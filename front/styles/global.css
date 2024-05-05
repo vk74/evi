@@ -1,0 +1,16 @@
+.user-registration-form-info {    /* подстрочник для полей формы регистрации нового пользователя */
+    color: gray; 
+    font-size: 12px; 
+    margin-top: 2px; 
+    display: block;
+  }
+
+  .ModuleAR {
+    flex-grow: 1;
+    background-color: rgba(161, 154, 254, 0.941);
+  }
+
+  .ModuleSettings {
+    flex-grow: 1;
+    background-color: rgb(246, 165, 172);
+  }
