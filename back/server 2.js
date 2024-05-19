@@ -18,7 +18,7 @@ app.listen(port, () => {
 //app.use(cors());
 
 app.use(cors({
-  origin: 'http://localhost:8080' // Разрешить доступ только для этого источника
+  origin: 'http://localhost:8081' // Разрешить доступ только для этого источника
 }));
 
 app.use(express.json());

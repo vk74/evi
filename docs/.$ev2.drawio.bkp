@@ -1,4 +1,4 @@
-<mxfile host="Electron" modified="2024-03-17T19:07:12.197Z" agent="Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) draw.io/24.0.4 Chrome/120.0.6099.109 Electron/28.1.0 Safari/537.36" etag="03A23RL_oD6C2c1q_X7i" version="24.0.4" type="device" pages="4">
+<mxfile host="Electron" modified="2024-03-17T19:24:36.114Z" agent="Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) draw.io/24.0.4 Chrome/120.0.6099.109 Electron/28.1.0 Safari/537.36" etag="t2faamXN1kE5Kg3Fo0Bi" version="24.0.4" type="device" pages="4">
   <diagram id="R2lEEEUBdFMjLlhIrx00" name="login lifecycle">
     <mxGraphModel dx="2187" dy="996" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="850" pageHeight="1100" math="0" shadow="0" extFonts="Permanent Marker^https://fonts.googleapis.com/css?family=Permanent+Marker">
       <root>
@@ -390,7 +390,7 @@
             <mxPoint y="-1" as="offset" />
           </mxGeometry>
         </mxCell>
-        <mxCell id="nROQ_O8uCRl0butZPI0A-19" value="log application-wide events, enrich event data:&lt;br&gt;&lt;ol&gt;&lt;li&gt;successful / failed executions of business logic&lt;/li&gt;&lt;li&gt;route guards events&lt;/li&gt;&lt;li&gt;informational events&lt;/li&gt;&lt;li&gt;user events (logon, logof ...)&lt;/li&gt;&lt;li&gt;events sent by errors controller&lt;/li&gt;&lt;/ol&gt;" style="strokeWidth=1;shadow=0;dashed=0;align=center;html=1;shape=mxgraph.mockup.forms.anchor;fontSize=17;fontColor=#666666;align=left;spacingLeft=5;resizeWidth=1;whiteSpace=wrap;" parent="nROQ_O8uCRl0butZPI0A-17" vertex="1">
+        <mxCell id="nROQ_O8uCRl0butZPI0A-19" value="log application-wide events, enrich event data:&lt;br&gt;&lt;ol&gt;&lt;li&gt;successful / failed executions of business logic&lt;/li&gt;&lt;li&gt;route guards events&lt;/li&gt;&lt;li&gt;informational events&lt;/li&gt;&lt;li&gt;user events (logon, logoff ...)&lt;/li&gt;&lt;li&gt;events received from errors controller&lt;/li&gt;&lt;/ol&gt;" style="strokeWidth=1;shadow=0;dashed=0;align=center;html=1;shape=mxgraph.mockup.forms.anchor;fontSize=17;fontColor=#666666;align=left;spacingLeft=5;resizeWidth=1;whiteSpace=wrap;" parent="nROQ_O8uCRl0butZPI0A-17" vertex="1">
           <mxGeometry width="1233.170731707317" height="90" relative="1" as="geometry">
             <mxPoint x="15" y="70" as="offset" />
           </mxGeometry>
@@ -460,7 +460,7 @@
             <mxPoint y="-1" as="offset" />
           </mxGeometry>
         </mxCell>
-        <mxCell id="nROQ_O8uCRl0butZPI0A-37" value="write event to fluentd" style="strokeWidth=1;shadow=0;dashed=0;align=center;html=1;shape=mxgraph.mockup.forms.anchor;fontSize=17;fontColor=#666666;align=left;spacingLeft=5;resizeWidth=1;whiteSpace=wrap;" parent="nROQ_O8uCRl0butZPI0A-35" vertex="1">
+        <mxCell id="nROQ_O8uCRl0butZPI0A-37" value="write event logs to fluentd" style="strokeWidth=1;shadow=0;dashed=0;align=center;html=1;shape=mxgraph.mockup.forms.anchor;fontSize=17;fontColor=#666666;align=left;spacingLeft=5;resizeWidth=1;whiteSpace=wrap;" parent="nROQ_O8uCRl0butZPI0A-35" vertex="1">
           <mxGeometry width="200" height="30" relative="1" as="geometry">
             <mxPoint y="40" as="offset" />
           </mxGeometry>
