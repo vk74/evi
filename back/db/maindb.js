@@ -1,12 +1,17 @@
 // File purpose: connection to MAIN databse and integration methods to get, post, update data   
 
+const bcrypt = require('bcrypt');
 const { Pool } = require('pg');
 
-// Create new database connections pool 
+// create new pool of connections with users database
 const pool = new Pool({
-  user: 'config_user', // имя пользователя в PostgreSQL с правами работы в подключаемой базе данных
-  host: 'localhost',     // хост, обычно localhost для локальной разработки
-  database: 'main', // название базы данных
-  password: 'P@ssw0rd',   // пароль для доступа к базе данных
-  port: 5432,                  // порт, на котором работает PostgreSQL
+  user: 'config_user',    // username in PostgreSQL to perform designated operations
+  host: 'localhost',      // host where Postgres is installed
+  database: 'maindb',     // DB name for connection
+  password: 'P@ssw0rd',   // password for username above
+  port: 5432,             // port of PostgreSQL
 });
+
+module.exports = {
+  pool
+};
