@@ -1,5 +1,5 @@
 // /back/middleware/getUserProfile.js
-const pool = require('../db/userdb');
+const pool = require('../db/maindb');
 
 // get user profile data by using his username
 async function getUserProfile(username) {

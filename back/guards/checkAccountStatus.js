@@ -1,4 +1,4 @@
-const pool = require('../db/userdb').pool;
+const pool = require('../db/maindb').pool;
 
 const checkAccountStatus = async (req, res, next) => {
     const { username } = req.body; // get username from request

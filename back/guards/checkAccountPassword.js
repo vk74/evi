@@ -1,6 +1,6 @@
 const bcrypt = require('bcrypt');
-const userdb = require('../db/userdb');
-const pool = require('../db/userdb').pool;
+const userdb = require('../db/maindb');
+const pool = require('../db/maindb').pool;
 
 const checkAccountPassword = async (req, res, next) => {
     const { username, password } = req.body;

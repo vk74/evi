@@ -1,6 +1,6 @@
 const bcrypt = require('bcrypt');
 // const userdb = require('../db/userdb');
-const pool = require('../db/userdb').pool;
+const pool = require('../db/maindb').pool;
 
 const changeUserPassword = async ({ username, newPassword }) => {
     try {

@@ -1,5 +1,5 @@
 const bcrypt = require('bcrypt');
-const { pool } = require('../db/userdb'); // Импорт пула соединений для базы userdb
+const { pool } = require('../db/maindb'); // Импорт пула соединений для базы userdb
 
 const registerNewUser = async (req, res) => {
   try {

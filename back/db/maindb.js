@@ -1,4 +1,4 @@
-// File purpose: connection to MAIN databse and integration methods to get, post, update data   
+// File purpose: connection to MAIN databse and methods to get, post, update data   
 
 const bcrypt = require('bcrypt');
 const { Pool } = require('pg');
