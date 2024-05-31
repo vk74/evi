@@ -71,17 +71,17 @@
 
       <!-- стилизация app bar   -->
       <template v-slot:image>
-        <v-img
-          gradient="to top right, rgba(19,84,122,.8), rgba(128,208,199,.8)"
-        ></v-img>
+        <v-img gradient="to top right, rgba(19,84,122,.8), rgba(128,208,199,.8)"></v-img>
       </template>
     </v-app-bar>
 
     <!-- Navigation Drawer   -->
-      <!-- элемент второго варианта дизайна nav drawer, без динамического свертывания  <v-navigation-drawer v-model="drawer" :rail="rail" permanent @click="rail = false">   -->
-      <v-navigation-drawer v-model="drawer" app expand-on-hover rail elevation="5">  
+    <!-- элемент второго варианта дизайна nav drawer, без динамического свертывания  <v-navigation-drawer v-model="drawer" :rail="rail" permanent @click="rail = false">   -->
+    <v-navigation-drawer v-model="drawer" app expand-on-hover rail elevation="5">
       <v-list density="compact" nav>
-        <v-list-item @click="setActiveModule('Catalog')" prepend-icon="mdi-view-dashboard" title="catalog" value="catalog"> <!-- ээлемент второго варианта nav drawer, без динамического свертывания <template v-slot:append> <v-btn variant="text" icon="mdi-chevron-left" @click.stop="rail = !rail"></v-btn></template> --> </v-list-item>
+        <v-list-item @click="setActiveModule('Catalog')" prepend-icon="mdi-view-dashboard" title="catalog" value="catalog">
+          <!-- ээлемент второго варианта nav drawer, без динамического свертывания <template v-slot:append> <v-btn variant="text" icon="mdi-chevron-left" @click.stop="rail = !rail"></v-btn></template> -->
+        </v-list-item>
         <v-list-item @click="setActiveModule('Work')" prepend-icon="mdi-file-edit-outline" title="work items" value="workItems"></v-list-item>
         <v-list-item @click="setActiveModule('AR')" prepend-icon="mdi-chart-timeline" title="reports" value="reports"></v-list-item>
         <v-divider class="border-opacity-25"></v-divider><br>
@@ -90,7 +90,7 @@
         <v-list-item @click="setActiveModule('XLS')" prepend-icon="mdi-microsoft-excel" title="xls prototyping" value="xlsPrototyping"></v-list-item>
         <v-divider class="border-opacity-25"></v-divider>
       </v-list>
-        <!-- Settings in the bottom -->
+      <!-- Settings in the bottom -->
       <template v-slot:append>
         <v-list>
           <v-list-item @click="setActiveModule('Account')" prepend-icon="mdi-account" title="account" value="account" v-if="isLoggedIn"></v-list-item>
@@ -102,22 +102,24 @@
     </v-navigation-drawer>
 
     <!-- Main Work Area  -->
-    <v-main> <!-- @change-module="setActiveModule" -->
-      <ModuleLogin v-if="activeModule === 'Login'"/>
-      <ModuleCatalog v-if="activeModule === 'Catalog'"/>
-      <ModuleWork v-if="activeModule === 'Work'"/>
-      <ModuleAR v-if="activeModule === 'AR'"/>
-      <ModuleAdmpan v-if="activeModule === 'Admpan'"/>
-      <ModuleXLS  v-if="activeModule === 'XLS'"/>
-      <ModuleAccount  v-if="activeModule === 'Account'"/>
-      <ModuleSettings  v-if="activeModule === 'Settings'"/>
-      <ModuleHelp  v-if="activeModule === 'Help'"/>
+    <v-main>
+      <!-- @change-module="setActiveModule" -->
+      <ModuleLogin v-if="activeModule === 'Login'" />
+      <ModuleCatalog v-if="activeModule === 'Catalog'" />
+      <ModuleWork v-if="activeModule === 'Work'" />
+      <ModuleAR v-if="activeModule === 'AR'" />
+      <ModuleAdmpan v-if="activeModule === 'Admpan'" />
+      <ModuleXLS v-if="activeModule === 'XLS'" />
+      <ModuleAccount v-if="activeModule === 'Account'" />
+      <ModuleSettings v-if="activeModule === 'Settings'" />
+      <ModuleHelp v-if="activeModule === 'Help'" />
     </v-main>
-
   </v-app>
 </template>
 
 <script>
+import { ref, computed } from 'vue';
+import { useUserStore } from './state/userstate';
 import ModuleCatalog from './components/catalog/ModuleCatalog.vue';
 import ModuleWork from './components/work/ModuleWork.vue';
 import ModuleAR from './components/ar/ModuleAR.vue';
@@ -147,58 +149,53 @@ export default {
     ModalChangeUserPass,
     LoginDialog
   },
-  data() {
-    return {
-      drawer: true,
-      // rail: true, // элемент второго варианта дизайна nav drawer, без динамического свертывания
-      //activeModule: 'Catalog', // активный модуль по умолчанию, выставляемый при загрузке приложения
-      //isLoginModulVisible: false, // переменная для управления видимостью модального окна входа
-      isRegisterModalVisible: false,
-      isChangePassModalVisible: false,
-      isLoginDialogVisible: false,
-    };
-  },
-  computed: {
-    isLoggedIn() {  
-      return this.$store.state.isLoggedIn;  // получаем значение атрибута isLoggedIn из Vuex хранилища
-    },
-    activeModule() {
-    return this.$store.state.activeModule;
-  }
-},
+  setup() {
+    const userStore = useUserStore();
+    const drawer = ref(true);
+    const isRegisterModalVisible = ref(false);
+    const isChangePassModalVisible = ref(false);
+    const isLoginDialogVisible = ref(false);
 
-  methods: {
-    setActiveModule(module){
-      this.$store.commit('setActiveModule', module); // обновляем активный модуль через Vuex
-    },
-    logout() {
-      this.$store.dispatch('userLogoff'); //сбрасываем данные пользователя в vuex
-      this.$store.commit('setActiveModule', 'Catalog'); //после выхода, показываем модуль каталога
-      this.showUserMenu = false; // закрываем меню пользователя после выхода
-    },
-    //showLoginModul() {
-      //console.log("isLoggedIn before showing login modal:", this.isLoggedIn);
-    //  this.isLoginModulVisible = true;
-    //},
-    showLoginDialog() {
-      console.log("Клик по кнопке showLoginDialog. Текущее состояние isLoginDialogVisible:", this.isLoginDialogVisible);
-      this.isLoginDialogVisible = true;
-      console.log("После установки isLoginDialogVisible в true, новое состояние:", this.isLoginDialogVisible);
-    },
-    handleLoginSuccess() {
-    this.setActiveModule('Work'); // в случае успешного логина переключаемся на модуль Work
-    //this.isLoginDialogVisible = false; // Закрываем диалоговое окно входа
-  },
-    showChangePassModal() {
-      this.isChangePassModalVisible = true;
-    },
-    showRegisterModal() { 
-      this.isRegisterModalVisible = true;
-    }
+    const isLoggedIn = computed(() => userStore.isLoggedIn);
+    const activeModule = computed(() => userStore.activeModule);
+
+    const setActiveModule = (module) => {
+      userStore.setActiveModule(module);
+    };
+
+    const logout = () => {
+      userStore.userLogoff();
+      setActiveModule('Catalog');
+    };
+
+    const showRegisterModal = () => {
+      isRegisterModalVisible.value = true;
+    };
+
+    return {
+      drawer,
+      isRegisterModalVisible,
+      isChangePassModalVisible,
+      isLoginDialogVisible,
+      isLoggedIn,
+      activeModule,
+      setActiveModule,
+      logout,
+      showLoginDialog() {
+        isLoginDialogVisible.value = true;
+      },
+      handleLoginSuccess() {
+        setActiveModule('Work'); // в случае успешного логина переключаемся на модуль Work
+      },
+      showChangePassModal() {
+        isChangePassModalVisible.value = true;
+      },
+      showRegisterModal,
+    };
   }
 };
 </script>
 
 <style>
-
+/* ваши стили */
 </style>

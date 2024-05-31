@@ -48,6 +48,8 @@
 </template>
 
 <script>
+import { useUserStore } from '../../state/userstate';
+
 export default {
   name: 'ModalRegister',
   data() {
@@ -81,6 +83,11 @@ export default {
 
           if (response.ok) {
             console.log('Регистрационные данные пользователя успешно отправлены на сервер');
+            // Сохраняем данные пользователя в Pinia store
+            const userStore = useUserStore();
+            userStore.setUsername(this.user.username);
+            userStore.setJwt(''); // Установите JWT, если он возвращается сервером
+            userStore.setLoggedIn(true); // Предположим, что пользователь автоматически входит в систему после регистрации
             this.closeModal();
           } else {
             console.error('Ошибка отправки регистрационных данных на сервер:', response.status, response.statusText);

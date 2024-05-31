@@ -1,37 +1,29 @@
 <template>
   <div class="modal-overlay" v-if="dialog" @click.self="closeModal">
-    <!-- <div class="modal"> -->
-      <!-- <v-dialog v-model="dialog" persistent max-width="600px"> -->
-        <v-card>
-          <v-card-title class="text-h5">вход в приложение</v-card-title>
-          <v-card-text>
-            <v-form>
-              <v-text-field v-model="username" label="логин" required></v-text-field>
-              <v-text-field v-model="password" label="пароль" type="password" required></v-text-field>
-            </v-form>
-            <p v-if="showError">неправильное имя пользователя либо пароль</p>
-            <p v-if="showSuccess">успешно</p>
-          </v-card-text>
-          <v-card-actions>
-            <v-spacer></v-spacer>
-            <!-- <v-btn color="teal darken-1" text @click="closeDialog">отмена</v-btn> -->
-            <v-btn color="teal darken-1" text @click="login">войти</v-btn>
-          </v-card-actions>
-        </v-card>
-      <!-- </v-dialog> -->
-      <!-- <v-snackbar v-model="showSuccess" :timeout="2000">
-        Успешный вход.
-        <v-btn color="green" text @click="showSuccess = false">Закрыть</v-btn>
-      </v-snackbar> -->
-    <!--  </div> --->
+    <v-card>
+      <v-card-title class="text-h5">вход в приложение</v-card-title>
+      <v-card-text>
+        <v-form>
+          <v-text-field v-model="username" label="логин" required></v-text-field>
+          <v-text-field v-model="password" label="пароль" type="password" required></v-text-field>
+        </v-form>
+        <p v-if="showError">неправильное имя пользователя либо пароль</p>
+        <p v-if="showSuccess">успешно</p>
+      </v-card-text>
+      <v-card-actions>
+        <v-spacer></v-spacer>
+        <v-btn color="teal darken-1" text @click="login">войти</v-btn>
+      </v-card-actions>
+    </v-card>
   </div>  
 </template>
 
 <script>
-import { jwtDecode } from 'jwt-decode';  // библиотека для декодирования JWT
+import { jwtDecode } from 'jwt-decode'; // импорт функции декодирования JWT
+import { useUserStore } from '../../state/userstate'; // импорт Pinia store
 
 export default {
-  name: 'ModalLogin',
+  name: 'ModulLogin-modal',
   data() {
     return {
       dialog: true, // Сделаем диалог открытым по умолчанию
@@ -43,8 +35,8 @@ export default {
   },
   methods: {
     async login() {
-      console.log("Логин:", this.username, "Пароль:", this.password); 
-      
+      console.log("Логин:", this.username, "Пароль:", this.password);
+
       this.showError = false; // сбрасываем ошибку при каждой новой попытке входа
       this.showSuccess = false; // сбрасываем сообщение об успехе при каждой новой попытке
 
@@ -57,23 +49,25 @@ export default {
         console.log('Ответ сервера:', response);
 
         if (response.data.success) {
-          localStorage.setItem('userToken', response.data.token); // сохраняем токен в localStorage чтобы пользователю не пришлось повторно аутентифицироваться 
-         
+          localStorage.setItem('userToken', response.data.token); // сохраняем токен в localStorage чтобы пользователю не пришлось повторно аутентифицироваться
+
           const decoded = jwtDecode(response.data.token);  // декодирование JWT для извлечения данных пейлоуда
           console.log('Декодированный JWT:', decoded);
 
-          // обновление Vuex хранилища данными из пейлоуда токена
-          this.$store.commit('setUsername', decoded.sub); // мутация для установки имени пользователя
-          this.$store.commit('setLoggedIn', true); // мутация для установки флага аутентификации в true
-          this.$store.commit('setJwt', response.data.token); // сохраняем сам токен
+          // обновление Pinia хранилища данными из пейлоуда токена
+          const userStore = useUserStore();
+          userStore.setUsername(decoded.sub); // установка имени пользователя
+          userStore.setLoggedIn(true); // установка флага аутентификации в true
+          userStore.setJwt(response.data.token); // сохраняем сам токен
           // обновляем остальные поля на основе декодированного токена
-          this.$store.commit('setIssuer', decoded.iss);
-          this.$store.commit('setAudience', decoded.aud);
-          this.$store.commit('setIssuedAt', decoded.iat);
-          this.$store.commit('setJwtId', decoded.jti);
-          this.$store.commit('setTokenExpires', decoded.exp); // срок истечения жизни токена
+          userStore.setIssuer(decoded.iss);
+          userStore.setAudience(decoded.aud);
+          userStore.setIssuedAt(decoded.iat);
+          userStore.setJwtId(decoded.jti);
+          userStore.setTokenExpires(decoded.exp); // срок истечения жизни токена
 
           this.showSuccess = true;
+          this.showError = false;
           setTimeout(() => {
             this.closeDialog();
           }, 1000);
@@ -84,16 +78,15 @@ export default {
         this.showError = true; // показываем ошибку, если возникла ошибка запроса
         console.error('Ошибка при отправке запроса:', error);
       }
-
-       // this.closeDialog(); // закрыть диалог после попытки входа
     },
     closeDialog() {
-      this.dialog = false; //закрыть модальное окно
+      this.dialog = false; // закрыть модальное окно
+      this.$emit('close'); // оповестить родительский компонент о закрытии
     }
   }
 };
 </script>
 
 <style>
-
+/* ваши стили */
 </style>

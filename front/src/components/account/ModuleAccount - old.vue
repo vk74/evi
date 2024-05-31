@@ -1,36 +1,144 @@
 <template>
-  <div class="pt-3 pl-3 pr-3 pb-3">
-    <v-card color="teal-lighten-1" elevation="1">
-  <v-row>
-    <v-col cols="auto">
-      <br>&nbsp;
-      <v-icon size="40">mdi-account-settings</v-icon><br>
-    </v-col>
-    <v-col>
-      <v-card-title class="text-h5 mb-0">имя пользователя</v-card-title>
-      <v-card-subtitle>компания / должность </v-card-subtitle>
-    </v-col>
-  </v-row>
-</v-card>
+  <v-container fluid>
+    <v-row>
 
-  </div>
-  <div>
-    <h4>&nbsp;Модуль  "личный кабинет"</h4>
-    &nbsp;Модуль будет использоваться для настроек пользовательского профиля, отображения личных данных, смены пароля и пр.
-    <br><br>
-    <h4>&nbsp;Current user state for debugging</h4>
-    <p>&nbsp;Username: {{ username }}</p>
-    <p>&nbsp;Issued token (JWT): {{ jwt }}</p>
-    <p>&nbsp;isLoggedIn attribute: {{ isLoggedIn }}</p>
-    <p>&nbsp;Token issued at: {{ issuedAt }}</p> 
-    <p>&nbsp;Token issuer: {{ issuer }}</p> 
-    <p>&nbsp;Token expires: {{ expiresAt }}</p> 
-  </div>
+      <!-- user banner -->
+      <v-col cols="12">
+        <v-card class="pa-4" color="blue-grey-lighten-5" elevation="2" >
+          <v-row align="center">
+            <v-col cols="3" sm="2" md="1">
+              <v-avatar size="96px" class="elevation-7">
+                <img :src="require('@/assets/user-profile-default-male.jpg')" alt="User's avatar">
+              </v-avatar>
+            </v-col>
+            <v-col>
+              <h3 class="white--text mb-0">{{ username }}</h3>
+              <div class="white--text subtitle-1">ПУЛЬС / Менеджер по развитию бизнеса</div>
+            </v-col>
+          </v-row>
+        </v-card>
+      </v-col>
+
+      <!-- profile card -->
+      <v-col cols="12" md="6">
+        <v-card class="pa-4" outlined elevation="2">
+          <v-text-field
+            label="First Name"
+            :value="profile.first_name"
+            readonly
+          ></v-text-field>
+          <v-text-field
+            label="Last Name"
+            :value="profile.last_name"
+            readonly
+          ></v-text-field>
+          <v-text-field
+            label="Middle Name"
+            :value="profile.middle_name"
+            readonly
+          ></v-text-field>
+          <v-text-field
+            label="Phone Number"
+            :value="profile.phone_number"
+            readonly
+          ></v-text-field>
+          <v-text-field
+            label="Email"
+            :value="profile.email"
+            readonly
+          ></v-text-field>
+          <v-text-field
+            label="Address"
+            :value="profile.address"
+            readonly
+          ></v-text-field>
+          <v-text-field
+            label="Company Name"
+            :value="profile.company_name"
+            readonly
+          ></v-text-field>
+          <v-text-field
+            label="Position"
+            :value="profile.position"
+            readonly
+          ></v-text-field>
+          <v-text-field
+            label="Gender"
+            :value="profile.gender"
+            readonly
+          ></v-text-field>
+        </v-card>
+      </v-col>
+
+      <!-- tech card -->
+      <v-col cols="12" md="6">
+        <v-card class="pa-4" outlined elevation="2" title="технические данные сессии">
+          Username: <b>{{ username }} </b> <br>
+          Issued <b>JSON web token:</b> {{ jwt }} <br>
+          isLoggedIn attribute: <b>{{ isLoggedIn }}</b> <br>
+          Token issued at: <b>{{ issuedAt }} </b> <br>
+          Token issuer: <b>{{ issuer }} </b> <br>
+          Token expires: <b>{{ expiresAt }} </b> <br>
+        </v-card>
+      </v-col>
+
+      <!-- settings card 
+      <v-col cols="12" md="6">
+        <v-card class="pa-4" outlined elevation="2" title="настройки для пользователя">
+          <v-list two-line>
+            <v-list-item>
+              <v-list-item-content>
+                <v-list-item-title>оповещать при обновлениях мойх рабочих элементов</v-list-item-title>
+              </v-list-item-content>
+              <v-list-item-action>
+                <v-switch v-model="settings.workUpdates"></v-switch>
+              </v-list-item-action>
+            </v-list-item>
+            <v-list-item>
+              <v-list-item-content>
+                <v-list-item-title>отправлять новости</v-list-item-title>
+              </v-list-item-content>
+              <v-list-item-action>
+                <v-switch v-model="settings.newsletter"></v-switch>
+              </v-list-item-action>
+            </v-list-item>
+          </v-list>
+        </v-card>
+      </v-col> -->
+
+    </v-row>
+  </v-container>
+
 </template>
 
 <script>
 export default {
   name: 'ModuleAccount',
+  data() {
+    return {
+      profile: {}, // изначально пустой объект, будет заполнен данными профиля
+      settings: {
+        workUpdates: false,
+        newsletter: true,
+      },
+    };
+  },
+  async mounted() {
+    if (this.isLoggedIn) {
+      try {
+        // Используйте this.$http.get для отправки запроса
+        const response = await this.$http.get('http://localhost:3000/profile', {
+          headers: { Authorization: `Bearer ${this.jwt}` },
+          // username: this.username,
+          // password: this.password
+        });
+        this.profile = response.data;
+      } catch (error) {
+        console.error('Ошибка при загрузке данных профиля:', error);
+        // Обработка ошибок
+      }
+    }
+  },
   computed: {
     username() {
       return this.$store.state.username;
@@ -57,8 +165,3 @@ export default {
   },
 };
 </script>
-
-
-<style>
-
-</style>

@@ -4,9 +4,7 @@
       <v-card>
         <v-card-title class="text-h5">cмена пароля</v-card-title>
         <v-card-text>
-        <!--<p>Ваш новый пароль должен отличаться от текущего и прошлых паролей.</p>
-        <br> -->
-        <v-form @submit.prevent="changePassword">
+          <v-form @submit.prevent="changePassword">
             <v-text-field
               label="Новый пароль"
               id="password"
@@ -14,8 +12,7 @@
               v-model="password"
               :error-messages="passwordError ? [passwordError] : []"
               outlined
-              >
-            </v-text-field>
+            ></v-text-field>
             <v-text-field
               label="Подтвердите пароль"
               id="confirmPassword"
@@ -23,14 +20,12 @@
               v-model="confirmPassword"
               :error-messages="confirmPasswordError ? [confirmPasswordError] : []"
               outlined
-              >
-          </v-text-field>
-        </v-form>
+            ></v-text-field>
+          </v-form>
         </v-card-text>
         <v-card-actions>
           <v-spacer></v-spacer>
-            <v-btn color="teal darken-1" text @click="changePassword">изменить пароль</v-btn>
-            <!-- <v-btn type="submit" color="primary">сменить пароль</v-btn> -->
+          <v-btn color="teal darken-1" text @click="changePassword">изменить пароль</v-btn>
         </v-card-actions>
       </v-card>
     </div>
@@ -38,46 +33,41 @@
 </template>
 
 <script>
-import { useStore } from 'vuex'; // импортируем хук useStore из Vuex
+import { useUserStore } from '../../state/userstate'; // импорт Pinia store
+import { ref, computed, watch } from 'vue';
 
 export default {
-name: 'ModalChangeUserPass',
-setup() {
-    const store = useStore(); // используем хук useStore для доступа к хранилищу
-    const username = store.state.username; // получаем username из состояния
-    return { username }; // возвращаем username для использования в шаблоне/методах
-  },
-  data() {
-    return {
-      password: '',
-      confirmPassword: '',
-      passwordError: '',
-      confirmPasswordError: '',
-    };
-  },
-watch: {
+  name: 'ModalChangeUserPass',
+  setup() {
+    const userStore = useUserStore(); // используем хук useUserStore для доступа к хранилищу
+    const username = computed(() => userStore.username); // получаем username из состояния
+    const password = ref('');
+    const confirmPassword = ref('');
+    const passwordError = ref('');
+    const confirmPasswordError = ref('');
+
     // наблюдатель за изменением пароля для валидации
-    password(newVal) {
-    this.validatePassword(newVal);
-    },
+    watch(password, (newVal) => {
+      validatePassword(newVal);
+    });
+
     // наблюдатель за изменением подтверждения пароля для проверки совпадения
-    confirmPassword() {
-    this.confirmPasswordError = '';
-    },
-},
-methods: {
-    validatePassword(password) {
-    const regex = /^[a-zA-Zа-яА-Я0-9\p{P}]{8,40}$/u;
-    this.passwordError = '';
+    watch(confirmPassword, () => {
+      confirmPasswordError.value = '';
+    });
 
-    if (!regex.test(password)) {
-        this.passwordError = 'Пароль должен быть от 8 до 40 символов и содержать только буквы, цифры и знаки препинания';
-    }
-    },
+    const validatePassword = (password) => {
+      const regex = /^[a-zA-Zа-яА-Я0-9\p{P}]{8,40}$/u;
+      passwordError.value = '';
 
-    async changePassword() {
-      if (this.password !== this.confirmPassword) {
-        this.confirmPasswordError = 'Пароли не совпадают';
+      if (!regex.test(password)) {
+        passwordError.value = 'Пароль должен быть от 8 до 40 символов и содержать только буквы, цифры и знаки препинания';
+      }
+    };
+
+    const changePassword = async () => {
+      if (password.value !== confirmPassword.value) {
+        confirmPasswordError.value = 'Пароли не совпадают';
         return;
       }
 
@@ -88,8 +78,8 @@ methods: {
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
-            username: this.username, // используем username из vuex
-            newPassword: this.password,
+            username: username.value, // используем username из Pinia
+            newPassword: password.value,
           }),
         });
 
@@ -101,17 +91,25 @@ methods: {
         console.log('Результат смены пароля:', result);
 
         // опционально: обработка успешного ответа от сервера
-        //alert('пароль успешно изменен.');
+        // alert('пароль успешно изменен.');
       } catch (error) {
         console.error('Ошибка при смене пароля:', error);
         // опционально: обработка ошибки
-        //alert('ошибка при смене пароля.');
+        // alert('ошибка при смене пароля.');
       }
-    },
+    };
+
+    return {
+      password,
+      confirmPassword,
+      passwordError,
+      confirmPasswordError,
+      changePassword,
+    };
   },
 };
 </script>
-  
-<style>
 
+<style>
+/* ваши стили */
 </style>
