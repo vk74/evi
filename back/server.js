@@ -10,18 +10,17 @@ const port = 3000;
 const app = express();
 const fs = require('fs');
 
-
 app.listen(port, () => {
   console.log(`Server listening at http://localhost:${port}`);
 });
 
 //app.use(cors());
-
 app.use(cors({
   origin: 'http://localhost:8080' // Разрешить доступ только для этого источника
 }));
 
 app.use(express.json());
+//app.use('/profile', getUserProfile); // Регистрация маршрута
 app.use(bodyParser.json());
 app.use(userRoutes);
 

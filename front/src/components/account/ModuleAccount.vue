@@ -24,12 +24,12 @@
           <v-text-field label="First Name" :value="profile.first_name" readonly></v-text-field>
           <v-text-field label="Last Name" :value="profile.last_name" readonly></v-text-field>
           <v-text-field label="Middle Name" :value="profile.middle_name" readonly></v-text-field>
+          <v-text-field label="Gender" :value="profile.gender" readonly></v-text-field>
           <v-text-field label="Phone Number" :value="profile.phone_number" readonly></v-text-field>
           <v-text-field label="Email" :value="profile.email" readonly></v-text-field>
           <v-text-field label="Address" :value="profile.address" readonly></v-text-field>
           <v-text-field label="Company Name" :value="profile.company_name" readonly></v-text-field>
           <v-text-field label="Position" :value="profile.position" readonly></v-text-field>
-          <v-text-field label="Gender" :value="profile.gender" readonly></v-text-field>
         </v-card>
       </v-col>
 
@@ -44,30 +44,6 @@
           Token expires: <b>{{ expiresAt }} </b> <br>
         </v-card>
       </v-col>
-
-      <!-- settings card 
-      <v-col cols="12" md="6">
-        <v-card class="pa-4" outlined elevation="2" title="настройки для пользователя">
-          <v-list two-line>
-            <v-list-item>
-              <v-list-item-content>
-                <v-list-item-title>оповещать при обновлениях мойх рабочих элементов</v-list-item-title>
-              </v-list-item-content>
-              <v-list-item-action>
-                <v-switch v-model="settings.workUpdates"></v-switch>
-              </v-list-item-action>
-            </v-list-item>
-            <v-list-item>
-              <v-list-item-content>
-                <v-list-item-title>отправлять новости</v-list-item-title>
-              </v-list-item-content>
-              <v-list-item-action>
-                <v-switch v-model="settings.newsletter"></v-switch>
-              </v-list-item-action>
-            </v-list-item>
-          </v-list>
-        </v-card>
-      </v-col> -->
     </v-row>
   </v-container>
 </template>
@@ -75,6 +51,7 @@
 <script>
 import { useUserStore } from '../../state/userstate'; // импорт Pinia store
 import { computed } from 'vue';
+import axios from 'axios';
 
 export default {
   name: 'ModuleAccount',
@@ -92,14 +69,13 @@ export default {
 
     if (userStore.isLoggedIn) {
       try {
-        // Используйте this.$http.get для отправки запроса
-        const response = await this.$http.get('http://localhost:3000/profile', {
+        // Используйте axios для отправки запроса
+        const response = await axios.get('http://localhost:3000/profile', {
           headers: { Authorization: `Bearer ${userStore.jwt}` },
         });
         this.profile = response.data;
       } catch (error) {
         console.error('Ошибка при загрузке данных профиля:', error);
-        // Обработка ошибок
       }
     }
   },

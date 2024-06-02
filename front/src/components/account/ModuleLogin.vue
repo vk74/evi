@@ -18,16 +18,14 @@
     </v-card>
   </div>  
 </template>
-
 <script>
 import { jwtDecode } from 'jwt-decode';  // библиотека для декодирования JWT
 import { useUserStore } from '../../state/userstate'; // импорт Pinia store
-
 export default {
   name: 'ModulLogin-modal',
   data() {
     return {
-      dialog: true, // Сделаем диалог открытым по умолчанию
+      //dialog: true, // Сделаем диалог открытым по умолчанию
       username: '',
       password: '',
       showError: false,
@@ -37,24 +35,18 @@ export default {
   methods: {
     async login() {
       console.log("Логин:", this.username, "Пароль:", this.password);
-
       this.showError = false; // сбрасываем ошибку при каждой новой попытке входа
       this.showSuccess = false; // сбрасываем сообщение об успехе при каждой новой попытке
-
       try {
         const response = await this.$http.post('http://localhost:3000/login', {
           username: this.username,
           password: this.password
         });
-
         console.log('Ответ сервера:', response);
-
         if (response.data.success) {
           localStorage.setItem('userToken', response.data.token); // сохраняем токен в localStorage чтобы пользователю не пришлось повторно аутентифицироваться
-
           const decoded = jwtDecode(response.data.token);  // декодирование JWT для извлечения данных пейлоуда
           console.log('Декодированный JWT:', decoded);
-
           // обновление Pinia хранилища данными из пейлоуда токена
           const userStore = useUserStore();
           userStore.setUsername(decoded.sub); // установка имени пользователя
@@ -66,12 +58,12 @@ export default {
           userStore.setIssuedAt(decoded.iat);
           userStore.setJwtId(decoded.jti);
           userStore.setTokenExpires(decoded.exp); // срок истечения жизни токена
-
           this.showSuccess = true;
           this.showError = false;
           setTimeout(() => {
             this.closeDialog();
           }, 1000);
+          userStore.setActiveModule('Catalog');
         } else {
           this.showError = true; // показываем ошибку, если валидация неудачна
         }
@@ -87,7 +79,6 @@ export default {
   }
 };
 </script>
-
 <style>
 /* ваши стили */
 </style>

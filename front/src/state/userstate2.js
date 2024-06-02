@@ -1,5 +1,5 @@
 // /src/state/userstate.js хранилище для отслеживания состояния пользователя
-//import axios from 'axios';
+import axios from 'axios';
 import { defineStore } from 'pinia';
 
 export const useUserStore = defineStore('user', {
@@ -52,18 +52,7 @@ export const useUserStore = defineStore('user', {
     setActiveModule(module) {
       this.activeModule = module;
     },
-/*     async setActiveModule() {
-      try {
-        const response = await axios.get('http://localhost:3000/profile', {
-          headers: { Authorization: `Bearer ${this.jwt}` },
-        });
-        // Обработка данных профиля
-      } catch (error) {
-        console.error('Ошибка при загрузке данных профиля:', error);
-      }
-    },
-  } */
-
+    
     // действия для вызова методов установки значений
     updateUsername(username) {
       this.setUsername(username);

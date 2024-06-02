@@ -1,10 +1,9 @@
 <template>
   <v-container fluid>
     <v-row>
-
       <!-- user banner -->
       <v-col cols="12">
-        <v-card class="pa-4" color="blue-grey-lighten-5" elevation="2" >
+        <v-card class="pa-4" color="blue-grey-lighten-5" elevation="2">
           <v-row align="center">
             <v-col cols="3" sm="2" md="1">
               <v-avatar size="96px" class="elevation-7">
@@ -21,28 +20,16 @@
 
       <!-- profile card -->
       <v-col cols="12" md="6">
-        <v-card class="pa-4" outlined elevation="2" title="данные профиля">
-          <v-list two-line>
-            <v-list-item>
-              <v-list-item-content>
-                <v-list-item-title>телефон</v-list-item-title>
-                <v-list-item-subtitle>{{ profile.telephone }}</v-list-item-subtitle>
-              </v-list-item-content>
-            </v-list-item>
-            <v-list-item>
-              <v-list-item-content>
-                <v-list-item-title>email</v-list-item-title>
-                <v-list-item-subtitle>{{ profile.email }}</v-list-item-subtitle>
-              </v-list-item-content>
-            </v-list-item>
-            <v-list-item>
-              <v-list-item-content>
-                <v-list-item-title>адрес</v-list-item-title>
-                <v-list-item-subtitle>{{ profile.address }}</v-list-item-subtitle>
-              </v-list-item-content>
-            </v-list-item>
-          </v-list>
-
+        <v-card class="pa-4" outlined elevation="2">
+          <v-text-field label="First Name" :value="profile.first_name" readonly></v-text-field>
+          <v-text-field label="Last Name" :value="profile.last_name" readonly></v-text-field>
+          <v-text-field label="Middle Name" :value="profile.middle_name" readonly></v-text-field>
+          <v-text-field label="Gender" :value="profile.gender" readonly></v-text-field>
+          <v-text-field label="Phone Number" :value="profile.phone_number" readonly></v-text-field>
+          <v-text-field label="Email" :value="profile.email" readonly></v-text-field>
+          <v-text-field label="Address" :value="profile.address" readonly></v-text-field>
+          <v-text-field label="Company Name" :value="profile.company_name" readonly></v-text-field>
+          <v-text-field label="Position" :value="profile.position" readonly></v-text-field>
         </v-card>
       </v-col>
 
@@ -81,51 +68,62 @@
           </v-list>
         </v-card>
       </v-col> -->
-
     </v-row>
   </v-container>
-
 </template>
 
 <script>
+import { useUserStore } from '../../state/userstate'; // импорт Pinia store
+import { computed } from 'vue';
+
 export default {
   name: 'ModuleAccount',
   data() {
     return {
-      profile: {
-        telephone: '(985) 123 1234 123',
-        email: 'atest@mail.ru',
-        address: 'ул. Гагарина 123, Ростов, Россия',
-      },
+      profile: {}, // изначально пустой объект, будет заполнен данными профиля
       settings: {
         workUpdates: false,
         newsletter: true,
       },
     };
   },
-  computed: {
-    username() {
-      return this.$store.state.username;
-    },
-    jwt() {
-      return this.$store.state.jwt;
-    },
-    isLoggedIn() {
-      return this.$store.state.isLoggedIn;
-    },
-    // Добавленные вычисляемые свойства
-    issuedAt() {
-      const iat = this.$store.state.issuedAt;
-      return iat ? new Date(iat * 1000).toLocaleString() : 'N/A';
-    },
-    issuer() {
-      return this.$store.state.issuer || 'N/A';
-    },
-    // JWT `exp` представляет собой временную метку Unix в секундах
-    expiresAt() {
-      const exp = this.$store.state.tokenExpires; // Убедитесь, что здесь используется правильный ключ состояния
-      return exp ? new Date(exp * 1000).toLocaleString() : 'N/A';
-    },
+  async mounted() {
+    const userStore = useUserStore();
+
+    if (userStore.isLoggedIn) {
+      try {
+        // Используйте this.$http.get для отправки запроса
+        const response = await this.$http.get('http://localhost:3000/profile', {
+          headers: { Authorization: `Bearer ${userStore.jwt}` },
+        });
+        this.profile = response.data;
+      } catch (error) {
+        console.error('Ошибка при загрузке данных профиля:', error);
+        // Обработка ошибок
+      }
+    }
   },
+  setup() {
+    const userStore = useUserStore();
+
+    return {
+      username: computed(() => userStore.username),
+      jwt: computed(() => userStore.jwt),
+      isLoggedIn: computed(() => userStore.isLoggedIn),
+      issuedAt: computed(() => {
+        const iat = userStore.issuedAt;
+        return iat ? new Date(iat * 1000).toLocaleString() : 'N/A';
+      }),
+      issuer: computed(() => userStore.issuer || 'N/A'),
+      expiresAt: computed(() => {
+        const exp = userStore.tokenExpires;
+        return exp ? new Date(exp * 1000).toLocaleString() : 'N/A';
+      }),
+    };
+  }
 };
 </script>
+
+<style>
+/* ваши стили */
+</style>
