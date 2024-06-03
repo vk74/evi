@@ -12,7 +12,10 @@
             </v-col>
             <v-col>
               <h3 class="white--text mb-0">{{ username }}</h3>
-              <div class="white--text subtitle-1">ПУЛЬС / Менеджер по развитию бизнеса</div>
+              <div class="white--text subtitle-1">КОМПАНИЯ / ДОЛЖНОСТЬ / еще какая-нибудь статусная фигня</div>
+            </v-col>
+            <v-col class="d-flex justify-end" cols="auto">
+              <v-btn color="teal darken-1" text @click="openChangePasswordModal">Сменить пароль</v-btn>
             </v-col>
           </v-row>
         </v-card>
@@ -21,30 +24,49 @@
       <!-- profile card -->
       <v-col cols="12" md="6">
         <v-card class="pa-4" outlined elevation="2">
-          <v-text-field label="First Name" :value="profile.first_name" readonly></v-text-field>
-          <v-text-field label="Last Name" :value="profile.last_name" readonly></v-text-field>
-          <v-text-field label="Middle Name" :value="profile.middle_name" readonly></v-text-field>
-          <v-text-field label="Gender" :value="profile.gender" readonly></v-text-field>
-          <v-text-field label="Phone Number" :value="profile.phone_number" readonly></v-text-field>
-          <v-text-field label="Email" :value="profile.email" readonly></v-text-field>
-          <v-text-field label="Address" :value="profile.address" readonly></v-text-field>
-          <v-text-field label="Company Name" :value="profile.company_name" readonly></v-text-field>
-          <v-text-field label="Position" :value="profile.position" readonly></v-text-field>
+          <v-text-field label="фамилия" :value="profile.last_name" readonly></v-text-field>
+          <v-text-field label="имя" :value="profile.first_name" readonly></v-text-field>
+          <v-text-field label="отчество" :value="profile.middle_name" readonly></v-text-field>
+          <v-text-field label="пол" :value="profile.gender" readonly></v-text-field>
+          <v-text-field label="номер телефона" :value="profile.phone_number" readonly></v-text-field>
+          <v-text-field label="e-mail" :value="profile.email" readonly></v-text-field>
+          <v-text-field label="адрес" :value="profile.address" readonly></v-text-field>
+          <v-text-field label="название компании" :value="profile.company_name" readonly></v-text-field>
+          <v-text-field label="должность" :value="profile.position" readonly></v-text-field>
         </v-card>
       </v-col>
 
       <!-- tech card -->
       <v-col cols="12" md="6">
-        <v-card class="pa-4" outlined elevation="2" title="технические данные сессии">
-          Username: <b>{{ username }} </b> <br>
-          Issued <b>JSON web token:</b> {{ jwt }} <br>
-          isLoggedIn attribute: <b>{{ isLoggedIn }}</b> <br>
-          Token issued at: <b>{{ issuedAt }} </b> <br>
-          Token issuer: <b>{{ issuer }} </b> <br>
-          Token expires: <b>{{ expiresAt }} </b> <br>
+        <v-card class="pa-4" outlined elevation="2">
+          <v-card-title>
+            <v-row align="center" class="w-100">
+              <v-col>технические данные сессии</v-col>
+              <v-col class="d-flex justify-end" cols="auto">
+                <v-btn icon @click="toggleTechCard" class="square-btn">
+                  <v-icon>{{ isTechCardExpanded ? 'mdi-chevron-up' : 'mdi-chevron-down' }}</v-icon>
+                </v-btn>
+              </v-col>
+            </v-row>
+          </v-card-title>
+          <v-expand-transition>
+            <v-card-text v-show="isTechCardExpanded">
+              Username: <b>{{ username }} </b> <br>
+              Issued <b>JSON web token:</b> {{ jwt }} <br>
+              isLoggedIn attribute: <b>{{ isLoggedIn }}</b> <br>
+              Token issued at: <b>{{ issuedAt }} </b> <br>
+              Token issuer: <b>{{ issuer }} </b> <br>
+              Token expires: <b>{{ expiresAt }} </b> <br>
+            </v-card-text>
+          </v-expand-transition>
         </v-card>
       </v-col>
     </v-row>
+
+    <!-- Modal for changing password -->
+    <v-dialog v-model="isChangePasswordModalVisible" max-width="500px">
+      <ModalChangeUserPass @close="closeChangePasswordModal" />
+    </v-dialog>
   </v-container>
 </template>
 
@@ -52,9 +74,13 @@
 import { useUserStore } from '../../state/userstate'; // импорт Pinia store
 import { computed } from 'vue';
 import axios from 'axios';
+import ModalChangeUserPass from './ModalChangeUserPass.vue'; // импорт компонента
 
 export default {
   name: 'ModuleAccount',
+  components: {
+    ModalChangeUserPass,
+  },
   data() {
     return {
       profile: {}, // изначально пустой объект, будет заполнен данными профиля
@@ -62,6 +88,8 @@ export default {
         workUpdates: false,
         newsletter: true,
       },
+      isChangePasswordModalVisible: false,
+      isTechCardExpanded: true, // открываем по умолчанию
     };
   },
   async mounted() {
@@ -96,10 +124,29 @@ export default {
         return exp ? new Date(exp * 1000).toLocaleString() : 'N/A';
       }),
     };
-  }
+  },
+  methods: {
+    openChangePasswordModal() {
+      this.isChangePasswordModalVisible = true;
+    },
+    closeChangePasswordModal() {
+      this.isChangePasswordModalVisible = false;
+    },
+    toggleTechCard() {
+      this.isTechCardExpanded = !this.isTechCardExpanded;
+    },
+  },
 };
 </script>
 
 <style>
 /* ваши стили */
+.square-btn {
+  border-radius: 5px; /* Скругленные углы */
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
 </style>

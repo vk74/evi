@@ -12,7 +12,10 @@
             </v-col>
             <v-col>
               <h3 class="white--text mb-0">{{ username }}</h3>
-              <div class="white--text subtitle-1">ПУЛЬС / Менеджер по развитию бизнеса</div>
+              <div class="white--text subtitle-1">КОМПАНИЯ / ДОЛЖНОСТЬ / еще какая-нибудь статусная фигня</div>
+            </v-col>
+            <v-col class="d-flex justify-end" cols="auto">
+              <v-btn color="teal darken-1" text @click="openChangePasswordModal">Сменить пароль</v-btn>
             </v-col>
           </v-row>
         </v-card>
@@ -35,49 +38,49 @@
 
       <!-- tech card -->
       <v-col cols="12" md="6">
-        <v-card class="pa-4" outlined elevation="2" title="технические данные сессии">
-          Username: <b>{{ username }} </b> <br>
-          Issued <b>JSON web token:</b> {{ jwt }} <br>
-          isLoggedIn attribute: <b>{{ isLoggedIn }}</b> <br>
-          Token issued at: <b>{{ issuedAt }} </b> <br>
-          Token issuer: <b>{{ issuer }} </b> <br>
-          Token expires: <b>{{ expiresAt }} </b> <br>
+        <v-card class="pa-4" outlined elevation="2">
+          <v-card-title>
+            <v-row align="center" class="w-100">
+              <v-col>технические данные сессии</v-col>
+              <v-col class="d-flex justify-end" cols="auto">
+                <v-btn icon @click="toggleTechCard">
+                  <v-icon>{{ isTechCardExpanded ? 'mdi-chevron-up' : 'mdi-chevron-down' }}</v-icon>
+                </v-btn>
+              </v-col>
+            </v-row>
+          </v-card-title>
+          <v-expand-transition>
+            <v-card-text v-show="isTechCardExpanded">
+              Username: <b>{{ username }} </b> <br>
+              Issued <b>JSON web token:</b> {{ jwt }} <br>
+              isLoggedIn attribute: <b>{{ isLoggedIn }}</b> <br>
+              Token issued at: <b>{{ issuedAt }} </b> <br>
+              Token issuer: <b>{{ issuer }} </b> <br>
+              Token expires: <b>{{ expiresAt }} </b> <br>
+            </v-card-text>
+          </v-expand-transition>
         </v-card>
       </v-col>
-
-      <!-- settings card 
-      <v-col cols="12" md="6">
-        <v-card class="pa-4" outlined elevation="2" title="настройки для пользователя">
-          <v-list two-line>
-            <v-list-item>
-              <v-list-item-content>
-                <v-list-item-title>оповещать при обновлениях мойх рабочих элементов</v-list-item-title>
-              </v-list-item-content>
-              <v-list-item-action>
-                <v-switch v-model="settings.workUpdates"></v-switch>
-              </v-list-item-action>
-            </v-list-item>
-            <v-list-item>
-              <v-list-item-content>
-                <v-list-item-title>отправлять новости</v-list-item-title>
-              </v-list-item-content>
-              <v-list-item-action>
-                <v-switch v-model="settings.newsletter"></v-switch>
-              </v-list-item-action>
-            </v-list-item>
-          </v-list>
-        </v-card>
-      </v-col> -->
     </v-row>
+
+    <!-- Modal for changing password -->
+    <v-dialog v-model="isChangePasswordModalVisible" max-width="500px">
+      <ModalChangeUserPass @close="closeChangePasswordModal" />
+    </v-dialog>
   </v-container>
 </template>
 
 <script>
 import { useUserStore } from '../../state/userstate'; // импорт Pinia store
 import { computed } from 'vue';
+import axios from 'axios';
+import ModalChangeUserPass from './ModalChangeUserPass.vue'; // импорт компонента
 
 export default {
   name: 'ModuleAccount',
+  components: {
+    ModalChangeUserPass,
+  },
   data() {
     return {
       profile: {}, // изначально пустой объект, будет заполнен данными профиля
@@ -85,6 +88,8 @@ export default {
         workUpdates: false,
         newsletter: true,
       },
+      isChangePasswordModalVisible: false,
+      isTechCardExpanded: true, // открываем по умолчанию
     };
   },
   async mounted() {
@@ -92,14 +97,13 @@ export default {
 
     if (userStore.isLoggedIn) {
       try {
-        // Используйте this.$http.get для отправки запроса
-        const response = await this.$http.get('http://localhost:3000/profile', {
+        // Используйте axios для отправки запроса
+        const response = await axios.get('http://localhost:3000/profile', {
           headers: { Authorization: `Bearer ${userStore.jwt}` },
         });
         this.profile = response.data;
       } catch (error) {
         console.error('Ошибка при загрузке данных профиля:', error);
-        // Обработка ошибок
       }
     }
   },
@@ -120,7 +124,18 @@ export default {
         return exp ? new Date(exp * 1000).toLocaleString() : 'N/A';
       }),
     };
-  }
+  },
+  methods: {
+    openChangePasswordModal() {
+      this.isChangePasswordModalVisible = true;
+    },
+    closeChangePasswordModal() {
+      this.isChangePasswordModalVisible = false;
+    },
+    toggleTechCard() {
+      this.isTechCardExpanded = !this.isTechCardExpanded;
+    },
+  },
 };
 </script>
 

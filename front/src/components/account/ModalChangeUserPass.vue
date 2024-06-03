@@ -2,11 +2,19 @@
   <div class="modal-overlay">
     <div class="modal">
       <v-card>
-        <v-card-title class="text-h5">cмена пароля</v-card-title>
+        <v-card-title class="text-h5">смена пароля</v-card-title>
         <v-card-text>
           <v-form @submit.prevent="changePassword">
             <v-text-field
-              label="Новый пароль"
+              label="текущий пароль"
+              id="currentPassword"
+              type="password"
+              v-model="currentPassword"
+              :error-messages="currentPasswordError ? [currentPasswordError] : []"
+              outlined
+            ></v-text-field>
+            <v-text-field
+              label="новый пароль"
               id="password"
               type="password"
               v-model="password"
@@ -14,7 +22,7 @@
               outlined
             ></v-text-field>
             <v-text-field
-              label="Подтвердите пароль"
+              label="подтвердите пароль"
               id="confirmPassword"
               type="password"
               v-model="confirmPassword"
@@ -25,9 +33,15 @@
         </v-card-text>
         <v-card-actions>
           <v-spacer></v-spacer>
-          <v-btn color="teal darken-1" text @click="changePassword">изменить пароль</v-btn>
+          <v-btn color="teal darken-1" text @click="changePassword">Изменить пароль</v-btn>
         </v-card-actions>
       </v-card>
+      <v-snackbar v-model="showSuccessMessage" :timeout="3000" color="success">
+        Пароль успешно изменен.
+      </v-snackbar>
+      <v-snackbar v-model="showErrorMessage" :timeout="3000" color="error">
+        {{ errorMessage }}
+      </v-snackbar>
     </div>
   </div>
 </template>
@@ -38,13 +52,24 @@ import { ref, computed, watch } from 'vue';
 
 export default {
   name: 'ModalChangeUserPass',
-  setup() {
+  props: {
+    onClose: {
+      type: Function,
+      required: true,
+    },
+  },
+  setup(props) {
     const userStore = useUserStore(); // используем хук useUserStore для доступа к хранилищу
     const username = computed(() => userStore.username); // получаем username из состояния
+    const currentPassword = ref('');
     const password = ref('');
     const confirmPassword = ref('');
+    const currentPasswordError = ref('');
     const passwordError = ref('');
     const confirmPasswordError = ref('');
+    const showSuccessMessage = ref(false);
+    const showErrorMessage = ref(false);
+    const errorMessage = ref('');
 
     // наблюдатель за изменением пароля для валидации
     watch(password, (newVal) => {
@@ -57,17 +82,27 @@ export default {
     });
 
     const validatePassword = (password) => {
-      const regex = /^[a-zA-Zа-яА-Я0-9\p{P}]{8,40}$/u;
+      const regex = /^[a-zA-Zа-яА-Я0-9\p{P}]+$/u;
       passwordError.value = '';
 
       if (!regex.test(password)) {
-        passwordError.value = 'Пароль должен быть от 8 до 40 символов и содержать только буквы, цифры и знаки препинания';
+        passwordError.value = 'Пароль должен содержать только буквы, цифры и знаки препинания';
       }
     };
 
     const changePassword = async () => {
+      if (password.value.length < 8 || password.value.length > 40) {
+        passwordError.value = 'Длина пароля должна быть от 8 до 40 символов.';
+        return;
+      }
+
       if (password.value !== confirmPassword.value) {
         confirmPasswordError.value = 'Пароли не совпадают';
+        return;
+      }
+
+      if (!currentPassword.value) {
+        currentPasswordError.value = 'Текущий пароль обязателен.';
         return;
       }
 
@@ -79,6 +114,7 @@ export default {
           },
           body: JSON.stringify({
             username: username.value, // используем username из Pinia
+            currentPassword: currentPassword.value,
             newPassword: password.value,
           }),
         });
@@ -90,21 +126,33 @@ export default {
         const result = await response.json();
         console.log('Результат смены пароля:', result);
 
-        // опционально: обработка успешного ответа от сервера
-        // alert('пароль успешно изменен.');
+        if (result.success) {
+          showSuccessMessage.value = true;
+          setTimeout(() => {
+            props.onClose(); // вызываем метод для закрытия модального окна
+          }, 3000);
+        } else {
+          showErrorMessage.value = true;
+          errorMessage.value = result.error;
+        }
       } catch (error) {
         console.error('Ошибка при смене пароля:', error);
-        // опционально: обработка ошибки
-        // alert('ошибка при смене пароля.');
+        showErrorMessage.value = true;
+        errorMessage.value = 'Ошибка при смене пароля.';
       }
     };
 
     return {
+      currentPassword,
       password,
       confirmPassword,
+      currentPasswordError,
       passwordError,
       confirmPasswordError,
       changePassword,
+      showSuccessMessage,
+      showErrorMessage,
+      errorMessage,
     };
   },
 };
