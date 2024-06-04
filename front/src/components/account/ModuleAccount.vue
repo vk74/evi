@@ -24,15 +24,15 @@
       <!-- profile card -->
       <v-col cols="12" md="6">
         <v-card class="pa-4" outlined elevation="2">
-          <v-text-field label="фамилия" :value="profile.last_name" readonly></v-text-field>
-          <v-text-field label="имя" :value="profile.first_name" readonly></v-text-field>
-          <v-text-field label="отчество" :value="profile.middle_name" readonly></v-text-field>
-          <v-text-field label="пол" :value="profile.gender" readonly></v-text-field>
-          <v-text-field label="номер телефона" :value="profile.phone_number" readonly></v-text-field>
-          <v-text-field label="e-mail" :value="profile.email" readonly></v-text-field>
-          <v-text-field label="адрес" :value="profile.address" readonly></v-text-field>
-          <v-text-field label="название компании" :value="profile.company_name" readonly></v-text-field>
-          <v-text-field label="должность" :value="profile.position" readonly></v-text-field>
+          <v-text-field label="First Name" :value="profile.first_name" readonly></v-text-field>
+          <v-text-field label="Last Name" :value="profile.last_name" readonly></v-text-field>
+          <v-text-field label="Middle Name" :value="profile.middle_name" readonly></v-text-field>
+          <v-text-field label="Gender" :value="profile.gender" readonly></v-text-field>
+          <v-text-field label="Phone Number" :value="profile.phone_number" readonly></v-text-field>
+          <v-text-field label="Email" :value="profile.email" readonly></v-text-field>
+          <v-text-field label="Address" :value="profile.address" readonly></v-text-field>
+          <v-text-field label="Company Name" :value="profile.company_name" readonly></v-text-field>
+          <v-text-field label="Position" :value="profile.position" readonly></v-text-field>
         </v-card>
       </v-col>
 
@@ -40,14 +40,11 @@
       <v-col cols="12" md="6">
         <v-card class="pa-4" outlined elevation="2">
           <v-card-title>
-            <v-row align="center" class="w-100">
-              <v-col>технические данные сессии</v-col>
-              <v-col class="d-flex justify-end" cols="auto">
-                <v-btn icon @click="toggleTechCard" class="square-btn">
-                  <v-icon>{{ isTechCardExpanded ? 'mdi-chevron-up' : 'mdi-chevron-down' }}</v-icon>
-                </v-btn>
-              </v-col>
-            </v-row>
+            <span>технические данные сессии</span>
+            <v-spacer></v-spacer>
+            <v-btn icon @click="toggleTechCard">
+              <v-icon>{{ isTechCardExpanded ? 'mdi-chevron-up' : 'mdi-chevron-down' }}</v-icon>
+            </v-btn>
           </v-card-title>
           <v-expand-transition>
             <v-card-text v-show="isTechCardExpanded">
@@ -57,6 +54,8 @@
               Token issued at: <b>{{ issuedAt }} </b> <br>
               Token issuer: <b>{{ issuer }} </b> <br>
               Token expires: <b>{{ expiresAt }} </b> <br>
+              Session will expire in: <b>{{ sessionDurations.sessionDuration }} seconds</b> <br>
+              Session warning will be shown in: <b>{{ sessionDurations.warningDuration }} seconds</b> <br>
             </v-card-text>
           </v-expand-transition>
         </v-card>
@@ -75,6 +74,7 @@ import { useUserStore } from '../../state/userstate'; // импорт Pinia stor
 import { computed } from 'vue';
 import axios from 'axios';
 import ModalChangeUserPass from './ModalChangeUserPass.vue'; // импорт компонента
+import { getSessionDurations } from '../../services/sessionServices';
 
 export default {
   name: 'ModuleAccount',
@@ -89,7 +89,8 @@ export default {
         newsletter: true,
       },
       isChangePasswordModalVisible: false,
-      isTechCardExpanded: true, // открываем по умолчанию
+      isTechCardExpanded: true,
+      sessionDurations: getSessionDurations(),
     };
   },
   async mounted() {
@@ -139,14 +140,14 @@ export default {
 };
 </script>
 
-<style>
-/* ваши стили */
-.square-btn {
-  border-radius: 5px; /* Скругленные углы */
-  width: 20px;
-  height: 20px;
+<style scoped>
+.v-card-title {
   display: flex;
+  justify-content: space-between;
   align-items: center;
-  justify-content: center;
+}
+
+.v-btn {
+  border-radius: 8px;
 }
 </style>
