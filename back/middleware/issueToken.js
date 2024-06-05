@@ -6,6 +6,8 @@ const uuidv4 = require('uuid').v4;
 
 const privateKeyPath = './keys/private_key.pem'; // path to private key used to sign new JWT
 const privateKey = fs.readFileSync(privateKeyPath, 'utf8'); // read private key from file
+//global.privateKey = privateKey;// Сделайте privateKey доступным глобально
+
 console.log('read private key from file: success');
 
 const issueToken = (req, res) => {
@@ -13,10 +15,12 @@ const issueToken = (req, res) => {
         return res.status(401).json({ success: false, message: 'Unauthorized' });
     }
 
+    console.log('User authenticated, issuing token for:', req.user.username);
+
     const payload = {
-        iss: 'ev2 webapp',
+        iss: 'ev2 app',
         sub: req.user.username,  // sub: username,
-        aud: 'ev2 webapp registered users',
+        aud: 'ev2 app registered users',
         jti: uuidv4(),
     };
 

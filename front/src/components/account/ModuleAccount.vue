@@ -11,8 +11,8 @@
               </v-avatar>
             </v-col>
             <v-col>
-              <h3 class="white--text mb-0">{{ username }}</h3>
-              <div class="white--text subtitle-1">КОМПАНИЯ / ДОЛЖНОСТЬ / еще какая-нибудь статусная фигня</div>
+              <h3 class="white--text mb-0">{{ profile.username }}</h3>
+              <div class="white--text subtitle-1">{{ profile.company_name }} / {{ profile.position }}</div>
             </v-col>
             <v-col class="d-flex justify-end" cols="auto">
               <v-btn color="teal darken-1" text @click="openChangePasswordModal">Сменить пароль</v-btn>
@@ -24,15 +24,15 @@
       <!-- profile card -->
       <v-col cols="12" md="6">
         <v-card class="pa-4" outlined elevation="2">
-          <v-text-field label="фамилия" :value="profile.last_name" readonly></v-text-field>
-          <v-text-field label="имя" :value="profile.first_name" readonly></v-text-field>
-          <v-text-field label="отчество" :value="profile.middle_name" readonly></v-text-field>
-          <v-text-field label="пол" :value="profile.gender" readonly></v-text-field>
-          <v-text-field label="номер телефона" :value="profile.phone_number" readonly></v-text-field>
-          <v-text-field label="e-mail" :value="profile.email" readonly></v-text-field>
-          <v-text-field label="адрес" :value="profile.address" readonly></v-text-field>
-          <v-text-field label="название организации" :value="profile.company_name" readonly></v-text-field>
-          <v-text-field label="должность" :value="profile.position" readonly></v-text-field>
+          <v-text-field label="Фамилия" v-model="profile.last_name" readonly></v-text-field>
+          <v-text-field label="Имя" v-model="profile.first_name" readonly></v-text-field>
+          <v-text-field label="Отчество" v-model="profile.middle_name" readonly></v-text-field>
+          <v-text-field label="Пол" v-model="profile.gender" readonly></v-text-field>
+          <v-text-field label="Номер телефона" v-model="profile.phone_number" readonly></v-text-field>
+          <v-text-field label="E-mail" v-model="profile.email" readonly></v-text-field>
+          <v-text-field label="Адрес" v-model="profile.address" readonly></v-text-field>
+          <v-text-field label="Название организации" v-model="profile.company_name" readonly></v-text-field>
+          <v-text-field label="Должность" v-model="profile.position" readonly></v-text-field>
         </v-card>
       </v-col>
 
@@ -40,7 +40,7 @@
       <v-col cols="12" md="6">
         <v-card class="pa-4" outlined elevation="2">
           <v-card-title>
-            <span>технические данные сессии</span>
+            <span>Технические данные сессии</span>
             <v-spacer></v-spacer>
             <v-btn icon @click="toggleTechCard">
               <v-icon>{{ isTechCardExpanded ? 'mdi-chevron-up' : 'mdi-chevron-down' }}</v-icon>
@@ -83,7 +83,17 @@ export default {
   },
   data() {
     return {
-      profile: {}, // изначально пустой объект, будет заполнен данными профиля
+      profile: {
+        last_name: '',
+        first_name: '',
+        middle_name: '',
+        gender: '',
+        phone_number: '',
+        email: '',
+        address: '',
+        company_name: '',
+        position: ''
+      },
       settings: {
         workUpdates: false,
         newsletter: true,
@@ -98,13 +108,12 @@ export default {
 
     if (userStore.isLoggedIn) {
       try {
-        // Используйте axios для отправки запроса
         const response = await axios.get('http://localhost:3000/profile', {
           headers: { Authorization: `Bearer ${userStore.jwt}` },
         });
         this.profile = response.data;
       } catch (error) {
-        console.error('Ошибка при загрузке данных профиля:', error);
+        console.error('Ошибка при загрузке данных профиля пользователя ev2:', error);
       }
     }
   },

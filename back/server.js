@@ -10,6 +10,10 @@ const port = 3000;
 const app = express();
 const fs = require('fs');
 
+const privateKeyPath = './keys/private_key.pem'; // path to private key used to sign new JWT
+const privateKey = fs.readFileSync(privateKeyPath, 'utf8'); // read private key from file
+global.privateKey = privateKey;
+
 app.listen(port, () => {
   console.log(`Server listening at http://localhost:${port}`);
 });

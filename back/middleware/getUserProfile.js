@@ -1,10 +1,13 @@
 const express = require('express');
 const router = express.Router();
-const pool = require('../db/maindb'); // Подкорректируйте путь к вашему файлу подключения к базе данных
+const pool = require('../db/maindb').pool;
 
 // Middleware для получения профиля пользователя по имени пользователя
-router.get('/', async (req, res) => {
-  const username = req.user.username; // Предполагается, что имя пользователя хранится в объекте запроса
+router.get('/profile', async (req, res) => {
+
+  // req.user = { username: 't1' }; // Убедитесь, что такой пользователь существует в базе данных
+
+  const username = req.user.username; 
 
   if (!username) {
     return res.status(400).json({ message: 'Username is required' });
