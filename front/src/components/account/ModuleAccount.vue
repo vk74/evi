@@ -24,15 +24,15 @@
       <!-- profile card -->
       <v-col cols="12" md="6">
         <v-card class="pa-4" outlined elevation="2">
-          <v-text-field label="First Name" :value="profile.first_name" readonly></v-text-field>
-          <v-text-field label="Last Name" :value="profile.last_name" readonly></v-text-field>
-          <v-text-field label="Middle Name" :value="profile.middle_name" readonly></v-text-field>
-          <v-text-field label="Gender" :value="profile.gender" readonly></v-text-field>
-          <v-text-field label="Phone Number" :value="profile.phone_number" readonly></v-text-field>
-          <v-text-field label="Email" :value="profile.email" readonly></v-text-field>
-          <v-text-field label="Address" :value="profile.address" readonly></v-text-field>
-          <v-text-field label="Company Name" :value="profile.company_name" readonly></v-text-field>
-          <v-text-field label="Position" :value="profile.position" readonly></v-text-field>
+          <v-text-field label="фамилия" :value="profile.last_name" readonly></v-text-field>
+          <v-text-field label="имя" :value="profile.first_name" readonly></v-text-field>
+          <v-text-field label="отчество" :value="profile.middle_name" readonly></v-text-field>
+          <v-text-field label="пол" :value="profile.gender" readonly></v-text-field>
+          <v-text-field label="номер телефона" :value="profile.phone_number" readonly></v-text-field>
+          <v-text-field label="e-mail" :value="profile.email" readonly></v-text-field>
+          <v-text-field label="адрес" :value="profile.address" readonly></v-text-field>
+          <v-text-field label="название организации" :value="profile.company_name" readonly></v-text-field>
+          <v-text-field label="должность" :value="profile.position" readonly></v-text-field>
         </v-card>
       </v-col>
 
