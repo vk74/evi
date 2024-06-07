@@ -24,6 +24,9 @@
       <!-- profile card -->
       <v-col cols="12" md="6">
         <v-card class="pa-4" outlined elevation="2">
+          <v-card-title>
+            <span>данные профиля</span>
+          </v-card-title>
           <v-text-field label="Фамилия" v-model="profile.last_name" readonly></v-text-field>
           <v-text-field label="Имя" v-model="profile.first_name" readonly></v-text-field>
           <v-text-field label="Отчество" v-model="profile.middle_name" readonly></v-text-field>
@@ -33,6 +36,10 @@
           <v-text-field label="Адрес" v-model="profile.address" readonly></v-text-field>
           <v-text-field label="Название организации" v-model="profile.company_name" readonly></v-text-field>
           <v-text-field label="Должность" v-model="profile.position" readonly></v-text-field>
+          <v-card-actions>
+            <v-spacer></v-spacer>
+            <v-btn color="teal darken-1" text @click="saveProfile">сохранить изменения</v-btn>
+          </v-card-actions>
         </v-card>
       </v-col>
 
@@ -40,7 +47,7 @@
       <v-col cols="12" md="6">
         <v-card class="pa-4" outlined elevation="2">
           <v-card-title>
-            <span>Технические данные сессии</span>
+            <span>технические данные сессии</span>
             <v-spacer></v-spacer>
             <v-btn icon @click="toggleTechCard">
               <v-icon>{{ isTechCardExpanded ? 'mdi-chevron-up' : 'mdi-chevron-down' }}</v-icon>
@@ -144,6 +151,9 @@ export default {
     },
     toggleTechCard() {
       this.isTechCardExpanded = !this.isTechCardExpanded;
+    },
+    saveProfile() {
+      // Функция для сохранения изменений профиля
     },
   },
 };

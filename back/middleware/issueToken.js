@@ -27,7 +27,7 @@ const issueToken = (req, res) => {
     try {
         const token = jwt.sign(payload, privateKey, {
             algorithm: 'RS256',
-            expiresIn: '2h'
+            expiresIn: '1h'
         });
         console.log('JWT successfully created and issued to the user');
         res.json({ success: true, token });
