@@ -15,7 +15,7 @@
               <div class="white--text subtitle-1">{{ profile.company_name }} / {{ profile.position }}</div>
             </v-col>
             <v-col class="d-flex justify-end" cols="auto">
-              <v-btn color="teal darken-1" text @click="openChangePasswordModal">Сменить пароль</v-btn>
+              <v-btn color="teal darken-1" text @click="openChangePasswordModal">изменить пароль</v-btn>
             </v-col>
           </v-row>
         </v-card>
@@ -25,17 +25,17 @@
       <v-col cols="12" md="6">
         <v-card class="pa-4" outlined elevation="2">
           <v-card-title>
-            <span>данные профиля</span>
+            <span>профиль пользователя</span>
           </v-card-title>
-          <v-text-field label="Фамилия" v-model="profile.last_name" readonly></v-text-field>
-          <v-text-field label="Имя" v-model="profile.first_name" readonly></v-text-field>
-          <v-text-field label="Отчество" v-model="profile.middle_name" readonly></v-text-field>
-          <v-text-field label="Пол" v-model="profile.gender" readonly></v-text-field>
-          <v-text-field label="Номер телефона" v-model="profile.phone_number" readonly></v-text-field>
-          <v-text-field label="E-mail" v-model="profile.email" readonly></v-text-field>
-          <v-text-field label="Адрес" v-model="profile.address" readonly></v-text-field>
-          <v-text-field label="Название организации" v-model="profile.company_name" readonly></v-text-field>
-          <v-text-field label="Должность" v-model="profile.position" readonly></v-text-field>
+          <v-text-field label="фамилия" v-model="profile.last_name"></v-text-field>
+          <v-text-field label="имя" v-model="profile.first_name"></v-text-field>
+          <v-text-field label="отчество" v-model="profile.middle_name"></v-text-field>
+          <v-text-field label="пол" v-model="profile.gender"></v-text-field>
+          <v-text-field label="номер телефона" v-model="profile.phone_number"></v-text-field>
+          <v-text-field label="E-mail" v-model="profile.email"></v-text-field>
+          <v-text-field label="адрес" v-model="profile.address"></v-text-field>
+          <v-text-field label="название организации" v-model="profile.company_name"></v-text-field>
+          <v-text-field label="должность" v-model="profile.position"></v-text-field>
           <v-card-actions>
             <v-spacer></v-spacer>
             <v-btn color="teal darken-1" text @click="saveProfile">сохранить изменения</v-btn>
@@ -73,14 +73,19 @@
     <v-dialog v-model="isChangePasswordModalVisible" max-width="500px">
       <ModalChangeUserPass @close="closeChangePasswordModal" />
     </v-dialog>
+
+    <!-- Snackbar for success message -->
+    <v-snackbar v-model="snackbar" :timeout="3000" :color="snackbarColor" absolute top>
+      {{ snackbarMessage }}
+    </v-snackbar>
   </v-container>
 </template>
 
 <script>
-import { useUserStore } from '../../state/userstate'; // импорт Pinia store
+import { useUserStore } from '../../state/userstate'; 
 import { computed } from 'vue';
 import axios from 'axios';
-import ModalChangeUserPass from './ModalChangeUserPass.vue'; // импорт компонента
+import ModalChangeUserPass from './ModalChangeUserPass.vue'; 
 import { getSessionDurations } from '../../services/sessionServices';
 
 export default {
@@ -108,6 +113,9 @@ export default {
       isChangePasswordModalVisible: false,
       isTechCardExpanded: true,
       sessionDurations: getSessionDurations(),
+      snackbar: false,
+      snackbarMessage: '',
+      snackbarColor: 'teal'
     };
   },
   async mounted() {
@@ -120,7 +128,7 @@ export default {
         });
         this.profile = response.data;
       } catch (error) {
-        console.error('Ошибка при загрузке данных профиля пользователя ev2:', error);
+        console.error('Error on load of user profile data:', error);
       }
     }
   },
@@ -152,9 +160,27 @@ export default {
     toggleTechCard() {
       this.isTechCardExpanded = !this.isTechCardExpanded;
     },
-    saveProfile() {
-      // Функция для сохранения изменений профиля
-    },
+    async saveProfile() {
+      const userStore = useUserStore();
+
+      if (userStore.isLoggedIn) {
+        try {
+          console.log('sending request to update user profile data:', this.profile);
+          const response = await axios.post('http://localhost:3000/profile', this.profile, {
+            headers: { Authorization: `Bearer ${userStore.jwt}` },
+          });
+          console.log('Profile updated successfully:', response.data);
+          this.snackbarMessage = 'данные профиля успешно обновлены';
+          this.snackbarColor = 'teal';
+          this.snackbar = true;
+        } catch (error) {
+          console.error('Error on save of user profile data:', error);
+          this.snackbarMessage = 'ошибка при обновлении данных профиля';
+          this.snackbarColor = 'red';
+          this.snackbar = true;
+        }
+      }
+    }
   },
 };
 </script>
@@ -168,5 +194,9 @@ export default {
 
 .v-btn {
   border-radius: 8px;
+}
+
+.v-snackbar {
+  top: 50px !important;
 }
 </style>
