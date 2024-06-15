@@ -18,14 +18,16 @@
     </v-card>
   </div>  
 </template>
+
 <script>
 import { jwtDecode } from 'jwt-decode';  // библиотека для декодирования JWT
 import { useUserStore } from '../../state/userstate'; // импорт Pinia store
+import { startSessionTimers } from '../../services/sessionServices'; // импорт функции управления сессией
+
 export default {
   name: 'ModulLogin-modal',
   data() {
     return {
-      //dialog: true, // Сделаем диалог открытым по умолчанию
       username: '',
       password: '',
       showError: false,
@@ -58,6 +60,10 @@ export default {
           userStore.setIssuedAt(decoded.iat);
           userStore.setJwtId(decoded.jti);
           userStore.setTokenExpires(decoded.exp); // срок истечения жизни токена
+          
+          console.log('User logged in successfully. Starting session timers...');
+          startSessionTimers();
+
           this.showSuccess = true;
           this.showError = false;
           setTimeout(() => {

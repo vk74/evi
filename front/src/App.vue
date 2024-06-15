@@ -16,7 +16,7 @@
       </v-btn>
 
       <v-dialog v-model="isLoginDialogVisible" max-width="500px">
-        <LoginDialog @close="isLoginDialogVisible = false" />
+        <LoginDialog @close="isLoginDialogVisible = false" @login-success="handleLoginSuccess" />
       </v-dialog>
 
       <!-- кнопка для перехода на страницу входа в приложение  -->
@@ -76,11 +76,9 @@
     </v-app-bar>
 
     <!-- Navigation Drawer   -->
-    <!-- элемент второго варианта дизайна nav drawer, без динамического свертывания  <v-navigation-drawer v-model="drawer" :rail="rail" permanent @click="rail = false">   -->
     <v-navigation-drawer v-model="drawer" app expand-on-hover rail elevation="5">
       <v-list density="compact" nav>
         <v-list-item @click="setActiveModule('Catalog')" prepend-icon="mdi-view-dashboard" title="catalog" value="catalog">
-          <!-- ээлемент второго варианта nav drawer, без динамического свертывания <template v-slot:append> <v-btn variant="text" icon="mdi-chevron-left" @click.stop="rail = !rail"></v-btn></template> -->
         </v-list-item>
         <v-list-item @click="setActiveModule('Work')" prepend-icon="mdi-file-edit-outline" title="work items" value="workItems"></v-list-item>
         <v-list-item @click="setActiveModule('AR')" prepend-icon="mdi-chart-timeline" title="reports" value="reports"></v-list-item>
@@ -90,7 +88,7 @@
         <v-list-item @click="setActiveModule('XLS')" prepend-icon="mdi-microsoft-excel" title="xls prototyping" value="xlsPrototyping"></v-list-item>
         <v-divider class="border-opacity-25"></v-divider>
       </v-list>
-      <!-- Settings in the bottom -->
+              <!-- Settings in the bottom -->
       <template v-slot:append>
         <v-list>
           <v-list-item @click="setActiveModule('Account')" prepend-icon="mdi-account" title="account" value="account" v-if="isLoggedIn"></v-list-item>
@@ -103,23 +101,23 @@
 
     <!-- Main Work Area  -->
     <v-main>
-      <!-- @change-module="setActiveModule" -->
       <ModuleLogin v-if="activeModule === 'Login'" />
-      <ModuleCatalog v-if="activeModule === 'Catalog'" />
-      <ModuleWork v-if="activeModule === 'Work'" />
-      <ModuleAR v-if="activeModule === 'AR'" />
-      <ModuleAdmpan v-if="activeModule === 'Admpan'" />
-      <ModuleXLS v-if="activeModule === 'XLS'" />
-      <ModuleAccount v-if="activeModule === 'Account'" />
-      <ModuleSettings v-if="activeModule === 'Settings'" />
-      <ModuleHelp v-if="activeModule === 'Help'" />
+        <ModuleCatalog v-if="activeModule === 'Catalog'" />
+        <ModuleWork v-if="activeModule === 'Work'" />
+        <ModuleAR v-if="activeModule === 'AR'" />
+        <ModuleAdmpan v-if="activeModule === 'Admpan'" />
+        <ModuleXLS v-if="activeModule === 'XLS'" />
+        <ModuleAccount v-if="activeModule === 'Account'" />
+        <ModuleSettings v-if="activeModule === 'Settings'" />
+        <ModuleHelp v-if="activeModule === 'Help'" />
     </v-main>
   </v-app>
 </template>
 
 <script>
-import { ref, computed } from 'vue';
+  import { ref, computed, onMounted } from 'vue';
 import { useUserStore } from './state/userstate';
+import { startSessionTimers } from './services/sessionServices';
 import ModuleCatalog from './components/catalog/ModuleCatalog.vue';
 import ModuleWork from './components/work/ModuleWork.vue';
 import ModuleAR from './components/ar/ModuleAR.vue';
@@ -172,6 +170,13 @@ export default {
       isRegisterModalVisible.value = true;
     };
 
+    onMounted(() => {
+      if (isLoggedIn.value) {
+        console.log('App mounted. User is logged in. Starting session timers...');
+        startSessionTimers();
+      }
+    });
+
     return {
       drawer,
       isRegisterModalVisible,
@@ -192,10 +197,10 @@ export default {
       },
       showRegisterModal,
     };
-  }
+  },
 };
 </script>
 
 <style>
-/* ваши стили */
+
 </style>

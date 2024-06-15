@@ -1,51 +1,71 @@
 // src/services/sessionServices.js
 import { useUserStore } from '../state/userstate';
-import axios from 'axios';
+import { createApp, h } from 'vue';
+import vuetify from '../plugins/vuetify'; // импорт экземпляра Vuetify
+import { VBtn } from 'vuetify/lib/components';
 
 let sessionTimeout = null;
-let warningTimeout = null;
-let sessionDuration = null;
-let warningDuration = null;
 
 const startSessionTimers = () => {
   const userStore = useUserStore();
 
-  const warningTime = 5 * 60 * 1000; // 5 минут до истечения
-  sessionDuration = (userStore.tokenExpires * 1000) - Date.now();
+  console.log('Starting session timers...');
+
+  const sessionDuration = (userStore.tokenExpires * 1000) - Date.now();
 
   clearTimeout(sessionTimeout);
-  clearTimeout(warningTimeout);
 
-  warningDuration = sessionDuration - warningTime;
+  console.log(`Session duration: ${sessionDuration}`);
 
-  warningTimeout = setTimeout(() => {
-    // Показать предупреждение пользователю о необходимости продления сессии
-    alert('Your session will expire in 5 minutes. Please extend your session.');
-  }, warningDuration);
-
-  sessionTimeout = setTimeout(async () => {
-    // Попытаться обновить JWT
-    try {
-      const response = await axios.post('http://localhost:3000/extendtoken', {}, {
-        headers: {
-          Authorization: `Bearer ${userStore.jwt}`,
-        },
-      });
-
-      if (response.data.success) {
-        userStore.setJwt(response.data.token);
-        startSessionTimers(); // Перезапустить таймеры с новыми данными
-      } else {
-        // Если не удалось обновить токен, выполнить logout
-        userStore.logout();
-        alert('Your session has expired. Please log in again.');
-      }
-    } catch (error) {
-      console.error('Error extending session:', error);
-      userStore.logout();
-      alert('Your session has expired. Please log in again.');
-    }
+  sessionTimeout = setTimeout(() => {
+    console.log('Triggering session expiry...');
+    handleSessionExpiry(userStore);
   }, sessionDuration);
+};
+
+const handleSessionExpiry = (userStore) => {
+  console.log('Handling session expiry...');
+
+  // 1. Сбросить состояние сессии в Pinia
+  userStore.userLogoff();
+
+  // 2. Показать алерт и перенаправить пользователя на страницу входа
+  console.log('Triggering alert for session expiry...');
+  alertSessionExpired(userStore);
+};
+
+const alertSessionExpired = (userStore) => {
+  console.log('Showing alert for session expiry...');
+  const alertDiv = document.createElement('div');
+  alertDiv.innerHTML = `
+    <div style="text-align: center;">
+      <p>Ваша рабочая сессия истекла. Войдите в приложение заново.</p>
+      <div id="loginButtonContainer" style="margin-top: 10px;"></div>
+    </div>
+  `;
+  alertDiv.style.position = 'fixed';
+  alertDiv.style.top = '50%';
+  alertDiv.style.left = '50%';
+  alertDiv.style.transform = 'translate(-50%, -50%)';
+  alertDiv.style.backgroundColor = 'white';
+  alertDiv.style.padding = '20px';
+  alertDiv.style.boxShadow = '0 0 10px rgba(0, 0, 0, 0.5)';
+  document.body.appendChild(alertDiv);
+
+  const loginButtonContainer = document.getElementById('loginButtonContainer');
+  createApp({
+    render() {
+      return h(VBtn, {
+        color: 'teal darken-1',
+        text: true,
+        onClick: () => {
+          console.log('User clicked login button. Redirecting to login module...');
+          userStore.setActiveModule('Login'); // assuming you have a method to change the active module in Pinia
+          document.body.removeChild(alertDiv);
+        },
+      }, 'вход в приложение');
+    },
+  }).use(vuetify).mount(loginButtonContainer);
 };
 
 const resetSessionTimers = () => {
@@ -53,8 +73,7 @@ const resetSessionTimers = () => {
 };
 
 const getSessionDurations = () => ({
-  sessionDuration: sessionDuration / 1000, // в секундах
-  warningDuration: warningDuration / 1000, // в секундах
+  sessionDuration: (useUserStore().tokenExpires * 1000 - Date.now()) / 1000, // в секундах
 });
 
 export { startSessionTimers, resetSessionTimers, getSessionDurations };

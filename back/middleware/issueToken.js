@@ -27,9 +27,9 @@ const issueToken = (req, res) => {
     try {
         const token = jwt.sign(payload, privateKey, {
             algorithm: 'RS256',
-            expiresIn: '4h'
+            expiresIn: '2h'
         });
-        console.log('JWT successfully created and issued to the user');
+        console.log('JWT successfully created and issued to the user:', req.user.username);
         res.json({ success: true, token });
     } catch (error) {
         console.error('token creation error:', error.message);
