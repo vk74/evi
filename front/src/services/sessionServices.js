@@ -1,7 +1,7 @@
 // src/services/sessionServices.js
 import { useUserStore } from '../state/userstate';
 import { createApp, h } from 'vue';
-import vuetify from '../plugins/vuetify'; // импорт экземпляра Vuetify
+import vuetify from '../plugins/vuetify'; 
 import { VBtn } from 'vuetify/lib/components';
 
 let sessionTimeout = null;
@@ -60,7 +60,7 @@ const alertSessionExpired = (userStore) => {
         text: true,
         onClick: () => {
           console.log('User clicked login button. Redirecting to login module...');
-          userStore.setActiveModule('Login'); // assuming you have a method to change the active module in Pinia
+          userStore.setActiveModule('Login');
           document.body.removeChild(alertDiv);
         },
       }, 'вход в приложение');
