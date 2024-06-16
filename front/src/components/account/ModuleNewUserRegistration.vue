@@ -4,29 +4,40 @@
         <v-card-title class="text-h5">Регистрация</v-card-title>
         <v-card-text>
           <v-form @submit.prevent="submitForm">
-            <v-text-field v-model="user.username" label="Имя пользователя" required></v-text-field>
+            <v-text-field v-model="user.username" label="Имя пользователя *" required></v-text-field>
             <span v-if="isInvalid('username')" class="user-registration-form-info">Имя пользователя должно быть не более 25 символов и содержать только буквы и цифры.</span>
   
-            <v-text-field v-model="user.password" label="Пароль" type="password" required></v-text-field>
+            <v-text-field
+              v-model="user.password"
+              :type="showPassword ? 'text' : 'password'"
+              label="Пароль *"
+              append-icon="mdi-eye"
+              @click:append="togglePasswordVisibility"
+              required
+            ></v-text-field>
             <span v-if="isInvalid('password')" class="user-registration-form-info">Пароль должен быть от 8 до 40 символов и содержать только буквы, цифры и знаки препинания.</span>
   
-            <v-text-field v-model="user.surname" label="Фамилия" required></v-text-field>
+            <v-text-field v-model="user.surname" label="Фамилия *" required></v-text-field>
             <span v-if="isInvalid('surname')" class="user-registration-form-info">Фамилия должна быть не более 25 символов и содержать только буквы.</span>
   
-            <v-text-field v-model="user.name" label="Имя" required></v-text-field>
+            <v-text-field v-model="user.name" label="Имя *" required></v-text-field>
             <span v-if="isInvalid('name')" class="user-registration-form-info">Имя должно быть не более 25 символов и содержать только буквы.</span>
   
-            <v-text-field v-model="user.email" label="Email" required></v-text-field>
+            <v-text-field v-model="user.email" label="Email *" required></v-text-field>
             <span v-if="isInvalid('email')" class="user-registration-form-info">Введите корректный адрес электронной почты.</span>
   
-            <v-text-field v-model="user.phone" label="Телефон"></v-text-field>
+            <v-text-field
+              v-model="user.phone"
+              label="Телефон"
+              placeholder="+7 (###) ###-####"
+            ></v-text-field>
             <span v-if="isInvalid('phone')" class="user-registration-form-info">Телефон должен содержать только цифры и быть не длиннее 12 символов.</span>
   
             <v-text-field v-model="user.address" label="Адрес"></v-text-field>
-            <span v-if="isInvalid('address')" class="user-registration-form-info">Адрес должен быть не более 50 символов и содержать только буквы, цифры и знаки препинания.</span>
+            <span v-if="isInvalid('address')" class="user-registration-form-info">Адрес должен быть не более 100 символов и содержать только буквы, цифры, пробелы и знаки препинания.</span>
           </v-form>
           <p v-if="showError">Ошибка валидации: невалидные поля - {{ invalidFields.join(', ') }}</p>
-          <p v-if="showSuccess">Регистрация прошла успешно</p>
+          <p v-if="showSuccess" class="success-message">Данные регистрационной формы успешно отправлены на сервер. Новый пользователь зарегистрирован!</p>
         </v-card-text>
         <v-card-actions>
           <v-spacer></v-spacer>
@@ -56,10 +67,14 @@
         },
         showError: false,
         showSuccess: false,
-        invalidFields: []
+        invalidFields: [],
+        showPassword: false // состояние для отображения/скрытия пароля
       };
     },
     methods: {
+      togglePasswordVisibility() {
+        this.showPassword = !this.showPassword;
+      },
       async submitForm() {
         this.showError = false;
         this.invalidFields = this.validateForm();
@@ -75,14 +90,7 @@
   
             if (response.ok) {
               console.log('Регистрационные данные пользователя успешно отправлены на сервер');
-              const userStore = useUserStore();
-              userStore.setUsername(this.user.username);
-              userStore.setJwt(''); // Установите JWT, если он возвращается сервером
-              userStore.setLoggedIn(true); // Предположим, что пользователь автоматически входит в систему после регистрации
               this.showSuccess = true;
-              setTimeout(() => {
-                userStore.setActiveModule('Catalog');
-              }, 1000);
             } else {
               console.error('Ошибка отправки регистрационных данных на сервер:', response.status, response.statusText);
             }
@@ -98,17 +106,17 @@
         const usernameRegex = /^[a-zA-Zа-яА-Я0-9]{1,25}$/;
         const passwordRegex = /^[a-zA-Zа-яА-Я0-9\p{P}]{8,40}$/u;
         const nameSurnameRegex = /^[a-zA-Zа-яА-Я]{1,25}$/;
-        const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
-        const phoneRegex = /^[0-9]{0,12}$/;
-        const addressRegex = /^[a-zA-Zа-яА-Я0-9\p{P}]{1,50}$/u;
+        const emailRegex = /^[a-zA-Zа-яА-Я0-9._%+-]+@[a-zA-Zа-яА-Я0-9.-]+\.[a-zA-Zа-яА-Я]{2,6}$/;
+        const phoneRegex = /^[+0-9]{0,15}$/;
+        const addressRegex = /^[a-zA-Zа-яА-Я0-9\s\p{P}]{1,100}$/u;
   
         if (!usernameRegex.test(this.user.username)) invalidFields.push('Имя пользователя');
         if (!passwordRegex.test(this.user.password)) invalidFields.push('Пароль');
         if (!nameSurnameRegex.test(this.user.surname)) invalidFields.push('Фамилия');
         if (!nameSurnameRegex.test(this.user.name)) invalidFields.push('Имя');
         if (!emailRegex.test(this.user.email)) invalidFields.push('Email');
-        if (!phoneRegex.test(this.user.phone)) invalidFields.push('Телефон');
-        if (!addressRegex.test(this.user.address)) invalidFields.push('Адрес');
+        if (this.user.phone && !phoneRegex.test(this.user.phone)) invalidFields.push('Телефон');
+        if (this.user.address && !addressRegex.test(this.user.address)) invalidFields.push('Адрес');
   
         return invalidFields;
       },
@@ -119,14 +127,15 @@
           case 'password':
             return this.user.password && !/^[a-zA-Zа-яА-Я0-9\p{P}]{8,40}$/u.test(this.user.password);
           case 'surname':
+            return this.user.surname && !/^[a-zA-Zа-яА-Я]{1,25}$/.test(this.user.surname);
           case 'name':
-            return this.user[field] && !/^[a-zA-Zа-яА-Я]{1,25}$/.test(this.user[field]);
+            return this.user.name && !/^[a-zA-Zа-яА-Я]{1,25}$/.test(this.user.name);
           case 'email':
-            return this.user.email && !/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(this.user.email);
+            return this.user.email && !/^[a-zA-Zа-яА-Я0-9._%+-]+@[a-zA-Zа-яА-Я0-9.-]+\.[a-zA-Zа-яА-Я]{2,6}$/.test(this.user.email);
           case 'phone':
-            return this.user.phone && !/^[0-9]{0,12}$/.test(this.user.phone);
+            return this.user.phone && !/^[+0-9]{0,15}$/.test(this.user.phone);
           case 'address':
-            return this.user.address && !/^[a-zA-Zа-яА-Я0-9\p{P}]{1,50}$/u.test(this.user.address);
+            return this.user.address && !/^[a-zA-Zа-яА-Я0-9\s\p{P}]{1,100}$/u.test(this.user.address);
           default:
             return false;
         }
@@ -152,7 +161,7 @@
     margin: 16px auto; /* отступы сверху и снизу */
   }
   
-  .login-text {
+  .login-text, .success-message {
     text-align: center;
     margin-top: 16px;
   }
