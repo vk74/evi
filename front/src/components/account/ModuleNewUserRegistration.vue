@@ -1,5 +1,5 @@
 <template>
-    <div class="pt-3 pl-3"> 
+    <div class="pt-3 pl-3">
       <v-card max-width="500px">
         <v-card-title class="text-h5">Регистрация</v-card-title>
         <v-card-text>
@@ -32,15 +32,17 @@
           <v-spacer></v-spacer>
           <v-btn color="teal darken-1" text @click="submitForm">регистрация</v-btn>
         </v-card-actions>
+        <div class="divider"></div>
+        <p class="login-text">уже есть учетная запись? <a href="#" @click.prevent="goToLogin" class="login-link">войдите в систему</a></p><br>
       </v-card>
-    </div>  
+    </div>
   </template>
   
   <script>
   import { useUserStore } from '../../state/userstate';
   
   export default {
-    name: 'ModalRegister',
+    name: 'ModuleNewUserRegistration',
     data() {
       return {
         user: {
@@ -128,6 +130,10 @@
           default:
             return false;
         }
+      },
+      goToLogin() {
+        const userStore = useUserStore();
+        userStore.setActiveModule('Login');
       }
     }
   };
@@ -137,5 +143,26 @@
   .user-registration-form-info {
     color: red;
     font-size: 0.8em;
+  }
+  
+  .divider {
+    width: calc(100% - 32px); /* ширина такая же как у полей ввода */
+    height: 1px;
+    background-color: #ccc;
+    margin: 16px auto; /* отступы сверху и снизу */
+  }
+  
+  .login-text {
+    text-align: center;
+    margin-top: 16px;
+  }
+  
+  .login-link {
+    color: teal;
+    text-decoration: none;
+  }
+  
+  .login-link:hover {
+    text-decoration: underline;
   }
   </style>  

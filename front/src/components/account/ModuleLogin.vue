@@ -12,9 +12,10 @@
       </v-card-text>
       <v-card-actions>
         <v-spacer></v-spacer>
-        <!-- <v-btn color="teal darken-1" text @click="closeDialog">отмена</v-btn> -->
         <v-btn color="teal darken-1" text @click="login">войти</v-btn>
       </v-card-actions>
+      <div class="divider"></div>
+      <p class="register-text">если у вас нет учетной записи ev2, <a href="#" @click.prevent="goToRegistration" class="register-link">зарегистрируйтесь</a></p><br>
     </v-card>
   </div>  
 </template>
@@ -25,7 +26,7 @@ import { useUserStore } from '../../state/userstate'; // импорт Pinia stor
 import { startSessionTimers } from '../../services/sessionServices'; // импорт функции управления сессией
 
 export default {
-  name: 'ModulLogin-modal',
+  name: 'ModuleLogin',
   data() {
     return {
       username: '',
@@ -81,10 +82,34 @@ export default {
     closeDialog() {
       this.dialog = false; // закрыть модальное окно
       this.$emit('close'); // оповестить родительский компонент о закрытии
+    },
+    goToRegistration() {
+      const userStore = useUserStore();
+      userStore.setActiveModule('NewUserRegistration');
     }
   }
 };
 </script>
-<style>
-/* ваши стили */
+
+<style scoped>
+.divider {
+  width: calc(100% - 32px); /* ширина такая же как у полей логина и пароля */
+  height: 1px;
+  background-color: #ccc;
+  margin: 16px auto; /* отступы сверху и снизу */
+}
+
+.register-text {
+  text-align: center;
+  margin-top: 16px;
+}
+
+.register-link {
+  color: teal;
+  text-decoration: none;
+}
+
+.register-link:hover {
+  text-decoration: underline;
+}
 </style>
