@@ -32,17 +32,12 @@
       <!-- кнопка регистрации -->
       <v-tooltip bottom>
         <template v-slot:activator="{ props }">
-          <v-btn icon v-bind="props" @click="showRegisterModal" v-if="!isLoggedIn">
+          <v-btn icon v-bind="props" @click="setActiveModule('NewUserRegistration')" v-if="!isLoggedIn">
             <v-icon>mdi-account-plus</v-icon>
           </v-btn>
         </template>
         <span>регистрация учетной записи</span>
       </v-tooltip>
-
-      <!-- Модальное окно регистрации -->
-      <v-dialog v-model="isRegisterModalVisible" max-width="500px">
-        <ModalRegister @close="isRegisterModalVisible = false" />
-      </v-dialog>
 
       <!-- кнопка меню для системных команд: выход, смена пароля и пр. -->
       <v-menu>
@@ -88,7 +83,7 @@
         <v-list-item @click="setActiveModule('XLS')" prepend-icon="mdi-microsoft-excel" title="xls prototyping" value="xlsPrototyping"></v-list-item>
         <v-divider class="border-opacity-25"></v-divider>
       </v-list>
-              <!-- Settings in the bottom -->
+      <!-- Settings in the bottom -->
       <template v-slot:append>
         <v-list>
           <v-list-item @click="setActiveModule('Account')" prepend-icon="mdi-account" title="account" value="account" v-if="isLoggedIn"></v-list-item>
@@ -102,20 +97,21 @@
     <!-- Main Work Area  -->
     <v-main>
       <ModuleLogin v-if="activeModule === 'Login'" />
-        <ModuleCatalog v-if="activeModule === 'Catalog'" />
-        <ModuleWork v-if="activeModule === 'Work'" />
-        <ModuleAR v-if="activeModule === 'AR'" />
-        <ModuleAdmpan v-if="activeModule === 'Admpan'" />
-        <ModuleXLS v-if="activeModule === 'XLS'" />
-        <ModuleAccount v-if="activeModule === 'Account'" />
-        <ModuleSettings v-if="activeModule === 'Settings'" />
-        <ModuleHelp v-if="activeModule === 'Help'" />
+      <ModuleCatalog v-if="activeModule === 'Catalog'" />
+      <ModuleWork v-if="activeModule === 'Work'" />
+      <ModuleAR v-if="activeModule === 'AR'" />
+      <ModuleAdmpan v-if="activeModule === 'Admpan'" />
+      <ModuleXLS v-if="activeModule === 'XLS'" />
+      <ModuleAccount v-if="activeModule === 'Account'" />
+      <ModuleSettings v-if="activeModule === 'Settings'" />
+      <ModuleHelp v-if="activeModule === 'Help'" />
+      <ModuleNewUserRegistration v-if="activeModule === 'NewUserRegistration'" />
     </v-main>
   </v-app>
 </template>
 
 <script>
-  import { ref, computed, onMounted } from 'vue';
+import { ref, computed, onMounted } from 'vue';
 import { useUserStore } from './state/userstate';
 import { startSessionTimers } from './services/sessionServices';
 import ModuleCatalog from './components/catalog/ModuleCatalog.vue';
@@ -127,9 +123,9 @@ import ModuleAccount from './components/account/ModuleAccount.vue';
 import ModuleSettings from './components/settings/ModuleSettings.vue';
 import ModuleHelp from './components/help/ModuleHelp.vue';
 import ModuleLogin from './components/account/ModuleLogin.vue';
-import ModalRegister from './components/account/ModalRegister.vue';
 import ModalChangeUserPass from './components/account/ModalChangeUserPass.vue';
 import LoginDialog from './components/account/ModuleLogin.vue';
+import ModuleNewUserRegistration from './components/account/ModuleNewUserRegistration.vue';
 
 export default {
   name: 'App',
@@ -143,14 +139,13 @@ export default {
     ModuleSettings,
     ModuleHelp,
     ModuleLogin,
-    ModalRegister,
     ModalChangeUserPass,
-    LoginDialog
+    LoginDialog,
+    ModuleNewUserRegistration
   },
   setup() {
     const userStore = useUserStore();
     const drawer = ref(true);
-    const isRegisterModalVisible = ref(false);
     const isChangePassModalVisible = ref(false);
     const isLoginDialogVisible = ref(false);
 
@@ -166,10 +161,6 @@ export default {
       setActiveModule('Catalog');
     };
 
-    const showRegisterModal = () => {
-      isRegisterModalVisible.value = true;
-    };
-
     onMounted(() => {
       if (isLoggedIn.value) {
         console.log('App mounted. User is logged in. Starting session timers...');
@@ -179,7 +170,6 @@ export default {
 
     return {
       drawer,
-      isRegisterModalVisible,
       isChangePassModalVisible,
       isLoginDialogVisible,
       isLoggedIn,
@@ -194,13 +184,14 @@ export default {
       },
       showChangePassModal() {
         isChangePassModalVisible.value = true;
-      },
-      showRegisterModal,
+      }
     };
   },
 };
 </script>
 
 <style>
-
+.v-snackbar {
+  top: 50px !important;
+}
 </style>
