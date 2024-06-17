@@ -89,13 +89,13 @@
             });
   
             if (response.ok) {
-              console.log('Регистрационные данные пользователя успешно отправлены на сервер');
+              console.log('New user registration data successfully sent to backend server');
               this.showSuccess = true;
             } else {
-              console.error('Ошибка отправки регистрационных данных на сервер:', response.status, response.statusText);
+              console.error('Error on sending registration data to backend:', response.status, response.statusText);
             }
           } catch (error) {
-            console.error('Ошибка отправки регистрационных данных на сервер:', error);
+            console.error('Error on sending registration data to backend:', error);
           }
         } else {
           this.showError = true;
@@ -155,10 +155,10 @@
   }
   
   .divider {
-    width: calc(100% - 32px); /* ширина такая же как у полей ввода */
+    width: calc(100% - 32px); /* divider width same as data fields */
     height: 1px;
     background-color: #ccc;
-    margin: 16px auto; /* отступы сверху и снизу */
+    margin: 16px auto; 
   }
   
   .login-text, .success-message {

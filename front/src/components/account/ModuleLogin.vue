@@ -37,7 +37,7 @@ export default {
   },
   methods: {
     async login() {
-      console.log("Логин:", this.username, "Пароль:", this.password);
+      console.log("Login:", this.username, "Pass:", this.password);
       this.showError = false; // сбрасываем ошибку при каждой новой попытке входа
       this.showSuccess = false; // сбрасываем сообщение об успехе при каждой новой попытке
       try {
@@ -45,11 +45,11 @@ export default {
           username: this.username,
           password: this.password
         });
-        console.log('Ответ сервера:', response);
+        console.log('reply from backend server:', response);
         if (response.data.success) {
           localStorage.setItem('userToken', response.data.token); // сохраняем токен в localStorage чтобы пользователю не пришлось повторно аутентифицироваться
           const decoded = jwtDecode(response.data.token);  // декодирование JWT для извлечения данных пейлоуда
-          console.log('Декодированный JWT:', decoded);
+          console.log('decoded JWT:', decoded);
           // обновление Pinia хранилища данными из пейлоуда токена
           const userStore = useUserStore();
           userStore.setUsername(decoded.sub); // установка имени пользователя
@@ -62,7 +62,7 @@ export default {
           userStore.setJwtId(decoded.jti);
           userStore.setTokenExpires(decoded.exp); // срок истечения жизни токена
           
-          console.log('User logged in successfully. Starting session timers...');
+          console.log('User logged in successfully');
           startSessionTimers();
 
           this.showSuccess = true;
@@ -76,7 +76,7 @@ export default {
         }
       } catch (error) {
         this.showError = true; // показываем ошибку, если возникла ошибка запроса
-        console.error('Ошибка при отправке запроса:', error);
+        console.error('Error sending request:', error);
       }
     },
     closeDialog() {
