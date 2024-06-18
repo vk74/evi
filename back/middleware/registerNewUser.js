@@ -1,10 +1,10 @@
 const bcrypt = require('bcrypt');
-const { pool } = require('../db/maindb'); // Импорт пула соединений для базы userdb
+const { pool } = require('../db/maindb'); // Import pool connection for the user database
 
 const registerNewUser = async (req, res) => {
   try {
     const { username, password, name, surname, email, phone, address } = req.body;
-    const role = 'registered_user'; // assign default role to new user
+    const role = 'registered_user'; // Assign default role to new user
 
     // Debug output
     console.log("Received data:", { username, password, name, surname, email, phone, address });
@@ -12,6 +12,13 @@ const registerNewUser = async (req, res) => {
     // Validate required fields
     if (!username || !password || !name || !surname || !email) {
       return res.status(400).json({ message: 'Все поля должны быть заполнены' });
+    }
+
+    // Check if email is already in use
+    const emailCheckResult = await pool.query('SELECT user_id FROM users WHERE email = $1', [email]);
+    if (emailCheckResult.rows.length > 0) {
+      console.error('New user registration process error: the e-mail is already registered by another user');
+      return res.status(400).json({ message: 'this e-mail is already registered by another user' });
     }
 
     // Password hashing
@@ -39,8 +46,8 @@ const registerNewUser = async (req, res) => {
     return res.status(201).json({ userId, username, email, role });
   } catch (error) {
     await pool.query('ROLLBACK');
-    console.error('Ошибка регистрации пользователя:', error);
-    return res.status(500).json({ message: 'Ошибка регистрации пользователя' });
+    console.error('New user registration error:', error);
+    return res.status(500).json({ message: 'New user registration error:' });
   }
 };
 
