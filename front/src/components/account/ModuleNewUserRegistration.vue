@@ -1,3 +1,4 @@
+
 <template>
   <div class="pt-3 pl-3">
     <v-card max-width="500px">
@@ -37,6 +38,7 @@
           <span v-if="isInvalid('address')" class="user-registration-form-info">Адрес должен быть не более 100 символов и содержать только буквы, цифры, пробелы и знаки препинания.</span>
         </v-form>
         <p v-if="showError" class="error-message">Ошибка валидации: невалидные поля - {{ invalidFields.join(', ') }}</p>
+        <p v-if="showDuplicateUsernameError" class="error-message">Ошибка: такое имя пользователя уже используется</p>
         <p v-if="showDuplicateEmailError" class="error-message">Ошибка: такой адрес электронной почты уже используется</p>
         <p v-if="showDuplicatePhoneError" class="error-message">Ошибка: такой номер телефона уже используется</p>
         <p v-if="showSuccess" class="success-message">Данные регистрационной формы успешно отправлены на сервер. Новый пользователь зарегистрирован!</p>
@@ -69,6 +71,7 @@ export default {
       },
       showError: false,
       showSuccess: false,
+      showDuplicateUsernameError: false,
       showDuplicateEmailError: false,
       showDuplicatePhoneError: false,
       invalidFields: [],
@@ -81,6 +84,7 @@ export default {
     },
     async submitForm() {
       this.showError = false;
+      this.showDuplicateUsernameError = false;
       this.showDuplicateEmailError = false;
       this.showDuplicatePhoneError = false;
       this.invalidFields = this.validateForm();
@@ -99,7 +103,9 @@ export default {
             this.showSuccess = true;
           } else {
             const errorData = await response.json();
-            if (errorData.message === 'this e-mail is already registered by another user') {
+            if (errorData.message === 'this username is already registered by another user') {
+              this.showDuplicateUsernameError = true;
+            } else if (errorData.message === 'this e-mail is already registered by another user') {
               this.showDuplicateEmailError = true;
             } else if (errorData.message === 'this phone number is already registered by another user') {
               this.showDuplicatePhoneError = true;

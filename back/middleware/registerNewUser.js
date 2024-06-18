@@ -14,6 +14,13 @@ const registerNewUser = async (req, res) => {
       return res.status(400).json({ message: 'Все поля должны быть заполнены' });
     }
 
+    // Check if username is already in use
+    const usernameCheckResult = await pool.query('SELECT user_id FROM users WHERE username = $1', [username]);
+    if (usernameCheckResult.rows.length > 0) {
+      console.error('New user registration process error: the username is already registered by another user');
+      return res.status(400).json({ message: 'this username is already registered by another user' });
+    }
+
     // Check if email is already in use
     const emailCheckResult = await pool.query('SELECT user_id FROM users WHERE email = $1', [email]);
     if (emailCheckResult.rows.length > 0) {
