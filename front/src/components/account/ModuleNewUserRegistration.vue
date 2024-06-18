@@ -31,13 +31,14 @@
             label="Телефон"
             placeholder="+7 (###) ###-####"
           ></v-text-field>
-          <span v-if="isInvalid('phone')" class="user-registration-form-info">Телефон должен содержать только цифры и быть не длиннее 15 символов.</span>
+          <span v-if="isInvalid('phone')" class="user-registration-form-info">Телефон должен содержать только цифры и быть не длиннее 12 символов.</span>
 
           <v-text-field v-model="user.address" label="Адрес"></v-text-field>
           <span v-if="isInvalid('address')" class="user-registration-form-info">Адрес должен быть не более 100 символов и содержать только буквы, цифры, пробелы и знаки препинания.</span>
         </v-form>
         <p v-if="showError" class="error-message">Ошибка валидации: невалидные поля - {{ invalidFields.join(', ') }}</p>
         <p v-if="showDuplicateEmailError" class="error-message">Ошибка: такой адрес электронной почты уже используется</p>
+        <p v-if="showDuplicatePhoneError" class="error-message">Ошибка: такой номер телефона уже используется</p>
         <p v-if="showSuccess" class="success-message">Данные регистрационной формы успешно отправлены на сервер. Новый пользователь зарегистрирован!</p>
       </v-card-text>
       <v-card-actions>
@@ -69,6 +70,7 @@ export default {
       showError: false,
       showSuccess: false,
       showDuplicateEmailError: false,
+      showDuplicatePhoneError: false,
       invalidFields: [],
       showPassword: false // состояние для отображения/скрытия пароля
     };
@@ -80,6 +82,7 @@ export default {
     async submitForm() {
       this.showError = false;
       this.showDuplicateEmailError = false;
+      this.showDuplicatePhoneError = false;
       this.invalidFields = this.validateForm();
       if (this.invalidFields.length === 0) {
         try {
@@ -98,6 +101,8 @@ export default {
             const errorData = await response.json();
             if (errorData.message === 'this e-mail is already registered by another user') {
               this.showDuplicateEmailError = true;
+            } else if (errorData.message === 'this phone number is already registered by another user') {
+              this.showDuplicatePhoneError = true;
             } else {
               console.error('Error on sending registration data to backend:', response.status, response.statusText);
             }

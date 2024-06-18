@@ -21,6 +21,13 @@ const registerNewUser = async (req, res) => {
       return res.status(400).json({ message: 'this e-mail is already registered by another user' });
     }
 
+    // Check if phone number is already in use
+    const phoneCheckResult = await pool.query('SELECT user_id FROM user_profiles WHERE phone_number = $1', [phone]);
+    if (phoneCheckResult.rows.length > 0) {
+      console.error('New user registration process error: the phone number is already registered by another user');
+      return res.status(400).json({ message: 'this phone number is already registered by another user' });
+    }
+
     // Password hashing
     const hashedPassword = await bcrypt.hash(password, 10);
     console.log("Hashed password:", hashedPassword);
