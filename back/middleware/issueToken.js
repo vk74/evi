@@ -6,7 +6,7 @@ const uuidv4 = require('uuid').v4;
 
 const privateKeyPath = './keys/private_key.pem'; // path to private key used to sign new JWT
 const privateKey = fs.readFileSync(privateKeyPath, 'utf8'); // read private key from file
-//global.privateKey = privateKey;// Сделайте privateKey доступным глобально
+//global.privateKey = privateKey;// privateKey доступный глобально
 
 console.log('read private key from file: success');
 
@@ -27,7 +27,7 @@ const issueToken = (req, res) => {
     try {
         const token = jwt.sign(payload, privateKey, {
             algorithm: 'RS256',
-            expiresIn: '2h'
+            expiresIn: '30m'
         });
         console.log('JWT successfully created and issued to the user:', req.user.username);
         res.json({ success: true, token });

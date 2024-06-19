@@ -26,7 +26,7 @@ const extendToken = (req, res) => {
 
     const newToken = jwt.sign(payload, privateKey, {
       algorithm: 'RS256',
-      expiresIn: '2h'
+      expiresIn: '1h'
     });
 
     console.log('JWT successfully extended and issued to the user');

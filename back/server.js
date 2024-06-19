@@ -14,8 +14,34 @@ const privateKeyPath = './keys/private_key.pem'; // path to private key used to 
 const privateKey = fs.readFileSync(privateKeyPath, 'utf8'); // read private key from file
 global.privateKey = privateKey;
 
+/* app.listen(port, () => {
+  //const timestamp = new Date().toISOString(); // Получаем текущую временную метку в формате ISO
+  const timestamp = new Date().toLocaleString(); // Получаем текущую временную метку в локальном часовом поясе
+  console.log(`[${timestamp}] Server listening at http://localhost:${port}`);
+}); */
+
 app.listen(port, () => {
-  console.log(`Server listening at http://localhost:${port}`);
+  const now = new Date();
+  const dateOptions = { 
+    year: 'numeric', 
+    month: '2-digit', 
+    day: '2-digit' 
+  };
+  const timeOptions = { 
+    hour: '2-digit', 
+    minute: '2-digit', 
+    second: '2-digit',
+    hour12: false // Использование 24-часового формата
+  };
+
+  // Форматируем дату в формате день/месяц/год
+  const formattedDate = now.toLocaleDateString('en-GB', dateOptions);
+  const formattedTime = now.toLocaleTimeString('en-US', timeOptions);
+  
+  // Объединяем дату и время
+  const timestamp = `${formattedDate}, ${formattedTime}`;
+
+  console.log(`[${timestamp}] Server listening at http://localhost:${port}`);
 });
 
 //app.use(cors());

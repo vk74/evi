@@ -38,9 +38,9 @@
           <span v-if="isInvalid('address')" class="user-registration-form-info">Адрес должен быть не более 100 символов и содержать только буквы, цифры, пробелы и знаки препинания.</span>
         </v-form>
         <p v-if="showError" class="error-message">Ошибка валидации: невалидные поля - {{ invalidFields.join(', ') }}</p>
-        <p v-if="showDuplicateUsernameError" class="error-message">Ошибка: такое имя пользователя уже используется</p>
-        <p v-if="showDuplicateEmailError" class="error-message">Ошибка: такой адрес электронной почты уже используется</p>
-        <p v-if="showDuplicatePhoneError" class="error-message">Ошибка: такой номер телефона уже используется</p>
+        <p v-if="showDuplicateUsernameError" class="error-message">ошибка: такое имя пользователя уже зарегистрировано</p>
+        <p v-if="showDuplicateEmailError" class="error-message">ошибка: такой адрес электронной почты уже используется</p>
+        <p v-if="showDuplicatePhoneError" class="error-message">ошибка: такой номер телефона уже используется</p>
         <p v-if="showSuccess" class="success-message">Данные регистрационной формы успешно отправлены на сервер. Новый пользователь зарегистрирован!</p>
       </v-card-text>
       <v-card-actions>
