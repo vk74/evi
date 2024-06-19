@@ -11,8 +11,9 @@
               </v-avatar>
             </v-col>
             <v-col>
-              <h3 class="white--text mb-0">{{ profile.username }}</h3>
+              <h3 class="white--text mb-0">{{ profile.first_name }} {{ profile.last_name }}</h3><br>
               <div class="white--text subtitle-1">{{ profile.company_name }} / {{ profile.position }}</div>
+              <div class="white--text subtitle-2">{{ username }}</div>
             </v-col>
             <v-col class="d-flex justify-end" cols="auto">
               <v-btn color="teal darken-1" text @click="openChangePasswordModal">изменить пароль</v-btn>
