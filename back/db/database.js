@@ -29,7 +29,8 @@ const getLocations = async () => {
   return result.rows;
 };
 
+
 module.exports = {
   insertData,
   getLocations,
-};
+}; 
