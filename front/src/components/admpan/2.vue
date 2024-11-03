@@ -25,15 +25,18 @@
     </div>
   
     <v-list density="compact" nav class="navigation-list">
-      <v-list-group>
+      <v-list-group 
+        value="serviceAdmin"
+        @click="handleServiceAdminClick"
+      >
         <template v-slot:activator="{ props }">
           <v-list-item
             v-bind="props"
             class="nav-item"
             prepend-icon="mdi-room-service"
             title="управление сервисами"
-            :active="activeSubModule === 'SubModuleServiceAdm'"
-            @click="setActiveSubModule('SubModuleServiceAdm', 'all')"
+            value="serviceAdmin"
+            :active="isServiceAdminActive"
           >
             <v-list-item-title v-if="!drawer" class="hidden-title">управление сервисами</v-list-item-title>
           </v-list-item>
@@ -140,9 +143,15 @@ export default {
     const admpanStore = useAdmpanStore();
     const drawer = ref(true);
     const currentFilter = ref('all');
+    const isGroupOpen = ref(false);
 
     const activeSubModule = computed(() => admpanStore.activeSubModule);
     const isPinned = computed(() => admpanStore.isPinned);
+    
+    // Упростили проверку, убрав зависимость от состояния группы
+    const isServiceAdminActive = computed(() => 
+      activeSubModule.value === 'SubModuleServiceAdm'
+    );
     
     const currentSubModule = computed(() => {
       switch(activeSubModule.value) {
@@ -156,6 +165,13 @@ export default {
           return SubModuleServiceAdm;
       }
     });
+
+    const handleServiceAdminClick = () => {
+      isGroupOpen.value = !isGroupOpen.value;
+      if (isGroupOpen.value) {
+        setActiveSubModule('SubModuleServiceAdm', 'all');
+      }
+    };
 
     const setActiveSubModule = (module, filter = null) => {
       admpanStore.setActiveSubModule(module);
@@ -175,7 +191,9 @@ export default {
       drawer,
       isPinned,
       toggleDrawerPin,
-      currentFilter
+      currentFilter,
+      isServiceAdminActive,
+      handleServiceAdminClick
     };
   },
 };

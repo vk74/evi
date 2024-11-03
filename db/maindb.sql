@@ -1,21 +1,104 @@
+
+CREATE DATABASE maindb;
+
+CREATE USER config_user WITH PASSWORD 'P@ssword';
+
+\c maindb
+
+CREATE EXTENSION IF NOT EXISTS "pgcrypto";
+
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT SELECT, INSERT, UPDATE, DELETE ON TABLES TO config_user;
+
 -- -- service related data
 CREATE TYPE service_status AS ENUM {
+    'drafted',
+    'being developed',
+    'being tested',
+    'non-compliant',   -- could not be passed to production
+    'pending approval',
+    'in production',
+    'under maintenance',
+    'suspended',
+    'being upgraded',
+    'discontinued'
+}
+
+create table services {
+    service_id UUID,
+    service_name varchar (250) NOT NULL,
+    service_status service_status,
+    purpose varchar(250) NOT NULL,
+    comments varchar(250) NOT NULL,
+    default_support_group VARCHAR(50) NOT NULL,
+    service_owner UUID,
+
+    -- service life-cycle
+
+    creation_date TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    created_by UUID,
+    last_modified_date TIMESTAMP,
+    created_by UUID,
+
+    set_draft_status_by UUID,
+    set_draft_status TIMESTAMP,
+    set_production_status_by UUID,
+    set_production_status TIMESTAMP,
+    set_discontinued_status_by UUID,
+    set_discontinued_status TIMESTAMP
+
+    -- additional fields
+
+    -- cost (center?)
+    -- risk level
+    -- KPI
+    -- SLA id
+    -- dependencies
+
+    -- service tile design
+
+    tile_width_closed SMALLINT CHECK (closed_tile_width > 0),
+    tile_height_closed SMALLINT CHECK (closed_tile_height > 0),
+    tile_width_open SMALLINT CHECK (open_tile_width > 0),
+    tile_height_open SMALLINT CHECK (open_tile_height > 0),
+    short_description VARCHAR(250),
+    long_description TEXT,
+    icon_path VARCHAR(255) NOT NULL DEFAULT '/public/icons/default_service_icon.png',
+}
+
+-- ------- catalog items related data
+
+CREATE TYPE offering_status AS ENUM {
     'draft',
     'production',
     'discontinued'
 }
 
-create table service {
-    service_id SERIAL NOT NULL,
+create table offerings {
+    offering_id SERIAL NOT NULL,
     entity_id UUID,
-    service_name varchar (250) NOT NULL,
-    service_status service_status,
-    purpose varchar(250) NOT NULL,
+    entity_name varchar (250) NOT NULL,
+    offering_status offering_status,
+    offering_short_description varchar(100),
+    offering_long_description varchar(500),
     comments varchar(250) NOT NULL,    
-    created_at timestamp,
-    last_modified_at timestamp
 
-    support_group VARCHAR(50) NOT NULL,
+    creation_date TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    created_by UUID,
+    last_modified_date TIMESTAMP,
+    created_by UUID,
+
+    set_draft_status_by UUID,
+    set_draft_status TIMESTAMP,
+    set_production_status_by UUID,
+    set_production_status TIMESTAMP
+    set_discontinued_status_by UUID,
+    set_discontinued_status TIMESTAMP,
+
+    -- offering display attributes
+    offering_icon ???,
+    offering_horizontal_size int,
+    offering_vertical_size int,
+
 
 }
 
@@ -46,12 +129,7 @@ create table template {
     title VARCHAR(100) NOT NULL,
     display_name varchar(100) NULL,  -- still don't understand why this field is needed
 
-    -- service ownership
-    service_owner UUID,
-    default_service_group UUID,
-
-
-    -- service log
+    -- template lifecycle
 
     creation_date TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     created_by UUID,
