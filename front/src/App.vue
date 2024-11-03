@@ -10,7 +10,7 @@
         <v-icon>mdi-magnify</v-icon>
       </v-btn>
 
-      <!-- кнопка тестирования диалоговых окон <v-btn icon @click="showLoginDialog"> -->
+      <!-- кнопка перевода, (ранее - тестирования диалоговых окон <v-btn icon @click="showLoginDialog"> ) -->
       
       <v-btn icon>
         <v-icon>mdi-translate</v-icon>
