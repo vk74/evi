@@ -10,9 +10,10 @@
         <v-icon>mdi-magnify</v-icon>
       </v-btn>
 
-      <!-- кнопка тестирования диалоговых окон -->
-      <v-btn icon @click="showLoginDialog">
-        <v-icon>mdi-ab-testing</v-icon>
+      <!-- кнопка тестирования диалоговых окон <v-btn icon @click="showLoginDialog"> -->
+      
+      <v-btn icon>
+        <v-icon>mdi-translate</v-icon>
       </v-btn>
 
       <v-dialog v-model="isLoginDialogVisible" max-width="500px">
