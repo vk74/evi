@@ -10,11 +10,23 @@
         <v-icon>mdi-magnify</v-icon>
       </v-btn>
 
-      <!-- кнопка перевода, (ранее - тестирования диалоговых окон <v-btn icon @click="showLoginDialog"> ) -->
-      
-      <v-btn icon>
-        <v-icon>mdi-translate</v-icon>
-      </v-btn>
+      <!-- кнопка перевода с выпадающим меню -->
+      <v-menu>
+        <template v-slot:activator="{ props }">
+          <v-btn icon v-bind="props">
+            <v-icon>mdi-translate</v-icon>
+          </v-btn>
+        </template>
+
+        <v-list>
+          <v-list-item>
+            <v-list-item-title>english</v-list-item-title>
+          </v-list-item>
+          <v-list-item>
+            <v-list-item-title>русский</v-list-item-title>
+          </v-list-item>
+        </v-list>
+      </v-menu>
 
       <v-dialog v-model="isLoginDialogVisible" max-width="500px">
         <LoginDialog @close="isLoginDialogVisible = false" @login-success="handleLoginSuccess" />
@@ -71,43 +83,43 @@
       </template>
     </v-app-bar>
 
-    <!-- Navigation Drawer   -->
-    <v-navigation-drawer v-model="drawer" app expand-on-hover rail elevation="5">
-      <v-list density="compact" nav>
-        <v-list-item @click="setActiveModule('Catalog')" prepend-icon="mdi-view-dashboard" title="catalog" value="catalog">
-        </v-list-item>
-        <v-list-item @click="setActiveModule('Work')" prepend-icon="mdi-file-edit-outline" title="work items" value="workItems"></v-list-item>
-        <v-list-item @click="setActiveModule('AR')" prepend-icon="mdi-chart-timeline" title="reports" value="reports"></v-list-item>
-        <v-divider class="border-opacity-25"></v-divider><br>
-        <v-list-item @click="setActiveModule('Admpan')" prepend-icon="mdi-application-cog" title="admin panel" value="adminPanel"></v-list-item>
-        <v-divider class="border-opacity-25"></v-divider><br>
-        <v-list-item @click="setActiveModule('XLS')" prepend-icon="mdi-microsoft-excel" title="xls prototyping" value="xlsPrototyping"></v-list-item>
-        <v-divider class="border-opacity-25"></v-divider>
-      </v-list>
-      <!-- Settings in the bottom -->
-      <template v-slot:append>
-        <v-list>
-          <v-list-item @click="setActiveModule('Account')" prepend-icon="mdi-account" title="account" value="account" v-if="isLoggedIn"></v-list-item>
+      <!-- Navigation Drawer   -->
+      <v-navigation-drawer v-model="drawer" app expand-on-hover rail elevation="5">
+        <v-list density="compact" nav>
+          <v-list-item @click="setActiveModule('Catalog')" prepend-icon="mdi-view-dashboard" title="catalog" value="catalog">
+          </v-list-item>
+          <v-list-item @click="setActiveModule('Work')" prepend-icon="mdi-file-edit-outline" title="work items" value="workItems"></v-list-item>
+          <v-list-item @click="setActiveModule('AR')" prepend-icon="mdi-chart-timeline" title="reports" value="reports"></v-list-item>
+          <v-divider class="border-opacity-25"></v-divider><br>
+          <v-list-item @click="setActiveModule('Admpan')" prepend-icon="mdi-application-cog" title="admin panel" value="adminPanel"></v-list-item>
+          <v-divider class="border-opacity-25"></v-divider><br>
+          <v-list-item @click="setActiveModule('XLS')" prepend-icon="mdi-microsoft-excel" title="xls prototyping" value="xlsPrototyping"></v-list-item>
           <v-divider class="border-opacity-25"></v-divider>
-          <v-list-item @click="setActiveModule('Settings')" prepend-icon="mdi-cog" title="settings" value="settings" v-if="isLoggedIn"></v-list-item>
-          <v-list-item @click="setActiveModule('Help')" prepend-icon="mdi-help-circle-outline" title="help & support" value="help"></v-list-item>
         </v-list>
-      </template>
-    </v-navigation-drawer>
-
-    <!-- Main Work Area  -->
-    <v-main>
-      <ModuleLogin v-if="activeModule === 'Login'" />
-      <ModuleCatalog v-if="activeModule === 'Catalog'" />
-      <ModuleWork v-if="activeModule === 'Work'" />
-      <ModuleAR v-if="activeModule === 'AR'" />
-      <ModuleAdmpan v-if="activeModule === 'Admpan'" />
-      <ModuleXLS v-if="activeModule === 'XLS'" />
-      <ModuleAccount v-if="activeModule === 'Account'" />
-      <ModuleSettings v-if="activeModule === 'Settings'" />
-      <ModuleHelp v-if="activeModule === 'Help'" />
-      <ModuleNewUserRegistration v-if="activeModule === 'NewUserRegistration'" />
-    </v-main>
+        <!-- Settings in the bottom -->
+        <template v-slot:append>
+          <v-list>
+            <v-list-item @click="setActiveModule('Account')" prepend-icon="mdi-account" title="account" value="account" v-if="isLoggedIn"></v-list-item>
+            <v-divider class="border-opacity-25"></v-divider>
+            <v-list-item @click="setActiveModule('Settings')" prepend-icon="mdi-cog" title="settings" value="settings" v-if="isLoggedIn"></v-list-item>
+            <v-list-item @click="setActiveModule('Help')" prepend-icon="mdi-help-circle-outline" title="help & support" value="help"></v-list-item>
+          </v-list>
+        </template>
+      </v-navigation-drawer>
+  
+      <!-- Main Work Area  -->
+      <v-main>
+        <ModuleLogin v-if="activeModule === 'Login'" />
+        <ModuleCatalog v-if="activeModule === 'Catalog'" />
+        <ModuleWork v-if="activeModule === 'Work'" />
+        <ModuleAR v-if="activeModule === 'AR'" />
+        <ModuleAdmpan v-if="activeModule === 'Admpan'" />
+        <ModuleXLS v-if="activeModule === 'XLS'" />
+        <ModuleAccount v-if="activeModule === 'Account'" />
+        <ModuleSettings v-if="activeModule === 'Settings'" />
+        <ModuleHelp v-if="activeModule === 'Help'" />
+        <ModuleNewUserRegistration v-if="activeModule === 'NewUserRegistration'" />
+      </v-main>
   </v-app>
 </template>
 
@@ -181,7 +193,7 @@ export default {
         isLoginDialogVisible.value = true;
       },
       handleLoginSuccess() {
-        setActiveModule('Work'); // в случае успешного логина переключаемся на модуль Work
+        setActiveModule('Work');
       },
       showChangePassModal() {
         isChangePassModalVisible.value = true;

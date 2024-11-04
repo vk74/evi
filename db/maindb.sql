@@ -10,60 +10,82 @@ CREATE EXTENSION IF NOT EXISTS "pgcrypto";
 ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT SELECT, INSERT, UPDATE, DELETE ON TABLES TO config_user;
 
 -- -- service related data
-CREATE TYPE service_status AS ENUM {
+CREATE TYPE service_status AS ENUM (
     'drafted',
-    'being developed',
-    'being tested',
-    'non-compliant',   -- could not be passed to production
-    'pending approval',
-    'in production',
-    'under maintenance',
+    'being_developed',
+    'being_tested',
+    'non_compliant',
+    'pending_approval',
+    'in_production',
+    'under_maintenance',
     'suspended',
-    'being upgraded',
+    'being_upgraded',
     'discontinued'
-}
+);
 
-create table services {
-    service_id UUID,
-    service_name varchar (250) NOT NULL,
-    service_status service_status,
-    purpose varchar(250) NOT NULL,
-    comments varchar(250) NOT NULL,
-    default_support_group VARCHAR(50) NOT NULL,
-    service_owner UUID,
+CREATE TYPE service_priority AS ENUM (
+    'critical',
+    'high',
+    'medium',
+    'low'
+);
 
-    -- service life-cycle
+CREATE TYPE service_visibility AS ENUM (
+    'public',
+    'private',
+    'restricted'
+);
 
-    creation_date TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    created_by UUID,
-    last_modified_date TIMESTAMP,
-    created_by UUID,
+CREATE TABLE services (
+    -- Основные идентификаторы
+    service_id UUID PRIMARY KEY,
+    service_name VARCHAR(250) NOT NULL,
+    service_status service_status NOT NULL DEFAULT 'drafted',
+    service_visibility service_visibility NOT NULL DEFAULT 'private',
+    service_purpose VARCHAR(250) NOT NULL,
+    service_comments VARCHAR(250),
+    
+    -- Ответственные лица и группы
+    service_support_tier1 UUID REFERENCES groups(group_id),
+    service_support_tier2 UUID REFERENCES groups(group_id),
+    service_support_tier3 UUID REFERENCES groups(group_id),
+    service_owner UUID REFERENCES users(user_id),
+    service_backup_owner UUID REFERENCES users(user_id),
+    service_technical_owner UUID REFERENCES users(user_id),
+    service_dispatcher UUID REFERENCES users(user_id),
+    
+    -- Основные характеристики сервиса
+    service_priority service_priority NOT NULL DEFAULT 'low',
+    service_availability service_availability NOT NULL DEFAULT '8x5',
+    
+    -- Технические детали
+    service_url VARCHAR(500),
+    service_documentation_url VARCHAR(500),
+    service_support_instructions TEXT,
+    service_recovery_instructions TEXT,
+    
+    -- Основные даты
+    service_created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    service_created_by UUID NOT NULL REFERENCES users(user_id),
+    service_modified_at TIMESTAMPTZ,
+    service_modified_by UUID REFERENCES users(user_id),
+    
+    -- UI характеристики
+    service_tile_width_closed SMALLINT CHECK (service_tile_width_closed > 0),
+    service_tile_height_closed SMALLINT CHECK (service_tile_height_closed > 0),
+    service_tile_width_open SMALLINT CHECK (service_tile_width_open > 0),
+    service_tile_height_open SMALLINT CHECK (service_tile_height_open > 0),
+    service_description_short VARCHAR(250),
+    service_description_long TEXT,
+    service_icon_path VARCHAR(255) NOT NULL DEFAULT '/public/icons/default_service_icon.png',
+    
+    -- Ограничения
+    CONSTRAINT unique_service_name UNIQUE (service_name)
+);
 
-    set_draft_status_by UUID,
-    set_draft_status TIMESTAMP,
-    set_production_status_by UUID,
-    set_production_status TIMESTAMP,
-    set_discontinued_status_by UUID,
-    set_discontinued_status TIMESTAMP
+-- Индекс для оптимизации запросов по статусу
+CREATE INDEX idx_service_status ON services(service_status);
 
-    -- additional fields
-
-    -- cost (center?)
-    -- risk level
-    -- KPI
-    -- SLA id
-    -- dependencies
-
-    -- service tile design
-
-    tile_width_closed SMALLINT CHECK (closed_tile_width > 0),
-    tile_height_closed SMALLINT CHECK (closed_tile_height > 0),
-    tile_width_open SMALLINT CHECK (open_tile_width > 0),
-    tile_height_open SMALLINT CHECK (open_tile_height > 0),
-    short_description VARCHAR(250),
-    long_description TEXT,
-    icon_path VARCHAR(255) NOT NULL DEFAULT '/public/icons/default_service_icon.png',
-}
 
 -- ------- catalog items related data
 

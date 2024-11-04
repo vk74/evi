@@ -1,123 +1,123 @@
 <template>
   <v-container fluid>
-  <v-row>
-  <v-navigation-drawer 
-    v-model="drawer" 
-    app 
-    :expand-on-hover="!isPinned"
-    :rail="!isPinned"
-    elevation="5"
-    class="drawer-container"
-  >
-    <!-- Область-кнопка на всю ширину без иконки -->
-    <div class="full-width-toggle" @click="toggleDrawerPin"></div>
+    <v-row>
+      <v-navigation-drawer 
+        v-model="drawer" 
+        app 
+        :expand-on-hover="!isPinned"
+        :rail="!isPinned"
+        elevation="5"
+        class="drawer-container"
+      >
+        <!-- Область-кнопка на всю ширину без иконки -->
+        <div class="full-width-toggle" @click="toggleDrawerPin"></div>
 
-    <!-- Оригинальная кнопка справа -->
-    <div class="chevron-button">
-      <v-btn
-        variant="text"
-        @click="toggleDrawerPin"
-        :icon="isPinned ? 'mdi-chevron-double-left' : 'mdi-chevron-double-right'"
-        size="small"
-        class="chevron-icon"
-        color="grey-darken-1"
-      ></v-btn>
-    </div>
-  
-    <v-list density="compact" nav class="navigation-list">
-      <v-list-group>
-        <template v-slot:activator="{ props }">
-          <v-list-item
-            v-bind="props"
-            class="nav-item"
-            prepend-icon="mdi-room-service"
-            title="управление сервисами"
-            :active="activeSubModule === 'SubModuleServiceAdm'"
-            @click="setActiveSubModule('SubModuleServiceAdm', 'all')"
+        <!-- Оригинальная кнопка справа -->
+        <div class="chevron-button">
+          <v-btn
+            variant="text"
+            @click="toggleDrawerPin"
+            :icon="isPinned ? 'mdi-chevron-double-left' : 'mdi-chevron-double-right'"
+            size="small"
+            class="chevron-icon"
+            color="grey-darken-1"
+          ></v-btn>
+        </div>
+      
+        <v-list density="compact" nav class="navigation-list">
+          <v-list-group>
+            <template v-slot:activator="{ props }">
+              <v-list-item
+                v-bind="props"
+                class="nav-item"
+                prepend-icon="mdi-room-service"
+                title="управление сервисами"
+                :active="activeSubModule === 'SubModuleServiceAdm'"
+                @click="setActiveSubModule('SubModuleServiceAdm', 'all')"
+              >
+                <v-list-item-title v-if="!drawer" class="hidden-title">управление сервисами</v-list-item-title>
+              </v-list-item>
+            </template>
+
+            <v-list-item
+              @click="setActiveSubModule('SubModuleServiceAdm', 'all')"
+              class="sub-nav-item"
+              value="allServices"
+              :active="currentFilter === 'all'"
+            >
+              <template v-slot:prepend>
+                <v-icon size="small" class="sub-icon">mdi-view-list</v-icon>
+              </template>
+              <v-list-item-title>все сервисы</v-list-item-title>
+            </v-list-item>
+
+            <v-list-item
+              @click="setActiveSubModule('SubModuleServiceAdm', 'active')"
+              class="sub-nav-item"
+              value="activeServices"
+              :active="currentFilter === 'active'"
+            >
+              <template v-slot:prepend>
+                <v-icon size="small" class="sub-icon">mdi-check-circle</v-icon>
+              </template>
+              <v-list-item-title>активные</v-list-item-title>
+            </v-list-item>
+
+            <v-list-item
+              @click="setActiveSubModule('SubModuleServiceAdm', 'planned')"
+              class="sub-nav-item"
+              value="plannedServices"
+              :active="currentFilter === 'planned'"
+            >
+              <template v-slot:prepend>
+                <v-icon size="small" class="sub-icon">mdi-calendar-clock</v-icon>
+              </template>
+              <v-list-item-title>планируемые</v-list-item-title>
+            </v-list-item>
+
+            <v-list-item
+              @click="setActiveSubModule('SubModuleServiceAdm', 'deactivated')"
+              class="sub-nav-item"
+              value="deactivatedServices"
+              :active="currentFilter === 'deactivated'"
+            >
+              <template v-slot:prepend>
+                <v-icon size="small" class="sub-icon">mdi-close-circle</v-icon>
+              </template>
+              <v-list-item-title>деактивированные</v-list-item-title>
+            </v-list-item>
+          </v-list-group>
+
+          <v-list-item 
+            @click="setActiveSubModule('SubModuleUserAdm')" 
+            class="nav-item" 
+            prepend-icon="mdi-account" 
+            title="управление пользователями" 
+            value="userAdmin"
+            :active="activeSubModule === 'SubModuleUserAdm'"
           >
-            <v-list-item-title v-if="!drawer" class="hidden-title">управление сервисами</v-list-item-title>
+            <v-list-item-title v-if="!drawer" class="hidden-title">управление пользователями</v-list-item-title>
           </v-list-item>
-        </template>
 
-        <v-list-item
-          @click="setActiveSubModule('SubModuleServiceAdm', 'all')"
-          class="sub-nav-item"
-          value="allServices"
-          :active="currentFilter === 'all'"
-        >
-          <template v-slot:prepend>
-            <v-icon size="small" class="sub-icon">mdi-view-list</v-icon>
-          </template>
-          <v-list-item-title>все сервисы</v-list-item-title>
-        </v-list-item>
+          <v-list-item 
+            @click="setActiveSubModule('SubModuleAppAdm')" 
+            class="nav-item" 
+            prepend-icon="mdi-application" 
+            title="настройки приложения" 
+            value="appAdmin"
+            :active="activeSubModule === 'SubModuleAppAdm'"
+          >
+            <v-list-item-title v-if="!drawer" class="hidden-title">настройки приложения</v-list-item-title>
+          </v-list-item>
 
-        <v-list-item
-          @click="setActiveSubModule('SubModuleServiceAdm', 'active')"
-          class="sub-nav-item"
-          value="activeServices"
-          :active="currentFilter === 'active'"
-        >
-          <template v-slot:prepend>
-            <v-icon size="small" class="sub-icon">mdi-check-circle</v-icon>
-          </template>
-          <v-list-item-title>активные</v-list-item-title>
-        </v-list-item>
-
-        <v-list-item
-          @click="setActiveSubModule('SubModuleServiceAdm', 'planned')"
-          class="sub-nav-item"
-          value="plannedServices"
-          :active="currentFilter === 'planned'"
-        >
-          <template v-slot:prepend>
-            <v-icon size="small" class="sub-icon">mdi-calendar-clock</v-icon>
-          </template>
-          <v-list-item-title>планируемые</v-list-item-title>
-        </v-list-item>
-
-        <v-list-item
-          @click="setActiveSubModule('SubModuleServiceAdm', 'deactivated')"
-          class="sub-nav-item"
-          value="deactivatedServices"
-          :active="currentFilter === 'deactivated'"
-        >
-          <template v-slot:prepend>
-            <v-icon size="small" class="sub-icon">mdi-close-circle</v-icon>
-          </template>
-          <v-list-item-title>деактивированные</v-list-item-title>
-        </v-list-item>
-      </v-list-group>
-
-      <v-list-item 
-        @click="setActiveSubModule('SubModuleUserAdm')" 
-        class="nav-item" 
-        prepend-icon="mdi-account" 
-        title="управление пользователями" 
-        value="userAdmin"
-        :active="activeSubModule === 'SubModuleUserAdm'"
-      >
-        <v-list-item-title v-if="!drawer" class="hidden-title">управление пользователями</v-list-item-title>
-      </v-list-item>
-
-      <v-list-item 
-        @click="setActiveSubModule('SubModuleAppAdm')" 
-        class="nav-item" 
-        prepend-icon="mdi-application" 
-        title="настройки приложения" 
-        value="appAdmin"
-        :active="activeSubModule === 'SubModuleAppAdm'"
-      >
-        <v-list-item-title v-if="!drawer" class="hidden-title">настройки приложения</v-list-item-title>
-      </v-list-item>
-
-      <v-divider class="border-opacity-25"></v-divider>
-    </v-list>
-  </v-navigation-drawer>
-  
-  <v-col cols="11">
-    <component :is="currentSubModule" />
-  </v-col>
-  </v-row>
+          <v-divider class="border-opacity-25"></v-divider>
+        </v-list>
+      </v-navigation-drawer>
+      
+      <v-col cols="11">
+        <component :is="currentSubModule" />
+      </v-col>
+    </v-row>
   </v-container>
 </template>
 
@@ -128,6 +128,7 @@ import { useAdmpanStore } from '@/state/admpanstate';
 const SubModuleServiceAdm = defineAsyncComponent(() => import('./SubModuleServiceAdm.vue'));
 const SubModuleUserAdm = defineAsyncComponent(() => import('./SubModuleUserAdm.vue'));
 const SubModuleAppAdm = defineAsyncComponent(() => import('./SubModuleAppAdm.vue'));
+const SubModuleNewService = defineAsyncComponent(() => import('./SubModuleNewService.vue'));
 
 export default {
   name: 'ModuleAdmpan',
@@ -135,6 +136,7 @@ export default {
     SubModuleServiceAdm,
     SubModuleUserAdm,
     SubModuleAppAdm,
+    SubModuleNewService,
   },
   setup() {
     const admpanStore = useAdmpanStore();
@@ -152,6 +154,8 @@ export default {
           return SubModuleUserAdm;
         case 'SubModuleAppAdm':
           return SubModuleAppAdm;
+        case 'SubModuleNewService':
+          return SubModuleNewService;
         default:
           return SubModuleServiceAdm;
       }
