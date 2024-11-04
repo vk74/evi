@@ -39,7 +39,7 @@
             <v-icon>mdi-login</v-icon>
           </v-btn>
         </template>
-        <span>{{ translations[userStore.language].navigation.tooltips.login }}</span>
+        <span>{{ $t('navigation.tooltips.login') }}</span>
       </v-tooltip>
 
       <!-- кнопка регистрации -->
@@ -49,7 +49,7 @@
             <v-icon>mdi-account-plus</v-icon>
           </v-btn>
         </template>
-        <span>{{ translations[userStore.language].navigation.tooltips.register }}</span>
+        <span>{{ $t('navigation.tooltips.register') }}</span>
       </v-tooltip>
 
       <!-- кнопка меню для системных команд: выход, смена пароля и пр. -->
@@ -62,13 +62,13 @@
 
         <v-list>
           <v-list-item>
-            <v-list-item-title>{{ translations[userStore.language].navigation.systemMenu.test }}</v-list-item-title>
+            <v-list-item-title>{{ $t('navigation.systemMenu.test') }}</v-list-item-title>
           </v-list-item>
           <v-list-item @click="isChangePassModalVisible = true">
-            <v-list-item-title>{{ translations[userStore.language].navigation.systemMenu.changePassword }}</v-list-item-title>
+            <v-list-item-title>{{ $t('navigation.systemMenu.changePassword') }}</v-list-item-title>
           </v-list-item>
           <v-list-item @click="logout" v-if="isLoggedIn">
-            <v-list-item-title>{{ translations[userStore.language].navigation.systemMenu.logout }}</v-list-item-title>
+            <v-list-item-title>{{ $t('navigation.systemMenu.logout') }}</v-list-item-title>
           </v-list-item>
         </v-list>
       </v-menu>
@@ -89,33 +89,33 @@
         <v-list-item 
           @click="setActiveModule('Catalog')" 
           prepend-icon="mdi-view-dashboard" 
-          :title="translations[userStore.language].navigation.drawer.catalog" 
+          :title="$t('navigation.drawer.catalog')" 
           value="catalog">
         </v-list-item>
         <v-list-item 
           @click="setActiveModule('Work')" 
           prepend-icon="mdi-file-edit-outline" 
-          :title="translations[userStore.language].navigation.drawer.workModule" 
+          :title="$t('navigation.drawer.workModule')" 
           value="workItems">
         </v-list-item>
         <v-list-item 
           @click="setActiveModule('AR')" 
           prepend-icon="mdi-chart-timeline" 
-          :title="translations[userStore.language].navigation.drawer.reports" 
+          :title="$t('navigation.drawer.reports')" 
           value="reports">
         </v-list-item>
         <v-divider class="border-opacity-25"></v-divider><br>
         <v-list-item 
           @click="setActiveModule('Admpan')" 
           prepend-icon="mdi-application-cog" 
-          :title="translations[userStore.language].navigation.drawer.adminModule" 
+          :title="$t('navigation.drawer.adminModule')" 
           value="adminPanel">
         </v-list-item>
         <v-divider class="border-opacity-25"></v-divider><br>
         <v-list-item 
           @click="setActiveModule('XLS')" 
           prepend-icon="mdi-microsoft-excel" 
-          :title="translations[userStore.language].navigation.drawer.xlsPrototyping" 
+          :title="$t('navigation.drawer.xlsPrototyping')" 
           value="xlsPrototyping">
         </v-list-item>
         <v-divider class="border-opacity-25"></v-divider>
@@ -126,7 +126,7 @@
           <v-list-item 
             @click="setActiveModule('Help')" 
             prepend-icon="mdi-help-circle-outline" 
-            :title="translations[userStore.language].navigation.drawer.helpSupport" 
+            :title="$t('navigation.drawer.helpSupport')" 
             value="help">
           </v-list-item>
         </v-list>
@@ -152,9 +152,8 @@
 <script>
 import { ref, computed, onMounted } from 'vue';
 import { useUserStore } from './state/userstate';
+import { useI18n } from 'vue-i18n';
 import { startSessionTimers } from './services/sessionServices';
-import ruTranslations from './AppTranslationRU.json';
-import enTranslations from './AppTranslationEN.json';
 import ModuleCatalog from './components/catalog/ModuleCatalog.vue';
 import ModuleWork from './components/work/ModuleWork.vue';
 import ModuleAR from './components/ar/ModuleAR.vue';
@@ -186,17 +185,13 @@ export default {
   },
   setup() {
     const userStore = useUserStore();
+    const i18n = useI18n();
     const drawer = ref(true);
     const isChangePassModalVisible = ref(false);
     const isLoginDialogVisible = ref(false);
 
     const isLoggedIn = computed(() => userStore.isLoggedIn);
     const activeModule = computed(() => userStore.activeModule);
-    
-    const translations = {
-      ru: ruTranslations,
-      en: enTranslations
-    };
 
     const setActiveModule = (module) => {
       userStore.setActiveModule(module);
@@ -207,11 +202,16 @@ export default {
       setActiveModule('Catalog');
     };
 
-    const changeLanguage = (lang) => {
+       // Модифицируем функцию смены языка
+       const changeLanguage = (lang) => {
       userStore.setLanguage(lang);
+      i18n.locale.value = lang; // Устанавливаем локаль i18n здесь
     };
 
     onMounted(() => {
+      // Синхронизируем начальный язык при монтировании
+      i18n.locale.value = userStore.language;
+      
       if (isLoggedIn.value) {
         console.log('App mounted. User is logged in. Starting session timers...');
         startSessionTimers();
@@ -225,7 +225,6 @@ export default {
       isLoggedIn,
       activeModule,
       userStore,
-      translations,
       setActiveModule,
       logout,
       changeLanguage,

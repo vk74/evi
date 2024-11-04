@@ -31,11 +31,13 @@
                 v-bind="props"
                 class="nav-item"
                 prepend-icon="mdi-room-service"
-                title="управление сервисами"
+                :title="$t('admpan.nav.services.main')"
                 :active="activeSubModule === 'SubModuleServiceAdm'"
                 @click="setActiveSubModule('SubModuleServiceAdm', 'all')"
               >
-                <v-list-item-title v-if="!drawer" class="hidden-title">управление сервисами</v-list-item-title>
+                <v-list-item-title v-if="!drawer" class="hidden-title">
+                  {{ $t('admpan.nav.services.main') }}
+                </v-list-item-title>
               </v-list-item>
             </template>
 
@@ -48,7 +50,7 @@
               <template v-slot:prepend>
                 <v-icon size="small" class="sub-icon">mdi-view-list</v-icon>
               </template>
-              <v-list-item-title>все сервисы</v-list-item-title>
+              <v-list-item-title>{{ $t('admpan.nav.services.items.all') }}</v-list-item-title>
             </v-list-item>
 
             <v-list-item
@@ -60,7 +62,7 @@
               <template v-slot:prepend>
                 <v-icon size="small" class="sub-icon">mdi-check-circle</v-icon>
               </template>
-              <v-list-item-title>активные</v-list-item-title>
+              <v-list-item-title>{{ $t('admpan.nav.services.items.active') }}</v-list-item-title>
             </v-list-item>
 
             <v-list-item
@@ -72,7 +74,7 @@
               <template v-slot:prepend>
                 <v-icon size="small" class="sub-icon">mdi-calendar-clock</v-icon>
               </template>
-              <v-list-item-title>планируемые</v-list-item-title>
+              <v-list-item-title>{{ $t('admpan.nav.services.items.planned') }}</v-list-item-title>
             </v-list-item>
 
             <v-list-item
@@ -84,7 +86,7 @@
               <template v-slot:prepend>
                 <v-icon size="small" class="sub-icon">mdi-close-circle</v-icon>
               </template>
-              <v-list-item-title>деактивированные</v-list-item-title>
+              <v-list-item-title>{{ $t('admpan.nav.services.items.deactivated') }}</v-list-item-title>
             </v-list-item>
           </v-list-group>
 
@@ -92,22 +94,26 @@
             @click="setActiveSubModule('SubModuleUserAdm')" 
             class="nav-item" 
             prepend-icon="mdi-account" 
-            title="управление пользователями" 
+            :title="$t('admpan.nav.users.main')"
             value="userAdmin"
             :active="activeSubModule === 'SubModuleUserAdm'"
           >
-            <v-list-item-title v-if="!drawer" class="hidden-title">управление пользователями</v-list-item-title>
+            <v-list-item-title v-if="!drawer" class="hidden-title">
+              {{ $t('admpan.nav.users.main') }}
+            </v-list-item-title>
           </v-list-item>
 
           <v-list-item 
             @click="setActiveSubModule('SubModuleAppAdm')" 
             class="nav-item" 
             prepend-icon="mdi-application" 
-            title="настройки приложения" 
+            :title="$t('admpan.nav.settings.main')"
             value="appAdmin"
             :active="activeSubModule === 'SubModuleAppAdm'"
           >
-            <v-list-item-title v-if="!drawer" class="hidden-title">настройки приложения</v-list-item-title>
+            <v-list-item-title v-if="!drawer" class="hidden-title">
+              {{ $t('admpan.nav.settings.main') }}
+            </v-list-item-title>
           </v-list-item>
 
           <v-divider class="border-opacity-25"></v-divider>
@@ -124,6 +130,7 @@
 <script>
 import { ref, computed, defineAsyncComponent } from 'vue';
 import { useAdmpanStore } from '@/state/admpanstate';
+import { useI18n } from 'vue-i18n';
 
 const SubModuleServiceAdm = defineAsyncComponent(() => import('./SubModuleServiceAdm.vue'));
 const SubModuleUserAdm = defineAsyncComponent(() => import('./SubModuleUserAdm.vue'));
@@ -140,6 +147,7 @@ export default {
   },
   setup() {
     const admpanStore = useAdmpanStore();
+    const { t } = useI18n();
     const drawer = ref(true);
     const currentFilter = ref('all');
 
@@ -179,7 +187,8 @@ export default {
       drawer,
       isPinned,
       toggleDrawerPin,
-      currentFilter
+      currentFilter,
+      t
     };
   },
 };

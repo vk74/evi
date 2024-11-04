@@ -1,0 +1,21 @@
+{
+  "admpan": {
+    "nav": {
+      "services": {
+        "main": "service management",
+        "items": {
+          "all": "all services",
+          "active": "active",
+          "planned": "planned",
+          "deactivated": "deactivated"
+        }
+      },
+      "users": {
+        "main": "user management"
+      },
+      "settings": {
+        "main": "application settings"
+      }
+    }
+  }
+}

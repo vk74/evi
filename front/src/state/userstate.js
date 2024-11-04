@@ -1,6 +1,6 @@
 // /src/state/userstate.js хранилище для отслеживания состояния пользователя
-//import axios from 'axios';
 import { defineStore } from 'pinia';
+
 
 export const useUserStore = defineStore('user', {
   state: () => ({
@@ -13,7 +13,7 @@ export const useUserStore = defineStore('user', {
     jwtId: '', // Уникальный идентификатор JWT
     tokenExpires: '', // Время истечения токена
     activeModule: 'Catalog', // активный модуль в main work area
-    language: 'ru' // Язык интерфейса, по умолчанию русский
+    language: localStorage.getItem('userLanguage') || 'ru' // Язык интерфейса, по умолчанию русский
   }),
 
   actions: {
@@ -75,13 +75,6 @@ export const useUserStore = defineStore('user', {
 
     updateJwt(jwt) {
       this.setJwt(jwt);
-      // здесь можно декодировать JWT и обновить остальные поля состояния
-      // например, используя библиотеку jwt-decode (npm install jwt-decode)
-      // const decoded = jwtDecode(jwt);
-      // this.setIssuer(decoded.iss);
-      // this.setAudience(decoded.aud);
-      // this.setIssuedAt(decoded.iat);
-      // this.setJwtId(decoded.jti);
     },
 
     updateLoggedIn(isLoggedIn) {
