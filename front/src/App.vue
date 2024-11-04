@@ -19,11 +19,11 @@
         </template>
 
         <v-list>
-          <v-list-item>
-            <v-list-item-title>english</v-list-item-title>
+          <v-list-item @click="changeLanguage('en')" :active="userStore.language === 'en'">
+            <v-list-item-title>English</v-list-item-title>
           </v-list-item>
-          <v-list-item>
-            <v-list-item-title>русский</v-list-item-title>
+          <v-list-item @click="changeLanguage('ru')" :active="userStore.language === 'ru'">
+            <v-list-item-title>Русский</v-list-item-title>
           </v-list-item>
         </v-list>
       </v-menu>
@@ -39,7 +39,7 @@
             <v-icon>mdi-login</v-icon>
           </v-btn>
         </template>
-        <span>вход для зарегистрированных пользователей</span>
+        <span>{{ translations[userStore.language].navigation.tooltips.login }}</span>
       </v-tooltip>
 
       <!-- кнопка регистрации -->
@@ -49,7 +49,7 @@
             <v-icon>mdi-account-plus</v-icon>
           </v-btn>
         </template>
-        <span>регистрация учетной записи</span>
+        <span>{{ translations[userStore.language].navigation.tooltips.register }}</span>
       </v-tooltip>
 
       <!-- кнопка меню для системных команд: выход, смена пароля и пр. -->
@@ -62,13 +62,13 @@
 
         <v-list>
           <v-list-item>
-            <v-list-item-title>тестовая команда</v-list-item-title>
+            <v-list-item-title>{{ translations[userStore.language].navigation.systemMenu.test }}</v-list-item-title>
           </v-list-item>
           <v-list-item @click="isChangePassModalVisible = true">
-            <v-list-item-title>изменить пароль</v-list-item-title>
+            <v-list-item-title>{{ translations[userStore.language].navigation.systemMenu.changePassword }}</v-list-item-title>
           </v-list-item>
           <v-list-item @click="logout" v-if="isLoggedIn">
-            <v-list-item-title>выйти</v-list-item-title>
+            <v-list-item-title>{{ translations[userStore.language].navigation.systemMenu.logout }}</v-list-item-title>
           </v-list-item>
         </v-list>
       </v-menu>
@@ -83,43 +83,69 @@
       </template>
     </v-app-bar>
 
-      <!-- Navigation Drawer   -->
-      <v-navigation-drawer v-model="drawer" app expand-on-hover rail elevation="5">
-        <v-list density="compact" nav>
-          <v-list-item @click="setActiveModule('Catalog')" prepend-icon="mdi-view-dashboard" title="catalog" value="catalog">
+    <!-- Navigation Drawer -->
+    <v-navigation-drawer v-model="drawer" app expand-on-hover rail elevation="5">
+      <v-list density="compact" nav>
+        <v-list-item 
+          @click="setActiveModule('Catalog')" 
+          prepend-icon="mdi-view-dashboard" 
+          :title="translations[userStore.language].navigation.drawer.catalog" 
+          value="catalog">
+        </v-list-item>
+        <v-list-item 
+          @click="setActiveModule('Work')" 
+          prepend-icon="mdi-file-edit-outline" 
+          :title="translations[userStore.language].navigation.drawer.workModule" 
+          value="workItems">
+        </v-list-item>
+        <v-list-item 
+          @click="setActiveModule('AR')" 
+          prepend-icon="mdi-chart-timeline" 
+          :title="translations[userStore.language].navigation.drawer.reports" 
+          value="reports">
+        </v-list-item>
+        <v-divider class="border-opacity-25"></v-divider><br>
+        <v-list-item 
+          @click="setActiveModule('Admpan')" 
+          prepend-icon="mdi-application-cog" 
+          :title="translations[userStore.language].navigation.drawer.adminModule" 
+          value="adminPanel">
+        </v-list-item>
+        <v-divider class="border-opacity-25"></v-divider><br>
+        <v-list-item 
+          @click="setActiveModule('XLS')" 
+          prepend-icon="mdi-microsoft-excel" 
+          :title="translations[userStore.language].navigation.drawer.xlsPrototyping" 
+          value="xlsPrototyping">
+        </v-list-item>
+        <v-divider class="border-opacity-25"></v-divider>
+      </v-list>
+      <!-- Settings in the bottom -->
+      <template v-slot:append>
+        <v-list>
+          <v-list-item 
+            @click="setActiveModule('Help')" 
+            prepend-icon="mdi-help-circle-outline" 
+            :title="translations[userStore.language].navigation.drawer.helpSupport" 
+            value="help">
           </v-list-item>
-          <v-list-item @click="setActiveModule('Work')" prepend-icon="mdi-file-edit-outline" title="work items" value="workItems"></v-list-item>
-          <v-list-item @click="setActiveModule('AR')" prepend-icon="mdi-chart-timeline" title="reports" value="reports"></v-list-item>
-          <v-divider class="border-opacity-25"></v-divider><br>
-          <v-list-item @click="setActiveModule('Admpan')" prepend-icon="mdi-application-cog" title="admin panel" value="adminPanel"></v-list-item>
-          <v-divider class="border-opacity-25"></v-divider><br>
-          <v-list-item @click="setActiveModule('XLS')" prepend-icon="mdi-microsoft-excel" title="xls prototyping" value="xlsPrototyping"></v-list-item>
-          <v-divider class="border-opacity-25"></v-divider>
         </v-list>
-        <!-- Settings in the bottom -->
-        <template v-slot:append>
-          <v-list>
-            <v-list-item @click="setActiveModule('Account')" prepend-icon="mdi-account" title="account" value="account" v-if="isLoggedIn"></v-list-item>
-            <v-divider class="border-opacity-25"></v-divider>
-            <v-list-item @click="setActiveModule('Settings')" prepend-icon="mdi-cog" title="settings" value="settings" v-if="isLoggedIn"></v-list-item>
-            <v-list-item @click="setActiveModule('Help')" prepend-icon="mdi-help-circle-outline" title="help & support" value="help"></v-list-item>
-          </v-list>
-        </template>
-      </v-navigation-drawer>
-  
-      <!-- Main Work Area  -->
-      <v-main>
-        <ModuleLogin v-if="activeModule === 'Login'" />
-        <ModuleCatalog v-if="activeModule === 'Catalog'" />
-        <ModuleWork v-if="activeModule === 'Work'" />
-        <ModuleAR v-if="activeModule === 'AR'" />
-        <ModuleAdmpan v-if="activeModule === 'Admpan'" />
-        <ModuleXLS v-if="activeModule === 'XLS'" />
-        <ModuleAccount v-if="activeModule === 'Account'" />
-        <ModuleSettings v-if="activeModule === 'Settings'" />
-        <ModuleHelp v-if="activeModule === 'Help'" />
-        <ModuleNewUserRegistration v-if="activeModule === 'NewUserRegistration'" />
-      </v-main>
+      </template>
+    </v-navigation-drawer>
+
+    <!-- Main Work Area  -->
+    <v-main>
+      <ModuleLogin v-if="activeModule === 'Login'" />
+      <ModuleCatalog v-if="activeModule === 'Catalog'" />
+      <ModuleWork v-if="activeModule === 'Work'" />
+      <ModuleAR v-if="activeModule === 'AR'" />
+      <ModuleAdmpan v-if="activeModule === 'Admpan'" />
+      <ModuleXLS v-if="activeModule === 'XLS'" />
+      <ModuleAccount v-if="activeModule === 'Account'" />
+      <ModuleSettings v-if="activeModule === 'Settings'" />
+      <ModuleHelp v-if="activeModule === 'Help'" />
+      <ModuleNewUserRegistration v-if="activeModule === 'NewUserRegistration'" />
+    </v-main>
   </v-app>
 </template>
 
@@ -127,6 +153,8 @@
 import { ref, computed, onMounted } from 'vue';
 import { useUserStore } from './state/userstate';
 import { startSessionTimers } from './services/sessionServices';
+import ruTranslations from './AppTranslationRU.json';
+import enTranslations from './AppTranslationEN.json';
 import ModuleCatalog from './components/catalog/ModuleCatalog.vue';
 import ModuleWork from './components/work/ModuleWork.vue';
 import ModuleAR from './components/ar/ModuleAR.vue';
@@ -164,6 +192,11 @@ export default {
 
     const isLoggedIn = computed(() => userStore.isLoggedIn);
     const activeModule = computed(() => userStore.activeModule);
+    
+    const translations = {
+      ru: ruTranslations,
+      en: enTranslations
+    };
 
     const setActiveModule = (module) => {
       userStore.setActiveModule(module);
@@ -172,6 +205,10 @@ export default {
     const logout = () => {
       userStore.userLogoff();
       setActiveModule('Catalog');
+    };
+
+    const changeLanguage = (lang) => {
+      userStore.setLanguage(lang);
     };
 
     onMounted(() => {
@@ -187,8 +224,11 @@ export default {
       isLoginDialogVisible,
       isLoggedIn,
       activeModule,
+      userStore,
+      translations,
       setActiveModule,
       logout,
+      changeLanguage,
       showLoginDialog() {
         isLoginDialogVisible.value = true;
       },

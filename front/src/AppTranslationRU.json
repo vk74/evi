@@ -1,0 +1,21 @@
+{
+    "navigation": {
+      "drawer": {
+        "catalog": "каталог",
+        "workModule": "рабочий модуль",
+        "reports": "отчеты",
+        "adminModule": "модуль управления",
+        "xlsPrototyping": "прототипирование",
+        "helpSupport": "помощь и поддержка"
+      },
+      "tooltips": {
+        "login": "вход для зарегистрированных пользователей",
+        "register": "регистрация учетной записи"
+      },
+      "systemMenu": {
+        "test": "тестовая команда",
+        "changePassword": "изменить пароль",
+        "logout": "выйти"
+      }
+    }
+  }
