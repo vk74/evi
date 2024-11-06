@@ -5,7 +5,7 @@
           <v-img gradient="to top right, rgba(15,70,150,.85), rgba(100,180,170,.6)"></v-img>
         </template>
         <v-spacer></v-spacer>
-        <v-toolbar-title class="title-padding" style="color: white; text-align: right; margin-right: 20px;">создание нового сервиса</v-toolbar-title>
+        <v-toolbar-title class="title-padding" style="color: white; text-align: right; margin-right: 20px;">форма для создания нового сервиса</v-toolbar-title>
       </v-app-bar>
       <v-row>
         <p>Форма создания нового сервиса</p>
