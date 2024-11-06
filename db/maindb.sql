@@ -9,6 +9,62 @@ CREATE EXTENSION IF NOT EXISTS "pgcrypto";
 
 ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT SELECT, INSERT, UPDATE, DELETE ON TABLES TO config_user;
 
+-- -- (user) groups table data
+CREATE TYPE group_type AS ENUM (
+    'support',      -- группы поддержки
+    'development',  -- группы разработки
+    'business',     -- бизнес-группы
+    'admin',        -- административные группы
+    'security'      -- группы безопасности
+);
+
+-- Создаем enum для статуса группы
+CREATE TYPE group_status AS ENUM (
+    'active',
+    'inactive',
+    'archived'
+);
+
+-- Создаем таблицу groups
+CREATE TABLE groups (
+    -- Основные идентификаторы
+    group_id UUID PRIMARY KEY,
+    group_name VARCHAR(100) NOT NULL,
+    group_display_name VARCHAR(150),
+    
+    -- Характеристики группы
+    group_type group_type NOT NULL DEFAULT 'business',
+    group_status group_status NOT NULL DEFAULT 'active',
+    group_description TEXT,
+    
+    -- Ответственные лица
+    group_owner UUID NOT NULL REFERENCES users(user_id),
+    group_backup_owner UUID REFERENCES users(user_id),
+    
+    -- Контактная информация
+    group_email VARCHAR(255) CHECK (
+    group_email ~* '^[A-Za-z0-9._%+-]+@[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?(?:\.[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?)*\.[A-Za-z]{2,}$'
+    ),
+    
+    -- Дополнительные параметры
+    group_max_members SMALLINT CHECK (group_max_members > 0),
+    
+    -- Метаданные
+    group_created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    group_created_by UUID NOT NULL REFERENCES users(user_id),
+    group_modified_at TIMESTAMPTZ,
+    group_modified_by UUID REFERENCES users(user_id),
+    
+    -- Ограничения
+    CONSTRAINT unique_group_name UNIQUE (group_name),
+    CONSTRAINT check_backup_owner CHECK (group_owner != group_backup_owner)
+);
+
+-- Создаем индексы
+--?
+
+
+
 -- -- service related data
 CREATE TYPE service_status AS ENUM (
     'drafted',
@@ -32,18 +88,13 @@ CREATE TYPE service_priority AS ENUM (
 
 CREATE TYPE service_visibility AS ENUM (
     'public',
-    'private',
-    'restricted'
+    'private'
 );
 
 CREATE TABLE services (
     -- Основные идентификаторы
     service_id UUID PRIMARY KEY,
     service_name VARCHAR(250) NOT NULL,
-    service_status service_status NOT NULL DEFAULT 'drafted',
-    service_visibility service_visibility NOT NULL DEFAULT 'private',
-    service_purpose VARCHAR(250) NOT NULL,
-    service_comments VARCHAR(250),
     
     -- Ответственные лица и группы
     service_support_tier1 UUID REFERENCES groups(group_id),
@@ -56,15 +107,14 @@ CREATE TABLE services (
     
     -- Основные характеристики сервиса
     service_priority service_priority NOT NULL DEFAULT 'low',
-    service_availability service_availability NOT NULL DEFAULT '8x5',
+    service_description_short VARCHAR(250),
+    service_description_long TEXT,
+    service_status service_status NOT NULL DEFAULT 'drafted',
+    service_visibility service_visibility NOT NULL DEFAULT 'private',
+    service_purpose VARCHAR(250),
+    service_comments VARCHAR(250),
     
-    -- Технические детали
-    service_url VARCHAR(500),
-    service_documentation_url VARCHAR(500),
-    service_support_instructions TEXT,
-    service_recovery_instructions TEXT,
-    
-    -- Основные даты
+    --  Метаданные
     service_created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
     service_created_by UUID NOT NULL REFERENCES users(user_id),
     service_modified_at TIMESTAMPTZ,
@@ -75,9 +125,6 @@ CREATE TABLE services (
     service_tile_height_closed SMALLINT CHECK (service_tile_height_closed > 0),
     service_tile_width_open SMALLINT CHECK (service_tile_width_open > 0),
     service_tile_height_open SMALLINT CHECK (service_tile_height_open > 0),
-    service_description_short VARCHAR(250),
-    service_description_long TEXT,
-    service_icon_path VARCHAR(255) NOT NULL DEFAULT '/public/icons/default_service_icon.png',
     
     -- Ограничения
     CONSTRAINT unique_service_name UNIQUE (service_name)

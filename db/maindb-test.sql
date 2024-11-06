@@ -1,3 +1,60 @@
+-- -- (user) groups table data
+CREATE TYPE group_type AS ENUM (
+    'support',      -- группы поддержки
+    'development',  -- группы разработки
+    'business',     -- бизнес-группы
+    'admin',        -- административные группы
+    'security'      -- группы безопасности
+);
+
+-- Создаем enum для статуса группы
+CREATE TYPE group_status AS ENUM (
+    'active',       -- активная группа
+    'inactive',     -- неактивная группа
+    'archived'      -- архивная группа
+);
+
+-- Создаем таблицу groups
+CREATE TABLE groups (
+    -- Основные идентификаторы
+    group_id UUID PRIMARY KEY,
+    group_name VARCHAR(100) NOT NULL,
+    group_display_name VARCHAR(150),
+    
+    -- Характеристики группы
+    group_type group_type NOT NULL DEFAULT 'business',
+    group_status group_status NOT NULL DEFAULT 'active',
+    group_description TEXT,
+    
+    -- Ответственные лица
+    group_owner UUID NOT NULL REFERENCES users(user_id),
+    group_backup_owner UUID REFERENCES users(user_id),
+    
+    -- Контактная информация
+    group_email VARCHAR(255),
+    
+    -- Дополнительные параметры
+    group_max_members SMALLINT,
+    
+    -- Метаданные
+    group_created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    group_created_by UUID NOT NULL REFERENCES users(user_id),
+    group_modified_at TIMESTAMPTZ,
+    group_modified_by UUID REFERENCES users(user_id),
+    
+    -- Ограничения
+    CONSTRAINT unique_group_name UNIQUE (group_name),
+    CONSTRAINT check_backup_owner CHECK (group_owner != group_backup_owner)
+);
+
+-- Создаем индексы
+CREATE INDEX idx_groups_type ON groups(group_type);
+CREATE INDEX idx_groups_status ON groups(group_status);
+CREATE INDEX idx_groups_owner ON groups(group_owner);
+
+
+-- -- service related data
+
 CREATE TYPE service_status AS ENUM (
     'drafted',
     'being_developed',
@@ -22,6 +79,23 @@ CREATE TYPE service_visibility AS ENUM (
     'public',
     'private',
     'restricted'
+);
+
+CREATE TYPE service_availability AS ENUM (
+    '24x7x365',
+    '24x7',
+    '24x6',
+    '24x5',
+    '16x7',
+    '16x6',
+    '16x5',
+    '12x7',
+    '12x6',
+    '12x5',
+    '8x7',
+    '8x6',
+    '8x5',
+    'custom'
 );
 
 CREATE TABLE services (
