@@ -7,11 +7,20 @@ CREATE TYPE group_type AS ENUM (
     'security'      -- группы безопасности
 );
 
+-- -- (user) groups table data
+CREATE TYPE group_type AS ENUM (
+    'support',      -- группы поддержки
+    'development',  -- группы разработки
+    'users',        -- группы пользователей, используется по умолчанию
+    'admin',        -- административные группы
+    'security'      -- группы безопасности
+);
+
 -- Создаем enum для статуса группы
 CREATE TYPE group_status AS ENUM (
-    'active',       -- активная группа
-    'inactive',     -- неактивная группа
-    'archived'      -- архивная группа
+    'active',
+    'inactive',
+    'archived'
 );
 
 -- Создаем таблицу groups
@@ -22,7 +31,7 @@ CREATE TABLE groups (
     group_display_name VARCHAR(150),
     
     -- Характеристики группы
-    group_type group_type NOT NULL DEFAULT 'business',
+    group_type group_type NOT NULL DEFAULT 'users',
     group_status group_status NOT NULL DEFAULT 'active',
     group_description TEXT,
     
@@ -31,10 +40,12 @@ CREATE TABLE groups (
     group_backup_owner UUID REFERENCES users(user_id),
     
     -- Контактная информация
-    group_email VARCHAR(255),
+    group_email VARCHAR(255) CHECK (
+        group_email ~* '^[A-Za-z0-9._%+-]+@[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?(?:\.[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?)*\.[A-Za-z]{2,6}$'
+    ),
     
     -- Дополнительные параметры
-    group_max_members SMALLINT,
+    group_max_members SMALLINT CHECK (group_max_members > 0),
     
     -- Метаданные
     group_created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -51,6 +62,75 @@ CREATE TABLE groups (
 CREATE INDEX idx_groups_type ON groups(group_type);
 CREATE INDEX idx_groups_status ON groups(group_status);
 CREATE INDEX idx_groups_owner ON groups(group_owner);
+
+
+-- -- service related data
+CREATE TYPE service_status AS ENUM (
+    'drafted',
+    'being_developed',
+    'being_tested',
+    'non_compliant',
+    'pending_approval',
+    'in_production',
+    'under_maintenance',
+    'suspended',
+    'being_upgraded',
+    'discontinued'
+);
+
+CREATE TYPE service_priority AS ENUM (
+    'critical',
+    'high',
+    'medium',
+    'low'
+);
+
+CREATE TYPE service_visibility AS ENUM (
+    'public',
+    'private'
+);
+
+CREATE TABLE services (
+    -- Основные идентификаторы
+    service_id UUID PRIMARY KEY,
+    service_name VARCHAR(250) NOT NULL,
+    
+    -- Ответственные лица и группы
+    service_support_tier1 UUID REFERENCES groups(group_id),
+    service_support_tier2 UUID REFERENCES groups(group_id),
+    service_support_tier3 UUID REFERENCES groups(group_id),
+    service_owner UUID REFERENCES users(user_id),
+    service_backup_owner UUID REFERENCES users(user_id),
+    service_technical_owner UUID REFERENCES users(user_id),
+    service_dispatcher UUID REFERENCES users(user_id),
+    
+    -- Основные характеристики сервиса
+    service_priority service_priority NOT NULL DEFAULT 'low',
+    service_description_short VARCHAR(250),
+    service_description_long TEXT,
+    service_status service_status NOT NULL DEFAULT 'drafted',
+    service_visibility service_visibility NOT NULL DEFAULT 'private',
+    service_purpose VARCHAR(250),
+    service_comments VARCHAR(250),
+    
+    --  Метаданные
+    service_created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    service_created_by UUID NOT NULL REFERENCES users(user_id),
+    service_modified_at TIMESTAMPTZ,
+    service_modified_by UUID REFERENCES users(user_id),
+    
+    -- UI характеристики
+    service_tile_width_closed SMALLINT CHECK (service_tile_width_closed > 0),
+    service_tile_height_closed SMALLINT CHECK (service_tile_height_closed > 0),
+    service_tile_width_open SMALLINT CHECK (service_tile_width_open > 0),
+    service_tile_height_open SMALLINT CHECK (service_tile_height_open > 0),
+    
+    -- Ограничения
+    CONSTRAINT unique_service_name UNIQUE (service_name)
+);
+
+-- Индекс для оптимизации запросов по статусу
+CREATE INDEX idx_service_status ON services(service_status);
 
 
 -- -- service related data

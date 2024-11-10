@@ -11,58 +11,54 @@ ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT SELECT, INSERT, UPDATE, DELETE O
 
 -- -- (user) groups table data
 CREATE TYPE group_type AS ENUM (
-    'support',      -- группы поддержки
-    'development',  -- группы разработки
-    'business',     -- бизнес-группы
-    'admin',        -- административные группы
-    'security'      -- группы безопасности
+    'support',    -- группы поддержки
+    'development', -- группы разработки
+    'users',      -- группы пользователей, используется по умолчанию
+    'admin',      -- административные группы
+    'security'    -- группы безопасности
 );
 
--- Создаем enum для статуса группы
 CREATE TYPE group_status AS ENUM (
     'active',
     'inactive',
     'archived'
 );
 
--- Создаем таблицу groups
+-- Основная таблица, используется для авторизации
 CREATE TABLE groups (
-    -- Основные идентификаторы
     group_id UUID PRIMARY KEY,
     group_name VARCHAR(100) NOT NULL,
-    group_display_name VARCHAR(150),
-    
-    -- Характеристики группы
-    group_type group_type NOT NULL DEFAULT 'business',
+    group_type group_type NOT NULL DEFAULT 'users',
     group_status group_status NOT NULL DEFAULT 'active',
+    CONSTRAINT unique_group_name UNIQUE (group_name)
+);
+
+-- Таблица с расширенной информацией о группах
+CREATE TABLE group_details (
+    group_id UUID PRIMARY KEY REFERENCES groups(group_id) ON DELETE CASCADE,
+    group_display_name VARCHAR(150),
     group_description TEXT,
-    
     -- Ответственные лица
     group_owner UUID NOT NULL REFERENCES users(user_id),
     group_backup_owner UUID REFERENCES users(user_id),
-    
     -- Контактная информация
     group_email VARCHAR(255) CHECK (
         group_email ~* '^[A-Za-z0-9._%+-]+@[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?(?:\.[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?)*\.[A-Za-z]{2,6}$'
     ),
-    
     -- Дополнительные параметры
     group_max_members SMALLINT CHECK (group_max_members > 0),
-    
     -- Метаданные
     group_created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
     group_created_by UUID NOT NULL REFERENCES users(user_id),
     group_modified_at TIMESTAMPTZ,
     group_modified_by UUID REFERENCES users(user_id),
-    
     -- Ограничения
-    CONSTRAINT unique_group_name UNIQUE (group_name),
     CONSTRAINT check_backup_owner CHECK (group_owner != group_backup_owner)
 );
 
+
 -- Создаем индексы
 --?
-
 
 
 -- -- service related data
@@ -91,12 +87,30 @@ CREATE TYPE service_visibility AS ENUM (
     'private'
 );
 
+-- Основная таблица services для каталога и авторизации
 CREATE TABLE services (
     -- Основные идентификаторы
     service_id UUID PRIMARY KEY,
     service_name VARCHAR(250) NOT NULL,
-    
-    -- Ответственные лица и группы
+    -- Поля для отображения в каталоге
+    service_description_short VARCHAR(250),
+    service_visibility service_visibility NOT NULL DEFAULT 'private',
+    -- UI характеристики для каталога
+    service_tile_width_closed SMALLINT CHECK (service_tile_width_closed > 0),
+    service_tile_height_closed SMALLINT CHECK (service_tile_height_closed > 0),
+    service_tile_width_open SMALLINT CHECK (service_tile_width_open > 0),
+    service_tile_height_open SMALLINT CHECK (service_tile_height_open > 0),
+    -- Группы для авторизации
+    service_users_group UUID REFERENCES groups(group_id), 
+    service_status service_status NOT NULL DEFAULT 'drafted',
+    -- Ограничения
+    CONSTRAINT unique_service_name UNIQUE (service_name)
+);
+
+-- Расширенная информация о сервисах
+CREATE TABLE service_details (
+    service_id UUID PRIMARY KEY REFERENCES services(service_id) ON DELETE CASCADE,
+    -- Ответственные лица и группы поддержки
     service_support_tier1 UUID REFERENCES groups(group_id),
     service_support_tier2 UUID REFERENCES groups(group_id),
     service_support_tier3 UUID REFERENCES groups(group_id),
@@ -104,34 +118,21 @@ CREATE TABLE services (
     service_backup_owner UUID REFERENCES users(user_id),
     service_technical_owner UUID REFERENCES users(user_id),
     service_dispatcher UUID REFERENCES users(user_id),
-    
-    -- Основные характеристики сервиса
+    -- Дополнительные характеристики
     service_priority service_priority NOT NULL DEFAULT 'low',
-    service_description_short VARCHAR(250),
     service_description_long TEXT,
-    service_status service_status NOT NULL DEFAULT 'drafted',
-    service_visibility service_visibility NOT NULL DEFAULT 'private',
     service_purpose VARCHAR(250),
     service_comments VARCHAR(250),
-    
-    --  Метаданные
+    -- Метаданные
     service_created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
     service_created_by UUID NOT NULL REFERENCES users(user_id),
     service_modified_at TIMESTAMPTZ,
-    service_modified_by UUID REFERENCES users(user_id),
-    
-    -- UI характеристики
-    service_tile_width_closed SMALLINT CHECK (service_tile_width_closed > 0),
-    service_tile_height_closed SMALLINT CHECK (service_tile_height_closed > 0),
-    service_tile_width_open SMALLINT CHECK (service_tile_width_open > 0),
-    service_tile_height_open SMALLINT CHECK (service_tile_height_open > 0),
-    
-    -- Ограничения
-    CONSTRAINT unique_service_name UNIQUE (service_name)
+    service_modified_by UUID REFERENCES users(user_id)
 );
 
--- Индекс для оптимизации запросов по статусу
+-- Индексы
 CREATE INDEX idx_service_status ON services(service_status);
+CREATE INDEX idx_service_users_group ON services(service_users_group);
 
 
 -- ------- catalog items related data

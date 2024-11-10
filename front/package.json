@@ -33,6 +33,7 @@
     "babel-eslint": "^10.1.0",
     "eslint": "^7.32.0",
     "eslint-plugin-vue": "^8.7.1",
+    "remove-trailing-separator": "^1.1.0",
     "vue-cli-plugin-vuetify": "~2.5.8",
     "webpack-chain": "^6.5.1",
     "webpack-plugin-vuetify": "^2.0.0-alpha.0"
