@@ -10,23 +10,10 @@
         <v-icon>mdi-magnify</v-icon>
       </v-btn>
 
-      <!-- кнопка перевода с выпадающим меню -->
-      <v-menu>
-        <template v-slot:activator="{ props }">
-          <v-btn icon v-bind="props">
-            <v-icon>mdi-translate</v-icon>
-          </v-btn>
-        </template>
-
-        <v-list>
-          <v-list-item @click="changeLanguage('en')" :active="userStore.language === 'en'">
-            <v-list-item-title>English</v-list-item-title>
-          </v-list-item>
-          <v-list-item @click="changeLanguage('ru')" :active="userStore.language === 'ru'">
-            <v-list-item-title>Русский</v-list-item-title>
-          </v-list-item>
-        </v-list>
-      </v-menu>
+      <!-- кнопка тестирования диалоговых окон -->
+      <v-btn icon @click="showLoginDialog">
+        <v-icon>mdi-ab-testing</v-icon>
+      </v-btn>
 
       <v-dialog v-model="isLoginDialogVisible" max-width="500px">
         <LoginDialog @close="isLoginDialogVisible = false" @login-success="handleLoginSuccess" />
@@ -39,7 +26,7 @@
             <v-icon>mdi-login</v-icon>
           </v-btn>
         </template>
-        <span>{{ $t('navigation.tooltips.login') }}</span>
+        <span>вход для зарегистрированных пользователей</span>
       </v-tooltip>
 
       <!-- кнопка регистрации -->
@@ -49,7 +36,7 @@
             <v-icon>mdi-account-plus</v-icon>
           </v-btn>
         </template>
-        <span>{{ $t('navigation.tooltips.register') }}</span>
+        <span>регистрация учетной записи</span>
       </v-tooltip>
 
       <!-- кнопка меню для системных команд: выход, смена пароля и пр. -->
@@ -62,13 +49,13 @@
 
         <v-list>
           <v-list-item>
-            <v-list-item-title>{{ $t('navigation.systemMenu.test') }}</v-list-item-title>
+            <v-list-item-title>тестовая команда</v-list-item-title>
           </v-list-item>
           <v-list-item @click="isChangePassModalVisible = true">
-            <v-list-item-title>{{ $t('navigation.systemMenu.changePassword') }}</v-list-item-title>
+            <v-list-item-title>изменить пароль</v-list-item-title>
           </v-list-item>
           <v-list-item @click="logout" v-if="isLoggedIn">
-            <v-list-item-title>{{ $t('navigation.systemMenu.logout') }}</v-list-item-title>
+            <v-list-item-title>выйти</v-list-item-title>
           </v-list-item>
         </v-list>
       </v-menu>
@@ -83,66 +70,26 @@
       </template>
     </v-app-bar>
 
-    <!-- Navigation Drawer -->
+    <!-- Navigation Drawer   -->
     <v-navigation-drawer v-model="drawer" app expand-on-hover rail elevation="5">
       <v-list density="compact" nav>
-        <v-list-item 
-          @click="setActiveModule('Catalog')" 
-          prepend-icon="mdi-view-dashboard" 
-          :title="$t('navigation.drawer.catalog')" 
-          value="catalog">
+        <v-list-item @click="setActiveModule('Catalog')" prepend-icon="mdi-view-dashboard" title="catalog" value="catalog">
         </v-list-item>
-        <v-list-item 
-          @click="setActiveModule('Work')" 
-          prepend-icon="mdi-file-edit-outline" 
-          :title="$t('navigation.drawer.workModule')" 
-          value="workItems">
-        </v-list-item>
-        <v-list-item 
-          @click="setActiveModule('AR')" 
-          prepend-icon="mdi-chart-timeline" 
-          :title="$t('navigation.drawer.reports')" 
-          value="reports">
-        </v-list-item>
+        <v-list-item @click="setActiveModule('Work')" prepend-icon="mdi-file-edit-outline" title="work items" value="workItems"></v-list-item>
+        <v-list-item @click="setActiveModule('AR')" prepend-icon="mdi-chart-timeline" title="reports" value="reports"></v-list-item>
         <v-divider class="border-opacity-25"></v-divider><br>
-        <v-list-item 
-          @click="setActiveModule('Admpan')" 
-          prepend-icon="mdi-application-cog" 
-          :title="$t('navigation.drawer.adminModule')" 
-          value="adminPanel">
-        </v-list-item>
+        <v-list-item @click="setActiveModule('Admpan')" prepend-icon="mdi-application-cog" title="admin panel" value="adminPanel"></v-list-item>
         <v-divider class="border-opacity-25"></v-divider><br>
-        <v-list-item 
-          @click="setActiveModule('XLS')" 
-          prepend-icon="mdi-microsoft-excel" 
-          :title="$t('navigation.drawer.xlsPrototyping')" 
-          value="xlsPrototyping">
-        </v-list-item>
+        <v-list-item @click="setActiveModule('XLS')" prepend-icon="mdi-microsoft-excel" title="xls prototyping" value="xlsPrototyping"></v-list-item>
         <v-divider class="border-opacity-25"></v-divider>
       </v-list>
       <!-- Settings in the bottom -->
       <template v-slot:append>
         <v-list>
-          <v-list-item 
-            @click="setActiveModule('Account')" 
-            prepend-icon="mdi-account" 
-            :title="$t('navigation.drawer.account')"  
-            v-if="isLoggedIn">
-          </v-list-item>
+          <v-list-item @click="setActiveModule('Account')" prepend-icon="mdi-account" title="account" value="account" v-if="isLoggedIn"></v-list-item>
           <v-divider class="border-opacity-25"></v-divider>
-          <v-list-item 
-            @click="setActiveModule('Settings')" 
-            prepend-icon="mdi-cog" 
-            :title="$t('navigation.drawer.settings')"  
-            value="settings" 
-            v-if="isLoggedIn">
-          </v-list-item>
-          <v-list-item 
-            @click="setActiveModule('Help')" 
-            prepend-icon="mdi-help-circle-outline" 
-            :title="$t('navigation.drawer.helpSupport')" 
-            value="help">
-          </v-list-item>
+          <v-list-item @click="setActiveModule('Settings')" prepend-icon="mdi-cog" title="settings" value="settings" v-if="isLoggedIn"></v-list-item>
+          <v-list-item @click="setActiveModule('Help')" prepend-icon="mdi-help-circle-outline" title="help & support" value="help"></v-list-item>
         </v-list>
       </template>
     </v-navigation-drawer>
@@ -166,7 +113,6 @@
 <script>
 import { ref, computed, onMounted } from 'vue';
 import { useUserStore } from './state/userstate';
-import { useI18n } from 'vue-i18n';
 import { startSessionTimers } from './services/sessionServices';
 import ModuleCatalog from './components/catalog/ModuleCatalog.vue';
 import ModuleWork from './components/work/ModuleWork.vue';
@@ -199,7 +145,6 @@ export default {
   },
   setup() {
     const userStore = useUserStore();
-    const i18n = useI18n();
     const drawer = ref(true);
     const isChangePassModalVisible = ref(false);
     const isLoginDialogVisible = ref(false);
@@ -216,16 +161,7 @@ export default {
       setActiveModule('Catalog');
     };
 
-       // Модифицируем функцию смены языка
-       const changeLanguage = (lang) => {
-      userStore.setLanguage(lang);
-      i18n.locale.value = lang; // Устанавливаем локаль i18n здесь
-    };
-
     onMounted(() => {
-      // Синхронизируем начальный язык при монтировании
-      i18n.locale.value = userStore.language;
-      
       if (isLoggedIn.value) {
         console.log('App mounted. User is logged in. Starting session timers...');
         startSessionTimers();
@@ -238,15 +174,13 @@ export default {
       isLoginDialogVisible,
       isLoggedIn,
       activeModule,
-      userStore,
       setActiveModule,
       logout,
-      changeLanguage,
       showLoginDialog() {
         isLoginDialogVisible.value = true;
       },
       handleLoginSuccess() {
-        setActiveModule('Work');
+        setActiveModule('Work'); // в случае успешного логина переключаемся на модуль Work
       },
       showChangePassModal() {
         isChangePassModalVisible.value = true;

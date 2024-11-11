@@ -1,21 +1,23 @@
 {
-    "navigation": {
-      "drawer": {
-        "catalog": "каталог",
-        "workModule": "рабочий модуль",
-        "reports": "отчеты",
-        "adminModule": "центр управления",
-        "xlsPrototyping": "прототипирование",
-        "helpSupport": "помощь и поддержка"
-      },
-      "tooltips": {
-        "login": "вход для зарегистрированных пользователей",
-        "register": "регистрация учетной записи"
-      },
-      "systemMenu": {
-        "test": "тестовая команда",
-        "changePassword": "изменить пароль",
-        "logout": "выйти"
-      }
+  "navigation": {
+    "drawer": {
+      "catalog": "каталог",
+      "workModule": "рабочий модуль",
+      "reports": "отчеты", 
+      "adminModule": "центр управления",
+      "xlsPrototyping": "прототипирование",
+      "helpSupport": "помощь и поддержка",
+      "account": "личный кабинет",
+      "settings": "настройки"
+    },
+    "tooltips": {
+      "login": "вход для зарегистрированных пользователей",
+      "register": "регистрация учетной записи"
+    },
+    "systemMenu": {
+      "test": "тестовая команда",
+      "changePassword": "изменить пароль",
+      "logout": "выйти"
     }
   }
+}

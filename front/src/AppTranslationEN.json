@@ -1,21 +1,23 @@
 {
-    "navigation": {
-      "drawer": {
-        "catalog": "catalog",
-        "workModule": "work module",
-        "reports": "reports",
-        "adminModule": "admin module",
-        "xlsPrototyping": "xls prototyping",
-        "helpSupport": "help & support"
-      },
-      "tooltips": {
-        "login": "login for registered users",
-        "register": "account registration"
-      },
-      "systemMenu": {
-        "test": "test command",
-        "changePassword": "change password",
-        "logout": "logout"
-      }
+  "navigation": {
+    "drawer": {
+      "catalog": "catalog",
+      "workModule": "work module", 
+      "reports": "reports",
+      "adminModule": "admin module",
+      "xlsPrototyping": "xls prototyping",
+      "helpSupport": "help & support",
+      "account": "account",
+      "settings": "settings"
+    },
+    "tooltips": {
+      "login": "login for registered users",
+      "register": "account registration"
+    },
+    "systemMenu": {
+      "test": "test command",
+      "changePassword": "change password", 
+      "logout": "logout"
     }
   }
+}
