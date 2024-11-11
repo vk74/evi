@@ -101,7 +101,9 @@ CREATE TABLE services (
     service_tile_width_open SMALLINT CHECK (service_tile_width_open > 0),
     service_tile_height_open SMALLINT CHECK (service_tile_height_open > 0),
     -- Группы для авторизации
-    service_users_group UUID REFERENCES groups(group_id), 
+    service_access_allowed_group UUID REFERENCES groups(group_id),
+    service_access_denied_group UUID REFERENCES groups(group_id), 
+    service_access_denied_users UUID REFERENCES users(user_id),
     service_status service_status NOT NULL DEFAULT 'drafted',
     -- Ограничения
     CONSTRAINT unique_service_name UNIQUE (service_name)

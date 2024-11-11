@@ -2,7 +2,7 @@ const { Pool } = require('pg');
 
 // Создание нового пула соединений с базой данных
 const pool = new Pool({
-  user: 'config_user', // ваше имя пользователя для PostgreSQL
+  user: 'app_service', // ваше имя пользователя для PostgreSQL
   host: 'localhost',     // хост, обычно localhost для локальной разработки
   database: 'protodb', // название вашей базы данных
   password: 'P@ssw0rd',   // пароль для доступа к базе данных
