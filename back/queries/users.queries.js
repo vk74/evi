@@ -26,6 +26,21 @@ const userQueries = {
             VALUES ($1, $2, $3, $4, $5)`
     },
     // Аутентификация
+    getUserForToken: {
+        name: 'get-user-for-token',
+        text: `
+            SELECT 
+                u.user_id,
+                u.username,
+                u.role,
+                u.account_status,
+                up.first_name,
+                up.last_name
+            FROM app.users u
+            LEFT JOIN app.user_profiles up ON u.user_id = up.user_id
+            WHERE u.username = $1
+        `
+    },
     getUserPassword: {
         name: 'get-user-password',
         text: 'SELECT user_id, hashed_password FROM app.users WHERE username = $1'
