@@ -1,3 +1,4 @@
+
 <template>
   <v-container>
     <v-app-bar app>
@@ -5,14 +6,15 @@
         <v-img gradient="to top right, rgba(15,70,150,.85), rgba(100,180,170,.6)"></v-img>
       </template>
       <v-spacer></v-spacer>
-      <v-toolbar-title class="title-padding" style="color: white; text-align: right; margin-right: 20px;">
+      <v-toolbar-title style="color: white; text-align: right; margin-right: 20px;">
         форма для создания нового сервиса
       </v-toolbar-title>
     </v-app-bar>
 
-    <v-card class="mt-6 form-card">
-      <v-card-text>
-        <v-form>
+          <v-card class="mt-6 form-card">
+            <v-card-text>
+              <v-form>
+
           <!-- Основная информация -->
           <v-sheet class="section-container">
             <h2 class="section-title">основная информация</h2>
@@ -48,6 +50,24 @@
             </v-row>
             <v-row>
               <v-col cols="12" md="6">
+                <v-select
+                  label="видимость*"
+                  variant="outlined"
+                  density="comfortable"
+                  :items="['public', 'private']"
+                />
+              </v-col>
+              <v-col cols="12" md="6">
+                <v-select
+                  label="приоритет*"
+                  variant="outlined"
+                  density="comfortable"
+                  :items="['critical', 'high', 'medium', 'low']"
+                />
+              </v-col>
+            </v-row>
+            <v-row>
+              <v-col cols="12" md="6">
                 <v-textarea
                   label="краткое описание"
                   variant="outlined"
@@ -57,16 +77,36 @@
                 />
               </v-col>
               <v-col cols="12" md="6">
-                <v-select
-                  label="видимость*"
+                <v-text-field
+                  label="назначение сервиса"
                   variant="outlined"
                   density="comfortable"
-                  :items="['public', 'private']"
+                  hint="до 250 символов"
+                  persistent-hint
+                />
+              </v-col>
+            </v-row>
+            <v-row>
+              <v-col cols="12">
+                <v-textarea
+                  label="подробное описание"
+                  variant="outlined"
+                  rows="4"
+                />
+              </v-col>
+            </v-row>
+            <v-row>
+              <v-col cols="12">
+                <v-textarea
+                  label="комментарии"
+                  variant="outlined"
+                  rows="2"
+                  hint="до 250 символов"
+                  persistent-hint
                 />
               </v-col>
             </v-row>
           </v-sheet>
-
           <!-- Параметры отображения -->
           <v-sheet class="section-container mt-6">
             <h2 class="section-title">параметры отображения сервиса в каталоге</h2>
@@ -130,51 +170,7 @@
             </v-row>
           </v-sheet>
 
-          <!-- Детальная информация -->
-          <v-sheet class="section-container mt-6">
-            <h2 class="section-title">детальная информация</h2>
-            <v-row>
-              <v-col cols="12" md="6">
-                <v-select
-                  label="приоритет*"
-                  variant="outlined"
-                  density="comfortable"
-                  :items="['critical', 'high', 'medium', 'low']"
-                />
-              </v-col>
-              <v-col cols="12" md="6">
-                <v-text-field
-                  label="назначение сервиса"
-                  variant="outlined"
-                  density="comfortable"
-                  hint="до 250 символов"
-                  persistent-hint
-                />
-              </v-col>
-            </v-row>
-            <v-row>
-              <v-col cols="12">
-                <v-textarea
-                  label="подробное описание"
-                  variant="outlined"
-                  rows="4"
-                />
-              </v-col>
-            </v-row>
-            <v-row>
-              <v-col cols="12">
-                <v-textarea
-                  label="комментарии"
-                  variant="outlined"
-                  rows="2"
-                  hint="до 250 символов"
-                  persistent-hint
-                />
-              </v-col>
-            </v-row>
-          </v-sheet>
-
-          <!-- Права доступа -->
+                    <!-- Права доступа -->
           <v-sheet class="section-container mt-6">
             <h2 class="section-title">права доступа</h2>
             
@@ -184,42 +180,30 @@
                 <div class="access-section">
                   <div class="d-flex align-center mb-2">
                     <span class="text-subtitle-2">группы с разрешенным доступом</span>
-                    <v-menu>
-                      <template v-slot:activator="{ props }">
-                        <v-btn
-                          variant="text"
-                          icon="mdi-plus"
-                          size="small"
-                          class="ml-2"
-                          v-bind="props"
-                        ></v-btn>
-                      </template>
-                      <v-card min-width="300">
-                        <v-card-text>
-                          <v-text-field
-                            variant="outlined"
-                            density="comfortable"
-                            hide-details
-                            placeholder="поиск группы"
-                            prepend-inner-icon="mdi-magnify"
-                          ></v-text-field>
-                          <v-list density="compact" class="mt-2">
-                            <v-list-item value="1">группа разработчиков</v-list-item>
-                            <v-list-item value="2">группа тестирования</v-list-item>
-                            <v-list-item value="3">группа аналитиков</v-list-item>
-                          </v-list>
-                        </v-card-text>
-                      </v-card>
-                    </v-menu>
+                    <v-btn
+                      variant="text"
+                      icon="mdi-plus"
+                      size="small"
+                      class="ml-2"
+                      color="rgba(0, 0, 0, 0.6)"
+                    ></v-btn>
                   </div>
                   <div class="selected-items">
                     <v-chip
-                      v-for="n in 2"
-                      :key="n"
-                      class="ma-1"
+                      variant="outlined"
                       closable
+                      class="ma-1"
+                      color="rgba(0, 0, 0, 0.6)"
                     >
-                      группа {{ n }}
+                      группа 1
+                    </v-chip>
+                    <v-chip
+                      variant="outlined"
+                      closable
+                      class="ma-1"
+                      color="rgba(0, 0, 0, 0.6)"
+                    >
+                      группа 2
                     </v-chip>
                   </div>
                 </div>
@@ -232,42 +216,30 @@
                 <div class="access-section">
                   <div class="d-flex align-center mb-2">
                     <span class="text-subtitle-2">группы с запрещенным доступом</span>
-                    <v-menu>
-                      <template v-slot:activator="{ props }">
-                        <v-btn
-                          variant="text"
-                          icon="mdi-plus"
-                          size="small"
-                          class="ml-2"
-                          v-bind="props"
-                        ></v-btn>
-                      </template>
-                      <v-card min-width="300">
-                        <v-card-text>
-                          <v-text-field
-                            variant="outlined"
-                            density="comfortable"
-                            hide-details
-                            placeholder="поиск группы"
-                            prepend-inner-icon="mdi-magnify"
-                          ></v-text-field>
-                          <v-list density="compact" class="mt-2">
-                            <v-list-item value="1">группа 1</v-list-item>
-                            <v-list-item value="2">группа 2</v-list-item>
-                            <v-list-item value="3">группа 3</v-list-item>
-                          </v-list>
-                        </v-card-text>
-                      </v-card>
-                    </v-menu>
+                    <v-btn
+                      variant="text"
+                      icon="mdi-plus"
+                      size="small"
+                      class="ml-2"
+                      color="rgba(0, 0, 0, 0.6)"
+                    ></v-btn>
                   </div>
                   <div class="selected-items">
                     <v-chip
-                      v-for="n in 2"
-                      :key="n"
-                      class="ma-1"
+                      variant="outlined"
                       closable
+                      class="ma-1"
+                      color="rgba(0, 0, 0, 0.6)"
                     >
-                      группа {{ n }}
+                      группа 1
+                    </v-chip>
+                    <v-chip
+                      variant="outlined"
+                      closable
+                      class="ma-1"
+                      color="rgba(0, 0, 0, 0.6)"
+                    >
+                      группа 2
                     </v-chip>
                   </div>
                 </div>
@@ -280,50 +252,36 @@
                 <div class="access-section">
                   <div class="d-flex align-center mb-2">
                     <span class="text-subtitle-2">пользователи с запрещенным доступом</span>
-                    <v-menu>
-                      <template v-slot:activator="{ props }">
-                        <v-btn
-                          variant="text"
-                          icon="mdi-plus"
-                          size="small"
-                          class="ml-2"
-                          v-bind="props"
-                        ></v-btn>
-                      </template>
-                      <v-card min-width="300">
-                        <v-card-text>
-                          <v-text-field
-                            variant="outlined"
-                            density="comfortable"
-                            hide-details
-                            placeholder="поиск пользователя"
-                            prepend-inner-icon="mdi-magnify"
-                          ></v-text-field>
-                          <v-list density="compact" class="mt-2">
-                            <v-list-item value="1">пользователь 1</v-list-item>
-                            <v-list-item value="2">пользователь 2</v-list-item>
-                            <v-list-item value="3">пользователь 3</v-list-item>
-                          </v-list>
-                        </v-card-text>
-                      </v-card>
-                    </v-menu>
+                    <v-btn
+                      variant="text"
+                      icon="mdi-plus"
+                      size="small"
+                      class="ml-2"
+                      color="rgba(0, 0, 0, 0.6)"
+                    ></v-btn>
                   </div>
                   <div class="selected-items">
                     <v-chip
-                      v-for="n in 2"
-                      :key="n"
-                      class="ma-1"
+                      variant="outlined"
                       closable
+                      class="ma-1"
+                      color="rgba(0, 0, 0, 0.6)"
                     >
-                      пользователь {{ n }}
+                      пользователь 1
+                    </v-chip>
+                    <v-chip
+                      variant="outlined"
+                      closable
+                      class="ma-1"
+                      color="rgba(0, 0, 0, 0.6)"
+                    >
+                      пользователь 2
                     </v-chip>
                   </div>
                 </div>
               </v-col>
             </v-row>
-          </v-sheet>
-
-          <!-- Ответственные лица -->
+          </v-sheet>                    <!-- Ответственные лица -->
           <v-sheet class="section-container mt-6">
             <h2 class="section-title">ответственные лица</h2>
             <v-row>
@@ -331,7 +289,7 @@
                 <div class="owner-field">
                   <span class="text-subtitle-2">владелец сервиса*</span>
                   <div class="owner-content">
-                    <div v-if="false" class="d-flex align-center empty-state">
+                    <div v-if="false" class="empty-state">
                       <v-btn
                         variant="outlined"
                         density="comfortable"
@@ -344,26 +302,36 @@
                     <div v-else class="selected-owner">
                       <div class="owner-info">
                         <v-avatar size="32" color="primary">
-                          <span class="text-h6">ИП</span>
+                          <span class="text-h6">ип</span>
                         </v-avatar>
                         <div class="owner-details ml-2">
-                          <div class="owner-name">Иванов Петр</div>
+                          <div class="owner-name">иванов петр</div>
                           <div class="owner-position">разработчик</div>
                         </div>
                       </div>
                       <div class="owner-actions">
-                        <v-btn
-                          variant="text"
-                          icon="mdi-pencil"
-                          size="small"
-                          color="primary"
-                        ></v-btn>
-                        <v-btn
-                          variant="text"
-                          icon="mdi-delete"
-                          size="small"
-                          color="error"
-                        ></v-btn>
+                        <v-tooltip text="изменить" location="top">
+                          <template v-slot:activator="{ props }">
+                            <v-btn
+                              v-bind="props"
+                              variant="text"
+                              icon="mdi-pencil"
+                              size="small"
+                              color="rgba(0, 0, 0, 0.6)"
+                            ></v-btn>
+                          </template>
+                        </v-tooltip>
+                        <v-tooltip text="удалить" location="top">
+                          <template v-slot:activator="{ props }">
+                            <v-btn
+                              v-bind="props"
+                              variant="text"
+                              icon="mdi-delete"
+                              size="small"
+                              color="rgba(0, 0, 0, 0.6)"
+                            ></v-btn>
+                          </template>
+                        </v-tooltip>
                       </div>
                     </div>
                   </div>
@@ -374,7 +342,7 @@
                 <div class="owner-field">
                   <span class="text-subtitle-2">резервный владелец</span>
                   <div class="owner-content">
-                    <div class="d-flex align-center empty-state">
+                    <div class="empty-state">
                       <v-btn
                         variant="outlined"
                         density="comfortable"
@@ -394,7 +362,7 @@
                 <div class="owner-field">
                   <span class="text-subtitle-2">технический владелец</span>
                   <div class="owner-content">
-                    <div class="d-flex align-center empty-state">
+                    <div class="empty-state">
                       <v-btn
                         variant="outlined"
                         density="comfortable"
@@ -412,7 +380,7 @@
                 <div class="owner-field">
                   <span class="text-subtitle-2">диспетчер</span>
                   <div class="owner-content">
-                    <div class="d-flex align-center empty-state">
+                    <div class="empty-state">
                       <v-btn
                         variant="outlined"
                         density="comfortable"
@@ -436,7 +404,7 @@
                 <div class="owner-field">
                   <span class="text-subtitle-2">поддержка 1 линии</span>
                   <div class="owner-content">
-                    <div v-if="false" class="d-flex align-center empty-state">
+                    <div v-if="false" class="empty-state">
                       <v-btn
                         variant="outlined"
                         density="comfortable"
@@ -457,18 +425,28 @@
                         </div>
                       </div>
                       <div class="owner-actions">
-                        <v-btn
-                          variant="text"
-                          icon="mdi-pencil"
-                          size="small"
-                          color="primary"
-                        ></v-btn>
-                        <v-btn
-                          variant="text"
-                          icon="mdi-delete"
-                          size="small"
-                          color="error"
-                        ></v-btn>
+                        <v-tooltip text="изменить" location="top">
+                          <template v-slot:activator="{ props }">
+                            <v-btn
+                              v-bind="props"
+                              variant="text"
+                              icon="mdi-pencil"
+                              size="small"
+                              color="rgba(0, 0, 0, 0.6)"
+                            ></v-btn>
+                          </template>
+                        </v-tooltip>
+                        <v-tooltip text="удалить" location="top">
+                          <template v-slot:activator="{ props }">
+                            <v-btn
+                              v-bind="props"
+                              variant="text"
+                              icon="mdi-delete"
+                              size="small"
+                              color="rgba(0, 0, 0, 0.6)"
+                            ></v-btn>
+                          </template>
+                        </v-tooltip>
                       </div>
                     </div>
                   </div>
@@ -479,7 +457,7 @@
                 <div class="owner-field">
                   <span class="text-subtitle-2">поддержка 2 линии</span>
                   <div class="owner-content">
-                    <div class="d-flex align-center empty-state">
+                    <div class="empty-state">
                       <v-btn
                         variant="outlined"
                         density="comfortable"
@@ -497,7 +475,7 @@
                 <div class="owner-field">
                   <span class="text-subtitle-2">поддержка 3 линии</span>
                   <div class="owner-content">
-                    <div class="d-flex align-center empty-state">
+                    <div class="empty-state">
                       <v-btn
                         variant="outlined"
                         density="comfortable"
@@ -546,10 +524,6 @@ export default {
 </script>
 
 <style scoped>
-.title-padding {
-  padding-left: 25px;
-}
-
 .form-card {
   border-radius: 8px;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
@@ -566,7 +540,6 @@ export default {
   font-size: 1.25rem;
   font-weight: 500;
   margin-bottom: 16px;
-  text-transform: lowercase;
 }
 
 .tile-section-label {
@@ -577,31 +550,12 @@ export default {
   padding-left: 4px;
 }
 
-.v-text-field,
-.v-select,
-.v-textarea {
-  margin-bottom: 8px;
-}
-
 .v-btn {
   text-transform: none;
   font-weight: 500;
 }
 
-.access-section {
-  border: 1px solid rgba(0, 0, 0, 0.12);
-  border-radius: 4px;
-  padding: 12px;
-}
-
-.selected-items {
-  min-height: 40px;
-  padding: 4px;
-  border-radius: 4px;
-  background-color: #f5f5f5;
-}
-
-.owner-field {
+.access-section, .owner-field {
   border: 1px solid rgba(0, 0, 0, 0.12);
   border-radius: 4px;
   padding: 12px;
@@ -619,13 +573,15 @@ export default {
   width: 100%;
 }
 
-.selected-owner {
+.selected-items, .selected-owner {
   display: flex;
-  justify-content: space-between;
+  flex-wrap: wrap;
   align-items: center;
   padding: 8px;
   background: #f5f5f5;
   border-radius: 4px;
+  min-height: 40px;
+  gap: 8px; /* добавляем отступ между чипами */
 }
 
 .owner-info {
