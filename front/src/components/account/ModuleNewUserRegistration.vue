@@ -41,7 +41,7 @@
         <p v-if="showDuplicateUsernameError" class="error-message">ошибка: такое имя пользователя уже зарегистрировано</p>
         <p v-if="showDuplicateEmailError" class="error-message">ошибка: такой адрес электронной почты уже используется</p>
         <p v-if="showDuplicatePhoneError" class="error-message">ошибка: такой номер телефона уже используется</p>
-        <p v-if="showSuccess" class="success-message">Данные регистрационной формы успешно отправлены на сервер. Новый пользователь зарегистрирован!</p>
+        <p v-if="showSuccess" class="success-message">Данные регистрационной формы успешно отправлены на сервер</p>
       </v-card-text>
       <v-card-actions>
         <v-spacer></v-spacer>
@@ -75,18 +75,29 @@ export default {
       showDuplicateEmailError: false,
       showDuplicatePhoneError: false,
       invalidFields: [],
-      showPassword: false // состояние для отображения/скрытия пароля
+      showPassword: false
     };
   },
   methods: {
     togglePasswordVisibility() {
       this.showPassword = !this.showPassword;
     },
-    async submitForm() {
+
+    clearMessages() {
       this.showError = false;
+      this.showSuccess = false;
       this.showDuplicateUsernameError = false;
       this.showDuplicateEmailError = false;
       this.showDuplicatePhoneError = false;
+    },
+
+    async submitForm() {
+      // Сначала очищаем все сообщения
+      this.clearMessages();
+
+      // Добавляем небольшую задержку для визуального эффекта очистки
+      await new Promise(resolve => setTimeout(resolve, 100));
+
       this.invalidFields = this.validateForm();
       if (this.invalidFields.length === 0) {
         try {
@@ -120,6 +131,7 @@ export default {
         this.showError = true;
       }
     },
+
     validateForm() {
       const invalidFields = [];
       const usernameRegex = /^[a-zA-Zа-яА-Я0-9]{1,25}$/;
@@ -139,6 +151,7 @@ export default {
 
       return invalidFields;
     },
+
     isInvalid(field) {
       switch(field) {
         case 'username':
@@ -159,6 +172,7 @@ export default {
           return false;
       }
     },
+
     goToLogin() {
       const userStore = useUserStore();
       userStore.setActiveModule('Login');
