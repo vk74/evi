@@ -6,7 +6,7 @@
       </template>
       <v-tooltip bottom>
         <template v-slot:activator="{ props }">
-          <v-btn icon v-bind="props" @click="onNewServiceClick">
+          <v-btn icon v-bind="props" @click="onServiceEditorClick">
             <v-icon left style="color: white;">mdi-file-plus-outline</v-icon>
           </v-btn>
         </template>
@@ -41,12 +41,12 @@
 import { useAdmpanStore } from '@/state/admpanstate';
 
 export default {
-  name: 'SubModuleServiceAdm',
+  name: 'SubModuleServiceAdmin',
   setup() {
     const admpanStore = useAdmpanStore();
 
-    const onNewServiceClick = () => {
-      admpanStore.setActiveSubModule('SubModuleNewService');
+    const onServiceEditorClick = () => {
+      admpanStore.setActiveSubModule('SubModuleServiceEditor');
     };
 
     const onButtonClick = () => {
@@ -54,7 +54,7 @@ export default {
     };
 
     return {
-      onNewServiceClick,
+      onServiceEditorClick,
       onButtonClick
     };
   }

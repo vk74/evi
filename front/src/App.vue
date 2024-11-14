@@ -106,10 +106,10 @@
         </v-list-item>
         <v-divider class="border-opacity-25"></v-divider><br>
         <v-list-item 
-          @click="setActiveModule('Admpan')" 
+          @click="setActiveModule('Admin')" 
           prepend-icon="mdi-application-cog" 
-          :title="$t('navigation.drawer.adminModule')" 
-          value="adminPanel">
+          :title="$t('navigation.drawer.ModuleAdmin')" 
+          value="admin">
         </v-list-item>
         <v-divider class="border-opacity-25"></v-divider><br>
         <v-list-item 
@@ -153,7 +153,7 @@
       <ModuleCatalog v-if="activeModule === 'Catalog'" />
       <ModuleWork v-if="activeModule === 'Work'" />
       <ModuleAR v-if="activeModule === 'AR'" />
-      <ModuleAdmpan v-if="activeModule === 'Admpan'" />
+      <ModuleAdmin v-if="activeModule === 'Admin'" />
       <ModuleXLS v-if="activeModule === 'XLS'" />
       <ModuleAccount v-if="activeModule === 'Account'" />
       <ModuleSettings v-if="activeModule === 'Settings'" />
@@ -171,7 +171,7 @@ import { startSessionTimers } from './services/sessionServices';
 import ModuleCatalog from './components/catalog/ModuleCatalog.vue';
 import ModuleWork from './components/work/ModuleWork.vue';
 import ModuleAR from './components/ar/ModuleAR.vue';
-import ModuleAdmpan from './components/admpan/ModuleAdmpan.vue';
+import ModuleAdmin from './components/admin/ModuleAdmin.vue';
 import ModuleXLS from './components/proto/ModuleXLS.vue';
 import ModuleAccount from './components/account/ModuleAccount.vue';
 import ModuleSettings from './components/settings/ModuleSettings.vue';
@@ -187,7 +187,7 @@ export default {
     ModuleCatalog,
     ModuleWork,
     ModuleAR,
-    ModuleAdmpan,
+    ModuleAdmin,
     ModuleXLS,
     ModuleAccount,
     ModuleSettings,

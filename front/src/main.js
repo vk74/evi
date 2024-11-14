@@ -14,8 +14,8 @@ import { useUserStore } from './state/userstate'; // импорт Pinia store
 // Импорт всех файлов локализации
 import appRu from './AppTranslationRU.json';
 import appEn from './AppTranslationEN.json';
-import admpanRu from './components/admpan/AdmpanTranslationRU.json';
-import admpanEn from './components/admpan/AdmpanTranslationEN.json';
+import admpanRu from './components/admin/AdminTranslationRU.json';
+import admpanEn from './components/admin/AdminTranslationEN.json';
 
 // Объединяем переводы
 const messages = {

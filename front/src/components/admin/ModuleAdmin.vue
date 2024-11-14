@@ -31,18 +31,18 @@
                 v-bind="props"
                 class="nav-item"
                 prepend-icon="mdi-room-service"
-                :title="$t('admpan.nav.services.main')"
-                :active="activeSubModule === 'SubModuleServiceAdm'"
-                @click="setActiveSubModule('SubModuleServiceAdm', 'all')"
+                :title="$t('admin.nav.services.main')"
+                :active="activeSubModule === 'SubModuleServiceAdmin'"
+                @click="setActiveSubModule('SubModuleServiceAdmin', 'all')"
               >
                 <v-list-item-title v-if="!drawer" class="hidden-title">
-                  {{ $t('admpan.nav.services.main') }}
+                  {{ $t('admin.nav.services.main') }}
                 </v-list-item-title>
               </v-list-item>
             </template>
 
             <v-list-item
-              @click="setActiveSubModule('SubModuleServiceAdm', 'all')"
+              @click="setActiveSubModule('SubModuleServiceAdmin', 'all')"
               class="sub-nav-item"
               value="allServices"
               :active="currentFilter === 'all'"
@@ -50,11 +50,11 @@
               <template v-slot:prepend>
                 <v-icon size="small" class="sub-icon">mdi-view-list</v-icon>
               </template>
-              <v-list-item-title>{{ $t('admpan.nav.services.items.all') }}</v-list-item-title>
+              <v-list-item-title>{{ $t('admin.nav.services.items.all') }}</v-list-item-title>
             </v-list-item>
 
             <v-list-item
-              @click="setActiveSubModule('SubModuleServiceAdm', 'active')"
+              @click="setActiveSubModule('SubModuleServiceAdmin', 'active')"
               class="sub-nav-item"
               value="activeServices"
               :active="currentFilter === 'active'"
@@ -62,11 +62,11 @@
               <template v-slot:prepend>
                 <v-icon size="small" class="sub-icon">mdi-check-circle</v-icon>
               </template>
-              <v-list-item-title>{{ $t('admpan.nav.services.items.active') }}</v-list-item-title>
+              <v-list-item-title>{{ $t('admin.nav.services.items.active') }}</v-list-item-title>
             </v-list-item>
 
             <v-list-item
-              @click="setActiveSubModule('SubModuleServiceAdm', 'planned')"
+              @click="setActiveSubModule('SubModuleServiceAdmin', 'planned')"
               class="sub-nav-item"
               value="plannedServices"
               :active="currentFilter === 'planned'"
@@ -74,11 +74,11 @@
               <template v-slot:prepend>
                 <v-icon size="small" class="sub-icon">mdi-calendar-clock</v-icon>
               </template>
-              <v-list-item-title>{{ $t('admpan.nav.services.items.planned') }}</v-list-item-title>
+              <v-list-item-title>{{ $t('admin.nav.services.items.planned') }}</v-list-item-title>
             </v-list-item>
 
             <v-list-item
-              @click="setActiveSubModule('SubModuleServiceAdm', 'deactivated')"
+              @click="setActiveSubModule('SubModuleServiceAdmin', 'deactivated')"
               class="sub-nav-item"
               value="deactivatedServices"
               :active="currentFilter === 'deactivated'"
@@ -86,33 +86,33 @@
               <template v-slot:prepend>
                 <v-icon size="small" class="sub-icon">mdi-close-circle</v-icon>
               </template>
-              <v-list-item-title>{{ $t('admpan.nav.services.items.deactivated') }}</v-list-item-title>
+              <v-list-item-title>{{ $t('admin.nav.services.items.deactivated') }}</v-list-item-title>
             </v-list-item>
           </v-list-group>
 
           <v-list-item 
-            @click="setActiveSubModule('SubModuleUserAdm')" 
+            @click="setActiveSubModule('SubModuleUserAdmin')" 
             class="nav-item" 
             prepend-icon="mdi-account" 
-            :title="$t('admpan.nav.users.main')"
+            :title="$t('admin.nav.users.main')"
             value="userAdmin"
-            :active="activeSubModule === 'SubModuleUserAdm'"
+            :active="activeSubModule === 'SubModuleUserAdmin'"
           >
             <v-list-item-title v-if="!drawer" class="hidden-title">
-              {{ $t('admpan.nav.users.main') }}
+              {{ $t('admin.nav.users.main') }}
             </v-list-item-title>
           </v-list-item>
 
           <v-list-item 
-            @click="setActiveSubModule('SubModuleAppAdm')" 
+            @click="setActiveSubModule('SubModuleAppAdmin')" 
             class="nav-item" 
             prepend-icon="mdi-application" 
-            :title="$t('admpan.nav.settings.main')"
+            :title="$t('admin.nav.settings.main')"
             value="appAdmin"
-            :active="activeSubModule === 'SubModuleAppAdm'"
+            :active="activeSubModule === 'SubModuleAppAdmin'"
           >
             <v-list-item-title v-if="!drawer" class="hidden-title">
-              {{ $t('admpan.nav.settings.main') }}
+              {{ $t('admin.nav.settings.main') }}
             </v-list-item-title>
           </v-list-item>
 
@@ -132,18 +132,18 @@ import { ref, computed, defineAsyncComponent } from 'vue';
 import { useAdmpanStore } from '@/state/admpanstate';
 import { useI18n } from 'vue-i18n';
 
-const SubModuleServiceAdm = defineAsyncComponent(() => import('./SubModuleServiceAdm.vue'));
-const SubModuleUserAdm = defineAsyncComponent(() => import('./SubModuleUserAdm.vue'));
-const SubModuleAppAdm = defineAsyncComponent(() => import('./SubModuleAppAdm.vue'));
-const SubModuleNewService = defineAsyncComponent(() => import('./SubModuleNewService.vue'));
+const SubModuleServiceAdmin = defineAsyncComponent(() => import('./SubModuleServiceAdmin.vue'));
+const SubModuleUserAdmin = defineAsyncComponent(() => import('./SubModuleUserAdmin.vue'));
+const SubModuleAppAdmin = defineAsyncComponent(() => import('./SubModuleAppAdmin.vue'));
+const SubModuleServiceEditor = defineAsyncComponent(() => import('./SubModuleServiceEditor.vue'));
 
 export default {
   name: 'ModuleAdmpan',
   components: {
-    SubModuleServiceAdm,
-    SubModuleUserAdm,
-    SubModuleAppAdm,
-    SubModuleNewService,
+    SubModuleServiceAdmin,
+    SubModuleUserAdmin,
+    SubModuleAppAdmin,
+    SubModuleServiceEditor,
   },
   setup() {
     const admpanStore = useAdmpanStore();
@@ -156,16 +156,16 @@ export default {
     
     const currentSubModule = computed(() => {
       switch(activeSubModule.value) {
-        case 'SubModuleServiceAdm':
-          return SubModuleServiceAdm;
-        case 'SubModuleUserAdm':
-          return SubModuleUserAdm;
-        case 'SubModuleAppAdm':
-          return SubModuleAppAdm;
-        case 'SubModuleNewService':
-          return SubModuleNewService;
+        case 'SubModuleServiceAdmin':
+          return SubModuleServiceAdmin;
+        case 'SubModuleUserAdmin':
+          return SubModuleUserAdmin;
+        case 'SubModuleAppAdmin':
+          return SubModuleAppAdmin;
+        case 'SubModuleServiceEditor':
+          return SubModuleServiceEditor;
         default:
-          return SubModuleServiceAdm;
+          return SubModuleServiceAdmin;
       }
     });
 
