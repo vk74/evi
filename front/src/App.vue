@@ -108,7 +108,7 @@
         <v-list-item 
           @click="setActiveModule('Admin')" 
           prepend-icon="mdi-application-cog" 
-          :title="$t('navigation.drawer.ModuleAdmin')" 
+          :title="$t('navigation.drawer.Admin')" 
           value="admin">
         </v-list-item>
         <v-divider class="border-opacity-25"></v-divider><br>

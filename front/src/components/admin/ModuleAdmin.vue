@@ -129,7 +129,7 @@
 
 <script>
 import { ref, computed, defineAsyncComponent } from 'vue';
-import { useAdmpanStore } from '@/state/admpanstate';
+import { useAdminStore } from '@/state/adminstate';
 import { useI18n } from 'vue-i18n';
 
 const SubModuleServiceAdmin = defineAsyncComponent(() => import('./SubModuleServiceAdmin.vue'));
@@ -138,7 +138,7 @@ const SubModuleAppAdmin = defineAsyncComponent(() => import('./SubModuleAppAdmin
 const SubModuleServiceEditor = defineAsyncComponent(() => import('./SubModuleServiceEditor.vue'));
 
 export default {
-  name: 'ModuleAdmpan',
+  name: 'ModuleAdmin',
   components: {
     SubModuleServiceAdmin,
     SubModuleUserAdmin,
@@ -146,13 +146,13 @@ export default {
     SubModuleServiceEditor,
   },
   setup() {
-    const admpanStore = useAdmpanStore();
+    const adminStore = useAdminStore();
     const { t } = useI18n();
     const drawer = ref(true);
     const currentFilter = ref('all');
 
-    const activeSubModule = computed(() => admpanStore.activeSubModule);
-    const isPinned = computed(() => admpanStore.isPinned);
+    const activeSubModule = computed(() => adminStore.activeSubModule);
+    const isPinned = computed(() => adminStore.isPinned);
     
     const currentSubModule = computed(() => {
       switch(activeSubModule.value) {
@@ -170,14 +170,14 @@ export default {
     });
 
     const setActiveSubModule = (module, filter = null) => {
-      admpanStore.setActiveSubModule(module);
+      adminStore.setActiveSubModule(module);
       if (filter) {
         currentFilter.value = filter;
       }
     };
 
     const toggleDrawerPin = () => {
-      admpanStore.setIsPinned(!isPinned.value);
+      adminStore.setIsPinned(!isPinned.value);
     };
 
     return {

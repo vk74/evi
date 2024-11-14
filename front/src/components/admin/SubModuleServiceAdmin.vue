@@ -38,15 +38,15 @@
 </template>
 
 <script>
-import { useAdmpanStore } from '@/state/admpanstate';
+import { useAdminStore } from '@/state/adminstate';
 
 export default {
   name: 'SubModuleServiceAdmin',
   setup() {
-    const admpanStore = useAdmpanStore();
+    const adminStore = useAdminStore();
 
     const onServiceEditorClick = () => {
-      admpanStore.setActiveSubModule('SubModuleServiceEditor');
+      adminStore.setActiveSubModule('SubModuleServiceEditor');
     };
 
     const onButtonClick = () => {

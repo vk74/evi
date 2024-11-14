@@ -1,8 +1,10 @@
+// storage for admin module state
+
 import { defineStore } from 'pinia';
 
-export const useAdmpanStore = defineStore('admpan', {
+export const useAdminStore = defineStore('admin', {
   state: () => ({
-    activeSubModule: 'SubModuleServiceAdm',
+    activeSubModule: 'SubModuleServiceAdmin',
     isPinned: false,
     previousModule: null, // Добавляем состояние для хранения предыдущего модуля
   }),
