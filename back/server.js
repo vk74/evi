@@ -1,5 +1,6 @@
 const express = require('express');
 const userRoutes = require('./routes/routes.users'); 
+const servicesRoutes = require('./routes/routes.services'); 
 
 const ExcelJS = require('exceljs');
 const bodyParser = require('body-parser');
@@ -53,10 +54,12 @@ app.use(express.json());
 //app.use('/profile', getUserProfile); // Регистрация маршрута
 app.use(bodyParser.json());
 app.use(userRoutes);
+app.use(servicesRoutes);
 
 app.get('/', (req, res) => {
   res.send('Backend server is running');
 });
+
 
 
 ////////////////////////// прототипы маршрутов для работы с excel ////////////////////////// 

@@ -32,6 +32,7 @@
                 <template v-slot:activator="{ props }">
                   <v-text-field
                     v-bind="props"
+                    v-model="serviceName"
                     label="название сервиса*"
                     variant="outlined"
                     density="comfortable"
@@ -41,6 +42,7 @@
             </v-col>
             <v-col cols="12" md="6">
               <v-select
+                v-model="status"
                 label="статус*"
                 variant="outlined"
                 density="comfortable"
@@ -51,6 +53,7 @@
           <v-row>
             <v-col cols="12" md="6">
               <v-select
+                v-model="visibility"
                 label="видимость*"
                 variant="outlined"
                 density="comfortable"
@@ -59,6 +62,7 @@
             </v-col>
             <v-col cols="12" md="6">
               <v-select
+                v-model="priority"
                 label="приоритет*"
                 variant="outlined"
                 density="comfortable"
@@ -72,6 +76,7 @@
                 <template v-slot:activator="{ props }">
                   <v-textarea
                     v-bind="props"
+                    v-model="shortDescription"
                     label="краткое описание*"
                     variant="outlined"
                     rows="3"
@@ -81,6 +86,7 @@
             </v-col>
             <v-col cols="12" md="6">
               <v-text-field
+                v-model="purpose"
                 label="назначение сервиса"
                 variant="outlined"
                 density="comfortable"
@@ -93,6 +99,7 @@
                 <template v-slot:activator="{ props }">
                   <v-textarea
                     v-bind="props"
+                    v-model="fullDescription"
                     label="подробное описание*"
                     variant="outlined"
                     rows="4"
@@ -104,13 +111,13 @@
           <v-row>
             <v-col cols="12">
               <v-textarea
+                v-model="comments"
                 label="комментарии"
                 variant="outlined"
                 rows="2"
               />
             </v-col>
           </v-row>
-
           <!-- Кнопка сохранения -->
           <v-row class="mt-4">
             <v-col cols="12" class="d-flex">
@@ -119,8 +126,11 @@
                 variant="elevated"
                 size="large"
                 prepend-icon="mdi-content-save-outline"
+                @click="submitDescriptionSection"
+                :loading="isSaving"
+                :disabled="isSaving"
               >
-                сохранить
+                {{ isSaving ? 'Сохранение...' : 'Сохранить' }}
               </v-btn>
             </v-col>
           </v-row>
@@ -577,16 +587,6 @@ const rules = {
   range: v => (v >= 0 && v <= 99) || 'введите значение от 0 до 99'
 }
 
-// Visualization Section Refs
-const closedWidth = ref('')
-const closedHeight = ref('')
-const openWidth = ref('')
-const openHeight = ref('')
-const closedWidthError = ref('')
-const closedHeightError = ref('')
-const openWidthError = ref('')
-const openHeightError = ref('')
-
 // Description Section Refs
 const serviceName = ref('')
 const status = ref('')
@@ -597,6 +597,16 @@ const purpose = ref('')
 const fullDescription = ref('')
 const comments = ref('')
 const isSaving = ref(false)
+
+// Visualization Section Refs
+const closedWidth = ref('')
+const closedHeight = ref('')
+const openWidth = ref('')
+const openHeight = ref('')
+const closedWidthError = ref('')
+const closedHeightError = ref('')
+const openWidthError = ref('')
+const openHeightError = ref('')
 
 // Validation Method
 const validateField = (field) => {
@@ -616,8 +626,24 @@ const validateField = (field) => {
   }
 }
 
-// Save Description Method
-const saveDescription = async () => {
+// Save Description Section Data Method
+import { useUserStore } from '@/state/userstate';
+
+const userStore = useUserStore();
+
+const submitDescriptionSection = async () => {
+  console.log('Save button clicked - Description Section')
+  console.log('Current form values:', {
+    name: serviceName.value,
+    status: status.value,
+    visibility: visibility.value,
+    priority: priority.value,
+    shortDescription: shortDescription.value,
+    purpose: purpose.value,
+    fullDescription: fullDescription.value,
+    comments: comments.value
+  })
+
   try {
     isSaving.value = true
 
@@ -627,6 +653,12 @@ const saveDescription = async () => {
 
     if (serviceName.value.length < 3 || serviceName.value.length > 250) {
       throw new Error('Название сервиса должно содержать от 3 до 250 символов')
+    }
+
+    // Получаем JWT токен из userStore
+    const jwt = userStore.jwt
+    if (!jwt) {
+      throw new Error('Необходима авторизация')
     }
 
     const payload = {
@@ -640,10 +672,14 @@ const saveDescription = async () => {
       comments: comments.value
     }
 
-    const response = await fetch('http://localhost:3000/api/adminmodule/services/newservice/description', {
+    console.log('Sending payload to backend:', payload)
+    console.log('Authorization JWT:', jwt) // Для отладки
+
+    const response = await fetch('http://localhost:3000/api/admin/services', {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json'
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${jwt}`
       },
       body: JSON.stringify(payload)
     })
@@ -654,11 +690,11 @@ const saveDescription = async () => {
     }
 
     const result = await response.json()
-    console.log('Data successfully sent to backend:', result)
+    console.log('Backend response:', result)
     return { success: true, data: result }
     
   } catch (error) {
-    console.error('Save error:', error)
+    console.error('Save description section error:', error)
     return { success: false, error: error.message }
   } finally {
     isSaving.value = false
