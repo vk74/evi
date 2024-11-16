@@ -1,25 +1,9 @@
+// services.editor.js 
+// получает данные из фронтэнда, модуля service editor, валидирует и записывает в базу
 const { pool } = require('../db/maindb');
 
 /**
  * Общие вспомогательные функции
- */
-
-// Получение UUID пользователя по его имени
-async function getUserUUID(client, username) {
-  const userQuery = 'SELECT user_id FROM app.users WHERE username = $1';
-  const userResult = await client.query(userQuery, [username]);
-  
-  if (userResult.rows.length === 0) {
-    throw new Error('User not found in database');
-  }
-  
-  const userId = userResult.rows[0].user_id;
-  console.log('Found user UUID:', userId);
-  return userId;
-}
-
-/**
- * Сохранение данных секции "Описание"
  */
 async function createService(req, res) {
   const client = await pool.connect();
@@ -29,10 +13,10 @@ async function createService(req, res) {
     await client.query('BEGIN');
     console.log('Transaction started');
 
-    // Получаем UUID пользователя
-    const userId = await getUserUUID(client, req.user.username);
+    // Используем UUID пользователя, полученный ранее через getUserUUID
+    const userId = req.user.uuid;
     console.log('User info from request:', req.user);
-    console.log('User ID from request:', userId);
+    console.log('Using user UUID from middleware:', userId);
 
     // Создаем запись в таблице services
     const servicesQuery = `
@@ -142,7 +126,4 @@ async function updateManagement(req, res) {
 
 module.exports = {
   createService
-  // updateVisualization,
-  // updateAccess,
-  // updateManagement
 };

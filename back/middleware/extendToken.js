@@ -1,3 +1,5 @@
+// 16.11.2024 промежуточное ПО, пока не используется.
+
 const jwt = require('jsonwebtoken');
 const fs = require('fs');
 const path = require('path');

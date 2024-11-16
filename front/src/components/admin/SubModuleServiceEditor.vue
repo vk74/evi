@@ -77,7 +77,7 @@
                   <v-textarea
                     v-bind="props"
                     v-model="shortDescription"
-                    label="краткое описание*"
+                    label="краткое описание"
                     variant="outlined"
                     rows="3"
                   />
@@ -100,7 +100,7 @@
                   <v-textarea
                     v-bind="props"
                     v-model="fullDescription"
-                    label="подробное описание*"
+                    label="подробное описание"
                     variant="outlined"
                     rows="4"
                   />
@@ -646,7 +646,7 @@ const submitDescriptionSection = async () => {
 
   try {
     isSaving.value = true
-
+    
     if (!serviceName.value || !status.value || !visibility.value || !priority.value) {
       throw new Error('Пожалуйста, заполните все обязательные поля')
     }
