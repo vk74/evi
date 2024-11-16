@@ -64,7 +64,7 @@
           <v-list-item>
             <v-list-item-title>{{ $t('navigation.systemMenu.test') }}</v-list-item-title>
           </v-list-item>
-          <v-list-item @click="isChangePassModalVisible = true">
+          <v-list-item @click="isChangePassModalVisible = true" v-if="isLoggedIn">
             <v-list-item-title>{{ $t('navigation.systemMenu.changePassword') }}</v-list-item-title>
           </v-list-item>
           <v-list-item @click="logout" v-if="isLoggedIn">
