@@ -1,4 +1,4 @@
-// /src/state/userstate.js хранилище для отслеживания состояния пользователя
+// /src/state/userstate.js хранилище для отслеживания состояния
 import { defineStore } from 'pinia';
 
 

@@ -160,12 +160,24 @@
       <ModuleHelp v-if="activeModule === 'Help'" />
       <ModuleNewUserRegistration v-if="activeModule === 'NewUserRegistration'" />
     </v-main>
+
+    <!-- Глобальный snackbar -->
+    <AppSnackbar
+      v-if="uiStore.snackbar.show"
+      :type="uiStore.snackbar.type"
+      :message="uiStore.snackbar.message"
+      :timeout="uiStore.snackbar.timeout"
+      :closable="uiStore.snackbar.closable"
+      :position="uiStore.snackbar.position"
+      @close="uiStore.hideSnackbar"
+    />
   </v-app>
 </template>
 
-<script>
+<script setup>
 import { ref, computed, onMounted } from 'vue';
 import { useUserStore } from './state/userstate';
+import { useUiStore } from './state/uistate';
 import { useI18n } from 'vue-i18n';
 import { startSessionTimers } from './services/sessionServices';
 import ModuleCatalog from './components/catalog/ModuleCatalog.vue';
@@ -180,80 +192,61 @@ import ModuleLogin from './components/account/ModuleLogin.vue';
 import ModalChangeUserPass from './components/account/ModalChangeUserPass.vue';
 import LoginDialog from './components/account/ModuleLogin.vue';
 import ModuleNewUserRegistration from './components/account/ModuleNewUserRegistration.vue';
+import AppSnackbar from './components/ui/snackbars/AppSnackbar.vue';
 
-export default {
-  name: 'App',
-  components: {
-    ModuleCatalog,
-    ModuleWork,
-    ModuleAR,
-    ModuleAdmin,
-    ModuleXLS,
-    ModuleAccount,
-    ModuleSettings,
-    ModuleHelp,
-    ModuleLogin,
-    ModalChangeUserPass,
-    LoginDialog,
-    ModuleNewUserRegistration
-  },
-  setup() {
-    const userStore = useUserStore();
-    const i18n = useI18n();
-    const drawer = ref(true);
-    const isChangePassModalVisible = ref(false);
-    const isLoginDialogVisible = ref(false);
+// Инициализация store и i18n
+const userStore = useUserStore();
+const uiStore = useUiStore();
+const i18n = useI18n();
 
-    const isLoggedIn = computed(() => userStore.isLoggedIn);
-    const activeModule = computed(() => userStore.activeModule);
+// Refs
+const drawer = ref(true);
+const isChangePassModalVisible = ref(false);
+const isLoginDialogVisible = ref(false);
 
-    const setActiveModule = (module) => {
-      userStore.setActiveModule(module);
-    };
+// Computed properties
+const isLoggedIn = computed(() => userStore.isLoggedIn);
+const activeModule = computed(() => userStore.activeModule);
 
-    const logout = () => {
-      userStore.userLogoff();
-      setActiveModule('Catalog');
-    };
-
-       // Модифицируем функцию смены языка
-       const changeLanguage = (lang) => {
-      userStore.setLanguage(lang);
-      i18n.locale.value = lang; // Устанавливаем локаль i18n здесь
-    };
-
-    onMounted(() => {
-      // Синхронизируем начальный язык при монтировании
-      i18n.locale.value = userStore.language;
-      
-      if (isLoggedIn.value) {
-        console.log('App mounted. User is logged in. Starting session timers...');
-        startSessionTimers();
-      }
-    });
-
-    return {
-      drawer,
-      isChangePassModalVisible,
-      isLoginDialogVisible,
-      isLoggedIn,
-      activeModule,
-      userStore,
-      setActiveModule,
-      logout,
-      changeLanguage,
-      showLoginDialog() {
-        isLoginDialogVisible.value = true;
-      },
-      handleLoginSuccess() {
-        setActiveModule('Work');
-      },
-      showChangePassModal() {
-        isChangePassModalVisible.value = true;
-      }
-    };
-  },
+// Methods
+const setActiveModule = (module) => {
+ userStore.setActiveModule(module);
 };
+
+const logout = () => {
+ userStore.userLogoff();
+ setActiveModule('Catalog');
+};
+
+const changeLanguage = (lang) => {
+ userStore.setLanguage(lang);
+ i18n.locale.value = lang;
+};
+
+const showLoginDialog = () => {
+ isLoginDialogVisible.value = true;
+};
+
+const handleLoginSuccess = () => {
+ setActiveModule('Work');
+};
+
+const showChangePassModal = () => {
+ isChangePassModalVisible.value = true;
+};
+
+// Lifecycle hooks
+onMounted(() => {
+ i18n.locale.value = userStore.language;
+ if (isLoggedIn.value) {
+   console.log('App mounted. User is logged in. Starting session timers...');
+   startSessionTimers();
+ }
+});
+
+// В script setup не нужно явно объявлять components и возвращать переменные
+// Все импортированные компоненты и объявленные переменные 
+// автоматически доступны в template
 </script>
 
 <style>

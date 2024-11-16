@@ -6,10 +6,9 @@ import App from './App.vue';
 import { startSessionTimers } from './services/sessionServices';
 import axios from 'axios';
 import '/styles/global.css';
-import vuetify from './plugins/vuetify'; // импорт экземпляра Vuetify
+import vuetify from './plugins/vuetify';
 import '@mdi/font/css/materialdesignicons.css';
-import { jwtDecode } from 'jwt-decode'; // библиотека для декодирования JWT
-import { useUserStore } from './state/userstate'; // импорт Pinia store
+import { jwtDecode } from 'jwt-decode';
 
 // Импорт всех файлов локализации
 import appRu from './AppTranslationRU.json';
@@ -31,55 +30,59 @@ const messages = {
 
 // Создаем экземпляр i18n
 const i18n = createI18n({
-  legacy: false, // Используем Composition API
-  locale: localStorage.getItem('userLanguage') || 'ru', // Язык по умолчанию
-  fallbackLocale: 'ru', // Запасной язык
+  legacy: false,
+  locale: localStorage.getItem('userLanguage') || 'ru',
+  fallbackLocale: 'ru',
   messages
 });
 
+// Создаем приложение
 const app = createApp(App);
 const pinia = createPinia();
 
+// Устанавливаем плагины
 app.use(pinia);
 app.use(i18n);
-app.use(vuetify); // добавляем библиотеки Vuetify в запускаемый экземпляр приложения
-app.config.globalProperties.$http = axios; // добавляем axios как глобальное свойство
+app.use(vuetify);
+app.config.globalProperties.$http = axios;
 
-const token = localStorage.getItem('userToken');
-if (token) {
-  try {
-    const decoded = jwtDecode(token);
-    const currentTime = Date.now() / 1000; // получаем текущее время в секундах
-    const userStore = useUserStore(); // получаем доступ к Pinia хранилищу
-    if (decoded.exp < currentTime) {
-      // если время истечения токена уже прошло
-      localStorage.removeItem('userToken'); // удаляем токен из localStorage
+// Функция инициализации состояния пользователя
+const initializeUserState = async () => {
+  const { useUserStore } = await import('./state/userstate');
+  const userStore = useUserStore();
+  
+  const token = localStorage.getItem('userToken');
+  if (token) {
+    try {
+      const decoded = jwtDecode(token);
+      const currentTime = Date.now() / 1000;
+      
+      if (decoded.exp < currentTime) {
+        localStorage.removeItem('userToken');
+        userStore.setLoggedIn(false);
+        userStore.setUsername('');
+        userStore.setJwt('');
+      } else {
+        userStore.setLoggedIn(true);
+        userStore.setUsername(decoded.sub);
+        userStore.setJwt(token);
+        userStore.setIssuer(decoded.iss);
+        userStore.setAudience(decoded.aud);
+        userStore.setIssuedAt(decoded.iat);
+        userStore.setJwtId(decoded.jti);
+        userStore.setTokenExpires(decoded.exp);
+        startSessionTimers();
+      }
+    } catch (error) {
+      console.error('Ошибка при декодировании JWT:', error);
+      localStorage.removeItem('userToken');
       userStore.setLoggedIn(false);
-      // очищаем дополнительные связанные с токеном данные
-      userStore.setUsername('');
-      userStore.setJwt('');
-    } else {
-      // если токен все еще действителен
-      userStore.setLoggedIn(true);
-      userStore.setUsername(decoded.sub);
-      userStore.setJwt(token);
-      userStore.setIssuer(decoded.iss);
-      userStore.setAudience(decoded.aud);
-      userStore.setIssuedAt(decoded.iat);
-      userStore.setJwtId(decoded.jti);
-      userStore.setTokenExpires(decoded.exp);
-      startSessionTimers(); // запуск таймеров сессии при старте приложения
     }
-  } catch (error) {
-    console.error('Ошибка при декодировании JWT:', error);
-    localStorage.removeItem('userToken'); // в случае ошибки также удаляем токен
-    const userStore = useUserStore(); // получаем доступ к Pinia хранилищу
+  } else {
     userStore.setLoggedIn(false);
   }
-} else {
-  // если токен отсутствует
-  const userStore = useUserStore(); // получаем доступ к Pinia хранилищу
-  userStore.setLoggedIn(false);
-}
+};
 
+// Монтируем приложение и инициализируем состояние
 app.mount('#app');
+initializeUserState();

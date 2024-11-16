@@ -553,12 +553,6 @@
 
 <script setup>
 import { ref } from 'vue'
-import { useUserStore } from '@/state/userstate'
-import { useUiStore } from '@/state/uistate'
-
-// Инициализируем store в начале, до использования
-const userStore = useUserStore()
-const uiStore = useUiStore()
 
 const sections = [
   { id: 'description', title: 'описание', icon: 'mdi-book-open-page-variant-outline' },
@@ -633,6 +627,10 @@ const validateField = (field) => {
 }
 
 // Save Description Section Data Method
+import { useUserStore } from '@/state/userstate';
+
+const userStore = useUserStore();
+
 const submitDescriptionSection = async () => {
   console.log('Save button clicked - Description Section')
   console.log('Current form values:', {
@@ -649,12 +647,10 @@ const submitDescriptionSection = async () => {
   try {
     isSaving.value = true
     
-    // Валидация обязательных полей
     if (!serviceName.value || !status.value || !visibility.value || !priority.value) {
       throw new Error('Пожалуйста, заполните все обязательные поля')
     }
 
-    // Валидация длины названия сервиса
     if (serviceName.value.length < 3 || serviceName.value.length > 250) {
       throw new Error('Название сервиса должно содержать от 3 до 250 символов')
     }
@@ -677,7 +673,7 @@ const submitDescriptionSection = async () => {
     }
 
     console.log('Sending payload to backend:', payload)
-    console.log('Authorization JWT:', jwt)
+    console.log('Authorization JWT:', jwt) // Для отладки
 
     const response = await fetch('http://localhost:3000/api/admin/services', {
       method: 'POST',
@@ -695,18 +691,10 @@ const submitDescriptionSection = async () => {
 
     const result = await response.json()
     console.log('Backend response:', result)
-
-    // Показываем уведомление об успехе
-    uiStore.showSuccessSnackbar('Данные сервиса успешно сохранены')
-    
     return { success: true, data: result }
     
   } catch (error) {
     console.error('Save description section error:', error)
-    
-    // Показываем уведомление об ошибке с детальным сообщением
-    uiStore.showErrorSnackbar(error.message || 'Произошла ошибка при сохранении данных')
-    
     return { success: false, error: error.message }
   } finally {
     isSaving.value = false
