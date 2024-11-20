@@ -128,7 +128,7 @@ async function serviceEditor(req, res) {
             });
         } else {
             res.status(500).json({
-                message: 'Ошибка при создании сервиса',
+                message: 'Ошибка при записи данных сервиса',
                 error: error.message
             });
         }

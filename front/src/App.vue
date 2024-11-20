@@ -94,7 +94,7 @@
         </v-list-item>
         <v-list-item 
           @click="setActiveModule('Work')" 
-          prepend-icon="mdi-file-edit-outline" 
+          prepend-icon="mdi-text-box-multiple-outline" 
           :title="$t('navigation.drawer.workModule')" 
           value="workItems">
         </v-list-item>
