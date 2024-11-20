@@ -1,10 +1,10 @@
 // services.editor.js
-// получает данные из фронтэнда, модуля service editor, валидирует и записывает в базу
+// получает данные из фронтэнда, модуля service editor, отправляет в модуль валидации и записывает в базу
 
 const { pool } = require('../db/maindb');
 const { validateServiceData, ValidationError } = require('./services.editor.validator');
 
-async function createService(req, res) {
+async function serviceEditor(req, res) {
     const client = await pool.connect();
     console.log('Database connection established');
     
@@ -110,7 +110,7 @@ async function createService(req, res) {
         console.log('Transaction committed successfully');
 
         res.status(201).json({
-            message: 'Сервис успешно создан',
+            message: 'данные сервиса успешно записаны',
             serviceId: serviceId
         });
 
@@ -152,5 +152,5 @@ async function updateManagement(req, res) {
 */
 
 module.exports = {
-    createService
+    serviceEditor
 };

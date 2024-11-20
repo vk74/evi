@@ -1,12 +1,12 @@
 const express = require('express');
 const router = express.Router();
 
-const getUserUUID = require('../middleware/getUserUUID');
+const getUserUUID = require('../middleware/users.get.uuid');
 const validateJWT = require('../guards/auth.validate.jwt');
 // const checkAccountStatus = require('../guards/auth.check.status');
-const { createService } = require('../middleware/services.editor');
+const { serviceEditor } = require('../middleware/services.editor');
 
 // Создание нового сервиса
-router.post('/api/admin/services', validateJWT, getUserUUID, createService);
+router.post('/api/admin/services', validateJWT, getUserUUID, serviceEditor);
 
 module.exports = router;
