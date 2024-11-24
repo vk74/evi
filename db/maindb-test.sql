@@ -1,3 +1,64 @@
+
+CREATE TYPE work_area_type AS ENUM (
+    'type_a',
+    'type_b',
+);
+
+-- Базовая таблица для всех рабочих областей
+CREATE TABLE catalog_sections (
+    id UUID PRIMARY KEY,
+    name VARCHAR(255),
+    work_area_type work_area_type NOT NULL DEFAULT 'type_a',
+    work_area_id UUID,  -- единое поле для связи
+        CONSTRAINT fk_type_a 
+        FOREIGN KEY (work_area_id) 
+        REFERENCES work_area_type_a(id)
+        WHEN (work_area_type = 'type_a')
+        DEFERRABLE INITIALLY DEFERRED,
+    CONSTRAINT fk_type_b 
+        FOREIGN KEY (work_area_id) 
+        REFERENCES work_area_type_b(id)
+        WHEN (work_area_type = 'type_b')
+        DEFERRABLE INITIALLY DEFERRED
+);
+
+-- Таблица для области типа A
+CREATE TABLE work_area_type_a (
+    id UUID PRIMARY KEY,
+    name VARCHAR(255),
+);
+
+-- Таблица для области типа B
+CREATE TABLE work_area_type_b (
+    id UUID PRIMARY KEY,
+    name VARCHAR(255),
+);
+
+
+
+
+--  app bar секция каталог, таблица для секций 
+enum section_type
+enum section_status
+
+id UUID
+section_name
+section_type
+section_status
+slug
+
+
+-- рабочие области секций
+
+id UUID
+catalog_work_area_name
+catalog_work_area_status
+catalog_work_area_tag
+
+
+
+
+
 -- -- (user) groups table data
 CREATE TYPE group_type AS ENUM (
     'support',      -- группы поддержки
