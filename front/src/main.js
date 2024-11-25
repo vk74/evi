@@ -1,6 +1,7 @@
 // src/main.js
 import { createApp } from 'vue';
 import { createPinia } from 'pinia';
+import piniaPluginPersistedstate from 'pinia-plugin-persistedstate';
 import { createI18n } from 'vue-i18n';
 import App from './App.vue';
 import { startSessionTimers } from './services/sessionServices';
@@ -39,6 +40,7 @@ const i18n = createI18n({
 // Создаем приложение
 const app = createApp(App);
 const pinia = createPinia();
+pinia.use(piniaPluginPersistedstate);
 
 // Устанавливаем плагины
 app.use(pinia);
