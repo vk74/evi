@@ -5,12 +5,12 @@
 * Основные функции:
 * - Загрузка списка сервисов из API
 * - Хранение списка загруженных сервисов
+* - Загрузка детальной информации о сервисах
 * - Управление состоянием загрузки и ошибками
 * - Предоставление доступа к данным через геттеры
 * - Кэширование загруженных данных для оптимизации производительности
 */
 
-// Store для управления состоянием модуля каталога
 import { defineStore } from 'pinia';
 import { useUserStore } from './userstate';
 import axios from 'axios';
@@ -26,7 +26,13 @@ export const useCatalogStore = defineStore('catalog', {
     // Список загруженных сервисов
     services: [],
     // Флаг, указывающий были ли загружены сервисы
-    servicesLoaded: false
+    servicesLoaded: false,
+    // Кэш деталей сервисов
+    serviceDetails: {},
+    // Флаг загрузки деталей
+    loadingDetails: false,
+    // Ошибка загрузки деталей
+    detailsError: null
   }),
 
   getters: {
@@ -37,7 +43,9 @@ export const useCatalogStore = defineStore('catalog', {
     // Получение ошибки
     getError: (state) => state.error,
     // Получение списка сервисов
-    getServices: (state) => state.services
+    getServices: (state) => state.services,
+    // Получение деталей сервиса по ID
+    getServiceDetailsById: (state) => (id) => state.serviceDetails[id]
   },
 
   actions: {
@@ -105,10 +113,49 @@ export const useCatalogStore = defineStore('catalog', {
       }
     },
 
+    // Загрузка деталей сервиса
+    async loadServiceDetails(serviceId) {
+      console.log('CatalogStore: Loading details for service:', serviceId);
+      
+      // Если детали уже загружены, возвращаем их из кэша
+      if (this.serviceDetails[serviceId]) {
+        console.log('CatalogStore: Details found in cache');
+        return this.serviceDetails[serviceId];
+      }
+
+      this.loadingDetails = true;
+      this.detailsError = null;
+
+      try {
+        const userStore = useUserStore();
+        
+        if (!userStore.isLoggedIn) {
+          throw new Error('User not logged in');
+        }
+
+        const response = await axios.get(`http://localhost:3000/api/catalog/services/${serviceId}/details`, {
+          headers: { 
+            Authorization: `Bearer ${userStore.jwt}` 
+          }
+        });
+
+        console.log('CatalogStore: Details loaded successfully');
+        this.serviceDetails[serviceId] = response.data.details;
+        return response.data.details;
+      } catch (error) {
+        console.error('CatalogStore: Error loading service details:', error);
+        this.detailsError = 'Failed to load service details';
+        throw error;
+      } finally {
+        this.loadingDetails = false;
+      }
+    },
+
     // Сброс списка сервисов
     resetServices() {
       this.services = [];
       this.servicesLoaded = false;
+      this.serviceDetails = {};
     }
   }
 });
