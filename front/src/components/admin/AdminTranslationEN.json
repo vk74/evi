@@ -1,6 +1,9 @@
 {
   "admin": {
     "nav": {
+      "catalog": {
+        "main": "catalog management"
+      },
       "services": {
         "main": "service management",
         "items": {

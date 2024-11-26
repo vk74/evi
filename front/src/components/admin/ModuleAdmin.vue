@@ -2,33 +2,39 @@
   ModuleAdmin.vue
   Основной модуль администрирования, содержащий навигационное меню и
   контейнер для отображения подмодулей администрирования.
+  
   Поддерживает сворачиваемое боковое меню с четырьмя основными разделами:
   - Управление каталогом
   - Управление сервисами
   - Управление пользователями
   - Настройки приложения
+  
+  Боковое меню имеет три режима отображения:
+  1. Авто-скрытие: меню свернуто, раскрывается при наведении
+  2. Зафиксировано открытым: меню всегда раскрыто
+  3. Зафиксировано закрытым: меню всегда свернуто
 -->
 <template>
   <v-container fluid>
     <v-row>
-      <!-- Боковое навигационное меню с возможностью сворачивания -->
+      <!-- Боковое навигационное меню с тремя режимами отображения -->
       <v-navigation-drawer 
         v-model="drawer" 
         app 
-        :expand-on-hover="!isPinned"
-        :rail="!isPinned"
+        :expand-on-hover="drawerMode === 'auto'"
+        :rail="drawerMode === 'auto' || drawerMode === 'closed'"
         elevation="5"
         class="drawer-container"
       >
-        <!-- Область-кнопка на всю ширину для сворачивания/разворачивания -->
-        <div class="full-width-toggle" @click="toggleDrawerPin"></div>
+        <!-- Область-кнопка на всю ширину для переключения режимов -->
+        <div class="full-width-toggle" @click="toggleDrawerMode"></div>
 
-        <!-- Кнопка-шеврон для управления состоянием меню -->
+        <!-- Кнопка-шеврон для переключения режимов -->
         <div class="chevron-button">
           <v-btn
             variant="text"
-            @click="toggleDrawerPin"
-            :icon="isPinned ? 'mdi-chevron-double-left' : 'mdi-chevron-double-right'"
+            @click="toggleDrawerMode"
+            :icon="chevronIcon"
             size="small"
             class="chevron-icon"
             color="grey-darken-1"
@@ -133,7 +139,23 @@ export default {
 
     // Вычисляемые свойства для отслеживания состояния модуля
     const activeSubModule = computed(() => adminStore.activeSubModule);
-    const isPinned = computed(() => adminStore.isPinned);
+    
+    // Получаем текущий режим отображения drawer из store
+    const drawerMode = computed(() => adminStore.drawerMode);
+
+    // Определяем иконку в зависимости от режима drawer
+    const chevronIcon = computed(() => {
+      switch(drawerMode.value) {
+        case 'auto':
+          return 'mdi-chevron-double-right';
+        case 'opened':
+          return 'mdi-chevron-double-left';
+        case 'closed':
+          return 'mdi-chevron-double-down';
+        default:
+          return 'mdi-chevron-double-right';
+      }
+    });
     
     // Определение текущего активного подмодуля
     const currentSubModule = computed(() => {
@@ -158,9 +180,12 @@ export default {
       adminStore.setActiveSubModule(module);
     };
 
-    // Переключение состояния закрепления бокового меню
-    const toggleDrawerPin = () => {
-      adminStore.setIsPinned(!isPinned.value);
+    // Циклическое переключение режимов отображения drawer
+    const toggleDrawerMode = () => {
+      const modes = ['auto', 'opened', 'closed'];
+      const currentIndex = modes.indexOf(drawerMode.value);
+      const nextIndex = (currentIndex + 1) % modes.length;
+      adminStore.setDrawerMode(modes[nextIndex]);
     };
 
     return {
@@ -168,8 +193,9 @@ export default {
       currentSubModule,
       setActiveSubModule,
       drawer,
-      isPinned,
-      toggleDrawerPin,
+      drawerMode,
+      toggleDrawerMode,
+      chevronIcon,
       t
     };
   },
