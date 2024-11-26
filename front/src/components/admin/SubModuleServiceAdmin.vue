@@ -1,74 +1,123 @@
+<!--
+  Модуль администрирования сервисов.
+  Обеспечивает навигацию между разделами управления сервисами через app bar
+  и отображает соответствующие подмодули в рабочей области.
+-->
 <template>
-  <v-container>
-    <v-app-bar app>
-      <template v-slot:image>
-        <v-img gradient="to top right, rgba(15,70,150,.85), rgba(100,180,170,.6)"></v-img>
-      </template>
-      <v-tooltip bottom>
-        <template v-slot:activator="{ props }">
-          <v-btn icon v-bind="props" @click="onServiceEditorClick">
-            <v-icon left style="color: white;">mdi-file-plus-outline</v-icon>
-          </v-btn>
-        </template>
-        <span>новый сервис</span>
-      </v-tooltip>
-      <v-tooltip bottom>
-        <template v-slot:activator="{ props }">
-          <v-btn icon v-bind="props" @click="onButtonClick">
-            <v-icon left style="color: white;">mdi-square-edit-outline</v-icon>
-          </v-btn>
-        </template>
-        <span>редактировать сервис</span>
-      </v-tooltip>
-      <v-tooltip bottom>
-        <template v-slot:activator="{ props }">
-          <v-btn icon v-bind="props" @click="onButtonClick">
-            <v-icon left style="color: white;">mdi-delete-outline</v-icon>
-          </v-btn>
-        </template>
-        <span>удалить сервис</span>
-      </v-tooltip>
+  <div class="module-root">
+    <!-- App Bar -->
+    <v-app-bar app flat class="app-bar">
+      <!-- Секции и кнопка нового сервиса -->
+      <div class="nav-section">
+        <v-btn
+          v-for="section in sections"
+          :key="section.id"
+          :class="['section-btn', { 'section-active': activeSection === section.id }]"
+          variant="text"
+          @click="switchSection(section.id)"
+        >
+          <v-icon start>{{ section.icon }}</v-icon>
+          {{ section.title }}
+        </v-btn>
+
+        <!-- Разделитель -->
+        <div class="separator"></div>
+
+        <!-- Кнопка нового сервиса -->
+        <v-tooltip location="bottom">
+          <template v-slot:activator="{ props }">
+            <v-btn
+              icon
+              v-bind="props"
+              @click="onServiceEditorClick"
+              class="new-service-btn"
+              color="rgba(0, 0, 0, 0.45)"
+            >
+              <v-icon>mdi-file-plus-outline</v-icon>
+            </v-btn>
+          </template>
+          <span>новый сервис</span>
+        </v-tooltip>
+      </div>
       <v-spacer></v-spacer>
-      <v-toolbar-title class="title-padding" style="color: white; text-align: right; margin-right: 20px;">управление сервисами</v-toolbar-title>
     </v-app-bar>
-    <v-row>
-      <p>Содержимое под-модуля Service Administration</p>
-    </v-row>
-  </v-container>
+
+    <!-- Working Area -->
+    <div class="working-area">
+      <SubModuleServiceViewActiveServices v-if="activeSection === 'active-services'" />
+      <SubModuleServiceViewAllServices v-if="activeSection === 'all-services'" />
+      <SubModuleServiceEditor v-if="activeSubModule === 'SubModuleServiceEditor'" />
+    </div>
+  </div>
 </template>
 
-<script>
-import { useAdminStore } from '@/state/adminstate';
+<script setup>
+import { computed } from 'vue'
+import { useAdminStore } from '@/state/adminstate'
+import SubModuleServiceViewActiveServices from './SubModuleServiceViewActiveServices.vue'
+import SubModuleServiceViewAllServices from './SubModuleServiceViewAllServices.vue'
+import SubModuleServiceEditor from './SubModuleServiceEditor.vue'
 
-export default {
-  name: 'SubModuleServiceAdmin',
-  setup() {
-    const adminStore = useAdminStore();
+// Инициализация store
+const adminStore = useAdminStore()
 
-    const onServiceEditorClick = () => {
-      adminStore.setActiveSubModule('SubModuleServiceEditor');
-    };
+// Определение секций
+const sections = [
+  { id: 'active-services', title: 'активные сервисы', icon: 'mdi-check-circle-outline' },
+  { id: 'all-services', title: 'все сервисы', icon: 'mdi-view-grid-outline' }
+]
 
-    const onButtonClick = () => {
-      console.log('Button clicked');
-    };
+// Получение активной секции из store
+const activeSection = computed(() => adminStore.getCurrentSection)
 
-    return {
-      onServiceEditorClick,
-      onButtonClick
-    };
+// Получение активного подмодуля из store
+const activeSubModule = computed(() => adminStore.activeSubModule)
+
+// Переключение секций
+const switchSection = (sectionId) => {
+  adminStore.setActiveSection(sectionId)
+  // При переключении секции сбрасываем activeSubModule, если открыт редактор
+  if (adminStore.activeSubModule === 'SubModuleServiceEditor') {
+    adminStore.setActiveSubModule(null)
   }
-};
+}
+
+// Открытие редактора нового сервиса
+const onServiceEditorClick = () => {
+  adminStore.setActiveSubModule('SubModuleServiceEditor')
+}
 </script>
 
 <style scoped>
-/* Стилизация компонента */
-.title-padding {
-  padding-left: 25px;
+.app-bar {
+  background-color: rgba(0, 0, 0, 0.05) !important;
 }
 
-/* Добавляем стиль для отступа первой кнопки */
-.v-app-bar :deep(.v-btn:first-of-type) {
-  margin-left: 40px; /* или padding-left: 20px; */
+.nav-section {
+  display: flex;
+  align-items: center;
+  margin-left: 15px;
+}
+
+.section-btn {
+  text-transform: none;
+  font-weight: 400;
+  height: 64px;
+  border-radius: 0;
+  color: rgba(0, 0, 0, 0.6) !important;
+}
+
+.section-active {
+  border-bottom: 2px solid #009688;
+  font-weight: 500;
+}
+
+.separator {
+  width: 24px;
+}
+
+.working-area {
+  height: calc(100vh - 64px);
+  overflow-y: auto;
 }
 </style>
