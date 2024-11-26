@@ -3,6 +3,7 @@
  * Хранилище состояния для модуля администрирования.
  * Управляет состоянием активного подмодуля, режимом отображения бокового меню
  * и активной секцией в модуле управления сервисами.
+ * Обеспечивает сохранение состояния между сессиями пользователя.
  */
 import { defineStore } from 'pinia';
 
@@ -78,4 +79,15 @@ export const useAdminStore = defineStore('admin', {
             }
         }
     },
+
+    persist: {
+        enabled: true,
+        strategies: [
+            {
+                key: 'admin-store',
+                storage: localStorage,
+                paths: ['drawerMode', 'activeSubModule', 'activeSection']
+            }
+        ]
+    }
 });
