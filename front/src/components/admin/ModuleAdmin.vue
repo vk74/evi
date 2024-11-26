@@ -1,6 +1,17 @@
+<!-- 
+  ModuleAdmin.vue
+  Основной модуль администрирования, содержащий навигационное меню и
+  контейнер для отображения подмодулей администрирования.
+  Поддерживает сворачиваемое боковое меню с четырьмя основными разделами:
+  - Управление каталогом
+  - Управление сервисами
+  - Управление пользователями
+  - Настройки приложения
+-->
 <template>
   <v-container fluid>
     <v-row>
+      <!-- Боковое навигационное меню с возможностью сворачивания -->
       <v-navigation-drawer 
         v-model="drawer" 
         app 
@@ -9,10 +20,10 @@
         elevation="5"
         class="drawer-container"
       >
-        <!-- Область-кнопка на всю ширину без иконки -->
+        <!-- Область-кнопка на всю ширину для сворачивания/разворачивания -->
         <div class="full-width-toggle" @click="toggleDrawerPin"></div>
 
-        <!-- Оригинальная кнопка справа -->
+        <!-- Кнопка-шеврон для управления состоянием меню -->
         <div class="chevron-button">
           <v-btn
             variant="text"
@@ -24,76 +35,41 @@
           ></v-btn>
         </div>
       
+        <!-- Основное навигационное меню -->
         <v-list density="compact" nav class="navigation-list">
-          <v-list-group>
-            <template v-slot:activator="{ props }">
-              <v-list-item
-                v-bind="props"
-                class="nav-item"
-                prepend-icon="mdi-room-service"
-                :title="$t('admin.nav.services.main')"
-                :active="activeSubModule === 'SubModuleServiceAdmin'"
-                @click="setActiveSubModule('SubModuleServiceAdmin', 'all')"
-              >
-                <v-list-item-title v-if="!drawer" class="hidden-title">
-                  {{ $t('admin.nav.services.main') }}
-                </v-list-item-title>
-              </v-list-item>
-            </template>
+          <!-- Пункт меню "Управление каталогом" -->
+          <v-list-item 
+            @click="setActiveSubModule('SubModuleCatalogAdmin')" 
+            class="nav-item" 
+            prepend-icon="mdi-view-grid-plus-outline" 
+            :title="$t('admin.nav.catalog.main')"
+            value="catalogAdmin"
+            :active="activeSubModule === 'SubModuleCatalogAdmin'"
+          >
+            <v-list-item-title v-if="!drawer" class="hidden-title">
+              {{ $t('admin.nav.catalog.main') }}
+            </v-list-item-title>
+          </v-list-item>
 
-            <v-list-item
-              @click="setActiveSubModule('SubModuleServiceAdmin', 'all')"
-              class="sub-nav-item"
-              value="allServices"
-              :active="currentFilter === 'all'"
-            >
-              <template v-slot:prepend>
-                <v-icon size="small" class="sub-icon">mdi-view-list</v-icon>
-              </template>
-              <v-list-item-title>{{ $t('admin.nav.services.items.all') }}</v-list-item-title>
-            </v-list-item>
+          <!-- Пункт меню "Управление сервисами" -->
+          <v-list-item 
+            @click="setActiveSubModule('SubModuleServiceAdmin')" 
+            class="nav-item" 
+            prepend-icon="mdi-cube-scan" 
+            :title="$t('admin.nav.services.main')"
+            value="serviceAdmin"
+            :active="activeSubModule === 'SubModuleServiceAdmin'"
+          >
+            <v-list-item-title v-if="!drawer" class="hidden-title">
+              {{ $t('admin.nav.services.main') }}
+            </v-list-item-title>
+          </v-list-item>
 
-            <v-list-item
-              @click="setActiveSubModule('SubModuleServiceAdmin', 'active')"
-              class="sub-nav-item"
-              value="activeServices"
-              :active="currentFilter === 'active'"
-            >
-              <template v-slot:prepend>
-                <v-icon size="small" class="sub-icon">mdi-check-circle</v-icon>
-              </template>
-              <v-list-item-title>{{ $t('admin.nav.services.items.active') }}</v-list-item-title>
-            </v-list-item>
-
-            <v-list-item
-              @click="setActiveSubModule('SubModuleServiceAdmin', 'planned')"
-              class="sub-nav-item"
-              value="plannedServices"
-              :active="currentFilter === 'planned'"
-            >
-              <template v-slot:prepend>
-                <v-icon size="small" class="sub-icon">mdi-calendar-clock</v-icon>
-              </template>
-              <v-list-item-title>{{ $t('admin.nav.services.items.planned') }}</v-list-item-title>
-            </v-list-item>
-
-            <v-list-item
-              @click="setActiveSubModule('SubModuleServiceAdmin', 'deactivated')"
-              class="sub-nav-item"
-              value="deactivatedServices"
-              :active="currentFilter === 'deactivated'"
-            >
-              <template v-slot:prepend>
-                <v-icon size="small" class="sub-icon">mdi-close-circle</v-icon>
-              </template>
-              <v-list-item-title>{{ $t('admin.nav.services.items.deactivated') }}</v-list-item-title>
-            </v-list-item>
-          </v-list-group>
-
+          <!-- Пункт меню "Управление пользователями" -->
           <v-list-item 
             @click="setActiveSubModule('SubModuleUserAdmin')" 
             class="nav-item" 
-            prepend-icon="mdi-account" 
+            prepend-icon="mdi-account-cog" 
             :title="$t('admin.nav.users.main')"
             value="userAdmin"
             :active="activeSubModule === 'SubModuleUserAdmin'"
@@ -103,10 +79,11 @@
             </v-list-item-title>
           </v-list-item>
 
+          <!-- Пункт меню "Настройки приложения" -->
           <v-list-item 
             @click="setActiveSubModule('SubModuleAppAdmin')" 
             class="nav-item" 
-            prepend-icon="mdi-application" 
+            prepend-icon="mdi-cog-outline" 
             :title="$t('admin.nav.settings.main')"
             value="appAdmin"
             :active="activeSubModule === 'SubModuleAppAdmin'"
@@ -120,6 +97,7 @@
         </v-list>
       </v-navigation-drawer>
       
+      <!-- Контейнер для отображения активного подмодуля -->
       <v-col cols="11">
         <component :is="currentSubModule" />
       </v-col>
@@ -132,6 +110,8 @@ import { ref, computed, defineAsyncComponent } from 'vue';
 import { useAdminStore } from '@/state/adminstate';
 import { useI18n } from 'vue-i18n';
 
+// Асинхронная загрузка подмодулей
+const SubModuleCatalogAdmin = defineAsyncComponent(() => import('./SubModuleCatalogAdmin.vue'));
 const SubModuleServiceAdmin = defineAsyncComponent(() => import('./SubModuleServiceAdmin.vue'));
 const SubModuleUserAdmin = defineAsyncComponent(() => import('./SubModuleUserAdmin.vue'));
 const SubModuleAppAdmin = defineAsyncComponent(() => import('./SubModuleAppAdmin.vue'));
@@ -140,6 +120,7 @@ const SubModuleServiceEditor = defineAsyncComponent(() => import('./SubModuleSer
 export default {
   name: 'ModuleAdmin',
   components: {
+    SubModuleCatalogAdmin,
     SubModuleServiceAdmin,
     SubModuleUserAdmin,
     SubModuleAppAdmin,
@@ -149,13 +130,16 @@ export default {
     const adminStore = useAdminStore();
     const { t } = useI18n();
     const drawer = ref(true);
-    const currentFilter = ref('all');
 
+    // Вычисляемые свойства для отслеживания состояния модуля
     const activeSubModule = computed(() => adminStore.activeSubModule);
     const isPinned = computed(() => adminStore.isPinned);
     
+    // Определение текущего активного подмодуля
     const currentSubModule = computed(() => {
       switch(activeSubModule.value) {
+        case 'SubModuleCatalogAdmin':
+          return SubModuleCatalogAdmin;
         case 'SubModuleServiceAdmin':
           return SubModuleServiceAdmin;
         case 'SubModuleUserAdmin':
@@ -165,17 +149,16 @@ export default {
         case 'SubModuleServiceEditor':
           return SubModuleServiceEditor;
         default:
-          return SubModuleServiceAdmin;
+          return SubModuleCatalogAdmin;
       }
     });
 
-    const setActiveSubModule = (module, filter = null) => {
+    // Установка активного подмодуля
+    const setActiveSubModule = (module) => {
       adminStore.setActiveSubModule(module);
-      if (filter) {
-        currentFilter.value = filter;
-      }
     };
 
+    // Переключение состояния закрепления бокового меню
     const toggleDrawerPin = () => {
       adminStore.setIsPinned(!isPinned.value);
     };
@@ -187,7 +170,6 @@ export default {
       drawer,
       isPinned,
       toggleDrawerPin,
-      currentFilter,
       t
     };
   },
@@ -195,10 +177,13 @@ export default {
 </script>
 
 <style scoped>
+/* Стили для контейнера бокового меню */
 .drawer-container {
   position: relative;
+  background-color: rgb(242, 242, 242) !important;
 }
 
+/* Стили для области переключения состояния меню */
 .full-width-toggle {
   position: absolute;
   top: 0;
@@ -215,6 +200,7 @@ export default {
   background-color: rgba(var(--v-theme-primary), 0.04);
 }
 
+/* Стили для кнопки-шеврона */
 .chevron-button {
   position: absolute;
   right: -16px;
@@ -232,32 +218,14 @@ export default {
   opacity: 0.6;
 }
 
+/* Стили для навигационного списка */
 .navigation-list {
   margin-top: 48px;
 }
 
+/* Стили для элементов навигации */
 .nav-item {
   min-height: 56px;
-}
-
-.sub-nav-item {
-  min-height: 40px;
-  padding-left: 8px !important;
-}
-
-.sub-icon {
-  margin-left: 8px !important;
-}
-
-:deep(.v-list--rail) {
-  .sub-nav-item {
-    padding-left: 0 !important;
-    
-    .sub-icon {
-      margin-left: 8px !important;
-      opacity: 1 !important;
-    }
-  }
 }
 
 .v-list-item__icon {
@@ -268,6 +236,7 @@ export default {
   align-items: center;
 }
 
+/* Стили для скрытых заголовков в свернутом состоянии */
 .hidden-title {
   display: none;
 }
