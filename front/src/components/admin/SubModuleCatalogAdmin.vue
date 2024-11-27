@@ -1,61 +1,90 @@
+<!--
+ * Модуль администрирования каталога SubModuleCatalogAdmin.vue
+ * Обеспечивает навигацию между разделами управления каталогом через app bar
+ * и отображает соответствующие подмодули в рабочей области.
+-->
 <template>
-    <v-container>
-      <v-app-bar app>
-        <template v-slot:image>
-          <v-img gradient="to top right, rgba(30,50,100,.85), rgba(0,128,128,.8)"></v-img>
-        </template>
-          <v-tooltip bottom>
-            <template v-slot:activator="{ props }">
-              <v-btn icon v-bind="props" @click="onButtonClick">
-                <v-icon left style="color: white;">mdi-account-plus-outline</v-icon>
-              </v-btn>
-            </template>
-            <span>добавить пользователя</span>
-          </v-tooltip>
-          <v-tooltip bottom>
-            <template v-slot:activator="{ props }">
-              <v-btn icon v-bind="props" @click="onButtonClick">
-                <v-icon left style="color: white;">mdi-account-edit-outline</v-icon>
-              </v-btn>
-            </template>
-            <span>редактировать пользователя</span>
-          </v-tooltip>
-          <v-tooltip bottom>
-            <template v-slot:activator="{ props }">
-              <v-btn icon v-bind="props" @click="onButtonClick">
-                <v-icon left style="color: white;">mdi-account-minus-outline</v-icon>
-              </v-btn>
-            </template>
-            <span>удалить пользователя</span>
-          </v-tooltip>
-          <v-spacer></v-spacer>
-          <v-toolbar-title class="title-padding" style="color: white; text-align: right; margin-right: 20px;">управление каталогом</v-toolbar-title>
-      </v-app-bar>
-      <v-row>
-        <p>Содержимое под-модуля Catalog Administration</p>
-      </v-row>
-    </v-container>
-  </template>
-  
-  <script>
-  export default {
-    name: 'SubModuleCatalogAdmin',
-    methods: {
-      onButtonClick() {
-        console.log('Button clicked');
-      },
-    },
-  };
-  </script>
-  
-  <style scoped>
-  /* Стилизация компонента 
-  .title-padding {
-    padding-left: 25px;
-  }*/
-  
-  /* Добавляем стиль для отступа первой кнопки */
-  .v-app-bar :deep(.v-btn:first-of-type) {
-    margin-left: 40px; /* или padding-left: 20px; */
-  }
-  </style>
+  <div class="module-root">
+    <!-- App Bar -->
+    <v-app-bar app flat class="app-bar">
+      <!-- Секции -->
+      <div class="nav-section">
+        <v-btn
+          v-for="section in sections"
+          :key="section.id"
+          :class="['section-btn', { 'section-active': activeSection === section.id }]"
+          variant="text"
+          @click="switchSection(section.id)"
+        >
+          <v-icon start>{{ section.icon }}</v-icon>
+          {{ section.title }}
+        </v-btn>
+      </div>
+      <v-spacer></v-spacer>
+    </v-app-bar>
+
+    <!-- Working Area -->
+    <div class="working-area">
+      <SubModuleCatalogEditor v-if="activeSection === 'settings'" />
+      <SubModuleCatalogSettingsVisualization v-if="activeSection === 'visualization'" />
+      <SubModuleCatalogSettingsAccess v-if="activeSection === 'access'" />
+    </div>
+  </div>
+</template>
+
+<script setup>
+import { computed } from 'vue'
+import { useAdminStore } from '@/state/adminstate'
+// Импорты подмодулей (будут созданы позже)
+import SubModuleCatalogEditor from './SubModuleCatalogEditor.vue'
+import SubModuleCatalogSettingsVisualization from './SubModuleCatalogSettingsVisualization.vue'
+import SubModuleCatalogSettingsAccess from './SubModuleCatalogSettingsAccess.vue'
+
+// Инициализация store
+const adminStore = useAdminStore()
+
+// Определение секций
+const sections = [
+  { id: 'settings', title: 'настройки', icon: 'mdi-cog-outline' },
+  { id: 'visualization', title: 'визуализация', icon: 'mdi-view-dashboard-outline' },
+  { id: 'access', title: 'доступ', icon: 'mdi-shield-outline' }
+]
+
+// Получение активной секции из store
+const activeSection = computed(() => adminStore.getCurrentSection)
+
+// Переключение секций
+const switchSection = (sectionId) => {
+  adminStore.setActiveSection(sectionId)
+}
+</script>
+
+<style scoped>
+.app-bar {
+  background-color: rgba(0, 0, 0, 0.05) !important;
+}
+
+.nav-section {
+  display: flex;
+  align-items: center;
+  margin-left: 15px;
+}
+
+.section-btn {
+  text-transform: none;
+  font-weight: 400;
+  height: 64px;
+  border-radius: 0;
+  color: rgba(0, 0, 0, 0.6) !important;
+}
+
+.section-active {
+  border-bottom: 2px solid #009688;
+  font-weight: 500;
+}
+
+.working-area {
+  height: calc(100vh - 64px);
+  overflow-y: auto;
+}
+</style>

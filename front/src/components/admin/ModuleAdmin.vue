@@ -12,7 +12,7 @@
   Боковое меню имеет три режима отображения:
   1. Авто-скрытие: меню свернуто, раскрывается при наведении
   2. Зафиксировано открытым: меню всегда раскрыто
-  3. Зафиксировано закрытым: меню всегда свернуто
+  3. Зафиксировано закрытым: меню всегда свернуто, отображаются подсказки при наведении
 -->
 <template>
   <v-container fluid>
@@ -51,6 +51,11 @@
             :title="$t('admin.nav.catalog.main')"
             value="catalogAdmin"
             :active="activeSubModule === 'SubModuleCatalogAdmin'"
+            v-tooltip="{
+              text: $t('admin.nav.catalog.main'),
+              location: 'right',
+              disabled: drawerMode !== 'closed'
+            }"
           >
             <v-list-item-title v-if="!drawer" class="hidden-title">
               {{ $t('admin.nav.catalog.main') }}
@@ -65,6 +70,11 @@
             :title="$t('admin.nav.services.main')"
             value="serviceAdmin"
             :active="activeSubModule === 'SubModuleServiceAdmin'"
+            v-tooltip="{
+              text: $t('admin.nav.services.main'),
+              location: 'right',
+              disabled: drawerMode !== 'closed'
+            }"
           >
             <v-list-item-title v-if="!drawer" class="hidden-title">
               {{ $t('admin.nav.services.main') }}
@@ -79,6 +89,11 @@
             :title="$t('admin.nav.users.main')"
             value="userAdmin"
             :active="activeSubModule === 'SubModuleUserAdmin'"
+            v-tooltip="{
+              text: $t('admin.nav.users.main'),
+              location: 'right',
+              disabled: drawerMode !== 'closed'
+            }"
           >
             <v-list-item-title v-if="!drawer" class="hidden-title">
               {{ $t('admin.nav.users.main') }}
@@ -93,6 +108,11 @@
             :title="$t('admin.nav.settings.main')"
             value="appAdmin"
             :active="activeSubModule === 'SubModuleAppAdmin'"
+            v-tooltip="{
+              text: $t('admin.nav.settings.main'),
+              location: 'right',
+              disabled: drawerMode !== 'closed'
+            }"
           >
             <v-list-item-title v-if="!drawer" class="hidden-title">
               {{ $t('admin.nav.settings.main') }}
