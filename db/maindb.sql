@@ -482,3 +482,39 @@ date:
 
 authors:
 */
+
+
+-- Создание таблицы для хранения участников групп
+CREATE TABLE IF NOT EXISTS app.group_members (
+    -- Уникальный идентификатор записи
+    member_id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
+    
+    -- Ссылка на группу
+    group_id uuid NOT NULL REFERENCES app.groups(group_id) ON DELETE CASCADE,
+    
+    -- Ссылка на пользователя
+    user_id uuid NOT NULL REFERENCES app.users(user_id) ON DELETE CASCADE,
+    
+    -- Дата добавления пользователя в группу
+    joined_at timestamp with time zone NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    
+    -- Кто добавил пользователя в группу
+    added_by uuid NOT NULL REFERENCES app.users(user_id),
+    
+    -- Мягкое удаление для истории
+    is_active boolean NOT NULL DEFAULT true,
+    
+    -- Дата исключения из группы (если is_active = false)
+    left_at timestamp with time zone,
+    
+    -- Кто исключил пользователя из группы
+    removed_by uuid REFERENCES app.users(user_id),
+    
+    -- Уникальное ограничение: пользователь может быть в группе только один раз
+    UNIQUE(group_id, user_id, is_active)
+);
+
+-- Индексы для оптимизации запросов
+CREATE INDEX IF NOT EXISTS idx_group_members_group_id ON app.group_members(group_id);
+CREATE INDEX IF NOT EXISTS idx_group_members_user_id ON app.group_members(user_id);
+CREATE INDEX IF NOT EXISTS idx_group_members_active ON app.group_members(is_active);

@@ -46,7 +46,7 @@
               class="action-btn"
               color="rgba(0, 0, 0, 0.45)"
             >
-              <v-icon>mdi-account-group-outline</v-icon>
+              <v-icon>mdi-account-multiple-plus-outline</v-icon>
             </v-btn>
           </template>
           <span>добавить группу</span>
