@@ -1,67 +1,73 @@
 <!--
  * Модуль администрирования пользователей SubModuleUserAdmin.vue
  * Обеспечивает навигацию между разделами управления пользователями через app bar,
- * предоставляет функции создания новых пользователей и групп,
- * и отображает соответствующие подмодули в рабочей области.
+ * предоставляет функции создания новых пользователей и групп.
+ * Отображает соответствующие подмодули в рабочей области, при этом редактор групп
+ * может занимать всю область модуля, заменяя стандартный интерфейс.
 -->
 <template>
   <div class="module-root">
-    <!-- App Bar -->
-    <v-app-bar app flat class="app-bar">
-      <!-- Секции -->
-      <div class="nav-section">
-        <v-btn
-          v-for="section in sections"
-          :key="section.id"
-          :class="['section-btn', { 'section-active': activeSection === section.id }]"
-          variant="text"
-          @click="switchSection(section.id)"
-        >
-          <v-icon start>{{ section.icon }}</v-icon>
-          {{ section.title }}
-        </v-btn>
-        <!-- Разделитель -->
-        <div class="separator"></div>
-        <!-- Кнопки создания -->
-        <v-tooltip location="bottom">
-          <template v-slot:activator="{ props }">
-            <v-btn
-              icon
-              v-bind="props"
-              @click="onUserEditorClick"
-              class="action-btn"
-              color="rgba(0, 0, 0, 0.45)"
-            >
-              <v-icon>mdi-account-plus-outline</v-icon>
-            </v-btn>
-          </template>
-          <span>добавить пользователя</span>
-        </v-tooltip>
-        <v-tooltip location="bottom">
-          <template v-slot:activator="{ props }">
-            <v-btn
-              icon
-              v-bind="props"
-              @click="onGroupEditorClick"
-              class="action-btn"
-              color="rgba(0, 0, 0, 0.45)"
-            >
-              <v-icon>mdi-account-multiple-plus-outline</v-icon>
-            </v-btn>
-          </template>
-          <span>добавить группу</span>
-        </v-tooltip>
-      </div>
-      <v-spacer></v-spacer>
-    </v-app-bar>
+    <!-- Показываем основной интерфейс только если не открыт редактор групп -->
+    <template v-if="activeUserSubModule !== 'SubModuleGroupEditor'">
+      <!-- App Bar -->
+      <v-app-bar app flat class="app-bar">
+        <!-- Секции -->
+        <div class="nav-section">
+          <v-btn
+            v-for="section in sections"
+            :key="section.id"
+            :class="['section-btn', { 'section-active': activeSection === section.id }]"
+            variant="text"
+            @click="switchSection(section.id)"
+          >
+            <v-icon start>{{ section.icon }}</v-icon>
+            {{ section.title }}
+          </v-btn>
+          <!-- Разделитель -->
+          <div class="separator"></div>
+          <!-- Кнопки создания -->
+          <v-tooltip location="bottom">
+            <template v-slot:activator="{ props }">
+              <v-btn
+                icon
+                v-bind="props"
+                @click="onUserEditorClick"
+                class="action-btn"
+                color="rgba(0, 0, 0, 0.45)"
+              >
+                <v-icon>mdi-account-plus-outline</v-icon>
+              </v-btn>
+            </template>
+            <span>добавить пользователя</span>
+          </v-tooltip>
+          <v-tooltip location="bottom">
+            <template v-slot:activator="{ props }">
+              <v-btn
+                icon
+                v-bind="props"
+                @click="onGroupEditorClick"
+                class="action-btn"
+                color="rgba(0, 0, 0, 0.45)"
+              >
+                <v-icon>mdi-account-multiple-plus-outline</v-icon>
+              </v-btn>
+            </template>
+            <span>добавить группу</span>
+          </v-tooltip>
+        </div>
+        <v-spacer></v-spacer>
+      </v-app-bar>
 
-    <!-- Working Area -->
-    <div class="working-area">
-      <SubModuleUserViewAllUsers v-if="activeSection === 'users' && !activeUserSubModule" />
-      <SubModuleUserViewAllGroups v-if="activeSection === 'groups' && !activeUserSubModule" />
-      <SubModuleUserEditor v-if="activeUserSubModule === 'SubModuleUserEditor'" />
-      <SubModuleGroupEditor v-if="activeUserSubModule === 'SubModuleGroupEditor'" />
-    </div>
+      <!-- Working Area -->
+      <div class="working-area">
+        <SubModuleUserViewAllUsers v-if="activeSection === 'users' && !activeUserSubModule" />
+        <SubModuleUserViewAllGroups v-if="activeSection === 'groups' && !activeUserSubModule" />
+        <SubModuleUserEditor v-if="activeUserSubModule === 'SubModuleUserEditor'" />
+      </div>
+    </template>
+    
+    <!-- Редактор групп на том же уровне что и основной интерфейс -->
+    <SubModuleGroupEditor v-else />
   </div>
 </template>
 
