@@ -195,8 +195,13 @@ export default {
       }
     });
 
-    // Установка активного подмодуля
+    // Установка активного подмодуля с дополнительной логикой сброса состояния редакторов
     const setActiveSubModule = (module) => {
+      // Если переключаемся на модуль управления пользователями,
+      // сбрасываем состояние любых открытых редакторов
+      if (module === 'SubModuleUserAdmin') {
+        adminStore.setActiveUserSubModule(null);
+      }
       adminStore.setActiveSubModule(module);
     };
 
