@@ -52,7 +52,7 @@
                 <v-icon>mdi-account-multiple-plus-outline</v-icon>
               </v-btn>
             </template>
-            <span>добавить группу</span>
+            <span>создать новую группу</span>
           </v-tooltip>
         </div>
         <v-spacer></v-spacer>

@@ -8,12 +8,30 @@
 -->
 <template>
     <v-container>
-      <!-- Заголовок формы -->
-      <v-row>
-        <v-col>
-          <h2 class="text-h5 font-weight-light mb-6">{{ isEditMode ? 'редактирование группы' : 'создание новой группы' }}</h2>
-        </v-col>
-      </v-row>
+      <!-- App Bar -->
+      <v-app-bar app flat class="app-bar">
+        <div class="d-flex align-center ml-8">
+          <v-btn
+            variant="outlined"
+            class="mr-4"
+            @click="cancel"
+          >
+            отмена
+          </v-btn>
+          <v-btn
+            color="teal"
+            variant="outlined"
+          >
+            {{ isEditMode ? 'сохранить' : 'создать' }}
+          </v-btn>
+        </div>
+        <v-spacer></v-spacer>
+        <v-app-bar-title>
+          <h2 class="text-h5 font-weight-light">
+            {{ isEditMode ? 'редактирование группы' : 'создание новой группы' }}
+          </h2>
+        </v-app-bar-title>
+      </v-app-bar>
   
       <!-- Форма -->
       <v-form ref="form">
@@ -48,41 +66,41 @@
         <v-divider class="my-4"></v-divider>
   
         <!-- настройки группы -->
-      <div class="form-section">
-        <h3 class="text-h5 font-weight-regular text-grey-darken-1 mb-4">настройки группы</h3>
-        <v-row>
-          <v-col cols="12" md="6">
-            <v-select
-              v-model="groupData.group_status"
-              label="статус"
-              :items="[
-                { title: 'активна', value: 'active' },
-                { title: 'неактивна', value: 'inactive' },
-                { title: 'в архиве', value: 'archived' }
-              ]"
-              item-title="title"
-              item-value="value"
-              :default="'active'"
-            ></v-select>
-          </v-col>
-          <v-col cols="12" md="6">
-            <v-tooltip location="top">
-              <template v-slot:activator="{ props }">
-                <v-text-field
-                  v-bind="props"
-                  v-model="groupData.group_max_members"
-                  label="макс. участников"
-                  type="number"
-                  class="max-width-150"
-                  min="0"
-                  max="9999999999"
-                ></v-text-field>
-              </template>
-              <span>максимальное количество участников группы</span>
-            </v-tooltip>
-          </v-col>
-        </v-row>
-      </div>
+        <div class="form-section">
+          <h3 class="text-h6 font-weight-regular text-grey-darken-1 mb-4">настройки группы</h3>
+          <v-row>
+            <v-col cols="12" md="6">
+              <v-select
+                v-model="groupData.group_status"
+                label="статус"
+                :items="[
+                  { title: 'активна', value: 'active' },
+                  { title: 'неактивна', value: 'inactive' },
+                  { title: 'в архиве', value: 'archived' }
+                ]"
+                item-title="title"
+                item-value="value"
+                :default="'active'"
+              ></v-select>
+            </v-col>
+            <v-col cols="12" md="6">
+              <v-tooltip location="top">
+                <template v-slot:activator="{ props }">
+                  <v-text-field
+                    v-bind="props"
+                    v-model="groupData.group_max_members"
+                    label="макс. участников"
+                    type="number"
+                    class="max-width-150"
+                    min="0"
+                    max="9999999999"
+                  ></v-text-field>
+                </template>
+                <span>максимальное количество участников группы</span>
+              </v-tooltip>
+            </v-col>
+          </v-row>
+        </div>
   
         <v-divider class="my-4"></v-divider>
   
@@ -139,32 +157,13 @@
           <!-- здесь будет список участников -->
         </div>
       </template>
-  
-      <!-- кнопки действий -->
-      <v-divider class="my-4"></v-divider>
-      
-      <v-row>
-        <v-col class="d-flex justify-end">
-          <v-btn color="grey" class="mr-4" @click="cancel">
-            отмена
-          </v-btn>
-          <v-btn color="primary" @click="saveGroup">
-            {{ isEditMode ? 'сохранить' : 'создать' }}
-          </v-btn>
-        </v-col>
-      </v-row>
     </v-container>
   </template>
-  
-  <style scoped>
-  .max-width-150 {
-    max-width: 150px;
-  }
-  </style>
   
   <script setup>
   import { ref, computed } from 'vue'
   import { useGroupStore } from '@/state/groupstate'
+  import { useAdminStore } from '@/state/adminstate'
   
   // Props
   const props = defineProps({
@@ -182,8 +181,9 @@
   // Emit events
   const emit = defineEmits(['saved', 'cancelled'])
   
-  // Store
+  // Stores
   const groupStore = useGroupStore()
+  const adminStore = useAdminStore()
   
   // Form reference
   const form = ref(null)
@@ -223,6 +223,10 @@
   }
   
   const cancel = () => {
+    // Сбрасываем активный подмодуль редактирования пользователей / групп
+    adminStore.resetActiveUserSubModule()
+    // Возвращаемся в основной модуль управления пользователями
+    adminStore.setActiveSubModule('SubModuleUserAdmin')
     emit('cancelled')
   }
   
@@ -248,4 +252,13 @@
   
   initializeComponent()
   </script>
-  ```
+  
+  <style scoped>
+  .app-bar {
+    background-color: rgba(0, 0, 0, 0.05) !important;
+  }
+  
+  .max-width-150 {
+    max-width: 150px;
+  }
+  </style>

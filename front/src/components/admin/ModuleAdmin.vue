@@ -137,11 +137,11 @@ import { useAdminStore } from '@/state/adminstate';
 import { useI18n } from 'vue-i18n';
 
 // Асинхронная загрузка подмодулей
-const SubModuleCatalogAdmin = defineAsyncComponent(() => import('./SubModuleCatalogAdmin.vue'));
-const SubModuleServiceAdmin = defineAsyncComponent(() => import('./SubModuleServiceAdmin.vue'));
-const SubModuleUserAdmin = defineAsyncComponent(() => import('./SubModuleUserAdmin.vue'));
-const SubModuleAppAdmin = defineAsyncComponent(() => import('./SubModuleAppAdmin.vue'));
-const SubModuleServiceEditor = defineAsyncComponent(() => import('./SubModuleServiceEditor.vue'));
+const SubModuleCatalogAdmin = defineAsyncComponent(() => import('./catalog/SubModuleCatalogAdmin.vue'));
+const SubModuleServiceAdmin = defineAsyncComponent(() => import('./service/SubModuleServiceAdmin.vue'));
+const SubModuleUserAdmin = defineAsyncComponent(() => import('./user/SubModuleUserAdmin.vue'));
+const SubModuleAppAdmin = defineAsyncComponent(() => import('./app/SubModuleAppAdmin.vue'));
+const SubModuleServiceEditor = defineAsyncComponent(() => import('./service/SubModuleServiceEditor.vue'));
 
 export default {
   name: 'ModuleAdmin',

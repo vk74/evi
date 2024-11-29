@@ -36,7 +36,7 @@
               <v-icon>mdi-file-plus-outline</v-icon>
             </v-btn>
           </template>
-          <span>новый сервис</span>
+          <span>создать новый сервис</span>
         </v-tooltip>
       </div>
       <v-spacer></v-spacer>
