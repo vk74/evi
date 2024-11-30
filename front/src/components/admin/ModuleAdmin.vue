@@ -141,7 +141,7 @@ const SubModuleCatalogAdmin = defineAsyncComponent(() => import('./catalog/SubMo
 const SubModuleServiceAdmin = defineAsyncComponent(() => import('./service/SubModuleServiceAdmin.vue'));
 const SubModuleUserAdmin = defineAsyncComponent(() => import('./user/SubModuleUserAdmin.vue'));
 const SubModuleAppAdmin = defineAsyncComponent(() => import('./app/SubModuleAppAdmin.vue'));
-const SubModuleServiceEditor = defineAsyncComponent(() => import('./service/SubModuleServiceEditor.vue'));
+const SubModuleServiceEditor = defineAsyncComponent(() => import('./service/ServiceEditor.vue'));
 
 export default {
   name: 'ModuleAdmin',

@@ -54,9 +54,9 @@
 <script setup>
 import { computed } from 'vue'
 import { useAdminStore } from '@/state/adminstate'
-import SubModuleServiceViewActiveServices from './SubModuleServiceViewActiveServices.vue'
-import SubModuleServiceViewAllServices from './SubModuleServiceViewAllServices.vue'
-import SubModuleServiceEditor from './SubModuleServiceEditor.vue'
+import SubModuleServiceViewActiveServices from './ViewActiveServices.vue'
+import SubModuleServiceViewAllServices from './ViewAllServices.vue'
+import SubModuleServiceEditor from './ServiceEditor.vue'
 
 // Инициализация store
 const adminStore = useAdminStore()

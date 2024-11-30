@@ -1,3 +1,13 @@
+<!--
+  ServiceEditor.vue  
+  
+  Компонент редактора сервисов, предоставляющий интерфейс для создания и редактирования
+  сервисов в каталоге. Включает в себя четыре основных раздела:
+  - Описание: базовая информация о сервисе
+  - Визуализация: настройки отображения карточки сервиса
+  - Доступ: управление правами доступа к сервису
+  - Управление: назначение ответственных лиц
+-->
 <template>
   <v-container class="pa-0">
     <v-app-bar app flat class="app-bar">
@@ -716,8 +726,9 @@ const submitDescriptionSection = async () => {
 
 <style scoped>
 .app-bar {
-  background-color: rgba(0, 0, 0, 0.05) !important;
+  background-color: rgb(242, 242, 242) !important;
 }
+
 
 .section-btn {
   text-transform: none;

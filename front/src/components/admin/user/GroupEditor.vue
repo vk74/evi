@@ -1,17 +1,19 @@
 <!--
-  SubModuleGroupEditor.vue  
+  GroupEditor.vue
   Компонент для создания и редактирования групп пользователей.
-  Поддерживает два режима работы:
-  - Создание новой группы
-  - Редактирование существующей группы
   
-  Позволяет управлять всеми параметрами группы и списком участников.
+  Функциональность:
+  - Создание новой группы пользователей
+  - Редактирование существующей группы
+  - Управление основными параметрами группы
+  - Управление списком участников группы (в режиме редактирования)
+  - Установка владельцев группы
 -->
 <template>
   <v-container class="pa-0">
-    <!-- App Bar -->
+    <!-- App Bar с фиксированным серым фоном -->
     <v-app-bar app flat class="app-bar">
-      <div class="d-flex align-center ml-8">
+      <div style="margin-left: 35px;">
         <v-btn
           variant="outlined"
           class="mr-4"
@@ -27,258 +29,310 @@
         </v-btn>
       </div>
       <v-spacer></v-spacer>
-      <v-app-bar-title>
-        <h2 class="text-h5 font-weight-light">
-          {{ isEditMode ? 'редактирование группы' : 'создание новой группы' }}
-        </h2>
-      </v-app-bar-title>
+      <v-toolbar-title class="title-text">
+        {{ isEditMode ? 'редактирование группы' : 'создание группы' }}
+      </v-toolbar-title>
     </v-app-bar>
 
-    <!-- Контейнер для формы с правильными отступами -->
-    <v-container class="form-container">
-      <!-- Форма -->
-      <v-form ref="form">
-        <!-- основная информация -->
-        <div class="form-section">
-          <h3 class="text-h6 font-weight-regular text-grey-darken-1 mb-4">основная информация</h3>
-          <v-row>
-            <v-col cols="12" md="6">
-              <v-text-field
-                v-model="groupData.group_name"
-                label="название группы*"
-                :rules="[v => !!v || 'название группы обязательно']"
-                required
-              />
-            </v-col>
-            <v-col cols="12" md="6">
-              <v-text-field
-                v-model="groupData.group_display_name"
-                label="отображаемое название"
-              />
-            </v-col>
-            <v-col cols="12">
-              <v-textarea
-                v-model="groupData.group_description"
-                label="описание группы"
-                rows="3"
-              />
-            </v-col>
-          </v-row>
+    <!-- Основной контейнер с контентом -->
+    <v-container class="content-container">
+      <!-- Форма группы -->
+      <v-card flat>
+        <!-- Секция основной информации -->
+        <div class="card-header">
+          <v-card-title class="text-subtitle-1">основная информация</v-card-title>
+          <v-divider class="section-divider"></v-divider>
         </div>
+        <v-card-text class="pt-3">
+          <v-form ref="form">
+            <v-row>
+              <v-col cols="12" md="6">
+                <v-text-field
+                  v-model="groupData.group_name"
+                  label="название группы*"
+                  :rules="[v => !!v || 'название группы обязательно']"
+                  variant="outlined"
+                  density="comfortable"
+                  required
+                />
+              </v-col>
+              <v-col cols="12" md="6">
+                <v-text-field
+                  v-model="groupData.group_display_name"
+                  label="отображаемое название"
+                  variant="outlined"
+                  density="comfortable"
+                />
+              </v-col>
+              <v-col cols="12">
+                <v-textarea
+                  v-model="groupData.group_description"
+                  label="описание группы"
+                  variant="outlined"
+                  rows="3"
+                />
+              </v-col>
+            </v-row>
 
-        <v-divider class="my-4"></v-divider>
+            <!-- Секция настроек группы -->
+            <v-row>
+              <v-col cols="12">
+                <div class="card-header">
+                  <v-card-title class="text-subtitle-1">настройки группы</v-card-title>
+                  <v-divider class="section-divider"></v-divider>
+                </div>
+              </v-col>
+              <v-col cols="12" md="6">
+                <v-select
+                  v-model="groupData.group_status"
+                  label="статус"
+                  variant="outlined"
+                  density="comfortable"
+                  :items="[
+                    { title: 'активна', value: 'active' },
+                    { title: 'неактивна', value: 'inactive' },
+                    { title: 'в архиве', value: 'archived' }
+                  ]"
+                  item-title="title"
+                  item-value="value"
+                  :default="'active'"
+                />
+              </v-col>
+              <v-col cols="12" md="6">
+                <v-tooltip location="top">
+                  <template v-slot:activator="{ props }">
+                    <v-text-field
+                      v-bind="props"
+                      v-model="groupData.group_max_members"
+                      label="макс. участников"
+                      variant="outlined"
+                      density="comfortable"
+                      type="number"
+                      class="max-width-150"
+                      min="0"
+                      max="9999999999"
+                    />
+                  </template>
+                  <span>максимальное количество участников группы</span>
+                </v-tooltip>
+              </v-col>
+            </v-row>
 
-        <!-- настройки группы -->
-        <div class="form-section">
-          <h3 class="text-h6 font-weight-regular text-grey-darken-1 mb-4">настройки группы</h3>
-          <v-row>
-            <v-col cols="12" md="6">
-              <v-select
-                v-model="groupData.group_status"
-                label="статус"
-                :items="[
-                  { title: 'активна', value: 'active' },
-                  { title: 'неактивна', value: 'inactive' },
-                  { title: 'в архиве', value: 'archived' }
-                ]"
-                item-title="title"
-                item-value="value"
-                :default="'active'"
-              ></v-select>
-            </v-col>
-            <v-col cols="12" md="6">
-              <v-tooltip location="top">
-                <template v-slot:activator="{ props }">
-                  <v-text-field
-                    v-bind="props"
-                    v-model="groupData.group_max_members"
-                    label="макс. участников"
-                    type="number"
-                    class="max-width-150"
-                    min="0"
-                    max="9999999999"
-                  ></v-text-field>
-                </template>
-                <span>максимальное количество участников группы</span>
-              </v-tooltip>
-            </v-col>
-          </v-row>
+            <!-- Секция контактной информации -->
+            <v-row>
+              <v-col cols="12">
+                <div class="card-header">
+                  <v-card-title class="text-subtitle-1">контактная информация</v-card-title>
+                  <v-divider class="section-divider"></v-divider>
+                </div>
+              </v-col>
+              <v-col cols="12" md="6">
+                <v-text-field
+                  v-model="groupData.group_email"
+                  label="email группы"
+                  variant="outlined"
+                  density="comfortable"
+                  type="email"
+                />
+              </v-col>
+            </v-row>
+
+            <!-- Секция управления -->
+            <v-row>
+              <v-col cols="12">
+                <div class="card-header">
+                  <v-card-title class="text-subtitle-1">управление</v-card-title>
+                  <v-divider class="section-divider"></v-divider>
+                </div>
+              </v-col>
+              <v-col cols="12" md="6">
+                <v-select
+                  v-model="groupData.group_owner"
+                  label="владелец группы"
+                  variant="outlined"
+                  density="comfortable"
+                  :items="[]"
+                />
+              </v-col>
+              <v-col cols="12" md="6">
+                <v-select
+                  v-model="groupData.group_backup_owner"
+                  label="резервный владелец"
+                  variant="outlined"
+                  density="comfortable"
+                  :items="[]"
+                />
+              </v-col>
+            </v-row>
+          </v-form>
+        </v-card-text>
+      </v-card>
+
+      <!-- Секция участников группы (только для режима редактирования) -->
+      <v-card v-if="isEditMode" flat class="mt-4">
+        <div class="card-header">
+          <v-card-title class="text-subtitle-1">участники группы</v-card-title>
+          <v-divider class="section-divider"></v-divider>
         </div>
-
-        <v-divider class="my-4"></v-divider>
-
-        <!-- контактная информация -->
-        <div class="form-section">
-          <h3 class="text-h6 font-weight-regular text-grey-darken-1 mb-4">контактная информация</h3>
-          <v-row>
-            <v-col cols="12" md="6">
-              <v-text-field
-                v-model="groupData.group_email"
-                label="email группы"
-                type="email"
-              />
-            </v-col>
-          </v-row>
-        </div>
-
-        <v-divider class="my-4"></v-divider>
-
-        <!-- управление -->
-        <div class="form-section">
-          <h3 class="text-h6 font-weight-regular text-grey-darken-1 mb-4">управление</h3>
-          <v-row>
-            <v-col cols="12" md="6">
-              <v-select
-                v-model="groupData.group_owner"
-                label="владелец группы"
-                :items="[]"
-              ></v-select>
-            </v-col>
-            <v-col cols="12" md="6">
-              <v-select
-                v-model="groupData.group_backup_owner"
-                label="резервный владелец"
-                :items="[]"
-              ></v-select>
-            </v-col>
-          </v-row>
-        </div>
-      </v-form>
-
-      <!-- список участников (только для режима редактирования) -->
-      <template v-if="isEditMode">
-        <v-divider class="my-4"></v-divider>
-        
-        <div class="form-section">
-          <div class="d-flex align-center mb-4">
-            <h3 class="text-h6 font-weight-regular text-grey-darken-1">участники группы</h3>
-            <v-spacer></v-spacer>
-            <v-btn color="primary" @click="showAddMemberDialog">
+        <v-card-text class="pt-3">
+          <div class="d-flex justify-end mb-4">
+            <v-btn
+              color="teal"
+              variant="outlined"
+              @click="showAddMemberDialog"
+            >
               добавить участника
             </v-btn>
           </div>
-          <!-- здесь будет список участников -->
-        </div>
-      </template>
+          <!-- Здесь будет список участников -->
+        </v-card-text>
+      </v-card>
+
     </v-container>
   </v-container>
 </template>
 
 <script setup>
-// Script остается без изменений
+// Импорты необходимых зависимостей
 import { ref, computed } from 'vue'
 import { useGroupStore } from '@/state/groupstate'
 import { useAdminStore } from '@/state/adminstate'
 
-// Props
+// Определение props компонента
 const props = defineProps({
-mode: {
-  type: String,
-  required: true,
-  validator: (value) => ['create', 'edit'].includes(value)
-},
-groupId: {
-  type: String,
-  required: false
-}
+  // Режим работы компонента: создание или редактирование
+  mode: {
+    type: String,
+    required: true,
+    validator: (value) => ['create', 'edit'].includes(value)
+  },
+  // ID группы (требуется только в режиме редактирования)
+  groupId: {
+    type: String,
+    required: false
+  }
 })
 
-// Emit events
+// События, которые может испускать компонент
 const emit = defineEmits(['saved', 'cancelled'])
 
-// Stores
+// Инициализация хранилищ
 const groupStore = useGroupStore()
 const adminStore = useAdminStore()
 
-// Form reference
+// Ссылка на форму для валидации
 const form = ref(null)
 
-// Computed
+// Вычисляемое свойство для определения режима работы
 const isEditMode = computed(() => props.mode === 'edit')
 
-// Group data
+// Данные группы с начальными значениями
 const groupData = ref({
-group_name: '',
-group_display_name: '',
-group_description: '',
-group_type: 'users',
-group_status: 'active',
-group_max_members: null,
-group_email: '',
-group_owner: null,
-group_backup_owner: null
+  group_name: '',
+  group_display_name: '',
+  group_description: '',
+  group_type: 'users',
+  group_status: 'active',
+  group_max_members: null,
+  group_email: '',
+  group_owner: null,
+  group_backup_owner: null
 })
 
-// Methods
+// Метод сохранения группы
 const saveGroup = async () => {
-const formValid = await form.value?.validate()
-if (!formValid?.valid) return
+  // Проверяем валидность формы
+  const formValid = await form.value?.validate()
+  if (!formValid?.valid) return
 
-try {
-  if (isEditMode.value) {
-    await groupStore.updateGroup(props.groupId, groupData.value)
-  } else {
-    await groupStore.createGroup(groupData.value)
-  }
-  emit('saved')
-} catch (error) {
-  console.error('Error saving group:', error)
-  // TODO: показать ошибку пользователю
-}
-}
-
-const cancel = () => {
-// Сбрасываем активный подмодуль редактирования пользователей / групп
-adminStore.resetActiveUserSubModule()
-// Возвращаемся в основной модуль управления пользователями
-adminStore.setActiveSubModule('SubModuleUserAdmin')
-emit('cancelled')
-}
-
-const showAddMemberDialog = () => {
-// TODO: реализовать диалог добавления участника
-}
-
-// При монтировании компонента
-const initializeComponent = async () => {
-if (isEditMode.value && props.groupId) {
   try {
-    const group = await groupStore.fetchGroup(props.groupId)
-    groupData.value = { ...group }
+    // В зависимости от режима вызываем соответствующий метод store
     if (isEditMode.value) {
-      await groupStore.fetchGroupMembers(props.groupId)
+      await groupStore.updateGroup(props.groupId, groupData.value)
+    } else {
+      await groupStore.createGroup(groupData.value)
     }
+    emit('saved')
   } catch (error) {
-    console.error('Error fetching group data:', error)
+    console.error('Error saving group:', error)
     // TODO: показать ошибку пользователю
   }
 }
+
+// Метод отмены редактирования/создания
+const cancel = () => {
+  // Сбрасываем активный подмодуль редактирования
+  adminStore.resetActiveUserSubModule()
+  // Возвращаемся в основной модуль управления пользователями
+  adminStore.setActiveSubModule('SubModuleUserAdmin')
+  emit('cancelled')
 }
 
+// Метод для показа диалога добавления участника
+const showAddMemberDialog = () => {
+  // TODO: реализовать диалог добавления участника
+}
+
+// Инициализация компонента
+const initializeComponent = async () => {
+  // Если режим редактирования, загружаем данные группы
+  if (isEditMode.value && props.groupId) {
+    try {
+      const group = await groupStore.fetchGroup(props.groupId)
+      groupData.value = { ...group }
+      if (isEditMode.value) {
+        await groupStore.fetchGroupMembers(props.groupId)
+      }
+    } catch (error) {
+      console.error('Error fetching group data:', error)
+      // TODO: показать ошибку пользователю
+    }
+  }
+}
+
+// Запускаем инициализацию при монтировании компонента
 initializeComponent()
 </script>
 
 <style scoped>
-/* Стили для внешнего контейнера, убираем отступы по умолчанию */
-.v-container.pa-0 {
-padding: 0 !important;
-}
-
-/* Стили для AppBar - непрозрачный светло-серый фон */
+/* Стили для AppBar */
 .app-bar {
-background-color: rgb(242, 242, 242) !important; /* Тот же оттенок серого, но без прозрачности */
-z-index: 100;
+  background-color: rgb(242, 242, 242) !important;
 }
 
-/* Стили для контейнера формы */
-.form-container {
-padding-top: 0px; /* Компенсируем высоту AppBar */
-height: calc(100vh - 64px);
-overflow-y: auto;
+/* Стили для заголовка в AppBar */
+.title-text {
+  margin-right: 15px;
+  text-align: right;
+  font-family: 'Roboto', sans-serif;
+  font-size: 1.1rem;
+  font-weight: 400;
+  letter-spacing: 0.5px;
+  color: rgba(0, 0, 0, 0.6);
+}
+
+/* Основной контейнер для контента */
+.content-container {
+  margin-top: 5px;
+  padding-left: 5px;
+  padding-top: 0;
+  padding-right: 0;
+  padding-bottom: 0;
+}
+
+/* Стили для заголовка карточки и разделителя */
+.card-header {
+  padding: 5px 5px 0 10px;
+}
+
+.section-divider {
+  border-color: rgba(0, 0, 0, 0.999) !important;
+  margin-top: 5px;
+  margin-bottom: 5px;
 }
 
 /* Дополнительные стили */
 .max-width-150 {
-max-width: 150px;
+  max-width: 150px;
 }
 </style>
