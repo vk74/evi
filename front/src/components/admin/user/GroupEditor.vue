@@ -6,8 +6,7 @@
   - Создание новой группы пользователей
   - Редактирование существующей группы
   - Управление основными параметрами группы
-  - Управление списком участников группы (в режиме редактирования)
-  - Установка владельцев группы
+  - Валидация полей формы с отображением ошибок
 -->
 <template>
   <v-container class="pa-0">
@@ -25,6 +24,7 @@
           color="teal"
           variant="outlined"
           @click="saveGroup"
+          :disabled="!isFormValid"
         >
           {{ isEditMode ? 'сохранить' : 'создать группу' }}
         </v-btn>
@@ -45,24 +45,28 @@
           <v-divider class="section-divider"></v-divider>
         </div>
         <v-card-text class="pt-3">
-          <v-form ref="form">
+          <v-form ref="form" v-model="isFormValid">
             <v-row>
               <v-col cols="12" md="6">
                 <v-text-field
                   v-model="groupData.group_name"
                   label="название группы*"
-                  :rules="[v => !!v || 'название группы обязательно']"
+                  :rules="groupNameRules"
                   variant="outlined"
                   density="comfortable"
+                  counter="64"
                   required
                 />
               </v-col>
               <v-col cols="12" md="6">
                 <v-text-field
                   v-model="groupData.group_display_name"
-                  label="отображаемое название"
+                  label="отображаемое название*"
+                  :rules="displayNameRules"
                   variant="outlined"
                   density="comfortable"
+                  counter="100"
+                  required
                 />
               </v-col>
               <v-col cols="12">
@@ -72,10 +76,8 @@
                   variant="outlined"
                   rows="4"
                   class="description-field"
-                  :rules="[
-                    v => !v || v.length <= 1000 || 'Максимальная длина описания - 1000 символов'
-                  ]"
-                  counter
+                  :rules="descriptionRules"
+                  counter="1000"
                   no-resize
                 />
               </v-col>
@@ -116,11 +118,12 @@
                       density="comfortable"
                       type="number"
                       class="max-width-150"
+                      :rules="maxMembersRules"
                       min="0"
-                      max="9999999999"
+                      max="1024"
                     />
                   </template>
-                  <span>максимальное количество участников группы</span>
+                  <span>максимальное количество участников группы (0-1024)</span>
                 </v-tooltip>
               </v-col>
             </v-row>
@@ -140,6 +143,7 @@
                   variant="outlined"
                   density="comfortable"
                   type="email"
+                  :rules="emailRules"
                 />
               </v-col>
             </v-row>
@@ -174,27 +178,6 @@
           </v-form>
         </v-card-text>
       </v-card>
-
-      <!-- Секция участников группы (только для режима редактирования) -->
-      <v-card v-if="isEditMode" flat class="mt-4">
-        <div class="card-header">
-          <v-card-title class="text-subtitle-1">участники группы</v-card-title>
-          <v-divider class="section-divider"></v-divider>
-        </div>
-        <v-card-text class="pt-3">
-          <div class="d-flex justify-end mb-4">
-            <v-btn
-              color="teal"
-              variant="outlined"
-              @click="showAddMemberDialog"
-            >
-              добавить участника
-            </v-btn>
-          </div>
-          <!-- Здесь будет список участников -->
-        </v-card-text>
-      </v-card>
-
     </v-container>
   </v-container>
 </template>
@@ -227,6 +210,7 @@ const groupStore = useGroupStore()
 
 // Ссылка на форму для валидации
 const form = ref(null)
+const isFormValid = ref(false)
 
 // Вычисляемое свойство для определения режима работы
 const isEditMode = computed(() => props.mode === 'edit')
@@ -246,6 +230,36 @@ const initialGroupData = {
 
 // Данные группы с начальными значениями
 const groupData = ref({ ...initialGroupData })
+
+// Правила валидации для названия группы
+const groupNameRules = [
+  v => !!v || 'название группы обязательно',
+  v => (v && v.length <= 64) || 'название группы не может быть длиннее 64 символов',
+  v => /^[a-zA-Zа-яА-Я0-9\-. _]+$/.test(v) || 'разрешены только буквы, цифры, дефис, точка, пробел и нижнее подчеркивание'
+]
+
+// Правила валидации для отображаемого названия
+const displayNameRules = [
+  v => !!v || 'отображаемое название обязательно',
+  v => (v && v.length <= 100) || 'отображаемое название не может быть длиннее 100 символов',
+  v => /^[a-zA-Zа-яА-Я0-9\-. _]+$/.test(v) || 'разрешены только буквы, цифры, дефис, точка, пробел и нижнее подчеркивание'
+]
+
+// Правила валидации для описания группы
+const descriptionRules = [
+  v => !v || v.length <= 1000 || 'описание не может быть длиннее 1000 символов',
+  v => !v || /^[a-zA-Zа-яА-Я0-9\-.,!? ]+$/.test(v) || 'разрешены только буквы, цифры и базовая пунктуация'
+]
+
+// Правила валидации для максимального количества участников
+const maxMembersRules = [
+  v => !v || (v >= 0 && v <= 1024) || 'значение должно быть от 0 до 1024'
+]
+
+// Правила валидации для email
+const emailRules = [
+  v => !v || /^[a-zA-Zа-яА-Я0-9._%+-]+@[a-zA-Zа-яА-Я0-9.-]+\.[a-zA-Zа-яА-Я]{2,6}$/.test(v) || 'некорректный email адрес'
+]
 
 // Метод сохранения группы
 const saveGroup = async () => {
@@ -270,13 +284,7 @@ const saveGroup = async () => {
 // Метод для сброса формы к начальным значениям
 const resetForm = () => {
   groupData.value = { ...initialGroupData }
-  // Сбрасываем валидацию формы, если она была
   form.value?.reset()
-}
-
-// Метод для показа диалога добавления участника
-const showAddMemberDialog = () => {
-  // TODO: реализовать диалог добавления участника
 }
 
 // Инициализация компонента
@@ -286,9 +294,6 @@ const initializeComponent = async () => {
     try {
       const group = await groupStore.fetchGroup(props.groupId)
       groupData.value = { ...group }
-      if (isEditMode.value) {
-        await groupStore.fetchGroupMembers(props.groupId)
-      }
     } catch (error) {
       console.error('Error fetching group data:', error)
       // TODO: показать ошибку пользователю
@@ -298,13 +303,6 @@ const initializeComponent = async () => {
 
 // Запускаем инициализацию при монтировании компонента
 initializeComponent()
-
-// Делаем методы доступными для шаблона
-defineExpose({
-  resetForm,
-  saveGroup,
-  showAddMemberDialog
-})
 </script>
 
 <style scoped>
