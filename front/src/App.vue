@@ -1,6 +1,11 @@
 <!--
 App.vue
-
+Корневой компонент приложения, который определяет основную структуру интерфейса.
+Содержит:
+- App Bar с основными элементами управления (поиск, смена языка, вход/выход)
+- Navigation Drawer для навигации между основными модулями
+- Основную рабочую область для отображения активного модуля
+- Глобальный snackbar для системных сообщений
 -->
 
 <template>
@@ -89,7 +94,7 @@ App.vue
     </v-app-bar>
 
     <!-- Navigation Drawer -->
-    <v-navigation-drawer v-model="drawer" app expand-on-hover rail elevation="5">
+    <v-navigation-drawer v-model="drawer" app expand-on-hover rail elevation="5" class="custom-drawer">
       <v-list density="compact" nav>
         <v-list-item 
           @click="setActiveModule('Catalog')" 
@@ -257,5 +262,9 @@ onMounted(() => {
 <style>
 .v-snackbar {
   top: 50px !important;
+}
+
+.custom-drawer {
+  background-color: rgb(218, 218, 218) !important;
 }
 </style>
