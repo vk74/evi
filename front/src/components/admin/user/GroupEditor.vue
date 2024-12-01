@@ -12,18 +12,19 @@
 <template>
   <v-container class="pa-0">
     <!-- App Bar с фиксированным серым фоном -->
-    <v-app-bar app flat class="app-bar">
+    <v-app-bar flat class="editor-app-bar">
       <div style="margin-left: 35px;">
         <v-btn
           variant="outlined"
           class="mr-4"
-          @click="cancel"
+          @click="resetForm"
         >
-          отмена
+          сбросить поля формы
         </v-btn>
         <v-btn
           color="teal"
           variant="outlined"
+          @click="saveGroup"
         >
           {{ isEditMode ? 'сохранить' : 'создать группу' }}
         </v-btn>
@@ -196,7 +197,6 @@
 // Импорты необходимых зависимостей
 import { ref, computed } from 'vue'
 import { useGroupStore } from '@/state/groupstate'
-import { useAdminStore } from '@/state/adminstate'
 
 // Определение props компонента
 const props = defineProps({
@@ -214,11 +214,10 @@ const props = defineProps({
 })
 
 // События, которые может испускать компонент
-const emit = defineEmits(['saved', 'cancelled'])
+const emit = defineEmits(['saved'])
 
-// Инициализация хранилищ
+// Инициализация хранилища
 const groupStore = useGroupStore()
-const adminStore = useAdminStore()
 
 // Ссылка на форму для валидации
 const form = ref(null)
@@ -259,13 +258,21 @@ const saveGroup = async () => {
   }
 }
 
-// Метод отмены редактирования/создания
-const cancel = () => {
-  // Сбрасываем активный подмодуль редактирования
-  adminStore.resetActiveUserSubModule()
-  // Возвращаемся в основной модуль управления пользователями
-  adminStore.setActiveSubModule('SubModuleUserAdmin')
-  emit('cancelled')
+// Метод для сброса формы к начальным значениям
+const resetForm = () => {
+  groupData.value = {
+    group_name: '',
+    group_display_name: '',
+    group_description: '',
+    group_type: 'users',
+    group_status: 'active',
+    group_max_members: null,
+    group_email: '',
+    group_owner: null,
+    group_backup_owner: null
+  }
+  // Сбрасываем валидацию формы, если она была
+  form.value?.reset()
 }
 
 // Метод для показа диалога добавления участника
@@ -292,6 +299,13 @@ const initializeComponent = async () => {
 
 // Запускаем инициализацию при монтировании компонента
 initializeComponent()
+
+// Делаем методы доступными для шаблона
+defineExpose({
+  resetForm,
+  saveGroup,
+  showAddMemberDialog
+})
 </script>
 
 <style scoped>
