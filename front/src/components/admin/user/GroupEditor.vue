@@ -37,18 +37,19 @@
           {{ isEditMode ? 'сохранить' : 'создать группу' }}
         </v-btn>
         <v-btn
-          variant="outlined"
-          class="mx-4"
-          @click="resetForm"
-        >
-          сбросить поля формы
-        </v-btn>
-        <v-btn
           color="teal"
           variant="outlined"
-          prepend-icon="mdi-account-plus"
+          class="mx-4"
+          :disabled="activeSection !== 'members'"
         >
           добавить участника
+        </v-btn>
+        <v-btn
+          variant="outlined"
+          @click="resetForm"
+          :disabled="activeSection !== 'groupData'"
+        >
+          сбросить поля формы
         </v-btn>
       </div>
       <v-spacer></v-spacer>
@@ -287,7 +288,7 @@
 
 <script setup>
 // Импорты необходимых зависимостей
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
 import { useGroupStore } from '@/state/groupstate'
 
 // Определение props компонента
@@ -322,8 +323,16 @@ const activeSection = ref('groupData')
 
 // Метод переключения секций
 const switchSection = (sectionId) => {
-  activeSection.value = sectionId
+  if (sections.some(section => section.id === sectionId)) {
+    activeSection.value = sectionId
+  }
 }
+
+// Наблюдаем за изменением секции для дополнительных действий
+watch(activeSection, (newSection) => {
+  // Здесь можно добавить дополнительную логику при смене секции
+  console.log('Активная секция:', newSection)
+})
 
 // Переменные для таблицы участников
 const page = ref(1)
@@ -489,11 +498,18 @@ initializeComponent()
   height: 64px;
   border-radius: 0;
   color: rgba(0, 0, 0, 0.6) !important;
+  min-width: 120px;  /* Добавим минимальную ширину для кнопок */
 }
 
 .section-active {
-  border-bottom: 2px solid #009688;
+  border-bottom: 2px solid teal;      /* Используем teal для соответствия общему стилю */
+  color: rgba(0, 0, 0, 0.87) !important;  /* Более темный цвет для активной секции */
   font-weight: 500;
+}
+
+/* Добавим hover эффект для кнопок секций */
+.section-btn:hover {
+  background-color: rgba(0, 0, 0, 0.04);
 }
 
 /* Стили для заголовка в AppBar */
@@ -507,10 +523,14 @@ initializeComponent()
   color: rgba(0, 0, 0, 0.6);
 }
 
-/* Рабочая область */
-.working-area {
-  height: calc(100vh - 64px);
-  overflow-y: auto;
+/* Основной контейнер для контента */
+.content-container {
+  margin-top: 5px;
+  padding-left: 5px;
+  padding-top: 0;
+  padding-right: 0;
+  padding-bottom: 0;
+  height: 100%;
 }
 
 /* Стили для заголовка карточки и разделителя */
