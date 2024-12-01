@@ -231,8 +231,8 @@ const form = ref(null)
 // Вычисляемое свойство для определения режима работы
 const isEditMode = computed(() => props.mode === 'edit')
 
-// Данные группы с начальными значениями
-const groupData = ref({
+// Начальные значения для формы группы
+const initialGroupData = {
   group_name: '',
   group_display_name: '',
   group_description: '',
@@ -242,7 +242,10 @@ const groupData = ref({
   group_email: '',
   group_owner: null,
   group_backup_owner: null
-})
+}
+
+// Данные группы с начальными значениями
+const groupData = ref({ ...initialGroupData })
 
 // Метод сохранения группы
 const saveGroup = async () => {
@@ -266,17 +269,7 @@ const saveGroup = async () => {
 
 // Метод для сброса формы к начальным значениям
 const resetForm = () => {
-  groupData.value = {
-    group_name: '',
-    group_display_name: '',
-    group_description: '',
-    group_type: 'users',
-    group_status: 'active',
-    group_max_members: null,
-    group_email: '',
-    group_owner: null,
-    group_backup_owner: null
-  }
+  groupData.value = { ...initialGroupData }
   // Сбрасываем валидацию формы, если она была
   form.value?.reset()
 }
@@ -317,7 +310,7 @@ defineExpose({
 <style scoped>
 /* Стили для AppBar */
 .editor-app-bar {
-  background-color: rgb(242, 242, 242) !important;
+  background-color: #FFFFFF !important;
 }
 
 /* Стили для заголовка в AppBar */
