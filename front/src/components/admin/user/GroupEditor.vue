@@ -70,7 +70,13 @@
                   v-model="groupData.group_description"
                   label="описание группы"
                   variant="outlined"
-                  rows="3"
+                  rows="4"
+                  class="description-field"
+                  :rules="[
+                    v => !v || v.length <= 1000 || 'Максимальная длина описания - 1000 символов'
+                  ]"
+                  counter
+                  no-resize
                 />
               </v-col>
             </v-row>
@@ -310,7 +316,7 @@ defineExpose({
 
 <style scoped>
 /* Стили для AppBar */
-.app-bar {
+.editor-app-bar {
   background-color: rgb(242, 242, 242) !important;
 }
 
@@ -332,6 +338,7 @@ defineExpose({
   padding-top: 0;
   padding-right: 0;
   padding-bottom: 0;
+  height: 100%;
 }
 
 /* Стили для заголовка карточки и разделителя */
@@ -343,6 +350,18 @@ defineExpose({
   border-color: rgba(0, 0, 0, 0.999) !important;
   margin-top: 5px;
   margin-bottom: 5px;
+}
+
+/* Стили для поля описания */
+:deep(.description-field) {
+  & .v-field__input {
+    height: 150px !important;
+  }
+  
+  & textarea {
+    height: 100% !important;
+    overflow-y: auto !important;
+  }
 }
 
 /* Дополнительные стили */

@@ -1,3 +1,8 @@
+<!--
+App.vue
+
+-->
+
 <template>
   <v-app>
     <!-- App Bar -->
