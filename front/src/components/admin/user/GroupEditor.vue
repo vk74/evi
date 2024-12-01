@@ -314,8 +314,8 @@ const groupStore = useGroupStore()
 
 // Определение секций навигации
 const sections = [
-  { id: 'groupData', title: 'данные группы', icon: 'mdi-file-document-outline' },
-  { id: 'members', title: 'участники', icon: 'mdi-account-group-outline' }
+  { id: 'groupData', title: 'данные группы' },
+  { id: 'members', title: 'участники группы' }
 ]
 
 // Активная секция по умолчанию
@@ -556,7 +556,7 @@ initializeComponent()
   }
 }
 
-/* Дополнительные стили */
+/* Стиль для ограничения ширины поля с максимальным количеством участников  */
 .max-width-150 {
   max-width: 150px;
 }
