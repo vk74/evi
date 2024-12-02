@@ -138,6 +138,15 @@ App.vue
           :active="appStore.isModuleActive('XLS')"
         >
         </v-list-item>
+        <v-divider class="border-opacity-25"></v-divider><br>
+        <v-list-item 
+            @click="setActiveModule('Help')" 
+            prepend-icon="mdi-help-circle-outline" 
+            :title="$t('navigation.drawer.helpSupport')" 
+            value="help"
+            :active="appStore.isModuleActive('Help')"
+          >
+          </v-list-item>
         <v-divider class="border-opacity-25"></v-divider>
       </v-list>
       <!-- Settings in the bottom -->
@@ -151,7 +160,7 @@ App.vue
             :active="appStore.isModuleActive('Account')"
           >
           </v-list-item>
-          <v-divider class="border-opacity-25"></v-divider>
+          
           <v-list-item 
             @click="setActiveModule('Settings')" 
             prepend-icon="mdi-cog" 
@@ -159,14 +168,6 @@ App.vue
             value="settings" 
             v-if="isLoggedIn"
             :active="appStore.isModuleActive('Settings')"
-          >
-          </v-list-item>
-          <v-list-item 
-            @click="setActiveModule('Help')" 
-            prepend-icon="mdi-help-circle-outline" 
-            :title="$t('navigation.drawer.helpSupport')" 
-            value="help"
-            :active="appStore.isModuleActive('Help')"
           >
           </v-list-item>
         </v-list>
