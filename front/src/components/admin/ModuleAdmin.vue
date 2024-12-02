@@ -234,7 +234,7 @@ export default {
 /* Стили для контейнера бокового меню */
 .drawer-container {
   position: relative;
-  background-color: rgb(232, 232, 232) !important;
+  background-color: rgb(224, 224, 224) !important;
 }
 
 /* Стили для области переключения состояния меню */

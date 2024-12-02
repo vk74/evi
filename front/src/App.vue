@@ -363,7 +363,7 @@ onMounted(() => {
 }
 
 .custom-drawer {
-  background-color: rgb(220, 220, 220) !important;
+  background-color: rgb(210, 210, 210) !important;
 }
 
 /* Стиль для активного пункта меню */
