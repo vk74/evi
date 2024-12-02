@@ -14,6 +14,7 @@
   2. Зафиксировано открытым: меню всегда раскрыто
   3. Зафиксировано закрытым: меню всегда свернуто, отображаются подсказки при наведении
 -->
+
 <template>
   <v-container fluid>
     <v-row>
@@ -46,7 +47,7 @@
               {{ $t('admin.nav.catalog.main') }}
             </v-list-item-title>
           </v-list-item>
-
+ 
           <!-- Пункт меню "Управление сервисами" -->
           <v-list-item 
             @click="setActiveSubModule('SubModuleServiceAdmin')" 
@@ -65,7 +66,7 @@
               {{ $t('admin.nav.services.main') }}
             </v-list-item-title>
           </v-list-item>
-
+ 
           <!-- Пункт меню "Управление пользователями" -->
           <v-list-item 
             @click="setActiveSubModule('SubModuleUserAdmin')" 
@@ -84,7 +85,7 @@
               {{ $t('admin.nav.users.main') }}
             </v-list-item-title>
           </v-list-item>
-
+ 
           <!-- Пункт меню "Настройки приложения" -->
           <v-list-item 
             @click="setActiveSubModule('SubModuleAppAdmin')" 
@@ -103,26 +104,20 @@
               {{ $t('admin.nav.settings.main') }}
             </v-list-item-title>
           </v-list-item>
-
+ 
           <v-divider class="border-opacity-25"></v-divider>
         </v-list>
-
-        <!-- Перемещенные элементы управления в нижнюю часть -->
+ 
+        <!-- Append slot для управления и настроек -->
         <template v-slot:append>
-          <!-- Область-кнопка для переключения режимов -->
-          <div class="full-width-toggle" @click="toggleDrawerMode"></div>
-
-          <!-- Кнопка-шеврон для переключения режимов -->
-          <div class="chevron-button">
-            <v-btn
-              variant="text"
-              @click="toggleDrawerMode"
-              :icon="chevronIcon"
-              size="small"
-              class="chevron-icon"
-              color="grey-darken-1"
-            ></v-btn>
-          </div>
+          <v-btn
+            variant="text"
+            @click="toggleDrawerMode"
+            :icon="chevronIcon"
+            size="small"
+            class="drawer-toggle-btn"
+            color="grey-darken-1"
+          ></v-btn>
         </template>
       </v-navigation-drawer>
       
@@ -132,7 +127,7 @@
       </v-col>
     </v-row>
   </v-container>
-</template>
+ </template>
 
 <script>
 import { ref, computed, defineAsyncComponent } from 'vue';
@@ -231,63 +226,37 @@ export default {
 </script>
 
 <style scoped>
-/* Стили для контейнера бокового меню */
 .drawer-container {
-  position: relative;
-  background-color: rgb(224, 224, 224) !important;
+ position: relative;
+ background-color: rgb(224, 224, 224) !important;
 }
 
-/* Стили для области переключения состояния меню */
-.full-width-toggle {
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  height: 32px;
-  background-color: rgb(var(--v-theme-surface));
-  cursor: pointer;
-  z-index: 99;
-  transition: background-color 0.2s ease;
-}
-
-.full-width-toggle:hover {
-  background-color: rgba(var(--v-theme-primary), 0.04);
-}
-
-/* Стили для кнопки-шеврона */
-.chevron-button {
-  position: absolute;
-  right: -16px;
-  bottom: 0px;
-  z-index: 100;
-}
-
-.chevron-icon {
-  background-color: rgb(var(--v-theme-surface));
-  box-shadow: 2px 0 4px rgba(0, 0, 0, 0.1);
-  border-radius: 0 4px 4px 0;
-  height: 32px;
-  width: 24px;
-  padding: 0;
-  opacity: 0.6;
-}
-
-/* Стили для навигационного списка */
 .navigation-list {
-  margin-top: 0;
+ margin-top: 0;
 }
 
-/* Стили для элементов навигации */
 .v-list-item__icon {
-  min-width: 40px;
+ min-width: 40px;
 }
 
 .v-list-item__content {
-  align-items: center;
+ align-items: center;
 }
 
-/* Стили для скрытых заголовков в свернутом состоянии */
 .hidden-title {
-  display: none;
+ display: none;
+}
+
+.drawer-toggle-btn {
+ position: absolute;
+ right: -10px;
+ bottom: 10px;
+ box-shadow: 2px 0 4px rgba(0, 0, 0, 0.1);
+ opacity: 0.6;
+ transition: opacity 0.2s ease;
+}
+
+.drawer-toggle-btn:hover {
+ opacity: 1;
 }
 </style>
