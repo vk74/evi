@@ -100,33 +100,43 @@ App.vue
           @click="setActiveModule('Catalog')" 
           prepend-icon="mdi-view-dashboard" 
           :title="$t('navigation.drawer.catalog')" 
-          value="catalog">
+          value="catalog"
+          :active="appStore.isModuleActive('Catalog')"
+        >
         </v-list-item>
         <v-list-item 
           @click="setActiveModule('Work')" 
           prepend-icon="mdi-text-box-multiple-outline" 
           :title="$t('navigation.drawer.workModule')" 
-          value="workItems">
+          value="workItems"
+          :active="appStore.isModuleActive('Work')"
+        >
         </v-list-item>
         <v-list-item 
           @click="setActiveModule('AR')" 
           prepend-icon="mdi-chart-timeline" 
           :title="$t('navigation.drawer.reports')" 
-          value="reports">
+          value="reports"
+          :active="appStore.isModuleActive('AR')"
+        >
         </v-list-item>
         <v-divider class="border-opacity-25"></v-divider><br>
         <v-list-item 
           @click="setActiveModule('Admin')" 
           prepend-icon="mdi-application-cog" 
           :title="$t('navigation.drawer.Admin')" 
-          value="admin">
+          value="admin"
+          :active="appStore.isModuleActive('Admin')"
+        >
         </v-list-item>
         <v-divider class="border-opacity-25"></v-divider><br>
         <v-list-item 
           @click="setActiveModule('XLS')" 
           prepend-icon="mdi-microsoft-excel" 
           :title="$t('navigation.drawer.xlsPrototyping')" 
-          value="xlsPrototyping">
+          value="xlsPrototyping"
+          :active="appStore.isModuleActive('XLS')"
+        >
         </v-list-item>
         <v-divider class="border-opacity-25"></v-divider>
       </v-list>
@@ -137,7 +147,9 @@ App.vue
             @click="setActiveModule('Account')" 
             prepend-icon="mdi-account" 
             :title="$t('navigation.drawer.account')"  
-            v-if="isLoggedIn">
+            v-if="isLoggedIn"
+            :active="appStore.isModuleActive('Account')"
+          >
           </v-list-item>
           <v-divider class="border-opacity-25"></v-divider>
           <v-list-item 
@@ -145,13 +157,17 @@ App.vue
             prepend-icon="mdi-cog" 
             :title="$t('navigation.drawer.settings')"  
             value="settings" 
-            v-if="isLoggedIn">
+            v-if="isLoggedIn"
+            :active="appStore.isModuleActive('Settings')"
+          >
           </v-list-item>
           <v-list-item 
             @click="setActiveModule('Help')" 
             prepend-icon="mdi-help-circle-outline" 
             :title="$t('navigation.drawer.helpSupport')" 
-            value="help">
+            value="help"
+            :active="appStore.isModuleActive('Help')"
+          >
           </v-list-item>
         </v-list>
       </template>
@@ -159,16 +175,16 @@ App.vue
 
     <!-- Main Work Area  -->
     <v-main>
-      <ModuleLogin v-if="activeModule === 'Login'" />
-      <ModuleCatalog v-if="activeModule === 'Catalog'" />
-      <ModuleWork v-if="activeModule === 'Work'" />
-      <ModuleAR v-if="activeModule === 'AR'" />
-      <ModuleAdmin v-if="activeModule === 'Admin'" />
-      <ModuleXLS v-if="activeModule === 'XLS'" />
-      <ModuleAccount v-if="activeModule === 'Account'" />
-      <ModuleSettings v-if="activeModule === 'Settings'" />
-      <ModuleHelp v-if="activeModule === 'Help'" />
-      <ModuleNewUserRegistration v-if="activeModule === 'NewUserRegistration'" />
+      <ModuleLogin v-if="appStore.isModuleActive('Login')" />
+      <ModuleCatalog v-if="appStore.isModuleActive('Catalog')" />
+      <ModuleWork v-if="appStore.isModuleActive('Work')" />
+      <ModuleAR v-if="appStore.isModuleActive('AR')" />
+      <ModuleAdmin v-if="appStore.isModuleActive('Admin')" />
+      <ModuleXLS v-if="appStore.isModuleActive('XLS')" />
+      <ModuleAccount v-if="appStore.isModuleActive('Account')" />
+      <ModuleSettings v-if="appStore.isModuleActive('Settings')" />
+      <ModuleHelp v-if="appStore.isModuleActive('Help')" />
+      <ModuleNewUserRegistration v-if="appStore.isModuleActive('NewUserRegistration')" />
     </v-main>
 
     <!-- Глобальный snackbar -->
@@ -188,6 +204,7 @@ App.vue
 import { ref, computed, onMounted } from 'vue';
 import { useUserStore } from './state/userstate';
 import { useUiStore } from './state/uistate';
+import { useAppStore } from './state/appstate';
 import { useI18n } from 'vue-i18n';
 import { startSessionTimers } from './services/sessionServices';
 import ModuleCatalog from './components/catalog/ModuleCatalog.vue';
@@ -207,6 +224,7 @@ import AppSnackbar from './components/ui/snackbars/AppSnackbar.vue';
 // Инициализация store и i18n
 const userStore = useUserStore();
 const uiStore = useUiStore();
+const appStore = useAppStore();
 const i18n = useI18n();
 
 // Refs
@@ -216,47 +234,42 @@ const isLoginDialogVisible = ref(false);
 
 // Computed properties
 const isLoggedIn = computed(() => userStore.isLoggedIn);
-const activeModule = computed(() => userStore.activeModule);
 
 // Methods
 const setActiveModule = (module) => {
- userStore.setActiveModule(module);
+  appStore.setActiveModule(module);
 };
 
 const logout = () => {
- userStore.userLogoff();
- setActiveModule('Catalog');
+  userStore.userLogoff();
+  appStore.setActiveModule('Catalog');
 };
 
 const changeLanguage = (lang) => {
- userStore.setLanguage(lang);
- i18n.locale.value = lang;
+  userStore.setLanguage(lang);
+  i18n.locale.value = lang;
 };
 
 const showLoginDialog = () => {
- isLoginDialogVisible.value = true;
+  isLoginDialogVisible.value = true;
 };
 
 const handleLoginSuccess = () => {
- setActiveModule('Work');
+  appStore.setActiveModule('Work');
 };
 
 const showChangePassModal = () => {
- isChangePassModalVisible.value = true;
+  isChangePassModalVisible.value = true;
 };
 
 // Lifecycle hooks
 onMounted(() => {
- i18n.locale.value = userStore.language;
- if (isLoggedIn.value) {
-   console.log('App mounted. User is logged in. Starting session timers...');
-   startSessionTimers();
- }
+  i18n.locale.value = userStore.language;
+  if (isLoggedIn.value) {
+    console.log('App mounted. User is logged in. Starting session timers...');
+    startSessionTimers();
+  }
 });
-
-// В script setup не нужно явно объявлять components и возвращать переменные
-// Все импортированные компоненты и объявленные переменные 
-// автоматически доступны в template
 </script>
 
 <style>
@@ -265,6 +278,17 @@ onMounted(() => {
 }
 
 .custom-drawer {
-  background-color: rgb(218, 218, 218) !important;
+  background-color: rgb(212, 212, 212) !important;
+}
+
+/* Стиль для активного пункта меню */
+.v-navigation-drawer .v-list-item--active {
+  background-color: rgba(128, 208, 199, 0.15) !important;
+  color: rgb(19, 84, 122) !important;
+}
+
+/* Стиль для иконки активного пункта меню */
+.v-navigation-drawer .v-list-item--active .v-icon {
+  color: rgb(19, 84, 122) !important;
 }
 </style>
