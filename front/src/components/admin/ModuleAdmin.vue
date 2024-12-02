@@ -26,21 +26,6 @@
         elevation="5"
         class="drawer-container"
       >
-        <!-- Область-кнопка на всю ширину для переключения режимов -->
-        <div class="full-width-toggle" @click="toggleDrawerMode"></div>
-
-        <!-- Кнопка-шеврон для переключения режимов -->
-        <div class="chevron-button">
-          <v-btn
-            variant="text"
-            @click="toggleDrawerMode"
-            :icon="chevronIcon"
-            size="small"
-            class="chevron-icon"
-            color="grey-darken-1"
-          ></v-btn>
-        </div>
-      
         <!-- Основное навигационное меню -->
         <v-list density="compact" nav class="navigation-list">
           <!-- Пункт меню "Управление каталогом" -->
@@ -121,6 +106,24 @@
 
           <v-divider class="border-opacity-25"></v-divider>
         </v-list>
+
+        <!-- Перемещенные элементы управления в нижнюю часть -->
+        <template v-slot:append>
+          <!-- Область-кнопка для переключения режимов -->
+          <div class="full-width-toggle" @click="toggleDrawerMode"></div>
+
+          <!-- Кнопка-шеврон для переключения режимов -->
+          <div class="chevron-button">
+            <v-btn
+              variant="text"
+              @click="toggleDrawerMode"
+              :icon="chevronIcon"
+              size="small"
+              class="chevron-icon"
+              color="grey-darken-1"
+            ></v-btn>
+          </div>
+        </template>
       </v-navigation-drawer>
       
       <!-- Контейнер для отображения активного подмодуля -->
@@ -237,7 +240,7 @@ export default {
 /* Стили для области переключения состояния меню */
 .full-width-toggle {
   position: absolute;
-  top: 0;
+  bottom: 0;
   left: 0;
   right: 0;
   height: 32px;
@@ -255,7 +258,7 @@ export default {
 .chevron-button {
   position: absolute;
   right: -16px;
-  top: 0px;
+  bottom: 0px;
   z-index: 100;
 }
 
@@ -271,16 +274,12 @@ export default {
 
 /* Стили для навигационного списка */
 .navigation-list {
-  margin-top: 48px;
+  margin-top: 0;
 }
 
 /* Стили для элементов навигации */
-.nav-item {
-  min-height: 56px;
-}
-
 .v-list-item__icon {
-  min-width: 56px;
+  min-width: 40px;
 }
 
 .v-list-item__content {

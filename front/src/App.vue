@@ -3,7 +3,7 @@ App.vue
 Корневой компонент приложения, который определяет основную структуру интерфейса.
 Содержит:
 - App Bar с основными элементами управления (поиск, смена языка, вход/выход)
-- Navigation Drawer для навигации между основными модулями
+- Navigation Drawer для навигации между основными модулями с возможностью управления режимами отображения
 - Основную рабочую область для отображения активного модуля
 - Глобальный snackbar для системных сообщений
 -->
@@ -94,84 +94,148 @@ App.vue
     </v-app-bar>
 
     <!-- Navigation Drawer -->
-    <v-navigation-drawer v-model="drawer" app expand-on-hover rail elevation="5" class="custom-drawer">
-      <v-list density="compact" nav>
-        <v-list-item 
-          @click="setActiveModule('Catalog')" 
-          prepend-icon="mdi-view-dashboard" 
-          :title="$t('navigation.drawer.catalog')" 
-          value="catalog"
-          :active="appStore.isModuleActive('Catalog')"
-        >
-        </v-list-item>
-        <v-list-item 
-          @click="setActiveModule('Work')" 
-          prepend-icon="mdi-text-box-multiple-outline" 
-          :title="$t('navigation.drawer.workModule')" 
-          value="workItems"
-          :active="appStore.isModuleActive('Work')"
-        >
-        </v-list-item>
-        <v-list-item 
-          @click="setActiveModule('AR')" 
-          prepend-icon="mdi-chart-timeline" 
-          :title="$t('navigation.drawer.reports')" 
-          value="reports"
-          :active="appStore.isModuleActive('AR')"
-        >
-        </v-list-item>
-        <v-divider class="border-opacity-25"></v-divider><br>
-        <v-list-item 
-          @click="setActiveModule('Admin')" 
-          prepend-icon="mdi-application-cog" 
-          :title="$t('navigation.drawer.Admin')" 
-          value="admin"
-          :active="appStore.isModuleActive('Admin')"
-        >
-        </v-list-item>
-        <v-divider class="border-opacity-25"></v-divider><br>
-        <v-list-item 
-          @click="setActiveModule('XLS')" 
-          prepend-icon="mdi-microsoft-excel" 
-          :title="$t('navigation.drawer.xlsPrototyping')" 
-          value="xlsPrototyping"
-          :active="appStore.isModuleActive('XLS')"
-        >
-        </v-list-item>
-        <v-divider class="border-opacity-25"></v-divider><br>
-        <v-list-item 
-            @click="setActiveModule('Help')" 
-            prepend-icon="mdi-help-circle-outline" 
-            :title="$t('navigation.drawer.helpSupport')" 
-            value="help"
-            :active="appStore.isModuleActive('Help')"
-          >
-          </v-list-item>
-        <v-divider class="border-opacity-25"></v-divider>
-      </v-list>
+    <v-navigation-drawer 
+    v-model="drawer" 
+    app 
+    :expand-on-hover="appStore.drawerMode === 'auto'"
+    :rail="appStore.drawerMode === 'auto' || appStore.drawerMode === 'closed'"
+    elevation="5" 
+    class="custom-drawer"
+    >
+    <v-list density="compact" nav>
+      <v-list-item 
+        @click="setActiveModule('Catalog')" 
+        prepend-icon="mdi-view-dashboard" 
+        :title="$t('navigation.drawer.catalog')" 
+        value="catalog"
+        :active="appStore.isModuleActive('Catalog')"
+        v-tooltip="{
+          text: $t('navigation.drawer.catalog'),
+          location: 'right',
+          disabled: appStore.drawerMode !== 'closed'
+        }"
+      >
+      </v-list-item>
+      <v-list-item 
+        @click="setActiveModule('Work')" 
+        prepend-icon="mdi-text-box-multiple-outline" 
+        :title="$t('navigation.drawer.workModule')" 
+        value="workItems"
+        :active="appStore.isModuleActive('Work')"
+        v-tooltip="{
+          text: $t('navigation.drawer.workModule'),
+          location: 'right',
+          disabled: appStore.drawerMode !== 'closed'
+        }"
+      >
+      </v-list-item>
+      <v-list-item 
+        @click="setActiveModule('AR')" 
+        prepend-icon="mdi-chart-timeline" 
+        :title="$t('navigation.drawer.reports')" 
+        value="reports"
+        :active="appStore.isModuleActive('AR')"
+        v-tooltip="{
+          text: $t('navigation.drawer.reports'),
+          location: 'right',
+          disabled: appStore.drawerMode !== 'closed'
+        }"
+      >
+      </v-list-item>
+      <v-divider class="border-opacity-25"></v-divider><br>
+      <v-list-item 
+        @click="setActiveModule('Admin')" 
+        prepend-icon="mdi-application-cog" 
+        :title="$t('navigation.drawer.Admin')" 
+        value="admin"
+        :active="appStore.isModuleActive('Admin')"
+        v-tooltip="{
+          text: $t('navigation.drawer.Admin'),
+          location: 'right',
+          disabled: appStore.drawerMode !== 'closed'
+        }"
+      >
+      </v-list-item>
+      <v-divider class="border-opacity-25"></v-divider><br>
+      <v-list-item 
+        @click="setActiveModule('XLS')" 
+        prepend-icon="mdi-microsoft-excel" 
+        :title="$t('navigation.drawer.xlsPrototyping')" 
+        value="xlsPrototyping"
+        :active="appStore.isModuleActive('XLS')"
+        v-tooltip="{
+          text: $t('navigation.drawer.xlsPrototyping'),
+          location: 'right',
+          disabled: appStore.drawerMode !== 'closed'
+        }"
+      >
+      </v-list-item>
+      <v-divider class="border-opacity-25"></v-divider><br>
+      <v-list-item 
+        @click="setActiveModule('Help')" 
+        prepend-icon="mdi-help-circle-outline" 
+        :title="$t('navigation.drawer.helpSupport')" 
+        value="help"
+        :active="appStore.isModuleActive('Help')"
+        v-tooltip="{
+          text: $t('navigation.drawer.helpSupport'),
+          location: 'right',
+          disabled: appStore.drawerMode !== 'closed'
+        }"
+      >
+      </v-list-item>
+      <v-divider class="border-opacity-25"></v-divider>
+    </v-list>
+
+    <!-- Append slot для управления и настроек -->
+    <template v-slot:append>
+      <!-- Область-кнопка для переключения режимов -->  
+      <div class="full-width-toggle" @click="toggleDrawerMode"></div>
+
+      <!-- Кнопка-шеврон для переключения режимов -->
+      <div class="chevron-button">
+        <v-btn
+          variant="text"
+          @click="toggleDrawerMode"
+          :icon="chevronIcon"
+          size="small"
+          class="chevron-icon"
+          color="grey-darken-1"
+        ></v-btn>
+      </div>
+
       <!-- Settings in the bottom -->
-      <template v-slot:append>
-        <v-list>
-          <v-list-item 
-            @click="setActiveModule('Account')" 
-            prepend-icon="mdi-account" 
-            :title="$t('navigation.drawer.account')"  
-            v-if="isLoggedIn"
-            :active="appStore.isModuleActive('Account')"
-          >
-          </v-list-item>
-          
-          <v-list-item 
-            @click="setActiveModule('Settings')" 
-            prepend-icon="mdi-cog" 
-            :title="$t('navigation.drawer.settings')"  
-            value="settings" 
-            v-if="isLoggedIn"
-            :active="appStore.isModuleActive('Settings')"
-          >
-          </v-list-item>
-        </v-list>
-      </template>
+      <v-list>
+        <v-list-item 
+          @click="setActiveModule('Account')" 
+          prepend-icon="mdi-account" 
+          :title="$t('navigation.drawer.account')"  
+          v-if="isLoggedIn"
+          :active="appStore.isModuleActive('Account')"
+          v-tooltip="{
+            text: $t('navigation.drawer.account'),
+            location: 'right',
+            disabled: appStore.drawerMode !== 'closed'
+          }"
+        >
+        </v-list-item>
+        
+        <v-list-item 
+          @click="setActiveModule('Settings')" 
+          prepend-icon="mdi-cog" 
+          :title="$t('navigation.drawer.settings')"  
+          value="settings" 
+          v-if="isLoggedIn"
+          :active="appStore.isModuleActive('Settings')"
+          v-tooltip="{
+            text: $t('navigation.drawer.settings'),
+            location: 'right',
+            disabled: appStore.drawerMode !== 'closed'
+          }"
+        >
+        </v-list-item>
+      </v-list>
+    </template>
     </v-navigation-drawer>
 
     <!-- Main Work Area  -->
@@ -236,6 +300,19 @@ const isLoginDialogVisible = ref(false);
 // Computed properties
 const isLoggedIn = computed(() => userStore.isLoggedIn);
 
+const chevronIcon = computed(() => {
+  switch(appStore.drawerMode) {
+    case 'auto':
+      return 'mdi-chevron-double-right';
+    case 'opened':
+      return 'mdi-chevron-double-left';
+    case 'closed':
+      return 'mdi-chevron-double-down';
+    default:
+      return 'mdi-chevron-double-right';
+  }
+});
+
 // Methods
 const setActiveModule = (module) => {
   appStore.setActiveModule(module);
@@ -263,6 +340,13 @@ const showChangePassModal = () => {
   isChangePassModalVisible.value = true;
 };
 
+const toggleDrawerMode = () => {
+  const modes = ['auto', 'opened', 'closed'];
+  const currentIndex = modes.indexOf(appStore.drawerMode);
+  const nextIndex = (currentIndex + 1) % modes.length;
+  appStore.setDrawerMode(modes[nextIndex]);
+};
+
 // Lifecycle hooks
 onMounted(() => {
   i18n.locale.value = userStore.language;
@@ -279,7 +363,7 @@ onMounted(() => {
 }
 
 .custom-drawer {
-  background-color: rgb(212, 212, 212) !important;
+  background-color: rgb(220, 220, 220) !important;
 }
 
 /* Стиль для активного пункта меню */
@@ -291,5 +375,40 @@ onMounted(() => {
 /* Стиль для иконки активного пункта меню */
 .v-navigation-drawer .v-list-item--active .v-icon {
   color: rgb(19, 84, 122) !important;
+}
+
+/* Стили для области переключения состояния меню */
+.full-width-toggle {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 32px;
+  background-color: rgb(var(--v-theme-surface));
+  cursor: pointer;
+  z-index: 99;
+  transition: background-color 0.2s ease;
+}
+
+.full-width-toggle:hover {
+  background-color: rgba(var(--v-theme-primary), 0.04);
+}
+
+/* Стили для кнопки-шеврона */
+.chevron-button {
+  position: absolute;
+  right: -16px;
+  bottom: -8px;
+  z-index: 100;
+}
+
+.chevron-icon {
+  background-color: rgb(var(--v-theme-surface));
+  box-shadow: 2px 0 4px rgba(0, 0, 0, 0.1);
+  border-radius: 0 4px 4px 0;
+  height: 32px;
+  width: 24px;
+  padding: 0;
+  opacity: 0.6;
 }
 </style>
