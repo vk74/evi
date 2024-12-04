@@ -1,12 +1,12 @@
-const { defineConfig } = require('@vue/cli-service')
-
-module.exports = defineConfig({
+module.exports = {
   transpileDependencies: true,
   pluginOptions: {
     vuetify: {}
   },
-  // Оптимизации для development
   configureWebpack: {
+    entry: {
+      app: './src/main.js'  // Указываем более конкретно точку входа
+    },
     cache: true,
     optimization: {
       removeAvailableModules: false,
@@ -20,14 +20,13 @@ module.exports = defineConfig({
       hints: false
     }
   },
-  // Отключаем лишние опции в development
   css: {
     sourceMap: false
   },
   productionSourceMap: false,
-  lintOnSave: false, // Временно отключаем линтинг при сборке
+  lintOnSave: false,
   devServer: {
     hot: true,
     liveReload: false
   }
-})
+}

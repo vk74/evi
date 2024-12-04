@@ -1,9 +1,10 @@
 // src/main.js
+console.log('Starting application...');
 import { createApp } from 'vue';
+import App from './App.vue';
 import { createPinia } from 'pinia';
 import piniaPluginPersistedstate from 'pinia-plugin-persistedstate';
 import { createI18n } from 'vue-i18n';
-import App from './App.vue';
 import { startSessionTimers } from './services/sessionServices';
 import axios from 'axios';
 import '/styles/global.css';
@@ -16,6 +17,9 @@ import appRu from './AppTranslationRU.json';
 import appEn from './AppTranslationEN.json';
 import admpanRu from './components/admin/AdminTranslationRU.json';
 import admpanEn from './components/admin/AdminTranslationEN.json';
+
+console.log('App component:', App);
+console.log('All imports completed');
 
 // Объединяем переводы
 const messages = {
@@ -39,6 +43,7 @@ const i18n = createI18n({
 
 // Создаем приложение
 const app = createApp(App);
+console.log('App instance created');
 const pinia = createPinia();
 pinia.use(piniaPluginPersistedstate);
 
@@ -87,4 +92,5 @@ const initializeUserState = async () => {
 
 // Монтируем приложение и инициализируем состояние
 app.mount('#app');
+console.log('App mounted');
 initializeUserState();

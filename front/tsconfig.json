@@ -17,17 +17,20 @@
     },
     "lib": ["esnext", "dom", "dom.iterable", "scripthost"],
     "allowJs": true,
-    "checkJs": false,      // Добавляем это
-    "noEmit": true        // И это
+    "checkJs": false,
+    "noEmit": true,
+    "resolveJsonModule": true,    // Добавляем поддержку JSON
+    "noImplicitAny": false       // Отключаем строгую типизацию
   },
   "include": [
     "src/**/*.ts",
     "src/**/*.tsx",
     "src/**/*.vue",
-    "src/**/*.js"  // Оставляем для поддержки js файлов
+    "src/**/*.js",
+    "src/**/*.json"              // Добавляем JSON файлы
   ],
   "exclude": [
     "node_modules",
-    "dist"          // Добавляем dist
+    "dist"
   ]
 }
