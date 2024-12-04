@@ -41,6 +41,7 @@
     "remove-trailing-separator": "^1.1.0",
     "typescript": "^5.7.2",
     "vue-cli-plugin-vuetify": "~2.5.8",
+    "vue-tsc": "^1.8.27",
     "webpack": "^5.96.1",
     "webpack-chain": "^6.5.1",
     "webpack-plugin-vuetify": "^2.0.0-alpha.0"
