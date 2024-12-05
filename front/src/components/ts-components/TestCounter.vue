@@ -21,7 +21,7 @@
     name: 'TestCounter',
     data(): CounterData {
       return {
-        count: 0,
+        count: 5,
         title: 'TypeScript Counter'
       }
     },

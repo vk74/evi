@@ -1,7 +1,7 @@
 <template>
     <div>
       <TestCounter />
-      <!-- Тут может быть основной контент ViewAllGroups -->
+      
     </div>
   </template>
   
