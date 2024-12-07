@@ -219,12 +219,14 @@
                 <v-row>
                   <v-col cols="12" md="6">
                     <v-text-field
-                      v-model="userProfile.phone_number"
-                      label="телефон"
-                      :rules="phoneRules"
-                      variant="outlined"
-                      density="comfortable"
-                      placeholder="+X-XXX-XXX-XX-XX"
+                    v-model="userProfile.phone_number"
+                    label="телефон"
+                    :rules="phoneRules"
+                    variant="outlined"
+                    density="comfortable"
+                    placeholder="+7 XXX XXX XXXX"
+                    @input="handlePhoneInput"
+                    @focus="handlePhoneFocus"
                     />
                   </v-col>
                   <v-col cols="12">
@@ -282,46 +284,61 @@
   </template>
   
   <script setup>
-  // Импорты необходимых зависимостей
-  import { ref, computed, onMounted, watch } from 'vue'
-  import { useAdminStore } from '@/state/adminstate'
-  import axios from 'axios'
-  import { useUiStore } from '@/state/uistate'
-  import { useUserStore } from '@/state/userstate'
-  
-  // Определение props
-  const props = defineProps({
-    mode: {
-      type: String,
-      required: true,
-      default: 'create'
-    },
-    userId: {
-      type: String,
-      required: false
-    }
-  })
-  
-  // События компонента
-  const emit = defineEmits(['saved'])
-  
-  // Инициализация хранилища
-  const adminStore = useAdminStore()
+// ================== ИМПОРТЫ ==================
+import { ref, computed, onMounted, watch } from 'vue'
+import { useAdminStore } from '@/state/adminstate'
+import { useUiStore } from '@/state/uistate'
+import { useUserStore } from '@/state/userstate'
+import axios from 'axios'
 
-  // Инициализация UI store для snackbar
-  const uiStore = useUiStore()
-  
-  // Ссылки на формы для валидации
-  const accountForm = ref(null)
-  const profileForm = ref(null)
-  const isAccountFormValid = ref(false)
-  const isProfileFormValid = ref(false)
+// ================== ОПРЕДЕЛЕНИЕ PROPS ==================
+/**
+ * Props компонента:
+ * mode - режим работы (create/edit)
+ * userId - ID пользователя (только для режима edit)
+ */
+const props = defineProps({
+  mode: {
+    type: String,
+    required: true,
+    default: 'create'
+  },
+  userId: {
+    type: String,
+    required: false
+  }
+})
 
-  // Состояние отправки формы
-  const isSubmitting = ref(false)
+// События компонента
+const emit = defineEmits(['saved'])
 
-    // Начальные значения для учетной записи пользователя
-    const initialUserData = {
+// ================== ИНИЦИАЛИЗАЦИЯ ХРАНИЛИЩ ==================
+const adminStore = useAdminStore()
+const uiStore = useUiStore()
+
+// ==================== БАЗОВОЕ СОСТОЯНИЕ ====================
+/**
+ * Ссылки на формы компонента и их состояния валидации
+ */
+ const accountForm = ref(null)
+const profileForm = ref(null)
+const isAccountFormValid = ref(false)
+const isProfileFormValid = ref(false)
+
+/**
+ * Состояния UI
+ */
+const isSubmitting = ref(false)         // Флаг отправки формы
+const showPassword = ref(false)         // Управление видимостью пароля
+const hasInteracted = ref(false)        // Флаг взаимодействия с формой
+const activeSection = ref('account')    // Текущая активная секция
+const showRequiredFieldsWarning = ref(false) // Флаг предупреждения о незаполненных полях
+
+// ==================== НАЧАЛЬНЫЕ ЗНАЧЕНИЯ ФОРМ ====================
+/**
+ * Начальные значения для учетной записи пользователя
+ */
+const initialUserData = {
     username: '',
     email: '',
     status: 'active',
@@ -330,14 +347,10 @@
     passwordConfirm: ''
 }
 
-  // Управление видимостью пароля
-  const showPassword = ref(false)
-
-  // Отслеживание первого взаимодействия с формой
-  const hasInteracted = ref(false)
-  
-  // Начальные значения для профиля пользователя
-  const initialUserProfile = {
+/**
+ * Начальные значения для профиля пользователя
+ */
+const initialUserProfile = {
     first_name: '',
     last_name: '',
     middle_name: '',
@@ -346,198 +359,232 @@
     company_name: '',
     position: '',
     gender: null
-  }
-  
-  // Данные пользователя и профиля
-  const userData = ref({ ...initialUserData })
-  const userProfile = ref({ ...initialUserProfile })
-  
-  // Определение режима работы
-  const isEditMode = computed(() => props.mode === 'edit')
+}
 
-  // Определение секций навигации
-  const sections = computed(() => {
-    const baseSections = [
-      { id: 'account', title: 'учетная запись' },
-      { id: 'profile', title: 'профиль' }
-    ]
-    
-    // Добавляем секцию групп только в режиме редактирования
-    if (isEditMode.value) {
-      baseSections.push({ id: 'groups', title: 'участник групп' })
-    }
-    
-    return baseSections
-  })
+// ==================== РЕАКТИВНЫЕ ДАННЫЕ ФОРМ ====================
+/**
+ * Реактивные объекты данных форм
+ * Используются для двустороннего связывания с полями ввода
+ */
+const userData = ref({ ...initialUserData })
+const userProfile = ref({ ...initialUserProfile })
 
-  // Активная секция
-  const activeSection = ref('account')
+// ==================== ПРАВИЛА ВАЛИДАЦИИ ====================
+/**
+ * Регулярные выражения для валидации
+ */
+const nameRegex = /^[a-zA-Zа-яА-Я\- ]+$/
 
-  // Отслеживание заполненности обязательных полей
-  const requiredFieldsFilled = computed(() => {
-    const accountRequired = [
-      userData.value.username,
-      userData.value.email,
-      userData.value.password,
-      userData.value.passwordConfirm
-    ].every(field => !!field)
-
-    const profileRequired = [
-      userProfile.value.first_name,
-      userProfile.value.last_name
-    ].every(field => !!field)
-
-    return accountRequired && profileRequired
-  })
-
-  // Слежение за изменениями в полях формы
-  const watchFormFields = () => {
-    const fieldsToWatch = [
-      () => userData.value.username,
-      () => userData.value.email,
-      () => userData.value.password,
-      () => userData.value.passwordConfirm,
-      () => userProfile.value.first_name,
-      () => userProfile.value.last_name
-    ]
-
-    fieldsToWatch.forEach(field => {
-      watch(field, () => {
-        if (!hasInteracted.value) {
-          hasInteracted.value = true
-        }
-      })
-    })
-  }
-
-  // Метод переключения секций
-  const switchSection = (sectionId) => {
-    // Проверяем, существует ли секция в текущем наборе секций
-    if (sections.value.some(section => section.id === sectionId)) {
-      activeSection.value = sectionId
-    }
-  }
-
-  // Обновленное вычисляемое свойство для общей валидности формы
-  const isFormValid = computed(() => {
-    // Проверяем валидность учетной записи
-    if (!isAccountFormValid.value) return false
-    
-    // Проверяем валидность профиля если открыта эта секция
-    if (activeSection.value === 'profile' && !isProfileFormValid.value) return false
-    
-    // Проверяем заполненность обязательных полей
-    if (!requiredFieldsFilled.value) return false
-    
-    return true
-  })
-
-  // Watch для управления snackbar
-  const showRequiredFieldsWarning = ref(false)
-
-  watch(hasInteracted, (newValue) => {
-    if (newValue && !requiredFieldsFilled.value) {
-      showRequiredFieldsWarning.value = true
-    }
-  }, { immediate: false })
-
-  watch(requiredFieldsFilled, (newValue) => {
-    if (newValue && showRequiredFieldsWarning.value) {
-      showRequiredFieldsWarning.value = false
-      uiStore.hideSnackbar() // Если в вашем uiStore есть такой метод
-    }
-  }, { immediate: false })
-
-  watch(showRequiredFieldsWarning, (newValue) => {
-    if (newValue) {
-      uiStore.showInfoSnackbar('заполните обязательные поля в секциях "учетная запись" и "профиль"', {
-        timeout: -1 // Отключаем автоматическое скрытие
-      })
-    }
-  })
-  
-  // Правила валидации для учетной записи
-  const usernameRules = [
+/**
+ * Правила валидации для учетной записи
+ */
+const usernameRules = [
     v => !!v || 'название учетной записи обязательно',
     v => (v && v.length <= 64) || 'название учетной записи не может быть длиннее 64 символов',
     v => /^[a-zA-Zа-яА-Я0-9\-._]+$/.test(v) || 'разрешены только буквы, цифры, дефис, точка и нижнее подчеркивание'
-  ]
-  
-  const emailRules = [
+]
+
+const emailRules = [
     v => !!v || 'e-mail обязателен',
     v => /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(v) || 'некорректный e-mail адрес'
-  ]
+]
 
-  // Правила для пароля
-  const passwordRules = [
+const passwordRules = [
     v => !!v || 'пароль обязателен',
     v => (v && v.length >= 8) || 'пароль должен быть не короче 8 символов',
     v => (v && v.length <= 40) || 'пароль не может быть длиннее 40 символов',
     v => /^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{8,40}$/.test(v) || 'пароль должен содержать буквы и цифры'
-  ]
+]
 
-  // Правила для подтверждения пароля
-  const passwordConfirmRules = [
+const passwordConfirmRules = [
     v => !!v || 'подтверждение пароля обязательно',
     v => v === userData.value.password || 'пароли не совпадают'
-  ] 
+]
 
-  // Правила валидации для профиля
-  const nameRegex = /^[a-zA-Zа-яА-Я\- ]+$/
-  
-  const firstNameRules = [
+/**
+ * Правила валидации для профиля
+ */
+const firstNameRules = [
     v => !!v || 'имя обязательно',
     v => (v && v.length >= 2) || 'имя должно быть не короче 2 символов',
     v => (v && v.length <= 50) || 'имя не может быть длиннее 50 символов',
     v => !v || nameRegex.test(v) || 'имя может содержать только буквы, пробелы и дефис'
-  ]
-  
-  const lastNameRules = [
+]
+
+const lastNameRules = [
     v => !!v || 'фамилия обязательна',
     v => (v && v.length >= 2) || 'фамилия должна быть не короче 2 символов',
     v => (v && v.length <= 50) || 'фамилия не может быть длиннее 50 символов',
     v => !v || nameRegex.test(v) || 'фамилия может содержать только буквы, пробелы и дефис'
-  ]
-  
-  const middleNameRules = [
+]
+
+const middleNameRules = [
     v => !v || v.length <= 50 || 'отчество не может быть длиннее 50 символов',
     v => !v || nameRegex.test(v) || 'отчество может содержать только буквы, пробелы и дефис'
-  ]
-  
-  const phoneRules = [
-    v => !v || /^\+\d{1,3}-\d{3}-\d{3}-\d{2}-\d{2}$/.test(v) || 'введите телефон в формате +X-XXX-XXX-XX-XX'
-  ]
-  
-  const addressRules = [
+]
+
+const phoneRules = [
+    v => !v || /^\+[\d\s]{11,15}$/.test(v) || 'неверный формат телефона'
+]
+
+const addressRules = [
     v => !v || v.length <= 5000 || 'адрес не может быть длиннее 5000 символов',
-    // Запрещаем управляющие символы, оставляем только печатные символы и базовые пробельные символы
     v => !v || /^[\p{L}\p{N}\p{P}\p{Z}]+$/u.test(v) || 'адрес содержит недопустимые символы'
-  ]
-  
-  const companyNameRules = [
+]
+
+const companyNameRules = [
     v => !v || v.length <= 255 || 'название компании не может быть длиннее 255 символов',
     v => !v || /^[\p{L}\p{N}\p{P}\p{Z}]+$/u.test(v) || 'название компании содержит недопустимые символы'
-  ]
-  
-  const positionRules = [
+]
+
+const positionRules = [
     v => !v || v.length <= 255 || 'должность не может быть длиннее 255 символов',
     v => !v || /^[\p{L}\p{N}\p{P}\p{Z}]+$/u.test(v) || 'должность содержит недопустимые символы'
-  ]
-  
-  // Добавим computed для преобразования пола
-  const normalizedGender = computed(() => {
+]
+
+// ==================== COMPUTED PROPERTIES ====================
+/**
+ * Определение режима работы компонента
+ */
+ const isEditMode = computed(() => props.mode === 'edit')
+
+/**
+ * Формирование списка доступных секций
+ * В режиме создания убираем секцию групп
+ */
+const sections = computed(() => {
+    const baseSections = [
+        { id: 'account', title: 'учетная запись' },
+        { id: 'profile', title: 'профиль' }
+    ]
+    
+    if (isEditMode.value) {
+        baseSections.push({ id: 'groups', title: 'участник групп' })
+    }
+    
+    return baseSections
+})
+
+/**
+ * Проверка заполненности обязательных полей
+ */
+const requiredFieldsFilled = computed(() => {
+    const accountRequired = [
+        userData.value.username,
+        userData.value.email,
+        userData.value.password,
+        userData.value.passwordConfirm
+    ].every(field => !!field)
+
+    const profileRequired = [
+        userProfile.value.first_name,
+        userProfile.value.last_name
+    ].every(field => !!field)
+
+    return accountRequired && profileRequired
+})
+
+/**
+ * Общая валидность формы
+ */
+const isFormValid = computed(() => {
+    if (!isAccountFormValid.value) return false
+    if (activeSection.value === 'profile' && !isProfileFormValid.value) return false
+    if (!requiredFieldsFilled.value) return false
+    return true
+})
+
+/**
+ * Нормализация значения пола для API
+ */
+const normalizedGender = computed(() => {
     if (!userProfile.value.gender) return null
     return userProfile.value.gender === 'male' ? 'm' : 'f'
-  })
+})
 
-  // Метод сохранения пользователя
-  const saveUser = async () => {
+// ==================== МЕТОДЫ ====================
+/**
+ * Методы для работы с телефонным номером
+ */
+const formatPhoneNumber = (number) => {
+    // Убираем все символы кроме цифр и пробелов
+    const cleaned = number.replace(/[^\d\s]/g, '')
+    // Добавляем +, если его нет
+    return cleaned ? '+' + cleaned : '+'
+}
+
+const normalizePhoneNumber = (phone) => {
+    if (!phone) return null
+    // Оставляем только цифры и добавляем +
+    return '+' + phone.replace(/[^\d]/g, '')
+}
+
+const handlePhoneInput = (event) => {
+    const input = event.target.value
+    if (input.startsWith('+')) {
+        userProfile.value.phone_number = formatPhoneNumber(input.slice(1))
+    } else {
+        userProfile.value.phone_number = formatPhoneNumber(input)
+    }
+}
+
+const handlePhoneFocus = () => {
+    if (!userProfile.value.phone_number) {
+        userProfile.value.phone_number = '+'
+    }
+}
+
+/**
+ * Переключение секций формы
+ */
+const switchSection = (sectionId) => {
+    if (sections.value.some(section => section.id === sectionId)) {
+        activeSection.value = sectionId
+    }
+}
+
+/**
+ * Отслеживание заполнения полей формы
+ */
+const watchFormFields = () => {
+    const fieldsToWatch = [
+        () => userData.value.username,
+        () => userData.value.email,
+        () => userData.value.password,
+        () => userData.value.passwordConfirm,
+        () => userProfile.value.first_name,
+        () => userProfile.value.last_name
+    ]
+
+    fieldsToWatch.forEach(field => {
+        watch(field, () => {
+            if (!hasInteracted.value) {
+                hasInteracted.value = true
+            }
+        })
+    })
+}
+
+/**
+ * Сброс всех форм
+ */
+const resetAllForms = () => {
+    userData.value = { ...initialUserData }
+    userProfile.value = { ...initialUserProfile }
+    showPassword.value = false
+    accountForm.value?.reset()
+    profileForm.value?.reset()
+    console.log('All forms have been reset')
+}
+
+/**
+ * Сохранение данных пользователя
+ */
+const saveUser = async () => {
     console.log('Starting saveUser method...')
-    
     isSubmitting.value = true
     
     try {
-        // Получаем токен из userStore
         const userStore = useUserStore()
         const token = userStore.jwt
         
@@ -554,8 +601,8 @@
             first_name: userProfile.value.first_name,
             last_name: userProfile.value.last_name,
             middle_name: userProfile.value.middle_name || null,
-            gender: normalizedGender.value || null,  // Используем преобразованное значение
-            phone_number: userProfile.value.phone_number || null,
+            gender: normalizedGender.value,
+            phone_number: normalizePhoneNumber(userProfile.value.phone_number),
             address: userProfile.value.address || null,
             company_name: userProfile.value.company_name || null,
             position: userProfile.value.position || null
@@ -563,7 +610,8 @@
         
         console.log('Sending request with data:', requestData)
         
-        const response = await axios.post('http://localhost:3000/api/admin/user/newuser', 
+        const response = await axios.post(
+            'http://localhost:3000/api/admin/user/newuser', 
             requestData,
             {
                 headers: {
@@ -573,7 +621,6 @@
         )
         
         console.log('Server response:', response.data)
-        
         uiStore.showSuccessSnackbar('учетная запись пользователя создана')
         resetAllForms()
         emit('saved')
@@ -595,42 +642,58 @@
     }
 }
 
-  // Метод сброса всех форм
-  const resetAllForms = () => {
-      // Сброс данных учетной записи
-      userData.value = { ...initialUserData }
-      // Сброс данных профиля
-      userProfile.value = { ...initialUserProfile }
-      // Сброс состояния видимости пароля
-      showPassword.value = false
-      // Сброс валидации форм
-      accountForm.value?.reset()
-      profileForm.value?.reset()
-
-  console.log('All forms have been reset')
-  }
-  
-  // Инициализация компонента
-  const initializeComponent = async () => {
-    // Если режим редактирования, загружаем данные пользователя
-    if (isEditMode.value && props.userId) {
-      try {
-        // TODO: Загрузить данные пользователя и профиля
-        console.log('Loading user data for:', props.userId)
-      } catch (error) {
-        console.error('Error fetching user data:', error)
-        // TODO: показать ошибку пользователю
-      }
+// ==================== WATCHERS ====================
+/**
+ * Отслеживание заполнения обязательных полей и управление уведомлениями
+ */
+ watch(hasInteracted, (newValue) => {
+    if (newValue && !requiredFieldsFilled.value) {
+        showRequiredFieldsWarning.value = true
     }
-  }
-  
-  // Запускаем инициализацию при монтировании компонента
-  onMounted(() => {
+}, { immediate: false })
+
+watch(requiredFieldsFilled, (newValue) => {
+    if (newValue && showRequiredFieldsWarning.value) {
+        showRequiredFieldsWarning.value = false
+        uiStore.hideSnackbar()
+    }
+}, { immediate: false })
+
+watch(showRequiredFieldsWarning, (newValue) => {
+    if (newValue) {
+        uiStore.showInfoSnackbar(
+            'заполните обязательные поля в секциях "учетная запись" и "профиль"', 
+            { timeout: -1 }
+        )
+    }
+})
+
+// ==================== LIFECYCLE HOOKS ====================
+/**
+ * Инициализация компонента
+ */
+const initializeComponent = async () => {
+    // Загрузка данных пользователя в режиме редактирования
+    if (isEditMode.value && props.userId) {
+        try {
+            // TODO: Загрузить данные пользователя и профиля
+            console.log('Loading user data for:', props.userId)
+        } catch (error) {
+            console.error('Error fetching user data:', error)
+            // TODO: показать ошибку пользователю
+        }
+    }
+}
+
+/**
+ * Хук жизненного цикла: монтирование компонента
+ */
+onMounted(() => {
     console.log('UserEditor mounted, initializing...')
     initializeComponent()
     watchFormFields()
-  })
-  </script>
+})
+</script>
   
   <style scoped>
 .editor-app-bar {
