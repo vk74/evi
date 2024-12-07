@@ -6,7 +6,10 @@
   - Создание новой учетной записи пользователя
   - Редактирование существующей учетной записи
   - Управление основными параметрами пользователя
-  - Валидация полей формы с отображением ошибок
+  - Двухуровневая валидация формы:
+    * Контроль заполнения обязательных полей с информационным уведомлением
+    * Валидация всех полей по установленным правилам
+  - Управление участием пользователя в группах (только в режиме редактирования)
 -->
 
 <template>
@@ -280,7 +283,7 @@
   
   <script setup>
   // Импорты необходимых зависимостей
-  import { ref, computed, onMounted } from 'vue'
+  import { ref, computed, onMounted, watch } from 'vue'
   import { useAdminStore } from '@/state/adminstate'
   import axios from 'axios'
   import { useUiStore } from '@/state/uistate'
@@ -308,23 +311,6 @@
   // Инициализация UI store для snackbar
   const uiStore = useUiStore()
   
-  // Определение секций навигации
-  const sections = [
-    { id: 'account', title: 'учетная запись' },
-    { id: 'profile', title: 'профиль' },
-    { id: 'groups', title: 'участник групп' }
-  ]
-  
-  // Активная секция
-  const activeSection = ref('account')
-  
-  // Метод переключения секций
-  const switchSection = (sectionId) => {
-    if (sections.some(section => section.id === sectionId)) {
-      activeSection.value = sectionId
-    }
-  }
-  
   // Ссылки на формы для валидации
   const accountForm = ref(null)
   const profileForm = ref(null)
@@ -333,23 +319,9 @@
 
   // Состояние отправки формы
   const isSubmitting = ref(false)
-  
-  // Вычисляемое свойство для общей валидности формы
-  const isFormValid = computed(() => {
-    // Проверяем валидность учетной записи
-    if (!isAccountFormValid.value) return false
-    
-    // Проверяем валидность профиля если открыта эта секция
-    if (activeSection.value === 'profile' && !isProfileFormValid.value) return false
-    
-    return true
-  })
-  
-  // Определение режима работы
-  const isEditMode = computed(() => props.mode === 'edit')
-  
-  // Начальные значения для учетной записи пользователя
-  const initialUserData = {
+
+    // Начальные значения для учетной записи пользователя
+    const initialUserData = {
     username: '',
     email: '',
     status: 'active',
@@ -360,6 +332,9 @@
 
   // Управление видимостью пароля
   const showPassword = ref(false)
+
+  // Отслеживание первого взаимодействия с формой
+  const hasInteracted = ref(false)
   
   // Начальные значения для профиля пользователя
   const initialUserProfile = {
@@ -376,6 +351,110 @@
   // Данные пользователя и профиля
   const userData = ref({ ...initialUserData })
   const userProfile = ref({ ...initialUserProfile })
+  
+  // Определение режима работы
+  const isEditMode = computed(() => props.mode === 'edit')
+
+  // Определение секций навигации
+  const sections = computed(() => {
+    const baseSections = [
+      { id: 'account', title: 'учетная запись' },
+      { id: 'profile', title: 'профиль' }
+    ]
+    
+    // Добавляем секцию групп только в режиме редактирования
+    if (isEditMode.value) {
+      baseSections.push({ id: 'groups', title: 'участник групп' })
+    }
+    
+    return baseSections
+  })
+
+  // Активная секция
+  const activeSection = ref('account')
+
+  // Отслеживание заполненности обязательных полей
+  const requiredFieldsFilled = computed(() => {
+    const accountRequired = [
+      userData.value.username,
+      userData.value.email,
+      userData.value.password,
+      userData.value.passwordConfirm
+    ].every(field => !!field)
+
+    const profileRequired = [
+      userProfile.value.first_name,
+      userProfile.value.last_name
+    ].every(field => !!field)
+
+    return accountRequired && profileRequired
+  })
+
+  // Слежение за изменениями в полях формы
+  const watchFormFields = () => {
+    const fieldsToWatch = [
+      () => userData.value.username,
+      () => userData.value.email,
+      () => userData.value.password,
+      () => userData.value.passwordConfirm,
+      () => userProfile.value.first_name,
+      () => userProfile.value.last_name
+    ]
+
+    fieldsToWatch.forEach(field => {
+      watch(field, () => {
+        if (!hasInteracted.value) {
+          hasInteracted.value = true
+        }
+      })
+    })
+  }
+
+  // Метод переключения секций
+  const switchSection = (sectionId) => {
+    // Проверяем, существует ли секция в текущем наборе секций
+    if (sections.value.some(section => section.id === sectionId)) {
+      activeSection.value = sectionId
+    }
+  }
+
+  // Обновленное вычисляемое свойство для общей валидности формы
+  const isFormValid = computed(() => {
+    // Проверяем валидность учетной записи
+    if (!isAccountFormValid.value) return false
+    
+    // Проверяем валидность профиля если открыта эта секция
+    if (activeSection.value === 'profile' && !isProfileFormValid.value) return false
+    
+    // Проверяем заполненность обязательных полей
+    if (!requiredFieldsFilled.value) return false
+    
+    return true
+  })
+
+  // Watch для управления snackbar
+  const showRequiredFieldsWarning = ref(false)
+
+  watch(hasInteracted, (newValue) => {
+    if (newValue && !requiredFieldsFilled.value) {
+      showRequiredFieldsWarning.value = true
+    }
+  }, { immediate: false })
+
+  watch(requiredFieldsFilled, (newValue) => {
+    if (newValue && showRequiredFieldsWarning.value) {
+      showRequiredFieldsWarning.value = false
+      uiStore.hideSnackbar() // Если в вашем uiStore есть такой метод
+    }
+  }, { immediate: false })
+
+  watch(showRequiredFieldsWarning, (newValue) => {
+    if (newValue) {
+      uiStore.showInfoSnackbar('заполните обязательные поля в секциях "учетная запись" и "профиль"', {
+        timeout: -1 // Отключаем автоматическое скрытие
+      })
+    }
+  })
   
   // Правила валидации для учетной записи
   const usernameRules = [
@@ -445,6 +524,12 @@
     v => !v || /^[\p{L}\p{N}\p{P}\p{Z}]+$/u.test(v) || 'должность содержит недопустимые символы'
   ]
   
+  // Добавим computed для преобразования пола
+  const normalizedGender = computed(() => {
+    if (!userProfile.value.gender) return null
+    return userProfile.value.gender === 'male' ? 'm' : 'f'
+  })
+
   // Метод сохранения пользователя
   const saveUser = async () => {
     console.log('Starting saveUser method...')
@@ -469,7 +554,7 @@
             first_name: userProfile.value.first_name,
             last_name: userProfile.value.last_name,
             middle_name: userProfile.value.middle_name || null,
-            gender: userProfile.value.gender || null,
+            gender: normalizedGender.value || null,  // Используем преобразованное значение
             phone_number: userProfile.value.phone_number || null,
             address: userProfile.value.address || null,
             company_name: userProfile.value.company_name || null,
@@ -543,6 +628,7 @@
   onMounted(() => {
     console.log('UserEditor mounted, initializing...')
     initializeComponent()
+    watchFormFields()
   })
   </script>
   
