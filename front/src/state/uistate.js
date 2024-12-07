@@ -1,3 +1,7 @@
+/**
+ * uitate.js
+ * Store для управления ...
+ */
 import { defineStore } from 'pinia';
 import { SNACKBAR_DEFAULTS } from '@/components/ui/snackbars/constants';
 import { SnackbarType } from '@/components/ui/snackbars/types';

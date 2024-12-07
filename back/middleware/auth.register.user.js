@@ -1,3 +1,5 @@
+// auth.register.user: middleware для обработки данных учетной записи пользователя со страницы самостоятельной регистрации нового пользователя 
+
 const bcrypt = require('bcrypt');
 const { pool } = require('../db/maindb');
 const { userQueries } = require('../queries/users.queries');

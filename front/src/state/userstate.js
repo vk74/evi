@@ -1,4 +1,4 @@
-// /src/state/userstate.js хранилище для отслеживания состояния
+// /src/state/userstate.js хранилище для отслеживания состояния пользователя
 import { defineStore } from 'pinia';
 import { jwtDecode } from 'jwt-decode';
 

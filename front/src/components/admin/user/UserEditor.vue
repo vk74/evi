@@ -27,22 +27,22 @@
         </div>
         
         <div style="margin-left: 35px;">
-            <v-btn
-                color="teal"
-                variant="outlined"
-                @click="saveUser"
-                :disabled="!isFormValid"
-                class="mr-2"
-            >
-                {{ isEditMode ? 'сохранить учетную запись' : 'создать учетную запись' }}
-            </v-btn>
-            <v-btn
-                variant="outlined"
-                @click="resetAllForms"
-            >
-                сбросить поля формы
-            </v-btn>
-            </div>
+          <v-btn
+              color="teal"
+              variant="outlined"
+              @click="saveUser"
+              :disabled="!isFormValid || isSubmitting"
+              class="mr-2"
+          >
+              {{ isEditMode ? 'сохранить учетную запись' : 'создать учетную запись' }}
+          </v-btn>
+          <v-btn
+              variant="outlined"
+              @click="resetAllForms"
+          >
+              сбросить поля формы
+          </v-btn>
+        </div>
 
         <v-spacer></v-spacer>
         <v-toolbar-title class="title-text">
@@ -282,6 +282,9 @@
   // Импорты необходимых зависимостей
   import { ref, computed, onMounted } from 'vue'
   import { useAdminStore } from '@/state/adminstate'
+  import axios from 'axios'
+  import { useUiStore } from '@/state/uistate'
+  import { useUserStore } from '@/state/userstate'
   
   // Определение props
   const props = defineProps({
@@ -301,6 +304,9 @@
   
   // Инициализация хранилища
   const adminStore = useAdminStore()
+
+  // Инициализация UI store для snackbar
+  const uiStore = useUiStore()
   
   // Определение секций навигации
   const sections = [
@@ -324,6 +330,9 @@
   const profileForm = ref(null)
   const isAccountFormValid = ref(false)
   const isProfileFormValid = ref(false)
+
+  // Состояние отправки формы
+  const isSubmitting = ref(false)
   
   // Вычисляемое свойство для общей валидности формы
   const isFormValid = computed(() => {
@@ -438,36 +447,68 @@
   
   // Метод сохранения пользователя
   const saveUser = async () => {
-    // Валидация форм
-    const accountValid = await accountForm.value?.validate()
-    let profileValid = true
+    console.log('Starting saveUser method...')
     
-    if (activeSection.value === 'profile') {
-      profileValid = await profileForm.value?.validate()
-    }
+    isSubmitting.value = true
     
-    if (!accountValid?.valid || !profileValid?.valid) {
-      console.error('Form validation failed')
-      return
-    }
-  
     try {
-      // Подготовка данных для сохранения
-      const userDataToSave = {
-        ...userData.value,
-        profile: userProfile.value
-      }
-      
-      console.log('Saving user data:', userDataToSave)
-      
-      // TODO: Реализовать сохранение пользователя через API
-      
-      emit('saved')
+        // Получаем токен из userStore
+        const userStore = useUserStore()
+        const token = userStore.jwt
+        
+        if (!token) {
+            throw new Error('Отсутствует токен авторизации')
+        }
+
+        const requestData = {
+            username: userData.value.username,
+            email: userData.value.email,
+            password: userData.value.password,
+            account_status: userData.value.status,
+            is_staff: userData.value.is_employee,
+            first_name: userProfile.value.first_name,
+            last_name: userProfile.value.last_name,
+            middle_name: userProfile.value.middle_name || null,
+            gender: userProfile.value.gender || null,
+            phone_number: userProfile.value.phone_number || null,
+            address: userProfile.value.address || null,
+            company_name: userProfile.value.company_name || null,
+            position: userProfile.value.position || null
+        }
+        
+        console.log('Sending request with data:', requestData)
+        
+        const response = await axios.post('http://localhost:3000/api/admin/user/newuser', 
+            requestData,
+            {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            }
+        )
+        
+        console.log('Server response:', response.data)
+        
+        uiStore.showSuccessSnackbar('учетная запись пользователя создана')
+        resetAllForms()
+        emit('saved')
+        
     } catch (error) {
-      console.error('Error saving user:', error)
-      // TODO: показать ошибку пользователю
+        console.error('Error details:', {
+            message: error.message,
+            response: error.response?.data,
+            status: error.response?.status
+        })
+        
+        uiStore.showErrorSnackbar(
+            error.response?.data?.message || 
+            error.message || 
+            'ошибка создания учетной записи'
+        )
+    } finally {
+        isSubmitting.value = false
     }
-  }
+}
 
   // Метод сброса всех форм
   const resetAllForms = () => {

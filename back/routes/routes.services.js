@@ -1,3 +1,5 @@
+// File purpose: Routes for admin module services - handles routes for service management functionality
+
 const express = require('express');
 const router = express.Router();
 

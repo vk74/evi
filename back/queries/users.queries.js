@@ -12,6 +12,7 @@ const userQueries = {
         name: 'check-phone',
         text: 'SELECT user_id FROM app.user_profiles WHERE phone_number = $1'
     },
+    // вставка данных со страницы самостоятельной регистрации пользователя (не все поля, часть данных пользователь может самостоятельно внести у себя в профиле, или их добавит админ)
     insertUser: {
         name: 'insert-user',
         text: `INSERT INTO app.users
@@ -19,11 +20,20 @@ const userQueries = {
             VALUES ($1, $2, $3, CURRENT_TIMESTAMP)
             RETURNING user_id`
     },
+    // вставка данных со страницы самостоятельной регистрации пользователя (не все поля, часть данных пользователь может самостоятельно внести у себя в профиле, или их добавит админ)
     insertProfile: {
         name: 'insert-user-profile',
         text: `INSERT INTO app.user_profiles
             (user_id, first_name, last_name, phone_number, address)
             VALUES ($1, $2, $3, $4, $5)`
+    },
+    // вставка данных со страницы регистрации пользователя в административном модуле (все поля)
+    insertAdminUserProfile: {
+        name: 'insert-admin-user-profile',
+        text: `INSERT INTO app.user_profiles
+            (user_id, first_name, last_name, middle_name, gender, 
+            phone_number, address, company_name, position)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`
     },
     // Аутентификация
     getUserForToken: {

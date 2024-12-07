@@ -2,6 +2,8 @@ const express = require('express');
 const userRoutes = require('./routes/routes.users'); 
 const servicesRoutes = require('./routes/routes.services'); 
 const catalogRoutes = require('./routes/routes.catalog');
+const adminRoutes = require('./routes/routes.admin');
+const workRoutes = require('./routes/routes.work');
 
 const ExcelJS = require('exceljs');
 const bodyParser = require('body-parser');
@@ -57,6 +59,8 @@ app.use(bodyParser.json());
 app.use(userRoutes);
 app.use(servicesRoutes);
 app.use(catalogRoutes);
+app.use(adminRoutes);
+app.use(workRoutes);
 
 app.get('/', (req, res) => {
   res.send('Backend server is running');
