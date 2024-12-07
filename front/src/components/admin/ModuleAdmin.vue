@@ -110,14 +110,15 @@
  
         <!-- Append slot для управления и настроек -->
         <template v-slot:append>
-          <v-btn
-            variant="text"
-            @click="toggleDrawerMode"
-            :icon="chevronIcon"
-            size="small"
-            class="drawer-toggle-btn"
-            color="grey-darken-1"
-          ></v-btn>
+          <div class="drawer-control-area" @click="toggleDrawerMode">
+            <v-btn
+              variant="text"
+              :icon="chevronIcon"
+              size="small"
+              class="drawer-toggle-btn"
+              color="grey-darken-1"
+            ></v-btn>
+          </div>
         </template>
       </v-navigation-drawer>
       
@@ -250,7 +251,7 @@ export default {
 .drawer-toggle-btn {
  position: absolute;
  right: -10px;
- bottom: 10px;
+ bottom: 2px;
  box-shadow: 2px 0 4px rgba(0, 0, 0, 0.1);
  opacity: 0.6;
  transition: opacity 0.2s ease;

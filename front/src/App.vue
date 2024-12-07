@@ -189,22 +189,12 @@ App.vue
  
       <!-- Append slot для управления и настроек -->
       <template v-slot:append>
-        <v-btn
-          variant="text"
-          @click="toggleDrawerMode"
-          :icon="chevronIcon"
-          size="small"
-          class="drawer-toggle-btn"
-          color="grey-darken-1"
-        ></v-btn>
- 
-        <!-- Settings in the bottom -->
-        <v-list>
+        <!-- Account и Settings -->
+        <v-list v-if="isLoggedIn">
           <v-list-item 
             @click="setActiveModule('Account')" 
             prepend-icon="mdi-account" 
-            :title="$t('navigation.drawer.account')"  
-            v-if="isLoggedIn"
+            :title="$t('navigation.drawer.account')"
             :active="appStore.isModuleActive('Account')"
             v-tooltip="{
               text: $t('navigation.drawer.account'),
@@ -219,7 +209,6 @@ App.vue
             prepend-icon="mdi-cog" 
             :title="$t('navigation.drawer.settings')"  
             value="settings" 
-            v-if="isLoggedIn"
             :active="appStore.isModuleActive('Settings')"
             v-tooltip="{
               text: $t('navigation.drawer.settings'),
@@ -229,6 +218,17 @@ App.vue
           >
           </v-list-item>
         </v-list>
+
+        <!-- Область управления drawer -->
+        <div class="drawer-control-area" @click="toggleDrawerMode">
+          <v-btn
+            variant="text"
+            :icon="chevronIcon"
+            size="small"
+            class="drawer-toggle-btn"
+            color="grey-darken-1"
+          ></v-btn>
+        </div>
       </template>
     </v-navigation-drawer>
  
@@ -353,35 +353,56 @@ onMounted(() => {
 
 <style>
 .v-snackbar {
- top: 50px !important;
+  top: 50px !important;
 }
 
 .custom-drawer {
- background-color: rgb(210, 210, 210) !important;
+  background-color: rgb(210, 210, 210) !important;
 }
 
 /* Стиль для активного пункта меню */
 .v-navigation-drawer .v-list-item--active {
- background-color: rgba(128, 208, 199, 0.15) !important;
- color: rgb(19, 84, 122) !important;
+  background-color: rgba(128, 208, 199, 0.15) !important;
+  color: rgb(19, 84, 122) !important;
 }
 
 /* Стиль для иконки активного пункта меню */
 .v-navigation-drawer .v-list-item--active .v-icon {
- color: rgb(19, 84, 122) !important;
+  color: rgb(19, 84, 122) !important;
 }
 
-/* Стиль для кнопки переключения режима drawer */
+/* Стили для области управления drawer */
+.drawer-control-area {
+  position: relative;
+  height: 48px;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.drawer-control-area:hover {
+  background-color: rgba(128, 208, 199, 0.15) !important;
+}
+
+/* Стили для кнопки переключения */
 .drawer-toggle-btn {
- position: absolute;
- right: -10px;
- bottom: 10px;
- box-shadow: 4px 0 4px rgba(0, 0, 0, 0.1);
- opacity: 0.6;
- transition: opacity 0.2s ease;
+  position: absolute;
+  right: -10px;
+  bottom: 2px;
+  opacity: 0.6;
+  transition: opacity 0.2s ease;
+  background: none !important;
+  box-shadow: none !important;
 }
 
 .drawer-toggle-btn:hover {
- opacity: 1;
+  opacity: 1;
+}
+
+.drawer-toggle-btn :deep(.v-btn__content) {
+  background: none;
+}
+
+.drawer-toggle-btn :deep(.v-btn__overlay) {
+  display: none;
 }
 </style>
