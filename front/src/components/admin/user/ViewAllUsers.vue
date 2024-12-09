@@ -82,7 +82,7 @@
   <script setup>
   import { ref, computed, onMounted, watch } from 'vue'
   import { useAdminStore } from '@/state/adminstate'
-  import { useUsersListStore } from '@/state/usersListState'
+  import { useUsersListStore } from '@/state/usersliststate'
   
   // Инициализация необходимых объектов
   const adminStore = useAdminStore()
