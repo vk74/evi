@@ -102,10 +102,10 @@
   // Определение всех возможных колонок
   const allHeaders = [
     { title: 'ID', key: 'user_id', sortable: true },
-    { title: 'Username', key: 'username', sortable: true },
-    { title: 'Email', key: 'email', sortable: true },
-    { title: 'Статус', key: 'account_status', sortable: true },
-    { title: 'Действия', key: 'actions', sortable: false }
+    { title: 'уч. запись', key: 'username', sortable: true },
+    { title: 'e-mail', key: 'email', sortable: true },
+    { title: 'статус', key: 'account_status', sortable: true },
+    { title: 'действия', key: 'actions', sortable: false }
   ]
   
   // Видимые колонки (по умолчанию все, кроме ID)
