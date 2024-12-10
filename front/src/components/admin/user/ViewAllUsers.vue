@@ -79,25 +79,40 @@
     </v-container>
   </template>
   
-  <script setup>
+  <script setup lang="ts">
   import { ref, computed, onMounted, watch } from 'vue'
   import { useAdminStore } from '@/state/adminstate'
-  import { useUsersListStore } from '@/state/usersliststate'
+  import { useUsersListStore } from '@/state/usersListState'
   
+
+  interface User {
+    user_id: number;
+    username: string;
+    email: string;
+    account_status: 'active' | 'disabled' | 'suspended' | string;
+    [key: string]: any;
+  }
+
+  interface TableHeader {
+    title: string;
+    key: string;
+    sortable: boolean;
+  }
+
   // Инициализация необходимых объектов
   const adminStore = useAdminStore()
   const usersListStore = useUsersListStore()
   
   // Состояние меню
   const showMenu = ref(false)
-  const menuX = ref(0)
-  const menuY = ref(0)
+  const menuX = ref<number>(0)
+  const menuY = ref<number>(0)
   
   // Параметры таблицы
-  const page = ref(1)
-  const itemsPerPage = ref(25)
-  const sortBy = ref('username')
-  const sortDesc = ref(false)
+  const page = ref<number>(1)
+  const itemsPerPage = ref<number>(25)
+  const sortBy = ref<string>('username')
+  const sortDesc = ref<boolean>(false)
   
   // Определение всех возможных колонок
   const allHeaders = [
@@ -109,7 +124,7 @@
   ]
   
   // Видимые колонки (по умолчанию все, кроме ID)
-  const visibleColumns = ref(allHeaders.map(h => h.key).filter(key => key !== 'user_id'))
+  const visibleColumns = ref<string>(allHeaders.map(h => h.key).filter(key => key !== 'user_id'))
   
   // Вычисляемые свойства
   const visibleHeaders = computed(() => 
@@ -121,14 +136,14 @@
   const totalItems = computed(() => usersListStore.totalUsers)
   
   // Методы
-  const showHeaderMenu = (event) => {
+  const showHeaderMenu = (event: MouseEvent) => {
     event.preventDefault()
     menuX.value = event.clientX
     menuY.value = event.clientY
     showMenu.value = true
   }
   
-  const toggleColumn = (key) => {
+  const toggleColumn = (key: string) => {
     const index = visibleColumns.value.indexOf(key)
     if (index === -1) {
       visibleColumns.value.push(key)
@@ -137,7 +152,12 @@
     }
   }
   
-  const handleSort = (event) => {
+  interface SortEvent {
+    key: string;
+    order: 'asc' | 'desc';
+  }
+
+  const handleSort = (event: SortEvent) => {
     if (event.length > 0) {
       const { key, order } = event[0]
       sortBy.value = key
@@ -146,7 +166,7 @@
     }
   }
   
-  const getStatusColor = (status) => {
+  const getStatusColor = (status: string): string => {
     switch (status) {
       case 'active': return 'success'
       case 'disabled': return 'error'
@@ -155,14 +175,14 @@
     }
   }
   
-  const editUser = (user) => {
+  const editUser = (user: User) => {
   adminStore.setActiveUserSubModule('SubModuleUserEditor')
   // Возможно здесь также нужно сохранить ID пользователя для редактирования
   // в зависимости от логики вашего приложения
 }
   
   // Отслеживание изменений пагинации
-  watch([page, itemsPerPage], ([newPage, newItemsPerPage]) => {
+  watch([page, itemsPerPage], ([newPage, newItemsPerPage]: [number, number]) => {
     usersListStore.setPagination(newPage, newItemsPerPage)
   })
   
