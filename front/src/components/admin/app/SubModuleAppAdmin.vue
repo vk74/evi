@@ -34,7 +34,7 @@
 
 <script setup>
 import { computed } from 'vue'
-import { useAdminStore } from '@/state/adminstate'
+import { useAdminStore } from '@/components/admin/adminstate'
 // Импорты подмодулей
 import SubModuleAppSettingsEditor from './SubModuleAppSettingsEditor.vue'
 import SubModuleAppSettingsVisualization from './SubModuleAppSettingsVisualization.vue'

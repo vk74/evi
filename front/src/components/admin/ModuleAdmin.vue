@@ -132,7 +132,7 @@
 
 <script>
 import { ref, computed, defineAsyncComponent } from 'vue';
-import { useAdminStore } from '@/state/adminstate';
+import { useAdminStore } from './adminstate';
 import { useI18n } from 'vue-i18n';
 
 // Асинхронная загрузка подмодулей

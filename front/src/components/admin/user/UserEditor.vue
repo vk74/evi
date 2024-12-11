@@ -286,7 +286,7 @@
   <script setup>
 // ================== ИМПОРТЫ ==================
 import { ref, computed, onMounted, watch } from 'vue'
-import { useAdminStore } from '@/state/adminstate'
+import { useAdminStore } from '@/components/admin/adminstate'
 import { useUiStore } from '@/state/uistate'
 import { useUserStore } from '@/state/userstate'
 import axios from 'axios'

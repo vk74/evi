@@ -33,7 +33,7 @@
   
   <script setup>
   import { computed } from 'vue'
-  import { useCatalogStore } from '@/state/catalogstate'
+  import { useCatalogStore } from './catalogstate'
   import SubModuleCatalog from './sections/SubModuleCatalog.vue'
   import SubModuleCatalogSection2 from './sections/SubModuleCatalogSection2.vue'
   import SubModuleCatalogSection3 from './sections/SubModuleCatalogSection3.vue'

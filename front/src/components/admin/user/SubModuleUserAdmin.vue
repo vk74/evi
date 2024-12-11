@@ -38,7 +38,7 @@
 
 <script setup>
 import { computed } from 'vue'
-import { useAdminStore } from '@/state/adminstate'
+import { useAdminStore } from '@/components/admin/adminstate'
 // Импорты подмодулей
 import SubModuleUserViewAllUsers from './ViewAllUsers.vue'
 import SubModuleUserViewAllGroups from './ViewAllGroups.vue'

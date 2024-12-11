@@ -52,7 +52,7 @@
  
  <script setup>
  import { onMounted } from 'vue';
- import { useCatalogStore } from '../../../state/catalogstate';
+ import { useCatalogStore } from '../catalogstate';
  import ServiceCard from './ServiceCard.vue';
  
  // Получаем store

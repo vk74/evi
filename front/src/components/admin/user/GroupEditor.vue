@@ -290,7 +290,7 @@
 <script setup>
 // Импорты необходимых зависимостей
 import { ref, computed, watch } from 'vue'
-import { useGroupStore } from '@/state/groupstate'
+import { useGroupStore } from './groupstate'
 
 // Определение props компонента
 const props = defineProps({

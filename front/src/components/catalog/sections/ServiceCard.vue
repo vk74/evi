@@ -69,7 +69,7 @@
    
    <script setup>
    import { ref, onMounted } from 'vue';
-   import { useCatalogStore } from '../../../state/catalogstate';
+   import { useCatalogStore } from '../catalogstate';
    
    // Определение входных параметров компонента
    const props = defineProps({

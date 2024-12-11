@@ -53,7 +53,7 @@
 
 <script setup>
 import { computed } from 'vue'
-import { useAdminStore } from '@/state/adminstate'
+import { useAdminStore } from '@/components/admin/adminstate'
 import SubModuleServiceViewActiveServices from './ViewActiveServices.vue'
 import SubModuleServiceViewAllServices from './ViewAllServices.vue'
 import SubModuleServiceEditor from './ServiceEditor.vue'

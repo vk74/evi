@@ -81,8 +81,8 @@
   
   <script setup lang="ts">
   import { ref, computed, onMounted, watch } from 'vue'
-  import { useAdminStore } from '@/state/adminstate'
-  import { useUsersListStore } from '@/state/usersListState'
+  import { useAdminStore } from '../adminstate'
+  import { useUsersListStore } from './usersListState'
   
 
   interface User {
@@ -124,7 +124,7 @@
   ]
   
   // Видимые колонки (по умолчанию все, кроме ID)
-  const visibleColumns = ref<string>(allHeaders.map(h => h.key).filter(key => key !== 'user_id'))
+  const visibleColumns = ref<string[]>(allHeaders.map(h => h.key).filter(key => key !== 'user_id'))
   
   // Вычисляемые свойства
   const visibleHeaders = computed(() => 
@@ -157,7 +157,7 @@
     order: 'asc' | 'desc';
   }
 
-  const handleSort = (event: SortEvent) => {
+  const handleSort = (event: SortEvent[]) => {
     if (event.length > 0) {
       const { key, order } = event[0]
       sortBy.value = key

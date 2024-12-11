@@ -15,7 +15,7 @@
   </template>
   
   <script setup>
-  import { useAdminStore } from '@/state/adminstate'
+  import { useAdminStore } from '@/components/admin/adminstate'
   
   // Инициализация store
   const adminStore = useAdminStore()

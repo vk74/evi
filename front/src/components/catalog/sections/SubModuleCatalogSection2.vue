@@ -14,7 +14,7 @@
   
   <script setup>
   import { onMounted } from 'vue'
-  import { useCatalogStore } from '@/state/catalogstate'
+  import { useCatalogStore } from '../catalogstate'
   
   // Инициализация store
   const catalogStore = useCatalogStore()
