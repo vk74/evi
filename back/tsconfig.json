@@ -1,0 +1,37 @@
+{
+    "compilerOptions": {
+      "target": "es2020",
+      "module": "commonjs",
+      "lib": ["es2020", "esnext.asynciterable"],
+      "allowJs": true,          // Разрешает компиляцию JavaScript файлов
+      "checkJs": false,         // Отключаем проверку типов в JS файлах на начальном этапе
+      "outDir": "./dist",       // Скомпилированные файлы
+      "rootDir": "./src",       // Исходный код
+      "strict": true,           // Включаем строгий режим
+      "esModuleInterop": true,
+      "skipLibCheck": true,
+      "forceConsistentCasingInFileNames": true,
+      "moduleResolution": "node",
+      "resolveJsonModule": true,
+      "isolatedModules": true,
+      "incremental": true,
+      "sourceMap": true,        // Добавляем source maps для отладки
+      "baseUrl": "./",          // Базовый путь для резолвинга модулей
+      "experimentalDecorators": true,     // Поддержка декораторов
+      "emitDecoratorMetadata": true,      // Метаданные для декораторов
+      "types": ["node", "express"],       // Добавляем типы Node.js и Express
+      "paths": {                          // Алиасы для путей (опционально)
+        "@/*": ["src/*"]
+      }
+    },
+    "include": [
+      "src/**/*",
+      "src/**/*.ts",
+      "src/**/*.d.ts"
+    ],
+    "exclude": [
+      "node_modules",
+      "dist",
+      "**/*.spec.ts"    // Исключаем тестовые файлы
+    ]
+  }
