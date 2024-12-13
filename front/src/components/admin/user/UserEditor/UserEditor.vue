@@ -293,9 +293,9 @@ import axios from 'axios'
 
 // ================== ОПРЕДЕЛЕНИЕ PROPS ==================
 /**
- * Props компонента:
+ * Props определяет режим работы компонента:
  * mode - режим работы (create/edit)
- * userId - ID пользователя (только для режима edit)
+ * userId - ID пользователя (используется только для режима edit)
  */
 const props = defineProps({
   mode: {
@@ -318,9 +318,9 @@ const uiStore = useUiStore()
 
 // ==================== БАЗОВОЕ СОСТОЯНИЕ ====================
 /**
- * Ссылки на формы компонента и их состояния валидации
- */
- const accountForm = ref(null)
+* Ссылки на формы компонента и их состояния валидации
+*/
+const accountForm = ref(null)
 const profileForm = ref(null)
 const isAccountFormValid = ref(false)
 const isProfileFormValid = ref(false)

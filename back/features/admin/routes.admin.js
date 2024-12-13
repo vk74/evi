@@ -5,8 +5,8 @@ const express = require('express');
 const router = express.Router();
 
 // Middleware imports
-const validateJWT = require('../guards/auth.validate.jwt');
-const newUserEditor = require('../middleware/admin/users/admin.users.usereditor.newuser');
+const validateJWT = require('../../guards/auth.validate.jwt');
+const newUserEditor = require('./users/usereditor/admin.users.usereditor.newuser');
 
 /////////////// CATALOG SECTION ROUTES
 

@@ -40,10 +40,10 @@
 import { computed } from 'vue'
 import { useAdminStore } from '@/components/admin/adminstate'
 // Импорты подмодулей
-import SubModuleUserViewAllUsers from './ViewAllUsers.vue'
-import SubModuleUserViewAllGroups from './ViewAllGroups.vue'
-import SubModuleUserEditor from './UserEditor.vue'
-import SubModuleGroupEditor from './GroupEditor.vue'
+import SubModuleUserViewAllUsers from './ViewAllUsers/ViewAllUsers.vue'
+import SubModuleUserViewAllGroups from './ViewAllGroups/ViewAllGroups.vue'
+import SubModuleUserEditor from './UserEditor/UserEditor.vue'
+import SubModuleGroupEditor from './GroupEditor/GroupEditor.vue'
 
 // Инициализация store
 const adminStore = useAdminStore()

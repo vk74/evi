@@ -110,12 +110,12 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted, watch } from 'vue'
-import { useAdminStore } from '../adminstate'
+import { useAdminStore } from '../../adminstate'
 import { useUsersListStore } from './usersListState'
 import { useUiStore } from '@/state/uistate'
 import { SnackbarType } from '@/components/ui/snackbars/types'
-import type { User } from './userType'
-import type { AdminStateActions } from './adminStateTypes'
+import type { User } from '../userType'
+import type { AdminStateActions } from '../../adminStateTypes'
 import type { UiActions } from '@/state/uiStateTypes'
 import type { UsersListActions } from './usersListStateTypes'
 

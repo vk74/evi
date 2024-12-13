@@ -1,5 +1,5 @@
 const { pool } = require('../db/maindb');
-const { userQueries } = require('../queries/users.queries');
+const { userQueries } = require('../features/admin/users/queries.users');
 
 const updateUserProfile = async (req, res) => {
    console.log('Received request for user profile data update');

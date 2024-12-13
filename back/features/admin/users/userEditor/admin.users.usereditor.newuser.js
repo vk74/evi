@@ -2,8 +2,8 @@
 // Processes user account data and profile information, validates input, and saves to database
 
 const bcrypt = require('bcrypt');
-const { pool } = require('../../../db/maindb');
-const { userQueries } = require('../../../queries/users.queries');
+const { pool } = require('../../../../db/maindb');
+const { userQueries } = require('../../users/queries.users');
 
 const adminNewUser = async (req, res) => {
     try {

@@ -1,5 +1,5 @@
 const { pool } = require('../db/maindb');
-const { userQueries } = require('../queries/users.queries');
+const { userQueries } = require('../features/admin/users/queries.users');
 
 const getUserProfile = async (req, res) => {
    const username = req.user.username;
