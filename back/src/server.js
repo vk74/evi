@@ -19,11 +19,13 @@ const privateKeyPath = './src/keys/private_key.pem'; // path to private key used
 const privateKey = fs.readFileSync(privateKeyPath, 'utf8'); // read private key from file
 global.privateKey = privateKey;
 
-/* app.listen(port, () => {
-  //const timestamp = new Date().toISOString(); // Получаем текущую временную метку в формате ISO
-  const timestamp = new Date().toLocaleString(); // Получаем текущую временную метку в локальном часовом поясе
-  console.log(`[${timestamp}] Server listening at http://localhost:${port}`);
-}); */
+// Проверка что ключ установлен
+if (!global.privateKey) {
+  console.error('Failed to set global.privateKey');
+  process.exit(1);
+} else {
+  console.log('Global private key set successfully');
+}
 
 app.listen(port, () => {
   const now = new Date();
