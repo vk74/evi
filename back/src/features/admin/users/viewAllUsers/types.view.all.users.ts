@@ -1,6 +1,6 @@
 /**
- * types.all.users.ts
- * Type definitions for the user management system.
+ * types.view.all.users.ts
+ * Type definitions for the user management sub-module.
  * 
  * Functionality:
  * - Defines types and interfaces for user data structure
@@ -20,16 +20,12 @@
 export enum AccountStatus {
   active = 'active',
   disabled = 'disabled',
-  requires_action = 'requires_action'
+  requires_user_action = 'requires_user_action'
 }
 
-/**
- * User interface
- * Defines the structure of user data returned by the API
- * Contains essential user information excluding sensitive data
- */
 export interface IUser {
   user_id: string;        // UUID пользователя
+  user_name: string;
   email: string;          // Email пользователя
   is_staff: boolean;      // Флаг является ли пользователь staff
   account_status: AccountStatus; // Статус аккаунта из схемы app
@@ -38,21 +34,11 @@ export interface IUser {
   last_name: string;      // Фамилия
 }
 
-/**
- * API Response interface
- * Defines the structure of the response from the users endpoint
- * Includes array of users and total count for potential future pagination
- */
 export interface IUsersResponse {
   users: IUser[];         // Array of user records
   total: number;         // Total number of users in the system
 }
 
-/**
- * Error handling type
- * Defines the structure of error responses
- * Used for consistent error handling across the users endpoint
- */
 export type UserError = {
   code: string;           // Error code identifier
   message: string;        // Human-readable error message

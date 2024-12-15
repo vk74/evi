@@ -111,13 +111,13 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, watch } from 'vue'
 import { useAdminStore } from '../../adminstate'
-import { useUsersListStore } from './usersListState'
+import { useUsersListStore } from './state.view.all.users'
 import { useUiStore } from '@/state/uistate'
 import { SnackbarType } from '@/components/ui/snackbars/types'
-import type { User } from '../userType'
-import type { AdminStateActions } from '../../adminStateTypes'
+import type { User } from '../type.user'
+import type { AdminStateActions } from '../../types.adminstate'
 import type { UiActions } from '@/state/uiStateTypes'
-import type { UsersListActions } from './usersListStateTypes'
+import type { UsersListActions } from './types.view.all.users'
 
 /**
  * Интерфейс заголовка таблицы

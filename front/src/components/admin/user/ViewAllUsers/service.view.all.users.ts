@@ -22,7 +22,7 @@
  */
 
 import axios, { AxiosError } from 'axios';
-import { User } from '../userType';
+import { User } from '../type.user';
 
 /** Интерфейс ответа API при запросе списка пользователей */
 export interface UsersListResponse {

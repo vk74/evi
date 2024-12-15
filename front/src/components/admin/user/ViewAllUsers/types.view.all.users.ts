@@ -11,7 +11,7 @@
  * Используется совместно с usersListState.ts и ViewAllUsers.vue
  */
 
-import type { User } from '../userType'
+import type { User } from '../type.user'
 
 /** Ответ API при запросе списка пользователей */
 export interface UsersResponse {

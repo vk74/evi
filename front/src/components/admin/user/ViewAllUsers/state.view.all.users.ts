@@ -18,7 +18,7 @@ import type {
   UsersListState,
   UsersResponse,
   FetchUsersParams 
-} from './usersListStateTypes';
+} from './types.view.all.users';
 
 export const useUsersListStore = defineStore('usersList', {
   // Начальное состояние store
