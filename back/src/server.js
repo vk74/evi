@@ -1,20 +1,21 @@
+require('module-alias/register');
 const express = require('express');
-const userRoutes = require('./routes/routes.users'); 
-const servicesRoutes = require('./routes/routes.services'); 
-const catalogRoutes = require('./routes/routes.catalog');
-const adminRoutes = require('./features/admin/routes.admin');
-const workRoutes = require('./features/work/routes.work');
+const userRoutes = require('@/routes/routes.users'); 
+const servicesRoutes = require('@/routes/routes.services'); 
+const catalogRoutes = require('@/routes/routes.catalog');
+const adminRoutes = require('@/features/admin/routes.admin');
+const workRoutes = require('@/features/work/routes.work');
 
 const ExcelJS = require('exceljs');
 const bodyParser = require('body-parser');
 const cors = require('cors');
 
-const { insertData, getLocations } = require('./db/database');
+const { insertData, getLocations } = require('@/db/database');
 const port = 3000;
 const app = express();
 const fs = require('fs');
 
-const privateKeyPath = './keys/private_key.pem'; // path to private key used to sign new JWT
+const privateKeyPath = './src/keys/private_key.pem'; // path to private key used to sign new JWT
 const privateKey = fs.readFileSync(privateKeyPath, 'utf8'); // read private key from file
 global.privateKey = privateKey;
 

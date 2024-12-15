@@ -2,9 +2,15 @@
   "name": "back",
   "version": "1.0.0",
   "description": "",
-  "main": "index.js",
+  "main": "src/server.js",
+  "_moduleAliases": {
+    "@": "src"
+  },
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start": "node src/server.js",
+    "dev": "nodemon --watch 'src/**/*' --ext 'js,mjs,cjs,json,ts' --exec 'ts-node' src/server.js",
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "ts-check": "ts-node src/tests/ts-check.ts"
   },
   "keywords": [],
   "author": "",
@@ -18,6 +24,7 @@
     "express": "^4.18.2",
     "fs": "^0.0.1-security",
     "jsonwebtoken": "^9.0.2",
+    "module-alias": "^2.2.3",
     "pg": "^8.11.3",
     "uuid": "^9.0.1"
   },

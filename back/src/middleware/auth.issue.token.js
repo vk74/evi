@@ -1,7 +1,8 @@
 const jwt = require('jsonwebtoken');
 const uuidv4 = require('uuid').v4;
-const fs = require('fs');
-const privateKey = fs.readFileSync('./keys/private_key.pem', 'utf8');
+// const fs = require('fs');
+// const privateKey = fs.readFileSync('../keys/private_key.pem', 'utf8');
+const privateKey = global.privateKey;
 
 const issueToken = (req, res) => {
     if (!req.user) {

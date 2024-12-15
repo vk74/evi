@@ -1,5 +1,5 @@
 /back/EdDSA/*
-/back/keys/*
+/back/src/keys/*
 /back/node_modules/*
 /docs/other/*
 .env

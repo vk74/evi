@@ -9,13 +9,13 @@ const registerUser = require('../middleware/auth.register.user');
 const changeUserPassword = require('../middleware/users.change.password');
 const getUserProfile = require('../middleware/users.get.profile');
 const updateUserProfile = require('../middleware/users.update.profile');
-const extendToken = require('../middleware/auth.extend.token');
+//const extendToken = require('../middleware/auth.extend.token');
 
 router.post('/register', registerUser);
 router.post('/login', checkAccountPassword, checkAccountStatus, issueToken);
 router.post('/changeuserpass', changeUserPassword);
 router.get('/profile', validateJWT, getUserProfile);
 router.post('/profile', validateJWT, updateUserProfile);
-router.post('/extendtoken', extendToken);
+//router.post('/extendtoken', extendToken);
 
 module.exports = router;
