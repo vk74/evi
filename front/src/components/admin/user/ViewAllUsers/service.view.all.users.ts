@@ -49,7 +49,7 @@ export interface FetchUsersParams {
  */
 export class UsersListService {
   /** Базовый URL для API запросов */
-  private readonly BASE_URL = '/api/admin/users';
+  private readonly BASE_URL = 'http://localhost:3000/api/admin/users/view-all-users';
 
   /**
    * Получение списка пользователей с пагинацией и сортировкой

@@ -47,11 +47,17 @@
       @update:sort-by="handleSort"
       @contextmenu.prevent="showHeaderMenu"
     >
+      <!-- Шаблон для ID -->
+      <template v-slot:item.user_id="{ item }">
+        <span class="text-caption">{{ item.raw.user_id }}</span>
+      </template>
+
       <!-- Шаблон для статуса пользователя -->
       <template v-slot:item.account_status="{ item }">
         <v-chip
           :color="getStatusColor(item.raw.account_status)"
-          size="small"
+          size="x-small"
+          class="status-chip"
         >
           {{ item.raw.account_status }}
         </v-chip>
@@ -62,7 +68,8 @@
         <v-icon
           :color="item.raw.is_staff ? 'teal' : 'grey'"
           :icon="item.raw.is_staff ? 'mdi-check-circle' : 'mdi-minus-circle'"
-          size="small"
+          size="x-small"
+          class="staff-icon"
         />
       </template>
 
@@ -126,6 +133,7 @@ interface TableHeader {
   title: string;
   key: string;
   sortable: boolean;
+  width?: string; // Добавлено новое опциональное свойство для ширины
 }
 
 // Инициализация хранилищ с типами
@@ -144,19 +152,22 @@ const itemsPerPage = ref<number>(usersListStore.itemsPerPage)
 const sortBy = ref<string>(usersListStore.sortBy)
 const sortDesc = ref<boolean>(usersListStore.sortDesc)
 
-// Определение всех возможных колонок таблицы
+// Определение всех возможных колонок таблицы с новым порядком и добавлением новых полей
 const allHeaders: TableHeader[] = [
-  { title: 'ID', key: 'user_id', sortable: true },
+  { title: 'ID', key: 'user_id', sortable: true, width: '80px' },
   { title: 'уч. запись', key: 'username', sortable: true },
   { title: 'e-mail', key: 'email', sortable: true },
-  { title: 'сотрудник', key: 'is_staff', sortable: true },
-  { title: 'статус', key: 'account_status', sortable: true },
-  { title: 'действия', key: 'actions', sortable: false }
+  { title: 'сотрудник', key: 'is_staff', sortable: true, width: '60px' },
+  { title: 'статус', key: 'account_status', sortable: true, width: '80px' },
+  { title: 'имя', key: 'first_name', sortable: true },
+  { title: 'отчество', key: 'middle_name', sortable: true },
+  { title: 'фамилия', key: 'last_name', sortable: true },
+  { title: 'действия', key: 'actions', sortable: false, width: '100px' }
 ]
 
-// Видимые колонки (по умолчанию все, кроме ID)
+// Видимые колонки (теперь включаем все колонки по умолчанию)
 const visibleColumns = ref<string[]>(
-  allHeaders.map(h => h.key).filter(key => key !== 'user_id')
+  allHeaders.map(h => h.key)
 )
 
 // Вычисляемые свойства
@@ -268,18 +279,29 @@ onMounted(async () => {
 
 <style scoped>
 .users-table {
- width: 100%;
+  width: 100%;
 }
 
 /* Стили для заголовков с сортировкой */
 :deep(.v-data-table-header th) {
- white-space: nowrap;
- user-select: none;
- cursor: pointer;
+  white-space: nowrap;
+  user-select: none;
+  cursor: pointer;
 }
 
 /* Стили для активной сортировки */
 :deep(.v-data-table-header th.sortable.active) {
- color: rgb(var(--v-theme-primary));
+  color: rgb(var(--v-theme-primary));
+}
+
+/* Стили для узких колонок */
+.status-chip {
+  width: 80px;
+  justify-content: center;
+}
+
+.staff-icon {
+  width: 60px;
+  text-align: center;
 }
 </style>
