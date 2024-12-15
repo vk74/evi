@@ -3,7 +3,7 @@
 
 const bcrypt = require('bcrypt');
 const { pool } = require('../../../../db/maindb');
-const { userQueries } = require('../../users/queries.users');
+const { userQueries } = require('../../../../middleware/queries.users');
 
 const adminNewUser = async (req, res) => {
     try {

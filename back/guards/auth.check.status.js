@@ -1,5 +1,5 @@
 const { pool } = require('../db/maindb');
-const { userQueries } = require('../features/admin/users/queries.users');
+const { userQueries } = require('../middleware/queries.users');
 
 const checkAccountStatus = async (req, res, next) => {
    const { username } = req.body;

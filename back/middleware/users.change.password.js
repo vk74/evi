@@ -1,6 +1,6 @@
 const bcrypt = require('bcrypt');
 const { pool } = require('../db/maindb');
-const { userQueries } = require('../features/admin/users/queries.users');
+const { userQueries } = require('./queries.users');
 
 const changeUserPassword = async (req, res) => {
    const { username, currentPassword, newPassword } = req.body;
