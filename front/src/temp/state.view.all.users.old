@@ -15,14 +15,14 @@
 import { defineStore } from 'pinia';
 import axios, { AxiosError } from 'axios';
 import type { 
-  UsersListState,
+  StoreViewAllUsers,
   UsersResponse,
   FetchUsersParams 
 } from './types.view.all.users';
 
-export const useUsersListStore = defineStore('usersList', {
+export const useStoreViewAllUsers = defineStore('usersList', {
   // Начальное состояние store
-  state: (): UsersListState => ({
+  state: (): StoreViewAllUsers => ({
     users: [], // Список пользователей
     loading: false, // Флаг загрузки данных
     error: null, // Сообщение об ошибке
@@ -36,7 +36,7 @@ export const useUsersListStore = defineStore('usersList', {
   // Геттеры store
   getters: {
     // Получение отсортированного списка пользователей
-    sortedUsers: (state: UsersListState) => {
+    sortedUsers: (state: StoreViewAllUsers) => {
       return [...state.users].sort((a, b) => {
         const sortField = state.sortBy;
         const modifier = state.sortDesc ? -1 : 1;

@@ -8,7 +8,7 @@ export const queries: SQLQueries = {
     getAllUsers: `
         SELECT 
             user_id,
-            user_name,
+            username,
             email,
             is_staff,
             account_status,

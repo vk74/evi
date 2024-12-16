@@ -279,12 +279,14 @@ import ModalChangeUserPass from './components/account/ModalChangeUserPass.vue';
 import LoginDialog from './components/account/ModuleLogin.vue';
 import ModuleNewUserRegistration from './components/account/ModuleNewUserRegistration.vue';
 import AppSnackbar from './components/ui/snackbars/AppSnackbar.vue';
+import { useStoreViewAllUsers } from './components/admin/users/ViewAllUsers/state.view.all.users';
 
 // Инициализация store и i18n
 const userStore = useUserStore();
 const uiStore = useUiStore();
 const appStore = useAppStore();
 const i18n = useI18n();
+const usersListStore = useStoreViewAllUsers();
 
 // Refs
 const drawer = ref(true);
@@ -313,6 +315,7 @@ const setActiveModule = (module) => {
 };
 
 const logout = () => {
+  usersListStore.clearCache();
   userStore.userLogoff();
   appStore.setActiveModule('Catalog');
 };

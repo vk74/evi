@@ -34,7 +34,7 @@ export interface FetchUsersParams {
 }
 
 /** Состояние хранилища списка пользователей */
-export interface UsersListState {
+export interface StoreViewAllUsers {
   /** Массив данных пользователей */
   users: User[];
   /** Флаг загрузки данных */
@@ -56,7 +56,7 @@ export interface UsersListState {
 /** Геттеры хранилища списка пользователей */
 export interface UsersListGetters {
   /** Получение отсортированного списка пользователей */
-  sortedUsers: (state: UsersListState) => User[];
+  sortedUsers: (state: StoreViewAllUsers) => User[];
 }
 
 /** Методы хранилища списка пользователей */

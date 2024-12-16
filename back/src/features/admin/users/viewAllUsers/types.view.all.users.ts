@@ -25,7 +25,7 @@ export enum AccountStatus {
 
 export interface IUser {
   user_id: string;        // UUID пользователя
-  user_name: string;
+  username: string;
   email: string;          // Email пользователя
   is_staff: boolean;      // Флаг является ли пользователь staff
   account_status: AccountStatus; // Статус аккаунта из схемы app

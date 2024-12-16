@@ -138,7 +138,7 @@ import { useI18n } from 'vue-i18n';
 // Асинхронная загрузка подмодулей
 const SubModuleCatalogAdmin = defineAsyncComponent(() => import('./catalog/SubModuleCatalogAdmin.vue'));
 const SubModuleServiceAdmin = defineAsyncComponent(() => import('./service/SubModuleServiceAdmin.vue'));
-const SubModuleUserAdmin = defineAsyncComponent(() => import('./user/SubModuleUserAdmin.vue'));
+const SubModuleUserAdmin = defineAsyncComponent(() => import('./users/SubModuleUserAdmin.vue'));
 const SubModuleAppAdmin = defineAsyncComponent(() => import('./app/SubModuleAppAdmin.vue'));
 const SubModuleServiceEditor = defineAsyncComponent(() => import('./service/ServiceEditor.vue'));
 
