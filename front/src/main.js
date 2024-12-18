@@ -13,8 +13,8 @@ import '@mdi/font/css/materialdesignicons.css';
 import { jwtDecode } from 'jwt-decode';
 
 // Импорт всех файлов локализации
-import appRu from './AppTranslationRU.json';
-import appEn from './AppTranslationEN.json';
+import appRu from './components/AppTranslationRU.json';
+import appEn from './components/AppTranslationEN.json';
 import admpanRu from './components/admin/AdminTranslationRU.json';
 import admpanEn from './components/admin/AdminTranslationEN.json';
 
