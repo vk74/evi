@@ -1,5 +1,4 @@
 // src/main.js
-console.log('Starting application...');
 import { createApp } from 'vue';
 import App from './App.vue';
 import { createPinia } from 'pinia';
@@ -18,6 +17,7 @@ import appEn from './components/AppTranslationEN.json';
 import admpanRu from './components/admin/AdminTranslationRU.json';
 import admpanEn from './components/admin/AdminTranslationEN.json';
 
+console.log('Starting application...');
 console.log('App component:', App);
 console.log('All imports completed');
 
