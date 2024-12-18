@@ -1,4 +1,14 @@
-// src/core/api/axios.service.ts
+/**
+ * @file service.axios.ts
+ * Service for handling HTTP requests with axios.
+ *
+ * Functionality:
+ * - Creates and configures axios instance
+ * - Manages authentication headers
+ * - Handles network-level errors
+ * - Provides request/response interceptors
+ */
+
 import axios, { AxiosInstance, AxiosError } from 'axios';
 import { axiosSettings } from './config';
 import { useUserStore } from '@/state/userstate';
