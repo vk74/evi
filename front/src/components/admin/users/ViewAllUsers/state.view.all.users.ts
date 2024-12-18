@@ -49,7 +49,7 @@ export const useStoreViewAllUsers = defineStore('viewAllUsers', () => {
         const start = (page.value - 1) * itemsPerPage.value
         const end = start + itemsPerPage.value
 
-        let result = [...users.value]
+        const result = [...users.value]
         
         // Применяем сортировку если задана
         if (sorting.value.sortBy) {

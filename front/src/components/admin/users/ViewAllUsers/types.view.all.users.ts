@@ -62,32 +62,11 @@ export interface ISortParams {
 }
 
 /**
- * Store state interface
- */
-export interface IUsersState {
-    users: IUser[];
-    loading: boolean;
-    error: string | null;
-    pagination: IPaginationParams;
-    sorting: ISortParams;
-    lastUpdated: number | null;
-}
-
-/**
  * API response interface
  */
 export interface IUsersResponse {
     users: IUser[];
     total: number;
-}
-
-/**
- * Error response interface
- */
-export interface IUserError {
-    code: string;
-    message: string;
-    details?: unknown;
 }
 
 /**
