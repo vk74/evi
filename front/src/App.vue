@@ -11,10 +11,13 @@ App.vue
 <template>
   <v-app>
     <!-- App Bar -->
-    <v-app-bar color="teal-darken-4" dense>
-      <v-app-bar-nav-icon @click="drawer = !drawer"></v-app-bar-nav-icon>
+    <v-app-bar
+      color="teal-darken-4"
+      dense
+    >
+      <v-app-bar-nav-icon @click="drawer = !drawer" />
       <v-app-bar-title>ev2</v-app-bar-title>
-      <v-spacer></v-spacer>
+      <v-spacer />
  
       <v-btn icon>
         <v-icon>mdi-magnify</v-icon>
@@ -22,30 +25,50 @@ App.vue
  
       <!-- кнопка перевода с выпадающим меню -->
       <v-menu>
-        <template v-slot:activator="{ props }">
-          <v-btn icon v-bind="props">
+        <template #activator="{ props }">
+          <v-btn
+            icon
+            v-bind="props"
+          >
             <v-icon>mdi-translate</v-icon>
           </v-btn>
         </template>
  
         <v-list>
-          <v-list-item @click="changeLanguage('en')" :active="userStore.language === 'en'">
+          <v-list-item
+            :active="userStore.language === 'en'"
+            @click="changeLanguage('en')"
+          >
             <v-list-item-title>English</v-list-item-title>
           </v-list-item>
-          <v-list-item @click="changeLanguage('ru')" :active="userStore.language === 'ru'">
+          <v-list-item
+            :active="userStore.language === 'ru'"
+            @click="changeLanguage('ru')"
+          >
             <v-list-item-title>Русский</v-list-item-title>
           </v-list-item>
         </v-list>
       </v-menu>
  
-      <v-dialog v-model="isLoginDialogVisible" max-width="500px">
-        <LoginDialog @close="isLoginDialogVisible = false" @login-success="handleLoginSuccess" />
+      <v-dialog
+        v-model="isLoginDialogVisible"
+        max-width="500px"
+      >
+        <LoginDialog
+          @close="isLoginDialogVisible = false"
+          @login-success="handleLoginSuccess"
+        />
       </v-dialog>
  
       <!-- кнопка для перехода на страницу входа в приложение  -->
       <v-tooltip bottom>
-        <template v-slot:activator="{ props }">
-          <v-btn icon v-bind="props" @click="setActiveModule('Login')" v-if="!isLoggedIn">
+        <template #activator="{ props }">
+          <v-btn
+            v-if="!isLoggedIn"
+            icon
+            v-bind="props" 
+            @click="setActiveModule('Login')"
+          >
             <v-icon>mdi-login</v-icon>
           </v-btn>
         </template>
@@ -54,8 +77,13 @@ App.vue
  
       <!-- кнопка регистрации -->
       <v-tooltip bottom>
-        <template v-slot:activator="{ props }">
-          <v-btn icon v-bind="props" @click="setActiveModule('NewUserRegistration')" v-if="!isLoggedIn">
+        <template #activator="{ props }">
+          <v-btn
+            v-if="!isLoggedIn"
+            icon
+            v-bind="props"
+            @click="setActiveModule('NewUserRegistration')"
+          >
             <v-icon>mdi-account-plus</v-icon>
           </v-btn>
         </template>
@@ -64,7 +92,7 @@ App.vue
  
       <!-- кнопка меню для системных команд: выход, смена пароля и пр. -->
       <v-menu>
-        <template v-slot:activator="{ props }">
+        <template #activator="{ props }">
           <v-btn v-bind="props">
             <v-icon>mdi-dots-vertical</v-icon>
           </v-btn>
@@ -74,22 +102,31 @@ App.vue
           <v-list-item>
             <v-list-item-title>{{ $t('navigation.systemMenu.test') }}</v-list-item-title>
           </v-list-item>
-          <v-list-item @click="isChangePassModalVisible = true" v-if="isLoggedIn">
+          <v-list-item
+            v-if="isLoggedIn"
+            @click="isChangePassModalVisible = true"
+          >
             <v-list-item-title>{{ $t('navigation.systemMenu.changePassword') }}</v-list-item-title>
           </v-list-item>
-          <v-list-item @click="logout" v-if="isLoggedIn">
+          <v-list-item
+            v-if="isLoggedIn"
+            @click="logout"
+          >
             <v-list-item-title>{{ $t('navigation.systemMenu.logout') }}</v-list-item-title>
           </v-list-item>
         </v-list>
       </v-menu>
  
-      <v-dialog v-model="isChangePassModalVisible" max-width="500px">
+      <v-dialog
+        v-model="isChangePassModalVisible"
+        max-width="500px"
+      >
         <ModalChangeUserPass @close="isChangePassModalVisible = false" />
       </v-dialog>
  
       <!-- стилизация app bar   -->
-      <template v-slot:image>
-        <v-img gradient="to top right, rgba(19,84,122,.8), rgba(128,208,199,.8)"></v-img>
+      <template #image>
+        <v-img gradient="to top right, rgba(19,84,122,.8), rgba(128,208,199,.8)" />
       </template>
     </v-app-bar>
  
@@ -102,132 +139,130 @@ App.vue
       elevation="5" 
       class="custom-drawer"
     >
-      <v-list density="compact" nav>
+      <v-list
+        density="compact"
+        nav
+      >
         <v-list-item 
-          @click="setActiveModule('Catalog')" 
-          prepend-icon="mdi-view-dashboard" 
-          :title="$t('navigation.drawer.catalog')" 
-          value="catalog"
-          :active="appStore.isModuleActive('Catalog')"
           v-tooltip="{
             text: $t('navigation.drawer.catalog'),
             location: 'right',
             disabled: appStore.drawerMode !== 'closed'
-          }"
-        >
-        </v-list-item>
+          }" 
+          prepend-icon="mdi-view-dashboard" 
+          :title="$t('navigation.drawer.catalog')" 
+          value="catalog"
+          :active="appStore.isModuleActive('Catalog')"
+          @click="setActiveModule('Catalog')"
+        />
         <v-list-item 
-          @click="setActiveModule('Work')" 
-          prepend-icon="mdi-text-box-multiple-outline" 
-          :title="$t('navigation.drawer.workModule')" 
-          value="workItems"
-          :active="appStore.isModuleActive('Work')"
           v-tooltip="{
             text: $t('navigation.drawer.workModule'),
             location: 'right',
             disabled: appStore.drawerMode !== 'closed'
-          }"
-        >
-        </v-list-item>
+          }" 
+          prepend-icon="mdi-text-box-multiple-outline" 
+          :title="$t('navigation.drawer.workModule')" 
+          value="workItems"
+          :active="appStore.isModuleActive('Work')"
+          @click="setActiveModule('Work')"
+        />
         <v-list-item 
-          @click="setActiveModule('AR')" 
-          prepend-icon="mdi-chart-timeline" 
-          :title="$t('navigation.drawer.reports')" 
-          value="reports"
-          :active="appStore.isModuleActive('AR')"
           v-tooltip="{
             text: $t('navigation.drawer.reports'),
             location: 'right',
             disabled: appStore.drawerMode !== 'closed'
-          }"
-        >
-        </v-list-item>
-        <v-divider class="border-opacity-25"></v-divider><br>
+          }" 
+          prepend-icon="mdi-chart-timeline" 
+          :title="$t('navigation.drawer.reports')" 
+          value="reports"
+          :active="appStore.isModuleActive('AR')"
+          @click="setActiveModule('AR')"
+        />
+        <v-divider class="border-opacity-25" /><br>
         <v-list-item 
-          @click="setActiveModule('Admin')" 
-          prepend-icon="mdi-application-cog" 
-          :title="$t('navigation.drawer.Admin')" 
-          value="admin"
-          :active="appStore.isModuleActive('Admin')"
           v-tooltip="{
             text: $t('navigation.drawer.Admin'),
             location: 'right',
             disabled: appStore.drawerMode !== 'closed'
-          }"
-        >
-        </v-list-item>
-        <v-divider class="border-opacity-25"></v-divider><br>
+          }" 
+          prepend-icon="mdi-application-cog" 
+          :title="$t('navigation.drawer.Admin')" 
+          value="admin"
+          :active="appStore.isModuleActive('Admin')"
+          @click="setActiveModule('Admin')"
+        />
+        <v-divider class="border-opacity-25" /><br>
         <v-list-item 
-          @click="setActiveModule('XLS')" 
-          prepend-icon="mdi-microsoft-excel" 
-          :title="$t('navigation.drawer.xlsPrototyping')" 
-          value="xlsPrototyping"
-          :active="appStore.isModuleActive('XLS')"
           v-tooltip="{
             text: $t('navigation.drawer.xlsPrototyping'),
             location: 'right',
             disabled: appStore.drawerMode !== 'closed'
-          }"
-        >
-        </v-list-item>
-        <v-divider class="border-opacity-25"></v-divider><br>
+          }" 
+          prepend-icon="mdi-microsoft-excel" 
+          :title="$t('navigation.drawer.xlsPrototyping')" 
+          value="xlsPrototyping"
+          :active="appStore.isModuleActive('XLS')"
+          @click="setActiveModule('XLS')"
+        />
+        <v-divider class="border-opacity-25" /><br>
         <v-list-item 
-          @click="setActiveModule('Help')" 
-          prepend-icon="mdi-help-circle-outline" 
-          :title="$t('navigation.drawer.helpSupport')" 
-          value="help"
-          :active="appStore.isModuleActive('Help')"
           v-tooltip="{
             text: $t('navigation.drawer.helpSupport'),
             location: 'right',
             disabled: appStore.drawerMode !== 'closed'
-          }"
-        >
-        </v-list-item>
-        <v-divider class="border-opacity-25"></v-divider>
+          }" 
+          :title="$t('navigation.drawer.helpSupport')" 
+          prepend-icon="mdi-help-circle-outline" 
+          value="help"
+          :active="appStore.isModuleActive('Help')"
+          @click="setActiveModule('Help')"
+        />
+        <v-divider class="border-opacity-25" />
       </v-list>
  
       <!-- Append slot для управления и настроек -->
-      <template v-slot:append>
+      <template #append>
         <!-- Account и Settings -->
         <v-list v-if="isLoggedIn">
           <v-list-item 
-            @click="setActiveModule('Account')" 
-            prepend-icon="mdi-account" 
-            :title="$t('navigation.drawer.account')"
-            :active="appStore.isModuleActive('Account')"
             v-tooltip="{
               text: $t('navigation.drawer.account'),
               location: 'right',
               disabled: appStore.drawerMode !== 'closed'
-            }"
-          >
-          </v-list-item>
+            }" 
+            prepend-icon="mdi-account" 
+            :title="$t('navigation.drawer.account')"
+            :active="appStore.isModuleActive('Account')"
+            @click="setActiveModule('Account')"
+          />
           
           <v-list-item 
-            @click="setActiveModule('Settings')" 
-            prepend-icon="mdi-cog" 
-            :title="$t('navigation.drawer.settings')"  
-            value="settings" 
-            :active="appStore.isModuleActive('Settings')"
             v-tooltip="{
               text: $t('navigation.drawer.settings'),
               location: 'right',
               disabled: appStore.drawerMode !== 'closed'
-            }"
-          >
-          </v-list-item>
+            }" 
+            prepend-icon="mdi-cog" 
+            :title="$t('navigation.drawer.settings')"  
+            value="settings" 
+            :active="appStore.isModuleActive('Settings')"
+            @click="setActiveModule('Settings')"
+          />
         </v-list>
 
         <!-- Область управления drawer -->
-        <div class="drawer-control-area" @click="toggleDrawerMode">
+        <div
+          class="drawer-control-area"
+          @click="toggleDrawerMode"
+        >
           <v-btn
             variant="text"
             :icon="chevronIcon"
             size="small"
             class="drawer-toggle-btn"
             color="grey-darken-1"
-          ></v-btn>
+          />
         </div>
       </template>
     </v-navigation-drawer>
@@ -257,7 +292,7 @@ App.vue
       @close="uiStore.hideSnackbar"
     />
   </v-app>
- </template>
+</template>
 
 <script setup>
 import { ref, computed, onMounted } from 'vue';
@@ -325,17 +360,17 @@ const changeLanguage = (lang) => {
   i18n.locale.value = lang;
 };
 
-const showLoginDialog = () => {
-  isLoginDialogVisible.value = true;
-};
+//const showLoginDialog = () => {
+//  isLoginDialogVisible.value = true;
+//};
 
 const handleLoginSuccess = () => {
   appStore.setActiveModule('Work');
 };
 
-const showChangePassModal = () => {
-  isChangePassModalVisible.value = true;
-};
+//const showChangePassModal = () => {
+//  isChangePassModalVisible.value = true;
+//};
 
 const toggleDrawerMode = () => {
   const modes = ['auto', 'opened', 'closed'];

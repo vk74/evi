@@ -19,6 +19,26 @@
       "settings": {
         "main": "application settings"
       }
+    },
+    "users": {
+      "list": {
+        "title": "users list",
+        "buttons": {
+          "create": "create account"
+        },
+        "table": {
+          "headers": {
+            "id": "id",
+            "username": "username",
+            "email": "e-mail",
+            "isStaff": "staff",
+            "status": "status",
+            "lastName": "last name",
+            "firstName": "first name",
+            "middleName": "middle name"
+          }
+        }
+      }
     }
   }
 }

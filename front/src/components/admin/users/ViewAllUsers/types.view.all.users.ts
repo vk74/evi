@@ -76,3 +76,12 @@ export interface IJWTValidation {
     isValid: boolean;
     expiresIn: number;  // Время в секундах до истечения токена
 }
+
+/**
+ * Интерфейс заголовка таблицы
+ */
+export interface TableHeader {
+    title: string
+    key: string
+    width?: string
+  }

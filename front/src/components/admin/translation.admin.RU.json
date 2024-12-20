@@ -19,6 +19,26 @@
       "settings": {
         "main": "настройки приложения"
       }
+    },
+    "users": {
+      "list": {
+        "title": "список пользователей",
+        "buttons": {
+          "create": "создать учетную запись"
+        },
+        "table": {
+          "headers": {
+            "id": "id",
+            "username": "уч. запись",
+            "email": "e-mail",
+            "isStaff": "сотрудник",
+            "status": "статус",
+            "lastName": "фамилия",
+            "firstName": "имя",
+            "middleName": "отчество"
+          }
+        }
+      }
     }
   }
 }
