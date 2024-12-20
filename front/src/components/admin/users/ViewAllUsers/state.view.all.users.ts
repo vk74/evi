@@ -85,7 +85,7 @@ export const useStoreViewAllUsers = defineStore('viewAllUsers', () => {
 
     // Actions
     /**
-     * Validates JWT token and returns validation status with expiration time
+     * Validates JWT token and returns validation status with expiration time - for use in timer
      */
     function validateJWT(): IJWTValidation {
         const userStore = useUserStore()

@@ -1,6 +1,6 @@
 {
-  "name": "back",
-  "version": "1.0.0",
+  "name": "ev2-srv",
+  "version": "0.1.0",
   "description": "",
   "main": "src/server.js",
   "_moduleAliases": {

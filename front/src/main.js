@@ -14,22 +14,22 @@ import { jwtDecode } from 'jwt-decode';
 // Импорт всех файлов локализации
 import appRu from './components/AppTranslationRU.json';
 import appEn from './components/AppTranslationEN.json';
-import admpanRu from './components/admin/AdminTranslationRU.json';
-import admpanEn from './components/admin/AdminTranslationEN.json';
+import adminRu from './components/admin/translation.admiin.RU.json';
+import adminEn from './components/admin/translation.admin.EN.json';
 
 console.log('Starting application...');
 console.log('App component:', App);
 console.log('All imports completed');
 
 // Объединяем переводы
-const messages = {
+const translation = {
   ru: {
     ...appRu,
-    ...admpanRu
+    ...adminRu
   },
   en: {
     ...appEn,
-    ...admpanEn
+    ...adminEn
   }
 };
 
@@ -38,7 +38,7 @@ const i18n = createI18n({
   legacy: false,
   locale: localStorage.getItem('userLanguage') || 'ru',
   fallbackLocale: 'ru',
-  messages
+  translation
 });
 
 // Создаем приложение

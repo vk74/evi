@@ -22,7 +22,7 @@ async function getAllUsers(req: Request, res: Response): Promise<void> {
             query: req.query
         });
 
-        // JWT проверка уже должна быть выполнена middleware
+        // JWT проверка уже должна быть выполнена route guards
         // Если запрос дошёл до контроллера, значит JWT валидный
 
         // Создаем экземпляр сервиса и получаем данные
