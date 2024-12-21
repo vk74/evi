@@ -10,19 +10,11 @@
  * - Обновление списка пользователей вручную
  * - Редактирование пользователей через UserEditor
  */
-<template>
+ <template>
   <v-card flat>
-    <v-app-bar 
-      flat 
-      class="px-4 d-flex justify-space-between"
-    >
+    <v-app-bar flat class="px-4 d-flex justify-space-between">
       <div>
-        <v-btn
-          color="teal"
-          variant="outlined"
-          class="mr-2"
-          @click="createUser"
-        >
+        <v-btn color="teal" variant="outlined" class="mr-2" @click="createUser">
           {{ t('admin.users.list.buttons.create') }}
         </v-btn>
       </div>
@@ -41,19 +33,16 @@
       :items-per-page-options="[10, 25, 50, 100]"
       class="users-table"
     >
-      <!-- Шаблон для ID -->
       <template #[`item.user_id`]="{ item }">
         <span>{{ item.user_id }}</span>
       </template>
 
-      <!-- Шаблон для статуса пользователя -->
       <template #[`item.account_status`]="{ item }">
         <v-chip size="x-small">
           {{ item.account_status }}
         </v-chip>
       </template>
 
-      <!-- Шаблон для колонки "сотрудник" -->
       <template #[`item.is_staff`]="{ item }">
         <v-icon
           :color="item.is_staff ? 'teal' : 'grey'"
@@ -120,7 +109,17 @@ onMounted(async () => {
 </script>
 
 <style scoped>
+/* Убираем высоту и overflow у таблицы */
 .users-table {
   width: 100%;
+  /* Важно: удаляем высоту! */
+  height: auto;
+  /* Важно: удаляем overflow! */
+  overflow: visible;
+}
+
+/* Дополнительно, чтобы избежать "прыгания" контента при загрузке */
+.v-data-table__wrapper {
+    overflow: visible; /* Важно! */
 }
 </style>

@@ -97,7 +97,6 @@ const switchSection = (sectionId) => {
 }
 
 .working-area {
-  height: calc(100vh - 64px);
   overflow-y: auto;
 }
 </style>
