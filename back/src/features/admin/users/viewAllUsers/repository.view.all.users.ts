@@ -49,11 +49,11 @@ const createUsersRepository = () => {
 
             // Устанавливаем новый таймер на 60 минут
             cacheTimer = setTimeout(() => {
-                console.log('Timer expired, clearing cache');
+                console.log('Timer expired, clearing cache with users list');
                 cache = null;
                 cacheTimer = null;
             }, 60 * 60 * 1000); // 60 минут в миллисекундах
-            console.log('Cache timer started for 60 minutes');
+            console.log('Timer started for 60 minutes for users list cache');
         }
     };
 };
