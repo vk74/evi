@@ -10,11 +10,19 @@
  * - Обновление списка пользователей вручную
  * - Редактирование пользователей через UserEditor
  */
- <template>
+<template>
   <v-card flat>
-    <v-app-bar flat class="px-4 d-flex justify-space-between">
+    <v-app-bar
+      flat
+      class="px-4 d-flex justify-space-between"
+    >
       <div>
-        <v-btn color="teal" variant="outlined" class="mr-2" @click="createUser">
+        <v-btn
+          color="teal"
+          variant="outlined"
+          class="mr-2"
+          @click="createUser"
+        >
           {{ t('admin.users.list.buttons.create') }}
         </v-btn>
       </div>
