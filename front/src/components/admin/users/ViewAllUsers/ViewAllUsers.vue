@@ -68,9 +68,11 @@ import { ref, computed, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useStoreViewAllUsers } from './state.view.all.users'
 import type { TableHeader } from './types.view.all.users'
+import { useAdminStore } from '../../adminstate'
 
 // Инициализация i18n
 const { t } = useI18n()
+const adminStore = useAdminStore()
 
 // Инициализация хранилища
 const usersStore = useStoreViewAllUsers()
@@ -99,9 +101,11 @@ const totalItems = computed(() => usersStore.totalItems)
 /**
  * Обработчик создания нового пользователя
  */
-const createUser = () => {
-  // TODO: Реализовать логику создания пользователя
-  console.log('Creating new user...')
+ const createUser = () => {
+  adminStore.$patch({
+    activeSubModule: 'SubModuleUserAdmin',  // Переключаемся на модуль управления пользователями
+    activeUserSection: 'user-editor'        // Переключаемся на секцию редактора пользователей
+  })
 }
 
 // Инициализация при монтировании компонента

@@ -235,6 +235,7 @@ export const useAdminStore = defineStore('admin', {
     /**
      * Полный сброс всех состояний хранилища
      */
+    // eslint-disable-next-line no-dupe-keys
     resetAllState() {
     this.activeSubModule = 'SubModuleServiceAdmin';
     this.drawerMode = 'auto';
