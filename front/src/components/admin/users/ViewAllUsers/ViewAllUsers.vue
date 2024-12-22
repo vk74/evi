@@ -53,7 +53,7 @@
 
       <template #[`item.is_staff`]="{ item }">
         <v-icon
-          :color="item.is_staff ? 'teal' : 'grey'"
+          :color="item.is_staff ? 'teal' : 'red-darken-4'"
           :icon="item.is_staff ? 'mdi-check-circle' : 'mdi-minus-circle'"
           size="x-small"
         />
@@ -117,17 +117,6 @@ onMounted(async () => {
 </script>
 
 <style scoped>
-/* Убираем высоту и overflow у таблицы */
-.users-table {
-  width: 100%;
-  /* Важно: удаляем высоту! */
-  height: auto;
-  /* Важно: удаляем overflow! */
-  overflow: visible;
-}
 
-/* Дополнительно, чтобы избежать "прыгания" контента при загрузке */
-.v-data-table__wrapper {
-    overflow: visible; /* Важно! */
-}
+
 </style>
