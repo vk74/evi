@@ -1,4 +1,6 @@
-// core/index.ts
+// index of all core services for import into functional modules 
+
+/*
 import * as apiService from './api'
 import * as loggerService from './logger'
 import * as eventService from './events'
@@ -13,3 +15,4 @@ export const Core = {
 import { Core } from '@/core'
 Core.api.client.get(...)
 Core.logger.info(...)
+*/

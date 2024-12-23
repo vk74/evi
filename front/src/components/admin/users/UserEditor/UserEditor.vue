@@ -13,50 +13,49 @@
 -->
 
 <template>
-    <v-container class="pa-0">
-      <!-- App Bar с фиксированным фоном -->
-      <v-app-bar flat class="editor-app-bar">
-        <!-- Секции -->
-        <div class="nav-section">
-          <v-btn
-            v-for="section in sections"
-            :key="section.id"
-            :class="['section-btn', { 'section-active': activeSection === section.id }]"
-            variant="text"
-            @click="switchSection(section.id)"
-          >
-            {{ section.title }}
-          </v-btn>
-        </div>
-        
-        <div style="margin-left: 35px;">
-          <v-btn
-              color="teal"
-              variant="outlined"
-              @click="saveUser"
-              :disabled="!isFormValid || isSubmitting"
-              class="mr-2"
-          >
-              {{ isEditMode ? 'сохранить учетную запись' : 'создать учетную запись' }}
-          </v-btn>
-          <v-btn
-              variant="outlined"
-              @click="resetAllForms"
-          >
-              сбросить поля формы
-          </v-btn>
-        </div>
-
-        <v-spacer></v-spacer>
-        <v-toolbar-title class="title-text">
-          {{ isEditMode ? 'редактирование учетной записи' : 'создание учетной записи' }}
-        </v-toolbar-title>
-      </v-app-bar>
+  <v-container class="pa-0">
+    <!-- App Bar с фиксированным фоном -->
+    <v-app-bar flat class="editor-app-bar">
+      <!-- Секции -->
+      <div class="nav-section">
+        <v-btn
+          v-for="section in sections"
+          :key="section.id"
+          :class="['section-btn', { 'section-active': activeSection === section.id }]"
+          variant="text"
+          @click="switchSection(section.id)"
+        >
+          {{ section.title }}
+        </v-btn>
+      </div>
       
-      <!-- Рабочая область -->
-      <div class="working-area">
+      <div style="margin-left: 35px;">
+        <v-btn
+          color="teal"
+          variant="outlined"
+          @click="saveUser"
+          :disabled="!isFormValid || isSubmitting"
+          class="mr-2"
+        >
+          {{ isEditMode ? 'сохранить учетную запись' : 'создать учетную запись' }}
+        </v-btn>
+        <v-btn
+          variant="outlined"
+          @click="resetAllForms"
+        >
+          сбросить поля формы
+        </v-btn>
+      </div>
 
-        <!-- Секция учетной записи -->
+      <v-spacer></v-spacer>
+      <v-toolbar-title class="title-text">
+        {{ isEditMode ? 'редактирование учетной записи' : 'создание учетной записи' }}
+      </v-toolbar-title>
+    </v-app-bar>
+    
+    <!-- Рабочая область -->
+    <div class="working-area">
+      <!-- Секция учетной записи -->
         <v-container v-if="activeSection === 'account'" class="content-container">
         <v-card flat>
             <div class="card-header">
@@ -99,7 +98,7 @@
                     :items="[
                         { title: 'активна', value: 'active' },
                         { title: 'отключена', value: 'disabled' },
-                        { title: 'требует активации', value: 'requires_user_activation' }
+                        { title: 'требует действия пользователя', value: 'requires_user_action' }
                     ]"
                     item-title="title"
                     item-value="value"
@@ -149,139 +148,139 @@
             </v-card-text>
         </v-card>
         </v-container>
-  
-        <!-- Секция профиля -->
-        <v-container v-if="activeSection === 'profile'" class="content-container">
-          <v-card flat>
-            <!-- Персональные данные -->
-            <div class="card-header">
-              <v-card-title class="text-subtitle-1">персональные данные</v-card-title>
-              <v-divider class="section-divider"></v-divider>
-            </div>
-            
-            <v-card-text class="pt-3">
-              <v-form ref="profileForm" v-model="isProfileFormValid">
-                <v-row>
-                  <v-col cols="12" md="4">
-                    <v-text-field
-                      v-model="userProfile.first_name"
-                      label="имя*"
-                      :rules="firstNameRules"
-                      variant="outlined"
-                      density="comfortable"
-                      counter="50"
-                      required
-                    />
-                  </v-col>
-                  <v-col cols="12" md="4">
-                    <v-text-field
-                      v-model="userProfile.last_name"
-                      label="фамилия*"
-                      :rules="lastNameRules"
-                      variant="outlined"
-                      density="comfortable"
-                      counter="50"
-                      required
-                    />
-                  </v-col>
-                  <v-col cols="12" md="4">
-                    <v-text-field
-                      v-model="userProfile.middle_name"
-                      label="отчество"
-                      :rules="middleNameRules"
-                      variant="outlined"
-                      density="comfortable"
-                      counter="50"
-                    />
-                  </v-col>
-                  <v-col cols="12" md="4">
-                    <v-select
-                      v-model="userProfile.gender"
-                      label="пол"
-                      variant="outlined"
-                      density="comfortable"
-                      :items="[
-                        { title: 'мужской', value: 'male' },
-                        { title: 'женский', value: 'female' }
-                      ]"
-                      item-title="title"
-                      item-value="value"
-                    />
-                  </v-col>
-                </v-row>
-  
-                <!-- Контактная информация -->
-                <div class="card-header mt-6">
-                  <v-card-title class="text-subtitle-1">контактная информация</v-card-title>
-                  <v-divider class="section-divider"></v-divider>
-                </div>
-  
-                <v-row>
-                  <v-col cols="12" md="6">
-                    <v-text-field
-                    v-model="userProfile.phone_number"
-                    label="телефон"
-                    :rules="phoneRules"
+
+      <!-- Секция профиля -->
+      <v-container v-if="activeSection === 'profile'" class="content-container">
+        <v-card flat>
+          <!-- Персональные данные -->
+          <div class="card-header">
+            <v-card-title class="text-subtitle-1">персональные данные</v-card-title>
+            <v-divider class="section-divider"></v-divider>
+          </div>
+          
+          <v-card-text class="pt-3">
+            <v-form ref="profileForm" v-model="isProfileFormValid">
+              <v-row>
+                <v-col cols="12" md="4">
+                  <v-text-field
+                    v-model="userProfile.first_name"
+                    label="имя*"
+                    :rules="firstNameRules"
                     variant="outlined"
                     density="comfortable"
-                    placeholder="+7 XXX XXX XXXX"
-                    @input="handlePhoneInput"
-                    @focus="handlePhoneFocus"
-                    />
-                  </v-col>
-                  <v-col cols="12">
-                    <v-textarea
-                      v-model="userProfile.address"
-                      label="адрес"
-                      :rules="addressRules"
-                      variant="outlined"
-                      rows="3"
-                      counter="5000"
-                      no-resize
-                    />
-                  </v-col>
-                </v-row>
-  
-                <!-- Информация о работе -->
-                <div class="card-header mt-6">
-                  <v-card-title class="text-subtitle-1">информация о работе</v-card-title>
-                  <v-divider class="section-divider"></v-divider>
-                </div>
-  
-                <v-row>
-                  <v-col cols="12" md="6">
-                    <v-text-field
-                      v-model="userProfile.company_name"
-                      label="название компании"
-                      :rules="companyNameRules"
-                      variant="outlined"
-                      density="comfortable"
-                      counter="255"
-                    />
-                  </v-col>
-                  <v-col cols="12" md="6">
-                    <v-text-field
-                      v-model="userProfile.position"
-                      label="должность"
-                      :rules="positionRules"
-                      variant="outlined"
-                      density="comfortable"
-                      counter="255"
-                    />
-                  </v-col>
-                </v-row>
-              </v-form>
-            </v-card-text>
-          </v-card>
-        </v-container>
-  
-        <!-- Секция участника групп -->
-        <v-container v-if="activeSection === 'groups'" class="content-container">
-          <!-- Заглушка для будущей реализации -->
-        </v-container>
-      </div>
-    </v-container>
-  </template>
+                    counter="50"
+                    required
+                  />
+                </v-col>
+                <v-col cols="12" md="4">
+                  <v-text-field
+                    v-model="userProfile.last_name"
+                    label="фамилия*"
+                    :rules="lastNameRules"
+                    variant="outlined"
+                    density="comfortable"
+                    counter="50"
+                    required
+                  />
+                </v-col>
+                <v-col cols="12" md="4">
+                  <v-text-field
+                    v-model="userProfile.middle_name"
+                    label="отчество"
+                    :rules="middleNameRules"
+                    variant="outlined"
+                    density="comfortable"
+                    counter="50"
+                  />
+                </v-col>
+                <v-col cols="12" md="4">
+                  <v-select
+                    v-model="userProfile.gender"
+                    label="пол"
+                    variant="outlined"
+                    density="comfortable"
+                    :items="[
+                      { title: 'мужской', value: 'male' },
+                      { title: 'женский', value: 'female' }
+                    ]"
+                    item-title="title"
+                    item-value="value"
+                  />
+                </v-col>
+              </v-row>
+
+              <!-- Контактная информация -->
+              <div class="card-header mt-6">
+                <v-card-title class="text-subtitle-1">контактная информация</v-card-title>
+                <v-divider class="section-divider"></v-divider>
+              </div>
+
+              <v-row>
+                <v-col cols="12" md="6">
+                  <v-text-field
+                  v-model="userProfile.phone_number"
+                  label="телефон"
+                  :rules="phoneRules"
+                  variant="outlined"
+                  density="comfortable"
+                  placeholder="+7 XXX XXX XXXX"
+                  @input="handlePhoneInput"
+                  @focus="handlePhoneFocus"
+                  />
+                </v-col>
+                <v-col cols="12">
+                  <v-textarea
+                    v-model="userProfile.address"
+                    label="адрес"
+                    :rules="addressRules"
+                    variant="outlined"
+                    rows="3"
+                    counter="5000"
+                    no-resize
+                  />
+                </v-col>
+              </v-row>
+
+              <!-- Информация о работе -->
+              <div class="card-header mt-6">
+                <v-card-title class="text-subtitle-1">информация о работе</v-card-title>
+                <v-divider class="section-divider"></v-divider>
+              </div>
+
+              <v-row>
+                <v-col cols="12" md="6">
+                  <v-text-field
+                    v-model="userProfile.company_name"
+                    label="название компании"
+                    :rules="companyNameRules"
+                    variant="outlined"
+                    density="comfortable"
+                    counter="255"
+                  />
+                </v-col>
+                <v-col cols="12" md="6">
+                  <v-text-field
+                    v-model="userProfile.position"
+                    label="должность"
+                    :rules="positionRules"
+                    variant="outlined"
+                    density="comfortable"
+                    counter="255"
+                  />
+                </v-col>
+              </v-row>
+            </v-form>
+          </v-card-text>
+        </v-card>
+      </v-container>
+
+      <!-- Секция участника групп -->
+      <v-container v-if="activeSection === 'groups'" class="content-container">
+        <!-- Заглушка для будущей реализации -->
+      </v-container>
+    </div>
+  </v-container>
+</template>
   
   <script setup>
 // ================== ИМПОРТЫ ==================
