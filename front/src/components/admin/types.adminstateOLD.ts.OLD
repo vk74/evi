@@ -1,5 +1,5 @@
 /**
- * @file adminStateTypes.ts
+ * @file adminStateTypesOld.ts
  * 
  * Типы для хранилища состояния модуля администрирования.
  */
