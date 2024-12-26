@@ -1,33 +1,36 @@
 // Основной компонент, обертка над v-snackbar из Vuetify
 
 <template>
-    <v-snackbar
-      v-model="isVisible"
-      :color="snackbarColor"
-      :timeout="currentTimeout"
-      :location="currentPosition"
-    >
-      <!-- Иконка и текст -->
-      <div class="d-flex align-center">
-        <v-icon
-          :icon="currentIcon"
-          class="mr-2"
-          size="small"
-        />
-        {{ message }}
-      </div>
+  <v-snackbar
+    v-model="isVisible"
+    :color="snackbarColor"
+    :timeout="currentTimeout"
+    :location="currentPosition"
+  >
+    <!-- Иконка и текст -->
+    <div class="d-flex align-center">
+      <v-icon
+        :icon="currentIcon"
+        class="mr-2"
+        size="small"
+      />
+      {{ message }}
+    </div>
   
-      <!-- Кнопка закрытия -->
-      <template v-slot:actions v-if="closable">
-        <v-btn
-          icon="mdi-close"
-          variant="text"
-          @click="close"
-          size="small"
-        />
-      </template>
-    </v-snackbar>
-  </template>
+    <!-- Кнопка закрытия -->
+    <template
+      v-if="closable"
+      #actions
+    >
+      <v-btn
+        icon="mdi-close"
+        variant="text"
+        size="small"
+        @click="close"
+      />
+    </template>
+  </v-snackbar>
+</template>
   
   <script setup>
   import { ref, computed } from 'vue'

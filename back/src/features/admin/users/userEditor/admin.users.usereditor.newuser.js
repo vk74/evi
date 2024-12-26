@@ -1,5 +1,7 @@
+// admin.users.usereditor.newuser.js
 // File purpose: Middleware for handling new user creation from admin panel
 // Processes user account data and profile information, validates input, and saves to database
+// Note: name fields (first_name, middle_name, last_name) are now stored in app.users table
 
 const bcrypt = require('bcrypt');
 const { pool } = require('../../../../db/maindb');
@@ -12,8 +14,7 @@ const adminNewUser = async (req, res) => {
         const { 
             username, password, email, first_name, last_name,
             middle_name, gender, phone_number, address, 
-            company_name, position, is_staff = false, 
-            account_status = 'active'
+            company_name, position, is_staff, account_status
         } = req.body;
 
         console.log('Received data for new user:', {
@@ -123,27 +124,33 @@ const adminNewUser = async (req, res) => {
         await pool.query('BEGIN');
 
         try {
-            // Сохранение данных пользователя
+            // Сохранение данных пользователя (включая поля имени и статус)
             const userResult = await pool.query(
-                userQueries.insertUser.text,
-                [username, hashedPassword, email]
+                userQueries.insertUserWithNames.text,
+                [
+                    username,        // $1
+                    hashedPassword,  // $2
+                    email,          // $3
+                    first_name,     // $4
+                    last_name,      // $5
+                    middle_name,    // $6
+                    is_staff,       // $7
+                    account_status  // $8
+                ]
             );
             const userId = userResult.rows[0].user_id;
             console.log(`Created user account with ID: ${userId}`);
 
-            // Сохранение профиля пользователя
+            // Сохранение профиля пользователя (без полей имени)
             await pool.query(
-                userQueries.insertAdminUserProfile.text,
+                userQueries.insertAdminUserProfileWithoutNames.text,
                 [
                     userId,         // $1
-                    first_name,     // $2
-                    last_name,      // $3
-                    middle_name,    // $4
-                    gender,         // $5
-                    phone_number,   // $6
-                    address,        // $7
-                    company_name,   // $8
-                    position        // $9
+                    gender,         // $2
+                    phone_number,   // $3
+                    address,        // $4
+                    company_name,   // $5
+                    position        // $6
                 ]
             );
             console.log('Created full user profile from admin panel');
@@ -163,8 +170,6 @@ const adminNewUser = async (req, res) => {
             console.log('Transaction rolled back due to error:', error);
             throw error;
         }
-
-        // Продолжение следует...
 
     } catch (error) {
         console.error('Admin new user creation error:', error);

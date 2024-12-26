@@ -56,18 +56,18 @@
     <!-- Рабочая область -->
     <div class="working-area">
       <!-- Секция учетной записи -->
-        <v-container v-if="activeSection === 'account'" class="content-container">
+      <v-container v-if="activeSection === 'account'" class="content-container">
         <v-card flat>
-            <div class="card-header">
+          <div class="card-header">
             <v-card-title class="text-subtitle-1">основная информация</v-card-title>
             <v-divider class="section-divider"></v-divider>
-            </div>
+          </div>
             
-            <v-card-text class="pt-3">
+          <v-card-text class="pt-3">
             <v-form ref="accountForm" v-model="isAccountFormValid">
-                <v-row>
+              <v-row>
                 <v-col cols="12" md="6">
-                    <v-text-field
+                  <v-text-field
                     v-model="userData.username"
                     label="название учетной записи*"
                     :rules="usernameRules"
@@ -75,10 +75,13 @@
                     density="comfortable"
                     counter="64"
                     required
-                    />
+                  />
                 </v-col>
-                <v-col cols="12" md="6">
-                    <v-text-field
+                <v-col 
+                  cols="12"
+                  md="6"
+                >
+                  <v-text-field
                     v-model="userData.email"
                     label="e-mail*"
                     :rules="emailRules"
@@ -86,36 +89,45 @@
                     density="comfortable"
                     type="email"
                     required
-                    />
+                  />
                 </v-col>
 
-                <v-col cols="12" md="6">
-                    <v-select
+                <v-col 
+                  cols="12" 
+                  md="6"
+                >
+                  <v-select
                     v-model="userData.status"
                     label="статус учетной записи"
                     variant="outlined"
                     density="comfortable"
                     :items="[
-                        { title: 'активна', value: 'active' },
-                        { title: 'отключена', value: 'disabled' },
-                        { title: 'требует действия пользователя', value: 'requires_user_action' }
+                      { title: 'активна', value: 'active' },
+                      { title: 'отключена', value: 'disabled' },
+                      { title: 'требует действия пользователя', value: 'requires_user_action' }
                     ]"
                     item-title="title"
                     item-value="value"
-                    />
+                  />
                 </v-col>
-                <v-col cols="12" md="6">
-                    <v-checkbox
+                <v-col 
+                  cols="12" 
+                  md="6"
+                >
+                  <v-checkbox
                     v-model="userData.is_employee"
                     label="работник организации"
                     color="teal"
                     hide-details
-                    />
+                  />
                 </v-col>
                 
                 <!-- Поля для пароля -->
-                <v-col cols="12" md="6">
-                    <v-text-field
+                <v-col 
+                  cols="12" 
+                  md="6"
+                >
+                  <v-text-field
                     v-model="userData.password"
                     label="пароль*"
                     :rules="passwordRules"
@@ -126,10 +138,13 @@
                     counter="40"
                     required
                     @click:append-inner="showPassword = !showPassword"
-                    />
+                  />
                 </v-col>
-                <v-col cols="12" md="6">
-                    <v-text-field
+                <v-col 
+                  cols="12" 
+                  md="6"
+                >
+                  <v-text-field
                     v-model="userData.passwordConfirm"
                     label="подтверждение пароля*"
                     :rules="passwordConfirmRules"
@@ -140,17 +155,19 @@
                     counter="40"
                     required
                     @click:append-inner="showPassword = !showPassword"
-                    />
+                  />
                 </v-col>
-
-                </v-row>
+              </v-row>
             </v-form>
-            </v-card-text>
+          </v-card-text>
         </v-card>
-        </v-container>
+      </v-container>
 
       <!-- Секция профиля -->
-      <v-container v-if="activeSection === 'profile'" class="content-container">
+      <v-container 
+        v-if="activeSection === 'profile'" 
+        class="content-container"
+      >
         <v-card flat>
           <!-- Персональные данные -->
           <div class="card-header">

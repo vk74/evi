@@ -1,3 +1,5 @@
+// queries.users.js
+// pre-defined queries
 const userQueries = {
     // Регистрация
     checkUsername: {
@@ -99,6 +101,21 @@ const userQueries = {
             SET hashed_password = $1
             WHERE username = $2
             RETURNING username`
+    },
+    // Новый запрос для вставки пользователя с полями имени
+    insertUserWithNames: {
+        name: 'insert-user-with-names',
+        text: `INSERT INTO app.users
+            (username, hashed_password, email, first_name, last_name, middle_name, is_staff, account_status, created_at)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, CURRENT_TIMESTAMP)
+            RETURNING user_id`
+    },
+    
+    insertAdminUserProfileWithoutNames: {
+        name: 'insert-admin-user-profile-without-names',
+        text: `INSERT INTO app.user_profiles
+            (user_id, gender, phone_number, address, company_name, position)
+            VALUES ($1, $2, $3, $4, $5, $6)`
     }
 };
 
