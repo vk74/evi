@@ -196,11 +196,7 @@ export default {
 
     // Установка активного подмодуля с дополнительной логикой сброса состояния редакторов
     const setActiveSubModule = (module) => {
-      // Если переключаемся на модуль управления пользователями,
-      // сбрасываем состояние любых открытых редакторов
-      if (module === 'SubModuleUserAdmin') {
-        adminStore.setActiveUserSubModule(null);
-      }
+      // Простое переключение модуля без дополнительной логики
       adminStore.setActiveSubModule(module);
     };
 

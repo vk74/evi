@@ -38,17 +38,16 @@
 
 <script setup>
 import { computed } from 'vue'
-import { useAdminStore } from '@/components/admin/adminstate'
-// Импорты подмодулей
+import { useUsersAdminStore } from './state.users.admin'
 import SubModuleUserViewAllUsers from './ViewAllUsers/ViewAllUsers.vue'
 import SubModuleUserViewAllGroups from './ViewAllGroups/ViewAllGroups.vue'
 import SubModuleUserEditor from './UserEditor/UserEditor.vue'
 import SubModuleGroupEditor from './GroupEditor/GroupEditor.vue'
 
 // Инициализация store
-const adminStore = useAdminStore()
+const usersStore = useUsersAdminStore()
 
-// Определение секций
+// Определение секций остается как есть
 const sections = [
   { id: 'users', title: 'список пользователей', icon: 'mdi-account-multiple-outline' },
   { id: 'groups', title: 'список групп', icon: 'mdi-account-group-outline' },
@@ -56,12 +55,12 @@ const sections = [
   { id: 'group-editor', title: 'редактор групп', icon: 'mdi-account-multiple-plus-outline' }
 ]
 
-// Получение активной секции из store
-const activeSection = computed(() => adminStore.getCurrentUserSection)
+// Получение активной секции из нового store
+const activeSection = computed(() => usersStore.getCurrentSection)
 
-// Переключение секций
+// Переключение секций через новый store
 const switchSection = (sectionId) => {
-  adminStore.setActiveUserSection(sectionId)
+  usersStore.setActiveSection(sectionId)
 }
 </script>
 

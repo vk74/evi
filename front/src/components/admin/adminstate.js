@@ -1,9 +1,7 @@
 /**
  * adminstate.js
  * Хранилище состояния для модуля администрирования.
- * Управляет состоянием активного подмодуля, режимом отображения бокового меню
- * и активными секциями в модулях управления сервисами, каталогом и пользователями.
- * Обеспечивает сохранение состояния между сессиями пользователя.
+ * Управляет состоянием активного подмодуля и режимом отображения бокового меню.
  */
 import { defineStore } from 'pinia';
 
@@ -16,10 +14,6 @@ export const useAdminStore = defineStore('admin', {
     previousSection: null, // Для хранения предыдущей секции
     activeCatalogSection: 'settings', // Активная секция в модуле управления каталогом
     previousCatalogSection: null, // Для хранения предыдущей секции каталога
-    // Новые состояния для управления пользователями
-    activeUserSection: 'users', // Активная секция в модуле управления пользователями
-    previousUserSection: null, // Для хранения предыдущей секции пользователей
-    activeUserSubModule: null, // Для хранения активного подмодуля редактирования
   }),
 
   getters: {
@@ -36,22 +30,10 @@ export const useAdminStore = defineStore('admin', {
     getCurrentCatalogSection: (state) => state.activeCatalogSection,
 
     /**
-     * Получение текущей активной секции управления пользователями
-     * @returns {string} ID активной секции пользователей
-     */
-    getCurrentUserSection: (state) => state.activeUserSection,
-
-    /**
-     * Получение текущего активного подмодуля редактирования
-     * @returns {string|null} Имя активного подмодуля редактирования
-     */
-    getCurrentUserSubModule: (state) => state.activeUserSubModule,
-
-    /**
      * Получение текущей активной секции настроек приложения
      * @returns {string} ID активной секции настроек
      */
-        getCurrentAppSection: (state) => state.activeAppSection,
+    getCurrentAppSection: (state) => state.activeAppSection,
   },
 
   actions: {
@@ -131,56 +113,24 @@ export const useAdminStore = defineStore('admin', {
     },
 
     /**
-     * Установка активной секции в модуле управления пользователями
-     * @param {'users' | 'groups'} sectionId - ID секции пользователей для активации
+     * Установка активной секции в модуле настроек приложения
+     * @param {'settings' | 'visualization'} sectionId - ID секции настроек для активации
      */
-    setActiveUserSection(sectionId) {
-      if (this.activeUserSection !== sectionId) {
-        this.previousUserSection = this.activeUserSection;
-        this.activeUserSection = sectionId;
+    setActiveAppSection(sectionId) {
+      if (this.activeAppSection !== sectionId) {
+        this.previousAppSection = this.activeAppSection;
+        this.activeAppSection = sectionId;
       }
     },
 
     /**
-     * Возврат к предыдущей активной секции пользователей
+     * Возврат к предыдущей активной секции настроек приложения
      */
-    returnToPreviousUserSection() {
-      if (this.previousUserSection) {
-        this.activeUserSection = this.previousUserSection;
-        this.previousUserSection = null;
+    returnToPreviousAppSection() {
+      if (this.previousAppSection) {
+        this.activeAppSection = this.previousAppSection;
+        this.previousAppSection = null;
       }
-    },
-
-    /**
-     * Установка активного подмодуля редактирования пользователей
-     * @param {'SubModuleUserEditor' | 'SubModuleGroupEditor' | null} subModule - Имя подмодуля для активации
-     */
-    setActiveUserSubModule(subModule) {
-      this.activeUserSubModule = subModule;
-    },
-
-    /**
-     * Сброс активного подмодуля редактирования пользователей
-     */
-    resetActiveUserSubModule() {
-      this.activeUserSubModule = null;
-    },
-
-    /**
-     * Сброс всех состояний модуля управления пользователями
-     */
-    resetUserModuleState() {
-      this.activeUserSection = 'users';
-      this.previousUserSection = null;
-      this.activeUserSubModule = null;
-    },
-
-    /**
-     * Сброс всех состояний модуля управления каталогом
-     */
-    resetCatalogModuleState() {
-      this.activeCatalogSection = 'settings';
-      this.previousCatalogSection = null;
     },
 
     /**
@@ -192,6 +142,22 @@ export const useAdminStore = defineStore('admin', {
     },
 
     /**
+     * Сброс всех состояний модуля управления каталогом
+     */
+    resetCatalogModuleState() {
+      this.activeCatalogSection = 'settings';
+      this.previousCatalogSection = null;
+    },
+
+    /**
+     * Сброс всех состояний модуля настроек приложения
+     */
+    resetAppModuleState() {
+      this.activeAppSection = 'settings';
+      this.previousAppSection = null;
+    },
+
+    /**
      * Полный сброс всех состояний хранилища
      */
     resetAllState() {
@@ -200,50 +166,7 @@ export const useAdminStore = defineStore('admin', {
       this.previousModule = null;
       this.resetServiceModuleState();
       this.resetCatalogModuleState();
-      this.resetUserModuleState();
-    },
-
-    /**
-     * Установка активной секции в модуле настроек приложения
-     * @param {'settings' | 'visualization'} sectionId - ID секции настроек для активации
-     */
-    setActiveAppSection(sectionId) {
-    if (this.activeAppSection !== sectionId) {
-        this.previousAppSection = this.activeAppSection;
-        this.activeAppSection = sectionId;
-    }
-    },
-
-    /**
-     * Возврат к предыдущей активной секции настроек приложения
-     */
-    returnToPreviousAppSection() {
-    if (this.previousAppSection) {
-        this.activeAppSection = this.previousAppSection;
-        this.previousAppSection = null;
-    }
-    },
-
-    /**
-     * Сброс всех состояний модуля настроек приложения
-     */
-    resetAppModuleState() {
-    this.activeAppSection = 'settings';
-    this.previousAppSection = null;
-    },
-
-    /**
-     * Полный сброс всех состояний хранилища
-     */
-    // eslint-disable-next-line no-dupe-keys
-    resetAllState() {
-    this.activeSubModule = 'SubModuleServiceAdmin';
-    this.drawerMode = 'auto';
-    this.previousModule = null;
-    this.resetServiceModuleState();
-    this.resetCatalogModuleState();
-    this.resetUserModuleState();
-    this.resetAppModuleState();
+      this.resetAppModuleState();
     }
   },
 
@@ -258,8 +181,6 @@ export const useAdminStore = defineStore('admin', {
           'activeSubModule',
           'activeSection',
           'activeCatalogSection',
-          'activeUserSection',
-          'activeUserSubModule',
           'activeAppSection'
         ]
       }
