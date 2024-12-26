@@ -72,6 +72,7 @@ import { useAdminStore } from '../../adminstate'
 
 // Инициализация i18n
 const { t } = useI18n()
+
 const adminStore = useAdminStore()
 
 // Инициализация хранилища
@@ -121,6 +122,5 @@ onMounted(async () => {
 </script>
 
 <style scoped>
-
 
 </style>
