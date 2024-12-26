@@ -10,59 +10,8 @@
  * - Обновление списка пользователей вручную
  * - Редактирование пользователей через UserEditor
  */
-<template>
-  <v-card flat>
-    <v-app-bar
-      flat
-      class="px-4 d-flex justify-space-between"
-    >
-      <div>
-        <v-btn
-          color="teal"
-          variant="outlined"
-          class="mr-2"
-          @click="createUser"
-        >
-          {{ t('admin.users.list.buttons.create') }}
-        </v-btn>
-      </div>
-      <v-app-bar-title class="text-subtitle-2 text-lowercase text-right">
-        {{ t('admin.users.list.title') }}
-      </v-app-bar-title>
-    </v-app-bar>
 
-    <v-data-table
-      v-model:page="page"
-      v-model:items-per-page="itemsPerPage"
-      :headers="headers"
-      :items="users"
-      :loading="loading"
-      :items-length="totalItems"
-      :items-per-page-options="[10, 25, 50, 100]"
-      class="users-table"
-    >
-      <template #[`item.user_id`]="{ item }">
-        <span>{{ item.user_id }}</span>
-      </template>
-
-      <template #[`item.account_status`]="{ item }">
-        <v-chip size="x-small">
-          {{ item.account_status }}
-        </v-chip>
-      </template>
-
-      <template #[`item.is_staff`]="{ item }">
-        <v-icon
-          :color="item.is_staff ? 'teal' : 'red-darken-4'"
-          :icon="item.is_staff ? 'mdi-check-circle' : 'mdi-minus-circle'"
-          size="x-small"
-        />
-      </template>
-    </v-data-table>
-  </v-card>
-</template>
-
-<script setup lang="ts">
+ <script setup lang="ts">
 import usersService from './service.view.all.users'
 import { ref, computed, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
@@ -120,6 +69,58 @@ onMounted(async () => {
   }
 })
 </script>
+
+<template>
+  <v-card flat>
+    <v-app-bar
+      flat
+      class="px-4 d-flex justify-space-between"
+    >
+      <div>
+        <v-btn
+          color="teal"
+          variant="outlined"
+          class="mr-2"
+          @click="createUser"
+        >
+          {{ t('admin.users.list.buttons.create') }}
+        </v-btn>
+      </div>
+      <v-app-bar-title class="text-subtitle-2 text-lowercase text-right">
+        {{ t('admin.users.list.title') }}
+      </v-app-bar-title>
+    </v-app-bar>
+
+    <v-data-table
+      v-model:page="page"
+      v-model:items-per-page="itemsPerPage"
+      :headers="headers"
+      :items="users"
+      :loading="loading"
+      :items-length="totalItems"
+      :items-per-page-options="[10, 25, 50, 100]"
+      class="users-table"
+    >
+      <template #[`item.user_id`]="{ item }">
+        <span>{{ item.user_id }}</span>
+      </template>
+
+      <template #[`item.account_status`]="{ item }">
+        <v-chip size="x-small">
+          {{ item.account_status }}
+        </v-chip>
+      </template>
+
+      <template #[`item.is_staff`]="{ item }">
+        <v-icon
+          :color="item.is_staff ? 'teal' : 'red-darken-4'"
+          :icon="item.is_staff ? 'mdi-check-circle' : 'mdi-minus-circle'"
+          size="x-small"
+        />
+      </template>
+    </v-data-table>
+  </v-card>
+</template>
 
 <style scoped>
 

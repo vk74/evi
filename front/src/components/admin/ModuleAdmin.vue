@@ -1,19 +1,78 @@
 <!-- 
   ModuleAdmin.vue
-  Основной модуль администрирования, содержащий навигационное меню и
-  контейнер для отображения подмодулей администрирования.
-  
-  Поддерживает сворачиваемое боковое меню с четырьмя основными разделами:
-  - Управление каталогом
-  - Управление сервисами
-  - Управление пользователями
-  - Настройки приложения
+  Модуль навигации по основным под-модулям администрирования.
   
   Боковое меню имеет три режима отображения:
   1. Авто-скрытие: меню свернуто, раскрывается при наведении
   2. Зафиксировано открытым: меню всегда раскрыто
   3. Зафиксировано закрытым: меню всегда свернуто, отображаются подсказки при наведении
 -->
+
+<script setup lang="ts">
+import { ref, computed, defineAsyncComponent } from 'vue'
+import { useAdminStore } from './state.admin'
+import type { SubModuleId } from './types.admin'
+import { useI18n } from 'vue-i18n'
+
+// Асинхронная загрузка подмодулей
+const SubModuleCatalogAdmin = defineAsyncComponent(() => import('./catalog/SubModuleCatalogAdmin.vue'))
+const SubModuleServiceAdmin = defineAsyncComponent(() => import('./service/SubModuleServiceAdmin.vue'))
+const SubModuleUsersAdmin = defineAsyncComponent(() => import('./users/SubModuleUsersAdmin.vue'))
+const SubModuleAppAdmin = defineAsyncComponent(() => import('./app/SubModuleAppAdmin.vue'))
+
+const adminStore = useAdminStore()
+const { t } = useI18n()
+const drawer = ref<boolean>(true)
+
+// Вычисляемые свойства для отслеживания состояния модуля
+const activeSubModule = computed((): SubModuleId => adminStore.activeSubModule)
+
+// Получаем текущий режим отображения drawer из store
+const drawerMode = computed(() => adminStore.drawerMode)
+
+// Определяем иконку в зависимости от режима drawer
+const chevronIcon = computed((): string => {
+  switch(drawerMode.value) {
+    case 'auto':
+      return 'mdi-chevron-double-right'
+    case 'opened':
+      return 'mdi-chevron-double-left'
+    case 'closed':
+      return 'mdi-chevron-double-down'
+    default:
+      return 'mdi-chevron-double-right'
+  }
+})
+
+// Определение текущего активного подмодуля
+const currentSubModule = computed(() => {
+  switch(activeSubModule.value) {
+    case 'SubModuleCatalogAdmin':
+      return SubModuleCatalogAdmin
+    case 'SubModuleServiceAdmin':
+      return SubModuleServiceAdmin
+    case 'SubModuleUsersAdmin':
+      return SubModuleUsersAdmin
+    case 'SubModuleAppAdmin':
+      return SubModuleAppAdmin
+    default:
+      return SubModuleCatalogAdmin
+  }
+})
+
+// Установка активного подмодуля
+const setActiveSubModule = (module: SubModuleId): void => {
+  adminStore.setActiveSubModule(module)
+}
+
+// Циклическое переключение режимов отображения drawer
+const toggleDrawerMode = (): void => {
+  const modes = ['auto', 'opened', 'closed'] as const
+  const currentIndex = modes.indexOf(drawerMode.value as typeof modes[number])
+  const nextIndex = (currentIndex + 1) % modes.length
+  adminStore.setDrawerMode(modes[nextIndex])
+}
+</script>
 
 <template>
   <v-container fluid>
@@ -28,96 +87,115 @@
         class="drawer-container"
       >
         <!-- Основное навигационное меню -->
-        <v-list density="compact" nav class="navigation-list">
+        <v-list
+          density="compact"
+          nav
+          class="navigation-list"
+        >
           <!-- Пункт меню "Управление каталогом" -->
           <v-list-item 
-            @click="setActiveSubModule('SubModuleCatalogAdmin')" 
+            v-tooltip="{
+              text: t('admin.nav.catalog.main'),
+              location: 'right',
+              disabled: drawerMode !== 'closed'
+            }" 
             class="nav-item" 
             prepend-icon="mdi-view-grid-plus-outline" 
-            :title="$t('admin.nav.catalog.main')"
+            :title="t('admin.nav.catalog.main')"
             value="catalogAdmin"
             :active="activeSubModule === 'SubModuleCatalogAdmin'"
-            v-tooltip="{
-              text: $t('admin.nav.catalog.main'),
-              location: 'right',
-              disabled: drawerMode !== 'closed'
-            }"
+            @click="setActiveSubModule('SubModuleCatalogAdmin')"
           >
-            <v-list-item-title v-if="!drawer" class="hidden-title">
-              {{ $t('admin.nav.catalog.main') }}
+            <v-list-item-title
+              v-if="!drawer"
+              class="hidden-title"
+            >
+              {{ t('admin.nav.catalog.main') }}
             </v-list-item-title>
           </v-list-item>
- 
+
           <!-- Пункт меню "Управление сервисами" -->
           <v-list-item 
-            @click="setActiveSubModule('SubModuleServiceAdmin')" 
+            v-tooltip="{
+              text: t('admin.nav.services.main'),
+              location: 'right',
+              disabled: drawerMode !== 'closed'
+            }" 
             class="nav-item" 
             prepend-icon="mdi-cube-scan" 
-            :title="$t('admin.nav.services.main')"
+            :title="t('admin.nav.services.main')"
             value="serviceAdmin"
             :active="activeSubModule === 'SubModuleServiceAdmin'"
-            v-tooltip="{
-              text: $t('admin.nav.services.main'),
-              location: 'right',
-              disabled: drawerMode !== 'closed'
-            }"
+            @click="setActiveSubModule('SubModuleServiceAdmin')"
           >
-            <v-list-item-title v-if="!drawer" class="hidden-title">
-              {{ $t('admin.nav.services.main') }}
+            <v-list-item-title
+              v-if="!drawer"
+              class="hidden-title"
+            >
+              {{ t('admin.nav.services.main') }}
             </v-list-item-title>
           </v-list-item>
- 
+
           <!-- Пункт меню "Управление пользователями" -->
           <v-list-item 
-            @click="setActiveSubModule('SubModuleUserAdmin')" 
-            class="nav-item" 
-            prepend-icon="mdi-account-cog" 
-            :title="$t('admin.nav.users.main')"
-            value="userAdmin"
-            :active="activeSubModule === 'SubModuleUserAdmin'"
             v-tooltip="{
-              text: $t('admin.nav.users.main'),
+              text: t('admin.nav.users.main'),
               location: 'right',
               disabled: drawerMode !== 'closed'
-            }"
+            }" 
+            class="nav-item" 
+            :title="t('admin.nav.users.main')" 
+            prepend-icon="mdi-account-cog"
+            value="userAdmin"
+            :active="activeSubModule === 'SubModuleUsersAdmin'"
+            @click="setActiveSubModule('SubModuleUsersAdmin')"
           >
-            <v-list-item-title v-if="!drawer" class="hidden-title">
-              {{ $t('admin.nav.users.main') }}
+            <v-list-item-title 
+              v-if="!drawer" 
+              class="hidden-title"
+            >
+              {{ t('admin.nav.users.main') }}
             </v-list-item-title>
           </v-list-item>
- 
+
           <!-- Пункт меню "Настройки приложения" -->
           <v-list-item 
-            @click="setActiveSubModule('SubModuleAppAdmin')" 
-            class="nav-item" 
-            prepend-icon="mdi-cog-outline" 
-            :title="$t('admin.nav.settings.main')"
-            value="appAdmin"
-            :active="activeSubModule === 'SubModuleAppAdmin'"
             v-tooltip="{
-              text: $t('admin.nav.settings.main'),
+              text: t('admin.nav.settings.main'),
               location: 'right',
               disabled: drawerMode !== 'closed'
-            }"
+            }" 
+            class="nav-item" 
+            prepend-icon="mdi-cog-outline" 
+            :title="t('admin.nav.settings.main')"
+            value="appAdmin"
+            :active="activeSubModule === 'SubModuleAppAdmin'"
+            @click="setActiveSubModule('SubModuleAppAdmin')"
           >
-            <v-list-item-title v-if="!drawer" class="hidden-title">
-              {{ $t('admin.nav.settings.main') }}
+            <v-list-item-title
+              v-if="!drawer"
+              class="hidden-title"
+            >
+              {{ t('admin.nav.settings.main') }}
             </v-list-item-title>
           </v-list-item>
- 
-          <v-divider class="border-opacity-25"></v-divider>
+
+          <v-divider class="border-opacity-25" />
         </v-list>
- 
+
         <!-- Append slot для управления и настроек -->
-        <template v-slot:append>
-          <div class="drawer-control-area" @click="toggleDrawerMode">
+        <template #append>
+          <div
+            class="drawer-control-area"
+            @click="toggleDrawerMode"
+          >
             <v-btn
               variant="text"
               :icon="chevronIcon"
               size="small"
               class="drawer-toggle-btn"
               color="grey-darken-1"
-            ></v-btn>
+            />
           </div>
         </template>
       </v-navigation-drawer>
@@ -128,132 +206,40 @@
       </v-col>
     </v-row>
   </v-container>
- </template>
-
-<script>
-import { ref, computed, defineAsyncComponent } from 'vue';
-import { useAdminStore } from './adminstate';
-import { useI18n } from 'vue-i18n';
-
-// Асинхронная загрузка подмодулей
-const SubModuleCatalogAdmin = defineAsyncComponent(() => import('./catalog/SubModuleCatalogAdmin.vue'));
-const SubModuleServiceAdmin = defineAsyncComponent(() => import('./service/SubModuleServiceAdmin.vue'));
-const SubModuleUserAdmin = defineAsyncComponent(() => import('./users/SubModuleUserAdmin.vue'));
-const SubModuleAppAdmin = defineAsyncComponent(() => import('./app/SubModuleAppAdmin.vue'));
-const SubModuleServiceEditor = defineAsyncComponent(() => import('./service/ServiceEditor.vue'));
-
-export default {
-  name: 'ModuleAdmin',
-  components: {
-    SubModuleCatalogAdmin,
-    SubModuleServiceAdmin,
-    SubModuleUserAdmin,
-    SubModuleAppAdmin,
-    SubModuleServiceEditor,
-  },
-  setup() {
-    const adminStore = useAdminStore();
-    const { t } = useI18n();
-    const drawer = ref(true);
-
-    // Вычисляемые свойства для отслеживания состояния модуля
-    const activeSubModule = computed(() => adminStore.activeSubModule);
-    
-    // Получаем текущий режим отображения drawer из store
-    const drawerMode = computed(() => adminStore.drawerMode);
-
-    // Определяем иконку в зависимости от режима drawer
-    const chevronIcon = computed(() => {
-      switch(drawerMode.value) {
-        case 'auto':
-          return 'mdi-chevron-double-right';
-        case 'opened':
-          return 'mdi-chevron-double-left';
-        case 'closed':
-          return 'mdi-chevron-double-down';
-        default:
-          return 'mdi-chevron-double-right';
-      }
-    });
-    
-    // Определение текущего активного подмодуля
-    const currentSubModule = computed(() => {
-      switch(activeSubModule.value) {
-        case 'SubModuleCatalogAdmin':
-          return SubModuleCatalogAdmin;
-        case 'SubModuleServiceAdmin':
-          return SubModuleServiceAdmin;
-        case 'SubModuleUserAdmin':
-          return SubModuleUserAdmin;
-        case 'SubModuleAppAdmin':
-          return SubModuleAppAdmin;
-        case 'SubModuleServiceEditor':
-          return SubModuleServiceEditor;
-        default:
-          return SubModuleCatalogAdmin;
-      }
-    });
-
-    // Установка активного подмодуля с дополнительной логикой сброса состояния редакторов
-    const setActiveSubModule = (module) => {
-      // Простое переключение модуля без дополнительной логики
-      adminStore.setActiveSubModule(module);
-    };
-
-    // Циклическое переключение режимов отображения drawer
-    const toggleDrawerMode = () => {
-      const modes = ['auto', 'opened', 'closed'];
-      const currentIndex = modes.indexOf(drawerMode.value);
-      const nextIndex = (currentIndex + 1) % modes.length;
-      adminStore.setDrawerMode(modes[nextIndex]);
-    };
-
-    return {
-      activeSubModule,
-      currentSubModule,
-      setActiveSubModule,
-      drawer,
-      drawerMode,
-      toggleDrawerMode,
-      chevronIcon,
-      t
-    };
-  },
-};
-</script>
+</template>
 
 <style scoped>
 .drawer-container {
- position: relative;
- background-color: rgb(224, 224, 224) !important;
+  position: relative;
+  background-color: rgb(224, 224, 224) !important;
 }
 
 .navigation-list {
- margin-top: 0;
+  margin-top: 0;
 }
 
 .v-list-item__icon {
- min-width: 40px;
+  min-width: 40px;
 }
 
 .v-list-item__content {
- align-items: center;
+  align-items: center;
 }
 
 .hidden-title {
- display: none;
+  display: none;
 }
 
 .drawer-toggle-btn {
- position: absolute;
- right: -10px;
- bottom: 2px;
- box-shadow: 2px 0 4px rgba(0, 0, 0, 0.1);
- opacity: 0.6;
- transition: opacity 0.2s ease;
+  position: absolute;
+  right: -10px;
+  bottom: 2px;
+  box-shadow: 2px 0 4px rgba(0, 0, 0, 0.1);
+  opacity: 0.6;
+  transition: opacity 0.2s ease;
 }
 
 .drawer-toggle-btn:hover {
- opacity: 1;
+  opacity: 1;
 }
 </style>

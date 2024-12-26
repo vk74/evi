@@ -8,3 +8,9 @@ export type UserSectionId = 'users' | 'groups' | 'user-editor' | 'group-editor'
 export interface UsersAdminState {
   activeSection: UserSectionId
 }
+
+export interface Section {
+  id: UserSectionId
+  title: string
+  icon: string
+}
