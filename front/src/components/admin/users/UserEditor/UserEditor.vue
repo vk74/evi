@@ -285,7 +285,6 @@
   <script setup>
 // ================== ИМПОРТЫ ==================
 import { ref, computed, onMounted, watch } from 'vue'
-import { useAdminStore } from '@/components/admin/adminstate'
 import { useUiStore } from '@/state/uistate'
 import { useUserStore } from '@/state/userstate'
 import axios from 'axios'
@@ -312,7 +311,6 @@ const props = defineProps({
 const emit = defineEmits(['saved'])
 
 // ================== ИНИЦИАЛИЗАЦИЯ ХРАНИЛИЩ ==================
-const adminStore = useAdminStore()
 const uiStore = useUiStore()
 
 // ==================== БАЗОВОЕ СОСТОЯНИЕ ====================

@@ -3,10 +3,43 @@
  * Обеспечивает навигацию между разделами управления каталогом через app bar
  * и отображает соответствующие подмодули в рабочей области.
 -->
+<script setup lang="ts">
+import { computed } from 'vue'
+import { useCatalogAdminStore } from './state.catalog.admin'
+import type { Section, CatalogSectionId } from './types.catalog.admin'
+
+// Импорты подмодулей
+import SubModuleCatalogEditor from './CatalogEditor/SubModuleCatalogEditor.vue'
+import SubModuleCatalogSettingsVisualization from './VisualizationSettings/SubModuleCatalogSettingsVisualization.vue'
+import SubModuleCatalogSettingsAccess from './AccessSettings/SubModuleCatalogSettingsAccess.vue'
+
+// Инициализация store
+const catalogStore = useCatalogAdminStore()
+
+// Определение секций
+const sections: Section[] = [
+  { id: 'settings', title: 'настройки', icon: 'mdi-cog-outline' },
+  { id: 'visualization', title: 'визуализация', icon: 'mdi-view-dashboard-outline' },
+  { id: 'access', title: 'доступ', icon: 'mdi-shield-outline' }
+]
+
+// Получение активной секции из store
+const activeSection = computed(() => catalogStore.getCurrentSection)
+
+// Переключение секций
+const switchSection = (sectionId: CatalogSectionId) => {
+  catalogStore.setActiveSection(sectionId)
+}
+</script>
+
 <template>
   <div class="module-root">
     <!-- App Bar -->
-    <v-app-bar app flat class="app-bar">
+    <v-app-bar
+      app
+      flat
+      class="app-bar"
+    >
       <!-- Секции -->
       <div class="nav-section">
         <v-btn
@@ -16,11 +49,13 @@
           variant="text"
           @click="switchSection(section.id)"
         >
-          <v-icon start>{{ section.icon }}</v-icon>
+          <v-icon start>
+            {{ section.icon }}
+          </v-icon>
           {{ section.title }}
         </v-btn>
       </div>
-      <v-spacer></v-spacer>
+      <v-spacer />
     </v-app-bar>
 
     <!-- Working Area -->
@@ -31,33 +66,6 @@
     </div>
   </div>
 </template>
-
-<script setup>
-import { computed } from 'vue'
-import { useAdminStore } from '@/components/admin/adminstate'
-// Импорты подмодулей (будут созданы позже)
-import SubModuleCatalogEditor from './SubModuleCatalogEditor.vue'
-import SubModuleCatalogSettingsVisualization from './SubModuleCatalogSettingsVisualization.vue'
-import SubModuleCatalogSettingsAccess from './SubModuleCatalogSettingsAccess.vue'
-
-// Инициализация store
-const adminStore = useAdminStore()
-
-// Определение секций
-const sections = [
-  { id: 'settings', title: 'настройки', icon: 'mdi-cog-outline' },
-  { id: 'visualization', title: 'визуализация', icon: 'mdi-view-dashboard-outline' },
-  { id: 'access', title: 'доступ', icon: 'mdi-shield-outline' }
-]
-
-// Получение активной секции из store
-const activeSection = computed(() => adminStore.getCurrentSection)
-
-// Переключение секций
-const switchSection = (sectionId) => {
-  adminStore.setActiveSection(sectionId)
-}
-</script>
 
 <style scoped>
 .app-bar {

@@ -4,6 +4,33 @@
  * и отображает соответствующие подмодули в рабочей области.
  * Предоставляет доступ к основным настройкам и визуальному оформлению приложения.
 -->
+<script setup lang="ts">
+import { computed } from 'vue'
+import { useAppAdminStore } from './state.app.admin'
+import type { AppSectionId, Section } from './types.app.admin'
+
+// Импорты подмодулей
+import SubModuleAppSettingsEditor from './settings/SubModuleAppSettingsEditor.vue'
+import SubModuleAppSettingsVisualization from './visualization/SubModuleAppSettingsVisualization.vue'
+
+// Инициализация store
+const appAdminStore = useAppAdminStore()
+
+// Определение секций
+const sections: Section[] = [
+  { id: 'settings', title: 'настройки', icon: 'mdi-cog-outline' },
+  { id: 'visualization', title: 'визуализация', icon: 'mdi-palette-outline' }
+]
+
+// Получение активной секции из store
+const activeSection = computed((): AppSectionId => appAdminStore.getCurrentSection)
+
+// Переключение секций
+const switchSection = (sectionId: AppSectionId): void => {
+  appAdminStore.setActiveSection(sectionId)
+}
+</script>
+
 <template>
   <div class="module-root">
     <!-- App Bar -->
@@ -31,31 +58,6 @@
     </div>
   </div>
 </template>
-
-<script setup>
-import { computed } from 'vue'
-import { useAdminStore } from '@/components/admin/adminstate'
-// Импорты подмодулей
-import SubModuleAppSettingsEditor from './SubModuleAppSettingsEditor.vue'
-import SubModuleAppSettingsVisualization from './SubModuleAppSettingsVisualization.vue'
-
-// Инициализация store
-const adminStore = useAdminStore()
-
-// Определение секций
-const sections = [
-  { id: 'settings', title: 'настройки', icon: 'mdi-cog-outline' },
-  { id: 'visualization', title: 'визуализация', icon: 'mdi-palette-outline' }
-]
-
-// Получение активной секции из store
-const activeSection = computed(() => adminStore.getCurrentAppSection)
-
-// Переключение секций
-const switchSection = (sectionId) => {
-  adminStore.setActiveAppSection(sectionId)
-}
-</script>
 
 <style scoped>
 .app-bar {

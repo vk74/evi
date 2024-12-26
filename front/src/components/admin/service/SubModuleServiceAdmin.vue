@@ -1,12 +1,55 @@
 <!--
-  Модуль администрирования сервисов SubModuleServiceAdmin.vue.
-  Обеспечивает навигацию между разделами управления сервисами через app bar
-  и отображает соответствующие подмодули в рабочей области.
+ * Модуль администрирования сервисов SubModuleServiceAdmin.vue.
+ * Обеспечивает навигацию между разделами управления сервисами через app bar
+ * и отображает соответствующие подмодули в рабочей области.
 -->
+<script setup lang="ts">
+import { computed } from 'vue'
+import { useServiceAdminStore } from './state.service.admin'
+import type { ServiceSection, ServiceSectionId } from './types.service.admin'
+import SubModuleServiceViewActiveServices from './ViewActiveServices/ViewActiveServices.vue'
+import SubModuleServiceViewAllServices from './ViewAllServices/ViewAllServices.vue'
+import SubModuleServiceEditor from './ServiceEditor/ServiceEditor.vue'
+
+// Инициализация store
+const serviceStore = useServiceAdminStore()
+
+// Определение секций
+const sections: ServiceSection[] = [
+  { 
+    id: 'active-services', 
+    title: 'активные сервисы', 
+    icon: 'mdi-check-circle-outline' 
+  },
+  { 
+    id: 'all-services', 
+    title: 'все сервисы', 
+    icon: 'mdi-view-grid-outline' 
+  }
+]
+
+// Получение активной секции из store
+const activeSection = computed(() => serviceStore.getCurrentSection)
+
+// Переключение секций
+const switchSection = (sectionId: ServiceSectionId): void => {
+  serviceStore.setActiveSection(sectionId)
+}
+
+// Открытие редактора нового сервиса
+const onServiceEditorClick = (): void => {
+  serviceStore.setActiveSection('editor')
+}
+</script>
+
 <template>
   <div class="module-root">
     <!-- App Bar -->
-    <v-app-bar app flat class="app-bar">
+    <v-app-bar
+      app
+      flat
+      class="app-bar"
+    >
       <!-- Секции и кнопка нового сервиса -->
       <div class="nav-section">
         <v-btn
@@ -16,22 +59,22 @@
           variant="text"
           @click="switchSection(section.id)"
         >
-          <v-icon start>{{ section.icon }}</v-icon>
+          <v-icon start>
+            {{ section.icon }}
+          </v-icon>
           {{ section.title }}
         </v-btn>
-
         <!-- Разделитель -->
-        <div class="separator"></div>
-
+        <div class="separator" />
         <!-- Кнопка нового сервиса -->
         <v-tooltip location="bottom">
-          <template v-slot:activator="{ props }">
+          <template #activator="{ props }">
             <v-btn
               icon
               v-bind="props"
-              @click="onServiceEditorClick"
               class="new-service-btn"
               color="rgba(0, 0, 0, 0.45)"
+              @click="onServiceEditorClick"
             >
               <v-icon>mdi-file-plus-outline</v-icon>
             </v-btn>
@@ -39,54 +82,17 @@
           <span>создать новый сервис</span>
         </v-tooltip>
       </div>
-      <v-spacer></v-spacer>
+      <v-spacer />
     </v-app-bar>
 
     <!-- Working Area -->
     <div class="working-area">
       <SubModuleServiceViewActiveServices v-if="activeSection === 'active-services'" />
       <SubModuleServiceViewAllServices v-if="activeSection === 'all-services'" />
-      <SubModuleServiceEditor v-if="activeSubModule === 'SubModuleServiceEditor'" />
+      <SubModuleServiceEditor v-if="activeSection === 'editor'" />
     </div>
   </div>
 </template>
-
-<script setup>
-import { computed } from 'vue'
-import { useAdminStore } from '@/components/admin/adminstate'
-import SubModuleServiceViewActiveServices from './ViewActiveServices.vue'
-import SubModuleServiceViewAllServices from './ViewAllServices.vue'
-import SubModuleServiceEditor from './ServiceEditor.vue'
-
-// Инициализация store
-const adminStore = useAdminStore()
-
-// Определение секций
-const sections = [
-  { id: 'active-services', title: 'активные сервисы', icon: 'mdi-check-circle-outline' },
-  { id: 'all-services', title: 'все сервисы', icon: 'mdi-view-grid-outline' }
-]
-
-// Получение активной секции из store
-const activeSection = computed(() => adminStore.getCurrentSection)
-
-// Получение активного подмодуля из store
-const activeSubModule = computed(() => adminStore.activeSubModule)
-
-// Переключение секций
-const switchSection = (sectionId) => {
-  adminStore.setActiveSection(sectionId)
-  // При переключении секции сбрасываем activeSubModule, если открыт редактор
-  if (adminStore.activeSubModule === 'SubModuleServiceEditor') {
-    adminStore.setActiveSubModule(null)
-  }
-}
-
-// Открытие редактора нового сервиса
-const onServiceEditorClick = () => {
-  adminStore.setActiveSubModule('SubModuleServiceEditor')
-}
-</script>
 
 <style scoped>
 .app-bar {

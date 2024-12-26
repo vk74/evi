@@ -17,19 +17,25 @@ import { ref, computed, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useStoreViewAllUsers } from './state.view.all.users'
 import type { TableHeader } from './types.view.all.users'
-import { useAdminStore } from '../../adminstate'
+import { useUsersAdminStore } from '../state.users.admin'
 
 // Инициализация i18n
 const { t } = useI18n()
 
-const adminStore = useAdminStore()
-
-// Инициализация хранилища
+// Инициализация хранилищ
 const usersStore = useStoreViewAllUsers()
+const usersSectionStore = useUsersAdminStore()
 
 // Параметры таблицы
 const page = ref<number>(usersStore.page)
 const itemsPerPage = ref<number>(usersStore.itemsPerPage)
+
+/**
+ * Обработчик создания нового пользователя
+ */
+ const createUser = () => {
+  usersSectionStore.setActiveSection('user-editor')
+}
 
 // Определение колонок таблицы как реактивного вычисляемого свойства
 const headers = computed<TableHeader[]>(() => [
@@ -48,15 +54,7 @@ const users = computed(() => usersStore.users)
 const loading = computed(() => usersStore.loading)
 const totalItems = computed(() => usersStore.totalItems)
 
-/**
- * Обработчик создания нового пользователя
- */
- const createUser = () => {
-  adminStore.$patch({
-    activeSubModule: 'SubModuleUserAdmin',  // Переключаемся на модуль управления пользователями
-    activeUserSection: 'user-editor'        // Переключаемся на секцию редактора пользователей
-  })
-}
+
 
 // Инициализация при монтировании компонента
 onMounted(async () => {
