@@ -563,8 +563,8 @@
 
 <script setup>
 import { ref } from 'vue'
-import { useUserStore } from '@/state/userstate'
-import { useUiStore } from '@/state/uistate'
+import { useUserStore } from '@/core/state/userstate'
+import { useUiStore } from '@/core/state/uistate'
 
 // Инициализируем store в начале, до использования
 const userStore = useUserStore()

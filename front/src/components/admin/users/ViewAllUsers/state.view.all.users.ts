@@ -15,7 +15,7 @@
 
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
-import { useUserStore } from '@/state/userstate'
+import { useUserStore } from '@/core/state/userstate'
 import { 
     IUser, 
     ItemsPerPageOption,

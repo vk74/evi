@@ -12,7 +12,7 @@
 */
 
 import { defineStore } from 'pinia';
-import { useUserStore } from '../../state/userstate';
+import { useUserStore } from '@/core/state/userstate';
 import axios from 'axios';
 
 export const useCatalogStore = defineStore('catalog', {

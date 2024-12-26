@@ -295,12 +295,12 @@ App.vue
 </template>
 
 <script setup>
-import { ref, computed, onMounted, watch } from 'vue';
-import { useUserStore } from './state/userstate';
-import { useUiStore } from './state/uistate';
-import { useAppStore } from './state/appstate';
+import { ref, computed, onMounted } from 'vue';
+import { useUserStore } from '@/core/state/userstate';
+import { useUiStore } from './core/state/uistate';
+import { useAppStore } from './core/state/appstate';
 import { useI18n } from 'vue-i18n';
-import { startSessionTimers } from './services/sessionServices';
+import { startSessionTimers } from '@/core/services/sessionServices';
 import ModuleCatalog from './components/catalog/ModuleCatalog.vue';
 import ModuleWork from './components/work/ModuleWork.vue';
 import ModuleAR from './components/ar/ModuleAR.vue';
@@ -313,7 +313,7 @@ import ModuleLogin from './components/account/ModuleLogin.vue';
 import ModalChangeUserPass from './components/account/ModalChangeUserPass.vue';
 import LoginDialog from './components/account/ModuleLogin.vue';
 import ModuleNewUserRegistration from './components/account/ModuleNewUserRegistration.vue';
-import AppSnackbar from './components/ui/snackbars/AppSnackbar.vue';
+import AppSnackbar from './core/ui/snackbars/AppSnackbar.vue';
 import { useStoreViewAllUsers } from './components/admin/users/ViewAllUsers/state.view.all.users';
 
 // Инициализация store и i18n

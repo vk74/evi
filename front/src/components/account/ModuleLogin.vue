@@ -22,8 +22,8 @@
 
 <script>
 import { jwtDecode } from 'jwt-decode';  // библиотека для декодирования JWT
-import { useUserStore } from '../../state/userstate'; // импорт Pinia store
-import { startSessionTimers } from '../../services/sessionServices'; // импорт функции управления сессией
+import { useUserStore } from '@/core/state/userstate'; // импорт Pinia store
+import { startSessionTimers } from '@/core/services/sessionServices'; // импорт функции управления сессией
 
 export default {
   name: 'ModuleLogin',

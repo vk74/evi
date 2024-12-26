@@ -4,7 +4,7 @@ import App from './App.vue';
 import { createPinia } from 'pinia';
 import piniaPluginPersistedstate from 'pinia-plugin-persistedstate';
 import { createI18n } from 'vue-i18n';
-import { startSessionTimers } from './services/sessionServices';
+import { startSessionTimers } from '@/core/services/sessionServices';
 import axios from 'axios';
 import '/styles/global.css';
 import vuetify from './plugins/vuetify';
@@ -55,7 +55,7 @@ app.config.globalProperties.$http = axios;
 
 // Функция инициализации состояния пользователя
 const initializeUserState = async () => {
-  const { useUserStore } = await import('./state/userstate');
+  const { useUserStore } = await import('@/core/state/userstate');
   const userStore = useUserStore();
   
   const token = localStorage.getItem('userToken');

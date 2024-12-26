@@ -11,7 +11,7 @@
 
 import axios, { AxiosInstance, AxiosError } from 'axios';
 import { axiosSettings } from './config';
-import { useUserStore } from '@/state/userstate';
+import { useUserStore } from '@/core/state/userstate';
 
 /**
  * Создаем и настраиваем axios инстанс

@@ -54,7 +54,7 @@
 </template>
 
 <script>
-import { useUserStore } from '../../state/userstate';
+import { useUserStore } from '@/core/state/userstate';
 
 export default {
   name: 'ModuleNewUserRegistration',

@@ -9,7 +9,7 @@
  */
 import { api } from '@/core/api/service.axios'
 import { useStoreViewAllUsers } from './state.view.all.users'
-import { useUserStore } from '@/state/userstate'
+import { useUserStore } from '@/core/state/userstate'
 import type { IUsersResponse } from './types.view.all.users'
 
 // Логгер для основных операций

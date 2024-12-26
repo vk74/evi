@@ -83,11 +83,11 @@
 </template>
 
 <script>
-import { useUserStore } from '../../state/userstate'; 
+import { useUserStore } from '@/core/state/userstate'; 
 import { computed } from 'vue';
 import axios from 'axios';
 import ModalChangeUserPass from './ModalChangeUserPass.vue'; 
-import { getSessionDurations } from '../../services/sessionServices';
+import { getSessionDurations } from '@/core/services/sessionServices';
 
 export default {
   name: 'ModuleAccount',

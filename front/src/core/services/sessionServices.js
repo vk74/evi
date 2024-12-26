@@ -1,7 +1,7 @@
 // src/services/sessionServices.js
-import { useUserStore } from '../state/userstate';
+import { useUserStore } from '@/core/state/userstate';
 import { createApp, h } from 'vue';
-import vuetify from '../plugins/vuetify'; 
+import vuetify from '../../plugins/vuetify'; 
 import { VBtn } from 'vuetify/lib/components';
 
 let sessionTimeout = null;

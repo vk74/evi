@@ -285,8 +285,8 @@
   <script setup>
 // ================== ИМПОРТЫ ==================
 import { ref, computed, onMounted, watch } from 'vue'
-import { useUiStore } from '@/state/uistate'
-import { useUserStore } from '@/state/userstate'
+import { useUiStore } from '@/core/state/uistate'
+import { useUserStore } from '@/core/state/userstate'
 import axios from 'axios'
 
 // ================== ОПРЕДЕЛЕНИЕ PROPS ==================

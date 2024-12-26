@@ -42,8 +42,8 @@
 
 <script setup>
 import { ref, computed, watch } from 'vue';
-import { useUserStore } from '../../state/userstate';
-import { useUiStore } from '../../state/uistate';
+import { useUserStore } from '@/core/state/userstate';
+import { useUiStore } from '../../core/state/uistate';
 
 // Props
 const props = defineProps({

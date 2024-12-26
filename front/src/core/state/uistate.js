@@ -3,8 +3,8 @@
  * Store для управления ...
  */
 import { defineStore } from 'pinia';
-import { SNACKBAR_DEFAULTS } from '@/components/ui/snackbars/constants';
-import { SnackbarType } from '@/components/ui/snackbars/types';
+import { SNACKBAR_DEFAULTS } from '../ui/snackbars/constants';
+import { SnackbarType } from '../ui/snackbars/types';
 
 export const useUiStore = defineStore('ui', {
   state: () => ({
