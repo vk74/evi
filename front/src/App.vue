@@ -362,6 +362,7 @@ const setActiveModule = (module) => {
 
 const logout = () => {
   usersListStore.clearCache();
+  usersListStore.clearSelection();
   userStore.userLogoff();
   appStore.setActiveModule('Catalog');
 };

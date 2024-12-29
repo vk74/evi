@@ -133,6 +133,7 @@ export const useStoreViewAllUsers = defineStore('viewAllUsers', () => {
             
             if (validation.expiresIn <= 4) {
                 clearCache()
+                clearSelection()
             } else {
                 // Перезапускаем таймер с обновленным временем
                 setupJWTCheck()
