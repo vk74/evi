@@ -50,7 +50,7 @@ export const deleteSelectedUsersService = {
         store.error = null
 
         try {
-            await api.post('/api/admin/users/delete-users', {
+            await api.post('/api/admin/users/delete-selected-users', {
                 userIds
             })
 

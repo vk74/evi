@@ -44,3 +44,14 @@ export type UserError = {
   message: string;        // Human-readable error message
   details?: unknown;      // Additional error context (optional)
 }
+
+// Интерфейс для запроса на удаление пользователей
+export interface IDeleteUsersRequest {
+  userIds: string[]; // массив UUID пользователей для удаления
+}
+
+// Интерфейс для ответа операции удаления
+export interface IDeleteUsersResponse {
+  success: boolean;
+  deletedCount: number; // количество успешно удаленных записей
+}

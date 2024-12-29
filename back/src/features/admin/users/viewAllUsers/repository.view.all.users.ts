@@ -54,7 +54,16 @@ const createUsersRepository = () => {
                 cacheTimer = null;
             }, 60 * 60 * 1000); // 60 минут в миллисекундах
             console.log('Timer started for 60 minutes for users list cache');
-        }
+        },
+
+        clearCache: (): void => {
+            console.log('Clearing users list cache');
+            cache = null;
+            if (cacheTimer) {
+              clearTimeout(cacheTimer);
+              cacheTimer = null;
+            }
+          }
     };
 };
 
