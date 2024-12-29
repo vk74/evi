@@ -1,5 +1,5 @@
 /**
- * @file state.view.all.users.ts
+ * state.view.all.users.ts
  * Pinia store for managing users list state.
  * 
  * Functionality:
@@ -41,7 +41,10 @@ export const useStoreViewAllUsers = defineStore('viewAllUsers', () => {
         sortBy: '',
         sortDesc: false
     })
+
     const jwtCheckTimer = ref<ReturnType<typeof setTimeout> | null>(null)
+
+    const selectedUsers = ref<string[]>([])
 
     // Getters
     const getUsers = computed(() => {
@@ -82,6 +85,8 @@ export const useStoreViewAllUsers = defineStore('viewAllUsers', () => {
 
         return result.slice(start, end)
     })
+
+    const selectedCount = computed(() => selectedUsers.value.length)
 
     // Actions
     /**
@@ -185,6 +190,23 @@ export const useStoreViewAllUsers = defineStore('viewAllUsers', () => {
         logger.info(`Sorting updated: ${field} ${sorting.value.sortDesc ? 'DESC' : 'ASC'}`)
     }
 
+    function selectUser(userId: string) {
+        if (!selectedUsers.value.includes(userId)) {
+            selectedUsers.value.push(userId)
+            logger.info(`User ${userId} selected`)
+        }
+    }
+
+    function deselectUser(userId: string) {
+        selectedUsers.value = selectedUsers.value.filter(id => id !== userId)
+        logger.info(`User ${userId} deselected`)
+    }
+
+    function clearSelection() {
+        selectedUsers.value = []
+        logger.info('Selection cleared')
+    }
+
     return {
         // State
         users,
@@ -194,14 +216,19 @@ export const useStoreViewAllUsers = defineStore('viewAllUsers', () => {
         itemsPerPage,
         totalItems,
         sorting,
+        selectedUsers,
         
         // Getters
         getUsers,
-        
+        selectedCount,
+
         // Actions
         updateCache,
         updateDisplayParams,
         updateSort,
-        clearCache
+        clearCache,
+        selectUser,
+        deselectUser,
+        clearSelection
     }
 })

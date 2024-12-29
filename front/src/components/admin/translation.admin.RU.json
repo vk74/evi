@@ -24,7 +24,9 @@
       "list": {
         "title": "список пользователей",
         "buttons": {
-          "create": "создать учетную запись"
+          "create": "создать учетную запись",
+          "delete": "удалить",
+          "deleteSelected": "удалить выбранные"
         },
         "table": {
           "headers": {
@@ -35,10 +37,19 @@
             "status": "статус",
             "lastName": "фамилия",
             "firstName": "имя",
-            "middleName": "отчество"
+            "middleName": "отчество",
+            "select": "выбор"
           }
+        },
+        "messages": {
+          "confirmDelete": "Вы уверены, что хотите удалить выбранных пользователей?",
+          "confirmDeleteSingle": "Вы уверены, что хотите удалить пользователя?"
         }
       }
     }
-  }
+  },
+  "common": {
+    "cancel": "отмена",
+    "delete": "удалить"
+  }  
 }

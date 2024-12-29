@@ -24,7 +24,9 @@
       "list": {
         "title": "users list",
         "buttons": {
-          "create": "create account"
+          "create": "create account",
+          "delete": "delete",
+          "deleteSelected": "delete selected"
         },
         "table": {
           "headers": {
@@ -35,10 +37,19 @@
             "status": "status",
             "lastName": "last name",
             "firstName": "first name",
-            "middleName": "middle name"
+            "middleName": "middle name",
+            "select": "select"
           }
+        },
+        "messages": {
+          "confirmDelete": "Are you sure you want to delete selected users?",
+          "confirmDeleteSingle": "Are you sure you want to delete this user?"
         }
       }
     }
+  },
+  "common": {
+    "cancel": "cancel",
+    "delete": "delete"
   }
 }

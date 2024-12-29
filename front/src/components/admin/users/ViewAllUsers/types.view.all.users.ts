@@ -1,5 +1,5 @@
 /**
- * @file types.view.all.users.ts
+ * types.view.all.users.ts
  * Type definitions for the user management frontend module.
  * 
  * This module provides TypeScript types and interfaces for:

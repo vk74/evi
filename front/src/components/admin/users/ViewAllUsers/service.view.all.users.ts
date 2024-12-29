@@ -1,5 +1,5 @@
 /**
- * @file service.view.all.users.ts
+ * service.view.all.users.ts
  * Service for fetching and managing users list data.
  *
  * Functionality:

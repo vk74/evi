@@ -10,9 +10,9 @@
  * - Обновление списка пользователей вручную
  * - Редактирование пользователей через UserEditor
  */
-
- <script setup lang="ts">
+<script setup lang="ts">
 import usersService from './service.view.all.users'
+import deleteSelectedUsersService from './service.delete.selected.users'
 import { ref, computed, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useStoreViewAllUsers } from './state.view.all.users'
@@ -30,31 +30,99 @@ const usersSectionStore = useUsersAdminStore()
 const page = ref<number>(usersStore.page)
 const itemsPerPage = ref<number>(usersStore.itemsPerPage)
 
-/**
- * Обработчик создания нового пользователя
- */
- const createUser = () => {
+// Состояние диалога подтверждения удаления
+const showDeleteDialog = ref(false)
+
+// Вычисляемые свойства для работы с выбранными пользователями
+const selectedCount = computed(() => usersStore.selectedCount)
+const hasSelected = computed(() => selectedCount.value > 0)
+
+// Обработчики действий с пользователями
+const createUser = () => {
   usersSectionStore.setActiveSection('user-editor')
 }
 
-// Определение колонок таблицы как реактивного вычисляемого свойства
+const onSelectUser = (userId: string, selected: boolean) => {
+  if (selected) {
+    usersStore.selectUser(userId)
+  } else {
+    usersStore.deselectUser(userId)
+  }
+}
+
+const isSelected = (userId: string) => {
+  return usersStore.selectedUsers.includes(userId)
+}
+
+const onDeleteSelected = () => {
+  showDeleteDialog.value = true
+}
+
+// В ViewAllUsers.vue
+const confirmDelete = async () => {
+  try {
+    await deleteSelectedUsersService.deleteSelectedUsers(usersStore.selectedUsers)
+  } catch (error) {
+    console.error('Error during users deletion:', error)
+    // Здесь можно добавить отображение ошибки пользователю
+  } finally {
+    showDeleteDialog.value = false  // Закрываем диалог в любом случае
+  }
+}
+
+const cancelDelete = () => {
+  showDeleteDialog.value = false
+}
+
+// Определение колонок таблицы
 const headers = computed<TableHeader[]>(() => [
-  { title: t('admin.users.list.table.headers.id'), key: 'user_id', width: '80px' },
-  { title: t('admin.users.list.table.headers.username'), key: 'username' },
-  { title: t('admin.users.list.table.headers.email'), key: 'email' },
-  { title: t('admin.users.list.table.headers.isStaff'), key: 'is_staff', width: '60px' },
-  { title: t('admin.users.list.table.headers.status'), key: 'account_status', width: '60px' },
-  { title: t('admin.users.list.table.headers.lastName'), key: 'last_name' },
-  { title: t('admin.users.list.table.headers.firstName'), key: 'first_name' },
-  { title: t('admin.users.list.table.headers.middleName'), key: 'middle_name' }
+  { 
+    title: t('admin.users.list.table.headers.select'), 
+    key: 'selection',
+    width: '40px',
+    sortable: false
+  },
+  { 
+    title: t('admin.users.list.table.headers.id'), 
+    key: 'user_id', 
+    width: '80px' 
+  },
+  { 
+    title: t('admin.users.list.table.headers.username'), 
+    key: 'username' 
+  },
+  { 
+    title: t('admin.users.list.table.headers.email'), 
+    key: 'email' 
+  },
+  { 
+    title: t('admin.users.list.table.headers.isStaff'), 
+    key: 'is_staff', 
+    width: '60px' 
+  },
+  { 
+    title: t('admin.users.list.table.headers.status'), 
+    key: 'account_status', 
+    width: '60px' 
+  },
+  { 
+    title: t('admin.users.list.table.headers.lastName'), 
+    key: 'last_name' 
+  },
+  { 
+    title: t('admin.users.list.table.headers.firstName'), 
+    key: 'first_name' 
+  },
+  { 
+    title: t('admin.users.list.table.headers.middleName'), 
+    key: 'middle_name' 
+  }
 ])
 
-// Вычисляемые свойства
+// Вычисляемые свойства для данных
 const users = computed(() => usersStore.users)
 const loading = computed(() => usersStore.loading)
 const totalItems = computed(() => usersStore.totalItems)
-
-
 
 // Инициализация при монтировании компонента
 onMounted(async () => {
@@ -74,7 +142,7 @@ onMounted(async () => {
       flat
       class="px-4 d-flex justify-space-between"
     >
-      <div>
+      <div class="d-flex align-center">
         <v-btn
           color="teal"
           variant="outlined"
@@ -83,7 +151,19 @@ onMounted(async () => {
         >
           {{ t('admin.users.list.buttons.create') }}
         </v-btn>
+        
+        <v-btn
+          v-if="hasSelected"
+          color="error"
+          variant="outlined"
+          class="mr-2"
+          @click="onDeleteSelected"
+        >
+          {{ t('admin.users.list.buttons.delete') }}
+          <span class="ml-2">({{ selectedCount }})</span>
+        </v-btn>
       </div>
+
       <v-app-bar-title class="text-subtitle-2 text-lowercase text-right">
         {{ t('admin.users.list.title') }}
       </v-app-bar-title>
@@ -99,6 +179,16 @@ onMounted(async () => {
       :items-per-page-options="[10, 25, 50, 100]"
       class="users-table"
     >
+      <!-- Шаблон для колонки с чекбоксами -->
+      <template #[`item.selection`]="{ item }">
+        <v-checkbox
+          :model-value="isSelected(item.user_id)"
+          @update:model-value="(value) => onSelectUser(item.user_id, value)"
+          density="compact"
+          hide-details
+        />
+      </template>
+
       <template #[`item.user_id`]="{ item }">
         <span>{{ item.user_id }}</span>
       </template>
@@ -117,9 +207,36 @@ onMounted(async () => {
         />
       </template>
     </v-data-table>
+
+    <!-- Диалог подтверждения удаления -->
+    <v-dialog
+      v-model="showDeleteDialog"
+      max-width="400"
+    >
+      <v-card>
+        <v-card-title class="text-subtitle-1 text-wrap">
+          {{ t('admin.users.list.messages.confirmDelete') }}
+        </v-card-title>
+        <v-card-actions>
+          <v-spacer />
+          <v-btn
+            color="grey"
+            variant="text"
+            class="text-none"
+            @click="cancelDelete"
+          >
+            {{ t('common.cancel') }}
+          </v-btn>
+          <v-btn
+            color="error"
+            variant="text"
+            class="text-none"
+            @click="confirmDelete"
+          >
+            {{ t('common.delete') }}
+          </v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
   </v-card>
 </template>
-
-<style scoped>
-
-</style>
