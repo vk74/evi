@@ -292,7 +292,10 @@
       </v-container>
 
       <!-- Секция участника групп -->
-      <v-container v-if="activeSection === 'groups'" class="content-container">
+      <v-container
+        v-if="activeSection === 'groups'"
+        class="content-container"
+      >
         <!-- Заглушка для будущей реализации -->
       </v-container>
     </div>
