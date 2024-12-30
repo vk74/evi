@@ -10,131 +10,142 @@
  * - Обновление списка пользователей вручную
  * - Редактирование пользователей через UserEditor
  */
-<script setup lang="ts">
-import usersService from './service.view.all.users'
-import deleteSelectedUsersService from './service.delete.selected.users'
-import { ref, computed, onMounted } from 'vue'
-import { useI18n } from 'vue-i18n'
-import { useStoreViewAllUsers } from './state.view.all.users'
-import type { TableHeader } from './types.view.all.users'
-import { useUsersAdminStore } from '../state.users.admin'
-
-// Инициализация i18n
-const { t } = useI18n()
-
-// Инициализация хранилищ
-const usersStore = useStoreViewAllUsers()
-const usersSectionStore = useUsersAdminStore()
-
-// Параметры таблицы
-const page = ref<number>(usersStore.page)
-const itemsPerPage = ref<number>(usersStore.itemsPerPage)
-
-// Состояние диалога подтверждения удаления
-const showDeleteDialog = ref(false)
-
-// Вычисляемые свойства для работы с выбранными пользователями
-const selectedCount = computed(() => usersStore.selectedCount)
-const hasSelected = computed(() => selectedCount.value > 0)
-
-// Обработчики действий с пользователями
-const createUser = () => {
-  usersSectionStore.setActiveSection('user-editor')
-}
-
-const onSelectUser = (userId: string, selected: boolean) => {
-  if (selected) {
-    usersStore.selectUser(userId)
-  } else {
-    usersStore.deselectUser(userId)
-  }
-}
-
-const isSelected = (userId: string) => {
-  return usersStore.selectedUsers.includes(userId)
-}
-
-const onDeleteSelected = () => {
-  showDeleteDialog.value = true
-}
-
-// В ViewAllUsers.vue
-const confirmDelete = async () => {
-  try {
-    await deleteSelectedUsersService.deleteSelectedUsers(usersStore.selectedUsers)
-  } catch (error) {
-    console.error('Error during users deletion:', error)
-    // Здесь можно добавить отображение ошибки пользователю
-  } finally {
-    showDeleteDialog.value = false  // Закрываем диалог в любом случае
-  }
-}
-
-const cancelDelete = () => {
-  showDeleteDialog.value = false
-}
-
-// Определение колонок таблицы
-const headers = computed<TableHeader[]>(() => [
-  { 
-    title: t('admin.users.list.table.headers.select'), 
-    key: 'selection',
-    width: '40px',
-    sortable: false
-  },
-  { 
-    title: t('admin.users.list.table.headers.id'), 
-    key: 'user_id', 
-    width: '80px' 
-  },
-  { 
-    title: t('admin.users.list.table.headers.username'), 
-    key: 'username' 
-  },
-  { 
-    title: t('admin.users.list.table.headers.email'), 
-    key: 'email' 
-  },
-  { 
-    title: t('admin.users.list.table.headers.isStaff'), 
-    key: 'is_staff', 
-    width: '60px' 
-  },
-  { 
-    title: t('admin.users.list.table.headers.status'), 
-    key: 'account_status', 
-    width: '60px' 
-  },
-  { 
-    title: t('admin.users.list.table.headers.lastName'), 
-    key: 'last_name' 
-  },
-  { 
-    title: t('admin.users.list.table.headers.firstName'), 
-    key: 'first_name' 
-  },
-  { 
-    title: t('admin.users.list.table.headers.middleName'), 
-    key: 'middle_name' 
-  }
-])
-
-// Вычисляемые свойства для данных
-const users = computed(() => usersStore.users)
-const loading = computed(() => usersStore.loading)
-const totalItems = computed(() => usersStore.totalItems)
-
-// Инициализация при монтировании компонента
-onMounted(async () => {
-  try {
-    if (!usersStore.users.length) {
-      await usersService.fetchUsers()
-    }
-  } catch (error) {
-    console.error('Error loading initial users list:', error)
-  }
-})
-</script>
+ <script setup lang="ts">
+ import usersService from './service.view.all.users'
+ import deleteSelectedUsersService from './service.delete.selected.users'
+ import { ref, computed, onMounted } from 'vue'
+ import { useI18n } from 'vue-i18n'
+ import { useStoreViewAllUsers } from './state.view.all.users'
+ import type { TableHeader } from './types.view.all.users'
+ import { useUsersAdminStore } from '../state.users.admin'
+ import { useUiStore } from '@/core/state/uistate'
+ 
+ // Инициализация сторов и i18n
+ const { t } = useI18n()
+ const usersStore = useStoreViewAllUsers()
+ const usersSectionStore = useUsersAdminStore()
+ const uiStore = useUiStore()
+ 
+ // Параметры таблицы
+ const page = ref<number>(usersStore.page)
+ const itemsPerPage = ref<number>(usersStore.itemsPerPage)
+ 
+ // Состояние диалога подтверждения удаления
+ const showDeleteDialog = ref(false)
+ 
+ // Вычисляемые свойства для работы с выбранными пользователями
+ const selectedCount = computed(() => usersStore.selectedCount)
+ const hasSelected = computed(() => selectedCount.value > 0)
+ 
+ // Обработчики действий с пользователями
+ const createUser = () => {
+   usersSectionStore.setActiveSection('user-editor')
+ }
+ 
+ const onSelectUser = (userId: string, selected: boolean) => {
+   if (selected) {
+     usersStore.selectUser(userId)
+   } else {
+     usersStore.deselectUser(userId)
+   }
+ }
+ 
+ const isSelected = (userId: string) => {
+   return usersStore.selectedUsers.includes(userId)
+ }
+ 
+ const onDeleteSelected = () => {
+   showDeleteDialog.value = true
+ }
+ 
+ const cancelDelete = () => {
+   showDeleteDialog.value = false
+ }
+ 
+ const confirmDelete = async () => {
+   console.log('[ViewAllUsers] Starting confirmDelete operation')
+   
+   try {
+     console.log('[ViewAllUsers] Calling delete service with selectedUsers:', usersStore.selectedUsers)
+     const deletedCount = await deleteSelectedUsersService.deleteSelectedUsers(usersStore.selectedUsers)
+     console.log('[ViewAllUsers] Service returned deletedCount:', deletedCount)
+     
+     console.log('[ViewAllUsers] Preparing success message')
+     const message = t('admin.users.list.messages.deleteUsersSuccess', { count: deletedCount })
+     console.log('[ViewAllUsers] Success message prepared:', message)
+     
+     console.log('[ViewAllUsers] Showing success notification')
+     uiStore.showSuccessSnackbar(message)
+     
+   } catch (error) {
+     console.error('[ViewAllUsers] Error during users deletion:', error)
+   } finally {
+     console.log('[ViewAllUsers] Closing delete dialog')
+     showDeleteDialog.value = false
+   }
+ }
+ 
+ // Определение колонок таблицы
+ const headers = computed<TableHeader[]>(() => [
+   { 
+     title: t('admin.users.list.table.headers.select'), 
+     key: 'selection',
+     width: '40px',
+     sortable: false
+   },
+   { 
+     title: t('admin.users.list.table.headers.id'), 
+     key: 'user_id', 
+     width: '80px' 
+   },
+   { 
+     title: t('admin.users.list.table.headers.username'), 
+     key: 'username' 
+   },
+   { 
+     title: t('admin.users.list.table.headers.email'), 
+     key: 'email' 
+   },
+   { 
+     title: t('admin.users.list.table.headers.isStaff'), 
+     key: 'is_staff', 
+     width: '60px' 
+   },
+   { 
+     title: t('admin.users.list.table.headers.status'), 
+     key: 'account_status', 
+     width: '60px' 
+   },
+   { 
+     title: t('admin.users.list.table.headers.lastName'), 
+     key: 'last_name' 
+   },
+   { 
+     title: t('admin.users.list.table.headers.firstName'), 
+     key: 'first_name' 
+   },
+   { 
+     title: t('admin.users.list.table.headers.middleName'), 
+     key: 'middle_name' 
+   }
+ ])
+ 
+ // Вычисляемые свойства для данных
+ const users = computed(() => usersStore.users)
+ const loading = computed(() => usersStore.loading)
+ const totalItems = computed(() => usersStore.totalItems)
+ 
+ // Инициализация при монтировании компонента
+ onMounted(async () => {
+   try {
+     if (!usersStore.users.length) {
+       await usersService.fetchUsers()
+     }
+   } catch (error) {
+     console.error('Error loading initial users list:', error)
+   }
+ })
+ </script>
 
 <template>
   <v-card flat>
@@ -183,9 +194,9 @@ onMounted(async () => {
       <template #[`item.selection`]="{ item }">
         <v-checkbox
           :model-value="isSelected(item.user_id)"
-          @update:model-value="(value) => onSelectUser(item.user_id, value)"
           density="compact"
           hide-details
+          @update:model-value="(value: boolean | null) => onSelectUser(item.user_id, value ?? false)"
         />
       </template>
 

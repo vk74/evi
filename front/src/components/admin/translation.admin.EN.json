@@ -1,4 +1,4 @@
-{
+ {
   "admin": {
     "nav": {
       "catalog": {
@@ -43,7 +43,8 @@
         },
         "messages": {
           "confirmDelete": "Are you sure you want to delete selected users?",
-          "confirmDeleteSingle": "Are you sure you want to delete this user?"
+          "confirmDeleteSingle": "Are you sure you want to delete this user?",
+          "deleteUsersSuccess": "Successfully deleted {count} user accounts. Users list has been updated."
         }
       }
     }
