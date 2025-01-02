@@ -1,7 +1,6 @@
 /**
- * @file ViewAllUsers.vue
+ * @file Userslist.vue
  * Компонент для отображения и управления списком пользователей системы.
- * Работает совместно с usersListStore и usersListService.
  *
  * Функциональность:
  * - Отображение пользователей в табличном виде с пагинацией
@@ -19,12 +18,15 @@
  import type { TableHeader } from './types.users.list'
  import { useUsersAdminStore } from '../state.users.admin'
  import { useUiStore } from '@/core/state/uistate'
+ import { useUserStore } from '@/core/state/userstate'
  
  // Инициализация сторов и i18n
  const { t } = useI18n()
  const usersStore = useStoreUsersList()
  const usersSectionStore = useUsersAdminStore()
  const uiStore = useUiStore()
+ const userStore = useUserStore()
+ const isAuthorized = computed(() => userStore.isLoggedIn)
  
  // Параметры таблицы
  const page = ref<number>(usersStore.page)
@@ -155,6 +157,7 @@
     >
       <div class="d-flex align-center">
         <v-btn
+          v-show="isAuthorized"
           color="teal"
           variant="outlined"
           class="mr-2"
@@ -164,7 +167,7 @@
         </v-btn>
         
         <v-btn
-          v-if="hasSelected"
+          v-show="isAuthorized && hasSelected"
           color="error"
           variant="outlined"
           class="mr-2"
