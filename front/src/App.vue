@@ -314,14 +314,14 @@ import ModalChangeUserPass from './components/account/ModalChangeUserPass.vue';
 import LoginDialog from './components/account/ModuleLogin.vue';
 import ModuleNewUserRegistration from './components/account/ModuleNewUserRegistration.vue';
 import AppSnackbar from './core/ui/snackbars/AppSnackbar.vue';
-import { useStoreViewAllUsers } from './components/admin/users/ViewAllUsers/state.view.all.users';
+import { useStoreUsersList } from './components/admin/users/UsersList/state.users.list';
 
 // Инициализация store и i18n
 const userStore = useUserStore();
 const uiStore = useUiStore();
 const appStore = useAppStore();
 const i18n = useI18n();
-const usersListStore = useStoreViewAllUsers();
+const usersListStore = useStoreUsersList();
 
 /*
 const publicPages = ['Login', 'NewUserRegistration']

@@ -15,14 +15,14 @@
  import deleteSelectedUsersService from './service.delete.selected.users'
  import { ref, computed, onMounted } from 'vue'
  import { useI18n } from 'vue-i18n'
- import { useStoreViewAllUsers } from './state.view.all.users'
- import type { TableHeader } from './types.view.all.users'
+ import { useStoreUsersList } from './state.users.list'
+ import type { TableHeader } from './types.users.list'
  import { useUsersAdminStore } from '../state.users.admin'
  import { useUiStore } from '@/core/state/uistate'
  
  // Инициализация сторов и i18n
  const { t } = useI18n()
- const usersStore = useStoreViewAllUsers()
+ const usersStore = useStoreUsersList()
  const usersSectionStore = useUsersAdminStore()
  const uiStore = useUiStore()
  

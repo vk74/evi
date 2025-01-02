@@ -3,10 +3,10 @@
  * Service for deleting selected users.
  */
 import { api } from '@/core/api/service.axios'
-import { useStoreViewAllUsers } from './state.view.all.users'
+import { useStoreUsersList } from './state.users.list'
 import { useUserStore } from '@/core/state/userstate'
 import usersService from './service.view.all.users'
-import type { IUser } from './types.view.all.users'
+import type { IUser } from './types.users.list'
 
 // Интерфейс для ответа API
 interface IDeleteUsersResponse {
@@ -29,7 +29,7 @@ export const deleteSelectedUsersService = {
   async deleteSelectedUsers(userIds: string[]): Promise<number> {
     logger.info('Starting deleteSelectedUsers with IDs:', { userIds })
 
-    const store = useStoreViewAllUsers()
+    const store = useStoreUsersList()
     logger.info('Store initialized')
 
     const userStore = useUserStore()

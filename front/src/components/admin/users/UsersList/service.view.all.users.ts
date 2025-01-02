@@ -8,9 +8,9 @@
  * - Provides logging for main operations
  */
 import { api } from '@/core/api/service.axios'
-import { useStoreViewAllUsers } from './state.view.all.users'
+import { useStoreUsersList } from './state.users.list'
 import { useUserStore } from '@/core/state/userstate'
-import type { IUsersResponse } from './types.view.all.users'
+import type { IUsersResponse } from './types.users.list'
 
 // Логгер для основных операций
 const logger = {
@@ -28,7 +28,7 @@ export const usersService = {
    * @throws {Error} При ошибке получения данных
    */
   async fetchUsers(): Promise<void> {
-    const store = useStoreViewAllUsers()
+    const store = useStoreUsersList()
     const userStore = useUserStore()
 
     // Проверка авторизации пользователя

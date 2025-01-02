@@ -21,7 +21,7 @@ import {
     ItemsPerPageOption,
     ISortParams,
     IJWTValidation 
-} from './types.view.all.users'
+} from './types.users.list'
 
 // Logger для основных операций
 const logger = {
@@ -29,7 +29,7 @@ const logger = {
     error: (message: string) => console.error(`[UsersStore] ${message}`)
 }
 
-export const useStoreViewAllUsers = defineStore('viewAllUsers', () => {
+export const useStoreUsersList = defineStore('viewAllUsers', () => {
     // State
     const users = ref<IUser[]>([])
     const loading = ref(false)

@@ -3,8 +3,8 @@
 import { computed } from 'vue'
 import { useUsersAdminStore } from './state.users.admin'
 import type { UserSectionId, Section } from './types.users.admin'
-import SubModuleUserViewAllUsers from './ViewAllUsers/ViewAllUsers.vue'
-import SubModuleUserViewAllGroups from './ViewAllGroups/ViewAllGroups.vue'
+import SubModuleUserViewAllUsers from './UsersList/UsersList.vue'
+import SubModuleUserViewAllGroups from './GroupsList/GroupsList.vue'
 import SubModuleUserEditor from './UserEditor/UserEditor.vue'
 import SubModuleGroupEditor from './GroupEditor/GroupEditor.vue'
 
