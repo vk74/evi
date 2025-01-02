@@ -1,5 +1,5 @@
 /**
- * @file repository.view.all.users.ts
+ * @file repository.users.list.ts
  * Repository for caching users list data.
  * 
  * Functionality:
@@ -15,7 +15,7 @@
  * 5. After timer expires, cache is cleared and next request will query database
  */
 
-import { IUsersResponse } from './types.view.all.users';
+import { IUsersResponse } from './types.users.list';
 
 // Создаем замыкание для хранения состояния кэша и таймера
 const createUsersRepository = () => {

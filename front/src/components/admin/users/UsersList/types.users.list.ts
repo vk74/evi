@@ -1,5 +1,5 @@
 /**
- * types.view.all.users.ts
+ * types.users.list.ts
  * Type definitions for the user management frontend module.
  * 
  * This module provides TypeScript types and interfaces for:
@@ -10,8 +10,8 @@
  * - Error handling types
  * 
  * Used by:
- * - ViewAllUsers.vue component
- * - state.view.all.users.ts store
+ * - UsersList.vue component
+ * - state.users.list.ts store
  * - service.view.all.users.ts service
  */
 

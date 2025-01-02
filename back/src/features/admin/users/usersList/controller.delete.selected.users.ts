@@ -10,7 +10,7 @@
  */
 
 import { Request, Response } from 'express';
-import { IDeleteUsersRequest, IDeleteUsersResponse, UserError } from './types.view.all.users';
+import { IDeleteUsersRequest, IDeleteUsersResponse, UserError } from './types.users.list';
 import { deleteSelectedUsers as deleteSelectedUsersService } from './service.delete.selected.users';
 
 // Вспомогательная функция для логирования

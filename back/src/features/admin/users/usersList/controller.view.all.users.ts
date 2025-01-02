@@ -1,6 +1,6 @@
 // controller.view.all.users.ts
 import { Request, Response } from 'express';
-import { IUsersResponse, UserError } from './types.view.all.users';
+import { IUsersResponse, UserError } from './types.users.list';
 import { getAllUsers as getAllUsersService } from './service.view.all.users';
 
 // Вспомогательная функция для логирования

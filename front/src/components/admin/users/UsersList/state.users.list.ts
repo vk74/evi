@@ -1,5 +1,5 @@
 /**
- * state.view.all.users.ts
+ * state.users.list.ts
  * Pinia store for managing users list state.
  * 
  * Functionality:
@@ -9,7 +9,7 @@
  * - Display parameters management (items per page, current page)
  * 
  * Used by:
- * - ViewAllUsers.vue component
+ * - UsersList.vue component
  * - service.view.all.users.ts service
  */
 

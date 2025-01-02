@@ -8,9 +8,9 @@
  * - Handles errors and logging
  */
 
-import { IDeleteUsersRequest, IDeleteUsersResponse, UserError } from './types.view.all.users';
-import { usersRepository } from './repository.view.all.users';
-import { queries } from './queries.view.all.users';
+import { IDeleteUsersRequest, IDeleteUsersResponse, UserError } from './types.users.list';
+import { usersRepository } from './repository.users.list';
+import { queries } from './queries.users.list';
 import { Pool } from 'pg';
 import { pool as pgPool } from '../../../../db/maindb';
 

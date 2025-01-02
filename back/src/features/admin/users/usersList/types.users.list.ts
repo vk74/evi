@@ -1,5 +1,5 @@
 /**
- * types.view.all.users.ts
+ * types.users.list.ts
  * Type definitions for the user management sub-module.
  * 
  * Functionality:
