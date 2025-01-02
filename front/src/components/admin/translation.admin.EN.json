@@ -1,4 +1,4 @@
- {
+{
   "admin": {
     "nav": {
       "catalog": {
@@ -21,10 +21,17 @@
       }
     },
     "users": {
+      "sections": {
+        "usersList": "users list",
+        "groupsList": "groups list",
+        "userEditor": "user editor",
+        "groupEditor": "group editor"
+      },
+      "moduleTitle": "users and groups management",
       "list": {
         "title": "users list",
         "buttons": {
-          "create": "create account",
+          "create": "create user account",
           "delete": "delete",
           "deleteSelected": "delete selected"
         },

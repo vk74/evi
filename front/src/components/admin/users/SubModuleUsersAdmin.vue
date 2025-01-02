@@ -1,44 +1,58 @@
-<!-- SubModuleUserAdmin.vue -->
-<script setup lang="ts">
-import { computed } from 'vue'
-import { useUsersAdminStore } from './state.users.admin'
-import type { UserSectionId, Section } from './types.users.admin'
-import SubModuleUserViewAllUsers from './UsersList/UsersList.vue'
-import SubModuleUserViewAllGroups from './GroupsList/GroupsList.vue'
-import SubModuleUserEditor from './UserEditor/UserEditor.vue'
-import SubModuleGroupEditor from './GroupEditor/GroupEditor.vue'
+/**
+ * @file SubModuleUsersAdmin.vue
+ * Компонент для управления разделами административного модуля пользователей и групп.
+ * 
+ * Функциональность:
+ * - Навигация между разделами (список пользователей, список групп, редакторы)
+ * - Отображение активного раздела
+ * - Управление состоянием через Pinia store
+ * - Многоязычный интерфейс с использованием i18n
+ */
 
-const usersStore = useUsersAdminStore()
-
-const sections: Section[] = [
-  { 
-    id: 'users', 
-    title: 'список пользователей', 
-    icon: 'mdi-account-multiple-outline' 
-  },
-  { 
-    id: 'groups', 
-    title: 'список групп', 
-    icon: 'mdi-account-group-outline' 
-  },
-  { 
-    id: 'user-editor', 
-    title: 'редактор пользователей', 
-    icon: 'mdi-account-plus-outline' 
-  },
-  { 
-    id: 'group-editor', 
-    title: 'редактор групп', 
-    icon: 'mdi-account-multiple-plus-outline' 
-  }
-]
-
-const activeSection = computed((): UserSectionId => usersStore.getCurrentSection)
-
-const switchSection = (sectionId: UserSectionId): void => {
-  usersStore.setActiveSection(sectionId)
-}
-</script>
+ <script setup lang="ts">
+ import { computed } from 'vue'
+ import { useI18n } from 'vue-i18n'
+ import { useUsersAdminStore } from './state.users.admin'
+ import type { UserSectionId, Section } from './types.users.admin'
+ import SubModuleUsersList from './UsersList/UsersList.vue'
+ import SubModuleGroupsList from './GroupsList/GroupsList.vue'
+ import SubModuleUserEditor from './UserEditor/UserEditor.vue'
+ import SubModuleGroupEditor from './GroupEditor/GroupEditor.vue'
+ 
+ // Инициализация i18n и store
+ const { t } = useI18n()
+ const usersStore = useUsersAdminStore()
+ 
+ // Определение секций административного модуля как вычисляемого свойства
+ const sections = computed((): Section[] => [
+   {
+     id: 'users',
+     title: t('admin.users.sections.usersList'),
+     icon: 'mdi-account-multiple-outline'
+   },
+   {
+     id: 'groups',
+     title: t('admin.users.sections.groupsList'),
+     icon: 'mdi-account-group-outline'
+   },
+   {
+     id: 'user-editor',
+     title: t('admin.users.sections.userEditor'),
+     icon: 'mdi-account-plus-outline'
+   },
+   {
+     id: 'group-editor',
+     title: t('admin.users.sections.groupEditor'),
+     icon: 'mdi-account-multiple-plus-outline'
+   }
+ ])
+ 
+ // Вычисляемые свойства и методы для управления секциями
+ const activeSection = computed((): UserSectionId => usersStore.getCurrentSection)
+ const switchSection = (sectionId: UserSectionId): void => {
+   usersStore.setActiveSection(sectionId)
+ }
+ </script>
 
 <template>
   <div class="module-root">
@@ -48,7 +62,7 @@ const switchSection = (sectionId: UserSectionId): void => {
       flat
       class="app-bar"
     >
-      <!-- Секции -->
+      <!-- Навигация по секциям -->
       <div class="nav-section">
         <v-btn
           v-for="section in sections"
@@ -68,19 +82,19 @@ const switchSection = (sectionId: UserSectionId): void => {
       </div>
       <v-spacer />
       <div class="module-title">
-        управление пользователями и группами
+        {{ t('admin.users.moduleTitle') }}
       </div>
     </v-app-bar>
 
-    <!-- Working Area -->
+    <!-- Рабочая область -->
     <div class="working-area">
-      <SubModuleUserViewAllUsers v-if="activeSection === 'users'" />
-      <SubModuleUserViewAllGroups v-if="activeSection === 'groups'" />
-      <SubModuleUserEditor 
+      <SubModuleUsersList v-if="activeSection === 'users'" />
+      <SubModuleGroupsList v-if="activeSection === 'groups'" />
+      <SubModuleUserEditor
         v-if="activeSection === 'user-editor'"
-        mode="create" 
+        mode="create"
       />
-      <SubModuleGroupEditor 
+      <SubModuleGroupEditor
         v-if="activeSection === 'group-editor'"
         mode="create"
       />
