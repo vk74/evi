@@ -1,192 +1,159 @@
 /**
- * state.user.editor.ts
- * Pinia store for managing user editor state.
- */
+* state.user.editor.ts
+* Pinia store для управления состоянием редактора пользователей.
+*
+* Функциональность:
+* - Хранение данных форм в режиме создания нового пользователя
+* - Управление состоянием UI
+* - Подготовка данных для отправки в API
+*/
 
 import { defineStore } from 'pinia'
-import { ref, computed } from 'vue'
+import { AccountStatus, Gender } from './types.user.editor'
 import type { 
-    IUserAccount, 
-    IUserProfile,
-    EditorMode
+  IUserAccount,
+  IUserProfile,
+  IEditorUIState,
+  ICreateUserRequest 
 } from './types.user.editor'
-import { AccountStatus, Gender } from './types.user.editor'  // Добавлен импорт Gender
 
-// Logger для основных операций
-const logger = {
-    info: (message: string, meta?: object) => console.log(`[UserEditorStore] ${message}`, meta || ''),
-    error: (message: string, error?: unknown) => console.error(`[UserEditorStore] ${message}`, error || '')
+/**
+* Интерфейс состояния хранилища
+*/
+interface UserEditorState {
+ account: IUserAccount
+ profile: IUserProfile
+ ui: IEditorUIState
 }
 
-export const useUserEditorStore = defineStore('userEditor', () => {
-    // State
-    const editorMode = ref<EditorMode>({ mode: 'create' })
-    const loading = ref<boolean>(false)
-    const error = ref<string | null>(null)
-    
-    // Form data
-    const userAccount = ref<IUserAccount>({
-        username: '',
-        email: '',
-        password: '',
-        passwordConfirm: '',  // Добавлено для валидации
-        is_staff: false,
-        account_status: AccountStatus.ACTIVE,
-        first_name: '',
-        middle_name: null,
-        last_name: '',
-    })
+/**
+* Начальные значения для формы аккаунта
+*/
+const initialAccountState: IUserAccount = {
+ username: '',
+ email: '',
+ password: '',
+ passwordConfirm: '',
+ is_staff: false,
+ account_status: AccountStatus.ACTIVE,
+ first_name: '',
+ middle_name: null,
+ last_name: '',
+}
 
-    const userProfile = ref<IUserProfile>({
-        phone_number: null,
-        address: null,
-        company_name: null,
-        position: null,
-        gender: null,
-        reserve1: null,
-        reserve2: null,
-        reserve3: null
-    })
+/**
+* Начальные значения для формы профиля
+*/
+const initialProfileState: IUserProfile = {
+ phone_number: null,
+ address: null,
+ company_name: null,
+ position: null,
+ gender: null,
+}
 
-    // Form validation states
-    const isAccountFormValid = ref<boolean>(false)
-    const isProfileFormValid = ref<boolean>(false)
-    const hasInteracted = ref<boolean>(false)
-    const showRequiredFieldsWarning = ref<boolean>(false)
-    const isSubmitting = ref<boolean>(false)
+/**
+* Начальные значения для состояния UI
+*/
+const initialUIState: IEditorUIState = {
+ activeSection: 'account',
+ showPassword: false,
+ isSubmitting: false,
+ hasInteracted: false,
+}
 
-    // Form validation results from validator
-    const requiredFieldsComplete = ref<boolean>(false)
-    const userInputsValidated = ref<boolean>(false)
+/**
+* Определение хранилища
+*/
+export const useUserEditorStore = defineStore('userEditor', {
+ state: (): UserEditorState => ({
+   account: { ...initialAccountState },
+   profile: { ...initialProfileState },
+   ui: { ...initialUIState }
+ }),
 
-    // Computed
-    const isEditMode = computed(() => editorMode.value.mode === 'edit')
-    
-    const requiredFieldsFilled = computed(() => {
-        const account = userAccount.value
-        return Boolean(
-            account.username &&
-            account.email &&
-            account.password &&
-            account.passwordConfirm &&
-            account.password === account.passwordConfirm &&
-            account.first_name &&
-            account.last_name
-        )
-    })
+ actions: {
+   /**
+    * Обновление данных аккаунта
+    */
+   updateAccount(data: Partial<IUserAccount>) {
+     console.log('Updating account data:', data)
+     this.account = { ...this.account, ...data }
+   },
 
-    const isFormValid = computed(() => {
-        return isAccountFormValid.value && 
-               isProfileFormValid.value && 
-               requiredFieldsFilled.value &&
-               requiredFieldsComplete.value &&
-               userInputsValidated.value
-    })
+   /**
+    * Обновление данных профиля
+    */
+   updateProfile(data: Partial<IUserProfile>) {
+     console.log('Updating profile data:', data)
+     this.profile = { ...this.profile, ...data }
+   },
 
-    // Actions
-    function initializeEditor(mode: EditorMode) {
-        editorMode.value = mode
-        logger.info(`Editor initialized in ${mode.mode} mode`, 
-            mode.mode === 'edit' ? { userId: mode.userId } : undefined
-        )
-    }
+   /**
+    * Обновление состояния UI
+    */
+   updateUIState(data: Partial<IEditorUIState>) {
+     console.log('Updating UI state:', data)
+     this.ui = { ...this.ui, ...data }
+   },
 
-    function resetForms() {
-        userAccount.value = {
-            username: '',
-            email: '',
-            password: '',
-            passwordConfirm: '',
-            is_staff: false,
-            account_status: AccountStatus.ACTIVE,
-            first_name: '',
-            middle_name: null,
-            last_name: ''
-        }
+   /**
+    * Переключение секции
+    */
+   switchSection(section: 'account' | 'profile') {
+     console.log('Switching to section:', section)
+     this.ui.activeSection = section
+   },
 
-        userProfile.value = {
-            phone_number: null,
-            address: null,
-            company_name: null,
-            position: null,
-            gender: null,
-            reserve1: null,
-            reserve2: null,
-            reserve3: null
-        }
+   /**
+    * Переключение видимости пароля
+    */
+   togglePasswordVisibility() {
+     console.log('Toggling password visibility')
+     this.ui.showPassword = !this.ui.showPassword
+   },
 
-        isAccountFormValid.value = false
-        isProfileFormValid.value = false
-        hasInteracted.value = false
-        showRequiredFieldsWarning.value = false
-        error.value = null
+   /**
+    * Сброс формы к начальным значениям
+    */
+   resetForm() {
+     console.log('Resetting form to initial state')
+     this.account = { ...initialAccountState }
+     this.profile = { ...initialProfileState }
+     this.ui = { ...initialUIState }
+   },
 
-        logger.info('Forms reset to initial state')
-    }
+   /**
+    * Установка состояния отправки формы
+    */
+   setSubmitting(isSubmitting: boolean) {
+     console.log('Setting submitting state:', isSubmitting)
+     this.ui.isSubmitting = isSubmitting
+   },
 
-    function setFormValidation(form: 'account' | 'profile', isValid: boolean) {
-        if (form === 'account') {
-            isAccountFormValid.value = isValid
-        } else {
-            isProfileFormValid.value = isValid
-        }
-        logger.info(`${form} form validation state updated`, { isValid })
-    }
-
-    function updateAccountData(data: Partial<IUserAccount>) {
-        userAccount.value = { ...userAccount.value, ...data }
-        logger.info('Account data updated')
-    }
-
-    function updateProfileData(data: Partial<IUserProfile>) {
-        userProfile.value = { ...userProfile.value, ...data }
-        // Валидация значения gender при обновлении
-        if (data.gender !== undefined && data.gender !== null) {
-            if (![Gender.MALE, Gender.FEMALE, null].includes(data.gender)) {
-                logger.error('Invalid gender value provided')
-                return
-            }
-        }
-        logger.info('Profile data updated')
-    }
-
-    function setRequiredFieldsComplete(isComplete: boolean) {
-        requiredFieldsComplete.value = isComplete
-        logger.info('Required fields completion status updated:', { isComplete })
-    }
-    
-    function setUserInputsValidated(isValid: boolean) {
-        userInputsValidated.value = isValid
-        logger.info('User inputs validation status updated:', { isValid })
-    }
-
-    return {
-        // State
-        editorMode,
-        loading,
-        error,
-        userAccount,
-        userProfile,
-        isAccountFormValid,
-        isProfileFormValid,
-        hasInteracted,
-        showRequiredFieldsWarning,
-        isSubmitting,
-        requiredFieldsComplete,
-        userInputsValidated,
-
-        // Computed
-        isEditMode,
-        requiredFieldsFilled,
-        isFormValid,
-
-        // Actions
-        initializeEditor,
-        resetForms,
-        setFormValidation,
-        updateAccountData,
-        updateProfileData,
-        setRequiredFieldsComplete,
-        setUserInputsValidated,
-    }
+   /**
+    * Подготовка данных для отправки в API
+    */
+   prepareRequestData(): ICreateUserRequest {
+     console.log('Preparing data for API request')
+     const { account, profile } = this
+     
+     return {
+       username: account.username,
+       email: account.email,
+       password: account.password,
+       account_status: account.account_status,
+       is_staff: account.is_staff,
+       first_name: account.first_name,
+       last_name: account.last_name,
+       middle_name: account.middle_name,
+       gender: profile.gender === Gender.MALE ? 'm' : 
+               profile.gender === Gender.FEMALE ? 'f' : null,
+       phone_number: profile.phone_number,
+       address: profile.address,
+       company_name: profile.company_name,
+       position: profile.position
+     }
+   }
+ }
 })

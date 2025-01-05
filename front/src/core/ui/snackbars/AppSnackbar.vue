@@ -1,4 +1,4 @@
-// Основной компонент, обертка над v-snackbar из Vuetify
+// Кор компонент, обертка над v-snackbar из Vuetify
 
 <template>
   <v-snackbar

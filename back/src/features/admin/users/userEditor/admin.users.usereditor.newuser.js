@@ -1,7 +1,6 @@
 // admin.users.usereditor.newuser.js
 // File purpose: Middleware for handling new user creation from admin panel
 // Processes user account data and profile information, validates input, and saves to database
-// Note: name fields (first_name, middle_name, last_name) are now stored in app.users table
 
 const bcrypt = require('bcrypt');
 const { pool } = require('../../../../db/maindb');
@@ -158,12 +157,15 @@ const adminNewUser = async (req, res) => {
             await pool.query('COMMIT');
             console.log('Transaction committed successfully');
 
-            return res.status(201).json({
+            const successResponse = {
+                success: true,
                 message: 'учетная запись пользователя создана',
                 userId,
                 username,
                 email
-            });
+            };
+            console.log('Sending success response to frontend:', successResponse);
+            return res.status(201).json(successResponse);
 
         } catch (error) {
             await pool.query('ROLLBACK');
