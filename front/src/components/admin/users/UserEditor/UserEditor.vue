@@ -11,12 +11,6 @@
     * Валидация всех полей по установленным правилам
   - Управление участием пользователя в группах (только в режиме редактирования)
 -->
-/**
- * UserEditor.vue
- * 
- * Компонент для создания новой учетной записи пользователя.
- * Содержит единую форму с валидацией полей и уведомлениями о заполнении.
- */
 
  <script setup lang="ts">
  import { ref, computed, onMounted, watch } from 'vue'
@@ -24,10 +18,6 @@
  import { createUserService } from './service.create.new.user'
  import { useUiStore } from '@/core/state/uistate'
  import { AccountStatus, Gender } from './types.user.editor'
- import type { 
-   IUserAccount, 
-   IUserProfile,
- } from './types.user.editor'
  
  // ==================== STORES ====================
  const userEditorStore = useUserEditorStore()
