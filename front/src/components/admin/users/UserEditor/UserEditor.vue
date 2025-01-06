@@ -18,6 +18,7 @@
  import { createUserService } from './service.create.new.user'
  import { useUiStore } from '@/core/state/uistate'
  import { AccountStatus, Gender } from './types.user.editor'
+import { usernameRules, emailRules, passwordRules, mobilePhoneRules } from '@/core/validation/rules.common.fields'
  
  // ==================== STORES ====================
  const userEditorStore = useUserEditorStore()
@@ -60,25 +61,7 @@
   * Регулярные выражения для валидации
   */
  const nameRegex = /^[a-zA-Zа-яА-Я\- ]+$/
- 
- const usernameRules = [
-   (v: string) => !!v || 'название учетной записи обязательно',
-   (v: string) => (v && v.length <= 64) || 'название учетной записи не может быть длиннее 64 символов',
-   (v: string) => /^[a-zA-Zа-яА-Я0-9\-._]+$/.test(v) || 'разрешены только буквы, цифры, дефис, точка и нижнее подчеркивание'
- ]
- 
- const emailRules = [
-   (v: string) => !!v || 'e-mail обязателен',
-   (v: string) => /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(v) || 'некорректный e-mail адрес'
- ]
- 
- const passwordRules = [
-   (v: string) => !!v || 'пароль обязателен',
-   (v: string) => (v && v.length >= 8) || 'пароль должен быть не короче 8 символов',
-   (v: string) => (v && v.length <= 40) || 'пароль не может быть длиннее 40 символов',
-   (v: string) => /^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{8,40}$/.test(v) || 'пароль должен содержать буквы и цифры'
- ]
- 
+
  const firstNameRules = [
    (v: string) => !!v || 'имя обязательно',
    (v: string) => (v && v.length >= 2) || 'имя должно быть не короче 2 символов',
@@ -96,10 +79,6 @@
    (v: string) => (v && v.length >= 2) || 'фамилия должна быть не короче 2 символов',
    (v: string) => (v && v.length <= 50) || 'фамилия не может быть длиннее 50 символов',
    (v: string) => !v || nameRegex.test(v) || 'фамилия может содержать только буквы, пробелы и дефис'
- ]
- 
- const phoneRules = [
-   (v: string) => !v || /^\+[\d\s]{11,15}$/.test(v) || 'неверный формат телефона'
  ]
  
  const addressRules = [
@@ -430,7 +409,7 @@
                   <v-text-field
                     :model-value="userEditorStore.profile.phone_number"
                     label="телефон"
-                    :rules="phoneRules"
+                    :rules="mobilePhoneRules"
                     variant="outlined"
                     density="comfortable"
                     placeholder="+7 XXX XXX XXXX"
