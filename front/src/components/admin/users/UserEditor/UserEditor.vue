@@ -18,7 +18,7 @@
  import { createUserService } from './service.create.new.user'
  import { useUiStore } from '@/core/state/uistate'
  import { AccountStatus, Gender } from './types.user.editor'
-import { usernameRules, emailRules, passwordRules, mobilePhoneRules } from '@/core/validation/rules.common.fields'
+ import { usernameRules, emailRules, passwordRules, mobilePhoneRules } from '@/core/validation/rules.common.fields'
  
  // ==================== STORES ====================
  const userEditorStore = useUserEditorStore()
@@ -131,6 +131,7 @@ import { usernameRules, emailRules, passwordRules, mobilePhoneRules } from '@/co
    return cleaned ? '+' + cleaned : '+'
  }
  
+ /*
  const normalizePhoneNumber = (phone: string | null): string | null => {
    if (!phone) return null
    return '+' + phone.replace(/[^\d]/g, '')
@@ -148,7 +149,23 @@ import { usernameRules, emailRules, passwordRules, mobilePhoneRules } from '@/co
      userEditorStore.updateProfile({ phone_number: '+' })
    }
  }
- 
+ */
+
+  /**
+   * Загрузка данных пользователя для редактирования
+   */
+  const loadUserData = async (userId: string) => {
+    try {
+      await loadUserService.fetchUserById(userId)
+    } catch (error) {
+      uiStore.showErrorSnackbar(
+        error instanceof Error ? error.message : 'Ошибка загрузки данных пользователя',
+        { timeout: 15000 }
+      )
+    }
+  }
+
+
  /**
   * Сброс формы
   */
@@ -217,15 +234,31 @@ import { usernameRules, emailRules, passwordRules, mobilePhoneRules } from '@/co
     <!-- App Bar с фиксированным фоном -->
     <v-app-bar flat class="editor-app-bar">
       <div style="margin-left: 15px;">
+        <!-- Кнопка создания (видна только в режиме создания) -->
         <v-btn
+          v-if="userEditorStore.mode.mode === 'create'"
           color="teal"
           variant="outlined"
           @click="saveUser"
           :disabled="!isFormValid || isSubmitting"
           class="mr-2"
         >
-          создать учетную запись
+          создать
         </v-btn>
+
+        <!-- Кнопка обновления (видна только в режиме редактирования) -->
+        <v-btn
+          v-if="userEditorStore.mode.mode === 'edit'"
+          color="teal"
+          variant="outlined"
+          @click="updateUser"
+          :disabled="!isFormValid || isSubmitting"
+          class="mr-2"
+        >
+          обновить данные пользователя
+        </v-btn>
+
+        <!-- Кнопка сброса (видна всегда) -->
         <v-btn
           variant="outlined"
           @click="resetForm"
@@ -235,8 +268,10 @@ import { usernameRules, emailRules, passwordRules, mobilePhoneRules } from '@/co
       </div>
 
       <v-spacer></v-spacer>
+      
+      <!-- Динамический заголовок в зависимости от режима -->
       <v-toolbar-title class="title-text">
-        создание учетной записи
+        {{ userEditorStore.mode.mode === 'create' ? 'создание учетной записи' : 'редактирование учетной записи' }}
       </v-toolbar-title>
     </v-app-bar>
 
@@ -260,7 +295,7 @@ import { usernameRules, emailRules, passwordRules, mobilePhoneRules } from '@/co
                     :rules="usernameRules"
                     variant="outlined"
                     density="comfortable"
-                    counter="64"
+                    counter="25"
                     required
                   />
                 </v-col>
@@ -407,14 +442,12 @@ import { usernameRules, emailRules, passwordRules, mobilePhoneRules } from '@/co
               <v-row class="pt-3">
                 <v-col cols="12" md="6">
                   <v-text-field
-                    :model-value="userEditorStore.profile.phone_number"
-                    label="телефон"
+                    v-model="userEditorStore.profile.mobile_phone_number"
+                    label="мобильный телефон"
                     :rules="mobilePhoneRules"
                     variant="outlined"
                     density="comfortable"
                     placeholder="+7 XXX XXX XXXX"
-                    @input="handlePhoneInput"
-                    @focus="handlePhoneFocus"
                   />
                 </v-col>
                 <v-col cols="12">
@@ -458,36 +491,13 @@ import { usernameRules, emailRules, passwordRules, mobilePhoneRules } from '@/co
 </template>
 
 <style scoped>
-.editor-app-bar {
- background-color: #FFFFFF !important;
-}
-
 .title-text {
  margin-right: 15px;
  text-align: right;
  font-family: 'Roboto', sans-serif;
  font-size: 1.1rem;
- font-weight: 400;
+ font-weight: 300;
  letter-spacing: 0.5px;
  color: rgba(0, 0, 0, 0.6);
-}
-
-.content-container {
- margin-top: 5px;
- padding-left: 5px;
- padding-top: 0;
- padding-right: 0;
- padding-bottom: 0;
- height: 100%;
-}
-
-.card-header {
- padding: 5px 5px 0 10px;
-}
-
-.section-divider {
- border-color: rgba(0, 0, 0, 0.87) !important;
- margin-top: 5px;
- margin-bottom: 5px;
 }
 </style>

@@ -17,6 +17,7 @@
  import { useStoreUsersList } from './state.users.list'
  import type { TableHeader } from './types.users.list'
  import { useUsersAdminStore } from '../state.users.admin'
+ import loadUserService from '../UserEditor/service.load.user'
  import { useUiStore } from '@/core/state/uistate'
  import { useUserStore } from '@/core/state/userstate'
  
@@ -54,9 +55,7 @@
  
  const hasOneSelected = computed(() => selectedCount.value === 1)
 
- const editUser = () => {
-  usersSectionStore.setActiveSection('user-editor')
-}
+
 
  const isSelected = (userId: string) => {
    return usersStore.selectedUsers.includes(userId)
@@ -92,6 +91,35 @@
      showDeleteDialog.value = false
    }
  }
+
+    // Функция для получения ID единственного выбранного пользователя
+    const getSelectedUserId = (): string => {
+      console.log('[ViewAllUsers] Getting selected user ID')
+      return usersStore.selectedUsers[0]
+    }
+
+    // Функция для обработки клика по кнопке редактирования
+    const editUser = async () => {
+      console.log('[ViewAllUsers] Starting edit user operation')
+      
+      try {
+        const userId = getSelectedUserId()
+        console.log('[ViewAllUsers] Selected user ID:', userId)
+        
+        // Загружаем данные пользователя
+        await loadUserService.fetchUserById(userId)
+        console.log('[ViewAllUsers] User data loaded successfully')
+        
+        // Переходим к редактированию
+        usersSectionStore.setActiveSection('user-editor')
+        
+      } catch (error) {
+        console.error('[ViewAllUsers] Error loading user data:', error)
+        uiStore.showErrorSnackbar(
+          error instanceof Error ? error.message : 'Ошибка загрузки данных пользователя'
+        )
+      }
+    }
  
  // Определение колонок таблицы
  const headers = computed<TableHeader[]>(() => [

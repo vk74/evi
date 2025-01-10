@@ -14,17 +14,9 @@ import type {
   IUserAccount,
   IUserProfile,
   IEditorUIState,
-  ICreateUserRequest 
+  ICreateUserRequest, 
+  UserEditorState
 } from './types.user.editor'
-
-/**
-* Интерфейс состояния хранилища
-*/
-interface UserEditorState {
- account: IUserAccount
- profile: IUserProfile
- ui: IEditorUIState
-}
 
 /**
 * Начальные значения для формы аккаунта
@@ -45,7 +37,7 @@ const initialAccountState: IUserAccount = {
 * Начальные значения для формы профиля
 */
 const initialProfileState: IUserProfile = {
- phone_number: null,
+ mobile_phone_number: null,
  address: null,
  company_name: null,
  position: null,
@@ -60,6 +52,7 @@ const initialUIState: IEditorUIState = {
  showPassword: false,
  isSubmitting: false,
  hasInteracted: false,
+ isFormChanged: false,
 }
 
 /**
@@ -69,7 +62,10 @@ export const useUserEditorStore = defineStore('userEditor', {
  state: (): UserEditorState => ({
    account: { ...initialAccountState },
    profile: { ...initialProfileState },
-   ui: { ...initialUIState }
+   ui: { ...initialUIState },
+   mode: {
+     mode: 'create'
+   }
  }),
 
  actions: {
@@ -91,28 +87,42 @@ export const useUserEditorStore = defineStore('userEditor', {
 
    /**
     * Обновление состояния UI
-    */
+    *
    updateUIState(data: Partial<IEditorUIState>) {
      console.log('Updating UI state:', data)
      this.ui = { ...this.ui, ...data }
    },
 
    /**
-    * Переключение секции
-    */
-   switchSection(section: 'account' | 'profile') {
-     console.log('Switching to section:', section)
-     this.ui.activeSection = section
-   },
-
-   /**
     * Переключение видимости пароля
-    */
+    *
    togglePasswordVisibility() {
      console.log('Toggling password visibility')
      this.ui.showPassword = !this.ui.showPassword
    },
+   */
 
+  // Добавляем новый action
+  initEditMode(data: { user: IUserAccount; profile: IUserProfile }) {
+    console.log('Initializing edit mode with user data')
+    
+    // Устанавливаем режим редактирования
+    this.mode = {
+      mode: 'edit',
+      userId: data.user.user_id as string
+    }
+    
+    // Сохраняем оригинальные данные
+    this.originalData = {
+      account: { ...data.user },
+      profile: { ...data.profile }
+    }
+    
+    // Обновляем текущие данные через существующие actions
+    this.updateAccount(data.user)
+    this.updateProfile(data.profile)
+  },
+   
    /**
     * Сброс формы к начальным значениям
     */
@@ -149,7 +159,7 @@ export const useUserEditorStore = defineStore('userEditor', {
        middle_name: account.middle_name,
        gender: profile.gender === Gender.MALE ? 'm' : 
                profile.gender === Gender.FEMALE ? 'f' : null,
-       phone_number: profile.phone_number,
+       mobile_phone_number: profile.mobile_phone_number,
        address: profile.address,
        company_name: profile.company_name,
        position: profile.position
