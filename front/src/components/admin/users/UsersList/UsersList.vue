@@ -52,6 +52,12 @@
    }
  }
  
+ const hasOneSelected = computed(() => selectedCount.value === 1)
+
+ const editUser = () => {
+  usersSectionStore.setActiveSection('user-editor')
+}
+
  const isSelected = (userId: string) => {
    return usersStore.selectedUsers.includes(userId)
  }
@@ -157,20 +163,33 @@
     >
       <div class="d-flex align-center">
         <v-btn
-          v-show="isAuthorized"
+          v-if="isAuthorized"
           color="teal"
           variant="outlined"
           class="mr-2"
+          :disabled="hasSelected"
           @click="createUser"
         >
           {{ t('admin.users.list.buttons.create') }}
         </v-btn>
         
         <v-btn
-          v-show="isAuthorized && hasSelected"
+          v-if="isAuthorized"
+          color="teal"
+          variant="outlined"
+          class="mr-2"
+          :disabled="!hasOneSelected"
+          @click="editUser"
+        >
+          {{ t('admin.users.list.buttons.edit') }}
+        </v-btn>
+        
+        <v-btn
+          v-if="isAuthorized"
           color="error"
           variant="outlined"
           class="mr-2"
+          :disabled="!hasSelected"
           @click="onDeleteSelected"
         >
           {{ t('admin.users.list.buttons.delete') }}

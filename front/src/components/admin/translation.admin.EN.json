@@ -33,6 +33,7 @@
         "buttons": {
           "create": "create user account",
           "delete": "delete",
+          "edit": "edit",
           "deleteSelected": "delete selected"
         },
         "table": {
