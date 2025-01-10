@@ -12,14 +12,14 @@ const adminNewUser = async (req, res) => {
         
         const { 
             username, password, email, first_name, last_name,
-            middle_name, gender, phone_number, address, 
+            middle_name, gender, mobile_phone_number, address, 
             company_name, position, is_staff, account_status
         } = req.body;
 
         console.log('Received data for new user:', {
             username,
             email,
-            phone_number: phone_number || 'not provided'
+            mobile_phone_number: mobile_phone_number || 'not provided'
         });
 
         // Валидация обязательных полей
@@ -56,13 +56,13 @@ const adminNewUser = async (req, res) => {
         console.log('Starting uniqueness checks for user:', {
             username,
             email,
-            phone_number: phone_number || 'not provided'
+            mobile_phone_number: mobile_phone_number || 'not provided'
         });
 
         console.log('Using SQL queries:', {
             username_query: userQueries.checkUsername.text,
             email_query: userQueries.checkEmail.text,
-            phone_query: userQueries.checkPhone.text
+            mobile_phone_query: userQueries.checkPhone.text
         });
 
         // Проверка уникальности полей
@@ -82,11 +82,11 @@ const adminNewUser = async (req, res) => {
         ];
 
         // Добавляем проверку телефона только если он указан
-        if (phone_number) {
+        if (mobile_phone_number) {
             console.log('Adding phone number check');
             uniqueChecks.push({
                 query: userQueries.checkPhone.text,
-                params: [phone_number],
+                params: [mobile_phone_number],
                 field: 'номер телефона',
                 message: 'уже используется другим пользователем'
             });
@@ -146,7 +146,7 @@ const adminNewUser = async (req, res) => {
                 [
                     userId,         // $1
                     gender,         // $2
-                    phone_number,   // $3
+                    mobile_phone_number,   // $3
                     address,        // $4
                     company_name,   // $5
                     position        // $6

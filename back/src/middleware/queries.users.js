@@ -12,7 +12,7 @@ const userQueries = {
     },
     checkPhone: {
         name: 'check-phone',
-        text: 'SELECT user_id FROM app.user_profiles WHERE phone_number = $1'
+        text: 'SELECT user_id FROM app.user_profiles WHERE mobile_phone_number = $1'
     },
     // вставка данных со страницы самостоятельной регистрации пользователя (не все поля, часть данных пользователь может самостоятельно внести у себя в профиле, или их добавит админ)
     insertUser: {
@@ -26,7 +26,7 @@ const userQueries = {
     insertProfile: {
         name: 'insert-user-profile',
         text: `INSERT INTO app.user_profiles
-            (user_id, first_name, last_name, phone_number, address)
+            (user_id, first_name, last_name, mobile_phone_number, address)
             VALUES ($1, $2, $3, $4, $5)`
     },
     // вставка данных со страницы регистрации пользователя в административном модуле (все поля)
@@ -34,7 +34,7 @@ const userQueries = {
         name: 'insert-admin-user-profile',
         text: `INSERT INTO app.user_profiles
             (user_id, first_name, last_name, middle_name, gender, 
-            phone_number, address, company_name, position)
+            mobile_phone_number, address, company_name, position)
             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`
     },
     // Аутентификация
@@ -69,7 +69,7 @@ const userQueries = {
             up.first_name,
             up.last_name,
             up.middle_name,
-            up.phone_number,
+            up.mobile_phone_number,
             up.address,
             up.company_name,
             up.position,
@@ -85,7 +85,7 @@ const userQueries = {
                 last_name = $2,
                 middle_name = $3,
                 gender = $4,
-                phone_number = $5,
+                mobile_phone_number = $5,
                 address = $6,
                 company_name = $7,
                 position = $8
@@ -114,7 +114,7 @@ const userQueries = {
     insertAdminUserProfileWithoutNames: {
         name: 'insert-admin-user-profile-without-names',
         text: `INSERT INTO app.user_profiles
-            (user_id, gender, phone_number, address, company_name, position)
+            (user_id, gender, mobile_phone_number, address, company_name, position)
             VALUES ($1, $2, $3, $4, $5, $6)`
     }
 };
