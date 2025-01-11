@@ -311,7 +311,8 @@
                     density="comfortable"
                     :items="[
                       { title: 'мужской', value: Gender.MALE },
-                      { title: 'женский', value: Gender.FEMALE }
+                      { title: 'женский', value: Gender.FEMALE },
+                      { title: 'не указано', value: Gender.NOTDEFINED }
                     ]"
                     item-title="title"
                     item-value="value"

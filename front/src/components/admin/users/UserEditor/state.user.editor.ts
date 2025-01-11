@@ -42,7 +42,7 @@ const initialProfileState: IUserProfile = {
  address: '', //null,
  company_name: '', //null,
  position: '', //null,
- gender: null,
+ gender: '' //null,
 }
 
 /**
@@ -88,6 +88,7 @@ export const useUserEditorStore = defineStore('userEditor', {
      console.log('Updating profile data:', data)
      this.profile = { ...this.profile, ...data }
    },
+
 
   // Добавляем новый action
   initEditMode(data: { user: IUserAccount; profile: IUserProfile }) {
@@ -144,8 +145,9 @@ export const useUserEditorStore = defineStore('userEditor', {
        first_name: account.first_name,
        last_name: account.last_name,
        middle_name: account.middle_name,
-       gender: profile.gender === Gender.MALE ? 'm' : 
-               profile.gender === Gender.FEMALE ? 'f' : null,
+       gender: profile.gender === Gender.MALE ? 'm' 
+              : profile.gender === Gender.FEMALE ? 'f'
+              : 'n',
        mobile_phone_number: profile.mobile_phone_number,
        address: profile.address,
        company_name: profile.company_name,

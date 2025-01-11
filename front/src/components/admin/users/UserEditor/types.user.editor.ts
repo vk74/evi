@@ -20,8 +20,9 @@ export enum AccountStatus {
 
 
 export enum Gender {
-  MALE = 'male',
-  FEMALE = 'female'
+  MALE = 'm',
+  FEMALE = 'f',
+  NOTDEFINED = 'n'
 }
 
 /**
@@ -65,7 +66,7 @@ export interface IUserProfile {
   address: string                 // 
   company_name: string            // character varying(255)
   position: string                // character varying(255)
-  gender: Gender | null           // app.gender
+  gender: string //Gender // | null           // app.gender
 }
 
 /**
@@ -91,7 +92,7 @@ export interface ICreateUserRequest {
   first_name: string
   last_name: string
   middle_name: string 
-  gender: 'm' | 'f' | null
+  gender: 'm' | 'f' | 'n' // null
   mobile_phone_number: string 
   address: string 
   company_name: string 
