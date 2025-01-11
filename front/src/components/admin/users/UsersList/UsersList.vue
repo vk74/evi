@@ -18,6 +18,7 @@
  import type { TableHeader } from './types.users.list'
  import { useUsersAdminStore } from '../state.users.admin'
  import loadUserService from '../UserEditor/service.load.user'
+ import { useUserEditorStore } from '../UserEditor/state.user.editor'
  import { useUiStore } from '@/core/state/uistate'
  import { useUserStore } from '@/core/state/userstate'
  
@@ -42,7 +43,29 @@
  
  // Обработчики действий с пользователями
  const createUser = () => {
-   usersSectionStore.setActiveSection('user-editor')
+  console.log('[ViewAllUsers] Starting create user operation')
+  
+  try {
+    // Получаем store для UserEditor
+    const userEditorStore = useUserEditorStore()
+    
+    // Сбрасываем форму к начальным значениям
+    userEditorStore.resetForm()
+    
+    // Устанавливаем режим создания
+    userEditorStore.mode = {
+      mode: 'create'
+    }
+    
+    // Переключаем секцию на редактор пользователя
+    usersSectionStore.setActiveSection('user-editor')
+    
+  } catch (error) {
+    console.error('[ViewAllUsers] Error initializing create mode:', error)
+    uiStore.showErrorSnackbar(
+      error instanceof Error ? error.message : 'Ошибка инициализации режима создания'
+    )
+  }
  }
  
  const onSelectUser = (userId: string, selected: boolean) => {
