@@ -18,6 +18,7 @@ export enum AccountStatus {
   REQUIRES_USER_ACTION = 'requires_user_action'
 }
 
+
 export enum Gender {
   MALE = 'male',
   FEMALE = 'female'
@@ -46,12 +47,12 @@ export interface IUserAccount {
   email: string                    // character varying(255)
   password: string                 // text (хранится как hashed_password)
   passwordConfirm: string          // только для валидации формы
-  is_staff: boolean               // boolean
-  account_status: AccountStatus    // app.account_status
-  first_name: string              // character varying(50)
-  middle_name: string | null      // character varying(50)
-  last_name: string               // character varying(50)
-  created_at?: Date               // timestamp with timezone
+  is_staff: boolean                // boolean
+  account_status: string           // app.account_status
+  first_name: string               // character varying(50)
+  middle_name: string              // character varying(50)
+  last_name: string                // character varying(50)
+  created_at?: Date                // timestamp with timezone
 }
 
 /**
@@ -60,10 +61,10 @@ export interface IUserAccount {
 export interface IUserProfile {
   profile_id?: string             // uuid
   user_id?: string                // uuid связь с app.users
-  mobile_phone_number: string | null     // character varying(15)
-  address: string | null          // text
-  company_name: string | null     // character varying(255)
-  position: string | null         // character varying(255)
+  mobile_phone_number: string     // character varying(15)
+  address: string                 // 
+  company_name: string            // character varying(255)
+  position: string                // character varying(255)
   gender: Gender | null           // app.gender
 }
 
@@ -85,16 +86,16 @@ export interface ICreateUserRequest {
   username: string
   email: string
   password: string
-  account_status: AccountStatus
+  account_status: string // AccountStatus
   is_staff: boolean
   first_name: string
   last_name: string
-  middle_name: string | null
+  middle_name: string 
   gender: 'm' | 'f' | null
-  mobile_phone_number: string | null
-  address: string | null
-  company_name: string | null
-  position: string | null
+  mobile_phone_number: string 
+  address: string 
+  company_name: string 
+  position: string 
 }
 
 // Интерфейс для ответа API

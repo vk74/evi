@@ -9,7 +9,8 @@
 */
 
 import { defineStore } from 'pinia'
-import { AccountStatus, Gender } from './types.user.editor'
+//import { AccountStatus, Gender } from './types.user.editor'
+import { Gender } from './types.user.editor'
 import type { 
   IUserAccount,
   IUserProfile,
@@ -27,9 +28,9 @@ const initialAccountState: IUserAccount = {
  password: '',
  passwordConfirm: '',
  is_staff: false,
- account_status: AccountStatus.ACTIVE,
+ account_status: '',  // AccountStatus.ACTIVE,
  first_name: '',
- middle_name: null,
+ middle_name: '', //null,
  last_name: '',
 }
 
@@ -37,10 +38,10 @@ const initialAccountState: IUserAccount = {
 * Начальные значения для формы профиля
 */
 const initialProfileState: IUserProfile = {
- mobile_phone_number: null,
- address: null,
- company_name: null,
- position: null,
+ mobile_phone_number: '', //null,
+ address: '', //null,
+ company_name: '', //null,
+ position: '', //null,
  gender: null,
 }
 
@@ -59,14 +60,17 @@ const initialUIState: IEditorUIState = {
 * Определение хранилища
 */
 export const useUserEditorStore = defineStore('userEditor', {
- state: (): UserEditorState => ({
-   account: { ...initialAccountState },
-   profile: { ...initialProfileState },
-   ui: { ...initialUIState },
-   mode: {
-     mode: 'create'
-   }
- }),
+  state: (): UserEditorState => ({
+    account: { ...initialAccountState },
+    profile: { ...initialProfileState },
+    ui: { ...initialUIState },
+    mode: {
+      mode: 'create'
+    },
+    originalData: undefined
+  }),
+
+// getters
 
  actions: {
    /**
@@ -84,23 +88,6 @@ export const useUserEditorStore = defineStore('userEditor', {
      console.log('Updating profile data:', data)
      this.profile = { ...this.profile, ...data }
    },
-
-   /**
-    * Обновление состояния UI
-    *
-   updateUIState(data: Partial<IEditorUIState>) {
-     console.log('Updating UI state:', data)
-     this.ui = { ...this.ui, ...data }
-   },
-
-   /**
-    * Переключение видимости пароля
-    *
-   togglePasswordVisibility() {
-     console.log('Toggling password visibility')
-     this.ui.showPassword = !this.ui.showPassword
-   },
-   */
 
   // Добавляем новый action
   initEditMode(data: { user: IUserAccount; profile: IUserProfile }) {

@@ -738,7 +738,7 @@
     </mxGraphModel>
   </diagram>
   <diagram id="isww2otGbUuB_dp6Xj4z" name="page lifecycle">
-    <mxGraphModel dx="3362" dy="690" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="2336" pageHeight="1654" math="0" shadow="0">
+    <mxGraphModel dx="9044" dy="2788" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="2336" pageHeight="1654" math="0" shadow="0">
       <root>
         <mxCell id="0" />
         <mxCell id="1" parent="0" />
@@ -755,25 +755,25 @@
           <mxGeometry x="-2150" y="300" width="60" height="30" as="geometry" />
         </mxCell>
         <mxCell id="hFoT4BBJ4kwxUY1JRt-M-4" value="created" style="text;html=1;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;" parent="1" vertex="1">
-          <mxGeometry x="-1523" y="300" width="60" height="30" as="geometry" />
+          <mxGeometry x="-2010" y="310" width="60" height="30" as="geometry" />
         </mxCell>
         <mxCell id="hFoT4BBJ4kwxUY1JRt-M-5" value="beforeMount" style="text;html=1;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;" parent="1" vertex="1">
-          <mxGeometry x="-896" y="300" width="60" height="30" as="geometry" />
+          <mxGeometry x="-1840" y="310" width="60" height="30" as="geometry" />
         </mxCell>
         <mxCell id="hFoT4BBJ4kwxUY1JRt-M-6" value="mounted" style="text;html=1;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;" parent="1" vertex="1">
-          <mxGeometry x="-269" y="300" width="60" height="30" as="geometry" />
+          <mxGeometry x="-1640" y="310" width="60" height="30" as="geometry" />
         </mxCell>
         <mxCell id="hFoT4BBJ4kwxUY1JRt-M-7" value="beforeUpdate" style="text;html=1;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;" parent="1" vertex="1">
-          <mxGeometry x="359" y="300" width="60" height="30" as="geometry" />
+          <mxGeometry x="-1470" y="310" width="60" height="30" as="geometry" />
         </mxCell>
         <mxCell id="hFoT4BBJ4kwxUY1JRt-M-8" value="updated" style="text;html=1;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;" parent="1" vertex="1">
-          <mxGeometry x="986" y="300" width="60" height="30" as="geometry" />
+          <mxGeometry x="-1280" y="310" width="60" height="30" as="geometry" />
         </mxCell>
         <mxCell id="hFoT4BBJ4kwxUY1JRt-M-9" value="beforeUnmount" style="text;html=1;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;" parent="1" vertex="1">
-          <mxGeometry x="1613" y="300" width="60" height="30" as="geometry" />
+          <mxGeometry x="-1100" y="310" width="60" height="30" as="geometry" />
         </mxCell>
         <mxCell id="hFoT4BBJ4kwxUY1JRt-M-10" value="unmounted" style="text;html=1;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;" parent="1" vertex="1">
-          <mxGeometry x="2240" y="300" width="60" height="30" as="geometry" />
+          <mxGeometry x="-880" y="310" width="60" height="30" as="geometry" />
         </mxCell>
         <mxCell id="hFoT4BBJ4kwxUY1JRt-M-11" value="Lifecycle hooks" style="text;html=1;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;" parent="1" vertex="1">
           <mxGeometry x="-2300" y="300" width="100" height="30" as="geometry" />
@@ -1203,7 +1203,7 @@
         <mxCell id="3VfYue7QZ4IWv_uMdxXZ-39" value="getters&lt;br&gt;&lt;br&gt;&lt;b&gt;Actor1&lt;/b&gt;" style="html=1;align=center;verticalAlign=middle;dashed=0;whiteSpace=wrap;fillColor=#b1ddf0;strokeColor=#10739e;" parent="1" vertex="1">
           <mxGeometry x="280" y="280" width="160" height="80" as="geometry" />
         </mxCell>
-        <mxCell id="3VfYue7QZ4IWv_uMdxXZ-40" value="template&lt;div&gt;1.&amp;nbsp;&lt;div&gt;&lt;br&gt;&lt;/div&gt;&lt;div&gt;3.&amp;nbsp; вызов сервисов для CRUD операций&lt;/div&gt;&lt;/div&gt;" style="html=1;align=left;verticalAlign=middle;dashed=0;whiteSpace=wrap;fillColor=#b1ddf0;strokeColor=#10739e;" parent="1" vertex="1">
+        <mxCell id="3VfYue7QZ4IWv_uMdxXZ-40" value="&lt;div&gt;script&lt;/div&gt;&lt;div&gt;1.&amp;nbsp;&lt;span style=&quot;background-color: transparent; color: light-dark(rgb(0, 0, 0), rgb(255, 255, 255));&quot;&gt;вызов сервисов для CRUD операций&lt;/span&gt;&lt;/div&gt;&lt;div&gt;&lt;br&gt;&lt;/div&gt;template&lt;div&gt;1. v-model для привязи полей формы&lt;div&gt;&lt;br&gt;&lt;/div&gt;&lt;div&gt;&lt;br&gt;&lt;/div&gt;&lt;/div&gt;" style="html=1;align=left;verticalAlign=middle;dashed=0;whiteSpace=wrap;fillColor=#b1ddf0;strokeColor=#10739e;" parent="1" vertex="1">
           <mxGeometry x="280" y="600" width="160" height="240" as="geometry" />
         </mxCell>
         <mxCell id="3VfYue7QZ4IWv_uMdxXZ-41" value="форма или функция" style="html=1;align=center;verticalAlign=middle;dashed=0;whiteSpace=wrap;fillColor=#b1ddf0;strokeColor=#10739e;" parent="1" vertex="1">

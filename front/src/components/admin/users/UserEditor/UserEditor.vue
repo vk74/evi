@@ -18,6 +18,7 @@
  import { createUserService } from './service.create.new.user'
  import { useUiStore } from '@/core/state/uistate'
  import { AccountStatus, Gender } from './types.user.editor'
+
  import { usernameRules, emailRules, passwordRules, mobilePhoneRules } from '@/core/validation/rules.common.fields'
  
  // ==================== STORES ====================
@@ -123,48 +124,6 @@
  })
  
  // ==================== METHODS ====================
- /**
-  * Форматирование и обработка телефонного номера
-  */
- const formatPhoneNumber = (number: string): string => {
-   const cleaned = number.replace(/[^\d\s]/g, '')
-   return cleaned ? '+' + cleaned : '+'
- }
- 
- /*
- const normalizePhoneNumber = (phone: string | null): string | null => {
-   if (!phone) return null
-   return '+' + phone.replace(/[^\d]/g, '')
- }
- 
- const handlePhoneInput = (event: Event) => {
-   const input = (event.target as HTMLInputElement).value
-   userEditorStore.updateProfile({
-     phone_number: formatPhoneNumber(input.startsWith('+') ? input.slice(1) : input)
-   })
- }
- 
- const handlePhoneFocus = () => {
-   if (!userEditorStore.profile.phone_number) {
-     userEditorStore.updateProfile({ phone_number: '+' })
-   }
- }
- */
-
-  /**
-   * Загрузка данных пользователя для редактирования
-   */
-  const loadUserData = async (userId: string) => {
-    try {
-      await loadUserService.fetchUserById(userId)
-    } catch (error) {
-      uiStore.showErrorSnackbar(
-        error instanceof Error ? error.message : 'Ошибка загрузки данных пользователя',
-        { timeout: 15000 }
-      )
-    }
-  }
-
 
  /**
   * Сброс формы
@@ -361,6 +320,9 @@
               </v-row>
             </v-col>
 
+            <!-- Временный отладочный вывод 
+            <p>Current mode: {{ userEditorStore.mode.mode }}</p> -->
+
             <!-- Блок 2: Безопасность -->
             <v-col cols="12">
               <div class="card-header mt-6">
@@ -369,43 +331,45 @@
               </div>
 
               <v-row class="pt-3">
-                <v-col cols="12" md="5">
-                  <v-text-field
-                    v-model="userEditorStore.account.password"
-                    label="пароль*"
-                    :rules="passwordRules"
-                    variant="outlined"
-                    density="comfortable"
-                    :type="showPassword ? 'text' : 'password'"
-                    counter="40"
-                    required
-                  />
-                </v-col>
-                <v-col cols="12" md="5">
-                  <v-text-field
-                    v-model="userEditorStore.account.passwordConfirm"
-                    label="подтверждение пароля*"
-                    :rules="[(v) => v === userEditorStore.account.password || 'пароли не совпадают']"
-                    variant="outlined"
-                    density="comfortable"
-                    :type="showPassword ? 'text' : 'password'"
-                    counter="40"
-                    required
-                  />
-                </v-col>
-                <v-col cols="12" md="2" class="d-flex align-center">
-                  <v-btn
-                    icon
-                    variant="text"
-                    @click="showPassword = !showPassword"
-                    class="ml-n2"
-                  >
-                    <v-icon>
-                      {{ showPassword ? 'mdi-eye-off' : 'mdi-eye' }}
-                    </v-icon>
-                  </v-btn>
-                </v-col>
-
+                <!-- Поля пароля показываются только в режиме компонента EditMode -->
+                <template v-if="userEditorStore.mode.mode === 'create'">
+                  <v-col cols="12" md="5">
+                    <v-text-field
+                      v-model="userEditorStore.account.password"
+                      label="пароль*"
+                      :rules="passwordRules"
+                      variant="outlined"
+                      density="comfortable"
+                      :type="showPassword ? 'text' : 'password'"
+                      counter="40"
+                      required
+                    />
+                  </v-col>
+                  <v-col cols="12" md="5">
+                    <v-text-field
+                      v-model="userEditorStore.account.passwordConfirm"
+                      label="подтверждение пароля*"
+                      :rules="[(v) => v === userEditorStore.account.password || 'пароли не совпадают']"
+                      variant="outlined"
+                      density="comfortable"
+                      :type="showPassword ? 'text' : 'password'"
+                      counter="40"
+                      required
+                    />
+                  </v-col>
+                  <v-col cols="12" md="2" class="d-flex align-center">
+                    <v-btn
+                      icon
+                      variant="text"
+                      @click="showPassword = !showPassword"
+                      class="ml-n2"
+                    >
+                      <v-icon>
+                        {{ showPassword ? 'mdi-eye-off' : 'mdi-eye' }}
+                      </v-icon>
+                    </v-btn>
+                  </v-col>
+                </template>
                 <v-col cols="12" md="6">
                   <v-select
                     v-model="userEditorStore.account.account_status"

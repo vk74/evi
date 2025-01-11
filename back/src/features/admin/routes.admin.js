@@ -18,6 +18,8 @@ router.get('/api/admin/users/view-all-users', validateJWT, getAllUsers);
 //return selected user by user id
 router.get('/api/admin/users/fetch-user-by-userid/:userId', validateJWT, loadUserById);
 
+// /api/admin/users/update-user-by-userid
+
 //delete selected user by user id
 router.post('/api/admin/users/delete-selected-users', validateJWT, deleteSelectedUsers);
 
