@@ -66,7 +66,7 @@ export interface IUserProfile {
   address: string                 // 
   company_name: string            // character varying(255)
   position: string                // character varying(255)
-  gender: string //Gender // | null           // app.gender
+  gender: string                  // app.gender
 }
 
 /**
@@ -97,6 +97,22 @@ export interface ICreateUserRequest {
   address: string 
   company_name: string 
   position: string 
+}
+
+export interface IUpdateUserRequest {
+  user_id: string   // Обязательное поле для обновления
+  username?: string
+  email?: string
+  account_status?: string
+  is_staff?: boolean
+  first_name?: string
+  last_name?: string
+  middle_name?: string
+  gender?: 'm' | 'f' | 'n'
+  mobile_phone_number?: string
+  address?: string
+  company_name?: string
+  position?: string
 }
 
 // Интерфейс для ответа API
@@ -151,4 +167,5 @@ export interface UserEditorState {
 export interface UserEditorStoreGetters {
   isEditMode: () => boolean;
   hasChanges: () => boolean;
+  getChangedFields: () => Partial<ICreateUserRequest>;
 }

@@ -16,9 +16,9 @@
  import { ref, computed, onMounted, watch } from 'vue'
  import { useUserEditorStore } from './state.user.editor'
  import { createUserService } from './service.create.new.user'
+ import { updateUserService } from './service.update.user'
  import { useUiStore } from '@/core/state/uistate'
  import { AccountStatus, Gender } from './types.user.editor'
-
  import { usernameRules, emailRules, passwordRules, mobilePhoneRules } from '@/core/validation/rules.common.fields'
  
  // ==================== STORES ====================
@@ -181,6 +181,40 @@
    }
  }
  
+/**
+ * Обновление данных пользователя
+ */
+ const updateUser = async () => {
+  console.log('Starting user update...')
+  
+  if (!form.value?.validate()) {
+    uiStore.showErrorSnackbar('пожалуйста, проверьте правильность заполнения полей')
+    return
+  }
+
+  isSubmitting.value = true
+  
+  try {
+    const requestData = userEditorStore.prepareUpdateData()
+    const success = await updateUserService.updateUser(requestData)
+    
+    if (success) {
+      console.log('User updated successfully')
+      uiStore.showSuccessSnackbar('данные пользователя обновлены')
+      resetForm() // Сбрасываем форму к значениям по умолчанию
+    }
+    
+  } catch (error) {
+    console.error('Error updating user:', error)
+    uiStore.showErrorSnackbar(
+      error instanceof Error ? error.message : 'ошибка обновления данных пользователя'
+    )
+  } finally {
+    isSubmitting.value = false
+  }
+}
+
+
  // ==================== LIFECYCLE ====================
  onMounted(() => {
    console.log('UserEditor mounted')
@@ -211,7 +245,7 @@
           color="teal"
           variant="outlined"
           @click="updateUser"
-          :disabled="!isFormValid || isSubmitting"
+          :disabled="!isFormValid || isSubmitting || !userEditorStore.hasChanges"
           class="mr-2"
         >
           обновить данные пользователя

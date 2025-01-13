@@ -15,8 +15,10 @@ import type {
   IUserAccount,
   IUserProfile,
   IEditorUIState,
-  ICreateUserRequest, 
-  UserEditorState
+  ICreateUserRequest,
+  IUpdateUserRequest, 
+  UserEditorState,
+  EditMode
 } from './types.user.editor'
 
 /**
@@ -71,6 +73,82 @@ export const useUserEditorStore = defineStore('userEditor', {
   }),
 
 // getters
+getters: {
+  isEditMode(): boolean {
+    return this.mode.mode === 'edit'
+  },
+  
+  getChangedFields(): IUpdateUserRequest {
+    if (!this.originalData || this.mode.mode !== 'edit') {
+      return { user_id: '' }  // Возвращаем пустой объект с обязательным полем
+    }
+
+    const changes: IUpdateUserRequest = {
+      user_id: (this.mode as EditMode).userId
+    }
+
+    const currentData = {
+      ...this.account,
+      ...this.profile
+    }
+
+    const originalData = {
+      ...this.originalData.account,
+      ...this.originalData.profile
+    }
+
+    // Проверяем каждое поле и добавляем только измененные
+    if (currentData.username !== originalData.username) {
+      changes.username = currentData.username
+    }
+    if (currentData.email !== originalData.email) {
+      changes.email = currentData.email
+    }
+    if (currentData.account_status !== originalData.account_status) {
+      changes.account_status = currentData.account_status
+    }
+    if (currentData.is_staff !== originalData.is_staff) {
+      changes.is_staff = currentData.is_staff
+    }
+    if (currentData.first_name !== originalData.first_name) {
+      changes.first_name = currentData.first_name
+    }
+    if (currentData.last_name !== originalData.last_name) {
+      changes.last_name = currentData.last_name
+    }
+    if (currentData.middle_name !== originalData.middle_name) {
+      changes.middle_name = currentData.middle_name
+    }
+    if (currentData.gender !== originalData.gender) {
+      changes.gender = currentData.gender as 'm' | 'f' | 'n'
+    }
+    if (currentData.mobile_phone_number !== originalData.mobile_phone_number) {
+      changes.mobile_phone_number = currentData.mobile_phone_number
+    }
+    if (currentData.address !== originalData.address) {
+      changes.address = currentData.address
+    }
+    if (currentData.company_name !== originalData.company_name) {
+      changes.company_name = currentData.company_name
+    }
+    if (currentData.position !== originalData.position) {
+      changes.position = currentData.position
+    }
+
+    return changes
+  },
+
+  hasChanges(): boolean {
+    if (!this.originalData || this.mode.mode !== 'edit') {
+      return false
+    }
+    
+    // Получаем измененные поля
+    const changes = this.getChangedFields
+    // Проверяем есть ли изменения помимо user_id
+    return Object.keys(changes).length > 1  // > 1 потому что user_id всегда присутствует
+  }
+},
 
  actions: {
    /**
@@ -153,6 +231,16 @@ export const useUserEditorStore = defineStore('userEditor', {
        company_name: profile.company_name,
        position: profile.position
      }
-   }
+   },
+
+  prepareUpdateData(): IUpdateUserRequest {
+    // Используем getter для получения изменений
+    const changes = this.getChangedFields
+
+    // Логируем для отладки
+    console.log('Preparing data for update:', changes)
+
+    return changes
+  }
  }
 })
