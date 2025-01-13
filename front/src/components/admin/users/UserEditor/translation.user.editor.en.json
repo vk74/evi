@@ -1,0 +1,89 @@
+{
+    "admin": {
+      "users": {
+        "editor": {
+          "title": {
+            "create": "create user account",
+            "edit": "edit user account"
+          },
+          "sections": {
+            "basicInfo": "basic information",
+            "security": "security",
+            "additionalInfo": "additional information"
+          },
+          "buttons": {
+            "create": "create",
+            "update": "update user data",
+            "reset": "reset form fields"
+          },
+          "fields": {
+            "username": {
+              "label": "username*"
+            },
+            "email": {
+              "label": "e-mail*"
+            },
+            "firstName": {
+              "label": "first name*"
+            },
+            "middleName": {
+              "label": "middle name"
+            },
+            "lastName": {
+              "label": "last name*"
+            },
+            "gender": {
+              "label": "gender",
+              "options": {
+                "male": "male",
+                "female": "female",
+                "notDefined": "not defined"
+              }
+            },
+            "password": {
+              "label": "password*",
+              "confirm": "confirm password*"
+            },
+            "accountStatus": {
+              "label": "account status",
+              "options": {
+                "active": "active",
+                "disabled": "disabled",
+                "requiresAction": "requires user action"
+              }
+            },
+            "isStaff": {
+              "label": "organization employee"
+            },
+            "mobilePhone": {
+              "label": "mobile phone",
+              "placeholder": "+7 XXX XXX XXXX"
+            },
+            "address": {
+              "label": "address"
+            },
+            "company": {
+              "label": "company name"
+            },
+            "position": {
+              "label": "position"
+            }
+          },
+          "messages": {
+            "validation": {
+              "requiredFields": "fill in required fields marked with an asterisk (*)",
+              "formErrors": "please check the form fields for correctness"
+            },
+            "success": {
+              "created": "user account created",
+              "updated": "user data updated"
+            },
+            "error": {
+              "create": "error creating account",
+              "update": "error updating user data"
+            }
+          }
+        }
+      }
+    }
+  }

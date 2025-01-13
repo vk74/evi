@@ -13,6 +13,7 @@
 -->
 
  <script setup lang="ts">
+ import { useI18n } from 'vue-i18n'
  import { ref, computed, onMounted, watch } from 'vue'
  import { useUserEditorStore } from './state.user.editor'
  import { createUserService } from './service.create.new.user'
@@ -24,6 +25,7 @@
  // ==================== STORES ====================
  const userEditorStore = useUserEditorStore()
  const uiStore = useUiStore()
+ const { t } = useI18n()
  
  // ==================== REFS & STATE ====================
  /**
@@ -117,7 +119,7 @@
  watch(showRequiredFieldsWarning, (newValue) => {
    if (newValue) {
      uiStore.showInfoSnackbar(
-       'заполните обязательные поля, отмеченные звездочкой (*)', 
+       t('admin.users.editor.messages.validation.requiredFields'),  
        { timeout: -1 }
      )
    }
@@ -157,7 +159,7 @@
    console.log('Starting user creation...')
    
    if (!form.value?.validate()) {
-     uiStore.showErrorSnackbar('пожалуйста, проверьте правильность заполнения полей')
+     uiStore.showErrorSnackbar(t('admin.users.editor.messages.validation.formErrors'))
      return
    }
  
@@ -168,13 +170,13 @@
      const userId = await createUserService.createUser(requestData)
      
      console.log('User created successfully:', userId)
-     uiStore.showSuccessSnackbar('учетная запись пользователя создана')
+     uiStore.showSuccessSnackbar(t('admin.users.editor.messages.success.created'))
      resetForm()
      
    } catch (error) {
      console.error('Error creating user:', error)
      uiStore.showErrorSnackbar(
-       error instanceof Error ? error.message : 'ошибка создания учетной записи'
+       error instanceof Error ? error.message : t('admin.users.editor.messages.error.create')
      )
    } finally {
      isSubmitting.value = false
@@ -188,7 +190,7 @@
   console.log('Starting user update...')
   
   if (!form.value?.validate()) {
-    uiStore.showErrorSnackbar('пожалуйста, проверьте правильность заполнения полей')
+    uiStore.showErrorSnackbar(t('admin.users.editor.messages.validation.formErrors'))
     return
   }
 
@@ -200,14 +202,14 @@
     
     if (success) {
       console.log('User updated successfully')
-      uiStore.showSuccessSnackbar('данные пользователя обновлены')
+      uiStore.showSuccessSnackbar(t('admin.users.editor.messages.success.updated'))
       resetForm() // Сбрасываем форму к значениям по умолчанию
     }
     
   } catch (error) {
     console.error('Error updating user:', error)
     uiStore.showErrorSnackbar(
-      error instanceof Error ? error.message : 'ошибка обновления данных пользователя'
+      error instanceof Error ? error.message : t('admin.users.editor.messages.error.update')
     )
   } finally {
     isSubmitting.value = false
@@ -236,7 +238,7 @@
           :disabled="!isFormValid || isSubmitting"
           class="mr-2"
         >
-          создать
+          {{ t('admin.users.editor.buttons.create') }}
         </v-btn>
 
         <!-- Кнопка обновления (видна только в режиме редактирования) -->
@@ -248,7 +250,7 @@
           :disabled="!isFormValid || isSubmitting || !userEditorStore.hasChanges"
           class="mr-2"
         >
-          обновить данные пользователя
+          {{ t('admin.users.editor.buttons.update') }}
         </v-btn>
 
         <!-- Кнопка сброса (видна всегда) -->
@@ -256,7 +258,7 @@
           variant="outlined"
           @click="resetForm"
         >
-          сбросить поля формы
+          {{ t('admin.users.editor.buttons.reset') }}
         </v-btn>
       </div>
 
@@ -264,7 +266,10 @@
       
       <!-- Динамический заголовок в зависимости от режима -->
       <v-toolbar-title class="title-text">
-        {{ userEditorStore.mode.mode === 'create' ? 'создание учетной записи' : 'редактирование учетной записи' }}
+        {{ userEditorStore.mode.mode === 'create' 
+          ? t('admin.users.editor.title.create') 
+          : t('admin.users.editor.title.edit') 
+        }}
       </v-toolbar-title>
     </v-app-bar>
 
@@ -276,7 +281,7 @@
             <!-- Блок 1: Основная информация -->
             <v-col cols="12">
               <div class="card-header">
-                <v-card-title class="text-subtitle-1">основная информация</v-card-title>
+                <v-card-title class="text-subtitle-1">{{ t('admin.users.editor.sections.basicInfo') }}</v-card-title>
                 <v-divider class="section-divider"></v-divider>
               </div>
 
@@ -284,7 +289,7 @@
                 <v-col cols="12" md="6">
                   <v-text-field
                     v-model="userEditorStore.account.username"
-                    label="название учетной записи*"
+                    :label="t('admin.users.editor.fields.username.label')"
                     :rules="usernameRules"
                     variant="outlined"
                     density="comfortable"
@@ -295,7 +300,7 @@
                 <v-col cols="12" md="6">
                   <v-text-field
                     v-model="userEditorStore.account.email"
-                    label="e-mail*"
+                    :label="t('admin.users.editor.fields.email.label')"
                     :rules="emailRules"
                     variant="outlined"
                     density="comfortable"
@@ -307,7 +312,7 @@
                 <v-col cols="12" md="4">
                   <v-text-field
                     v-model="userEditorStore.account.first_name"
-                    label="имя*"
+                    :label="t('admin.users.editor.fields.firstName.label')"
                     :rules="firstNameRules"
                     variant="outlined"
                     density="comfortable"
@@ -318,7 +323,7 @@
                 <v-col cols="12" md="4">
                   <v-text-field
                     v-model="userEditorStore.account.middle_name"
-                    label="отчество"
+                    :label="t('admin.users.editor.fields.middleName.label')"
                     :rules="middleNameRules"
                     variant="outlined"
                     density="comfortable"
@@ -328,7 +333,7 @@
                 <v-col cols="12" md="4">
                   <v-text-field
                     v-model="userEditorStore.account.last_name"
-                    label="фамилия*"
+                    :label="t('admin.users.editor.fields.lastName.label')"
                     :rules="lastNameRules"
                     variant="outlined"
                     density="comfortable"
@@ -340,13 +345,13 @@
                 <v-col cols="12" md="4">
                   <v-select
                     v-model="userEditorStore.profile.gender"
-                    label="пол"
+                    :label="t('admin.users.editor.fields.gender.label')"
                     variant="outlined"
                     density="comfortable"
                     :items="[
-                      { title: 'мужской', value: Gender.MALE },
-                      { title: 'женский', value: Gender.FEMALE },
-                      { title: 'не указано', value: Gender.NOTDEFINED }
+                      { title: t('admin.users.editor.fields.gender.options.male'), value: Gender.MALE },
+                      { title: t('admin.users.editor.fields.gender.options.female'), value: Gender.FEMALE },
+                      { title: t('admin.users.editor.fields.gender.options.notDefined'), value: Gender.NOTDEFINED }
                     ]"
                     item-title="title"
                     item-value="value"
@@ -361,7 +366,7 @@
             <!-- Блок 2: Безопасность -->
             <v-col cols="12">
               <div class="card-header mt-6">
-                <v-card-title class="text-subtitle-1">безопасность</v-card-title>
+                <v-card-title class="text-subtitle-1">{{ t('admin.users.editor.sections.security') }}</v-card-title>
                 <v-divider class="section-divider"></v-divider>
               </div>
 
@@ -371,7 +376,7 @@
                   <v-col cols="12" md="5">
                     <v-text-field
                       v-model="userEditorStore.account.password"
-                      label="пароль*"
+                      :label="t('admin.users.editor.fields.password.label')"
                       :rules="passwordRules"
                       variant="outlined"
                       density="comfortable"
@@ -383,7 +388,7 @@
                   <v-col cols="12" md="5">
                     <v-text-field
                       v-model="userEditorStore.account.passwordConfirm"
-                      label="подтверждение пароля*"
+                      :label="t('admin.users.editor.fields.password.confirm')"
                       :rules="[(v) => v === userEditorStore.account.password || 'пароли не совпадают']"
                       variant="outlined"
                       density="comfortable"
@@ -408,13 +413,13 @@
                 <v-col cols="12" md="6">
                   <v-select
                     v-model="userEditorStore.account.account_status"
-                    label="статус учетной записи"
+                    :label="t('admin.users.editor.fields.accountStatus.label')"
                     variant="outlined"
                     density="comfortable"
                     :items="[
-                      { title: 'активна', value: AccountStatus.ACTIVE },
-                      { title: 'отключена', value: AccountStatus.DISABLED },
-                      { title: 'требует действия пользователя', value: AccountStatus.REQUIRES_USER_ACTION }
+                      { title: t('admin.users.editor.fields.accountStatus.options.active'), value: AccountStatus.ACTIVE },
+                      { title: t('admin.users.editor.fields.accountStatus.options.disabled'), value: AccountStatus.DISABLED },
+                      { title: t('admin.users.editor.fields.accountStatus.options.requiresAction'), value: AccountStatus.REQUIRES_USER_ACTION }
                     ]"
                     item-title="title"
                     item-value="value"
@@ -423,7 +428,7 @@
                 <v-col cols="12" md="6">
                   <v-checkbox
                     v-model="userEditorStore.account.is_staff"
-                    label="работник организации"
+                    :label="t('admin.users.editor.fields.isStaff.label')"
                     color="teal"
                     hide-details
                   />
@@ -434,7 +439,7 @@
             <!-- Блок 3: Дополнительная информация -->
             <v-col cols="12">
               <div class="card-header mt-6">
-                <v-card-title class="text-subtitle-1">дополнительная информация</v-card-title>
+                <v-card-title class="text-subtitle-1">{{ t('admin.users.editor.sections.additionalInfo') }}</v-card-title>
                 <v-divider class="section-divider"></v-divider>
               </div>
 
@@ -442,17 +447,17 @@
                 <v-col cols="12" md="6">
                   <v-text-field
                     v-model="userEditorStore.profile.mobile_phone_number"
-                    label="мобильный телефон"
+                    :label="t('admin.users.editor.fields.mobilePhone.label')"
+                    :placeholder="t('admin.users.editor.fields.mobilePhone.placeholder')"
                     :rules="mobilePhoneRules"
                     variant="outlined"
                     density="comfortable"
-                    placeholder="+7 XXX XXX XXXX"
                   />
                 </v-col>
                 <v-col cols="12">
                   <v-textarea
                     v-model="userEditorStore.profile.address"
-                    label="адрес"
+                    :label="t('admin.users.editor.fields.address.label')"
                     :rules="addressRules"
                     variant="outlined"
                     rows="3"
@@ -463,7 +468,7 @@
                 <v-col cols="12" md="6">
                   <v-text-field
                     v-model="userEditorStore.profile.company_name"
-                    label="название компании"
+                    :label="t('admin.users.editor.fields.company.label')"
                     :rules="companyNameRules"
                     variant="outlined"
                     density="comfortable"
@@ -473,7 +478,7 @@
                 <v-col cols="12" md="6">
                   <v-text-field
                     v-model="userEditorStore.profile.position"
-                    label="должность"
+                    :label="t('admin.users.editor.fields.position.label')"
                     :rules="positionRules"
                     variant="outlined"
                     density="comfortable"

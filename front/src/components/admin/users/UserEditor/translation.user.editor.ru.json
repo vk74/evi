@@ -1,0 +1,89 @@
+{
+    "admin": {
+      "users": {
+        "editor": {
+          "title": {
+            "create": "создание учетной записи",
+            "edit": "редактирование учетной записи"
+          },
+          "sections": {
+            "basicInfo": "основная информация",
+            "security": "безопасность",
+            "additionalInfo": "дополнительная информация"
+          },
+          "buttons": {
+            "create": "создать",
+            "update": "обновить данные пользователя",
+            "reset": "сбросить поля формы"
+          },
+          "fields": {
+            "username": {
+              "label": "название учетной записи*"
+            },
+            "email": {
+              "label": "e-mail*"
+            },
+            "firstName": {
+              "label": "имя*"
+            },
+            "middleName": {
+              "label": "отчество"
+            },
+            "lastName": {
+              "label": "фамилия*"
+            },
+            "gender": {
+              "label": "пол",
+              "options": {
+                "male": "мужской",
+                "female": "женский",
+                "notDefined": "не указано"
+              }
+            },
+            "password": {
+              "label": "пароль*",
+              "confirm": "подтверждение пароля*"
+            },
+            "accountStatus": {
+              "label": "статус учетной записи",
+              "options": {
+                "active": "активна",
+                "disabled": "отключена",
+                "requiresAction": "требует действия пользователя"
+              }
+            },
+            "isStaff": {
+              "label": "работник организации"
+            },
+            "mobilePhone": {
+              "label": "мобильный телефон",
+              "placeholder": "+7 XXX XXX XXXX"
+            },
+            "address": {
+              "label": "адрес"
+            },
+            "company": {
+              "label": "название компании"
+            },
+            "position": {
+              "label": "должность"
+            }
+          },
+          "messages": {
+            "validation": {
+              "requiredFields": "заполните обязательные поля, отмеченные звездочкой (*)",
+              "formErrors": "пожалуйста, проверьте правильность заполнения полей"
+            },
+            "success": {
+              "created": "учетная запись пользователя создана",
+              "updated": "данные пользователя обновлены"
+            },
+            "error": {
+              "create": "ошибка создания учетной записи",
+              "update": "ошибка обновления данных пользователя"
+            }
+          }
+        }
+      }
+    }
+  }

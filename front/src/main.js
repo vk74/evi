@@ -12,26 +12,14 @@ import '@mdi/font/css/materialdesignicons.css';
 import { jwtDecode } from 'jwt-decode';
 
 // Импорт всех файлов локализации
-import appRu from './components/AppTranslationRU.json';
-import appEn from './components/AppTranslationEN.json';
-import adminRu from './components/admin/translation.admin.ru.json';
-import adminEn from './components/admin/translation.admin.en.json';
+import translations from '@/core/services/locales.index'
 
 console.log('Starting application...');
 console.log('App component:', App);
 console.log('All imports completed');
 
 // Объединяем переводы
-const messages = {
-  ru: {
-    ...appRu,
-    ...adminRu
-  },
-  en: {
-    ...appEn,
-    ...adminEn
-  }
-};
+const messages = translations;
 
 // Создаем экземпляр i18n
 const i18n = createI18n({
