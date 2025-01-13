@@ -1,5 +1,5 @@
 /**
- * types.user.editor.ts
+ * types.user.editor.ts - backend file
  * Type definitions for user management functionality on BACKEND.
  *
  * This module defines TypeScript types and interfaces for:
@@ -49,6 +49,28 @@ export interface DbUserProfile {
     position: string | null  // character varying(255)
     gender: Gender | null    // app.gender
 }
+
+/**
+ * Update user account interface
+ */
+export interface UpdateUserRequest {
+    user_id: string   // Обязательное поле для обновления
+    // Поля таблицы app.users
+    username?: string
+    email?: string
+    is_staff?: boolean
+    account_status?: AccountStatus
+    first_name?: string
+    middle_name?: string
+    last_name?: string
+    
+    // Поля таблицы app.user_profiles
+    mobile_phone_number?: string
+    address?: string
+    company_name?: string
+    position?: string
+    gender?: Gender
+  }
 
 /**
  * API Response interfaces

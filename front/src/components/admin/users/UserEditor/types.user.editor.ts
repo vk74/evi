@@ -1,5 +1,5 @@
 /**
- * types.user.editor.ts
+ * types.user.editor.ts - used in frontend
  * Type definitions for the user editor component.
  *
  * This module defines TypeScript types and interfaces for:
