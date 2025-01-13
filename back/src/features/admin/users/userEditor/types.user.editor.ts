@@ -121,3 +121,95 @@ export interface ServiceError {
     message: string;
     details?: unknown;
 }
+
+/**
+ * Create user interfaces
+ */
+export interface CreateUserRequest {
+  // User table fields
+  username: string
+  password: string
+  email: string
+  first_name: string
+  last_name: string
+  middle_name?: string
+  is_staff?: boolean
+  account_status?: AccountStatus
+
+  // Profile table fields
+  gender?: Gender
+  mobile_phone_number?: string
+  address?: string
+  company_name?: string
+  position?: string
+}
+
+export interface CreateUserResponse extends ApiResponse {
+  userId: string
+  username: string
+  email: string
+}
+
+/**
+ * Validation interfaces
+ */
+export interface ValidationError extends ServiceError {
+  code: 'VALIDATION_ERROR'
+  field?: string
+}
+
+export interface UniqueCheckError extends ServiceError {
+  code: 'UNIQUE_CONSTRAINT_ERROR'
+  field: string
+}
+
+export interface RequiredFieldError extends ValidationError {
+  code: 'REQUIRED_FIELD_ERROR'
+  field: string
+}
+
+/**
+ * Create user interfaces
+ */
+export interface CreateUserRequest {
+    // User table fields
+    username: string
+    password: string
+    email: string
+    first_name: string
+    last_name: string
+    middle_name?: string
+    is_staff?: boolean
+    account_status?: AccountStatus
+  
+    // Profile table fields
+    gender?: Gender
+    mobile_phone_number?: string
+    address?: string
+    company_name?: string
+    position?: string
+  }
+  
+  export interface CreateUserResponse extends ApiResponse {
+    userId: string
+    username: string
+    email: string
+  }
+  
+  /**
+   * Validation interfaces
+   */
+  export interface ValidationError extends ServiceError {
+    code: 'VALIDATION_ERROR'
+    field?: string
+  }
+  
+  export interface UniqueCheckError extends ServiceError {
+    code: 'UNIQUE_CONSTRAINT_ERROR'
+    field: string
+  }
+  
+  export interface RequiredFieldError extends ValidationError {
+    code: 'REQUIRED_FIELD_ERROR'
+    field: string
+  }

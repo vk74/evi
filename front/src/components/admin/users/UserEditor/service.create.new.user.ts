@@ -40,7 +40,7 @@ export const createUserService = {
 
     try {
       const response = await api.post<ICreateUserResponse>(
-        '/api/admin/user/newuser',
+        '/api/admin/users/create-new-user',
         userData
       )
 

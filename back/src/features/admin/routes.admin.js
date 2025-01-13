@@ -1,27 +1,19 @@
-// routes.admin.js 
-
 const express = require('express');
 const router = express.Router();
-
 const validateJWT = require('../../guards/auth.validate.jwt');
-const newUserEditor = require('./users/usereditor/admin.users.usereditor.newuser');
+
+// Import controllers
 const getAllUsers = require('./users/usersList/controller.view.all.users');
 const updateUserById = require('./users/userEditor/controller.update.user');
 const deleteSelectedUsers = require('./users/usersList/controller.delete.selected.users');
 const loadUserById = require('./users/userEditor/controller.load.user');
+const createUserController = require('./users/userEditor/controller.create.user');
 
-// Route for creating new user from admin panel
-router.post('/api/admin/user/newuser', validateJWT, newUserEditor);
-
-//return list of all registered users (partial details)
+// Routes
+router.post('/api/admin/users/create-new-user', validateJWT, createUserController);
 router.get('/api/admin/users/view-all-users', validateJWT, getAllUsers);
-
-//return selected user by user id
 router.get('/api/admin/users/fetch-user-by-userid/:userId', validateJWT, loadUserById);
-
 router.post('/api/admin/users/update-user-by-userid', validateJWT, updateUserById);
-
-//delete selected user by user id
 router.post('/api/admin/users/delete-selected-users', validateJWT, deleteSelectedUsers);
 
 module.exports = router;

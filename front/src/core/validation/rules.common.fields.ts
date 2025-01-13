@@ -1,4 +1,5 @@
 /**
+ * rules.common.fields.ts - frontend validation rules
  * Common validation rules for frequently used form fields.
  * Used across multiple components to ensure consistent validation behavior.
  * Contains rules for username, password, email and mobile phone fields.
