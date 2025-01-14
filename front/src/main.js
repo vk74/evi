@@ -12,7 +12,7 @@ import '@mdi/font/css/materialdesignicons.css';
 import { jwtDecode } from 'jwt-decode';
 
 // Импорт всех файлов локализации
-import translations from '@/core/services/locales.index'
+import translations from '@/core/services/translations.index'
 
 console.log('Starting application...');
 console.log('App component:', App);

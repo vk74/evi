@@ -1,0 +1,32 @@
+{
+    "list": {
+      "title": "users list",
+      "buttons": {
+        "create": "create user account",
+        "delete": "delete",
+        "edit": "edit"
+      },
+      "table": {
+        "headers": {
+          "id": "id",
+          "username": "username",
+          "email": "e-mail",
+          "isStaff": "staff",
+          "status": "status",
+          "lastName": "last name",
+          "firstName": "first name",
+          "middleName": "middle name",
+          "select": "select"
+        }
+      },
+      "messages": {
+        "confirmDelete": "Are you sure you want to delete selected users?",
+        "confirmDeleteSingle": "Are you sure you want to delete this user?",
+        "deleteUsersSuccess": "Successfully deleted {count} user accounts. Users list has been updated."
+      }
+    },
+    "common": {
+      "cancel": "cancel",
+      "delete": "delete"
+    }
+  }

@@ -5,8 +5,6 @@
  * Функциональность:
  * - Отображение пользователей в табличном виде с пагинацией
  * - Сортировка по колонкам с сохранением состояния
- * - Управление видимостью колонок через контекстное меню
- * - Обновление списка пользователей вручную
  * - Редактирование пользователей через UserEditor
  */
  <script setup lang="ts">
@@ -101,7 +99,7 @@
      console.log('[ViewAllUsers] Service returned deletedCount:', deletedCount)
      
      console.log('[ViewAllUsers] Preparing success message')
-     const message = t('admin.users.list.messages.deleteUsersSuccess', { count: deletedCount })
+     const message = t('list.messages.deleteUsersSuccess', { count: deletedCount })
      console.log('[ViewAllUsers] Success message prepared:', message)
      
      console.log('[ViewAllUsers] Showing success notification')
@@ -147,44 +145,44 @@
  // Определение колонок таблицы
  const headers = computed<TableHeader[]>(() => [
    { 
-     title: t('admin.users.list.table.headers.select'), 
+     title: t('list.table.headers.select'), 
      key: 'selection',
      width: '40px',
      sortable: false
    },
    { 
-     title: t('admin.users.list.table.headers.id'), 
+     title: t('list.table.headers.id'), 
      key: 'user_id', 
      width: '80px' 
    },
    { 
-     title: t('admin.users.list.table.headers.username'), 
+     title: t('list.table.headers.username'), 
      key: 'username' 
    },
    { 
-     title: t('admin.users.list.table.headers.email'), 
+     title: t('list.table.headers.email'), 
      key: 'email' 
    },
    { 
-     title: t('admin.users.list.table.headers.isStaff'), 
+     title: t('list.table.headers.isStaff'), 
      key: 'is_staff', 
      width: '60px' 
    },
    { 
-     title: t('admin.users.list.table.headers.status'), 
+     title: t('list.table.headers.status'), 
      key: 'account_status', 
      width: '60px' 
    },
    { 
-     title: t('admin.users.list.table.headers.lastName'), 
+     title: t('list.table.headers.lastName'), 
      key: 'last_name' 
    },
    { 
-     title: t('admin.users.list.table.headers.firstName'), 
+     title: t('list.table.headers.firstName'), 
      key: 'first_name' 
    },
    { 
-     title: t('admin.users.list.table.headers.middleName'), 
+     title: t('list.table.headers.middleName'), 
      key: 'middle_name' 
    }
  ])
@@ -221,7 +219,7 @@
           :disabled="hasSelected"
           @click="createUser"
         >
-          {{ t('admin.users.list.buttons.create') }}
+          {{ t('list.buttons.create') }}
         </v-btn>
         
         <v-btn
@@ -232,7 +230,7 @@
           :disabled="!hasOneSelected"
           @click="editUser"
         >
-          {{ t('admin.users.list.buttons.edit') }}
+          {{ t('list.buttons.edit') }}
         </v-btn>
         
         <v-btn
@@ -243,13 +241,13 @@
           :disabled="!hasSelected"
           @click="onDeleteSelected"
         >
-          {{ t('admin.users.list.buttons.delete') }}
+          {{ t('list.buttons.delete') }}
           <span class="ml-2">({{ selectedCount }})</span>
         </v-btn>
       </div>
 
       <v-app-bar-title class="text-subtitle-2 text-lowercase text-right">
-        {{ t('admin.users.list.title') }}
+        {{ t('list.title') }}
       </v-app-bar-title>
     </v-app-bar>
 
@@ -299,7 +297,7 @@
     >
       <v-card>
         <v-card-title class="text-subtitle-1 text-wrap">
-          {{ t('admin.users.list.messages.confirmDelete') }}
+          {{ t('list.messages.confirmDelete') }}
         </v-card-title>
         <v-card-actions>
           <v-spacer />
