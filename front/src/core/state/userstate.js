@@ -1,10 +1,12 @@
-// /src/state/userstate.js хранилище для отслеживания состояния пользователя
+// userstate.js - Pinia store for managing user state: authentication, 
+// personal data, interface settings and JWT token
 import { defineStore } from 'pinia';
 import { jwtDecode } from 'jwt-decode';
 
 export const useUserStore = defineStore('user', {
   state: () => ({
     username: '', // Имя пользователя
+    userID: '', // UUID пользователя
     jwt: '', // JWT токен
     isLoggedIn: false, // Статус аутентификации
     issuer: '', // Издатель токена
@@ -22,6 +24,10 @@ export const useUserStore = defineStore('user', {
       if (!state.tokenExpires) return false;
       const currentTime = Date.now() / 1000;
       return state.tokenExpires > currentTime;
+    },
+    // Получение UUID пользователя
+    getUserID: (state) => {
+      return state.userID;
     }
   },
 
@@ -29,6 +35,10 @@ export const useUserStore = defineStore('user', {
     // устанавливаем имя пользователя
     setUsername(username) {
       this.username = username;
+    },
+    // устанавливаем UUID пользователя
+    setUserID(userID) {
+      this.userID = userID;
     },
     // устанавливаем JWT токен
     setJwt(jwt) {
@@ -41,6 +51,7 @@ export const useUserStore = defineStore('user', {
           this.setIssuedAt(decoded.iat);
           this.setJwtId(decoded.jti);
           this.setTokenExpires(decoded.exp);
+          this.setUserID(decoded.uid); // Получаем UUID из поля uid токена
         } catch (error) {
           console.error('Error decoding JWT:', error);
           this.userLogoff();
@@ -84,6 +95,9 @@ export const useUserStore = defineStore('user', {
     updateUsername(username) {
       this.setUsername(username);
     },
+    updateUserID(userID) {
+      this.setUserID(userID);
+    },
     updateJwt(jwt) {
       this.setJwt(jwt);
     },
@@ -112,6 +126,7 @@ export const useUserStore = defineStore('user', {
       this.setLoggedIn(false); // Обновляем состояние на не аутентифицировано
       // Очистка других связанных данных
       this.setUsername('');
+      this.setUserID(''); // Добавляем очистку UUID
       this.setJwt('');
       this.setIssuer('');
       this.setAudience('');
@@ -149,7 +164,7 @@ export const useUserStore = defineStore('user', {
   persist: {
     key: 'user-session',
     storage: localStorage,
-    paths: ['jwt', 'username', 'language', 'activeModule'], // Сохраняем только необходимые поля
+    paths: ['jwt', 'username', 'userID', 'language', 'activeModule'], // Добавляем userID в персистентное хранилище
     beforeRestore: (context) => {
       console.log('Restoring user session...');
     },

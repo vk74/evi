@@ -1,3 +1,5 @@
+// ModuleLogin.vue - User login component that handles authentication process,
+// JWT token processing and user state management
 <template>
   <div class="pt-3 pl-3"> 
     <v-card max-width="500px">
@@ -53,6 +55,7 @@ export default {
           // обновление Pinia хранилища данными из пейлоуда токена
           const userStore = useUserStore();
           userStore.setUsername(decoded.sub); // установка имени пользователя
+          userStore.setUserID(decoded.uid); // установка UUID пользователя
           userStore.setLoggedIn(true); // установка флага аутентификации в true
           userStore.setJwt(response.data.token); // сохраняем сам токен
           // обновляем остальные поля на основе декодированного токена
