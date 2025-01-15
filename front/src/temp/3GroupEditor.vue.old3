@@ -1,0 +1,394 @@
+<!--
+  GroupEditor.vue
+  Компонент для создания и редактирования групп пользователей.
+  
+  Функциональность:
+  - Создание новой группы
+  - Редактирование существующей группы
+  - Управление основными параметрами группы
+  - Двухуровневая валидация формы:
+    * Контроль заполнения обязательных полей с информационным уведомлением
+    * Валидация всех полей по установленным правилам
+-->
+
+<script setup lang="ts">
+import { useI18n } from 'vue-i18n'
+import { ref, computed, onMounted, watch } from 'vue'
+import { useGroupEditorStore } from './state.group.editor'
+import { useUserStore } from '@/core/state/userstate'
+import { useUiStore } from '@/core/state/uistate'
+import { GroupStatus } from './types.group.editor'
+
+// ==================== STORES ====================
+const groupEditorStore = useGroupEditorStore()
+const userStore = useUserStore()
+const uiStore = useUiStore()
+const { t } = useI18n()
+
+// ==================== REFS & STATE ====================
+/**
+ * Ссылка на форму и её состояние валидации
+ */
+const form = ref<any>(null)  // any используем из-за особенностей типизации Vuetify
+const isFormValid = ref(false)
+
+/**
+ * UI состояния
+ */
+const isSubmitting = ref(false)       // Флаг отправки формы
+const hasInteracted = ref(false)      // Флаг взаимодействия с формой
+const showRequiredFieldsWarning = ref(false) // Флаг предупреждения о незаполненных полях
+
+// ==================== COMPUTED ====================
+/**
+ * Отслеживание заполнения обязательных полей
+ */
+const requiredFields = computed(() => ({
+  group_name: groupEditorStore.group.group_name,
+  group_status: groupEditorStore.group.group_status,
+  group_owner: groupEditorStore.group.group_owner
+}))
+
+const requiredFieldsFilled = computed(() => 
+  Object.values(requiredFields.value).every(field => !!field)
+)
+
+const activeSection = computed({
+  get: () => {
+    console.log('Getting active section:', groupEditorStore.ui.activeSection)
+    return groupEditorStore.ui.activeSection
+  },
+  set: (value) => {
+    console.log('Trying to set section:', value)
+    if (value === 'members' && groupEditorStore.mode.mode === 'create') {
+      console.log('Blocking members section in create mode')
+      return
+    }
+    console.log('Setting active section to:', value)
+    groupEditorStore.ui.activeSection = value
+  }
+})
+
+// ==================== VALIDATION RULES ====================
+/**
+ * Правила валидации для полей формы
+ */
+const groupNameRules = [
+  (v: string) => !!v || 'название группы обязательно',
+  (v: string) => (v && v.length >= 2) || 'название группы должно быть не короче 2 символов',
+  (v: string) => (v && v.length <= 100) || 'название группы не может быть длиннее 100 символов',
+  (v: string) => !v || /^[\p{L}\p{N}\p{P}\p{Z}]+$/u.test(v) || 'название группы содержит недопустимые символы'
+]
+
+const descriptionRules = [
+  (v: string) => !v || v.length <= 5000 || 'описание не может быть длиннее 5000 символов'
+]
+
+const emailRules = [
+  (v: string) => !v || v.length <= 255 || 'email не может быть длиннее 255 символов',
+  (v: string) => !v || /^$|^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v) || 'некорректный формат email'
+]
+
+// ==================== WATCHERS ====================
+/**
+ * Отслеживание заполнения обязательных полей и управление уведомлениями
+ */
+watch(hasInteracted, (newValue) => {
+  if (newValue && !requiredFieldsFilled.value) {
+    showRequiredFieldsWarning.value = true
+  }
+}, { immediate: false })
+
+watch(requiredFieldsFilled, (newValue) => {
+  if (newValue && showRequiredFieldsWarning.value) {
+    showRequiredFieldsWarning.value = false
+    uiStore.hideSnackbar()
+  }
+}, { immediate: false })
+
+watch(showRequiredFieldsWarning, (newValue) => {
+  if (newValue) {
+    uiStore.showInfoSnackbar(
+      t('admin.groups.editor.messages.validation.requiredFields'),
+      { timeout: -1 }
+    )
+  }
+})
+
+// ==================== METHODS ====================
+/**
+ * Сброс формы
+ */
+const resetForm = () => {
+  groupEditorStore.resetForm()
+  form.value?.reset()
+  hasInteracted.value = false
+  showRequiredFieldsWarning.value = false
+  console.log('Form has been reset')
+}
+
+/**
+ * Отслеживание взаимодействия с полями формы
+ */
+const watchFormFields = () => {
+  const fieldsToWatch = Object.keys(requiredFields.value)
+  fieldsToWatch.forEach(field => {
+    watch(() => requiredFields.value[field], () => {
+      if (!hasInteracted.value) {
+        hasInteracted.value = true
+      }
+    })
+  })
+}
+
+/**
+ * Сохранение группы
+ */
+const saveGroup = async () => {
+  console.log('Starting group creation...')
+  
+  if (!form.value?.validate()) {
+    uiStore.showErrorSnackbar(t('admin.groups.editor.messages.validation.formErrors'))
+    return
+  }
+
+  isSubmitting.value = true
+  
+  try {
+    const requestData = groupEditorStore.prepareRequestData()
+    // Пока закомментировано до создания сервиса
+    // const groupId = await createGroupService.createGroup(requestData)
+    
+    console.log('Group created successfully') // : groupId
+    uiStore.showSuccessSnackbar(t('admin.groups.editor.messages.success.created'))
+    resetForm()
+    
+  } catch (error) {
+    console.error('Error creating group:', error)
+    uiStore.showErrorSnackbar(
+      error instanceof Error ? error.message : t('admin.groups.editor.messages.error.create')
+    )
+  } finally {
+    isSubmitting.value = false
+  }
+}
+
+/**
+ * Обновление данных группы
+ */
+const updateGroup = async () => {
+  console.log('Starting group update...')
+  
+  if (!form.value?.validate()) {
+    uiStore.showErrorSnackbar(t('admin.groups.editor.messages.validation.formErrors'))
+    return
+  }
+
+  isSubmitting.value = true
+  
+  try {
+    const requestData = groupEditorStore.prepareUpdateData()
+    // Пока закомментировано до создания сервиса
+    // const success = await updateGroupService.updateGroup(requestData)
+    const success = true // Временно для тестирования
+    
+    if (success) {
+      console.log('Group updated successfully')
+      uiStore.showSuccessSnackbar(t('admin.groups.editor.messages.success.updated'))
+      resetForm()
+    }
+    
+  } catch (error) {
+    console.error('Error updating group:', error)
+    uiStore.showErrorSnackbar(
+      error instanceof Error ? error.message : t('admin.groups.editor.messages.error.update')
+    )
+  } finally {
+    isSubmitting.value = false
+  }
+}
+
+// ==================== LIFECYCLE ====================
+onMounted(() => {
+  console.log('GroupEditor mounted')
+  console.log('Initial active section:', groupEditorStore.ui.activeSection)
+  watchFormFields()
+})
+</script>
+
+<template>
+  <v-container class="pa-0">
+    <!-- App Bar с фиксированным фоном -->
+    <v-app-bar flat class="editor-app-bar">
+      <!-- Кнопки управления -->
+      <div class="d-flex align-center" style="margin-left: 15px;">
+        <!-- Кнопки секции "данные группы" -->
+
+        <!-- Секции редактора -->
+        <v-tabs v-model="activeSection" class="ml-4">
+          <v-tab value="details">
+            {{ t('admin.groups.editor.sections.details') }}
+          </v-tab>
+          <v-tab 
+            value="members"
+            :disabled="groupEditorStore.mode.mode === 'create'"
+          >
+            <v-tooltip activator="parent" location="bottom" :disabled="groupEditorStore.mode.mode === 'edit'">
+              <template v-slot:default>
+                <span>{{ t('admin.groups.editor.sections.members') }}</span>
+                <span v-if="groupEditorStore.mode.mode === 'create'">
+                  - {{ t('admin.groups.editor.messages.createFirst') }}
+                </span>
+              </template>
+            </v-tooltip>
+          </v-tab>
+        </v-tabs>
+
+        <template v-if="groupEditorStore.mode.mode === 'create'">
+          <v-btn
+            color="teal"
+            variant="outlined"
+            @click="saveGroup"
+            :disabled="!isFormValid || isSubmitting"
+            class="mr-2"
+          >
+            {{ t('admin.groups.editor.buttons.create') }}
+          </v-btn>
+          <v-btn
+            variant="outlined"
+            @click="resetForm"
+            class="mr-2"
+          >
+            {{ t('admin.groups.editor.buttons.reset') }}
+          </v-btn>
+        </template>
+        <template v-else>
+          <v-btn
+            color="teal"
+            variant="outlined"
+            @click="updateGroup"
+            :disabled="!isFormValid || isSubmitting || !groupEditorStore.hasChanges"
+            class="mr-2"
+          >
+            {{ t('admin.groups.editor.buttons.update') }}
+          </v-btn>
+        </template>
+
+        <!-- Кнопки секции "участники группы" (только в режиме редактирования) -->
+        <template v-if="groupEditorStore.mode.mode === 'edit'">
+          <v-btn
+            color="primary"
+            variant="outlined"
+            class="mr-2"
+            :disabled="true"
+          >
+            {{ t('admin.groups.editor.buttons.addMember') }}
+          </v-btn>
+          <v-btn
+            color="error"
+            variant="outlined"
+            :disabled="true"
+          >
+            {{ t('admin.groups.editor.buttons.removeMember') }}
+          </v-btn>
+        </template>
+      </div>
+
+      <v-spacer></v-spacer>
+
+      <!-- Заголовок -->
+      <v-toolbar-title class="title-text ml-4">
+        {{ groupEditorStore.mode.mode === 'create' 
+          ? t('admin.groups.editor.title.create') 
+          : t('admin.groups.editor.title.edit') 
+        }}
+      </v-toolbar-title>
+    </v-app-bar>
+
+    <!-- Основной контент -->
+    <v-container class="content-container">
+      <!-- Секция данных группы -->
+      <div v-show="activeSection === 'details'">
+        <v-card flat>
+          <v-form ref="form" v-model="isFormValid">
+            <v-row>
+              <v-col cols="12">
+                <v-row class="pt-3">
+                  <!-- Основные поля формы -->
+                  <v-col cols="12" md="6">
+                    <v-text-field
+                      v-model="groupEditorStore.group.group_name"
+                      :label="t('admin.groups.editor.fields.groupName.label')"
+                      :rules="groupNameRules"
+                      variant="outlined"
+                      density="comfortable"
+                      counter="100"
+                      required
+                    />
+                  </v-col>
+
+                  <v-col cols="12" md="6">
+                    <v-select
+                      v-model="groupEditorStore.group.group_status"
+                      :label="t('admin.groups.editor.fields.groupStatus.label')"
+                      :items="[
+                        { title: t('admin.groups.editor.fields.groupStatus.options.active'), value: GroupStatus.ACTIVE },
+                        { title: t('admin.groups.editor.fields.groupStatus.options.inactive'), value: GroupStatus.INACTIVE },
+                        { title: t('admin.groups.editor.fields.groupStatus.options.archived'), value: GroupStatus.ARCHIVED }
+                      ]"
+                      item-title="title"
+                      item-value="value"
+                      variant="outlined"
+                      density="comfortable"
+                      required
+                    />
+                  </v-col>
+
+                  <v-col cols="12" md="12">
+                    <v-textarea
+                      v-model="groupEditorStore.details.group_description"
+                      :label="t('admin.groups.editor.fields.description.label')"
+                      :rules="descriptionRules"
+                      variant="outlined"
+                      rows="3"
+                      counter="5000"
+                      no-resize
+                    />
+                  </v-col>
+
+                  <v-col cols="12" md="6">
+                    <v-text-field
+                      v-model="groupEditorStore.details.group_email"
+                      :label="t('admin.groups.editor.fields.email.label')"
+                      :rules="emailRules"
+                      variant="outlined"
+                      density="comfortable"
+                      type="email"
+                    />
+                  </v-col>
+                </v-row>
+              </v-col>
+            </v-row>
+          </v-form>
+        </v-card>
+      </div>
+
+      <!-- Секция участников группы -->
+      <div 
+        v-show="activeSection === 'members'"
+        @vue:mounted="() => console.log('Members section mounted')"
+      >
+        <v-card flat>
+          <v-card-text>
+            <template v-if="groupEditorStore.mode.mode === 'create'">
+              {{ t('admin.groups.editor.messages.createFirst') }}
+            </template>
+            <template v-else>
+              {{ t('admin.groups.editor.messages.membersSection.notImplemented') }}
+            </template>
+          </v-card-text>
+        </v-card>
+      </div>
+    </v-container>
+  </v-container>
+</template>

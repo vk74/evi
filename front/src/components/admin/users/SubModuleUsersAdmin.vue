@@ -31,14 +31,14 @@
      icon: 'mdi-account-multiple-outline'
    },
    {
-     id: 'groups',
-     title: t('admin.users.sections.groupsList'),
-     icon: 'mdi-account-group-outline'
-   },
-   {
      id: 'user-editor',
      title: t('admin.users.sections.userEditor'),
      icon: 'mdi-account-plus-outline'
+   },
+   {
+     id: 'groups',
+     title: t('admin.users.sections.groupsList'),
+     icon: 'mdi-account-group-outline'
    },
    {
      id: 'group-editor',
@@ -88,12 +88,12 @@
 
     <!-- Рабочая область -->
     <div class="working-area">
-      <SubModuleUsersList v-if="activeSection === 'users'" />
-      <SubModuleGroupsList v-if="activeSection === 'groups'" />
+      <SubModuleUsersList v-if="activeSection === 'users'" />     
       <SubModuleUserEditor
         v-if="activeSection === 'user-editor'"
         mode="create"
       />
+      <SubModuleGroupsList v-if="activeSection === 'groups'" />
       <SubModuleGroupEditor
         v-if="activeSection === 'group-editor'"
         mode="create"

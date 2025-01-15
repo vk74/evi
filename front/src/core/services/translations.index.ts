@@ -1,6 +1,6 @@
 import { merge } from 'lodash'
 
-// Импорты переводов App.vue
+// translations for top level App.vue
 import appTranslationsRu from '@/components/AppTranslationRU.json'
 import appTranslationsEn from '@/components/AppTranslationEN.json'
 
