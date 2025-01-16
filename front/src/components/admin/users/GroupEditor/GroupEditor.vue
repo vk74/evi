@@ -8,15 +8,17 @@ import { ref, computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import type { TableHeader } from './types.group.editor'
 
+ // ==================== STORES ====================
 const { t } = useI18n()
-const store = useGroupEditorStore()
+const groupEditorStore = useGroupEditorStore()
 
+ // ==================== COMPUTED ====================
 // Computed properties for active section
-const isDetailsActive = computed(() => store.ui.activeSection === 'details')
-const isMembersActive = computed(() => store.ui.activeSection === 'members')
+const isDetailsActive = computed(() => groupEditorStore.ui.activeSection === 'details')
+const isMembersActive = computed(() => groupEditorStore.ui.activeSection === 'members')
 
 // Computed property для определения режима работы
-const isEditMode = computed(() => store.isEditMode)
+const isEditMode = computed(() => groupEditorStore.isEditMode)
 
 // Computed property для заголовка модуля
 const moduleTitle = computed(() => 
@@ -37,7 +39,7 @@ const switchSection = (section: 'details' | 'members') => {
   }
   
   console.log('[GroupEditor] Switching to section:', section)
-  store.setActiveSection(section)
+  groupEditorStore.setActiveSection(section)
 }
 
 // Table headers configuration
@@ -176,10 +178,11 @@ const isSelected = (userId: string) => {
                   <!-- Group Name -->
                   <v-col cols="12" md="6">
                     <v-text-field
+                      v-model="groupEditorStore.group.group_name"
                       label="название группы"
                       variant="outlined"
                       density="comfortable"
-                      counter="255"
+                      counter="100"
                       required
                     />
                   </v-col>
@@ -187,6 +190,7 @@ const isSelected = (userId: string) => {
                   <!-- Group Status -->
                   <v-col cols="12" md="6">
                     <v-select
+                    v-model="groupEditorStore.group.group_status"
                       label="статус группы"
                       variant="outlined"
                       density="comfortable"
@@ -203,6 +207,7 @@ const isSelected = (userId: string) => {
                   <!-- Group Description -->
                   <v-col cols="12">
                     <v-textarea
+                      v-model="groupEditorStore.details.group_description"
                       label="описание группы"
                       variant="outlined"
                       rows="3"
@@ -211,9 +216,21 @@ const isSelected = (userId: string) => {
                     />
                   </v-col>
 
+                  <!-- Group email -->
+                  <v-col cols="12" md="6">
+                    <v-text-field
+                      v-model="groupEditorStore.details.group_email"
+                      label="e-mail группы"
+                      variant="outlined"
+                      density="comfortable"
+                      readonly
+                    />
+                  </v-col>
+
                   <!-- Group Owner -->
                   <v-col cols="12" md="6">
                     <v-text-field
+                    v-model="groupEditorStore.group.group_owner"
                       label="владелец группы"
                       variant="outlined"
                       density="comfortable"
