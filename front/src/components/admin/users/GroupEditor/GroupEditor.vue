@@ -145,6 +145,7 @@ const isSelected = (userId: string) => {
           обновить данные группы
         </v-btn>
         <v-btn
+          v-if="!isEditMode"
           variant="outlined"
           class="control-btn"
         >
