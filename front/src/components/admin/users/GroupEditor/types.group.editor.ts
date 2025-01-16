@@ -136,3 +136,12 @@ export enum GroupStatus {
     hasChanges: () => boolean
     getChangedFields: () => Partial<IUpdateGroupRequest>
   }
+
+  /**
+ * Интерфейс заголовка таблицы
+ */
+export interface TableHeader {
+  title: string
+  key: string
+  width?: string
+}
