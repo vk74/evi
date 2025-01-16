@@ -1,3 +1,7 @@
+/*
+* GroupEditor.vue - component is used for setting or editing group details
+*/
+
 <script lang="ts" setup>
 </script>
 
@@ -14,13 +18,13 @@
           :class="['section-btn', { 'section-active': true }]"
           variant="text"
         >
-          Данные группы
+          данные группы
         </v-btn>
         <v-btn
           :class="['section-btn']"
           variant="text"
         >
-          Участники группы
+          участники группы
         </v-btn>
       </div>
 
@@ -32,7 +36,7 @@
           variant="outlined"
           class="mr-2 control-btn"
         >
-          Создать группу
+          создать группу
         </v-btn>
 
         <v-btn
@@ -40,7 +44,7 @@
           variant="outlined"
           class="mr-2 control-btn"
         >
-          Обновить данные группы
+          обновить данные группы
         </v-btn>
 
         <v-btn 
@@ -54,7 +58,7 @@
       <v-spacer />
       
       <div class="module-title">
-        Создание группы
+        создание группы
       </div>
     </v-app-bar>
 
@@ -68,7 +72,7 @@
                 <v-row class="pt-3">
                   <v-col cols="12" md="6">
                     <v-text-field
-                      label="Название группы"
+                      label="название группы"
                       variant="outlined"
                       density="comfortable"
                       counter="255"
@@ -78,12 +82,13 @@
 
                   <v-col cols="12" md="6">
                     <v-select
-                      label="Статус группы"
+                      label="статус группы"
                       variant="outlined"
                       density="comfortable"
                       :items="[
-                        { title: 'Активна', value: 'active' },
-                        { title: 'Отключена', value: 'disabled' }
+                        { title: 'активна', value: 'active' },
+                        { title: 'отключена', value: 'disabled' },
+                        { title: 'в архиве', value: 'archived' }
                       ]"
                       item-title="title"
                       item-value="value"
@@ -92,7 +97,7 @@
 
                   <v-col cols="12">
                     <v-textarea
-                      label="Описание группы"
+                      label="описание группы"
                       variant="outlined"
                       rows="3"
                       counter="5000"
@@ -102,7 +107,7 @@
 
                   <v-col cols="12" md="6">
                     <v-text-field
-                      label="Владелец группы"
+                      label="владелец группы"
                       variant="outlined"
                       density="comfortable"
                       readonly
@@ -145,17 +150,9 @@
   font-size: 16px;
 }
 
-.working-area {
-  overflow-y: auto;
-}
-
 .control-buttons {
   display: flex;
   align-items: center;
 }
 
-.control-btn {
-  text-transform: none;
-  font-weight: 400;
-}
 </style>

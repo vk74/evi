@@ -164,6 +164,15 @@ export const useGroupEditorStore = defineStore('groupEditor', {
     },
 
     /**
+     * Установка активной секции
+     */
+    setActiveSection(section: 'details' | 'members') {
+      console.log('[GroupEditor] Setting active section:', section)
+      this.ui.activeSection = section
+      this.ui.hasInteracted = true
+    },
+
+    /**
      * Сброс формы к начальным значениям
      */
     resetForm() {

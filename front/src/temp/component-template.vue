@@ -1,3 +1,7 @@
+/*
+* GroupEditor.vue - componen is used for setting and editing group details
+*/
+
 <script lang="ts" setup>
 </script>
 
@@ -14,13 +18,13 @@
           :class="['section-btn', { 'section-active': true }]"
           variant="text"
         >
-          Данные группы
+          данные группы
         </v-btn>
         <v-btn
           :class="['section-btn']"
           variant="text"
         >
-          Участники группы
+          участники группы
         </v-btn>
       </div>
 
@@ -32,7 +36,7 @@
           variant="outlined"
           class="mr-2 control-btn"
         >
-          Создать группу
+          создать группу
         </v-btn>
 
         <v-btn
@@ -40,7 +44,7 @@
           variant="outlined"
           class="mr-2 control-btn"
         >
-          Обновить данные группы
+          обновить данные группы
         </v-btn>
 
         <v-btn 
@@ -54,7 +58,7 @@
       <v-spacer />
       
       <div class="module-title">
-        Создание группы
+        создание группы
       </div>
     </v-app-bar>
 
@@ -145,17 +149,9 @@
   font-size: 16px;
 }
 
-.working-area {
-  overflow-y: auto;
-}
-
 .control-buttons {
   display: flex;
   align-items: center;
 }
 
-.control-btn {
-  text-transform: none;
-  font-weight: 400;
-}
 </style>
