@@ -1,5 +1,5 @@
 /**
- * @file GroupEditor.vue
+ * GroupEditor.vue
  * Компонент для создания и редактирования групп пользователей
  */
 <script setup lang="ts">
@@ -15,6 +15,14 @@ const store = useGroupEditorStore()
 const isDetailsActive = computed(() => store.ui.activeSection === 'details')
 const isMembersActive = computed(() => store.ui.activeSection === 'members')
 
+// Computed property для определения режима работы
+const isEditMode = computed(() => store.isEditMode)
+
+// Computed property для заголовка модуля
+const moduleTitle = computed(() => 
+  isEditMode.value ? 'редактирование группы' : 'создание группы'
+)
+
 // Table parameters
 const page = ref(1)
 const itemsPerPage = ref(25)
@@ -22,6 +30,12 @@ const selectedMembers = ref<string[]>([])
 
 // Handler for section switching
 const switchSection = (section: 'details' | 'members') => {
+  // В режиме создания не позволяем переключаться на секцию участников
+  if (!isEditMode.value && section === 'members') {
+    console.log('[GroupEditor] Cannot switch to members section in create mode')
+    return
+  }
+  
   console.log('[GroupEditor] Switching to section:', section)
   store.setActiveSection(section)
 }
@@ -102,6 +116,7 @@ const isSelected = (userId: string) => {
             'section-btn',
             { 'section-active': isMembersActive }
           ]"
+          :disabled="!isEditMode"
           variant="text"
           @click="switchSection('members')"
         >
@@ -114,6 +129,7 @@ const isSelected = (userId: string) => {
       <!-- Control buttons -->
       <div class="control-buttons">
         <v-btn
+          v-if="!isEditMode"
           color="teal"
           variant="outlined"
           class="mr-2 control-btn"
@@ -121,6 +137,7 @@ const isSelected = (userId: string) => {
           создать группу
         </v-btn>
         <v-btn
+          v-else
           color="teal"
           variant="outlined"
           class="mr-2 control-btn"
@@ -131,7 +148,7 @@ const isSelected = (userId: string) => {
           variant="outlined"
           class="control-btn"
         >
-          Сбросить
+          сбросить
         </v-btn>
       </div>
 
@@ -139,7 +156,7 @@ const isSelected = (userId: string) => {
 
       <!-- Title -->
       <div class="module-title">
-        создание группы
+        {{ moduleTitle }}
       </div>
     </v-app-bar>
 
@@ -277,6 +294,11 @@ const isSelected = (userId: string) => {
   border-bottom: 2px solid #009688;
   font-weight: 500;
   color: rgba(0, 0, 0, 0.87) !important;
+}
+
+.section-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 
 .module-title {
