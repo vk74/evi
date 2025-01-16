@@ -6,6 +6,7 @@
 import { useGroupEditorStore } from './state.group.editor'
 import { ref, computed } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { GroupStatus } from './types.group.editor'
 import type { TableHeader } from './types.group.editor'
 
  // ==================== STORES ====================
@@ -195,9 +196,9 @@ const isSelected = (userId: string) => {
                       variant="outlined"
                       density="comfortable"
                       :items="[
-                        { title: 'активна', value: 'active' },
-                        { title: 'отключена', value: 'disabled' },
-                        { title: 'в архиве', value: 'archived' }
+                        { title: 'активна', value: GroupStatus.ACTIVE },
+                        { title: 'отключена', value: GroupStatus.DISABLED },
+                        { title: 'в архиве', value: GroupStatus.ARCHIVED }
                       ]"
                       item-title="title"
                       item-value="value"

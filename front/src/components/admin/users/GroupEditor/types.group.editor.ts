@@ -14,7 +14,7 @@
  */
 export enum GroupStatus {
     ACTIVE = 'active',
-    INACTIVE = 'disabled',
+    DISABLED = 'disabled',
     ARCHIVED = 'archived'
   }
   
