@@ -1,0 +1,42 @@
+{
+  "validation": {
+    "username": {
+      "required": "username is required",
+      "minLength": "minimum length is 3 characters",
+      "maxLength": "maximum length is 25 characters",
+      "format": "only Latin letters and numbers are allowed",
+      "requireLetter": "username must contain at least one letter"
+    },
+    "password": {
+      "required": "password is required",
+      "minLength": "minimum length is 8 characters",
+      "maxLength": "maximum length is 40 characters",
+      "format": "password may contain Latin letters, numbers and common special characters",
+      "requireLetter": "password must contain at least one letter",
+      "requireNumber": "password must contain at least one number"
+    },
+    "email": {
+      "required": "email is required",
+      "format": "invalid email address"
+    },
+    "mobilePhone": {
+      "format": "invalid mobile phone number"
+    },
+    "firstName": {
+      "required": "first name is required",
+      "minLength": "first name must be at least 2 characters",
+      "maxLength": "first name cannot be longer than 50 characters",
+      "format": "first name can only contain letters, spaces and hyphens"
+    },
+    "middleName": {
+      "maxLength": "middle name cannot be longer than 50 characters",
+      "format": "middle name can only contain letters, spaces and hyphens"
+    },
+    "lastName": {
+      "required": "last name is required",
+      "minLength": "last name must be at least 2 characters",
+      "maxLength": "last name cannot be longer than 50 characters",
+      "format": "last name can only contain letters, spaces and hyphens"
+    }
+  }
+}

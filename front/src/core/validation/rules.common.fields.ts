@@ -2,41 +2,73 @@
  * rules.common.fields.ts - frontend validation rules
  * Common validation rules for frequently used form fields.
  * Used across multiple components to ensure consistent validation behavior.
- * Contains rules for username, password, email and mobile phone fields.
  */
+import { useI18n } from 'vue-i18n'
+
+// const { t } = useI18n()
 
 type ValidationRule = (value: string) => string | boolean
 
-export const usernameRules: ValidationRule[] = [
-    v => !!v || 'Username is required',
-    v => (v && v.length >= 3) || 'Minimum length is 3 characters',
-    v => (v && v.length <= 25) || 'Maximum length is 25 characters',
-    v => /^[a-zA-Z0-9]+$/.test(v) || 'Only Latin letters and numbers are allowed',
-    v => /[a-zA-Z]/.test(v) || 'Username must contain at least one letter'
-]
+/**
+ * Regular expression for validating person names
+ * Allows letters, spaces and hyphens
+ */
+const nameRegex = /^[a-zA-Zа-яА-Я\- ]+$/
 
-export const passwordRules: ValidationRule[] = [
-    v => !!v || 'Password is required',
-    v => (v && v.length >= 8) || 'Minimum length is 8 characters',
-    v => (v && v.length <= 40) || 'Maximum length is 40 characters',
-    v => /^[A-Za-z0-9!"#$%&'()*+,.-/:;<=>?@[\]^_`{|}~]+$/.test(v) || 
-        'Password may contain Latin letters, numbers and common special characters',
-    v => /[A-Za-z]/.test(v) || 'Password must contain at least one letter',
-    v => /[0-9]/.test(v) || 'Password must contain at least one number'
-]
+export function useValidationRules() {
+    const { t } = useI18n()
+    
+    return {
+      usernameRules: [
+        v => !!v || t('validation.username.required'),
+        v => (v && v.length >= 3) || t('validation.username.minLength'),
+        v => (v && v.length <= 25) || t('validation.username.maxLength'),
+        v => /^[a-zA-Z0-9]+$/.test(v) || t('validation.username.format'),
+        v => /[a-zA-Z]/.test(v) || t('validation.username.requireLetter')
+      ],
+      
+      passwordRules: [
+        v => !!v || t('validation.password.required'),
+        v => (v && v.length >= 8) || t('validation.password.minLength'),
+        v => (v && v.length <= 40) || t('validation.password.maxLength'),
+        v => /^[A-Za-z0-9!"#$%&'()*+,.-/:;<=>?@[\]^_`{|}~]+$/.test(v) || t('validation.password.format'),
+        v => /[A-Za-z]/.test(v) || t('validation.password.requireLetter'),
+        v => /[0-9]/.test(v) || t('validation.password.requireNumber')
+       ],
+      
+       emailRules: [
+        v => !!v || t('validation.email.required'),
+        v => {
+          const emailRegex = /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$/
+          return emailRegex.test(v) || t('validation.email.format')
+        }
+       ],
 
-export const emailRules: ValidationRule[] = [
-    v => !!v || 'Email is required',
-    v => {
-        const emailRegex = /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$/
-        return emailRegex.test(v) || 'Invalid email address'
+       mobilePhoneRules: [
+        v => {
+          if (!v || v === '' || v === '+') return true
+          const phoneRegex = /^\+?[\d\s.()-]{10,15}$/
+          return phoneRegex.test(v.trim()) || t('validation.mobilePhone.format')
+        }
+       ],
+
+       firstNameRules: [
+        v => !!v || t('validation.firstName.required'),
+        v => (v && v.length >= 2) || t('validation.firstName.minLength'),
+        v => (v && v.length <= 50) || t('validation.firstName.maxLength'),
+        v => !v || nameRegex.test(v) || t('validation.firstName.format')
+       ],
+       
+       middleNameRules: [
+        v => !v || v.length <= 50 || t('validation.middleName.maxLength'),
+        v => !v || nameRegex.test(v) || t('validation.middleName.format')
+       ],
+       
+       lastNameRules: [
+        v => !!v || t('validation.lastName.required'),
+        v => (v && v.length >= 2) || t('validation.lastName.minLength'),
+        v => (v && v.length <= 50) || t('validation.lastName.maxLength'),
+        v => !v || nameRegex.test(v) || t('validation.lastName.format')
+       ]
     }
-]
-
-export const mobilePhoneRules: ValidationRule[] = [
-    v => {
-        if (!v || v === '' || v === '+') return true
-        const phoneRegex = /^\+?[\d\s.()-]{10,15}$/
-        return phoneRegex.test(v.trim()) || 'Invalid mobile phone number'
-    }
-]
+  }

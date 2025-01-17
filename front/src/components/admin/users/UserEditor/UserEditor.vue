@@ -20,12 +20,22 @@
  import { updateUserService } from './service.update.user'
  import { useUiStore } from '@/core/state/uistate'
  import { AccountStatus, Gender } from './types.user.editor'
- import { usernameRules, emailRules, passwordRules, mobilePhoneRules } from '@/core/validation/rules.common.fields'
- 
+ //import { usernameRules, emailRules, passwordRules, mobilePhoneRules, firstNameRules, middleNameRules, lastNameRules } from '@/core/validation/rules.common.fields'
+ import { useValidationRules } from '@/core/validation/rules.common.fields'
+
  // ==================== STORES ====================
  const userEditorStore = useUserEditorStore()
  const uiStore = useUiStore()
  const { t } = useI18n()
+ const {
+  usernameRules,
+  emailRules,
+  passwordRules,
+  mobilePhoneRules,
+  firstNameRules,
+  middleNameRules,
+  lastNameRules
+} = useValidationRules()
  
  // ==================== REFS & STATE ====================
  /**
@@ -60,29 +70,7 @@
  )
  
  // ==================== VALIDATION RULES ====================
- /**
-  * Регулярные выражения для валидации
-  */
- const nameRegex = /^[a-zA-Zа-яА-Я\- ]+$/
 
- const firstNameRules = [
-   (v: string) => !!v || 'имя обязательно',
-   (v: string) => (v && v.length >= 2) || 'имя должно быть не короче 2 символов',
-   (v: string) => (v && v.length <= 50) || 'имя не может быть длиннее 50 символов',
-   (v: string) => !v || nameRegex.test(v) || 'имя может содержать только буквы, пробелы и дефис'
- ]
- 
- const middleNameRules = [
-   (v: string) => !v || v.length <= 50 || 'отчество не может быть длиннее 50 символов',
-   (v: string) => !v || nameRegex.test(v) || 'отчество может содержать только буквы, пробелы и дефис'
- ]
- 
- const lastNameRules = [
-   (v: string) => !!v || 'фамилия обязательна',
-   (v: string) => (v && v.length >= 2) || 'фамилия должна быть не короче 2 символов',
-   (v: string) => (v && v.length <= 50) || 'фамилия не может быть длиннее 50 символов',
-   (v: string) => !v || nameRegex.test(v) || 'фамилия может содержать только буквы, пробелы и дефис'
- ]
  
  const addressRules = [
    (v: string) => !v || v.length <= 5000 || 'адрес не может быть длиннее 5000 символов',
