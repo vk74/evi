@@ -14,7 +14,7 @@
 
  <script setup lang="ts">
  import { useI18n } from 'vue-i18n'
- import { ref, computed, onMounted, watch } from 'vue'
+ import { ref, computed, onMounted, watch, onBeforeUnmount } from 'vue'
  import { useUserEditorStore } from './state.user.editor'
  import { createUserService } from './service.create.new.user'
  import { updateUserService } from './service.update.user'
@@ -208,6 +208,11 @@ const positionRules = [
    console.log('UserEditor mounted')
    watchFormFields()
  })
+
+ onBeforeUnmount(() => {
+  uiStore.hideSnackbar()
+  showRequiredFieldsWarning.value = false
+})
  </script>
 
 <template>
