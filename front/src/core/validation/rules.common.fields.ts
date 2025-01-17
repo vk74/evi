@@ -7,7 +7,7 @@ import { useI18n } from 'vue-i18n'
 
 // const { t } = useI18n()
 
-type ValidationRule = (value: string) => string | boolean
+// type ValidationRule = (value: string) => string | boolean
 
 /**
  * Regular expression for validating person names
@@ -21,7 +21,7 @@ export function useValidationRules() {
     return {
       usernameRules: [
         v => !!v || t('validation.username.required'),
-        v => (v && v.length >= 3) || t('validation.username.minLength'),
+        v => (v && v.length >= 2) || t('validation.username.minLength'),
         v => (v && v.length <= 25) || t('validation.username.maxLength'),
         v => /^[a-zA-Z0-9]+$/.test(v) || t('validation.username.format'),
         v => /[a-zA-Z]/.test(v) || t('validation.username.requireLetter')
@@ -69,6 +69,11 @@ export function useValidationRules() {
         v => (v && v.length >= 2) || t('validation.lastName.minLength'),
         v => (v && v.length <= 50) || t('validation.lastName.maxLength'),
         v => !v || nameRegex.test(v) || t('validation.lastName.format')
+       ],
+
+       generalDescriptionRules: [
+         v => !v || v.length <= 5000 || t('validation.generalDescription.maxLength'),
+         v => !v || /^[a-zA-Zа-яА-ЯёЁ0-9\s\-_.,!?()@#$%&'*+=/<>[\]{}"`~;:|]+$/.test(v) || t('validation.generalDescription.format'),
        ]
     }
   }

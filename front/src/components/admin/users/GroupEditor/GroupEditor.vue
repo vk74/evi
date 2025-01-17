@@ -1,13 +1,15 @@
 /**
  * GroupEditor.vue
- * Компонент для создания и редактирования групп пользователей
+ * Component for group creation and editing
  */
+
 <script setup lang="ts">
 import { useGroupEditorStore } from './state.group.editor'
 import { ref, computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { GroupStatus } from './types.group.editor'
 import type { TableHeader } from './types.group.editor'
+import { useValidationRules } from '@/core/validation/rules.common.fields'
 
  // ==================== STORES ====================
 const { t } = useI18n()
@@ -87,6 +89,25 @@ const headers = computed<TableHeader[]>(() => [
   }
 ])
 
+// ==================== VALIDATION RULES ====================
+const { emailRules } = useValidationRules()
+
+const groupNameRules = [
+ v => !!v || 'Название группы обязательно',
+ v => (v && v.length >= 2) || 'Минимальная длина названия 2 символа', 
+ v => (v && v.length <= 100) || 'Максимальная длина названия 100 символов',
+ v => /^[a-zA-Z0-9\-]+$/.test(v) || 'Разрешены только латинские буквы, цифры и дефис'
+]
+
+const groupStatusRules = [
+ v => !!v || 'Статус обязателен',
+ v => Object.values(GroupStatus).includes(v) || 'Недопустимый статус'
+]
+
+const { generalDescriptionRules } = useValidationRules()
+
+const { usernameRules } = useValidationRules()
+
 // Handlers for table interactions
 const onSelectMember = (userId: string, selected: boolean) => {
   console.log('[GroupEditor] Member selection changed:', { userId, selected })
@@ -95,6 +116,10 @@ const onSelectMember = (userId: string, selected: boolean) => {
 
 const isSelected = (userId: string) => {
   return selectedMembers.value.includes(userId)
+}
+
+const handleReset = () => {
+  groupEditorStore.resetForm()
 }
 </script>
 
@@ -151,6 +176,7 @@ const isSelected = (userId: string) => {
           v-if="!isEditMode"
           variant="outlined"
           class="control-btn"
+          @click="handleReset"
         >
           сбросить
         </v-btn>
@@ -180,19 +206,20 @@ const isSelected = (userId: string) => {
                   <v-col cols="12" md="6">
                     <v-text-field
                       v-model="groupEditorStore.group.group_name"
-                      label="название группы"
+                      label="название*"
                       variant="outlined"
                       density="comfortable"
                       counter="100"
                       required
+                      :rules="groupNameRules"
                     />
                   </v-col>
 
                   <!-- Group Status -->
                   <v-col cols="12" md="6">
                     <v-select
-                    v-model="groupEditorStore.group.group_status"
-                      label="статус группы"
+                      v-model="groupEditorStore.group.group_status"
+                      label="статус"
                       variant="outlined"
                       density="comfortable"
                       :items="[
@@ -202,6 +229,7 @@ const isSelected = (userId: string) => {
                       ]"
                       item-title="title"
                       item-value="value"
+                      :rules="groupStatusRules"
                     />
                   </v-col>
 
@@ -209,11 +237,12 @@ const isSelected = (userId: string) => {
                   <v-col cols="12">
                     <v-textarea
                       v-model="groupEditorStore.details.group_description"
-                      label="описание группы"
+                      label="описание"
                       variant="outlined"
-                      rows="3"
+                      rows="2"
                       counter="5000"
                       no-resize
+                      :rules="generalDescriptionRules"
                     />
                   </v-col>
 
@@ -221,21 +250,22 @@ const isSelected = (userId: string) => {
                   <v-col cols="12" md="6">
                     <v-text-field
                       v-model="groupEditorStore.details.group_email"
-                      label="e-mail группы"
+                      label="e-mail"
                       variant="outlined"
                       density="comfortable"
-                      readonly
+                      :rules="emailRules"
                     />
                   </v-col>
 
                   <!-- Group Owner -->
                   <v-col cols="12" md="6">
                     <v-text-field
-                    v-model="groupEditorStore.group.group_owner"
-                      label="владелец группы"
+                      v-model="groupEditorStore.group.group_owner"
+                      label="владелец*"
                       variant="outlined"
                       density="comfortable"
                       readonly
+                      :rules="usernameRules"
                     />
                   </v-col>
                 </v-row>

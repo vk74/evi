@@ -54,15 +54,21 @@ const initialUIState: IEditorUIState = {
  * Определение хранилища
  */
 export const useGroupEditorStore = defineStore('groupEditor', {
-  state: (): GroupEditorState => ({
-    group: { ...initialGroupState },
-    details: { ...initialDetailsState },
-    ui: { ...initialUIState },
-    mode: {
-      mode: 'create'
-    },
-    originalData: undefined
-  }),
+  state: (): GroupEditorState => {
+    const userStore = useUserStore()
+    return {
+      group: { 
+        ...initialGroupState,
+        group_owner: userStore.username || ''
+      },
+      details: { ...initialDetailsState },
+      ui: { ...initialUIState },
+      mode: {
+        mode: 'create'
+      },
+      originalData: undefined
+    }
+  },
 
   getters: {
     isEditMode(): boolean {
@@ -174,19 +180,27 @@ export const useGroupEditorStore = defineStore('groupEditor', {
 
     /**
      * Сброс формы к начальным значениям
+     * Работает только в режиме создания группы
      */
     resetForm() {
-      console.log('Resetting form to initial state')
-      // Устанавливаем владельца группы из текущего пользователя
-      const userStore = useUserStore()
-      const initialGroup = { 
-        ...initialGroupState,
-        group_owner: userStore.username
+      if (this.mode.mode === 'edit') {
+        console.log('Reset form is not available in edit mode')
+        return
       }
+
+      console.log('Resetting form to initial state')
+      const userStore = useUserStore()
       
-      this.group = { ...initialGroup }
+      this.group = { 
+        ...initialGroupState,
+        group_owner: userStore.username || ''
+      }
       this.details = { ...initialDetailsState }
       this.ui = { ...initialUIState }
+      this.mode = {
+        mode: 'create'
+      }
+      this.originalData = undefined
     },
 
     /**

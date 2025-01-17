@@ -18,7 +18,7 @@
         },
         "fields": {
           "username": {
-            "label": "название учетной записи*"
+            "label": "имя учетной записи*"
           },
           "email": {
             "label": "e-mail*"

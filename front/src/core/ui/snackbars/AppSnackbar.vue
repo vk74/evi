@@ -1,4 +1,7 @@
-// Кор компонент, обертка над v-snackbar из Vuetify
+/* 
+* AppSnackbar.vue 
+* Кор компонент, обертка над v-snackbar из Vuetify
+*/
 
 <template>
   <v-snackbar

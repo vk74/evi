@@ -37,6 +37,10 @@
       "minLength": "last name must be at least 2 characters",
       "maxLength": "last name cannot be longer than 50 characters",
       "format": "last name can only contain letters, spaces and hyphens"
+    },
+    "generalDescription": {
+      "maxLength": "description cannot be longer than 5000 characters",
+      "format": "can only contain letters, numbers and common symbols"
     }
   }
 }

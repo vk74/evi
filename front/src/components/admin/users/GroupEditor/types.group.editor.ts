@@ -39,7 +39,7 @@ export enum GroupStatus {
     group_id?: string                  // uuid, опционален т.к. генерируется при создании
     group_name: string                 // character varying(100)
     group_status: GroupStatus          // app.group_status
-    group_owner: string                // uuid
+    group_owner: string                // username пользователя-владельца группы
     is_system: boolean                 // boolean
   }
   
