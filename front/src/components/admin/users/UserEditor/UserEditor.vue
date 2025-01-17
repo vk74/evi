@@ -69,23 +69,21 @@
    Object.values(requiredFields.value).every(field => !!field)
  )
  
- // ==================== VALIDATION RULES ====================
+// ==================== VALIDATION RULES ====================
+const addressRules = [
+  (v: string) => !v || v.length <= 5000 || t('admin.users.editor.validation.fields.address.length'),
+  (v: string) => !v || /^[\p{L}\p{N}\p{P}\p{Z}]+$/u.test(v) || t('admin.users.editor.validation.fields.address.format')
+]
 
- 
- const addressRules = [
-   (v: string) => !v || v.length <= 5000 || 'адрес не может быть длиннее 5000 символов',
-   (v: string) => !v || /^[\p{L}\p{N}\p{P}\p{Z}]+$/u.test(v) || 'адрес содержит недопустимые символы'
- ]
- 
- const companyNameRules = [
-   (v: string) => !v || v.length <= 255 || 'название компании не может быть длиннее 255 символов',
-   (v: string) => !v || /^[\p{L}\p{N}\p{P}\p{Z}]+$/u.test(v) || 'название компании содержит недопустимые символы'
- ]
- 
- const positionRules = [
-   (v: string) => !v || v.length <= 255 || 'должность не может быть длиннее 255 символов',
-   (v: string) => !v || /^[\p{L}\p{N}\p{P}\p{Z}]+$/u.test(v) || 'должность содержит недопустимые символы'
- ]
+const companyNameRules = [
+  (v: string) => !v || v.length <= 255 || t('admin.users.editor.validation.fields.company.length'),
+  (v: string) => !v || /^[\p{L}\p{N}\p{P}\p{Z}]+$/u.test(v) || t('admin.users.editor.validation.fields.company.format')
+]
+
+const positionRules = [
+  (v: string) => !v || v.length <= 255 || t('admin.users.editor.validation.fields.position.length'),
+  (v: string) => !v || /^[\p{L}\p{N}\p{P}\p{Z}]+$/u.test(v) || t('admin.users.editor.validation.fields.position.format')
+]
  
  // ==================== WATCHERS ====================
  /**
@@ -377,7 +375,7 @@
                     <v-text-field
                       v-model="userEditorStore.account.passwordConfirm"
                       :label="t('admin.users.editor.fields.password.confirm')"
-                      :rules="[(v) => v === userEditorStore.account.password || 'пароли не совпадают']"
+                      :rules="[(v) => v === userEditorStore.account.password || t('admin.users.editor.validation.fields.password.mismatch')]"
                       variant="outlined"
                       density="comfortable"
                       :type="showPassword ? 'text' : 'password'"

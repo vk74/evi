@@ -1,89 +1,108 @@
 {
-    "admin": {
-      "users": {
-        "editor": {
-          "title": {
-            "create": "create user account",
-            "edit": "edit user account"
+  "admin": {
+    "users": {
+      "editor": {
+        "title": {
+          "create": "create user account",
+          "edit": "edit user account"
+        },
+        "sections": {
+          "basicInfo": "basic information",
+          "security": "security",
+          "additionalInfo": "additional information"
+        },
+        "buttons": {
+          "create": "create",
+          "update": "update user data",
+          "reset": "reset form fields"
+        },
+        "fields": {
+          "username": {
+            "label": "username*"
           },
-          "sections": {
-            "basicInfo": "basic information",
-            "security": "security",
-            "additionalInfo": "additional information"
+          "email": {
+            "label": "e-mail*"
           },
-          "buttons": {
-            "create": "create",
-            "update": "update user data",
-            "reset": "reset form fields"
+          "firstName": {
+            "label": "first name*"
           },
-          "fields": {
-            "username": {
-              "label": "username*"
-            },
-            "email": {
-              "label": "e-mail*"
-            },
-            "firstName": {
-              "label": "first name*"
-            },
-            "middleName": {
-              "label": "middle name"
-            },
-            "lastName": {
-              "label": "last name*"
-            },
-            "gender": {
-              "label": "gender",
-              "options": {
-                "male": "male",
-                "female": "female",
-                "notDefined": "not defined"
-              }
-            },
-            "password": {
-              "label": "password*",
-              "confirm": "confirm password*"
-            },
-            "accountStatus": {
-              "label": "account status",
-              "options": {
-                "active": "active",
-                "disabled": "disabled",
-                "requiresAction": "requires user action"
-              }
-            },
-            "isStaff": {
-              "label": "organization employee"
-            },
-            "mobilePhone": {
-              "label": "mobile phone",
-              "placeholder": "+7 XXX XXX XXXX"
-            },
-            "address": {
-              "label": "address"
-            },
-            "company": {
-              "label": "company name"
-            },
-            "position": {
-              "label": "position"
+          "middleName": {
+            "label": "middle name"
+          },
+          "lastName": {
+            "label": "last name*"
+          },
+          "gender": {
+            "label": "gender",
+            "options": {
+              "male": "male",
+              "female": "female",
+              "notDefined": "not defined"
             }
           },
-          "messages": {
-            "validation": {
-              "requiredFields": "fill in required fields marked with an asterisk (*)",
-              "formErrors": "please check the form fields for correctness"
+          "password": {
+            "label": "password*",
+            "confirm": "confirm password*"
+          },
+          "accountStatus": {
+            "label": "account status",
+            "options": {
+              "active": "active",
+              "disabled": "disabled",
+              "requiresAction": "requires user action"
+            }
+          },
+          "isStaff": {
+            "label": "organization employee"
+          },
+          "mobilePhone": {
+            "label": "mobile phone",
+            "placeholder": "+7 XXX XXX XXXX"
+          },
+          "address": {
+            "label": "address"
+          },
+          "company": {
+            "label": "company name"
+          },
+          "position": {
+            "label": "position"
+          }
+        },
+        "messages": {
+          "validation": {
+            "requiredFields": "fill in required fields marked with an asterisk (*)",
+            "formErrors": "please check the form fields for correctness"
+          },
+          "success": {
+            "created": "user account created",
+            "updated": "user data updated"
+          },
+          "error": {
+            "create": "error creating account",
+            "update": "error updating user data"
+          }
+        },
+        "validation": {
+          "fields": {
+            "address": {
+              "length": "address cannot be longer than 5000 characters",
+              "format": "address contains invalid characters"
             },
-            "success": {
-              "created": "user account created",
-              "updated": "user data updated"
+            "company": {
+              "length": "company name cannot be longer than 255 characters", 
+              "format": "company name contains invalid characters"
             },
-            "error": {
-              "create": "error creating account",
-              "update": "error updating user data"
+            "position": {
+              "length": "position cannot be longer than 255 characters",
+              "format": "position contains invalid characters"
+            },
+            "password": {
+              "mismatch": "passwords do not match"
             }
           }
         }
       }
     }
   }
+}
