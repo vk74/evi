@@ -5,12 +5,12 @@
 
 <script setup lang="ts">
 import { useGroupEditorStore } from './state.group.editor'
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { GroupStatus } from './types.group.editor'
 import type { TableHeader } from './types.group.editor'
 import { useValidationRules } from '@/core/validation/rules.common.fields'
-import { createGroupService } from './service.create.group'
+//import { createGroupService } from './service.create.group'
 
  // ==================== STORES ====================
 const { t } = useI18n()
@@ -33,6 +33,7 @@ const moduleTitle = computed(() =>
 const page = ref(1)
 const itemsPerPage = ref(25)
 const selectedMembers = ref<string[]>([])
+
 
 // Handler for section switching
 const switchSection = (section: 'details' | 'members') => {
@@ -97,7 +98,7 @@ const groupNameRules = [
  v => !!v || 'Название группы обязательно',
  v => (v && v.length >= 2) || 'Минимальная длина названия 2 символа', 
  v => (v && v.length <= 100) || 'Максимальная длина названия 100 символов',
- v => /^[a-zA-Z0-9\-]+$/.test(v) || 'Разрешены только латинские буквы, цифры и дефис'
+ v => /^[a-zA-Z0-9-]+$/.test(v) || 'Разрешены только латинские буквы, цифры и дефис'
 ]
 
 const groupStatusRules = [
@@ -108,6 +109,12 @@ const groupStatusRules = [
 const { generalDescriptionRules } = useValidationRules()
 
 const { usernameRules } = useValidationRules()
+
+// ==================== WATCHERS ====================
+
+
+
+// ==================== HANDLERS ====================
 
 // Handlers for table interactions
 const onSelectMember = (userId: string, selected: boolean) => {

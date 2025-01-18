@@ -134,7 +134,6 @@ export enum GroupStatus {
   export interface GroupEditorStoreGetters {
     isEditMode: () => boolean
     hasChanges: () => boolean
-    getChangedFields: () => Partial<IUpdateGroupRequest>
   }
 
   /**
