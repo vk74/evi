@@ -10,6 +10,7 @@ import { useI18n } from 'vue-i18n'
 import { GroupStatus } from './types.group.editor'
 import type { TableHeader } from './types.group.editor'
 import { useValidationRules } from '@/core/validation/rules.common.fields'
+import { createGroupService } from './service.create.group'
 
  // ==================== STORES ====================
 const { t } = useI18n()
@@ -118,6 +119,20 @@ const isSelected = (userId: string) => {
   return selectedMembers.value.includes(userId)
 }
 
+/**
+ * Обработчик создания новой группы
+ */
+ const handleCreateGroup = async () => {
+  console.log('[GroupEditor] Calling group creation')
+  try {
+    const response = await groupEditorStore.createNewGroup()
+    console.log('[GroupEditor] Group created:', response)
+  } catch (error) {
+    console.error('[GroupEditor] Error creating group:', error)
+    // TODO: добавить обработку ошибок в UI
+  }
+}
+
 const handleReset = () => {
   groupEditorStore.resetForm()
 }
@@ -161,6 +176,9 @@ const handleReset = () => {
           color="teal"
           variant="outlined"
           class="mr-2 control-btn"
+          :loading="groupEditorStore.ui.isSubmitting"
+          :disabled="groupEditorStore.ui.isSubmitting"
+          @click="handleCreateGroup"
         >
           создать группу
         </v-btn>

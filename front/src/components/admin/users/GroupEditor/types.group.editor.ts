@@ -40,7 +40,7 @@ export enum GroupStatus {
     group_name: string                 // character varying(100)
     group_status: GroupStatus          // app.group_status
     group_owner: string                // username пользователя-владельца группы
-    is_system: boolean                 // boolean
+    //is_system: boolean                 // boolean
   }
   
   /**
@@ -70,7 +70,7 @@ export enum GroupStatus {
     group_name: string
     group_status: GroupStatus
     group_owner: string
-    is_system: boolean
+    //is_system: boolean
     group_description: string
     group_email: string
   }
@@ -80,7 +80,7 @@ export enum GroupStatus {
     group_name?: string
     group_status?: GroupStatus
     group_owner?: string
-    is_system?: boolean
+    //is_system?: boolean
     group_description?: string
     group_email?: string
   }
@@ -144,4 +144,16 @@ export interface TableHeader {
   title: string
   key: string
   width?: string
+}
+
+/**
+ * Интерфейс действий хранилища
+ */
+export interface GroupEditorStoreActions {
+  createNewGroup: () => Promise<ICreateGroupResponse>
+  updateGroup: (data: Partial<IGroupData>) => void
+  updateDetails: (data: Partial<IGroupDetails>) => void
+  setActiveSection: (section: 'details' | 'members') => void
+  setSubmitting: (isSubmitting: boolean) => void
+  resetForm: () => void
 }

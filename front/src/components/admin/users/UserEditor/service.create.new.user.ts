@@ -1,11 +1,10 @@
 /**
  * service.create.new.user.ts
- * Сервис для создания новой учетной записи пользователя.
+ * Service used for creation of new user account from admin module.
  *
- * Функциональность:
- * - Создание новой учетной записи через API
- * - Обработка ошибок запроса
- * - Логирование операций
+ * - sending request to api for new user creation
+ * - errors management
+ * - logging
  */
 import { api } from '@/core/api/service.axios'
 import type { ICreateUserRequest, ICreateUserResponse } from './types.user.editor'

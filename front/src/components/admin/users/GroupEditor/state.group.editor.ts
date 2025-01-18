@@ -17,9 +17,11 @@ import type {
   ICreateGroupRequest,
   IUpdateGroupRequest,
   GroupEditorState,
-  EditMode
+  EditMode,
+  ICreateGroupResponse
 } from './types.group.editor'
 import { useUserStore } from '@/core/state/userstate'
+import { createGroupService } from './service.create.group'
 
 /**
  * Начальные значения для данных группы
@@ -28,7 +30,7 @@ const initialGroupState: IGroupData = {
   group_name: '',
   group_status: GroupStatus.ACTIVE,
   group_owner: '',
-  is_system: false
+  //is_system: false
 }
 
 /**
@@ -115,9 +117,9 @@ export const useGroupEditorStore = defineStore('groupEditor', {
       if (currentData.group_owner !== originalData.group_owner) {
         changes.group_owner = currentData.group_owner
       }
-      if (currentData.is_system !== originalData.is_system) {
-        changes.is_system = currentData.is_system
-      }
+      //if (currentData.is_system !== originalData.is_system) {
+      //  changes.is_system = currentData.is_system
+      //}
       if (currentData.group_description !== originalData.group_description) {
         changes.group_description = currentData.group_description
       }
@@ -222,7 +224,7 @@ export const useGroupEditorStore = defineStore('groupEditor', {
         group_name: group.group_name,
         group_status: group.group_status,
         group_owner: group.group_owner,
-        is_system: group.is_system,
+        //is_system: group.is_system,
         group_description: details.group_description,
         group_email: details.group_email
       }
@@ -239,6 +241,41 @@ export const useGroupEditorStore = defineStore('groupEditor', {
       console.log('Preparing data for update:', changes)
 
       return changes
+    },
+
+    /**
+     * Создание новой группы
+     * @returns Promise<ICreateGroupResponse> - Ответ от сервера с данными созданной группы
+     * @throws Error при ошибке создания
+     */
+    async createNewGroup(): Promise<ICreateGroupResponse> {
+      console.log('[GroupEditorStore] Starting group creation')
+      
+      try {
+        this.setSubmitting(true)
+        
+        // Получаем подготовленные данные
+        const requestData = this.prepareRequestData()
+        
+        // Отправляем запрос через сервис и получаем ответ
+        const response = await createGroupService.createGroup(requestData)
+        
+        console.log('[GroupEditorStore] Group created successfully:', {
+          groupId: response.groupId,
+          groupName: response.group_name
+        })
+        
+        // Сбрасываем форму после успешного создания
+        this.resetForm()
+        
+        return response
+        
+      } catch (error) {
+        console.error('[GroupEditorStore] Failed to create group:', error)
+        throw error
+      } finally {
+        this.setSubmitting(false)
+      }
     }
   }
 })
