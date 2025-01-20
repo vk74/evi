@@ -5,18 +5,18 @@
 
 <script setup lang="ts">
 import { useGroupEditorStore } from './state.group.editor'
-import { ref, computed, watch } from 'vue'
+import { ref, computed, watch, onBeforeUnmount } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { GroupStatus } from './types.group.editor'
 import type { TableHeader } from './types.group.editor'
 import { useValidationRules } from '@/core/validation/rules.common.fields'
-
+ import { useUiStore } from '@/core/state/uistate'
 //import { createGroupService } from './service.create.group'
 
  // ==================== STORES ====================
 const { t } = useI18n()
 const groupEditorStore = useGroupEditorStore()
-
+const uiStore = useUiStore()
 
  // ==================== REFS & STATE ====================
 // Table parameters
@@ -26,8 +26,8 @@ const selectedMembers = ref<string[]>([])
 
 const formRef = ref<HTMLFormElement | null>(null)
 const isFormContentValidated = ref(false)
-
 const isRequiredFieldsComplete = ref(false)
+const hasInteracted = ref(false)
 
  // ==================== COMPUTED ====================
 
@@ -91,7 +91,7 @@ const headers = computed<TableHeader[]>(() => [
 ])
 
 // ==================== VALIDATION RULES ====================
-const { emailRules } = useValidationRules()
+const { optionalEmailRules } = useValidationRules()
 
 const groupNameRules = [
  v => !!v || 'Название группы обязательно',
@@ -130,6 +130,32 @@ watch(
   () => {
     validateRequiredFields()
   }
+)
+
+// watcher to check if user touched required fields to display info snakbar. snakbar will not be displayed unles user has touched either of required fields
+watch(
+  [
+    () => groupEditorStore.group.group_name,
+    () => groupEditorStore.group.group_owner
+  ],
+  () => {
+    if (!hasInteracted.value) {
+      hasInteracted.value = true
+    }
+  }
+)
+
+// Управление отображением snackbar
+watch(
+  [hasInteracted, isRequiredFieldsComplete],
+  ([interacted, complete]) => {
+    if (interacted && !complete) {
+      uiStore.showInfoSnackbar('для создания группы заполните все обязательные поля помеченные *')
+    } else {
+      uiStore.hideSnackbar()
+    }
+  },
+  { immediate: true }
 )
 
 // ==================== HANDLERS ====================
@@ -193,10 +219,14 @@ const isSelected = (userId: string) => {
 
 const handleReset = () => {
   groupEditorStore.resetForm()
+  hasInteracted.value = false
+  uiStore.hideSnackbar()
 }
 
- // ==================== LIFECYCLE ====================
-
+// ==================== LIFECYCLE ====================
+onBeforeUnmount(() => {
+  uiStore.hideSnackbar()
+})
 </script>
 
 <template>
@@ -342,7 +372,7 @@ const handleReset = () => {
                       label="e-mail"
                       variant="outlined"
                       density="comfortable"
-                      :rules="emailRules"
+                      :rules="optionalEmailRules"
                     />
                   </v-col>
 

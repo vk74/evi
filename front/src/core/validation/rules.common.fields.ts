@@ -44,6 +44,13 @@ export function useValidationRules() {
         }
        ],
 
+       optionalEmailRules: [
+        v => {
+          const emailRegex = /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$/
+          return !v || emailRegex.test(v) || t('validation.email.format')
+        }
+      ],
+
        mobilePhoneRules: [
         v => {
           if (!v || v === '' || v === '+') return true
