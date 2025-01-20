@@ -23,6 +23,8 @@ const page = ref(1)
 const itemsPerPage = ref(25)
 const selectedMembers = ref<string[]>([])
 
+const formRef = ref<HTMLFormElement | null>(null)
+const isFormContentValidated = ref(false)
 
  // ==================== COMPUTED ====================
 // Computed properties for active section
@@ -102,10 +104,26 @@ const { usernameRules } = useValidationRules()
 
 // ==================== WATCHERS ====================
 
-
+watch(
+  [
+    () => groupEditorStore.group,
+    () => groupEditorStore.details
+  ],
+  async () => {
+    await validateForm()
+  },
+  { deep: true }
+)
 
 // ==================== HANDLERS ====================
 
+const validateForm = async () => {
+  if (!formRef.value) return false
+  
+  const { valid } = await formRef.value.validate()
+  isFormContentValidated.value = valid
+  return valid
+}
 
 // Handler for section switching
 const switchSection = (section: 'details' | 'members') => {
@@ -229,7 +247,14 @@ const handleReset = () => {
           v-if="isDetailsActive"
           flat
         >
-          <v-form class="px-4">
+          <v-form 
+            ref="formRef"
+            class="px-4"
+          >
+            <!-- Debug validation state -->
+            <div class="pa-2 text-caption">
+              Form validation state: {{ isFormContentValidated }}
+            </div>
             <v-row>
               <v-col cols="12">
                 <v-row class="pt-3">
