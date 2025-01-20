@@ -26,6 +26,8 @@ const selectedMembers = ref<string[]>([])
 const formRef = ref<HTMLFormElement | null>(null)
 const isFormContentValidated = ref(false)
 
+const isRequiredFieldsComplete = ref(false)
+
  // ==================== COMPUTED ====================
 // Computed properties for active section
 const isDetailsActive = computed(() => groupEditorStore.ui.activeSection === 'details')
@@ -115,6 +117,16 @@ watch(
   { deep: true }
 )
 
+watch(
+  [
+    () => groupEditorStore.group.group_name,
+    () => groupEditorStore.group.group_owner
+  ],
+  () => {
+    validateRequiredFields()
+  }
+)
+
 // ==================== HANDLERS ====================
 
 const validateForm = async () => {
@@ -123,6 +135,19 @@ const validateForm = async () => {
   const { valid } = await formRef.value.validate()
   isFormContentValidated.value = valid
   return valid
+}
+
+const validateRequiredFields = () => {
+  const { group_name, group_owner } = groupEditorStore.group
+  
+  isRequiredFieldsComplete.value = Boolean(
+    group_name && 
+    group_name.trim() !== '' && 
+    group_owner && 
+    group_owner.trim() !== ''
+  )
+  
+  return isRequiredFieldsComplete.value
 }
 
 // Handler for section switching
@@ -254,6 +279,9 @@ const handleReset = () => {
             <!-- Debug validation state -->
             <div class="pa-2 text-caption">
               Form validation state: {{ isFormContentValidated }}
+            </div>
+            <div class="pa-2 text-caption">
+              Required fields state: {{ isRequiredFieldsComplete }}
             </div>
             <v-row>
               <v-col cols="12">
