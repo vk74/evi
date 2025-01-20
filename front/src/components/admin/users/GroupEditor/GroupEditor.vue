@@ -10,6 +10,7 @@ import { useI18n } from 'vue-i18n'
 import { GroupStatus } from './types.group.editor'
 import type { TableHeader } from './types.group.editor'
 import { useValidationRules } from '@/core/validation/rules.common.fields'
+
 //import { createGroupService } from './service.create.group'
 
  // ==================== STORES ====================
@@ -29,6 +30,10 @@ const isFormContentValidated = ref(false)
 const isRequiredFieldsComplete = ref(false)
 
  // ==================== COMPUTED ====================
+
+ const isFormValid = computed(() => 
+  isFormContentValidated.value && isRequiredFieldsComplete.value
+)
 // Computed properties for active section
 const isDetailsActive = computed(() => groupEditorStore.ui.activeSection === 'details')
 const isMembersActive = computed(() => groupEditorStore.ui.activeSection === 'members')
@@ -233,7 +238,7 @@ const handleReset = () => {
           variant="outlined"
           class="mr-2 control-btn"
           :loading="groupEditorStore.ui.isSubmitting"
-          :disabled="groupEditorStore.ui.isSubmitting"
+          :disabled="groupEditorStore.ui.isSubmitting || !isFormValid"
           @click="handleCreateGroup"
         >
           создать группу
