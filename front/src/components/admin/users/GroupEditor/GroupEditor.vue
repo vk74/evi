@@ -16,6 +16,14 @@ import { useValidationRules } from '@/core/validation/rules.common.fields'
 const { t } = useI18n()
 const groupEditorStore = useGroupEditorStore()
 
+
+ // ==================== REFS & STATE ====================
+// Table parameters
+const page = ref(1)
+const itemsPerPage = ref(25)
+const selectedMembers = ref<string[]>([])
+
+
  // ==================== COMPUTED ====================
 // Computed properties for active section
 const isDetailsActive = computed(() => groupEditorStore.ui.activeSection === 'details')
@@ -28,24 +36,6 @@ const isEditMode = computed(() => groupEditorStore.isEditMode)
 const moduleTitle = computed(() => 
   isEditMode.value ? 'редактирование группы' : 'создание группы'
 )
-
-// Table parameters
-const page = ref(1)
-const itemsPerPage = ref(25)
-const selectedMembers = ref<string[]>([])
-
-
-// Handler for section switching
-const switchSection = (section: 'details' | 'members') => {
-  // В режиме создания не позволяем переключаться на секцию участников
-  if (!isEditMode.value && section === 'members') {
-    console.log('[GroupEditor] Cannot switch to members section in create mode')
-    return
-  }
-  
-  console.log('[GroupEditor] Switching to section:', section)
-  groupEditorStore.setActiveSection(section)
-}
 
 // Table headers configuration
 const headers = computed<TableHeader[]>(() => [
@@ -116,6 +106,19 @@ const { usernameRules } = useValidationRules()
 
 // ==================== HANDLERS ====================
 
+
+// Handler for section switching
+const switchSection = (section: 'details' | 'members') => {
+  // В режиме создания не позволяем переключаться на секцию участников
+  if (!isEditMode.value && section === 'members') {
+    console.log('[GroupEditor] Cannot switch to members section in create mode')
+    return
+  }
+  
+  console.log('[GroupEditor] Switching to section:', section)
+  groupEditorStore.setActiveSection(section)
+}
+
 // Handlers for table interactions
 const onSelectMember = (userId: string, selected: boolean) => {
   console.log('[GroupEditor] Member selection changed:', { userId, selected })
@@ -143,6 +146,9 @@ const isSelected = (userId: string) => {
 const handleReset = () => {
   groupEditorStore.resetForm()
 }
+
+ // ==================== LIFECYCLE ====================
+
 </script>
 
 <template>
