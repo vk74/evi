@@ -1,5 +1,5 @@
 /**
- * types.group.editor.ts
+ * types.group.editor.ts - frontend
  * Type definitions for the group editor component.
  *
  * This module defines TypeScript types and interfaces for:
