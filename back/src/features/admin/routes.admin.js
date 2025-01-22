@@ -8,6 +8,7 @@ const updateUserById = require('./users/userEditor/controller.update.user');
 const deleteSelectedUsers = require('./users/usersList/controller.delete.selected.users');
 const loadUserById = require('./users/userEditor/controller.load.user');
 const createUserController = require('./users/userEditor/controller.create.user');
+const createGroupController = require('./users/groupEditor/controller.create.group');
 
 // Routes Users
 router.post('/api/admin/users/create-new-user', validateJWT, createUserController);
@@ -17,7 +18,7 @@ router.post('/api/admin/users/update-user-by-userid', validateJWT, updateUserByI
 router.post('/api/admin/users/delete-selected-users', validateJWT, deleteSelectedUsers);
 
 // Routes Groups
-// /api/admin/groups/create-new-group
+router.post('/api/admin/groups/create-new-group', validateJWT, createGroupController);
 // /api/admin/groups/update-group-by-groupid/:groupId
 // /api/admin/groups/fetch-group-by-groupid/:groupId
 // api/admin/users/delete-selected-groups
