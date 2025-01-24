@@ -20,6 +20,16 @@ import type {
 
 const pool = pgPool as Pool;
 
+// Data preparation
+function trimData(data: CreateUserRequest): CreateUserRequest {
+  return {
+    ...data,
+    username: data.username?.trim(),
+    email: data.email?.trim(),
+    mobile_phone_number: data.mobile_phone_number?.trim(),
+  };
+}
+
 // Validation functions
 async function validateRequiredFields(data: CreateUserRequest): Promise<void> {
   const requiredFields = {
@@ -40,6 +50,40 @@ async function validateRequiredFields(data: CreateUserRequest): Promise<void> {
       message: `Missing required fields: ${missingFields.join(', ')}`,
       field: missingFields[0].toLowerCase()
     } as RequiredFieldError;
+  }
+}
+
+function validateUsername(username: string): void {
+  if (username.length < VALIDATION.USERNAME.MIN_LENGTH) {
+    throw {
+      code: 'VALIDATION_ERROR',
+      message: VALIDATION.USERNAME.MESSAGES.MIN_LENGTH,
+      field: 'username'
+    } as ValidationError;
+  }
+
+  if (username.length > VALIDATION.USERNAME.MAX_LENGTH) {
+    throw {
+      code: 'VALIDATION_ERROR',
+      message: VALIDATION.USERNAME.MESSAGES.MAX_LENGTH,
+      field: 'username'
+    } as ValidationError;
+  }
+
+  if (!REGEX.USERNAME.test(username)) {
+    throw {
+      code: 'VALIDATION_ERROR',
+      message: VALIDATION.USERNAME.MESSAGES.INVALID_CHARS,
+      field: 'username'
+    } as ValidationError;
+  }
+
+  if (!REGEX.USERNAME_CONTAINS_LETTER.test(username)) {
+    throw {
+      code: 'VALIDATION_ERROR',
+      message: VALIDATION.USERNAME.MESSAGES.NO_LETTER,
+      field: 'username'
+    } as ValidationError;
   }
 }
 
@@ -85,6 +129,66 @@ function validatePassword(password: string): void {
   }
 }
 
+function validateEmail(email: string): void {
+  if (email.length > VALIDATION.EMAIL.MAX_LENGTH) {
+    throw {
+      code: 'VALIDATION_ERROR',
+      message: VALIDATION.EMAIL.MESSAGES.MAX_LENGTH,
+      field: 'email'
+    } as ValidationError;
+  }
+
+  if (!REGEX.EMAIL.test(email)) {
+    throw {
+      code: 'VALIDATION_ERROR',
+      message: VALIDATION.EMAIL.MESSAGES.INVALID,
+      field: 'email'
+    } as ValidationError;
+  }
+}
+
+function validateName(name: string, field: 'first_name' | 'middle_name' | 'last_name'): void {
+  const validationRules = field === 'middle_name' 
+    ? VALIDATION.MIDDLE_NAME 
+    : field === 'first_name' 
+      ? VALIDATION.FIRST_NAME 
+      : VALIDATION.LAST_NAME;
+
+  if (field !== 'middle_name' && name.length < validationRules.MIN_LENGTH) {
+    throw {
+      code: 'VALIDATION_ERROR',
+      message: validationRules.MESSAGES.MIN_LENGTH,
+      field
+    } as ValidationError;
+  }
+
+  if (name.length > validationRules.MAX_LENGTH) {
+    throw {
+      code: 'VALIDATION_ERROR',
+      message: validationRules.MESSAGES.MAX_LENGTH,
+      field
+    } as ValidationError;
+  }
+
+  if (!REGEX.NAME.test(name)) {
+    throw {
+      code: 'VALIDATION_ERROR',
+      message: validationRules.MESSAGES.INVALID_CHARS,
+      field
+    } as ValidationError;
+  }
+}
+
+function validateMobilePhone(phone: string): void {
+  if (!REGEX.MOBILE_PHONE.test(phone)) {
+    throw {
+      code: 'VALIDATION_ERROR',
+      message: VALIDATION.MOBILE_PHONE.MESSAGES.INVALID,
+      field: 'mobile_phone_number'
+    } as ValidationError;
+  }
+}
+
 async function checkUniqueness(data: CreateUserRequest): Promise<void> {
     const uniqueChecks = [
       {
@@ -120,19 +224,39 @@ async function checkUniqueness(data: CreateUserRequest): Promise<void> {
         } as UniqueCheckError;
       }
     }
+}
+
+// Основная функция валидации данных
+function validateData(data: CreateUserRequest): void {
+  validateUsername(data.username);
+  validatePassword(data.password);
+  validateEmail(data.email);
+  validateName(data.first_name, 'first_name');
+  validateName(data.last_name, 'last_name');
+  
+  if (data.middle_name) {
+    validateName(data.middle_name, 'middle_name');
   }
+  
+  if (data.mobile_phone_number) {
+    validateMobilePhone(data.mobile_phone_number);
+  }
+}
 
 export async function createUser(userData: CreateUserRequest): Promise<CreateUserResponse> {
   const client = await pool.connect();
   
   try {
+    // Data preparation
+    const trimmedData = trimData(userData);
+
     // Validation
-    await validateRequiredFields(userData);
-    validatePassword(userData.password);
-    await checkUniqueness(userData);
+    await validateRequiredFields(trimmedData);
+    validateData(trimmedData);
+    await checkUniqueness(trimmedData);
 
     // Password hashing
-    const hashedPassword = await bcrypt.hash(userData.password, 10);
+    const hashedPassword = await bcrypt.hash(trimmedData.password, 10);
 
     // Start transaction
     await client.query('BEGIN');
@@ -141,14 +265,14 @@ export async function createUser(userData: CreateUserRequest): Promise<CreateUse
     const userResult = await client.query(
         queries.insertUser.text,
       [
-        userData.username,
+        trimmedData.username,
         hashedPassword,
-        userData.email,
-        userData.first_name,
-        userData.last_name,
-        userData.middle_name || null,
-        userData.is_staff || false,
-        userData.account_status || 'active'
+        trimmedData.email,
+        trimmedData.first_name,
+        trimmedData.last_name,
+        trimmedData.middle_name || null,
+        trimmedData.is_staff || false,
+        trimmedData.account_status || 'active'
       ]
     );
     
@@ -159,11 +283,11 @@ export async function createUser(userData: CreateUserRequest): Promise<CreateUse
         queries.insertUserProfile.text,
       [
         userId,
-        userData.gender || null,
-        userData.mobile_phone_number || null,
-        userData.address || null,
-        userData.company_name || null,
-        userData.position || null
+        trimmedData.gender || null,
+        trimmedData.mobile_phone_number || null,
+        trimmedData.address || null,
+        trimmedData.company_name || null,
+        trimmedData.position || null
       ]
     );
 
@@ -173,8 +297,8 @@ export async function createUser(userData: CreateUserRequest): Promise<CreateUse
       success: true,
       message: 'User account created successfully',
       userId,
-      username: userData.username,
-      email: userData.email
+      username: trimmedData.username,
+      email: trimmedData.email
     };
 
   } catch (error) {

@@ -70,12 +70,14 @@ export const VALIDATION = {
       }
   },
   MIDDLE_NAME: {
-      MAX_LENGTH: 50,
-      MESSAGES: {
-          MAX_LENGTH: 'Middle name cannot exceed 50 characters',
-          INVALID_CHARS: 'Middle name can only contain letters, spaces and hyphens'
-      }
-  },
+    MIN_LENGTH: 2,  // добавляем как у других имен
+    MAX_LENGTH: 50,
+    MESSAGES: {
+        MIN_LENGTH: 'Middle name must be at least 2 characters long', // добавляем сообщение
+        MAX_LENGTH: 'Middle name cannot exceed 50 characters',
+        INVALID_CHARS: 'Middle name can only contain letters, spaces and hyphens'
+    }
+},
   LAST_NAME: {
       MIN_LENGTH: 2,
       MAX_LENGTH: 50,
