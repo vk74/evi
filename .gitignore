@@ -2,6 +2,8 @@
 /back/src/keys/*
 /back/node_modules/*
 /docs/other/*
+/docs/logo/*
+/docs/temp/*
 .env
 dist/
 *.log
