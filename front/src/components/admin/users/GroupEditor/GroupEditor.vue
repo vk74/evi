@@ -211,16 +211,23 @@ const isSelected = (userId: string) => {
   try {
     const response = await groupEditorStore.createNewGroup()
     console.log('[GroupEditor] Group created:', response)
+    
+    if (response?.success) {
+      uiStore.showSuccessSnackbar('новая группа была создана успешно')
+      //handleReset()
+    }
   } catch (error) {
     console.error('[GroupEditor] Error creating group:', error)
-    // TODO: добавить обработку ошибок в UI
+    uiStore.showErrorSnackbar(error instanceof Error ? error.message : 'ошибка при создании группы')
   }
 }
 
 const handleReset = () => {
   groupEditorStore.resetForm()
   hasInteracted.value = false
-  uiStore.hideSnackbar()
+  formRef.value?.reset()
+  isFormContentValidated.value = false
+  isRequiredFieldsComplete.value = false
 }
 
 // ==================== LIFECYCLE ====================
