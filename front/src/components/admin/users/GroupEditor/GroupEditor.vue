@@ -1,6 +1,6 @@
 <!-- GroupEditor.vue -->
 <script setup lang="ts">
-import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
+import { ref, onMounted, onBeforeUnmount } from 'vue'
 import { useGroupEditorStore } from './state.group.editor'
 import { useUiStore } from '@/core/state/uistate'
 import { GroupStatus } from './types.group.editor'

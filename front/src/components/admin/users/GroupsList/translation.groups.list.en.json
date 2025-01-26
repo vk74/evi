@@ -1,0 +1,28 @@
+{
+  "admin": {
+    "groups": {
+      "list": {
+        "title": "Groups List",
+        "buttons": {
+          "create": "Create Group",
+          "edit": "Edit",
+          "delete": "Delete"
+        },
+        "table": {
+          "headers": {
+            "select": "Select",
+            "id": "ID",
+            "name": "Name",
+            "status": "Status",
+            "owner": "Owner",
+            "system": "System"
+          }
+        },
+        "messages": {
+          "confirmDelete": "Are you sure you want to delete the selected groups?",
+          "deleteSuccess": "Successfully deleted {count} groups."
+        }
+      }
+    }
+  }
+}

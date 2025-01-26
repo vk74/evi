@@ -19,6 +19,7 @@ router.post('/api/admin/users/delete-selected-users', validateJWT, deleteSelecte
 
 // Routes Groups
 router.post('/api/admin/groups/create-new-group', validateJWT, createGroupController);
+// /api/admin/groups/fetch-groups
 // /api/admin/groups/update-group-by-groupid/:groupId
 // /api/admin/groups/fetch-group-by-groupid/:groupId
 // api/admin/users/delete-selected-groups

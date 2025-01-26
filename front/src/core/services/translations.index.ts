@@ -14,6 +14,10 @@ import userEditorEn from '@/components/admin/users/UserEditor/translation.user.e
 import usersListRu from '@/components/admin/users/UsersList/translation.users.list.ru.json'
 import usersListEn from '@/components/admin/users/UsersList/translation.users.list.en.json'
 
+import groupsListRu from '@/components/admin/users/GroupsList/translation.groups.list.ru.json'
+import groupsListEn from '@/components/admin/users/GroupsList/translation.groups.list.en.json'
+// 
+
 // validation rules
 import validationCommonFieldsRulesRu from '@/core/validation/translation.rules.common.fields.ru.json'
 import validationCommonFieldsRulesEn from '@/core/validation/translation.rules.common.fields.en.json'
@@ -25,13 +29,15 @@ export default {
       adminModuleRu,
       userEditorRu,
       usersListRu,
-      validationCommonFieldsRulesRu
+      validationCommonFieldsRulesRu,
+      groupsListRu
     ),
     en: merge({},
       appTranslationsEn,
       adminModuleEn,
       userEditorEn,
       usersListEn,
-      validationCommonFieldsRulesEn
+      validationCommonFieldsRulesEn,
+      groupsListEn
     )
   }
