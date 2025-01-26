@@ -76,3 +76,12 @@ export interface TableHeader {
   width?: string;
   sortable?: boolean;
 }
+
+/**
+ * Error type for group operations
+ */
+export type GroupError = {
+  code: string;            // Error code identifier
+  message: string;         // Human-readable error message
+  details?: unknown;       // Additional error context (optional)
+};

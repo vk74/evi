@@ -1,13 +1,13 @@
 <!--
 /**
  * @file GroupsList.vue
- * Компонент для отображения и управления списком групп в модуле администрирования.
+ * Component for displaying and managing the list of groups in the administration module.
  *
- * Функциональность:
- * - Отображение групп в табличном виде с пагинацией
- * - Сортировка по колонкам с сохранением состояния
- * - Выбор групп для удаления или редактирования
- * - Создание новой группы
+ * Functionality:
+ * - Displays groups in a table with pagination
+ * - Sorts columns with state preservation
+ * - Selects groups for deletion or editing
+ * - Creates a new group
  */
 -->
 
@@ -16,39 +16,40 @@ import { ref, computed, onMounted } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useStoreGroupsList } from './state.groups.list';
 import groupsService from './service.read.groups';
+import deleteSelectedGroupsService from './service.delete.selected.groups';
 import type { TableHeader } from './types.groups.list';
 import { useUserStore } from '@/core/state/userstate';
 import { useUiStore } from '@/core/state/uistate';
-import { useUsersAdminStore } from '../state.users.admin'; // Хранилище для управления секциями
+import { useUsersAdminStore } from '../state.users.admin';
 
-// Инициализация сторов и i18n
+// ==================== STORE AND I18N INITIALIZATION ====================
 const { t } = useI18n();
 const groupsStore = useStoreGroupsList();
 const userStore = useUserStore();
 const uiStore = useUiStore();
-const usersAdminStore = useUsersAdminStore(); // Хранилище для управления секциями
+const usersAdminStore = useUsersAdminStore();
 
-// Проверка авторизации пользователя
+// ==================== AUTHENTICATION CHECK ====================
 const isAuthorized = computed(() => userStore.isLoggedIn);
 
-// Параметры таблицы
+// ==================== TABLE PARAMETERS ====================
 const page = ref<number>(groupsStore.page);
 const itemsPerPage = ref<number>(groupsStore.itemsPerPage);
 
-// Вычисляемые свойства для работы с группами
+// ==================== COMPUTED PROPERTIES ====================
 const groups = computed(() => groupsStore.getGroups);
 const loading = computed(() => groupsStore.loading);
 const totalItems = computed(() => groupsStore.totalItems);
 
-// Выбранные группы
+// ==================== SELECTED GROUPS ====================
 const selectedCount = computed(() => groupsStore.selectedCount);
 const hasSelected = computed(() => selectedCount.value > 0);
 const hasOneSelected = computed(() => selectedCount.value === 1);
 
-// Состояние диалога подтверждения удаления
+// ==================== DELETE CONFIRMATION DIALOG STATE ====================
 const showDeleteDialog = ref(false);
 
-// Заголовки таблицы
+// ==================== TABLE HEADERS ====================
 const headers = computed<TableHeader[]>(() => [
   { 
     title: t('admin.groups.list.table.headers.select'), 
@@ -59,30 +60,37 @@ const headers = computed<TableHeader[]>(() => [
   { 
     title: t('admin.groups.list.table.headers.id'), 
     key: 'group_id', 
-    width: '80px' 
+    width: '200px'
   },
   { 
     title: t('admin.groups.list.table.headers.name'), 
-    key: 'group_name' 
+    key: 'group_name', 
+    width: '300px'
   },
   { 
     title: t('admin.groups.list.table.headers.status'), 
     key: 'group_status', 
-    width: '100px' 
+    width: '120px'
   },
   { 
     title: t('admin.groups.list.table.headers.owner'), 
     key: 'group_owner', 
-    width: '120px' 
+    width: '200px'
   },
   { 
     title: t('admin.groups.list.table.headers.system'), 
     key: 'is_system', 
-    width: '80px' 
+    width: '80px'
   }
 ]);
 
-// Функция для получения цвета статуса
+// ==================== GROUP HANDLING FUNCTIONS ====================
+
+/**
+ * Gets the color for the group status
+ * @param status - Group status
+ * @returns Color for the status
+ */
 const getStatusColor = (status: string) => {
   switch (status) {
     case 'active':
@@ -96,7 +104,11 @@ const getStatusColor = (status: string) => {
   }
 };
 
-// Функция для выбора/снятия выбора группы
+/**
+ * Selects or deselects a group
+ * @param groupId - Group ID
+ * @param selected - Selection flag
+ */
 const onSelectGroup = (groupId: string, selected: boolean) => {
   if (selected) {
     groupsStore.selectGroup(groupId);
@@ -105,52 +117,73 @@ const onSelectGroup = (groupId: string, selected: boolean) => {
   }
 };
 
-// Функция для проверки, выбрана ли группа
+/**
+ * Checks if a group is selected
+ * @param groupId - Group ID
+ * @returns Selection flag
+ */
 const isSelected = (groupId: string) => {
   return groupsStore.selectedGroups.includes(groupId);
 };
 
-// Функция для создания группы
+/**
+ * Handles group creation
+ */
 const createGroup = () => {
   console.log('Create group clicked');
-  // Устанавливаем активную секцию для перехода в GroupEditor
   usersAdminStore.setActiveSection('group-editor');
 };
 
-// Функция для редактирования группы
+/**
+ * Handles group editing
+ */
 const editGroup = () => {
   console.log('Edit group clicked');
-  // Здесь можно добавить логику для редактирования группы
+  // Add logic for editing a group here
 };
 
-// Функция для удаления выбранных групп
-const onDeleteSelected = () => {
-  showDeleteDialog.value = true;
-};
-
-// Функция для отмены удаления
-const cancelDelete = () => {
-  showDeleteDialog.value = false;
-};
-
-// Функция для подтверждения удаления
-const confirmDelete = async () => {
+/**
+ * Handles group deletion
+ */
+const onDeleteSelected = async () => {
   try {
     console.log('Deleting selected groups:', groupsStore.selectedGroups);
-    // Здесь можно добавить логику для удаления групп
-    uiStore.showSuccessSnackbar(t('admin.groups.list.messages.deleteSuccess', { count: selectedCount.value }));
+
+    // Call the service to delete selected groups
+    const deletedCount = await deleteSelectedGroupsService.deleteSelectedGroups(groupsStore.selectedGroups);
+
+    // Show success notification
+    uiStore.showSuccessSnackbar(t('admin.groups.list.messages.deleteSuccess', { count: deletedCount }));
+
+    // Refresh the groups list
+    await groupsService.fetchGroups();
+
   } catch (error) {
     console.error('Error deleting groups:', error);
     uiStore.showErrorSnackbar(
-      error instanceof Error ? error.message : 'Ошибка удаления групп'
+      error instanceof Error ? error.message : 'Error deleting groups'
     );
   } finally {
+    // Close the delete confirmation dialog
     showDeleteDialog.value = false;
+
+    // Clear the selection
     groupsStore.clearSelection();
   }
 };
 
-// Загрузка данных при монтировании компонента
+/**
+ * Cancels the delete operation
+ */
+const cancelDelete = () => {
+  showDeleteDialog.value = false;
+};
+
+// ==================== LIFECYCLE HOOKS ====================
+
+/**
+ * Fetches groups when the component is mounted
+ */
 onMounted(async () => {
   try {
     if (!groupsStore.groups.length) {
@@ -159,7 +192,7 @@ onMounted(async () => {
   } catch (error) {
     console.error('Error loading initial groups list:', error);
     uiStore.showErrorSnackbar(
-      error instanceof Error ? error.message : 'Ошибка загрузки списка групп'
+      error instanceof Error ? error.message : 'Error loading groups list'
     );
   }
 });
@@ -169,7 +202,7 @@ onMounted(async () => {
   <v-card flat>
     <v-app-bar flat class="px-4 d-flex justify-space-between">
       <div class="d-flex align-center">
-        <!-- Кнопка "Создать группу" -->
+        <!-- Create Group Button -->
         <v-btn
           v-if="isAuthorized"
           color="teal"
@@ -180,7 +213,7 @@ onMounted(async () => {
           {{ t('admin.groups.list.buttons.create') }}
         </v-btn>
 
-        <!-- Кнопка "Редактировать" -->
+        <!-- Edit Group Button -->
         <v-btn
           v-if="isAuthorized"
           color="teal"
@@ -192,7 +225,7 @@ onMounted(async () => {
           {{ t('admin.groups.list.buttons.edit') }}
         </v-btn>
 
-        <!-- Кнопка "Удалить" -->
+        <!-- Delete Group Button -->
         <v-btn
           v-if="isAuthorized"
           color="error"
@@ -211,7 +244,7 @@ onMounted(async () => {
       </v-app-bar-title>
     </v-app-bar>
 
-    <!-- Таблица с группами -->
+    <!-- Groups Table -->
     <v-data-table
       v-model:page="page"
       v-model:items-per-page="itemsPerPage"
@@ -222,7 +255,7 @@ onMounted(async () => {
       :items-per-page-options="[10, 25, 50, 100]"
       class="groups-table"
     >
-      <!-- Шаблон для колонки с чекбоксами -->
+      <!-- Selection Checkbox Template -->
       <template #[`item.selection`]="{ item }">
         <v-checkbox
           :model-value="isSelected(item.group_id)"
@@ -232,14 +265,14 @@ onMounted(async () => {
         />
       </template>
 
-      <!-- Шаблон для статуса группы -->
+      <!-- Group Status Template -->
       <template #[`item.group_status`]="{ item }">
         <v-chip :color="getStatusColor(item.group_status)" size="x-small">
           {{ item.group_status }}
         </v-chip>
       </template>
 
-      <!-- Шаблон для системной группы -->
+      <!-- System Group Template -->
       <template #[`item.is_system`]="{ item }">
         <v-icon
           :color="item.is_system ? 'teal' : 'red-darken-4'"
@@ -249,7 +282,7 @@ onMounted(async () => {
       </template>
     </v-data-table>
 
-    <!-- Диалог подтверждения удаления -->
+    <!-- Delete Confirmation Dialog -->
     <v-dialog v-model="showDeleteDialog" max-width="400">
       <v-card>
         <v-card-title class="text-subtitle-1 text-wrap">
@@ -269,7 +302,7 @@ onMounted(async () => {
             color="error"
             variant="text"
             class="text-none"
-            @click="confirmDelete"
+            @click="onDeleteSelected"
           >
             {{ t('common.delete') }}
           </v-btn>
@@ -282,5 +315,6 @@ onMounted(async () => {
 <style scoped>
 .groups-table {
   margin-top: 16px;
+  width: 100%; /* Takes up the full available width */
 }
 </style>

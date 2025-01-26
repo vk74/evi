@@ -2,25 +2,26 @@
   "admin": {
     "groups": {
       "list": {
-        "title": "Groups List",
+        "title": "groups list",
         "buttons": {
-          "create": "Create Group",
-          "edit": "Edit",
-          "delete": "Delete"
+          "create": "create Group",
+          "edit": "edit",
+          "delete": "delete"
         },
         "table": {
           "headers": {
-            "select": "Select",
+            "select": "select",
             "id": "ID",
-            "name": "Name",
-            "status": "Status",
-            "owner": "Owner",
-            "system": "System"
+            "name": "name",
+            "status": "status",
+            "owner": "owner",
+            "system": "system"
           }
         },
         "messages": {
-          "confirmDelete": "Are you sure you want to delete the selected groups?",
-          "deleteSuccess": "Successfully deleted {count} groups."
+          "confirmDelete": "are you sure you want to delete the selected groups?",
+          "deleteSuccess": "successfully deleted {count} groups.",
+          "deleteError": "groups delete operation error."
         }
       }
     }

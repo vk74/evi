@@ -45,4 +45,12 @@ export type GroupError = {
   code: string;            // Error code identifier
   message: string;         // Human-readable error message
   details?: unknown;       // Additional error context (optional)
+};
+
+/**
+ * Interface for SQL queries related to groups
+ */
+export interface SQLQueries {
+  getAllGroups: string;    // Query to fetch all groups
+  deleteSelectedGroups: string; // Query to delete selected groups
 }
