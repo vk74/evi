@@ -1,446 +1,241 @@
-/**
- * GroupEditor.vue
- * Component for group creation and editing
- */
-
+<!-- GroupEditor.vue -->
 <script setup lang="ts">
+import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
 import { useGroupEditorStore } from './state.group.editor'
-import { ref, computed, watch, onBeforeUnmount } from 'vue'
-import { useI18n } from 'vue-i18n'
+import { useUiStore } from '@/core/state/uistate'
 import { GroupStatus } from './types.group.editor'
-import type { TableHeader } from './types.group.editor'
 import { useValidationRules } from '@/core/validation/rules.common.fields'
- import { useUiStore } from '@/core/state/uistate'
-//import { createGroupService } from './service.create.group'
+import type { TableHeader } from './types.group.editor'
 
- // ==================== STORES ====================
-const { t } = useI18n()
 const groupEditorStore = useGroupEditorStore()
 const uiStore = useUiStore()
+const { 
+  optionalEmailRules,
+  generalDescriptionRules,
+  usernameRules 
+} = useValidationRules()
 
- // ==================== REFS & STATE ====================
-// Table parameters
+// ==================== FORM REFS & STATE ====================
+const formRef = ref<any>(null)
+const isFormValid = ref(false)
+const hasInteracted = ref(false)
+const selectedMembers = ref<string[]>([])
 const page = ref(1)
 const itemsPerPage = ref(25)
-const selectedMembers = ref<string[]>([])
 
-const formRef = ref<HTMLFormElement | null>(null)
-const isFormContentValidated = ref(false)
-const isRequiredFieldsComplete = ref(false)
-const hasInteracted = ref(false)
-
- // ==================== COMPUTED ====================
-
- const isFormValid = computed(() => 
-  isFormContentValidated.value && isRequiredFieldsComplete.value
-)
-// Computed properties for active section
-const isDetailsActive = computed(() => groupEditorStore.ui.activeSection === 'details')
-const isMembersActive = computed(() => groupEditorStore.ui.activeSection === 'members')
-
-// Computed property для определения режима работы
-const isEditMode = computed(() => groupEditorStore.isEditMode)
-
-// Computed property для заголовка модуля
-const moduleTitle = computed(() => 
-  isEditMode.value ? 'редактирование группы' : 'создание группы'
-)
-
-// Table headers configuration
-const headers = computed<TableHeader[]>(() => [
-  { 
-    title: t('list.table.headers.select'), 
-    key: 'selection',
-    width: '40px'
-  },
-  { 
-    title: t('list.table.headers.id'), 
-    key: 'user_id',
-    width: '80px'
-  },
-  { 
-    title: t('list.table.headers.username'), 
-    key: 'username'
-  },
-  { 
-    title: t('list.table.headers.email'), 
-    key: 'email'
-  },
-  { 
-    title: t('list.table.headers.isStaff'), 
-    key: 'is_staff',
-    width: '60px'
-  },
-  { 
-    title: t('list.table.headers.status'), 
-    key: 'account_status',
-    width: '60px'
-  },
-  { 
-    title: t('list.table.headers.lastName'), 
-    key: 'last_name'
-  },
-  { 
-    title: t('list.table.headers.firstName'), 
-    key: 'first_name'
-  },
-  { 
-    title: t('list.table.headers.middleName'), 
-    key: 'middle_name'
-  }
+// ==================== TABLE CONFIG ====================
+const headers = ref<TableHeader[]>([
+  { title: 'Выбор', key: 'selection', width: '40px' },
+  { title: 'ID', key: 'user_id', width: '80px' },
+  { title: 'Логин', key: 'username' },
+  { title: 'Email', key: 'email' },
+  { title: 'Статус', key: 'account_status', width: '60px' },
+  { title: 'Персонал', key: 'is_staff', width: '60px' },
+  { title: 'Фамилия', key: 'last_name' },
+  { title: 'Имя', key: 'first_name' },
+  { title: 'Отчество', key: 'middle_name' }
 ])
 
 // ==================== VALIDATION RULES ====================
-const { optionalEmailRules } = useValidationRules()
-
 const groupNameRules = [
- v => !!v || 'Название группы обязательно',
- v => (v && v.length >= 2) || 'Минимальная длина названия 2 символа', 
- v => (v && v.length <= 100) || 'Максимальная длина названия 100 символов',
- v => /^[a-zA-Z0-9-]+$/.test(v) || 'Разрешены только латинские буквы, цифры и дефис'
+  (v: string) => !!v || 'Название группы обязательно',
+  (v: string) => (v?.length >= 2) || 'Минимальная длина 2 символа',
+  (v: string) => (v?.length <= 100) || 'Максимальная длина 100 символов',
+  (v: string) => /^[a-zA-Z0-9-]+$/.test(v) || 'Только латиница, цифры и дефис'
 ]
 
 const groupStatusRules = [
- v => !!v || 'Статус обязателен',
- v => Object.values(GroupStatus).includes(v) || 'Недопустимый статус'
+  (v: GroupStatus) => !!v || 'Выберите статус',
+  (v: GroupStatus) => Object.values(GroupStatus).includes(v) || 'Недопустимый статус'
 ]
 
-const { generalDescriptionRules } = useValidationRules()
-
-const { usernameRules } = useValidationRules()
-
-// ==================== WATCHERS ====================
-
-watch(
-  [
-    () => groupEditorStore.group,
-    () => groupEditorStore.details
-  ],
-  async () => {
-    await validateForm()
-  },
-  { deep: true }
-)
-
-watch(
-  [
-    () => groupEditorStore.group.group_name,
-    () => groupEditorStore.group.group_owner
-  ],
-  () => {
-    validateRequiredFields()
-  }
-)
-
-// watcher to check if user touched required fields to display info snakbar. snakbar will not be displayed unles user has touched either of required fields
-watch(
-  [
-    () => groupEditorStore.group.group_name,
-    () => groupEditorStore.group.group_owner
-  ],
-  () => {
-    if (!hasInteracted.value) {
-      hasInteracted.value = true
-    }
-  }
-)
-
-// Управление отображением snackbar
-watch(
-  [hasInteracted, isRequiredFieldsComplete],
-  ([interacted, complete]) => {
-    if (interacted && !complete) {
-      uiStore.showInfoSnackbar('для создания группы заполните все обязательные поля помеченные *')
-    } else {
-      uiStore.hideSnackbar()
-    }
-  },
-  { immediate: true }
-)
-
-// ==================== HANDLERS ====================
-
-const validateForm = async () => {
+// ==================== FORM HANDLERS ====================
+const validate = async () => {
   if (!formRef.value) return false
-  
   const { valid } = await formRef.value.validate()
-  isFormContentValidated.value = valid
   return valid
 }
 
-const validateRequiredFields = () => {
-  const { group_name, group_owner } = groupEditorStore.group
-  
-  isRequiredFieldsComplete.value = Boolean(
-    group_name && 
-    group_name.trim() !== '' && 
-    group_owner && 
-    group_owner.trim() !== ''
-  )
-  
-  return isRequiredFieldsComplete.value
-}
-
-// Handler for section switching
-const switchSection = (section: 'details' | 'members') => {
-  // В режиме создания не позволяем переключаться на секцию участников
-  if (!isEditMode.value && section === 'members') {
-    console.log('[GroupEditor] Cannot switch to members section in create mode')
+const handleCreateGroup = async () => {
+  if (!(await validate())) {
+    uiStore.showErrorSnackbar('Заполните обязательные поля')
     return
   }
-  
-  console.log('[GroupEditor] Switching to section:', section)
-  groupEditorStore.setActiveSection(section)
-}
 
-// Handlers for table interactions
-const onSelectMember = (userId: string, selected: boolean) => {
-  console.log('[GroupEditor] Member selection changed:', { userId, selected })
-  // To be implemented with service
-}
-
-const isSelected = (userId: string) => {
-  return selectedMembers.value.includes(userId)
-}
-
-/**
- * Обработчик создания новой группы
- */
- const handleCreateGroup = async () => {
-  console.log('[GroupEditor] Calling group creation')
   try {
     const response = await groupEditorStore.createNewGroup()
-    console.log('[GroupEditor] Group created:', response)
-    
     if (response?.success) {
-      uiStore.showSuccessSnackbar('новая группа была создана успешно')
-      //handleReset()
+      uiStore.showSuccessSnackbar('Группа создана успешно')
+      resetForm()
     }
   } catch (error) {
-    console.error('[GroupEditor] Error creating group:', error)
-    uiStore.showErrorSnackbar(error instanceof Error ? error.message : 'ошибка при создании группы')
+    uiStore.showErrorSnackbar(error instanceof Error ? error.message : 'Ошибка создания')
   }
 }
 
-const handleReset = () => {
+const resetForm = () => {
   groupEditorStore.resetForm()
-  hasInteracted.value = false
   formRef.value?.reset()
-  isFormContentValidated.value = false
-  isRequiredFieldsComplete.value = false
+  hasInteracted.value = false
+  selectedMembers.value = []
+}
+
+// ==================== TABLE HANDLERS ====================
+const switchSection = (section: 'details' | 'members') => {
+  if (!groupEditorStore.isEditMode && section === 'members') return
+  groupEditorStore.ui.activeSection = section
+}
+
+const isSelected = (userId: string) => selectedMembers.value.includes(userId)
+
+const onSelectMember = (userId: string, selected: boolean) => {
+  selectedMembers.value = selected 
+    ? [...selectedMembers.value, userId]
+    : selectedMembers.value.filter(id => id !== userId)
 }
 
 // ==================== LIFECYCLE ====================
-onBeforeUnmount(() => {
-  uiStore.hideSnackbar()
-})
+onMounted(() => groupEditorStore.resetForm())
+onBeforeUnmount(() => uiStore.hideSnackbar())
 </script>
 
 <template>
   <div class="module-root">
-    <!-- App Bar -->
     <v-app-bar flat class="app-bar">
-      <!-- Навигация по секциям -->
       <div class="nav-section">
         <v-btn
-          :class="[
-            'section-btn',
-            { 'section-active': isDetailsActive }
-          ]"
-          variant="text"
+          :class="['section-btn', { 'section-active': groupEditorStore.ui.activeSection === 'details' }]"
           @click="switchSection('details')"
+          variant="text"
         >
-          данные группы
+          Данные группы
         </v-btn>
         <v-btn
-          :class="[
-            'section-btn',
-            { 'section-active': isMembersActive }
-          ]"
-          :disabled="!isEditMode"
-          variant="text"
+          :class="['section-btn', { 'section-active': groupEditorStore.ui.activeSection === 'members' }]"
           @click="switchSection('members')"
+          :disabled="!groupEditorStore.isEditMode"
+          variant="text"
         >
-          участники группы
+          Участники группы
         </v-btn>
       </div>
 
       <v-spacer />
 
-      <!-- Control buttons -->
       <div class="control-buttons">
         <v-btn
-          v-if="!isEditMode"
           color="teal"
           variant="outlined"
-          class="mr-2 control-btn"
-          :loading="groupEditorStore.ui.isSubmitting"
-          :disabled="groupEditorStore.ui.isSubmitting || !isFormValid"
+          class="mr-2"
           @click="handleCreateGroup"
+          :disabled="!isFormValid"
         >
-          создать группу
+          Создать группу
         </v-btn>
+        
         <v-btn
-          v-else
-          color="teal"
           variant="outlined"
-          class="mr-2 control-btn"
+          @click="resetForm"
         >
-          обновить данные группы
-        </v-btn>
-        <v-btn
-          v-if="!isEditMode"
-          variant="outlined"
-          class="control-btn"
-          @click="handleReset"
-        >
-          сбросить
+          Сбросить
         </v-btn>
       </div>
 
       <v-spacer />
 
-      <!-- Title -->
       <div class="module-title">
-        {{ moduleTitle }}
+        {{ groupEditorStore.isEditMode ? 'Редактирование группы' : 'Создание группы' }}
       </div>
     </v-app-bar>
 
-    <!-- Рабочая область -->
     <div class="working-area">
       <v-container class="content-container pa-0">
-        <!-- Group Details Form -->
-        <v-card
-          v-if="isDetailsActive"
-          flat
-        >
-          <v-form 
-            ref="formRef"
-            class="px-4"
-          >
-            <!-- Debug validation state -->
-            <div class="pa-2 text-caption">
-              Form validation state: {{ isFormContentValidated }}
-            </div>
-            <div class="pa-2 text-caption">
-              Required fields state: {{ isRequiredFieldsComplete }}
-            </div>
-            <v-row>
+        <v-card v-if="groupEditorStore.ui.activeSection === 'details'" flat>
+          <v-form ref="formRef" v-model="isFormValid" @submit.prevent>
+            <v-row class="pa-4">
+              <!-- Group Name -->
+              <v-col cols="12" md="6">
+                <v-text-field
+                  v-model="groupEditorStore.group.group_name"
+                  label="Название*"
+                  :rules="groupNameRules"
+                  variant="outlined"
+                  density="comfortable"
+                  required
+                />
+              </v-col>
+
+              <!-- Group Status -->
+              <v-col cols="12" md="6">
+                <v-select
+                  v-model="groupEditorStore.group.group_status"
+                  label="Статус*"
+                  :items="[
+                    { title: 'Активна', value: GroupStatus.ACTIVE },
+                    { title: 'Отключена', value: GroupStatus.DISABLED },
+                    { title: 'В архиве', value: GroupStatus.ARCHIVED }
+                  ]"
+                  item-title="title"
+                  item-value="value"
+                  :rules="groupStatusRules"
+                  variant="outlined"
+                  density="comfortable"
+                />
+              </v-col>
+
+              <!-- Group Description -->
               <v-col cols="12">
-                <v-row class="pt-3">
-                  <!-- Group Name -->
-                  <v-col cols="12" md="6">
-                    <v-text-field
-                      v-model="groupEditorStore.group.group_name"
-                      label="название*"
-                      variant="outlined"
-                      density="comfortable"
-                      counter="100"
-                      required
-                      :rules="groupNameRules"
-                    />
-                  </v-col>
+                <v-textarea
+                  v-model="groupEditorStore.details.group_description"
+                  label="Описание"
+                  :rules="generalDescriptionRules"
+                  variant="outlined"
+                  rows="2"
+                  counter="5000"
+                />
+              </v-col>
 
-                  <!-- Group Status -->
-                  <v-col cols="12" md="6">
-                    <v-select
-                      v-model="groupEditorStore.group.group_status"
-                      label="статус"
-                      variant="outlined"
-                      density="comfortable"
-                      :items="[
-                        { title: 'активна', value: GroupStatus.ACTIVE },
-                        { title: 'отключена', value: GroupStatus.DISABLED },
-                        { title: 'в архиве', value: GroupStatus.ARCHIVED }
-                      ]"
-                      item-title="title"
-                      item-value="value"
-                      :rules="groupStatusRules"
-                    />
-                  </v-col>
+              <!-- Group Email -->
+              <v-col cols="12" md="6">
+                <v-text-field
+                  v-model="groupEditorStore.details.group_email"
+                  label="E-mail"
+                  :rules="optionalEmailRules"
+                  variant="outlined"
+                  density="comfortable"
+                />
+              </v-col>
 
-                  <!-- Group Description -->
-                  <v-col cols="12">
-                    <v-textarea
-                      v-model="groupEditorStore.details.group_description"
-                      label="описание"
-                      variant="outlined"
-                      rows="2"
-                      counter="5000"
-                      no-resize
-                      :rules="generalDescriptionRules"
-                    />
-                  </v-col>
-
-                  <!-- Group email -->
-                  <v-col cols="12" md="6">
-                    <v-text-field
-                      v-model="groupEditorStore.details.group_email"
-                      label="e-mail"
-                      variant="outlined"
-                      density="comfortable"
-                      :rules="optionalEmailRules"
-                    />
-                  </v-col>
-
-                  <!-- Group Owner -->
-                  <v-col cols="12" md="6">
-                    <v-text-field
-                      v-model="groupEditorStore.group.group_owner"
-                      label="владелец*"
-                      variant="outlined"
-                      density="comfortable"
-                      readonly
-                      :rules="usernameRules"
-                    />
-                  </v-col>
-                </v-row>
+              <!-- Group Owner -->
+              <v-col cols="12" md="6">
+                <v-text-field
+                  v-model="groupEditorStore.group.group_owner"
+                  label="Владелец*"
+                  :rules="usernameRules"
+                  variant="outlined"
+                  density="comfortable"
+                  readonly
+                />
               </v-col>
             </v-row>
           </v-form>
         </v-card>
 
-        <!-- Group Members Table -->
-        <v-card
-          v-else-if="isMembersActive"
-          flat
-        >
+        <!-- Members Table -->
+        <v-card v-else flat>
           <v-data-table
             v-model:page="page"
             v-model:items-per-page="itemsPerPage"
             :headers="headers"
             :items="[]"
             :loading="false"
-            :items-per-page-options="[10, 25, 50, 100]"
           >
-            <!-- Selection Column Template -->
-            <template #[`item.selection`]="{ item }">
+            <template #item.selection="{ item }">
               <v-checkbox
                 :model-value="isSelected(item.user_id)"
+                @update:model-value="(val) => onSelectMember(item.user_id, val)"
                 density="compact"
                 hide-details
-                @update:model-value="(value) => onSelectMember(item.user_id, Boolean(value))"
-              />
-            </template>
-
-            <!-- User ID Column Template -->
-            <template #[`item.user_id`]="{ item }">
-              <span>{{ item.user_id }}</span>
-            </template>
-
-            <!-- Account Status Column Template -->
-            <template #[`item.account_status`]="{ item }">
-              <v-chip size="x-small">
-                {{ item.account_status }}
-              </v-chip>
-            </template>
-
-            <!-- Staff Status Column Template -->
-            <template #[`item.is_staff`]="{ item }">
-              <v-icon
-                :color="item.is_staff ? 'teal' : 'red-darken-4'"
-                :icon="item.is_staff ? 'mdi-check-circle' : 'mdi-minus-circle'"
-                size="x-small"
               />
             </template>
           </v-data-table>
@@ -469,11 +264,6 @@ onBeforeUnmount(() => {
   border-bottom: 2px solid #009688;
   font-weight: 500;
   color: rgba(0, 0, 0, 0.87) !important;
-}
-
-.section-btn:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
 }
 
 .module-title {

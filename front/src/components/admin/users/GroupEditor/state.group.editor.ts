@@ -184,36 +184,18 @@ export const useGroupEditorStore = defineStore('groupEditor', {
      * Сброс формы к начальным значениям
      * Работает только в режиме создания группы
      */
+    // state.group.editor.ts
     resetForm() {
-      if (this.mode.mode === 'edit') {
-        console.log('Reset form is not available in edit mode')
-        return
-      }
-    
-      console.log('Resetting form to initial state')
-      const userStore = useUserStore()
-    
-      // Сбрасываем все состояния одним действием для предотвращения промежуточных обновлений
-      const resetState = {
-        group: {
-          ...initialGroupState,
-          group_status: GroupStatus.ACTIVE,
-          group_owner: userStore.username || ''
-        },
-        details: { ...initialDetailsState },
-        ui: { 
-          ...initialUIState,
-          hasInteracted: false,
-          showRequiredFieldsWarning: false
-        },
-        mode: {
-          mode: 'create'
-        },
-        originalData: undefined
-      }
-    
-      // Применяем все изменения одним действием
-      Object.assign(this, resetState)
+      if (this.mode.mode === 'edit') return
+      
+      // Используем Object.assign для реактивности
+      Object.assign(this.group, {
+        ...initialGroupState,
+        group_owner: useUserStore().username || ''
+      })
+      
+      Object.assign(this.details, initialDetailsState)
+      Object.assign(this.ui, initialUIState)
     },
 
     /**
