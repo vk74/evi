@@ -26,4 +26,3 @@ export const queries: SQLQueries = {
       RETURNING user_id
     `
   };
-

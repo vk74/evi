@@ -1,12 +1,12 @@
 /**
- * @file repository.users.list.ts
- * Repository for caching users list data.
- * 
+ * @file repository.groups.list.ts
+ * Repository for caching groups list data.
+ *
  * Functionality:
- * - Maintains in-memory cache for users list
+ * - Maintains in-memory cache for groups list
  * - Implements cache invalidation with timer
- * - Provides methods to check, get and set cache
- * 
+ * - Provides methods to check, get, and set cache
+ *
  * Cache algorithm:
  * 1. Cache starts empty on service initialization
  * 2. First request triggers database query and caches result
@@ -15,11 +15,11 @@
  * 5. After timer expires, cache is cleared and next request will query database
  */
 
-import { IUsersResponse } from './types.users.list';
+import { IGroupsResponse } from './types.groups.list';
 
 // Создаем замыкание для хранения состояния кэша и таймера
-const createUsersRepository = () => {
-    let cache: IUsersResponse | null = null;
+const createGroupsRepository = () => {
+    let cache: IGroupsResponse | null = null;
     let cacheTimer: NodeJS.Timeout | null = null;
     console.log('Repository initialized with empty cache');
 
@@ -30,7 +30,7 @@ const createUsersRepository = () => {
         },
 
         // Получение данных из кэша
-        getCachedData: (): IUsersResponse => {
+        getCachedData: (): IGroupsResponse => {
             if (!cache) {
                 throw new Error('Cache is empty');
             }
@@ -38,8 +38,8 @@ const createUsersRepository = () => {
         },
 
         // Сохранение данных в кэш и запуск таймера
-        setCacheData: (data: IUsersResponse): void => {
-            console.log('Writing data to users list cache');
+        setCacheData: (data: IGroupsResponse): void => {
+            console.log('Writing data to groups list cache');
             cache = data;
 
             // Очищаем предыдущий таймер если он есть
@@ -49,22 +49,23 @@ const createUsersRepository = () => {
 
             // Устанавливаем новый таймер на 60 минут
             cacheTimer = setTimeout(() => {
-                console.log('Timer expired, clearing cache with users list');
+                console.log('Timer expired, clearing cache with groups list');
                 cache = null;
                 cacheTimer = null;
             }, 60 * 60 * 1000); // 60 минут в миллисекундах
-            console.log('Timer started for 60 minutes for users list cache');
+            console.log('Timer started for 60 minutes for groups list cache');
         },
 
+        // Очистка кэша
         clearCache: (): void => {
-            console.log('Clearing users list cache');
+            console.log('Clearing groups list cache');
             cache = null;
             if (cacheTimer) {
-              clearTimeout(cacheTimer);
-              cacheTimer = null;
+                clearTimeout(cacheTimer);
+                cacheTimer = null;
             }
-          }
+        }
     };
 };
 
-export const usersRepository = createUsersRepository();
+export const groupsRepository = createGroupsRepository();

@@ -9,6 +9,7 @@ const deleteSelectedUsers = require('./users/usersList/controller.delete.selecte
 const loadUserById = require('./users/userEditor/controller.load.user');
 const createUserController = require('./users/userEditor/controller.create.user');
 const createGroupController = require('./users/groupEditor/controller.create.group');
+const fetchGroups = require('./users/groupsList/controller.groups.list').default;
 
 // Routes Users
 router.post('/api/admin/users/create-new-user', validateJWT, createUserController);
@@ -19,10 +20,9 @@ router.post('/api/admin/users/delete-selected-users', validateJWT, deleteSelecte
 
 // Routes Groups
 router.post('/api/admin/groups/create-new-group', validateJWT, createGroupController);
-// /api/admin/groups/fetch-groups
+router.get('/api/admin/groups/fetch-groups', validateJWT, fetchGroups);
 // /api/admin/groups/update-group-by-groupid/:groupId
 // /api/admin/groups/fetch-group-by-groupid/:groupId
 // api/admin/users/delete-selected-groups
-
 
 module.exports = router;
