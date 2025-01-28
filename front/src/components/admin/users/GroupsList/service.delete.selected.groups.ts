@@ -12,7 +12,6 @@ import { api } from '@/core/api/service.axios'; // Axios instance
 import { useStoreGroupsList } from './state.groups.list'; // Groups store
 import { useUiStore } from '@/core/state/uistate'; // UI store
 import { useUserStore } from '@/core/state/userstate'; // User store
-import { useUsersAdminStore } from '../state.users.admin'; // Users admin store
 import type { GroupError } from './types.groups.list'; // Types
 
 // Логгер для основных операций
@@ -26,16 +25,15 @@ const logger = {
  */
 export const deleteSelectedGroupsService = {
     /**
-     * Удаляет выбранные группы по их IDs
-     * @param groupIds - Массив UUID групп для удаления
-     * @returns Promise<number> - Количество удаленных групп
-     * @throws {GroupError} - В случае ошибки
+     * Deletes selected groups by their IDs
+     * @param groupIds - Array of group UUIDs to delete
+     * @returns Promise<number> - Number of deleted groups
+     * @throws {GroupError} - If an error occurs
      */
     async deleteSelectedGroups(groupIds: string[]): Promise<number> {
         const store = useStoreGroupsList();
         const userStore = useUserStore();
         const uiStore = useUiStore();
-        const usersAdminStore = useUsersAdminStore();
 
         // Проверка авторизации пользователя
         if (!userStore.isLoggedIn) {
@@ -71,11 +69,15 @@ export const deleteSelectedGroupsService = {
             // Возвращаем количество удаленных групп
             return response.data.deletedCount;
 
-        } catch (error) {
-            // Логируем ошибку
-            //logger.error('Error during groups deletion', error);
+        } catch (error: unknown) {
+            // Log the error
+            if (error instanceof Error) {
+                logger.error('Error during groups deletion', { message: error.message, stack: error.stack });
+            } else {
+                logger.error('Error during groups deletion', { error });
+            }
 
-            // Формируем ошибку для отображения
+            // Create an error object for display
             const groupError: GroupError = {
                 code: 'DELETE_GROUPS_ERROR',
                 message: 'Failed to delete selected groups',
@@ -84,10 +86,10 @@ export const deleteSelectedGroupsService = {
                     undefined
             };
 
-            // Показываем уведомление об ошибке
+            // Show error notification
             uiStore.showErrorSnackbar(groupError.message);
 
-            // Пробрасываем ошибку дальше
+            // Throw the GroupError
             throw groupError;
         }
     }

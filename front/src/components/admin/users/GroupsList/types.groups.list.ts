@@ -79,9 +79,13 @@ export interface TableHeader {
 
 /**
  * Error type for group operations
+ * 
+ * @property code - Error code identifier 
+ * @property message - Human-readable error message 
+ * @property details - Additional error context (optional, string) 
  */
 export type GroupError = {
   code: string;            // Error code identifier
   message: string;         // Human-readable error message
-  details?: unknown;       // Additional error context (optional)
+  details?: string;       // Additional error context (optional)
 };
