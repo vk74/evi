@@ -155,6 +155,9 @@ const editGroup = () => {
     // Show success notification
     uiStore.showSuccessSnackbar(t('admin.groups.list.messages.deleteSuccess', { count: deletedCount }));
 
+    // Перезагружаем группы после удаления
+    await groupsService.fetchGroups();
+
   } catch (error) {
     console.error('Error deleting groups:', error);
     uiStore.showErrorSnackbar(

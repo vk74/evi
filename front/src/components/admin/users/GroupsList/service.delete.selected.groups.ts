@@ -68,13 +68,6 @@ export const deleteSelectedGroupsService = {
             store.clearCache();
             logger.info('Cache cleared in the frontend store');
 
-            // Перезагружаем компонент через хранилище
-            usersAdminStore.setActiveSection('groups'); // Устанавливаем активную секцию
-            logger.info('Component reloaded via usersAdminStore');
-
-            // Показываем уведомление об успешном удалении
-            uiStore.showSuccessSnackbar(`Successfully deleted ${response.data.deletedCount} groups`);
-
             // Возвращаем количество удаленных групп
             return response.data.deletedCount;
 
