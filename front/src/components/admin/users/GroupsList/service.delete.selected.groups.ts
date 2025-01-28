@@ -1,22 +1,24 @@
 /**
  * @file service.delete.selected.groups.ts
- * Service for deleting selected groups.
+ * Frontend service for deleting selected groups.
  *
  * Functionality:
  * - Sends a request to delete selected groups by their IDs.
+ * - Clears the cache and reloads the groups list after successful deletion.
  * - Handles errors and logging.
  */
 
-import { api } from '@/core/api/service.axios'; // Импорт Axios instance
-import { useStoreGroupsList } from './state.groups.list';
-import { useUiStore } from '@/core/state/uistate';
-import { useUserStore } from '@/core/state/userstate';
-import type { GroupError } from './types.groups.list';
+import { api } from '@/core/api/service.axios'; // Axios instance
+import { useStoreGroupsList } from './state.groups.list'; // Groups store
+import { useUiStore } from '@/core/state/uistate'; // UI store
+import { useUserStore } from '@/core/state/userstate'; // User store
+import { useUsersAdminStore } from '../state.users.admin'; // Users admin store
+import type { GroupError } from './types.groups.list'; // Types
 
 // Логгер для основных операций
 const logger = {
     info: (message: string, meta?: object) => console.log(`[DeleteGroupsService] ${message}`, meta || ''),
-    error: (message: string, error?: unknown) => console.error(`[DeleteGroupsService] ${message}`, error || '')
+    error: (message: string, meta?: object) => console.error(`[DeleteGroupsService] ${message}`, meta || '')
 };
 
 /**
@@ -33,6 +35,7 @@ export const deleteSelectedGroupsService = {
         const store = useStoreGroupsList();
         const userStore = useUserStore();
         const uiStore = useUiStore();
+        const usersAdminStore = useUsersAdminStore();
 
         // Проверка авторизации пользователя
         if (!userStore.isLoggedIn) {
@@ -61,6 +64,14 @@ export const deleteSelectedGroupsService = {
             // Логируем успешное удаление
             logger.info('Successfully deleted groups', { deletedCount: response.data.deletedCount });
 
+            // Очищаем кеш в хранилище
+            store.clearCache();
+            logger.info('Cache cleared in the frontend store');
+
+            // Перезагружаем компонент через хранилище
+            usersAdminStore.setActiveSection('groups'); // Устанавливаем активную секцию
+            logger.info('Component reloaded via usersAdminStore');
+
             // Показываем уведомление об успешном удалении
             uiStore.showSuccessSnackbar(`Successfully deleted ${response.data.deletedCount} groups`);
 
@@ -69,7 +80,7 @@ export const deleteSelectedGroupsService = {
 
         } catch (error) {
             // Логируем ошибку
-            logger.error('Error during groups deletion', error);
+            //logger.error('Error during groups deletion', error);
 
             // Формируем ошибку для отображения
             const groupError: GroupError = {

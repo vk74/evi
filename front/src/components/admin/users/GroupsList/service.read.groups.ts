@@ -1,38 +1,39 @@
 /**
  * @file service.read.groups.ts
- * Service for fetching and managing groups list data.
+ * Frontend service for fetching and managing groups list data.
  *
  * Functionality:
- * - Fetches groups list from API endpoint
- * - Updates store cache with received data
- * - Provides logging for main operations
+ * - Fetches groups list from the API endpoint.
+ * - Updates the store cache with the received data.
+ * - Handles errors and logging.
+ * - Provides methods for fetching and caching groups data.
  */
 
-import { api } from '@/core/api/service.axios'; // Импорт Axios instance
-import { useStoreGroupsList } from './state.groups.list'; // Импорт хранилища
-import { useUserStore } from '@/core/state/userstate'; // Импорт хранилища пользователя
-import type { IGroupsResponse } from './types.groups.list'; // Импорт типов
+import { api } from '@/core/api/service.axios'; // Axios instance
+import { useStoreGroupsList } from './state.groups.list'; // Groups store
+import { useUserStore } from '@/core/state/userstate'; // User store
+import type { IGroupsResponse } from './types.groups.list'; // Types
 
-// Логгер для основных операций
+// Logger for main operations
 const logger = {
     info: (message: string, meta?: object) => console.log(`[GroupsService] ${message}`, meta || ''),
-    error: (message: string, error?: unknown) => console.error(`[GroupsService] ${message}`, error || '')
+    error: (message: string, meta?: object) => console.error(`[GroupsService] ${message}`, meta || '')
 };
 
 /**
- * Сервис для работы со списком групп
+ * Service for working with the groups list
  */
 export const groupsService = {
     /**
-     * Получает список всех групп
+     * Fetches the list of all groups from the API and updates the store cache.
      * @returns Promise<void>
-     * @throws {Error} При ошибке получения данных
+     * @throws {Error} If an error occurs during the fetch operation.
      */
     async fetchGroups(): Promise<void> {
-        const store = useStoreGroupsList(); // Хранилище групп
-        const userStore = useUserStore(); // Хранилище пользователя
+        const store = useStoreGroupsList(); // Groups store
+        const userStore = useUserStore(); // User store
 
-        // Проверка авторизации пользователя
+        // Check if the user is authenticated
         if (!userStore.isLoggedIn) {
             const errorMessage = 'User not authenticated';
             logger.error(errorMessage);
@@ -40,7 +41,7 @@ export const groupsService = {
             throw new Error(errorMessage);
         }
 
-        // Проверяем наличие данных в кэше
+        // Check if the cache is already populated
         if (store.groups.length > 0) {
             logger.info('Using cached groups list from store', {
                 cachedGroups: store.groups.length
@@ -48,19 +49,20 @@ export const groupsService = {
             return;
         }
 
+        // Set loading state
         store.loading = true;
         store.error = null;
 
         try {
             logger.info('Cache empty, fetching groups list from API');
 
-            // Выполняем запрос к API
+            // Fetch groups data from the API
             const response = await api.get<IGroupsResponse>('/api/admin/groups/fetch-groups');
 
-            // Проверка формата данных
+            // Validate the response format
             if (!response.data || !Array.isArray(response.data.groups)) {
                 const errorMessage = 'Invalid API response format';
-                logger.error(errorMessage);
+                logger.error(errorMessage, { response: response.data });
                 throw new Error(errorMessage);
             }
 
@@ -68,7 +70,7 @@ export const groupsService = {
                 groupCount: response.data.groups.length
             });
 
-            // Обновляем кэш в хранилище
+            // Update the store cache with the new data
             store.updateCache(response.data.groups, response.data.total);
 
             logger.info('Groups list cached in store', {
@@ -78,9 +80,10 @@ export const groupsService = {
         } catch (error) {
             const errorMessage = error instanceof Error ? error.message : 'Failed to process groups data';
             store.error = errorMessage;
-            logger.error('Error fetching groups:', error);
+            logger.error('Error fetching groups:', { error });
             throw new Error(errorMessage);
         } finally {
+            // Reset loading state
             store.loading = false;
         }
     }

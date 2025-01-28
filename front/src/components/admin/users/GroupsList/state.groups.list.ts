@@ -1,3 +1,14 @@
+/**
+ * @file state.groups.list.ts
+ * Frontend store for managing the state of the groups list.
+ *
+ * Functionality:
+ * - Manages the state of groups, including loading, error, pagination, sorting, and selection.
+ * - Implements caching for the groups list to reduce database load.
+ * - Handles JWT token validation and automatic cache clearing when the token expires.
+ * - Provides methods for updating, sorting, selecting, and clearing the cache.
+ */
+
 import { defineStore } from 'pinia';
 import { ref, computed, onUnmounted } from 'vue';
 import { useUserStore } from '@/core/state/userstate';
@@ -8,32 +19,42 @@ import type {
     GroupStatus
 } from './types.groups.list';
 
-// Logger для основных операций
+// Logger for main operations
 const logger = {
-    info: (message: string) => console.log(`[GroupsStore] ${message}`),
-    error: (message: string) => console.error(`[GroupsStore] ${message}`)
+    info: (message: string, meta?: object) => console.log(`[GroupsStore] ${message}`, meta || ''),
+    error: (message: string, meta?: object) => console.error(`[GroupsStore] ${message}`, meta || '')
 };
 
 export const useStoreGroupsList = defineStore('groupsList', () => {
     // State
-    const groups = ref<IGroup[]>([]);
-    const loading = ref(false);
-    const error = ref<string | null>(null);
-    const page = ref(1);
-    const itemsPerPage = ref<ItemsPerPageOption>(25);
-    const totalItems = ref(0);
-    const sorting = ref<ISortParams>({
+    const groups = ref<IGroup[]>([]); // List of groups
+    const loading = ref(false); // Loading state
+    const error = ref<string | null>(null); // Error state
+    const page = ref(1); // Current page number
+    const itemsPerPage = ref<ItemsPerPageOption>(25); // Number of items per page
+    const totalItems = ref(0); // Total number of items
+    const sorting = ref<ISortParams>({ // Sorting parameters
         sortBy: '',
         sortDesc: false
     });
-    const selectedGroups = ref<string[]>([]);
+    const selectedGroups = ref<string[]>([]); // List of selected group IDs
 
-    // Таймер для проверки JWT
+    // Timer for JWT validation
     const jwtCheckTimer = ref<ReturnType<typeof setTimeout> | null>(null);
 
     // Getters
+    /**
+     * Returns the list of groups with applied pagination and sorting.
+     * @returns {IGroup[]} - Sorted and paginated list of groups.
+     */
     const getGroups = computed(() => {
-        logger.info('Getting groups with current display parameters');
+        logger.info('Getting groups with current display parameters', {
+            page: page.value,
+            itemsPerPage: itemsPerPage.value,
+            sortBy: sorting.value.sortBy,
+            sortDesc: sorting.value.sortDesc
+        });
+
         const start = (page.value - 1) * itemsPerPage.value;
         const end = start + itemsPerPage.value;
 
@@ -60,12 +81,13 @@ export const useStoreGroupsList = defineStore('groupsList', () => {
         return result.slice(start, end);
     });
 
-    const selectedCount = computed(() => selectedGroups.value.length);
-    const hasSelected = computed(() => selectedCount.value > 0);
+    const selectedCount = computed(() => selectedGroups.value.length); // Number of selected groups
+    const hasSelected = computed(() => selectedCount.value > 0); // Whether any groups are selected
 
     // Actions
     /**
-     * Валидирует JWT токен и возвращает его статус
+     * Validates the JWT token and returns its status.
+     * @returns { isValid: boolean; expiresIn: number } - Token validation status.
      */
     function validateJWT(): { isValid: boolean; expiresIn: number } {
         const userStore = useUserStore();
@@ -78,7 +100,7 @@ export const useStoreGroupsList = defineStore('groupsList', () => {
     }
 
     /**
-     * Устанавливает таймер для проверки JWT
+     * Sets up a timer to check JWT validity and clear the cache if the token expires.
      */
     function setupJWTCheck() {
         if (jwtCheckTimer.value) {
@@ -93,7 +115,7 @@ export const useStoreGroupsList = defineStore('groupsList', () => {
             return;
         }
 
-        // Устанавливаем таймер на (срок валидности - 4 секунды)
+        // Set a timer for (token expiration time - 4 seconds)
         const timeoutDuration = (expiresIn - 4) * 1000;
 
         jwtCheckTimer.value = setTimeout(() => {
@@ -103,7 +125,7 @@ export const useStoreGroupsList = defineStore('groupsList', () => {
                 clearSelection();
                 clearCache();
             } else {
-                setupJWTCheck(); // Перезапускаем таймер
+                setupJWTCheck(); // Restart the timer
             }
         }, timeoutDuration);
 
@@ -111,26 +133,37 @@ export const useStoreGroupsList = defineStore('groupsList', () => {
     }
 
     /**
-     * Обновляет кэш с новыми данными о группах
+     * Updates the cache with new groups data.
+     * @param newGroups - New list of groups.
+     * @param total - Total number of groups.
      */
     function updateCache(newGroups: IGroup[], total: number) {
         groups.value = newGroups;
         totalItems.value = total;
-        setupJWTCheck(); // Запускаем таймер после обновления кэша
-        logger.info(`Cache updated with ${newGroups.length} groups`);
+        setupJWTCheck(); // Start the timer after updating the cache
+        logger.info('Cache updated with new groups data', {
+            groupCount: newGroups.length,
+            totalItems: total
+        });
     }
 
     /**
-     * Обновляет параметры отображения (пагинация)
+     * Updates the display parameters (pagination).
+     * @param newItemsPerPage - New number of items per page.
+     * @param newPage - New page number.
      */
     function updateDisplayParams(newItemsPerPage: ItemsPerPageOption, newPage: number) {
         itemsPerPage.value = newItemsPerPage;
         page.value = newPage;
-        logger.info(`Display params updated: ${newItemsPerPage} items per page, page ${newPage}`);
+        logger.info('Display parameters updated', {
+            itemsPerPage: newItemsPerPage,
+            page: newPage
+        });
     }
 
     /**
-     * Обновляет параметры сортировки
+     * Updates the sorting parameters.
+     * @param field - Field to sort by.
      */
     function updateSort(field: keyof IGroup) {
         if (sorting.value.sortBy === field) {
@@ -141,37 +174,42 @@ export const useStoreGroupsList = defineStore('groupsList', () => {
                 sortDesc: false
             };
         }
-        logger.info(`Sorting updated: ${field} ${sorting.value.sortDesc ? 'DESC' : 'ASC'}`);
+        logger.info('Sorting parameters updated', {
+            sortBy: sorting.value.sortBy,
+            sortDesc: sorting.value.sortDesc
+        });
     }
 
     /**
-     * Выбирает группу
+     * Selects a group.
+     * @param groupId - ID of the group to select.
      */
     function selectGroup(groupId: string) {
         if (!selectedGroups.value.includes(groupId)) {
             selectedGroups.value.push(groupId);
-            logger.info(`Group ${groupId} selected`);
+            logger.info('Group selected', { groupId });
         }
     }
 
     /**
-     * Снимает выбор с группы
+     * Deselects a group.
+     * @param groupId - ID of the group to deselect.
      */
     function deselectGroup(groupId: string) {
         selectedGroups.value = selectedGroups.value.filter(id => id !== groupId);
-        logger.info(`Group ${groupId} deselected`);
+        logger.info('Group deselected', { groupId });
     }
 
     /**
-     * Очищает выбор групп
+     * Clears the selection of groups.
      */
     function clearSelection() {
         selectedGroups.value = [];
-        logger.info('Selection cleared');
+        logger.info('Group selection cleared');
     }
 
     /**
-     * Очищает кэш и сбрасывает состояние хранилища
+     * Clears the cache and resets the store state.
      */
     function clearCache() {
         groups.value = [];
@@ -185,7 +223,7 @@ export const useStoreGroupsList = defineStore('groupsList', () => {
         logger.info('Cache cleared');
     }
 
-    // Очистка таймера при уничтожении компонента
+    // Clean up the timer when the component is destroyed
     onUnmounted(() => {
         if (jwtCheckTimer.value) {
             clearTimeout(jwtCheckTimer.value);

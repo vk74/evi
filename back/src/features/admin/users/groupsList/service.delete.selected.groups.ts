@@ -54,6 +54,14 @@ export const deleteSelectedGroupsService = {
             // Очищаем кэш в репозитории
             groupsRepository.clearCache();
 
+            // Проверяем, что кэш действительно очищен
+            const isCacheCleared = !groupsRepository.hasValidCache();
+            if (isCacheCleared) {
+                logger.info('Cache successfully cleared');
+            } else {
+                logger.error('Cache was not cleared successfully');
+            }
+
             // Возвращаем количество удаленных групп
             return deletedCount;
 

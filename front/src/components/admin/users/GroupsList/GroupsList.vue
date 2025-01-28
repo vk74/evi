@@ -145,7 +145,7 @@ const editGroup = () => {
 /**
  * Handles group deletion
  */
-const onDeleteSelected = async () => {
+ const onDeleteSelected = async () => {
   try {
     console.log('Deleting selected groups:', groupsStore.selectedGroups);
 
@@ -154,9 +154,6 @@ const onDeleteSelected = async () => {
 
     // Show success notification
     uiStore.showSuccessSnackbar(t('admin.groups.list.messages.deleteSuccess', { count: deletedCount }));
-
-    // Refresh the groups list
-    await groupsService.fetchGroups();
 
   } catch (error) {
     console.error('Error deleting groups:', error);
