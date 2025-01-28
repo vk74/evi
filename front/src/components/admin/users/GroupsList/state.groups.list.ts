@@ -10,7 +10,7 @@
  */
 
 import { defineStore } from 'pinia';
-import { ref, computed, onUnmounted } from 'vue';
+import { ref, computed, onUnmounted, watch } from 'vue';
 import { useUserStore } from '@/core/state/userstate';
 import type {
     IGroup,
@@ -40,7 +40,7 @@ export const useStoreGroupsList = defineStore('groupsList', () => {
     const selectedGroups = ref<string[]>([]); // List of selected group IDs
 
     // Timer for JWT validation
-    const jwtCheckTimer = ref<ReturnType<typeof setTimeout> | null>(null);
+    const groupsJwtCheckTimer = ref<ReturnType<typeof setTimeout> | null>(null);
 
     // Getters
     /**
@@ -103,9 +103,9 @@ export const useStoreGroupsList = defineStore('groupsList', () => {
      * Sets up a timer to check JWT validity and clear the cache if the token expires.
      */
     function setupJWTCheck() {
-        if (jwtCheckTimer.value) {
-            clearTimeout(jwtCheckTimer.value);
-            jwtCheckTimer.value = null;
+        if (groupsJwtCheckTimer.value) {
+            clearTimeout(groupsJwtCheckTimer.value);
+            groupsJwtCheckTimer.value = null;
         }
 
         const { isValid, expiresIn } = validateJWT();
@@ -118,7 +118,7 @@ export const useStoreGroupsList = defineStore('groupsList', () => {
         // Set a timer for (token expiration time - 4 seconds)
         const timeoutDuration = (expiresIn - 4) * 1000;
 
-        jwtCheckTimer.value = setTimeout(() => {
+        groupsJwtCheckTimer.value = setTimeout(() => {
             const validation = validateJWT();
 
             if (validation.expiresIn <= 4) {
@@ -216,17 +216,31 @@ export const useStoreGroupsList = defineStore('groupsList', () => {
         totalItems.value = 0;
         error.value = null;
         clearSelection();
-        if (jwtCheckTimer.value) {
-            clearTimeout(jwtCheckTimer.value);
-            jwtCheckTimer.value = null;
+        if (groupsJwtCheckTimer.value) {
+            clearTimeout(groupsJwtCheckTimer.value);
+            groupsJwtCheckTimer.value = null;
         }
         logger.info('Cache cleared');
     }
 
+    // Подписка на изменения isLoggedIn
+    /**
+    const userStore = useUserStore()
+    watch(
+        () => userStore.isLoggedIn,
+        (newValue, oldValue) => {
+            if (!newValue) {
+                logger.info('User logged out, clearing cache')
+                clearCache()
+            }
+        }
+    )
+    */
+
     // Clean up the timer when the component is destroyed
     onUnmounted(() => {
-        if (jwtCheckTimer.value) {
-            clearTimeout(jwtCheckTimer.value);
+        if (groupsJwtCheckTimer.value) {
+            clearTimeout(groupsJwtCheckTimer.value);
         }
     });
 

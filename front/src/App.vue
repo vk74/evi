@@ -315,6 +315,7 @@ import LoginDialog from './components/account/ModuleLogin.vue';
 import ModuleNewUserRegistration from './components/account/ModuleNewUserRegistration.vue';
 import AppSnackbar from './core/ui/snackbars/AppSnackbar.vue';
 import { useStoreUsersList } from './components/admin/users/UsersList/state.users.list';
+import { useStoreGroupsList } from './components/admin/users/GroupsList/state.groups.list'
 
 // Инициализация store и i18n
 const userStore = useUserStore();
@@ -322,6 +323,7 @@ const uiStore = useUiStore();
 const appStore = useAppStore();
 const i18n = useI18n();
 const usersListStore = useStoreUsersList();
+const groupsListStore = useStoreGroupsList();
 
 /*
 const publicPages = ['Login', 'NewUserRegistration']
@@ -363,6 +365,8 @@ const setActiveModule = (module) => {
 const logout = () => {
   usersListStore.clearCache();
   usersListStore.clearSelection();
+  groupsListStore.clearCache();
+  groupsListStore.clearSelection();
   userStore.userLogoff();
   appStore.setActiveModule('Catalog');
 };
