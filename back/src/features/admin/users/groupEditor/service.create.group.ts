@@ -13,6 +13,7 @@ import { Pool } from 'pg';
 import { pool as pgPool } from '../../../../db/maindb';
 import { queries } from './queries.group.editor';
 import { GroupStatus } from './types.group.editor';
+import { groupsRepository } from '../groupsList/repository.groups.list';
 import type { 
   CreateGroupRequest, 
   CreateGroupResponse,

@@ -10,13 +10,12 @@
  */
 
 import { defineStore } from 'pinia';
-import { ref, computed, onUnmounted, watch } from 'vue';
+import { ref, computed, onUnmounted } from 'vue';
 import { useUserStore } from '@/core/state/userstate';
 import type {
     IGroup,
     ItemsPerPageOption,
-    ISortParams,
-    GroupStatus
+    ISortParams
 } from './types.groups.list';
 
 // Logger for main operations
