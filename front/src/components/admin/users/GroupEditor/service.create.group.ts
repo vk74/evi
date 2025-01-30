@@ -7,10 +7,14 @@
  * - logging
  */
 import { api } from '@/core/api/service.axios'
+import { groupsService } from '../GroupsList/service.read.groups';
+import { useStoreGroupsList } from '../GroupsList/state.groups.list'; // Groups store
 import type { 
   ICreateGroupRequest, 
   ICreateGroupResponse 
 } from './types.group.editor'
+
+const groupsStore = useStoreGroupsList();
 
 /**
  * Логгер для операций сервиса
@@ -56,8 +60,18 @@ export const createGroupService = {
         logger.info('Group successfully created', {
           groupId: response.data.groupId,
           group_name: response.data.group_name
-        })
-        return response.data
+        });
+      
+        // Обновляем список групп в кеше хранилища
+        try {
+          groupsStore.clearCache();
+          groupsService.fetchGroups();
+        } catch (error) {
+          // Логируем ошибку, но не прерываем выполнение
+          logger.error('Failed to update groups list after creation', error);
+        }
+      
+        return response.data;
       } else {
         const errorMessage = response.data.message || 'Неизвестная ошибка создания группы'
         logger.error(errorMessage)

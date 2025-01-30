@@ -229,6 +229,13 @@ export async function createGroup(
     await client.query('COMMIT');
     logger.info('Group created successfully', { groupId });
 
+    try {
+      groupsRepository.clearCache;
+      logger.info('groups list repository cache cleared succsessfully')
+    } catch (error){
+      logger.info('failed to clear groups list repository cache')
+    };
+
     return {
       success: true,
       message: 'Group created successfully',
