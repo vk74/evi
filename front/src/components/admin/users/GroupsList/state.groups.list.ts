@@ -24,15 +24,17 @@ const logger = {
     error: (message: string, meta?: object) => console.error(`[GroupsStore] ${message}`, meta || '')
 };
 
+// Define the Pinia store for groups list
 export const useStoreGroupsList = defineStore('groupsList', () => {
-    // State
-    const groups = ref<IGroup[]>([]); // List of groups
+    // State definitions
+    // Store the complete list of groups without applying pagination here
+    const groups = ref<IGroup[]>([]); // List of all groups (full dataset)
     const loading = ref(false); // Loading state
     const error = ref<string | null>(null); // Error state
-    const page = ref(1); // Current page number
-    const itemsPerPage = ref<ItemsPerPageOption>(25); // Number of items per page
-    const totalNumberOfGroups = ref(0); // Total number of items
-    const sorting = ref<ISortParams>({ // Sorting parameters
+    const page = ref(1); // Current page number (used for server-side pagination if implemented later)
+    const itemsPerPage = ref<ItemsPerPageOption>(25); // Number of items per page (used for server-side pagination if implemented later)
+    const totalNumberOfGroups = ref(0); // Total number of items (updated from API response)
+    const sorting = ref<ISortParams>({ // Sorting parameters (used for server-side sorting if implemented later)
         sortBy: '',
         sortDesc: false
     });
@@ -43,42 +45,38 @@ export const useStoreGroupsList = defineStore('groupsList', () => {
 
     // Getters
     /**
-     * Returns the list of groups with applied pagination and sorting.
-     * @returns {IGroup[]} - Sorted and paginated list of groups.
+     * Returns the complete list of groups with applied sorting only.
+     * Note: Pagination is removed here to let v-data-table handle it locally.
+     * @returns {IGroup[]} - Sorted list of all groups (no pagination applied).
      */
     const getGroups = computed(() => {
         logger.info('[Store] getGroups called', {
-          page: page.value,
-          itemsPerPage: itemsPerPage.value,
-          totalItems: totalNumberOfGroups.value,
-          groupsCount: groups.value.length
+            totalItems: totalNumberOfGroups.value,
+            groupsCount: groups.value.length
         });
-      
-        const start = (page.value - 1) * itemsPerPage.value;
-        const end = start + itemsPerPage.value;
       
         const result = [...groups.value];
       
         if (sorting.value.sortBy) {
-          result.sort((a, b) => {
-            const aValue = a[sorting.value.sortBy as keyof IGroup];
-            const bValue = b[sorting.value.sortBy as keyof IGroup];
-            const modifier = sorting.value.sortDesc ? -1 : 1;
+            result.sort((a, b) => {
+                const aValue = a[sorting.value.sortBy as keyof IGroup];
+                const bValue = b[sorting.value.sortBy as keyof IGroup];
+                const modifier = sorting.value.sortDesc ? -1 : 1;
       
-            if (typeof aValue === 'string' && typeof bValue === 'string') {
-              return aValue.localeCompare(bValue) * modifier;
-            }
+                if (typeof aValue === 'string' && typeof bValue === 'string') {
+                    return aValue.localeCompare(bValue) * modifier;
+                }
       
-            if (typeof aValue === 'boolean' && typeof bValue === 'boolean') {
-              return (aValue === bValue) ? 0 : (aValue ? modifier : -modifier);
-            }
+                if (typeof aValue === 'boolean' && typeof bValue === 'boolean') {
+                    return (aValue === bValue) ? 0 : (aValue ? modifier : -modifier);
+                }
       
-            return aValue > bValue ? modifier : -modifier;
-          });
+                return aValue > bValue ? modifier : -modifier;
+            });
         }
       
-        return result.slice(start, end);
-      });
+        return result; // Return full sorted list for v-data-table to handle pagination locally
+    });
 
     const selectedCount = computed(() => selectedGroups.value.length); // Number of selected groups
     const hasSelected = computed(() => selectedCount.value > 0); // Whether any groups are selected
@@ -137,7 +135,7 @@ export const useStoreGroupsList = defineStore('groupsList', () => {
      * @param total - Total number of groups.
      */
     function updateCache(newGroups: IGroup[], total: number) {
-        groups.value = [...newGroups]; // Замена массива
+        groups.value = [...newGroups]; // Replace the array with new data
         totalNumberOfGroups.value = total;
         setupJWTCheck(); // Start the timer after updating the cache
         logger.info('Cache updated with new groups data', {
@@ -148,6 +146,7 @@ export const useStoreGroupsList = defineStore('groupsList', () => {
 
     /**
      * Updates the display parameters (pagination).
+     * Note: This is retained for potential future server-side pagination but not used for local pagination in v-data-table.
      * @param newItemsPerPage - New number of items per page.
      * @param newPage - New page number.
      */
@@ -162,6 +161,7 @@ export const useStoreGroupsList = defineStore('groupsList', () => {
 
     /**
      * Updates the sorting parameters.
+     * Note: This is retained for potential server-side sorting but not used for local sorting in v-data-table currently.
      * @param field - Field to sort by.
      */
     function updateSort(field: keyof IGroup) {
@@ -222,21 +222,7 @@ export const useStoreGroupsList = defineStore('groupsList', () => {
         logger.info('Cache cleared');
     }
 
-    // Подписка на изменения isLoggedIn
-    /**
-    const userStore = useUserStore()
-    watch(
-        () => userStore.isLoggedIn,
-        (newValue, oldValue) => {
-            if (!newValue) {
-                logger.info('User logged out, clearing cache')
-                clearCache()
-            }
-        }
-    )
-    */
-
-    // Clean up the timer when the component is destroyed
+    // Clean up the timer when the component or store is unmounted
     onUnmounted(() => {
         if (groupsJwtCheckTimer.value) {
             clearTimeout(groupsJwtCheckTimer.value);

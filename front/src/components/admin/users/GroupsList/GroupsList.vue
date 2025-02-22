@@ -12,37 +12,33 @@
 -->
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed, watch, onMounted } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useStoreGroupsList } from './state.groups.list';
 import groupsService from './service.read.groups';
 import deleteSelectedGroupsService from './service.delete.selected.groups';
-import type { TableHeader } from './types.groups.list';
+import type { TableHeader, IGroup, ItemsPerPageOption } from './types.groups.list'; // Импортируем нужные типы
 import { useUserStore } from '@/core/state/userstate';
 import { useUiStore } from '@/core/state/uistate';
 import { useUsersAdminStore } from '../state.users.admin';
 
-// ==================== STORE AND I18N INITIALIZATION ====================
+// Initialize stores and i18n
 const { t } = useI18n();
 const groupsStore = useStoreGroupsList();
 const userStore = useUserStore();
 const uiStore = useUiStore();
 const usersAdminStore = useUsersAdminStore();
 
-// ==================== AUTHENTICATION CHECK ====================
+// Authentication check
 const isAuthorized = computed(() => userStore.isLoggedIn);
 
-// ==================== TABLE PARAMETERS ====================
+// Table parameters
+// Note: These are retained for potential server-side pagination but managed locally by v-data-table
 const page = ref<number>(groupsStore.page);
-const itemsPerPage = ref<number>(groupsStore.itemsPerPage);
+const itemsPerPage = ref<ItemsPerPageOption>(groupsStore.itemsPerPage as ItemsPerPageOption); // Приведение типа
 
-const tableKey = ref(0);
-
-const updateTable = () => {
-  tableKey.value++; // Принудительно перерисовываем таблицу
-};
-
-// ==================== COMPUTED PROPERTIES ====================
+// Computed properties
+// Get the full list of groups (no pagination applied here, handled by v-data-table)
 const groups = computed(() => groupsStore.getGroups);
 const loading = computed(() => groupsStore.loading);
 const totalNumOfGroups = computed(() => {
@@ -50,15 +46,15 @@ const totalNumOfGroups = computed(() => {
   return groupsStore.totalNumberOfGroups;
 });
 
-// ==================== SELECTED GROUPS ====================
+// Selected groups state
 const selectedCount = computed(() => groupsStore.selectedCount);
 const hasSelected = computed(() => selectedCount.value > 0);
 const hasOneSelected = computed(() => selectedCount.value === 1);
 
-// ==================== DELETE CONFIRMATION DIALOG STATE ====================
+// Delete confirmation dialog state
 const showDeleteDialog = ref(false);
 
-// ==================== TABLE HEADERS ====================
+// Table headers (unchanged, managed locally by v-data-table)
 const headers = computed<TableHeader[]>(() => [
   { 
     title: t('admin.groups.list.table.headers.select'), 
@@ -93,15 +89,14 @@ const headers = computed<TableHeader[]>(() => [
   }
 ]);
 
-// ==================== GROUP HANDLING FUNCTIONS ====================
-
+// Group handling functions
 /**
- * Gets the color for the group status
+ * Gets the color for the group status.
  * @param status - Group status
  * @returns Color for the status
  */
 const getStatusColor = (status: string) => {
-  switch (status) {
+  switch (status.toLowerCase()) { // Добавлено приведение к нижнему регистру для надежности
     case 'active':
       return 'teal';
     case 'disabled':
@@ -109,52 +104,77 @@ const getStatusColor = (status: string) => {
     case 'archived':
       return 'grey';
     default:
-      return 'blue';
+      return 'blue'; // По умолчанию, если статус некорректен
   }
 };
 
 /**
- * Selects or deselects a group
+ * Selects or deselects a group.
  * @param groupId - Group ID
  * @param selected - Selection flag
  */
 const onSelectGroup = (groupId: string, selected: boolean) => {
+  if (!groupId) {
+    console.warn('Invalid groupId provided to onSelectGroup:', groupId);
+    return; // Предотвращаем некорректный выбор
+  }
   if (selected) {
     groupsStore.selectGroup(groupId);
   } else {
     groupsStore.deselectGroup(groupId);
   }
+  console.log('Selected groupId:', groupId); // Логирование для отладки
 };
 
 /**
- * Checks if a group is selected
+ * Checks if a group is selected.
  * @param groupId - Group ID
  * @returns Selection flag
  */
 const isSelected = (groupId: string) => {
+  if (!groupId) {
+    console.warn('Invalid groupId provided to isSelected:', groupId);
+    return false; // Предотвращаем некорректный выбор
+  }
   return groupsStore.selectedGroups.includes(groupId);
 };
 
 /**
- * Handles group creation
+ * Handles group creation.
  */
 const createGroup = () => {
   console.log('Create group clicked');
   usersAdminStore.setActiveSection('group-editor');
+  // TODO: Add logic to refresh groups after group creation (e.g., call fetchGroups)
 };
 
 /**
- * Handles group editing
+ * Handles group editing.
  */
 const editGroup = () => {
   console.log('Edit group clicked');
   // Add logic for editing a group here
+  // TODO: Add logic to refresh groups after editing (e.g., call fetchGroups if needed)
 };
 
 /**
- * Handles group deletion
+ * Handles local sorting updates from v-data-table.
+ * Note: This updates the Pinia store for potential server-side sorting in the future.
+ * @param sortParams - Sorting parameters from v-data-table
  */
- const onDeleteSelected = async () => {
+const onSortUpdate = (sortParams: { key: string; order: 'asc' | 'desc' | null }) => {
+  if (sortParams.key) {
+    groupsStore.updateSort(sortParams.key as keyof IGroup); // Типизировано корректно
+    groupsStore.sorting.sortDesc = sortParams.order === 'desc';
+  } else {
+    groupsStore.updateSort('' as keyof IGroup); // Типизировано корректно
+  }
+};
+
+/**
+ * Handles group deletion.
+ */
+const onDeleteSelected = async () => {
   try {
     console.log('Deleting selected groups:', groupsStore.selectedGroups);
 
@@ -164,9 +184,8 @@ const editGroup = () => {
     // Show success notification
     uiStore.showSuccessSnackbar(t('admin.groups.list.messages.deleteSuccess', { count: deletedCount }));
 
-    // Перезагружаем группы после удаления
+    // Refresh groups after deletion
     await groupsService.fetchGroups();
-    updateTable();
 
   } catch (error) {
     console.error('Error deleting groups:', error);
@@ -174,35 +193,30 @@ const editGroup = () => {
       error instanceof Error ? error.message : 'Error deleting groups'
     );
   } finally {
-    // Close the delete confirmation dialog
+    // Close the delete confirmation dialog and clear selection
     showDeleteDialog.value = false;
-
-    // Clear the selection
     groupsStore.clearSelection();
   }
 };
 
+// Lifecycle hooks
 /**
- * Cancels the delete operation
+ * Fetches groups when the component is mounted.
  */
-const cancelDelete = () => {
-  showDeleteDialog.value = false;
-};
-
-// ==================== LIFECYCLE HOOKS ====================
-
-/**
- * Fetches groups when the component is mounted
- */
- onMounted(async () => {
+onMounted(async () => {
   try {
-    await groupsService.fetchGroups(); // Всегда загружаем данные
+    await groupsService.fetchGroups(); // Fetch all groups (full dataset)
   } catch (error) {
     console.error('Error loading initial groups list:', error);
     uiStore.showErrorSnackbar(
       error instanceof Error ? error.message : 'Error loading groups list'
     );
   }
+});
+
+// Sync pagination parameters with Pinia store (optional, for future server-side pagination)
+watch([page, itemsPerPage], ([newPage, newItemsPerPage]) => {
+  groupsStore.updateDisplayParams(newItemsPerPage, newPage);
 });
 </script>
 
@@ -240,7 +254,7 @@ const cancelDelete = () => {
           variant="outlined"
           class="mr-2"
           :disabled="!hasSelected"
-          @click="onDeleteSelected"
+          @click="showDeleteDialog = true"
         >
           {{ t('admin.groups.list.buttons.delete') }}
           <span class="ml-2">({{ selectedCount }})</span>
@@ -252,9 +266,7 @@ const cancelDelete = () => {
       </v-app-bar-title>
     </v-app-bar>
 
-    <!-- Groups Table -->
     <v-data-table
-      :key="tableKey"
       v-model:page="page"
       v-model:items-per-page="itemsPerPage"
       :headers="headers"
@@ -265,26 +277,23 @@ const cancelDelete = () => {
       class="groups-table"
       @update:page="(newPage) => page = newPage"
       @update:items-per-page="(newItemsPerPage) => itemsPerPage = newItemsPerPage"
+      @update:sort="(sortParams) => onSortUpdate(sortParams)"
     >
-      <!-- Selection Checkbox Template -->
-      <template #[`item.selection`]="{ item }">
+      <template v-slot:item.selection="{ item }">
         <v-checkbox
-          :model-value="isSelected(item.group_id)"
-          density="compact"
+          :model-value="isSelected(item.group_id ?? '')"  
           hide-details
-          @update:model-value="(value: boolean | null) => onSelectGroup(item.group_id, value ?? false)"
+          @update:model-value="(value: boolean | null) => onSelectGroup(item.group_id ?? '', value ?? false)"
         />
       </template>
 
-      <!-- Group Status Template -->
-      <template #[`item.group_status`]="{ item }">
-        <v-chip :color="getStatusColor(item.group_status)" size="x-small">
-          {{ item.group_status }}
+      <template v-slot:item.group_status="{ item }">
+        <v-chip :color="getStatusColor(item.group_status ?? 'default')" size="x-small">
+          {{ item.group_status ?? 'Unknown' }}
         </v-chip>
       </template>
 
-      <!-- System Group Template -->
-      <template #[`item.is_system`]="{ item }">
+      <template v-slot:item.is_system="{ item }">
         <v-icon
           :color="item.is_system ? 'teal' : 'red-darken-4'"
           :icon="item.is_system ? 'mdi-check-circle' : 'mdi-minus-circle'"
@@ -293,7 +302,6 @@ const cancelDelete = () => {
       </template>
     </v-data-table>
 
-    <!-- Delete Confirmation Dialog -->
     <v-dialog v-model="showDeleteDialog" max-width="400">
       <v-card>
         <v-card-title class="text-subtitle-1 text-wrap">
@@ -305,7 +313,7 @@ const cancelDelete = () => {
             color="grey"
             variant="text"
             class="text-none"
-            @click="cancelDelete"
+            @click="showDeleteDialog = false"
           >
             {{ t('common.cancel') }}
           </v-btn>
