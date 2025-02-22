@@ -1,12 +1,13 @@
 /**
  * service.create.group.ts - backend
- * Service layer for handling group creation operations.
+ * Backend service layer for handling group creation operations.
  * 
  * Handles:
  * - Input validation
  * - Database operations
  * - Transaction management
  * - Error handling
+ * - Clear cache after successfull group creation
  */
 
 import { Pool } from 'pg';
@@ -230,11 +231,27 @@ export async function createGroup(
     logger.info('Group created successfully', { groupId });
 
     try {
-      groupsRepository.clearCache;
-      logger.info('groups list repository cache cleared succsessfully')
-    } catch (error){
-      logger.info('failed to clear groups list repository cache')
-    };
+      // Логируем состояние кеша до очистки
+      const cacheStateBefore = groupsRepository.hasValidCache();
+      logger.info(`Cache state before clearing: ${cacheStateBefore ? 'Valid' : 'Empty'}`);
+    
+      // Очищаем кэш
+      groupsRepository.clearCache(); // Вызываем метод очистки кеша
+    
+      // Логируем состояние кеша после очистки
+      const cacheStateAfter = groupsRepository.hasValidCache();
+      logger.info(`Cache state after clearing: ${cacheStateAfter ? 'Valid' : 'Empty'}`);
+    
+      // Проверяем, что кэш действительно очищен
+      if (!cacheStateAfter) {
+        logger.info('Groups list repository cache cleared successfully');
+      } else {
+        logger.error('Failed to clear groups list repository cache: cache is still valid');
+      }
+    } catch (error) {
+      // Логируем ошибку, если что-то пошло не так
+      logger.error('Failed to clear groups list repository cache', error);
+    }
 
     return {
       success: true,
