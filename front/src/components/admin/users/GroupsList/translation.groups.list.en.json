@@ -3,6 +3,7 @@
     "groups": {
       "list": {
         "title": "groups list",
+        "search": "search in groups",
         "buttons": {
           "create": "create Group",
           "edit": "edit",

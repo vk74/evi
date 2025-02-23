@@ -244,7 +244,7 @@ watch([page, itemsPerPage], ([newPage, newItemsPerPage]) => {
         <!-- Search Field in v-app-bar, aligned with buttons -->
         <v-text-field
           v-model="searchQuery"
-          label="поиск в списке групп"
+          :label="t('admin.groups.list.search')"
           variant="outlined"
           density="compact"
           clearable
@@ -327,10 +327,6 @@ watch([page, itemsPerPage], ([newPage, newItemsPerPage]) => {
 </template>
 
 <style scoped>
-.groups-table {
-  margin-top: 16px;
-  width: 100%; /* Takes up the full available width */
-}
 .v-text-field {
   margin-top: 23px; /* Корректировка вертикального выравнивания */
 }
