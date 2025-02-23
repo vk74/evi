@@ -15,13 +15,13 @@
 import { ref, computed, watch, onMounted } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useStoreGroupsList } from './state.groups.list';
-import groupsService from './service.read.groups'; // Импортируем сервис для загрузки данных группы
+import groupsService from './service.read.groups';
 import deleteSelectedGroupsService from './service.delete.selected.groups';
-import type { TableHeader, IGroup, ItemsPerPageOption } from './types.groups.list'; // Убрал лишние типы GroupEditor
+import type { TableHeader, IGroup, ItemsPerPageOption } from './types.groups.list';
 import { useUserStore } from '@/core/state/userstate';
 import { useUiStore } from '@/core/state/uistate';
 import { useUsersAdminStore } from '../state.users.admin';
-import { useGroupEditorStore } from '../GroupEditor/state.group.editor'; // Импортируем хранилище для GroupEditor
+import { useGroupEditorStore } from '../GroupEditor/state.group.editor'; // Исправлен путь импорта
 
 // Initialize stores and i18n
 const { t } = useI18n();
@@ -29,18 +29,17 @@ const groupsStore = useStoreGroupsList();
 const userStore = useUserStore();
 const uiStore = useUiStore();
 const usersAdminStore = useUsersAdminStore();
-const groupEditorStore = useGroupEditorStore(); // Инициализируем хранилище редактора групп
+const groupEditorStore = useGroupEditorStore();
 
 // Authentication check
 const isAuthorized = computed(() => userStore.isLoggedIn);
 
 // Table parameters
-// Note: These are retained for potential server-side pagination but managed locally by v-data-table
 const page = ref<number>(groupsStore.page);
 const itemsPerPage = ref<ItemsPerPageOption>(groupsStore.itemsPerPage as ItemsPerPageOption); // Приведение типа
+const searchQuery = ref<string>(''); // Добавляем реактивную переменную для поиска
 
 // Computed properties
-// Get the full list of groups (no pagination applied here, handled by v-data-table)
 const groups = computed(() => groupsStore.getGroups);
 const loading = computed(() => groupsStore.loading);
 const totalNumOfGroups = computed(() => {
@@ -56,39 +55,14 @@ const hasOneSelected = computed(() => selectedCount.value === 1);
 // Delete confirmation dialog state
 const showDeleteDialog = ref(false);
 
-// Table headers (unchanged, managed locally by v-data-table)
+// Table headers
 const headers = computed<TableHeader[]>(() => [
-  { 
-    title: t('admin.groups.list.table.headers.select'), 
-    key: 'selection',
-    width: '40px',
-    sortable: false
-  },
-  { 
-    title: t('admin.groups.list.table.headers.id'), 
-    key: 'group_id', 
-    width: '200px'
-  },
-  { 
-    title: t('admin.groups.list.table.headers.name'), 
-    key: 'group_name', 
-    width: '300px'
-  },
-  { 
-    title: t('admin.groups.list.table.headers.status'), 
-    key: 'group_status', 
-    width: '120px'
-  },
-  { 
-    title: t('admin.groups.list.table.headers.owner'), 
-    key: 'group_owner', 
-    width: '200px'
-  },
-  { 
-    title: t('admin.groups.list.table.headers.system'), 
-    key: 'is_system', 
-    width: '80px'
-  }
+  { title: t('admin.groups.list.table.headers.select'), key: 'selection', width: '40px', sortable: false },
+  { title: t('admin.groups.list.table.headers.id'), key: 'group_id', width: '200px' },
+  { title: t('admin.groups.list.table.headers.name'), key: 'group_name', width: '300px' },
+  { title: t('admin.groups.list.table.headers.status'), key: 'group_status', width: '120px' },
+  { title: t('admin.groups.list.table.headers.owner'), key: 'group_owner', width: '200px' },
+  { title: t('admin.groups.list.table.headers.system'), key: 'is_system', width: '80px' }
 ]);
 
 // Group handling functions
@@ -98,15 +72,11 @@ const headers = computed<TableHeader[]>(() => [
  * @returns Color for the status
  */
 const getStatusColor = (status: string) => {
-  switch (status.toLowerCase()) { // Добавлено приведение к нижнему регистру для надежности
-    case 'active':
-      return 'teal';
-    case 'disabled':
-      return 'red';
-    case 'archived':
-      return 'grey';
-    default:
-      return 'blue'; // По умолчанию, если статус некорректен
+  switch (status.toLowerCase()) {
+    case 'active': return 'teal';
+    case 'disabled': return 'red';
+    case 'archived': return 'grey';
+    default: return 'blue';
   }
 };
 
@@ -120,11 +90,8 @@ const onSelectGroup = (groupId: string, selected: boolean) => {
     console.warn('Invalid groupId provided to onSelectGroup:', groupId);
     return; // Предотвращаем некорректный выбор
   }
-  if (selected) {
-    groupsStore.selectGroup(groupId);
-  } else {
-    groupsStore.deselectGroup(groupId);
-  }
+  if (selected) groupsStore.selectGroup(groupId);
+  else groupsStore.deselectGroup(groupId);
   console.log('Selected groupId:', groupId); // Логирование для отладки
 };
 
@@ -160,14 +127,11 @@ const editGroup = async () => {
     const selectedGroupId = groupsStore.selectedGroups[0]; // Берем ID первой (и единственной) выбранной группы
     console.log('Loading group for editing with groupId:', selectedGroupId);
     try {
-      // Загружаем данные группы из бэкенда через сервис
-      const groupData = await groupsService.fetchGroupById(selectedGroupId); // Предполагаемый метод
-      // Инициализируем режим редактирования в groupEditorStore
+      const groupData = await fetchGroupService.fetchGroupById(selectedGroupId);
       groupEditorStore.initEditMode({
-        group: groupData.group, // Предполагаем, что данные возвращаются в формате { group: IGroupData, details: IGroupDetails }
+        group: groupData.group,
         details: groupData.details
       });
-      // Переключаем на секцию редактора групп
       usersAdminStore.setActiveSection('group-editor');
     } catch (error) {
       console.error('Error loading group for editing:', error);
@@ -186,10 +150,10 @@ const editGroup = async () => {
  */
 const onSortUpdate = (sortParams: { key: string; order: 'asc' | 'desc' | null }) => {
   if (sortParams.key) {
-    groupsStore.updateSort(sortParams.key as keyof IGroup); // Типизировано корректно
+    groupsStore.updateSort(sortParams.key as keyof IGroup);
     groupsStore.sorting.sortDesc = sortParams.order === 'desc';
   } else {
-    groupsStore.updateSort('' as keyof IGroup); // Типизировано корректно
+    groupsStore.updateSort('' as keyof IGroup);
   }
 };
 
@@ -208,14 +172,11 @@ const onDeleteSelected = async () => {
 
     // Refresh groups after deletion
     await groupsService.fetchGroups();
-
   } catch (error) {
     console.error('Error deleting groups:', error);
-    uiStore.showErrorSnackbar(
-      error instanceof Error ? error.message : 'Error deleting groups'
-    );
+    uiStore.showErrorSnackbar(error instanceof Error ? error.message : 'Error deleting groups');
   } finally {
-    // Close the delete confirmation dialog and clear selection
+     // Close the delete confirmation dialog and clear selection
     showDeleteDialog.value = false;
     groupsStore.clearSelection();
   }
@@ -227,12 +188,10 @@ const onDeleteSelected = async () => {
  */
 onMounted(async () => {
   try {
-    await groupsService.fetchGroups(); // Fetch all groups (full dataset)
+    await groupsService.fetchGroups();
   } catch (error) {
     console.error('Error loading initial groups list:', error);
-    uiStore.showErrorSnackbar(
-      error instanceof Error ? error.message : 'Error loading groups list'
-    );
+    uiStore.showErrorSnackbar(error instanceof Error ? error.message : 'Error loading groups list');
   }
 });
 
@@ -244,7 +203,7 @@ watch([page, itemsPerPage], ([newPage, newItemsPerPage]) => {
 
 <template>
   <v-card flat>
-    <v-app-bar flat class="px-4 d-flex justify-space-between">
+    <v-app-bar flat class="px-4 d-flex align-center justify-space-between">
       <div class="d-flex align-center">
         <!-- Create Group Button -->
         <v-btn
@@ -281,6 +240,18 @@ watch([page, itemsPerPage], ([newPage, newItemsPerPage]) => {
           {{ t('admin.groups.list.buttons.delete') }}
           <span class="ml-2">({{ selectedCount }})</span>
         </v-btn>
+
+        <!-- Search Field in v-app-bar, aligned with buttons -->
+        <v-text-field
+          v-model="searchQuery"
+          label="поиск в списке групп"
+          variant="outlined"
+          density="compact"
+          clearable
+          prepend-inner-icon="mdi-magnify"
+          class="ml-4"
+          style="max-width: 700px; min-width: 500px;"
+        />
       </div>
 
       <v-app-bar-title class="text-subtitle-2 text-lowercase text-right">
@@ -289,6 +260,7 @@ watch([page, itemsPerPage], ([newPage, newItemsPerPage]) => {
     </v-app-bar>
 
     <v-data-table
+      :search="searchQuery"
       v-model:page="page"
       v-model:items-per-page="itemsPerPage"
       :headers="headers"
@@ -303,15 +275,16 @@ watch([page, itemsPerPage], ([newPage, newItemsPerPage]) => {
     >
       <template v-slot:item.selection="{ item }">
         <v-checkbox
-          :model-value="isSelected(item.group_id ?? '')"  
+          :model-value="isSelected(item.group_id)"
+          density="compact"
           hide-details
-          @update:model-value="(value: boolean | null) => onSelectGroup(item.group_id ?? '', value ?? false)"
+          @update:model-value="(value: boolean | null) => onSelectGroup(item.group_id, value ?? false)"
         />
       </template>
 
       <template v-slot:item.group_status="{ item }">
-        <v-chip :color="getStatusColor(item.group_status ?? 'default')" size="x-small">
-          {{ item.group_status ?? 'Unknown' }}
+        <v-chip :color="getStatusColor(item.group_status)" size="x-small">
+          {{ item.group_status }}
         </v-chip>
       </template>
 
@@ -357,5 +330,8 @@ watch([page, itemsPerPage], ([newPage, newItemsPerPage]) => {
 .groups-table {
   margin-top: 16px;
   width: 100%; /* Takes up the full available width */
+}
+.v-text-field {
+  margin-top: 23px; /* Корректировка вертикального выравнивания */
 }
 </style>
