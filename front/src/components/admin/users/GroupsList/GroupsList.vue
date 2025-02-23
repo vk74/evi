@@ -15,12 +15,13 @@
 import { ref, computed, watch, onMounted } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useStoreGroupsList } from './state.groups.list';
-import groupsService from './service.read.groups';
+import groupsService from './service.read.groups'; // Импортируем сервис для загрузки данных группы
 import deleteSelectedGroupsService from './service.delete.selected.groups';
-import type { TableHeader, IGroup, ItemsPerPageOption } from './types.groups.list'; // Импортируем нужные типы
+import type { TableHeader, IGroup, ItemsPerPageOption } from './types.groups.list'; // Убрал лишние типы GroupEditor
 import { useUserStore } from '@/core/state/userstate';
 import { useUiStore } from '@/core/state/uistate';
 import { useUsersAdminStore } from '../state.users.admin';
+import { useGroupEditorStore } from '../GroupEditor/state.group.editor'; // Импортируем хранилище для GroupEditor
 
 // Initialize stores and i18n
 const { t } = useI18n();
@@ -28,6 +29,7 @@ const groupsStore = useStoreGroupsList();
 const userStore = useUserStore();
 const uiStore = useUiStore();
 const usersAdminStore = useUsersAdminStore();
+const groupEditorStore = useGroupEditorStore(); // Инициализируем хранилище редактора групп
 
 // Authentication check
 const isAuthorized = computed(() => userStore.isLoggedIn);
@@ -150,11 +152,31 @@ const createGroup = () => {
 
 /**
  * Handles group editing.
+ * @description Loads the selected group from backend into GroupEditor for editing.
  */
-const editGroup = () => {
+const editGroup = async () => {
   console.log('Edit group clicked');
-  // Add logic for editing a group here
-  // TODO: Add logic to refresh groups after editing (e.g., call fetchGroups if needed)
+  if (hasOneSelected.value) {
+    const selectedGroupId = groupsStore.selectedGroups[0]; // Берем ID первой (и единственной) выбранной группы
+    console.log('Loading group for editing with groupId:', selectedGroupId);
+    try {
+      // Загружаем данные группы из бэкенда через сервис
+      const groupData = await groupsService.fetchGroupById(selectedGroupId); // Предполагаемый метод
+      // Инициализируем режим редактирования в groupEditorStore
+      groupEditorStore.initEditMode({
+        group: groupData.group, // Предполагаем, что данные возвращаются в формате { group: IGroupData, details: IGroupDetails }
+        details: groupData.details
+      });
+      // Переключаем на секцию редактора групп
+      usersAdminStore.setActiveSection('group-editor');
+    } catch (error) {
+      console.error('Error loading group for editing:', error);
+      uiStore.showErrorSnackbar('Не удалось загрузить данные группы для редактирования');
+    }
+  } else {
+    console.warn('No single group selected for editing');
+    uiStore.showErrorSnackbar(t('admin.groups.list.messages.noGroupSelected'));
+  }
 };
 
 /**
