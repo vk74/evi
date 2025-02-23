@@ -6,9 +6,24 @@
  * - Checking constraints (uniqueness, existence)
  * - Creating new groups
  * - Adding group details
+ * - Fetching group data by group ID (separate queries for app.groups and app.group_details)
  */
 
-export const queries = {
+interface SQLQuery {
+  text: string;
+}
+
+interface GroupEditorQueries {
+  checkGroupName: SQLQuery;
+  getUserId: SQLQuery;
+  checkUserExists: SQLQuery;
+  insertGroup: SQLQuery;
+  insertGroupDetails: SQLQuery;
+  getGroupById: SQLQuery;
+  getGroupDetailsById: SQLQuery;
+}
+
+export const queries: GroupEditorQueries = {
   // Check if group name is already taken
   checkGroupName: {
     text: `
@@ -57,7 +72,7 @@ export const queries = {
     `
   },
   
-  // И меняем insertGroupDetails, используя UUID вместо username
+  // Insert group details into app.group_details
   insertGroupDetails: {
     text: `
       INSERT INTO app.group_details (
@@ -74,6 +89,42 @@ export const queries = {
         $4,  -- UUID создателя группы
         now()
       )
+    `
+  },
+
+  // Fetch group data from app.groups by group_id
+  getGroupById: {
+    text: `
+      SELECT 
+        group_id,
+        group_name,
+        reserve_1,
+        group_status,
+        group_owner,
+        is_system
+      FROM app.groups
+      WHERE group_id = $1::uuid
+      LIMIT 1
+    `
+  },
+
+  // Fetch group details from app.group_details by group_id
+  getGroupDetailsById: {
+    text: `
+      SELECT 
+        group_id,
+        group_description,
+        group_email,
+        group_created_at,
+        group_created_by,
+        group_modified_at,
+        group_modified_by,
+        reserve_field_1,
+        reserve_field_2,
+        reserve_field_3
+      FROM app.group_details
+      WHERE group_id = $1::uuid
+      LIMIT 1
     `
   }
 }

@@ -17,6 +17,7 @@ import { useI18n } from 'vue-i18n';
 import { useStoreGroupsList } from './state.groups.list';
 import groupsService from './service.read.groups';
 import deleteSelectedGroupsService from './service.delete.selected.groups';
+import { fetchGroupService } from '../GroupEditor/service.fetch.group'; // Добавлен импорт сервиса
 import type { TableHeader, IGroup, ItemsPerPageOption } from './types.groups.list';
 import { useUserStore } from '@/core/state/userstate';
 import { useUiStore } from '@/core/state/uistate';
@@ -127,10 +128,10 @@ const editGroup = async () => {
     const selectedGroupId = groupsStore.selectedGroups[0]; // Берем ID первой (и единственной) выбранной группы
     console.log('Loading group for editing with groupId:', selectedGroupId);
     try {
-      const groupData = await fetchGroupService.fetchGroupById(selectedGroupId);
+      const { group, details } = await fetchGroupService.fetchGroupById(selectedGroupId);
       groupEditorStore.initEditMode({
-        group: groupData.group,
-        details: groupData.details
+        group: group,
+        details: details
       });
       usersAdminStore.setActiveSection('group-editor');
     } catch (error) {
