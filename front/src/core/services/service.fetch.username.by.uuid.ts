@@ -33,7 +33,7 @@ export async function fetchUsernameByUuid(userId: string): Promise<string> {
     console.log(`[FetchUsernameService] Fetching username for userId: ${userId}`);
     
     const response = await api.get<FetchUsernameResponse>(
-      `/api/admin/users/fetch-username-by-uuid/${userId}`
+      `/api/core/users/fetch-username-by-uuid/${userId}` // Обновлённый путь к эндпоинту
     );
 
     if (!response.data.success) {

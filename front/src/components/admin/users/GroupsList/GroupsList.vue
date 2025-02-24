@@ -17,12 +17,12 @@ import { useI18n } from 'vue-i18n';
 import { useStoreGroupsList } from './state.groups.list';
 import groupsService from './service.read.groups';
 import deleteSelectedGroupsService from './service.delete.selected.groups';
-import { fetchGroupService } from '../GroupEditor/service.fetch.group'; // Добавлен импорт сервиса
+import { fetchGroupService } from '../GroupEditor/service.fetch.group'; // Импорт обновлённого сервиса
 import type { TableHeader, IGroup, ItemsPerPageOption } from './types.groups.list';
 import { useUserStore } from '@/core/state/userstate';
 import { useUiStore } from '@/core/state/uistate';
 import { useUsersAdminStore } from '../state.users.admin';
-import { useGroupEditorStore } from '../GroupEditor/state.group.editor'; // Исправлен путь импорта
+import { useGroupEditorStore } from '../GroupEditor/state.group.editor';
 
 // Initialize stores and i18n
 const { t } = useI18n();
@@ -120,7 +120,7 @@ const createGroup = () => {
 
 /**
  * Handles group editing.
- * @description Loads the selected group from backend into GroupEditor for editing.
+ * @description Loads the selected group from backend into GroupEditor for editing, including owner's username.
  */
 const editGroup = async () => {
   console.log('Edit group clicked');
@@ -130,7 +130,7 @@ const editGroup = async () => {
     try {
       const { group, details } = await fetchGroupService.fetchGroupById(selectedGroupId);
       groupEditorStore.initEditMode({
-        group: group,
+        group: group, // Передаём обновлённые данные с ownerUsername
         details: details
       });
       usersAdminStore.setActiveSection('group-editor');

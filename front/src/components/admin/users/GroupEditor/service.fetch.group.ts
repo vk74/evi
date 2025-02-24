@@ -5,13 +5,15 @@
  * Functionality:
  * - Retrieves group data by ID
  * - Validates the received data
+ * - Fetches username for group owner asynchronously
  * - Initializes edit mode in the store
  * - Handles errors during fetching
  */
 import { api } from '@/core/api/service.axios';
 import { useGroupEditorStore } from './state.group.editor';
 import { useUserStore } from '@/core/state/userstate';
-import type { IGroupData, IGroupDetails, IApiError, ILoadGroupResponse } from './types.group.editor'; // Импортируем нужные типы
+import { fetchUsernameByUuid } from '@/core/services/service.fetch.username.by.uuid';
+import type { IGroupData, IGroupDetails, IApiError, ILoadGroupResponse } from './types.group.editor';
 
 // Logger for tracking operations
 const logger = {
@@ -25,9 +27,9 @@ const logger = {
  */
 export const fetchGroupService = {
   /**
-   * Fetches group data by ID
+   * Fetches group data by ID and includes owner's username
    * @param groupId - ID of the group
-   * @returns Promise<{ group: IGroupData, details: IGroupDetails }> - Group data and details
+   * @returns Promise<{ group: IGroupData, details: IGroupDetails }> - Group data and details with owner's username
    * @throws {Error} If fetching fails or data is missing
    */
   async fetchGroupById(groupId: string): Promise<{ group: IGroupData, details: IGroupDetails }> {
@@ -74,12 +76,31 @@ export const fetchGroupService = {
         group_email: ''
       }; // Default values if details are missing
 
-      logger.info('Successfully received group data', {
+      // Fetch owner's username asynchronously if group_owner exists
+      let ownerUsername = groupData.group_owner; // Default to UUID if username fetch fails
+      if (groupData.group_owner) {
+        try {
+          ownerUsername = await fetchUsernameByUuid(groupData.group_owner);
+          logger.info('Successfully fetched owner username', { groupId, ownerUsername });
+        } catch (error) {
+          logger.error('Failed to fetch owner username, using UUID instead', error);
+          ownerUsername = groupData.group_owner; // Fall back to UUID
+        }
+      }
+
+      // Update groupData with owner's username (keep group_owner as UUID for consistency)
+      const updatedGroupData: IGroupData = {
+        ...groupData,
+        ownerUsername // Add owner's username as a new field, keeping group_owner as UUID
+      };
+
+      logger.info('Successfully received group data with owner username', {
         groupId,
-        groupName: groupData.group_name
+        groupName: updatedGroupData.group_name,
+        ownerUsername
       });
 
-      return { group: groupData, details: detailsData };
+      return { group: updatedGroupData, details: detailsData };
 
     } catch (error) {
       const apiError = error as IApiError;

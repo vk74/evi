@@ -43,9 +43,11 @@ export default async function fetchUsernameByUuid(req: Request, res: Response, n
   const userId = req.params.userId;
 
   try {
+    // Логируем получение запроса
     console.log(`[${new Date().toISOString()}] [FetchUsernameService] Received request to fetch username for userId: ${userId}`);
 
     if (!userId) {
+      console.log(`[${new Date().toISOString()}] [FetchUsernameService] Validation failed: User ID is required`);
       res.status(400).json({
         success: false,
         message: 'User ID is required',
@@ -54,12 +56,23 @@ export default async function fetchUsernameByUuid(req: Request, res: Response, n
       return;
     }
 
+    // Логируем начало выполнения запроса к базе данных
+    console.log(`[${new Date().toISOString()}] [FetchUsernameService] Querying database for userId: ${userId}`);
+    
+    // Выполняем запрос к базе данных для получения username по user_id
     const result: QueryResult<{ username: string }> = await pool.query(
-      'SELECT username FROM app.users WHERE user_id = $1::uuid LIMIT 1',
+      'SELECT username FROM app.users WHERE user_id = $1 LIMIT 1', // Убедились, что таблица и поля корректны
       [userId]
     );
 
+    // Логируем результат запроса
+    console.log(`[${new Date().toISOString()}] [FetchUsernameService] Database query result for userId ${userId}:`, {
+      rowsLength: result.rows.length,
+      rows: result.rows
+    });
+
     if (result.rows.length === 0) {
+      console.log(`[${new Date().toISOString()}] [FetchUsernameService] User not found for userId: ${userId}`);
       res.status(404).json({
         success: false,
         message: 'User not found',
@@ -70,6 +83,7 @@ export default async function fetchUsernameByUuid(req: Request, res: Response, n
 
     const username = result.rows[0].username;
 
+    // Логируем успешное получение username
     console.log(`[${new Date().toISOString()}] [FetchUsernameService] Successfully retrieved username: ${username} for userId: ${userId}`);
 
     res.status(200).json({
@@ -78,7 +92,11 @@ export default async function fetchUsernameByUuid(req: Request, res: Response, n
       data: { username }
     });
   } catch (error) {
-    console.error(`[${new Date().toISOString()}] [FetchUsernameService] Error fetching username for userId: ${userId}`, error);
+    // Логируем ошибку
+    console.error(`[${new Date().toISOString()}] [FetchUsernameService] Error fetching username for userId: ${userId}`, {
+      error: error instanceof Error ? error.message : 'Unknown error',
+      stack: error instanceof Error ? error.stack : undefined
+    });
 
     const serviceError: ServiceError = {
       code: 'INTERNAL_SERVER_ERROR',

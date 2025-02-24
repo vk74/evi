@@ -36,11 +36,12 @@ export enum GroupStatus {
    * Интерфейс базовой информации группы (таблица app.groups)
    */
   export interface IGroupData {
-    group_id?: string                  // uuid, опционален т.к. генерируется при создании
-    group_name: string                 // character varying(100)
-    group_status: GroupStatus          // app.group_status
-    group_owner: string                // username пользователя-владельца группы
-    //is_system: boolean                 // boolean
+  group_id?: string                  // uuid, опционален т.к. генерируется при создании
+  group_name: string                 // character varying(100)
+  group_status: GroupStatus          // app.group_status
+  group_owner: string                // username пользователя-владельца группы (UUID)
+  is_system?: boolean                // boolean, опционально для фронтенда
+  ownerUsername?: string             // Username of the group owner, optional
   }
   
   /**

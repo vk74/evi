@@ -4,7 +4,7 @@ const userRoutes = require('@/routes/routes.users');
 const servicesRoutes = require('@/routes/routes.services'); 
 const catalogRoutes = require('@/routes/routes.catalog');
 const adminRoutes = require('@/features/admin/routes.admin');
-const coreRoutes = require ('./core/routes/routes.core');
+const coreRoutes = require ('@/core/routes/routes.core');
 const workRoutes = require('@/features/work/routes.work');
 
 const ExcelJS = require('exceljs');
@@ -70,7 +70,6 @@ app.use(workRoutes);
 app.get('/', (req, res) => {
   res.send('Backend server is running');
 });
-
 
 
 ////////////////////////// прототипы маршрутов для работы с excel ////////////////////////// 

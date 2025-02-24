@@ -17,6 +17,6 @@ const validateJWT = require('../../guards/auth.validate.jwt');
  * Route to fetch username by user UUID
  * Requires JWT authentication
  */
-router.get('/users/fetch-username-by-uuid/:userId', validateJWT, fetchUsernameByUuid);
+router.get('/api/core/users/fetch-username-by-uuid/:userId', validateJWT, fetchUsernameByUuid);
 
 module.exports = router;

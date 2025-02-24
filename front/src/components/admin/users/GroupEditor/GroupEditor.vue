@@ -1,6 +1,6 @@
 <!-- GroupEditor.vue -->
 <script setup lang="ts">
-import { ref, onMounted, onBeforeUnmount } from 'vue'
+import { ref, onMounted, onBeforeUnmount, computed } from 'vue'
 import { useGroupEditorStore } from './state.group.editor'
 import { useUiStore } from '@/core/state/uistate'
 import { GroupStatus } from './types.group.editor'
@@ -93,6 +93,12 @@ const onSelectMember = (userId: string, selected: boolean) => {
     ? [...selectedMembers.value, userId]
     : selectedMembers.value.filter(id => id !== userId)
 }
+
+// ==================== DISPLAY LOGIC FOR OWNER ====================
+// Вычисляемое свойство для отображения поля "Владелец" с username (если доступно) или UUID
+const ownerDisplay = computed(() => {
+  return groupEditorStore.group.ownerUsername || groupEditorStore.group.group_owner || '';
+});
 
 // ==================== LIFECYCLE ====================
 onMounted(() => groupEditorStore.resetForm())
@@ -206,10 +212,10 @@ onBeforeUnmount(() => uiStore.hideSnackbar())
                 />
               </v-col>
 
-              <!-- Group Owner -->
+              <!-- Group Owner (now displaying username if available) -->
               <v-col cols="12" md="6">
                 <v-text-field
-                  v-model="groupEditorStore.group.group_owner"
+                  v-model="ownerDisplay" 
                   label="Владелец*"
                   :rules="usernameRules"
                   variant="outlined"
