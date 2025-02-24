@@ -4,6 +4,7 @@ const userRoutes = require('@/routes/routes.users');
 const servicesRoutes = require('@/routes/routes.services'); 
 const catalogRoutes = require('@/routes/routes.catalog');
 const adminRoutes = require('@/features/admin/routes.admin');
+const coreRoutes = require ('./core/routes/routes.core');
 const workRoutes = require('@/features/work/routes.work');
 
 const ExcelJS = require('exceljs');
@@ -63,6 +64,7 @@ app.use(userRoutes);
 app.use(servicesRoutes);
 app.use(catalogRoutes);
 app.use(adminRoutes);
+app.use(coreRoutes);
 app.use(workRoutes);
 
 app.get('/', (req, res) => {
