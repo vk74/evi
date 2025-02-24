@@ -1,6 +1,7 @@
 <!-- GroupEditor.vue -->
+<!-- Component for creating or editing a group with dynamic form and member management -->
 <script setup lang="ts">
-import { ref, onMounted, onBeforeUnmount, computed } from 'vue'
+import { ref, onMounted, onBeforeUnmount, computed, watch } from 'vue'
 import { useGroupEditorStore } from './state.group.editor'
 import { useUiStore } from '@/core/state/uistate'
 import { GroupStatus } from './types.group.editor'
@@ -18,7 +19,8 @@ const {
 // ==================== FORM REFS & STATE ====================
 const formRef = ref<any>(null)
 const isFormValid = ref(false)
-const hasInteracted = ref(false)
+const isFormDirty = ref(false) // Tracks if form has changed in edit mode
+const isInitialLoad = ref(true) // Prevents watch from firing on initial load
 const selectedMembers = ref<string[]>([])
 const page = ref(1)
 const itemsPerPage = ref(25)
@@ -73,10 +75,16 @@ const handleCreateGroup = async () => {
   }
 }
 
+const handleUpdateGroup = async () => {
+  // Placeholder: вызов сервиса для обновления группы
+  console.log('Обновление группы - реализация ожидается')
+}
+
 const resetForm = () => {
   groupEditorStore.resetForm()
   formRef.value?.reset()
-  hasInteracted.value = false
+  isFormDirty.value = false // Reset dirty state on form reset
+  isInitialLoad.value = true // Reset initial load state
   selectedMembers.value = []
 }
 
@@ -95,13 +103,29 @@ const onSelectMember = (userId: string, selected: boolean) => {
 }
 
 // ==================== DISPLAY LOGIC FOR OWNER ====================
-// Вычисляемое свойство для отображения поля "Владелец" с username (если доступно) или UUID
 const ownerDisplay = computed(() => {
-  return groupEditorStore.group.ownerUsername || groupEditorStore.group.group_owner || '';
-});
+  return groupEditorStore.group.ownerUsername || groupEditorStore.group.group_owner || ''
+})
+
+// ==================== WATCH FORM CHANGES ====================
+watch(
+  () => [groupEditorStore.group, groupEditorStore.details],
+  () => {
+    if (!isInitialLoad.value) {
+      isFormDirty.value = true
+    }
+  },
+  { deep: true }
+)
 
 // ==================== LIFECYCLE ====================
-onMounted(() => groupEditorStore.resetForm())
+onMounted(() => {
+  groupEditorStore.resetForm()
+  isFormDirty.value = false // Form starts clean
+  isInitialLoad.value = true // Mark as initial load
+  // После загрузки данных с бэкенда (если есть), устанавливаем isInitialLoad в false
+  setTimeout(() => { isInitialLoad.value = false }, 0) // Имитация асинхронной загрузки
+})
 onBeforeUnmount(() => uiStore.hideSnackbar())
 </script>
 
@@ -130,6 +154,7 @@ onBeforeUnmount(() => uiStore.hideSnackbar())
 
       <div class="control-buttons">
         <v-btn
+          v-if="!groupEditorStore.isEditMode"
           color="teal"
           variant="outlined"
           class="mr-2"
@@ -137,6 +162,16 @@ onBeforeUnmount(() => uiStore.hideSnackbar())
           :disabled="!isFormValid"
         >
           Создать группу
+        </v-btn>
+        <v-btn
+          v-else
+          color="teal"
+          variant="outlined"
+          class="mr-2"
+          @click="handleUpdateGroup"
+          :disabled="!isFormValid || !isFormDirty"
+        >
+          Обновить данные группы
         </v-btn>
         
         <v-btn
@@ -215,7 +250,7 @@ onBeforeUnmount(() => uiStore.hideSnackbar())
               <!-- Group Owner (now displaying username if available) -->
               <v-col cols="12" md="6">
                 <v-text-field
-                  v-model="ownerDisplay" 
+                  v-model="ownerDisplay"
                   label="Владелец*"
                   :rules="usernameRules"
                   variant="outlined"
