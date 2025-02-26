@@ -23,10 +23,12 @@ function validateJWT(req, res, next) {
 
   try {
     const decoded = jwt.verify(token, privateKey);
-    // Расширяем информацию о пользователе в запросе
+    
+    // Расширяем информацию о пользователе в запросе, используя данные из токена
     req.user = {
-      id: decoded.sub,  // Используем sub из JWT как id пользователя
-      username: decoded.sub
+      id: decoded.sub,  // Сохраняем username как id для обратной совместимости
+      username: decoded.sub,
+      user_id: decoded.uid // Добавляем UUID пользователя из токена (uid)
     };
     
     console.log('JWT validation successful for user:', decoded.sub);

@@ -8,6 +8,7 @@
  * - Group status enumeration
  * - Error handling types
  * - Group fetch request and response structures
+ * - Group update request and response structures
  */
 
 /**
@@ -31,6 +32,19 @@ export interface CreateGroupRequest {
 }
 
 /**
+ * Interface for validating incoming group update requests
+ */
+export interface UpdateGroupRequest {
+  group_id: string; // UUID of the group to update
+  group_name?: string; // Optional, with validation rules
+  group_status?: GroupStatus; // Optional
+  group_owner?: string; // Optional, UUID of the owner
+  group_description?: string; // Optional
+  group_email?: string; // Optional
+  modified_by: string; // UUID of the user performing the update (from req.user)
+}
+
+/**
  * Interface for group creation API responses
  */
 export interface CreateGroupResponse {
@@ -38,6 +52,15 @@ export interface CreateGroupResponse {
   message: string;
   groupId: string; // UUID of the created group
   group_name: string;
+}
+
+/**
+ * Interface for group update API responses
+ */
+export interface UpdateGroupResponse {
+  success: boolean;
+  message: string;
+  groupId: string; // UUID of the updated group
 }
 
 /**
@@ -121,7 +144,7 @@ export interface ValidationError extends BaseError {
 
 /**
  * Unique constraint error interface
- * Used when attempting to create a record with a value that must be unique
+ * Used when attempting to create or update a record with a value that must be unique
  */
 export interface UniqueCheckError extends BaseError {
   code: 'UNIQUE_CONSTRAINT_ERROR';
@@ -135,6 +158,14 @@ export interface UniqueCheckError extends BaseError {
 export interface RequiredFieldError extends BaseError {
   code: 'REQUIRED_FIELD_ERROR';
   field: string;
+}
+
+/**
+ * Not found error interface
+ * Used when a resource (e.g., group) is not found
+ */
+export interface NotFoundError extends BaseError {
+  code: 'NOT_FOUND';
 }
 
 /**
@@ -153,4 +184,5 @@ export type ServiceErrorType =
   | ValidationError 
   | UniqueCheckError 
   | RequiredFieldError 
+  | NotFoundError 
   | ServiceError;

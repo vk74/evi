@@ -7,6 +7,7 @@
  * - Creating new groups
  * - Adding group details
  * - Fetching group data by group ID (separate queries for app.groups and app.group_details)
+ * - Updating group data by group ID (separate queries for app.groups and app.group_details)
  */
 
 interface SQLQuery {
@@ -21,6 +22,8 @@ interface GroupEditorQueries {
   insertGroupDetails: SQLQuery;
   getGroupById: SQLQuery;
   getGroupDetailsById: SQLQuery;
+  updateGroupById: SQLQuery;       // Добавлено
+  updateGroupDetailsById: SQLQuery; // Добавлено
 }
 
 export const queries: GroupEditorQueries = {
@@ -126,5 +129,32 @@ export const queries: GroupEditorQueries = {
       WHERE group_id = $1::uuid
       LIMIT 1
     `
+  },
+
+  // Update group data in app.groups by group_id, updating only changed fields
+  updateGroupById: {
+    text: `
+      UPDATE app.groups
+      SET
+        group_name = COALESCE($2, group_name),
+        group_status = COALESCE($3, group_status),
+        group_owner = COALESCE($4, group_owner)
+      WHERE group_id = $1::uuid
+      RETURNING group_id
+    `
+  },
+
+  // Update group details in app.group_details by group_id
+  updateGroupDetailsById: {
+    text: `
+      UPDATE app.group_details
+      SET
+        group_description = COALESCE($2, group_description),
+        group_email = COALESCE($3, group_email),
+        group_modified_at = now(),
+        group_modified_by = $4
+      WHERE group_id = $1::uuid
+      RETURNING group_id
+    `
   }
-}
+};
