@@ -29,15 +29,15 @@ const itemsPerPage = ref(25)
 
 // ==================== TABLE CONFIG ====================
 const headers = ref<TableHeader[]>([
-  { title: 'Выбор', key: 'selection', width: '40px' },
-  { title: 'ID', key: 'user_id', width: '80px' },
-  { title: 'Логин', key: 'username' },
-  { title: 'Email', key: 'email' },
-  { title: 'Статус', key: 'account_status', width: '60px' },
-  { title: 'Персонал', key: 'is_staff', width: '60px' },
-  { title: 'Фамилия', key: 'last_name' },
-  { title: 'Имя', key: 'first_name' },
-  { title: 'Отчество', key: 'middle_name' }
+  { title: 'выбор', key: 'selection', width: '40px' },
+  { title: 'id', key: 'user_id', width: '80px' },
+  { title: 'логин', key: 'username' },
+  { title: 'e-mail', key: 'email' },
+  { title: 'статус', key: 'account_status', width: '60px' },
+  { title: 'сотрудник', key: 'is_staff', width: '60px' },
+  { title: 'фамилия', key: 'last_name' },
+  { title: 'имя', key: 'first_name' },
+  { title: 'отчество', key: 'middle_name' }
 ])
 
 // ==================== VALIDATION RULES ====================
@@ -172,7 +172,7 @@ onBeforeUnmount(() => uiStore.hideSnackbar())
           @click="switchSection('details')"
           variant="text"
         >
-          Данные группы
+          данные группы
         </v-btn>
         <v-btn
           :class="['section-btn', { 'section-active': groupEditorStore.ui.activeSection === 'members' }]"
@@ -180,46 +180,67 @@ onBeforeUnmount(() => uiStore.hideSnackbar())
           :disabled="!groupEditorStore.isEditMode"
           variant="text"
         >
-          Участники группы
+          участники группы
         </v-btn>
       </div>
 
       <v-spacer />
 
       <div class="control-buttons">
-        <v-btn
-          v-if="!groupEditorStore.isEditMode"
-          color="teal"
-          variant="outlined"
-          class="mr-2"
-          @click="handleCreateGroup"
-          :disabled="!isFormValid || isSubmitting"
-        >
-          Создать группу
-        </v-btn>
-        <v-btn
-          v-else
-          color="teal"
-          variant="outlined"
-          class="mr-2"
-          @click="handleUpdateGroup"
-          :disabled="!isFormValid || !isFormDirty || isSubmitting"
-        >
-          Обновить данные группы
-        </v-btn>
-        
-        <v-btn
-          variant="outlined"
-          @click="resetForm"
-        >
-          Сбросить
-        </v-btn>
+        <template v-if="!groupEditorStore.isEditMode">
+          <v-btn
+            color="teal"
+            variant="outlined"
+            class="mr-2"
+            @click="handleCreateGroup"
+            :disabled="!isFormValid || isSubmitting"
+          >
+            Создать группу
+          </v-btn>
+          <v-btn
+            variant="outlined"
+            @click="resetForm"
+          >
+            Сбросить
+          </v-btn>
+        </template>
+        <template v-else-if="groupEditorStore.ui.activeSection === 'details'">
+          <v-btn
+            color="teal"
+            variant="outlined"
+            class="mr-2"
+            @click="handleUpdateGroup"
+            :disabled="!isFormValid || !isFormDirty || isSubmitting"
+          >
+            Обновить данные группы
+          </v-btn>
+          <v-btn
+            variant="outlined"
+            @click="resetForm"
+          >
+            Сбросить
+          </v-btn>
+        </template>
+        <template v-else-if="groupEditorStore.ui.activeSection === 'members'">
+          <v-btn
+            color="teal"
+            variant="outlined"
+            class="mr-2"
+          >
+            Добавить участника
+          </v-btn>
+          <v-btn
+            variant="outlined"
+          >
+            Удалить участника
+          </v-btn>
+        </template>
       </div>
 
       <v-spacer />
 
       <div class="module-title">
-        {{ groupEditorStore.isEditMode ? 'Редактирование группы' : 'Создание группы' }}
+        {{ groupEditorStore.isEditMode ? 'редактирование группы' : 'создание группы' }}
       </div>
     </v-app-bar>
 
