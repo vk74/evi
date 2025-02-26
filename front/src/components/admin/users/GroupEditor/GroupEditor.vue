@@ -7,6 +7,7 @@ import { useUiStore } from '@/core/state/uistate'
 import { GroupStatus } from './types.group.editor'
 import { useValidationRules } from '@/core/validation/rules.common.fields'
 import type { TableHeader } from './types.group.editor'
+import { updateGroupService } from './service.update.group' // Импорт сервиса обновления
 
 const groupEditorStore = useGroupEditorStore()
 const uiStore = useUiStore()
@@ -21,6 +22,7 @@ const formRef = ref<any>(null)
 const isFormValid = ref(false)
 const isFormDirty = ref(false) // Tracks if form has changed in edit mode
 const isInitialLoad = ref(true) // Prevents watch from firing on initial load
+const isSubmitting = ref(false) // Флаг состояния отправки
 const selectedMembers = ref<string[]>([])
 const page = ref(1)
 const itemsPerPage = ref(25)
@@ -65,6 +67,7 @@ const handleCreateGroup = async () => {
   }
 
   try {
+    isSubmitting.value = true
     const response = await groupEditorStore.createNewGroup()
     if (response?.success) {
       uiStore.showSuccessSnackbar('Группа создана успешно')
@@ -72,12 +75,44 @@ const handleCreateGroup = async () => {
     }
   } catch (error) {
     uiStore.showErrorSnackbar(error instanceof Error ? error.message : 'Ошибка создания')
+  } finally {
+    isSubmitting.value = false
   }
 }
 
 const handleUpdateGroup = async () => {
-  // Placeholder: вызов сервиса для обновления группы
-  console.log('Обновление группы - реализация ожидается')
+  console.log('Starting group update...')
+  
+  if (!(await validate())) {
+    uiStore.showErrorSnackbar('Заполните обязательные поля')
+    return
+  }
+
+  if (!groupEditorStore.hasChanges) {
+    uiStore.showInfoSnackbar('Нет изменений для сохранения')
+    return
+  }
+
+  isSubmitting.value = true
+
+  try {
+    const requestData = groupEditorStore.prepareUpdateData()
+    const success = await updateGroupService.updateGroup(requestData)
+
+    if (success) {
+      console.log('Group updated successfully')
+      uiStore.showSuccessSnackbar('Группа обновлена успешно')
+      // Не сбрасываем форму, как указано в пожелании
+      isFormDirty.value = false // Сбрасываем флаг изменений
+    }
+  } catch (error) {
+    console.error('Error updating group:', error)
+    uiStore.showErrorSnackbar(
+      error instanceof Error ? error.message : 'Ошибка обновления группы'
+    )
+  } finally {
+    isSubmitting.value = false
+  }
 }
 
 const resetForm = () => {
@@ -123,7 +158,6 @@ onMounted(() => {
   groupEditorStore.resetForm()
   isFormDirty.value = false // Form starts clean
   isInitialLoad.value = true // Mark as initial load
-  // После загрузки данных с бэкенда (если есть), устанавливаем isInitialLoad в false
   setTimeout(() => { isInitialLoad.value = false }, 0) // Имитация асинхронной загрузки
 })
 onBeforeUnmount(() => uiStore.hideSnackbar())
@@ -159,7 +193,7 @@ onBeforeUnmount(() => uiStore.hideSnackbar())
           variant="outlined"
           class="mr-2"
           @click="handleCreateGroup"
-          :disabled="!isFormValid"
+          :disabled="!isFormValid || isSubmitting"
         >
           Создать группу
         </v-btn>
@@ -169,7 +203,7 @@ onBeforeUnmount(() => uiStore.hideSnackbar())
           variant="outlined"
           class="mr-2"
           @click="handleUpdateGroup"
-          :disabled="!isFormValid || !isFormDirty"
+          :disabled="!isFormValid || !isFormDirty || isSubmitting"
         >
           Обновить данные группы
         </v-btn>

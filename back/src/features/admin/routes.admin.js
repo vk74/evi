@@ -25,8 +25,6 @@ router.post('/api/admin/groups/create-new-group', validateJWT, createGroupContro
 router.get('/api/admin/groups/fetch-groups', validateJWT, fetchGroups);
 router.post('/api/admin/groups/delete-selected-groups', validateJWT, deleteSelectedGroupsController);
 router.get('/api/admin/groups/fetch-group-by-groupid/:groupId', validateJWT, fetchGroupById);
-// /api/admin/groups/update-group-by-groupid/:groupId
-// /api/admin/groups/fetch-group-by-groupid/:groupId
-// api/admin/users/delete-selected-groups
+// /api/admin/groups/update-group-by-groupid/
 
 module.exports = router;
