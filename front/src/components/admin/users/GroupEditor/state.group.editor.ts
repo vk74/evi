@@ -259,7 +259,7 @@ export const useGroupEditorStore = defineStore('groupEditor', {
         })
         
         // Сбрасываем форму после успешного создания
-        this.resetForm()
+        // this.resetForm()
         
         return response
         

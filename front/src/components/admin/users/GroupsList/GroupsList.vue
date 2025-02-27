@@ -2,12 +2,6 @@
 /**
  * @file GroupsList.vue
  * Component for displaying and managing the list of groups in the administration module.
- *
- * Functionality:
- * - Displays groups in a table with pagination
- * - Sorts columns with state preservation
- * - Selects groups for deletion or editing
- * - Creates a new group
  */
 -->
 
@@ -17,13 +11,12 @@ import { useI18n } from 'vue-i18n';
 import { useStoreGroupsList } from './state.groups.list';
 import groupsService from './service.read.groups';
 import deleteSelectedGroupsService from './service.delete.selected.groups';
-import { fetchGroupService } from '../GroupEditor/service.fetch.group'; // Импорт обновлённого сервиса
+import { fetchGroupService } from '../GroupEditor/service.fetch.group';
 import type { TableHeader, IGroup, ItemsPerPageOption } from './types.groups.list';
 import { useUserStore } from '@/core/state/userstate';
 import { useUiStore } from '@/core/state/uistate';
 import { useUsersAdminStore } from '../state.users.admin';
 import { useGroupEditorStore } from '../GroupEditor/state.group.editor';
-
 // Initialize stores and i18n
 const { t } = useI18n();
 const groupsStore = useStoreGroupsList();
@@ -37,8 +30,8 @@ const isAuthorized = computed(() => userStore.isLoggedIn);
 
 // Table parameters
 const page = ref<number>(groupsStore.page);
-const itemsPerPage = ref<ItemsPerPageOption>(groupsStore.itemsPerPage as ItemsPerPageOption); // Приведение типа
-const searchQuery = ref<string>(''); // Добавляем реактивную переменную для поиска
+const itemsPerPage = ref<ItemsPerPageOption>(groupsStore.itemsPerPage as ItemsPerPageOption);
+const searchQuery = ref<string>('');
 
 // Computed properties
 const groups = computed(() => groupsStore.getGroups);
@@ -66,12 +59,6 @@ const headers = computed<TableHeader[]>(() => [
   { title: t('admin.groups.list.table.headers.system'), key: 'is_system', width: '80px' }
 ]);
 
-// Group handling functions
-/**
- * Gets the color for the group status.
- * @param status - Group status
- * @returns Color for the status
- */
 const getStatusColor = (status: string) => {
   switch (status.toLowerCase()) {
     case 'active': return 'teal';
@@ -81,56 +68,41 @@ const getStatusColor = (status: string) => {
   }
 };
 
-/**
- * Selects or deselects a group.
- * @param groupId - Group ID
- * @param selected - Selection flag
- */
 const onSelectGroup = (groupId: string, selected: boolean) => {
   if (!groupId) {
     console.warn('Invalid groupId provided to onSelectGroup:', groupId);
-    return; // Предотвращаем некорректный выбор
+    return;
   }
   if (selected) groupsStore.selectGroup(groupId);
   else groupsStore.deselectGroup(groupId);
-  console.log('Selected groupId:', groupId); // Логирование для отладки
+  console.log('Selected groupId:', groupId);
 };
 
-/**
- * Checks if a group is selected.
- * @param groupId - Group ID
- * @returns Selection flag
- */
 const isSelected = (groupId: string) => {
   if (!groupId) {
     console.warn('Invalid groupId provided to isSelected:', groupId);
-    return false; // Предотвращаем некорректный выбор
+    return false;
   }
   return groupsStore.selectedGroups.includes(groupId);
 };
 
-/**
- * Handles group creation.
- */
 const createGroup = () => {
   console.log('Create group clicked');
+  // Сбрасываем форму и устанавливаем режим создания
+  groupEditorStore.resetForm(); // Очищает поля, сохраняя group_owner
+  groupEditorStore.mode = { mode: 'create' }; // Явно устанавливаем режим создания
   usersAdminStore.setActiveSection('group-editor');
-  // TODO: Add logic to refresh groups after group creation (e.g., call fetchGroups)
 };
 
-/**
- * Handles group editing.
- * @description Loads the selected group from backend into GroupEditor for editing, including owner's username.
- */
 const editGroup = async () => {
   console.log('Edit group clicked');
   if (hasOneSelected.value) {
-    const selectedGroupId = groupsStore.selectedGroups[0]; // Берем ID первой (и единственной) выбранной группы
+    const selectedGroupId = groupsStore.selectedGroups[0];
     console.log('Loading group for editing with groupId:', selectedGroupId);
     try {
       const { group, details } = await fetchGroupService.fetchGroupById(selectedGroupId);
       groupEditorStore.initEditMode({
-        group: group, // Передаём обновлённые данные с ownerUsername
+        group: group,
         details: details
       });
       usersAdminStore.setActiveSection('group-editor');
@@ -144,11 +116,6 @@ const editGroup = async () => {
   }
 };
 
-/**
- * Handles local sorting updates from v-data-table.
- * Note: This updates the Pinia store for potential server-side sorting in the future.
- * @param sortParams - Sorting parameters from v-data-table
- */
 const onSortUpdate = (sortParams: { key: string; order: 'asc' | 'desc' | null }) => {
   if (sortParams.key) {
     groupsStore.updateSort(sortParams.key as keyof IGroup);
@@ -158,35 +125,21 @@ const onSortUpdate = (sortParams: { key: string; order: 'asc' | 'desc' | null })
   }
 };
 
-/**
- * Handles group deletion.
- */
 const onDeleteSelected = async () => {
   try {
     console.log('Deleting selected groups:', groupsStore.selectedGroups);
-
-    // Call the service to delete selected groups
     const deletedCount = await deleteSelectedGroupsService.deleteSelectedGroups(groupsStore.selectedGroups);
-
-    // Show success notification
     uiStore.showSuccessSnackbar(t('admin.groups.list.messages.deleteSuccess', { count: deletedCount }));
-
-    // Refresh groups after deletion
     await groupsService.fetchGroups();
   } catch (error) {
     console.error('Error deleting groups:', error);
     uiStore.showErrorSnackbar(error instanceof Error ? error.message : 'Error deleting groups');
   } finally {
-     // Close the delete confirmation dialog and clear selection
     showDeleteDialog.value = false;
     groupsStore.clearSelection();
   }
 };
 
-// Lifecycle hooks
-/**
- * Fetches groups when the component is mounted.
- */
 onMounted(async () => {
   try {
     await groupsService.fetchGroups();
@@ -196,7 +149,6 @@ onMounted(async () => {
   }
 });
 
-// Sync pagination parameters with Pinia store (optional, for future server-side pagination)
 watch([page, itemsPerPage], ([newPage, newItemsPerPage]) => {
   groupsStore.updateDisplayParams(newItemsPerPage, newPage);
 });
@@ -206,7 +158,6 @@ watch([page, itemsPerPage], ([newPage, newItemsPerPage]) => {
   <v-card flat>
     <v-app-bar flat class="px-4 d-flex align-center justify-space-between">
       <div class="d-flex align-center">
-        <!-- Create Group Button -->
         <v-btn
           v-if="isAuthorized"
           color="teal"
@@ -216,8 +167,6 @@ watch([page, itemsPerPage], ([newPage, newItemsPerPage]) => {
         >
           {{ t('admin.groups.list.buttons.create') }}
         </v-btn>
-
-        <!-- Edit Group Button -->
         <v-btn
           v-if="isAuthorized"
           color="teal"
@@ -228,8 +177,6 @@ watch([page, itemsPerPage], ([newPage, newItemsPerPage]) => {
         >
           {{ t('admin.groups.list.buttons.edit') }}
         </v-btn>
-
-        <!-- Delete Group Button -->
         <v-btn
           v-if="isAuthorized"
           color="error"
@@ -241,8 +188,6 @@ watch([page, itemsPerPage], ([newPage, newItemsPerPage]) => {
           {{ t('admin.groups.list.buttons.delete') }}
           <span class="ml-2">({{ selectedCount }})</span>
         </v-btn>
-
-        <!-- Search Field in v-app-bar, aligned with buttons -->
         <v-text-field
           v-model="searchQuery"
           :label="t('admin.groups.list.search')"
@@ -254,7 +199,6 @@ watch([page, itemsPerPage], ([newPage, newItemsPerPage]) => {
           style="max-width: 700px; min-width: 500px;"
         />
       </div>
-
       <v-app-bar-title class="text-subtitle-2 text-lowercase text-right">
         {{ t('admin.groups.list.title') }}
       </v-app-bar-title>
@@ -282,13 +226,11 @@ watch([page, itemsPerPage], ([newPage, newItemsPerPage]) => {
           @update:model-value="(value: boolean | null) => onSelectGroup(item.group_id, value ?? false)"
         />
       </template>
-
       <template v-slot:item.group_status="{ item }">
         <v-chip :color="getStatusColor(item.group_status)" size="x-small">
           {{ item.group_status }}
         </v-chip>
       </template>
-
       <template v-slot:item.is_system="{ item }">
         <v-icon
           :color="item.is_system ? 'teal' : 'red-darken-4'"
@@ -329,6 +271,6 @@ watch([page, itemsPerPage], ([newPage, newItemsPerPage]) => {
 
 <style scoped>
 .v-text-field {
-  margin-top: 23px; /* Корректировка вертикального выравнивания */
+  margin-top: 23px;
 }
 </style>

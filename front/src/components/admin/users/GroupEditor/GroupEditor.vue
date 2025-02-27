@@ -70,8 +70,18 @@ const handleCreateGroup = async () => {
     isSubmitting.value = true
     const response = await groupEditorStore.createNewGroup()
     if (response?.success) {
+      // Переключаем в режим редактирования с текущими данными
+      groupEditorStore.initEditMode({
+        group: {
+          ...groupEditorStore.group,
+          group_id: response.groupId
+        },
+        details: {
+          ...groupEditorStore.details
+        }
+      })
+      isFormDirty.value = false
       uiStore.showSuccessSnackbar('Группа создана успешно')
-      resetForm()
     }
   } catch (error) {
     uiStore.showErrorSnackbar(error instanceof Error ? error.message : 'Ошибка создания')
@@ -102,7 +112,6 @@ const handleUpdateGroup = async () => {
     if (success) {
       console.log('Group updated successfully')
       uiStore.showSuccessSnackbar('Группа обновлена успешно')
-      // Не сбрасываем форму, как указано в пожелании
       isFormDirty.value = false // Сбрасываем флаг изменений
     }
   } catch (error) {
@@ -214,12 +223,7 @@ onBeforeUnmount(() => uiStore.hideSnackbar())
           >
             Обновить данные группы
           </v-btn>
-          <v-btn
-            variant="outlined"
-            @click="resetForm"
-          >
-            Сбросить
-          </v-btn>
+          <!-- Убрана кнопка "Сбросить" -->
         </template>
         <template v-else-if="groupEditorStore.ui.activeSection === 'members'">
           <v-btn
@@ -249,8 +253,19 @@ onBeforeUnmount(() => uiStore.hideSnackbar())
         <v-card v-if="groupEditorStore.ui.activeSection === 'details'" flat>
           <v-form ref="formRef" v-model="isFormValid" @submit.prevent>
             <v-row class="pa-4">
+              <!-- Group UUID (visible only in edit mode) -->
+              <v-col v-if="groupEditorStore.isEditMode" cols="12" md="6">
+                <v-text-field
+                  :model-value="groupEditorStore.mode.mode === 'edit' ? groupEditorStore.mode.groupId : ''"
+                  label="UUID группы"
+                  variant="outlined"
+                  density="comfortable"
+                  readonly
+                />
+              </v-col>
+
               <!-- Group Name -->
-              <v-col cols="12" md="6">
+              <v-col cols="12" :md="groupEditorStore.isEditMode ? 6 : 12">
                 <v-text-field
                   v-model="groupEditorStore.group.group_name"
                   label="Название*"
