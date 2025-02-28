@@ -26,6 +26,7 @@ const isSubmitting = ref(false) // Флаг состояния отправки
 const selectedMembers = ref<string[]>([])
 const page = ref(1)
 const itemsPerPage = ref(25)
+const searchQuery = ref('')
 
 // ==================== TABLE CONFIG ====================
 const headers = ref<TableHeader[]>([
@@ -223,7 +224,6 @@ onBeforeUnmount(() => uiStore.hideSnackbar())
           >
             Обновить данные группы
           </v-btn>
-          <!-- Убрана кнопка "Сбросить" -->
         </template>
         <template v-else-if="groupEditorStore.ui.activeSection === 'members'">
           <v-btn
@@ -234,6 +234,7 @@ onBeforeUnmount(() => uiStore.hideSnackbar())
             Добавить участника
           </v-btn>
           <v-btn
+            color="red"
             variant="outlined"
           >
             Удалить участника
@@ -253,7 +254,6 @@ onBeforeUnmount(() => uiStore.hideSnackbar())
         <v-card v-if="groupEditorStore.ui.activeSection === 'details'" flat>
           <v-form ref="formRef" v-model="isFormValid" @submit.prevent>
             <v-row class="pa-4">
-              <!-- Group UUID (visible only in edit mode) -->
               <v-col v-if="groupEditorStore.isEditMode" cols="12" md="6">
                 <v-text-field
                   :model-value="groupEditorStore.mode.mode === 'edit' ? groupEditorStore.mode.groupId : ''"
@@ -264,7 +264,6 @@ onBeforeUnmount(() => uiStore.hideSnackbar())
                 />
               </v-col>
 
-              <!-- Group Name -->
               <v-col cols="12" :md="groupEditorStore.isEditMode ? 6 : 12">
                 <v-text-field
                   v-model="groupEditorStore.group.group_name"
@@ -276,7 +275,6 @@ onBeforeUnmount(() => uiStore.hideSnackbar())
                 />
               </v-col>
 
-              <!-- Group Status -->
               <v-col cols="12" md="6">
                 <v-select
                   v-model="groupEditorStore.group.group_status"
@@ -294,7 +292,6 @@ onBeforeUnmount(() => uiStore.hideSnackbar())
                 />
               </v-col>
 
-              <!-- Group Description -->
               <v-col cols="12">
                 <v-textarea
                   v-model="groupEditorStore.details.group_description"
@@ -306,7 +303,6 @@ onBeforeUnmount(() => uiStore.hideSnackbar())
                 />
               </v-col>
 
-              <!-- Group Email -->
               <v-col cols="12" md="6">
                 <v-text-field
                   v-model="groupEditorStore.details.group_email"
@@ -317,7 +313,6 @@ onBeforeUnmount(() => uiStore.hideSnackbar())
                 />
               </v-col>
 
-              <!-- Group Owner (now displaying username if available) -->
               <v-col cols="12" md="6">
                 <v-text-field
                   v-model="ownerDisplay"
@@ -332,14 +327,25 @@ onBeforeUnmount(() => uiStore.hideSnackbar())
           </v-form>
         </v-card>
 
-        <!-- Members Table -->
         <v-card v-else flat>
+          <v-container class="pa-4">
+            <v-text-field
+              v-model="searchQuery"
+              label="Поиск по участникам"
+              variant="outlined"
+              density="comfortable"
+              prepend-inner-icon="mdi-magnify"
+              clearable
+              class="mb-4"
+            />
+          </v-container>
           <v-data-table
             v-model:page="page"
             v-model:items-per-page="itemsPerPage"
             :headers="headers"
             :items="[]"
             :loading="false"
+            :search="searchQuery"
           >
             <template #item.selection="{ item }">
               <v-checkbox
