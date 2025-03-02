@@ -8,7 +8,7 @@ import { GroupStatus } from './types.group.editor'
 import { useValidationRules } from '@/core/validation/rules.common.fields'
 import type { TableHeader } from './types.group.editor'
 import { updateGroupService } from './service.update.group' // Импорт сервиса обновления
-import SelectUsers from '../../../../core/ui/modals/SelectUsers.vue'
+import ItemSelector from '../../../../core/ui/modals/item-actions/ItemSelector.vue'
 
 const groupEditorStore = useGroupEditorStore()
 const uiStore = useUiStore()
@@ -28,7 +28,7 @@ const selectedMembers = ref<string[]>([])
 const page = ref(1)
 const itemsPerPage = ref(25)
 const searchQuery = ref('')
-const isSelectUsersModalOpen = ref(false)
+const isItemSelectorModalOpen = ref(false)
 
 // ==================== TABLE CONFIG ====================
 const headers = ref<TableHeader[]>([
@@ -149,19 +149,19 @@ const onSelectMember = (userId: string, selected: boolean) => {
     : selectedMembers.value.filter(id => id !== userId)
 }
 
-const openSelectUsersModal = () => {
-  isSelectUsersModalOpen.value = true
+const openItemSelectorModal = () => {
+  isItemSelectorModalOpen.value = true
 }
 
-const handleAddMembers = async (selectedUserIds: string[]) => {
-  if (!selectedUserIds || selectedUserIds.length === 0) {
+const handleAddMembers = async (selectedItemIds: string[]) => {
+  if (!selectedItemIds || selectedItemIds.length === 0) {
     uiStore.showErrorSnackbar('Не выбрано ни одного участника')
     return
   }
 
   try {
     // Placeholder для вызова сервиса добавления участников
-    await addGroupMembers(selectedUserIds)
+    await addGroupMembers(selectedItemIds)
     uiStore.showSuccessSnackbar('Участники добавлены успешно')
   } catch (error) {
     uiStore.showErrorSnackbar(error instanceof Error ? error.message : 'Ошибка добавления участников')
@@ -257,7 +257,7 @@ onBeforeUnmount(() => uiStore.hideSnackbar())
             color="teal"
             variant="outlined"
             class="mr-2"
-            @click="openSelectUsersModal"
+            @click="openItemSelectorModal"
           >
             Добавить участника
           </v-btn>
@@ -388,8 +388,14 @@ onBeforeUnmount(() => uiStore.hideSnackbar())
       </v-container>
     </div>
 
-    <v-dialog v-model="isSelectUsersModalOpen" max-width="500">
-      <SelectUsers @select="handleAddMembers" @close="isSelectUsersModalOpen = false" />
+    <v-dialog v-model="isItemSelectorModalOpen" max-width="600">
+      <ItemSelector 
+        :context="'GroupEditor'" 
+        operation-type="add" 
+        :max-items="20" 
+        @close="isItemSelectorModalOpen = false" 
+        @actionPerformed="handleAddMembers"
+      />
     </v-dialog>
   </div>
 </template>

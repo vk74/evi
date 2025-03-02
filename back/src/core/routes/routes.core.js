@@ -19,4 +19,7 @@ const validateJWT = require('../../guards/auth.validate.jwt');
  */
 router.get('/api/core/users/fetch-username-by-uuid/:userId', validateJWT, fetchUsernameByUuid);
 
+// /api/core/item-search
+// /api/core/item-action
+
 module.exports = router;

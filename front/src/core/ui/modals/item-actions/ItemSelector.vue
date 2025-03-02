@@ -3,6 +3,9 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
 import { useUiStore } from '@/core/state/uistate'
+import { SearchParams, SearchResult, ActionParams } from './types.item.selector'
+import searchItems from './service.items.search'
+import performItemAction from './service.item.action'
 
 // Props definition for universal component
 const props = defineProps({
@@ -24,8 +27,9 @@ const props = defineProps({
 const emit = defineEmits(['close', 'actionPerformed'])
 
 // State management
+const isDialogOpen = ref(true) // Internal state for dialog visibility, defaults to true (managed by parent)
 const searchQuery = ref('')
-const searchResults = ref<any[]>([]) // Array to store search results, will be typed later
+const searchResults = ref<SearchResult[]>([]) // Typed with SearchResult
 const isLoading = ref(false)
 const selectedItems = ref<string[]>([]) // Array of item IDs (e.g., UUIDs) selected by user
 const uiStore = useUiStore()
@@ -37,6 +41,7 @@ const isActionDisabled = computed(() => selectedItems.value.length === 0)
 // Handlers
 const closeModal = () => {
   console.log('Closing ItemSelector modal')
+  isDialogOpen.value = false
   emit('close')
 }
 
@@ -56,23 +61,15 @@ const handleSearch = async () => {
   console.log('Searching items with query:', searchQuery.value)
   try {
     isLoading.value = true
-    // Placeholder for search service call (will be replaced with service.fetch.items.ts)
-    const mockResults = generateMockResults() // Mock data for demonstration
-    searchResults.value = [...searchResults.value, ...mockResults] // Preserve existing results
+    const searchParams: SearchParams = { query: searchQuery.value, limit: props.maxItems - selectedItems.value.length }
+    const response = await searchItems(searchParams)
+    searchResults.value = [...searchResults.value, ...response.items] // Preserve existing results
   } catch (error) {
     console.error('Error searching items:', error)
     uiStore.showErrorSnackbar('Ошибка поиска объектов')
   } finally {
     isLoading.value = false
   }
-}
-
-// Mock function for demonstration (will be replaced with real service)
-function generateMockResults() {
-  return Array.from({ length: 5 }, (_, i) => ({
-    id: `item-${Date.now()}-${i}`,
-    name: `Item ${searchQuery.value} ${i + 1}`
-  }))
 }
 
 const handleAction = async () => {
@@ -84,10 +81,10 @@ const handleAction = async () => {
   console.log('Performing action with selected items:', selectedItems.value)
   try {
     isLoading.value = true
-    // Placeholder for action service call (will be replaced with service.item.action.ts)
-    const success = true // Mock success
-    if (success) {
-      uiStore.showSuccessSnackbar(`Успешно выполнено действие над ${selectedItems.value.length} объектами`)
+    const actionParams: ActionParams = { items: selectedItems.value, operationType: props.operationType }
+    const response = await performItemAction(actionParams)
+    if (response.success) {
+      uiStore.showSuccessSnackbar(`Успешно выполнено действие над ${response.count} объектами`)
       resetSearch()
       closeModal()
     }
@@ -126,7 +123,7 @@ const onKeyPress = (event: KeyboardEvent) => {
 </script>
 
 <template>
-  <v-dialog v-model="true" max-width="600">
+  <v-dialog v-model="isDialogOpen" max-width="600">
     <v-card>
       <v-card-text>
         <v-row class="mb-4" align="center">
