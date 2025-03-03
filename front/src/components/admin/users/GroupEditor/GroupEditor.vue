@@ -388,10 +388,11 @@ onBeforeUnmount(() => uiStore.hideSnackbar())
       </v-container>
     </div>
 
+    <!-- Параметры для заголовка, типа операции и количества items -->
     <v-dialog v-model="isItemSelectorModalOpen" max-width="600">
       <ItemSelector 
-        :context="'GroupEditor'" 
-        operation-type="add" 
+        :title="'добавление пользователей в группу'" 
+        operation-type="add-users-to-group" 
         :max-items="20" 
         @close="isItemSelectorModalOpen = false" 
         @actionPerformed="handleAddMembers"
