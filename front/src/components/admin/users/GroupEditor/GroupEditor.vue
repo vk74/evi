@@ -378,10 +378,10 @@ onBeforeUnmount(() => uiStore.hideSnackbar())
 
         <v-card v-else flat>
           <v-container class="pa-4">
-            <h3 class="mb-2">{{ groupEditorStore.group.group_name || 'Без названия' }}</h3>
+            <h4 class="mb-2">группа: {{ groupEditorStore.group.group_name || 'Без названия' }}</h4><br>
             <v-text-field
               v-model="searchQuery"
-              label="Поиск по участникам"
+              label="поиск в таблице участников группы"
               variant="outlined"
               density="comfortable"
               prepend-inner-icon="mdi-magnify"
