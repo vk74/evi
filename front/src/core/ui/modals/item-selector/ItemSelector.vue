@@ -8,9 +8,10 @@
      <script setup lang="ts">
      import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
      import { useUiStore } from '@/core/state/uistate'
-     import { SearchParams, SearchResult, ActionParams } from './types.item.selector'
+     import { SearchParams } from './types.item.selector'
      import searchUsers from './service.search.users'
      import addUsersToGroup from './service.add.users.to.group'
+     import useSearchUsersStore from './state.search.users'
      
      // Props definition
      const props = defineProps({
@@ -36,20 +37,29 @@
      const emit = defineEmits(['close', 'actionPerformed'])
      
      // State management
+     const searchStore = useSearchUsersStore()
      const isDialogOpen = ref(true)
      const searchQuery = ref('')
-     const searchResults = ref<SearchResult[]>([])
-     const currentSearchResults = ref<SearchResult[]>([])
      const isLoading = ref(false)
-     const selectedItems = ref<string[]>([])
      const uiStore = useUiStore()
      
+     // Initialize store with props.maxItems
+     onMounted(() => {
+       searchStore.setMaxItems(props.maxItems)
+       console.log('[ItemSelector] Mounted with props:', props)
+     })
+     
+     onBeforeUnmount(() => {
+       searchStore.clearSelection()
+       console.log('[ItemSelector] Unmounted')
+     })
+     
      // Computed properties
-     const isSearchDisabled = computed(() => selectedItems.value.length >= props.maxItems)
+     const isSearchDisabled = computed(() => searchStore.getSearchResults.length >= props.maxItems)
      const canSearch = computed(() => (searchQuery.value?.length || 0) >= 2)
-     const isActionDisabled = computed(() => searchResults.value.length === 0 || (selectedItems.value.length + searchResults.value.length >= props.maxItems))
-     const isResetDisabled = computed(() => searchResults.value.length === 0) // Active only if there are results
-     const remainingLimit = computed(() => props.maxItems - selectedItems.value.length - searchResults.value.length)
+     const isActionDisabled = computed(() => searchStore.getSearchResults.length === 0)
+     const isResetDisabled = computed(() => searchStore.getSearchResults.length === 0)
+     const remainingLimit = computed(() => props.maxItems - searchStore.getSearchResults.length)
      
      // Action handlers
      const actionHandlers: Record<string, { label: string; handler: () => Promise<void> }> = {
@@ -60,9 +70,16 @@
      }
      
      async function handleAddUsersToGroup() {
-       const actionParams: ActionParams = { items: selectedItems.value, operationType: 'add-users-to-group' }
+       console.log('[ItemSelector] handleAddUsersToGroup called, selectedItems:', searchStore.getSelectedItems);
+       if (searchStore.getSelectedItems.length === 0) {
+         uiStore.showErrorSnackbar('Нет результатов для добавления')
+         return
+       }
+     
        try {
-         const response = await addUsersToGroup(actionParams)
+         console.log('[ItemSelector] Attempting to add users to group with selectedItems:', searchStore.getSelectedItems);
+         const response = await addUsersToGroup()
+         console.log('[ItemSelector] Response from addUsersToGroup:', response);
          if (response.success) {
            uiStore.showSuccessSnackbar(`Успешно добавлено ${response.count} пользователей в группу`)
            emit('actionPerformed', response)
@@ -70,32 +87,30 @@
            closeModal()
          }
        } catch (error) {
-         console.error('Error adding users to group:', error)
+         console.error('[ItemSelector] Error adding users to group:', error)
          uiStore.showErrorSnackbar('Ошибка добавления пользователей в группу')
        }
      }
      
      const closeModal = () => {
-       console.log('Closing ItemSelector modal')
+       console.log('[ItemSelector] Closing ItemSelector modal')
        isDialogOpen.value = false
        emit('close')
      }
      
      const resetSearch = () => {
-       console.log('Resetting search results')
+       console.log('[ItemSelector] Resetting search results, searchQuery:', searchQuery.value, 'searchResults:', searchStore.getSearchResults)
        searchQuery.value = ''
-       searchResults.value = []
-       currentSearchResults.value = []
-       selectedItems.value = []
+       searchStore.clearSelection()
      }
      
      const handleSearch = async () => {
+       console.log('[ItemSelector] Starting search with query:', searchQuery.value, 'remainingLimit:', remainingLimit.value)
        if (!canSearch.value) {
          uiStore.showErrorSnackbar('Введите не менее 2 символов для поиска')
          return
        }
      
-       console.log(`Searching user accounts with query: "${searchQuery.value}" at endpoint: /api/core/item-selector/search-users?limit=${remainingLimit.value}`)
        try {
          isLoading.value = true
          const searchParams: SearchParams = {
@@ -103,24 +118,20 @@
            limit: remainingLimit.value > 0 ? remainingLimit.value : 0,
          }
          const response = await searchUsers(searchParams)
-         currentSearchResults.value = response
-         searchResults.value = [...searchResults.value, ...response.filter(newItem => 
-           !searchResults.value.some(existingItem => existingItem.uuid === newItem.uuid)
-         )]
+         console.log('[ItemSelector] Search results received:', response)
+         searchStore.setSearchResults(response)
+         console.log('[ItemSelector] Updated searchResults:', searchStore.getSearchResults)
        } catch (error) {
-         console.error('Error searching users:', error)
+         console.error('[ItemSelector] Error searching users:', error)
          uiStore.showErrorSnackbar('Ошибка при поиске пользователей')
        } finally {
          isLoading.value = false
+         console.log('[ItemSelector] Search completed, isLoading:', isLoading.value)
        }
      }
      
      const handleAction = async () => {
-       if (selectedItems.value.length === 0) {
-         uiStore.showErrorSnackbar('Выберите хотя бы один объект для действия')
-         return
-       }
-       console.log('Performing action with selected items:', selectedItems.value)
+       console.log('[ItemSelector] Performing action with operationType:', props.operationType, 'selectedItems:', searchStore.getSelectedItems)
        const action = actionHandlers[props.operationType]
        if (action) {
          await action.handler()
@@ -129,29 +140,12 @@
        }
      }
      
-     const onItemSelect = (itemId: string) => {
-       console.log('Item selected:', itemId)
-       if (selectedItems.value.includes(itemId)) {
-         selectedItems.value = selectedItems.value.filter((id) => id !== itemId)
-       } else if (selectedItems.value.length < props.maxItems) {
-         selectedItems.value.push(itemId)
-       }
-     }
-     
      const onKeyPress = (event: KeyboardEvent) => {
+       console.log('[ItemSelector] Key pressed:', event.key, 'canSearch:', canSearch.value, 'isSearchDisabled:', isSearchDisabled.value)
        if (event.key === 'Enter' && !isSearchDisabled.value && canSearch.value) {
          handleSearch()
        }
      }
-     
-     // Lifecycle hooks
-     onMounted(() => {
-       console.log('ItemSelector mounted with props:', props)
-     })
-     
-     onBeforeUnmount(() => {
-       console.log('ItemSelector unmounted')
-     })
      </script>
      
      <template>
@@ -182,16 +176,15 @@
                <v-row class="mb-4">
                  <v-col cols="12">
                    <v-chip
-                     v-for="item in searchResults"
+                     v-for="item in searchStore.getSearchResults"
                      :key="item.uuid"
                      class="ma-1"
                      closable
-                     @click="onItemSelect(item.uuid)"
-                     @click:close="onItemSelect(item.uuid)"
+                     @click:close="searchStore.removeSelectedItem(item.uuid)"
                    >
                      {{ item.username }} ({{ item.uuid }})
                    </v-chip>
-                   <v-chip v-if="!searchResults.length" color="grey" disabled>
+                   <v-chip v-if="!searchStore.getSearchResults.length" color="grey" disabled>
                      Объекты не найдены
                    </v-chip>
                  </v-col>

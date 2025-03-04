@@ -18,5 +18,5 @@ const searchUsers = require('../services/item-selector/controller.search.users')
 router.get('/api/core/users/fetch-username-by-uuid/:userId', validateJWT, fetchUsernameByUuid);
 
 router.get('/api/core/item-selector/search-users', validateJWT, searchUsers); 
-
+// /api/core/item-selector/add-users-to-group
 module.exports = router;

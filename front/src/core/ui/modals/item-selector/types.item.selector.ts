@@ -70,3 +70,9 @@ export interface UserAccountSearchResult extends SearchResult {
 export interface UserAccountSearchResponse extends SearchResponse {
   items: UserAccountSearchResult[]; // Array of user account search results
 }
+
+export interface AddUsersResponse {
+  success: boolean;
+  count: number;
+  message?: string;
+}

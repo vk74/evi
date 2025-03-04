@@ -1,15 +1,16 @@
 /**
  * @file service.search.users.ts
- * Service for searching users based on a query string and maxItems limit.
+ * Service for searching user accounts in the ItemSelector.
  * 
  * Functionality:
- * - Searches for users in the API based on a query and limit
+ * - Searches for users based on a query string and limit
  * - Validates the received data
- * - Handles errors during fetching
- * - Provides logging for operations
+ * - Handles errors during the operation
+ * - Provides logging for key operations
  */
 import { api } from '@/core/api/service.axios';
 import { useUiStore } from '@/core/state/uistate';
+import useSearchUsersStore from './state.search.users';
 import type { SearchParams, SearchResult } from './types.item.selector';
 
 // Logger for tracking operations
@@ -19,42 +20,43 @@ const logger = {
 };
 
 /**
- * Searches for users based on a query string and maximum items limit.
- * @param params - Search parameters including query string and limit
- * @returns Promise with search results or throws an error
+ * Searches for user accounts based on query and limit.
+ * @param params - Search parameters including query and optional limit
+ * @returns Promise with search results array
  */
 async function searchUsers(params: SearchParams): Promise<SearchResult[]> {
   const uiStore = useUiStore();
-  const { query, limit } = params;
+  const searchStore = useSearchUsersStore();
+  const { query, limit = 20 } = params;
 
-  // Log the sent query
-  logger.info('Searching users', { query, limit: limit || 20 });
+  // Validate input parameters
+  if (!query || query.trim() === '') {
+    throw new Error('Search query cannot be empty');
+  }
+
+  // Log the sent request
+  logger.info('Searching user accounts', { query, limit });
 
   try {
-    // Request user search data from the API
-    const response = await api.get<{ items: any[]; total: number }>(
-      `/api/core/item-selector/search-users?query=${encodeURIComponent(query)}&limit=${limit || 20}`
-    );
+    // Prepare the request URL
+    const url = `/api/core/item-selector/search-users?query=${encodeURIComponent(query)}&limit=${limit}`;
+    console.log('[SearchUsersService] Request prepared:', url);
 
-    // Check if the request was successful
-    if (!response.data || !Array.isArray(response.data.items)) {
-      throw new Error('Invalid response format: Expected an array of items');
-    }
-
-    // Transform response data to match SearchResult type
-    const searchResults: SearchResult[] = response.data.items.map((item: any) => ({
-      username: item.username,
-      uuid: item.uuid,
-    }));
+    // Send GET request to the API endpoint
+    const response = await api.get<{ success: boolean; items: SearchResult[]; total: number }>(url);
 
     // Log successful response
     logger.info('Successfully retrieved search results', {
       query,
-      limit: limit || 20,
-      totalResults: searchResults.length,
+      limit,
+      totalResults: response.data.total,
     });
 
-    return searchResults;
+    // Store and return only the items array
+    const results = response.data.items;
+    searchStore.setSearchResults(results);
+
+    return results;
   } catch (error) {
     // Log error
     logger.error('Error searching users', error);
@@ -62,8 +64,7 @@ async function searchUsers(params: SearchParams): Promise<SearchResult[]> {
     const errorMessage = error instanceof Error ? error.message : 'Неизвестная ошибка при поиске пользователей';
     uiStore.showErrorSnackbar(errorMessage);
 
-    // Return an empty array if the backend is not implemented or an error occurs
-    return [];
+    throw error; // Re-throw to handle in the calling component
   }
 }
 
