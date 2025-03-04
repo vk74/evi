@@ -24,9 +24,8 @@ export interface SearchParams {
  * Result of a search operation, representing a generic item
  */
 export interface SearchResult {
-  id: string;           // Unique identifier for the item (e.g., UUID)
-  name: string;         // Display name or title of the item
-  [key: string]: any;   // Additional dynamic properties for flexibility
+  username: string;
+  uuid: string;
 }
 
 /**

@@ -1,0 +1,84 @@
+/**
+ * service.search.users.ts
+ * Service for searching users based on a query string and maxItems limit.
+ * 
+ * Functionality:
+ * - Searches for users in the database based on a query and limit
+ * - Handles data transformation and business logic
+ * - Manages database interactions and error handling
+ * - Provides logging for operations
+ * 
+ * Data flow:
+ * 1. Receive search query and limit
+ * 2. Query database for matching users using parameterized queries
+ * 3. Transform and return formatted response
+ */
+
+import { Pool, QueryResult } from 'pg';
+import { queries } from './queries.item.selector';
+import { 
+  SearchParams, 
+  SearchResult,
+  SearchResponse,
+  ServiceError 
+} from './types.item.selector';
+import { pool as pgPool } from '../../../../src/db/maindb'; // Обновленный путь к maindb
+
+// Type assertion for pool
+const pool = pgPool as Pool;
+
+// Logging helper
+function logService(message: string, meta?: object): void {
+  console.log(`[${new Date().toISOString()}] [SearchUsersService] ${message}`, meta || '');
+}
+
+/**
+ * Service function to search users based on query and limit
+ * @param params SearchParams containing the query string and limit
+ * @returns SearchResponse with search results or error
+ */
+export async function searchUsers(params: SearchParams): Promise<SearchResult[]> {
+  const { query, limit } = params;
+
+  try {
+    // Log operation start
+    logService('Searching users in database', { query, limit });
+
+    // Perform search query with parameterized values to prevent SQL injection
+    const result: QueryResult<SearchResult> = await pool.query(queries.searchUsers.text, [
+      `%${query}%`, // Wrap query in wildcards for ILIKE search
+      limit || 20,  // Default limit to 20 if not provided
+    ]);
+
+    // Transform query results to match SearchResult type
+    const searchResults: SearchResult[] = result.rows.map(row => ({
+      id: row.uuid,
+      name: row.name,
+      username: row.username,
+      uuid: row.uuid,
+    }));
+
+    // Log successful search
+    logService('Successfully retrieved search results', {
+      query,
+      limit,
+      totalResults: searchResults.length,
+    });
+
+    return searchResults;
+  } catch (error) {
+    // Log error
+    logService('Error searching users', { query, limit, error });
+
+    const serviceError: ServiceError = {
+      code: 'INTERNAL_SERVER_ERROR',
+      message: 'Failed to search users',
+      // Убедитесь, что тип ServiceError включает details
+      details: error instanceof Error ? error.message : 'Unknown error',
+    };
+
+    throw serviceError;
+  }
+}
+
+export default searchUsers;

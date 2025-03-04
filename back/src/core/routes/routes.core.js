@@ -10,16 +10,13 @@
 
 const express = require('express');
 const router = express.Router();
-const fetchUsernameByUuid = require('../services/service.fetch.username.by.uuid').default; // Явно получаем функцию через .default
 const validateJWT = require('../../guards/auth.validate.jwt');
 
-/**
- * Route to fetch username by user UUID
- * Requires JWT authentication
- */
+const fetchUsernameByUuid = require('../services/service.fetch.username.by.uuid').default; // Явно получаем функцию через .default
+const searchUsers = require('../services/item-selector/controller.search.users').default;
+
 router.get('/api/core/users/fetch-username-by-uuid/:userId', validateJWT, fetchUsernameByUuid);
 
-// /api/core/item-search
-// /api/core/item-action
+router.get('/api/core/item-selector/search-users', validateJWT, searchUsers); 
 
 module.exports = router;

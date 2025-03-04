@@ -8,7 +8,7 @@ import { GroupStatus } from './types.group.editor'
 import { useValidationRules } from '@/core/validation/rules.common.fields'
 import type { TableHeader } from './types.group.editor'
 import { updateGroupService } from './service.update.group' // Импорт сервиса обновления
-import ItemSelector from '../../../../core/ui/modals/item-actions/ItemSelector.vue'
+import ItemSelector from '../../../../core/ui/modals/item-selector/ItemSelector.vue'
 
 const groupEditorStore = useGroupEditorStore()
 const uiStore = useUiStore()
@@ -170,7 +170,7 @@ const handleAddMembers = async (selectedItemIds: string[]) => {
 
 // Placeholder для сервиса (будет реализован отдельно)
 async function addGroupMembers(userIds: string[]) {
-  // Этот метод будет реализован в service.add.groupmembers.ts
+  // Этот метод будет реализован в service.add.users.to.group.ts
   console.log('Adding members with IDs:', userIds)
 }
 
@@ -357,9 +357,10 @@ onBeforeUnmount(() => uiStore.hideSnackbar())
 
         <v-card v-else flat>
           <v-container class="pa-4">
+            <h4 class="mb-2">группа: {{ groupEditorStore.group.group_name || 'Без названия' }}</h4><br> <!-- Название группы -->
             <v-text-field
               v-model="searchQuery"
-              label="Поиск по участникам"
+              label="поиск по участникам группы"
               variant="outlined"
               density="comfortable"
               prepend-inner-icon="mdi-magnify"
@@ -388,11 +389,12 @@ onBeforeUnmount(() => uiStore.hideSnackbar())
       </v-container>
     </div>
 
-    <!-- Параметры для заголовка, типа операции и количества items -->
+    <!-- Параметры для заголовка, типа операции, типа поиска и количества items -->
     <v-dialog v-model="isItemSelectorModalOpen" max-width="600">
       <ItemSelector 
         :title="'добавление пользователей в группу'" 
         operation-type="add-users-to-group" 
+        search-type="user-account"
         :max-items="20" 
         @close="isItemSelectorModalOpen = false" 
         @actionPerformed="handleAddMembers"
