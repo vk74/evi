@@ -9,9 +9,11 @@ import { useValidationRules } from '@/core/validation/rules.common.fields'
 import type { TableHeader } from './types.group.editor'
 import { updateGroupService } from './service.update.group' // Импорт сервиса обновления
 import ItemSelector from '../../../../core/ui/modals/item-selector/ItemSelector.vue'
+import { useUserStore } from '@/core/state/userstate' // Импорт для проверки JWT
 
 const groupEditorStore = useGroupEditorStore()
 const uiStore = useUiStore()
+const userStore = useUserStore() // Хранилище для проверки авторизации
 const { 
   optionalEmailRules,
   generalDescriptionRules,
@@ -29,6 +31,9 @@ const page = ref(1)
 const itemsPerPage = ref(25)
 const searchQuery = ref('')
 const isItemSelectorModalOpen = ref(false)
+
+// Computed property for authorization check
+const isAuthorized = computed(() => userStore.isLoggedIn)
 
 // ==================== TABLE CONFIG ====================
 const headers = ref<TableHeader[]>([
@@ -73,7 +78,6 @@ const handleCreateGroup = async () => {
     isSubmitting.value = true
     const response = await groupEditorStore.createNewGroup()
     if (response?.success) {
-      // Переключаем в режим редактирования с текущими данными
       groupEditorStore.initEditMode({
         group: {
           ...groupEditorStore.group,
@@ -160,7 +164,6 @@ const handleAddMembers = async (selectedItemIds: string[]) => {
   }
 
   try {
-    // Placeholder для вызова сервиса добавления участников
     await addGroupMembers(selectedItemIds)
     uiStore.showSuccessSnackbar('Участники добавлены успешно')
   } catch (error) {
@@ -170,7 +173,6 @@ const handleAddMembers = async (selectedItemIds: string[]) => {
 
 // Placeholder для сервиса (будет реализован отдельно)
 async function addGroupMembers(userIds: string[]) {
-  // Этот метод будет реализован в service.add.users.to.group.ts
   console.log('Adding members with IDs:', userIds)
 }
 
@@ -192,11 +194,26 @@ watch(
 
 // ==================== LIFECYCLE ====================
 onMounted(() => {
+  // Проверка валидности JWT при инициализации
+  if (!userStore.isLoggedIn) {
+    // Сделать все кнопки в app-bar недоступными
+    // (используем isAuthorized в шаблоне)
+    
+    // Сброс кэша Pinia
+    groupEditorStore.$reset()
+    uiStore.$reset()
+    userStore.$reset()
+
+    // Вывод тост-сообщения
+    uiStore.showErrorSnackbar('Пользователь не вошел в систему')
+  }
+
   groupEditorStore.resetForm()
   isFormDirty.value = false // Form starts clean
   isInitialLoad.value = true // Mark as initial load
   setTimeout(() => { isInitialLoad.value = false }, 0) // Имитация асинхронной загрузки
 })
+
 onBeforeUnmount(() => uiStore.hideSnackbar())
 </script>
 
@@ -206,6 +223,7 @@ onBeforeUnmount(() => uiStore.hideSnackbar())
       <div class="nav-section">
         <v-btn
           :class="['section-btn', { 'section-active': groupEditorStore.ui.activeSection === 'details' }]"
+          :disabled="!isAuthorized || !groupEditorStore.isEditMode"
           @click="switchSection('details')"
           variant="text"
         >
@@ -213,8 +231,8 @@ onBeforeUnmount(() => uiStore.hideSnackbar())
         </v-btn>
         <v-btn
           :class="['section-btn', { 'section-active': groupEditorStore.ui.activeSection === 'members' }]"
+          :disabled="!isAuthorized || !groupEditorStore.isEditMode"
           @click="switchSection('members')"
-          :disabled="!groupEditorStore.isEditMode"
           variant="text"
         >
           участники группы
@@ -229,13 +247,14 @@ onBeforeUnmount(() => uiStore.hideSnackbar())
             color="teal"
             variant="outlined"
             class="mr-2"
+            :disabled="!isAuthorized || !isFormValid || isSubmitting"
             @click="handleCreateGroup"
-            :disabled="!isFormValid || isSubmitting"
           >
             Создать группу
           </v-btn>
           <v-btn
             variant="outlined"
+            :disabled="!isAuthorized"
             @click="resetForm"
           >
             Сбросить
@@ -246,8 +265,8 @@ onBeforeUnmount(() => uiStore.hideSnackbar())
             color="teal"
             variant="outlined"
             class="mr-2"
+            :disabled="!isAuthorized || !isFormValid || !isFormDirty || isSubmitting"
             @click="handleUpdateGroup"
-            :disabled="!isFormValid || !isFormDirty || isSubmitting"
           >
             Обновить данные группы
           </v-btn>
@@ -257,6 +276,7 @@ onBeforeUnmount(() => uiStore.hideSnackbar())
             color="teal"
             variant="outlined"
             class="mr-2"
+            :disabled="!isAuthorized"
             @click="openItemSelectorModal"
           >
             Добавить участника
@@ -264,6 +284,7 @@ onBeforeUnmount(() => uiStore.hideSnackbar())
           <v-btn
             color="red"
             variant="outlined"
+            :disabled="!isAuthorized"
           >
             Удалить участника
           </v-btn>
@@ -357,10 +378,10 @@ onBeforeUnmount(() => uiStore.hideSnackbar())
 
         <v-card v-else flat>
           <v-container class="pa-4">
-            <h4 class="mb-2">группа: {{ groupEditorStore.group.group_name || 'Без названия' }}</h4><br> <!-- Название группы -->
+            <h3 class="mb-2">{{ groupEditorStore.group.group_name || 'Без названия' }}</h3>
             <v-text-field
               v-model="searchQuery"
-              label="поиск по участникам группы"
+              label="Поиск по участникам"
               variant="outlined"
               density="comfortable"
               prepend-inner-icon="mdi-magnify"
@@ -382,6 +403,7 @@ onBeforeUnmount(() => uiStore.hideSnackbar())
                 @update:model-value="(val) => onSelectMember(item.user_id, val)"
                 density="compact"
                 hide-details
+                :disabled="!isAuthorized"
               />
             </template>
           </v-data-table>
@@ -389,7 +411,6 @@ onBeforeUnmount(() => uiStore.hideSnackbar())
       </v-container>
     </div>
 
-    <!-- Параметры для заголовка, типа операции, типа поиска и количества items -->
     <v-dialog v-model="isItemSelectorModalOpen" max-width="600">
       <ItemSelector 
         :title="'добавление пользователей в группу'" 
@@ -398,6 +419,7 @@ onBeforeUnmount(() => uiStore.hideSnackbar())
         :max-items="20" 
         @close="isItemSelectorModalOpen = false" 
         @actionPerformed="handleAddMembers"
+        :disabled="!isAuthorized"
       />
     </v-dialog>
   </div>
