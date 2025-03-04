@@ -1,18 +1,17 @@
 /**
  * @file service.add.users.to.group.ts
- * Service for adding users to a group in the item selector.
+ * Service for adding users to a group in the ItemSelector.
  * 
  * Functionality:
  * - Adds users to a group via the API based on user IDs and group ID
- * - Validates the received data from ItemSelector
+ * - Validates the received data
  * - Handles errors during the operation
- * - Provides detailed logging for operations
+ * - Provides logging for key operations
  */
 import { api } from '@/core/api/service.axios';
 import { useUiStore } from '@/core/state/uistate';
 import { useGroupEditorStore } from '@/components/admin/users/GroupEditor/state.group.editor';
 import { useUserStore } from '@/core/state/userstate'; // Импорт для получения UUID пользователя
-import useSearchUsersStore from './state.search.users';
 import type { AddUsersResponse } from './types.item.selector';
 
 // Logger for tracking operations
@@ -23,16 +22,13 @@ const logger = {
 
 /**
  * Adds users to a group based on user IDs from ItemSelector and group ID from store.
- * @param userIds - Array of user UUIDs selected in ItemSelector (from store)
+ * @param userIds - Array of user UUIDs selected in ItemSelector
  * @returns Promise with response indicating success and count of added users
  */
-async function addUsersToGroup(): Promise<AddUsersResponse> {
+async function addUsersToGroup(userIds: string[]): Promise<AddUsersResponse> {
   const uiStore = useUiStore();
   const groupEditorStore = useGroupEditorStore();
   const userStore = useUserStore(); // Хранилище для получения UUID текущего пользователя
-  const searchStore = useSearchUsersStore();
-
-  const userIds = searchStore.getSelectedItems;
 
   // Validate input parameters
   if (!userIds || userIds.length === 0) {
@@ -73,16 +69,10 @@ async function addUsersToGroup(): Promise<AddUsersResponse> {
       throw new Error(response.data.message || 'Failed to add users to group');
     }
 
-    // Clear selection after successful addition
-    searchStore.clearSelection();
-
     return response.data;
   } catch (error) {
     // Log error with request details
-    logger.error('Error adding users to group', {
-      requestBody,
-      error,
-    });
+    logger.error('Error adding users to group', error);
 
     const errorMessage = error instanceof Error ? error.message : 'Неизвестная ошибка при добавлении пользователей в группу';
     uiStore.showErrorSnackbar(errorMessage);

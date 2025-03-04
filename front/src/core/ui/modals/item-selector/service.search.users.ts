@@ -10,7 +10,6 @@
  */
 import { api } from '@/core/api/service.axios';
 import { useUiStore } from '@/core/state/uistate';
-import useSearchUsersStore from './state.search.users';
 import type { SearchParams, SearchResult } from './types.item.selector';
 
 // Logger for tracking operations
@@ -26,7 +25,6 @@ const logger = {
  */
 async function searchUsers(params: SearchParams): Promise<SearchResult[]> {
   const uiStore = useUiStore();
-  const searchStore = useSearchUsersStore();
   const { query, limit = 20 } = params;
 
   // Validate input parameters
@@ -52,11 +50,7 @@ async function searchUsers(params: SearchParams): Promise<SearchResult[]> {
       totalResults: response.data.total,
     });
 
-    // Store and return only the items array
-    const results = response.data.items;
-    searchStore.setSearchResults(results);
-
-    return results;
+    return response.data.items;
   } catch (error) {
     // Log error
     logger.error('Error searching users', error);
