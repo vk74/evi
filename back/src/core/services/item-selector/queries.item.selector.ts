@@ -3,7 +3,7 @@
  * SQL queries for item selector operations (e.g., searching users, adding users to groups).
  * 
  * Contains parameterized queries for:
- * - Searching users by query string with a limit
+ * - Searching users by query string (username or UUID) with a limit
  * - Checking if a group exists
  * - Checking if users exist
  * - Checking if users are already members of a group
@@ -25,7 +25,7 @@ interface ItemSelectorQueries {
 }
 
 export const queries: ItemSelectorQueries = {
-  // Search users by query string with a limit on the number of results
+  // Search users by query string (username or UUID) with a limit on the number of results
   searchUsers: {
     text: `
       SELECT 
@@ -35,6 +35,7 @@ export const queries: ItemSelectorQueries = {
         user_id AS uuid  -- Explicitly including uuid for consistency
       FROM app.users
       WHERE username ILIKE $1  -- Case-insensitive search by username
+         OR user_id::text ILIKE $1  -- Case-insensitive search by UUID
       ORDER BY username
       LIMIT $2
     `

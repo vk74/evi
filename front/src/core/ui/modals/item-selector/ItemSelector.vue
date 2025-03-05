@@ -102,6 +102,12 @@
        searchResults.value = []
      }
      
+     /**
+      * Performs a search based on the current query and appends results to existing ones.
+      * - Retains all existing search results between searches
+      * - Adds only unique results (prevents duplicates based on UUID)
+      * - Respects maxItems limit for the total number of results
+      */
      const handleSearch = async () => {
        console.log('[ItemSelector] Starting search with query:', searchQuery.value, 'remainingLimit:', remainingLimit.value)
        if (!canSearch.value) {
@@ -115,10 +121,39 @@
            query: searchQuery.value,
            limit: remainingLimit.value > 0 ? remainingLimit.value : 0,
          }
+         
+         // Skip search if we're already at max capacity
+         if (searchParams.limit === 0) {
+           uiStore.showErrorSnackbar(`Достигнут лимит в ${props.maxItems} объектов`)
+           isLoading.value = false
+           return
+         }
+         
          const response = await searchUsers(searchParams)
          console.log('[ItemSelector] Search results received:', response)
-         searchResults.value = response
-         console.log('[ItemSelector] Updated searchResults:', searchResults.value)
+         
+         // Filter out items that are already in searchResults to avoid duplicates
+         const newUniqueItems = response.filter(newItem => 
+           !searchResults.value.some(existingItem => existingItem.uuid === newItem.uuid)
+         )
+         
+         console.log('[ItemSelector] New unique items to add:', newUniqueItems.length)
+         
+         // Add new unique items to the existing results
+         if (newUniqueItems.length > 0) {
+           searchResults.value = [...searchResults.value, ...newUniqueItems]
+           console.log('[ItemSelector] Updated searchResults:', searchResults.value)
+           
+           if (newUniqueItems.length < response.length) {
+             uiStore.showInfoSnackbar(`Найдено ${response.length} объектов, добавлено ${newUniqueItems.length} уникальных`)
+           } else {
+             uiStore.showSuccessSnackbar(`Добавлено ${newUniqueItems.length} объектов`)
+           }
+         } else if (response.length > 0) {
+           uiStore.showInfoSnackbar('Все найденные объекты уже добавлены в результаты')
+         } else {
+           uiStore.showInfoSnackbar('По вашему запросу ничего не найдено')
+         }
        } catch (error) {
          console.error('[ItemSelector] Error searching users:', error)
          uiStore.showErrorSnackbar('Ошибка при поиске пользователей')
@@ -158,7 +193,7 @@
                  <v-col cols="12">
                    <v-text-field
                      v-model="searchQuery"
-                     label="Поиск"
+                     label="Поиск (по имени пользователя или UUID)"
                      variant="outlined"
                      density="comfortable"
                      append-inner-icon="mdi-magnify"

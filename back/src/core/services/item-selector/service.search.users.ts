@@ -1,6 +1,6 @@
 /**
  * service.search.users.ts
- * Service for searching users based on a query string and maxItems limit.
+ * BACKEND service for searching users based on a query string and maxItems limit.
  * 
  * Functionality:
  * - Searches for users in the database based on a query and limit
@@ -45,17 +45,18 @@ export async function searchUsers(params: SearchParams): Promise<SearchResult[]>
     logService('Searching users in database', { query, limit });
 
     // Perform search query with parameterized values to prevent SQL injection
-    const result: QueryResult<SearchResult> = await pool.query(queries.searchUsers.text, [
+    const result: QueryResult = await pool.query(queries.searchUsers.text, [
       `%${query}%`, // Wrap query in wildcards for ILIKE search
       limit || 20,  // Default limit to 20 if not provided
     ]);
 
     // Transform query results to match SearchResult type
+    // Важно: используем именно те поля, которые возвращаются в запросе
     const searchResults: SearchResult[] = result.rows.map(row => ({
-      id: row.uuid,
-      name: row.name,
-      username: row.username,
-      uuid: row.uuid,
+      id: row.uuid,           // Это поле уже преобразовано из user_id в запросе
+      name: row.name,         // Это поле уже преобразовано из username в запросе
+      username: row.username, // Оригинальное поле username
+      uuid: row.uuid,         // Это поле уже преобразовано из user_id в запросе
     }));
 
     // Log successful search
