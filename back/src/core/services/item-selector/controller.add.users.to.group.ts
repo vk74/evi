@@ -112,4 +112,4 @@ async function addUsersToGroupController(req: Request & { user?: { uuid: string 
   }
 }
 
-module.exports = addUsersToGroupController;
+export default addUsersToGroupController;

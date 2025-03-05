@@ -1,6 +1,6 @@
 /**
  * @file service.add.users.to.group.ts
- * Service for adding users to a group in the database.
+ * BACKEND Service for adding users to a group in the database.
  * 
  * Functionality:
  * - Validates input data (group and user existence, permissions)
