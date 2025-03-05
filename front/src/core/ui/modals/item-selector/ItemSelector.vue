@@ -11,6 +11,9 @@ import { useUiStore } from '@/core/state/uistate'
 import { SearchParams, SearchResult } from './types.item.selector'
 import searchUsers from './service.search.users'
 import addUsersToGroup from './service.add.users.to.group'
+// Здесь будут импорты других сервисов поиска, когда они будут созданы
+// import searchGroups from './service.search.groups'
+// import searchWorkspaces from './service.search.workspaces'
 
 // Props definition
 const props = defineProps({
@@ -42,6 +45,35 @@ const searchResults = ref<SearchResult[]>([]) // All results are automatically s
 const isLoading = ref(false)
 const uiStore = useUiStore()
 
+// Словарь подсказок для разных типов поиска
+const searchPlaceholders: Record<string, string> = {
+  'user-account': 'Поиск (по имени пользователя, UUID или email)',
+  'group': 'Поиск (по названию группы или UUID)',
+  'workspace': 'Поиск (по названию объекта)',
+  // Можно добавить другие типы поиска при необходимости
+  'default': 'Поиск'
+}
+
+// Вычисляемое свойство для получения подсказки поиска
+const searchPlaceholder = computed(() => 
+  searchPlaceholders[props.searchType] || searchPlaceholders['default']
+)
+
+// Словарь для отображения объектов разных типов
+const itemDisplayFormats: Record<string, (item: SearchResult) => string> = {
+  'user-account': (item) => `${item.username} (${item.uuid})`,
+  'group': (item) => `${item.name || item.groupName} (${item.uuid})`,
+  'workspace': (item) => `${item.name} (${item.uuid})`,
+  // Другие форматы для разных типов
+  'default': (item) => item.name || item.username || item.uuid || 'Неизвестный объект'
+}
+
+// Функция для получения отображаемого текста для элемента
+const getItemDisplayText = (item: SearchResult): string => {
+  const formatter = itemDisplayFormats[props.searchType] || itemDisplayFormats['default']
+  return formatter(item)
+}
+
 // Initialize
 onMounted(() => {
   console.log('[ItemSelector] Mounted with props:', props)
@@ -59,12 +91,25 @@ const isActionDisabled = computed(() => searchResults.value.length === 0)
 const isResetDisabled = computed(() => searchResults.value.length === 0)
 const remainingLimit = computed(() => props.maxItems - searchResults.value.length)
 
+// Обработчики поиска для разных типов объектов
+const searchHandlers: Record<string, (params: SearchParams) => Promise<SearchResult[]>> = {
+  'user-account': searchUsers,
+  // Заглушки для будущих типов поиска
+  // 'group': searchGroups,
+  // 'workspace': searchWorkspaces
+}
+
 // Action handlers
 const actionHandlers: Record<string, { label: string; handler: () => Promise<void> }> = {
   'add-users-to-group': {
     label: 'Добавить',
     handler: handleAddUsersToGroup,
   },
+  // Здесь можно добавить другие типы операций
+  // 'add-groups-to-workspace': {
+  //   label: 'Добавить',
+  //   handler: handleAddGroupsToWorkspace,
+  // },
 }
 
 async function handleAddUsersToGroup() {
@@ -90,6 +135,8 @@ async function handleAddUsersToGroup() {
   }
 }
 
+// Другие обработчики действий будут добавлены здесь по мере необходимости
+
 const closeModal = () => {
   console.log('[ItemSelector] Closing ItemSelector modal')
   isDialogOpen.value = false
@@ -103,13 +150,11 @@ const resetSearch = () => {
 }
 
 /**
- * Performs a search based on the current query and appends results to existing ones.
- * - Retains all existing search results between searches
- * - Adds only unique results (prevents duplicates based on UUID)
- * - Respects maxItems limit for the total number of results
+ * Универсальная функция поиска, которая выбирает правильный обработчик 
+ * в зависимости от типа поиска и добавляет уникальные результаты
  */
 const handleSearch = async () => {
-  console.log('[ItemSelector] Starting search with query:', searchQuery.value, 'remainingLimit:', remainingLimit.value)
+  console.log('[ItemSelector] Starting search with query:', searchQuery.value, 'searchType:', props.searchType, 'remainingLimit:', remainingLimit.value)
   if (!canSearch.value) {
     uiStore.showErrorSnackbar('Введите не менее 2 символов для поиска')
     return
@@ -129,8 +174,10 @@ const handleSearch = async () => {
       return
     }
     
-    const response = await searchUsers(searchParams)
-    console.log('[ItemSelector] Search results received:', response)
+    // Выбираем правильный обработчик поиска или используем searchUsers как запасной вариант
+    const searchHandler = searchHandlers[props.searchType] || searchUsers
+    const response = await searchHandler(searchParams)
+    console.log(`[ItemSelector] Search results received for ${props.searchType}:`, response)
     
     // Filter out items that are already in searchResults to avoid duplicates
     const newUniqueItems = response.filter(newItem => 
@@ -155,8 +202,8 @@ const handleSearch = async () => {
       uiStore.showInfoSnackbar('По вашему запросу ничего не найдено')
     }
   } catch (error) {
-    console.error('[ItemSelector] Error searching users:', error)
-    uiStore.showErrorSnackbar('Ошибка при поиске пользователей')
+    console.error(`[ItemSelector] Error searching ${props.searchType}:`, error)
+    uiStore.showErrorSnackbar(`Ошибка при поиске`)
   } finally {
     isLoading.value = false
     console.log('[ItemSelector] Search completed, isLoading:', isLoading.value)
@@ -193,7 +240,7 @@ const onKeyPress = (event: KeyboardEvent) => {
             <v-col cols="12">
               <v-text-field
                 v-model="searchQuery"
-                label="Поиск (по имени пользователя, UUID или email)"
+                :label="searchPlaceholder"
                 variant="outlined"
                 density="comfortable"
                 append-inner-icon="mdi-magnify"
@@ -215,7 +262,7 @@ const onKeyPress = (event: KeyboardEvent) => {
                 closable
                 @click:close="searchResults.value = searchResults.value.filter(i => i.uuid !== item.uuid)"
               >
-                {{ item.username }} ({{ item.uuid }})
+                {{ getItemDisplayText(item) }}
               </v-chip>
               <v-chip v-if="!searchResults.length" color="grey" disabled>
                 Объекты не найдены
