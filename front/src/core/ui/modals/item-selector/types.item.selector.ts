@@ -1,4 +1,4 @@
-// types.item.selector.ts
+// FRONTEND types.item.selector.ts f
 // Type definitions for the ItemSelector component, including search and action functionality
 
 // ==================== General ItemSelector Types ====================

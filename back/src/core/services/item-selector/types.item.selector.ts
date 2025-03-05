@@ -21,8 +21,36 @@ export interface SearchResponse {
   total: number;
 }
 
+// Error interfaces for consistent error handling
 export interface ServiceError {
-  code?: string;        // Error code (e.g., 'INTERNAL_SERVER_ERROR')
-  message: string;      // Error message
+  code: string;         // Error code (e.g., 'INTERNAL_SERVER_ERROR')
+  message: string;      // User-friendly error message
   details?: string;     // Optional detailed error information (e.g., for debugging)
+}
+
+export interface ValidationError extends ServiceError {
+  code: 'VALIDATION_ERROR';
+  field: string;        // Field that failed validation
+}
+
+export interface NotFoundError extends ServiceError {
+  code: 'NOT_FOUND_ERROR';
+  field: string;        // Resource that wasn't found
+}
+
+export interface PermissionError extends ServiceError {
+  code: 'PERMISSION_ERROR';
+}
+
+// New interfaces for adding users to group feature
+export interface AddUsersToGroupRequest {
+  groupId: string;      // UUID of the group to add users to
+  userIds: string[];    // Array of user UUIDs to add to the group
+  addedBy?: string;     // UUID of the user performing the action (optional, can be taken from JWT)
+}
+
+export interface AddUsersToGroupResponse {
+  success: boolean;     // Indicates if the operation was successful
+  message: string;      // Descriptive message about the operation result
+  count: number;        // Number of users successfully added to the group
 }
