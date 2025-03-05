@@ -6,8 +6,10 @@ import { useGroupEditorStore } from './state.group.editor'
 import { useUiStore } from '@/core/state/uistate'
 import { GroupStatus } from './types.group.editor'
 import { useValidationRules } from '@/core/validation/rules.common.fields'
-import type { TableHeader } from './types.group.editor'
+import type { TableHeader, EditMode } from './types.group.editor'
 import { updateGroupService } from './service.update.group' // Импорт сервиса обновления
+import { fetchGroupMembersService } from './service.fetch.group.members' // Импорт сервиса получения участников
+import { removeGroupMembersService } from './service.remove.group.members' // Импорт сервиса удаления участников
 import ItemSelector from '../../../../core/ui/modals/item-selector/ItemSelector.vue'
 import { useUserStore } from '@/core/state/userstate' // Импорт для проверки JWT
 
@@ -26,7 +28,6 @@ const isFormValid = ref(false)
 const isFormDirty = ref(false) // Tracks if form has changed in edit mode
 const isInitialLoad = ref(true) // Prevents watch from firing on initial load
 const isSubmitting = ref(false) // Флаг состояния отправки
-const selectedMembers = ref<string[]>([])
 const page = ref(1)
 const itemsPerPage = ref(25)
 const searchQuery = ref('')
@@ -47,6 +48,11 @@ const headers = ref<TableHeader[]>([
   { title: 'имя', key: 'first_name' },
   { title: 'отчество', key: 'middle_name' }
 ])
+
+// ==================== COMPUTED PROPERTIES FOR MEMBERS ====================
+const members = computed(() => groupEditorStore.getGroupMembers)
+const membersLoading = computed(() => groupEditorStore.members.loading)
+const hasSelectedMembers = computed(() => groupEditorStore.hasSelectedMembers)
 
 // ==================== VALIDATION RULES ====================
 const groupNameRules = [
@@ -136,21 +142,30 @@ const resetForm = () => {
   formRef.value?.reset()
   isFormDirty.value = false // Reset dirty state on form reset
   isInitialLoad.value = true // Reset initial load state
-  selectedMembers.value = []
 }
 
 // ==================== TABLE HANDLERS ====================
-const switchSection = (section: 'details' | 'members') => {
+const switchSection = async (section: 'details' | 'members') => {
   if (!groupEditorStore.isEditMode && section === 'members') return
-  groupEditorStore.ui.activeSection = section
+  
+  groupEditorStore.setActiveSection(section)
+  
+  // Load members data when switching to the members tab
+  if (section === 'members' && groupEditorStore.isEditMode) {
+    const groupId = (groupEditorStore.mode as EditMode).groupId
+    try {
+      await fetchGroupMembersService.fetchGroupMembers(groupId)
+    } catch (error) {
+      console.error('Error loading group members:', error)
+      uiStore.showErrorSnackbar('Ошибка загрузки участников группы')
+    }
+  }
 }
 
-const isSelected = (userId: string) => selectedMembers.value.includes(userId)
+const isSelected = (userId: string) => groupEditorStore.members.selectedMembers.includes(userId)
 
 const onSelectMember = (userId: string, selected: boolean) => {
-  selectedMembers.value = selected 
-    ? [...selectedMembers.value, userId]
-    : selectedMembers.value.filter(id => id !== userId)
+  groupEditorStore.toggleGroupMemberSelection(userId, selected)
 }
 
 const openItemSelectorModal = () => {
@@ -168,6 +183,34 @@ const handleAddMembers = async (selectedItemIds: string[]) => {
     uiStore.showSuccessSnackbar('Участники добавлены успешно')
   } catch (error) {
     uiStore.showErrorSnackbar(error instanceof Error ? error.message : 'Ошибка добавления участников')
+  }
+}
+
+const handleRemoveMembers = async () => {
+  if (!groupEditorStore.hasSelectedMembers) {
+    uiStore.showErrorSnackbar('Не выбрано ни одного участника для удаления')
+    return
+  }
+  
+  if (!groupEditorStore.isEditMode) {
+    uiStore.showErrorSnackbar('Недоступно в режиме создания группы')
+    return
+  }
+  
+  const groupId = (groupEditorStore.mode as EditMode).groupId
+  
+  try {
+    const removedCount = await removeGroupMembersService.removeGroupMembers(
+      groupId,
+      groupEditorStore.members.selectedMembers
+    )
+    
+    if (removedCount > 0) {
+      uiStore.showSuccessSnackbar(`Удалено участников: ${removedCount}`)
+      groupEditorStore.clearGroupMembersSelection()
+    }
+  } catch (error) {
+    uiStore.showErrorSnackbar(error instanceof Error ? error.message : 'Ошибка удаления участников')
   }
 }
 
@@ -214,7 +257,10 @@ onMounted(() => {
   setTimeout(() => { isInitialLoad.value = false }, 0) // Имитация асинхронной загрузки
 })
 
-onBeforeUnmount(() => uiStore.hideSnackbar())
+onBeforeUnmount(() => {
+  uiStore.hideSnackbar()
+  groupEditorStore.resetMembersState() // Очистка состояния участников при выходе из компонента
+})
 </script>
 
 <template>
@@ -223,7 +269,7 @@ onBeforeUnmount(() => uiStore.hideSnackbar())
       <div class="nav-section">
         <v-btn
           :class="['section-btn', { 'section-active': groupEditorStore.ui.activeSection === 'details' }]"
-          :disabled="!isAuthorized || !groupEditorStore.isEditMode"
+          :disabled="!isAuthorized"
           @click="switchSection('details')"
           variant="text"
         >
@@ -284,7 +330,8 @@ onBeforeUnmount(() => uiStore.hideSnackbar())
           <v-btn
             color="red"
             variant="outlined"
-            :disabled="!isAuthorized"
+            :disabled="!isAuthorized || !hasSelectedMembers"
+            @click="handleRemoveMembers"
           >
             Удалить участника
           </v-btn>
@@ -393,11 +440,11 @@ onBeforeUnmount(() => uiStore.hideSnackbar())
             v-model:page="page"
             v-model:items-per-page="itemsPerPage"
             :headers="headers"
-            :items="[]"
-            :loading="false"
+            :items="members"
+            :loading="membersLoading"
             :search="searchQuery"
           >
-            <template #item.selection="{ item }">
+            <template v-slot:item.selection="{ item }">
               <v-checkbox
                 :model-value="isSelected(item.user_id)"
                 @update:model-value="(val) => onSelectMember(item.user_id, val)"
@@ -405,6 +452,25 @@ onBeforeUnmount(() => uiStore.hideSnackbar())
                 hide-details
                 :disabled="!isAuthorized"
               />
+            </template>
+            <template v-slot:item.account_status="{ item }">
+              <v-chip 
+                :color="item.account_status === 'active' ? 'green' : 'red'" 
+                size="x-small">
+                {{ item.account_status }}
+              </v-chip>
+            </template>
+            <template v-slot:item.is_staff="{ item }">
+              <v-icon
+                :color="item.is_staff ? 'teal' : 'grey'"
+                :icon="item.is_staff ? 'mdi-check-circle' : 'mdi-minus-circle'"
+                size="x-small"
+              />
+            </template>
+            <template v-slot:no-data>
+              <div class="pa-4 text-center">
+                {{ groupEditorStore.members.error || 'Нет данных для отображения' }}
+              </div>
             </template>
           </v-data-table>
         </v-card>

@@ -18,7 +18,9 @@ import type {
   IUpdateGroupRequest,
   GroupEditorState,
   EditMode,
-  ICreateGroupResponse
+  ICreateGroupResponse,
+  IGroupMember,
+  IGroupMembersState
 } from './types.group.editor'
 import { useUserStore } from '@/core/state/userstate'
 import { createGroupService } from './service.create.group'
@@ -53,6 +55,16 @@ const initialUIState: IEditorUIState = {
 }
 
 /**
+ * Начальные значения для состояния участников группы
+ */
+const initialMembersState: IGroupMembersState = {
+  members: [],
+  loading: false,
+  error: null,
+  selectedMembers: []
+}
+
+/**
  * Определение хранилища
  */
 export const useGroupEditorStore = defineStore('groupEditor', {
@@ -68,7 +80,8 @@ export const useGroupEditorStore = defineStore('groupEditor', {
       mode: {
         mode: 'create'
       },
-      originalData: undefined
+      originalData: undefined,
+      members: { ...initialMembersState }
     }
   },
 
@@ -128,6 +141,27 @@ export const useGroupEditorStore = defineStore('groupEditor', {
       }
 
       return changes
+    },
+
+    /**
+     * Получение списка участников группы
+     */
+    getGroupMembers(): IGroupMember[] {
+      return this.members.members
+    },
+
+    /**
+     * Количество выбранных участников
+     */
+    selectedMembersCount(): number {
+      return this.members.selectedMembers.length
+    },
+
+    /**
+     * Есть ли выбранные участники
+     */
+    hasSelectedMembers(): boolean {
+      return this.selectedMembersCount > 0
     }
   },
 
@@ -196,6 +230,9 @@ export const useGroupEditorStore = defineStore('groupEditor', {
       
       Object.assign(this.details, initialDetailsState)
       Object.assign(this.ui, initialUIState)
+      
+      // Сбрасываем состояние участников группы
+      this.resetMembersState()
     },
 
     /**
@@ -269,6 +306,77 @@ export const useGroupEditorStore = defineStore('groupEditor', {
       } finally {
         this.setSubmitting(false)
       }
+    },
+
+    /**
+     * Действия для работы с участниками группы
+     */
+
+    /**
+     * Обновление списка участников группы
+     */
+    updateGroupMembers(members: IGroupMember[]) {
+      console.log('[GroupEditorStore] Updating group members list:', members.length)
+      this.members.members = members
+    },
+
+    /**
+     * Установка состояния загрузки для участников группы
+     */
+    setMembersLoading(loading: boolean) {
+      this.members.loading = loading
+    },
+
+    /**
+     * Установка ошибки для участников группы
+     */
+    setMembersError(error: string | null) {
+      this.members.error = error
+    },
+
+    /**
+     * Выбор участника группы
+     */
+    selectGroupMember(userId: string) {
+      if (!this.members.selectedMembers.includes(userId)) {
+        this.members.selectedMembers.push(userId)
+        console.log('[GroupEditorStore] Member selected:', userId)
+      }
+    },
+
+    /**
+     * Отмена выбора участника группы
+     */
+    deselectGroupMember(userId: string) {
+      this.members.selectedMembers = this.members.selectedMembers.filter(id => id !== userId)
+      console.log('[GroupEditorStore] Member deselected:', userId)
+    },
+
+    /**
+     * Переключение выбора участника группы
+     */
+    toggleGroupMemberSelection(userId: string, selected: boolean) {
+      if (selected) {
+        this.selectGroupMember(userId)
+      } else {
+        this.deselectGroupMember(userId)
+      }
+    },
+
+    /**
+     * Очистка выбора участников группы
+     */
+    clearGroupMembersSelection() {
+      this.members.selectedMembers = []
+      console.log('[GroupEditorStore] Members selection cleared')
+    },
+
+    /**
+     * Сброс состояния участников группы
+     */
+    resetMembersState() {
+      Object.assign(this.members, initialMembersState)
+      console.log('[GroupEditorStore] Members state reset')
     }
   }
 })
