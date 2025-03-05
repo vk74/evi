@@ -25,7 +25,7 @@ interface ItemSelectorQueries {
 }
 
 export const queries: ItemSelectorQueries = {
-  // Search users by query string (username or UUID) with a limit on the number of results
+  // Search users by query string (username, UUID or email) with a limit on the number of results
   searchUsers: {
     text: `
       SELECT 
@@ -36,6 +36,7 @@ export const queries: ItemSelectorQueries = {
       FROM app.users
       WHERE username ILIKE $1  -- Case-insensitive search by username
          OR user_id::text ILIKE $1  -- Case-insensitive search by UUID
+         OR email ILIKE $1  -- Case-insensitive search by email
       ORDER BY username
       LIMIT $2
     `
