@@ -60,19 +60,36 @@ export async function fetchGroupMembers(request: FetchGroupMembersRequest): Prom
       groupId 
     });
 
-    // Transform query results to match GroupMember type
-    const members: GroupMember[] = result.rows.map(row => {
-      // Create display name from first_name, middle_name, last_name
+    // Transform query results to maintain both GroupMember interface compatibility
+    // and include all fields needed by the frontend
+    const members = result.rows.map(row => {
+      // Create display name from first_name, middle_name, last_name for GroupMember interface
       const name = [row.first_name, row.middle_name, row.last_name]
           .filter(Boolean)
           .join(' ');
       
+      // Create a member object with all required fields
       return {
+        // Fields required by GroupMember interface
         user_id: row.user_id,
         username: row.username,
-        name: name, // Ensure we have the required 'name' field
+        name: name,
         email: row.email,
-        role: row.is_staff ? 'staff' : 'user' // Providing a role based on is_staff
+        role: row.is_staff ? 'staff' : 'user',
+        
+        // Additional fields needed by the frontend
+        member_id: row.member_id,
+        group_id: row.group_id,
+        joined_at: row.joined_at,
+        added_by: row.added_by,
+        is_active: row.is_active,
+        left_at: row.left_at,
+        removed_by: row.removed_by,
+        is_staff: row.is_staff,
+        account_status: row.account_status,
+        first_name: row.first_name,
+        middle_name: row.middle_name,
+        last_name: row.last_name
       };
     });
 
@@ -87,7 +104,7 @@ export async function fetchGroupMembers(request: FetchGroupMembersRequest): Prom
       success: true,
       message: members.length > 0 ? 'Group members fetched successfully' : 'Group has no members',
       data: {
-        members,
+        members, // TypeScript допускает присвоение более широкого типа к более узкому при возврате данных
         total: members.length,
       },
     };
