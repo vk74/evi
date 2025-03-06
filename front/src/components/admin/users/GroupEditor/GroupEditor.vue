@@ -330,7 +330,7 @@ onBeforeUnmount(() => {
             Добавить участника
           </v-btn>
           <v-btn
-            color="red"
+            color="error"
             variant="outlined"
             :disabled="!isAuthorized || !hasSelectedMembers"
             @click="handleRemoveMembers"

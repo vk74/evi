@@ -238,17 +238,17 @@ const onKeyPress = (event: KeyboardEvent) => {
               <h2 class="text-body-1">{{ title }}</h2>
             </v-col>
             <v-col cols="12">
-              <v-text-field
+             <v-text-field
                 v-model="searchQuery"
                 :label="searchPlaceholder"
                 variant="outlined"
                 density="comfortable"
-                append-inner-icon="mdi-magnify"
+                prepend-inner-icon="mdi-magnify"
                 clearable
                 class="mb-2"
                 :disabled="isSearchDisabled"
                 @keypress="onKeyPress"
-                @click:append-inner="handleSearch"
+                @click:prepend-inner="handleSearch"
               />
               <p class="text-caption mb-2">Максимальное количество объектов: {{ maxItems }}</p>
             </v-col>
@@ -260,9 +260,12 @@ const onKeyPress = (event: KeyboardEvent) => {
                 :key="item.uuid"
                 class="ma-1"
                 closable
-                @click:close="searchResults.value = searchResults.value.filter(i => i.uuid !== item.uuid)"
+                @click:close="searchResults = searchResults.filter(i => i.uuid !== item.uuid)"
               >
                 {{ getItemDisplayText(item) }}
+                <template v-slot:close>
+                  <v-icon color="error">mdi-close</v-icon>
+                </template>
               </v-chip>
               <v-chip v-if="!searchResults.length" color="grey" disabled>
                 Объекты не найдены
