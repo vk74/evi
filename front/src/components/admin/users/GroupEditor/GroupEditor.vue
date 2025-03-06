@@ -9,7 +9,7 @@ import { useValidationRules } from '@/core/validation/rules.common.fields'
 import type { TableHeader, EditMode } from './types.group.editor'
 import { updateGroupService } from './service.update.group' // Импорт сервиса обновления
 import { fetchGroupMembersService } from './service.fetch.group.members' // Импорт сервиса получения участников
-import { removeGroupMembersService } from './service.remove.group.members' // Импорт сервиса удаления участников
+import { removeGroupMembers } from './service.delete.group.members' // Импорт сервиса удаления участников
 import ItemSelector from '../../../../core/ui/modals/item-selector/ItemSelector.vue'
 import { useUserStore } from '@/core/state/userstate' // Импорт для проверки JWT
 
@@ -200,13 +200,15 @@ const handleRemoveMembers = async () => {
   const groupId = (groupEditorStore.mode as EditMode).groupId
   
   try {
-    const removedCount = await removeGroupMembersService.removeGroupMembers(
+    const removedCount = await removeGroupMembers(
       groupId,
       groupEditorStore.members.selectedMembers
     )
     
     if (removedCount > 0) {
-      uiStore.showSuccessSnackbar(`Удалено участников: ${removedCount}`)
+      // После успешного удаления, обновляем список участников
+      await fetchGroupMembersService.fetchGroupMembers(groupId)
+      // Очищаем выделение
       groupEditorStore.clearGroupMembersSelection()
     }
   } catch (error) {
@@ -333,7 +335,7 @@ onBeforeUnmount(() => {
             :disabled="!isAuthorized || !hasSelectedMembers"
             @click="handleRemoveMembers"
           >
-            Удалить участника
+            Удалить участника из группы
           </v-btn>
         </template>
       </div>

@@ -25,6 +25,7 @@ interface GroupEditorQueries {
   updateGroupById: SQLQuery;
   updateGroupDetailsById: SQLQuery;
   getGroupMembers: SQLQuery;
+  removeGroupMembers: SQLQuery;
 }
 
 export const queries: GroupEditorQueries = {
@@ -181,6 +182,15 @@ export const queries: GroupEditorQueries = {
       JOIN app.users u ON gm.user_id = u.user_id
       WHERE gm.group_id = $1::uuid
       ORDER BY u.last_name, u.first_name
+    `
+  },
+
+  removeGroupMembers: {
+    text: `
+      DELETE FROM app.group_members
+      WHERE group_id = $1::uuid
+      AND user_id = ANY($2::uuid[])
+      RETURNING user_id
     `
   }
 };

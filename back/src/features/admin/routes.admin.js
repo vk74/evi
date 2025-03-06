@@ -14,6 +14,7 @@ const deleteSelectedGroupsController = require('./users/groupsList/controller.de
 const fetchGroupById = require('./users/groupEditor/controller.fetch.group').default;
 const updateGroupById = require('./users/groupEditor/controller.update.group');
 const fetchGroupMembers = require('./users/groupEditor/controller.fetch.group.members').default;
+const removeGroupMembers = require('./users/groupEditor/controller.delete.group.members').default;
 
 // Routes for Users
 router.post('/api/admin/users/create-new-user', validateJWT, createUserController);
@@ -29,5 +30,6 @@ router.post('/api/admin/groups/delete-selected-groups', validateJWT, deleteSelec
 router.get('/api/admin/groups/fetch-group-by-groupid/:groupId', validateJWT, fetchGroupById);
 router.post('/api/admin/groups/update-group-by-groupid', validateJWT, updateGroupById);
 router.get('/api/admin/groups/:groupId/members', validateJWT, fetchGroupMembers);
+router.post('/api/admin/groups/:groupId/members/remove', validateJWT, removeGroupMembers);
 
 module.exports = router;

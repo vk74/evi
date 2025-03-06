@@ -1,6 +1,6 @@
 /**
  * service.fetch.group.members.ts
- * Service for fetching members of a specific group.
+ * BACKEND service for fetching members of a specific group.
  * 
  * Functionality:
  * - Validates input parameters

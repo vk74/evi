@@ -208,6 +208,26 @@ export interface FetchGroupMembersResponse {
 }
 
 /**
+ * Interface for removing group members request
+ */
+export interface RemoveGroupMembersRequest {
+  groupId: string;      // UUID of the group
+  userIds: string[];    // Array of user UUIDs to remove
+}
+
+/**
+ * Interface for removing group members response
+ */
+export interface RemoveGroupMembersResponse {
+  success: boolean;
+  message: string;
+  data?: {
+    removedCount: number;
+    removedUserIds: string[];
+  };
+}
+
+/**
  * Union type of all possible service errors
  */
 export type ServiceErrorType = 
