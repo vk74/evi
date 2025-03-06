@@ -1,12 +1,12 @@
 /**
  * service.fetch.group.members.ts
- * Service for fetching group members from the API.
+ * FRONTEND service for fetching group members from the API.
  * 
  * Functionality:
  * - Fetches group members data from the API
  * - Handles API response and error processing
  */
-import axios from 'axios'
+import { api } from '@/core/api/service.axios';
 import { useGroupEditorStore } from './state.group.editor'
 import { useUserStore } from '@/core/state/userstate'
 import { useUiStore } from '@/core/state/uistate'
@@ -16,8 +16,6 @@ import type { IFetchGroupMembersResponse } from './types.group.editor'
  * Singleton service for fetching group members
  */
 class FetchGroupMembersService {
-  private apiUrl = '/api/v1/admin/groups/members'
-  
   /**
    * Fetches members for a specific group
    * @param groupId - ID of the group to fetch members for
@@ -40,20 +38,17 @@ class FetchGroupMembersService {
       groupEditorStore.setMembersError(null)
       console.log(`[FetchGroupMembersService] Fetching members for group ${groupId}`)
       
-      const response = await axios.get<IFetchGroupMembersResponse>(
-        `${this.apiUrl}/${groupId}`,
-        {
-          headers: {
-            Authorization: `Bearer ${userStore.jwt}`
-          }
-        }
+      // Используем api из core/api/service.axios и правильный URL
+      const response = await api.get<IFetchGroupMembersResponse>(
+        `/api/admin/groups/${groupId}/members`
       )
       
-      const { success, members, message } = response.data
+      const { success, data, message } = response.data
       
-      if (success && members) {
-        groupEditorStore.updateGroupMembers(members)
-        console.log(`[FetchGroupMembersService] Successfully fetched ${members.length} members`)
+      if (success && data && data.members) {
+        groupEditorStore.updateGroupMembers(data.members)
+        console.log(`[FetchGroupMembersService] Successfully fetched ${data.total} members`)
+        uiStore.showSuccessSnackbar(`Успешно загружено ${data.total} участников группы`)
         return true
       } else {
         const errorMessage = message || 'Не удалось получить список участников группы'
@@ -63,7 +58,24 @@ class FetchGroupMembersService {
         return false
       }
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Ошибка при получении участников группы'
+      let errorMessage = 'Ошибка при получении участников группы'
+      
+      // Пытаемся получить более информативное сообщение об ошибке
+      if (error instanceof Error) {
+        errorMessage = error.message
+      }
+      
+      // Делаем сообщение более понятным для пользователя
+      if (errorMessage.includes('500')) {
+        errorMessage = 'Ошибка на сервере при получении участников группы'
+      } else if (errorMessage.includes('404')) {
+        errorMessage = 'Не найдена группа или сервис для получения участников'
+      } else if (errorMessage.includes('403')) {
+        errorMessage = 'Нет прав доступа для просмотра участников группы'
+      } else if (errorMessage.includes('401')) {
+        errorMessage = 'Требуется авторизация для просмотра участников группы'
+      }
+      
       console.error('[FetchGroupMembersService] Exception:', error)
       groupEditorStore.setMembersError(errorMessage)
       uiStore.showErrorSnackbar(errorMessage)

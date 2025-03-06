@@ -102,7 +102,7 @@ const searchHandlers: Record<string, (params: SearchParams) => Promise<SearchRes
 // Action handlers
 const actionHandlers: Record<string, { label: string; handler: () => Promise<void> }> = {
   'add-users-to-group': {
-    label: 'Добавить',
+    label: 'добавить',
     handler: handleAddUsersToGroup,
   },
   // Здесь можно добавить другие типы операций
@@ -115,7 +115,7 @@ const actionHandlers: Record<string, { label: string; handler: () => Promise<voi
 async function handleAddUsersToGroup() {
   console.log('[ItemSelector] handleAddUsersToGroup called, selectedItems:', searchResults.value.map(item => item.uuid));
   if (searchResults.value.length === 0) {
-    uiStore.showErrorSnackbar('Нет результатов для добавления')
+    uiStore.showErrorSnackbar('нет результатов для добавления')
     return
   }
 
@@ -124,14 +124,14 @@ async function handleAddUsersToGroup() {
     const response = await addUsersToGroup(searchResults.value.map(item => item.uuid))
     console.log('[ItemSelector] Response from addUsersToGroup:', response);
     if (response.success) {
-      uiStore.showSuccessSnackbar(`Успешно добавлено ${response.count} пользователей в группу`)
+      uiStore.showSuccessSnackbar(`успешно добавлено ${response.count} пользователей в группу`)
       emit('actionPerformed', response)
       resetSearch()
       closeModal()
     }
   } catch (error) {
     console.error('[ItemSelector] Error adding users to group:', error)
-    uiStore.showErrorSnackbar('Ошибка добавления пользователей в группу')
+    uiStore.showErrorSnackbar('ошибка добавления пользователей в группу')
   }
 }
 
@@ -156,7 +156,7 @@ const resetSearch = () => {
 const handleSearch = async () => {
   console.log('[ItemSelector] Starting search with query:', searchQuery.value, 'searchType:', props.searchType, 'remainingLimit:', remainingLimit.value)
   if (!canSearch.value) {
-    uiStore.showErrorSnackbar('Введите не менее 2 символов для поиска')
+    uiStore.showErrorSnackbar('введите не менее 2 символов для поиска')
     return
   }
 
@@ -169,7 +169,7 @@ const handleSearch = async () => {
     
     // Skip search if we're already at max capacity
     if (searchParams.limit === 0) {
-      uiStore.showErrorSnackbar(`Достигнут лимит в ${props.maxItems} объектов`)
+      uiStore.showErrorSnackbar(`достигнут лимит в ${props.maxItems} объектов`)
       isLoading.value = false
       return
     }
@@ -194,16 +194,16 @@ const handleSearch = async () => {
       if (newUniqueItems.length < response.length) {
         uiStore.showInfoSnackbar(`Найдено ${response.length} объектов, добавлено ${newUniqueItems.length} уникальных`)
       } else {
-        uiStore.showSuccessSnackbar(`Добавлено ${newUniqueItems.length} объектов`)
+        uiStore.showSuccessSnackbar(`найдено объектов: ${newUniqueItems.length}`)
       }
     } else if (response.length > 0) {
       uiStore.showInfoSnackbar('Все найденные объекты уже добавлены в результаты')
     } else {
-      uiStore.showInfoSnackbar('По вашему запросу ничего не найдено')
+      uiStore.showInfoSnackbar('по вашему запросу ничего не найдено')
     }
   } catch (error) {
     console.error(`[ItemSelector] Error searching ${props.searchType}:`, error)
-    uiStore.showErrorSnackbar(`Ошибка при поиске`)
+    uiStore.showErrorSnackbar(`ошибка при поиске`)
   } finally {
     isLoading.value = false
     console.log('[ItemSelector] Search completed, isLoading:', isLoading.value)
@@ -216,7 +216,7 @@ const handleAction = async () => {
   if (action) {
     await action.handler()
   } else {
-    uiStore.showErrorSnackbar('Недопустимый тип операции')
+    uiStore.showErrorSnackbar('недопустимый тип операции')
   }
 }
 

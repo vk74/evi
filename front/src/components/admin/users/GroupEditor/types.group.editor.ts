@@ -1,6 +1,6 @@
 /**
  * types.group.editor.ts - frontend
- * Type definitions for the group editor component.
+ * Frontend type definitions for the group editor component.
  *
  * This module defines TypeScript types and interfaces for:
  * - Component modes and states
@@ -201,9 +201,12 @@ resetForm: () => void
 * Интерфейс ответа API при получении участников группы
 */
 export interface IFetchGroupMembersResponse {
-success: boolean
-members: IGroupMember[]
-message?: string
+  success: boolean
+  message?: string
+  data?: {
+    members: IGroupMember[]
+    total: number
+  }
 }
 
 /**

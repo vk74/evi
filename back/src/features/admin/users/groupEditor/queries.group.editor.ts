@@ -22,8 +22,9 @@ interface GroupEditorQueries {
   insertGroupDetails: SQLQuery;
   getGroupById: SQLQuery;
   getGroupDetailsById: SQLQuery;
-  updateGroupById: SQLQuery;       // Добавлено
-  updateGroupDetailsById: SQLQuery; // Добавлено
+  updateGroupById: SQLQuery;
+  updateGroupDetailsById: SQLQuery;
+  getGroupMembers: SQLQuery;
 }
 
 export const queries: GroupEditorQueries = {
@@ -155,6 +156,31 @@ export const queries: GroupEditorQueries = {
         group_modified_by = $4
       WHERE group_id = $1::uuid
       RETURNING group_id
+    `
+  },
+
+  getGroupMembers: {
+    text: `
+      SELECT 
+        gm.member_id,
+        gm.group_id,
+        gm.user_id,
+        gm.joined_at,
+        gm.added_by,
+        gm.is_active,
+        gm.left_at,
+        gm.removed_by,
+        u.username,
+        u.email,
+        u.is_staff,
+        u.account_status,
+        u.first_name,
+        u.middle_name,
+        u.last_name
+      FROM app.group_members gm
+      JOIN app.users u ON gm.user_id = u.user_id
+      WHERE gm.group_id = $1::uuid
+      ORDER BY u.last_name, u.first_name
     `
   }
 };

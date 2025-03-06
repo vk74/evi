@@ -174,7 +174,37 @@ export interface NotFoundError extends BaseError {
  */
 export interface ServiceError extends BaseError {
   code: 'INTERNAL_SERVER_ERROR';
-  details: string;
+  details: string | undefined; // Изменено с "string" на "string | undefined"
+}
+
+/**
+ * Interface for fetching group members request
+ */
+export interface FetchGroupMembersRequest {
+  groupId: string; // UUID of the group to fetch members for
+}
+
+/**
+ * Interface representing a group member 
+ */
+export interface GroupMember {
+  user_id: string; // UUID of the user
+  username: string;
+  name: string; // User's display name
+  email?: string; // Optional email address
+  role?: string; // Optional role in the group
+}
+
+/**
+ * Interface for group members API responses
+ */
+export interface FetchGroupMembersResponse {
+  success: boolean;
+  message: string;
+  data: {
+    members: GroupMember[];
+    total: number;
+  } | null;
 }
 
 /**

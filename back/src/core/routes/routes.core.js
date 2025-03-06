@@ -17,10 +17,10 @@ const fetchUsernameByUuid = require('../services/service.fetch.username.by.uuid'
 const searchUsers = require('../services/item-selector/controller.search.users').default;
 const addUsersToGroup = require('../services/item-selector/controller.add.users.to.group').default;
 
-// User services
+// utility services
 router.get('/api/core/users/fetch-username-by-uuid/:userId', validateJWT, fetchUsernameByUuid);
 
-// Item selector services
+// item selector services
 router.get('/api/core/item-selector/search-users', validateJWT, searchUsers); 
 router.post('/api/core/item-selector/add-users-to-group', validateJWT, addUsersToGroup);
 
