@@ -4,43 +4,54 @@
  *
  * Функциональность:
  * - Отображение пользователей в табличном виде с пагинацией
- * - Сортировка по колонкам с сохранением состояния
+ * - Поиск по полям UUID, username, email, first_name, last_name
+ * - Сортировка по колонкам с серверной обработкой
  * - Редактирование пользователей через UserEditor
+ * - Оптимизированное кэширование данных
  */
- <script setup lang="ts">
- import usersService from './service.view.all.users'
- import deleteSelectedUsersService from './service.delete.selected.users'
- import { ref, computed, onMounted } from 'vue'
- import { useI18n } from 'vue-i18n'
- import { useStoreUsersList } from './state.users.list'
- import type { TableHeader } from './types.users.list'
- import { useUsersAdminStore } from '../state.users.admin'
- import loadUserService from '../UserEditor/service.load.user'
- import { useUserEditorStore } from '../UserEditor/state.user.editor'
- import { useUiStore } from '@/core/state/uistate'
- import { useUserStore } from '@/core/state/userstate'
- 
- // Инициализация сторов и i18n
- const { t } = useI18n()
- const usersStore = useStoreUsersList()
- const usersSectionStore = useUsersAdminStore()
- const uiStore = useUiStore()
- const userStore = useUserStore()
- const isAuthorized = computed(() => userStore.isLoggedIn)
- 
- // Параметры таблицы
- const page = ref<number>(usersStore.page)
- const itemsPerPage = ref<number>(usersStore.itemsPerPage)
- 
- // Состояние диалога подтверждения удаления
- const showDeleteDialog = ref(false)
- 
- // Вычисляемые свойства для работы с выбранными пользователями
- const selectedCount = computed(() => usersStore.selectedCount)
- const hasSelected = computed(() => selectedCount.value > 0)
- 
- // Обработчики действий с пользователями
- const createUser = () => {
+<script setup lang="ts">
+import usersFetchService from './service.fetch.users'
+import { ref, computed, onMounted, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
+import { useStoreUsersList } from './state.users.list'
+import type { TableHeader, ItemsPerPageOption } from './types.users.list'
+import { useUsersAdminStore } from '../state.users.admin'
+import loadUserService from '../UserEditor/service.load.user'
+import { useUserEditorStore } from '../UserEditor/state.user.editor'
+import { useUiStore } from '@/core/state/uistate'
+import { useUserStore } from '@/core/state/userstate'
+import debounce from 'lodash/debounce'
+
+// Инициализация сторов и i18n
+const { t } = useI18n()
+const usersStore = useStoreUsersList()
+const usersSectionStore = useUsersAdminStore()
+const uiStore = useUiStore()
+const userStore = useUserStore()
+
+// Параметры таблицы и поиска
+const page = ref<number>(usersStore.page)
+const itemsPerPage = ref<ItemsPerPageOption>(usersStore.itemsPerPage)
+const searchQuery = ref<string>('')
+const isSearching = ref<boolean>(false)
+
+// Состояние диалога подтверждения удаления
+const showDeleteDialog = ref(false)
+
+// Вычисляемые свойства
+const isAuthorized = computed(() => userStore.isLoggedIn)
+const selectedCount = computed(() => usersStore.selectedCount)
+const hasSelected = computed(() => usersStore.hasSelected)
+const hasOneSelected = computed(() => usersStore.hasOneSelected)
+const loading = computed(() => usersStore.loading)
+const users = computed(() => usersStore.currentUsers)
+const totalItems = computed(() => usersStore.totalItems)
+const isSearchEnabled = computed(() => 
+  searchQuery.value.length >= 2 || searchQuery.value.length === 0
+)
+
+// Обработчики действий с пользователями
+const createUser = () => {
   console.log('[ViewAllUsers] Starting create user operation')
   
   try {
@@ -64,158 +75,252 @@
       error instanceof Error ? error.message : 'Ошибка инициализации режима создания'
     )
   }
- }
- 
- const onSelectUser = (userId: string, selected: boolean) => {
-   if (selected) {
-     usersStore.selectUser(userId)
-   } else {
-     usersStore.deselectUser(userId)
-   }
- }
- 
- const hasOneSelected = computed(() => selectedCount.value === 1)
+}
 
+const onSelectUser = (userId: string, selected: boolean) => {
+  if (selected) {
+    usersStore.selectUser(userId)
+  } else {
+    usersStore.deselectUser(userId)
+  }
+}
 
+const isSelected = (userId: string) => {
+  return usersStore.isSelected(userId)
+}
 
- const isSelected = (userId: string) => {
-   return usersStore.selectedUsers.includes(userId)
- }
- 
- const onDeleteSelected = () => {
-   showDeleteDialog.value = true
- }
- 
- const cancelDelete = () => {
-   showDeleteDialog.value = false
- }
- 
- const confirmDelete = async () => {
-   console.log('[ViewAllUsers] Starting confirmDelete operation')
-   
-   try {
-     console.log('[ViewAllUsers] Calling delete service with selectedUsers:', usersStore.selectedUsers)
-     const deletedCount = await deleteSelectedUsersService.deleteSelectedUsers(usersStore.selectedUsers)
-     console.log('[ViewAllUsers] Service returned deletedCount:', deletedCount)
-     
-     console.log('[ViewAllUsers] Preparing success message')
-     const message = t('list.messages.deleteUsersSuccess', { count: deletedCount })
-     console.log('[ViewAllUsers] Success message prepared:', message)
-     
-     console.log('[ViewAllUsers] Showing success notification')
-     uiStore.showSuccessSnackbar(message)
-     
-   } catch (error) {
-     console.error('[ViewAllUsers] Error during users deletion:', error)
-   } finally {
-     console.log('[ViewAllUsers] Closing delete dialog')
-     showDeleteDialog.value = false
-   }
- }
+const onDeleteSelected = () => {
+  showDeleteDialog.value = true
+}
 
-    // Функция для получения ID единственного выбранного пользователя
-    const getSelectedUserId = (): string => {
-      console.log('[ViewAllUsers] Getting selected user ID')
-      return usersStore.selectedUsers[0]
+const cancelDelete = () => {
+  showDeleteDialog.value = false
+}
+
+const confirmDelete = async () => {
+  console.log('[ViewAllUsers] Starting confirmDelete operation')
+  
+  try {
+    console.log('[ViewAllUsers] Calling delete service with selectedUsers:', usersStore.selectedUsers)
+    const deletedCount = await usersFetchService.deleteSelectedUsers(usersStore.selectedUsers)
+    console.log('[ViewAllUsers] Service returned deletedCount:', deletedCount)
+    
+    console.log('[ViewAllUsers] Preparing success message')
+    const message = t('list.messages.deleteUsersSuccess', { count: deletedCount })
+    console.log('[ViewAllUsers] Success message prepared:', message)
+    
+    console.log('[ViewAllUsers] Showing success notification')
+    uiStore.showSuccessSnackbar(message)
+    
+  } catch (error) {
+    console.error('[ViewAllUsers] Error during users deletion:', error)
+  } finally {
+    console.log('[ViewAllUsers] Closing delete dialog')
+    showDeleteDialog.value = false
+  }
+}
+
+// Функция для получения ID единственного выбранного пользователя
+const getSelectedUserId = (): string => {
+  console.log('[ViewAllUsers] Getting selected user ID')
+  return usersStore.selectedUsers[0]
+}
+
+// Функция для обработки клика по кнопке редактирования
+const editUser = async () => {
+  console.log('[ViewAllUsers] Starting edit user operation')
+  
+  try {
+    const userId = getSelectedUserId()
+    console.log('[ViewAllUsers] Selected user ID:', userId)
+    
+    // Загружаем данные пользователя
+    await loadUserService.fetchUserById(userId)
+    console.log('[ViewAllUsers] User data loaded successfully')
+    
+    // Переходим к редактированию
+    usersSectionStore.setActiveSection('user-editor')
+    
+  } catch (error) {
+    console.error('[ViewAllUsers] Error loading user data:', error)
+    uiStore.showErrorSnackbar(
+      error instanceof Error ? error.message : 'Ошибка загрузки данных пользователя'
+    )
+  }
+}
+
+// Функция принудительного обновления списка
+const refreshList = async () => {
+  console.log('[ViewAllUsers] Forcing refresh of users list')
+  try {
+    await usersFetchService.refreshUsers()
+    uiStore.showSuccessSnackbar(t('list.messages.refreshSuccess'))
+  } catch (error) {
+    console.error('[ViewAllUsers] Error refreshing users list:', error)
+  }
+}
+
+// Обработчик изменения страницы и количества элементов на странице
+const updatePagination = async (newPage?: number, newItemsPerPage?: ItemsPerPageOption) => {
+  const params: any = {}
+  
+  if (newPage !== undefined) {
+    params.page = newPage
+  }
+  
+  if (newItemsPerPage !== undefined) {
+    params.itemsPerPage = newItemsPerPage
+  }
+  
+  try {
+    await usersFetchService.fetchUsers(params)
+  } catch (error) {
+    console.error('[ViewAllUsers] Error updating pagination:', error)
+  }
+}
+
+// Обработчики событий таблицы
+const handlePageChange = (newPage: number) => {
+  page.value = newPage
+  updatePagination(newPage)
+}
+
+const handleItemsPerPageChange = (newItemsPerPage: ItemsPerPageOption) => {
+  itemsPerPage.value = newItemsPerPage
+  updatePagination(page.value, newItemsPerPage)
+}
+
+// Обработчик изменения сортировки
+const handleSortChange = async (sortBy: string[]) => {
+  // v-data-table возвращает массив полей и направлений
+  // В нашем случае мы используем только первое поле
+  if (sortBy.length > 0) {
+    const [column, direction] = sortBy[0].split(':')
+    const sortDesc = direction === 'desc'
+    
+    try {
+      await usersFetchService.fetchUsers({
+        sortBy: column,
+        sortDesc
+      })
+    } catch (error) {
+      console.error('[ViewAllUsers] Error updating sort:', error)
     }
+  }
+}
 
-    // Функция для обработки клика по кнопке редактирования
-    const editUser = async () => {
-      console.log('[ViewAllUsers] Starting edit user operation')
-      
-      try {
-        const userId = getSelectedUserId()
-        console.log('[ViewAllUsers] Selected user ID:', userId)
-        
-        // Загружаем данные пользователя
-        await loadUserService.fetchUserById(userId)
-        console.log('[ViewAllUsers] User data loaded successfully')
-        
-        // Переходим к редактированию
-        usersSectionStore.setActiveSection('user-editor')
-        
-      } catch (error) {
-        console.error('[ViewAllUsers] Error loading user data:', error)
-        uiStore.showErrorSnackbar(
-          error instanceof Error ? error.message : 'Ошибка загрузки данных пользователя'
-        )
-      }
-    }
- 
- // Определение колонок таблицы
- const headers = computed<TableHeader[]>(() => [
-   { 
-     title: t('list.table.headers.select'), 
-     key: 'selection',
-     width: '40px',
-     sortable: false
-   },
-   { 
-     title: t('list.table.headers.id'), 
-     key: 'user_id', 
-     width: '80px' 
-   },
-   { 
-     title: t('list.table.headers.username'), 
-     key: 'username' 
-   },
-   { 
-     title: t('list.table.headers.email'), 
-     key: 'email' 
-   },
-   { 
-     title: t('list.table.headers.isStaff'), 
-     key: 'is_staff', 
-     width: '60px' 
-   },
-   { 
-     title: t('list.table.headers.status'), 
-     key: 'account_status', 
-     width: '60px' 
-   },
-   { 
-     title: t('list.table.headers.lastName'), 
-     key: 'last_name' 
-   },
-   { 
-     title: t('list.table.headers.firstName'), 
-     key: 'first_name' 
-   },
-   { 
-     title: t('list.table.headers.middleName'), 
-     key: 'middle_name' 
-   }
- ])
- 
- // Вычисляемые свойства для данных
- const users = computed(() => usersStore.users)
- const loading = computed(() => usersStore.loading)
- const totalItems = computed(() => usersStore.totalItems)
- 
- // Инициализация при монтировании компонента
- onMounted(async () => {
-   try {
-     if (!usersStore.users.length) {
-       await usersService.fetchUsers()
-     }
-   } catch (error) {
-     console.error('Error loading initial users list:', error)
-   }
- })
- </script>
+// Функция поиска с debounce
+const performSearch = async () => {
+  if (!isSearchEnabled.value && searchQuery.value.length === 1) {
+    return // Не выполняем поиск если длина строки 1 символ
+  }
+  
+  isSearching.value = true
+  
+  try {
+    await usersFetchService.fetchUsers({
+      search: searchQuery.value,
+      page: 1 // Сбрасываем страницу при поиске
+    })
+  } catch (error) {
+    console.error('[ViewAllUsers] Error performing search:', error)
+  } finally {
+    isSearching.value = false
+  }
+}
+
+// Создаем debounced версию функции поиска
+const debouncedSearch = debounce(performSearch, 500)
+
+// Слушаем изменения строки поиска
+watch(searchQuery, () => {
+  debouncedSearch()
+})
+
+// Обработчик нажатия Enter в поле поиска
+const handleSearchKeydown = (event: KeyboardEvent) => {
+  if (event.key === 'Enter') {
+    debouncedSearch.flush() // Немедленно выполняем поиск
+  }
+}
+
+// Определение колонок таблицы
+const headers = computed<TableHeader[]>(() => [
+  { 
+    title: t('list.table.headers.select'), 
+    key: 'selection',
+    width: '40px',
+    sortable: false
+  },
+  { 
+    title: t('list.table.headers.id'), 
+    key: 'user_id', 
+    width: '80px',
+    sortable: true
+  },
+  { 
+    title: t('list.table.headers.username'), 
+    key: 'username',
+    sortable: true
+  },
+  { 
+    title: t('list.table.headers.email'), 
+    key: 'email',
+    sortable: true
+  },
+  { 
+    title: t('list.table.headers.isStaff'), 
+    key: 'is_staff', 
+    width: '60px',
+    sortable: true
+  },
+  { 
+    title: t('list.table.headers.status'), 
+    key: 'account_status', 
+    width: '60px',
+    sortable: true
+  },
+  { 
+    title: t('list.table.headers.lastName'), 
+    key: 'last_name',
+    sortable: true
+  },
+  { 
+    title: t('list.table.headers.firstName'), 
+    key: 'first_name',
+    sortable: true
+  },
+  { 
+    title: t('list.table.headers.middleName'), 
+    key: 'middle_name',
+    sortable: true
+  }
+])
+
+// Инициализация при монтировании компонента
+onMounted(async () => {
+  try {
+    // Загружаем данные, даже если они есть в кэше
+    // это позволит использовать кэш если данные актуальны
+    await usersFetchService.fetchUsers()
+  } catch (error) {
+    console.error('[ViewAllUsers] Error loading initial users list:', error)
+  }
+})
+</script>
 
 <template>
   <v-card flat>
     <v-app-bar
       flat
-      class="px-4 d-flex justify-space-between"
+      class="px-4"
     >
-      <div class="d-flex align-center">
+      <div class="d-flex align-center flex-wrap">
         <v-btn
           v-if="isAuthorized"
           color="teal"
           variant="outlined"
-          class="mr-2"
+          class="mr-2 mb-2"
           :disabled="hasSelected"
           @click="createUser"
         >
@@ -226,7 +331,7 @@
           v-if="isAuthorized"
           color="teal"
           variant="outlined"
-          class="mr-2"
+          class="mr-2 mb-2"
           :disabled="!hasOneSelected"
           @click="editUser"
         >
@@ -237,19 +342,49 @@
           v-if="isAuthorized"
           color="error"
           variant="outlined"
-          class="mr-2"
+          class="mr-2 mb-2"
           :disabled="!hasSelected"
           @click="onDeleteSelected"
         >
           {{ t('list.buttons.delete') }}
           <span class="ml-2">({{ selectedCount }})</span>
         </v-btn>
+        
+        <v-btn
+          v-if="isAuthorized"
+          color="primary"
+          variant="outlined"
+          class="mr-2 mb-2"
+          @click="refreshList"
+          :loading="loading"
+        >
+          {{ t('list.buttons.refresh') }}
+        </v-btn>
       </div>
 
-      <v-app-bar-title class="text-subtitle-2 text-lowercase text-right">
+      <v-spacer />
+
+      <v-app-bar-title class="text-subtitle-2 text-lowercase text-right hidden-sm-and-down">
         {{ t('list.title') }}
       </v-app-bar-title>
     </v-app-bar>
+    
+    <!-- Строка поиска -->
+    <div class="px-4 pb-2">
+      <v-text-field
+        v-model="searchQuery"
+        density="compact"
+        variant="outlined"
+        hide-details
+        clearable
+        :placeholder="t('list.search.placeholder')"
+        prepend-inner-icon="mdi-magnify"
+        :loading="isSearching"
+        :hint="searchQuery.length === 1 ? t('list.search.minChars') : ''"
+        persistent-hint
+        @keydown="handleSearchKeydown"
+      />
+    </div>
 
     <v-data-table
       v-model:page="page"
@@ -258,8 +393,11 @@
       :items="users"
       :loading="loading"
       :items-length="totalItems"
-      :items-per-page-options="[10, 25, 50, 100]"
+      :items-per-page-options="[25, 50, 100]"
       class="users-table"
+      @update:page="handlePageChange"
+      @update:items-per-page="handleItemsPerPageChange"
+      @update:sort-by="handleSortChange"
     >
       <!-- Шаблон для колонки с чекбоксами -->
       <template #[`item.selection`]="{ item }">
@@ -288,6 +426,12 @@
           size="x-small"
         />
       </template>
+      
+      <template #bottom>
+        <div class="d-flex justify-end align-center text-caption text-grey pa-2" v-if="totalItems > 0">
+          {{ t('list.pagination.total', { count: totalItems }) }}
+        </div>
+      </template>
     </v-data-table>
 
     <!-- Диалог подтверждения удаления -->
@@ -297,7 +441,7 @@
     >
       <v-card>
         <v-card-title class="text-subtitle-1 text-wrap">
-          {{ t('list.messages.confirmDelete') }}
+          {{ t('list.messages.confirmDelete', { count: selectedCount }) }}
         </v-card-title>
         <v-card-actions>
           <v-spacer />
@@ -322,3 +466,9 @@
     </v-dialog>
   </v-card>
 </template>
+
+<style scoped>
+.users-table {
+  width: 100%;
+}
+</style>

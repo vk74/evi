@@ -3,9 +3,9 @@ const router = express.Router();
 const validateJWT = require('../../guards/auth.validate.jwt');
 
 // Import controllers
-const getAllUsers = require('./users/usersList/controller.view.all.users');
+const fetchUsers = require('./users/usersList/controller.fetch.users').default;
+const deleteSelectedUsers = require('./users/usersList/controller.delete.users').default;
 const updateUserById = require('./users/userEditor/controller.update.user');
-const deleteSelectedUsers = require('./users/usersList/controller.delete.selected.users');
 const loadUserById = require('./users/userEditor/controller.load.user');
 const createUserController = require('./users/userEditor/controller.create.user');
 const createGroupController = require('./users/groupEditor/controller.create.group');
@@ -18,7 +18,7 @@ const removeGroupMembers = require('./users/groupEditor/controller.delete.group.
 
 // Routes for Users
 router.post('/api/admin/users/create-new-user', validateJWT, createUserController);
-router.get('/api/admin/users/view-all-users', validateJWT, getAllUsers);
+router.get('/api/admin/users/fetch-users', validateJWT, fetchUsers);
 router.get('/api/admin/users/fetch-user-by-userid/:userId', validateJWT, loadUserById);
 router.post('/api/admin/users/update-user-by-userid', validateJWT, updateUserById);
 router.post('/api/admin/users/delete-selected-users', validateJWT, deleteSelectedUsers);

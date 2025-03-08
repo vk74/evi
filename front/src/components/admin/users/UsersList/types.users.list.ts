@@ -5,14 +5,14 @@
  * This module provides TypeScript types and interfaces for:
  * - User data structure and properties
  * - State management store interfaces
- * - API response types
- * - Pagination and sorting parameters
- * - Error handling types
+ * - API request and response types
+ * - Pagination, sorting and filtering parameters
+ * - Cache structure
  * 
  * Used by:
  * - UsersList.vue component
  * - state.users.list.ts store
- * - service.view.all.users.ts service
+ * - service.fetch.users.ts service
  */
 
 /**
@@ -45,20 +45,33 @@ export interface IUser {
 export interface IPaginationParams {
     page: number;
     itemsPerPage: number;
-    totalItems: number;
 }
 
 /**
  * Available items per page options
  */
-export type ItemsPerPageOption = 10 | 25 | 50 | 100;
+export type ItemsPerPageOption = 25 | 50 | 100;
 
 /**
  * Sorting parameters interface
  */
 export interface ISortParams {
-    sortBy: keyof IUser | '';
+    sortBy: string;
     sortDesc: boolean;
+}
+
+/**
+ * Search parameters
+ */
+export interface ISearchParams {
+    search: string;
+}
+
+/**
+ * Combined query parameters for API requests
+ */
+export interface IFetchUsersParams extends IPaginationParams, ISortParams, ISearchParams {
+    forceRefresh?: boolean;
 }
 
 /**
@@ -70,18 +83,40 @@ export interface IUsersResponse {
 }
 
 /**
- * JWT token validation interface
+ * Cache entry structure
  */
-export interface IJWTValidation {
-    isValid: boolean;
-    expiresIn: number;  // Время в секундах до истечения токена
+export interface CacheEntry {
+    users: IUser[];
+    totalItems: number;
+    timestamp: number;
+    query: IFetchUsersParams;
 }
 
 /**
- * Интерфейс заголовка таблицы
+ * Table header interface
  */
 export interface TableHeader {
-    title: string
-    key: string
-    width?: string
+    title: string;
+    key: string;
+    width?: string;
+    sortable?: boolean;
+}
+
+/**
+ * API error response
+ */
+export interface IApiError {
+    code: string;
+    message: string;
+    details?: any;
+}
+
+/**
+ * Cache statistics
+ */
+export interface CacheStats {
+    size: number;
+    hits: number;
+    misses: number;
+    hitRatio: number;
 }

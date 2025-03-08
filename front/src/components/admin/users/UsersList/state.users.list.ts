@@ -1,16 +1,16 @@
 /**
  * state.users.list.ts
- * Pinia store for managing users list state.
+ * Pinia store for managing users list state with optimized caching.
  * 
  * Functionality:
- * - Cache management for users list
- * - JWT validation with timer-based cache invalidation
- * - Sorting functionality
- * - Display parameters management (items per page, current page)
+ * - Parametrized caching system for users data
+ * - Cache management with TTL and LRU policy
+ * - Display parameters management (pagination, sorting, search)
+ * - Selection state for multi-select operations
  * 
  * Used by:
  * - UsersList.vue component
- * - service.view.all.users.ts service
+ * - service.fetch.users.ts service
  */
 
 import { defineStore } from 'pinia'
@@ -20,216 +20,285 @@ import {
     IUser, 
     ItemsPerPageOption,
     ISortParams,
-    IJWTValidation 
+    ISearchParams,
+    IFetchUsersParams,
+    CacheEntry,
+    IPaginationParams,
+    CacheStats
 } from './types.users.list'
 
-// Logger для основных операций
+// Configuration
+const CACHE_CONFIG = {
+    TTL_MINUTES: 60,        // Cache entry lifetime in minutes
+    MAX_ENTRIES: 50,        // Maximum number of cache entries
+    AUTO_CLEANUP_MINS: 15   // Auto cleanup interval in minutes
+};
+
+// Logger for main operations
 const logger = {
-    info: (message: string) => console.log(`[UsersStore] ${message}`),
-    error: (message: string) => console.error(`[UsersStore] ${message}`)
-}
+    info: (message: string, meta?: any) => console.log(`[UsersStore] ${message}`, meta || ''),
+    error: (message: string, meta?: any) => console.error(`[UsersStore] ${message}`, meta || '')
+};
 
 export const useStoreUsersList = defineStore('viewAllUsers', () => {
-    // State
-    const users = ref<IUser[]>([])
-    const loading = ref(false)
-    const error = ref<string | null>(null)
-    const page = ref(1)
-    const itemsPerPage = ref<ItemsPerPageOption>(25)
-    const totalItems = ref(0)
-    const sorting = ref<ISortParams>({
+    // User store for auth state
+    const userStore = useUserStore();
+    
+    // Cache and statistics
+    const cacheMap = ref<Record<string, CacheEntry>>({});
+    const cacheStats = ref<CacheStats>({
+        size: 0,
+        hits: 0,
+        misses: 0,
+        hitRatio: 0
+    });
+    
+    // Current display parameters
+    const displayParams = ref<IFetchUsersParams>({
+        page: 1,
+        itemsPerPage: 25 as ItemsPerPageOption,
         sortBy: '',
-        sortDesc: false
-    })
-
-    const jwtCheckTimer = ref<ReturnType<typeof setTimeout> | null>(null)
-
-    const selectedUsers = ref<string[]>([])
-
-    // Getters
-    const getUsers = computed(() => {
-        logger.info('Getting users with current display parameters')
-        const start = (page.value - 1) * itemsPerPage.value
-        const end = start + itemsPerPage.value
-
-        const result = [...users.value]
-        
-        // Применяем сортировку если задана
-        if (sorting.value.sortBy) {
-            result.sort((a, b) => {
-                const aValue = a[sorting.value.sortBy as keyof IUser]
-                const bValue = b[sorting.value.sortBy as keyof IUser]
-                const modifier = sorting.value.sortDesc ? -1 : 1
-        
-                // Если оба значения undefined, считаем их равными
-                if (aValue === undefined && bValue === undefined) return 0
-                // Если только aValue undefined, оно "меньше"
-                if (aValue === undefined) return -1 * modifier
-                // Если только bValue undefined, оно "меньше"
-                if (bValue === undefined) return 1 * modifier
-        
-                // Для boolean значений
-                if (typeof aValue === 'boolean' && typeof bValue === 'boolean') {
-                    return (aValue === bValue) ? 0 : (aValue ? modifier : -modifier)
-                }
-        
-                // Для строк делаем регистронезависимое сравнение
-                if (typeof aValue === 'string' && typeof bValue === 'string') {
-                    return aValue.localeCompare(bValue) * modifier
-                }
-        
-                // Для всех остальных случаев используем стандартное сравнение
-                return aValue > bValue ? modifier : -modifier
-            })
-        }
-
-        return result.slice(start, end)
-    })
-
-    const selectedCount = computed(() => selectedUsers.value.length)
-
-    // Actions
+        sortDesc: false,
+        search: ''
+    });
+    
+    // UI state
+    const loading = ref(false);
+    const error = ref<string | null>(null);
+    const selectedUsers = ref<string[]>([]);
+    
+    // Result data
+    const currentUsers = ref<IUser[]>([]);
+    const totalItems = ref(0);
+    
+    // Cache cleanup timer
+    let cleanupTimer: ReturnType<typeof setTimeout> | null = null;
+    
     /**
-     * Validates JWT token and returns validation status with expiration time - for use in timer
+     * Generates cache key from query parameters
      */
-    function validateJWT(): IJWTValidation {
-        const userStore = useUserStore()
-        
-        // Преобразуем строку в число для tokenExpires
-        const tokenExpiresTime = userStore.tokenExpires ? 
-            Number(userStore.tokenExpires) : 
-            0
-            
-        return {
-            isValid: Boolean(userStore.$state.isLoggedIn && tokenExpiresTime > (Date.now() / 1000)),
-            expiresIn: tokenExpiresTime ? 
-                tokenExpiresTime - (Date.now() / 1000) : 
-                0
-        }
+    function generateCacheKey(params: IFetchUsersParams): string {
+        return `${params.search}-${params.sortBy}-${params.sortDesc}-${params.page}-${params.itemsPerPage}`;
     }
-
+    
     /**
-     * Sets up JWT check timer based on token expiration
+     * Checks if cache entry is still valid
      */
-    function setupJWTCheck() {
-        // Очищаем предыдущий таймер если есть
-        if (jwtCheckTimer.value) {
-            clearTimeout(jwtCheckTimer.value)
-            jwtCheckTimer.value = null
-        }
-
-        const { isValid, expiresIn } = validateJWT()
+    function isCacheValid(entry: CacheEntry): boolean {
+        const now = Date.now();
+        const ageInMinutes = (now - entry.timestamp) / (1000 * 60);
+        return ageInMinutes <= CACHE_CONFIG.TTL_MINUTES;
+    }
+    
+    /**
+     * Gets data from cache if available and valid
+     */
+    function getCachedData(params: IFetchUsersParams): CacheEntry | null {
+        const key = generateCacheKey(params);
+        const entry = cacheMap.value[key];
         
-        if (!isValid) {
-            clearCache()
-            return
+        if (!entry) {
+            cacheStats.value.misses++;
+            logger.info(`Cache miss for key: ${key}`);
+            return null;
         }
-
-        // Устанавливаем таймер на (срок валидности - 4 секунды)
-        const timeoutDuration = (expiresIn - 4) * 1000
         
-        jwtCheckTimer.value = setTimeout(() => {
-            const validation = validateJWT()
+        if (!isCacheValid(entry)) {
+            // Remove expired entry
+            delete cacheMap.value[key];
+            cacheStats.value.misses++;
+            logger.info(`Cache expired for key: ${key}`);
+            return null;
+        }
+        
+        cacheStats.value.hits++;
+        cacheStats.value.hitRatio = cacheStats.value.hits / (cacheStats.value.hits + cacheStats.value.misses);
+        logger.info(`Cache hit for key: ${key}`);
+        return entry;
+    }
+    
+    /**
+     * Saves data to cache
+     */
+    function setCacheData(params: IFetchUsersParams, users: IUser[], total: number): void {
+        const key = generateCacheKey(params);
+        
+        // Check if we need to evict entries (simple LRU implementation)
+        if (Object.keys(cacheMap.value).length >= CACHE_CONFIG.MAX_ENTRIES) {
+            const oldestKey = Object.keys(cacheMap.value).reduce((oldest, key) => {
+                if (!oldest) return key;
+                return cacheMap.value[key].timestamp < cacheMap.value[oldest].timestamp ? key : oldest;
+            }, '');
             
-            if (validation.expiresIn <= 4) {
-                clearSelection()
-                clearCache()
-            } else {
-                // Перезапускаем таймер с обновленным временем
-                setupJWTCheck()
+            if (oldestKey) {
+                delete cacheMap.value[oldestKey];
+                logger.info(`Evicted oldest cache entry: ${oldestKey}`);
             }
-        }, timeoutDuration)
-
-        logger.info(`JWT check timer set for ${timeoutDuration}ms`)
-    }
-
-    /**
-     * Clears cached data and resets store state
-     */
-    function clearCache() {
-        users.value = []
-        totalItems.value = 0
-        error.value = null
-        if (jwtCheckTimer.value) {
-            clearTimeout(jwtCheckTimer.value)
-            jwtCheckTimer.value = null
         }
-        logger.info('Cache cleared')
+        
+        // Store new data
+        cacheMap.value[key] = {
+            users: [...users],
+            totalItems: total,
+            timestamp: Date.now(),
+            query: { ...params }
+        };
+        
+        cacheStats.value.size = Object.keys(cacheMap.value).length;
+        logger.info(`Cached data for key: ${key}`, { usersCount: users.length, total });
     }
-
+    
     /**
-     * Updates cache with new users data
+     * Sets up automatic cache cleanup
      */
-    function updateCache(newUsers: IUser[], total: number) {
-        users.value = newUsers
-        totalItems.value = total
-        setupJWTCheck()
-        logger.info(`Cache updated with ${newUsers.length} users`)
+    function setupCacheCleanup() {
+        if (cleanupTimer) {
+            clearInterval(cleanupTimer);
+        }
+        
+        cleanupTimer = setInterval(() => {
+            const now = Date.now();
+            let removedCount = 0;
+            
+            Object.keys(cacheMap.value).forEach(key => {
+                const entry = cacheMap.value[key];
+                const ageInMinutes = (now - entry.timestamp) / (1000 * 60);
+                
+                if (ageInMinutes > CACHE_CONFIG.TTL_MINUTES) {
+                    delete cacheMap.value[key];
+                    removedCount++;
+                }
+            });
+            
+            if (removedCount > 0) {
+                cacheStats.value.size = Object.keys(cacheMap.value).length;
+                logger.info(`Cleaned up ${removedCount} expired cache entries`);
+            }
+        }, CACHE_CONFIG.AUTO_CLEANUP_MINS * 60 * 1000);
     }
-
+    
     /**
-     * Updates display parameters
+     * Invalidates all or specific cache entries
      */
-    function updateDisplayParams(newItemsPerPage: ItemsPerPageOption, newPage: number) {
-        itemsPerPage.value = newItemsPerPage
-        page.value = newPage
-        logger.info(`Display params updated: ${newItemsPerPage} items per page, page ${newPage}`)
-    }
-
-    /**
-     * Updates sorting parameters
-     */
-    function updateSort(field: keyof IUser) {
-        if (sorting.value.sortBy === field) {
-            sorting.value.sortDesc = !sorting.value.sortDesc
+    function invalidateCache(specificParams?: IFetchUsersParams): void {
+        if (specificParams) {
+            const key = generateCacheKey(specificParams);
+            if (cacheMap.value[key]) {
+                delete cacheMap.value[key];
+                logger.info(`Invalidated specific cache entry: ${key}`);
+            }
         } else {
-            sorting.value = {
-                sortBy: field,
-                sortDesc: false
-            }
+            cacheMap.value = {};
+            logger.info('Complete cache invalidation');
         }
-        logger.info(`Sorting updated: ${field} ${sorting.value.sortDesc ? 'DESC' : 'ASC'}`)
+        
+        cacheStats.value.size = Object.keys(cacheMap.value).length;
     }
-
-    function selectUser(userId: string) {
+    
+    /**
+     * Updates current display parameters
+     */
+    function updateDisplayParams(params: Partial<IFetchUsersParams>): void {
+        displayParams.value = {
+            ...displayParams.value,
+            ...params
+        };
+        
+        // Reset to first page when changing sort or search
+        if ('sortBy' in params || 'sortDesc' in params || 'search' in params) {
+            displayParams.value.page = 1;
+        }
+        
+        logger.info('Display parameters updated', displayParams.value);
+    }
+    
+    /**
+     * Sets current users and total count
+     */
+    function setUsersData(users: IUser[], total: number): void {
+        currentUsers.value = users;
+        totalItems.value = total;
+    }
+    
+    /**
+     * Selection management
+     */
+    function selectUser(userId: string): void {
         if (!selectedUsers.value.includes(userId)) {
-            selectedUsers.value.push(userId)
-            logger.info(`User ${userId} selected`)
+            selectedUsers.value.push(userId);
+            logger.info(`User ${userId} selected`);
         }
     }
-
-    function deselectUser(userId: string) {
-        selectedUsers.value = selectedUsers.value.filter(id => id !== userId)
-        logger.info(`User ${userId} deselected`)
+    
+    function deselectUser(userId: string): void {
+        selectedUsers.value = selectedUsers.value.filter(id => id !== userId);
+        logger.info(`User ${userId} deselected`);
     }
-
-    function clearSelection() {
-        selectedUsers.value = []
-        logger.info('Selection cleared')
+    
+    function clearSelection(): void {
+        selectedUsers.value = [];
+        logger.info('Selection cleared');
     }
-
+    
+    /**
+     * Check if current user is authorized
+     */
+    const isAuthorized = computed(() => userStore.isLoggedIn);
+    
+    /**
+     * Number of selected users
+     */
+    const selectedCount = computed(() => selectedUsers.value.length);
+    
+    /**
+     * Flag indicating if at least one user is selected
+     */
+    const hasSelected = computed(() => selectedCount.value > 0);
+    
+    /**
+     * Flag indicating if exactly one user is selected
+     */
+    const hasOneSelected = computed(() => selectedCount.value === 1);
+    
+    // Setup cache cleanup on store initialization
+    setupCacheCleanup();
+    
     return {
         // State
-        users,
         loading,
         error,
-        page,
-        itemsPerPage,
+        currentUsers,
         totalItems,
-        sorting,
+        displayParams,
         selectedUsers,
+        cacheStats,
+        
+        // Display parameter getters
+        get page() { return displayParams.value.page },
+        get itemsPerPage() { return displayParams.value.itemsPerPage },
+        get sortBy() { return displayParams.value.sortBy },
+        get sortDesc() { return displayParams.value.sortDesc },
+        get search() { return displayParams.value.search },
         
         // Getters
-        getUsers,
+        isAuthorized,
         selectedCount,
-
-        // Actions
-        updateCache,
+        hasSelected,
+        hasOneSelected,
+        
+        // Cache methods
+        getCachedData,
+        setCacheData,
+        invalidateCache,
+        
+        // Data methods
+        setUsersData,
         updateDisplayParams,
-        updateSort,
-        clearCache,
+        
+        // Selection methods
         selectUser,
         deselectUser,
-        clearSelection
-    }
-})
+        clearSelection,
+        isSelected: (userId: string) => selectedUsers.value.includes(userId)
+    };
+});
