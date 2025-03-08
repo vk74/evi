@@ -11,6 +11,7 @@
  */
 <script setup lang="ts">
 import usersFetchService from './service.fetch.users'
+import deleteSelectedUsersService from './service.delete.selected.users'
 import { ref, computed, onMounted, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useStoreUsersList } from './state.users.list'
@@ -102,7 +103,7 @@ const confirmDelete = async () => {
   
   try {
     console.log('[ViewAllUsers] Calling delete service with selectedUsers:', usersStore.selectedUsers)
-    const deletedCount = await usersFetchService.deleteSelectedUsers(usersStore.selectedUsers)
+    const deletedCount = await deleteSelectedUsersService.deleteSelectedUsers(usersStore.selectedUsers)
     console.log('[ViewAllUsers] Service returned deletedCount:', deletedCount)
     
     console.log('[ViewAllUsers] Preparing success message')
@@ -230,12 +231,19 @@ const performSearch = async () => {
 }
 
 // Создаем debounced версию функции поиска
-const debouncedSearch = debounce(performSearch, 500)
+const debouncedSearch = debounce(performSearch, 800)
 
 // Слушаем изменения строки поиска
 watch(searchQuery, () => {
   debouncedSearch()
 })
+
+// Добавляем обработчик очистки поля поиска
+const handleClearSearch = () => {
+  // При нажатии на крестик просто очищаем поле, но не запускаем поиск
+  // Поиск с пустой строкой будет запущен через обычный watch с debounce
+  searchQuery.value = ''
+}
 
 // Обработчик нажатия Enter в поле поиска
 const handleSearchKeydown = (event: KeyboardEvent) => {
@@ -352,13 +360,17 @@ onMounted(async () => {
         
         <v-btn
           v-if="isAuthorized"
-          color="primary"
-          variant="outlined"
+          icon
+          variant="text"
           class="mr-2 mb-2"
           @click="refreshList"
           :loading="loading"
+          :title="t('list.buttons.refreshHint', 'Обновить список пользователей')"
         >
-          {{ t('list.buttons.refresh') }}
+          <v-icon>mdi-refresh</v-icon>
+          <v-tooltip activator="parent" location="bottom">
+            {{ t('list.buttons.refreshHint', 'Обновить список пользователей') }}
+          </v-tooltip>
         </v-btn>
       </div>
 
@@ -377,12 +389,15 @@ onMounted(async () => {
         variant="outlined"
         hide-details
         clearable
-        :placeholder="t('list.search.placeholder')"
+        clear-icon="mdi-close"
+        color="teal"
+        :placeholder="t('list.search.placeholder', 'Поиск пользователей...')"
         prepend-inner-icon="mdi-magnify"
         :loading="isSearching"
         :hint="searchQuery.length === 1 ? t('list.search.minChars') : ''"
         persistent-hint
         @keydown="handleSearchKeydown"
+        @click:clear="handleClearSearch"
       />
     </div>
 
@@ -427,11 +442,8 @@ onMounted(async () => {
         />
       </template>
       
-      <template #bottom>
-        <div class="d-flex justify-end align-center text-caption text-grey pa-2" v-if="totalItems > 0">
-          {{ t('list.pagination.total', { count: totalItems }) }}
-        </div>
-      </template>
+      <!-- Нижняя часть таблицы с общим числом записей -->
+      <!-- Не используем шаблон #bottom, чтобы сохранить стандартную пагинацию -->
     </v-data-table>
 
     <!-- Диалог подтверждения удаления -->
@@ -468,7 +480,8 @@ onMounted(async () => {
 </template>
 
 <style scoped>
-.users-table {
-  width: 100%;
+/* Стиль для крестика очистки */
+:deep(.v-field__clearable) .v-icon {
+  color: teal !important;
 }
 </style>
