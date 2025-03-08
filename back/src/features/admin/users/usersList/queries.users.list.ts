@@ -48,9 +48,10 @@ export const fetchUsersQuery = `
       ($1 = '' OR 
        username ILIKE '%' || $1 || '%' OR 
        email ILIKE '%' || $1 || '%' OR 
-       user_id::text = $1 OR
+       user_id::text ILIKE '%' || $1 || '%' OR
        first_name ILIKE '%' || $1 || '%' OR 
-       last_name ILIKE '%' || $1 || '%')
+       last_name ILIKE '%' || $1 || '%' OR
+       middle_name ILIKE '%' || $1 || '%')
   ),
   counted AS (
     SELECT COUNT(*) AS total FROM filtered_users
