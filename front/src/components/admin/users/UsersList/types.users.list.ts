@@ -1,6 +1,6 @@
 /**
  * types.users.list.ts
- * Type definitions for the user management frontend module.
+ * FRONTEND type definitions for the user management frontend module.
  * 
  * This module provides TypeScript types and interfaces for:
  * - User data structure and properties

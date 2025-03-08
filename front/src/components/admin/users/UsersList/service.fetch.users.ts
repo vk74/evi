@@ -1,6 +1,6 @@
 /**
  * service.fetch.users.ts
- * Service for fetching and managing users list data from API.
+ * FRONTEND service for fetching and managing users list data from API.
  *
  * Functionality:
  * - Fetches users with pagination, sorting and filtering
@@ -149,54 +149,6 @@ export const usersFetchService = {
     } finally {
       store.loading = false
       currentController = null
-    }
-  },
-
-  /**
-   * Deletes multiple users by ID
-   * @param userIds Array of user IDs to delete
-   * @returns Promise<number> Number of deleted users
-   * @throws {Error} When deletion fails
-   */
-  async deleteSelectedUsers(userIds: string[]): Promise<number> {
-    const store = useStoreUsersList()
-    const uiStore = useUiStore()
-
-    if (!userIds.length) {
-      return 0
-    }
-
-    logger.info('Deleting selected users', { userIds })
-
-    try {
-      const response = await api.post<{success: boolean, deletedCount: number}>(
-        '/api/admin/users/delete-users',
-        { userIds }
-      )
-
-      const deletedCount = response.data.deletedCount
-
-      logger.info('Successfully deleted users', { deletedCount })
-
-      // Invalidate cache completely after deletion
-      store.invalidateCache()
-      
-      // Clear selection
-      store.clearSelection()
-      
-      // Refetch current page
-      await this.fetchUsers()
-
-      return deletedCount
-
-    } catch (error: any) {
-      const errorMessage = error.response?.data?.message || 
-                         error.message || 
-                         'Failed to delete users'
-      
-      logger.error('Error deleting users:', error)
-      uiStore.showErrorSnackbar(errorMessage)
-      throw error
     }
   },
 

@@ -1,6 +1,6 @@
 /**
  * @file service.fetch.users.ts
- * Service for fetching users data from database.
+ * BACKEND service for fetching users data from database.
  * 
  * Functionality:
  * - Retrieves users with pagination, sorting and filtering

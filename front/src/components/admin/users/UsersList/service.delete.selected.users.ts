@@ -1,6 +1,6 @@
 /**
  * service.delete.selected.users.ts
- * Service for deleting selected users.
+ * FRONTEND service for deleting selected users.
  *
  * Functionality:
  * - Sends delete request to API
