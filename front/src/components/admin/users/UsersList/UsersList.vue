@@ -365,11 +365,14 @@ onMounted(async () => {
           class="mr-2 mb-2"
           @click="refreshList"
           :loading="loading"
-          :title="t('list.buttons.refreshHint', 'Обновить список пользователей')"
         >
-          <v-icon>mdi-refresh</v-icon>
+          <v-icon
+            color="teal"
+          >
+            mdi-refresh
+          </v-icon>
           <v-tooltip activator="parent" location="bottom">
-            {{ t('list.buttons.refreshHint', 'Обновить список пользователей') }}
+            {{ t('list.buttons.refreshHint', 'обновить список пользователей') }}
           </v-tooltip>
         </v-btn>
       </div>
