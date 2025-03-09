@@ -7,6 +7,7 @@
  * - Поиск по полям UUID, username, email, first_name, last_name
  * - Сортировка по колонкам с серверной обработкой
  * - Редактирование пользователей через UserEditor
+ * - Сброс пароля пользователей через ChangePassword
  * - Оптимизированное кэширование данных
  */
 <script setup lang="ts">
@@ -22,6 +23,8 @@ import { useUserEditorStore } from '../UserEditor/state.user.editor'
 import { useUiStore } from '@/core/state/uistate'
 import { useUserStore } from '@/core/state/userstate'
 import debounce from 'lodash/debounce'
+import ChangePassword from '../../../../core/ui/modals/change-password/ChangePassword.vue'
+import { PasswordChangeMode } from '../../../../core/ui/modals/change-password/types.change.password'
 
 // Инициализация сторов и i18n
 const { t } = useI18n()
@@ -36,8 +39,15 @@ const itemsPerPage = ref<ItemsPerPageOption>(usersStore.itemsPerPage)
 const searchQuery = ref<string>('')
 const isSearching = ref<boolean>(false)
 
-// Состояние диалога подтверждения удаления
+// Состояние диалогов
 const showDeleteDialog = ref(false)
+const showPasswordDialog = ref(false)
+
+// Данные выбранного пользователя для сброса пароля
+const selectedUserData = ref({
+  uuid: '',
+  username: ''
+})
 
 // Вычисляемые свойства
 const isAuthorized = computed(() => userStore.isLoggedIn)
@@ -125,6 +135,38 @@ const confirmDelete = async () => {
 const getSelectedUserId = (): string => {
   console.log('[ViewAllUsers] Getting selected user ID')
   return usersStore.selectedUsers[0]
+}
+
+// Функция для обработки клика по кнопке сброса пароля
+const resetPassword = async () => {
+  console.log('[ViewAllUsers] Starting reset password operation')
+  
+  try {
+    const userId = getSelectedUserId()
+    console.log('[ViewAllUsers] Selected user ID for password reset:', userId)
+    
+    // Находим выбранного пользователя в текущем списке
+    const selectedUser = users.value.find(user => user.user_id === userId)
+    
+    if (selectedUser) {
+      // Сохраняем данные выбранного пользователя
+      selectedUserData.value = {
+        uuid: selectedUser.user_id,
+        username: selectedUser.username
+      }
+      
+      // Открываем диалог сброса пароля
+      showPasswordDialog.value = true
+    } else {
+      console.error('[ViewAllUsers] Selected user not found in current list')
+      uiStore.showErrorSnackbar('Пользователь не найден в текущем списке')
+    }
+  } catch (error) {
+    console.error('[ViewAllUsers] Error preparing password reset:', error)
+    uiStore.showErrorSnackbar(
+      error instanceof Error ? error.message : 'Ошибка при подготовке сброса пароля'
+    )
+  }
 }
 
 // Функция для обработки клика по кнопке редактирования
@@ -348,6 +390,17 @@ onMounted(async () => {
         
         <v-btn
           v-if="isAuthorized"
+          color="teal"
+          variant="outlined"
+          class="mr-2 mb-2"
+          :disabled="!hasOneSelected"
+          @click="resetPassword"
+        >
+          {{ t('list.buttons.resetPassword', 'Сбросить пароль') }}
+        </v-btn>
+        
+        <v-btn
+          v-if="isAuthorized"
           color="error"
           variant="outlined"
           class="mr-2 mb-2"
@@ -478,6 +531,17 @@ onMounted(async () => {
           </v-btn>
         </v-card-actions>
       </v-card>
+    </v-dialog>
+    
+    <!-- Модальное окно сброса пароля -->
+    <v-dialog v-model="showPasswordDialog" max-width="550">
+      <ChangePassword
+        :title="t('passwordChange.resetPasswordFor', 'Сброс пароля для') + ' ' + selectedUserData.username"
+        :uuid="selectedUserData.uuid"
+        :username="selectedUserData.username"
+        :mode="PasswordChangeMode.ADMIN"
+        :on-close="() => showPasswordDialog = false"
+      />
     </v-dialog>
   </v-card>
 </template>

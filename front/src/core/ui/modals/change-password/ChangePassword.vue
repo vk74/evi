@@ -12,8 +12,8 @@
 <template>
   <div class="modal-overlay" @click.self="closeModal">
     <div class="modal">
-      <v-card width="500" class="mx-auto">
-        <v-card-title class="text-h5">
+      <v-card>
+        <v-card-title class="text-h7">
           {{ title }}
         </v-card-title>
         
@@ -39,7 +39,6 @@
               :label="$t('passwordChange.newPassword')"
               :type="showNewPassword ? 'text' : 'password'"
               :append-icon="showNewPassword ? 'mdi-eye' : 'mdi-eye-off'"
-              :rules="passwordRules"
               :error-messages="newPasswordError ? [newPasswordError] : []"
               @click:append="showNewPassword = !showNewPassword"
               @input="validatePasswordMatch"
@@ -67,20 +66,21 @@
           <v-spacer></v-spacer>
           <v-btn
             color="grey"
-            text
+            variant="outlined"
+            class="mr-2"
             @click="resetForm"
           >
-            {{ $t('passwordChange.reset') }}
+            {{ $t('passwordChange.reset', 'Сбросить') }}
           </v-btn>
           <v-btn
-            color="teal darken-1"
-            text
+            color="teal"
+            variant="outlined"
             :loading="loading"
             @click="submitForm"
           >
             {{ mode === PasswordChangeMode.SELF 
-              ? $t('passwordChange.change') 
-              : $t('passwordChange.resetPassword') }}
+              ? $t('passwordChange.change', 'Изменить') 
+              : $t('passwordChange.resetPassword', 'Сменить пароль') }}
           </v-btn>
         </v-card-actions>
       </v-card>
@@ -91,7 +91,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { useValidationRules } from '../../validation/rules.common.fields';
+import { useValidationRules } from '../../../validation/rules.common.fields';
 import { useUiStore } from '@/core/state/uistate';
 import { ChangePasswordProps, PasswordChangeMode } from './types.change.password';
 import changePassword from './service.self.change.password';
@@ -230,16 +230,16 @@ const submitForm = async () => {
     }
     
     if (response.success) {
-      uiStore.showSuccessSnackbar(response.message || t('passwordChange.success'));
+      uiStore.showSuccessSnackbar(response.message || t('passwordChange.success', 'Пароль успешно изменен'));
       setTimeout(() => {
         closeModal();
       }, 2000);
     } else {
-      uiStore.showErrorSnackbar(response.message || t('passwordChange.error'));
+      uiStore.showErrorSnackbar(response.message || t('passwordChange.error', 'Ошибка при смене пароля'));
     }
   } catch (error) {
     console.error('[ChangePassword] Error during password change:', error);
-    uiStore.showErrorSnackbar(t('passwordChange.unexpectedError'));
+    uiStore.showErrorSnackbar(t('passwordChange.unexpectedError', 'Непредвиденная ошибка при смене пароля'));
   } finally {
     loading.value = false;
   }
@@ -258,18 +258,20 @@ onMounted(() => {
   left: 0;
   width: 100%;
   height: 100%;
-  background-color: rgba(0, 0, 0, 0.5);
+  background: rgba(0, 0, 0, 0.5);
   display: flex;
   justify-content: center;
   align-items: center;
-  z-index: 100;
+  z-index: 1000;
 }
 
 .modal {
-  position: relative;
-  max-width: 90%;
-  max-height: 90%;
+  background: white;
+  border-radius: 8px;
+  max-width: 550px;
+  width: 100%;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
   overflow: auto;
-  z-index: 101;
+  z-index: 1001;
 }
 </style>

@@ -4,7 +4,8 @@
  * Makes API calls to backend admin reset password endpoint.
  */
 
-import axios from 'axios';
+import { api } from '@/core/api/service.axios';
+import { AxiosError } from 'axios';
 import { AdminResetPasswordRequest, ChangePasswordResponse } from './types.change.password';
 
 /**
@@ -16,7 +17,7 @@ export async function resetPassword(data: AdminResetPasswordRequest): Promise<Ch
   console.log('[Admin Reset Password Service] Preparing to reset password for user:', data.username);
   
   try {
-    const response = await axios.post<ChangePasswordResponse>(
+    const response = await api.post<ChangePasswordResponse>(
       '/api/core/users/admin-change-password',
       data
     );
@@ -27,7 +28,7 @@ export async function resetPassword(data: AdminResetPasswordRequest): Promise<Ch
     console.error('[Admin Reset Password Service] Error resetting password:', error);
     
     // Handle axios error responses
-    if (axios.isAxiosError(error) && error.response) {
+    if (error instanceof AxiosError && error.response) {
       return error.response.data as ChangePasswordResponse;
     }
     

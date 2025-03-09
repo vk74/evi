@@ -322,5 +322,7 @@ const onKeyPress = (event: KeyboardEvent) => {
   max-width: 550px;
   width: 100%;
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  overflow: auto;
+  z-index: 1001;
 }
 </style>

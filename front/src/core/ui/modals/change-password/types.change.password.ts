@@ -1,5 +1,5 @@
 /**
- * types.change.password.ts
+ * FRONTEND types.change.password.ts
  * Type definitions for password change component and related services.
  * Supports both user self-change and admin password reset scenarios.
  */
