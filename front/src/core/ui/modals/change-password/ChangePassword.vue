@@ -173,7 +173,7 @@ const submitForm = async () => {
       uiStore.showSuccessSnackbar(response.message || t('passwordChange.success', 'Пароль успешно изменен'));
       setTimeout(() => {
         closeModal();
-      }, 2000);
+      }, 300);
     } else {
       uiStore.showErrorSnackbar(response.message || t('passwordChange.error', 'Ошибка при смене пароля'));
     }
