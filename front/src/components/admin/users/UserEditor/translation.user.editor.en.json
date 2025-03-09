@@ -14,7 +14,8 @@
         "buttons": {
           "create": "create",
           "update": "update user data",
-          "reset": "reset form fields"
+          "reset": "reset form fields",
+          "resetPassword": "reset password"
         },
         "fields": {
           "username": {
@@ -31,6 +32,9 @@
           },
           "lastName": {
             "label": "last name*"
+          },
+          "uuid": {
+            "label": "uuid"
           },
           "gender": {
             "label": "gender",

@@ -14,7 +14,8 @@
         "buttons": {
           "create": "создать",
           "update": "обновить данные пользователя",
-          "reset": "сбросить поля формы"
+          "reset": "сбросить поля формы",
+          "resetPassword": "сбросить пароль"
         },
         "fields": {
           "username": {
@@ -31,6 +32,9 @@
           },
           "lastName": {
             "label": "фамилия*"
+          },
+          "uuid": {
+            "label": "uuid"
           },
           "gender": {
             "label": "пол",

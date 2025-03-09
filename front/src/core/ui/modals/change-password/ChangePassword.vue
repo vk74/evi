@@ -9,84 +9,6 @@
  * - Validates password according to system rules
  * - Provides password visibility toggle
  */
-<template>
-  <div class="modal-overlay" @click.self="closeModal">
-    <div class="modal">
-      <v-card>
-        <v-card-title class="text-h7">
-          {{ title }}
-        </v-card-title>
-        
-        <v-card-text>
-          <v-form ref="form" @submit.prevent="submitForm">
-            <!-- Current password field (only for self mode) -->
-            <v-text-field
-              v-if="mode === PasswordChangeMode.SELF"
-              v-model="currentPassword"
-              :label="$t('passwordChange.currentPassword')"
-              :type="showCurrentPassword ? 'text' : 'password'"
-              :append-icon="showCurrentPassword ? 'mdi-eye' : 'mdi-eye-off'"
-              :error-messages="currentPasswordError ? [currentPasswordError] : []"
-              @click:append="showCurrentPassword = !showCurrentPassword"
-              outlined
-              dense
-              class="mb-3"
-            ></v-text-field>
-            
-            <!-- New password field -->
-            <v-text-field
-              v-model="newPassword"
-              :label="$t('passwordChange.newPassword')"
-              :type="showNewPassword ? 'text' : 'password'"
-              :append-icon="showNewPassword ? 'mdi-eye' : 'mdi-eye-off'"
-              :error-messages="newPasswordError ? [newPasswordError] : []"
-              @click:append="showNewPassword = !showNewPassword"
-              @input="validatePasswordMatch"
-              outlined
-              dense
-              class="mb-3"
-            ></v-text-field>
-            
-            <!-- Confirm password field -->
-            <v-text-field
-              v-model="confirmPassword"
-              :label="$t('passwordChange.confirmPassword')"
-              :type="showConfirmPassword ? 'text' : 'password'"
-              :append-icon="showConfirmPassword ? 'mdi-eye' : 'mdi-eye-off'"
-              :error-messages="confirmPasswordError ? [confirmPasswordError] : []"
-              @click:append="showConfirmPassword = !showConfirmPassword"
-              @input="validatePasswordMatch"
-              outlined
-              dense
-            ></v-text-field>
-          </v-form>
-        </v-card-text>
-        
-        <v-card-actions>
-          <v-spacer></v-spacer>
-          <v-btn
-            color="grey"
-            variant="outlined"
-            class="mr-2"
-            @click="resetForm"
-          >
-            {{ $t('passwordChange.reset', 'Сбросить') }}
-          </v-btn>
-          <v-btn
-            color="teal"
-            variant="outlined"
-            :loading="loading"
-            @click="submitForm"
-          >
-            {{ mode === PasswordChangeMode.SELF 
-              ? $t('passwordChange.change', 'Изменить') 
-              : $t('passwordChange.resetPassword', 'Сменить пароль') }}
-          </v-btn>
-        </v-card-actions>
-      </v-card>
-    </div>
-  </div>
-</template>
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue';
@@ -250,6 +172,85 @@ onMounted(() => {
   console.log(`[ChangePassword] Mounted in ${props.mode} mode for user ${props.username}`);
 });
 </script>
+
+<template>
+  <div class="modal-overlay" @click.self="closeModal">
+    <div class="modal">
+      <v-card>
+        <v-card-title class="text-h7">
+          {{ title }}
+        </v-card-title>
+        
+        <v-card-text>
+          <v-form ref="form" @submit.prevent="submitForm">
+            <!-- Current password field (only for self mode) -->
+            <v-text-field
+              v-if="mode === PasswordChangeMode.SELF"
+              v-model="currentPassword"
+              :label="$t('passwordChange.currentPassword')"
+              :type="showCurrentPassword ? 'text' : 'password'"
+              :append-icon="showCurrentPassword ? 'mdi-eye' : 'mdi-eye-off'"
+              :error-messages="currentPasswordError ? [currentPasswordError] : []"
+              @click:append="showCurrentPassword = !showCurrentPassword"
+              outlined
+              dense
+              class="mb-3"
+            ></v-text-field>
+            
+            <!-- New password field -->
+            <v-text-field
+              v-model="newPassword"
+              :label="$t('passwordChange.newPassword')"
+              :type="showNewPassword ? 'text' : 'password'"
+              :append-icon="showNewPassword ? 'mdi-eye' : 'mdi-eye-off'"
+              :error-messages="newPasswordError ? [newPasswordError] : []"
+              @click:append="showNewPassword = !showNewPassword"
+              @input="validatePasswordMatch"
+              outlined
+              dense
+              class="mb-3"
+            ></v-text-field>
+            
+            <!-- Confirm password field -->
+            <v-text-field
+              v-model="confirmPassword"
+              :label="$t('passwordChange.confirmPassword')"
+              :type="showConfirmPassword ? 'text' : 'password'"
+              :append-icon="showConfirmPassword ? 'mdi-eye' : 'mdi-eye-off'"
+              :error-messages="confirmPasswordError ? [confirmPasswordError] : []"
+              @click:append="showConfirmPassword = !showConfirmPassword"
+              @input="validatePasswordMatch"
+              outlined
+              dense
+            ></v-text-field>
+          </v-form>
+        </v-card-text>
+        
+        <v-card-actions>
+          <v-spacer></v-spacer>
+          <v-btn
+            color="grey"
+            variant="outlined"
+            class="mr-2"
+            @click="resetForm"
+          >
+            {{ $t('passwordChange.reset', 'Сбросить') }}
+          </v-btn>
+          <v-btn
+            color="teal"
+            variant="outlined"
+            :loading="loading"
+            @click="submitForm"
+          >
+            {{ mode === PasswordChangeMode.SELF 
+              ? $t('passwordChange.change', 'Изменить') 
+              : $t('passwordChange.resetPassword', 'Сменить пароль') }}
+          </v-btn>
+        </v-card-actions>
+      </v-card>
+    </div>
+  </div>
+</template>
 
 <style scoped>
 .modal-overlay {
