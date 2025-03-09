@@ -1,32 +1,37 @@
 {
-    "list": {
-      "title": "users list",
-      "buttons": {
-        "create": "create user account",
-        "delete": "delete",
-        "edit": "edit"
-      },
-      "table": {
-        "headers": {
-          "id": "id",
-          "username": "username",
-          "email": "e-mail",
-          "isStaff": "staff",
-          "status": "status",
-          "lastName": "last name",
-          "firstName": "first name",
-          "middleName": "middle name",
-          "select": "select"
-        }
-      },
-      "messages": {
-        "confirmDelete": "Are you sure you want to delete selected users?",
-        "confirmDeleteSingle": "Are you sure you want to delete this user?",
-        "deleteUsersSuccess": "Successfully deleted {count} user accounts. Users list has been updated."
+  "list": {
+    "title": "users list",
+    "buttons": {
+      "create": "create user",
+      "edit": "edit",
+      "delete": "delete",
+      "resetPassword": "reset password",
+      "refreshHint": "refresh users list"
+    },
+    "search": {
+      "placeholder": "Search users...",
+      "minChars": "Enter at least 2 characters"
+    },
+    "table": {
+      "headers": {
+        "select": "select",
+        "id": "ID",
+        "username": "username",
+        "email": "email",
+        "isStaff": "staff",
+        "status": "status",
+        "firstName": "first name",
+        "lastName": "last name",
+        "middleName": "middle name"
       }
     },
-    "common": {
-      "cancel": "cancel",
-      "delete": "delete"
+    "messages": {
+      "confirmDelete": "Are you sure you want to delete {count} selected users?",
+      "deleteUsersSuccess": "Successfully deleted {count} users.",
+      "refreshSuccess": "Users list refreshed successfully."
     }
+  },
+  "passwordChange": {
+    "resetPasswordFor": "Reset password for"
   }
+}

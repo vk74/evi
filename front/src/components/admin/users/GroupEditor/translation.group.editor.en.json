@@ -1,0 +1,76 @@
+{
+  "admin": {
+    "groups": {
+      "editor": {
+        "title": {
+          "create": "create group",
+          "edit": "edit group"
+        },
+        "sections": {
+          "details": "group details",
+          "members": "group members"
+        },
+        "buttons": {
+          "create": "create group",
+          "reset": "reset",
+          "update": "update group data",
+          "addMember": "add member",
+          "removeMember": "remove member from group"
+        },
+        "form": {
+          "groupId": "group UUID",
+          "name": "name*",
+          "status": "status*",
+          "description": "description",
+          "email": "e-mail",
+          "owner": "owner*"
+        },
+        "status": {
+          "active": "active",
+          "disabled": "disabled",
+          "archived": "archived"
+        },
+        "search": "search in group members table",
+        "table": {
+          "headers": {
+            "select": "select",
+            "id": "id",
+            "username": "username",
+            "email": "e-mail",
+            "status": "status",
+            "staff": "staff",
+            "lastname": "last name",
+            "firstname": "first name",
+            "middlename": "middle name"
+          }
+        },
+        "messages": {
+          "createSuccess": "group created successfully",
+          "updateSuccess": "group updated successfully",
+          "createError": "error creating group",
+          "updateError": "error updating group",
+          "noChanges": "no changes to save",
+          "requiredFields": "fill in required fields",
+          "membersAddSuccess": "members added successfully",
+          "membersAddError": "error adding members",
+          "membersRemoveSuccess": "members removed successfully",
+          "membersRemoveError": "error removing members",
+          "noMembersSelected": "no members selected",
+          "loadMembersError": "error loading group members",
+          "notLoggedIn": "user not logged in",
+          "unavailableInCreateMode": "unavailable in group creation mode"
+        },
+        "validation": {
+          "minLength": "minimum length is {length} characters",
+          "maxLength": "maximum length is {length} characters",
+          "alphaNumDash": "only latin characters, numbers and hyphens are allowed",
+          "invalidStatus": "invalid status"
+        }
+      }
+    }
+  },
+  "common": {
+    "unnamed": "Unnamed",
+    "noData": "no data to display"
+  }
+}

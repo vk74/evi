@@ -1,0 +1,76 @@
+{
+  "admin": {
+    "groups": {
+      "editor": {
+        "title": {
+          "create": "создание группы",
+          "edit": "редактирование группы"
+        },
+        "sections": {
+          "details": "данные группы",
+          "members": "участники группы"
+        },
+        "buttons": {
+          "create": "создать группу",
+          "reset": "сбросить",
+          "update": "обновить данные группы",
+          "addMember": "добавить участника",
+          "removeMember": "удалить участника из группы"
+        },
+        "form": {
+          "groupId": "UUID группы",
+          "name": "название*",
+          "status": "статус*",
+          "description": "описание",
+          "email": "e-mail",
+          "owner": "владелец*"
+        },
+        "status": {
+          "active": "активна",
+          "disabled": "отключена",
+          "archived": "в архиве"
+        },
+        "search": "поиск в таблице участников группы",
+        "table": {
+          "headers": {
+            "select": "выбор",
+            "id": "id",
+            "username": "логин",
+            "email": "e-mail",
+            "status": "статус",
+            "staff": "сотрудник",
+            "lastname": "фамилия",
+            "firstname": "имя",
+            "middlename": "отчество"
+          }
+        },
+        "messages": {
+          "createSuccess": "группа создана успешно",
+          "updateSuccess": "группа обновлена успешно",
+          "createError": "ошибка создания группы",
+          "updateError": "ошибка обновления группы",
+          "noChanges": "нет изменений для сохранения",
+          "requiredFields": "заполните обязательные поля",
+          "membersAddSuccess": "участники добавлены успешно",
+          "membersAddError": "ошибка добавления участников",
+          "membersRemoveSuccess": "участники удалены успешно",
+          "membersRemoveError": "ошибка удаления участников",
+          "noMembersSelected": "не выбрано ни одного участника",
+          "loadMembersError": "ошибка загрузки участников группы",
+          "notLoggedIn": "пользователь не вошел в систему",
+          "unavailableInCreateMode": "недоступно в режиме создания группы"
+        },
+        "validation": {
+          "minLength": "минимальная длина {length} символов",
+          "maxLength": "максимальная длина {length} символов",
+          "alphaNumDash": "только латиница, цифры и дефис",
+          "invalidStatus": "недопустимый статус"
+        }
+      }
+    }
+  },
+  "common": {
+    "unnamed": "Без названия",
+    "noData": "нет данных для отображения"
+  }
+}

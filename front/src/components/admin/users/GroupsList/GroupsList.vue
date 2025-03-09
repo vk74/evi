@@ -63,7 +63,7 @@ const getStatusColor = (status: string) => {
   switch (status.toLowerCase()) {
     case 'active': return 'teal';
     case 'disabled': return 'red';
-    case 'archived': return 'grey';
+    case 'archived': return 'blue';
     default: return 'blue';
   }
 };
@@ -188,21 +188,25 @@ watch([page, itemsPerPage], ([newPage, newItemsPerPage]) => {
           {{ t('admin.groups.list.buttons.delete') }}
           <span class="ml-2">({{ selectedCount }})</span>
         </v-btn>
-        <v-text-field
-          v-model="searchQuery"
-          :label="t('admin.groups.list.search')"
-          variant="outlined"
-          density="compact"
-          clearable
-          prepend-inner-icon="mdi-magnify"
-          class="ml-4"
-          style="max-width: 700px; min-width: 500px;"
-        />
       </div>
       <v-app-bar-title class="text-subtitle-2 text-lowercase text-right">
         {{ t('admin.groups.list.title') }}
       </v-app-bar-title>
     </v-app-bar>
+
+    <!-- Search field moved here, above the table -->
+    <div class="px-4 pt-4">
+      <v-text-field
+        v-model="searchQuery"
+        :label="t('admin.groups.list.search')"
+        variant="outlined"
+        density="compact"
+        clearable
+        clear-icon="mdi-close"
+        color="teal"
+        prepend-inner-icon="mdi-magnify"
+      />
+    </div>
 
     <v-data-table
       :search="searchQuery"
@@ -270,7 +274,5 @@ watch([page, itemsPerPage], ([newPage, newItemsPerPage]) => {
 </template>
 
 <style scoped>
-.v-text-field {
-  margin-top: 23px;
-}
+
 </style>

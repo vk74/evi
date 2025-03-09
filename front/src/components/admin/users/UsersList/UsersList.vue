@@ -131,6 +131,16 @@ const confirmDelete = async () => {
   }
 }
 
+const getStatusColor = (status: string) => {
+  switch (status.toLowerCase()) {
+    case 'active': return 'teal';
+    case 'disabled': return 'red';
+    case 'archived': return 'grey';
+    case 'requires_user_action': return 'blue';
+    default: return 'black';
+  }
+};
+
 // Функция для получения ID единственного выбранного пользователя
 const getSelectedUserId = (): string => {
   console.log('[ViewAllUsers] Getting selected user ID')
@@ -396,7 +406,7 @@ onMounted(async () => {
           :disabled="!hasOneSelected"
           @click="resetPassword"
         >
-          {{ t('list.buttons.resetPassword', 'Сбросить пароль') }}
+          {{ t('list.buttons.resetPassword') }}
         </v-btn>
         
         <v-btn
@@ -425,7 +435,7 @@ onMounted(async () => {
             mdi-refresh
           </v-icon>
           <v-tooltip activator="parent" location="bottom">
-            {{ t('list.buttons.refreshHint', 'обновить список пользователей') }}
+            {{ t('list.buttons.refreshHint') }}
           </v-tooltip>
         </v-btn>
       </div>
@@ -447,7 +457,7 @@ onMounted(async () => {
         clearable
         clear-icon="mdi-close"
         color="teal"
-        :placeholder="t('list.search.placeholder', 'Поиск пользователей...')"
+        :placeholder="t('list.search.placeholder')"
         prepend-inner-icon="mdi-magnify"
         :loading="isSearching"
         :hint="searchQuery.length === 1 ? t('list.search.minChars') : ''"
@@ -485,7 +495,9 @@ onMounted(async () => {
       </template>
 
       <template #[`item.account_status`]="{ item }">
-        <v-chip size="x-small">
+        <v-chip 
+          :color="getStatusColor(item.account_status)" 
+          size="x-small">
           {{ item.account_status }}
         </v-chip>
       </template>
@@ -497,9 +509,6 @@ onMounted(async () => {
           size="x-small"
         />
       </template>
-      
-      <!-- Нижняя часть таблицы с общим числом записей -->
-      <!-- Не используем шаблон #bottom, чтобы сохранить стандартную пагинацию -->
     </v-data-table>
 
     <!-- Диалог подтверждения удаления -->
@@ -536,7 +545,7 @@ onMounted(async () => {
     <!-- Модальное окно сброса пароля -->
     <v-dialog v-model="showPasswordDialog" max-width="550">
       <ChangePassword
-        :title="t('passwordChange.resetPasswordFor', 'Сброс пароля для') + ' ' + selectedUserData.username"
+        :title="t('passwordChange.resetPasswordFor') + ' ' + selectedUserData.username"
         :uuid="selectedUserData.uuid"
         :username="selectedUserData.username"
         :mode="PasswordChangeMode.ADMIN"

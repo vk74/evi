@@ -4,6 +4,9 @@ import { merge } from 'lodash'
 import appTranslationsRu from '@/components/AppTranslationRU.json'
 import appTranslationsEn from '@/components/AppTranslationEN.json'
 
+// core modules
+
+
 // Admin module and sub-modules and functions
 import adminModuleRu from '@/components/admin/translation.admin.ru.json'
 import adminModuleEn from '@/components/admin/translation.admin.en.json'
@@ -16,6 +19,9 @@ import usersListEn from '@/components/admin/users/UsersList/translation.users.li
 
 import groupsListRu from '@/components/admin/users/GroupsList/translation.groups.list.ru.json'
 import groupsListEn from '@/components/admin/users/GroupsList/translation.groups.list.en.json'
+
+import groupsEditorEn from '@/components/admin/users/GroupEditor/translation.group.editor.en.json'
+import groupsEditorRu from '@/components/admin/users/GroupEditor/translation.group.editor.ru.json'
 // 
 
 // validation rules
@@ -30,7 +36,8 @@ export default {
       userEditorRu,
       usersListRu,
       validationCommonFieldsRulesRu,
-      groupsListRu
+      groupsListRu,
+      groupsEditorRu
     ),
     en: merge({},
       appTranslationsEn,
@@ -38,6 +45,7 @@ export default {
       userEditorEn,
       usersListEn,
       validationCommonFieldsRulesEn,
-      groupsListEn
+      groupsListEn,
+      groupsEditorEn
     )
   }

@@ -2,20 +2,24 @@
 <!-- Component for creating or editing a group with dynamic form and member management -->
 <script setup lang="ts">
 import { ref, onMounted, onBeforeUnmount, computed, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useGroupEditorStore } from './state.group.editor'
 import { useUiStore } from '@/core/state/uistate'
 import { GroupStatus } from './types.group.editor'
 import { useValidationRules } from '@/core/validation/rules.common.fields'
 import type { TableHeader, EditMode } from './types.group.editor'
-import { updateGroupService } from './service.update.group' // Импорт сервиса обновления
-import { fetchGroupMembersService } from './service.fetch.group.members' // Импорт сервиса получения участников
-import { removeGroupMembers } from './service.delete.group.members' // Импорт сервиса удаления участников
+import { updateGroupService } from './service.update.group' // Import update service
+import { fetchGroupMembersService } from './service.fetch.group.members' // Import members fetch service
+import { removeGroupMembers } from './service.delete.group.members' // Import members delete service
 import ItemSelector from '../../../../core/ui/modals/item-selector/ItemSelector.vue'
-import { useUserStore } from '@/core/state/userstate' // Импорт для проверки JWT
+import { useUserStore } from '@/core/state/userstate' // Import for JWT check
+
+// Initialize i18n
+const { t } = useI18n()
 
 const groupEditorStore = useGroupEditorStore()
 const uiStore = useUiStore()
-const userStore = useUserStore() // Хранилище для проверки авторизации
+const userStore = useUserStore()
 const { 
   optionalEmailRules,
   generalDescriptionRules,
@@ -27,7 +31,7 @@ const formRef = ref<any>(null)
 const isFormValid = ref(false)
 const isFormDirty = ref(false) // Tracks if form has changed in edit mode
 const isInitialLoad = ref(true) // Prevents watch from firing on initial load
-const isSubmitting = ref(false) // Флаг состояния отправки
+const isSubmitting = ref(false) // Submission state flag
 const page = ref(1)
 const itemsPerPage = ref(25)
 const searchQuery = ref('')
@@ -37,16 +41,16 @@ const isItemSelectorModalOpen = ref(false)
 const isAuthorized = computed(() => userStore.isLoggedIn)
 
 // ==================== TABLE CONFIG ====================
-const headers = ref<TableHeader[]>([
-  { title: 'выбор', key: 'selection', width: '40px' },
-  { title: 'id', key: 'user_id', width: '80px' },
-  { title: 'логин', key: 'username' },
-  { title: 'e-mail', key: 'email' },
-  { title: 'статус', key: 'account_status', width: '60px' },
-  { title: 'сотрудник', key: 'is_staff', width: '60px' },
-  { title: 'фамилия', key: 'last_name' },
-  { title: 'имя', key: 'first_name' },
-  { title: 'отчество', key: 'middle_name' }
+const headers = computed<TableHeader[]>(() => [
+  { title: t('admin.groups.editor.table.headers.select'), key: 'selection', width: '40px' },
+  { title: t('admin.groups.editor.table.headers.id'), key: 'user_id', width: '80px' },
+  { title: t('admin.groups.editor.table.headers.username'), key: 'username' },
+  { title: t('admin.groups.editor.table.headers.email'), key: 'email' },
+  { title: t('admin.groups.editor.table.headers.status'), key: 'account_status', width: '60px' },
+  { title: t('admin.groups.editor.table.headers.staff'), key: 'is_staff', width: '60px' },
+  { title: t('admin.groups.editor.table.headers.lastname'), key: 'last_name' },
+  { title: t('admin.groups.editor.table.headers.firstname'), key: 'first_name' },
+  { title: t('admin.groups.editor.table.headers.middlename'), key: 'middle_name' }
 ])
 
 // ==================== COMPUTED PROPERTIES FOR MEMBERS ====================
@@ -56,15 +60,15 @@ const hasSelectedMembers = computed(() => groupEditorStore.hasSelectedMembers)
 
 // ==================== VALIDATION RULES ====================
 const groupNameRules = [
-  (v: string) => !!v || 'Название группы обязательно',
-  (v: string) => (v?.length >= 2) || 'Минимальная длина 2 символа',
-  (v: string) => (v?.length <= 100) || 'Максимальная длина 100 символов',
-  (v: string) => /^[a-zA-Z0-9-]+$/.test(v) || 'Только латиница, цифры и дефис'
+  (v: string) => !!v || t('admin.groups.editor.messages.requiredFields'),
+  (v: string) => (v?.length >= 2) || t('admin.groups.editor.validation.minLength', { length: 2 }),
+  (v: string) => (v?.length <= 100) || t('admin.groups.editor.validation.maxLength', { length: 100 }),
+  (v: string) => /^[a-zA-Z0-9-]+$/.test(v) || t('admin.groups.editor.validation.alphaNumDash')
 ]
 
 const groupStatusRules = [
-  (v: GroupStatus) => !!v || 'Выберите статус',
-  (v: GroupStatus) => Object.values(GroupStatus).includes(v) || 'Недопустимый статус'
+  (v: GroupStatus) => !!v || t('admin.groups.editor.messages.requiredFields'),
+  (v: GroupStatus) => Object.values(GroupStatus).includes(v) || t('admin.groups.editor.validation.invalidStatus')
 ]
 
 // ==================== FORM HANDLERS ====================
@@ -76,7 +80,7 @@ const validate = async () => {
 
 const handleCreateGroup = async () => {
   if (!(await validate())) {
-    uiStore.showErrorSnackbar('Заполните обязательные поля')
+    uiStore.showErrorSnackbar(t('admin.groups.editor.messages.requiredFields'))
     return
   }
 
@@ -94,10 +98,10 @@ const handleCreateGroup = async () => {
         }
       })
       isFormDirty.value = false
-      uiStore.showSuccessSnackbar('Группа создана успешно')
+      uiStore.showSuccessSnackbar(t('admin.groups.editor.messages.createSuccess'))
     }
   } catch (error) {
-    uiStore.showErrorSnackbar(error instanceof Error ? error.message : 'Ошибка создания')
+    uiStore.showErrorSnackbar(error instanceof Error ? error.message : t('admin.groups.editor.messages.createError'))
   } finally {
     isSubmitting.value = false
   }
@@ -107,12 +111,12 @@ const handleUpdateGroup = async () => {
   console.log('Starting group update...')
   
   if (!(await validate())) {
-    uiStore.showErrorSnackbar('Заполните обязательные поля')
+    uiStore.showErrorSnackbar(t('admin.groups.editor.messages.requiredFields'))
     return
   }
 
   if (!groupEditorStore.hasChanges) {
-    uiStore.showInfoSnackbar('Нет изменений для сохранения')
+    uiStore.showInfoSnackbar(t('admin.groups.editor.messages.noChanges'))
     return
   }
 
@@ -124,13 +128,13 @@ const handleUpdateGroup = async () => {
 
     if (success) {
       console.log('Group updated successfully')
-      uiStore.showSuccessSnackbar('Группа обновлена успешно')
-      isFormDirty.value = false // Сбрасываем флаг изменений
+      uiStore.showSuccessSnackbar(t('admin.groups.editor.messages.updateSuccess'))
+      isFormDirty.value = false // Reset changes flag
     }
   } catch (error) {
     console.error('Error updating group:', error)
     uiStore.showErrorSnackbar(
-      error instanceof Error ? error.message : 'Ошибка обновления группы'
+      error instanceof Error ? error.message : t('admin.groups.editor.messages.updateError')
     )
   } finally {
     isSubmitting.value = false
@@ -157,7 +161,7 @@ const switchSection = async (section: 'details' | 'members') => {
       await fetchGroupMembersService.fetchGroupMembers(groupId)
     } catch (error) {
       console.error('Error loading group members:', error)
-      uiStore.showErrorSnackbar('Ошибка загрузки участников группы')
+      uiStore.showErrorSnackbar(t('admin.groups.editor.messages.loadMembersError'))
     }
   }
 }
@@ -174,26 +178,26 @@ const openItemSelectorModal = () => {
 
 const handleAddMembers = async (selectedItemIds: string[]) => {
   if (!selectedItemIds || selectedItemIds.length === 0) {
-    uiStore.showErrorSnackbar('Не выбрано ни одного участника')
+    uiStore.showErrorSnackbar(t('admin.groups.editor.messages.noMembersSelected'))
     return
   }
 
   try {
     await addGroupMembers(selectedItemIds)
-    uiStore.showSuccessSnackbar('Участники добавлены успешно')
+    uiStore.showSuccessSnackbar(t('admin.groups.editor.messages.membersAddSuccess'))
   } catch (error) {
-    uiStore.showErrorSnackbar(error instanceof Error ? error.message : 'Ошибка добавления участников')
+    uiStore.showErrorSnackbar(error instanceof Error ? error.message : t('admin.groups.editor.messages.membersAddError'))
   }
 }
 
 const handleRemoveMembers = async () => {
   if (!groupEditorStore.hasSelectedMembers) {
-    uiStore.showErrorSnackbar('Не выбрано ни одного участника для удаления')
+    uiStore.showErrorSnackbar(t('admin.groups.editor.messages.noMembersSelected'))
     return
   }
   
   if (!groupEditorStore.isEditMode) {
-    uiStore.showErrorSnackbar('Недоступно в режиме создания группы')
+    uiStore.showErrorSnackbar(t('admin.groups.editor.messages.unavailableInCreateMode'))
     return
   }
   
@@ -206,17 +210,17 @@ const handleRemoveMembers = async () => {
     )
     
     if (removedCount > 0) {
-      // После успешного удаления, обновляем список участников
+      // After successful removal, update the members list
       await fetchGroupMembersService.fetchGroupMembers(groupId)
-      // Очищаем выделение
+      // Clear selection
       groupEditorStore.clearGroupMembersSelection()
     }
   } catch (error) {
-    uiStore.showErrorSnackbar(error instanceof Error ? error.message : 'Ошибка удаления участников')
+    uiStore.showErrorSnackbar(error instanceof Error ? error.message : t('admin.groups.editor.messages.membersRemoveError'))
   }
 }
 
-// Placeholder для сервиса (будет реализован отдельно)
+// Placeholder for service (will be implemented separately)
 async function addGroupMembers(userIds: string[]) {
   console.log('Adding members with IDs:', userIds)
 }
@@ -239,29 +243,29 @@ watch(
 
 // ==================== LIFECYCLE ====================
 onMounted(() => {
-  // Проверка валидности JWT при инициализации
+  // Check JWT validation on initialization
   if (!userStore.isLoggedIn) {
-    // Сделать все кнопки в app-bar недоступными
-    // (используем isAuthorized в шаблоне)
+    // Make all app-bar buttons unavailable
+    // (we use isAuthorized in the template)
     
-    // Сброс кэша Pinia
+    // Reset Pinia cache
     groupEditorStore.$reset()
     uiStore.$reset()
     userStore.$reset()
 
-    // Вывод тост-сообщения
-    uiStore.showErrorSnackbar('Пользователь не вошел в систему')
+    // Show toast message
+    uiStore.showErrorSnackbar(t('admin.groups.editor.messages.notLoggedIn'))
   }
 
   groupEditorStore.resetForm()
   isFormDirty.value = false // Form starts clean
   isInitialLoad.value = true // Mark as initial load
-  setTimeout(() => { isInitialLoad.value = false }, 0) // Имитация асинхронной загрузки
+  setTimeout(() => { isInitialLoad.value = false }, 0) // Simulate async loading
 })
 
 onBeforeUnmount(() => {
   uiStore.hideSnackbar()
-  groupEditorStore.resetMembersState() // Очистка состояния участников при выходе из компонента
+  groupEditorStore.resetMembersState() // Clear members state when leaving component
 })
 </script>
 
@@ -275,7 +279,7 @@ onBeforeUnmount(() => {
           @click="switchSection('details')"
           variant="text"
         >
-          данные группы
+          {{ t('admin.groups.editor.sections.details') }}
         </v-btn>
         <v-btn
           :class="['section-btn', { 'section-active': groupEditorStore.ui.activeSection === 'members' }]"
@@ -283,7 +287,7 @@ onBeforeUnmount(() => {
           @click="switchSection('members')"
           variant="text"
         >
-          участники группы
+          {{ t('admin.groups.editor.sections.members') }}
         </v-btn>
       </div>
 
@@ -298,14 +302,14 @@ onBeforeUnmount(() => {
             :disabled="!isAuthorized || !isFormValid || isSubmitting"
             @click="handleCreateGroup"
           >
-            Создать группу
+            {{ t('admin.groups.editor.buttons.create') }}
           </v-btn>
           <v-btn
             variant="outlined"
             :disabled="!isAuthorized"
             @click="resetForm"
           >
-            Сбросить
+            {{ t('admin.groups.editor.buttons.reset') }}
           </v-btn>
         </template>
         <template v-else-if="groupEditorStore.ui.activeSection === 'details'">
@@ -316,7 +320,7 @@ onBeforeUnmount(() => {
             :disabled="!isAuthorized || !isFormValid || !isFormDirty || isSubmitting"
             @click="handleUpdateGroup"
           >
-            Обновить данные группы
+            {{ t('admin.groups.editor.buttons.update') }}
           </v-btn>
         </template>
         <template v-else-if="groupEditorStore.ui.activeSection === 'members'">
@@ -327,7 +331,7 @@ onBeforeUnmount(() => {
             :disabled="!isAuthorized"
             @click="openItemSelectorModal"
           >
-            Добавить участника
+            {{ t('admin.groups.editor.buttons.addMember') }}
           </v-btn>
           <v-btn
             color="error"
@@ -335,7 +339,7 @@ onBeforeUnmount(() => {
             :disabled="!isAuthorized || !hasSelectedMembers"
             @click="handleRemoveMembers"
           >
-            Удалить участника из группы
+            {{ t('admin.groups.editor.buttons.removeMember') }}
           </v-btn>
         </template>
       </div>
@@ -343,7 +347,9 @@ onBeforeUnmount(() => {
       <v-spacer />
 
       <div class="module-title">
-        {{ groupEditorStore.isEditMode ? 'редактирование группы' : 'создание группы' }}
+        {{ groupEditorStore.isEditMode 
+           ? t('admin.groups.editor.title.edit') 
+           : t('admin.groups.editor.title.create') }}
       </div>
     </v-app-bar>
 
@@ -355,7 +361,7 @@ onBeforeUnmount(() => {
               <v-col v-if="groupEditorStore.isEditMode" cols="12" md="6">
                 <v-text-field
                   :model-value="groupEditorStore.mode.mode === 'edit' ? groupEditorStore.mode.groupId : ''"
-                  label="UUID группы"
+                  :label="t('admin.groups.editor.form.groupId')"
                   variant="outlined"
                   density="comfortable"
                   readonly
@@ -365,7 +371,7 @@ onBeforeUnmount(() => {
               <v-col cols="12" :md="groupEditorStore.isEditMode ? 6 : 12">
                 <v-text-field
                   v-model="groupEditorStore.group.group_name"
-                  label="Название*"
+                  :label="t('admin.groups.editor.form.name')"
                   :rules="groupNameRules"
                   variant="outlined"
                   density="comfortable"
@@ -376,11 +382,11 @@ onBeforeUnmount(() => {
               <v-col cols="12" md="6">
                 <v-select
                   v-model="groupEditorStore.group.group_status"
-                  label="Статус*"
+                  :label="t('admin.groups.editor.form.status')"
                   :items="[
-                    { title: 'Активна', value: GroupStatus.ACTIVE },
-                    { title: 'Отключена', value: GroupStatus.DISABLED },
-                    { title: 'В архиве', value: GroupStatus.ARCHIVED }
+                    { title: t('admin.groups.editor.status.active'), value: GroupStatus.ACTIVE },
+                    { title: t('admin.groups.editor.status.disabled'), value: GroupStatus.DISABLED },
+                    { title: t('admin.groups.editor.status.archived'), value: GroupStatus.ARCHIVED }
                   ]"
                   item-title="title"
                   item-value="value"
@@ -393,7 +399,7 @@ onBeforeUnmount(() => {
               <v-col cols="12">
                 <v-textarea
                   v-model="groupEditorStore.details.group_description"
-                  label="Описание"
+                  :label="t('admin.groups.editor.form.description')"
                   :rules="generalDescriptionRules"
                   variant="outlined"
                   rows="2"
@@ -404,7 +410,7 @@ onBeforeUnmount(() => {
               <v-col cols="12" md="6">
                 <v-text-field
                   v-model="groupEditorStore.details.group_email"
-                  label="E-mail"
+                  :label="t('admin.groups.editor.form.email')"
                   :rules="optionalEmailRules"
                   variant="outlined"
                   density="comfortable"
@@ -414,7 +420,7 @@ onBeforeUnmount(() => {
               <v-col cols="12" md="6">
                 <v-text-field
                   v-model="ownerDisplay"
-                  label="Владелец*"
+                  :label="t('admin.groups.editor.form.owner')"
                   :rules="usernameRules"
                   variant="outlined"
                   density="comfortable"
@@ -427,10 +433,10 @@ onBeforeUnmount(() => {
 
         <v-card v-else flat>
           <v-container class="pa-4">
-            <h4 class="mb-2">группа: {{ groupEditorStore.group.group_name || 'Без названия' }}</h4><br>
+            <h4 class="mb-2">{{ t('admin.groups.editor.sections.members') }}: {{ groupEditorStore.group.group_name || t('common.unnamed') }}</h4><br>
             <v-text-field
               v-model="searchQuery"
-              label="поиск в таблице участников группы"
+              :label="t('admin.groups.editor.search')"
               variant="outlined"
               density="comfortable"
               prepend-inner-icon="mdi-magnify"
@@ -471,7 +477,7 @@ onBeforeUnmount(() => {
             </template>
             <template v-slot:no-data>
               <div class="pa-4 text-center">
-                {{ groupEditorStore.members.error || 'Нет данных для отображения' }}
+                {{ groupEditorStore.members.error || t('common.noData') }}
               </div>
             </template>
           </v-data-table>
@@ -481,7 +487,7 @@ onBeforeUnmount(() => {
 
     <v-dialog v-model="isItemSelectorModalOpen" max-width="600">
       <ItemSelector 
-        :title="'добавление пользователей в группу'" 
+        :title="t('admin.groups.editor.buttons.addMember')" 
         operation-type="add-users-to-group" 
         search-type="user-account"
         :max-items="20" 
