@@ -1,5 +1,5 @@
 /**
- * types.change.password.ts
+ * BACKEND types.change.password.ts
  * Type definitions for password changing functionality.
  * Supports both user self-change and admin password reset scenarios.
  */

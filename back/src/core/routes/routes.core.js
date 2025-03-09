@@ -17,8 +17,8 @@ const fetchUsernameByUuid = require('../services/service.fetch.username.by.uuid'
 const searchUsers = require('../services/item-selector/controller.search.users').default;
 const addUsersToGroup = require('../services/item-selector/controller.add.users.to.group').default;
 
-const selfChangePasswordController = require('../services/change-password/service.self.change.password').default;
-const adminResetPasswordController = require('../services/change-password/service.admin.change.password').default;
+const selfChangePasswordController = require('../services/change-password/controller.self.change.password').default;
+const adminResetPasswordController = require('../services/change-password/controller.admin.change.password').default;
 
 
 // utility services

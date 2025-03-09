@@ -4,9 +4,18 @@
  * Receives request and passes it to the service layer, then formats response.
  */
 
-import { Request, Response } from 'express';
-import { AdminResetPasswordRequest } from './types.change.password';
+import { Request as ExpressRequest, Response } from 'express';
+import { AdminResetPasswordRequest, ChangePasswordResponse } from './types.change.password';
 import resetPassword from './service.admin.change.password';
+
+// Расширяем тип Request для включения свойства user, добавляемого middleware validateJWT
+interface Request extends ExpressRequest {
+  user?: {
+    id: string;
+    username: string;
+    user_id: string;
+  };
+}
 
 /**
  * Controller to handle admin password reset requests
@@ -17,11 +26,64 @@ import resetPassword from './service.admin.change.password';
 export async function adminResetPasswordController(req: Request, res: Response): Promise<Response> {
   console.log('[Admin Reset Password Controller] Received password reset request');
   
+  // Детальное логирование входящего запроса
+  console.log('[Admin Reset Password Controller] Request body:', JSON.stringify({
+    uuid: req.body?.uuid || 'undefined',
+    username: req.body?.username || 'undefined',
+    // Скрываем пароль в логах
+    newPassword: req.body?.newPassword ? '****' : 'undefined'
+  }, null, 2));
+  
+  // Логирование заголовков
+  console.log('[Admin Reset Password Controller] Request headers:', {
+    'content-type': req.headers['content-type'],
+    'content-length': req.headers['content-length'],
+    'x-requested-with': req.headers['x-requested-with']
+  });
+  
+  // Логирование информации о пользователе, делающем запрос
+  console.log('[Admin Reset Password Controller] User performing action:', 
+    req.user ? `${req.user.username} (${req.user.user_id})` : 'Unknown user');
+  
   try {
-    // Pass request to service layer
-    const result = await resetPassword(req.body as AdminResetPasswordRequest);
+    // Проверка наличия данных в запросе
+    if (!req.body || !req.body.uuid || !req.body.username || !req.body.newPassword) {
+      console.error('[Admin Reset Password Controller] Invalid request data:', {
+        hasBody: !!req.body,
+        hasUuid: req.body?.uuid ? true : false,
+        hasUsername: req.body?.username ? true : false,
+        hasNewPassword: req.body?.newPassword ? true : false
+      });
+      
+      return res.status(400).json({
+        success: false,
+        message: 'Missing required fields in request',
+        error: 'Request validation failed'
+      });
+    }
     
-    // Return appropriate response based on service result
+    // Извлекаем данные из запроса
+    const resetRequest: AdminResetPasswordRequest = {
+      uuid: req.body.uuid,
+      username: req.body.username,
+      newPassword: req.body.newPassword
+    };
+    
+    console.log('[Admin Reset Password Controller] Extracted data:', {
+      uuid: resetRequest.uuid,
+      username: resetRequest.username,
+      passwordProvided: !!resetRequest.newPassword
+    });
+    
+    // Передаем данные в сервисный слой
+    const result: ChangePasswordResponse = await resetPassword(resetRequest);
+    
+    console.log('[Admin Reset Password Controller] Service response:', {
+      success: result.success,
+      message: result.message
+    });
+    
+    // Возвращаем ответ клиенту
     if (result.success) {
       return res.status(200).json(result);
     } else {

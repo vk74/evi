@@ -8,6 +8,7 @@
  * - Supports admin password reset
  * - Validates password according to system rules
  * - Provides password visibility toggle
+ * - Logs comprehensive information about operations
  */
 
 <script setup lang="ts">
@@ -15,6 +16,7 @@ import { ref, computed, onMounted } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useValidationRules } from '../../../validation/rules.common.fields';
 import { useUiStore } from '@/core/state/uistate';
+import { useUserStore } from '@/core/state/userstate';
 import { ChangePasswordProps, PasswordChangeMode } from './types.change.password';
 import changePassword from './service.self.change.password';
 import resetPassword from './service.admin.change.password';
@@ -22,12 +24,14 @@ import resetPassword from './service.admin.change.password';
 // Init i18n and stores
 const { t } = useI18n();
 const uiStore = useUiStore();
+const userStore = useUserStore();
 
 // Component props
 const props = defineProps<ChangePasswordProps>();
 
 // Form refs and validation
 const form = ref<HTMLFormElement | null>(null);
+const newPasswordRef = ref<HTMLInputElement | null>(null);
 const { passwordRules } = useValidationRules();
 
 // Form state
@@ -122,7 +126,8 @@ const validateForm = (): boolean => {
  * Submits the form with appropriate service based on mode
  */
 const submitForm = async () => {
-  console.log(`[ChangePassword] Submitting form in ${props.mode} mode`);
+  console.log(`[ChangePassword] Submitting form in ${props.mode} mode for user ${props.username} (${props.uuid})`);
+  console.log(`[ChangePassword] Current admin user: ${userStore.username} (${userStore.userID})`);
   
   if (!validateForm()) {
     console.log('[ChangePassword] Form validation failed');
@@ -136,19 +141,32 @@ const submitForm = async () => {
     
     if (props.mode === PasswordChangeMode.SELF) {
       // Self change password
-      response = await changePassword({
+      const selfData = {
         uuid: props.uuid,
         username: props.username,
         currentPassword: currentPassword.value,
         newPassword: newPassword.value
-      });
+      };
+      console.log('[ChangePassword] Self mode data:', JSON.stringify({
+        uuid: selfData.uuid || 'missing',
+        username: selfData.username || 'missing',
+        currentPassword: selfData.currentPassword ? '[REDACTED]' : 'missing',
+        newPassword: selfData.newPassword ? '[REDACTED]' : 'missing'
+      }));
+      response = await changePassword(selfData);
     } else {
       // Admin reset password
-      response = await resetPassword({
+      const adminData = {
         uuid: props.uuid,
         username: props.username,
         newPassword: newPassword.value
-      });
+      };
+      console.log('[ChangePassword] Admin mode data:', JSON.stringify({
+        uuid: adminData.uuid || 'missing',
+        username: adminData.username || 'missing',
+        newPassword: adminData.newPassword ? '[REDACTED]' : 'missing'
+      }));
+      response = await resetPassword(adminData);
     }
     
     if (response.success) {
@@ -169,7 +187,22 @@ const submitForm = async () => {
 
 // Initialize form on mount
 onMounted(() => {
-  console.log(`[ChangePassword] Mounted in ${props.mode} mode for user ${props.username}`);
+  console.log(`[ChangePassword] Mounted in ${props.mode} mode for user ${props.username} (${props.uuid})`);
+  console.log(`[ChangePassword] Current admin user: ${userStore.username} (${userStore.userID})`);
+  
+  // Verify all props are present
+  if (!props.title) console.warn('[ChangePassword] Missing prop: title');
+  if (!props.uuid) console.warn('[ChangePassword] Missing prop: uuid');
+  if (!props.username) console.warn('[ChangePassword] Missing prop: username');
+  if (!props.mode) console.warn('[ChangePassword] Missing prop: mode');
+  if (!props.onClose) console.warn('[ChangePassword] Missing prop: onClose');
+  
+  // Установка фокуса на поле нового пароля после рендера компонента
+  setTimeout(() => {
+    if (newPasswordRef.value?.$el.querySelector('input')) {
+      newPasswordRef.value.$el.querySelector('input').focus();
+    }
+  }, 100);
 });
 </script>
 
@@ -182,7 +215,7 @@ onMounted(() => {
         </v-card-title>
         
         <v-card-text>
-          <v-form ref="form" @submit.prevent="submitForm">
+          <v-form ref="form" @submit.prevent="submitForm" @keyup.enter="submitForm">
             <!-- Current password field (only for self mode) -->
             <v-text-field
               v-if="mode === PasswordChangeMode.SELF"
@@ -192,13 +225,16 @@ onMounted(() => {
               :append-icon="showCurrentPassword ? 'mdi-eye' : 'mdi-eye-off'"
               :error-messages="currentPasswordError ? [currentPasswordError] : []"
               @click:append="showCurrentPassword = !showCurrentPassword"
+              @keyup.enter="submitForm"
               outlined
               dense
               class="mb-3"
+              tabindex="1"
             ></v-text-field>
             
             <!-- New password field -->
             <v-text-field
+              ref="newPasswordRef"
               v-model="newPassword"
               :label="$t('passwordChange.newPassword')"
               :type="showNewPassword ? 'text' : 'password'"
@@ -206,9 +242,11 @@ onMounted(() => {
               :error-messages="newPasswordError ? [newPasswordError] : []"
               @click:append="showNewPassword = !showNewPassword"
               @input="validatePasswordMatch"
+              @keyup.enter="submitForm"
               outlined
               dense
               class="mb-3"
+              tabindex="2"
             ></v-text-field>
             
             <!-- Confirm password field -->
@@ -220,8 +258,10 @@ onMounted(() => {
               :error-messages="confirmPasswordError ? [confirmPasswordError] : []"
               @click:append="showConfirmPassword = !showConfirmPassword"
               @input="validatePasswordMatch"
+              @keyup.enter="submitForm"
               outlined
               dense
+              tabindex="3"
             ></v-text-field>
           </v-form>
         </v-card-text>
@@ -232,6 +272,7 @@ onMounted(() => {
             color="grey"
             variant="outlined"
             class="mr-2"
+            tabindex="5"
             @click="resetForm"
           >
             {{ $t('passwordChange.reset', 'Сбросить') }}
@@ -240,6 +281,7 @@ onMounted(() => {
             color="teal"
             variant="outlined"
             :loading="loading"
+            tabindex="4"
             @click="submitForm"
           >
             {{ mode === PasswordChangeMode.SELF 

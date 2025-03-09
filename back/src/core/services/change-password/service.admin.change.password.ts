@@ -6,9 +6,38 @@
 
 import bcrypt from 'bcrypt';
 import { pool } from '../../../db/maindb';
-import { passwordChangeQueries } from './queries.change.password';
-import { AdminResetPasswordRequest, ChangePasswordResponse } from './types.change.password';
 import { REGEX, VALIDATION } from '../../validation/rules.common.fields';
+import { AdminResetPasswordRequest, ChangePasswordResponse } from './types.change.password';
+
+// SQL queries with correct schema reference
+const passwordQueries = {
+  getUserPasswordByUuid: `
+    SELECT hashed_password, username
+    FROM app.users
+    WHERE user_id = $1
+  `,
+
+  updatePasswordByUuid: `
+    UPDATE app.users
+    SET hashed_password = $1
+    WHERE user_id = $2
+    RETURNING user_id, username
+  `,
+
+  checkUserExists: `
+    SELECT EXISTS (
+      SELECT 1 FROM app.users 
+      WHERE user_id = $1
+    ) as exists
+  `,
+
+  validateUserIdentity: `
+    SELECT EXISTS (
+      SELECT 1 FROM app.users 
+      WHERE user_id = $1 AND username = $2
+    ) as exists
+  `
+};
 
 /**
  * Reset user password (admin function)
@@ -70,7 +99,7 @@ export async function resetPassword(data: AdminResetPasswordRequest): Promise<Ch
   try {
     // Verify user exists and username matches UUID
     const userExistsResult = await pool.query(
-      passwordChangeQueries.validateUserIdentity,
+      passwordQueries.validateUserIdentity,
       [uuid, username]
     );
 
@@ -88,9 +117,11 @@ export async function resetPassword(data: AdminResetPasswordRequest): Promise<Ch
     const saltRounds = 10;
     const hashedNewPassword = await bcrypt.hash(newPassword, saltRounds);
     
+    console.log(`[Admin Reset Password Service] Password hashed successfully for user: ${username} (${uuid})`);
+
     // Update the password in the database
     const updateResult = await pool.query(
-      passwordChangeQueries.updatePasswordByUuid,
+      passwordQueries.updatePasswordByUuid,
       [hashedNewPassword, uuid]
     );
 
