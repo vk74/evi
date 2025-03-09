@@ -1,0 +1,52 @@
+{
+  "passwordChange": {
+    "currentPassword": "текущий пароль",
+    "newPassword": "новый пароль",
+    "confirmPassword": "подтверждение пароля",
+    "passwordsDoNotMatch": "пароли не совпадают",
+    "currentPasswordRequired": "требуется текущий пароль",
+    "success": "пароль успешно изменен",
+    "error": "щшибка при смене пароля",
+    "unexpectedError": "непредвиденная ошибка при смене пароля",
+    "reset": "сбросить",
+    "change": "изменить",
+    "resetPassword": "сменить пароль",
+    "resetPasswordFor": "Сброс пароля для"
+  },
+  "itemSelector": {
+    "title": {
+      "addUsersToGroup": "добавление пользователей в группу"
+    },
+    "search": {
+      "placeholder": {
+        "userAccount": "поиск (по имени пользователя, uuid или email)",
+        "group": "поиск (по названию группы или uuid)",
+        "workspace": "поиск (по названию объекта)",
+        "default": "поиск"
+      },
+      "limit": "максимальное количество объектов: {count}",
+      "minChars": "введите не менее 2 символов для поиска"
+    },
+    "items": {
+      "notFound": "объекты не найдены"
+    },
+    "buttons": {
+      "cancel": "отмена",
+      "reset": "сбросить результаты",
+      "add": "добавить",
+      "execute": "выполнить"
+    },
+    "messages": {
+      "noResults": "нет результатов для добавления",
+      "addSuccess": "успешно добавлено {count} пользователей в группу",
+      "addError": "ошибка добавления пользователей в группу",
+      "searchLimitReached": "достигнут лимит в {count} объектов",
+      "searchError": "ошибка при поиске",
+      "invalidOperationType": "недопустимый тип операции",
+      "foundItems": "найдено объектов: {count}",
+      "addedUniqueItems": "найдено {total} объектов, добавлено {unique} уникальных",
+      "alreadyAdded": "все найденные объекты уже добавлены в результаты",
+      "noItemsFound": "по вашему запросу ничего не найдено"
+    }
+  }
+}

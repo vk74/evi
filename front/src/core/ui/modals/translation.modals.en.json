@@ -1,0 +1,52 @@
+{
+  "passwordChange": {
+    "currentPassword": "current password",
+    "newPassword": "new password",
+    "confirmPassword": "confirm password",
+    "passwordsDoNotMatch": "passwords do not match",
+    "currentPasswordRequired": "current password is required",
+    "success": "password changed successfully",
+    "error": "error changing password",
+    "unexpectedError": "unexpected error during password change",
+    "reset": "reset",
+    "change": "change",
+    "resetPassword": "reset password",
+    "resetPasswordFor": "reset password for"
+  },
+  "itemSelector": {
+    "title": {
+      "addUsersToGroup": "adding users to group"
+    },
+    "search": {
+      "placeholder": {
+        "userAccount": "search (by username, uuid or email)",
+        "group": "search (by group name or uuid)",
+        "workspace": "search (by object name)",
+        "default": "search"
+      },
+      "limit": "maximum items: {count}",
+      "minChars": "enter at least 2 characters to search"
+    },
+    "items": {
+      "notFound": "no items found"
+    },
+    "buttons": {
+      "cancel": "cancel",
+      "reset": "reset results",
+      "add": "add",
+      "execute": "execute"
+    },
+    "messages": {
+      "noResults": "no results to add",
+      "addSuccess": "successfully added {count} users to group",
+      "addError": "error adding users to group",
+      "searchLimitReached": "limit of {count} items reached",
+      "searchError": "search error",
+      "invalidOperationType": "invalid operation type",
+      "foundItems": "found {count} items",
+      "addedUniqueItems": "found {total} items, added {unique} unique ones",
+      "alreadyAdded": "all found items have already been added to results",
+      "noItemsFound": "no items found for your request"
+    }
+  }
+}

@@ -7,6 +7,7 @@ Expects 4 parameters:
 - searchType: string, defines the search type for querying the endpoint (e.g., "user-account"). -->
 <script setup lang="ts">
 import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useUiStore } from '@/core/state/uistate'
 import { SearchParams, SearchResult } from './types.item.selector'
 import searchUsers from './service.search.users'
@@ -14,6 +15,9 @@ import addUsersToGroup from './service.add.users.to.group'
 // Здесь будут импорты других сервисов поиска, когда они будут созданы
 // import searchGroups from './service.search.groups'
 // import searchWorkspaces from './service.search.workspaces'
+
+// Init i18n
+const { t } = useI18n()
 
 // Props definition
 const props = defineProps({
@@ -46,18 +50,21 @@ const isLoading = ref(false)
 const uiStore = useUiStore()
 
 // Словарь подсказок для разных типов поиска
-const searchPlaceholders: Record<string, string> = {
-  'user-account': 'Поиск (по имени пользователя, UUID или email)',
-  'group': 'Поиск (по названию группы или UUID)',
-  'workspace': 'Поиск (по названию объекта)',
-  // Можно добавить другие типы поиска при необходимости
-  'default': 'Поиск'
+const getSearchPlaceholder = (type: string): string => {
+  switch (type) {
+    case 'user-account':
+      return t('itemSelector.search.placeholder.userAccount')
+    case 'group':
+      return t('itemSelector.search.placeholder.group')
+    case 'workspace':
+      return t('itemSelector.search.placeholder.workspace')
+    default:
+      return t('itemSelector.search.placeholder.default')
+  }
 }
 
 // Вычисляемое свойство для получения подсказки поиска
-const searchPlaceholder = computed(() => 
-  searchPlaceholders[props.searchType] || searchPlaceholders['default']
-)
+const searchPlaceholder = computed(() => getSearchPlaceholder(props.searchType))
 
 // Словарь для отображения объектов разных типов
 const itemDisplayFormats: Record<string, (item: SearchResult) => string> = {
@@ -65,7 +72,7 @@ const itemDisplayFormats: Record<string, (item: SearchResult) => string> = {
   'group': (item) => `${item.name || item.groupName} (${item.uuid})`,
   'workspace': (item) => `${item.name} (${item.uuid})`,
   // Другие форматы для разных типов
-  'default': (item) => item.name || item.username || item.uuid || 'Неизвестный объект'
+  'default': (item) => item.name || item.username || item.uuid || t('itemSelector.items.notFound')
 }
 
 // Функция для получения отображаемого текста для элемента
@@ -102,7 +109,7 @@ const searchHandlers: Record<string, (params: SearchParams) => Promise<SearchRes
 // Action handlers
 const actionHandlers: Record<string, { label: string; handler: () => Promise<void> }> = {
   'add-users-to-group': {
-    label: 'добавить',
+    label: t('itemSelector.buttons.add'),
     handler: handleAddUsersToGroup,
   },
   // Здесь можно добавить другие типы операций
@@ -115,7 +122,7 @@ const actionHandlers: Record<string, { label: string; handler: () => Promise<voi
 async function handleAddUsersToGroup() {
   console.log('[ItemSelector] handleAddUsersToGroup called, selectedItems:', searchResults.value.map(item => item.uuid));
   if (searchResults.value.length === 0) {
-    uiStore.showErrorSnackbar('нет результатов для добавления')
+    uiStore.showErrorSnackbar(t('itemSelector.messages.noResults'))
     return
   }
 
@@ -124,14 +131,14 @@ async function handleAddUsersToGroup() {
     const response = await addUsersToGroup(searchResults.value.map(item => item.uuid))
     console.log('[ItemSelector] Response from addUsersToGroup:', response);
     if (response.success) {
-      uiStore.showSuccessSnackbar(`успешно добавлено ${response.count} пользователей в группу`)
+      uiStore.showSuccessSnackbar(t('itemSelector.messages.addSuccess', { count: response.count }))
       emit('actionPerformed', response)
       resetSearch()
       closeModal()
     }
   } catch (error) {
     console.error('[ItemSelector] Error adding users to group:', error)
-    uiStore.showErrorSnackbar('ошибка добавления пользователей в группу')
+    uiStore.showErrorSnackbar(t('itemSelector.messages.addError'))
   }
 }
 
@@ -156,7 +163,7 @@ const resetSearch = () => {
 const handleSearch = async () => {
   console.log('[ItemSelector] Starting search with query:', searchQuery.value, 'searchType:', props.searchType, 'remainingLimit:', remainingLimit.value)
   if (!canSearch.value) {
-    uiStore.showErrorSnackbar('введите не менее 2 символов для поиска')
+    uiStore.showErrorSnackbar(t('itemSelector.search.minChars'))
     return
   }
 
@@ -169,7 +176,7 @@ const handleSearch = async () => {
     
     // Skip search if we're already at max capacity
     if (searchParams.limit === 0) {
-      uiStore.showErrorSnackbar(`достигнут лимит в ${props.maxItems} объектов`)
+      uiStore.showErrorSnackbar(t('itemSelector.messages.searchLimitReached', { count: props.maxItems }))
       isLoading.value = false
       return
     }
@@ -192,18 +199,21 @@ const handleSearch = async () => {
       console.log('[ItemSelector] Updated searchResults:', searchResults.value)
       
       if (newUniqueItems.length < response.length) {
-        uiStore.showInfoSnackbar(`Найдено ${response.length} объектов, добавлено ${newUniqueItems.length} уникальных`)
+        uiStore.showInfoSnackbar(t('itemSelector.messages.addedUniqueItems', { 
+          total: response.length, 
+          unique: newUniqueItems.length 
+        }))
       } else {
-        uiStore.showSuccessSnackbar(`найдено объектов: ${newUniqueItems.length}`)
+        uiStore.showSuccessSnackbar(t('itemSelector.messages.foundItems', { count: newUniqueItems.length }))
       }
     } else if (response.length > 0) {
-      uiStore.showInfoSnackbar('Все найденные объекты уже добавлены в результаты')
+      uiStore.showInfoSnackbar(t('itemSelector.messages.alreadyAdded'))
     } else {
-      uiStore.showInfoSnackbar('по вашему запросу ничего не найдено')
+      uiStore.showInfoSnackbar(t('itemSelector.messages.noItemsFound'))
     }
   } catch (error) {
     console.error(`[ItemSelector] Error searching ${props.searchType}:`, error)
-    uiStore.showErrorSnackbar(`ошибка при поиске`)
+    uiStore.showErrorSnackbar(t('itemSelector.messages.searchError'))
   } finally {
     isLoading.value = false
     console.log('[ItemSelector] Search completed, isLoading:', isLoading.value)
@@ -216,7 +226,7 @@ const handleAction = async () => {
   if (action) {
     await action.handler()
   } else {
-    uiStore.showErrorSnackbar('недопустимый тип операции')
+    uiStore.showErrorSnackbar(t('itemSelector.messages.invalidOperationType'))
   }
 }
 
@@ -250,7 +260,7 @@ const onKeyPress = (event: KeyboardEvent) => {
                 @keypress="onKeyPress"
                 @click:prepend-inner="handleSearch"
               />
-              <p class="text-caption mb-2">Максимальное количество объектов: {{ maxItems }}</p>
+              <p class="text-caption mb-2">{{ t('itemSelector.search.limit', { count: maxItems }) }}</p>
             </v-col>
           </v-row>
           <v-row class="mb-4">
@@ -268,14 +278,14 @@ const onKeyPress = (event: KeyboardEvent) => {
                 </template>
               </v-chip>
               <v-chip v-if="!searchResults.length" color="grey" disabled>
-                Объекты не найдены
+                {{ t('itemSelector.items.notFound') }}
               </v-chip>
             </v-col>
           </v-row>
           <v-row>
             <v-col cols="12" class="d-flex justify-space-between">
               <v-btn color="gray" variant="outlined" @click="closeModal">
-                Отмена
+                {{ t('itemSelector.buttons.cancel') }}
               </v-btn>
               <v-btn
                 color="gray"
@@ -283,7 +293,7 @@ const onKeyPress = (event: KeyboardEvent) => {
                 @click="resetSearch"
                 :disabled="isResetDisabled"
               >
-                Сбросить результаты
+                {{ t('itemSelector.buttons.reset') }}
               </v-btn>
               <v-btn
                 color="teal"
@@ -292,7 +302,7 @@ const onKeyPress = (event: KeyboardEvent) => {
                 :disabled="isActionDisabled"
                 :loading="isLoading"
               >
-                {{ actionHandlers[operationType]?.label || 'Выполнить' }}
+                {{ actionHandlers[operationType]?.label || t('itemSelector.buttons.execute') }}
               </v-btn>
             </v-col>
           </v-row>

@@ -136,7 +136,7 @@ const getStatusColor = (status: string) => {
     case 'active': return 'teal';
     case 'disabled': return 'red';
     case 'archived': return 'grey';
-    case 'requires_user_action': return 'blue';
+    case 'requires_user_action': return 'orange';
     default: return 'black';
   }
 };
@@ -556,8 +556,5 @@ onMounted(async () => {
 </template>
 
 <style scoped>
-/* Стиль для крестика очистки */
-:deep(.v-field__clearable) .v-icon {
-  color: teal !important;
-}
+
 </style>

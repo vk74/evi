@@ -5,7 +5,8 @@ import appTranslationsRu from '@/components/AppTranslationRU.json'
 import appTranslationsEn from '@/components/AppTranslationEN.json'
 
 // core modules
-
+import coreModalsRu from '@/core/ui/modals/translation.modals.ru.json'
+import coreModalsEn from '@/core/ui/modals/translation.modals.en.json'
 
 // Admin module and sub-modules and functions
 import adminModuleRu from '@/components/admin/translation.admin.ru.json'
@@ -32,6 +33,7 @@ import validationCommonFieldsRulesEn from '@/core/validation/translation.rules.c
 export default {
     ru: merge({},
       appTranslationsRu,
+      coreModalsRu,
       adminModuleRu,
       userEditorRu,
       usersListRu,
@@ -41,6 +43,7 @@ export default {
     ),
     en: merge({},
       appTranslationsEn,
+      coreModalsEn,
       adminModuleEn,
       userEditorEn,
       usersListEn,

@@ -170,16 +170,16 @@ const submitForm = async () => {
     }
     
     if (response.success) {
-      uiStore.showSuccessSnackbar(response.message || t('passwordChange.success', 'Пароль успешно изменен'));
+      uiStore.showSuccessSnackbar(response.message || t('passwordChange.success'));
       setTimeout(() => {
         closeModal();
       }, 300);
     } else {
-      uiStore.showErrorSnackbar(response.message || t('passwordChange.error', 'Ошибка при смене пароля'));
+      uiStore.showErrorSnackbar(response.message || t('passwordChange.error'));
     }
   } catch (error) {
     console.error('[ChangePassword] Error during password change:', error);
-    uiStore.showErrorSnackbar(t('passwordChange.unexpectedError', 'Непредвиденная ошибка при смене пароля'));
+    uiStore.showErrorSnackbar(t('passwordChange.unexpectedError'));
   } finally {
     loading.value = false;
   }
@@ -275,7 +275,7 @@ onMounted(() => {
             tabindex="5"
             @click="resetForm"
           >
-            {{ $t('passwordChange.reset', 'Сбросить') }}
+            {{ $t('passwordChange.reset') }}
           </v-btn>
           <v-btn
             color="teal"
@@ -285,8 +285,8 @@ onMounted(() => {
             @click="submitForm"
           >
             {{ mode === PasswordChangeMode.SELF 
-              ? $t('passwordChange.change', 'Изменить') 
-              : $t('passwordChange.resetPassword', 'Сменить пароль') }}
+              ? $t('passwordChange.change') 
+              : $t('passwordChange.resetPassword') }}
           </v-btn>
         </v-card-actions>
       </v-card>
