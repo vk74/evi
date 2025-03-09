@@ -76,10 +76,12 @@ const setActiveModule = (module) => {
 };
 
 const logout = () => {
-  usersListStore.clearCache();
-  usersListStore.clearSelection();
-  groupsListStore.clearCache();
-  groupsListStore.clearSelection();
+  // Safely call methods if they exist
+  if (typeof usersListStore.clearCache === 'function') usersListStore.clearCache();
+  if (typeof usersListStore.clearSelection === 'function') usersListStore.clearSelection();
+  if (typeof groupsListStore.clearCache === 'function') groupsListStore.clearCache();
+  if (typeof groupsListStore.clearSelection === 'function') groupsListStore.clearSelection();
+  
   userStore.userLogoff();
   appStore.setActiveModule('Catalog');
 };
@@ -210,13 +212,8 @@ onMounted(() => {
         </template>
  
         <v-list>
-          <v-list-item>
-            <v-list-item-title>{{ $t('navigation.systemMenu.test') }}</v-list-item-title>
-          </v-list-item>
-          
           <!-- Account module link -->
           <v-list-item
-            v-if="isLoggedIn"
             @click="setActiveModule('Account')"
           >
             <v-list-item-title>{{ $t('navigation.drawer.account') }}</v-list-item-title>
