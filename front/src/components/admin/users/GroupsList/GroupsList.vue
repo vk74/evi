@@ -62,7 +62,7 @@ const headers = computed<TableHeader[]>(() => [
 const getStatusColor = (status: string) => {
   switch (status.toLowerCase()) {
     case 'active': return 'teal';
-    case 'disabled': return 'red';
+    case 'disabled': return 'error';
     case 'archived': return 'blue';
     default: return 'blue';
   }

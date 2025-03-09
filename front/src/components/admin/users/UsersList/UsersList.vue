@@ -134,7 +134,7 @@ const confirmDelete = async () => {
 const getStatusColor = (status: string) => {
   switch (status.toLowerCase()) {
     case 'active': return 'teal';
-    case 'disabled': return 'red';
+    case 'disabled': return 'error';
     case 'archived': return 'grey';
     case 'requires_user_action': return 'orange';
     default: return 'black';
