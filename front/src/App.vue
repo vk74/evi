@@ -1,12 +1,122 @@
 <!--
 App.vue
-Корневой компонент приложения, который определяет основную структуру интерфейса.
-Содержит:
-- App Bar с основными элементами управления (поиск, смена языка, вход/выход)
-- Navigation Drawer для навигации между основными модулями с возможностью управления режимами отображения
-- Основную рабочую область для отображения активного модуля
-- Глобальный snackbar для системных сообщений
+Root component of the application that defines the main interface structure.
+Contains:
+- App Bar with primary controls (language switching, account management)
+- Navigation Drawer for navigation between main modules with display mode management
+- Main work area for displaying the active module
+- Global snackbar for system messages
 -->
+<script setup>
+import { ref, computed, onMounted } from 'vue';
+import { useUserStore } from '@/core/state/userstate';
+import { useUiStore } from './core/state/uistate';
+import { useAppStore } from './core/state/appstate';
+import { useI18n } from 'vue-i18n';
+import { startSessionTimers } from '@/core/services/sessionServices';
+import ModuleCatalog from './components/catalog/ModuleCatalog.vue';
+import ModuleWork from './components/work/ModuleWork.vue';
+import ModuleAR from './components/ar/ModuleAR.vue';
+import ModuleAdmin from './components/admin/ModuleAdmin.vue';
+import ModuleXLS from './components/proto/ModuleXLS.vue';
+import ModuleAccount from './components/account/ModuleAccount.vue';
+import ModuleSettings from './components/settings/ModuleSettings.vue';
+import ModuleHelp from './components/help/ModuleHelp.vue';
+import ModuleLogin from './components/account/ModuleLogin.vue';
+import ModalChangeUserPass from './components/account/ModalChangeUserPass.vue';
+import LoginDialog from './components/account/ModuleLogin.vue';
+import ModuleNewUserRegistration from './components/account/ModuleNewUserRegistration.vue';
+import AppSnackbar from './core/ui/snackbars/AppSnackbar.vue';
+import { useStoreUsersList } from './components/admin/users/UsersList/state.users.list';
+import { useStoreGroupsList } from './components/admin/users/GroupsList/state.groups.list'
+
+// Store and i18n initialization
+const userStore = useUserStore();
+const uiStore = useUiStore();
+const appStore = useAppStore();
+const i18n = useI18n();
+const usersListStore = useStoreUsersList();
+const groupsListStore = useStoreGroupsList();
+
+/*
+const publicPages = ['Login', 'NewUserRegistration']
+
+watch(() => appStore.activeModule, (newModule) => {
+  if (!publicPages.includes(newModule) && !userStore.isLoggedIn) {
+    console.log('Redirecting to login page')
+    appStore.setActiveModule('Login')
+  }
+})
+*/
+
+// Refs
+const drawer = ref(true);
+const isChangePassModalVisible = ref(false);
+const isLoginDialogVisible = ref(false);
+
+// Computed properties
+const isLoggedIn = computed(() => userStore.isLoggedIn);
+
+const chevronIcon = computed(() => {
+  switch(appStore.drawerMode) {
+    case 'auto':
+      return 'mdi-chevron-double-right';
+    case 'opened':
+      return 'mdi-chevron-double-left';
+    case 'closed':
+      return 'mdi-chevron-double-down';
+    default:
+      return 'mdi-chevron-double-right';
+  }
+});
+
+// Methods
+const setActiveModule = (module) => {
+  appStore.setActiveModule(module);
+};
+
+const logout = () => {
+  usersListStore.clearCache();
+  usersListStore.clearSelection();
+  groupsListStore.clearCache();
+  groupsListStore.clearSelection();
+  userStore.userLogoff();
+  appStore.setActiveModule('Catalog');
+};
+
+const changeLanguage = (lang) => {
+  userStore.setLanguage(lang);
+  i18n.locale.value = lang;
+};
+
+//const showLoginDialog = () => {
+//  isLoginDialogVisible.value = true;
+//};
+
+const handleLoginSuccess = () => {
+  appStore.setActiveModule('Work');
+};
+
+//const showChangePassModal = () => {
+//  isChangePassModalVisible.value = true;
+//};
+
+const toggleDrawerMode = () => {
+  const modes = ['auto', 'opened', 'closed'];
+  const currentIndex = modes.indexOf(appStore.drawerMode);
+  const nextIndex = (currentIndex + 1) % modes.length;
+  appStore.setDrawerMode(modes[nextIndex]);
+};
+
+// Lifecycle hooks
+onMounted(() => {
+  i18n.locale.value = userStore.language;
+  if (isLoggedIn.value) {
+    console.log('App mounted. User is logged in. Starting session timers...');
+    startSessionTimers();
+  }
+});
+</script>
 
 <template>
   <v-app>
@@ -19,11 +129,12 @@ App.vue
       <v-app-bar-title>ev2</v-app-bar-title>
       <v-spacer />
  
-      <v-btn icon>
+      <!-- Search icon (hidden for now) -->
+      <v-btn icon style="display: none;">
         <v-icon>mdi-magnify</v-icon>
       </v-btn>
  
-      <!-- кнопка перевода с выпадающим меню -->
+      <!-- Language selection dropdown menu -->
       <v-menu>
         <template #activator="{ props }">
           <v-btn
@@ -60,7 +171,7 @@ App.vue
         />
       </v-dialog>
  
-      <!-- кнопка для перехода на страницу входа в приложение  -->
+      <!-- Login button -->
       <v-tooltip bottom>
         <template #activator="{ props }">
           <v-btn
@@ -75,7 +186,7 @@ App.vue
         <span>{{ $t('navigation.tooltips.login') }}</span>
       </v-tooltip>
  
-      <!-- кнопка регистрации -->
+      <!-- Registration button -->
       <v-tooltip bottom>
         <template #activator="{ props }">
           <v-btn
@@ -90,11 +201,11 @@ App.vue
         <span>{{ $t('navigation.tooltips.register') }}</span>
       </v-tooltip>
  
-      <!-- кнопка меню для системных команд: выход, смена пароля и пр. -->
-      <v-menu>
+      <!-- Account menu (replaces vertical dots menu) - shown only for logged in users -->
+      <v-menu v-if="isLoggedIn">
         <template #activator="{ props }">
-          <v-btn v-bind="props">
-            <v-icon>mdi-dots-vertical</v-icon>
+          <v-btn v-bind="props" icon>
+            <v-icon>mdi-account</v-icon>
           </v-btn>
         </template>
  
@@ -102,12 +213,30 @@ App.vue
           <v-list-item>
             <v-list-item-title>{{ $t('navigation.systemMenu.test') }}</v-list-item-title>
           </v-list-item>
+          
+          <!-- Account module link -->
+          <v-list-item
+            v-if="isLoggedIn"
+            @click="setActiveModule('Account')"
+          >
+            <v-list-item-title>{{ $t('navigation.drawer.account') }}</v-list-item-title>
+          </v-list-item>
+          
+          <!-- App preferences (formerly settings) module link -->
+          <v-list-item
+            v-if="isLoggedIn"
+            @click="setActiveModule('Settings')"
+          >
+            <v-list-item-title>{{ $t('navigation.drawer.appPreferences') }}</v-list-item-title>
+          </v-list-item>
+          
           <v-list-item
             v-if="isLoggedIn"
             @click="isChangePassModalVisible = true"
           >
             <v-list-item-title>{{ $t('navigation.systemMenu.changePassword') }}</v-list-item-title>
           </v-list-item>
+          
           <v-list-item
             v-if="isLoggedIn"
             @click="logout"
@@ -124,7 +253,7 @@ App.vue
         <ModalChangeUserPass @close="isChangePassModalVisible = false" />
       </v-dialog>
  
-      <!-- стилизация app bar   -->
+      <!-- App bar styling -->
       <template #image>
         <v-img gradient="to top right, rgba(19,84,122,.8), rgba(128,208,199,.8)" />
       </template>
@@ -221,37 +350,9 @@ App.vue
         <v-divider class="border-opacity-25" />
       </v-list>
  
-      <!-- Append slot для управления и настроек -->
+      <!-- Append slot for drawer controls -->
       <template #append>
-        <!-- Account и Settings -->
-        <v-list v-if="isLoggedIn">
-          <v-list-item 
-            v-tooltip="{
-              text: $t('navigation.drawer.account'),
-              location: 'right',
-              disabled: appStore.drawerMode !== 'closed'
-            }" 
-            prepend-icon="mdi-account" 
-            :title="$t('navigation.drawer.account')"
-            :active="appStore.isModuleActive('Account')"
-            @click="setActiveModule('Account')"
-          />
-          
-          <v-list-item 
-            v-tooltip="{
-              text: $t('navigation.drawer.settings'),
-              location: 'right',
-              disabled: appStore.drawerMode !== 'closed'
-            }" 
-            prepend-icon="mdi-cog" 
-            :title="$t('navigation.drawer.settings')"  
-            value="settings" 
-            :active="appStore.isModuleActive('Settings')"
-            @click="setActiveModule('Settings')"
-          />
-        </v-list>
-
-        <!-- Область управления drawer -->
+        <!-- Drawer control area -->
         <div
           class="drawer-control-area"
           @click="toggleDrawerMode"
@@ -281,7 +382,7 @@ App.vue
       <ModuleNewUserRegistration v-if="appStore.isModuleActive('NewUserRegistration')" />
     </v-main>
  
-    <!-- Глобальный snackbar -->
+    <!-- Global snackbar -->
     <AppSnackbar
       v-if="uiStore.snackbar.show"
       :type="uiStore.snackbar.type"
@@ -294,117 +395,6 @@ App.vue
   </v-app>
 </template>
 
-<script setup>
-import { ref, computed, onMounted } from 'vue';
-import { useUserStore } from '@/core/state/userstate';
-import { useUiStore } from './core/state/uistate';
-import { useAppStore } from './core/state/appstate';
-import { useI18n } from 'vue-i18n';
-import { startSessionTimers } from '@/core/services/sessionServices';
-import ModuleCatalog from './components/catalog/ModuleCatalog.vue';
-import ModuleWork from './components/work/ModuleWork.vue';
-import ModuleAR from './components/ar/ModuleAR.vue';
-import ModuleAdmin from './components/admin/ModuleAdmin.vue';
-import ModuleXLS from './components/proto/ModuleXLS.vue';
-import ModuleAccount from './components/account/ModuleAccount.vue';
-import ModuleSettings from './components/settings/ModuleSettings.vue';
-import ModuleHelp from './components/help/ModuleHelp.vue';
-import ModuleLogin from './components/account/ModuleLogin.vue';
-import ModalChangeUserPass from './components/account/ModalChangeUserPass.vue';
-import LoginDialog from './components/account/ModuleLogin.vue';
-import ModuleNewUserRegistration from './components/account/ModuleNewUserRegistration.vue';
-import AppSnackbar from './core/ui/snackbars/AppSnackbar.vue';
-import { useStoreUsersList } from './components/admin/users/UsersList/state.users.list';
-import { useStoreGroupsList } from './components/admin/users/GroupsList/state.groups.list'
-
-// Инициализация store и i18n
-const userStore = useUserStore();
-const uiStore = useUiStore();
-const appStore = useAppStore();
-const i18n = useI18n();
-const usersListStore = useStoreUsersList();
-const groupsListStore = useStoreGroupsList();
-
-/*
-const publicPages = ['Login', 'NewUserRegistration']
-
-watch(() => appStore.activeModule, (newModule) => {
-  if (!publicPages.includes(newModule) && !userStore.isLoggedIn) {
-    console.log('Перенаправление на страницу входа')
-    appStore.setActiveModule('Login')
-  }
-})
-*/
-
-// Refs
-const drawer = ref(true);
-const isChangePassModalVisible = ref(false);
-const isLoginDialogVisible = ref(false);
-
-// Computed properties
-const isLoggedIn = computed(() => userStore.isLoggedIn);
-
-const chevronIcon = computed(() => {
-  switch(appStore.drawerMode) {
-    case 'auto':
-      return 'mdi-chevron-double-right';
-    case 'opened':
-      return 'mdi-chevron-double-left';
-    case 'closed':
-      return 'mdi-chevron-double-down';
-    default:
-      return 'mdi-chevron-double-right';
-  }
-});
-
-// Methods
-const setActiveModule = (module) => {
-  appStore.setActiveModule(module);
-};
-
-const logout = () => {
-  usersListStore.clearCache();
-  usersListStore.clearSelection();
-  groupsListStore.clearCache();
-  groupsListStore.clearSelection();
-  userStore.userLogoff();
-  appStore.setActiveModule('Catalog');
-};
-
-const changeLanguage = (lang) => {
-  userStore.setLanguage(lang);
-  i18n.locale.value = lang;
-};
-
-//const showLoginDialog = () => {
-//  isLoginDialogVisible.value = true;
-//};
-
-const handleLoginSuccess = () => {
-  appStore.setActiveModule('Work');
-};
-
-//const showChangePassModal = () => {
-//  isChangePassModalVisible.value = true;
-//};
-
-const toggleDrawerMode = () => {
-  const modes = ['auto', 'opened', 'closed'];
-  const currentIndex = modes.indexOf(appStore.drawerMode);
-  const nextIndex = (currentIndex + 1) % modes.length;
-  appStore.setDrawerMode(modes[nextIndex]);
-};
-
-// Lifecycle hooks
-onMounted(() => {
-  i18n.locale.value = userStore.language;
-  if (isLoggedIn.value) {
-    console.log('App mounted. User is logged in. Starting session timers...');
-    startSessionTimers();
-  }
-});
-</script>
-
 <style>
 .v-snackbar {
   top: 50px !important;
@@ -414,18 +404,18 @@ onMounted(() => {
   background-color: rgb(210, 210, 210) !important;
 }
 
-/* Стиль для активного пункта меню */
+/* Active menu item style */
 .v-navigation-drawer .v-list-item--active {
   background-color: rgba(128, 208, 199, 0.15) !important;
   color: rgb(19, 84, 122) !important;
 }
 
-/* Стиль для иконки активного пункта меню */
+/* Active menu item icon style */
 .v-navigation-drawer .v-list-item--active .v-icon {
   color: rgb(19, 84, 122) !important;
 }
 
-/* Стили для области управления drawer */
+/* Drawer control area styles */
 .drawer-control-area {
   position: relative;
   height: 48px;
@@ -437,7 +427,7 @@ onMounted(() => {
   background-color: rgba(128, 208, 199, 0.15) !important;
 }
 
-/* Стили для кнопки переключения */
+/* Toggle button styles */
 .drawer-toggle-btn {
   position: absolute;
   right: -10px;
