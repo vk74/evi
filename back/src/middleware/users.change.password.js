@@ -1,3 +1,4 @@
+// usersCache.change.password.js 
 const bcrypt = require('bcrypt');
 const { pool } = require('../db/maindb');
 const { userQueries } = require('./queries.users');

@@ -17,11 +17,19 @@ const fetchUsernameByUuid = require('../services/service.fetch.username.by.uuid'
 const searchUsers = require('../services/item-selector/controller.search.users').default;
 const addUsersToGroup = require('../services/item-selector/controller.add.users.to.group').default;
 
+const selfChangePasswordController = require('../services/change-password/service.self.change.password').default;
+const adminResetPasswordController = require('../services/change-password/service.admin.change.password').default;
+
+
 // utility services
 router.get('/api/core/users/fetch-username-by-uuid/:userId', validateJWT, fetchUsernameByUuid);
 
-// item selector services
+// item selector universal component services
 router.get('/api/core/item-selector/search-users', validateJWT, searchUsers); 
 router.post('/api/core/item-selector/add-users-to-group', validateJWT, addUsersToGroup);
+
+// change password universal component
+router.post('/api/core/users/self-change-password', validateJWT, selfChangePasswordController);
+router.post('/api/core/users/admin-change-password', validateJWT, adminResetPasswordController);
 
 module.exports = router;
