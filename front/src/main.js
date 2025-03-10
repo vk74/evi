@@ -16,7 +16,7 @@ import translations from '@/core/services/translations.index'
 
 console.log('Starting application...');
 console.log('App component:', App);
-console.log('All imports completed');
+console.log('All imports complete');
 
 // Объединяем переводы
 const messages = translations;

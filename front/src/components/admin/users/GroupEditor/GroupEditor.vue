@@ -463,7 +463,7 @@ onBeforeUnmount(() => {
             </template>
             <template v-slot:item.account_status="{ item }">
               <v-chip 
-                :color="item.account_status === 'active' ? 'green' : 'red'" 
+                :color="item.account_status === 'active' ? 'teal' : 'red'" 
                 size="x-small">
                 {{ item.account_status }}
               </v-chip>

@@ -6,24 +6,27 @@
  */
 import { defineStore } from 'pinia';
 
+// Гарантированная инициализация списка всех доступных модулей
+const DEFAULT_MODULES = [
+  'Catalog',
+  'Work',
+  'AR',
+  'Admin',
+  'XLS',
+  'Account',
+  'Settings',
+  'KnowledgeBase',
+  'Login',
+  'NewUserRegistration'
+];
+
 export const useAppStore = defineStore('app', {
   state: () => ({
-    activeModule: 'Catalog', // Текущий активный модуль по умолчанию
+    activeModule: 'Login', // Текущий активный модуль по умолчанию
     previousModule: null, // Предыдущий активный модуль
-    drawerMode: 'auto', // Режимы: 'auto', 'opened', 'closed'
+    drawerMode: 'closed', // Режимы: 'auto', 'opened', 'closed'
     // Список всех доступных модулей для валидации
-    availableModules: [
-      'Catalog',
-      'Work',
-      'AR',
-      'Admin',
-      'XLS',
-      'Account',
-      'Settings',
-      'Help',
-      'Login',
-      'NewUserRegistration'
-    ]
+    availableModules: DEFAULT_MODULES
   }),
 
   getters: {
@@ -81,10 +84,11 @@ export const useAppStore = defineStore('app', {
     /**
      * Сброс состояния хранилища
      */
-    resetState() {
-      this.activeModule = 'Catalog';
-      this.previousModule = null;
-      this.drawerMode = 'auto';
+    resetState() { 
+      this.activeModule = 'Login'; 
+      this.previousModule = null; 
+      this.drawerMode = 'closed'; 
+      this.availableModules = DEFAULT_MODULES; 
     }
   },
 

@@ -8,35 +8,35 @@ Contains:
 - Global snackbar for system messages
 -->
 <script setup>
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed, onMounted, defineAsyncComponent } from 'vue';
 import { useUserStore } from '@/core/state/userstate';
 import { useUiStore } from './core/state/uistate';
 import { useAppStore } from './core/state/appstate';
 import { useI18n } from 'vue-i18n';
 import { startSessionTimers } from '@/core/services/sessionServices';
-import ModuleCatalog from './components/catalog/ModuleCatalog.vue';
-import ModuleWork from './components/work/ModuleWork.vue';
-import ModuleAR from './components/ar/ModuleAR.vue';
-import ModuleAdmin from './components/admin/ModuleAdmin.vue';
-import ModuleXLS from './components/proto/ModuleXLS.vue';
-import ModuleAccount from './components/account/ModuleAccount.vue';
-import ModuleSettings from './components/settings/ModuleSettings.vue';
-import ModuleHelp from './components/help/ModuleHelp.vue';
+
+// Async component imports
+const ModuleCatalog = defineAsyncComponent(() => import('./components/catalog/ModuleCatalog.vue'));
+const ModuleWork = defineAsyncComponent(() => import('./components/work/ModuleWork.vue'));
+const ModuleAR = defineAsyncComponent(() => import('./components/ar/ModuleAR.vue'));
+const ModuleAdmin = defineAsyncComponent(() => import('./components/admin/ModuleAdmin.vue'));
+const ModuleXLS = defineAsyncComponent(() => import('./components/proto/ModuleXLS.vue'));
+const ModuleAccount = defineAsyncComponent(() => import('./components/account/ModuleAccount.vue'));
+const ModuleSettings = defineAsyncComponent(() => import('./components/settings/ModuleSettings.vue'));
+const ModuleKnowledgeBase = defineAsyncComponent(() => import('./components/KB/ModuleKnowledgeBase.vue'));
+
+// Regular component imports
 import ModuleLogin from './components/account/ModuleLogin.vue';
 import ModalChangeUserPass from './components/account/ModalChangeUserPass.vue';
 import LoginDialog from './components/account/ModuleLogin.vue';
 import ModuleNewUserRegistration from './components/account/ModuleNewUserRegistration.vue';
 import AppSnackbar from './core/ui/snackbars/AppSnackbar.vue';
-import { useStoreUsersList } from './components/admin/users/UsersList/state.users.list';
-import { useStoreGroupsList } from './components/admin/users/GroupsList/state.groups.list'
 
 // Store and i18n initialization
 const userStore = useUserStore();
 const uiStore = useUiStore();
 const appStore = useAppStore();
 const i18n = useI18n();
-const usersListStore = useStoreUsersList();
-const groupsListStore = useStoreGroupsList();
 
 /*
 const publicPages = ['Login', 'NewUserRegistration']
@@ -76,14 +76,9 @@ const setActiveModule = (module) => {
 };
 
 const logout = () => {
-  // Safely call methods if they exist
-  if (typeof usersListStore.clearCache === 'function') usersListStore.clearCache();
-  if (typeof usersListStore.clearSelection === 'function') usersListStore.clearSelection();
-  if (typeof groupsListStore.clearCache === 'function') groupsListStore.clearCache();
-  if (typeof groupsListStore.clearSelection === 'function') groupsListStore.clearSelection();
-  
+  // Функция будет переписана с другой логикой позже
   userStore.userLogoff();
-  appStore.setActiveModule('Catalog');
+  appStore.setActiveModule('Login');
 };
 
 const changeLanguage = (lang) => {
@@ -91,17 +86,9 @@ const changeLanguage = (lang) => {
   i18n.locale.value = lang;
 };
 
-//const showLoginDialog = () => {
-//  isLoginDialogVisible.value = true;
-//};
-
 const handleLoginSuccess = () => {
   appStore.setActiveModule('Work');
 };
-
-//const showChangePassModal = () => {
-//  isChangePassModalVisible.value = true;
-//};
 
 const toggleDrawerMode = () => {
   const modes = ['auto', 'opened', 'closed'];
@@ -206,7 +193,10 @@ onMounted(() => {
       <!-- Account menu (replaces vertical dots menu) - shown only for logged in users -->
       <v-menu v-if="isLoggedIn">
         <template #activator="{ props }">
-          <v-btn v-bind="props" icon>
+          <v-btn
+            v-bind="props"
+            icon
+          >
             <v-icon>mdi-account</v-icon>
           </v-btn>
         </template>
@@ -270,6 +260,7 @@ onMounted(() => {
         nav
       >
         <v-list-item 
+          v-if="isLoggedIn"
           v-tooltip="{
             text: $t('navigation.drawer.catalog'),
             location: 'right',
@@ -282,6 +273,7 @@ onMounted(() => {
           @click="setActiveModule('Catalog')"
         />
         <v-list-item 
+          v-if="isLoggedIn"
           v-tooltip="{
             text: $t('navigation.drawer.workModule'),
             location: 'right',
@@ -294,6 +286,7 @@ onMounted(() => {
           @click="setActiveModule('Work')"
         />
         <v-list-item 
+          v-if="isLoggedIn"
           v-tooltip="{
             text: $t('navigation.drawer.reports'),
             location: 'right',
@@ -305,8 +298,22 @@ onMounted(() => {
           :active="appStore.isModuleActive('AR')"
           @click="setActiveModule('AR')"
         />
-        <v-divider class="border-opacity-25" /><br>
         <v-list-item 
+          v-if="isLoggedIn"
+          v-tooltip="{
+            text: $t('navigation.drawer.knowledgeBase'),
+            location: 'right',
+            disabled: appStore.drawerMode !== 'closed'
+          }" 
+          :title="$t('navigation.drawer.knowledgeBase')" 
+          prepend-icon="mdi-library" 
+          value="KnowledgeBase"
+          :active="appStore.isModuleActive('KnowledgeBase')"
+          @click="setActiveModule('KnowledgeBase')"
+        />
+        <v-divider v-if="isLoggedIn" class="border-opacity-25" /><br v-if="isLoggedIn">
+        <v-list-item 
+          v-if="isLoggedIn"
           v-tooltip="{
             text: $t('navigation.drawer.Admin'),
             location: 'right',
@@ -318,8 +325,9 @@ onMounted(() => {
           :active="appStore.isModuleActive('Admin')"
           @click="setActiveModule('Admin')"
         />
-        <v-divider class="border-opacity-25" /><br>
+        <v-divider v-if="isLoggedIn" class="border-opacity-25" /><br v-if="isLoggedIn">
         <v-list-item 
+          v-if="isLoggedIn"
           v-tooltip="{
             text: $t('navigation.drawer.xlsPrototyping'),
             location: 'right',
@@ -331,20 +339,6 @@ onMounted(() => {
           :active="appStore.isModuleActive('XLS')"
           @click="setActiveModule('XLS')"
         />
-        <v-divider class="border-opacity-25" /><br>
-        <v-list-item 
-          v-tooltip="{
-            text: $t('navigation.drawer.helpSupport'),
-            location: 'right',
-            disabled: appStore.drawerMode !== 'closed'
-          }" 
-          :title="$t('navigation.drawer.helpSupport')" 
-          prepend-icon="mdi-help-circle-outline" 
-          value="help"
-          :active="appStore.isModuleActive('Help')"
-          @click="setActiveModule('Help')"
-        />
-        <v-divider class="border-opacity-25" />
       </v-list>
  
       <!-- Append slot for drawer controls -->
@@ -375,7 +369,7 @@ onMounted(() => {
       <ModuleXLS v-if="appStore.isModuleActive('XLS')" />
       <ModuleAccount v-if="appStore.isModuleActive('Account')" />
       <ModuleSettings v-if="appStore.isModuleActive('Settings')" />
-      <ModuleHelp v-if="appStore.isModuleActive('Help')" />
+      <ModuleKnowledgeBase v-if="appStore.isModuleActive('KnowledgeBase')" />
       <ModuleNewUserRegistration v-if="appStore.isModuleActive('NewUserRegistration')" />
     </v-main>
  

@@ -27,7 +27,7 @@
     "src/**/*.tsx",
     "src/**/*.vue",
     "src/**/*.js",
-    "src/**/*.json"              // Добавляем JSON файлы
+    "src/**/*.json"
   ],
   "exclude": [
     "node_modules",
