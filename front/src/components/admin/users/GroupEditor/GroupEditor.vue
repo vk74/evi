@@ -40,6 +40,17 @@ const isItemSelectorModalOpen = ref(false)
 // Computed property for authorization check
 const isAuthorized = computed(() => userStore.isLoggedIn)
 
+// Function to get color based on status (copied from UsersList.vue)
+const getStatusColor = (status: string) => {
+  switch (status.toLowerCase()) {
+    case 'active': return 'teal';
+    case 'disabled': return 'error';
+    case 'archived': return 'grey';
+    case 'requires_user_action': return 'orange';
+    default: return 'black';
+  }
+};
+
 // ==================== TABLE CONFIG ====================
 const headers = computed<TableHeader[]>(() => [
   { title: t('admin.groups.editor.table.headers.select'), key: 'selection', width: '40px' },
@@ -463,14 +474,14 @@ onBeforeUnmount(() => {
             </template>
             <template v-slot:item.account_status="{ item }">
               <v-chip 
-                :color="item.account_status === 'active' ? 'teal' : 'red'" 
+                :color="getStatusColor(item.account_status)" 
                 size="x-small">
                 {{ item.account_status }}
               </v-chip>
             </template>
             <template v-slot:item.is_staff="{ item }">
               <v-icon
-                :color="item.is_staff ? 'teal' : 'grey'"
+                :color="item.is_staff ? 'teal' : 'red-darken-4'"
                 :icon="item.is_staff ? 'mdi-check-circle' : 'mdi-minus-circle'"
                 size="x-small"
               />

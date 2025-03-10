@@ -67,10 +67,10 @@
             "label": "address"
           },
           "company": {
-            "label": "company name"
+            "label": "company name (field being developed)"
           },
           "position": {
-            "label": "position"
+            "label": "position (field being developed)"
           }
         },
         "messages": {
