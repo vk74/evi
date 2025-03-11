@@ -1,7 +1,7 @@
 /**
  * Консольный транспорт для логгера
  */
-import { LogLevel, LogMessage, LogTransport } from '../logger.types';
+import { LogLevel, LogMessage, LogTransport, OperationType } from '../logger.types';
 import { getLoggerConfig } from '../logger.config';
 
 /**
@@ -14,6 +14,18 @@ const LEVEL_COLORS = {
   [LogLevel.ERROR]: '\x1b[31m', // Красный
   [LogLevel.FATAL]: '\x1b[35m', // Пурпурный
   RESET: '\x1b[0m'              // Сброс цвета
+};
+
+/**
+ * Префиксы для разных типов операций
+ */
+const OPERATION_TYPE_PREFIX = {
+  [OperationType.APP]: '[APP]',
+  [OperationType.SYSTEM]: '[SYS]',
+  [OperationType.SECURITY]: '[SEC]',
+  [OperationType.AUDIT]: '[AUDIT]',
+  [OperationType.INTGRN]: '[INTGRN]',
+  [OperationType.PERFORMANCE]: '[PERF]'
 };
 
 /**
@@ -30,16 +42,20 @@ function formatConsoleMessage(message: LogMessage): string {
     ? timestamp 
     : new Date(timestamp).toLocaleString();
   
+  // Получаем префикс типа операции
+  const operationType = source.operationType;
+  const typePrefix = operationType ? `${OPERATION_TYPE_PREFIX[operationType]} ` : '';
+  
   // Основная часть сообщения
   const levelColor = LEVEL_COLORS[level];
   const reset = LEVEL_COLORS.RESET;
   
-  // Базовая строка сообщения
-  let result = `${time} ${levelColor}[${level.toUpperCase()}]${reset} [${code}] ${text}`;
+  // Базовая строка сообщения с префиксом типа операции
+  let result = `${time} ${typePrefix}${levelColor}[${level.toUpperCase()}]${reset} [${code}] ${text}`;
   
   // Добавляем информацию об источнике
   const sourceInfo = Object.entries(source)
-    .filter(([, value]) => value !== undefined)
+    .filter(([key, value]) => value !== undefined && key !== 'operationType') // Исключаем operationType, так как он уже добавлен
     .map(([key, value]) => `${key}=${value}`)
     .join(' ');
   

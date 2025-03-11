@@ -14,6 +14,18 @@ export enum LogLevel {
 }
 
 /**
+ * Типы операций для логирования
+ */
+export enum OperationType {
+  APP = 'app',             // Пользовательские операции, бизнес-логика
+  SYSTEM = 'system',       // Обслуживающие процессы
+  SECURITY = 'security',   // События безопасности
+  AUDIT = 'audit',         // События для регуляторного учета
+  INTGRN = 'integration',  // Взаимодействие с внешними системами
+  PERFORMANCE = 'performance' // Метрики производительности
+}
+
+/**
  * Контекст логгера, содержит информацию об источнике события
  */
 export interface LogContext {
@@ -21,6 +33,8 @@ export interface LogContext {
   module: string;
   /** Имя файла источника (например, "service.create.group.ts") */
   fileName?: string;
+  /** Тип операции */
+  operationType?: OperationType;
   /** ID пользователя в системе */
   userId?: string;
   /** Дополнительные контекстные данные */
@@ -31,7 +45,7 @@ export interface LogContext {
  * Параметры для методов логирования
  */
 export interface LogParams {
-  /** Код события в формате "MODULE:FUNCTION:OPERATION:TYPE:NUMBER" */
+  /** Код события в формате "MODULE:SUBMODULE:FUNCTION:OPERATION:NUMBER" */
   code: string;
   /** Сообщение (может быть заменено или дополнено описанием из справочника) */
   message?: string;
@@ -98,4 +112,14 @@ export interface Logger {
   fatal: (params: LogParams) => void;
   /** Создание нового логгера с расширенным контекстом */
   withContext: (additionalContext: Partial<LogContext>) => Logger;
+}
+
+/**
+ * Структура для кодов событий
+ */
+export interface EventCode {
+  /** Код события в формате "MODULE:SUBMODULE:FUNCTION:OPERATION:NUMBER" */
+  code: string;
+  /** Описание события */
+  description: string;
 }

@@ -194,7 +194,6 @@ watch([page, itemsPerPage], ([newPage, newItemsPerPage]) => {
       </v-app-bar-title>
     </v-app-bar>
 
-    <!-- Search field moved here, above the table -->
     <div class="px-4 pt-4">
       <v-text-field
         v-model="searchQuery"

@@ -24,6 +24,19 @@ export const loggerConfig = {
   
   /** Формат временной метки */
   timestampFormat: 'ISO', // 'ISO' или 'LOCALE'
+  
+  /** Формат вывода (console, json, elastic) */
+  outputFormat: process.env.LOG_FORMAT || 'console',
+  
+  /** SIEM-специфичные настройки */
+  siem: {
+    /** Адрес SIEM-системы */
+    endpoint: process.env.SIEM_ENDPOINT,
+    /** Ключ API для SIEM */
+    apiKey: process.env.SIEM_API_KEY,
+    /** Тип форматирования */
+    format: process.env.SIEM_FORMAT || 'json'
+  }
 };
 
 /**

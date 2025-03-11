@@ -3,12 +3,16 @@
  */
 import { LogTransport } from '../logger.types';
 import { consoleTransport } from './logger.console';
+import { jsonTransport } from './logger.json';
+import { elasticTransport } from './logger.elastic';
 
 /**
  * Словарь всех доступных транспортов
  */
 export const transports: Record<string, LogTransport> = {
-  console: consoleTransport
+  console: consoleTransport,
+  json: jsonTransport,
+  elastic: elasticTransport
 };
 
 /**
@@ -29,4 +33,12 @@ export function getActiveTransports(enabledTransports: string[]): LogTransport[]
   return enabledTransports
     .map(name => getTransport(name))
     .filter((transport): transport is LogTransport => transport !== undefined);
+}
+
+/**
+ * Регистрация нового транспорта
+ * @param transport Транспорт для регистрации
+ */
+export function registerTransport(transport: LogTransport): void {
+  transports[transport.name] = transport;
 }

@@ -58,7 +58,7 @@ const headers = computed<TableHeader[]>(() => [
   { title: t('admin.groups.editor.table.headers.username'), key: 'username' },
   { title: t('admin.groups.editor.table.headers.email'), key: 'email' },
   { title: t('admin.groups.editor.table.headers.status'), key: 'account_status', width: '60px' },
-  { title: t('admin.groups.editor.table.headers.staff'), key: 'is_staff', width: '60px' },
+  { title: t('admin.groups.editor.table.headers.staff'), key: 'is_staff', width: '40px' },
   { title: t('admin.groups.editor.table.headers.lastname'), key: 'last_name' },
   { title: t('admin.groups.editor.table.headers.firstname'), key: 'first_name' },
   { title: t('admin.groups.editor.table.headers.middlename'), key: 'middle_name' }
@@ -452,6 +452,8 @@ onBeforeUnmount(() => {
               density="comfortable"
               prepend-inner-icon="mdi-magnify"
               clearable
+              color="teal"
+              clear-icon="mdi-close"
               class="mb-4"
             />
           </v-container>

@@ -7,10 +7,11 @@ import {
   LogMessage, 
   LogParams,
   Logger,
-  LoggerOptions
+  LoggerOptions,
+  OperationType
 } from './logger.types';
 import { getLoggerConfig } from './logger.config';
-import { getEventDescription } from './logger.codes';
+import { getEventDescription } from './codes';
 import { getActiveTransports } from './transports/logger.transports.index';
 
 /**
@@ -136,4 +137,64 @@ export function createLogger(context: LogContext, options?: LoggerOptions): Logg
       return createLogger(newContext, options);
     }
   };
+}
+
+/**
+ * Создаёт логгер для бизнес-операций
+ * @param context Контекст логгера (без типа операции)
+ * @param options Опции логгера
+ * @returns Экземпляр логгера для бизнес-операций
+ */
+export function createAppLogger(context: Omit<LogContext, 'operationType'>, options?: LoggerOptions): Logger {
+  return createLogger({ ...context, operationType: OperationType.APP } as LogContext, options);
+}
+
+/**
+ * Создаёт логгер для системных операций
+ * @param context Контекст логгера (без типа операции)
+ * @param options Опции логгера
+ * @returns Экземпляр логгера для системных операций
+ */
+export function createSystemLogger(context: Omit<LogContext, 'operationType'>, options?: LoggerOptions): Logger {
+  return createLogger({ ...context, operationType: OperationType.SYSTEM } as LogContext, options);
+}
+
+/**
+ * Создаёт логгер для событий безопасности
+ * @param context Контекст логгера (без типа операции)
+ * @param options Опции логгера
+ * @returns Экземпляр логгера для событий безопасности
+ */
+export function createSecurityLogger(context: Omit<LogContext, 'operationType'>, options?: LoggerOptions): Logger {
+  return createLogger({ ...context, operationType: OperationType.SECURITY } as LogContext, options);
+}
+
+/**
+ * Создаёт логгер для событий аудита
+ * @param context Контекст логгера (без типа операции)
+ * @param options Опции логгера
+ * @returns Экземпляр логгера для событий аудита
+ */
+export function createAuditLogger(context: Omit<LogContext, 'operationType'>, options?: LoggerOptions): Logger {
+  return createLogger({ ...context, operationType: OperationType.AUDIT } as LogContext, options);
+}
+
+/**
+ * Создаёт логгер для событий интеграции
+ * @param context Контекст логгера (без типа операции)
+ * @param options Опции логгера
+ * @returns Экземпляр логгера для событий интеграции
+ */
+export function createIntegrationLogger(context: Omit<LogContext, 'operationType'>, options?: LoggerOptions): Logger {
+  return createLogger({ ...context, operationType: OperationType.INTGRN } as LogContext, options);
+}
+
+/**
+ * Создаёт логгер для событий производительности
+ * @param context Контекст логгера (без типа операции)
+ * @param options Опции логгера
+ * @returns Экземпляр логгера для событий производительности
+ */
+export function createPerformanceLogger(context: Omit<LogContext, 'operationType'>, options?: LoggerOptions): Logger {
+  return createLogger({ ...context, operationType: OperationType.PERFORMANCE } as LogContext, options);
 }
