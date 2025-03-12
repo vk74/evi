@@ -8,27 +8,26 @@ import { LogLevel } from './logger.types';
  */
 export const loggerConfig = {
   /** Уровень логирования по умолчанию */
-  defaultLogLevel: LogLevel.INFO,
+  defaultLogLevel: LogLevel.DEBUG,
   
   /** Активные транспорты для логирования */
-  enabledTransports: ['console'],
+  enabledTransports: ['console', 'json'],
   
   /** Название приложения */
-  appName: 'my-app',
+  appName: 'admin-panel',
   
   /** Окружение (берется из переменной окружения или значение по умолчанию) */
   environment: process.env.NODE_ENV || 'development',
   
   /** Показывать детальную информацию в production */
-  showDetailsInProduction: false,
+  showDetailsInProduction: true,
   
   /** Формат временной метки */
-  timestampFormat: 'ISO', // 'ISO' или 'LOCALE'
+  timestampFormat: 'ISO',
   
   /** Формат вывода (console, json, elastic) */
   outputFormat: process.env.LOG_FORMAT || 'console',
-  
-  /** SIEM-специфичные настройки */
+    /** SIEM-специфичные настройки */
   siem: {
     /** Адрес SIEM-системы */
     endpoint: process.env.SIEM_ENDPOINT,

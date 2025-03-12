@@ -23,20 +23,25 @@ import type {
   RequiredFieldError,
   ServiceError
 } from './types.group.editor';
+import { 
+  createAppLogger,
+  Events 
+} from '../../../../core/logger/logger.index';
 
 const pool = pgPool as Pool;
 
-// Logger configuration
-const logger = {
-  info: (message: string, meta?: object) => 
-    console.log(`[CreateGroupService] ${message}`, meta || ''),
-  error: (message: string, error?: unknown) => 
-    console.error(`[CreateGroupService] ${message}`, error || '')
-};
+// Создаем экземпляр логгера для сервиса групп
+const logger = createAppLogger({
+  module: 'AdminGroupService',
+  fileName: 'service.create.group.ts'
+});
 
 // Validation functions
 async function validateRequiredFields(data: CreateGroupRequest): Promise<void> {
-  logger.info('Validating required fields');
+  logger.debug({
+    code: Events.ADMIN.USERS.CREATION.VALIDATE.SUCCESS.code,
+    message: 'Validating required fields'
+  });
   
   const requiredFields = {
     group_name: 'Group name',
@@ -49,6 +54,12 @@ async function validateRequiredFields(data: CreateGroupRequest): Promise<void> {
     .map(([, label]) => label);
 
   if (missingFields.length > 0) {
+    logger.warn({
+      code: Events.ADMIN.USERS.CREATION.VALIDATE.REQUIRED_FIELD.code,
+      message: `Missing required fields: ${missingFields.join(', ')}`,
+      details: { missingFields }
+    });
+
     throw {
       code: 'REQUIRED_FIELD_ERROR',
       message: `Missing required fields: ${missingFields.join(', ')}`,
@@ -58,9 +69,19 @@ async function validateRequiredFields(data: CreateGroupRequest): Promise<void> {
 }
 
 function validateGroupName(name: string): void {
-  logger.info('Validating group name format');
+  logger.debug({
+    code: Events.ADMIN.USERS.CREATION.VALIDATE.SUCCESS.code,
+    message: 'Validating group name format',
+    details: { name }
+  });
 
   if (name.length < 2) {
+    logger.warn({
+      code: Events.ADMIN.USERS.CREATION.VALIDATE.NAME_FORMAT.code,
+      message: 'Group name too short',
+      details: { name, length: name.length, minLength: 2 }
+    });
+
     throw {
       code: 'VALIDATION_ERROR',
       message: 'Minimum group name length is 2 characters',
@@ -69,6 +90,12 @@ function validateGroupName(name: string): void {
   }
 
   if (name.length > 100) {
+    logger.warn({
+      code: Events.ADMIN.USERS.CREATION.VALIDATE.NAME_FORMAT.code,
+      message: 'Group name too long',
+      details: { name, length: name.length, maxLength: 100 }
+    });
+
     throw {
       code: 'VALIDATION_ERROR',
       message: 'Maximum group name length is 100 characters',
@@ -77,6 +104,12 @@ function validateGroupName(name: string): void {
   }
 
   if (!/^[a-zA-Z0-9-]+$/.test(name)) {
+    logger.warn({
+      code: Events.ADMIN.USERS.CREATION.VALIDATE.NAME_FORMAT.code,
+      message: 'Group name contains invalid characters',
+      details: { name, pattern: '^[a-zA-Z0-9-]+$' }
+    });
+
     throw {
       code: 'VALIDATION_ERROR',
       message: 'Group name can only contain latin letters, numbers and hyphens',
@@ -86,13 +119,23 @@ function validateGroupName(name: string): void {
 }
 
 function validateEmail(email: string | undefined): void {
-  logger.info('Validating email format');
-  
   if (!email) return;
+
+  logger.debug({
+    code: Events.ADMIN.USERS.CREATION.VALIDATE.SUCCESS.code,
+    message: 'Validating email format',
+    details: { email }
+  });
 
   const emailRegex = /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)+$/;
   
   if (!emailRegex.test(email) || email.length > 254) {
+    logger.warn({
+      code: Events.ADMIN.USERS.CREATION.VALIDATE.EMAIL_FORMAT.code,
+      message: 'Invalid email format',
+      details: { email, length: email.length, maxLength: 254 }
+    });
+
     throw {
       code: 'VALIDATION_ERROR',
       message: 'Invalid email format',
@@ -102,11 +145,21 @@ function validateEmail(email: string | undefined): void {
 }
 
 function validateDescription(description: string | undefined): void {
-  logger.info('Validating description format');
-  
   if (!description) return;
 
+  logger.debug({
+    code: Events.ADMIN.USERS.CREATION.VALIDATE.SUCCESS.code,
+    message: 'Validating description format',
+    details: { descriptionLength: description.length }
+  });
+
   if (description.length > 5000) {
+    logger.warn({
+      code: Events.ADMIN.USERS.CREATION.VALIDATE.DESCRIPTION_FORMAT.code,
+      message: 'Description too long',
+      details: { length: description.length, maxLength: 5000 }
+    });
+
     throw {
       code: 'VALIDATION_ERROR',
       message: 'Maximum description length is 5000 characters',
@@ -115,6 +168,12 @@ function validateDescription(description: string | undefined): void {
   }
 
   if (!/^[a-zA-Zа-яА-ЯёЁ0-9\s\-_.,!?()@#$%&'*+=/<>[\]{}"`~;:|]+$/.test(description)) {
+    logger.warn({
+      code: Events.ADMIN.USERS.CREATION.VALIDATE.DESCRIPTION_FORMAT.code,
+      message: 'Description contains invalid characters',
+      details: { descriptionLength: description.length }
+    });
+
     throw {
       code: 'VALIDATION_ERROR',
       message: 'Description contains invalid characters',
@@ -124,10 +183,20 @@ function validateDescription(description: string | undefined): void {
 }
 
 async function checkUniqueness(groupName: string): Promise<void> {
-  logger.info('Checking group name uniqueness', { groupName });
+  logger.debug({
+    code: Events.ADMIN.USERS.CREATION.CHECK.NAME_EXISTS.code,
+    message: 'Checking group name uniqueness',
+    details: { groupName }
+  });
 
   const result = await pool.query(queries.checkGroupName.text, [groupName]);
   if (result.rows.length > 0) {
+    logger.warn({
+      code: Events.ADMIN.USERS.CREATION.CHECK.NAME_EXISTS.code,
+      message: 'Group name already exists',
+      details: { groupName, existingGroup: result.rows[0] }
+    });
+
     throw {
       code: 'UNIQUE_CONSTRAINT_ERROR',
       message: 'Group name is already taken',
@@ -137,10 +206,20 @@ async function checkUniqueness(groupName: string): Promise<void> {
 }
 
 async function checkOwnerExists(ownerUsername: string): Promise<void> {
-  logger.info('Checking if owner exists', { ownerUsername });
+  logger.debug({
+    code: Events.ADMIN.USERS.CREATION.CHECK.OWNER_NOT_FOUND.code,
+    message: 'Checking if owner exists',
+    details: { ownerUsername }
+  });
 
   const result = await pool.query(queries.checkUserExists.text, [ownerUsername]);
   if (result.rows.length === 0) {
+    logger.warn({
+      code: Events.ADMIN.USERS.CREATION.CHECK.OWNER_NOT_FOUND.code,
+      message: 'Group owner does not exist',
+      details: { ownerUsername }
+    });
+
     throw {
       code: 'VALIDATION_ERROR',
       message: 'Group owner does not exist',
@@ -156,9 +235,14 @@ export async function createGroup(
   const client = await pool.connect();
   
   try {
-    logger.info('Starting group creation process', { 
-      groupName: groupData.group_name,
-      owner: groupData.group_owner 
+    logger.info({
+      code: Events.ADMIN.USERS.CREATION.CREATE.SUCCESS.code,
+      message: 'Starting group creation process',
+      details: { 
+        groupName: groupData.group_name,
+        owner: groupData.group_owner,
+        initiatedBy: currentUser.username
+      }
     });
 
     // Validation
@@ -168,6 +252,15 @@ export async function createGroup(
     validateDescription(groupData.group_description);
     
     if (!Object.values(GroupStatus).includes(groupData.group_status)) {
+      logger.warn({
+        code: Events.ADMIN.USERS.CREATION.VALIDATE.STATUS_FORMAT.code,
+        message: 'Invalid group status',
+        details: { 
+          providedStatus: groupData.group_status,
+          allowedStatuses: Object.values(GroupStatus)
+        }
+      });
+
       throw {
         code: 'VALIDATION_ERROR',
         message: 'Invalid group status',
@@ -181,39 +274,41 @@ export async function createGroup(
 
     // Start transaction
     await client.query('BEGIN');
-    logger.info('Starting database transaction');
+    logger.debug({
+      code: Events.ADMIN.USERS.CREATION.DATABASE.TRANSACTION_START.code,
+      message: 'Starting database transaction'
+    });
     
     // Получаем UUID владельца
     const ownerResult = await client.query(
       queries.getUserId.text,
       [groupData.group_owner]
     );
-    logger.info('Owner query result:', ownerResult.rows[0]); // добавим лог
+    logger.debug({
+      code: Events.ADMIN.USERS.CREATION.DATABASE.SUCCESS.code,
+      message: 'Owner query completed',
+      details: { ownerData: ownerResult.rows[0] }
+    });
     
     const ownerUuid = ownerResult.rows[0].user_id;
-    logger.info('Owner UUID:', ownerUuid); // и ещё один лог
     
-    const params = [
-      groupData.group_name,    
-      groupData.group_status,  
-      ownerUuid,              
-      false                   
-    ];
-    logger.info('Insert group parameters:', params);
-    logger.info('Insert group query:', { query: queries.insertGroup.text });
-
     // Создаем группу с полученным UUID
     const groupResult = await client.query(
       queries.insertGroup.text,
       [
         groupData.group_name,    
         groupData.group_status,  
-        ownerUuid,              // используем полученный UUID    
+        ownerUuid,               
         false                   
       ]
     );
     
     const groupId = groupResult.rows[0].group_id;
+    logger.debug({
+      code: Events.ADMIN.USERS.CREATION.DATABASE.SUCCESS.code,
+      message: 'Group base data inserted',
+      details: { groupId }
+    });
 
     // Create group details
     await client.query(
@@ -222,35 +317,46 @@ export async function createGroup(
         groupId,
         groupData.group_description || null,
         groupData.group_email || null,
-        ownerUuid,  // Используем UUID вместо username
-        // убираем now() так как он теперь в запросе
+        ownerUuid
       ]
     );
+    logger.debug({
+      code: Events.ADMIN.USERS.CREATION.DATABASE.SUCCESS.code,
+      message: 'Group details inserted',
+      details: { groupId }
+    });
 
     await client.query('COMMIT');
-    logger.info('Group created successfully', { groupId });
+    logger.info({
+      code: Events.ADMIN.USERS.CREATION.DATABASE.SUCCESS.code,
+      message: 'Group database transaction committed',
+      details: { groupId, groupName: groupData.group_name }
+    });
 
     try {
-      // Логируем состояние кеша до очистки
-      const cacheStateBefore = groupsRepository.hasValidCache();
-      logger.info(`Cache state before clearing: ${cacheStateBefore ? 'Valid' : 'Empty'}`);
-    
       // Очищаем кэш
-      groupsRepository.clearCache(); // Вызываем метод очистки кеша
-    
-      // Логируем состояние кеша после очистки
+      groupsRepository.clearCache(); 
+      
+      // Проверяем состояние кеша
       const cacheStateAfter = groupsRepository.hasValidCache();
-      logger.info(`Cache state after clearing: ${cacheStateAfter ? 'Valid' : 'Empty'}`);
-    
-      // Проверяем, что кэш действительно очищен
+      
       if (!cacheStateAfter) {
-        logger.info('Groups list repository cache cleared successfully');
+        logger.info({
+          code: Events.ADMIN.USERS.CREATION.CACHE.CLEARED.code,
+          message: 'Groups list repository cache cleared successfully'
+        });
       } else {
-        logger.error('Failed to clear groups list repository cache: cache is still valid');
+        logger.warn({
+          code: Events.ADMIN.USERS.CREATION.CACHE.ERROR.code,
+          message: 'Failed to clear groups list repository cache: cache is still valid'
+        });
       }
     } catch (error) {
-      // Логируем ошибку, если что-то пошло не так
-      logger.error('Failed to clear groups list repository cache', error);
+      logger.error({
+        code: Events.ADMIN.USERS.CREATION.CACHE.ERROR.code,
+        message: 'Failed to clear groups list repository cache',
+        error
+      });
     }
 
     return {
@@ -262,11 +368,29 @@ export async function createGroup(
 
   } catch (error) {
     await client.query('ROLLBACK');
-    logger.error('Failed to create group', error);
     
     if ((error as ServiceError).code) {
+      logger.error({
+        code: Events.ADMIN.USERS.CREATION.CREATE.ERROR.code,
+        message: `Group creation failed: ${(error as Error).message}`,
+        details: { 
+          groupName: groupData.group_name,
+          errorType: (error as ServiceError).code
+        },
+        error
+      });
       throw error;
     }
+
+    logger.error({
+      code: Events.ADMIN.USERS.CREATION.DATABASE.ERROR.code,
+      message: 'Unexpected error during group creation',
+      details: { 
+        groupName: groupData.group_name,
+        errorMessage: error instanceof Error ? error.message : String(error)
+      },
+      error
+    });
 
     throw {
       code: 'INTERNAL_SERVER_ERROR',

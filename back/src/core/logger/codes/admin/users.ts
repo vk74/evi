@@ -1,67 +1,104 @@
 /**
- * Коды событий для операций с пользователями
+ * Коды событий для операций с группами
  */
-export const UserEvents = {
+export const GroupEvents = {
   CREATION: {
-    /** Операция создания пользователя */
-    CREATE: {
-      /** Успешное создание пользователя */
-      SUCCESS: { 
-        code: 'ADMIN:USERS:CREATION:CREATE:001', 
-        description: 'Пользователь успешно создан' 
-      },
-      /** Ошибка валидации данных пользователя */
-      VALIDATION_ERROR: { 
-        code: 'ADMIN:USERS:CREATION:CREATE:002', 
-        description: 'Ошибка валидации данных пользователя' 
-      },
-      /** Пользователь с таким именем уже существует */
-      DUPLICATE_USERNAME: { 
-        code: 'ADMIN:USERS:CREATION:CREATE:003', 
-        description: 'Пользователь с таким именем уже существует' 
+    /** Операция получения запроса */
+    REQUEST: {
+      /** Получен запрос на создание группы */
+      RECEIVED: { 
+        code: 'ADMIN:USERS:GROUPS:REQUEST:001', 
+        description: 'Получен запрос на создание группы' 
       }
     },
-    /** Операция проверки пользователя */
+    /** Операция валидации */
     VALIDATE: {
-      /** Ошибка проверки сложности пароля */
-      PASSWORD_STRENGTH: {
-        code: 'ADMIN:USERS:CREATION:VALIDATE:001',
-        description: 'Недостаточно сложный пароль'
+      /** Успешная валидация полей */
+      SUCCESS: { 
+        code: 'ADMIN:USERS:GROUPS:VALIDATE:001', 
+        description: 'Валидация полей группы успешна' 
       },
-      /** Ошибка проверки формата email */
-      EMAIL_FORMAT: {
-        code: 'ADMIN:USERS:CREATION:VALIDATE:002',
-        description: 'Неверный формат электронной почты'
+      /** Ошибка обязательного поля */
+      REQUIRED_FIELD: { 
+        code: 'ADMIN:USERS:GROUPS:VALIDATE:002', 
+        description: 'Отсутствует обязательное поле группы' 
+      },
+      /** Ошибка формата имени группы */
+      NAME_FORMAT: { 
+        code: 'ADMIN:USERS:GROUPS:VALIDATE:003', 
+        description: 'Неверный формат имени группы' 
+      },
+      /** Ошибка формата email */
+      EMAIL_FORMAT: { 
+        code: 'ADMIN:USERS:GROUPS:VALIDATE:004', 
+        description: 'Неверный формат email группы' 
+      },
+      /** Ошибка формата описания */
+      DESCRIPTION_FORMAT: { 
+        code: 'ADMIN:USERS:GROUPS:VALIDATE:005', 
+        description: 'Неверный формат описания группы' 
+      },
+      /** Ошибка формата статуса */
+      STATUS_FORMAT: { 
+        code: 'ADMIN:USERS:GROUPS:VALIDATE:006', 
+        description: 'Неверный статус группы' 
       }
-    }
-  },
-  UPDATE: {
-    /** Операция обновления пользователя */
-    UPDATE: {
-      /** Успешное обновление пользователя */
-      SUCCESS: {
-        code: 'ADMIN:USERS:UPDATE:UPDATE:001',
-        description: 'Данные пользователя успешно обновлены'
+    },
+    /** Операция проверки уникальности */
+    CHECK: {
+      /** Ошибка уникальности имени группы */
+      NAME_EXISTS: { 
+        code: 'ADMIN:USERS:GROUPS:CHECK:001', 
+        description: 'Группа с таким именем уже существует' 
       },
-      /** Пользователь не найден */
-      NOT_FOUND: {
-        code: 'ADMIN:USERS:UPDATE:UPDATE:002',
-        description: 'Пользователь не найден'
+      /** Ошибка существования владельца */
+      OWNER_NOT_FOUND: { 
+        code: 'ADMIN:USERS:GROUPS:CHECK:002', 
+        description: 'Владелец группы не найден' 
       }
-    }
-  },
-  DELETION: {
-    /** Операция удаления пользователя */
-    DELETE: {
-      /** Успешное удаление пользователя */
-      SUCCESS: {
-        code: 'ADMIN:USERS:DELETION:DELETE:001',
-        description: 'Пользователь успешно удален'
+    },
+    /** Операция сохранения в БД */
+    DATABASE: {
+      /** Начало транзакции */
+      TRANSACTION_START: { 
+        code: 'ADMIN:USERS:GROUPS:DATABASE:001', 
+        description: 'Начата транзакция создания группы' 
       },
-      /** Ошибка при удалении пользователя */
-      ERROR: {
-        code: 'ADMIN:USERS:DELETION:DELETE:002',
-        description: 'Ошибка при удалении пользователя'
+      /** Успешное сохранение */
+      SUCCESS: { 
+        code: 'ADMIN:USERS:GROUPS:DATABASE:002', 
+        description: 'Группа успешно сохранена в базе данных' 
+      },
+      /** Ошибка при сохранении */
+      ERROR: { 
+        code: 'ADMIN:USERS:GROUPS:DATABASE:003', 
+        description: 'Ошибка при сохранении группы в базе данных' 
+      }
+    },
+    /** Операция обновления кеша */
+    CACHE: {
+      /** Успешная очистка кеша */
+      CLEARED: { 
+        code: 'ADMIN:USERS:GROUPS:CACHE:001', 
+        description: 'Кеш групп успешно очищен' 
+      },
+      /** Ошибка очистки кеша */
+      ERROR: { 
+        code: 'ADMIN:USERS:GROUPS:CACHE:002', 
+        description: 'Ошибка при очистке кеша групп' 
+      }
+    },
+    /** Операция создания группы (общая) */
+    CREATE: {
+      /** Успешное создание группы */
+      SUCCESS: { 
+        code: 'ADMIN:USERS:GROUPS:CREATE:001', 
+        description: 'Группа успешно создана' 
+      },
+      /** Ошибка при создании группы */
+      ERROR: { 
+        code: 'ADMIN:USERS:GROUPS:CREATE:002', 
+        description: 'Ошибка при создании группы' 
       }
     }
   }

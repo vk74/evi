@@ -9,41 +9,62 @@ import type {
   CreateGroupRequest,
   ServiceErrorType
 } from './types.group.editor';
+import { 
+  createAppLogger,
+  Events 
+} from '../../../../core/logger/logger.index';
 
-function logRequest(message: string, meta?: object): void {
-  console.log(`[${new Date().toISOString()}] [CreateGroup] ${message}`, meta || '');
-}
-
-function logError(message: string, error: unknown, meta?: object): void {
-  console.error(
-    `[${new Date().toISOString()}] [CreateGroup] ${message}`,
-    { error, ...meta }
-  );
-}
+// Создаем экземпляр логгера для контроллера групп
+const logger = createAppLogger({
+  module: 'AdminGroupController',
+  fileName: 'controller.create.group.ts'
+});
 
 async function createGroupController(req: Request & { user?: { username: string } }, res: Response): Promise<void> {
   const groupData: CreateGroupRequest = req.body;
   
   try {
-    logRequest('Received request to create new group', {
-      groupName: groupData.group_name,
-      owner: groupData.group_owner
+    // Логируем получение запроса
+    logger.info({
+      code: Events.ADMIN.USERS.CREATION.REQUEST.RECEIVED.code,
+      message: `Received request to create new group: ${groupData.group_name}`,
+      details: {
+        groupName: groupData.group_name,
+        owner: groupData.group_owner,
+        requestIP: req.ip,
+        userAgent: req.headers['user-agent']
+      }
     });
 
     const result = await createGroup(groupData, { username: req.user?.username || '' });
 
-    logRequest('Successfully created group', {
-      groupId: result.groupId,
-      groupName: result.group_name
+    // Логируем успешное создание
+    logger.info({
+      code: Events.ADMIN.USERS.CREATION.CREATE.SUCCESS.code,
+      message: `Successfully created group: ${result.group_name}`,
+      details: {
+        groupId: result.groupId,
+        groupName: result.group_name,
+        createdBy: req.user?.username || 'anonymous'
+      }
     });
 
     res.status(201).json(result);
 
   } catch (err) {
     const error = err as ServiceErrorType;
-    logError('Failed to create group', error, {
-      groupName: groupData.group_name,
-      errorCode: error.code
+    
+    // Логируем ошибку создания
+    logger.error({
+      code: Events.ADMIN.USERS.CREATION.CREATE.ERROR.code,
+      message: `Failed to create group: ${error.message}`,
+      details: {
+        groupName: groupData.group_name,
+        errorCode: error.code,
+        field: error.field,
+        requestBody: groupData
+      },
+      error
     });
 
     // Handle specific error types

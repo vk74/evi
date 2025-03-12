@@ -1,7 +1,7 @@
 /**
  * Объединенный экспорт всех кодов событий
  */
-import { UserEvents } from './admin/users';
+import { GroupEvents } from './admin/users';
 import { SystemEvents } from './admin/system';
 import { CatalogEvents } from './admin/catalog';
 import { ServicesEvents } from './admin/services';
@@ -12,7 +12,7 @@ import { EventCode } from '../logger.types';
  */
 export const Events = {
   ADMIN: {
-    USERS: UserEvents,
+    USERS: GroupEvents,
     SYSTEM: SystemEvents,
     CATALOG: CatalogEvents,
     SERVICES: ServicesEvents
