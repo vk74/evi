@@ -8,10 +8,10 @@ import { LogLevel } from './logger.types';
  */
 export const loggerConfig = {
   /** Уровень логирования по умолчанию */
-  defaultLogLevel: LogLevel.DEBUG,
+  defaultLogLevel: LogLevel.INFO,
   
   /** Активные транспорты для логирования */
-  enabledTransports: ['console', 'json'],
+  enabledTransports: ['console'],
   
   /** Название приложения */
   appName: 'admin-panel',
