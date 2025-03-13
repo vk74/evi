@@ -15,7 +15,8 @@
           "reset": "reset",
           "update": "update group data",
           "addMember": "add member",
-          "removeMember": "remove member from group"
+          "removeMember": "remove member from group",
+          "changeOwner": "change owner"
         },
         "form": {
           "groupId": "group UUID",

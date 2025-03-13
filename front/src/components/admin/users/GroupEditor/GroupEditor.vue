@@ -231,6 +231,13 @@ const handleRemoveMembers = async () => {
   }
 }
 
+// ==================== OWNER CHANGE HANDLERS ====================
+const handleChangeOwner = () => {
+  console.log('Change owner button clicked')
+  // This will be implemented later as per the requirements
+  // Currently we're only adding the button UI
+}
+
 // Placeholder for service (will be implemented separately)
 async function addGroupMembers(userIds: string[]) {
   console.log('Adding members with IDs:', userIds)
@@ -332,6 +339,16 @@ onBeforeUnmount(() => {
             @click="handleUpdateGroup"
           >
             {{ t('admin.groups.editor.buttons.update') }}
+          </v-btn>
+          <v-btn
+            v-if="groupEditorStore.isEditMode"
+            color="teal"
+            variant="outlined"
+            class="mr-2"
+            :disabled="!isAuthorized"
+            @click="handleChangeOwner"
+          >
+            {{ t('admin.groups.editor.buttons.changeOwner') }}
           </v-btn>
         </template>
         <template v-else-if="groupEditorStore.ui.activeSection === 'members'">
@@ -543,4 +560,6 @@ onBeforeUnmount(() => {
   display: flex;
   align-items: center;
 }
+
+
 </style>
