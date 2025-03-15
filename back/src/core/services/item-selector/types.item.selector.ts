@@ -1,6 +1,6 @@
 /**
  * types.item.selector.ts
- * Type definitions for item selector operations.
+ * BACKEND type definitions for item selector operations.
  */
 
 export interface SearchParams {
@@ -42,6 +42,7 @@ export interface PermissionError extends ServiceError {
   code: 'PERMISSION_ERROR';
 }
 
+
 // New interfaces for adding users to group feature
 export interface AddUsersToGroupRequest {
   groupId: string;      // UUID of the group to add users to
@@ -53,4 +54,17 @@ export interface AddUsersToGroupResponse {
   success: boolean;     // Indicates if the operation was successful
   message: string;      // Descriptive message about the operation result
   count: number;        // Number of users successfully added to the group
+}
+
+// New interfaces for changing group owner feature
+export interface ChangeGroupOwnerRequest {
+  groupId: string;      // UUID of the group
+  newOwnerId: string;   // UUID of the new owner
+  changedBy?: string;   // UUID of the user performing the action (optional, can be taken from JWT)
+}
+
+export interface ChangeGroupOwnerResponse {
+  success: boolean;     // Indicates if the operation was successful
+  message: string;      // Descriptive message about the operation result
+  oldOwnerId?: string;  // UUID of the previous owner (useful for UI updates)
 }

@@ -1,6 +1,6 @@
 /**
  * @file service.change.group.owner.ts
- * Service for changing the owner of a group in the ItemSelector.
+ * FRONTEND service for changing the owner of a group in the ItemSelector.
  * 
  * Functionality:
  * - Changes the owner of a group via the API based on selected user ID

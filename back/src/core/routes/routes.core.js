@@ -16,6 +16,7 @@ const validateJWT = require('../../guards/auth.validate.jwt');
 const fetchUsernameByUuid = require('../services/service.fetch.username.by.uuid').default;
 const searchUsers = require('../services/item-selector/controller.search.users').default;
 const addUsersToGroup = require('../services/item-selector/controller.add.users.to.group').default;
+const changeGroupOwner = require('../services/item-selector/controller.change.group.owner').default;
 
 const selfChangePasswordController = require('../services/change-password/controller.self.change.password').default;
 const adminResetPasswordController = require('../services/change-password/controller.admin.change.password').default;
@@ -27,7 +28,7 @@ router.get('/api/core/users/fetch-username-by-uuid/:userId', validateJWT, fetchU
 // item selector universal component services
 router.get('/api/core/item-selector/search-users', validateJWT, searchUsers); 
 router.post('/api/core/item-selector/add-users-to-group', validateJWT, addUsersToGroup);
-// /api/core/item-selector/change-group-owner
+router.post('/api/core/item-selector/change-group-owner', validateJWT, changeGroupOwner);
 
 // change password universal component
 router.post('/api/core/users/self-change-password', validateJWT, selfChangePasswordController);

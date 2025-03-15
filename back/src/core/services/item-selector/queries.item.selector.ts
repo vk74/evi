@@ -1,6 +1,6 @@
 /**
  * queries.item.selector.ts
- * SQL queries for item selector operations (e.g., searching users, adding users to groups).
+ * SQL queries for item selector operations (e.g., searching users, adding users to groups, changing group owner).
  * 
  * Contains parameterized queries for:
  * - Searching users by query string (username or UUID) with a limit
@@ -8,6 +8,10 @@
  * - Checking if users exist
  * - Checking if users are already members of a group
  * - Adding users to a group
+ * - Getting current group owner
+ * - Checking if user exists
+ * - Updating group owner
+ * - Updating group details modified information
  * 
  * Note: Uses parameterized queries to prevent SQL injection attacks.
  */
@@ -22,6 +26,10 @@ interface ItemSelectorQueries {
   checkUsersExist: SQLQuery;
   checkExistingMembers: SQLQuery;
   addUserToGroup: SQLQuery;
+  getCurrentGroupOwner: SQLQuery;     // New query for getting current group owner
+  checkUserExists: SQLQuery;          // New query for checking if user exists
+  updateGroupOwner: SQLQuery;         // New query for updating group owner
+  updateGroupDetails: SQLQuery;       // New query for updating group details
 }
 
 export const queries: ItemSelectorQueries = {
@@ -89,6 +97,45 @@ export const queries: ItemSelectorQueries = {
         true
       )
       RETURNING member_id
+    `
+  },
+
+  // Get current owner of a group by group ID
+  getCurrentGroupOwner: {
+    text: `
+      SELECT group_owner
+      FROM app.groups
+      WHERE group_id = $1
+    `
+  },
+
+  // Check if user exists by UUID
+  checkUserExists: {
+    text: `
+      SELECT user_id
+      FROM app.users
+      WHERE user_id = $1
+    `
+  },
+
+  // Update group owner in the groups table
+  updateGroupOwner: {
+    text: `
+      UPDATE app.groups
+      SET group_owner = $2
+      WHERE group_id = $1
+      RETURNING group_id
+    `
+  },
+
+  // Update modified information in group_details table
+  updateGroupDetails: {
+    text: `
+      UPDATE app.group_details
+      SET group_modified_at = CURRENT_TIMESTAMP,
+          group_modified_by = $2
+      WHERE group_id = $1
+      RETURNING group_id
     `
   }
 };
