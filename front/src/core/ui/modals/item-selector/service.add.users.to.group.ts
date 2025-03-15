@@ -11,8 +11,8 @@
 import { api } from '@/core/api/service.axios';
 import { useUiStore } from '@/core/state/uistate';
 import { useGroupEditorStore } from '@/components/admin/users/GroupEditor/state.group.editor';
-import { useUserStore } from '@/core/state/userstate'; // Импорт для получения UUID пользователя
-import type { AddUsersResponse } from './types.item.selector';
+import { useUserStore } from '@/core/state/userstate';
+import { AddUsersResponse, AddUsersToGroupRequest } from './types.action.services';
 
 // Logger for tracking operations
 const logger = {

@@ -10,7 +10,7 @@
  */
 import { api } from '@/core/api/service.axios';
 import { useUiStore } from '@/core/state/uistate';
-import type { SearchParams, SearchResult } from './types.item.selector';
+import { SearchParams, SearchResult, UserAccountSearchResponse } from './types.search.services';
 
 // Logger for tracking operations
 const logger = {

@@ -27,6 +27,10 @@
       "limit": "maximum items: {count}",
       "minChars": "enter at least 2 characters to search"
     },
+    "windows": {
+      "searchResults": "search results, max items: {max}",
+      "selection": "selection, max items: {max}"
+    },
     "items": {
       "notFound": "no items found"
     },
@@ -34,6 +38,7 @@
       "cancel": "cancel",
       "reset": "reset results",
       "add": "add",
+      "remove": "remove",
       "execute": "execute"
     },
     "messages": {
@@ -41,12 +46,18 @@
       "addSuccess": "successfully added {count} users to group",
       "addError": "error adding users to group",
       "searchLimitReached": "limit of {count} items reached",
+      "selectionLimitReached": "selection limit of {count} items reached",
       "searchError": "search error",
       "invalidOperationType": "invalid operation type",
       "foundItems": "found {count} items",
       "addedUniqueItems": "found {total} items, added {unique} unique ones",
       "alreadyAdded": "all found items have already been added to results",
-      "noItemsFound": "no items found for your request"
+      "noItemsFound": "no items found for your request",
+      "emptySearchResults": "no search results to display",
+      "emptySelection": "no items selected",
+      "noObjectsForAction": "no items selected for action",
+      "actionSuccess": "operation completed successfully with {count} items",
+      "actionError": "error performing the operation"
     }
   }
 }

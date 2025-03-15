@@ -1,167 +1,99 @@
 <!-- ItemSelector.vue -->
-<!-- Universal modal component for searching and performing actions on items.
-Expects 4 parameters:
-- title: string, sets the modal title (e.g., "Adding users to group").
-- operationType: string, defines the action type (e.g., "add-users-to-group").
-- maxItems: number, specifies the maximum number of selectable items (1–100).
-- searchType: string, defines the search type for querying the endpoint (e.g., "user-account"). -->
+<!--
+  Универсальный модальный компонент для поиска и выбора объектов.
+  
+  Компонент позволяет пользователям искать объекты через предоставленный searchService,
+  выбирать их и выполнять действие с помощью actionService.
+  
+  Интерфейс состоит из двух окон:
+  - Левое окно отображает результаты поиска
+  - Правое окно отображает выбранные объекты
+  
+  Пропсы:
+  - title: String (обязательный) - Заголовок модального окна
+  - searchService: Function (обязательный) - Функция сервиса поиска
+  - actionService: Function (обязательный) - Функция сервиса действия
+  - maxResults: Number (по умолчанию: 30) - Максимальное количество объектов в результатах поиска
+  - maxItems: Number (по умолчанию: 20) - Максимальное количество объектов в списке выбора
+  - actionButtonText: String (по умолчанию: из i18n) - Текст кнопки действия
+-->
 <script setup lang="ts">
-import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
+import { ref, computed, onMounted, onBeforeUnmount, PropType, defineProps, defineEmits } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useUiStore } from '@/core/state/uistate'
-import { SearchParams, SearchResult } from './types.item.selector'
-import searchUsers from './service.search.users'
-import addUsersToGroup from './service.add.users.to.group'
-// Здесь будут импорты других сервисов поиска, когда они будут созданы
-// import searchGroups from './service.search.groups'
-// import searchWorkspaces from './service.search.workspaces'
+import { 
+  ItemSelectorItem, 
+  SearchServiceFn, 
+  ActionServiceFn 
+} from './types.item.selector'
 
-// Init i18n
+// Инициализация i18n
 const { t } = useI18n()
 
-// Props definition
+// Определение пропсов
 const props = defineProps({
   title: {
     type: String,
     required: true,
   },
-  operationType: {
-    type: String,
+  searchService: {
+    type: Function as PropType<SearchServiceFn>,
     required: true,
   },
-  searchType: {
-    type: String,
+  actionService: {
+    type: Function as PropType<ActionServiceFn>,
     required: true,
+  },
+  maxResults: {
+    type: Number,
+    default: 30,
+    validator: (value: number) => value >= 1,
   },
   maxItems: {
     type: Number,
-    required: true,
-    validator: (value: number) => value >= 1 && value <= 100,
+    default: 20,
+    validator: (value: number) => value >= 1,
+  },
+  actionButtonText: {
+    type: String,
+    default: null, // Будет использовать значение из i18n если не указано
   },
 })
 
+// События компонента
 const emit = defineEmits(['close', 'actionPerformed'])
 
-// State management
-const isDialogOpen = ref(true)
+// Управление состоянием
 const searchQuery = ref('')
-const searchResults = ref<SearchResult[]>([]) // All results are automatically selected
+const searchResultItems = ref<ItemSelectorItem[]>([]) // Элементы левого окна (результаты поиска)
+const selectedItems = ref<ItemSelectorItem[]>([]) // Элементы правого окна (выбранные объекты)
 const isLoading = ref(false)
 const uiStore = useUiStore()
 
-// Словарь подсказок для разных типов поиска
-const getSearchPlaceholder = (type: string): string => {
-  switch (type) {
-    case 'user-account':
-      return t('itemSelector.search.placeholder.userAccount')
-    case 'group':
-      return t('itemSelector.search.placeholder.group')
-    case 'workspace':
-      return t('itemSelector.search.placeholder.workspace')
-    default:
-      return t('itemSelector.search.placeholder.default')
-  }
-}
-
-// Вычисляемое свойство для получения подсказки поиска
-const searchPlaceholder = computed(() => getSearchPlaceholder(props.searchType))
-
-// Словарь для отображения объектов разных типов
-const itemDisplayFormats: Record<string, (item: SearchResult) => string> = {
-  'user-account': (item) => `${item.username} (${item.uuid})`,
-  'group': (item) => `${item.name || item.groupName} (${item.uuid})`,
-  'workspace': (item) => `${item.name} (${item.uuid})`,
-  // Другие форматы для разных типов
-  'default': (item) => item.name || item.username || item.uuid || t('itemSelector.items.notFound')
-}
-
-// Функция для получения отображаемого текста для элемента
-const getItemDisplayText = (item: SearchResult): string => {
-  const formatter = itemDisplayFormats[props.searchType] || itemDisplayFormats['default']
-  return formatter(item)
-}
-
-// Initialize
+// Инициализация
 onMounted(() => {
-  console.log('[ItemSelector] Mounted with props:', props)
+  console.log('[ItemSelector] Компонент инициализирован с пропсами:', props)
 })
 
 onBeforeUnmount(() => {
-  console.log('[ItemSelector] Unmounted')
-  searchResults.value = []
+  console.log('[ItemSelector] Компонент удаляется')
+  searchResultItems.value = []
+  selectedItems.value = []
 })
 
-// Computed properties
-const isSearchDisabled = computed(() => searchResults.value.length >= props.maxItems)
+// Вычисляемые свойства
 const canSearch = computed(() => (searchQuery.value?.length || 0) >= 2)
-const isActionDisabled = computed(() => searchResults.value.length === 0)
-const isResetDisabled = computed(() => searchResults.value.length === 0)
-const remainingLimit = computed(() => props.maxItems - searchResults.value.length)
-
-// Обработчики поиска для разных типов объектов
-const searchHandlers: Record<string, (params: SearchParams) => Promise<SearchResult[]>> = {
-  'user-account': searchUsers,
-  // Заглушки для будущих типов поиска
-  // 'group': searchGroups,
-  // 'workspace': searchWorkspaces
-}
-
-// Action handlers
-const actionHandlers: Record<string, { label: string; handler: () => Promise<void> }> = {
-  'add-users-to-group': {
-    label: t('itemSelector.buttons.add'),
-    handler: handleAddUsersToGroup,
-  },
-  // Здесь можно добавить другие типы операций
-  // 'add-groups-to-workspace': {
-  //   label: 'Добавить',
-  //   handler: handleAddGroupsToWorkspace,
-  // },
-}
-
-async function handleAddUsersToGroup() {
-  console.log('[ItemSelector] handleAddUsersToGroup called, selectedItems:', searchResults.value.map(item => item.uuid));
-  if (searchResults.value.length === 0) {
-    uiStore.showErrorSnackbar(t('itemSelector.messages.noResults'))
-    return
-  }
-
-  try {
-    console.log('[ItemSelector] Attempting to add users to group with selectedItems:', searchResults.value.map(item => item.uuid));
-    const response = await addUsersToGroup(searchResults.value.map(item => item.uuid))
-    console.log('[ItemSelector] Response from addUsersToGroup:', response);
-    if (response.success) {
-      uiStore.showSuccessSnackbar(t('itemSelector.messages.addSuccess', { count: response.count }))
-      emit('actionPerformed', response)
-      resetSearch()
-      closeModal()
-    }
-  } catch (error) {
-    console.error('[ItemSelector] Error adding users to group:', error)
-    uiStore.showErrorSnackbar(t('itemSelector.messages.addError'))
-  }
-}
-
-// Другие обработчики действий будут добавлены здесь по мере необходимости
-
-const closeModal = () => {
-  console.log('[ItemSelector] Closing ItemSelector modal')
-  isDialogOpen.value = false
-  emit('close')
-}
-
-const resetSearch = () => {
-  console.log('[ItemSelector] Resetting search results, searchQuery:', searchQuery.value, 'searchResults:', searchResults.value)
-  searchQuery.value = ''
-  searchResults.value = []
-}
+const isActionDisabled = computed(() => selectedItems.value.length === 0)
+const isResetDisabled = computed(() => searchResultItems.value.length === 0 && selectedItems.value.length === 0)
+const actionButtonLabel = computed(() => props.actionButtonText || t('itemSelector.buttons.execute'))
 
 /**
- * Универсальная функция поиска, которая выбирает правильный обработчик 
- * в зависимости от типа поиска и добавляет уникальные результаты
+ * Выполнить поиск и обновить результаты
  */
 const handleSearch = async () => {
-  console.log('[ItemSelector] Starting search with query:', searchQuery.value, 'searchType:', props.searchType, 'remainingLimit:', remainingLimit.value)
+  console.log('[ItemSelector] Начинаем поиск с запросом:', searchQuery.value)
+  
+  // Проверка минимальной длины запроса
   if (!canSearch.value) {
     uiStore.showErrorSnackbar(t('itemSelector.search.minChars'))
     return
@@ -169,70 +101,138 @@ const handleSearch = async () => {
 
   try {
     isLoading.value = true
-    const searchParams: SearchParams = {
-      query: searchQuery.value,
-      limit: remainingLimit.value > 0 ? remainingLimit.value : 0,
-    }
     
-    // Skip search if we're already at max capacity
-    if (searchParams.limit === 0) {
-      uiStore.showErrorSnackbar(t('itemSelector.messages.searchLimitReached', { count: props.maxItems }))
-      isLoading.value = false
-      return
-    }
+    // Очищаем предыдущие результаты поиска, но сохраняем выбранные элементы
+    searchResultItems.value = []
     
-    // Выбираем правильный обработчик поиска или используем searchUsers как запасной вариант
-    const searchHandler = searchHandlers[props.searchType] || searchUsers
-    const response = await searchHandler(searchParams)
-    console.log(`[ItemSelector] Search results received for ${props.searchType}:`, response)
+    // Вызываем сервис поиска
+    const results = await props.searchService(searchQuery.value, props.maxResults)
+    console.log('[ItemSelector] Получены результаты поиска:', results)
     
-    // Filter out items that are already in searchResults to avoid duplicates
-    const newUniqueItems = response.filter(newItem => 
-      !searchResults.value.some(existingItem => existingItem.uuid === newItem.uuid)
+    // Фильтруем элементы, которые уже в списке выбранных, чтобы избежать дубликатов
+    const uniqueResults = results.filter(newItem => 
+      !selectedItems.value.some(existingItem => existingItem.uuid === newItem.uuid)
     )
     
-    console.log('[ItemSelector] New unique items to add:', newUniqueItems.length)
+    searchResultItems.value = uniqueResults
+    console.log('[ItemSelector] Отфильтрованные уникальные результаты:', uniqueResults.length)
     
-    // Add new unique items to the existing results
-    if (newUniqueItems.length > 0) {
-      searchResults.value = [...searchResults.value, ...newUniqueItems]
-      console.log('[ItemSelector] Updated searchResults:', searchResults.value)
-      
-      if (newUniqueItems.length < response.length) {
-        uiStore.showInfoSnackbar(t('itemSelector.messages.addedUniqueItems', { 
-          total: response.length, 
-          unique: newUniqueItems.length 
-        }))
-      } else {
-        uiStore.showSuccessSnackbar(t('itemSelector.messages.foundItems', { count: newUniqueItems.length }))
-      }
-    } else if (response.length > 0) {
+    // Показываем соответствующее уведомление в зависимости от результатов
+    if (results.length === 0) {
+      uiStore.showInfoSnackbar(t('itemSelector.messages.noItemsFound'))
+    } else if (uniqueResults.length === 0) {
+      // Все найденные элементы уже в выборе
       uiStore.showInfoSnackbar(t('itemSelector.messages.alreadyAdded'))
     } else {
-      uiStore.showInfoSnackbar(t('itemSelector.messages.noItemsFound'))
+      // Показываем, сколько элементов найдено и сколько отфильтровано
+      if (uniqueResults.length < results.length) {
+        uiStore.showInfoSnackbar(t('itemSelector.messages.addedUniqueItems', { 
+          total: results.length, 
+          unique: uniqueResults.length 
+        }))
+      } else {
+        uiStore.showSuccessSnackbar(t('itemSelector.messages.foundItems', { count: uniqueResults.length }))
+      }
     }
   } catch (error) {
-    console.error(`[ItemSelector] Error searching ${props.searchType}:`, error)
+    console.error('[ItemSelector] Ошибка поиска:', error)
     uiStore.showErrorSnackbar(t('itemSelector.messages.searchError'))
   } finally {
     isLoading.value = false
-    console.log('[ItemSelector] Search completed, isLoading:', isLoading.value)
   }
 }
 
+/**
+ * Переместить элемент из результатов поиска в выбранные
+ */
+const addItemToSelection = (item: ItemSelectorItem) => {
+  console.log('[ItemSelector] Добавляем элемент в выбранные:', item)
+  
+  // Проверяем, не достигли ли мы максимального лимита элементов
+  if (selectedItems.value.length >= props.maxItems) {
+    uiStore.showErrorSnackbar(t('itemSelector.messages.selectionLimitReached', { count: props.maxItems }))
+    return
+  }
+  
+  // Перемещаем элемент из результатов поиска в выбранные
+  searchResultItems.value = searchResultItems.value.filter(i => i.uuid !== item.uuid)
+  selectedItems.value.push(item)
+}
+
+/**
+ * Удалить элемент из выбранных
+ */
+const removeItemFromSelection = (item: ItemSelectorItem) => {
+  console.log('[ItemSelector] Удаляем элемент из выбранных:', item)
+  selectedItems.value = selectedItems.value.filter(i => i.uuid !== item.uuid)
+  // Примечание: Мы не добавляем его обратно в результаты поиска, как указано в требованиях
+}
+
+/**
+ * Обработать нажатие кнопки действия
+ */
 const handleAction = async () => {
-  console.log('[ItemSelector] Performing action with operationType:', props.operationType, 'selectedItems:', searchResults.value.map(item => item.uuid))
-  const action = actionHandlers[props.operationType]
-  if (action) {
-    await action.handler()
-  } else {
-    uiStore.showErrorSnackbar(t('itemSelector.messages.invalidOperationType'))
+  console.log('[ItemSelector] Выполняем действие с выбранными элементами:', selectedItems.value.map(item => item.uuid))
+  
+  // Проверяем, что у нас есть элементы для обработки
+  if (selectedItems.value.length === 0) {
+    uiStore.showErrorSnackbar(t('itemSelector.messages.noObjectsForAction'))
+    return
+  }
+  
+  try {
+    isLoading.value = true
+    
+    // Вызываем сервис действия с UUID выбранных элементов
+    const result = await props.actionService(selectedItems.value.map(item => item.uuid))
+    console.log('[ItemSelector] Результат действия:', result)
+    
+    if (result.success) {
+      // Показываем уведомление об успехе
+      uiStore.showSuccessSnackbar(
+        result.message || t('itemSelector.messages.actionSuccess', { count: result.count || selectedItems.value.length })
+      )
+      
+      // Эмитим событие с результатом
+      emit('actionPerformed', result)
+      
+      // Закрываем модальное окно
+      closeModal()
+    } else {
+      // Показываем уведомление об ошибке
+      uiStore.showErrorSnackbar(result.message || t('itemSelector.messages.actionError'))
+    }
+  } catch (error) {
+    console.error('[ItemSelector] Ошибка выполнения действия:', error)
+    uiStore.showErrorSnackbar(t('itemSelector.messages.actionError'))
+  } finally {
+    isLoading.value = false
   }
 }
 
+/**
+ * Сбросить поиск и выбор
+ */
+const resetSearch = () => {
+  console.log('[ItemSelector] Сбрасываем поиск и выбор')
+  searchQuery.value = ''
+  searchResultItems.value = []
+  selectedItems.value = []
+}
+
+/**
+ * Закрыть модальное окно
+ */
+const closeModal = () => {
+  console.log('[ItemSelector] Закрываем модальное окно ItemSelector')
+  emit('close')
+}
+
+/**
+ * Обработка событий клавиатуры
+ */
 const onKeyPress = (event: KeyboardEvent) => {
-  console.log('[ItemSelector] Key pressed:', event.key, 'canSearch:', canSearch.value, 'isSearchDisabled:', isSearchDisabled.value)
-  if (event.key === 'Enter' && !isSearchDisabled.value && canSearch.value) {
+  if (event.key === 'Enter' && canSearch.value) {
     handleSearch()
   }
 }
@@ -242,49 +242,101 @@ const onKeyPress = (event: KeyboardEvent) => {
   <div class="modal-overlay" @click.self="closeModal">
     <div class="modal">
       <v-card>
+        <v-card-title>{{ title }}</v-card-title>
         <v-card-text>
-          <v-row class="mb-2" align="center">
+          <!-- Строка поиска -->
+          <v-row class="mb-2">
             <v-col cols="12">
-              <h2 class="text-body-1">{{ title }}</h2>
-            </v-col>
-            <v-col cols="12">
-             <v-text-field
+              <v-text-field
                 v-model="searchQuery"
-                :label="searchPlaceholder"
+                :label="t('itemSelector.search.placeholder')"
                 variant="outlined"
                 density="comfortable"
                 prepend-inner-icon="mdi-magnify"
                 clearable
-                class="mb-2"
-                :disabled="isSearchDisabled"
+                :disabled="isLoading"
                 @keypress="onKeyPress"
                 @click:prepend-inner="handleSearch"
               />
-              <p class="text-caption mb-2">{{ t('itemSelector.search.limit', { count: maxItems }) }}</p>
             </v-col>
           </v-row>
-          <v-row class="mb-4">
-            <v-col cols="12">
-              <v-chip
-                v-for="item in searchResults"
-                :key="item.uuid"
-                class="ma-1"
-                closable
-                @click:close="searchResults = searchResults.filter(i => i.uuid !== item.uuid)"
-              >
-                {{ getItemDisplayText(item) }}
-                <template v-slot:close>
-                  <v-icon color="error">mdi-close</v-icon>
-                </template>
-              </v-chip>
-              <v-chip v-if="!searchResults.length" color="grey" disabled>
-                {{ t('itemSelector.items.notFound') }}
-              </v-chip>
-            </v-col>
-          </v-row>
+          
+          <!-- Два окна: Результаты поиска и Выбор -->
           <v-row>
+            <!-- Левое окно: Результаты поиска -->
+            <v-col cols="6">
+              <div class="window-header">
+                {{ t('itemSelector.windows.searchResults', { max: maxResults }) }}
+              </div>
+              <div class="window-content">
+                <v-list density="compact" v-if="searchResultItems.length > 0">
+                  <v-list-item
+                    v-for="item in searchResultItems"
+                    :key="item.uuid"
+                    :title="item.name"
+                    @dblclick="addItemToSelection(item)"
+                  >
+                    <template v-slot:append>
+                      <v-btn 
+                        size="small" 
+                        icon 
+                        variant="text" 
+                        @click="addItemToSelection(item)" 
+                        :title="t('itemSelector.buttons.add')"
+                      >
+                        <v-icon>mdi-plus</v-icon>
+                      </v-btn>
+                    </template>
+                  </v-list-item>
+                </v-list>
+                <div v-else class="empty-message">
+                  {{ t('itemSelector.messages.emptySearchResults') }}
+                </div>
+              </div>
+            </v-col>
+            
+            <!-- Правое окно: Выбор -->
+            <v-col cols="6">
+              <div class="window-header">
+                {{ t('itemSelector.windows.selection', { max: maxItems }) }}
+              </div>
+              <div class="window-content">
+                <v-list density="compact" v-if="selectedItems.length > 0">
+                  <v-list-item
+                    v-for="item in selectedItems"
+                    :key="item.uuid"
+                    :title="item.name"
+                    @dblclick="removeItemFromSelection(item)"
+                  >
+                    <template v-slot:append>
+                      <v-btn 
+                        size="small" 
+                        icon 
+                        variant="text" 
+                        color="error" 
+                        @click="removeItemFromSelection(item)" 
+                        :title="t('itemSelector.buttons.remove')"
+                      >
+                        <v-icon>mdi-close</v-icon>
+                      </v-btn>
+                    </template>
+                  </v-list-item>
+                </v-list>
+                <div v-else class="empty-message">
+                  {{ t('itemSelector.messages.emptySelection') }}
+                </div>
+              </div>
+            </v-col>
+          </v-row>
+          
+          <!-- Кнопки -->
+          <v-row class="mt-4">
             <v-col cols="12" class="d-flex justify-space-between">
-              <v-btn color="gray" variant="outlined" @click="closeModal">
+              <v-btn 
+                color="gray" 
+                variant="outlined" 
+                @click="closeModal"
+              >
                 {{ t('itemSelector.buttons.cancel') }}
               </v-btn>
               <v-btn
@@ -296,13 +348,13 @@ const onKeyPress = (event: KeyboardEvent) => {
                 {{ t('itemSelector.buttons.reset') }}
               </v-btn>
               <v-btn
-                color="teal"
+                color="primary"
                 variant="outlined"
                 @click="handleAction"
                 :disabled="isActionDisabled"
                 :loading="isLoading"
               >
-                {{ actionHandlers[operationType]?.label || t('itemSelector.buttons.execute') }}
+                {{ actionButtonLabel }}
               </v-btn>
             </v-col>
           </v-row>
@@ -329,10 +381,34 @@ const onKeyPress = (event: KeyboardEvent) => {
 .modal {
   background: white;
   border-radius: 8px;
-  max-width: 550px;
+  max-width: 800px;
   width: 100%;
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
   overflow: auto;
   z-index: 1001;
+}
+
+.window-header {
+  font-weight: 600;
+  padding: 8px;
+  background-color: #f5f5f5;
+  border-radius: 4px 4px 0 0;
+  border: 1px solid #e0e0e0;
+}
+
+.window-content {
+  height: 300px;
+  overflow-y: auto;
+  border: 1px solid #e0e0e0;
+  border-top: none;
+  border-radius: 0 0 4px 4px;
+  background-color: white;
+}
+
+.empty-message {
+  padding: 16px;
+  color: #757575;
+  font-style: italic;
+  text-align: center;
 }
 </style>
