@@ -82,6 +82,9 @@ const selectedItems = ref<ItemSelectorItem[]>([]) // Элементы право
 const isLoading = ref(false)
 const uiStore = useUiStore()
 
+// Ref для автофокуса на поле поиска
+const searchInputRef = ref(null)
+
 // Инициализация
 onMounted(() => {
   console.log('[ItemSelector] Компонент инициализирован с пропсами:', props)
@@ -94,6 +97,18 @@ onMounted(() => {
   if (!actionServiceMap[props.actionService]) {
     console.error(`[ItemSelector] Сервис действия "${props.actionService}" не найден`)
   }
+  
+  // Устанавливаем фокус на поле поиска с небольшой задержкой
+  setTimeout(() => {
+    if (searchInputRef.value) {
+      const inputElement = searchInputRef.value.$el.querySelector('input')
+      if (inputElement) {
+        inputElement.focus()
+      } else {
+        searchInputRef.value.focus()
+      }
+    }
+  }, 50)
 })
 
 onBeforeUnmount(() => {
@@ -278,7 +293,8 @@ const onKeyPress = (event: KeyboardEvent) => {
 <template>
   <div class="modal-overlay" @click.self="closeModal">
     <div class="modal">
-      <v-card width="100%">
+      <!-- Увеличим максимальную ширину до 1100px для большей комфортности -->
+      <v-card width="100%" max-width="1100px">
         <v-card-title>{{ title }}</v-card-title>
         <v-card-text>
           <!-- Строка поиска -->
@@ -289,12 +305,14 @@ const onKeyPress = (event: KeyboardEvent) => {
                 :label="t('itemSelector.search.placeholder.default')"
                 variant="outlined"
                 density="compact"
+                color="teal"
                 prepend-inner-icon="mdi-magnify"
                 clearable
                 :disabled="isLoading"
                 @keypress="onKeyPress"
                 @click:prepend-inner="handleSearch"
                 class="mb-0"
+                ref="searchInputRef"
               />
             </v-col>
           </v-row>
@@ -412,18 +430,7 @@ const onKeyPress = (event: KeyboardEvent) => {
 </template>
 
 <style scoped>
-.modal-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: rgba(0, 0, 0, 0.5);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  z-index: 1000;
-}
+
 
 .modal {
   background: white;
