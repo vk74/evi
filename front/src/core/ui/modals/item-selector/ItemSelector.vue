@@ -11,8 +11,8 @@
   
   Пропсы:
   - title: String (обязательный) - Заголовок модального окна
-  - searchService: Function (обязательный) - Функция сервиса поиска
-  - actionService: Function (обязательный) - Функция сервиса действия
+  - searchService: String (обязательный) - Имя сервиса поиска (например "searchUsers")
+  - actionService: String (обязательный) - Имя сервиса действия (например "addUsersToGroup")
   - maxResults: Number (по умолчанию: 30) - Максимальное количество объектов в результатах поиска
   - maxItems: Number (по умолчанию: 20) - Максимальное количество объектов в списке выбора
   - actionButtonText: String (по умолчанию: из i18n) - Текст кнопки действия
@@ -21,27 +21,39 @@
 import { ref, computed, onMounted, onBeforeUnmount, PropType, defineProps, defineEmits } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useUiStore } from '@/core/state/uistate'
-import { 
-  ItemSelectorItem, 
-  SearchServiceFn, 
-  ActionServiceFn 
-} from './types.item.selector'
+import { ItemSelectorItem } from './types.item.selector'
+
+// Импорт сервисов
+import searchUsers from '@/core/ui/modals/item-selector/service.search.users'
+import addUsersToGroup from '@/core/ui/modals/item-selector/service.add.users.to.group'
+// При добавлении новых сервисов, импортируйте их здесь
+
+// Маппинг имен сервисов в функции
+const searchServiceMap = {
+  searchUsers: searchUsers,
+  // Добавьте новые сервисы поиска здесь
+}
+
+const actionServiceMap = {
+  addUsersToGroup: addUsersToGroup,
+  // Добавьте новые сервисы действий здесь
+}
 
 // Инициализация i18n
 const { t } = useI18n()
 
-// Определение пропсов
+// Определение пропсов (теперь строки вместо функций)
 const props = defineProps({
   title: {
     type: String,
     required: true,
   },
   searchService: {
-    type: Function as PropType<SearchServiceFn>,
+    type: String, // Теперь ожидаем строку
     required: true,
   },
   actionService: {
-    type: Function as PropType<ActionServiceFn>,
+    type: String, // Теперь ожидаем строку
     required: true,
   },
   maxResults: {
@@ -73,6 +85,15 @@ const uiStore = useUiStore()
 // Инициализация
 onMounted(() => {
   console.log('[ItemSelector] Компонент инициализирован с пропсами:', props)
+  
+  // Проверяем, что сервисы существуют
+  if (!searchServiceMap[props.searchService]) {
+    console.error(`[ItemSelector] Сервис поиска "${props.searchService}" не найден`)
+  }
+  
+  if (!actionServiceMap[props.actionService]) {
+    console.error(`[ItemSelector] Сервис действия "${props.actionService}" не найден`)
+  }
 })
 
 onBeforeUnmount(() => {
@@ -95,7 +116,7 @@ const handleSearch = async () => {
   
   // Проверка минимальной длины запроса
   if (!canSearch.value) {
-    uiStore.showErrorSnackbar(t('itemSelector.search.minChars'))
+    uiStore.showWarningSnackbar(t('itemSelector.search.minChars'))
     return
   }
 
@@ -105,8 +126,18 @@ const handleSearch = async () => {
     // Очищаем предыдущие результаты поиска, но сохраняем выбранные элементы
     searchResultItems.value = []
     
+    // Получаем функцию сервиса из маппинга по имени
+    const searchServiceFn = searchServiceMap[props.searchService]
+    if (!searchServiceFn) {
+      throw new Error(`Сервис поиска "${props.searchService}" не найден`)
+    }
+    
     // Вызываем сервис поиска
-    const results = await props.searchService(searchQuery.value, props.maxResults)
+    const results = await searchServiceFn({
+      query: searchQuery.value,
+      limit: props.maxResults
+    })
+    
     console.log('[ItemSelector] Получены результаты поиска:', results)
     
     // Фильтруем элементы, которые уже в списке выбранных, чтобы избежать дубликатов
@@ -183,8 +214,14 @@ const handleAction = async () => {
   try {
     isLoading.value = true
     
+    // Получаем функцию сервиса из маппинга по имени
+    const actionServiceFn = actionServiceMap[props.actionService]
+    if (!actionServiceFn) {
+      throw new Error(`Сервис действия "${props.actionService}" не найден`)
+    }
+    
     // Вызываем сервис действия с UUID выбранных элементов
-    const result = await props.actionService(selectedItems.value.map(item => item.uuid))
+    const result = await actionServiceFn(selectedItems.value.map(item => item.uuid))
     console.log('[ItemSelector] Результат действия:', result)
     
     if (result.success) {
@@ -232,7 +269,7 @@ const closeModal = () => {
  * Обработка событий клавиатуры
  */
 const onKeyPress = (event: KeyboardEvent) => {
-  if (event.key === 'Enter' && canSearch.value) {
+  if (event.key === 'Enter') {
     handleSearch()
   }
 }
@@ -241,8 +278,7 @@ const onKeyPress = (event: KeyboardEvent) => {
 <template>
   <div class="modal-overlay" @click.self="closeModal">
     <div class="modal">
-      <!-- Увеличим максимальную ширину до 1100px для большей комфортности -->
-      <v-card width="100%" max-width="1100px">
+      <v-card width="100%">
         <v-card-title>{{ title }}</v-card-title>
         <v-card-text>
           <!-- Строка поиска -->

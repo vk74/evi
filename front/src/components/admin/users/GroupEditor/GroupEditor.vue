@@ -187,17 +187,24 @@ const openItemSelectorModal = () => {
   isItemSelectorModalOpen.value = true
 }
 
-const handleAddMembers = async (selectedItemIds: string[]) => {
-  if (!selectedItemIds || selectedItemIds.length === 0) {
-    uiStore.showErrorSnackbar(t('admin.groups.editor.messages.noMembersSelected'))
-    return
-  }
-
-  try {
-    await addGroupMembers(selectedItemIds)
-    uiStore.showSuccessSnackbar(t('admin.groups.editor.messages.membersAddSuccess'))
-  } catch (error) {
-    uiStore.showErrorSnackbar(error instanceof Error ? error.message : t('admin.groups.editor.messages.membersAddError'))
+// Обновленный обработчик добавления участников
+const handleAddMembers = async (result: any) => {
+  console.log('[GroupEditor] Members added via ItemSelector, result:', result)
+  
+  // Проверяем успешность операции
+  if (result && result.success) {
+    // Обновляем список участников группы
+    if (groupEditorStore.isEditMode) {
+      const groupId = (groupEditorStore.mode as EditMode).groupId
+      try {
+        // Просто обновляем список участников
+        await fetchGroupMembersService.fetchGroupMembers(groupId)
+        // Очищаем выбор
+        groupEditorStore.clearGroupMembersSelection()
+      } catch (error) {
+        console.error('Error refreshing group members:', error)
+      }
+    }
   }
 }
 
@@ -515,15 +522,16 @@ onBeforeUnmount(() => {
       </v-container>
     </div>
 
-    <v-dialog v-model="isItemSelectorModalOpen" max-width="600">
+    <v-dialog v-model="isItemSelectorModalOpen" max-width="700">
       <ItemSelector 
-        :title="t('admin.groups.editor.buttons.addMember')" 
-        operation-type="add-users-to-group" 
-        search-type="user-account"
-        :max-items="20" 
+        :title="t('admin.groups.editor.itemSelector.title')"
+        searchService="searchUsers"
+        actionService="addUsersToGroup"
+        :maxResults="40"
+        :maxItems="20"
+        :actionButtonText="t('admin.groups.editor.itemSelector.addMembers')"
         @close="isItemSelectorModalOpen = false" 
         @actionPerformed="handleAddMembers"
-        :disabled="!isAuthorized"
       />
     </v-dialog>
   </div>
