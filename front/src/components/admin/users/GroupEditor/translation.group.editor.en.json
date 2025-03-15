@@ -66,6 +66,10 @@
           "maxLength": "maximum length is {length} characters",
           "alphaNumDash": "only latin characters, numbers and hyphens are allowed",
           "invalidStatus": "invalid status"
+        },
+        "itemSelector": {
+          "title": "adding users to group",
+          "addMembers": "add members"
         }
       }
     }
