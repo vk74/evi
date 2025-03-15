@@ -59,7 +59,9 @@
           "noMembersSelected": "не выбрано ни одного участника",
           "loadMembersError": "ошибка загрузки участников группы",
           "notLoggedIn": "пользователь не вошел в систему",
-          "unavailableInCreateMode": "недоступно в режиме создания группы"
+          "unavailableInCreateMode": "недоступно в режиме создания группы",
+          "ownerChangeSuccess": "владелец группы успешно изменен",
+          "ownerChangeError": "ошибка при смене владельца группы"
         },
         "validation": {
           "minLength": "минимальная длина {length} символов",
@@ -69,7 +71,8 @@
         },
         "itemSelector": {
           "title": "добавление пользователей в группу",
-          "addMembers": "добавить пользователей"
+          "addMembers": "добавить пользователей",
+          "ownerTitle": "смена владельца группы"
         }
       }
     }

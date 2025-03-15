@@ -20,3 +20,21 @@ export interface AddUsersToGroupRequest {
   userIds: string[];
   addedBy: string;
 }
+
+/**
+ * Request body for change group owner API call
+ */
+export interface ChangeGroupOwnerRequest {
+  groupId: string;      // ID of the group
+  newOwnerId: string;   // ID of the new owner
+  changedBy: string;    // ID of the user making the change
+}
+
+/**
+ * Response from the change group owner service
+ */
+export interface ChangeGroupOwnerResponse {
+  success: boolean;
+  message?: string;
+  oldOwnerId?: string;  // ID of the previous owner
+}

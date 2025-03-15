@@ -26,6 +26,7 @@ import { ItemSelectorItem } from './types.item.selector'
 // Импорт сервисов
 import searchUsers from '@/core/ui/modals/item-selector/service.search.users'
 import addUsersToGroup from '@/core/ui/modals/item-selector/service.add.users.to.group'
+import changeGroupOwner from './service.change.group.owner'
 // При добавлении новых сервисов, импортируйте их здесь
 
 // Маппинг имен сервисов в функции
@@ -36,6 +37,7 @@ const searchServiceMap = {
 
 const actionServiceMap = {
   addUsersToGroup: addUsersToGroup,
+  changeGroupOwner: changeGroupOwner,
   // Добавьте новые сервисы действий здесь
 }
 

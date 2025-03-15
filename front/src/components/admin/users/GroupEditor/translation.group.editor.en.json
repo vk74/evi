@@ -59,7 +59,9 @@
           "noMembersSelected": "no members selected",
           "loadMembersError": "error loading group members",
           "notLoggedIn": "user not logged in",
-          "unavailableInCreateMode": "unavailable in group creation mode"
+          "unavailableInCreateMode": "unavailable in group creation mode",
+          "ownerChangeSuccess": "group owner changed successfully",
+          "ownerChangeError": "error changing group owner"
         },
         "validation": {
           "minLength": "minimum length is {length} characters",
@@ -69,7 +71,8 @@
         },
         "itemSelector": {
           "title": "adding users to group",
-          "addMembers": "add members"
+          "addMembers": "add members",
+          "ownerTitle": "change group owner"
         }
       }
     }
