@@ -9,6 +9,7 @@ import { GroupStatus } from './types.group.editor'
 import { useValidationRules } from '@/core/validation/rules.common.fields'
 import type { TableHeader, EditMode } from './types.group.editor'
 import { updateGroupService } from './service.update.group' // Import update service
+import { fetchGroupService } from './service.fetch.group' // Import fetch service
 import { fetchGroupMembersService } from './service.fetch.group.members' // Import members fetch service
 import { removeGroupMembers } from './service.delete.group.members' // Import members delete service
 import ItemSelector from '../../../../core/ui/modals/item-selector/ItemSelector.vue'
@@ -36,6 +37,7 @@ const page = ref(1)
 const itemsPerPage = ref(25)
 const searchQuery = ref('')
 const isItemSelectorModalOpen = ref(false)
+const isOwnerSelectorModalOpen = ref(false) // New ref for owner change modal
 
 // Computed property for authorization check
 const isAuthorized = computed(() => userStore.isLoggedIn)
@@ -187,7 +189,7 @@ const openItemSelectorModal = () => {
   isItemSelectorModalOpen.value = true
 }
 
-// Обновленный обработчик добавления участников
+// Обработчик добавления участников
 const handleAddMembers = async (result: any) => {
   console.log('[GroupEditor] Members added via ItemSelector, result:', result)
   
@@ -240,14 +242,39 @@ const handleRemoveMembers = async () => {
 
 // ==================== OWNER CHANGE HANDLERS ====================
 const handleChangeOwner = () => {
-  console.log('Change owner button clicked')
-  // This will be implemented later as per the requirements
-  // Currently we're only adding the button UI
+  console.log('Opening owner change selector')
+  isOwnerSelectorModalOpen.value = true
 }
 
-// Placeholder for service (will be implemented separately)
-async function addGroupMembers(userIds: string[]) {
-  console.log('Adding members with IDs:', userIds)
+// Обработчик события смены владельца группы
+const handleOwnerChanged = async (result: any) => {
+  console.log('[GroupEditor] Owner change result:', result)
+  
+  if (result && result.success) {
+    // Получаем ID группы
+    const groupId = (groupEditorStore.mode as EditMode).groupId
+    
+    try {
+      // Обновляем данные группы из бэкенда
+      const { group, details } = await fetchGroupService.fetchGroupById(groupId)
+      
+      // Обновляем данные в хранилище
+      groupEditorStore.initEditMode({ group, details })
+      
+      // Показываем сообщение об успехе
+      uiStore.showSuccessSnackbar(t('admin.groups.editor.messages.ownerChangeSuccess'))
+    } catch (error) {
+      console.error('Error refreshing group data after owner change:', error)
+      uiStore.showErrorSnackbar(
+        error instanceof Error ? error.message : t('admin.groups.editor.messages.ownerChangeError')
+      )
+    }
+  } else {
+    // Показываем сообщение об ошибке
+    uiStore.showErrorSnackbar(
+      result?.message || t('admin.groups.editor.messages.ownerChangeError')
+    )
+  }
 }
 
 // ==================== DISPLAY LOGIC FOR OWNER ====================
@@ -522,6 +549,7 @@ onBeforeUnmount(() => {
       </v-container>
     </div>
 
+    <!-- Модальное окно для добавления участников -->
     <v-dialog v-model="isItemSelectorModalOpen" max-width="700">
       <ItemSelector 
         :title="t('admin.groups.editor.itemSelector.title')"
@@ -532,6 +560,20 @@ onBeforeUnmount(() => {
         :actionButtonText="t('admin.groups.editor.itemSelector.addMembers')"
         @close="isItemSelectorModalOpen = false" 
         @actionPerformed="handleAddMembers"
+      />
+    </v-dialog>
+
+    <!-- Модальное окно для смены владельца группы -->
+    <v-dialog v-model="isOwnerSelectorModalOpen" max-width="700">
+      <ItemSelector 
+        :title="t('admin.groups.editor.itemSelector.ownerTitle')"
+        searchService="searchUsers"
+        actionService="changeGroupOwner"
+        :maxResults="20"
+        :maxItems="1"
+        :actionButtonText="t('admin.groups.editor.buttons.changeOwner')"
+        @close="isOwnerSelectorModalOpen = false" 
+        @actionPerformed="handleOwnerChanged"
       />
     </v-dialog>
   </div>
@@ -568,6 +610,4 @@ onBeforeUnmount(() => {
   display: flex;
   align-items: center;
 }
-
-
 </style>

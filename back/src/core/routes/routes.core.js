@@ -27,6 +27,7 @@ router.get('/api/core/users/fetch-username-by-uuid/:userId', validateJWT, fetchU
 // item selector universal component services
 router.get('/api/core/item-selector/search-users', validateJWT, searchUsers); 
 router.post('/api/core/item-selector/add-users-to-group', validateJWT, addUsersToGroup);
+// /api/core/item-selector/change-group-owner
 
 // change password universal component
 router.post('/api/core/users/self-change-password', validateJWT, selfChangePasswordController);
