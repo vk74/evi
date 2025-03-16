@@ -1,16 +1,27 @@
 <!--
   UserEditor.vue
-  Компонент для создания и редактирования учетных записей пользователей.
+  Component for creating and editing user accounts.
   
-  Функциональность:
-  - Создание новой учетной записи пользователя
-  - Редактирование существующей учетной записи
-  - Управление основными параметрами пользователя
-  - Двухуровневая валидация формы:
-    * Контроль заполнения обязательных полей с информационным уведомлением
-    * Валидация всех полей по установленным правилам
-  - Управление участием пользователя в группах (только в режиме редактирования)
-  - Сброс пароля пользователя администратором (только в режиме редактирования)
+  The component operates in two modes:
+  1. Create Mode:
+     - Creating a new user account with all required fields
+     - Setting up initial password
+     - Configuring basic user parameters and profile information
+     - Form validation with required field checking
+  
+  2. Edit Mode:
+     - Editing an existing user account details
+     - Modifying user status and security settings
+     - Managing user's profile information
+     - Resetting user password (admin functionality)
+     - Tracking changes for efficient updates
+  
+  Common functionality:
+  - Two-level form validation:
+    * Required fields validation with informational notifications
+    * All fields validation based on established rules
+  - User interface with clear section organization
+  - Responsive design for different screen sizes
 -->
 
 <script setup lang="ts">
@@ -271,8 +282,9 @@ onBeforeUnmount(() => {
           {{ t('admin.users.editor.buttons.resetPassword') }}
         </v-btn>
 
-        <!-- Кнопка сброса (видна всегда) -->
+        <!-- Кнопка сброса (видна только в режиме создания) -->
         <v-btn
+          v-if="userEditorStore.mode.mode === 'create'"
           variant="outlined"
           @click="resetForm"
         >
