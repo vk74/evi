@@ -12,6 +12,10 @@
 import { Pool } from 'pg';
 import { pool as pgPool } from '../../../db/maindb';
 import { queries } from './queries.item.selector';
+import { 
+  createAppLogger,
+  Events 
+} from '../../../core/logger/logger.index';
 import type { 
   ChangeGroupOwnerResponse,
   ServiceError, 
@@ -34,13 +38,11 @@ interface UpdatedRow {
   group_id: string;
 }
 
-// Logger for tracking operations
-const logger = {
-  info: (message: string, meta?: object) => 
-    console.log(`[ChangeGroupOwnerService] ${message}`, meta || ''),
-  error: (message: string, error?: unknown) => 
-    console.error(`[ChangeGroupOwnerService] ${message}`, error || '', error ? '' : '')
-};
+// Create logger for the service
+const logger = createAppLogger({
+  module: 'ItemSelectorService',
+  fileName: 'service.change.group.owner.ts'
+});
 
 /**
  * Validates if a group exists in the database and returns its current owner
@@ -50,11 +52,20 @@ const logger = {
  * @throws NotFoundError if group doesn't exist
  */
 async function validateGroupAndGetCurrentOwner(groupId: string, client: any): Promise<string> {
-  logger.info('Validating group existence and getting current owner', { groupId });
+  logger.debug({
+    code: Events.CORE.ITEM_SELECTOR.GROUP_OWNER.VALIDATE.GROUP.code,
+    message: 'Validating group existence and getting current owner',
+    details: { groupId }
+  });
 
   const result = await client.query(queries.checkGroupExists.text, [groupId]);
   if (result.rows.length === 0) {
-    logger.error(`Group not found - ID: ${groupId}`);
+    logger.warn({
+      code: Events.CORE.ITEM_SELECTOR.GROUP_OWNER.VALIDATE.GROUP_NOT_FOUND.code,
+      message: 'Group not found during owner change operation',
+      details: { groupId }
+    });
+
     throw {
       code: 'NOT_FOUND_ERROR',
       message: 'Group not found',
@@ -64,6 +75,16 @@ async function validateGroupAndGetCurrentOwner(groupId: string, client: any): Pr
 
   // Get the current owner
   const ownerResult = await client.query(queries.getCurrentGroupOwner.text, [groupId]);
+  
+  logger.debug({
+    code: Events.CORE.ITEM_SELECTOR.GROUP_OWNER.VALIDATE.SUCCESS.code,
+    message: 'Successfully found group and current owner',
+    details: { 
+      groupId, 
+      currentOwner: ownerResult.rows[0].group_owner 
+    }
+  });
+  
   return ownerResult.rows[0].group_owner;
 }
 
@@ -74,17 +95,32 @@ async function validateGroupAndGetCurrentOwner(groupId: string, client: any): Pr
  * @throws ValidationError if user doesn't exist
  */
 async function validateUserExists(userId: string, client: any): Promise<void> {
-  logger.info('Validating new owner existence', { userId });
+  logger.debug({
+    code: Events.CORE.ITEM_SELECTOR.GROUP_OWNER.VALIDATE.USER.code,
+    message: 'Validating new owner existence',
+    details: { userId }
+  });
   
   const result = await client.query(queries.checkUserExists.text, [userId]);
   if (result.rows.length === 0) {
-    logger.error(`User not found - ID: ${userId}`);
+    logger.warn({
+      code: Events.CORE.ITEM_SELECTOR.GROUP_OWNER.VALIDATE.USER_NOT_FOUND.code,
+      message: 'New owner user not found',
+      details: { userId }
+    });
+
     throw {
       code: 'VALIDATION_ERROR',
       message: 'New owner user not found',
       field: 'newOwnerId'
     } as ValidationError;
   }
+  
+  logger.debug({
+    code: Events.CORE.ITEM_SELECTOR.GROUP_OWNER.VALIDATE.SUCCESS.code,
+    message: 'Successfully validated new owner existence',
+    details: { userId }
+  });
 }
 
 /**
@@ -102,24 +138,44 @@ export async function changeGroupOwner(
   const client = await pool.connect();
   
   try {
-    logger.info('Starting process to change group owner', { 
-      groupId, 
-      newOwnerId,
-      changedBy 
+    logger.info({
+      code: Events.CORE.ITEM_SELECTOR.GROUP_OWNER.CHANGE.INITIATED.code,
+      message: 'Starting process to change group owner',
+      details: { 
+        groupId, 
+        newOwnerId,
+        changedBy 
+      }
     });
 
     // Validate inputs
     if (!groupId || !newOwnerId || !changedBy) {
+      const missingField = !groupId ? 'groupId' : !newOwnerId ? 'newOwnerId' : 'changedBy';
+      
+      logger.warn({
+        code: Events.CORE.ITEM_SELECTOR.GROUP_OWNER.VALIDATE.REQUIRED_FIELD.code,
+        message: 'Missing required parameter for group owner change',
+        details: { 
+          missingField,
+          groupId, 
+          newOwnerId,
+          changedBy
+        }
+      });
+
       throw {
         code: 'VALIDATION_ERROR',
         message: 'Missing required parameters',
-        field: !groupId ? 'groupId' : !newOwnerId ? 'newOwnerId' : 'changedBy'
+        field: missingField
       } as ValidationError;
     }
 
     // Start transaction
     await client.query('BEGIN');
-    logger.info('Database transaction started');
+    logger.debug({
+      code: Events.CORE.ITEM_SELECTOR.GROUP_OWNER.DATABASE.TRANSACTION_START.code,
+      message: 'Database transaction started for group owner change'
+    });
 
     // Validate group exists and get current owner
     const currentOwnerId = await validateGroupAndGetCurrentOwner(groupId, client);
@@ -130,7 +186,15 @@ export async function changeGroupOwner(
     // If current owner is the same as new owner, no need to update
     if (currentOwnerId === newOwnerId) {
       await client.query('COMMIT');
-      logger.info('New owner is the same as current owner, no update needed');
+      
+      logger.info({
+        code: Events.CORE.ITEM_SELECTOR.GROUP_OWNER.CHANGE.NO_CHANGE.code,
+        message: 'New owner is the same as current owner, no update needed',
+        details: { 
+          groupId, 
+          ownerId: currentOwnerId 
+        }
+      });
       
       return {
         success: true,
@@ -140,10 +204,14 @@ export async function changeGroupOwner(
     }
 
     // Update the group owner
-    logger.info('Updating group owner', { 
-      groupId, 
-      currentOwnerId,
-      newOwnerId 
+    logger.info({
+      code: Events.CORE.ITEM_SELECTOR.GROUP_OWNER.CHANGE.UPDATING.code,
+      message: 'Updating group owner',
+      details: { 
+        groupId, 
+        currentOwnerId,
+        newOwnerId 
+      }
     });
 
     const updateResult = await client.query(
@@ -152,6 +220,16 @@ export async function changeGroupOwner(
     );
     
     if (!updateResult.rowCount || updateResult.rowCount === 0) {
+      logger.error({
+        code: Events.CORE.ITEM_SELECTOR.GROUP_OWNER.DATABASE.ERROR.code,
+        message: 'Failed to update group owner - no rows were updated',
+        details: { 
+          groupId, 
+          newOwnerId,
+          updateResult 
+        }
+      });
+
       throw {
         code: 'INTERNAL_SERVER_ERROR',
         message: 'Failed to update group owner',
@@ -160,18 +238,32 @@ export async function changeGroupOwner(
     }
 
     // Update the group details (modified timestamp and user)
-    await client.query(
+    const detailsResult = await client.query(
       queries.updateGroupDetails.text,
       [groupId, changedBy]
     );
+    
+    logger.debug({
+      code: Events.CORE.ITEM_SELECTOR.GROUP_OWNER.DATABASE.SUCCESS.code,
+      message: 'Successfully updated group details with modification info',
+      details: { 
+        groupId,
+        changedBy,
+        detailsUpdated: detailsResult.rowCount ? detailsResult.rowCount > 0 : false
+      }
+    });
 
     // Commit transaction
     await client.query('COMMIT');
     
-    logger.info('Group owner successfully changed', { 
-      groupId, 
-      oldOwnerId: currentOwnerId,
-      newOwnerId
+    logger.info({
+      code: Events.CORE.ITEM_SELECTOR.GROUP_OWNER.CHANGE.SUCCESS.code,
+      message: 'Group owner successfully changed',
+      details: { 
+        groupId, 
+        oldOwnerId: currentOwnerId,
+        newOwnerId
+      }
     });
 
     return {
@@ -183,7 +275,17 @@ export async function changeGroupOwner(
   } catch (error) {
     // Rollback transaction on error
     await client.query('ROLLBACK');
-    logger.error('Failed to change group owner', error);
+    
+    logger.error({
+      code: Events.CORE.ITEM_SELECTOR.GROUP_OWNER.CHANGE.ERROR.code,
+      message: 'Failed to change group owner',
+      details: { 
+        groupId, 
+        newOwnerId,
+        errorCode: (error as ServiceError).code || 'UNKNOWN_ERROR'
+      },
+      error
+    });
     
     if ((error as ServiceError).code) {
       throw error;
@@ -199,7 +301,10 @@ export async function changeGroupOwner(
   } finally {
     // Release client back to pool
     client.release();
-    logger.info('Database client released');
+    logger.debug({
+      code: Events.CORE.ITEM_SELECTOR.DATABASE.CLIENT_RELEASED.code,
+      message: 'Database client released'
+    });
   }
 }
 

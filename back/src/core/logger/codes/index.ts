@@ -5,6 +5,7 @@ import { GroupEvents } from './admin/users';
 import { SystemEvents } from './admin/system';
 import { CatalogEvents } from './admin/catalog';
 import { ServicesEvents } from './admin/services';
+import { ItemSelectorEvents } from '../codes/core/item-selector/item.selector';
 import { EventCode } from '../logger.types';
 
 /**
@@ -16,6 +17,9 @@ export const Events = {
     SYSTEM: SystemEvents,
     CATALOG: CatalogEvents,
     SERVICES: ServicesEvents
+  },
+  CORE: {
+    ITEM_SELECTOR: ItemSelectorEvents
   }
 };
 

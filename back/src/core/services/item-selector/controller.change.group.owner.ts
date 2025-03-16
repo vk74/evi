@@ -11,21 +11,20 @@
  */
 import { Request, Response } from 'express';
 import { changeGroupOwner } from './service.change.group.owner';
+import { 
+  createAppLogger,
+  Events 
+} from '../../../core/logger/logger.index';
 import type { 
   ChangeGroupOwnerRequest,
   ServiceError
 } from './types.item.selector';
 
-// Logger for tracking operations
-const logger = {
-  info: (message: string, meta?: object) => 
-    console.log(`[${new Date().toISOString()}] [ChangeGroupOwner] ${message}`, meta || ''),
-  error: (message: string, error: unknown, meta?: object) => 
-    console.error(
-      `[${new Date().toISOString()}] [ChangeGroupOwner] ${message}`,
-      { error, ...meta }
-    )
-};
+// Create logger for the controller
+const logger = createAppLogger({
+  module: 'ItemSelectorController',
+  fileName: 'controller.change.group.owner.ts'
+});
 
 /**
  * Controller function that handles HTTP requests for changing group owner
@@ -36,17 +35,28 @@ async function changeGroupOwnerController(req: Request & { user?: { uuid: string
   const requestData: ChangeGroupOwnerRequest = req.body;
   
   // Log request data for debugging
-  logger.info('Received request to change group owner', {
-    groupId: requestData.groupId,
-    newOwnerId: requestData.newOwnerId,
-    requestedBy: req.user?.uuid
+  logger.info({
+    code: Events.CORE.ITEM_SELECTOR.GROUP_OWNER.REQUEST.RECEIVED.code,
+    message: 'Received request to change group owner',
+    details: {
+      groupId: requestData.groupId,
+      newOwnerId: requestData.newOwnerId,
+      requestedBy: req.user?.uuid
+    }
   });
 
   // Basic validation
   if (!requestData.groupId || !requestData.newOwnerId) {
-    logger.error('Invalid request data', null, {
-      groupId: requestData.groupId,
-      newOwnerId: requestData.newOwnerId
+    const missingField = !requestData.groupId ? 'groupId' : 'newOwnerId';
+    
+    logger.warn({
+      code: Events.CORE.ITEM_SELECTOR.GROUP_OWNER.REQUEST.INVALID.code,
+      message: 'Invalid request data for changing group owner',
+      details: {
+        groupId: requestData.groupId,
+        newOwnerId: requestData.newOwnerId,
+        missingField
+      }
     });
     
     res.status(400).json({
@@ -65,10 +75,14 @@ async function changeGroupOwnerController(req: Request & { user?: { uuid: string
     );
 
     // Log success and return result
-    logger.info('Successfully changed group owner', {
-      groupId: requestData.groupId,
-      newOwnerId: requestData.newOwnerId,
-      oldOwnerId: result.oldOwnerId
+    logger.info({
+      code: Events.CORE.ITEM_SELECTOR.GROUP_OWNER.RESPONSE.SUCCESS.code,
+      message: 'Successfully changed group owner',
+      details: {
+        groupId: requestData.groupId,
+        newOwnerId: requestData.newOwnerId,
+        oldOwnerId: result.oldOwnerId
+      }
     });
 
     res.status(200).json(result);
@@ -76,9 +90,16 @@ async function changeGroupOwnerController(req: Request & { user?: { uuid: string
     const error = err as ServiceError;
     
     // Log error with details
-    logger.error('Failed to change group owner', error, {
-      groupId: requestData.groupId,
-      code: error.code
+    logger.error({
+      code: Events.CORE.ITEM_SELECTOR.GROUP_OWNER.RESPONSE.ERROR.code,
+      message: 'Failed to change group owner',
+      details: {
+        groupId: requestData.groupId,
+        newOwnerId: requestData.newOwnerId,
+        errorCode: error.code,
+        errorMessage: error.message
+      },
+      error
     });
 
     // Handle specific error cases
@@ -100,6 +121,17 @@ async function changeGroupOwnerController(req: Request & { user?: { uuid: string
 
       default:
         // Handle unexpected errors
+        logger.error({
+          code: Events.CORE.ITEM_SELECTOR.GROUP_OWNER.RESPONSE.INTERNAL_ERROR.code,
+          message: 'Internal server error occurred while changing group owner',
+          details: {
+            groupId: requestData.groupId,
+            newOwnerId: requestData.newOwnerId,
+            error: error.details || error.message
+          },
+          error
+        });
+        
         res.status(500).json({
           success: false,
           message: 'Internal server error occurred while changing group owner',
