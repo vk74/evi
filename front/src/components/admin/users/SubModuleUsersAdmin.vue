@@ -1,58 +1,60 @@
 /**
  * @file SubModuleUsersAdmin.vue
- * Компонент для управления разделами административного модуля пользователей и групп.
+ * Component for managing sections of administrative module for users and groups.
  * 
- * Функциональность:
- * - Навигация между разделами (список пользователей, список групп, редакторы)
- * - Отображение активного раздела
- * - Управление состоянием через Pinia store
- * - Многоязычный интерфейс с использованием i18n
+ * Functionality:
+ * - Navigation between sections (users list, groups list, editors)
+ * - Display of active section
+ * - State management via Pinia store
+ * - Multilingual interface using i18n
  */
 
- <script setup lang="ts">
- import { computed } from 'vue'
- import { useI18n } from 'vue-i18n'
- import { useUsersAdminStore } from './state.users.admin'
- import type { UserSectionId, Section } from './types.users.admin'
- import SubModuleUsersList from './UsersList/UsersList.vue'
- import SubModuleGroupsList from './GroupsList/GroupsList.vue'
- import SubModuleUserEditor from './UserEditor/UserEditor.vue'
- import SubModuleGroupEditor from './GroupEditor/GroupEditor.vue'
- 
- // Инициализация i18n и store
- const { t } = useI18n()
- const usersStore = useUsersAdminStore()
- 
- // Определение секций административного модуля как вычисляемого свойства
- const sections = computed((): Section[] => [
-   {
-     id: 'users',
-     title: t('admin.users.sections.usersList'),
-     icon: 'mdi-account-multiple-outline'
-   },
-   {
-     id: 'user-editor',
-     title: t('admin.users.sections.userEditor'),
-     icon: 'mdi-account-plus-outline'
-   },
-   {
-     id: 'groups',
-     title: t('admin.users.sections.groupsList'),
-     icon: 'mdi-account-group-outline'
-   },
-   {
-     id: 'group-editor',
-     title: t('admin.users.sections.groupEditor'),
-     icon: 'mdi-account-multiple-plus-outline'
-   }
- ])
- 
- // Вычисляемые свойства и методы для управления секциями
- const activeSection = computed((): UserSectionId => usersStore.getCurrentSection)
- const switchSection = (sectionId: UserSectionId): void => {
-   usersStore.setActiveSection(sectionId)
- }
- </script>
+<script setup lang="ts">
+import { computed, defineAsyncComponent } from 'vue'
+import { useI18n } from 'vue-i18n'
+import { useUsersAdminStore } from './state.users.admin'
+import type { UserSectionId, Section } from './types.users.admin'
+
+// Async components for lazy loading
+const UsersList = defineAsyncComponent(() => import('./UsersList/UsersList.vue'))
+const GroupsList = defineAsyncComponent(() => import('./GroupsList/GroupsList.vue'))
+const UserEditor = defineAsyncComponent(() => import('./UserEditor/UserEditor.vue'))
+const GroupEditor = defineAsyncComponent(() => import('./GroupEditor/GroupEditor.vue'))
+
+// Initialize i18n and store
+const { t } = useI18n()
+const usersStore = useUsersAdminStore()
+
+// Define administrative module sections as computed property
+const sections = computed((): Section[] => [
+  {
+    id: 'users',
+    title: t('admin.users.sections.usersList'),
+    icon: 'mdi-account-multiple-outline'
+  },
+  {
+    id: 'user-editor',
+    title: t('admin.users.sections.userEditor'),
+    icon: 'mdi-account-plus-outline'
+  },
+  {
+    id: 'groups',
+    title: t('admin.users.sections.groupsList'),
+    icon: 'mdi-account-group-outline'
+  },
+  {
+    id: 'group-editor',
+    title: t('admin.users.sections.groupEditor'),
+    icon: 'mdi-account-multiple-plus-outline'
+  }
+])
+
+// Computed properties and methods for section management
+const activeSection = computed((): UserSectionId => usersStore.getCurrentSection)
+const switchSection = (sectionId: UserSectionId): void => {
+  usersStore.setActiveSection(sectionId)
+}
+</script>
 
 <template>
   <div class="module-root">
@@ -62,7 +64,7 @@
       flat
       class="app-bar"
     >
-      <!-- Навигация по секциям -->
+      <!-- Section navigation -->
       <div class="nav-section">
         <v-btn
           v-for="section in sections"
@@ -86,15 +88,15 @@
       </div>
     </v-app-bar>
 
-    <!-- Рабочая область -->
+    <!-- Working area -->
     <div class="working-area">
-      <SubModuleUsersList v-if="activeSection === 'users'" />     
-      <SubModuleUserEditor
+      <UsersList v-if="activeSection === 'users'" />     
+      <UserEditor
         v-if="activeSection === 'user-editor'"
         mode="create"
       />
-      <SubModuleGroupsList v-if="activeSection === 'groups'" />
-      <SubModuleGroupEditor
+      <GroupsList v-if="activeSection === 'groups'" />
+      <GroupEditor
         v-if="activeSection === 'group-editor'"
         mode="create"
       />
