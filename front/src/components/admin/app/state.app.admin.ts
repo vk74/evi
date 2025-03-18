@@ -1,36 +1,42 @@
 /**
  * state.app.admin.ts
- * Хранилище состояния для модуля настроек приложения.
- * Управляет состоянием активной секции в модуле SubModuleAppAdmin.
+ * 
+ * Simple state management for the application settings module using Pinia.
+ * Currently only tracks the selected category index for persistence between sessions.
  */
-import { defineStore } from 'pinia'
-import type { AppAdminState, AppSectionId } from './types.app.admin'
 
-export const useAppAdminStore = defineStore('app-admin', {
+import { defineStore } from 'pinia';
+
+// Define the interface for the store state
+interface AppAdminState {
+  // Currently only tracking the UI state for selected category
+  selectedCategoryIndex: number;
+}
+
+/**
+ * App Admin Store
+ * Currently only manages which settings category is selected
+ */
+export const useAppAdminStore = defineStore('appAdmin', {
+  // Initial state
   state: (): AppAdminState => ({
-    /**
-     * Текущая активная секция в модуле настроек приложения
-     */
-    activeSection: 'settings'
+    selectedCategoryIndex: 0
   }),
-
+  
+  // Getters
   getters: {
-    /**
-     * Получение текущей активной секции
-     */
-    getCurrentSection(): AppSectionId {
-      return this.activeSection
-    }
+    // Get the currently selected category index
+    getCurrentCategoryIndex: (state) => state.selectedCategoryIndex
   },
-
+  
+  // Actions
   actions: {
-    /**
-     * Установка активной секции
-     */
-    setActiveSection(sectionId: AppSectionId) {
-      this.activeSection = sectionId
+    // Set the selected category
+    setSelectedCategory(index: number) {
+      this.selectedCategoryIndex = index;
     }
   },
-
+  
+  // Enable persistence to keep selected category between sessions
   persist: true
-})
+});

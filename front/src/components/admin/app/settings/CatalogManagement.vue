@@ -360,9 +360,5 @@ const exportImages = ref(true);
 </script>
 
 <style scoped>
-.settings-section {
-  max-width: 800px;
-  margin: 0 auto;
-  padding: 16px;
-}
+
 </style>

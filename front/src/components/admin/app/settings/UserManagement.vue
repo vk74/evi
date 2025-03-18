@@ -2,12 +2,12 @@
   File: UserManagement.vue
   Description: User management settings component
   Purpose: Configure user-related settings, permissions, authentication methods
+  
+  Updated to work with the simplified architecture
 -->
 
 <template>
-  <div class="settings-section">
-    <h2 class="text-h6 mb-4">User Management</h2>
-    
+  <div>
     <!-- User Authentication -->
     <v-card variant="outlined" class="mb-4">
       <v-card-title class="text-subtitle-1">
@@ -21,11 +21,12 @@
           label="Default Authentication Method"
           variant="outlined"
           density="comfortable"
+          color="teal-darken-2"
         ></v-select>
         
         <v-switch
           v-model="enableMFA"
-          color="primary"
+          color="teal-darken-2"
           label="Require Multi-Factor Authentication"
           hide-details
           class="mt-4"
@@ -33,7 +34,7 @@
         
         <v-switch
           v-model="singleSignOn"
-          color="primary"
+          color="teal-darken-2"
           label="Enable Single Sign-On (SSO)"
           hide-details
           class="mt-2"
@@ -56,11 +57,12 @@
           step="1"
           thumb-label
           class="mb-4"
+          color="teal-darken-2"
         ></v-slider>
         
         <v-switch
           v-model="requireLowercase"
-          color="primary"
+          color="teal-darken-2"
           label="Require lowercase letters"
           hide-details
           class="mb-2"
@@ -68,7 +70,7 @@
         
         <v-switch
           v-model="requireUppercase"
-          color="primary"
+          color="teal-darken-2"
           label="Require uppercase letters"
           hide-details
           class="mb-2"
@@ -76,7 +78,7 @@
         
         <v-switch
           v-model="requireNumbers"
-          color="primary"
+          color="teal-darken-2"
           label="Require numbers"
           hide-details
           class="mb-2"
@@ -84,7 +86,7 @@
         
         <v-switch
           v-model="requireSpecialChars"
-          color="primary"
+          color="teal-darken-2"
           label="Require special characters"
           hide-details
           class="mb-2"
@@ -97,6 +99,7 @@
           variant="outlined"
           density="comfortable"
           class="mt-4"
+          color="teal-darken-2"
         ></v-select>
       </v-card-text>
     </v-card>
@@ -114,11 +117,12 @@
           label="Registration Type"
           variant="outlined"
           density="comfortable"
+          color="teal-darken-2"
         ></v-select>
         
         <v-switch
           v-model="emailVerification"
-          color="primary"
+          color="teal-darken-2"
           label="Require email verification"
           hide-details
           class="mt-4"
@@ -126,7 +130,7 @@
         
         <v-switch
           v-model="adminApproval"
-          color="primary"
+          color="teal-darken-2"
           label="Require admin approval"
           hide-details
           class="mt-2"
@@ -138,6 +142,7 @@
           variant="outlined"
           density="comfortable"
           class="mt-4"
+          color="teal-darken-2"
         ></v-text-field>
       </v-card-text>
     </v-card>
@@ -157,11 +162,12 @@
           step="5"
           thumb-label
           class="mb-4"
+          color="teal-darken-2"
         ></v-slider>
         
         <v-switch
           v-model="rememberMe"
-          color="primary"
+          color="teal-darken-2"
           label="Allow 'Remember Me' option"
           hide-details
           class="mb-2"
@@ -169,7 +175,7 @@
         
         <v-switch
           v-model="concurrentSessions"
-          color="primary"
+          color="teal-darken-2"
           label="Allow concurrent sessions"
           hide-details
           class="mb-2"
@@ -182,6 +188,7 @@
           variant="outlined"
           density="comfortable"
           class="mt-4"
+          color="teal-darken-2"
           :disabled="!concurrentSessions"
         ></v-text-field>
       </v-card-text>
@@ -238,10 +245,4 @@ const concurrentSessions = ref(true);
 const maxSessionsPerUser = ref(5);
 </script>
 
-<style scoped>
-.settings-section {
-  max-width: 800px;
-  margin: 0 auto;
-  padding: 16px;
-}
-</style>
+<!-- No scoped styles to avoid conflicts with parent components -->
