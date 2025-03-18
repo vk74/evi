@@ -38,17 +38,6 @@ const uiStore = useUiStore();
 const appStore = useAppStore();
 const i18n = useI18n();
 
-/*
-const publicPages = ['Login', 'NewUserRegistration']
-
-watch(() => appStore.activeModule, (newModule) => {
-  if (!publicPages.includes(newModule) && !userStore.isLoggedIn) {
-    console.log('Redirecting to login page')
-    appStore.setActiveModule('Login')
-  }
-})
-*/
-
 // Refs
 const drawer = ref(true);
 const isChangePassModalVisible = ref(false);
