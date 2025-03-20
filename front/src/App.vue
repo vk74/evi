@@ -6,9 +6,10 @@ Contains:
 - Navigation Drawer for navigation between main modules with display mode management
 - Main work area for displaying the active module
 - Global snackbar for system messages
+- Enhanced Admin section with accordion styling and proper focus management
 -->
 <script setup>
-import { ref, computed, onMounted, defineAsyncComponent } from 'vue';
+import { ref, computed, onMounted, watch, defineAsyncComponent } from 'vue';
 import { useUserStore } from '@/core/state/userstate';
 import { useUiStore } from './core/state/uistate';
 import { useAppStore } from './core/state/appstate';
@@ -19,11 +20,16 @@ import { startSessionTimers } from '@/core/services/sessionServices';
 const ModuleCatalog = defineAsyncComponent(() => import('./components/catalog/ModuleCatalog.vue'));
 const ModuleWork = defineAsyncComponent(() => import('./components/work/ModuleWork.vue'));
 const ModuleAR = defineAsyncComponent(() => import('./components/ar/ModuleAR.vue'));
-const ModuleAdmin = defineAsyncComponent(() => import('./components/admin/ModuleAdmin.vue'));
 const ModuleXLS = defineAsyncComponent(() => import('./components/proto/ModuleXLS.vue'));
 const ModuleAccount = defineAsyncComponent(() => import('./components/account/ModuleAccount.vue'));
 const ModuleSettings = defineAsyncComponent(() => import('./components/settings/ModuleSettings.vue'));
 const ModuleKnowledgeBase = defineAsyncComponent(() => import('./components/KB/ModuleKnowledgeBase.vue'));
+
+// Admin submodule imports
+const SubModuleCatalogAdmin = defineAsyncComponent(() => import('./components/admin/catalog/SubModuleCatalogAdmin.vue'));
+const SubModuleServiceAdmin = defineAsyncComponent(() => import('./components/admin/service/SubModuleServiceAdmin.vue'));
+const SubModuleUsersAdmin = defineAsyncComponent(() => import('./components/admin/users/SubModuleUsersAdmin.vue'));
+const SubModuleAppAdmin = defineAsyncComponent(() => import('./components/admin/app/SubModuleAppAdmin.vue'));
 
 // Regular component imports
 import ModuleLogin from './components/account/ModuleLogin.vue';
@@ -42,6 +48,7 @@ const i18n = useI18n();
 const drawer = ref(true);
 const isChangePassModalVisible = ref(false);
 const isLoginDialogVisible = ref(false);
+const isAdminExpanded = ref(false); // Track admin section expansion
 
 // Computed properties
 const isLoggedIn = computed(() => userStore.isLoggedIn);
@@ -59,9 +66,49 @@ const chevronIcon = computed(() => {
   }
 });
 
+// Admin expansion indicator icon
+const adminExpandIcon = computed(() => {
+  return isAdminExpanded.value ? 'mdi-chevron-up' : 'mdi-chevron-down';
+});
+
+// Get the current active admin sub-module from the store
+const activeAdminSubModule = computed(() => appStore.getActiveAdminSubModule);
+
+// Compute the current admin submodule component to display
+const currentAdminSubmodule = computed(() => {
+  switch(activeAdminSubModule.value) {
+    case 'catalogAdmin':
+      return SubModuleCatalogAdmin;
+    case 'serviceAdmin':
+      return SubModuleServiceAdmin;
+    case 'usersAdmin':
+      return SubModuleUsersAdmin;
+    case 'appAdmin':
+      return SubModuleAppAdmin;
+    default:
+      return SubModuleAppAdmin; // Default to app settings
+  }
+});
+
 // Methods
 const setActiveModule = (module) => {
   appStore.setActiveModule(module);
+};
+
+// Toggle admin accordion expansion and set Admin as active module
+const toggleAdminExpanded = () => {
+  isAdminExpanded.value = !isAdminExpanded.value;
+  
+  // When expanding, always set Admin as the active module
+  if (isAdminExpanded.value) {
+    setActiveModule('Admin');
+  }
+};
+
+// Set active admin section and navigate to Admin module
+const setActiveAdminSection = (section) => {
+  appStore.setActiveAdminSubModule(section);
+  setActiveModule('Admin');
 };
 
 const logout = () => {
@@ -86,9 +133,31 @@ const toggleDrawerMode = () => {
   appStore.setDrawerMode(modes[nextIndex]);
 };
 
+// Watch for active module changes
+watch(
+  () => appStore.activeModule,
+  (newModule) => {
+    // If user navigates to a module other than Admin, collapse the admin section
+    if (newModule !== 'Admin' && isAdminExpanded.value) {
+      isAdminExpanded.value = false;
+    }
+    
+    // If user navigates to Admin module, expand the admin section
+    if (newModule === 'Admin' && !isAdminExpanded.value) {
+      isAdminExpanded.value = true;
+    }
+  }
+);
+
 // Lifecycle hooks
 onMounted(() => {
   i18n.locale.value = userStore.language;
+  
+  // If Admin is the active module on initial load, expand the admin section
+  if (appStore.activeModule === 'Admin') {
+    isAdminExpanded.value = true;
+  }
+  
   if (isLoggedIn.value) {
     console.log('App mounted. User is logged in. Starting session timers...');
     startSessionTimers();
@@ -238,7 +307,6 @@ onMounted(() => {
     <!-- Navigation Drawer -->
     <v-navigation-drawer 
       v-model="drawer" 
-      app 
       :expand-on-hover="appStore.drawerMode === 'auto'"
       :rail="appStore.drawerMode === 'auto' || appStore.drawerMode === 'closed'"
       elevation="5" 
@@ -248,6 +316,7 @@ onMounted(() => {
         density="compact"
         nav
       >
+        <!-- Regular modules -->
         <v-list-item 
           v-if="isLoggedIn"
           v-tooltip="{
@@ -300,21 +369,112 @@ onMounted(() => {
           :active="appStore.isModuleActive('KnowledgeBase')"
           @click="setActiveModule('KnowledgeBase')"
         />
-        <v-divider v-if="isLoggedIn" class="border-opacity-25" /><br v-if="isLoggedIn">
-        <v-list-item 
-          v-if="isLoggedIn"
-          v-tooltip="{
-            text: $t('navigation.drawer.Admin'),
-            location: 'right',
-            disabled: appStore.drawerMode !== 'closed'
-          }" 
-          prepend-icon="mdi-application-cog" 
-          :title="$t('navigation.drawer.Admin')" 
-          value="admin"
-          :active="appStore.isModuleActive('Admin')"
-          @click="setActiveModule('Admin')"
-        />
-        <v-divider v-if="isLoggedIn" class="border-opacity-25" /><br v-if="isLoggedIn">
+        <v-divider v-if="isLoggedIn" class="border-opacity-25" />
+        
+        <!-- Enhanced Admin accordion section -->
+        <div v-if="isLoggedIn" class="admin-accordion-container">
+          <!-- Admin header with toggle -->
+          <v-list-item 
+            class="admin-header-item"
+            :class="{ 'admin-expanded': isAdminExpanded }"
+            v-tooltip="{
+              text: $t('navigation.drawer.Admin'),
+              location: 'right',
+              disabled: appStore.drawerMode !== 'closed'
+            }" 
+            prepend-icon="mdi-application-cog" 
+            :title="$t('navigation.drawer.Admin')" 
+            value="admin"
+            :active="appStore.isModuleActive('Admin')"
+            @click="toggleAdminExpanded"
+          >
+            <!-- Expansion indicator -->
+            <template #append>
+              <v-icon 
+                size="small" 
+                :icon="adminExpandIcon"
+                class="admin-expand-icon"
+              />
+            </template>
+          </v-list-item>
+          
+          <!-- Admin sub-modules (accordion content) -->
+          <v-expand-transition>
+            <div v-if="isAdminExpanded" class="admin-submenu">
+              <!-- Catalog Admin -->
+              <v-list-item
+                class="admin-sub-item"
+                :class="{ 'admin-sub-active': activeAdminSubModule === 'catalogAdmin' }"
+                v-tooltip="{
+                  text: $t('admin.nav.catalog.main'),
+                  location: 'right',
+                  disabled: appStore.drawerMode !== 'closed'
+                }"
+                prepend-icon="mdi-view-grid-plus-outline"
+                :title="$t('admin.nav.catalog.main')"
+                value="catalogAdmin"
+                density="compact"
+                :active="appStore.isModuleActive('Admin') && activeAdminSubModule === 'catalogAdmin'"
+                @click="setActiveAdminSection('catalogAdmin')"
+              />
+              
+              <!-- Service Admin -->
+              <v-list-item
+                class="admin-sub-item"
+                :class="{ 'admin-sub-active': activeAdminSubModule === 'serviceAdmin' }"
+                v-tooltip="{
+                  text: $t('admin.nav.services.main'),
+                  location: 'right',
+                  disabled: appStore.drawerMode !== 'closed'
+                }"
+                prepend-icon="mdi-cube-scan"
+                :title="$t('admin.nav.services.main')"
+                value="serviceAdmin"
+                density="compact"
+                :active="appStore.isModuleActive('Admin') && activeAdminSubModule === 'serviceAdmin'"
+                @click="setActiveAdminSection('serviceAdmin')"
+              />
+              
+              <!-- Users Admin -->
+              <v-list-item
+                class="admin-sub-item"
+                :class="{ 'admin-sub-active': activeAdminSubModule === 'usersAdmin' }"
+                v-tooltip="{
+                  text: $t('admin.nav.users.main'),
+                  location: 'right',
+                  disabled: appStore.drawerMode !== 'closed'
+                }"
+                prepend-icon="mdi-account-cog"
+                :title="$t('admin.nav.users.main')"
+                value="usersAdmin"
+                density="compact"
+                :active="appStore.isModuleActive('Admin') && activeAdminSubModule === 'usersAdmin'"
+                @click="setActiveAdminSection('usersAdmin')"
+              />
+              
+              <!-- App Settings Admin -->
+              <v-list-item
+                class="admin-sub-item"
+                :class="{ 'admin-sub-active': activeAdminSubModule === 'appAdmin' }"
+                v-tooltip="{
+                  text: $t('admin.nav.settings.main'),
+                  location: 'right',
+                  disabled: appStore.drawerMode !== 'closed'
+                }"
+                prepend-icon="mdi-cog-outline"
+                :title="$t('admin.nav.settings.main')"
+                value="appAdmin"
+                density="compact"
+                :active="appStore.isModuleActive('Admin') && activeAdminSubModule === 'appAdmin'"
+                @click="setActiveAdminSection('appAdmin')"
+              />
+            </div>
+          </v-expand-transition>
+        </div>
+        
+        <v-divider v-if="isLoggedIn" class="border-opacity-25" />
+        
+        <!-- XLS Prototyping module -->
         <v-list-item 
           v-if="isLoggedIn"
           v-tooltip="{
@@ -354,7 +514,8 @@ onMounted(() => {
       <ModuleCatalog v-if="appStore.isModuleActive('Catalog')" />
       <ModuleWork v-if="appStore.isModuleActive('Work')" />
       <ModuleAR v-if="appStore.isModuleActive('AR')" />
-      <ModuleAdmin v-if="appStore.isModuleActive('Admin')" />
+      <!-- Directly render the appropriate admin submodule based on selection -->
+      <component :is="currentAdminSubmodule" v-if="appStore.isModuleActive('Admin')" />
       <ModuleXLS v-if="appStore.isModuleActive('XLS')" />
       <ModuleAccount v-if="appStore.isModuleActive('Account')" />
       <ModuleSettings v-if="appStore.isModuleActive('Settings')" />
@@ -428,5 +589,78 @@ onMounted(() => {
 
 .drawer-toggle-btn :deep(.v-btn__overlay) {
   display: none;
+}
+
+/* Admin accordion styling */
+.admin-accordion-container {
+  margin-bottom: 8px;
+}
+
+.admin-header-item {
+  position: relative;
+  transition: background-color 0.3s ease;
+}
+
+.admin-header-item.admin-expanded {
+  border-bottom: 1px solid rgba(19, 84, 122, 0.1);
+}
+
+/* Only apply background color when Admin is both expanded AND active */
+.admin-header-item.admin-expanded.v-list-item--active {
+  background-color: rgba(19, 84, 122, 0.08) !important;
+}
+
+.admin-expand-icon {
+  transition: transform 0.3s ease;
+}
+
+.admin-expanded .admin-expand-icon {
+  transform: rotate(180deg);
+}
+
+/* Admin submenu styling */
+.admin-submenu {
+  background-color: rgba(19, 84, 122, 0.05);
+  margin-top: 1px;
+  border-left: 3px solid rgba(19, 84, 122, 0.2);
+}
+
+.admin-sub-item {
+  padding-left: 8px !important;
+  margin-bottom: 1px;
+  height: 36px !important;
+  min-height: 36px !important;
+  transition: background-color 0.2s ease, border-left 0.2s ease;
+}
+
+.admin-sub-item:hover {
+  background-color: rgba(19, 84, 122, 0.08) !important;
+}
+
+.admin-sub-item.admin-sub-active {
+  background-color: rgba(19, 84, 122, 0.15) !important;
+  border-left: 3px solid rgb(19, 84, 122);
+  margin-left: -3px;
+}
+
+.admin-sub-item .v-icon {
+  font-size: 18px !important;
+  opacity: 0.85;
+}
+
+/* For rail mode (icon-only) */
+:deep(.v-navigation-drawer--rail) .admin-submenu {
+  padding-left: 0;
+  border-left: none;
+}
+
+:deep(.v-navigation-drawer--rail) .admin-sub-item {
+  padding-left: 0 !important;
+}
+
+:deep(.v-navigation-drawer--rail) .admin-sub-active {
+  margin-left: 0;
+  border-left: none;
+  border-right: 3px solid rgb(19, 84, 122);
 }
 </style>
