@@ -29,7 +29,7 @@ const ModuleKnowledgeBase = defineAsyncComponent(() => import('./components/KB/M
 const SubModuleCatalogAdmin = defineAsyncComponent(() => import('./components/admin/catalog/SubModuleCatalogAdmin.vue'));
 const SubModuleServiceAdmin = defineAsyncComponent(() => import('./components/admin/service/SubModuleServiceAdmin.vue'));
 const SubModuleUsersAdmin = defineAsyncComponent(() => import('./components/admin/users/SubModuleUsersAdmin.vue'));
-const SubModuleAppAdmin = defineAsyncComponent(() => import('./components/admin/app/SubModuleAppAdmin.vue'));
+const SubModuleAppSettings = defineAsyncComponent(() => import('./components/admin/app/SubModuleAppSettings.vue'));
 
 // Regular component imports
 import ModuleLogin from './components/account/ModuleLogin.vue';
@@ -84,9 +84,9 @@ const currentAdminSubmodule = computed(() => {
     case 'usersAdmin':
       return SubModuleUsersAdmin;
     case 'appAdmin':
-      return SubModuleAppAdmin;
+      return SubModuleAppSettings;
     default:
-      return SubModuleAppAdmin; // Default to app settings
+      return SubModuleAppSettings; // Default to app settings
   }
 });
 

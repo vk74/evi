@@ -18,7 +18,7 @@ import { useI18n } from 'vue-i18n'
 const SubModuleCatalogAdmin = defineAsyncComponent(() => import('./catalog/SubModuleCatalogAdmin.vue'))
 const SubModuleServiceAdmin = defineAsyncComponent(() => import('./service/SubModuleServiceAdmin.vue'))
 const SubModuleUsersAdmin = defineAsyncComponent(() => import('./users/SubModuleUsersAdmin.vue'))
-const SubModuleAppAdmin = defineAsyncComponent(() => import('./app/SubModuleAppAdmin.vue'))
+const SubModuleAppSettings = defineAsyncComponent(() => import('./app/SubModuleAppSettings.vue'))
 
 const adminStore = useAdminStore()
 const { t } = useI18n()
@@ -53,8 +53,8 @@ const currentSubModule = computed(() => {
       return SubModuleServiceAdmin
     case 'SubModuleUsersAdmin':
       return SubModuleUsersAdmin
-    case 'SubModuleAppAdmin':
-      return SubModuleAppAdmin
+    case 'SubModuleAppSettings':
+      return SubModuleAppSettings
     default:
       return SubModuleCatalogAdmin
   }
@@ -169,8 +169,8 @@ const toggleDrawerMode = (): void => {
             prepend-icon="mdi-cog-outline" 
             :title="t('admin.nav.settings.main')"
             value="appAdmin"
-            :active="activeSubModule === 'SubModuleAppAdmin'"
-            @click="setActiveSubModule('SubModuleAppAdmin')"
+            :active="activeSubModule === 'SubModuleAppSettings'"
+            @click="setActiveSubModule('SubModuleAppSettings')"
           >
             <v-list-item-title
               v-if="!drawer"
