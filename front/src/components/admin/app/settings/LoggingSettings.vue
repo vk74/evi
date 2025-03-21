@@ -1,326 +1,501 @@
 <!--
   File: LoggingSettings.vue
   Description: Logging configuration settings component
-  Purpose: Configure application logging levels, destinations, and retention policies
-  
-  Updated: Moved script block above template and added scoped styles for card borders
+  Purpose: Configure application logging based on backend logger parameters
+  Author: Updated to match real backend logger configuration with separate transport settings
 -->
 
 <script setup lang="ts">
 import { ref } from 'vue';
 
-// Log levels
-const defaultLogLevel = ref('Info');
-const logLevels = ['Trace', 'Debug', 'Info', 'Warning', 'Error', 'Critical', 'None'];
+/**
+ * Core logger settings based on the backend service
+ * Contains global configuration parameters for the entire logging system
+ */
+const appName = ref('ev2');
+const timestampFormat = ref('ISO');
 
-// Log components
-const logComponents = ref([
-  {
-    id: 1,
-    name: 'Authentication',
-    icon: 'mdi-shield-account-outline',
-    level: 'Info'
+/**
+ * Console Transport Settings
+ * Contains settings specific to console logging transport
+ */
+const consoleTransport = ref({
+  enabled: true,
+  outputFormat: 'console',
+  outputFormats: ['console', 'json', 'elastic'],
+  operationLevels: {
+    APP: 'INFO',
+    SYSTEM: 'INFO',
+    SECURITY: 'WARN',
+    AUDIT: 'INFO',
+    INTGRN: 'INFO',
+    PERFORMANCE: 'DEBUG'
   },
-  {
-    id: 2,
-    name: 'Database',
-    icon: 'mdi-database-outline',
-    level: 'Warning'
-  },
-  {
-    id: 3,
-    name: 'API Requests',
-    icon: 'mdi-api',
-    level: 'Info'
-  },
-  {
-    id: 4,
-    name: 'User Actions',
-    icon: 'mdi-account-outline',
-    level: 'Info'
-  },
-  {
-    id: 5,
-    name: 'Background Services',
-    icon: 'mdi-cogs',
-    level: 'Warning'
+  context: {
+    includeModule: true,
+    includeFileName: true,
+    includeOperationType: true,
+    includeUserId: true
   }
-]);
+});
 
-// Log storage
-const logStorage = ref('File System');
-const storageOptions = ['File System', 'Database', 'Cloud Storage', 'Syslog'];
-const logPath = ref('/var/log/myapp/');
-const databaseTable = ref('application_logs');
-const logPrefix = ref('app-log-');
-const dailyRotation = ref(true);
+/**
+ * File Transport Settings
+ * Contains settings specific to file logging transport including retention policies
+ */
+const fileTransport = ref({
+  enabled: false,
+  operationLevels: {
+    APP: 'WARN',
+    SYSTEM: 'WARN',
+    SECURITY: 'ERROR',
+    AUDIT: 'WARN',
+    INTGRN: 'WARN',
+    PERFORMANCE: 'INFO'
+  },
+  context: {
+    includeModule: true,
+    includeFileName: true,
+    includeOperationType: true,
+    includeUserId: true
+  },
+  filePath: '/var/log/app/',
+  filePrefix: 'app-log-',
+  dailyRotation: true,
+  retentionType: 'time',
+  retentionPeriod: '30 days',
+  retentionPeriods: [
+    '1 day',
+    '7 days',
+    '14 days',
+    '30 days',
+    '60 days',
+    '90 days',
+    '180 days',
+    '1 year'
+  ],
+  maxLogFiles: 30,
+  maxLogSize: 1000,
+  compressOldLogs: true,
+  archiveLogsBeforeDelete: false
+});
 
-// Retention policy
-const retentionType = ref('time');
-const retentionPeriod = ref('30 days');
-const retentionPeriods = [
-  '1 day',
-  '7 days',
-  '14 days',
-  '30 days',
-  '60 days',
-  '90 days',
-  '180 days',
-  '1 year'
-];
-const maxLogFiles = ref(30);
-const maxLogSize = ref(1000);
-const compressOldLogs = ref(true);
-const archiveLogsBeforeDelete = ref(false);
+/**
+ * Operation types metadata
+ * Contains descriptions and icons for each operation type
+ */
+const operationTypesMetadata = {
+  APP: {
+    description: 'Пользовательские операции, бизнес-логика',
+    icon: 'mdi-account-outline'
+  },
+  SYSTEM: {
+    description: 'Обслуживающие процессы',
+    icon: 'mdi-cogs'
+  },
+  SECURITY: {
+    description: 'События безопасности',
+    icon: 'mdi-shield-account-outline'
+  },
+  AUDIT: {
+    description: 'События для регуляторного учета',
+    icon: 'mdi-clipboard-text-outline'
+  },
+  INTGRN: {
+    description: 'Взаимодействие с внешними системами',
+    icon: 'mdi-connection'
+  },
+  PERFORMANCE: {
+    description: 'Метрики производительности',
+    icon: 'mdi-speedometer'
+  }
+};
 
-// Monitoring and alerts
-const enableAlerts = ref(true);
-const alertOnError = ref(true);
-const alertOnWarning = ref(false);
-const alertOnCritical = ref(true);
-const alertMethod = ref('Email');
-const alertMethods = ['None', 'Email', 'SMS', 'Webhook', 'Slack', 'Teams'];
-const alertRecipients = ref('admin@example.com');
+/**
+ * Available log levels for dropdowns
+ */
+const logLevels = ['DEBUG', 'INFO', 'WARN', 'ERROR', 'FATAL'];
 </script>
 
 <template>
   <div class="settings-section logging-settings">
-    <h2 class="text-h6 mb-4">Logging Settings</h2>
+    <h2 class="text-h6 mb-4">Настройки логирования</h2>
     
-    <!-- Log Levels -->
+    <!-- Core Settings -->
     <v-card variant="outlined" class="mb-4">
-      <v-card-title class="text-subtitle-1">
-        <v-icon start icon="mdi-format-list-bulleted" class="mr-2"></v-icon>
-        Log Levels
+      <v-card-title class="text-subtitle-1 mb-4">
+        <v-icon start icon="mdi-tune" class="mr-2"></v-icon>
+        Основные настройки
       </v-card-title>
       <v-card-text>
-        <v-select
-          v-model="defaultLogLevel"
-          :items="logLevels"
-          label="Default Log Level"
-          variant="outlined"
-          density="comfortable"
-        ></v-select>
+        <v-row>
+          <v-col cols="12" md="6">
+            <v-text-field
+              v-model="appName"
+              label="Название приложения"
+              variant="outlined"
+              density="comfortable"
+              hint="Идентификатор приложения в системах сбора логов"
+            ></v-text-field>
+          </v-col>
+          
+          <v-col cols="12" md="6">
+            <v-select
+              v-model="timestampFormat"
+              :items="['ISO', 'UTC', 'Local']"
+              label="Формат временной метки"
+              variant="outlined"
+              density="comfortable"
+            ></v-select>
+          </v-col>
+        </v-row>
+      </v-card-text>
+    </v-card>
+    
+    <!-- Console Transport Settings -->
+    <v-card variant="outlined" class="mb-4">
+      <v-card-title class="text-subtitle-1 mb-4">
+        <v-icon start icon="mdi-console" class="mr-2"></v-icon>
+        Логирование в консоль node.js
+      </v-card-title>
+      
+      <v-card-text>
+        <v-switch
+          v-model="consoleTransport.enabled"
+          color="primary"
+          label="Включить логирование в консоль"
+          hide-details
+          class="mb-4"
+        ></v-switch>
         
-        <div class="text-subtitle-2 mt-4 mb-2">Component-specific Log Levels</div>
+        <v-expand-transition>
+          <div v-if="consoleTransport.enabled">
+            <!-- Console Format -->
+            <v-select
+              v-model="consoleTransport.outputFormat"
+              :items="consoleTransport.outputFormats"
+              label="Формат вывода"
+              variant="outlined"
+              density="comfortable"
+              class="mb-4"
+            ></v-select>
+            
+            <!-- Console Operation Types Settings -->
+            <div class="mb-4">
+              <span class="text-subtitle-2 mb-4 d-block">Настройки типов операций</span>
+              
+              <v-list>
+                <v-list-item
+                  v-for="(level, opType) in consoleTransport.operationLevels"
+                  :key="opType"
+                >
+                  <template v-slot:prepend>
+                    <v-icon :icon="operationTypesMetadata[opType].icon" class="me-3"></v-icon>
+                  </template>
+                  
+                  <template v-slot:title>
+                    {{ opType }}
+                  </template>
+                  
+                  <template v-slot:subtitle>
+                    {{ operationTypesMetadata[opType].description }}
+                  </template>
+                  
+                  <template v-slot:append>
+                    <v-select
+                      v-model="consoleTransport.operationLevels[opType]"
+                      :items="logLevels"
+                      variant="underlined"
+                      density="compact"
+                      hide-details
+                      class="max-width-select"
+                    ></v-select>
+                  </template>
+                </v-list-item>
+              </v-list>
+            </div>
+            
+            <!-- Console Context Settings -->
+            <div>
+              <span class="text-subtitle-2 mb-2 d-block">Контекст логирования</span>
+              
+              <v-row>
+                <v-col cols="12" sm="6" md="3">
+                  <v-checkbox
+                    v-model="consoleTransport.context.includeModule"
+                    label="Название модуля"
+                    color="primary"
+                    hide-details
+                  ></v-checkbox>
+                </v-col>
+                
+                <v-col cols="12" sm="6" md="3">
+                  <v-checkbox
+                    v-model="consoleTransport.context.includeFileName"
+                    label="Имя файла источника"
+                    color="primary"
+                    hide-details
+                  ></v-checkbox>
+                </v-col>
+                
+                <v-col cols="12" sm="6" md="3">
+                  <v-checkbox
+                    v-model="consoleTransport.context.includeOperationType"
+                    label="Тип операции"
+                    color="primary"
+                    hide-details
+                  ></v-checkbox>
+                </v-col>
+                
+                <v-col cols="12" sm="6" md="3">
+                  <v-checkbox
+                    v-model="consoleTransport.context.includeUserId"
+                    label="ID пользователя"
+                    color="primary"
+                    hide-details
+                  ></v-checkbox>
+                </v-col>
+              </v-row>
+            </div>
+          </div>
+        </v-expand-transition>
+      </v-card-text>
+    </v-card>
+    
+    <!-- File Transport Settings -->
+    <v-card variant="outlined" class="mb-4">
+      <v-card-title class="text-subtitle-1 mb-4">
+        <v-icon start icon="mdi-file-outline" class="mr-2"></v-icon>
+        Логирование в файловую систему
+      </v-card-title>
+      
+      <v-card-text>
+        <v-switch
+          v-model="fileTransport.enabled"
+          color="primary"
+          label="Включить логирование в файловую систему"
+          hide-details
+          class="mb-2"
+        ></v-switch>
         
-        <v-list>
-          <v-list-item
-            v-for="component in logComponents"
-            :key="component.id"
-          >
-            <template v-slot:prepend>
-              <v-icon :icon="component.icon" class="me-3"></v-icon>
-            </template>
+        <v-alert
+          type="info"
+          variant="tonal"
+          density="compact"
+          class="mb-4 mt-2"
+        >
+          Логирование в файловую систему находится в разработке
+        </v-alert>
+        
+        <v-expand-transition>
+          <div v-if="fileTransport.enabled">
+            <!-- File Operation Types Settings -->
+            <div class="mb-4">
+              <span class="text-subtitle-2 mb-4 d-block">Настройки типов операций</span>
+              
+              <v-list>
+                <v-list-item
+                  v-for="(level, opType) in fileTransport.operationLevels"
+                  :key="opType"
+                >
+                  <template v-slot:prepend>
+                    <v-icon :icon="operationTypesMetadata[opType].icon" class="me-3"></v-icon>
+                  </template>
+                  
+                  <template v-slot:title>
+                    {{ opType }}
+                  </template>
+                  
+                  <template v-slot:subtitle>
+                    {{ operationTypesMetadata[opType].description }}
+                  </template>
+                  
+                  <template v-slot:append>
+                    <v-select
+                      v-model="fileTransport.operationLevels[opType]"
+                      :items="logLevels"
+                      variant="underlined"
+                      density="compact"
+                      hide-details
+                      class="max-width-select"
+                    ></v-select>
+                  </template>
+                </v-list-item>
+              </v-list>
+            </div>
             
-            <template v-slot:title>
-              {{ component.name }}
-            </template>
-            
-            <template v-slot:append>
-              <v-select
-                v-model="component.level"
-                :items="logLevels"
-                variant="underlined"
-                density="compact"
+            <!-- File Storage Settings -->
+            <div class="mb-4">
+              <span class="text-subtitle-2 mb-2 d-block">Настройки хранения</span>
+              
+              <v-row>
+                <v-col cols="12" md="6">
+                  <v-text-field
+                    v-model="fileTransport.filePath"
+                    label="Путь к файлам логов"
+                    variant="outlined"
+                    density="comfortable"
+                    placeholder="/var/log/app/"
+                  ></v-text-field>
+                </v-col>
+                
+                <v-col cols="12" md="6">
+                  <v-text-field
+                    v-model="fileTransport.filePrefix"
+                    label="Префикс файлов логов"
+                    variant="outlined"
+                    density="comfortable"
+                    placeholder="app-log-"
+                  ></v-text-field>
+                </v-col>
+              </v-row>
+              
+              <v-switch
+                v-model="fileTransport.dailyRotation"
+                color="primary"
+                label="Ежедневная ротация логов"
                 hide-details
-                class="max-width-select"
-              ></v-select>
-            </template>
-          </v-list-item>
-        </v-list>
+                class="mb-4 mt-2"
+              ></v-switch>
+            </div>
+            
+            <!-- File Retention Policy -->
+            <div class="mb-4">
+              <span class="text-subtitle-2 mb-2 d-block">Политика хранения</span>
+              
+              <v-radio-group v-model="fileTransport.retentionType">
+                <v-radio
+                  label="Хранить логи определенный период времени"
+                  value="time"
+                ></v-radio>
+                
+                <v-select
+                  v-model="fileTransport.retentionPeriod"
+                  :items="fileTransport.retentionPeriods"
+                  label="Период хранения"
+                  variant="outlined"
+                  density="comfortable"
+                  class="ms-4 mt-2"
+                  :disabled="fileTransport.retentionType !== 'time'"
+                ></v-select>
+                
+                <v-radio
+                  label="Хранить определенное количество файлов логов"
+                  value="count"
+                  class="mt-4"
+                ></v-radio>
+                
+                <v-text-field
+                  v-model="fileTransport.maxLogFiles"
+                  label="Максимальное количество файлов"
+                  type="number"
+                  variant="outlined"
+                  density="comfortable"
+                  class="ms-4 mt-2"
+                  :disabled="fileTransport.retentionType !== 'count'"
+                ></v-text-field>
+                
+                <v-radio
+                  label="Хранить логи до достижения лимита размера"
+                  value="size"
+                  class="mt-4"
+                ></v-radio>
+                
+                <v-text-field
+                  v-model="fileTransport.maxLogSize"
+                  label="Максимальный общий размер (МБ)"
+                  type="number"
+                  variant="outlined"
+                  density="comfortable"
+                  class="ms-4 mt-2"
+                  :disabled="fileTransport.retentionType !== 'size'"
+                ></v-text-field>
+              </v-radio-group>
+              
+              <v-switch
+                v-model="fileTransport.compressOldLogs"
+                color="primary"
+                label="Сжимать старые логи"
+                hide-details
+                class="mt-4"
+              ></v-switch>
+              
+              <v-switch
+                v-model="fileTransport.archiveLogsBeforeDelete"
+                color="primary"
+                label="Архивировать логи перед удалением"
+                hide-details
+                class="mt-2"
+              ></v-switch>
+            </div>
+            
+            <!-- File Context Settings -->
+            <div>
+              <span class="text-subtitle-2 mb-2 d-block">Контекст логирования</span>
+              
+              <v-row>
+                <v-col cols="12" sm="6" md="3">
+                  <v-checkbox
+                    v-model="fileTransport.context.includeModule"
+                    label="Название модуля"
+                    color="primary"
+                    hide-details
+                  ></v-checkbox>
+                </v-col>
+                
+                <v-col cols="12" sm="6" md="3">
+                  <v-checkbox
+                    v-model="fileTransport.context.includeFileName"
+                    label="Имя файла источника"
+                    color="primary"
+                    hide-details
+                  ></v-checkbox>
+                </v-col>
+                
+                <v-col cols="12" sm="6" md="3">
+                  <v-checkbox
+                    v-model="fileTransport.context.includeOperationType"
+                    label="Тип операции"
+                    color="primary"
+                    hide-details
+                  ></v-checkbox>
+                </v-col>
+                
+                <v-col cols="12" sm="6" md="3">
+                  <v-checkbox
+                    v-model="fileTransport.context.includeUserId"
+                    label="ID пользователя"
+                    color="primary"
+                    hide-details
+                  ></v-checkbox>
+                </v-col>
+              </v-row>
+            </div>
+          </div>
+        </v-expand-transition>
       </v-card-text>
     </v-card>
     
-    <!-- Log Storage -->
-    <v-card variant="outlined" class="mb-4">
-      <v-card-title class="text-subtitle-1">
-        <v-icon start icon="mdi-harddisk" class="mr-2"></v-icon>
-        Log Storage
-      </v-card-title>
-      <v-card-text>
-        <v-select
-          v-model="logStorage"
-          :items="storageOptions"
-          label="Log Storage Location"
-          variant="outlined"
-          density="comfortable"
-        ></v-select>
-        
-        <v-text-field
-          v-model="logPath"
-          label="Log File Path"
-          variant="outlined"
-          density="comfortable"
-          placeholder="/var/log/myapp/"
-          class="mt-4"
-          :disabled="logStorage !== 'File System'"
-        ></v-text-field>
-        
-        <v-text-field
-          v-model="databaseTable"
-          label="Database Table"
-          variant="outlined"
-          density="comfortable"
-          placeholder="application_logs"
-          class="mt-4"
-          :disabled="logStorage !== 'Database'"
-        ></v-text-field>
-        
-        <v-text-field
-          v-model="logPrefix"
-          label="Log File Prefix"
-          variant="outlined"
-          density="comfortable"
-          placeholder="app-log-"
-          class="mt-4"
-        ></v-text-field>
-        
-        <v-switch
-          v-model="dailyRotation"
-          color="primary"
-          label="Enable daily log rotation"
-          hide-details
-          class="mt-4"
-        ></v-switch>
-      </v-card-text>
-    </v-card>
-    
-    <!-- Retention Policy -->
-    <v-card variant="outlined" class="mb-4">
-      <v-card-title class="text-subtitle-1">
-        <v-icon start icon="mdi-clock-outline" class="mr-2"></v-icon>
-        Retention Policy
-      </v-card-title>
-      <v-card-text>
-        <v-radio-group v-model="retentionType">
-          <v-radio
-            label="Keep logs for a specific time period"
-            value="time"
-          ></v-radio>
-          
-          <v-select
-            v-model="retentionPeriod"
-            :items="retentionPeriods"
-            label="Retention Period"
-            variant="outlined"
-            density="comfortable"
-            class="ms-4 mt-2"
-            :disabled="retentionType !== 'time'"
-          ></v-select>
-          
-          <v-radio
-            label="Keep specific number of log files"
-            value="count"
-            class="mt-4"
-          ></v-radio>
-          
-          <v-text-field
-            v-model="maxLogFiles"
-            label="Maximum Log Files"
-            type="number"
-            variant="outlined"
-            density="comfortable"
-            class="ms-4 mt-2"
-            :disabled="retentionType !== 'count'"
-          ></v-text-field>
-          
-          <v-radio
-            label="Keep logs until storage limit is reached"
-            value="size"
-            class="mt-4"
-          ></v-radio>
-          
-          <v-text-field
-            v-model="maxLogSize"
-            label="Maximum Total Size (MB)"
-            type="number"
-            variant="outlined"
-            density="comfortable"
-            class="ms-4 mt-2"
-            :disabled="retentionType !== 'size'"
-          ></v-text-field>
-        </v-radio-group>
-        
-        <v-switch
-          v-model="compressOldLogs"
-          color="primary"
-          label="Compress old logs"
-          hide-details
-          class="mt-4"
-        ></v-switch>
-        
-        <v-switch
-          v-model="archiveLogsBeforeDelete"
-          color="primary"
-          label="Archive logs before deletion"
-          hide-details
-          class="mt-2"
-        ></v-switch>
-      </v-card-text>
-    </v-card>
-    
-    <!-- Log Monitoring -->
+    <!-- Event Codes Examples -->
     <v-card variant="outlined">
-      <v-card-title class="text-subtitle-1">
-        <v-icon start icon="mdi-alert-circle-outline" class="mr-2"></v-icon>
-        Log Monitoring & Alerts
+      <v-card-title class="text-subtitle-1 mb-4">
+        <v-icon start icon="mdi-barcode" class="mr-2"></v-icon>
+        Примеры кодов событий
       </v-card-title>
       <v-card-text>
-        <v-switch
-          v-model="enableAlerts"
-          color="primary"
-          label="Enable log monitoring alerts"
-          hide-details
-        ></v-switch>
+        <p class="text-body-2 mb-2">
+          Коды событий используются для идентификации определенных действий в системе.
+          Формат: <code>MODULE:SUBMODULE:FUNCTION:OPERATION:NUMBER</code>
+        </p>
         
-        <div class="text-subtitle-2 mt-4 mb-2">Send alerts for:</div>
-        
-        <v-checkbox
-          v-model="alertOnError"
-          label="Error logs"
-          color="primary"
-          hide-details
-          :disabled="!enableAlerts"
-        ></v-checkbox>
-        
-        <v-checkbox
-          v-model="alertOnWarning"
-          label="Warning logs"
-          color="primary"
-          hide-details
-          :disabled="!enableAlerts"
-          class="mt-2"
-        ></v-checkbox>
-        
-        <v-checkbox
-          v-model="alertOnCritical"
-          label="Critical logs"
-          color="primary"
-          hide-details
-          :disabled="!enableAlerts"
-          class="mt-2"
-        ></v-checkbox>
-        
-        <v-select
-          v-model="alertMethod"
-          :items="alertMethods"
-          label="Alert Notification Method"
-          variant="outlined"
-          density="comfortable"
-          class="mt-4"
-          :disabled="!enableAlerts"
-        ></v-select>
-        
-        <v-text-field
-          v-model="alertRecipients"
-          label="Alert Recipients"
-          placeholder="admin@example.com, sysadmin@example.com"
-          variant="outlined"
-          density="comfortable"
-          class="mt-4"
-          :disabled="!enableAlerts || alertMethod === 'None'"
-        ></v-text-field>
+        <v-list density="compact" lines="one">
+          <v-list-item
+            v-for="(code, index) in ['ADMIN:USERS:CREATE:OPERATION:001', 'ADMIN:SYSTEM:UPDATE:OPERATION:002', 'CORE:ITEM_SELECTOR:SELECT:OPERATION:001']"
+            :key="index"
+            :title="code"
+            prepend-icon="mdi-code-tags"
+          ></v-list-item>
+        </v-list>
       </v-card-text>
     </v-card>
   </div>
