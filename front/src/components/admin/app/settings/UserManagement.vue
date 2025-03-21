@@ -3,11 +3,60 @@
   Description: User management settings component
   Purpose: Configure user-related settings, permissions, authentication methods
   
-  Updated to work with the simplified architecture
+  Updated: Moved script block above template and added scoped styles for card borders
 -->
 
+<script setup lang="ts">
+import { ref } from 'vue';
+
+// Authentication settings
+const authMethod = ref('Email & Password');
+const authMethods = [
+  'Email & Password',
+  'OAuth 2.0',
+  'LDAP',
+  'SAML',
+  'Active Directory'
+];
+const enableMFA = ref(true);
+const singleSignOn = ref(false);
+
+// Password policy
+const passwordMinLength = ref(8);
+const requireLowercase = ref(true);
+const requireUppercase = ref(true);
+const requireNumbers = ref(true);
+const requireSpecialChars = ref(false);
+const passwordExpiration = ref('90 days');
+const passwordExpirationOptions = [
+  'Never',
+  '30 days',
+  '60 days',
+  '90 days',
+  '180 days',
+  '1 year'
+];
+
+// Registration settings
+const registrationType = ref('Self-registration');
+const registrationTypes = [
+  'Self-registration',
+  'Invitation only',
+  'Admin-created accounts only'
+];
+const emailVerification = ref(true);
+const adminApproval = ref(false);
+const defaultUserRole = ref('User');
+
+// Session management
+const sessionTimeout = ref(30);
+const rememberMe = ref(true);
+const concurrentSessions = ref(true);
+const maxSessionsPerUser = ref(5);
+</script>
+
 <template>
-  <div>
+  <div class="user-management-container">
     <!-- User Authentication -->
     <v-card variant="outlined" class="mb-4">
       <v-card-title class="text-subtitle-1">
@@ -196,53 +245,19 @@
   </div>
 </template>
 
-<script setup lang="ts">
-import { ref } from 'vue';
+<style scoped>
+/* Target only the cards within this component */
+:deep(.v-card.v-card--variant-outlined) {
+  border-color: rgba(0, 0, 0, 0.12) !important;
+}
 
-// Authentication settings
-const authMethod = ref('Email & Password');
-const authMethods = [
-  'Email & Password',
-  'OAuth 2.0',
-  'LDAP',
-  'SAML',
-  'Active Directory'
-];
-const enableMFA = ref(true);
-const singleSignOn = ref(false);
+/* Add subtle hover effect to cards in this component */
+.user-management-container .v-card {
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
 
-// Password policy
-const passwordMinLength = ref(8);
-const requireLowercase = ref(true);
-const requireUppercase = ref(true);
-const requireNumbers = ref(true);
-const requireSpecialChars = ref(false);
-const passwordExpiration = ref('90 days');
-const passwordExpirationOptions = [
-  'Never',
-  '30 days',
-  '60 days',
-  '90 days',
-  '180 days',
-  '1 year'
-];
-
-// Registration settings
-const registrationType = ref('Self-registration');
-const registrationTypes = [
-  'Self-registration',
-  'Invitation only',
-  'Admin-created accounts only'
-];
-const emailVerification = ref(true);
-const adminApproval = ref(false);
-const defaultUserRole = ref('User');
-
-// Session management
-const sessionTimeout = ref(30);
-const rememberMe = ref(true);
-const concurrentSessions = ref(true);
-const maxSessionsPerUser = ref(5);
-</script>
-
-<!-- No scoped styles to avoid conflicts with parent components -->
+.user-management-container .v-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08) !important;
+}
+</style>

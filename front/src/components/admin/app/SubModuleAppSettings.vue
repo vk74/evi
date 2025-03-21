@@ -1,12 +1,17 @@
 <!--
- * Модуль администрирования настроек приложения SubModuleAppAdmin.vue
- * Обеспечивает навигацию между категориями настроек приложения
- * и отображает соответствующие компоненты настроек в рабочей области.
+ * Application settings administration module SubModuleAppSettings.vue
+ * Provides navigation between application settings categories
+ * and displays the corresponding settings components in the workspace area.
  * 
  * Uses a simplified Pinia store to persist the selected category between sessions.
+ * 
+ * Updated: Optimized layout to reduce gap between menu and content
+ * while ensuring full visibility of menu text. Uses a combination of
+ * slightly adjusted column widths and content positioning instead of
+ * drastically reducing the menu width.
 -->
 <script setup lang="ts">
-import { ref, computed, shallowRef, defineComponent } from 'vue';
+import { ref, computed, shallowRef } from 'vue';
 import { useAppAdminStore } from './state.app.admin';
 
 // Import all setting components
@@ -26,32 +31,32 @@ const categories = shallowRef([
   { 
     name: 'General Settings', 
     icon: 'mdi-cog-outline', 
-    component: defineComponent(GeneralSettings)
+    component: GeneralSettings
   },
   { 
     name: 'User Management', 
     icon: 'mdi-account-group-outline', 
-    component: defineComponent(UserManagement)
+    component: UserManagement
   },
   { 
     name: 'Service Management', 
     icon: 'mdi-tools', 
-    component: defineComponent(ServiceManagement)
+    component: ServiceManagement
   },
   { 
     name: 'Catalog Management', 
     icon: 'mdi-view-grid-outline', 
-    component: defineComponent(CatalogManagement)
+    component: CatalogManagement
   },
   { 
     name: 'Logging Settings', 
     icon: 'mdi-text-box-outline', 
-    component: defineComponent(LoggingSettings)
+    component: LoggingSettings
   },
   { 
     name: 'Workspace Management', 
     icon: 'mdi-view-dashboard-outline', 
-    component: defineComponent(WorkspaceManagement)
+    component: WorkspaceManagement
   }
 ]);
 
@@ -112,7 +117,7 @@ const selectCategory = (index) => {
     
     <v-row no-gutters class="fill-height">
       <!-- Left panel - Categories navigation with white background (hidden on mobile) -->
-      <v-col cols="12" sm="4" md="3" lg="3" xl="2" class="pa-0 d-none d-sm-block">
+      <v-col cols="12" sm="3" md="3" lg="2.5" xl="2" class="pa-0 d-none d-sm-block menu-column">
         <!-- Categories list without background -->
         <v-list density="compact" nav class="categories-list pa-0">
           <v-list-item
@@ -128,9 +133,9 @@ const selectCategory = (index) => {
         </v-list>
       </v-col>
 
-      <!-- Right panel - Content area with transitions between panels -->
-      <v-col cols="12" sm="8" md="9" lg="9" xl="10" class="content-panel pa-0">
-        <div class="content-area pa-4">
+      <!-- Content panel with negative margin to reduce visual gap -->
+      <v-col cols="12" sm="9" md="9" lg="9.5" xl="10" class="content-panel pa-0">
+        <div class="content-area ml-n3 pl-3 pr-3 py-4">
           <transition name="slide-fade" mode="out-in">
             <component :is="categories[selectedCategory].component" :key="selectedCategory" />
           </transition>
@@ -141,57 +146,28 @@ const selectCategory = (index) => {
 </template>
 
 <style scoped>
-.categories-list {
-  /* White background to blend with content panel */
-  background-color: white;
-  height: 100%;
-  border-right: 1px solid rgba(0, 0, 0, 0.05); /* Very subtle border */
-}
-
 .menu-item {
   min-height: 44px;
   position: relative;
-  transition: all 0.2s ease;
+  transition: all 0.1s ease;
   margin: 2px 0;
-}
-
-/* Hover effect for menu items */
-.menu-item:hover:not(.category-active) {
-  background-color: rgba(0, 0, 0, 0.03); /* Very light background on hover */
-}
-
-.menu-item:hover:not(.category-active) :deep(.v-icon),
-.menu-item:hover:not(.category-active) :deep(.v-list-item-title) {
-  color: rgba(0, 137, 123, 0.6) !important; /* Lighter teal on hover */
-}
-
-/* Custom styling for the active category with "glow" effect */
-.category-active {
-  color: #00897b !important; /* teal-darken-2 equivalent */
-  font-weight: 500;
+  padding-left: 18px; /* Left padding to move icons away from the edge */
+  white-space: nowrap; /* Prevent text wrapping in menu items */
+  overflow: hidden; /* Prevent text overflow */
+  text-overflow: ellipsis; /* Add ellipsis for very long text */
 }
 
 /* Make the icon glow for active category */
 .category-active :deep(.v-icon) {
-  color: #00897b !important;
-  filter: drop-shadow(0 0 3px rgba(0, 137, 123, 0.3));
+  color: #13547a !important; /* Updated teal color to darker shade */
+  filter: drop-shadow(0 0 3px rgba(19, 84, 122, 0.3));
 }
 
 /* Make the text glow for active category */
 .category-active :deep(.v-list-item-title) {
-  color: #00897b !important;
-  text-shadow: 0 0 1px rgba(0, 137, 123, 0.2);
+  color: #13547a !important; /* Updated teal color to darker shade */
+  text-shadow: 0 0 1px rgba(19, 84, 122, 0.2);
   letter-spacing: 0.01em;
-}
-
-.content-panel {
-  background-color: white;
-  height: 100%;
-}
-
-.content-area {
-  width: 100%;
-  height: 100%;
 }
 
 /* Mobile categories styles */
@@ -209,8 +185,9 @@ const selectCategory = (index) => {
   justify-content: flex-start;
   font-weight: 500;
   height: 56px;
-  color: #00897b !important;
+  color: #13547a !important; /* Updated teal color to darker shade */
   background-color: white;
+  padding-left: 12px; /* Left padding for mobile menu button */
 }
 
 .mobile-dropdown {
@@ -223,50 +200,23 @@ const selectCategory = (index) => {
   z-index: 99;
 }
 
-/* Transitions between settings panels */
-.slide-fade-enter-active {
-  transition: all 0.3s ease;
+/* Visual correction to pull content closer to menu */
+.content-area {
+  position: relative;
 }
 
-.slide-fade-leave-active {
-  transition: all 0.3s cubic-bezier(1, 0.5, 0.8, 1);
+/* Fix for Vuetify grid system which only accepts integer values for columns */
+.menu-column {
+  max-width: 20%; /* Fine-tune for lg breakpoint */
 }
 
-.slide-fade-enter-from,
-.slide-fade-leave-to {
-  transform: translateX(20px);
-  opacity: 0;
-}
-
-/* Make sure switches and other controls use the teal color */
-:deep(.v-switch--selection-controls) .v-switch__track--active {
-  opacity: 1;
-  background-color: #00897b !important;
-}
-
-:deep(.v-slider .v-slider__track-fill) {
-  background-color: #00897b !important;
-}
-
-:deep(.v-slider .v-slider__thumb) {
-  color: #00897b !important;
-}
-
-/* Responsive adjustments */
-@media (max-width: 600px) {
-  .content-area {
-    padding: 12px !important; /* Less padding on mobile */
+@media (max-width: 1264px) and (min-width: 960px) {
+  .menu-column {
+    max-width: 20%; /* Approximately lg="2.5" */
   }
   
-  /* Slight fade transition for mobile menu */
-  .v-expand-transition-enter-active,
-  .v-expand-transition-leave-active {
-    transition: opacity 0.2s ease;
-  }
-  
-  .v-expand-transition-enter-from,
-  .v-expand-transition-leave-to {
-    opacity: 0;
+  .content-panel {
+    max-width: 80%; /* Complementary to menu column width */
   }
 }
 </style>

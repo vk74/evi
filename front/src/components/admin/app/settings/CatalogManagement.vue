@@ -2,10 +2,106 @@
   File: CatalogManagement.vue
   Description: Catalog management settings component
   Purpose: Configure catalog-related settings, categories, taxonomies, and display options
+  
+  Updated: Moved script block above template and added scoped styles for card borders
 -->
 
+<script setup lang="ts">
+import { ref } from 'vue';
+
+// Display settings
+const defaultView = ref('Grid');
+const viewTypes = ['Grid', 'List', 'Table'];
+const itemsPerPage = ref('24');
+const itemsPerPageOptions = ['12', '24', '36', '48', '96'];
+const sortOrder = ref('Newest first');
+const sortOptions = [
+  'Newest first',
+  'Oldest first',
+  'Price: low to high',
+  'Price: high to low',
+  'Name: A to Z',
+  'Name: Z to A',
+  'Most popular'
+];
+const showOutOfStock = ref(true);
+const showFeaturedFirst = ref(true);
+
+// Category settings
+const categories = ref([
+  {
+    id: 1,
+    name: 'Electronics',
+    icon: 'mdi-laptop',
+    itemCount: 128
+  },
+  {
+    id: 2,
+    name: 'Clothing',
+    icon: 'mdi-tshirt-crew-outline',
+    itemCount: 256
+  },
+  {
+    id: 3,
+    name: 'Home & Garden',
+    icon: 'mdi-sofa-outline',
+    itemCount: 193
+  },
+  {
+    id: 4,
+    name: 'Books',
+    icon: 'mdi-book-open-variant',
+    itemCount: 87
+  }
+]);
+const enableNestedCategories = ref(true);
+const categoryDepth = ref('3');
+const categoryDepthOptions = ['1', '2', '3', '4', '5'];
+
+// Product attributes
+const productAttributes = ref([
+  {
+    id: 1,
+    name: 'Color',
+    type: 'multi',
+    enabled: true
+  },
+  {
+    id: 2,
+    name: 'Size',
+    type: 'multi',
+    enabled: true
+  },
+  {
+    id: 3,
+    name: 'Weight',
+    type: 'number',
+    enabled: true
+  },
+  {
+    id: 4,
+    name: 'Material',
+    type: 'text',
+    enabled: true
+  },
+  {
+    id: 5,
+    name: 'Is Featured',
+    type: 'boolean',
+    enabled: true
+  }
+]);
+const useAttributesForFiltering = ref(true);
+
+// Import/Export settings
+const importFormat = ref('CSV');
+const exportFormat = ref('CSV');
+const fileFormats = ['CSV', 'XML', 'JSON'];
+const exportImages = ref(true);
+</script>
+
 <template>
-  <div class="settings-section">
+  <div class="settings-section catalog-management">
     <h2 class="text-h6 mb-4">Catalog Management</h2>
     
     <!-- Display Settings -->
@@ -265,100 +361,24 @@
   </div>
 </template>
 
-<script setup lang="ts">
-import { ref } from 'vue';
-
-// Display settings
-const defaultView = ref('Grid');
-const viewTypes = ['Grid', 'List', 'Table'];
-const itemsPerPage = ref('24');
-const itemsPerPageOptions = ['12', '24', '36', '48', '96'];
-const sortOrder = ref('Newest first');
-const sortOptions = [
-  'Newest first',
-  'Oldest first',
-  'Price: low to high',
-  'Price: high to low',
-  'Name: A to Z',
-  'Name: Z to A',
-  'Most popular'
-];
-const showOutOfStock = ref(true);
-const showFeaturedFirst = ref(true);
-
-// Category settings
-const categories = ref([
-  {
-    id: 1,
-    name: 'Electronics',
-    icon: 'mdi-laptop',
-    itemCount: 128
-  },
-  {
-    id: 2,
-    name: 'Clothing',
-    icon: 'mdi-tshirt-crew-outline',
-    itemCount: 256
-  },
-  {
-    id: 3,
-    name: 'Home & Garden',
-    icon: 'mdi-sofa-outline',
-    itemCount: 193
-  },
-  {
-    id: 4,
-    name: 'Books',
-    icon: 'mdi-book-open-variant',
-    itemCount: 87
-  }
-]);
-const enableNestedCategories = ref(true);
-const categoryDepth = ref('3');
-const categoryDepthOptions = ['1', '2', '3', '4', '5'];
-
-// Product attributes
-const productAttributes = ref([
-  {
-    id: 1,
-    name: 'Color',
-    type: 'multi',
-    enabled: true
-  },
-  {
-    id: 2,
-    name: 'Size',
-    type: 'multi',
-    enabled: true
-  },
-  {
-    id: 3,
-    name: 'Weight',
-    type: 'number',
-    enabled: true
-  },
-  {
-    id: 4,
-    name: 'Material',
-    type: 'text',
-    enabled: true
-  },
-  {
-    id: 5,
-    name: 'Is Featured',
-    type: 'boolean',
-    enabled: true
-  }
-]);
-const useAttributesForFiltering = ref(true);
-
-// Import/Export settings
-const importFormat = ref('CSV');
-const exportFormat = ref('CSV');
-const fileFormats = ['CSV', 'XML', 'JSON'];
-const exportImages = ref(true);
-</script>
-
 <style scoped>
+/* Target cards in this component for grey borders */
+:deep(.v-card.v-card--variant-outlined) {
+  border-color: rgba(0, 0, 0, 0.12) !important;
+}
 
+/* Add subtle hover effect to cards */
+.catalog-management .v-card {
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.catalog-management .v-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08) !important;
+}
+
+/* Ensure nested cards have proper styling too */
+:deep(.v-card .v-card) {
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05) !important;
+}
 </style>

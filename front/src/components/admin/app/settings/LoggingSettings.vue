@@ -2,10 +2,89 @@
   File: LoggingSettings.vue
   Description: Logging configuration settings component
   Purpose: Configure application logging levels, destinations, and retention policies
+  
+  Updated: Moved script block above template and added scoped styles for card borders
 -->
 
+<script setup lang="ts">
+import { ref } from 'vue';
+
+// Log levels
+const defaultLogLevel = ref('Info');
+const logLevels = ['Trace', 'Debug', 'Info', 'Warning', 'Error', 'Critical', 'None'];
+
+// Log components
+const logComponents = ref([
+  {
+    id: 1,
+    name: 'Authentication',
+    icon: 'mdi-shield-account-outline',
+    level: 'Info'
+  },
+  {
+    id: 2,
+    name: 'Database',
+    icon: 'mdi-database-outline',
+    level: 'Warning'
+  },
+  {
+    id: 3,
+    name: 'API Requests',
+    icon: 'mdi-api',
+    level: 'Info'
+  },
+  {
+    id: 4,
+    name: 'User Actions',
+    icon: 'mdi-account-outline',
+    level: 'Info'
+  },
+  {
+    id: 5,
+    name: 'Background Services',
+    icon: 'mdi-cogs',
+    level: 'Warning'
+  }
+]);
+
+// Log storage
+const logStorage = ref('File System');
+const storageOptions = ['File System', 'Database', 'Cloud Storage', 'Syslog'];
+const logPath = ref('/var/log/myapp/');
+const databaseTable = ref('application_logs');
+const logPrefix = ref('app-log-');
+const dailyRotation = ref(true);
+
+// Retention policy
+const retentionType = ref('time');
+const retentionPeriod = ref('30 days');
+const retentionPeriods = [
+  '1 day',
+  '7 days',
+  '14 days',
+  '30 days',
+  '60 days',
+  '90 days',
+  '180 days',
+  '1 year'
+];
+const maxLogFiles = ref(30);
+const maxLogSize = ref(1000);
+const compressOldLogs = ref(true);
+const archiveLogsBeforeDelete = ref(false);
+
+// Monitoring and alerts
+const enableAlerts = ref(true);
+const alertOnError = ref(true);
+const alertOnWarning = ref(false);
+const alertOnCritical = ref(true);
+const alertMethod = ref('Email');
+const alertMethods = ['None', 'Email', 'SMS', 'Webhook', 'Slack', 'Teams'];
+const alertRecipients = ref('admin@example.com');
+</script>
+
 <template>
-  <div class="settings-section">
+  <div class="settings-section logging-settings">
     <h2 class="text-h6 mb-4">Logging Settings</h2>
     
     <!-- Log Levels -->
@@ -247,83 +326,24 @@
   </div>
 </template>
 
-<script setup lang="ts">
-import { ref } from 'vue';
-
-// Log levels
-const defaultLogLevel = ref('Info');
-const logLevels = ['Trace', 'Debug', 'Info', 'Warning', 'Error', 'Critical', 'None'];
-
-// Log components
-const logComponents = ref([
-  {
-    id: 1,
-    name: 'Authentication',
-    icon: 'mdi-shield-account-outline',
-    level: 'Info'
-  },
-  {
-    id: 2,
-    name: 'Database',
-    icon: 'mdi-database-outline',
-    level: 'Warning'
-  },
-  {
-    id: 3,
-    name: 'API Requests',
-    icon: 'mdi-api',
-    level: 'Info'
-  },
-  {
-    id: 4,
-    name: 'User Actions',
-    icon: 'mdi-account-outline',
-    level: 'Info'
-  },
-  {
-    id: 5,
-    name: 'Background Services',
-    icon: 'mdi-cogs',
-    level: 'Warning'
-  }
-]);
-
-// Log storage
-const logStorage = ref('File System');
-const storageOptions = ['File System', 'Database', 'Cloud Storage', 'Syslog'];
-const logPath = ref('/var/log/myapp/');
-const databaseTable = ref('application_logs');
-const logPrefix = ref('app-log-');
-const dailyRotation = ref(true);
-
-// Retention policy
-const retentionType = ref('time');
-const retentionPeriod = ref('30 days');
-const retentionPeriods = [
-  '1 day',
-  '7 days',
-  '14 days',
-  '30 days',
-  '60 days',
-  '90 days',
-  '180 days',
-  '1 year'
-];
-const maxLogFiles = ref(30);
-const maxLogSize = ref(1000);
-const compressOldLogs = ref(true);
-const archiveLogsBeforeDelete = ref(false);
-
-// Monitoring and alerts
-const enableAlerts = ref(true);
-const alertOnError = ref(true);
-const alertOnWarning = ref(false);
-const alertOnCritical = ref(true);
-const alertMethod = ref('Email');
-const alertMethods = ['None', 'Email', 'SMS', 'Webhook', 'Slack', 'Teams'];
-const alertRecipients = ref('admin@example.com');
-</script>
-
 <style scoped>
+/* Target cards in this component for grey borders */
+:deep(.v-card.v-card--variant-outlined) {
+  border-color: rgba(0, 0, 0, 0.12) !important;
+}
 
+/* Add subtle hover effect to cards */
+.logging-settings .v-card {
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.logging-settings .v-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08) !important;
+}
+
+/* Adjust spacing for selects in list items */
+.max-width-select {
+  max-width: 120px;
+}
 </style>

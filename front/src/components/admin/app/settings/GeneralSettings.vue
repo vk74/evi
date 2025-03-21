@@ -4,7 +4,61 @@
   Purpose: Configure basic application settings like theme, language, notifications
   
   Enhanced with responsive design adjustments to work with parent component transitions
+  Updated: Changed border colors to grey and moved script block above template
 -->
+
+<script setup lang="ts">
+import { ref } from 'vue';
+
+// Theme settings
+const isDarkTheme = ref(false);
+const selectedThemeColor = ref('teal-darken-2'); // Default to darker teal
+const themeColors = [
+  'teal-darken-2',
+  'teal-darken-1',
+  'teal',
+  'teal-lighten-1',
+  'teal-lighten-2'
+];
+
+// Language settings
+const selectedLanguage = ref('English');
+const useSystemLanguage = ref(true);
+const languages = [
+  'English',
+  'Русский',
+  'Español',
+  'Français',
+  'Deutsch',
+  '中文',
+  '日本語'
+];
+
+// Notification settings
+const enableNotifications = ref(true);
+const enableSounds = ref(true);
+const notificationVolume = ref(70);
+
+// Update settings
+const lastUpdateCheck = ref('Today, 10:23 AM');
+const updateFrequency = ref('Daily');
+const autoInstallUpdates = ref(false);
+const updateFrequencies = [
+  'Manual',
+  'Daily',
+  'Weekly',
+  'Monthly'
+];
+
+/**
+ * Simulates checking for updates
+ * In a real implementation, this would make an API call to check for updates
+ */
+const checkUpdates = () => {
+  lastUpdateCheck.value = new Date().toLocaleString();
+  // Implement actual update checking logic here
+};
+</script>
 
 <template>
   <div class="settings-container">
@@ -149,68 +203,21 @@
   </div>
 </template>
 
-<script setup lang="ts">
-import { ref } from 'vue';
-
-// Theme settings
-const isDarkTheme = ref(false);
-const selectedThemeColor = ref('teal-darken-2'); // Default to darker teal
-const themeColors = [
-  'teal-darken-2',
-  'teal-darken-1',
-  'teal',
-  'teal-lighten-1',
-  'teal-lighten-2'
-];
-
-// Language settings
-const selectedLanguage = ref('English');
-const useSystemLanguage = ref(true);
-const languages = [
-  'English',
-  'Русский',
-  'Español',
-  'Français',
-  'Deutsch',
-  '中文',
-  '日本語'
-];
-
-// Notification settings
-const enableNotifications = ref(true);
-const enableSounds = ref(true);
-const notificationVolume = ref(70);
-
-// Update settings
-const lastUpdateCheck = ref('Today, 10:23 AM');
-const updateFrequency = ref('Daily');
-const autoInstallUpdates = ref(false);
-const updateFrequencies = [
-  'Manual',
-  'Daily',
-  'Weekly',
-  'Monthly'
-];
-
-/**
- * Simulates checking for updates
- * In a real implementation, this would make an API call to check for updates
- */
-const checkUpdates = () => {
-  lastUpdateCheck.value = new Date().toLocaleString();
-  // Implement actual update checking logic here
-};
-</script>
-
 <style scoped>
 /* Add subtle animations and transitions to settings cards */
 .settings-card {
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  border-color: rgba(0, 0, 0, 0.12) !important;
 }
 
 .settings-card:hover {
   transform: translateY(-2px);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08) !important;
+}
+
+/* Target all outlined cards in this component */
+:deep(.v-card.v-card--variant-outlined) {
+  border-color: rgba(0, 0, 0, 0.12) !important;
 }
 
 /* Responsive adjustments */

@@ -2,10 +2,114 @@
   File: ServiceManagement.vue
   Description: Service management settings component
   Purpose: Configure application services, API connections, third-party integrations
+  
+  Updated: Moved script block above template and added scoped styles for card borders
 -->
 
+<script setup lang="ts">
+import { ref } from 'vue';
+
+// API Configuration
+const apiEndpoint = ref('https://api.example.com/v1');
+const apiVersion = ref('v1.0');
+const apiVersions = ['v1.0', 'v1.1', 'v2.0-beta'];
+const apiTimeout = ref(30);
+const enableApiCaching = ref(true);
+
+// Service Health
+const healthStatus = ref('Healthy');
+const lastHealthCheck = ref('Today, 09:45 AM');
+const healthCheckInterval = ref('Every 15 minutes');
+const healthCheckIntervals = [
+  'Manual only',
+  'Every 5 minutes',
+  'Every 15 minutes',
+  'Every 30 minutes',
+  'Every hour',
+  'Daily'
+];
+const autoRestart = ref(true);
+const alertOnFailure = ref(true);
+
+/**
+ * Simulates checking the health of services
+ * In a real implementation, this would make API calls to check service status
+ */
+const checkHealth = () => {
+  lastHealthCheck.value = new Date().toLocaleString();
+  // Randomly set health status for demo purposes
+  const statuses = ['Healthy', 'Degraded', 'Unhealthy'];
+  const randomIndex = Math.floor(Math.random() * statuses.length);
+  healthStatus.value = statuses[randomIndex];
+};
+
+// Third-party Integrations
+const integrations = ref([
+  {
+    id: 1,
+    name: 'Email Service (SendGrid)',
+    description: 'Handles email notifications and alerts',
+    icon: 'mdi-email-outline',
+    enabled: true
+  },
+  {
+    id: 2,
+    name: 'Payment Gateway (Stripe)',
+    description: 'Processes payments and subscriptions',
+    icon: 'mdi-credit-card-outline',
+    enabled: true
+  },
+  {
+    id: 3,
+    name: 'Storage Service (AWS S3)',
+    description: 'Handles file storage and retrieval',
+    icon: 'mdi-cloud-outline',
+    enabled: true
+  },
+  {
+    id: 4,
+    name: 'Analytics (Google Analytics)',
+    description: 'Tracks user behavior and metrics',
+    icon: 'mdi-chart-line',
+    enabled: false
+  }
+]);
+
+// Background Services
+const backgroundServices = ref([
+  {
+    id: 1,
+    name: 'Data Synchronization',
+    description: 'Syncs data between services and databases',
+    icon: 'mdi-sync',
+    enabled: true
+  },
+  {
+    id: 2,
+    name: 'Scheduled Reports',
+    description: 'Generates and sends scheduled reports',
+    icon: 'mdi-file-chart-outline',
+    enabled: true
+  },
+  {
+    id: 3,
+    name: 'Automated Backups',
+    description: 'Creates regular backups of application data',
+    icon: 'mdi-backup-restore',
+    enabled: true
+  },
+  {
+    id: 4,
+    name: 'Notification Service',
+    description: 'Processes and sends notifications to users',
+    icon: 'mdi-bell-outline',
+    enabled: true
+  }
+]);
+</script>
+
 <template>
-  <div class="settings-section">
+  <div class="settings-section service-management">
     <h2 class="text-h6 mb-4">Service Management</h2>
     
     <!-- API Configuration -->
@@ -201,108 +305,19 @@
   </div>
 </template>
 
-<script setup lang="ts">
-import { ref } from 'vue';
-
-// API Configuration
-const apiEndpoint = ref('https://api.example.com/v1');
-const apiVersion = ref('v1.0');
-const apiVersions = ['v1.0', 'v1.1', 'v2.0-beta'];
-const apiTimeout = ref(30);
-const enableApiCaching = ref(true);
-
-// Service Health
-const healthStatus = ref('Healthy');
-const lastHealthCheck = ref('Today, 09:45 AM');
-const healthCheckInterval = ref('Every 15 minutes');
-const healthCheckIntervals = [
-  'Manual only',
-  'Every 5 minutes',
-  'Every 15 minutes',
-  'Every 30 minutes',
-  'Every hour',
-  'Daily'
-];
-const autoRestart = ref(true);
-const alertOnFailure = ref(true);
-
-/**
- * Simulates checking the health of services
- * In a real implementation, this would make API calls to check service status
- */
-const checkHealth = () => {
-  lastHealthCheck.value = new Date().toLocaleString();
-  // Randomly set health status for demo purposes
-  const statuses = ['Healthy', 'Degraded', 'Unhealthy'];
-  const randomIndex = Math.floor(Math.random() * statuses.length);
-  healthStatus.value = statuses[randomIndex];
-};
-
-// Third-party Integrations
-const integrations = ref([
-  {
-    id: 1,
-    name: 'Email Service (SendGrid)',
-    description: 'Handles email notifications and alerts',
-    icon: 'mdi-email-outline',
-    enabled: true
-  },
-  {
-    id: 2,
-    name: 'Payment Gateway (Stripe)',
-    description: 'Processes payments and subscriptions',
-    icon: 'mdi-credit-card-outline',
-    enabled: true
-  },
-  {
-    id: 3,
-    name: 'Storage Service (AWS S3)',
-    description: 'Handles file storage and retrieval',
-    icon: 'mdi-cloud-outline',
-    enabled: true
-  },
-  {
-    id: 4,
-    name: 'Analytics (Google Analytics)',
-    description: 'Tracks user behavior and metrics',
-    icon: 'mdi-chart-line',
-    enabled: false
-  }
-]);
-
-// Background Services
-const backgroundServices = ref([
-  {
-    id: 1,
-    name: 'Data Synchronization',
-    description: 'Syncs data between services and databases',
-    icon: 'mdi-sync',
-    enabled: true
-  },
-  {
-    id: 2,
-    name: 'Scheduled Reports',
-    description: 'Generates and sends scheduled reports',
-    icon: 'mdi-file-chart-outline',
-    enabled: true
-  },
-  {
-    id: 3,
-    name: 'Automated Backups',
-    description: 'Creates regular backups of application data',
-    icon: 'mdi-backup-restore',
-    enabled: true
-  },
-  {
-    id: 4,
-    name: 'Notification Service',
-    description: 'Processes and sends notifications to users',
-    icon: 'mdi-bell-outline',
-    enabled: true
-  }
-]);
-</script>
-
 <style scoped>
+/* Apply grey borders to cards in this component */
+:deep(.v-card.v-card--variant-outlined) {
+  border-color: rgba(0, 0, 0, 0.12) !important;
+}
 
+/* Add subtle hover animation to cards */
+.service-management .v-card {
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.service-management .v-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08) !important;
+}
 </style>
