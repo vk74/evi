@@ -4,12 +4,6 @@
  * and displays the corresponding settings components in the workspace area.
  * 
  * Uses a simplified Pinia store to persist the selected category between sessions.
- * 
- * Updated: 
- * - Simplified structure to a flat list of categories
- * - Removed catalog management and service management sections
- * - Fixed import of types from types.app.settings.ts
- * - Fixed ESLint issue with computed property
  -->
  <script setup lang="ts">
  import { ref, computed, shallowRef, onMounted } from 'vue';
@@ -17,6 +11,7 @@
  
  // Import all setting components
  import GeneralSettings from './settings/GeneralSettings.vue';
+ import SecuritySettings from './settings/SecuritySettings.vue';
  import UserManagement from './settings/UserManagement.vue';
  import LoggingSettings from './settings/LoggingSettings.vue';
  import WorkspaceManagement from './settings/WorkspaceManagement.vue';
@@ -24,7 +19,6 @@
  // Initialize the store
  const appSettingsStore = useAppSettingsStore();
  
- // Define all categories as a flat list (no subcategories)
  // Using shallowRef for better performance since these are components
  const categories = shallowRef([
    { 
@@ -40,10 +34,10 @@
    { 
      name: 'security settings', 
      icon: 'mdi-shield-outline', 
-     component: GeneralSettings  // Placeholder until real component is created
+     component: SecuritySettings
    },
    { 
-     name: 'user management', 
+     name: 'users management', 
      icon: 'mdi-account-group-outline', 
      component: UserManagement
    },
@@ -129,9 +123,7 @@
      </div>
      
      <v-row no-gutters class="fill-height">
-       <!-- Left panel - Categories navigation with white background (hidden on mobile) -->
        <v-col cols="12" sm="3" md="3" lg="2.5" xl="2" class="pa-0 d-none d-sm-block menu-column">
-         <!-- Categories list without background -->
          <v-list density="compact" nav class="categories-list pa-0">
            <v-list-item
              v-for="(category, index) in categories"
@@ -146,7 +138,6 @@
          </v-list>
        </v-col>
  
-       <!-- Content panel with negative margin to reduce visual gap -->
        <v-col cols="12" sm="9" md="9" lg="9.5" xl="10" class="content-panel pa-0">
          <div class="content-area ml-n3 pl-3 pr-3 py-4">
            <transition name="slide-fade" mode="out-in">
@@ -172,18 +163,17 @@
  
  /* Make the icon glow for active category */
  .category-active :deep(.v-icon) {
-   color: #13547a !important; /* Updated teal color to darker shade */
+   color: #13547a !important;
    filter: drop-shadow(0 0 3px rgba(19, 84, 122, 0.3));
  }
  
  /* Make the text glow for active category */
  .category-active :deep(.v-list-item-title) {
-   color: #13547a !important; /* Updated teal color to darker shade */
+   color: #13547a !important;
    text-shadow: 0 0 1px rgba(19, 84, 122, 0.2);
    letter-spacing: 0.01em;
  }
  
- /* Mobile categories styles */
  .mobile-categories {
    width: 100%;
    background-color: white;
@@ -198,9 +188,9 @@
    justify-content: flex-start;
    font-weight: 500;
    height: 56px;
-   color: #13547a !important; /* Updated teal color to darker shade */
+   color: #13547a !important;
    background-color: white;
-   padding-left: 12px; /* Left padding for mobile menu button */
+   padding-left: 12px; 
  }
  
  .mobile-dropdown {

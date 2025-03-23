@@ -26,12 +26,7 @@ const selectedLanguage = ref('English');
 const useSystemLanguage = ref(true);
 const languages = [
   'English',
-  'Русский',
-  'Español',
-  'Français',
-  'Deutsch',
-  '中文',
-  '日本語'
+  'Русский'
 ];
 
 // Notification settings
@@ -62,24 +57,34 @@ const checkUpdates = () => {
 
 <template>
   <div class="settings-container">
+    <h2 class="text-h6 mb-4">настройки приложения</h2>
+
+    <v-alert
+      type="info"
+      variant="tonal"
+      density="compact"
+      class="mb-4 mt-2"
+    >
+      настройки системы находится в разработке
+    </v-alert>
     <!-- Theme Settings -->
     <v-card variant="outlined" class="mb-4 settings-card">
       <v-card-title class="text-subtitle-1">
         <v-icon start icon="mdi-palette-outline" class="mr-2"></v-icon>
-        Appearance
+        appearance
       </v-card-title>
       <v-card-text>
         <v-switch
           v-model="isDarkTheme"
           color="teal-darken-2"
-          label="Dark Theme"
+          label="dark Theme"
           hide-details
         ></v-switch>
         
         <v-select
           v-model="selectedThemeColor"
           :items="themeColors"
-          label="Accent Color"
+          label="accent Color"
           variant="outlined"
           density="comfortable"
           class="mt-4"
@@ -92,13 +97,13 @@ const checkUpdates = () => {
     <v-card variant="outlined" class="mb-4 settings-card">
       <v-card-title class="text-subtitle-1">
         <v-icon start icon="mdi-translate" class="mr-2"></v-icon>
-        Language
+        language
       </v-card-title>
       <v-card-text>
         <v-select
           v-model="selectedLanguage"
           :items="languages"
-          label="Display Language"
+          label="fallback language"
           variant="outlined"
           density="comfortable"
           color="teal-darken-2"
@@ -108,93 +113,6 @@ const checkUpdates = () => {
           v-model="useSystemLanguage"
           color="teal-darken-2"
           label="Use system language"
-          hide-details
-          class="mt-4"
-        ></v-switch>
-      </v-card-text>
-    </v-card>
-    
-    <!-- Notification Settings -->
-    <v-card variant="outlined" class="mb-4 settings-card">
-      <v-card-title class="text-subtitle-1">
-        <v-icon start icon="mdi-bell-outline" class="mr-2"></v-icon>
-        Notifications
-      </v-card-title>
-      <v-card-text>
-        <v-switch
-          v-model="enableNotifications"
-          color="teal-darken-2"
-          label="Enable notifications"
-          hide-details
-        ></v-switch>
-        
-        <v-switch
-          v-model="enableSounds"
-          color="teal-darken-2"
-          label="Notification sounds"
-          hide-details
-          class="mt-2"
-          :disabled="!enableNotifications"
-        ></v-switch>
-        
-        <v-slider
-          v-model="notificationVolume"
-          label="Volume"
-          min="0"
-          max="100"
-          step="10"
-          show-ticks="always"
-          :disabled="!enableNotifications || !enableSounds"
-          class="mt-4"
-          color="teal-darken-2"
-          thumb-color="teal-darken-2"
-        >
-          <template v-slot:prepend>
-            <v-icon icon="mdi-volume-low"></v-icon>
-          </template>
-          <template v-slot:append>
-            <v-icon icon="mdi-volume-high"></v-icon>
-          </template>
-        </v-slider>
-      </v-card-text>
-    </v-card>
-    
-    <!-- Updates Settings -->
-    <v-card variant="outlined" class="settings-card">
-      <v-card-title class="text-subtitle-1">
-        <v-icon start icon="mdi-update" class="mr-2"></v-icon>
-        Updates
-      </v-card-title>
-      <v-card-text>
-        <div class="d-flex update-header align-center mb-3">
-          <div>
-            <div class="text-body-1">Check for updates</div>
-            <div class="text-caption text-medium-emphasis">Last checked: {{ lastUpdateCheck }}</div>
-          </div>
-          <v-btn
-            variant="tonal"
-            color="teal-darken-2"
-            size="small"
-            prepend-icon="mdi-refresh"
-            @click="checkUpdates"
-          >
-            Check now
-          </v-btn>
-        </div>
-        
-        <v-select
-          v-model="updateFrequency"
-          :items="updateFrequencies"
-          label="Update Frequency"
-          variant="outlined"
-          density="comfortable"
-          color="teal-darken-2"
-        ></v-select>
-        
-        <v-switch
-          v-model="autoInstallUpdates"
-          color="teal-darken-2"
-          label="Auto-install updates"
           hide-details
           class="mt-4"
         ></v-switch>

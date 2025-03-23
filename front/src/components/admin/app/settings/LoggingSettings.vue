@@ -86,27 +86,27 @@ const fileTransport = ref({
  */
 const operationTypesMetadata = {
   APP: {
-    description: 'Пользовательские операции, бизнес-логика',
+    description: 'пользовательские операции, бизнес-логика',
     icon: 'mdi-account-outline'
   },
   SYSTEM: {
-    description: 'Обслуживающие процессы',
+    description: 'обслуживающие процессы',
     icon: 'mdi-cogs'
   },
   SECURITY: {
-    description: 'События безопасности',
+    description: 'события безопасности',
     icon: 'mdi-shield-account-outline'
   },
   AUDIT: {
-    description: 'События для регуляторного учета',
+    description: 'события для регуляторного учета',
     icon: 'mdi-clipboard-text-outline'
   },
   INTGRN: {
-    description: 'Взаимодействие с внешними системами',
+    description: 'взаимодействие с внешними системами',
     icon: 'mdi-connection'
   },
   PERFORMANCE: {
-    description: 'Метрики производительности',
+    description: 'метрики производительности',
     icon: 'mdi-speedometer'
   }
 };
@@ -119,13 +119,13 @@ const logLevels = ['DEBUG', 'INFO', 'WARN', 'ERROR', 'FATAL'];
 
 <template>
   <div class="settings-section logging-settings">
-    <h2 class="text-h6 mb-4">Настройки логирования</h2>
+    <h2 class="text-h6 mb-4">настройки логирования</h2>
     
     <!-- Core Settings -->
     <v-card variant="outlined" class="mb-4">
       <v-card-title class="text-subtitle-1 mb-4">
         <v-icon start icon="mdi-tune" class="mr-2"></v-icon>
-        Основные настройки
+        основные настройки
       </v-card-title>
       <v-card-text>
         <v-row>
@@ -135,7 +135,7 @@ const logLevels = ['DEBUG', 'INFO', 'WARN', 'ERROR', 'FATAL'];
               label="Название приложения"
               variant="outlined"
               density="comfortable"
-              hint="Идентификатор приложения в системах сбора логов"
+              hint="идентификатор приложения в системах сбора логов"
             ></v-text-field>
           </v-col>
           
@@ -143,7 +143,7 @@ const logLevels = ['DEBUG', 'INFO', 'WARN', 'ERROR', 'FATAL'];
             <v-select
               v-model="timestampFormat"
               :items="['ISO', 'UTC', 'Local']"
-              label="Формат временной метки"
+              label="формат временной метки"
               variant="outlined"
               density="comfortable"
             ></v-select>
@@ -156,14 +156,14 @@ const logLevels = ['DEBUG', 'INFO', 'WARN', 'ERROR', 'FATAL'];
     <v-card variant="outlined" class="mb-4">
       <v-card-title class="text-subtitle-1 mb-4">
         <v-icon start icon="mdi-console" class="mr-2"></v-icon>
-        Логирование в консоль node.js
+        вывод журналов событий в консоль node.js
       </v-card-title>
       
       <v-card-text>
         <v-switch
           v-model="consoleTransport.enabled"
           color="primary"
-          label="Включить логирование в консоль"
+          label="включить логирование в консоль"
           hide-details
           class="mb-4"
         ></v-switch>
@@ -174,7 +174,7 @@ const logLevels = ['DEBUG', 'INFO', 'WARN', 'ERROR', 'FATAL'];
             <v-select
               v-model="consoleTransport.outputFormat"
               :items="consoleTransport.outputFormats"
-              label="Формат вывода"
+              label="формат вывода"
               variant="outlined"
               density="comfortable"
               class="mb-4"
@@ -182,7 +182,7 @@ const logLevels = ['DEBUG', 'INFO', 'WARN', 'ERROR', 'FATAL'];
             
             <!-- Console Operation Types Settings -->
             <div class="mb-4">
-              <span class="text-subtitle-2 mb-4 d-block">Настройки типов операций</span>
+              <span class="text-subtitle-2 mb-4 d-block">настройки типов операций</span>
               
               <v-list>
                 <v-list-item
@@ -217,7 +217,7 @@ const logLevels = ['DEBUG', 'INFO', 'WARN', 'ERROR', 'FATAL'];
             
             <!-- Console Context Settings -->
             <div>
-              <span class="text-subtitle-2 mb-2 d-block">Контекст логирования</span>
+              <span class="text-subtitle-2 mb-2 d-block">контекст логирования</span>
               
               <v-row>
                 <v-col cols="12" sm="6" md="3">
@@ -232,7 +232,7 @@ const logLevels = ['DEBUG', 'INFO', 'WARN', 'ERROR', 'FATAL'];
                 <v-col cols="12" sm="6" md="3">
                   <v-checkbox
                     v-model="consoleTransport.context.includeFileName"
-                    label="Имя файла источника"
+                    label="имя файла источника"
                     color="primary"
                     hide-details
                   ></v-checkbox>
@@ -241,7 +241,7 @@ const logLevels = ['DEBUG', 'INFO', 'WARN', 'ERROR', 'FATAL'];
                 <v-col cols="12" sm="6" md="3">
                   <v-checkbox
                     v-model="consoleTransport.context.includeOperationType"
-                    label="Тип операции"
+                    label="тип операции"
                     color="primary"
                     hide-details
                   ></v-checkbox>
@@ -266,14 +266,14 @@ const logLevels = ['DEBUG', 'INFO', 'WARN', 'ERROR', 'FATAL'];
     <v-card variant="outlined" class="mb-4">
       <v-card-title class="text-subtitle-1 mb-4">
         <v-icon start icon="mdi-file-outline" class="mr-2"></v-icon>
-        Логирование в файловую систему
+        логирование в файловую систему
       </v-card-title>
       
       <v-card-text>
         <v-switch
           v-model="fileTransport.enabled"
           color="primary"
-          label="Включить логирование в файловую систему"
+          label="включить логирование в файловую систему"
           hide-details
           class="mb-2"
         ></v-switch>
@@ -284,14 +284,14 @@ const logLevels = ['DEBUG', 'INFO', 'WARN', 'ERROR', 'FATAL'];
           density="compact"
           class="mb-4 mt-2"
         >
-          Логирование в файловую систему находится в разработке
+          запись журналов событий в файловую систему находится в разработке
         </v-alert>
         
         <v-expand-transition>
           <div v-if="fileTransport.enabled">
             <!-- File Operation Types Settings -->
             <div class="mb-4">
-              <span class="text-subtitle-2 mb-4 d-block">Настройки типов операций</span>
+              <span class="text-subtitle-2 mb-4 d-block">настройки типов операций</span>
               
               <v-list>
                 <v-list-item
@@ -326,13 +326,13 @@ const logLevels = ['DEBUG', 'INFO', 'WARN', 'ERROR', 'FATAL'];
             
             <!-- File Storage Settings -->
             <div class="mb-4">
-              <span class="text-subtitle-2 mb-2 d-block">Настройки хранения</span>
+              <span class="text-subtitle-2 mb-2 d-block">настройки хранения</span>
               
               <v-row>
                 <v-col cols="12" md="6">
                   <v-text-field
                     v-model="fileTransport.filePath"
-                    label="Путь к файлам логов"
+                    label="путь к файлам логов"
                     variant="outlined"
                     density="comfortable"
                     placeholder="/var/log/app/"
@@ -342,7 +342,7 @@ const logLevels = ['DEBUG', 'INFO', 'WARN', 'ERROR', 'FATAL'];
                 <v-col cols="12" md="6">
                   <v-text-field
                     v-model="fileTransport.filePrefix"
-                    label="Префикс файлов логов"
+                    label="префикс файлов логов"
                     variant="outlined"
                     density="comfortable"
                     placeholder="app-log-"
@@ -353,7 +353,7 @@ const logLevels = ['DEBUG', 'INFO', 'WARN', 'ERROR', 'FATAL'];
               <v-switch
                 v-model="fileTransport.dailyRotation"
                 color="primary"
-                label="Ежедневная ротация логов"
+                label="ежедневная ротация логов"
                 hide-details
                 class="mb-4 mt-2"
               ></v-switch>
@@ -361,18 +361,18 @@ const logLevels = ['DEBUG', 'INFO', 'WARN', 'ERROR', 'FATAL'];
             
             <!-- File Retention Policy -->
             <div class="mb-4">
-              <span class="text-subtitle-2 mb-2 d-block">Политика хранения</span>
+              <span class="text-subtitle-2 mb-2 d-block">политика хранения</span>
               
               <v-radio-group v-model="fileTransport.retentionType">
                 <v-radio
-                  label="Хранить логи определенный период времени"
+                  label="хранить логи определенный период времени"
                   value="time"
                 ></v-radio>
                 
                 <v-select
                   v-model="fileTransport.retentionPeriod"
                   :items="fileTransport.retentionPeriods"
-                  label="Период хранения"
+                  label="период хранения"
                   variant="outlined"
                   density="comfortable"
                   class="ms-4 mt-2"
@@ -431,7 +431,7 @@ const logLevels = ['DEBUG', 'INFO', 'WARN', 'ERROR', 'FATAL'];
             
             <!-- File Context Settings -->
             <div>
-              <span class="text-subtitle-2 mb-2 d-block">Контекст логирования</span>
+              <span class="text-subtitle-2 mb-2 d-block">контекст логирования</span>
               
               <v-row>
                 <v-col cols="12" sm="6" md="3">
@@ -480,17 +480,17 @@ const logLevels = ['DEBUG', 'INFO', 'WARN', 'ERROR', 'FATAL'];
     <v-card variant="outlined">
       <v-card-title class="text-subtitle-1 mb-4">
         <v-icon start icon="mdi-barcode" class="mr-2"></v-icon>
-        Примеры кодов событий
+        примеры кодов событий
       </v-card-title>
       <v-card-text>
         <p class="text-body-2 mb-2">
-          Коды событий используются для идентификации определенных действий в системе.
-          Формат: <code>MODULE:SUBMODULE:FUNCTION:OPERATION:NUMBER</code>
+          коды событий используются для идентификации определенных действий в системе.
+          формат: <code>MODULE:SUBMODULE:FUNCTION:OPERATION:NUMBER</code>
         </p>
         
         <v-list density="compact" lines="one">
           <v-list-item
-            v-for="(code, index) in ['ADMIN:USERS:CREATE:OPERATION:001', 'ADMIN:SYSTEM:UPDATE:OPERATION:002', 'CORE:ITEM_SELECTOR:SELECT:OPERATION:001']"
+            v-for="(code, index) in ['ADMIN:USERS:USEREDITOR:UPDATE:001', 'ADMIN:SYSTEM:SESSION:DROP:004']"
             :key="index"
             :title="code"
             prepend-icon="mdi-code-tags"
