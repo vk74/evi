@@ -7,19 +7,17 @@
  * 
  * Updated: 
  * - Simplified structure to a flat list of categories
- * - Moved all settings to the same level
- * - Removed all expansion/collapse functionality
- * - Minimized code complexity
+ * - Removed catalog management and service management sections
+ * - Fixed import of types from types.app.settings.ts
+ * - Fixed ESLint issue with computed property
  -->
  <script setup lang="ts">
- import { ref, computed, shallowRef } from 'vue';
- import { useAppSettingsStore } from './state.app.settings';
+ import { ref, computed, shallowRef, onMounted } from 'vue';
+ import { useAppSettingsStore } from '@/components/admin/app/state.app.settings';
  
  // Import all setting components
  import GeneralSettings from './settings/GeneralSettings.vue';
  import UserManagement from './settings/UserManagement.vue';
- import ServiceManagement from './settings/ServiceManagement.vue';
- import CatalogManagement from './settings/CatalogManagement.vue';
  import LoggingSettings from './settings/LoggingSettings.vue';
  import WorkspaceManagement from './settings/WorkspaceManagement.vue';
  
@@ -45,31 +43,28 @@
      component: GeneralSettings  // Placeholder until real component is created
    },
    { 
-     name: 'workspace management', 
-     icon: 'mdi-view-grid-outline', 
-     component: WorkspaceManagement
-   },
-   { 
      name: 'user management', 
      icon: 'mdi-account-group-outline', 
      component: UserManagement
    },
    { 
-     name: 'service management', 
-     icon: 'mdi-tools', 
-     component: ServiceManagement
-   },
-   { 
-     name: 'catalog management', 
-     icon: 'mdi-view-dashboard-outline', 
-     component: CatalogManagement
+     name: 'workspace management', 
+     icon: 'mdi-view-grid-outline', 
+     component: WorkspaceManagement
    }
  ]);
  
  // Get current selected category from store
- const selectedCategoryIndex = ref(appSettingsStore.getCurrentCategoryIndex);
+ const selectedCategoryIndex = ref(0); // Начальное значение
  
- // Computed property to get current active component
+ // Устанавливаем значение из хранилища при монтировании компонента
+ onMounted(() => {
+   const storeIndex = appSettingsStore.getCurrentCategoryIndex;
+   // Проверяем, что индекс корректный для нашего массива категорий
+   selectedCategoryIndex.value = Math.min(storeIndex, categories.value.length - 1);
+ });
+ 
+ // Computed property to get current active component without side effects
  const activeComponent = computed(() => {
    return categories.value[selectedCategoryIndex.value].component;
  });
@@ -90,7 +85,7 @@
  /**
   * Function to select category
   */
- const selectCategory = (index) => {
+ const selectCategory = (index: number) => {
    selectedCategoryIndex.value = index;
    appSettingsStore.setSelectedCategory(index);
    
