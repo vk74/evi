@@ -10,7 +10,7 @@
  import { useAppSettingsStore } from '@/components/admin/app/state.app.settings';
  
  // Import all setting components
- import GeneralSettings from './settings/GeneralSettings.vue';
+ import AppSettings from './settings/AppSettings.vue';
  import SecuritySettings from './settings/SecuritySettings.vue';
  import UserManagement from './settings/UserManagement.vue';
  import LoggingSettings from './settings/LoggingSettings.vue';
@@ -24,7 +24,7 @@
    { 
      name: 'application settings', 
      icon: 'mdi-cog-outline', 
-     component: GeneralSettings
+     component: AppSettings
    },
    { 
      name: 'security settings', 

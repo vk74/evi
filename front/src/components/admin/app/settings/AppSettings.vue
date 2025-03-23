@@ -1,10 +1,10 @@
 <!--
-  File: GeneralSettings.vue
+  File: AppSettings.vue
   Description: General application settings component
   Purpose: Configure basic application settings like theme, language, notifications
   
-  Enhanced with responsive design adjustments to work with parent component transitions
-  Updated: Changed border colors to grey and moved script block above template
+  Updated: Removed card containers and replaced with div sections with dividers,
+  standardized field widths, and improved section spacing for consistency with SecuritySettings
 -->
 
 <script setup lang="ts">
@@ -56,7 +56,7 @@ const checkUpdates = () => {
 </script>
 
 <template>
-  <div class="settings-container">
+  <div class="app-settings-container">
     <h2 class="text-h6 mb-4">настройки приложения</h2>
 
     <v-alert
@@ -67,39 +67,44 @@ const checkUpdates = () => {
     >
       настройки системы находится в разработке
     </v-alert>
+    
     <!-- Theme Settings -->
-    <v-card variant="outlined" class="mb-4 settings-card">
-      <v-card-title class="text-subtitle-1">
+    <div class="settings-section mb-4">
+      <div class="section-title text-subtitle-1 d-flex align-center mb-4">
         <v-icon start icon="mdi-palette-outline" class="mr-2"></v-icon>
         appearance
-      </v-card-title>
-      <v-card-text>
+      </div>
+      
+      <div class="section-content">
         <v-switch
           v-model="isDarkTheme"
           color="teal-darken-2"
-          label="dark Theme"
+          label="dark theme"
           hide-details
         ></v-switch>
         
         <v-select
           v-model="selectedThemeColor"
           :items="themeColors"
-          label="accent Color"
+          label="accent color"
           variant="outlined"
           density="comfortable"
           class="mt-4"
           color="teal-darken-2"
+          style="max-width: 200px;"
         ></v-select>
-      </v-card-text>
-    </v-card>
+      </div>
+      <v-divider class="mt-4"></v-divider>
+    </div>
     
     <!-- Language Settings -->
-    <v-card variant="outlined" class="mb-4 settings-card">
-      <v-card-title class="text-subtitle-1">
+    <div class="settings-section">
+      <div class="section-title text-subtitle-1 d-flex align-center mb-6">
         <v-icon start icon="mdi-translate" class="mr-2"></v-icon>
         language
-      </v-card-title>
-      <v-card-text>
+      </div>
+      
+      <div class="section-content">
         <v-select
           v-model="selectedLanguage"
           :items="languages"
@@ -107,47 +112,41 @@ const checkUpdates = () => {
           variant="outlined"
           density="comfortable"
           color="teal-darken-2"
+          style="max-width: 200px;"
         ></v-select>
         
         <v-switch
           v-model="useSystemLanguage"
           color="teal-darken-2"
-          label="Use system language"
+          label="use system language"
           hide-details
           class="mt-4"
         ></v-switch>
-      </v-card-text>
-    </v-card>
+      </div>
+    </div>
   </div>
 </template>
 
 <style scoped>
-/* Add subtle animations and transitions to settings cards */
-.settings-card {
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
-  border-color: rgba(0, 0, 0, 0.12) !important;
+.app-settings-container {
+  /* Base container styling */
 }
 
-.settings-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08) !important;
+.settings-section {
+  padding: 16px 0;
+  transition: background-color 0.2s ease;
 }
 
-/* Target all outlined cards in this component */
-:deep(.v-card.v-card--variant-outlined) {
-  border-color: rgba(0, 0, 0, 0.12) !important;
+.settings-section:hover {
+  background-color: rgba(0, 0, 0, 0.01);
 }
 
-/* Responsive adjustments */
-@media (max-width: 600px) {
-  .update-header {
-    flex-direction: column;
-    align-items: flex-start !important;
-  }
-  
-  .update-header button {
-    margin-top: 12px;
-    align-self: flex-start;
-  }
+.section-title {
+  font-weight: 500;
+}
+
+/* Make dividers more subtle */
+:deep(.v-divider) {
+  opacity: 0.7;
 }
 </style>

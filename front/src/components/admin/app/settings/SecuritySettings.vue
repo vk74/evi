@@ -1,25 +1,27 @@
 <!--
-  File: UserManagement.vue
-  Description: User management settings component
-  Purpose: Configure user-related settings, permissions, authentication methods
+  File: SecuritySettings.vue
+  Description: Security settings component
+  Purpose: Configure security-related settings including session management, password policies, and user registration
   
-  Updated: Moved script block above template and added scoped styles for card borders
+  Updated: Replaced card borders with dividers, converted text to lowercase, reorganized sections,
+  adjusted session management controls and modified user registration section
 -->
 
 <script setup lang="ts">
-import { ref } from 'vue';
+import { ref, computed } from 'vue';
 
-// Authentication settings
-const authMethod = ref('Email & Password');
-const authMethods = [
-  'Email & Password',
-  'OAuth 2.0',
-  'LDAP',
-  'SAML',
-  'Active Directory'
-];
-const enableMFA = ref(true);
-const singleSignOn = ref(false);
+// Session management
+const sessionDuration = ref(30);
+const concurrentSessions = ref(true);
+const maxSessionsPerUser = ref(5);
+
+// Computed property for session duration label
+const sessionDurationLabel = computed(() => {
+  if (sessionDuration.value > 540) {
+    return '∞';
+  }
+  return `${sessionDuration.value} минут`;
+});
 
 // Password policy
 const passwordMinLength = ref(8);
@@ -29,81 +31,86 @@ const requireNumbers = ref(true);
 const requireSpecialChars = ref(false);
 const passwordExpiration = ref('90 days');
 const passwordExpirationOptions = [
-  'Never',
+  'never',
   '30 days',
   '60 days',
   '90 days',
   '180 days',
   '1 year'
 ];
+const forcePasswordChangeAfterExpiration = ref(true);
 
-// Registration settings
-const registrationType = ref('Self-registration');
-const registrationTypes = [
-  'Self-registration',
-  'Invitation only',
-  'Admin-created accounts only'
-];
+// User registration settings
+const allowSelfRegistration = ref(true);
 const emailVerification = ref(true);
 const adminApproval = ref(false);
-const defaultUserRole = ref('User');
-
-// Session management
-const sessionTimeout = ref(30);
-const rememberMe = ref(true);
-const concurrentSessions = ref(true);
-const maxSessionsPerUser = ref(5);
 </script>
 
 <template>
-  <div class="user-management-container">
+  <div class="security-settings-container">
     <h2 class="text-h6 mb-4">настройки безопасности</h2>
-    <!-- User Authentication -->
-    <v-card variant="outlined" class="mb-4">
-      <v-card-title class="text-subtitle-1">
-        <v-icon start icon="mdi-lock-outline" class="mr-2"></v-icon>
-        Authentication
-      </v-card-title>
-      <v-card-text>
-        <v-select
-          v-model="authMethod"
-          :items="authMethods"
-          label="Default Authentication Method"
-          variant="outlined"
-          density="comfortable"
+    
+    <!-- Session Management -->
+    <div class="settings-section mb-4">
+      <div class="section-title text-subtitle-1 d-flex align-center mb-4">
+        <v-icon start icon="mdi-account-clock-outline" class="mr-2"></v-icon>
+        session management
+      </div>
+      
+      <div class="section-content">
+        <v-slider
+          v-model="sessionDuration"
+          :label="`session duration: ${sessionDurationLabel}`"
+          min="1"
+          max="541"
+          step="1"
+          thumb-label
+          class="mb-4"
           color="teal-darken-2"
-        ></v-select>
+        >
+          <template v-slot:thumb-label>
+            {{ sessionDuration > 540 ? '∞' : sessionDuration }}
+          </template>
+        </v-slider>
         
         <v-switch
-          v-model="enableMFA"
+          v-model="concurrentSessions"
           color="teal-darken-2"
-          label="Require Multi-Factor Authentication"
+          label="allow concurrent sessions"
           hide-details
-          class="mt-4"
+          class="mb-2"
         ></v-switch>
         
-        <v-switch
-          v-model="singleSignOn"
-          color="teal-darken-2"
-          label="Enable Single Sign-On (SSO)"
-          hide-details
-          class="mt-2"
-        ></v-switch>
-      </v-card-text>
-    </v-card>
+        <div class="d-flex align-center">
+          <v-text-field
+            v-model="maxSessionsPerUser"
+            label="maximum sessions per user"
+            type="number"
+            variant="outlined"
+            density="comfortable"
+            class="mt-4"
+            color="teal-darken-2"
+            :disabled="!concurrentSessions"
+            style="max-width: 200px;"
+          ></v-text-field>
+        </div>
+      </div>
+      <v-divider class="mt-4"></v-divider>
+    </div>
     
     <!-- Password Policy -->
-    <v-card variant="outlined" class="mb-4">
-      <v-card-title class="text-subtitle-1">
+    <div class="settings-section mb-4">
+      <div class="section-title text-subtitle-1 d-flex align-center mb-4">
         <v-icon start icon="mdi-form-textbox-password" class="mr-2"></v-icon>
-        Password Policy
-      </v-card-title>
-      <v-card-text>
+        password policy
+      </div>
+      
+      <div class="section-content">
         <v-slider
           v-model="passwordMinLength"
-          label="Minimum Password Length"
-          min="6"
-          max="16"
+          :label="`minimum password length: ${passwordMinLength}`"
+          min="8"
+          max="24"
           step="1"
           thumb-label
           class="mb-4"
@@ -113,7 +120,7 @@ const maxSessionsPerUser = ref(5);
         <v-switch
           v-model="requireLowercase"
           color="teal-darken-2"
-          label="Require lowercase letters"
+          label="require lowercase letters"
           hide-details
           class="mb-2"
         ></v-switch>
@@ -121,7 +128,7 @@ const maxSessionsPerUser = ref(5);
         <v-switch
           v-model="requireUppercase"
           color="teal-darken-2"
-          label="Require uppercase letters"
+          label="require uppercase letters"
           hide-details
           class="mb-2"
         ></v-switch>
@@ -129,7 +136,7 @@ const maxSessionsPerUser = ref(5);
         <v-switch
           v-model="requireNumbers"
           color="teal-darken-2"
-          label="Require numbers"
+          label="require numbers"
           hide-details
           class="mb-2"
         ></v-switch>
@@ -137,7 +144,7 @@ const maxSessionsPerUser = ref(5);
         <v-switch
           v-model="requireSpecialChars"
           color="teal-darken-2"
-          label="Require special characters"
+          label="require special characters"
           hide-details
           class="mb-2"
         ></v-switch>
@@ -145,120 +152,90 @@ const maxSessionsPerUser = ref(5);
         <v-select
           v-model="passwordExpiration"
           :items="passwordExpirationOptions"
-          label="Password Expiration"
+          label="password expiration"
           variant="outlined"
           density="comfortable"
           class="mt-4"
           color="teal-darken-2"
+          style="max-width: 200px;"
         ></v-select>
-      </v-card-text>
-    </v-card>
+        
+        <div class="d-flex align-start mt-4">
+          <v-switch
+            v-model="forcePasswordChangeAfterExpiration"
+            color="teal-darken-2"
+            label="force user to change password after expiration"
+            hide-details
+            :disabled="passwordExpiration === 'never'"
+          ></v-switch>
+          <span class="text-caption text-grey ml-2 mt-2">функция в разработке</span>
+        </div>
+      </div>
+      <v-divider class="mt-4"></v-divider>
+    </div>
     
     <!-- User Registration -->
-    <v-card variant="outlined" class="mb-4">
-      <v-card-title class="text-subtitle-1">
+    <div class="settings-section">
+      <div class="section-title text-subtitle-1 d-flex align-center mb-4">
         <v-icon start icon="mdi-account-plus-outline" class="mr-2"></v-icon>
-        User Registration
-      </v-card-title>
-      <v-card-text>
-        <v-select
-          v-model="registrationType"
-          :items="registrationTypes"
-          label="Registration Type"
-          variant="outlined"
-          density="comfortable"
-          color="teal-darken-2"
-        ></v-select>
-        
+        user registration
+      </div>
+      
+      <div class="section-content">
         <v-switch
-          v-model="emailVerification"
+          v-model="allowSelfRegistration"
           color="teal-darken-2"
-          label="Require email verification"
+          label="allow users self-registration"
           hide-details
-          class="mt-4"
-        ></v-switch>
-        
-        <v-switch
-          v-model="adminApproval"
-          color="teal-darken-2"
-          label="Require admin approval"
-          hide-details
-          class="mt-2"
-        ></v-switch>
-        
-        <v-text-field
-          v-model="defaultUserRole"
-          label="Default User Role"
-          variant="outlined"
-          density="comfortable"
-          class="mt-4"
-          color="teal-darken-2"
-        ></v-text-field>
-      </v-card-text>
-    </v-card>
-    
-    <!-- Session Management -->
-    <v-card variant="outlined">
-      <v-card-title class="text-subtitle-1">
-        <v-icon start icon="mdi-account-clock-outline" class="mr-2"></v-icon>
-        Session Management
-      </v-card-title>
-      <v-card-text>
-        <v-slider
-          v-model="sessionTimeout"
-          label="Session Timeout (minutes)"
-          min="5"
-          max="240"
-          step="5"
-          thumb-label
           class="mb-4"
-          color="teal-darken-2"
-        ></v-slider>
-        
-        <v-switch
-          v-model="rememberMe"
-          color="teal-darken-2"
-          label="Allow 'Remember Me' option"
-          hide-details
-          class="mb-2"
         ></v-switch>
         
-        <v-switch
-          v-model="concurrentSessions"
-          color="teal-darken-2"
-          label="Allow concurrent sessions"
-          hide-details
-          class="mb-2"
-        ></v-switch>
+        <div class="d-flex align-start">
+          <v-switch
+            v-model="emailVerification"
+            color="teal-darken-2"
+            label="require e-mail verification"
+            hide-details
+            class="mb-2"
+          ></v-switch>
+          <span class="text-caption text-grey ml-2 mt-2">функция в разработке</span>
+        </div>
         
-        <v-text-field
-          v-model="maxSessionsPerUser"
-          label="Maximum Sessions per User"
-          type="number"
-          variant="outlined"
-          density="comfortable"
-          class="mt-4"
-          color="teal-darken-2"
-          :disabled="!concurrentSessions"
-        ></v-text-field>
-      </v-card-text>
-    </v-card>
+        <div class="d-flex align-start">
+          <v-switch
+            v-model="adminApproval"
+            color="teal-darken-2"
+            label="require admin approval"
+            hide-details
+            class="mb-2"
+          ></v-switch>
+          <span class="text-caption text-grey ml-2 mt-2">функция в разработке</span>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
 <style scoped>
-/* Target only the cards within this component */
-:deep(.v-card.v-card--variant-outlined) {
-  border-color: rgba(0, 0, 0, 0.12) !important;
+.security-settings-container {
+  /* Maintain the container styling */
 }
 
-/* Add subtle hover effect to cards in this component */
-.user-management-container .v-card {
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
+.settings-section {
+  padding: 16px 0;
+  transition: background-color 0.2s ease;
 }
 
-.user-management-container .v-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08) !important;
+.settings-section:hover {
+  background-color: rgba(0, 0, 0, 0.01);
+}
+
+.section-title {
+  font-weight: 500;
+}
+
+/* Make dividers more subtle */
+:deep(.v-divider) {
+  opacity: 0.7;
 }
 </style>

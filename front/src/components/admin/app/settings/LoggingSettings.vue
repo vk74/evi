@@ -2,7 +2,9 @@
   File: LoggingSettings.vue
   Description: Logging configuration settings component
   Purpose: Configure application logging based on backend logger parameters
-  Author: Updated to match real backend logger configuration with separate transport settings
+  
+  Updated: Replaced card containers with div sections and dividers,
+  standardized color scheme to teal-darken-2, and improved spacing for consistency
 -->
 
 <script setup lang="ts">
@@ -118,24 +120,26 @@ const logLevels = ['DEBUG', 'INFO', 'WARN', 'ERROR', 'FATAL'];
 </script>
 
 <template>
-  <div class="settings-section logging-settings">
+  <div class="logging-settings-container">
     <h2 class="text-h6 mb-4">настройки логирования</h2>
     
     <!-- Core Settings -->
-    <v-card variant="outlined" class="mb-4">
-      <v-card-title class="text-subtitle-1 mb-4">
+    <div class="settings-section mb-4">
+      <div class="section-title text-subtitle-1 d-flex align-center mb-4">
         <v-icon start icon="mdi-tune" class="mr-2"></v-icon>
         основные настройки
-      </v-card-title>
-      <v-card-text>
+      </div>
+      
+      <div class="section-content">
         <v-row>
           <v-col cols="12" md="6">
             <v-text-field
               v-model="appName"
-              label="Название приложения"
+              label="название приложения"
               variant="outlined"
               density="comfortable"
               hint="идентификатор приложения в системах сбора логов"
+              color="teal-darken-2"
             ></v-text-field>
           </v-col>
           
@@ -146,23 +150,25 @@ const logLevels = ['DEBUG', 'INFO', 'WARN', 'ERROR', 'FATAL'];
               label="формат временной метки"
               variant="outlined"
               density="comfortable"
+              color="teal-darken-2"
             ></v-select>
           </v-col>
         </v-row>
-      </v-card-text>
-    </v-card>
+      </div>
+      <v-divider class="mt-4"></v-divider>
+    </div>
     
     <!-- Console Transport Settings -->
-    <v-card variant="outlined" class="mb-4">
-      <v-card-title class="text-subtitle-1 mb-4">
+    <div class="settings-section mb-4">
+      <div class="section-title text-subtitle-1 d-flex align-center mb-4">
         <v-icon start icon="mdi-console" class="mr-2"></v-icon>
         вывод журналов событий в консоль node.js
-      </v-card-title>
+      </div>
       
-      <v-card-text>
+      <div class="section-content">
         <v-switch
           v-model="consoleTransport.enabled"
-          color="primary"
+          color="teal-darken-2"
           label="включить логирование в консоль"
           hide-details
           class="mb-4"
@@ -178,6 +184,8 @@ const logLevels = ['DEBUG', 'INFO', 'WARN', 'ERROR', 'FATAL'];
               variant="outlined"
               density="comfortable"
               class="mb-4"
+              color="teal-darken-2"
+              style="max-width: 200px;"
             ></v-select>
             
             <!-- Console Operation Types Settings -->
@@ -190,7 +198,7 @@ const logLevels = ['DEBUG', 'INFO', 'WARN', 'ERROR', 'FATAL'];
                   :key="opType"
                 >
                   <template v-slot:prepend>
-                    <v-icon :icon="operationTypesMetadata[opType].icon" class="me-3"></v-icon>
+                    <v-icon :icon="operationTypesMetadata[opType].icon" class="me-3" color="teal-darken-2"></v-icon>
                   </template>
                   
                   <template v-slot:title>
@@ -209,6 +217,7 @@ const logLevels = ['DEBUG', 'INFO', 'WARN', 'ERROR', 'FATAL'];
                       density="compact"
                       hide-details
                       class="max-width-select"
+                      color="teal-darken-2"
                     ></v-select>
                   </template>
                 </v-list-item>
@@ -223,8 +232,8 @@ const logLevels = ['DEBUG', 'INFO', 'WARN', 'ERROR', 'FATAL'];
                 <v-col cols="12" sm="6" md="3">
                   <v-checkbox
                     v-model="consoleTransport.context.includeModule"
-                    label="Название модуля"
-                    color="primary"
+                    label="название модуля"
+                    color="teal-darken-2"
                     hide-details
                   ></v-checkbox>
                 </v-col>
@@ -233,7 +242,7 @@ const logLevels = ['DEBUG', 'INFO', 'WARN', 'ERROR', 'FATAL'];
                   <v-checkbox
                     v-model="consoleTransport.context.includeFileName"
                     label="имя файла источника"
-                    color="primary"
+                    color="teal-darken-2"
                     hide-details
                   ></v-checkbox>
                 </v-col>
@@ -242,7 +251,7 @@ const logLevels = ['DEBUG', 'INFO', 'WARN', 'ERROR', 'FATAL'];
                   <v-checkbox
                     v-model="consoleTransport.context.includeOperationType"
                     label="тип операции"
-                    color="primary"
+                    color="teal-darken-2"
                     hide-details
                   ></v-checkbox>
                 </v-col>
@@ -250,8 +259,8 @@ const logLevels = ['DEBUG', 'INFO', 'WARN', 'ERROR', 'FATAL'];
                 <v-col cols="12" sm="6" md="3">
                   <v-checkbox
                     v-model="consoleTransport.context.includeUserId"
-                    label="ID пользователя"
-                    color="primary"
+                    label="id пользователя"
+                    color="teal-darken-2"
                     hide-details
                   ></v-checkbox>
                 </v-col>
@@ -259,20 +268,21 @@ const logLevels = ['DEBUG', 'INFO', 'WARN', 'ERROR', 'FATAL'];
             </div>
           </div>
         </v-expand-transition>
-      </v-card-text>
-    </v-card>
+      </div>
+      <v-divider class="mt-4"></v-divider>
+    </div>
     
     <!-- File Transport Settings -->
-    <v-card variant="outlined" class="mb-4">
-      <v-card-title class="text-subtitle-1 mb-4">
+    <div class="settings-section mb-4">
+      <div class="section-title text-subtitle-1 d-flex align-center mb-4">
         <v-icon start icon="mdi-file-outline" class="mr-2"></v-icon>
         логирование в файловую систему
-      </v-card-title>
+      </div>
       
-      <v-card-text>
+      <div class="section-content">
         <v-switch
           v-model="fileTransport.enabled"
-          color="primary"
+          color="teal-darken-2"
           label="включить логирование в файловую систему"
           hide-details
           class="mb-2"
@@ -283,6 +293,7 @@ const logLevels = ['DEBUG', 'INFO', 'WARN', 'ERROR', 'FATAL'];
           variant="tonal"
           density="compact"
           class="mb-4 mt-2"
+          color="teal-darken-2"
         >
           запись журналов событий в файловую систему находится в разработке
         </v-alert>
@@ -299,7 +310,7 @@ const logLevels = ['DEBUG', 'INFO', 'WARN', 'ERROR', 'FATAL'];
                   :key="opType"
                 >
                   <template v-slot:prepend>
-                    <v-icon :icon="operationTypesMetadata[opType].icon" class="me-3"></v-icon>
+                    <v-icon :icon="operationTypesMetadata[opType].icon" class="me-3" color="teal-darken-2"></v-icon>
                   </template>
                   
                   <template v-slot:title>
@@ -318,6 +329,7 @@ const logLevels = ['DEBUG', 'INFO', 'WARN', 'ERROR', 'FATAL'];
                       density="compact"
                       hide-details
                       class="max-width-select"
+                      color="teal-darken-2"
                     ></v-select>
                   </template>
                 </v-list-item>
@@ -336,6 +348,7 @@ const logLevels = ['DEBUG', 'INFO', 'WARN', 'ERROR', 'FATAL'];
                     variant="outlined"
                     density="comfortable"
                     placeholder="/var/log/app/"
+                    color="teal-darken-2"
                   ></v-text-field>
                 </v-col>
                 
@@ -346,13 +359,14 @@ const logLevels = ['DEBUG', 'INFO', 'WARN', 'ERROR', 'FATAL'];
                     variant="outlined"
                     density="comfortable"
                     placeholder="app-log-"
+                    color="teal-darken-2"
                   ></v-text-field>
                 </v-col>
               </v-row>
               
               <v-switch
                 v-model="fileTransport.dailyRotation"
-                color="primary"
+                color="teal-darken-2"
                 label="ежедневная ротация логов"
                 hide-details
                 class="mb-4 mt-2"
@@ -363,10 +377,11 @@ const logLevels = ['DEBUG', 'INFO', 'WARN', 'ERROR', 'FATAL'];
             <div class="mb-4">
               <span class="text-subtitle-2 mb-2 d-block">политика хранения</span>
               
-              <v-radio-group v-model="fileTransport.retentionType">
+              <v-radio-group v-model="fileTransport.retentionType" color="teal-darken-2">
                 <v-radio
                   label="хранить логи определенный период времени"
                   value="time"
+                  color="teal-darken-2"
                 ></v-radio>
                 
                 <v-select
@@ -377,53 +392,61 @@ const logLevels = ['DEBUG', 'INFO', 'WARN', 'ERROR', 'FATAL'];
                   density="comfortable"
                   class="ms-4 mt-2"
                   :disabled="fileTransport.retentionType !== 'time'"
+                  color="teal-darken-2"
+                  style="max-width: 200px;"
                 ></v-select>
                 
                 <v-radio
-                  label="Хранить определенное количество файлов логов"
+                  label="хранить определенное количество файлов логов"
                   value="count"
                   class="mt-4"
+                  color="teal-darken-2"
                 ></v-radio>
                 
                 <v-text-field
                   v-model="fileTransport.maxLogFiles"
-                  label="Максимальное количество файлов"
+                  label="максимальное количество файлов"
                   type="number"
                   variant="outlined"
                   density="comfortable"
                   class="ms-4 mt-2"
                   :disabled="fileTransport.retentionType !== 'count'"
+                  color="teal-darken-2"
+                  style="max-width: 200px;"
                 ></v-text-field>
                 
                 <v-radio
-                  label="Хранить логи до достижения лимита размера"
+                  label="хранить логи до достижения лимита размера"
                   value="size"
                   class="mt-4"
+                  color="teal-darken-2"
                 ></v-radio>
                 
                 <v-text-field
                   v-model="fileTransport.maxLogSize"
-                  label="Максимальный общий размер (МБ)"
+                  label="максимальный общий размер (МБ)"
                   type="number"
                   variant="outlined"
                   density="comfortable"
                   class="ms-4 mt-2"
                   :disabled="fileTransport.retentionType !== 'size'"
+                  color="teal-darken-2"
+                  style="max-width: 200px;"
                 ></v-text-field>
               </v-radio-group>
               
               <v-switch
                 v-model="fileTransport.compressOldLogs"
-                color="primary"
-                label="Сжимать старые логи"
+                color="teal-darken-2"
+                label="сжимать старые логи"
                 hide-details
                 class="mt-4"
               ></v-switch>
               
               <v-switch
                 v-model="fileTransport.archiveLogsBeforeDelete"
-                color="primary"
-                label="Архивировать логи перед удалением"
+                color="teal-darken-2"
+                label="архивировать логи перед удалением"
                 hide-details
                 class="mt-2"
               ></v-switch>
@@ -437,8 +460,8 @@ const logLevels = ['DEBUG', 'INFO', 'WARN', 'ERROR', 'FATAL'];
                 <v-col cols="12" sm="6" md="3">
                   <v-checkbox
                     v-model="fileTransport.context.includeModule"
-                    label="Название модуля"
-                    color="primary"
+                    label="название модуля"
+                    color="teal-darken-2"
                     hide-details
                   ></v-checkbox>
                 </v-col>
@@ -446,8 +469,8 @@ const logLevels = ['DEBUG', 'INFO', 'WARN', 'ERROR', 'FATAL'];
                 <v-col cols="12" sm="6" md="3">
                   <v-checkbox
                     v-model="fileTransport.context.includeFileName"
-                    label="Имя файла источника"
-                    color="primary"
+                    label="имя файла источника"
+                    color="teal-darken-2"
                     hide-details
                   ></v-checkbox>
                 </v-col>
@@ -455,8 +478,8 @@ const logLevels = ['DEBUG', 'INFO', 'WARN', 'ERROR', 'FATAL'];
                 <v-col cols="12" sm="6" md="3">
                   <v-checkbox
                     v-model="fileTransport.context.includeOperationType"
-                    label="Тип операции"
-                    color="primary"
+                    label="тип операции"
+                    color="teal-darken-2"
                     hide-details
                   ></v-checkbox>
                 </v-col>
@@ -464,8 +487,8 @@ const logLevels = ['DEBUG', 'INFO', 'WARN', 'ERROR', 'FATAL'];
                 <v-col cols="12" sm="6" md="3">
                   <v-checkbox
                     v-model="fileTransport.context.includeUserId"
-                    label="ID пользователя"
-                    color="primary"
+                    label="id пользователя"
+                    color="teal-darken-2"
                     hide-details
                   ></v-checkbox>
                 </v-col>
@@ -473,16 +496,18 @@ const logLevels = ['DEBUG', 'INFO', 'WARN', 'ERROR', 'FATAL'];
             </div>
           </div>
         </v-expand-transition>
-      </v-card-text>
-    </v-card>
+      </div>
+      <v-divider class="mt-4"></v-divider>
+    </div>
     
     <!-- Event Codes Examples -->
-    <v-card variant="outlined">
-      <v-card-title class="text-subtitle-1 mb-4">
+    <div class="settings-section">
+      <div class="section-title text-subtitle-1 d-flex align-center mb-4">
         <v-icon start icon="mdi-barcode" class="mr-2"></v-icon>
         примеры кодов событий
-      </v-card-title>
-      <v-card-text>
+      </div>
+      
+      <div class="section-content">
         <p class="text-body-2 mb-2">
           коды событий используются для идентификации определенных действий в системе.
           формат: <code>MODULE:SUBMODULE:FUNCTION:OPERATION:NUMBER</code>
@@ -494,31 +519,59 @@ const logLevels = ['DEBUG', 'INFO', 'WARN', 'ERROR', 'FATAL'];
             :key="index"
             :title="code"
             prepend-icon="mdi-code-tags"
-          ></v-list-item>
+            class="event-code-item"
+          >
+            <template v-slot:prepend>
+              <v-icon icon="mdi-code-tags" color="teal-darken-2"></v-icon>
+            </template>
+          </v-list-item>
         </v-list>
-      </v-card-text>
-    </v-card>
+      </div>
+    </div>
   </div>
 </template>
 
 <style scoped>
-/* Target cards in this component for grey borders */
-:deep(.v-card.v-card--variant-outlined) {
-  border-color: rgba(0, 0, 0, 0.12) !important;
+.logging-settings-container {
+  /* Base container styling */
 }
 
-/* Add subtle hover effect to cards */
-.logging-settings .v-card {
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
+.settings-section {
+  padding: 16px 0;
+  transition: background-color 0.2s ease;
 }
 
-.logging-settings .v-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08) !important;
+.settings-section:hover {
+  background-color: rgba(0, 0, 0, 0.01);
+}
+
+.section-title {
+  font-weight: 500;
+}
+
+/* Make dividers more subtle */
+:deep(.v-divider) {
+  opacity: 0.7;
 }
 
 /* Adjust spacing for selects in list items */
 .max-width-select {
   max-width: 120px;
+}
+
+/* Style list items */
+:deep(.v-list-item:hover) {
+  background-color: rgba(0, 0, 0, 0.03);
+}
+
+/* Ensure all text fields have consistent width */
+.logging-settings-container :deep(.v-text-field.v-input) {
+  max-width: 100%;
+}
+
+/* Style the event code list items */
+.event-code-item {
+  border-radius: 4px;
+  transition: background-color 0.2s ease;
 }
 </style>

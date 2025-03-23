@@ -3,7 +3,8 @@
   Description: Workspace management settings component
   Purpose: Configure workspace-related settings, layouts, and collaboration features
   
-  Updated: Removed card borders and added dividers between sections
+  Updated: Replaced card containers with div sections and dividers,
+  standardized color scheme to teal-darken-2, and improved section spacing for consistency
 -->
 
 <script setup lang="ts">
@@ -143,22 +144,34 @@ const revisionRetentionOptions = [
 </script>
 
 <template>
-  <div class="settings-section workspace-management">
-    <h2 class="text-h6 mb-4">Workspace Management</h2>
+  <div class="workspace-management-container">
+    <h2 class="text-h6 mb-4">workspace management</h2>
     
+    <v-alert
+      type="info"
+      variant="tonal"
+      density="compact"
+      class="mb-4 mt-2"
+    >
+      компонент находится в разработке
+    </v-alert>
+
     <!-- Workspace Appearance -->
-    <v-card class="mb-4 pa-4 section-card" elevation="0">
-      <v-card-title class="text-subtitle-1 px-0">
+    <div class="settings-section mb-4">
+      <div class="section-title text-subtitle-1 d-flex align-center mb-4">
         <v-icon start icon="mdi-palette-outline" class="mr-2"></v-icon>
-        Workspace Appearance
-      </v-card-title>
-      <v-card-text class="px-0">
+        workspace appearance
+      </div>
+      
+      <div class="section-content">
         <v-select
           v-model="workspaceLayout"
           :items="layoutOptions"
-          label="Default Layout"
+          label="default layout"
           variant="outlined"
           density="comfortable"
+          color="teal-darken-2"
+          style="max-width: 200px;"
         ></v-select>
         
         <v-row class="mt-4">
@@ -166,9 +179,10 @@ const revisionRetentionOptions = [
             <v-select
               v-model="sidebarPosition"
               :items="positionOptions"
-              label="Sidebar Position"
+              label="sidebar position"
               variant="outlined"
               density="comfortable"
+              color="teal-darken-2"
             ></v-select>
           </v-col>
           
@@ -176,61 +190,64 @@ const revisionRetentionOptions = [
             <v-select
               v-model="defaultPanel"
               :items="panelOptions"
-              label="Default Panel"
+              label="default panel"
               variant="outlined"
               density="comfortable"
+              color="teal-darken-2"
             ></v-select>
           </v-col>
         </v-row>
         
         <v-checkbox
           v-model="compactMode"
-          label="Compact mode"
-          color="primary"
+          label="compact mode"
+          color="teal-darken-2"
           hide-details
           class="mt-4"
         ></v-checkbox>
         
         <v-checkbox
           v-model="rememberLayout"
-          label="Remember user layout preferences"
-          color="primary"
+          label="remember user layout preferences"
+          color="teal-darken-2"
           hide-details
           class="mt-2"
         ></v-checkbox>
-      </v-card-text>
+      </div>
       <v-divider class="mt-4"></v-divider>
-    </v-card>
+    </div>
     
     <!-- Collaboration -->
-    <v-card class="mb-4 pa-4 section-card" elevation="0">
-      <v-card-title class="text-subtitle-1 px-0">
+    <div class="settings-section mb-4">
+      <div class="section-title text-subtitle-1 d-flex align-center mb-4">
         <v-icon start icon="mdi-account-group-outline" class="mr-2"></v-icon>
-        Collaboration
-      </v-card-title>
-      <v-card-text class="px-0">
+        collaboration
+      </div>
+      
+      <div class="section-content">
         <v-switch
           v-model="enableCollaboration"
-          color="primary"
-          label="Enable workspace collaboration"
+          color="teal-darken-2"
+          label="enable workspace collaboration"
           hide-details
         ></v-switch>
         
         <v-slider
           v-model="maxCollaborators"
-          label="Maximum collaborators per workspace"
+          label="maximum collaborators per workspace"
           min="1"
           max="50"
           step="1"
           thumb-label
           class="mt-4"
           :disabled="!enableCollaboration"
+          color="teal-darken-2"
         ></v-slider>
         
         <v-switch
           v-model="showUserCursors"
-          color="primary"
-          label="Show user cursors in real-time"
+          color="teal-darken-2"
+          label="show user cursors in real-time"
           hide-details
           class="mt-4"
           :disabled="!enableCollaboration"
@@ -238,8 +255,8 @@ const revisionRetentionOptions = [
         
         <v-switch
           v-model="showEditHistory"
-          color="primary"
-          label="Show edit history"
+          color="teal-darken-2"
+          label="show edit history"
           hide-details
           class="mt-2"
           :disabled="!enableCollaboration"
@@ -248,32 +265,35 @@ const revisionRetentionOptions = [
         <v-select
           v-model="conflictResolution"
           :items="conflictOptions"
-          label="Conflict Resolution Strategy"
+          label="conflict resolution strategy"
           variant="outlined"
           density="comfortable"
           class="mt-4"
           :disabled="!enableCollaboration"
+          color="teal-darken-2"
+          style="max-width: 200px;"
         ></v-select>
-      </v-card-text>
+      </div>
       <v-divider class="mt-4"></v-divider>
-    </v-card>
+    </div>
     
     <!-- Workspace Templates -->
-    <v-card class="mb-4 pa-4 section-card" elevation="0">
-      <v-card-title class="d-flex align-center text-subtitle-1 px-0">
+    <div class="settings-section mb-4">
+      <div class="section-title d-flex align-center text-subtitle-1 mb-4">
         <v-icon start icon="mdi-checkbox-multiple-blank-outline" class="mr-2"></v-icon>
-        Workspace Templates
+        workspace templates
         <v-spacer></v-spacer>
         <v-btn
           size="small"
-          color="primary"
+          color="teal-darken-2"
           variant="text"
           prepend-icon="mdi-plus"
         >
-          Add
+          add
         </v-btn>
-      </v-card-title>
-      <v-card-text class="px-0">
+      </div>
+      
+      <div class="section-content">
         <v-list select-strategy="single-select" class="pa-0 bg-transparent">
           <v-list-item
             v-for="template in workspaceTemplates"
@@ -284,7 +304,7 @@ const revisionRetentionOptions = [
             class="mb-1"
           >
             <template v-slot:prepend>
-              <v-icon :icon="template.icon" class="me-3" color="primary"></v-icon>
+              <v-icon :icon="template.icon" class="me-3" color="teal-darken-2"></v-icon>
             </template>
             
             <template v-slot:title>
@@ -298,13 +318,14 @@ const revisionRetentionOptions = [
                     icon="mdi-dots-vertical"
                     variant="text"
                     v-bind="props"
+                    color="teal-darken-2"
                   ></v-btn>
                 </template>
                 <v-list density="compact">
-                  <v-list-item title="Edit"></v-list-item>
-                  <v-list-item title="Duplicate"></v-list-item>
-                  <v-list-item title="Delete"></v-list-item>
-                  <v-list-item title="Set as default"></v-list-item>
+                  <v-list-item title="edit"></v-list-item>
+                  <v-list-item title="duplicate"></v-list-item>
+                  <v-list-item title="delete"></v-list-item>
+                  <v-list-item title="set as default"></v-list-item>
                 </v-list>
               </v-menu>
             </template>
@@ -313,24 +334,25 @@ const revisionRetentionOptions = [
         
         <v-switch
           v-model="showTemplateSelection"
-          color="primary"
-          label="Show template selection on workspace creation"
+          color="teal-darken-2"
+          label="show template selection on workspace creation"
           hide-details
           class="mt-4"
         ></v-switch>
-      </v-card-text>
+      </div>
       <v-divider class="mt-4"></v-divider>
-    </v-card>
+    </div>
     
     <!-- Widgets & Modules -->
-    <v-card class="mb-4 pa-4 section-card" elevation="0">
-      <v-card-title class="text-subtitle-1 px-0">
+    <div class="settings-section mb-4">
+      <div class="section-title text-subtitle-1 d-flex align-center mb-4">
         <v-icon start icon="mdi-view-dashboard-outline" class="mr-2"></v-icon>
-        Widgets & Modules
-      </v-card-title>
-      <v-card-text class="px-0">
+        widgets & modules
+      </div>
+      
+      <div class="section-content">
         <v-list class="pa-0 bg-transparent">
-          <v-list-subheader class="pl-0">Available Widgets</v-list-subheader>
+          <v-list-subheader class="pl-0 text-lowercase">available widgets</v-list-subheader>
           
           <v-list-item
             v-for="widget in availableWidgets"
@@ -339,7 +361,7 @@ const revisionRetentionOptions = [
             class="mb-1"
           >
             <template v-slot:prepend>
-              <v-icon :icon="widget.icon" class="me-3"></v-icon>
+              <v-icon :icon="widget.icon" class="me-3" color="teal-darken-2"></v-icon>
             </template>
             
             <template v-slot:title>
@@ -349,7 +371,7 @@ const revisionRetentionOptions = [
             <template v-slot:append>
               <v-switch
                 v-model="widget.enabled"
-                color="primary"
+                color="teal-darken-2"
                 hide-details
               ></v-switch>
             </template>
@@ -359,15 +381,15 @@ const revisionRetentionOptions = [
         <v-divider class="my-4"></v-divider>
         
         <div class="d-flex align-center mb-4">
-          <div class="text-subtitle-2">Default Dashboard Widgets</div>
+          <div class="text-subtitle-2 text-lowercase">default dashboard widgets</div>
           <v-spacer></v-spacer>
           <v-btn
             size="small"
-            color="primary"
+            color="teal-darken-2"
             variant="text"
             prepend-icon="mdi-cog-outline"
           >
-            Configure
+            configure
           </v-btn>
         </div>
         
@@ -376,35 +398,39 @@ const revisionRetentionOptions = [
             v-for="widget in defaultWidgets"
             :key="widget.id"
             closable
+            color="teal-darken-2"
+            variant="outlined"
           >
             <v-icon start :icon="widget.icon"></v-icon>
             {{ widget.name }}
           </v-chip>
         </v-chip-group>
-      </v-card-text>
+      </div>
       <v-divider class="mt-4"></v-divider>
-    </v-card>
+    </div>
     
     <!-- Data & Storage -->
-    <v-card class="mb-4 pa-4 section-card" elevation="0">
-      <v-card-title class="text-subtitle-1 px-0">
+    <div class="settings-section">
+      <div class="section-title text-subtitle-1 d-flex align-center mb-4">
         <v-icon start icon="mdi-database-outline" class="mr-2"></v-icon>
-        Data & Storage
-      </v-card-title>
-      <v-card-text class="px-0">
+        data & storage
+      </div>
+      
+      <div class="section-content">
         <v-slider
           v-model="storageQuota"
-          label="Storage Quota per Workspace (GB)"
+          :label="`storage quota per workspace: ${storageQuota} gb`"
           min="1"
           max="100"
           step="1"
           thumb-label
+          color="teal-darken-2"
         ></v-slider>
         
         <div class="d-flex justify-space-between mb-4 mt-4">
           <div>
-            <div class="text-body-1">Auto-Save Frequency</div>
-            <div class="text-caption text-medium-emphasis">How often to automatically save workspace changes</div>
+            <div class="text-body-1">auto-save frequency</div>
+            <div class="text-caption text-medium-emphasis">how often to automatically save workspace changes</div>
           </div>
           <v-select
             v-model="autoSaveInterval"
@@ -413,13 +439,14 @@ const revisionRetentionOptions = [
             density="compact"
             hide-details
             class="max-width-select"
+            color="teal-darken-2"
           ></v-select>
         </div>
         
         <v-switch
           v-model="keepRevisionHistory"
-          color="primary"
-          label="Keep revision history"
+          color="teal-darken-2"
+          label="keep revision history"
           hide-details
           class="mt-4"
         ></v-switch>
@@ -427,11 +454,13 @@ const revisionRetentionOptions = [
         <v-select
           v-model="revisionRetention"
           :items="revisionRetentionOptions"
-          label="Revision History Retention"
+          label="revision history retention"
           variant="outlined"
           density="comfortable"
           class="mt-4"
           :disabled="!keepRevisionHistory"
+          color="teal-darken-2"
+          style="max-width: 200px;"
         ></v-select>
         
         <v-btn
@@ -441,28 +470,34 @@ const revisionRetentionOptions = [
           prepend-icon="mdi-delete-outline"
           class="mt-6"
         >
-          Clear All Workspace Cache
+          clear all workspace cache
         </v-btn>
-      </v-card-text>
-      <v-divider class="mt-4"></v-divider>
-    </v-card>
+      </div>
+    </div>
   </div>
 </template>
 
 <style scoped>
-/* Styling for section cards */
-.section-card {
-  background-color: transparent !important;
+.workspace-management-container {
+  /* Base container styling */
+}
+
+.settings-section {
+  padding: 16px 0;
   transition: background-color 0.2s ease;
 }
 
-.section-card:hover {
-  background-color: rgba(0, 0, 0, 0.02) !important;
+.settings-section:hover {
+  background-color: rgba(0, 0, 0, 0.01);
 }
 
-/* Remove default padding from v-card */
-.section-card :deep(.v-card-text) {
-  padding-bottom: 0;
+.section-title {
+  font-weight: 500;
+}
+
+/* Make dividers more subtle */
+:deep(.v-divider) {
+  opacity: 0.7;
 }
 
 /* Width constraint for select inputs in flex layouts */
@@ -473,10 +508,5 @@ const revisionRetentionOptions = [
 /* Make v-list items more distinct when hovered */
 :deep(.v-list-item:hover) {
   background-color: rgba(0, 0, 0, 0.03);
-}
-
-/* Style the dividers to be subtle */
-:deep(.v-divider) {
-  opacity: 0.7;
 }
 </style>
