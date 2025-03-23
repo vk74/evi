@@ -146,37 +146,45 @@
  .settings-layout {
    display: flex;
    width: 100%;
+   height: 100%; /* Важно для работы прокрутки */
+   overflow: hidden; /* Предотвращает прокрутку всего контейнера */
  }
  
  .menu-panel {
-   width: 220px; /* Фиксированная ширина */
-   min-width: 220px; /* Чтобы предотвратить сжатие */
+   width: 220px;
+   min-width: 220px;
    border-right: 1px solid rgba(0, 0, 0, 0.12);
    background-color: white;
-   flex-shrink: 0; /* Предотвращает сжатие при нехватке места */
+   flex-shrink: 0;
+   position: sticky; /* Фиксирует меню при прокрутке */
+   top: 0; /* Прилипает к верху */
+   height: 100vh; /* Высота на весь экран */
+   overflow-y: auto; /* Позволяет прокручивать само меню, если оно длиннее экрана */
  }
  
  .content-panel {
    flex-grow: 1;
-   overflow-y: auto;
+   overflow-y: auto; /* Добавляет прокрутку только для содержимого */
+   height: 100vh; /* Высота на весь экран для правильной работы прокрутки */
+   padding: 16px;
  }
  
+ /* Остальные стили остаются без изменений */
  .menu-item {
    min-height: 44px;
    position: relative;
    transition: all 0.1s ease;
    margin: 2px 0;
    padding-left: 16px;
-   white-space: normal; /* Разрешаем перенос текста при необходимости */
-   overflow: visible; /* Убедимся, что текст не обрезается */
+   white-space: normal;
+   overflow: visible;
  }
  
- /* Настройка отображения текста в элементах списка */
  .menu-item :deep(.v-list-item-title) {
-   white-space: normal; /* Важно - позволяет тексту переноситься */ 
+   white-space: normal;
    overflow: visible;
    text-overflow: clip;
-   padding-right: 8px; /* Дополнительное пространство справа */
+   padding-right: 8px;
  }
  
  /* Make the icon glow for active category */
@@ -233,7 +241,7 @@
    opacity: 0;
  }
  
- /* Адаптивность для планшетов - увеличиваем размер меню на промежуточных разрешениях */
+ /* Адаптивность для планшетов */
  @media (min-width: 600px) and (max-width: 960px) {
    .menu-panel {
      width: 190px;

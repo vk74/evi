@@ -57,6 +57,7 @@ const maxSessionsPerUser = ref(5);
 
 <template>
   <div class="user-management-container">
+    <h2 class="text-h6 mb-4">настройки безопасности</h2>
     <!-- User Authentication -->
     <v-card variant="outlined" class="mb-4">
       <v-card-title class="text-subtitle-1">
