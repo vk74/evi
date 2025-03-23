@@ -3,7 +3,7 @@
  * Provides navigation between application settings categories
  * and displays the corresponding settings components in the workspace area.
  * 
- * Uses a simplified Pinia store to persist the selected category between sessions.
+ * Uses a Pinia store to persist the selected category between sessions.
  -->
  <script setup lang="ts">
  import { ref, computed, shallowRef, onMounted } from 'vue';
@@ -27,14 +27,14 @@
      component: GeneralSettings
    },
    { 
-     name: 'logging management', 
-     icon: 'mdi-text-box-outline', 
-     component: LoggingSettings
-   },
-   { 
      name: 'security settings', 
      icon: 'mdi-shield-outline', 
      component: SecuritySettings
+   },
+   { 
+     name: 'logging management', 
+     icon: 'mdi-text-box-outline', 
+     component: LoggingSettings
    },
    { 
      name: 'users management', 
@@ -48,33 +48,28 @@
    }
  ]);
  
- // Get current selected category from store
- const selectedCategoryIndex = ref(0); // Начальное значение
+ // Current selected category index
+ const selectedCategoryIndex = ref(0);
  
- // Устанавливаем значение из хранилища при монтировании компонента
+ // Mobile menu state
+ const isMobileMenuOpen = ref(false);
+ 
+ // On component mount, initialize the selected category from the store
  onMounted(() => {
    const storeIndex = appSettingsStore.getCurrentCategoryIndex;
-   // Проверяем, что индекс корректный для нашего массива категорий
+   // Ensure the index is valid for our categories array
    selectedCategoryIndex.value = Math.min(storeIndex, categories.value.length - 1);
  });
  
- // Computed property to get current active component without side effects
+ // Computed property to get active component based on selected category
  const activeComponent = computed(() => {
    return categories.value[selectedCategoryIndex.value].component;
  });
  
- // For mobile view toggle
- const isMobileMenuOpen = ref(false);
- 
- // Computed property to check if screen is in mobile view
- const isMobile = computed(() => {
-   return window.innerWidth < 600;
+ // Computed property to get active category name for display in mobile view
+ const activeCategoryName = computed(() => {
+   return categories.value[selectedCategoryIndex.value].name;
  });
- 
- // Function to toggle mobile menu
- const toggleMobileMenu = () => {
-   isMobileMenuOpen.value = !isMobileMenuOpen.value;
- };
  
  /**
   * Function to select category
@@ -83,16 +78,14 @@
    selectedCategoryIndex.value = index;
    appSettingsStore.setSelectedCategory(index);
    
-   // Close mobile menu if in mobile view
-   if (isMobile.value) {
-     isMobileMenuOpen.value = false;
-   }
+   // Close mobile menu if open
+   isMobileMenuOpen.value = false;
  };
  
- // Computed property to get active category name for display
- const activeCategoryName = computed(() => {
-   return categories.value[selectedCategoryIndex.value].name;
- });
+ // Function to toggle mobile menu
+ const toggleMobileMenu = () => {
+   isMobileMenuOpen.value = !isMobileMenuOpen.value;
+ };
  </script>
  
  <template>
@@ -117,14 +110,15 @@
              @click="selectCategory(index)"
              :prepend-icon="category.icon"
              :title="category.name"
-           ></v-list-item>
+           />
          </v-list>
        </v-expand-transition>
      </div>
      
-     <v-row no-gutters class="fill-height">
-       <v-col cols="12" sm="3" md="3" lg="2.5" xl="2" class="pa-0 d-none d-sm-block menu-column">
-         <v-list density="compact" nav class="categories-list pa-0">
+     <div class="settings-layout fill-height">
+       <!-- Menu Panel (hidden on mobile) -->
+       <div class="menu-panel d-none d-sm-block">
+         <v-list density="compact" nav class="categories-list">
            <v-list-item
              v-for="(category, index) in categories"
              :key="`cat-${index}`"
@@ -132,33 +126,57 @@
              @click="selectCategory(index)"
              :prepend-icon="category.icon"
              :title="category.name"
-             rounded="false"
              active-class=""
-           ></v-list-item>
+           />
          </v-list>
-       </v-col>
+       </div>
  
-       <v-col cols="12" sm="9" md="9" lg="9.5" xl="10" class="content-panel pa-0">
-         <div class="content-area ml-n3 pl-3 pr-3 py-4">
-           <transition name="slide-fade" mode="out-in">
-             <component :is="activeComponent" :key="selectedCategoryIndex" />
-           </transition>
-         </div>
-       </v-col>
-     </v-row>
+       <!-- Content Panel -->
+       <div class="content-panel pa-4">
+         <transition name="fade" mode="out-in">
+           <component :is="activeComponent" :key="selectedCategoryIndex" />
+         </transition>
+       </div>
+     </div>
    </v-container>
  </template>
  
  <style scoped>
+ /* Используем flexbox макет вместо сетки Vuetify для лучшего контроля */
+ .settings-layout {
+   display: flex;
+   width: 100%;
+ }
+ 
+ .menu-panel {
+   width: 220px; /* Фиксированная ширина */
+   min-width: 220px; /* Чтобы предотвратить сжатие */
+   border-right: 1px solid rgba(0, 0, 0, 0.12);
+   background-color: white;
+   flex-shrink: 0; /* Предотвращает сжатие при нехватке места */
+ }
+ 
+ .content-panel {
+   flex-grow: 1;
+   overflow-y: auto;
+ }
+ 
  .menu-item {
    min-height: 44px;
    position: relative;
    transition: all 0.1s ease;
    margin: 2px 0;
-   padding-left: 18px; /* Left padding to move icons away from the edge */
-   white-space: nowrap; /* Prevent text wrapping in menu items */
-   overflow: hidden; /* Prevent text overflow */
-   text-overflow: ellipsis; /* Add ellipsis for very long text */
+   padding-left: 16px;
+   white-space: normal; /* Разрешаем перенос текста при необходимости */
+   overflow: visible; /* Убедимся, что текст не обрезается */
+ }
+ 
+ /* Настройка отображения текста в элементах списка */
+ .menu-item :deep(.v-list-item-title) {
+   white-space: normal; /* Важно - позволяет тексту переноситься */ 
+   overflow: visible;
+   text-overflow: clip;
+   padding-right: 8px; /* Дополнительное пространство справа */
  }
  
  /* Make the icon glow for active category */
@@ -174,6 +192,7 @@
    letter-spacing: 0.01em;
  }
  
+ /* Mobile categories styling */
  .mobile-categories {
    width: 100%;
    background-color: white;
@@ -190,7 +209,7 @@
    height: 56px;
    color: #13547a !important;
    background-color: white;
-   padding-left: 12px; 
+   padding-left: 12px;
  }
  
  .mobile-dropdown {
@@ -203,23 +222,26 @@
    z-index: 99;
  }
  
- /* Visual correction to pull content closer to menu */
- .content-area {
-   position: relative;
+ /* Fade transition for content switching */
+ .fade-enter-active,
+ .fade-leave-active {
+   transition: opacity 0.2s ease;
  }
  
- /* Fix for Vuetify grid system which only accepts integer values for columns */
- .menu-column {
-   max-width: 20%; /* Fine-tune for lg breakpoint */
+ .fade-enter-from,
+ .fade-leave-to {
+   opacity: 0;
  }
  
- @media (max-width: 1264px) and (min-width: 960px) {
-   .menu-column {
-     max-width: 20%; /* Approximately lg="2.5" */
+ /* Адаптивность для планшетов - увеличиваем размер меню на промежуточных разрешениях */
+ @media (min-width: 600px) and (max-width: 960px) {
+   .menu-panel {
+     width: 190px;
+     min-width: 190px;
    }
    
-   .content-panel {
-     max-width: 80%; /* Complementary to menu column width */
+   .menu-item {
+     padding-left: 12px;
    }
  }
  </style>
