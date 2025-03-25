@@ -16,6 +16,7 @@ import { ref } from 'vue';
  * Contains global configuration parameters for the entire logging system
  */
 const appName = ref('ev2');
+const appNameEnabled = ref(true);
 const timestampFormat = ref('ISO');
 
 /**
@@ -135,6 +136,15 @@ const logLevelDescriptions = {
   <div class="logging-settings-container">
     <h2 class="text-h6 mb-4">настройки логирования</h2>
     
+    <v-alert
+      type="info"
+      variant="tonal"
+      density="compact"
+      class="mb-4 mt-2"
+    >
+      компонент находится в разработке
+    </v-alert>
+    
     <!-- Core Settings -->
     <div class="settings-section mb-4">
       <div class="section-title text-subtitle-1 d-flex align-center mb-4">
@@ -143,45 +153,49 @@ const logLevelDescriptions = {
       </div>
       
       <div class="section-content">
-        <v-row>
-          <v-col cols="12" md="6">
-            <v-text-field
-              v-model="appName"
-              label="название приложения"
-              variant="outlined"
-              density="comfortable"
-              color="teal-darken-2"
-            >
-              <template v-slot:append>
-                <v-tooltip location="top" max-width="300">
-                  <template v-slot:activator="{ props }">
-                    <v-icon 
-                      icon="mdi-help-circle-outline" 
-                      size="small" 
-                      v-bind="props"
-                      color="teal-darken-2"
-                    ></v-icon>
-                  </template>
-                  <div class="pa-2">
-                    Идентификатор приложения в системах сбора логов. Этот префикс будет добавлен ко всем логам, чтобы их можно было фильтровать и отличать от логов других приложений. Также используется для группировки логов в системах мониторинга и аналитики.
-                  </div>
-                </v-tooltip>
+        <v-switch
+          v-model="appNameEnabled"
+          color="teal-darken-2"
+          label="идентификатор приложения"
+          hide-details
+          class="mb-2"
+        ></v-switch>
+        
+        <v-text-field
+          v-model="appName"
+          label="название приложения"
+          variant="outlined"
+          density="comfortable"
+          color="teal-darken-2"
+          :disabled="!appNameEnabled"
+          class="mb-4"
+        >
+          <template v-slot:append>
+            <v-tooltip location="top" max-width="400">
+              <template v-slot:activator="{ props }">
+                <v-icon 
+                  icon="mdi-help-circle-outline" 
+                  size="small" 
+                  v-bind="props"
+                  color="teal-darken-2"
+                ></v-icon>
               </template>
-            </v-text-field>
-          </v-col>
-          
-          <v-col cols="12" md="6">
-            <v-select
-              v-model="timestampFormat"
-              :items="['ISO', 'UTC', 'Local']"
-              label="формат временной метки"
-              variant="outlined"
-              density="comfortable"
-              color="teal-darken-2"
-              style="max-width: 200px;"
-            ></v-select>
-          </v-col>
-        </v-row>
+              <div class="pa-2">
+                Используется для группировки логов в системах SIEM, мониторинга и аналитики. Индикатор приложения будет добавлен ко всем записям в логах, в виде префикса, чтобы их можно было фильтровать и отличать от логов других приложений.
+              </div>
+            </v-tooltip>
+          </template>
+        </v-text-field>
+        
+        <v-select
+          v-model="timestampFormat"
+          :items="['ISO', 'UTC', 'Local']"
+          label="формат метки времени"
+          variant="outlined"
+          density="comfortable"
+          color="teal-darken-2"
+          style="max-width: 200px;"
+        ></v-select>
       </div>
       <v-divider class="mt-4"></v-divider>
     </div>
@@ -349,16 +363,6 @@ const logLevelDescriptions = {
           hide-details
           class="mb-2"
         ></v-switch>
-        
-        <v-alert
-          type="info"
-          variant="tonal"
-          density="compact"
-          class="mb-4 mt-2"
-          color="teal-darken-2"
-        >
-          запись журналов событий в файловую систему находится в разработке
-        </v-alert>
         
         <v-expand-transition>
           <div v-if="fileTransport.enabled">

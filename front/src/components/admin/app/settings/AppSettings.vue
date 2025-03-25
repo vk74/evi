@@ -49,7 +49,7 @@ const adminApproval = ref(false);
       density="compact"
       class="mb-4 mt-2"
     >
-      настройки системы находится в разработке
+      компонент находится в разработке
     </v-alert>
     
     <!-- Language Settings -->

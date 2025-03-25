@@ -55,6 +55,15 @@ const forcePasswordChangeAfterExpiration = ref(true);
   <div class="security-settings-container">
     <h2 class="text-h6 mb-4">настройки безопасности</h2>
     
+    <v-alert
+      type="info"
+      variant="tonal"
+      density="compact"
+      class="mb-4 mt-2"
+    >
+      компонент находится в разработке
+    </v-alert>
+    
     <!-- Session Management -->
     <div class="settings-section mb-4">
       <div class="section-title text-subtitle-1 d-flex align-center mb-4">

@@ -33,7 +33,7 @@ const allowAddDisabledAndArchivedUsersToGroups = ref(false);
         <v-switch
           v-model="allowUserToChangeOwnProfile"
           color="teal-darken-2"
-          label="allow user to change own profile"
+          label="allow user to update own profile"
           hide-details
         ></v-switch>
       </div>
@@ -51,7 +51,7 @@ const allowAddDisabledAndArchivedUsersToGroups = ref(false);
         <v-switch
           v-model="allowAddDisabledAndArchivedUsersToGroups"
           color="teal-darken-2"
-          label="allow add disabled and archived users to groups"
+          label="allow only users with status 'active' to be added to groups"
           hide-details
         ></v-switch>
       </div>
