@@ -3,8 +3,9 @@
   Description: User management settings component
   Purpose: Configure user profiles and group management settings
   
-  Updated: Replaced all previous sections with two new sections -
-  user profiles and group management, following the established styling patterns
+  Updated: 
+  - Standardized divider colors to match other settings components
+  - Used standard border-color rgba(0, 0, 0, 0.12) with opacity 1
 -->
 
 <script setup lang="ts">
@@ -76,8 +77,9 @@ const allowAddDisabledAndArchivedUsersToGroups = ref(false);
   font-weight: 500;
 }
 
-/* Make dividers more subtle */
+/* Make dividers same color as border in parent component */
 :deep(.v-divider) {
-  opacity: 0.7;
+  border-color: rgba(0, 0, 0, 0.12);
+  opacity: 1;
 }
 </style>

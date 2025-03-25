@@ -1,17 +1,29 @@
 <!--
   File: AppSettings.vue
   Description: General application settings component
-  Purpose: Configure basic application settings like theme, language, notifications
+  Purpose: Configure basic application settings like language and user registration
   
-  Updated: Removed card containers and replaced with div sections with dividers,
-  standardized field widths, and improved section spacing for consistency with SecuritySettings
+  Updated: 
+  - Removed "use system language" toggle from Language section
+  - Moved appearance section to the bottom
+  - Removed dark theme toggle
+  - Added user registration section from SecuritySettings
+  - Added "функция в разработке" note for accent color
+  - Standardized section dividers to match parent component style
+  - Removed unused variables to avoid confusion
 -->
 
 <script setup lang="ts">
 import { ref } from 'vue';
 
+// Language settings
+const selectedLanguage = ref('English');
+const languages = [
+  'English',
+  'Русский'
+];
+
 // Theme settings
-const isDarkTheme = ref(false);
 const selectedThemeColor = ref('teal-darken-2'); // Default to darker teal
 const themeColors = [
   'teal-darken-2',
@@ -21,38 +33,10 @@ const themeColors = [
   'teal-lighten-2'
 ];
 
-// Language settings
-const selectedLanguage = ref('English');
-const useSystemLanguage = ref(true);
-const languages = [
-  'English',
-  'Русский'
-];
-
-// Notification settings
-const enableNotifications = ref(true);
-const enableSounds = ref(true);
-const notificationVolume = ref(70);
-
-// Update settings
-const lastUpdateCheck = ref('Today, 10:23 AM');
-const updateFrequency = ref('Daily');
-const autoInstallUpdates = ref(false);
-const updateFrequencies = [
-  'Manual',
-  'Daily',
-  'Weekly',
-  'Monthly'
-];
-
-/**
- * Simulates checking for updates
- * In a real implementation, this would make an API call to check for updates
- */
-const checkUpdates = () => {
-  lastUpdateCheck.value = new Date().toLocaleString();
-  // Implement actual update checking logic here
-};
+// User registration settings (moved from SecuritySettings)
+const allowSelfRegistration = ref(true);
+const emailVerification = ref(true);
+const adminApproval = ref(false);
 </script>
 
 <template>
@@ -68,38 +52,9 @@ const checkUpdates = () => {
       настройки системы находится в разработке
     </v-alert>
     
-    <!-- Theme Settings -->
+    <!-- Language Settings -->
     <div class="settings-section mb-4">
       <div class="section-title text-subtitle-1 d-flex align-center mb-4">
-        <v-icon start icon="mdi-palette-outline" class="mr-2"></v-icon>
-        appearance
-      </div>
-      
-      <div class="section-content">
-        <v-switch
-          v-model="isDarkTheme"
-          color="teal-darken-2"
-          label="dark theme"
-          hide-details
-        ></v-switch>
-        
-        <v-select
-          v-model="selectedThemeColor"
-          :items="themeColors"
-          label="accent color"
-          variant="outlined"
-          density="comfortable"
-          class="mt-4"
-          color="teal-darken-2"
-          style="max-width: 200px;"
-        ></v-select>
-      </div>
-      <v-divider class="mt-4"></v-divider>
-    </div>
-    
-    <!-- Language Settings -->
-    <div class="settings-section">
-      <div class="section-title text-subtitle-1 d-flex align-center mb-6">
         <v-icon start icon="mdi-translate" class="mr-2"></v-icon>
         language
       </div>
@@ -114,14 +69,71 @@ const checkUpdates = () => {
           color="teal-darken-2"
           style="max-width: 200px;"
         ></v-select>
-        
+      </div>
+      <v-divider class="mt-4"></v-divider>
+    </div>
+    
+    <!-- User Registration (moved from SecuritySettings) -->
+    <div class="settings-section mb-4">
+      <div class="section-title text-subtitle-1 d-flex align-center mb-4">
+        <v-icon start icon="mdi-account-plus-outline" class="mr-2"></v-icon>
+        user registration
+      </div>
+      
+      <div class="section-content">
         <v-switch
-          v-model="useSystemLanguage"
+          v-model="allowSelfRegistration"
           color="teal-darken-2"
-          label="use system language"
+          label="allow users self-registration"
           hide-details
-          class="mt-4"
+          class="mb-4"
         ></v-switch>
+        
+        <div class="d-flex align-start">
+          <v-switch
+            v-model="emailVerification"
+            color="teal-darken-2"
+            label="require e-mail verification"
+            hide-details
+            class="mb-2"
+          ></v-switch>
+          <span class="text-caption text-grey ml-2 mt-2">функция в разработке</span>
+        </div>
+        
+        <div class="d-flex align-start">
+          <v-switch
+            v-model="adminApproval"
+            color="teal-darken-2"
+            label="require admin approval"
+            hide-details
+            class="mb-2"
+          ></v-switch>
+          <span class="text-caption text-grey ml-2 mt-2">функция в разработке</span>
+        </div>
+      </div>
+      <v-divider class="mt-4"></v-divider>
+    </div>
+    
+    <!-- Theme Settings (moved to the end, dark theme removed) -->
+    <div class="settings-section">
+      <div class="section-title text-subtitle-1 d-flex align-center mb-4">
+        <v-icon start icon="mdi-palette-outline" class="mr-2"></v-icon>
+        appearance
+      </div>
+      
+      <div class="section-content">
+        <div class="d-flex align-start">
+          <v-select
+            v-model="selectedThemeColor"
+            :items="themeColors"
+            label="accent color"
+            variant="outlined"
+            density="comfortable"
+            color="teal-darken-2"
+            style="max-width: 200px;"
+          ></v-select>
+          <span class="text-caption text-grey ml-2 mt-6">функция в разработке</span>
+        </div>
       </div>
     </div>
   </div>
@@ -145,8 +157,9 @@ const checkUpdates = () => {
   font-weight: 500;
 }
 
-/* Make dividers more subtle */
+/* Make dividers same color as border in parent component */
 :deep(.v-divider) {
-  opacity: 0.7;
+  border-color: rgba(0, 0, 0, 0.12);
+  opacity: 1;
 }
 </style>

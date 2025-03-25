@@ -3,8 +3,9 @@
   Description: Logging configuration settings component
   Purpose: Configure application logging based on backend logger parameters
   
-  Updated: Replaced card containers with div sections and dividers,
-  standardized color scheme to teal-darken-2, and improved spacing for consistency
+  Updated: 
+  - Standardized divider colors to match other settings components
+  - Used standard border-color rgba(0, 0, 0, 0.12) with opacity 1
 -->
 
 <script setup lang="ts">
@@ -549,9 +550,10 @@ const logLevels = ['DEBUG', 'INFO', 'WARN', 'ERROR', 'FATAL'];
   font-weight: 500;
 }
 
-/* Make dividers more subtle */
+/* Make dividers same color as border in parent component */
 :deep(.v-divider) {
-  opacity: 0.7;
+  border-color: rgba(0, 0, 0, 0.12);
+  opacity: 1;
 }
 
 /* Adjust spacing for selects in list items */

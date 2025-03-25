@@ -1,30 +1,40 @@
 <!--
   File: SecuritySettings.vue
   Description: Security settings component
-  Purpose: Configure security-related settings including session management, password policies, and user registration
+  Purpose: Configure security-related settings including session management and password policies
   
-  Updated: Replaced card borders with dividers, converted text to lowercase, reorganized sections,
-  adjusted session management controls and modified user registration section
+  Updated: 
+  - Replaced session duration slider with dropdown and unlimited session checkbox
+  - Removed user registration section (moved to AppSettings)
+  - Standardized divider colors to match parent component
+  - Added informational hint for session duration
 -->
 
 <script setup lang="ts">
 import { ref, computed } from 'vue';
 
 // Session management
-const sessionDuration = ref(30);
+const sessionDuration = ref('30');
+const unlimitedSession = ref(false);
 const concurrentSessions = ref(true);
 const maxSessionsPerUser = ref(5);
 
-// Computed property for session duration label
-const sessionDurationLabel = computed(() => {
-  if (sessionDuration.value > 540) {
-    return '∞';
-  }
-  return `${sessionDuration.value} минут`;
-});
+// Session duration options (10 minutes to 24 hours)
+const sessionDurationOptions = [
+  { title: '10 минут', value: '10' },
+  { title: '15 минут', value: '15' },
+  { title: '30 минут', value: '30' },
+  { title: '1 час', value: '60' },
+  { title: '2 часа', value: '120' },
+  { title: '4 часа', value: '240' },
+  { title: '8 часов', value: '480' },
+  { title: '12 часов', value: '720' },
+  { title: '1 сутки', value: '1440' }
+];
 
 // Password policy
-const passwordMinLength = ref(8);
+const passwordMinLength = ref('8');
+const passwordLengthOptions = Array.from({ length: 17 }, (_, i) => (i + 8).toString());
 const requireLowercase = ref(true);
 const requireUppercase = ref(true);
 const requireNumbers = ref(true);
@@ -39,11 +49,6 @@ const passwordExpirationOptions = [
   '1 year'
 ];
 const forcePasswordChangeAfterExpiration = ref(true);
-
-// User registration settings
-const allowSelfRegistration = ref(true);
-const emailVerification = ref(true);
-const adminApproval = ref(false);
 </script>
 
 <template>
@@ -58,20 +63,32 @@ const adminApproval = ref(false);
       </div>
       
       <div class="section-content">
-        <v-slider
-          v-model="sessionDuration"
-          :label="`session duration: ${sessionDurationLabel}`"
-          min="1"
-          max="541"
-          step="1"
-          thumb-label
-          class="mb-4"
-          color="teal-darken-2"
-        >
-          <template v-slot:thumb-label>
-            {{ sessionDuration > 540 ? '∞' : sessionDuration }}
-          </template>
-        </v-slider>
+        <div class="d-flex align-start mb-4">
+          <v-select
+            v-model="sessionDuration"
+            :items="sessionDurationOptions"
+            label="session duration"
+            variant="outlined"
+            density="comfortable"
+            color="teal-darken-2"
+            style="max-width: 200px;"
+            :disabled="unlimitedSession"
+          ></v-select>
+          
+          <div class="ml-4 mt-4">
+            <v-checkbox
+              v-model="unlimitedSession"
+              color="teal-darken-2"
+              label="сессия без ограничения по времени"
+              hide-details
+            ></v-checkbox>
+          </div>
+        </div>
+        
+        <div class="text-caption text-grey mb-4">
+          <v-icon icon="mdi-information-outline" size="small" class="mr-1"></v-icon>
+          Более длинная сессия улучшает удобство пользователей, но может снизить безопасность
+        </div>
         
         <v-switch
           v-model="concurrentSessions"
@@ -99,23 +116,23 @@ const adminApproval = ref(false);
     </div>
     
     <!-- Password Policy -->
-    <div class="settings-section mb-4">
+    <div class="settings-section">
       <div class="section-title text-subtitle-1 d-flex align-center mb-4">
         <v-icon start icon="mdi-form-textbox-password" class="mr-2"></v-icon>
         password policy
       </div>
       
       <div class="section-content">
-        <v-slider
+        <v-select
           v-model="passwordMinLength"
-          :label="`minimum password length: ${passwordMinLength}`"
-          min="8"
-          max="24"
-          step="1"
-          thumb-label
+          :items="passwordLengthOptions"
+          label="minimum password length"
+          variant="outlined"
+          density="comfortable"
           class="mb-4"
           color="teal-darken-2"
-        ></v-slider>
+          style="max-width: 200px;"
+        ></v-select>
         
         <v-switch
           v-model="requireLowercase"
@@ -171,47 +188,6 @@ const adminApproval = ref(false);
           <span class="text-caption text-grey ml-2 mt-2">функция в разработке</span>
         </div>
       </div>
-      <v-divider class="mt-4"></v-divider>
-    </div>
-    
-    <!-- User Registration -->
-    <div class="settings-section">
-      <div class="section-title text-subtitle-1 d-flex align-center mb-4">
-        <v-icon start icon="mdi-account-plus-outline" class="mr-2"></v-icon>
-        user registration
-      </div>
-      
-      <div class="section-content">
-        <v-switch
-          v-model="allowSelfRegistration"
-          color="teal-darken-2"
-          label="allow users self-registration"
-          hide-details
-          class="mb-4"
-        ></v-switch>
-        
-        <div class="d-flex align-start">
-          <v-switch
-            v-model="emailVerification"
-            color="teal-darken-2"
-            label="require e-mail verification"
-            hide-details
-            class="mb-2"
-          ></v-switch>
-          <span class="text-caption text-grey ml-2 mt-2">функция в разработке</span>
-        </div>
-        
-        <div class="d-flex align-start">
-          <v-switch
-            v-model="adminApproval"
-            color="teal-darken-2"
-            label="require admin approval"
-            hide-details
-            class="mb-2"
-          ></v-switch>
-          <span class="text-caption text-grey ml-2 mt-2">функция в разработке</span>
-        </div>
-      </div>
     </div>
   </div>
 </template>
@@ -234,8 +210,9 @@ const adminApproval = ref(false);
   font-weight: 500;
 }
 
-/* Make dividers more subtle */
+/* Make dividers same color as border in parent component */
 :deep(.v-divider) {
-  opacity: 0.7;
+  border-color: rgba(0, 0, 0, 0.12);
+  opacity: 1;
 }
 </style>
