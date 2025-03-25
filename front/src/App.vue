@@ -7,6 +7,7 @@ Contains:
 - Main work area for displaying the active module
 - Global snackbar for system messages
 - Enhanced Admin section with accordion styling and proper focus management
+- Duplicated app bar actions in navigation drawer for improved accessibility
 -->
 <script setup>
 import { ref, computed, onMounted, watch, defineAsyncComponent } from 'vue';
@@ -167,143 +168,40 @@ onMounted(() => {
 
 <template>
   <v-app>
-    <!-- App Bar -->
-    <v-app-bar
-      color="teal-darken-4"
-      dense
+    <!-- Floating menu button - always visible regardless of drawer state -->
+    <div 
+      class="floating-menu-btn"
+      :style="{ width: drawer && appStore.drawerMode !== 'closed' ? '256px' : '64px' }"
     >
-      <v-app-bar-nav-icon @click="drawer = !drawer" />
-      <v-app-bar-title>ev2</v-app-bar-title>
-      <v-spacer />
- 
-      <!-- Search icon (hidden for now) -->
-      <v-btn icon style="display: none;">
-        <v-icon>mdi-magnify</v-icon>
+      <v-btn
+        icon
+        variant="text"
+        @click="drawer = !drawer"
+        class="menu-toggle-btn"
+        :class="{ 'transparent-bg': drawer }"
+      >
+        <v-icon>mdi-menu</v-icon>
       </v-btn>
- 
-      <!-- Language selection dropdown menu -->
-      <v-menu>
-        <template #activator="{ props }">
-          <v-btn
-            icon
-            v-bind="props"
-          >
-            <v-icon>mdi-translate</v-icon>
-          </v-btn>
-        </template>
- 
-        <v-list>
-          <v-list-item
-            :active="userStore.language === 'en'"
-            @click="changeLanguage('en')"
-          >
-            <v-list-item-title>English</v-list-item-title>
-          </v-list-item>
-          <v-list-item
-            :active="userStore.language === 'ru'"
-            @click="changeLanguage('ru')"
-          >
-            <v-list-item-title>Русский</v-list-item-title>
-          </v-list-item>
-        </v-list>
-      </v-menu>
- 
-      <v-dialog
-        v-model="isLoginDialogVisible"
-        max-width="500px"
-      >
-        <LoginDialog
-          @close="isLoginDialogVisible = false"
-          @login-success="handleLoginSuccess"
-        />
-      </v-dialog>
- 
-      <!-- Login button -->
-      <v-tooltip bottom>
-        <template #activator="{ props }">
-          <v-btn
-            v-if="!isLoggedIn"
-            icon
-            v-bind="props" 
-            @click="setActiveModule('Login')"
-          >
-            <v-icon>mdi-login</v-icon>
-          </v-btn>
-        </template>
-        <span>{{ $t('navigation.tooltips.login') }}</span>
-      </v-tooltip>
- 
-      <!-- Registration button -->
-      <v-tooltip bottom>
-        <template #activator="{ props }">
-          <v-btn
-            v-if="!isLoggedIn"
-            icon
-            v-bind="props"
-            @click="setActiveModule('NewUserRegistration')"
-          >
-            <v-icon>mdi-account-plus</v-icon>
-          </v-btn>
-        </template>
-        <span>{{ $t('navigation.tooltips.register') }}</span>
-      </v-tooltip>
- 
-      <!-- Account menu (replaces vertical dots menu) - shown only for logged in users -->
-      <v-menu v-if="isLoggedIn">
-        <template #activator="{ props }">
-          <v-btn
-            v-bind="props"
-            icon
-          >
-            <v-icon>mdi-account</v-icon>
-          </v-btn>
-        </template>
- 
-        <v-list>
-          <!-- Account module link -->
-          <v-list-item
-            @click="setActiveModule('Account')"
-          >
-            <v-list-item-title>{{ $t('navigation.drawer.account') }}</v-list-item-title>
-          </v-list-item>
-          
-          <!-- App preferences (formerly settings) module link -->
-          <v-list-item
-            v-if="isLoggedIn"
-            @click="setActiveModule('Settings')"
-          >
-            <v-list-item-title>{{ $t('navigation.drawer.appPreferences') }}</v-list-item-title>
-          </v-list-item>
-          
-          <v-list-item
-            v-if="isLoggedIn"
-            @click="isChangePassModalVisible = true"
-          >
-            <v-list-item-title>{{ $t('navigation.systemMenu.changePassword') }}</v-list-item-title>
-          </v-list-item>
-          
-          <v-list-item
-            v-if="isLoggedIn"
-            @click="logout"
-          >
-            <v-list-item-title>{{ $t('navigation.systemMenu.logout') }}</v-list-item-title>
-          </v-list-item>
-        </v-list>
-      </v-menu>
- 
-      <v-dialog
-        v-model="isChangePassModalVisible"
-        max-width="500px"
-      >
-        <ModalChangeUserPass @close="isChangePassModalVisible = false" />
-      </v-dialog>
- 
-      <!-- App bar styling -->
-      <template #image>
-        <v-img gradient="to top right, rgba(19,84,122,.8), rgba(128,208,199,.8)" />
-      </template>
-    </v-app-bar>
- 
+    </div>
+
+    <!-- Global dialogs that were previously in app bar -->
+    <v-dialog
+      v-model="isLoginDialogVisible"
+      max-width="500px"
+    >
+      <LoginDialog
+        @close="isLoginDialogVisible = false"
+        @login-success="handleLoginSuccess"
+      />
+    </v-dialog>
+
+    <v-dialog
+      v-model="isChangePassModalVisible"
+      max-width="500px"
+    >
+      <ModalChangeUserPass @close="isChangePassModalVisible = false" />
+    </v-dialog>
+
     <!-- Navigation Drawer -->
     <v-navigation-drawer 
       v-model="drawer" 
@@ -312,6 +210,9 @@ onMounted(() => {
       elevation="5" 
       class="custom-drawer"
     >
+      <!-- Add padding area to prevent overlap with menu button -->
+      <div class="drawer-padding-top"></div>
+      
       <v-list
         density="compact"
         nav
@@ -490,8 +391,121 @@ onMounted(() => {
         />
       </v-list>
  
-      <!-- Append slot for drawer controls -->
+      <!-- Append slot for drawer controls and duplicated actions -->
       <template #append>
+        <!-- Language selection dropdown menu above divider -->
+        <div class="drawer-actions language-selector">
+          <v-menu>
+            <template #activator="{ props }">
+              <v-btn
+                icon
+                variant="text"
+                v-bind="props"
+                class="drawer-action-btn"
+              >
+                <v-icon>mdi-translate</v-icon>
+              </v-btn>
+            </template>
+            
+            <v-list>
+              <v-list-item
+                :active="userStore.language === 'en'"
+                @click="changeLanguage('en')"
+              >
+                <v-list-item-title>English</v-list-item-title>
+              </v-list-item>
+              <v-list-item
+                :active="userStore.language === 'ru'"
+                @click="changeLanguage('ru')"
+              >
+                <v-list-item-title>Русский</v-list-item-title>
+              </v-list-item>
+            </v-list>
+          </v-menu>
+        </div>
+        
+        <!-- Divider between language and account icons -->
+        <v-divider class="border-opacity-25 mx-3 my-2" />
+        
+        <!-- Account-related icons below divider -->
+        <div class="drawer-actions">
+          <!-- Account icon with dropdown (when logged in) -->
+          <v-menu v-if="isLoggedIn">
+            <template #activator="{ props }">
+              <v-btn
+                v-bind="props"
+                icon
+                variant="text"
+                class="drawer-action-btn"
+              >
+                <v-icon>mdi-account</v-icon>
+              </v-btn>
+            </template>
+            
+            <v-list>
+              <!-- Account module link -->
+              <v-list-item
+                @click="setActiveModule('Account')"
+              >
+                <v-list-item-title>{{ $t('navigation.drawer.account') }}</v-list-item-title>
+              </v-list-item>
+              
+              <!-- App preferences module link -->
+              <v-list-item
+                @click="setActiveModule('Settings')"
+              >
+                <v-list-item-title>{{ $t('navigation.drawer.appPreferences') }}</v-list-item-title>
+              </v-list-item>
+              
+              <v-list-item
+                @click="isChangePassModalVisible = true"
+              >
+                <v-list-item-title>{{ $t('navigation.systemMenu.changePassword') }}</v-list-item-title>
+              </v-list-item>
+              
+              <v-list-item
+                @click="logout"
+              >
+                <v-list-item-title>{{ $t('navigation.systemMenu.logout') }}</v-list-item-title>
+              </v-list-item>
+            </v-list>
+          </v-menu>
+          
+          <!-- Login button (when not logged in) -->
+          <v-tooltip location="right">
+            <template #activator="{ props }">
+              <v-btn
+                v-if="!isLoggedIn"
+                icon
+                variant="text"
+                v-bind="props" 
+                @click="setActiveModule('Login')"
+                class="drawer-action-btn"
+              >
+                <v-icon>mdi-login</v-icon>
+              </v-btn>
+            </template>
+            <span>{{ $t('navigation.tooltips.login') }}</span>
+          </v-tooltip>
+          
+          <!-- Registration button (when not logged in) -->
+          <v-tooltip location="right">
+            <template #activator="{ props }">
+              <v-btn
+                v-if="!isLoggedIn"
+                icon
+                variant="text"
+                v-bind="props"
+                @click="setActiveModule('NewUserRegistration')"
+                class="drawer-action-btn"
+              >
+                <v-icon>mdi-account-plus</v-icon>
+              </v-btn>
+            </template>
+            <span>{{ $t('navigation.tooltips.register') }}</span>
+          </v-tooltip>
+        </div>
+        
         <!-- Drawer control area -->
         <div
           class="drawer-control-area"
@@ -662,5 +676,79 @@ onMounted(() => {
   margin-left: 0;
   border-left: none;
   border-right: 3px solid rgb(19, 84, 122);
+}
+
+/* Drawer actions section styling */
+.drawer-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 0;
+}
+
+.drawer-action-btn {
+  margin: 0;
+  padding: 0;
+  opacity: 0.75;
+  height: 40px !important;
+  min-height: 40px !important;
+  width: 100%;
+  border-radius: 0;
+  transition: opacity 0.2s ease, background-color 0.2s ease;
+}
+
+.drawer-action-btn :deep(.v-btn__content) {
+  margin: 0;
+  padding: 0;
+}
+
+.drawer-action-btn:hover {
+  opacity: 1;
+  background-color: rgba(128, 208, 199, 0.15) !important;
+}
+
+/* Make actions more compact in rail mode */
+:deep(.v-navigation-drawer--rail) .drawer-actions {
+  padding: 0;
+}
+
+:deep(.v-navigation-drawer--rail) .drawer-action-btn {
+  margin: 0;
+}
+
+/* Floating menu button styles */
+.floating-menu-btn {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 2000; /* Ensure it's above the navigation drawer */
+  width: 64px; /* Width matching the navigation drawer in rail mode */
+}
+
+.menu-toggle-btn {
+  background-color: rgba(210, 210, 210, 0.85) !important; /* Semi-transparent gray matching drawer */
+  color: #555 !important; /* Darker icon color to match drawer icons */
+  border-radius: 0; /* Remove border radius for flush edges */
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  transition: background-color 0.3s ease;
+  width: 100%; /* Make button fill the container width */
+  justify-content: flex-start; /* Align icon to the left */
+  padding-left: 12px;
+  height: 56px; /* Fixed height to match drawer header height */
+}
+
+/* Transparent background when drawer is open */
+.menu-toggle-btn.transparent-bg {
+  background-color: transparent !important;
+  box-shadow: none !important;
+}
+
+.menu-toggle-btn:hover:not(.transparent-bg) {
+  background-color: rgba(190, 190, 190, 0.95) !important; /* Slightly darker on hover */
+}
+
+/* Top padding in navigation drawer to make room for menu button */
+.drawer-padding-top {
+  height: 56px; /* Match height of menu button + padding */
 }
 </style>
