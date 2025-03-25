@@ -118,6 +118,17 @@ const operationTypesMetadata = {
  * Available log levels for dropdowns
  */
 const logLevels = ['DEBUG', 'INFO', 'WARN', 'ERROR', 'FATAL'];
+
+/**
+ * Log level descriptions to display in tooltips
+ */
+const logLevelDescriptions = {
+  'DEBUG': 'Детальная информация для разработчиков. Самый подробный уровень логирования.',
+  'INFO': 'Общая информация о работе приложения. Стандартный уровень для большинства операций.',
+  'WARN': 'Предупреждения, которые не останавливают работу, но требуют внимания.',
+  'ERROR': 'Ошибки, препятствующие выполнению отдельной операции.',
+  'FATAL': 'Критические ошибки, из-за которых приложение не может продолжать работу.'
+};
 </script>
 
 <template>
@@ -139,9 +150,24 @@ const logLevels = ['DEBUG', 'INFO', 'WARN', 'ERROR', 'FATAL'];
               label="название приложения"
               variant="outlined"
               density="comfortable"
-              hint="идентификатор приложения в системах сбора логов"
               color="teal-darken-2"
-            ></v-text-field>
+            >
+              <template v-slot:append>
+                <v-tooltip location="top" max-width="300">
+                  <template v-slot:activator="{ props }">
+                    <v-icon 
+                      icon="mdi-help-circle-outline" 
+                      size="small" 
+                      v-bind="props"
+                      color="teal-darken-2"
+                    ></v-icon>
+                  </template>
+                  <div class="pa-2">
+                    Идентификатор приложения в системах сбора логов. Этот префикс будет добавлен ко всем логам, чтобы их можно было фильтровать и отличать от логов других приложений. Также используется для группировки логов в системах мониторинга и аналитики.
+                  </div>
+                </v-tooltip>
+              </template>
+            </v-text-field>
           </v-col>
           
           <v-col cols="12" md="6">
@@ -152,6 +178,7 @@ const logLevels = ['DEBUG', 'INFO', 'WARN', 'ERROR', 'FATAL'];
               variant="outlined"
               density="comfortable"
               color="teal-darken-2"
+              style="max-width: 200px;"
             ></v-select>
           </v-col>
         </v-row>
@@ -191,81 +218,115 @@ const logLevels = ['DEBUG', 'INFO', 'WARN', 'ERROR', 'FATAL'];
             
             <!-- Console Operation Types Settings -->
             <div class="mb-4">
-              <span class="text-subtitle-2 mb-4 d-block">настройки типов операций</span>
-              
-              <v-list>
-                <v-list-item
-                  v-for="(level, opType) in consoleTransport.operationLevels"
-                  :key="opType"
-                >
-                  <template v-slot:prepend>
-                    <v-icon :icon="operationTypesMetadata[opType].icon" class="me-3" color="teal-darken-2"></v-icon>
-                  </template>
-                  
-                  <template v-slot:title>
-                    {{ opType }}
-                  </template>
-                  
-                  <template v-slot:subtitle>
-                    {{ operationTypesMetadata[opType].description }}
-                  </template>
-                  
-                  <template v-slot:append>
-                    <v-select
-                      v-model="consoleTransport.operationLevels[opType]"
-                      :items="logLevels"
-                      variant="underlined"
-                      density="compact"
-                      hide-details
-                      class="max-width-select"
+              <div class="d-flex align-center mb-2">
+                <span class="text-subtitle-2">настройки типов операций</span>
+                <v-tooltip location="top" max-width="300">
+                  <template v-slot:activator="{ props }">
+                    <v-icon 
+                      icon="mdi-help-circle-outline" 
+                      size="small" 
+                      class="ms-2" 
                       color="teal-darken-2"
-                    ></v-select>
+                      v-bind="props"
+                    ></v-icon>
                   </template>
-                </v-list-item>
-              </v-list>
+                  <div class="pa-2">
+                    <div v-for="(description, level) in logLevelDescriptions" :key="level" class="mb-1">
+                      <strong>{{ level }}</strong>: {{ description }}
+                    </div>
+                  </div>
+                </v-tooltip>
+              </div>
+              
+              <v-table density="compact" class="operation-levels-table">
+                <tbody>
+                  <tr
+                    v-for="(level, opType) in consoleTransport.operationLevels"
+                    :key="opType"
+                  >
+                    <td style="width: 75%">
+                      <div class="d-flex align-center">
+                        <v-icon :icon="operationTypesMetadata[opType].icon" class="me-3" color="teal-darken-2"></v-icon>
+                        <div>
+                          <div class="font-weight-medium">{{ opType }}</div>
+                          <div class="text-caption text-medium-emphasis">{{ operationTypesMetadata[opType].description }}</div>
+                        </div>
+                      </div>
+                    </td>
+                    <td style="width: 25%">
+                      <v-select
+                        v-model="consoleTransport.operationLevels[opType]"
+                        :items="logLevels"
+                        variant="outlined"
+                        density="compact"
+                        hide-details
+                        color="teal-darken-2"
+                        bg-color="white"
+                        :title="logLevelDescriptions[consoleTransport.operationLevels[opType]]"
+                      ></v-select>
+                    </td>
+                  </tr>
+                </tbody>
+              </v-table>
             </div>
             
             <!-- Console Context Settings -->
-            <div>
-              <span class="text-subtitle-2 mb-2 d-block">контекст логирования</span>
+            <div class="mt-6">
+              <div class="d-flex align-center mb-2">
+                <span class="text-subtitle-2">контекст логирования</span>
+                <v-tooltip location="top" max-width="300">
+                  <template v-slot:activator="{ props }">
+                    <v-icon 
+                      icon="mdi-help-circle-outline" 
+                      size="small" 
+                      class="ms-2" 
+                      color="teal-darken-2"
+                      v-bind="props"
+                    ></v-icon>
+                  </template>
+                  <div class="pa-2">
+                    Выберите дополнительную информацию, которая будет добавлена в каждую запись лога.
+                    Больше контекста улучшает диагностику, но увеличивает размер логов.
+                  </div>
+                </v-tooltip>
+              </div>
               
-              <v-row>
-                <v-col cols="12" sm="6" md="3">
-                  <v-checkbox
-                    v-model="consoleTransport.context.includeModule"
-                    label="название модуля"
-                    color="teal-darken-2"
-                    hide-details
-                  ></v-checkbox>
-                </v-col>
+              <div class="d-flex flex-wrap">
+                <v-checkbox
+                  v-model="consoleTransport.context.includeModule"
+                  label="название модуля"
+                  color="teal-darken-2"
+                  hide-details
+                  density="compact"
+                  class="me-4 mb-0"
+                ></v-checkbox>
                 
-                <v-col cols="12" sm="6" md="3">
-                  <v-checkbox
-                    v-model="consoleTransport.context.includeFileName"
-                    label="имя файла источника"
-                    color="teal-darken-2"
-                    hide-details
-                  ></v-checkbox>
-                </v-col>
+                <v-checkbox
+                  v-model="consoleTransport.context.includeFileName"
+                  label="имя файла источника"
+                  color="teal-darken-2"
+                  hide-details
+                  density="compact"
+                  class="me-4 mb-0"
+                ></v-checkbox>
                 
-                <v-col cols="12" sm="6" md="3">
-                  <v-checkbox
-                    v-model="consoleTransport.context.includeOperationType"
-                    label="тип операции"
-                    color="teal-darken-2"
-                    hide-details
-                  ></v-checkbox>
-                </v-col>
+                <v-checkbox
+                  v-model="consoleTransport.context.includeOperationType"
+                  label="тип операции"
+                  color="teal-darken-2"
+                  hide-details
+                  density="compact"
+                  class="me-4 mb-0"
+                ></v-checkbox>
                 
-                <v-col cols="12" sm="6" md="3">
-                  <v-checkbox
-                    v-model="consoleTransport.context.includeUserId"
-                    label="id пользователя"
-                    color="teal-darken-2"
-                    hide-details
-                  ></v-checkbox>
-                </v-col>
-              </v-row>
+                <v-checkbox
+                  v-model="consoleTransport.context.includeUserId"
+                  label="id пользователя"
+                  color="teal-darken-2"
+                  hide-details
+                  density="compact"
+                ></v-checkbox>
+              </div>
             </div>
           </div>
         </v-expand-transition>
@@ -303,38 +364,115 @@ const logLevels = ['DEBUG', 'INFO', 'WARN', 'ERROR', 'FATAL'];
           <div v-if="fileTransport.enabled">
             <!-- File Operation Types Settings -->
             <div class="mb-4">
-              <span class="text-subtitle-2 mb-4 d-block">настройки типов операций</span>
-              
-              <v-list>
-                <v-list-item
-                  v-for="(level, opType) in fileTransport.operationLevels"
-                  :key="opType"
-                >
-                  <template v-slot:prepend>
-                    <v-icon :icon="operationTypesMetadata[opType].icon" class="me-3" color="teal-darken-2"></v-icon>
-                  </template>
-                  
-                  <template v-slot:title>
-                    {{ opType }}
-                  </template>
-                  
-                  <template v-slot:subtitle>
-                    {{ operationTypesMetadata[opType].description }}
-                  </template>
-                  
-                  <template v-slot:append>
-                    <v-select
-                      v-model="fileTransport.operationLevels[opType]"
-                      :items="logLevels"
-                      variant="underlined"
-                      density="compact"
-                      hide-details
-                      class="max-width-select"
+              <div class="d-flex align-center mb-2">
+                <span class="text-subtitle-2">настройки типов операций</span>
+                <v-tooltip location="top" max-width="300">
+                  <template v-slot:activator="{ props }">
+                    <v-icon 
+                      icon="mdi-help-circle-outline" 
+                      size="small" 
+                      class="ms-2" 
                       color="teal-darken-2"
-                    ></v-select>
+                      v-bind="props"
+                    ></v-icon>
                   </template>
-                </v-list-item>
-              </v-list>
+                  <div class="pa-2">
+                    <div v-for="(description, level) in logLevelDescriptions" :key="level" class="mb-1">
+                      <strong>{{ level }}</strong>: {{ description }}
+                    </div>
+                  </div>
+                </v-tooltip>
+              </div>
+              
+              <v-table density="compact" class="operation-levels-table">
+                <tbody>
+                  <tr
+                    v-for="(level, opType) in fileTransport.operationLevels"
+                    :key="opType"
+                  >
+                    <td style="width: 75%">
+                      <div class="d-flex align-center">
+                        <v-icon :icon="operationTypesMetadata[opType].icon" class="me-3" color="teal-darken-2"></v-icon>
+                        <div>
+                          <div class="font-weight-medium">{{ opType }}</div>
+                          <div class="text-caption text-medium-emphasis">{{ operationTypesMetadata[opType].description }}</div>
+                        </div>
+                      </div>
+                    </td>
+                    <td style="width: 25%">
+                      <v-select
+                        v-model="fileTransport.operationLevels[opType]"
+                        :items="logLevels"
+                        variant="outlined"
+                        density="compact"
+                        hide-details
+                        color="teal-darken-2"
+                        bg-color="white"
+                        :title="logLevelDescriptions[fileTransport.operationLevels[opType]]"
+                      ></v-select>
+                    </td>
+                  </tr>
+                </tbody>
+              </v-table>
+            </div>
+            
+            <!-- File Context Settings -->
+            <div class="mt-6 mb-6">
+              <div class="d-flex align-center mb-2">
+                <span class="text-subtitle-2">контекст логирования</span>
+                <v-tooltip location="top" max-width="300">
+                  <template v-slot:activator="{ props }">
+                    <v-icon 
+                      icon="mdi-help-circle-outline" 
+                      size="small" 
+                      class="ms-2" 
+                      color="teal-darken-2"
+                      v-bind="props"
+                    ></v-icon>
+                  </template>
+                  <div class="pa-2">
+                    Выберите дополнительную информацию, которая будет добавлена в каждую запись лога.
+                    Больше контекста улучшает диагностику, но увеличивает размер логов.
+                  </div>
+                </v-tooltip>
+              </div>
+              
+              <div class="d-flex flex-wrap">
+                <v-checkbox
+                  v-model="fileTransport.context.includeModule"
+                  label="название модуля"
+                  color="teal-darken-2"
+                  hide-details
+                  density="compact"
+                  class="me-4 mb-0"
+                ></v-checkbox>
+                
+                <v-checkbox
+                  v-model="fileTransport.context.includeFileName"
+                  label="имя файла источника"
+                  color="teal-darken-2"
+                  hide-details
+                  density="compact"
+                  class="me-4 mb-0"
+                ></v-checkbox>
+                
+                <v-checkbox
+                  v-model="fileTransport.context.includeOperationType"
+                  label="тип операции"
+                  color="teal-darken-2"
+                  hide-details
+                  density="compact"
+                  class="me-4 mb-0"
+                ></v-checkbox>
+                
+                <v-checkbox
+                  v-model="fileTransport.context.includeUserId"
+                  label="id пользователя"
+                  color="teal-darken-2"
+                  hide-details
+                  density="compact"
+                ></v-checkbox>
+              </div>
             </div>
             
             <!-- File Storage Settings -->
@@ -452,49 +590,6 @@ const logLevels = ['DEBUG', 'INFO', 'WARN', 'ERROR', 'FATAL'];
                 class="mt-2"
               ></v-switch>
             </div>
-            
-            <!-- File Context Settings -->
-            <div>
-              <span class="text-subtitle-2 mb-2 d-block">контекст логирования</span>
-              
-              <v-row>
-                <v-col cols="12" sm="6" md="3">
-                  <v-checkbox
-                    v-model="fileTransport.context.includeModule"
-                    label="название модуля"
-                    color="teal-darken-2"
-                    hide-details
-                  ></v-checkbox>
-                </v-col>
-                
-                <v-col cols="12" sm="6" md="3">
-                  <v-checkbox
-                    v-model="fileTransport.context.includeFileName"
-                    label="имя файла источника"
-                    color="teal-darken-2"
-                    hide-details
-                  ></v-checkbox>
-                </v-col>
-                
-                <v-col cols="12" sm="6" md="3">
-                  <v-checkbox
-                    v-model="fileTransport.context.includeOperationType"
-                    label="тип операции"
-                    color="teal-darken-2"
-                    hide-details
-                  ></v-checkbox>
-                </v-col>
-                
-                <v-col cols="12" sm="6" md="3">
-                  <v-checkbox
-                    v-model="fileTransport.context.includeUserId"
-                    label="id пользователя"
-                    color="teal-darken-2"
-                    hide-details
-                  ></v-checkbox>
-                </v-col>
-              </v-row>
-            </div>
           </div>
         </v-expand-transition>
       </div>
@@ -561,8 +656,13 @@ const logLevels = ['DEBUG', 'INFO', 'WARN', 'ERROR', 'FATAL'];
   max-width: 120px;
 }
 
-/* Style list items */
-:deep(.v-list-item:hover) {
+/* Style table */
+.operation-levels-table {
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  border-radius: 4px;
+}
+
+.operation-levels-table :deep(tr:hover) {
   background-color: rgba(0, 0, 0, 0.03);
 }
 

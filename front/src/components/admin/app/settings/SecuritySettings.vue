@@ -63,7 +63,7 @@ const forcePasswordChangeAfterExpiration = ref(true);
       </div>
       
       <div class="section-content">
-        <div class="d-flex align-start mb-4">
+        <div class="d-flex align-center mb-2">
           <v-select
             v-model="sessionDuration"
             :items="sessionDurationOptions"
@@ -75,19 +75,29 @@ const forcePasswordChangeAfterExpiration = ref(true);
             :disabled="unlimitedSession"
           ></v-select>
           
-          <div class="ml-4 mt-4">
-            <v-checkbox
-              v-model="unlimitedSession"
-              color="teal-darken-2"
-              label="сессия без ограничения по времени"
-              hide-details
-            ></v-checkbox>
-          </div>
+          <v-tooltip location="top" max-width="300">
+            <template v-slot:activator="{ props }">
+              <v-icon 
+                icon="mdi-help-circle-outline" 
+                size="small" 
+                class="ms-2" 
+                color="teal-darken-2"
+                v-bind="props"
+              ></v-icon>
+            </template>
+            <div class="pa-2">
+              Более длинная сессия улучшает удобство пользователей, но может снизить безопасность
+            </div>
+          </v-tooltip>
         </div>
         
-        <div class="text-caption text-grey mb-4">
-          <v-icon icon="mdi-information-outline" size="small" class="mr-1"></v-icon>
-          Более длинная сессия улучшает удобство пользователей, но может снизить безопасность
+        <div class="mb-4">
+          <v-checkbox
+            v-model="unlimitedSession"
+            color="teal-darken-2"
+            label="сессия без ограничения по времени"
+            hide-details
+          ></v-checkbox>
         </div>
         
         <v-switch

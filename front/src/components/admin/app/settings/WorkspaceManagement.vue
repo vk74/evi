@@ -74,18 +74,19 @@ const showTemplateSelection = ref(true);
       </div>
       
       <div class="section-content">
-        <v-select
-          v-model="workspaceLayout"
-          :items="layoutOptions"
-          label="default layout"
-          variant="outlined"
-          density="comfortable"
-          color="teal-darken-2"
-          style="max-width: 200px;"
-        ></v-select>
-        
-        <v-row class="mt-4">
-          <v-col cols="12" sm="6">
+        <div class="d-flex flex-wrap">
+          <div class="me-4 mb-4" style="min-width: 200px;">
+            <v-select
+              v-model="workspaceLayout"
+              :items="layoutOptions"
+              label="default layout"
+              variant="outlined"
+              density="comfortable"
+              color="teal-darken-2"
+            ></v-select>
+          </div>
+          
+          <div class="me-4 mb-4" style="min-width: 200px;">
             <v-select
               v-model="sidebarPosition"
               :items="positionOptions"
@@ -94,9 +95,9 @@ const showTemplateSelection = ref(true);
               density="comfortable"
               color="teal-darken-2"
             ></v-select>
-          </v-col>
+          </div>
           
-          <v-col cols="12" sm="6">
+          <div class="mb-4" style="min-width: 200px;">
             <v-select
               v-model="defaultPanel"
               :items="panelOptions"
@@ -105,8 +106,8 @@ const showTemplateSelection = ref(true);
               density="comfortable"
               color="teal-darken-2"
             ></v-select>
-          </v-col>
-        </v-row>
+          </div>
+        </div>
         
         <v-checkbox
           v-model="compactMode"
