@@ -7,10 +7,12 @@ Contains:
 - Main work area for displaying the active module
 - Global snackbar for system messages
 - Enhanced Admin section with accordion styling and proper focus management
-- Duplicated app bar actions in navigation drawer for improved accessibility
+- Consistent button styling throughout the navigation drawer
+- Fixed active state tracking for bottom navigation items
+- Improved handling of ResizeObserver errors with a more robust implementation
 -->
 <script setup>
-import { ref, computed, onMounted, watch, defineAsyncComponent } from 'vue';
+import { ref, computed, onMounted, watch, defineAsyncComponent, nextTick } from 'vue';
 import { useUserStore } from '@/core/state/userstate';
 import { useUiStore } from './core/state/uistate';
 import { useAppStore } from './core/state/appstate';
@@ -50,6 +52,9 @@ const drawer = ref(true);
 const isChangePassModalVisible = ref(false);
 const isLoginDialogVisible = ref(false);
 const isAdminExpanded = ref(false); // Track admin section expansion
+const isProfileMenuOpen = ref(false); // Track profile menu state
+const isLanguageMenuOpen = ref(false); // Track language menu state
+const menuLocked = ref(false); // Prevent menu interactions during animations
 
 // Computed properties
 const isLoggedIn = computed(() => userStore.isLoggedIn);
@@ -91,9 +96,29 @@ const currentAdminSubmodule = computed(() => {
   }
 });
 
+// Safe menu interaction methods with debouncing
+const safeCloseMenus = () => {
+  if (menuLocked.value) return;
+  
+  menuLocked.value = true;
+  isProfileMenuOpen.value = false;
+  isLanguageMenuOpen.value = false;
+  
+  // Unlock after animation completes
+  setTimeout(() => {
+    menuLocked.value = false;
+  }, 300);
+};
+
 // Methods
 const setActiveModule = (module) => {
-  appStore.setActiveModule(module);
+  // Close menus safely before changing modules
+  safeCloseMenus();
+  
+  // Small delay to ensure menus are closed before module change
+  setTimeout(() => {
+    appStore.setActiveModule(module);
+  }, 50);
 };
 
 // Toggle admin accordion expansion and set Admin as active module
@@ -113,14 +138,25 @@ const setActiveAdminSection = (section) => {
 };
 
 const logout = () => {
-  // Функция будет переписана с другой логикой позже
-  userStore.userLogoff();
-  appStore.setActiveModule('Login');
+  // Close menus before logout
+  safeCloseMenus();
+  
+  // Small delay to ensure menus are closed
+  setTimeout(() => {
+    userStore.userLogoff();
+    appStore.setActiveModule('Login');
+  }, 50);
 };
 
 const changeLanguage = (lang) => {
-  userStore.setLanguage(lang);
-  i18n.locale.value = lang;
+  // Close language menu
+  safeCloseMenus();
+  
+  // Small delay to avoid race conditions
+  setTimeout(() => {
+    userStore.setLanguage(lang);
+    i18n.locale.value = lang;
+  }, 50);
 };
 
 const handleLoginSuccess = () => {
@@ -128,10 +164,50 @@ const handleLoginSuccess = () => {
 };
 
 const toggleDrawerMode = () => {
+  // Close menus safely before toggling drawer mode
+  safeCloseMenus();
+  
   const modes = ['auto', 'opened', 'closed'];
   const currentIndex = modes.indexOf(appStore.drawerMode);
   const nextIndex = (currentIndex + 1) % modes.length;
-  appStore.setDrawerMode(modes[nextIndex]);
+  
+  // Small delay to ensure menus are closed before toggling
+  setTimeout(() => {
+    appStore.setDrawerMode(modes[nextIndex]);
+  }, 50);
+};
+
+// Controlled menu toggle functions
+const toggleProfileMenu = () => {
+  if (menuLocked.value) return;
+  
+  // Close language menu if open
+  if (isLanguageMenuOpen.value) {
+    isLanguageMenuOpen.value = false;
+    
+    // Wait for animation to complete before opening profile menu
+    setTimeout(() => {
+      isProfileMenuOpen.value = !isProfileMenuOpen.value;
+    }, 100);
+  } else {
+    isProfileMenuOpen.value = !isProfileMenuOpen.value;
+  }
+};
+
+const toggleLanguageMenu = () => {
+  if (menuLocked.value) return;
+  
+  // Close profile menu if open
+  if (isProfileMenuOpen.value) {
+    isProfileMenuOpen.value = false;
+    
+    // Wait for animation to complete before opening language menu
+    setTimeout(() => {
+      isLanguageMenuOpen.value = !isLanguageMenuOpen.value;
+    }, 100);
+  } else {
+    isLanguageMenuOpen.value = !isLanguageMenuOpen.value;
+  }
 };
 
 // Watch for active module changes
@@ -147,8 +223,53 @@ watch(
     if (newModule === 'Admin' && !isAdminExpanded.value) {
       isAdminExpanded.value = true;
     }
+    
+    // Close any open menus when changing modules
+    safeCloseMenus();
   }
 );
+
+// Watch for drawer changes
+watch(
+  drawer,
+  () => {
+    // When drawer state changes, close any open menus to prevent resize issues
+    safeCloseMenus();
+  }
+);
+
+// Prevent ResizeObserver errors - more robust implementation
+const preventResizeErrors = () => {
+  // Error handler for ResizeObserver errors
+  const errorHandler = (event) => {
+    if (event.message && event.message.includes('ResizeObserver')) {
+      event.stopImmediatePropagation();
+      event.preventDefault();
+      return false;
+    }
+  };
+
+  // Add multiple listeners to catch all variations of the error
+  window.addEventListener('error', errorHandler);
+  window.addEventListener('unhandledrejection', (event) => {
+    if (event.reason && event.reason.message && 
+        event.reason.message.includes('ResizeObserver')) {
+      event.preventDefault();
+      event.stopPropagation();
+    }
+  });
+  
+  // Set a global error handler
+  const originalConsoleError = console.error;
+  console.error = (...args) => {
+    // Filter out ResizeObserver errors from console
+    if (args[0] && typeof args[0] === 'string' && 
+        args[0].includes('ResizeObserver')) {
+      return;
+    }
+    originalConsoleError.apply(console, args);
+  };
+};
 
 // Lifecycle hooks
 onMounted(() => {
@@ -163,6 +284,9 @@ onMounted(() => {
     console.log('App mounted. User is logged in. Starting session timers...');
     startSessionTimers();
   }
+  
+  // Set up ResizeObserver error prevention
+  preventResizeErrors();
 });
 </script>
 
@@ -391,120 +515,132 @@ onMounted(() => {
         />
       </v-list>
  
-      <!-- Append slot for drawer controls and duplicated actions -->
+      <!-- Append slot for drawer controls and bottom navigation items -->
       <template #append>
-        <!-- Language selection dropdown menu above divider -->
-        <div class="drawer-actions language-selector">
-          <v-menu>
-            <template #activator="{ props }">
-              <v-btn
-                icon
-                variant="text"
-                v-bind="props"
-                class="drawer-action-btn"
-              >
-                <v-icon>mdi-translate</v-icon>
-              </v-btn>
-            </template>
+        <!-- Bottom navigation list -->
+        <v-list density="compact" nav>
+          <!-- Language selection with menu - using click trigger -->
+          <div class="menu-wrapper">
+            <v-list-item
+              v-tooltip="{
+                text: $t('navigation.tooltips.language'),
+                location: 'right',
+                disabled: appStore.drawerMode !== 'closed'
+              }"
+              prepend-icon="mdi-translate"
+              :title="$t('navigation.drawer.language')"
+              value="language"
+              class="bottom-list-item"
+              :active="isLanguageMenuOpen"
+              @click="toggleLanguageMenu"
+            />
             
-            <v-list>
-              <v-list-item
-                :active="userStore.language === 'en'"
-                @click="changeLanguage('en')"
-              >
-                <v-list-item-title>English</v-list-item-title>
-              </v-list-item>
-              <v-list-item
-                :active="userStore.language === 'ru'"
-                @click="changeLanguage('ru')"
-              >
-                <v-list-item-title>Русский</v-list-item-title>
-              </v-list-item>
-            </v-list>
-          </v-menu>
-        </div>
-        
-        <!-- Divider between language and account icons -->
-        <v-divider class="border-opacity-25 mx-3 my-2" />
-        
-        <!-- Account-related icons below divider -->
-        <div class="drawer-actions">
-          <!-- Account icon with dropdown (when logged in) -->
-          <v-menu v-if="isLoggedIn">
-            <template #activator="{ props }">
-              <v-btn
-                v-bind="props"
-                icon
-                variant="text"
-                class="drawer-action-btn"
-              >
-                <v-icon>mdi-account</v-icon>
-              </v-btn>
-            </template>
+            <v-menu
+              v-model="isLanguageMenuOpen"
+              :close-on-content-click="true"
+              location="start"
+              offset="5"
+              transition="slide-y-transition"
+              content-class="stable-menu"
+            >
+              <template #activator="{ props }">
+                <div v-bind="props" class="hidden-activator"></div>
+              </template>
+              <v-list>
+                <v-list-item
+                  :active="userStore.language === 'en'"
+                  @click="changeLanguage('en')"
+                >
+                  <v-list-item-title>English</v-list-item-title>
+                </v-list-item>
+                <v-list-item
+                  :active="userStore.language === 'ru'"
+                  @click="changeLanguage('ru')"
+                >
+                  <v-list-item-title>Русский</v-list-item-title>
+                </v-list-item>
+              </v-list>
+            </v-menu>
+          </div>
+          
+          <v-divider class="border-opacity-25" />
+          
+          <!-- Profile menu (when logged in) - using click trigger -->
+          <div v-if="isLoggedIn" class="menu-wrapper">
+            <v-list-item
+              v-tooltip="{
+                text: $t('navigation.tooltips.profile'),
+                location: 'right',
+                disabled: appStore.drawerMode !== 'closed'
+              }"
+              prepend-icon="mdi-account"
+              :title="$t('navigation.drawer.profile')"
+              value="profile"
+              class="bottom-list-item"
+              :active="isProfileMenuOpen || appStore.isModuleActive('Account') || appStore.isModuleActive('Settings')"
+              @click="toggleProfileMenu"
+            />
             
-            <v-list>
-              <!-- Account module link -->
-              <v-list-item
-                @click="setActiveModule('Account')"
-              >
-                <v-list-item-title>{{ $t('navigation.drawer.account') }}</v-list-item-title>
-              </v-list-item>
-              
-              <!-- App preferences module link -->
-              <v-list-item
-                @click="setActiveModule('Settings')"
-              >
-                <v-list-item-title>{{ $t('navigation.drawer.appPreferences') }}</v-list-item-title>
-              </v-list-item>
-              
-              <v-list-item
-                @click="isChangePassModalVisible = true"
-              >
-                <v-list-item-title>{{ $t('navigation.systemMenu.changePassword') }}</v-list-item-title>
-              </v-list-item>
-              
-              <v-list-item
-                @click="logout"
-              >
-                <v-list-item-title>{{ $t('navigation.systemMenu.logout') }}</v-list-item-title>
-              </v-list-item>
-            </v-list>
-          </v-menu>
+            <v-menu
+              v-model="isProfileMenuOpen"
+              :close-on-content-click="true"
+              location="start"
+              offset="5"
+              transition="slide-y-transition"
+              content-class="stable-menu"
+            >
+              <template #activator="{ props }">
+                <div v-bind="props" class="hidden-activator"></div>
+              </template>
+              <v-list>
+                <v-list-item @click="setActiveModule('Account')">
+                  <v-list-item-title>{{ $t('navigation.drawer.account') }}</v-list-item-title>
+                </v-list-item>
+                <v-list-item @click="setActiveModule('Settings')">
+                  <v-list-item-title>{{ $t('navigation.drawer.appPreferences') }}</v-list-item-title>
+                </v-list-item>
+                <v-list-item @click="isChangePassModalVisible = true">
+                  <v-list-item-title>{{ $t('navigation.systemMenu.changePassword') }}</v-list-item-title>
+                </v-list-item>
+                <v-list-item @click="logout">
+                  <v-list-item-title>{{ $t('navigation.systemMenu.logout') }}</v-list-item-title>
+                </v-list-item>
+              </v-list>
+            </v-menu>
+          </div>
           
-          <!-- Login button (when not logged in) -->
-          <v-tooltip location="right">
-            <template #activator="{ props }">
-              <v-btn
-                v-if="!isLoggedIn"
-                icon
-                variant="text"
-                v-bind="props" 
-                @click="setActiveModule('Login')"
-                class="drawer-action-btn"
-              >
-                <v-icon>mdi-login</v-icon>
-              </v-btn>
-            </template>
-            <span>{{ $t('navigation.tooltips.login') }}</span>
-          </v-tooltip>
+          <!-- Login item (when not logged in) -->
+          <v-list-item
+            v-if="!isLoggedIn"
+            v-tooltip="{
+              text: $t('navigation.tooltips.login'),
+              location: 'right',
+              disabled: appStore.drawerMode !== 'closed'
+            }"
+            prepend-icon="mdi-login"
+            :title="$t('navigation.drawer.login')"
+            value="login"
+            :active="appStore.isModuleActive('Login')"
+            @click="setActiveModule('Login')"
+            class="bottom-list-item"
+          />
           
-          <!-- Registration button (when not logged in) -->
-          <v-tooltip location="right">
-            <template #activator="{ props }">
-              <v-btn
-                v-if="!isLoggedIn"
-                icon
-                variant="text"
-                v-bind="props"
-                @click="setActiveModule('NewUserRegistration')"
-                class="drawer-action-btn"
-              >
-                <v-icon>mdi-account-plus</v-icon>
-              </v-btn>
-            </template>
-            <span>{{ $t('navigation.tooltips.register') }}</span>
-          </v-tooltip>
-        </div>
+          <!-- Register item (when not logged in) -->
+          <v-list-item
+            v-if="!isLoggedIn"
+            v-tooltip="{
+              text: $t('navigation.tooltips.register'),
+              location: 'right',
+              disabled: appStore.drawerMode !== 'closed'
+            }"
+            prepend-icon="mdi-account-plus"
+            :title="$t('navigation.drawer.register')"
+            value="register"
+            :active="appStore.isModuleActive('NewUserRegistration')"
+            @click="setActiveModule('NewUserRegistration')"
+            class="bottom-list-item"
+          />
+        </v-list>
         
         <!-- Drawer control area -->
         <div
@@ -568,6 +704,39 @@ onMounted(() => {
 /* Active menu item icon style */
 .v-navigation-drawer .v-list-item--active .v-icon {
   color: rgb(19, 84, 122) !important;
+}
+
+/* Bottom list items styling */
+.bottom-list-item {
+  min-height: 40px !important;
+}
+
+.bottom-list-item:hover {
+  background-color: rgba(128, 208, 199, 0.15) !important;
+  cursor: pointer;
+}
+
+/* Menu wrapper to help with positioning */
+.menu-wrapper {
+  position: relative;
+}
+
+/* Hidden activator to prevent resize issues */
+.hidden-activator {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* Stable menu to prevent layout shifts */
+.stable-menu {
+  min-width: 200px;
 }
 
 /* Drawer control area styles */
@@ -676,44 +845,6 @@ onMounted(() => {
   margin-left: 0;
   border-left: none;
   border-right: 3px solid rgb(19, 84, 122);
-}
-
-/* Drawer actions section styling */
-.drawer-actions {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  padding: 0;
-}
-
-.drawer-action-btn {
-  margin: 0;
-  padding: 0;
-  opacity: 0.75;
-  height: 40px !important;
-  min-height: 40px !important;
-  width: 100%;
-  border-radius: 0;
-  transition: opacity 0.2s ease, background-color 0.2s ease;
-}
-
-.drawer-action-btn :deep(.v-btn__content) {
-  margin: 0;
-  padding: 0;
-}
-
-.drawer-action-btn:hover {
-  opacity: 1;
-  background-color: rgba(128, 208, 199, 0.15) !important;
-}
-
-/* Make actions more compact in rail mode */
-:deep(.v-navigation-drawer--rail) .drawer-actions {
-  padding: 0;
-}
-
-:deep(.v-navigation-drawer--rail) .drawer-action-btn {
-  margin: 0;
 }
 
 /* Floating menu button styles */

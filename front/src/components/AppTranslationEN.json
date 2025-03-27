@@ -8,11 +8,17 @@
       "xlsPrototyping": "xls prototyping",
       "knowledgeBase": "knowledge base",
       "account": "account",
-      "appPreferences": "app preferences"
+      "appPreferences": "app preferences",
+      "language": "language",
+      "profile": "profile",
+      "login": "login",
+      "register": "register"
     },
     "tooltips": {
       "login": "login for registered users",
-      "register": "account registration"
+      "register": "account registration",
+      "language": "change language",
+      "profile": "your account"
     },
     "systemMenu": {
       "test": "test command",
