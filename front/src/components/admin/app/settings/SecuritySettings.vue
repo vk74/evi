@@ -17,7 +17,7 @@ import { ref, computed } from 'vue';
 const sessionDuration = ref('30');
 const unlimitedSession = ref(false);
 const concurrentSessions = ref(true);
-const maxSessionsPerUser = ref(5);
+const maxSessionsPerUser = ref(2);
 
 // Session duration options (10 minutes to 24 hours)
 const sessionDurationOptions = [
