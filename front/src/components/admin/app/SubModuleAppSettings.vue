@@ -407,31 +407,6 @@
    margin-right: 8px;
  }
  
- /* Connection lines with CSS pseudo-elements */
- .section-item:not(.level-0)::before {
-   content: '';
-   position: absolute;
-   left: 16px;
-   top: 19px; /* Fixed position instead of 50% for multiline items */
-   width: 6px;
-   height: 1px;
-   background-color: rgba(0, 0, 0, 0.1);
- }
- 
- .section-item:not(.level-0)::after {
-   content: '';
-   position: absolute;
-   left: 16px;
-   top: -8px;
-   width: 1px;
-   height: calc(100% + 8px);
-   background-color: rgba(0, 0, 0, 0.1);
- }
- 
- .section-item.is-last-in-level::after {
-   height: 50%;
- }
- 
  /* Mobile menu */
  .mobile-categories {
    width: 100%;
