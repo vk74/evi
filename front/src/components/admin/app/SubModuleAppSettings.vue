@@ -1,88 +1,227 @@
 <!--
  * Application settings administration module SubModuleAppSettings.vue
- * Provides navigation between application settings categories
+ * Provides hierarchical navigation between application settings categories
  * and displays the corresponding settings components in the workspace area.
  * 
- * Uses a Pinia store to persist the selected category between sessions.
+ * Uses a Pinia store to persist the selected category and expanded state between sessions.
  -->
  <script setup lang="ts">
- import { ref, computed, shallowRef, onMounted } from 'vue';
+ import { ref, computed, onMounted } from 'vue';
  import { useAppSettingsStore } from '@/components/admin/app/state.app.settings';
  
- // Import all setting components
- import AppSettings from './settings/AppSettings.vue';
- import SecuritySettings from './settings/SecuritySettings.vue';
- import UserManagement from './settings/UserManagement.vue';
- import LoggingSettings from './settings/LoggingSettings.vue';
- import WorkspaceManagement from './settings/WorkspaceManagement.vue';
+ // Define section interface
+ interface Section {
+   id: string;
+   name: string;
+   icon: string;
+   children?: Section[];
+ }
  
  // Initialize the store
  const appSettingsStore = useAppSettingsStore();
  
- // Using shallowRef for better performance since these are components
- const categories = shallowRef([
-   { 
-     name: 'application settings', 
-     icon: 'mdi-cog-outline', 
-     component: AppSettings
+ // Hierarchical sections structure
+ const sections = ref<Section[]>([
+   {
+     id: 'application',
+     name: 'application',
+     icon: 'mdi-cog-outline',
+     children: [
+       {
+         id: 'application.user_profiles',
+         name: 'user profiles',
+         icon: 'mdi-account-cog-outline',
+       },
+       {
+         id: 'application.logging',
+         name: 'logging',
+         icon: 'mdi-text-box-outline',
+         children: [
+           {
+             id: 'application.logging.console_transport',
+             name: 'console transport',
+             icon: 'mdi-console',
+           },
+           {
+             id: 'application.logging.file_transport',
+             name: 'file transport',
+             icon: 'mdi-file-outline',
+           }
+         ]
+       },
+       {
+         id: 'application.security',
+         name: 'security',
+         icon: 'mdi-shield-outline',
+         children: [
+           {
+             id: 'application.security.session_management',
+             name: 'session management',
+             icon: 'mdi-account-clock-outline',
+           },
+           {
+             id: 'application.security.password_policies',
+             name: 'password policies',
+             icon: 'mdi-form-textbox-password',
+           }
+         ]
+       }
+     ]
    },
-   { 
-     name: 'security settings', 
-     icon: 'mdi-shield-outline', 
-     component: SecuritySettings
+   {
+     id: 'users_management',
+     name: 'users management',
+     icon: 'mdi-account-group-outline',
    },
-   { 
-     name: 'logging management', 
-     icon: 'mdi-text-box-outline', 
-     component: LoggingSettings
+   {
+     id: 'catalog',
+     name: 'catalog',
+     icon: 'mdi-folder-table-outline',
    },
-   { 
-     name: 'users management', 
-     icon: 'mdi-account-group-outline', 
-     component: UserManagement
+   {
+     id: 'services',
+     name: 'services',
+     icon: 'mdi-puzzle-outline',
    },
-   { 
-     name: 'workspace management', 
-     icon: 'mdi-view-grid-outline', 
-     component: WorkspaceManagement
+   {
+     id: 'processes',
+     name: 'processes',
+     icon: 'mdi-chart-timeline-variant',
    }
  ]);
- 
- // Current selected category index
- const selectedCategoryIndex = ref(0);
  
  // Mobile menu state
  const isMobileMenuOpen = ref(false);
  
- // On component mount, initialize the selected category from the store
- onMounted(() => {
-   const storeIndex = appSettingsStore.getCurrentCategoryIndex;
-   // Ensure the index is valid for our categories array
-   selectedCategoryIndex.value = Math.min(storeIndex, categories.value.length - 1);
+ // Get selected section ID from store
+ const selectedSectionId = computed(() => {
+   return appSettingsStore.getSelectedSectionId;
  });
  
- // Computed property to get active component based on selected category
- const activeComponent = computed(() => {
-   return categories.value[selectedCategoryIndex.value].component;
- });
- 
- // Computed property to get active category name for display in mobile view
- const activeCategoryName = computed(() => {
-   return categories.value[selectedCategoryIndex.value].name;
+ // Get expanded sections from store
+ const expandedSections = computed(() => {
+   return appSettingsStore.getExpandedSections;
  });
  
  /**
-  * Function to select category
+  * Converts hierarchical sections structure to a flat list for display
+  * Only includes sections that should be visible based on expanded state
   */
- const selectCategory = (index: number) => {
-   selectedCategoryIndex.value = index;
-   appSettingsStore.setSelectedCategory(index);
+ const flattenedSections = computed(() => {
+   const result: Array<{
+     id: string;
+     name: string;
+     icon: string;
+     level: number;
+     hasChildren: boolean;
+     isLastInLevel: boolean;
+     parentId: string | null;
+   }> = [];
+ 
+   // Helper function to recursively process sections
+   const processSections = (
+     sectionList: Section[],
+     level: number = 0,
+     parentId: string | null = null
+   ) => {
+     sectionList.forEach((section, index) => {
+       // Add the current section to the result
+       result.push({
+         id: section.id,
+         name: section.name,
+         icon: section.icon,
+         level,
+         hasChildren: !!section.children && section.children.length > 0,
+         isLastInLevel: index === sectionList.length - 1,
+         parentId
+       });
+ 
+       // If section is expanded and has children, process them
+       if (
+         section.children &&
+         section.children.length > 0 &&
+         expandedSections.value.includes(section.id)
+       ) {
+         processSections(section.children, level + 1, section.id);
+       }
+     });
+   };
+ 
+   processSections(sections.value);
+   return result;
+ });
+ 
+ /**
+  * Helper function to find section by ID in the hierarchical structure
+  * Returns null if section not found
+  */
+ const findSectionById = (id: string, sectionList: Section[]): Section | null => {
+   for (const section of sectionList) {
+     if (section.id === id) {
+       return section;
+     }
+     
+     if (section.children && section.children.length > 0) {
+       const found = findSectionById(id, section.children);
+       if (found) return found;
+     }
+   }
    
-   // Close mobile menu if open
-   isMobileMenuOpen.value = false;
+   return null;
  };
  
- // Function to toggle mobile menu
+ // Get the selected section object with fallback to avoid null reference errors
+ const selectedSection = computed(() => {
+   const section = findSectionById(selectedSectionId.value, sections.value);
+   // Provide default values to avoid "Cannot read properties of undefined" error
+   return section || { id: '', name: 'Settings', icon: 'mdi-cog-outline' };
+ });
+ 
+ /**
+  * Function to expand all parent sections of a given section ID
+  * Uses the hierarchical ID structure to identify parent sections
+  */
+ const expandParentSections = (id: string) => {
+   const parts = id.split('.');
+   let currentId = '';
+   
+   // For each segment in the path, expand the parent section
+   for (let i = 0; i < parts.length - 1; i++) {
+     if (i === 0) {
+       currentId = parts[i];
+     } else {
+       currentId += '.' + parts[i];
+     }
+     
+     appSettingsStore.expandSection(currentId);
+   }
+ };
+ 
+ /**
+  * Handle section click
+  */
+ const handleSectionClick = (section: { id: string; hasChildren: boolean }) => {
+   // Set as selected
+   appSettingsStore.setSelectedSection(section.id);
+   
+   // Toggle expansion if it has children
+   if (section.hasChildren) {
+     appSettingsStore.toggleSection(section.id);
+   }
+ };
+ 
+ // On component mount
+ onMounted(() => {
+   // If no section is selected in store, default to 'application'
+   if (!selectedSectionId.value) {
+     appSettingsStore.setSelectedSection('application');
+   }
+   
+   // Expand parent sections of the selected section
+   expandParentSections(selectedSectionId.value);
+ });
+ 
+ // Toggle mobile menu
  const toggleMobileMenu = () => {
    isMobileMenuOpen.value = !isMobileMenuOpen.value;
  };
@@ -98,19 +237,30 @@
          class="mobile-menu-button"
          prepend-icon="mdi-menu"
        >
-         {{ activeCategoryName }}
+         {{ selectedSection.name }}
        </v-btn>
        
+       <!-- Mobile dropdown menu -->
        <v-expand-transition>
          <v-list v-show="isMobileMenuOpen" class="mobile-dropdown">
            <v-list-item
-             v-for="(category, index) in categories"
-             :key="`cat-${index}`"
-             :class="['menu-item', { 'category-active': selectedCategoryIndex === index }]"
-             @click="selectCategory(index)"
-             :prepend-icon="category.icon"
-             :title="category.name"
-           />
+             v-for="section in flattenedSections"
+             :key="section.id"
+             @click="handleSectionClick(section)"
+             :class="['mobile-section-item', { 'section-active': section.id === selectedSectionId }]"
+             :style="{ paddingLeft: `${16 + section.level * 20}px` }"
+           >
+             <template v-slot:prepend>
+               <v-icon
+                 v-if="section.hasChildren"
+                 :icon="expandedSections.includes(section.id) ? 'mdi-chevron-down' : 'mdi-chevron-right'"
+                 size="small"
+                 class="mr-2"
+               ></v-icon>
+               <v-icon :icon="section.icon" size="small" class="mr-2"></v-icon>
+             </template>
+             {{ section.name }}
+           </v-list-item>
          </v-list>
        </v-expand-transition>
      </div>
@@ -118,89 +268,151 @@
      <div class="settings-layout fill-height">
        <!-- Menu Panel (hidden on mobile) -->
        <div class="menu-panel d-none d-sm-block">
-         <v-list density="compact" nav class="categories-list">
+         <v-list density="compact" nav class="sections-list">
            <v-list-item
-             v-for="(category, index) in categories"
-             :key="`cat-${index}`"
-             :class="['menu-item', { 'category-active': selectedCategoryIndex === index }]"
-             @click="selectCategory(index)"
-             :prepend-icon="category.icon"
-             :title="category.name"
+             v-for="section in flattenedSections"
+             :key="section.id"
+             :class="[
+               'section-item', 
+               `level-${section.level}`,
+               { 'section-active': section.id === selectedSectionId },
+               { 'has-children': section.hasChildren },
+               { 'is-expanded': expandedSections.includes(section.id) },
+               { 'is-last-in-level': section.isLastInLevel }
+             ]"
+             @click="handleSectionClick(section)"
              active-class=""
-           />
+           >
+             <template v-slot:prepend>
+               <div class="section-indicator">
+                 <v-icon
+                   v-if="section.hasChildren"
+                   :icon="expandedSections.includes(section.id) ? 'mdi-chevron-down' : 'mdi-chevron-right'"
+                   size="small"
+                   class="chevron-icon"
+                 ></v-icon>
+               </div>
+               <v-icon :icon="section.icon" size="small" class="section-icon"></v-icon>
+             </template>
+             <v-list-item-title>{{ section.name }}</v-list-item-title>
+           </v-list-item>
          </v-list>
        </div>
  
        <!-- Content Panel -->
        <div class="content-panel pa-4">
-         <transition name="fade" mode="out-in">
-           <component :is="activeComponent" :key="selectedCategoryIndex" />
-         </transition>
+         <h2>Selected section: {{ selectedSectionId }}</h2>
+         <!-- Will be replaced with component rendering later -->
        </div>
      </div>
    </v-container>
  </template>
  
  <style scoped>
- /* Используем flexbox макет вместо сетки Vuetify для лучшего контроля */
+ /* Settings layout */
  .settings-layout {
    display: flex;
    width: 100%;
-   height: 100%; /* Важно для работы прокрутки */
-   overflow: hidden; /* Предотвращает прокрутку всего контейнера */
+   height: 100%;
+   overflow: hidden;
  }
  
  .menu-panel {
-   width: 220px;
-   min-width: 220px;
+   width: 235px; /* Increased from 220px */
+   min-width: 235px;
    border-right: 1px solid rgba(0, 0, 0, 0.12);
    background-color: white;
    flex-shrink: 0;
-   position: sticky; /* Фиксирует меню при прокрутке */
-   top: 0; /* Прилипает к верху */
-   height: 100vh; /* Высота на весь экран */
-   overflow-y: auto; /* Позволяет прокручивать само меню, если оно длиннее экрана */
+   position: sticky;
+   top: 0;
+   height: 100vh;
+   overflow-y: auto;
  }
  
  .content-panel {
    flex-grow: 1;
-   overflow-y: auto; /* Добавляет прокрутку только для содержимого */
-   height: 100vh; /* Высота на весь экран для правильной работы прокрутки */
+   overflow-y: auto;
+   height: 100vh;
    padding: 16px;
  }
  
- /* Остальные стили остаются без изменений */
- .menu-item {
-   min-height: 44px;
+ /* Section items */
+ .section-item {
+   min-height: 40px;
    position: relative;
    transition: all 0.1s ease;
    margin: 2px 0;
+ }
+ 
+ /* Apply indentation based on level */
+ .section-item.level-0 {
    padding-left: 16px;
-   white-space: normal;
-   overflow: visible;
  }
  
- .menu-item :deep(.v-list-item-title) {
-   white-space: normal;
-   overflow: visible;
-   text-overflow: clip;
-   padding-right: 8px;
+ .section-item.level-1 {
+   padding-left: 26px;
  }
  
- /* Make the icon glow for active category */
- .category-active :deep(.v-icon) {
+ .section-item.level-2 {
+   padding-left: 36px;
+ }
+ 
+ .section-item.level-3 {
+   padding-left: 46px;
+ }
+ 
+ .section-item.level-4 {
+   padding-left: 56px;
+ }
+ 
+ /* Active section */
+ .section-active {
+   background-color: rgba(19, 84, 122, 0.05);
+ }
+ 
+ .section-active :deep(.v-list-item-title),
+ .section-active :deep(.v-icon) {
    color: #13547a !important;
-   filter: drop-shadow(0 0 3px rgba(19, 84, 122, 0.3));
+   filter: drop-shadow(0 0 2px rgba(19, 84, 122, 0.2));
  }
  
- /* Make the text glow for active category */
- .category-active :deep(.v-list-item-title) {
-   color: #13547a !important;
-   text-shadow: 0 0 1px rgba(19, 84, 122, 0.2);
-   letter-spacing: 0.01em;
+ /* Section icons */
+ .section-indicator {
+   display: inline-flex;
+   width: 16px;
+   margin-right: 4px;
  }
  
- /* Mobile categories styling */
+ .section-icon {
+   margin-right: 8px;
+ }
+ 
+ /* Connection lines with CSS pseudo-elements */
+ .section-item:not(.level-0)::before {
+   content: '';
+   position: absolute;
+   left: 16px;
+   top: 50%;
+   width: 6px;
+   height: 1px;
+   background-color: rgba(0, 0, 0, 0.1);
+ }
+ 
+ .section-item:not(.level-0)::after {
+   content: '';
+   position: absolute;
+   left: 16px;
+   top: -8px;
+   width: 1px;
+   height: calc(100% + 8px);
+   background-color: rgba(0, 0, 0, 0.1);
+ }
+ 
+ .section-item.is-last-in-level::after {
+   height: 50%;
+ }
+ 
+ /* Mobile menu */
  .mobile-categories {
    width: 100%;
    background-color: white;
@@ -230,7 +442,11 @@
    z-index: 99;
  }
  
- /* Fade transition for content switching */
+ .mobile-section-item {
+   min-height: 40px;
+ }
+ 
+ /* Transitions */
  .fade-enter-active,
  .fade-leave-active {
    transition: opacity 0.2s ease;
@@ -241,15 +457,11 @@
    opacity: 0;
  }
  
- /* Адаптивность для планшетов */
+ /* Tablet responsiveness */
  @media (min-width: 600px) and (max-width: 960px) {
    .menu-panel {
-     width: 190px;
-     min-width: 190px;
-   }
-   
-   .menu-item {
-     padding-left: 12px;
+     width: 210px;
+     min-width: 210px;
    }
  }
  </style>

@@ -1,43 +1,71 @@
 /**
  * state.app.settings.ts
  * 
- * Simple state management for the application settings module using Pinia.
- * Tracks the selected category index for persistence between sessions.
+ * State management for the application settings module using Pinia.
+ * Tracks the selected section ID and expanded sections for hierarchical menu.
  */
 
 import { defineStore } from 'pinia';
 
 // Define the interface for the store state
 interface AppSettingsState {
-  selectedCategoryIndex: number;
+  selectedSectionId: string;
+  expandedSections: string[];
 }
 
 /**
  * App Settings Store
- * Manages which settings category is selected
+ * Manages which settings section is selected and which sections are expanded
  */
 export const useAppSettingsStore = defineStore('appSettings', {
   // Initial state
   state: (): AppSettingsState => ({
-    selectedCategoryIndex: 0 // Default to first category
+    selectedSectionId: 'application', // Default to application section
+    expandedSections: [] // Start with all sections collapsed
   }),
   
   // Getters
   getters: {
-    // Get the currently selected category index
-    getCurrentCategoryIndex: (state): number => {
-      return state.selectedCategoryIndex;
+    // Get the currently selected section ID
+    getSelectedSectionId: (state): string => {
+      return state.selectedSectionId;
+    },
+    
+    // Get all expanded section IDs
+    getExpandedSections: (state): string[] => {
+      return state.expandedSections;
     }
   },
   
   // Actions
   actions: {
-    // Set the selected category
-    setSelectedCategory(index: number) {
-      this.selectedCategoryIndex = index;
+    // Set the selected section
+    setSelectedSection(id: string) {
+      this.selectedSectionId = id;
+    },
+    
+    // Expand a section
+    expandSection(id: string) {
+      if (!this.expandedSections.includes(id)) {
+        this.expandedSections.push(id);
+      }
+    },
+    
+    // Collapse a section
+    collapseSection(id: string) {
+      this.expandedSections = this.expandedSections.filter(sectionId => sectionId !== id);
+    },
+    
+    // Toggle a section's expanded state
+    toggleSection(id: string) {
+      if (this.expandedSections.includes(id)) {
+        this.collapseSection(id);
+      } else {
+        this.expandSection(id);
+      }
     }
   },
   
-  // Enable persistence to keep selected category between sessions
+  // Enable persistence to keep state between sessions
   persist: true
 });
