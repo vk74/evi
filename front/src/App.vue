@@ -697,13 +697,14 @@ onMounted(() => {
 
 /* Active menu item style */
 .v-navigation-drawer .v-list-item--active {
-  background-color: rgba(128, 208, 199, 0.15) !important;
-  color: rgb(19, 84, 122) !important;
+  background-color: rgba(38, 166, 154, 0.08) !important;
+  color: #13547a !important;
 }
 
 /* Active menu item icon style */
 .v-navigation-drawer .v-list-item--active .v-icon {
-  color: rgb(19, 84, 122) !important;
+  color: #13547a !important;
+  filter: drop-shadow(0 0 2px rgba(9, 181, 26, 0.245));
 }
 
 /* Bottom list items styling */
@@ -712,7 +713,7 @@ onMounted(() => {
 }
 
 .bottom-list-item:hover {
-  background-color: rgba(128, 208, 199, 0.15) !important;
+  background-color: rgba(38, 166, 154, 0.08) !important;
   cursor: pointer;
 }
 
@@ -748,7 +749,7 @@ onMounted(() => {
 }
 
 .drawer-control-area:hover {
-  background-color: rgba(128, 208, 199, 0.15) !important;
+  background-color: rgba(38, 166, 154, 0.08) !important;
 }
 
 /* Toggle button styles */
@@ -790,7 +791,7 @@ onMounted(() => {
 
 /* Only apply background color when Admin is both expanded AND active */
 .admin-header-item.admin-expanded.v-list-item--active {
-  background-color: rgba(19, 84, 122, 0.08) !important;
+  background-color: rgba(38, 166, 154, 0.08) !important;
 }
 
 .admin-expand-icon {
@@ -803,7 +804,7 @@ onMounted(() => {
 
 /* Admin submenu styling */
 .admin-submenu {
-  background-color: rgba(19, 84, 122, 0.05);
+  background-color: rgba(38, 166, 154, 0.05);
   margin-top: 1px;
   border-left: 3px solid rgba(19, 84, 122, 0.2);
 }
@@ -817,12 +818,12 @@ onMounted(() => {
 }
 
 .admin-sub-item:hover {
-  background-color: rgba(19, 84, 122, 0.08) !important;
+  background-color: rgba(38, 166, 154, 0.08) !important;
 }
 
 .admin-sub-item.admin-sub-active {
-  background-color: rgba(19, 84, 122, 0.15) !important;
-  border-left: 3px solid rgb(19, 84, 122);
+  background-color: rgba(38, 166, 154, 0.12) !important;
+  border-left: 3px solid #13547a;
   margin-left: -3px;
 }
 
@@ -844,7 +845,7 @@ onMounted(() => {
 :deep(.v-navigation-drawer--rail) .admin-sub-active {
   margin-left: 0;
   border-left: none;
-  border-right: 3px solid rgb(19, 84, 122);
+  border-right: 3px solid #13547a;
 }
 
 /* Floating menu button styles */
