@@ -318,8 +318,8 @@
  }
  
  .menu-panel {
-   width: 235px; /* Increased from 220px */
-   min-width: 235px;
+   width: 255px; /* Increased from original 220px for better fit of multilevel items */
+   min-width: 255px;
    border-right: 1px solid rgba(0, 0, 0, 0.12);
    background-color: white;
    flex-shrink: 0;
@@ -339,9 +339,29 @@
  /* Section items */
  .section-item {
    min-height: 40px;
+   height: auto !important; /* Allow height to expand for multiline content */
    position: relative;
    transition: all 0.1s ease;
    margin: 2px 0;
+   padding-top: 6px;
+   padding-bottom: 6px;
+ }
+ 
+ /* Override Vuetify's default styles that prevent text wrapping */
+ .section-item :deep(.v-list-item__content) {
+   overflow: visible !important;
+   white-space: normal !important;
+ }
+ 
+ .section-item :deep(.v-list-item-title) {
+   white-space: normal !important;
+   overflow: visible !important;
+   text-overflow: clip !important;
+   word-wrap: break-word !important;
+   overflow-wrap: break-word !important;
+   line-height: 1.3 !important;
+   padding-right: 8px !important;
+   max-width: calc(255px - 50px - 16px) !important; /* Width minus icons and paddings */
  }
  
  /* Apply indentation based on level */
@@ -367,13 +387,13 @@
  
  /* Active section */
  .section-active {
-   background-color: rgba(19, 84, 122, 0.05);
+   background-color: rgba(38, 166, 154, 0.08) !important;
  }
  
  .section-active :deep(.v-list-item-title),
  .section-active :deep(.v-icon) {
    color: #13547a !important;
-   filter: drop-shadow(0 0 2px rgba(19, 84, 122, 0.2));
+   filter: drop-shadow(0 0 2px rgba(9, 181, 26, 0.245));
  }
  
  /* Section icons */
@@ -392,7 +412,7 @@
    content: '';
    position: absolute;
    left: 16px;
-   top: 50%;
+   top: 19px; /* Fixed position instead of 50% for multiline items */
    width: 6px;
    height: 1px;
    background-color: rgba(0, 0, 0, 0.1);
@@ -427,7 +447,7 @@
    justify-content: flex-start;
    font-weight: 500;
    height: 56px;
-   color: #13547a !important;
+   color: #26a69a !important;
    background-color: white;
    padding-left: 12px;
  }
@@ -446,6 +466,12 @@
    min-height: 40px;
  }
  
+ .mobile-section-item :deep(.v-list-item-title) {
+   white-space: normal !important;
+   overflow: visible !important;
+   text-overflow: clip !important;
+ }
+ 
  /* Transitions */
  .fade-enter-active,
  .fade-leave-active {
@@ -460,8 +486,12 @@
  /* Tablet responsiveness */
  @media (min-width: 600px) and (max-width: 960px) {
    .menu-panel {
-     width: 210px;
-     min-width: 210px;
+     width: 230px;
+     min-width: 230px;
+   }
+ 
+   .section-item :deep(.v-list-item-title) {
+     max-width: calc(230px - 50px - 16px) !important;
    }
  }
  </style>
