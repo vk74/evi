@@ -4,10 +4,22 @@
  * and displays the corresponding settings components in the workspace area.
  * 
  * Uses a Pinia store to persist the selected category and expanded state between sessions.
+ * 
+ * Updated:
+ * - Added dynamic component loading for multiple sections (application, logging, security, users_management)
+ * - Implemented conditional rendering of settings components based on section ID
+ * - Components are loaded from their respective subdirectories
  -->
  <script setup lang="ts">
- import { ref, computed, onMounted } from 'vue';
- import { useAppSettingsStore } from '@/components/admin/app/state.app.settings';
+ import { ref, computed, onMounted, markRaw } from 'vue';
+ import { useAppSettingsStore } from '@/components/admin/settings/state.app.settings';
+ // Import components for each section
+ import UsersManagement from './users_management/UsersManagement.vue';
+ import GroupsManagement from './users_management/groups_management/GroupsManagement.vue';
+ import Application from './application/Application.vue';
+ import UserProfiles from './application/user_profiles/UserProfiles.vue';
+ import Logging from './logging/Logging.vue';
+ import Security from './security/Security.vue';
  
  // Define section interface
  interface Section {
@@ -72,6 +84,13 @@
      id: 'users_management',
      name: 'users management',
      icon: 'mdi-account-group-outline',
+     children: [
+       {
+         id: 'users_management.groups',
+         name: 'groups management',
+         icon: 'mdi-account-multiple-outline',
+       }
+     ]
    },
    {
      id: 'catalog',
@@ -90,6 +109,17 @@
    }
  ]);
  
+ // Map section IDs to components
+ const sectionComponents = {
+   'application': markRaw(Application),
+   'application.user_profiles': markRaw(UserProfiles),
+   'application.logging': markRaw(Logging),
+   'application.security': markRaw(Security),
+   'users_management': markRaw(UsersManagement),
+   'users_management.groups': markRaw(GroupsManagement),
+   // Other components can be added here as they're created for other sections
+ };
+ 
  // Mobile menu state
  const isMobileMenuOpen = ref(false);
  
@@ -101,6 +131,14 @@
  // Get expanded sections from store
  const expandedSections = computed(() => {
    return appSettingsStore.getExpandedSections;
+ });
+ 
+ /**
+  * Get the component that should be displayed for the selected section
+  * Returns null if no component is mapped to the selected section ID
+  */
+ const currentComponent = computed(() => {
+   return sectionComponents[selectedSectionId.value] || null;
  });
  
  /**
@@ -301,8 +339,9 @@
  
        <!-- Content Panel -->
        <div class="content-panel pa-4">
-         <h2>Selected section: {{ selectedSectionId }}</h2>
-         <!-- Will be replaced with component rendering later -->
+         <!-- Dynamic component rendering based on selected section -->
+         <component :is="currentComponent" v-if="currentComponent" />
+         <h2 v-else>Selected section: {{ selectedSectionId }}</h2>
        </div>
      </div>
    </v-container>

@@ -32,7 +32,7 @@ const ModuleKnowledgeBase = defineAsyncComponent(() => import('./components/KB/M
 const SubModuleCatalogAdmin = defineAsyncComponent(() => import('./components/admin/catalog/SubModuleCatalogAdmin.vue'));
 const SubModuleServiceAdmin = defineAsyncComponent(() => import('./components/admin/service/SubModuleServiceAdmin.vue'));
 const SubModuleUsersAdmin = defineAsyncComponent(() => import('./components/admin/users/SubModuleUsersAdmin.vue'));
-const SubModuleAppSettings = defineAsyncComponent(() => import('./components/admin/app/SubModuleAppSettings.vue'));
+const SubModuleAppSettings = defineAsyncComponent(() => import('./components/admin/settings/SubModuleAppSettings.vue'));
 
 // Regular component imports
 import ModuleLogin from './components/account/ModuleLogin.vue';
