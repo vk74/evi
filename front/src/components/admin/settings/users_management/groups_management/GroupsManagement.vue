@@ -20,7 +20,7 @@ const allowAddDisabledAndArchivedUsersToGroups = ref(false);
         <v-switch
           v-model="allowAddDisabledAndArchivedUsersToGroups"
           color="teal-darken-2"
-          label="allow only users with status 'active' to be added to groups"
+          label="allow only users with 'active' status to be added to groups"
           hide-details
         ></v-switch>
       </div>
