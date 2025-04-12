@@ -58,8 +58,7 @@ export async function loadSettings(): Promise<void> {
     });
 
     logService('Settings loaded successfully', {
-      settingsCount: Object.keys(settingsCache).length,
-      sections: [...new Set(Object.values(settingsCache).map(s => s.sections_path))]
+      settingsCount: Object.keys(settingsCache).length
     });
 
   } catch (error) {
