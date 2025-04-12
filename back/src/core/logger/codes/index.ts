@@ -6,6 +6,7 @@ import { SystemEvents } from './admin/system';
 import { CatalogEvents } from './admin/catalog';
 import { ServicesEvents } from './admin/services';
 import { ItemSelectorEvents } from '../codes/core/item-selector/item.selector';
+import { SettingsEvents } from '../codes/core/settings/settings';
 import { EventCode } from '../logger.types';
 
 /**
@@ -19,7 +20,8 @@ export const Events = {
     SERVICES: ServicesEvents
   },
   CORE: {
-    ITEM_SELECTOR: ItemSelectorEvents
+    ITEM_SELECTOR: ItemSelectorEvents,
+    SETTINGS: SettingsEvents
   }
 };
 

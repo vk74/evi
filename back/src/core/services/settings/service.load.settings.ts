@@ -7,6 +7,8 @@ import { Pool, QueryResult } from 'pg';
 import { pool as pgPool } from '../../../db/maindb';
 import { queries } from './queries.settings';
 import { AppSetting, SettingsCache, Environment, SettingsError } from './types.settings';
+import { createSystemLogger, Logger, OperationType } from '../../../core/logger/logger.index';
+import { Events } from '../../../core/logger/codes';
 
 // Type assertion for pool
 const pool = pgPool as Pool;
@@ -14,10 +16,11 @@ const pool = pgPool as Pool;
 // In-memory cache object
 let settingsCache: SettingsCache = {};
 
-// Logging helper
-function logService(message: string, meta?: object): void {
-  console.log(`[${new Date().toISOString()}] [LoadSettingsService] ${message}`, meta || '');
-}
+// Create logger for settings service
+const logger: Logger = createSystemLogger({
+  module: 'SettingsService',
+  fileName: 'service.load.settings.ts'
+});
 
 /**
  * Generate cache key from sections_path and setting_name
@@ -31,12 +34,18 @@ function generateCacheKey(sectionsPath: string, settingName: string): string {
  */
 export async function loadSettings(): Promise<void> {
   try {
-    logService('Starting to load settings from database');
+    logger.info({
+      code: Events.CORE.SETTINGS.LOAD.START.INITIATED.code,
+      message: 'Starting to load settings from database'
+    });
 
     const result: QueryResult = await pool.query(queries.getAllSettings.text);
     
     if (!result.rows || result.rows.length === 0) {
-      logService('No settings found in database');
+      logger.warn({
+        code: Events.CORE.SETTINGS.LOAD.PROCESS.EMPTY.code,
+        message: 'No settings found in database'
+      });
       return;
     }
 
@@ -57,12 +66,24 @@ export async function loadSettings(): Promise<void> {
       settingsCache[cacheKey] = setting;
     });
 
-    logService('Settings loaded successfully', {
-      settingsCount: Object.keys(settingsCache).length
+    logger.info({
+      code: Events.CORE.SETTINGS.LOAD.PROCESS.SUCCESS.code,
+      message: 'Settings loaded successfully',
+      details: {
+        settingsCount: Object.keys(settingsCache).length
+      }
     });
 
   } catch (error) {
-    logService('Error loading settings', { error });
+    logger.error({
+      code: Events.CORE.SETTINGS.LOAD.PROCESS.ERROR.code,
+      message: 'Error loading settings',
+      error,
+      details: {
+        errorMessage: error instanceof Error ? error.message : 'Unknown error'
+      }
+    });
+    
     const settingsError: SettingsError = {
       code: 'DB_ERROR',
       message: error instanceof Error ? error.message : 'Failed to load settings from database',
@@ -80,7 +101,11 @@ export function getSetting(sectionsPath: string, settingName: string): AppSettin
   const setting = settingsCache[cacheKey];
   
   if (!setting) {
-    logService('Setting not found in cache', { sectionsPath, settingName });
+    logger.debug({
+      code: Events.CORE.SETTINGS.GET.BY_NAME.NOT_FOUND.code,
+      message: 'Setting not found in cache',
+      details: { sectionsPath, settingName }
+    });
     return null;
   }
 
@@ -110,16 +135,38 @@ export function getSettingValue(sectionsPath: string, settingName: string): any 
  * Get all settings in a specific section
  */
 export function getSettingsBySection(sectionsPath: string): AppSetting[] {
-  return Object.values(settingsCache).filter(
+  const sectionSettings = Object.values(settingsCache).filter(
     setting => setting.sections_path.startsWith(sectionsPath)
   );
+  
+  if (sectionSettings.length === 0) {
+    logger.debug({
+      code: Events.CORE.SETTINGS.GET.BY_SECTION.NOT_FOUND.code,
+      message: 'No settings found for section',
+      details: { sectionsPath }
+    });
+  } else {
+    logger.debug({
+      code: Events.CORE.SETTINGS.GET.BY_SECTION.SUCCESS.code,
+      message: 'Settings section fetched successfully',
+      details: { 
+        sectionsPath,
+        settingsCount: sectionSettings.length
+      }
+    });
+  }
+  
+  return sectionSettings;
 }
 
 /**
  * Force reload all settings from database
  */
 export async function reloadSettings(): Promise<void> {
-  logService('Force reloading settings');
+  logger.info({
+    code: Events.CORE.SETTINGS.LOAD.START.INITIATED.code,
+    message: 'Force reloading settings from database'
+  });
   await loadSettings();
 }
 
@@ -129,11 +176,26 @@ export async function reloadSettings(): Promise<void> {
  */
 export async function initializeSettings(): Promise<void> {
   try {
-    logService('Initializing settings module');
+    logger.info({
+      code: Events.CORE.SETTINGS.INIT.PROCESS.START.code,
+      message: 'Initializing settings module'
+    });
+    
     await loadSettings();
-    logService('Settings module initialized successfully');
+    
+    logger.info({
+      code: Events.CORE.SETTINGS.INIT.PROCESS.SUCCESS.code,
+      message: 'Settings module initialized successfully'
+    });
   } catch (error) {
-    logService('Failed to initialize settings module', { error });
+    logger.error({
+      code: Events.CORE.SETTINGS.INIT.PROCESS.ERROR.code,
+      message: 'Failed to initialize settings module',
+      error,
+      details: {
+        errorMessage: error instanceof Error ? error.message : 'Unknown error'
+      }
+    });
     throw error;
   }
 }
