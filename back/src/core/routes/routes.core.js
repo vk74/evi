@@ -20,7 +20,7 @@ const changeGroupOwner = require('../services/item-selector/controller.change.gr
 
 const selfChangePasswordController = require('../services/change-password/controller.self.change.password').default;
 const adminResetPasswordController = require('../services/change-password/controller.admin.change.password').default;
-
+const fetchSettingsController = require('../services/settings/controller.fetch.settings').default;
 
 // utility services
 router.get('/api/core/users/fetch-username-by-uuid/:userId', validateJWT, fetchUsernameByUuid);
@@ -33,5 +33,8 @@ router.post('/api/core/item-selector/change-group-owner', validateJWT, changeGro
 // change password universal component
 router.post('/api/core/users/self-change-password', validateJWT, selfChangePasswordController);
 router.post('/api/core/users/admin-change-password', validateJWT, adminResetPasswordController);
+
+// settings services
+router.post('/api/core/settings/fetch-settings', validateJWT, fetchSettingsController);
 
 module.exports = router;

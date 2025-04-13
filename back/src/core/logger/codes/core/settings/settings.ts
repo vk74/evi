@@ -75,6 +75,11 @@ export const SettingsEvents = {
   GET: {
     /** Операция получения настройки по имени */
     BY_NAME: {
+      /** Инициировано получение настройки по имени */
+      INITIATED: {
+        code: 'CORE:SETTINGS:GET:BY_NAME:000',
+        description: 'Инициировано получение настройки по имени'
+      },
       /** Настройка успешно получена */
       SUCCESS: { 
         code: 'CORE:SETTINGS:GET:BY_NAME:001', 
@@ -84,10 +89,25 @@ export const SettingsEvents = {
       NOT_FOUND: { 
         code: 'CORE:SETTINGS:GET:BY_NAME:002', 
         description: 'Настройка не найдена в кэше' 
+      },
+      /** Настройка конфиденциальна */
+      CONFIDENTIAL: {
+        code: 'CORE:SETTINGS:GET:BY_NAME:003',
+        description: 'Доступ к конфиденциальной настройке запрещен'
+      },
+      /** Ошибка при получении настройки */
+      ERROR: {
+        code: 'CORE:SETTINGS:GET:BY_NAME:004',
+        description: 'Ошибка при получении настройки по имени'
       }
     },
     /** Операция получения настроек по секции */
     BY_SECTION: {
+      /** Инициировано получение настроек по секции */
+      INITIATED: {
+        code: 'CORE:SETTINGS:GET:BY_SECTION:000',
+        description: 'Инициировано получение настроек по секции'
+      },
       /** Настройки секции успешно получены */
       SUCCESS: { 
         code: 'CORE:SETTINGS:GET:BY_SECTION:001', 
@@ -97,6 +117,29 @@ export const SettingsEvents = {
       NOT_FOUND: { 
         code: 'CORE:SETTINGS:GET:BY_SECTION:002', 
         description: 'Настройки секции не найдены в кэше' 
+      },
+      /** Ошибка при получении настроек секции */
+      ERROR: {
+        code: 'CORE:SETTINGS:GET:BY_SECTION:003',
+        description: 'Ошибка при получении настроек по секции'
+      }
+    },
+    /** Операция получения всех настроек */
+    ALL: {
+      /** Инициировано получение всех настроек */
+      INITIATED: {
+        code: 'CORE:SETTINGS:GET:ALL:000',
+        description: 'Инициировано получение всех настроек'
+      },
+      /** Все настройки успешно получены */
+      SUCCESS: {
+        code: 'CORE:SETTINGS:GET:ALL:001',
+        description: 'Все настройки успешно получены из кэша'
+      },
+      /** Ошибка при получении всех настроек */
+      ERROR: {
+        code: 'CORE:SETTINGS:GET:ALL:002',
+        description: 'Ошибка при получении всех настроек'
       }
     }
   },
@@ -120,6 +163,34 @@ export const SettingsEvents = {
       ERROR: { 
         code: 'CORE:SETTINGS:INIT:PROCESS:003', 
         description: 'Ошибка при инициализации модуля настроек' 
+      }
+    }
+  },
+  /**
+   * События связанные с API запросами настроек
+   */
+  API: {
+    /** Операции запроса настроек */
+    FETCH: {
+      /** Запрос получен */
+      RECEIVED: {
+        code: 'CORE:SETTINGS:API:FETCH:001', 
+        description: 'Получен запрос на получение настроек'
+      },
+      /** Запрос обработан успешно */
+      SUCCESS: {
+        code: 'CORE:SETTINGS:API:FETCH:002',
+        description: 'Запрос на получение настроек успешно обработан'
+      },
+      /** Ошибка валидации запроса */
+      VALIDATION_ERROR: {
+        code: 'CORE:SETTINGS:API:FETCH:003',
+        description: 'Ошибка валидации запроса на получение настроек'
+      },
+      /** Ошибка обработки запроса */
+      ERROR: {
+        code: 'CORE:SETTINGS:API:FETCH:004',
+        description: 'Ошибка при обработке запроса на получение настроек'
       }
     }
   }

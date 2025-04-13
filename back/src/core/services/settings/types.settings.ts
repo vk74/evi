@@ -44,3 +44,87 @@ export interface SettingsError {
   message: string;
   details?: unknown;
 }
+
+/**
+ * Request types for settings fetch operations
+ */
+
+/**
+ * Base request for settings fetch operations
+ */
+export interface FetchSettingsBaseRequest {
+  /**
+   * Optional environment filter
+   */
+  environment?: Environment;
+  /**
+   * Whether to include confidential settings
+   * Default: false
+   */
+  includeConfidential?: boolean;
+}
+
+/**
+ * Request to fetch a single setting by name
+ */
+export interface FetchSettingByNameRequest extends FetchSettingsBaseRequest {
+  /**
+   * Full setting path
+   */
+  sectionsPath: string;
+  /**
+   * Setting name
+   */
+  settingName: string;
+}
+
+/**
+ * Request to fetch settings by section path
+ */
+export interface FetchSettingsBySectionRequest extends FetchSettingsBaseRequest {
+  /**
+   * Section path to filter settings by
+   */
+  sectionsPath: string;
+}
+
+/**
+ * Request to fetch all settings
+ */
+export interface FetchAllSettingsRequest extends FetchSettingsBaseRequest {
+  // No additional properties needed
+}
+
+/**
+ * Union type for all fetch settings request types
+ */
+export type FetchSettingsRequest = 
+  | FetchSettingByNameRequest
+  | FetchSettingsBySectionRequest
+  | FetchAllSettingsRequest;
+
+/**
+ * Response types for settings fetch operations
+ */
+
+/**
+ * Response for settings fetch operations
+ */
+export interface FetchSettingsResponse {
+  /**
+   * Whether the operation was successful
+   */
+  success: boolean;
+  /**
+   * Error message if operation failed
+   */
+  error?: string;
+  /**
+   * Settings returned by the operation
+   */
+  settings?: AppSetting[];
+  /**
+   * Single setting for single fetch operations
+   */
+  setting?: AppSetting;
+}
