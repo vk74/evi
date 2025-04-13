@@ -25,7 +25,7 @@ export function setCache(settings: AppSetting[]): void {
   
   logCache('Settings cache updated', { 
     settingsCount: settings.length,
-    groups: [...new Set(settings.map(s => s.setting_group))]
+    sections: [...new Set(settings.map(s => s.sections_path))]
   });
 }
 
@@ -52,7 +52,7 @@ export function getSetting(settingName: string): AppSetting | null {
 
   logCache('Setting retrieved from cache', { 
     settingName,
-    settingGroup: setting.setting_group 
+    sectionsPath: setting.sections_path 
   });
   
   return setting;
@@ -85,20 +85,11 @@ export function hasSetting(settingName: string): boolean {
  */
 export function parseSettingValue(setting: AppSetting): any {
   try {
-    switch (setting.setting_type) {
-      case 'boolean':
-        return setting.setting_value.toLowerCase() === 'true';
-      case 'number':
-        return Number(setting.setting_value);
-      case 'json':
-        return JSON.parse(setting.setting_value);
-      default:
-        return setting.setting_value;
-    }
+    // Value is already stored as a proper type in jsonb field
+    return setting.value !== null ? setting.value : setting.default_value;
   } catch (error) {
     logCache('Error parsing setting value', {
       settingName: setting.setting_name,
-      settingType: setting.setting_type,
       error
     });
     return null;
