@@ -15,6 +15,13 @@ const coreRoutes = require ('@/core/routes/routes.core');
 const workRoutes = require('@/features/work/routes.work');
 const { loadSettings } = require('@/core/services/settings/service.load.settings');
 
+// Import centralized logger
+const { 
+  createSystemLogger, 
+  Events,
+  OperationType
+} = require('@/core/logger/logger.index');
+
 const ExcelJS = require('exceljs');
 const bodyParser = require('body-parser');
 const cors = require('cors');
@@ -24,12 +31,27 @@ const fs = require('fs');
 const port = 3000;
 const app = express();
 
+// Create logger for server
+const logger = createSystemLogger({
+  module: 'ServerMain',
+  fileName: 'server.js'
+});
+
 // Settings ready flag
 let settingsLoaded = false;
 
 // Middleware to check if settings are loaded
 const checkSettingsLoaded = (req, res, next) => {
   if (!settingsLoaded) {
+    logger.warn({
+      code: Events.CORE.SERVER.REQUEST.READINESS.NOT_READY.code,
+      message: 'Server is not ready yet, rejecting request',
+      details: {
+        path: req.path,
+        method: req.method
+      }
+    });
+    
     return res.status(503).json({
       success: false,
       message: 'Server is starting up. Settings are being loaded. Please try again in a moment.'
@@ -40,6 +62,11 @@ const checkSettingsLoaded = (req, res, next) => {
 
 async function initializeServer() {
   try {
+    logger.info({
+      code: Events.CORE.SERVER.STARTUP.INIT.START.code,
+      message: 'Starting server initialization'
+    });
+    
     // 1. Loading private key
     const privateKeyPath = './src/keys/private_key.pem';
     const privateKey = fs.readFileSync(privateKeyPath, 'utf8');
@@ -48,13 +75,21 @@ async function initializeServer() {
     if (!global.privateKey) {
       throw new Error('Failed to set global.privateKey');
     }
-    console.log('Global private key set successfully');
+    
+    logger.info({
+      code: Events.CORE.SERVER.STARTUP.KEYS.SUCCESS.code,
+      message: 'Global private key set successfully'
+    });
 
     // 2. Loading settings
-    console.log('Loading application settings...');
+    logger.info({
+      code: Events.CORE.SETTINGS.INIT.PROCESS.START.code,
+      message: 'Loading application settings...'
+    });
+    
     await loadSettings();
     settingsLoaded = true;
-    console.log('Application settings loaded successfully');
+    // No duplicate logging here, as loadSettings already logs success message
 
     // 3. Setting up middleware
     // Configure CORS for frontend only
@@ -69,6 +104,11 @@ async function initializeServer() {
     //app.use('/profile', getUserProfile); // Route registration
     app.use(bodyParser.json());
 
+    logger.info({
+      code: Events.CORE.SERVER.STARTUP.MIDDLEWARE.SUCCESS.code,
+      message: 'Middleware configuration completed'
+    });
+
     // 4. Add settings loading check middleware for all routes
     app.use(checkSettingsLoaded);
 
@@ -79,6 +119,11 @@ async function initializeServer() {
     app.use(adminRoutes);
     app.use(coreRoutes);
     app.use(workRoutes);
+
+    logger.info({
+      code: Events.CORE.SERVER.STARTUP.ROUTES.SUCCESS.code,
+      message: 'All routes registered successfully'
+    });
 
     // 6. Base route
     app.get('/', (req, res) => {
@@ -101,11 +146,22 @@ async function initializeServer() {
     app.post('/protosubmit', async (req, res) => {
       try {
         // Debug line
-        console.log('Received request:', req.body);
+        logger.debug({
+          code: Events.CORE.EXCEL.PROTOTYPE.SUCCESS.code,
+          message: 'Received request for form submission',
+          details: { body: req.body }
+        });
+        
         const { orgname, region, location, checkbox, radioOption, date } = req.body;
         const result = await insertData(orgname, region, location, checkbox, radioOption, date);
         res.status(200).json(result);
       } catch (error) {
+        logger.error({
+          code: Events.CORE.EXCEL.PROTOTYPE.ERROR.code,
+          message: 'Error processing form submission',
+          error
+        });
+        
         res.status(500).json({ error: error.message });
       }
     });
@@ -137,8 +193,21 @@ async function initializeServer() {
         res.setHeader('Content-Disposition', 'attachment; filename=estimatorFile.xlsx');
         await workbook.xlsx.write(res);
         res.end();
+        
+        logger.info({
+          code: Events.CORE.EXCEL.PROTOTYPE.SUCCESS.code,
+          message: 'Excel file generated and sent successfully',
+          details: {
+            username: req.user?.username
+          }
+        });
       } catch (error) {
-        console.error('Error generating Excel file:', error);
+        logger.error({
+          code: Events.CORE.EXCEL.PROTOTYPE.ERROR.code,
+          message: 'Error generating Excel file',
+          error
+        });
+        
         res.status(500).send('Error generating Excel file');
       }
     });
@@ -218,11 +287,28 @@ async function initializeServer() {
       const formattedTime = now.toLocaleTimeString('en-US', timeOptions);
       const timestamp = `${formattedDate}, ${formattedTime}`;
 
-      console.log(`[${timestamp}] Server listening at http://localhost:${port}`);
+      logger.info({
+        code: Events.CORE.SERVER.STARTUP.HTTP.LISTENING.code,
+        message: `Server listening at http://localhost:${port}`,
+        details: {
+          timestamp: `${formattedDate}, ${formattedTime}`,
+          port
+        }
+      });
+    });
+
+    logger.info({
+      code: Events.CORE.SERVER.STARTUP.INIT.SUCCESS.code,
+      message: 'Server initialization completed successfully'
     });
 
   } catch (error) {
-    console.error('Failed to initialize server:', error);
+    logger.error({
+      code: Events.CORE.SERVER.STARTUP.INIT.ERROR.code,
+      message: 'Failed to initialize server',
+      error
+    });
+    
     process.exit(1);
   }
 }
