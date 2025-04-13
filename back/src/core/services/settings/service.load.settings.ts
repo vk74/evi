@@ -66,12 +66,11 @@ export async function loadSettings(): Promise<void> {
       settingsCache[cacheKey] = setting;
     });
 
+    const settingsCount = Object.keys(settingsCache).length;
+    
     logger.info({
       code: Events.CORE.SETTINGS.LOAD.PROCESS.SUCCESS.code,
-      message: 'Settings loaded successfully',
-      details: {
-        settingsCount: Object.keys(settingsCache).length
-      }
+      message: `Settings loaded successfully, number of loaded settings: ${settingsCount}`
     });
 
   } catch (error) {
