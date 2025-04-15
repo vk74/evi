@@ -1,5 +1,5 @@
 <!--
-  File: UserProfiles.vue
+  File: Application.UserProfiles.vue
   Description: User profiles management component
   Purpose: Configure user profile settings and permissions
 -->
@@ -11,6 +11,9 @@ import { ref } from 'vue';
 const allowUserToChangeOwnProfile = ref(true);
 const allowUserToUploadAvatar = ref(true);
 const maxUserProfilePhotoSize = ref(1024); // Size in KB
+
+// Log component initialization
+console.log('Application.UserProfiles component initialized');
 </script>
 
 <template>

@@ -1,25 +1,22 @@
 <!--
- * Application settings administration module SubModuleAppSettings.vue
- * Provides hierarchical navigation between application settings categories
- * and displays the corresponding settings components in the workspace area.
+ * File: SubModuleAppSettings.vue
+ * Description: Application settings administration module
+ * Purpose: Provides hierarchical navigation between application settings categories
+ *          and displays the corresponding settings components in the workspace area
  * 
- * Uses a Pinia store to persist the selected category and expanded state between sessions.
- * 
- * Updated:
- * - Added dynamic component loading for multiple sections (application, logging, security, users_management)
- * - Implemented conditional rendering of settings components based on section ID
- * - Components are loaded from their respective subdirectories
+ * Uses a Pinia store to persist the selected category and expanded state between sessions
  -->
  <script setup lang="ts">
  import { ref, computed, onMounted, markRaw } from 'vue';
  import { useAppSettingsStore } from '@/components/admin/settings/state.app.settings';
- // Import components for each section
- import UsersManagement from './users_management/UsersManagement.vue';
- import GroupsManagement from './users_management/groups_management/GroupsManagement.vue';
- import Application from './application/Application.vue';
- import UserProfiles from './application/user_profiles/UserProfiles.vue';
- import Logging from './logging/Logging.vue';
- import Security from './security/Security.vue';
+ 
+ // Import components from sections directory with hierarchical naming
+ import Application from './sections/Application.vue';
+ import UserProfiles from './sections/Application.UserProfiles.vue';
+ import Logging from './sections/Application.Logging.vue';
+ import Security from './sections/Application.Security.vue';
+ import UsersManagement from './sections/UsersManagement.vue';
+ import GroupsManagement from './sections/UsersManagement.GroupsManagement.vue';
  
  // Define section interface
  interface Section {

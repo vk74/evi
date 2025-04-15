@@ -1,16 +1,7 @@
 <!--
-  File: AppSettings.vue
+  File: Application.vue
   Description: General application settings component
   Purpose: Configure basic application settings like language and user registration
-  
-  Updated: 
-  - Removed "use system language" toggle from Language section
-  - Moved appearance section to the bottom
-  - Removed dark theme toggle
-  - Added user registration section from SecuritySettings
-  - Added "функция в разработке" note for accent color
-  - Standardized section dividers to match parent component style
-  - Removed unused variables to avoid confusion
 -->
 
 <script setup lang="ts">
@@ -37,6 +28,9 @@ const themeColors = [
 const allowSelfRegistration = ref(true);
 const emailVerification = ref(true);
 const adminApproval = ref(false);
+
+// Log component initialization
+console.log('Application settings component initialized');
 </script>
 
 <template>

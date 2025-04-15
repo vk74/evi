@@ -1,13 +1,7 @@
 <!--
-  File: SecuritySettings.vue
+  File: Application.Security.vue
   Description: Security settings component
   Purpose: Configure security-related settings including session management and password policies
-  
-  Updated: 
-  - Replaced session duration slider with dropdown and unlimited session checkbox
-  - Removed user registration section (moved to AppSettings)
-  - Standardized divider colors to match parent component
-  - Added informational hint for session duration
 -->
 
 <script setup lang="ts">
@@ -49,6 +43,9 @@ const passwordExpirationOptions = [
   '1 year'
 ];
 const forcePasswordChangeAfterExpiration = ref(true);
+
+// Log component initialization
+console.log('Application.Security component initialized');
 </script>
 
 <template>

@@ -1,11 +1,7 @@
 <!--
-  File: UserManagement.vue
+  File: UsersManagement.vue
   Description: User management settings component
   Purpose: Configure general user management settings and account behavior
-  
-  Updated: 
-  - Removed user profile specific settings (moved to UserProfiles.vue)
-  - Added new settings for account management and administrative functions
 -->
 
 <script setup lang="ts">
@@ -17,6 +13,9 @@ const notifyBeforeAccountExpiry = ref(true);
 const daysBeforeNotification = ref(14);
 const enableBulkAccountOperations = ref(true);
 const requireCommentOnAccountStatusChange = ref(true);
+
+// Log component initialization
+console.log('UsersManagement component initialized');
 </script>
 
 <template>

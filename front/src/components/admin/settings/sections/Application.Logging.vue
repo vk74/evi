@@ -1,11 +1,7 @@
 <!--
-  File: LoggingSettings.vue
+  File: Application.Logging.vue
   Description: Logging configuration settings component
   Purpose: Configure application logging based on backend logger parameters
-  
-  Updated: 
-  - Standardized divider colors to match other settings components
-  - Used standard border-color rgba(0, 0, 0, 0.12) with opacity 1
 -->
 
 <script setup lang="ts">
@@ -130,6 +126,9 @@ const logLevelDescriptions = {
   'ERROR': 'Ошибки, препятствующие выполнению отдельной операции.',
   'FATAL': 'Критические ошибки, из-за которых приложение не может продолжать работу.'
 };
+
+// Log component initialization
+console.log('Application.Logging component initialized');
 </script>
 
 <template>

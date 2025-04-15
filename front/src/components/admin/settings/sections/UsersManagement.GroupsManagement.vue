@@ -1,7 +1,7 @@
 <!--
-  File: GroupsManagement.vue
+  File: UsersManagement.GroupsManagement.vue
   Description: Groups management settings component
-  Purpose: Configure group related settings
+  Purpose: Configure group related settings and group membership rules
 -->
 
 <script setup lang="ts">
@@ -9,6 +9,9 @@ import { ref } from 'vue';
 
 // Group management settings
 const allowAddDisabledAndArchivedUsersToGroups = ref(false);
+
+// Log component initialization
+console.log('UsersManagement.GroupsManagement component initialized');
 </script>
 
 <template>
