@@ -7,8 +7,10 @@
  * Uses a Pinia store to persist the selected category and expanded state between sessions
  -->
  <script setup lang="ts">
- import { ref, computed, onMounted, markRaw } from 'vue';
- import { useAppSettingsStore } from '@/components/admin/settings/state.app.settings';
+ import { ref, computed, onMounted, markRaw, watch } from 'vue';
+ import { useAppSettingsStore } from './state.app.settings';
+ import { fetchSettings } from './service.fetch.settings';
+ import { useUiStore } from '@/core/state/uistate';
  
  // Import components from sections directory with hierarchical naming
  import Application from './sections/Application.vue';
@@ -28,6 +30,10 @@
  
  // Initialize the store
  const appSettingsStore = useAppSettingsStore();
+ const uiStore = useUiStore();
+ 
+ // Flag to track initial loading of settings for current section
+ const isInitialLoadComplete = ref(false);
  
  // Hierarchical sections structure
  const sections = ref<Section[]>([
@@ -245,6 +251,48 @@
    }
  };
  
+ /**
+  * Fetches settings for the current section
+  * Special handling for the root 'application' section which may not have settings yet
+  */
+ async function loadCurrentSectionSettings() {
+   const sectionId = selectedSectionId.value;
+   
+   console.log(`Loading settings for selected section: ${sectionId}`);
+   
+   try {
+     // For the root 'application' section, we expect it might not have settings yet
+     if (sectionId === 'application') {
+       try {
+         // Try to fetch settings, but don't display errors if none found
+         await fetchSettings(sectionId);
+       } catch (error) {
+         // Silent fail for root section
+         console.log('No settings found for root Application section - this is expected');
+       }
+     } else {
+       // For all other sections, fetch normally
+       await fetchSettings(sectionId);
+     }
+   } catch (error) {
+     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+     console.error(`Error loading settings for section ${sectionId}:`, error);
+     
+     // Show warning for settings load failure
+     uiStore.showWarningSnackbar(`Предупреждение: Не удалось загрузить настройки для секции. ${errorMessage}`);
+   } finally {
+     isInitialLoadComplete.value = true;
+   }
+ }
+ 
+ // Watch for changes to selected section
+ watch(selectedSectionId, (newSectionId, oldSectionId) => {
+   if (newSectionId !== oldSectionId && isInitialLoadComplete.value) {
+     // Load settings for newly selected section
+     loadCurrentSectionSettings();
+   }
+ });
+ 
  // On component mount
  onMounted(() => {
    // If no section is selected in store, default to 'application'
@@ -254,6 +302,9 @@
    
    // Expand parent sections of the selected section
    expandParentSections(selectedSectionId.value);
+   
+   // Load settings for initially selected section
+   loadCurrentSectionSettings();
  });
  
  // Toggle mobile menu

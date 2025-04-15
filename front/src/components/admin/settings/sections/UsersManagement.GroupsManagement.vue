@@ -5,20 +5,77 @@
 -->
 
 <script setup lang="ts">
-import { ref } from 'vue';
+import { ref, onMounted, watch } from 'vue';
+import { useAppSettingsStore } from '@/components/admin/settings/state.app.settings';
+import { fetchSettings, getSettingValue } from '@/components/admin/settings/service.fetch.settings';
+import DataLoading from '@/core/ui/loaders/DataLoading.vue';
 
-// Group management settings
+// Section identifier
+const sectionId = 'users_management.groups';
+
+// Group management settings with default values
 const allowAddDisabledAndArchivedUsersToGroups = ref(false);
 
-// Log component initialization
-console.log('UsersManagement.GroupsManagement component initialized');
+// Store reference
+const appSettingsStore = useAppSettingsStore();
+
+// Loading state
+const isLoadingSettings = ref(true);
+
+/**
+ * Load settings from the backend
+ */
+async function loadSettings() {
+  isLoadingSettings.value = true;
+  
+  try {
+    console.log('Loading settings for Groups Management');
+    const settings = await fetchSettings(sectionId);
+    
+    // Apply settings to component
+    if (settings && settings.length > 0) {
+      console.log('Received settings:', settings);
+      
+      // Get specific settings by name with fallback values
+      allowAddDisabledAndArchivedUsersToGroups.value = getSettingValue(
+        sectionId, 
+        'allowAddDisabledAndArchivedUsersToGroups', 
+        false
+      );
+    } else {
+      console.log('No settings received for Groups Management');
+    }
+  } catch (error) {
+    console.error('Failed to load settings:', error);
+  } finally {
+    isLoadingSettings.value = false;
+  }
+}
+
+// Watch for changes in loading state from the store
+watch(
+  () => appSettingsStore.isLoading,
+  (isLoading) => {
+    isLoadingSettings.value = isLoading;
+  }
+);
+
+// Initialize component
+onMounted(() => {
+  console.log('UsersManagement.GroupsManagement component initialized');
+  loadSettings();
+});
 </script>
 
 <template>
   <div class="groups-management-container">
     <h2 class="text-h6 mb-4">управление группами</h2>
     
-    <div class="settings-section">
+    <!-- Loading indicator -->
+    <DataLoading :loading="isLoadingSettings" size="medium" />
+    
+    <!-- Settings content (only shown when not loading) -->
+    <div v-if="!isLoadingSettings" class="settings-section">
       <div class="section-content">
         <v-switch
           v-model="allowAddDisabledAndArchivedUsersToGroups"
@@ -34,6 +91,7 @@ console.log('UsersManagement.GroupsManagement component initialized');
 <style scoped>
 .groups-management-container {
   /* Base container styling */
+  position: relative;
 }
 
 .settings-section {
