@@ -13,8 +13,9 @@ import DataLoading from '@/core/ui/loaders/DataLoading.vue';
 // Section path identifier - using component name for better consistency
 const section_path = 'UsersManagement.GroupsManagement';
 
-// Group management settings with default values
-const allowAddDisabledAndArchivedUsersToGroups = ref(false);
+// Group management settings with default values - using correct setting name matching the database
+// The setting "only.add.active.members" from database will control if only active members can be added to groups
+const onlyAddActiveMembers = ref(false);
 
 // Store reference
 const appSettingsStore = useAppSettingsStore();
@@ -37,11 +38,14 @@ async function loadSettings() {
       console.log('Received settings:', settings);
       
       // Get specific settings by name with fallback values
-      allowAddDisabledAndArchivedUsersToGroups.value = getSettingValue(
+      // Use the exact setting name as it appears in the database: "only.add.active.members"
+      onlyAddActiveMembers.value = getSettingValue(
         section_path, 
-        'allowAddDisabledAndArchivedUsersToGroups', 
+        'only.add.active.members', 
         false
       );
+      
+      console.log('Applied setting "only.add.active.members":', onlyAddActiveMembers.value);
     } else {
       console.log('No settings received for Groups Management');
     }
@@ -78,9 +82,9 @@ onMounted(() => {
     <div v-if="!isLoadingSettings" class="settings-section">
       <div class="section-content">
         <v-switch
-          v-model="allowAddDisabledAndArchivedUsersToGroups"
+          v-model="onlyAddActiveMembers"
           color="teal-darken-2"
-          label="allow only users with 'active' status to be added to groups"
+          label="добавлять в группы только пользователей со статусом 'активен'"
           hide-details
         ></v-switch>
       </div>
