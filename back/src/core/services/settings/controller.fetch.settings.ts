@@ -219,7 +219,7 @@ async function fetchSettings(req: AuthenticatedRequest, res: Response): Promise<
     switch (type) {
       case 'byName': {
         // Validate required parameters
-        if (!params.sectionsPath || !params.settingName) {
+        if (!params.sectionPath || !params.settingName) {
           logger.warn({
             code: Events.CORE.SETTINGS.API.FETCH.VALIDATION_ERROR.code,
             message: 'Missing required parameters for byName request',
@@ -232,13 +232,13 @@ async function fetchSettings(req: AuthenticatedRequest, res: Response): Promise<
 
           res.status(400).json({
             success: false,
-            error: 'Missing required parameters: sectionsPath and settingName are required for byName requests'
+            error: 'Missing required parameters: sectionPath and settingName are required for byName requests'
           } as FetchSettingsResponse);
           return;
         }
 
         const request: FetchSettingByNameRequest = {
-          sectionPath: params.sectionsPath,
+          sectionPath: params.sectionPath,
           settingName: params.settingName,
           environment,
           includeConfidential
@@ -255,7 +255,7 @@ async function fetchSettings(req: AuthenticatedRequest, res: Response): Promise<
 
       case 'bySection': {
         // Validate required parameters
-        if (!params.sectionsPath) {
+        if (!params.sectionPath) {
           logger.warn({
             code: Events.CORE.SETTINGS.API.FETCH.VALIDATION_ERROR.code,
             message: 'Missing required parameter for bySection request',
@@ -268,13 +268,13 @@ async function fetchSettings(req: AuthenticatedRequest, res: Response): Promise<
 
           res.status(400).json({
             success: false,
-            error: 'Missing required parameter: sectionsPath is required for bySection requests'
+            error: 'Missing required parameter: sectionPath is required for bySection requests'
           } as FetchSettingsResponse);
           return;
         }
 
         const request: FetchSettingsBySectionRequest = {
-          sectionPath: params.sectionsPath,
+          sectionPath: params.sectionPath,
           environment,
           includeConfidential
         };

@@ -23,17 +23,14 @@ export enum Environment {
 
 /**
  * Interface for a single setting from app.app_settings
+ * Simplified for frontend use, includes only required fields
  */
 export interface AppSetting {
   section_path: string;      // Path to settings section (e.g. "security/passwords")
   setting_name: string;       // Unique setting identifier
   environment: string;        // Environment type
   value: any;                 // Setting value
-  validation_schema?: any;    // Optional JSON Schema for validation
-  default_value?: any;        // Optional default value
   confidentiality: boolean;   // Whether this setting contains sensitive data
-  description?: string;       // Optional setting description
-  updated_at: Date;           // Last update timestamp
 }
 
 /**
