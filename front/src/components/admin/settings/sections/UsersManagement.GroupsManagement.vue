@@ -5,23 +5,46 @@
 -->
 
 <script setup lang="ts">
-import { ref, onMounted, watch } from 'vue';
+import { computed, onMounted, watch, ref } from 'vue';
 import { useAppSettingsStore } from '@/components/admin/settings/state.app.settings';
-import { fetchSettings, getSettingValue } from '@/components/admin/settings/service.fetch.settings';
+import { fetchSettings } from '@/components/admin/settings/service.fetch.settings';
 import DataLoading from '@/core/ui/loaders/DataLoading.vue';
 
 // Section path identifier - using component name for better consistency
 const section_path = 'UsersManagement.GroupsManagement';
-
-// Group management settings with default values - using correct setting name matching the database
-// The setting "only.add.active.members" from database will control if only active members can be added to groups
-const onlyAddActiveMembers = ref(false);
 
 // Store reference
 const appSettingsStore = useAppSettingsStore();
 
 // Loading state
 const isLoadingSettings = ref(true);
+
+/**
+ * Direct binding to the setting value from Pinia store
+ * This computed property will automatically update when the store changes
+ */
+const onlyAddActiveMembers = computed({
+  get: () => {
+    const settings = appSettingsStore.getCachedSettings(section_path);
+    if (!settings || settings.length === 0) return false;
+    
+    // Find the setting with name 'only.add.active.members'
+    const setting = settings.find(s => s.setting_name === 'only.add.active.members');
+    
+    // Return the value or default (false) if not found
+    const value = setting?.value !== undefined && setting?.value !== null 
+      ? setting.value 
+      : false;
+    
+    console.log('Computed setting "only.add.active.members" value:', value);
+    return value;
+  },
+  set: (newValue) => {
+    // In future implementation, this setter would update the setting in the backend
+    console.log('Setting value changed to:', newValue);
+    // Future implementation: updateSetting(section_path, 'only.add.active.members', newValue)
+  }
+});
 
 /**
  * Load settings from the backend
@@ -33,19 +56,8 @@ async function loadSettings() {
     console.log('Loading settings for Groups Management');
     const settings = await fetchSettings(section_path);
     
-    // Apply settings to component
     if (settings && settings.length > 0) {
       console.log('Received settings:', settings);
-      
-      // Get specific settings by name with fallback values
-      // Use the exact setting name as it appears in the database: "only.add.active.members"
-      onlyAddActiveMembers.value = getSettingValue(
-        section_path, 
-        'only.add.active.members', 
-        false
-      );
-      
-      console.log('Applied setting "only.add.active.members":', onlyAddActiveMembers.value);
     } else {
       console.log('No settings received for Groups Management');
     }
