@@ -53,6 +53,42 @@ function filterConfidentialSettings(settings: AppSetting[], includeConfidential 
 }
 
 /**
+ * Normalize section path to support both PascalCase and snake_case formats
+ * @param path Section path to normalize
+ * @returns Array of normalized path variants for comparison
+ */
+function normalizeSectionPath(path: string): string[] {
+  // Original path
+  const variants = [path];
+  
+  // Convert PascalCase to snake_case: "UsersManagement.GroupsManagement" -> "users_management.groups_management"
+  const snakeCasePath = path.replace(/\.?([A-Z])/g, (x, y) => '_' + y.toLowerCase())
+    .replace(/^_/, '')  // Remove leading underscore if any
+    .replace(/\._/g, '.'); // Fix dots followed by underscores
+  if (!variants.includes(snakeCasePath)) {
+    variants.push(snakeCasePath);
+  }
+  
+  // Convert snake_case to PascalCase: "users_management.groups" -> "UsersManagement.Groups"
+  const pascalCasePath = path.split('.').map(segment => 
+    segment.split('_').map(part => 
+      part.charAt(0).toUpperCase() + part.slice(1)
+    ).join('')
+  ).join('.');
+  if (!variants.includes(pascalCasePath)) {
+    variants.push(pascalCasePath);
+  }
+  
+  logger.debug({
+    code: 'SETTINGS:PATH:NORMALIZE',
+    message: 'Normalized section path variants',
+    details: { original: path, variants }
+  });
+  
+  return variants;
+}
+
+/**
  * Fetch a single setting by section path and name
  * @param request Request parameters
  * @returns The requested setting or null if not found
@@ -68,18 +104,21 @@ export async function fetchSettingByName(request: FetchSettingByNameRequest): Pr
     });
 
     const allSettings = Object.values(getAllSettings());
+    const pathVariants = normalizeSectionPath(sectionPath);
     
-    // Find the specific setting
-    const setting = allSettings.find(s => 
-      s.section_path === sectionPath && 
-      s.setting_name === settingName
-    );
+    // Find the specific setting using normalized path variants
+    const setting = allSettings.find(s => {
+      const settingPathVariants = normalizeSectionPath(s.section_path);
+      return pathVariants.some(pathVariant => 
+        settingPathVariants.some(settingPathVariant => settingPathVariant === pathVariant)
+      ) && s.setting_name === settingName;
+    });
 
     if (!setting) {
       logger.debug({
         code: Events.CORE.SETTINGS.GET.BY_NAME.NOT_FOUND.code,
         message: 'Setting not found',
-        details: { sectionPath, settingName }
+        details: { sectionPath, settingName, pathVariants }
       });
       return null;
     }
@@ -110,7 +149,7 @@ export async function fetchSettingByName(request: FetchSettingByNameRequest): Pr
     logger.info({
       code: Events.CORE.SETTINGS.GET.BY_NAME.SUCCESS.code,
       message: 'Setting fetched successfully',
-      details: { settingName, sectionPath }
+      details: { settingName, sectionPath, pathVariants }
     });
 
     return setting;
@@ -149,11 +188,18 @@ export async function fetchSettingsBySection(request: FetchSettingsBySectionRequ
     });
 
     const allSettings = Object.values(getAllSettings());
+    const pathVariants = normalizeSectionPath(sectionPath);
     
-    // Filter by section path
-    let settings = allSettings.filter(setting => 
-      setting.section_path.startsWith(sectionPath)
-    );
+    // Filter by section path, trying all possible path variants
+    let settings = allSettings.filter(setting => {
+      // Try matching any normalized path variant
+      return pathVariants.some(pathVariant => 
+        setting.section_path.startsWith(pathVariant) ||
+        normalizeSectionPath(setting.section_path).some(settingPathVariant => 
+          settingPathVariant.startsWith(pathVariant)
+        )
+      );
+    });
     
     // Apply filters
     settings = filterSettingsByEnvironment(settings, environment);
@@ -164,7 +210,8 @@ export async function fetchSettingsBySection(request: FetchSettingsBySectionRequ
       message: 'Settings fetched by section successfully',
       details: { 
         sectionPath, 
-        settingsCount: settings.length 
+        settingsCount: settings.length,
+        pathVariants
       }
     });
 

@@ -14,8 +14,8 @@ import {
 // Define the interface for the store state
 interface AppSettingsState {
   // UI State
-  selectedSectionId: string;      // Currently selected section ID
-  expandedSections: string[];     // List of expanded section IDs
+  selectedSectionPath: string;      // Currently selected section path
+  expandedSections: string[];     // List of expanded section paths
   
   // Settings Data State
   settingsCache: Record<string, SettingsCacheEntry>; // Cache of settings by section
@@ -34,7 +34,7 @@ export const SETTINGS_CACHE_TTL = 5 * 60 * 1000;
 export const useAppSettingsStore = defineStore('appSettings', {
   // Initial state
   state: (): AppSettingsState => ({
-    selectedSectionId: 'application', // Default to application section
+    selectedSectionPath: 'Application', // Default to application section
     expandedSections: [], // Start with all sections collapsed
     settingsCache: {}, // Empty cache to start
     isLoading: false,
@@ -43,19 +43,19 @@ export const useAppSettingsStore = defineStore('appSettings', {
   
   // Getters
   getters: {
-    // Get the currently selected section ID
-    getSelectedSectionId: (state): string => {
-      return state.selectedSectionId;
+    // Get the currently selected section path
+    getSelectedSectionPath: (state): string => {
+      return state.selectedSectionPath;
     },
     
-    // Get all expanded section IDs
+    // Get all expanded section paths
     getExpandedSections: (state): string[] => {
       return state.expandedSections;
     },
     
     // Check if settings for a specific section exist and are not expired
-    hasValidCache: (state) => (sectionId: string): boolean => {
-      const cacheEntry = state.settingsCache[sectionId];
+    hasValidCache: (state) => (section_path: string): boolean => {
+      const cacheEntry = state.settingsCache[section_path];
       if (!cacheEntry) return false;
       
       const now = Date.now();
@@ -63,8 +63,8 @@ export const useAppSettingsStore = defineStore('appSettings', {
     },
     
     // Get settings for a specific section from cache
-    getCachedSettings: (state) => (sectionId: string): AppSetting[] | null => {
-      const cacheEntry = state.settingsCache[sectionId];
+    getCachedSettings: (state) => (section_path: string): AppSetting[] | null => {
+      const cacheEntry = state.settingsCache[section_path];
       if (!cacheEntry) return null;
       
       // Check if cache has expired
@@ -82,9 +82,9 @@ export const useAppSettingsStore = defineStore('appSettings', {
       
       // Filter out expired entries
       const now = Date.now();
-      Object.entries(state.settingsCache).forEach(([sectionId, entry]) => {
+      Object.entries(state.settingsCache).forEach(([section_path, entry]) => {
         if ((now - entry.timestamp) < SETTINGS_CACHE_TTL) {
-          result[sectionId] = entry.data;
+          result[section_path] = entry.data;
         }
       });
       
@@ -105,28 +105,28 @@ export const useAppSettingsStore = defineStore('appSettings', {
   // Actions
   actions: {
     // Set the selected section
-    setSelectedSection(id: string) {
-      this.selectedSectionId = id;
+    setSelectedSection(path: string) {
+      this.selectedSectionPath = path;
     },
     
     // Expand a section
-    expandSection(id: string) {
-      if (!this.expandedSections.includes(id)) {
-        this.expandedSections.push(id);
+    expandSection(path: string) {
+      if (!this.expandedSections.includes(path)) {
+        this.expandedSections.push(path);
       }
     },
     
     // Collapse a section
-    collapseSection(id: string) {
-      this.expandedSections = this.expandedSections.filter(sectionId => sectionId !== id);
+    collapseSection(path: string) {
+      this.expandedSections = this.expandedSections.filter(section_path => section_path !== path);
     },
     
     // Toggle a section's expanded state
-    toggleSection(id: string) {
-      if (this.expandedSections.includes(id)) {
-        this.collapseSection(id);
+    toggleSection(path: string) {
+      if (this.expandedSections.includes(path)) {
+        this.collapseSection(path);
       } else {
-        this.expandSection(id);
+        this.expandSection(path);
       }
     },
     
@@ -141,25 +141,25 @@ export const useAppSettingsStore = defineStore('appSettings', {
     },
     
     // Add settings to cache for a section
-    cacheSettings(sectionId: string, settings: AppSetting[]) {
+    cacheSettings(section_path: string, settings: AppSetting[]) {
       // Filter settings for this exact section
       const sectionSettings = settings.filter(
-        setting => setting.section_path === sectionId
+        setting => setting.section_path === section_path
       );
       
-      this.settingsCache[sectionId] = {
+      this.settingsCache[section_path] = {
         timestamp: Date.now(),
         data: sectionSettings
       };
       
-      console.log(`Cached ${sectionSettings.length} settings for section: ${sectionId}`);
+      console.log(`Cached ${sectionSettings.length} settings for section: ${section_path}`);
     },
     
     // Clear cache for a specific section
-    clearSectionCache(sectionId: string) {
-      if (this.settingsCache[sectionId]) {
-        delete this.settingsCache[sectionId];
-        console.log(`Cleared cache for section: ${sectionId}`);
+    clearSectionCache(section_path: string) {
+      if (this.settingsCache[section_path]) {
+        delete this.settingsCache[section_path];
+        console.log(`Cleared cache for section: ${section_path}`);
       }
     },
     

@@ -38,44 +38,44 @@
  // Hierarchical sections structure
  const sections = ref<Section[]>([
    {
-     id: 'application',
+     id: 'Application',
      name: 'application',
      icon: 'mdi-cog-outline',
      children: [
        {
-         id: 'application.user_profiles',
+         id: 'Application.UserProfiles',
          name: 'user profiles',
          icon: 'mdi-account-cog-outline',
        },
        {
-         id: 'application.logging',
+         id: 'Application.Logging',
          name: 'logging',
          icon: 'mdi-text-box-outline',
          children: [
            {
-             id: 'application.logging.console_transport',
+             id: 'Application.Logging.ConsoleTransport',
              name: 'console transport',
              icon: 'mdi-console',
            },
            {
-             id: 'application.logging.file_transport',
+             id: 'Application.Logging.FileTransport',
              name: 'file transport',
              icon: 'mdi-file-outline',
            }
          ]
        },
        {
-         id: 'application.security',
+         id: 'Application.Security',
          name: 'security',
          icon: 'mdi-shield-outline',
          children: [
            {
-             id: 'application.security.session_management',
+             id: 'Application.Security.SessionManagement',
              name: 'session management',
              icon: 'mdi-account-clock-outline',
            },
            {
-             id: 'application.security.password_policies',
+             id: 'Application.Security.PasswordPolicies',
              name: 'password policies',
              icon: 'mdi-form-textbox-password',
            }
@@ -84,29 +84,29 @@
      ]
    },
    {
-     id: 'users_management',
+     id: 'UsersManagement',
      name: 'users management',
      icon: 'mdi-account-group-outline',
      children: [
        {
-         id: 'users_management.groups',
+         id: 'UsersManagement.GroupsManagement',
          name: 'groups management',
          icon: 'mdi-account-multiple-outline',
        }
      ]
    },
    {
-     id: 'catalog',
+     id: 'Catalog',
      name: 'catalog',
      icon: 'mdi-folder-table-outline',
    },
    {
-     id: 'services',
+     id: 'Services',
      name: 'services',
      icon: 'mdi-puzzle-outline',
    },
    {
-     id: 'processes',
+     id: 'Processes',
      name: 'processes',
      icon: 'mdi-chart-timeline-variant',
    }
@@ -114,21 +114,21 @@
  
  // Map section IDs to components
  const sectionComponents = {
-   'application': markRaw(Application),
-   'application.user_profiles': markRaw(UserProfiles),
-   'application.logging': markRaw(Logging),
-   'application.security': markRaw(Security),
-   'users_management': markRaw(UsersManagement),
-   'users_management.groups': markRaw(GroupsManagement),
+   'Application': markRaw(Application),
+   'Application.UserProfiles': markRaw(UserProfiles),
+   'Application.Logging': markRaw(Logging),
+   'Application.Security': markRaw(Security),
+   'UsersManagement': markRaw(UsersManagement),
+   'UsersManagement.GroupsManagement': markRaw(GroupsManagement),
    // Other components can be added here as they're created for other sections
  };
  
  // Mobile menu state
  const isMobileMenuOpen = ref(false);
  
- // Get selected section ID from store
- const selectedSectionId = computed(() => {
-   return appSettingsStore.getSelectedSectionId;
+ // Get selected section path from store
+ const selectedSectionPath = computed(() => {
+   return appSettingsStore.getSelectedSectionPath;
  });
  
  // Get expanded sections from store
@@ -141,7 +141,7 @@
   * Returns null if no component is mapped to the selected section ID
   */
  const currentComponent = computed(() => {
-   return sectionComponents[selectedSectionId.value] || null;
+   return sectionComponents[selectedSectionPath.value] || null;
  });
  
  /**
@@ -213,7 +213,7 @@
  
  // Get the selected section object with fallback to avoid null reference errors
  const selectedSection = computed(() => {
-   const section = findSectionById(selectedSectionId.value, sections.value);
+   const section = findSectionById(selectedSectionPath.value, sections.value);
    // Provide default values to avoid "Cannot read properties of undefined" error
    return section || { id: '', name: 'Settings', icon: 'mdi-cog-outline' };
  });
@@ -253,30 +253,30 @@
  
  /**
   * Fetches settings for the current section
-  * Special handling for the root 'application' section which may not have settings yet
+  * Special handling for the root 'Application' section which may not have settings yet
   */
  async function loadCurrentSectionSettings() {
-   const sectionId = selectedSectionId.value;
+   const section_path = selectedSectionPath.value;
    
-   console.log(`Loading settings for selected section: ${sectionId}`);
+   console.log(`Loading settings for selected section: ${section_path}`);
    
    try {
-     // For the root 'application' section, we expect it might not have settings yet
-     if (sectionId === 'application') {
+     // For the root 'Application' section, we expect it might not have settings yet
+     if (section_path === 'Application') {
        try {
          // Try to fetch settings, but don't display errors if none found
-         await fetchSettings(sectionId);
+         await fetchSettings(section_path);
        } catch (error) {
          // Silent fail for root section
          console.log('No settings found for root Application section - this is expected');
        }
      } else {
        // For all other sections, fetch normally
-       await fetchSettings(sectionId);
+       await fetchSettings(section_path);
      }
    } catch (error) {
      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-     console.error(`Error loading settings for section ${sectionId}:`, error);
+     console.error(`Error loading settings for section ${section_path}:`, error);
      
      // Show warning for settings load failure
      uiStore.showWarningSnackbar(`Предупреждение: Не удалось загрузить настройки для секции. ${errorMessage}`);
@@ -286,8 +286,8 @@
  }
  
  // Watch for changes to selected section
- watch(selectedSectionId, (newSectionId, oldSectionId) => {
-   if (newSectionId !== oldSectionId && isInitialLoadComplete.value) {
+ watch(selectedSectionPath, (newSectionPath, oldSectionPath) => {
+   if (newSectionPath !== oldSectionPath && isInitialLoadComplete.value) {
      // Load settings for newly selected section
      loadCurrentSectionSettings();
    }
@@ -295,13 +295,13 @@
  
  // On component mount
  onMounted(() => {
-   // If no section is selected in store, default to 'application'
-   if (!selectedSectionId.value) {
-     appSettingsStore.setSelectedSection('application');
+   // If no section is selected in store, default to 'Application'
+   if (!selectedSectionPath.value) {
+     appSettingsStore.setSelectedSection('Application');
    }
    
    // Expand parent sections of the selected section
-   expandParentSections(selectedSectionId.value);
+   expandParentSections(selectedSectionPath.value);
    
    // Load settings for initially selected section
    loadCurrentSectionSettings();
@@ -333,7 +333,7 @@
              v-for="section in flattenedSections"
              :key="section.id"
              @click="handleSectionClick(section)"
-             :class="['mobile-section-item', { 'section-active': section.id === selectedSectionId }]"
+             :class="['mobile-section-item', { 'section-active': section.id === selectedSectionPath.value }]"
              :style="{ paddingLeft: `${16 + section.level * 20}px` }"
            >
              <template v-slot:prepend>
@@ -361,7 +361,7 @@
              :class="[
                'section-item', 
                `level-${section.level}`,
-               { 'section-active': section.id === selectedSectionId },
+               { 'section-active': section.id === selectedSectionPath.value },
                { 'has-children': section.hasChildren },
                { 'is-expanded': expandedSections.includes(section.id) },
                { 'is-last-in-level': section.isLastInLevel }
@@ -389,7 +389,7 @@
        <div class="content-panel pa-4">
          <!-- Dynamic component rendering based on selected section -->
          <component :is="currentComponent" v-if="currentComponent" />
-         <h2 v-else>Selected section: {{ selectedSectionId }}</h2>
+         <h2 v-else>Selected section: {{ selectedSectionPath }}</h2>
        </div>
      </div>
    </v-container>

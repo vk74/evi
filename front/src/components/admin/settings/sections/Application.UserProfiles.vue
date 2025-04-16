@@ -5,15 +5,66 @@
 -->
 
 <script setup lang="ts">
-import { ref } from 'vue';
+import { ref, onMounted, watch } from 'vue';
+import { useAppSettingsStore } from '@/components/admin/settings/state.app.settings';
+import { fetchSettings, getSettingValue } from '@/components/admin/settings/service.fetch.settings';
+import DataLoading from '@/core/ui/loaders/DataLoading.vue';
+
+// Section path identifier - using component name for better consistency
+const section_path = 'Application.UserProfiles';
+
+// Store reference
+const appSettingsStore = useAppSettingsStore();
+
+// Loading state
+const isLoadingSettings = ref(true);
 
 // User profile settings
 const allowUserToChangeOwnProfile = ref(true);
 const allowUserToUploadAvatar = ref(true);
 const maxUserProfilePhotoSize = ref(1024); // Size in KB
 
-// Log component initialization
-console.log('Application.UserProfiles component initialized');
+/**
+ * Load settings from the backend
+ */
+async function loadSettings() {
+  isLoadingSettings.value = true;
+  
+  try {
+    console.log('Loading settings for User Profiles');
+    const settings = await fetchSettings(section_path);
+    
+    // Apply settings to component
+    if (settings && settings.length > 0) {
+      console.log('Received settings:', settings);
+      
+      // Get specific settings by name with fallback values
+      allowUserToChangeOwnProfile.value = getSettingValue(section_path, 'allowUserToChangeOwnProfile', true);
+      allowUserToUploadAvatar.value = getSettingValue(section_path, 'allowUserToUploadAvatar', true);
+      maxUserProfilePhotoSize.value = getSettingValue(section_path, 'maxUserProfilePhotoSize', 1024);
+    } else {
+      console.log('No settings received for User Profiles - using defaults');
+    }
+  } catch (error) {
+    console.error('Failed to load user profile settings:', error);
+  } finally {
+    isLoadingSettings.value = false;
+  }
+}
+
+// Watch for changes in loading state from the store
+watch(
+  () => appSettingsStore.isLoading,
+  (isLoading) => {
+    isLoadingSettings.value = isLoading;
+  }
+);
+
+// Initialize component
+onMounted(() => {
+  console.log('Application.UserProfiles component initialized');
+  loadSettings();
+});
 </script>
 
 <template>

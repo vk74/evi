@@ -10,8 +10,8 @@ import { useAppSettingsStore } from '@/components/admin/settings/state.app.setti
 import { fetchSettings, getSettingValue } from '@/components/admin/settings/service.fetch.settings';
 import DataLoading from '@/core/ui/loaders/DataLoading.vue';
 
-// Section identifier
-const sectionId = 'application';
+// Section path identifier - using component name for better consistency
+const section_path = 'Application';
 
 // Store reference
 const appSettingsStore = useAppSettingsStore();
@@ -51,18 +51,18 @@ async function loadSettings() {
     console.log('Loading settings for Application root section');
     
     try {
-      const settings = await fetchSettings(sectionId);
+      const settings = await fetchSettings(section_path);
       
       // Apply settings to component if any received
       if (settings && settings.length > 0) {
         console.log('Received settings:', settings);
         
         // Apply settings for language, theme, registration
-        selectedLanguage.value = getSettingValue(sectionId, 'defaultLanguage', 'English');
-        selectedThemeColor.value = getSettingValue(sectionId, 'accentColor', 'teal-darken-2');
-        allowSelfRegistration.value = getSettingValue(sectionId, 'allowSelfRegistration', true);
-        emailVerification.value = getSettingValue(sectionId, 'requireEmailVerification', true);
-        adminApproval.value = getSettingValue(sectionId, 'requireAdminApproval', false);
+        selectedLanguage.value = getSettingValue(section_path, 'defaultLanguage', 'English');
+        selectedThemeColor.value = getSettingValue(section_path, 'accentColor', 'teal-darken-2');
+        allowSelfRegistration.value = getSettingValue(section_path, 'allowSelfRegistration', true);
+        emailVerification.value = getSettingValue(section_path, 'requireEmailVerification', true);
+        adminApproval.value = getSettingValue(section_path, 'requireAdminApproval', false);
       } else {
         console.log('No settings received for Application root section - using defaults');
       }

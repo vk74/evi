@@ -6,28 +6,19 @@
 import { Pool, QueryResult } from 'pg';
 import { pool as pgPool } from '../../../db/maindb';
 import { queries } from './queries.settings';
-import { AppSetting, SettingsCache, Environment, SettingsError } from './types.settings';
-import { createSystemLogger, Logger, OperationType } from '../../../core/logger/logger.index';
+import { AppSetting, Environment, SettingsError } from './types.settings';
+import { createSystemLogger, Logger } from '../../../core/logger/logger.index';
 import { Events } from '../../../core/logger/codes';
+import { setCache, clearCache } from './cache.settings';
 
 // Type assertion for pool
 const pool = pgPool as Pool;
-
-// In-memory cache object
-let settingsCache: SettingsCache = {};
 
 // Create logger for settings service
 const logger: Logger = createSystemLogger({
   module: 'SettingsService',
   fileName: 'service.load.settings.ts'
 });
-
-/**
- * Generate cache key from section_path and setting_name
- */
-function generateCacheKey(sectionPath: string, settingName: string): string {
-  return `${sectionPath}/${settingName}`;
-}
 
 /**
  * Load all settings from database into cache
@@ -46,31 +37,28 @@ export async function loadSettings(): Promise<void> {
         code: Events.CORE.SETTINGS.LOAD.PROCESS.EMPTY.code,
         message: 'No settings found in database'
       });
+      // Clear cache if no settings
+      clearCache();
       return;
     }
 
-    // Clear existing cache
-    settingsCache = {};
-
-    // Transform query results and populate cache
-    result.rows.forEach(row => {
-      const setting: AppSetting = {
+    // Transform query results into AppSetting objects
+    const settings = result.rows.map(row => {
+      return {
         ...row,
         value: row.value, // JSONB field, already parsed by pg
         validation_schema: row.validation_schema, // JSONB field
         default_value: row.default_value, // JSONB field
         updated_at: new Date(row.updated_at)
-      };
-
-      const cacheKey = generateCacheKey(setting.section_path, setting.setting_name);
-      settingsCache[cacheKey] = setting;
+      } as AppSetting;
     });
 
-    const settingsCount = Object.keys(settingsCache).length;
+    // Update the centralized cache
+    setCache(settings);
     
     logger.info({
       code: Events.CORE.SETTINGS.LOAD.PROCESS.SUCCESS.code,
-      message: `Settings loaded successfully, number of loaded settings: ${settingsCount}`
+      message: `Settings loaded successfully, number of loaded settings: ${settings.length}`
     });
 
   } catch (error) {
@@ -90,72 +78,6 @@ export async function loadSettings(): Promise<void> {
     };
     throw settingsError;
   }
-}
-
-/**
- * Get setting by section path and name
- */
-export function getSetting(sectionPath: string, settingName: string): AppSetting | null {
-  const cacheKey = generateCacheKey(sectionPath, settingName);
-  const setting = settingsCache[cacheKey];
-  
-  if (!setting) {
-    logger.debug({
-      code: Events.CORE.SETTINGS.GET.BY_NAME.NOT_FOUND.code,
-      message: 'Setting not found in cache',
-      details: { sectionPath, settingName }
-    });
-    return null;
-  }
-
-  return setting;
-}
-
-/**
- * Get setting value by section path and name
- * Returns parsed value or default value if setting not found
- */
-export function getSettingValue(sectionPath: string, settingName: string): any {
-  const setting = getSetting(sectionPath, settingName);
-  
-  if (!setting) {
-    return null;
-  }
-
-  // If setting exists but value is null, try to use default_value
-  if (setting.value === null && setting.default_value !== null) {
-    return setting.default_value;
-  }
-
-  return setting.value;
-}
-
-/**
- * Get all settings in a specific section
- */
-export function getSettingsBySection(sectionPath: string): AppSetting[] {
-  const sectionSettings = Object.values(settingsCache).filter(
-    setting => setting.section_path.startsWith(sectionPath)
-  );
-  
-  if (sectionSettings.length === 0) {
-    logger.debug({
-      code: Events.CORE.SETTINGS.GET.BY_SECTION.NOT_FOUND.code,
-      message: 'No settings found for section',
-      details: { sectionPath }
-    });
-  } else {
-    logger.debug({
-      code: Events.CORE.SETTINGS.GET.BY_SECTION.SUCCESS.code,
-      message: 'Settings section fetched successfully',
-      details: { 
-        sectionPath,
-        settingsCount: sectionSettings.length
-      }
-    });
-  }
-  
-  return sectionSettings;
 }
 
 /**

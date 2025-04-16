@@ -14,12 +14,22 @@ function logCache(message: string, meta?: object): void {
 }
 
 /**
+ * Generate cache key from section_path and setting_name
+ * This should match the key generation in service.load.settings.ts
+ */
+function generateCacheKey(sectionPath: string, settingName: string): string {
+  return `${sectionPath}/${settingName}`;
+}
+
+/**
  * Set the entire cache contents
  * @param settings Array of settings to cache
  */
 export function setCache(settings: AppSetting[]): void {
   settingsCache = settings.reduce((cache, setting) => {
-    cache[setting.setting_name] = setting;
+    // Use both section_path and setting_name to create unique key
+    const cacheKey = generateCacheKey(setting.section_path, setting.setting_name);
+    cache[cacheKey] = setting;
     return cache;
   }, {} as SettingsCache);
   
@@ -38,21 +48,23 @@ export function clearCache(): void {
 }
 
 /**
- * Get a setting value by name
+ * Get a setting value by section path and name
+ * @param sectionPath The section path of the setting
  * @param settingName The unique name of the setting
  * @returns The setting value or null if not found
  */
-export function getSetting(settingName: string): AppSetting | null {
-  const setting = settingsCache[settingName];
+export function getSetting(sectionPath: string, settingName: string): AppSetting | null {
+  const cacheKey = generateCacheKey(sectionPath, settingName);
+  const setting = settingsCache[cacheKey];
   
   if (!setting) {
-    logCache('Setting not found in cache', { settingName });
+    logCache('Setting not found in cache', { sectionPath, settingName });
     return null;
   }
 
   logCache('Setting retrieved from cache', { 
-    settingName,
-    sectionsPath: setting.section_path 
+    sectionPath,
+    settingName
   });
   
   return setting;
@@ -71,11 +83,13 @@ export function getAllSettings(): SettingsCache {
 
 /**
  * Check if a setting exists in cache
+ * @param sectionPath The section path of the setting
  * @param settingName The unique name of the setting
  * @returns boolean indicating if setting exists
  */
-export function hasSetting(settingName: string): boolean {
-  return settingName in settingsCache;
+export function hasSetting(sectionPath: string, settingName: string): boolean {
+  const cacheKey = generateCacheKey(sectionPath, settingName);
+  return cacheKey in settingsCache;
 }
 
 /**

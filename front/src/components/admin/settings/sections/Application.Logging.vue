@@ -5,7 +5,19 @@
 -->
 
 <script setup lang="ts">
-import { ref } from 'vue';
+import { ref, onMounted, watch } from 'vue';
+import { useAppSettingsStore } from '@/components/admin/settings/state.app.settings';
+import { fetchSettings, getSettingValue } from '@/components/admin/settings/service.fetch.settings';
+import DataLoading from '@/core/ui/loaders/DataLoading.vue';
+
+// Section path identifier - using component name for better consistency
+const section_path = 'Application.Logging';
+
+// Store reference
+const appSettingsStore = useAppSettingsStore();
+
+// Loading state
+const isLoadingSettings = ref(true);
 
 /**
  * Core logger settings based on the backend service

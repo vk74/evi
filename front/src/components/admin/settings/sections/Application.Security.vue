@@ -5,7 +5,19 @@
 -->
 
 <script setup lang="ts">
-import { ref, computed } from 'vue';
+import { ref, computed, onMounted, watch } from 'vue';
+import { useAppSettingsStore } from '@/components/admin/settings/state.app.settings';
+import { fetchSettings, getSettingValue } from '@/components/admin/settings/service.fetch.settings';
+import DataLoading from '@/core/ui/loaders/DataLoading.vue';
+
+// Section path identifier - using component name for better consistency
+const section_path = 'Application.Security';
+
+// Store reference
+const appSettingsStore = useAppSettingsStore();
+
+// Loading state
+const isLoadingSettings = ref(true);
 
 // Session management
 const sessionDuration = ref('30');
@@ -44,8 +56,57 @@ const passwordExpirationOptions = [
 ];
 const forcePasswordChangeAfterExpiration = ref(true);
 
-// Log component initialization
-console.log('Application.Security component initialized');
+/**
+ * Load settings from the backend
+ */
+async function loadSettings() {
+  isLoadingSettings.value = true;
+  
+  try {
+    console.log('Loading settings for Application.Security section');
+    const settings = await fetchSettings(section_path);
+    
+    // Apply settings to component
+    if (settings && settings.length > 0) {
+      console.log('Received settings:', settings);
+      
+      // Apply session management settings
+      sessionDuration.value = getSettingValue(section_path, 'sessionDuration', '30');
+      unlimitedSession.value = getSettingValue(section_path, 'unlimitedSession', false);
+      concurrentSessions.value = getSettingValue(section_path, 'concurrentSessions', true);
+      maxSessionsPerUser.value = getSettingValue(section_path, 'maxSessionsPerUser', 2);
+      
+      // Apply password policy settings
+      passwordMinLength.value = getSettingValue(section_path, 'passwordMinLength', '8');
+      requireLowercase.value = getSettingValue(section_path, 'requireLowercase', true);
+      requireUppercase.value = getSettingValue(section_path, 'requireUppercase', true);
+      requireNumbers.value = getSettingValue(section_path, 'requireNumbers', true);
+      requireSpecialChars.value = getSettingValue(section_path, 'requireSpecialChars', false);
+      passwordExpiration.value = getSettingValue(section_path, 'passwordExpiration', '90 days');
+      forcePasswordChangeAfterExpiration.value = getSettingValue(section_path, 'forcePasswordChangeAfterExpiration', true);
+    } else {
+      console.log('No settings received for Application.Security section - using defaults');
+    }
+  } catch (error) {
+    console.error('Failed to load security settings:', error);
+  } finally {
+    isLoadingSettings.value = false;
+  }
+}
+
+// Watch for changes in loading state from the store
+watch(
+  () => appSettingsStore.isLoading,
+  (isLoading) => {
+    isLoadingSettings.value = isLoading;
+  }
+);
+
+// Initialize component
+onMounted(() => {
+  console.log('Application.Security component initialized');
+  loadSettings();
+});
 </script>
 
 <template>

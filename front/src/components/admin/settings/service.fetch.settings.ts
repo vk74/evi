@@ -22,21 +22,21 @@ import {
  * Fetches application settings from the backend for a specific section.
  * First checks the cache, and only requests from backend if cache is empty or expired.
  * 
- * @param sectionId - The section ID to fetch settings for
+ * @param section_path - The section path to fetch settings for
  * @param forceRefresh - Whether to force a refresh from the server (bypass cache)
  * @returns Promise that resolves to an array of settings
  */
-export async function fetchSettings(sectionId: string, forceRefresh = false): Promise<AppSetting[]> {
+export async function fetchSettings(section_path: string, forceRefresh = false): Promise<AppSetting[]> {
   const store = useAppSettingsStore();
   const uiStore = useUiStore();
   
-  console.log(`Fetching settings for section: ${sectionId}${forceRefresh ? ' (forced refresh)' : ''}`);
+  console.log(`Fetching settings for section: ${section_path}${forceRefresh ? ' (forced refresh)' : ''}`);
   
   try {
     // Check if we have valid cache and not forcing refresh
-    if (!forceRefresh && store.hasValidCache(sectionId)) {
-      const cachedSettings = store.getCachedSettings(sectionId);
-      console.log(`Using cached settings for section: ${sectionId}`, cachedSettings);
+    if (!forceRefresh && store.hasValidCache(section_path)) {
+      const cachedSettings = store.getCachedSettings(section_path);
+      console.log(`Using cached settings for section: ${section_path}`, cachedSettings);
       return cachedSettings || [];
     }
     
@@ -47,7 +47,7 @@ export async function fetchSettings(sectionId: string, forceRefresh = false): Pr
     // Prepare request parameters
     const requestData: FetchSettingsBySectionRequest = {
       type: 'bySection',  // Using bySection type to fetch settings for a specific section
-      sectionPath: sectionId,
+      sectionPath: section_path,
       environment: 'all', // Get settings for all environments
       includeConfidential: false // Don't include confidential settings
     };
@@ -61,7 +61,7 @@ export async function fetchSettings(sectionId: string, forceRefresh = false): Pr
     // Handle response
     if (response.data.success && response.data.settings) {
       // Cache the settings
-      store.cacheSettings(sectionId, response.data.settings);
+      store.cacheSettings(section_path, response.data.settings);
       
       // Clear any previous errors
       store.setError(null);
@@ -82,7 +82,7 @@ export async function fetchSettings(sectionId: string, forceRefresh = false): Pr
   } catch (error) {
     // Handle exception
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-    console.error(`Error fetching settings for section ${sectionId}:`, error);
+    console.error(`Error fetching settings for section ${section_path}:`, error);
     
     // Set error in store
     store.setError(errorMessage);
@@ -101,14 +101,14 @@ export async function fetchSettings(sectionId: string, forceRefresh = false): Pr
 /**
  * Gets a specific setting value by its name.
  * 
- * @param sectionId - The section ID the setting belongs to
+ * @param section_path - The section path the setting belongs to
  * @param settingName - The unique name of the setting to get
  * @param defaultValue - Default value to return if setting not found
  * @returns The setting value or default value if not found
  */
-export function getSettingValue<T>(sectionId: string, settingName: string, defaultValue: T): T {
+export function getSettingValue<T>(section_path: string, settingName: string, defaultValue: T): T {
   const store = useAppSettingsStore();
-  const settings = store.getCachedSettings(sectionId);
+  const settings = store.getCachedSettings(section_path);
   
   if (!settings) return defaultValue;
   
@@ -122,18 +122,18 @@ export function getSettingValue<T>(sectionId: string, settingName: string, defau
 /**
  * Fetches a specific setting by its name directly from the backend.
  * 
- * @param sectionId - The section ID the setting belongs to
+ * @param section_path - The section path the setting belongs to
  * @param settingName - The unique name of the setting to get
  * @returns Promise that resolves to the setting or null if not found
  */
-export async function fetchSettingByName(sectionId: string, settingName: string): Promise<AppSetting | null> {
+export async function fetchSettingByName(section_path: string, settingName: string): Promise<AppSetting | null> {
   const uiStore = useUiStore();
   
   try {
     // Prepare request parameters
     const requestData: FetchSettingByNameRequest = {
       type: 'byName',
-      sectionPath: sectionId,
+      sectionPath: section_path,
       settingName: settingName,
       environment: 'all',
       includeConfidential: false
@@ -154,7 +154,7 @@ export async function fetchSettingByName(sectionId: string, settingName: string)
   } catch (error) {
     // Handle exception
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-    console.error(`Error fetching setting ${settingName} for section ${sectionId}:`, error);
+    console.error(`Error fetching setting ${settingName} for section ${section_path}:`, error);
     
     // Show error message to user
     uiStore.showErrorSnackbar(`Ошибка получения настройки: ${errorMessage}`);
@@ -166,23 +166,23 @@ export async function fetchSettingByName(sectionId: string, settingName: string)
 /**
  * Checks if the cache for a section has expired.
  * 
- * @param sectionId - The section ID to check
+ * @param section_path - The section path to check
  * @returns True if cache has expired or doesn't exist, false otherwise
  */
-export function isSettingsCacheExpired(sectionId: string): boolean {
+export function isSettingsCacheExpired(section_path: string): boolean {
   const store = useAppSettingsStore();
-  return !store.hasValidCache(sectionId);
+  return !store.hasValidCache(section_path);
 }
 
 /**
  * Gets the time in seconds until the cache expires.
  * 
- * @param sectionId - The section ID to check
+ * @param section_path - The section path to check
  * @returns Time in seconds until expiration, or 0 if already expired
  */
-export function getSettingsCacheTimeRemaining(sectionId: string): number {
+export function getSettingsCacheTimeRemaining(section_path: string): number {
   const store = useAppSettingsStore();
-  const cache = store.settingsCache[sectionId];
+  const cache = store.settingsCache[section_path];
   
   if (!cache) return 0;
   

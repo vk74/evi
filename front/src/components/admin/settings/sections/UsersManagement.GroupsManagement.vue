@@ -10,8 +10,8 @@ import { useAppSettingsStore } from '@/components/admin/settings/state.app.setti
 import { fetchSettings, getSettingValue } from '@/components/admin/settings/service.fetch.settings';
 import DataLoading from '@/core/ui/loaders/DataLoading.vue';
 
-// Section identifier
-const sectionId = 'users_management.groups';
+// Section path identifier - using component name for better consistency
+const section_path = 'UsersManagement.GroupsManagement';
 
 // Group management settings with default values
 const allowAddDisabledAndArchivedUsersToGroups = ref(false);
@@ -30,7 +30,7 @@ async function loadSettings() {
   
   try {
     console.log('Loading settings for Groups Management');
-    const settings = await fetchSettings(sectionId);
+    const settings = await fetchSettings(section_path);
     
     // Apply settings to component
     if (settings && settings.length > 0) {
@@ -38,7 +38,7 @@ async function loadSettings() {
       
       // Get specific settings by name with fallback values
       allowAddDisabledAndArchivedUsersToGroups.value = getSettingValue(
-        sectionId, 
+        section_path, 
         'allowAddDisabledAndArchivedUsersToGroups', 
         false
       );
