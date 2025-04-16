@@ -18,7 +18,7 @@ export const queries: SettingsQueries = {
   getAllSettings: {
     text: `
       SELECT 
-        sections_path,
+        section_path,
         setting_name,
         environment,
         value,
@@ -28,7 +28,7 @@ export const queries: SettingsQueries = {
         description,
         updated_at
       FROM app.app_settings
-      ORDER BY sections_path, setting_name
+      ORDER BY section_path, setting_name
     `
   },
 
@@ -36,7 +36,7 @@ export const queries: SettingsQueries = {
   getSettingByPath: {
     text: `
       SELECT 
-        sections_path,
+        section_path,
         setting_name,
         environment,
         value,
@@ -46,7 +46,7 @@ export const queries: SettingsQueries = {
         description,
         updated_at
       FROM app.app_settings
-      WHERE sections_path = $1
+      WHERE section_path = $1
       AND setting_name = $2
       LIMIT 1
     `
@@ -56,7 +56,7 @@ export const queries: SettingsQueries = {
   getSettingsBySection: {
     text: `
       SELECT 
-        sections_path,
+        section_path,
         setting_name,
         environment,
         value,
@@ -66,8 +66,8 @@ export const queries: SettingsQueries = {
         description,
         updated_at
       FROM app.app_settings
-      WHERE sections_path LIKE $1 || '%'
-      ORDER BY sections_path, setting_name
+      WHERE section_path LIKE $1 || '%'
+      ORDER BY section_path, setting_name
     `
   }
 };

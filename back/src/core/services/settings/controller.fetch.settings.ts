@@ -238,7 +238,7 @@ async function fetchSettings(req: AuthenticatedRequest, res: Response): Promise<
         }
 
         const request: FetchSettingByNameRequest = {
-          sectionsPath: params.sectionsPath,
+          sectionPath: params.sectionsPath,
           settingName: params.settingName,
           environment,
           includeConfidential
@@ -274,7 +274,7 @@ async function fetchSettings(req: AuthenticatedRequest, res: Response): Promise<
         }
 
         const request: FetchSettingsBySectionRequest = {
-          sectionsPath: params.sectionsPath,
+          sectionPath: params.sectionsPath,
           environment,
           includeConfidential
         };

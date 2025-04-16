@@ -53,25 +53,25 @@ function filterConfidentialSettings(settings: AppSetting[], includeConfidential 
 }
 
 /**
- * Fetch a single setting by sections path and name
+ * Fetch a single setting by section path and name
  * @param request Request parameters
  * @returns The requested setting or null if not found
  */
 export async function fetchSettingByName(request: FetchSettingByNameRequest): Promise<AppSetting | null> {
   try {
-    const { sectionsPath, settingName, environment, includeConfidential = false } = request;
+    const { sectionPath, settingName, environment, includeConfidential = false } = request;
     
     logger.debug({
       code: Events.CORE.SETTINGS.GET.BY_NAME.INITIATED.code,
       message: 'Fetching setting by name',
-      details: { sectionsPath, settingName, environment }
+      details: { sectionPath, settingName, environment }
     });
 
     const allSettings = Object.values(getAllSettings());
     
     // Find the specific setting
     const setting = allSettings.find(s => 
-      s.sections_path === sectionsPath && 
+      s.section_path === sectionPath && 
       s.setting_name === settingName
     );
 
@@ -79,7 +79,7 @@ export async function fetchSettingByName(request: FetchSettingByNameRequest): Pr
       logger.debug({
         code: Events.CORE.SETTINGS.GET.BY_NAME.NOT_FOUND.code,
         message: 'Setting not found',
-        details: { sectionsPath, settingName }
+        details: { sectionPath, settingName }
       });
       return null;
     }
@@ -110,7 +110,7 @@ export async function fetchSettingByName(request: FetchSettingByNameRequest): Pr
     logger.info({
       code: Events.CORE.SETTINGS.GET.BY_NAME.SUCCESS.code,
       message: 'Setting fetched successfully',
-      details: { settingName, sectionsPath }
+      details: { settingName, sectionPath }
     });
 
     return setting;
@@ -134,25 +134,25 @@ export async function fetchSettingByName(request: FetchSettingByNameRequest): Pr
 }
 
 /**
- * Fetch settings by sections path
+ * Fetch settings by section path
  * @param request Request parameters
  * @returns Array of settings in the specified section
  */
 export async function fetchSettingsBySection(request: FetchSettingsBySectionRequest): Promise<AppSetting[]> {
   try {
-    const { sectionsPath, environment, includeConfidential = false } = request;
+    const { sectionPath, environment, includeConfidential = false } = request;
     
     logger.debug({
       code: Events.CORE.SETTINGS.GET.BY_SECTION.INITIATED.code,
       message: 'Fetching settings by section',
-      details: { sectionsPath, environment }
+      details: { sectionPath, environment }
     });
 
     const allSettings = Object.values(getAllSettings());
     
     // Filter by section path
     let settings = allSettings.filter(setting => 
-      setting.sections_path.startsWith(sectionsPath)
+      setting.section_path.startsWith(sectionPath)
     );
     
     // Apply filters
@@ -163,7 +163,7 @@ export async function fetchSettingsBySection(request: FetchSettingsBySectionRequ
       code: Events.CORE.SETTINGS.GET.BY_SECTION.SUCCESS.code,
       message: 'Settings fetched by section successfully',
       details: { 
-        sectionsPath, 
+        sectionPath, 
         settingsCount: settings.length 
       }
     });

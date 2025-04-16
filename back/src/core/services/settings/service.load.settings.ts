@@ -23,10 +23,10 @@ const logger: Logger = createSystemLogger({
 });
 
 /**
- * Generate cache key from sections_path and setting_name
+ * Generate cache key from section_path and setting_name
  */
-function generateCacheKey(sectionsPath: string, settingName: string): string {
-  return `${sectionsPath}/${settingName}`;
+function generateCacheKey(sectionPath: string, settingName: string): string {
+  return `${sectionPath}/${settingName}`;
 }
 
 /**
@@ -62,7 +62,7 @@ export async function loadSettings(): Promise<void> {
         updated_at: new Date(row.updated_at)
       };
 
-      const cacheKey = generateCacheKey(setting.sections_path, setting.setting_name);
+      const cacheKey = generateCacheKey(setting.section_path, setting.setting_name);
       settingsCache[cacheKey] = setting;
     });
 
@@ -93,17 +93,17 @@ export async function loadSettings(): Promise<void> {
 }
 
 /**
- * Get setting by sections path and name
+ * Get setting by section path and name
  */
-export function getSetting(sectionsPath: string, settingName: string): AppSetting | null {
-  const cacheKey = generateCacheKey(sectionsPath, settingName);
+export function getSetting(sectionPath: string, settingName: string): AppSetting | null {
+  const cacheKey = generateCacheKey(sectionPath, settingName);
   const setting = settingsCache[cacheKey];
   
   if (!setting) {
     logger.debug({
       code: Events.CORE.SETTINGS.GET.BY_NAME.NOT_FOUND.code,
       message: 'Setting not found in cache',
-      details: { sectionsPath, settingName }
+      details: { sectionPath, settingName }
     });
     return null;
   }
@@ -112,11 +112,11 @@ export function getSetting(sectionsPath: string, settingName: string): AppSettin
 }
 
 /**
- * Get setting value by sections path and name
+ * Get setting value by section path and name
  * Returns parsed value or default value if setting not found
  */
-export function getSettingValue(sectionsPath: string, settingName: string): any {
-  const setting = getSetting(sectionsPath, settingName);
+export function getSettingValue(sectionPath: string, settingName: string): any {
+  const setting = getSetting(sectionPath, settingName);
   
   if (!setting) {
     return null;
@@ -133,23 +133,23 @@ export function getSettingValue(sectionsPath: string, settingName: string): any 
 /**
  * Get all settings in a specific section
  */
-export function getSettingsBySection(sectionsPath: string): AppSetting[] {
+export function getSettingsBySection(sectionPath: string): AppSetting[] {
   const sectionSettings = Object.values(settingsCache).filter(
-    setting => setting.sections_path.startsWith(sectionsPath)
+    setting => setting.section_path.startsWith(sectionPath)
   );
   
   if (sectionSettings.length === 0) {
     logger.debug({
       code: Events.CORE.SETTINGS.GET.BY_SECTION.NOT_FOUND.code,
       message: 'No settings found for section',
-      details: { sectionsPath }
+      details: { sectionPath }
     });
   } else {
     logger.debug({
       code: Events.CORE.SETTINGS.GET.BY_SECTION.SUCCESS.code,
       message: 'Settings section fetched successfully',
       details: { 
-        sectionsPath,
+        sectionPath,
         settingsCount: sectionSettings.length
       }
     });

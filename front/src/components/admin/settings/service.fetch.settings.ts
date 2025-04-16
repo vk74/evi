@@ -47,7 +47,7 @@ export async function fetchSettings(sectionId: string, forceRefresh = false): Pr
     // Prepare request parameters
     const requestData: FetchSettingsBySectionRequest = {
       type: 'bySection',  // Using bySection type to fetch settings for a specific section
-      sectionsPath: sectionId,
+      sectionPath: sectionId,
       environment: 'all', // Get settings for all environments
       includeConfidential: false // Don't include confidential settings
     };
@@ -133,7 +133,7 @@ export async function fetchSettingByName(sectionId: string, settingName: string)
     // Prepare request parameters
     const requestData: FetchSettingByNameRequest = {
       type: 'byName',
-      sectionsPath: sectionId,
+      sectionPath: sectionId,
       settingName: settingName,
       environment: 'all',
       includeConfidential: false

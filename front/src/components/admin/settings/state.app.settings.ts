@@ -144,7 +144,7 @@ export const useAppSettingsStore = defineStore('appSettings', {
     cacheSettings(sectionId: string, settings: AppSetting[]) {
       // Filter settings for this exact section
       const sectionSettings = settings.filter(
-        setting => setting.sections_path === sectionId
+        setting => setting.section_path === sectionId
       );
       
       this.settingsCache[sectionId] = {

@@ -12,7 +12,7 @@ Don't delete nor optimize code without my consent.
 Don't use classes in the files, use functions and methods instead. 
 Add logging for major functions and events. the logging function is centralized.
 
-
+For tasks related to Postgres database you can use MCP server to connect to maindb and explore the database structure.
 
 Переписку в чатах ведем на русском, но все комментарии и код пишем на английском.
 

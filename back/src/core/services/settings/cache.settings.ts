@@ -25,7 +25,7 @@ export function setCache(settings: AppSetting[]): void {
   
   logCache('Settings cache updated', { 
     settingsCount: settings.length,
-    sections: [...new Set(settings.map(s => s.sections_path))]
+    sections: [...new Set(settings.map(s => s.section_path))]
   });
 }
 
@@ -52,7 +52,7 @@ export function getSetting(settingName: string): AppSetting | null {
 
   logCache('Setting retrieved from cache', { 
     settingName,
-    sectionsPath: setting.sections_path 
+    sectionsPath: setting.section_path 
   });
   
   return setting;

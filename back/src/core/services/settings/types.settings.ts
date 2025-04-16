@@ -17,7 +17,7 @@ export enum Environment {
  * Interface representing a single setting from app.app_settings
  */
 export interface AppSetting {
-  sections_path: string;          // Path to settings section (e.g. "security/passwords")
+  section_path: string;          // Path to settings section (e.g. "security/passwords")
   setting_name: string;          // Unique setting identifier
   environment: Environment;      // Environment type
   value: any;                   // Setting value stored as JSONB
@@ -30,7 +30,7 @@ export interface AppSetting {
 
 /**
  * Cache structure for settings
- * Key is combination of sections_path and setting_name
+ * Key is combination of section_path and setting_name
  */
 export interface SettingsCache {
   [key: string]: AppSetting;
@@ -71,7 +71,7 @@ export interface FetchSettingByNameRequest extends FetchSettingsBaseRequest {
   /**
    * Full setting path
    */
-  sectionsPath: string;
+  sectionPath: string;
   /**
    * Setting name
    */
@@ -85,7 +85,7 @@ export interface FetchSettingsBySectionRequest extends FetchSettingsBaseRequest 
   /**
    * Section path to filter settings by
    */
-  sectionsPath: string;
+  sectionPath: string;
 }
 
 /**
