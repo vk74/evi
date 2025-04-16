@@ -8,6 +8,7 @@
 import { computed, onMounted, watch, ref } from 'vue';
 import { useAppSettingsStore } from '@/components/admin/settings/state.app.settings';
 import { fetchSettings } from '@/components/admin/settings/service.fetch.settings';
+import { updateSettingFromComponent } from '@/components/admin/settings/service.update.settings';
 import DataLoading from '@/core/ui/loaders/DataLoading.vue';
 
 // Section path identifier - using component name for better consistency
@@ -40,9 +41,9 @@ const onlyAddActiveMembers = computed({
     return value;
   },
   set: (newValue) => {
-    // In future implementation, this setter would update the setting in the backend
     console.log('Setting value changed to:', newValue);
-    // Future implementation: updateSetting(section_path, 'only.add.active.members', newValue)
+    // Update the setting using our update service
+    updateSettingFromComponent(section_path, 'only.add.active.members', newValue);
   }
 });
 

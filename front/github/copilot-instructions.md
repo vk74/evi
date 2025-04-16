@@ -15,6 +15,7 @@ Preferences for .vue components:
   3. start building components with interface language in russian. internationalization with i18 library should be done as a separate step upon component functionality completion. 
   4. all comments in all files should be in english
   5. the header comment should have an explanation of the file functionality / algorythm, what type of objects it is working with, major interactions. 
+  6. use CompositionAPI style of code
 
 IMPORTANT: explain how you understand the task and wait for my consent before writing the code. 
 

@@ -109,3 +109,22 @@ export function parseSettingValue(setting: AppSetting): any {
     return null;
   }
 }
+
+/**
+ * Update a single setting in the cache
+ * @param setting The updated setting object to cache
+ * @returns boolean indicating if the update was successful
+ */
+export function updateCachedSetting(setting: AppSetting): boolean {
+  const cacheKey = generateCacheKey(setting.section_path, setting.setting_name);
+  
+  // Update the setting in cache
+  settingsCache[cacheKey] = setting;
+  
+  logCache('Setting updated in cache', { 
+    sectionPath: setting.section_path,
+    settingName: setting.setting_name 
+  });
+  
+  return true;
+}

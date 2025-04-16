@@ -143,3 +143,48 @@ export interface FetchSettingsResponse {
    */
   setting?: AppSetting;
 }
+
+/**
+ * Request for updating a setting value
+ */
+export interface UpdateSettingRequest {
+  /**
+   * Section path of the setting to update
+   */
+  sectionPath: string;
+  
+  /**
+   * Name of the setting to update
+   */
+  settingName: string;
+  
+  /**
+   * New value for the setting
+   */
+  value: any;
+  
+  /**
+   * Optional environment to update setting for
+   */
+  environment?: string;
+}
+
+/**
+ * Response for setting update operation
+ */
+export interface UpdateSettingResponse {
+  /**
+   * Whether the operation was successful
+   */
+  success: boolean;
+  
+  /**
+   * Optional error message if operation failed
+   */
+  error?: string;
+  
+  /**
+   * Updated setting if operation was successful
+   */
+  updatedSetting?: AppSetting;
+}

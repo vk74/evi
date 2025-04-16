@@ -167,6 +167,78 @@ export const useAppSettingsStore = defineStore('appSettings', {
     clearAllCache() {
       this.settingsCache = {};
       console.log('Cleared all settings cache');
+    },
+    
+    /**
+     * Sets the value of a specific setting in the cache
+     * 
+     * @param sectionPath - The section path of the setting
+     * @param settingName - The name of the setting
+     * @param value - The new value for the setting
+     * @returns boolean indicating if setting was found and updated
+     */
+    setSetting(sectionPath: string, settingName: string, value: any): boolean {
+      const cacheEntry = this.settingsCache[sectionPath];
+      if (!cacheEntry) return false;
+      
+      // Find the setting in the cache
+      const settingIndex = cacheEntry.data.findIndex(
+        setting => setting.setting_name === settingName
+      );
+      
+      if (settingIndex === -1) return false;
+      
+      // Update the setting value locally
+      cacheEntry.data[settingIndex].value = value;
+      console.log(`Local cache updated for setting ${sectionPath}.${settingName}`, value);
+      
+      return true;
+    },
+    
+    /**
+     * Updates a setting in cache with the full setting object
+     * Used after API confirms the update was successful
+     * 
+     * @param sectionPath - The section path of the setting
+     * @param settingName - The name of the setting
+     * @param updatedSetting - The updated setting object from API
+     * @returns boolean indicating if cache was updated
+     */
+    updateCachedSetting(sectionPath: string, settingName: string, updatedSetting: AppSetting): boolean {
+      const cacheEntry = this.settingsCache[sectionPath];
+      if (!cacheEntry) return false;
+      
+      // Find the setting in the cache
+      const settingIndex = cacheEntry.data.findIndex(
+        setting => setting.setting_name === settingName
+      );
+      
+      if (settingIndex === -1) {
+        // Setting not found in cache, add it
+        cacheEntry.data.push(updatedSetting);
+        console.log(`Added new setting to cache: ${sectionPath}.${settingName}`);
+      } else {
+        // Update existing setting
+        cacheEntry.data[settingIndex] = updatedSetting;
+        console.log(`Updated cached setting: ${sectionPath}.${settingName}`);
+      }
+      
+      // Refresh the timestamp to extend cache TTL
+      cacheEntry.timestamp = Date.now();
+      return true;
+    },
+    
+    /**
+     * Roll back a setting to previous value
+     * Used when API update fails and we need to revert optimistic update
+     * 
+     * @param sectionPath - The section path of the setting
+     * @param settingName - The name of the setting
+     * @param originalValue - The original value to restore
+     */
+    rollbackSetting(sectionPath: string, settingName: string, originalValue: any): void {
+      this.setSetting(sectionPath, settingName, originalValue);
+      console.log(`Rolled back setting ${sectionPath}.${settingName} to:`, originalValue);
     }
   },
   

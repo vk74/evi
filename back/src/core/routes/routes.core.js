@@ -21,6 +21,7 @@ const changeGroupOwner = require('../services/item-selector/controller.change.gr
 const selfChangePasswordController = require('../services/change-password/controller.self.change.password').default;
 const adminResetPasswordController = require('../services/change-password/controller.admin.change.password').default;
 const fetchSettingsController = require('../services/settings/controller.fetch.settings').default;
+const updateSettingsController = require('../services/settings/controller.update.settings').default;
 
 // utility services
 router.get('/api/core/users/fetch-username-by-uuid/:userId', validateJWT, fetchUsernameByUuid);
@@ -36,5 +37,6 @@ router.post('/api/core/users/admin-change-password', validateJWT, adminResetPass
 
 // settings services
 router.post('/api/core/settings/fetch-settings', validateJWT, fetchSettingsController);
+router.post('/api/core/settings/update-settings', validateJWT, updateSettingsController);
 
 module.exports = router;

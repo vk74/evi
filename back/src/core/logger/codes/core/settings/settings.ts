@@ -193,5 +193,79 @@ export const SettingsEvents = {
         description: 'Ошибка при обработке запроса на получение настроек'
       }
     }
+  },
+  /**
+   * События связанные с обновлением настроек
+   */
+  UPDATE: {
+    /** Операция начала обновления настройки */
+    START: {
+      /** Инициировано обновление настройки */
+      INITIATED: { 
+        code: 'CORE:SETTINGS:UPDATE:START:001', 
+        description: 'Инициировано обновление настройки' 
+      },
+      /** Получен запрос на обновление настройки */
+      RECEIVED: {
+        code: 'CORE:SETTINGS:UPDATE:START:002',
+        description: 'Получен запрос на обновление настройки'
+      }
+    },
+    /** Операция выполнения обновления настройки */
+    PROCESS: {
+      /** Настройка не найдена в кэше */
+      CACHE_MISS: {
+        code: 'CORE:SETTINGS:UPDATE:PROCESS:001',
+        description: 'Настройка не найдена в кэше при обновлении'
+      },
+      /** Кэш обновлен с новым значением настройки */
+      CACHE_UPDATE: {
+        code: 'CORE:SETTINGS:UPDATE:PROCESS:002',
+        description: 'Кэш обновлен с новым значением настройки'
+      },
+      /** Ошибка валидации запроса */
+      VALIDATION_ERROR: {
+        code: 'CORE:SETTINGS:UPDATE:PROCESS:003',
+        description: 'Ошибка валидации данных для обновления настройки'
+      },
+      /** Успешное обновление настройки */
+      SUCCESS: { 
+        code: 'CORE:SETTINGS:UPDATE:PROCESS:004', 
+        description: 'Настройка успешно обновлена' 
+      },
+      /** Ошибка при обновлении настройки */
+      ERROR: { 
+        code: 'CORE:SETTINGS:UPDATE:PROCESS:005', 
+        description: 'Ошибка при обновлении настройки' 
+      }
+    }
+  },
+  /**
+   * События связанные с валидацией настроек
+   */
+  VALIDATE: {
+    /** Операция выполнения валидации */
+    PROCESS: {
+      /** Начало валидации */
+      START: { 
+        code: 'CORE:SETTINGS:VALIDATE:PROCESS:001', 
+        description: 'Начата валидация значения настройки по схеме' 
+      },
+      /** Валидация пропущена (нет схемы) */
+      SKIP: { 
+        code: 'CORE:SETTINGS:VALIDATE:PROCESS:002', 
+        description: 'Валидация пропущена - схема отсутствует' 
+      },
+      /** Успешная валидация */
+      SUCCESS: { 
+        code: 'CORE:SETTINGS:VALIDATE:PROCESS:003', 
+        description: 'Значение настройки успешно валидировано' 
+      },
+      /** Ошибка валидации */
+      ERROR: { 
+        code: 'CORE:SETTINGS:VALIDATE:PROCESS:004', 
+        description: 'Ошибка валидации значения настройки' 
+      }
+    }
   }
 };
