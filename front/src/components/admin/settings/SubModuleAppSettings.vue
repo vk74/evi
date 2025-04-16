@@ -315,7 +315,7 @@
  
  <template>
    <v-container fluid class="pa-0 fill-height">
-     <!-- Mobile category selector (visible only on small screens) -->
+     <!-- Mobile category selector (visible only on small screens ) -->
      <div class="mobile-categories d-sm-none">
        <v-btn
          variant="text"
