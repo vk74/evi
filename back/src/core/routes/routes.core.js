@@ -13,7 +13,7 @@ const router = express.Router();
 const validateJWT = require('../../guards/auth.validate.jwt');
 
 // Импорт контроллеров (используем .default для ES Module exports)
-const fetchUsernameByUuid = require('../services/service.fetch.username.by.uuid').default;
+const fetchUsernameByUuid = require('../helpers/get.username.by.uuid').default;
 const searchUsers = require('../services/item-selector/controller.search.users').default;
 const addUsersToGroup = require('../services/item-selector/controller.add.users.to.group').default;
 const changeGroupOwner = require('../services/item-selector/controller.change.group.owner').default;
