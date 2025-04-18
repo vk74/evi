@@ -8,6 +8,7 @@ import { ServicesEvents } from './admin/services';
 import { ItemSelectorEvents } from '../codes/core/item-selector/item.selector';
 import { SettingsEvents } from '../codes/core/settings/settings';
 import { ServerEvents } from '../codes/core/server/server';
+import { GET_USER_ACCOUNT_STATUS } from '../codes/core/helpers/get.user.account.status';
 import { EventCode } from '../logger.types';
 
 /**
@@ -23,7 +24,10 @@ export const Events = {
   CORE: {
     ITEM_SELECTOR: ItemSelectorEvents,
     SETTINGS: SettingsEvents,
-    SERVER: ServerEvents
+    SERVER: ServerEvents,
+    HELPERS: {
+      GET_USER_ACCOUNT_STATUS
+    }
   }
 };
 
