@@ -18,6 +18,10 @@ import type {
   ValidationError,
   NotFoundError
 } from './types.item.selector';
+import { getUserAccountStatus } from '../../helpers/get.user.account.status';
+import { getSetting, parseSettingValue } from '../settings/cache.settings';
+import { createSystemLogger, Logger } from '../../logger/logger.index';
+import { Events } from '../../logger/codes';
 
 const pool = pgPool as Pool;
 
@@ -26,13 +30,11 @@ interface UserIdRow {
   user_id: string;
 }
 
-// Logger for tracking operations
-const logger = {
-  info: (message: string, meta?: object) => 
-    console.log(`[AddUsersToGroupService] ${message}`, meta || ''),
-  error: (message: string, error?: unknown) => 
-    console.error(`[AddUsersToGroupService] ${message}`, error || '', error ? '' : '')
-};
+// Create logger for service
+const logger: Logger = createSystemLogger({
+  module: 'AddUsersToGroupService',
+  fileName: 'service.add.users.to.group.ts'
+});
 
 /**
  * Validates if a group exists in the database
@@ -41,11 +43,20 @@ const logger = {
  * @throws NotFoundError if group doesn't exist
  */
 async function validateGroupExists(groupId: string, client: any): Promise<void> {
-  logger.info('Validating group existence', { groupId });
+  logger.info({
+    code: Events.CORE.ITEM_SELECTOR.ADD_USERS.VALIDATE.SUCCESS.code,
+    message: 'Validating group existence',
+    details: { groupId }
+  });
 
   const result = await client.query(queries.checkGroupExists.text, [groupId]);
   if (result.rows.length === 0) {
-    logger.error(`Group not found - ID: ${groupId}`);
+    logger.error({
+      code: Events.CORE.ITEM_SELECTOR.ADD_USERS.VALIDATE.GROUP_NOT_FOUND.code,
+      message: 'Group not found during validation',
+      details: { groupId }
+    });
+    
     throw {
       code: 'NOT_FOUND_ERROR',
       message: 'Group not found',
@@ -62,17 +73,33 @@ async function validateGroupExists(groupId: string, client: any): Promise<void> 
  * @throws ValidationError if no valid users found
  */
 async function validateUsersExist(userIds: string[], client: any): Promise<string[]> {
-  logger.info('Validating user existence', { userCount: userIds.length });
+  logger.info({
+    code: Events.CORE.ITEM_SELECTOR.ADD_USERS.VALIDATE.SUCCESS.code,
+    message: 'Validating user existence',
+    details: { userCount: userIds.length }
+  });
   
   const result = await client.query(queries.checkUsersExist.text, [userIds]);
   const validUserIds = result.rows.map((row: UserIdRow) => row.user_id);
   
-  logger.info('Users validation complete', { 
-    requestedCount: userIds.length, 
-    validCount: validUserIds.length 
+  logger.info({
+    code: Events.CORE.ITEM_SELECTOR.ADD_USERS.VALIDATE.SUCCESS.code,
+    message: 'Users validation complete',
+    details: { 
+      requestedCount: userIds.length, 
+      validCount: validUserIds.length 
+    }
   });
 
   if (validUserIds.length === 0) {
+    logger.error({
+      code: Events.CORE.ITEM_SELECTOR.ADD_USERS.VALIDATE.USERS_NOT_FOUND.code,
+      message: 'No valid users found during validation',
+      details: { 
+        userIds 
+      }
+    });
+    
     throw {
       code: 'VALIDATION_ERROR',
       message: 'No valid users found',
@@ -91,9 +118,13 @@ async function validateUsersExist(userIds: string[], client: any): Promise<strin
  * @returns Array of user IDs not already in the group
  */
 async function filterExistingMembers(groupId: string, userIds: string[], client: any): Promise<string[]> {
-  logger.info('Checking for existing group members', { 
-    groupId, 
-    userCount: userIds.length 
+  logger.info({
+    code: Events.CORE.ITEM_SELECTOR.ADD_USERS.PROCESS.INITIATED.code,
+    message: 'Checking for existing group members',
+    details: { 
+      groupId, 
+      userCount: userIds.length 
+    }
   });
 
   const result = await client.query(queries.checkExistingMembers.text, [groupId, userIds]);
@@ -101,12 +132,119 @@ async function filterExistingMembers(groupId: string, userIds: string[], client:
   
   const newUserIds = userIds.filter(id => !existingUserIds.includes(id));
   
-  logger.info('Filtered existing members', { 
-    existingCount: existingUserIds.length,
-    newCount: newUserIds.length
+  logger.info({
+    code: Events.CORE.ITEM_SELECTOR.ADD_USERS.PROCESS.SUCCESS.code,
+    message: 'Filtered existing members',
+    details: { 
+      existingCount: existingUserIds.length,
+      newCount: newUserIds.length
+    }
   });
   
   return newUserIds;
+}
+
+/**
+ * Validates user account status and checks if it meets requirements
+ * @param userId User UUID to validate
+ * @returns Boolean indicating if user can be added to group
+ */
+async function validateUserAccountStatus(userId: string): Promise<boolean> {
+  logger.info({
+    code: Events.CORE.ITEM_SELECTOR.ADD_USERS.VALIDATE.ACCOUNT_STATUS_START.code,
+    message: 'Validating user account status',
+    details: { userId }
+  });
+  
+  try {
+    // Get account status from helper
+    const accountStatus = await getUserAccountStatus(userId);
+    
+    if (!accountStatus) {
+      logger.warn({
+        code: Events.CORE.ITEM_SELECTOR.ADD_USERS.VALIDATE.ACCOUNT_NOT_FOUND.code,
+        message: 'User not found for account status check',
+        details: { userId }
+      });
+      return false;
+    }
+    
+    // If user is active, allow adding to group
+    if (accountStatus === 'active') {
+      logger.info({
+        code: Events.CORE.ITEM_SELECTOR.ADD_USERS.VALIDATE.ACCOUNT_STATUS_ACTIVE.code,
+        message: 'User has active account status',
+        details: { userId, accountStatus }
+      });
+      return true;
+    }
+    
+    // For non-active users, check application settings
+    logger.info({
+      code: Events.CORE.ITEM_SELECTOR.ADD_USERS.VALIDATE.ACCOUNT_STATUS_INACTIVE.code,
+      message: 'User has non-active account status',
+      details: { userId, accountStatus }
+    });
+    
+    // Get setting from the correct cache - default to true for safety
+    logger.info({
+      code: Events.CORE.ITEM_SELECTOR.ADD_USERS.VALIDATE.ACCOUNT_STATUS_CHECK_SETTINGS.code,
+      message: 'Checking application settings for non-active users',
+      details: { userId }
+    });
+    
+    const settingPath = 'UsersManagement.GroupManagement';
+    const settingName = 'only.add.active.users';
+    const setting = getSetting(settingPath, settingName);
+    
+    // Default to true (only active users) if setting not found
+    let onlyAddActiveUsers = true;
+    
+    if (setting) {
+      onlyAddActiveUsers = parseSettingValue(setting) === true;
+    }
+    
+    logger.info({
+      code: Events.CORE.ITEM_SELECTOR.ADD_USERS.VALIDATE.ACCOUNT_STATUS_CHECK_SETTINGS.code,
+      message: 'Checked settings for adding non-active users',
+      details: { 
+        userId, 
+        onlyAddActiveUsers 
+      }
+    });
+    
+    // If setting is true, only active users can be added to groups
+    if (onlyAddActiveUsers) {
+      logger.info({
+        code: Events.CORE.ITEM_SELECTOR.ADD_USERS.VALIDATE.ACCOUNT_STATUS_INACTIVE.code,
+        message: 'Cannot add non-active user to group due to settings',
+        details: { 
+          userId, 
+          accountStatus 
+        }
+      });
+      return false;
+    }
+    
+    // If setting is false, allow adding non-active users
+    logger.info({
+      code: Events.CORE.ITEM_SELECTOR.ADD_USERS.VALIDATE.SUCCESS.code,
+      message: 'Non-active user allowed by settings',
+      details: { userId, accountStatus }
+    });
+    return true;
+  } catch (error) {
+    logger.error({
+      code: Events.CORE.ITEM_SELECTOR.ADD_USERS.VALIDATE.ACCOUNT_STATUS_ERROR.code,
+      message: 'Error validating user account status',
+      error,
+      details: { 
+        userId,
+        errorMessage: error instanceof Error ? error.message : 'Unknown error'
+      }
+    });
+    return false;
+  }
 }
 
 /**
@@ -124,14 +262,28 @@ export async function addUsersToGroup(
   const client = await pool.connect();
   
   try {
-    logger.info('Starting process to add users to group', { 
-      groupId, 
-      usersCount: userIds.length,
-      addedBy 
+    logger.info({
+      code: Events.CORE.ITEM_SELECTOR.ADD_USERS.PROCESS.INITIATED.code,
+      message: 'Starting process to add users to group',
+      details: { 
+        groupId, 
+        usersCount: userIds.length,
+        addedBy 
+      }
     });
 
     // Validate inputs
     if (!groupId || !userIds || userIds.length === 0 || !addedBy) {
+      logger.error({
+        code: Events.CORE.ITEM_SELECTOR.ADD_USERS.REQUEST.INVALID.code,
+        message: 'Missing required parameters',
+        details: { 
+          groupId, 
+          usersCount: userIds?.length || 0, 
+          addedBy 
+        }
+      });
+      
       throw {
         code: 'VALIDATION_ERROR',
         message: 'Missing required parameters',
@@ -141,7 +293,10 @@ export async function addUsersToGroup(
 
     // Start transaction
     await client.query('BEGIN');
-    logger.info('Database transaction started');
+    logger.info({
+      code: Events.CORE.ITEM_SELECTOR.ADD_USERS.PROCESS.INITIATED.code,
+      message: 'Database transaction started'
+    });
 
     // Validate group exists
     await validateGroupExists(groupId, client);
@@ -155,7 +310,11 @@ export async function addUsersToGroup(
     // If no new users to add after filtering
     if (newUserIds.length === 0) {
       await client.query('COMMIT');
-      logger.info('No new users to add, all are already members');
+      logger.info({
+        code: Events.CORE.ITEM_SELECTOR.ADD_USERS.PROCESS.SUCCESS.code,
+        message: 'No new users to add, all are already members',
+        details: { groupId }
+      });
       
       return {
         success: true,
@@ -164,15 +323,58 @@ export async function addUsersToGroup(
       };
     }
 
-    // Add users to group
+    // Validate account status for each user and filter out those that don't meet requirements
+    logger.info({
+      code: Events.CORE.ITEM_SELECTOR.ADD_USERS.VALIDATE.ACCOUNT_STATUS_START.code,
+      message: 'Validating account status for users',
+      details: { count: newUserIds.length }
+    });
+    
+    const eligibleUserIds = [];
+    for (const userId of newUserIds) {
+      const isEligible = await validateUserAccountStatus(userId);
+      if (isEligible) {
+        eligibleUserIds.push(userId);
+      } else {
+        logger.info({
+          code: Events.CORE.ITEM_SELECTOR.ADD_USERS.VALIDATE.ACCOUNT_STATUS_INACTIVE.code,
+          message: 'User excluded due to account status',
+          details: { userId }
+        });
+      }
+    }
+    
+    if (eligibleUserIds.length === 0) {
+      await client.query('COMMIT');
+      logger.info({
+        code: Events.CORE.ITEM_SELECTOR.ADD_USERS.PROCESS.SUCCESS.code,
+        message: 'No eligible users to add after account status check',
+        details: { 
+          groupId,
+          originalCount: newUserIds.length
+        }
+      });
+      
+      return {
+        success: false,
+        message: 'No eligible users to add due to account status restrictions',
+        count: 0
+      };
+    }
+
+    // Add eligible users to group
     const addedUsers = [];
     
-    logger.info('Adding users to group', { 
-      groupId, 
-      userCount: newUserIds.length 
+    logger.info({
+      code: Events.CORE.ITEM_SELECTOR.ADD_USERS.PROCESS.INITIATED.code,
+      message: 'Adding eligible users to group',
+      details: { 
+        groupId, 
+        userCount: eligibleUserIds.length 
+      }
     });
 
-    for (const userId of newUserIds) {
+    for (const userId of eligibleUserIds) {
       const result = await client.query(
         queries.addUserToGroup.text,
         [groupId, userId, addedBy]
@@ -186,21 +388,43 @@ export async function addUsersToGroup(
     // Commit transaction
     await client.query('COMMIT');
     
-    logger.info('Users successfully added to group', { 
-      groupId, 
-      addedCount: addedUsers.length 
+    logger.info({
+      code: Events.CORE.ITEM_SELECTOR.ADD_USERS.PROCESS.SUCCESS.code,
+      message: 'Users successfully added to group',
+      details: { 
+        groupId, 
+        addedCount: addedUsers.length,
+        skippedCount: newUserIds.length - addedUsers.length
+      }
     });
+
+    // Check if some users were filtered out due to account status
+    const skippedCount = newUserIds.length - addedUsers.length;
+    let message = `${addedUsers.length} user(s) successfully added to the group`;
+    
+    if (skippedCount > 0) {
+      message += `, ${skippedCount} user(s) skipped due to account status restrictions`;
+    }
 
     return {
       success: true,
-      message: `${addedUsers.length} user(s) successfully added to the group`,
+      message,
       count: addedUsers.length
     };
 
   } catch (error) {
     // Rollback transaction on error
     await client.query('ROLLBACK');
-    logger.error('Failed to add users to group', error);
+    logger.error({
+      code: Events.CORE.ITEM_SELECTOR.ADD_USERS.PROCESS.ERROR.code,
+      message: 'Failed to add users to group',
+      error,
+      details: {
+        groupId,
+        errorMessage: error instanceof Error ? error.message : 'Unknown error',
+        errorDetails: (error as ServiceError).code ? error : null
+      }
+    });
     
     if ((error as ServiceError).code) {
       throw error;
@@ -216,7 +440,10 @@ export async function addUsersToGroup(
   } finally {
     // Release client back to pool
     client.release();
-    logger.info('Database client released');
+    logger.info({
+      code: Events.CORE.ITEM_SELECTOR.DATABASE.CLIENT_RELEASED.code,
+      message: 'Database client released'
+    });
   }
 }
 

@@ -1,6 +1,11 @@
 /**
- * get.user.account.status.ts
- * Helper for retrieving user account status by UUID from database
+ * @file get.user.account.status.ts
+ * BACKEND Helper for retrieving user account status by UUID from database
+ * 
+ * Functionality:
+ * - Gets user account status directly from database by user UUID
+ * - Performs error handling and logging
+ * - Returns standardized status values
  */
 
 import { Pool, QueryResult } from 'pg';
@@ -54,7 +59,7 @@ export async function getUserAccountStatus(userId: string): Promise<string | nul
       });
       return null;
     }
-
+    
     const accountStatus = result.rows[0].account_status;
     
     logger.info({
@@ -83,3 +88,5 @@ export async function getUserAccountStatus(userId: string): Promise<string | nul
     throw accountStatusError;
   }
 }
+
+export default getUserAccountStatus;

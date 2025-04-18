@@ -67,6 +67,36 @@ export const ItemSelectorEvents = {
       USERS_NOT_FOUND: { 
         code: 'CORE:ITEM_SELECTOR:ADD_USERS:VALIDATE:003', 
         description: 'Пользователи не найдены при добавлении в группу' 
+      },
+      /** Начало проверки статуса учетной записи */
+      ACCOUNT_STATUS_START: { 
+        code: 'CORE:ITEM_SELECTOR:ADD_USERS:VALIDATE:004', 
+        description: 'Начата проверка статуса учетной записи пользователя' 
+      },
+      /** Пользователь имеет активный статус */
+      ACCOUNT_STATUS_ACTIVE: { 
+        code: 'CORE:ITEM_SELECTOR:ADD_USERS:VALIDATE:005', 
+        description: 'Пользователь имеет активный статус учетной записи' 
+      },
+      /** Пользователь имеет неактивный статус */
+      ACCOUNT_STATUS_INACTIVE: { 
+        code: 'CORE:ITEM_SELECTOR:ADD_USERS:VALIDATE:006', 
+        description: 'Пользователь имеет неактивный статус учетной записи' 
+      },
+      /** Проверка настроек приложения для неактивных пользователей */
+      ACCOUNT_STATUS_CHECK_SETTINGS: { 
+        code: 'CORE:ITEM_SELECTOR:ADD_USERS:VALIDATE:007', 
+        description: 'Проверка настроек приложения для добавления неактивных пользователей' 
+      },
+      /** Учетная запись не найдена */
+      ACCOUNT_NOT_FOUND: { 
+        code: 'CORE:ITEM_SELECTOR:ADD_USERS:VALIDATE:008', 
+        description: 'Учетная запись пользователя не найдена' 
+      },
+      /** Ошибка проверки статуса учетной записи */
+      ACCOUNT_STATUS_ERROR: { 
+        code: 'CORE:ITEM_SELECTOR:ADD_USERS:VALIDATE:009', 
+        description: 'Ошибка при проверке статуса учетной записи' 
       }
     },
     /** Операция добавления пользователей в группу */
