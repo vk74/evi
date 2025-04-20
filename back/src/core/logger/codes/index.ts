@@ -8,9 +8,11 @@ import { ServicesEvents } from './admin/services';
 import { ItemSelectorEvents } from '../codes/core/item-selector/item.selector';
 import { SettingsEvents } from '../codes/core/settings/settings';
 import { ServerEvents } from '../codes/core/server/server';
-import { GET_USER_ACCOUNT_STATUS } from '../codes/core/helpers/get.user.account.status';
-import { GET_UUID_BY_GROUP_NAME } from '../codes/core/helpers/get.uuid.by.group.name';
-import { CHECK_IS_USER_ADMIN } from '../codes/core/helpers/check.is.user.admin';
+import { 
+  GET_USER_ACCOUNT_STATUS,
+  GET_UUID_BY_GROUP_NAME,
+  CHECK_IS_USER_ADMIN
+} from '../codes/core/helpers/helpers';
 import { EventCode } from '../logger.types';
 
 /**
