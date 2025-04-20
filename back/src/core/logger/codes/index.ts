@@ -9,6 +9,7 @@ import { ItemSelectorEvents } from '../codes/core/item-selector/item.selector';
 import { SettingsEvents } from '../codes/core/settings/settings';
 import { ServerEvents } from '../codes/core/server/server';
 import { GET_USER_ACCOUNT_STATUS } from '../codes/core/helpers/get.user.account.status';
+import { GET_UUID_BY_GROUP_NAME } from '../codes/core/helpers/get.uuid.by.group.name';
 import { EventCode } from '../logger.types';
 
 /**
@@ -26,7 +27,8 @@ export const Events = {
     SETTINGS: SettingsEvents,
     SERVER: ServerEvents,
     HELPERS: {
-      GET_USER_ACCOUNT_STATUS
+      GET_USER_ACCOUNT_STATUS,
+      GET_UUID_BY_GROUP_NAME
     }
   }
 };
