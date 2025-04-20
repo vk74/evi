@@ -13,7 +13,7 @@ const router = express.Router();
 const validateJWT = require('../../guards/auth.validate.jwt');
 
 // Импорт контроллеров (используем .default для ES Module exports)
-const fetchUsernameByUuid = require('../helpers/get.username.by.uuid').default;
+const getUsernameByUuidController = require('../middleware/controller.get.username.by.uuid').default;
 const searchUsers = require('../services/item-selector/controller.search.users').default;
 const addUsersToGroup = require('../services/item-selector/controller.add.users.to.group').default;
 const changeGroupOwner = require('../services/item-selector/controller.change.group.owner').default;
@@ -24,7 +24,7 @@ const fetchSettingsController = require('../services/settings/controller.fetch.s
 const updateSettingsController = require('../services/settings/controller.update.settings').default;
 
 // utility services
-router.get('/api/core/users/fetch-username-by-uuid/:userId', validateJWT, fetchUsernameByUuid);
+router.get('/api/core/users/fetch-username-by-uuid/:userId', validateJWT, getUsernameByUuidController);
 
 // item selector universal component services
 router.get('/api/core/item-selector/search-users', validateJWT, searchUsers); 

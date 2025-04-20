@@ -3,7 +3,8 @@
  * BACKEND Helper for retrieving user account status by UUID from database
  * 
  * Functionality:
- * - Gets user account status directly from database by user UUID
+ * - Gets user account status from cache or database by user UUID
+ * - Caches results to reduce database load
  * - Performs error handling and logging
  * - Returns standardized status values
  */
@@ -12,6 +13,7 @@ import { Pool, QueryResult } from 'pg';
 import { pool as pgPool } from '../../db/maindb';
 import { createSystemLogger, Logger } from '../logger/logger.index';
 import { Events } from '../logger/codes';
+import { get, set, CacheKeys } from './cache.helpers';
 
 // Type assertion for pool
 const pool = pgPool as Pool;
@@ -43,6 +45,19 @@ export async function getUserAccountStatus(userId: string): Promise<string | nul
       details: { userId }
     });
 
+    // Try to get result from cache first
+    const cacheKey = CacheKeys.forUserStatus(userId);
+    const cachedStatus = get<string | null>(cacheKey);
+    
+    if (cachedStatus !== undefined) {
+      logger.debug({
+        code: Events.CORE.HELPERS.GET_USER_ACCOUNT_STATUS.PROCESS.SUCCESS.code,
+        message: `Retrieved account status for user ${userId} from cache`,
+        details: { userId, accountStatus: cachedStatus, source: 'cache' }
+      });
+      return cachedStatus;
+    }
+
     // Query to get account status
     const query = {
       text: 'SELECT account_status FROM app.users WHERE user_id = $1',
@@ -57,15 +72,21 @@ export async function getUserAccountStatus(userId: string): Promise<string | nul
         message: `User not found with UUID: ${userId}`,
         details: { userId }
       });
+      
+      // Cache the null result
+      set(cacheKey, null);
       return null;
     }
     
     const accountStatus = result.rows[0].account_status;
     
+    // Cache the result
+    set(cacheKey, accountStatus);
+    
     logger.info({
       code: Events.CORE.HELPERS.GET_USER_ACCOUNT_STATUS.PROCESS.SUCCESS.code,
       message: `Retrieved account status [${accountStatus}] for user: ${userId}`,
-      details: { userId, accountStatus }
+      details: { userId, accountStatus, source: 'database' }
     });
 
     return accountStatus;

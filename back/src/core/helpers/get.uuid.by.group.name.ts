@@ -3,7 +3,8 @@
  * BACKEND Helper for retrieving group UUID by its name
  * 
  * Functionality:
- * - Gets group UUID from database by group name
+ * - Gets group UUID from cache or database by group name
+ * - Caches results to reduce database load
  * - Performs error handling and logging
  * - Returns UUID or null if not found
  */
@@ -12,6 +13,7 @@ import { Pool, QueryResult } from 'pg';
 import { pool as pgPool } from '../../db/maindb';
 import { createSystemLogger, Logger } from '../logger/logger.index';
 import { Events } from '../logger/codes';
+import { get, set, CacheKeys } from './cache.helpers';
 
 // Type assertion for pool
 const pool = pgPool as Pool;
@@ -43,6 +45,19 @@ export async function getUuidByGroupName(groupName: string): Promise<string | nu
       details: { groupName }
     });
 
+    // Try to get result from cache first
+    const cacheKey = CacheKeys.forGroupUuid(groupName);
+    const cachedUuid = get<string | null>(cacheKey);
+    
+    if (cachedUuid !== undefined) {
+      logger.debug({
+        code: Events.CORE.HELPERS.GET_UUID_BY_GROUP_NAME.PROCESS.SUCCESS.code,
+        message: `Retrieved UUID for group ${groupName} from cache`,
+        details: { groupName, groupId: cachedUuid, source: 'cache' }
+      });
+      return cachedUuid;
+    }
+
     // Query to get group UUID
     const query = {
       text: 'SELECT group_id FROM app.groups WHERE group_name = $1',
@@ -57,15 +72,21 @@ export async function getUuidByGroupName(groupName: string): Promise<string | nu
         message: `Group not found with name: ${groupName}`,
         details: { groupName }
       });
+      
+      // Cache the null result
+      set(cacheKey, null);
       return null;
     }
     
     const groupId = result.rows[0].group_id;
     
+    // Cache the result
+    set(cacheKey, groupId);
+    
     logger.info({
       code: Events.CORE.HELPERS.GET_UUID_BY_GROUP_NAME.PROCESS.SUCCESS.code,
       message: `Retrieved UUID [${groupId}] for group: ${groupName}`,
-      details: { groupName, groupId }
+      details: { groupName, groupId, source: 'database' }
     });
 
     return groupId;

@@ -8,10 +8,13 @@ import { ServicesEvents } from './admin/services';
 import { ItemSelectorEvents } from '../codes/core/item-selector/item.selector';
 import { SettingsEvents } from '../codes/core/settings/settings';
 import { ServerEvents } from '../codes/core/server/server';
+import { GET_USERNAME_BY_UUID as MiddlewareGetUsernameByUuid } from '../codes/core/middleware/middleware';
 import { 
   GET_USER_ACCOUNT_STATUS,
   GET_UUID_BY_GROUP_NAME,
-  CHECK_IS_USER_ADMIN
+  CHECK_IS_USER_ADMIN,
+  CACHE,
+  GET_USERNAME_BY_UUID
 } from '../codes/core/helpers/helpers';
 import { EventCode } from '../logger.types';
 
@@ -29,10 +32,15 @@ export const Events = {
     ITEM_SELECTOR: ItemSelectorEvents,
     SETTINGS: SettingsEvents,
     SERVER: ServerEvents,
+    MIDDLEWARE: {
+      GET_USERNAME_BY_UUID: MiddlewareGetUsernameByUuid
+    },
     HELPERS: {
       GET_USER_ACCOUNT_STATUS,
       GET_UUID_BY_GROUP_NAME,
-      CHECK_IS_USER_ADMIN
+      CHECK_IS_USER_ADMIN,
+      GET_USERNAME_BY_UUID,
+      CACHE
     }
   }
 };

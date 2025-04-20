@@ -1,113 +1,113 @@
 /**
- * service.fetch.username.by.uuid.ts (Backend)
- * Backend service for fetching username by user UUID from the database.
+ * @file get.username.by.uuid.ts
+ * BACKEND Helper for retrieving username by user UUID
  * 
  * Functionality:
- * - Handles HTTP GET requests to retrieve username by UUID
- * - Validates request parameters
- * - Queries the database for username
- * - Sends formatted API responses
- * - Manages error handling and logging
- * - Designed as a single-file service for simplicity
+ * - Gets username from cache or database by user UUID
+ * - Caches results to reduce database load
+ * - Performs error handling and logging
+ * - Returns username or null if user not found
  */
 
-import { Request, Response, NextFunction } from 'express';
 import { Pool, QueryResult } from 'pg';
-import { pool as pgPool } from '../../db/maindb'; // Импортируем пул из maindb.js (корректировка пути)
+import { pool as pgPool } from '../../db/maindb';
+import { createSystemLogger, Logger } from '../logger/logger.index';
+import { Events } from '../logger/codes';
+import { get, set, CacheKeys } from './cache.helpers';
 
 // Type assertion for pool
 const pool = pgPool as Pool;
 
-// Define types locally in the file
-interface FetchUsernameResponse {
-  success: boolean;
-  message: string;
-  data: {
-    username: string;
-  } | null;
-}
+// Create logger for helper
+const logger: Logger = createSystemLogger({
+  module: 'UsernameByUuidHelper',
+  fileName: 'get.username.by.uuid.ts'
+});
 
-interface ServiceError {
-  code: 'INTERNAL_SERVER_ERROR';
+// Interface for potential errors
+interface GetUsernameError {
+  code: string;
   message: string;
-  details: string;
+  details?: any;
 }
 
 /**
- * Fetches username for a given user UUID from the database
- * @param req Express Request object containing userId in params
- * @param res Express Response object for sending the response
- * @param next Express NextFunction for error handling
+ * Fetch username by user UUID
+ * @param uuid UUID of the user
+ * @returns Promise resolving to username string or null if user not found
+ * @throws GetUsernameError on database errors
  */
-export default async function fetchUsernameByUuid(req: Request, res: Response, next: NextFunction): Promise<void> {
-  const userId = req.params.userId;
-
+export async function fetchUsernameByUuid(uuid: string): Promise<string | null> {
   try {
-    // Логируем получение запроса
-    console.log(`[${new Date().toISOString()}] [FetchUsernameService] Received request to fetch username for userId: ${userId}`);
+    logger.info({
+      code: Events.CORE.HELPERS.GET_USERNAME_BY_UUID.PROCESS.START.code,
+      message: `Fetching username for user: ${uuid}`,
+      details: { uuid }
+    });
 
-    if (!userId) {
-      console.log(`[${new Date().toISOString()}] [FetchUsernameService] Validation failed: User ID is required`);
-      res.status(400).json({
-        success: false,
-        message: 'User ID is required',
-        data: null
-      });
-      return;
-    }
-
-    // Логируем начало выполнения запроса к базе данных
-    console.log(`[${new Date().toISOString()}] [FetchUsernameService] Querying database for userId: ${userId}`);
+    // Try to get result from cache first
+    const cacheKey = CacheKeys.forUserName(uuid);
+    const cachedUsername = get<string | null>(cacheKey);
     
-    // Выполняем запрос к базе данных для получения username по user_id
-    const result: QueryResult<{ username: string }> = await pool.query(
-      'SELECT username FROM app.users WHERE user_id = $1 LIMIT 1', // Убедились, что таблица и поля корректны
-      [userId]
-    );
-
-    // Логируем результат запроса
-    console.log(`[${new Date().toISOString()}] [FetchUsernameService] Database query result for userId ${userId}:`, {
-      rowsLength: result.rows.length,
-      rows: result.rows
-    });
-
-    if (result.rows.length === 0) {
-      console.log(`[${new Date().toISOString()}] [FetchUsernameService] User not found for userId: ${userId}`);
-      res.status(404).json({
-        success: false,
-        message: 'User not found',
-        data: null
+    if (cachedUsername !== undefined) {
+      logger.debug({
+        code: Events.CORE.HELPERS.GET_USERNAME_BY_UUID.PROCESS.SUCCESS.code,
+        message: `Retrieved username for user ${uuid} from cache`,
+        details: { uuid, username: cachedUsername, source: 'cache' }
       });
-      return;
+      return cachedUsername;
     }
 
-    const username = result.rows[0].username;
-
-    // Логируем успешное получение username
-    console.log(`[${new Date().toISOString()}] [FetchUsernameService] Successfully retrieved username: ${username} for userId: ${userId}`);
-
-    res.status(200).json({
-      success: true,
-      message: 'Username fetched successfully',
-      data: { username }
-    });
-  } catch (error) {
-    // Логируем ошибку
-    console.error(`[${new Date().toISOString()}] [FetchUsernameService] Error fetching username for userId: ${userId}`, {
-      error: error instanceof Error ? error.message : 'Unknown error',
-      stack: error instanceof Error ? error.stack : undefined
-    });
-
-    const serviceError: ServiceError = {
-      code: 'INTERNAL_SERVER_ERROR',
-      message: 'Failed to fetch username',
-      details: error instanceof Error ? error.message : 'Unknown error'
+    // Query to get username
+    const query = {
+      text: 'SELECT username FROM app.users WHERE user_id = $1 LIMIT 1',
+      values: [uuid]
     };
 
-    res.status(500).json({
-      success: false,
-      message: serviceError.message,
-      data: null
+    const result: QueryResult = await pool.query(query);
+    
+    if (!result.rows || result.rows.length === 0) {
+      logger.warn({
+        code: Events.CORE.HELPERS.GET_USERNAME_BY_UUID.PROCESS.NOT_FOUND.code,
+        message: `User not found with UUID: ${uuid}`,
+        details: { uuid }
+      });
+      
+      // Cache the null result
+      set(cacheKey, null);
+      return null;
+    }
+    
+    const username = result.rows[0].username;
+    
+    // Cache the result
+    set(cacheKey, username);
+    
+    logger.info({
+      code: Events.CORE.HELPERS.GET_USERNAME_BY_UUID.PROCESS.SUCCESS.code,
+      message: `Retrieved username [${username}] for UUID: ${uuid}`,
+      details: { uuid, username, source: 'database' }
     });
+
+    return username;
+  } catch (error) {
+    logger.error({
+      code: Events.CORE.HELPERS.GET_USERNAME_BY_UUID.PROCESS.ERROR.code,
+      message: `Error fetching username for user: ${uuid}`,
+      error,
+      details: {
+        uuid,
+        errorMessage: error instanceof Error ? error.message : 'Unknown error'
+      }
+    });
+    
+    const getUsernameError: GetUsernameError = {
+      code: 'DB_ERROR',
+      message: error instanceof Error ? error.message : 'Failed to fetch username',
+      details: { uuid, error }
+    };
+    throw getUsernameError;
   }
 }
+
+export default fetchUsernameByUuid;
