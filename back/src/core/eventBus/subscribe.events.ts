@@ -1,4 +1,4 @@
-// version: 1.0
+// version: 1.001
 // Advanced subscription mechanism for Event Bus
 // Provides priority-based subscriptions, complex filtering capabilities,
 // subscription management and a fluent DSL for defining event filters
@@ -36,6 +36,14 @@ interface ManagedSubscription {
   callCount: number;
   lastCalledAt?: Date;
   createdAt: Date;
+}
+
+/**
+ * State object for the filter builder pattern
+ */
+interface FilterBuilderState {
+  conditions: FilterCondition[];
+  currentOperator: LogicalOperator;
 }
 
 // ==================== Internal Storage ====================
@@ -146,258 +154,359 @@ const applyCondition = (condition: FilterCondition, event: BaseEvent): boolean =
   }
 };
 
-// ==================== DSL for Filter Builder ====================
+// ==================== Filter Builder Functions ====================
 
 /**
- * Builder for creating filter conditions with a fluent API
+ * Initialize a new filter builder state
  */
-export class FilterBuilder {
-  private conditions: FilterCondition[] = [];
-  private currentOperator: LogicalOperator = LogicalOperator.AND;
+export const filter = (): FilterBuilderState => ({
+  conditions: [],
+  currentOperator: LogicalOperator.AND
+});
 
-  /**
-   * Switch to AND logic for subsequent conditions
-   */
-  and(): FilterBuilder {
-    this.currentOperator = LogicalOperator.AND;
-    return this;
-  }
+/**
+ * Switch to AND logic for subsequent conditions
+ */
+export const and = (state: FilterBuilderState): FilterBuilderState => ({
+  ...state,
+  currentOperator: LogicalOperator.AND
+});
 
-  /**
-   * Switch to OR logic for subsequent conditions
-   */
-  or(): FilterBuilder {
-    this.currentOperator = LogicalOperator.OR;
-    return this;
-  }
+/**
+ * Switch to OR logic for subsequent conditions
+ */
+export const or = (state: FilterBuilderState): FilterBuilderState => ({
+  ...state,
+  currentOperator: LogicalOperator.OR
+});
 
-  /**
-   * Create a condition where field must equal value
-   */
-  where(field: string, value: any): FilterBuilder {
-    this.conditions.push({
-      type: 'simple',
-      field,
-      operator: FilterOperator.EQUALS,
-      value,
-      apply: (event: BaseEvent) => {
-        const fieldValue = getNestedValue(event, field);
-        return applyOperator(FilterOperator.EQUALS, fieldValue, value);
-      }
-    });
-    return this;
-  }
+/**
+ * Create a condition where field must equal value
+ */
+export const where = (state: FilterBuilderState, field: string, value: any): FilterBuilderState => {
+  const condition: SimpleFilterCondition = {
+    type: 'simple',
+    field,
+    operator: FilterOperator.EQUALS,
+    value,
+    apply: (event: BaseEvent) => {
+      const fieldValue = getNestedValue(event, field);
+      return applyOperator(FilterOperator.EQUALS, fieldValue, value);
+    }
+  };
+  
+  return {
+    ...state,
+    conditions: [...state.conditions, condition]
+  };
+};
 
-  /**
-   * Create a condition where field must not equal value
-   */
-  whereNot(field: string, value: any): FilterBuilder {
-    this.conditions.push({
-      type: 'simple',
-      field,
-      operator: FilterOperator.NOT_EQUALS,
-      value,
-      apply: (event: BaseEvent) => {
-        const fieldValue = getNestedValue(event, field);
-        return applyOperator(FilterOperator.NOT_EQUALS, fieldValue, value);
-      }
-    });
-    return this;
-  }
+/**
+ * Create a condition where field must not equal value
+ */
+export const whereNot = (state: FilterBuilderState, field: string, value: any): FilterBuilderState => {
+  const condition: SimpleFilterCondition = {
+    type: 'simple',
+    field,
+    operator: FilterOperator.NOT_EQUALS,
+    value,
+    apply: (event: BaseEvent) => {
+      const fieldValue = getNestedValue(event, field);
+      return applyOperator(FilterOperator.NOT_EQUALS, fieldValue, value);
+    }
+  };
+  
+  return {
+    ...state,
+    conditions: [...state.conditions, condition]
+  };
+};
 
-  /**
-   * Create a condition where field is greater than value
-   */
-  whereGreaterThan(field: string, value: number | string | Date): FilterBuilder {
-    this.conditions.push({
-      type: 'simple',
-      field,
-      operator: FilterOperator.GREATER_THAN,
-      value,
-      apply: (event: BaseEvent) => {
-        const fieldValue = getNestedValue(event, field);
-        return applyOperator(FilterOperator.GREATER_THAN, fieldValue, value);
-      }
-    });
-    return this;
-  }
+/**
+ * Create a condition where field is greater than value
+ */
+export const whereGreaterThan = (
+  state: FilterBuilderState, 
+  field: string, 
+  value: number | string | Date
+): FilterBuilderState => {
+  const condition: SimpleFilterCondition = {
+    type: 'simple',
+    field,
+    operator: FilterOperator.GREATER_THAN,
+    value,
+    apply: (event: BaseEvent) => {
+      const fieldValue = getNestedValue(event, field);
+      return applyOperator(FilterOperator.GREATER_THAN, fieldValue, value);
+    }
+  };
+  
+  return {
+    ...state,
+    conditions: [...state.conditions, condition]
+  };
+};
 
-  /**
-   * Create a condition where field is less than value
-   */
-  whereLessThan(field: string, value: number | string | Date): FilterBuilder {
-    this.conditions.push({
-      type: 'simple',
-      field,
-      operator: FilterOperator.LESS_THAN,
-      value,
-      apply: (event: BaseEvent) => {
-        const fieldValue = getNestedValue(event, field);
-        return applyOperator(FilterOperator.LESS_THAN, fieldValue, value);
-      }
-    });
-    return this;
-  }
+/**
+ * Create a condition where field is less than value
+ */
+export const whereLessThan = (
+  state: FilterBuilderState, 
+  field: string, 
+  value: number | string | Date
+): FilterBuilderState => {
+  const condition: SimpleFilterCondition = {
+    type: 'simple',
+    field,
+    operator: FilterOperator.LESS_THAN,
+    value,
+    apply: (event: BaseEvent) => {
+      const fieldValue = getNestedValue(event, field);
+      return applyOperator(FilterOperator.LESS_THAN, fieldValue, value);
+    }
+  };
+  
+  return {
+    ...state,
+    conditions: [...state.conditions, condition]
+  };
+};
 
-  /**
-   * Create a condition where field contains value
-   */
-  whereContains(field: string, value: string): FilterBuilder {
-    this.conditions.push({
-      type: 'simple',
-      field,
-      operator: FilterOperator.CONTAINS,
-      value,
-      apply: (event: BaseEvent) => {
-        const fieldValue = getNestedValue(event, field);
-        return applyOperator(FilterOperator.CONTAINS, fieldValue, value);
-      }
-    });
-    return this;
-  }
+/**
+ * Create a condition where field contains value
+ */
+export const whereContains = (state: FilterBuilderState, field: string, value: string): FilterBuilderState => {
+  const condition: SimpleFilterCondition = {
+    type: 'simple',
+    field,
+    operator: FilterOperator.CONTAINS,
+    value,
+    apply: (event: BaseEvent) => {
+      const fieldValue = getNestedValue(event, field);
+      return applyOperator(FilterOperator.CONTAINS, fieldValue, value);
+    }
+  };
+  
+  return {
+    ...state,
+    conditions: [...state.conditions, condition]
+  };
+};
 
-  /**
-   * Create a condition where field starts with value
-   */
-  whereStartsWith(field: string, value: string): FilterBuilder {
-    this.conditions.push({
-      type: 'simple',
-      field,
-      operator: FilterOperator.STARTS_WITH,
-      value,
-      apply: (event: BaseEvent) => {
-        const fieldValue = getNestedValue(event, field);
-        return applyOperator(FilterOperator.STARTS_WITH, fieldValue, value);
-      }
-    });
-    return this;
-  }
+/**
+ * Create a condition where field starts with value
+ */
+export const whereStartsWith = (state: FilterBuilderState, field: string, value: string): FilterBuilderState => {
+  const condition: SimpleFilterCondition = {
+    type: 'simple',
+    field,
+    operator: FilterOperator.STARTS_WITH,
+    value,
+    apply: (event: BaseEvent) => {
+      const fieldValue = getNestedValue(event, field);
+      return applyOperator(FilterOperator.STARTS_WITH, fieldValue, value);
+    }
+  };
+  
+  return {
+    ...state,
+    conditions: [...state.conditions, condition]
+  };
+};
 
-  /**
-   * Create a condition where field ends with value
-   */
-  whereEndsWith(field: string, value: string): FilterBuilder {
-    this.conditions.push({
-      type: 'simple',
-      field,
-      operator: FilterOperator.ENDS_WITH,
-      value,
-      apply: (event: BaseEvent) => {
-        const fieldValue = getNestedValue(event, field);
-        return applyOperator(FilterOperator.ENDS_WITH, fieldValue, value);
-      }
-    });
-    return this;
-  }
+/**
+ * Create a condition where field ends with value
+ */
+export const whereEndsWith = (state: FilterBuilderState, field: string, value: string): FilterBuilderState => {
+  const condition: SimpleFilterCondition = {
+    type: 'simple',
+    field,
+    operator: FilterOperator.ENDS_WITH,
+    value,
+    apply: (event: BaseEvent) => {
+      const fieldValue = getNestedValue(event, field);
+      return applyOperator(FilterOperator.ENDS_WITH, fieldValue, value);
+    }
+  };
+  
+  return {
+    ...state,
+    conditions: [...state.conditions, condition]
+  };
+};
 
-  /**
-   * Create a condition where field matches regex pattern
-   */
-  whereMatches(field: string, pattern: string | RegExp): FilterBuilder {
-    const patternStr = pattern instanceof RegExp ? pattern.source : pattern;
-    this.conditions.push({
-      type: 'simple',
-      field,
-      operator: FilterOperator.MATCHES,
-      value: patternStr,
-      apply: (event: BaseEvent) => {
-        const fieldValue = getNestedValue(event, field);
-        return applyOperator(FilterOperator.MATCHES, fieldValue, patternStr);
-      }
-    });
-    return this;
-  }
+/**
+ * Create a condition where field matches regex pattern
+ */
+export const whereMatches = (
+  state: FilterBuilderState, 
+  field: string, 
+  pattern: string | RegExp
+): FilterBuilderState => {
+  const patternStr = pattern instanceof RegExp ? pattern.source : pattern;
+  const condition: SimpleFilterCondition = {
+    type: 'simple',
+    field,
+    operator: FilterOperator.MATCHES,
+    value: patternStr,
+    apply: (event: BaseEvent) => {
+      const fieldValue = getNestedValue(event, field);
+      return applyOperator(FilterOperator.MATCHES, fieldValue, patternStr);
+    }
+  };
+  
+  return {
+    ...state,
+    conditions: [...state.conditions, condition]
+  };
+};
 
-  /**
-   * Create a condition where field exists and is not null
-   */
-  whereExists(field: string): FilterBuilder {
-    this.conditions.push({
-      type: 'simple',
-      field,
-      operator: FilterOperator.EXISTS,
-      value: true,
-      apply: (event: BaseEvent) => {
-        const fieldValue = getNestedValue(event, field);
-        return applyOperator(FilterOperator.EXISTS, fieldValue, true);
-      }
-    });
-    return this;
-  }
+/**
+ * Create a condition where field exists and is not null
+ */
+export const whereExists = (state: FilterBuilderState, field: string): FilterBuilderState => {
+  const condition: SimpleFilterCondition = {
+    type: 'simple',
+    field,
+    operator: FilterOperator.EXISTS,
+    value: true,
+    apply: (event: BaseEvent) => {
+      const fieldValue = getNestedValue(event, field);
+      return applyOperator(FilterOperator.EXISTS, fieldValue, true);
+    }
+  };
+  
+  return {
+    ...state,
+    conditions: [...state.conditions, condition]
+  };
+};
 
-  /**
-   * Create a condition where field is in array of values
-   */
-  whereIn(field: string, values: any[]): FilterBuilder {
-    this.conditions.push({
-      type: 'simple',
-      field,
-      operator: FilterOperator.IN,
-      value: values,
-      apply: (event: BaseEvent) => {
-        const fieldValue = getNestedValue(event, field);
-        return applyOperator(FilterOperator.IN, fieldValue, values);
-      }
-    });
-    return this;
-  }
+/**
+ * Create a condition where field is in array of values
+ */
+export const whereIn = (state: FilterBuilderState, field: string, values: any[]): FilterBuilderState => {
+  const condition: SimpleFilterCondition = {
+    type: 'simple',
+    field,
+    operator: FilterOperator.IN,
+    value: values,
+    apply: (event: BaseEvent) => {
+      const fieldValue = getNestedValue(event, field);
+      return applyOperator(FilterOperator.IN, fieldValue, values);
+    }
+  };
+  
+  return {
+    ...state,
+    conditions: [...state.conditions, condition]
+  };
+};
 
-  /**
-   * Negate the next condition
-   */
-  not(): FilterBuilder {
-    // This will modify the next condition to be a negation
-    // For now, we'll just note that we're in negation mode
-    return this;
-  }
+/**
+ * Create a condition for event type (category)
+ */
+export const whereEventType = (
+  state: FilterBuilderState, 
+  eventType: 'app' | 'system' | 'security' | 'integration' | 'performance'
+): FilterBuilderState => {
+  return where(state, 'eventType', eventType);
+};
 
-  /**
-   * Add a nested filter builder with grouped conditions
-   */
-  group(builderFn: (builder: FilterBuilder) => FilterBuilder): FilterBuilder {
-    const nestedBuilder = new FilterBuilder();
-    builderFn(nestedBuilder);
+/**
+ * Create a condition for severity level
+ */
+export const whereSeverity = (
+  state: FilterBuilderState, 
+  severity: 'debug' | 'info' | 'warning' | 'error' | 'critical'
+): FilterBuilderState => {
+  return where(state, 'severity', severity);
+};
 
-    const nestedFilter = nestedBuilder.build();
-    
-    // Add the nested filter condition
-    this.conditions.push({
-      type: 'compound',
-      operator: nestedBuilder.currentOperator,
-      conditions: nestedBuilder.conditions,
-      apply: (event: BaseEvent) => nestedFilter(event)
-    });
+/**
+ * Create a condition for minimum severity level
+ */
+export const whereMinSeverity = (
+  state: FilterBuilderState,
+  minSeverity: 'debug' | 'info' | 'warning' | 'error' | 'critical'
+): FilterBuilderState => {
+  const severityLevels = {
+    debug: 0,
+    info: 1,
+    warning: 2,
+    error: 3,
+    critical: 4
+  };
+  
+  const minLevel = severityLevels[minSeverity];
+  
+  const condition: SimpleFilterCondition = {
+    type: 'simple',
+    field: 'severity',
+    operator: FilterOperator.CUSTOM,
+    value: minSeverity,
+    apply: (event: BaseEvent) => {
+      if (!event.severity) return false;
+      return severityLevels[event.severity] >= minLevel;
+    }
+  };
+  
+  return {
+    ...state,
+    conditions: [...state.conditions, condition]
+  };
+};
 
-    return this;
+/**
+ * Build a filter function from the filter state
+ */
+export const buildFilter = (state: FilterBuilderState): (event: BaseEvent) => boolean => {
+  // If no conditions, return a function that passes all events
+  if (state.conditions.length === 0) {
+    return () => true;
   }
   
-  /**
-   * Build a filter function from all conditions
-   */
-  build(): (event: BaseEvent) => boolean {
-    // If no conditions, return a function that passes all events
-    if (this.conditions.length === 0) {
-      return () => true;
-    }
-    
-    // Create a compound condition from all the conditions
-    const rootCondition: CompoundFilterCondition = {
-      type: 'compound',
-      operator: this.currentOperator,
-      conditions: this.conditions,
-      apply: (event: BaseEvent) => 
-        this.currentOperator === LogicalOperator.AND
-          ? this.conditions.every(c => c.apply(event))
-          : this.conditions.some(c => c.apply(event))
-    };
-    
-    // Return a function that applies the root condition
-    return (event: BaseEvent) => rootCondition.apply(event);
-  }
-}
+  // Create a compound condition from all the conditions
+  const rootCondition: CompoundFilterCondition = {
+    type: 'compound',
+    operator: state.currentOperator,
+    conditions: state.conditions,
+    apply: (event: BaseEvent) => 
+      state.currentOperator === LogicalOperator.AND
+        ? state.conditions.every(c => c.apply(event))
+        : state.conditions.some(c => c.apply(event))
+  };
+  
+  // Return a function that applies the root condition
+  return (event: BaseEvent) => rootCondition.apply(event);
+};
 
-// Create a new filter builder
-export const filter = (): FilterBuilder => new FilterBuilder();
+/**
+ * Add a nested filter with grouped conditions
+ */
+export const group = (
+  state: FilterBuilderState,
+  groupFn: (state: FilterBuilderState) => FilterBuilderState
+): FilterBuilderState => {
+  // Create a new filter state and apply the group function
+  const nestedState = groupFn(filter());
+  
+  // Build a filter function from the nested state
+  const nestedFilter = buildFilter(nestedState);
+  
+  // Add the compound condition to the parent state
+  const compoundCondition: CompoundFilterCondition = {
+    type: 'compound',
+    operator: nestedState.currentOperator,
+    conditions: nestedState.conditions,
+    apply: (event: BaseEvent) => nestedFilter(event)
+  };
+  
+  return {
+    ...state,
+    conditions: [...state.conditions, compoundCondition]
+  };
+};
 
 // ==================== Advanced Subscription Functions ====================
 
@@ -430,9 +539,15 @@ const createAdvancedHandler = (
       return;
     }
     
-    // Apply filters
+    // Apply standard filters
     if (options.version && event.version !== options.version) return;
     if (options.source && event.source !== options.source) return;
+    
+    // New filters for eventType and severity
+    if (options.eventType && event.eventType !== options.eventType) return;
+    if (options.severity && event.severity !== options.severity) return;
+    
+    // Apply custom filter function if provided
     if (options.filter && !options.filter(event)) return;
     
     // Update call count and last called time
@@ -515,12 +630,13 @@ export const subscribe = (
  */
 export const subscribeWithFilter = (
   pattern: string,
-  filterBuilder: FilterBuilder,
+  filterBuilder: (state: FilterBuilderState) => FilterBuilderState,
   handler: EventHandler,
   options: Omit<AdvancedSubscriptionOptions, 'filter'> = {}
 ): string => {
   // Build filter function from builder
-  const filterFn = filterBuilder.build();
+  const filterState = filterBuilder(filter());
+  const filterFn = buildFilter(filterState);
   
   // Subscribe with filter function
   return subscribe(pattern, handler, {
@@ -746,6 +862,12 @@ export const findMatchingHandlers = (event: BaseEvent): SubscriptionStatus[] => 
     
     // Skip if source doesn't match
     if (options.source && event.source !== options.source) return;
+    
+    // Skip if eventType doesn't match
+    if (options.eventType && event.eventType !== options.eventType) return;
+    
+    // Skip if severity doesn't match
+    if (options.severity && event.severity !== options.severity) return;
     
     // Skip if filter doesn't pass
     if (options.filter && !options.filter(event)) return;

@@ -25,6 +25,26 @@ export const createEventFactory = (config: EventFactoryConfig) => {
   };
 
   /**
+   * Get the default event type based on the event name pattern
+   * This is a helper function to determine the event type if not explicitly provided
+   */
+  const getDefaultEventType = (eventName: string): 'app' | 'system' | 'security' | 'integration' | 'performance' => {
+    // Simple pattern matching based on event name prefixes
+    if (eventName.startsWith('security.') || eventName.includes('.auth.')) {
+      return 'security';
+    } else if (eventName.startsWith('system.') || eventName.includes('.startup.') || eventName.includes('.shutdown.')) {
+      return 'system';
+    } else if (eventName.startsWith('perf.') || eventName.includes('.performance.')) {
+      return 'performance';
+    } else if (eventName.startsWith('integration.') || eventName.includes('.external.')) {
+      return 'integration';
+    } else {
+      // Default to 'app' for most business-related events
+      return 'app';
+    }
+  };
+
+  /**
    * Creates a basic event with the specified type and payload
    */
   const createEvent = (
@@ -39,11 +59,15 @@ export const createEventFactory = (config: EventFactoryConfig) => {
 
     // Get version from registry if not specified
     const version = options.version || getEventSchemaVersion(eventName);
+    
+    // Get event type (category) from options or determine based on event name
+    const eventType = options.eventType || getDefaultEventType(eventName);
 
     // Create the event with required fields
     const event: BaseEvent = {
       eventId: `event-${uuidv4()}`,
       eventName,
+      eventType,
       version,
       timestamp: new Date().toISOString(),
       source: options.source || factoryConfig.source,

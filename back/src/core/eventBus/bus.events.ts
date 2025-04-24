@@ -459,6 +459,16 @@ export class EventBus {
       return false;
     }
     
+    // Check eventType filter
+    if (options.eventType && event.eventType !== options.eventType) {
+      return false;
+    }
+    
+    // Check severity filter
+    if (options.severity && event.severity !== options.severity) {
+      return false;
+    }
+    
     // Check custom filter
     if (options.filter && !options.filter(event)) {
       return false;

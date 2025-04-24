@@ -10,6 +10,11 @@ export interface BaseEvent {
   // Example: "user.newaccount.created"
   eventName: string;
 
+  // 📊 Category of the event for classification and filtering
+  // Filled by: EventFabric
+  // Example: "app"
+  eventType: 'app' | 'system' | 'security' | 'integration' | 'performance';
+
   // 🔢 Schema version of the event
   // Filled by: EventFabric (from event registry)
   // Example: "v1"
@@ -141,6 +146,8 @@ export interface CreateEventOptions {
   version?: string;
   // Custom source (otherwise from factory config)
   source?: string;
+  // Category of the event (classification)
+  eventType?: 'app' | 'system' | 'security' | 'integration' | 'performance';
   // Severity level for the event
   severity?: 'debug' | 'info' | 'warning' | 'error' | 'critical';
   // Event duration in milliseconds
@@ -190,6 +197,10 @@ export interface SubscriptionOptions {
   version?: string;
   // Only receive events from this source
   source?: string;
+  // Only receive events of this type (category)
+  eventType?: 'app' | 'system' | 'security' | 'integration' | 'performance';
+  // Only receive events with this severity level
+  severity?: 'debug' | 'info' | 'warning' | 'error' | 'critical';
   // Custom filter function
   filter?: EventFilterPredicate;
   // Whether to handle errors from this handler
@@ -253,7 +264,8 @@ export enum FilterOperator {
   NOT_EXISTS = 'notExists',
   IN = 'in',
   NOT_IN = 'notIn',
-  MATCHES = 'matches' // For regex patterns
+  MATCHES = 'matches', // For regex patterns
+  CUSTOM = 'custom'    // For custom filtering logic
 }
 
 /**
