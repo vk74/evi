@@ -14,11 +14,11 @@ export const eventReferences = {
 // Export utility type for referencing event types across the application
 export type EventType = keyof typeof eventReferences;
 
-// Export function to validate if an event type exists in the registry
-export const isValidEventType = (eventType: string): boolean => {
-  // Split the event type into domain and specific event
+// Export function to validate if an event name exists in the registry
+export const isValidEventType = (eventName: string): boolean => {
+  // Split the event name into domain and specific event
   // Example: "user.newaccount.created" -> ["user", "newaccount.created"]
-  const [domain, ...rest] = eventType.split('.');
+  const [domain, ...rest] = eventName.split('.');
   
   if (!rest.length || !eventReferences[domain as EventType]) {
     return false;
@@ -31,9 +31,9 @@ export const isValidEventType = (eventType: string): boolean => {
   return eventReferences[domain as EventType].hasOwnProperty(eventKey);
 };
 
-// Helper function to get event schema version by event type
-export const getEventSchemaVersion = (eventType: string): string => {
-  const [domain, ...rest] = eventType.split('.');
+// Helper function to get event schema version by event name
+export const getEventSchemaVersion = (eventName: string): string => {
+  const [domain, ...rest] = eventName.split('.');
   
   if (!rest.length || !eventReferences[domain as EventType]) {
     return 'v1'; // Default to v1 if not found

@@ -28,22 +28,22 @@ export const createEventFactory = (config: EventFactoryConfig) => {
    * Creates a basic event with the specified type and payload
    */
   const createEvent = (
-    eventType: string,
+    eventName: string,
     payload?: unknown,
     options: CreateEventOptions = {}
   ): BaseEvent => {
     // Verify that the event type is registered
-    if (!isValidEventType(eventType)) {
-      console.log(`Warning: Creating event with unregistered type: ${eventType}`);
+    if (!isValidEventType(eventName)) {
+      console.log(`Warning: Creating event with unregistered type: ${eventName}`);
     }
 
     // Get version from registry if not specified
-    const version = options.version || getEventSchemaVersion(eventType);
+    const version = options.version || getEventSchemaVersion(eventName);
 
     // Create the event with required fields
     const event: BaseEvent = {
       eventId: `event-${uuidv4()}`,
-      eventType,
+      eventName,
       version,
       timestamp: new Date().toISOString(),
       source: options.source || factoryConfig.source,
@@ -80,7 +80,7 @@ export const createEventFactory = (config: EventFactoryConfig) => {
    */
   const createRelatedEvent = (
     baseEvent: BaseEvent,
-    eventType: string,
+    eventName: string,
     payload?: unknown,
     options: Omit<CreateEventOptions, 'correlationId'> = {}
   ): BaseEvent => {
@@ -88,7 +88,7 @@ export const createEventFactory = (config: EventFactoryConfig) => {
     // If base event doesn't have a correlation ID, use its event ID
     const correlationId = baseEvent.correlationId || baseEvent.eventId;
 
-    return createEvent(eventType, payload, {
+    return createEvent(eventName, payload, {
       ...options,
       correlationId,
       // Inherit tracing context if not explicitly provided
@@ -106,11 +106,11 @@ export const createEventFactory = (config: EventFactoryConfig) => {
    */
   const createCausedEvent = (
     causingEvent: BaseEvent,
-    eventType: string,
+    eventName: string,
     payload?: unknown,
     options: Omit<CreateEventOptions, 'causationId' | 'correlationId'> = {}
   ): BaseEvent => {
-    return createRelatedEvent(causingEvent, eventType, payload, {
+    return createRelatedEvent(causingEvent, eventName, payload, {
       ...options,
       // Set causation ID to the causing event's ID
       causationId: causingEvent.eventId
@@ -121,12 +121,12 @@ export const createEventFactory = (config: EventFactoryConfig) => {
    * Creates an error event with appropriate error details
    */
   const createErrorEvent = (
-    eventType: string,
+    eventName: string,
     error: Error,
     options: CreateEventOptions = {}
   ): BaseEvent => {
     return createEvent(
-      eventType,
+      eventName,
       {
         message: error.message,
         name: error.name,

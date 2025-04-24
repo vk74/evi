@@ -31,7 +31,7 @@ interface EventTypeMetrics {
  * Telemetry for the EventBus
  */
 export class EventBusTelemetry {
-  // Track metrics per event type
+  // Track metrics per event name
   private eventMetrics: Map<string, EventTypeMetrics> = new Map();
   // Track overall metrics
   private totalPublished: number = 0;
@@ -53,14 +53,14 @@ export class EventBusTelemetry {
   /**
    * Record that an event was published
    */
-  recordPublication(eventType: string): void {
+  recordPublication(eventName: string): void {
     this.totalPublished++;
     
-    if (!this.eventMetrics.has(eventType)) {
-      this.eventMetrics.set(eventType, this.createDefaultMetrics());
+    if (!this.eventMetrics.has(eventName)) {
+      this.eventMetrics.set(eventName, this.createDefaultMetrics());
     }
     
-    const metrics = this.eventMetrics.get(eventType)!;
+    const metrics = this.eventMetrics.get(eventName)!;
     metrics.publishCount++;
     metrics.lastPublishedAt = new Date();
     
@@ -102,12 +102,12 @@ export class EventBusTelemetry {
   /**
    * Record processing time for an event handler
    */
-  recordProcessingTime(eventType: string, timeMs: number): void {
-    if (!this.eventMetrics.has(eventType)) {
-      this.eventMetrics.set(eventType, this.createDefaultMetrics());
+  recordProcessingTime(eventName: string, timeMs: number): void {
+    if (!this.eventMetrics.has(eventName)) {
+      this.eventMetrics.set(eventName, this.createDefaultMetrics());
     }
     
-    const metrics = this.eventMetrics.get(eventType)!;
+    const metrics = this.eventMetrics.get(eventName)!;
     metrics.totalProcessingTime += timeMs;
     metrics.processingTimeSamples++;
     
@@ -123,22 +123,22 @@ export class EventBusTelemetry {
   /**
    * Record an error that occurred during event processing
    */
-  recordError(eventType: string): void {
+  recordError(eventName: string): void {
     this.totalErrors++;
     
-    if (!this.eventMetrics.has(eventType)) {
-      this.eventMetrics.set(eventType, this.createDefaultMetrics());
+    if (!this.eventMetrics.has(eventName)) {
+      this.eventMetrics.set(eventName, this.createDefaultMetrics());
     }
     
-    const metrics = this.eventMetrics.get(eventType)!;
+    const metrics = this.eventMetrics.get(eventName)!;
     metrics.errorCount++;
   }
 
   /**
    * Get metrics for a specific event type
    */
-  getEventMetrics(eventType: string): EventTypeMetrics | undefined {
-    return this.eventMetrics.get(eventType);
+  getEventMetrics(eventName: string): EventTypeMetrics | undefined {
+    return this.eventMetrics.get(eventName);
   }
 
   /**

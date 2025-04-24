@@ -8,7 +8,7 @@ export interface BaseEvent {
   // 🏷 Logical event type used for routing and subscriptions
   // Filled by: EventFabric (from event template/registry)
   // Example: "user.newaccount.created"
-  eventType: string;
+  eventName: string;
 
   // 🔢 Schema version of the event
   // Filled by: EventFabric (from event registry)

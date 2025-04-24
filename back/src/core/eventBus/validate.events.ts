@@ -24,10 +24,10 @@ export const validateEvent = (event: BaseEvent): ValidationResult => {
     errors.push('Event is missing required eventId');
   }
   
-  if (!event.eventType) {
-    errors.push('Event is missing required eventType');
-  } else if (!isValidEventType(event.eventType)) {
-    errors.push(`Invalid eventType: ${event.eventType}. This event type is not registered in the event catalog.`);
+  if (!event.eventName) {
+    errors.push('Event is missing required eventName');
+  } else if (!isValidEventType(event.eventName)) {
+    errors.push(`Invalid eventName: ${event.eventName}. This event type is not registered in the event catalog.`);
   }
   
   if (!event.timestamp) {
@@ -49,15 +49,15 @@ export const validateEvent = (event: BaseEvent): ValidationResult => {
     errors.push('Event is missing required version');
   } else {
     // Check if version matches the one in registry
-    const expectedVersion = getEventSchemaVersion(event.eventType);
+    const expectedVersion = getEventSchemaVersion(event.eventName);
     if (event.version !== expectedVersion) {
       errors.push(`Event version mismatch: ${event.version} provided, but registry specifies ${expectedVersion}`);
     }
   }
   
   // Validate payload against schema if available
-  if (event.eventType && isValidEventType(event.eventType)) {
-    const [domain, ...rest] = event.eventType.split('.');
+  if (event.eventName && isValidEventType(event.eventName)) {
+    const [domain, ...rest] = event.eventName.split('.');
     const eventKey = rest.join('.');
     
     // Get the domain registry

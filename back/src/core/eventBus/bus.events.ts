@@ -45,7 +45,7 @@ export class EventBus {
    * Subscribe to events matching a pattern
    * 
    * Patterns can be:
-   * - Exact event type: 'user.profile.updated'
+   * - Exact event name: 'user.profile.updated'
    * - Domain wildcard: 'user.*'
    * - Domain+entity wildcard: 'user.profile.*'
    * - All events: '*'
@@ -154,15 +154,15 @@ export class EventBus {
     
     // Update telemetry
     if (publishOptions.collectTelemetry) {
-      eventBusTelemetry.recordPublication(event.eventType);
+      eventBusTelemetry.recordPublication(event.eventName);
     }
     
     // Emit the specific event type
-    this.emitter.emit(event.eventType, event);
+    this.emitter.emit(event.eventName, event);
     
     // Emit for domain pattern subscribers
     // Example: user.profile.updated -> user.*
-    const domainParts = event.eventType.split('.');
+    const domainParts = event.eventName.split('.');
     if (domainParts.length > 1) {
       const domain = domainParts[0];
       this.emitter.emit(`${domain}.*`, event);
@@ -209,18 +209,18 @@ export class EventBus {
     
     // Update telemetry
     if (publishOptions.collectTelemetry) {
-      eventBusTelemetry.recordPublication(event.eventType);
+      eventBusTelemetry.recordPublication(event.eventName);
     }
     
     // Get all patterns this event should trigger
     const patterns = [
-      event.eventType,
-      `${event.eventType.split('.')[0]}.*`,
+      event.eventName,
+      `${event.eventName.split('.')[0]}.*`,
       '*'
     ];
     
     // Add domain+entity pattern if applicable
-    const domainParts = event.eventType.split('.');
+    const domainParts = event.eventName.split('.');
     if (domainParts.length > 2) {
       const domain = domainParts[0];
       const entity = domainParts[1];
@@ -250,21 +250,21 @@ export class EventBus {
                 const handlerPromise = result.catch(error => {
                   if (options.handleErrors !== false) {
                     errors.push({ error, event, handlerPattern: pattern });
-                    eventBusTelemetry.recordError(event.eventType);
+                    eventBusTelemetry.recordError(event.eventName);
                     return; // Swallow error if handleErrors is true
                   } else {
                     throw error; // Re-throw if handleErrors is false
                   }
                 }).then(() => {
                   const processingTime = Date.now() - startTime;
-                  eventBusTelemetry.recordProcessingTime(event.eventType, processingTime);
+                  eventBusTelemetry.recordProcessingTime(event.eventName, processingTime);
                 });
                 
                 allPromises.push(handlerPromise);
               } else {
                 // Synchronous handler
                 const processingTime = Date.now() - startTime;
-                eventBusTelemetry.recordProcessingTime(event.eventType, processingTime);
+                eventBusTelemetry.recordProcessingTime(event.eventName, processingTime);
               }
             }
           } catch (error) {
@@ -274,7 +274,7 @@ export class EventBus {
                 event, 
                 handlerPattern: pattern 
               });
-              eventBusTelemetry.recordError(event.eventType);
+              eventBusTelemetry.recordError(event.eventName);
             } else {
               throw error; // Re-throw if handleErrors is false
             }
@@ -306,7 +306,7 @@ export class EventBus {
         // Вместо использования AggregateError, который вызывает ошибку компиляции,
         // создаем обычную ошибку с информативным сообщением
         const firstError = errors[0].error;
-        const errorMessage = `${errors.length} error(s) occurred while processing event ${event.eventType}. First error: ${firstError.message}`;
+        const errorMessage = `${errors.length} error(s) occurred while processing event ${event.eventName}. First error: ${firstError.message}`;
         throw new Error(errorMessage);
       }
     }
@@ -406,12 +406,12 @@ export class EventBus {
             })
             .finally(() => {
               const processingTime = Date.now() - startTime;
-              eventBusTelemetry.recordProcessingTime(event.eventType, processingTime);
+              eventBusTelemetry.recordProcessingTime(event.eventName, processingTime);
             });
         } else {
           // Synchronous handler
           const processingTime = Date.now() - startTime;
-          eventBusTelemetry.recordProcessingTime(event.eventType, processingTime);
+          eventBusTelemetry.recordProcessingTime(event.eventName, processingTime);
         }
       } catch (error) {
         this.handleEventError(error, event, pattern, options);
@@ -428,7 +428,7 @@ export class EventBus {
     pattern: string,
     options: SubscriptionOptions
   ): void {
-    eventBusTelemetry.recordError(event.eventType);
+    eventBusTelemetry.recordError(event.eventName);
     
     const busError: EventBusError = {
       error: error instanceof Error ? error : new Error(String(error)),

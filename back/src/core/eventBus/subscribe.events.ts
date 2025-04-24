@@ -720,13 +720,13 @@ export const getAllSubscriptions = (): SubscriptionStatus[] => {
 export const findMatchingHandlers = (event: BaseEvent): SubscriptionStatus[] => {
   const matches: SubscriptionStatus[] = [];
   const matchingPatterns = [
-    event.eventType,
-    `${event.eventType.split('.')[0]}.*`,
+    event.eventName,
+    `${event.eventName.split('.')[0]}.*`,
     '*'
   ];
   
   // Add domain+entity pattern if applicable
-  const domainParts = event.eventType.split('.');
+  const domainParts = event.eventName.split('.');
   if (domainParts.length > 2) {
     const domain = domainParts[0];
     const entity = domainParts[1];
