@@ -50,10 +50,10 @@ export interface BaseEvent {
   // Example: { retryCount: 2, source: "api" }
   metadata?: Record<string, unknown>;
 
-  // 🪵 Logging level of the event
+  // 🪵 Severity level of the event
   // Filled by: EventFabric or logger
   // Example: "info"
-  logLevel?: 'debug' | 'info' | 'warning' | 'error' | 'critical';
+  severity?: 'debug' | 'info' | 'warning' | 'error' | 'critical';
 
   // ⏱ Duration of the operation related to the event, in milliseconds
   // Filled by: business logic or EventFabric
@@ -141,8 +141,8 @@ export interface CreateEventOptions {
   version?: string;
   // Custom source (otherwise from factory config)
   source?: string;
-  // Logging level for the event
-  logLevel?: 'debug' | 'info' | 'warning' | 'error' | 'critical';
+  // Severity level for the event
+  severity?: 'debug' | 'info' | 'warning' | 'error' | 'critical';
   // Event duration in milliseconds
   duration?: number;
   // Distributed tracing IDs

@@ -56,7 +56,7 @@ export const createEventFactory = (config: EventFactoryConfig) => {
     if (options.correlationId) event.correlationId = options.correlationId;
     if (options.causationId) event.causationId = options.causationId;
     if (options.userId) event.userId = options.userId;
-    if (options.logLevel) event.logLevel = options.logLevel;
+    if (options.severity) event.severity = options.severity;
     if (options.duration) event.duration = options.duration;
     if (options.traceId) event.traceId = options.traceId;
     if (options.spanId) event.spanId = options.spanId;
@@ -134,7 +134,7 @@ export const createEventFactory = (config: EventFactoryConfig) => {
       },
       {
         ...options,
-        logLevel: options.logLevel || 'error',
+        severity: options.severity || 'error',
         stackTrace: error.stack,
         tags: [...(options.tags || []), 'error']
       }
