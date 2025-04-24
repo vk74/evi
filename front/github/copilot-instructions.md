@@ -8,14 +8,18 @@ Our project is using several types of files:
 Don't delete nor optimize code without my consent.  
 Don't use classes in TypeScript and JavaScript files, use functions and methods instead. 
 
-
 Preferences for .vue components:
   1. add console logging for major functions and events
   2. for major events like successfull component operation completion, errors, warnings, use snackbar messages which is a global component in front/core/ui/snackbars.
   3. start building components with interface language in russian. internationalization with i18 library should be done as a separate step upon component functionality completion. 
-  4. all comments in all files should be in english
-  5. the header comment should have an explanation of the file functionality / algorythm, what type of objects it is working with, major interactions. 
-  6. use CompositionAPI style of code
+  4. use CompositionAPI style of code
+
+Comments in files
+  1. all comments in all files should be in english
+  2. the header comment should have:
+    a. file version: if this is a new file put version 1.0. if we work on a file - increment version by 001.
+    b. an explanation of the file functionality / algorythm, what type of objects it is working with, major interactions. 
+
 
 IMPORTANT: explain how you understand the task and wait for my consent before writing the code. 
 

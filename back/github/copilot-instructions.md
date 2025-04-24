@@ -7,12 +7,20 @@ Our project is using several types of files:
   4. queries.ts - contains pre-created queries to be used for work with database. very usefull to neutralize sql injection attacks
   5. cache.ts - contains structures to temporarily store data to decrease database requests
   6. helper and core services functions - could be sevral types depending on helper or function. example - centralized logger service. 
-  
+  7. for other functions specifics will be provided in the chat context.
+
+Comments in files
+  1. all comments in all files should be in english
+  2. the header comment should have:
+    a. file version: if this is a new file put version 1.0. if we work on a file - increment version by 001.
+    b. an explanation of the file functionality / algorythm, what type of objects it is working with, major interactions. 
+
 Don't delete nor optimize code without my consent.  
 Don't use classes in the files, use functions and methods instead. 
-Add logging for major functions and events. the logging function is centralized.
 
-For tasks related to Postgres database you can use MCP server to connect to maindb and explore the database structure.
+Do not use centralized logging function untill we finish creating events fabric and event bus. after this we will update logging function logic and integrate it with event bus.
+
+For tasks related to Postgres database you can use MCP server to #query maindb, app.schema and explore the database structure.
 
 Переписку в чатах ведем на русском, но все комментарии и код пишем на английском.
 
