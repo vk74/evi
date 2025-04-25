@@ -17,7 +17,7 @@ import { groupsRepository } from './repository.groups.list';
 const pool = pgPool as Pool;
 
 // Логгер для основных операций
-const logger = {
+const lgr = {
     info: (message: string, meta?: object) => console.log(`[DeleteGroupsService] ${message}`, meta || ''),
     error: (message: string, error?: unknown) => console.error(`[DeleteGroupsService] ${message}`, error || '')
 };
@@ -35,7 +35,7 @@ export const deleteSelectedGroupsService = {
     async deleteSelectedGroups(groupIds: string[]): Promise<number> {
         try {
             // Логируем начало операции
-            logger.info('Starting delete operation', { groupIds });
+            lgr.info('Starting delete operation', { groupIds });
 
             // Выполняем SQL-запрос для удаления групп
             const result = await pool.query(queries.deleteSelectedGroups, [groupIds]);
@@ -43,13 +43,13 @@ export const deleteSelectedGroupsService = {
             // Проверяем результат
             if (!result.rows || !Array.isArray(result.rows)) {
                 const errorMessage = 'Invalid database response format';
-                logger.error(errorMessage);
+                lgr.error(errorMessage);
                 throw new Error(errorMessage);
             }
 
             // Логируем успешное удаление
             const deletedCount = result.rows.length;
-            logger.info('Successfully deleted groups', { deletedCount });
+            lgr.info('Successfully deleted groups', { deletedCount });
 
             // Очищаем кэш в репозитории
             groupsRepository.clearCache();
@@ -57,9 +57,9 @@ export const deleteSelectedGroupsService = {
             // Проверяем, что кэш действительно очищен
             const isCacheCleared = !groupsRepository.hasValidCache();
             if (isCacheCleared) {
-                logger.info('Cache successfully cleared');
+                lgr.info('Cache successfully cleared');
             } else {
-                logger.error('Cache was not cleared successfully');
+                lgr.error('Cache was not cleared successfully');
             }
 
             // Возвращаем количество удаленных групп
@@ -67,7 +67,7 @@ export const deleteSelectedGroupsService = {
 
         } catch (error) {
             // Логируем ошибку
-            logger.error('Error during groups deletion', error);
+            lgr.error('Error during groups deletion', error);
 
             // Пробрасываем ошибку дальше
             throw new Error(

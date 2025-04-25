@@ -16,8 +16,8 @@ import type {
   ServiceError
 } from './types.item.selector';
 
-// Logger for tracking operations
-const logger = {
+// lgr for tracking operations
+const lgr = {
   info: (message: string, meta?: object) => 
     console.log(`[${new Date().toISOString()}] [AddUsersToGroup] ${message}`, meta || ''),
   error: (message: string, error: unknown, meta?: object) => 
@@ -36,7 +36,7 @@ async function addUsersToGroupController(req: Request & { user?: { uuid: string 
   const requestData: AddUsersToGroupRequest = req.body;
   
   // Log request data for debugging
-  logger.info('Received request to add users to group', {
+  lgr.info('Received request to add users to group', {
     groupId: requestData.groupId,
     userCount: requestData.userIds?.length || 0,
     requestedBy: req.user?.uuid
@@ -44,7 +44,7 @@ async function addUsersToGroupController(req: Request & { user?: { uuid: string 
 
   // Basic validation
   if (!requestData.groupId || !requestData.userIds || !Array.isArray(requestData.userIds) || requestData.userIds.length === 0) {
-    logger.error('Invalid request data', null, {
+    lgr.error('Invalid request data', null, {
       groupId: requestData.groupId,
       userIds: requestData.userIds
     });
@@ -66,7 +66,7 @@ async function addUsersToGroupController(req: Request & { user?: { uuid: string 
     );
 
     // Log success and return result
-    logger.info('Successfully added users to group', {
+    lgr.info('Successfully added users to group', {
       groupId: requestData.groupId,
       addedCount: result.count
     });
@@ -76,7 +76,7 @@ async function addUsersToGroupController(req: Request & { user?: { uuid: string 
     const error = err as ServiceError;
     
     // Log error with details
-    logger.error('Failed to add users to group', error, {
+    lgr.error('Failed to add users to group', error, {
       groupId: requestData.groupId,
       code: error.code
     });

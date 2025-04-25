@@ -24,21 +24,21 @@ import type {
   ServiceError
 } from './types.group.editor';
 import { 
-  createAppLogger,
+  createAppLgr,
   Events 
-} from '../../../../core/logger/logger.index';
+} from '../../../../core/lgr/lgr.index';
 
 const pool = pgPool as Pool;
 
 // Создаем экземпляр логгера для сервиса групп
-const logger = createAppLogger({
+const lgr = createAppLgr({
   module: 'AdminGroupService',
   fileName: 'service.create.group.ts'
 });
 
 // Validation functions
 async function validateRequiredFields(data: CreateGroupRequest): Promise<void> {
-  logger.debug({
+  lgr.debug({
     code: Events.ADMIN.USERS.CREATION.VALIDATE.SUCCESS.code,
     message: 'Validating required fields'
   });
@@ -54,7 +54,7 @@ async function validateRequiredFields(data: CreateGroupRequest): Promise<void> {
     .map(([, label]) => label);
 
   if (missingFields.length > 0) {
-    logger.warn({
+    lgr.warn({
       code: Events.ADMIN.USERS.CREATION.VALIDATE.REQUIRED_FIELD.code,
       message: `Missing required fields: ${missingFields.join(', ')}`,
       details: { missingFields }
@@ -69,14 +69,14 @@ async function validateRequiredFields(data: CreateGroupRequest): Promise<void> {
 }
 
 function validateGroupName(name: string): void {
-  logger.debug({
+  lgr.debug({
     code: Events.ADMIN.USERS.CREATION.VALIDATE.SUCCESS.code,
     message: 'Validating group name format',
     details: { name }
   });
 
   if (name.length < 2) {
-    logger.warn({
+    lgr.warn({
       code: Events.ADMIN.USERS.CREATION.VALIDATE.NAME_FORMAT.code,
       message: 'Group name too short',
       details: { name, length: name.length, minLength: 2 }
@@ -90,7 +90,7 @@ function validateGroupName(name: string): void {
   }
 
   if (name.length > 100) {
-    logger.warn({
+    lgr.warn({
       code: Events.ADMIN.USERS.CREATION.VALIDATE.NAME_FORMAT.code,
       message: 'Group name too long',
       details: { name, length: name.length, maxLength: 100 }
@@ -104,7 +104,7 @@ function validateGroupName(name: string): void {
   }
 
   if (!/^[a-zA-Z0-9-]+$/.test(name)) {
-    logger.warn({
+    lgr.warn({
       code: Events.ADMIN.USERS.CREATION.VALIDATE.NAME_FORMAT.code,
       message: 'Group name contains invalid characters',
       details: { name, pattern: '^[a-zA-Z0-9-]+$' }
@@ -121,7 +121,7 @@ function validateGroupName(name: string): void {
 function validateEmail(email: string | undefined): void {
   if (!email) return;
 
-  logger.debug({
+  lgr.debug({
     code: Events.ADMIN.USERS.CREATION.VALIDATE.SUCCESS.code,
     message: 'Validating email format',
     details: { email }
@@ -130,7 +130,7 @@ function validateEmail(email: string | undefined): void {
   const emailRegex = /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)+$/;
   
   if (!emailRegex.test(email) || email.length > 254) {
-    logger.warn({
+    lgr.warn({
       code: Events.ADMIN.USERS.CREATION.VALIDATE.EMAIL_FORMAT.code,
       message: 'Invalid email format',
       details: { email, length: email.length, maxLength: 254 }
@@ -147,14 +147,14 @@ function validateEmail(email: string | undefined): void {
 function validateDescription(description: string | undefined): void {
   if (!description) return;
 
-  logger.debug({
+  lgr.debug({
     code: Events.ADMIN.USERS.CREATION.VALIDATE.SUCCESS.code,
     message: 'Validating description format',
     details: { descriptionLength: description.length }
   });
 
   if (description.length > 5000) {
-    logger.warn({
+    lgr.warn({
       code: Events.ADMIN.USERS.CREATION.VALIDATE.DESCRIPTION_FORMAT.code,
       message: 'Description too long',
       details: { length: description.length, maxLength: 5000 }
@@ -168,7 +168,7 @@ function validateDescription(description: string | undefined): void {
   }
 
   if (!/^[a-zA-Zа-яА-ЯёЁ0-9\s\-_.,!?()@#$%&'*+=/<>[\]{}"`~;:|]+$/.test(description)) {
-    logger.warn({
+    lgr.warn({
       code: Events.ADMIN.USERS.CREATION.VALIDATE.DESCRIPTION_FORMAT.code,
       message: 'Description contains invalid characters',
       details: { descriptionLength: description.length }
@@ -183,7 +183,7 @@ function validateDescription(description: string | undefined): void {
 }
 
 async function checkUniqueness(groupName: string): Promise<void> {
-  logger.debug({
+  lgr.debug({
     code: Events.ADMIN.USERS.CREATION.CHECK.NAME_EXISTS.code,
     message: 'Checking group name uniqueness',
     details: { groupName }
@@ -191,7 +191,7 @@ async function checkUniqueness(groupName: string): Promise<void> {
 
   const result = await pool.query(queries.checkGroupName.text, [groupName]);
   if (result.rows.length > 0) {
-    logger.warn({
+    lgr.warn({
       code: Events.ADMIN.USERS.CREATION.CHECK.NAME_EXISTS.code,
       message: 'Group name already exists',
       details: { groupName, existingGroup: result.rows[0] }
@@ -206,7 +206,7 @@ async function checkUniqueness(groupName: string): Promise<void> {
 }
 
 async function checkOwnerExists(ownerUsername: string): Promise<void> {
-  logger.debug({
+  lgr.debug({
     code: Events.ADMIN.USERS.CREATION.CHECK.OWNER_NOT_FOUND.code,
     message: 'Checking if owner exists',
     details: { ownerUsername }
@@ -214,7 +214,7 @@ async function checkOwnerExists(ownerUsername: string): Promise<void> {
 
   const result = await pool.query(queries.checkUserExists.text, [ownerUsername]);
   if (result.rows.length === 0) {
-    logger.warn({
+    lgr.warn({
       code: Events.ADMIN.USERS.CREATION.CHECK.OWNER_NOT_FOUND.code,
       message: 'Group owner does not exist',
       details: { ownerUsername }
@@ -235,7 +235,7 @@ export async function createGroup(
   const client = await pool.connect();
   
   try {
-    logger.info({
+    lgr.info({
       code: Events.ADMIN.USERS.CREATION.CREATE.SUCCESS.code,
       message: 'Starting group creation process',
       details: { 
@@ -252,7 +252,7 @@ export async function createGroup(
     validateDescription(groupData.group_description);
     
     if (!Object.values(GroupStatus).includes(groupData.group_status)) {
-      logger.warn({
+      lgr.warn({
         code: Events.ADMIN.USERS.CREATION.VALIDATE.STATUS_FORMAT.code,
         message: 'Invalid group status',
         details: { 
@@ -274,7 +274,7 @@ export async function createGroup(
 
     // Start transaction
     await client.query('BEGIN');
-    logger.debug({
+    lgr.debug({
       code: Events.ADMIN.USERS.CREATION.DATABASE.TRANSACTION_START.code,
       message: 'Starting database transaction'
     });
@@ -284,7 +284,7 @@ export async function createGroup(
       queries.getUserId.text,
       [groupData.group_owner]
     );
-    logger.debug({
+    lgr.debug({
       code: Events.ADMIN.USERS.CREATION.DATABASE.SUCCESS.code,
       message: 'Owner query completed',
       details: { ownerData: ownerResult.rows[0] }
@@ -304,7 +304,7 @@ export async function createGroup(
     );
     
     const groupId = groupResult.rows[0].group_id;
-    logger.debug({
+    lgr.debug({
       code: Events.ADMIN.USERS.CREATION.DATABASE.SUCCESS.code,
       message: 'Group base data inserted',
       details: { groupId }
@@ -320,14 +320,14 @@ export async function createGroup(
         ownerUuid
       ]
     );
-    logger.debug({
+    lgr.debug({
       code: Events.ADMIN.USERS.CREATION.DATABASE.SUCCESS.code,
       message: 'Group details inserted',
       details: { groupId }
     });
 
     await client.query('COMMIT');
-    logger.info({
+    lgr.info({
       code: Events.ADMIN.USERS.CREATION.DATABASE.SUCCESS.code,
       message: 'Group database transaction committed',
       details: { groupId, groupName: groupData.group_name }
@@ -341,18 +341,18 @@ export async function createGroup(
       const cacheStateAfter = groupsRepository.hasValidCache();
       
       if (!cacheStateAfter) {
-        logger.info({
+        lgr.info({
           code: Events.ADMIN.USERS.CREATION.CACHE.CLEARED.code,
           message: 'Groups list repository cache cleared successfully'
         });
       } else {
-        logger.warn({
+        lgr.warn({
           code: Events.ADMIN.USERS.CREATION.CACHE.ERROR.code,
           message: 'Failed to clear groups list repository cache: cache is still valid'
         });
       }
     } catch (error) {
-      logger.error({
+      lgr.error({
         code: Events.ADMIN.USERS.CREATION.CACHE.ERROR.code,
         message: 'Failed to clear groups list repository cache',
         error
@@ -370,7 +370,7 @@ export async function createGroup(
     await client.query('ROLLBACK');
     
     if ((error as ServiceError).code) {
-      logger.error({
+      lgr.error({
         code: Events.ADMIN.USERS.CREATION.CREATE.ERROR.code,
         message: `Group creation failed: ${(error as Error).message}`,
         details: { 
@@ -382,7 +382,7 @@ export async function createGroup(
       throw error;
     }
 
-    logger.error({
+    lgr.error({
       code: Events.ADMIN.USERS.CREATION.DATABASE.ERROR.code,
       message: 'Unexpected error during group creation',
       details: { 

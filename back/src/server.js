@@ -1,9 +1,12 @@
-// server.js
-// Main backend application entry point.
-// - Sets up Express server and middleware
-// - Loads application settings and encryption keys 
-// - Registers API routes
-// - Handles server startup and shutdown
+/**
+ * Main server file
+ * 
+ * This is the entry point for the backend server.
+ * It handles server initialization, middleware setup, and route registration.
+ * 
+ * Created: 2022-08-15
+ * Last modified: 2023-11-20
+ */
 
 require('module-alias/register');
 const express = require('express');
@@ -17,10 +20,10 @@ const { loadSettings } = require('@/core/services/settings/service.load.settings
 
 // Import centralized logger
 const { 
-  createSystemLogger, 
+  createSystemLgr, 
   Events,
   OperationType
-} = require('@/core/logger/logger.index');
+} = require('@/core/lgr/lgr.index');
 
 const ExcelJS = require('exceljs');
 const bodyParser = require('body-parser');
@@ -31,8 +34,8 @@ const fs = require('fs');
 const port = 3000;
 const app = express();
 
-// Create logger for server
-const logger = createSystemLogger({
+// Create lgr for server
+const lgr = createSystemLgr({
   module: 'ServerMain',
   fileName: 'server.js'
 });
@@ -43,7 +46,7 @@ let settingsLoaded = false;
 // Middleware to check if settings are loaded
 const checkSettingsLoaded = (req, res, next) => {
   if (!settingsLoaded) {
-    logger.warn({
+    lgr.warn({
       code: Events.CORE.SERVER.REQUEST.READINESS.NOT_READY.code,
       message: 'Server is not ready yet, rejecting request',
       details: {
@@ -62,7 +65,7 @@ const checkSettingsLoaded = (req, res, next) => {
 
 async function initializeServer() {
   try {
-    logger.info({
+    lgr.info({
       code: Events.CORE.SERVER.STARTUP.INIT.START.code,
       message: 'Starting server initialization'
     });
@@ -76,13 +79,13 @@ async function initializeServer() {
       throw new Error('Failed to set global.privateKey');
     }
     
-    logger.info({
+    lgr.info({
       code: Events.CORE.SERVER.STARTUP.KEYS.SUCCESS.code,
       message: 'Global private key set successfully'
     });
 
     // 2. Loading settings
-    logger.info({
+    lgr.info({
       code: Events.CORE.SETTINGS.INIT.PROCESS.START.code,
       message: 'Loading application settings...'
     });
@@ -104,7 +107,7 @@ async function initializeServer() {
     //app.use('/profile', getUserProfile); // Route registration
     app.use(bodyParser.json());
 
-    logger.info({
+    lgr.info({
       code: Events.CORE.SERVER.STARTUP.MIDDLEWARE.SUCCESS.code,
       message: 'Middleware configuration completed'
     });
@@ -120,7 +123,7 @@ async function initializeServer() {
     app.use(coreRoutes);
     app.use(workRoutes);
 
-    logger.info({
+    lgr.info({
       code: Events.CORE.SERVER.STARTUP.ROUTES.SUCCESS.code,
       message: 'All routes registered successfully'
     });
@@ -146,7 +149,7 @@ async function initializeServer() {
     app.post('/protosubmit', async (req, res) => {
       try {
         // Debug line
-        logger.debug({
+        lgr.debug({
           code: Events.CORE.EXCEL.PROTOTYPE.SUCCESS.code,
           message: 'Received request for form submission',
           details: { body: req.body }
@@ -156,7 +159,7 @@ async function initializeServer() {
         const result = await insertData(orgname, region, location, checkbox, radioOption, date);
         res.status(200).json(result);
       } catch (error) {
-        logger.error({
+        lgr.error({
           code: Events.CORE.EXCEL.PROTOTYPE.ERROR.code,
           message: 'Error processing form submission',
           error
@@ -194,7 +197,7 @@ async function initializeServer() {
         await workbook.xlsx.write(res);
         res.end();
         
-        logger.info({
+        lgr.info({
           code: Events.CORE.EXCEL.PROTOTYPE.SUCCESS.code,
           message: 'Excel file generated and sent successfully',
           details: {
@@ -202,7 +205,7 @@ async function initializeServer() {
           }
         });
       } catch (error) {
-        logger.error({
+        lgr.error({
           code: Events.CORE.EXCEL.PROTOTYPE.ERROR.code,
           message: 'Error generating Excel file',
           error
@@ -287,7 +290,7 @@ async function initializeServer() {
       const formattedTime = now.toLocaleTimeString('en-US', timeOptions);
       const timestamp = `${formattedDate}, ${formattedTime}`;
 
-      logger.info({
+      lgr.info({
         code: Events.CORE.SERVER.STARTUP.HTTP.LISTENING.code,
         message: `Server listening at http://localhost:${port}`,
         details: {
@@ -297,13 +300,13 @@ async function initializeServer() {
       });
     });
 
-    logger.info({
+    lgr.info({
       code: Events.CORE.SERVER.STARTUP.INIT.SUCCESS.code,
       message: 'Server initialization completed successfully'
     });
 
   } catch (error) {
-    logger.error({
+    lgr.error({
       code: Events.CORE.SERVER.STARTUP.INIT.ERROR.code,
       message: 'Failed to initialize server',
       error

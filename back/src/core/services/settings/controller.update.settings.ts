@@ -7,11 +7,11 @@
 import { Request, Response } from 'express';
 import { UpdateSettingRequest, UpdateSettingResponse } from './types.settings';
 import { updateSetting } from './service.update.settings';
-import { createSystemLogger, Logger } from '../../../core/logger/logger.index';
-import { Events } from '../../../core/logger/codes';
+import { createSystemLgr, Lgr } from '../../../core/lgr/lgr.index';
+import { Events } from '../../../core/lgr/codes';
 
-// Create logger for controller
-const logger: Logger = createSystemLogger({
+// Create lgr for controller
+const lgr: Lgr = createSystemLgr({
   module: 'SettingsController',
   fileName: 'controller.update.settings.ts'
 });
@@ -25,7 +25,7 @@ const logger: Logger = createSystemLogger({
 export default async function handleUpdateSetting(req: Request, res: Response): Promise<void> {
   try {
     // Log incoming request
-    logger.debug({
+    lgr.debug({
       code: Events.CORE.SETTINGS.UPDATE.START.RECEIVED.code,
       message: 'Received setting update request',
       details: {
@@ -38,7 +38,7 @@ export default async function handleUpdateSetting(req: Request, res: Response): 
     const { sectionPath, settingName, value } = req.body;
 
     if (!sectionPath || !settingName || value === undefined) {
-      logger.warn({
+      lgr.warn({
         code: Events.CORE.SETTINGS.UPDATE.PROCESS.VALIDATION_ERROR.code,
         message: 'Invalid update settings request',
         details: {
@@ -68,7 +68,7 @@ export default async function handleUpdateSetting(req: Request, res: Response): 
 
     // Return result
     if (result.success) {
-      logger.info({
+      lgr.info({
         code: Events.CORE.SETTINGS.UPDATE.PROCESS.SUCCESS.code,
         message: 'Setting update successful',
         details: {
@@ -80,7 +80,7 @@ export default async function handleUpdateSetting(req: Request, res: Response): 
       res.status(200).json(result);
     } else {
       // Failure, but not an exception
-      logger.warn({
+      lgr.warn({
         code: Events.CORE.SETTINGS.UPDATE.PROCESS.ERROR.code,
         message: 'Setting update failed',
         details: {
@@ -96,7 +96,7 @@ export default async function handleUpdateSetting(req: Request, res: Response): 
     // Handle exceptions
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     
-    logger.error({
+    lgr.error({
       code: Events.CORE.SETTINGS.UPDATE.PROCESS.ERROR.code,
       message: 'Exception during setting update',
       error,

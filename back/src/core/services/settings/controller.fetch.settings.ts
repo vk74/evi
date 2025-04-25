@@ -19,8 +19,8 @@ import {
   fetchSettingsBySection,
   fetchAllSettings
 } from './service.fetch.settings';
-import { createSystemLogger, Logger } from '../../../core/logger/logger.index';
-import { Events } from '../../../core/logger/codes';
+import { createSystemLgr, Lgr } from '../../../core/lgr/lgr.index';
+import { Events } from '../../../core/lgr/codes';
 
 // Get the pool from maindb
 const pool = pgPool as Pool;
@@ -34,8 +34,8 @@ interface AuthenticatedRequest extends Request {
   }
 }
 
-// Create logger for settings controller
-const logger: Logger = createSystemLogger({
+// Create lgr for settings controller
+const lgr: Lgr = createSystemLgr({
   module: 'SettingsController',
   fileName: 'controller.fetch.settings.ts'
 });
@@ -60,7 +60,7 @@ async function isUserAdmin(userId: string): Promise<boolean> {
         );
         
         if (!userResult.rows || userResult.rows.length === 0) {
-          logger.warn({
+          lgr.warn({
             code: Events.CORE.SETTINGS.API.FETCH.VALIDATION_ERROR.code,
             message: 'User not found',
             details: { userId }
@@ -70,7 +70,7 @@ async function isUserAdmin(userId: string): Promise<boolean> {
         
         userUuid = userResult.rows[0].user_id;
       } catch (error) {
-        logger.error({
+        lgr.error({
           code: Events.CORE.SETTINGS.API.FETCH.ERROR.code,
           message: 'Error getting user UUID by username',
           error,
@@ -94,7 +94,7 @@ async function isUserAdmin(userId: string): Promise<boolean> {
 
     // If group not found, user is not an admin
     if (!groupQuery.rows || groupQuery.rows.length === 0) {
-      logger.warn({
+      lgr.warn({
         code: Events.CORE.SETTINGS.API.FETCH.VALIDATION_ERROR.code,
         message: 'Administrators group not found in the system',
         details: { userId, userUuid }
@@ -118,7 +118,7 @@ async function isUserAdmin(userId: string): Promise<boolean> {
     // Безопасная проверка на существование строк в результате
     return memberQuery.rowCount !== null && memberQuery.rowCount > 0;
   } catch (error) {
-    logger.error({
+    lgr.error({
       code: Events.CORE.SETTINGS.API.FETCH.ERROR.code,
       message: 'Error checking administrator status',
       error,
@@ -149,7 +149,7 @@ async function getUsernameByUuid(userId: string): Promise<string | null> {
 
     return result.rows[0].username;
   } catch (error) {
-    logger.error({
+    lgr.error({
       code: Events.CORE.SETTINGS.API.FETCH.ERROR.code,
       message: 'Error fetching username by UUID',
       error,
@@ -176,7 +176,7 @@ async function fetchSettings(req: AuthenticatedRequest, res: Response): Promise<
     // const isAdmin = userId ? await isUserAdmin(userId) : false;
     const isAdmin = true; // Временное решение для отладки
 
-    logger.info({
+    lgr.info({
       code: Events.CORE.SETTINGS.API.FETCH.RECEIVED.code,
       message: 'Received settings fetch request',
       details: { 
@@ -191,7 +191,7 @@ async function fetchSettings(req: AuthenticatedRequest, res: Response): Promise<
 
     // Validate request
     if (!type) {
-      logger.warn({
+      lgr.warn({
         code: Events.CORE.SETTINGS.API.FETCH.VALIDATION_ERROR.code,
         message: 'Missing required parameter: type',
         details: { 
@@ -213,7 +213,7 @@ async function fetchSettings(req: AuthenticatedRequest, res: Response): Promise<
     const includeConfidential = isAdmin && params.includeConfidential === true;
     
     if (params.includeConfidential && !isAdmin) {
-      logger.warn({
+      lgr.warn({
         code: Events.CORE.SETTINGS.API.FETCH.VALIDATION_ERROR.code,
         message: 'User attempted to access confidential settings without administrator privileges',
         details: { 
@@ -228,7 +228,7 @@ async function fetchSettings(req: AuthenticatedRequest, res: Response): Promise<
 
     // Validate environment if provided
     if (environment && !Object.values(Environment).includes(environment)) {
-      logger.warn({
+      lgr.warn({
         code: Events.CORE.SETTINGS.API.FETCH.VALIDATION_ERROR.code,
         message: 'Invalid environment value',
         details: { 
@@ -252,7 +252,7 @@ async function fetchSettings(req: AuthenticatedRequest, res: Response): Promise<
       case 'byName': {
         // Validate required parameters
         if (!params.sectionPath || !params.settingName) {
-          logger.warn({
+          lgr.warn({
             code: Events.CORE.SETTINGS.API.FETCH.VALIDATION_ERROR.code,
             message: 'Missing required parameters for byName request',
             details: { 
@@ -288,7 +288,7 @@ async function fetchSettings(req: AuthenticatedRequest, res: Response): Promise<
       case 'bySection': {
         // Validate required parameters
         if (!params.sectionPath) {
-          logger.warn({
+          lgr.warn({
             code: Events.CORE.SETTINGS.API.FETCH.VALIDATION_ERROR.code,
             message: 'Missing required parameter for bySection request',
             details: { 
@@ -336,7 +336,7 @@ async function fetchSettings(req: AuthenticatedRequest, res: Response): Promise<
       }
 
       default: {
-        logger.warn({
+        lgr.warn({
           code: Events.CORE.SETTINGS.API.FETCH.VALIDATION_ERROR.code,
           message: 'Invalid fetch type',
           details: { 
@@ -354,7 +354,7 @@ async function fetchSettings(req: AuthenticatedRequest, res: Response): Promise<
       }
     }
 
-    logger.info({
+    lgr.info({
       code: Events.CORE.SETTINGS.API.FETCH.SUCCESS.code,
       message: 'Settings fetch request processed successfully',
       details: {
@@ -369,7 +369,7 @@ async function fetchSettings(req: AuthenticatedRequest, res: Response): Promise<
 
     res.status(200).json(result);
   } catch (error) {
-    logger.error({
+    lgr.error({
       code: Events.CORE.SETTINGS.API.FETCH.ERROR.code,
       message: 'Error processing settings fetch request',
       error,

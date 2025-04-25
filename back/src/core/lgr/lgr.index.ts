@@ -7,28 +7,28 @@ export type {
   LogLevel, 
   LogContext, 
   LogParams, 
-  Logger 
-} from './logger.types';
+  Lgr 
+} from './lgr.types';
 
 // Экспорт enum можно оставить без 'type'
-export { OperationType } from './logger.types';
+export { OperationType } from './lgr.types';
 
 // Экспорт функции создания логгеров
 export { 
-  createLogger,
-  createAppLogger,
-  createSystemLogger,
-  createSecurityLogger,
-  createAuditLogger,
-  createIntegrationLogger,
-  createPerformanceLogger
-} from './logger.factory';
+  createLgr,
+  createAppLgr,
+  createSystemLgr,
+  createSecurityLgr,
+  createAuditLgr,
+  createIntegrationLgr,
+  createPerformanceLgr
+} from './lgr.factory';
 
 // Экспорт справочника кодов событий
 export { Events, getEventDescription } from './codes';
 
 // Экспорт конфигурации
-export { getLoggerConfig, updateLoggerConfig } from './logger.config';
+export { getLgrConfig, updateLgrConfig } from './lgr.config';
 
 // Экспорт функций для работы с транспортами
-export { registerTransport } from './transports/logger.transports.index';
+export { registerTransport } from './transports/lgr.transports.index';

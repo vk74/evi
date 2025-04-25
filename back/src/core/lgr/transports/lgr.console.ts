@@ -1,8 +1,8 @@
 /**
  * Консольный транспорт для логгера
  */
-import { LogLevel, LogMessage, LogTransport, OperationType } from '../logger.types';
-import { getLoggerConfig } from '../logger.config';
+import { LogLevel, LogMessage, LogTransport, OperationType } from '../lgr.types';
+import { getLgrConfig } from '../lgr.config';
 
 /**
  * Цвета для разных уровней логирования
@@ -35,7 +35,7 @@ const OPERATION_TYPE_PREFIX = {
  */
 function formatConsoleMessage(message: LogMessage): string {
   const { timestamp, level, code, message: text, source, details, error } = message;
-  const config = getLoggerConfig();
+  const config = getLgrConfig();
   
   // Формат времени
   const time = config.timestampFormat === 'ISO' 

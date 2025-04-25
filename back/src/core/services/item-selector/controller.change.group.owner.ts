@@ -12,16 +12,16 @@
 import { Request, Response } from 'express';
 import { changeGroupOwner } from './service.change.group.owner';
 import { 
-  createAppLogger,
+  createAppLgr,
   Events 
-} from '../../../core/logger/logger.index';
+} from '../../../core/lgr/lgr.index';
 import type { 
   ChangeGroupOwnerRequest,
   ServiceError
 } from './types.item.selector';
 
-// Create logger for the controller
-const logger = createAppLogger({
+// Create lgr for the controller
+const lgr = createAppLgr({
   module: 'ItemSelectorController',
   fileName: 'controller.change.group.owner.ts'
 });
@@ -35,7 +35,7 @@ async function changeGroupOwnerController(req: Request & { user?: { uuid: string
   const requestData: ChangeGroupOwnerRequest = req.body;
   
   // Log request data for debugging
-  logger.info({
+  lgr.info({
     code: Events.CORE.ITEM_SELECTOR.GROUP_OWNER.REQUEST.RECEIVED.code,
     message: 'Received request to change group owner',
     details: {
@@ -49,7 +49,7 @@ async function changeGroupOwnerController(req: Request & { user?: { uuid: string
   if (!requestData.groupId || !requestData.newOwnerId) {
     const missingField = !requestData.groupId ? 'groupId' : 'newOwnerId';
     
-    logger.warn({
+    lgr.warn({
       code: Events.CORE.ITEM_SELECTOR.GROUP_OWNER.REQUEST.INVALID.code,
       message: 'Invalid request data for changing group owner',
       details: {
@@ -75,7 +75,7 @@ async function changeGroupOwnerController(req: Request & { user?: { uuid: string
     );
 
     // Log success and return result
-    logger.info({
+    lgr.info({
       code: Events.CORE.ITEM_SELECTOR.GROUP_OWNER.RESPONSE.SUCCESS.code,
       message: 'Successfully changed group owner',
       details: {
@@ -90,7 +90,7 @@ async function changeGroupOwnerController(req: Request & { user?: { uuid: string
     const error = err as ServiceError;
     
     // Log error with details
-    logger.error({
+    lgr.error({
       code: Events.CORE.ITEM_SELECTOR.GROUP_OWNER.RESPONSE.ERROR.code,
       message: 'Failed to change group owner',
       details: {
@@ -121,7 +121,7 @@ async function changeGroupOwnerController(req: Request & { user?: { uuid: string
 
       default:
         // Handle unexpected errors
-        logger.error({
+        lgr.error({
           code: Events.CORE.ITEM_SELECTOR.GROUP_OWNER.RESPONSE.INTERNAL_ERROR.code,
           message: 'Internal server error occurred while changing group owner',
           details: {

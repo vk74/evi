@@ -1,8 +1,8 @@
 /**
  * Elasticsearch транспорт для логгера
  */
-import { LogMessage, LogTransport } from '../logger.types';
-import { getLoggerConfig } from '../logger.config';
+import { LogMessage, LogTransport } from '../lgr.types';
+import { getLgrConfig } from '../lgr.config';
 
 /**
  * Преобразует сообщение логгера в формат ECS (Elastic Common Schema)
@@ -11,7 +11,7 @@ import { getLoggerConfig } from '../logger.config';
  */
 function formatElasticMessage(message: LogMessage): Record<string, any> {
   const { timestamp, level, code, message: text, source, details, error } = message;
-  const config = getLoggerConfig();
+  const config = getLgrConfig();
   
   // Создаем базовую структуру объекта
   const ecsLog: Record<string, any> = {
@@ -63,7 +63,7 @@ function formatElasticMessage(message: LogMessage): Record<string, any> {
  * @param logData Данные для отправки
  */
 async function sendToElastic(logData: Record<string, any>): Promise<void> {
-  const config = getLoggerConfig();
+  const config = getLgrConfig();
   
   if (!config.siem.endpoint) {
     console.error('Elasticsearch endpoint not configured');

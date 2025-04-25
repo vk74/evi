@@ -1,12 +1,12 @@
 /**
  * Конфигурация логгера
  */
-import { LogLevel } from './logger.types';
+import { LogLevel } from './lgr.types';
 
 /**
  * Конфигурация логгера по умолчанию
  */
-export const loggerConfig = {
+export const lgrConfig = {
   /** Уровень логирования по умолчанию */
   defaultLogLevel: LogLevel.INFO,
   
@@ -42,14 +42,14 @@ export const loggerConfig = {
  * Получение конфигурации логгера
  * @returns Текущая конфигурация
  */
-export function getLoggerConfig() {
-  return loggerConfig;
+export function getLgrConfig() {
+  return lgrConfig;
 }
 
 /**
  * Обновление конфигурации логгера
  * @param newConfig Новые настройки
  */
-export function updateLoggerConfig(newConfig: Partial<typeof loggerConfig>) {
-  Object.assign(loggerConfig, newConfig);
+export function updateLgrConfig(newConfig: Partial<typeof lgrConfig>) {
+  Object.assign(lgrConfig, newConfig);
 }

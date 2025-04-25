@@ -13,9 +13,9 @@ import { Pool } from 'pg';
 import { pool as pgPool } from '../../../db/maindb';
 import { queries } from './queries.item.selector';
 import { 
-  createAppLogger,
+  createAppLgr,
   Events 
-} from '../../../core/logger/logger.index';
+} from '../../../core/lgr/lgr.index';
 import type { 
   ChangeGroupOwnerResponse,
   ServiceError, 
@@ -38,8 +38,8 @@ interface UpdatedRow {
   group_id: string;
 }
 
-// Create logger for the service
-const logger = createAppLogger({
+// Create lgr for the service
+const lgr = createAppLgr({
   module: 'ItemSelectorService',
   fileName: 'service.change.group.owner.ts'
 });
@@ -52,7 +52,7 @@ const logger = createAppLogger({
  * @throws NotFoundError if group doesn't exist
  */
 async function validateGroupAndGetCurrentOwner(groupId: string, client: any): Promise<string> {
-  logger.debug({
+  lgr.debug({
     code: Events.CORE.ITEM_SELECTOR.GROUP_OWNER.VALIDATE.GROUP.code,
     message: 'Validating group existence and getting current owner',
     details: { groupId }
@@ -60,7 +60,7 @@ async function validateGroupAndGetCurrentOwner(groupId: string, client: any): Pr
 
   const result = await client.query(queries.checkGroupExists.text, [groupId]);
   if (result.rows.length === 0) {
-    logger.warn({
+    lgr.warn({
       code: Events.CORE.ITEM_SELECTOR.GROUP_OWNER.VALIDATE.GROUP_NOT_FOUND.code,
       message: 'Group not found during owner change operation',
       details: { groupId }
@@ -76,7 +76,7 @@ async function validateGroupAndGetCurrentOwner(groupId: string, client: any): Pr
   // Get the current owner
   const ownerResult = await client.query(queries.getCurrentGroupOwner.text, [groupId]);
   
-  logger.debug({
+  lgr.debug({
     code: Events.CORE.ITEM_SELECTOR.GROUP_OWNER.VALIDATE.SUCCESS.code,
     message: 'Successfully found group and current owner',
     details: { 
@@ -95,7 +95,7 @@ async function validateGroupAndGetCurrentOwner(groupId: string, client: any): Pr
  * @throws ValidationError if user doesn't exist
  */
 async function validateUserExists(userId: string, client: any): Promise<void> {
-  logger.debug({
+  lgr.debug({
     code: Events.CORE.ITEM_SELECTOR.GROUP_OWNER.VALIDATE.USER.code,
     message: 'Validating new owner existence',
     details: { userId }
@@ -103,7 +103,7 @@ async function validateUserExists(userId: string, client: any): Promise<void> {
   
   const result = await client.query(queries.checkUserExists.text, [userId]);
   if (result.rows.length === 0) {
-    logger.warn({
+    lgr.warn({
       code: Events.CORE.ITEM_SELECTOR.GROUP_OWNER.VALIDATE.USER_NOT_FOUND.code,
       message: 'New owner user not found',
       details: { userId }
@@ -116,7 +116,7 @@ async function validateUserExists(userId: string, client: any): Promise<void> {
     } as ValidationError;
   }
   
-  logger.debug({
+  lgr.debug({
     code: Events.CORE.ITEM_SELECTOR.GROUP_OWNER.VALIDATE.SUCCESS.code,
     message: 'Successfully validated new owner existence',
     details: { userId }
@@ -138,7 +138,7 @@ export async function changeGroupOwner(
   const client = await pool.connect();
   
   try {
-    logger.info({
+    lgr.info({
       code: Events.CORE.ITEM_SELECTOR.GROUP_OWNER.CHANGE.INITIATED.code,
       message: 'Starting process to change group owner',
       details: { 
@@ -152,7 +152,7 @@ export async function changeGroupOwner(
     if (!groupId || !newOwnerId || !changedBy) {
       const missingField = !groupId ? 'groupId' : !newOwnerId ? 'newOwnerId' : 'changedBy';
       
-      logger.warn({
+      lgr.warn({
         code: Events.CORE.ITEM_SELECTOR.GROUP_OWNER.VALIDATE.REQUIRED_FIELD.code,
         message: 'Missing required parameter for group owner change',
         details: { 
@@ -172,7 +172,7 @@ export async function changeGroupOwner(
 
     // Start transaction
     await client.query('BEGIN');
-    logger.debug({
+    lgr.debug({
       code: Events.CORE.ITEM_SELECTOR.GROUP_OWNER.DATABASE.TRANSACTION_START.code,
       message: 'Database transaction started for group owner change'
     });
@@ -187,7 +187,7 @@ export async function changeGroupOwner(
     if (currentOwnerId === newOwnerId) {
       await client.query('COMMIT');
       
-      logger.info({
+      lgr.info({
         code: Events.CORE.ITEM_SELECTOR.GROUP_OWNER.CHANGE.NO_CHANGE.code,
         message: 'New owner is the same as current owner, no update needed',
         details: { 
@@ -204,7 +204,7 @@ export async function changeGroupOwner(
     }
 
     // Update the group owner
-    logger.info({
+    lgr.info({
       code: Events.CORE.ITEM_SELECTOR.GROUP_OWNER.CHANGE.UPDATING.code,
       message: 'Updating group owner',
       details: { 
@@ -220,7 +220,7 @@ export async function changeGroupOwner(
     );
     
     if (!updateResult.rowCount || updateResult.rowCount === 0) {
-      logger.error({
+      lgr.error({
         code: Events.CORE.ITEM_SELECTOR.GROUP_OWNER.DATABASE.ERROR.code,
         message: 'Failed to update group owner - no rows were updated',
         details: { 
@@ -243,7 +243,7 @@ export async function changeGroupOwner(
       [groupId, changedBy]
     );
     
-    logger.debug({
+    lgr.debug({
       code: Events.CORE.ITEM_SELECTOR.GROUP_OWNER.DATABASE.SUCCESS.code,
       message: 'Successfully updated group details with modification info',
       details: { 
@@ -256,7 +256,7 @@ export async function changeGroupOwner(
     // Commit transaction
     await client.query('COMMIT');
     
-    logger.info({
+    lgr.info({
       code: Events.CORE.ITEM_SELECTOR.GROUP_OWNER.CHANGE.SUCCESS.code,
       message: 'Group owner successfully changed',
       details: { 
@@ -276,7 +276,7 @@ export async function changeGroupOwner(
     // Rollback transaction on error
     await client.query('ROLLBACK');
     
-    logger.error({
+    lgr.error({
       code: Events.CORE.ITEM_SELECTOR.GROUP_OWNER.CHANGE.ERROR.code,
       message: 'Failed to change group owner',
       details: { 
@@ -301,7 +301,7 @@ export async function changeGroupOwner(
   } finally {
     // Release client back to pool
     client.release();
-    logger.debug({
+    lgr.debug({
       code: Events.CORE.ITEM_SELECTOR.DATABASE.CLIENT_RELEASED.code,
       message: 'Database client released'
     });

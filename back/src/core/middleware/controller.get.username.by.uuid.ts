@@ -10,12 +10,12 @@
  */
 
 import { Request, Response, NextFunction } from 'express';
-import { createSystemLogger, Logger } from '../logger/logger.index';
-import { Events } from '../logger/codes';
+import { createSystemLgr, Lgr } from '../lgr/lgr.index';
+import { Events } from '../lgr/codes';
 import { fetchUsernameByUuid } from '../helpers/get.username.by.uuid';
 
 // Create logger for controller
-const logger: Logger = createSystemLogger({
+const logger: Lgr = createSystemLgr({
   module: 'UsernameByUuidController',
   fileName: 'controller.get.username.by.uuid.ts'
 });

@@ -89,7 +89,7 @@ export interface LogTransport {
 /**
  * Опции при создании логгера
  */
-export interface LoggerOptions {
+export interface LgrOptions {
   /** Минимальный уровень логирования (сообщения с уровнем ниже не будут обрабатываться) */
   minLevel?: LogLevel;
   /** Список используемых транспортов */
@@ -99,7 +99,7 @@ export interface LoggerOptions {
 /**
  * Интерфейс экземпляра логгера
  */
-export interface Logger {
+export interface Lgr {
   /** Логирование отладочной информации */
   debug: (params: LogParams) => void;
   /** Логирование информационных сообщений */
@@ -111,7 +111,7 @@ export interface Logger {
   /** Логирование критических ошибок */
   fatal: (params: LogParams) => void;
   /** Создание нового логгера с расширенным контекстом */
-  withContext: (additionalContext: Partial<LogContext>) => Logger;
+  withContext: (additionalContext: Partial<LogContext>) => Lgr;
 }
 
 /**

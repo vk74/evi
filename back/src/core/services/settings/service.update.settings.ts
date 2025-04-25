@@ -8,16 +8,16 @@ import { Pool, QueryResult, PoolClient } from 'pg';
 import { pool as pgPool } from '../../../db/maindb';
 import { queries } from './queries.settings';
 import { AppSetting, Environment, SettingsError, UpdateSettingRequest, UpdateSettingResponse } from './types.settings';
-import { createSystemLogger, Logger } from '../../../core/logger/logger.index';
-import { Events } from '../../../core/logger/codes';
+import { createSystemLgr, Lgr } from '../../../core/lgr/lgr.index';
+import { Events } from '../../../core/lgr/codes';
 import { getSetting, hasSetting, updateCachedSetting } from './cache.settings';
 import { validateOrThrow } from './service.validate.settings';
 
 // Type assertion for pool
 const pool = pgPool as Pool;
 
-// Create logger for settings service
-const logger: Logger = createSystemLogger({
+// Create lgr for settings service
+const lgr: Lgr = createSystemLgr({
   module: 'SettingsUpdateService',
   fileName: 'service.update.settings.ts'
 });
@@ -34,7 +34,7 @@ export async function updateSetting(request: UpdateSettingRequest): Promise<Upda
 
   try {
     // Log update request
-    logger.info({
+    lgr.info({
       code: Events.CORE.SETTINGS.UPDATE.START.INITIATED.code,
       message: 'Setting update requested',
       details: {
@@ -49,7 +49,7 @@ export async function updateSetting(request: UpdateSettingRequest): Promise<Upda
 
     // If not in cache, we need to fetch it from database
     if (!setting) {
-      logger.debug({
+      lgr.debug({
         code: Events.CORE.SETTINGS.UPDATE.PROCESS.CACHE_MISS.code,
         message: 'Setting not found in cache, attempting to fetch from database',
         details: { sectionPath, settingName }
@@ -60,7 +60,7 @@ export async function updateSetting(request: UpdateSettingRequest): Promise<Upda
       
       if (!result.rows || result.rows.length === 0) {
         const errorMessage = `Setting not found: ${sectionPath}/${settingName}`;
-        logger.error({
+        lgr.error({
           code: Events.CORE.SETTINGS.UPDATE.PROCESS.ERROR.code,
           message: errorMessage,
           details: { sectionPath, settingName }
@@ -86,7 +86,7 @@ export async function updateSetting(request: UpdateSettingRequest): Promise<Upda
     // But let's add an additional check to satisfy TypeScript
     if (!setting) {
       const errorMessage = `Unable to retrieve setting: ${sectionPath}/${settingName}`;
-      logger.error({
+      lgr.error({
         code: Events.CORE.SETTINGS.UPDATE.PROCESS.ERROR.code,
         message: errorMessage,
         details: { sectionPath, settingName }
@@ -115,7 +115,7 @@ export async function updateSetting(request: UpdateSettingRequest): Promise<Upda
       await client.query('ROLLBACK');
       
       const errorMessage = `Failed to update setting: ${sectionPath}/${settingName}`;
-      logger.error({
+      lgr.error({
         code: Events.CORE.SETTINGS.UPDATE.PROCESS.ERROR.code,
         message: errorMessage,
         details: { sectionPath, settingName }
@@ -142,7 +142,7 @@ export async function updateSetting(request: UpdateSettingRequest): Promise<Upda
     // Update cache
     updateCachedSetting(updatedSetting);
     
-    logger.info({
+    lgr.info({
       code: Events.CORE.SETTINGS.UPDATE.PROCESS.SUCCESS.code,
       message: 'Setting updated successfully',
       details: {
@@ -160,7 +160,7 @@ export async function updateSetting(request: UpdateSettingRequest): Promise<Upda
     // Rollback transaction if active
     if (client) {
       await client.query('ROLLBACK').catch(err => {
-        logger.error({
+        lgr.error({
           code: Events.CORE.SETTINGS.UPDATE.PROCESS.ERROR.code,
           message: 'Error during transaction rollback',
           error: err,
@@ -173,7 +173,7 @@ export async function updateSetting(request: UpdateSettingRequest): Promise<Upda
 
     // Log error with details
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-    logger.error({
+    lgr.error({
       code: Events.CORE.SETTINGS.UPDATE.PROCESS.ERROR.code,
       message: 'Error updating setting',
       error,

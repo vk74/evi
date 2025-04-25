@@ -5,11 +5,11 @@
 
 import { AppSetting, SettingsError } from './types.settings';
 import Ajv, { ErrorObject } from 'ajv';
-import { createSystemLogger, Logger } from '../../../core/logger/logger.index';
-import { Events } from '../../../core/logger/codes';
+import { createSystemLgr, Lgr } from '../../../core/lgr/lgr.index';
+import { Events } from '../../../core/lgr/codes';
 
-// Create logger for validation service
-const logger: Logger = createSystemLogger({
+// Create lgr for validation service
+const lgr: Lgr = createSystemLgr({
   module: 'SettingsValidationService',
   fileName: 'service.validate.settings.ts'
 });
@@ -31,7 +31,7 @@ export function validateSettingValue(setting: AppSetting, value: any): { isValid
   try {
     // If no validation schema provided, consider valid
     if (!setting.validation_schema) {
-      logger.debug({
+      lgr.debug({
         code: Events.CORE.SETTINGS.VALIDATE.PROCESS.SKIP.code,
         message: 'No validation schema defined for setting, skipping validation',
         details: {
@@ -42,7 +42,7 @@ export function validateSettingValue(setting: AppSetting, value: any): { isValid
       return { isValid: true };
     }
 
-    logger.debug({
+    lgr.debug({
       code: Events.CORE.SETTINGS.VALIDATE.PROCESS.START.code,
       message: 'Validating setting value against schema',
       details: {
@@ -67,7 +67,7 @@ export function validateSettingValue(setting: AppSetting, value: any): { isValid
         return `${path} ${error.message || 'Invalid value'}`;
       });
 
-      logger.warn({
+      lgr.warn({
         code: Events.CORE.SETTINGS.VALIDATE.PROCESS.ERROR.code,
         message: 'Setting value failed validation',
         details: {
@@ -80,7 +80,7 @@ export function validateSettingValue(setting: AppSetting, value: any): { isValid
       return { isValid: false, errors };
     }
 
-    logger.debug({
+    lgr.debug({
       code: Events.CORE.SETTINGS.VALIDATE.PROCESS.SUCCESS.code,
       message: 'Setting value passed validation',
       details: {
@@ -94,7 +94,7 @@ export function validateSettingValue(setting: AppSetting, value: any): { isValid
     // Handle validation errors
     const errorMessage = error instanceof Error ? error.message : String(error);
     
-    logger.error({
+    lgr.error({
       code: Events.CORE.SETTINGS.VALIDATE.PROCESS.ERROR.code,
       message: 'Error during setting validation',
       error,

@@ -10,12 +10,12 @@ import type {
   ServiceErrorType
 } from './types.group.editor';
 import { 
-  createAppLogger,
+  createAppLgr,
   Events 
-} from '../../../../core/logger/logger.index';
+} from '../../../../core/lgr/lgr.index';
 
 // Создаем экземпляр логгера для контроллера групп
-const logger = createAppLogger({
+const lgr = createAppLgr({
   module: 'AdminGroupController',
   fileName: 'controller.create.group.ts'
 });
@@ -25,7 +25,7 @@ async function createGroupController(req: Request & { user?: { username: string 
   
   try {
     // Логируем получение запроса
-    logger.info({
+    lgr.info({
       code: Events.ADMIN.USERS.CREATION.REQUEST.RECEIVED.code,
       message: `Received request to create new group: ${groupData.group_name}`,
       details: {
@@ -39,7 +39,7 @@ async function createGroupController(req: Request & { user?: { username: string 
     const result = await createGroup(groupData, { username: req.user?.username || '' });
 
     // Логируем успешное создание
-    logger.info({
+    lgr.info({
       code: Events.ADMIN.USERS.CREATION.CREATE.SUCCESS.code,
       message: `Successfully created group: ${result.group_name}`,
       details: {
@@ -55,7 +55,7 @@ async function createGroupController(req: Request & { user?: { username: string 
     const error = err as ServiceErrorType;
     
     // Логируем ошибку создания
-    logger.error({
+    lgr.error({
       code: Events.ADMIN.USERS.CREATION.CREATE.ERROR.code,
       message: `Failed to create group: ${error.message}`,
       details: {

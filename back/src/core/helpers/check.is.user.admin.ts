@@ -12,16 +12,16 @@
 
 import { Pool, QueryResult } from 'pg';
 import { pool as pgPool } from '../../db/maindb';
-import { createSystemLogger, Logger } from '../logger/logger.index';
-import { Events } from '../logger/codes';
+import { createSystemLgr, Lgr } from '../lgr/lgr.index';
+import { Events } from '../lgr/codes';
 import { getUuidByGroupName } from './get.uuid.by.group.name';
 import { get, set, CacheKeys } from './cache.helpers';
 
 // Type assertion for pool
 const pool = pgPool as Pool;
 
-// Create logger for helper
-const logger: Logger = createSystemLogger({
+// Create lgr for helper
+const lgr: Lgr = createSystemLgr({
   module: 'UserAdminCheckHelper',
   fileName: 'check.is.user.admin.ts'
 });
@@ -41,7 +41,7 @@ interface AdminCheckError {
  */
 export async function checkIsUserAdmin(userId: string): Promise<boolean> {
   try {
-    logger.info({
+    lgr.info({
       code: Events.CORE.HELPERS.CHECK_IS_USER_ADMIN.PROCESS.START.code,
       message: `Checking if user ${userId} is an administrator`,
       details: { userId }
@@ -52,7 +52,7 @@ export async function checkIsUserAdmin(userId: string): Promise<boolean> {
     const cachedResult = get<boolean>(cacheKey);
     
     if (cachedResult !== undefined) {
-      logger.debug({
+      lgr.debug({
         code: Events.CORE.HELPERS.CHECK_IS_USER_ADMIN.PROCESS.SUCCESS.code,
         message: `Retrieved admin status for user ${userId} from cache`,
         details: { userId, isAdmin: cachedResult, source: 'cache' }
@@ -66,7 +66,7 @@ export async function checkIsUserAdmin(userId: string): Promise<boolean> {
 
     // If administrators group not found
     if (!groupId) {
-      logger.warn({
+      lgr.warn({
         code: Events.CORE.HELPERS.CHECK_IS_USER_ADMIN.PROCESS.GROUP_NOT_FOUND.code,
         message: 'Administrators group not found in the system',
         details: { administratorsGroupName }
@@ -99,20 +99,20 @@ export async function checkIsUserAdmin(userId: string): Promise<boolean> {
     set(cacheKey, isAdmin);
     
     if (isAdmin) {
-      logger.info({
+      lgr.info({
         code: Events.CORE.HELPERS.CHECK_IS_USER_ADMIN.PROCESS.USER_IS_ADMIN.code,
         message: `User ${userId} is an administrator`,
         details: { userId, groupId }
       });
     } else {
-      logger.info({
+      lgr.info({
         code: Events.CORE.HELPERS.CHECK_IS_USER_ADMIN.PROCESS.USER_NOT_ADMIN.code,
         message: `User ${userId} is not an administrator`,
         details: { userId, groupId }
       });
     }
     
-    logger.info({
+    lgr.info({
       code: Events.CORE.HELPERS.CHECK_IS_USER_ADMIN.PROCESS.SUCCESS.code,
       message: `Completed admin status check for user ${userId}`,
       details: { userId, isAdmin, source: 'database' }
@@ -120,7 +120,7 @@ export async function checkIsUserAdmin(userId: string): Promise<boolean> {
 
     return isAdmin;
   } catch (error) {
-    logger.error({
+    lgr.error({
       code: Events.CORE.HELPERS.CHECK_IS_USER_ADMIN.PROCESS.ERROR.code,
       message: `Error checking admin status for user: ${userId}`,
       error,

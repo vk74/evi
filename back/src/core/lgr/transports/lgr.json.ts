@@ -1,7 +1,7 @@
 /**
  * JSON транспорт для логгера
  */
-import { LogMessage, LogTransport } from '../logger.types';
+import { LogMessage, LogTransport } from '../lgr.types';
 
 /**
  * Преобразует сообщение логгера в JSON формат

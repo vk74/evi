@@ -11,15 +11,15 @@
 
 import { Pool, QueryResult } from 'pg';
 import { pool as pgPool } from '../../db/maindb';
-import { createSystemLogger, Logger } from '../logger/logger.index';
-import { Events } from '../logger/codes';
+import { createSystemLgr, Lgr } from '../lgr/lgr.index';
+import { Events } from '../lgr/codes';
 import { get, set, CacheKeys } from './cache.helpers';
 
 // Type assertion for pool
 const pool = pgPool as Pool;
 
-// Create logger for helper
-const logger: Logger = createSystemLogger({
+// Create lgr for helper
+const lgr: Lgr = createSystemLgr({
   module: 'UsernameByUuidHelper',
   fileName: 'get.username.by.uuid.ts'
 });
@@ -39,7 +39,7 @@ interface GetUsernameError {
  */
 export async function fetchUsernameByUuid(uuid: string): Promise<string | null> {
   try {
-    logger.info({
+    lgr.info({
       code: Events.CORE.HELPERS.GET_USERNAME_BY_UUID.PROCESS.START.code,
       message: `Fetching username for user: ${uuid}`,
       details: { uuid }
@@ -50,7 +50,7 @@ export async function fetchUsernameByUuid(uuid: string): Promise<string | null> 
     const cachedUsername = get<string | null>(cacheKey);
     
     if (cachedUsername !== undefined) {
-      logger.debug({
+      lgr.debug({
         code: Events.CORE.HELPERS.GET_USERNAME_BY_UUID.PROCESS.SUCCESS.code,
         message: `Retrieved username for user ${uuid} from cache`,
         details: { uuid, username: cachedUsername, source: 'cache' }
@@ -67,7 +67,7 @@ export async function fetchUsernameByUuid(uuid: string): Promise<string | null> 
     const result: QueryResult = await pool.query(query);
     
     if (!result.rows || result.rows.length === 0) {
-      logger.warn({
+      lgr.warn({
         code: Events.CORE.HELPERS.GET_USERNAME_BY_UUID.PROCESS.NOT_FOUND.code,
         message: `User not found with UUID: ${uuid}`,
         details: { uuid }
@@ -83,7 +83,7 @@ export async function fetchUsernameByUuid(uuid: string): Promise<string | null> 
     // Cache the result
     set(cacheKey, username);
     
-    logger.info({
+    lgr.info({
       code: Events.CORE.HELPERS.GET_USERNAME_BY_UUID.PROCESS.SUCCESS.code,
       message: `Retrieved username [${username}] for UUID: ${uuid}`,
       details: { uuid, username, source: 'database' }
@@ -91,7 +91,7 @@ export async function fetchUsernameByUuid(uuid: string): Promise<string | null> 
 
     return username;
   } catch (error) {
-    logger.error({
+    lgr.error({
       code: Events.CORE.HELPERS.GET_USERNAME_BY_UUID.PROCESS.ERROR.code,
       message: `Error fetching username for user: ${uuid}`,
       error,

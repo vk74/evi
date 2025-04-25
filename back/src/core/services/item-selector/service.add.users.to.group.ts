@@ -20,8 +20,8 @@ import type {
 } from './types.item.selector';
 import { getUserAccountStatus } from '../../helpers/get.user.account.status';
 import { getSetting, parseSettingValue } from '../settings/cache.settings';
-import { createSystemLogger, Logger } from '../../logger/logger.index';
-import { Events } from '../../logger/codes';
+import { createSystemLgr, Lgr } from '../../lgr/lgr.index';
+import { Events } from '../../lgr/codes';
 
 const pool = pgPool as Pool;
 
@@ -30,8 +30,8 @@ interface UserIdRow {
   user_id: string;
 }
 
-// Create logger for service
-const logger: Logger = createSystemLogger({
+// Create lgr for service
+const lgr: Lgr = createSystemLgr({
   module: 'AddUsersToGroupService',
   fileName: 'service.add.users.to.group.ts'
 });
@@ -43,7 +43,7 @@ const logger: Logger = createSystemLogger({
  * @throws NotFoundError if group doesn't exist
  */
 async function validateGroupExists(groupId: string, client: any): Promise<void> {
-  logger.info({
+  lgr.info({
     code: Events.CORE.ITEM_SELECTOR.ADD_USERS.VALIDATE.SUCCESS.code,
     message: 'Validating group existence',
     details: { groupId }
@@ -51,7 +51,7 @@ async function validateGroupExists(groupId: string, client: any): Promise<void> 
 
   const result = await client.query(queries.checkGroupExists.text, [groupId]);
   if (result.rows.length === 0) {
-    logger.error({
+    lgr.error({
       code: Events.CORE.ITEM_SELECTOR.ADD_USERS.VALIDATE.GROUP_NOT_FOUND.code,
       message: 'Group not found during validation',
       details: { groupId }
@@ -73,7 +73,7 @@ async function validateGroupExists(groupId: string, client: any): Promise<void> 
  * @throws ValidationError if no valid users found
  */
 async function validateUsersExist(userIds: string[], client: any): Promise<string[]> {
-  logger.info({
+  lgr.info({
     code: Events.CORE.ITEM_SELECTOR.ADD_USERS.VALIDATE.SUCCESS.code,
     message: 'Validating user existence',
     details: { userCount: userIds.length }
@@ -82,7 +82,7 @@ async function validateUsersExist(userIds: string[], client: any): Promise<strin
   const result = await client.query(queries.checkUsersExist.text, [userIds]);
   const validUserIds = result.rows.map((row: UserIdRow) => row.user_id);
   
-  logger.info({
+  lgr.info({
     code: Events.CORE.ITEM_SELECTOR.ADD_USERS.VALIDATE.SUCCESS.code,
     message: 'Users validation complete',
     details: { 
@@ -92,7 +92,7 @@ async function validateUsersExist(userIds: string[], client: any): Promise<strin
   });
 
   if (validUserIds.length === 0) {
-    logger.error({
+    lgr.error({
       code: Events.CORE.ITEM_SELECTOR.ADD_USERS.VALIDATE.USERS_NOT_FOUND.code,
       message: 'No valid users found during validation',
       details: { 
@@ -118,7 +118,7 @@ async function validateUsersExist(userIds: string[], client: any): Promise<strin
  * @returns Array of user IDs not already in the group
  */
 async function filterExistingMembers(groupId: string, userIds: string[], client: any): Promise<string[]> {
-  logger.info({
+  lgr.info({
     code: Events.CORE.ITEM_SELECTOR.ADD_USERS.PROCESS.INITIATED.code,
     message: 'Checking for existing group members',
     details: { 
@@ -132,7 +132,7 @@ async function filterExistingMembers(groupId: string, userIds: string[], client:
   
   const newUserIds = userIds.filter(id => !existingUserIds.includes(id));
   
-  logger.info({
+  lgr.info({
     code: Events.CORE.ITEM_SELECTOR.ADD_USERS.PROCESS.SUCCESS.code,
     message: 'Filtered existing members',
     details: { 
@@ -150,7 +150,7 @@ async function filterExistingMembers(groupId: string, userIds: string[], client:
  * @returns Boolean indicating if user can be added to group
  */
 async function validateUserAccountStatus(userId: string): Promise<boolean> {
-  logger.info({
+  lgr.info({
     code: Events.CORE.ITEM_SELECTOR.ADD_USERS.VALIDATE.ACCOUNT_STATUS_START.code,
     message: 'Validating user account status',
     details: { userId }
@@ -161,7 +161,7 @@ async function validateUserAccountStatus(userId: string): Promise<boolean> {
     const accountStatus = await getUserAccountStatus(userId);
     
     if (!accountStatus) {
-      logger.warn({
+      lgr.warn({
         code: Events.CORE.ITEM_SELECTOR.ADD_USERS.VALIDATE.ACCOUNT_NOT_FOUND.code,
         message: 'User not found for account status check',
         details: { userId }
@@ -171,7 +171,7 @@ async function validateUserAccountStatus(userId: string): Promise<boolean> {
     
     // If user is active, allow adding to group
     if (accountStatus === 'active') {
-      logger.info({
+      lgr.info({
         code: Events.CORE.ITEM_SELECTOR.ADD_USERS.VALIDATE.ACCOUNT_STATUS_ACTIVE.code,
         message: 'User has active account status',
         details: { userId, accountStatus }
@@ -180,14 +180,14 @@ async function validateUserAccountStatus(userId: string): Promise<boolean> {
     }
     
     // For non-active users, check application settings
-    logger.info({
+    lgr.info({
       code: Events.CORE.ITEM_SELECTOR.ADD_USERS.VALIDATE.ACCOUNT_STATUS_INACTIVE.code,
       message: 'User has non-active account status',
       details: { userId, accountStatus }
     });
     
     // Get setting from the correct cache - default to true for safety
-    logger.info({
+    lgr.info({
       code: Events.CORE.ITEM_SELECTOR.ADD_USERS.VALIDATE.ACCOUNT_STATUS_CHECK_SETTINGS.code,
       message: 'Checking application settings for non-active users',
       details: { userId }
@@ -204,7 +204,7 @@ async function validateUserAccountStatus(userId: string): Promise<boolean> {
       onlyAddActiveUsers = parseSettingValue(setting) === true;
     }
     
-    logger.info({
+    lgr.info({
       code: Events.CORE.ITEM_SELECTOR.ADD_USERS.VALIDATE.ACCOUNT_STATUS_CHECK_SETTINGS.code,
       message: 'Checked settings for adding non-active users',
       details: { 
@@ -215,7 +215,7 @@ async function validateUserAccountStatus(userId: string): Promise<boolean> {
     
     // If setting is true, only active users can be added to groups
     if (onlyAddActiveUsers) {
-      logger.info({
+      lgr.info({
         code: Events.CORE.ITEM_SELECTOR.ADD_USERS.VALIDATE.ACCOUNT_STATUS_INACTIVE.code,
         message: 'Cannot add non-active user to group due to settings',
         details: { 
@@ -227,14 +227,14 @@ async function validateUserAccountStatus(userId: string): Promise<boolean> {
     }
     
     // If setting is false, allow adding non-active users
-    logger.info({
+    lgr.info({
       code: Events.CORE.ITEM_SELECTOR.ADD_USERS.VALIDATE.SUCCESS.code,
       message: 'Non-active user allowed by settings',
       details: { userId, accountStatus }
     });
     return true;
   } catch (error) {
-    logger.error({
+    lgr.error({
       code: Events.CORE.ITEM_SELECTOR.ADD_USERS.VALIDATE.ACCOUNT_STATUS_ERROR.code,
       message: 'Error validating user account status',
       error,
@@ -262,7 +262,7 @@ export async function addUsersToGroup(
   const client = await pool.connect();
   
   try {
-    logger.info({
+    lgr.info({
       code: Events.CORE.ITEM_SELECTOR.ADD_USERS.PROCESS.INITIATED.code,
       message: 'Starting process to add users to group',
       details: { 
@@ -274,7 +274,7 @@ export async function addUsersToGroup(
 
     // Validate inputs
     if (!groupId || !userIds || userIds.length === 0 || !addedBy) {
-      logger.error({
+      lgr.error({
         code: Events.CORE.ITEM_SELECTOR.ADD_USERS.REQUEST.INVALID.code,
         message: 'Missing required parameters',
         details: { 
@@ -293,7 +293,7 @@ export async function addUsersToGroup(
 
     // Start transaction
     await client.query('BEGIN');
-    logger.info({
+    lgr.info({
       code: Events.CORE.ITEM_SELECTOR.ADD_USERS.PROCESS.INITIATED.code,
       message: 'Database transaction started'
     });
@@ -310,7 +310,7 @@ export async function addUsersToGroup(
     // If no new users to add after filtering
     if (newUserIds.length === 0) {
       await client.query('COMMIT');
-      logger.info({
+      lgr.info({
         code: Events.CORE.ITEM_SELECTOR.ADD_USERS.PROCESS.SUCCESS.code,
         message: 'No new users to add, all are already members',
         details: { groupId }
@@ -324,7 +324,7 @@ export async function addUsersToGroup(
     }
 
     // Validate account status for each user and filter out those that don't meet requirements
-    logger.info({
+    lgr.info({
       code: Events.CORE.ITEM_SELECTOR.ADD_USERS.VALIDATE.ACCOUNT_STATUS_START.code,
       message: 'Validating account status for users',
       details: { count: newUserIds.length }
@@ -336,7 +336,7 @@ export async function addUsersToGroup(
       if (isEligible) {
         eligibleUserIds.push(userId);
       } else {
-        logger.info({
+        lgr.info({
           code: Events.CORE.ITEM_SELECTOR.ADD_USERS.VALIDATE.ACCOUNT_STATUS_INACTIVE.code,
           message: 'User excluded due to account status',
           details: { userId }
@@ -346,7 +346,7 @@ export async function addUsersToGroup(
     
     if (eligibleUserIds.length === 0) {
       await client.query('COMMIT');
-      logger.info({
+      lgr.info({
         code: Events.CORE.ITEM_SELECTOR.ADD_USERS.PROCESS.SUCCESS.code,
         message: 'No eligible users to add after account status check',
         details: { 
@@ -365,7 +365,7 @@ export async function addUsersToGroup(
     // Add eligible users to group
     const addedUsers = [];
     
-    logger.info({
+    lgr.info({
       code: Events.CORE.ITEM_SELECTOR.ADD_USERS.PROCESS.INITIATED.code,
       message: 'Adding eligible users to group',
       details: { 
@@ -388,7 +388,7 @@ export async function addUsersToGroup(
     // Commit transaction
     await client.query('COMMIT');
     
-    logger.info({
+    lgr.info({
       code: Events.CORE.ITEM_SELECTOR.ADD_USERS.PROCESS.SUCCESS.code,
       message: 'Users successfully added to group',
       details: { 
@@ -415,7 +415,7 @@ export async function addUsersToGroup(
   } catch (error) {
     // Rollback transaction on error
     await client.query('ROLLBACK');
-    logger.error({
+    lgr.error({
       code: Events.CORE.ITEM_SELECTOR.ADD_USERS.PROCESS.ERROR.code,
       message: 'Failed to add users to group',
       error,
@@ -440,7 +440,7 @@ export async function addUsersToGroup(
   } finally {
     // Release client back to pool
     client.release();
-    logger.info({
+    lgr.info({
       code: Events.CORE.ITEM_SELECTOR.DATABASE.CLIENT_RELEASED.code,
       message: 'Database client released'
     });

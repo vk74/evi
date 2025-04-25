@@ -10,11 +10,11 @@
  * - Tracks and logs cache statistics
  */
 
-import { createSystemLogger, Logger } from '../logger/logger.index';
-import { Events } from '../logger/codes';
+import { createSystemLgr, Lgr } from '../lgr/lgr.index';
+import { Events } from '../lgr/codes';
 
-// Create logger for cache
-const logger: Logger = createSystemLogger({
+// Create lgr for cache
+const lgr: Lgr = createSystemLgr({
   module: 'HelpersCacheService',
   fileName: 'cache.helpers.ts'
 });
@@ -73,7 +73,7 @@ const cacheStats: Record<string, CacheStats> = {
 
 // Initialize the cache and start periodic stats logging
 function initCache(): void {
-  logger.info({
+  lgr.info({
     code: Events.CORE.HELPERS.CACHE.INIT.SUCCESS.code,
     message: 'Helper cache initialized successfully',
     details: {
@@ -115,7 +115,7 @@ export function get<T>(key: string): T | undefined {
   const parsedKey = parseKey(key);
   
   if (!parsedKey) {
-    logger.debug({
+    lgr.debug({
       code: Events.CORE.HELPERS.CACHE.GET.INVALID_KEY.code,
       message: `Invalid cache key format: ${key}`,
       details: { key }
@@ -130,7 +130,7 @@ export function get<T>(key: string): T | undefined {
   // If entry doesn't exist
   if (!entry) {
     cacheStats[type].misses++;
-    logger.debug({
+    lgr.debug({
       code: Events.CORE.HELPERS.CACHE.GET.MISS.code,
       message: `Cache miss for key: ${key}`,
       details: { key, type, id }
@@ -146,7 +146,7 @@ export function get<T>(key: string): T | undefined {
     cacheStats[type].misses++;
     cacheStats[type].size--;
     
-    logger.debug({
+    lgr.debug({
       code: Events.CORE.HELPERS.CACHE.GET.EXPIRED.code,
       message: `Cache entry expired for key: ${key}`,
       details: { key, type, id, expiredAt: new Date(entry.expiry) }
@@ -158,7 +158,7 @@ export function get<T>(key: string): T | undefined {
   entry.lastAccessed = now;
   cacheStats[type].hits++;
   
-  logger.debug({
+  lgr.debug({
     code: Events.CORE.HELPERS.CACHE.GET.HIT.code,
     message: `Cache hit for key: ${key}`,
     details: { key, type, id }
@@ -176,7 +176,7 @@ export function set<T>(key: string, value: T): void {
   const parsedKey = parseKey(key);
   
   if (!parsedKey) {
-    logger.debug({
+    lgr.debug({
       code: Events.CORE.HELPERS.CACHE.SET.INVALID_KEY.code,
       message: `Invalid cache key format: ${key}`,
       details: { key, value }
@@ -207,7 +207,7 @@ export function set<T>(key: string, value: T): void {
       cache.delete(oldestKey);
       cacheStats[type].size--;
       
-      logger.debug({
+      lgr.debug({
         code: Events.CORE.HELPERS.CACHE.SET.EVICT.code,
         message: `Evicted LRU cache entry: ${type}${oldestKey}`,
         details: { type, key: oldestKey, lastAccessed: new Date(oldestTime) }
@@ -229,7 +229,7 @@ export function set<T>(key: string, value: T): void {
     cacheStats[type].size++;
   }
   
-  logger.debug({
+  lgr.debug({
     code: Events.CORE.HELPERS.CACHE.SET.SUCCESS.code,
     message: `Cache ${isUpdate ? 'updated' : 'set'} for key: ${key}`,
     details: {
@@ -250,7 +250,7 @@ export function del(key: string): void {
   const parsedKey = parseKey(key);
   
   if (!parsedKey) {
-    logger.debug({
+    lgr.debug({
       code: Events.CORE.HELPERS.CACHE.DELETE.INVALID_KEY.code,
       message: `Invalid cache key format: ${key}`,
       details: { key }
@@ -264,13 +264,13 @@ export function del(key: string): void {
   if (cache.delete(id)) {
     cacheStats[type].size--;
     
-    logger.debug({
+    lgr.debug({
       code: Events.CORE.HELPERS.CACHE.DELETE.SUCCESS.code,
       message: `Cache entry deleted for key: ${key}`,
       details: { key, type, id }
     });
   } else {
-    logger.debug({
+    lgr.debug({
       code: Events.CORE.HELPERS.CACHE.DELETE.NOT_FOUND.code,
       message: `Cache entry not found for deletion: ${key}`,
       details: { key, type, id }
@@ -284,7 +284,7 @@ export function del(key: string): void {
  */
 export function clearByType(type: string): void {
   if (!cacheStorage[type]) {
-    logger.warn({
+    lgr.warn({
       code: Events.CORE.HELPERS.CACHE.CLEAR.TYPE_NOT_FOUND.code,
       message: `Cache type not found for clearing: ${type}`,
       details: { type }
@@ -298,7 +298,7 @@ export function clearByType(type: string): void {
   cache.clear();
   cacheStats[type] = { hits: 0, misses: 0, size: 0 };
   
-  logger.info({
+  lgr.info({
     code: Events.CORE.HELPERS.CACHE.CLEAR.TYPE.code,
     message: `Cleared all cache entries for type: ${type}`,
     details: { type, entriesCount }
@@ -313,7 +313,7 @@ export function clearAll(): void {
     clearByType(type);
   }
   
-  logger.info({
+  lgr.info({
     code: Events.CORE.HELPERS.CACHE.CLEAR.ALL.code,
     message: 'Cleared all cache entries from all types'
   });
@@ -340,7 +340,7 @@ function logStats(): void {
     };
   }
   
-  logger.debug({
+  lgr.debug({
     code: Events.CORE.HELPERS.CACHE.STATS.REPORT.code,
     message: 'Cache statistics report',
     details: { stats }

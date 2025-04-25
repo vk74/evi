@@ -17,8 +17,8 @@ import { UserError } from './types.users.list';
 // Explicitly set the type for pool
 const pool = pgPool as Pool;
 
-// Logger for main operations
-const logger = {
+// lgr for main operations
+const lgr = {
   info: (message: string, meta?: object) => console.log(`[UserDeleteService] ${message}`, meta || ''),
   error: (message: string, error?: unknown) => console.error(`[UserDeleteService] ${message}`, error || '')
 };
@@ -35,11 +35,11 @@ export const usersDeleteService = {
   async deleteSelectedUsers(userIds: string[]): Promise<number> {
     try {
       if (!Array.isArray(userIds) || userIds.length === 0) {
-        logger.info('No valid user IDs provided for deletion');
+        lgr.info('No valid user IDs provided for deletion');
         return 0;
       }
       
-      logger.info('Deleting selected users', { count: userIds.length });
+      lgr.info('Deleting selected users', { count: userIds.length });
       
       const result = await pool.query(queries.deleteSelectedUsers, [userIds]);
       
@@ -48,12 +48,12 @@ export const usersDeleteService = {
       
       const deletedCount = result.rowCount || 0; // Ensure we always return a number
       
-      logger.info('Users deleted successfully', { deletedCount });
+      lgr.info('Users deleted successfully', { deletedCount });
       
       return deletedCount;
       
     } catch (error) {
-      logger.error('Error deleting users', error);
+      lgr.error('Error deleting users', error);
       throw {
         code: 'DELETE_ERROR',
         message: 'Error deleting users',

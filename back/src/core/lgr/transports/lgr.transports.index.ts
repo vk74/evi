@@ -1,10 +1,10 @@
 /**
  * Экспортирует все доступные транспорты для логгера
  */
-import { LogTransport } from '../logger.types';
-import { consoleTransport } from './logger.console';
-import { jsonTransport } from './logger.json';
-import { elasticTransport } from './logger.elastic';
+import { LogTransport } from '../lgr.types';
+import { consoleTransport } from './lgr.console';
+import { jsonTransport } from './lgr.json';
+import { elasticTransport } from './lgr.elastic';
 
 /**
  * Словарь всех доступных транспортов

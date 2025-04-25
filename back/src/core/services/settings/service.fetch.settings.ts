@@ -12,11 +12,11 @@ import {
   FetchAllSettingsRequest,
   SettingsError
 } from './types.settings';
-import { createSystemLogger, Logger } from '../../../core/logger/logger.index';
-import { Events } from '../../../core/logger/codes';
+import { createSystemLgr, Lgr } from '../../../core/lgr/lgr.index';
+import { Events } from '../../../core/lgr/codes';
 
-// Create logger for settings service
-const logger: Logger = createSystemLogger({
+// Create lgr for settings service
+const lgr: Lgr = createSystemLgr({
   module: 'SettingsService',
   fileName: 'service.fetch.settings.ts'
 });
@@ -79,7 +79,7 @@ function normalizeSectionPath(path: string): string[] {
     variants.push(pascalCasePath);
   }
   
-  logger.debug({
+  lgr.debug({
     code: 'SETTINGS:PATH:NORMALIZE',
     message: 'Normalized section path variants',
     details: { original: path, variants }
@@ -97,7 +97,7 @@ export async function fetchSettingByName(request: FetchSettingByNameRequest): Pr
   try {
     const { sectionPath, settingName, environment, includeConfidential = false } = request;
     
-    logger.debug({
+    lgr.debug({
       code: Events.CORE.SETTINGS.GET.BY_NAME.INITIATED.code,
       message: 'Fetching setting by name',
       details: { sectionPath, settingName, environment }
@@ -115,7 +115,7 @@ export async function fetchSettingByName(request: FetchSettingByNameRequest): Pr
     });
 
     if (!setting) {
-      logger.debug({
+      lgr.debug({
         code: Events.CORE.SETTINGS.GET.BY_NAME.NOT_FOUND.code,
         message: 'Setting not found',
         details: { sectionPath, settingName, pathVariants }
@@ -128,7 +128,7 @@ export async function fetchSettingByName(request: FetchSettingByNameRequest): Pr
         environment !== Environment.ALL && 
         setting.environment !== Environment.ALL && 
         setting.environment !== environment) {
-      logger.debug({
+      lgr.debug({
         code: Events.CORE.SETTINGS.GET.BY_NAME.NOT_FOUND.code,
         message: 'Setting found but environment does not match',
         details: { settingName, requestedEnv: environment, settingEnv: setting.environment }
@@ -138,7 +138,7 @@ export async function fetchSettingByName(request: FetchSettingByNameRequest): Pr
 
     // Check confidentiality
     if (!includeConfidential && setting.confidentiality) {
-      logger.debug({
+      lgr.debug({
         code: Events.CORE.SETTINGS.GET.BY_NAME.CONFIDENTIAL.code,
         message: 'Setting is confidential and includeConfidential is false',
         details: { settingName }
@@ -146,7 +146,7 @@ export async function fetchSettingByName(request: FetchSettingByNameRequest): Pr
       return null;
     }
 
-    logger.info({
+    lgr.info({
       code: Events.CORE.SETTINGS.GET.BY_NAME.SUCCESS.code,
       message: 'Setting fetched successfully',
       details: { settingName, sectionPath, pathVariants }
@@ -154,7 +154,7 @@ export async function fetchSettingByName(request: FetchSettingByNameRequest): Pr
 
     return setting;
   } catch (error) {
-    logger.error({
+    lgr.error({
       code: Events.CORE.SETTINGS.GET.BY_NAME.ERROR.code,
       message: 'Error fetching setting by name',
       error,
@@ -181,7 +181,7 @@ export async function fetchSettingsBySection(request: FetchSettingsBySectionRequ
   try {
     const { sectionPath, environment, includeConfidential = false } = request;
     
-    logger.debug({
+    lgr.debug({
       code: Events.CORE.SETTINGS.GET.BY_SECTION.INITIATED.code,
       message: 'Fetching settings by section',
       details: { sectionPath, environment }
@@ -205,7 +205,7 @@ export async function fetchSettingsBySection(request: FetchSettingsBySectionRequ
     settings = filterSettingsByEnvironment(settings, environment);
     settings = filterConfidentialSettings(settings, includeConfidential);
 
-    logger.info({
+    lgr.info({
       code: Events.CORE.SETTINGS.GET.BY_SECTION.SUCCESS.code,
       message: 'Settings fetched by section successfully',
       details: { 
@@ -217,7 +217,7 @@ export async function fetchSettingsBySection(request: FetchSettingsBySectionRequ
 
     return settings;
   } catch (error) {
-    logger.error({
+    lgr.error({
       code: Events.CORE.SETTINGS.GET.BY_SECTION.ERROR.code,
       message: 'Error fetching settings by section',
       error,
@@ -244,7 +244,7 @@ export async function fetchAllSettings(request: FetchAllSettingsRequest): Promis
   try {
     const { environment, includeConfidential = false } = request;
     
-    logger.debug({
+    lgr.debug({
       code: Events.CORE.SETTINGS.GET.ALL.INITIATED.code,
       message: 'Fetching all settings',
       details: { environment, includeConfidential }
@@ -256,7 +256,7 @@ export async function fetchAllSettings(request: FetchAllSettingsRequest): Promis
     settings = filterSettingsByEnvironment(settings, environment);
     settings = filterConfidentialSettings(settings, includeConfidential);
 
-    logger.info({
+    lgr.info({
       code: Events.CORE.SETTINGS.GET.ALL.SUCCESS.code,
       message: 'All settings fetched successfully',
       details: { settingsCount: settings.length }
@@ -264,7 +264,7 @@ export async function fetchAllSettings(request: FetchAllSettingsRequest): Promis
 
     return settings;
   } catch (error) {
-    logger.error({
+    lgr.error({
       code: Events.CORE.SETTINGS.GET.ALL.ERROR.code,
       message: 'Error fetching all settings',
       error,

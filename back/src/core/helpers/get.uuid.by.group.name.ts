@@ -11,15 +11,15 @@
 
 import { Pool, QueryResult } from 'pg';
 import { pool as pgPool } from '../../db/maindb';
-import { createSystemLogger, Logger } from '../logger/logger.index';
-import { Events } from '../logger/codes';
+import { createSystemLgr, Lgr } from '../lgr/lgr.index';
+import { Events } from '../lgr/codes';
 import { get, set, CacheKeys } from './cache.helpers';
 
 // Type assertion for pool
 const pool = pgPool as Pool;
 
-// Create logger for helper
-const logger: Logger = createSystemLogger({
+// Create lgr for helper
+const lgr: Lgr = createSystemLgr({
   module: 'GroupUuidHelper',
   fileName: 'get.uuid.by.group.name.ts'
 });
@@ -39,7 +39,7 @@ interface GroupUuidError {
  */
 export async function getUuidByGroupName(groupName: string): Promise<string | null> {
   try {
-    logger.info({
+    lgr.info({
       code: Events.CORE.HELPERS.GET_UUID_BY_GROUP_NAME.PROCESS.START.code,
       message: `Getting group UUID for group: ${groupName}`,
       details: { groupName }
@@ -50,7 +50,7 @@ export async function getUuidByGroupName(groupName: string): Promise<string | nu
     const cachedUuid = get<string | null>(cacheKey);
     
     if (cachedUuid !== undefined) {
-      logger.debug({
+      lgr.debug({
         code: Events.CORE.HELPERS.GET_UUID_BY_GROUP_NAME.PROCESS.SUCCESS.code,
         message: `Retrieved UUID for group ${groupName} from cache`,
         details: { groupName, groupId: cachedUuid, source: 'cache' }
@@ -67,7 +67,7 @@ export async function getUuidByGroupName(groupName: string): Promise<string | nu
     const result: QueryResult = await pool.query(query);
     
     if (!result.rows || result.rows.length === 0) {
-      logger.warn({
+      lgr.warn({
         code: Events.CORE.HELPERS.GET_UUID_BY_GROUP_NAME.PROCESS.NOT_FOUND.code,
         message: `Group not found with name: ${groupName}`,
         details: { groupName }
@@ -83,7 +83,7 @@ export async function getUuidByGroupName(groupName: string): Promise<string | nu
     // Cache the result
     set(cacheKey, groupId);
     
-    logger.info({
+    lgr.info({
       code: Events.CORE.HELPERS.GET_UUID_BY_GROUP_NAME.PROCESS.SUCCESS.code,
       message: `Retrieved UUID [${groupId}] for group: ${groupName}`,
       details: { groupName, groupId, source: 'database' }
@@ -91,7 +91,7 @@ export async function getUuidByGroupName(groupName: string): Promise<string | nu
 
     return groupId;
   } catch (error) {
-    logger.error({
+    lgr.error({
       code: Events.CORE.HELPERS.GET_UUID_BY_GROUP_NAME.PROCESS.ERROR.code,
       message: `Error getting UUID for group: ${groupName}`,
       error,

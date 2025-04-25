@@ -11,15 +11,15 @@
 
 import { Pool, QueryResult } from 'pg';
 import { pool as pgPool } from '../../db/maindb';
-import { createSystemLogger, Logger } from '../logger/logger.index';
-import { Events } from '../logger/codes';
+import { createSystemLgr, Lgr } from '../lgr/lgr.index';
+import { Events } from '../lgr/codes';
 import { get, set, CacheKeys } from './cache.helpers';
 
 // Type assertion for pool
 const pool = pgPool as Pool;
 
-// Create logger for helper
-const logger: Logger = createSystemLogger({
+// Create lgr for helper
+const lgr: Lgr = createSystemLgr({
   module: 'UserAccountStatusHelper',
   fileName: 'get.user.account.status.ts'
 });
@@ -39,7 +39,7 @@ interface AccountStatusError {
  */
 export async function getUserAccountStatus(userId: string): Promise<string | null> {
   try {
-    logger.info({
+    lgr.info({
       code: Events.CORE.HELPERS.GET_USER_ACCOUNT_STATUS.PROCESS.START.code,
       message: `Getting user account status for user: ${userId}`,
       details: { userId }
@@ -50,7 +50,7 @@ export async function getUserAccountStatus(userId: string): Promise<string | nul
     const cachedStatus = get<string | null>(cacheKey);
     
     if (cachedStatus !== undefined) {
-      logger.debug({
+      lgr.debug({
         code: Events.CORE.HELPERS.GET_USER_ACCOUNT_STATUS.PROCESS.SUCCESS.code,
         message: `Retrieved account status for user ${userId} from cache`,
         details: { userId, accountStatus: cachedStatus, source: 'cache' }
@@ -67,7 +67,7 @@ export async function getUserAccountStatus(userId: string): Promise<string | nul
     const result: QueryResult = await pool.query(query);
     
     if (!result.rows || result.rows.length === 0) {
-      logger.warn({
+      lgr.warn({
         code: Events.CORE.HELPERS.GET_USER_ACCOUNT_STATUS.PROCESS.NOT_FOUND.code,
         message: `User not found with UUID: ${userId}`,
         details: { userId }
@@ -83,7 +83,7 @@ export async function getUserAccountStatus(userId: string): Promise<string | nul
     // Cache the result
     set(cacheKey, accountStatus);
     
-    logger.info({
+    lgr.info({
       code: Events.CORE.HELPERS.GET_USER_ACCOUNT_STATUS.PROCESS.SUCCESS.code,
       message: `Retrieved account status [${accountStatus}] for user: ${userId}`,
       details: { userId, accountStatus, source: 'database' }
@@ -91,7 +91,7 @@ export async function getUserAccountStatus(userId: string): Promise<string | nul
 
     return accountStatus;
   } catch (error) {
-    logger.error({
+    lgr.error({
       code: Events.CORE.HELPERS.GET_USER_ACCOUNT_STATUS.PROCESS.ERROR.code,
       message: `Error getting account status for user: ${userId}`,
       error,

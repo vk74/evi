@@ -7,15 +7,15 @@ import { Pool, QueryResult } from 'pg';
 import { pool as pgPool } from '../../../db/maindb';
 import { queries } from './queries.settings';
 import { AppSetting, Environment, SettingsError } from './types.settings';
-import { createSystemLogger, Logger } from '../../../core/logger/logger.index';
-import { Events } from '../../../core/logger/codes';
+import { createSystemLgr, Lgr } from '../../../core/lgr/lgr.index';
+import { Events } from '../../../core/lgr/codes';
 import { setCache, clearCache } from './cache.settings';
 
 // Type assertion for pool
 const pool = pgPool as Pool;
 
-// Create logger for settings service
-const logger: Logger = createSystemLogger({
+// Create lgr for settings service
+const lgr: Lgr = createSystemLgr({
   module: 'SettingsService',
   fileName: 'service.load.settings.ts'
 });
@@ -25,7 +25,7 @@ const logger: Logger = createSystemLogger({
  */
 export async function loadSettings(): Promise<void> {
   try {
-    logger.info({
+    lgr.info({
       code: Events.CORE.SETTINGS.LOAD.START.INITIATED.code,
       message: 'Starting to load settings from database'
     });
@@ -33,7 +33,7 @@ export async function loadSettings(): Promise<void> {
     const result: QueryResult = await pool.query(queries.getAllSettings.text);
     
     if (!result.rows || result.rows.length === 0) {
-      logger.warn({
+      lgr.warn({
         code: Events.CORE.SETTINGS.LOAD.PROCESS.EMPTY.code,
         message: 'No settings found in database'
       });
@@ -56,13 +56,13 @@ export async function loadSettings(): Promise<void> {
     // Update the centralized cache
     setCache(settings);
     
-    logger.info({
+    lgr.info({
       code: Events.CORE.SETTINGS.LOAD.PROCESS.SUCCESS.code,
       message: `Settings loaded successfully, number of loaded settings: ${settings.length}`
     });
 
   } catch (error) {
-    logger.error({
+    lgr.error({
       code: Events.CORE.SETTINGS.LOAD.PROCESS.ERROR.code,
       message: 'Error loading settings',
       error,
@@ -84,7 +84,7 @@ export async function loadSettings(): Promise<void> {
  * Force reload all settings from database
  */
 export async function reloadSettings(): Promise<void> {
-  logger.info({
+  lgr.info({
     code: Events.CORE.SETTINGS.LOAD.START.INITIATED.code,
     message: 'Force reloading settings from database'
   });
@@ -97,19 +97,19 @@ export async function reloadSettings(): Promise<void> {
  */
 export async function initializeSettings(): Promise<void> {
   try {
-    logger.info({
+    lgr.info({
       code: Events.CORE.SETTINGS.INIT.PROCESS.START.code,
       message: 'Initializing settings module'
     });
     
     await loadSettings();
     
-    logger.info({
+    lgr.info({
       code: Events.CORE.SETTINGS.INIT.PROCESS.SUCCESS.code,
       message: 'Settings module initialized successfully'
     });
   } catch (error) {
-    logger.error({
+    lgr.error({
       code: Events.CORE.SETTINGS.INIT.PROCESS.ERROR.code,
       message: 'Failed to initialize settings module',
       error,

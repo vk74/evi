@@ -16,7 +16,7 @@ import {
   CACHE,
   GET_USERNAME_BY_UUID
 } from '../codes/core/helpers/helpers';
-import { EventCode } from '../logger.types';
+import { EventCode } from '../lgr.types';
 
 /**
  * Объединенная структура всех кодов событий

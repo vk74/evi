@@ -17,8 +17,8 @@ import { IUser, IUsersResponse, IUsersFetchParams, UserError } from './types.use
 // Explicitly set the type for pool
 const pool = pgPool as Pool;
 
-// Logger for main operations
-const logger = {
+// lgr for main operations
+const lgr = {
   info: (message: string, meta?: object) => console.log(`[UsersFetchService] ${message}`, meta || ''),
   error: (message: string, error?: unknown) => console.error(`[UsersFetchService] ${message}`, error || '')
 };
@@ -76,7 +76,7 @@ export const usersFetchService = {
       if (!forceRefresh) {
         const cachedData = usersCache.get(cacheKey);
         if (cachedData) {
-          logger.info('Using cached users data', { cacheHit: true, params });
+          lgr.info('Using cached users data', { cacheHit: true, params });
           return cachedData;
         }
       } else {
@@ -85,7 +85,7 @@ export const usersFetchService = {
       }
       
       // If not in cache or force refresh, query the database
-      logger.info('Fetching users from database', { params });
+      lgr.info('Fetching users from database', { params });
       
       // Build sort clause
       const sortClause = buildSortClause(sortBy, sortDesc);
@@ -119,7 +119,7 @@ export const usersFetchService = {
       // Cache the result
       usersCache.set(cacheKey, response);
       
-      logger.info('Successfully fetched users', { 
+      lgr.info('Successfully fetched users', { 
         count: users.length,
         total,
         search: !!search
@@ -128,7 +128,7 @@ export const usersFetchService = {
       return response;
       
     } catch (error) {
-      logger.error('Error fetching users', error);
+      lgr.error('Error fetching users', error);
       throw {
         code: 'DATABASE_ERROR',
         message: 'Error retrieving user data',
