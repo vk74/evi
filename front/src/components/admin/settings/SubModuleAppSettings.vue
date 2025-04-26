@@ -16,6 +16,8 @@
  import Application from './sections/Application.vue';
  import UserProfiles from './sections/Application.UserProfiles.vue';
  import Logging from './sections/Application.Logging.vue';
+ import LoggingConsole from './sections/Application.Logging.Console.vue';
+ import LoggingFile from './sections/Application.Logging.File.vue';
  import Security from './sections/Application.Security.vue';
  import UsersManagement from './sections/UsersManagement.vue';
  import GroupsManagement from './sections/UsersManagement.GroupsManagement.vue';
@@ -53,12 +55,12 @@
          icon: 'mdi-text-box-outline',
          children: [
            {
-             id: 'Application.Logging.ConsoleTransport',
+             id: 'Application.Logging.Console',
              name: 'console transport',
              icon: 'mdi-console',
            },
            {
-             id: 'Application.Logging.FileTransport',
+             id: 'Application.Logging.File',
              name: 'file transport',
              icon: 'mdi-file-outline',
            }
@@ -117,6 +119,8 @@
    'Application': markRaw(Application),
    'Application.UserProfiles': markRaw(UserProfiles),
    'Application.Logging': markRaw(Logging),
+   'Application.Logging.Console': markRaw(LoggingConsole),
+   'Application.Logging.File': markRaw(LoggingFile),
    'Application.Security': markRaw(Security),
    'UsersManagement': markRaw(UsersManagement),
    'UsersManagement.GroupsManagement': markRaw(GroupsManagement),

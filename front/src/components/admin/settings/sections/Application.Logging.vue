@@ -2,6 +2,7 @@
   File: Application.Logging.vue
   Description: Logging configuration settings component
   Purpose: Configure application logging based on backend logger parameters
+  Version: 1.1
 -->
 
 <script setup lang="ts">
@@ -23,6 +24,7 @@ const isLoadingSettings = ref(true);
  * Core logger settings based on the backend service
  * Contains global configuration parameters for the entire logging system
  */
+const loggingEnabled = ref(true);
 const appName = ref('ev2');
 const appNameEnabled = ref(true);
 const timestampFormat = ref('ISO');
@@ -139,8 +141,48 @@ const logLevelDescriptions = {
   'FATAL': 'Критические ошибки, из-за которых приложение не может продолжать работу.'
 };
 
-// Log component initialization
-console.log('Application.Logging component initialized');
+/**
+ * Load settings from the backend
+ */
+async function loadSettings() {
+  isLoadingSettings.value = true;
+  
+  try {
+    console.log('Loading settings for Application Logging');
+    const settings = await fetchSettings(section_path);
+    
+    // Apply settings to component
+    if (settings && settings.length > 0) {
+      console.log('Received settings:', settings);
+      
+      // Get specific settings by name with fallback values
+      loggingEnabled.value = getSettingValue(section_path, 'loggingEnabled', true);
+      appName.value = getSettingValue(section_path, 'appName', 'ev2');
+      appNameEnabled.value = getSettingValue(section_path, 'appNameEnabled', true);
+      timestampFormat.value = getSettingValue(section_path, 'timestampFormat', 'ISO');
+    } else {
+      console.log('No settings received for Application Logging - using defaults');
+    }
+  } catch (error) {
+    console.error('Failed to load logging settings:', error);
+  } finally {
+    isLoadingSettings.value = false;
+  }
+}
+
+// Watch for changes in loading state from the store
+watch(
+  () => appSettingsStore.isLoading,
+  (isLoading) => {
+    isLoadingSettings.value = isLoading;
+  }
+);
+
+// Initialize component
+onMounted(() => {
+  console.log('Application.Logging component initialized');
+  loadSettings();
+});
 </script>
 
 <template>
@@ -156,489 +198,73 @@ console.log('Application.Logging component initialized');
       компонент находится в разработке
     </v-alert>
     
-    <!-- Core Settings -->
-    <div class="settings-section mb-4">
-      <div class="section-title text-subtitle-1 d-flex align-center mb-4">
-        <v-icon start icon="mdi-tune" class="mr-2"></v-icon>
-        основные настройки
-      </div>
-      
-      <div class="section-content">
-        <v-switch
-          v-model="appNameEnabled"
-          color="teal-darken-2"
-          label="идентификатор приложения"
-          hide-details
-          class="mb-2"
-        ></v-switch>
-        
-        <v-text-field
-          v-model="appName"
-          label="название приложения"
-          variant="outlined"
-          density="comfortable"
-          color="teal-darken-2"
-          :disabled="!appNameEnabled"
-          class="mb-4"
-        >
-          <template v-slot:append>
-            <v-tooltip location="top" max-width="400">
-              <template v-slot:activator="{ props }">
-                <v-icon 
-                  icon="mdi-help-circle-outline" 
-                  size="small" 
-                  v-bind="props"
-                  color="teal-darken-2"
-                ></v-icon>
-              </template>
-              <div class="pa-2">
-                Используется для группировки логов в системах SIEM, мониторинга и аналитики. Индикатор приложения будет добавлен ко всем записям в логах, в виде префикса, чтобы их можно было фильтровать и отличать от логов других приложений.
-              </div>
-            </v-tooltip>
-          </template>
-        </v-text-field>
-        
-        <v-select
-          v-model="timestampFormat"
-          :items="['ISO', 'UTC', 'Local']"
-          label="формат метки времени"
-          variant="outlined"
-          density="comfortable"
-          color="teal-darken-2"
-          style="max-width: 200px;"
-        ></v-select>
-      </div>
-      <v-divider class="mt-4"></v-divider>
-    </div>
+    <!-- Loading indicator -->
+    <DataLoading :loading="isLoadingSettings" size="medium" />
     
-    <!-- Console Transport Settings -->
-    <div class="settings-section mb-4">
-      <div class="section-title text-subtitle-1 d-flex align-center mb-4">
-        <v-icon start icon="mdi-console" class="mr-2"></v-icon>
-        вывод журналов событий в консоль node.js
-      </div>
-      
-      <div class="section-content">
-        <v-switch
-          v-model="consoleTransport.enabled"
-          color="teal-darken-2"
-          label="включить логирование в консоль"
-          hide-details
-          class="mb-4"
-        ></v-switch>
+    <template v-if="!isLoadingSettings">
+      <!-- Core Settings -->
+      <div class="settings-section mb-4">
+        <div class="section-title text-subtitle-1 d-flex align-center mb-4">
+          <v-icon start icon="mdi-tune" class="mr-2"></v-icon>
+          основные настройки
+        </div>
         
-        <v-expand-transition>
-          <div v-if="consoleTransport.enabled">
-            <!-- Console Format -->
-            <v-select
-              v-model="consoleTransport.outputFormat"
-              :items="consoleTransport.outputFormats"
-              label="формат вывода"
-              variant="outlined"
-              density="comfortable"
-              class="mb-4"
-              color="teal-darken-2"
-              style="max-width: 200px;"
-            ></v-select>
-            
-            <!-- Console Operation Types Settings -->
-            <div class="mb-4">
-              <div class="d-flex align-center mb-2">
-                <span class="text-subtitle-2">настройки типов операций</span>
-                <v-tooltip location="top" max-width="300">
-                  <template v-slot:activator="{ props }">
-                    <v-icon 
-                      icon="mdi-help-circle-outline" 
-                      size="small" 
-                      class="ms-2" 
-                      color="teal-darken-2"
-                      v-bind="props"
-                    ></v-icon>
-                  </template>
-                  <div class="pa-2">
-                    <div v-for="(description, level) in logLevelDescriptions" :key="level" class="mb-1">
-                      <strong>{{ level }}</strong>: {{ description }}
-                    </div>
-                  </div>
-                </v-tooltip>
-              </div>
-              
-              <v-table density="compact" class="operation-levels-table">
-                <tbody>
-                  <tr
-                    v-for="(level, opType) in consoleTransport.operationLevels"
-                    :key="opType"
-                  >
-                    <td style="width: 75%">
-                      <div class="d-flex align-center">
-                        <v-icon :icon="operationTypesMetadata[opType].icon" class="me-3" color="teal-darken-2"></v-icon>
-                        <div>
-                          <div class="font-weight-medium">{{ opType }}</div>
-                          <div class="text-caption text-medium-emphasis">{{ operationTypesMetadata[opType].description }}</div>
-                        </div>
-                      </div>
-                    </td>
-                    <td style="width: 25%">
-                      <v-select
-                        v-model="consoleTransport.operationLevels[opType]"
-                        :items="logLevels"
-                        variant="outlined"
-                        density="compact"
-                        hide-details
-                        color="teal-darken-2"
-                        bg-color="white"
-                        :title="logLevelDescriptions[consoleTransport.operationLevels[opType]]"
-                      ></v-select>
-                    </td>
-                  </tr>
-                </tbody>
-              </v-table>
-            </div>
-            
-            <!-- Console Context Settings -->
-            <div class="mt-6">
-              <div class="d-flex align-center mb-2">
-                <span class="text-subtitle-2">контекст логирования</span>
-                <v-tooltip location="top" max-width="300">
-                  <template v-slot:activator="{ props }">
-                    <v-icon 
-                      icon="mdi-help-circle-outline" 
-                      size="small" 
-                      class="ms-2" 
-                      color="teal-darken-2"
-                      v-bind="props"
-                    ></v-icon>
-                  </template>
-                  <div class="pa-2">
-                    Выберите дополнительную информацию, которая будет добавлена в каждую запись лога.
-                    Больше контекста улучшает диагностику, но увеличивает размер логов.
-                  </div>
-                </v-tooltip>
-              </div>
-              
-              <div class="d-flex flex-wrap">
-                <v-checkbox
-                  v-model="consoleTransport.context.includeModule"
-                  label="название модуля"
-                  color="teal-darken-2"
-                  hide-details
-                  density="compact"
-                  class="me-4 mb-0"
-                ></v-checkbox>
-                
-                <v-checkbox
-                  v-model="consoleTransport.context.includeFileName"
-                  label="имя файла источника"
-                  color="teal-darken-2"
-                  hide-details
-                  density="compact"
-                  class="me-4 mb-0"
-                ></v-checkbox>
-                
-                <v-checkbox
-                  v-model="consoleTransport.context.includeOperationType"
-                  label="тип операции"
-                  color="teal-darken-2"
-                  hide-details
-                  density="compact"
-                  class="me-4 mb-0"
-                ></v-checkbox>
-                
-                <v-checkbox
-                  v-model="consoleTransport.context.includeUserId"
-                  label="id пользователя"
-                  color="teal-darken-2"
-                  hide-details
-                  density="compact"
-                ></v-checkbox>
-              </div>
-            </div>
-          </div>
-        </v-expand-transition>
-      </div>
-      <v-divider class="mt-4"></v-divider>
-    </div>
-    
-    <!-- File Transport Settings -->
-    <div class="settings-section mb-4">
-      <div class="section-title text-subtitle-1 d-flex align-center mb-4">
-        <v-icon start icon="mdi-file-outline" class="mr-2"></v-icon>
-        логирование в файловую систему
-      </div>
-      
-      <div class="section-content">
-        <v-switch
-          v-model="fileTransport.enabled"
-          color="teal-darken-2"
-          label="включить логирование в файловую систему"
-          hide-details
-          class="mb-2"
-        ></v-switch>
-        
-        <v-expand-transition>
-          <div v-if="fileTransport.enabled">
-            <!-- File Operation Types Settings -->
-            <div class="mb-4">
-              <div class="d-flex align-center mb-2">
-                <span class="text-subtitle-2">настройки типов операций</span>
-                <v-tooltip location="top" max-width="300">
-                  <template v-slot:activator="{ props }">
-                    <v-icon 
-                      icon="mdi-help-circle-outline" 
-                      size="small" 
-                      class="ms-2" 
-                      color="teal-darken-2"
-                      v-bind="props"
-                    ></v-icon>
-                  </template>
-                  <div class="pa-2">
-                    <div v-for="(description, level) in logLevelDescriptions" :key="level" class="mb-1">
-                      <strong>{{ level }}</strong>: {{ description }}
-                    </div>
-                  </div>
-                </v-tooltip>
-              </div>
-              
-              <v-table density="compact" class="operation-levels-table">
-                <tbody>
-                  <tr
-                    v-for="(level, opType) in fileTransport.operationLevels"
-                    :key="opType"
-                  >
-                    <td style="width: 75%">
-                      <div class="d-flex align-center">
-                        <v-icon :icon="operationTypesMetadata[opType].icon" class="me-3" color="teal-darken-2"></v-icon>
-                        <div>
-                          <div class="font-weight-medium">{{ opType }}</div>
-                          <div class="text-caption text-medium-emphasis">{{ operationTypesMetadata[opType].description }}</div>
-                        </div>
-                      </div>
-                    </td>
-                    <td style="width: 25%">
-                      <v-select
-                        v-model="fileTransport.operationLevels[opType]"
-                        :items="logLevels"
-                        variant="outlined"
-                        density="compact"
-                        hide-details
-                        color="teal-darken-2"
-                        bg-color="white"
-                        :title="logLevelDescriptions[fileTransport.operationLevels[opType]]"
-                      ></v-select>
-                    </td>
-                  </tr>
-                </tbody>
-              </v-table>
-            </div>
-            
-            <!-- File Context Settings -->
-            <div class="mt-6 mb-6">
-              <div class="d-flex align-center mb-2">
-                <span class="text-subtitle-2">контекст логирования</span>
-                <v-tooltip location="top" max-width="300">
-                  <template v-slot:activator="{ props }">
-                    <v-icon 
-                      icon="mdi-help-circle-outline" 
-                      size="small" 
-                      class="ms-2" 
-                      color="teal-darken-2"
-                      v-bind="props"
-                    ></v-icon>
-                  </template>
-                  <div class="pa-2">
-                    Выберите дополнительную информацию, которая будет добавлена в каждую запись лога.
-                    Больше контекста улучшает диагностику, но увеличивает размер логов.
-                  </div>
-                </v-tooltip>
-              </div>
-              
-              <div class="d-flex flex-wrap">
-                <v-checkbox
-                  v-model="fileTransport.context.includeModule"
-                  label="название модуля"
-                  color="teal-darken-2"
-                  hide-details
-                  density="compact"
-                  class="me-4 mb-0"
-                ></v-checkbox>
-                
-                <v-checkbox
-                  v-model="fileTransport.context.includeFileName"
-                  label="имя файла источника"
-                  color="teal-darken-2"
-                  hide-details
-                  density="compact"
-                  class="me-4 mb-0"
-                ></v-checkbox>
-                
-                <v-checkbox
-                  v-model="fileTransport.context.includeOperationType"
-                  label="тип операции"
-                  color="teal-darken-2"
-                  hide-details
-                  density="compact"
-                  class="me-4 mb-0"
-                ></v-checkbox>
-                
-                <v-checkbox
-                  v-model="fileTransport.context.includeUserId"
-                  label="id пользователя"
-                  color="teal-darken-2"
-                  hide-details
-                  density="compact"
-                ></v-checkbox>
-              </div>
-            </div>
-            
-            <!-- File Storage Settings -->
-            <div class="mb-4">
-              <span class="text-subtitle-2 mb-2 d-block">настройки хранения</span>
-              
-              <v-row>
-                <v-col cols="12" md="6">
-                  <v-text-field
-                    v-model="fileTransport.filePath"
-                    label="путь к файлам логов"
-                    variant="outlined"
-                    density="comfortable"
-                    placeholder="/var/log/app/"
-                    color="teal-darken-2"
-                  ></v-text-field>
-                </v-col>
-                
-                <v-col cols="12" md="6">
-                  <v-text-field
-                    v-model="fileTransport.filePrefix"
-                    label="префикс файлов логов"
-                    variant="outlined"
-                    density="comfortable"
-                    placeholder="app-log-"
-                    color="teal-darken-2"
-                  ></v-text-field>
-                </v-col>
-              </v-row>
-              
-              <v-switch
-                v-model="fileTransport.dailyRotation"
-                color="teal-darken-2"
-                label="ежедневная ротация логов"
-                hide-details
-                class="mb-4 mt-2"
-              ></v-switch>
-            </div>
-            
-            <!-- File Retention Policy -->
-            <div class="mb-4">
-              <span class="text-subtitle-2 mb-2 d-block">политика хранения</span>
-              
-              <v-radio-group v-model="fileTransport.retentionType" color="teal-darken-2">
-                <v-radio
-                  label="хранить логи определенный период времени"
-                  value="time"
-                  color="teal-darken-2"
-                ></v-radio>
-                
-                <v-select
-                  v-model="fileTransport.retentionPeriod"
-                  :items="fileTransport.retentionPeriods"
-                  label="период хранения"
-                  variant="outlined"
-                  density="comfortable"
-                  class="ms-4 mt-2"
-                  :disabled="fileTransport.retentionType !== 'time'"
-                  color="teal-darken-2"
-                  style="max-width: 200px;"
-                ></v-select>
-                
-                <v-radio
-                  label="хранить определенное количество файлов логов"
-                  value="count"
-                  class="mt-4"
-                  color="teal-darken-2"
-                ></v-radio>
-                
-                <v-text-field
-                  v-model="fileTransport.maxLogFiles"
-                  label="максимальное количество файлов"
-                  type="number"
-                  variant="outlined"
-                  density="comfortable"
-                  class="ms-4 mt-2"
-                  :disabled="fileTransport.retentionType !== 'count'"
-                  color="teal-darken-2"
-                  style="max-width: 200px;"
-                ></v-text-field>
-                
-                <v-radio
-                  label="хранить логи до достижения лимита размера"
-                  value="size"
-                  class="mt-4"
-                  color="teal-darken-2"
-                ></v-radio>
-                
-                <v-text-field
-                  v-model="fileTransport.maxLogSize"
-                  label="максимальный общий размер (МБ)"
-                  type="number"
-                  variant="outlined"
-                  density="comfortable"
-                  class="ms-4 mt-2"
-                  :disabled="fileTransport.retentionType !== 'size'"
-                  color="teal-darken-2"
-                  style="max-width: 200px;"
-                ></v-text-field>
-              </v-radio-group>
-              
-              <v-switch
-                v-model="fileTransport.compressOldLogs"
-                color="teal-darken-2"
-                label="сжимать старые логи"
-                hide-details
-                class="mt-4"
-              ></v-switch>
-              
-              <v-switch
-                v-model="fileTransport.archiveLogsBeforeDelete"
-                color="teal-darken-2"
-                label="архивировать логи перед удалением"
-                hide-details
-                class="mt-2"
-              ></v-switch>
-            </div>
-          </div>
-        </v-expand-transition>
-      </div>
-      <v-divider class="mt-4"></v-divider>
-    </div>
-    
-    <!-- Event Codes Examples -->
-    <div class="settings-section">
-      <div class="section-title text-subtitle-1 d-flex align-center mb-4">
-        <v-icon start icon="mdi-barcode" class="mr-2"></v-icon>
-        примеры кодов событий
-      </div>
-      
-      <div class="section-content">
-        <p class="text-body-2 mb-2">
-          коды событий используются для идентификации определенных действий в системе.
-          формат: <code>MODULE:SUBMODULE:FUNCTION:OPERATION:NUMBER</code>
-        </p>
-        
-        <v-list density="compact" lines="one">
-          <v-list-item
-            v-for="(code, index) in ['ADMIN:USERS:USEREDITOR:UPDATE:001', 'ADMIN:SYSTEM:SESSION:DROP:004']"
-            :key="index"
-            :title="code"
-            prepend-icon="mdi-code-tags"
-            class="event-code-item"
+        <div class="section-content">
+          <v-switch
+            v-model="loggingEnabled"
+            color="teal-darken-2"
+            label="включить логирование"
+            hide-details
+            class="mb-2"
+          ></v-switch>
+          
+          <v-switch
+            v-model="appNameEnabled"
+            color="teal-darken-2"
+            label="идентификатор приложения"
+            hide-details
+            class="mb-2"
+            :disabled="!loggingEnabled"
+          ></v-switch>
+          
+          <v-text-field
+            v-model="appName"
+            label="название приложения"
+            variant="outlined"
+            density="comfortable"
+            color="teal-darken-2"
+            :disabled="!appNameEnabled"
+            class="mb-4"
           >
-            <template v-slot:prepend>
-              <v-icon icon="mdi-code-tags" color="teal-darken-2"></v-icon>
+            <template v-slot:append>
+              <v-tooltip location="top" max-width="400">
+                <template v-slot:activator="{ props }">
+                  <v-icon 
+                    icon="mdi-help-circle-outline" 
+                    size="small" 
+                    v-bind="props"
+                    color="teal-darken-2"
+                  ></v-icon>
+                </template>
+                <div class="pa-2">
+                  Используется для группировки логов в системах SIEM, мониторинга и аналитики. Индикатор приложения будет добавлен ко всем записям в логах, в виде префикса, чтобы их можно было фильтровать и отличать от логов других приложений.
+                </div>
+              </v-tooltip>
             </template>
-          </v-list-item>
-        </v-list>
+          </v-text-field>
+          
+          <v-select
+            v-model="timestampFormat"
+            :items="['ISO', 'UTC', 'Local']"
+            label="формат метки времени"
+            variant="outlined"
+            density="comfortable"
+            color="teal-darken-2"
+            style="max-width: 200px;"
+          ></v-select>
+        </div>
       </div>
-    </div>
+    </template>
   </div>
 </template>
 
@@ -664,31 +290,5 @@ console.log('Application.Logging component initialized');
 :deep(.v-divider) {
   border-color: rgba(0, 0, 0, 0.12);
   opacity: 1;
-}
-
-/* Adjust spacing for selects in list items */
-.max-width-select {
-  max-width: 120px;
-}
-
-/* Style table */
-.operation-levels-table {
-  border: 1px solid rgba(0, 0, 0, 0.12);
-  border-radius: 4px;
-}
-
-.operation-levels-table :deep(tr:hover) {
-  background-color: rgba(0, 0, 0, 0.03);
-}
-
-/* Ensure all text fields have consistent width */
-.logging-settings-container :deep(.v-text-field.v-input) {
-  max-width: 100%;
-}
-
-/* Style the event code list items */
-.event-code-item {
-  border-radius: 4px;
-  transition: background-color 0.2s ease;
 }
 </style>
