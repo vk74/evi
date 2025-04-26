@@ -29,6 +29,10 @@ const {
   OperationType
 } = require('@/core/lgr/lgr.index');
 
+// Import new logger system
+const loggerService = require('@/core/logger/service.logger').default;
+const loggerSubscriptions = require('@/core/logger/subscriptions.logger').default;
+
 const ExcelJS = require('exceljs');
 const bodyParser = require('body-parser');
 const cors = require('cors');
@@ -110,6 +114,11 @@ async function initializeServer() {
       }
       
       console.log('Event system initialized successfully');
+      
+      // Initialize logger service with event bus integration
+      loggerService.initialize();
+      loggerSubscriptions.initializeSubscriptions();
+      console.log('Logger system initialized successfully');
     } catch (eventError) {
       console.error('Failed to initialize event system:', eventError);
       throw eventError;
