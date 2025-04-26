@@ -17,7 +17,7 @@ Preferences for .vue components:
 Comments in files
   1. all comments in all files should be in english
   2. the header comment should have:
-    a. file version: if this is a new file put version 1.0. if we work on a file - increment version by 001.
+    a. file version: if this is a new file put version 1.0. if we work on a file and adding|removing code - increment version by 001.
     b. an explanation of the file functionality / algorythm, what type of objects it is working with, major interactions. 
 
 
