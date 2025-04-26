@@ -18,6 +18,10 @@ const coreRoutes = require ('@/core/routes/routes.core');
 const workRoutes = require('@/features/work/routes.work');
 const { loadSettings } = require('@/core/services/settings/service.load.settings');
 
+// Import event bus system
+const { eventBus } = require('@/core/eventBus/bus.events');
+const { createEventFactory } = require('@/core/eventBus/factory.events');
+
 // Import centralized logger
 const { 
   createSystemLgr, 
@@ -40,20 +44,22 @@ const lgr = createSystemLgr({
   fileName: 'server.js'
 });
 
+// Global event factory instance
+let eventFactory = null;
+
 // Settings ready flag
 let settingsLoaded = false;
 
 // Middleware to check if settings are loaded
 const checkSettingsLoaded = (req, res, next) => {
   if (!settingsLoaded) {
-    lgr.warn({
-      code: Events.CORE.SERVER.REQUEST.READINESS.NOT_READY.code,
-      message: 'Server is not ready yet, rejecting request',
-      details: {
+    console.warn(
+      'Server is not ready yet, rejecting request',
+      {
         path: req.path,
         method: req.method
       }
-    });
+    );
     
     return res.status(503).json({
       success: false,
@@ -65,10 +71,7 @@ const checkSettingsLoaded = (req, res, next) => {
 
 async function initializeServer() {
   try {
-    lgr.info({
-      code: Events.CORE.SERVER.STARTUP.INIT.START.code,
-      message: 'Starting server initialization'
-    });
+    console.log('Starting server initialization');
     
     // 1. Loading private key
     const privateKeyPath = './src/keys/private_key.pem';
@@ -79,22 +82,40 @@ async function initializeServer() {
       throw new Error('Failed to set global.privateKey');
     }
     
-    lgr.info({
-      code: Events.CORE.SERVER.STARTUP.KEYS.SUCCESS.code,
-      message: 'Global private key set successfully'
-    });
+    console.log('Global private key set successfully');
 
     // 2. Loading settings
-    lgr.info({
-      code: Events.CORE.SETTINGS.INIT.PROCESS.START.code,
-      message: 'Loading application settings...'
-    });
+    console.log('Loading application settings...');
     
     await loadSettings();
     settingsLoaded = true;
     // No duplicate logging here, as loadSettings already logs success message
 
-    // 3. Setting up middleware
+    // 3. Initialize event system - event bus and event factory
+    try {
+      // Check if event bus is available
+      if (!eventBus) {
+        throw new Error('Event bus not initialized');
+      }
+      
+      // Create event factory
+      eventFactory = createEventFactory({
+        source: 'backend-server',
+        environment: process.env.NODE_ENV || 'development',
+        validateOnCreate: true
+      });
+      
+      if (!eventFactory) {
+        throw new Error('Failed to create event factory');
+      }
+      
+      console.log('Event system initialized successfully');
+    } catch (eventError) {
+      console.error('Failed to initialize event system:', eventError);
+      throw eventError;
+    }
+
+    // 4. Setting up middleware
     // Configure CORS for frontend only
     app.use(cors({
       origin: 'http://localhost:8080', // Allow access only from this source
@@ -107,15 +128,12 @@ async function initializeServer() {
     //app.use('/profile', getUserProfile); // Route registration
     app.use(bodyParser.json());
 
-    lgr.info({
-      code: Events.CORE.SERVER.STARTUP.MIDDLEWARE.SUCCESS.code,
-      message: 'Middleware configuration completed'
-    });
+    console.log('Middleware configuration completed');
 
-    // 4. Add settings loading check middleware for all routes
+    // 5. Add settings loading check middleware for all routes
     app.use(checkSettingsLoaded);
 
-    // 5. Route registration
+    // 6. Route registration
     app.use(userRoutes);
     app.use(servicesRoutes);
     app.use(catalogRoutes);
@@ -123,12 +141,9 @@ async function initializeServer() {
     app.use(coreRoutes);
     app.use(workRoutes);
 
-    lgr.info({
-      code: Events.CORE.SERVER.STARTUP.ROUTES.SUCCESS.code,
-      message: 'All routes registered successfully'
-    });
+    console.log('All routes registered successfully');
 
-    // 6. Base route
+    // 7. Base route
     app.get('/', (req, res) => {
       res.send('Backend server is running');
     });
@@ -290,27 +305,13 @@ async function initializeServer() {
       const formattedTime = now.toLocaleTimeString('en-US', timeOptions);
       const timestamp = `${formattedDate}, ${formattedTime}`;
 
-      lgr.info({
-        code: Events.CORE.SERVER.STARTUP.HTTP.LISTENING.code,
-        message: `Server listening at http://localhost:${port}`,
-        details: {
-          timestamp: `${formattedDate}, ${formattedTime}`,
-          port
-        }
-      });
+      console.log(`Server listening at http://localhost:${port} | ${timestamp}`);
     });
 
-    lgr.info({
-      code: Events.CORE.SERVER.STARTUP.INIT.SUCCESS.code,
-      message: 'Server initialization completed successfully'
-    });
+    console.log('Server initialization completed successfully');
 
   } catch (error) {
-    lgr.error({
-      code: Events.CORE.SERVER.STARTUP.INIT.ERROR.code,
-      message: 'Failed to initialize server',
-      error
-    });
+    console.error('Failed to initialize server:', error);
     
     process.exit(1);
   }
