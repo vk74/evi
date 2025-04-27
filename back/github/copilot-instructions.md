@@ -14,11 +14,13 @@ Comments in files
   2. the header comment should have:
     a. file version: if this is a new file put version 1.0. if we work on a file - increment version by 001.
     b. an explanation of the file functionality / algorythm, what type of objects it is working with, major interactions. 
+    c. comment should should mention this is a backend file, should contain file name but no path to the file
 
 Don't delete nor optimize code without my consent.  
+
 Don't use classes in the files, use functions and methods instead. 
 
-Do not use centralized logging function untill we finish creating events fabric and event bus. after this we will update logging function logic and integrate it with event bus.
+Do not use centralized lgr function for logging. We are going to switch to a new logger function soon.
 
 For tasks related to Postgres database you can use MCP server to #query maindb, app.schema and explore the database structure.
 

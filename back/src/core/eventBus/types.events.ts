@@ -1,9 +1,15 @@
 export interface BaseEvent {
   // version: 1.0
+
   // 📌 Unique identifier for the event (used for traceability and idempotency)
   // Filled by: EventFabric
   // Example: "event-7d31a21c-943e-4a5e-9f32-b7e1290cfb1d"
   eventId: string;
+
+  // 🏷 Application name or identifier 
+  // used for SIEM applications to identify log entries belong to ev2 application
+  // Example: "ev2"
+  applicationName?: string;
 
   // 🏷 Logical event type used for routing and subscriptions
   // Filled by: EventFabric (from event template/registry)
@@ -12,7 +18,6 @@ export interface BaseEvent {
 
   // 📊 Category of the event for classification and filtering
   // Filled by: EventFabric
-  // Example: "app"
   eventType: 'app' | 'system' | 'security' | 'integration' | 'performance';
 
   // 🔢 Schema version of the event
