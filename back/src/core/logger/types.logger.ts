@@ -1,4 +1,4 @@
-// filepath: /Users/vk/Library/Mobile Documents/com~apple~CloudDocs/code/ev2/back/src/core/logger/types.logger.ts
+
 // version: 1.1
 // Types and interfaces for the logger system
 // Contains definitions for transports and subscription configurations

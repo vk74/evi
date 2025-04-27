@@ -1,4 +1,3 @@
-// filepath: /Users/vk/Library/Mobile Documents/com~apple~CloudDocs/code/ev2/back/src/core/logger/service.logger.ts
 // version: 1.1
 // Logger service implementation
 // Handles routing of log events to the appropriate transports

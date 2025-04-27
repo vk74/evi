@@ -1,4 +1,3 @@
-// filepath: /Users/vk/Library/Mobile Documents/com~apple~CloudDocs/code/ev2/back/src/core/logger/subscriptions.logger.ts
 // version: 1.1
 // Logger subscriptions service
 // Handles subscribing to events from event bus and routing them to the logger service
