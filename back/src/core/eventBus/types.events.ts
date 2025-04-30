@@ -7,7 +7,7 @@ export interface BaseEvent {
   eventId: string;
 
   // 🏷 Application name or identifier 
-  // used for SIEM applications to identify log entries belong to ev2 application
+  // used for SIEM or alike applications to identify to which application the log entry bellongs to
   // Example: "ev2"
   applicationName?: string;
 
