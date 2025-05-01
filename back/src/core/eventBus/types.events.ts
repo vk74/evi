@@ -1,92 +1,105 @@
+// file version: 1.0
+
 export interface BaseEvent {
-  // version: 1.0
+  // event interface version: 1.0
 
   // 📌 Unique identifier for the event (used for traceability and idempotency)
   // Filled by: EventFabric
-  // Example: "event-7d31a21c-943e-4a5e-9f32-b7e1290cfb1d"
+  // Example: "event-7d31a21c-943e-4a5e-9f32-b7e1290cfb1d" (PREFIX + UUID v4)
   eventId: string;
 
   // 🏷 Application name or identifier 
-  // used for SIEM or alike applications to identify to which application the log entry bellongs to
+  // Generated for SIEM or alike applications to identify which application sent the log entry
   // Example: "ev2"
   applicationName?: string;
 
+  // 🕒 ISO timestamp when the event was created
+  // Example: "2025-04-25T12:34:56.789Z"
+  timestamp: string;
+
+
+  // EVENTS FROM BUSINESS SERVICE TO BE TAKEN BY EVENT FABRIC FROM SERVICE REFERENCE FILE
+
+
   // 🏷 Logical event type used for routing and subscriptions
-  // Filled by: EventFabric (from event template/registry)
   // Example: "user.newaccount.created"
   eventName: string;
 
-  // 📊 Category of the event for classification and filtering
-  // Filled by: EventFabric
-  eventType: 'app' | 'system' | 'security' | 'integration' | 'performance';
-
-  // 🔢 Schema version of the event
-  // Filled by: EventFabric (from event registry)
-  // Example: "v1"
-  version: string;
-
-  // 🕒 ISO timestamp when the event was created
-  // Filled by: EventFabric
-  // Example: "2025-04-23T12:34:56.789Z"
-  timestamp: string;
-
   // 🧭 Origin of the event, such as a service or module name
-  // Filled by: EventFabric or ContextProvider
   // Example: "auth-service"
   source: string;
 
+  // 📊 Category of the event for classification and filtering
+  eventType: 'app' | 'system' | 'security' | 'integration' | 'performance';
+
+  // 🪵 Severity level of the event
+  severity?: 'debug' | 'info' | 'warning' | 'error' | 'critical';
+
+  // message to be used in logging and other services
+  eventMessage?: string;
+
+  // 🧾 Business data associated with the event
+  // Example: { userId: "u123", email: "test@example.com" }
+  payload?: unknown;
+
+  // Message for error events, providing details about the error
+  errorData?: string;
+
+  // 🔢 Schema version of the event
+  // Example: "v1.0"
+  version: string;
+
+
+  // EVENT PROPERTIES TO BE COLLECTED BY EVENT FABRIC DURING EVENT CREATION
+
+
+  // 🌐 IP address of the user/client triggering the event
+  // Example: "192.168.17.55"
+  ipAddress?: string;
+
+  // 👤 ID of the user who triggered the event
+  userId?: string;
+
+
+  // EVENT PROPERTIES TO BE USED BY FABRIC EVENT VALIDATOR
+
+
+  // used by Event Fabric Validator to supply event validation error data
+  publicationValidationError?: string;
+
+
+  // EVENT PROPERTIES TO BE USED LATER
+
+
   // 🔗 Correlation ID to group related events (e.g., user workflow)
-  // Filled by: ContextProvider
   // Example: "corr-abc123"
   correlationId?: string;
 
   // 🔄 ID of the previous event that triggered this one (causality)
-  // Filled by: EventFabric or ContextProvider
   // Example: "evt-6a91e281-..."
   causationId?: string;
 
-  // 🧾 Business data associated with the event
-  // Filled by: business logic → passed to EventFabric
-  // Example: { userId: "u123", email: "test@example.com" }
-  payload?: unknown;
-
-  // 👤 ID of the user who triggered the event
-  // Filled by: ContextProvider
-  // Example: "u123"
-  userId?: string;
-
   // 📦 Arbitrary metadata related to the event
-  // Filled by: EventFabric or business logic
   // Example: { retryCount: 2, source: "api" }
   metadata?: Record<string, unknown>;
 
-  // 🪵 Severity level of the event
-  // Filled by: EventFabric or logger
-  // Example: "info"
-  severity?: 'debug' | 'info' | 'warning' | 'error' | 'critical';
-
-  // ⏱ Duration of the operation related to the event, in milliseconds
-  // Filled by: business logic or EventFabric
-  // Example: 145
-  duration?: number;
-
   // 🧵 Trace ID for distributed tracing across services
-  // Filled by: ContextProvider or tracing system (e.g., OpenTelemetry)
   // Example: "trace-abc456"
   traceId?: string;
 
+  // ⏱ Duration of the operation related to the event, in milliseconds
+  // Example: 145
+  duration?: number;
+
   // 📍 Span ID for intra-service tracing (local operation trace)
-  // Filled by: tracing system
   // Example: "span-def789"
   spanId?: string;
 
   // 🌍 Runtime environment of the event (used for filtering/logging)
-  // Filled by: ContextProvider
   // Example: "production"
   environment?: string;
 
   // 🖥 Host details where the event was generated
-  // Filled by: EventFabric or ContextProvider
   // Example: { hostname: "node-1", processId: 1204 }
   hostInfo?: {
     hostname: string;
@@ -95,32 +108,22 @@ export interface BaseEvent {
   };
 
   // 🏷 Tags used for filtering and categorizing events
-  // Filled by: EventFabric or business logic
   // Example: ["user", "signup", "critical"]
   tags?: string[];
 
   // 💥 Stack trace for error events
-  // Filled by: error handler → EventFabric
   // Example: "Error: Invalid token at AuthService.ts:123:4"
   stackTrace?: string;
 
-  // 🌐 IP address of the user/client triggering the event
-  // Filled by: ContextProvider (extracted from request)
-  // Example: "192.168.1.55"
-  ipAddress?: string;
-
   // 📱 Session ID for grouping events within the same user session
-  // Filled by: ContextProvider
   // Example: "sess-xyz456"
   sessionId?: string;
 
   // 🚪 Path or route that triggered the event (for API tracking)
-  // Filled by: ContextProvider
   // Example: "/api/v1/users/create"
   requestPath?: string;
 
   // 🔍 Indexed key-value fields for quick search/filtering in logs or UI
-  // Filled by: EventFabric or EventLogger
   // Example: { email: "test@example.com", region: "EU" }
   searchableFields?: Record<string, string>;
 }

@@ -12,7 +12,7 @@ Our project is using several types of files:
 Comments in files
   1. all comments in all files should be in english
   2. the header comment should have:
-    a. file version: if this is a new file put version 1.0. if we work on a file - increment version by 001.
+    a. file version: if this is a new file put version 1.0.0. if we work on a file - increment version by 01, for example 1.0 -> 1.0.01 -> 1.0.02 etc.
     b. an explanation of the file functionality / algorythm, what type of objects it is working with, major interactions. 
     c. comment should should mention this is a backend file, should contain file name but no path to the file
 
@@ -25,4 +25,3 @@ Do not use centralized lgr function for logging. We are going to switch to a new
 For tasks related to Postgres database you can use MCP server to #query maindb, app.schema and explore the database structure.
 
 Переписку в чатах ведем на русском, но все комментарии и код пишем на английском.
-

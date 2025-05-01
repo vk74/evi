@@ -4,6 +4,7 @@
 /docs/other/*
 /docs/logo/*
 /docs/temp/*
+/docs/*.txt
 .env
 dist/
 *.log

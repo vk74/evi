@@ -20,7 +20,7 @@ const { loadSettings } = require('@/core/services/settings/service.load.settings
 
 // Import event bus system
 const { eventBus } = require('@/core/eventBus/bus.events');
-const { createEventFactory } = require('@/core/eventBus/factory.events');
+const { createEventFactory } = require('@/core/eventBus/fabric.events');
 
 // Import centralized logger
 const { 
