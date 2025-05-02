@@ -1,8 +1,10 @@
 /**
- * service.fetch.settings.ts
+ * service.fetch.settings.ts - version 1.0.01
  * Service for fetching settings from cache with filtering.
+ * Now accepts request object for access to user context.
  */
 
+import { Request } from 'express';
 import { getAllSettings } from './cache.settings';
 import { 
   AppSetting, 
@@ -14,6 +16,7 @@ import {
 } from './types.settings';
 import { createSystemLgr, Lgr } from '../../../core/lgr/lgr.index';
 import { Events } from '../../../core/lgr/codes';
+import { getRequestorUuidFromReq } from '../../../core/helpers/get.requestor.uuid.from.req';
 
 // Create lgr for settings service
 const lgr: Lgr = createSystemLgr({
@@ -91,16 +94,23 @@ function normalizeSectionPath(path: string): string[] {
 /**
  * Fetch a single setting by section path and name
  * @param request Request parameters
+ * @param req Express request object for context
  * @returns The requested setting or null if not found
  */
-export async function fetchSettingByName(request: FetchSettingByNameRequest): Promise<AppSetting | null> {
+export async function fetchSettingByName(request: FetchSettingByNameRequest, req: Request): Promise<AppSetting | null> {
   try {
     const { sectionPath, settingName, environment, includeConfidential = false } = request;
+    const requestorUuid = getRequestorUuidFromReq(req);
     
     lgr.debug({
       code: Events.CORE.SETTINGS.GET.BY_NAME.INITIATED.code,
       message: 'Fetching setting by name',
-      details: { sectionPath, settingName, environment }
+      details: { 
+        sectionPath, 
+        settingName, 
+        environment,
+        requestorUuid
+      }
     });
 
     const allSettings = Object.values(getAllSettings());
@@ -118,7 +128,12 @@ export async function fetchSettingByName(request: FetchSettingByNameRequest): Pr
       lgr.debug({
         code: Events.CORE.SETTINGS.GET.BY_NAME.NOT_FOUND.code,
         message: 'Setting not found',
-        details: { sectionPath, settingName, pathVariants }
+        details: { 
+          sectionPath, 
+          settingName, 
+          pathVariants,
+          requestorUuid
+        }
       });
       return null;
     }
@@ -131,7 +146,12 @@ export async function fetchSettingByName(request: FetchSettingByNameRequest): Pr
       lgr.debug({
         code: Events.CORE.SETTINGS.GET.BY_NAME.NOT_FOUND.code,
         message: 'Setting found but environment does not match',
-        details: { settingName, requestedEnv: environment, settingEnv: setting.environment }
+        details: { 
+          settingName, 
+          requestedEnv: environment, 
+          settingEnv: setting.environment,
+          requestorUuid
+        }
       });
       return null;
     }
@@ -141,7 +161,10 @@ export async function fetchSettingByName(request: FetchSettingByNameRequest): Pr
       lgr.debug({
         code: Events.CORE.SETTINGS.GET.BY_NAME.CONFIDENTIAL.code,
         message: 'Setting is confidential and includeConfidential is false',
-        details: { settingName }
+        details: { 
+          settingName,
+          requestorUuid
+        }
       });
       return null;
     }
@@ -149,18 +172,27 @@ export async function fetchSettingByName(request: FetchSettingByNameRequest): Pr
     lgr.info({
       code: Events.CORE.SETTINGS.GET.BY_NAME.SUCCESS.code,
       message: 'Setting fetched successfully',
-      details: { settingName, sectionPath, pathVariants }
+      details: { 
+        settingName, 
+        sectionPath, 
+        pathVariants,
+        requestorUuid
+      }
     });
 
     return setting;
   } catch (error) {
+    // Получаем UUID пользователя из запроса для логирования
+    const requestorUuid = getRequestorUuidFromReq(req);
+    
     lgr.error({
       code: Events.CORE.SETTINGS.GET.BY_NAME.ERROR.code,
       message: 'Error fetching setting by name',
       error,
       details: { 
         errorMessage: error instanceof Error ? error.message : 'Unknown error',
-        request 
+        request,
+        requestorUuid
       }
     });
     
@@ -175,16 +207,22 @@ export async function fetchSettingByName(request: FetchSettingByNameRequest): Pr
 /**
  * Fetch settings by section path
  * @param request Request parameters
+ * @param req Express request object for context
  * @returns Array of settings in the specified section
  */
-export async function fetchSettingsBySection(request: FetchSettingsBySectionRequest): Promise<AppSetting[]> {
+export async function fetchSettingsBySection(request: FetchSettingsBySectionRequest, req: Request): Promise<AppSetting[]> {
   try {
     const { sectionPath, environment, includeConfidential = false } = request;
+    const requestorUuid = getRequestorUuidFromReq(req);
     
     lgr.debug({
       code: Events.CORE.SETTINGS.GET.BY_SECTION.INITIATED.code,
       message: 'Fetching settings by section',
-      details: { sectionPath, environment }
+      details: { 
+        sectionPath, 
+        environment,
+        requestorUuid
+      }
     });
 
     const allSettings = Object.values(getAllSettings());
@@ -211,19 +249,24 @@ export async function fetchSettingsBySection(request: FetchSettingsBySectionRequ
       details: { 
         sectionPath, 
         settingsCount: settings.length,
-        pathVariants
+        pathVariants,
+        requestorUuid
       }
     });
 
     return settings;
   } catch (error) {
+    // Получаем UUID пользователя из запроса для логирования
+    const requestorUuid = getRequestorUuidFromReq(req);
+    
     lgr.error({
       code: Events.CORE.SETTINGS.GET.BY_SECTION.ERROR.code,
       message: 'Error fetching settings by section',
       error,
       details: { 
         errorMessage: error instanceof Error ? error.message : 'Unknown error',
-        request 
+        request,
+        requestorUuid
       }
     });
     
@@ -238,16 +281,22 @@ export async function fetchSettingsBySection(request: FetchSettingsBySectionRequ
 /**
  * Fetch all settings with optional filtering
  * @param request Request parameters
+ * @param req Express request object for context
  * @returns Array of all settings matching the filters
  */
-export async function fetchAllSettings(request: FetchAllSettingsRequest): Promise<AppSetting[]> {
+export async function fetchAllSettings(request: FetchAllSettingsRequest, req: Request): Promise<AppSetting[]> {
   try {
     const { environment, includeConfidential = false } = request;
+    const requestorUuid = getRequestorUuidFromReq(req);
     
     lgr.debug({
       code: Events.CORE.SETTINGS.GET.ALL.INITIATED.code,
       message: 'Fetching all settings',
-      details: { environment, includeConfidential }
+      details: { 
+        environment, 
+        includeConfidential,
+        requestorUuid
+      }
     });
 
     let settings = Object.values(getAllSettings());
@@ -259,18 +308,25 @@ export async function fetchAllSettings(request: FetchAllSettingsRequest): Promis
     lgr.info({
       code: Events.CORE.SETTINGS.GET.ALL.SUCCESS.code,
       message: 'All settings fetched successfully',
-      details: { settingsCount: settings.length }
+      details: { 
+        settingsCount: settings.length,
+        requestorUuid
+      }
     });
 
     return settings;
   } catch (error) {
+    // Получаем UUID пользователя из запроса для логирования
+    const requestorUuid = getRequestorUuidFromReq(req);
+    
     lgr.error({
       code: Events.CORE.SETTINGS.GET.ALL.ERROR.code,
       message: 'Error fetching all settings',
       error,
       details: { 
         errorMessage: error instanceof Error ? error.message : 'Unknown error',
-        request 
+        request,
+        requestorUuid
       }
     });
     

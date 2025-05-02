@@ -1,6 +1,7 @@
 /**
- * controller.fetch.settings.ts
+ * controller.fetch.settings.ts - version 1.0.01
  * Controller for handling settings fetch API requests.
+ * Now passes request object to service layer for user context access.
  */
 
 import { Request, Response } from 'express';
@@ -21,6 +22,7 @@ import {
 } from './service.fetch.settings';
 import { createSystemLgr, Lgr } from '../../../core/lgr/lgr.index';
 import { Events } from '../../../core/lgr/codes';
+import { getRequestorUuidFromReq } from '../../../core/helpers/get.requestor.uuid.from.req';
 
 // Get the pool from maindb
 const pool = pgPool as Pool;
@@ -171,6 +173,7 @@ async function fetchSettings(req: AuthenticatedRequest, res: Response): Promise<
   try {
     const userId = req.user?.id;
     let username = req.user?.username || null;
+    const requestorUuid = getRequestorUuidFromReq(req);
 
     // ВРЕМЕННО: Отключаем проверку административных прав
     // const isAdmin = userId ? await isUserAdmin(userId) : false;
@@ -183,7 +186,8 @@ async function fetchSettings(req: AuthenticatedRequest, res: Response): Promise<
         body: req.body,
         userId,
         username,
-        isAdmin
+        isAdmin,
+        requestorUuid
       }
     });
 
@@ -197,7 +201,8 @@ async function fetchSettings(req: AuthenticatedRequest, res: Response): Promise<
         details: { 
           body: req.body,
           userId,
-          username
+          username,
+          requestorUuid
         }
       });
 
@@ -219,7 +224,8 @@ async function fetchSettings(req: AuthenticatedRequest, res: Response): Promise<
         details: { 
           userId,
           username,
-          isAdmin: false
+          isAdmin: false,
+          requestorUuid
         }
       });
     }
@@ -234,7 +240,8 @@ async function fetchSettings(req: AuthenticatedRequest, res: Response): Promise<
         details: { 
           environment,
           userId,
-          username 
+          username,
+          requestorUuid
         }
       });
 
@@ -258,7 +265,8 @@ async function fetchSettings(req: AuthenticatedRequest, res: Response): Promise<
             details: { 
               params,
               userId,
-              username
+              username,
+              requestorUuid
             }
           });
 
@@ -276,7 +284,8 @@ async function fetchSettings(req: AuthenticatedRequest, res: Response): Promise<
           includeConfidential
         };
 
-        const setting = await fetchSettingByName(request);
+        // Передаём объект запроса в сервис
+        const setting = await fetchSettingByName(request, req);
 
         result = {
           success: true,
@@ -294,7 +303,8 @@ async function fetchSettings(req: AuthenticatedRequest, res: Response): Promise<
             details: { 
               params,
               userId,
-              username
+              username,
+              requestorUuid
             }
           });
 
@@ -311,7 +321,8 @@ async function fetchSettings(req: AuthenticatedRequest, res: Response): Promise<
           includeConfidential
         };
 
-        const settings = await fetchSettingsBySection(request);
+        // Передаём объект запроса в сервис
+        const settings = await fetchSettingsBySection(request, req);
 
         result = {
           success: true,
@@ -326,7 +337,8 @@ async function fetchSettings(req: AuthenticatedRequest, res: Response): Promise<
           includeConfidential
         };
 
-        const settings = await fetchAllSettings(request);
+        // Передаём объект запроса в сервис
+        const settings = await fetchAllSettings(request, req);
 
         result = {
           success: true,
@@ -342,7 +354,8 @@ async function fetchSettings(req: AuthenticatedRequest, res: Response): Promise<
           details: { 
             type,
             userId,
-            username
+            username,
+            requestorUuid
           }
         });
 
@@ -363,12 +376,16 @@ async function fetchSettings(req: AuthenticatedRequest, res: Response): Promise<
         confidentialIncluded: includeConfidential,
         userId,
         username,
+        requestorUuid,
         requestedEnvironment: environment
       }
     });
 
     res.status(200).json(result);
   } catch (error) {
+    // Get UUID from request if possible
+    const requestorUuid = getRequestorUuidFromReq(req);
+    
     lgr.error({
       code: Events.CORE.SETTINGS.API.FETCH.ERROR.code,
       message: 'Error processing settings fetch request',
@@ -376,7 +393,8 @@ async function fetchSettings(req: AuthenticatedRequest, res: Response): Promise<
       details: {
         errorMessage: error instanceof Error ? error.message : 'Unknown error',
         body: req.body,
-        userId: req.user?.id
+        userId: req.user?.id,
+        requestorUuid
       }
     });
 

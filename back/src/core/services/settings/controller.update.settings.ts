@@ -1,7 +1,8 @@
 /**
- * controller.update.settings.ts
+ * controller.update.settings.ts - version 1.0.01
  * Controller for handling setting update requests.
  * Validates incoming requests before passing to service.
+ * Now passes request object to service layer for user context access.
  */
 
 import { Request, Response } from 'express';
@@ -9,6 +10,7 @@ import { UpdateSettingRequest, UpdateSettingResponse } from './types.settings';
 import { updateSetting } from './service.update.settings';
 import { createSystemLgr, Lgr } from '../../../core/lgr/lgr.index';
 import { Events } from '../../../core/lgr/codes';
+import { getRequestorUuidFromReq } from '../../../core/helpers/get.requestor.uuid.from.req';
 
 // Create lgr for controller
 const lgr: Lgr = createSystemLgr({
@@ -24,13 +26,16 @@ const lgr: Lgr = createSystemLgr({
  */
 export default async function handleUpdateSetting(req: Request, res: Response): Promise<void> {
   try {
+    // Получаем UUID пользователя, делающего запрос
+    const requestorUuid = getRequestorUuidFromReq(req);
+    
     // Log incoming request
     lgr.debug({
       code: Events.CORE.SETTINGS.UPDATE.START.RECEIVED.code,
       message: 'Received setting update request',
       details: {
         body: req.body,
-        ip: req.ip
+        requestorUuid
       }
     });
 
@@ -44,7 +49,8 @@ export default async function handleUpdateSetting(req: Request, res: Response): 
         details: {
           sectionPath,
           settingName,
-          hasValue: value !== undefined
+          hasValue: value !== undefined,
+          requestorUuid
         }
       });
       
@@ -63,8 +69,8 @@ export default async function handleUpdateSetting(req: Request, res: Response): 
       environment: req.body.environment
     };
 
-    // Call service to process update
-    const result = await updateSetting(updateRequest);
+    // Call service to process update, передавая объект req
+    const result = await updateSetting(updateRequest, req);
 
     // Return result
     if (result.success) {
@@ -73,7 +79,8 @@ export default async function handleUpdateSetting(req: Request, res: Response): 
         message: 'Setting update successful',
         details: {
           sectionPath,
-          settingName
+          settingName,
+          requestorUuid
         }
       });
       
@@ -86,7 +93,8 @@ export default async function handleUpdateSetting(req: Request, res: Response): 
         details: {
           sectionPath,
           settingName,
-          error: result.error
+          error: result.error,
+          requestorUuid
         }
       });
       
@@ -95,13 +103,15 @@ export default async function handleUpdateSetting(req: Request, res: Response): 
   } catch (error) {
     // Handle exceptions
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    const requestorUuid = getRequestorUuidFromReq(req);
     
     lgr.error({
       code: Events.CORE.SETTINGS.UPDATE.PROCESS.ERROR.code,
       message: 'Exception during setting update',
       error,
       details: {
-        errorMessage
+        errorMessage,
+        requestorUuid
       }
     });
     

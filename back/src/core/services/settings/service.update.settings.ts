@@ -1,9 +1,11 @@
 /**
- * service.update.settings.ts
+ * service.update.settings.ts - version 1.0.01
  * Service for updating application settings.
  * Validates new setting values against schemas and updates both database and cache.
+ * Now accepts request object for access to user context.
  */
 
+import { Request } from 'express';
 import { Pool, QueryResult, PoolClient } from 'pg';
 import { pool as pgPool } from '../../../db/maindb';
 import { queries } from './queries.settings';
@@ -12,6 +14,7 @@ import { createSystemLgr, Lgr } from '../../../core/lgr/lgr.index';
 import { Events } from '../../../core/lgr/codes';
 import { getSetting, hasSetting, updateCachedSetting } from './cache.settings';
 import { validateOrThrow } from './service.validate.settings';
+import { getRequestorUuidFromReq } from '../../../core/helpers/get.requestor.uuid.from.req';
 
 // Type assertion for pool
 const pool = pgPool as Pool;
@@ -26,13 +29,17 @@ const lgr: Lgr = createSystemLgr({
  * Updates a setting value in both database and cache
  * 
  * @param request - Update setting request containing sectionPath, settingName and new value
+ * @param req - Express request object for user context
  * @returns Promise resolving to UpdateSettingResponse
  */
-export async function updateSetting(request: UpdateSettingRequest): Promise<UpdateSettingResponse> {
+export async function updateSetting(request: UpdateSettingRequest, req: Request): Promise<UpdateSettingResponse> {
   const { sectionPath, settingName, value, environment } = request;
   let client: PoolClient | null = null;
 
   try {
+    // Получаем UUID пользователя из запроса
+    const requestorUuid = getRequestorUuidFromReq(req);
+    
     // Log update request
     lgr.info({
       code: Events.CORE.SETTINGS.UPDATE.START.INITIATED.code,
@@ -41,6 +48,7 @@ export async function updateSetting(request: UpdateSettingRequest): Promise<Upda
         sectionPath,
         settingName,
         environment: environment || 'all',
+        requestorUuid
       }
     });
 
@@ -52,7 +60,11 @@ export async function updateSetting(request: UpdateSettingRequest): Promise<Upda
       lgr.debug({
         code: Events.CORE.SETTINGS.UPDATE.PROCESS.CACHE_MISS.code,
         message: 'Setting not found in cache, attempting to fetch from database',
-        details: { sectionPath, settingName }
+        details: { 
+          sectionPath, 
+          settingName,
+          requestorUuid
+        }
       });
 
       // Query database for this setting
@@ -63,7 +75,11 @@ export async function updateSetting(request: UpdateSettingRequest): Promise<Upda
         lgr.error({
           code: Events.CORE.SETTINGS.UPDATE.PROCESS.ERROR.code,
           message: errorMessage,
-          details: { sectionPath, settingName }
+          details: { 
+            sectionPath, 
+            settingName,
+            requestorUuid
+          }
         });
         
         return {
@@ -89,7 +105,11 @@ export async function updateSetting(request: UpdateSettingRequest): Promise<Upda
       lgr.error({
         code: Events.CORE.SETTINGS.UPDATE.PROCESS.ERROR.code,
         message: errorMessage,
-        details: { sectionPath, settingName }
+        details: { 
+          sectionPath, 
+          settingName,
+          requestorUuid
+        }
       });
       
       return {
@@ -118,7 +138,11 @@ export async function updateSetting(request: UpdateSettingRequest): Promise<Upda
       lgr.error({
         code: Events.CORE.SETTINGS.UPDATE.PROCESS.ERROR.code,
         message: errorMessage,
-        details: { sectionPath, settingName }
+        details: { 
+          sectionPath, 
+          settingName,
+          requestorUuid
+        }
       });
       
       return {
@@ -148,7 +172,8 @@ export async function updateSetting(request: UpdateSettingRequest): Promise<Upda
       details: {
         sectionPath,
         settingName,
-        updatedAt: updatedSetting.updated_at
+        updatedAt: updatedSetting.updated_at,
+        requestorUuid
       }
     });
 
@@ -160,12 +185,16 @@ export async function updateSetting(request: UpdateSettingRequest): Promise<Upda
     // Rollback transaction if active
     if (client) {
       await client.query('ROLLBACK').catch(err => {
+        // Получаем UUID пользователя из запроса для логирования
+        const requestorUuid = getRequestorUuidFromReq(req);
+        
         lgr.error({
           code: Events.CORE.SETTINGS.UPDATE.PROCESS.ERROR.code,
           message: 'Error during transaction rollback',
           error: err,
           details: {
-            originalError: error instanceof Error ? error.message : 'Unknown error'
+            originalError: error instanceof Error ? error.message : 'Unknown error',
+            requestorUuid
           }
         });
       });
@@ -173,6 +202,9 @@ export async function updateSetting(request: UpdateSettingRequest): Promise<Upda
 
     // Log error with details
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    // Получаем UUID пользователя из запроса для логирования
+    const requestorUuid = getRequestorUuidFromReq(req);
+    
     lgr.error({
       code: Events.CORE.SETTINGS.UPDATE.PROCESS.ERROR.code,
       message: 'Error updating setting',
@@ -180,7 +212,8 @@ export async function updateSetting(request: UpdateSettingRequest): Promise<Upda
       details: {
         sectionPath,
         settingName,
-        errorMessage
+        errorMessage,
+        requestorUuid
       }
     });
 
