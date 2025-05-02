@@ -1,9 +1,10 @@
 /**
- * @file controller.groups.list.ts
+ * @file controller.groups.list.ts - version 1.0.01
  * Controller for fetching groups list.
  *
  * Handles HTTP requests to the /api/admin/groups/fetch-groups endpoint.
  * Validates JWT (if needed), retrieves data from the service, and sends the response.
+ * Now passes the request object to service layer.
  */
 
 import { Request, Response } from 'express';
@@ -37,8 +38,8 @@ async function fetchGroups(req: Request, res: Response): Promise<void> {
         // JWT проверка уже должна быть выполнена route guards
         // Если запрос дошёл до контроллера, значит JWT валидный
 
-        // Получаем данные из сервиса
-        const result: IGroupsResponse = await getAllGroups();
+        // Получаем данные из сервиса, передавая объект req
+        const result: IGroupsResponse = await getAllGroups(req);
 
         // Логируем успешное получение данных
         logRequest('Successfully retrieved groups data', {

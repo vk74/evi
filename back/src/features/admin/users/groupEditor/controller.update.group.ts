@@ -1,7 +1,8 @@
 /**
- * controller.update.group.ts
+ * controller.update.group.ts - version 1.0.01
  * Controller for handling group update requests at /api/admin/groups/update-group-by-groupid.
  * Validates request structure, extracts user data, and delegates business logic to the service.
+ * Now passes request object to service layer.
  */
 
 import { Request, Response } from 'express';
@@ -24,7 +25,7 @@ async function updateGroupById(req: Request, res: Response): Promise<void> {
       method: req.method,
       url: req.url,
       groupId: updateData.group_id,
-      userID: (req as any).user?.user_id || (req as any).user?.id, // Логируем user_id или id из req.user
+      userID: (req as any).user?.user_id || (req as any).user?.id
     });
 
     // Извлекаем user_id (UUID пользователя) из req.user
@@ -37,11 +38,12 @@ async function updateGroupById(req: Request, res: Response): Promise<void> {
       } as RequiredFieldError;
     }
 
-    const result = await updateGroupService({ ...updateData, modified_by: modifiedBy });
-
+    // Передаем req в сервис
+    const result = await updateGroupService({ ...updateData, modified_by: modifiedBy }, req);
+    
     logRequest('Successfully updated group data', {
       groupId: updateData.group_id,
-      userID: modifiedBy, // Логируем userID после успешного обновления
+      userID: modifiedBy
     });
 
     res.status(200).json(result as UpdateGroupResponse);

@@ -1,5 +1,5 @@
 /**
- * service.create.group.ts - backend
+ * service.create.group.ts - version 1.0.01
  * Backend service layer for handling group creation operations.
  * 
  * Handles:
@@ -7,14 +7,17 @@
  * - Database operations
  * - Transaction management
  * - Error handling
- * - Clear cache after successfull group creation
+ * - Clear cache after successful group creation
+ * - Now accepts request object for access to user context
  */
 
+import { Request } from 'express';
 import { Pool } from 'pg';
 import { pool as pgPool } from '../../../../db/maindb';
 import { queries } from './queries.group.editor';
 import { GroupStatus } from './types.group.editor';
 import { groupsRepository } from '../groupsList/repository.groups.list';
+import { getRequestorUuidFromReq } from '../../../../core/helpers/get.requestor.uuid.from.req';
 import type { 
   CreateGroupRequest, 
   CreateGroupResponse,
@@ -230,18 +233,23 @@ async function checkOwnerExists(ownerUsername: string): Promise<void> {
 
 export async function createGroup(
   groupData: CreateGroupRequest, 
-  currentUser: { username: string }
+  currentUser: { username: string },
+  req: Request
 ): Promise<CreateGroupResponse> {
   const client = await pool.connect();
   
   try {
+    // Получаем UUID пользователя, делающего запрос
+    const requestorUuid = getRequestorUuidFromReq(req);
+    
     lgr.info({
       code: Events.ADMIN.USERS.CREATION.CREATE.SUCCESS.code,
       message: 'Starting group creation process',
       details: { 
         groupName: groupData.group_name,
         owner: groupData.group_owner,
-        initiatedBy: currentUser.username
+        initiatedBy: currentUser.username,
+        requestorUuid
       }
     });
 
@@ -257,7 +265,8 @@ export async function createGroup(
         message: 'Invalid group status',
         details: { 
           providedStatus: groupData.group_status,
-          allowedStatuses: Object.values(GroupStatus)
+          allowedStatuses: Object.values(GroupStatus),
+          requestorUuid
         }
       });
 
@@ -276,7 +285,8 @@ export async function createGroup(
     await client.query('BEGIN');
     lgr.debug({
       code: Events.ADMIN.USERS.CREATION.DATABASE.TRANSACTION_START.code,
-      message: 'Starting database transaction'
+      message: 'Starting database transaction',
+      details: { requestorUuid }
     });
     
     // Получаем UUID владельца
@@ -287,7 +297,7 @@ export async function createGroup(
     lgr.debug({
       code: Events.ADMIN.USERS.CREATION.DATABASE.SUCCESS.code,
       message: 'Owner query completed',
-      details: { ownerData: ownerResult.rows[0] }
+      details: { ownerData: ownerResult.rows[0], requestorUuid }
     });
     
     const ownerUuid = ownerResult.rows[0].user_id;
@@ -307,7 +317,7 @@ export async function createGroup(
     lgr.debug({
       code: Events.ADMIN.USERS.CREATION.DATABASE.SUCCESS.code,
       message: 'Group base data inserted',
-      details: { groupId }
+      details: { groupId, requestorUuid }
     });
 
     // Create group details
@@ -317,20 +327,20 @@ export async function createGroup(
         groupId,
         groupData.group_description || null,
         groupData.group_email || null,
-        ownerUuid
+        requestorUuid // Используем UUID того, кто выполняет запрос
       ]
     );
     lgr.debug({
       code: Events.ADMIN.USERS.CREATION.DATABASE.SUCCESS.code,
       message: 'Group details inserted',
-      details: { groupId }
+      details: { groupId, requestorUuid }
     });
 
     await client.query('COMMIT');
     lgr.info({
       code: Events.ADMIN.USERS.CREATION.DATABASE.SUCCESS.code,
       message: 'Group database transaction committed',
-      details: { groupId, groupName: groupData.group_name }
+      details: { groupId, groupName: groupData.group_name, requestorUuid }
     });
 
     try {
@@ -343,18 +353,21 @@ export async function createGroup(
       if (!cacheStateAfter) {
         lgr.info({
           code: Events.ADMIN.USERS.CREATION.CACHE.CLEARED.code,
-          message: 'Groups list repository cache cleared successfully'
+          message: 'Groups list repository cache cleared successfully',
+          details: { requestorUuid }
         });
       } else {
         lgr.warn({
           code: Events.ADMIN.USERS.CREATION.CACHE.ERROR.code,
-          message: 'Failed to clear groups list repository cache: cache is still valid'
+          message: 'Failed to clear groups list repository cache: cache is still valid',
+          details: { requestorUuid }
         });
       }
     } catch (error) {
       lgr.error({
         code: Events.ADMIN.USERS.CREATION.CACHE.ERROR.code,
         message: 'Failed to clear groups list repository cache',
+        details: { requestorUuid },
         error
       });
     }

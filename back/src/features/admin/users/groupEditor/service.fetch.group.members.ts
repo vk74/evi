@@ -1,25 +1,28 @@
 /**
- * service.fetch.group.members.ts
+ * service.fetch.group.members.ts - version 1.0.01
  * BACKEND service for fetching members of a specific group.
  * 
  * Functionality:
  * - Validates input parameters
  * - Fetches group members from the database
- * - Handles data transformation and business logic
- * - Manages error handling
- * - Provides logging for operations
+ * - Formats data for frontend consumption
+ * - Handles error cases
+ * - Now accepts request object for access to user context
  */
 
+import { Request } from 'express';
 import { Pool, QueryResult } from 'pg';
+import { pool as pgPool } from '../../../../db/maindb';
 import { queries } from './queries.group.editor';
 import { 
   FetchGroupMembersRequest, 
   FetchGroupMembersResponse,
   GroupMember,
   ValidationError,
+  NotFoundError,
   ServiceError
 } from './types.group.editor';
-import { pool as pgPool } from '../../../../db/maindb';
+import { getRequestorUuidFromReq } from '../../../../core/helpers/get.requestor.uuid.from.req';
 
 // Type assertion for pool
 const pool = pgPool as Pool;
@@ -30,17 +33,20 @@ function logService(message: string, meta?: object): void {
 }
 
 /**
- * Service function to fetch members of a group
+ * Service function to fetch group members
  * @param request FetchGroupMembersRequest containing the group ID
- * @returns FetchGroupMembersResponse with members data or error information
+ * @param req Express request object for context
+ * @returns FetchGroupMembersResponse with members data
  */
-export async function fetchGroupMembers(request: FetchGroupMembersRequest): Promise<FetchGroupMembersResponse> {
+export async function fetchGroupMembers(request: FetchGroupMembersRequest, req: Request): Promise<FetchGroupMembersResponse> {
   const { groupId } = request;
 
   try {
+    // Get the UUID of the user making the request
+    const requestorUuid = getRequestorUuidFromReq(req);
+    
     // Input validation
     if (!groupId) {
-      // Создаем ошибку валидации
       const validationError: ValidationError = {
         code: 'VALIDATION_ERROR',
         message: 'Group ID is required',
@@ -50,74 +56,63 @@ export async function fetchGroupMembers(request: FetchGroupMembersRequest): Prom
     }
 
     // Log operation start
-    logService('Fetching group members from database', { groupId });
+    logService('Fetching group members from database', { 
+      groupId, 
+      requestorUuid 
+    });
 
-    // Perform query to get group members with parameterized values to prevent SQL injection
+    // Perform query to get group members
     const result: QueryResult = await pool.query(queries.getGroupMembers.text, [groupId]);
     
-    logService('Raw database query results obtained', { 
-      rowCount: result.rowCount,
-      groupId 
-    });
-
-    // Transform query results to maintain both GroupMember interface compatibility
-    // and include all fields needed by the frontend
-    const members = result.rows.map(row => {
-      // Create display name from first_name, middle_name, last_name for GroupMember interface
-      const name = [row.first_name, row.middle_name, row.last_name]
-          .filter(Boolean)
-          .join(' ');
+    // If no rows returned, group might not exist
+    if (result.rows.length === 0) {
+      // We need to check if the group exists
+      const groupResult = await pool.query(queries.getGroupById.text, [groupId]);
       
-      // Create a member object with all required fields
-      return {
-        // Fields required by GroupMember interface
-        user_id: row.user_id,
-        username: row.username,
-        name: name,
-        email: row.email,
-        role: row.is_staff ? 'staff' : 'user',
-        
-        // Additional fields needed by the frontend
-        member_id: row.member_id,
-        group_id: row.group_id,
-        joined_at: row.joined_at,
-        added_by: row.added_by,
-        is_active: row.is_active,
-        left_at: row.left_at,
-        removed_by: row.removed_by,
-        is_staff: row.is_staff,
-        account_status: row.account_status,
-        first_name: row.first_name,
-        middle_name: row.middle_name,
-        last_name: row.last_name
-      };
-    });
-
+      if (groupResult.rows.length === 0) {
+        throw {
+          code: 'NOT_FOUND',
+          message: 'Group not found'
+        } as NotFoundError;
+      }
+    }
+    
+    // Map database rows to GroupMember objects
+    const members: GroupMember[] = result.rows.map(row => ({
+      user_id: row.user_id,
+      username: row.username,
+      name: `${row.first_name} ${row.last_name}`.trim(),
+      email: row.email,
+      role: row.is_staff ? 'Administrator' : 'User'
+    }));
+    
     // Log successful fetch
-    logService('Successfully retrieved group members', {
-      groupId,
-      totalMembers: members.length,
+    logService('Successfully fetched group members', { 
+      groupId, 
+      memberCount: members.length,
+      requestorUuid
     });
 
     // Return formatted response
     return {
       success: true,
-      message: members.length > 0 ? 'Group members fetched successfully' : 'Group has no members',
+      message: 'Group members retrieved successfully',
       data: {
-        members, // TypeScript допускает присвоение более широкого типа к более узкому при возврате данных
-        total: members.length,
-      },
+        members,
+        total: members.length
+      }
     };
+    
   } catch (error) {
     // Log error
     logService('Error in fetchGroupMembers service', { groupId, error });
 
-    // Если ошибка уже в правильном формате (имеет code), просто пробрасываем дальше
+    // If error already has the correct format (has code), just pass it through
     if (error && typeof error === 'object' && 'code' in error) {
       throw error;
     }
 
-    // Иначе создаем сервисную ошибку
+    // Otherwise create a service error
     const serviceError: ServiceError = {
       code: 'INTERNAL_SERVER_ERROR',
       message: error instanceof Error ? error.message : 'Failed to fetch group members from database',

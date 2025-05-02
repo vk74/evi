@@ -1,11 +1,11 @@
 /**
- * controller.delete.group.members.ts
+ * controller.delete.group.members.ts - version 1.0.01
  * Controller for handling group members deletion requests.
  * 
  * Functionality:
  * - Handles HTTP POST requests to remove group members
  * - Extracts request parameters
- * - Delegates to service layer
+ * - Delegates to service layer with request object
  * - Formats HTTP responses
  * - Provides request and response logging
  */
@@ -43,9 +43,9 @@ export async function removeGroupMembers(req: Request, res: Response): Promise<v
       userIdsCount: userIds?.length || 0
     });
 
-    // Call service layer to remove group members
+    // Call service layer to remove group members, passing request object
     const request: RemoveGroupMembersRequest = { groupId, userIds };
-    const result = await removeGroupMembersService(request);
+    const result = await removeGroupMembersService(request, req);
 
     // Send response with format matching the frontend interface
     res.status(200).json({

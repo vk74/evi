@@ -1,17 +1,20 @@
 /**
- * @file service.delete.selected.groups.ts
+ * @file service.delete.selected.groups.ts - version 1.0.01
  * Backend service for deleting selected groups.
  *
  * Functionality:
  * - Deletes selected groups from the database.
  * - Clears the cache after successful deletion.
  * - Handles errors and logging.
+ * - Now accepts request object for access to user context.
  */
 
+import { Request } from 'express';
 import { Pool } from 'pg';
 import { pool as pgPool } from '../../../../db/maindb';
 import { queries } from './queries.groups.list';
 import { groupsRepository } from './repository.groups.list';
+import { getRequestorUuidFromReq } from '../../../../core/helpers/get.requestor.uuid.from.req';
 
 // Явно указываем тип для pool
 const pool = pgPool as Pool;
@@ -29,13 +32,20 @@ export const deleteSelectedGroupsService = {
     /**
      * Deletes selected groups by their IDs
      * @param groupIds - Array of group UUIDs to delete
+     * @param req - Express request object for context
      * @returns Promise<number> - Number of deleted groups
      * @throws {Error} - If an error occurs
      */
-    async deleteSelectedGroups(groupIds: string[]): Promise<number> {
+    async deleteSelectedGroups(groupIds: string[], req: Request): Promise<number> {
         try {
+            // Получаем UUID пользователя, делающего запрос
+            const requestorUuid = getRequestorUuidFromReq(req);
+            
             // Логируем начало операции
-            lgr.info('Starting delete operation', { groupIds });
+            lgr.info('Starting delete operation', { 
+                groupIds,
+                requestorUuid
+            });
 
             // Выполняем SQL-запрос для удаления групп
             const result = await pool.query(queries.deleteSelectedGroups, [groupIds]);
@@ -49,7 +59,10 @@ export const deleteSelectedGroupsService = {
 
             // Логируем успешное удаление
             const deletedCount = result.rows.length;
-            lgr.info('Successfully deleted groups', { deletedCount });
+            lgr.info('Successfully deleted groups', { 
+                deletedCount,
+                requestorUuid
+            });
 
             // Очищаем кэш в репозитории
             groupsRepository.clearCache();
@@ -57,9 +70,9 @@ export const deleteSelectedGroupsService = {
             // Проверяем, что кэш действительно очищен
             const isCacheCleared = !groupsRepository.hasValidCache();
             if (isCacheCleared) {
-                lgr.info('Cache successfully cleared');
+                lgr.info('Cache successfully cleared', { requestorUuid });
             } else {
-                lgr.error('Cache was not cleared successfully');
+                lgr.error('Cache was not cleared successfully', { requestorUuid });
             }
 
             // Возвращаем количество удаленных групп

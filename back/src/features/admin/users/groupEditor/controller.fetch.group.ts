@@ -1,15 +1,13 @@
 /**
- * controller.fetch.group.ts
+ * controller.fetch.group.ts - version 1.0.01
  * Controller for fetching group data by group ID in the admin panel.
  * 
  * Functionality:
  * - Handles HTTP GET requests to retrieve group data
  * - Validates request parameters
- * - Delegates data loading to service layer
+ * - Delegates data loading to service layer (passing the request object)
  * - Handles response formatting and error cases
  * - Provides request logging
- * 
- * Note: Database pool is managed in the service layer (service.fetch.group.ts), not via req.app.get('dbPool').
  */
 
 import { Request, Response } from 'express';
@@ -52,8 +50,8 @@ export async function fetchGroupById(req: Request, res: Response): Promise<void>
       return;
     }
 
-    // Call service layer to fetch group data
-    const result: FetchGroupResponse = await fetchGroupData({ groupId });
+    // Call service layer to fetch group data, passing the request object
+    const result: FetchGroupResponse = await fetchGroupData({ groupId }, req);
 
     // Log successful response
     if (result.success && result.data) {

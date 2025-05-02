@@ -1,11 +1,11 @@
 /**
- * controller.fetch.group.members.ts
+ * controller.fetch.group.members.ts - version 1.0.01
  * Controller for handling group members fetch requests.
  * 
  * Functionality:
  * - Handles HTTP GET requests to fetch group members
  * - Extracts request parameters
- * - Delegates to service layer
+ * - Delegates to service layer with request object
  * - Formats HTTP responses
  * - Provides request and response logging
  */
@@ -41,9 +41,9 @@ export async function fetchGroupMembers(req: Request, res: Response): Promise<vo
       groupId,
     });
 
-    // Call service layer to fetch group members
+    // Call service layer to fetch group members, passing request object
     const request: FetchGroupMembersRequest = { groupId };
-    const result = await fetchGroupMembersService(request);
+    const result = await fetchGroupMembersService(request, req);
 
     // Send response
     res.status(200).json(result);

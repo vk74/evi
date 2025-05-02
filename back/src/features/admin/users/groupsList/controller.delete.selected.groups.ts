@@ -1,11 +1,11 @@
 /**
- * @file controller.delete.selected.groups.ts
+ * @file controller.delete.selected.groups.ts - version 1.0.01
  * Controller for handling group deletion requests.
  *
  * Functionality:
  * - Handles HTTP POST requests to delete selected groups.
  * - Validates the request body.
- * - Calls the service to delete groups.
+ * - Calls the service to delete groups, passing the request object.
  * - Sends the response back to the client.
  */
 
@@ -45,8 +45,8 @@ async function deleteSelectedGroups(req: Request, res: Response): Promise<void> 
             return;
         }
 
-        // Вызываем сервис для удаления групп
-        const deletedCount = await deleteSelectedGroupsService.deleteSelectedGroups(groupIds);
+        // Вызываем сервис для удаления групп, передавая объект req
+        const deletedCount = await deleteSelectedGroupsService.deleteSelectedGroups(groupIds, req);
 
         // Логируем успешное выполнение
         logRequest('Successfully deleted groups', { deletedCount });

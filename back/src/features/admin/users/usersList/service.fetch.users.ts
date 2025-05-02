@@ -1,18 +1,21 @@
 /**
- * @file service.fetch.users.ts
+ * @file service.fetch.users.ts - version 1.0.01
  * BACKEND service for fetching users data from database.
  * 
  * Functionality:
  * - Retrieves users with pagination, sorting and filtering
  * - Integrates with cache layer for optimized performance
  * - Maps database records to response format
+ * - Now accepts request object for context access
  */
 
+import { Request } from 'express';
 import { Pool } from 'pg';
 import { pool as pgPool } from '../../../../db/maindb';
 import { usersCache, CacheKey } from './cache.users.list';
 import { queries, buildSortClause } from './queries.users.list';
 import { IUser, IUsersResponse, IUsersFetchParams, UserError } from './types.users.list';
+import { getRequestorUuidFromReq } from '../../../../core/helpers/get.requestor.uuid.from.req';
 
 // Explicitly set the type for pool
 const pool = pgPool as Pool;
@@ -51,10 +54,14 @@ export const usersFetchService = {
   /**
    * Fetches users with filtering, sorting and pagination
    * @param params Query parameters
+   * @param req Express request object for context
    * @returns Promise with users response
    */
-  async fetchUsers(params: IUsersFetchParams): Promise<IUsersResponse> {
+  async fetchUsers(params: IUsersFetchParams, req: Request): Promise<IUsersResponse> {
     try {
+      // Get the UUID of the user making the request
+      const requestorUuid = getRequestorUuidFromReq(req);
+      
       // Normalize parameters
       const search = (params.search || '').trim();
       const page = Math.max(1, params.page || 1);
@@ -62,6 +69,13 @@ export const usersFetchService = {
       const sortBy = params.sortBy || '';
       const sortDesc = params.sortDesc || false;
       const forceRefresh = params.forceRefresh || false;
+      
+      lgr.info('Processing fetch users request', { 
+        requestorUuid,
+        search: search || '(empty)',
+        page,
+        itemsPerPage
+      });
       
       // Create cache key
       const cacheKey: CacheKey = {
@@ -76,7 +90,11 @@ export const usersFetchService = {
       if (!forceRefresh) {
         const cachedData = usersCache.get(cacheKey);
         if (cachedData) {
-          lgr.info('Using cached users data', { cacheHit: true, params });
+          lgr.info('Using cached users data', { 
+            cacheHit: true, 
+            params,
+            requestorUuid 
+          });
           return cachedData;
         }
       } else {
@@ -85,7 +103,10 @@ export const usersFetchService = {
       }
       
       // If not in cache or force refresh, query the database
-      lgr.info('Fetching users from database', { params });
+      lgr.info('Fetching users from database', { 
+        params,
+        requestorUuid
+      });
       
       // Build sort clause
       const sortClause = buildSortClause(sortBy, sortDesc);
@@ -122,7 +143,8 @@ export const usersFetchService = {
       lgr.info('Successfully fetched users', { 
         count: users.length,
         total,
-        search: !!search
+        search: !!search,
+        requestorUuid
       });
       
       return response;

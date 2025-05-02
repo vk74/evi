@@ -1,14 +1,18 @@
 /**
- * service.update.group.ts
+ * service.update.group.ts - version 1.0.01
  * Service for handling group update business logic and database operations.
  * Performs validation using common backend rules, updates group data in app.groups and app.group_details, and manages transactions.
+ * Now accepts request object for access to user context.
  */
 
+import { Request } from 'express';
 import { Pool } from 'pg';
 import { pool as pgPool } from '../../../../db/maindb';
 import { queries } from './queries.group.editor';
 import type { UpdateGroupRequest, UpdateGroupResponse, ServiceError, ValidationError, NotFoundError } from './types.group.editor';
 import { REGEX, VALIDATION } from '../../../../core/validation/rules.common.fields';
+import { groupsRepository } from '../groupsList/repository.groups.list';
+import { getRequestorUuidFromReq } from '../../../../core/helpers/get.requestor.uuid.from.req';
 
 const pool = pgPool as Pool;
 
@@ -16,7 +20,10 @@ function logService(message: string, meta?: object): void {
   console.log(`[${new Date().toISOString()}] [UpdateGroupService] ${message}`, meta || '');
 }
 
-export async function updateGroupById(updateData: UpdateGroupRequest): Promise<UpdateGroupResponse> {
+export async function updateGroupById(updateData: UpdateGroupRequest, req: Request): Promise<UpdateGroupResponse> {
+  // Получаем UUID пользователя, делающего запрос
+  const requestorUuid = getRequestorUuidFromReq(req);
+
   // Валидация group_name, если он передан, используя общие правила
   if (updateData.group_name !== undefined) { // Проверяем, что поле передано (включая null/empty)
     if (!updateData.group_name) {
@@ -57,7 +64,10 @@ export async function updateGroupById(updateData: UpdateGroupRequest): Promise<U
 
   try {
     await client.query('BEGIN');
-    logService('Starting group update transaction', { groupId: updateData.group_id });
+    logService('Starting group update transaction', { 
+      groupId: updateData.group_id,
+      requestorUuid
+    });
 
     // Подготовка параметров для обновления app.groups
     // Передаём null для неуказанных полей, COALESCE в запросе сохранит текущие значения
@@ -87,7 +97,7 @@ export async function updateGroupById(updateData: UpdateGroupRequest): Promise<U
       updateData.group_id,
       updateData.group_description || null,
       updateData.group_email || null,
-      updateData.modified_by, // UUID пользователя, выполняющего обновление
+      requestorUuid || updateData.modified_by // Используем UUID пользователя из запроса или переданный modified_by
     ];
 
     // Обновление данных группы в app.group_details
@@ -105,7 +115,24 @@ export async function updateGroupById(updateData: UpdateGroupRequest): Promise<U
     }
 
     await client.query('COMMIT');
-    logService('Successfully updated group data', { groupId: updateData.group_id });
+    logService('Successfully updated group data', { 
+      groupId: updateData.group_id,
+      requestorUuid
+    });
+    
+    // Очищаем кэш списка групп
+    try {
+      groupsRepository.clearCache();
+      logService('Groups list cache cleared', { 
+        requestorUuid 
+      });
+    } catch (error) {
+      // Не прерываем выполнение, если очистка кэша не удалась
+      logService('Failed to clear groups list cache', { 
+        error,
+        requestorUuid
+      });
+    }
 
     return {
       success: true,
@@ -118,7 +145,11 @@ export async function updateGroupById(updateData: UpdateGroupRequest): Promise<U
 
     const error = err as ServiceError;
 
-    logService('Error updating group data', { groupId: updateData.group_id, error });
+    logService('Error updating group data', { 
+      groupId: updateData.group_id, 
+      error,
+      requestorUuid
+    });
 
     throw {
       code: error?.code || 'INTERNAL_SERVER_ERROR',

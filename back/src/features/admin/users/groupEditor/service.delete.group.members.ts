@@ -1,5 +1,5 @@
 /**
- * service.delete.group.members.ts
+ * service.delete.group.members.ts - version 1.0.01
  * BACKEND service for removing members from a specific group.
  * 
  * Functionality:
@@ -8,8 +8,10 @@
  * - Handles data transformation and business logic
  * - Manages error handling
  * - Provides logging for operations
+ * - Now accepts request object for access to user context
  */
 
+import { Request } from 'express';
 import { Pool, QueryResult } from 'pg';
 import { queries } from './queries.group.editor';
 import { 
@@ -19,6 +21,7 @@ import {
   ServiceError
 } from './types.group.editor';
 import { pool as pgPool } from '../../../../db/maindb';
+import { getRequestorUuidFromReq } from '../../../../core/helpers/get.requestor.uuid.from.req';
 
 // Type assertion for pool
 const pool = pgPool as Pool;
@@ -31,12 +34,16 @@ function logService(message: string, meta?: object): void {
 /**
  * Service function to remove members from a group
  * @param request RemoveGroupMembersRequest containing the group ID and array of user IDs
+ * @param req Express request object for context
  * @returns RemoveGroupMembersResponse with removal status and details
  */
-export async function removeGroupMembers(request: RemoveGroupMembersRequest): Promise<RemoveGroupMembersResponse> {
+export async function removeGroupMembers(request: RemoveGroupMembersRequest, req: Request): Promise<RemoveGroupMembersResponse> {
   const { groupId, userIds } = request;
 
   try {
+    // Get the UUID of the user making the request
+    const requestorUuid = getRequestorUuidFromReq(req);
+    
     // Input validation
     if (!groupId) {
       const validationError: ValidationError = {
@@ -59,7 +66,8 @@ export async function removeGroupMembers(request: RemoveGroupMembersRequest): Pr
     // Log operation start
     logService('Removing group members from database', { 
       groupId, 
-      userIdsCount: userIds.length 
+      userIdsCount: userIds.length,
+      requestorUuid
     });
 
     // Perform query to remove group members with parameterized values to prevent SQL injection
@@ -75,7 +83,8 @@ export async function removeGroupMembers(request: RemoveGroupMembersRequest): Pr
     logService('Successfully removed group members', {
       groupId,
       removedCount,
-      removedUserIds
+      removedUserIds,
+      requestorUuid
     });
 
     // Return formatted response

@@ -1,7 +1,8 @@
 /**
- * controller.create.group.ts
+ * controller.create.group.ts - version 1.0.02
  * Controller for handling group creation requests from admin panel.
  * Processes requests, handles errors, and formats responses.
+ * Now passes request object to service layer.
  */
 import { Request, Response } from 'express';
 import { createGroup } from './service.create.group';
@@ -31,12 +32,12 @@ async function createGroupController(req: Request & { user?: { username: string 
       details: {
         groupName: groupData.group_name,
         owner: groupData.group_owner,
-        requestIP: req.ip,
         userAgent: req.headers['user-agent']
       }
     });
 
-    const result = await createGroup(groupData, { username: req.user?.username || '' });
+    // Передаем объект req в сервис
+    const result = await createGroup(groupData, { username: req.user?.username || '' }, req);
 
     // Логируем успешное создание
     lgr.info({

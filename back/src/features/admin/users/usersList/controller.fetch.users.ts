@@ -1,11 +1,11 @@
 /**
- * @file controller.fetch.users.ts
+ * @file controller.fetch.users.ts - version 1.0.01
  * Controller for handling user list fetch API requests.
  * 
  * Functionality:
  * - Processes HTTP requests for user data
  * - Validates request parameters
- * - Delegates business logic to service layer
+ * - Delegates business logic to service layer (passing the entire req object)
  * - Formats API responses
  */
 
@@ -55,8 +55,8 @@ async function fetchUsers(req: Request, res: Response): Promise<void> {
       return;
     }
 
-    // Handle the request through service
-    const result = await usersFetchService.fetchUsers(params);
+    // Handle the request through service, now passing the req object
+    const result = await usersFetchService.fetchUsers(params, req);
 
     // Log successful response
     logRequest('Successfully processed users fetch request', {

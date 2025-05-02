@@ -1,11 +1,11 @@
 /**
- * @file controller.delete.users.ts
+ * @file controller.delete.users.ts - version 1.0.01
  * Controller for handling user deletion API requests.
  * 
  * Functionality:
  * - Processes HTTP requests for user deletion
  * - Validates request parameters
- * - Delegates deletion logic to service layer
+ * - Delegates deletion logic to service layer (passing the entire req object)
  * - Formats API responses
  */
 
@@ -44,8 +44,8 @@ async function deleteSelectedUsers(req: Request, res: Response): Promise<void> {
       return;
     }
 
-    // Execute delete through service
-    const deletedCount = await usersDeleteService.deleteSelectedUsers(req.body.userIds);
+    // Execute delete through service, now passing the req object
+    const deletedCount = await usersDeleteService.deleteSelectedUsers(req.body.userIds, req);
 
     // Log success
     logRequest('Successfully deleted users', {
