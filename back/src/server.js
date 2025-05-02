@@ -20,7 +20,7 @@ const { loadSettings } = require('@/core/services/settings/service.load.settings
 
 // Import event bus system
 const { eventBus } = require('@/core/eventBus/bus.events');
-const { createEventFactory } = require('@/core/eventBus/fabric.events');
+const fabricEvents = require('@/core/eventBus/fabric.events').default;
 // Import event reference cache
 const { initializeEventCache, getCachedEventSchema } = require('@/core/eventBus/reference/cache.reference.events');
 
@@ -118,15 +118,11 @@ async function initializeServer() {
         throw new Error('Event bus not initialized');
       }
       
-      // Create event factory
-      eventFactory = createEventFactory({
-        source: 'backend-server',
-        environment: process.env.NODE_ENV || 'development',
-        validateOnCreate: true
-      });
+      // Set global event factory
+      eventFactory = fabricEvents;
       
       if (!eventFactory) {
-        throw new Error('Failed to create event factory');
+        throw new Error('Failed to load event factory');
       }
       
       console.log('Event system initialized successfully');
@@ -262,58 +258,7 @@ async function initializeServer() {
     });
 
 
-    /*  Version with direct file saving to backend server filesystem
 
-    app.post('/proto-generate-excel', async (req, res) => {
-      try {
-        // Data from request
-        const formData = req.body;
-        const workbook = new ExcelJS.Workbook();
-        const worksheet = workbook.addWorksheet('Data Sheet');
-
-        // Write headers
-        worksheet.columns = [
-          { header: 'Field', key: 'field', width: 30 },
-          { header: 'Value', key: 'value', width: 30 }
-        ];
-
-        // Add data to file
-        worksheet.addRow({ field: 'Organization Name', value: formData.orgname });
-        worksheet.addRow({ field: 'Country / Region', value: formData.region });
-        worksheet.addRow({ field: 'Location', value: formData.location });
-        worksheet.addRow({ field: 'Monitoring Station Deployed', value: formData.checkbox ? 'Yes' : 'No' });
-        worksheet.addRow({ field: 'Selected Option', value: formData.radio });
-        worksheet.addRow({ field: 'Date Filled', value: formData.date });
-
-        const filePath = '/Users/vit/Documents/code/output/estimatorFile1.xlsx'; // Path to save file
-        await workbook.xlsx.writeFile(filePath);
-        
-        res.status(200).send('Excel file generated successfully');
-
-        // Save file
-        const fileName = 'estimatorFile.xlsx';
-        await workbook.xlsx.writeFile(fileName);
-
-        // Send file to client
-        res.download(fileName, (err) => {
-          if (err) {
-            console.error('Error sending file:', err);
-            res.status(500).send('Error sending file');
-          }
-          
-          // Delete file after sending
-          fs.unlink(fileName, (unlinkErr) => {
-            if (unlinkErr) {
-              console.error('Error deleting file:', unlinkErr);
-            }
-          });
-        });
-      } catch (error) {
-        console.error('Error generating Excel file:', error);
-        res.status(500).send('Error generating Excel file');
-      }
-    });
-    */
 
     ////////////////////////// End of Excel route prototypes ////////////////////////// 
 

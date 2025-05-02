@@ -137,7 +137,7 @@ export const consoleTransport = (config: Partial<ConsoleTransportConfig> = {}): 
         source, 
         payload, 
         severity, 
-        userId, 
+        requestorId, 
         metadata 
       } = event;
       
@@ -166,8 +166,8 @@ export const consoleTransport = (config: Partial<ConsoleTransportConfig> = {}): 
       }
       
       // User ID if available
-      if (userId) {
-        logParts.push(`user: ${userId}`);
+      if (requestorId) {
+        logParts.push(`user: ${requestorId}`);
       }
       
       // Build main log message

@@ -58,7 +58,7 @@ export interface BaseEvent {
   ipAddress?: string;
 
   // 👤 ID of the user who triggered the event
-  userId?: string;
+  requestorId?: string;
 
 
   // EVENT PROPERTIES TO BE USED BY FABRIC EVENT VALIDATOR

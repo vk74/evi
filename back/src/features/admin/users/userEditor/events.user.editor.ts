@@ -32,7 +32,7 @@ export const USER_CREATION_EVENTS = {
     source: 'user editor admin submodule',
     eventType: 'app' as const,
     severity: 'debug' as const,
-    eventMessage: 'User creation validation successful',
+    eventMessage: 'Validation of user data for account creation complete successful',
     payload: null, // Will be of type { username: string, email: string }
     version: '1.0.0'
   },

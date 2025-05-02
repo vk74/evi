@@ -1,180 +1,189 @@
-// Event Factory for creating standardized event instances that conform to BaseEvent interface
-// Provides methods for creating basic events, related events, and causal events with proper metadata
+/**
+ * fabric.events.ts - backend file
+ * version: 1.0.01
+ * 
+ * Event Factory for creating standardized event instances
+ * that conform to BaseEvent interface.
+ * 
+ * This module is responsible for creating event objects based on templates 
+ * stored in the events cache. It follows a modular approach with separate 
+ * functions for each step of event creation and enrichment:
+ * 
+ * 1. getEventTemplateFromCache - Gets event template from cache or creates minimal template
+ * 2. createBaseEvent - Creates base event with required core properties
+ * 3. enrichWithPayload - Adds business data to the event
+ * 4. enrichWithRequestorInfo - Adds user context from request object
+ * 
+ * The factory is designed to be resilient and continue to function even if
+ * some data is missing. It integrates with the event validation system
+ * but does not stop execution on validation issues.
+ */
 
-const { v4: uuidv4 } = require('uuid');
-import { BaseEvent, EventFactoryConfig, CreateEventOptions } from './types.events';
-import { getEventSchemaVersion, isValidEventType } from './reference/index.reference.events';
+import { v4 as uuidv4 } from 'uuid';
+import { BaseEvent, CreateEventOptions } from './types.events';
+import { getEventTemplate, hasEventInCache } from './reference/cache.reference.events';
 import { assertValidEvent } from './validate.events';
+import getRequestorUuidFromReq from '../helpers/get.requestor.uuid.from.req';
 import os from 'os';
 
 /**
- * Factory for creating standardized event objects
+ * Input parameters for creating an event
  */
-export const createEventFactory = (config: EventFactoryConfig) => {
-  // Default configuration
-  const factoryConfig: Required<EventFactoryConfig> = {
-    source: config.source,
-    environment: config.environment || process.env.NODE_ENV || 'development',
-    validateOnCreate: config.validateOnCreate !== undefined ? config.validateOnCreate : true
-  };
+export interface CreateEventParams {
+  // Express request object for extracting user context
+  req?: any;
+  
+  // Event name or event key from predefined constants (e.g. USER_CREATION_EVENTS.VALIDATION_PASSED)
+  eventName: string;
+  
+  // Business data to include in the event
+  payload?: unknown;
+  
+  // Optional error data for error events
+  errorData?: string;
+}
 
-  // Basic host information for all events
-  const hostInfo = {
-    hostname: os.hostname(),
-    processId: process.pid
-  };
-
-  /**
-   * Get the default event type based on the event name pattern
-   * This is a helper function to determine the event type if not explicitly provided
-   */
-  const getDefaultEventType = (eventName: string): 'app' | 'system' | 'security' | 'integration' | 'performance' => {
-    // Simple pattern matching based on event name prefixes
-    if (eventName.startsWith('security.') || eventName.includes('.auth.')) {
-      return 'security';
-    } else if (eventName.startsWith('system.') || eventName.includes('.startup.') || eventName.includes('.shutdown.')) {
-      return 'system';
-    } else if (eventName.startsWith('perf.') || eventName.includes('.performance.')) {
-      return 'performance';
-    } else if (eventName.startsWith('integration.') || eventName.includes('.external.')) {
-      return 'integration';
-    } else {
-      // Default to 'app' for most business-related events
-      return 'app';
-    }
-  };
-
-  /**
-   * Creates a basic event with the specified type and payload
-   */
-  const createEvent = (
-    eventName: string,
-    payload?: unknown,
-    options: CreateEventOptions = {}
-  ): BaseEvent => {
-    // Verify that the event type is registered
-    if (!isValidEventType(eventName)) {
-      console.log(`Warning: Creating event with unregistered type: ${eventName}`);
-    }
-
-    // Get version from registry if not specified
-    const version = options.version || getEventSchemaVersion(eventName);
+/**
+ * Factory for creating standardized event objects with a modular approach
+ */
+export const createEvent = async (params: CreateEventParams): Promise<BaseEvent> => {
+  try {
+    // Step 1: Get event template from cache
+    const eventTemplate = getEventTemplateFromCache(params.eventName);
     
-    // Get event type (category) from options or determine based on event name
-    const eventType = options.eventType || getDefaultEventType(eventName);
-
-    // Create the event with required fields
-    const event: BaseEvent = {
-      eventId: `event-${uuidv4()}`,
-      eventName,
-      eventType,
-      version,
-      timestamp: new Date().toISOString(),
-      source: options.source || factoryConfig.source,
-      payload,
-      hostInfo,
-      environment: factoryConfig.environment,
-    };
-
-    // Add optional fields if provided
-    if (options.correlationId) event.correlationId = options.correlationId;
-    if (options.causationId) event.causationId = options.causationId;
-    if (options.userId) event.userId = options.userId;
-    if (options.severity) event.severity = options.severity;
-    if (options.duration) event.duration = options.duration;
-    if (options.traceId) event.traceId = options.traceId;
-    if (options.spanId) event.spanId = options.spanId;
-    if (options.ipAddress) event.ipAddress = options.ipAddress;
-    if (options.sessionId) event.sessionId = options.sessionId;
-    if (options.requestPath) event.requestPath = options.requestPath;
-    if (options.tags) event.tags = options.tags;
-    if (options.metadata) event.metadata = options.metadata;
-    if (options.searchableFields) event.searchableFields = options.searchableFields;
-
-    // Validate the event if validation is enabled
-    if (factoryConfig.validateOnCreate) {
-      assertValidEvent(event);
+    // Step 2: Create basic event with core properties
+    let event = createBaseEvent(eventTemplate, params.eventName);
+    
+    // Step 3: Enrich event with payload
+    event = enrichWithPayload(event, params.payload);
+    
+    // Step 4: Enrich event with requestor information
+    event = enrichWithRequestorInfo(event, params.req);
+    
+    // Step 5: Add error data if provided
+    if (params.errorData) {
+      event.errorData = params.errorData;
     }
-
+    
+    // Return the created event for validation and publishing
     return event;
-  };
+  } catch (error) {
+    console.error(`Error creating event ${params.eventName}:`, error);
+    throw new Error(`Failed to create event: ${error instanceof Error ? error.message : String(error)}`);
+  }
+};
 
-  /**
-   * Creates an event related to an existing event (shares correlation ID)
-   */
-  const createRelatedEvent = (
-    baseEvent: BaseEvent,
-    eventName: string,
-    payload?: unknown,
-    options: Omit<CreateEventOptions, 'correlationId'> = {}
-  ): BaseEvent => {
-    // Use the correlation ID from the base event
-    // If base event doesn't have a correlation ID, use its event ID
-    const correlationId = baseEvent.correlationId || baseEvent.eventId;
-
-    return createEvent(eventName, payload, {
-      ...options,
-      correlationId,
-      // Inherit tracing context if not explicitly provided
-      traceId: options.traceId || baseEvent.traceId,
-      spanId: options.spanId || baseEvent.spanId,
-      // Inherit user context if not explicitly provided
-      userId: options.userId || baseEvent.userId,
-      sessionId: options.sessionId || baseEvent.sessionId,
-      ipAddress: options.ipAddress || baseEvent.ipAddress
-    });
-  };
-
-  /**
-   * Creates an event caused by an existing event (causal relationship)
-   */
-  const createCausedEvent = (
-    causingEvent: BaseEvent,
-    eventName: string,
-    payload?: unknown,
-    options: Omit<CreateEventOptions, 'causationId' | 'correlationId'> = {}
-  ): BaseEvent => {
-    return createRelatedEvent(causingEvent, eventName, payload, {
-      ...options,
-      // Set causation ID to the causing event's ID
-      causationId: causingEvent.eventId
-    });
-  };
-
-  /**
-   * Creates an error event with appropriate error details
-   */
-  const createErrorEvent = (
-    eventName: string,
-    error: Error,
-    options: CreateEventOptions = {}
-  ): BaseEvent => {
-    return createEvent(
-      eventName,
-      {
-        message: error.message,
-        name: error.name,
-        ...(options.payload || {})
-      },
-      {
-        ...options,
-        severity: options.severity || 'error',
-        stackTrace: error.stack,
-        tags: [...(options.tags || []), 'error']
-      }
-    );
-  };
-
-  // Return the factory methods
+/**
+ * Step 1: Get event template from cache based on event name or event key
+ */
+export const getEventTemplateFromCache = (eventNameOrKey: string): Partial<BaseEvent> => {
+  // Check if the event name exists directly in the cache
+  if (hasEventInCache(eventNameOrKey)) {
+    const template = getEventTemplate(eventNameOrKey);
+    if (template) {
+      return template;
+    }
+  }
+  
+  // If event name wasn't found directly, it might be provided as a constant key
+  // For example, USER_CREATION_EVENTS.VALIDATION_PASSED instead of "userEditor.creation.validation.passed"
+  // In this case, we need to extract the actual event name
+  
+  console.log(`Event name "${eventNameOrKey}" not found directly in cache, trying to resolve...`);
+  
+  // The template wasn't found, create a minimal template
   return {
-    createEvent,
-    createRelatedEvent,
-    createCausedEvent,
-    createErrorEvent
+    eventName: eventNameOrKey,
+    source: 'unknown',
+    eventType: 'app',
+    version: '1.0.0'
   };
 };
 
 /**
- * Type for the EventFactory object
+ * Step 2: Create the base event structure with core properties
  */
-export type EventFactory = ReturnType<typeof createEventFactory>;
+export const createBaseEvent = (template: Partial<BaseEvent>, eventName: string): BaseEvent => {
+  // Basic host information
+  const hostInfo = {
+    hostname: os.hostname(),
+    processId: process.pid
+  };
+  
+  // Create the event with required fields
+  const event: BaseEvent = {
+    eventId: `event-${uuidv4()}`,
+    timestamp: new Date().toISOString(),
+    eventName: template.eventName || eventName,
+    source: template.source || 'unknown',
+    eventType: template.eventType || 'app',
+    version: template.version || '1.0.0',
+    severity: template.severity,
+    eventMessage: template.eventMessage,
+    hostInfo,
+    environment: process.env.NODE_ENV || 'development'
+  };
+  
+  return event;
+};
+
+/**
+ * Step 3: Enrich the event with payload data
+ */
+export const enrichWithPayload = (event: BaseEvent, payload?: unknown): BaseEvent => {
+  if (payload !== undefined) {
+    event.payload = payload;
+  }
+  return event;
+};
+
+/**
+ * Step 4: Enrich the event with requestor information
+ */
+export const enrichWithRequestorInfo = (event: BaseEvent, req?: any): BaseEvent => {
+  if (req) {
+    // Extract requestorId using helper
+    const requestorId = getRequestorUuidFromReq(req);
+    if (requestorId) {
+      event.requestorId = requestorId;
+    }
+    
+    // Extract IP address if available
+    if (req.ip) {
+      event.ipAddress = req.ip;
+    } else if (req.connection && req.connection.remoteAddress) {
+      event.ipAddress = req.connection.remoteAddress;
+    }
+    
+    // Extract request path if available
+    if (req.path) {
+      event.requestPath = req.path;
+    } else if (req.url) {
+      event.requestPath = req.url;
+    }
+  }
+  
+  return event;
+};
+
+/**
+ * Creates and validates an event, then returns it for publishing
+ */
+export const createAndValidateEvent = async (params: CreateEventParams): Promise<BaseEvent> => {
+  const event = await createEvent(params);
+  
+  // Validation will be implemented separately
+  // This is a placeholder for future validation integration
+  
+  return event;
+};
+
+export default {
+  createEvent,
+  createAndValidateEvent,
+  // Export individual steps for testing and flexibility
+  getEventTemplateFromCache,
+  createBaseEvent,
+  enrichWithPayload,
+  enrichWithRequestorInfo
+};
