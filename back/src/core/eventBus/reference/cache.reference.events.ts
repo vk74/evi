@@ -50,7 +50,7 @@ export const initializeEventCache = (): void => {
     return;
   }
 
-  console.log('Initializing event reference cache...');
+
   
   try {
     // Clear existing cache if any

@@ -21,6 +21,8 @@ const { loadSettings } = require('@/core/services/settings/service.load.settings
 // Import event bus system
 const { eventBus } = require('@/core/eventBus/bus.events');
 const { createEventFactory } = require('@/core/eventBus/fabric.events');
+// Import event reference cache
+const { initializeEventCache, getCachedEventSchema } = require('@/core/eventBus/reference/cache.reference.events');
 
 // Import centralized logger
 const { 
@@ -54,20 +56,34 @@ let eventFactory = null;
 // Settings ready flag
 let settingsLoaded = false;
 
-// Middleware to check if settings are loaded
-const checkSettingsLoaded = (req, res, next) => {
+// Event cache ready flag
+let eventCacheInitialized = false;
+
+// Middleware to check if critical components are loaded
+const checkServerReady = (req, res, next) => {
+  const notReadyComponents = [];
+  
   if (!settingsLoaded) {
+    notReadyComponents.push('Settings');
+  }
+  
+  if (!eventCacheInitialized) {
+    notReadyComponents.push('Event Cache');
+  }
+  
+  if (notReadyComponents.length > 0) {
     console.warn(
       'Server is not ready yet, rejecting request',
       {
         path: req.path,
-        method: req.method
+        method: req.method,
+        notReadyComponents
       }
     );
     
     return res.status(503).json({
       success: false,
-      message: 'Server is starting up. Settings are being loaded. Please try again in a moment.'
+      message: `Server is starting up. Components still initializing: ${notReadyComponents.join(', ')}. Please try again in a moment.`
     });
   }
   next();
@@ -115,6 +131,12 @@ async function initializeServer() {
       
       console.log('Event system initialized successfully');
       
+      // Initialize event reference cache
+      console.log('Initializing event reference cache...');
+      initializeEventCache();
+      eventCacheInitialized = true;
+      console.log('Event reference cache initialized successfully');
+      
       // Initialize logger service with event bus integration
       loggerService.initialize();
       loggerSubscriptions.initializeSubscriptions();
@@ -139,8 +161,8 @@ async function initializeServer() {
 
     console.log('Middleware configuration completed');
 
-    // 5. Add settings loading check middleware for all routes
-    app.use(checkSettingsLoaded);
+    // 5. Add server readiness check middleware for all routes
+    app.use(checkServerReady);
 
     // 6. Route registration
     app.use(userRoutes);
