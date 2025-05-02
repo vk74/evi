@@ -1,4 +1,4 @@
-// version: 1.001
+// version: 1.002
 // Core Event Bus implementation based on Node.js EventEmitter
 // Provides pattern-based event subscription, filtered event handling,
 // asynchronous event publishing, and error handling capabilities
@@ -14,6 +14,25 @@ import {
 } from './types.events';
 import { validateEvent } from './validate.events';
 import { eventBusTelemetry } from './telemetry.events';
+
+// Stack trace elements for authorized callers
+const AUTHORIZED_CALLERS = [
+  'validate.events.ts',
+  'fabric.events.ts'
+];
+
+/**
+ * Check if the current caller is authorized to publish events
+ * This uses stack trace analysis to determine the calling file
+ */
+const isAuthorizedCaller = (): boolean => {
+  // Create an error to capture the stack trace
+  const stack = new Error().stack;
+  if (!stack) return false;
+  
+  // Check if any authorized caller is in the stack trace
+  return AUTHORIZED_CALLERS.some(caller => stack.includes(caller));
+};
 
 /**
  * Internal subscription object
@@ -241,24 +260,24 @@ export const off = (pattern: string, handler: EventHandler): void => {
 
 /**
  * Publish an event to the bus (synchronous)
+ * Only authorized callers (validator and event factory) can publish events
  */
 export const publish = (event: BaseEvent, options: PublishOptions = {}): void => {
+  // Check if caller is authorized to publish events
+  if (!isAuthorizedCaller()) {
+    const error = new Error(
+      'Unauthorized event publication attempt! Events must be published through ' +
+      'validator or event factory to ensure proper validation.'
+    );
+    console.error(error);
+    throw error;
+  }
+  
   const publishOptions = {
     throwErrors: false,
-    validate: true,
     collectTelemetry: true,
     ...options
   };
-  
-  // Validate the event if requested
-  if (publishOptions.validate) {
-    const validation = validateEvent(event);
-    if (!validation.isValid) {
-      const error = new Error(`Invalid event: ${validation.errors.join(', ')}`);
-      console.error(error);
-      throw error;
-    }
-  }
   
   // Update telemetry
   if (publishOptions.collectTelemetry) {
