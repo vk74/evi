@@ -249,8 +249,8 @@ async function validateData(data: CreateUserRequest, req: Request): Promise<void
       validateMobilePhone(data.mobile_phone_number);
     }
     
-    // Create validation passed event
-    const validationPassedEvent = await fabricEvents.createEvent({
+    // Create and publish validation passed event using the fabric
+    await fabricEvents.createAndPublishEvent({
       req,
       eventName: USER_CREATION_EVENTS.VALIDATION_PASSED.eventName,
       payload: {
@@ -259,12 +259,9 @@ async function validateData(data: CreateUserRequest, req: Request): Promise<void
       }
     });
     
-    // Publish the event
-    eventBus.publish(validationPassedEvent);
-    
   } catch (error) {
-    // Create validation failed event
-    const validationFailedEvent = await fabricEvents.createEvent({
+    // Create and publish validation failed event using the fabric
+    await fabricEvents.createAndPublishEvent({
       req,
       eventName: USER_CREATION_EVENTS.VALIDATION_FAILED.eventName,
       payload: {
@@ -273,9 +270,6 @@ async function validateData(data: CreateUserRequest, req: Request): Promise<void
       },
       errorData: (error as ValidationError).message
     });
-    
-    // Publish the event
-    eventBus.publish(validationFailedEvent);
     
     // Re-throw the error to be handled upstream
     throw error;
@@ -290,8 +284,8 @@ export async function createUser(userData: CreateUserRequest, req: Request): Pro
     const requestorUuid = getRequestorUuidFromReq(req);
     console.log(`[CreateUserService] User with UUID ${requestorUuid} is creating a new user account`);
     
-    // Create request received event
-    const requestReceivedEvent = await fabricEvents.createEvent({
+    // Create and publish request received event
+    await fabricEvents.createAndPublishEvent({
       req,
       eventName: USER_CREATION_EVENTS.REQUEST_RECEIVED.eventName,
       payload: {
@@ -299,9 +293,6 @@ export async function createUser(userData: CreateUserRequest, req: Request): Pro
         email: userData.email
       }
     });
-    
-    // Publish the event
-    eventBus.publish(requestReceivedEvent);
     
     // Data preparation
     const trimmedData = trimData(userData);
@@ -350,8 +341,8 @@ export async function createUser(userData: CreateUserRequest, req: Request): Pro
     await client.query('COMMIT');
     console.log(`[CreateUserService] User ${trimmedData.username} created successfully by administrator ${requestorUuid}`);
 
-    // Create completion event
-    const completionEvent = await fabricEvents.createEvent({
+    // Create and publish completion event
+    await fabricEvents.createAndPublishEvent({
       req,
       eventName: USER_CREATION_EVENTS.COMPLETE.eventName,
       payload: {
@@ -360,9 +351,6 @@ export async function createUser(userData: CreateUserRequest, req: Request): Pro
         email: trimmedData.email
       }
     });
-    
-    // Publish the event
-    eventBus.publish(completionEvent);
 
     return {
       success: true,
@@ -375,8 +363,8 @@ export async function createUser(userData: CreateUserRequest, req: Request): Pro
   } catch (error) {
     await client.query('ROLLBACK');
     
-    // Create failed event
-    const failedEvent = await fabricEvents.createEvent({
+    // Create and publish failed event
+    await fabricEvents.createAndPublishEvent({
       req,
       eventName: USER_CREATION_EVENTS.FAILED.eventName,
       payload: {
@@ -388,9 +376,6 @@ export async function createUser(userData: CreateUserRequest, req: Request): Pro
       },
       errorData: error instanceof Error ? error.message : String(error)
     });
-    
-    // Publish the event
-    eventBus.publish(failedEvent);
     
     // Re-throw validation and uniqueness errors
     if ((error as ServiceError).code) {
