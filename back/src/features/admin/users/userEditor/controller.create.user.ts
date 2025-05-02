@@ -1,7 +1,8 @@
 /**
- * controller.create.user.ts
+ * controller.create.user.ts - version 1.0.01
  * Controller for handling user creation requests from admin panel.
  * Processes requests, handles errors, and formats responses.
+ * Now passes the entire request object to the service layer.
  */
 
 import { Request, Response } from 'express';
@@ -34,7 +35,8 @@ async function createUserController(req: Request, res: Response): Promise<void> 
       email: userData.email
     });
 
-    const result = await createUser(userData);
+    // Pass the entire req object to the service
+    const result = await createUser(userData, req);
 
     logRequest('Successfully created user', {
       userId: result.userId,

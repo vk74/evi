@@ -1,11 +1,11 @@
 /**
- * controller.load.user.ts
+ * controller.load.user.ts - version 1.0.01
  * Controller for handling user data loading requests.
  * 
  * Functionality:
  * - Receives requests for user data by ID
  * - Validates request parameters
- * - Delegates data loading to service layer
+ * - Delegates data loading to service layer (passing the entire req object)
  * - Handles response formatting and error cases
  * - Provides request logging
  */
@@ -38,8 +38,8 @@ async function loadUserById(req: Request, res: Response): Promise<void> {
             userId
         });
 
-        // Call service layer to load user data
-        const result = await loadUserService(userId);
+        // Call service layer to load user data, passing the entire req object
+        const result = await loadUserService(userId, req);
 
         // Log successful response
         logRequest('Successfully loaded user data', {

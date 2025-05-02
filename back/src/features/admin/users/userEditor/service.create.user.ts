@@ -1,9 +1,11 @@
 /**
- * service.create.user.ts
+ * service.create.user.ts - version 1.0.03
  * Service layer for handling user creation from admin panel.
  * Handles validation, password hashing, and database operations.
+ * Now accepts request object for context and tracking.
  */
 
+import { Request } from 'express';
 import { Pool } from 'pg';
 import bcrypt from 'bcrypt';
 import { pool as pgPool } from '../../../../db/maindb';
@@ -17,6 +19,7 @@ import type {
   RequiredFieldError,
   ServiceError
 } from './types.user.editor';
+import { getRequestorUuidFromReq } from '../../../../core/helpers/get.requestor.uuid.from.req';
 
 const pool = pgPool as Pool;
 
@@ -226,7 +229,7 @@ async function checkUniqueness(data: CreateUserRequest): Promise<void> {
     }
 }
 
-// Основная функция валидации данных
+// Main validation function
 function validateData(data: CreateUserRequest): void {
   validateUsername(data.username);
   validatePassword(data.password);
@@ -243,10 +246,14 @@ function validateData(data: CreateUserRequest): void {
   }
 }
 
-export async function createUser(userData: CreateUserRequest): Promise<CreateUserResponse> {
+export async function createUser(userData: CreateUserRequest, req: Request): Promise<CreateUserResponse> {
   const client = await pool.connect();
   
   try {
+    // Get the UUID of the user making the request
+    const requestorUuid = getRequestorUuidFromReq(req);
+    console.log(`[CreateUserService] User with UUID ${requestorUuid} is creating a new user account`);
+    
     // Data preparation
     const trimmedData = trimData(userData);
 
@@ -292,6 +299,7 @@ export async function createUser(userData: CreateUserRequest): Promise<CreateUse
     );
 
     await client.query('COMMIT');
+    console.log(`[CreateUserService] User ${trimmedData.username} created successfully by administrator ${requestorUuid}`);
 
     return {
       success: true,

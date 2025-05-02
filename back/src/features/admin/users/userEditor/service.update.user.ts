@@ -1,9 +1,12 @@
-// service.update.user.ts
+// service.update.user.ts - version 1.0.02
+// Service for updating user accounts, now accepts request object
 
+import { Request } from 'express';
 import { Pool } from 'pg';
 import { pool as pgPool } from '../../../../db/maindb';
 import { queries } from './queries.user.editor';
 import type { UpdateUserRequest, ApiResponse, ServiceError } from './types.user.editor';
+import { getRequestorUuidFromReq } from '../../../../core/helpers/get.requestor.uuid.from.req';
 
 const pool = pgPool as Pool;
 
@@ -11,12 +14,17 @@ function logService(message: string, meta?: object): void {
   console.log(`[${new Date().toISOString()}] [UpdateUserService] ${message}`, meta || '');
 }
 
-export async function updateUserById(updateData: UpdateUserRequest): Promise<ApiResponse> {
+export async function updateUserById(updateData: UpdateUserRequest, req: Request): Promise<ApiResponse> {
     const client = await pool.connect();
     
     try {
+      // Get the UUID of the user making the request
+      const requestorUuid = getRequestorUuidFromReq(req);
       await client.query('BEGIN');
-      logService('Starting user update transaction', { userId: updateData.user_id });
+      logService('Starting user update transaction', { 
+        userId: updateData.user_id, 
+        requestorUuid
+      });
   
       // Подготовка параметров для обновления пользователя
       const userParams = [
@@ -67,7 +75,10 @@ export async function updateUserById(updateData: UpdateUserRequest): Promise<Api
       }
   
       await client.query('COMMIT');
-      logService('Successfully updated user data', { userId: updateData.user_id });
+      logService('Successfully updated user data', { 
+        userId: updateData.user_id,
+        requestorUuid
+      });
   
       return {
         success: true,
@@ -75,19 +86,18 @@ export async function updateUserById(updateData: UpdateUserRequest): Promise<Api
       };
   
     } catch (err: unknown) {
-    await client.query('ROLLBACK');
-    
-    // Приводим error к типу ServiceError
-    const error = err as ServiceError;
-    
-    logService('Error updating user data', { userId: updateData.user_id, error });
-    
-    // Безопасно обращаемся к свойствам error
-    throw {
-        code: error?.code || 'UPDATE_FAILED',
-        message: error instanceof Error ? error.message : 'Failed to update user data',
-        details: error
-    } as ServiceError;
+      await client.query('ROLLBACK');
+      
+      // Приводим error к типу ServiceError
+      const error = err as ServiceError;
+      logService('Error updating user data', { userId: updateData.user_id, error });
+      
+      // Безопасно обращаемся к свойствам error
+      throw {
+          code: error?.code || 'UPDATE_FAILED',
+          message: error instanceof Error ? error.message : 'Failed to update user data',
+          details: error
+      } as ServiceError;
   
     } finally {
       client.release();

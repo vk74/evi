@@ -21,7 +21,8 @@ async function updateUserById(req: Request, res: Response): Promise<void> {
       userId: updateData.user_id
     });
 
-    const result = await updateUserService(updateData);
+    // Now passing the entire req object to the service
+    const result = await updateUserService(updateData, req);
     
     logRequest('Successfully updated user data', {
       userId: updateData.user_id
