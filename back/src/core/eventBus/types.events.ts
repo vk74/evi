@@ -359,3 +359,21 @@ export interface CompoundFilterCondition extends FilterCondition {
   operator: LogicalOperator;
   conditions: FilterCondition[];
 }
+
+/**
+ * Parameters for creating system error events
+ * Used to report validation errors and other system-level issues
+ */
+export interface CreateSystemErrorEventParams {
+  // Event name for the error event
+  eventName: string;
+  
+  // Payload data describing the error
+  payload: unknown;
+  
+  // Detailed error message
+  errorData?: string;
+  
+  // Optional override for error severity
+  severity?: 'debug' | 'info' | 'warning' | 'error' | 'critical';
+}

@@ -1,9 +1,10 @@
 // filepath: /Users/vk/Library/Mobile Documents/com~apple~CloudDocs/code/ev2/back/src/core/eventBus/reference/index.ts
-// version: 1.1.0
+// version: 1.1.1
 // Central registry for all event domain catalogs in the application
 // This file serves as a registry for all event references across different modules
 
 import { USER_CREATION_EVENTS, USER_UPDATE_EVENTS, USER_LOAD_EVENTS } from '../../../features/admin/users/userEditor/events.user.editor';
+import { EVENT_VALIDATION_EVENTS, EVENT_BUS_EVENTS } from './errors.reference.events';
 
 /**
  * Registry structure for event references
@@ -48,6 +49,33 @@ export const eventReferences: Record<string, Record<string, EventSchema>> = {
     
     // Load events
     ...Object.entries(USER_LOAD_EVENTS).reduce((acc, [key, event]) => {
+      const eventKey = event.eventName.split('.').slice(1).join('.');
+      return {
+        ...acc,
+        [eventKey]: {
+          version: event.version,
+          description: event.eventMessage
+        }
+      };
+    }, {}),
+  },
+  
+  // System events - events for internal system operations
+  system: {
+    // Event validation errors
+    ...Object.entries(EVENT_VALIDATION_EVENTS).reduce((acc, [key, event]) => {
+      const eventKey = event.eventName.split('.').slice(1).join('.');
+      return {
+        ...acc,
+        [eventKey]: {
+          version: event.version,
+          description: event.eventMessage
+        }
+      };
+    }, {}),
+    
+    // Event bus errors
+    ...Object.entries(EVENT_BUS_EVENTS).reduce((acc, [key, event]) => {
       const eventKey = event.eventName.split('.').slice(1).join('.');
       return {
         ...acc,
