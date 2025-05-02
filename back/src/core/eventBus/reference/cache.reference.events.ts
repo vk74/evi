@@ -49,8 +49,6 @@ export const initializeEventCache = (): void => {
   if (cacheInitialized) {
     return;
   }
-
-
   
   try {
     // Clear existing cache if any

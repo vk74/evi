@@ -23,7 +23,7 @@ export const USER_CREATION_EVENTS = {
     severity: 'debug' as const,
     eventMessage: 'User creation request received',
     payload: null, // Will be of type CreateUserRequest
-    version: '1.0'
+    version: '1.0.0'
   },
   
   // When a user creation request passes validation
@@ -34,7 +34,7 @@ export const USER_CREATION_EVENTS = {
     severity: 'debug' as const,
     eventMessage: 'User creation validation successful',
     payload: null, // Will be of type { username: string, email: string }
-    version: '1.0'
+    version: '1.0.0'
   },
   
   // When a user creation request fails validation
@@ -46,7 +46,7 @@ export const USER_CREATION_EVENTS = {
     eventMessage: 'User creation validation failed',
     payload: null, // Will be of type { field: string, message: string }
     errorData: null, // Will be filled with validation error details
-    version: '1.0'
+    version: '1.0.0'
   },
   
   // When a user creation operation is completed successfully
@@ -57,7 +57,7 @@ export const USER_CREATION_EVENTS = {
     severity: 'info' as const,
     eventMessage: 'User account created successfully',
     payload: null, // Will be of type { userId: string, username: string }
-    version: '1.0'
+    version: '1.0.0'
   },
   
   // When a user creation operation fails
@@ -69,7 +69,7 @@ export const USER_CREATION_EVENTS = {
     eventMessage: 'User account creation failed',
     payload: null, // Will be of type ServiceError
     errorData: null, // Will be filled with error details
-    version: '1.0'
+    version: '1.0.0'
   }
 };
 
@@ -86,7 +86,7 @@ export const USER_UPDATE_EVENTS = {
     severity: 'debug' as const,
     eventMessage: 'User update request received',
     payload: null, // Will be of type { userId: string, updatedFields: string[] }
-    version: '1.0'
+    version: '1.0.0'
   },
   
   // When a user update request passes validation
@@ -97,7 +97,7 @@ export const USER_UPDATE_EVENTS = {
     severity: 'debug' as const,
     eventMessage: 'User update validation successful',
     payload: null, // Will be of type { userId: string, updatedFields: string[] }
-    version: '1.0'
+    version: '1.0.0'
   },
   
   // When a user update request fails validation
@@ -109,7 +109,7 @@ export const USER_UPDATE_EVENTS = {
     eventMessage: 'User update validation failed',
     payload: null, // Will be of type { userId: string, field: string, message: string }
     errorData: null, // Will be filled with validation error details
-    version: '1.0'
+    version: '1.0.0'
   },
   
   // When a user update operation is completed successfully
@@ -120,7 +120,7 @@ export const USER_UPDATE_EVENTS = {
     severity: 'info' as const,
     eventMessage: 'User account updated successfully',
     payload: null, // Will be of type { userId: string, updatedFields: string[] }
-    version: '1.0'
+    version: '1.0.0'
   },
   
   // When a user update operation fails
@@ -132,7 +132,7 @@ export const USER_UPDATE_EVENTS = {
     eventMessage: 'User account update failed',
     payload: null, // Will be of type { userId: string, error: ServiceError }
     errorData: null, // Will be filled with error details
-    version: '1.0'
+    version: '1.0.0'
   }
 };
 
@@ -149,7 +149,7 @@ export const USER_LOAD_EVENTS = {
     severity: 'debug' as const,
     eventMessage: 'User load request received',
     payload: null, // Will be of type { userId: string }
-    version: '1.0'
+    version: '1.0.0'
   },
   
   // When a user is successfully loaded from the database
@@ -160,7 +160,7 @@ export const USER_LOAD_EVENTS = {
     severity: 'debug' as const,
     eventMessage: 'User data loaded successfully',
     payload: null, // Will be of type { userId: string, username: string }
-    version: '1.0'
+    version: '1.0.0'
   },
   
   // When a user load operation fails
@@ -172,7 +172,7 @@ export const USER_LOAD_EVENTS = {
     eventMessage: 'Failed to load user data',
     payload: null, // Will be of type { userId: string, error: ServiceError }
     errorData: null, // Will be filled with error details
-    version: '1.0'
+    version: '1.0.0'
   },
   
   // When user data is not found
@@ -184,6 +184,6 @@ export const USER_LOAD_EVENTS = {
     eventMessage: 'User not found',
     payload: null, // Will be of type { userId: string }
     errorData: null, // Will be filled with details
-    version: '1.0'
+    version: '1.0.0'
   }
 };
