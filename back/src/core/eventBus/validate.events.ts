@@ -1,7 +1,7 @@
-// version: 1.0
+// version: 1.0.1
 // Event validator for ensuring events meet requirements before publishing
 import { BaseEvent } from './types.events';
-import { isValidEventType, getEventSchemaVersion, eventReferences } from './reference';
+import { isValidEventType, getEventSchemaVersion, eventReferences } from './reference/index.reference.events';
 
 // Interface for validation result
 interface ValidationResult {

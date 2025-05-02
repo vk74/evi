@@ -46,7 +46,7 @@ export interface BaseEvent {
   errorData?: string;
 
   // 🔢 Schema version of the event
-  // Example: "v1.0"
+  // Example: "v1.0.07"
   version: string;
 
 

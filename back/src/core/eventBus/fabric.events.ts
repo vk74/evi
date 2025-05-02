@@ -3,7 +3,7 @@
 
 const { v4: uuidv4 } = require('uuid');
 import { BaseEvent, EventFactoryConfig, CreateEventOptions } from './types.events';
-import { getEventSchemaVersion, isValidEventType } from './reference';
+import { getEventSchemaVersion, isValidEventType } from './reference/index.reference.events';
 import { assertValidEvent } from './validate.events';
 import os from 'os';
 
