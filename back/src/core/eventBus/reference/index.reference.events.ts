@@ -1,19 +1,11 @@
 // filepath: /Users/vk/Library/Mobile Documents/com~apple~CloudDocs/code/ev2/back/src/core/eventBus/reference/index.reference.events.ts
-// version: 1.2.1
+// version: 1.2.3
 // Central registry for all event domain catalogs in the application
 // This file serves as a registry for all event references across different modules
 
 import path from 'path';
-
-/**
- * Registry structure for event references
- * Each domain contains a record of event definitions
- */
-export interface EventSchema {
-  version: string;
-  description?: string;
-  payloadSchema?: Record<string, unknown>; // Optional JSON Schema for payload validation
-}
+import { EventSchema, EventObject, EventCollection } from '../types.events';
+import { initializeEventCache } from './cache.reference.events';
 
 /**
  * Registry of event reference files
@@ -39,18 +31,42 @@ export const eventReferenceFiles: Record<string, string[]> = {
  */
 let eventReferencesCache: Record<string, Record<string, EventSchema>> | null = null;
 
-// Interface representing event object schema for type safety
-interface EventObject {
-  eventName: string;
-  version?: string;
-  eventMessage?: string;
-  [key: string]: any;
-}
-
-// Interface for collections of events
-interface EventCollection {
-  [key: string]: EventObject;
-}
+/**
+ * Actively initializes the event reference system
+ * Scans all event reference files, builds the index and initializes the cache
+ * Should be called during application startup for active initialization
+ * 
+ * @returns A promise that resolves when initialization is complete
+ */
+export const initializeEventReferenceSystem = async (): Promise<void> => {
+  try {
+    console.log('Starting event reference system initialization...');
+    
+    // Force clear any existing cache
+    eventReferencesCache = null;
+    
+    // Actively build references
+    const references = buildEventReferences();
+    
+    console.log(`Event references built successfully with ${Object.keys(references).length} domains`);
+    
+    // Count total events across all domains
+    let totalEvents = 0;
+    Object.values(references).forEach(domainEvents => {
+      totalEvents += Object.keys(domainEvents).length;
+    });
+    
+    console.log(`Found ${totalEvents} events across all domains`);
+    
+    // After index is built, initialize the cache
+    initializeEventCache();
+    
+    console.log('Event reference system initialized successfully');
+  } catch (error) {
+    console.error('Failed to initialize event reference system:', error);
+    throw new Error(`Event reference system initialization failed: ${error instanceof Error ? error.message : String(error)}`);
+  }
+};
 
 /**
  * Builds event references from the registered files

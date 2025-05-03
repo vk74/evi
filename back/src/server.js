@@ -21,8 +21,8 @@ const { loadSettings } = require('@/core/services/settings/service.load.settings
 // Import event bus system
 const { eventBus } = require('@/core/eventBus/bus.events');
 const fabricEvents = require('@/core/eventBus/fabric.events').default;
-// Import event reference cache
-const { initializeEventCache, getCachedEventSchema } = require('@/core/eventBus/reference/cache.reference.events');
+// Import event reference system for active initialization
+const { initializeEventReferenceSystem } = require('@/core/eventBus/reference/index.reference.events');
 
 // Import centralized logger
 const { 
@@ -56,8 +56,8 @@ let eventFactory = null;
 // Settings ready flag
 let settingsLoaded = false;
 
-// Event cache ready flag
-let eventCacheInitialized = false;
+// Event system ready flag
+let eventSystemInitialized = false;
 
 // Middleware to check if critical components are loaded
 const checkServerReady = (req, res, next) => {
@@ -67,8 +67,8 @@ const checkServerReady = (req, res, next) => {
     notReadyComponents.push('Settings');
   }
   
-  if (!eventCacheInitialized) {
-    notReadyComponents.push('Event Cache');
+  if (!eventSystemInitialized) {
+    notReadyComponents.push('Event System');
   }
   
   if (notReadyComponents.length > 0) {
@@ -111,7 +111,7 @@ async function initializeServer() {
     settingsLoaded = true;
     // No duplicate logging here, as loadSettings already logs success message
 
-    // 3. Initialize event system - event bus and event factory
+    // 3. Initialize event system - event bus, index, cache and event factory
     try {
       // Check if event bus is available
       if (!eventBus) {
@@ -125,13 +125,12 @@ async function initializeServer() {
         throw new Error('Failed to load event factory');
       }
       
-      console.log('Event system initialized successfully');
+      console.log('Event bus and factory initialized successfully');
       
-      // Initialize event reference cache
-      console.log('Initializing event reference cache...');
-      initializeEventCache();
-      eventCacheInitialized = true;
-      console.log('Event reference cache initialized successfully');
+      // Actively initialize the event reference system (index and cache)
+      console.log('Actively initializing event reference system...');
+      await initializeEventReferenceSystem();
+      eventSystemInitialized = true;
       
       // Initialize logger service with event bus integration
       loggerService.initialize();

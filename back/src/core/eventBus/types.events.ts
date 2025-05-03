@@ -1,4 +1,4 @@
-// file version: 1.0
+// file version: 1.0.01
 
 export interface BaseEvent {
   // event interface version: 1.0
@@ -376,4 +376,54 @@ export interface CreateSystemErrorEventParams {
   
   // Optional override for error severity
   severity?: 'debug' | 'info' | 'warning' | 'error' | 'critical';
+}
+
+/**
+ * ================== EVENT REFERENCE TYPES ==================
+ * Below types are used for managing event references in the event system
+ */
+
+/**
+ * Registry structure for event references
+ * Each domain contains a record of event definitions
+ */
+export interface EventSchema {
+  version: string;
+  description?: string;
+  payloadSchema?: Record<string, unknown>; // Optional JSON Schema for payload validation
+}
+
+/**
+ * Enhanced schema that includes all properties needed for event creation
+ * Used in cache.reference.events.ts to store resolved event schemas
+ */
+export interface CachedEventSchema extends EventSchema {
+  eventName: string;
+  source: string;
+  eventType: 'app' | 'system' | 'security' | 'integration' | 'performance';
+  severity?: 'debug' | 'info' | 'warning' | 'error' | 'critical';
+  eventMessage?: string;
+  version: string; 
+}
+
+/**
+ * Interface representing event object schema for type safety
+ * Used in index.reference.events.ts and cache.reference.events.ts 
+ */
+export interface EventObject {
+  eventName: string;
+  source?: string;
+  eventType?: 'app' | 'system' | 'security' | 'integration' | 'performance';
+  severity?: 'debug' | 'info' | 'warning' | 'error' | 'critical';
+  eventMessage?: string;
+  version?: string;
+  [key: string]: any;
+}
+
+/**
+ * Interface for collections of events
+ * Used in index.reference.events.ts and cache.reference.events.ts
+ */
+export interface EventCollection {
+  [key: string]: EventObject;
 }

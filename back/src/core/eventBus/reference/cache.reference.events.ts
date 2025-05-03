@@ -1,6 +1,6 @@
 /**
  * cache.reference.events.ts - backend file
- * version: 1.0.2
+ * version: 1.0.3
  * 
  * This file implements a caching mechanism for event references.
  * It loads all event reference data at server startup and provides
@@ -8,26 +8,13 @@
  * Cache remains unchanged during application runtime until server restart.
  */
 
-import { BaseEvent } from '../types.events';
+import { BaseEvent, CachedEventSchema, EventSchema, EventObject, EventCollection } from '../types.events';
 import { 
   getEventReferences, 
-  EventSchema, 
   getEventSchema, 
   buildEventReferences,
   eventReferenceFiles
 } from './index.reference.events';
-
-/**
- * Enhanced schema that includes all properties needed for event creation
- */
-interface CachedEventSchema extends EventSchema {
-  eventName: string;
-  source: string;
-  eventType: 'app' | 'system' | 'security' | 'integration' | 'performance';
-  severity?: 'debug' | 'info' | 'warning' | 'error' | 'critical';
-  eventMessage?: string;
-  version: string; 
-}
 
 /**
  * Cache structure that stores fully resolved event schemas by event name
@@ -129,8 +116,10 @@ const findSourceEventTemplate = (fullEventName: string): Partial<BaseEvent> | nu
               !Array.isArray(collection) &&
               collectionName === collectionName.toUpperCase()) {
             
+            const eventCollection = collection as EventCollection;
+            
             // Look through all events in the collection
-            for (const [eventKey, event] of Object.entries(collection)) {
+            for (const [eventKey, event] of Object.entries(eventCollection)) {
               if (typeof event === 'object' && 
                   event !== null && 
                   'eventName' in event &&
