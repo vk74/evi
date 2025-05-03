@@ -1,5 +1,5 @@
 /**
- * @file controller.fetch.users.ts - version 1.0.01
+ * @file controller.fetch.users.ts - version 1.0.02
  * Controller for handling user list fetch API requests.
  * 
  * Functionality:
@@ -7,32 +7,29 @@
  * - Validates request parameters
  * - Delegates business logic to service layer (passing the entire req object)
  * - Formats API responses
+ * - Generates events via event bus for tracing and monitoring
  */
 
 import { Request, Response } from 'express';
 import { usersFetchService } from './service.fetch.users';
 import { IUsersFetchParams, UserError } from './types.users.list';
-
-// Helper for request logging
-function logRequest(message: string, meta: object): void {
-  console.log(`[${new Date().toISOString()}] [UsersFetchController] ${message}`, meta);
-}
-
-// Helper for error logging
-function logError(message: string, error: unknown, meta: object): void {
-  console.error(`[${new Date().toISOString()}] [UsersFetchController] ${message}`, { error, ...meta });
-}
+import fabricEvents from '../../../../core/eventBus/fabric.events';
+import { USERS_FETCH_CONTROLLER_EVENTS } from './events.users.list';
 
 /**
  * Controller function for fetching users
  */
 async function fetchUsers(req: Request, res: Response): Promise<void> {
   try {
-    // Log incoming request
-    logRequest('Received fetch users request', {
-      method: req.method,
-      url: req.url,
-      query: req.query
+    // Create event for incoming request
+    await fabricEvents.createAndPublishEvent({
+      req,
+      eventName: USERS_FETCH_CONTROLLER_EVENTS.HTTP_REQUEST_RECEIVED.eventName,
+      payload: {
+        method: req.method,
+        url: req.url,
+        query: req.query
+      }
     });
 
     // Parse and validate query parameters
@@ -47,7 +44,13 @@ async function fetchUsers(req: Request, res: Response): Promise<void> {
     
     // Validate search query length
     if (params.search && params.search.length === 1) {
-      logRequest('Invalid search query (too short)', { search: params.search });
+      // Create event for invalid search
+      await fabricEvents.createAndPublishEvent({
+        req,
+        eventName: USERS_FETCH_CONTROLLER_EVENTS.INVALID_SEARCH.eventName,
+        payload: { search: params.search }
+      });
+      
       res.status(400).json({
         code: 'INVALID_SEARCH',
         message: 'Search query must be at least 2 characters or empty'
@@ -58,19 +61,29 @@ async function fetchUsers(req: Request, res: Response): Promise<void> {
     // Handle the request through service, now passing the req object
     const result = await usersFetchService.fetchUsers(params, req);
 
-    // Log successful response
-    logRequest('Successfully processed users fetch request', {
-      resultCount: result.users.length,
-      totalCount: result.total
+    // Create event for successful response
+    await fabricEvents.createAndPublishEvent({
+      req,
+      eventName: USERS_FETCH_CONTROLLER_EVENTS.HTTP_RESPONSE_SENT.eventName,
+      payload: {
+        resultCount: result.users.length,
+        totalCount: result.total
+      }
     });
 
     // Send response
     res.status(200).json(result);
     
   } catch (error) {
-    // Log error
-    logError('Error while fetching users', error, {
-      query: req.query
+    // Create event for error
+    await fabricEvents.createAndPublishEvent({
+      req,
+      eventName: USERS_FETCH_CONTROLLER_EVENTS.HTTP_ERROR.eventName,
+      payload: {
+        query: req.query,
+        errorCode: (error as UserError)?.code || 'INTERNAL_SERVER_ERROR'
+      },
+      errorData: (error as Error)?.message || String(error)
     });
 
     // Format error response

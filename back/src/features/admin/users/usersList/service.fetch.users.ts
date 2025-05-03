@@ -1,12 +1,12 @@
 /**
- * @file service.fetch.users.ts - version 1.0.01
+ * @file service.fetch.users.ts - version 1.0.02
  * BACKEND service for fetching users data from database.
  * 
  * Functionality:
  * - Retrieves users with pagination, sorting and filtering
  * - Integrates with cache layer for optimized performance
  * - Maps database records to response format
- * - Now accepts request object for context access
+ * - Uses event bus to track operations
  */
 
 import { Request } from 'express';
@@ -16,15 +16,11 @@ import { usersCache, CacheKey } from './cache.users.list';
 import { queries, buildSortClause } from './queries.users.list';
 import { IUser, IUsersResponse, IUsersFetchParams, UserError } from './types.users.list';
 import { getRequestorUuidFromReq } from '../../../../core/helpers/get.requestor.uuid.from.req';
+import fabricEvents from '../../../../core/eventBus/fabric.events';
+import { USERS_FETCH_EVENTS } from './events.users.list';
 
 // Explicitly set the type for pool
 const pool = pgPool as Pool;
-
-// lgr for main operations
-const lgr = {
-  info: (message: string, meta?: object) => console.log(`[UsersFetchService] ${message}`, meta || ''),
-  error: (message: string, error?: unknown) => console.error(`[UsersFetchService] ${message}`, error || '')
-};
 
 /**
  * Maximum result limit for search queries to prevent excessive results
@@ -70,11 +66,16 @@ export const usersFetchService = {
       const sortDesc = params.sortDesc || false;
       const forceRefresh = params.forceRefresh || false;
       
-      lgr.info('Processing fetch users request', { 
-        requestorUuid,
-        search: search || '(empty)',
-        page,
-        itemsPerPage
+      // Create event for fetching users request
+      await fabricEvents.createAndPublishEvent({
+        req,
+        eventName: USERS_FETCH_EVENTS.REQUEST_RECEIVED.eventName,
+        payload: { 
+          requestorUuid,
+          search: search || '(empty)',
+          page,
+          itemsPerPage
+        }
       });
       
       // Create cache key
@@ -90,11 +91,17 @@ export const usersFetchService = {
       if (!forceRefresh) {
         const cachedData = usersCache.get(cacheKey);
         if (cachedData) {
-          lgr.info('Using cached users data', { 
-            cacheHit: true, 
-            params,
-            requestorUuid 
+          // Create event for cache hit
+          await fabricEvents.createAndPublishEvent({
+            req,
+            eventName: USERS_FETCH_EVENTS.CACHE_HIT.eventName,
+            payload: { 
+              cacheHit: true, 
+              params,
+              requestorUuid 
+            }
           });
+          
           return cachedData;
         }
       } else {
@@ -102,10 +109,14 @@ export const usersFetchService = {
         usersCache.invalidate('refresh', undefined, cacheKey);
       }
       
-      // If not in cache or force refresh, query the database
-      lgr.info('Fetching users from database', { 
-        params,
-        requestorUuid
+      // Create event for cache miss/fetch from database
+      await fabricEvents.createAndPublishEvent({
+        req,
+        eventName: USERS_FETCH_EVENTS.CACHE_MISS.eventName,
+        payload: { 
+          params,
+          requestorUuid
+        }
       });
       
       // Build sort clause
@@ -140,17 +151,34 @@ export const usersFetchService = {
       // Cache the result
       usersCache.set(cacheKey, response);
       
-      lgr.info('Successfully fetched users', { 
-        count: users.length,
-        total,
-        search: !!search,
-        requestorUuid
+      // Create event for fetch completion
+      await fabricEvents.createAndPublishEvent({
+        req,
+        eventName: USERS_FETCH_EVENTS.COMPLETE.eventName,
+        payload: { 
+          count: users.length,
+          total,
+          search: !!search,
+          requestorUuid
+        }
       });
       
       return response;
       
     } catch (error) {
-      lgr.error('Error fetching users', error);
+      // Create event for fetch failure
+      await fabricEvents.createAndPublishEvent({
+        req,
+        eventName: USERS_FETCH_EVENTS.FAILED.eventName,
+        payload: {
+          error: {
+            code: 'DATABASE_ERROR',
+            message: 'Error retrieving user data'
+          }
+        },
+        errorData: error instanceof Error ? error.message : String(error)
+      });
+      
       throw {
         code: 'DATABASE_ERROR',
         message: 'Error retrieving user data',

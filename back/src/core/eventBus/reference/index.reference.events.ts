@@ -17,6 +17,11 @@ export const eventReferenceFiles: Record<string, string[]> = {
     path.resolve(__dirname, '../../../features/admin/users/userEditor/events.user.editor.ts')
   ],
   
+  // Users list events
+  usersList: [
+    path.resolve(__dirname, '../../../features/admin/users/usersList/events.users.list.ts')
+  ],
+  
   // System events - events for internal system operations
   system: [
     path.resolve(__dirname, './errors.reference.events.ts')

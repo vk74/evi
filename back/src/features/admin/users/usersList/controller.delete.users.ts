@@ -1,5 +1,5 @@
 /**
- * @file controller.delete.users.ts - version 1.0.01
+ * @file controller.delete.users.ts - version 1.0.02
  * Controller for handling user deletion API requests.
  * 
  * Functionality:
@@ -7,36 +7,40 @@
  * - Validates request parameters
  * - Delegates deletion logic to service layer (passing the entire req object)
  * - Formats API responses
+ * - Generates events via event bus for tracing and monitoring
  */
 
 import { Request, Response } from 'express';
 import { usersDeleteService } from './service.delete.users';
 import { UserError } from './types.users.list';
-
-// Helper for request logging
-function logRequest(message: string, meta: object): void {
-  console.log(`[${new Date().toISOString()}] [UserDeleteController] ${message}`, meta);
-}
-
-// Helper for error logging
-function logError(message: string, error: unknown, meta: object): void {
-  console.error(`[${new Date().toISOString()}] [UserDeleteController] ${message}`, { error, ...meta });
-}
+import fabricEvents from '../../../../core/eventBus/fabric.events';
+import { USERS_DELETE_CONTROLLER_EVENTS } from './events.users.list';
 
 /**
  * Controller function for deleting users
  */
 async function deleteSelectedUsers(req: Request, res: Response): Promise<void> {
   try {
-    // Log incoming request
-    logRequest('Received delete users request', {
-      method: req.method,
-      url: req.url,
-      body: { userIds: req.body.userIds?.length }
+    // Create event for incoming request
+    await fabricEvents.createAndPublishEvent({
+      req,
+      eventName: USERS_DELETE_CONTROLLER_EVENTS.HTTP_REQUEST_RECEIVED.eventName,
+      payload: {
+        method: req.method,
+        url: req.url,
+        userIds: req.body.userIds?.length
+      }
     });
 
     // Validate request
     if (!req.body.userIds || !Array.isArray(req.body.userIds) || req.body.userIds.length === 0) {
+      // Create event for invalid request
+      await fabricEvents.createAndPublishEvent({
+        req,
+        eventName: USERS_DELETE_CONTROLLER_EVENTS.INVALID_REQUEST.eventName,
+        payload: null
+      });
+      
       res.status(400).json({
         code: 'INVALID_REQUEST',
         message: 'No valid user IDs provided for deletion'
@@ -47,10 +51,14 @@ async function deleteSelectedUsers(req: Request, res: Response): Promise<void> {
     // Execute delete through service, now passing the req object
     const deletedCount = await usersDeleteService.deleteSelectedUsers(req.body.userIds, req);
 
-    // Log success
-    logRequest('Successfully deleted users', {
-      requestedCount: req.body.userIds.length,
-      actuallyDeleted: deletedCount
+    // Create event for successful response
+    await fabricEvents.createAndPublishEvent({
+      req,
+      eventName: USERS_DELETE_CONTROLLER_EVENTS.HTTP_RESPONSE_SENT.eventName,
+      payload: {
+        requestedCount: req.body.userIds.length,
+        actuallyDeleted: deletedCount
+      }
     });
 
     // Send response
@@ -60,9 +68,15 @@ async function deleteSelectedUsers(req: Request, res: Response): Promise<void> {
     });
     
   } catch (error) {
-    // Log error
-    logError('Error while deleting users', error, {
-      userIds: req.body.userIds?.length
+    // Create event for error
+    await fabricEvents.createAndPublishEvent({
+      req,
+      eventName: USERS_DELETE_CONTROLLER_EVENTS.HTTP_ERROR.eventName,
+      payload: {
+        userIds: req.body.userIds?.length,
+        errorCode: (error as UserError)?.code || 'INTERNAL_SERVER_ERROR'
+      },
+      errorData: (error as Error)?.message || String(error)
     });
 
     // Format error response

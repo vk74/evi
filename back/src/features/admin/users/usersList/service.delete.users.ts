@@ -1,12 +1,12 @@
 /**
- * @file service.delete.users.ts - version 1.0.01
+ * @file service.delete.users.ts - version 1.0.02
  * BACKEND service for user deletion operations.
  * 
  * Functionality:
  * - Handles deletion of users by UUID
  * - Supports batch deletion with transaction
  * - Invalidates cache after operations
- * - Uses request context for authentication and logging
+ * - Uses event bus for tracking operations
  */
 
 import { Request } from 'express';
@@ -15,15 +15,11 @@ import { pool as pgPool } from '../../../../db/maindb';
 import { queries } from './queries.users.list';
 import { usersCache } from './cache.users.list';
 import { getRequestorUuidFromReq } from '../../../../core/helpers/get.requestor.uuid.from.req';
+import fabricEvents from '../../../../core/eventBus/fabric.events';
+import { USERS_DELETE_EVENTS } from './events.users.list';
 
 // Cast pool to correct type
 const pool = pgPool as Pool;
-
-// Logger for service operations
-const lgr = {
-  info: (message: string, meta?: object) => console.log(`[UsersDeleteService] ${message}`, meta || ''),
-  error: (message: string, error?: unknown) => console.error(`[UsersDeleteService] ${message}`, error || '')
-};
 
 /**
  * Service for handling user deletion operations
@@ -39,9 +35,14 @@ export const usersDeleteService = {
     // Get the UUID of the user making the request
     const requestorUuid = getRequestorUuidFromReq(req);
     
-    lgr.info('Starting delete operation for selected users', {
-      userCount: userIds.length,
-      requestorUuid
+    // Create event for starting delete operation
+    await fabricEvents.createAndPublishEvent({
+      req,
+      eventName: USERS_DELETE_EVENTS.REQUEST_RECEIVED.eventName,
+      payload: {
+        userCount: userIds.length,
+        requestorUuid
+      }
     });
     
     // Prevent deletion of empty array
@@ -59,19 +60,43 @@ export const usersDeleteService = {
       // Invalidate cache after successful deletion
       if (deletedCount > 0) {
         usersCache.invalidate('delete');
-        lgr.info('Cache invalidated after user deletion', { deletedCount, requestorUuid });
+        
+        // Create event for cache invalidation
+        await fabricEvents.createAndPublishEvent({
+          req,
+          eventName: USERS_DELETE_EVENTS.CACHE_INVALIDATED.eventName,
+          payload: { deletedCount, requestorUuid }
+        });
       }
       
-      lgr.info('Users deletion completed', {
-        requested: userIds.length,
-        deleted: deletedCount,
-        requestorUuid
+      // Create event for successful completion
+      await fabricEvents.createAndPublishEvent({
+        req,
+        eventName: USERS_DELETE_EVENTS.COMPLETE.eventName,
+        payload: {
+          requested: userIds.length,
+          deleted: deletedCount,
+          requestorUuid
+        }
       });
       
       return deletedCount;
       
     } catch (error) {
-      lgr.error('Error deleting users', error);
+      // Create event for deletion failure
+      await fabricEvents.createAndPublishEvent({
+        req,
+        eventName: USERS_DELETE_EVENTS.FAILED.eventName,
+        payload: {
+          userIds: userIds.length,
+          error: {
+            code: 'DATABASE_ERROR',
+            message: 'Error occurred while deleting users'
+          }
+        },
+        errorData: error instanceof Error ? error.message : String(error)
+      });
+      
       throw {
         code: 'DATABASE_ERROR',
         message: 'Error occurred while deleting users',
