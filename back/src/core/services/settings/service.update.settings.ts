@@ -1,8 +1,9 @@
 /**
- * service.update.settings.ts - version 1.0.01
+ * service.update.settings.ts - backend file
+ * version: 1.0.02
  * Service for updating application settings.
  * Validates new setting values against schemas and updates both database and cache.
- * Now accepts request object for access to user context.
+ * Now uses event system instead of logging.
  */
 
 import { Request } from 'express';
@@ -10,20 +11,14 @@ import { Pool, QueryResult, PoolClient } from 'pg';
 import { pool as pgPool } from '../../../db/maindb';
 import { queries } from './queries.settings';
 import { AppSetting, Environment, SettingsError, UpdateSettingRequest, UpdateSettingResponse } from './types.settings';
-import { createSystemLgr, Lgr } from '../../../core/lgr/lgr.index';
-import { Events } from '../../../core/lgr/codes';
 import { getSetting, hasSetting, updateCachedSetting } from './cache.settings';
 import { validateOrThrow } from './service.validate.settings';
 import { getRequestorUuidFromReq } from '../../../core/helpers/get.requestor.uuid.from.req';
+import fabricEvents from '../../../core/eventBus/fabric.events';
+import { SETTINGS_UPDATE_EVENTS } from './events.settings';
 
 // Type assertion for pool
 const pool = pgPool as Pool;
-
-// Create lgr for settings service
-const lgr: Lgr = createSystemLgr({
-  module: 'SettingsUpdateService',
-  fileName: 'service.update.settings.ts'
-});
 
 /**
  * Updates a setting value in both database and cache
@@ -40,11 +35,11 @@ export async function updateSetting(request: UpdateSettingRequest, req: Request)
     // Получаем UUID пользователя из запроса
     const requestorUuid = getRequestorUuidFromReq(req);
     
-    // Log update request
-    lgr.info({
-      code: Events.CORE.SETTINGS.UPDATE.START.INITIATED.code,
-      message: 'Setting update requested',
-      details: {
+    // Publish update initiated event
+    fabricEvents.createAndPublishEvent({
+      eventName: SETTINGS_UPDATE_EVENTS.REQUEST_INITIATED.eventName,
+      req,
+      payload: {
         sectionPath,
         settingName,
         environment: environment || 'all',
@@ -57,10 +52,12 @@ export async function updateSetting(request: UpdateSettingRequest, req: Request)
 
     // If not in cache, we need to fetch it from database
     if (!setting) {
-      lgr.debug({
-        code: Events.CORE.SETTINGS.UPDATE.PROCESS.CACHE_MISS.code,
-        message: 'Setting not found in cache, attempting to fetch from database',
-        details: { 
+      // Publish cache miss event
+      fabricEvents.createAndPublishEvent({
+        eventName: SETTINGS_UPDATE_EVENTS.VALIDATION_FAILED.eventName,
+        req,
+        payload: { 
+          message: 'Setting not found in cache, attempting to fetch from database',
           sectionPath, 
           settingName,
           requestorUuid
@@ -72,14 +69,18 @@ export async function updateSetting(request: UpdateSettingRequest, req: Request)
       
       if (!result.rows || result.rows.length === 0) {
         const errorMessage = `Setting not found: ${sectionPath}/${settingName}`;
-        lgr.error({
-          code: Events.CORE.SETTINGS.UPDATE.PROCESS.ERROR.code,
-          message: errorMessage,
-          details: { 
+        
+        // Publish error event
+        fabricEvents.createAndPublishEvent({
+          eventName: SETTINGS_UPDATE_EVENTS.ERROR.eventName,
+          req,
+          payload: { 
+            message: errorMessage,
             sectionPath, 
             settingName,
             requestorUuid
-          }
+          },
+          errorData: errorMessage
         });
         
         return {
@@ -102,14 +103,18 @@ export async function updateSetting(request: UpdateSettingRequest, req: Request)
     // But let's add an additional check to satisfy TypeScript
     if (!setting) {
       const errorMessage = `Unable to retrieve setting: ${sectionPath}/${settingName}`;
-      lgr.error({
-        code: Events.CORE.SETTINGS.UPDATE.PROCESS.ERROR.code,
-        message: errorMessage,
-        details: { 
+      
+      // Publish error event
+      fabricEvents.createAndPublishEvent({
+        eventName: SETTINGS_UPDATE_EVENTS.ERROR.eventName,
+        req,
+        payload: { 
+          message: errorMessage,
           sectionPath, 
           settingName,
           requestorUuid
-        }
+        },
+        errorData: errorMessage
       });
       
       return {
@@ -118,8 +123,36 @@ export async function updateSetting(request: UpdateSettingRequest, req: Request)
       };
     }
 
-    // Validate setting value against schema
-    validateOrThrow(setting, value);
+    try {
+      // Validate setting value against schema
+      validateOrThrow(setting, value);
+      
+      // Publish validation passed event
+      fabricEvents.createAndPublishEvent({
+        eventName: SETTINGS_UPDATE_EVENTS.VALIDATION_PASSED.eventName,
+        req,
+        payload: {
+          sectionPath,
+          settingName,
+          requestorUuid
+        }
+      });
+    } catch (validationError) {
+      // Publish validation failed event
+      fabricEvents.createAndPublishEvent({
+        eventName: SETTINGS_UPDATE_EVENTS.VALIDATION_FAILED.eventName,
+        req,
+        payload: {
+          sectionPath,
+          settingName,
+          error: validationError instanceof Error ? validationError.message : 'Validation error',
+          requestorUuid
+        },
+        errorData: validationError instanceof Error ? validationError.message : 'Validation error'
+      });
+      
+      throw validationError;
+    }
 
     // Start transaction for atomic update
     client = await pool.connect();
@@ -135,14 +168,18 @@ export async function updateSetting(request: UpdateSettingRequest, req: Request)
       await client.query('ROLLBACK');
       
       const errorMessage = `Failed to update setting: ${sectionPath}/${settingName}`;
-      lgr.error({
-        code: Events.CORE.SETTINGS.UPDATE.PROCESS.ERROR.code,
-        message: errorMessage,
-        details: { 
+      
+      // Publish error event
+      fabricEvents.createAndPublishEvent({
+        eventName: SETTINGS_UPDATE_EVENTS.ERROR.eventName,
+        req,
+        payload: { 
+          message: errorMessage,
           sectionPath, 
           settingName,
           requestorUuid
-        }
+        },
+        errorData: errorMessage
       });
       
       return {
@@ -166,10 +203,11 @@ export async function updateSetting(request: UpdateSettingRequest, req: Request)
     // Update cache
     updateCachedSetting(updatedSetting);
     
-    lgr.info({
-      code: Events.CORE.SETTINGS.UPDATE.PROCESS.SUCCESS.code,
-      message: 'Setting updated successfully',
-      details: {
+    // Publish success event
+    fabricEvents.createAndPublishEvent({
+      eventName: SETTINGS_UPDATE_EVENTS.SUCCESS.eventName,
+      req,
+      payload: {
         sectionPath,
         settingName,
         updatedAt: updatedSetting.updated_at,
@@ -188,33 +226,37 @@ export async function updateSetting(request: UpdateSettingRequest, req: Request)
         // Получаем UUID пользователя из запроса для логирования
         const requestorUuid = getRequestorUuidFromReq(req);
         
-        lgr.error({
-          code: Events.CORE.SETTINGS.UPDATE.PROCESS.ERROR.code,
-          message: 'Error during transaction rollback',
-          error: err,
-          details: {
+        // Publish error event for rollback failure
+        fabricEvents.createAndPublishEvent({
+          eventName: SETTINGS_UPDATE_EVENTS.ERROR.eventName,
+          req,
+          payload: {
+            message: 'Error during transaction rollback',
             originalError: error instanceof Error ? error.message : 'Unknown error',
+            rollbackError: err instanceof Error ? err.message : 'Unknown rollback error',
             requestorUuid
-          }
+          },
+          errorData: err instanceof Error ? err.message : 'Unknown rollback error'
         });
       });
     }
 
-    // Log error with details
+    // Get error details
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-    // Получаем UUID пользователя из запроса для логирования
     const requestorUuid = getRequestorUuidFromReq(req);
     
-    lgr.error({
-      code: Events.CORE.SETTINGS.UPDATE.PROCESS.ERROR.code,
-      message: 'Error updating setting',
-      error,
-      details: {
+    // Publish error event
+    fabricEvents.createAndPublishEvent({
+      eventName: SETTINGS_UPDATE_EVENTS.ERROR.eventName,
+      req,
+      payload: {
+        message: 'Error updating setting',
         sectionPath,
         settingName,
-        errorMessage,
+        errorDetails: errorMessage,
         requestorUuid
-      }
+      },
+      errorData: errorMessage
     });
 
     // Determine error type

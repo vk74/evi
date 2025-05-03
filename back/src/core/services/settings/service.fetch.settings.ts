@@ -1,7 +1,8 @@
 /**
- * service.fetch.settings.ts - version 1.0.01
+ * service.fetch.settings.ts - backend file
+ * version: 1.0.02
  * Service for fetching settings from cache with filtering.
- * Now accepts request object for access to user context.
+ * Now uses event system instead of logging.
  */
 
 import { Request } from 'express';
@@ -14,15 +15,14 @@ import {
   FetchAllSettingsRequest,
   SettingsError
 } from './types.settings';
-import { createSystemLgr, Lgr } from '../../../core/lgr/lgr.index';
-import { Events } from '../../../core/lgr/codes';
 import { getRequestorUuidFromReq } from '../../../core/helpers/get.requestor.uuid.from.req';
-
-// Create lgr for settings service
-const lgr: Lgr = createSystemLgr({
-  module: 'SettingsService',
-  fileName: 'service.fetch.settings.ts'
-});
+import fabricEvents from '../../../core/eventBus/fabric.events';
+import { 
+  SETTINGS_FETCH_EVENTS, 
+  SETTINGS_FETCH_BY_NAME_EVENTS, 
+  SETTINGS_FETCH_BY_SECTION_EVENTS, 
+  SETTINGS_FETCH_ALL_EVENTS 
+} from './events.settings';
 
 /**
  * Filter settings by environment
@@ -82,12 +82,6 @@ function normalizeSectionPath(path: string): string[] {
     variants.push(pascalCasePath);
   }
   
-  lgr.debug({
-    code: 'SETTINGS:PATH:NORMALIZE',
-    message: 'Normalized section path variants',
-    details: { original: path, variants }
-  });
-  
   return variants;
 }
 
@@ -102,10 +96,11 @@ export async function fetchSettingByName(request: FetchSettingByNameRequest, req
     const { sectionPath, settingName, environment, includeConfidential = false } = request;
     const requestorUuid = getRequestorUuidFromReq(req);
     
-    lgr.debug({
-      code: Events.CORE.SETTINGS.GET.BY_NAME.INITIATED.code,
-      message: 'Fetching setting by name',
-      details: { 
+    // Publish initiated event
+    fabricEvents.createAndPublishEvent({
+      eventName: SETTINGS_FETCH_BY_NAME_EVENTS.REQUEST_INITIATED.eventName,
+      req,
+      payload: { 
         sectionPath, 
         settingName, 
         environment,
@@ -125,10 +120,11 @@ export async function fetchSettingByName(request: FetchSettingByNameRequest, req
     });
 
     if (!setting) {
-      lgr.debug({
-        code: Events.CORE.SETTINGS.GET.BY_NAME.NOT_FOUND.code,
-        message: 'Setting not found',
-        details: { 
+      // Publish not found event
+      fabricEvents.createAndPublishEvent({
+        eventName: SETTINGS_FETCH_BY_NAME_EVENTS.NOT_FOUND.eventName,
+        req,
+        payload: { 
           sectionPath, 
           settingName, 
           pathVariants,
@@ -143,10 +139,11 @@ export async function fetchSettingByName(request: FetchSettingByNameRequest, req
         environment !== Environment.ALL && 
         setting.environment !== Environment.ALL && 
         setting.environment !== environment) {
-      lgr.debug({
-        code: Events.CORE.SETTINGS.GET.BY_NAME.NOT_FOUND.code,
-        message: 'Setting found but environment does not match',
-        details: { 
+      // Publish not found event for environment mismatch
+      fabricEvents.createAndPublishEvent({
+        eventName: SETTINGS_FETCH_BY_NAME_EVENTS.NOT_FOUND.eventName,
+        req,
+        payload: { 
           settingName, 
           requestedEnv: environment, 
           settingEnv: setting.environment,
@@ -158,10 +155,11 @@ export async function fetchSettingByName(request: FetchSettingByNameRequest, req
 
     // Check confidentiality
     if (!includeConfidential && setting.confidentiality) {
-      lgr.debug({
-        code: Events.CORE.SETTINGS.GET.BY_NAME.CONFIDENTIAL.code,
-        message: 'Setting is confidential and includeConfidential is false',
-        details: { 
+      // Publish confidential event
+      fabricEvents.createAndPublishEvent({
+        eventName: SETTINGS_FETCH_BY_NAME_EVENTS.CONFIDENTIAL.eventName,
+        req,
+        payload: { 
           settingName,
           requestorUuid
         }
@@ -169,10 +167,11 @@ export async function fetchSettingByName(request: FetchSettingByNameRequest, req
       return null;
     }
 
-    lgr.info({
-      code: Events.CORE.SETTINGS.GET.BY_NAME.SUCCESS.code,
-      message: 'Setting fetched successfully',
-      details: { 
+    // Publish success event
+    fabricEvents.createAndPublishEvent({
+      eventName: SETTINGS_FETCH_BY_NAME_EVENTS.SUCCESS.eventName,
+      req,
+      payload: { 
         settingName, 
         sectionPath, 
         pathVariants,
@@ -185,15 +184,17 @@ export async function fetchSettingByName(request: FetchSettingByNameRequest, req
     // Получаем UUID пользователя из запроса для логирования
     const requestorUuid = getRequestorUuidFromReq(req);
     
-    lgr.error({
-      code: Events.CORE.SETTINGS.GET.BY_NAME.ERROR.code,
-      message: 'Error fetching setting by name',
-      error,
-      details: { 
+    // Publish error event
+    fabricEvents.createAndPublishEvent({
+      eventName: SETTINGS_FETCH_EVENTS.ERROR.eventName,
+      req,
+      payload: { 
         errorMessage: error instanceof Error ? error.message : 'Unknown error',
+        operation: 'fetchSettingByName',
         request,
         requestorUuid
-      }
+      },
+      errorData: error instanceof Error ? error.message : 'Unknown error'
     });
     
     throw {
@@ -215,10 +216,11 @@ export async function fetchSettingsBySection(request: FetchSettingsBySectionRequ
     const { sectionPath, environment, includeConfidential = false } = request;
     const requestorUuid = getRequestorUuidFromReq(req);
     
-    lgr.debug({
-      code: Events.CORE.SETTINGS.GET.BY_SECTION.INITIATED.code,
-      message: 'Fetching settings by section',
-      details: { 
+    // Publish initiated event
+    fabricEvents.createAndPublishEvent({
+      eventName: SETTINGS_FETCH_BY_SECTION_EVENTS.REQUEST_INITIATED.eventName,
+      req,
+      payload: { 
         sectionPath, 
         environment,
         requestorUuid
@@ -243,10 +245,11 @@ export async function fetchSettingsBySection(request: FetchSettingsBySectionRequ
     settings = filterSettingsByEnvironment(settings, environment);
     settings = filterConfidentialSettings(settings, includeConfidential);
 
-    lgr.info({
-      code: Events.CORE.SETTINGS.GET.BY_SECTION.SUCCESS.code,
-      message: 'Settings fetched by section successfully',
-      details: { 
+    // Publish success event
+    fabricEvents.createAndPublishEvent({
+      eventName: SETTINGS_FETCH_BY_SECTION_EVENTS.SUCCESS.eventName,
+      req,
+      payload: { 
         sectionPath, 
         settingsCount: settings.length,
         pathVariants,
@@ -259,15 +262,17 @@ export async function fetchSettingsBySection(request: FetchSettingsBySectionRequ
     // Получаем UUID пользователя из запроса для логирования
     const requestorUuid = getRequestorUuidFromReq(req);
     
-    lgr.error({
-      code: Events.CORE.SETTINGS.GET.BY_SECTION.ERROR.code,
-      message: 'Error fetching settings by section',
-      error,
-      details: { 
+    // Publish error event
+    fabricEvents.createAndPublishEvent({
+      eventName: SETTINGS_FETCH_EVENTS.ERROR.eventName,
+      req,
+      payload: { 
         errorMessage: error instanceof Error ? error.message : 'Unknown error',
+        operation: 'fetchSettingsBySection',
         request,
         requestorUuid
-      }
+      },
+      errorData: error instanceof Error ? error.message : 'Unknown error'
     });
     
     throw {
@@ -289,10 +294,11 @@ export async function fetchAllSettings(request: FetchAllSettingsRequest, req: Re
     const { environment, includeConfidential = false } = request;
     const requestorUuid = getRequestorUuidFromReq(req);
     
-    lgr.debug({
-      code: Events.CORE.SETTINGS.GET.ALL.INITIATED.code,
-      message: 'Fetching all settings',
-      details: { 
+    // Publish initiated event
+    fabricEvents.createAndPublishEvent({
+      eventName: SETTINGS_FETCH_ALL_EVENTS.REQUEST_INITIATED.eventName,
+      req,
+      payload: { 
         environment, 
         includeConfidential,
         requestorUuid
@@ -305,10 +311,11 @@ export async function fetchAllSettings(request: FetchAllSettingsRequest, req: Re
     settings = filterSettingsByEnvironment(settings, environment);
     settings = filterConfidentialSettings(settings, includeConfidential);
 
-    lgr.info({
-      code: Events.CORE.SETTINGS.GET.ALL.SUCCESS.code,
-      message: 'All settings fetched successfully',
-      details: { 
+    // Publish success event
+    fabricEvents.createAndPublishEvent({
+      eventName: SETTINGS_FETCH_ALL_EVENTS.SUCCESS.eventName,
+      req,
+      payload: { 
         settingsCount: settings.length,
         requestorUuid
       }
@@ -319,15 +326,17 @@ export async function fetchAllSettings(request: FetchAllSettingsRequest, req: Re
     // Получаем UUID пользователя из запроса для логирования
     const requestorUuid = getRequestorUuidFromReq(req);
     
-    lgr.error({
-      code: Events.CORE.SETTINGS.GET.ALL.ERROR.code,
-      message: 'Error fetching all settings',
-      error,
-      details: { 
+    // Publish error event
+    fabricEvents.createAndPublishEvent({
+      eventName: SETTINGS_FETCH_EVENTS.ERROR.eventName,
+      req,
+      payload: { 
         errorMessage: error instanceof Error ? error.message : 'Unknown error',
+        operation: 'fetchAllSettings',
         request,
         requestorUuid
-      }
+      },
+      errorData: error instanceof Error ? error.message : 'Unknown error'
     });
     
     throw {

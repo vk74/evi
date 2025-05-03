@@ -1,6 +1,8 @@
 /**
- * cache.settings.ts
+ * cache.settings.ts - backend file
+ * version: 1.0.04
  * In-memory cache for application settings.
+ * Uses simple console.log for logging with consistent format.
  */
 
 import { AppSetting, SettingsCache } from './types.settings';
@@ -8,9 +10,14 @@ import { AppSetting, SettingsCache } from './types.settings';
 // In-memory cache object
 let settingsCache: SettingsCache = {};
 
-// Logging helper
-function logCache(message: string, meta?: object): void {
-  console.log(`[${new Date().toISOString()}] [SettingsCache] ${message}`, meta || '');
+/**
+ * Helper function for consistent log format
+ * @param level Log level (INFO, WARN, ERROR, DEBUG)
+ * @param message Message to log
+ * @param details Optional details to include
+ */
+function logMessage(level: string, message: string, details?: any): void {
+  console.log(`[${new Date().toISOString()}] [${level}] [SettingsCache] ${message}`, details || '');
 }
 
 /**
@@ -33,7 +40,7 @@ export function setCache(settings: AppSetting[]): void {
     return cache;
   }, {} as SettingsCache);
   
-  logCache('Settings cache updated', { 
+  logMessage('INFO', 'Settings cache updated', { 
     settingsCount: settings.length,
     sections: [...new Set(settings.map(s => s.section_path))]
   });
@@ -44,7 +51,7 @@ export function setCache(settings: AppSetting[]): void {
  */
 export function clearCache(): void {
   settingsCache = {};
-  logCache('Settings cache cleared');
+  logMessage('INFO', 'Settings cache cleared');
 }
 
 /**
@@ -58,15 +65,10 @@ export function getSetting(sectionPath: string, settingName: string): AppSetting
   const setting = settingsCache[cacheKey];
   
   if (!setting) {
-    logCache('Setting not found in cache', { sectionPath, settingName });
+    logMessage('WARN', 'Setting not found in cache', { sectionPath, settingName });
     return null;
   }
 
-  logCache('Setting retrieved from cache', { 
-    sectionPath,
-    settingName
-  });
-  
   return setting;
 }
 
@@ -75,9 +77,6 @@ export function getSetting(sectionPath: string, settingName: string): AppSetting
  * @returns Object containing all cached settings
  */
 export function getAllSettings(): SettingsCache {
-  logCache('Retrieved all settings from cache', { 
-    settingsCount: Object.keys(settingsCache).length 
-  });
   return settingsCache;
 }
 
@@ -102,9 +101,9 @@ export function parseSettingValue(setting: AppSetting): any {
     // Value is already stored as a proper type in jsonb field
     return setting.value !== null ? setting.value : setting.default_value;
   } catch (error) {
-    logCache('Error parsing setting value', {
+    logMessage('ERROR', 'Error parsing setting value', {
       settingName: setting.setting_name,
-      error
+      error: error instanceof Error ? error.message : error
     });
     return null;
   }
@@ -121,7 +120,7 @@ export function updateCachedSetting(setting: AppSetting): boolean {
   // Update the setting in cache
   settingsCache[cacheKey] = setting;
   
-  logCache('Setting updated in cache', { 
+  logMessage('DEBUG', 'Setting updated in cache', { 
     sectionPath: setting.section_path,
     settingName: setting.setting_name 
   });

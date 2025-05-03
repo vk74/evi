@@ -1,42 +1,40 @@
 /**
- * service.load.settings.ts
+ * service.load.settings.ts - backend file
+ * version: 1.0.03
  * Service for loading and caching application settings.
+ * Uses simple console.log instead of lgr.
  */
 
 import { Pool, QueryResult } from 'pg';
 import { pool as pgPool } from '../../../db/maindb';
 import { queries } from './queries.settings';
 import { AppSetting, Environment, SettingsError } from './types.settings';
-import { createSystemLgr, Lgr } from '../../../core/lgr/lgr.index';
-import { Events } from '../../../core/lgr/codes';
 import { setCache, clearCache } from './cache.settings';
 
 // Type assertion for pool
 const pool = pgPool as Pool;
 
-// Create lgr for settings service
-const lgr: Lgr = createSystemLgr({
-  module: 'SettingsService',
-  fileName: 'service.load.settings.ts'
-});
+/**
+ * Helper function for consistent log format
+ * @param level Log level (INFO, WARN, ERROR)
+ * @param message Message to log
+ * @param details Optional details to include
+ */
+function logMessage(level: string, message: string, details?: any): void {
+  console.log(`[${new Date().toISOString()}] [${level}] [SettingsLoader] ${message}`, details || '');
+}
 
 /**
  * Load all settings from database into cache
  */
 export async function loadSettings(): Promise<void> {
   try {
-    lgr.info({
-      code: Events.CORE.SETTINGS.LOAD.START.INITIATED.code,
-      message: 'Starting to load settings from database'
-    });
+    logMessage('INFO', 'Starting to load settings from database');
 
     const result: QueryResult = await pool.query(queries.getAllSettings.text);
     
     if (!result.rows || result.rows.length === 0) {
-      lgr.warn({
-        code: Events.CORE.SETTINGS.LOAD.PROCESS.EMPTY.code,
-        message: 'No settings found in database'
-      });
+      logMessage('WARN', 'No settings found in database');
       // Clear cache if no settings
       clearCache();
       return;
@@ -56,19 +54,12 @@ export async function loadSettings(): Promise<void> {
     // Update the centralized cache
     setCache(settings);
     
-    lgr.info({
-      code: Events.CORE.SETTINGS.LOAD.PROCESS.SUCCESS.code,
-      message: `Settings loaded successfully, number of loaded settings: ${settings.length}`
-    });
+    logMessage('INFO', `Settings loaded successfully, number of loaded settings: ${settings.length}`);
 
   } catch (error) {
-    lgr.error({
-      code: Events.CORE.SETTINGS.LOAD.PROCESS.ERROR.code,
-      message: 'Error loading settings',
-      error,
-      details: {
-        errorMessage: error instanceof Error ? error.message : 'Unknown error'
-      }
+    logMessage('ERROR', 'Error loading settings', {
+      errorMessage: error instanceof Error ? error.message : 'Unknown error',
+      stack: error instanceof Error ? error.stack : undefined
     });
     
     const settingsError: SettingsError = {
@@ -84,10 +75,7 @@ export async function loadSettings(): Promise<void> {
  * Force reload all settings from database
  */
 export async function reloadSettings(): Promise<void> {
-  lgr.info({
-    code: Events.CORE.SETTINGS.LOAD.START.INITIATED.code,
-    message: 'Force reloading settings from database'
-  });
+  logMessage('INFO', 'Force reloading settings from database');
   await loadSettings();
 }
 
@@ -97,25 +85,15 @@ export async function reloadSettings(): Promise<void> {
  */
 export async function initializeSettings(): Promise<void> {
   try {
-    lgr.info({
-      code: Events.CORE.SETTINGS.INIT.PROCESS.START.code,
-      message: 'Initializing settings module'
-    });
+    logMessage('INFO', 'Initializing settings module');
     
     await loadSettings();
     
-    lgr.info({
-      code: Events.CORE.SETTINGS.INIT.PROCESS.SUCCESS.code,
-      message: 'Settings module initialized successfully'
-    });
+    logMessage('INFO', 'Settings module initialized successfully');
   } catch (error) {
-    lgr.error({
-      code: Events.CORE.SETTINGS.INIT.PROCESS.ERROR.code,
-      message: 'Failed to initialize settings module',
-      error,
-      details: {
-        errorMessage: error instanceof Error ? error.message : 'Unknown error'
-      }
+    logMessage('ERROR', 'Failed to initialize settings module', {
+      errorMessage: error instanceof Error ? error.message : 'Unknown error',
+      stack: error instanceof Error ? error.stack : undefined
     });
     throw error;
   }

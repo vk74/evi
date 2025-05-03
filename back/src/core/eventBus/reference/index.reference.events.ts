@@ -32,6 +32,11 @@ export const eventReferenceFiles: Record<string, string[]> = {
     path.resolve(__dirname, '../../../features/admin/users/groupEditor/events.group.editor.ts')
   ],
   
+  // Settings module events
+  settings: [
+    path.resolve(__dirname, '../../../core/services/settings/events.settings.ts')
+  ],
+  
   // System events - events for internal system operations
   system: [
     path.resolve(__dirname, './errors.reference.events.ts')

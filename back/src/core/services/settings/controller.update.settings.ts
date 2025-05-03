@@ -1,22 +1,17 @@
 /**
- * controller.update.settings.ts - version 1.0.01
+ * controller.update.settings.ts - backend file
+ * version: 1.0.02
  * Controller for handling setting update requests.
  * Validates incoming requests before passing to service.
- * Now passes request object to service layer for user context access.
+ * Now uses event system instead of logging.
  */
 
 import { Request, Response } from 'express';
 import { UpdateSettingRequest, UpdateSettingResponse } from './types.settings';
 import { updateSetting } from './service.update.settings';
-import { createSystemLgr, Lgr } from '../../../core/lgr/lgr.index';
-import { Events } from '../../../core/lgr/codes';
 import { getRequestorUuidFromReq } from '../../../core/helpers/get.requestor.uuid.from.req';
-
-// Create lgr for controller
-const lgr: Lgr = createSystemLgr({
-  module: 'SettingsController',
-  fileName: 'controller.update.settings.ts'
-});
+import fabricEvents from '../../../core/eventBus/fabric.events';
+import { SETTINGS_UPDATE_CONTROLLER_EVENTS } from './events.settings';
 
 /**
  * Handle request to update a setting
@@ -29,11 +24,13 @@ export default async function handleUpdateSetting(req: Request, res: Response): 
     // Получаем UUID пользователя, делающего запрос
     const requestorUuid = getRequestorUuidFromReq(req);
     
-    // Log incoming request
-    lgr.debug({
-      code: Events.CORE.SETTINGS.UPDATE.START.RECEIVED.code,
-      message: 'Received setting update request',
-      details: {
+    // Log incoming request using events
+    fabricEvents.createAndPublishEvent({
+      eventName: SETTINGS_UPDATE_CONTROLLER_EVENTS.HTTP_REQUEST_RECEIVED.eventName,
+      req,
+      payload: {
+        method: req.method,
+        url: req.url,
         body: req.body,
         requestorUuid
       }
@@ -43,10 +40,11 @@ export default async function handleUpdateSetting(req: Request, res: Response): 
     const { sectionPath, settingName, value } = req.body;
 
     if (!sectionPath || !settingName || value === undefined) {
-      lgr.warn({
-        code: Events.CORE.SETTINGS.UPDATE.PROCESS.VALIDATION_ERROR.code,
-        message: 'Invalid update settings request',
-        details: {
+      fabricEvents.createAndPublishEvent({
+        eventName: SETTINGS_UPDATE_CONTROLLER_EVENTS.VALIDATION_ERROR.eventName,
+        req,
+        payload: {
+          message: 'Invalid update settings request',
           sectionPath,
           settingName,
           hasValue: value !== undefined,
@@ -74,12 +72,14 @@ export default async function handleUpdateSetting(req: Request, res: Response): 
 
     // Return result
     if (result.success) {
-      lgr.info({
-        code: Events.CORE.SETTINGS.UPDATE.PROCESS.SUCCESS.code,
-        message: 'Setting update successful',
-        details: {
+      fabricEvents.createAndPublishEvent({
+        eventName: SETTINGS_UPDATE_CONTROLLER_EVENTS.HTTP_RESPONSE_SENT.eventName,
+        req,
+        payload: {
+          message: 'Setting update successful',
           sectionPath,
           settingName,
+          statusCode: 200,
           requestorUuid
         }
       });
@@ -87,13 +87,15 @@ export default async function handleUpdateSetting(req: Request, res: Response): 
       res.status(200).json(result);
     } else {
       // Failure, but not an exception
-      lgr.warn({
-        code: Events.CORE.SETTINGS.UPDATE.PROCESS.ERROR.code,
-        message: 'Setting update failed',
-        details: {
+      fabricEvents.createAndPublishEvent({
+        eventName: SETTINGS_UPDATE_CONTROLLER_EVENTS.HTTP_ERROR.eventName,
+        req,
+        payload: {
+          message: 'Setting update failed',
           sectionPath,
           settingName,
           error: result.error,
+          statusCode: 400,
           requestorUuid
         }
       });
@@ -105,14 +107,16 @@ export default async function handleUpdateSetting(req: Request, res: Response): 
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     const requestorUuid = getRequestorUuidFromReq(req);
     
-    lgr.error({
-      code: Events.CORE.SETTINGS.UPDATE.PROCESS.ERROR.code,
-      message: 'Exception during setting update',
-      error,
-      details: {
+    fabricEvents.createAndPublishEvent({
+      eventName: SETTINGS_UPDATE_CONTROLLER_EVENTS.HTTP_ERROR.eventName,
+      req,
+      payload: {
+        message: 'Exception during setting update',
         errorMessage,
+        statusCode: 500,
         requestorUuid
-      }
+      },
+      errorData: errorMessage
     });
     
     res.status(500).json({
