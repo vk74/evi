@@ -1,25 +1,17 @@
 /**
- * @file controller.groups.list.ts - version 1.0.01
+ * @file controller.groups.list.ts - version 1.0.02
  * Controller for fetching groups list.
  *
  * Handles HTTP requests to the /api/admin/groups/fetch-groups endpoint.
  * Validates JWT (if needed), retrieves data from the service, and sends the response.
- * Now passes the request object to service layer.
+ * Uses event bus to track operations and enhance observability.
  */
 
 import { Request, Response } from 'express';
 import { getAllGroups } from './service.groups.list';
 import { IGroupsResponse, GroupError } from './types.groups.list';
-
-// Вспомогательная функция для логирования
-function logRequest(message: string, meta: object): void {
-    console.log(`[${new Date().toISOString()}] [FetchGroups] ${message}`, meta);
-}
-
-// Вспомогательная функция для логирования ошибок
-function logError(message: string, error: unknown, meta: object): void {
-    console.error(`[${new Date().toISOString()}] [FetchGroups] ${message}`, { error, ...meta });
-}
+import fabricEvents from '../../../../core/eventBus/fabric.events';
+import { GROUPS_FETCH_CONTROLLER_EVENTS } from './events.groups.list';
 
 /**
  * Основная функция-контроллер для получения списка групп.
@@ -28,11 +20,15 @@ function logError(message: string, error: unknown, meta: object): void {
  */
 async function fetchGroups(req: Request, res: Response): Promise<void> {
     try {
-        // Логируем входящий запрос
-        logRequest('Received request', {
-            method: req.method,
-            url: req.url,
-            query: req.query
+        // Создаем событие для входящего запроса
+        await fabricEvents.createAndPublishEvent({
+            req,
+            eventName: GROUPS_FETCH_CONTROLLER_EVENTS.HTTP_REQUEST_RECEIVED.eventName,
+            payload: {
+                method: req.method,
+                url: req.url,
+                query: req.query
+            }
         });
 
         // JWT проверка уже должна быть выполнена route guards
@@ -41,17 +37,28 @@ async function fetchGroups(req: Request, res: Response): Promise<void> {
         // Получаем данные из сервиса, передавая объект req
         const result: IGroupsResponse = await getAllGroups(req);
 
-        // Логируем успешное получение данных
-        logRequest('Successfully retrieved groups data', {
-            groupCount: result.groups.length
+        // Создаем событие для успешного ответа
+        await fabricEvents.createAndPublishEvent({
+            req,
+            eventName: GROUPS_FETCH_CONTROLLER_EVENTS.HTTP_RESPONSE_SENT.eventName,
+            payload: {
+                groupCount: result.groups.length
+            }
         });
 
         // Отправка ответа
         res.status(200).json(result);
 
     } catch (error) {
-        // Логирование ошибки
-        logError('Error while fetching groups list', error, {});
+        // Создаем событие для ошибки
+        await fabricEvents.createAndPublishEvent({
+            req,
+            eventName: GROUPS_FETCH_CONTROLLER_EVENTS.HTTP_ERROR.eventName,
+            payload: {
+                errorCode: (error as GroupError)?.code || 'INTERNAL_SERVER_ERROR'
+            },
+            errorData: error instanceof Error ? error.message : String(error)
+        });
 
         // Формирование ответа с ошибкой
         const groupError: GroupError = {

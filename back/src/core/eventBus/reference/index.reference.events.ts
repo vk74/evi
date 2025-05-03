@@ -1,5 +1,5 @@
 // filepath: /Users/vk/Library/Mobile Documents/com~apple~CloudDocs/code/ev2/back/src/core/eventBus/reference/index.reference.events.ts
-// version: 1.2.3
+// version: 1.0.07
 // Central registry for all event domain catalogs in the application
 // This file serves as a registry for all event references across different modules
 
@@ -20,6 +20,11 @@ export const eventReferenceFiles: Record<string, string[]> = {
   // Users list events
   usersList: [
     path.resolve(__dirname, '../../../features/admin/users/usersList/events.users.list.ts')
+  ],
+  
+  // Groups list events
+  groupsList: [
+    path.resolve(__dirname, '../../../features/admin/users/groupsList/events.groups.list.ts')
   ],
   
   // System events - events for internal system operations

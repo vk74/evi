@@ -1,13 +1,12 @@
 /**
- * @file service.groups.list.ts - version 1.0.01
+ * @file service.groups.list.ts - version 1.0.02
  * Service for managing groups data operations.
  *
  * Functionality:
  * - Retrieves groups list from cache or database
  * - Maps database records to response format
  * - Updates repository cache with new data
- * - Handles errors and logging
- * - Now accepts request object for context access
+ * - Uses event bus to track operations and enhance observability
  *
  * Data flow:
  * 1. Check repository cache
@@ -26,6 +25,8 @@ import { queries } from './queries.groups.list';
 import { Pool } from 'pg';
 import { pool as pgPool } from '../../../../db/maindb';
 import { getRequestorUuidFromReq } from '../../../../core/helpers/get.requestor.uuid.from.req';
+import fabricEvents from '../../../../core/eventBus/fabric.events';
+import { GROUPS_FETCH_EVENTS } from './events.groups.list';
 
 // Явно указываем тип для pool
 const pool = pgPool as Pool;
@@ -36,19 +37,40 @@ export async function getAllGroups(req: Request): Promise<IGroupsResponse> {
         
         // Получаем UUID пользователя, делающего запрос
         const requestorUuid = getRequestorUuidFromReq(req);
-        console.log(`[GroupsService] Processing request from user UUID: ${requestorUuid}`);
+        
+        // Создаем событие для получения запроса на получение списка групп
+        await fabricEvents.createAndPublishEvent({
+            req,
+            eventName: GROUPS_FETCH_EVENTS.REQUEST_RECEIVED.eventName,
+            payload: { requestorUuid }
+        });
 
         // Проверяем наличие данных в кэше
         const isCacheValid = await repository.hasValidCache();
         if (isCacheValid) {
-            console.log(`[GroupsService] Cache hit: retrieving groups from repository cache for user ${requestorUuid}`);
             const cachedData = await repository.getCachedData();
-            console.log(`[GroupsService] Sending ${cachedData.groups.length} groups from cache to frontend`);
+            
+            // Создаем событие для использования кэша
+            await fabricEvents.createAndPublishEvent({
+                req,
+                eventName: GROUPS_FETCH_EVENTS.CACHE_HIT.eventName,
+                payload: { 
+                    requestorUuid,
+                    groupCount: cachedData.groups.length 
+                }
+            });
+            
             return cachedData;
         }
 
         // Если кэш недействителен, получаем данные из БД
-        console.log(`[GroupsService] Cache miss: querying database for user ${requestorUuid}`);
+        // Создаем событие для кэш-мисса и обращения к БД
+        await fabricEvents.createAndPublishEvent({
+            req,
+            eventName: GROUPS_FETCH_EVENTS.CACHE_MISS.eventName,
+            payload: { requestorUuid }
+        });
+        
         const result = await pool.query(queries.getAllGroups);
 
         // Обработка данных и применение бизнес-логики
@@ -67,12 +89,33 @@ export async function getAllGroups(req: Request): Promise<IGroupsResponse> {
 
         // Сохраняем результат в кэш
         await repository.setCacheData(response);
-        console.log(`[GroupsService] Sending ${groups.length} groups from database to frontend for user ${requestorUuid}`);
+        
+        // Создаем событие для успешного получения данных из БД
+        await fabricEvents.createAndPublishEvent({
+            req,
+            eventName: GROUPS_FETCH_EVENTS.COMPLETE.eventName,
+            payload: { 
+                count: groups.length,
+                requestorUuid 
+            }
+        });
 
         return response;
 
     } catch (error) {
-        console.error('[GroupsService] Service error while fetching groups:', error);
+        // Создаем событие для ошибки при получении данных
+        await fabricEvents.createAndPublishEvent({
+            req,
+            eventName: GROUPS_FETCH_EVENTS.FAILED.eventName,
+            payload: {
+                error: {
+                    code: 'SERVICE_ERROR',
+                    message: 'Error while processing groups data'
+                }
+            },
+            errorData: error instanceof Error ? error.message : String(error)
+        });
+        
         throw {
             code: 'SERVICE_ERROR',
             message: 'Error while processing groups data',

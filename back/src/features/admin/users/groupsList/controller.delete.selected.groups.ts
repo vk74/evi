@@ -1,5 +1,5 @@
 /**
- * @file controller.delete.selected.groups.ts - version 1.0.01
+ * @file controller.delete.selected.groups.ts - version 1.0.02
  * Controller for handling group deletion requests.
  *
  * Functionality:
@@ -7,20 +7,13 @@
  * - Validates the request body.
  * - Calls the service to delete groups, passing the request object.
  * - Sends the response back to the client.
+ * - Uses event bus to track operations and enhance observability.
  */
 
 import { Request, Response } from 'express';
 import { deleteSelectedGroupsService } from './service.delete.selected.groups';
-
-// Вспомогательная функция для логирования
-function logRequest(message: string, meta: object): void {
-    console.log(`[DeleteGroupsController] ${message}`, meta);
-}
-
-// Вспомогательная функция для логирования ошибок
-function logError(message: string, error: unknown, meta: object): void {
-    console.error(`[DeleteGroupsController] ${message}`, { error, ...meta });
-}
+import fabricEvents from '../../../../core/eventBus/fabric.events';
+import { GROUPS_DELETE_CONTROLLER_EVENTS } from './events.groups.list';
 
 /**
  * Handles the deletion of selected groups
@@ -29,34 +22,54 @@ function logError(message: string, error: unknown, meta: object): void {
  */
 async function deleteSelectedGroups(req: Request, res: Response): Promise<void> {
     try {
-        // Логируем входящий запрос
-        logRequest('Received request', {
-            method: req.method,
-            url: req.url,
-            body: req.body
+        // Создаем событие для входящего запроса
+        await fabricEvents.createAndPublishEvent({
+            req,
+            eventName: GROUPS_DELETE_CONTROLLER_EVENTS.HTTP_REQUEST_RECEIVED.eventName,
+            payload: {
+                method: req.method,
+                url: req.url,
+                body: req.body
+            }
         });
 
         // Проверяем наличие groupIds в теле запроса
         const { groupIds } = req.body;
         if (!groupIds || !Array.isArray(groupIds)) {
-            const errorMessage = 'Invalid request body: groupIds is required and must be an array';
-            logError(errorMessage, {}, {});
-            res.status(400).json({ error: errorMessage });
+            // Создаем событие для невалидного запроса
+            await fabricEvents.createAndPublishEvent({
+                req,
+                eventName: GROUPS_DELETE_CONTROLLER_EVENTS.INVALID_REQUEST.eventName,
+                payload: null
+            });
+            
+            res.status(400).json({ error: 'Invalid request body: groupIds is required and must be an array' });
             return;
         }
 
         // Вызываем сервис для удаления групп, передавая объект req
         const deletedCount = await deleteSelectedGroupsService.deleteSelectedGroups(groupIds, req);
 
-        // Логируем успешное выполнение
-        logRequest('Successfully deleted groups', { deletedCount });
+        // Создаем событие для успешного ответа
+        await fabricEvents.createAndPublishEvent({
+            req,
+            eventName: GROUPS_DELETE_CONTROLLER_EVENTS.HTTP_RESPONSE_SENT.eventName,
+            payload: { deletedCount }
+        });
 
         // Отправляем ответ клиенту
         res.status(200).json({ deletedCount });
 
     } catch (error) {
-        // Логируем ошибку
-        logError('Error during groups deletion', error, {});
+        // Создаем событие для ошибки
+        await fabricEvents.createAndPublishEvent({
+            req,
+            eventName: GROUPS_DELETE_CONTROLLER_EVENTS.HTTP_ERROR.eventName,
+            payload: {
+                error: 'Failed to delete selected groups'
+            },
+            errorData: error instanceof Error ? error.message : String(error)
+        });
 
         // Отправляем ошибку клиенту
         res.status(500).json({
