@@ -1,5 +1,5 @@
 /**
- * service.create.user.ts - version 1.0.04
+ * BACKEND service.create.user.ts - version 1.0.04
  * Service layer for handling user creation from admin panel.
  * Handles validation, password hashing, and database operations.
  * Now includes event bus integration for logging and tracking user creation events.
@@ -282,7 +282,6 @@ export async function createUser(userData: CreateUserRequest, req: Request): Pro
   try {
     // Get the UUID of the user making the request
     const requestorUuid = getRequestorUuidFromReq(req);
-    console.log(`[CreateUserService] User with UUID ${requestorUuid} is creating a new user account`);
     
     // Create and publish request received event
     await fabricEvents.createAndPublishEvent({
@@ -339,7 +338,6 @@ export async function createUser(userData: CreateUserRequest, req: Request): Pro
     );
 
     await client.query('COMMIT');
-    console.log(`[CreateUserService] User ${trimmedData.username} created successfully by administrator ${requestorUuid}`);
 
     // Create and publish completion event
     await fabricEvents.createAndPublishEvent({
