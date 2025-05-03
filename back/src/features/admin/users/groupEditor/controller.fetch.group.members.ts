@@ -1,5 +1,5 @@
 /**
- * controller.fetch.group.members.ts - version 1.0.01
+ * controller.fetch.group.members.ts - version 1.0.02
  * Controller for handling group members fetch requests.
  * 
  * Functionality:
@@ -7,7 +7,7 @@
  * - Extracts request parameters
  * - Delegates to service layer with request object
  * - Formats HTTP responses
- * - Provides request and response logging
+ * - Uses event bus for tracking operations and enhancing observability
  */
 
 import { Request, Response } from 'express';
@@ -16,15 +16,8 @@ import {
   FetchGroupMembersRequest,
   ServiceErrorType 
 } from './types.group.editor';
-
-// Logging helper functions
-function logRequest(message: string, meta: object): void {
-  console.log(`[${new Date().toISOString()}] [FetchGroupMembers] ${message}`, meta);
-}
-
-function logError(message: string, error: unknown, meta: object): void {
-  console.error(`[${new Date().toISOString()}] [FetchGroupMembers] ${message}`, { error, ...meta });
-}
+import fabricEvents from '../../../../core/eventBus/fabric.events';
+import { GROUP_MEMBERS_CONTROLLER_EVENTS } from './events.group.editor';
 
 /**
  * Controller function for fetching group members
@@ -34,33 +27,48 @@ export async function fetchGroupMembers(req: Request, res: Response): Promise<vo
   const groupId = req.params.groupId;
 
   try {
-    // Log incoming request
-    logRequest('Received request to fetch group members', {
-      method: req.method,
-      url: req.url,
-      groupId,
+    // Создаем событие для входящего запроса
+    await fabricEvents.createAndPublishEvent({
+      req,
+      eventName: GROUP_MEMBERS_CONTROLLER_EVENTS.FETCH_HTTP_REQUEST_RECEIVED.eventName,
+      payload: {
+        groupId,
+        method: req.method,
+        url: req.url
+      }
     });
 
     // Call service layer to fetch group members, passing request object
     const request: FetchGroupMembersRequest = { groupId };
     const result = await fetchGroupMembersService(request, req);
 
+    // Создаем событие для успешного ответа
+    await fabricEvents.createAndPublishEvent({
+      req,
+      eventName: GROUP_MEMBERS_CONTROLLER_EVENTS.FETCH_HTTP_RESPONSE_SENT.eventName,
+      payload: {
+        groupId,
+        memberCount: result.data?.total || 0
+      }
+    });
+
     // Send response
     res.status(200).json(result);
 
-    // Log successful response
-    logRequest('Successfully sent response', {
-      groupId,
-      success: result.success,
-      totalMembers: result.data?.total || 0,
-    });
-
   } catch (err) {
-    // Log error
-    logError('Error while processing request', err, { groupId });
-
     // Cast to service error type for handling
     const error = err as ServiceErrorType;
+    
+    // Создаем событие для ошибки
+    await fabricEvents.createAndPublishEvent({
+      req,
+      eventName: GROUP_MEMBERS_CONTROLLER_EVENTS.FETCH_HTTP_ERROR.eventName,
+      payload: {
+        groupId,
+        errorCode: error.code || 'UNKNOWN_ERROR'
+      },
+      errorData: error instanceof Error ? error.message : String(error)
+    });
     
     // Determine response status and message based on error type
     let statusCode = 500;

@@ -59,7 +59,7 @@ const headers = computed<TableHeader[]>(() => [
   { title: t('admin.groups.editor.table.headers.id'), key: 'user_id', width: '80px' },
   { title: t('admin.groups.editor.table.headers.username'), key: 'username' },
   { title: t('admin.groups.editor.table.headers.email'), key: 'email' },
-  { title: t('admin.groups.editor.table.headers.status'), key: 'account_status', width: '60px' },
+  { title: t('admin.groups.editor.table.headers.status'), key: 'status', width: '60px' },
   { title: t('admin.groups.editor.table.headers.staff'), key: 'is_staff', width: '40px' },
   { title: t('admin.groups.editor.table.headers.lastname'), key: 'last_name' },
   { title: t('admin.groups.editor.table.headers.firstname'), key: 'first_name' },
@@ -525,11 +525,11 @@ onBeforeUnmount(() => {
                 :disabled="!isAuthorized"
               />
             </template>
-            <template v-slot:item.account_status="{ item }">
+            <template v-slot:item.status="{ item }">
               <v-chip 
-                :color="getStatusColor(item.account_status)" 
+                :color="getStatusColor(item.status)" 
                 size="x-small">
-                {{ item.account_status }}
+                {{ item.status }}
               </v-chip>
             </template>
             <template v-slot:item.is_staff="{ item }">

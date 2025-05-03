@@ -1,8 +1,8 @@
 /**
- * service.update.group.ts - version 1.0.01
+ * service.update.group.ts - version 1.0.02
  * Service for handling group update business logic and database operations.
  * Performs validation using common backend rules, updates group data in app.groups and app.group_details, and manages transactions.
- * Now accepts request object for access to user context.
+ * Uses event bus for tracking operations and enhancing observability.
  */
 
 import { Request } from 'express';
@@ -13,60 +13,133 @@ import type { UpdateGroupRequest, UpdateGroupResponse, ServiceError, ValidationE
 import { REGEX, VALIDATION } from '../../../../core/validation/rules.common.fields';
 import { groupsRepository } from '../groupsList/repository.groups.list';
 import { getRequestorUuidFromReq } from '../../../../core/helpers/get.requestor.uuid.from.req';
+import fabricEvents from '../../../../core/eventBus/fabric.events';
+import { GROUP_UPDATE_EVENTS } from './events.group.editor';
 
 const pool = pgPool as Pool;
-
-function logService(message: string, meta?: object): void {
-  console.log(`[${new Date().toISOString()}] [UpdateGroupService] ${message}`, meta || '');
-}
 
 export async function updateGroupById(updateData: UpdateGroupRequest, req: Request): Promise<UpdateGroupResponse> {
   // Получаем UUID пользователя, делающего запрос
   const requestorUuid = getRequestorUuidFromReq(req);
 
+  // Создаем событие для начала обновления группы
+  await fabricEvents.createAndPublishEvent({
+    req,
+    eventName: GROUP_UPDATE_EVENTS.REQUEST_RECEIVED.eventName,
+    payload: { 
+      groupId: updateData.group_id,
+      requestorUuid
+    }
+  });
+
   // Валидация group_name, если он передан, используя общие правила
   if (updateData.group_name !== undefined) { // Проверяем, что поле передано (включая null/empty)
     if (!updateData.group_name) {
+      // Создаем событие для ошибки валидации
+      await fabricEvents.createAndPublishEvent({
+        req,
+        eventName: GROUP_UPDATE_EVENTS.VALIDATION_FAILED.eventName,
+        payload: {
+          field: 'group_name',
+          message: VALIDATION.GROUP_NAME.MESSAGES.REQUIRED
+        },
+        errorData: 'Group name is empty'
+      });
+
       throw {
         code: 'VALIDATION_ERROR',
         message: VALIDATION.GROUP_NAME.MESSAGES.REQUIRED,
         field: 'group_name',
-        details: 'Group name is empty', // Добавляем details
+        details: 'Group name is empty',
       } as ValidationError;
     }
     if (updateData.group_name.length < VALIDATION.GROUP_NAME.MIN_LENGTH) {
+      // Создаем событие для ошибки валидации
+      await fabricEvents.createAndPublishEvent({
+        req,
+        eventName: GROUP_UPDATE_EVENTS.VALIDATION_FAILED.eventName,
+        payload: {
+          field: 'group_name',
+          message: VALIDATION.GROUP_NAME.MESSAGES.MIN_LENGTH,
+          length: updateData.group_name.length,
+          minLength: VALIDATION.GROUP_NAME.MIN_LENGTH
+        },
+        errorData: `Group name must be at least ${VALIDATION.GROUP_NAME.MIN_LENGTH} characters long`
+      });
+
       throw {
         code: 'VALIDATION_ERROR',
         message: VALIDATION.GROUP_NAME.MESSAGES.MIN_LENGTH,
         field: 'group_name',
-        details: `Group name must be at least ${VALIDATION.GROUP_NAME.MIN_LENGTH} characters long`, // Добавляем details
+        details: `Group name must be at least ${VALIDATION.GROUP_NAME.MIN_LENGTH} characters long`,
       } as ValidationError;
     }
     if (updateData.group_name.length > VALIDATION.GROUP_NAME.MAX_LENGTH) {
+      // Создаем событие для ошибки валидации
+      await fabricEvents.createAndPublishEvent({
+        req,
+        eventName: GROUP_UPDATE_EVENTS.VALIDATION_FAILED.eventName,
+        payload: {
+          field: 'group_name',
+          message: VALIDATION.GROUP_NAME.MESSAGES.MAX_LENGTH,
+          length: updateData.group_name.length,
+          maxLength: VALIDATION.GROUP_NAME.MAX_LENGTH
+        },
+        errorData: `Group name cannot exceed ${VALIDATION.GROUP_NAME.MAX_LENGTH} characters`
+      });
+
       throw {
         code: 'VALIDATION_ERROR',
         message: VALIDATION.GROUP_NAME.MESSAGES.MAX_LENGTH,
         field: 'group_name',
-        details: `Group name cannot exceed ${VALIDATION.GROUP_NAME.MAX_LENGTH} characters`, // Добавляем details
+        details: `Group name cannot exceed ${VALIDATION.GROUP_NAME.MAX_LENGTH} characters`,
       } as ValidationError;
     }
     if (!REGEX.GROUP_NAME.test(updateData.group_name)) {
+      // Создаем событие для ошибки валидации
+      await fabricEvents.createAndPublishEvent({
+        req,
+        eventName: GROUP_UPDATE_EVENTS.VALIDATION_FAILED.eventName,
+        payload: {
+          field: 'group_name',
+          message: VALIDATION.GROUP_NAME.MESSAGES.INVALID_CHARS,
+          pattern: REGEX.GROUP_NAME.toString()
+        },
+        errorData: 'Group name can only contain Latin letters, numbers, and hyphens'
+      });
+
       throw {
         code: 'VALIDATION_ERROR',
         message: VALIDATION.GROUP_NAME.MESSAGES.INVALID_CHARS,
         field: 'group_name',
-        details: 'Group name can only contain Latin letters, numbers, and hyphens', // Добавляем details
+        details: 'Group name can only contain Latin letters, numbers, and hyphens',
       } as ValidationError;
     }
   }
+
+  // Создаем событие для успешной валидации
+  await fabricEvents.createAndPublishEvent({
+    req,
+    eventName: GROUP_UPDATE_EVENTS.VALIDATION_PASSED.eventName,
+    payload: { 
+      groupId: updateData.group_id,
+      requestorUuid
+    }
+  });
 
   const client = await pool.connect();
 
   try {
     await client.query('BEGIN');
-    logService('Starting group update transaction', { 
-      groupId: updateData.group_id,
-      requestorUuid
+    
+    // Создаем событие для начала транзакции
+    await fabricEvents.createAndPublishEvent({
+      req,
+      eventName: GROUP_UPDATE_EVENTS.TRANSACTION_START.eventName,
+      payload: { 
+        groupId: updateData.group_id,
+        requestorUuid
+      }
     });
 
     // Подготовка параметров для обновления app.groups
@@ -85,10 +158,24 @@ export async function updateGroupById(updateData: UpdateGroupRequest, req: Reque
     );
 
     if (groupResult.rowCount === 0) {
+      // Создаем событие для ошибки "группа не найдена"
+      await fabricEvents.createAndPublishEvent({
+        req,
+        eventName: GROUP_UPDATE_EVENTS.FAILED.eventName,
+        payload: {
+          groupId: updateData.group_id,
+          error: {
+            code: 'NOT_FOUND',
+            message: 'Group not found'
+          }
+        },
+        errorData: 'No group found with the provided group_id'
+      });
+
       throw {
         code: 'NOT_FOUND',
         message: 'Group not found',
-        details: 'No group found with the provided group_id', // Добавляем details
+        details: 'No group found with the provided group_id',
       } as NotFoundError;
     }
 
@@ -107,30 +194,80 @@ export async function updateGroupById(updateData: UpdateGroupRequest, req: Reque
     );
 
     if (detailsResult.rowCount === 0) {
+      // Создаем событие для ошибки "детали группы не найдены"
+      await fabricEvents.createAndPublishEvent({
+        req,
+        eventName: GROUP_UPDATE_EVENTS.FAILED.eventName,
+        payload: {
+          groupId: updateData.group_id,
+          error: {
+            code: 'NOT_FOUND',
+            message: 'Group details not found'
+          }
+        },
+        errorData: 'No group details found for the provided group_id'
+      });
+
       throw {
         code: 'NOT_FOUND',
         message: 'Group details not found',
-        details: 'No group details found for the provided group_id', // Добавляем details
+        details: 'No group details found for the provided group_id',
       } as NotFoundError;
     }
 
     await client.query('COMMIT');
-    logService('Successfully updated group data', { 
-      groupId: updateData.group_id,
-      requestorUuid
+    
+    // Создаем событие для успешного обновления группы
+    await fabricEvents.createAndPublishEvent({
+      req,
+      eventName: GROUP_UPDATE_EVENTS.COMPLETE.eventName,
+      payload: { 
+        groupId: updateData.group_id,
+        requestorUuid
+      }
     });
     
     // Очищаем кэш списка групп
     try {
       groupsRepository.clearCache();
-      logService('Groups list cache cleared', { 
-        requestorUuid 
-      });
+      
+      // Проверяем очистку кэша
+      const cacheStateAfter = groupsRepository.hasValidCache();
+      
+      if (!cacheStateAfter) {
+        // Создаем событие для успешной очистки кэша
+        await fabricEvents.createAndPublishEvent({
+          req,
+          eventName: GROUP_UPDATE_EVENTS.CACHE_CLEARED.eventName,
+          payload: { 
+            groupId: updateData.group_id,
+            requestorUuid 
+          }
+        });
+      } else {
+        // Создаем событие для ошибки очистки кэша
+        await fabricEvents.createAndPublishEvent({
+          req,
+          eventName: GROUP_UPDATE_EVENTS.CACHE_CLEAR_FAILED.eventName,
+          payload: { 
+            groupId: updateData.group_id,
+            error: 'Cache is still valid after clearing',
+            requestorUuid 
+          },
+          errorData: 'Failed to clear cache: cache still valid'
+        });
+      }
     } catch (error) {
-      // Не прерываем выполнение, если очистка кэша не удалась
-      logService('Failed to clear groups list cache', { 
-        error,
-        requestorUuid
+      // Создаем событие для ошибки очистки кэша
+      await fabricEvents.createAndPublishEvent({
+        req,
+        eventName: GROUP_UPDATE_EVENTS.CACHE_CLEAR_FAILED.eventName,
+        payload: { 
+          groupId: updateData.group_id,
+          error: error instanceof Error ? error.message : String(error),
+          requestorUuid 
+        },
+        errorData: error instanceof Error ? error.message : String(error)
       });
     }
 
@@ -144,11 +281,24 @@ export async function updateGroupById(updateData: UpdateGroupRequest, req: Reque
     await client.query('ROLLBACK');
 
     const error = err as ServiceError;
+    
+    if ((error as ServiceError).code) {
+      // Если это наша ошибка с кодом, просто пробрасываем дальше
+      throw error;
+    }
 
-    logService('Error updating group data', { 
-      groupId: updateData.group_id, 
-      error,
-      requestorUuid
+    // Создаем событие для неожиданной ошибки
+    await fabricEvents.createAndPublishEvent({
+      req,
+      eventName: GROUP_UPDATE_EVENTS.FAILED.eventName,
+      payload: {
+        groupId: updateData.group_id,
+        error: {
+          code: 'INTERNAL_SERVER_ERROR',
+          message: 'Failed to update group data'
+        }
+      },
+      errorData: error instanceof Error ? error.message : String(error)
     });
 
     throw {

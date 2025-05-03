@@ -1,31 +1,30 @@
 /**
- * controller.update.group.ts - version 1.0.01
+ * controller.update.group.ts - version 1.0.02
  * Controller for handling group update requests at /api/admin/groups/update-group-by-groupid.
  * Validates request structure, extracts user data, and delegates business logic to the service.
- * Now passes request object to service layer.
+ * Now uses event bus for tracking operations and enhancing observability.
  */
 
 import { Request, Response } from 'express';
 import { updateGroupById as updateGroupService } from './service.update.group';
 import type { UpdateGroupRequest, ServiceError, UpdateGroupResponse, RequiredFieldError } from './types.group.editor';
-
-function logRequest(message: string, meta: object): void {
-  console.log(`[${new Date().toISOString()}] [UpdateGroup] ${message}`, meta);
-}
-
-function logError(message: string, error: unknown, meta: object): void {
-  console.error(`[${new Date().toISOString()}] [UpdateGroup] ${message}`, { error, ...meta });
-}
+import fabricEvents from '../../../../core/eventBus/fabric.events';
+import { GROUP_UPDATE_CONTROLLER_EVENTS } from './events.group.editor';
 
 async function updateGroupById(req: Request, res: Response): Promise<void> {
   const updateData = req.body as UpdateGroupRequest;
 
   try {
-    logRequest('Received request to update group data', {
-      method: req.method,
-      url: req.url,
-      groupId: updateData.group_id,
-      userID: (req as any).user?.user_id || (req as any).user?.id
+    // Создаем событие для входящего запроса
+    await fabricEvents.createAndPublishEvent({
+      req,
+      eventName: GROUP_UPDATE_CONTROLLER_EVENTS.HTTP_REQUEST_RECEIVED.eventName,
+      payload: {
+        groupId: updateData.group_id,
+        method: req.method,
+        url: req.url,
+        userID: (req as any).user?.user_id || (req as any).user?.id
+      }
     });
 
     // Извлекаем user_id (UUID пользователя) из req.user
@@ -41,9 +40,15 @@ async function updateGroupById(req: Request, res: Response): Promise<void> {
     // Передаем req в сервис
     const result = await updateGroupService({ ...updateData, modified_by: modifiedBy }, req);
     
-    logRequest('Successfully updated group data', {
-      groupId: updateData.group_id,
-      userID: modifiedBy
+    // Создаем событие для успешного ответа
+    await fabricEvents.createAndPublishEvent({
+      req,
+      eventName: GROUP_UPDATE_CONTROLLER_EVENTS.HTTP_RESPONSE_SENT.eventName,
+      payload: {
+        groupId: updateData.group_id,
+        success: result.success,
+        userID: modifiedBy
+      }
     });
 
     res.status(200).json(result as UpdateGroupResponse);
@@ -51,9 +56,16 @@ async function updateGroupById(req: Request, res: Response): Promise<void> {
   } catch (err: unknown) {
     const error = err as ServiceError;
 
-    logError('Error while updating group data', error, {
-      groupId: updateData.group_id,
-      userID: (req as any).user?.user_id || (req as any).user?.id, // Логируем userID при ошибке
+    // Создаем событие для ошибки
+    await fabricEvents.createAndPublishEvent({
+      req,
+      eventName: GROUP_UPDATE_CONTROLLER_EVENTS.HTTP_ERROR.eventName,
+      payload: {
+        groupId: updateData.group_id,
+        errorCode: error.code || 'UNKNOWN_ERROR',
+        userID: (req as any).user?.user_id || (req as any).user?.id
+      },
+      errorData: error instanceof Error ? error.message : String(error)
     });
 
     let statusCode: number;

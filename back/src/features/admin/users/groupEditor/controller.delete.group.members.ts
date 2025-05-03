@@ -1,5 +1,5 @@
 /**
- * controller.delete.group.members.ts - version 1.0.01
+ * controller.delete.group.members.ts - version 1.0.02
  * Controller for handling group members deletion requests.
  * 
  * Functionality:
@@ -7,7 +7,7 @@
  * - Extracts request parameters
  * - Delegates to service layer with request object
  * - Formats HTTP responses
- * - Provides request and response logging
+ * - Uses event bus for tracking operations and enhancing observability
  */
 
 import { Request, Response } from 'express';
@@ -16,15 +16,8 @@ import {
   RemoveGroupMembersRequest,
   ServiceErrorType 
 } from './types.group.editor';
-
-// Logging helper functions
-function logRequest(message: string, meta: object): void {
-  console.log(`[${new Date().toISOString()}] [RemoveGroupMembers] ${message}`, meta);
-}
-
-function logError(message: string, error: unknown, meta: object): void {
-  console.error(`[${new Date().toISOString()}] [RemoveGroupMembers] ${message}`, { error, ...meta });
-}
+import fabricEvents from '../../../../core/eventBus/fabric.events';
+import { GROUP_MEMBERS_CONTROLLER_EVENTS } from './events.group.editor';
 
 /**
  * Controller function for removing group members
@@ -35,17 +28,31 @@ export async function removeGroupMembers(req: Request, res: Response): Promise<v
   const { userIds } = req.body;
 
   try {
-    // Log incoming request
-    logRequest('Received request to remove group members', {
-      method: req.method,
-      url: req.url,
-      groupId,
-      userIdsCount: userIds?.length || 0
+    // Создаем событие для входящего запроса
+    await fabricEvents.createAndPublishEvent({
+      req,
+      eventName: GROUP_MEMBERS_CONTROLLER_EVENTS.REMOVE_HTTP_REQUEST_RECEIVED.eventName,
+      payload: {
+        groupId,
+        userIdsCount: userIds?.length || 0,
+        method: req.method,
+        url: req.url
+      }
     });
 
     // Call service layer to remove group members, passing request object
     const request: RemoveGroupMembersRequest = { groupId, userIds };
     const result = await removeGroupMembersService(request, req);
+
+    // Создаем событие для успешного ответа
+    await fabricEvents.createAndPublishEvent({
+      req,
+      eventName: GROUP_MEMBERS_CONTROLLER_EVENTS.REMOVE_HTTP_RESPONSE_SENT.eventName,
+      payload: {
+        groupId,
+        removedCount: result.data?.removedCount || 0
+      }
+    });
 
     // Send response with format matching the frontend interface
     res.status(200).json({
@@ -54,19 +61,20 @@ export async function removeGroupMembers(req: Request, res: Response): Promise<v
       removedCount: result.data?.removedCount || 0
     });
 
-    // Log successful response
-    logRequest('Successfully sent response', {
-      groupId,
-      success: true,
-      removedCount: result.data?.removedCount || 0,
-    });
-
   } catch (err) {
-    // Log error
-    logError('Error while processing request', err, { groupId });
-
     // Cast to service error type for handling
     const error = err as ServiceErrorType;
+    
+    // Создаем событие для ошибки
+    await fabricEvents.createAndPublishEvent({
+      req,
+      eventName: GROUP_MEMBERS_CONTROLLER_EVENTS.REMOVE_HTTP_ERROR.eventName,
+      payload: {
+        groupId,
+        errorCode: error.code || 'UNKNOWN_ERROR'
+      },
+      errorData: error instanceof Error ? error.message : String(error)
+    });
     
     // Determine response status and message based on error type
     let statusCode = 500;

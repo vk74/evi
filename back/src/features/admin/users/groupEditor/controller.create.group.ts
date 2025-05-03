@@ -2,7 +2,7 @@
  * controller.create.group.ts - version 1.0.02
  * Controller for handling group creation requests from admin panel.
  * Processes requests, handles errors, and formats responses.
- * Now passes request object to service layer.
+ * Now uses event bus for tracking operations.
  */
 import { Request, Response } from 'express';
 import { createGroup } from './service.create.group';
@@ -10,28 +10,24 @@ import type {
   CreateGroupRequest,
   ServiceErrorType
 } from './types.group.editor';
-import { 
-  createAppLgr,
-  Events 
-} from '../../../../core/lgr/lgr.index';
+import fabricEvents from '../../../../core/eventBus/fabric.events';
+import { GROUP_CREATION_CONTROLLER_EVENTS } from './events.group.editor';
 
-// Создаем экземпляр логгера для контроллера групп
-const lgr = createAppLgr({
-  module: 'AdminGroupController',
-  fileName: 'controller.create.group.ts'
-});
-
+/**
+ * Controller function for group creation
+ */
 async function createGroupController(req: Request & { user?: { username: string } }, res: Response): Promise<void> {
   const groupData: CreateGroupRequest = req.body;
   
   try {
-    // Логируем получение запроса
-    lgr.info({
-      code: Events.ADMIN.USERS.CREATION.REQUEST.RECEIVED.code,
-      message: `Received request to create new group: ${groupData.group_name}`,
-      details: {
+    // Создаем событие для входящего запроса
+    await fabricEvents.createAndPublishEvent({
+      req,
+      eventName: GROUP_CREATION_CONTROLLER_EVENTS.HTTP_REQUEST_RECEIVED.eventName,
+      payload: {
         groupName: groupData.group_name,
-        owner: groupData.group_owner,
+        method: req.method,
+        url: req.url,
         userAgent: req.headers['user-agent']
       }
     });
@@ -39,11 +35,11 @@ async function createGroupController(req: Request & { user?: { username: string 
     // Передаем объект req в сервис
     const result = await createGroup(groupData, { username: req.user?.username || '' }, req);
 
-    // Логируем успешное создание
-    lgr.info({
-      code: Events.ADMIN.USERS.CREATION.CREATE.SUCCESS.code,
-      message: `Successfully created group: ${result.group_name}`,
-      details: {
+    // Создаем событие для успешного ответа
+    await fabricEvents.createAndPublishEvent({
+      req,
+      eventName: GROUP_CREATION_CONTROLLER_EVENTS.HTTP_RESPONSE_SENT.eventName,
+      payload: {
         groupId: result.groupId,
         groupName: result.group_name,
         createdBy: req.user?.username || 'anonymous'
@@ -55,17 +51,16 @@ async function createGroupController(req: Request & { user?: { username: string 
   } catch (err) {
     const error = err as ServiceErrorType;
     
-    // Логируем ошибку создания
-    lgr.error({
-      code: Events.ADMIN.USERS.CREATION.CREATE.ERROR.code,
-      message: `Failed to create group: ${error.message}`,
-      details: {
+    // Создаем событие для ошибки
+    await fabricEvents.createAndPublishEvent({
+      req,
+      eventName: GROUP_CREATION_CONTROLLER_EVENTS.HTTP_ERROR.eventName,
+      payload: {
         groupName: groupData.group_name,
         errorCode: error.code,
-        field: error.field,
-        requestBody: groupData
+        field: error.field
       },
-      error
+      errorData: error.message
     });
 
     // Handle specific error types

@@ -1,5 +1,5 @@
 /**
- * controller.fetch.group.ts - version 1.0.01
+ * controller.fetch.group.ts - version 1.0.02
  * Controller for fetching group data by group ID in the admin panel.
  * 
  * Functionality:
@@ -7,7 +7,7 @@
  * - Validates request parameters
  * - Delegates data loading to service layer (passing the request object)
  * - Handles response formatting and error cases
- * - Provides request logging
+ * - Uses event bus for tracking operations and enhancing observability
  */
 
 import { Request, Response } from 'express';
@@ -17,15 +17,8 @@ import {
   FetchGroupResponse, 
   ServiceError 
 } from './types.group.editor';
-
-// Logging helper functions
-function logRequest(message: string, meta: object): void {
-  console.log(`[${new Date().toISOString()}] [FetchGroup] ${message}`, meta);
-}
-
-function logError(message: string, error: unknown, meta: object): void {
-  console.error(`[${new Date().toISOString()}] [FetchGroup] ${message}`, { error, ...meta });
-}
+import fabricEvents from '../../../../core/eventBus/fabric.events';
+import { GROUP_FETCH_CONTROLLER_EVENTS } from './events.group.editor';
 
 /**
  * Controller function for fetching group data by group ID
@@ -35,11 +28,15 @@ export async function fetchGroupById(req: Request, res: Response): Promise<void>
   const groupId = req.params.groupId;
 
   try {
-    // Log incoming request
-    logRequest('Received request to fetch group data', {
-      method: req.method,
-      url: req.url,
-      groupId
+    // Создаем событие для входящего запроса
+    await fabricEvents.createAndPublishEvent({
+      req,
+      eventName: GROUP_FETCH_CONTROLLER_EVENTS.HTTP_REQUEST_RECEIVED.eventName,
+      payload: {
+        groupId,
+        method: req.method,
+        url: req.url
+      }
     });
 
     if (!groupId) {
@@ -53,12 +50,16 @@ export async function fetchGroupById(req: Request, res: Response): Promise<void>
     // Call service layer to fetch group data, passing the request object
     const result: FetchGroupResponse = await fetchGroupData({ groupId }, req);
 
-    // Log successful response
+    // Создаем событие для успешного ответа
     if (result.success && result.data) {
-      logRequest('Successfully fetched group data', {
-        groupId,
-        group_name: result.data.group.group_name,
-        group_status: result.data.group.group_status
+      await fabricEvents.createAndPublishEvent({
+        req,
+        eventName: GROUP_FETCH_CONTROLLER_EVENTS.HTTP_RESPONSE_SENT.eventName,
+        payload: {
+          groupId,
+          groupName: result.data.group.group_name,
+          groupStatus: result.data.group.group_status
+        }
       });
     }
 
@@ -68,8 +69,16 @@ export async function fetchGroupById(req: Request, res: Response): Promise<void>
   } catch (err) {
     const error = err as ServiceError;
     
-    // Log error
-    logError('Error while fetching group data', error, { groupId });
+    // Создаем событие для ошибки
+    await fabricEvents.createAndPublishEvent({
+      req,
+      eventName: GROUP_FETCH_CONTROLLER_EVENTS.HTTP_ERROR.eventName,
+      payload: {
+        groupId,
+        errorCode: error.code || 'UNKNOWN_ERROR'
+      },
+      errorData: error instanceof Error ? error.message : String(error)
+    });
 
     // Determine response status and message based on error type
     const statusCode = error.code === 'INTERNAL_SERVER_ERROR' ? 500 : 404;

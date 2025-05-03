@@ -1,5 +1,5 @@
 /**
- * service.fetch.group.ts - version 1.0.01
+ * service.fetch.group.ts - version 1.0.02
  * Service for fetching group data by group ID.
  * 
  * Functionality:
@@ -7,7 +7,7 @@
  * - Fetches group data from the database
  * - Combines group and group details data
  * - Handles error cases gracefully
- * - Now accepts request object for access to user context
+ * - Uses event bus for tracking operations and enhancing observability
  */
 
 import { Request } from 'express';
@@ -23,14 +23,11 @@ import {
   ServiceError
 } from './types.group.editor';
 import { getRequestorUuidFromReq } from '../../../../core/helpers/get.requestor.uuid.from.req';
+import fabricEvents from '../../../../core/eventBus/fabric.events';
+import { GROUP_FETCH_EVENTS } from './events.group.editor';
 
 // Type assertion for pool
 const pool = pgPool as Pool;
-
-// Logging helper
-function logService(message: string, meta?: object): void {
-  console.log(`[${new Date().toISOString()}] [FetchGroupService] ${message}`, meta || '');
-}
 
 /**
  * Fetches group data by group ID
@@ -44,7 +41,16 @@ export async function fetchGroupData(request: FetchGroupRequest, req: Request): 
   try {
     // Get the UUID of the user making the request
     const requestorUuid = getRequestorUuidFromReq(req);
-    logService('Fetching group data from database', { groupId, requestorUuid });
+    
+    // Создаем событие для начала операции получения данных группы
+    await fabricEvents.createAndPublishEvent({
+      req,
+      eventName: GROUP_FETCH_EVENTS.REQUEST_RECEIVED.eventName,
+      payload: { 
+        groupId, 
+        requestorUuid 
+      }
+    });
 
     // Fetch group base data
     const groupResult = await pool.query<GroupBaseData>(
@@ -72,11 +78,15 @@ export async function fetchGroupData(request: FetchGroupRequest, req: Request): 
       ? detailsResult.rows[0] 
       : null;
     
-    // Log successful data retrieval
-    logService('Successfully retrieved group data', { 
-      groupId, 
-      groupName: groupData.group_name,
-      requestorUuid
+    // Создаем событие для успешного получения данных группы
+    await fabricEvents.createAndPublishEvent({
+      req,
+      eventName: GROUP_FETCH_EVENTS.COMPLETE.eventName,
+      payload: { 
+        groupId, 
+        groupName: groupData.group_name,
+        requestorUuid
+      }
     });
     
     // Return formatted response
@@ -90,17 +100,36 @@ export async function fetchGroupData(request: FetchGroupRequest, req: Request): 
     };
     
   } catch (error) {
-    // Log error
-    logService('Error in service while loading group data', { groupId, error });
-    
-    // Return formatted error response
+    // Обрабатываем ошибку и создаем соответствующее событие
     if ((error as NotFoundError).code === 'NOT_FOUND') {
+      // Создаем событие для ошибки "не найдено"
+      await fabricEvents.createAndPublishEvent({
+        req,
+        eventName: GROUP_FETCH_EVENTS.FAILED.eventName,
+        payload: {
+          groupId,
+          error: 'Group not found'
+        },
+        errorData: 'Group not found'
+      });
+      
       return {
         success: false,
         message: 'Group not found',
         data: null
       };
     }
+    
+    // Создаем событие для других ошибок
+    await fabricEvents.createAndPublishEvent({
+      req,
+      eventName: GROUP_FETCH_EVENTS.FAILED.eventName,
+      payload: {
+        groupId,
+        error: 'Error retrieving group data'
+      },
+      errorData: error instanceof Error ? error.message : String(error)
+    });
     
     // For other errors, throw to be caught by controller
     throw {

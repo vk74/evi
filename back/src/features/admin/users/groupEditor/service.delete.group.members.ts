@@ -1,5 +1,5 @@
 /**
- * service.delete.group.members.ts - version 1.0.01
+ * service.delete.group.members.ts - version 1.0.02
  * BACKEND service for removing members from a specific group.
  * 
  * Functionality:
@@ -7,8 +7,7 @@
  * - Removes group members from the database
  * - Handles data transformation and business logic
  * - Manages error handling
- * - Provides logging for operations
- * - Now accepts request object for access to user context
+ * - Uses event bus for tracking operations and enhancing observability
  */
 
 import { Request } from 'express';
@@ -22,14 +21,11 @@ import {
 } from './types.group.editor';
 import { pool as pgPool } from '../../../../db/maindb';
 import { getRequestorUuidFromReq } from '../../../../core/helpers/get.requestor.uuid.from.req';
+import fabricEvents from '../../../../core/eventBus/fabric.events';
+import { GROUP_MEMBERS_EVENTS } from './events.group.editor';
 
 // Type assertion for pool
 const pool = pgPool as Pool;
-
-// Logging helper
-function logService(message: string, meta?: object): void {
-  console.log(`[${new Date().toISOString()}] [RemoveGroupMembersService] ${message}`, meta || '');
-}
 
 /**
  * Service function to remove members from a group
@@ -44,6 +40,17 @@ export async function removeGroupMembers(request: RemoveGroupMembersRequest, req
     // Get the UUID of the user making the request
     const requestorUuid = getRequestorUuidFromReq(req);
     
+    // Создаем событие для запроса на удаление участников группы
+    await fabricEvents.createAndPublishEvent({
+      req,
+      eventName: GROUP_MEMBERS_EVENTS.REMOVE_REQUEST_RECEIVED.eventName,
+      payload: { 
+        groupId, 
+        userIdsCount: userIds?.length || 0,
+        requestorUuid
+      }
+    });
+    
     // Input validation
     if (!groupId) {
       const validationError: ValidationError = {
@@ -51,6 +58,18 @@ export async function removeGroupMembers(request: RemoveGroupMembersRequest, req
         message: 'Group ID is required',
         field: 'groupId'
       };
+      
+      // Создаем событие для ошибки валидации
+      await fabricEvents.createAndPublishEvent({
+        req,
+        eventName: GROUP_MEMBERS_EVENTS.REMOVE_FAILED.eventName,
+        payload: {
+          groupId: 'undefined',
+          error: 'Group ID is required'
+        },
+        errorData: 'Group ID is required'
+      });
+      
       throw validationError;
     }
 
@@ -60,15 +79,20 @@ export async function removeGroupMembers(request: RemoveGroupMembersRequest, req
         message: 'At least one user ID must be provided',
         field: 'userIds'
       };
+      
+      // Создаем событие для ошибки валидации
+      await fabricEvents.createAndPublishEvent({
+        req,
+        eventName: GROUP_MEMBERS_EVENTS.REMOVE_FAILED.eventName,
+        payload: {
+          groupId,
+          error: 'At least one user ID must be provided'
+        },
+        errorData: 'At least one user ID must be provided'
+      });
+      
       throw validationError;
     }
-
-    // Log operation start
-    logService('Removing group members from database', { 
-      groupId, 
-      userIdsCount: userIds.length,
-      requestorUuid
-    });
 
     // Perform query to remove group members with parameterized values to prevent SQL injection
     const result: QueryResult = await pool.query(queries.removeGroupMembers.text, [
@@ -79,12 +103,16 @@ export async function removeGroupMembers(request: RemoveGroupMembersRequest, req
     const removedUserIds = result.rows.map(row => row.user_id);
     const removedCount = removedUserIds.length;
 
-    // Log successful removal
-    logService('Successfully removed group members', {
-      groupId,
-      removedCount,
-      removedUserIds,
-      requestorUuid
+    // Создаем событие для успешного удаления участников группы
+    await fabricEvents.createAndPublishEvent({
+      req,
+      eventName: GROUP_MEMBERS_EVENTS.REMOVE_COMPLETE.eventName,
+      payload: {
+        groupId,
+        removedCount,
+        removedUserIds,
+        requestorUuid
+      }
     });
 
     // Return formatted response
@@ -99,15 +127,23 @@ export async function removeGroupMembers(request: RemoveGroupMembersRequest, req
       }
     };
   } catch (error) {
-    // Log error
-    logService('Error in removeGroupMembers service', { groupId, userIds, error });
-
     // If error already has the correct format (has code), just pass it through
     if (error && typeof error === 'object' && 'code' in error) {
       throw error;
     }
 
     // Otherwise create a service error
+    // Создаем событие для неожиданной ошибки
+    await fabricEvents.createAndPublishEvent({
+      req,
+      eventName: GROUP_MEMBERS_EVENTS.REMOVE_FAILED.eventName,
+      payload: {
+        groupId,
+        error: 'Failed to remove group members from database'
+      },
+      errorData: error instanceof Error ? error.stack : 'Unknown error'
+    });
+    
     const serviceError: ServiceError = {
       code: 'INTERNAL_SERVER_ERROR',
       message: error instanceof Error ? error.message : 'Failed to remove group members from database',
