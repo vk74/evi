@@ -1,17 +1,21 @@
 /**
  * validate.events.ts - backend file
- * version: 1.1.0
+ * version: 1.1.02
  * 
  * Event validator for ensuring events meet requirements before publishing.
  * Validates events against their schemas and notifies about validation failures.
- * Implements a feedback mechanism to report validation errors through the event bus.
+ * Uses event cache for performance and consistency checks.
+ * Performs schema version validation to ensure compatibility.
  */
 
 import { BaseEvent } from './types.events';
-import { isValidEventType, getEventSchemaVersion, eventReferences } from './reference/index.reference.events';
+import { hasEventInCache, getEventSchemaVersion } from './reference/cache.reference.events';
 import { EVENT_VALIDATION_EVENTS } from './reference/errors.reference.events';
 import { eventBus } from './bus.events';
 import fabricEvents from './fabric.events';
+
+// Minimum required event schema version for compatibility
+const MIN_SCHEMA_VERSION = '1.0';
 
 // Interface for validation result
 interface ValidationResult {
@@ -30,6 +34,30 @@ const REQUIRED_FIELDS: Array<keyof BaseEvent> = [
   'eventType',
   'version'
 ];
+
+/**
+ * Compares semantic versions to determine if version A is greater than or equal to version B
+ * @param versionA First version to compare
+ * @param versionB Second version to compare
+ * @returns True if versionA >= versionB
+ */
+const isVersionCompatible = (versionA: string, versionB: string): boolean => {
+  const partsA = versionA.split('.').map(part => parseInt(part, 10));
+  const partsB = versionB.split('.').map(part => parseInt(part, 10));
+
+  // Ensure both arrays have same length
+  while (partsA.length < partsB.length) partsA.push(0);
+  while (partsB.length < partsA.length) partsB.push(0);
+
+  // Compare major.minor.patch parts
+  for (let i = 0; i < partsA.length; i++) {
+    if (partsA[i] > partsB[i]) return true;
+    if (partsA[i] < partsB[i]) return false;
+  }
+
+  // Versions are exactly the same
+  return true;
+};
 
 /**
  * Validates a BaseEvent to ensure it meets the minimum requirements
@@ -63,41 +91,32 @@ export const validateEvent = (event: BaseEvent): ValidationResult => {
   }
   
   if (event.eventName) {
-    // Validate event name is registered
-    if (!isValidEventType(event.eventName)) {
-      const errorMsg = `Invalid eventName: ${event.eventName}. This event type is not registered in the event catalog.`;
+    // Validate event name is registered in the cache
+    if (!hasEventInCache(event.eventName)) {
+      const errorMsg = `Invalid eventName: ${event.eventName}. This event type is not registered in the event cache.`;
       errors.push(errorMsg);
     } else {
-      // Check version matches the one in registry
+      // Get cached schema version
       const expectedVersion = getEventSchemaVersion(event.eventName);
-      if (event.version && event.version !== expectedVersion) {
-        const errorMsg = `Event version mismatch: ${event.version} provided, but registry specifies ${expectedVersion}`;
+      
+      // Check if event has a version
+      if (!event.version) {
+        const errorMsg = `Event is missing version field`;
+        errors.push(errorMsg);
+      } 
+      // Check if event version matches cached version
+      else if (expectedVersion && event.version !== expectedVersion) {
+        const errorMsg = `Event version mismatch: ${event.version} provided, but cache specifies ${expectedVersion}`;
         errors.push(errorMsg);
       }
       
-      // Validate payload against schema if available
-      if (isValidEventType(event.eventName)) {
-        const [domain, ...rest] = event.eventName.split('.');
-        const eventKey = rest.join('.');
-        
-        // Get the domain registry
-        const domainRegistry = eventReferences[domain as keyof typeof eventReferences];
-        
-        if (domainRegistry && domainRegistry[eventKey] && domainRegistry[eventKey].payloadSchema) {
-          // Basic payload validation - in a real implementation, this would use a JSON Schema validator
-          const schema = domainRegistry[eventKey].payloadSchema;
-          
-          if (schema.required && Array.isArray(schema.required)) {
-            for (const requiredField of schema.required as string[]) {
-              // Check if payload exists and has required field
-              if (!event.payload || !Object.prototype.hasOwnProperty.call(event.payload, requiredField)) {
-                const errorMsg = `Event payload is missing required field: ${requiredField}`;
-                errors.push(errorMsg);
-              }
-            }
-          }
-        }
+      // Check if event version meets minimum version requirement
+      if (event.version && !isVersionCompatible(event.version, MIN_SCHEMA_VERSION)) {
+        const errorMsg = `Event schema version ${event.version} is outdated. Minimum required version is ${MIN_SCHEMA_VERSION}`;
+        errors.push(errorMsg);
       }
+      
+      // Additional payload validation could be added here based on schema from cache
     }
   }
 
@@ -130,21 +149,40 @@ export const validateAndPublishEvent = async (event: BaseEvent): Promise<boolean
       .filter(err => err.startsWith('Event is missing required field:'))
       .map(err => err.replace('Event is missing required field: ', ''));
     
-    // Create validation error event
+    // Check for schema version errors
+    const versionErrors = validation.errors
+      .filter(err => err.includes('outdated') || err.includes('version mismatch'));
+    
+    // Create appropriate error event based on the type of validation failure
     try {
-      // Use Algorithm 2 from the factory to create and publish a system error event
-      // directly to the event bus, bypassing validation
-      await fabricEvents.createAndPublishSystemErrorEvent({
-        eventName: EVENT_VALIDATION_EVENTS.VALIDATION_FAILED.eventName,
-        payload: {
-          originalEventName: event.eventName || 'unknown',
-          originalEventId: event.eventId || 'unknown',
-          missingFields,
-          errors: validation.errors
-        },
-        errorData: validation.errors.join('; '),
-        severity: 'warning'
-      });
+      if (versionErrors.length > 0) {
+        // If there are version errors, create a schema version error event
+        await fabricEvents.createAndPublishSystemErrorEvent({
+          eventName: EVENT_VALIDATION_EVENTS.SCHEMA_VERSION_ERROR.eventName,
+          payload: {
+            originalEventName: event.eventName || 'unknown',
+            originalEventId: event.eventId || 'unknown',
+            eventVersion: event.version || 'missing',
+            minRequiredVersion: MIN_SCHEMA_VERSION,
+            errors: versionErrors
+          },
+          errorData: versionErrors.join('; '),
+          severity: 'error'
+        });
+      } else {
+        // For other validation errors, create a general validation error event
+        await fabricEvents.createAndPublishSystemErrorEvent({
+          eventName: EVENT_VALIDATION_EVENTS.VALIDATION_FAILED.eventName,
+          payload: {
+            originalEventName: event.eventName || 'unknown',
+            originalEventId: event.eventId || 'unknown',
+            missingFields,
+            errors: validation.errors
+          },
+          errorData: validation.errors.join('; '),
+          severity: 'warning'
+        });
+      }
     } catch (error) {
       console.error('Failed to create validation error event:', error);
     }

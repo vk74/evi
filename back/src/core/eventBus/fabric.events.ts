@@ -1,6 +1,6 @@
 /**
  * fabric.events.ts - backend file
- * version: 1.0.03
+ * version: 1.0.04
  * 
  * Event Factory for creating standardized event instances
  * that conform to BaseEvent interface.
@@ -11,18 +11,15 @@
  *    bypassing validation to avoid infinite loops
  * 
  * The factory creates events in a modular way with separate functions
- * for each step of event creation and enrichment:
- * - getEventTemplateFromCache - Gets event template from cache
- * - createBaseEvent - Creates base event with required core properties
- * - enrichWithPayload - Adds business data to the event
- * - enrichWithRequestorInfo - Adds user context from request object
+ * for each step of event creation and enrichment.
  */
 
 import { v4 as uuidv4 } from 'uuid';
 import { BaseEvent, CreateEventOptions, CreateSystemErrorEventParams } from './types.events';
-import { getEventTemplate, hasEventInCache } from './reference/cache.reference.events';
+import { hasEventInCache, getEventTemplate } from './reference/cache.reference.events';
 import { validateAndPublishEvent } from './validate.events';
 import { eventBus } from './bus.events';
+import { EVENT_TEMPLATE_NOT_FOUND } from './reference/errors.reference.events';
 import getRequestorUuidFromReq from '../helpers/get.requestor.uuid.from.req';
 import os from 'os';
 
@@ -100,19 +97,40 @@ export const createAndPublishSystemErrorEvent = async (params: CreateSystemError
  */
 export const createEvent = async (params: CreateEventParams): Promise<BaseEvent> => {
   try {
-    // Step 1: Get event template from cache
-    const eventTemplate = getEventTemplateFromCache(params.eventName);
+    // Check if event template exists in cache
+    if (!hasEventInCache(params.eventName)) {
+      // Template not found - publish a system error event and throw error
+      await createAndPublishSystemErrorEvent({
+        eventName: EVENT_TEMPLATE_NOT_FOUND.eventName,
+        payload: {
+          attemptedEventName: params.eventName,
+          errorType: 'TEMPLATE_NOT_FOUND',
+          timestamp: new Date().toISOString()
+        },
+        errorData: `Event template '${params.eventName}' not found in cache. Events must be registered in the event registry.`,
+        severity: 'error'
+      });
+      
+      throw new Error(`Event template '${params.eventName}' not found in cache. All events must be registered before use.`);
+    }
     
-    // Step 2: Create basic event with core properties
+    // Get event template from cache
+    const eventTemplate = getEventTemplate(params.eventName);
+    
+    if (!eventTemplate) {
+      throw new Error(`Failed to retrieve template for event '${params.eventName}' from cache`);
+    }
+    
+    // Create basic event with core properties
     let event = createBaseEvent(eventTemplate, params.eventName);
     
-    // Step 3: Enrich event with payload
+    // Enrich event with payload
     event = enrichWithPayload(event, params.payload);
     
-    // Step 4: Enrich event with requestor information
+    // Enrich event with requestor information
     event = enrichWithRequestorInfo(event, params.req);
     
-    // Step 5: Add error data if provided
+    // Add error data if provided
     if (params.errorData) {
       event.errorData = params.errorData;
     }
@@ -130,10 +148,32 @@ export const createEvent = async (params: CreateEventParams): Promise<BaseEvent>
  */
 export const createSystemErrorEvent = async (params: CreateSystemErrorEventParams): Promise<BaseEvent> => {
   try {
-    // Step 1: Get event template from cache or create minimal template
-    const eventTemplate = getEventTemplateFromCache(params.eventName);
+    // Check if event template exists in cache
+    if (!hasEventInCache(params.eventName)) {
+      console.error(`System error event template '${params.eventName}' not found in cache.`);
+      
+      // Create a minimal valid event as fallback
+      return {
+        eventId: `event-${uuidv4()}`,
+        timestamp: new Date().toISOString(),
+        eventName: params.eventName,
+        source: 'event system',
+        eventType: 'system',
+        version: '1.0.0',
+        severity: params.severity || 'error',
+        payload: params.payload,
+        errorData: params.errorData || 'System error event creation failed: template not found'
+      };
+    }
     
-    // Step 2: Create basic event with core properties
+    // Get event template from cache
+    const eventTemplate = getEventTemplate(params.eventName);
+    
+    if (!eventTemplate) {
+      throw new Error(`Failed to retrieve template for system error event '${params.eventName}' from cache`);
+    }
+    
+    // Create basic event with core properties
     let event = createBaseEvent(eventTemplate, params.eventName);
     
     // Override severity if provided
@@ -141,10 +181,10 @@ export const createSystemErrorEvent = async (params: CreateSystemErrorEventParam
       event.severity = params.severity;
     }
     
-    // Step 3: Enrich with payload
+    // Enrich with payload
     event = enrichWithPayload(event, params.payload);
     
-    // Step 4: Add error data if provided
+    // Add error data if provided
     if (params.errorData) {
       event.errorData = params.errorData;
     }
@@ -170,33 +210,6 @@ export const createSystemErrorEvent = async (params: CreateSystemErrorEventParam
       errorData: `Failed to create system error event: ${error instanceof Error ? error.message : String(error)}`
     };
   }
-};
-
-/**
- * Gets event template from cache based on event name or event key
- */
-export const getEventTemplateFromCache = (eventNameOrKey: string): Partial<BaseEvent> => {
-  // Check if the event name exists directly in the cache
-  if (hasEventInCache(eventNameOrKey)) {
-    const template = getEventTemplate(eventNameOrKey);
-    if (template) {
-      return template;
-    }
-  }
-  
-  // If event name wasn't found directly, it might be provided as a constant key
-  // For example, USER_CREATION_EVENTS.VALIDATION_PASSED instead of "userEditor.creation.validation.passed"
-  // In this case, we need to extract the actual event name
-  
-  console.log(`Event name "${eventNameOrKey}" not found directly in cache, trying to resolve...`);
-  
-  // The template wasn't found, create a minimal template
-  return {
-    eventName: eventNameOrKey,
-    source: 'unknown',
-    eventType: 'app',
-    version: '1.0.0'
-  };
 };
 
 /**
@@ -275,7 +288,6 @@ export default {
   createSystemErrorEvent,
   
   // Helper functions (mainly for testing)
-  getEventTemplateFromCache,
   createBaseEvent,
   enrichWithPayload,
   enrichWithRequestorInfo

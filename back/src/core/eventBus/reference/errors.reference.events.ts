@@ -1,6 +1,6 @@
 /**
  * errors.reference.events.ts - backend file
- * version: 1.0.0
+ * version: 1.0.02
  * 
  * This file contains event definitions for internal system errors 
  * related to the event bus and event validation.
@@ -38,6 +38,16 @@ export const EVENT_VALIDATION_EVENTS = {
     payload: null, // Will be of type { eventName: string, schemaIssue: string }
     errorData: null, // Will be filled with schema error details
     version: '1.0.0'
+  },
+  
+  // When the event schema version is outdated or invalid
+  SCHEMA_VERSION_ERROR: {
+    eventName: 'system.events.schema.version.error',
+    source: 'event validation system',
+    eventType: 'system' as const,
+    severity: 'error' as const,
+    eventMessage: 'Event schema version is outdated or invalid',
+    version: '1.0.0'
   }
 };
 
@@ -69,4 +79,16 @@ export const EVENT_BUS_EVENTS = {
     errorData: null, // Will be filled with error details
     version: '1.0.0'
   }
+};
+
+/**
+ * Events related to event template errors
+ */
+export const EVENT_TEMPLATE_NOT_FOUND = {
+  eventName: 'system.events.template.not.found',
+  source: 'event factory system',
+  eventType: 'system' as const,
+  severity: 'error' as const,
+  eventMessage: 'Event template not found in cache',
+  version: '1.0.0'
 };

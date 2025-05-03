@@ -294,6 +294,25 @@ export const getEventTemplate = (eventName: string): Partial<BaseEvent> | null =
 };
 
 /**
+ * Gets the schema version for an event from cache
+ * 
+ * @param eventName The full event name
+ * @returns The schema version or null if event not found
+ */
+export const getEventSchemaVersion = (eventName: string): string | null => {
+  if (!cacheInitialized) {
+    throw new Error('Event cache has not been initialized. Call initializeEventCache() first.');
+  }
+  
+  const schema = eventSchemaCache[eventName];
+  if (!schema) {
+    return null;
+  }
+  
+  return schema.version || null;
+};
+
+/**
  * Debug function to dump the entire cache contents
  * Useful for development/debugging only
  */
