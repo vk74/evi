@@ -1,8 +1,8 @@
 /**
- * controller.create.user.ts - version 1.0.01
+ * controller.create.user.ts - version 1.0.02
  * Controller for handling user creation requests from admin panel.
  * Processes requests, handles errors, and formats responses.
- * Now passes the entire request object to the service layer.
+ * Now uses event bus for operation tracking.
  */
 
 import { Request, Response } from 'express';
@@ -14,33 +14,37 @@ import type {
   UniqueCheckError,
   RequiredFieldError 
 } from './types.user.editor';
-
-function logRequest(message: string, meta?: object): void {
-  console.log(`[${new Date().toISOString()}] [CreateUser] ${message}`, meta || '');
-}
-
-function logError(message: string, error: unknown, meta?: object): void {
-  console.error(
-    `[${new Date().toISOString()}] [CreateUser] ${message}`,
-    { error, ...meta }
-  );
-}
+import fabricEvents from '../../../../core/eventBus/fabric.events';
+import { USER_CREATION_CONTROLLER_EVENTS } from './events.user.editor';
 
 async function createUserController(req: Request, res: Response): Promise<void> {
   const userData: CreateUserRequest = req.body;
 
   try {
-    logRequest('Received request to create new user', {
-      username: userData.username,
-      email: userData.email
+    // Log HTTP request received event
+    await fabricEvents.createAndPublishEvent({
+      req,
+      eventName: USER_CREATION_CONTROLLER_EVENTS.HTTP_REQUEST_RECEIVED.eventName,
+      payload: {
+        method: req.method,
+        url: req.url,
+        username: userData.username,
+        email: userData.email
+      }
     });
 
     // Pass the entire req object to the service
     const result = await createUser(userData, req);
 
-    logRequest('Successfully created user', {
-      userId: result.userId,
-      username: result.username
+    // Log HTTP response sent event
+    await fabricEvents.createAndPublishEvent({
+      req,
+      eventName: USER_CREATION_CONTROLLER_EVENTS.HTTP_RESPONSE_SENT.eventName,
+      payload: {
+        userId: result.userId,
+        username: result.username,
+        statusCode: 201
+      }
     });
 
     res.status(201).json(result);
@@ -48,9 +52,16 @@ async function createUserController(req: Request, res: Response): Promise<void> 
   } catch (err) {
     const error = err as ServiceError;
     
-    logError('Failed to create user', error, {
-      username: userData.username,
-      errorCode: error.code
+    // Log HTTP error event
+    await fabricEvents.createAndPublishEvent({
+      req,
+      eventName: USER_CREATION_CONTROLLER_EVENTS.HTTP_ERROR.eventName,
+      payload: {
+        username: userData.username,
+        errorCode: error.code || 'INTERNAL_SERVER_ERROR',
+        statusCode: getStatusCodeForError(error)
+      },
+      errorData: error instanceof Error ? error.message : String(error)
     });
 
     // Handle specific error types
@@ -91,6 +102,22 @@ async function createUserController(req: Request, res: Response): Promise<void> 
             error.message : undefined
         });
     }
+  }
+}
+
+/**
+ * Helper function to determine HTTP status code based on error type
+ */
+function getStatusCodeForError(error: ServiceError): number {
+  switch (error.code) {
+    case 'REQUIRED_FIELD_ERROR':
+    case 'VALIDATION_ERROR':
+    case 'UNIQUE_CONSTRAINT_ERROR':
+      return 400;
+    case 'NOT_FOUND':
+      return 404;
+    default:
+      return 500;
   }
 }
 

@@ -1,5 +1,5 @@
 /**
- * controller.load.user.ts - version 1.0.01
+ * controller.load.user.ts - version 1.0.02
  * Controller for handling user data loading requests.
  * 
  * Functionality:
@@ -7,21 +7,14 @@
  * - Validates request parameters
  * - Delegates data loading to service layer (passing the entire req object)
  * - Handles response formatting and error cases
- * - Provides request logging
+ * - Uses event bus for operation tracking
  */
 
 import { Request, Response } from 'express';
 import { loadUserById as loadUserService } from './service.load.user';
 import type { LoadUserResponse, ServiceError } from './types.user.editor';
-
-// Logging helper functions
-function logRequest(message: string, meta: object): void {
-    console.log(`[${new Date().toISOString()}] [LoadUser] ${message}`, meta);
-}
-
-function logError(message: string, error: unknown, meta: object): void {
-    console.error(`[${new Date().toISOString()}] [LoadUser] ${message}`, { error, ...meta });
-}
+import fabricEvents from '../../../../core/eventBus/fabric.events';
+import { USER_LOAD_CONTROLLER_EVENTS } from './events.user.editor';
 
 /**
  * Controller function for loading user data by ID
@@ -31,19 +24,29 @@ async function loadUserById(req: Request, res: Response): Promise<void> {
     const userId = req.params.userId;
 
     try {
-        // Log incoming request
-        logRequest('Received request to load user data', {
-            method: req.method,
-            url: req.url,
-            userId
+        // Log HTTP request received event
+        await fabricEvents.createAndPublishEvent({
+            req,
+            eventName: USER_LOAD_CONTROLLER_EVENTS.HTTP_REQUEST_RECEIVED.eventName,
+            payload: {
+                method: req.method,
+                url: req.url,
+                userId
+            }
         });
 
         // Call service layer to load user data, passing the entire req object
         const result = await loadUserService(userId, req);
 
-        // Log successful response
-        logRequest('Successfully loaded user data', {
-            userId
+        // Log HTTP response sent event
+        await fabricEvents.createAndPublishEvent({
+            req,
+            eventName: USER_LOAD_CONTROLLER_EVENTS.HTTP_RESPONSE_SENT.eventName,
+            payload: {
+                userId,
+                statusCode: 200,
+                username: result.data.user?.username
+            }
         });
 
         // Send response
@@ -52,8 +55,17 @@ async function loadUserById(req: Request, res: Response): Promise<void> {
     } catch (err) {
         const error = err as ServiceError;
         
-        // Log error
-        logError('Error while loading user data', error, { userId });
+        // Log HTTP error event
+        await fabricEvents.createAndPublishEvent({
+            req,
+            eventName: USER_LOAD_CONTROLLER_EVENTS.HTTP_ERROR.eventName,
+            payload: {
+                userId,
+                errorCode: error.code || 'INTERNAL_SERVER_ERROR',
+                statusCode: error.code === 'NOT_FOUND' ? 404 : 500
+            },
+            errorData: error instanceof Error ? error.message : String(error)
+        });
 
         // Determine response status and message based on error type
         const statusCode = error.code === 'NOT_FOUND' ? 404 : 500;

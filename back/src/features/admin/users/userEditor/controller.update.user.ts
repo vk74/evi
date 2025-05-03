@@ -1,31 +1,44 @@
-//controller.update.user.ts
+/**
+ * controller.update.user.ts - version 1.0.02
+ * Controller for handling user update requests from admin panel.
+ * Processes requests, handles errors, and formats responses.
+ * Now uses event bus for operation tracking.
+ */
+
 import { Request, Response } from 'express';
 import { updateUserById as updateUserService } from './service.update.user';
 import type { UpdateUserRequest, ServiceError } from './types.user.editor';
-
-function logRequest(message: string, meta: object): void {
-  console.log(`[${new Date().toISOString()}] [UpdateUser] ${message}`, meta);
-}
-
-function logError(message: string, error: unknown, meta: object): void {
-  console.error(`[${new Date().toISOString()}] [UpdateUser] ${message}`, { error, ...meta });
-}
+import fabricEvents from '../../../../core/eventBus/fabric.events';
+import { USER_UPDATE_CONTROLLER_EVENTS } from './events.user.editor';
 
 async function updateUserById(req: Request, res: Response): Promise<void> {
   const updateData = req.body as UpdateUserRequest;
   
   try {
-    logRequest('Received request to update user data', {
-      method: req.method,
-      url: req.url,
-      userId: updateData.user_id
+    // Log HTTP request received event
+    await fabricEvents.createAndPublishEvent({
+      req,
+      eventName: USER_UPDATE_CONTROLLER_EVENTS.HTTP_REQUEST_RECEIVED.eventName,
+      payload: {
+        method: req.method,
+        url: req.url,
+        userId: updateData.user_id,
+        updatedFields: Object.keys(updateData).filter(key => key !== 'user_id')
+      }
     });
 
-    // Now passing the entire req object to the service
+    // Passing the entire req object to the service
     const result = await updateUserService(updateData, req);
     
-    logRequest('Successfully updated user data', {
-      userId: updateData.user_id
+    // Log HTTP response sent event
+    await fabricEvents.createAndPublishEvent({
+      req,
+      eventName: USER_UPDATE_CONTROLLER_EVENTS.HTTP_RESPONSE_SENT.eventName,
+      payload: {
+        userId: updateData.user_id,
+        statusCode: 200,
+        updatedFields: Object.keys(updateData).filter(key => key !== 'user_id')
+      }
     });
 
     res.status(200).json(result);
@@ -33,11 +46,21 @@ async function updateUserById(req: Request, res: Response): Promise<void> {
   } catch (err: unknown) {
     const error = err as ServiceError;
     
-    logError('Error while updating user data', error, { 
-      userId: updateData.user_id 
+    // Determine status code based on error
+    const statusCode = error.code === 'NOT_FOUND' ? 404 : 500;
+    
+    // Log HTTP error event
+    await fabricEvents.createAndPublishEvent({
+      req,
+      eventName: USER_UPDATE_CONTROLLER_EVENTS.HTTP_ERROR.eventName,
+      payload: {
+        userId: updateData.user_id,
+        errorCode: error.code || 'INTERNAL_SERVER_ERROR',
+        statusCode: statusCode
+      },
+      errorData: error instanceof Error ? error.message : String(error)
     });
 
-    const statusCode = error.code === 'NOT_FOUND' ? 404 : 500;
     const errorResponse = {
       success: false,
       message: error.message || 'An error occurred while processing your request',

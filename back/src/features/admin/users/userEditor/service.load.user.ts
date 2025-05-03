@@ -1,5 +1,5 @@
 /**
- * service.load.user.ts - version 1.0.01
+ * service.load.user.ts - version 1.0.02
  * Service for loading user data operations.
  * 
  * Functionality:
@@ -7,7 +7,7 @@
  * - Combines user account and profile data
  * - Handles data transformation and business logic
  * - Manages database interactions and error handling
- * - Now accepts req object for access to user context
+ * - Now uses event bus for operation tracking and logging
  * 
  * Data flow:
  * 1. Receive user ID and request object
@@ -20,16 +20,13 @@ import { Request } from 'express';
 import { Pool } from 'pg';
 import { pool as pgPool } from '../../../../db/maindb';
 import { queries } from './queries.user.editor';
-import type { DbUser, DbUserProfile, LoadUserResponse } from './types.user.editor';
+import type { DbUser, DbUserProfile, LoadUserResponse, ServiceError } from './types.user.editor';
 import { getRequestorUuidFromReq } from '../../../../core/helpers/get.requestor.uuid.from.req';
+import fabricEvents from '../../../../core/eventBus/fabric.events';
+import { USER_LOAD_EVENTS } from './events.user.editor';
 
 // Type assertion for pool
 const pool = pgPool as Pool;
-
-// Logging helper
-function logService(message: string, meta?: object): void {
-    console.log(`[${new Date().toISOString()}] [LoadUserService] ${message}`, meta || '');
-}
 
 /**
  * Loads user data by ID from database
@@ -42,12 +39,31 @@ export async function loadUserById(userId: string, req: Request): Promise<LoadUs
     try {
         // Get the UUID of the user making the request
         const requestorUuid = getRequestorUuidFromReq(req);
-        logService('Loading user data from database', { userId, requestorUuid });
+        
+        // Create and publish request received event
+        await fabricEvents.createAndPublishEvent({
+            req,
+            eventName: USER_LOAD_EVENTS.REQUEST_RECEIVED.eventName,
+            payload: {
+                userId,
+                requestorUuid
+            }
+        });
 
         // Get user account data
         const userResult = await pool.query<DbUser>(queries.getUserById, [userId]);
         
         if (userResult.rows.length === 0) {
+            // Create and publish user not found event
+            await fabricEvents.createAndPublishEvent({
+                req,
+                eventName: USER_LOAD_EVENTS.NOT_FOUND.eventName,
+                payload: {
+                    userId,
+                    requestorUuid
+                }
+            });
+            
             throw {
                 code: 'NOT_FOUND',
                 message: 'User not found'
@@ -61,6 +77,17 @@ export async function loadUserById(userId: string, req: Request): Promise<LoadUs
         );
 
         if (profileResult.rows.length === 0) {
+            // Create and publish profile not found event
+            await fabricEvents.createAndPublishEvent({
+                req,
+                eventName: USER_LOAD_EVENTS.NOT_FOUND.eventName,
+                payload: {
+                    userId,
+                    requestorUuid,
+                    detail: 'User profile not found'
+                }
+            });
+            
             throw {
                 code: 'NOT_FOUND',
                 message: 'User profile not found'
@@ -77,11 +104,36 @@ export async function loadUserById(userId: string, req: Request): Promise<LoadUs
             }
         };
 
-        logService('Successfully retrieved user data', { userId, requestorUuid });
+        // Create and publish successful load event
+        await fabricEvents.createAndPublishEvent({
+            req,
+            eventName: USER_LOAD_EVENTS.COMPLETE.eventName,
+            payload: {
+                userId,
+                username: userResult.rows[0].username,
+                requestorUuid
+            }
+        });
+        
         return response;
 
     } catch (error) {
-        logService('Error in service while loading user data', { userId, error });
+        // If this is not a NOT_FOUND error, publish a FAILED event
+        if ((error as ServiceError).code !== 'NOT_FOUND') {
+            await fabricEvents.createAndPublishEvent({
+                req,
+                eventName: USER_LOAD_EVENTS.FAILED.eventName,
+                payload: {
+                    userId,
+                    error: (error as ServiceError).code ? error : {
+                        code: 'INTERNAL_SERVER_ERROR',
+                        message: error instanceof Error ? error.message : String(error)
+                    }
+                },
+                errorData: error instanceof Error ? error.message : String(error)
+            });
+        }
+        
         throw error; // Pass error to controller for handling
     }
 }

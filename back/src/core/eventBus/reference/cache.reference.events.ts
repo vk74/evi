@@ -1,6 +1,6 @@
 /**
  * cache.reference.events.ts - backend file
- * version: 1.0.1
+ * version: 1.0.2
  * 
  * This file implements a caching mechanism for event references.
  * It loads all event reference data at server startup and provides
@@ -9,7 +9,13 @@
  */
 
 import { BaseEvent } from '../types.events';
-import { eventReferences, EventSchema, getEventSchema } from './index.reference.events';
+import { 
+  getEventReferences, 
+  EventSchema, 
+  getEventSchema, 
+  buildEventReferences,
+  eventReferenceFiles
+} from './index.reference.events';
 
 /**
  * Enhanced schema that includes all properties needed for event creation
@@ -54,13 +60,15 @@ export const initializeEventCache = (): void => {
     // Clear existing cache if any
     eventSchemaCache = {};
     
-    // Fill cache with all event definitions from all domains
-    Object.entries(eventReferences).forEach(([domain, domainEvents]) => {
+    // Force building the references to ensure we have the latest data
+    const references = buildEventReferences();
+    
+    // Process each domain and its events
+    Object.entries(references).forEach(([domain, domainEvents]) => {
       Object.entries(domainEvents).forEach(([eventKey, schema]) => {
         const fullEventName = `${domain}.${eventKey}`;
         
-        // Get the actual event template from source files through index.reference.events.ts 
-        // For example, from USER_CREATION_EVENTS.REQUEST_RECEIVED
+        // Get the actual event template from source files
         const eventTemplate = findSourceEventTemplate(fullEventName);
         
         if (eventTemplate) {
@@ -71,7 +79,7 @@ export const initializeEventCache = (): void => {
             eventType: eventTemplate.eventType || 'app',
             severity: eventTemplate.severity,
             eventMessage: eventTemplate.eventMessage,
-            version: eventTemplate.version || schema.version || '1.0' // Use version from template or schema
+            version: eventTemplate.version || schema.version || '1.0'
           };
         } else {
           // Create a basic schema if no template is found
@@ -80,7 +88,7 @@ export const initializeEventCache = (): void => {
             eventName: fullEventName,
             source: 'unknown',
             eventType: 'app',
-            version: schema.version || '1.0' // Use version from schema or default to '1.0'
+            version: schema.version || '1.0'
           };
           
           console.warn(`Warning: No template found for event ${fullEventName}`);
@@ -104,79 +112,39 @@ const findSourceEventTemplate = (fullEventName: string): Partial<BaseEvent> | nu
   try {
     const [domain, ...rest] = fullEventName.split('.');
     
-    // Get all domains from eventReferences
-    const allDomains = Object.keys(eventReferences);
+    if (!eventReferenceFiles[domain]) {
+      console.warn(`No reference files registered for domain: ${domain}`);
+      return null;
+    }
     
-    // Check if the domain is registered
-    if (allDomains.includes(domain)) {
-      // Get the eventKey (everything after the domain prefix)
-      const eventKey = rest.join('.');
-      
-      // Try to find the original event template by searching through all registered references
-      // in the index.reference.events.ts
-      for (const [moduleName, moduleEvents] of Object.entries(
-        // This is a dynamic import of all event references at runtime
-        // It uses the domains registered in the index.reference.events.ts
-        require('./index.reference.events')
-      )) {
-        // Skip non-array entries like 'eventReferences', 'isValidEventType', etc.
-        if (!Array.isArray(moduleEvents) && typeof moduleEvents === 'object' && moduleEvents !== null) {
-          // Try to find event collections in the module
-          for (const [collectionName, eventCollection] of Object.entries(moduleEvents)) {
-            // Skip non-object properties and functions
-            if (typeof eventCollection === 'object' && eventCollection !== null && 
-                !Array.isArray(eventCollection) && collectionName.toUpperCase() === collectionName) {
-              // This appears to be an event collection (like USER_CREATION_EVENTS)
-              // Look for the event in this collection
-              for (const event of Object.values(eventCollection)) {
-                if (typeof event === 'object' && event !== null && 'eventName' in event) {
-                  if ((event as any).eventName === fullEventName) {
-                    return event as Partial<BaseEvent>;
-                  }
-                }
+    // Iterate through all files registered for this domain
+    for (const filePath of eventReferenceFiles[domain]) {
+      try {
+        const moduleExports = require(filePath);
+        
+        // Find all exported event collections (constants with UPPERCASE names)
+        for (const [collectionName, collection] of Object.entries(moduleExports)) {
+          if (typeof collection === 'object' && 
+              collection !== null && 
+              !Array.isArray(collection) &&
+              collectionName === collectionName.toUpperCase()) {
+            
+            // Look through all events in the collection
+            for (const [eventKey, event] of Object.entries(collection)) {
+              if (typeof event === 'object' && 
+                  event !== null && 
+                  'eventName' in event &&
+                  event.eventName === fullEventName) {
+                return event as Partial<BaseEvent>;
               }
             }
           }
         }
+      } catch (error) {
+        console.error(`Error importing from ${filePath}:`, error);
       }
-      
-      // As a fallback, try direct imports for known domains
-      if (domain === 'userEditor') {
-        const { USER_CREATION_EVENTS, USER_UPDATE_EVENTS, USER_LOAD_EVENTS } 
-          = require('../../../features/admin/users/userEditor/events.user.editor');
-        
-        // Try each collection
-        const collections = [USER_CREATION_EVENTS, USER_UPDATE_EVENTS, USER_LOAD_EVENTS];
-        
-        for (const collection of collections) {
-          const foundEvent = Object.values(collection)
-            .find((event: any) => event.eventName === fullEventName);
-          
-          if (foundEvent) {
-            return foundEvent as Partial<BaseEvent>;
-          }
-        }
-      } else if (domain === 'system') {
-        const { EVENT_VALIDATION_EVENTS, EVENT_BUS_EVENTS } 
-          = require('./errors.reference.events');
-        
-        // Try each collection
-        const collections = [EVENT_VALIDATION_EVENTS, EVENT_BUS_EVENTS];
-        
-        for (const collection of collections) {
-          const foundEvent = Object.values(collection)
-            .find((event: any) => event.eventName === fullEventName);
-          
-          if (foundEvent) {
-            return foundEvent as Partial<BaseEvent>;
-          }
-        }
-      }
-      
-      // Add further domain-specific fallbacks here if needed
     }
     
-    // If we couldn't find the event with any method, return null
     console.warn(`No source template found for event: ${fullEventName}`);
     return null;
   } catch (error) {
@@ -310,6 +278,16 @@ export const getEventSchemaVersion = (eventName: string): string | null => {
   }
   
   return schema.version || null;
+};
+
+/**
+ * Refreshes the cache by clearing it and reinitializing
+ * Useful when new event types are added dynamically
+ */
+export const refreshEventCache = (): void => {
+  cacheInitialized = false;
+  eventSchemaCache = {};
+  initializeEventCache();
 };
 
 /**
