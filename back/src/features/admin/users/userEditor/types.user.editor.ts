@@ -154,7 +154,7 @@ export interface CreateUserResponse extends ApiResponse {
  * Validation interfaces
  */
 export interface ValidationError extends ServiceError {
-  code: 'VALIDATION_ERROR'
+  code: 'VALIDATION_ERROR' | 'REQUIRED_FIELD_ERROR' | string
   field?: string
 }
 
@@ -200,7 +200,7 @@ export interface CreateUserRequest {
    * Validation interfaces
    */
   export interface ValidationError extends ServiceError {
-    code: 'VALIDATION_ERROR'
+    code: 'VALIDATION_ERROR' | 'REQUIRED_FIELD_ERROR' | string
     field?: string
   }
   

@@ -22,7 +22,8 @@
       "types": ["node", "express"],       // Добавляем типы Node.js и Express
       "paths": {                          // Алиасы для путей (опционально)
         "@/*": ["src/*"]
-      }
+      },
+      "allowSyntheticDefaultImports": true
     },
     "include": [
       "src/**/*",

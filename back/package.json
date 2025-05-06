@@ -7,11 +7,10 @@
     "@": "src"
   },
   "scripts": {
-    "start": "node src/server.js",
+    "start": "ts-node --transpile-only src/server.js",
     "dev": "nodemon --watch 'src/**/*' --ext 'js,mjs,cjs,json,ts' --exec 'ts-node' src/server.js",
     "test": "echo \"Error: no test specified\" && exit 1",
-    "ts-check": "ts-node src/tests/ts-check.ts",
-    "build": "echo 'Build complete' && cp -r ./src ./dist"
+    "ts-check": "ts-node src/tests/ts-check.ts"
   },
   "keywords": [],
   "author": "",
@@ -42,8 +41,11 @@
     "@typescript-eslint/parser": "^8.18.0",
     "eslint": "^9.16.0",
     "nodemon": "^3.1.7",
+    "rimraf": "^6.0.1",
     "ts-node": "^10.9.2",
     "ts-node-dev": "^2.0.0",
+    "tsc-alias": "^1.8.16",
+    "tsconfig-paths": "^4.2.0",
     "typescript": "^5.7.2"
   }
 }
