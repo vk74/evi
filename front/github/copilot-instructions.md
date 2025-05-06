@@ -23,6 +23,5 @@ Comments in files
     c. comment should should mention this is a frontend file, should contain file name but no path to the file
 
 
-IMPORTANT: explain how you understand the task and wait for my consent before writing the code. 
 
 Переписку в чатах ведем на русском, но все комментарии и код пишем на английском.
