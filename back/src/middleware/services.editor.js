@@ -1,3 +1,5 @@
+// this file is a candidate for deletion after re-creation of services module
+
 // services.editor.js
 // получает данные из фронтэнда, модуля service editor, отправляет в модуль валидации и записывает в базу
 

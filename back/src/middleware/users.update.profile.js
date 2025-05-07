@@ -1,3 +1,4 @@
+// this file is a candidate for deletion after migration of user profile module to .ts
 const { pool } = require('../db/maindb');
 const { userQueries } = require('./queries.users');
 

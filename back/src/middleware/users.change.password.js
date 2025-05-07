@@ -1,4 +1,4 @@
-// usersCache.change.password.js 
+// this file is a candidate for deletion after check of password change function 
 const bcrypt = require('bcrypt');
 const { pool } = require('../db/maindb');
 const { userQueries } = require('./queries.users');

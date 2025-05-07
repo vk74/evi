@@ -1,4 +1,5 @@
 //users.get.uuid.js
+// this file is a candidate for deletion or move to helpers logic
 const { pool } = require('../db/maindb');
 
 async function getUserUUID(req, res, next) {

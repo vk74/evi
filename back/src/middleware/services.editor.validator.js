@@ -1,3 +1,5 @@
+// this file is a candidate for deletion after re-creation of services module
+
 // services.editor.validator.js
 // Модуль валидации данных для сервисов
 // Проверяет корректность входящих данных перед записью в базу данных
