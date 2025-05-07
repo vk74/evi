@@ -1,8 +1,47 @@
-const bcrypt = require('bcrypt');
-const { pool } = require('../db/maindb');
-const { userQueries } = require('./queries.users');
+/**
+ * auth.register.user.ts - version 1.0.0
+ * BACKEND middleware for user registration
+ * 
+ * Processes user registration requests:
+ * - Validates required fields
+ * - Checks uniqueness of username, email, and phone
+ * - Hashes password
+ * - Stores user data in database (transaction)
+ * - Returns success/error response
+ */
 
-const register = async (req, res) => {
+import { Request, Response } from 'express';
+import bcrypt from 'bcrypt';
+import { Pool, QueryResult } from 'pg';
+import { pool as pgPool } from '../db/maindb';
+import { userQueries } from './queries.users';
+
+// Type assertion for pool
+const pool = pgPool as Pool;
+
+// Interface for registration request body
+interface RegistrationRequest {
+  username: string;
+  password: string;
+  surname: string; // will be last_name in DB
+  name: string;    // will be first_name in DB
+  email: string;
+  phone?: string;  // optional
+  address?: string; // optional
+  [key: string]: any; // for any additional fields
+}
+
+interface EnhancedRequest extends Request {
+  body: RegistrationRequest;
+}
+
+/**
+ * Handles user registration
+ * @param req Express request with registration data
+ * @param res Express response
+ * @returns Promise<void>
+ */
+const register = async (req: EnhancedRequest, res: Response): Promise<void> => {
     try {
         const {
             username,
@@ -19,34 +58,38 @@ const register = async (req, res) => {
         const missingFields = requiredFields.filter(field => !req.body[field]);
 
         if (missingFields.length > 0) {
-            return res.status(400).json({
+            res.status(400).json({
                 message: 'missing required fields: ' + missingFields.join(', ')
             });
+            return;
         }
 
         // Проверка уникальности username
-        const usernameResult = await pool.query(userQueries.checkUsername.text, [username]);
+        const usernameResult: QueryResult = await pool.query(userQueries.checkUsername.text, [username]);
         if (usernameResult.rows.length > 0) {
-            return res.status(400).json({
+            res.status(400).json({
                 message: 'this username is already registered by another user'
             });
+            return;
         }
 
         // Проверка уникальности email
-        const emailResult = await pool.query(userQueries.checkEmail.text, [email]);
+        const emailResult: QueryResult = await pool.query(userQueries.checkEmail.text, [email]);
         if (emailResult.rows.length > 0) {
-            return res.status(400).json({
+            res.status(400).json({
                 message: 'this e-mail is already registered by another user'
             });
+            return;
         }
 
         // Проверка уникальности телефона (только если он предоставлен)
         if (phone) {
-            const phoneResult = await pool.query(userQueries.checkPhone.text, [phone]);
+            const phoneResult: QueryResult = await pool.query(userQueries.checkPhone.text, [phone]);
             if (phoneResult.rows.length > 0) {
-                return res.status(400).json({
+                res.status(400).json({
                     message: 'this phone number is already registered by another user'
                 });
+                return;
             }
         }
 
@@ -58,7 +101,7 @@ const register = async (req, res) => {
 
         try {
             // Вставка основных данных пользователя в app.users
-            const userResult = await pool.query(
+            const userResult: QueryResult = await pool.query(
                 userQueries.insertUserWithNames.text,
                 [
                     username,         // $1
@@ -89,10 +132,11 @@ const register = async (req, res) => {
 
             await pool.query('COMMIT');
 
-            return res.status(201).json({
+            res.status(201).json({
                 message: 'user registration successful',
                 userId
             });
+            return;
 
         } catch (error) {
             await pool.query('ROLLBACK');
@@ -101,11 +145,14 @@ const register = async (req, res) => {
 
     } catch (error) {
         console.error('Registration error:', error);
-        return res.status(500).json({
+        res.status(500).json({
             message: 'registration failed',
-            details: error.message
+            details: error instanceof Error ? error.message : String(error)
         });
     }
 };
 
+// Export for CommonJS require() compatibility
 module.exports = register;
+// Export for ES modules
+export default register;

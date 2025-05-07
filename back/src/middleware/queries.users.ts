@@ -1,6 +1,58 @@
-// queries.users.js
-// pre-defined queries
-const userQueries = {
+/**
+ * queries.users.ts - version 1.0.01
+ * BACKEND predefined SQL queries for user operations
+ * 
+ * Contains prepared SQL queries for:
+ * - User registration and validation
+ * - Authentication
+ * - Profile management
+ * - Password management
+ */
+
+/**
+ * Interface for SQL query definition
+ */
+interface SqlQuery {
+  /** Name identifier for the query */
+  name: string;
+  /** SQL query text with parameter placeholders */
+  text: string;
+}
+
+/**
+ * Interface for all user-related queries
+ */
+interface UserQueriesCollection {
+  // Registration queries
+  checkUsername: SqlQuery;
+  checkEmail: SqlQuery;
+  checkPhone: SqlQuery;
+  insertUser: SqlQuery;
+  insertProfile: SqlQuery;
+  insertAdminUserProfile: SqlQuery;
+  insertUserWithNames: SqlQuery;
+  insertAdminUserProfileWithoutNames: SqlQuery;
+  
+  // Authentication queries
+  getUserForToken: SqlQuery;
+  getUserPassword: SqlQuery;
+  getUserStatus: SqlQuery;
+  
+  // Profile queries
+  getProfile: SqlQuery;
+  updateProfile: SqlQuery;
+  
+  // Password management
+  updatePassword: SqlQuery;
+  
+  // Index signature for string-based access
+  [queryName: string]: SqlQuery;
+}
+
+/**
+ * Collection of predefined SQL queries for user operations
+ */
+export const userQueries: UserQueriesCollection = {
     // Регистрация
     checkUsername: {
         name: 'check-username',
@@ -66,33 +118,45 @@ const userQueries = {
         name: 'get-user-profile',
         text: `SELECT
             u.email,
-            up.first_name,
-            up.last_name,
-            up.middle_name,
+            u.first_name,
+            u.last_name,
+            u.middle_name,
             up.mobile_phone_number,
             up.address,
             up.company_name,
             up.position,
             up.gender
             FROM app.users u
-            JOIN app.user_profiles up ON u.user_id = up.user_id
+            LEFT JOIN app.user_profiles up ON u.user_id = up.user_id
             WHERE u.username = $1`
     },
     updateProfile: {
         name: 'update-user-profile',
-        text: `UPDATE app.user_profiles
-            SET first_name = $1,
-                last_name = $2,
-                middle_name = $3,
-                gender = $4,
-                mobile_phone_number = $5,
-                address = $6,
-                company_name = $7,
-                position = $8
-            FROM app.users
-            WHERE app.user_profiles.user_id = app.users.user_id
-            AND app.users.username = $9
-            RETURNING *`
+        text: `WITH user_update AS (
+                UPDATE app.users
+                SET first_name = $1,
+                    last_name = $2,
+                    middle_name = $3
+                WHERE username = $9
+                RETURNING user_id
+              )
+              UPDATE app.user_profiles up
+              SET gender = $4,
+                  mobile_phone_number = $5,
+                  address = $6,
+                  company_name = $7,
+                  position = $8
+              FROM user_update
+              WHERE up.user_id = user_update.user_id
+              RETURNING up.user_id, 
+                        $1 as first_name, 
+                        $2 as last_name, 
+                        $3 as middle_name, 
+                        up.gender, 
+                        up.mobile_phone_number, 
+                        up.address, 
+                        up.company_name, 
+                        up.position`
     },
     // Смена пароля
     updatePassword: {
@@ -119,4 +183,5 @@ const userQueries = {
     }
 };
 
+// Для совместимости с CommonJS require()
 module.exports = { userQueries };

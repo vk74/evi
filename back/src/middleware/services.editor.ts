@@ -1,12 +1,60 @@
-// this file is a candidate for deletion after re-creation of services module
+/**
+ * services.editor.ts - version 1.0.0
+ * BACKEND middleware for processing service editor data
+ * 
+ * This file is a candidate for deletion after re-creation of services module
+ * 
+ * Receives data from frontend service editor module, validates it through validation module,
+ * and saves it to the database in a transaction across services and service_details tables
+ */
 
-// services.editor.js
-// получает данные из фронтэнда, модуля service editor, отправляет в модуль валидации и записывает в базу
+import { Request, Response } from 'express';
+import { Pool, QueryResult } from 'pg';
+import { pool as pgPool } from '../db/maindb';
+import { validateServiceData, ValidationError } from './services.editor.validator';
 
-const { pool } = require('../db/maindb');
-const { validateServiceData, ValidationError } = require('./services.editor.validator');
+// Type assertion for pool
+const pool = pgPool as Pool;
 
-async function serviceEditor(req, res) {
+// Interface for user info in request
+interface UserInfo {
+  username: string;
+  uuid: string;
+  [key: string]: any;
+}
+
+// Interface for enhanced request with user info
+interface EnhancedRequest extends Request {
+  user?: UserInfo;
+  body: ServiceData;
+}
+
+// Interface for service data structure
+interface ServiceData {
+  name: string;
+  status: string;
+  visibility: string;
+  shortDescription?: string;
+  priority: number;
+  fullDescription?: string;
+  purpose?: string;
+  comments?: string;
+  [key: string]: any;
+}
+
+// Interface for service query result
+interface ServiceResult {
+  service_id: string;
+  [key: string]: any;
+}
+
+/**
+ * Processes service editor data, validates it and saves to database
+ * @param req Express request with service data
+ * @param res Express response
+ * @returns Promise<void>
+ */
+async function serviceEditor(req: EnhancedRequest, res: Response): Promise<void> {
     const client = await pool.connect();
     console.log('Database connection established');
     
@@ -25,19 +73,25 @@ async function serviceEditor(req, res) {
             });
         } catch (validationError) {
             // Если произошла ошибка валидации, возвращаем 400 Bad Request
-            console.log('Validation error:', validationError.message);
-            return res.status(400).json({
+            console.log('Validation error:', (validationError as ValidationError).message);
+            res.status(400).json({
                 message: 'Ошибка валидации данных',
-                error: validationError.message,
-                field: validationError.field
+                error: (validationError as ValidationError).message,
+                field: (validationError as ValidationError).field
             });
+            return;
         }
 
         await client.query('BEGIN');
         console.log('Transaction started');
 
         // Используем UUID пользователя, полученный ранее через getUserUUID
-        const userId = req.user.uuid;
+        const userId = req.user?.uuid;
+        
+        if (!userId) {
+            throw new Error('User UUID not found in request');
+        }
+        
         console.log('User info from request:', req.user);
         console.log('Using user UUID from middleware:', userId);
 
@@ -69,7 +123,7 @@ async function serviceEditor(req, res) {
             shortDescription: req.body.shortDescription
         });
 
-        const serviceResult = await client.query(servicesQuery, servicesValues);
+        const serviceResult: QueryResult<ServiceResult> = await client.query(servicesQuery, servicesValues);
         const serviceId = serviceResult.rows[0].service_id;
         console.log('Successfully inserted into services table, generated service_id:', serviceId);
 
@@ -131,7 +185,7 @@ async function serviceEditor(req, res) {
         } else {
             res.status(500).json({
                 message: 'Ошибка при записи данных сервиса',
-                error: error.message
+                error: error instanceof Error ? error.message : String(error)
             });
         }
     } finally {
@@ -142,17 +196,23 @@ async function serviceEditor(req, res) {
 
 // Placeholder для будущих методов
 /*
-async function updateVisualization(req, res) {
+async function updateVisualization(req: EnhancedRequest, res: Response): Promise<void> {
     // TODO: Реализация обновления визуализации
 }
-async function updateAccess(req, res) {
+async function updateAccess(req: EnhancedRequest, res: Response): Promise<void> {
     // TODO: Реализация обновления прав доступа
 }
-async function updateManagement(req, res) {
+async function updateManagement(req: EnhancedRequest, res: Response): Promise<void> {
     // TODO: Реализация обновления данных управления
 }
 */
 
+// Export for CommonJS require() compatibility
 module.exports = {
+    serviceEditor
+};
+
+// Export for ES modules
+export {
     serviceEditor
 };

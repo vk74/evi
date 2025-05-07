@@ -1,25 +1,52 @@
-// this file is a candidate for deletion after re-creation of services module
+/**
+ * services.editor.validator.ts - version 1.0.0
+ * BACKEND validator module for service data
+ * 
+ * This file is a candidate for deletion after re-creation of services module
+ * 
+ * Validates incoming service data before storing in database
+ * Checks fields according to their type and validation rules
+ * Supports incremental data filling and extensible data types
+ */
 
-// services.editor.validator.js
-// Модуль валидации данных для сервисов
-// Проверяет корректность входящих данных перед записью в базу данных
-// Выполняет проверку полей согласно их типу и правилам валидации
-// Поддерживает поэтапное заполнение данных и расширение типов данных
+import { Pool, QueryResult } from 'pg';
+import { pool as pgPool } from '../db/maindb';
 
-const { pool } = require('../db/maindb');
+// Type assertion for pool
+const pool = pgPool as Pool;
 
-// Класс для ошибок валидации
-class ValidationError extends Error {
-    constructor(message, field = null) {
+// Class for validation errors
+export class ValidationError extends Error {
+    field: string | null;
+    
+    constructor(message: string, field: string | null = null) {
         super(message);
         this.name = 'ValidationError';
         this.field = field;
     }
 }
 
-// Конфигурация правил валидации для полей
-const FIELD_RULES = {
-    // Текущие поля
+// Field rule type definitions
+interface StringRule {
+    type: 'string';
+    required: boolean;
+    minLength: number;
+    maxLength: number;
+    fieldName: string;
+}
+
+interface EnumRule {
+    type: 'enum';
+    required: boolean;
+    enumType: string;
+    fieldName: string;
+}
+
+type FieldRule = StringRule | EnumRule;
+
+// Configuration of validation rules for fields
+export const FIELD_RULES: Record<string, FieldRule> = {
+    // Current fields
     name: {
         type: 'string',
         required: false,
@@ -75,32 +102,32 @@ const FIELD_RULES = {
     }
 };
 
-// Регулярные выражения для проверки различных типов данных
+// Regular expressions for checking various data types
 const VALIDATION_PATTERNS = {
-    // Паттерн для проверки запрещенных символов и HTML
+    // Pattern for checking forbidden characters and HTML
     forbiddenChars: /<[^>]*>|[<>"'&]/,
 };
 
 /**
- * Проверяет поле данных в зависимости от его типа и правил
- * @param {any} value - проверяемое значение
- * @param {Object} rules - правила валидации для поля
- * @throws {ValidationError} если проверка не пройдена
+ * Checks a data field depending on its type and rules
+ * @param value - value to check
+ * @param rules - validation rules for the field
+ * @throws ValidationError if validation fails
  */
-const validateDataField = (value, rules) => {
+const validateDataField = (value: any, rules: FieldRule): void => {
     console.log(`\nПроверка поля ${rules.fieldName}:`);
     console.log(`- Значение: "${value}"`);
     console.log(`- Тип данных: ${rules.type}`);
 
-    // Проверка на undefined или null
+    // Check for undefined or null
     if (value === undefined || value === null) {
         console.log('- Результат: пропущено (пустое значение)');
         return;
     }
 
-    // Проверка типа string
+    // Check for string type
     if (rules.type === 'string') {
-        // Проверка типа данных
+        // Check data type
         if (typeof value !== 'string') {
             console.log(`- Ошибка: неверный тип данных (${typeof value})`);
             throw new ValidationError(
@@ -109,13 +136,13 @@ const validateDataField = (value, rules) => {
             );
         }
 
-        // Пропускаем проверку длины если поле пустое и не обязательное
+        // Skip length check if field is empty and not required
         if (value.trim() === '' && !rules.required) {
             console.log('- Результат: пропущено (пустая строка)');
             return;
         }
 
-        // Проверка длины
+        // Check length
         console.log(`- Проверка длины: ${value.length} символов (допустимо от ${rules.minLength} до ${rules.maxLength})`);
         if (value.length < rules.minLength || value.length > rules.maxLength) {
             console.log('- Ошибка: некорректная длина');
@@ -125,7 +152,7 @@ const validateDataField = (value, rules) => {
             );
         }
 
-        // Проверка на запрещенные символы
+        // Check for forbidden characters
         if (VALIDATION_PATTERNS.forbiddenChars.test(value)) {
             console.log('- Ошибка: обнаружены запрещенные символы');
             throw new ValidationError(
@@ -139,18 +166,18 @@ const validateDataField = (value, rules) => {
 }
 
 /**
- * Проверяет значение на соответствие enum-типу в базе данных
- * @param {string} enumType - название типа в базе данных
- * @param {string} value - проверяемое значение
- * @param {string} fieldName - название поля для сообщения об ошибке
- * @throws {ValidationError} если значение не соответствует enum-типу
+ * Validates a value against an enum type in the database
+ * @param enumType - name of the type in the database
+ * @param value - value to check
+ * @param fieldName - field name for error message
+ * @throws ValidationError if value doesn't match enum type
  */
-const validateEnumValue = async (enumType, value, fieldName) => {
+const validateEnumValue = async (enumType: string, value: any, fieldName: string): Promise<void> => {
     console.log(`\nПроверка enum-поля ${fieldName}:`);
     console.log(`- Значение: "${value}"`);
     console.log(`- Тип enum: ${enumType}`);
 
-    // Пропускаем проверку если значение не предоставлено
+    // Skip check if value is not provided
     if (value === undefined || value === null) {
         console.log('- Результат: пропущено (пустое значение)');
         return;
@@ -160,7 +187,7 @@ const validateEnumValue = async (enumType, value, fieldName) => {
         const query = `
             SELECT unnest(enum_range(NULL::app.${enumType})) as value;
         `;
-        const result = await pool.query(query);
+        const result: QueryResult<{ value: string }> = await pool.query(query);
         const validValues = result.rows.map(row => row.value);
 
         console.log(`- Допустимые значения: ${validValues.join(', ')}`);
@@ -178,26 +205,26 @@ const validateEnumValue = async (enumType, value, fieldName) => {
         if (error instanceof ValidationError) {
             throw error;
         }
-        console.log(`- Ошибка: ${error.message}`);
+        console.log(`- Ошибка: ${(error as Error).message}`);
         throw new ValidationError(
-            `Ошибка при проверке поля ${fieldName}: ${error.message}`,
+            `Ошибка при проверке поля ${fieldName}: ${(error as Error).message}`,
             fieldName
         );
     }
 }
 
 /**
- * Основная функция валидации данных сервиса
- * @param {Object} data - объект с данными для валидации
- * @throws {ValidationError} если проверка не пройдена
+ * Main service data validation function
+ * @param data - object with data to validate
+ * @throws ValidationError if validation fails
  */
-const validateServiceData = async (data) => {
+export const validateServiceData = async (data: Record<string, any>): Promise<void> => {
     console.log('\n=== Начало валидации данных сервиса ===');
     console.log('Входящие данные:', data);
     
-    // Проходим только по тем полям, которые пришли в запросе
+    // Process only those fields that come in the request
     for (const [fieldKey, value] of Object.entries(data)) {
-        // Проверяем, что для поля существуют правила валидации
+        // Check if there are validation rules for the field
         if (FIELD_RULES[fieldKey]) {
             const rules = FIELD_RULES[fieldKey];
             if (rules.type === 'enum') {
@@ -213,6 +240,7 @@ const validateServiceData = async (data) => {
     console.log('\n=== Валидация успешно завершена ===');
 }
 
+// Export for CommonJS require() compatibility
 module.exports = {
     validateServiceData,
     ValidationError,
