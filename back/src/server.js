@@ -44,12 +44,6 @@ const fs = require('fs');
 const port = 3000;
 const app = express();
 
-// Create lgr for server
-const lgr = createSystemLgr({
-  module: 'ServerMain',
-  fileName: 'server.js'
-});
-
 // Global event factory instance
 let eventFactory = null;
 
@@ -189,23 +183,12 @@ async function initializeServer() {
     // Route to save prototype form data to postgres database
     app.post('/protosubmit', async (req, res) => {
       try {
-        // Debug line
-        lgr.debug({
-          code: Events.CORE.EXCEL.PROTOTYPE.SUCCESS.code,
-          message: 'Received request for form submission',
-          details: { body: req.body }
-        });
-        
+        // Debug line removed
         const { orgname, region, location, checkbox, radioOption, date } = req.body;
         const result = await insertData(orgname, region, location, checkbox, radioOption, date);
         res.status(200).json(result);
       } catch (error) {
-        lgr.error({
-          code: Events.CORE.EXCEL.PROTOTYPE.ERROR.code,
-          message: 'Error processing form submission',
-          error
-        });
-        
+        // Logging removed
         res.status(500).json({ error: error.message });
       }
     });
@@ -238,26 +221,12 @@ async function initializeServer() {
         await workbook.xlsx.write(res);
         res.end();
         
-        lgr.info({
-          code: Events.CORE.EXCEL.PROTOTYPE.SUCCESS.code,
-          message: 'Excel file generated and sent successfully',
-          details: {
-            username: req.user?.username
-          }
-        });
+        // Logging removed
       } catch (error) {
-        lgr.error({
-          code: Events.CORE.EXCEL.PROTOTYPE.ERROR.code,
-          message: 'Error generating Excel file',
-          error
-        });
-        
+        // Logging removed
         res.status(500).send('Error generating Excel file');
       }
     });
-
-
-
 
     ////////////////////////// End of Excel route prototypes ////////////////////////// 
 
