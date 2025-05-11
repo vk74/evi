@@ -1,13 +1,42 @@
-// File purpose: Routes for catalog module - handles retrieval of services information for catalog display
+/**
+ * version: 1.0.01
+ * Backend router file for catalog module.
+ * Handles routes for retrieving services information for catalog display.
+ * Contains controllers for fetching production services and service details.
+ * File: routes.catalog.ts
+ */
 
-const express = require('express');
-const router = express.Router();
+import express, { Router, Request, Response } from 'express';
+const router: Router = express.Router();
 const { pool } = require('../db/maindb');
 const validateJWT = require('../guards/auth.validate.jwt');
 const getUserUUID = require('../middleware/users.get.uuid');
 
+// Types for service objects
+interface Service {
+  service_id: string;
+  service_name: string;
+  service_description_short: string;
+  service_visibility: string;
+  service_tile_width_closed: number;
+  service_tile_height_closed: number;
+}
+
+interface ServiceDetails {
+  service_id: string;
+  [key: string]: any; // Additional service detail properties
+}
+
+// Extended request with params property
+interface RequestWithParams extends Request {
+  params: {
+    id: string;
+    [key: string]: string;
+  };
+}
+
 // Get services in production status
-const getProductionServices = async (req, res) => {
+const getProductionServices = async (req: Request, res: Response): Promise<void> => {
   console.log('API: Received request for production services');
   try {
     const query = `
@@ -29,10 +58,11 @@ const getProductionServices = async (req, res) => {
     
     if (result.rows.length === 0) {
       console.log('API: No services found');
-      return res.status(200).json({ 
+      res.status(200).json({ 
         message: 'No services in production found',
         services: [] 
       });
+      return;
     }
 
     console.log('API: Sending response with services');
@@ -50,7 +80,7 @@ const getProductionServices = async (req, res) => {
 };
 
 // Get service details by ID
-const getServiceDetails = async (req, res) => {
+const getServiceDetails = async (req: RequestWithParams, res: Response): Promise<void> => {
   console.log('API: Received request for service details, ID:', req.params.id);
   try {
     const query = `
@@ -65,10 +95,11 @@ const getServiceDetails = async (req, res) => {
     
     if (result.rows.length === 0) {
       console.log('API: No details found for service');
-      return res.status(404).json({ 
+      res.status(404).json({ 
         message: 'Service details not found',
         details: null 
       });
+      return;
     }
 
     console.log('API: Sending service details');
@@ -89,4 +120,5 @@ const getServiceDetails = async (req, res) => {
 router.get('/api/catalog/services', validateJWT, getUserUUID, getProductionServices);
 router.get('/api/catalog/services/:id/details', validateJWT, getUserUUID, getServiceDetails);
 
+// CommonJS module export for compatibility with server.js
 module.exports = router;
