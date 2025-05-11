@@ -1,5 +1,5 @@
 /**
- * version: 1.0.01
+ * version: 1.0.02
  * Backend router file for catalog module.
  * Handles routes for retrieving services information for catalog display.
  * Contains controllers for fetching production services and service details.
@@ -7,10 +7,11 @@
  */
 
 import express, { Router, Request, Response } from 'express';
+import { pool } from '../db/maindb';
+import validateJWT from '../guards/auth.validate.jwt';
+import getUserUUID from '../middleware/users.get.uuid';
+
 const router: Router = express.Router();
-const { pool } = require('../db/maindb');
-const validateJWT = require('../guards/auth.validate.jwt');
-const getUserUUID = require('../middleware/users.get.uuid');
 
 // Types for service objects
 interface Service {
@@ -120,5 +121,5 @@ const getServiceDetails = async (req: RequestWithParams, res: Response): Promise
 router.get('/api/catalog/services', validateJWT, getUserUUID, getProductionServices);
 router.get('/api/catalog/services/:id/details', validateJWT, getUserUUID, getServiceDetails);
 
-// CommonJS module export for compatibility with server.js
-module.exports = router;
+// Export using ES modules syntax
+export default router;

@@ -1,5 +1,5 @@
 /**
- * controller.admin.change.password.ts
+ * controller.admin.change.password.ts - version 1.0.01
  * Controller for handling admin requests to reset user passwords.
  * Receives request and passes it to the service layer, then formats response.
  */
@@ -21,9 +21,9 @@ interface Request extends ExpressRequest {
  * Controller to handle admin password reset requests
  * @param {Request} req - Express request object
  * @param {Response} res - Express response object
- * @returns {Promise<Response>} JSON response with result
+ * @returns {Promise<void>} Promise that resolves when response is sent
  */
-export async function adminResetPasswordController(req: Request, res: Response): Promise<Response> {
+export async function adminResetPasswordController(req: Request, res: Response): Promise<void> {
   console.log('[Admin Reset Password Controller] Received password reset request');
   
   // Детальное логирование входящего запроса
@@ -55,11 +55,12 @@ export async function adminResetPasswordController(req: Request, res: Response):
         hasNewPassword: req.body?.newPassword ? true : false
       });
       
-      return res.status(400).json({
+      res.status(400).json({
         success: false,
         message: 'Missing required fields in request',
         error: 'Request validation failed'
       });
+      return;
     }
     
     // Извлекаем данные из запроса
@@ -85,13 +86,13 @@ export async function adminResetPasswordController(req: Request, res: Response):
     
     // Возвращаем ответ клиенту
     if (result.success) {
-      return res.status(200).json(result);
+      res.status(200).json(result);
     } else {
-      return res.status(400).json(result);
+      res.status(400).json(result);
     }
   } catch (error) {
     console.error('[Admin Reset Password Controller] Unexpected error:', error);
-    return res.status(500).json({
+    res.status(500).json({
       success: false,
       message: 'An unexpected error occurred',
       error: error instanceof Error ? error.message : 'Unknown error'

@@ -1,5 +1,5 @@
 /*
-  File version: 1.0.02
+  File version: 1.0.03
   This is a backend file. The file provides JWT validation functionality.
   It validates the JWT token from the Authorization header and extends the request with user information.
 */
@@ -62,5 +62,5 @@ const validateJWT: GuardFunction = (req: AuthenticatedRequest, res: Response, ne
   }
 };
 
-// Using module.exports for CommonJS compatibility
-module.exports = validateJWT;
+// Export using ES modules syntax
+export default validateJWT;

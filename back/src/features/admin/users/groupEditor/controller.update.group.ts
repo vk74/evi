@@ -1,5 +1,5 @@
 /**
- * controller.update.group.ts - version 1.0.02
+ * controller.update.group.ts - version 1.0.03
  * Controller for handling group update requests at /api/admin/groups/update-group-by-groupid.
  * Validates request structure, extracts user data, and delegates business logic to the service.
  * Now uses event bus for tracking operations and enhancing observability.
@@ -87,4 +87,5 @@ async function updateGroupById(req: Request, res: Response): Promise<void> {
   }
 }
 
-module.exports = updateGroupById;
+// Export using ES modules syntax
+export default updateGroupById;

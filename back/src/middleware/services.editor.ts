@@ -1,5 +1,5 @@
 /**
- * services.editor.ts - version 1.0.0
+ * services.editor.ts - version 1.0.01
  * BACKEND middleware for processing service editor data
  * 
  * This file is a candidate for deletion after re-creation of services module
@@ -207,12 +207,5 @@ async function updateManagement(req: EnhancedRequest, res: Response): Promise<vo
 }
 */
 
-// Export for CommonJS require() compatibility
-module.exports = {
-    serviceEditor
-};
-
-// Export for ES modules
-export {
-    serviceEditor
-};
+// Export using ES modules only
+export { serviceEditor };

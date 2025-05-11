@@ -1,5 +1,5 @@
 /**
- * controller.create.user.ts - version 1.0.02
+ * controller.create.user.ts - version 1.0.03
  * Controller for handling user creation requests from admin panel.
  * Processes requests, handles errors, and formats responses.
  * Now uses event bus for operation tracking.
@@ -121,4 +121,5 @@ function getStatusCodeForError(error: ServiceError): number {
   }
 }
 
-module.exports = createUserController;
+// Export using ES modules syntax
+export default createUserController;

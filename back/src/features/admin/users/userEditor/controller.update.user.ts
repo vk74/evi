@@ -1,5 +1,5 @@
 /**
- * controller.update.user.ts - version 1.0.02
+ * controller.update.user.ts - version 1.0.03
  * Controller for handling user update requests from admin panel.
  * Processes requests, handles errors, and formats responses.
  * Now uses event bus for operation tracking.
@@ -73,4 +73,5 @@ async function updateUserById(req: Request, res: Response): Promise<void> {
   }
 }
 
-module.exports = updateUserById;
+// Export using ES modules syntax
+export default updateUserById;

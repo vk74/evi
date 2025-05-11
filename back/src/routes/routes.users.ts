@@ -1,22 +1,21 @@
 /**
- * version: 1.0.0
+ * version: 1.0.01
  * Backend router file for user account related routes.
  * Handles user authentication, registration, profile management and routes to appropriate middleware.
  * File: routes.users.ts
  */
 
 import express, { Router } from 'express';
-const router: Router = express.Router();
+import validateJWT from '../guards/auth.validate.jwt';
+import checkAccountPassword from '../guards/auth.check.password';
+import checkAccountStatus from '../guards/auth.check.status';
+import issueToken from '../middleware/auth.issue.token';
+import registerUser from '../middleware/auth.register.user';
+import changeUserPassword from '../middleware/users.change.password';
+import getUserProfile from '../middleware/users.get.profile';
+import updateUserProfile from '../middleware/users.update.profile';
 
-// Importing middleware using CommonJS syntax for compatibility
-const validateJWT = require('../guards/auth.validate.jwt');
-const checkAccountPassword = require('../guards/auth.check.password');
-const checkAccountStatus = require('../guards/auth.check.status');
-const issueToken = require('../middleware/auth.issue.token');
-const registerUser = require('../middleware/auth.register.user');
-const changeUserPassword = require('../middleware/users.change.password');
-const getUserProfile = require('../middleware/users.get.profile');
-const updateUserProfile = require('../middleware/users.update.profile');
+const router: Router = express.Router();
 
 router.post('/register', registerUser);
 router.post('/login', checkAccountPassword, checkAccountStatus, issueToken);
@@ -24,5 +23,5 @@ router.post('/changeuserpass', changeUserPassword);
 router.get('/profile', validateJWT, getUserProfile);
 router.post('/profile', validateJWT, updateUserProfile);
 
-// CommonJS module export for compatibility with server.js
-module.exports = router;
+// Export using ES modules syntax
+export default router;

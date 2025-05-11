@@ -1,5 +1,5 @@
 /**
- * version: 1.0.0
+ * version: 1.0.01
  * Core routes for global backend services.
  * 
  * Functionality:
@@ -10,21 +10,20 @@
  */
 
 import express, { Router } from 'express';
+import validateJWT from '../../guards/auth.validate.jwt';
+
+// Импорт контроллеров
+import getUsernameByUuidController from '../middleware/controller.get.username.by.uuid';
+import searchUsers from '../services/item-selector/controller.search.users';
+import addUsersToGroup from '../services/item-selector/controller.add.users.to.group';
+import changeGroupOwner from '../services/item-selector/controller.change.group.owner';
+
+import selfChangePasswordController from '../services/change-password/controller.self.change.password';
+import adminResetPasswordController from '../services/change-password/controller.admin.change.password';
+import fetchSettingsController from '../services/settings/controller.fetch.settings';
+import updateSettingsController from '../services/settings/controller.update.settings';
+
 const router: Router = express.Router();
-
-// Importing middleware using CommonJS syntax for compatibility
-const validateJWT = require('../../guards/auth.validate.jwt');
-
-// Импорт контроллеров (используем .default для ES Module exports)
-const getUsernameByUuidController = require('../middleware/controller.get.username.by.uuid').default;
-const searchUsers = require('../services/item-selector/controller.search.users').default;
-const addUsersToGroup = require('../services/item-selector/controller.add.users.to.group').default;
-const changeGroupOwner = require('../services/item-selector/controller.change.group.owner').default;
-
-const selfChangePasswordController = require('../services/change-password/controller.self.change.password').default;
-const adminResetPasswordController = require('../services/change-password/controller.admin.change.password').default;
-const fetchSettingsController = require('../services/settings/controller.fetch.settings').default;
-const updateSettingsController = require('../services/settings/controller.update.settings').default;
 
 // utility services
 router.get('/api/core/users/fetch-username-by-uuid/:userId', validateJWT, getUsernameByUuidController);
@@ -42,5 +41,5 @@ router.post('/api/core/users/admin-change-password', validateJWT, adminResetPass
 router.post('/api/core/settings/fetch-settings', validateJWT, fetchSettingsController);
 router.post('/api/core/settings/update-settings', validateJWT, updateSettingsController);
 
-// CommonJS module export for compatibility with server.js
-module.exports = router;
+// Export using ES modules syntax
+export default router;

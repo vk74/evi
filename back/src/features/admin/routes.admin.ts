@@ -1,5 +1,5 @@
 /**
- * version: 1.0.0
+ * version: 1.0.01
  * Backend router file for admin functionality.
  * Defines routes for administrative functions focused on user and group management.
  * All routes are protected by JWT validation middleware.
@@ -7,24 +7,23 @@
  */
 
 import express, { Router } from 'express';
-const router: Router = express.Router();
-
-// Importing middleware using CommonJS syntax for compatibility
-const validateJWT = require('../../guards/auth.validate.jwt');
+import validateJWT from '../../guards/auth.validate.jwt';
 
 // Import controllers
-const fetchUsers = require('./users/usersList/controller.fetch.users').default;
-const deleteSelectedUsers = require('./users/usersList/controller.delete.users').default;
-const updateUserById = require('./users/userEditor/controller.update.user');
-const loadUserById = require('./users/userEditor/controller.load.user');
-const createUserController = require('./users/userEditor/controller.create.user');
-const createGroupController = require('./users/groupEditor/controller.create.group');
-const fetchGroups = require('./users/groupsList/controller.groups.list').default;
-const deleteSelectedGroupsController = require('./users/groupsList/controller.delete.selected.groups').default;
-const fetchGroupById = require('./users/groupEditor/controller.fetch.group').default;
-const updateGroupById = require('./users/groupEditor/controller.update.group');
-const fetchGroupMembers = require('./users/groupEditor/controller.fetch.group.members').default;
-const removeGroupMembers = require('./users/groupEditor/controller.delete.group.members').default;
+import fetchUsers from './users/usersList/controller.fetch.users';
+import deleteSelectedUsers from './users/usersList/controller.delete.users';
+import updateUserById from './users/userEditor/controller.update.user';
+import loadUserById from './users/userEditor/controller.load.user';
+import createUserController from './users/userEditor/controller.create.user';
+import createGroupController from './users/groupEditor/controller.create.group';
+import fetchGroups from './users/groupsList/controller.groups.list';
+import deleteSelectedGroupsController from './users/groupsList/controller.delete.selected.groups';
+import fetchGroupById from './users/groupEditor/controller.fetch.group';
+import updateGroupById from './users/groupEditor/controller.update.group';
+import fetchGroupMembers from './users/groupEditor/controller.fetch.group.members';
+import removeGroupMembers from './users/groupEditor/controller.delete.group.members';
+
+const router: Router = express.Router();
 
 // Routes for Users
 router.post('/api/admin/users/create-new-user', validateJWT, createUserController);
@@ -42,5 +41,5 @@ router.post('/api/admin/groups/update-group-by-groupid', validateJWT, updateGrou
 router.get('/api/admin/groups/:groupId/members', validateJWT, fetchGroupMembers);
 router.post('/api/admin/groups/:groupId/members/remove', validateJWT, removeGroupMembers);
 
-// CommonJS module export for compatibility with server.js
-module.exports = router;
+// Export using ES modules syntax
+export default router;

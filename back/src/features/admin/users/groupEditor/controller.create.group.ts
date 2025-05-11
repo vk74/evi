@@ -1,5 +1,5 @@
 /**
- * controller.create.group.ts - version 1.0.02
+ * controller.create.group.ts - version 1.0.03
  * Controller for handling group creation requests from admin panel.
  * Processes requests, handles errors, and formats responses.
  * Now uses event bus for tracking operations.
@@ -87,4 +87,5 @@ async function createGroupController(req: Request & { user?: { username: string 
   }
 }
 
-module.exports = createGroupController;
+// Export using ES modules syntax
+export default createGroupController;

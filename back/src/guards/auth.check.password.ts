@@ -1,5 +1,5 @@
 /*
-  File version: 1.0.01
+  File version: 1.0.02
   This is a backend file. The file provides password verification functionality.
   It validates user credentials by checking username and password against the database.
 */
@@ -73,5 +73,5 @@ const checkAccountPassword: GuardFunction = async (
    }
 };
 
-// Using module.exports for CommonJS compatibility
-module.exports = checkAccountPassword;
+// Export using ES modules syntax
+export default checkAccountPassword;

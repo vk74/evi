@@ -1,5 +1,5 @@
 /*
-  File version: 1.0.01
+  File version: 1.0.02
   This is a backend file. The file provides account status verification functionality.
   It checks if a user account exists and is not disabled before allowing further request processing.
 */
@@ -68,5 +68,5 @@ const checkAccountStatus: GuardFunction = async (
    }
 };
 
-// Using module.exports for CommonJS compatibility
-module.exports = checkAccountStatus;
+// Export using ES modules syntax
+export default checkAccountStatus;

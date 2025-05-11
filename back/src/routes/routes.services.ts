@@ -1,21 +1,20 @@
 /**
- * version: 1.0.01
+ * version: 1.0.02
  * Backend router file for admin services.
  * Handles routes for service management functionality.
  * File: routes.services.ts
  */
 
 import express, { Router } from 'express';
-const router: Router = express.Router();
+import getUserUUID from '../middleware/users.get.uuid';
+import validateJWT from '../guards/auth.validate.jwt';
+// import checkAccountStatus from '../guards/auth.check.status';
+import { serviceEditor } from '../middleware/services.editor';
 
-// Импортируем middleware используя CommonJS-совместимый синтаксис
-const getUserUUID = require('../middleware/users.get.uuid');
-const validateJWT = require('../guards/auth.validate.jwt');
-// const checkAccountStatus = require('../guards/auth.check.status');
-const { serviceEditor } = require('../middleware/services.editor');
+const router: Router = express.Router();
 
 // Создание нового сервиса
 router.post('/api/admin/services', validateJWT, getUserUUID, serviceEditor);
 
-// CommonJS module export for compatibility with server.js
-module.exports = router;
+// Export using ES modules syntax
+export default router;

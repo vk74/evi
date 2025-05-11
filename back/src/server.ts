@@ -1,5 +1,5 @@
 /**
- * version: 1.0.0
+ * version: 1.0.01
  * Main server file
  * 
  * This is the entry point for the backend server.
@@ -16,33 +16,33 @@ import fs from 'fs';
 import ExcelJS from 'exceljs';
 
 // Import routes
-const userRoutes = require('@/routes/routes.users');
-const servicesRoutes = require('@/routes/routes.services');
-const catalogRoutes = require('@/routes/routes.catalog');
-const adminRoutes = require('@/features/admin/routes.admin');
-const coreRoutes = require('@/core/routes/routes.core');
-const workRoutes = require('@/features/work/routes.work');
-const { loadSettings } = require('@/core/services/settings/service.load.settings');
+import userRoutes from '@/routes/routes.users';
+import servicesRoutes from '@/routes/routes.services';
+import catalogRoutes from '@/routes/routes.catalog';
+import adminRoutes from '@/features/admin/routes.admin';
+import coreRoutes from '@/core/routes/routes.core';
+import workRoutes from '@/features/work/routes.work';
+import { loadSettings } from '@/core/services/settings/service.load.settings';
 
 // Import event bus system
-const { eventBus } = require('@/core/eventBus/bus.events');
-const fabricEvents = require('@/core/eventBus/fabric.events').default;
+import { eventBus } from '@/core/eventBus/bus.events';
+import fabricEvents from '@/core/eventBus/fabric.events';
 // Import event reference system for active initialization
-const { initializeEventReferenceSystem } = require('@/core/eventBus/reference/index.reference.events');
+import { initializeEventReferenceSystem } from '@/core/eventBus/reference/index.reference.events';
 
 // Import centralized logger
-const { 
+import { 
   createSystemLgr, 
   Events,
   OperationType
-} = require('@/core/lgr/lgr.index');
+} from '@/core/lgr/lgr.index';
 
 // Import new logger system
-const loggerService = require('@/core/logger/service.logger').default;
-const loggerSubscriptions = require('@/core/logger/subscriptions.logger').default;
+import loggerService from '@/core/logger/service.logger';
+import loggerSubscriptions from '@/core/logger/subscriptions.logger';
 
 // Import database functions
-const { insertData, getLocations } = require('@/db/database');
+import { insertData, getLocations } from '@/db/database';
 
 // Define global declarations for TypeScript
 declare global {

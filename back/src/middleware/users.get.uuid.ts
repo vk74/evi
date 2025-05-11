@@ -2,7 +2,7 @@
  * 
  * to be deleted after migration of Account Profile module to new architecture
  * 
- * users.get.uuid.ts - version 1.0.0
+ * users.get.uuid.ts - version 1.0.01
  * BACKEND middleware for retrieving user UUID
  * 
  * Gets user UUID from database based on username provided in request
@@ -64,7 +64,5 @@ async function getUserUUID(req: EnhancedRequest, res: Response, next: NextFuncti
   }
 }
 
-// Export for CommonJS require() compatibility
-module.exports = getUserUUID;
-// Export for ES modules
+// Export using ES modules only
 export default getUserUUID;

@@ -1,5 +1,5 @@
 /**
- * controller.load.user.ts - version 1.0.02
+ * controller.load.user.ts - version 1.0.03
  * Controller for handling user data loading requests.
  * 
  * Functionality:
@@ -81,4 +81,5 @@ async function loadUserById(req: Request, res: Response): Promise<void> {
     }
 }
 
-module.exports = loadUserById;
+// Export using ES modules syntax
+export default loadUserById;
