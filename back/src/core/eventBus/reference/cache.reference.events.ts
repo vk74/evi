@@ -1,6 +1,6 @@
 /**
  * cache.reference.events.ts - backend file
- * version: 1.0.3
+ * version: 1.0.4
  * 
  * This file implements a caching mechanism for event references.
  * It loads all event reference data at server startup and provides
@@ -38,7 +38,7 @@ let cacheInitialized = false;
  * Initializes the event reference cache
  * Should be called during application startup
  */
-export const initializeEventCache = (): void => {
+export const initializeEventCache = async (): Promise<void> => {
   if (cacheInitialized) {
     return;
   }
@@ -47,41 +47,44 @@ export const initializeEventCache = (): void => {
     // Clear existing cache if any
     eventSchemaCache = {};
     
-    // Force building the references to ensure we have the latest data
-    const references = buildEventReferences();
+    // Force building the references to ensure we have the latest data - now with await
+    const references = await buildEventReferences();
     
     // Process each domain and its events
-    Object.entries(references).forEach(([domain, domainEvents]) => {
-      Object.entries(domainEvents).forEach(([eventKey, schema]) => {
+    for (const [domain, domainEvents] of Object.entries(references)) {
+      for (const [eventKey, schema] of Object.entries(domainEvents)) {
         const fullEventName = `${domain}.${eventKey}`;
         
+        // Explicitly type the schema to EventSchema
+        const typedSchema = schema as EventSchema;
+        
         // Get the actual event template from source files
-        const eventTemplate = findSourceEventTemplate(fullEventName);
+        const eventTemplate = await findSourceEventTemplate(fullEventName);
         
         if (eventTemplate) {
           eventSchemaCache[fullEventName] = {
-            ...schema,
             eventName: fullEventName,
             source: eventTemplate.source || '',
             eventType: eventTemplate.eventType || 'app',
             severity: eventTemplate.severity,
             eventMessage: eventTemplate.eventMessage,
-            version: eventTemplate.version || schema.version || '1.0'
+            version: eventTemplate.version || typedSchema.version || '1.0',
+            description: typedSchema.description || ''
           };
         } else {
           // Create a basic schema if no template is found
           eventSchemaCache[fullEventName] = {
-            ...schema,
             eventName: fullEventName,
             source: 'unknown',
             eventType: 'app',
-            version: schema.version || '1.0'
+            version: typedSchema.version || '1.0',
+            description: typedSchema.description || ''
           };
           
           console.warn(`Warning: No template found for event ${fullEventName}`);
         }
-      });
-    });
+      }
+    }
     
     cacheInitialized = true;
     console.log(`Event reference cache initialized with ${Object.keys(eventSchemaCache).length} events`);
@@ -95,7 +98,7 @@ export const initializeEventCache = (): void => {
  * Finds the original event template definition from the source modules
  * This provides access to event properties not stored in the reference index
  */
-const findSourceEventTemplate = (fullEventName: string): Partial<BaseEvent> | null => {
+const findSourceEventTemplate = async (fullEventName: string): Promise<Partial<BaseEvent> | null> => {
   try {
     const [domain, ...rest] = fullEventName.split('.');
     
@@ -107,7 +110,7 @@ const findSourceEventTemplate = (fullEventName: string): Partial<BaseEvent> | nu
     // Iterate through all files registered for this domain
     for (const filePath of eventReferenceFiles[domain]) {
       try {
-        const moduleExports = require(filePath);
+        const moduleExports = await import(filePath);
         
         // Find all exported event collections (constants with UPPERCASE names)
         for (const [collectionName, collection] of Object.entries(moduleExports)) {
@@ -273,10 +276,10 @@ export const getEventSchemaVersion = (eventName: string): string | null => {
  * Refreshes the cache by clearing it and reinitializing
  * Useful when new event types are added dynamically
  */
-export const refreshEventCache = (): void => {
+export const refreshEventCache = async (): Promise<void> => {
   cacheInitialized = false;
   eventSchemaCache = {};
-  initializeEventCache();
+  await initializeEventCache();
 };
 
 /**

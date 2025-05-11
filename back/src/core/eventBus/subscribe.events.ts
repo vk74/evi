@@ -1,9 +1,9 @@
-// version: 1.001
+// version: 1.002
 // Advanced subscription mechanism for Event Bus
 // Provides priority-based subscriptions, complex filtering capabilities,
 // subscription management and a fluent DSL for defining event filters
 
-const { v4: uuid } = require('uuid');
+import { v4 as uuid } from 'uuid';
 import { 
   BaseEvent, 
   EventHandler, 

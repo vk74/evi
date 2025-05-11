@@ -1,9 +1,9 @@
-// version: 1.1
+// version: 1.2
 // Logger subscriptions service
 // Handles subscribing to events from event bus and routing them to the logger service
 
 import { BaseEvent } from '../eventBus/types.events';
-import { subscribe, filter, whereSeverity } from '../eventBus/subscribe.events';
+import { subscribe, filter, whereSeverity, unsubscribe } from '../eventBus/subscribe.events';
 import loggerService from './service.logger';
 import { LoggerSubscriptionRule } from './types.logger';
 
@@ -74,9 +74,6 @@ export const initializeSubscriptions = (rules: LoggerSubscriptionRule[] = defaul
  * Clear all active subscriptions
  */
 export const clearSubscriptions = (): void => {
-  // Import dynamically to avoid circular dependency
-  const { unsubscribe } = require('../eventBus/subscribe.events');
-  
   // Call all unsubscribe functions
   for (const subscriptionId of activeSubscriptions) {
     unsubscribe(subscriptionId);

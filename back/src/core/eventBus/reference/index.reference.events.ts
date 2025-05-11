@@ -66,7 +66,7 @@ export const initializeEventReferenceSystem = async (): Promise<void> => {
     eventReferencesCache = null;
     
     // Actively build references
-    const references = buildEventReferences();
+    const references = await buildEventReferences();
     
     console.log(`Event references built successfully with ${Object.keys(references).length} domains`);
     
@@ -92,7 +92,7 @@ export const initializeEventReferenceSystem = async (): Promise<void> => {
  * Builds event references from the registered files
  * This is called by the cache module when needed
  */
-export const buildEventReferences = (): Record<string, Record<string, EventSchema>> => {
+export const buildEventReferences = async (): Promise<Record<string, Record<string, EventSchema>>> => {
   if (eventReferencesCache) {
     return eventReferencesCache;
   }
@@ -100,16 +100,16 @@ export const buildEventReferences = (): Record<string, Record<string, EventSchem
   const references: Record<string, Record<string, EventSchema>> = {};
   
   // Process each domain
-  Object.entries(eventReferenceFiles).forEach(([domain, files]) => {
+  for (const [domain, files] of Object.entries(eventReferenceFiles)) {
     if (!references[domain]) {
       references[domain] = {};
     }
     
     // Process each file in the domain
-    files.forEach(filePath => {
+    for (const filePath of files) {
       try {
-        // Dynamically import the module
-        const eventModule = require(filePath);
+        // Dynamically import the module using ES modules syntax
+        const eventModule = await import(filePath);
         
         // Find all exported constants that look like event collections
         const collections = Object.entries(eventModule)
@@ -141,8 +141,8 @@ export const buildEventReferences = (): Record<string, Record<string, EventSchem
       } catch (error) {
         console.error(`Error loading event references from ${filePath}:`, error);
       }
-    });
-  });
+    }
+  }
   
   eventReferencesCache = references;
   return references;
@@ -152,9 +152,9 @@ export const buildEventReferences = (): Record<string, Record<string, EventSchem
  * Gets all event references
  * Lazily builds the references on first access
  */
-export const getEventReferences = (): Record<string, Record<string, EventSchema>> => {
+export const getEventReferences = async (): Promise<Record<string, Record<string, EventSchema>>> => {
   if (!eventReferencesCache) {
-    return buildEventReferences();
+    return await buildEventReferences();
   }
   return eventReferencesCache;
 };
@@ -168,7 +168,7 @@ export type EventType = keyof typeof eventReferenceFiles;
  * @param eventName The full event name to validate (e.g., "userEditor.creation.complete")
  * @returns boolean indicating if the event name is registered
  */
-export const isValidEventType = (eventName: string): boolean => {
+export const isValidEventType = async (eventName: string): Promise<boolean> => {
   // Split the event name into domain and specific event
   const [domain, ...rest] = eventName.split('.');
   
@@ -176,7 +176,7 @@ export const isValidEventType = (eventName: string): boolean => {
     return false;
   }
   
-  const references = getEventReferences();
+  const references = await getEventReferences();
   
   if (!references[domain]) {
     return false;
@@ -195,14 +195,14 @@ export const isValidEventType = (eventName: string): boolean => {
  * @param eventName The full event name (e.g., "userEditor.creation.complete")
  * @returns The schema version for the event, or '1.0' if not found
  */
-export const getEventSchemaVersion = (eventName: string): string => {
+export const getEventSchemaVersion = async (eventName: string): Promise<string> => {
   const [domain, ...rest] = eventName.split('.');
   
   if (!rest.length) {
     return '1.0'; // Default to 1.0 if not formatted correctly
   }
   
-  const references = getEventReferences();
+  const references = await getEventReferences();
   
   if (!references[domain]) {
     return '1.0'; // Default to 1.0 if domain not found
@@ -223,14 +223,14 @@ export const getEventSchemaVersion = (eventName: string): string => {
  * @param eventName The full event name
  * @returns The event schema, or undefined if not found
  */
-export const getEventSchema = (eventName: string): EventSchema | undefined => {
+export const getEventSchema = async (eventName: string): Promise<EventSchema | undefined> => {
   const [domain, ...rest] = eventName.split('.');
   
   if (!rest.length) {
     return undefined;
   }
   
-  const references = getEventReferences();
+  const references = await getEventReferences();
   
   if (!references[domain]) {
     return undefined;
@@ -247,8 +247,8 @@ export const getEventSchema = (eventName: string): EventSchema | undefined => {
  * @param domain The domain to get events for
  * @returns Array of full event names
  */
-export const getEventNamesForDomain = (domain: string): string[] => {
-  const references = getEventReferences();
+export const getEventNamesForDomain = async (domain: string): Promise<string[]> => {
+  const references = await getEventReferences();
   
   if (!references[domain]) {
     return [];
@@ -262,8 +262,8 @@ export const getEventNamesForDomain = (domain: string): string[] => {
  * 
  * @returns Array of domain names
  */
-export const getAllEventDomains = (): string[] => {
-  return Object.keys(getEventReferences());
+export const getAllEventDomains = async (): Promise<string[]> => {
+  return Object.keys(await getEventReferences());
 };
 
 /**
@@ -271,9 +271,9 @@ export const getAllEventDomains = (): string[] => {
  * 
  * @returns Array of full event names
  */
-export const getAllEventNames = (): string[] => {
+export const getAllEventNames = async (): Promise<string[]> => {
   const events: string[] = [];
-  const references = getEventReferences();
+  const references = await getEventReferences();
   
   Object.entries(references).forEach(([domain, domainEvents]) => {
     Object.keys(domainEvents).forEach(eventKey => {
