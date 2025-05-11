@@ -1,5 +1,5 @@
 /**
- * queries.users.ts - version 1.0.01
+ * queries.users.ts - version 1.0.03
  * BACKEND predefined SQL queries for user operations
  * 
  * Contains prepared SQL queries for:
@@ -182,6 +182,3 @@ export const userQueries: UserQueriesCollection = {
             VALUES ($1, $2, $3, $4, $5, $6)`
     }
 };
-
-// Для совместимости с CommonJS require()
-module.exports = { userQueries };

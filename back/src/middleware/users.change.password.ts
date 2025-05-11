@@ -1,5 +1,5 @@
 /**
- * users.change.password.ts - version 1.0.0
+ * users.change.password.ts - version 1.0.1
  * BACKEND middleware for user password change
  * 
  * Validates password change requests, checks current password
@@ -154,7 +154,5 @@ const changeUserPassword = async (req: EnhancedRequest, res: Response): Promise<
    }
 };
 
-// Export for CommonJS require() compatibility
-module.exports = changeUserPassword;
-// Export for ES modules
+// Export for ES modules only
 export default changeUserPassword;

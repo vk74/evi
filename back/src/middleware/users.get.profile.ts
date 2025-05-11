@@ -1,5 +1,5 @@
 /**
- * users.get.profile.ts - version 1.0.0
+ * users.get.profile.ts - version 1.0.1
  * BACKEND middleware for retrieving user profile data
  * 
  * This file is a candidate for deletion after migration of user profile module to .ts
@@ -85,7 +85,5 @@ const getUserProfile = async (req: EnhancedRequest, res: Response): Promise<void
    }
 };
 
-// Export for CommonJS require() compatibility
-module.exports = getUserProfile;
-// Export for ES modules
+// Export for ES modules only
 export default getUserProfile;

@@ -1,5 +1,5 @@
 /**
- * users.update.profile.ts - version 1.0.0
+ * users.update.profile.ts - version 1.0.1
  * BACKEND middleware for updating user profile data
  * 
  * This file is a candidate for deletion after migration of user profile module to .ts
@@ -136,9 +136,7 @@ const updateUserProfile = async (req: EnhancedRequest, res: Response): Promise<v
            details: error instanceof Error ? error.message : String(error)
        });
    }
-};
+}
 
-// Export for CommonJS require() compatibility
-module.exports = updateUserProfile;
 // Export for ES modules
 export default updateUserProfile;

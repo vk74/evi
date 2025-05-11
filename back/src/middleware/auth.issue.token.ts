@@ -1,5 +1,5 @@
 /**
- * auth.issue.token.ts - version 1.0.0
+ * auth.issue.token.ts - version 1.0.1
  * Middleware responsible for creating and issuing JWT tokens to authenticated users
  */
 
@@ -83,7 +83,5 @@ const issueToken = async (req: EnhancedRequest, res: Response): Promise<void> =>
   }
 };
 
-// Экспорт для совместимости с CommonJS require()
-module.exports = issueToken;
-// Также экспортируем по умолчанию для ES modules
+// Export for ES modules only
 export default issueToken;

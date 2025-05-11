@@ -1,5 +1,5 @@
 /**
- * auth.register.user.ts - version 1.0.0
+ * auth.register.user.ts - version 1.0.1
  * BACKEND middleware for user registration
  * 
  * Processes user registration requests:
@@ -152,7 +152,5 @@ const register = async (req: EnhancedRequest, res: Response): Promise<void> => {
     }
 };
 
-// Export for CommonJS require() compatibility
-module.exports = register;
-// Export for ES modules
+// Export for ES modules only
 export default register;

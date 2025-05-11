@@ -1,5 +1,5 @@
 /**
- * services.editor.validator.ts - version 1.0.0
+ * services.editor.validator.ts - version 1.0.2
  * BACKEND validator module for service data
  * 
  * This file is a candidate for deletion after re-creation of services module
@@ -239,10 +239,3 @@ export const validateServiceData = async (data: Record<string, any>): Promise<vo
     
     console.log('\n=== Валидация успешно завершена ===');
 }
-
-// Export for CommonJS require() compatibility
-module.exports = {
-    validateServiceData,
-    ValidationError,
-    FIELD_RULES
-};
