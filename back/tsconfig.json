@@ -3,7 +3,7 @@
       "target": "es2020",
       "module": "commonjs",
       "lib": ["es2020", "esnext.asynciterable"],
-      "allowJs": true,          // Разрешает компиляцию JavaScript файлов
+      // Удалён параметр allowJs, так как весь код теперь в TypeScript
       "checkJs": false,         // Отключаем проверку типов в JS файлах на начальном этапе
       "outDir": "./dist",       // Скомпилированные файлы
       "rootDir": "./src",       // Исходный код

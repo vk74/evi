@@ -8,12 +8,13 @@
   },
   "scripts": {
     "start": "ts-node --transpile-only src/server.ts",
-    "dev": "nodemon --watch 'src/**/*' --ext 'js,mjs,cjs,json,ts' --exec 'ts-node' src/server.ts",
+    "dev": "nodemon --watch 'src/**/*' --ext 'ts' --exec 'ts-node' src/server.ts",
     "test": "echo \"Error: no test specified\" && exit 1",
-    "ts-check": "ts-node src/tests/ts-check.ts",
-    "build": "rimraf dist && npm run build:ts && npm run build:js",
-    "build:ts": "tsc",
-    "build:js": "mkdir -p dist && find src -name '*.js' -o -name '*.json' | while read file; do mkdir -p \"dist/$(dirname \"${file#src/}\")\" && cp \"$file\" \"dist/${file#src/}\"; done && cp -r src/keys dist/"
+    "ts-check": "tsc --noEmit",
+    "build": "rimraf dist && tsc && npm run copy-assets",
+    "copy-assets": "cp -r src/keys dist/",
+    "serve": "node dist/server.js",
+    "build:prod": "NODE_ENV=production rimraf dist && tsc && npm run copy-assets"
   },
   "keywords": [],
   "author": "",
