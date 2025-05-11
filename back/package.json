@@ -2,13 +2,13 @@
   "name": "back",
   "version": "0.1.0",
   "description": "",
-  "main": "src/server.js",
+  "main": "src/server.ts",
   "_moduleAliases": {
     "@": "src"
   },
   "scripts": {
-    "start": "ts-node --transpile-only src/server.js",
-    "dev": "nodemon --watch 'src/**/*' --ext 'js,mjs,cjs,json,ts' --exec 'ts-node' src/server.js",
+    "start": "ts-node --transpile-only src/server.ts",
+    "dev": "nodemon --watch 'src/**/*' --ext 'js,mjs,cjs,json,ts' --exec 'ts-node' src/server.ts",
     "test": "echo \"Error: no test specified\" && exit 1",
     "ts-check": "ts-node src/tests/ts-check.ts",
     "build": "rimraf dist && npm run build:ts && npm run build:js",

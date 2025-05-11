@@ -1,20 +1,26 @@
 /**
+ * version: 1.0.0
  * Main server file
  * 
  * This is the entry point for the backend server.
  * It handles server initialization, middleware setup, and route registration.
- * 
- * Created: 2022-08-15
- * Last modified: 2023-11-20
+ * File: server.ts
  */
 
-require('module-alias/register');
-const express = require('express');
-const userRoutes = require('@/routes/routes.users'); 
-const servicesRoutes = require('@/routes/routes.services'); 
+// Import module-alias for path aliases
+import 'module-alias/register';
+import express, { Express, Request, Response, NextFunction } from 'express';
+import cors from 'cors';
+import bodyParser from 'body-parser';
+import fs from 'fs';
+import ExcelJS from 'exceljs';
+
+// Import routes
+const userRoutes = require('@/routes/routes.users');
+const servicesRoutes = require('@/routes/routes.services');
 const catalogRoutes = require('@/routes/routes.catalog');
 const adminRoutes = require('@/features/admin/routes.admin');
-const coreRoutes = require ('@/core/routes/routes.core');
+const coreRoutes = require('@/core/routes/routes.core');
 const workRoutes = require('@/features/work/routes.work');
 const { loadSettings } = require('@/core/services/settings/service.load.settings');
 
@@ -35,27 +41,39 @@ const {
 const loggerService = require('@/core/logger/service.logger').default;
 const loggerSubscriptions = require('@/core/logger/subscriptions.logger').default;
 
-const ExcelJS = require('exceljs');
-const bodyParser = require('body-parser');
-const cors = require('cors');
+// Import database functions
 const { insertData, getLocations } = require('@/db/database');
-const fs = require('fs');
 
-const port = 3000;
-const app = express();
+// Define global declarations for TypeScript
+declare global {
+  var privateKey: string;
+}
+
+const port: number = 3000;
+const app: Express = express();
 
 // Global event factory instance
-let eventFactory = null;
+let eventFactory: any = null;
 
 // Settings ready flag
-let settingsLoaded = false;
+let settingsLoaded: boolean = false;
 
 // Event system ready flag
-let eventSystemInitialized = false;
+let eventSystemInitialized: boolean = false;
+
+// Interface for form data in Excel generation
+interface ExcelFormData {
+  orgname: string;
+  region: string;
+  location: string;
+  checkbox: boolean;
+  radio: string;
+  date: string;
+}
 
 // Middleware to check if critical components are loaded
-const checkServerReady = (req, res, next) => {
-  const notReadyComponents = [];
+const checkServerReady = (req: Request, res: Response, next: NextFunction): void => {
+  const notReadyComponents: string[] = [];
   
   if (!settingsLoaded) {
     notReadyComponents.push('Settings');
@@ -75,15 +93,16 @@ const checkServerReady = (req, res, next) => {
       }
     );
     
-    return res.status(503).json({
+    res.status(503).json({
       success: false,
       message: `Server is starting up. Components still initializing: ${notReadyComponents.join(', ')}. Please try again in a moment.`
     });
+    return;
   }
   next();
 };
 
-async function initializeServer() {
+async function initializeServer(): Promise<void> {
   try {
     console.log('Starting server initialization');
     
@@ -164,24 +183,24 @@ async function initializeServer() {
     console.log('All routes registered successfully');
 
     // 7. Base route
-    app.get('/', (req, res) => {
+    app.get('/', (req: Request, res: Response) => {
       res.send('Backend server is running');
     });
 
     ////////////////////////// Excel route prototypes ////////////////////////// 
 
     // Route to get locations list
-    app.get('/protolocations', async (req, res) => {
+    app.get('/protolocations', async (req: Request, res: Response) => {
       try {
         const locations = await getLocations();
         res.status(200).json(locations);
       } catch (error) {
-        res.status(500).json({ error: error.message });
+        res.status(500).json({ error: (error as Error).message });
       }
     });
 
     // Route to save prototype form data to postgres database
-    app.post('/protosubmit', async (req, res) => {
+    app.post('/protosubmit', async (req: Request, res: Response) => {
       try {
         // Debug line removed
         const { orgname, region, location, checkbox, radioOption, date } = req.body;
@@ -189,15 +208,15 @@ async function initializeServer() {
         res.status(200).json(result);
       } catch (error) {
         // Logging removed
-        res.status(500).json({ error: error.message });
+        res.status(500).json({ error: (error as Error).message });
       }
     });
 
     // Route to generate Excel file to user-selected directory
-    app.post('/proto-generate-excel', async (req, res) => {
+    app.post('/proto-generate-excel', async (req: Request, res: Response) => {
       try {
         // Data from request
-        const formData = req.body;
+        const formData: ExcelFormData = req.body;
         const workbook = new ExcelJS.Workbook();
         const worksheet = workbook.addWorksheet('Data Sheet');
 
@@ -233,12 +252,12 @@ async function initializeServer() {
     // 8. Server startup
     app.listen(port, () => {
       const now = new Date();
-      const dateOptions = { 
+      const dateOptions: Intl.DateTimeFormatOptions = { 
         year: 'numeric', 
         month: '2-digit', 
         day: '2-digit' 
       };
-      const timeOptions = { 
+      const timeOptions: Intl.DateTimeFormatOptions = { 
         hour: '2-digit', 
         minute: '2-digit', 
         second: '2-digit',
@@ -256,7 +275,6 @@ async function initializeServer() {
 
   } catch (error) {
     console.error('Failed to initialize server:', error);
-    
     process.exit(1);
   }
 }
