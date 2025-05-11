@@ -1,5 +1,15 @@
-const express = require('express');
-const router = express.Router();
+/**
+ * version: 1.0.0
+ * Backend router file for admin functionality.
+ * Defines routes for administrative functions focused on user and group management.
+ * All routes are protected by JWT validation middleware.
+ * File: routes.admin.ts
+ */
+
+import express, { Router } from 'express';
+const router: Router = express.Router();
+
+// Importing middleware using CommonJS syntax for compatibility
 const validateJWT = require('../../guards/auth.validate.jwt');
 
 // Import controllers
@@ -32,4 +42,5 @@ router.post('/api/admin/groups/update-group-by-groupid', validateJWT, updateGrou
 router.get('/api/admin/groups/:groupId/members', validateJWT, fetchGroupMembers);
 router.post('/api/admin/groups/:groupId/members/remove', validateJWT, removeGroupMembers);
 
+// CommonJS module export for compatibility with server.js
 module.exports = router;

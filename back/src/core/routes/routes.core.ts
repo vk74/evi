@@ -1,15 +1,18 @@
 /**
- * routes.core.js
+ * version: 1.0.0
  * Core routes for global backend services.
  * 
  * Functionality:
  * - Defines API endpoints under /api/core/... for core services
  * - Includes authentication middleware (validateJWT)
- * - Routes requests to appropriate services
+ * - Routes requests to appropriate controllers for user management, group operations, password changes, and settings management
+ * File: routes.core.ts
  */
 
-const express = require('express');
-const router = express.Router();
+import express, { Router } from 'express';
+const router: Router = express.Router();
+
+// Importing middleware using CommonJS syntax for compatibility
 const validateJWT = require('../../guards/auth.validate.jwt');
 
 // Импорт контроллеров (используем .default для ES Module exports)
@@ -39,4 +42,5 @@ router.post('/api/core/users/admin-change-password', validateJWT, adminResetPass
 router.post('/api/core/settings/fetch-settings', validateJWT, fetchSettingsController);
 router.post('/api/core/settings/update-settings', validateJWT, updateSettingsController);
 
+// CommonJS module export for compatibility with server.js
 module.exports = router;
