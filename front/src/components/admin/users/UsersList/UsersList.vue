@@ -1,6 +1,6 @@
 /**
  * @file Userslist.vue
- * @version 1.0.03
+ * @version 1.0.04
  * Компонент для отображения и управления списком пользователей системы.
  *
  * Функциональность:
@@ -228,38 +228,54 @@ const refreshList = async () => {
 
 // Функции навигации для пагинатора
 const goToPrevPage = () => {
-  console.log('[ViewAllUsers] Navigate to previous page')
+  console.log('[ViewAllUsers] Navigate to previous page, current page:', page.value)
   
   if (page.value > 1) {
     const newPage = page.value - 1
+    console.log('[ViewAllUsers] Setting previous page to:', newPage)
     handlePageChange(newPage)
+  } else {
+    console.log('[ViewAllUsers] Cannot go to previous page, already on first page')
   }
 }
 
 const goToNextPage = () => {
-  console.log('[ViewAllUsers] Navigate to next page')
+  console.log('[ViewAllUsers] Navigate to next page, current page:', page.value)
   
   const maxPage = Math.ceil(totalItems.value / itemsPerPage.value)
+  console.log('[ViewAllUsers] Max page calculated:', maxPage)
+  
   if (page.value < maxPage) {
     const newPage = page.value + 1
+    console.log('[ViewAllUsers] Setting next page to:', newPage)
     handlePageChange(newPage)
+  } else {
+    console.log('[ViewAllUsers] Cannot go to next page, already on last page')
   }
 }
 
 const goToFirstPage = () => {
-  console.log('[ViewAllUsers] Navigate to first page')
+  console.log('[ViewAllUsers] Navigate to first page, current page:', page.value)
   
   if (page.value !== 1) {
+    console.log('[ViewAllUsers] Setting page to first page')
     handlePageChange(1)
+  } else {
+    console.log('[ViewAllUsers] Already on first page')
   }
 }
 
 const goToLastPage = () => {
-  console.log('[ViewAllUsers] Navigate to last page')
+  console.log('[ViewAllUsers] Navigate to last page, current page:', page.value)
   
   const maxPage = Math.ceil(totalItems.value / itemsPerPage.value)
+  console.log('[ViewAllUsers] Max page calculated:', maxPage)
+  
   if (page.value !== maxPage) {
+    console.log('[ViewAllUsers] Setting page to last page:', maxPage)
     handlePageChange(maxPage)
+  } else {
+    console.log('[ViewAllUsers] Already on last page')
   }
 }
 
@@ -270,17 +286,26 @@ const updatePagination = async (newPage?: number, newItemsPerPage?: ItemsPerPage
   
   if (newPage !== undefined) {
     params.page = newPage
+    console.log('[ViewAllUsers] Setting new page in params:', newPage)
   }
   
   if (newItemsPerPage !== undefined) {
     params.itemsPerPage = newItemsPerPage
+    console.log('[ViewAllUsers] Setting new itemsPerPage in params:', newItemsPerPage)
   }
   
   console.log('[ViewAllUsers] Updating pagination with params:', params)
   
   try {
     await usersFetchService.fetchUsers(params)
-    console.log('[ViewAllUsers] After pagination update, totalItems:', totalItems.value)
+    console.log('[ViewAllUsers] After pagination update:')
+    console.log('  - totalItems:', totalItems.value)
+    console.log('  - current page:', page.value)
+    console.log('  - items per page:', itemsPerPage.value)
+    console.log('  - usersStore.page:', usersStore.page)
+    
+    // Принудительно синхронизируем локальное значение страницы и значение в хранилище
+    page.value = usersStore.page
   } catch (error) {
     console.error('[ViewAllUsers] Error updating pagination:', error)
   }
@@ -288,6 +313,7 @@ const updatePagination = async (newPage?: number, newItemsPerPage?: ItemsPerPage
 
 // Обработчики событий таблицы
 const handlePageChange = (newPage: number) => {
+  console.log('[ViewAllUsers] Handle page change to:', newPage)
   page.value = newPage
   updatePagination(newPage)
 }
@@ -533,8 +559,8 @@ onMounted(async () => {
     </div>
 
     <v-data-table
-      v-model:page="page"
-      v-model:items-per-page="itemsPerPage"
+      :page="page"
+      :items-per-page="itemsPerPage"
       :headers="headers"
       :items="users"
       :loading="loading"
@@ -569,22 +595,25 @@ onMounted(async () => {
                 icon="mdi-page-first"
                 size="small"
                 variant="text"
+                color="teal"
                 class="mr-1"
-                :disabled="page === 1"
+                :disabled="page <= 1"
                 @click="goToFirstPage"
               />
               <v-btn
                 icon="mdi-chevron-left"
                 size="small"
                 variant="text"
+                color="teal"
                 class="mr-1"
-                :disabled="page === 1"
+                :disabled="page <= 1"
                 @click="goToPrevPage"
               />
               <v-btn
                 icon="mdi-chevron-right"
                 size="small"
                 variant="text"
+                color="teal"
                 class="mr-1"
                 :disabled="page >= Math.ceil(totalItems / itemsPerPage)"
                 @click="goToNextPage"
@@ -593,6 +622,7 @@ onMounted(async () => {
                 icon="mdi-page-last"
                 size="small"
                 variant="text"
+                color="teal"
                 :disabled="page >= Math.ceil(totalItems / itemsPerPage)"
                 @click="goToLastPage"
               />
