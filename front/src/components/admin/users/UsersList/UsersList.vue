@@ -1,5 +1,6 @@
 /**
  * @file Userslist.vue
+ * @version 1.0.02
  * Компонент для отображения и управления списком пользователей системы.
  *
  * Функциональность:
@@ -9,6 +10,8 @@
  * - Редактирование пользователей через UserEditor
  * - Сброс пароля пользователей через ChangePassword
  * - Оптимизированное кэширование данных
+ * - Корректное отображение счетчика общего количества записей
+ * - Выбор количества записей на странице
  */
 <script setup lang="ts">
 import usersFetchService from './service.fetch.users'
@@ -16,7 +19,7 @@ import deleteSelectedUsersService from './service.delete.selected.users'
 import { ref, computed, onMounted, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useStoreUsersList } from './state.users.list'
-import type { TableHeader, ItemsPerPageOption } from './types.users.list'
+import type { TableHeader, ItemsPerPageOption, IFetchUsersParams } from './types.users.list'
 import { useUsersAdminStore } from '../state.users.admin'
 import loadUserService from '../UserEditor/service.load.user'
 import { useUserEditorStore } from '../UserEditor/state.user.editor'
@@ -35,7 +38,12 @@ const userStore = useUserStore()
 
 // Параметры таблицы и поиска
 const page = ref<number>(usersStore.page)
-const itemsPerPage = ref<ItemsPerPageOption>(usersStore.itemsPerPage)
+const itemsPerPage = ref<ItemsPerPageOption>(
+  // Обеспечиваем, что значение из хранилища соответствует типу ItemsPerPageOption
+  (usersStore.itemsPerPage === 25 || usersStore.itemsPerPage === 50 || usersStore.itemsPerPage === 100) 
+    ? usersStore.itemsPerPage as ItemsPerPageOption 
+    : 25 as ItemsPerPageOption
+)
 const searchQuery = ref<string>('')
 const isSearching = ref<boolean>(false)
 
@@ -56,7 +64,11 @@ const hasSelected = computed(() => usersStore.hasSelected)
 const hasOneSelected = computed(() => usersStore.hasOneSelected)
 const loading = computed(() => usersStore.loading)
 const users = computed(() => usersStore.currentUsers)
-const totalItems = computed(() => usersStore.totalItems)
+const totalItems = computed(() => {
+  console.log('[ViewAllUsers] totalItems computed value:', usersStore.totalItems)
+  return usersStore.totalItems
+})
+
 const isSearchEnabled = computed(() => 
   searchQuery.value.length >= 2 || searchQuery.value.length === 0
 )
@@ -215,7 +227,8 @@ const refreshList = async () => {
 
 // Обработчик изменения страницы и количества элементов на странице
 const updatePagination = async (newPage?: number, newItemsPerPage?: ItemsPerPageOption) => {
-  const params: any = {}
+  // Используем типизированный объект вместо any
+  const params: Partial<IFetchUsersParams> = {}
   
   if (newPage !== undefined) {
     params.page = newPage
@@ -225,8 +238,11 @@ const updatePagination = async (newPage?: number, newItemsPerPage?: ItemsPerPage
     params.itemsPerPage = newItemsPerPage
   }
   
+  console.log('[ViewAllUsers] Updating pagination with params:', params)
+  
   try {
     await usersFetchService.fetchUsers(params)
+    console.log('[ViewAllUsers] After pagination update, totalItems:', totalItems.value)
   } catch (error) {
     console.error('[ViewAllUsers] Error updating pagination:', error)
   }
@@ -238,9 +254,15 @@ const handlePageChange = (newPage: number) => {
   updatePagination(newPage)
 }
 
-const handleItemsPerPageChange = (newItemsPerPage: ItemsPerPageOption) => {
-  itemsPerPage.value = newItemsPerPage
-  updatePagination(page.value, newItemsPerPage)
+const handleItemsPerPageChange = (newItemsPerPage: number) => {
+  console.log('[ViewAllUsers] Items per page changed:', newItemsPerPage, 'current totalItems:', totalItems.value)
+  // Приводим к типу ItemsPerPageOption
+  const validItemsPerPage = (newItemsPerPage === 25 || newItemsPerPage === 50 || newItemsPerPage === 100) 
+    ? newItemsPerPage as ItemsPerPageOption 
+    : 25 as ItemsPerPageOption
+  
+  itemsPerPage.value = validItemsPerPage
+  updatePagination(page.value, validItemsPerPage)
 }
 
 // Обработчик изменения сортировки
@@ -363,6 +385,8 @@ onMounted(async () => {
     // Загружаем данные, даже если они есть в кэше
     // это позволит использовать кэш если данные актуальны
     await usersFetchService.fetchUsers()
+    // Логируем общее количество записей после загрузки
+    console.log('[ViewAllUsers] Total items after initial load:', totalItems.value)
   } catch (error) {
     console.error('[ViewAllUsers] Error loading initial users list:', error)
   }
@@ -426,15 +450,18 @@ onMounted(async () => {
           icon
           variant="text"
           class="mr-2 mb-2"
-          @click="refreshList"
           :loading="loading"
+          @click="refreshList"
         >
           <v-icon
             color="teal"
           >
             mdi-refresh
           </v-icon>
-          <v-tooltip activator="parent" location="bottom">
+          <v-tooltip 
+            activator="parent" 
+            location="bottom"
+          >
             {{ t('list.buttons.refreshHint') }}
           </v-tooltip>
         </v-btn>
@@ -473,41 +500,39 @@ onMounted(async () => {
       :headers="headers"
       :items="users"
       :loading="loading"
-      :items-length="totalItems"
       :items-per-page-options="[25, 50, 100]"
+      :server-items-length="totalItems"
+      must-sort
       class="users-table"
       @update:page="handlePageChange"
       @update:items-per-page="handleItemsPerPageChange"
       @update:sort-by="handleSortChange"
     >
-      <!-- Шаблон для колонки с чекбоксами -->
-      <template #[`item.selection`]="{ item }">
-        <v-checkbox
-          :model-value="isSelected(item.user_id)"
-          density="compact"
-          hide-details
-          @update:model-value="(value: boolean | null) => onSelectUser(item.user_id, value ?? false)"
-        />
-      </template>
-
-      <template #[`item.user_id`]="{ item }">
-        <span>{{ item.user_id }}</span>
-      </template>
-
-      <template #[`item.account_status`]="{ item }">
-        <v-chip 
-          :color="getStatusColor(item.account_status)" 
-          size="x-small">
-          {{ item.account_status }}
-        </v-chip>
-      </template>
-
-      <template #[`item.is_staff`]="{ item }">
-        <v-icon
-          :color="item.is_staff ? 'teal' : 'red-darken-4'"
-          :icon="item.is_staff ? 'mdi-check-circle' : 'mdi-minus-circle'"
-          size="x-small"
-        />
+      <!-- Используем шаблон bottom для замены стандартного футера -->
+      <template #bottom>
+        <div class="d-flex align-center justify-end pa-4">
+          <div class="d-flex align-center">
+            <div class="d-flex align-center mr-4">
+              <span class="text-caption mr-2">Items per page:</span>
+              <v-select
+                v-model="itemsPerPage"
+                density="compact"
+                variant="outlined"
+                hide-details
+                :items="[25, 50, 100]"
+                style="width: 90px; min-width: 90px;"
+              />
+            </div>
+            <span class="text-caption mr-4">
+              {{ (page - 1) * itemsPerPage + 1 }}-{{ Math.min(page * itemsPerPage, totalItems) }} of {{ totalItems }}
+            </span>
+            <v-pagination
+              v-model="page"
+              :length="Math.ceil(totalItems / itemsPerPage)"
+              :total-visible="7"
+            />
+          </div>
+        </div>
       </template>
     </v-data-table>
 
@@ -543,7 +568,10 @@ onMounted(async () => {
     </v-dialog>
     
     <!-- Модальное окно сброса пароля -->
-    <v-dialog v-model="showPasswordDialog" max-width="550">
+    <v-dialog 
+      v-model="showPasswordDialog" 
+      max-width="550"
+    >
       <ChangePassword
         :title="t('passwordChange.resetPasswordFor') + ' ' + selectedUserData.username"
         :uuid="selectedUserData.uuid"
@@ -556,5 +584,5 @@ onMounted(async () => {
 </template>
 
 <style scoped>
-
+/* Стили для компонента UsersList */
 </style>
