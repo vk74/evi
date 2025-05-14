@@ -22,5 +22,9 @@ Comments in files
     b. an explanation of the file functionality / algorythm, what type of objects it is working with, major interactions. 
     c. comment should should mention this is a frontend file, should contain file name but no path to the file
 
+При разработке или изменении кода:
+1. Thoroughly test each change before moving on to the next one
+2. Follow the principle of minimal changes
+3. Do not delete or optimize code without my consent.
 
 Переписку в чатах ведем на русском, но все комментарии и код пишем на английском.

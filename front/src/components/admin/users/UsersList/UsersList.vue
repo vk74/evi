@@ -1,12 +1,13 @@
 /**
  * @file Userslist.vue
- * @version 1.0.02
+ * @version 1.0.03
  * Компонент для отображения и управления списком пользователей системы.
  *
  * Функциональность:
  * - Отображение пользователей в табличном виде с пагинацией
  * - Поиск по полям UUID, username, email, first_name, last_name
  * - Сортировка по колонкам с серверной обработкой
+ * - Расширенная навигация по страницам (первая, предыдущая, следующая, последняя)
  * - Редактирование пользователей через UserEditor
  * - Сброс пароля пользователей через ChangePassword
  * - Оптимизированное кэширование данных
@@ -222,6 +223,43 @@ const refreshList = async () => {
     uiStore.showSuccessSnackbar(t('list.messages.refreshSuccess'))
   } catch (error) {
     console.error('[ViewAllUsers] Error refreshing users list:', error)
+  }
+}
+
+// Функции навигации для пагинатора
+const goToPrevPage = () => {
+  console.log('[ViewAllUsers] Navigate to previous page')
+  
+  if (page.value > 1) {
+    const newPage = page.value - 1
+    handlePageChange(newPage)
+  }
+}
+
+const goToNextPage = () => {
+  console.log('[ViewAllUsers] Navigate to next page')
+  
+  const maxPage = Math.ceil(totalItems.value / itemsPerPage.value)
+  if (page.value < maxPage) {
+    const newPage = page.value + 1
+    handlePageChange(newPage)
+  }
+}
+
+const goToFirstPage = () => {
+  console.log('[ViewAllUsers] Navigate to first page')
+  
+  if (page.value !== 1) {
+    handlePageChange(1)
+  }
+}
+
+const goToLastPage = () => {
+  console.log('[ViewAllUsers] Navigate to last page')
+  
+  const maxPage = Math.ceil(totalItems.value / itemsPerPage.value)
+  if (page.value !== maxPage) {
+    handlePageChange(maxPage)
   }
 }
 
@@ -526,11 +564,39 @@ onMounted(async () => {
             <span class="text-caption mr-4">
               {{ (page - 1) * itemsPerPage + 1 }}-{{ Math.min(page * itemsPerPage, totalItems) }} of {{ totalItems }}
             </span>
-            <v-pagination
-              v-model="page"
-              :length="Math.ceil(totalItems / itemsPerPage)"
-              :total-visible="7"
-            />
+            <div class="d-flex align-center">
+              <v-btn
+                icon="mdi-page-first"
+                size="small"
+                variant="text"
+                class="mr-1"
+                :disabled="page === 1"
+                @click="goToFirstPage"
+              />
+              <v-btn
+                icon="mdi-chevron-left"
+                size="small"
+                variant="text"
+                class="mr-1"
+                :disabled="page === 1"
+                @click="goToPrevPage"
+              />
+              <v-btn
+                icon="mdi-chevron-right"
+                size="small"
+                variant="text"
+                class="mr-1"
+                :disabled="page >= Math.ceil(totalItems / itemsPerPage)"
+                @click="goToNextPage"
+              />
+              <v-btn
+                icon="mdi-page-last"
+                size="small"
+                variant="text"
+                :disabled="page >= Math.ceil(totalItems / itemsPerPage)"
+                @click="goToLastPage"
+              />
+            </div>
           </div>
         </div>
       </template>
