@@ -1,6 +1,6 @@
 /**
  * @file Userslist.vue
- * @version 1.0.04
+ * @version 1.0.07
  * Компонент для отображения и управления списком пользователей системы.
  *
  * Функциональность:
@@ -8,7 +8,25 @@
  * - Поиск по полям UUID, username, email, first_name, last_name
  * - Сортировка по колонкам с серверной обработкой
  * - Расширенная навигация по страницам (первая, предыдущая, следующая, последняя)
- * - Редактирование пользователей через UserEditor
+ * - Редактирование пользователей че// Следим за изменениями страницы и количества элементов на странице
+watch([page, itemsPerPage], ([newPage, newItemsPerPage]) => {
+  console.log('[ViewAllUsers] Watch triggered - page:', newPage, 'itemsPerPage:', newItemsPerPage)
+  // Обновляем параметры в хранилище
+  usersStore.updateDisplayParams({
+    page: newPage,
+    itemsPerPage: newItemsPerPage
+  });
+  
+  // Запрашиваем данные через сервис
+  try {
+    usersFetchService.fetchUsers({
+      page: newPage,
+      itemsPerPage: newItemsPerPage
+    });
+  } catch (error) {
+    console.error('[ViewAllUsers] Error in watch handler:', error);
+  }
+});or
  * - Сброс пароля пользователей через ChangePassword
  * - Оптимизированное кэширование данных
  * - Корректное отображение счетчика общего количества записей
@@ -20,7 +38,7 @@ import deleteSelectedUsersService from './service.delete.selected.users'
 import { ref, computed, onMounted, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useStoreUsersList } from './state.users.list'
-import type { TableHeader, ItemsPerPageOption, IFetchUsersParams } from './types.users.list'
+import type { TableHeader, ItemsPerPageOption } from './types.users.list'
 import { useUsersAdminStore } from '../state.users.admin'
 import loadUserService from '../UserEditor/service.load.user'
 import { useUserEditorStore } from '../UserEditor/state.user.editor'
@@ -220,6 +238,11 @@ const refreshList = async () => {
   console.log('[ViewAllUsers] Forcing refresh of users list')
   try {
     await usersFetchService.refreshUsers()
+    
+    // Обновляем локальное значение page и itemsPerPage
+    page.value = usersStore.page
+    itemsPerPage.value = usersStore.itemsPerPage as ItemsPerPageOption
+    
     uiStore.showSuccessSnackbar(t('list.messages.refreshSuccess'))
   } catch (error) {
     console.error('[ViewAllUsers] Error refreshing users list:', error)
@@ -228,123 +251,62 @@ const refreshList = async () => {
 
 // Функции навигации для пагинатора
 const goToPrevPage = () => {
-  console.log('[ViewAllUsers] Navigate to previous page, current page:', page.value)
+  console.log('[ViewAllUsers] Navigate to previous page')
   
   if (page.value > 1) {
-    const newPage = page.value - 1
-    console.log('[ViewAllUsers] Setting previous page to:', newPage)
-    handlePageChange(newPage)
-  } else {
-    console.log('[ViewAllUsers] Cannot go to previous page, already on first page')
+    page.value = page.value - 1
+    // Обновление страницы происходит в watch
   }
 }
 
 const goToNextPage = () => {
-  console.log('[ViewAllUsers] Navigate to next page, current page:', page.value)
+  console.log('[ViewAllUsers] Navigate to next page')
   
   const maxPage = Math.ceil(totalItems.value / itemsPerPage.value)
-  console.log('[ViewAllUsers] Max page calculated:', maxPage)
-  
   if (page.value < maxPage) {
-    const newPage = page.value + 1
-    console.log('[ViewAllUsers] Setting next page to:', newPage)
-    handlePageChange(newPage)
-  } else {
-    console.log('[ViewAllUsers] Cannot go to next page, already on last page')
+    page.value = page.value + 1
+    // Обновление страницы происходит в watch
   }
 }
 
 const goToFirstPage = () => {
-  console.log('[ViewAllUsers] Navigate to first page, current page:', page.value)
+  console.log('[ViewAllUsers] Navigate to first page')
   
   if (page.value !== 1) {
-    console.log('[ViewAllUsers] Setting page to first page')
-    handlePageChange(1)
-  } else {
-    console.log('[ViewAllUsers] Already on first page')
+    page.value = 1
+    // Обновление страницы происходит в watch
   }
 }
 
 const goToLastPage = () => {
-  console.log('[ViewAllUsers] Navigate to last page, current page:', page.value)
+  console.log('[ViewAllUsers] Navigate to last page')
   
   const maxPage = Math.ceil(totalItems.value / itemsPerPage.value)
-  console.log('[ViewAllUsers] Max page calculated:', maxPage)
-  
   if (page.value !== maxPage) {
-    console.log('[ViewAllUsers] Setting page to last page:', maxPage)
-    handlePageChange(maxPage)
-  } else {
-    console.log('[ViewAllUsers] Already on last page')
+    page.value = maxPage
+    // Обновление страницы происходит в watch
   }
-}
-
-// Обработчик изменения страницы и количества элементов на странице
-const updatePagination = async (newPage?: number, newItemsPerPage?: ItemsPerPageOption) => {
-  // Используем типизированный объект вместо any
-  const params: Partial<IFetchUsersParams> = {}
-  
-  if (newPage !== undefined) {
-    params.page = newPage
-    console.log('[ViewAllUsers] Setting new page in params:', newPage)
-  }
-  
-  if (newItemsPerPage !== undefined) {
-    params.itemsPerPage = newItemsPerPage
-    console.log('[ViewAllUsers] Setting new itemsPerPage in params:', newItemsPerPage)
-  }
-  
-  console.log('[ViewAllUsers] Updating pagination with params:', params)
-  
-  try {
-    await usersFetchService.fetchUsers(params)
-    console.log('[ViewAllUsers] After pagination update:')
-    console.log('  - totalItems:', totalItems.value)
-    console.log('  - current page:', page.value)
-    console.log('  - items per page:', itemsPerPage.value)
-    console.log('  - usersStore.page:', usersStore.page)
-    
-    // Принудительно синхронизируем локальное значение страницы и значение в хранилище
-    page.value = usersStore.page
-  } catch (error) {
-    console.error('[ViewAllUsers] Error updating pagination:', error)
-  }
-}
-
-// Обработчики событий таблицы
-const handlePageChange = (newPage: number) => {
-  console.log('[ViewAllUsers] Handle page change to:', newPage)
-  page.value = newPage
-  updatePagination(newPage)
-}
-
-const handleItemsPerPageChange = (newItemsPerPage: number) => {
-  console.log('[ViewAllUsers] Items per page changed:', newItemsPerPage, 'current totalItems:', totalItems.value)
-  // Приводим к типу ItemsPerPageOption
-  const validItemsPerPage = (newItemsPerPage === 25 || newItemsPerPage === 50 || newItemsPerPage === 100) 
-    ? newItemsPerPage as ItemsPerPageOption 
-    : 25 as ItemsPerPageOption
-  
-  itemsPerPage.value = validItemsPerPage
-  updatePagination(page.value, validItemsPerPage)
 }
 
 // Обработчик изменения сортировки
-const handleSortChange = async (sortBy: string[]) => {
+const handleSortChange = (sortBy: string[]) => {
   // v-data-table возвращает массив полей и направлений
   // В нашем случае мы используем только первое поле
   if (sortBy.length > 0) {
     const [column, direction] = sortBy[0].split(':')
     const sortDesc = direction === 'desc'
     
-    try {
-      await usersFetchService.fetchUsers({
-        sortBy: column,
-        sortDesc
-      })
-    } catch (error) {
-      console.error('[ViewAllUsers] Error updating sort:', error)
-    }
+    // Обновляем параметры в хранилище и запрашиваем данные
+    usersStore.updateDisplayParams({
+      sortBy: column,
+      sortDesc
+    });
+    
+    // Запрашиваем данные с сервера
+    usersFetchService.fetchUsers({
+      sortBy: column,
+      sortDesc
+    });
   }
 }
 
@@ -357,10 +319,20 @@ const performSearch = async () => {
   isSearching.value = true
   
   try {
-    await usersFetchService.fetchUsers({
+    // Сначала обновляем параметры в хранилище
+    usersStore.updateDisplayParams({
       search: searchQuery.value,
       page: 1 // Сбрасываем страницу при поиске
-    })
+    });
+    
+    // Затем запрашиваем данные
+    await usersFetchService.fetchUsers({
+      search: searchQuery.value,
+      page: 1
+    });
+    
+    // Синхронизируем страницу с хранилищем
+    page.value = usersStore.page;
   } catch (error) {
     console.error('[ViewAllUsers] Error performing search:', error)
   } finally {
@@ -453,6 +425,19 @@ onMounted(async () => {
     console.log('[ViewAllUsers] Total items after initial load:', totalItems.value)
   } catch (error) {
     console.error('[ViewAllUsers] Error loading initial users list:', error)
+  }
+})
+
+// Следим за изменениями страницы и количества элементов на странице
+watch([page, itemsPerPage], async ([newPage, newItemsPerPage]) => {
+  console.log('[ViewAllUsers] Watch triggered - page:', newPage, 'itemsPerPage:', newItemsPerPage)
+  try {
+    await usersFetchService.fetchUsers({
+      page: newPage,
+      itemsPerPage: newItemsPerPage
+    })
+  } catch (error) {
+    console.error('[ViewAllUsers] Error updating page/itemsPerPage:', error)
   }
 })
 </script>
@@ -559,8 +544,8 @@ onMounted(async () => {
     </div>
 
     <v-data-table
-      :page="page"
-      :items-per-page="itemsPerPage"
+      v-model:page="page"
+      v-model:items-per-page="itemsPerPage"
       :headers="headers"
       :items="users"
       :loading="loading"
@@ -568,8 +553,6 @@ onMounted(async () => {
       :server-items-length="totalItems"
       must-sort
       class="users-table"
-      @update:page="handlePageChange"
-      @update:items-per-page="handleItemsPerPageChange"
       @update:sort-by="handleSortChange"
     >
       <!-- Используем шаблон bottom для замены стандартного футера -->
@@ -585,9 +568,13 @@ onMounted(async () => {
                 hide-details
                 :items="[25, 50, 100]"
                 style="width: 90px; min-width: 90px;"
+                @update:model-value="value => itemsPerPage = value as ItemsPerPageOption"
               />
             </div>
-            <span class="text-caption mr-4">
+            <span 
+              :key="`items-${page}-${itemsPerPage}-${totalItems}`"
+              class="text-caption mr-4"
+            >
               {{ (page - 1) * itemsPerPage + 1 }}-{{ Math.min(page * itemsPerPage, totalItems) }} of {{ totalItems }}
             </span>
             <div class="d-flex align-center">
