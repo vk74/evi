@@ -1,36 +1,15 @@
 /**
  * @file Userslist.vue
- * @version 1.0.07
+ * Version: 1.2
  * Компонент для отображения и управления списком пользователей системы.
  *
  * Функциональность:
  * - Отображение пользователей в табличном виде с пагинацией
  * - Поиск по полям UUID, username, email, first_name, last_name
  * - Сортировка по колонкам с серверной обработкой
- * - Расширенная навигация по страницам (первая, предыдущая, следующая, последняя)
- * - Редактирование пользователей че// Следим за изменениями страницы и количества элементов на странице
-watch([page, itemsPerPage], ([newPage, newItemsPerPage]) => {
-  console.log('[ViewAllUsers] Watch triggered - page:', newPage, 'itemsPerPage:', newItemsPerPage)
-  // Обновляем параметры в хранилище
-  usersStore.updateDisplayParams({
-    page: newPage,
-    itemsPerPage: newItemsPerPage
-  });
-  
-  // Запрашиваем данные через сервис
-  try {
-    usersFetchService.fetchUsers({
-      page: newPage,
-      itemsPerPage: newItemsPerPage
-    });
-  } catch (error) {
-    console.error('[ViewAllUsers] Error in watch handler:', error);
-  }
-});or
+ * - Редактирование пользователей через UserEditor
  * - Сброс пароля пользователей через ChangePassword
  * - Оптимизированное кэширование данных
- * - Корректное отображение счетчика общего количества записей
- * - Выбор количества записей на странице
  */
 <script setup lang="ts">
 import usersFetchService from './service.fetch.users'
@@ -38,7 +17,12 @@ import deleteSelectedUsersService from './service.delete.selected.users'
 import { ref, computed, onMounted, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useStoreUsersList } from './state.users.list'
-import type { TableHeader, ItemsPerPageOption } from './types.users.list'
+import type { 
+  TableHeader, 
+  ItemsPerPageOption, 
+  IFetchUsersParams,
+  ISortParams
+} from './types.users.list'
 import { useUsersAdminStore } from '../state.users.admin'
 import loadUserService from '../UserEditor/service.load.user'
 import { useUserEditorStore } from '../UserEditor/state.user.editor'
@@ -56,15 +40,25 @@ const uiStore = useUiStore()
 const userStore = useUserStore()
 
 // Параметры таблицы и поиска
-const page = ref<number>(usersStore.page)
-const itemsPerPage = ref<ItemsPerPageOption>(
-  // Обеспечиваем, что значение из хранилища соответствует типу ItemsPerPageOption
-  (usersStore.itemsPerPage === 25 || usersStore.itemsPerPage === 50 || usersStore.itemsPerPage === 100) 
-    ? usersStore.itemsPerPage as ItemsPerPageOption 
-    : 25 as ItemsPerPageOption
-)
-const searchQuery = ref<string>('')
-const isSearching = ref<boolean>(false)
+const page = ref<number>(usersStore.page);
+const itemsPerPage = ref<ItemsPerPageOption>(usersStore.itemsPerPage as ItemsPerPageOption);
+const searchQuery = ref<string>('');
+const isSearching = ref<boolean>(false);
+
+// Отслеживание сортировки
+const sortBy = ref<string | null>(usersStore.sortBy || null);
+const sortDesc = ref<boolean>(usersStore.sortDesc);
+
+// Наблюдатель за изменениями параметров пагинации (как в GroupsList)
+watch([page, itemsPerPage], ([newPage, newItemsPerPage]) => {
+  console.log(`[DEBUG-PAGINATION] watch triggered with:`, { page: newPage, itemsPerPage: newItemsPerPage });
+  
+  // Загружаем пользователей с новыми параметрами
+  usersFetchService.fetchUsers({
+    page: newPage,
+    itemsPerPage: newItemsPerPage
+  });
+});
 
 // Состояние диалогов
 const showDeleteDialog = ref(false)
@@ -83,11 +77,7 @@ const hasSelected = computed(() => usersStore.hasSelected)
 const hasOneSelected = computed(() => usersStore.hasOneSelected)
 const loading = computed(() => usersStore.loading)
 const users = computed(() => usersStore.currentUsers)
-const totalItems = computed(() => {
-  console.log('[ViewAllUsers] totalItems computed value:', usersStore.totalItems)
-  return usersStore.totalItems
-})
-
+const totalItems = computed(() => usersStore.totalItems)
 const isSearchEnabled = computed(() => 
   searchQuery.value.length >= 2 || searchQuery.value.length === 0
 )
@@ -154,11 +144,18 @@ const confirmDelete = async () => {
     console.log('[ViewAllUsers] Showing success notification')
     uiStore.showSuccessSnackbar(message)
     
+    // Обновляем список пользователей после удаления
+    await usersFetchService.fetchUsers()
+    
   } catch (error) {
     console.error('[ViewAllUsers] Error during users deletion:', error)
+    uiStore.showErrorSnackbar(
+      error instanceof Error ? error.message : 'Ошибка при удалении пользователей'
+    )
   } finally {
     console.log('[ViewAllUsers] Closing delete dialog')
     showDeleteDialog.value = false
+    usersStore.clearSelection()
   }
 }
 
@@ -238,75 +235,74 @@ const refreshList = async () => {
   console.log('[ViewAllUsers] Forcing refresh of users list')
   try {
     await usersFetchService.refreshUsers()
-    
-    // Обновляем локальное значение page и itemsPerPage
-    page.value = usersStore.page
-    itemsPerPage.value = usersStore.itemsPerPage as ItemsPerPageOption
-    
     uiStore.showSuccessSnackbar(t('list.messages.refreshSuccess'))
   } catch (error) {
     console.error('[ViewAllUsers] Error refreshing users list:', error)
-  }
-}
-
-// Функции навигации для пагинатора
-const goToPrevPage = () => {
-  console.log('[ViewAllUsers] Navigate to previous page')
-  
-  if (page.value > 1) {
-    page.value = page.value - 1
-    // Обновление страницы происходит в watch
-  }
-}
-
-const goToNextPage = () => {
-  console.log('[ViewAllUsers] Navigate to next page')
-  
-  const maxPage = Math.ceil(totalItems.value / itemsPerPage.value)
-  if (page.value < maxPage) {
-    page.value = page.value + 1
-    // Обновление страницы происходит в watch
-  }
-}
-
-const goToFirstPage = () => {
-  console.log('[ViewAllUsers] Navigate to first page')
-  
-  if (page.value !== 1) {
-    page.value = 1
-    // Обновление страницы происходит в watch
-  }
-}
-
-const goToLastPage = () => {
-  console.log('[ViewAllUsers] Navigate to last page')
-  
-  const maxPage = Math.ceil(totalItems.value / itemsPerPage.value)
-  if (page.value !== maxPage) {
-    page.value = maxPage
-    // Обновление страницы происходит в watch
+    uiStore.showErrorSnackbar(
+      error instanceof Error ? error.message : 'Ошибка обновления списка пользователей'
+    )
   }
 }
 
 // Обработчик изменения сортировки
-const handleSortChange = (sortBy: string[]) => {
-  // v-data-table возвращает массив полей и направлений
-  // В нашем случае мы используем только первое поле
-  if (sortBy.length > 0) {
-    const [column, direction] = sortBy[0].split(':')
-    const sortDesc = direction === 'desc'
+const handleSortChange = async (sortByInfo: any) => {
+  console.log('[ViewAllUsers] Sort changed:', sortByInfo)
+  
+  if (!sortByInfo || sortByInfo.length === 0) {
+    // Если сортировка отключена, сбрасываем
+    sortBy.value = null
+    sortDesc.value = false
     
-    // Обновляем параметры в хранилище и запрашиваем данные
-    usersStore.updateDisplayParams({
+    try {
+      await usersFetchService.fetchUsers({
+        sortBy: '',
+        sortDesc: false
+      })
+    } catch (error) {
+      console.error('[ViewAllUsers] Error resetting sort:', error)
+      uiStore.showErrorSnackbar(
+        error instanceof Error ? error.message : 'Ошибка при сбросе сортировки'
+      )
+    }
+    return
+  }
+  
+  // Парсим информацию о сортировке
+  const sortItem = sortByInfo[0]
+  let column: string
+  let direction: boolean
+  
+  if (typeof sortItem === 'string') {
+    // Если строка в формате "column:asc" или "column:desc"
+    const [col, dir] = sortItem.split(':')
+    column = col
+    direction = dir === 'desc'
+  } else if (sortItem && typeof sortItem === 'object') {
+    // Если объект в формате { key: 'column', order: 'asc'/'desc' }
+    column = sortItem.key
+    direction = sortItem.order === 'desc'
+  } else {
+    console.error('[ViewAllUsers] Invalid sort info format:', sortItem)
+    return
+  }
+  
+  // Обновляем локальное состояние
+  sortBy.value = column
+  sortDesc.value = direction
+  
+  // Отправляем запрос на сервер
+  try {
+    await usersFetchService.fetchUsers({
       sortBy: column,
-      sortDesc
-    });
-    
-    // Запрашиваем данные с сервера
-    usersFetchService.fetchUsers({
-      sortBy: column,
-      sortDesc
-    });
+      sortDesc: direction,
+      page: page.value,
+      itemsPerPage: itemsPerPage.value
+    })
+  } catch (error) {
+    console.error('[ViewAllUsers] Error updating sort:', error)
+    uiStore.showErrorSnackbar(
+      error instanceof Error ? error.message : 'Ошибка при обновлении сортировки'
+    )
   }
 }
 
@@ -319,22 +315,19 @@ const performSearch = async () => {
   isSearching.value = true
   
   try {
-    // Сначала обновляем параметры в хранилище
-    usersStore.updateDisplayParams({
-      search: searchQuery.value,
-      page: 1 // Сбрасываем страницу при поиске
-    });
-    
-    // Затем запрашиваем данные
+    // При поиске сбрасываем страницу на первую
+    page.value = 1
     await usersFetchService.fetchUsers({
       search: searchQuery.value,
-      page: 1
-    });
-    
-    // Синхронизируем страницу с хранилищем
-    page.value = usersStore.page;
+      page: 1,
+      sortBy: sortBy.value || '',
+      sortDesc: sortDesc.value
+    })
   } catch (error) {
     console.error('[ViewAllUsers] Error performing search:', error)
+    uiStore.showErrorSnackbar(
+      error instanceof Error ? error.message : 'Ошибка при выполнении поиска'
+    )
   } finally {
     isSearching.value = false
   }
@@ -415,29 +408,37 @@ const headers = computed<TableHeader[]>(() => [
   }
 ])
 
+// Функция для логирования состояния пагинации
+const logPaginationState = (source: string) => {
+  console.log(`[DEBUG-PAGINATION] [${source}] State:`, {
+    page: page.value,
+    itemsPerPage: itemsPerPage.value,
+    totalItems: totalItems.value,
+    userStorePage: usersStore.page,
+    userStoreItemsPerPage: usersStore.itemsPerPage
+  });
+}
+
 // Инициализация при монтировании компонента
 onMounted(async () => {
+  console.log('[ViewAllUsers] Component mounted, initializing...')
+  logPaginationState('onMounted-before');
+  
   try {
-    // Загружаем данные, даже если они есть в кэше
-    // это позволит использовать кэш если данные актуальны
-    await usersFetchService.fetchUsers()
-    // Логируем общее количество записей после загрузки
-    console.log('[ViewAllUsers] Total items after initial load:', totalItems.value)
+    // Загружаем начальные данные
+    await usersFetchService.fetchUsers({
+      page: page.value,
+      itemsPerPage: itemsPerPage.value,
+      sortBy: sortBy.value || '',
+      sortDesc: sortDesc.value
+    })
+
+    logPaginationState('onMounted-after');
   } catch (error) {
     console.error('[ViewAllUsers] Error loading initial users list:', error)
-  }
-})
-
-// Следим за изменениями страницы и количества элементов на странице
-watch([page, itemsPerPage], async ([newPage, newItemsPerPage]) => {
-  console.log('[ViewAllUsers] Watch triggered - page:', newPage, 'itemsPerPage:', newItemsPerPage)
-  try {
-    await usersFetchService.fetchUsers({
-      page: newPage,
-      itemsPerPage: newItemsPerPage
-    })
-  } catch (error) {
-    console.error('[ViewAllUsers] Error updating page/itemsPerPage:', error)
+    uiStore.showErrorSnackbar(
+      error instanceof Error ? error.message : 'Ошибка при загрузке списка пользователей'
+    )
   }
 })
 </script>
@@ -543,79 +544,56 @@ watch([page, itemsPerPage], async ([newPage, newItemsPerPage]) => {
       />
     </div>
 
+    <!-- v-data-table с отладочной информацией о пагинации -->
+    <div class="px-4 pb-2 d-flex align-center">
+      <div v-if="true" class="text-caption">
+        Page: {{ page }} | Items per page: {{ itemsPerPage }} | Total: {{ totalItems }} | 
+        Store Page: {{ usersStore.page }} | Store Items: {{ usersStore.itemsPerPage }}
+      </div>
+    </div>
+
     <v-data-table
+      :search="searchQuery"
       v-model:page="page"
       v-model:items-per-page="itemsPerPage"
       :headers="headers"
       :items="users"
       :loading="loading"
+      :items-length="totalItems"
       :items-per-page-options="[25, 50, 100]"
-      :server-items-length="totalItems"
-      must-sort
       class="users-table"
+      multi-sort
       @update:sort-by="handleSortChange"
     >
-      <!-- Используем шаблон bottom для замены стандартного футера -->
-      <template #bottom>
-        <div class="d-flex align-center justify-end pa-4">
-          <div class="d-flex align-center">
-            <div class="d-flex align-center mr-4">
-              <span class="text-caption mr-2">Items per page:</span>
-              <v-select
-                v-model="itemsPerPage"
-                density="compact"
-                variant="outlined"
-                hide-details
-                :items="[25, 50, 100]"
-                style="width: 90px; min-width: 90px;"
-                @update:model-value="value => itemsPerPage = value as ItemsPerPageOption"
-              />
-            </div>
-            <span 
-              :key="`items-${page}-${itemsPerPage}-${totalItems}`"
-              class="text-caption mr-4"
-            >
-              {{ (page - 1) * itemsPerPage + 1 }}-{{ Math.min(page * itemsPerPage, totalItems) }} of {{ totalItems }}
-            </span>
-            <div class="d-flex align-center">
-              <v-btn
-                icon="mdi-page-first"
-                size="small"
-                variant="text"
-                color="teal"
-                class="mr-1"
-                :disabled="page <= 1"
-                @click="goToFirstPage"
-              />
-              <v-btn
-                icon="mdi-chevron-left"
-                size="small"
-                variant="text"
-                color="teal"
-                class="mr-1"
-                :disabled="page <= 1"
-                @click="goToPrevPage"
-              />
-              <v-btn
-                icon="mdi-chevron-right"
-                size="small"
-                variant="text"
-                color="teal"
-                class="mr-1"
-                :disabled="page >= Math.ceil(totalItems / itemsPerPage)"
-                @click="goToNextPage"
-              />
-              <v-btn
-                icon="mdi-page-last"
-                size="small"
-                variant="text"
-                color="teal"
-                :disabled="page >= Math.ceil(totalItems / itemsPerPage)"
-                @click="goToLastPage"
-              />
-            </div>
-          </div>
-        </div>
+      <!-- Шаблон для колонки с чекбоксами -->
+      <template #[`item.selection`]="{ item }">
+        <v-checkbox
+          :model-value="isSelected(item.user_id)"
+          density="compact"
+          hide-details
+          @update:model-value="(value: boolean | null) => onSelectUser(item.user_id, value ?? false)"
+        />
+      </template>
+
+      <template #[`item.user_id`]="{ item }">
+        <span>{{ item.user_id }}</span>
+      </template>
+
+      <template #[`item.account_status`]="{ item }">
+        <v-chip 
+          :color="getStatusColor(item.account_status)" 
+          size="x-small"
+        >
+          {{ item.account_status }}
+        </v-chip>
+      </template>
+
+      <template #[`item.is_staff`]="{ item }">
+        <v-icon
+          :color="item.is_staff ? 'teal' : 'red-darken-4'"
+          :icon="item.is_staff ? 'mdi-check-circle' : 'mdi-minus-circle'"
+          size="x-small"
+        />
       </template>
     </v-data-table>
 
@@ -667,5 +645,7 @@ watch([page, itemsPerPage], async ([newPage, newItemsPerPage]) => {
 </template>
 
 <style scoped>
-/* Стили для компонента UsersList */
+.users-table :deep(.v-data-table-footer) {
+  border-top: thin solid rgba(var(--v-border-color), var(--v-border-opacity));
+}
 </style>
