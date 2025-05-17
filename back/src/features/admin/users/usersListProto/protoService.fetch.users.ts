@@ -1,6 +1,7 @@
 /**
- * @file service.fetch.users.ts - version 1.0.02
- * BACKEND service for fetching users data from database.
+ * @file protoService.fetch.users.ts
+ * Version: 1.0.0
+ * BACKEND service for fetching prototype users data with server-side processing.
  * 
  * Functionality:
  * - Retrieves users with pagination, sorting and filtering
@@ -12,12 +13,12 @@
 import { Request } from 'express';
 import { Pool } from 'pg';
 import { pool as pgPool } from '../../../../db/maindb';
-import { usersCache, CacheKey } from './cache.users.list';
-import { queries, buildSortClause } from './queries.users.list';
-import { IUser, IUsersResponse, IUsersFetchParams, UserError } from './types.users.list';
+import { usersProtoCache, CacheKey } from './protoCache.users.list';
+import { queries, buildSortClause } from './protoQueries.users.list';
+import { IUser, IUsersResponse, IUsersFetchParams, UserError } from './protoTypes.users.list';
 import { getRequestorUuidFromReq } from '../../../../core/helpers/get.requestor.uuid.from.req';
 import fabricEvents from '../../../../core/eventBus/fabric.events';
-import { USERS_FETCH_EVENTS } from './events.users.list';
+import { USERS_FETCH_EVENTS } from './protoEvents.users.list';
 
 // Explicitly set the type for pool
 const pool = pgPool as Pool;
@@ -46,7 +47,7 @@ function mapDbUserToInterface(dbUser: any): IUser {
 /**
  * User data service for fetching operations
  */
-export const usersFetchService = {
+export const protoUsersFetchService = {
   /**
    * Fetches users with filtering, sorting and pagination
    * @param params Query parameters
@@ -89,7 +90,7 @@ export const usersFetchService = {
       
       // Check if we can use cached data
       if (!forceRefresh) {
-        const cachedData = usersCache.get(cacheKey);
+        const cachedData = usersProtoCache.get(cacheKey);
         if (cachedData) {
           // Create event for cache hit
           await fabricEvents.createAndPublishEvent({
@@ -98,7 +99,7 @@ export const usersFetchService = {
             payload: { 
               cacheHit: true, 
               params,
-              requestorUuid 
+              requestorUuid
             }
           });
           
@@ -106,7 +107,7 @@ export const usersFetchService = {
         }
       } else {
         // If force refresh, invalidate the entry
-        usersCache.invalidate('refresh', undefined, cacheKey);
+        usersProtoCache.invalidate('refresh', undefined, cacheKey);
       }
       
       // Create event for cache miss/fetch from database
@@ -149,7 +150,7 @@ export const usersFetchService = {
       const response: IUsersResponse = { users, total };
       
       // Cache the result
-      usersCache.set(cacheKey, response);
+      usersProtoCache.set(cacheKey, response);
       
       // Create event for fetch completion
       await fabricEvents.createAndPublishEvent({
@@ -188,4 +189,4 @@ export const usersFetchService = {
   }
 };
 
-export default usersFetchService;
+export default protoUsersFetchService;

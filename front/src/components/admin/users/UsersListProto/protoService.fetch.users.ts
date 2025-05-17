@@ -92,7 +92,7 @@ export const usersFetchService = {
 
       // Make API request
       const response = await api.get<IUsersResponse>(
-        '/api/admin/users/fetch-users',
+        '/api/admin/users/proto/fetch-users',
         {
           params: {
             page: queryParams.page,

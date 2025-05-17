@@ -1,5 +1,5 @@
 /**
- * version: 1.0.01
+ * version: 1.0.03
  * Backend router file for admin functionality.
  * Defines routes for administrative functions focused on user and group management.
  * All routes are protected by JWT validation middleware.
@@ -10,8 +10,7 @@ import express, { Router } from 'express';
 import validateJWT from '../../guards/auth.validate.jwt';
 
 // Import controllers
-import fetchUsers from './users/usersList/controller.fetch.users';
-import deleteSelectedUsers from './users/usersList/controller.delete.users';
+import { fetchProtoUsers, deleteSelectedProtoUsers } from './users/usersListProto/routes.users.list.proto';
 import updateUserById from './users/userEditor/controller.update.user';
 import loadUserById from './users/userEditor/controller.load.user';
 import createUserController from './users/userEditor/controller.create.user';
@@ -27,10 +26,14 @@ const router: Router = express.Router();
 
 // Routes for Users
 router.post('/api/admin/users/create-new-user', validateJWT, createUserController);
-router.get('/api/admin/users/fetch-users', validateJWT, fetchUsers);
+router.get('/api/admin/users/fetch-users', validateJWT, fetchProtoUsers); // Временно используем прототипный контроллер для пустого UsersList
 router.get('/api/admin/users/fetch-user-by-userid/:userId', validateJWT, loadUserById);
 router.post('/api/admin/users/update-user-by-userid', validateJWT, updateUserById);
-router.post('/api/admin/users/delete-selected-users', validateJWT, deleteSelectedUsers);
+router.post('/api/admin/users/delete-selected-users', validateJWT, deleteSelectedProtoUsers); // Временно используем прототипный контроллер для пустого UsersList
+
+// Routes for Prototype Users List
+router.get('/api/admin/users/proto/fetch-users', validateJWT, fetchProtoUsers);
+router.post('/api/admin/users/proto/delete-selected-users', validateJWT, deleteSelectedProtoUsers);
 
 // Routes for Groups
 router.post('/api/admin/groups/create-new-group', validateJWT, createGroupController);

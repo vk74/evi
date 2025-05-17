@@ -1,6 +1,7 @@
 /**
- * @file controller.fetch.users.ts - version 1.0.02
- * Controller for handling user list fetch API requests.
+ * @file protoController.fetch.users.ts
+ * Version: 1.0.0
+ * Controller for handling prototype user list fetch API requests with server-side processing.
  * 
  * Functionality:
  * - Processes HTTP requests for user data
@@ -11,15 +12,15 @@
  */
 
 import { Request, Response } from 'express';
-import { usersFetchService } from './service.fetch.users';
-import { IUsersFetchParams, UserError } from './types.users.list';
+import { protoUsersFetchService } from './protoService.fetch.users';
+import { IUsersFetchParams, UserError } from './protoTypes.users.list';
 import fabricEvents from '../../../../core/eventBus/fabric.events';
-import { USERS_FETCH_CONTROLLER_EVENTS } from './events.users.list';
+import { USERS_FETCH_CONTROLLER_EVENTS } from './protoEvents.users.list';
 
 /**
  * Controller function for fetching users
  */
-async function fetchUsers(req: Request, res: Response): Promise<void> {
+async function fetchProtoUsers(req: Request, res: Response): Promise<void> {
   try {
     // Create event for incoming request
     await fabricEvents.createAndPublishEvent({
@@ -59,7 +60,7 @@ async function fetchUsers(req: Request, res: Response): Promise<void> {
     }
 
     // Handle the request through service, now passing the req object
-    const result = await usersFetchService.fetchUsers(params, req);
+    const result = await protoUsersFetchService.fetchUsers(params, req);
 
     // Create event for successful response
     await fabricEvents.createAndPublishEvent({
@@ -99,4 +100,4 @@ async function fetchUsers(req: Request, res: Response): Promise<void> {
   }
 }
 
-export default fetchUsers;
+export default fetchProtoUsers;

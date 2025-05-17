@@ -1,6 +1,7 @@
 /**
- * @file controller.delete.users.ts - version 1.0.02
- * Controller for handling user deletion API requests.
+ * @file protoController.delete.users.ts
+ * Version: 1.0.0
+ * Controller for handling prototype user deletion API requests with server-side processing.
  * 
  * Functionality:
  * - Processes HTTP requests for user deletion
@@ -11,15 +12,15 @@
  */
 
 import { Request, Response } from 'express';
-import { usersDeleteService } from './service.delete.users';
-import { UserError } from './types.users.list';
+import { protoUsersDeleteService } from './protoService.delete.users';
+import { UserError } from './protoTypes.users.list';
 import fabricEvents from '../../../../core/eventBus/fabric.events';
-import { USERS_DELETE_CONTROLLER_EVENTS } from './events.users.list';
+import { USERS_DELETE_CONTROLLER_EVENTS } from './protoEvents.users.list';
 
 /**
  * Controller function for deleting users
  */
-async function deleteSelectedUsers(req: Request, res: Response): Promise<void> {
+async function deleteSelectedProtoUsers(req: Request, res: Response): Promise<void> {
   try {
     // Create event for incoming request
     await fabricEvents.createAndPublishEvent({
@@ -49,7 +50,7 @@ async function deleteSelectedUsers(req: Request, res: Response): Promise<void> {
     }
 
     // Execute delete through service, now passing the req object
-    const deletedCount = await usersDeleteService.deleteSelectedUsers(req.body.userIds, req);
+    const deletedCount = await protoUsersDeleteService.deleteSelectedUsers(req.body.userIds, req);
 
     // Create event for successful response
     await fabricEvents.createAndPublishEvent({
@@ -92,4 +93,4 @@ async function deleteSelectedUsers(req: Request, res: Response): Promise<void> {
   }
 }
 
-export default deleteSelectedUsers;
+export default deleteSelectedProtoUsers;

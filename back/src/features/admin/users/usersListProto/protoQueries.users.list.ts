@@ -1,6 +1,7 @@
 /**
- * @file queries.users.list.ts
- * SQL queries for the users list management module.
+ * @file protoQueries.users.list.ts
+ * Version: 1.0.0
+ * SQL queries for the prototype users list management module with server-side processing.
  * 
  * Functionality:
  * - Provides parametrized queries for fetching users with filtering and sorting
@@ -8,7 +9,7 @@
  * - Supports pagination and search functionality
  */
 
-import { SortableColumn } from './types.users.list';
+import { SortableColumn } from './protoTypes.users.list';
 
 // Column mapping for sorting
 const SORT_COLUMNS: Record<string, SortableColumn> = {

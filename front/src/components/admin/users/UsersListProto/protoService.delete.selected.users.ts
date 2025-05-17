@@ -49,7 +49,7 @@ export const deleteSelectedUsersService = {
 
     try {
       const response = await api.post<{success: boolean, deletedCount: number}>(
-        '/api/admin/users/delete-selected-users',
+        '/api/admin/users/proto/delete-selected-users',
         { userIds }
       )
 

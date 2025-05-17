@@ -1,6 +1,7 @@
 /**
- * @file types.users.list.ts
- * BACKEND type definitions for the user management sub-module.
+ * @file protoTypes.users.list.ts
+ * Version: 1.0.0
+ * BACKEND type definitions for the prototype user management sub-module with server-side processing.
  * 
  * Functionality:
  * - Defines types and interfaces for user data structure

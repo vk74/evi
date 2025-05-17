@@ -1,6 +1,7 @@
 /**
- * @file cache.users.list.ts
- * Cache manager for users list data.
+ * @file protoCache.users.list.ts
+ * Version: 1.0.0
+ * Cache manager for prototype users list data with server-side processing.
  * 
  * Functionality:
  * - Maintains in-memory cache with parametrized keys
@@ -10,7 +11,7 @@
  * - Cache statistics and monitoring
  */
 
-import { IUsersResponse } from './types.users.list';
+import { IUsersResponse } from './protoTypes.users.list';
 
 // Cache configuration
 const CACHE_CONFIG = {
@@ -68,7 +69,7 @@ const createUsersCache = () => {
     
     if (!entry) {
       stats.misses++;
-      CACHE_CONFIG.ENABLE_LOGGING && console.log(`[UsersCache] Cache miss for key: ${key}`);
+      CACHE_CONFIG.ENABLE_LOGGING && console.log(`[Proto UsersCache] Cache miss for key: ${key}`);
       return null;
     }
     
@@ -76,7 +77,7 @@ const createUsersCache = () => {
     if (Date.now() - entry.timestamp > CACHE_CONFIG.TTL_MINUTES * 60 * 1000) {
       cache.delete(key);
       keyLastAccess.delete(key);
-      CACHE_CONFIG.ENABLE_LOGGING && console.log(`[UsersCache] Expired entry for key: ${key}`);
+      CACHE_CONFIG.ENABLE_LOGGING && console.log(`[Proto UsersCache] Expired entry for key: ${key}`);
       stats.misses++;
       return null;
     }
@@ -86,7 +87,7 @@ const createUsersCache = () => {
     keyLastAccess.set(key, Date.now());
     stats.hits++;
     
-    CACHE_CONFIG.ENABLE_LOGGING && console.log(`[UsersCache] Cache hit for key: ${key}`);
+    CACHE_CONFIG.ENABLE_LOGGING && console.log(`[Proto UsersCache] Cache hit for key: ${key}`);
     return entry.data;
   }
   
@@ -107,7 +108,7 @@ const createUsersCache = () => {
     if (oldestKey) {
       cache.delete(oldestKey);
       keyLastAccess.delete(oldestKey);
-      CACHE_CONFIG.ENABLE_LOGGING && console.log(`[UsersCache] Evicted LRU entry with key: ${oldestKey}`);
+      CACHE_CONFIG.ENABLE_LOGGING && console.log(`[Proto UsersCache] Evicted LRU entry with key: ${oldestKey}`);
     }
   }
   
@@ -130,7 +131,7 @@ const createUsersCache = () => {
     });
     
     keyLastAccess.set(key, Date.now());
-    CACHE_CONFIG.ENABLE_LOGGING && console.log(`[UsersCache] Stored data for key: ${key}`);
+    CACHE_CONFIG.ENABLE_LOGGING && console.log(`[Proto UsersCache] Stored data for key: ${key}`);
   }
   
   /**
@@ -144,7 +145,7 @@ const createUsersCache = () => {
         cache.clear();
         keyLastAccess.clear();
         stats.fullInvalidations++;
-        CACHE_CONFIG.ENABLE_LOGGING && console.log('[UsersCache] Complete cache invalidation');
+        CACHE_CONFIG.ENABLE_LOGGING && console.log('[Proto UsersCache] Complete cache invalidation');
         break;
         
       case 'create':
@@ -157,7 +158,7 @@ const createUsersCache = () => {
             stats.partialInvalidations++;
           }
         }
-        CACHE_CONFIG.ENABLE_LOGGING && console.log('[UsersCache] Invalidated non-filtered entries after user creation');
+        CACHE_CONFIG.ENABLE_LOGGING && console.log('[Proto UsersCache] Invalidated non-filtered entries after user creation');
         break;
         
       case 'update':
@@ -166,7 +167,7 @@ const createUsersCache = () => {
         cache.clear();
         keyLastAccess.clear();
         stats.fullInvalidations++;
-        CACHE_CONFIG.ENABLE_LOGGING && console.log(`[UsersCache] Cache invalidated after user ${type} operation`);
+        CACHE_CONFIG.ENABLE_LOGGING && console.log(`[Proto UsersCache] Cache invalidated after user ${type} operation`);
         break;
         
       case 'refresh':
@@ -176,7 +177,7 @@ const createUsersCache = () => {
           cache.delete(refreshKey);
           keyLastAccess.delete(refreshKey);
           stats.refreshInvalidations++;
-          CACHE_CONFIG.ENABLE_LOGGING && console.log(`[UsersCache] Refreshed cache for key: ${refreshKey}`);
+          CACHE_CONFIG.ENABLE_LOGGING && console.log(`[Proto UsersCache] Refreshed cache for key: ${refreshKey}`);
         }
         break;
     }
@@ -199,7 +200,7 @@ const createUsersCache = () => {
       }
       
       if (cleanedCount > 0) {
-        CACHE_CONFIG.ENABLE_LOGGING && console.log(`[UsersCache] Auto-cleanup: removed ${cleanedCount} expired entries`);
+        CACHE_CONFIG.ENABLE_LOGGING && console.log(`[Proto UsersCache] Auto-cleanup: removed ${cleanedCount} expired entries`);
         stats.expirations += cleanedCount;
       }
     }, CACHE_CONFIG.CLEANUP_INTERVAL * 1000);
@@ -239,4 +240,4 @@ const createUsersCache = () => {
 };
 
 // Export singleton instance
-export const usersCache = createUsersCache();
+export const usersProtoCache = createUsersCache();

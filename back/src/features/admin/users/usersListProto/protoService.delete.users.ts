@@ -1,6 +1,7 @@
 /**
- * @file service.delete.users.ts - version 1.0.02
- * BACKEND service for user deletion operations.
+ * @file protoService.delete.users.ts
+ * Version: 1.0.0
+ * BACKEND service for prototype user deletion operations with server-side processing.
  * 
  * Functionality:
  * - Handles deletion of users by UUID
@@ -12,11 +13,11 @@
 import { Request } from 'express';
 import { Pool } from 'pg';
 import { pool as pgPool } from '../../../../db/maindb';
-import { queries } from './queries.users.list';
-import { usersCache } from './cache.users.list';
+import { queries } from './protoQueries.users.list';
+import { usersProtoCache } from './protoCache.users.list';
 import { getRequestorUuidFromReq } from '../../../../core/helpers/get.requestor.uuid.from.req';
 import fabricEvents from '../../../../core/eventBus/fabric.events';
-import { USERS_DELETE_EVENTS } from './events.users.list';
+import { USERS_DELETE_EVENTS } from './protoEvents.users.list';
 
 // Cast pool to correct type
 const pool = pgPool as Pool;
@@ -24,7 +25,7 @@ const pool = pgPool as Pool;
 /**
  * Service for handling user deletion operations
  */
-export const usersDeleteService = {
+export const protoUsersDeleteService = {
   /**
    * Deletes selected users by their UUIDs
    * @param userIds Array of user UUIDs to delete
@@ -59,7 +60,7 @@ export const usersDeleteService = {
       
       // Invalidate cache after successful deletion
       if (deletedCount > 0) {
-        usersCache.invalidate('delete');
+        usersProtoCache.invalidate('delete');
         
         // Create event for cache invalidation
         await fabricEvents.createAndPublishEvent({
@@ -99,13 +100,11 @@ export const usersDeleteService = {
       
       throw {
         code: 'DATABASE_ERROR',
-        message: 'Error occurred while deleting users',
-        details: process.env.NODE_ENV === 'development' 
-          ? (error instanceof Error ? error.message : String(error)) 
-          : undefined
+        message: 'Error deleting users',
+        details: process.env.NODE_ENV === 'development' ? error : undefined
       };
     }
   }
 };
 
-export default usersDeleteService;
+export default protoUsersDeleteService;
