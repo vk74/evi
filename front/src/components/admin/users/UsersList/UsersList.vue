@@ -1,15 +1,15 @@
 /**
  * @file Userslist.vue
- * Version: 1.2
+ * Version: 1.2.02
  * Компонент для отображения и управления списком пользователей системы.
  *
  * Функциональность:
  * - Отображение пользователей в табличном виде с пагинацией
- * - Поиск по полям UUID, username, email, first_name, last_name
+ * - Поиск по полям UUID, username, email, first_name, last_name (серверный)
  * - Сортировка по колонкам с серверной обработкой
  * - Редактирование пользователей через UserEditor
  * - Сброс пароля пользователей через ChangePassword
- * - Оптимизированное кэширование данных
+ * - Оптимизированное кэширование данных (серверное)
  */
 <script setup lang="ts">
 import usersFetchService from './service.fetch.users'
@@ -21,7 +21,7 @@ import type {
   TableHeader, 
   ItemsPerPageOption, 
   IFetchUsersParams,
-  ISortParams
+  // ISortParams // No longer directly used here, managed by local refs
 } from './types.users.list'
 import { useUsersAdminStore } from '../state.users.admin'
 import loadUserService from '../UserEditor/service.load.user'
@@ -42,23 +42,12 @@ const userStore = useUserStore()
 // Параметры таблицы и поиска
 const page = ref<number>(usersStore.page);
 const itemsPerPage = ref<ItemsPerPageOption>(usersStore.itemsPerPage as ItemsPerPageOption);
-const searchQuery = ref<string>('');
+const searchQuery = ref<string>(usersStore.search || ''); // Initialize with store's search
 const isSearching = ref<boolean>(false);
 
 // Отслеживание сортировки
 const sortBy = ref<string | null>(usersStore.sortBy || null);
 const sortDesc = ref<boolean>(usersStore.sortDesc);
-
-// Наблюдатель за изменениями параметров пагинации (как в GroupsList)
-watch([page, itemsPerPage], ([newPage, newItemsPerPage]) => {
-  console.log(`[DEBUG-PAGINATION] watch triggered with:`, { page: newPage, itemsPerPage: newItemsPerPage });
-  
-  // Загружаем пользователей с новыми параметрами
-  usersFetchService.fetchUsers({
-    page: newPage,
-    itemsPerPage: newItemsPerPage
-  });
-});
 
 // Состояние диалогов
 const showDeleteDialog = ref(false)
@@ -145,7 +134,14 @@ const confirmDelete = async () => {
     uiStore.showSuccessSnackbar(message)
     
     // Обновляем список пользователей после удаления
-    await usersFetchService.fetchUsers()
+    // Fetch with current parameters to maintain view
+    await usersFetchService.fetchUsers({
+        page: page.value,
+        itemsPerPage: itemsPerPage.value,
+        sortBy: sortBy.value || '',
+        sortDesc: sortDesc.value,
+        search: searchQuery.value
+    })
     
   } catch (error) {
     console.error('[ViewAllUsers] Error during users deletion:', error)
@@ -234,7 +230,21 @@ const editUser = async () => {
 const refreshList = async () => {
   console.log('[ViewAllUsers] Forcing refresh of users list')
   try {
-    await usersFetchService.refreshUsers()
+    // Invalidate cache for current params and refetch
+    usersStore.invalidateCache({
+        page: page.value,
+        itemsPerPage: itemsPerPage.value,
+        sortBy: sortBy.value || '',
+        sortDesc: sortDesc.value,
+        search: searchQuery.value
+    });
+    await usersFetchService.fetchUsers({
+        page: page.value,
+        itemsPerPage: itemsPerPage.value,
+        sortBy: sortBy.value || '',
+        sortDesc: sortDesc.value,
+        search: searchQuery.value
+    })
     uiStore.showSuccessSnackbar(t('list.messages.refreshSuccess'))
   } catch (error) {
     console.error('[ViewAllUsers] Error refreshing users list:', error)
@@ -244,74 +254,83 @@ const refreshList = async () => {
   }
 }
 
-// Обработчик изменения сортировки
-const handleSortChange = async (sortByInfo: any) => {
-  console.log('[ViewAllUsers] Sort changed:', sortByInfo)
-  
-  if (!sortByInfo || sortByInfo.length === 0) {
-    // Если сортировка отключена, сбрасываем
-    sortBy.value = null
-    sortDesc.value = false
-    
+// Define a more specific type for sortByInfo from v-data-table options
+type VDataTableSortByItem = { key: string; order: 'asc' | 'desc' };
+
+// Новый обработчик для @update:options
+const updateOptionsAndFetch = async (options: { page?: number, itemsPerPage?: number, sortBy?: Readonly<VDataTableSortByItem[]> }) => {
+  console.log('[ViewAllUsers] @update:options triggered with:', JSON.parse(JSON.stringify(options)));
+
+  let needsFetch = false;
+
+  if (options.page !== undefined && page.value !== options.page) {
+    page.value = options.page;
+    needsFetch = true;
+  }
+  if (options.itemsPerPage !== undefined && itemsPerPage.value !== options.itemsPerPage) {
+    itemsPerPage.value = options.itemsPerPage;
+    needsFetch = true;
+  }
+
+  if (options.sortBy) {
+    if (options.sortBy.length > 0) {
+      const sortItem = options.sortBy[0];
+      if (sortBy.value !== sortItem.key || sortDesc.value !== (sortItem.order === 'desc')) {
+        sortBy.value = sortItem.key;
+        sortDesc.value = sortItem.order === 'desc';
+        // When sort changes, Vuetify's v-data-table usually resets to page 1 if not controlled
+        // Ensure our state reflects this if we want to go to page 1 on sort.
+        // If the options.page is already 1, this won't mark it as a new page change.
+        if (page.value !== 1) {
+          page.value = 1; // Reset to page 1 on sort change
+        }
+        needsFetch = true;
+      }
+    } else if (sortBy.value !== null) { // If sortBy is cleared
+      sortBy.value = null;
+      sortDesc.value = false;
+      if (page.value !== 1) {
+        page.value = 1;
+      }
+      needsFetch = true;
+    }
+  }
+
+  if (needsFetch) {
+    console.log('[ViewAllUsers] Fetching users due to options change:', {
+      page: page.value,
+      itemsPerPage: itemsPerPage.value,
+      sortBy: sortBy.value,
+      sortDesc: sortDesc.value,
+      search: searchQuery.value
+    });
     try {
       await usersFetchService.fetchUsers({
-        sortBy: '',
-        sortDesc: false
-      })
+        page: page.value,
+        itemsPerPage: itemsPerPage.value,
+        sortBy: sortBy.value || '',
+        sortDesc: sortDesc.value,
+        search: searchQuery.value
+      });
     } catch (error) {
-      console.error('[ViewAllUsers] Error resetting sort:', error)
+      console.error('[ViewAllUsers] Error fetching users after options change:', error);
       uiStore.showErrorSnackbar(
-        error instanceof Error ? error.message : 'Ошибка при сбросе сортировки'
-      )
+        error instanceof Error ? error.message : 'Ошибка при загрузке данных пользователей'
+      );
     }
-    return
-  }
-  
-  // Парсим информацию о сортировке
-  const sortItem = sortByInfo[0]
-  let column: string
-  let direction: boolean
-  
-  if (typeof sortItem === 'string') {
-    // Если строка в формате "column:asc" или "column:desc"
-    const [col, dir] = sortItem.split(':')
-    column = col
-    direction = dir === 'desc'
-  } else if (sortItem && typeof sortItem === 'object') {
-    // Если объект в формате { key: 'column', order: 'asc'/'desc' }
-    column = sortItem.key
-    direction = sortItem.order === 'desc'
   } else {
-    console.error('[ViewAllUsers] Invalid sort info format:', sortItem)
-    return
-  }
-  
-  // Обновляем локальное состояние
-  sortBy.value = column
-  sortDesc.value = direction
-  
-  // Отправляем запрос на сервер
-  try {
-    await usersFetchService.fetchUsers({
-      sortBy: column,
-      sortDesc: direction,
-      page: page.value,
-      itemsPerPage: itemsPerPage.value
-    })
-  } catch (error) {
-    console.error('[ViewAllUsers] Error updating sort:', error)
-    uiStore.showErrorSnackbar(
-      error instanceof Error ? error.message : 'Ошибка при обновлении сортировки'
-    )
+    console.log('[ViewAllUsers] No fetch needed, options did not result in state change requiring fetch.');
   }
 }
 
 // Функция поиска с debounce
 const performSearch = async () => {
   if (!isSearchEnabled.value && searchQuery.value.length === 1) {
+    console.log('[ViewAllUsers] Search query too short, not performing search.');
     return // Не выполняем поиск если длина строки 1 символ
   }
   
+  console.log('[ViewAllUsers] Performing search for:', searchQuery.value);
   isSearching.value = true
   
   try {
@@ -319,7 +338,8 @@ const performSearch = async () => {
     page.value = 1
     await usersFetchService.fetchUsers({
       search: searchQuery.value,
-      page: 1,
+      page: 1, // Reset to page 1 on new search
+      itemsPerPage: itemsPerPage.value,
       sortBy: sortBy.value || '',
       sortDesc: sortDesc.value
     })
@@ -334,24 +354,28 @@ const performSearch = async () => {
 }
 
 // Создаем debounced версию функции поиска
-const debouncedSearch = debounce(performSearch, 800)
+const debouncedSearch = debounce(performSearch, 500) // Updated to 500ms
 
 // Слушаем изменения строки поиска
-watch(searchQuery, () => {
+watch(searchQuery, (newValue, oldValue) => {
+  console.log('[ViewAllUsers] Search query changed from', oldValue, 'to', newValue);
   debouncedSearch()
 })
 
 // Добавляем обработчик очистки поля поиска
 const handleClearSearch = () => {
-  // При нажатии на крестик просто очищаем поле, но не запускаем поиск
+  console.log('[ViewAllUsers] Search cleared');
+  // При нажатии на крестик просто очищаем поле, 
   // Поиск с пустой строкой будет запущен через обычный watch с debounce
-  searchQuery.value = ''
+  searchQuery.value = '' 
 }
 
 // Обработчик нажатия Enter в поле поиска
 const handleSearchKeydown = (event: KeyboardEvent) => {
   if (event.key === 'Enter') {
-    debouncedSearch.flush() // Немедленно выполняем поиск
+    console.log('[ViewAllUsers] Enter pressed in search, flushing debounce');
+    debouncedSearch.cancel(); // Cancel any pending debounced calls
+    performSearch(); // Perform search immediately
   }
 }
 
@@ -415,7 +439,10 @@ const logPaginationState = (source: string) => {
     itemsPerPage: itemsPerPage.value,
     totalItems: totalItems.value,
     userStorePage: usersStore.page,
-    userStoreItemsPerPage: usersStore.itemsPerPage
+    userStoreItemsPerPage: usersStore.itemsPerPage,
+    sortBy: sortBy.value,
+    sortDesc: sortDesc.value,
+    search: searchQuery.value
   });
 }
 
@@ -425,12 +452,13 @@ onMounted(async () => {
   logPaginationState('onMounted-before');
   
   try {
-    // Загружаем начальные данные
+    // Загружаем начальные данные, используя текущие значения (включая из стора)
     await usersFetchService.fetchUsers({
       page: page.value,
       itemsPerPage: itemsPerPage.value,
       sortBy: sortBy.value || '',
-      sortDesc: sortDesc.value
+      sortDesc: sortDesc.value,
+      search: searchQuery.value
     })
 
     logPaginationState('onMounted-after');
@@ -505,14 +533,13 @@ onMounted(async () => {
         >
           <v-icon
             color="teal"
-          >
-            mdi-refresh
-          </v-icon>
+            icon="mdi-refresh"
+          />
           <v-tooltip 
-            activator="parent" 
+            activator="parent"
             location="bottom"
           >
-            {{ t('list.buttons.refreshHint') }}
+            {{ t('list.buttons.refresh') }}
           </v-tooltip>
         </v-btn>
       </div>
@@ -545,17 +572,18 @@ onMounted(async () => {
     </div>
 
     <!-- v-data-table с отладочной информацией о пагинации -->
-    <div class="px-4 pb-2 d-flex align-center">
-      <div v-if="true" class="text-caption">
-        Page: {{ page }} | Items per page: {{ itemsPerPage }} | Total: {{ totalItems }} | 
-        Store Page: {{ usersStore.page }} | Store Items: {{ usersStore.itemsPerPage }}
-      </div>
+    <div 
+      v-if="true" 
+      class="px-4 pb-2 d-flex align-center text-caption"
+    >
+      Page: {{ page }} | Items per page: {{ itemsPerPage }} | Total: {{ totalItems }} | 
+      Store Page: {{ usersStore.page }} | Store Items: {{ usersStore.itemsPerPage }} |
+      SortBy: {{ sortBy }} | SortDesc: {{ sortDesc }} | Search: {{ searchQuery }}
     </div>
 
     <v-data-table
-      :search="searchQuery"
-      v-model:page="page"
-      v-model:items-per-page="itemsPerPage"
+      :page="page"
+      :items-per-page="itemsPerPage"
       :headers="headers"
       :items="users"
       :loading="loading"
@@ -563,7 +591,8 @@ onMounted(async () => {
       :items-per-page-options="[25, 50, 100]"
       class="users-table"
       multi-sort
-      @update:sort-by="handleSortChange"
+      :sort-by="sortBy ? [{ key: sortBy, order: sortDesc ? 'desc' : 'asc' }] : []"
+      @update:options="updateOptionsAndFetch"
     >
       <!-- Шаблон для колонки с чекбоксами -->
       <template #[`item.selection`]="{ item }">
@@ -604,7 +633,7 @@ onMounted(async () => {
     >
       <v-card>
         <v-card-title class="text-subtitle-1 text-wrap">
-          {{ t('list.messages.confirmDelete', { count: selectedCount }) }}
+          {{ t('list.messages.confirmDelete') }}
         </v-card-title>
         <v-card-actions>
           <v-spacer />
