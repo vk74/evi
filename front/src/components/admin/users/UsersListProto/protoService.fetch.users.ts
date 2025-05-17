@@ -1,5 +1,6 @@
 /**
- * service.fetch.users.ts
+ * protoService.fetch.users.ts
+ * Version: 1.0.0
  * FRONTEND service for fetching and managing users list data from API.
  *
  * Functionality:
@@ -9,19 +10,19 @@
  * - Provides error handling and logging
  */
 import { api } from '@/core/api/service.axios'
-import { useStoreUsersList } from './state.users.list'
+import { useStoreUsersList } from './protoState.users.list'
 import { useUserStore } from '@/core/state/userstate'
 import { useUiStore } from '@/core/state/uistate'
 import { 
   IFetchUsersParams, 
   IUsersResponse,
   IApiError
-} from './types.users.list'
+} from './protoTypes.users.list'
 
 // Logger for main operations
 const logger = {
-  info: (message: string, meta?: any) => console.log(`[UsersFetchService] ${message}`, meta || ''),
-  error: (message: string, error?: any) => console.error(`[UsersFetchService] ${message}`, error || '')
+  info: (message: string, meta?: any) => console.log(`[ProtoUsersFetchService] ${message}`, meta || ''),
+  error: (message: string, error?: any) => console.error(`[ProtoUsersFetchService] ${message}`, error || '')
 }
 
 // For request cancellation

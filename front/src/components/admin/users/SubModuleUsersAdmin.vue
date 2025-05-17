@@ -17,6 +17,7 @@ import type { UserSectionId, Section } from './types.users.admin'
 
 // Async components for lazy loading
 const UsersList = defineAsyncComponent(() => import('./UsersList/UsersList.vue'))
+const UsersListProto = defineAsyncComponent(() => import('./UsersListProto/protoUsersList.vue'))
 const GroupsList = defineAsyncComponent(() => import('./GroupsList/GroupsList.vue'))
 const UserEditor = defineAsyncComponent(() => import('./UserEditor/UserEditor.vue'))
 const GroupEditor = defineAsyncComponent(() => import('./GroupEditor/GroupEditor.vue'))
@@ -31,6 +32,11 @@ const sections = computed((): Section[] => [
     id: 'users',
     title: t('admin.users.sections.usersList'),
     icon: 'mdi-account-multiple-outline'
+  },
+  {
+    id: 'users-proto',
+    title: 'users list proto',
+    icon: 'mdi-flask-outline'
   },
   {
     id: 'user-editor',
@@ -90,7 +96,8 @@ const switchSection = (sectionId: UserSectionId): void => {
 
     <!-- Working area -->
     <div class="working-area">
-      <UsersList v-if="activeSection === 'users'" />     
+      <UsersList v-if="activeSection === 'users'" />
+      <UsersListProto v-if="activeSection === 'users-proto'" />
       <UserEditor
         v-if="activeSection === 'user-editor'"
         mode="create"

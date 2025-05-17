@@ -18,6 +18,9 @@ import userEditorEn from '@/components/admin/users/UserEditor/translation.user.e
 import usersListRu from '@/components/admin/users/UsersList/translation.users.list.ru.json'
 import usersListEn from '@/components/admin/users/UsersList/translation.users.list.en.json'
 
+import usersListProtoRu from '@/components/admin/users/UsersListProto/protoTranslation.users.list.ru.json'
+import usersListProtoEn from '@/components/admin/users/UsersListProto/protoTranslation.users.list.en.json'
+
 import groupsListRu from '@/components/admin/users/GroupsList/translation.groups.list.ru.json'
 import groupsListEn from '@/components/admin/users/GroupsList/translation.groups.list.en.json'
 
@@ -37,6 +40,7 @@ export default {
       adminModuleRu,
       userEditorRu,
       usersListRu,
+      usersListProtoRu,
       validationCommonFieldsRulesRu,
       groupsListRu,
       groupsEditorRu
@@ -47,6 +51,7 @@ export default {
       adminModuleEn,
       userEditorEn,
       usersListEn,
+      usersListProtoEn,
       validationCommonFieldsRulesEn,
       groupsListEn,
       groupsEditorEn

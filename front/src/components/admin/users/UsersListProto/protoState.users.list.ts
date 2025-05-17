@@ -1,5 +1,6 @@
 /**
- * state.users.list.ts
+ * protoState.users.list.ts
+ * Version: 1.0.0
  * Pinia store for managing users list state with optimized caching.
  * 
  * Functionality:
@@ -9,8 +10,8 @@
  * - Selection state for multi-select operations
  * 
  * Used by:
- * - UsersList.vue component
- * - service.fetch.users.ts service
+ * - protoUsersList.vue component
+ * - protoService.fetch.users.ts service
  */
 
 import { defineStore } from 'pinia'
@@ -25,7 +26,7 @@ import {
     CacheEntry,
     IPaginationParams,
     CacheStats
-} from './types.users.list'
+} from './protoTypes.users.list'
 
 // Configuration
 const CACHE_CONFIG = {
@@ -40,7 +41,7 @@ const logger = {
     error: (message: string, meta?: any) => console.error(`[UsersStore] ${message}`, meta || '')
 };
 
-export const useStoreUsersList = defineStore('viewAllUsers', () => {
+export const useStoreUsersList = defineStore('protoViewAllUsers', () => {
     // User store for auth state
     const userStore = useUserStore();
     

@@ -1,5 +1,6 @@
 /**
- * service.delete.selected.users.ts
+ * protoService.delete.selected.users.ts
+ * Version: 1.0.0
  * FRONTEND service for deleting selected users.
  *
  * Functionality:
@@ -8,14 +9,14 @@
  * - Returns count of deleted users
  */
 import { api } from '@/core/api/service.axios'
-import { useStoreUsersList } from './state.users.list'
+import { useStoreUsersList } from './protoState.users.list'
 import { useUserStore } from '@/core/state/userstate'
-import usersFetchService from './service.fetch.users'
+import usersFetchService from './protoService.fetch.users'
 
 // Logger for main operations
 const logger = {
-  info: (message: string, meta?: any) => console.log(`[DeleteUsersService] ${message}`, meta || ''),
-  error: (message: string, error?: any) => console.error(`[DeleteUsersService] ${message}`, error || '')
+  info: (message: string, meta?: any) => console.log(`[ProtoDeleteUsersService] ${message}`, meta || ''),
+  error: (message: string, error?: any) => console.error(`[ProtoDeleteUsersService] ${message}`, error || '')
 }
 
 /**
