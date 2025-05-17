@@ -1,4 +1,4 @@
-// version: 1.0.08
+// version: 1.0.09
 // Central registry for all event domain catalogs in the application
 // This file serves as a registry for all event references across different modules
 
@@ -16,12 +16,7 @@ export const eventReferenceFiles: Record<string, string[]> = {
     path.resolve(__dirname, '../../../features/admin/users/userEditor/events.user.editor.ts')
   ],
   
-  // Users list events (now using proto events)
-  usersList: [
-    path.resolve(__dirname, '../../../features/admin/users/usersListProto/protoEvents.users.list.ts')
-  ],
-  
-  // Proto users list events
+  // Users list events (fully migrated to prototype implementation)
   usersListProto: [
     path.resolve(__dirname, '../../../features/admin/users/usersListProto/protoEvents.users.list.ts')
   ],
