@@ -314,8 +314,8 @@ const headers = computed<TableHeader[]>(() => [
   { title: t('admin.users.list.table.headers.id'), key: 'user_id', width: '200px' },
   { title: t('admin.users.list.table.headers.username'), key: 'username', width: '150px' },
   { title: t('admin.users.list.table.headers.email'), key: 'email', width: '200px' },
-  { title: t('admin.users.list.table.headers.firstName'), key: 'first_name', width: '150px' },
   { title: t('admin.users.list.table.headers.lastName'), key: 'last_name', width: '150px' },
+  { title: t('admin.users.list.table.headers.firstName'), key: 'first_name', width: '150px' },
   { title: t('admin.users.list.table.headers.middleName'), key: 'middle_name', width: '150px' },
   { title: t('admin.users.list.table.headers.status'), key: 'account_status', width: '100px' },
   { title: t('admin.users.list.table.headers.isStaff'), key: 'is_staff', width: '80px' }
