@@ -21,6 +21,11 @@ export const eventReferenceFiles: Record<string, string[]> = {
     path.resolve(__dirname, '../../../features/admin/users/usersListProto/protoEvents.users.list.ts')
   ],
   
+  // Users list events (production implementation)
+  usersList: [
+    path.resolve(__dirname, '../../../features/admin/users/usersList/events.users.list.ts')
+  ],
+  
   // Groups list events
   groupsList: [
     path.resolve(__dirname, '../../../features/admin/users/groupsList/events.groups.list.ts')

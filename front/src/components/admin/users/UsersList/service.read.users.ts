@@ -51,9 +51,17 @@ const usersService = {
             
             // Clear any previous errors
             store.setError(null);
-        } catch (error: any) {
+        } catch (error: unknown) {
             // Handle error
-            const errorMessage = error.response?.data?.message || error.message || 'Unknown error';
+            let errorMessage = 'Unknown error';
+            
+            if (error instanceof Error) {
+                errorMessage = error.message;
+            } else if (typeof error === 'object' && error !== null) {
+                const errorObj = error as { response?: { data?: { message?: string } }, message?: string };
+                errorMessage = errorObj.response?.data?.message || errorObj.message || errorMessage;
+            }
+            
             console.error('[UsersService] Error fetching users:', errorMessage);
             store.setError(`Error fetching users: ${errorMessage}`);
             throw error;
@@ -64,15 +72,49 @@ const usersService = {
     },
 
     /**
-     * Refreshes the user data in the store
+     * Refreshes the user data in the store and backend cache
      * @returns Promise<void>
      */
     async refreshUsers(): Promise<void> {
         const store = useStoreUsersList();
         // Clear the current cache first
         store.clearCache();
-        // Fetch fresh data
-        await this.fetchUsers();
+        
+        try {
+            // Set loading state
+            store.setLoading(true);
+            console.log('[UsersService] Refreshing users data...');
+
+            // Make API request with refresh parameter to clear backend cache
+            const response = await api.get<IUsersResponse>('/users/list', {
+                params: { refresh: true }
+            });
+            
+            // Update store with fresh data
+            const users = response.data.items;
+            console.log(`[UsersService] Refreshed data with ${users.length} users`);
+            store.setUsers(users);
+            
+            // Clear any previous errors
+            store.setError(null);
+        } catch (error: unknown) {
+            // Handle error
+            let errorMessage = 'Unknown error';
+            
+            if (error instanceof Error) {
+                errorMessage = error.message;
+            } else if (typeof error === 'object' && error !== null) {
+                const errorObj = error as { response?: { data?: { message?: string } }, message?: string };
+                errorMessage = errorObj.response?.data?.message || errorObj.message || errorMessage;
+            }
+            
+            console.error('[UsersService] Error refreshing users:', errorMessage);
+            store.setError(`Error refreshing users: ${errorMessage}`);
+            throw error;
+        } finally {
+            // Reset loading state
+            store.setLoading(false);
+        }
     }
 };
 

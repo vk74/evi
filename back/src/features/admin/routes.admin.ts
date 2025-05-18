@@ -1,5 +1,5 @@
 /**
- * version: 1.0.03
+ * version: 1.0.04
  * Backend router file for admin functionality.
  * Defines routes for administrative functions focused on user and group management.
  * All routes are protected by JWT validation middleware.
@@ -21,17 +21,21 @@ import fetchGroupById from './users/groupEditor/controller.fetch.group';
 import updateGroupById from './users/groupEditor/controller.update.group';
 import fetchGroupMembers from './users/groupEditor/controller.fetch.group.members';
 import removeGroupMembers from './users/groupEditor/controller.delete.group.members';
+import fetchUsers from './users/usersList/controller.users.list';
+import deleteSelectedUsers from './users/usersList/controller.delete.selected.users';
 
 const router: Router = express.Router();
 
 // Routes for Users
 router.post('/api/admin/users/create-new-user', validateJWT, createUserController);
-router.get('/api/admin/users/fetch-users', validateJWT, fetchProtoUsers); // Временно используем прототипный контроллер для пустого UsersList
+router.get('/api/admin/users/fetch-users', validateJWT, fetchUsers);
+router.get('/users/list', validateJWT, fetchUsers); // Дополнительный маршрут для совместимости с фронтендом
+router.post('/users/delete', validateJWT, deleteSelectedUsers); // Дополнительный маршрут для совместимости с фронтендом
 router.get('/api/admin/users/fetch-user-by-userid/:userId', validateJWT, loadUserById);
 router.post('/api/admin/users/update-user-by-userid', validateJWT, updateUserById);
-router.post('/api/admin/users/delete-selected-users', validateJWT, deleteSelectedProtoUsers); // Временно используем прототипный контроллер для пустого UsersList
+router.post('/api/admin/users/delete-selected-users', validateJWT, deleteSelectedUsers);
 
-// Routes for Prototype Users List
+// Routes for Prototype Users List (legacy, keeping for compatibility)
 router.get('/api/admin/users/proto/fetch-users', validateJWT, fetchProtoUsers);
 router.post('/api/admin/users/proto/delete-selected-users', validateJWT, deleteSelectedProtoUsers);
 
