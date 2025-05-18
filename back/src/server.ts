@@ -1,5 +1,5 @@
 /**
- * version: 1.0.01
+ * version: 1.0.02
  * Main server file
  * 
  * This is the entry point for the backend server.
@@ -16,12 +16,12 @@ import fs from 'fs';
 import ExcelJS from 'exceljs';
 
 // Import routes
-import userRoutes from '@/routes/routes.users';
-import servicesRoutes from '@/routes/routes.services';
-import catalogRoutes from '@/routes/routes.catalog';
-import adminRoutes from '@/features/admin/routes.admin';
+import userRoutes from '@/core/auth/routes.users';
+import servicesRoutes from '@/modules/catalog/routes.services';
+import catalogRoutes from '@/modules/catalog/routes.catalog';
+import adminRoutes from '@/modules/admin/routes.admin';
 import coreRoutes from '@/core/routes/routes.core';
-import workRoutes from '@/features/work/routes.work';
+import workRoutes from '@/modules/work/routes.work';
 import { loadSettings } from '@/core/services/settings/service.load.settings';
 
 // Import event bus system

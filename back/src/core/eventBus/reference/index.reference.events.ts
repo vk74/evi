@@ -1,4 +1,4 @@
-// version: 1.0.09
+// version: 1.0.10
 // Central registry for all event domain catalogs in the application
 // This file serves as a registry for all event references across different modules
 
@@ -13,27 +13,27 @@ import { initializeEventCache } from './cache.reference.events';
 export const eventReferenceFiles: Record<string, string[]> = {
   // User editor events
   userEditor: [
-    path.resolve(__dirname, '../../../features/admin/users/userEditor/events.user.editor.ts')
+    path.resolve(__dirname, '../../../modules/admin/users/userEditor/events.user.editor.ts')
   ],
   
   // Users list events (fully migrated to prototype implementation)
   usersListProto: [
-    path.resolve(__dirname, '../../../features/admin/users/usersListProto/protoEvents.users.list.ts')
+    path.resolve(__dirname, '../../../modules/admin/users/usersListProto/protoEvents.users.list.ts')
   ],
   
   // Users list events (production implementation)
   usersList: [
-    path.resolve(__dirname, '../../../features/admin/users/usersList/events.users.list.ts')
+    path.resolve(__dirname, '../../../modules/admin/users/usersList/events.users.list.ts')
   ],
   
   // Groups list events
   groupsList: [
-    path.resolve(__dirname, '../../../features/admin/users/groupsList/events.groups.list.ts')
+    path.resolve(__dirname, '../../../modules/admin/users/groupsList/events.groups.list.ts')
   ],
   
   // Group editor events
   groupEditor: [
-    path.resolve(__dirname, '../../../features/admin/users/groupEditor/events.group.editor.ts')
+    path.resolve(__dirname, '../../../modules/admin/users/groupEditor/events.group.editor.ts')
   ],
   
   // Settings module events

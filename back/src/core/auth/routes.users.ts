@@ -6,14 +6,14 @@
  */
 
 import express, { Router } from 'express';
-import validateJWT from '../guards/auth.validate.jwt';
-import checkAccountPassword from '../guards/auth.check.password';
-import checkAccountStatus from '../guards/auth.check.status';
-import issueToken from '../middleware/auth.issue.token';
-import registerUser from '../middleware/auth.register.user';
-import changeUserPassword from '../middleware/users.change.password';
-import getUserProfile from '../middleware/users.get.profile';
-import updateUserProfile from '../middleware/users.update.profile';
+import validateJWT from '../../guards/auth.validate.jwt';
+import checkAccountPassword from '../../guards/auth.check.password';
+import checkAccountStatus from '../../guards/auth.check.status';
+import issueToken from '../../middleware/auth.issue.token';
+import registerUser from '../../middleware/auth.register.user';
+import changeUserPassword from '../../middleware/users.change.password';
+import getUserProfile from '../../middleware/users.get.profile';
+import updateUserProfile from '../../middleware/users.update.profile';
 
 const router: Router = express.Router();
 

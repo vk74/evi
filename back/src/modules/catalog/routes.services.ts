@@ -6,10 +6,10 @@
  */
 
 import express, { Router } from 'express';
-import getUserUUID from '../middleware/users.get.uuid';
-import validateJWT from '../guards/auth.validate.jwt';
+import getUserUUID from '../../middleware/users.get.uuid';
+import validateJWT from '../../guards/auth.validate.jwt';
 // import checkAccountStatus from '../guards/auth.check.status';
-import { serviceEditor } from '../middleware/services.editor';
+import { serviceEditor } from '../../middleware/services.editor';
 
 const router: Router = express.Router();
 
