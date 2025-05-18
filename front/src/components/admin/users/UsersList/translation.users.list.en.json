@@ -3,7 +3,38 @@
     "users": {
       "list": {
         "title": "Users List",
-        "emptyState": "This component will be implemented later"
+        "buttons": {
+          "create": "create user",
+          "edit": "edit",
+          "delete": "delete",
+          "resetPassword": "reset password",
+          "refreshHint": "refresh users list"
+        },
+        "search": {
+          "placeholder": "Search users...",
+          "minChars": "Enter at least 2 characters"
+        },
+        "table": {
+          "headers": {
+            "select": "select",
+            "id": "ID",
+            "username": "username",
+            "email": "email",
+            "isStaff": "staff",
+            "status": "status",
+            "firstName": "first name",
+            "lastName": "last name",
+            "middleName": "middle name"
+          }
+        },
+        "messages": {
+          "confirmDelete": "Are you sure you want to delete {count} selected users?",
+          "deleteUsersSuccess": "Successfully deleted {count} users.",
+          "refreshSuccess": "Users list refreshed successfully."
+        }
+      },
+      "passwordChange": {
+        "resetPasswordFor": "Reset password for"
       }
     }
   }

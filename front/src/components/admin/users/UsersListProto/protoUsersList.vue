@@ -552,16 +552,15 @@ onMounted(async () => {
     </v-app-bar>
     
     <!-- Строка поиска -->
-    <div class="px-4 pb-2">
+    <div class="px-4 pt-4">
       <v-text-field
         v-model="searchQuery"
         density="compact"
         variant="outlined"
-        hide-details
         clearable
         clear-icon="mdi-close"
         color="teal"
-        :placeholder="t('list.search.placeholder')"
+        :label="t('list.search.placeholder')"
         prepend-inner-icon="mdi-magnify"
         :loading="isSearching"
         :hint="searchQuery.length === 1 ? t('list.search.minChars') : ''"
