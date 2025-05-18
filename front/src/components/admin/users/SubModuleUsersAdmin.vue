@@ -34,11 +34,6 @@ const sections = computed((): Section[] => [
     icon: 'mdi-account-multiple-outline'
   },
   {
-    id: 'users-proto',
-    title: 'users list proto',
-    icon: 'mdi-flask-outline'
-  },
-  {
     id: 'user-editor',
     title: t('admin.users.sections.userEditor'),
     icon: 'mdi-account-plus-outline'
@@ -52,6 +47,11 @@ const sections = computed((): Section[] => [
     id: 'group-editor',
     title: t('admin.users.sections.groupEditor'),
     icon: 'mdi-account-multiple-plus-outline'
+  },
+  {
+    id: 'users-proto',
+    title: 'users list proto',
+    icon: 'mdi-flask-outline'
   }
 ])
 
@@ -75,7 +75,11 @@ const switchSection = (sectionId: UserSectionId): void => {
         <v-btn
           v-for="section in sections"
           :key="section.id"
-          :class="['section-btn', { 'section-active': activeSection === section.id }]"
+          :class="[
+            'section-btn', 
+            { 'section-active': activeSection === section.id },
+            { 'proto-section': section.id === 'users-proto' }
+          ]"
           variant="text"
           @click="switchSection(section.id)"
         >
@@ -134,6 +138,16 @@ const switchSection = (sectionId: UserSectionId): void => {
   border-bottom: 2px solid #009688;
   font-weight: 500;
   color: rgba(0, 0, 0, 0.87) !important;
+}
+
+.proto-section {
+  color: #dc6700 !important; /* Оранжевый цвет для секции users-proto */
+  font-weight: 500;
+}
+
+.proto-section.section-active {
+  border-bottom: 2px solid #dc6700;
+  color: #dc6700 !important;
 }
 
 .module-title {
