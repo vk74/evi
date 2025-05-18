@@ -5,7 +5,7 @@
 */
 
 import { Response, NextFunction } from 'express';
-import { pool } from '../db/maindb';
+import { pool } from '../core/db/maindb';
 import { userQueries } from '../middleware/queries.users';
 import { AuthenticatedRequest, GuardFunction } from './types.guards';
 

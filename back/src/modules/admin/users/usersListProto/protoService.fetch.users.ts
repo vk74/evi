@@ -12,7 +12,7 @@
 
 import { Request } from 'express';
 import { Pool } from 'pg';
-import { pool as pgPool } from '../../../../db/maindb';
+import { pool as pgPool } from '../../../../core/db/maindb';
 import { usersProtoCache, CacheKey } from './protoCache.users.list';
 import { queries, buildSortClause } from './protoQueries.users.list';
 import { IUser, IUsersResponse, IUsersFetchParams, UserError } from './protoTypes.users.list';

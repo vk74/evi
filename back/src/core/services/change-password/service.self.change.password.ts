@@ -5,7 +5,7 @@
  */
 
 import bcrypt from 'bcrypt';
-import { pool } from '../../../db/maindb';
+import { pool } from '../../db/maindb';
 import { passwordChangeQueries } from './queries.change.password';
 import { SelfChangePasswordRequest, ChangePasswordResponse } from './types.change.password';
 import { REGEX, VALIDATION } from '../../validation/rules.common.fields';

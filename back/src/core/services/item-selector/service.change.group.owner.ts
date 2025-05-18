@@ -10,7 +10,7 @@
  * - Returns formatted response with old owner ID
  */
 import { Pool } from 'pg';
-import { pool as pgPool } from '../../../db/maindb';
+import { pool as pgPool } from '../../db/maindb';
 import { queries } from './queries.item.selector';
 import { 
   createAppLgr,

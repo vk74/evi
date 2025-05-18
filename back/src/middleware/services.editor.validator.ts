@@ -10,7 +10,7 @@
  */
 
 import { Pool, QueryResult } from 'pg';
-import { pool as pgPool } from '../db/maindb';
+import { pool as pgPool } from '../core/db/maindb';
 
 // Type assertion for pool
 const pool = pgPool as Pool;

@@ -10,7 +10,7 @@
  * - Returns formatted response
  */
 import { Pool } from 'pg';
-import { pool as pgPool } from '../../../db/maindb';
+import { pool as pgPool } from '../../db/maindb';
 import { queries } from './queries.item.selector';
 import type { 
   AddUsersToGroupResponse,

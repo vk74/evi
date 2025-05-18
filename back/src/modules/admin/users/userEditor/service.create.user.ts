@@ -8,7 +8,7 @@
 import { Request } from 'express';
 import { Pool } from 'pg';
 import bcrypt from 'bcrypt';
-import { pool as pgPool } from '../../../../db/maindb';
+import { pool as pgPool } from '../../../../core/db/maindb';
 import { queries } from './queries.user.editor';
 import { REGEX, VALIDATION } from '../../../../core/validation/rules.common.fields';
 import type { 

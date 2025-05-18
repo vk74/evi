@@ -7,7 +7,7 @@
 
 import { Request } from 'express';
 import { Pool } from 'pg';
-import { pool as pgPool } from '../../../../db/maindb';
+import { pool as pgPool } from '../../../../core/db/maindb';
 import { queries } from './queries.group.editor';
 import type { UpdateGroupRequest, UpdateGroupResponse, ServiceError, ValidationError, NotFoundError } from './types.group.editor';
 import { REGEX, VALIDATION } from '../../../../core/validation/rules.common.fields';

@@ -23,7 +23,7 @@ import { IGroupsResponse, GroupError } from './types.groups.list';
 import { groupsRepository } from './repository.groups.list';
 import { queries } from './queries.groups.list';
 import { Pool } from 'pg';
-import { pool as pgPool } from '../../../../db/maindb';
+import { pool as pgPool } from '../../../../core/db/maindb';
 import { getRequestorUuidFromReq } from '../../../../core/helpers/get.requestor.uuid.from.req';
 import fabricEvents from '../../../../core/eventBus/fabric.events';
 import { GROUPS_FETCH_EVENTS } from './events.groups.list';

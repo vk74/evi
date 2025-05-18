@@ -11,7 +11,7 @@
 
 import { Request } from 'express';
 import { Pool } from 'pg';
-import { pool as pgPool } from '../../../../db/maindb';
+import { pool as pgPool } from '../../../../core/db/maindb';
 import { queries } from './queries.groups.list';
 import { groupsRepository } from './repository.groups.list';
 import { getRequestorUuidFromReq } from '../../../../core/helpers/get.requestor.uuid.from.req';

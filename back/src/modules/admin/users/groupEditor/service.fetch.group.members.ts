@@ -12,7 +12,7 @@
 
 import { Request } from 'express';
 import { Pool, QueryResult } from 'pg';
-import { pool as pgPool } from '../../../../db/maindb';
+import { pool as pgPool } from '../../../../core/db/maindb';
 import { queries } from './queries.group.editor';
 import { 
   FetchGroupMembersRequest, 

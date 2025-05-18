@@ -19,7 +19,7 @@ import {
   ValidationError,
   ServiceError
 } from './types.group.editor';
-import { pool as pgPool } from '../../../../db/maindb';
+import { pool as pgPool } from '../../../../core/db/maindb';
 import { getRequestorUuidFromReq } from '../../../../core/helpers/get.requestor.uuid.from.req';
 import fabricEvents from '../../../../core/eventBus/fabric.events';
 import { GROUP_MEMBERS_EVENTS } from './events.group.editor';

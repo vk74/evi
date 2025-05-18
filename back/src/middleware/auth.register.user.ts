@@ -13,7 +13,7 @@
 import { Request, Response } from 'express';
 import bcrypt from 'bcrypt';
 import { Pool, QueryResult } from 'pg';
-import { pool as pgPool } from '../db/maindb';
+import { pool as pgPool } from '../core/db/maindb';
 import { userQueries } from './queries.users';
 
 // Type assertion for pool

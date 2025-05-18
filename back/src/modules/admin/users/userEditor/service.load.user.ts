@@ -18,7 +18,7 @@
 
 import { Request } from 'express';
 import { Pool } from 'pg';
-import { pool as pgPool } from '../../../../db/maindb';
+import { pool as pgPool } from '../../../../core/db/maindb';
 import { queries } from './queries.user.editor';
 import type { DbUser, DbUserProfile, LoadUserResponse, ServiceError } from './types.user.editor';
 import { getRequestorUuidFromReq } from '../../../../core/helpers/get.requestor.uuid.from.req';

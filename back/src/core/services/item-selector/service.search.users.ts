@@ -22,7 +22,7 @@ import {
   SearchResponse,
   ServiceError 
 } from './types.item.selector';
-import { pool as pgPool } from '../../../../src/db/maindb'; // Обновленный путь к maindb
+import { pool as pgPool } from '../../db/maindb'; // Обновленный путь к maindb
 
 // Type assertion for pool
 const pool = pgPool as Pool;

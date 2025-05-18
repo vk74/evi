@@ -1,5 +1,5 @@
 /**
- * version: 1.0.02
+ * version: 1.0.03
  * Main server file
  * 
  * This is the entry point for the backend server.
@@ -42,7 +42,7 @@ import loggerService from '@/core/logger/service.logger';
 import loggerSubscriptions from '@/core/logger/subscriptions.logger';
 
 // Import database functions
-import { insertData, getLocations } from '@/db/database';
+import { insertData, getLocations } from '@/core/db/database';
 
 // Define global declarations for TypeScript
 declare global {

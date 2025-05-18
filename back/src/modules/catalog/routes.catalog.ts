@@ -7,7 +7,7 @@
  */
 
 import express, { Router, Request, Response } from 'express';
-import { pool } from '../../db/maindb';
+import { pool } from '../../core/db/maindb';
 import validateJWT from '../../guards/auth.validate.jwt';
 import getUserUUID from '../../middleware/users.get.uuid';
 

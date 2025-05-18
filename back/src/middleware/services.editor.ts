@@ -10,7 +10,7 @@
 
 import { Request, Response } from 'express';
 import { Pool, QueryResult } from 'pg';
-import { pool as pgPool } from '../db/maindb';
+import { pool as pgPool } from '../core/db/maindb';
 import { validateServiceData, ValidationError } from './services.editor.validator';
 
 // Type assertion for pool

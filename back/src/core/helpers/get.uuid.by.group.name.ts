@@ -10,7 +10,7 @@
  */
 
 import { Pool, QueryResult } from 'pg';
-import { pool as pgPool } from '../../db/maindb';
+import { pool as pgPool } from '../db/maindb';
 import { createSystemLgr, Lgr } from '../lgr/lgr.index';
 import { Events } from '../lgr/codes';
 import { get, set, CacheKeys } from './cache.helpers';
