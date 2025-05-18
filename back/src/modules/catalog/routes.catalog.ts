@@ -8,7 +8,7 @@
 
 import express, { Router, Request, Response } from 'express';
 import { pool } from '../../core/db/maindb';
-import validateJWT from '../../guards/auth.validate.jwt';
+import validateJWT from '../../core/guards/auth.validate.jwt';
 import getUserUUID from '../../middleware/users.get.uuid';
 
 const router: Router = express.Router();

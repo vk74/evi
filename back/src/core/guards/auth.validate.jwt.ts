@@ -6,7 +6,7 @@
 
 import jwt from 'jsonwebtoken';
 import { Response, NextFunction } from 'express';
-import { AuthenticatedRequest, JwtPayload, GuardFunction } from './types.guards';
+import { AuthenticatedRequest, JwtPayload, GuardFunction } from '../../guards/types.guards';
 
 // Declare global privateKey property for TypeScript
 declare global {

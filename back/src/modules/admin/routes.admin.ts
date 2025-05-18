@@ -7,7 +7,7 @@
  */
 
 import express, { Router } from 'express';
-import validateJWT from '../../guards/auth.validate.jwt';
+import validateJWT from '../../core/guards/auth.validate.jwt';
 
 // Import controllers
 import { fetchProtoUsers, deleteSelectedProtoUsers } from './users/usersListProto/routes.users.list.proto';

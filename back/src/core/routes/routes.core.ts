@@ -10,7 +10,7 @@
  */
 
 import express, { Router } from 'express';
-import validateJWT from '../../guards/auth.validate.jwt';
+import validateJWT from '../guards/auth.validate.jwt';
 
 // Импорт контроллеров
 import getUsernameByUuidController from '../middleware/controller.get.username.by.uuid';

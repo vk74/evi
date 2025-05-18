@@ -6,7 +6,7 @@
  */
 
 import express, { Router } from 'express';
-import validateJWT from '../../guards/auth.validate.jwt';
+import validateJWT from '../guards/auth.validate.jwt';
 import checkAccountPassword from '../../guards/auth.check.password';
 import checkAccountStatus from '../../guards/auth.check.status';
 import issueToken from '../../middleware/auth.issue.token';
