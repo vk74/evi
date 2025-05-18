@@ -13,7 +13,7 @@
  * Used by:
  * - UsersList.vue component
  * - state.users.list.ts store
- * - service.read.users.ts service
+ * - service.fetch.users.ts service
  */
 
 /**

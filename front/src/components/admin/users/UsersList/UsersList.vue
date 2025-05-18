@@ -167,15 +167,14 @@
           hide-details
           @click.stop
           @change="toggleUserSelection(item.user_id)"
-        ></v-checkbox>
+        />
       </template>
 
       <!-- Account status -->
       <template #item.account_status="{ item }">
         <v-chip
-          :color="item.account_status === 'active' ? 'success' : 'error'"
-          size="small"
-          variant="tonal"
+          :color="getStatusColor(item.account_status)"
+          size="x-small"
         >
           {{ item.account_status }}
         </v-chip>
@@ -184,14 +183,9 @@
       <!-- Admin status -->
       <template #item.is_staff="{ item }">
         <v-icon
-          v-if="item.is_staff"
-          color="info"
-          icon="mdi-check-circle"
-        />
-        <v-icon
-          v-else
-          color="grey"
-          icon="mdi-minus-circle"
+          :color="item.is_staff ? 'teal' : 'red-darken-4'"
+          :icon="item.is_staff ? 'mdi-check-circle' : 'mdi-minus-circle'"
+          size="x-small"
         />
       </template>
 
@@ -200,35 +194,7 @@
         {{ formatDate(item.created_at) }}
       </template>
 
-      <!-- Actions column -->
-      <template #item.actions="{ item }">
-        <v-tooltip location="bottom">
-          <template #activator="{ props }">
-            <v-btn
-              icon="mdi-account-edit"
-              size="small"
-              density="compact"
-              v-bind="props"
-              @click.stop="editUser(item.user_id)"
-            />
-          </template>
-          <span>{{ t('admin.users.list.buttons.edit') }}</span>
-        </v-tooltip>
-        
-        <v-tooltip location="bottom">
-          <template #activator="{ props }">
-            <v-btn
-              icon="mdi-lock-reset"
-              size="small"
-              density="compact"
-              class="ml-2"
-              v-bind="props"
-              @click.stop="resetUserPassword(item.user_id, item.username)"
-            />
-          </template>
-          <span>{{ t('admin.users.list.buttons.resetPassword') }}</span>
-        </v-tooltip>
-      </template>
+
       
       <!-- No data template -->
       <template #no-data>
@@ -269,14 +235,18 @@
     </v-dialog>
 
     <!-- Password change dialog (hidden initially) -->
-    <div v-if="showPasswordDialog">        <ChangePassword
-        :title="t('admin.users.passwordChange.resetPasswordFor')"
+    <v-dialog 
+      v-model="showPasswordDialog" 
+      max-width="550"
+    >
+      <ChangePassword
+        :title="t('admin.users.passwordChange.resetPasswordFor') + ' ' + selectedUserData.username"
         :uuid="selectedUserData.uuid"
         :username="selectedUserData.username"
         :mode="PasswordChangeMode.ADMIN"
         :on-close="() => showPasswordDialog = false"
       />
-    </div>
+    </v-dialog>
   </div>
 </template>
 
@@ -284,7 +254,7 @@
 import { ref, computed, watch, onMounted } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useStoreUsersList } from './state.users.list';
-import usersService from './service.read.users';
+import usersService from './service.fetch.users';
 import deleteSelectedUsersService from './service.delete.selected.users';
 import type { TableHeader, ItemsPerPageOption } from './types.users.list';
 import { useUserStore } from '@/core/state/userstate';
@@ -313,7 +283,7 @@ const searchQuery = ref<string>('');
 const isSearching = ref<boolean>(false);
 // Fix for sortBy format issue
 const localSortBy = ref<{ key: string, order: 'asc' | 'desc' }[]>([
-  { key: usersStore.sortBy, order: usersStore.sortDesc ? 'desc' : 'asc' }
+  { key: usersStore.sorting.sortBy, order: usersStore.sorting.sortDesc ? 'desc' : 'asc' }
 ]);
 
 // Computed properties
@@ -348,8 +318,7 @@ const headers = computed<TableHeader[]>(() => [
   { title: t('admin.users.list.table.headers.lastName'), key: 'last_name', width: '150px' },
   { title: t('admin.users.list.table.headers.middleName'), key: 'middle_name', width: '150px' },
   { title: t('admin.users.list.table.headers.status'), key: 'account_status', width: '100px' },
-  { title: t('admin.users.list.table.headers.isStaff'), key: 'is_staff', width: '80px' },
-  { title: t('actions', { ns: 'common' }), key: 'actions', width: '120px', sortable: false }
+  { title: t('admin.users.list.table.headers.isStaff'), key: 'is_staff', width: '80px' }
 ]);
 
 // Watch for changes in page and items per page
@@ -377,6 +346,17 @@ const formatDate = (dateString: string): string => {
     hour: '2-digit',
     minute: '2-digit'
   }).format(date);
+};
+
+// Get color for status chip
+const getStatusColor = (status: string) => {
+  switch (status.toLowerCase()) {
+    case 'active': return 'teal';
+    case 'disabled': return 'error';
+    case 'archived': return 'grey';
+    case 'requires_user_action': return 'orange';
+    default: return 'black';
+  }
 };
 
 // Handle search input

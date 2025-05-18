@@ -1,5 +1,5 @@
 /**
- * @file service.read.users.ts
+ * @file service.fetch.users.ts
  * Version: 1.0.0
  * Frontend service for fetching and managing users list data.
  *
