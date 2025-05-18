@@ -1,6 +1,6 @@
 /**
  * @file protoUsersList.vue
- * Version: 1.0.03
+ * Version: 1.0.02
  * Компонент-прототип для отображения и управления списком пользователей системы с обработкой на сервере.
  *
  * Функциональность:
@@ -469,6 +469,17 @@ onMounted(async () => {
 
 <template>
   <v-card flat>
+    <v-app-bar
+      flat
+      class="px-4"
+    >
+      <v-spacer />
+
+      <v-app-bar-title class="text-subtitle-2 text-lowercase text-right">
+        users list prototype: server-side processing
+      </v-app-bar-title>
+    </v-app-bar>
+    
     <div class="d-flex">
       <!-- Основное содержимое (левая часть) -->
       <div class="flex-grow-1">
@@ -552,7 +563,7 @@ onMounted(async () => {
         <!-- Верхняя часть боковой панели - кнопки для операций над компонентом -->
         <div class="side-bar-section">
           <h3 class="text-subtitle-2 px-2 py-2">
-            {{ t('list.sidebar.actions') }}
+            Управление списком
           </h3>
           
           <v-btn
@@ -587,7 +598,7 @@ onMounted(async () => {
         <!-- Нижняя часть боковой панели - кнопки для операций над выбранными элементами -->
         <div class="side-bar-section">
           <h3 class="text-subtitle-2 px-2 py-2">
-            {{ t('list.sidebar.selectedItem') }}
+            Управление элементом
           </h3>
           
           <v-btn

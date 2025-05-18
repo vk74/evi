@@ -1,11 +1,16 @@
 {
   "list": {
     "title": "users list prototype: server-side processing",
+    "sidebar": {
+      "actions": "actions",
+      "selectedItem": "selected item"
+    },
     "buttons": {
       "create": "create user",
       "edit": "edit",
       "delete": "delete",
       "resetPassword": "reset password",
+      "refresh": "refresh",
       "refreshHint": "refresh users list"
     },
     "search": {
