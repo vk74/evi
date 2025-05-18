@@ -207,7 +207,7 @@
     <!-- Delete confirmation dialog -->
     <v-dialog
       v-model="showDeleteDialog"
-      max-width="500px"
+      max-width="600px"
     >
       <v-card>
         <v-card-title>{{ t('admin.users.list.messages.confirmDelete', { count: selectedCount }) }}</v-card-title>
@@ -221,14 +221,14 @@
             variant="text"
             @click="showDeleteDialog = false"
           >
-            {{ t('common.buttons.cancel') }}
+            {{ t('admin.users.list.buttons.cancel') }}
           </v-btn>
           <v-btn
             color="error"
             variant="text"
             @click="deleteSelectedUsers"
           >
-            {{ t('common.buttons.confirm') }}
+            {{ t('admin.users.list.buttons.confirm') }}
           </v-btn>
         </v-card-actions>
       </v-card>

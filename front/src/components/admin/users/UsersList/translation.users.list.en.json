@@ -8,7 +8,9 @@
           "edit": "edit",
           "delete": "delete",
           "resetPassword": "reset password",
-          "refreshHint": "refresh users list"
+          "refreshHint": "refresh users list",
+          "cancel": "cancel",
+          "confirm": "confirm"
         },
         "search": {
           "placeholder": "Search users...",
