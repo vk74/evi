@@ -1,5 +1,5 @@
 /**
- * @file controller.delete.selected.groups.ts - version 1.0.03
+ * @file controller.delete.selected.groups.ts - version 1.0.04
  * Controller for handling group deletion requests.
  *
  * Functionality:
@@ -8,6 +8,8 @@
  * - Calls the service to delete groups, passing the request object.
  * - Sends the response back to the client.
  * - Uses event bus to track operations and enhance observability.
+ * 
+ * Note: HTTP request/response events are now handled by the universal connection handler.
  */
 
 import { Request, Response } from 'express';
@@ -27,9 +29,12 @@ async function deleteSelectedGroupsLogic(req: Request, res: Response): Promise<a
     const { groupIds } = req.body;
 
     // Process group deletion
-    const result = await deleteSelectedGroupsService.deleteSelectedGroups(groupIds, req);
+    const deletedCount = await deleteSelectedGroupsService.deleteSelectedGroups(groupIds, req);
 
-    return result;
+    // Return result in format expected by frontend
+    return {
+        deletedCount
+    };
 }
 
 // Export controller using universal connection handler
