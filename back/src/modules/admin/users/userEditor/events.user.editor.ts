@@ -1,6 +1,6 @@
 /**
  * events.user.editor.ts - backend file
- * version: 1.0.05
+ * version: 1.0.06
  * 
  * This file contains event definitions for the user management domain within the user editor admin submodule.
  * It serves as a reference for creating and publishing user-related events to the event bus.
@@ -8,6 +8,8 @@
  * 
  * These events are used to track and react to user management operations
  * such as creation, updates, and status changes.
+ * 
+ * Note: HTTP request/response events are now handled by the universal connection handler.
  */
 
 /**
@@ -15,17 +17,6 @@
  * Events related to user account creation processes
  */
 export const USER_CREATION_EVENTS = {
-  // When a request to create a user is received
-  REQUEST_RECEIVED: {
-    eventName: 'userEditor.creation.request.received',
-    source: 'user editor admin submodule',
-    eventType: 'app' as const,
-    severity: 'debug' as const,
-    eventMessage: 'User creation request received',
-    payload: null, // Will be of type CreateUserRequest
-    version: '1.0.0'
-  },
-  
   // When a user creation request passes validation
   VALIDATION_PASSED: {
     eventName: 'userEditor.creation.validation.passed',
@@ -78,17 +69,6 @@ export const USER_CREATION_EVENTS = {
  * Events related to updating existing user accounts
  */
 export const USER_UPDATE_EVENTS = {
-  // When a request to update a user is received
-  REQUEST_RECEIVED: {
-    eventName: 'userEditor.update.request.received',
-    source: 'user editor admin submodule',
-    eventType: 'app' as const,
-    severity: 'debug' as const,
-    eventMessage: 'User update request received',
-    payload: null, // Will be of type { userId: string, updatedFields: string[] }
-    version: '1.0.0'
-  },
-  
   // When a user update request passes validation
   VALIDATION_PASSED: {
     eventName: 'userEditor.update.validation.passed',
@@ -141,17 +121,6 @@ export const USER_UPDATE_EVENTS = {
  * Events related to loading/fetching user data
  */
 export const USER_LOAD_EVENTS = {
-  // When a request to load user data is received
-  REQUEST_RECEIVED: {
-    eventName: 'userEditor.load.request.received',
-    source: 'user editor admin submodule',
-    eventType: 'app' as const,
-    severity: 'debug' as const,
-    eventMessage: 'User load request received',
-    payload: null, // Will be of type { userId: string }
-    version: '1.0.0'
-  },
-  
   // When a user is successfully loaded from the database
   COMPLETE: {
     eventName: 'userEditor.load.complete',
@@ -184,126 +153,6 @@ export const USER_LOAD_EVENTS = {
     eventMessage: 'User not found',
     payload: null, // Will be of type { userId: string }
     errorData: null, // Will be filled with details
-    version: '1.0.0'
-  }
-};
-
-/**
- * Controller Events for User Creation
- * Events related to HTTP controller processing for user creation
- */
-export const USER_CREATION_CONTROLLER_EVENTS = {
-  // When HTTP request is received by controller
-  HTTP_REQUEST_RECEIVED: {
-    eventName: 'userEditor.controller.creation.request.received',
-    source: 'user editor admin controller',
-    eventType: 'app' as const,
-    severity: 'debug' as const,
-    eventMessage: 'HTTP request received to create user',
-    payload: null, // Will be of type { method: string, url: string, username: string }
-    version: '1.0.0'
-  },
-  
-  // When controller successfully processes the request and sends response
-  HTTP_RESPONSE_SENT: {
-    eventName: 'userEditor.controller.creation.response.sent',
-    source: 'user editor admin controller',
-    eventType: 'app' as const,
-    severity: 'debug' as const,
-    eventMessage: 'HTTP response sent for user creation',
-    payload: null, // Will be of type { userId: string, statusCode: number }
-    version: '1.0.0'
-  },
-  
-  // When controller encounters an error processing the request
-  HTTP_ERROR: {
-    eventName: 'userEditor.controller.creation.error',
-    source: 'user editor admin controller',
-    eventType: 'app' as const,
-    severity: 'error' as const,
-    eventMessage: 'Error in user creation controller',
-    payload: null, // Will be of type { username: string, errorCode: string, statusCode: number }
-    errorData: null, // Will be filled with error details
-    version: '1.0.0'
-  }
-};
-
-/**
- * Controller Events for User Update
- * Events related to HTTP controller processing for user updates
- */
-export const USER_UPDATE_CONTROLLER_EVENTS = {
-  // When HTTP request is received by controller
-  HTTP_REQUEST_RECEIVED: {
-    eventName: 'userEditor.controller.update.request.received',
-    source: 'user editor admin controller',
-    eventType: 'app' as const,
-    severity: 'debug' as const,
-    eventMessage: 'HTTP request received to update user',
-    payload: null, // Will be of type { method: string, url: string, userId: string }
-    version: '1.0.0'
-  },
-  
-  // When controller successfully processes the request and sends response
-  HTTP_RESPONSE_SENT: {
-    eventName: 'userEditor.controller.update.response.sent',
-    source: 'user editor admin controller',
-    eventType: 'app' as const,
-    severity: 'debug' as const,
-    eventMessage: 'HTTP response sent for user update',
-    payload: null, // Will be of type { userId: string, statusCode: number }
-    version: '1.0.0'
-  },
-  
-  // When controller encounters an error processing the request
-  HTTP_ERROR: {
-    eventName: 'userEditor.controller.update.error',
-    source: 'user editor admin controller',
-    eventType: 'app' as const,
-    severity: 'error' as const,
-    eventMessage: 'Error in user update controller',
-    payload: null, // Will be of type { userId: string, errorCode: string, statusCode: number }
-    errorData: null, // Will be filled with error details
-    version: '1.0.0'
-  }
-};
-
-/**
- * Controller Events for User Loading
- * Events related to HTTP controller processing for loading user data
- */
-export const USER_LOAD_CONTROLLER_EVENTS = {
-  // When HTTP request is received by controller
-  HTTP_REQUEST_RECEIVED: {
-    eventName: 'userEditor.controller.load.request.received',
-    source: 'user editor admin controller',
-    eventType: 'app' as const,
-    severity: 'debug' as const,
-    eventMessage: 'HTTP request received to load user',
-    payload: null, // Will be of type { method: string, url: string, userId: string }
-    version: '1.0.0'
-  },
-  
-  // When controller successfully processes the request and sends response
-  HTTP_RESPONSE_SENT: {
-    eventName: 'userEditor.controller.load.response.sent',
-    source: 'user editor admin controller',
-    eventType: 'app' as const,
-    severity: 'debug' as const,
-    eventMessage: 'HTTP response sent for user data',
-    payload: null, // Will be of type { userId: string, statusCode: number }
-    version: '1.0.0'
-  },
-  
-  // When controller encounters an error processing the request
-  HTTP_ERROR: {
-    eventName: 'userEditor.controller.load.error',
-    source: 'user editor admin controller',
-    eventType: 'app' as const,
-    severity: 'error' as const,
-    eventMessage: 'Error in user load controller',
-    payload: null, // Will be of type { userId: string, errorCode: string, statusCode: number }
-    errorData: null, // Will be filled with error details
     version: '1.0.0'
   }
 };

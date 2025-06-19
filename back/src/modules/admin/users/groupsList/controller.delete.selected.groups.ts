@@ -12,8 +12,6 @@
 
 import { Request, Response } from 'express';
 import { deleteSelectedGroupsService } from './service.delete.selected.groups';
-import fabricEvents from '../../../../core/eventBus/fabric.events';
-import { GROUPS_DELETE_CONTROLLER_EVENTS } from './events.groups.list';
 import { connectionHandler } from '../../../../core/helpers/connection.handler';
 
 /**
@@ -22,46 +20,17 @@ import { connectionHandler } from '../../../../core/helpers/connection.handler';
  * @param res - Express response object
  */
 async function deleteSelectedGroupsLogic(req: Request, res: Response): Promise<any> {
-    // Create event for incoming request
-    await fabricEvents.createAndPublishEvent({
-        req,
-        eventName: GROUPS_DELETE_CONTROLLER_EVENTS.HTTP_REQUEST_RECEIVED.eventName,
-        payload: {
-            method: req.method,
-            url: req.url,
-            body: req.body
-        }
-    });
+    // JWT validation is already performed by route guards
+    // If request reaches controller, JWT is valid
 
-    // Check for groupIds in request body
+    // Get group IDs from request body
     const { groupIds } = req.body;
-    if (!groupIds || !Array.isArray(groupIds)) {
-        // Create event for invalid request
-        await fabricEvents.createAndPublishEvent({
-            req,
-            eventName: GROUPS_DELETE_CONTROLLER_EVENTS.INVALID_REQUEST.eventName,
-            payload: null
-        });
-        
-        return Promise.reject({
-            code: 'INVALID_REQUEST',
-            message: 'Invalid request body: groupIds is required and must be an array'
-        });
-    }
 
-    // Call service to delete groups, passing req object
-    const deletedCount = await deleteSelectedGroupsService.deleteSelectedGroups(groupIds, req);
+    // Process group deletion
+    const result = await deleteSelectedGroupsService.deleteSelectedGroups(groupIds, req);
 
-    // Create event for successful response
-    await fabricEvents.createAndPublishEvent({
-        req,
-        eventName: GROUPS_DELETE_CONTROLLER_EVENTS.HTTP_RESPONSE_SENT.eventName,
-        payload: { deletedCount }
-    });
-
-    // Return response
-    return { deletedCount };
+    return result;
 }
 
 // Export controller using universal connection handler
-export default connectionHandler(deleteSelectedGroupsLogic);
+export default connectionHandler(deleteSelectedGroupsLogic, 'DeleteSelectedGroupsController');

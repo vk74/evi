@@ -13,92 +13,39 @@
 
 import { Request, Response } from 'express';
 import { protoUsersFetchService } from './protoService.fetch.users';
-import { IUsersFetchParams } from './protoTypes.users.list';
+import { IUsersFetchParams, IUsersResponse } from './protoTypes.users.list';
 import { connectionHandler } from '../../../../core/helpers/connection.handler';
-import fabricEvents from '../../../../core/eventBus/fabric.events';
-import { USERS_FETCH_CONTROLLER_EVENTS } from './protoEvents.users.list';
 
 /**
- * Controller function for fetching users
+ * Business logic for fetching users list (prototype)
+ * 
+ * @param req - Express Request object
+ * @param res - Express Response object
  */
-async function fetchProtoUsersLogic(req: Request, res: Response) {
-  try {
-    // Create event for incoming request
-    await fabricEvents.createAndPublishEvent({
-      req,
-      eventName: USERS_FETCH_CONTROLLER_EVENTS.HTTP_REQUEST_RECEIVED.eventName,
-      payload: {
-        method: req.method,
-        url: req.url,
-        query: req.query
-      }
-    });
+async function fetchProtoUsersLogic(req: Request, res: Response): Promise<any> {
+    // JWT validation is already performed by route guards
+    // If request reaches controller, JWT is valid
 
-    // Parse and validate query parameters
+    // Extract parameters from query
     const params: IUsersFetchParams = {
-      page: parseInt(req.query.page as string) || 1,
-      itemsPerPage: parseInt(req.query.itemsPerPage as string) || 25,
-      search: (req.query.search as string || '').trim(),
-      sortBy: req.query.sortBy as string,
-      sortDesc: req.query.sortDesc === 'true',
-      forceRefresh: req.query.forceRefresh === 'true'
+        search: req.query.search as string || '',
+        page: parseInt(req.query.page as string) || 1,
+        itemsPerPage: parseInt(req.query.itemsPerPage as string) || 10
     };
-    
-    // Validate search query length
-    if (params.search && params.search.length === 1) {
-      // Create event for invalid search
-      await fabricEvents.createAndPublishEvent({
-        req,
-        eventName: USERS_FETCH_CONTROLLER_EVENTS.INVALID_SEARCH.eventName,
-        payload: { search: params.search }
-      });
-      
-      return Promise.reject({
-        code: 'INVALID_SEARCH',
-        message: 'Search query must be at least 2 characters or empty'
-      });
+
+    // Validate search parameter
+    if (params.search && params.search.length < 2) {
+        throw {
+            code: 'INVALID_SEARCH',
+            message: 'Search term must be at least 2 characters long'
+        };
     }
 
-    // Handle the request through service, now passing the req object
-    const result = await protoUsersFetchService.fetchUsers(params, req);
+    // Get data from service
+    const result: IUsersResponse = await protoUsersFetchService.fetchUsers(params, req);
 
-    // Create event for successful response
-    await fabricEvents.createAndPublishEvent({
-      req,
-      eventName: USERS_FETCH_CONTROLLER_EVENTS.HTTP_RESPONSE_SENT.eventName,
-      payload: {
-        resultCount: result.users.length,
-        totalCount: result.total
-      }
-    });
-
-    // Send response
     return result;
-    
-  } catch (error) {
-    // Create event for error
-    await fabricEvents.createAndPublishEvent({
-      req,
-      eventName: USERS_FETCH_CONTROLLER_EVENTS.HTTP_ERROR.eventName,
-      payload: {
-        query: req.query,
-        errorCode: (error as UserError)?.code || 'INTERNAL_SERVER_ERROR'
-      },
-      errorData: (error as Error)?.message || String(error)
-    });
-
-    // Format error response
-    const userError: UserError = {
-      code: (error as UserError)?.code || 'INTERNAL_SERVER_ERROR',
-      message: (error as UserError)?.message || 'An error occurred while processing your request',
-      details: process.env.NODE_ENV === 'development' ? 
-        ((error as Error)?.message || String(error)) : 
-        undefined
-    };
-
-    return Promise.reject(userError);
-  }
 }
 
 // Export controller using universal connection handler
-export default connectionHandler(fetchProtoUsersLogic);
+export default connectionHandler(fetchProtoUsersLogic, 'ProtoFetchUsersController');

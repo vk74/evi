@@ -36,12 +36,12 @@ export const protoUsersDeleteService = {
     // Get the UUID of the user making the request
     const requestorUuid = getRequestorUuidFromReq(req);
     
-    // Create event for starting delete operation
+    // Create event for deletion operation start
     await fabricEvents.createAndPublishEvent({
       req,
-      eventName: USERS_DELETE_EVENTS.REQUEST_RECEIVED.eventName,
+      eventName: USERS_DELETE_EVENTS.COMPLETE.eventName,
       payload: {
-        userCount: userIds.length,
+        groupIds: userIds,
         requestorUuid
       }
     });

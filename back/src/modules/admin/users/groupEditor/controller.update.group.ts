@@ -55,4 +55,4 @@ async function updateGroupLogic(req: Request, res: Response): Promise<any> {
 }
 
 // Export controller using universal connection handler
-export default connectionHandler(updateGroupLogic);
+export default connectionHandler(updateGroupLogic, 'UpdateGroupController');

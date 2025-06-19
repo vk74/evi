@@ -19,10 +19,10 @@ export async function updateUserById(updateData: UpdateUserRequest, req: Request
       // Get the UUID of the user making the request
       const requestorUuid = getRequestorUuidFromReq(req);
       
-      // Create and publish request received event
+      // Create and publish validation passed event
       await fabricEvents.createAndPublishEvent({
         req,
-        eventName: USER_UPDATE_EVENTS.REQUEST_RECEIVED.eventName,
+        eventName: USER_UPDATE_EVENTS.VALIDATION_PASSED.eventName,
         payload: {
           userId: updateData.user_id,
           requestorUuid,

@@ -1,72 +1,38 @@
 /**
- * @file protoController.delete.users.ts
- * Version: 1.0.01
- * Controller for handling prototype user deletion API requests with server-side processing.
+ * protoController.delete.users.ts - backend file
+ * version: 1.0.02
  * 
- * Functionality:
- * - Processes HTTP requests for user deletion
- * - Validates request parameters
- * - Delegates deletion logic to service layer (passing the entire req object)
- * - Formats API responses
- * - Generates events via event bus for tracing and monitoring
+ * Prototype controller for deleting users.
+ * 
+ * Handles HTTP requests to the /api/admin/users/proto/delete endpoint.
+ * Validates JWT (handled by middleware), processes user deletion data,
+ * and sends the response. Uses event bus to track operations.
+ * 
+ * Note: HTTP request/response events are now handled by the universal connection handler.
  */
 
 import { Request, Response } from 'express';
 import { protoUsersDeleteService } from './protoService.delete.users';
-import { UserError } from './protoTypes.users.list';
-import fabricEvents from '../../../../core/eventBus/fabric.events';
-import { USERS_DELETE_CONTROLLER_EVENTS } from './protoEvents.users.list';
 import { connectionHandler } from '../../../../core/helpers/connection.handler';
 
 /**
- * Business logic for deleting users
+ * Business logic for deleting users (prototype)
+ * 
+ * @param req - Express Request object
+ * @param res - Express Response object
  */
 async function deleteSelectedProtoUsersLogic(req: Request, res: Response): Promise<any> {
-  // Create event for incoming request
-  await fabricEvents.createAndPublishEvent({
-    req,
-    eventName: USERS_DELETE_CONTROLLER_EVENTS.HTTP_REQUEST_RECEIVED.eventName,
-    payload: {
-      method: req.method,
-      url: req.url,
-      userIds: req.body.userIds?.length
-    }
-  });
+    // JWT validation is already performed by route guards
+    // If request reaches controller, JWT is valid
 
-  // Validate request
-  if (!req.body.userIds || !Array.isArray(req.body.userIds) || req.body.userIds.length === 0) {
-    // Create event for invalid request
-    await fabricEvents.createAndPublishEvent({
-      req,
-      eventName: USERS_DELETE_CONTROLLER_EVENTS.INVALID_REQUEST.eventName,
-      payload: null
-    });
-    
-    return Promise.reject({
-      code: 'INVALID_REQUEST',
-      message: 'No valid user IDs provided for deletion'
-    });
-  }
+    // Get user IDs from request body
+    const { userIds } = req.body;
 
-  // Execute delete through service, now passing the req object
-  const deletedCount = await protoUsersDeleteService.deleteSelectedUsers(req.body.userIds, req);
+    // Process user deletion
+    const result = await protoUsersDeleteService.deleteUsers(userIds, req);
 
-  // Create event for successful response
-  await fabricEvents.createAndPublishEvent({
-    req,
-    eventName: USERS_DELETE_CONTROLLER_EVENTS.HTTP_RESPONSE_SENT.eventName,
-    payload: {
-      requestedCount: req.body.userIds.length,
-      actuallyDeleted: deletedCount
-    }
-  });
-
-  // Return response
-  return {
-    success: true,
-    deletedCount
-  };
+    return result;
 }
 
 // Export controller using universal connection handler
-export default connectionHandler(deleteSelectedProtoUsersLogic);
+export default connectionHandler(deleteSelectedProtoUsersLogic, 'ProtoDeleteUsersController');

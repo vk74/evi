@@ -31,6 +31,17 @@ import type {
 
 const pool = pgPool as Pool;
 
+// Helper function to trim string fields
+function trimData(data: CreateGroupRequest): CreateGroupRequest {
+  return {
+    group_name: data.group_name?.trim(),
+    group_status: data.group_status,
+    group_owner: data.group_owner?.trim(),
+    group_email: data.group_email?.trim(),
+    group_description: data.group_description?.trim()
+  };
+}
+
 // Validation functions
 async function validateRequiredFields(data: CreateGroupRequest, req: Request): Promise<void> {
   // Create event for validation start
@@ -277,28 +288,19 @@ export async function createGroup(
   const client = await pool.connect();
   
   try {
-    // Get UUID of the user making the request
+    // Get the UUID of the user making the request
     const requestorUuid = getRequestorUuidFromReq(req);
     
-    // Create event for group creation start
-    await fabricEvents.createAndPublishEvent({
-      req,
-      eventName: GROUP_CREATION_EVENTS.REQUEST_RECEIVED.eventName,
-      payload: { 
-        groupName: groupData.group_name,
-        owner: groupData.group_owner,
-        initiatedBy: currentUser.username,
-        requestorUuid
-      }
-    });
+    // Data preparation
+    const trimmedData = trimData(groupData);
 
     // Validation
-    await validateRequiredFields(groupData, req);
-    await validateGroupName(groupData.group_name, req);
-    await validateEmail(groupData.group_email, req);
-    await validateDescription(groupData.group_description, req);
+    await validateRequiredFields(trimmedData, req);
+    await validateGroupName(trimmedData.group_name, req);
+    await validateEmail(trimmedData.group_email, req);
+    await validateDescription(trimmedData.group_description, req);
     
-    if (!Object.values(GroupStatus).includes(groupData.group_status)) {
+    if (!Object.values(GroupStatus).includes(trimmedData.group_status)) {
       // Create event for validation error
       await fabricEvents.createAndPublishEvent({
         req,
@@ -306,7 +308,7 @@ export async function createGroup(
         payload: {
           field: 'group_status',
           message: 'Invalid group status',
-          providedStatus: groupData.group_status,
+          providedStatus: trimmedData.group_status,
           allowedStatuses: Object.values(GroupStatus)
         },
         errorData: 'Invalid group status'
@@ -320,8 +322,8 @@ export async function createGroup(
     }
 
     // Database checks
-    await checkUniqueness(groupData.group_name, req);
-    await checkOwnerExists(groupData.group_owner, req);
+    await checkUniqueness(trimmedData.group_name, req);
+    await checkOwnerExists(trimmedData.group_owner, req);
 
     // Start transaction
     await client.query('BEGIN');
@@ -336,7 +338,7 @@ export async function createGroup(
     // Get owner UUID
     const ownerResult = await client.query(
       queries.getUserId.text,
-      [groupData.group_owner]
+      [trimmedData.group_owner]
     );
     
     const ownerUuid = ownerResult.rows[0].user_id;
@@ -345,8 +347,8 @@ export async function createGroup(
     const groupResult = await client.query(
       queries.insertGroup.text,
       [
-        groupData.group_name,    
-        groupData.group_status,  
+        trimmedData.group_name,    
+        trimmedData.group_status,  
         ownerUuid,               
         false                   
       ]
@@ -359,8 +361,8 @@ export async function createGroup(
       queries.insertGroupDetails.text,
       [
         groupId,
-        groupData.group_description || null,
-        groupData.group_email || null,
+        trimmedData.group_description || null,
+        trimmedData.group_email || null,
         requestorUuid // Use UUID of the user making the request
       ]
     );
@@ -373,7 +375,7 @@ export async function createGroup(
       eventName: GROUP_CREATION_EVENTS.COMPLETE.eventName,
       payload: {
         groupId,
-        groupName: groupData.group_name,
+        groupName: trimmedData.group_name,
         requestorUuid
       }
     });
@@ -424,7 +426,7 @@ export async function createGroup(
       success: true,
       message: 'Group created successfully',
       groupId,
-      group_name: groupData.group_name
+      group_name: trimmedData.group_name
     };
 
   } catch (error) {
@@ -440,7 +442,7 @@ export async function createGroup(
       req,
       eventName: GROUP_CREATION_EVENTS.FAILED.eventName,
       payload: {
-        groupName: groupData.group_name,
+        groupName: trimmedData.group_name,
         error: {
           code: 'INTERNAL_SERVER_ERROR',
           message: 'Failed to create group'

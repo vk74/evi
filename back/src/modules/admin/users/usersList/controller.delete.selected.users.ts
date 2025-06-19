@@ -4,16 +4,15 @@
  * 
  * Controller for deleting selected users.
  * 
- * Handles HTTP requests to the /api/admin/users/delete-selected-users endpoint.
- * Validates request body, processes deletion via service layer,
- * and returns results. Uses event bus for operation tracking.
+ * Handles HTTP requests to the /api/admin/users/delete endpoint.
+ * Validates JWT (handled by middleware), processes user deletion data,
+ * and sends the response. Uses event bus to track operations.
+ * 
+ * Note: HTTP request/response events are now handled by the universal connection handler.
  */
 
 import { Request, Response } from 'express';
-import { deleteSelectedUsers as deleteSelectedUsersService } from './service.delete.selected.users';
-import { DeleteUsersPayload } from './types.users.list';
-import fabricEvents from '../../../../core/eventBus/fabric.events';
-import { USERS_DELETE_CONTROLLER_EVENTS } from './events.users.list';
+import { deleteSelectedUsers } from './service.delete.selected.users';
 import { connectionHandler } from '../../../../core/helpers/connection.handler';
 
 /**
@@ -23,52 +22,17 @@ import { connectionHandler } from '../../../../core/helpers/connection.handler';
  * @param res - Express Response object
  */
 async function deleteSelectedUsersLogic(req: Request, res: Response): Promise<any> {
-    // Create event for incoming HTTP request
-    await fabricEvents.createAndPublishEvent({
-        req,
-        eventName: USERS_DELETE_CONTROLLER_EVENTS.HTTP_REQUEST_RECEIVED.eventName,
-        payload: {
-            method: req.method,
-            url: req.url,
-            body: req.body
-        }
-    });
-
     // JWT validation is already performed by route guards
     // If request reaches controller, JWT is valid
 
-    // Basic request body validation
-    if (!req.body || !req.body.userIds) {
-        return Promise.reject({
-            code: 'INVALID_REQUEST',
-            message: 'Request body must include userIds array'
-        });
-    }
+    // Get user IDs from request body
+    const { userIds } = req.body;
 
-    // Extract payload from request body
-    const payload: DeleteUsersPayload = {
-        userIds: req.body.userIds
-    };
+    // Process user deletion
+    const result = await deleteSelectedUsers(userIds, req);
 
-    // Call service function to process deletion
-    const result = await deleteSelectedUsersService(req, payload);
-
-    // Create event for successful HTTP response
-    await fabricEvents.createAndPublishEvent({
-        req,
-        eventName: USERS_DELETE_CONTROLLER_EVENTS.HTTP_RESPONSE_SENT.eventName,
-        payload: {
-            deletedCount: result.deletedUserIds.length
-        }
-    });
-
-    // Return success response
-    return { 
-        success: true,
-        deletedUserIds: result.deletedUserIds,
-        message: `Successfully deleted ${result.deletedUserIds.length} user(s)` 
-    };
+    return result;
 }
 
 // Export controller using universal connection handler
-export default connectionHandler(deleteSelectedUsersLogic);
+export default connectionHandler(deleteSelectedUsersLogic, 'DeleteSelectedUsersController');

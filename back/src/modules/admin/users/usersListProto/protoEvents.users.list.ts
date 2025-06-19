@@ -8,6 +8,8 @@
  * 
  * These events are used to track and react to users list operations
  * such as fetching users lists, deleting users, and cache operations.
+ * 
+ * Note: HTTP request/response events are now handled by the universal connection handler.
  */
 
 /**
@@ -15,17 +17,6 @@
  * Events related to fetching users list data
  */
 export const USERS_FETCH_EVENTS = {
-  // When a request to fetch users list is received
-  REQUEST_RECEIVED: {
-    eventName: 'usersListProto.fetch.request.received',
-    source: 'prototype users list admin submodule',
-    eventType: 'app' as const,
-    severity: 'debug' as const,
-    eventMessage: 'Proto users list fetch request received',
-    payload: null, // Will be of type { search: string, page: number, itemsPerPage: number }
-    version: '1.0.0'
-  },
-  
   // When users list is successfully loaded from the database
   COMPLETE: {
     eventName: 'usersListProto.fetch.complete',
@@ -77,17 +68,6 @@ export const USERS_FETCH_EVENTS = {
  * Events related to deleting users
  */
 export const USERS_DELETE_EVENTS = {
-  // When a request to delete users is received
-  REQUEST_RECEIVED: {
-    eventName: 'usersListProto.delete.request.received',
-    source: 'prototype users list admin submodule',
-    eventType: 'app' as const,
-    severity: 'debug' as const,
-    eventMessage: 'Proto users delete request received',
-    payload: null, // Will be of type { userCount: number }
-    version: '1.0.0'
-  },
-  
   // When users deletion is completed successfully
   COMPLETE: {
     eventName: 'usersListProto.delete.complete',
@@ -119,108 +99,6 @@ export const USERS_DELETE_EVENTS = {
     severity: 'debug' as const,
     eventMessage: 'Cache invalidated after proto user deletion',
     payload: null, // Will be of type { deletedCount: number }
-    version: '1.0.0'
-  }
-};
-
-/**
- * Controller Events for Users Fetch
- * Events related to HTTP controller processing for fetching users list
- */
-export const USERS_FETCH_CONTROLLER_EVENTS = {
-  // When HTTP request is received by controller
-  HTTP_REQUEST_RECEIVED: {
-    eventName: 'usersListProto.controller.fetch.request.received',
-    source: 'prototype users list admin controller',
-    eventType: 'app' as const,
-    severity: 'debug' as const,
-    eventMessage: 'HTTP request received to fetch proto users list',
-    payload: null, // Will be of type { method: string, url: string, query: object }
-    version: '1.0.0'
-  },
-  
-  // When controller successfully processes the request and sends response
-  HTTP_RESPONSE_SENT: {
-    eventName: 'usersListProto.controller.fetch.response.sent',
-    source: 'prototype users list admin controller',
-    eventType: 'app' as const,
-    severity: 'debug' as const,
-    eventMessage: 'HTTP response sent for proto users list data',
-    payload: null, // Will be of type { resultCount: number, totalCount: number }
-    version: '1.0.0'
-  },
-  
-  // When search query is invalid
-  INVALID_SEARCH: {
-    eventName: 'usersListProto.controller.fetch.invalid.search',
-    source: 'prototype users list admin controller',
-    eventType: 'app' as const,
-    severity: 'warning' as const,
-    eventMessage: 'Invalid search query (too short) in proto users list',
-    payload: null, // Will be of type { search: string }
-    version: '1.0.0'
-  },
-  
-  // When controller encounters an error processing the request
-  HTTP_ERROR: {
-    eventName: 'usersListProto.controller.fetch.error',
-    source: 'prototype users list admin controller',
-    eventType: 'app' as const,
-    severity: 'error' as const,
-    eventMessage: 'Error in proto users list fetch controller',
-    payload: null, // Will be of type { query: object, errorCode: string }
-    errorData: null, // Will be filled with error details
-    version: '1.0.0'
-  }
-};
-
-/**
- * Controller Events for Users Delete
- * Events related to HTTP controller processing for deleting users
- */
-export const USERS_DELETE_CONTROLLER_EVENTS = {
-  // When HTTP request is received by controller
-  HTTP_REQUEST_RECEIVED: {
-    eventName: 'usersListProto.controller.delete.request.received',
-    source: 'prototype users list admin controller',
-    eventType: 'app' as const,
-    severity: 'debug' as const,
-    eventMessage: 'HTTP request received to delete proto users',
-    payload: null, // Will be of type { method: string, url: string, userIds: number }
-    version: '1.0.0'
-  },
-  
-  // When controller successfully processes the request and sends response
-  HTTP_RESPONSE_SENT: {
-    eventName: 'usersListProto.controller.delete.response.sent',
-    source: 'prototype users list admin controller',
-    eventType: 'app' as const,
-    severity: 'debug' as const,
-    eventMessage: 'HTTP response sent for proto users deletion',
-    payload: null, // Will be of type { requestedCount: number, actuallyDeleted: number }
-    version: '1.0.0'
-  },
-  
-  // When request has invalid parameters
-  INVALID_REQUEST: {
-    eventName: 'usersListProto.controller.delete.invalid.request',
-    source: 'prototype users list admin controller',
-    eventType: 'app' as const,
-    severity: 'warning' as const,
-    eventMessage: 'Invalid delete request (no valid user IDs) in proto users list',
-    payload: null, // Will be null or minimal metadata
-    version: '1.0.0'
-  },
-  
-  // When controller encounters an error processing the request
-  HTTP_ERROR: {
-    eventName: 'usersListProto.controller.delete.error',
-    source: 'prototype users list admin controller',
-    eventType: 'app' as const,
-    severity: 'error' as const,
-    eventMessage: 'Error in proto users delete controller',
-    payload: null, // Will be of type { userIds: number, errorCode: string }
-    errorData: null, // Will be filled with error details
     version: '1.0.0'
   }
 };

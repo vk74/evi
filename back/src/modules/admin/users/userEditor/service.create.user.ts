@@ -249,7 +249,7 @@ async function validateData(data: CreateUserRequest, req: Request): Promise<void
       validateMobilePhone(data.mobile_phone_number);
     }
     
-    // Create and publish validation passed event using the fabric
+    // Create event for validation start
     await fabricEvents.createAndPublishEvent({
       req,
       eventName: USER_CREATION_EVENTS.VALIDATION_PASSED.eventName,
@@ -282,16 +282,6 @@ export async function createUser(userData: CreateUserRequest, req: Request): Pro
   try {
     // Get the UUID of the user making the request
     const requestorUuid = getRequestorUuidFromReq(req);
-    
-    // Create and publish request received event
-    await fabricEvents.createAndPublishEvent({
-      req,
-      eventName: USER_CREATION_EVENTS.REQUEST_RECEIVED.eventName,
-      payload: {
-        username: userData.username,
-        email: userData.email
-      }
-    });
     
     // Data preparation
     const trimmedData = trimData(userData);

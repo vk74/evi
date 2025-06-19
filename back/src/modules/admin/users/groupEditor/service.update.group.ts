@@ -19,16 +19,17 @@ import { GROUP_UPDATE_EVENTS } from './events.group.editor';
 const pool = pgPool as Pool;
 
 export async function updateGroupById(updateData: UpdateGroupRequest, req: Request): Promise<UpdateGroupResponse> {
-  // Get UUID of the user making the request
+  // Get the UUID of the user making the request
   const requestorUuid = getRequestorUuidFromReq(req);
 
-  // Create event for group update start
+  // Create and publish validation passed event
   await fabricEvents.createAndPublishEvent({
     req,
-    eventName: GROUP_UPDATE_EVENTS.REQUEST_RECEIVED.eventName,
-    payload: { 
+    eventName: GROUP_UPDATE_EVENTS.VALIDATION_PASSED.eventName,
+    payload: {
       groupId: updateData.group_id,
-      requestorUuid
+      requestorUuid,
+      updatedFields: Object.keys(updateData).filter(key => key !== 'group_id')
     }
   });
 
@@ -116,16 +117,6 @@ export async function updateGroupById(updateData: UpdateGroupRequest, req: Reque
       } as ValidationError;
     }
   }
-
-  // Create event for successful validation
-  await fabricEvents.createAndPublishEvent({
-    req,
-    eventName: GROUP_UPDATE_EVENTS.VALIDATION_PASSED.eventName,
-    payload: { 
-      groupId: updateData.group_id,
-      requestorUuid
-    }
-  });
 
   const client = await pool.connect();
 

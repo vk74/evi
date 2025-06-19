@@ -35,7 +35,8 @@ const pool = pgPool as Pool;
  * @param req - Express request object for context
  * @returns Promise with group data in a format ready for API response
  */
-export async function fetchGroupData(request: FetchGroupRequest, req: Request): Promise<FetchGroupResponse> {
+export async function fetchGroupData(request: FetchGroupRequest, req: Request): Promise<FetchGroupResponse> 
+{
   const { groupId } = request;
   
   try {

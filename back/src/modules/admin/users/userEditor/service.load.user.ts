@@ -40,16 +40,6 @@ export async function loadUserById(userId: string, req: Request): Promise<LoadUs
         // Get the UUID of the user making the request
         const requestorUuid = getRequestorUuidFromReq(req);
         
-        // Create and publish request received event
-        await fabricEvents.createAndPublishEvent({
-            req,
-            eventName: USER_LOAD_EVENTS.REQUEST_RECEIVED.eventName,
-            payload: {
-                userId,
-                requestorUuid
-            }
-        });
-
         // Get user account data
         const userResult = await pool.query<DbUser>(queries.getUserById, [userId]);
         

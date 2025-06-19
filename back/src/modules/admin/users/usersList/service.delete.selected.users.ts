@@ -33,44 +33,14 @@ export async function deleteSelectedUsers(
     payload: DeleteUsersPayload
 ): Promise<{ deletedUserIds: string[] }> {
     try {
-        // Get requestor UUID
-        const requestorUuid = getRequestorUuidFromReq(req) || 'unknown';
+        // Get UUID of the user making the request
+        const requestorUuid = getRequestorUuidFromReq(req);
         
-        // Publish event for incoming delete request
-        await fabricEvents.createAndPublishEvent({
-            req,
-            eventName: USERS_DELETE_EVENTS.REQUEST_RECEIVED.eventName,
-            payload: {
-                userIds: payload.userIds,
-                requestorUuid
-            }
-        });
-
-        // Validate input
-        if (!payload.userIds || !Array.isArray(payload.userIds) || payload.userIds.length === 0) {
-            const validationError: UserError = {
-                code: 'VALIDATION_ERROR',
-                message: 'No user IDs provided for deletion'
-            };
-
-            // Publish validation error event
-            await fabricEvents.createAndPublishEvent({
-                req,
-                eventName: USERS_DELETE_EVENTS.VALIDATION_FAILED.eventName,
-                payload: validationError
-            });
-
-            throw validationError;
-        }
-
-        // Execute delete query with array of UUIDs as parameter
-        const dbResult = await pgPool.query(
-            queries.deleteSelectedUsers,
-            [payload.userIds]
-        );
+        // Execute SQL query to delete users
+        const result = await pgPool.query(queries.deleteSelectedUsers, [payload.userIds]);
 
         // Get deleted user IDs from query result
-        const deletedUserIds = dbResult.rows.map((row: any) => row.user_id);
+        const deletedUserIds = result.rows.map((row: any) => row.user_id);
 
         // Invalidate cache to force fresh data load on next request
         usersRepository.invalidateCache();

@@ -70,7 +70,7 @@ export const protoUsersFetchService = {
       // Create event for fetching users request
       await fabricEvents.createAndPublishEvent({
         req,
-        eventName: USERS_FETCH_EVENTS.REQUEST_RECEIVED.eventName,
+        eventName: USERS_FETCH_EVENTS.CACHE_MISS.eventName,
         payload: { 
           requestorUuid,
           search: search || '(empty)',

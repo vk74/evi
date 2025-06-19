@@ -51,6 +51,9 @@ export async function removeGroupMembers(request: RemoveGroupMembersRequest, req
       }
     });
     
+    // Start database transaction
+    await pool.query('BEGIN');
+    
     // Input validation
     if (!groupId) {
       const validationError: ValidationError = {
@@ -115,6 +118,9 @@ export async function removeGroupMembers(request: RemoveGroupMembersRequest, req
       }
     });
 
+    // Commit transaction
+    await pool.query('COMMIT');
+
     // Return formatted response
     return {
       success: true,
@@ -149,6 +155,9 @@ export async function removeGroupMembers(request: RemoveGroupMembersRequest, req
       message: error instanceof Error ? error.message : 'Failed to remove group members from database',
       details: error instanceof Error ? error.stack : 'Unknown error'
     };
+
+    // Rollback transaction
+    await pool.query('ROLLBACK');
 
     throw serviceError;
   }

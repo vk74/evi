@@ -1,48 +1,39 @@
 /**
- * controller.update.user.ts - version 1.0.04
- * Controller for handling user update requests from admin panel.
- * Processes requests, handles errors, and formats responses.
- * Now uses event bus for operation tracking.
+ * controller.update.user.ts - backend file
+ * version: 1.0.02
+ * 
+ * Controller for updating user data.
+ * 
+ * Handles HTTP requests to the /api/admin/users/update/:userId endpoint.
+ * Validates JWT (handled by middleware), processes user update data,
+ * and sends the response. Uses event bus to track operations.
+ * 
+ * Note: HTTP request/response events are now handled by the universal connection handler.
  */
 
 import { Request, Response } from 'express';
-import { updateUserById as updateUserService } from './service.update.user';
-import type { UpdateUserRequest, ServiceError } from './types.user.editor';
-import fabricEvents from '../../../../core/eventBus/fabric.events';
-import { USER_UPDATE_CONTROLLER_EVENTS } from './events.user.editor';
+import { updateUserById as updateUser } from './service.update.user';
 import { connectionHandler } from '../../../../core/helpers/connection.handler';
 
+/**
+ * Business logic for updating user data
+ * 
+ * @param req - Express Request object
+ * @param res - Express Response object
+ */
 async function updateUserLogic(req: Request, res: Response): Promise<any> {
-  const updateData = req.body as UpdateUserRequest;
-  
-  // Log HTTP request received event
-  await fabricEvents.createAndPublishEvent({
-    req,
-    eventName: USER_UPDATE_CONTROLLER_EVENTS.HTTP_REQUEST_RECEIVED.eventName,
-    payload: {
-      method: req.method,
-      url: req.url,
-      userId: updateData.user_id,
-      updatedFields: Object.keys(updateData).filter(key => key !== 'user_id')
-    }
-  });
+    // JWT validation is already performed by route guards
+    // If request reaches controller, JWT is valid
 
-  // Passing the entire req object to the service
-  const result = await updateUserService(updateData, req);
-  
-  // Log HTTP response sent event
-  await fabricEvents.createAndPublishEvent({
-    req,
-    eventName: USER_UPDATE_CONTROLLER_EVENTS.HTTP_RESPONSE_SENT.eventName,
-    payload: {
-      userId: updateData.user_id,
-      statusCode: 200,
-      updatedFields: Object.keys(updateData).filter(key => key !== 'user_id')
-    }
-  });
+    // Get user ID from URL parameters and prepare update data
+    const userId = req.params.userId;
+    const userData = { ...req.body, user_id: userId };
 
-  return result;
+    // Update user data
+    const result = await updateUser(userData, req);
+
+    return result;
 }
 
 // Export controller using universal connection handler
-export default connectionHandler(updateUserLogic);
+export default connectionHandler(updateUserLogic, 'UpdateUserController');

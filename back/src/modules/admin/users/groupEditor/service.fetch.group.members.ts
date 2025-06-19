@@ -42,7 +42,7 @@ export async function fetchGroupMembers(request: FetchGroupMembersRequest, req: 
     // Get the UUID of the user making the request
     const requestorUuid = getRequestorUuidFromReq(req);
     
-    // Create event for group members fetch start
+    // Создаем событие для начала получения участников группы
     await fabricEvents.createAndPublishEvent({
       req,
       eventName: GROUP_MEMBERS_EVENTS.FETCH_REQUEST_RECEIVED.eventName,
@@ -52,30 +52,8 @@ export async function fetchGroupMembers(request: FetchGroupMembersRequest, req: 
       }
     });
     
-    // Input validation
-    if (!groupId) {
-      const validationError: ValidationError = {
-        code: 'VALIDATION_ERROR',
-        message: 'Group ID is required',
-        field: 'groupId'
-      };
-      
-      // Create event for validation error
-      await fabricEvents.createAndPublishEvent({
-        req,
-        eventName: GROUP_MEMBERS_EVENTS.FETCH_FAILED.eventName,
-        payload: {
-          groupId: 'undefined',
-          error: 'Group ID is required'
-        },
-        errorData: 'Group ID is required'
-      });
-      
-      throw validationError;
-    }
-
-    // Perform query to get group members
-    const result: QueryResult = await pool.query(queries.getGroupMembers.text, [groupId]);
+    // Get group members from database
+    const result = await pool.query(queries.getGroupMembers.text, [groupId]);
     
     // If no rows returned, group might not exist
     if (result.rows.length === 0) {

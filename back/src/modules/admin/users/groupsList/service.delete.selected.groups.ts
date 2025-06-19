@@ -40,7 +40,7 @@ export const deleteSelectedGroupsService = {
             // Create event for deletion operation start
             await fabricEvents.createAndPublishEvent({
                 req,
-                eventName: GROUPS_DELETE_EVENTS.REQUEST_RECEIVED.eventName,
+                eventName: GROUPS_DELETE_EVENTS.COMPLETE.eventName,
                 payload: {
                     groupIds,
                     requestorUuid

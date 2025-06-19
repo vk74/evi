@@ -41,6 +41,11 @@ export const eventReferenceFiles: Record<string, string[]> = {
     path.resolve(__dirname, '../../../core/services/settings/events.settings.ts')
   ],
   
+  // Connection handler events
+  connectionHandler: [
+    path.resolve(__dirname, '../../helpers/events.connection.handler.ts')
+  ],
+  
   // System events - events for internal system operations
   system: [
     path.resolve(__dirname, './errors.reference.events.ts')

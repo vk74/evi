@@ -24,10 +24,8 @@ export enum GroupStatus {
 export interface IGroup {
   group_id: string;        // Group UUID
   group_name: string;      // Group name
-  //reserve_1: string;       // Reserved field
   group_status: GroupStatus; // Group status
   group_owner: string;     // Group owner UUID
-  is_system: boolean;      // System group flag
 }
 
 /**

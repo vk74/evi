@@ -37,16 +37,6 @@ export async function getAllUsers(req: Request): Promise<IUsersResponse> {
         // Check if refresh parameter is present
         const shouldRefresh = req.query.refresh === 'true';
         
-        // Publish event for incoming request
-        await fabricEvents.createAndPublishEvent({
-            req,
-            eventName: USERS_FETCH_EVENTS.REQUEST_RECEIVED.eventName,
-            payload: {
-                requestorUuid,
-                refresh: shouldRefresh
-            }
-        });
-
         // If refresh is requested, invalidate the cache
         if (shouldRefresh) {
             usersRepository.invalidateCache();
