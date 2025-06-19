@@ -18,7 +18,7 @@ import { getRequestorUuidFromReq } from '../../../../core/helpers/get.requestor.
 import fabricEvents from '../../../../core/eventBus/fabric.events';
 import { GROUPS_DELETE_EVENTS } from './events.groups.list';
 
-// Явно указываем тип для pool
+// Explicitly set type for pool
 const pool = pgPool as Pool;
 
 /**
@@ -34,10 +34,10 @@ export const deleteSelectedGroupsService = {
      */
     async deleteSelectedGroups(groupIds: string[], req: Request): Promise<number> {
         try {
-            // Получаем UUID пользователя, делающего запрос
+            // Get UUID of the user making the request
             const requestorUuid = getRequestorUuidFromReq(req);
             
-            // Создаем событие для начала операции удаления
+            // Create event for deletion operation start
             await fabricEvents.createAndPublishEvent({
                 req,
                 eventName: GROUPS_DELETE_EVENTS.REQUEST_RECEIVED.eventName,
@@ -47,14 +47,14 @@ export const deleteSelectedGroupsService = {
                 }
             });
 
-            // Выполняем SQL-запрос для удаления групп
+            // Execute SQL query to delete groups
             const result = await pool.query(queries.deleteSelectedGroups, [groupIds]);
 
-            // Проверяем результат
+            // Check result
             if (!result.rows || !Array.isArray(result.rows)) {
                 const errorMessage = 'Invalid database response format';
                 
-                // Создаем событие для ошибки
+                // Create event for error
                 await fabricEvents.createAndPublishEvent({
                     req,
                     eventName: GROUPS_DELETE_EVENTS.FAILED.eventName,
@@ -67,10 +67,10 @@ export const deleteSelectedGroupsService = {
                 throw new Error(errorMessage);
             }
 
-            // Получаем количество удаленных групп
+            // Get number of deleted groups
             const deletedCount = result.rows.length;
             
-            // Создаем событие для успешного удаления
+            // Create event for successful deletion
             await fabricEvents.createAndPublishEvent({
                 req,
                 eventName: GROUPS_DELETE_EVENTS.COMPLETE.eventName,
@@ -80,20 +80,20 @@ export const deleteSelectedGroupsService = {
                 }
             });
 
-            // Очищаем кэш в репозитории
+            // Clear cache in repository
             groupsRepository.clearCache();
 
-            // Проверяем, что кэш действительно очищен
+            // Check if cache is actually cleared
             const isCacheCleared = !groupsRepository.hasValidCache();
             if (isCacheCleared) {
-                // Создаем событие для успешного очищения кэша
+                // Create event for successful cache clearing
                 await fabricEvents.createAndPublishEvent({
                     req,
                     eventName: GROUPS_DELETE_EVENTS.CACHE_INVALIDATED.eventName,
                     payload: { requestorUuid }
                 });
             } else {
-                // Создаем событие для неудачного очищения кэша
+                // Create event for failed cache clearing
                 await fabricEvents.createAndPublishEvent({
                     req,
                     eventName: GROUPS_DELETE_EVENTS.CACHE_INVALIDATION_FAILED.eventName,
@@ -101,11 +101,11 @@ export const deleteSelectedGroupsService = {
                 });
             }
 
-            // Возвращаем количество удаленных групп
+            // Return number of deleted groups
             return deletedCount;
 
         } catch (error) {
-            // Создаем событие для ошибки при удалении
+            // Create event for deletion error
             await fabricEvents.createAndPublishEvent({
                 req,
                 eventName: GROUPS_DELETE_EVENTS.FAILED.eventName,
@@ -115,7 +115,7 @@ export const deleteSelectedGroupsService = {
                 errorData: error instanceof Error ? error.message : String(error)
             });
 
-            // Пробрасываем ошибку дальше
+            // Re-throw error
             throw new Error(
                 process.env.NODE_ENV === 'development' ?
                     (error instanceof Error ? error.message : String(error)) :

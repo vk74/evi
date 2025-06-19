@@ -33,7 +33,7 @@ const pool = pgPool as Pool;
 
 // Validation functions
 async function validateRequiredFields(data: CreateGroupRequest, req: Request): Promise<void> {
-  // Создаем событие для начала валидации
+  // Create event for validation start
   await fabricEvents.createAndPublishEvent({
     req,
     eventName: GROUP_CREATION_EVENTS.VALIDATION_PASSED.eventName,
@@ -53,7 +53,7 @@ async function validateRequiredFields(data: CreateGroupRequest, req: Request): P
     .map(([, label]) => label);
 
   if (missingFields.length > 0) {
-    // Создаем событие для ошибки валидации
+    // Create event for validation error
     await fabricEvents.createAndPublishEvent({
       req,
       eventName: GROUP_CREATION_EVENTS.VALIDATION_FAILED.eventName,
@@ -74,7 +74,7 @@ async function validateRequiredFields(data: CreateGroupRequest, req: Request): P
 
 async function validateGroupName(name: string, req: Request): Promise<void> {
   if (name.length < 2) {
-    // Создаем событие для ошибки валидации
+    // Create event for validation error
     await fabricEvents.createAndPublishEvent({
       req,
       eventName: GROUP_CREATION_EVENTS.VALIDATION_FAILED.eventName,
@@ -95,7 +95,7 @@ async function validateGroupName(name: string, req: Request): Promise<void> {
   }
 
   if (name.length > 100) {
-    // Создаем событие для ошибки валидации
+    // Create event for validation error
     await fabricEvents.createAndPublishEvent({
       req,
       eventName: GROUP_CREATION_EVENTS.VALIDATION_FAILED.eventName,
@@ -116,7 +116,7 @@ async function validateGroupName(name: string, req: Request): Promise<void> {
   }
 
   if (!/^[a-zA-Z0-9-]+$/.test(name)) {
-    // Создаем событие для ошибки валидации
+    // Create event for validation error
     await fabricEvents.createAndPublishEvent({
       req,
       eventName: GROUP_CREATION_EVENTS.VALIDATION_FAILED.eventName,
@@ -142,7 +142,7 @@ async function validateEmail(email: string | undefined, req: Request): Promise<v
   const emailRegex = /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)+$/;
   
   if (!emailRegex.test(email) || email.length > 254) {
-    // Создаем событие для ошибки валидации
+    // Create event for validation error
     await fabricEvents.createAndPublishEvent({
       req,
       eventName: GROUP_CREATION_EVENTS.VALIDATION_FAILED.eventName,
@@ -167,7 +167,7 @@ async function validateDescription(description: string | undefined, req: Request
   if (!description) return;
 
   if (description.length > 5000) {
-    // Создаем событие для ошибки валидации
+    // Create event for validation error
     await fabricEvents.createAndPublishEvent({
       req,
       eventName: GROUP_CREATION_EVENTS.VALIDATION_FAILED.eventName,
@@ -188,7 +188,7 @@ async function validateDescription(description: string | undefined, req: Request
   }
 
   if (!/^[a-zA-Zа-яА-ЯёЁ0-9\s\-_.,!?()@#$%&'*+=/<>[\]{}"`~;:|]+$/.test(description)) {
-    // Создаем событие для ошибки валидации
+    // Create event for validation error
     await fabricEvents.createAndPublishEvent({
       req,
       eventName: GROUP_CREATION_EVENTS.VALIDATION_FAILED.eventName,
@@ -209,7 +209,7 @@ async function validateDescription(description: string | undefined, req: Request
 }
 
 async function checkUniqueness(groupName: string, req: Request): Promise<void> {
-  // Создаем событие для проверки уникальности
+  // Create event for uniqueness check
   await fabricEvents.createAndPublishEvent({
     req,
     eventName: GROUP_CREATION_EVENTS.NAME_CHECK.eventName,
@@ -218,7 +218,7 @@ async function checkUniqueness(groupName: string, req: Request): Promise<void> {
 
   const result = await pool.query(queries.checkGroupName.text, [groupName]);
   if (result.rows.length > 0) {
-    // Создаем событие для ошибки уникальности
+    // Create event for uniqueness error
     await fabricEvents.createAndPublishEvent({
       req,
       eventName: GROUP_CREATION_EVENTS.VALIDATION_FAILED.eventName,
@@ -240,7 +240,7 @@ async function checkUniqueness(groupName: string, req: Request): Promise<void> {
 }
 
 async function checkOwnerExists(ownerUsername: string, req: Request): Promise<void> {
-  // Создаем событие для проверки наличия владельца
+  // Create event for owner existence check
   await fabricEvents.createAndPublishEvent({
     req,
     eventName: GROUP_CREATION_EVENTS.OWNER_CHECK.eventName,
@@ -249,7 +249,7 @@ async function checkOwnerExists(ownerUsername: string, req: Request): Promise<vo
 
   const result = await pool.query(queries.checkUserExists.text, [ownerUsername]);
   if (result.rows.length === 0) {
-    // Создаем событие для ошибки проверки владельца
+    // Create event for owner check error
     await fabricEvents.createAndPublishEvent({
       req,
       eventName: GROUP_CREATION_EVENTS.VALIDATION_FAILED.eventName,
@@ -277,10 +277,10 @@ export async function createGroup(
   const client = await pool.connect();
   
   try {
-    // Получаем UUID пользователя, делающего запрос
+    // Get UUID of the user making the request
     const requestorUuid = getRequestorUuidFromReq(req);
     
-    // Создаем событие для начала создания группы
+    // Create event for group creation start
     await fabricEvents.createAndPublishEvent({
       req,
       eventName: GROUP_CREATION_EVENTS.REQUEST_RECEIVED.eventName,
@@ -299,7 +299,7 @@ export async function createGroup(
     await validateDescription(groupData.group_description, req);
     
     if (!Object.values(GroupStatus).includes(groupData.group_status)) {
-      // Создаем событие для ошибки валидации
+      // Create event for validation error
       await fabricEvents.createAndPublishEvent({
         req,
         eventName: GROUP_CREATION_EVENTS.VALIDATION_FAILED.eventName,
@@ -326,14 +326,14 @@ export async function createGroup(
     // Start transaction
     await client.query('BEGIN');
     
-    // Создаем событие для начала транзакции
+    // Create event for transaction start
     await fabricEvents.createAndPublishEvent({
       req,
       eventName: GROUP_CREATION_EVENTS.TRANSACTION_START.eventName,
       payload: { requestorUuid }
     });
     
-    // Получаем UUID владельца
+    // Get owner UUID
     const ownerResult = await client.query(
       queries.getUserId.text,
       [groupData.group_owner]
@@ -341,7 +341,7 @@ export async function createGroup(
     
     const ownerUuid = ownerResult.rows[0].user_id;
     
-    // Создаем группу с полученным UUID
+    // Create group with obtained UUID
     const groupResult = await client.query(
       queries.insertGroup.text,
       [
@@ -361,13 +361,13 @@ export async function createGroup(
         groupId,
         groupData.group_description || null,
         groupData.group_email || null,
-        requestorUuid // Используем UUID того, кто выполняет запрос
+        requestorUuid // Use UUID of the user making the request
       ]
     );
 
     await client.query('COMMIT');
     
-    // Создаем событие для успешного создания группы
+    // Create event for successful group creation
     await fabricEvents.createAndPublishEvent({
       req,
       eventName: GROUP_CREATION_EVENTS.COMPLETE.eventName,
@@ -379,14 +379,14 @@ export async function createGroup(
     });
 
     try {
-      // Очищаем кэш
+      // Clear cache
       groupsRepository.clearCache(); 
       
-      // Проверяем состояние кеша
+      // Check cache state
       const cacheStateAfter = groupsRepository.hasValidCache();
       
       if (!cacheStateAfter) {
-        // Создаем событие для успешной очистки кеша
+        // Create event for successful cache clearing
         await fabricEvents.createAndPublishEvent({
           req,
           eventName: GROUP_CREATION_EVENTS.CACHE_CLEARED.eventName,
@@ -396,7 +396,7 @@ export async function createGroup(
           }
         });
       } else {
-        // Создаем событие для ошибки очистки кеша
+        // Create event for cache clearing error
         await fabricEvents.createAndPublishEvent({
           req,
           eventName: GROUP_CREATION_EVENTS.CACHE_CLEAR_FAILED.eventName,
@@ -408,7 +408,7 @@ export async function createGroup(
         });
       }
     } catch (error) {
-      // Создаем событие для ошибки очистки кеша
+      // Create event for cache clearing error
       await fabricEvents.createAndPublishEvent({
         req,
         eventName: GROUP_CREATION_EVENTS.CACHE_CLEAR_FAILED.eventName,
@@ -431,11 +431,11 @@ export async function createGroup(
     await client.query('ROLLBACK');
     
     if ((error as ServiceError).code) {
-      // Если это наша ошибка с кодом, просто пробрасываем дальше
+      // If this is our error with code, just re-throw it
       throw error;
     }
 
-    // Создаем событие для неожиданной ошибки
+    // Create event for unexpected error
     await fabricEvents.createAndPublishEvent({
       req,
       eventName: GROUP_CREATION_EVENTS.FAILED.eventName,

@@ -22,12 +22,12 @@ export enum GroupStatus {
  * Core group interface matching backend data structure
  */
 export interface IGroup {
-  group_id: string;        // UUID группы
-  group_name: string;      // Название группы
-  //reserve_1: string;       // Резервное поле
-  group_status: GroupStatus; // Статус группы
-  group_owner: string;     // UUID владельца группы
-  is_system: boolean;      // Флаг системной группы
+  group_id: string;        // Group UUID
+  group_name: string;      // Group name
+  //reserve_1: string;       // Reserved field
+  group_status: GroupStatus; // Group status
+  group_owner: string;     // Group owner UUID
+  is_system: boolean;      // System group flag
 }
 
 /**

@@ -13,14 +13,15 @@
 
 import { Request, Response } from 'express';
 import { protoUsersFetchService } from './protoService.fetch.users';
-import { IUsersFetchParams, UserError } from './protoTypes.users.list';
+import { IUsersFetchParams } from './protoTypes.users.list';
+import { connectionHandler } from '../../../../core/helpers/connection.handler';
 import fabricEvents from '../../../../core/eventBus/fabric.events';
 import { USERS_FETCH_CONTROLLER_EVENTS } from './protoEvents.users.list';
 
 /**
  * Controller function for fetching users
  */
-async function fetchProtoUsers(req: Request, res: Response): Promise<void> {
+async function fetchProtoUsersLogic(req: Request, res: Response) {
   try {
     // Create event for incoming request
     await fabricEvents.createAndPublishEvent({
@@ -52,11 +53,10 @@ async function fetchProtoUsers(req: Request, res: Response): Promise<void> {
         payload: { search: params.search }
       });
       
-      res.status(400).json({
+      return Promise.reject({
         code: 'INVALID_SEARCH',
         message: 'Search query must be at least 2 characters or empty'
       });
-      return;
     }
 
     // Handle the request through service, now passing the req object
@@ -73,7 +73,7 @@ async function fetchProtoUsers(req: Request, res: Response): Promise<void> {
     });
 
     // Send response
-    res.status(200).json(result);
+    return result;
     
   } catch (error) {
     // Create event for error
@@ -96,8 +96,9 @@ async function fetchProtoUsers(req: Request, res: Response): Promise<void> {
         undefined
     };
 
-    res.status(500).json(userError);
+    return Promise.reject(userError);
   }
 }
 
-export default fetchProtoUsers;
+// Export controller using universal connection handler
+export default connectionHandler(fetchProtoUsersLogic);

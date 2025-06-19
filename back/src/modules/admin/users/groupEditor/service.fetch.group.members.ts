@@ -42,7 +42,7 @@ export async function fetchGroupMembers(request: FetchGroupMembersRequest, req: 
     // Get the UUID of the user making the request
     const requestorUuid = getRequestorUuidFromReq(req);
     
-    // Создаем событие для начала получения участников группы
+    // Create event for group members fetch start
     await fabricEvents.createAndPublishEvent({
       req,
       eventName: GROUP_MEMBERS_EVENTS.FETCH_REQUEST_RECEIVED.eventName,
@@ -60,7 +60,7 @@ export async function fetchGroupMembers(request: FetchGroupMembersRequest, req: 
         field: 'groupId'
       };
       
-      // Создаем событие для ошибки валидации
+      // Create event for validation error
       await fabricEvents.createAndPublishEvent({
         req,
         eventName: GROUP_MEMBERS_EVENTS.FETCH_FAILED.eventName,
@@ -83,7 +83,7 @@ export async function fetchGroupMembers(request: FetchGroupMembersRequest, req: 
       const groupResult = await pool.query(queries.getGroupById.text, [groupId]);
       
       if (groupResult.rows.length === 0) {
-        // Создаем событие для ошибки "группа не найдена"
+        // Create event for "group not found" error
         await fabricEvents.createAndPublishEvent({
           req,
           eventName: GROUP_MEMBERS_EVENTS.FETCH_FAILED.eventName,
@@ -112,7 +112,7 @@ export async function fetchGroupMembers(request: FetchGroupMembersRequest, req: 
       status: row.user_status || 'active'  // Default to 'active' if not present
     }));
     
-    // Создаем событие для успешного получения участников группы
+    // Create event for successful group members fetch
     await fabricEvents.createAndPublishEvent({
       req,
       eventName: GROUP_MEMBERS_EVENTS.FETCH_COMPLETE.eventName,
@@ -140,7 +140,7 @@ export async function fetchGroupMembers(request: FetchGroupMembersRequest, req: 
     }
 
     // Otherwise create a service error
-    // Создаем событие для неожиданной ошибки
+    // Create event for unexpected error
     await fabricEvents.createAndPublishEvent({
       req,
       eventName: GROUP_MEMBERS_EVENTS.FETCH_FAILED.eventName,
