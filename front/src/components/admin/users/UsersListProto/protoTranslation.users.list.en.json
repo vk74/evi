@@ -36,6 +36,9 @@
       "refreshSuccess": "Users list refreshed successfully."
     }
   },
+  "pagination": {
+    "itemsPerPage": "Items per page"
+  },
   "passwordChange": {
     "resetPasswordFor": "Reset password for"
   }

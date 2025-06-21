@@ -1,6 +1,6 @@
 /**
  * protoService.fetch.users.ts
- * Version: 1.0.0
+ * Version: 1.0.01
  * FRONTEND service for fetching and managing users list data from API.
  *
  * Functionality:
@@ -8,6 +8,7 @@
  * - Manages cache through Pinia store
  * - Handles request cancellation for concurrent requests
  * - Provides error handling and logging
+ * - Supports server-side pagination with proper total count handling
  */
 import { api } from '@/core/api/service.axios'
 import { useStoreUsersList } from './protoState.users.list'
@@ -111,15 +112,24 @@ export const usersFetchService = {
         throw new Error('Invalid API response format')
       }
 
+      console.log('[ProtoUsersFetchService] API Response received:', {
+        usersCount: response.data.users.length,
+        total: response.data.total,
+        responseDataType: typeof response.data.total,
+        usersSample: response.data.users.slice(0, 2).map(u => ({ id: u.user_id, username: u.username }))
+      });
+
       logger.info('Successfully received users data', {
         count: response.data.users.length,
-        total: response.data.total
+        total: response.data.total,
+        page: queryParams.page,
+        itemsPerPage: queryParams.itemsPerPage
       })
 
       // Update display parameters
       store.updateDisplayParams(params || {})
       
-      // Update store data
+      // Update store data with total count from database
       store.setUsersData(response.data.users, response.data.total)
       
       // Cache the result

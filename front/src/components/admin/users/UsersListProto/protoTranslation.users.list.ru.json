@@ -36,6 +36,9 @@
       "refreshSuccess": "Список пользователей успешно обновлен."
     }
   },
+  "pagination": {
+    "itemsPerPage": "Записей на странице"
+  },
   "passwordChange": {
     "resetPasswordFor": "Сброс пароля для"
   }

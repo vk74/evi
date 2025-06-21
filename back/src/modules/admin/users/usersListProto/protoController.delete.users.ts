@@ -29,7 +29,7 @@ async function deleteSelectedProtoUsersLogic(req: Request, res: Response): Promi
     const { userIds } = req.body;
 
     // Process user deletion
-    const result = await protoUsersDeleteService.deleteUsers(userIds, req);
+    const result = await protoUsersDeleteService.deleteSelectedUsers(userIds, req);
 
     return result;
 }

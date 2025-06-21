@@ -1,6 +1,6 @@
 /**
  * @file protoService.fetch.users.ts
- * Version: 1.0.0
+ * Version: 1.0.01
  * BACKEND service for fetching prototype users data with server-side processing.
  * 
  * Functionality:
@@ -8,6 +8,7 @@
  * - Integrates with cache layer for optimized performance
  * - Maps database records to response format
  * - Uses event bus to track operations
+ * - Provides proper total count for server-side pagination
  */
 
 import { Request } from 'express';
@@ -134,6 +135,14 @@ export const protoUsersFetchService = {
         offset               // OFFSET
       ]);
       
+      console.log('[ProtoUsersFetchService] SQL Query executed:', {
+        search,
+        sortClause,
+        itemsPerPage,
+        offset,
+        rowsReturned: result.rows.length
+      });
+      
       // Process result
       let total = 0;
       const users: IUser[] = [];
@@ -141,10 +150,24 @@ export const protoUsersFetchService = {
       if (result.rows.length > 0) {
         total = parseInt(result.rows[0].total);
         
+        console.log('[ProtoUsersFetchService] First row total field:', {
+          totalRaw: result.rows[0].total,
+          totalParsed: total,
+          totalType: typeof result.rows[0].total
+        });
+        
         for (const row of result.rows) {
           users.push(mapDbUserToInterface(row));
         }
       }
+      
+      console.log('[ProtoUsersFetchService] Query result processed:', {
+        usersCount: users.length,
+        totalRecords: total,
+        page: page,
+        itemsPerPage: itemsPerPage,
+        offset: offset
+      });
       
       // Create response
       const response: IUsersResponse = { users, total };

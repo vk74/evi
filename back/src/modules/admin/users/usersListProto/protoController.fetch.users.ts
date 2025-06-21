@@ -1,6 +1,6 @@
 /**
  * @file protoController.fetch.users.ts
- * Version: 1.0.0
+ * Version: 1.0.01
  * Controller for handling prototype user list fetch API requests with server-side processing.
  * 
  * Functionality:
@@ -9,6 +9,7 @@
  * - Delegates business logic to service layer (passing the entire req object)
  * - Formats API responses
  * - Generates events via event bus for tracing and monitoring
+ * - Supports server-side pagination, sorting and filtering
  */
 
 import { Request, Response } from 'express';
@@ -30,8 +31,12 @@ async function fetchProtoUsersLogic(req: Request, res: Response): Promise<any> {
     const params: IUsersFetchParams = {
         search: req.query.search as string || '',
         page: parseInt(req.query.page as string) || 1,
-        itemsPerPage: parseInt(req.query.itemsPerPage as string) || 10
+        itemsPerPage: parseInt(req.query.itemsPerPage as string) || 25,
+        sortBy: req.query.sortBy as string || '',
+        sortDesc: req.query.sortDesc === 'true'
     };
+
+    console.log('[ProtoFetchUsersController] Extracted parameters:', params);
 
     // Validate search parameter
     if (params.search && params.search.length < 2) {

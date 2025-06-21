@@ -1,6 +1,6 @@
 /**
  * protoState.users.list.ts
- * Version: 1.0.0
+ * Version: 1.0.01
  * Pinia store for managing users list state with optimized caching.
  * 
  * Functionality:
@@ -8,6 +8,7 @@
  * - Cache management with TTL and LRU policy
  * - Display parameters management (pagination, sorting, search)
  * - Selection state for multi-select operations
+ * - Server-side pagination support with proper total count handling
  * 
  * Used by:
  * - protoUsersList.vue component
@@ -214,11 +215,29 @@ export const useStoreUsersList = defineStore('protoViewAllUsers', () => {
     }
     
     /**
-     * Sets current users and total count
+     * Sets current users and total count from API response
+     * @param users - Array of user records for current page
+     * @param total - Total number of users in database (not just current page)
      */
     function setUsersData(users: IUser[], total: number): void {
+        console.log('[UsersStore] setUsersData called with:', {
+            usersCount: users.length,
+            total: total,
+            usersSample: users.slice(0, 2).map(u => ({ id: u.user_id, username: u.username }))
+        });
+        
         currentUsers.value = users;
-        totalItems.value = total;
+        totalItems.value = total; // This should be the total count from database, not current page count
+        
+        console.log('[UsersStore] State updated:', {
+            currentUsersLength: currentUsers.value.length,
+            totalItemsValue: totalItems.value
+        });
+        
+        logger.info('Users data updated', { 
+            currentPageUsers: users.length, 
+            totalItemsInDatabase: total 
+        });
     }
     
     /**

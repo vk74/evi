@@ -1,16 +1,18 @@
 /**
  * @file protoUsersList.vue
- * Version: 1.0.03
+ * Version: 1.0.07
  * Компонент-прототип для отображения и управления списком пользователей системы с обработкой на сервере.
  *
  * Функциональность:
- * - Отображение пользователей в табличном виде с пагинацией
+ * - Отображение пользователей в табличном виде с серверной пагинацией
  * - Поиск по полям UUID, username, email, first_name, last_name (серверный)
  * - Сортировка по колонкам с серверной обработкой
  * - Редактирование пользователей через UserEditor
  * - Сброс пароля пользователей через ChangePassword
  * - Оптимизированное кэширование данных (серверное)
  * - Боковая панель для размещения элементов управления (динамическое разделение на общие и относящиеся к выбранному элементу)
+ * - Собственный пагинатор с полной поддержкой серверной пагинации (заменяет встроенный v-data-table пагинатор)
+ * - Улучшенный интерфейс пагинатора с правильным расположением элементов и выравниванием по правому краю
  */
 <script setup lang="ts">
 import usersFetchService from './protoService.fetch.users'
@@ -258,60 +260,93 @@ const refreshList = async () => {
 // Define a more specific type for sortByInfo from v-data-table options
 type VDataTableSortByItem = { key: string; order: 'asc' | 'desc' };
 
-// Новый обработчик для @update:options
+// Новый обработчик для @update:options с правильной обработкой серверной пагинации
 const updateOptionsAndFetch = async (options: { page?: number, itemsPerPage?: number, sortBy?: Readonly<VDataTableSortByItem[]> }) => {
   console.log('[ViewAllUsers] @update:options triggered with:', JSON.parse(JSON.stringify(options)));
+  console.log('[ViewAllUsers] Current state before update:', {
+    page: page.value,
+    itemsPerPage: itemsPerPage.value,
+    totalItems: totalItems.value,
+    usersCount: users.value.length
+  });
 
   let needsFetch = false;
+  let pageChanged = false;
+  let itemsPerPageChanged = false;
+  let sortChanged = false;
 
+  // Handle page changes
   if (options.page !== undefined && page.value !== options.page) {
+    console.log('[ViewAllUsers] Page changed from', page.value, 'to', options.page);
     page.value = options.page;
-    needsFetch = true;
-  }
-  if (options.itemsPerPage !== undefined && itemsPerPage.value !== options.itemsPerPage) {
-    itemsPerPage.value = options.itemsPerPage;
+    pageChanged = true;
     needsFetch = true;
   }
 
+  // Handle items per page changes
+  if (options.itemsPerPage !== undefined && itemsPerPage.value !== options.itemsPerPage) {
+    console.log('[ViewAllUsers] Items per page changed from', itemsPerPage.value, 'to', options.itemsPerPage);
+    itemsPerPage.value = options.itemsPerPage;
+    itemsPerPageChanged = true;
+    // Reset to page 1 when changing items per page
+    if (page.value !== 1) {
+      page.value = 1;
+      pageChanged = true;
+    }
+    needsFetch = true;
+  }
+
+  // Handle sorting changes
   if (options.sortBy) {
     if (options.sortBy.length > 0) {
       const sortItem = options.sortBy[0];
       if (sortBy.value !== sortItem.key || sortDesc.value !== (sortItem.order === 'desc')) {
+        console.log('[ViewAllUsers] Sort changed from', { key: sortBy.value, desc: sortDesc.value }, 'to', { key: sortItem.key, desc: sortItem.order === 'desc' });
         sortBy.value = sortItem.key;
         sortDesc.value = sortItem.order === 'desc';
-        // When sort changes, Vuetify's v-data-table usually resets to page 1 if not controlled
-        // Ensure our state reflects this if we want to go to page 1 on sort.
-        // If the options.page is already 1, this won't mark it as a new page change.
+        sortChanged = true;
+        // Reset to page 1 when changing sort
         if (page.value !== 1) {
-          page.value = 1; // Reset to page 1 on sort change
+          page.value = 1;
+          pageChanged = true;
         }
         needsFetch = true;
       }
     } else if (sortBy.value !== null) { // If sortBy is cleared
+      console.log('[ViewAllUsers] Sort cleared');
       sortBy.value = null;
       sortDesc.value = false;
+      sortChanged = true;
       if (page.value !== 1) {
         page.value = 1;
+        pageChanged = true;
       }
       needsFetch = true;
     }
   }
 
   if (needsFetch) {
-    console.log('[ViewAllUsers] Fetching users due to options change:', {
+    const fetchParams = {
       page: page.value,
       itemsPerPage: itemsPerPage.value,
-      sortBy: sortBy.value,
+      sortBy: sortBy.value || '',
       sortDesc: sortDesc.value,
       search: searchQuery.value
+    };
+    
+    console.log('[ViewAllUsers] Fetching users due to options change:', {
+      ...fetchParams,
+      changes: { pageChanged, itemsPerPageChanged, sortChanged }
     });
+    
     try {
-      await usersFetchService.fetchUsers({
+      await usersFetchService.fetchUsers(fetchParams);
+      
+      console.log('[ViewAllUsers] Fetch completed. New state:', {
         page: page.value,
         itemsPerPage: itemsPerPage.value,
-        sortBy: sortBy.value || '',
-        sortDesc: sortDesc.value,
-        search: searchQuery.value
+        totalItems: totalItems.value,
+        usersCount: users.value.length
       });
     } catch (error) {
       console.error('[ViewAllUsers] Error fetching users after options change:', error);
@@ -428,7 +463,7 @@ const headers = computed<TableHeader[]>(() => [
   }
 ])
 
-// Функция для логирования состояния пагинации
+// Функция для логирования состояния пагинации с подробной информацией
 const logPaginationState = (source: string) => {
   console.log(`[DEBUG-PAGINATION] [${source}] State:`, {
     page: page.value,
@@ -438,7 +473,9 @@ const logPaginationState = (source: string) => {
     userStoreItemsPerPage: usersStore.itemsPerPage,
     sortBy: sortBy.value,
     sortDesc: sortDesc.value,
-    search: searchQuery.value
+    search: searchQuery.value,
+    usersCount: users.value.length,
+    expectedPageCount: Math.ceil(totalItems.value / itemsPerPage.value)
   });
 }
 
@@ -448,14 +485,19 @@ onMounted(async () => {
   logPaginationState('onMounted-before');
   
   try {
-    // Загружаем начальные данные, используя текущие значения (включая из стора)
-    await usersFetchService.fetchUsers({
+    // Ensure initial parameters are properly set
+    const initialParams = {
       page: page.value,
       itemsPerPage: itemsPerPage.value,
       sortBy: sortBy.value || '',
       sortDesc: sortDesc.value,
       search: searchQuery.value
-    })
+    };
+    
+    console.log('[ViewAllUsers] Initial parameters:', initialParams);
+    
+    // Загружаем начальные данные, используя текущие значения (включая из стора)
+    await usersFetchService.fetchUsers(initialParams)
 
     logPaginationState('onMounted-after');
   } catch (error) {
@@ -465,6 +507,130 @@ onMounted(async () => {
     )
   }
 })
+
+// Функции для собственного пагинатора
+/**
+ * Получает информацию о текущей странице для отображения
+ */
+const getPaginationInfo = () => {
+  const start = (page.value - 1) * itemsPerPage.value + 1;
+  const end = Math.min(page.value * itemsPerPage.value, totalItems.value);
+  return `${start}-${end} of ${totalItems.value} records`;
+};
+
+/**
+ * Вычисляет общее количество страниц
+ */
+const getTotalPages = () => {
+  return Math.ceil(totalItems.value / itemsPerPage.value);
+};
+
+/**
+ * Получает видимые номера страниц для отображения
+ */
+const getVisiblePages = () => {
+  const totalPages = getTotalPages();
+  const currentPage = page.value;
+  const pages: (number | string)[] = [];
+  
+  if (totalPages <= 7) {
+    // Если страниц мало, показываем все
+    for (let i = 1; i <= totalPages; i++) {
+      pages.push(i);
+    }
+  } else {
+    // Если страниц много, показываем умную пагинацию
+    if (currentPage <= 4) {
+      // В начале
+      for (let i = 1; i <= 5; i++) {
+        pages.push(i);
+      }
+      pages.push('...');
+      pages.push(totalPages);
+    } else if (currentPage >= totalPages - 3) {
+      // В конце
+      pages.push(1);
+      pages.push('...');
+      for (let i = totalPages - 4; i <= totalPages; i++) {
+        pages.push(i);
+      }
+    } else {
+      // В середине
+      pages.push(1);
+      pages.push('...');
+      for (let i = currentPage - 1; i <= currentPage + 1; i++) {
+        pages.push(i);
+      }
+      pages.push('...');
+      pages.push(totalPages);
+    }
+  }
+  
+  return pages;
+};
+
+/**
+ * Переход на указанную страницу
+ */
+const goToPage = async (newPage: number) => {
+  console.log('[ViewAllUsers] Going to page:', newPage);
+  
+  if (newPage < 1 || newPage > getTotalPages()) {
+    console.warn('[ViewAllUsers] Invalid page number:', newPage);
+    return;
+  }
+  
+  if (newPage === page.value) {
+    console.log('[ViewAllUsers] Already on page:', newPage);
+    return;
+  }
+  
+  page.value = newPage;
+  
+  try {
+    await usersFetchService.fetchUsers({
+      page: page.value,
+      itemsPerPage: itemsPerPage.value,
+      sortBy: sortBy.value || '',
+      sortDesc: sortDesc.value,
+      search: searchQuery.value
+    });
+    
+    console.log('[ViewAllUsers] Successfully navigated to page:', newPage);
+  } catch (error) {
+    console.error('[ViewAllUsers] Error navigating to page:', error);
+    uiStore.showErrorSnackbar(
+      error instanceof Error ? error.message : 'Ошибка при переходе на страницу'
+    );
+  }
+};
+
+/**
+ * Обработчик изменения количества записей на странице
+ */
+const handleItemsPerPageChange = async (newItemsPerPage: number) => {
+  console.log('[ViewAllUsers] Items per page changed to:', newItemsPerPage);
+  
+  itemsPerPage.value = newItemsPerPage;
+  page.value = 1; // Сбрасываем на первую страницу
+  
+  try {
+    await usersFetchService.fetchUsers({
+      page: page.value,
+      itemsPerPage: itemsPerPage.value,
+      sortBy: sortBy.value || '',
+      sortDesc: sortDesc.value,
+      search: searchQuery.value
+    });
+    
+    console.log('[ViewAllUsers] Successfully changed items per page to:', newItemsPerPage);
+  } catch (error) {
+    console.error('[ViewAllUsers] Error changing items per page:', error);
+    uiStore.showErrorSnackbar(
+      error instanceof Error ? error.message : 'Ошибка при изменении количества записей на странице'
+    );
+  }
+};
 </script>
 
 <template>
@@ -498,7 +664,8 @@ onMounted(async () => {
         >
           Page: {{ page }} | Items per page: {{ itemsPerPage }} | Total: {{ totalItems }} | 
           Store Page: {{ usersStore.page }} | Store Items: {{ usersStore.itemsPerPage }} |
-          SortBy: {{ sortBy }} | SortDesc: {{ sortDesc }} | Search: {{ searchQuery }}
+          SortBy: {{ sortBy }} | SortDesc: {{ sortDesc }} | Search: {{ searchQuery }} |
+          Users Count: {{ users.length }} | Store Total: {{ usersStore.totalItems }}
         </div>
 
         <v-data-table
@@ -513,6 +680,7 @@ onMounted(async () => {
           multi-sort
           :sort-by="sortBy ? [{ key: sortBy, order: sortDesc ? 'desc' : 'asc' }] : []"
           @update:options="updateOptionsAndFetch"
+          hide-default-footer
         >
           <!-- Шаблон для колонки с чекбоксами -->
           <template #[`item.selection`]="{ item }">
@@ -545,6 +713,93 @@ onMounted(async () => {
             />
           </template>
         </v-data-table>
+
+        <!-- Собственный пагинатор -->
+        <div class="custom-pagination-container pa-4">
+          <div class="d-flex align-center justify-end">
+            <!-- Элементы управления пагинацией -->
+            <div class="d-flex align-center">
+              <!-- Выбор количества записей на странице -->
+              <div class="d-flex align-center mr-4">
+                <span class="text-body-2 mr-2">{{ t('pagination.itemsPerPage') }}:</span>
+                <v-select
+                  v-model="itemsPerPage"
+                  :items="[25, 50, 100]"
+                  density="compact"
+                  variant="outlined"
+                  hide-details
+                  class="items-per-page-select"
+                  style="width: 100px"
+                  @update:model-value="handleItemsPerPageChange"
+                />
+              </div>
+              
+              <!-- Информация о записях -->
+              <div class="text-body-2 mr-4">
+                {{ getPaginationInfo() }}
+              </div>
+              
+              <!-- Кнопки навигации -->
+              <div class="d-flex align-center">
+                <v-btn
+                  icon
+                  variant="text"
+                  size="small"
+                  :disabled="page === 1"
+                  @click="goToPage(1)"
+                >
+                  <v-icon>mdi-chevron-double-left</v-icon>
+                </v-btn>
+                
+                <v-btn
+                  icon
+                  variant="text"
+                  size="small"
+                  :disabled="page === 1"
+                  @click="goToPage(page - 1)"
+                >
+                  <v-icon>mdi-chevron-left</v-icon>
+                </v-btn>
+                
+                <!-- Номера страниц -->
+                <div class="d-flex align-center mx-2">
+                  <template v-for="pageNum in getVisiblePages()" :key="pageNum">
+                    <v-btn
+                      v-if="pageNum !== '...'"
+                      :variant="pageNum === page ? 'tonal' : 'text'"
+                      size="small"
+                      class="mx-1"
+                      @click="goToPage(pageNum)"
+                    >
+                      {{ pageNum }}
+                    </v-btn>
+                    <span v-else class="mx-1">...</span>
+                  </template>
+                </div>
+                
+                <v-btn
+                  icon
+                  variant="text"
+                  size="small"
+                  :disabled="page >= getTotalPages()"
+                  @click="goToPage(page + 1)"
+                >
+                  <v-icon>mdi-chevron-right</v-icon>
+                </v-btn>
+                
+                <v-btn
+                  icon
+                  variant="text"
+                  size="small"
+                  :disabled="page >= getTotalPages()"
+                  @click="goToPage(getTotalPages())"
+                >
+                  <v-icon>mdi-chevron-double-right</v-icon>
+                </v-btn>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
       
       <!-- Боковая панель (правая часть) -->
@@ -754,5 +1009,24 @@ onMounted(async () => {
   left: 0;
   right: 0;
   border-top: thin solid rgba(var(--v-border-color), var(--v-border-opacity));
+}
+
+/* Стили для собственного пагинатора */
+.custom-pagination-container {
+  border-top: thin solid rgba(var(--v-border-color), var(--v-border-opacity));
+  background-color: rgba(var(--v-theme-surface), 1);
+}
+
+.items-per-page-select {
+  min-width: 100px;
+}
+
+.custom-pagination-container .v-btn {
+  min-width: 32px;
+  height: 32px;
+}
+
+.custom-pagination-container .v-btn--size-small {
+  font-size: 0.875rem;
 }
 </style>
