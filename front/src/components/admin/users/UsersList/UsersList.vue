@@ -1,7 +1,7 @@
 /**
- * @file protoUsersList.vue
+ * @file UsersList.vue
  * Version: 1.0.07
- * Компонент-прототип для отображения и управления списком пользователей системы с обработкой на сервере.
+ * Компонент для отображения и управления списком пользователей системы с обработкой на сервере.
  *
  * Функциональность:
  * - Отображение пользователей в табличном виде с серверной пагинацией
@@ -13,6 +13,7 @@
  * - Боковая панель для размещения элементов управления (динамическое разделение на общие и относящиеся к выбранному элементу)
  * - Собственный пагинатор с полной поддержкой серверной пагинации (заменяет встроенный v-data-table пагинатор)
  * - Улучшенный интерфейс пагинатора с правильным расположением элементов и выравниванием по правому краю
+ * - Полная локализация интерфейса с поддержкой i18n
  */
 <script setup lang="ts">
 import usersFetchService from './Service.fetch.users'
@@ -515,7 +516,7 @@ onMounted(async () => {
 const getPaginationInfo = () => {
   const start = (page.value - 1) * itemsPerPage.value + 1;
   const end = Math.min(page.value * itemsPerPage.value, totalItems.value);
-  return `${start}-${end} of ${totalItems.value} records`;
+  return t('pagination.recordsInfo', { start, end, total: totalItems.value });
 };
 
 /**
@@ -600,7 +601,7 @@ const goToPage = async (newPage: number) => {
   } catch (error) {
     console.error('[ViewAllUsers] Error navigating to page:', error);
     uiStore.showErrorSnackbar(
-      error instanceof Error ? error.message : 'Ошибка при переходе на страницу'
+      error instanceof Error ? error.message : t('pagination.errors.navigationError')
     );
   }
 };
@@ -627,7 +628,7 @@ const handleItemsPerPageChange = async (newItemsPerPage: number) => {
   } catch (error) {
     console.error('[ViewAllUsers] Error changing items per page:', error);
     uiStore.showErrorSnackbar(
-      error instanceof Error ? error.message : 'Ошибка при изменении количества записей на странице'
+      error instanceof Error ? error.message : t('pagination.errors.itemsPerPageError')
     );
   }
 };
@@ -738,6 +739,9 @@ const handleItemsPerPageChange = async (newItemsPerPage: number) => {
                   @click="goToPage(1)"
                 >
                   <v-icon>mdi-chevron-double-left</v-icon>
+                  <v-tooltip activator="parent" location="top">
+                    {{ t('pagination.navigation.firstPage') }}
+                  </v-tooltip>
                 </v-btn>
                 
                 <v-btn
@@ -748,6 +752,9 @@ const handleItemsPerPageChange = async (newItemsPerPage: number) => {
                   @click="goToPage(page - 1)"
                 >
                   <v-icon>mdi-chevron-left</v-icon>
+                  <v-tooltip activator="parent" location="top">
+                    {{ t('pagination.navigation.previousPage') }}
+                  </v-tooltip>
                 </v-btn>
                 
                 <!-- Номера страниц -->
@@ -774,6 +781,9 @@ const handleItemsPerPageChange = async (newItemsPerPage: number) => {
                   @click="goToPage(page + 1)"
                 >
                   <v-icon>mdi-chevron-right</v-icon>
+                  <v-tooltip activator="parent" location="top">
+                    {{ t('pagination.navigation.nextPage') }}
+                  </v-tooltip>
                 </v-btn>
                 
                 <v-btn
@@ -784,6 +794,9 @@ const handleItemsPerPageChange = async (newItemsPerPage: number) => {
                   @click="goToPage(getTotalPages())"
                 >
                   <v-icon>mdi-chevron-double-right</v-icon>
+                  <v-tooltip activator="parent" location="top">
+                    {{ t('pagination.navigation.lastPage') }}
+                  </v-tooltip>
                 </v-btn>
               </div>
             </div>

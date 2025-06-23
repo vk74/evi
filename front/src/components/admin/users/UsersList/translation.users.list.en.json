@@ -37,7 +37,18 @@
     }
   },
   "pagination": {
-    "itemsPerPage": "Items per page"
+    "itemsPerPage": "items per page",
+    "recordsInfo": "{start}-{end} of {total} records",
+    "navigation": {
+      "firstPage": "first page",
+      "previousPage": "previous page",
+      "nextPage": "next page",
+      "lastPage": "last page"
+    },
+    "errors": {
+      "navigationError": "error navigating to page",
+      "itemsPerPageError": "error changing items per page"
+    }
   },
   "passwordChange": {
     "resetPasswordFor": "Reset password for"

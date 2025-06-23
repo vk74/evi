@@ -1,6 +1,6 @@
 /**
- * protoTypes.users.list.ts
- * FRONTEND type definitions for the user management frontend prototype module.
+ * Types.users.list.ts
+ * FRONTEND type definitions for the user management frontend module.
  * Version: 1.0.0
  * 
  * This module provides TypeScript types and interfaces for:
@@ -11,8 +11,8 @@
  * - Cache structure
  * 
  * Used by:
- * - protoUsersList.vue component
- * - protoState.users.list.ts store
+ * - UsersList.vue component
+ * - State.users.list.ts store
  * - Service.fetch.users.ts service
  */
 

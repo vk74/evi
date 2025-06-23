@@ -37,7 +37,18 @@
     }
   },
   "pagination": {
-    "itemsPerPage": "Записей на странице"
+    "itemsPerPage": "записей на странице",
+    "recordsInfo": "{start}-{end} из {total} записей",
+    "navigation": {
+      "firstPage": "первая страница",
+      "previousPage": "предыдущая страница",
+      "nextPage": "следующая страница",
+      "lastPage": "последняя страница"
+    },
+    "errors": {
+      "navigationError": "ошибка при переходе на страницу",
+      "itemsPerPageError": "ошибка при изменении количества записей на странице"
+    }
   },
   "passwordChange": {
     "resetPasswordFor": "Сброс пароля для"
