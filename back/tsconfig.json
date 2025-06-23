@@ -19,7 +19,7 @@
       "baseUrl": "./",          // Базовый путь для резолвинга модулей
       "experimentalDecorators": true,     // Поддержка декораторов
       "emitDecoratorMetadata": true,      // Метаданные для декораторов
-      "types": ["node", "express"],       // Добавляем типы Node.js и Express
+      "types": ["node", "express", "jest"],       // Добавляем типы Node.js, Express и Jest
       "paths": {                          // Алиасы для путей (опционально)
         "@/*": ["src/*"]
       },
@@ -33,6 +33,10 @@
     "exclude": [
       "node_modules",
       "dist",
-      "**/*.spec.ts"    // Исключаем тестовые файлы
+      "**/*.test.ts",       // Исключаем тестовые файлы с суффиксом .test.ts
+      "**/*.spec.ts",       // Исключаем тестовые файлы с суффиксом .spec.ts
+      "**/__tests__/**",    // Исключаем папки __tests__
+      "src/tests/**",       // Исключаем отдельную папку tests
+      "coverage/**"         // Исключаем папку с отчетами покрытия
     ]
   }
