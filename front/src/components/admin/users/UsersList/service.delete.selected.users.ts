@@ -1,71 +1,81 @@
 /**
- * @file service.delete.selected.users.ts
+ * @file Service.delete.selected.users.ts
  * Version: 1.0.0
- * Frontend service for deleting selected users.
+ * FRONTEND service for deleting selected users.
  *
  * Functionality:
- * - Sends delete requests to the API endpoint for selected users.
- * - Updates the store cache after successful deletion.
- * - Handles errors and logging.
+ * - Sends delete request to API
+ * - Invalidates cache after deletion
+ * - Returns count of deleted users
  */
+import { api } from '@/core/api/service.axios'
+import { useStoreUsersList } from './State.users.list'
+import { useUserStore } from '@/core/state/userstate'
+import usersFetchService from './Service.fetch.users'
 
-import { api } from '@/core/api/service.axios'; // Axios instance
-import { useStoreUsersList } from './state.users.list'; // Users store
-import { useUserStore } from '@/core/state/userstate'; // User store
+// Logger for main operations
+const logger = {
+  info: (message: string, meta?: any) => console.log(`[ProtoDeleteUsersService] ${message}`, meta || ''),
+  error: (message: string, error?: any) => console.error(`[ProtoDeleteUsersService] ${message}`, error || '')
+}
 
 /**
  * Service for deleting selected users
  */
-const deleteSelectedUsersService = {
-    /**
-     * Deletes selected users from the API and updates the store cache.
-     * @param userIds - Array of user UUIDs to delete
-     * @returns Promise<void>
-     * @throws {Error} If an error occurs during the delete operation.
-     */
-    async deleteSelectedUsers(userIds: string[]): Promise<void> {
-        const store = useStoreUsersList(); // Users store
-        const userStore = useUserStore(); // User store
+export const deleteSelectedUsersService = {
+  /**
+   * Deletes selected users
+   * @param userIds Array of user IDs to delete
+   * @returns Promise<number> Number of deleted users
+   * @throws {Error} When deletion fails
+   */
+  async deleteSelectedUsers(userIds: string[]): Promise<number> {
+    const store = useStoreUsersList()
+    const userStore = useUserStore()
 
-        // Check if the user is authenticated
-        if (!userStore.isLoggedIn) {
-            const errorMessage = 'User not authenticated';
-            console.error('[DeleteUsersService]', errorMessage);
-            store.setError(errorMessage);
-            throw new Error(errorMessage);
-        }
-
-        // Check if there are any users to delete
-        if (!userIds.length) {
-            console.warn('[DeleteUsersService] No users selected for deletion');
-            return;
-        }
-
-        try {
-            // Set loading state
-            store.setLoading(true);
-            console.log(`[DeleteUsersService] Deleting ${userIds.length} users`);
-
-            // Make API request to delete the users
-            await api.post('/users/delete', { userIds });
-            
-            // Update store after successful deletion
-            store.removeUsers(userIds);
-            console.log(`[DeleteUsersService] Successfully deleted ${userIds.length} users`);
-            
-            // Clear any previous errors
-            store.setError(null);
-        } catch (error: any) {
-            // Handle error
-            const errorMessage = error.response?.data?.message || error.message || 'Unknown error';
-            console.error('[DeleteUsersService] Error deleting users:', errorMessage);
-            store.setError(`Error deleting users: ${errorMessage}`);
-            throw error;
-        } finally {
-            // Reset loading state
-            store.setLoading(false);
-        }
+    // Check user authentication
+    if (!userStore.isLoggedIn) {
+      const errorMessage = 'User not authenticated'
+      logger.error(errorMessage)
+      throw new Error(errorMessage)
     }
-};
 
-export default deleteSelectedUsersService;
+    if (!userIds.length) {
+      logger.info('No users selected for deletion')
+      return 0
+    }
+
+    logger.info('Deleting selected users', { count: userIds.length })
+
+    try {
+      const response = await api.post<{success: boolean, deletedCount: number}>(
+        '/api/admin/users/proto/delete-selected-users',
+        { userIds }
+      )
+
+      const deletedCount = response.data.deletedCount
+      logger.info('Successfully deleted users', { deletedCount })
+
+      // Invalidate cache completely after deletion
+      store.invalidateCache()
+      
+      // Clear selection
+      store.clearSelection()
+      
+      // Refresh current view to show updated data
+      await usersFetchService.fetchUsers()
+
+      return deletedCount
+
+    } catch (error: any) {
+      const errorMessage = error.response?.data?.message || 
+                        error.message || 
+                        'Failed to delete users'
+      
+      logger.error('Error deleting users:', error)
+      throw new Error(errorMessage)
+    }
+  }
+}
+
+export default deleteSelectedUsersService

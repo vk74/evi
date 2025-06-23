@@ -1,298 +1,324 @@
 /**
- * @file state.users.list.ts
+ * protoState.users.list.ts
  * Version: 1.0.01
- * Frontend store for managing the state of the users list.
- *
+ * Pinia store for managing users list state with optimized caching.
+ * 
  * Functionality:
- * - Manages the state of users, including loading, error, pagination, sorting, and selection.
- * - Implements caching for the users list to reduce server requests.
- * - Provides methods for updating, sorting, selecting, and clearing the cache.
+ * - Parametrized caching system for users data
+ * - Cache management with TTL and LRU policy
+ * - Display parameters management (pagination, sorting, search)
+ * - Selection state for multi-select operations
+ * - Server-side pagination support with proper total count handling
+ * 
+ * Used by:
+ * - protoUsersList.vue component
+ * - Service.fetch.users.ts service
  */
 
-import { defineStore } from 'pinia';
-import { ref, computed, watch } from 'vue';
-import { useUserStore } from '@/core/state/userstate';
-import type {
+import { defineStore } from 'pinia'
+import { ref, computed } from 'vue'
+import { useUserStore } from '@/core/state/userstate'
+import type { 
     IUser,
+    IFetchUsersParams,
+    IUsersResponse,
+    TableHeader,
     ItemsPerPageOption,
-    ISortParams
-} from './types.users.list';
+    IPaginationParams,
+    CacheStats,
+    CacheEntry
+} from './Types.users.list'
+
+// Configuration
+const CACHE_CONFIG = {
+    TTL_MINUTES: 60,        // Cache entry lifetime in minutes
+    MAX_ENTRIES: 50,        // Maximum number of cache entries
+    AUTO_CLEANUP_MINS: 15   // Auto cleanup interval in minutes
+};
 
 // Logger for main operations
 const logger = {
-    info: (message: string, meta?: object) => console.log(`[UsersStore] ${message}`, meta || ''),
-    error: (message: string, meta?: object) => console.error(`[UsersStore] ${message}`, meta || '')
+    info: (message: string, meta?: any) => console.log(`[UsersStore] ${message}`, meta || ''),
+    error: (message: string, meta?: any) => console.error(`[UsersStore] ${message}`, meta || '')
 };
 
-// Define the Pinia store for users list
-export const useStoreUsersList = defineStore('usersList', () => {
-    // State definitions
-    // Store the complete list of users without applying pagination here
-    const users = ref<IUser[]>([]); // List of all users (full dataset)
-    const loading = ref(false); // Loading state
-    const error = ref<string | null>(null); // Error state
-    const page = ref(1); // Current page number
-    const itemsPerPage = ref<ItemsPerPageOption>(25); // Number of items per page
-    const totalNumberOfUsers = ref(0); // Total number of items (updated from API response)
-    const sorting = ref<ISortParams>({ // Sorting parameters
-        sortBy: 'username',
-        sortDesc: false
-    });
-    const selectedUsers = ref<string[]>([]); // List of selected user IDs
-    const search = ref<string>(''); // Search query (handled by v-data-table)
-
-    // Get the authenticated user store
+export const useStoreUsersList = defineStore('protoViewAllUsers', () => {
+    // User store for auth state
     const userStore = useUserStore();
-
-    // Watch for token changes and refresh data if needed
-    watch(() => userStore.jwt, (newToken) => {
-        if (newToken) {
-            // New token available, refresh data
-            logger.info('Token refreshed, clearing cache');
-            clearCache();
+    
+    // Cache and statistics
+    const cacheMap = ref<Record<string, CacheEntry>>({});
+    const cacheStats = ref<CacheStats>({
+        size: 0,
+        hits: 0,
+        misses: 0,
+        hitRatio: 0
+    });
+    
+    // Current display parameters
+    const displayParams = ref<IFetchUsersParams>({
+        page: 1,
+        itemsPerPage: 25 as ItemsPerPageOption,
+        sortBy: '',
+        sortDesc: false,
+        search: ''
+    });
+    
+    // UI state
+    const loading = ref(false);
+    const error = ref<string | null>(null);
+    const selectedUsers = ref<string[]>([]);
+    
+    // Result data
+    const currentUsers = ref<IUser[]>([]);
+    const totalItems = ref(0);
+    
+    // Cache cleanup timer
+    let cleanupTimer: ReturnType<typeof setTimeout> | null = null;
+    
+    /**
+     * Generates cache key from query parameters
+     */
+    function generateCacheKey(params: IFetchUsersParams): string {
+        return `${params.search}-${params.sortBy}-${params.sortDesc}-${params.page}-${params.itemsPerPage}`;
+    }
+    
+    /**
+     * Checks if cache entry is still valid
+     */
+    function isCacheValid(entry: CacheEntry): boolean {
+        const now = Date.now();
+        const ageInMinutes = (now - entry.timestamp) / (1000 * 60);
+        return ageInMinutes <= CACHE_CONFIG.TTL_MINUTES;
+    }
+    
+    /**
+     * Gets data from cache if available and valid
+     */
+    function getCachedData(params: IFetchUsersParams): CacheEntry | null {
+        const key = generateCacheKey(params);
+        const entry = cacheMap.value[key];
+        
+        if (!entry) {
+            cacheStats.value.misses++;
+            logger.info(`Cache miss for key: ${key}`);
+            return null;
         }
-    });
-
-    // Computed properties
-    /**
-     * Returns the complete list of users with applied sorting only.
-     * Note: Pagination and search filtering are handled by v-data-table component.
-     * @returns {IUser[]} - Sorted list of all users (no pagination applied).
-     */
-    const getUsers = computed(() => {
-        logger.info('getUsers called', {
-            totalItems: totalNumberOfUsers.value,
-            usersCount: users.value.length
-        });
-
-        const result = [...users.value];
-
-        if (sorting.value.sortBy) {
-            result.sort((a, b) => {
-                const aValue = a[sorting.value.sortBy as keyof IUser];
-                const bValue = b[sorting.value.sortBy as keyof IUser];
-                const modifier = sorting.value.sortDesc ? -1 : 1;
-
-                if (typeof aValue === 'string' && typeof bValue === 'string') {
-                    // Special handling for date fields
-                    if (sorting.value.sortBy === 'created_at' || /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/.test(aValue)) {
-                        const dateA = new Date(aValue);
-                        const dateB = new Date(bValue);
-                        return (dateA.getTime() - dateB.getTime()) * modifier;
-                    }
-                    return aValue.localeCompare(bValue) * modifier;
-                }
-
-                if (typeof aValue === 'boolean' && typeof bValue === 'boolean') {
-                    return (aValue === bValue) ? 0 : (aValue ? modifier : -modifier);
-                }
-
-                return ((aValue as any) > (bValue as any)) ? modifier : -modifier;
-            });
+        
+        if (!isCacheValid(entry)) {
+            // Remove expired entry
+            delete cacheMap.value[key];
+            cacheStats.value.misses++;
+            logger.info(`Cache expired for key: ${key}`);
+            return null;
         }
-
-        return result; // Return full sorted list for v-data-table to handle pagination locally
-    });
-
-    // Get the count of selected users
-    const selectedCount = computed(() => selectedUsers.value.length);
-
-    // Check if any users are selected
-    const hasSelected = computed(() => selectedUsers.value.length > 0);
-
-    // Check if exactly one user is selected
-    const hasOneSelected = computed(() => selectedUsers.value.length === 1);
-
-    // Get the first selected user ID (useful for edit operations)
-    const firstSelectedUserId = computed(() => {
-        return selectedUsers.value.length > 0 ? selectedUsers.value[0] : null;
-    });
-
-    // Calculate total filtered users count (for display in UI)
-    const totalFilteredUsers = computed(() => {
-        return totalNumberOfUsers.value;
-    });
-
-    // Actions
-    /**
-     * Updates the cache with new users data.
-     * @param newUsers - New list of users.
-     * @param total - Total number of users.
-     */
-    function setUsers(data: IUser[], total?: number) {
-        users.value = [...data]; // Replace the array with new data
-        totalNumberOfUsers.value = total !== undefined ? total : data.length;
-        // Reset selection when data changes
-        selectedUsers.value = [];
-        logger.info('Cache updated with new users data', {
-            userCount: data.length,
-            totalNumberOfUsers: totalNumberOfUsers.value
-        });
+        
+        cacheStats.value.hits++;
+        cacheStats.value.hitRatio = cacheStats.value.hits / (cacheStats.value.hits + cacheStats.value.misses);
+        logger.info(`Cache hit for key: ${key}`);
+        return entry;
     }
-
+    
     /**
-     * Updates the loading state.
-     * @param isLoading - New loading state.
+     * Saves data to cache
      */
-    function setLoading(isLoading: boolean) {
-        loading.value = isLoading;
-    }
-
-    /**
-     * Sets the error state.
-     * @param errorMessage - Error message or null to clear errors.
-     */
-    function setError(errorMessage: string | null) {
-        error.value = errorMessage;
-    }
-
-    /**
-     * Updates the pagination parameters.
-     * @param newPage - New page number.
-     * @param newItemsPerPage - New items per page count.
-     */
-    function setPagination(newPage: number, newItemsPerPage: ItemsPerPageOption) {
-        page.value = newPage;
-        itemsPerPage.value = newItemsPerPage;
-        logger.info('Display parameters updated', {
-            page: newPage,
-            itemsPerPage: newItemsPerPage
-        });
-    }
-
-    /**
-     * Updates the sorting parameters.
-     * @param newSortBy - Field to sort by.
-     * @param newSortDesc - Sort direction (true for descending).
-     */
-    function setSorting(newSortBy: string, newSortDesc: boolean) {
-        sorting.value = {
-            sortBy: newSortBy,
-            sortDesc: newSortDesc
+    function setCacheData(params: IFetchUsersParams, users: IUser[], total: number): void {
+        const key = generateCacheKey(params);
+        
+        // Check if we need to evict entries (simple LRU implementation)
+        if (Object.keys(cacheMap.value).length >= CACHE_CONFIG.MAX_ENTRIES) {
+            const oldestKey = Object.keys(cacheMap.value).reduce((oldest, key) => {
+                if (!oldest) return key;
+                return cacheMap.value[key].timestamp < cacheMap.value[oldest].timestamp ? key : oldest;
+            }, '');
+            
+            if (oldestKey) {
+                delete cacheMap.value[oldestKey];
+                logger.info(`Evicted oldest cache entry: ${oldestKey}`);
+            }
+        }
+        
+        // Store new data
+        cacheMap.value[key] = {
+            users: [...users],
+            totalItems: total,
+            timestamp: Date.now(),
+            query: { ...params }
         };
-        logger.info('Sorting parameters updated', {
-            sortBy: newSortBy,
-            sortDesc: newSortDesc
+        
+        cacheStats.value.size = Object.keys(cacheMap.value).length;
+        logger.info(`Cached data for key: ${key}`, { usersCount: users.length, total });
+    }
+    
+    /**
+     * Sets up automatic cache cleanup
+     */
+    function setupCacheCleanup() {
+        if (cleanupTimer) {
+            clearInterval(cleanupTimer);
+        }
+        
+        cleanupTimer = setInterval(() => {
+            const now = Date.now();
+            let removedCount = 0;
+            
+            Object.keys(cacheMap.value).forEach(key => {
+                const entry = cacheMap.value[key];
+                const ageInMinutes = (now - entry.timestamp) / (1000 * 60);
+                
+                if (ageInMinutes > CACHE_CONFIG.TTL_MINUTES) {
+                    delete cacheMap.value[key];
+                    removedCount++;
+                }
+            });
+            
+            if (removedCount > 0) {
+                cacheStats.value.size = Object.keys(cacheMap.value).length;
+                logger.info(`Cleaned up ${removedCount} expired cache entries`);
+            }
+        }, CACHE_CONFIG.AUTO_CLEANUP_MINS * 60 * 1000);
+    }
+    
+    /**
+     * Invalidates all or specific cache entries
+     */
+    function invalidateCache(specificParams?: IFetchUsersParams): void {
+        if (specificParams) {
+            const key = generateCacheKey(specificParams);
+            if (cacheMap.value[key]) {
+                delete cacheMap.value[key];
+                logger.info(`Invalidated specific cache entry: ${key}`);
+            }
+        } else {
+            cacheMap.value = {};
+            logger.info('Complete cache invalidation');
+        }
+        
+        cacheStats.value.size = Object.keys(cacheMap.value).length;
+    }
+    
+    /**
+     * Updates current display parameters
+     */
+    function updateDisplayParams(params: Partial<IFetchUsersParams>): void {
+        displayParams.value = {
+            ...displayParams.value,
+            ...params
+        };
+        
+        // Reset to first page when changing sort or search
+        if ('sortBy' in params || 'sortDesc' in params || 'search' in params) {
+            displayParams.value.page = 1;
+        }
+        
+        logger.info('Display parameters updated', displayParams.value);
+    }
+    
+    /**
+     * Sets current users and total count from API response
+     * @param users - Array of user records for current page
+     * @param total - Total number of users in database (not just current page)
+     */
+    function setUsersData(users: IUser[], total: number): void {
+        console.log('[UsersStore] setUsersData called with:', {
+            usersCount: users.length,
+            total: total,
+            usersSample: users.slice(0, 2).map(u => ({ id: u.user_id, username: u.username }))
+        });
+        
+        currentUsers.value = users;
+        totalItems.value = total; // This should be the total count from database, not current page count
+        
+        console.log('[UsersStore] State updated:', {
+            currentUsersLength: currentUsers.value.length,
+            totalItemsValue: totalItems.value
+        });
+        
+        logger.info('Users data updated', { 
+            currentPageUsers: users.length, 
+            totalItemsInDatabase: total 
         });
     }
-
+    
     /**
-     * Updates the search query.
-     * @param query - Search query string.
+     * Selection management
      */
-    function setSearch(query: string) {
-        search.value = query;
-        // Reset to first page when search changes
-        page.value = 1;
-        logger.info('Search query updated', { query });
-    }
-
-    /**
-     * Toggles selection of a single user.
-     * @param userId - ID of the user to toggle selection.
-     */
-    function toggleUserSelection(userId: string) {
-        const index = selectedUsers.value.indexOf(userId);
-        if (index === -1) {
+    function selectUser(userId: string): void {
+        if (!selectedUsers.value.includes(userId)) {
             selectedUsers.value.push(userId);
-            logger.info('User selected', { userId });
-        } else {
-            selectedUsers.value.splice(index, 1);
-            logger.info('User deselected', { userId });
+            logger.info(`User ${userId} selected`);
         }
     }
-
-    /**
-     * Selects or deselects all users on the current page.
-     * @param currentPageUserIds - IDs of users on the current page.
-     */
-    function toggleSelectAll(currentPageUserIds: string[]) {
-        // If all users on the current page are already selected, deselect them
-        if (currentPageUserIds.every(id => selectedUsers.value.includes(id))) {
-            selectedUsers.value = selectedUsers.value.filter(id => !currentPageUserIds.includes(id));
-            logger.info('All users on current page deselected');
-        } else {
-            // Otherwise, add all users from the current page that aren't already selected
-            const newSelectedIds = currentPageUserIds.filter(id => !selectedUsers.value.includes(id));
-            selectedUsers.value = [...selectedUsers.value, ...newSelectedIds];
-            logger.info('All users on current page selected');
-        }
+    
+    function deselectUser(userId: string): void {
+        selectedUsers.value = selectedUsers.value.filter(id => id !== userId);
+        logger.info(`User ${userId} deselected`);
     }
-
-    /**
-     * Checks if a specific user is selected.
-     * @param userId - ID of the user to check.
-     * @returns boolean - True if the user is selected.
-     */
-    function isUserSelected(userId: string) {
-        return selectedUsers.value.includes(userId);
-    }
-
-    /**
-     * Removes users from the list (after deletion).
-     * @param userIds - IDs of users to remove.
-     */
-    function removeUsers(userIds: string[]) {
-        users.value = users.value.filter(user => !userIds.includes(user.user_id));
-        // Remove deleted users from selection
-        selectedUsers.value = selectedUsers.value.filter(id => !userIds.includes(id));
-        // Update total count
-        totalNumberOfUsers.value -= userIds.length;
-        logger.info('Users removed from cache', { removedCount: userIds.length });
-    }
-
-    /**
-     * Clears all selections.
-     */
-    function clearSelection() {
+    
+    function clearSelection(): void {
         selectedUsers.value = [];
         logger.info('Selection cleared');
     }
-
+    
     /**
-     * Clears the cache when needed.
+     * Check if current user is authorized
      */
-    function clearCache() {
-        users.value = [];
-        totalNumberOfUsers.value = 0;
-        selectedUsers.value = [];
-        error.value = null;
-        logger.info('Cache cleared');
-    }
-
-    // Expose the state and methods
+    const isAuthorized = computed(() => userStore.isLoggedIn);
+    
+    /**
+     * Number of selected users
+     */
+    const selectedCount = computed(() => selectedUsers.value.length);
+    
+    /**
+     * Flag indicating if at least one user is selected
+     */
+    const hasSelected = computed(() => selectedCount.value > 0);
+    
+    /**
+     * Flag indicating if exactly one user is selected
+     */
+    const hasOneSelected = computed(() => selectedCount.value === 1);
+    
+    // Setup cache cleanup on store initialization
+    setupCacheCleanup();
+    
     return {
         // State
-        users,
         loading,
         error,
-        page,
-        itemsPerPage,
-        totalNumberOfUsers,
-        sorting,
+        currentUsers,
+        totalItems,
+        displayParams,
         selectedUsers,
-        search,
-
-        // Computed
-        getUsers,
-        totalFilteredUsers,
+        cacheStats,
+        
+        // Display parameter getters
+        get page() { return displayParams.value.page },
+        get itemsPerPage() { return displayParams.value.itemsPerPage },
+        get sortBy() { return displayParams.value.sortBy },
+        get sortDesc() { return displayParams.value.sortDesc },
+        get search() { return displayParams.value.search },
+        
+        // Getters
+        isAuthorized,
         selectedCount,
         hasSelected,
         hasOneSelected,
-        firstSelectedUserId,
-
-        // Methods
-        setUsers,
-        setLoading,
-        setError,
-        setPagination,
-        setSorting,
-        setSearch,
-        toggleUserSelection,
-        toggleSelectAll,
-        isUserSelected,
-        removeUsers,
+        
+        // Cache methods
+        getCachedData,
+        setCacheData,
+        invalidateCache,
+        
+        // Data methods
+        setUsersData,
+        updateDisplayParams,
+        
+        // Selection methods
+        selectUser,
+        deselectUser,
         clearSelection,
-        clearCache
+        isSelected: (userId: string) => selectedUsers.value.includes(userId)
     };
 });

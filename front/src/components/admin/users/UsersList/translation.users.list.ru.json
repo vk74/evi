@@ -1,43 +1,45 @@
 {
-  "admin": {
-    "users": {
-      "list": {
-        "title": "Список пользователей",
-        "buttons": {
-          "create": "создать пользователя",
-          "edit": "редактировать",
-          "delete": "удалить",
-          "resetPassword": "сбросить пароль",
-          "refreshHint": "обновить список пользователей",
-          "cancel": "отмена",
-          "confirm": "подтвердить"
-        },
-        "search": {
-          "placeholder": "Поиск пользователей...",
-          "minChars": "Введите минимум 2 символа"
-        },
-        "table": {
-          "headers": {
-            "select": "выбор",
-            "id": "ID",
-            "username": "логин",
-            "email": "e-mail",
-            "isStaff": "сотрудник",
-            "status": "статус",
-            "firstName": "имя",
-            "lastName": "фамилия",
-            "middleName": "отчество"
-          }
-        },
-        "messages": {
-          "confirmDelete": "Вы уверены, что хотите удалить выбранных пользователей ({count})?",
-          "deleteUsersSuccess": "Успешно удалено пользователей: {count}.",
-          "refreshSuccess": "Список пользователей успешно обновлен."
-        }
-      },
-      "passwordChange": {
-        "resetPasswordFor": "Сброс пароля для"
+  "list": {
+    "title": "прототип списка пользователей: обработка на сервере",
+    "sidebar": {
+      "actions": "действия",
+      "selectedItem": "выбранный элемент"
+    },
+    "buttons": {
+      "create": "создать пользователя",
+      "edit": "редактировать",
+      "delete": "удалить",
+      "resetPassword": "сбросить пароль",
+      "refresh": "обновить",
+      "refreshHint": "обновить список пользователей"
+    },
+    "search": {
+      "placeholder": "Поиск пользователей...",
+      "minChars": "Введите минимум 2 символа"
+    },
+    "table": {
+      "headers": {
+        "select": "выбор",
+        "id": "ID",
+        "username": "логин",
+        "email": "e-mail",
+        "isStaff": "сотрудник",
+        "status": "статус",
+        "firstName": "имя",
+        "lastName": "фамилия",
+        "middleName": "отчество"
       }
+    },
+    "messages": {
+      "confirmDelete": "Вы уверены, что хотите удалить выбранных пользователей ({count})?",
+      "deleteUsersSuccess": "Успешно удалено пользователей: {count}.",
+      "refreshSuccess": "Список пользователей успешно обновлен."
     }
+  },
+  "pagination": {
+    "itemsPerPage": "Записей на странице"
+  },
+  "passwordChange": {
+    "resetPasswordFor": "Сброс пароля для"
   }
 }

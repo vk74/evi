@@ -1,354 +1,163 @@
 /**
- * @file UsersList.vue
- * Version: 1.0.0
- * Component for displaying and managing the list of users in the administration module.
- * 
- * All data processing (sorting, filtering, pagination) happens locally on the client side.
- * The component loads all user records at once and performs operations on the data in memory.
+ * @file protoUsersList.vue
+ * Version: 1.0.07
+ * Компонент-прототип для отображения и управления списком пользователей системы с обработкой на сервере.
+ *
+ * Функциональность:
+ * - Отображение пользователей в табличном виде с серверной пагинацией
+ * - Поиск по полям UUID, username, email, first_name, last_name (серверный)
+ * - Сортировка по колонкам с серверной обработкой
+ * - Редактирование пользователей через UserEditor
+ * - Сброс пароля пользователей через ChangePassword
+ * - Оптимизированное кэширование данных (серверное)
+ * - Боковая панель для размещения элементов управления (динамическое разделение на общие и относящиеся к выбранному элементу)
+ * - Собственный пагинатор с полной поддержкой серверной пагинации (заменяет встроенный v-data-table пагинатор)
+ * - Улучшенный интерфейс пагинатора с правильным расположением элементов и выравниванием по правому краю
  */
-
-<template>
-  <div class="users-list-container">
-    <!-- Loading overlay -->
-    <v-overlay
-      :model-value="loading"
-      class="align-center justify-center"
-    >
-      <v-progress-circular
-        indeterminate
-        size="64"
-      />
-    </v-overlay>
-
-    <!-- Top app bar with actions -->
-    <v-app-bar
-      flat
-      class="px-4"
-    >
-      <div class="d-flex align-center flex-wrap">
-        <!-- Create user button - disabled if users are selected -->
-        <v-btn
-          v-if="isAuthorized"
-          color="teal"
-          variant="outlined"
-          class="mr-2 mb-2"
-          :disabled="hasSelected"
-          @click="openUserEditor()"
-        >
-          {{ t('admin.users.list.buttons.create') }}
-        </v-btn>
-        
-        <!-- Edit user button - enabled if exactly one user is selected -->
-        <v-btn
-          v-if="isAuthorized"
-          color="teal"
-          variant="outlined"
-          class="mr-2 mb-2"
-          :disabled="!hasOneSelected"
-          @click="editSelectedUser()"
-        >
-          {{ t('admin.users.list.buttons.edit') }}
-        </v-btn>
-        
-        <!-- Reset password button - enabled if exactly one user is selected -->
-        <v-btn
-          v-if="isAuthorized"
-          color="teal"
-          variant="outlined"
-          class="mr-2 mb-2"
-          :disabled="!hasOneSelected"
-          @click="resetPassword()"
-        >
-          {{ t('admin.users.list.buttons.resetPassword') }}
-        </v-btn>
-        
-        <!-- Delete button - enabled if at least one user is selected -->
-        <v-btn
-          v-if="isAuthorized"
-          color="error"
-          variant="outlined"
-          class="mr-2 mb-2"
-          :disabled="!hasSelected"
-          @click="showDeleteDialog = true"
-        >
-          {{ t('admin.users.list.buttons.delete') }}
-          <span 
-            v-if="selectedCount > 0" 
-            class="ml-2"
-          >({{ selectedCount }})</span>
-        </v-btn>
-
-        <!-- Refresh button -->
-        <v-btn
-          v-if="isAuthorized"
-          icon
-          variant="text"
-          class="mr-2 mb-2"
-          :loading="loading"
-          @click="refreshData"
-        >
-          <v-icon
-            color="teal"
-            icon="mdi-refresh"
-          />
-          <v-tooltip 
-            activator="parent"
-            location="bottom"
-          >
-            {{ t('admin.users.list.buttons.refreshHint') }}
-          </v-tooltip>
-        </v-btn>
-      </div>
-
-      <v-spacer />
-
-      <v-app-bar-title class="text-subtitle-2 text-lowercase text-right hidden-sm-and-down">
-        {{ t('admin.users.list.title') }}
-      </v-app-bar-title>
-    </v-app-bar>
-
-    <!-- Search and filter bar -->
-    <div class="px-4 pt-4">
-      <v-text-field
-        v-model="searchQuery"
-        :label="t('admin.users.list.search.placeholder')"
-        variant="outlined"
-        density="compact"
-        clearable
-        clear-icon="mdi-close"
-        color="teal"
-        prepend-inner-icon="mdi-magnify"
-        :loading="isSearching"
-        :hint="searchQuery.length === 1 ? t('admin.users.list.search.minChars') : ''"
-        persistent-hint
-        @update:model-value="handleSearch"
-      />
-    </div>
-
-    <!-- Error alert -->
-    <v-alert
-      v-if="error"
-      type="error"
-      variant="tonal"
-      closable
-      class="ma-3"
-      @click:close="usersStore.setError(null)"
-    >
-      {{ error }}
-    </v-alert>
-
-    <!-- Users table -->
-    <v-data-table
-      v-model:page="page"
-      v-model:items-per-page="itemsPerPage"
-      v-model:sort-by="localSortBy"
-      :headers="headers"
-      :items="users"
-      :loading="loading"
-      :items-length="totalNumOfUsers"
-      item-value="user_id"
-      class="users-table"
-      density="compact"
-      @update:sort-by="handleSortChange"
-    >
-      <!-- Selection column -->
-      <template #header.selection>
-        <v-checkbox
-          v-model="selectAll"
-          hide-details
-          @click.stop
-        />
-      </template>
-
-      <!-- Selection cell -->
-      <template #item.selection="{ item }">
-        <v-checkbox
-          :model-value="isUserSelected(item.user_id)"
-          hide-details
-          @click.stop
-          @change="toggleUserSelection(item.user_id)"
-        />
-      </template>
-
-      <!-- Account status -->
-      <template #item.account_status="{ item }">
-        <v-chip
-          :color="getStatusColor(item.account_status)"
-          size="x-small"
-        >
-          {{ item.account_status }}
-        </v-chip>
-      </template>
-
-      <!-- Admin status -->
-      <template #item.is_staff="{ item }">
-        <v-icon
-          :color="item.is_staff ? 'teal' : 'red-darken-4'"
-          :icon="item.is_staff ? 'mdi-check-circle' : 'mdi-minus-circle'"
-          size="x-small"
-        />
-      </template>
-
-      <!-- Date formatter -->
-      <template #item.created_at="{ item }">
-        {{ formatDate(item.created_at) }}
-      </template>
-
-
-      
-      <!-- No data template -->
-      <template #no-data>
-        <p class="text-center">
-          {{ t('common.messages.no_data') }}
-        </p>
-      </template>
-    </v-data-table>
-
-    <!-- Delete confirmation dialog -->
-    <v-dialog
-      v-model="showDeleteDialog"
-      max-width="600px"
-    >
-      <v-card>
-        <v-card-title>{{ t('admin.users.list.messages.confirmDelete', { count: selectedCount }) }}</v-card-title>
-        <v-card-text>
-          {{ t('admin.users.list.messages.confirmDelete', { count: selectedCount }) }}
-        </v-card-text>
-        <v-card-actions>
-          <v-spacer />
-          <v-btn
-            color="primary"
-            variant="text"
-            @click="showDeleteDialog = false"
-          >
-            {{ t('admin.users.list.buttons.cancel') }}
-          </v-btn>
-          <v-btn
-            color="error"
-            variant="text"
-            @click="deleteSelectedUsers"
-          >
-            {{ t('admin.users.list.buttons.confirm') }}
-          </v-btn>
-        </v-card-actions>
-      </v-card>
-    </v-dialog>
-
-    <!-- Password change dialog (hidden initially) -->
-    <v-dialog 
-      v-model="showPasswordDialog" 
-      max-width="550"
-    >
-      <ChangePassword
-        :title="t('admin.users.passwordChange.resetPasswordFor') + ' ' + selectedUserData.username"
-        :uuid="selectedUserData.uuid"
-        :username="selectedUserData.username"
-        :mode="PasswordChangeMode.ADMIN"
-        :on-close="() => showPasswordDialog = false"
-      />
-    </v-dialog>
-  </div>
-</template>
-
 <script setup lang="ts">
-import { ref, computed, watch, onMounted } from 'vue';
-import { useI18n } from 'vue-i18n';
-import { useStoreUsersList } from './state.users.list';
-import usersService from './service.fetch.users';
-import deleteSelectedUsersService from './service.delete.selected.users';
-import type { TableHeader, ItemsPerPageOption } from './types.users.list';
-import { useUserStore } from '@/core/state/userstate';
-// import { useUiStore } from '@/core/state/uistate'; - not using UI store for snackbars
-import { useUsersAdminStore } from '../state.users.admin';
-import { useUserEditorStore } from '../UserEditor/state.user.editor';
-import ChangePassword from '../../../../core/ui/modals/change-password/ChangePassword.vue';
-import { PasswordChangeMode } from '../../../../core/ui/modals/change-password/types.change.password';
-import { loadUserService } from '../UserEditor/service.load.user';
+import usersFetchService from './Service.fetch.users'
+import deleteSelectedUsersService from './Service.delete.selected.users'
+import { ref, computed, onMounted, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
+import { useStoreUsersList } from './State.users.list'
+import type { 
+  TableHeader, 
+  ItemsPerPageOption, 
+  IFetchUsersParams,
+  // ISortParams // No longer directly used here, managed by local refs
+} from './Types.users.list'
+import { useUsersAdminStore } from '../state.users.admin'
+import loadUserService from '../UserEditor/service.load.user'
+import { useUserEditorStore } from '../UserEditor/state.user.editor'
+import { useUiStore } from '@/core/state/uistate'
+import { useUserStore } from '@/core/state/userstate'
+import debounce from 'lodash/debounce'
+import ChangePassword from '../../../../core/ui/modals/change-password/ChangePassword.vue'
+import { PasswordChangeMode } from '../../../../core/ui/modals/change-password/types.change.password'
 
-// Initialize stores and i18n
-const { t } = useI18n();
-const usersStore = useStoreUsersList();
-const userStore = useUserStore();
-// UI store is not used anymore since we're using console instead of showSnackbar
-const usersAdminStore = useUsersAdminStore();
-const userEditorStore = useUserEditorStore();
+// Инициализация сторов и i18n
+const { t } = useI18n()
+const usersStore = useStoreUsersList()
+const usersSectionStore = useUsersAdminStore()
+const uiStore = useUiStore()
+const userStore = useUserStore()
 
-// Authentication check
-const isAuthorized = computed(() => userStore.isLoggedIn);
-
-// Table parameters
+// Параметры таблицы и поиска
 const page = ref<number>(usersStore.page);
 const itemsPerPage = ref<ItemsPerPageOption>(usersStore.itemsPerPage as ItemsPerPageOption);
-const searchQuery = ref<string>('');
+const searchQuery = ref<string>(usersStore.search || ''); // Initialize with store's search
 const isSearching = ref<boolean>(false);
-// Fix for sortBy format issue
-const localSortBy = ref<{ key: string, order: 'asc' | 'desc' }[]>([
-  { key: usersStore.sorting.sortBy, order: usersStore.sorting.sortDesc ? 'desc' : 'asc' }
-]);
 
-// Computed properties
-const users = computed(() => usersStore.getUsers);
-const loading = computed(() => usersStore.loading);
-const error = computed(() => usersStore.error);
-const totalNumOfUsers = computed(() => usersStore.totalFilteredUsers);
+// Отслеживание сортировки
+const sortBy = ref<string | null>(usersStore.sortBy || null);
+const sortDesc = ref<boolean>(usersStore.sortDesc);
 
-// Selected users state
-const selectedCount = computed(() => usersStore.selectedCount);
-const hasSelected = computed(() => usersStore.hasSelected);
-const hasOneSelected = computed(() => usersStore.hasOneSelected);
-const selectAll = ref(false);
+// Состояние диалогов
+const showDeleteDialog = ref(false)
+const showPasswordDialog = ref(false)
 
-// Dialog states
-const showDeleteDialog = ref(false);
-const showPasswordDialog = ref(false);
-
-// Selected user data for operations
+// Данные выбранного пользователя для сброса пароля
 const selectedUserData = ref({
   uuid: '',
   username: ''
-});
+})
 
-// Table headers
-const headers = computed<TableHeader[]>(() => [
-  { title: t('admin.users.list.table.headers.select'), key: 'selection', width: '40px', sortable: false },
-  { title: t('admin.users.list.table.headers.id'), key: 'user_id', width: '200px' },
-  { title: t('admin.users.list.table.headers.username'), key: 'username', width: '150px' },
-  { title: t('admin.users.list.table.headers.email'), key: 'email', width: '200px' },
-  { title: t('admin.users.list.table.headers.lastName'), key: 'last_name', width: '150px' },
-  { title: t('admin.users.list.table.headers.firstName'), key: 'first_name', width: '150px' },
-  { title: t('admin.users.list.table.headers.middleName'), key: 'middle_name', width: '150px' },
-  { title: t('admin.users.list.table.headers.status'), key: 'account_status', width: '100px' },
-  { title: t('admin.users.list.table.headers.isStaff'), key: 'is_staff', width: '80px' }
-]);
+// Вычисляемые свойства
+const isAuthorized = computed(() => userStore.isLoggedIn)
+const selectedCount = computed(() => usersStore.selectedCount)
+const hasSelected = computed(() => usersStore.hasSelected)
+const hasOneSelected = computed(() => usersStore.hasOneSelected)
+const loading = computed(() => usersStore.loading)
+const users = computed(() => usersStore.currentUsers)
+const totalItems = computed(() => usersStore.totalItems)
+const isSearchEnabled = computed(() => 
+  searchQuery.value.length >= 2 || searchQuery.value.length === 0
+)
 
-// Watch for changes in page and items per page
-watch(page, (newPage) => {
-  usersStore.setPagination(newPage, itemsPerPage.value);
-});
+// Обработчики действий с пользователями
+const createUser = () => {
+  console.log('[ViewAllUsers] Starting create user operation')
+  
+  try {
+    // Получаем store для UserEditor
+    const userEditorStore = useUserEditorStore()
+    
+    // Сбрасываем форму к начальным значениям
+    userEditorStore.resetForm()
+    
+    // Устанавливаем режим создания
+    userEditorStore.mode = {
+      mode: 'create'
+    }
+    
+    // Переключаем секцию на редактор пользователя
+    usersSectionStore.setActiveSection('user-editor')
+    
+  } catch (error) {
+    console.error('[ViewAllUsers] Error initializing create mode:', error)
+    uiStore.showErrorSnackbar(
+      error instanceof Error ? error.message : 'Ошибка инициализации режима создания'
+    )
+  }
+}
 
-watch(itemsPerPage, (newItemsPerPage) => {
-  usersStore.setPagination(page.value, newItemsPerPage);
-});
+const onSelectUser = (userId: string, selected: boolean) => {
+  if (selected) {
+    usersStore.selectUser(userId)
+  } else {
+    usersStore.deselectUser(userId)
+  }
+}
 
-// Watch for change in selection state to update selectAll checkbox
-watch(users, () => {
-  updateSelectAllState();
-}, { deep: true });
+const isSelected = (userId: string) => {
+  return usersStore.isSelected(userId)
+}
 
-// Methods
-// Format date for display
-const formatDate = (dateString: string): string => {
-  const date = new Date(dateString);
-  return new Intl.DateTimeFormat('default', {
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit'
-  }).format(date);
-};
+const onDeleteSelected = () => {
+  showDeleteDialog.value = true
+}
 
-// Get color for status chip
+const cancelDelete = () => {
+  showDeleteDialog.value = false
+}
+
+const confirmDelete = async () => {
+  console.log('[ViewAllUsers] Starting confirmDelete operation')
+  
+  try {
+    console.log('[ViewAllUsers] Calling delete service with selectedUsers:', usersStore.selectedUsers)
+    const deletedCount = await deleteSelectedUsersService.deleteSelectedUsers(usersStore.selectedUsers)
+    console.log('[ViewAllUsers] Service returned deletedCount:', deletedCount)
+    
+    console.log('[ViewAllUsers] Preparing success message')
+    const message = t('list.messages.deleteUsersSuccess', { count: deletedCount })
+    console.log('[ViewAllUsers] Success message prepared:', message)
+    
+    console.log('[ViewAllUsers] Showing success notification')
+    uiStore.showSuccessSnackbar(message)
+    
+    // Обновляем список пользователей после удаления
+    // Fetch with current parameters to maintain view
+    await usersFetchService.fetchUsers({
+        page: page.value,
+        itemsPerPage: itemsPerPage.value,
+        sortBy: sortBy.value || '',
+        sortDesc: sortDesc.value,
+        search: searchQuery.value
+    })
+    
+  } catch (error) {
+    console.error('[ViewAllUsers] Error during users deletion:', error)
+    uiStore.showErrorSnackbar(
+      error instanceof Error ? error.message : 'Ошибка при удалении пользователей'
+    )
+  } finally {
+    console.log('[ViewAllUsers] Closing delete dialog')
+    showDeleteDialog.value = false
+    usersStore.clearSelection()
+  }
+}
+
 const getStatusColor = (status: string) => {
   switch (status.toLowerCase()) {
     case 'active': return 'teal';
@@ -359,162 +168,854 @@ const getStatusColor = (status: string) => {
   }
 };
 
-// Handle search input
-const handleSearch = (value: string) => {
-  isSearching.value = true;
-  usersStore.setSearch(value);
-  isSearching.value = false;
-};
+// Функция для получения ID единственного выбранного пользователя
+const getSelectedUserId = (): string => {
+  console.log('[ViewAllUsers] Getting selected user ID')
+  return usersStore.selectedUsers[0]
+}
 
-// Handle sort change
-const handleSortChange = (event: Array<{ key: string, order: string }>) => {
-  if (event.length === 0) {
-    usersStore.setSorting('username', false);
-  } else {
-    const { key, order } = event[0];
-    usersStore.setSorting(key, order === 'desc');
-  }
-};
-
-// Toggle selection of a single user
-const toggleUserSelection = (userId: string) => {
-  usersStore.toggleUserSelection(userId);
-  updateSelectAllState();
-};
-
-// Check if a user is selected
-const isUserSelected = (userId: string) => {
-  return usersStore.isUserSelected(userId);
-};
-
-// Update the select all checkbox state
-const updateSelectAllState = () => {
-  const currentPageUserIds = users.value.map(user => user.user_id);
-  selectAll.value = currentPageUserIds.length > 0 && 
-                    currentPageUserIds.every(id => usersStore.isUserSelected(id));
-};
-
-// Handle select all checkbox changes
-watch(selectAll, (newValue) => {
-  if (newValue) {
-    // Select all users on the current page
-    const currentPageUserIds = users.value.map(user => user.user_id);
-    usersStore.toggleSelectAll(currentPageUserIds);
-  } else {
-    // Deselect all users on the current page
-    const currentPageUserIds = users.value.map(user => user.user_id);
-    usersStore.toggleSelectAll(currentPageUserIds);
-  }
-});
-
-// Delete selected users
-const deleteSelectedUsers = async () => {
+// Функция для обработки клика по кнопке сброса пароля
+const resetPassword = async () => {
+  console.log('[ViewAllUsers] Starting reset password operation')
+  
   try {
-    await deleteSelectedUsersService.deleteSelectedUsers(usersStore.selectedUsers);
-    showDeleteDialog.value = false;
-    console.log(t('admin.users.list.messages.deleteUsersSuccess', { count: selectedCount.value }));
-  } catch (error: unknown) {
-    const errorMsg = error instanceof Error ? error.message : String(error);
-    console.error(`Error deleting users: ${errorMsg}`);
-  }
-};
-
-// Open user editor for creating a new user
-const openUserEditor = () => {
-  // Update editor store
-  userEditorStore.$state.mode = { mode: 'create' };
-  // Clear any existing user data
-  userEditorStore.$state.account = {
-    username: '',
-    email: '',
-    password: '',
-    passwordConfirm: '',
-    is_staff: false,
-    account_status: '',
-    first_name: '',
-    middle_name: '',
-    last_name: ''
-  };
-  // Switch to the editor view
-  usersAdminStore.setActiveSection('user-editor');
-};
-
-// Edit selected user (from toolbar)
-const editSelectedUser = () => {
-  if (usersStore.hasOneSelected) {
-    const userId = usersStore.firstSelectedUserId;
-    if (userId) {
-      editUser(userId);
-    }
-  }
-};
-
-// Edit specific user (from row actions)
-const editUser = async (userId: string) => {
-  try {
-    // Set editor mode
-    userEditorStore.$state.mode = { mode: 'edit', userId: userId };
-    // Load user data via the service
-    await loadUserService.fetchUserById(userId);
-    // Switch to editor view
-    usersAdminStore.setActiveSection('user-editor');
-  } catch (error: unknown) {
-    const errorMsg = error instanceof Error ? error.message : String(error);
-    console.error(`Error loading user: ${errorMsg}`);
-  }
-};
-
-// Reset password for selected user (from toolbar)
-const resetPassword = () => {
-  if (usersStore.hasOneSelected) {
-    const userId = usersStore.firstSelectedUserId;
-    if (userId) {
-      const user = usersStore.users.find(u => u.user_id === userId);
-      if (user) {
-        resetUserPassword(user.user_id, user.username);
+    const userId = getSelectedUserId()
+    console.log('[ViewAllUsers] Selected user ID for password reset:', userId)
+    
+    // Находим выбранного пользователя в текущем списке
+    const selectedUser = users.value.find(user => user.user_id === userId)
+    
+    if (selectedUser) {
+      // Сохраняем данные выбранного пользователя
+      selectedUserData.value = {
+        uuid: selectedUser.user_id,
+        username: selectedUser.username
       }
+      
+      // Открываем диалог сброса пароля
+      showPasswordDialog.value = true
+    } else {
+      console.error('[ViewAllUsers] Selected user not found in current list')
+      uiStore.showErrorSnackbar('Пользователь не найден в текущем списке')
+    }
+  } catch (error) {
+    console.error('[ViewAllUsers] Error preparing password reset:', error)
+    uiStore.showErrorSnackbar(
+      error instanceof Error ? error.message : 'Ошибка при подготовке сброса пароля'
+    )
+  }
+}
+
+// Функция для обработки клика по кнопке редактирования
+const editUser = async () => {
+  console.log('[ViewAllUsers] Starting edit user operation')
+  
+  try {
+    const userId = getSelectedUserId()
+    console.log('[ViewAllUsers] Selected user ID:', userId)
+    
+    // Загружаем данные пользователя
+    await loadUserService.fetchUserById(userId)
+    console.log('[ViewAllUsers] User data loaded successfully')
+    
+    // Переходим к редактированию
+    usersSectionStore.setActiveSection('user-editor')
+    
+  } catch (error) {
+    console.error('[ViewAllUsers] Error loading user data:', error)
+    uiStore.showErrorSnackbar(
+      error instanceof Error ? error.message : 'Ошибка загрузки данных пользователя'
+    )
+  }
+}
+
+// Функция принудительного обновления списка
+const refreshList = async () => {
+  console.log('[ViewAllUsers] Forcing refresh of users list')
+  try {
+    // Invalidate cache for current params and refetch
+    usersStore.invalidateCache({
+        page: page.value,
+        itemsPerPage: itemsPerPage.value,
+        sortBy: sortBy.value || '',
+        sortDesc: sortDesc.value,
+        search: searchQuery.value
+    });
+    await usersFetchService.fetchUsers({
+        page: page.value,
+        itemsPerPage: itemsPerPage.value,
+        sortBy: sortBy.value || '',
+        sortDesc: sortDesc.value,
+        search: searchQuery.value
+    })
+    uiStore.showSuccessSnackbar(t('list.messages.refreshSuccess'))
+  } catch (error) {
+    console.error('[ViewAllUsers] Error refreshing users list:', error)
+    uiStore.showErrorSnackbar(
+      error instanceof Error ? error.message : 'Ошибка обновления списка пользователей'
+    )
+  }
+}
+
+// Define a more specific type for sortByInfo from v-data-table options
+type VDataTableSortByItem = { key: string; order: 'asc' | 'desc' };
+
+// Новый обработчик для @update:options с правильной обработкой серверной пагинации
+const updateOptionsAndFetch = async (options: { page?: number, itemsPerPage?: number, sortBy?: Readonly<VDataTableSortByItem[]> }) => {
+  console.log('[ViewAllUsers] @update:options triggered with:', JSON.parse(JSON.stringify(options)));
+  console.log('[ViewAllUsers] Current state before update:', {
+    page: page.value,
+    itemsPerPage: itemsPerPage.value,
+    totalItems: totalItems.value,
+    usersCount: users.value.length
+  });
+
+  let needsFetch = false;
+  let pageChanged = false;
+  let itemsPerPageChanged = false;
+  let sortChanged = false;
+
+  // Handle page changes
+  if (options.page !== undefined && page.value !== options.page) {
+    console.log('[ViewAllUsers] Page changed from', page.value, 'to', options.page);
+    page.value = options.page;
+    pageChanged = true;
+    needsFetch = true;
+  }
+
+  // Handle items per page changes
+  if (options.itemsPerPage !== undefined && itemsPerPage.value !== options.itemsPerPage) {
+    console.log('[ViewAllUsers] Items per page changed from', itemsPerPage.value, 'to', options.itemsPerPage);
+    itemsPerPage.value = options.itemsPerPage;
+    itemsPerPageChanged = true;
+    // Reset to page 1 when changing items per page
+    if (page.value !== 1) {
+      page.value = 1;
+      pageChanged = true;
+    }
+    needsFetch = true;
+  }
+
+  // Handle sorting changes
+  if (options.sortBy) {
+    if (options.sortBy.length > 0) {
+      const sortItem = options.sortBy[0];
+      if (sortBy.value !== sortItem.key || sortDesc.value !== (sortItem.order === 'desc')) {
+        console.log('[ViewAllUsers] Sort changed from', { key: sortBy.value, desc: sortDesc.value }, 'to', { key: sortItem.key, desc: sortItem.order === 'desc' });
+        sortBy.value = sortItem.key;
+        sortDesc.value = sortItem.order === 'desc';
+        sortChanged = true;
+        // Reset to page 1 when changing sort
+        if (page.value !== 1) {
+          page.value = 1;
+          pageChanged = true;
+        }
+        needsFetch = true;
+      }
+    } else if (sortBy.value !== null) { // If sortBy is cleared
+      console.log('[ViewAllUsers] Sort cleared');
+      sortBy.value = null;
+      sortDesc.value = false;
+      sortChanged = true;
+      if (page.value !== 1) {
+        page.value = 1;
+        pageChanged = true;
+      }
+      needsFetch = true;
     }
   }
-};
 
-// Reset password for specific user (from row actions)
-const resetUserPassword = (userId: string, username: string) => {
-  selectedUserData.value = { uuid: userId, username };
-  showPasswordDialog.value = true;
-};
+  if (needsFetch) {
+    const fetchParams = {
+      page: page.value,
+      itemsPerPage: itemsPerPage.value,
+      sortBy: sortBy.value || '',
+      sortDesc: sortDesc.value,
+      search: searchQuery.value
+    };
+    
+    console.log('[ViewAllUsers] Fetching users due to options change:', {
+      ...fetchParams,
+      changes: { pageChanged, itemsPerPageChanged, sortChanged }
+    });
+    
+    try {
+      await usersFetchService.fetchUsers(fetchParams);
+      
+      console.log('[ViewAllUsers] Fetch completed. New state:', {
+        page: page.value,
+        itemsPerPage: itemsPerPage.value,
+        totalItems: totalItems.value,
+        usersCount: users.value.length
+      });
+    } catch (error) {
+      console.error('[ViewAllUsers] Error fetching users after options change:', error);
+      uiStore.showErrorSnackbar(
+        error instanceof Error ? error.message : 'Ошибка при загрузке данных пользователей'
+      );
+    }
+  } else {
+    console.log('[ViewAllUsers] No fetch needed, options did not result in state change requiring fetch.');
+  }
+}
 
-// Refresh data
-const refreshData = async () => {
+// Функция поиска с debounce
+const performSearch = async () => {
+  if (!isSearchEnabled.value && searchQuery.value.length === 1) {
+    console.log('[ViewAllUsers] Search query too short, not performing search.');
+    return // Не выполняем поиск если длина строки 1 символ
+  }
+  
+  console.log('[ViewAllUsers] Performing search for:', searchQuery.value);
+  isSearching.value = true
+  
   try {
-    await usersService.refreshUsers();
-    console.log(t('admin.users.list.messages.refreshSuccess'));
-  } catch (error: unknown) {
-    // Error is already handled in the service
-    console.error("Error refreshing users data:", error);
+    // При поиске сбрасываем страницу на первую
+    page.value = 1
+    await usersFetchService.fetchUsers({
+      search: searchQuery.value,
+      page: 1, // Reset to page 1 on new search
+      itemsPerPage: itemsPerPage.value,
+      sortBy: sortBy.value || '',
+      sortDesc: sortDesc.value
+    })
+  } catch (error) {
+    console.error('[ViewAllUsers] Error performing search:', error)
+    uiStore.showErrorSnackbar(
+      error instanceof Error ? error.message : 'Ошибка при выполнении поиска'
+    )
+  } finally {
+    isSearching.value = false
+  }
+}
+
+// Создаем debounced версию функции поиска
+const debouncedSearch = debounce(performSearch, 500) // Updated to 500ms
+
+// Слушаем изменения строки поиска
+watch(searchQuery, (newValue, oldValue) => {
+  console.log('[ViewAllUsers] Search query changed from', oldValue, 'to', newValue);
+  debouncedSearch()
+})
+
+// Добавляем обработчик очистки поля поиска
+const handleClearSearch = () => {
+  console.log('[ViewAllUsers] Search cleared');
+  // При нажатии на крестик просто очищаем поле, 
+  // Поиск с пустой строкой будет запущен через обычный watch с debounce
+  searchQuery.value = '' 
+}
+
+// Обработчик нажатия Enter в поле поиска
+const handleSearchKeydown = (event: KeyboardEvent) => {
+  if (event.key === 'Enter') {
+    console.log('[ViewAllUsers] Enter pressed in search, flushing debounce');
+    debouncedSearch.cancel(); // Cancel any pending debounced calls
+    performSearch(); // Perform search immediately
+  }
+}
+
+// Определение колонок таблицы
+const headers = computed<TableHeader[]>(() => [
+  { 
+    title: t('list.table.headers.select'), 
+    key: 'selection',
+    width: '40px',
+    sortable: false
+  },
+  { 
+    title: t('list.table.headers.id'), 
+    key: 'user_id', 
+    width: '80px',
+    sortable: true
+  },
+  { 
+    title: t('list.table.headers.username'), 
+    key: 'username',
+    sortable: true
+  },
+  { 
+    title: t('list.table.headers.email'), 
+    key: 'email',
+    sortable: true
+  },
+  { 
+    title: t('list.table.headers.isStaff'), 
+    key: 'is_staff', 
+    width: '60px',
+    sortable: true
+  },
+  { 
+    title: t('list.table.headers.status'), 
+    key: 'account_status', 
+    width: '60px',
+    sortable: true
+  },
+  { 
+    title: t('list.table.headers.lastName'), 
+    key: 'last_name',
+    sortable: true
+  },
+  { 
+    title: t('list.table.headers.firstName'), 
+    key: 'first_name',
+    sortable: true
+  }
+])
+
+// Функция для логирования состояния пагинации с подробной информацией
+const logPaginationState = (source: string) => {
+  console.log(`[DEBUG-PAGINATION] [${source}] State:`, {
+    page: page.value,
+    itemsPerPage: itemsPerPage.value,
+    totalItems: totalItems.value,
+    userStorePage: usersStore.page,
+    userStoreItemsPerPage: usersStore.itemsPerPage,
+    sortBy: sortBy.value,
+    sortDesc: sortDesc.value,
+    search: searchQuery.value,
+    usersCount: users.value.length,
+    expectedPageCount: Math.ceil(totalItems.value / itemsPerPage.value)
+  });
+}
+
+// Инициализация при монтировании компонента
+onMounted(async () => {
+  console.log('[ViewAllUsers] Component mounted, initializing...')
+  logPaginationState('onMounted-before');
+  
+  try {
+    // Ensure initial parameters are properly set
+    const initialParams = {
+      page: page.value,
+      itemsPerPage: itemsPerPage.value,
+      sortBy: sortBy.value || '',
+      sortDesc: sortDesc.value,
+      search: searchQuery.value
+    };
+    
+    console.log('[ViewAllUsers] Initial parameters:', initialParams);
+    
+    // Загружаем начальные данные, используя текущие значения (включая из стора)
+    await usersFetchService.fetchUsers(initialParams)
+
+    logPaginationState('onMounted-after');
+  } catch (error) {
+    console.error('[ViewAllUsers] Error loading initial users list:', error)
+    uiStore.showErrorSnackbar(
+      error instanceof Error ? error.message : 'Ошибка при загрузке списка пользователей'
+    )
+  }
+})
+
+// Функции для собственного пагинатора
+/**
+ * Получает информацию о текущей странице для отображения
+ */
+const getPaginationInfo = () => {
+  const start = (page.value - 1) * itemsPerPage.value + 1;
+  const end = Math.min(page.value * itemsPerPage.value, totalItems.value);
+  return `${start}-${end} of ${totalItems.value} records`;
+};
+
+/**
+ * Вычисляет общее количество страниц
+ */
+const getTotalPages = () => {
+  return Math.ceil(totalItems.value / itemsPerPage.value);
+};
+
+/**
+ * Получает видимые номера страниц для отображения
+ */
+const getVisiblePages = () => {
+  const totalPages = getTotalPages();
+  const currentPage = page.value;
+  const pages: (number | string)[] = [];
+  
+  if (totalPages <= 7) {
+    // Если страниц мало, показываем все
+    for (let i = 1; i <= totalPages; i++) {
+      pages.push(i);
+    }
+  } else {
+    // Если страниц много, показываем умную пагинацию
+    if (currentPage <= 4) {
+      // В начале
+      for (let i = 1; i <= 5; i++) {
+        pages.push(i);
+      }
+      pages.push('...');
+      pages.push(totalPages);
+    } else if (currentPage >= totalPages - 3) {
+      // В конце
+      pages.push(1);
+      pages.push('...');
+      for (let i = totalPages - 4; i <= totalPages; i++) {
+        pages.push(i);
+      }
+    } else {
+      // В середине
+      pages.push(1);
+      pages.push('...');
+      for (let i = currentPage - 1; i <= currentPage + 1; i++) {
+        pages.push(i);
+      }
+      pages.push('...');
+      pages.push(totalPages);
+    }
+  }
+  
+  return pages;
+};
+
+/**
+ * Переход на указанную страницу
+ */
+const goToPage = async (newPage: number) => {
+  console.log('[ViewAllUsers] Going to page:', newPage);
+  
+  if (newPage < 1 || newPage > getTotalPages()) {
+    console.warn('[ViewAllUsers] Invalid page number:', newPage);
+    return;
+  }
+  
+  if (newPage === page.value) {
+    console.log('[ViewAllUsers] Already on page:', newPage);
+    return;
+  }
+  
+  page.value = newPage;
+  
+  try {
+    await usersFetchService.fetchUsers({
+      page: page.value,
+      itemsPerPage: itemsPerPage.value,
+      sortBy: sortBy.value || '',
+      sortDesc: sortDesc.value,
+      search: searchQuery.value
+    });
+    
+    console.log('[ViewAllUsers] Successfully navigated to page:', newPage);
+  } catch (error) {
+    console.error('[ViewAllUsers] Error navigating to page:', error);
+    uiStore.showErrorSnackbar(
+      error instanceof Error ? error.message : 'Ошибка при переходе на страницу'
+    );
   }
 };
 
-// Initialize component
-onMounted(async () => {
-  if (isAuthorized.value) {
-    await refreshData();
+/**
+ * Обработчик изменения количества записей на странице
+ */
+const handleItemsPerPageChange = async (newItemsPerPage: number) => {
+  console.log('[ViewAllUsers] Items per page changed to:', newItemsPerPage);
+  
+  itemsPerPage.value = newItemsPerPage;
+  page.value = 1; // Сбрасываем на первую страницу
+  
+  try {
+    await usersFetchService.fetchUsers({
+      page: page.value,
+      itemsPerPage: itemsPerPage.value,
+      sortBy: sortBy.value || '',
+      sortDesc: sortDesc.value,
+      search: searchQuery.value
+    });
+    
+    console.log('[ViewAllUsers] Successfully changed items per page to:', newItemsPerPage);
+  } catch (error) {
+    console.error('[ViewAllUsers] Error changing items per page:', error);
+    uiStore.showErrorSnackbar(
+      error instanceof Error ? error.message : 'Ошибка при изменении количества записей на странице'
+    );
   }
-});
+};
 </script>
 
+<template>
+  <v-card flat>
+    <div class="d-flex">
+      <!-- Основное содержимое (левая часть) -->
+      <div class="flex-grow-1">
+        <!-- Строка поиска -->
+        <div class="px-4 pt-4">
+          <v-text-field
+            v-model="searchQuery"
+            density="compact"
+            variant="outlined"
+            clearable
+            clear-icon="mdi-close"
+            color="teal"
+            :label="t('list.search.placeholder')"
+            prepend-inner-icon="mdi-magnify"
+            :loading="isSearching"
+            :hint="searchQuery.length === 1 ? t('list.search.minChars') : ''"
+            persistent-hint
+            @keydown="handleSearchKeydown"
+            @click:clear="handleClearSearch"
+          />
+        </div>
+
+        <v-data-table
+          :page="page"
+          :items-per-page="itemsPerPage"
+          :headers="headers"
+          :items="users"
+          :loading="loading"
+          :items-length="totalItems"
+          :items-per-page-options="[25, 50, 100]"
+          class="users-table"
+          multi-sort
+          :sort-by="sortBy ? [{ key: sortBy, order: sortDesc ? 'desc' : 'asc' }] : []"
+          @update:options="updateOptionsAndFetch"
+          hide-default-footer
+        >
+          <!-- Шаблон для колонки с чекбоксами -->
+          <template #[`item.selection`]="{ item }">
+            <v-checkbox
+              :model-value="isSelected(item.user_id)"
+              density="compact"
+              hide-details
+              @update:model-value="(value: boolean | null) => onSelectUser(item.user_id, value ?? false)"
+            />
+          </template>
+
+          <template #[`item.user_id`]="{ item }">
+            <span>{{ item.user_id }}</span>
+          </template>
+
+          <template #[`item.account_status`]="{ item }">
+            <v-chip 
+              :color="getStatusColor(item.account_status)" 
+              size="x-small"
+            >
+              {{ item.account_status }}
+            </v-chip>
+          </template>
+
+          <template #[`item.is_staff`]="{ item }">
+            <v-icon
+              :color="item.is_staff ? 'teal' : 'red-darken-4'"
+              :icon="item.is_staff ? 'mdi-check-circle' : 'mdi-minus-circle'"
+              size="x-small"
+            />
+          </template>
+        </v-data-table>
+
+        <!-- Собственный пагинатор -->
+        <div class="custom-pagination-container pa-4">
+          <div class="d-flex align-center justify-end">
+            <!-- Элементы управления пагинацией -->
+            <div class="d-flex align-center">
+              <!-- Выбор количества записей на странице -->
+              <div class="d-flex align-center mr-4">
+                <span class="text-body-2 mr-2">{{ t('pagination.itemsPerPage') }}:</span>
+                <v-select
+                  v-model="itemsPerPage"
+                  :items="[25, 50, 100]"
+                  density="compact"
+                  variant="outlined"
+                  hide-details
+                  class="items-per-page-select"
+                  style="width: 100px"
+                  @update:model-value="handleItemsPerPageChange"
+                />
+              </div>
+              
+              <!-- Информация о записях -->
+              <div class="text-body-2 mr-4">
+                {{ getPaginationInfo() }}
+              </div>
+              
+              <!-- Кнопки навигации -->
+              <div class="d-flex align-center">
+                <v-btn
+                  icon
+                  variant="text"
+                  size="small"
+                  :disabled="page === 1"
+                  @click="goToPage(1)"
+                >
+                  <v-icon>mdi-chevron-double-left</v-icon>
+                </v-btn>
+                
+                <v-btn
+                  icon
+                  variant="text"
+                  size="small"
+                  :disabled="page === 1"
+                  @click="goToPage(page - 1)"
+                >
+                  <v-icon>mdi-chevron-left</v-icon>
+                </v-btn>
+                
+                <!-- Номера страниц -->
+                <div class="d-flex align-center mx-2">
+                  <template v-for="pageNum in getVisiblePages()" :key="pageNum">
+                    <v-btn
+                      v-if="pageNum !== '...'"
+                      :variant="pageNum === page ? 'tonal' : 'text'"
+                      size="small"
+                      class="mx-1"
+                      @click="goToPage(pageNum)"
+                    >
+                      {{ pageNum }}
+                    </v-btn>
+                    <span v-else class="mx-1">...</span>
+                  </template>
+                </div>
+                
+                <v-btn
+                  icon
+                  variant="text"
+                  size="small"
+                  :disabled="page >= getTotalPages()"
+                  @click="goToPage(page + 1)"
+                >
+                  <v-icon>mdi-chevron-right</v-icon>
+                </v-btn>
+                
+                <v-btn
+                  icon
+                  variant="text"
+                  size="small"
+                  :disabled="page >= getTotalPages()"
+                  @click="goToPage(getTotalPages())"
+                >
+                  <v-icon>mdi-chevron-double-right</v-icon>
+                </v-btn>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Боковая панель (правая часть) -->
+      <div class="side-bar-container">
+        <!-- Верхняя часть боковой панели - кнопки для операций над компонентом -->
+        <div class="side-bar-section">
+          <h3 class="text-subtitle-2 px-2 py-2">
+            {{ t('list.sidebar.actions') }}
+          </h3>
+          
+          <v-btn
+            v-if="isAuthorized"
+            block
+            color="teal"
+            variant="outlined"
+            class="mb-3"
+            :disabled="hasSelected"
+            @click="createUser"
+          >
+            {{ t('list.buttons.create') }}
+          </v-btn>
+          
+          <v-btn
+            v-if="isAuthorized"
+            block
+            color="teal"
+            variant="outlined"
+            class="mb-3"
+            :loading="loading"
+            @click="refreshList"
+          >
+            <v-icon icon="mdi-refresh" class="mr-2" />
+            {{ t('list.buttons.refresh') }}
+          </v-btn>
+        </div>
+        
+        <!-- Разделитель между секциями -->
+        <div class="sidebar-divider"></div>
+        
+        <!-- Нижняя часть боковой панели - кнопки для операций над выбранными элементами -->
+        <div class="side-bar-section">
+          <h3 class="text-subtitle-2 px-2 py-2">
+            {{ t('list.sidebar.selectedItem') }}
+          </h3>
+          
+          <v-btn
+            v-if="isAuthorized"
+            block
+            color="teal"
+            variant="outlined"
+            class="mb-3"
+            :disabled="!hasOneSelected"
+            @click="editUser"
+          >
+            {{ t('list.buttons.edit') }}
+          </v-btn>
+          
+          <v-btn
+            v-if="isAuthorized"
+            block
+            color="teal"
+            variant="outlined"
+            class="mb-3"
+            :disabled="!hasOneSelected"
+            @click="resetPassword"
+          >
+            {{ t('list.buttons.resetPassword') }}
+          </v-btn>
+          
+          <v-btn
+            v-if="isAuthorized"
+            block
+            color="error"
+            variant="outlined"
+            class="mb-3"
+            :disabled="!hasSelected"
+            @click="onDeleteSelected"
+          >
+            {{ t('list.buttons.delete') }}
+            <span class="ml-2">({{ selectedCount }})</span>
+          </v-btn>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Диалог подтверждения удаления -->
+    <v-dialog
+      v-model="showDeleteDialog"
+      max-width="400"
+    >
+      <v-card>
+        <v-card-title class="text-subtitle-1 text-wrap">
+          {{ t('list.messages.confirmDelete') }}
+        </v-card-title>
+        <v-card-actions>
+          <v-spacer />
+          <v-btn
+            color="grey"
+            variant="text"
+            class="text-none"
+            @click="cancelDelete"
+          >
+            {{ t('common.cancel') }}
+          </v-btn>
+          <v-btn
+            color="error"
+            variant="text"
+            class="text-none"
+            @click="confirmDelete"
+          >
+            {{ t('common.delete') }}
+          </v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
+    
+    <!-- Модальное окно сброса пароля -->
+    <v-dialog 
+      v-model="showPasswordDialog" 
+      max-width="550"
+    >
+      <ChangePassword
+        :title="t('passwordChange.resetPasswordFor') + ' ' + selectedUserData.username"
+        :uuid="selectedUserData.uuid"
+        :username="selectedUserData.username"
+        :mode="PasswordChangeMode.ADMIN"
+        :on-close="() => showPasswordDialog = false"
+      />
+    </v-dialog>
+
+    <!-- Диалог подтверждения удаления -->
+    <v-dialog
+      v-model="showDeleteDialog"
+      max-width="400"
+    >
+      <v-card>
+        <v-card-title class="text-subtitle-1 text-wrap">
+          {{ t('list.messages.confirmDelete') }}
+        </v-card-title>
+        <v-card-actions>
+          <v-spacer />
+          <v-btn
+            color="grey"
+            variant="text"
+            class="text-none"
+            @click="cancelDelete"
+          >
+            {{ t('common.cancel') }}
+          </v-btn>
+          <v-btn
+            color="error"
+            variant="text"
+            class="text-none"
+            @click="confirmDelete"
+          >
+            {{ t('common.delete') }}
+          </v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
+    
+    <!-- Модальное окно сброса пароля -->
+    <v-dialog 
+      v-model="showPasswordDialog" 
+      max-width="550"
+    >
+      <ChangePassword
+        :title="t('passwordChange.resetPasswordFor') + ' ' + selectedUserData.username"
+        :uuid="selectedUserData.uuid"
+        :username="selectedUserData.username"
+        :mode="PasswordChangeMode.ADMIN"
+        :on-close="() => showPasswordDialog = false"
+      />
+    </v-dialog>
+  </v-card>
+</template>
+
 <style scoped>
-.users-list-container {
-  height: 100%;
+.users-table :deep(.v-data-table-footer) {
+  border-top: thin solid rgba(var(--v-border-color), var(--v-border-opacity));
+}
+
+/* Стили для боковой панели */
+.side-bar-container {
+  width: 18%; /* Увеличено с 15% до 18% от ширины родительского элемента */
+  min-width: 220px; /* Увеличено с 180px до 220px для лучшего отображения кнопок */
+  border-left: thin solid rgba(var(--v-border-color), var(--v-border-opacity));
   display: flex;
   flex-direction: column;
 }
 
-.users-table {
-  flex: 1;
+.side-bar-section {
+  padding: 16px;
 }
 
-.v-table {
-  overflow-x: auto;
-  table-layout: fixed;
+/* Разделитель между секциями */
+.sidebar-divider {
+  height: 20px; /* Фиксированная высота разделителя */
+  position: relative;
+  margin: 0 16px;
+}
+
+.sidebar-divider::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 0;
+  right: 0;
+  border-top: thin solid rgba(var(--v-border-color), var(--v-border-opacity));
+}
+
+/* Стили для собственного пагинатора */
+.custom-pagination-container {
+  border-top: thin solid rgba(var(--v-border-color), var(--v-border-opacity));
+  background-color: rgba(var(--v-theme-surface), 1);
+}
+
+.items-per-page-select {
+  min-width: 100px;
+}
+
+.custom-pagination-container .v-btn {
+  min-width: 32px;
+  height: 32px;
+}
+
+.custom-pagination-container .v-btn--size-small {
+  font-size: 0.875rem;
 }
 </style>

@@ -1,5 +1,5 @@
 /**
- * @file service.read.users.ts
+ * @file service.fetch.users.ts
  * Version: 1.0.0
  * Frontend service for fetching and managing users list data.
  *
@@ -11,9 +11,9 @@
  */
 
 import { api } from '@/core/api/service.axios'; // Axios instance
-import { useStoreUsersList } from './state.users.list'; // Users store
+import { useStoreUsersList } from './oldstate.users.list'; // Users store
 import { useUserStore } from '@/core/state/userstate'; // User store
-import type { IUsersResponse } from './types.users.list'; // Types
+import type { IUsersResponse } from './oldtypes.users.list'; // Types
 
 /**
  * Service for working with the users list

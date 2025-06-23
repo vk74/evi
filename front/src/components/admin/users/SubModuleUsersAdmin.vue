@@ -16,8 +16,8 @@ import { useUsersAdminStore } from './state.users.admin'
 import type { UserSectionId, Section } from './types.users.admin'
 
 // Async components for lazy loading
-const UsersList = defineAsyncComponent(() => import('./UsersList/UsersList.vue'))
-const UsersListProto = defineAsyncComponent(() => import('./UsersListProto/protoUsersList.vue'))
+const UsersList = defineAsyncComponent(() => import('./UsersListOld/oldUsersList.vue'))
+const UsersListProto = defineAsyncComponent(() => import('./UsersList/UsersList.vue'))
 const GroupsList = defineAsyncComponent(() => import('./GroupsList/GroupsList.vue'))
 const UserEditor = defineAsyncComponent(() => import('./UserEditor/UserEditor.vue'))
 const GroupEditor = defineAsyncComponent(() => import('./GroupEditor/GroupEditor.vue'))

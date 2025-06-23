@@ -1,105 +1,123 @@
 /**
- * @file types.users.list.ts
+ * protoTypes.users.list.ts
+ * FRONTEND type definitions for the user management frontend prototype module.
  * Version: 1.0.0
- * Type definitions for the users management frontend module.
- *
+ * 
  * This module provides TypeScript types and interfaces for:
  * - User data structure and properties
  * - State management store interfaces
- * - API response types
- * - Pagination and sorting parameters
- * - Error handling types
- *
+ * - API request and response types
+ * - Pagination, sorting and filtering parameters
+ * - Cache structure
+ * 
  * Used by:
- * - UsersList.vue component
- * - state.users.list.ts store
- * - service.fetch.users.ts service
+ * - protoUsersList.vue component
+ * - protoState.users.list.ts store
+ * - Service.fetch.users.ts service
  */
 
 /**
- * User account status enumeration
+ * Account status enumeration
  * Matches PostgreSQL app.account_status type
  */
 export enum AccountStatus {
-  ACTIVE = 'active',
-  DISABLED = 'disabled'
+    ACTIVE = 'active',
+    DISABLED = 'disabled',
+    REQUIRES_ACTION = 'requires_user_action'
 }
 
 /**
-* Core user interface matching backend data structure
-*/
+ * Core user interface matching backend data structure
+ */
 export interface IUser {
-  user_id: string; // UUID
-  username: string; // character varying(100)
-  email: string; // character varying(100)
-  is_staff: boolean; // boolean
-  account_status: AccountStatus; // app.account_status
-  first_name: string; // character varying(100)
-  middle_name: string | null; // character varying(100) | null
-  last_name: string; // character varying(100)
-  created_at: string; // timestamp with time zone
+    user_id: string;
+    username: string;
+    email: string;
+    is_staff: boolean;
+    account_status: AccountStatus;
+    first_name: string;
+    middle_name: string;
+    last_name: string;
 }
 
 /**
-* Pagination parameters interface
-*/
+ * Pagination parameters interface
+ */
 export interface IPaginationParams {
-  page: number;
-  itemsPerPage: number;
-  totalItems: number;
+    page: number;
+    itemsPerPage: number;
 }
 
 /**
-* Available items per page options
-*/
-export type ItemsPerPageOption = 10 | 25 | 50 | 100;
+ * Available items per page options
+ */
+export type ItemsPerPageOption = 25 | 50 | 100;
 
 /**
-* Sorting parameters interface
-*/
+ * Sorting parameters interface
+ */
 export interface ISortParams {
-  sortBy: string;
-  sortDesc: boolean;
+    sortBy: string;
+    sortDesc: boolean;
 }
 
 /**
-* Table header definition
-*/
-export interface TableHeader {
-  title: string;
-  key: string;
-  width?: string;
-  sortable?: boolean;
+ * Search parameters
+ */
+export interface ISearchParams {
+    search: string;
 }
 
 /**
-* API response format for users data
-*/
+ * Combined query parameters for API requests
+ */
+export interface IFetchUsersParams extends IPaginationParams, ISortParams, ISearchParams {
+    forceRefresh?: boolean;
+}
+
+/**
+ * API response interface
+ */
 export interface IUsersResponse {
-  items: IUser[];
-  total: number;
+    users: IUser[];
+    total: number;
 }
 
 /**
-* Users store state interface
-*/
-export interface IUsersListStore {
-  users: IUser[];
-  loading: boolean;
-  error: string | null;
-  page: number;
-  itemsPerPage: ItemsPerPageOption;
-  totalNumberOfUsers: number;
-  sortBy: string;
-  sortDesc: boolean;
-  selectedUsers: string[];
+ * Cache entry structure
+ */
+export interface CacheEntry {
+    users: IUser[];
+    totalItems: number;
+    timestamp: number;
+    query: IFetchUsersParams;
 }
 
 /**
-* Error response interface
-*/
-export interface IErrorResponse {
-  error: string;
-  message: string;
-  statusCode: number;
+ * Table header interface
+ */
+export interface TableHeader {
+    title: string;
+    key: string;
+    width?: string;
+    sortable?: boolean;
+}
+
+/**
+ * API error response
+ */
+export interface IApiError {
+    code: string;
+    message: string;
+    details?: any;
+}
+
+/**
+ * Cache statistics
+ */
+export interface CacheStats {
+    size: number;
+    hits: number;
+    misses: number;
+    hitRatio: number;
 }
