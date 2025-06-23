@@ -29,7 +29,7 @@ const usersStore = useUsersAdminStore()
 // Define administrative module sections as computed property
 const sections = computed((): Section[] => [
   {
-    id: 'users',
+    id: 'users-proto',
     title: t('admin.users.sections.usersList'),
     icon: 'mdi-account-multiple-outline'
   },
@@ -49,9 +49,10 @@ const sections = computed((): Section[] => [
     icon: 'mdi-account-multiple-plus-outline'
   },
   {
-    id: 'users-proto',
-    title: 'users list proto',
-    icon: 'mdi-flask-outline'
+    id: 'users',
+    title: 'устаревший список пользователей',
+    icon: 'mdi-account-multiple-outline',
+    visible: false
   }
 ])
 
@@ -73,12 +74,11 @@ const switchSection = (sectionId: UserSectionId): void => {
       <!-- Section navigation -->
       <div class="nav-section">
         <v-btn
-          v-for="section in sections"
+          v-for="section in sections.filter(s => s.visible !== false)"
           :key="section.id"
           :class="[
             'section-btn', 
-            { 'section-active': activeSection === section.id },
-            { 'proto-section': section.id === 'users-proto' }
+            { 'section-active': activeSection === section.id }
           ]"
           variant="text"
           @click="switchSection(section.id)"
@@ -100,7 +100,6 @@ const switchSection = (sectionId: UserSectionId): void => {
 
     <!-- Working area -->
     <div class="working-area">
-      <UsersList v-if="activeSection === 'users'" />
       <UsersListProto v-if="activeSection === 'users-proto'" />
       <UserEditor
         v-if="activeSection === 'user-editor'"
@@ -111,6 +110,7 @@ const switchSection = (sectionId: UserSectionId): void => {
         v-if="activeSection === 'group-editor'"
         mode="create"
       />
+      <UsersList v-if="activeSection === 'users'" />
     </div>
   </div>
 </template>
@@ -138,16 +138,6 @@ const switchSection = (sectionId: UserSectionId): void => {
   border-bottom: 2px solid #009688;
   font-weight: 500;
   color: rgba(0, 0, 0, 0.87) !important;
-}
-
-.proto-section {
-  color: #dc6700 !important; /* Оранжевый цвет для секции users-proto */
-  font-weight: 500;
-}
-
-.proto-section.section-active {
-  border-bottom: 2px solid #dc6700;
-  color: #dc6700 !important;
 }
 
 .module-title {

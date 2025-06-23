@@ -657,17 +657,6 @@ const handleItemsPerPageChange = async (newItemsPerPage: number) => {
           />
         </div>
 
-        <!-- v-data-table с отладочной информацией о пагинации -->
-        <div 
-          v-if="true" 
-          class="px-4 pb-2 d-flex align-center text-caption"
-        >
-          Page: {{ page }} | Items per page: {{ itemsPerPage }} | Total: {{ totalItems }} | 
-          Store Page: {{ usersStore.page }} | Store Items: {{ usersStore.itemsPerPage }} |
-          SortBy: {{ sortBy }} | SortDesc: {{ sortDesc }} | Search: {{ searchQuery }} |
-          Users Count: {{ users.length }} | Store Total: {{ usersStore.totalItems }}
-        </div>
-
         <v-data-table
           :page="page"
           :items-per-page="itemsPerPage"

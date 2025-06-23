@@ -13,4 +13,5 @@ export interface Section {
   id: UserSectionId
   title: string
   icon: string
+  visible?: boolean
 }
