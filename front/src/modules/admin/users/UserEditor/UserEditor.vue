@@ -249,52 +249,6 @@ onBeforeUnmount(() => {
       flat
       class="editor-app-bar"
     >
-      <div style="margin-left: 15px;">
-        <!-- Кнопка создания (видна только в режиме создания) -->
-        <v-btn
-          v-if="userEditorStore.mode.mode === 'create'"
-          color="teal"
-          variant="outlined"
-          :disabled="!isFormValid || isSubmitting"
-          class="mr-2"
-          @click="saveUser"
-        >
-          {{ t('admin.users.editor.buttons.create') }}
-        </v-btn>
-
-        <!-- Кнопка обновления (видна только в режиме редактирования) -->
-        <v-btn
-          v-if="userEditorStore.mode.mode === 'edit'"
-          color="teal"
-          variant="outlined"
-          :disabled="!isFormValid || isSubmitting || !userEditorStore.hasChanges"
-          class="mr-2"
-          @click="updateUser"
-        >
-          {{ t('admin.users.editor.buttons.update') }}
-        </v-btn>
-
-        <!-- Кнопка сброса пароля (видна только в режиме редактирования) -->
-        <v-btn
-          v-if="userEditorStore.mode.mode === 'edit'"
-          color="teal"
-          variant="outlined"
-          class="mr-2"
-          @click="resetPassword"
-        >
-          {{ t('admin.users.editor.buttons.resetPassword') }}
-        </v-btn>
-
-        <!-- Кнопка сброса (видна только в режиме создания) -->
-        <v-btn
-          v-if="userEditorStore.mode.mode === 'create'"
-          variant="outlined"
-          @click="resetForm"
-        >
-          {{ t('admin.users.editor.buttons.reset') }}
-        </v-btn>
-      </div>
-
       <v-spacer />
       
       <!-- Динамический заголовок в зависимости от режима -->
@@ -307,293 +261,367 @@ onBeforeUnmount(() => {
     </v-app-bar>
 
     <!-- Рабочая область с основной формой -->
-    <v-container class="content-container">
-      <v-card flat>
-        <v-form
-          ref="form"
-          v-model="isFormValid"
-        >
-          <v-row>
-            <!-- Блок 1: Основная информация -->
-            <v-col cols="12">
-              <div class="card-header">
-                <v-card-title class="text-subtitle-1">
-                  {{ t('admin.users.editor.sections.basicInfo') }}
-                </v-card-title>
-                <v-divider class="section-divider" />
-              </div>
-
-              <v-row class="pt-3">
-                <!-- Поле UUID (только для режима редактирования) -->
-                <v-col
-                  v-if="userEditorStore.mode.mode === 'edit'"
-                  cols="12"
-                  md="12"
-                >
-                  <v-text-field
-                    v-model="userEditorStore.account.user_id"
-                    :label="t('admin.users.editor.fields.uuid.label')"
-                    variant="outlined"
-                    density="comfortable"
-                    readonly
-                    disabled
-                  />
-                </v-col>
-
-                <v-col
-                  cols="12"
-                  md="6"
-                >
-                  <v-text-field
-                    v-model="userEditorStore.account.username"
-                    :label="t('admin.users.editor.fields.username.label')"
-                    :rules="usernameRules"
-                    variant="outlined"
-                    density="comfortable"
-                    counter="25"
-                    required
-                  />
-                </v-col>
-                <v-col
-                  cols="12"
-                  md="6"
-                >
-                  <v-text-field
-                    v-model="userEditorStore.account.email"
-                    :label="t('admin.users.editor.fields.email.label')"
-                    :rules="emailRules"
-                    variant="outlined"
-                    density="comfortable"
-                    type="email"
-                    required
-                  />
-                </v-col>
-
-                <v-col
-                  cols="12"
-                  md="4"
-                >
-                  <v-text-field
-                    v-model="userEditorStore.account.first_name"
-                    :label="t('admin.users.editor.fields.firstName.label')"
-                    :rules="firstNameRules"
-                    variant="outlined"
-                    density="comfortable"
-                    counter="50"
-                    required
-                  />
-                </v-col>
-                <v-col
-                  cols="12"
-                  md="4"
-                >
-                  <v-text-field
-                    v-model="userEditorStore.account.middle_name"
-                    :label="t('admin.users.editor.fields.middleName.label')"
-                    :rules="middleNameRules"
-                    variant="outlined"
-                    density="comfortable"
-                    counter="50"
-                  />
-                </v-col>
-                <v-col
-                  cols="12"
-                  md="4"
-                >
-                  <v-text-field
-                    v-model="userEditorStore.account.last_name"
-                    :label="t('admin.users.editor.fields.lastName.label')"
-                    :rules="lastNameRules"
-                    variant="outlined"
-                    density="comfortable"
-                    counter="50"
-                    required
-                  />
-                </v-col>
-
-                <v-col
-                  cols="12"
-                  md="4"
-                >
-                  <v-select
-                    v-model="userEditorStore.profile.gender"
-                    :label="t('admin.users.editor.fields.gender.label')"
-                    variant="outlined"
-                    density="comfortable"
-                    :items="[
-                      { title: t('admin.users.editor.fields.gender.options.male'), value: Gender.MALE },
-                      { title: t('admin.users.editor.fields.gender.options.female'), value: Gender.FEMALE },
-                      { title: t('admin.users.editor.fields.gender.options.notDefined'), value: Gender.NOTDEFINED }
-                    ]"
-                    item-title="title"
-                    item-value="value"
-                  />
-                </v-col>
-              </v-row>
-            </v-col>
-
-            <!-- Временный отладочный вывод 
-            <p>Current mode: {{ userEditorStore.mode.mode }}</p> -->
-
-            <!-- Блок 2: Безопасность -->
-            <v-col cols="12">
-              <div class="card-header mt-6">
-                <v-card-title class="text-subtitle-1">
-                  {{ t('admin.users.editor.sections.security') }}
-                </v-card-title>
-                <v-divider class="section-divider" />
-              </div>
-
-              <v-row class="pt-3">
-                <!-- Поля пароля показываются только в режиме создания -->
-                <template v-if="userEditorStore.mode.mode === 'create'">
-                  <v-col
-                    cols="12"
-                    md="5"
-                  >
-                    <v-text-field
-                      v-model="userEditorStore.account.password"
-                      :label="t('admin.users.editor.fields.password.label')"
-                      :rules="passwordRules"
-                      variant="outlined"
-                      density="comfortable"
-                      :type="showPassword ? 'text' : 'password'"
-                      counter="40"
-                      required
-                    />
-                  </v-col>
-                  <v-col
-                    cols="12"
-                    md="5"
-                  >
-                    <v-text-field
-                      v-model="userEditorStore.account.passwordConfirm"
-                      :label="t('admin.users.editor.fields.password.confirm')"
-                      :rules="[(v) => v === userEditorStore.account.password || t('admin.users.editor.validation.fields.password.mismatch')]"
-                      variant="outlined"
-                      density="comfortable"
-                      :type="showPassword ? 'text' : 'password'"
-                      counter="40"
-                      required
-                    />
-                  </v-col>
-                  <v-col
-                    cols="12"
-                    md="2"
-                    class="d-flex align-center"
-                  >
-                    <v-btn
-                      icon
-                      variant="text"
-                      class="ml-n2"
-                      @click="showPassword = !showPassword"
-                    >
-                      <v-icon>
-                        {{ showPassword ? 'mdi-eye-off' : 'mdi-eye' }}
-                      </v-icon>
-                    </v-btn>
-                  </v-col>
-                </template>
-                <v-col
-                  cols="12"
-                  md="6"
-                >
-                  <v-select
-                    v-model="userEditorStore.account.account_status"
-                    :label="t('admin.users.editor.fields.accountStatus.label')"
-                    variant="outlined"
-                    density="comfortable"
-                    :items="[
-                      { title: t('admin.users.editor.fields.accountStatus.options.active'), value: AccountStatus.ACTIVE },
-                      { title: t('admin.users.editor.fields.accountStatus.options.disabled'), value: AccountStatus.DISABLED },
-                      { title: t('admin.users.editor.fields.accountStatus.options.requiresAction'), value: AccountStatus.REQUIRES_USER_ACTION }
-                    ]"
-                    item-title="title"
-                    item-value="value"
-                  />
-                </v-col>
-                <v-col
-                  cols="12"
-                  md="6"
-                >
-                  <v-checkbox
-                    v-model="userEditorStore.account.is_staff"
-                    :label="t('admin.users.editor.fields.isStaff.label')"
-                    color="teal"
-                    hide-details
-                  />
-                </v-col>
-              </v-row>
-            </v-col>
-
-            <!-- Блок 3: Дополнительная информация -->
-            <v-col cols="12">
-              <div class="card-header mt-6">
-                <v-card-title class="text-subtitle-1">
-                  {{ t('admin.users.editor.sections.additionalInfo') }}
-                </v-card-title>
-                <v-divider class="section-divider" />
-              </div>
-
-              <v-row class="pt-3">
-                <v-col
-                  cols="12"
-                  md="6"
-                >
-                  <v-text-field
-                    v-model="userEditorStore.profile.mobile_phone_number"
-                    :label="t('admin.users.editor.fields.mobilePhone.label')"
-                    :placeholder="t('admin.users.editor.fields.mobilePhone.placeholder')"
-                    :rules="mobilePhoneRules"
-                    variant="outlined"
-                    density="comfortable"
-                  />
-                </v-col>
+    <div class="d-flex">
+      <!-- Основное содержимое (левая часть) -->
+      <div class="flex-grow-1">
+        <v-container class="content-container">
+          <v-card flat>
+            <v-form
+              ref="form"
+              v-model="isFormValid"
+            >
+              <v-row>
+                <!-- Блок 1: Основная информация -->
                 <v-col cols="12">
-                  <v-textarea
-                    v-model="userEditorStore.profile.address"
-                    :label="t('admin.users.editor.fields.address.label')"
-                    :rules="addressRules"
-                    variant="outlined"
-                    rows="3"
-                    counter="5000"
-                    no-resize
-                  />
+                  <div class="card-header">
+                    <v-card-title class="text-subtitle-1">
+                      {{ t('admin.users.editor.sections.basicInfo') }}
+                    </v-card-title>
+                    <v-divider class="section-divider" />
+                  </div>
+
+                  <v-row class="pt-3">
+                    <!-- Поле UUID (только для режима редактирования) -->
+                    <v-col
+                      v-if="userEditorStore.mode.mode === 'edit'"
+                      cols="12"
+                      md="12"
+                    >
+                      <v-text-field
+                        v-model="userEditorStore.account.user_id"
+                        :label="t('admin.users.editor.fields.uuid.label')"
+                        variant="outlined"
+                        density="comfortable"
+                        readonly
+                        disabled
+                      />
+                    </v-col>
+
+                    <v-col
+                      cols="12"
+                      md="6"
+                    >
+                      <v-text-field
+                        v-model="userEditorStore.account.username"
+                        :label="t('admin.users.editor.fields.username.label')"
+                        :rules="usernameRules"
+                        variant="outlined"
+                        density="comfortable"
+                        counter="25"
+                        required
+                      />
+                    </v-col>
+                    <v-col
+                      cols="12"
+                      md="6"
+                    >
+                      <v-text-field
+                        v-model="userEditorStore.account.email"
+                        :label="t('admin.users.editor.fields.email.label')"
+                        :rules="emailRules"
+                        variant="outlined"
+                        density="comfortable"
+                        type="email"
+                        required
+                      />
+                    </v-col>
+
+                    <v-col
+                      cols="12"
+                      md="4"
+                    >
+                      <v-text-field
+                        v-model="userEditorStore.account.first_name"
+                        :label="t('admin.users.editor.fields.firstName.label')"
+                        :rules="firstNameRules"
+                        variant="outlined"
+                        density="comfortable"
+                        counter="50"
+                        required
+                      />
+                    </v-col>
+                    <v-col
+                      cols="12"
+                      md="4"
+                    >
+                      <v-text-field
+                        v-model="userEditorStore.account.middle_name"
+                        :label="t('admin.users.editor.fields.middleName.label')"
+                        :rules="middleNameRules"
+                        variant="outlined"
+                        density="comfortable"
+                        counter="50"
+                      />
+                    </v-col>
+                    <v-col
+                      cols="12"
+                      md="4"
+                    >
+                      <v-text-field
+                        v-model="userEditorStore.account.last_name"
+                        :label="t('admin.users.editor.fields.lastName.label')"
+                        :rules="lastNameRules"
+                        variant="outlined"
+                        density="comfortable"
+                        counter="50"
+                        required
+                      />
+                    </v-col>
+
+                    <v-col
+                      cols="12"
+                      md="4"
+                    >
+                      <v-select
+                        v-model="userEditorStore.profile.gender"
+                        :label="t('admin.users.editor.fields.gender.label')"
+                        variant="outlined"
+                        density="comfortable"
+                        :items="[
+                          { title: t('admin.users.editor.fields.gender.options.male'), value: Gender.MALE },
+                          { title: t('admin.users.editor.fields.gender.options.female'), value: Gender.FEMALE },
+                          { title: t('admin.users.editor.fields.gender.options.notDefined'), value: Gender.NOTDEFINED }
+                        ]"
+                        item-title="title"
+                        item-value="value"
+                      />
+                    </v-col>
+                  </v-row>
                 </v-col>
-                <v-col
-                  cols="12"
-                  md="6"
-                >
-                  <v-text-field
-                    v-model="userEditorStore.profile.company_name"
-                    :label="t('admin.users.editor.fields.company.label')"
-                    :rules="companyNameRules"
-                    variant="outlined"
-                    density="comfortable"
-                    readonly
-                    counter="255"
-                  />
+
+                <!-- Временный отладочный вывод 
+                <p>Current mode: {{ userEditorStore.mode.mode }}</p> -->
+
+                <!-- Блок 2: Безопасность -->
+                <v-col cols="12">
+                  <div class="card-header mt-6">
+                    <v-card-title class="text-subtitle-1">
+                      {{ t('admin.users.editor.sections.security') }}
+                    </v-card-title>
+                    <v-divider class="section-divider" />
+                  </div>
+
+                  <v-row class="pt-3">
+                    <!-- Поля пароля показываются только в режиме создания -->
+                    <template v-if="userEditorStore.mode.mode === 'create'">
+                      <v-col
+                        cols="12"
+                        md="5"
+                      >
+                        <v-text-field
+                          v-model="userEditorStore.account.password"
+                          :label="t('admin.users.editor.fields.password.label')"
+                          :rules="passwordRules"
+                          variant="outlined"
+                          density="comfortable"
+                          :type="showPassword ? 'text' : 'password'"
+                          counter="40"
+                          required
+                        />
+                      </v-col>
+                      <v-col
+                        cols="12"
+                        md="5"
+                      >
+                        <v-text-field
+                          v-model="userEditorStore.account.passwordConfirm"
+                          :label="t('admin.users.editor.fields.password.confirm')"
+                          :rules="[(v) => v === userEditorStore.account.password || t('admin.users.editor.validation.fields.password.mismatch')]"
+                          variant="outlined"
+                          density="comfortable"
+                          :type="showPassword ? 'text' : 'password'"
+                          counter="40"
+                          required
+                        />
+                      </v-col>
+                      <v-col
+                        cols="12"
+                        md="2"
+                        class="d-flex align-center"
+                      >
+                        <v-btn
+                          icon
+                          variant="text"
+                          class="ml-n2"
+                          @click="showPassword = !showPassword"
+                        >
+                          <v-icon>
+                            {{ showPassword ? 'mdi-eye-off' : 'mdi-eye' }}
+                          </v-icon>
+                        </v-btn>
+                      </v-col>
+                    </template>
+                    <v-col
+                      cols="12"
+                      md="6"
+                    >
+                      <v-select
+                        v-model="userEditorStore.account.account_status"
+                        :label="t('admin.users.editor.fields.accountStatus.label')"
+                        variant="outlined"
+                        density="comfortable"
+                        :items="[
+                          { title: t('admin.users.editor.fields.accountStatus.options.active'), value: AccountStatus.ACTIVE },
+                          { title: t('admin.users.editor.fields.accountStatus.options.disabled'), value: AccountStatus.DISABLED },
+                          { title: t('admin.users.editor.fields.accountStatus.options.requiresAction'), value: AccountStatus.REQUIRES_USER_ACTION }
+                        ]"
+                        item-title="title"
+                        item-value="value"
+                      />
+                    </v-col>
+                    <v-col
+                      cols="12"
+                      md="6"
+                    >
+                      <v-checkbox
+                        v-model="userEditorStore.account.is_staff"
+                        :label="t('admin.users.editor.fields.isStaff.label')"
+                        color="teal"
+                        hide-details
+                      />
+                    </v-col>
+                  </v-row>
                 </v-col>
-                <v-col
-                  cols="12"
-                  md="6"
-                >
-                  <v-text-field
-                    v-model="userEditorStore.profile.position"
-                    :label="t('admin.users.editor.fields.position.label')"
-                    :rules="positionRules"
-                    variant="outlined"
-                    density="comfortable"
-                    readonly
-                    counter="255"
-                  />
+
+                <!-- Блок 3: Дополнительная информация -->
+                <v-col cols="12">
+                  <div class="card-header mt-6">
+                    <v-card-title class="text-subtitle-1">
+                      {{ t('admin.users.editor.sections.additionalInfo') }}
+                    </v-card-title>
+                    <v-divider class="section-divider" />
+                  </div>
+
+                  <v-row class="pt-3">
+                    <v-col
+                      cols="12"
+                      md="6"
+                    >
+                      <v-text-field
+                        v-model="userEditorStore.profile.mobile_phone_number"
+                        :label="t('admin.users.editor.fields.mobilePhone.label')"
+                        :placeholder="t('admin.users.editor.fields.mobilePhone.placeholder')"
+                        :rules="mobilePhoneRules"
+                        variant="outlined"
+                        density="comfortable"
+                      />
+                    </v-col>
+                    <v-col cols="12">
+                      <v-textarea
+                        v-model="userEditorStore.profile.address"
+                        :label="t('admin.users.editor.fields.address.label')"
+                        :rules="addressRules"
+                        variant="outlined"
+                        rows="3"
+                        counter="5000"
+                        no-resize
+                      />
+                    </v-col>
+                    <v-col
+                      cols="12"
+                      md="6"
+                    >
+                      <v-text-field
+                        v-model="userEditorStore.profile.company_name"
+                        :label="t('admin.users.editor.fields.company.label')"
+                        :rules="companyNameRules"
+                        variant="outlined"
+                        density="comfortable"
+                        readonly
+                        counter="255"
+                      />
+                    </v-col>
+                    <v-col
+                      cols="12"
+                      md="6"
+                    >
+                      <v-text-field
+                        v-model="userEditorStore.profile.position"
+                        :label="t('admin.users.editor.fields.position.label')"
+                        :rules="positionRules"
+                        variant="outlined"
+                        density="comfortable"
+                        readonly
+                        counter="255"
+                      />
+                    </v-col>
+                  </v-row>
                 </v-col>
               </v-row>
-            </v-col>
-          </v-row>
-        </v-form>
-      </v-card>
-    </v-container>
+            </v-form>
+          </v-card>
+        </v-container>
+      </div>
+      
+      <!-- Боковая панель (правая часть) -->
+      <div class="side-bar-container">
+        <!-- Верхняя часть боковой панели - общие действия -->
+        <div class="side-bar-section">
+          <h3 class="text-subtitle-2 px-2 py-2">
+            {{ t('admin.users.editor.sidebar.actions') }}
+          </h3>
+          
+          <!-- Кнопка создания (видна только в режиме создания) -->
+          <v-btn
+            v-if="userEditorStore.mode.mode === 'create'"
+            block
+            color="teal"
+            variant="outlined"
+            :disabled="!isFormValid || isSubmitting"
+            class="mb-3"
+            @click="saveUser"
+          >
+            {{ t('admin.users.editor.buttons.create') }}
+          </v-btn>
+
+          <!-- Кнопка обновления (видна только в режиме редактирования) -->
+          <v-btn
+            v-if="userEditorStore.mode.mode === 'edit'"
+            block
+            color="teal"
+            variant="outlined"
+            :disabled="!isFormValid || isSubmitting || !userEditorStore.hasChanges"
+            class="mb-3"
+            @click="updateUser"
+          >
+            {{ t('admin.users.editor.buttons.update') }}
+          </v-btn>
+        </div>
+        
+        <!-- Разделитель между секциями -->
+        <div class="sidebar-divider" />
+        
+        <!-- Нижняя часть боковой панели - действия с формой -->
+        <div class="side-bar-section">
+          <h3 class="text-subtitle-2 px-2 py-2">
+            {{ t('admin.users.editor.sidebar.formActions') }}
+          </h3>
+          
+          <!-- Кнопка сброса пароля (видна только в режиме редактирования) -->
+          <v-btn
+            v-if="userEditorStore.mode.mode === 'edit'"
+            block
+            color="teal"
+            variant="outlined"
+            class="mb-3"
+            @click="resetPassword"
+          >
+            {{ t('admin.users.editor.buttons.resetPassword') }}
+          </v-btn>
+
+          <!-- Кнопка сброса (видна только в режиме создания) -->
+          <v-btn
+            v-if="userEditorStore.mode.mode === 'create'"
+            block
+            variant="outlined"
+            class="mb-3 wide-btn"
+            @click="resetForm"
+          >
+            {{ t('admin.users.editor.buttons.reset') }}
+          </v-btn>
+        </div>
+      </div>
+    </div>
 
     <!-- Диалог сброса пароля -->
     <v-dialog
@@ -620,5 +648,38 @@ font-size: 1.1rem;
 font-weight: 300;
 letter-spacing: 0.5px;
 color: rgba(0, 0, 0, 0.6);
+}
+
+/* Стили для боковой панели */
+.side-bar-container {
+  width: 18%;
+  min-width: 220px;
+  border-left: thin solid rgba(var(--v-border-color), var(--v-border-opacity));
+  display: flex;
+  flex-direction: column;
+}
+
+.side-bar-section {
+  padding: 16px;
+}
+
+/* Разделитель между секциями */
+.sidebar-divider {
+  height: 20px;
+  position: relative;
+  margin: 0 16px;
+}
+
+.sidebar-divider::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 0;
+  right: 0;
+  border-top: thin solid rgba(var(--v-border-color), var(--v-border-opacity));
+}
+
+.wide-btn {
+  min-width: 240px;
 }
 </style>

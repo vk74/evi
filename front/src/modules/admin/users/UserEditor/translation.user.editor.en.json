@@ -11,6 +11,10 @@
           "security": "security",
           "additionalInfo": "additional information"
         },
+        "sidebar": {
+          "actions": "actions",
+          "formActions": "form actions"
+        },
         "buttons": {
           "create": "create",
           "update": "update user data",
