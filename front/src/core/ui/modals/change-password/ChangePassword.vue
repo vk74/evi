@@ -207,7 +207,10 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="modal-overlay" @click.self="closeModal">
+  <div
+    class="modal-overlay"
+    @click.self="closeModal"
+  >
     <div class="modal">
       <v-card>
         <v-card-title class="text-h7">
@@ -215,7 +218,11 @@ onMounted(() => {
         </v-card-title>
         
         <v-card-text>
-          <v-form ref="form" @submit.prevent="submitForm" @keyup.enter="submitForm">
+          <v-form
+            ref="form"
+            @submit.prevent="submitForm"
+            @keyup.enter="submitForm"
+          >
             <!-- Current password field (only for self mode) -->
             <v-text-field
               v-if="mode === PasswordChangeMode.SELF"
@@ -224,13 +231,13 @@ onMounted(() => {
               :type="showCurrentPassword ? 'text' : 'password'"
               :append-icon="showCurrentPassword ? 'mdi-eye' : 'mdi-eye-off'"
               :error-messages="currentPasswordError ? [currentPasswordError] : []"
-              @click:append="showCurrentPassword = !showCurrentPassword"
-              @keyup.enter="submitForm"
               outlined
               dense
               class="mb-3"
               tabindex="1"
-            ></v-text-field>
+              @click:append="showCurrentPassword = !showCurrentPassword"
+              @keyup.enter="submitForm"
+            />
             
             <!-- New password field -->
             <v-text-field
@@ -240,14 +247,14 @@ onMounted(() => {
               :type="showNewPassword ? 'text' : 'password'"
               :append-icon="showNewPassword ? 'mdi-eye' : 'mdi-eye-off'"
               :error-messages="newPasswordError ? [newPasswordError] : []"
-              @click:append="showNewPassword = !showNewPassword"
-              @input="validatePasswordMatch"
-              @keyup.enter="submitForm"
               outlined
               dense
               class="mb-3"
               tabindex="2"
-            ></v-text-field>
+              @click:append="showNewPassword = !showNewPassword"
+              @input="validatePasswordMatch"
+              @keyup.enter="submitForm"
+            />
             
             <!-- Confirm password field -->
             <v-text-field
@@ -256,18 +263,18 @@ onMounted(() => {
               :type="showConfirmPassword ? 'text' : 'password'"
               :append-icon="showConfirmPassword ? 'mdi-eye' : 'mdi-eye-off'"
               :error-messages="confirmPasswordError ? [confirmPasswordError] : []"
-              @click:append="showConfirmPassword = !showConfirmPassword"
-              @input="validatePasswordMatch"
-              @keyup.enter="submitForm"
               outlined
               dense
               tabindex="3"
-            ></v-text-field>
+              @click:append="showConfirmPassword = !showConfirmPassword"
+              @input="validatePasswordMatch"
+              @keyup.enter="submitForm"
+            />
           </v-form>
         </v-card-text>
         
         <v-card-actions>
-          <v-spacer></v-spacer>
+          <v-spacer />
           <v-btn
             color="grey"
             variant="outlined"

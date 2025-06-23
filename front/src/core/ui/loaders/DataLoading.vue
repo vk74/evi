@@ -101,16 +101,19 @@ console.log('DataLoading component initialized');
         :size="currentSize.spinner"
         :color="color"
         indeterminate
-      ></v-progress-circular>
+      />
 
       <v-progress-linear
         v-else
         :height="currentSize.linear"
         :color="color"
         indeterminate
-      ></v-progress-linear>
+      />
 
-      <div v-if="loadingText" :class="['data-loading__text', currentSize.textClass]">
+      <div
+        v-if="loadingText"
+        :class="['data-loading__text', currentSize.textClass]"
+      >
         {{ loadingText }}
       </div>
     </div>

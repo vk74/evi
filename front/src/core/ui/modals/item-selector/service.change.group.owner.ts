@@ -10,7 +10,7 @@
  */
 import { api } from '@/core/api/service.axios';
 import { useUiStore } from '@/core/state/uistate';
-import { useGroupEditorStore } from '@/components/admin/users/GroupEditor/state.group.editor';
+import { useGroupEditorStore } from '@/modules/admin/users/GroupEditor/state.group.editor';
 import { useUserStore } from '@/core/state/userstate';
 import { ActionResult } from './types.item.selector';
 

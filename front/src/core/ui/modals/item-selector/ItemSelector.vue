@@ -293,28 +293,37 @@ const onKeyPress = (event: KeyboardEvent) => {
 </script>
 
 <template>
-  <div class="modal-overlay" @click.self="closeModal">
+  <div
+    class="modal-overlay"
+    @click.self="closeModal"
+  >
     <div class="modal">
       <!-- Увеличим максимальную ширину до 1100px для большей комфортности -->
-      <v-card width="100%" max-width="1100px">
+      <v-card
+        width="100%"
+        max-width="1100px"
+      >
         <v-card-title>{{ title }}</v-card-title>
         <v-card-text>
           <!-- Строка поиска -->
           <v-row class="mb-0">
-            <v-col cols="12" class="pb-0">
+            <v-col
+              cols="12"
+              class="pb-0"
+            >
               <v-text-field
                 v-model="searchQuery"
                 :label="t('itemSelector.search.placeholder.default')"
+                ref="searchInputRef"
                 variant="outlined"
                 density="compact"
                 color="teal"
                 prepend-inner-icon="mdi-magnify"
                 clearable
                 :disabled="isLoading"
+                class="mb-0"
                 @keypress="onKeyPress"
                 @click:prepend-inner="handleSearch"
-                class="mb-0"
-                ref="searchInputRef"
               />
             </v-col>
           </v-row>
@@ -327,27 +336,33 @@ const onKeyPress = (event: KeyboardEvent) => {
                 {{ t('itemSelector.windows.searchResults', { max: maxResults }) }}
               </div>
               <div class="window-content">
-                <v-list density="compact" v-if="searchResultItems.length > 0">
+                <v-list
+                  v-if="searchResultItems.length > 0"
+                  density="compact"
+                >
                   <v-list-item
                     v-for="item in searchResultItems"
                     :key="item.uuid"
                     :title="item.name"
                     @dblclick="addItemToSelection(item)"
                   >
-                    <template v-slot:append>
+                    <template #append>
                       <v-btn 
                         size="small" 
                         icon 
                         variant="text" 
-                        @click="addItemToSelection(item)" 
-                        :title="t('itemSelector.buttons.add')"
+                        :title="t('itemSelector.buttons.add')" 
+                        @click="addItemToSelection(item)"
                       >
                         <v-icon>mdi-plus</v-icon>
                       </v-btn>
                     </template>
                   </v-list-item>
                 </v-list>
-                <div v-else class="empty-message">
+                <div
+                  v-else
+                  class="empty-message"
+                >
                   {{ t('itemSelector.messages.emptySearchResults') }}
                 </div>
               </div>
@@ -359,28 +374,34 @@ const onKeyPress = (event: KeyboardEvent) => {
                 {{ t('itemSelector.windows.selection', { max: maxItems }) }}
               </div>
               <div class="window-content">
-                <v-list density="compact" v-if="selectedItems.length > 0">
+                <v-list
+                  v-if="selectedItems.length > 0"
+                  density="compact"
+                >
                   <v-list-item
                     v-for="item in selectedItems"
                     :key="item.uuid"
                     :title="item.name"
                     @dblclick="removeItemFromSelection(item)"
                   >
-                    <template v-slot:append>
+                    <template #append>
                       <v-btn 
                         size="small" 
                         icon 
                         variant="text" 
                         color="error" 
-                        @click="removeItemFromSelection(item)" 
-                        :title="t('itemSelector.buttons.remove')"
+                        :title="t('itemSelector.buttons.remove')" 
+                        @click="removeItemFromSelection(item)"
                       >
                         <v-icon>mdi-close</v-icon>
                       </v-btn>
                     </template>
                   </v-list-item>
                 </v-list>
-                <div v-else class="empty-message">
+                <div
+                  v-else
+                  class="empty-message"
+                >
                   {{ t('itemSelector.messages.emptySelection') }}
                 </div>
               </div>
@@ -389,7 +410,10 @@ const onKeyPress = (event: KeyboardEvent) => {
           
           <!-- Кнопки с новым расположением -->
           <v-row class="mt-4">
-            <v-col cols="12" class="d-flex">
+            <v-col
+              cols="12"
+              class="d-flex"
+            >
               <!-- Кнопка отмены слева -->
               <v-btn 
                 color="gray" 
@@ -400,15 +424,15 @@ const onKeyPress = (event: KeyboardEvent) => {
               </v-btn>
               
               <!-- Гибкое пространство между кнопками -->
-              <v-spacer></v-spacer>
+              <v-spacer />
               
               <!-- Кнопка сброса рядом с кнопкой выполнить -->
               <v-btn
                 color="gray"
                 variant="outlined"
-                @click="resetSearch"
                 :disabled="isResetDisabled"
                 class="mr-3"
+                @click="resetSearch"
               >
                 {{ t('itemSelector.buttons.reset') }}
               </v-btn>
@@ -417,9 +441,9 @@ const onKeyPress = (event: KeyboardEvent) => {
               <v-btn
                 color="teal"
                 variant="outlined"
-                @click="handleAction"
                 :disabled="isActionDisabled"
                 :loading="isLoading"
+                @click="handleAction"
               >
                 {{ actionButtonLabel }}
               </v-btn>

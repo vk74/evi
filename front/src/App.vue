@@ -20,25 +20,25 @@ import { useI18n } from 'vue-i18n';
 import { startSessionTimers } from '@/core/services/sessionServices';
 
 // Async component imports
-const ModuleCatalog = defineAsyncComponent(() => import('./components/catalog/ModuleCatalog.vue'));
-const ModuleWork = defineAsyncComponent(() => import('./components/work/ModuleWork.vue'));
-const ModuleAR = defineAsyncComponent(() => import('./components/ar/ModuleAR.vue'));
-const ModuleXLS = defineAsyncComponent(() => import('./components/proto/ModuleXLS.vue'));
-const ModuleAccount = defineAsyncComponent(() => import('./components/account/ModuleAccount.vue'));
-const ModuleSettings = defineAsyncComponent(() => import('./components/settings/ModuleSettings.vue'));
-const ModuleKnowledgeBase = defineAsyncComponent(() => import('./components/KB/ModuleKnowledgeBase.vue'));
+const ModuleCatalog = defineAsyncComponent(() => import('./modules/catalog/ModuleCatalog.vue'));
+const ModuleWork = defineAsyncComponent(() => import('./modules/work/ModuleWork.vue'));
+const ModuleAR = defineAsyncComponent(() => import('./modules/ar/ModuleAR.vue'));
+const ModuleXLS = defineAsyncComponent(() => import('./modules/proto/ModuleXLS.vue'));
+const ModuleAccount = defineAsyncComponent(() => import('./modules/account/ModuleAccount.vue'));
+const ModuleSettings = defineAsyncComponent(() => import('./modules/settings/ModuleSettings.vue'));
+const ModuleKnowledgeBase = defineAsyncComponent(() => import('./modules/KB/ModuleKnowledgeBase.vue'));
 
 // Admin submodule imports
-const SubModuleCatalogAdmin = defineAsyncComponent(() => import('./components/admin/catalog/SubModuleCatalogAdmin.vue'));
-const SubModuleServiceAdmin = defineAsyncComponent(() => import('./components/admin/service/SubModuleServiceAdmin.vue'));
-const SubModuleUsersAdmin = defineAsyncComponent(() => import('./components/admin/users/SubModuleUsersAdmin.vue'));
-const SubModuleAppSettings = defineAsyncComponent(() => import('./components/admin/settings/SubModuleAppSettings.vue'));
+const SubModuleCatalogAdmin = defineAsyncComponent(() => import('./modules/admin/catalog/SubModuleCatalogAdmin.vue'));
+const SubModuleServiceAdmin = defineAsyncComponent(() => import('./modules/admin/service/SubModuleServiceAdmin.vue'));
+const SubModuleUsersAdmin = defineAsyncComponent(() => import('./modules/admin/users/SubModuleUsersAdmin.vue'));
+const SubModuleAppSettings = defineAsyncComponent(() => import('./modules/admin/settings/SubModuleAppSettings.vue'));
 
 // Regular component imports
-import ModuleLogin from './components/account/ModuleLogin.vue';
-import ModalChangeUserPass from './components/account/ModalChangeUserPass.vue';
-import LoginDialog from './components/account/ModuleLogin.vue';
-import ModuleNewUserRegistration from './components/account/ModuleNewUserRegistration.vue';
+import ModuleLogin from './modules/account/ModuleLogin.vue';
+import ModalChangeUserPass from './modules/account/ModalChangeUserPass.vue';
+import LoginDialog from './modules/account/ModuleLogin.vue';
+import ModuleNewUserRegistration from './modules/account/ModuleNewUserRegistration.vue';
 import AppSnackbar from './core/ui/snackbars/AppSnackbar.vue';
 
 // Store and i18n initialization
@@ -300,9 +300,9 @@ onMounted(() => {
       <v-btn
         icon
         variant="text"
-        @click="drawer = !drawer"
         class="menu-toggle-btn"
         :class="{ 'transparent-bg': drawer }"
+        @click="drawer = !drawer"
       >
         <v-icon>mdi-menu</v-icon>
       </v-btn>
@@ -335,7 +335,7 @@ onMounted(() => {
       class="custom-drawer"
     >
       <!-- Add padding area to prevent overlap with menu button -->
-      <div class="drawer-padding-top"></div>
+      <div class="drawer-padding-top" />
       
       <v-list
         density="compact"
@@ -394,19 +394,25 @@ onMounted(() => {
           :active="appStore.isModuleActive('KnowledgeBase')"
           @click="setActiveModule('KnowledgeBase')"
         />
-        <v-divider v-if="isLoggedIn" class="border-opacity-25" />
+        <v-divider
+          v-if="isLoggedIn"
+          class="border-opacity-25"
+        />
         
         <!-- Enhanced Admin accordion section -->
-        <div v-if="isLoggedIn" class="admin-accordion-container">
+        <div
+          v-if="isLoggedIn"
+          class="admin-accordion-container"
+        >
           <!-- Admin header with toggle -->
           <v-list-item 
-            class="admin-header-item"
-            :class="{ 'admin-expanded': isAdminExpanded }"
             v-tooltip="{
               text: $t('navigation.drawer.Admin'),
               location: 'right',
               disabled: appStore.drawerMode !== 'closed'
-            }" 
+            }"
+            class="admin-header-item"
+            :class="{ 'admin-expanded': isAdminExpanded }" 
             prepend-icon="mdi-application-cog" 
             :title="$t('navigation.drawer.Admin')" 
             value="admin"
@@ -425,16 +431,19 @@ onMounted(() => {
           
           <!-- Admin sub-modules (accordion content) -->
           <v-expand-transition>
-            <div v-if="isAdminExpanded" class="admin-submenu">
+            <div
+              v-if="isAdminExpanded"
+              class="admin-submenu"
+            >
               <!-- Catalog Admin -->
               <v-list-item
-                class="admin-sub-item"
-                :class="{ 'admin-sub-active': activeAdminSubModule === 'catalogAdmin' }"
                 v-tooltip="{
                   text: $t('admin.nav.catalog.main'),
                   location: 'right',
                   disabled: appStore.drawerMode !== 'closed'
                 }"
+                class="admin-sub-item"
+                :class="{ 'admin-sub-active': activeAdminSubModule === 'catalogAdmin' }"
                 prepend-icon="mdi-view-grid-plus-outline"
                 :title="$t('admin.nav.catalog.main')"
                 value="catalogAdmin"
@@ -445,13 +454,13 @@ onMounted(() => {
               
               <!-- Service Admin -->
               <v-list-item
-                class="admin-sub-item"
-                :class="{ 'admin-sub-active': activeAdminSubModule === 'serviceAdmin' }"
                 v-tooltip="{
                   text: $t('admin.nav.services.main'),
                   location: 'right',
                   disabled: appStore.drawerMode !== 'closed'
                 }"
+                class="admin-sub-item"
+                :class="{ 'admin-sub-active': activeAdminSubModule === 'serviceAdmin' }"
                 prepend-icon="mdi-cube-scan"
                 :title="$t('admin.nav.services.main')"
                 value="serviceAdmin"
@@ -462,13 +471,13 @@ onMounted(() => {
               
               <!-- Users Admin -->
               <v-list-item
-                class="admin-sub-item"
-                :class="{ 'admin-sub-active': activeAdminSubModule === 'usersAdmin' }"
                 v-tooltip="{
                   text: $t('admin.nav.users.main'),
                   location: 'right',
                   disabled: appStore.drawerMode !== 'closed'
                 }"
+                class="admin-sub-item"
+                :class="{ 'admin-sub-active': activeAdminSubModule === 'usersAdmin' }"
                 prepend-icon="mdi-account-cog"
                 :title="$t('admin.nav.users.main')"
                 value="usersAdmin"
@@ -479,13 +488,13 @@ onMounted(() => {
               
               <!-- App Settings Admin -->
               <v-list-item
-                class="admin-sub-item"
-                :class="{ 'admin-sub-active': activeAdminSubModule === 'appAdmin' }"
                 v-tooltip="{
                   text: $t('admin.nav.settings.main'),
                   location: 'right',
                   disabled: appStore.drawerMode !== 'closed'
                 }"
+                class="admin-sub-item"
+                :class="{ 'admin-sub-active': activeAdminSubModule === 'appAdmin' }"
                 prepend-icon="mdi-cog-outline"
                 :title="$t('admin.nav.settings.main')"
                 value="appAdmin"
@@ -497,7 +506,10 @@ onMounted(() => {
           </v-expand-transition>
         </div>
         
-        <v-divider v-if="isLoggedIn" class="border-opacity-25" />
+        <v-divider
+          v-if="isLoggedIn"
+          class="border-opacity-25"
+        />
         
         <!-- XLS Prototyping module -->
         <v-list-item 
@@ -518,7 +530,10 @@ onMounted(() => {
       <!-- Append slot for drawer controls and bottom navigation items -->
       <template #append>
         <!-- Bottom navigation list -->
-        <v-list density="compact" nav>
+        <v-list
+          density="compact"
+          nav
+        >
           <!-- Language selection with menu - using click trigger -->
           <div class="menu-wrapper">
             <v-list-item
@@ -544,7 +559,10 @@ onMounted(() => {
               content-class="stable-menu"
             >
               <template #activator="{ props }">
-                <div v-bind="props" class="hidden-activator"></div>
+                <div
+                  v-bind="props"
+                  class="hidden-activator"
+                />
               </template>
               <v-list>
                 <v-list-item
@@ -566,7 +584,10 @@ onMounted(() => {
           <v-divider class="border-opacity-25" />
           
           <!-- Profile menu (when logged in) - using click trigger -->
-          <div v-if="isLoggedIn" class="menu-wrapper">
+          <div
+            v-if="isLoggedIn"
+            class="menu-wrapper"
+          >
             <v-list-item
               v-tooltip="{
                 text: $t('navigation.tooltips.profile'),
@@ -590,7 +611,10 @@ onMounted(() => {
               content-class="stable-menu"
             >
               <template #activator="{ props }">
-                <div v-bind="props" class="hidden-activator"></div>
+                <div
+                  v-bind="props"
+                  class="hidden-activator"
+                />
               </template>
               <v-list>
                 <v-list-item @click="setActiveModule('Account')">
@@ -621,8 +645,8 @@ onMounted(() => {
             :title="$t('navigation.drawer.login')"
             value="login"
             :active="appStore.isModuleActive('Login')"
-            @click="setActiveModule('Login')"
             class="bottom-list-item"
+            @click="setActiveModule('Login')"
           />
           
           <!-- Register item (when not logged in) -->
@@ -637,8 +661,8 @@ onMounted(() => {
             :title="$t('navigation.drawer.register')"
             value="register"
             :active="appStore.isModuleActive('NewUserRegistration')"
-            @click="setActiveModule('NewUserRegistration')"
             class="bottom-list-item"
+            @click="setActiveModule('NewUserRegistration')"
           />
         </v-list>
         
@@ -665,7 +689,10 @@ onMounted(() => {
       <ModuleWork v-if="appStore.isModuleActive('Work')" />
       <ModuleAR v-if="appStore.isModuleActive('AR')" />
       <!-- Directly render the appropriate admin submodule based on selection -->
-      <component :is="currentAdminSubmodule" v-if="appStore.isModuleActive('Admin')" />
+      <component
+        :is="currentAdminSubmodule"
+        v-if="appStore.isModuleActive('Admin')"
+      />
       <ModuleXLS v-if="appStore.isModuleActive('XLS')" />
       <ModuleAccount v-if="appStore.isModuleActive('Account')" />
       <ModuleSettings v-if="appStore.isModuleActive('Settings')" />
