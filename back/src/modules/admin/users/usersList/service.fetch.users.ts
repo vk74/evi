@@ -14,12 +14,12 @@
 import { Request } from 'express';
 import { Pool } from 'pg';
 import { pool as pgPool } from '../../../../core/db/maindb';
-import { usersProtoCache, CacheKey } from './protoCache.users.list';
-import { queries, buildSortClause } from './protoQueries.users.list';
-import { IUser, IUsersResponse, IUsersFetchParams, UserError } from './protoTypes.users.list';
+import { usersCache, CacheKey } from './cache.users.list';
+import { queries, buildSortClause } from './queries.users.list';
+import { IUser, IUsersResponse, IUsersFetchParams, UserError } from './types.users.list';
 import { getRequestorUuidFromReq } from '../../../../core/helpers/get.requestor.uuid.from.req';
 import fabricEvents from '../../../../core/eventBus/fabric.events';
-import { USERS_FETCH_EVENTS } from './protoEvents.users.list';
+import { USERS_FETCH_EVENTS } from './events.users.list';
 
 // Explicitly set the type for pool
 const pool = pgPool as Pool;
@@ -48,7 +48,7 @@ function mapDbUserToInterface(dbUser: any): IUser {
 /**
  * User data service for fetching operations
  */
-export const protoUsersFetchService = {
+export const usersFetchService = {
   /**
    * Fetches users with filtering, sorting and pagination
    * @param params Query parameters
@@ -91,7 +91,7 @@ export const protoUsersFetchService = {
       
       // Check if we can use cached data
       if (!forceRefresh) {
-        const cachedData = usersProtoCache.get(cacheKey);
+        const cachedData = usersCache.get(cacheKey);
         if (cachedData) {
           // Create event for cache hit
           await fabricEvents.createAndPublishEvent({
@@ -108,7 +108,7 @@ export const protoUsersFetchService = {
         }
       } else {
         // If force refresh, invalidate the entry
-        usersProtoCache.invalidate('refresh', undefined, cacheKey);
+        usersCache.invalidate('refresh', undefined, cacheKey);
       }
       
       // Create event for cache miss/fetch from database
@@ -135,7 +135,7 @@ export const protoUsersFetchService = {
         offset               // OFFSET
       ]);
       
-      console.log('[ProtoUsersFetchService] SQL Query executed:', {
+      console.log('[UsersFetchService] SQL Query executed:', {
         search,
         sortClause,
         itemsPerPage,
@@ -150,7 +150,7 @@ export const protoUsersFetchService = {
       if (result.rows.length > 0) {
         total = parseInt(result.rows[0].total);
         
-        console.log('[ProtoUsersFetchService] First row total field:', {
+        console.log('[UsersFetchService] First row total field:', {
           totalRaw: result.rows[0].total,
           totalParsed: total,
           totalType: typeof result.rows[0].total
@@ -161,7 +161,7 @@ export const protoUsersFetchService = {
         }
       }
       
-      console.log('[ProtoUsersFetchService] Query result processed:', {
+      console.log('[UsersFetchService] Query result processed:', {
         usersCount: users.length,
         totalRecords: total,
         page: page,
@@ -173,7 +173,7 @@ export const protoUsersFetchService = {
       const response: IUsersResponse = { users, total };
       
       // Cache the result
-      usersProtoCache.set(cacheKey, response);
+      usersCache.set(cacheKey, response);
       
       // Create event for fetch completion
       await fabricEvents.createAndPublishEvent({
@@ -212,4 +212,4 @@ export const protoUsersFetchService = {
   }
 };
 
-export default protoUsersFetchService;
+export default usersFetchService;

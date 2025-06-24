@@ -2,16 +2,15 @@
  * Version: 1.0.0
  *
  * Tests for delete selected users service
- * This backend file contains Jest tests for the delete selected users service logic. 
- * Tests verify business logic, database interactions, error handling, cache invalidation, and event generation.
- * Uses mocks for database, repository, and event bus dependencies.
+ * This backend file contains Jest tests for the users deletion service logic. 
+ * Tests verify business logic, database interactions, cache invalidation, error handling, and event generation.
+ * Uses mocks for database, cache, and event bus dependencies.
  *
  * File: service.delete.selected.users.test.ts
  */
 
 import { Request } from 'express';
-import { deleteSelectedUsers } from './service.delete.selected.users';
-import type { DeleteUsersPayload, UserError } from './types.users.list';
+import { usersDeleteService } from './service.delete.selected.users';
 
 // Mock dependencies
 jest.mock('@/core/db/maindb', () => ({
@@ -28,10 +27,15 @@ jest.mock('@/core/helpers/get.requestor.uuid.from.req', () => ({
   getRequestorUuidFromReq: jest.fn()
 }));
 
-jest.mock('./repository.users.list', () => ({
-  __esModule: true,
-  default: {
-    invalidateCache: jest.fn()
+jest.mock('./cache.users.list', () => ({
+  usersCache: {
+    invalidate: jest.fn()
+  }
+}));
+
+jest.mock('./queries.users.list', () => ({
+  queries: {
+    deleteSelectedUsers: 'DELETE FROM users WHERE user_id = ANY($1)'
   }
 }));
 
@@ -39,21 +43,31 @@ jest.mock('./repository.users.list', () => ({
 import { pool } from '@/core/db/maindb';
 import fabricEvents from '@/core/eventBus/fabric.events';
 import { getRequestorUuidFromReq } from '@/core/helpers/get.requestor.uuid.from.req';
-import usersRepository from './repository.users.list';
+import { usersCache } from './cache.users.list';
 import { USERS_DELETE_EVENTS } from './events.users.list';
 
 // Type the mocks
 const mockPool = pool as jest.Mocked<typeof pool>;
 const mockFabricEvents = fabricEvents as jest.Mocked<typeof fabricEvents>;
 const mockGetRequestorUuid = getRequestorUuidFromReq as jest.MockedFunction<typeof getRequestorUuidFromReq>;
-const mockUsersRepository = usersRepository as jest.Mocked<typeof usersRepository>;
+const mockUsersCache = usersCache as jest.Mocked<typeof usersCache>;
 
 describe('Delete Selected Users Service', () => {
   let mockRequest: Partial<Request>;
-  let mockPayload: DeleteUsersPayload;
+  let mockQuery: jest.Mock;
+
+  // Test data
+  const testUserIds = [
+    '123e4567-e89b-12d3-a456-426614174000',
+    '456e7890-e89b-12d3-a456-426614174000',
+    '789e0123-e89b-12d3-a456-426614174000'
+  ];
 
   beforeEach(() => {
     // Setup mocks before each test
+    mockQuery = jest.fn();
+    mockPool.query = mockQuery;
+    
     mockRequest = {
       headers: {},
       body: {}
@@ -65,537 +79,449 @@ describe('Delete Selected Users Service', () => {
     // Setup default values
     mockGetRequestorUuid.mockReturnValue('requestor-uuid-123');
     mockFabricEvents.createAndPublishEvent.mockResolvedValue(undefined);
-    mockUsersRepository.invalidateCache.mockReturnValue(undefined);
-
-    // Default payload
-    mockPayload = {
-      userIds: [
-        '123e4567-e89b-12d3-a456-426614174000',
-        '987fcdeb-51a2-43d1-b789-123456789abc'
-      ]
-    };
   });
 
-  describe('Successful user deletions', () => {
+  describe('Successful user deletion', () => {
     it('should delete multiple users successfully', async () => {
       // Prepare test data
-      const userIds = [
-        '123e4567-e89b-12d3-a456-426614174000',
-        '987fcdeb-51a2-43d1-b789-123456789abc',
-        '456defab-78c9-12d3-e456-789abcdef012'
-      ];
-      const requestorUuid = 'admin-uuid-456';
+      const userIds = testUserIds;
+      const requestorUuid = 'requestor-uuid-123';
 
-      const payload: DeleteUsersPayload = {
-        userIds
-      };
-
-      // Setup database mock - successful deletion
-      mockPool.query.mockResolvedValue({
-        rows: userIds.map(id => ({ user_id: id })),
-        rowCount: userIds.length
+      // Setup database mock - return deleted user IDs
+      mockQuery.mockResolvedValue({
+        rows: [
+          { user_id: userIds[0] },
+          { user_id: userIds[1] },
+          { user_id: userIds[2] }
+        ]
       });
-
-      // Setup mocks
-      mockGetRequestorUuid.mockReturnValue(requestorUuid);
 
       // Call the service
-      const result = await deleteSelectedUsers(mockRequest as Request, payload);
+      const result = await usersDeleteService.deleteSelectedUsers(userIds, mockRequest as Request);
 
       // Verify result
-      expect(result).toEqual({
-        deletedUserIds: userIds
-      });
+      expect(result).toBe(3);
 
       // Verify database call
-      expect(mockPool.query).toHaveBeenCalledTimes(1);
-      expect(mockPool.query).toHaveBeenCalledWith(
-        expect.any(String), // SQL query
+      expect(mockQuery).toHaveBeenCalledTimes(1);
+      expect(mockQuery).toHaveBeenCalledWith(
+        expect.any(String),
         [userIds]
       );
 
-      // Verify cache invalidation
-      expect(mockUsersRepository.invalidateCache).toHaveBeenCalledTimes(1);
+      // Verify cache was invalidated
+      expect(mockUsersCache.invalidate).toHaveBeenCalledWith('delete');
 
-      // Verify events
-      expect(mockFabricEvents.createAndPublishEvent).toHaveBeenCalledTimes(2);
-      
-      // CACHE_INVALIDATE event
+      // Verify events (3 events: start, cache invalidation, complete)
+      expect(mockFabricEvents.createAndPublishEvent).toHaveBeenCalledTimes(3);
       expect(mockFabricEvents.createAndPublishEvent).toHaveBeenNthCalledWith(1, {
-        req: mockRequest,
-        eventName: USERS_DELETE_EVENTS.CACHE_INVALIDATE.eventName,
-        payload: null
-      });
-
-      // COMPLETE event
-      expect(mockFabricEvents.createAndPublishEvent).toHaveBeenNthCalledWith(2, {
         req: mockRequest,
         eventName: USERS_DELETE_EVENTS.COMPLETE.eventName,
         payload: {
-          deletedCount: userIds.length,
+          groupIds: userIds,
+          requestorUuid
+        }
+      });
+      expect(mockFabricEvents.createAndPublishEvent).toHaveBeenNthCalledWith(2, {
+        req: mockRequest,
+        eventName: USERS_DELETE_EVENTS.CACHE_INVALIDATED.eventName,
+        payload: { deletedCount: 3, requestorUuid }
+      });
+      expect(mockFabricEvents.createAndPublishEvent).toHaveBeenNthCalledWith(3, {
+        req: mockRequest,
+        eventName: USERS_DELETE_EVENTS.COMPLETE.eventName,
+        payload: {
+          requested: 3,
+          deleted: 3,
           requestorUuid
         }
       });
     });
 
-    it('should handle single user deletion', async () => {
-      // Prepare test data - single user
-      const userIds = ['123e4567-e89b-12d3-a456-426614174000'];
-      const payload: DeleteUsersPayload = {
-        userIds
-      };
+    it('should delete single user successfully', async () => {
+      // Prepare test data
+      const userIds = [testUserIds[0]];
 
-      // Setup database mock
-      mockPool.query.mockResolvedValue({
-        rows: [{ user_id: userIds[0] }],
-        rowCount: 1
+      // Setup database mock - return single deleted user ID
+      mockQuery.mockResolvedValue({
+        rows: [{ user_id: userIds[0] }]
       });
 
       // Call the service
-      const result = await deleteSelectedUsers(mockRequest as Request, payload);
+      const result = await usersDeleteService.deleteSelectedUsers(userIds, mockRequest as Request);
 
       // Verify result
-      expect(result).toEqual({
-        deletedUserIds: userIds
-      });
+      expect(result).toBe(1);
 
       // Verify database call
-      expect(mockPool.query).toHaveBeenCalledWith(
+      expect(mockQuery).toHaveBeenCalledTimes(1);
+      expect(mockQuery).toHaveBeenCalledWith(
         expect.any(String),
         [userIds]
       );
 
-      // Verify events
-      expect(mockFabricEvents.createAndPublishEvent).toHaveBeenCalledTimes(2);
-      expect(mockFabricEvents.createAndPublishEvent).toHaveBeenNthCalledWith(2, {
-        req: mockRequest,
-        eventName: USERS_DELETE_EVENTS.COMPLETE.eventName,
-        payload: {
-          deletedCount: 1,
-          requestorUuid: 'requestor-uuid-123'
-        }
-      });
+      // Verify cache was invalidated
+      expect(mockUsersCache.invalidate).toHaveBeenCalledWith('delete');
     });
 
     it('should handle empty userIds array', async () => {
-      // Prepare test data - empty array
-      const payload: DeleteUsersPayload = {
-        userIds: []
-      };
-
-      // Setup database mock - no users to delete
-      mockPool.query.mockResolvedValue({
-        rows: [],
-        rowCount: 0
-      });
+      // Prepare test data
+      const userIds: string[] = [];
 
       // Call the service
-      const result = await deleteSelectedUsers(mockRequest as Request, payload);
+      const result = await usersDeleteService.deleteSelectedUsers(userIds, mockRequest as Request);
 
       // Verify result
-      expect(result).toEqual({
-        deletedUserIds: []
-      });
+      expect(result).toBe(0);
 
-      // Verify database call
-      expect(mockPool.query).toHaveBeenCalledWith(
-        expect.any(String),
-        [[]]
-      );
+      // Verify no database call was made
+      expect(mockQuery).not.toHaveBeenCalled();
 
-      // Verify events
-      expect(mockFabricEvents.createAndPublishEvent).toHaveBeenCalledTimes(2);
-      expect(mockFabricEvents.createAndPublishEvent).toHaveBeenNthCalledWith(2, {
+      // Verify no cache invalidation
+      expect(mockUsersCache.invalidate).not.toHaveBeenCalled();
+
+      // Verify only start event was published (no completion events)
+      expect(mockFabricEvents.createAndPublishEvent).toHaveBeenCalledTimes(1);
+      expect(mockFabricEvents.createAndPublishEvent).toHaveBeenCalledWith({
         req: mockRequest,
         eventName: USERS_DELETE_EVENTS.COMPLETE.eventName,
         payload: {
-          deletedCount: 0,
+          groupIds: [],
           requestorUuid: 'requestor-uuid-123'
         }
       });
     });
 
-    it('should handle partial deletion when some users not found', async () => {
+    it('should handle partial deletion success', async () => {
       // Prepare test data
-      const requestedUserIds = [
-        '123e4567-e89b-12d3-a456-426614174000',
-        '987fcdeb-51a2-43d1-b789-123456789abc',
-        '456defab-78c9-12d3-e456-789abcdef012'
-      ];
+      const userIds = testUserIds;
 
-      const deletedUserIds = [
-        '123e4567-e89b-12d3-a456-426614174000',
-        '456defab-78c9-12d3-e456-789abcdef012'
-      ];
-
-      const payload: DeleteUsersPayload = {
-        userIds: requestedUserIds
-      };
-
-      // Setup database mock - only 2 users found and deleted
-      mockPool.query.mockResolvedValue({
-        rows: deletedUserIds.map(id => ({ user_id: id })),
-        rowCount: deletedUserIds.length
+      // Setup database mock - only 2 out of 3 users deleted
+      mockQuery.mockResolvedValue({
+        rows: [
+          { user_id: userIds[0] },
+          { user_id: userIds[1] }
+        ]
       });
 
       // Call the service
-      const result = await deleteSelectedUsers(mockRequest as Request, payload);
+      const result = await usersDeleteService.deleteSelectedUsers(userIds, mockRequest as Request);
 
       // Verify result
-      expect(result).toEqual({
-        deletedUserIds
-      });
+      expect(result).toBe(2);
 
       // Verify database call
-      expect(mockPool.query).toHaveBeenCalledWith(
+      expect(mockQuery).toHaveBeenCalledTimes(1);
+      expect(mockQuery).toHaveBeenCalledWith(
         expect.any(String),
-        [requestedUserIds]
+        [userIds]
       );
 
-      // Verify events
-      expect(mockFabricEvents.createAndPublishEvent).toHaveBeenCalledTimes(2);
+      // Verify cache was invalidated
+      expect(mockUsersCache.invalidate).toHaveBeenCalledWith('delete');
+
+      // Verify events (3 events: start, cache invalidation, complete)
+      expect(mockFabricEvents.createAndPublishEvent).toHaveBeenCalledTimes(3);
       expect(mockFabricEvents.createAndPublishEvent).toHaveBeenNthCalledWith(2, {
         req: mockRequest,
-        eventName: USERS_DELETE_EVENTS.COMPLETE.eventName,
-        payload: {
-          deletedCount: 2,
-          requestorUuid: 'requestor-uuid-123'
-        }
+        eventName: USERS_DELETE_EVENTS.CACHE_INVALIDATED.eventName,
+        payload: { deletedCount: 2, requestorUuid: 'requestor-uuid-123' }
       });
+    });
+  });
+
+  describe('Cache invalidation', () => {
+    it('should invalidate cache when users are deleted', async () => {
+      // Prepare test data
+      const userIds = [testUserIds[0]];
+
+      // Setup database mock
+      mockQuery.mockResolvedValue({
+        rows: [{ user_id: userIds[0] }]
+      });
+
+      // Call the service
+      await usersDeleteService.deleteSelectedUsers(userIds, mockRequest as Request);
+
+      // Verify cache was invalidated
+      expect(mockUsersCache.invalidate).toHaveBeenCalledWith('delete');
+    });
+
+    it('should not invalidate cache when no users are deleted', async () => {
+      // Prepare test data
+      const userIds = testUserIds;
+
+      // Setup database mock - no users deleted
+      mockQuery.mockResolvedValue({
+        rows: []
+      });
+
+      // Call the service
+      const result = await usersDeleteService.deleteSelectedUsers(userIds, mockRequest as Request);
+
+      // Verify result
+      expect(result).toBe(0);
+
+      // Verify cache was not invalidated
+      expect(mockUsersCache.invalidate).not.toHaveBeenCalled();
     });
   });
 
   describe('Error handling', () => {
     it('should handle database errors', async () => {
       // Prepare test data
-      const userIds = ['123e4567-e89b-12d3-a456-426614174000'];
-      const payload: DeleteUsersPayload = {
-        userIds
-      };
+      const userIds = testUserIds;
 
+      // Setup database mock to throw error
       const dbError = new Error('Database connection failed');
-
-      // Setup database mock - database error
-      mockPool.query.mockRejectedValue(dbError);
+      mockQuery.mockRejectedValue(dbError);
 
       // Call the service and expect error
-      await expect(deleteSelectedUsers(mockRequest as Request, payload))
+      await expect(usersDeleteService.deleteSelectedUsers(userIds, mockRequest as Request))
         .rejects.toEqual({
-          code: 'USERS_DELETE_ERROR',
-          message: 'Database connection failed',
-          details: dbError
+          code: 'DATABASE_ERROR',
+          message: 'Error deleting users',
+          details: undefined // In production, details are not exposed
         });
 
-      // Verify database call
-      expect(mockPool.query).toHaveBeenCalledWith(
-        expect.any(String),
-        [userIds]
+      // Verify error event was published
+      expect(mockFabricEvents.createAndPublishEvent).toHaveBeenCalledWith({
+        req: mockRequest,
+        eventName: USERS_DELETE_EVENTS.FAILED.eventName,
+        payload: {
+          userIds: 3,
+          error: {
+            code: 'DATABASE_ERROR',
+            message: 'Error occurred while deleting users'
+          }
+        },
+        errorData: 'Database connection failed'
+      });
+    });
+
+    it('should handle foreign key constraint violations', async () => {
+      // Prepare test data
+      const userIds = testUserIds;
+
+      // Setup database mock to throw constraint error
+      const constraintError = new Error('violates foreign key constraint');
+      mockQuery.mockRejectedValue(constraintError);
+
+      // Call the service and expect error
+      await expect(usersDeleteService.deleteSelectedUsers(userIds, mockRequest as Request))
+        .rejects.toEqual({
+          code: 'DATABASE_ERROR',
+          message: 'Error deleting users',
+          details: undefined // In production, details are not exposed
+        });
+
+      // Verify error event was published
+      expect(mockFabricEvents.createAndPublishEvent).toHaveBeenCalledWith({
+        req: mockRequest,
+        eventName: USERS_DELETE_EVENTS.FAILED.eventName,
+        payload: {
+          userIds: 3,
+          error: {
+            code: 'DATABASE_ERROR',
+            message: 'Error occurred while deleting users'
+          }
+        },
+        errorData: 'violates foreign key constraint'
+      });
+    });
+
+    it('should handle malformed database response', async () => {
+      // Prepare test data
+      const userIds = testUserIds;
+
+      // Setup database mock with malformed response
+      mockQuery.mockResolvedValue({
+        rows: null // Malformed response
+      });
+
+      // Call the service and expect error
+      await expect(usersDeleteService.deleteSelectedUsers(userIds, mockRequest as Request))
+        .rejects.toEqual({
+          code: 'DATABASE_ERROR',
+          message: 'Error deleting users',
+          details: undefined
+        });
+
+      // Verify error event was published
+      expect(mockFabricEvents.createAndPublishEvent).toHaveBeenCalledWith({
+        req: mockRequest,
+        eventName: USERS_DELETE_EVENTS.FAILED.eventName,
+        payload: {
+          userIds: 3,
+          error: {
+            code: 'DATABASE_ERROR',
+            message: 'Error occurred while deleting users'
+          }
+        },
+        errorData: expect.any(String)
+      });
+    });
+  });
+
+  describe('Performance and edge cases', () => {
+    it('should handle large array of userIds', async () => {
+      // Prepare test data - large array
+      const largeUserIds = Array.from({ length: 100 }, (_, i) => 
+        `123e4567-e89b-12d3-a456-${i.toString().padStart(12, '0')}`
       );
 
-      // Verify events
-      expect(mockFabricEvents.createAndPublishEvent).toHaveBeenCalledTimes(1);
-      
-      // FAILED event
-      expect(mockFabricEvents.createAndPublishEvent).toHaveBeenCalledWith({
-        req: mockRequest,
-        eventName: USERS_DELETE_EVENTS.FAILED.eventName,
-        payload: {
-          error: {
-            code: 'USERS_DELETE_ERROR',
-            message: 'Database connection failed',
-            details: dbError
-          }
-        },
-        errorData: JSON.stringify({
-          code: 'USERS_DELETE_ERROR',
-          message: 'Database connection failed',
-          details: dbError
-        })
+      // Setup database mock - all users deleted
+      mockQuery.mockResolvedValue({
+        rows: largeUserIds.map(id => ({ user_id: id }))
       });
+
+      // Call the service
+      const result = await usersDeleteService.deleteSelectedUsers(largeUserIds, mockRequest as Request);
+
+      // Verify result
+      expect(result).toBe(100);
+
+      // Verify database call was made with large array
+      expect(mockQuery).toHaveBeenCalledWith(
+        expect.any(String),
+        [largeUserIds]
+      );
+
+      // Verify cache was invalidated
+      expect(mockUsersCache.invalidate).toHaveBeenCalledWith('delete');
     });
 
-    it('should handle constraint violation errors', async () => {
-      // Prepare test data
-      const userIds = ['123e4567-e89b-12d3-a456-426614174000'];
-      const payload: DeleteUsersPayload = {
-        userIds
-      };
+    it('should handle duplicate userIds', async () => {
+      // Prepare test data with duplicates
+      const userIdsWithDuplicates = [
+        testUserIds[0],
+        testUserIds[0], // Duplicate
+        testUserIds[1],
+        testUserIds[0]  // Another duplicate
+      ];
 
-      const constraintError = new Error('foreign key constraint violation');
-      (constraintError as any).code = '23503'; // PostgreSQL foreign key error code
-
-      // Setup database mock - constraint error
-      mockPool.query.mockRejectedValue(constraintError);
-
-      // Call the service and expect error
-      await expect(deleteSelectedUsers(mockRequest as Request, payload))
-        .rejects.toEqual({
-          code: '23503',
-          message: 'foreign key constraint violation',
-          details: constraintError
-        });
-
-      // Verify events
-      expect(mockFabricEvents.createAndPublishEvent).toHaveBeenCalledTimes(1);
-      expect(mockFabricEvents.createAndPublishEvent).toHaveBeenCalledWith({
-        req: mockRequest,
-        eventName: USERS_DELETE_EVENTS.FAILED.eventName,
-        payload: {
-          error: {
-            code: '23503',
-            message: 'foreign key constraint violation',
-            details: constraintError
-          }
-        },
-        errorData: JSON.stringify({
-          code: '23503',
-          message: 'foreign key constraint violation',
-          details: constraintError
-        })
+      // Setup database mock - return unique deleted user IDs
+      mockQuery.mockResolvedValue({
+        rows: [
+          { user_id: testUserIds[0] },
+          { user_id: testUserIds[1] }
+        ]
       });
+
+      // Call the service
+      const result = await usersDeleteService.deleteSelectedUsers(userIdsWithDuplicates, mockRequest as Request);
+
+      // Verify result
+      expect(result).toBe(2);
+
+      // Verify database call was made with duplicates (database handles deduplication)
+      expect(mockQuery).toHaveBeenCalledWith(
+        expect.any(String),
+        [userIdsWithDuplicates]
+      );
     });
 
-    it('should handle unknown errors', async () => {
-      // Prepare test data
-      const userIds = ['123e4567-e89b-12d3-a456-426614174000'];
-      const payload: DeleteUsersPayload = {
-        userIds
-      };
+    it('should handle invalid UUIDs gracefully', async () => {
+      // Prepare test data with invalid UUIDs
+      const invalidUserIds = [
+        'invalid-uuid-1',
+        '123e4567-e89b-12d3-a456-426614174000', // Valid UUID
+        'another-invalid-uuid'
+      ];
 
-      const unknownError = 'Unknown error occurred';
-
-      // Setup database mock - unknown error
-      mockPool.query.mockRejectedValue(unknownError);
-
-      // Call the service and expect error
-      await expect(deleteSelectedUsers(mockRequest as Request, payload))
-        .rejects.toEqual({
-          code: 'USERS_DELETE_ERROR',
-          message: 'Failed to delete users',
-          details: unknownError
-        });
-
-      // Verify events
-      expect(mockFabricEvents.createAndPublishEvent).toHaveBeenCalledTimes(1);
-      expect(mockFabricEvents.createAndPublishEvent).toHaveBeenCalledWith({
-        req: mockRequest,
-        eventName: USERS_DELETE_EVENTS.FAILED.eventName,
-        payload: {
-          error: {
-            code: 'USERS_DELETE_ERROR',
-            message: 'Failed to delete users',
-            details: unknownError
-          }
-        },
-        errorData: JSON.stringify({
-          code: 'USERS_DELETE_ERROR',
-          message: 'Failed to delete users',
-          details: unknownError
-        })
+      // Setup database mock - only valid UUID was processed
+      mockQuery.mockResolvedValue({
+        rows: [{ user_id: '123e4567-e89b-12d3-a456-426614174000' }]
       });
-    });
 
-    it('should generate failed event on errors', async () => {
-      // Prepare test data
-      const userIds = ['123e4567-e89b-12d3-a456-426614174000'];
-      const payload: DeleteUsersPayload = {
-        userIds
-      };
+      // Call the service
+      const result = await usersDeleteService.deleteSelectedUsers(invalidUserIds, mockRequest as Request);
 
-      const dbError = new Error('Connection timeout');
+      // Verify result
+      expect(result).toBe(1);
 
-      // Setup database mock - error
-      mockPool.query.mockRejectedValue(dbError);
-
-      // Call the service and expect error
-      await expect(deleteSelectedUsers(mockRequest as Request, payload))
-        .rejects.toMatchObject({
-          code: 'USERS_DELETE_ERROR',
-          message: 'Connection timeout'
-        });
-
-      // Verify FAILED event
-      expect(mockFabricEvents.createAndPublishEvent).toHaveBeenCalledTimes(1);
-      expect(mockFabricEvents.createAndPublishEvent).toHaveBeenCalledWith({
-        req: mockRequest,
-        eventName: USERS_DELETE_EVENTS.FAILED.eventName,
-        payload: {
-          error: {
-            code: 'USERS_DELETE_ERROR',
-            message: 'Connection timeout',
-            details: dbError
-          }
-        },
-        errorData: JSON.stringify({
-          code: 'USERS_DELETE_ERROR',
-          message: 'Connection timeout',
-          details: dbError
-        })
-      });
+      // Verify database call was made with all userIds (database handles validation)
+      expect(mockQuery).toHaveBeenCalledWith(
+        expect.any(String),
+        [invalidUserIds]
+      );
     });
   });
 
   describe('Event generation', () => {
-    it('should generate cache invalidate event after successful deletion', async () => {
+    it('should generate correct events for successful deletion', async () => {
       // Prepare test data
-      const userIds = ['123e4567-e89b-12d3-a456-426614174000'];
-      const payload: DeleteUsersPayload = {
-        userIds
-      };
+      const userIds = testUserIds;
+      const requestorUuid = 'requestor-uuid-123';
 
       // Setup database mock
-      mockPool.query.mockResolvedValue({
-        rows: [{ user_id: userIds[0] }],
-        rowCount: 1
+      mockQuery.mockResolvedValue({
+        rows: userIds.map(id => ({ user_id: id }))
       });
 
       // Call the service
-      await deleteSelectedUsers(mockRequest as Request, payload);
+      await usersDeleteService.deleteSelectedUsers(userIds, mockRequest as Request);
 
-      // Verify CACHE_INVALIDATE event
+      // Verify events were published in correct order
+      expect(mockFabricEvents.createAndPublishEvent).toHaveBeenCalledTimes(3);
+
+      // First event - operation start
       expect(mockFabricEvents.createAndPublishEvent).toHaveBeenNthCalledWith(1, {
         req: mockRequest,
-        eventName: USERS_DELETE_EVENTS.CACHE_INVALIDATE.eventName,
-        payload: null
-      });
-    });
-
-    it('should generate complete event with correct payload', async () => {
-      // Prepare test data
-      const userIds = [
-        '123e4567-e89b-12d3-a456-426614174000',
-        '987fcdeb-51a2-43d1-b789-123456789abc'
-      ];
-      const requestorUuid = 'user-uuid-789';
-      const payload: DeleteUsersPayload = {
-        userIds
-      };
-
-      // Setup mocks
-      mockGetRequestorUuid.mockReturnValue(requestorUuid);
-      mockPool.query.mockResolvedValue({
-        rows: userIds.map(id => ({ user_id: id })),
-        rowCount: userIds.length
+        eventName: USERS_DELETE_EVENTS.COMPLETE.eventName,
+        payload: {
+          groupIds: userIds,
+          requestorUuid
+        }
       });
 
-      // Call the service
-      await deleteSelectedUsers(mockRequest as Request, payload);
-
-      // Verify COMPLETE event
+      // Second event - cache invalidation
       expect(mockFabricEvents.createAndPublishEvent).toHaveBeenNthCalledWith(2, {
+        req: mockRequest,
+        eventName: USERS_DELETE_EVENTS.CACHE_INVALIDATED.eventName,
+        payload: { deletedCount: 3, requestorUuid }
+      });
+
+      // Third event - completion
+      expect(mockFabricEvents.createAndPublishEvent).toHaveBeenNthCalledWith(3, {
         req: mockRequest,
         eventName: USERS_DELETE_EVENTS.COMPLETE.eventName,
         payload: {
-          deletedCount: userIds.length,
+          requested: 3,
+          deleted: 3,
           requestorUuid
         }
       });
     });
-  });
 
-  describe('Cache invalidation', () => {
-    it('should invalidate cache after successful deletion', async () => {
+    it('should generate error events for failed deletion', async () => {
       // Prepare test data
-      const userIds = ['123e4567-e89b-12d3-a456-426614174000'];
-      const payload: DeleteUsersPayload = {
-        userIds
-      };
+      const userIds = testUserIds;
 
-      // Setup database mock
-      mockPool.query.mockResolvedValue({
-        rows: [{ user_id: userIds[0] }],
-        rowCount: 1
-      });
-
-      // Call the service
-      await deleteSelectedUsers(mockRequest as Request, payload);
-
-      // Verify cache invalidation
-      expect(mockUsersRepository.invalidateCache).toHaveBeenCalledTimes(1);
-    });
-
-    it('should not invalidate cache on errors', async () => {
-      // Prepare test data
-      const userIds = ['123e4567-e89b-12d3-a456-426614174000'];
-      const payload: DeleteUsersPayload = {
-        userIds
-      };
-
+      // Setup database mock to throw error
       const dbError = new Error('Database error');
-
-      // Setup database mock - error
-      mockPool.query.mockRejectedValue(dbError);
+      mockQuery.mockRejectedValue(dbError);
 
       // Call the service and expect error
-      await expect(deleteSelectedUsers(mockRequest as Request, payload))
-        .rejects.toMatchObject({
-          code: 'USERS_DELETE_ERROR'
+      await expect(usersDeleteService.deleteSelectedUsers(userIds, mockRequest as Request))
+        .rejects.toEqual({
+          code: 'DATABASE_ERROR',
+          message: 'Error deleting users',
+          details: undefined
         });
 
-      // Verify cache was not invalidated
-      expect(mockUsersRepository.invalidateCache).not.toHaveBeenCalled();
-    });
-  });
-
-  describe('Requestor UUID handling', () => {
-    it('should get requestor UUID from request', async () => {
-      // Prepare test data
-      const userIds = ['123e4567-e89b-12d3-a456-426614174000'];
-      const requestorUuid = 'custom-requestor-uuid';
-      const payload: DeleteUsersPayload = {
-        userIds
-      };
-
-      // Setup mocks
-      mockGetRequestorUuid.mockReturnValue(requestorUuid);
-      mockPool.query.mockResolvedValue({
-        rows: [{ user_id: userIds[0] }],
-        rowCount: 1
-      });
-
-      // Call the service
-      await deleteSelectedUsers(mockRequest as Request, payload);
-
-      // Verify that getRequestorUuidFromReq was called
-      expect(mockGetRequestorUuid).toHaveBeenCalledWith(mockRequest);
-      expect(mockGetRequestorUuid).toHaveBeenCalledTimes(2); // Called twice in the service
-
-      // Verify that requestorUuid is used in COMPLETE event
-      expect(mockFabricEvents.createAndPublishEvent).toHaveBeenNthCalledWith(2, {
+      // Verify error event was published
+      expect(mockFabricEvents.createAndPublishEvent).toHaveBeenCalledWith({
         req: mockRequest,
-        eventName: USERS_DELETE_EVENTS.COMPLETE.eventName,
+        eventName: USERS_DELETE_EVENTS.FAILED.eventName,
         payload: {
-          deletedCount: 1,
-          requestorUuid
-        }
-      });
-    });
-
-    it('should handle missing requestor UUID', async () => {
-      // Prepare test data
-      const userIds = ['123e4567-e89b-12d3-a456-426614174000'];
-      const payload: DeleteUsersPayload = {
-        userIds
-      };
-
-      // Setup mocks
-      mockGetRequestorUuid.mockReturnValue(null);
-      mockPool.query.mockResolvedValue({
-        rows: [{ user_id: userIds[0] }],
-        rowCount: 1
-      });
-
-      // Call the service
-      await deleteSelectedUsers(mockRequest as Request, payload);
-
-      // Verify that 'unknown' is used when requestorUuid is null
-      expect(mockFabricEvents.createAndPublishEvent).toHaveBeenNthCalledWith(2, {
-        req: mockRequest,
-        eventName: USERS_DELETE_EVENTS.COMPLETE.eventName,
-        payload: {
-          deletedCount: 1,
-          requestorUuid: 'unknown'
-        }
+          userIds: 3,
+          error: {
+            code: 'DATABASE_ERROR',
+            message: 'Error occurred while deleting users'
+          }
+        },
+        errorData: 'Database error'
       });
     });
   });

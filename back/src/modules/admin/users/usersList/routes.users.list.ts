@@ -8,7 +8,7 @@
  * - Makes them available for main admin router
  */
 
-import fetchProtoUsers from './protoController.fetch.users';
-import deleteSelectedProtoUsers from './protoController.delete.users';
+import fetchUsers from './controller.fetch.users';
+import deleteSelectedUsers from './controller.delete.selected.users';
 
-export { fetchProtoUsers, deleteSelectedProtoUsers };
+export { fetchUsers, deleteSelectedUsers };

@@ -23,8 +23,8 @@ import {
 
 // Logger for main operations
 const logger = {
-  info: (message: string, meta?: any) => console.log(`[ProtoUsersFetchService] ${message}`, meta || ''),
-  error: (message: string, error?: any) => console.error(`[ProtoUsersFetchService] ${message}`, error || '')
+  info: (message: string, meta?: any) => console.log(`[UsersFetchService] ${message}`, meta || ''),
+  error: (message: string, error?: any) => console.error(`[UsersFetchService] ${message}`, error || '')
 }
 
 // For request cancellation
@@ -94,7 +94,7 @@ export const usersFetchService = {
 
       // Make API request
       const response = await api.get<IUsersResponse>(
-        '/api/admin/users/proto/fetch-users',
+        '/api/admin/users/fetch-users',
         {
           params: {
             page: queryParams.page,
@@ -108,12 +108,28 @@ export const usersFetchService = {
         }
       )
 
+      // Debug: log what we received
+      console.log('[UsersFetchService] Raw response:', {
+        responseType: typeof response,
+        responseDataType: typeof response.data,
+        responseDataKeys: Object.keys(response.data || {}),
+        hasUsers: !!response.data?.users,
+        usersIsArray: Array.isArray(response.data?.users),
+        usersLength: response.data?.users?.length,
+        total: response.data?.total
+      });
+
       // Validate response format
       if (!response.data || !Array.isArray(response.data.users)) {
+        console.error('[UsersFetchService] Validation failed:', {
+          hasData: !!response.data,
+          usersIsArray: Array.isArray(response.data?.users),
+          responseData: response.data
+        });
         throw new Error('Invalid API response format')
       }
 
-      console.log('[ProtoUsersFetchService] API Response received:', {
+      console.log('[UsersFetchService] API Response received:', {
         usersCount: response.data.users.length,
         total: response.data.total,
         responseDataType: typeof response.data.total,

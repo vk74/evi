@@ -1,5 +1,5 @@
 /**
- * protoState.users.list.ts
+ * State.users.list.ts
  * Version: 1.0.01
  * Pinia store for managing users list state with optimized caching.
  * 
@@ -11,7 +11,7 @@
  * - Server-side pagination support with proper total count handling
  * 
  * Used by:
- * - protoUsersList.vue component
+ * - UsersList.vue component
  * - Service.fetch.users.ts service
  */
 
@@ -42,7 +42,7 @@ const logger = {
     error: (message: string, meta?: any) => console.error(`[UsersStore] ${message}`, meta || '')
 };
 
-export const useStoreUsersList = defineStore('protoViewAllUsers', () => {
+export const useStoreUsersList = defineStore('viewAllUsers', () => {
     // User store for auth state
     const userStore = useUserStore();
     

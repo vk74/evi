@@ -15,8 +15,8 @@ import usersFetchService from './Service.fetch.users'
 
 // Logger for main operations
 const logger = {
-  info: (message: string, meta?: any) => console.log(`[ProtoDeleteUsersService] ${message}`, meta || ''),
-  error: (message: string, error?: any) => console.error(`[ProtoDeleteUsersService] ${message}`, error || '')
+  info: (message: string, meta?: any) => console.log(`[DeleteUsersService] ${message}`, meta || ''),
+  error: (message: string, error?: any) => console.error(`[DeleteUsersService] ${message}`, error || '')
 }
 
 /**
@@ -49,7 +49,7 @@ export const deleteSelectedUsersService = {
 
     try {
       const response = await api.post<{success: boolean, deletedCount: number}>(
-        '/api/admin/users/proto/delete-selected-users',
+        '/api/admin/users/delete-selected-users',
         { userIds }
       )
 

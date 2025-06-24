@@ -1,89 +1,110 @@
 /**
- * service.delete.selected.users.ts - backend file
- * version: 1.0.01
+ * @file protoService.delete.users.ts
+ * Version: 1.0.0
+ * BACKEND service for prototype user deletion operations with server-side processing.
  * 
- * Service for deleting selected users.
- * 
- * This service provides business logic for deleting multiple users:
- * - Validates input data
- * - Executes deletion in database
- * - Invalidates cache after successful deletion
- * - Handles errors and generates appropriate events
+ * Functionality:
+ * - Handles deletion of users by UUID
+ * - Supports batch deletion with transaction
+ * - Invalidates cache after operations
+ * - Uses event bus for tracking operations
  */
 
 import { Request } from 'express';
 import { Pool } from 'pg';
 import { pool as pgPool } from '../../../../core/db/maindb';
 import { queries } from './queries.users.list';
-import usersRepository from './repository.users.list';
+import { usersCache } from './cache.users.list';
 import { getRequestorUuidFromReq } from '../../../../core/helpers/get.requestor.uuid.from.req';
-import { DeleteUsersPayload, UserError } from './types.users.list';
 import fabricEvents from '../../../../core/eventBus/fabric.events';
 import { USERS_DELETE_EVENTS } from './events.users.list';
 
+// Cast pool to correct type
+const pool = pgPool as Pool;
+
 /**
- * Service function to delete multiple users by IDs
- * 
- * @param req - Express Request object containing user context
- * @param payload - Object containing array of user IDs to delete
- * @returns Promise resolving to object with deleted user IDs
+ * Service for handling user deletion operations
  */
-export async function deleteSelectedUsers(
-    req: Request,
-    payload: DeleteUsersPayload
-): Promise<{ deletedUserIds: string[] }> {
-    try {
-        // Get UUID of the user making the request
-        const requestorUuid = getRequestorUuidFromReq(req);
-        
-        // Execute SQL query to delete users
-        const result = await pgPool.query(queries.deleteSelectedUsers, [payload.userIds]);
-
-        // Get deleted user IDs from query result
-        const deletedUserIds = result.rows.map((row: any) => row.user_id);
-
-        // Invalidate cache to force fresh data load on next request
-        usersRepository.invalidateCache();
-
-        // Publish cache invalidation event
-        await fabricEvents.createAndPublishEvent({
-            req,
-            eventName: USERS_DELETE_EVENTS.CACHE_INVALIDATE.eventName,
-            payload: null
-        });
-
-        // Publish success event
-        await fabricEvents.createAndPublishEvent({
-            req,
-            eventName: USERS_DELETE_EVENTS.COMPLETE.eventName,
-            payload: {
-                deletedCount: deletedUserIds.length,
-                requestorUuid: getRequestorUuidFromReq(req) || 'unknown'
-            }
-        });
-
-        // Return deleted IDs
-        return { deletedUserIds };
-
-    } catch (error: any) {
-        // Create standardized error object
-        const userError: UserError = {
-            code: error.code || 'USERS_DELETE_ERROR',
-            message: error.message || 'Failed to delete users',
-            details: error
-        };
-
-        // Publish failure event
-        await fabricEvents.createAndPublishEvent({
-            req,
-            eventName: USERS_DELETE_EVENTS.FAILED.eventName,
-            payload: {
-                error: userError
-            },
-            errorData: JSON.stringify(userError)
-        });
-
-        // Re-throw error for controller to handle
-        throw userError;
+export const usersDeleteService = {
+  /**
+   * Deletes selected users by their UUIDs
+   * @param userIds Array of user UUIDs to delete
+   * @param req Express request object for context
+   * @returns Promise with the count of deleted users
+   */
+  async deleteSelectedUsers(userIds: string[], req: Request): Promise<number> {
+    // Get the UUID of the user making the request
+    const requestorUuid = getRequestorUuidFromReq(req);
+    
+    // Create event for deletion operation start
+    await fabricEvents.createAndPublishEvent({
+      req,
+      eventName: USERS_DELETE_EVENTS.COMPLETE.eventName,
+      payload: {
+        groupIds: userIds,
+        requestorUuid
+      }
+    });
+    
+    // Prevent deletion of empty array
+    if (!userIds.length) {
+      return 0;
     }
-}
+    
+    try {
+      // Execute deletion query
+      const result = await pool.query(queries.deleteSelectedUsers, [userIds]);
+      
+      // Get delete count
+      const deletedCount = result.rows.length;
+      
+      // Invalidate cache after successful deletion
+      if (deletedCount > 0) {
+        usersCache.invalidate('delete');
+        
+        // Create event for cache invalidation
+        await fabricEvents.createAndPublishEvent({
+          req,
+          eventName: USERS_DELETE_EVENTS.CACHE_INVALIDATED.eventName,
+          payload: { deletedCount, requestorUuid }
+        });
+      }
+      
+      // Create event for successful completion
+      await fabricEvents.createAndPublishEvent({
+        req,
+        eventName: USERS_DELETE_EVENTS.COMPLETE.eventName,
+        payload: {
+          requested: userIds.length,
+          deleted: deletedCount,
+          requestorUuid
+        }
+      });
+      
+      return deletedCount;
+      
+    } catch (error) {
+      // Create event for deletion failure
+      await fabricEvents.createAndPublishEvent({
+        req,
+        eventName: USERS_DELETE_EVENTS.FAILED.eventName,
+        payload: {
+          userIds: userIds.length,
+          error: {
+            code: 'DATABASE_ERROR',
+            message: 'Error occurred while deleting users'
+          }
+        },
+        errorData: error instanceof Error ? error.message : String(error)
+      });
+      
+      throw {
+        code: 'DATABASE_ERROR',
+        message: 'Error deleting users',
+        details: process.env.NODE_ENV === 'development' ? error : undefined
+      };
+    }
+  }
+};
+
+export default usersDeleteService;

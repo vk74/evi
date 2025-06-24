@@ -1,7 +1,7 @@
 /**
- * @file protoController.fetch.users.ts
+ * @file controller.fetch.users.ts
  * Version: 1.0.01
- * Controller for handling prototype user list fetch API requests with server-side processing.
+ * Controller for handling user list fetch API requests with server-side processing.
  * 
  * Functionality:
  * - Processes HTTP requests for user data
@@ -13,17 +13,17 @@
  */
 
 import { Request, Response } from 'express';
-import { protoUsersFetchService } from './protoService.fetch.users';
-import { IUsersFetchParams, IUsersResponse } from './protoTypes.users.list';
+import { usersFetchService } from './service.fetch.users';
+import { IUsersFetchParams, IUsersResponse } from './types.users.list';
 import { connectionHandler } from '../../../../core/helpers/connection.handler';
 
 /**
- * Business logic for fetching users list (prototype)
+ * Business logic for fetching users list
  * 
  * @param req - Express Request object
  * @param res - Express Response object
  */
-async function fetchProtoUsersLogic(req: Request, res: Response): Promise<any> {
+async function fetchUsersLogic(req: Request, res: Response): Promise<any> {
     // JWT validation is already performed by route guards
     // If request reaches controller, JWT is valid
 
@@ -36,7 +36,7 @@ async function fetchProtoUsersLogic(req: Request, res: Response): Promise<any> {
         sortDesc: req.query.sortDesc === 'true'
     };
 
-    console.log('[ProtoFetchUsersController] Extracted parameters:', params);
+    console.log('[FetchUsersController] Extracted parameters:', params);
 
     // Validate search parameter
     if (params.search && params.search.length < 2) {
@@ -47,10 +47,20 @@ async function fetchProtoUsersLogic(req: Request, res: Response): Promise<any> {
     }
 
     // Get data from service
-    const result: IUsersResponse = await protoUsersFetchService.fetchUsers(params, req);
+    const result: IUsersResponse = await usersFetchService.fetchUsers(params, req);
+
+    // Debug: log what we're returning
+    console.log('[FetchUsersController] Returning result:', {
+      resultType: typeof result,
+      hasUsers: !!result.users,
+      usersIsArray: Array.isArray(result.users),
+      usersLength: result.users?.length,
+      total: result.total,
+      resultKeys: Object.keys(result)
+    });
 
     return result;
 }
 
 // Export controller using universal connection handler
-export default connectionHandler(fetchProtoUsersLogic, 'ProtoFetchUsersController');
+export default connectionHandler(fetchUsersLogic, 'FetchUsersController');

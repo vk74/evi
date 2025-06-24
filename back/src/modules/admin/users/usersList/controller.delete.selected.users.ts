@@ -2,7 +2,7 @@
  * controller.delete.selected.users.ts - backend file
  * version: 1.0.02
  * 
- * Controller for deleting selected users.
+ * Controller for deleting users.
  * 
  * Handles HTTP requests to the /api/admin/users/delete endpoint.
  * Validates JWT (handled by middleware), processes user deletion data,
@@ -12,11 +12,11 @@
  */
 
 import { Request, Response } from 'express';
-import { deleteSelectedUsers } from './service.delete.selected.users';
+import { usersDeleteService } from './service.delete.selected.users';
 import { connectionHandler } from '../../../../core/helpers/connection.handler';
 
 /**
- * Business logic for deleting selected users
+ * Business logic for deleting users
  * 
  * @param req - Express Request object
  * @param res - Express Response object
@@ -29,10 +29,10 @@ async function deleteSelectedUsersLogic(req: Request, res: Response): Promise<an
     const { userIds } = req.body;
 
     // Process user deletion
-    const result = await deleteSelectedUsers(req, { userIds });
+    const result = await usersDeleteService.deleteSelectedUsers(userIds, req);
 
     return result;
 }
 
 // Export controller using universal connection handler
-export default connectionHandler(deleteSelectedUsersLogic, 'DeleteSelectedUsersController');
+export default connectionHandler(deleteSelectedUsersLogic, 'DeleteUsersController');
