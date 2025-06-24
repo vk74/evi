@@ -1028,6 +1028,27 @@ const handleItemsPerPageChange = async (newItemsPerPage: number) => {
   border-top: thin solid rgba(var(--v-border-color), var(--v-border-opacity));
 }
 
+/* Styles for table horizontal lines with margins */
+.users-table :deep(.v-data-table__tr) {
+  position: relative;
+}
+
+.users-table :deep(.v-data-table__tr::after) {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 7px;
+  right: 7px;
+  height: 1px;
+  background-color: rgba(var(--v-border-color), var(--v-border-opacity));
+}
+
+/* Remove default table borders */
+.users-table :deep(.v-data-table__td),
+.users-table :deep(.v-data-table__th) {
+  border-bottom: none !important;
+}
+
 /* Styles for sidebar */
 .side-bar-container {
   width: 18%; /* Increased from 15% to 18% of parent element width */
