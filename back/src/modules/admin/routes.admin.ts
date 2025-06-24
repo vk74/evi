@@ -30,7 +30,7 @@ router.get('/api/admin/users/fetch-users', validateJWT, fetchUsers);
 router.get('/users/list', validateJWT, fetchUsers);
 router.post('/users/delete', validateJWT, deleteSelectedUsers);
 router.get('/api/admin/users/fetch-user-by-userid/:userId', validateJWT, loadUserById);
-router.post('/api/admin/users/update-user-by-userid', validateJWT, updateUserById);
+router.post('/api/admin/users/update-user-by-userid/:userId', validateJWT, updateUserById);
 router.post('/api/admin/users/delete-selected-users', validateJWT, deleteSelectedUsers);
 
 // Routes for Groups

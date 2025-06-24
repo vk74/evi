@@ -8,7 +8,7 @@
  * - Логирование операций
  */
 import { api } from '@/core/api/service.axios'
-import type { IUpdateUserRequest, IApiResponse } from './types.user.editor'
+import type { IUpdateUserRequestData, IApiResponse } from './types.user.editor'
 
 /**
  * Логгер для операций сервиса
@@ -26,19 +26,20 @@ const logger = {
 export const updateUserService = {
   /**
    * Обновляет данные пользователя
+   * @param userId - ID пользователя для обновления
    * @param userData - обновляемые данные пользователя
    * @returns Promise<boolean> - успешность операции
    * @throws Error при ошибке обновления
    */
-  async updateUser(userData: IUpdateUserRequest): Promise<boolean> {
+  async updateUser(userId: string, userData: IUpdateUserRequestData): Promise<boolean> {
     logger.info('Starting user update with data:', {
-      user_id: userData.user_id,
-      changed_fields: Object.keys(userData).filter(key => key !== 'user_id')
+      user_id: userId,
+      changed_fields: Object.keys(userData)
     })
 
     try {
       const response = await api.post<IApiResponse>(
-        '/api/admin/users/update-user-by-userid',
+        `/api/admin/users/update-user-by-userid/${userId}`,
         userData
       )
 
@@ -50,7 +51,7 @@ export const updateUserService = {
 
       if (response.data.success) {
         logger.info('User successfully updated', {
-          user_id: userData.user_id
+          user_id: userId
         })
         return true
       } else {

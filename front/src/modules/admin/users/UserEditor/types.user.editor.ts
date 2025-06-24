@@ -115,6 +115,22 @@ export interface IUpdateUserRequest {
   position?: string
 }
 
+// Тип для данных обновления без user_id (для API запросов)
+export interface IUpdateUserRequestData {
+  username?: string
+  email?: string
+  account_status?: string
+  is_staff?: boolean
+  first_name?: string
+  last_name?: string
+  middle_name?: string
+  gender?: 'm' | 'f' | 'n'
+  mobile_phone_number?: string
+  address?: string
+  company_name?: string
+  position?: string
+}
+
 // Интерфейс для ответа API
 export interface ICreateUserResponse {
   success: boolean

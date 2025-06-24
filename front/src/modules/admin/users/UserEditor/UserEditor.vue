@@ -31,7 +31,7 @@ import { useUserEditorStore } from './state.user.editor'
 import { createUserService } from './service.create.new.user'
 import { updateUserService } from './service.update.user'
 import { useUiStore } from '@/core/state/uistate'
-import { AccountStatus, Gender } from './types.user.editor'
+import { AccountStatus, Gender, EditMode } from './types.user.editor'
 import { useValidationRules } from '@/core/validation/rules.common.fields'
 import ChangePassword from '@/core/ui/modals/change-password/ChangePassword.vue'
 import { PasswordChangeMode } from '@/core/ui/modals/change-password/types.change.password'
@@ -203,7 +203,8 @@ const updateUser = async () => {
  
  try {
    const requestData = userEditorStore.prepareUpdateData()
-   const success = await updateUserService.updateUser(requestData)
+   const userId = (userEditorStore.mode as EditMode).userId
+   const success = await updateUserService.updateUser(userId, requestData)
    
    if (success) {
      console.log('User updated successfully')

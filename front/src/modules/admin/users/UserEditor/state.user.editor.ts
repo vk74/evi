@@ -18,7 +18,8 @@ import type {
   ICreateUserRequest,
   IUpdateUserRequest, 
   UserEditorState,
-  EditMode
+  EditMode,
+  IUpdateUserRequestData
 } from './types.user.editor'
 
 /**
@@ -78,14 +79,12 @@ getters: {
     return this.mode.mode === 'edit'
   },
   
-  getChangedFields(): IUpdateUserRequest {
+  getChangedFields(): IUpdateUserRequestData {
     if (!this.originalData || this.mode.mode !== 'edit') {
-      return { user_id: '' }  // Возвращаем пустой объект с обязательным полем
+      return {}  // Возвращаем пустой объект
     }
 
-    const changes: IUpdateUserRequest = {
-      user_id: (this.mode as EditMode).userId
-    }
+    const changes: IUpdateUserRequestData = {}
 
     const currentData = {
       ...this.account,
@@ -145,8 +144,8 @@ getters: {
     
     // Получаем измененные поля
     const changes = this.getChangedFields
-    // Проверяем есть ли изменения помимо user_id
-    return Object.keys(changes).length > 1  // > 1 потому что user_id всегда присутствует
+    // Проверяем есть ли изменения
+    return Object.keys(changes).length > 0
   }
 },
 
@@ -231,7 +230,7 @@ getters: {
      }
    },
 
-  prepareUpdateData(): IUpdateUserRequest {
+  prepareUpdateData(): IUpdateUserRequestData {
     // Используем getter для получения изменений
     const changes = this.getChangedFields
 

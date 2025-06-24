@@ -327,6 +327,46 @@ export const GROUP_UPDATE_EVENTS = {
 };
 
 /**
+ * Controller Events for Group Update
+ * Events related to HTTP controller processing for updating group data
+ */
+export const GROUP_UPDATE_CONTROLLER_EVENTS = {
+  // When HTTP request is received by controller
+  HTTP_REQUEST_RECEIVED: {
+    eventName: 'groupEditor.controller.update.request.received',
+    source: 'group editor admin controller',
+    eventType: 'app' as const,
+    severity: 'debug' as const,
+    eventMessage: 'HTTP request received to update group',
+    payload: null, // Will be of type { groupId: string, method: string, url: string }
+    version: '1.0.0'
+  },
+  
+  // When controller successfully processes the request and sends response
+  HTTP_RESPONSE_SENT: {
+    eventName: 'groupEditor.controller.update.response.sent',
+    source: 'group editor admin controller',
+    eventType: 'app' as const,
+    severity: 'debug' as const,
+    eventMessage: 'HTTP response sent for group update',
+    payload: null, // Will be of type { groupId: string, success: boolean }
+    version: '1.0.0'
+  },
+  
+  // When controller encounters an error
+  HTTP_ERROR: {
+    eventName: 'groupEditor.controller.update.error',
+    source: 'group editor admin controller',
+    eventType: 'app' as const,
+    severity: 'error' as const,
+    eventMessage: 'HTTP error occurred while updating group',
+    payload: null, // Will be of type { groupId: string, errorCode: string }
+    errorData: null, // Will be filled with error message
+    version: '1.0.0'
+  }
+};
+
+/**
  * Group Delete Events
  * Events related to deleting groups
  */

@@ -442,7 +442,7 @@ export async function createGroup(
       req,
       eventName: GROUP_CREATION_EVENTS.FAILED.eventName,
       payload: {
-        groupName: trimmedData.group_name,
+        groupName: groupData.group_name,
         error: {
           code: 'INTERNAL_SERVER_ERROR',
           message: 'Failed to create group'
