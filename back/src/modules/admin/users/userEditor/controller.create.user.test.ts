@@ -11,34 +11,34 @@
 
 import { Request, Response } from 'express';
 
-// Импортируем тестируемый контроллер
+// Import the controller under test
 import createUserController from './controller.create.user';
 
-// Мокируем сервис
+// Mock the service
 jest.mock('./service.create.user', () => ({
   createUser: jest.fn()
 }));
 
-// Мокируем connection handler
+// Mock the connection handler
 jest.mock('../../../../core/helpers/connection.handler', () => ({
   connectionHandler: jest.fn((logic) => logic)
 }));
 
-// Импортируем мок сервиса
+// Import the mocked service
 import { createUser } from './service.create.user';
 
-// Типизируем мок правильно
+// Type the mock correctly
 const mockCreateUser = createUser as jest.MockedFunction<typeof createUser>;
 
 describe('Create User Controller', () => {
-  // Создаем моки для request и response
+  // Create mocks for request and response
   let mockRequest: Partial<Request>;
   let mockResponse: Partial<Response>;
   let responseJson: jest.Mock;
   let responseStatus: jest.Mock;
 
   beforeEach(() => {
-    // Настраиваем моки перед каждым тестом
+    // Setup mocks before each test
     responseJson = jest.fn();
     responseStatus = jest.fn().mockReturnValue({ json: responseJson });
     
@@ -51,13 +51,13 @@ describe('Create User Controller', () => {
       json: responseJson
     };
 
-    // Очищаем моки
+    // Clear mocks
     jest.clearAllMocks();
   });
 
   describe('Request handling', () => {
     it('should pass request body to service and return service response', async () => {
-      // Подготавливаем тестовые данные
+      // Prepare test data
       const testUserData = {
         username: 'testuser',
         email: 'test@example.com',
@@ -76,25 +76,25 @@ describe('Create User Controller', () => {
 
       mockRequest.body = testUserData;
 
-      // Настраиваем мок сервиса
+      // Setup service mock
       mockCreateUser.mockResolvedValue(expectedServiceResponse);
 
-      // Вызываем контроллер
+      // Call the controller
       const result = await createUserController(
         mockRequest as Request, 
         mockResponse as Response
       );
 
-      // Проверяем что сервис был вызван с правильными данными
+      // Verify that service was called with correct data
       expect(mockCreateUser).toHaveBeenCalledWith(testUserData, mockRequest);
       expect(mockCreateUser).toHaveBeenCalledTimes(1);
 
-      // Проверяем что контроллер возвращает ответ сервиса
+      // Verify that controller returns service response
       expect(result).toEqual(expectedServiceResponse);
     });
 
     it('should handle service errors and return error response', async () => {
-      // Подготавливаем тестовые данные
+      // Prepare test data
       const testUserData = {
         username: 'testuser',
         email: 'test@example.com'
@@ -110,24 +110,24 @@ describe('Create User Controller', () => {
 
       mockRequest.body = testUserData;
 
-      // Настраиваем мок сервиса для возврата ошибки
+      // Setup service mock to return error
       mockCreateUser.mockResolvedValue(expectedErrorResponse);
 
-      // Вызываем контроллер
+      // Call the controller
       const result = await createUserController(
         mockRequest as Request, 
         mockResponse as Response
       );
 
-      // Проверяем что сервис был вызван
+      // Verify that service was called
       expect(mockCreateUser).toHaveBeenCalledWith(testUserData, mockRequest);
 
-      // Проверяем что контроллер возвращает ошибку сервиса
+      // Verify that controller returns service error
       expect(result).toEqual(expectedErrorResponse);
     });
 
     it('should handle empty request body', async () => {
-      // Пустое тело запроса
+      // Empty request body
       mockRequest.body = {};
 
       const expectedErrorResponse = {
@@ -138,26 +138,26 @@ describe('Create User Controller', () => {
         email: ''
       };
 
-      // Настраиваем мок сервиса для возврата ошибки валидации
+      // Setup service mock to return validation error
       mockCreateUser.mockResolvedValue(expectedErrorResponse);
 
-      // Вызываем контроллер
+      // Call the controller
       const result = await createUserController(
         mockRequest as Request, 
         mockResponse as Response
       );
 
-      // Проверяем что сервис был вызван с пустым объектом
+      // Verify that service was called with empty object
       expect(mockCreateUser).toHaveBeenCalledWith({}, mockRequest);
 
-      // Проверяем что контроллер возвращает ошибку валидации
+      // Verify that controller returns validation error
       expect(result).toEqual(expectedErrorResponse);
     });
   });
 
   describe('Service integration', () => {
     it('should pass complete user data to service', async () => {
-      // Полные данные пользователя
+      // Complete user data
       const completeUserData = {
         username: 'testuser',
         email: 'test@example.com',
@@ -182,13 +182,13 @@ describe('Create User Controller', () => {
       mockRequest.body = completeUserData;
       mockCreateUser.mockResolvedValue(expectedResponse);
 
-      // Вызываем контроллер
+      // Call the controller
       const result = await createUserController(
         mockRequest as Request, 
         mockResponse as Response
       );
 
-      // Проверяем что все данные переданы в сервис
+      // Verify that all data is passed to service
       expect(mockCreateUser).toHaveBeenCalledWith(completeUserData, mockRequest);
       expect(result).toEqual(expectedResponse);
     });

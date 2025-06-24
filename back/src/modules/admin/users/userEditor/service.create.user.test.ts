@@ -13,7 +13,7 @@ import { createUser } from './service.create.user';
 import type { CreateUserRequest } from './types.user.editor';
 import { AccountStatus, Gender } from './types.user.editor';
 
-// Мокируем все внешние зависимости
+// Mock all external dependencies
 jest.mock('../../../../core/db/maindb', () => ({
   pool: {
     connect: jest.fn(),
@@ -33,18 +33,18 @@ jest.mock('bcrypt', () => ({
   hash: jest.fn()
 }));
 
-// Импортируем мокированные модули
+// Import mocked modules
 import { pool } from '../../../../core/db/maindb';
 import { createAndPublishEvent } from '../../../../core/eventBus/fabric.events';
 import { getRequestorUuidFromReq } from '../../../../core/helpers/get.requestor.uuid.from.req';
 
 describe('Create User Service', () => {
-  // Моки для тестирования
+  // Mocks for testing
   let mockClient: any;
   let mockRequest: Partial<Request>;
   let mockUserData: CreateUserRequest;
 
-  // Генерируем уникальные данные для теста
+  // Generate unique test data
   const generateTestData = (): CreateUserRequest => {
     const now = new Date();
     const timestamp = now.getFullYear().toString() +
@@ -72,35 +72,35 @@ describe('Create User Service', () => {
   };
 
   beforeEach(() => {
-    // Очищаем все моки перед каждым тестом
+    // Clear all mocks before each test
     jest.clearAllMocks();
 
-    // Настраиваем мок клиента БД
+    // Setup database client mock
     mockClient = {
       query: jest.fn(),
       release: jest.fn()
     };
 
-    // Настраиваем мок пула БД
+    // Setup database pool mock
     (pool.connect as jest.Mock).mockResolvedValue(mockClient);
     (pool.query as jest.Mock).mockResolvedValue({ rows: [] });
 
-    // Настраиваем мок request
+    // Setup request mock
     mockRequest = {
       headers: {},
       body: {}
     };
 
-    // Настраиваем мок UUID запрашивающего
+    // Setup requestor UUID mock
     (getRequestorUuidFromReq as jest.Mock).mockReturnValue('test-requestor-uuid');
 
-    // Настраиваем мок bcrypt
+    // Setup bcrypt mock
     (bcrypt.hash as jest.Mock).mockResolvedValue('hashed_password_123');
 
-    // Настраиваем мок событий
+    // Setup events mock
     (createAndPublishEvent as jest.Mock).mockResolvedValue(undefined);
 
-    // Генерируем тестовые данные
+    // Generate test data
     mockUserData = generateTestData();
   });
 
@@ -219,7 +219,7 @@ describe('Create User Service', () => {
         mobile_phone_number: '  +1234567890  '
       };
 
-      // Умный мок для всех вызовов query
+      // Smart mock for all query calls
       mockClient.query.mockImplementation((query: string) => {
         if (query.includes('INSERT INTO app.users')) {
           return Promise.resolve({ rows: [{ user_id: 'test-user-uuid' }] });
@@ -231,13 +231,13 @@ describe('Create User Service', () => {
 
       expect(result.success).toBe(true);
 
-      // Проверяем, что данные были обрезаны
+      // Check that data was trimmed
       expect(mockClient.query).toHaveBeenCalledWith(
         expect.stringContaining('INSERT INTO app.users'),
         [
-          'testuser', // обрезанный username
+          'testuser', // trimmed username
           'hashed_password_123',
-          'test@example.com', // обрезанный email
+          'test@example.com', // trimmed email
           mockUserData.first_name,
           mockUserData.last_name,
           null, // middle_name
@@ -256,10 +256,10 @@ describe('Create User Service', () => {
         email: mockUserData.email,
         first_name: mockUserData.first_name,
         last_name: mockUserData.last_name
-        // Без mobile_phone_number и других опциональных полей
+        // Without mobile_phone_number and other optional fields
       };
 
-      // Умный мок для всех вызовов query
+      // Smart mock for all query calls
       mockClient.query.mockImplementation((query: string) => {
         if (query.includes('INSERT INTO app.users')) {
           return Promise.resolve({ rows: [{ user_id: 'test-user-uuid' }] });
@@ -285,7 +285,7 @@ describe('Create User Service', () => {
         position: 'Developer'
       };
 
-      // Умный мок для всех вызовов query
+      // Smart mock for all query calls
       mockClient.query.mockImplementation((query: string) => {
         if (query.includes('INSERT INTO app.users')) {
           return Promise.resolve({ rows: [{ user_id: 'test-user-uuid' }] });
@@ -297,7 +297,7 @@ describe('Create User Service', () => {
 
       expect(result.success).toBe(true);
 
-      // Проверяем, что все опциональные поля были переданы
+      // Check that all optional fields were passed
       expect(mockClient.query).toHaveBeenCalledWith(
         expect.stringContaining('INSERT INTO app.users'),
         [
@@ -316,7 +316,7 @@ describe('Create User Service', () => {
 
   describe('Password hashing', () => {
     it('should hash password with bcrypt', async () => {
-      // Умный мок для всех вызовов query
+      // Smart mock for all query calls
       mockClient.query.mockImplementation((query: string) => {
         if (query.includes('INSERT INTO app.users')) {
           return Promise.resolve({ rows: [{ user_id: 'test-user-uuid' }] });
@@ -326,14 +326,14 @@ describe('Create User Service', () => {
 
       await createUser(mockUserData, mockRequest as Request);
 
-      // Проверяем, что хэширование пароля было вызвано
+      // Check that password hashing was called
       expect(bcrypt.hash).toHaveBeenCalledWith('P@ssw0rd', 10);
     });
   });
 
   describe('Event publishing', () => {
     it('should publish validation passed event on successful validation', async () => {
-      // Умный мок для всех вызовов query
+      // Smart mock for all query calls
       mockClient.query.mockImplementation((query: string) => {
         if (query.includes('INSERT INTO app.users')) {
           return Promise.resolve({ rows: [{ user_id: 'test-user-uuid' }] });
@@ -343,7 +343,7 @@ describe('Create User Service', () => {
 
       await createUser(mockUserData, mockRequest as Request);
 
-      // Проверяем, что событие валидации было отправлено (событие генерируется в коде, не в тесте)
+      // Check that validation passed event was sent (event is generated in code, not in test)
       expect(createAndPublishEvent).toHaveBeenCalledWith({
         req: mockRequest,
         eventName: expect.stringContaining('validation.passed'),
@@ -355,7 +355,7 @@ describe('Create User Service', () => {
     });
 
     it('should publish validation failed event on validation error', async () => {
-      const invalidData = { ...mockUserData, username: 'ab' }; // слишком короткий username
+      const invalidData = { ...mockUserData, username: 'ab' }; // too short username
 
       await expect(createUser(invalidData, mockRequest as Request))
         .rejects
@@ -363,7 +363,7 @@ describe('Create User Service', () => {
           code: 'VALIDATION_ERROR'
         });
 
-      // Проверяем, что событие валидации было отправлено (событие генерируется в коде, не в тесте)
+      // Check that validation failed event was sent (event is generated in code, not in test)
       expect(createAndPublishEvent).toHaveBeenCalledWith({
         req: mockRequest,
         eventName: expect.stringContaining('validation.failed'),
@@ -376,7 +376,7 @@ describe('Create User Service', () => {
     });
 
     it('should publish completion event on successful user creation', async () => {
-      // Умный мок для всех вызовов query
+      // Smart mock for all query calls
       mockClient.query.mockImplementation((query: string) => {
         if (query.includes('INSERT INTO app.users')) {
           return Promise.resolve({ rows: [{ user_id: 'test-user-uuid' }] });
@@ -386,7 +386,7 @@ describe('Create User Service', () => {
 
       await createUser(mockUserData, mockRequest as Request);
 
-      // Проверяем, что событие завершения создания пользователя было отправлено
+      // Check that completion event was sent
       expect(createAndPublishEvent).toHaveBeenCalledWith({
         req: mockRequest,
         eventName: expect.stringContaining('complete'),
@@ -399,12 +399,12 @@ describe('Create User Service', () => {
     });
 
     it('should publish failed event on database error', async () => {
-      // Настраиваем моки для успешной валидации, но неудачного создания
+      // Setup mocks for successful validation but failed creation
       mockClient.query
         .mockResolvedValueOnce({ rows: [] }) // checkUsername
         .mockResolvedValueOnce({ rows: [] }) // checkEmail
         .mockResolvedValueOnce({ rows: [] }) // checkPhone
-        .mockResolvedValueOnce({ rows: [] }) // BEGIN
+        .mockResolvedValueOnce({ rows: [] })    // BEGIN
         .mockRejectedValueOnce(new Error('Database connection failed')); // insertUser
 
       await expect(createUser(mockUserData, mockRequest as Request))
@@ -414,7 +414,7 @@ describe('Create User Service', () => {
           message: 'Failed to create user account'
         });
 
-      // Проверяем, что событие ошибки было отправлено (последний вызов)
+      // Check that failed event was sent (last call)
       const lastCall = (createAndPublishEvent as jest.Mock).mock.calls.slice(-1)[0];
       expect(lastCall[0]).toMatchObject({
         req: mockRequest,
@@ -432,11 +432,11 @@ describe('Create User Service', () => {
 
   describe('Database transaction handling', () => {
     it('should rollback transaction on database error', async () => {
-      // Настраиваем моки для успешной валидации, но неудачного создания
+      // Setup mocks for successful validation but failed creation
       mockClient.query
         .mockResolvedValueOnce({ rows: [] }) // checkUsername
         .mockResolvedValueOnce({ rows: [] }) // checkEmail
-        .mockResolvedValueOnce({ rows: [] }) // checkPhone (так как mobile_phone_number есть в mockUserData)
+        .mockResolvedValueOnce({ rows: [] }) // checkPhone (since mobile_phone_number exists in mockUserData)
         .mockResolvedValueOnce({ rows: [] })    // BEGIN
         .mockRejectedValueOnce(new Error('Database connection failed')); // insertUser
 
@@ -447,12 +447,12 @@ describe('Create User Service', () => {
           message: 'Failed to create user account'
         });
 
-      // Проверяем, что был выполнен rollback
+      // Check that rollback was performed
       expect(mockClient.query).toHaveBeenCalledWith('ROLLBACK');
     });
 
     it('should release database client after operation', async () => {
-      // Умный мок для всех вызовов query
+      // Smart mock for all query calls
       mockClient.query.mockImplementation((query: string) => {
         if (query.includes('INSERT INTO app.users')) {
           return Promise.resolve({ rows: [{ user_id: 'test-user-uuid' }] });
@@ -462,7 +462,7 @@ describe('Create User Service', () => {
 
       await createUser(mockUserData, mockRequest as Request);
 
-      // Проверяем, что клиент был освобожден
+      // Check that client was released
       expect(mockClient.release).toHaveBeenCalled();
     });
   });
