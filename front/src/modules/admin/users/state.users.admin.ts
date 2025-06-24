@@ -11,7 +11,7 @@ export const useUsersAdminStore = defineStore('users-admin', {
     /**
      * Текущая активная секция в модуле управления пользователями
      */
-    activeSection: 'users'
+    activeSection: 'users-proto'
   }),
 
   getters: {

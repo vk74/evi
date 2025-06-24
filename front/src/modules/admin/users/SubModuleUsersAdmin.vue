@@ -16,7 +16,6 @@ import { useUsersAdminStore } from './state.users.admin'
 import type { UserSectionId, Section } from './types.users.admin'
 
 // Async components for lazy loading
-const UsersList = defineAsyncComponent(() => import('./UsersListOld/oldUsersList.vue'))
 const UsersListProto = defineAsyncComponent(() => import('./UsersList/UsersList.vue'))
 const GroupsList = defineAsyncComponent(() => import('./GroupsList/GroupsList.vue'))
 const UserEditor = defineAsyncComponent(() => import('./UserEditor/UserEditor.vue'))
@@ -47,12 +46,6 @@ const sections = computed((): Section[] => [
     id: 'group-editor',
     title: t('admin.users.sections.groupEditor'),
     icon: 'mdi-account-multiple-plus-outline'
-  },
-  {
-    id: 'users',
-    title: 'устаревший список пользователей',
-    icon: 'mdi-account-multiple-outline',
-    visible: false
   }
 ])
 
@@ -110,7 +103,6 @@ const switchSection = (sectionId: UserSectionId): void => {
         v-if="activeSection === 'group-editor'"
         mode="create"
       />
-      <UsersList v-if="activeSection === 'users'" />
     </div>
   </div>
 </template>
