@@ -160,6 +160,66 @@ describe('Update User Service', () => {
       });
     });
 
+    it('should handle update with only user_id (no-op update)', async () => {
+      // Prepare test data - only user_id, no other fields
+      const userId = '123e4567-e89b-12d3-a456-426614174000';
+      const updateData: UpdateUserRequest = {
+        user_id: userId
+        // No other fields provided
+      };
+
+      // Setup database mocks
+      mockClient.query
+        .mockResolvedValueOnce({ rows: [], rowCount: 1 }) // BEGIN
+        .mockResolvedValueOnce({ rows: [], rowCount: 1 }) // updateUserById (no changes)
+        .mockResolvedValueOnce({ rows: [], rowCount: 1 }) // updateUserProfileById (no changes)
+        .mockResolvedValueOnce({ rows: [], rowCount: 1 }); // COMMIT
+
+      // Call the service
+      const result = await updateUserById(updateData, mockRequest as Request);
+
+      // Verify result - should still succeed even with no changes
+      expect(result.success).toBe(true);
+      expect(result.message).toBe('User data updated successfully');
+
+      // Verify database calls - should still execute queries
+      expect(mockClient.query).toHaveBeenCalledTimes(4);
+      expect(mockClient.query).toHaveBeenNthCalledWith(1, 'BEGIN');
+      expect(mockClient.query).toHaveBeenNthCalledWith(2, expect.any(String), [
+        userId, undefined, undefined, undefined, undefined, 
+        undefined, undefined, undefined
+      ]);
+      expect(mockClient.query).toHaveBeenNthCalledWith(3, expect.any(String), [
+        userId, undefined, undefined, undefined, undefined, undefined
+      ]);
+      expect(mockClient.query).toHaveBeenNthCalledWith(4, 'COMMIT');
+
+      // Verify events - should still publish events
+      expect(mockFabricEvents.createAndPublishEvent).toHaveBeenCalledTimes(2);
+      
+      // VALIDATION_PASSED event with empty updatedFields
+      expect(mockFabricEvents.createAndPublishEvent).toHaveBeenNthCalledWith(1, {
+        req: mockRequest,
+        eventName: USER_UPDATE_EVENTS.VALIDATION_PASSED.eventName,
+        payload: {
+          userId,
+          requestorUuid: 'requestor-uuid-123',
+          updatedFields: [] // No fields to update
+        }
+      });
+
+      // COMPLETE event with empty updatedFields
+      expect(mockFabricEvents.createAndPublishEvent).toHaveBeenNthCalledWith(2, {
+        req: mockRequest,
+        eventName: USER_UPDATE_EVENTS.COMPLETE.eventName,
+        payload: {
+          userId,
+          updatedFields: [], // No fields were updated
+          requestorUuid: 'requestor-uuid-123'
+        }
+      });
+    });
+
     it('should handle partial update with minimal data', async () => {
       // Prepare test data - only email update
       const userId = '123e4567-e89b-12d3-a456-426614174000';

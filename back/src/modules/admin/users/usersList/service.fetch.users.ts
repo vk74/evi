@@ -68,6 +68,14 @@ export const usersFetchService = {
       const sortDesc = params.sortDesc || false;
       const forceRefresh = params.forceRefresh || false;
       
+      // Validate search parameter
+      if (search && search.length < 2) {
+        throw {
+          code: 'INVALID_SEARCH',
+          message: 'Search term must be at least 2 characters long'
+        };
+      }
+      
       // Create event for fetching users request
       await fabricEvents.createAndPublishEvent({
         req,
@@ -190,6 +198,12 @@ export const usersFetchService = {
       return response;
       
     } catch (error) {
+      // Check if this is a validation error that we threw ourselves
+      if (error && typeof error === 'object' && 'code' in error && error.code === 'INVALID_SEARCH') {
+        // Re-throw validation errors as-is
+        throw error;
+      }
+      
       // Create event for fetch failure
       await fabricEvents.createAndPublishEvent({
         req,

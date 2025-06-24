@@ -438,7 +438,7 @@ describe('Fetch Users Service', () => {
           details: undefined // In production, details are not exposed
         });
 
-      // Verify error event was published
+      // Verify failed event was published
       expect(mockFabricEvents.createAndPublishEvent).toHaveBeenCalledWith({
         req: mockRequest,
         eventName: USERS_FETCH_EVENTS.FAILED.eventName,
@@ -450,6 +450,31 @@ describe('Fetch Users Service', () => {
         },
         errorData: 'Database connection failed'
       });
+    });
+
+    it('should validate search parameter minimum length', async () => {
+      // Prepare test data with short search term
+      const params: IUsersFetchParams = {
+        search: 'a', // Only 1 character - too short
+        page: 1,
+        itemsPerPage: 25,
+        sortBy: '',
+        sortDesc: false
+      };
+
+      // Call the service and expect validation error
+      await expect(usersFetchService.fetchUsers(params, mockRequest as Request))
+        .rejects.toEqual({
+          code: 'INVALID_SEARCH',
+          message: 'Search term must be at least 2 characters long'
+        });
+
+      // Verify no database call was made
+      expect(mockQuery).not.toHaveBeenCalled();
+
+      // Verify no cache operations were performed
+      expect(mockUsersCache.get).not.toHaveBeenCalled();
+      expect(mockUsersCache.set).not.toHaveBeenCalled();
     });
 
     it('should handle malformed database response', async () => {

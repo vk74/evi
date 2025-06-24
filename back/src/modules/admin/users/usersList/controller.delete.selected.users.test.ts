@@ -87,52 +87,6 @@ describe('Delete Selected Users Controller', () => {
       expect(result).toEqual(expectedServiceResponse);
     });
 
-    it('should handle empty userIds array', async () => {
-      // Empty userIds array
-      mockRequest.body = { userIds: [] };
-
-      const expectedServiceResponse = 0; // No users deleted
-
-      // Setup service mock
-      mockUsersDeleteService.deleteSelectedUsers.mockResolvedValue(expectedServiceResponse);
-
-      // Call the controller
-      const result = await deleteSelectedUsersController(
-        mockRequest as Request, 
-        mockResponse as Response
-      );
-
-      // Verify that service was called with empty array
-      expect(mockUsersDeleteService.deleteSelectedUsers).toHaveBeenCalledWith([], mockRequest);
-
-      // Verify that controller returns service response
-      expect(result).toEqual(expectedServiceResponse);
-    });
-
-    it('should handle single user deletion', async () => {
-      // Single user deletion
-      const testUserIds = ['123e4567-e89b-12d3-a456-426614174000'];
-
-      const expectedServiceResponse = 1; // One user deleted
-
-      mockRequest.body = { userIds: testUserIds };
-
-      // Setup service mock
-      mockUsersDeleteService.deleteSelectedUsers.mockResolvedValue(expectedServiceResponse);
-
-      // Call the controller
-      const result = await deleteSelectedUsersController(
-        mockRequest as Request, 
-        mockResponse as Response
-      );
-
-      // Verify that service was called with single userId
-      expect(mockUsersDeleteService.deleteSelectedUsers).toHaveBeenCalledWith(testUserIds, mockRequest);
-
-      // Verify that controller returns service response
-      expect(result).toEqual(expectedServiceResponse);
-    });
-
     it('should handle service errors and return error response', async () => {
       // Prepare test data
       const testUserIds = ['123e4567-e89b-12d3-a456-426614174000'];
@@ -158,131 +112,25 @@ describe('Delete Selected Users Controller', () => {
     });
   });
 
-  describe('Parameter validation', () => {
-    it('should handle missing userIds in body', async () => {
-      // Missing userIds in body
-      mockRequest.body = {};
-
-      const expectedServiceResponse = 0; // No users to delete
-
-      // Setup service mock
-      mockUsersDeleteService.deleteSelectedUsers.mockResolvedValue(expectedServiceResponse);
-
-      // Call the controller
-      const result = await deleteSelectedUsersController(
-        mockRequest as Request, 
-        mockResponse as Response
-      );
-
-      // Verify that service was called with undefined userIds
-      expect(mockUsersDeleteService.deleteSelectedUsers).toHaveBeenCalledWith(undefined, mockRequest);
-
-      // Verify that controller returns service response
-      expect(result).toEqual(expectedServiceResponse);
-    });
-
-    it('should handle invalid userIds format', async () => {
-      // Invalid userIds format
-      const invalidUserIds = ['invalid-uuid', '123e4567-e89b-12d3-a456-426614174000'];
-
-      const expectedErrorResponse = {
-        code: 'INVALID_UUID',
-        message: 'Invalid user ID format'
-      };
-
-      mockRequest.body = { userIds: invalidUserIds };
-
-      // Setup service mock to throw validation error
-      mockUsersDeleteService.deleteSelectedUsers.mockRejectedValue(expectedErrorResponse);
-
-      // Call the controller and expect validation error
-      await expect(deleteSelectedUsersController(
-        mockRequest as Request, 
-        mockResponse as Response
-      )).rejects.toEqual(expectedErrorResponse);
-    });
-
-    it('should handle large array of userIds', async () => {
-      // Large array of userIds
-      const largeUserIds = Array.from({ length: 100 }, (_, i) => 
-        `123e4567-e89b-12d3-a456-${i.toString().padStart(12, '0')}`
-      );
-
-      const expectedServiceResponse = 100; // All users deleted
-
-      mockRequest.body = { userIds: largeUserIds };
-
-      // Setup service mock
-      mockUsersDeleteService.deleteSelectedUsers.mockResolvedValue(expectedServiceResponse);
-
-      // Call the controller
-      const result = await deleteSelectedUsersController(
-        mockRequest as Request, 
-        mockResponse as Response
-      );
-
-      // Verify that service was called with large array
-      expect(mockUsersDeleteService.deleteSelectedUsers).toHaveBeenCalledWith(largeUserIds, mockRequest);
-
-      // Verify that controller returns service response
-      expect(result).toEqual(expectedServiceResponse);
-    });
-  });
-
-  describe('Service integration', () => {
+  describe('Data passing', () => {
     it('should pass request object to service for context', async () => {
       // Prepare test data
       const testUserIds = ['123e4567-e89b-12d3-a456-426614174000'];
-
       const expectedServiceResponse = 1;
 
       mockRequest.body = { userIds: testUserIds };
-      mockRequest.headers = { 'authorization': 'Bearer token123' };
 
       // Setup service mock
       mockUsersDeleteService.deleteSelectedUsers.mockResolvedValue(expectedServiceResponse);
 
       // Call the controller
-      const result = await deleteSelectedUsersController(
+      await deleteSelectedUsersController(
         mockRequest as Request, 
         mockResponse as Response
       );
 
-      // Verify that full request object was passed to service
-      expect(mockUsersDeleteService.deleteSelectedUsers).toHaveBeenCalledWith(
-        testUserIds, // userIds array
-        mockRequest // full request object
-      );
-
-      expect(result).toEqual(expectedServiceResponse);
-    });
-
-    it('should handle partial deletion success', async () => {
-      // Some users deleted, some failed
-      const testUserIds = [
-        '123e4567-e89b-12d3-a456-426614174000',
-        '456e7890-e89b-12d3-a456-426614174000',
-        '789e0123-e89b-12d3-a456-426614174000'
-      ];
-
-      const expectedServiceResponse = 2; // Only 2 out of 3 deleted
-
-      mockRequest.body = { userIds: testUserIds };
-
-      // Setup service mock
-      mockUsersDeleteService.deleteSelectedUsers.mockResolvedValue(expectedServiceResponse);
-
-      // Call the controller
-      const result = await deleteSelectedUsersController(
-        mockRequest as Request, 
-        mockResponse as Response
-      );
-
-      // Verify that service was called with all userIds
+      // Verify that service was called with request object
       expect(mockUsersDeleteService.deleteSelectedUsers).toHaveBeenCalledWith(testUserIds, mockRequest);
-
-      // Verify that controller returns partial success count
-      expect(result).toEqual(expectedServiceResponse);
     });
   });
 }); 

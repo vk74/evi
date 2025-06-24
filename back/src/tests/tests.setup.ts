@@ -9,6 +9,8 @@
  * File: tests.setup.ts
  */
 
+import { initializeEventCache } from '@/core/eventBus/reference/cache.reference.events';
+
 // Global mocks for testing
 global.console = {
   ...console,
@@ -28,6 +30,15 @@ jest.setTimeout(10000);
 
 // Environment setup for tests
 process.env.NODE_ENV = 'test';
+
+// Initialize event cache before all tests
+beforeAll(async () => {
+  try {
+    await initializeEventCache();
+  } catch (error) {
+    console.warn('Event cache initialization failed in tests:', error);
+  }
+});
 
 // Clear all mocks before each test
 beforeEach(() => {
