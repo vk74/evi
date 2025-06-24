@@ -1,19 +1,19 @@
 /**
  * @file UsersList.vue
  * Version: 1.0.07
- * Компонент для отображения и управления списком пользователей системы с обработкой на сервере.
+ * Component for displaying and managing the system users list with server-side processing.
  *
- * Функциональность:
- * - Отображение пользователей в табличном виде с серверной пагинацией
- * - Поиск по полям UUID, username, email, first_name, last_name (серверный)
- * - Сортировка по колонкам с серверной обработкой
- * - Редактирование пользователей через UserEditor
- * - Сброс пароля пользователей через ChangePassword
- * - Оптимизированное кэширование данных (серверное)
- * - Боковая панель для размещения элементов управления (динамическое разделение на общие и относящиеся к выбранному элементу)
- * - Собственный пагинатор с полной поддержкой серверной пагинации (заменяет встроенный v-data-table пагинатор)
- * - Улучшенный интерфейс пагинатора с правильным расположением элементов и выравниванием по правому краю
- * - Полная локализация интерфейса с поддержкой i18n
+ * Functionality:
+ * - Display users in table format with server-side pagination
+ * - Search by UUID, username, email, first_name, last_name fields (server-side)
+ * - Sort by columns with server-side processing
+ * - Edit users through UserEditor
+ * - Reset user passwords through ChangePassword
+ * - Optimized data caching (server-side)
+ * - Sidebar for control elements placement (dynamic separation into general and item-specific)
+ * - Custom paginator with full server-side pagination support (replaces built-in v-data-table paginator)
+ * - Improved paginator interface with proper element positioning and right alignment
+ * - Full interface localization with i18n support
  */
 <script setup lang="ts">
 import usersFetchService from './Service.fetch.users'
@@ -36,34 +36,34 @@ import debounce from 'lodash/debounce'
 import ChangePassword from '../../../../core/ui/modals/change-password/ChangePassword.vue'
 import { PasswordChangeMode } from '../../../../core/ui/modals/change-password/types.change.password'
 
-// Инициализация сторов и i18n
+// Initialize stores and i18n
 const { t } = useI18n()
 const usersStore = useStoreUsersList()
 const usersSectionStore = useUsersAdminStore()
 const uiStore = useUiStore()
 const userStore = useUserStore()
 
-// Параметры таблицы и поиска
+// Table and search parameters
 const page = ref<number>(usersStore.page);
 const itemsPerPage = ref<ItemsPerPageOption>(usersStore.itemsPerPage as ItemsPerPageOption);
 const searchQuery = ref<string>(usersStore.search || ''); // Initialize with store's search
 const isSearching = ref<boolean>(false);
 
-// Отслеживание сортировки
+// Sort tracking
 const sortBy = ref<string | null>(usersStore.sortBy || null);
 const sortDesc = ref<boolean>(usersStore.sortDesc);
 
-// Состояние диалогов
+// Dialog state
 const showDeleteDialog = ref(false)
 const showPasswordDialog = ref(false)
 
-// Данные выбранного пользователя для сброса пароля
+// Selected user data for password reset
 const selectedUserData = ref({
   uuid: '',
   username: ''
 })
 
-// Вычисляемые свойства
+// Computed properties
 const isAuthorized = computed(() => userStore.isLoggedIn)
 const selectedCount = computed(() => usersStore.selectedCount)
 const hasSelected = computed(() => usersStore.hasSelected)
@@ -75,29 +75,29 @@ const isSearchEnabled = computed(() =>
   searchQuery.value.length >= 2 || searchQuery.value.length === 0
 )
 
-// Обработчики действий с пользователями
+// User action handlers
 const createUser = () => {
   console.log('[ViewAllUsers] Starting create user operation')
   
   try {
-    // Получаем store для UserEditor
+    // Get UserEditor store
     const userEditorStore = useUserEditorStore()
     
-    // Сбрасываем форму к начальным значениям
+    // Reset form to initial values
     userEditorStore.resetForm()
     
-    // Устанавливаем режим создания
+    // Set creation mode
     userEditorStore.mode = {
       mode: 'create'
     }
     
-    // Переключаем секцию на редактор пользователя
+    // Switch to user editor section
     usersSectionStore.setActiveSection('user-editor')
     
   } catch (error) {
     console.error('[ViewAllUsers] Error initializing create mode:', error)
     uiStore.showErrorSnackbar(
-      error instanceof Error ? error.message : 'Ошибка инициализации режима создания'
+      error instanceof Error ? error.message : 'Error initializing creation mode'
     )
   }
 }
@@ -137,7 +137,7 @@ const confirmDelete = async () => {
     console.log('[ViewAllUsers] Showing success notification')
     uiStore.showSuccessSnackbar(message)
     
-    // Обновляем список пользователей после удаления
+    // Update users list after deletion
     // Fetch with current parameters to maintain view
     await usersFetchService.fetchUsers({
         page: page.value,
@@ -150,7 +150,7 @@ const confirmDelete = async () => {
   } catch (error) {
     console.error('[ViewAllUsers] Error during users deletion:', error)
     uiStore.showErrorSnackbar(
-      error instanceof Error ? error.message : 'Ошибка при удалении пользователей'
+      error instanceof Error ? error.message : 'Error deleting users'
     )
   } finally {
     console.log('[ViewAllUsers] Closing delete dialog')
@@ -169,13 +169,13 @@ const getStatusColor = (status: string) => {
   }
 };
 
-// Функция для получения ID единственного выбранного пользователя
+// Function to get ID of the single selected user
 const getSelectedUserId = (): string => {
   console.log('[ViewAllUsers] Getting selected user ID')
   return usersStore.selectedUsers[0]
 }
 
-// Функция для обработки клика по кнопке сброса пароля
+// Function to handle password reset button click
 const resetPassword = async () => {
   console.log('[ViewAllUsers] Starting reset password operation')
   
@@ -183,31 +183,31 @@ const resetPassword = async () => {
     const userId = getSelectedUserId()
     console.log('[ViewAllUsers] Selected user ID for password reset:', userId)
     
-    // Находим выбранного пользователя в текущем списке
+    // Find selected user in current list
     const selectedUser = users.value.find(user => user.user_id === userId)
     
     if (selectedUser) {
-      // Сохраняем данные выбранного пользователя
+      // Save selected user data
       selectedUserData.value = {
         uuid: selectedUser.user_id,
         username: selectedUser.username
       }
       
-      // Открываем диалог сброса пароля
+      // Open password reset dialog
       showPasswordDialog.value = true
     } else {
       console.error('[ViewAllUsers] Selected user not found in current list')
-      uiStore.showErrorSnackbar('Пользователь не найден в текущем списке')
+      uiStore.showErrorSnackbar('User not found in current list')
     }
   } catch (error) {
     console.error('[ViewAllUsers] Error preparing password reset:', error)
     uiStore.showErrorSnackbar(
-      error instanceof Error ? error.message : 'Ошибка при подготовке сброса пароля'
+      error instanceof Error ? error.message : 'Error preparing password reset'
     )
   }
 }
 
-// Функция для обработки клика по кнопке редактирования
+// Function to handle edit button click
 const editUser = async () => {
   console.log('[ViewAllUsers] Starting edit user operation')
   
@@ -215,22 +215,22 @@ const editUser = async () => {
     const userId = getSelectedUserId()
     console.log('[ViewAllUsers] Selected user ID:', userId)
     
-    // Загружаем данные пользователя
+    // Load user data
     await loadUserService.fetchUserById(userId)
     console.log('[ViewAllUsers] User data loaded successfully')
     
-    // Переходим к редактированию
+    // Switch to editing
     usersSectionStore.setActiveSection('user-editor')
     
   } catch (error) {
     console.error('[ViewAllUsers] Error loading user data:', error)
     uiStore.showErrorSnackbar(
-      error instanceof Error ? error.message : 'Ошибка загрузки данных пользователя'
+      error instanceof Error ? error.message : 'Error loading user data'
     )
   }
 }
 
-// Функция принудительного обновления списка
+// Function to force refresh the list
 const refreshList = async () => {
   console.log('[ViewAllUsers] Forcing refresh of users list')
   try {
@@ -253,15 +253,22 @@ const refreshList = async () => {
   } catch (error) {
     console.error('[ViewAllUsers] Error refreshing users list:', error)
     uiStore.showErrorSnackbar(
-      error instanceof Error ? error.message : 'Ошибка обновления списка пользователей'
+      error instanceof Error ? error.message : 'Error refreshing users list'
     )
   }
+}
+
+// Function to clear selected elements
+const clearSelections = () => {
+  console.log('[ViewAllUsers] Clearing all selections')
+  usersStore.clearSelection()
+  uiStore.showSuccessSnackbar(t('list.messages.clearSelectionsSuccess'))
 }
 
 // Define a more specific type for sortByInfo from v-data-table options
 type VDataTableSortByItem = { key: string; order: 'asc' | 'desc' };
 
-// Новый обработчик для @update:options с правильной обработкой серверной пагинации
+// New handler for @update:options with proper server-side pagination handling
 const updateOptionsAndFetch = async (options: { page?: number, itemsPerPage?: number, sortBy?: Readonly<VDataTableSortByItem[]> }) => {
   console.log('[ViewAllUsers] @update:options triggered with:', JSON.parse(JSON.stringify(options)));
   console.log('[ViewAllUsers] Current state before update:', {
@@ -352,7 +359,7 @@ const updateOptionsAndFetch = async (options: { page?: number, itemsPerPage?: nu
     } catch (error) {
       console.error('[ViewAllUsers] Error fetching users after options change:', error);
       uiStore.showErrorSnackbar(
-        error instanceof Error ? error.message : 'Ошибка при загрузке данных пользователей'
+        error instanceof Error ? error.message : 'Error fetching users after options change'
       );
     }
   } else {
@@ -360,18 +367,18 @@ const updateOptionsAndFetch = async (options: { page?: number, itemsPerPage?: nu
   }
 }
 
-// Функция поиска с debounce
+// Function to perform search with debounce
 const performSearch = async () => {
   if (!isSearchEnabled.value && searchQuery.value.length === 1) {
     console.log('[ViewAllUsers] Search query too short, not performing search.');
-    return // Не выполняем поиск если длина строки 1 символ
+    return // Don't perform search if string length is 1
   }
   
   console.log('[ViewAllUsers] Performing search for:', searchQuery.value);
   isSearching.value = true
   
   try {
-    // При поиске сбрасываем страницу на первую
+    // When searching, reset page to first
     page.value = 1
     await usersFetchService.fetchUsers({
       search: searchQuery.value,
@@ -383,31 +390,31 @@ const performSearch = async () => {
   } catch (error) {
     console.error('[ViewAllUsers] Error performing search:', error)
     uiStore.showErrorSnackbar(
-      error instanceof Error ? error.message : 'Ошибка при выполнении поиска'
+      error instanceof Error ? error.message : 'Error performing search'
     )
   } finally {
     isSearching.value = false
   }
 }
 
-// Создаем debounced версию функции поиска
+// Create debounced version of search function
 const debouncedSearch = debounce(performSearch, 500) // Updated to 500ms
 
-// Слушаем изменения строки поиска
+// Listen for search string changes
 watch(searchQuery, (newValue, oldValue) => {
   console.log('[ViewAllUsers] Search query changed from', oldValue, 'to', newValue);
   debouncedSearch()
 })
 
-// Добавляем обработчик очистки поля поиска
+// Add handler for clearing search field
 const handleClearSearch = () => {
   console.log('[ViewAllUsers] Search cleared');
-  // При нажатии на крестик просто очищаем поле, 
-  // Поиск с пустой строкой будет запущен через обычный watch с debounce
+  // When clicking the close icon, simply clear the field, 
+  // Search with empty string will be triggered through regular watch with debounce
   searchQuery.value = '' 
 }
 
-// Обработчик нажатия Enter в поле поиска
+// Enter key handler for search field
 const handleSearchKeydown = (event: KeyboardEvent) => {
   if (event.key === 'Enter') {
     console.log('[ViewAllUsers] Enter pressed in search, flushing debounce');
@@ -416,7 +423,7 @@ const handleSearchKeydown = (event: KeyboardEvent) => {
   }
 }
 
-// Определение колонок таблицы
+// Define table columns
 const headers = computed<TableHeader[]>(() => [
   { 
     title: t('list.table.headers.select'), 
@@ -464,7 +471,7 @@ const headers = computed<TableHeader[]>(() => [
   }
 ])
 
-// Функция для логирования состояния пагинации с подробной информацией
+// Function to log pagination state with detailed information
 const logPaginationState = (source: string) => {
   console.log(`[DEBUG-PAGINATION] [${source}] State:`, {
     page: page.value,
@@ -480,7 +487,7 @@ const logPaginationState = (source: string) => {
   });
 }
 
-// Инициализация при монтировании компонента
+// Initialize on mount
 onMounted(async () => {
   console.log('[ViewAllUsers] Component mounted, initializing...')
   logPaginationState('onMounted-before');
@@ -497,21 +504,21 @@ onMounted(async () => {
     
     console.log('[ViewAllUsers] Initial parameters:', initialParams);
     
-    // Загружаем начальные данные, используя текущие значения (включая из стора)
+    // Load initial data, using current values (including from store)
     await usersFetchService.fetchUsers(initialParams)
 
     logPaginationState('onMounted-after');
   } catch (error) {
     console.error('[ViewAllUsers] Error loading initial users list:', error)
     uiStore.showErrorSnackbar(
-      error instanceof Error ? error.message : 'Ошибка при загрузке списка пользователей'
+      error instanceof Error ? error.message : 'Error loading initial users list'
     )
   }
 })
 
-// Функции для собственного пагинатора
+// Functions for custom paginator
 /**
- * Получает информацию о текущей странице для отображения
+ * Gets current page information for display
  */
 const getPaginationInfo = () => {
   const start = (page.value - 1) * itemsPerPage.value + 1;
@@ -520,14 +527,14 @@ const getPaginationInfo = () => {
 };
 
 /**
- * Вычисляет общее количество страниц
+ * Calculates total page count
  */
 const getTotalPages = () => {
   return Math.ceil(totalItems.value / itemsPerPage.value);
 };
 
 /**
- * Получает видимые номера страниц для отображения
+ * Gets visible page numbers for display
  */
 const getVisiblePages = () => {
   const totalPages = getTotalPages();
@@ -535,28 +542,28 @@ const getVisiblePages = () => {
   const pages: (number | string)[] = [];
   
   if (totalPages <= 7) {
-    // Если страниц мало, показываем все
+    // If pages are few, show all
     for (let i = 1; i <= totalPages; i++) {
       pages.push(i);
     }
   } else {
-    // Если страниц много, показываем умную пагинацию
+    // If pages are many, show smart pagination
     if (currentPage <= 4) {
-      // В начале
+      // At the beginning
       for (let i = 1; i <= 5; i++) {
         pages.push(i);
       }
       pages.push('...');
       pages.push(totalPages);
     } else if (currentPage >= totalPages - 3) {
-      // В конце
+      // At the end
       pages.push(1);
       pages.push('...');
       for (let i = totalPages - 4; i <= totalPages; i++) {
         pages.push(i);
       }
     } else {
-      // В середине
+      // In the middle
       pages.push(1);
       pages.push('...');
       for (let i = currentPage - 1; i <= currentPage + 1; i++) {
@@ -571,7 +578,7 @@ const getVisiblePages = () => {
 };
 
 /**
- * Переход на указанную страницу
+ * Navigates to specified page
  */
 const goToPage = async (newPage: number) => {
   console.log('[ViewAllUsers] Going to page:', newPage);
@@ -607,13 +614,13 @@ const goToPage = async (newPage: number) => {
 };
 
 /**
- * Обработчик изменения количества записей на странице
+ * Handler for changing record count per page
  */
 const handleItemsPerPageChange = async (newItemsPerPage: number) => {
   console.log('[ViewAllUsers] Items per page changed to:', newItemsPerPage);
   
   itemsPerPage.value = newItemsPerPage;
-  page.value = 1; // Сбрасываем на первую страницу
+  page.value = 1; // Reset to first page
   
   try {
     await usersFetchService.fetchUsers({
@@ -637,9 +644,9 @@ const handleItemsPerPageChange = async (newItemsPerPage: number) => {
 <template>
   <v-card flat>
     <div class="d-flex">
-      <!-- Основное содержимое (левая часть) -->
+      <!-- Main content (left part) -->
       <div class="flex-grow-1">
-        <!-- Строка поиска -->
+        <!-- Search row -->
         <div class="px-4 pt-4">
           <v-text-field
             v-model="searchQuery"
@@ -672,7 +679,7 @@ const handleItemsPerPageChange = async (newItemsPerPage: number) => {
           hide-default-footer
           @update:options="updateOptionsAndFetch"
         >
-          <!-- Шаблон для колонки с чекбоксами -->
+          <!-- Template for checkbox column -->
           <template #[`item.selection`]="{ item }">
             <v-checkbox
               :model-value="isSelected(item.user_id)"
@@ -704,12 +711,12 @@ const handleItemsPerPageChange = async (newItemsPerPage: number) => {
           </template>
         </v-data-table>
 
-        <!-- Собственный пагинатор -->
+        <!-- Custom paginator -->
         <div class="custom-pagination-container pa-4">
           <div class="d-flex align-center justify-end">
-            <!-- Элементы управления пагинацией -->
+            <!-- Paginator controls -->
             <div class="d-flex align-center">
-              <!-- Выбор количества записей на странице -->
+              <!-- Record count per page selector -->
               <div class="d-flex align-center mr-4">
                 <span class="text-body-2 mr-2">{{ t('pagination.itemsPerPage') }}:</span>
                 <v-select
@@ -724,12 +731,12 @@ const handleItemsPerPageChange = async (newItemsPerPage: number) => {
                 />
               </div>
               
-              <!-- Информация о записях -->
+              <!-- Record information -->
               <div class="text-body-2 mr-4">
                 {{ getPaginationInfo() }}
               </div>
               
-              <!-- Кнопки навигации -->
+              <!-- Navigation buttons -->
               <div class="d-flex align-center">
                 <v-btn
                   icon
@@ -763,7 +770,7 @@ const handleItemsPerPageChange = async (newItemsPerPage: number) => {
                   </v-tooltip>
                 </v-btn>
                 
-                <!-- Номера страниц -->
+                <!-- Page numbers -->
                 <div class="d-flex align-center mx-2">
                   <template
                     v-for="pageNum in getVisiblePages()"
@@ -822,9 +829,9 @@ const handleItemsPerPageChange = async (newItemsPerPage: number) => {
         </div>
       </div>
       
-      <!-- Боковая панель (правая часть) -->
+      <!-- Sidebar (right part) -->
       <div class="side-bar-container">
-        <!-- Верхняя часть боковой панели - кнопки для операций над компонентом -->
+        <!-- Top part of sidebar - buttons for component operations -->
         <div class="side-bar-section">
           <h3 class="text-subtitle-2 px-2 py-2">
             {{ t('list.sidebar.actions') }}
@@ -857,12 +864,28 @@ const handleItemsPerPageChange = async (newItemsPerPage: number) => {
             />
             {{ t('list.buttons.refresh') }}
           </v-btn>
+          
+          <v-btn
+            v-if="isAuthorized"
+            block
+            color="grey"
+            variant="outlined"
+            class="mb-3"
+            :disabled="!hasSelected"
+            @click="clearSelections"
+          >
+            <v-icon
+              icon="mdi-checkbox-blank-outline"
+              class="mr-2"
+            />
+            {{ t('list.buttons.clearSelections') }}
+          </v-btn>
         </div>
         
-        <!-- Разделитель между секциями -->
+        <!-- Divider between sections -->
         <div class="sidebar-divider" />
         
-        <!-- Нижняя часть боковой панели - кнопки для операций над выбранными элементами -->
+        <!-- Bottom part of sidebar - buttons for operations over selected elements -->
         <div class="side-bar-section">
           <h3 class="text-subtitle-2 px-2 py-2">
             {{ t('list.sidebar.selectedItem') }}
@@ -908,7 +931,7 @@ const handleItemsPerPageChange = async (newItemsPerPage: number) => {
       </div>
     </div>
     
-    <!-- Диалог подтверждения удаления -->
+    <!-- Delete confirmation dialog -->
     <v-dialog
       v-model="showDeleteDialog"
       max-width="400"
@@ -939,7 +962,7 @@ const handleItemsPerPageChange = async (newItemsPerPage: number) => {
       </v-card>
     </v-dialog>
     
-    <!-- Модальное окно сброса пароля -->
+    <!-- Password reset dialog -->
     <v-dialog 
       v-model="showPasswordDialog" 
       max-width="550"
@@ -953,7 +976,7 @@ const handleItemsPerPageChange = async (newItemsPerPage: number) => {
       />
     </v-dialog>
 
-    <!-- Диалог подтверждения удаления -->
+    <!-- Delete confirmation dialog -->
     <v-dialog
       v-model="showDeleteDialog"
       max-width="400"
@@ -984,7 +1007,7 @@ const handleItemsPerPageChange = async (newItemsPerPage: number) => {
       </v-card>
     </v-dialog>
     
-    <!-- Модальное окно сброса пароля -->
+    <!-- Password reset dialog -->
     <v-dialog 
       v-model="showPasswordDialog" 
       max-width="550"
@@ -1005,10 +1028,10 @@ const handleItemsPerPageChange = async (newItemsPerPage: number) => {
   border-top: thin solid rgba(var(--v-border-color), var(--v-border-opacity));
 }
 
-/* Стили для боковой панели */
+/* Styles for sidebar */
 .side-bar-container {
-  width: 18%; /* Увеличено с 15% до 18% от ширины родительского элемента */
-  min-width: 220px; /* Увеличено с 180px до 220px для лучшего отображения кнопок */
+  width: 18%; /* Increased from 15% to 18% of parent element width */
+  min-width: 220px; /* Increased from 180px to 220px for better button display */
   border-left: thin solid rgba(var(--v-border-color), var(--v-border-opacity));
   display: flex;
   flex-direction: column;
@@ -1018,9 +1041,9 @@ const handleItemsPerPageChange = async (newItemsPerPage: number) => {
   padding: 16px;
 }
 
-/* Разделитель между секциями */
+/* Divider between sections */
 .sidebar-divider {
-  height: 20px; /* Фиксированная высота разделителя */
+  height: 20px; /* Fixed divider height */
   position: relative;
   margin: 0 16px;
 }
@@ -1034,7 +1057,7 @@ const handleItemsPerPageChange = async (newItemsPerPage: number) => {
   border-top: thin solid rgba(var(--v-border-color), var(--v-border-opacity));
 }
 
-/* Стили для собственного пагинатора */
+/* Styles for custom paginator */
 .custom-pagination-container {
   border-top: thin solid rgba(var(--v-border-color), var(--v-border-opacity));
   background-color: rgba(var(--v-theme-surface), 1);

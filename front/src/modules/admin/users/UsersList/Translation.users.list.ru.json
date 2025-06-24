@@ -3,7 +3,7 @@
     "title": "прототип списка пользователей: обработка на сервере",
     "sidebar": {
       "actions": "действия",
-      "selectedItem": "выбранный элемент"
+      "selectedItem": "выбранная запись"
     },
     "buttons": {
       "create": "создать пользователя",
@@ -11,7 +11,8 @@
       "delete": "удалить",
       "resetPassword": "сбросить пароль",
       "refresh": "обновить",
-      "refreshHint": "обновить список пользователей"
+      "refreshHint": "обновить список пользователей",
+      "clearSelections": "очистить выбор"
     },
     "search": {
       "placeholder": "Поиск пользователей...",
@@ -33,7 +34,8 @@
     "messages": {
       "confirmDelete": "Вы уверены, что хотите удалить выбранных пользователей ({count})?",
       "deleteUsersSuccess": "Успешно удалено пользователей: {count}.",
-      "refreshSuccess": "Список пользователей успешно обновлен."
+      "refreshSuccess": "Список пользователей успешно обновлен.",
+      "clearSelectionsSuccess": "весь выбор очищен"
     }
   },
   "pagination": {

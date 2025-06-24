@@ -11,7 +11,8 @@
       "delete": "delete",
       "resetPassword": "reset password",
       "refresh": "refresh",
-      "refreshHint": "refresh users list"
+      "refreshHint": "refresh users list",
+      "clearSelections": "clear selections"
     },
     "search": {
       "placeholder": "Search users...",
@@ -33,7 +34,8 @@
     "messages": {
       "confirmDelete": "Are you sure you want to delete {count} selected users?",
       "deleteUsersSuccess": "Successfully deleted {count} users.",
-      "refreshSuccess": "Users list refreshed successfully."
+      "refreshSuccess": "Users list refreshed successfully.",
+      "clearSelectionsSuccess": "all selections cleared"
     }
   },
   "pagination": {
