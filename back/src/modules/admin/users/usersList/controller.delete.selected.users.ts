@@ -29,7 +29,7 @@ async function deleteSelectedUsersLogic(req: Request, res: Response): Promise<an
     const { userIds } = req.body;
 
     // Process user deletion
-    const result = await deleteSelectedUsers(userIds, req);
+    const result = await deleteSelectedUsers(req, { userIds });
 
     return result;
 }
