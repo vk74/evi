@@ -29,8 +29,8 @@ const initialAccountState: IUserAccount = {
  email: '',
  password: '',
  passwordConfirm: '',
- is_staff: false,
- account_status: '',  // AccountStatus.ACTIVE,
+ is_staff: true,
+ account_status: 'active',
  first_name: '',
  middle_name: '', //null,
  last_name: '',
@@ -44,7 +44,7 @@ const initialProfileState: IUserProfile = {
  address: '', //null,
  company_name: '', //null,
  position: '', //null,
- gender: '' //null,
+ gender: 'n' //null,
 }
 
 /**
@@ -218,18 +218,16 @@ getters: {
        username: account.username,
        email: account.email,
        password: account.password,
-       account_status: account.account_status,
+       account_status: account.account_status || 'active',
        is_staff: account.is_staff,
        first_name: account.first_name,
        last_name: account.last_name,
-       middle_name: account.middle_name,
-       gender: profile.gender === Gender.MALE ? 'm' 
-              : profile.gender === Gender.FEMALE ? 'f'
-              : 'n',
-       mobile_phone_number: profile.mobile_phone_number,
-       address: profile.address,
-       company_name: profile.company_name,
-       position: profile.position
+       middle_name: account.middle_name || '',
+       gender: profile.gender || 'n',
+       mobile_phone_number: profile.mobile_phone_number || '',
+       address: profile.address || '',
+       company_name: profile.company_name || '',
+       position: profile.position || ''
      }
    },
 

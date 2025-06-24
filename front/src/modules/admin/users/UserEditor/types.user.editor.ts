@@ -22,7 +22,7 @@ export enum AccountStatus {
 export enum Gender {
   MALE = 'm',
   FEMALE = 'f',
-  NOTDEFINED = 'n'
+  NOT_DEFINED = 'n'
 }
 
 /**
@@ -66,7 +66,7 @@ export interface IUserProfile {
   address: string                 // 
   company_name: string            // character varying(255)
   position: string                // character varying(255)
-  gender: string                  // app.gender
+  gender: 'm' | 'f' | 'n'        // app.gender
 }
 
 /**

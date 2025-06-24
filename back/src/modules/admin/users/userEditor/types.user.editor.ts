@@ -19,8 +19,9 @@ export enum AccountStatus {
 }
 
 export enum Gender {
-    MALE = 'male',
-    FEMALE = 'female'
+    MALE = 'm',
+    FEMALE = 'f',
+    NOT_DEFINED = 'n'
 }
 
 /**
@@ -47,7 +48,7 @@ export interface DbUserProfile {
     address: string | null   // text
     company_name: string | null // character varying(255)
     position: string | null  // character varying(255)
-    gender: Gender | null    // app.gender
+    gender: 'm' | 'f' | 'n' | null    // app.gender
 }
 
 /**
@@ -137,7 +138,7 @@ export interface CreateUserRequest {
   account_status?: AccountStatus
 
   // Profile table fields
-  gender?: Gender
+  gender?: 'm' | 'f' | 'n'
   mobile_phone_number?: string
   address?: string
   company_name?: string
@@ -183,7 +184,7 @@ export interface CreateUserRequest {
     account_status?: AccountStatus
   
     // Profile table fields
-    gender?: Gender
+    gender?: 'm' | 'f' | 'n'
     mobile_phone_number?: string
     address?: string
     company_name?: string

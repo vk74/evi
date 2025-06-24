@@ -58,6 +58,11 @@ const form = ref<any>(null)  // any используем из-за особен�
 const isFormValid = ref(false)
 
 /**
+ * Ссылка на поле username для автофокуса
+ */
+const usernameField = ref<any>(null)
+
+/**
  * UI состояния
  */
 const isSubmitting = ref(false)       // Флаг отправки формы
@@ -234,6 +239,14 @@ const closePasswordDialog = () => {
 onMounted(() => {
   console.log('UserEditor mounted')
   watchFormFields()
+  
+  // Автофокус на поле username только в режиме создания
+  if (userEditorStore.mode.mode === 'create') {
+    // Небольшая задержка для корректной работы с Vuetify
+    setTimeout(() => {
+      usernameField.value?.focus()
+    }, 100)
+  }
 })
 
 onBeforeUnmount(() => {
@@ -309,6 +322,7 @@ onBeforeUnmount(() => {
                         density="comfortable"
                         counter="25"
                         required
+                        ref="usernameField"
                       />
                     </v-col>
                     <v-col

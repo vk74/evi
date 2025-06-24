@@ -20,7 +20,7 @@ import type {
   ServiceError
 } from './types.user.editor';
 import { getRequestorUuidFromReq } from '../../../../core/helpers/get.requestor.uuid.from.req';
-import fabricEvents from '../../../../core/eventBus/fabric.events';
+import { createAndPublishEvent } from '../../../../core/eventBus/fabric.events';
 import { USER_CREATION_EVENTS } from './events.user.editor';
 import { eventBus } from '../../../../core/eventBus/bus.events';
 
@@ -195,6 +195,50 @@ function validateMobilePhone(phone: string): void {
   }
 }
 
+// Main validation function
+async function validateData(data: CreateUserRequest, req: Request): Promise<void> {
+  try {
+    validateUsername(data.username);
+    validatePassword(data.password);
+    validateEmail(data.email);
+    validateName(data.first_name, 'first_name');
+    validateName(data.last_name, 'last_name');
+    
+    if (data.middle_name) {
+      validateName(data.middle_name, 'middle_name');
+    }
+    
+    if (data.mobile_phone_number) {
+      validateMobilePhone(data.mobile_phone_number);
+    }
+    
+    // Create event for validation start
+    await createAndPublishEvent({
+      req,
+      eventName: USER_CREATION_EVENTS.VALIDATION_PASSED.eventName,
+      payload: {
+        username: data.username,
+        email: data.email
+      }
+    });
+    
+  } catch (error) {
+    // Create and publish validation failed event using the fabric
+    await createAndPublishEvent({
+      req,
+      eventName: USER_CREATION_EVENTS.VALIDATION_FAILED.eventName,
+      payload: {
+        field: (error as ValidationError).field,
+        message: (error as ValidationError).message
+      },
+      errorData: (error as ValidationError).message
+    });
+    
+    // Re-throw the error to be handled upstream
+    throw error;
+  }
+}
+
 async function checkUniqueness(data: CreateUserRequest): Promise<void> {
     const uniqueChecks = [
       {
@@ -232,50 +276,6 @@ async function checkUniqueness(data: CreateUserRequest): Promise<void> {
     }
 }
 
-// Main validation function
-async function validateData(data: CreateUserRequest, req: Request): Promise<void> {
-  try {
-    validateUsername(data.username);
-    validatePassword(data.password);
-    validateEmail(data.email);
-    validateName(data.first_name, 'first_name');
-    validateName(data.last_name, 'last_name');
-    
-    if (data.middle_name) {
-      validateName(data.middle_name, 'middle_name');
-    }
-    
-    if (data.mobile_phone_number) {
-      validateMobilePhone(data.mobile_phone_number);
-    }
-    
-    // Create event for validation start
-    await fabricEvents.createAndPublishEvent({
-      req,
-      eventName: USER_CREATION_EVENTS.VALIDATION_PASSED.eventName,
-      payload: {
-        username: data.username,
-        email: data.email
-      }
-    });
-    
-  } catch (error) {
-    // Create and publish validation failed event using the fabric
-    await fabricEvents.createAndPublishEvent({
-      req,
-      eventName: USER_CREATION_EVENTS.VALIDATION_FAILED.eventName,
-      payload: {
-        field: (error as ValidationError).field,
-        message: (error as ValidationError).message
-      },
-      errorData: (error as ValidationError).message
-    });
-    
-    // Re-throw the error to be handled upstream
-    throw error;
-  }
-}
-
 export async function createUser(userData: CreateUserRequest, req: Request): Promise<CreateUserResponse> {
   const client = await pool.connect();
   
@@ -306,8 +306,8 @@ export async function createUser(userData: CreateUserRequest, req: Request): Pro
         trimmedData.email,
         trimmedData.first_name,
         trimmedData.last_name,
-        trimmedData.middle_name || null,
-        trimmedData.is_staff || false,
+        trimmedData.middle_name ? trimmedData.middle_name : null,
+        typeof trimmedData.is_staff === 'boolean' ? trimmedData.is_staff : false,
         trimmedData.account_status || 'active'
       ]
     );
@@ -319,18 +319,18 @@ export async function createUser(userData: CreateUserRequest, req: Request): Pro
         queries.insertUserProfile.text,
       [
         userId,
-        trimmedData.gender || null,
-        trimmedData.mobile_phone_number || null,
-        trimmedData.address || null,
-        trimmedData.company_name || null,
-        trimmedData.position || null
+        trimmedData.gender ? trimmedData.gender : 'n',
+        trimmedData.mobile_phone_number ? trimmedData.mobile_phone_number : null,
+        trimmedData.address ? trimmedData.address : null,
+        trimmedData.company_name ? trimmedData.company_name : null,
+        trimmedData.position ? trimmedData.position : null
       ]
     );
 
     await client.query('COMMIT');
 
     // Create and publish completion event
-    await fabricEvents.createAndPublishEvent({
+    await createAndPublishEvent({
       req,
       eventName: USER_CREATION_EVENTS.COMPLETE.eventName,
       payload: {
@@ -352,7 +352,7 @@ export async function createUser(userData: CreateUserRequest, req: Request): Pro
     await client.query('ROLLBACK');
     
     // Create and publish failed event
-    await fabricEvents.createAndPublishEvent({
+    await createAndPublishEvent({
       req,
       eventName: USER_CREATION_EVENTS.FAILED.eventName,
       payload: {
