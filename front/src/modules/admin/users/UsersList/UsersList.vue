@@ -828,154 +828,109 @@ const handleItemsPerPageChange = async (newItemsPerPage: ItemsPerPageOption) => 
           </div>
         </div>
       </div>
-    </div>
-    
-    <!-- Fixed Sidebar (outside of main content flow) -->
-    <div class="side-bar-container">
-      <!-- Top part of sidebar - buttons for component operations -->
-      <div class="side-bar-section">
-        <h3 class="text-subtitle-2 px-2 py-2">
-          {{ t('list.sidebar.actions') }}
-        </h3>
-        
-        <v-btn
-          v-if="isAuthorized"
-          block
-          color="teal"
-          variant="outlined"
-          class="mb-3"
-          :disabled="hasSelected"
-          @click="createUser"
-        >
-          {{ t('list.buttons.create') }}
-        </v-btn>
-        
-        <v-btn
-          v-if="isAuthorized"
-          block
-          color="teal"
-          variant="outlined"
-          class="mb-3"
-          :loading="loading"
-          @click="refreshList"
-        >
-          <v-icon
-            icon="mdi-refresh"
-            class="mr-2"
-          />
-          {{ t('list.buttons.refresh') }}
-        </v-btn>
-        
-        <v-btn
-          v-if="isAuthorized"
-          block
-          color="grey"
-          variant="outlined"
-          class="mb-3"
-          :disabled="!hasSelected"
-          @click="clearSelections"
-        >
-          <v-icon
-            icon="mdi-checkbox-blank-outline"
-            class="mr-2"
-          />
-          {{ t('list.buttons.clearSelections') }}
-        </v-btn>
-      </div>
       
-      <!-- Divider between sections -->
-      <div class="sidebar-divider" />
-      
-      <!-- Bottom part of sidebar - buttons for operations over selected elements -->
-      <div class="side-bar-section">
-        <h3 class="text-subtitle-2 px-2 py-2">
-          {{ t('list.sidebar.selectedItem') }}
-        </h3>
-        
-        <v-btn
-          v-if="isAuthorized"
-          block
-          color="teal"
-          variant="outlined"
-          class="mb-3"
-          :disabled="!hasOneSelected"
-          @click="editUser"
-        >
-          {{ t('list.buttons.edit') }}
-        </v-btn>
-        
-        <v-btn
-          v-if="isAuthorized"
-          block
-          color="teal"
-          variant="outlined"
-          class="mb-3"
-          :disabled="!hasOneSelected"
-          @click="resetPassword"
-        >
-          {{ t('list.buttons.resetPassword') }}
-        </v-btn>
-        
-        <v-btn
-          v-if="isAuthorized"
-          block
-          color="error"
-          variant="outlined"
-          class="mb-3"
-          :disabled="!hasSelected"
-          @click="onDeleteSelected"
-        >
-          {{ t('list.buttons.delete') }}
-          <span class="ml-2">({{ selectedCount }})</span>
-        </v-btn>
-      </div>
-    </div>
-    
-    <!-- Delete confirmation dialog -->
-    <v-dialog
-      v-model="showDeleteDialog"
-      max-width="400"
-    >
-      <v-card>
-        <v-card-title class="text-subtitle-1 text-wrap">
-          {{ t('list.messages.confirmDelete') }}
-        </v-card-title>
-        <v-card-actions>
-          <v-spacer />
+      <!-- Sidebar (now part of the main flex layout) -->
+      <div class="side-bar-container">
+        <!-- Top part of sidebar - buttons for component operations -->
+        <div class="side-bar-section">
+          <h3 class="text-subtitle-2 px-2 py-2">
+            {{ t('list.sidebar.actions') }}
+          </h3>
+          
           <v-btn
+            v-if="isAuthorized"
+            block
+            color="teal"
+            variant="outlined"
+            class="mb-3"
+            :disabled="hasSelected"
+            @click="createUser"
+          >
+            {{ t('list.buttons.create') }}
+          </v-btn>
+          
+          <v-btn
+            v-if="isAuthorized"
+            block
+            color="teal"
+            variant="outlined"
+            class="mb-3"
+            :loading="loading"
+            @click="refreshList"
+          >
+            <v-icon
+              icon="mdi-refresh"
+              class="mr-2"
+            />
+            {{ t('list.buttons.refresh') }}
+          </v-btn>
+          
+          <v-btn
+            v-if="isAuthorized"
+            block
             color="grey"
-            variant="text"
-            class="text-none"
-            @click="cancelDelete"
+            variant="outlined"
+            class="mb-3"
+            :disabled="!hasSelected"
+            @click="clearSelections"
           >
-            {{ t('common.cancel') }}
+            <v-icon
+              icon="mdi-checkbox-blank-outline"
+              class="mr-2"
+            />
+            {{ t('list.buttons.clearSelections') }}
           </v-btn>
+        </div>
+        
+        <!-- Divider between sections -->
+        <div class="sidebar-divider" />
+        
+        <!-- Bottom part of sidebar - buttons for operations over selected elements -->
+        <div class="side-bar-section">
+          <h3 class="text-subtitle-2 px-2 py-2">
+            {{ t('list.sidebar.selectedItem') }}
+          </h3>
+          
           <v-btn
-            color="error"
-            variant="text"
-            class="text-none"
-            @click="confirmDelete"
+            v-if="isAuthorized"
+            block
+            color="teal"
+            variant="outlined"
+            class="mb-3"
+            :disabled="!hasOneSelected"
+            @click="editUser"
           >
-            {{ t('common.delete') }}
+            {{ t('list.buttons.edit') }}
           </v-btn>
-        </v-card-actions>
-      </v-card>
-    </v-dialog>
+          
+          <v-btn
+            v-if="isAuthorized"
+            block
+            color="teal"
+            variant="outlined"
+            class="mb-3"
+            :disabled="!hasOneSelected"
+            @click="resetPassword"
+          >
+            {{ t('list.buttons.resetPassword') }}
+          </v-btn>
+          
+          <v-btn
+            v-if="isAuthorized"
+            block
+            color="error"
+            variant="outlined"
+            class="mb-3"
+            :disabled="!hasSelected"
+            @click="onDeleteSelected"
+          >
+            {{ t('list.buttons.delete') }}
+            <span class="ml-2">({{ selectedCount }})</span>
+          </v-btn>
+        </div>
+      </div>
+    </div>
     
-    <!-- Password reset dialog -->
-    <v-dialog 
-      v-model="showPasswordDialog" 
-      max-width="550"
-    >
-      <ChangePassword
-        :title="t('passwordChange.resetPasswordFor') + ' ' + selectedUserData.username"
-        :uuid="selectedUserData.uuid"
-        :username="selectedUserData.username"
-        :mode="PasswordChangeMode.ADMIN"
-        :on-close="() => showPasswordDialog = false"
-      />
-    </v-dialog>
-
     <!-- Delete confirmation dialog -->
     <v-dialog
       v-model="showDeleteDialog"
@@ -1024,9 +979,8 @@ const handleItemsPerPageChange = async (newItemsPerPage: ItemsPerPageOption) => 
 </template>
 
 <style scoped>
-/* Main content area with right margin for fixed sidebar */
+/* Main content area - no longer needs right margin */
 .main-content-area {
-  margin-right: 18%;
   min-width: 0;
 }
 
@@ -1055,21 +1009,15 @@ const handleItemsPerPageChange = async (newItemsPerPage: ItemsPerPageOption) => 
   border-bottom: none !important;
 }
 
-/* Styles for sidebar - using fixed positioning */
+/* Styles for sidebar - now using flexbox instead of fixed positioning */
 .side-bar-container {
-  position: fixed;
-  top: 64px;
-  right: 0;
-  width: 18%;
-  min-width: 220px;
-  height: calc(100vh - 64px);
+  width: 280px;
+  min-width: 280px;
   border-left: thin solid rgba(var(--v-border-color), var(--v-border-opacity));
   display: flex;
   flex-direction: column;
   background-color: rgba(var(--v-theme-surface), 1);
-  z-index: 1000;
   overflow-y: auto;
-  box-shadow: -2px 0 8px rgba(0, 0, 0, 0.1);
 }
 
 .side-bar-section {
