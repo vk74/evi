@@ -62,6 +62,32 @@ const isSearchEnabled = computed(() =>
   searchQuery.value.length >= 2 || searchQuery.value.length === 0
 )
 
+// Helper function to get current fetch parameters
+const getFetchParams = () => ({
+  page: page.value,
+  itemsPerPage: itemsPerPage.value,
+  sortBy: sortBy.value || '',
+  sortDesc: sortDesc.value,
+  search: searchQuery.value
+})
+
+// Helper function for error handling
+const handleError = (error: unknown, context: string) => {
+  console.error(`[UsersList] ${context}:`, error)
+  uiStore.showErrorSnackbar(
+    error instanceof Error ? error.message : `Error ${context.toLowerCase()}`
+  )
+}
+
+// Helper function to fetch users with current parameters
+const fetchUsers = async () => {
+  try {
+    await usersFetchService.fetchUsers(getFetchParams())
+  } catch (error) {
+    handleError(error, 'fetching users')
+  }
+}
+
 // User action handlers
 const createUser = () => {
   try {
@@ -70,10 +96,7 @@ const createUser = () => {
     userEditorStore.mode = { mode: 'create' }
     usersSectionStore.setActiveSection('user-editor')
   } catch (error) {
-    console.error('[UsersList] Error initializing create mode:', error)
-    uiStore.showErrorSnackbar(
-      error instanceof Error ? error.message : 'Error initializing creation mode'
-    )
+    handleError(error, 'initializing create mode')
   }
 }
 
@@ -85,9 +108,7 @@ const onSelectUser = (userId: string, selected: boolean) => {
   }
 }
 
-const isSelected = (userId: string) => {
-  return usersStore.isSelected(userId)
-}
+const isSelected = (userId: string) => usersStore.isSelected(userId)
 
 const onDeleteSelected = () => {
   showDeleteDialog.value = true
@@ -100,23 +121,10 @@ const cancelDelete = () => {
 const confirmDelete = async () => {
   try {
     const deletedCount = await deleteSelectedUsersService.deleteSelectedUsers(usersStore.selectedUsers)
-    const message = t('list.messages.deleteUsersSuccess', { count: deletedCount })
-    uiStore.showSuccessSnackbar(message)
-    
-    // Update users list after deletion
-    await usersFetchService.fetchUsers({
-        page: page.value,
-        itemsPerPage: itemsPerPage.value,
-        sortBy: sortBy.value || '',
-        sortDesc: sortDesc.value,
-        search: searchQuery.value
-    })
-    
+    uiStore.showSuccessSnackbar(t('list.messages.deleteUsersSuccess', { count: deletedCount }))
+    await fetchUsers()
   } catch (error) {
-    console.error('[UsersList] Error during users deletion:', error)
-    uiStore.showErrorSnackbar(
-      error instanceof Error ? error.message : 'Error deleting users'
-    )
+    handleError(error, 'deleting users')
   } finally {
     showDeleteDialog.value = false
     usersStore.clearSelection()
@@ -124,18 +132,16 @@ const confirmDelete = async () => {
 }
 
 const getStatusColor = (status: string) => {
-  switch (status.toLowerCase()) {
-    case 'active': return 'teal';
-    case 'disabled': return 'error';
-    case 'archived': return 'grey';
-    case 'requires_user_action': return 'orange';
-    default: return 'black';
+  const colors = {
+    active: 'teal',
+    disabled: 'error',
+    archived: 'grey',
+    requires_user_action: 'orange'
   }
-};
-
-const getSelectedUserId = (): string => {
-  return usersStore.selectedUsers[0]
+  return colors[status.toLowerCase() as keyof typeof colors] || 'black'
 }
+
+const getSelectedUserId = (): string => usersStore.selectedUsers[0]
 
 const resetPassword = async () => {
   try {
@@ -152,10 +158,7 @@ const resetPassword = async () => {
       uiStore.showErrorSnackbar('User not found in current list')
     }
   } catch (error) {
-    console.error('[UsersList] Error preparing password reset:', error)
-    uiStore.showErrorSnackbar(
-      error instanceof Error ? error.message : 'Error preparing password reset'
-    )
+    handleError(error, 'preparing password reset')
   }
 }
 
@@ -165,35 +168,17 @@ const editUser = async () => {
     await loadUserService.fetchUserById(userId)
     usersSectionStore.setActiveSection('user-editor')
   } catch (error) {
-    console.error('[UsersList] Error loading user data:', error)
-    uiStore.showErrorSnackbar(
-      error instanceof Error ? error.message : 'Error loading user data'
-    )
+    handleError(error, 'loading user data')
   }
 }
 
 const refreshList = async () => {
   try {
-    usersStore.invalidateCache({
-        page: page.value,
-        itemsPerPage: itemsPerPage.value,
-        sortBy: sortBy.value || '',
-        sortDesc: sortDesc.value,
-        search: searchQuery.value
-    });
-    await usersFetchService.fetchUsers({
-        page: page.value,
-        itemsPerPage: itemsPerPage.value,
-        sortBy: sortBy.value || '',
-        sortDesc: sortDesc.value,
-        search: searchQuery.value
-    })
+    usersStore.invalidateCache(getFetchParams())
+    await fetchUsers()
     uiStore.showSuccessSnackbar(t('list.messages.refreshSuccess'))
   } catch (error) {
-    console.error('[UsersList] Error refreshing users list:', error)
-    uiStore.showErrorSnackbar(
-      error instanceof Error ? error.message : 'Error refreshing users list'
-    )
+    handleError(error, 'refreshing users list')
   }
 }
 
@@ -218,7 +203,7 @@ const updateOptionsAndFetch = async (options: { page?: number, itemsPerPage?: nu
   // Handle items per page changes
   if (options.itemsPerPage !== undefined && itemsPerPage.value !== options.itemsPerPage) {
     itemsPerPage.value = options.itemsPerPage as ItemsPerPageOption;
-    page.value = 1; // Reset to page 1
+    page.value = 1;
     needsFetch = true;
   }
 
@@ -229,7 +214,7 @@ const updateOptionsAndFetch = async (options: { page?: number, itemsPerPage?: nu
       if (sortBy.value !== sortItem.key || sortDesc.value !== (sortItem.order === 'desc')) {
         sortBy.value = sortItem.key;
         sortDesc.value = sortItem.order === 'desc';
-        page.value = 1; // Reset to page 1
+        page.value = 1;
         needsFetch = true;
       }
     } else if (sortBy.value !== null) {
@@ -241,20 +226,7 @@ const updateOptionsAndFetch = async (options: { page?: number, itemsPerPage?: nu
   }
 
   if (needsFetch) {
-    try {
-      await usersFetchService.fetchUsers({
-        page: page.value,
-        itemsPerPage: itemsPerPage.value,
-        sortBy: sortBy.value || '',
-        sortDesc: sortDesc.value,
-        search: searchQuery.value
-      });
-    } catch (error) {
-      console.error('[UsersList] Error fetching users after options change:', error);
-      uiStore.showErrorSnackbar(
-        error instanceof Error ? error.message : 'Error fetching users after options change'
-      );
-    }
+    await fetchUsers()
   }
 }
 
@@ -276,10 +248,7 @@ const performSearch = async () => {
       sortDesc: sortDesc.value
     })
   } catch (error) {
-    console.error('[UsersList] Error performing search:', error)
-    uiStore.showErrorSnackbar(
-      error instanceof Error ? error.message : 'Error performing search'
-    )
+    handleError(error, 'performing search')
   } finally {
     isSearching.value = false
   }
@@ -304,82 +273,29 @@ const handleSearchKeydown = (event: KeyboardEvent) => {
 
 // Table headers
 const headers = computed<TableHeader[]>(() => [
-  { 
-    title: t('list.table.headers.select'), 
-    key: 'selection',
-    width: '40px',
-    sortable: false
-  },
-  { 
-    title: t('list.table.headers.id'), 
-    key: 'user_id', 
-    width: '80px',
-    sortable: true
-  },
-  { 
-    title: t('list.table.headers.username'), 
-    key: 'username',
-    sortable: true
-  },
-  { 
-    title: t('list.table.headers.email'), 
-    key: 'email',
-    sortable: true
-  },
-  { 
-    title: t('list.table.headers.isStaff'), 
-    key: 'is_staff', 
-    width: '60px',
-    sortable: true
-  },
-  { 
-    title: t('list.table.headers.status'), 
-    key: 'account_status', 
-    width: '60px',
-    sortable: true
-  },
-  { 
-    title: t('list.table.headers.lastName'), 
-    key: 'last_name',
-    sortable: true
-  },
-  { 
-    title: t('list.table.headers.firstName'), 
-    key: 'first_name',
-    sortable: true
-  }
+  { title: t('list.table.headers.select'), key: 'selection', width: '40px', sortable: false },
+  { title: t('list.table.headers.id'), key: 'user_id', width: '80px', sortable: true },
+  { title: t('list.table.headers.username'), key: 'username', sortable: true },
+  { title: t('list.table.headers.email'), key: 'email', sortable: true },
+  { title: t('list.table.headers.isStaff'), key: 'is_staff', width: '60px', sortable: true },
+  { title: t('list.table.headers.status'), key: 'account_status', width: '60px', sortable: true },
+  { title: t('list.table.headers.lastName'), key: 'last_name', sortable: true },
+  { title: t('list.table.headers.firstName'), key: 'first_name', sortable: true }
 ])
 
 // Initialize on mount
 onMounted(async () => {
-  try {
-    const initialParams = {
-      page: page.value,
-      itemsPerPage: itemsPerPage.value,
-      sortBy: sortBy.value || '',
-      sortDesc: sortDesc.value,
-      search: searchQuery.value
-    };
-    
-    await usersFetchService.fetchUsers(initialParams)
-  } catch (error) {
-    console.error('[UsersList] Error loading initial users list:', error)
-    uiStore.showErrorSnackbar(
-      error instanceof Error ? error.message : 'Error loading initial users list'
-    )
-  }
+  await fetchUsers()
 })
 
-// Custom paginator functions
+// Pagination helpers
 const getPaginationInfo = () => {
   const start = (page.value - 1) * itemsPerPage.value + 1;
   const end = Math.min(page.value * itemsPerPage.value, totalItems.value);
   return t('pagination.recordsInfo', { start, end, total: totalItems.value });
 };
 
-const getTotalPages = () => {
-  return Math.ceil(totalItems.value / itemsPerPage.value);
-};
+const getTotalPages = () => Math.ceil(totalItems.value / itemsPerPage.value);
 
 const getVisiblePages = () => {
   const totalPages = getTotalPages();
@@ -387,30 +303,18 @@ const getVisiblePages = () => {
   const pages: (number | string)[] = [];
   
   if (totalPages <= 7) {
-    for (let i = 1; i <= totalPages; i++) {
-      pages.push(i);
-    }
+    for (let i = 1; i <= totalPages; i++) pages.push(i);
   } else {
     if (currentPage <= 4) {
-      for (let i = 1; i <= 5; i++) {
-        pages.push(i);
-      }
-      pages.push('...');
-      pages.push(totalPages);
+      for (let i = 1; i <= 5; i++) pages.push(i);
+      pages.push('...', totalPages);
     } else if (currentPage >= totalPages - 3) {
-      pages.push(1);
-      pages.push('...');
-      for (let i = totalPages - 4; i <= totalPages; i++) {
-        pages.push(i);
-      }
+      pages.push(1, '...');
+      for (let i = totalPages - 4; i <= totalPages; i++) pages.push(i);
     } else {
-      pages.push(1);
-      pages.push('...');
-      for (let i = currentPage - 1; i <= currentPage + 1; i++) {
-        pages.push(i);
-      }
-      pages.push('...');
-      pages.push(totalPages);
+      pages.push(1, '...');
+      for (let i = currentPage - 1; i <= currentPage + 1; i++) pages.push(i);
+      pages.push('...', totalPages);
     }
   }
   
@@ -423,41 +327,13 @@ const goToPage = async (newPage: number) => {
   }
   
   page.value = newPage;
-  
-  try {
-    await usersFetchService.fetchUsers({
-      page: page.value,
-      itemsPerPage: itemsPerPage.value,
-      sortBy: sortBy.value || '',
-      sortDesc: sortDesc.value,
-      search: searchQuery.value
-    });
-  } catch (error) {
-    console.error('[UsersList] Error navigating to page:', error);
-    uiStore.showErrorSnackbar(
-      error instanceof Error ? error.message : t('pagination.errors.navigationError')
-    );
-  }
+  await fetchUsers();
 };
 
 const handleItemsPerPageChange = async (newItemsPerPage: ItemsPerPageOption) => {
   itemsPerPage.value = newItemsPerPage;
   page.value = 1;
-  
-  try {
-    await usersFetchService.fetchUsers({
-      page: page.value,
-      itemsPerPage: itemsPerPage.value,
-      sortBy: sortBy.value || '',
-      sortDesc: sortDesc.value,
-      search: searchQuery.value
-    });
-  } catch (error) {
-    console.error('[UsersList] Error changing items per page:', error);
-    uiStore.showErrorSnackbar(
-      error instanceof Error ? error.message : t('pagination.errors.itemsPerPageError')
-    );
-  }
+  await fetchUsers();
 };
 </script>
 
