@@ -18,7 +18,6 @@
  import LoggingFile from './sections/Application.Logging.File.vue';
  import SessionManagement from './sections/Application.Security.SessionManagement.vue';
  import PasswordPolicies from './sections/Application.Security.PasswordPolicies.vue';
- import UsersManagement from './sections/UsersManagement.vue';
  import GroupsManagement from './sections/UsersManagement.GroupsManagement.vue';
  
  // Define section interface
@@ -120,7 +119,6 @@
    'Application.Logging.File': markRaw(LoggingFile),
    'Application.Security.SessionManagement': markRaw(SessionManagement),
    'Application.Security.PasswordPolicies': markRaw(PasswordPolicies),
-   'UsersManagement': markRaw(UsersManagement),
    'UsersManagement.GroupsManagement': markRaw(GroupsManagement),
    // Узлы-контейнеры не имеют компонента
  };

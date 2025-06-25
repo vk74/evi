@@ -245,45 +245,47 @@ onMounted(() => {
           class="mb-2"
         />
         
-        <v-switch
-          v-model="requireSpecialChars"
-          color="teal-darken-2"
-          label="требовать специальные символы"
-          hide-details
-          class="mb-2"
-        />
+        <div class="d-flex align-center mb-2">
+          <v-switch
+            v-model="requireSpecialChars"
+            color="teal-darken-2"
+            label="требовать специальные символы"
+            hide-details
+          />
+          <v-tooltip
+            location="top"
+            max-width="400"
+          >
+            <template #activator="{ props }">
+              <v-icon 
+                icon="mdi-help-circle-outline" 
+                size="small" 
+                class="ms-2" 
+                color="teal-darken-2"
+                v-bind="props"
+              />
+            </template>
+            <div class="pa-2">
+              <p class="text-subtitle-2 mb-2">разрешенные специальные символы:</p>
+              <p class="text-caption">
+                ! @ # $ % ^ & * ( ) - _ = + [ ] { } | \ : ; " ' < > , . ? / ~ `
+              </p>
+            </div>
+          </v-tooltip>
+        </div>
         
-        <v-tooltip
-          location="top"
-          max-width="400"
-        >
-          <template #activator="{ props }">
-            <v-icon 
-              icon="mdi-help-circle-outline" 
-              size="small" 
-              class="ms-2" 
-              color="teal-darken-2"
-              v-bind="props"
-            />
-          </template>
-          <div class="pa-2">
-            <p class="text-subtitle-2 mb-2">разрешенные специальные символы:</p>
-            <p class="text-caption">
-              ! @ # $ % ^ & * ( ) - _ = + [ ] { } | \ : ; " ' < > , . ? / ~ `
-            </p>
-          </div>
-        </v-tooltip>
-        
-        <v-select
-          v-model="passwordExpiration"
-          :items="passwordExpirationOptions"
-          label="срок действия пароля"
-          variant="outlined"
-          density="comfortable"
-          class="mt-4"
-          color="teal-darken-2"
-          style="max-width: 200px;"
-        />
+        <div class="d-flex align-center mt-4 mb-4" style="max-width: 400px;">
+          <v-select
+            v-model="passwordExpiration"
+            :items="passwordExpirationOptions"
+            label="срок действия пароля"
+            variant="outlined"
+            density="comfortable"
+            color="teal-darken-2"
+            style="max-width: 200px;"
+          />
+          <span class="text-caption text-grey ms-3">эта настройка находится в разработке</span>
+        </div>
         
         <!-- Interactive password example -->
         <div class="mt-6 pa-4 bg-grey-lighten-5 rounded">
