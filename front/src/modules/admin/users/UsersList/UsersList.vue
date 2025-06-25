@@ -274,9 +274,9 @@ const handleSearchKeydown = (event: KeyboardEvent) => {
 // Table headers
 const headers = computed<TableHeader[]>(() => [
   { title: t('list.table.headers.select'), key: 'selection', width: '40px', sortable: false },
-  { title: t('list.table.headers.id'), key: 'user_id', width: '80px', sortable: true },
-  { title: t('list.table.headers.username'), key: 'username', sortable: true },
-  { title: t('list.table.headers.email'), key: 'email', sortable: true },
+  { title: t('list.table.headers.id'), key: 'user_id', width: '200px', sortable: true },
+  { title: t('list.table.headers.username'), key: 'username', width: '150px', sortable: true },
+  { title: t('list.table.headers.email'), key: 'email', width: '200px', sortable: true },
   { title: t('list.table.headers.isStaff'), key: 'is_staff', width: '60px', sortable: true },
   { title: t('list.table.headers.status'), key: 'account_status', width: '60px', sortable: true },
   { title: t('list.table.headers.lastName'), key: 'last_name', sortable: true },
@@ -675,16 +675,16 @@ const handleItemsPerPageChange = async (newItemsPerPage: ItemsPerPageOption) => 
 </template>
 
 <style scoped>
-/* Main content area - no longer needs right margin */
+/* Main content area */
 .main-content-area {
   min-width: 0;
 }
 
+/* Table styles */
 .users-table :deep(.v-data-table-footer) {
   border-top: thin solid rgba(var(--v-border-color), var(--v-border-opacity));
 }
 
-/* Styles for table horizontal lines with margins */
 .users-table :deep(.v-data-table__tr) {
   position: relative;
 }
@@ -699,13 +699,12 @@ const handleItemsPerPageChange = async (newItemsPerPage: ItemsPerPageOption) => 
   background-color: rgba(var(--v-border-color), var(--v-border-opacity));
 }
 
-/* Remove default table borders */
 .users-table :deep(.v-data-table__td),
 .users-table :deep(.v-data-table__th) {
   border-bottom: none !important;
 }
 
-/* Styles for sidebar - now using flexbox instead of fixed positioning */
+/* Sidebar styles */
 .side-bar-container {
   width: 280px;
   min-width: 280px;
@@ -720,9 +719,8 @@ const handleItemsPerPageChange = async (newItemsPerPage: ItemsPerPageOption) => 
   padding: 16px;
 }
 
-/* Divider between sections */
 .sidebar-divider {
-  height: 20px; /* Fixed divider height */
+  height: 20px;
   position: relative;
   margin: 0 16px;
 }
@@ -736,7 +734,7 @@ const handleItemsPerPageChange = async (newItemsPerPage: ItemsPerPageOption) => 
   border-top: thin solid rgba(var(--v-border-color), var(--v-border-opacity));
 }
 
-/* Styles for custom paginator */
+/* Pagination styles */
 .custom-pagination-container {
   border-top: thin solid rgba(var(--v-border-color), var(--v-border-opacity));
   background-color: rgba(var(--v-theme-surface), 1);
@@ -749,9 +747,6 @@ const handleItemsPerPageChange = async (newItemsPerPage: ItemsPerPageOption) => 
 .custom-pagination-container .v-btn {
   min-width: 32px;
   height: 32px;
-}
-
-.custom-pagination-container .v-btn--size-small {
   font-size: 0.875rem;
 }
 </style>
