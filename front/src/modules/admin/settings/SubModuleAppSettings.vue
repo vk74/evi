@@ -13,12 +13,9 @@
  import { useUiStore } from '@/core/state/uistate';
  
  // Import components from sections directory with hierarchical naming
- import Application from './sections/Application.vue';
  import UserProfiles from './sections/Application.UserProfiles.vue';
- import Logging from './sections/Application.Logging.vue';
  import LoggingConsole from './sections/Application.Logging.Console.vue';
  import LoggingFile from './sections/Application.Logging.File.vue';
- import Security from './sections/Application.Security.vue';
  import SessionManagement from './sections/Application.Security.SessionManagement.vue';
  import PasswordPolicies from './sections/Application.Security.PasswordPolicies.vue';
  import UsersManagement from './sections/UsersManagement.vue';
@@ -118,17 +115,14 @@
  
  // Map section IDs to components
  const sectionComponents = {
-   'Application': markRaw(Application),
    'Application.UserProfiles': markRaw(UserProfiles),
-   'Application.Logging': markRaw(Logging),
    'Application.Logging.Console': markRaw(LoggingConsole),
    'Application.Logging.File': markRaw(LoggingFile),
-   'Application.Security': markRaw(Security),
    'Application.Security.SessionManagement': markRaw(SessionManagement),
    'Application.Security.PasswordPolicies': markRaw(PasswordPolicies),
    'UsersManagement': markRaw(UsersManagement),
    'UsersManagement.GroupsManagement': markRaw(GroupsManagement),
-   // Other components can be added here as they're created for other sections
+   // Узлы-контейнеры не имеют компонента
  };
  
  // Mobile menu state
