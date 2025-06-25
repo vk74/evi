@@ -22,8 +22,16 @@ const appSettingsStore = useAppSettingsStore();
 // Loading state
 const isLoadingSettings = ref(true);
 
-// Password length options (8 to 24 characters)
-const passwordLengthOptions = Array.from({ length: 17 }, (_, i) => (i + 8).toString());
+// Local UI state for immediate interaction
+const passwordMinLength = ref('8');
+const requireLowercase = ref(true);
+const requireUppercase = ref(true);
+const requireNumbers = ref(true);
+const requireSpecialChars = ref(false);
+const passwordExpiration = ref('90 days');
+
+// Password length options (4 to 40 characters)
+const passwordLengthOptions = Array.from({ length: 37 }, (_, i) => (i + 4).toString());
 
 // Password expiration options
 const passwordExpirationOptions = [
@@ -36,144 +44,76 @@ const passwordExpirationOptions = [
 ];
 
 /**
- * Direct binding to the setting values from Pinia store
- * These computed properties will automatically update when the store changes
+ * Update setting in store when local state changes
  */
-const passwordMinLength = computed({
-  get: () => {
-    const settings = appSettingsStore.getCachedSettings(section_path);
-    if (!settings || settings.length === 0) return '8';
-    
-    const setting = settings.find(s => s.setting_name === 'password.min.length');
-    const value = setting?.value !== undefined && setting?.value !== null 
-      ? setting.value.toString() 
-      : '8';
-    
-    console.log('Computed setting "password.min.length" value:', value);
-    return value;
-  },
-  set: (newValue) => {
-    console.log('Setting password.min.length value changed to:', newValue);
-    updateSettingFromComponent(section_path, 'password.min.length', newValue);
-  }
-});
+function updateSetting(settingName: string, value: any) {
+  console.log(`Updating setting ${settingName} to:`, value);
+  updateSettingFromComponent(section_path, settingName, value);
+}
 
-const requireLowercase = computed({
-  get: () => {
-    const settings = appSettingsStore.getCachedSettings(section_path);
-    if (!settings || settings.length === 0) return true;
-    
-    const setting = settings.find(s => s.setting_name === 'password.require.lowercase');
-    const value = setting?.value !== undefined && setting?.value !== null 
-      ? setting.value 
-      : true;
-    
-    console.log('Computed setting "password.require.lowercase" value:', value);
-    return value;
-  },
-  set: (newValue) => {
-    console.log('Setting password.require.lowercase value changed to:', newValue);
-    updateSettingFromComponent(section_path, 'password.require.lowercase', newValue);
-  }
-});
+/**
+ * Generate example password based on current settings
+ */
+const generateExamplePassword = computed(() => {
+  const length = Math.min(parseInt(passwordMinLength.value), 40);
+  let chars: string[] = [];
 
-const requireUppercase = computed({
-  get: () => {
-    const settings = appSettingsStore.getCachedSettings(section_path);
-    if (!settings || settings.length === 0) return true;
-    
-    const setting = settings.find(s => s.setting_name === 'password.require.uppercase');
-    const value = setting?.value !== undefined && setting?.value !== null 
-      ? setting.value 
-      : true;
-    
-    console.log('Computed setting "password.require.uppercase" value:', value);
-    return value;
-  },
-  set: (newValue) => {
-    console.log('Setting password.require.uppercase value changed to:', newValue);
-    updateSettingFromComponent(section_path, 'password.require.uppercase', newValue);
-  }
-});
+  // Всегда добавляем по одному символу каждого требуемого типа
+  if (requireLowercase.value) chars.push('a');
+  if (requireUppercase.value) chars.push('A');
+  if (requireNumbers.value) chars.push('1');
+  if (requireSpecialChars.value) chars.push('@');
 
-const requireNumbers = computed({
-  get: () => {
-    const settings = appSettingsStore.getCachedSettings(section_path);
-    if (!settings || settings.length === 0) return true;
-    
-    const setting = settings.find(s => s.setting_name === 'password.require.numbers');
-    const value = setting?.value !== undefined && setting?.value !== null 
-      ? setting.value 
-      : true;
-    
-    console.log('Computed setting "password.require.numbers" value:', value);
-    return value;
-  },
-  set: (newValue) => {
-    console.log('Setting password.require.numbers value changed to:', newValue);
-    updateSettingFromComponent(section_path, 'password.require.numbers', newValue);
-  }
-});
+  // Если ничего не выбрано — просто буквы
+  if (chars.length === 0) chars.push('a');
 
-const requireSpecialChars = computed({
-  get: () => {
-    const settings = appSettingsStore.getCachedSettings(section_path);
-    if (!settings || settings.length === 0) return false;
-    
-    const setting = settings.find(s => s.setting_name === 'password.require.special.chars');
-    const value = setting?.value !== undefined && setting?.value !== null 
-      ? setting.value 
-      : false;
-    
-    console.log('Computed setting "password.require.special.chars" value:', value);
-    return value;
-  },
-  set: (newValue) => {
-    console.log('Setting password.require.special.chars value changed to:', newValue);
-    updateSettingFromComponent(section_path, 'password.require.special.chars', newValue);
-  }
-});
+  // Формируем массив разрешённых символов для заполнения
+  let filler: string[] = [];
+  if (requireLowercase.value) filler = filler.concat(['b','c','d','e','f','g','h','j','k','m','n','p','q','r','s','t','u','v','w','x','y','z']);
+  if (requireUppercase.value) filler = filler.concat(['B','C','D','E','F','G','H','J','K','M','N','P','Q','R','S','T','U','V','W','X','Y','Z']);
+  if (requireNumbers.value) filler = filler.concat(['2','3','4','5','6','7','8','9']);
+  if (requireSpecialChars.value) filler = filler.concat(['!','#','$','%','&','*','-','_','+','?']);
+  // Если ничего не выбрано — только маленькие буквы
+  if (filler.length === 0) filler = ['a','b','c','d','e','f','g','h','j','k','m','n','p','q','r','s','t','u','v','w','x','y','z'];
 
-const passwordExpiration = computed({
-  get: () => {
-    const settings = appSettingsStore.getCachedSettings(section_path);
-    if (!settings || settings.length === 0) return '90 days';
-    
-    const setting = settings.find(s => s.setting_name === 'password.expiration');
-    const value = setting?.value !== undefined && setting?.value !== null 
-      ? setting.value 
-      : '90 days';
-    
-    console.log('Computed setting "password.expiration" value:', value);
-    return value;
-  },
-  set: (newValue) => {
-    console.log('Setting password.expiration value changed to:', newValue);
-    updateSettingFromComponent(section_path, 'password.expiration', newValue);
+  let fillIndex = 0;
+  while (chars.length < length) {
+    chars.push(filler[fillIndex % filler.length]);
+    fillIndex++;
   }
-});
 
-const forcePasswordChangeAfterExpiration = computed({
-  get: () => {
-    const settings = appSettingsStore.getCachedSettings(section_path);
-    if (!settings || settings.length === 0) return true;
-    
-    const setting = settings.find(s => s.setting_name === 'password.force.change.after.expiration');
-    const value = setting?.value !== undefined && setting?.value !== null 
-      ? setting.value 
-      : true;
-    
-    console.log('Computed setting "password.force.change.after.expiration" value:', value);
-    return value;
-  },
-  set: (newValue) => {
-    console.log('Setting password.force.change.after.expiration value changed to:', newValue);
-    updateSettingFromComponent(section_path, 'password.force.change.after.expiration', newValue);
-  }
+  return chars.join('');
 });
 
 /**
- * Load settings from the backend
+ * Get password requirements description
+ */
+const getPasswordRequirements = computed(() => {
+  const requirements: string[] = [];
+  
+  requirements.push(`минимум ${passwordMinLength.value} символов`);
+  
+  if (requireLowercase.value) {
+    requirements.push('строчные буквы');
+  }
+  
+  if (requireUppercase.value) {
+    requirements.push('заглавные буквы');
+  }
+  
+  if (requireNumbers.value) {
+    requirements.push('цифры');
+  }
+  
+  if (requireSpecialChars.value) {
+    requirements.push('специальные символы');
+  }
+  
+  return requirements.join(', ');
+});
+
+/**
+ * Load settings from the backend and update local state
  */
 async function loadSettings() {
   isLoadingSettings.value = true;
@@ -184,8 +124,26 @@ async function loadSettings() {
     
     if (settings && settings.length > 0) {
       console.log('Received settings:', settings);
+      
+      // Update local state from store
+      const cachedSettings = appSettingsStore.getCachedSettings(section_path);
+      if (cachedSettings && cachedSettings.length > 0) {
+        const minLengthSetting = cachedSettings.find(s => s.setting_name === 'password.min.length');
+        const lowercaseSetting = cachedSettings.find(s => s.setting_name === 'password.require.lowercase');
+        const uppercaseSetting = cachedSettings.find(s => s.setting_name === 'password.require.uppercase');
+        const numbersSetting = cachedSettings.find(s => s.setting_name === 'password.require.numbers');
+        const specialCharsSetting = cachedSettings.find(s => s.setting_name === 'password.require.special.chars');
+        const expirationSetting = cachedSettings.find(s => s.setting_name === 'password.expiration');
+        
+        if (minLengthSetting?.value !== undefined) passwordMinLength.value = minLengthSetting.value.toString();
+        if (lowercaseSetting?.value !== undefined) requireLowercase.value = lowercaseSetting.value;
+        if (uppercaseSetting?.value !== undefined) requireUppercase.value = uppercaseSetting.value;
+        if (numbersSetting?.value !== undefined) requireNumbers.value = numbersSetting.value;
+        if (specialCharsSetting?.value !== undefined) requireSpecialChars.value = specialCharsSetting.value;
+        if (expirationSetting?.value !== undefined) passwordExpiration.value = expirationSetting.value;
+      }
     } else {
-      console.log('No settings received for Password Policies');
+      console.log('No settings received for Password Policies - using defaults');
     }
   } catch (error) {
     console.error('Failed to load settings:', error);
@@ -193,6 +151,31 @@ async function loadSettings() {
     isLoadingSettings.value = false;
   }
 }
+
+// Watch for changes in local state and update store
+watch(passwordMinLength, (newValue) => {
+  updateSetting('password.min.length', newValue);
+});
+
+watch(requireLowercase, (newValue) => {
+  updateSetting('password.require.lowercase', newValue);
+});
+
+watch(requireUppercase, (newValue) => {
+  updateSetting('password.require.uppercase', newValue);
+});
+
+watch(requireNumbers, (newValue) => {
+  updateSetting('password.require.numbers', newValue);
+});
+
+watch(requireSpecialChars, (newValue) => {
+  updateSetting('password.require.special.chars', newValue);
+});
+
+watch(passwordExpiration, (newValue) => {
+  updateSetting('password.expiration', newValue);
+});
 
 // Watch for changes in loading state from the store
 watch(
@@ -270,6 +253,27 @@ onMounted(() => {
           class="mb-2"
         />
         
+        <v-tooltip
+          location="top"
+          max-width="400"
+        >
+          <template #activator="{ props }">
+            <v-icon 
+              icon="mdi-help-circle-outline" 
+              size="small" 
+              class="ms-2" 
+              color="teal-darken-2"
+              v-bind="props"
+            />
+          </template>
+          <div class="pa-2">
+            <p class="text-subtitle-2 mb-2">разрешенные специальные символы:</p>
+            <p class="text-caption">
+              ! @ # $ % ^ & * ( ) - _ = + [ ] { } | \ : ; " ' < > , . ? / ~ `
+            </p>
+          </div>
+        </v-tooltip>
+        
         <v-select
           v-model="passwordExpiration"
           :items="passwordExpirationOptions"
@@ -281,15 +285,17 @@ onMounted(() => {
           style="max-width: 200px;"
         />
         
-        <div class="d-flex align-start mt-4">
-          <v-switch
-            v-model="forcePasswordChangeAfterExpiration"
-            color="teal-darken-2"
-            label="принудительно требовать смену пароля после истечения срока"
-            hide-details
-            :disabled="passwordExpiration === 'never'"
-          />
-          <span class="text-caption text-grey ml-2 mt-2">функция в разработке</span>
+        <!-- Interactive password example -->
+        <div class="mt-6 pa-4 bg-grey-lighten-5 rounded">
+          <p class="text-body-2 text-grey-darken-1 mb-2">
+            пример пароля пользователя:
+          </p>
+          <p class="text-h6 font-weight-bold text-primary">
+            {{ generateExamplePassword }}
+          </p>
+          <p class="text-caption text-grey mt-2">
+            требования: {{ getPasswordRequirements }}
+          </p>
         </div>
       </div>
     </div>

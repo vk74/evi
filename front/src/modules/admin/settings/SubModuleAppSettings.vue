@@ -219,6 +219,52 @@
    return null;
  };
  
+ /**
+  * Helper function to find the first leaf section (section without children)
+  * starting from a given section
+  */
+ const findFirstLeafSection = (section: Section): string => {
+   if (!section.children || section.children.length === 0) {
+     return section.id;
+   }
+   
+   return findFirstLeafSection(section.children[0]);
+ };
+ 
+ /**
+  * Helper function to find the first leaf section in the entire sections tree
+  */
+ const findFirstLeafSectionInTree = (sectionList: Section[]): string => {
+   if (sectionList.length === 0) return '';
+   
+   return findFirstLeafSection(sectionList[0]);
+ };
+ 
+ /**
+  * Helper function to validate if a section exists in the tree
+  */
+ const isValidSection = (id: string): boolean => {
+   return findSectionById(id, sections.value) !== null;
+ };
+ 
+ /**
+  * Helper function to get all parent sections of a given section
+  */
+ const getParentSections = (id: string): string[] => {
+   const parts = id.split('.');
+   const parents: string[] = [];
+   
+   for (let i = 0; i < parts.length - 1; i++) {
+     if (i === 0) {
+       parents.push(parts[i]);
+     } else {
+       parents.push(parents[i - 1] + '.' + parts[i]);
+     }
+   }
+   
+   return parents;
+ };
+ 
  // Get the selected section object with fallback to avoid null reference errors
  const selectedSection = computed(() => {
    const section = findSectionById(selectedSectionPath.value, sections.value);
@@ -250,12 +296,32 @@
   * Handle section click
   */
  const handleSectionClick = (section: { id: string; hasChildren: boolean }) => {
-   // Set as selected
-   appSettingsStore.setSelectedSection(section.id);
-   
-   // Toggle expansion if it has children
    if (section.hasChildren) {
+     // Check if section is currently expanded
+     const isCurrentlyExpanded = expandedSections.value.includes(section.id);
+     
+     // Toggle the section (expand/collapse)
      appSettingsStore.toggleSection(section.id);
+     
+     // If we're expanding (was collapsed, now will be expanded)
+     if (!isCurrentlyExpanded) {
+       const sectionObj = findSectionById(section.id, sections.value);
+       if (sectionObj && sectionObj.children && sectionObj.children.length > 0) {
+         const firstChildId = findFirstLeafSection(sectionObj.children[0]);
+         appSettingsStore.setSelectedSection(firstChildId);
+         
+         // Expand all parent sections of the selected child
+         expandParentSections(firstChildId);
+       }
+     }
+     // If we're collapsing, we don't change the selected section
+     // The user can still see the content of the previously selected section
+   } else {
+     // If section has no children, just select it
+     appSettingsStore.setSelectedSection(section.id);
+     
+     // Expand all parent sections
+     expandParentSections(section.id);
    }
  };
  
@@ -303,13 +369,21 @@
  
  // On component mount
  onMounted(() => {
-   // If no section is selected in store, default to 'Application'
-   if (!selectedSectionPath.value) {
-     appSettingsStore.setSelectedSection('Application');
+   // Validate the saved section path
+   let validSectionPath = appSettingsStore.getSelectedSectionPath;
+   
+   if (!validSectionPath || !isValidSection(validSectionPath)) {
+     // If no section is selected or the section doesn't exist, select the first leaf section
+     validSectionPath = findFirstLeafSectionInTree(sections.value);
+     if (validSectionPath) {
+       appSettingsStore.setSelectedSection(validSectionPath);
+     }
    }
    
-   // Expand parent sections of the selected section
-   expandParentSections(selectedSectionPath.value);
+   // Expand all parent sections of the selected section
+   if (validSectionPath) {
+     expandParentSections(validSectionPath);
+   }
    
    // Load settings for initially selected section
    loadCurrentSectionSettings();
@@ -346,7 +420,7 @@
           <v-list-item
             v-for="section in flattenedSections"
             :key="section.id"
-            :class="['mobile-section-item', { 'section-active': section.id === selectedSectionPath.value }]"
+            :class="['mobile-section-item', { 'section-active': section.id === selectedSectionPath }]"
             :style="{ paddingLeft: `${16 + section.level * 20}px` }"
             @click="handleSectionClick(section)"
           >
@@ -383,7 +457,7 @@
             :class="[
               'section-item', 
               `level-${section.level}`,
-              { 'section-active': section.id === selectedSectionPath.value },
+              { 'section-active': section.id === selectedSectionPath },
               { 'has-children': section.hasChildren },
               { 'is-expanded': expandedSections.includes(section.id) },
               { 'is-last-in-level': section.isLastInLevel }
