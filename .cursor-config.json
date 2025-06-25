@@ -1,3 +1,47 @@
 {
-  "systemMessage": "You are assisting with a full-stack TypeScript project with a layered architecture and strict separation of responsibilities. The project is structured into two directories: 'front' (frontend) and 'back' (backend).\n\n— BACKEND RULES —\n• Project is fully migrated to TypeScript.\n• Follows single responsibility: each file (controller, service, cache, etc.) has a distinct purpose.\n• Common file roles:\n  1. types.ts — interfaces for validating incoming requests.\n  2. controller.ts — captures requests, validates them using types.ts, passes them to service.ts, and returns responses.\n  3. service.ts — contains business logic.\n  4. queries.ts — predefined SQL queries to prevent SQL injections.\n  5. cache.ts — temporary data store to reduce DB load.\n  6. helpers/core — auxiliary logic (e.g., centralized logger is replaced with event-driven logging).\n• Do not use classes; only use functions.\n• Do not delete or optimize code unless explicitly approved.\n• Logging: use event bus system. Emit module-specific events to an events factory. Logging is handled via subscriptions. Use console.log for debug only.\n• For Postgres tasks, use MCP server and #query to access 'maindb', app schema.\n• All comments must be in English.\n• Every file should start with a header comment including:\n  a. version number (e.g., 1.0.0 or incremented version)\n  b. explanation of the file purpose and logic\n  c. mention it's a backend file and include filename (without path)\n\n— FRONTEND RULES —\n• Project is partially migrated to TypeScript; some JS remains.\n• Files follow the same single responsibility principle.\n• File roles:\n  1. types.ts — defines data interfaces.\n  2. service.ts — manages business logic related to .vue components.\n  3. helpers/core — reusable logic or event buses.\n• Use CompositionAPI for Vue components.\n• Major functions should log to console.\n• Important actions (successes, errors) should use global snackbar from front/core/ui/snackbars.\n• Start with Russian interface text; i18n is added later.\n• All comments must be in English, explaining purpose of functions.\n• Every file should start with a header comment including:\n  a. version number\n  b. explanation of the file’s functionality\n  c. mention it’s a frontend file and include filename (without path)\n• Do not delete or optimize code unless explicitly approved.\n\n— GENERAL —\n• Communicate in Russian in chats, but write all code and comments in English.\n• Follow minimal-change principle and test each change thoroughly."
+  "systemMessage": "You are assisting with a full-stack TypeScript project with a layered architecture and strict separation of responsibilities. The project is structured into two directories: 'front' (frontend) and 'back' (backend).
+  
+  — BACKEND RULES 
+
+  • Project is fully migrated to TypeScript, don't write new files in js
+  • Architecture follows single responsibility files, each of them (controller, service, cache, etc.) has a distinct purpose.
+  • Common file roles:  
+    1. types.ts — interfaces for validating incoming requests.
+    2. controller.ts — captures requests, validates them using types.ts, passes them to service.ts, and returns responses.
+    3. service.ts — contains business logic.
+    4. queries.ts — predefined SQL queries to prevent SQL injections.
+    5. cache.ts — temporary data store to reduce DB load.
+    6. helpers/core — auxiliary logic (e.g., centralized logger is replaced with event-driven logging).
+  
+    • Do not use classes; only use functions.
+    • Do not delete or optimize code unless explicitly approved.
+    • Logging: use event bus system. Emit module-specific events to an events factory. Logging is handled via subscriptions. 
+    • For Postgres tasks, use MCP server and #query to access 'maindb', app schema.
+    • All comments must be in English.
+    • Every file should start with a header comment including:
+      a. version number (e.g., 1.0.0 or incremented version)
+      b. short explanation of the file purpose and logic
+      c. mention it's a backend file and include filename (without path)
+      
+  — FRONTEND RULES 
+  
+  • Project is partially migrated to TypeScript; some JS remains.
+  • Files follow the same single responsibility principle.
+  • File roles:
+    1. types.ts — defines data interfaces.
+    2. service.ts — manages business logic related to .vue components.
+    3. helpers/core — reusable logic or event buses.
+
+  • Use CompositionAPI for Vue components.
+  • Major functions should log to console.
+  • Important actions (successes, errors) should use global snackbar from front/core/ui/snackbars.
+  • Start with Russian interface text; i18n is added later.
+  • All comments must be in English, explaining purpose of functions.
+  • Every file should start with a header comment including:
+    a. version number
+    b. short explanation of the file purpose and logic
+    c. mention it's a frontend file and include filename (without path)
+  • Do not delete or optimize code unless explicitly approved.
+  • Communicate in Russian in chats, but write all code and comments in English.
+  • Follow minimal-change principle and test each change thoroughly."
 }

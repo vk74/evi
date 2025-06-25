@@ -2,18 +2,7 @@
  * @file UsersList.vue
  * Version: 1.0.07
  * Component for displaying and managing the system users list with server-side processing.
- *
- * Functionality:
- * - Display users in table format with server-side pagination
- * - Search by UUID, username, email, first_name, last_name fields (server-side)
- * - Sort by columns with server-side processing
- * - Edit users through UserEditor
- * - Reset user passwords through ChangePassword
- * - Optimized data caching (server-side)
- * - Sidebar for control elements placement (dynamic separation into general and item-specific)
- * - Custom paginator with full server-side pagination support (replaces built-in v-data-table paginator)
- * - Improved paginator interface with proper element positioning and right alignment
- * - Full interface localization with i18n support
+ * Features: pagination, search, sorting, user management operations (create, edit, delete, reset password).
  */
 <script setup lang="ts">
 import usersFetchService from './Service.fetch.users'
@@ -23,9 +12,7 @@ import { useI18n } from 'vue-i18n'
 import { useStoreUsersList } from './State.users.list'
 import type { 
   TableHeader, 
-  ItemsPerPageOption, 
-  IFetchUsersParams,
-  // ISortParams // No longer directly used here, managed by local refs
+  ItemsPerPageOption
 } from './Types.users.list'
 import { useUsersAdminStore } from '../state.users.admin'
 import loadUserService from '../UserEditor/service.load.user'
@@ -46,7 +33,7 @@ const userStore = useUserStore()
 // Table and search parameters
 const page = ref<number>(usersStore.page);
 const itemsPerPage = ref<ItemsPerPageOption>(usersStore.itemsPerPage as ItemsPerPageOption);
-const searchQuery = ref<string>(usersStore.search || ''); // Initialize with store's search
+const searchQuery = ref<string>(usersStore.search || '');
 const isSearching = ref<boolean>(false);
 
 // Sort tracking
@@ -77,25 +64,13 @@ const isSearchEnabled = computed(() =>
 
 // User action handlers
 const createUser = () => {
-  console.log('[ViewAllUsers] Starting create user operation')
-  
   try {
-    // Get UserEditor store
     const userEditorStore = useUserEditorStore()
-    
-    // Reset form to initial values
     userEditorStore.resetForm()
-    
-    // Set creation mode
-    userEditorStore.mode = {
-      mode: 'create'
-    }
-    
-    // Switch to user editor section
+    userEditorStore.mode = { mode: 'create' }
     usersSectionStore.setActiveSection('user-editor')
-    
   } catch (error) {
-    console.error('[ViewAllUsers] Error initializing create mode:', error)
+    console.error('[UsersList] Error initializing create mode:', error)
     uiStore.showErrorSnackbar(
       error instanceof Error ? error.message : 'Error initializing creation mode'
     )
@@ -123,22 +98,12 @@ const cancelDelete = () => {
 }
 
 const confirmDelete = async () => {
-  console.log('[ViewAllUsers] Starting confirmDelete operation')
-  
   try {
-    console.log('[ViewAllUsers] Calling delete service with selectedUsers:', usersStore.selectedUsers)
     const deletedCount = await deleteSelectedUsersService.deleteSelectedUsers(usersStore.selectedUsers)
-    console.log('[ViewAllUsers] Service returned deletedCount:', deletedCount)
-    
-    console.log('[ViewAllUsers] Preparing success message')
     const message = t('list.messages.deleteUsersSuccess', { count: deletedCount })
-    console.log('[ViewAllUsers] Success message prepared:', message)
-    
-    console.log('[ViewAllUsers] Showing success notification')
     uiStore.showSuccessSnackbar(message)
     
     // Update users list after deletion
-    // Fetch with current parameters to maintain view
     await usersFetchService.fetchUsers({
         page: page.value,
         itemsPerPage: itemsPerPage.value,
@@ -148,12 +113,11 @@ const confirmDelete = async () => {
     })
     
   } catch (error) {
-    console.error('[ViewAllUsers] Error during users deletion:', error)
+    console.error('[UsersList] Error during users deletion:', error)
     uiStore.showErrorSnackbar(
       error instanceof Error ? error.message : 'Error deleting users'
     )
   } finally {
-    console.log('[ViewAllUsers] Closing delete dialog')
     showDeleteDialog.value = false
     usersStore.clearSelection()
   }
@@ -169,72 +133,47 @@ const getStatusColor = (status: string) => {
   }
 };
 
-// Function to get ID of the single selected user
 const getSelectedUserId = (): string => {
-  console.log('[ViewAllUsers] Getting selected user ID')
   return usersStore.selectedUsers[0]
 }
 
-// Function to handle password reset button click
 const resetPassword = async () => {
-  console.log('[ViewAllUsers] Starting reset password operation')
-  
   try {
     const userId = getSelectedUserId()
-    console.log('[ViewAllUsers] Selected user ID for password reset:', userId)
-    
-    // Find selected user in current list
     const selectedUser = users.value.find(user => user.user_id === userId)
     
     if (selectedUser) {
-      // Save selected user data
       selectedUserData.value = {
         uuid: selectedUser.user_id,
         username: selectedUser.username
       }
-      
-      // Open password reset dialog
       showPasswordDialog.value = true
     } else {
-      console.error('[ViewAllUsers] Selected user not found in current list')
       uiStore.showErrorSnackbar('User not found in current list')
     }
   } catch (error) {
-    console.error('[ViewAllUsers] Error preparing password reset:', error)
+    console.error('[UsersList] Error preparing password reset:', error)
     uiStore.showErrorSnackbar(
       error instanceof Error ? error.message : 'Error preparing password reset'
     )
   }
 }
 
-// Function to handle edit button click
 const editUser = async () => {
-  console.log('[ViewAllUsers] Starting edit user operation')
-  
   try {
     const userId = getSelectedUserId()
-    console.log('[ViewAllUsers] Selected user ID:', userId)
-    
-    // Load user data
     await loadUserService.fetchUserById(userId)
-    console.log('[ViewAllUsers] User data loaded successfully')
-    
-    // Switch to editing
     usersSectionStore.setActiveSection('user-editor')
-    
   } catch (error) {
-    console.error('[ViewAllUsers] Error loading user data:', error)
+    console.error('[UsersList] Error loading user data:', error)
     uiStore.showErrorSnackbar(
       error instanceof Error ? error.message : 'Error loading user data'
     )
   }
 }
 
-// Function to force refresh the list
 const refreshList = async () => {
-  console.log('[ViewAllUsers] Forcing refresh of users list')
   try {
-    // Invalidate cache for current params and refetch
     usersStore.invalidateCache({
         page: page.value,
         itemsPerPage: itemsPerPage.value,
@@ -251,56 +190,35 @@ const refreshList = async () => {
     })
     uiStore.showSuccessSnackbar(t('list.messages.refreshSuccess'))
   } catch (error) {
-    console.error('[ViewAllUsers] Error refreshing users list:', error)
+    console.error('[UsersList] Error refreshing users list:', error)
     uiStore.showErrorSnackbar(
       error instanceof Error ? error.message : 'Error refreshing users list'
     )
   }
 }
 
-// Function to clear selected elements
 const clearSelections = () => {
-  console.log('[ViewAllUsers] Clearing all selections')
   usersStore.clearSelection()
   uiStore.showSuccessSnackbar(t('list.messages.clearSelectionsSuccess'))
 }
 
-// Define a more specific type for sortByInfo from v-data-table options
+// Type for v-data-table sort options
 type VDataTableSortByItem = { key: string; order: 'asc' | 'desc' };
 
-// New handler for @update:options with proper server-side pagination handling
+// Handler for v-data-table options changes
 const updateOptionsAndFetch = async (options: { page?: number, itemsPerPage?: number, sortBy?: Readonly<VDataTableSortByItem[]> }) => {
-  console.log('[ViewAllUsers] @update:options triggered with:', JSON.parse(JSON.stringify(options)));
-  console.log('[ViewAllUsers] Current state before update:', {
-    page: page.value,
-    itemsPerPage: itemsPerPage.value,
-    totalItems: totalItems.value,
-    usersCount: users.value.length
-  });
-
   let needsFetch = false;
-  let pageChanged = false;
-  let itemsPerPageChanged = false;
-  let sortChanged = false;
 
   // Handle page changes
   if (options.page !== undefined && page.value !== options.page) {
-    console.log('[ViewAllUsers] Page changed from', page.value, 'to', options.page);
     page.value = options.page;
-    pageChanged = true;
     needsFetch = true;
   }
 
   // Handle items per page changes
   if (options.itemsPerPage !== undefined && itemsPerPage.value !== options.itemsPerPage) {
-    console.log('[ViewAllUsers] Items per page changed from', itemsPerPage.value, 'to', options.itemsPerPage);
     itemsPerPage.value = options.itemsPerPage as ItemsPerPageOption;
-    itemsPerPageChanged = true;
-    // Reset to page 1 when changing items per page
-    if (page.value !== 1) {
-      page.value = 1;
-      pageChanged = true;
-    }
+    page.value = 1; // Reset to page 1
     needsFetch = true;
   }
 
@@ -309,86 +227,56 @@ const updateOptionsAndFetch = async (options: { page?: number, itemsPerPage?: nu
     if (options.sortBy.length > 0) {
       const sortItem = options.sortBy[0];
       if (sortBy.value !== sortItem.key || sortDesc.value !== (sortItem.order === 'desc')) {
-        console.log('[ViewAllUsers] Sort changed from', { key: sortBy.value, desc: sortDesc.value }, 'to', { key: sortItem.key, desc: sortItem.order === 'desc' });
         sortBy.value = sortItem.key;
         sortDesc.value = sortItem.order === 'desc';
-        sortChanged = true;
-        // Reset to page 1 when changing sort
-        if (page.value !== 1) {
-          page.value = 1;
-          pageChanged = true;
-        }
+        page.value = 1; // Reset to page 1
         needsFetch = true;
       }
-    } else if (sortBy.value !== null) { // If sortBy is cleared
-      console.log('[ViewAllUsers] Sort cleared');
+    } else if (sortBy.value !== null) {
       sortBy.value = null;
       sortDesc.value = false;
-      sortChanged = true;
-      if (page.value !== 1) {
-        page.value = 1;
-        pageChanged = true;
-      }
+      page.value = 1;
       needsFetch = true;
     }
   }
 
   if (needsFetch) {
-    const fetchParams = {
-      page: page.value,
-      itemsPerPage: itemsPerPage.value,
-      sortBy: sortBy.value || '',
-      sortDesc: sortDesc.value,
-      search: searchQuery.value
-    };
-    
-    console.log('[ViewAllUsers] Fetching users due to options change:', {
-      ...fetchParams,
-      changes: { pageChanged, itemsPerPageChanged, sortChanged }
-    });
-    
     try {
-      await usersFetchService.fetchUsers(fetchParams);
-      
-      console.log('[ViewAllUsers] Fetch completed. New state:', {
+      await usersFetchService.fetchUsers({
         page: page.value,
         itemsPerPage: itemsPerPage.value,
-        totalItems: totalItems.value,
-        usersCount: users.value.length
+        sortBy: sortBy.value || '',
+        sortDesc: sortDesc.value,
+        search: searchQuery.value
       });
     } catch (error) {
-      console.error('[ViewAllUsers] Error fetching users after options change:', error);
+      console.error('[UsersList] Error fetching users after options change:', error);
       uiStore.showErrorSnackbar(
         error instanceof Error ? error.message : 'Error fetching users after options change'
       );
     }
-  } else {
-    console.log('[ViewAllUsers] No fetch needed, options did not result in state change requiring fetch.');
   }
 }
 
-// Function to perform search with debounce
+// Search functionality
 const performSearch = async () => {
   if (!isSearchEnabled.value && searchQuery.value.length === 1) {
-    console.log('[ViewAllUsers] Search query too short, not performing search.');
-    return // Don't perform search if string length is 1
+    return
   }
   
-  console.log('[ViewAllUsers] Performing search for:', searchQuery.value);
   isSearching.value = true
   
   try {
-    // When searching, reset page to first
     page.value = 1
     await usersFetchService.fetchUsers({
       search: searchQuery.value,
-      page: 1, // Reset to page 1 on new search
+      page: 1,
       itemsPerPage: itemsPerPage.value,
       sortBy: sortBy.value || '',
       sortDesc: sortDesc.value
     })
   } catch (error) {
-    console.error('[ViewAllUsers] Error performing search:', error)
+    console.error('[UsersList] Error performing search:', error)
     uiStore.showErrorSnackbar(
       error instanceof Error ? error.message : 'Error performing search'
     )
@@ -397,33 +285,24 @@ const performSearch = async () => {
   }
 }
 
-// Create debounced version of search function
-const debouncedSearch = debounce(performSearch, 500) // Updated to 500ms
+const debouncedSearch = debounce(performSearch, 500)
 
-// Listen for search string changes
-watch(searchQuery, (newValue, oldValue) => {
-  console.log('[ViewAllUsers] Search query changed from', oldValue, 'to', newValue);
+watch(searchQuery, () => {
   debouncedSearch()
 })
 
-// Add handler for clearing search field
 const handleClearSearch = () => {
-  console.log('[ViewAllUsers] Search cleared');
-  // When clicking the close icon, simply clear the field, 
-  // Search with empty string will be triggered through regular watch with debounce
   searchQuery.value = '' 
 }
 
-// Enter key handler for search field
 const handleSearchKeydown = (event: KeyboardEvent) => {
   if (event.key === 'Enter') {
-    console.log('[ViewAllUsers] Enter pressed in search, flushing debounce');
-    debouncedSearch.cancel(); // Cancel any pending debounced calls
-    performSearch(); // Perform search immediately
+    debouncedSearch.cancel();
+    performSearch();
   }
 }
 
-// Define table columns
+// Table headers
 const headers = computed<TableHeader[]>(() => [
   { 
     title: t('list.table.headers.select'), 
@@ -471,29 +350,9 @@ const headers = computed<TableHeader[]>(() => [
   }
 ])
 
-// Function to log pagination state with detailed information
-const logPaginationState = (source: string) => {
-  console.log(`[DEBUG-PAGINATION] [${source}] State:`, {
-    page: page.value,
-    itemsPerPage: itemsPerPage.value,
-    totalItems: totalItems.value,
-    userStorePage: usersStore.page,
-    userStoreItemsPerPage: usersStore.itemsPerPage,
-    sortBy: sortBy.value,
-    sortDesc: sortDesc.value,
-    search: searchQuery.value,
-    usersCount: users.value.length,
-    expectedPageCount: Math.ceil(totalItems.value / itemsPerPage.value)
-  });
-}
-
 // Initialize on mount
 onMounted(async () => {
-  console.log('[ViewAllUsers] Component mounted, initializing...')
-  logPaginationState('onMounted-before');
-  
   try {
-    // Ensure initial parameters are properly set
     const initialParams = {
       page: page.value,
       itemsPerPage: itemsPerPage.value,
@@ -502,68 +361,49 @@ onMounted(async () => {
       search: searchQuery.value
     };
     
-    console.log('[ViewAllUsers] Initial parameters:', initialParams);
-    
-    // Load initial data, using current values (including from store)
     await usersFetchService.fetchUsers(initialParams)
-
-    logPaginationState('onMounted-after');
   } catch (error) {
-    console.error('[ViewAllUsers] Error loading initial users list:', error)
+    console.error('[UsersList] Error loading initial users list:', error)
     uiStore.showErrorSnackbar(
       error instanceof Error ? error.message : 'Error loading initial users list'
     )
   }
 })
 
-// Functions for custom paginator
-/**
- * Gets current page information for display
- */
+// Custom paginator functions
 const getPaginationInfo = () => {
   const start = (page.value - 1) * itemsPerPage.value + 1;
   const end = Math.min(page.value * itemsPerPage.value, totalItems.value);
   return t('pagination.recordsInfo', { start, end, total: totalItems.value });
 };
 
-/**
- * Calculates total page count
- */
 const getTotalPages = () => {
   return Math.ceil(totalItems.value / itemsPerPage.value);
 };
 
-/**
- * Gets visible page numbers for display
- */
 const getVisiblePages = () => {
   const totalPages = getTotalPages();
   const currentPage = page.value;
   const pages: (number | string)[] = [];
   
   if (totalPages <= 7) {
-    // If pages are few, show all
     for (let i = 1; i <= totalPages; i++) {
       pages.push(i);
     }
   } else {
-    // If pages are many, show smart pagination
     if (currentPage <= 4) {
-      // At the beginning
       for (let i = 1; i <= 5; i++) {
         pages.push(i);
       }
       pages.push('...');
       pages.push(totalPages);
     } else if (currentPage >= totalPages - 3) {
-      // At the end
       pages.push(1);
       pages.push('...');
       for (let i = totalPages - 4; i <= totalPages; i++) {
         pages.push(i);
       }
     } else {
-      // In the middle
       pages.push(1);
       pages.push('...');
       for (let i = currentPage - 1; i <= currentPage + 1; i++) {
@@ -577,19 +417,8 @@ const getVisiblePages = () => {
   return pages;
 };
 
-/**
- * Navigates to specified page
- */
 const goToPage = async (newPage: number) => {
-  console.log('[ViewAllUsers] Going to page:', newPage);
-  
-  if (newPage < 1 || newPage > getTotalPages()) {
-    console.warn('[ViewAllUsers] Invalid page number:', newPage);
-    return;
-  }
-  
-  if (newPage === page.value) {
-    console.log('[ViewAllUsers] Already on page:', newPage);
+  if (newPage < 1 || newPage > getTotalPages() || newPage === page.value) {
     return;
   }
   
@@ -603,24 +432,17 @@ const goToPage = async (newPage: number) => {
       sortDesc: sortDesc.value,
       search: searchQuery.value
     });
-    
-    console.log('[ViewAllUsers] Successfully navigated to page:', newPage);
   } catch (error) {
-    console.error('[ViewAllUsers] Error navigating to page:', error);
+    console.error('[UsersList] Error navigating to page:', error);
     uiStore.showErrorSnackbar(
       error instanceof Error ? error.message : t('pagination.errors.navigationError')
     );
   }
 };
 
-/**
- * Handler for changing record count per page
- */
 const handleItemsPerPageChange = async (newItemsPerPage: ItemsPerPageOption) => {
-  console.log('[ViewAllUsers] Items per page changed to:', newItemsPerPage);
-  
   itemsPerPage.value = newItemsPerPage;
-  page.value = 1; // Reset to first page
+  page.value = 1;
   
   try {
     await usersFetchService.fetchUsers({
@@ -630,10 +452,8 @@ const handleItemsPerPageChange = async (newItemsPerPage: ItemsPerPageOption) => 
       sortDesc: sortDesc.value,
       search: searchQuery.value
     });
-    
-    console.log('[ViewAllUsers] Successfully changed items per page to:', newItemsPerPage);
   } catch (error) {
-    console.error('[ViewAllUsers] Error changing items per page:', error);
+    console.error('[UsersList] Error changing items per page:', error);
     uiStore.showErrorSnackbar(
       error instanceof Error ? error.message : t('pagination.errors.itemsPerPageError')
     );
