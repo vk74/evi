@@ -44,6 +44,9 @@ import loggerSubscriptions from '@/core/logger/subscriptions.logger';
 // Import database functions
 import { insertData, getLocations } from '@/core/db/database';
 
+// Import cache helpers
+import { initCache as initHelpersCache } from '@/core/helpers/cache.helpers';
+
 // Define global declarations for TypeScript
 declare global {
   var privateKey: string;
@@ -105,7 +108,10 @@ const checkServerReady = (req: Request, res: Response, next: NextFunction): void
 async function initializeServer(): Promise<void> {
   try {
     console.log('Starting server initialization');
-    
+
+    // 0. Initialize helpers cache
+    initHelpersCache();
+
     // 1. Loading private key
     const privateKeyPath = './src/keys/private_key.pem';
     const privateKey = fs.readFileSync(privateKeyPath, 'utf8');
@@ -122,6 +128,7 @@ async function initializeServer(): Promise<void> {
     
     await loadSettings();
     settingsLoaded = true;
+    console.log('[Server] System settings loaded and ready');
     // No duplicate logging here, as loadSettings already logs success message
 
     // 3. Initialize event system - event bus, index, cache and event factory

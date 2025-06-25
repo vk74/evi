@@ -34,16 +34,14 @@ function generateCacheKey(sectionPath: string, settingName: string): string {
  */
 export function setCache(settings: AppSetting[]): void {
   settingsCache = settings.reduce((cache, setting) => {
-    // Use both section_path and setting_name to create unique key
     const cacheKey = generateCacheKey(setting.section_path, setting.setting_name);
     cache[cacheKey] = setting;
     return cache;
   }, {} as SettingsCache);
-  
-  logMessage('INFO', 'Settings cache updated', { 
-    settingsCount: settings.length,
-    sections: [...new Set(settings.map(s => s.section_path))]
-  });
+
+  const sectionSet = new Set(settings.map(s => s.section_path));
+  console.log(`[SettingsCache] Cache updated: ${settings.length} settings, ${sectionSet.size} sections`);
+  console.log(`[SettingsCache] Sections:`, Array.from(sectionSet));
 }
 
 /**
@@ -51,7 +49,7 @@ export function setCache(settings: AppSetting[]): void {
  */
 export function clearCache(): void {
   settingsCache = {};
-  logMessage('INFO', 'Settings cache cleared');
+  console.warn('[SettingsCache] Cache cleared');
 }
 
 /**
@@ -63,9 +61,9 @@ export function clearCache(): void {
 export function getSetting(sectionPath: string, settingName: string): AppSetting | null {
   const cacheKey = generateCacheKey(sectionPath, settingName);
   const setting = settingsCache[cacheKey];
-  
+
   if (!setting) {
-    logMessage('WARN', 'Setting not found in cache', { sectionPath, settingName });
+    console.warn('[SettingsCache] Setting not found in cache:', { sectionPath, settingName });
     return null;
   }
 
@@ -98,10 +96,9 @@ export function hasSetting(sectionPath: string, settingName: string): boolean {
  */
 export function parseSettingValue(setting: AppSetting): any {
   try {
-    // Value is already stored as a proper type in jsonb field
     return setting.value !== null ? setting.value : setting.default_value;
   } catch (error) {
-    logMessage('ERROR', 'Error parsing setting value', {
+    console.error('[SettingsCache] Error parsing setting value:', {
       settingName: setting.setting_name,
       error: error instanceof Error ? error.message : error
     });
@@ -116,14 +113,7 @@ export function parseSettingValue(setting: AppSetting): any {
  */
 export function updateCachedSetting(setting: AppSetting): boolean {
   const cacheKey = generateCacheKey(setting.section_path, setting.setting_name);
-  
-  // Update the setting in cache
   settingsCache[cacheKey] = setting;
-  
-  logMessage('DEBUG', 'Setting updated in cache', { 
-    sectionPath: setting.section_path,
-    settingName: setting.setting_name 
-  });
-  
+  console.log(`[SettingsCache] Setting updated: ${setting.section_path}/${setting.setting_name}`);
   return true;
 }

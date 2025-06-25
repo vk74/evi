@@ -154,7 +154,7 @@ async function loadSettings() {
 
 // Watch for changes in local state and update store
 watch(passwordMinLength, (newValue) => {
-  updateSetting('password.min.length', newValue);
+  updateSetting('password.min.length', Number(newValue));
 });
 
 watch(requireLowercase, (newValue) => {

@@ -15,28 +15,15 @@ import { setCache, clearCache } from './cache.settings';
 const pool = pgPool as Pool;
 
 /**
- * Helper function for consistent log format
- * @param level Log level (INFO, WARN, ERROR)
- * @param message Message to log
- * @param details Optional details to include
- */
-function logMessage(level: string, message: string, details?: any): void {
-  console.log(`[${new Date().toISOString()}] [${level}] [SettingsLoader] ${message}`, details || '');
-}
-
-/**
  * Load all settings from database into cache
  */
 export async function loadSettings(): Promise<void> {
   try {
-    logMessage('INFO', 'Starting to load settings from database');
-
     const result: QueryResult = await pool.query(queries.getAllSettings.text);
     
     if (!result.rows || result.rows.length === 0) {
-      logMessage('WARN', 'No settings found in database');
-      // Clear cache if no settings
       clearCache();
+      console.warn('[Settings] No settings found in database');
       return;
     }
 
@@ -54,14 +41,11 @@ export async function loadSettings(): Promise<void> {
     // Update the centralized cache
     setCache(settings);
     
-    logMessage('INFO', `Settings loaded successfully, number of loaded settings: ${settings.length}`);
+    console.log(`[Settings] Loaded ${settings.length} settings from database`);
+    console.log('[Settings] System settings are ready for use');
 
   } catch (error) {
-    logMessage('ERROR', 'Error loading settings', {
-      errorMessage: error instanceof Error ? error.message : 'Unknown error',
-      stack: error instanceof Error ? error.stack : undefined
-    });
-    
+    console.error('[Settings] Error loading settings:', error);
     const settingsError: SettingsError = {
       code: 'DB_ERROR',
       message: error instanceof Error ? error.message : 'Failed to load settings from database',
@@ -75,7 +59,7 @@ export async function loadSettings(): Promise<void> {
  * Force reload all settings from database
  */
 export async function reloadSettings(): Promise<void> {
-  logMessage('INFO', 'Force reloading settings from database');
+  console.log('[Settings] Force reloading settings from database');
   await loadSettings();
 }
 
@@ -85,16 +69,11 @@ export async function reloadSettings(): Promise<void> {
  */
 export async function initializeSettings(): Promise<void> {
   try {
-    logMessage('INFO', 'Initializing settings module');
-    
+    console.log('[Settings] Initializing settings module');
     await loadSettings();
-    
-    logMessage('INFO', 'Settings module initialized successfully');
+    console.log('[Settings] Settings module initialized successfully');
   } catch (error) {
-    logMessage('ERROR', 'Failed to initialize settings module', {
-      errorMessage: error instanceof Error ? error.message : 'Unknown error',
-      stack: error instanceof Error ? error.stack : undefined
-    });
+    console.error('[Settings] Failed to initialize settings module:', error);
     throw error;
   }
 }

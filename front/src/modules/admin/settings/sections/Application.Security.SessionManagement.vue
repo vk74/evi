@@ -32,7 +32,11 @@ const sessionDurationOptions = [
   { title: '4 часа', value: '240' },
   { title: '8 часов', value: '480' },
   { title: '12 часов', value: '720' },
-  { title: '1 сутки', value: '1440' }
+  { title: '1 сутки', value: '1440' },
+  { title: '2 суток', value: '2880' },
+  { title: '3 суток', value: '4320' },
+  { title: '5 суток', value: '7200' },
+  { title: 'неделя', value: '10080' }
 ];
 
 /**
@@ -54,26 +58,7 @@ const sessionDuration = computed({
   },
   set: (newValue) => {
     console.log('Setting session.duration value changed to:', newValue);
-    updateSettingFromComponent(section_path, 'session.duration', newValue);
-  }
-});
-
-const unlimitedSession = computed({
-  get: () => {
-    const settings = appSettingsStore.getCachedSettings(section_path);
-    if (!settings || settings.length === 0) return false;
-    
-    const setting = settings.find(s => s.setting_name === 'session.unlimited');
-    const value = setting?.value !== undefined && setting?.value !== null 
-      ? setting.value 
-      : false;
-    
-    console.log('Computed setting "session.unlimited" value:', value);
-    return value;
-  },
-  set: (newValue) => {
-    console.log('Setting session.unlimited value changed to:', newValue);
-    updateSettingFromComponent(section_path, 'session.unlimited', newValue);
+    updateSettingFromComponent(section_path, 'session.duration', Number(newValue));
   }
 });
 
@@ -179,9 +164,7 @@ onMounted(() => {
             density="comfortable"
             color="teal-darken-2"
             style="max-width: 200px;"
-            :disabled="unlimitedSession"
           />
-          
           <v-tooltip
             location="top"
             max-width="300"
@@ -200,24 +183,16 @@ onMounted(() => {
             </div>
           </v-tooltip>
         </div>
-        
-        <div class="mb-4">
-          <v-checkbox
-            v-model="unlimitedSession"
+        <div class="d-flex align-center mb-2">
+          <v-switch
+            v-model="concurrentSessions"
             color="teal-darken-2"
-            label="сессия без ограничения по времени"
+            label="разрешить одновременные сессии"
             hide-details
+            class="mb-2"
           />
+          <span class="text-caption text-grey ms-3">функция находится в разработке</span>
         </div>
-        
-        <v-switch
-          v-model="concurrentSessions"
-          color="teal-darken-2"
-          label="разрешить одновременные сессии"
-          hide-details
-          class="mb-2"
-        />
-        
         <div class="d-flex align-center">
           <v-text-field
             v-model="maxSessionsPerUser"
@@ -228,8 +203,9 @@ onMounted(() => {
             class="mt-4"
             color="teal-darken-2"
             :disabled="!concurrentSessions"
-            style="max-width: 200px;"
+            style="max-width: 400px;"
           />
+          <span class="text-caption text-grey ms-3">функция находится в разработке</span>
         </div>
       </div>
     </div>

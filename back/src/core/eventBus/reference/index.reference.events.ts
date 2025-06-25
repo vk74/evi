@@ -5,6 +5,7 @@
 import path from 'path';
 import { EventSchema, EventObject, EventCollection } from '../types.events';
 import { initializeEventCache } from './cache.reference.events';
+import fs from 'fs';
 
 /**
  * Registry of event reference files
@@ -107,6 +108,8 @@ export const buildEventReferences = async (): Promise<Record<string, Record<stri
   }
   
   const references: Record<string, Record<string, EventSchema>> = {};
+  const domainsWithErrors: string[] = [];
+  let totalEvents = 0;
   
   // Process each domain
   for (const [domain, files] of Object.entries(eventReferenceFiles)) {
@@ -117,6 +120,11 @@ export const buildEventReferences = async (): Promise<Record<string, Record<stri
     // Process each file in the domain
     for (const filePath of files) {
       try {
+        if (!fs.existsSync(filePath)) {
+          console.warn(`[EventReference] File not found for domain '${domain}': ${filePath}`);
+          domainsWithErrors.push(domain);
+          continue;
+        }
         // Dynamically import the module using ES modules syntax
         const eventModule = await import(filePath);
         
@@ -142,18 +150,28 @@ export const buildEventReferences = async (): Promise<Record<string, Record<stri
                     version: event.version || '1.0.0',
                     description: event.eventMessage || ''
                   };
+                  totalEvents++;
                 }
               }
             });
           }
         });
       } catch (error) {
-        console.error(`Error loading event references from ${filePath}:`, error);
+        console.warn(`[EventReference] Error loading event references from ${filePath}:`, error);
+        domainsWithErrors.push(domain);
       }
     }
   }
   
   eventReferencesCache = references;
+  
+  // Статистика по доменам и событиям
+  const loadedDomains = Object.keys(references).filter(domain => Object.keys(references[domain]).length > 0);
+  console.log(`[EventReference] Built references: ${loadedDomains.length} domains, ${totalEvents} events`);
+  if (domainsWithErrors.length > 0) {
+    const uniqueDomains = Array.from(new Set(domainsWithErrors));
+    console.warn(`[EventReference] Domains with errors or missing files:`, uniqueDomains);
+  }
   return references;
 };
 

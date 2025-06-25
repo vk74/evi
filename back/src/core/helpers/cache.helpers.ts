@@ -72,14 +72,10 @@ const cacheStats: Record<string, CacheStats> = {
 };
 
 // Initialize the cache and start periodic stats logging
-function initCache(): void {
-  lgr.info({
-    code: Events.CORE.HELPERS.CACHE.INIT.SUCCESS.code,
-    message: 'Helper cache initialized successfully',
-    details: {
-      cacheTypes: Object.keys(cacheStorage),
-      config: cacheConfig
-    }
+export function initCache(): void {
+  console.log('[HelpersCache] Initialized successfully', {
+    cacheTypes: Object.keys(cacheStorage),
+    config: cacheConfig
   });
 
   // Set up periodic stats logging (every 10 minutes)
@@ -323,28 +319,8 @@ export function clearAll(): void {
  * Log cache statistics
  */
 function logStats(): void {
-  const stats: Record<string, any> = {};
-  
-  for (const type of Object.values(CACHE_TYPES)) {
-    const typeStats = cacheStats[type];
-    const total = typeStats.hits + typeStats.misses;
-    const hitRatio = total > 0 ? (typeStats.hits / total) * 100 : 0;
-    
-    stats[type] = {
-      hits: typeStats.hits,
-      misses: typeStats.misses,
-      total,
-      hitRatio: `${hitRatio.toFixed(2)}%`,
-      size: typeStats.size,
-      limit: cacheConfig[type].limit
-    };
-  }
-  
-  lgr.debug({
-    code: Events.CORE.HELPERS.CACHE.STATS.REPORT.code,
-    message: 'Cache statistics report',
-    details: { stats }
-  });
+  const stats = Object.entries(cacheStats).map(([type, stat]) => ({ type, ...stat }));
+  console.log('[HelpersCache] Stats:', stats);
 }
 
 // Helper functions for constructing cache keys
@@ -354,9 +330,6 @@ export const CacheKeys = {
   forUserAdmin: (uuid: string): string => `${CACHE_TYPES.USER_ADMIN}${uuid}`,
   forUserName: (uuid: string): string => `${CACHE_TYPES.USER_NAME}${uuid}`
 };
-
-// Initialize cache on module load
-initCache();
 
 // Export CACHE_TYPES for use in other modules
 export { CACHE_TYPES };
