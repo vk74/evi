@@ -8,6 +8,7 @@
 
 <script setup lang="ts">
 import { computed, onMounted, watch, ref } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { useAppSettingsStore } from '@/modules/admin/settings/state.app.settings';
 import { fetchSettings } from '@/modules/admin/settings/service.fetch.settings';
 import { updateSettingFromComponent } from '@/modules/admin/settings/service.update.settings';
@@ -19,6 +20,9 @@ const section_path = 'Application.Security.PasswordPolicies';
 // Store reference
 const appSettingsStore = useAppSettingsStore();
 
+// Translations
+const { t, locale } = useI18n();
+
 // Loading state
 const isLoadingSettings = ref(true);
 
@@ -28,20 +32,9 @@ const requireLowercase = ref(true);
 const requireUppercase = ref(true);
 const requireNumbers = ref(true);
 const requireSpecialChars = ref(false);
-const passwordExpiration = ref('90 days');
 
 // Password length options (4 to 40 characters)
 const passwordLengthOptions = Array.from({ length: 37 }, (_, i) => (i + 4).toString());
-
-// Password expiration options
-const passwordExpirationOptions = [
-  'never',
-  '30 days',
-  '60 days',
-  '90 days',
-  '180 days',
-  '1 year'
-];
 
 /**
  * Update setting in store when local state changes
@@ -94,19 +87,19 @@ const getPasswordRequirements = computed(() => {
   requirements.push(`минимум ${passwordMinLength.value} символов`);
   
   if (requireLowercase.value) {
-    requirements.push('строчные буквы');
+    requirements.push(t('admin.settings.application.security.passwordpolicies.require.lowercase.label'));
   }
   
   if (requireUppercase.value) {
-    requirements.push('заглавные буквы');
+    requirements.push(t('admin.settings.application.security.passwordpolicies.require.uppercase.label'));
   }
   
   if (requireNumbers.value) {
-    requirements.push('цифры');
+    requirements.push(t('admin.settings.application.security.passwordpolicies.require.numbers.label'));
   }
   
   if (requireSpecialChars.value) {
-    requirements.push('специальные символы');
+    requirements.push(t('admin.settings.application.security.passwordpolicies.require.specialchars.label'));
   }
   
   return requirements.join(', ');
@@ -133,14 +126,12 @@ async function loadSettings() {
         const uppercaseSetting = cachedSettings.find(s => s.setting_name === 'password.require.uppercase');
         const numbersSetting = cachedSettings.find(s => s.setting_name === 'password.require.numbers');
         const specialCharsSetting = cachedSettings.find(s => s.setting_name === 'password.require.special.chars');
-        const expirationSetting = cachedSettings.find(s => s.setting_name === 'password.expiration');
         
         if (minLengthSetting?.value !== undefined) passwordMinLength.value = minLengthSetting.value.toString();
         if (lowercaseSetting?.value !== undefined) requireLowercase.value = lowercaseSetting.value;
         if (uppercaseSetting?.value !== undefined) requireUppercase.value = uppercaseSetting.value;
         if (numbersSetting?.value !== undefined) requireNumbers.value = numbersSetting.value;
         if (specialCharsSetting?.value !== undefined) requireSpecialChars.value = specialCharsSetting.value;
-        if (expirationSetting?.value !== undefined) passwordExpiration.value = expirationSetting.value;
       }
     } else {
       console.log('No settings received for Password Policies - using defaults');
@@ -173,10 +164,6 @@ watch(requireSpecialChars, (newValue) => {
   updateSetting('password.require.special.chars', newValue);
 });
 
-watch(passwordExpiration, (newValue) => {
-  updateSetting('password.expiration', newValue);
-});
-
 // Watch for changes in loading state from the store
 watch(
   () => appSettingsStore.isLoading,
@@ -195,7 +182,7 @@ onMounted(() => {
 <template>
   <div class="password-policies-container">
     <h2 class="text-h6 mb-4">
-      политика паролей
+      {{ t('admin.settings.application.security.passwordpolicies.title') }}
     </h2>
     
     <!-- Loading indicator -->
@@ -213,7 +200,7 @@ onMounted(() => {
         <v-select
           v-model="passwordMinLength"
           :items="passwordLengthOptions"
-          label="минимальная длина пароля"
+          :label="t('admin.settings.application.security.passwordpolicies.minlength.label')"
           variant="outlined"
           density="comfortable"
           class="mb-4"
@@ -224,7 +211,7 @@ onMounted(() => {
         <v-switch
           v-model="requireLowercase"
           color="teal-darken-2"
-          label="требовать строчные буквы"
+          :label="t('admin.settings.application.security.passwordpolicies.require.lowercase.label')"
           hide-details
           class="mb-2"
         />
@@ -232,7 +219,7 @@ onMounted(() => {
         <v-switch
           v-model="requireUppercase"
           color="teal-darken-2"
-          label="требовать заглавные буквы"
+          :label="t('admin.settings.application.security.passwordpolicies.require.uppercase.label')"
           hide-details
           class="mb-2"
         />
@@ -240,7 +227,7 @@ onMounted(() => {
         <v-switch
           v-model="requireNumbers"
           color="teal-darken-2"
-          label="требовать цифры"
+          :label="t('admin.settings.application.security.passwordpolicies.require.numbers.label')"
           hide-details
           class="mb-2"
         />
@@ -249,7 +236,7 @@ onMounted(() => {
           <v-switch
             v-model="requireSpecialChars"
             color="teal-darken-2"
-            label="требовать специальные символы"
+            :label="t('admin.settings.application.security.passwordpolicies.require.specialchars.label')"
             hide-details
           />
           <v-tooltip
@@ -266,37 +253,24 @@ onMounted(() => {
               />
             </template>
             <div class="pa-2">
-              <p class="text-subtitle-2 mb-2">разрешенные специальные символы:</p>
+              <p class="text-subtitle-2 mb-2">{{ t('admin.settings.application.security.passwordpolicies.specialchars.allowed.title') }}</p>
               <p class="text-caption">
-                ! @ # $ % ^ & * ( ) - _ = + [ ] { } | \ : ; " ' < > , . ? / ~ `
+                {{ t('admin.settings.application.security.passwordpolicies.specialchars.list') }}
               </p>
             </div>
           </v-tooltip>
         </div>
         
-        <div class="d-flex align-center mt-4 mb-4" style="max-width: 400px;">
-          <v-select
-            v-model="passwordExpiration"
-            :items="passwordExpirationOptions"
-            label="срок действия пароля"
-            variant="outlined"
-            density="comfortable"
-            color="teal-darken-2"
-            style="max-width: 200px;"
-          />
-          <span class="text-caption text-grey ms-3">эта настройка находится в разработке</span>
-        </div>
-        
         <!-- Interactive password example -->
         <div class="mt-6 pa-4 bg-grey-lighten-5 rounded">
           <p class="text-body-2 text-grey-darken-1 mb-2">
-            пример пароля пользователя:
+            {{ t('admin.settings.application.security.passwordpolicies.example.title') }}
           </p>
           <p class="text-h6 font-weight-bold text-primary">
             {{ generateExamplePassword }}
           </p>
           <p class="text-caption text-grey mt-2">
-            требования: {{ getPasswordRequirements }}
+            {{ t('admin.settings.application.security.passwordpolicies.requirements.label') }} {{ getPasswordRequirements }}
           </p>
         </div>
       </div>

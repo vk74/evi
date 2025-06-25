@@ -23,6 +23,9 @@ import groupsListEn from '@/modules/admin/users/GroupsList/translation.groups.li
 
 import groupsEditorEn from '@/modules/admin/users/GroupEditor/translation.group.editor.en.json'
 import groupsEditorRu from '@/modules/admin/users/GroupEditor/translation.group.editor.ru.json'
+
+import settingsRu from '@/modules/admin/settings/translation.settings.ru.json'
+import settingsEn from '@/modules/admin/settings/translation.settings.en.json'
 // 
 
 // validation rules
@@ -39,7 +42,8 @@ export default {
       usersListRu,
       validationCommonFieldsRulesRu,
       groupsListRu,
-      groupsEditorRu
+      groupsEditorRu,
+      settingsRu
     ),
     en: merge({},
       appTranslationsEn,
@@ -49,6 +53,7 @@ export default {
       usersListEn,
       validationCommonFieldsRulesEn,
       groupsListEn,
-      groupsEditorEn
+      groupsEditorEn,
+      settingsEn
     )
   }

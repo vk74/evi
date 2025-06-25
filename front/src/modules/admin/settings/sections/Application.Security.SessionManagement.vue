@@ -8,6 +8,7 @@
 
 <script setup lang="ts">
 import { computed, onMounted, watch, ref } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { useAppSettingsStore } from '@/modules/admin/settings/state.app.settings';
 import { fetchSettings } from '@/modules/admin/settings/service.fetch.settings';
 import { updateSettingFromComponent } from '@/modules/admin/settings/service.update.settings';
@@ -18,6 +19,9 @@ const section_path = 'Application.Security.SessionManagement';
 
 // Store reference
 const appSettingsStore = useAppSettingsStore();
+
+// Translations
+const { t } = useI18n();
 
 // Loading state
 const isLoadingSettings = ref(true);
@@ -140,7 +144,7 @@ onMounted(() => {
 <template>
   <div class="session-management-container">
     <h2 class="text-h6 mb-4">
-      управление сессиями
+      {{ t('admin.settings.application.security.sessionmanagement.title') }}
     </h2>
     
     <!-- Loading indicator -->
@@ -159,7 +163,7 @@ onMounted(() => {
           <v-select
             v-model="sessionDuration"
             :items="sessionDurationOptions"
-            label="длительность сессии"
+            :label="t('admin.settings.application.security.sessionmanagement.duration.label')"
             variant="outlined"
             density="comfortable"
             color="teal-darken-2"
@@ -179,7 +183,7 @@ onMounted(() => {
               />
             </template>
             <div class="pa-2">
-              Более длинная сессия улучшает удобство пользователей, но может снизить безопасность
+              {{ t('admin.settings.application.security.sessionmanagement.duration.tooltip') }}
             </div>
           </v-tooltip>
         </div>
@@ -187,16 +191,16 @@ onMounted(() => {
           <v-switch
             v-model="concurrentSessions"
             color="teal-darken-2"
-            label="разрешить одновременные сессии"
+            :label="t('admin.settings.application.security.sessionmanagement.concurrent.enabled.label')"
             hide-details
             class="mb-2"
           />
-          <span class="text-caption text-grey ms-3">функция находится в разработке</span>
+          <span class="text-caption text-grey ms-3">{{ t('admin.settings.application.security.sessionmanagement.in.development') }}</span>
         </div>
         <div class="d-flex align-center">
           <v-text-field
             v-model="maxSessionsPerUser"
-            label="максимальное количество сессий на пользователя"
+            :label="t('admin.settings.application.security.sessionmanagement.max.per.user.label')"
             type="number"
             variant="outlined"
             density="comfortable"
@@ -205,7 +209,7 @@ onMounted(() => {
             :disabled="!concurrentSessions"
             style="max-width: 400px;"
           />
-          <span class="text-caption text-grey ms-3">функция находится в разработке</span>
+          <span class="text-caption text-grey ms-3">{{ t('admin.settings.application.security.sessionmanagement.in.development') }}</span>
         </div>
       </div>
     </div>

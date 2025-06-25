@@ -6,6 +6,7 @@
 
 <script setup lang="ts">
 import { computed, onMounted, watch, ref } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { useAppSettingsStore } from '@/modules/admin/settings/state.app.settings';
 import { fetchSettings } from '@/modules/admin/settings/service.fetch.settings';
 import { updateSettingFromComponent } from '@/modules/admin/settings/service.update.settings';
@@ -16,6 +17,9 @@ const section_path = 'UsersManagement.GroupsManagement';
 
 // Store reference
 const appSettingsStore = useAppSettingsStore();
+
+// Translations
+const { t } = useI18n();
 
 // Loading state
 const isLoadingSettings = ref(true);
@@ -87,7 +91,7 @@ onMounted(() => {
 <template>
   <div class="groups-management-container">
     <h2 class="text-h6 mb-4">
-      управление группами
+      {{ t('admin.settings.usersmanagement.groupsmanagement.title') }}
     </h2>
     
     <!-- Loading indicator -->
@@ -105,7 +109,7 @@ onMounted(() => {
         <v-switch
           v-model="onlyAddActiveMembers"
           color="teal-darken-2"
-          label="добавлять в группы только пользователей со статусом 'активен'"
+          :label="t('admin.settings.usersmanagement.groupsmanagement.only.active.members.label')"
           hide-details
         />
       </div>

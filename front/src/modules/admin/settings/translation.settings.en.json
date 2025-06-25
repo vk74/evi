@@ -1,0 +1,81 @@
+{
+  "admin": {
+    "settings": {
+      "application": {
+        "security": {
+          "passwordpolicies": {
+            "title": "password policies",
+            "minlength": {
+              "label": "minimum password length"
+            },
+            "require": {
+              "lowercase": {
+                "label": "require lowercase letters"
+              },
+              "uppercase": {
+                "label": "require uppercase letters"
+              },
+              "numbers": {
+                "label": "require numbers"
+              },
+              "specialchars": {
+                "label": "require special characters"
+              }
+            },
+            "example": {
+              "title": "example user password:"
+            },
+            "requirements": {
+              "label": "requirements:"
+            },
+            "specialchars": {
+              "allowed": {
+                "title": "allowed special characters:"
+              },
+              "list": "! @ # $ % ^ & * ( ) - _ = + [ ] { } | \\ : ; \" ' < > , . ? / ~ `"
+            }
+          },
+          "sessionmanagement": {
+            "title": "session management",
+            "duration": {
+              "label": "session duration",
+              "tooltip": "Longer sessions improve user convenience but may reduce security"
+            },
+            "concurrent": {
+              "enabled": {
+                "label": "allow concurrent sessions"
+              }
+            },
+            "max": {
+              "per": {
+                "user": {
+                  "label": "maximum sessions per user"
+                }
+              }
+            },
+            "in.development": "feature is under development"
+          }
+        }
+      },
+      "usersmanagement": {
+        "groupsmanagement": {
+          "title": "groups management",
+          "only": {
+            "active": {
+              "members": {
+                "label": "add to groups only users with 'active' status"
+              }
+            }
+          }
+        }
+      },
+      "common": {
+        "loading": "loading settings...",
+        "save": {
+          "success": "settings saved",
+          "error": "error saving settings"
+        }
+      }
+    }
+  }
+} 
