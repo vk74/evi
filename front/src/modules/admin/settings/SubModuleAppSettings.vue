@@ -19,6 +19,8 @@
  import LoggingConsole from './sections/Application.Logging.Console.vue';
  import LoggingFile from './sections/Application.Logging.File.vue';
  import Security from './sections/Application.Security.vue';
+ import SessionManagement from './sections/Application.Security.SessionManagement.vue';
+ import PasswordPolicies from './sections/Application.Security.PasswordPolicies.vue';
  import UsersManagement from './sections/UsersManagement.vue';
  import GroupsManagement from './sections/UsersManagement.GroupsManagement.vue';
  
@@ -122,6 +124,8 @@
    'Application.Logging.Console': markRaw(LoggingConsole),
    'Application.Logging.File': markRaw(LoggingFile),
    'Application.Security': markRaw(Security),
+   'Application.Security.SessionManagement': markRaw(SessionManagement),
+   'Application.Security.PasswordPolicies': markRaw(PasswordPolicies),
    'UsersManagement': markRaw(UsersManagement),
    'UsersManagement.GroupsManagement': markRaw(GroupsManagement),
    // Other components can be added here as they're created for other sections

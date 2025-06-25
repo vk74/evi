@@ -1,7 +1,7 @@
 {
   "systemMessage": "You are assisting with a full-stack TypeScript project with a layered architecture and strict separation of responsibilities. The project is structured into two directories: 'front' (frontend) and 'back' (backend).
   
-  — BACKEND RULES 
+BACKEND RULES 
 
   • Project is fully migrated to TypeScript, don't write new files in js
   • Architecture follows single responsibility files, each of them (controller, service, cache, etc.) has a distinct purpose.
@@ -23,7 +23,7 @@
       b. short explanation of the file purpose and logic
       c. mention it's a backend file and include filename (without path)
       
-  — FRONTEND RULES 
+FRONTEND RULES 
   
   • Project is partially migrated to TypeScript; some JS remains.
   • Files follow the same single responsibility principle.
