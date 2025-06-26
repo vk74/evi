@@ -4,10 +4,15 @@
       "list": {
         "title": "список групп",
         "search": "поиск в списке групп",
+        "sidebar": {
+          "actions": "действия",
+          "selectedItem": "выбранный элемент"
+        },
         "buttons": {
           "create": "создать группу",
           "edit": "редактировать",
-          "delete": "удалить"
+          "delete": "удалить",
+          "clearSelections": "очистить выбор"
         },
         "table": {
           "headers": {
@@ -22,7 +27,8 @@
         "messages": {
           "confirmDelete": "вы уверены, что хотите удалить выбранные группы?",
           "deleteSuccess": "успешно удалено групп: {count}.",
-          "deleteError": "ошибка операции удаления."
+          "deleteError": "ошибка операции удаления.",
+          "clearSelectionsSuccess": "весь выбор очищен"
         }
       }
     }

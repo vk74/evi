@@ -140,6 +140,11 @@ const onDeleteSelected = async () => {
   }
 };
 
+const clearSelections = () => {
+  groupsStore.clearSelection();
+  uiStore.showSuccessSnackbar(t('admin.groups.list.messages.clearSelectionsSuccess'));
+};
+
 onMounted(async () => {
   try {
     await groupsService.fetchGroups();
@@ -156,98 +161,134 @@ watch([page, itemsPerPage], ([newPage, newItemsPerPage]) => {
 
 <template>
   <v-card flat>
-    <v-app-bar
-      flat
-      class="px-4 d-flex align-center justify-space-between"
-    >
-      <div class="d-flex align-center">
-        <v-btn
-          v-if="isAuthorized"
-          color="teal"
-          variant="outlined"
-          class="mr-2"
-          @click="createGroup"
+    <div class="d-flex">
+      <!-- Main content (left part) -->
+      <div class="flex-grow-1 main-content-area">
+        <div class="px-4 pt-4">
+          <v-text-field
+            v-model="searchQuery"
+            :label="t('admin.groups.list.search')"
+            variant="outlined"
+            density="compact"
+            clearable
+            clear-icon="mdi-close"
+            color="teal"
+            prepend-inner-icon="mdi-magnify"
+          />
+        </div>
+
+        <v-data-table
+          v-model:page="page"
+          v-model:items-per-page="itemsPerPage"
+          :search="searchQuery"
+          :headers="headers"
+          :items="groups"
+          :loading="loading"
+          :items-length="totalNumOfGroups"
+          :items-per-page-options="[10, 25, 50, 100]"
+          class="groups-table"
+          @update:page="(newPage) => page = newPage"
+          @update:items-per-page="(newItemsPerPage) => itemsPerPage = newItemsPerPage as ItemsPerPageOption"
+          @update:sort="(sortParams) => onSortUpdate(sortParams)"
         >
-          {{ t('admin.groups.list.buttons.create') }}
-        </v-btn>
-        <v-btn
-          v-if="isAuthorized"
-          color="teal"
-          variant="outlined"
-          class="mr-2"
-          :disabled="!hasOneSelected"
-          @click="editGroup"
-        >
-          {{ t('admin.groups.list.buttons.edit') }}
-        </v-btn>
-        <v-btn
-          v-if="isAuthorized"
-          color="error"
-          variant="outlined"
-          class="mr-2"
-          :disabled="!hasSelected"
-          @click="showDeleteDialog = true"
-        >
-          {{ t('admin.groups.list.buttons.delete') }}
-          <span class="ml-2">({{ selectedCount }})</span>
-        </v-btn>
+          <template #item.selection="{ item }">
+            <v-checkbox
+              :model-value="isSelected(item.group_id)"
+              density="compact"
+              hide-details
+              @update:model-value="(value: boolean | null) => onSelectGroup(item.group_id, value ?? false)"
+            />
+          </template>
+          <template #item.group_status="{ item }">
+            <v-chip
+              :color="getStatusColor(item.group_status)"
+              size="x-small"
+            >
+              {{ item.group_status }}
+            </v-chip>
+          </template>
+          <template #item.is_system="{ item }">
+            <v-icon
+              :color="item.is_system ? 'teal' : 'red-darken-4'"
+              :icon="item.is_system ? 'mdi-check-circle' : 'mdi-minus-circle'"
+              size="x-small"
+            />
+          </template>
+        </v-data-table>
       </div>
-      <v-app-bar-title class="text-subtitle-2 text-lowercase text-right">
-        {{ t('admin.groups.list.title') }}
-      </v-app-bar-title>
-    </v-app-bar>
-
-    <div class="px-4 pt-4">
-      <v-text-field
-        v-model="searchQuery"
-        :label="t('admin.groups.list.search')"
-        variant="outlined"
-        density="compact"
-        clearable
-        clear-icon="mdi-close"
-        color="teal"
-        prepend-inner-icon="mdi-magnify"
-      />
+      
+      <!-- Sidebar (right part) -->
+      <div class="side-bar-container">
+        <!-- Top part of sidebar - buttons for component operations -->
+        <div class="side-bar-section">
+          <h3 class="text-subtitle-2 px-2 py-2">
+            {{ t('admin.groups.list.sidebar.actions') }}
+          </h3>
+          
+          <v-btn
+            v-if="isAuthorized"
+            block
+            color="teal"
+            variant="outlined"
+            class="mb-3"
+            @click="createGroup"
+          >
+            {{ t('admin.groups.list.buttons.create') }}
+          </v-btn>
+          
+          <v-btn
+            v-if="isAuthorized"
+            block
+            color="grey"
+            variant="outlined"
+            class="mb-3"
+            :disabled="!hasSelected"
+            @click="clearSelections"
+          >
+            <v-icon
+              icon="mdi-checkbox-blank-outline"
+              class="mr-2"
+            />
+            {{ t('admin.groups.list.buttons.clearSelections') }}
+          </v-btn>
+        </div>
+        
+        <!-- Divider between sections -->
+        <div class="sidebar-divider" />
+        
+        <!-- Bottom part of sidebar - buttons for operations over selected elements -->
+        <div class="side-bar-section">
+          <h3 class="text-subtitle-2 px-2 py-2">
+            {{ t('admin.groups.list.sidebar.selectedItem') }}
+          </h3>
+          
+          <v-btn
+            v-if="isAuthorized"
+            block
+            color="teal"
+            variant="outlined"
+            class="mb-3"
+            :disabled="!hasOneSelected"
+            @click="editGroup"
+          >
+            {{ t('admin.groups.list.buttons.edit') }}
+          </v-btn>
+          
+          <v-btn
+            v-if="isAuthorized"
+            block
+            color="error"
+            variant="outlined"
+            class="mb-3"
+            :disabled="!hasSelected"
+            @click="showDeleteDialog = true"
+          >
+            {{ t('admin.groups.list.buttons.delete') }}
+            <span class="ml-2">({{ selectedCount }})</span>
+          </v-btn>
+        </div>
+      </div>
     </div>
-
-    <v-data-table
-      v-model:page="page"
-      v-model:items-per-page="itemsPerPage"
-      :search="searchQuery"
-      :headers="headers"
-      :items="groups"
-      :loading="loading"
-      :items-length="totalNumOfGroups"
-      :items-per-page-options="[10, 25, 50, 100]"
-      class="groups-table"
-      @update:page="(newPage) => page = newPage"
-      @update:items-per-page="(newItemsPerPage) => itemsPerPage = newItemsPerPage"
-      @update:sort="(sortParams) => onSortUpdate(sortParams)"
-    >
-      <template #item.selection="{ item }">
-        <v-checkbox
-          :model-value="isSelected(item.group_id)"
-          density="compact"
-          hide-details
-          @update:model-value="(value: boolean | null) => onSelectGroup(item.group_id, value ?? false)"
-        />
-      </template>
-      <template #item.group_status="{ item }">
-        <v-chip
-          :color="getStatusColor(item.group_status)"
-          size="x-small"
-        >
-          {{ item.group_status }}
-        </v-chip>
-      </template>
-      <template #item.is_system="{ item }">
-        <v-icon
-          :color="item.is_system ? 'teal' : 'red-darken-4'"
-          :icon="item.is_system ? 'mdi-check-circle' : 'mdi-minus-circle'"
-          size="x-small"
-        />
-      </template>
-    </v-data-table>
 
     <v-dialog
       v-model="showDeleteDialog"
@@ -282,5 +323,38 @@ watch([page, itemsPerPage], ([newPage, newItemsPerPage]) => {
 </template>
 
 <style scoped>
+/* Main content area */
+.main-content-area {
+  min-width: 0;
+}
 
+/* Sidebar styles */
+.side-bar-container {
+  width: 280px;
+  min-width: 280px;
+  border-left: thin solid rgba(var(--v-border-color), var(--v-border-opacity));
+  display: flex;
+  flex-direction: column;
+  background-color: rgba(var(--v-theme-surface), 1);
+  overflow-y: auto;
+}
+
+.side-bar-section {
+  padding: 16px;
+}
+
+.sidebar-divider {
+  height: 20px;
+  position: relative;
+  margin: 0 16px;
+}
+
+.sidebar-divider::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 0;
+  right: 0;
+  border-top: thin solid rgba(var(--v-border-color), var(--v-border-opacity));
+}
 </style>

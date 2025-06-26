@@ -4,10 +4,15 @@
       "list": {
         "title": "groups list",
         "search": "search in groups",
+        "sidebar": {
+          "actions": "actions",
+          "selectedItem": "selected item"
+        },
         "buttons": {
           "create": "create Group",
           "edit": "edit",
-          "delete": "delete"
+          "delete": "delete",
+          "clearSelections": "clear selections"
         },
         "table": {
           "headers": {
@@ -22,7 +27,8 @@
         "messages": {
           "confirmDelete": "are you sure you want to delete the selected groups?",
           "deleteSuccess": "successfully deleted {count} groups.",
-          "deleteError": "groups delete operation error."
+          "deleteError": "groups delete operation error.",
+          "clearSelectionsSuccess": "all selections cleared"
         }
       }
     }
