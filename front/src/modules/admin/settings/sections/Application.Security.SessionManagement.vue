@@ -26,22 +26,21 @@ const { t } = useI18n();
 // Loading state
 const isLoadingSettings = ref(true);
 
-// Session duration options (10 minutes to 24 hours)
-const sessionDurationOptions = [
-  { title: '10 минут', value: '10' },
-  { title: '15 минут', value: '15' },
-  { title: '30 минут', value: '30' },
-  { title: '1 час', value: '60' },
-  { title: '2 часа', value: '120' },
-  { title: '4 часа', value: '240' },
-  { title: '8 часов', value: '480' },
-  { title: '12 часов', value: '720' },
-  { title: '1 сутки', value: '1440' },
-  { title: '2 суток', value: '2880' },
-  { title: '3 суток', value: '4320' },
-  { title: '5 суток', value: '7200' },
-  { title: 'неделя', value: '10080' }
-];
+const sessionDurationOptions = computed(() => [
+  { title: t('admin.settings.application.security.sessionmanagement.duration.options.10'), value: '10' },
+  { title: t('admin.settings.application.security.sessionmanagement.duration.options.15'), value: '15' },
+  { title: t('admin.settings.application.security.sessionmanagement.duration.options.30'), value: '30' },
+  { title: t('admin.settings.application.security.sessionmanagement.duration.options.60'), value: '60' },
+  { title: t('admin.settings.application.security.sessionmanagement.duration.options.120'), value: '120' },
+  { title: t('admin.settings.application.security.sessionmanagement.duration.options.240'), value: '240' },
+  { title: t('admin.settings.application.security.sessionmanagement.duration.options.480'), value: '480' },
+  { title: t('admin.settings.application.security.sessionmanagement.duration.options.720'), value: '720' },
+  { title: t('admin.settings.application.security.sessionmanagement.duration.options.1440'), value: '1440' },
+  { title: t('admin.settings.application.security.sessionmanagement.duration.options.2880'), value: '2880' },
+  { title: t('admin.settings.application.security.sessionmanagement.duration.options.4320'), value: '4320' },
+  { title: t('admin.settings.application.security.sessionmanagement.duration.options.7200'), value: '7200' },
+  { title: t('admin.settings.application.security.sessionmanagement.duration.options.10080'), value: '10080' }
+]);
 
 /**
  * Direct binding to the setting values from Pinia store

@@ -32,9 +32,20 @@ const requireLowercase = ref(true);
 const requireUppercase = ref(true);
 const requireNumbers = ref(true);
 const requireSpecialChars = ref(false);
+const passwordExpiration = ref('never');
 
 // Password length options (4 to 40 characters)
 const passwordLengthOptions = Array.from({ length: 37 }, (_, i) => (i + 4).toString());
+
+// Password expiration options
+const passwordExpirationOptions = computed(() => [
+  { value: 'never', label: t('admin.settings.application.security.passwordpolicies.expiration.options.never') },
+  { value: '30days', label: t('admin.settings.application.security.passwordpolicies.expiration.options.30days') },
+  { value: '60days', label: t('admin.settings.application.security.passwordpolicies.expiration.options.60days') },
+  { value: '90days', label: t('admin.settings.application.security.passwordpolicies.expiration.options.90days') },
+  { value: '180days', label: t('admin.settings.application.security.passwordpolicies.expiration.options.180days') },
+  { value: '1year', label: t('admin.settings.application.security.passwordpolicies.expiration.options.1year') }
+]);
 
 /**
  * Update setting in store when local state changes
@@ -259,6 +270,22 @@ onMounted(() => {
               </p>
             </div>
           </v-tooltip>
+        </div>
+        
+        <div class="section-content">
+          <v-select
+            v-model="passwordExpiration"
+            :items="passwordExpirationOptions"
+            item-title="label"
+            item-value="value"
+            :label="t('admin.settings.application.security.passwordpolicies.expiration.label')"
+            variant="outlined"
+            density="comfortable"
+            class="mb-4"
+            color="teal-darken-2"
+            style="max-width: 200px;"
+          />
+          <span class="text-caption text-grey ms-3">{{ t('admin.settings.application.security.passwordpolicies.expiration.in.development') }}</span>
         </div>
         
         <!-- Interactive password example -->

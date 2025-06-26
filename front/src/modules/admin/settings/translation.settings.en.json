@@ -33,13 +33,40 @@
                 "title": "allowed special characters:"
               },
               "list": "! @ # $ % ^ & * ( ) - _ = + [ ] { } | \\ : ; \" ' < > , . ? / ~ `"
+            },
+            "expiration": {
+              "label": "password expiration",
+              "in.development": "this setting is under development",
+              "options": {
+                "never": "never",
+                "30days": "30 days",
+                "60days": "60 days",
+                "90days": "90 days",
+                "180days": "180 days",
+                "1year": "1 year"
+              }
             }
           },
           "sessionmanagement": {
             "title": "session management",
             "duration": {
               "label": "session duration",
-              "tooltip": "Longer sessions improve user convenience but may reduce security"
+              "tooltip": "Longer sessions improve user convenience but may reduce security",
+              "options": {
+                "10": "10 minutes",
+                "15": "15 minutes",
+                "30": "30 minutes",
+                "60": "1 hour",
+                "120": "2 hours",
+                "240": "4 hours",
+                "480": "8 hours",
+                "720": "12 hours",
+                "1440": "1 day",
+                "2880": "2 days",
+                "4320": "3 days",
+                "7200": "5 days",
+                "10080": "week"
+              }
             },
             "concurrent": {
               "enabled": {
