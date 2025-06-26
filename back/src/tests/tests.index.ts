@@ -29,6 +29,7 @@ import './ts-check';
 // Admin module tests
 import '../modules/admin/users/userEditor/service.create.user.test';
 import '../modules/admin/settings/cache.settings.integration.test';
-import '../modules/admin/users/userEditor/integration.test';
+// import '../modules/admin/users/userEditor/integration.test';
+import '../modules/admin/users/userEditor/integration.user-lifecycle.test';
 
 console.log('🧪 All test modules loaded'); 

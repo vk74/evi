@@ -208,7 +208,7 @@ describe('Create User Service', () => {
         .toMatchObject({
           code: 'VALIDATION_ERROR',
           field: 'password',
-          message: 'Пароль не соответствует политикам безопасности учетных записей'
+          message: 'Password does not meet account security policies'
         });
     });
 
@@ -243,7 +243,7 @@ describe('Create User Service', () => {
         .toMatchObject({
           code: 'VALIDATION_ERROR',
           field: 'password',
-          message: 'Настройки политик паролей не найдены. Обратитесь к администратору системы.'
+          message: 'Password policy settings not found. Please contact the system administrator.'
         });
     });
   });
