@@ -27,15 +27,17 @@ const { t, locale } = useI18n();
 const isLoadingSettings = ref(true);
 
 // Local UI state for immediate interaction
-const passwordMinLength = ref('8');
+const passwordMinLength = ref(8);
+const passwordMaxLength = ref(16);
 const requireLowercase = ref(true);
 const requireUppercase = ref(true);
 const requireNumbers = ref(true);
 const requireSpecialChars = ref(false);
+const allowedSpecialChars = ref('');
 const passwordExpiration = ref('never');
 
 // Password length options (4 to 40 characters)
-const passwordLengthOptions = Array.from({ length: 37 }, (_, i) => (i + 4).toString());
+const passwordLengthOptions = Array.from({ length: 37 }, (_, i) => (i + 4));
 
 // Password expiration options
 const passwordExpirationOptions = computed(() => [
@@ -46,6 +48,8 @@ const passwordExpirationOptions = computed(() => [
   { value: '180days', label: t('admin.settings.application.security.passwordpolicies.expiration.options.180days') },
   { value: '1year', label: t('admin.settings.application.security.passwordpolicies.expiration.options.1year') }
 ]);
+
+const passwordLengthRange = ref<number[]>([8, 16]);
 
 /**
  * Update setting in store when local state changes
@@ -59,33 +63,26 @@ function updateSetting(settingName: string, value: any) {
  * Generate example password based on current settings
  */
 const generateExamplePassword = computed(() => {
-  const length = Math.min(parseInt(passwordMinLength.value), 40);
+  const min = Number(passwordMinLength.value);
+  const max = Number(passwordMaxLength.value);
+  const length = Math.max(min, Math.min(max, 12)); // пример: длина по умолчанию 12, но в пределах min/max
   let chars: string[] = [];
-
-  // Всегда добавляем по одному символу каждого требуемого типа
   if (requireLowercase.value) chars.push('a');
   if (requireUppercase.value) chars.push('A');
   if (requireNumbers.value) chars.push('1');
-  if (requireSpecialChars.value) chars.push('@');
-
-  // Если ничего не выбрано — просто буквы
+  if (requireSpecialChars.value && allowedSpecialChars.value.length > 0) chars.push(allowedSpecialChars.value[0]);
   if (chars.length === 0) chars.push('a');
-
-  // Формируем массив разрешённых символов для заполнения
   let filler: string[] = [];
   if (requireLowercase.value) filler = filler.concat(['b','c','d','e','f','g','h','j','k','m','n','p','q','r','s','t','u','v','w','x','y','z']);
   if (requireUppercase.value) filler = filler.concat(['B','C','D','E','F','G','H','J','K','M','N','P','Q','R','S','T','U','V','W','X','Y','Z']);
   if (requireNumbers.value) filler = filler.concat(['2','3','4','5','6','7','8','9']);
-  if (requireSpecialChars.value) filler = filler.concat(['!','#','$','%','&','*','-','_','+','?']);
-  // Если ничего не выбрано — только маленькие буквы
+  if (requireSpecialChars.value && allowedSpecialChars.value.length > 0) filler = filler.concat(allowedSpecialChars.value.split(''));
   if (filler.length === 0) filler = ['a','b','c','d','e','f','g','h','j','k','m','n','p','q','r','s','t','u','v','w','x','y','z'];
-
   let fillIndex = 0;
   while (chars.length < length) {
     chars.push(filler[fillIndex % filler.length]);
     fillIndex++;
   }
-
   return chars.join('');
 });
 
@@ -121,24 +118,30 @@ const getPasswordRequirements = computed(() => {
  */
 async function loadSettings() {
   isLoadingSettings.value = true;
-  
   try {
     console.log('Loading settings for Password Policies');
     const settings = await fetchSettings(section_path);
-    
     if (settings && settings.length > 0) {
       console.log('Received settings:', settings);
-      
       // Update local state from store
       const cachedSettings = appSettingsStore.getCachedSettings(section_path);
       if (cachedSettings && cachedSettings.length > 0) {
         const minLengthSetting = cachedSettings.find(s => s.setting_name === 'password.min.length');
+        const maxLengthSetting = cachedSettings.find(s => s.setting_name === 'password.max.length');
+        let allowedSpecialCharsSetting = cachedSettings.find(s => s.setting_name === 'password.allowed.special.chars');
         const lowercaseSetting = cachedSettings.find(s => s.setting_name === 'password.require.lowercase');
         const uppercaseSetting = cachedSettings.find(s => s.setting_name === 'password.require.uppercase');
         const numbersSetting = cachedSettings.find(s => s.setting_name === 'password.require.numbers');
         const specialCharsSetting = cachedSettings.find(s => s.setting_name === 'password.require.special.chars');
-        
-        if (minLengthSetting?.value !== undefined) passwordMinLength.value = minLengthSetting.value.toString();
+        if (minLengthSetting?.value !== undefined) passwordMinLength.value = Number(minLengthSetting.value);
+        if (maxLengthSetting?.value !== undefined) passwordMaxLength.value = Number(maxLengthSetting.value);
+        if (allowedSpecialCharsSetting?.value !== undefined) {
+          allowedSpecialChars.value = allowedSpecialCharsSetting.value;
+        } else {
+          // Если нет в кеше, добавить дефолтное значение и синхронизировать с БД
+          allowedSpecialChars.value = '!@#$%^&*()-_=+[]{}|\\:;"\',.<>?';
+          updateSetting('password.allowed.special.chars', allowedSpecialChars.value);
+        }
         if (lowercaseSetting?.value !== undefined) requireLowercase.value = lowercaseSetting.value;
         if (uppercaseSetting?.value !== undefined) requireUppercase.value = uppercaseSetting.value;
         if (numbersSetting?.value !== undefined) requireNumbers.value = numbersSetting.value;
@@ -154,9 +157,18 @@ async function loadSettings() {
   }
 }
 
-// Watch for changes in local state and update store
 watch(passwordMinLength, (newValue) => {
+  if (passwordMaxLength.value < newValue) {
+    passwordMaxLength.value = newValue;
+  }
   updateSetting('password.min.length', Number(newValue));
+});
+
+watch(passwordMaxLength, (newValue) => {
+  if (newValue < passwordMinLength.value) {
+    passwordMinLength.value = newValue;
+  }
+  updateSetting('password.max.length', Number(newValue));
 });
 
 watch(requireLowercase, (newValue) => {
@@ -208,16 +220,28 @@ onMounted(() => {
       class="settings-section"
     >
       <div class="section-content">
-        <v-select
-          v-model="passwordMinLength"
-          :items="passwordLengthOptions"
-          :label="t('admin.settings.application.security.passwordpolicies.minlength.label')"
-          variant="outlined"
-          density="comfortable"
-          class="mb-4"
-          color="teal-darken-2"
-          style="max-width: 200px;"
-        />
+        <div class="mb-2">
+          <v-select
+            v-model="passwordMinLength"
+            :items="passwordLengthOptions"
+            :label="t('admin.settings.application.security.passwordpolicies.minlength.label')"
+            variant="outlined"
+            density="comfortable"
+            color="teal-darken-2"
+            style="max-width: 240px;"
+          />
+        </div>
+        <div class="mb-4">
+          <v-select
+            v-model="passwordMaxLength"
+            :items="passwordLengthOptions.filter(v => v >= passwordMinLength)"
+            :label="t('admin.settings.application.security.passwordpolicies.maxlength.label', 'максимальная длина пароля')"
+            variant="outlined"
+            density="comfortable"
+            color="teal-darken-2"
+            style="max-width: 240px;"
+          />
+        </div>
         
         <v-switch
           v-model="requireLowercase"
@@ -265,27 +289,31 @@ onMounted(() => {
             </template>
             <div class="pa-2">
               <p class="text-subtitle-2 mb-2">{{ t('admin.settings.application.security.passwordpolicies.specialchars.allowed.title') }}</p>
-              <p class="text-caption">
-                {{ t('admin.settings.application.security.passwordpolicies.specialchars.list') }}
-              </p>
+              <v-text-field
+                :model-value="allowedSpecialChars"
+                readonly
+                variant="outlined"
+                density="compact"
+                class="mb-0"
+                style="max-width: 320px;"
+              />
             </div>
           </v-tooltip>
         </div>
         
-        <div class="section-content">
+        <div class="section-content mb-4 d-flex align-center" style="gap: 16px;">
           <v-select
             v-model="passwordExpiration"
             :items="passwordExpirationOptions"
             item-title="label"
             item-value="value"
-            :label="t('admin.settings.application.security.passwordpolicies.expiration.label')"
+            :label="t('admin.settings.application.security.passwordpolicies.expiration.label', 'срок действия пароля')"
             variant="outlined"
             density="comfortable"
-            class="mb-4"
             color="teal-darken-2"
             style="max-width: 200px;"
           />
-          <span class="text-caption text-grey ms-3">{{ t('admin.settings.application.security.passwordpolicies.expiration.in.development') }}</span>
+          <span class="text-caption text-grey ms-3">{{ t('admin.settings.application.security.passwordpolicies.expiration.in.development', 'эта настройка находится в разработке') }}</span>
         </div>
         
         <!-- Interactive password example -->
