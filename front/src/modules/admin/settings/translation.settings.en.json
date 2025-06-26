@@ -8,6 +8,9 @@
             "minlength": {
               "label": "minimum password length"
             },
+            "maxlength": {
+              "label": "maximum password length"
+            },
             "require": {
               "lowercase": {
                 "label": "require lowercase letters"
@@ -36,7 +39,9 @@
             },
             "expiration": {
               "label": "password expiration",
-              "in.development": "this setting is under development",
+              "note": {
+                "in.development": "this setting is under development"
+              },
               "options": {
                 "never": "never",
                 "30days": "30 days",
@@ -44,6 +49,12 @@
                 "90days": "90 days",
                 "180days": "180 days",
                 "1year": "1 year"
+              },
+              "reset": {
+                "button": "reset settings",
+                "tooltip": "reset password policy settings to default values",
+                "success": "password settings reset to default values",
+                "error": "error resetting password settings"
               }
             }
           },

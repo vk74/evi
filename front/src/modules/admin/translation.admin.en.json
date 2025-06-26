@@ -28,6 +28,19 @@
         "groupEditor": "group editor"
       },
       "moduleTitle": "users and groups management"
+    },
+    "settings": {
+      "application": {
+        "security": {
+          "passwordpolicies": {
+            "reset": {
+              "button": "reset settings",
+              "success": "password settings reset to default values",
+              "error": "error resetting password settings"
+            }
+          }
+        }
+      }
     }
   },
   "common": {

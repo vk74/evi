@@ -103,3 +103,76 @@ export function updateSettingFromComponent(
   // Debounce the actual API update
   debouncedUpdateSetting(sectionPath, settingName, value);
 }
+
+/**
+ * Updates multiple settings at once
+ * 
+ * @param updates - Array of setting updates to perform
+ * @returns Promise resolving to array of results for each update
+ */
+export async function updateMultipleSettings(
+  updates: Array<{ sectionPath: string; settingName: string; value: any }>
+): Promise<Array<{ success: boolean; settingName: string; error?: string }>> {
+  const uiStore = useUiStore();
+  
+  console.log(`Updating ${updates.length} settings:`, updates);
+
+  try {
+    // Process all updates in parallel
+    const results = await Promise.allSettled(
+      updates.map(async ({ sectionPath, settingName, value }) => {
+        try {
+          const result = await updateSetting(sectionPath, settingName, value);
+          return {
+            success: !!result,
+            settingName,
+            error: result ? undefined : 'Update failed'
+          };
+        } catch (error) {
+          return {
+            success: false,
+            settingName,
+            error: error instanceof Error ? error.message : 'Unknown error'
+          };
+        }
+      })
+    );
+
+    // Process results
+    const processedResults = results.map((result, index) => {
+      if (result.status === 'fulfilled') {
+        return result.value;
+      } else {
+        return {
+          success: false,
+          settingName: updates[index]?.settingName || 'unknown',
+          error: result.reason instanceof Error ? result.reason.message : 'Unknown error'
+        };
+      }
+    });
+
+    // Count successes and failures
+    const successCount = processedResults.filter(r => r.success).length;
+    const failureCount = processedResults.filter(r => !r.success).length;
+
+    if (failureCount === 0) {
+      uiStore.showSuccessSnackbar(`Все настройки успешно обновлены (${successCount})`);
+    } else if (successCount === 0) {
+      uiStore.showErrorSnackbar(`Ошибка обновления настроек (${failureCount})`);
+    } else {
+      uiStore.showErrorSnackbar(`Обновлено ${successCount} настроек, ошибок: ${failureCount}`);
+    }
+
+    return processedResults;
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : 'Неизвестная ошибка';
+    console.error('Exception updating multiple settings:', error);
+    uiStore.showErrorSnackbar(`Ошибка при массовом обновлении настроек: ${errorMessage}`);
+    
+    return updates.map(({ settingName }) => ({
+      success: false,
+      settingName,
+      error: errorMessage
+    }));
+  }
+}

@@ -192,3 +192,40 @@ export function getSettingsCacheTimeRemaining(section_path: string): number {
   
   return Math.floor(remainingMs / 1000); // Convert to seconds
 }
+
+/**
+ * Gets default values for specified settings from cache
+ * 
+ * @param section_path - The section path the settings belong to
+ * @param settingNames - Array of setting names to get default values for
+ * @returns Object with setting names as keys and their default values
+ */
+export function getDefaultValues(
+  section_path: string, 
+  settingNames: string[]
+): Record<string, any> {
+  const store = useAppSettingsStore();
+  const settings = store.getCachedSettings(section_path);
+  
+  if (!settings || settings.length === 0) {
+    console.warn(`No settings found for section: ${section_path}`);
+    return {};
+  }
+  
+  const defaultValues: Record<string, any> = {};
+  
+  settingNames.forEach(settingName => {
+    const setting = settings.find(s => s.setting_name === settingName);
+    if (setting) {
+      // Use default_value if available, otherwise use current value as fallback
+      defaultValues[settingName] = setting.default_value !== undefined && setting.default_value !== null 
+        ? setting.default_value 
+        : setting.value;
+    } else {
+      console.warn(`Setting ${settingName} not found in section ${section_path}`);
+    }
+  });
+  
+  console.log(`Retrieved default values for ${Object.keys(defaultValues).length} settings:`, defaultValues);
+  return defaultValues;
+}

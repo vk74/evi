@@ -1,6 +1,6 @@
 <!--
   File: Application.Security.PasswordPolicies.vue
-  Version: 1.0.0
+  Version: 1.1.0
   Description: Password policies settings component for frontend
   Purpose: Configure password-related security settings including length, complexity, and expiration
   Frontend file that manages password policy configuration UI and integrates with settings store
@@ -11,7 +11,8 @@ import { computed, onMounted, watch, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useAppSettingsStore } from '@/modules/admin/settings/state.app.settings';
 import { fetchSettings } from '@/modules/admin/settings/service.fetch.settings';
-import { updateSettingFromComponent } from '@/modules/admin/settings/service.update.settings';
+import { updateSettingFromComponent, updateMultipleSettings } from '@/modules/admin/settings/service.update.settings';
+import { getDefaultValues } from '@/modules/admin/settings/service.fetch.settings';
 import DataLoading from '@/core/ui/loaders/DataLoading.vue';
 
 // Section path identifier - using component name for better consistency
@@ -25,6 +26,7 @@ const { t, locale } = useI18n();
 
 // Loading state
 const isLoadingSettings = ref(true);
+const isResetting = ref(false);
 
 // Local UI state for immediate interaction
 const passwordMinLength = ref(8);
@@ -195,6 +197,71 @@ watch(
   }
 );
 
+/**
+ * Reset password settings to default values
+ */
+async function resetToDefaults() {
+  isResetting.value = true;
+  
+  try {
+    console.log('Resetting password settings to defaults');
+    
+    // Get default values for all password settings
+    const settingNames = [
+      'password.min.length',
+      'password.max.length', 
+      'password.require.lowercase',
+      'password.require.uppercase',
+      'password.require.numbers',
+      'password.require.special.chars'
+    ];
+    
+    const defaultValues = getDefaultValues(section_path, settingNames);
+    
+    if (Object.keys(defaultValues).length === 0) {
+      console.error('No default values found for password settings');
+      return;
+    }
+    
+    // Prepare updates array
+    const updates = Object.entries(defaultValues).map(([settingName, value]) => ({
+      sectionPath: section_path,
+      settingName,
+      value
+    }));
+    
+    // Update all settings
+    const results = await updateMultipleSettings(updates);
+    
+    // Update local state with new values
+    if (defaultValues['password.min.length'] !== undefined) {
+      passwordMinLength.value = Number(defaultValues['password.min.length']);
+    }
+    if (defaultValues['password.max.length'] !== undefined) {
+      passwordMaxLength.value = Number(defaultValues['password.max.length']);
+    }
+    if (defaultValues['password.require.lowercase'] !== undefined) {
+      requireLowercase.value = Boolean(defaultValues['password.require.lowercase']);
+    }
+    if (defaultValues['password.require.uppercase'] !== undefined) {
+      requireUppercase.value = Boolean(defaultValues['password.require.uppercase']);
+    }
+    if (defaultValues['password.require.numbers'] !== undefined) {
+      requireNumbers.value = Boolean(defaultValues['password.require.numbers']);
+    }
+    if (defaultValues['password.require.special.chars'] !== undefined) {
+      requireSpecialChars.value = Boolean(defaultValues['password.require.special.chars']);
+    }
+    
+    console.log('Password settings reset successfully');
+    
+  } catch (error) {
+    console.error('Error resetting password settings:', error);
+  } finally {
+    isResetting.value = false;
+  }
+}
+
 // Initialize component
 onMounted(() => {
   console.log('Application.Security.PasswordPolicies component initialized');
@@ -301,7 +368,7 @@ onMounted(() => {
           </v-tooltip>
         </div>
         
-        <div class="section-content mb-4 d-flex align-center" style="gap: 16px;">
+        <div class="section-content mt-4 mb-4 d-flex align-center" style="gap: 16px;">
           <v-select
             v-model="passwordExpiration"
             :items="passwordExpirationOptions"
@@ -313,7 +380,7 @@ onMounted(() => {
             color="teal-darken-2"
             style="max-width: 200px;"
           />
-          <span class="text-caption text-grey ms-3">{{ t('admin.settings.application.security.passwordpolicies.expiration.in.development', 'эта настройка находится в разработке') }}</span>
+          <span class="text-caption text-grey ms-3">{{ t('admin.settings.application.security.passwordpolicies.expiration.note.in.development', 'эта настройка находится в разработке') }}</span>
         </div>
         
         <!-- Interactive password example -->
@@ -327,6 +394,28 @@ onMounted(() => {
           <p class="text-caption text-grey mt-2">
             {{ t('admin.settings.application.security.passwordpolicies.requirements.label') }} {{ getPasswordRequirements }}
           </p>
+        </div>
+        <!-- Кнопка сброса настроек внизу -->
+        <div class="mt-6 d-flex justify-start">
+          <v-tooltip location="top" max-width="300">
+            <template #activator="{ props }">
+              <v-btn
+                color="teal"
+                variant="outlined"
+                size="small"
+                :loading="isResetting"
+                :disabled="isResetting"
+                @click="resetToDefaults"
+                v-bind="props"
+              >
+                <v-icon start>mdi-refresh</v-icon>
+                {{ t('admin.settings.application.security.passwordpolicies.reset.button') }}
+              </v-btn>
+            </template>
+            <div class="pa-2">
+              {{ t('admin.settings.application.security.passwordpolicies.reset.tooltip') }}
+            </div>
+          </v-tooltip>
         </div>
       </div>
     </div>

@@ -30,6 +30,7 @@ export interface AppSetting {
   setting_name: string;       // Unique setting identifier
   environment: string;        // Environment type
   value: any;                 // Setting value
+  default_value?: any;        // Default value for the setting
   confidentiality: boolean;   // Whether this setting contains sensitive data
 }
 
