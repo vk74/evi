@@ -1,8 +1,9 @@
 /**
- * BACKEND service.create.user.ts - version 1.0.04
+ * BACKEND service.create.user.ts - version 1.0.05
  * Service layer for handling user creation from admin panel.
  * Handles validation, password hashing, and database operations.
  * Now includes event bus integration for logging and tracking user creation events.
+ * Password validation now uses dynamic settings from cache.
  */
 
 import { Request } from 'express';
@@ -23,6 +24,8 @@ import { getRequestorUuidFromReq } from '../../../../core/helpers/get.requestor.
 import { createAndPublishEvent } from '../../../../core/eventBus/fabric.events';
 import { USER_CREATION_EVENTS } from './events.user.editor';
 import { eventBus } from '../../../../core/eventBus/bus.events';
+import { getSetting } from '../../settings/cache.settings';
+import type { AppSetting } from '../../settings/types.settings';
 
 const pool = pgPool as Pool;
 
@@ -93,46 +96,93 @@ function validateUsername(username: string): void {
   }
 }
 
-function validatePassword(password: string): void {
-  if (password.length < VALIDATION.PASSWORD.MIN_LENGTH) {
+// Password validation using dynamic settings from cache
+async function validatePassword(password: string, username: string, req: Request): Promise<void> {
+  // Create event for password policy check start
+  await createAndPublishEvent({
+    req,
+    eventName: USER_CREATION_EVENTS.PASSWORD_POLICY_CHECK_START.eventName,
+    payload: { username }
+  });
+
+  // Get password policy settings from cache
+  const minLengthSetting = getSetting('Application.Security.PasswordPolicies', 'password.min.length');
+  const maxLengthSetting = getSetting('Application.Security.PasswordPolicies', 'password.max.length');
+  const requireUppercaseSetting = getSetting('Application.Security.PasswordPolicies', 'password.require.uppercase');
+  const requireLowercaseSetting = getSetting('Application.Security.PasswordPolicies', 'password.require.lowercase');
+  const requireNumbersSetting = getSetting('Application.Security.PasswordPolicies', 'password.require.numbers');
+  const requireSpecialCharsSetting = getSetting('Application.Security.PasswordPolicies', 'password.require.special.chars');
+  const allowedSpecialCharsSetting = getSetting('Application.Security.PasswordPolicies', 'password.allowed.special.chars');
+
+  // Check if all required settings are found
+  if (!minLengthSetting || !maxLengthSetting || !requireUppercaseSetting || 
+      !requireLowercaseSetting || !requireNumbersSetting || !requireSpecialCharsSetting || !allowedSpecialCharsSetting) {
+    await createAndPublishEvent({
+      req,
+      eventName: USER_CREATION_EVENTS.PASSWORD_POLICY_SETTINGS_NOT_FOUND.eventName,
+      payload: { username },
+      errorData: 'Password policy settings not found in cache'
+    });
     throw {
       code: 'VALIDATION_ERROR',
-      message: VALIDATION.PASSWORD.MESSAGES.MIN_LENGTH,
+      message: 'Password policy settings not found. Please contact the system administrator.',
       field: 'password'
     } as ValidationError;
   }
 
-  if (password.length > VALIDATION.PASSWORD.MAX_LENGTH) {
+  const policyViolations: string[] = [];
+
+  // Parse settings values
+  const minLength = Number(minLengthSetting.value);
+  const maxLength = Number(maxLengthSetting.value);
+  const requireUppercase = Boolean(requireUppercaseSetting.value);
+  const requireLowercase = Boolean(requireLowercaseSetting.value);
+  const requireNumbers = Boolean(requireNumbersSetting.value);
+  const requireSpecialChars = Boolean(requireSpecialCharsSetting.value);
+  const allowedSpecialChars = allowedSpecialCharsSetting.value || '!@#$%^&*()_+-=[]{}|;:,.<>?';
+
+  // Checks
+  if (password.length < minLength) {
+    policyViolations.push(`Password must be at least ${minLength} characters long`);
+  }
+  if (password.length > maxLength) {
+    policyViolations.push(`Password must be no more than ${maxLength} characters long`);
+  }
+  if (requireUppercase && !/[A-Z]/.test(password)) {
+    policyViolations.push('Password must contain at least one uppercase letter');
+  }
+  if (requireLowercase && !/[a-z]/.test(password)) {
+    policyViolations.push('Password must contain at least one lowercase letter');
+  }
+  if (requireNumbers && !/\d/.test(password)) {
+    policyViolations.push('Password must contain at least one digit');
+  }
+  if (requireSpecialChars) {
+    const specialCharRegex = new RegExp(`[${allowedSpecialChars.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}]`);
+    if (!specialCharRegex.test(password)) {
+      policyViolations.push('Password must contain at least one special character');
+    }
+  }
+
+  if (policyViolations.length > 0) {
+    await createAndPublishEvent({
+      req,
+      eventName: USER_CREATION_EVENTS.PASSWORD_POLICY_CHECK_FAILED.eventName,
+      payload: { username, policyViolations },
+      errorData: policyViolations.join(', ')
+    });
     throw {
       code: 'VALIDATION_ERROR',
-      message: VALIDATION.PASSWORD.MESSAGES.MAX_LENGTH,
+      message: 'Password does not meet account security policies',
       field: 'password'
     } as ValidationError;
   }
 
-  if (!REGEX.PASSWORD.test(password)) {
-    throw {
-      code: 'VALIDATION_ERROR',
-      message: VALIDATION.PASSWORD.MESSAGES.INVALID_CHARS,
-      field: 'password'
-    } as ValidationError;
-  }
-
-  if (!REGEX.PASSWORD_CONTAINS_LETTER.test(password)) {
-    throw {
-      code: 'VALIDATION_ERROR',
-      message: VALIDATION.PASSWORD.MESSAGES.NO_LETTER,
-      field: 'password'
-    } as ValidationError;
-  }
-
-  if (!REGEX.PASSWORD_CONTAINS_NUMBER.test(password)) {
-    throw {
-      code: 'VALIDATION_ERROR',
-      message: VALIDATION.PASSWORD.MESSAGES.NO_NUMBER,
-      field: 'password'
-    } as ValidationError;
-  }
+  await createAndPublishEvent({
+    req,
+    eventName: USER_CREATION_EVENTS.PASSWORD_POLICY_CHECK_PASSED.eventName,
+    payload: { username }
+  });
 }
 
 function validateEmail(email: string): void {
@@ -199,7 +249,7 @@ function validateMobilePhone(phone: string): void {
 async function validateData(data: CreateUserRequest, req: Request): Promise<void> {
   try {
     validateUsername(data.username);
-    validatePassword(data.password);
+    await validatePassword(data.password, data.username, req);
     validateEmail(data.email);
     validateName(data.first_name, 'first_name');
     validateName(data.last_name, 'last_name');

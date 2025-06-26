@@ -1,8 +1,8 @@
 /**
- * Version: 1.0.0
+ * Version: 1.0.01
  *
  * Tests for create user service
- * This backend file contains Jest tests for the user creation service logic. It covers validation, error handling, database interaction, password hashing, and event publishing for user creation. All external dependencies (database, event bus, helpers, bcrypt) are mocked. The file works with CreateUserRequest objects and simulates service behavior in isolation.
+ * This backend file contains Jest tests for the user creation service logic. It covers validation, error handling, database interaction, password hashing, and event publishing for user creation. All external dependencies (database, event bus, helpers, bcrypt, settings cache) are mocked. The file works with CreateUserRequest objects and simulates service behavior in isolation.
  *
  * File: service.create.user.test.ts
  */
@@ -29,6 +29,10 @@ jest.mock('../../../../core/helpers/get.requestor.uuid.from.req', () => ({
   getRequestorUuidFromReq: jest.fn()
 }));
 
+jest.mock('../../settings/cache.settings', () => ({
+  getSetting: jest.fn()
+}));
+
 jest.mock('bcrypt', () => ({
   hash: jest.fn()
 }));
@@ -37,12 +41,24 @@ jest.mock('bcrypt', () => ({
 import { pool } from '../../../../core/db/maindb';
 import { createAndPublishEvent } from '../../../../core/eventBus/fabric.events';
 import { getRequestorUuidFromReq } from '../../../../core/helpers/get.requestor.uuid.from.req';
+import { getSetting } from '../../settings/cache.settings';
 
 describe('Create User Service', () => {
   // Mocks for testing
   let mockClient: any;
   let mockRequest: Partial<Request>;
   let mockUserData: CreateUserRequest;
+
+  // Mock password policy settings
+  const mockPasswordSettings = {
+    'password.min.length': { value: 8, default_value: 8 },
+    'password.max.length': { value: 128, default_value: 128 },
+    'password.require.uppercase': { value: true, default_value: true },
+    'password.require.lowercase': { value: true, default_value: true },
+    'password.require.numbers': { value: true, default_value: true },
+    'password.require.special.chars': { value: true, default_value: true },
+    'password.allowed.special.chars': { value: '!@#$%^&*()_+-=[]{}|;:,.<>?', default_value: '!@#$%^&*()_+-=[]{}|;:,.<>?' }
+  };
 
   // Generate unique test data
   const generateTestData = (): CreateUserRequest => {
@@ -99,6 +115,14 @@ describe('Create User Service', () => {
 
     // Setup events mock
     (createAndPublishEvent as jest.Mock).mockResolvedValue(undefined);
+
+    // Setup password policy settings mock
+    (getSetting as jest.Mock).mockImplementation((sectionPath: string, settingName: string) => {
+      if (sectionPath === 'Application.Security.PasswordPolicies') {
+        return mockPasswordSettings[settingName as keyof typeof mockPasswordSettings] || null;
+      }
+      return null;
+    });
 
     // Generate test data
     mockUserData = generateTestData();
@@ -183,7 +207,8 @@ describe('Create User Service', () => {
         .rejects
         .toMatchObject({
           code: 'VALIDATION_ERROR',
-          field: 'password'
+          field: 'password',
+          message: 'Пароль не соответствует политикам безопасности учетных записей'
         });
     });
 
@@ -206,6 +231,19 @@ describe('Create User Service', () => {
         .toMatchObject({
           code: 'VALIDATION_ERROR',
           field: 'mobile_phone_number'
+        });
+    });
+
+    it('should throw error when password policy settings are not found', async () => {
+      // Mock missing password policy settings
+      (getSetting as jest.Mock).mockReturnValue(null);
+
+      await expect(createUser(mockUserData, mockRequest as Request))
+        .rejects
+        .toMatchObject({
+          code: 'VALIDATION_ERROR',
+          field: 'password',
+          message: 'Настройки политик паролей не найдены. Обратитесь к администратору системы.'
         });
     });
   });

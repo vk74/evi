@@ -1,6 +1,6 @@
 /**
  * events.user.editor.ts - backend file
- * version: 1.0.06
+ * version: 1.0.08
  * 
  * This file contains event definitions for the user management domain within the user editor admin submodule.
  * It serves as a reference for creating and publishing user-related events to the event bus.
@@ -17,49 +17,95 @@
  * Events related to user account creation processes
  */
 export const USER_CREATION_EVENTS = {
-  // When a user creation request passes validation
+  // Validation passed for user creation
   VALIDATION_PASSED: {
     eventName: 'userEditor.creation.validation.passed',
     source: 'user editor admin submodule',
     eventType: 'app' as const,
     severity: 'debug' as const,
-    eventMessage: 'Validation of user data for account creation complete successful',
-    payload: null, // Will be of type { username: string, email: string }
+    eventMessage: 'User creation validation passed',
+    payload: null, // { username: string, email: string }
     version: '1.0.0'
   },
   
-  // When a user creation request fails validation
+  // Validation failed for user creation
   VALIDATION_FAILED: {
     eventName: 'userEditor.creation.validation.failed',
     source: 'user editor admin submodule',
     eventType: 'app' as const,
     severity: 'warning' as const,
     eventMessage: 'User creation validation failed',
-    payload: null, // Will be of type { field: string, message: string }
-    errorData: null, // Will be filled with validation error details
+    payload: null, // { field: string, message: string }
+    errorData: null, // Validation error details
     version: '1.0.0'
   },
   
-  // When a user creation operation is completed successfully
+  // Password policy check started
+  PASSWORD_POLICY_CHECK_START: {
+    eventName: 'userEditor.creation.password.policy.check.start',
+    source: 'user editor admin submodule',
+    eventType: 'app' as const,
+    severity: 'debug' as const,
+    eventMessage: 'Password policy validation started',
+    payload: null, // { username: string }
+    version: '1.0.0'
+  },
+  
+  // Password passed policy check
+  PASSWORD_POLICY_CHECK_PASSED: {
+    eventName: 'userEditor.creation.password.policy.check.passed',
+    source: 'user editor admin submodule',
+    eventType: 'app' as const,
+    severity: 'debug' as const,
+    eventMessage: 'Password passed policy validation',
+    payload: null, // { username: string }
+    version: '1.0.0'
+  },
+  
+  // Password failed policy check
+  PASSWORD_POLICY_CHECK_FAILED: {
+    eventName: 'userEditor.creation.password.policy.check.failed',
+    source: 'user editor admin submodule',
+    eventType: 'app' as const,
+    severity: 'warning' as const,
+    eventMessage: 'Password failed policy validation',
+    payload: null, // { username: string, policyViolations: string[] }
+    errorData: null, // Validation error details
+    version: '1.0.0'
+  },
+  
+  // Password policy settings not found
+  PASSWORD_POLICY_SETTINGS_NOT_FOUND: {
+    eventName: 'userEditor.creation.password.policy.settings.not.found',
+    source: 'user editor admin submodule',
+    eventType: 'app' as const,
+    severity: 'error' as const,
+    eventMessage: 'Password policy settings not found in cache',
+    payload: null, // { username: string }
+    errorData: null, // Error details
+    version: '1.0.0'
+  },
+  
+  // User creation completed successfully
   COMPLETE: {
     eventName: 'userEditor.creation.complete',
     source: 'user editor admin submodule',
     eventType: 'app' as const,
     severity: 'info' as const,
     eventMessage: 'User account created successfully',
-    payload: null, // Will be of type { userId: string, username: string }
+    payload: null, // { userId: string, username: string }
     version: '1.0.0'
   },
   
-  // When a user creation operation fails
+  // User creation failed
   FAILED: {
     eventName: 'userEditor.creation.failed',
     source: 'user editor admin submodule',
     eventType: 'app' as const,
     severity: 'error' as const,
     eventMessage: 'User account creation failed',
-    payload: null, // Will be of type ServiceError
-    errorData: null, // Will be filled with error details
+    payload: null, // ServiceError
+    errorData: null, // Error details
     version: '1.0.0'
   }
 };
@@ -69,49 +115,49 @@ export const USER_CREATION_EVENTS = {
  * Events related to updating existing user accounts
  */
 export const USER_UPDATE_EVENTS = {
-  // When a user update request passes validation
+  // Validation passed for user update
   VALIDATION_PASSED: {
     eventName: 'userEditor.update.validation.passed',
     source: 'user editor admin submodule',
     eventType: 'app' as const,
     severity: 'debug' as const,
-    eventMessage: 'User update validation successful',
-    payload: null, // Will be of type { userId: string, updatedFields: string[] }
+    eventMessage: 'User update validation passed',
+    payload: null, // { userId: string, updatedFields: string[] }
     version: '1.0.0'
   },
   
-  // When a user update request fails validation
+  // Validation failed for user update
   VALIDATION_FAILED: {
     eventName: 'userEditor.update.validation.failed',
     source: 'user editor admin submodule',
     eventType: 'app' as const,
     severity: 'warning' as const,
     eventMessage: 'User update validation failed',
-    payload: null, // Will be of type { userId: string, field: string, message: string }
-    errorData: null, // Will be filled with validation error details
+    payload: null, // { userId: string, field: string, message: string }
+    errorData: null, // Validation error details
     version: '1.0.0'
   },
   
-  // When a user update operation is completed successfully
+  // User update completed successfully
   COMPLETE: {
     eventName: 'userEditor.update.complete',
     source: 'user editor admin submodule',
     eventType: 'app' as const,
     severity: 'info' as const,
     eventMessage: 'User account updated successfully',
-    payload: null, // Will be of type { userId: string, updatedFields: string[] }
+    payload: null, // { userId: string, updatedFields: string[] }
     version: '1.0.0'
   },
   
-  // When a user update operation fails
+  // User update failed
   FAILED: {
     eventName: 'userEditor.update.failed',
     source: 'user editor admin submodule',
     eventType: 'app' as const,
     severity: 'error' as const,
     eventMessage: 'User account update failed',
-    payload: null, // Will be of type { userId: string, error: ServiceError }
-    errorData: null, // Will be filled with error details
+    payload: null, // { userId: string, error: ServiceError }
+    errorData: null, // Error details
     version: '1.0.0'
   }
 };

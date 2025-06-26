@@ -21,6 +21,8 @@ import { spawn, ChildProcess } from 'child_process';
 import { Pool } from 'pg';
 import { pool as pgPool } from '../../../../core/db/maindb';
 import { getUuidByUsername } from '../../../../core/helpers/get.uuid.by.username';
+import { debugSettingsCache } from './debug-cache';
+import { reloadSettings } from '../../settings/service.load.settings';
 
 // Test configuration
 const TIMESTAMP = Date.now();
@@ -64,6 +66,123 @@ class IntegrationTestManager {
 
   constructor() {
     this.pool = pgPool as Pool;
+  }
+
+  /**
+   * Setup password policy settings for testing
+   */
+  async setupPasswordPolicies(): Promise<void> {
+    console.log('🔧 Setting up password policy settings...');
+    
+    try {
+      // Check if settings table exists
+      const tableExists = await this.pool.query(`
+        SELECT EXISTS (
+          SELECT FROM information_schema.tables 
+          WHERE table_schema = 'app' 
+          AND table_name = 'app_settings'
+        );
+      `);
+
+      if (!tableExists.rows[0].exists) {
+        console.log('⚠️  Settings table does not exist, creating...');
+        await this.pool.query(`
+          CREATE TABLE IF NOT EXISTS app.app_settings (
+            section_path VARCHAR(255) NOT NULL,
+            setting_name VARCHAR(255) NOT NULL,
+            environment VARCHAR(50) NOT NULL DEFAULT 'all',
+            value JSONB,
+            validation_schema JSONB,
+            default_value JSONB,
+            confidentiality BOOLEAN NOT NULL DEFAULT false,
+            description TEXT,
+            updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            PRIMARY KEY (section_path, setting_name)
+          );
+        `);
+      }
+
+      // Insert password policy settings
+      const passwordSettings = [
+        {
+          section_path: 'Application.Security.PasswordPolicies',
+          setting_name: 'min_length',
+          value: 8,
+          default_value: 8,
+          description: 'Minimum password length'
+        },
+        {
+          section_path: 'Application.Security.PasswordPolicies',
+          setting_name: 'max_length',
+          value: 128,
+          default_value: 128,
+          description: 'Maximum password length'
+        },
+        {
+          section_path: 'Application.Security.PasswordPolicies',
+          setting_name: 'require_uppercase',
+          value: true,
+          default_value: true,
+          description: 'Require uppercase letters'
+        },
+        {
+          section_path: 'Application.Security.PasswordPolicies',
+          setting_name: 'require_lowercase',
+          value: true,
+          default_value: true,
+          description: 'Require lowercase letters'
+        },
+        {
+          section_path: 'Application.Security.PasswordPolicies',
+          setting_name: 'require_numbers',
+          value: true,
+          default_value: true,
+          description: 'Require numbers'
+        },
+        {
+          section_path: 'Application.Security.PasswordPolicies',
+          setting_name: 'require_special_chars',
+          value: true,
+          default_value: true,
+          description: 'Require special characters'
+        },
+        {
+          section_path: 'Application.Security.PasswordPolicies',
+          setting_name: 'allowed_special_chars',
+          value: '!@#$%^&*()_+-=[]{}|;:,.<>?',
+          default_value: '!@#$%^&*()_+-=[]{}|;:,.<>?',
+          description: 'Allowed special characters'
+        }
+      ];
+
+      for (const setting of passwordSettings) {
+        // First delete existing setting if exists
+        await this.pool.query(`
+          DELETE FROM app.app_settings 
+          WHERE section_path = $1 AND setting_name = $2
+        `, [setting.section_path, setting.setting_name]);
+
+        // Then insert new setting
+        await this.pool.query(`
+          INSERT INTO app.app_settings 
+          (section_path, setting_name, environment, value, default_value, description, updated_at)
+          VALUES ($1, $2, $3, $4, $5, $6, NOW())
+        `, [
+          setting.section_path,
+          setting.setting_name,
+          'all',
+          JSON.stringify(setting.value),
+          JSON.stringify(setting.default_value),
+          setting.description
+        ]);
+      }
+
+      console.log('✅ Password policy settings created successfully');
+      await reloadSettings();
+    } catch (error) {
+      console.error('❌ Error setting up password policies:', error);
+      throw error;
+    }
   }
 
   /**
@@ -491,6 +610,12 @@ class IntegrationTestManager {
       // Setup
       await this.startServer();
       await this.authenticate();
+      
+      // Setup password policies for testing
+      await this.setupPasswordPolicies();
+      
+      // Debug cache contents
+      debugSettingsCache();
 
       // Pre-test cleanup
       await this.cleanupExistingUser();
