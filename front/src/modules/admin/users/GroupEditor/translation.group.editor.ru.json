@@ -18,6 +18,10 @@
           "removeMember": "удалить участника из группы",
           "changeOwner": "сменить владельца"
         },
+        "sidebar": {
+          "actions": "действия",
+          "selectedItem": "выбранный элемент"
+        },
         "form": {
           "groupId": "UUID группы",
           "name": "название*",

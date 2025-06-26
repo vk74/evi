@@ -18,6 +18,10 @@
           "removeMember": "remove member from group",
           "changeOwner": "change owner"
         },
+        "sidebar": {
+          "actions": "actions",
+          "selectedItem": "selected item"
+        },
         "form": {
           "groupId": "group UUID",
           "name": "name*",

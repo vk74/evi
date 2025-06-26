@@ -348,69 +348,6 @@ onBeforeUnmount(() => {
 
       <v-spacer />
 
-      <div class="control-buttons">
-        <template v-if="!groupEditorStore.isEditMode">
-          <v-btn
-            color="teal"
-            variant="outlined"
-            class="mr-2"
-            :disabled="!isAuthorized || !isFormValid || isSubmitting"
-            @click="handleCreateGroup"
-          >
-            {{ t('admin.groups.editor.buttons.create') }}
-          </v-btn>
-          <v-btn
-            variant="outlined"
-            :disabled="!isAuthorized"
-            @click="resetForm"
-          >
-            {{ t('admin.groups.editor.buttons.reset') }}
-          </v-btn>
-        </template>
-        <template v-else-if="groupEditorStore.ui.activeSection === 'details'">
-          <v-btn
-            color="teal"
-            variant="outlined"
-            class="mr-2"
-            :disabled="!isAuthorized || !isFormValid || !isFormDirty || isSubmitting"
-            @click="handleUpdateGroup"
-          >
-            {{ t('admin.groups.editor.buttons.update') }}
-          </v-btn>
-          <v-btn
-            v-if="groupEditorStore.isEditMode"
-            color="teal"
-            variant="outlined"
-            class="mr-2"
-            :disabled="!isAuthorized"
-            @click="handleChangeOwner"
-          >
-            {{ t('admin.groups.editor.buttons.changeOwner') }}
-          </v-btn>
-        </template>
-        <template v-else-if="groupEditorStore.ui.activeSection === 'members'">
-          <v-btn
-            color="teal"
-            variant="outlined"
-            class="mr-2"
-            :disabled="!isAuthorized"
-            @click="openItemSelectorModal"
-          >
-            {{ t('admin.groups.editor.buttons.addMember') }}
-          </v-btn>
-          <v-btn
-            color="error"
-            variant="outlined"
-            :disabled="!isAuthorized || !hasSelectedMembers"
-            @click="handleRemoveMembers"
-          >
-            {{ t('admin.groups.editor.buttons.removeMember') }}
-          </v-btn>
-        </template>
-      </div>
-
-      <v-spacer />
-
       <div class="module-title">
         {{ groupEditorStore.isEditMode 
           ? t('admin.groups.editor.title.edit') 
@@ -419,166 +356,267 @@ onBeforeUnmount(() => {
     </v-app-bar>
 
     <div class="working-area">
-      <v-container class="content-container pa-0">
-        <v-card
-          v-if="groupEditorStore.ui.activeSection === 'details'"
-          flat
-        >
-          <v-form
-            ref="formRef"
-            v-model="isFormValid"
-            @submit.prevent
-          >
-            <v-row class="pa-4">
-              <v-col
-                v-if="groupEditorStore.isEditMode"
-                cols="12"
-                md="6"
+      <div class="d-flex">
+        <!-- Основное содержимое (левая часть) -->
+        <div class="flex-grow-1">
+          <v-container class="content-container pa-0">
+            <v-card
+              v-if="groupEditorStore.ui.activeSection === 'details'"
+              flat
+            >
+              <v-form
+                ref="formRef"
+                v-model="isFormValid"
+                @submit.prevent
               >
+                <v-row class="pa-4">
+                  <v-col
+                    v-if="groupEditorStore.isEditMode"
+                    cols="12"
+                    md="6"
+                  >
+                    <v-text-field
+                      :model-value="groupEditorStore.mode.mode === 'edit' ? groupEditorStore.mode.groupId : ''"
+                      :label="t('admin.groups.editor.form.groupId')"
+                      variant="outlined"
+                      density="comfortable"
+                      readonly
+                    />
+                  </v-col>
+
+                  <v-col
+                    cols="12"
+                    :md="groupEditorStore.isEditMode ? 6 : 12"
+                  >
+                    <v-text-field
+                      v-model="groupEditorStore.group.group_name"
+                      :label="t('admin.groups.editor.form.name')"
+                      :rules="groupNameRules"
+                      variant="outlined"
+                      density="comfortable"
+                      required
+                    />
+                  </v-col>
+
+                  <v-col
+                    cols="12"
+                    md="6"
+                  >
+                    <v-select
+                      v-model="groupEditorStore.group.group_status"
+                      :label="t('admin.groups.editor.form.status')"
+                      :items="[
+                        { title: t('admin.groups.editor.status.active'), value: GroupStatus.ACTIVE },
+                        { title: t('admin.groups.editor.status.disabled'), value: GroupStatus.DISABLED },
+                        { title: t('admin.groups.editor.status.archived'), value: GroupStatus.ARCHIVED }
+                      ]"
+                      item-title="title"
+                      item-value="value"
+                      :rules="groupStatusRules"
+                      variant="outlined"
+                      density="comfortable"
+                    />
+                  </v-col>
+
+                  <v-col cols="12">
+                    <v-textarea
+                      v-model="groupEditorStore.details.group_description"
+                      :label="t('admin.groups.editor.form.description')"
+                      :rules="generalDescriptionRules"
+                      variant="outlined"
+                      rows="2"
+                      counter="5000"
+                    />
+                  </v-col>
+
+                  <v-col
+                    cols="12"
+                    md="6"
+                  >
+                    <v-text-field
+                      v-model="groupEditorStore.details.group_email"
+                      :label="t('admin.groups.editor.form.email')"
+                      :rules="optionalEmailRules"
+                      variant="outlined"
+                      density="comfortable"
+                    />
+                  </v-col>
+
+                  <v-col
+                    cols="12"
+                    md="6"
+                  >
+                    <v-text-field
+                      v-model="ownerDisplay"
+                      :label="t('admin.groups.editor.form.owner')"
+                      :rules="usernameRules"
+                      variant="outlined"
+                      density="comfortable"
+                      readonly
+                    />
+                  </v-col>
+                </v-row>
+              </v-form>
+            </v-card>
+
+            <v-card
+              v-else
+              flat
+            >
+              <v-container class="pa-4">
+                <h4 class="mb-2">
+                  {{ t('admin.groups.editor.sections.members') }}: {{ groupEditorStore.group.group_name || t('common.unnamed') }}
+                </h4><br>
                 <v-text-field
-                  :model-value="groupEditorStore.mode.mode === 'edit' ? groupEditorStore.mode.groupId : ''"
-                  :label="t('admin.groups.editor.form.groupId')"
+                  v-model="searchQuery"
+                  :label="t('admin.groups.editor.search')"
                   variant="outlined"
                   density="comfortable"
-                  readonly
+                  prepend-inner-icon="mdi-magnify"
+                  clearable
+                  color="teal"
+                  clear-icon="mdi-close"
+                  class="mb-4"
                 />
-              </v-col>
-
-              <v-col
-                cols="12"
-                :md="groupEditorStore.isEditMode ? 6 : 12"
+              </v-container>
+              <v-data-table
+                v-model:page="page"
+                v-model:items-per-page="itemsPerPage"
+                :headers="headers"
+                :items="members"
+                :loading="membersLoading"
+                :search="searchQuery"
               >
-                <v-text-field
-                  v-model="groupEditorStore.group.group_name"
-                  :label="t('admin.groups.editor.form.name')"
-                  :rules="groupNameRules"
-                  variant="outlined"
-                  density="comfortable"
-                  required
-                />
-              </v-col>
-
-              <v-col
-                cols="12"
-                md="6"
-              >
-                <v-select
-                  v-model="groupEditorStore.group.group_status"
-                  :label="t('admin.groups.editor.form.status')"
-                  :items="[
-                    { title: t('admin.groups.editor.status.active'), value: GroupStatus.ACTIVE },
-                    { title: t('admin.groups.editor.status.disabled'), value: GroupStatus.DISABLED },
-                    { title: t('admin.groups.editor.status.archived'), value: GroupStatus.ARCHIVED }
-                  ]"
-                  item-title="title"
-                  item-value="value"
-                  :rules="groupStatusRules"
-                  variant="outlined"
-                  density="comfortable"
-                />
-              </v-col>
-
-              <v-col cols="12">
-                <v-textarea
-                  v-model="groupEditorStore.details.group_description"
-                  :label="t('admin.groups.editor.form.description')"
-                  :rules="generalDescriptionRules"
-                  variant="outlined"
-                  rows="2"
-                  counter="5000"
-                />
-              </v-col>
-
-              <v-col
-                cols="12"
-                md="6"
-              >
-                <v-text-field
-                  v-model="groupEditorStore.details.group_email"
-                  :label="t('admin.groups.editor.form.email')"
-                  :rules="optionalEmailRules"
-                  variant="outlined"
-                  density="comfortable"
-                />
-              </v-col>
-
-              <v-col
-                cols="12"
-                md="6"
-              >
-                <v-text-field
-                  v-model="ownerDisplay"
-                  :label="t('admin.groups.editor.form.owner')"
-                  :rules="usernameRules"
-                  variant="outlined"
-                  density="comfortable"
-                  readonly
-                />
-              </v-col>
-            </v-row>
-          </v-form>
-        </v-card>
-
-        <v-card
-          v-else
-          flat
-        >
-          <v-container class="pa-4">
-            <h4 class="mb-2">
-              {{ t('admin.groups.editor.sections.members') }}: {{ groupEditorStore.group.group_name || t('common.unnamed') }}
-            </h4><br>
-            <v-text-field
-              v-model="searchQuery"
-              :label="t('admin.groups.editor.search')"
-              variant="outlined"
-              density="comfortable"
-              prepend-inner-icon="mdi-magnify"
-              clearable
-              color="teal"
-              clear-icon="mdi-close"
-              class="mb-4"
-            />
+                <template #item.selection="{ item }">
+                  <v-checkbox
+                    :model-value="isSelected(item.user_id)"
+                    density="compact"
+                    hide-details
+                    :disabled="!isAuthorized"
+                    @update:model-value="(val) => onSelectMember(item.user_id, val)"
+                  />
+                </template>
+                <template #item.status="{ item }">
+                  <v-chip 
+                    :color="getStatusColor(item.status)" 
+                    size="x-small"
+                  >
+                    {{ item.status }}
+                  </v-chip>
+                </template>
+                <template #item.is_staff="{ item }">
+                  <v-icon
+                    :color="item.is_staff ? 'teal' : 'red-darken-4'"
+                    :icon="item.is_staff ? 'mdi-check-circle' : 'mdi-minus-circle'"
+                    size="x-small"
+                  />
+                </template>
+                <template #no-data>
+                  <div class="pa-4 text-center">
+                    {{ groupEditorStore.members.error || t('common.noData') }}
+                  </div>
+                </template>
+              </v-data-table>
+            </v-card>
           </v-container>
-          <v-data-table
-            v-model:page="page"
-            v-model:items-per-page="itemsPerPage"
-            :headers="headers"
-            :items="members"
-            :loading="membersLoading"
-            :search="searchQuery"
-          >
-            <template #item.selection="{ item }">
-              <v-checkbox
-                :model-value="isSelected(item.user_id)"
-                density="compact"
-                hide-details
+        </div>
+        
+        <!-- Боковая панель (правая часть) -->
+        <div class="side-bar-container">
+          <!-- Верхняя часть боковой панели - основные действия -->
+          <div class="side-bar-section">
+            <h3 class="text-subtitle-2 px-2 py-2">
+              {{ t('admin.groups.editor.sidebar.actions') }}
+            </h3>
+            
+            <!-- Кнопка создания (видна только в режиме создания) -->
+            <v-btn
+              v-if="!groupEditorStore.isEditMode"
+              block
+              color="teal"
+              variant="outlined"
+              :disabled="!isAuthorized || !isFormValid || isSubmitting"
+              class="mb-3"
+              @click="handleCreateGroup"
+            >
+              {{ t('admin.groups.editor.buttons.create') }}
+            </v-btn>
+
+            <!-- Кнопка обновления (видна только в режиме редактирования в секции details) -->
+            <v-btn
+              v-if="groupEditorStore.isEditMode && groupEditorStore.ui.activeSection === 'details'"
+              block
+              color="teal"
+              variant="outlined"
+              :disabled="!isAuthorized || !isFormValid || !isFormDirty || isSubmitting"
+              class="mb-3"
+              @click="handleUpdateGroup"
+            >
+              {{ t('admin.groups.editor.buttons.update') }}
+            </v-btn>
+
+            <!-- Кнопки для секции members (видна только в режиме редактирования в секции members) -->
+            <template v-if="groupEditorStore.isEditMode && groupEditorStore.ui.activeSection === 'members'">
+              <v-btn
+                block
+                color="teal"
+                variant="outlined"
                 :disabled="!isAuthorized"
-                @update:model-value="(val) => onSelectMember(item.user_id, val)"
-              />
-            </template>
-            <template #item.status="{ item }">
-              <v-chip 
-                :color="getStatusColor(item.status)" 
-                size="x-small"
+                class="mb-3"
+                @click="openItemSelectorModal"
               >
-                {{ item.status }}
-              </v-chip>
+                {{ t('admin.groups.editor.buttons.addMember') }}
+              </v-btn>
+              
+              <v-btn
+                block
+                color="error"
+                variant="outlined"
+                :disabled="!isAuthorized || !hasSelectedMembers"
+                class="mb-3"
+                @click="handleRemoveMembers"
+              >
+                {{ t('admin.groups.editor.buttons.removeMember') }}
+              </v-btn>
             </template>
-            <template #item.is_staff="{ item }">
-              <v-icon
-                :color="item.is_staff ? 'teal' : 'red-darken-4'"
-                :icon="item.is_staff ? 'mdi-check-circle' : 'mdi-minus-circle'"
-                size="x-small"
-              />
-            </template>
-            <template #no-data>
-              <div class="pa-4 text-center">
-                {{ groupEditorStore.members.error || t('common.noData') }}
-              </div>
-            </template>
-          </v-data-table>
-        </v-card>
-      </v-container>
+          </div>
+          
+          <!-- Разделитель между секциями -->
+          <div class="sidebar-divider" />
+          
+          <!-- Нижняя часть боковой панели - действия с выбранными элементами -->
+          <div class="side-bar-section">
+            <h3 class="text-subtitle-2 px-2 py-2">
+              {{ t('admin.groups.editor.sidebar.selectedItem') }}
+            </h3>
+            
+            <!-- Кнопка сброса (видна только в режиме создания) -->
+            <v-btn
+              v-if="!groupEditorStore.isEditMode"
+              block
+              variant="outlined"
+              :disabled="!isAuthorized"
+              class="mb-3"
+              @click="resetForm"
+            >
+              {{ t('admin.groups.editor.buttons.reset') }}
+            </v-btn>
+
+            <!-- Кнопка смены владельца (видна только в режиме редактирования в секции details) -->
+            <v-btn
+              v-if="groupEditorStore.isEditMode && groupEditorStore.ui.activeSection === 'details'"
+              block
+              color="teal"
+              variant="outlined"
+              :disabled="!isAuthorized"
+              class="mb-3"
+              @click="handleChangeOwner"
+            >
+              {{ t('admin.groups.editor.buttons.changeOwner') }}
+            </v-btn>
+          </div>
+        </div>
+      </div>
     </div>
 
     <!-- Модальное окно для добавления участников -->
@@ -647,5 +685,34 @@ onBeforeUnmount(() => {
 .control-buttons {
   display: flex;
   align-items: center;
+}
+
+/* Стили для боковой панели */
+.side-bar-container {
+  width: 18%;
+  min-width: 220px;
+  border-left: thin solid rgba(var(--v-border-color), var(--v-border-opacity));
+  display: flex;
+  flex-direction: column;
+}
+
+.side-bar-section {
+  padding: 16px;
+}
+
+/* Разделитель между секциями */
+.sidebar-divider {
+  height: 20px;
+  position: relative;
+  margin: 0 16px;
+}
+
+.sidebar-divider::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 0;
+  right: 0;
+  border-top: thin solid rgba(var(--v-border-color), var(--v-border-opacity));
 }
 </style>
