@@ -19,7 +19,7 @@ import type {
   NotFoundError
 } from './types.item.selector';
 import { getUserAccountStatus } from '../../helpers/get.user.account.status';
-import { getSetting, parseSettingValue } from '../settings/cache.settings';
+import { getSetting, parseSettingValue } from '../../../modules/admin/settings/cache.settings';
 import { createSystemLgr, Lgr } from '../../lgr/lgr.index';
 import { Events } from '../../lgr/codes';
 

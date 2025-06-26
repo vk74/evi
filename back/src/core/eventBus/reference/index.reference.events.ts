@@ -39,7 +39,7 @@ export const eventReferenceFiles: Record<string, string[]> = {
   
   // Settings module events
   settings: [
-    path.resolve(__dirname, '../../../core/services/settings/events.settings.ts')
+    path.resolve(__dirname, '../../../modules/admin/settings/events.settings.ts')
   ],
   
   // Connection handler events

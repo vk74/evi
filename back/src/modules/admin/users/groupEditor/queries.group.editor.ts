@@ -18,6 +18,7 @@ interface GroupEditorQueries {
   checkGroupName: SQLQuery;
   getUserId: SQLQuery;
   checkUserExists: SQLQuery;
+  checkGroupExists: SQLQuery;
   insertGroup: SQLQuery;
   insertGroupDetails: SQLQuery;
   getGroupById: SQLQuery;
@@ -26,6 +27,7 @@ interface GroupEditorQueries {
   updateGroupDetailsById: SQLQuery;
   getGroupMembers: SQLQuery;
   removeGroupMembers: SQLQuery;
+  deleteGroup: SQLQuery;
 }
 
 export const queries: GroupEditorQueries = {
@@ -55,6 +57,16 @@ export const queries: GroupEditorQueries = {
       SELECT user_id
       FROM app.users
       WHERE username = $1
+      LIMIT 1
+    `
+  },
+
+  // Check if group exists by group_id
+  checkGroupExists: {
+    text: `
+      SELECT group_id
+      FROM app.groups
+      WHERE group_id = $1::uuid
       LIMIT 1
     `
   },
@@ -191,6 +203,14 @@ export const queries: GroupEditorQueries = {
       WHERE group_id = $1::uuid
       AND user_id = ANY($2::uuid[])
       RETURNING user_id
+    `
+  },
+
+  deleteGroup: {
+    text: `
+      DELETE FROM app.groups
+      WHERE group_id = $1::uuid
+      RETURNING group_id
     `
   }
 };

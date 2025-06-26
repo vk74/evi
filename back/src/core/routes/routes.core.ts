@@ -20,8 +20,8 @@ import changeGroupOwner from '../services/item-selector/controller.change.group.
 
 import selfChangePasswordController from '../services/change-password/controller.self.change.password';
 import adminResetPasswordController from '../services/change-password/controller.admin.change.password';
-import fetchSettingsController from '../services/settings/controller.fetch.settings';
-import updateSettingsController from '../services/settings/controller.update.settings';
+import fetchSettingsController from '../../modules/admin/settings/controller.fetch.settings';
+import updateSettingsController from '../../modules/admin/settings/controller.update.settings';
 
 const router: Router = express.Router();
 

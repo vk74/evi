@@ -236,3 +236,41 @@ export type ServiceErrorType =
   | RequiredFieldError 
   | NotFoundError 
   | ServiceError;
+
+/**
+ * Interface for adding users to group request
+ */
+export interface AddUsersToGroupRequest {
+  groupId: string;      // UUID of the group
+  userIds: string[];    // Array of user UUIDs to add
+}
+
+/**
+ * Interface for changing group owner request
+ */
+export interface ChangeGroupOwnerRequest {
+  groupId: string;      // UUID of the group
+  newOwnerId: string;   // UUID of the new owner
+}
+
+/**
+ * Interface for deleting group request
+ */
+export interface DeleteGroupRequest {
+  groupId: string;      // UUID of the group to delete
+}
+
+/**
+ * Interface for loading group request
+ */
+export interface LoadGroupRequest {
+  groupId: string;      // UUID of the group to load
+}
+
+/**
+ * Interface for searching users request
+ */
+export interface SearchUsersRequest {
+  searchTerm: string;   // Search term for username or name
+  limit?: number;       // Optional limit for results
+}

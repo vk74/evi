@@ -22,7 +22,7 @@ import catalogRoutes from '@/modules/catalog/routes.catalog';
 import adminRoutes from '@/modules/admin/routes.admin';
 import coreRoutes from '@/core/routes/routes.core';
 import workRoutes from '@/modules/work/routes.work';
-import { loadSettings } from '@/core/services/settings/service.load.settings';
+import { loadSettings } from '@/modules/admin/settings/service.load.settings';
 
 // Import event bus system
 import { eventBus } from '@/core/eventBus/bus.events';

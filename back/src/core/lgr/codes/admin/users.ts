@@ -101,5 +101,49 @@ export const GroupEvents = {
         description: 'Ошибка при создании группы' 
       }
     }
+  },
+  DELETE: {
+    /** Начало операции удаления */
+    INITIATED: { 
+      code: 'ADMIN:USERS:GROUPS:DELETE:001', 
+      description: 'Начата операция удаления группы' 
+    },
+    /** Группа не найдена */
+    GROUP_NOT_FOUND: { 
+      code: 'ADMIN:USERS:GROUPS:DELETE:002', 
+      description: 'Группа не найдена для удаления' 
+    },
+    /** Успешное удаление */
+    SUCCESS: { 
+      code: 'ADMIN:USERS:GROUPS:DELETE:003', 
+      description: 'Группа успешно удалена' 
+    },
+    /** Ошибка при удалении */
+    FAILED: { 
+      code: 'ADMIN:USERS:GROUPS:DELETE:004', 
+      description: 'Ошибка при удалении группы' 
+    }
+  },
+  LOAD: {
+    /** Начало операции загрузки */
+    INITIATED: { 
+      code: 'ADMIN:USERS:GROUPS:LOAD:001', 
+      description: 'Начата операция загрузки группы' 
+    },
+    /** Группа не найдена */
+    GROUP_NOT_FOUND: { 
+      code: 'ADMIN:USERS:GROUPS:LOAD:002', 
+      description: 'Группа не найдена' 
+    },
+    /** Успешная загрузка */
+    SUCCESS: { 
+      code: 'ADMIN:USERS:GROUPS:LOAD:003', 
+      description: 'Группа успешно загружена' 
+    },
+    /** Ошибка при загрузке */
+    FAILED: { 
+      code: 'ADMIN:USERS:GROUPS:LOAD:004', 
+      description: 'Ошибка при загрузке группы' 
+    }
   }
 };
