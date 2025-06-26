@@ -21,7 +21,6 @@ import { spawn, ChildProcess } from 'child_process';
 import { Pool } from 'pg';
 import { pool as pgPool } from '../../../../core/db/maindb';
 import { getUuidByUsername } from '../../../../core/helpers/get.uuid.by.username';
-import { debugSettingsCache } from './debug-cache';
 import { reloadSettings } from '../../settings/service.load.settings';
 
 // Test configuration
@@ -614,9 +613,6 @@ class IntegrationTestManager {
       // Setup password policies for testing
       await this.setupPasswordPolicies();
       
-      // Debug cache contents
-      debugSettingsCache();
-
       // Pre-test cleanup
       await this.cleanupExistingUser();
 
