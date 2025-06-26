@@ -88,6 +88,78 @@ const requiredFieldsFilled = computed(() =>
   Object.values(requiredFields.value).every(field => !!field)
 )
 
+// Computed свойства для полей профиля с правильной реактивностью
+const profileGender = computed({
+  get: () => userEditorStore.profile.gender,
+  set: (value) => userEditorStore.updateProfile({ gender: value })
+})
+
+const profileMobilePhone = computed({
+  get: () => userEditorStore.profile.mobile_phone_number,
+  set: (value) => userEditorStore.updateProfile({ mobile_phone_number: value })
+})
+
+const profileAddress = computed({
+  get: () => userEditorStore.profile.address,
+  set: (value) => userEditorStore.updateProfile({ address: value })
+})
+
+const profileCompanyName = computed({
+  get: () => userEditorStore.profile.company_name,
+  set: (value) => userEditorStore.updateProfile({ company_name: value })
+})
+
+const profilePosition = computed({
+  get: () => userEditorStore.profile.position,
+  set: (value) => userEditorStore.updateProfile({ position: value })
+})
+
+// Computed свойства для полей аккаунта с правильной реактивностью
+const accountUsername = computed({
+  get: () => userEditorStore.account.username,
+  set: (value) => userEditorStore.updateAccount({ username: value })
+})
+
+const accountEmail = computed({
+  get: () => userEditorStore.account.email,
+  set: (value) => userEditorStore.updateAccount({ email: value })
+})
+
+const accountFirstName = computed({
+  get: () => userEditorStore.account.first_name,
+  set: (value) => userEditorStore.updateAccount({ first_name: value })
+})
+
+const accountMiddleName = computed({
+  get: () => userEditorStore.account.middle_name,
+  set: (value) => userEditorStore.updateAccount({ middle_name: value })
+})
+
+const accountLastName = computed({
+  get: () => userEditorStore.account.last_name,
+  set: (value) => userEditorStore.updateAccount({ last_name: value })
+})
+
+const accountPassword = computed({
+  get: () => userEditorStore.account.password,
+  set: (value) => userEditorStore.updateAccount({ password: value })
+})
+
+const accountPasswordConfirm = computed({
+  get: () => userEditorStore.account.passwordConfirm,
+  set: (value) => userEditorStore.updateAccount({ passwordConfirm: value })
+})
+
+const accountStatus = computed({
+  get: () => userEditorStore.account.account_status,
+  set: (value) => userEditorStore.updateAccount({ account_status: value })
+})
+
+const accountIsStaff = computed({
+  get: () => userEditorStore.account.is_staff,
+  set: (value) => userEditorStore.updateAccount({ is_staff: value })
+})
+
 // ==================== VALIDATION RULES ====================
 const addressRules = [
  (v: string) => !v || v.length <= 5000 || t('admin.users.editor.validation.fields.address.length'),
@@ -316,7 +388,7 @@ onBeforeUnmount(() => {
                       md="6"
                     >
                       <v-text-field
-                        v-model="userEditorStore.account.username"
+                        v-model="accountUsername"
                         :label="t('admin.users.editor.fields.username.label')"
                         :rules="usernameRules"
                         variant="outlined"
@@ -331,7 +403,7 @@ onBeforeUnmount(() => {
                       md="6"
                     >
                       <v-text-field
-                        v-model="userEditorStore.account.email"
+                        v-model="accountEmail"
                         :label="t('admin.users.editor.fields.email.label')"
                         :rules="emailRules"
                         variant="outlined"
@@ -346,7 +418,7 @@ onBeforeUnmount(() => {
                       md="4"
                     >
                       <v-text-field
-                        v-model="userEditorStore.account.first_name"
+                        v-model="accountFirstName"
                         :label="t('admin.users.editor.fields.firstName.label')"
                         :rules="firstNameRules"
                         variant="outlined"
@@ -360,7 +432,7 @@ onBeforeUnmount(() => {
                       md="4"
                     >
                       <v-text-field
-                        v-model="userEditorStore.account.middle_name"
+                        v-model="accountMiddleName"
                         :label="t('admin.users.editor.fields.middleName.label')"
                         :rules="middleNameRules"
                         variant="outlined"
@@ -373,7 +445,7 @@ onBeforeUnmount(() => {
                       md="4"
                     >
                       <v-text-field
-                        v-model="userEditorStore.account.last_name"
+                        v-model="accountLastName"
                         :label="t('admin.users.editor.fields.lastName.label')"
                         :rules="lastNameRules"
                         variant="outlined"
@@ -388,14 +460,14 @@ onBeforeUnmount(() => {
                       md="4"
                     >
                       <v-select
-                        v-model="userEditorStore.profile.gender"
+                        v-model="profileGender"
                         :label="t('admin.users.editor.fields.gender.label')"
                         variant="outlined"
                         density="comfortable"
                         :items="[
                           { title: t('admin.users.editor.fields.gender.options.male'), value: Gender.MALE },
                           { title: t('admin.users.editor.fields.gender.options.female'), value: Gender.FEMALE },
-                          { title: t('admin.users.editor.fields.gender.options.notDefined'), value: Gender.NOTDEFINED }
+                          { title: t('admin.users.editor.fields.gender.options.notDefined'), value: Gender.NOT_DEFINED }
                         ]"
                         item-title="title"
                         item-value="value"
@@ -424,7 +496,7 @@ onBeforeUnmount(() => {
                         md="5"
                       >
                         <v-text-field
-                          v-model="userEditorStore.account.password"
+                          v-model="accountPassword"
                           :label="t('admin.users.editor.fields.password.label')"
                           :rules="passwordRules"
                           variant="outlined"
@@ -439,9 +511,9 @@ onBeforeUnmount(() => {
                         md="5"
                       >
                         <v-text-field
-                          v-model="userEditorStore.account.passwordConfirm"
+                          v-model="accountPasswordConfirm"
                           :label="t('admin.users.editor.fields.password.confirm')"
-                          :rules="[(v) => v === userEditorStore.account.password || t('admin.users.editor.validation.fields.password.mismatch')]"
+                          :rules="[(v) => v === accountPassword || t('admin.users.editor.validation.fields.password.mismatch')]"
                           variant="outlined"
                           density="comfortable"
                           :type="showPassword ? 'text' : 'password'"
@@ -471,7 +543,7 @@ onBeforeUnmount(() => {
                       md="6"
                     >
                       <v-select
-                        v-model="userEditorStore.account.account_status"
+                        v-model="accountStatus"
                         :label="t('admin.users.editor.fields.accountStatus.label')"
                         variant="outlined"
                         density="comfortable"
@@ -489,7 +561,7 @@ onBeforeUnmount(() => {
                       md="6"
                     >
                       <v-checkbox
-                        v-model="userEditorStore.account.is_staff"
+                        v-model="accountIsStaff"
                         :label="t('admin.users.editor.fields.isStaff.label')"
                         color="teal"
                         hide-details
@@ -513,7 +585,7 @@ onBeforeUnmount(() => {
                       md="6"
                     >
                       <v-text-field
-                        v-model="userEditorStore.profile.mobile_phone_number"
+                        v-model="profileMobilePhone"
                         :label="t('admin.users.editor.fields.mobilePhone.label')"
                         :placeholder="t('admin.users.editor.fields.mobilePhone.placeholder')"
                         :rules="mobilePhoneRules"
@@ -523,7 +595,7 @@ onBeforeUnmount(() => {
                     </v-col>
                     <v-col cols="12">
                       <v-textarea
-                        v-model="userEditorStore.profile.address"
+                        v-model="profileAddress"
                         :label="t('admin.users.editor.fields.address.label')"
                         :rules="addressRules"
                         variant="outlined"
@@ -537,7 +609,7 @@ onBeforeUnmount(() => {
                       md="6"
                     >
                       <v-text-field
-                        v-model="userEditorStore.profile.company_name"
+                        v-model="profileCompanyName"
                         :label="t('admin.users.editor.fields.company.label')"
                         :rules="companyNameRules"
                         variant="outlined"
@@ -551,7 +623,7 @@ onBeforeUnmount(() => {
                       md="6"
                     >
                       <v-text-field
-                        v-model="userEditorStore.profile.position"
+                        v-model="profilePosition"
                         :label="t('admin.users.editor.fields.position.label')"
                         :rules="positionRules"
                         variant="outlined"
@@ -645,7 +717,7 @@ onBeforeUnmount(() => {
     >
       <ChangePassword
         :title="t('admin.users.editor.buttons.resetPassword') + ' ' + userEditorStore.account.username"
-        :uuid="userEditorStore.account.user_id"
+        :uuid="userEditorStore.account.user_id || ''"
         :username="userEditorStore.account.username"
         :mode="PasswordChangeMode.ADMIN"
         :on-close="closePasswordDialog"
@@ -696,5 +768,12 @@ color: rgba(0, 0, 0, 0.6);
 
 .wide-btn {
   min-width: 240px;
+}
+
+/* Позволяет кнопке переносить текст на новую строку при необходимости */
+.v-btn .v-btn__content {
+  white-space: normal !important;
+  text-align: center;
+  line-height: 1.1;
 }
 </style>
