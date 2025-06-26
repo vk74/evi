@@ -193,8 +193,8 @@ async function validateUserAccountStatus(userId: string): Promise<boolean> {
       details: { userId }
     });
     
-    const settingPath = 'UsersManagement.GroupManagement';
-    const settingName = 'only.add.active.users';
+    const settingPath = 'Application.UsersManagement.GroupsManagement';
+    const settingName = 'add.only.active.users.to.groups';
     const setting = getSetting(settingPath, settingName);
     
     // Default to true (only active users) if setting not found
