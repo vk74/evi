@@ -17,11 +17,6 @@ export const eventReferenceFiles: Record<string, string[]> = {
     path.resolve(__dirname, '../../../modules/admin/users/userEditor/events.user.editor.ts')
   ],
   
-  // Users list events (fully migrated to prototype implementation)
-  usersListProto: [
-    path.resolve(__dirname, '../../../modules/admin/users/usersListProto/protoEvents.users.list.ts')
-  ],
-  
   // Users list events (production implementation)
   usersList: [
     path.resolve(__dirname, '../../../modules/admin/users/usersList/events.users.list.ts')

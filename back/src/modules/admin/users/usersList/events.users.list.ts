@@ -1,8 +1,8 @@
 /**
- * protoEvents.users.list.ts - backend file
+ * events.users.list.ts - backend file
  * version: 1.0.0
  * 
- * This file contains event definitions for the prototype users list management domain with server-side processing.
+ * This file contains event definitions for the users list management domain with server-side processing.
  * It serves as a reference for creating and publishing users list-related events to the event bus.
  * Each event includes standard properties like eventName, eventType, severity, etc.
  * 
