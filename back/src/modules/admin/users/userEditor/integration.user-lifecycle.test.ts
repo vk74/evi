@@ -8,6 +8,16 @@
 
 import axios, { AxiosInstance } from 'axios';
 
+// Global Jest declarations
+declare global {
+  const describe: (name: string, fn: () => void) => void;
+  const it: (name: string, fn: () => void | Promise<void>) => void;
+  const expect: any;
+  const beforeAll: (fn: () => void | Promise<void>, timeout?: number) => void;
+  const afterAll: (fn: () => void | Promise<void>, timeout?: number) => void;
+  const require: (module: string) => any;
+}
+
 // Конфиг теста
 const TEST_CONFIG = {
   baseURL: 'http://localhost:3000',
@@ -148,14 +158,12 @@ function makeShortEmail(prefix: string): string {
   return `${prefix}${Math.random().toString(36).slice(2, 6)}@ev2.dev`;
 }
 
-declare global {
-  const beforeAll: (fn: () => void | Promise<void>, timeout?: number) => void;
-  const afterAll: (fn: () => void | Promise<void>, timeout?: number) => void;
-}
-
 describe('User Lifecycle Integration Test: Password Policy', () => {
   let adminToken: string;
   let passwordPolicy: Record<string, any>;
+  let api: AxiosInstance;
+  let httpAgent: any;
+  let httpsAgent: any;
 
   beforeAll(async () => {
     // Аутентификация администратора
@@ -166,6 +174,27 @@ describe('User Lifecycle Integration Test: Password Policy', () => {
     adminToken = response.data.token;
     // Получаем актуальную политику паролей
     passwordPolicy = await fetchPasswordPolicySettings(adminToken);
+    // Создаем один экземпляр axios для всех тестов с отключенным keep-alive
+    const http = require('http');
+    const https = require('https');
+    httpAgent = new http.Agent({ keepAlive: false });
+    httpsAgent = new https.Agent({ keepAlive: false });
+    api = axios.create({
+      baseURL: TEST_CONFIG.baseURL,
+      headers: { Authorization: `Bearer ${adminToken}` },
+      httpAgent: httpAgent,
+      httpsAgent: httpsAgent
+    });
+  });
+
+  afterAll(async () => {
+    // Закрываем агенты
+    if (httpAgent) {
+      httpAgent.destroy();
+    }
+    if (httpsAgent) {
+      httpsAgent.destroy();
+    }
   });
 
   it('should allow user creation with valid password', async () => {
@@ -176,10 +205,6 @@ describe('User Lifecycle Integration Test: Password Policy', () => {
       email: makeShortEmail(`test_valid_`),
       password: validPassword
     };
-    const api = axios.create({
-      baseURL: TEST_CONFIG.baseURL,
-      headers: { Authorization: `Bearer ${adminToken}` }
-    });
     const response = await api.post('/api/admin/users/create-new-user', userData);
     expect(response.data.success).toBe(true);
     // cleanup
@@ -206,10 +231,6 @@ describe('User Lifecycle Integration Test: Password Policy', () => {
         email: makeShortEmail(`test_invalid_${v.type}_`),
         password: invalidPassword
       };
-      const api = axios.create({
-        baseURL: TEST_CONFIG.baseURL,
-        headers: { Authorization: `Bearer ${adminToken}` }
-      });
       try {
         await api.post('/api/admin/users/create-new-user', userData);
         throw new Error('Should have failed password policy');
@@ -227,6 +248,9 @@ describe('User Lifecycle Integration Test: Full Flow', () => {
   let testUserId: string | null = null;
   const uniqueSuffix = Date.now();
   let userData: any = {};
+  let api: AxiosInstance;
+  let httpAgent: any;
+  let httpsAgent: any;
 
   beforeAll(async () => {
     // Authenticate as admin
@@ -244,24 +268,34 @@ describe('User Lifecycle Integration Test: Full Flow', () => {
       email: makeShortEmail(`test_lifecycle_${uniqueSuffix}`),
       password: generateValidPassword(passwordPolicy)
     };
+    // Создаем один экземпляр axios для всех тестов с отключенным keep-alive
+    const http = require('http');
+    const https = require('https');
+    httpAgent = new http.Agent({ keepAlive: false });
+    httpsAgent = new https.Agent({ keepAlive: false });
+    api = axios.create({
+      baseURL: TEST_CONFIG.baseURL,
+      headers: { Authorization: `Bearer ${adminToken}` },
+      httpAgent: httpAgent,
+      httpsAgent: httpsAgent
+    });
   });
 
   afterAll(async () => {
     // Cleanup: delete test user if still exists
     if (testUserId) {
-      const api = axios.create({
-        baseURL: TEST_CONFIG.baseURL,
-        headers: { Authorization: `Bearer ${adminToken}` }
-      });
       await api.post('/api/admin/users/delete-selected-users', { userIds: [testUserId] });
+    }
+    // Закрываем агенты
+    if (httpAgent) {
+      httpAgent.destroy();
+    }
+    if (httpsAgent) {
+      httpsAgent.destroy();
     }
   });
 
   it('should create user via public API', async () => {
-    const api = axios.create({
-      baseURL: TEST_CONFIG.baseURL,
-      headers: { Authorization: `Bearer ${adminToken}` }
-    });
     const createResp = await api.post('/api/admin/users/create-new-user', userData);
     expect(createResp.data.success).toBe(true);
     testUserId = createResp.data.userId;
@@ -269,10 +303,6 @@ describe('User Lifecycle Integration Test: Full Flow', () => {
   });
 
   it('should not allow duplicate user creation', async () => {
-    const api = axios.create({
-      baseURL: TEST_CONFIG.baseURL,
-      headers: { Authorization: `Bearer ${adminToken}` }
-    });
     try {
       await api.post('/api/admin/users/create-new-user', userData);
       throw new Error('Duplicate user creation should fail');
@@ -283,20 +313,12 @@ describe('User Lifecycle Integration Test: Full Flow', () => {
   });
 
   it('should read user via public API', async () => {
-    const api = axios.create({
-      baseURL: TEST_CONFIG.baseURL,
-      headers: { Authorization: `Bearer ${adminToken}` }
-    });
     const fetchResp = await api.get(`/api/admin/users/fetch-user-by-userid/${testUserId}`);
     expect(fetchResp.data.success).toBe(true);
     expect(fetchResp.data.data?.user?.username).toBe(userData.username);
   });
 
   it('should update user via public API', async () => {
-    const api = axios.create({
-      baseURL: TEST_CONFIG.baseURL,
-      headers: { Authorization: `Bearer ${adminToken}` }
-    });
     const updateData = {
       email: `updated_${userData.email}`,
       account_status: 'active',
@@ -320,12 +342,8 @@ describe('User Lifecycle Integration Test: Full Flow', () => {
   });
 
   it('should delete user via public API', async () => {
-    const api = axios.create({
-      baseURL: TEST_CONFIG.baseURL,
-      headers: { Authorization: `Bearer ${adminToken}` }
-    });
     const deleteResp = await api.post('/api/admin/users/delete-selected-users', { userIds: [testUserId] });
     expect(deleteResp.data === 1 || deleteResp.data > 0).toBe(true);
     testUserId = null;
   });
-}); 
+});

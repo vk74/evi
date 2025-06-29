@@ -5,10 +5,16 @@
  */
 import { reloadSettings } from './service.load.settings';
 import { getAllSettings, getSetting } from './cache.settings';
+import { pool } from '../../../core/db/maindb';
 
 describe('Settings Cache Integration', () => {
   beforeAll(async () => {
     await reloadSettings();
+  });
+
+  afterAll(async () => {
+    // Закрываем соединение с базой данных
+    await pool.end();
   });
 
   it('should contain only password policy settings (6 ключей)', () => {
