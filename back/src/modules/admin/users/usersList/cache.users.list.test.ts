@@ -48,6 +48,11 @@ describe('Users List Cache', () => {
     usersCache.invalidate('all');
   });
 
+  afterAll(() => {
+    // Clean up cache resources
+    usersCache.cleanup();
+  });
+
   describe('Cache key generation', () => {
     it('should generate correct cache key for default parameters', () => {
       // Prepare test data

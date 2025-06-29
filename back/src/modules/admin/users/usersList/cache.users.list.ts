@@ -223,6 +223,17 @@ const createUsersCache = () => {
     };
   }
   
+  /**
+   * Cleans up resources (stops intervals, clears cache)
+   */
+  function cleanup(): void {
+    if (cleanupInterval) {
+      clearInterval(cleanupInterval);
+    }
+    cache.clear();
+    keyLastAccess.clear();
+  }
+  
   // Initialize auto cleanup on startup
   setupAutoCleanup();
   
@@ -231,6 +242,7 @@ const createUsersCache = () => {
     set,
     invalidate,
     getStats,
+    cleanup,
     // Method for debugging and testing
     debugInfo: () => ({
       size: cache.size,
