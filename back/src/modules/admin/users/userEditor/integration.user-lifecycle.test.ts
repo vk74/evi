@@ -1,7 +1,9 @@
 /**
  * integration.user-lifecycle.test.ts
- * Интеграционный тест полного жизненного цикла пользователя через публичные HTTP API.
- * Проверяет: создание, дублирование, чтение, обновление, удаление, политику паролей.
+ * Version: 1.0.0
+ * Integration test for the full user lifecycle via public HTTP API.
+ * Checks: create, read, update, delete user, and password policy.
+ * All comments and documentation are in English (see cursor-config.json).
  */
 
 import axios, { AxiosInstance } from 'axios';
@@ -66,7 +68,7 @@ async function fetchPasswordPolicySettings(token: string): Promise<Record<string
  */
 function generateValidPassword(policy: Record<string, any>): string {
   const minLength = Number(policy['password.min.length'] || 8);
-  const maxLength = Number(policy['password.max.length'] || 128);
+  const maxLength = Number(policy['password.max.length'] || 40);
   const requireUppercase = !!policy['password.require.uppercase'];
   const requireLowercase = !!policy['password.require.lowercase'];
   const requireNumbers = !!policy['password.require.numbers'];
@@ -224,20 +226,28 @@ describe('User Lifecycle Integration Test: Full Flow', () => {
   let passwordPolicy: Record<string, any>;
   let testUserId: string | null = null;
   const uniqueSuffix = Date.now();
+  let userData: any = {};
 
   beforeAll(async () => {
-    // Аутентификация администратора
+    // Authenticate as admin
     const response = await axios.post(`${TEST_CONFIG.baseURL}/login`, {
       username: TEST_CONFIG.admin.username,
       password: TEST_CONFIG.admin.password
     });
     adminToken = response.data.token;
-    // Получаем актуальную политику паролей
+    // Get current password policy
     passwordPolicy = await fetchPasswordPolicySettings(adminToken);
+    // Prepare user data for all tests
+    userData = {
+      ...TEST_CONFIG.testUser,
+      username: makeShortUsername(`test_lifecycle_${uniqueSuffix}`),
+      email: makeShortEmail(`test_lifecycle_${uniqueSuffix}`),
+      password: generateValidPassword(passwordPolicy)
+    };
   });
 
   afterAll(async () => {
-    // Cleanup: удаляем тестового пользователя, если остался
+    // Cleanup: delete test user if still exists
     if (testUserId) {
       const api = axios.create({
         baseURL: TEST_CONFIG.baseURL,
@@ -247,26 +257,22 @@ describe('User Lifecycle Integration Test: Full Flow', () => {
     }
   });
 
-  it('should create, read, update, and delete user via public API', async () => {
-    const validPassword = generateValidPassword(passwordPolicy);
-    const userData = {
-      ...TEST_CONFIG.testUser,
-      username: makeShortUsername(`test_lifecycle_${uniqueSuffix}`),
-      email: makeShortEmail(`test_lifecycle_${uniqueSuffix}`),
-      password: validPassword
-    };
+  it('should create user via public API', async () => {
     const api = axios.create({
       baseURL: TEST_CONFIG.baseURL,
       headers: { Authorization: `Bearer ${adminToken}` }
     });
-
-    // 1. Создание пользователя
     const createResp = await api.post('/api/admin/users/create-new-user', userData);
     expect(createResp.data.success).toBe(true);
     testUserId = createResp.data.userId;
     expect(testUserId).toBeTruthy();
+  });
 
-    // 2. Попытка дублирования
+  it('should not allow duplicate user creation', async () => {
+    const api = axios.create({
+      baseURL: TEST_CONFIG.baseURL,
+      headers: { Authorization: `Bearer ${adminToken}` }
+    });
     try {
       await api.post('/api/admin/users/create-new-user', userData);
       throw new Error('Duplicate user creation should fail');
@@ -274,13 +280,23 @@ describe('User Lifecycle Integration Test: Full Flow', () => {
       expect(error.response?.data?.success).not.toBe(true);
       expect(error.response?.data?.message).toMatch(/user|email|duplicate|exists/i);
     }
+  });
 
-    // 3. Загрузка пользователя
+  it('should read user via public API', async () => {
+    const api = axios.create({
+      baseURL: TEST_CONFIG.baseURL,
+      headers: { Authorization: `Bearer ${adminToken}` }
+    });
     const fetchResp = await api.get(`/api/admin/users/fetch-user-by-userid/${testUserId}`);
     expect(fetchResp.data.success).toBe(true);
     expect(fetchResp.data.data?.user?.username).toBe(userData.username);
+  });
 
-    // 4. Обновление пользователя
+  it('should update user via public API', async () => {
+    const api = axios.create({
+      baseURL: TEST_CONFIG.baseURL,
+      headers: { Authorization: `Bearer ${adminToken}` }
+    });
     const updateData = {
       email: `updated_${userData.email}`,
       account_status: 'active',
@@ -296,14 +312,18 @@ describe('User Lifecycle Integration Test: Full Flow', () => {
     };
     const updateResp = await api.post(`/api/admin/users/update-user-by-userid/${testUserId}`, updateData);
     expect(updateResp.data.success).toBe(true);
-
-    // 5. Проверка изменений
+    // Check changes
     const fetchUpdated = await api.get(`/api/admin/users/fetch-user-by-userid/${testUserId}`);
     expect(fetchUpdated.data.success).toBe(true);
     expect(fetchUpdated.data.data?.user?.email).toBe(updateData.email);
     expect(fetchUpdated.data.data?.profile?.company_name).toBe(updateData.company_name);
+  });
 
-    // 6. Удаление пользователя
+  it('should delete user via public API', async () => {
+    const api = axios.create({
+      baseURL: TEST_CONFIG.baseURL,
+      headers: { Authorization: `Bearer ${adminToken}` }
+    });
     const deleteResp = await api.post('/api/admin/users/delete-selected-users', { userIds: [testUserId] });
     expect(deleteResp.data === 1 || deleteResp.data > 0).toBe(true);
     testUserId = null;
