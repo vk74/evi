@@ -127,6 +127,7 @@ export function getSettingValue<T>(section_path: string, settingName: string, de
  * @returns Promise that resolves to the setting or null if not found
  */
 export async function fetchSettingByName(section_path: string, settingName: string): Promise<AppSetting | null> {
+  const store = useAppSettingsStore();
   const uiStore = useUiStore();
   
   try {
@@ -147,6 +148,9 @@ export async function fetchSettingByName(section_path: string, settingName: stri
     
     // Handle response - using optional setting property for byName requests
     if (response.data.success && response.data.setting) {
+      // Cache the setting in the store
+      store.cacheSettings(section_path, [response.data.setting]);
+      
       return response.data.setting;
     }
     
@@ -228,4 +232,117 @@ export function getDefaultValues(
   
   console.log(`Retrieved default values for ${Object.keys(defaultValues).length} settings:`, defaultValues);
   return defaultValues;
+}
+
+/**
+ * Fetches multiple settings by their names and caches them in the store.
+ * Checks cache first and only requests from backend for missing or expired settings.
+ * 
+ * @param settingsList - Array of settings to fetch with sectionPath and settingName
+ * @param forceRefresh - Whether to force refresh from server (bypass cache)
+ * @returns Promise that resolves to array of available settings
+ */
+export async function fetchSettingsByList(
+  settingsList: Array<{sectionPath: string, settingName: string}>,
+  forceRefresh = false
+): Promise<AppSetting[]> {
+  const store = useAppSettingsStore();
+  
+  console.log(`Fetching ${settingsList.length} settings by list${forceRefresh ? ' (forced refresh)' : ''}`);
+  
+  try {
+    // Step 1: Check cache and separate cached vs to-fetch settings
+    const cachedSettings: AppSetting[] = [];
+    const settingsToFetch: Array<{sectionPath: string, settingName: string}> = [];
+    
+    settingsList.forEach(({sectionPath, settingName}) => {
+      if (!forceRefresh) {
+        const sectionSettings = store.getCachedSettings(sectionPath);
+        const existingSetting = sectionSettings?.find(s => s.setting_name === settingName);
+        
+        if (existingSetting) {
+          cachedSettings.push(existingSetting);
+          console.log(`Using cached setting: ${sectionPath}.${settingName}`);
+        } else {
+          settingsToFetch.push({sectionPath, settingName});
+        }
+      } else {
+        settingsToFetch.push({sectionPath, settingName});
+      }
+    });
+    
+    // If all settings are cached, return them immediately
+    if (settingsToFetch.length === 0) {
+      console.log(`All ${cachedSettings.length} settings found in cache`);
+      return cachedSettings;
+    }
+    
+    console.log(`Found ${cachedSettings.length} in cache, fetching ${settingsToFetch.length} from API`);
+    
+    // Step 2: Fetch missing settings from API
+    const fetchPromises = settingsToFetch.map(async ({sectionPath, settingName}) => {
+      try {
+        const setting = await fetchSettingByName(sectionPath, settingName);
+        if (setting) {
+          console.log(`Successfully fetched setting: ${sectionPath}.${settingName}`);
+        } else {
+          console.warn(`Setting not found: ${sectionPath}.${settingName}`);
+        }
+        return setting;
+      } catch (error) {
+        console.error(`Error fetching setting ${sectionPath}.${settingName}:`, error);
+        return null;
+      }
+    });
+    
+    const fetchResults = await Promise.allSettled(fetchPromises);
+    
+    // Step 3: Process fetch results
+    const fetchedSettings: AppSetting[] = [];
+    let failedCount = 0;
+    
+    fetchResults.forEach((result, index) => {
+      if (result.status === 'fulfilled' && result.value) {
+        fetchedSettings.push(result.value);
+      } else {
+        failedCount++;
+        const {sectionPath, settingName} = settingsToFetch[index];
+        console.warn(`Failed to fetch setting: ${sectionPath}.${settingName}`);
+      }
+    });
+    
+    // Step 4: Group fetched settings by section for caching
+    const settingsBySection = fetchedSettings.reduce((acc, setting) => {
+      if (!acc[setting.section_path]) {
+        acc[setting.section_path] = [];
+      }
+      acc[setting.section_path].push(setting);
+      return acc;
+    }, {} as Record<string, AppSetting[]>);
+    
+    // Step 5: Cache settings by section
+    Object.entries(settingsBySection).forEach(([sectionPath, settings]) => {
+      store.cacheSettings(sectionPath, settings);
+      console.log(`Cached ${settings.length} settings for section: ${sectionPath}`);
+    });
+    
+    // Step 6: Combine and return results
+    const allSettings = [...cachedSettings, ...fetchedSettings];
+    
+    if (failedCount > 0) {
+      console.warn(`Warning: ${failedCount} settings failed to load out of ${settingsList.length} requested`);
+    }
+    
+    console.log(`Returning ${allSettings.length} settings (${cachedSettings.length} cached, ${fetchedSettings.length} fetched)`);
+    
+    return allSettings;
+    
+  } catch (error) {
+    // Critical error handling
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    console.error(`Critical error in fetchSettingsByList:`, error);
+    console.error(`Error details: ${errorMessage}`);
+    
+    return [];
+  }
 }
