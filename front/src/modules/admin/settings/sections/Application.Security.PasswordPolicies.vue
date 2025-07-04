@@ -30,19 +30,22 @@ const { t, locale } = useI18n();
 const isLoadingSettings = ref(true);
 const isResetting = ref(false);
 
+// Flag to track first load vs user changes
+const isFirstLoad = ref(true);
+
 // Individual setting loading states
 const settingLoadingStates = ref<Record<string, boolean>>({});
 const settingErrorStates = ref<Record<string, boolean>>({});
 const settingRetryAttempts = ref<Record<string, number>>({});
 
-// Local UI state for immediate interaction
-const passwordMinLength = ref(8);
-const passwordMaxLength = ref(16);
-const requireLowercase = ref(true);
-const requireUppercase = ref(true);
-const requireNumbers = ref(true);
-const requireSpecialChars = ref(false);
-const allowedSpecialChars = ref('');
+// Local UI state for immediate interaction - initialize with null (not set)
+const passwordMinLength = ref<number | null>(null);
+const passwordMaxLength = ref<number | null>(null);
+const requireLowercase = ref<boolean | null>(null);
+const requireUppercase = ref<boolean | null>(null);
+const requireNumbers = ref<boolean | null>(null);
+const requireSpecialChars = ref<boolean | null>(null);
+const allowedSpecialChars = ref<string | null>(null);
 const passwordExpiration = ref('never');
 
 // Password length options (4 to 40 characters)
@@ -100,6 +103,25 @@ const isSettingDisabled = (settingName: string) => {
 };
 
 /**
+ * Check if password length fields should be disabled
+ */
+const isPasswordLengthDisabled = computed(() => {
+  return passwordMinLength.value === null || passwordMaxLength.value === null ||
+         isSettingDisabled('password.min.length') || isSettingDisabled('password.max.length');
+});
+
+/**
+ * Get filtered password length options for max length based on min length
+ */
+const maxPasswordLengthOptions = computed(() => {
+  const minLength = passwordMinLength.value;
+  if (minLength === null) {
+    return passwordLengthOptions;
+  }
+  return passwordLengthOptions.filter(v => v >= minLength);
+});
+
+/**
  * Update setting in store when local state changes
  */
 function updateSetting(settingName: string, value: any) {
@@ -112,12 +134,16 @@ function updateSetting(settingName: string, value: any) {
 
 /**
  * Generate example password based on current settings
- * Only generate if no settings have errors
+ * Only generate if no settings have errors and all values are loaded
  */
 const generateExamplePassword = computed(() => {
-  // Don't generate example if there are loading or error states
-  if (hasLoadingSettings.value || hasErrorSettings.value) {
-    return '—';
+  // Don't generate example if there are loading or error states or null values
+  if (hasLoadingSettings.value || hasErrorSettings.value || 
+      passwordMinLength.value === null || passwordMaxLength.value === null ||
+      requireLowercase.value === null || requireUppercase.value === null ||
+      requireNumbers.value === null || requireSpecialChars.value === null ||
+      allowedSpecialChars.value === null) {
+    return null;
   }
   
   const min = Number(passwordMinLength.value);
@@ -147,9 +173,12 @@ const generateExamplePassword = computed(() => {
  * Get password requirements description
  */
 const getPasswordRequirements = computed(() => {
-  // Don't show requirements if there are loading or error states
-  if (hasLoadingSettings.value || hasErrorSettings.value) {
-    return '—';
+  // Don't show requirements if there are loading or error states or null values
+  if (hasLoadingSettings.value || hasErrorSettings.value || 
+      passwordMinLength.value === null || requireLowercase.value === null ||
+      requireUppercase.value === null || requireNumbers.value === null ||
+      requireSpecialChars.value === null) {
+    return null;
   }
   
   const requirements: string[] = [];
@@ -278,12 +307,17 @@ async function loadSettings() {
       console.log('No settings loaded successfully - using defaults');
     } else {
       console.log(`Successfully loaded ${successfulLoads.length} out of ${allSettings.length} settings`);
+      
+      // Show success toast for initial load
+      uiStore.showSuccessSnackbar('настройки успешно загружены');
     }
     
   } catch (error) {
     console.error('Failed to load settings:', error);
   } finally {
     isLoadingSettings.value = false;
+    // Enable user changes after initial load is complete
+    isFirstLoad.value = false;
   }
 }
 
@@ -296,34 +330,59 @@ async function retrySetting(settingName: string) {
   await loadSetting(settingName);
 }
 
+// Watch for changes in local state - only after first load is complete
 watch(passwordMinLength, (newValue) => {
-  if (passwordMaxLength.value < newValue) {
-    passwordMaxLength.value = newValue;
+  if (!isFirstLoad.value && newValue !== null) {
+    // Handle mutual dependency with passwordMaxLength
+    if (passwordMaxLength.value === null) {
+      passwordMaxLength.value = null;
+    } else if (passwordMaxLength.value < newValue) {
+      passwordMaxLength.value = newValue;
+    }
+    updateSetting('password.min.length', Number(newValue));
   }
-  updateSetting('password.min.length', Number(newValue));
 });
 
 watch(passwordMaxLength, (newValue) => {
-  if (newValue < passwordMinLength.value) {
-    passwordMinLength.value = newValue;
+  if (!isFirstLoad.value && newValue !== null) {
+    // Handle mutual dependency with passwordMinLength
+    if (passwordMinLength.value === null) {
+      passwordMinLength.value = null;
+    } else if (newValue < passwordMinLength.value) {
+      passwordMinLength.value = newValue;
+    }
+    updateSetting('password.max.length', Number(newValue));
   }
-  updateSetting('password.max.length', Number(newValue));
 });
 
 watch(requireLowercase, (newValue) => {
-  updateSetting('password.require.lowercase', newValue);
+  if (!isFirstLoad.value && newValue !== null) {
+    updateSetting('password.require.lowercase', newValue);
+  }
 });
 
 watch(requireUppercase, (newValue) => {
-  updateSetting('password.require.uppercase', newValue);
+  if (!isFirstLoad.value && newValue !== null) {
+    updateSetting('password.require.uppercase', newValue);
+  }
 });
 
 watch(requireNumbers, (newValue) => {
-  updateSetting('password.require.numbers', newValue);
+  if (!isFirstLoad.value && newValue !== null) {
+    updateSetting('password.require.numbers', newValue);
+  }
 });
 
 watch(requireSpecialChars, (newValue) => {
-  updateSetting('password.require.special.chars', newValue);
+  if (!isFirstLoad.value && newValue !== null) {
+    updateSetting('password.require.special.chars', newValue);
+  }
+});
+
+watch(allowedSpecialChars, (newValue) => {
+  if (!isFirstLoad.value && newValue !== null) {
+    updateSetting('password.allowed.special.chars', newValue);
+  }
 });
 
 // Watch for changes in loading state from the store
@@ -336,8 +395,14 @@ watch(
 
 /**
  * Reset password settings to default values
+ * Only available after initial load is complete
  */
 async function resetToDefaults() {
+  // Only allow reset after initial load is complete
+  if (isFirstLoad.value) {
+    return;
+  }
+  
   isResetting.value = true;
   
   try {
@@ -434,7 +499,7 @@ onMounted(() => {
               density="comfortable"
               color="teal-darken-2"
               style="max-width: 240px;"
-              :disabled="isSettingDisabled('password.min.length')"
+              :disabled="isSettingDisabled('password.min.length') || isPasswordLengthDisabled"
               :loading="settingLoadingStates['password.min.length']"
             />
             <v-tooltip
@@ -465,13 +530,13 @@ onMounted(() => {
           <div class="d-flex align-center">
             <v-select
               v-model="passwordMaxLength"
-              :items="passwordLengthOptions.filter(v => v >= passwordMinLength)"
+              :items="maxPasswordLengthOptions"
               :label="t('admin.settings.application.security.passwordpolicies.maxlength.label', 'максимальная длина пароля')"
               variant="outlined"
               density="comfortable"
               color="teal-darken-2"
               style="max-width: 240px;"
-              :disabled="isSettingDisabled('password.max.length')"
+              :disabled="isSettingDisabled('password.max.length') || isPasswordLengthDisabled"
               :loading="settingLoadingStates['password.max.length']"
             />
             <v-tooltip
@@ -696,10 +761,10 @@ onMounted(() => {
             {{ t('admin.settings.application.security.passwordpolicies.example.title') }}
           </p>
           <p class="text-h6 font-weight-bold text-primary">
-            {{ generateExamplePassword }}
+            {{ generateExamplePassword || '—' }}
           </p>
           <p class="text-caption text-grey mt-2">
-            {{ t('admin.settings.application.security.passwordpolicies.requirements.label') }} {{ getPasswordRequirements }}
+            {{ t('admin.settings.application.security.passwordpolicies.requirements.label') }} {{ getPasswordRequirements || '—' }}
           </p>
         </div>
         
@@ -712,7 +777,7 @@ onMounted(() => {
                 variant="outlined"
                 size="small"
                 :loading="isResetting"
-                :disabled="isResetting"
+                :disabled="isResetting || isFirstLoad"
                 @click="resetToDefaults"
                 v-bind="props"
               >
