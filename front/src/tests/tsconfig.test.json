@@ -1,0 +1,23 @@
+{
+  "extends": "../../tsconfig.json",
+  "compilerOptions": {
+    "types": ["jest", "node", "@vue/test-utils"],
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+    "strict": true,
+    "noImplicitAny": false,
+    "skipLibCheck": true
+  },
+  "include": [
+    "../**/*.ts",
+    "../**/*.tsx",
+    "../**/*.vue",
+    "../**/*.test.ts",
+    "../**/*.spec.ts",
+    "./**/*.ts"
+  ],
+  "exclude": [
+    "../../node_modules",
+    "../../dist"
+  ]
+} 
