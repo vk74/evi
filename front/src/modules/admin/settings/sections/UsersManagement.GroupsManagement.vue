@@ -27,13 +27,16 @@ const { t } = useI18n();
 // Loading states
 const isLoadingSettings = ref(true);
 
+// Flag to track first load vs user changes
+const isFirstLoad = ref(true);
+
 // Individual setting loading states
 const settingLoadingStates = ref<Record<string, boolean>>({});
 const settingErrorStates = ref<Record<string, boolean>>({});
 const settingRetryAttempts = ref<Record<string, number>>({});
 
-// Local UI state for immediate interaction
-const onlyAddActiveMembers = ref(false);
+// Local UI state for immediate interaction - initialize with null (not set)
+const onlyAddActiveMembers = ref<boolean | null>(null);
 
 // Define all settings that need to be loaded
 const allSettings = [
@@ -164,12 +167,17 @@ async function loadSettings() {
       console.log('No settings loaded successfully - using defaults');
     } else {
       console.log(`Successfully loaded ${successfulLoads.length} out of ${allSettings.length} settings`);
+      
+      // Show success toast for initial load
+      uiStore.showSuccessSnackbar('настройки успешно загружены');
     }
     
   } catch (error) {
     console.error('Failed to load settings:', error);
   } finally {
     isLoadingSettings.value = false;
+    // Enable user changes after initial load is complete
+    isFirstLoad.value = false;
   }
 }
 
@@ -182,10 +190,15 @@ async function retrySetting(settingName: string) {
   await loadSetting(settingName);
 }
 
-// Watch for changes in local state
-watch(onlyAddActiveMembers, (newValue) => {
-  updateSetting('add.only.active.users.to.groups', newValue);
-});
+// Watch for changes in local state - only after first load is complete
+watch(
+  onlyAddActiveMembers, 
+  (newValue) => {
+    if (!isFirstLoad.value) {
+      updateSetting('add.only.active.users.to.groups', newValue);
+    }
+  }
+);
 
 // Watch for changes in loading state from the store
 watch(
