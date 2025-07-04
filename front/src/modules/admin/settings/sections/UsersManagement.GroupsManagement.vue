@@ -1,5 +1,6 @@
 <!--
   File: UsersManagement.GroupsManagement.vue
+  Version: 1.2.0
   Description: Groups management settings component
   Purpose: Configure group related settings and group membership rules
 -->
@@ -10,68 +11,181 @@ import { useI18n } from 'vue-i18n';
 import { useAppSettingsStore } from '@/modules/admin/settings/state.app.settings';
 import { fetchSettings } from '@/modules/admin/settings/service.fetch.settings';
 import { updateSettingFromComponent } from '@/modules/admin/settings/service.update.settings';
+import { useUiStore } from '@/core/state/uistate';
 import DataLoading from '@/core/ui/loaders/DataLoading.vue';
 
 // Section path identifier - using component name for better consistency
-const section_path = 'UsersManagement.GroupsManagement';
+const section_path = 'Application.UsersManagement.GroupsManagement';
 
-// Store reference
+// Store references
 const appSettingsStore = useAppSettingsStore();
+const uiStore = useUiStore();
 
 // Translations
 const { t } = useI18n();
 
-// Loading state
+// Loading states
 const isLoadingSettings = ref(true);
 
-/**
- * Direct binding to the setting value from Pinia store
- * This computed property will automatically update when the store changes
- */
-const onlyAddActiveMembers = computed({
-  get: () => {
-    const settings = appSettingsStore.getCachedSettings(section_path);
-    if (!settings || settings.length === 0) return false;
-    
-    // Find the setting with name 'only.add.active.members'
-    const setting = settings.find(s => s.setting_name === 'only.add.active.members');
-    
-    // Return the value or default (false) if not found
-    const value = setting?.value !== undefined && setting?.value !== null 
-      ? setting.value 
-      : false;
-    
-    console.log('Computed setting "only.add.active.members" value:', value);
-    return value;
-  },
-  set: (newValue) => {
-    console.log('Setting value changed to:', newValue);
-    // Update the setting using our update service
-    updateSettingFromComponent(section_path, 'only.add.active.members', newValue);
-  }
+// Individual setting loading states
+const settingLoadingStates = ref<Record<string, boolean>>({});
+const settingErrorStates = ref<Record<string, boolean>>({});
+const settingRetryAttempts = ref<Record<string, number>>({});
+
+// Local UI state for immediate interaction
+const onlyAddActiveMembers = ref(false);
+
+// Define all settings that need to be loaded
+const allSettings = [
+  'add.only.active.users.to.groups'
+];
+
+// Initialize loading states for all settings
+allSettings.forEach(settingName => {
+  settingLoadingStates.value[settingName] = true;
+  settingErrorStates.value[settingName] = false;
+  settingRetryAttempts.value[settingName] = 0;
 });
 
 /**
- * Load settings from the backend
+ * Check if any settings are still loading
+ */
+const hasLoadingSettings = computed(() => {
+  return Object.values(settingLoadingStates.value).some(loading => loading);
+});
+
+/**
+ * Check if any settings have errors
+ */
+const hasErrorSettings = computed(() => {
+  return Object.values(settingErrorStates.value).some(error => error);
+});
+
+/**
+ * Check if a specific setting is disabled (loading or has error)
+ */
+const isSettingDisabled = (settingName: string) => {
+  return settingLoadingStates.value[settingName] || settingErrorStates.value[settingName];
+};
+
+/**
+ * Update setting in store when local state changes
+ */
+function updateSetting(settingName: string, value: any) {
+  // Only update if setting is not disabled
+  if (!isSettingDisabled(settingName)) {
+    console.log(`Updating setting ${settingName} to:`, value);
+    updateSettingFromComponent(section_path, settingName, value);
+  }
+}
+
+/**
+ * Load a single setting by name
+ */
+async function loadSetting(settingName: string): Promise<boolean> {
+  settingLoadingStates.value[settingName] = true;
+  settingErrorStates.value[settingName] = false;
+  
+  try {
+    console.log(`Loading setting: ${settingName}`);
+    
+    // Try to get setting from cache first
+    const cachedSettings = appSettingsStore.getCachedSettings(section_path);
+    const cachedSetting = cachedSettings?.find(s => s.setting_name === settingName);
+    
+    if (cachedSetting) {
+      console.log(`Found cached setting: ${settingName}`, cachedSetting.value);
+      updateLocalSetting(settingName, cachedSetting.value);
+      settingLoadingStates.value[settingName] = false;
+      return true;
+    }
+    
+    // If not in cache, fetch from backend
+    const settings = await fetchSettings(section_path);
+    const setting = settings?.find(s => s.setting_name === settingName);
+    
+    if (setting) {
+      console.log(`Successfully loaded setting: ${settingName}`, setting.value);
+      updateLocalSetting(settingName, setting.value);
+      settingLoadingStates.value[settingName] = false;
+      return true;
+    } else {
+      throw new Error(`Setting ${settingName} not found`);
+    }
+  } catch (error) {
+    console.error(`Failed to load setting ${settingName}:`, error);
+    settingErrorStates.value[settingName] = true;
+    settingLoadingStates.value[settingName] = false;
+    
+    // Try retry if we haven't exceeded attempts
+    if (settingRetryAttempts.value[settingName] < 1) {
+      settingRetryAttempts.value[settingName]++;
+      console.log(`Retrying setting ${settingName} in 5 seconds...`);
+      setTimeout(() => loadSetting(settingName), 5000);
+    } else {
+      // Show error toast only on final failure
+      uiStore.showErrorSnackbar(`Ошибка загрузки настройки: ${settingName}`);
+    }
+    
+    return false;
+  }
+}
+
+/**
+ * Update local setting value based on setting name
+ */
+function updateLocalSetting(settingName: string, value: any) {
+  switch (settingName) {
+    case 'add.only.active.users.to.groups':
+      onlyAddActiveMembers.value = Boolean(value);
+      break;
+  }
+}
+
+/**
+ * Load all settings from the backend and update local state
  */
 async function loadSettings() {
   isLoadingSettings.value = true;
   
   try {
     console.log('Loading settings for Groups Management');
-    const settings = await fetchSettings(section_path);
     
-    if (settings && settings.length > 0) {
-      console.log('Received settings:', settings);
+    // Load all settings in parallel
+    const loadPromises = allSettings.map(settingName => loadSetting(settingName));
+    await Promise.allSettled(loadPromises);
+    
+    // Check if we have any successful loads
+    const successfulLoads = allSettings.filter(settingName => 
+      !settingLoadingStates.value[settingName] && !settingErrorStates.value[settingName]
+    );
+    
+    if (successfulLoads.length === 0) {
+      console.log('No settings loaded successfully - using defaults');
     } else {
-      console.log('No settings received for Groups Management');
+      console.log(`Successfully loaded ${successfulLoads.length} out of ${allSettings.length} settings`);
     }
+    
   } catch (error) {
     console.error('Failed to load settings:', error);
   } finally {
     isLoadingSettings.value = false;
   }
 }
+
+/**
+ * Retry loading a specific setting
+ */
+async function retrySetting(settingName: string) {
+  settingRetryAttempts.value[settingName] = 0;
+  settingErrorStates.value[settingName] = false;
+  await loadSetting(settingName);
+}
+
+// Watch for changes in local state
+watch(onlyAddActiveMembers, (newValue) => {
+  updateSetting('add.only.active.users.to.groups', newValue);
+});
 
 // Watch for changes in loading state from the store
 watch(
@@ -106,12 +220,37 @@ onMounted(() => {
       class="settings-section"
     >
       <div class="section-content">
-        <v-switch
-          v-model="onlyAddActiveMembers"
-          color="teal-darken-2"
-          :label="t('admin.settings.usersmanagement.groupsmanagement.only.active.members.label')"
-          hide-details
-        />
+        <div class="d-flex align-center mb-2">
+          <v-switch
+            v-model="onlyAddActiveMembers"
+            color="teal-darken-2"
+            :label="t('admin.settings.usersmanagement.groupsmanagement.only.active.members.label')"
+            hide-details
+            :disabled="isSettingDisabled('add.only.active.users.to.groups')"
+            :loading="settingLoadingStates['add.only.active.users.to.groups']"
+          />
+          <v-tooltip
+            v-if="settingErrorStates['add.only.active.users.to.groups']"
+            location="top"
+            max-width="300"
+          >
+            <template #activator="{ props }">
+              <v-icon 
+                icon="mdi-alert-circle" 
+                size="small" 
+                class="ms-2" 
+                color="error"
+                v-bind="props"
+                @click="retrySetting('add.only.active.users.to.groups')"
+                style="cursor: pointer;"
+              />
+            </template>
+            <div class="pa-2">
+              <p class="text-subtitle-2 mb-2">Ошибка загрузки настройки</p>
+              <p class="text-caption">Нажмите для повторной попытки</p>
+            </div>
+          </v-tooltip>
+        </div>
       </div>
     </div>
   </div>
