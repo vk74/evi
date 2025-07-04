@@ -1,6 +1,6 @@
 <!--
   File: Application.Security.PasswordPolicies.vue
-  Version: 1.1.0
+  Version: 1.2.0
   Description: Password policies settings component for frontend
   Purpose: Configure password-related security settings including length, complexity, and expiration
   Frontend file that manages password policy configuration UI and integrates with settings store
@@ -13,20 +13,27 @@ import { useAppSettingsStore } from '@/modules/admin/settings/state.app.settings
 import { fetchSettings } from '@/modules/admin/settings/service.fetch.settings';
 import { updateSettingFromComponent, updateMultipleSettings } from '@/modules/admin/settings/service.update.settings';
 import { getDefaultValues } from '@/modules/admin/settings/service.fetch.settings';
+import { useUiStore } from '@/core/state/uistate';
 import DataLoading from '@/core/ui/loaders/DataLoading.vue';
 
 // Section path identifier - using component name for better consistency
 const section_path = 'Application.Security.PasswordPolicies';
 
-// Store reference
+// Store references
 const appSettingsStore = useAppSettingsStore();
+const uiStore = useUiStore();
 
 // Translations
 const { t, locale } = useI18n();
 
-// Loading state
+// Loading states
 const isLoadingSettings = ref(true);
 const isResetting = ref(false);
+
+// Individual setting loading states
+const settingLoadingStates = ref<Record<string, boolean>>({});
+const settingErrorStates = ref<Record<string, boolean>>({});
+const settingRetryAttempts = ref<Record<string, number>>({});
 
 // Local UI state for immediate interaction
 const passwordMinLength = ref(8);
@@ -53,21 +60,69 @@ const passwordExpirationOptions = computed(() => [
 
 const passwordLengthRange = ref<number[]>([8, 16]);
 
+// Define all settings that need to be loaded
+const allSettings = [
+  'password.min.length',
+  'password.max.length',
+  'password.require.lowercase',
+  'password.require.uppercase',
+  'password.require.numbers',
+  'password.require.special.chars',
+  'password.allowed.special.chars'
+];
+
+// Initialize loading states for all settings
+allSettings.forEach(settingName => {
+  settingLoadingStates.value[settingName] = true;
+  settingErrorStates.value[settingName] = false;
+  settingRetryAttempts.value[settingName] = 0;
+});
+
+/**
+ * Check if any settings are still loading
+ */
+const hasLoadingSettings = computed(() => {
+  return Object.values(settingLoadingStates.value).some(loading => loading);
+});
+
+/**
+ * Check if any settings have errors
+ */
+const hasErrorSettings = computed(() => {
+  return Object.values(settingErrorStates.value).some(error => error);
+});
+
+/**
+ * Check if a specific setting is disabled (loading or has error)
+ */
+const isSettingDisabled = (settingName: string) => {
+  return settingLoadingStates.value[settingName] || settingErrorStates.value[settingName];
+};
+
 /**
  * Update setting in store when local state changes
  */
 function updateSetting(settingName: string, value: any) {
-  console.log(`Updating setting ${settingName} to:`, value);
-  updateSettingFromComponent(section_path, settingName, value);
+  // Only update if setting is not disabled
+  if (!isSettingDisabled(settingName)) {
+    console.log(`Updating setting ${settingName} to:`, value);
+    updateSettingFromComponent(section_path, settingName, value);
+  }
 }
 
 /**
  * Generate example password based on current settings
+ * Only generate if no settings have errors
  */
 const generateExamplePassword = computed(() => {
+  // Don't generate example if there are loading or error states
+  if (hasLoadingSettings.value || hasErrorSettings.value) {
+    return '—';
+  }
+  
   const min = Number(passwordMinLength.value);
   const max = Number(passwordMaxLength.value);
-  const length = Math.max(min, Math.min(max, 12)); // пример: длина по умолчанию 12, но в пределах min/max
+  const length = Math.max(min, Math.min(max, 12));
   let chars: string[] = [];
   if (requireLowercase.value) chars.push('a');
   if (requireUppercase.value) chars.push('A');
@@ -92,6 +147,11 @@ const generateExamplePassword = computed(() => {
  * Get password requirements description
  */
 const getPasswordRequirements = computed(() => {
+  // Don't show requirements if there are loading or error states
+  if (hasLoadingSettings.value || hasErrorSettings.value) {
+    return '—';
+  }
+  
   const requirements: string[] = [];
   
   requirements.push(`минимум ${passwordMinLength.value} символов`);
@@ -116,47 +176,124 @@ const getPasswordRequirements = computed(() => {
 });
 
 /**
- * Load settings from the backend and update local state
+ * Load a single setting by name
+ */
+async function loadSetting(settingName: string): Promise<boolean> {
+  settingLoadingStates.value[settingName] = true;
+  settingErrorStates.value[settingName] = false;
+  
+  try {
+    console.log(`Loading setting: ${settingName}`);
+    
+    // Try to get setting from cache first
+    const cachedSettings = appSettingsStore.getCachedSettings(section_path);
+    const cachedSetting = cachedSettings?.find(s => s.setting_name === settingName);
+    
+    if (cachedSetting) {
+      console.log(`Found cached setting: ${settingName}`, cachedSetting.value);
+      updateLocalSetting(settingName, cachedSetting.value);
+      settingLoadingStates.value[settingName] = false;
+      return true;
+    }
+    
+    // If not in cache, fetch from backend
+    const settings = await fetchSettings(section_path);
+    const setting = settings?.find(s => s.setting_name === settingName);
+    
+    if (setting) {
+      console.log(`Successfully loaded setting: ${settingName}`, setting.value);
+      updateLocalSetting(settingName, setting.value);
+      settingLoadingStates.value[settingName] = false;
+      return true;
+    } else {
+      throw new Error(`Setting ${settingName} not found`);
+    }
+  } catch (error) {
+    console.error(`Failed to load setting ${settingName}:`, error);
+    settingErrorStates.value[settingName] = true;
+    settingLoadingStates.value[settingName] = false;
+    
+    // Try retry if we haven't exceeded attempts
+    if (settingRetryAttempts.value[settingName] < 1) {
+      settingRetryAttempts.value[settingName]++;
+      console.log(`Retrying setting ${settingName} in 5 seconds...`);
+      setTimeout(() => loadSetting(settingName), 5000);
+    } else {
+      // Show error toast only on final failure
+      uiStore.showErrorSnackbar(`Ошибка загрузки настройки: ${settingName}`);
+    }
+    
+    return false;
+  }
+}
+
+/**
+ * Update local setting value based on setting name
+ */
+function updateLocalSetting(settingName: string, value: any) {
+  switch (settingName) {
+    case 'password.min.length':
+      passwordMinLength.value = Number(value);
+      break;
+    case 'password.max.length':
+      passwordMaxLength.value = Number(value);
+      break;
+    case 'password.require.lowercase':
+      requireLowercase.value = Boolean(value);
+      break;
+    case 'password.require.uppercase':
+      requireUppercase.value = Boolean(value);
+      break;
+    case 'password.require.numbers':
+      requireNumbers.value = Boolean(value);
+      break;
+    case 'password.require.special.chars':
+      requireSpecialChars.value = Boolean(value);
+      break;
+    case 'password.allowed.special.chars':
+      allowedSpecialChars.value = String(value);
+      break;
+  }
+}
+
+/**
+ * Load all settings from the backend and update local state
  */
 async function loadSettings() {
   isLoadingSettings.value = true;
+  
   try {
     console.log('Loading settings for Password Policies');
-    const settings = await fetchSettings(section_path);
-    if (settings && settings.length > 0) {
-      console.log('Received settings:', settings);
-      // Update local state from store
-      const cachedSettings = appSettingsStore.getCachedSettings(section_path);
-      if (cachedSettings && cachedSettings.length > 0) {
-        const minLengthSetting = cachedSettings.find(s => s.setting_name === 'password.min.length');
-        const maxLengthSetting = cachedSettings.find(s => s.setting_name === 'password.max.length');
-        let allowedSpecialCharsSetting = cachedSettings.find(s => s.setting_name === 'password.allowed.special.chars');
-        const lowercaseSetting = cachedSettings.find(s => s.setting_name === 'password.require.lowercase');
-        const uppercaseSetting = cachedSettings.find(s => s.setting_name === 'password.require.uppercase');
-        const numbersSetting = cachedSettings.find(s => s.setting_name === 'password.require.numbers');
-        const specialCharsSetting = cachedSettings.find(s => s.setting_name === 'password.require.special.chars');
-        if (minLengthSetting?.value !== undefined) passwordMinLength.value = Number(minLengthSetting.value);
-        if (maxLengthSetting?.value !== undefined) passwordMaxLength.value = Number(maxLengthSetting.value);
-        if (allowedSpecialCharsSetting?.value !== undefined) {
-          allowedSpecialChars.value = allowedSpecialCharsSetting.value;
-        } else {
-          // Если нет в кеше, добавить дефолтное значение и синхронизировать с БД
-          allowedSpecialChars.value = '!@#$%^&*()-_=+[]{}|\\:;"\',.<>?';
-          updateSetting('password.allowed.special.chars', allowedSpecialChars.value);
-        }
-        if (lowercaseSetting?.value !== undefined) requireLowercase.value = lowercaseSetting.value;
-        if (uppercaseSetting?.value !== undefined) requireUppercase.value = uppercaseSetting.value;
-        if (numbersSetting?.value !== undefined) requireNumbers.value = numbersSetting.value;
-        if (specialCharsSetting?.value !== undefined) requireSpecialChars.value = specialCharsSetting.value;
-      }
+    
+    // Load all settings in parallel
+    const loadPromises = allSettings.map(settingName => loadSetting(settingName));
+    await Promise.allSettled(loadPromises);
+    
+    // Check if we have any successful loads
+    const successfulLoads = allSettings.filter(settingName => 
+      !settingLoadingStates.value[settingName] && !settingErrorStates.value[settingName]
+    );
+    
+    if (successfulLoads.length === 0) {
+      console.log('No settings loaded successfully - using defaults');
     } else {
-      console.log('No settings received for Password Policies - using defaults');
+      console.log(`Successfully loaded ${successfulLoads.length} out of ${allSettings.length} settings`);
     }
+    
   } catch (error) {
     console.error('Failed to load settings:', error);
   } finally {
     isLoadingSettings.value = false;
   }
+}
+
+/**
+ * Retry loading a specific setting
+ */
+async function retrySetting(settingName: string) {
+  settingRetryAttempts.value[settingName] = 0;
+  settingErrorStates.value[settingName] = false;
+  await loadSetting(settingName);
 }
 
 watch(passwordMinLength, (newValue) => {
@@ -288,51 +425,174 @@ onMounted(() => {
     >
       <div class="section-content">
         <div class="mb-2">
-          <v-select
-            v-model="passwordMinLength"
-            :items="passwordLengthOptions"
-            :label="t('admin.settings.application.security.passwordpolicies.minlength.label')"
-            variant="outlined"
-            density="comfortable"
-            color="teal-darken-2"
-            style="max-width: 240px;"
-          />
+          <div class="d-flex align-center">
+            <v-select
+              v-model="passwordMinLength"
+              :items="passwordLengthOptions"
+              :label="t('admin.settings.application.security.passwordpolicies.minlength.label')"
+              variant="outlined"
+              density="comfortable"
+              color="teal-darken-2"
+              style="max-width: 240px;"
+              :disabled="isSettingDisabled('password.min.length')"
+              :loading="settingLoadingStates['password.min.length']"
+            />
+            <v-tooltip
+              v-if="settingErrorStates['password.min.length']"
+              location="top"
+              max-width="300"
+            >
+              <template #activator="{ props }">
+                <v-icon 
+                  icon="mdi-alert-circle" 
+                  size="small" 
+                  class="ms-2" 
+                  color="error"
+                  v-bind="props"
+                  @click="retrySetting('password.min.length')"
+                  style="cursor: pointer;"
+                />
+              </template>
+              <div class="pa-2">
+                <p class="text-subtitle-2 mb-2">Ошибка загрузки настройки</p>
+                <p class="text-caption">Нажмите для повторной попытки</p>
+              </div>
+            </v-tooltip>
+          </div>
         </div>
+        
         <div class="mb-4">
-          <v-select
-            v-model="passwordMaxLength"
-            :items="passwordLengthOptions.filter(v => v >= passwordMinLength)"
-            :label="t('admin.settings.application.security.passwordpolicies.maxlength.label', 'максимальная длина пароля')"
-            variant="outlined"
-            density="comfortable"
-            color="teal-darken-2"
-            style="max-width: 240px;"
-          />
+          <div class="d-flex align-center">
+            <v-select
+              v-model="passwordMaxLength"
+              :items="passwordLengthOptions.filter(v => v >= passwordMinLength)"
+              :label="t('admin.settings.application.security.passwordpolicies.maxlength.label', 'максимальная длина пароля')"
+              variant="outlined"
+              density="comfortable"
+              color="teal-darken-2"
+              style="max-width: 240px;"
+              :disabled="isSettingDisabled('password.max.length')"
+              :loading="settingLoadingStates['password.max.length']"
+            />
+            <v-tooltip
+              v-if="settingErrorStates['password.max.length']"
+              location="top"
+              max-width="300"
+            >
+              <template #activator="{ props }">
+                <v-icon 
+                  icon="mdi-alert-circle" 
+                  size="small" 
+                  class="ms-2" 
+                  color="error"
+                  v-bind="props"
+                  @click="retrySetting('password.max.length')"
+                  style="cursor: pointer;"
+                />
+              </template>
+              <div class="pa-2">
+                <p class="text-subtitle-2 mb-2">Ошибка загрузки настройки</p>
+                <p class="text-caption">Нажмите для повторной попытки</p>
+              </div>
+            </v-tooltip>
+          </div>
         </div>
         
-        <v-switch
-          v-model="requireLowercase"
-          color="teal-darken-2"
-          :label="t('admin.settings.application.security.passwordpolicies.require.lowercase.label')"
-          hide-details
-          class="mb-2"
-        />
+        <div class="d-flex align-center mb-2">
+          <v-switch
+            v-model="requireLowercase"
+            color="teal-darken-2"
+            :label="t('admin.settings.application.security.passwordpolicies.require.lowercase.label')"
+            hide-details
+            :disabled="isSettingDisabled('password.require.lowercase')"
+            :loading="settingLoadingStates['password.require.lowercase']"
+          />
+          <v-tooltip
+            v-if="settingErrorStates['password.require.lowercase']"
+            location="top"
+            max-width="300"
+          >
+            <template #activator="{ props }">
+              <v-icon 
+                icon="mdi-alert-circle" 
+                size="small" 
+                class="ms-2" 
+                color="error"
+                v-bind="props"
+                @click="retrySetting('password.require.lowercase')"
+                style="cursor: pointer;"
+              />
+            </template>
+            <div class="pa-2">
+              <p class="text-subtitle-2 mb-2">Ошибка загрузки настройки</p>
+              <p class="text-caption">Нажмите для повторной попытки</p>
+            </div>
+          </v-tooltip>
+        </div>
         
-        <v-switch
-          v-model="requireUppercase"
-          color="teal-darken-2"
-          :label="t('admin.settings.application.security.passwordpolicies.require.uppercase.label')"
-          hide-details
-          class="mb-2"
-        />
+        <div class="d-flex align-center mb-2">
+          <v-switch
+            v-model="requireUppercase"
+            color="teal-darken-2"
+            :label="t('admin.settings.application.security.passwordpolicies.require.uppercase.label')"
+            hide-details
+            :disabled="isSettingDisabled('password.require.uppercase')"
+            :loading="settingLoadingStates['password.require.uppercase']"
+          />
+          <v-tooltip
+            v-if="settingErrorStates['password.require.uppercase']"
+            location="top"
+            max-width="300"
+          >
+            <template #activator="{ props }">
+              <v-icon 
+                icon="mdi-alert-circle" 
+                size="small" 
+                class="ms-2" 
+                color="error"
+                v-bind="props"
+                @click="retrySetting('password.require.uppercase')"
+                style="cursor: pointer;"
+              />
+            </template>
+            <div class="pa-2">
+              <p class="text-subtitle-2 mb-2">Ошибка загрузки настройки</p>
+              <p class="text-caption">Нажмите для повторной попытки</p>
+            </div>
+          </v-tooltip>
+        </div>
         
-        <v-switch
-          v-model="requireNumbers"
-          color="teal-darken-2"
-          :label="t('admin.settings.application.security.passwordpolicies.require.numbers.label')"
-          hide-details
-          class="mb-2"
-        />
+        <div class="d-flex align-center mb-2">
+          <v-switch
+            v-model="requireNumbers"
+            color="teal-darken-2"
+            :label="t('admin.settings.application.security.passwordpolicies.require.numbers.label')"
+            hide-details
+            :disabled="isSettingDisabled('password.require.numbers')"
+            :loading="settingLoadingStates['password.require.numbers']"
+          />
+          <v-tooltip
+            v-if="settingErrorStates['password.require.numbers']"
+            location="top"
+            max-width="300"
+          >
+            <template #activator="{ props }">
+              <v-icon 
+                icon="mdi-alert-circle" 
+                size="small" 
+                class="ms-2" 
+                color="error"
+                v-bind="props"
+                @click="retrySetting('password.require.numbers')"
+                style="cursor: pointer;"
+              />
+            </template>
+            <div class="pa-2">
+              <p class="text-subtitle-2 mb-2">Ошибка загрузки настройки</p>
+              <p class="text-caption">Нажмите для повторной попытки</p>
+            </div>
+          </v-tooltip>
+        </div>
         
         <div class="d-flex align-center mb-2">
           <v-switch
@@ -340,7 +600,30 @@ onMounted(() => {
             color="teal-darken-2"
             :label="t('admin.settings.application.security.passwordpolicies.require.specialchars.label')"
             hide-details
+            :disabled="isSettingDisabled('password.require.special.chars')"
+            :loading="settingLoadingStates['password.require.special.chars']"
           />
+          <v-tooltip
+            v-if="settingErrorStates['password.require.special.chars']"
+            location="top"
+            max-width="300"
+          >
+            <template #activator="{ props }">
+              <v-icon 
+                icon="mdi-alert-circle" 
+                size="small" 
+                class="ms-2" 
+                color="error"
+                v-bind="props"
+                @click="retrySetting('password.require.special.chars')"
+                style="cursor: pointer;"
+              />
+            </template>
+            <div class="pa-2">
+              <p class="text-subtitle-2 mb-2">Ошибка загрузки настройки</p>
+              <p class="text-caption">Нажмите для повторной попытки</p>
+            </div>
+          </v-tooltip>
           <v-tooltip
             location="top"
             max-width="400"
@@ -363,7 +646,30 @@ onMounted(() => {
                 density="compact"
                 class="mb-0"
                 style="max-width: 320px;"
+                :disabled="isSettingDisabled('password.allowed.special.chars')"
+                :loading="settingLoadingStates['password.allowed.special.chars']"
               />
+              <v-tooltip
+                v-if="settingErrorStates['password.allowed.special.chars']"
+                location="top"
+                max-width="300"
+              >
+                <template #activator="{ props }">
+                  <v-icon 
+                    icon="mdi-alert-circle" 
+                    size="small" 
+                    class="ms-2" 
+                    color="error"
+                    v-bind="props"
+                    @click="retrySetting('password.allowed.special.chars')"
+                    style="cursor: pointer;"
+                  />
+                </template>
+                <div class="pa-2">
+                  <p class="text-subtitle-2 mb-2">Ошибка загрузки настройки</p>
+                  <p class="text-caption">Нажмите для повторной попытки</p>
+                </div>
+              </v-tooltip>
             </div>
           </v-tooltip>
         </div>
@@ -379,6 +685,7 @@ onMounted(() => {
             density="comfortable"
             color="teal-darken-2"
             style="max-width: 200px;"
+            disabled
           />
           <span class="text-caption text-grey ms-3">{{ t('admin.settings.application.security.passwordpolicies.expiration.note.in.development', 'эта настройка находится в разработке') }}</span>
         </div>
@@ -395,6 +702,7 @@ onMounted(() => {
             {{ t('admin.settings.application.security.passwordpolicies.requirements.label') }} {{ getPasswordRequirements }}
           </p>
         </div>
+        
         <!-- Кнопка сброса настроек внизу -->
         <div class="mt-6 d-flex justify-start">
           <v-tooltip location="top" max-width="300">
