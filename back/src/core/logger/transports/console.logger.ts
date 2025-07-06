@@ -23,7 +23,16 @@ const colors = {
   critical: '\x1b[41m', // Red background
   eventName: '\x1b[35m',// Magenta
   time: '\x1b[90m',     // Gray
-  id: '\x1b[90m'        // Gray
+  id: '\x1b[90m',       // Gray
+  // Rainbow colors for structured logging
+  eventTime: '\x1b[34m', // Blue
+  source: '\x1b[32m',    // Green
+  event: '\x1b[35m',     // Magenta
+  level: '\x1b[33m',     // Yellow
+  eventUuid: '\x1b[36m', // Cyan
+  userUuid: '\x1b[31m',  // Red
+  payload: '\x1b[38;5;208m', // Orange
+  metadata: '\x1b[90m'   // Gray
 };
 
 /**
@@ -141,38 +150,6 @@ export const consoleTransport = (config: Partial<ConsoleTransportConfig> = {}): 
         metadata 
       } = event;
       
-      // Build log parts array
-      const logParts: string[] = [];
-      
-      // Add timestamp if configured
-      if (transportConfig.showTimestamp && timestamp) {
-        logParts.push(formatTimestamp(timestamp, transportConfig.useColors || false));
-      }
-      
-      // Add log level
-      logParts.push(formatLevel(severity, transportConfig.useColors || false));
-      
-      // Add event name
-      logParts.push(formatEventName(eventName, transportConfig.useColors || false));
-      
-      // Add event ID if configured
-      if (transportConfig.showEventId && eventId) {
-        logParts.push(formatEventId(eventId, transportConfig.useColors || false));
-      }
-      
-      // Source if available
-      if (source) {
-        logParts.push(`from ${source}`);
-      }
-      
-      // User ID if available
-      if (requestorId) {
-        logParts.push(`user: ${requestorId}`);
-      }
-      
-      // Build main log message
-      const logMessage = logParts.join(' ');
-      
       // Determine console method to use
       let consoleMethod: keyof typeof console = 'log';
       switch (severity?.toLowerCase()) {
@@ -191,18 +168,50 @@ export const consoleTransport = (config: Partial<ConsoleTransportConfig> = {}): 
           consoleMethod = 'log';
       }
       
-      // Log the main message
-      console[consoleMethod](logMessage);
+      const useColors = transportConfig.useColors || false;
       
-      // Log payload if present
-      if (payload !== undefined) {
-        console[consoleMethod]('Payload:', formatObject(payload, transportConfig.prettyPrint || false));
-      }
+      // Log each field as separate line
+      console[consoleMethod](
+        useColors ? `${colors.eventTime}event time:${colors.reset}` : 'event time:',
+        timestamp ? formatTimestamp(timestamp, false) : 'null'
+      );
       
-      // Log metadata if present
-      if (metadata && Object.keys(metadata).length > 0) {
-        console[consoleMethod]('Metadata:', formatObject(metadata, transportConfig.prettyPrint || false));
-      }
+      console[consoleMethod](
+        useColors ? `${colors.source}source:${colors.reset}` : 'source:',
+        source || 'null'
+      );
+      
+      console[consoleMethod](
+        useColors ? `${colors.event}event:${colors.reset}` : 'event:',
+        eventName || 'null'
+      );
+      
+      console[consoleMethod](
+        useColors ? `${colors.level}level:${colors.reset}` : 'level:',
+        severity || 'null'
+      );
+      
+      console[consoleMethod](
+        useColors ? `${colors.eventUuid}event UUID:${colors.reset}` : 'event UUID:',
+        eventId || 'null'
+      );
+      
+      console[consoleMethod](
+        useColors ? `${colors.userUuid}user UUID:${colors.reset}` : 'user UUID:',
+        requestorId || 'null'
+      );
+      
+      // Log payload
+      console[consoleMethod](
+        useColors ? `${colors.payload}payload:${colors.reset}` : 'payload:',
+        payload !== undefined ? formatObject(payload, transportConfig.prettyPrint || false) : 'null'
+      );
+      
+      // Log metadata
+      console[consoleMethod](
+        useColors ? `${colors.metadata}metadata:${colors.reset}` : 'metadata:',
+        metadata && Object.keys(metadata).length > 0 ? formatObject(metadata, transportConfig.prettyPrint || false) : 'null'
+      );
     }
   };
 };
