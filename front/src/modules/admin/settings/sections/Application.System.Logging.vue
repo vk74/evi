@@ -6,7 +6,7 @@
 -->
 
 <script setup lang="ts">
-import { ref, onMounted, watch } from 'vue';
+import { ref, onMounted, watch, computed } from 'vue';
 import { useAppSettingsStore } from '@/modules/admin/settings/state.app.settings';
 import { fetchSettings, getSettingValue } from '@/modules/admin/settings/service.fetch.settings';
 import DataLoading from '@/core/ui/loaders/DataLoading.vue';
@@ -14,14 +14,54 @@ import DataLoading from '@/core/ui/loaders/DataLoading.vue';
 // Section path identifier
 const section_path = 'Application.System.Logging';
 
+// Block identifiers
+const consoleBlockPath = 'Application.System.Logging.ConsoleLoggingBlock';
+const fileBlockPath = 'Application.System.Logging.FileLoggingBlock';
+
 // Store reference
 const appSettingsStore = useAppSettingsStore();
 
 // Loading state
 const isLoadingSettings = ref(true);
 
-// Module enabled state
-const enabled = ref(false);
+// Console logging settings
+const consoleLoggingEnabled = ref(false);
+const debugEventsEnabled = ref(false);
+
+// File logging settings
+const fileLoggingEnabled = ref(false);
+
+// Computed properties for block expansion state
+const isConsoleBlockExpanded = computed(() => 
+  appSettingsStore.isBlockExpanded(consoleBlockPath)
+);
+
+const isFileBlockExpanded = computed(() => 
+  appSettingsStore.isBlockExpanded(fileBlockPath)
+);
+
+// Icons for block expansion
+const consoleChevronIcon = computed(() => 
+  isConsoleBlockExpanded.value ? 'mdi-chevron-up' : 'mdi-chevron-down'
+);
+
+const fileChevronIcon = computed(() => 
+  isFileBlockExpanded.value ? 'mdi-chevron-up' : 'mdi-chevron-down'
+);
+
+/**
+ * Toggle console block expansion
+ */
+function toggleConsoleBlock() {
+  appSettingsStore.toggleBlock(consoleBlockPath);
+}
+
+/**
+ * Toggle file block expansion
+ */
+function toggleFileBlock() {
+  appSettingsStore.toggleBlock(fileBlockPath);
+}
 
 /**
  * Load settings from the backend
@@ -36,7 +76,9 @@ async function loadSettings() {
     // Apply settings to component
     if (settings && settings.length > 0) {
       console.log('Received settings:', settings);
-      enabled.value = getSettingValue(section_path, 'enabled', false);
+      consoleLoggingEnabled.value = getSettingValue(section_path, 'consoleLoggingEnabled', false);
+      debugEventsEnabled.value = getSettingValue(section_path, 'debugEventsEnabled', false);
+      fileLoggingEnabled.value = getSettingValue(section_path, 'fileLoggingEnabled', false);
     } else {
       console.log('No settings received for Logging - using defaults');
     }
@@ -65,7 +107,7 @@ onMounted(() => {
 <template>
   <div class="logging-container">
     <h2 class="text-h6 mb-4">
-      logging
+      логирование работы системы
     </h2>
     
     <!-- Loading indicator -->
@@ -75,16 +117,104 @@ onMounted(() => {
     />
     
     <template v-if="!isLoadingSettings">
-      <div class="settings-section">
-        <div class="section-content">
-          <v-switch
-            v-model="enabled"
-            color="teal-darken-2"
-            label="ВКЛЮЧИТЬ МОДУЛЬ"
-            hide-details
-            class="mb-4"
-          />
+      <!-- Console Logging Block -->
+      <div class="logging-block">
+        <!-- Console block header -->
+        <div 
+          class="block-header"
+          :class="{ 'block-expanded': isConsoleBlockExpanded }"
+          @click="toggleConsoleBlock"
+        >
+          <div class="block-header-content">
+            <v-icon 
+              :icon="consoleChevronIcon"
+              size="small"
+              class="chevron-icon"
+            />
+            <h3 class="block-title">
+              вывод логов в консоль
+            </h3>
+          </div>
         </div>
+        
+        <!-- Divider line -->
+        <div class="block-divider" />
+        
+        <!-- Console block content -->
+        <v-expand-transition>
+          <div
+            v-if="isConsoleBlockExpanded"
+            class="block-content"
+          >
+            <div class="settings-content">
+              <v-switch
+                v-model="consoleLoggingEnabled"
+                color="teal-darken-2"
+                label="включить вывод логов в консоль"
+                hide-details
+                class="mb-3"
+              />
+              <v-switch
+                v-model="debugEventsEnabled"
+                color="teal-darken-2"
+                label="вывод событий дебаггинга"
+                hide-details
+                class="mb-3"
+              />
+            </div>
+            
+            <!-- Bottom divider when expanded -->
+            <div class="block-divider" />
+          </div>
+        </v-expand-transition>
+      </div>
+      
+      <!-- File Logging Block -->
+      <div class="logging-block">
+        <!-- File block header -->
+        <div 
+          class="block-header"
+          :class="{ 'block-expanded': isFileBlockExpanded }"
+          @click="toggleFileBlock"
+        >
+          <div class="block-header-content">
+            <v-icon 
+              :icon="fileChevronIcon"
+              size="small"
+              class="chevron-icon"
+            />
+            <h3 class="block-title">
+              запись логов в файл
+            </h3>
+          </div>
+        </div>
+        
+        <!-- Divider line -->
+        <div class="block-divider" />
+        
+        <!-- File block content -->
+        <v-expand-transition>
+          <div
+            v-if="isFileBlockExpanded"
+            class="block-content"
+          >
+            <div class="settings-content">
+              <v-switch
+                v-model="fileLoggingEnabled"
+                color="teal-darken-2"
+                label="включить запись логов в файл"
+                hide-details
+                class="mb-3"
+              />
+              <div class="setting-note">
+                функция находится в разработке
+              </div>
+            </div>
+            
+            <!-- Bottom divider when expanded -->
+            <div class="block-divider" />
+          </div>
+        </v-expand-transition>
       </div>
     </template>
   </div>
@@ -95,12 +225,72 @@ onMounted(() => {
   /* Base container styling */
 }
 
-.settings-section {
-  padding: 16px 0;
-  transition: background-color 0.2s ease;
+.logging-block {
+  margin-bottom: 16px;
 }
 
-.settings-section:hover {
+.block-header {
+  display: flex;
+  align-items: center;
+  padding: 12px 16px;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+  user-select: none;
+}
+
+.block-header:hover {
+  background-color: rgba(0, 0, 0, 0.02);
+}
+
+.block-header-content {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.chevron-icon {
+  color: rgba(0, 0, 0, 0.6);
+  transition: transform 0.3s ease;
+}
+
+.block-expanded .chevron-icon {
+  transform: rotate(180deg);
+}
+
+.block-title {
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: rgba(0, 0, 0, 0.87);
+  margin: 0;
+}
+
+.block-divider {
+  height: 1px;
+  background-color: rgba(0, 0, 0, 0.3);
+  margin: 0;
+}
+
+.block-content {
   background-color: rgba(0, 0, 0, 0.01);
+}
+
+.settings-content {
+  padding: 16px 20px;
+}
+
+.settings-content .v-switch {
+  margin-bottom: 12px;
+}
+
+.settings-content .v-switch:last-child {
+  margin-bottom: 0;
+}
+
+.setting-note {
+  font-size: 0.8rem;
+  color: rgba(0, 0, 0, 0.6);
+  font-style: italic;
+  margin-top: 8px;
+  padding-left: 12px;
 }
 </style> 

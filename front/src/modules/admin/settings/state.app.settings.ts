@@ -16,6 +16,7 @@ interface AppSettingsState {
   // UI State
   selectedSectionPath: string;      // Currently selected section path
   expandedSections: string[];     // List of expanded section paths
+  expandedBlocks: string[];       // List of expanded setting blocks
   
   // Settings Data State
   settingsCache: Record<string, SettingsCacheEntry>; // Cache of settings by section
@@ -36,6 +37,10 @@ export const useAppSettingsStore = defineStore('appSettings', {
   state: (): AppSettingsState => ({
     selectedSectionPath: 'Application', // Default to application section
     expandedSections: [], // Start with all sections collapsed
+    expandedBlocks: [     // Start with both logging blocks expanded by default
+      'Application.System.Logging.ConsoleLoggingBlock',
+      'Application.System.Logging.FileLoggingBlock'
+    ],
     settingsCache: {}, // Empty cache to start
     isLoading: false,
     lastError: null
@@ -51,6 +56,11 @@ export const useAppSettingsStore = defineStore('appSettings', {
     // Get all expanded section paths
     getExpandedSections: (state): string[] => {
       return state.expandedSections;
+    },
+    
+    // Get all expanded block paths
+    getExpandedBlocks: (state): string[] => {
+      return state.expandedBlocks;
     },
     
     // Check if settings for a specific section exist and are not expired
@@ -99,7 +109,12 @@ export const useAppSettingsStore = defineStore('appSettings', {
     // Get the last error encountered
     getLastError: (state): string | null => {
       return state.lastError;
-    }
+    },
+    
+    // Check if a specific block is expanded
+    isBlockExpanded: (state) => (blockPath: string): boolean => {
+      return state.expandedBlocks.includes(blockPath);
+    },
   },
   
   // Actions
@@ -127,6 +142,27 @@ export const useAppSettingsStore = defineStore('appSettings', {
         this.collapseSection(path);
       } else {
         this.expandSection(path);
+      }
+    },
+    
+    // Expand a block
+    expandBlock(blockPath: string) {
+      if (!this.expandedBlocks.includes(blockPath)) {
+        this.expandedBlocks.push(blockPath);
+      }
+    },
+    
+    // Collapse a block
+    collapseBlock(blockPath: string) {
+      this.expandedBlocks = this.expandedBlocks.filter(path => path !== blockPath);
+    },
+    
+    // Toggle a block's expanded state
+    toggleBlock(blockPath: string) {
+      if (this.expandedBlocks.includes(blockPath)) {
+        this.collapseBlock(blockPath);
+      } else {
+        this.expandBlock(blockPath);
       }
     },
     
