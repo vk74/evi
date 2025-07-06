@@ -14,8 +14,8 @@
  
  // Import components from sections directory with hierarchical naming
  import UserProfiles from './sections/Application.UserProfiles.vue';
- import LoggingConsole from './sections/Application.Logging.Console.vue';
- import LoggingFile from './sections/Application.Logging.File.vue';
+ import SystemEventBus from './sections/Application.System.EventBus.vue';
+ import SystemLogging from './sections/Application.System.Logging.vue';
  import SessionManagement from './sections/Application.Security.SessionManagement.vue';
  import PasswordPolicies from './sections/Application.Security.PasswordPolicies.vue';
  import GroupsManagement from './sections/UsersManagement.GroupsManagement.vue';
@@ -48,23 +48,6 @@
          icon: 'mdi-account-cog-outline',
        },
        {
-         id: 'Application.Logging',
-         name: 'logging',
-         icon: 'mdi-text-box-outline',
-         children: [
-           {
-             id: 'Application.Logging.Console',
-             name: 'console transport',
-             icon: 'mdi-console',
-           },
-           {
-             id: 'Application.Logging.File',
-             name: 'file transport',
-             icon: 'mdi-file-outline',
-           }
-         ]
-       },
-       {
          id: 'Application.Security',
          name: 'security',
          icon: 'mdi-shield-outline',
@@ -78,6 +61,23 @@
              id: 'Application.Security.PasswordPolicies',
              name: 'password policies',
              icon: 'mdi-form-textbox-password',
+           }
+         ]
+       },
+       {
+         id: 'Application.System',
+         name: 'system',
+         icon: 'mdi-server',
+         children: [
+           {
+             id: 'Application.System.EventBus',
+             name: 'event bus',
+             icon: 'mdi-transit-connection-variant',
+           },
+           {
+             id: 'Application.System.Logging',
+             name: 'logging',
+             icon: 'mdi-text-box-outline',
            }
          ]
        }
@@ -115,8 +115,8 @@
  // Map section IDs to components
  const sectionComponents = {
    'Application.UserProfiles': markRaw(UserProfiles),
-   'Application.Logging.Console': markRaw(LoggingConsole),
-   'Application.Logging.File': markRaw(LoggingFile),
+   'Application.System.EventBus': markRaw(SystemEventBus),
+   'Application.System.Logging': markRaw(SystemLogging),
    'Application.Security.SessionManagement': markRaw(SessionManagement),
    'Application.Security.PasswordPolicies': markRaw(PasswordPolicies),
    'UsersManagement.GroupsManagement': markRaw(GroupsManagement),
