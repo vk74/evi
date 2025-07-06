@@ -170,6 +170,9 @@ export const consoleTransport = (config: Partial<ConsoleTransportConfig> = {}): 
       
       const useColors = transportConfig.useColors || false;
       
+      // Log separator line before event
+      console[consoleMethod]('----');
+      
       // Log each field as separate line
       console[consoleMethod](
         useColors ? `${colors.eventTime}event time:${colors.reset}` : 'event time:',
