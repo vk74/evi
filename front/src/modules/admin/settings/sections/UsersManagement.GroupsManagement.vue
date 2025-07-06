@@ -15,7 +15,7 @@ import { useUiStore } from '@/core/state/uistate';
 import DataLoading from '@/core/ui/loaders/DataLoading.vue';
 
 // Section path identifier - using component name for better consistency
-const section_path = 'Application.UsersManagement.GroupsManagement';
+const section_path = 'UsersManagement.GroupsManagement';
 
 // Store references
 const appSettingsStore = useAppSettingsStore();

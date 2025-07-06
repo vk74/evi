@@ -187,14 +187,14 @@ async function validateUserAccountStatus(userId: string): Promise<boolean> {
     });
     
     // Get setting from the correct cache - default to true for safety
-    lgr.info({
-      code: Events.CORE.ITEM_SELECTOR.ADD_USERS.VALIDATE.ACCOUNT_STATUS_CHECK_SETTINGS.code,
-      message: 'Checking application settings for non-active users',
-      details: { userId }
-    });
-    
-    const settingPath = 'Application.UsersManagement.GroupsManagement';
-    const settingName = 'add.only.active.users.to.groups';
+      lgr.info({
+    code: Events.CORE.ITEM_SELECTOR.ADD_USERS.VALIDATE.ACCOUNT_STATUS_CHECK_SETTINGS.code,
+    message: 'Checking application settings for non-active users',
+    details: { userId }
+  });
+  
+  const settingPath = 'UsersManagement.GroupsManagement';
+  const settingName = 'add.only.active.users.to.groups';
     const setting = getSetting(settingPath, settingName);
     
     // Default to true (only active users) if setting not found
