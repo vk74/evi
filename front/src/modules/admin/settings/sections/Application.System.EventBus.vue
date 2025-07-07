@@ -7,6 +7,7 @@
 
 <script setup lang="ts">
 import { ref, onMounted, watch } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { useAppSettingsStore } from '@/modules/admin/settings/state.app.settings';
 import { fetchSettings, getSettingValue } from '@/modules/admin/settings/service.fetch.settings';
 import DataLoading from '@/core/ui/loaders/DataLoading.vue';
@@ -16,6 +17,7 @@ const section_path = 'Application.System.EventBus';
 
 // Store reference
 const appSettingsStore = useAppSettingsStore();
+const { t } = useI18n();
 
 // Loading state
 const isLoadingSettings = ref(true);
@@ -65,7 +67,7 @@ onMounted(() => {
 <template>
   <div class="eventbus-container">
     <h2 class="text-h6 mb-4">
-      event bus
+      {{ t('admin.settings.application.system.eventbus.title') }}
     </h2>
     
     <!-- Loading indicator -->
@@ -80,7 +82,7 @@ onMounted(() => {
           <v-switch
             v-model="enabled"
             color="teal-darken-2"
-            label="ВКЛЮЧИТЬ МОДУЛЬ"
+            :label="t('admin.settings.application.system.eventbus.enabled.label')"
             hide-details
             class="mb-4"
           />

@@ -312,9 +312,9 @@ const onKeyPress = (event: KeyboardEvent) => {
               class="pb-0"
             >
               <v-text-field
+                ref="searchInputRef"
                 v-model="searchQuery"
                 :label="t('itemSelector.search.placeholder.default')"
-                ref="searchInputRef"
                 variant="outlined"
                 density="compact"
                 color="teal"

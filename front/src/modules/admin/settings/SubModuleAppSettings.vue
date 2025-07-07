@@ -8,9 +8,10 @@
  -->
  <script setup lang="ts">
  import { ref, computed, onMounted, markRaw, watch } from 'vue';
- import { useAppSettingsStore } from './state.app.settings';
- import { fetchSettings } from './service.fetch.settings';
- import { useUiStore } from '@/core/state/uistate';
+import { useI18n } from 'vue-i18n';
+import { useAppSettingsStore } from './state.app.settings';
+import { fetchSettings } from './service.fetch.settings';
+import { useUiStore } from '@/core/state/uistate';
  
  // Import components from sections directory with hierarchical naming
  import UserProfiles from './sections/Application.UserProfiles.vue';
@@ -29,54 +30,55 @@
  }
  
  // Initialize the store
- const appSettingsStore = useAppSettingsStore();
- const uiStore = useUiStore();
+const appSettingsStore = useAppSettingsStore();
+const uiStore = useUiStore();
+const { t } = useI18n();
  
  // Flag to track initial loading of settings for current section
  const isInitialLoadComplete = ref(false);
  
- // Hierarchical sections structure
- const sections = ref<Section[]>([
+ // Hierarchical sections structure - using computed to support reactive translations
+ const sections = computed<Section[]>(() => [
    {
      id: 'Application',
-     name: 'application',
+     name: t('admin.settings.sections.application'),
      icon: 'mdi-cog-outline',
      children: [
        {
          id: 'Application.UserProfiles',
-         name: 'user profiles',
+         name: t('admin.settings.sections.userprofiles'),
          icon: 'mdi-account-cog-outline',
        },
        {
          id: 'Application.Security',
-         name: 'security',
+         name: t('admin.settings.sections.security'),
          icon: 'mdi-shield-outline',
          children: [
            {
              id: 'Application.Security.SessionManagement',
-             name: 'session management',
+             name: t('admin.settings.sections.sessionmanagement'),
              icon: 'mdi-account-clock-outline',
            },
            {
              id: 'Application.Security.PasswordPolicies',
-             name: 'password policies',
+             name: t('admin.settings.sections.passwordpolicies'),
              icon: 'mdi-form-textbox-password',
            }
          ]
        },
        {
          id: 'Application.System',
-         name: 'system',
+         name: t('admin.settings.sections.system'),
          icon: 'mdi-server',
          children: [
            {
              id: 'Application.System.EventBus',
-             name: 'event bus',
+             name: t('admin.settings.sections.eventbus'),
              icon: 'mdi-transit-connection-variant',
            },
            {
              id: 'Application.System.Logging',
-             name: 'logging',
+             name: t('admin.settings.sections.logging'),
              icon: 'mdi-text-box-outline',
            }
          ]
@@ -85,29 +87,29 @@
    },
    {
      id: 'UsersManagement',
-     name: 'users management',
+     name: t('admin.settings.sections.usersmanagement'),
      icon: 'mdi-account-group-outline',
      children: [
        {
          id: 'UsersManagement.GroupsManagement',
-         name: 'groups management',
+         name: t('admin.settings.sections.groupsmanagement'),
          icon: 'mdi-account-multiple-outline',
        }
      ]
    },
    {
      id: 'Catalog',
-     name: 'catalog',
+     name: t('admin.settings.sections.catalog'),
      icon: 'mdi-folder-table-outline',
    },
    {
      id: 'Services',
-     name: 'services',
+     name: t('admin.settings.sections.services'),
      icon: 'mdi-puzzle-outline',
    },
    {
      id: 'Processes',
-     name: 'processes',
+     name: t('admin.settings.sections.processes'),
      icon: 'mdi-chart-timeline-variant',
    }
  ]);
@@ -485,7 +487,7 @@
           v-if="currentComponent"
         />
         <h2 v-else>
-          Selected section: {{ selectedSectionPath }}
+          {{ t('admin.settings.common.selected.section', { section: selectedSectionPath }) }}
         </h2>
       </div>
     </div>

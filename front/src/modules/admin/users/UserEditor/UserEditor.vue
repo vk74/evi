@@ -388,6 +388,7 @@ onBeforeUnmount(() => {
                       md="6"
                     >
                       <v-text-field
+                        ref="usernameField"
                         v-model="accountUsername"
                         :label="t('admin.users.editor.fields.username.label')"
                         :rules="usernameRules"
@@ -395,7 +396,6 @@ onBeforeUnmount(() => {
                         density="comfortable"
                         counter="25"
                         required
-                        ref="usernameField"
                       />
                     </v-col>
                     <v-col

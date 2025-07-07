@@ -514,13 +514,17 @@ onMounted(() => {
                   class="ms-2" 
                   color="error"
                   v-bind="props"
-                  @click="retrySetting('password.min.length')"
                   style="cursor: pointer;"
+                  @click="retrySetting('password.min.length')"
                 />
               </template>
               <div class="pa-2">
-                <p class="text-subtitle-2 mb-2">Ошибка загрузки настройки</p>
-                <p class="text-caption">Нажмите для повторной попытки</p>
+                <p class="text-subtitle-2 mb-2">
+                  Ошибка загрузки настройки
+                </p>
+                <p class="text-caption">
+                  Нажмите для повторной попытки
+                </p>
               </div>
             </v-tooltip>
           </div>
@@ -551,13 +555,17 @@ onMounted(() => {
                   class="ms-2" 
                   color="error"
                   v-bind="props"
-                  @click="retrySetting('password.max.length')"
                   style="cursor: pointer;"
+                  @click="retrySetting('password.max.length')"
                 />
               </template>
               <div class="pa-2">
-                <p class="text-subtitle-2 mb-2">Ошибка загрузки настройки</p>
-                <p class="text-caption">Нажмите для повторной попытки</p>
+                <p class="text-subtitle-2 mb-2">
+                  Ошибка загрузки настройки
+                </p>
+                <p class="text-caption">
+                  Нажмите для повторной попытки
+                </p>
               </div>
             </v-tooltip>
           </div>
@@ -584,13 +592,17 @@ onMounted(() => {
                 class="ms-2" 
                 color="error"
                 v-bind="props"
-                @click="retrySetting('password.require.lowercase')"
                 style="cursor: pointer;"
+                @click="retrySetting('password.require.lowercase')"
               />
             </template>
             <div class="pa-2">
-              <p class="text-subtitle-2 mb-2">Ошибка загрузки настройки</p>
-              <p class="text-caption">Нажмите для повторной попытки</p>
+              <p class="text-subtitle-2 mb-2">
+                Ошибка загрузки настройки
+              </p>
+              <p class="text-caption">
+                Нажмите для повторной попытки
+              </p>
             </div>
           </v-tooltip>
         </div>
@@ -616,13 +628,17 @@ onMounted(() => {
                 class="ms-2" 
                 color="error"
                 v-bind="props"
-                @click="retrySetting('password.require.uppercase')"
                 style="cursor: pointer;"
+                @click="retrySetting('password.require.uppercase')"
               />
             </template>
             <div class="pa-2">
-              <p class="text-subtitle-2 mb-2">Ошибка загрузки настройки</p>
-              <p class="text-caption">Нажмите для повторной попытки</p>
+              <p class="text-subtitle-2 mb-2">
+                Ошибка загрузки настройки
+              </p>
+              <p class="text-caption">
+                Нажмите для повторной попытки
+              </p>
             </div>
           </v-tooltip>
         </div>
@@ -648,13 +664,17 @@ onMounted(() => {
                 class="ms-2" 
                 color="error"
                 v-bind="props"
-                @click="retrySetting('password.require.numbers')"
                 style="cursor: pointer;"
+                @click="retrySetting('password.require.numbers')"
               />
             </template>
             <div class="pa-2">
-              <p class="text-subtitle-2 mb-2">Ошибка загрузки настройки</p>
-              <p class="text-caption">Нажмите для повторной попытки</p>
+              <p class="text-subtitle-2 mb-2">
+                Ошибка загрузки настройки
+              </p>
+              <p class="text-caption">
+                Нажмите для повторной попытки
+              </p>
             </div>
           </v-tooltip>
         </div>
@@ -680,13 +700,17 @@ onMounted(() => {
                 class="ms-2" 
                 color="error"
                 v-bind="props"
-                @click="retrySetting('password.require.special.chars')"
                 style="cursor: pointer;"
+                @click="retrySetting('password.require.special.chars')"
               />
             </template>
             <div class="pa-2">
-              <p class="text-subtitle-2 mb-2">Ошибка загрузки настройки</p>
-              <p class="text-caption">Нажмите для повторной попытки</p>
+              <p class="text-subtitle-2 mb-2">
+                Ошибка загрузки настройки
+              </p>
+              <p class="text-caption">
+                Нажмите для повторной попытки
+              </p>
             </div>
           </v-tooltip>
           <v-tooltip
@@ -703,7 +727,9 @@ onMounted(() => {
               />
             </template>
             <div class="pa-2">
-              <p class="text-subtitle-2 mb-2">{{ t('admin.settings.application.security.passwordpolicies.specialchars.allowed.title') }}</p>
+              <p class="text-subtitle-2 mb-2">
+                {{ t('admin.settings.application.security.passwordpolicies.specialchars.allowed.title') }}
+              </p>
               <v-text-field
                 :model-value="allowedSpecialChars"
                 readonly
@@ -726,20 +752,27 @@ onMounted(() => {
                     class="ms-2" 
                     color="error"
                     v-bind="props"
-                    @click="retrySetting('password.allowed.special.chars')"
                     style="cursor: pointer;"
+                    @click="retrySetting('password.allowed.special.chars')"
                   />
                 </template>
                 <div class="pa-2">
-                  <p class="text-subtitle-2 mb-2">Ошибка загрузки настройки</p>
-                  <p class="text-caption">Нажмите для повторной попытки</p>
+                  <p class="text-subtitle-2 mb-2">
+                    Ошибка загрузки настройки
+                  </p>
+                  <p class="text-caption">
+                    Нажмите для повторной попытки
+                  </p>
                 </div>
               </v-tooltip>
             </div>
           </v-tooltip>
         </div>
         
-        <div class="section-content mt-4 mb-4 d-flex align-center" style="gap: 16px;">
+        <div
+          class="section-content mt-4 mb-4 d-flex align-center"
+          style="gap: 16px;"
+        >
           <v-select
             v-model="passwordExpiration"
             :items="passwordExpirationOptions"
@@ -770,7 +803,10 @@ onMounted(() => {
         
         <!-- Кнопка сброса настроек внизу -->
         <div class="mt-6 d-flex justify-start">
-          <v-tooltip location="top" max-width="300">
+          <v-tooltip
+            location="top"
+            max-width="300"
+          >
             <template #activator="{ props }">
               <v-btn
                 color="teal"
@@ -778,10 +814,12 @@ onMounted(() => {
                 size="small"
                 :loading="isResetting"
                 :disabled="isResetting || isFirstLoad"
-                @click="resetToDefaults"
                 v-bind="props"
+                @click="resetToDefaults"
               >
-                <v-icon start>mdi-refresh</v-icon>
+                <v-icon start>
+                  mdi-refresh
+                </v-icon>
                 {{ t('admin.settings.application.security.passwordpolicies.reset.button') }}
               </v-btn>
             </template>

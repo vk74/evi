@@ -353,7 +353,7 @@ onMounted(() => {
                 <v-switch
                   v-model="consoleLoggingEnabled"
                   color="teal-darken-2"
-                  label="включить вывод логов в консоль"
+                  :label="t('admin.settings.application.system.logging.console.enabled.label')"
                   hide-details
                   :disabled="isSettingDisabled('turn.on.console.logging')"
                   :loading="settingLoadingStates['turn.on.console.logging']"
@@ -370,13 +370,17 @@ onMounted(() => {
                       class="ms-2" 
                       color="error"
                       v-bind="props"
-                      @click="retrySetting('turn.on.console.logging')"
                       style="cursor: pointer;"
+                      @click="retrySetting('turn.on.console.logging')"
                     />
                   </template>
                   <div class="pa-2">
-                    <p class="text-subtitle-2 mb-2">ошибка загрузки настройки</p>
-                    <p class="text-caption">нажмите для повторной попытки</p>
+                    <p class="text-subtitle-2 mb-2">
+                      {{ t('admin.settings.usersmanagement.groupsmanagement.messages.error.tooltip.title') }}
+                    </p>
+                    <p class="text-caption">
+                      {{ t('admin.settings.usersmanagement.groupsmanagement.messages.error.tooltip.retry') }}
+                    </p>
                   </div>
                 </v-tooltip>
               </div>
@@ -385,7 +389,7 @@ onMounted(() => {
                 <v-switch
                   v-model="debugEventsEnabled"
                   color="teal-darken-2"
-                  label="вывод событий дебаггинга"
+                  :label="t('admin.settings.application.system.logging.console.debug.events.label')"
                   hide-details
                   :disabled="isDebugEventsDisabled"
                   :loading="settingLoadingStates['console.log.debug.events']"
@@ -404,20 +408,20 @@ onMounted(() => {
                       class="ms-2" 
                       color="error"
                       v-bind="props"
-                      @click="retrySetting('console.log.debug.events')"
                       style="cursor: pointer;"
+                      @click="retrySetting('console.log.debug.events')"
                     />
                   </template>
                   <div class="pa-2">
-                    <p class="text-subtitle-2 mb-2">ошибка загрузки настройки</p>
-                    <p class="text-caption">нажмите для повторной попытки</p>
+                    <p class="text-subtitle-2 mb-2">
+                      {{ t('admin.settings.usersmanagement.groupsmanagement.messages.error.tooltip.title') }}
+                    </p>
+                    <p class="text-caption">
+                      {{ t('admin.settings.usersmanagement.groupsmanagement.messages.error.tooltip.retry') }}
+                    </p>
                   </div>
                 </v-tooltip>
-                
-                
               </div>
-              
-
             </div>
             
             <!-- Bottom divider when expanded -->
@@ -460,7 +464,7 @@ onMounted(() => {
                 <v-switch
                   v-model="fileLoggingEnabled"
                   color="teal-darken-2"
-                  label="включить запись логов в файл"
+                  :label="t('admin.settings.application.system.logging.file.enabled.label')"
                   hide-details
                   :disabled="isSettingDisabled('turn.on.file.logging')"
                   :loading="settingLoadingStates['turn.on.file.logging']"
@@ -477,13 +481,17 @@ onMounted(() => {
                       class="ms-2" 
                       color="error"
                       v-bind="props"
-                      @click="retrySetting('turn.on.file.logging')"
                       style="cursor: pointer;"
+                      @click="retrySetting('turn.on.file.logging')"
                     />
                   </template>
                   <div class="pa-2">
-                    <p class="text-subtitle-2 mb-2">ошибка загрузки настройки</p>
-                    <p class="text-caption">нажмите для повторной попытки</p>
+                    <p class="text-subtitle-2 mb-2">
+                      {{ t('admin.settings.usersmanagement.groupsmanagement.messages.error.tooltip.title') }}
+                    </p>
+                    <p class="text-caption">
+                      {{ t('admin.settings.usersmanagement.groupsmanagement.messages.error.tooltip.retry') }}
+                    </p>
                   </div>
                 </v-tooltip>
               </div>

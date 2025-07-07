@@ -127,7 +127,7 @@ async function loadSetting(settingName: string): Promise<boolean> {
       setTimeout(() => loadSetting(settingName), 5000);
     } else {
       // Show error toast only on final failure
-      uiStore.showErrorSnackbar(`Ошибка загрузки настройки: ${settingName}`);
+      uiStore.showErrorSnackbar(`${t('admin.settings.usersmanagement.groupsmanagement.messages.error.loading')}: ${settingName}`);
     }
     
     return false;
@@ -169,7 +169,7 @@ async function loadSettings() {
       console.log(`Successfully loaded ${successfulLoads.length} out of ${allSettings.length} settings`);
       
       // Show success toast for initial load
-      uiStore.showSuccessSnackbar('настройки успешно загружены');
+      uiStore.showSuccessSnackbar(t('admin.settings.usersmanagement.groupsmanagement.messages.settings.loaded'));
     }
     
   } catch (error) {
@@ -254,13 +254,17 @@ onMounted(() => {
                 class="ms-2" 
                 color="error"
                 v-bind="props"
-                @click="retrySetting('add.only.active.users.to.groups')"
                 style="cursor: pointer;"
+                @click="retrySetting('add.only.active.users.to.groups')"
               />
             </template>
             <div class="pa-2">
-              <p class="text-subtitle-2 mb-2">Ошибка загрузки настройки</p>
-              <p class="text-caption">Нажмите для повторной попытки</p>
+              <p class="text-subtitle-2 mb-2">
+                {{ t('admin.settings.usersmanagement.groupsmanagement.messages.error.tooltip.title') }}
+              </p>
+              <p class="text-caption">
+                {{ t('admin.settings.usersmanagement.groupsmanagement.messages.error.tooltip.retry') }}
+              </p>
             </div>
           </v-tooltip>
         </div>

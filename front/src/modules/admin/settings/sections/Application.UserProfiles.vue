@@ -6,6 +6,7 @@
 
 <script setup lang="ts">
 import { ref, onMounted, watch } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { useAppSettingsStore } from '@/modules/admin/settings/state.app.settings';
 import { fetchSettings, getSettingValue } from '@/modules/admin/settings/service.fetch.settings';
 import DataLoading from '@/core/ui/loaders/DataLoading.vue';
@@ -15,6 +16,7 @@ const section_path = 'Application.UserProfiles';
 
 // Store reference
 const appSettingsStore = useAppSettingsStore();
+const { t } = useI18n();
 
 // Loading state
 const isLoadingSettings = ref(true);
@@ -70,7 +72,7 @@ onMounted(() => {
 <template>
   <div class="user-profiles-container">
     <h2 class="text-h6 mb-4">
-      управление профилями пользователей
+      {{ t('admin.settings.application.userprofiles.title') }}
     </h2>
     
     <div class="settings-section mb-4">
@@ -80,14 +82,14 @@ onMounted(() => {
           icon="mdi-account-edit-outline"
           class="mr-2"
         />
-        Профили
+        {{ t('admin.settings.application.userprofiles.sections.profiles') }}
       </div>
       
       <div class="section-content">
         <v-switch
           v-model="allowUserToChangeOwnProfile"
           color="teal-darken-2"
-          label="allow user to update own profile"
+          :label="t('admin.settings.application.userprofiles.allow.user.update.own.profile.label')"
           hide-details
           class="mb-3"
         />
@@ -95,7 +97,7 @@ onMounted(() => {
         <v-switch
           v-model="allowUserToUploadAvatar"
           color="teal-darken-2"
-          label="allow users to upload profile photos"
+          :label="t('admin.settings.application.userprofiles.allow.user.upload.avatar.label')"
           hide-details
           class="mb-3"
         />
@@ -107,7 +109,7 @@ onMounted(() => {
           max="5120"
           step="256"
           thumb-label
-          :label="`Maximum profile photo size (${maxUserProfilePhotoSize} KB)`"
+          :label="t('admin.settings.application.userprofiles.max.profile.photo.size.label', { size: maxUserProfilePhotoSize })"
           color="teal-darken-2"
         >
           <template #append>
