@@ -1,8 +1,14 @@
 <!--
-  File: Application.System.Logging.vue
-  Description: System logging settings
-  Purpose: Enable/disable logging functionality
-  Version: 1.0
+  File: Application.System.Logging.vue - frontend file
+  Description: System logging settings with hierarchical dependencies
+  Purpose: Enable/disable logging functionality with console-dependent settings
+  Version: 1.1.0
+  
+  Features:
+  - Console logging enable/disable
+  - Debug events logging (depends on console logging being enabled)  
+  - File logging (independent setting)
+  - Hierarchical settings logic - dependent settings auto-disable when parent is disabled
 -->
 
 <script setup lang="ts">
@@ -78,6 +84,20 @@ const hasErrorSettings = computed(() => {
 const isSettingDisabled = (settingName: string) => {
   return settingLoadingStates.value[settingName] || settingErrorStates.value[settingName];
 };
+
+/**
+ * Check if debug events setting should be disabled based on hierarchical rules
+ * Debug events only work when console logging is enabled
+ */
+const isDebugEventsDisabled = computed(() => {
+  // Standard disabled checks (loading, error)
+  const standardDisabled = isSettingDisabled('console.log.debug.events');
+  
+  // Hierarchical disabled - debug events depend on console logging being enabled
+  const hierarchicalDisabled = !consoleLoggingEnabled.value;
+  
+  return standardDisabled || hierarchicalDisabled;
+});
 
 // Computed properties for block expansion state
 const isConsoleBlockExpanded = computed(() => 
@@ -242,6 +262,13 @@ watch(
   (newValue) => {
     if (!isFirstLoad.value) {
       updateSetting('turn.on.console.logging', newValue);
+      
+      // Hierarchical logic: if console logging is disabled, automatically disable debug events
+      if (!newValue && debugEventsEnabled.value) {
+        console.log('[Frontend] Console logging disabled, automatically disabling debug events');
+        debugEventsEnabled.value = false;
+        // Note: The watch on debugEventsEnabled will handle the backend update
+      }
     }
   }
 );
@@ -360,9 +387,11 @@ onMounted(() => {
                   color="teal-darken-2"
                   label="вывод событий дебаггинга"
                   hide-details
-                  :disabled="isSettingDisabled('console.log.debug.events')"
+                  :disabled="isDebugEventsDisabled"
                   :loading="settingLoadingStates['console.log.debug.events']"
                 />
+                
+                <!-- Error tooltip -->
                 <v-tooltip
                   v-if="settingErrorStates['console.log.debug.events']"
                   location="top"
@@ -384,7 +413,11 @@ onMounted(() => {
                     <p class="text-caption">нажмите для повторной попытки</p>
                   </div>
                 </v-tooltip>
+                
+                
               </div>
+              
+
             </div>
             
             <!-- Bottom divider when expanded -->
@@ -550,4 +583,6 @@ onMounted(() => {
   border-color: rgba(0, 0, 0, 0.12);
   opacity: 1;
 }
+
+
 </style> 
