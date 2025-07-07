@@ -9,6 +9,12 @@
 import { BaseEvent } from '../eventBus/types.events';
 import { LoggerTransport } from './types.logger';
 import consoleTransport from './transports/console.logger';
+import fabricEvents from '../eventBus/fabric.events';
+import { 
+  LOGGER_INITIALIZATION_EVENTS,
+  LOGGER_TRANSPORT_EVENTS,
+  LOGGER_SETTINGS_EVENTS
+} from './events.logger';
 
 // Map to store registered transports
 const transports = new Map<string, LoggerTransport>();
@@ -28,14 +34,46 @@ let currentSettings = {
  * Initialize the logger service
  */
 export const initialize = (): void => {
-  console.log('Logger service initialized');
+  const initialTransportsCount = transports.size;
+  const transportNames = Array.from(transports.keys());
+  
+  fabricEvents.createAndPublishEvent({
+    eventName: LOGGER_INITIALIZATION_EVENTS.SERVICE_INIT_STARTED.eventName,
+    payload: {
+      transportsCount: initialTransportsCount,
+      transportNames
+    }
+  });
 
+  const initializedTransports: string[] = [];
+  
   // Initialize all transports that have an initialize method
   for (const transport of transports.values()) {
     if (typeof transport.initialize === 'function') {
-      transport.initialize();
+      try {
+        transport.initialize();
+        initializedTransports.push(transport.name);
+      } catch (error) {
+        fabricEvents.createAndPublishEvent({
+          eventName: LOGGER_TRANSPORT_EVENTS.TRANSPORT_INIT_ERROR.eventName,
+          payload: {
+            transportName: transport.name
+          },
+          errorData: error instanceof Error ? error.message : String(error)
+        });
+      }
+    } else {
+      initializedTransports.push(transport.name);
     }
   }
+  
+  fabricEvents.createAndPublishEvent({
+    eventName: LOGGER_INITIALIZATION_EVENTS.SERVICE_INIT_SUCCESS.eventName,
+    payload: {
+      transportsCount: transports.size,
+      initializedTransports
+    }
+  });
 };
 
 /**
@@ -109,21 +147,45 @@ export const getTransports = (): string[] => {
  * Enables or disables console transport based on setting value
  */
 export const applyConsoleLoggingSetting = (enabled: boolean): void => {
-  console.log(`[Logger] ${enabled ? 'Enabling' : 'Disabling'} console logging`);
-  
+  const previousState = currentSettings.consoleLoggingEnabled;
   currentSettings.consoleLoggingEnabled = enabled;
   
   if (enabled) {
+    fabricEvents.createAndPublishEvent({
+      eventName: LOGGER_SETTINGS_EVENTS.CONSOLE_LOGGING_ENABLED.eventName,
+      payload: {
+        previousState
+      }
+    });
+    
     // Ensure console transport is registered
     if (!transports.has('console')) {
       transports.set('console', consoleTransport);
-      console.log('[Logger] Console transport registered');
+      fabricEvents.createAndPublishEvent({
+        eventName: LOGGER_TRANSPORT_EVENTS.TRANSPORT_REGISTERED.eventName,
+        payload: {
+          transportName: 'console'
+        }
+      });
     }
   } else {
+    fabricEvents.createAndPublishEvent({
+      eventName: LOGGER_SETTINGS_EVENTS.CONSOLE_LOGGING_DISABLED.eventName,
+      payload: {
+        previousState
+      }
+    });
+    
     // Remove console transport
     const removed = transports.delete('console');
     if (removed) {
-      console.log('[Logger] Console transport unregistered');
+      fabricEvents.createAndPublishEvent({
+        eventName: LOGGER_TRANSPORT_EVENTS.TRANSPORT_UNREGISTERED.eventName,
+        payload: {
+          transportName: 'console',
+          success: true
+        }
+      });
     }
   }
 };
@@ -134,15 +196,22 @@ export const applyConsoleLoggingSetting = (enabled: boolean): void => {
  * Note: This setting only works when console logging is enabled (hierarchical dependency)
  */
 export const applyDebugEventsSetting = (enabled: boolean): void => {
-  console.log(`[Logger] ${enabled ? 'Enabling' : 'Disabling'} debug events logging`);
-  
   currentSettings.debugEventsEnabled = enabled;
   
-  // Debug filtering is handled in processEvent method with console logging dependency
-  if (!currentSettings.consoleLoggingEnabled) {
-    console.log('[Logger] Note: Debug events setting will not take effect until console logging is enabled');
+  if (enabled) {
+    fabricEvents.createAndPublishEvent({
+      eventName: LOGGER_SETTINGS_EVENTS.DEBUG_EVENTS_ENABLED.eventName,
+      payload: {
+        consoleLoggingEnabled: currentSettings.consoleLoggingEnabled
+      }
+    });
   } else {
-    console.log('[Logger] Debug events setting applied');
+    fabricEvents.createAndPublishEvent({
+      eventName: LOGGER_SETTINGS_EVENTS.DEBUG_EVENTS_DISABLED.eventName,
+      payload: {
+        consoleLoggingEnabled: currentSettings.consoleLoggingEnabled
+      }
+    });
   }
 };
 
@@ -167,7 +236,13 @@ export const close = async (): Promise<void> => {
           promises.push(result);
         }
       } catch (error) {
-        console.error(`Error closing transport '${transport.name}':`, error);
+        fabricEvents.createAndPublishEvent({
+          eventName: LOGGER_TRANSPORT_EVENTS.TRANSPORT_CLOSE_ERROR.eventName,
+          payload: {
+            transportName: transport.name
+          },
+          errorData: error instanceof Error ? error.message : String(error)
+        });
       }
     }
   }

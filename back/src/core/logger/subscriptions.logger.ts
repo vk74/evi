@@ -11,6 +11,13 @@ import { subscribe, filter, whereSeverity, unsubscribe } from '../eventBus/subsc
 import loggerService from './service.logger';
 import { LoggerSubscriptionRule } from './types.logger';
 import { getSetting, parseSettingValue } from '../../modules/admin/settings/cache.settings';
+import fabricEvents from '../eventBus/fabric.events';
+import { 
+  LOGGER_INITIALIZATION_EVENTS,
+  LOGGER_SETTINGS_EVENTS,
+  LOGGER_ERROR_EVENTS,
+  LOGGER_SUBSCRIPTION_EVENTS
+} from './events.logger';
 
 // Track active subscriptions for cleanup
 const activeSubscriptions: Array<string> = [];
@@ -28,7 +35,13 @@ const handleLoggerSettingsChange = (event: BaseEvent): void => {
   try {
     // Check if payload exists and has required properties
     if (!event.payload || typeof event.payload !== 'object') {
-      console.warn('[Logger] Invalid payload in settings update event');
+      fabricEvents.createAndPublishEvent({
+        eventName: LOGGER_ERROR_EVENTS.INVALID_SETTINGS_PAYLOAD.eventName,
+        payload: {
+          eventName: event.eventName,
+          receivedPayload: event.payload
+        }
+      });
       return;
     }
     
@@ -37,21 +50,39 @@ const handleLoggerSettingsChange = (event: BaseEvent): void => {
     const settingName = payload.settingName;
     
     if (!sectionPath || !settingName) {
-      console.warn('[Logger] Missing sectionPath or settingName in payload');
+      fabricEvents.createAndPublishEvent({
+        eventName: LOGGER_ERROR_EVENTS.INVALID_SETTINGS_PAYLOAD.eventName,
+        payload: {
+          eventName: event.eventName,
+          receivedPayload: event.payload,
+          missingFields: !sectionPath ? 'sectionPath' : 'settingName'
+        }
+      });
       return;
     }
     
-    console.log(`[Logger] Processing settings change: ${sectionPath}/${settingName}`);
+    fabricEvents.createAndPublishEvent({
+      eventName: LOGGER_SETTINGS_EVENTS.CHANGE_PROCESSING_STARTED.eventName,
+      payload: {
+        sectionPath,
+        settingName
+      }
+    });
     
     // Get the updated setting value from cache
     const setting = getSetting(sectionPath, settingName);
     if (!setting) {
-      console.warn(`[Logger] Setting not found in cache: ${sectionPath}/${settingName}`);
+      fabricEvents.createAndPublishEvent({
+        eventName: LOGGER_ERROR_EVENTS.SETTING_NOT_FOUND.eventName,
+        payload: {
+          sectionPath,
+          settingName
+        }
+      });
       return;
     }
     
     const newValue = parseSettingValue(setting);
-    console.log(`[Logger] New setting value: ${settingName} = ${newValue}`);
     
     // Delegate setting changes to logger service
     switch (settingName) {
@@ -64,11 +95,34 @@ const handleLoggerSettingsChange = (event: BaseEvent): void => {
         break;
         
       default:
-        console.log(`[Logger] Unknown logger setting: ${settingName}`);
+        fabricEvents.createAndPublishEvent({
+          eventName: LOGGER_ERROR_EVENTS.UNKNOWN_SETTING.eventName,
+          payload: {
+            settingName,
+            sectionPath
+          }
+        });
+        return;
     }
     
+    fabricEvents.createAndPublishEvent({
+      eventName: LOGGER_SETTINGS_EVENTS.CHANGE_PROCESSING_SUCCESS.eventName,
+      payload: {
+        sectionPath,
+        settingName,
+        newValue
+      }
+    });
+    
   } catch (error) {
-    console.error('[Logger] Error processing settings change:', error);
+    fabricEvents.createAndPublishEvent({
+      eventName: LOGGER_ERROR_EVENTS.SETTINGS_PROCESSING_ERROR.eventName,
+      payload: {
+        sectionPath: (event.payload as any)?.sectionPath,
+        settingName: (event.payload as any)?.settingName
+      },
+      errorData: error instanceof Error ? error.message : String(error)
+    });
   }
 };
 
@@ -77,27 +131,49 @@ const handleLoggerSettingsChange = (event: BaseEvent): void => {
  * Reads current settings values and applies them to logger service
  */
 const loadInitialSettings = (): void => {
-  console.log('[Logger] Loading initial settings');
+  const settingsToLoad = ['turn.on.console.logging', 'console.log.debug.events'];
+  
+  fabricEvents.createAndPublishEvent({
+    eventName: LOGGER_SETTINGS_EVENTS.INITIAL_LOAD_STARTED.eventName,
+    payload: {
+      settingsToLoad
+    }
+  });
   
   try {
+    let consoleEnabled = true;
+    let debugEnabled = true;
+    
     // Load console logging setting
     const consoleLoggingSetting = getSetting('Application.System.Logging', 'turn.on.console.logging');
     if (consoleLoggingSetting) {
-      const consoleEnabled = parseSettingValue(consoleLoggingSetting);
-      console.log(`[Logger] Initial console logging: ${consoleEnabled}`);
+      consoleEnabled = parseSettingValue(consoleLoggingSetting);
       loggerService.applyConsoleLoggingSetting(consoleEnabled);
     }
     
     // Load debug events setting
     const debugEventsSetting = getSetting('Application.System.Logging', 'console.log.debug.events');
     if (debugEventsSetting) {
-      const debugEnabled = parseSettingValue(debugEventsSetting);
-      console.log(`[Logger] Initial debug events: ${debugEnabled}`);
+      debugEnabled = parseSettingValue(debugEventsSetting);
       loggerService.applyDebugEventsSetting(debugEnabled);
     }
     
+    fabricEvents.createAndPublishEvent({
+      eventName: LOGGER_SETTINGS_EVENTS.INITIAL_LOAD_SUCCESS.eventName,
+      payload: {
+        consoleLogging: consoleEnabled,
+        debugEvents: debugEnabled
+      }
+    });
+    
   } catch (error) {
-    console.error('[Logger] Error loading initial settings:', error);
+    fabricEvents.createAndPublishEvent({
+      eventName: LOGGER_ERROR_EVENTS.INITIAL_LOAD_ERROR.eventName,
+      payload: {
+        settingsToLoad
+      },
+      errorData: error instanceof Error ? error.message : String(error)
+    });
   }
 };
 
@@ -106,10 +182,17 @@ const loadInitialSettings = (): void => {
  * Creates main logging subscriptions and settings change subscription
  */
 export const initializeSubscriptions = (rules: LoggerSubscriptionRule[] = defaultRules): void => {
-  console.log('Initializing logger subscriptions');
+  fabricEvents.createAndPublishEvent({
+    eventName: LOGGER_INITIALIZATION_EVENTS.SUBSCRIPTIONS_INIT_STARTED.eventName,
+    payload: {
+      rulesCount: rules.length
+    }
+  });
 
   // Clear any existing subscriptions
   clearSubscriptions();
+  
+  const patterns: string[] = [];
   
   // Create main logging subscriptions based on rules
   for (const rule of rules) {
@@ -151,12 +234,27 @@ export const initializeSubscriptions = (rules: LoggerSubscriptionRule[] = defaul
     
     // Store the subscription ID for cleanup
     activeSubscriptions.push(subscriptionId);
+    patterns.push(pattern);
     
-    console.log(`Logger subscribed to events: ${pattern}`);
+    fabricEvents.createAndPublishEvent({
+      eventName: LOGGER_SUBSCRIPTION_EVENTS.PATTERN_SUBSCRIBED.eventName,
+      payload: {
+        pattern,
+        subscriptionId
+      }
+    });
   }
   
   // Create separate subscription for settings changes
   initializeSettingsSubscription();
+  
+  fabricEvents.createAndPublishEvent({
+    eventName: LOGGER_INITIALIZATION_EVENTS.SUBSCRIPTIONS_INIT_SUCCESS.eventName,
+    payload: {
+      subscriptionsCount: activeSubscriptions.length,
+      patterns
+    }
+  });
 };
 
 /**
@@ -164,8 +262,6 @@ export const initializeSubscriptions = (rules: LoggerSubscriptionRule[] = defaul
  * Creates subscription to settings update events with filtering for logger section
  */
 const initializeSettingsSubscription = (): void => {
-  console.log('[Logger] Initializing settings subscription');
-  
   // Load initial settings first
   loadInitialSettings();
   
@@ -187,7 +283,14 @@ const initializeSettingsSubscription = (): void => {
   );
   
   activeSubscriptions.push(settingsSubscriptionId);
-  console.log('[Logger] Settings subscription initialized');
+  
+  fabricEvents.createAndPublishEvent({
+    eventName: LOGGER_SUBSCRIPTION_EVENTS.SETTINGS_SUBSCRIPTION_INIT.eventName,
+    payload: {
+      pattern: 'settings.update.success',
+      subscriptionId: settingsSubscriptionId
+    }
+  });
 };
 
 /**
@@ -195,6 +298,8 @@ const initializeSettingsSubscription = (): void => {
  * Unsubscribes from all registered event patterns
  */
 export const clearSubscriptions = (): void => {
+  const clearedCount = activeSubscriptions.length;
+  
   // Call all unsubscribe functions
   for (const subscriptionId of activeSubscriptions) {
     unsubscribe(subscriptionId);
@@ -203,7 +308,12 @@ export const clearSubscriptions = (): void => {
   // Clear the array
   activeSubscriptions.length = 0;
   
-  console.log('Logger subscriptions cleared');
+  fabricEvents.createAndPublishEvent({
+    eventName: LOGGER_SUBSCRIPTION_EVENTS.SUBSCRIPTIONS_CLEARED.eventName,
+    payload: {
+      clearedCount
+    }
+  });
 };
 
 // Export the subscription services

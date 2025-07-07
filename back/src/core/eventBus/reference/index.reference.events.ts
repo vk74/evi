@@ -42,6 +42,11 @@ export const eventReferenceFiles: Record<string, string[]> = {
     path.resolve(__dirname, '../../helpers/events.connection.handler.ts')
   ],
   
+  // Logger events - events for logger service operations
+  logger: [
+    path.resolve(__dirname, '../../logger/events.logger.ts')
+  ],
+  
   // System events - events for internal system operations
   system: [
     path.resolve(__dirname, './errors.reference.events.ts')
@@ -84,7 +89,7 @@ export const initializeEventReferenceSystem = async (): Promise<void> => {
     console.log(`Found ${totalEvents} events across all domains`);
     
     // After index is built, initialize the cache
-    initializeEventCache();
+    await initializeEventCache();
     
     console.log('Event reference system initialized successfully');
   } catch (error) {
