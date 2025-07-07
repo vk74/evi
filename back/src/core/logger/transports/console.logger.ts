@@ -147,7 +147,8 @@ export const consoleTransport = (config: Partial<ConsoleTransportConfig> = {}): 
         payload, 
         severity, 
         requestorId, 
-        metadata 
+        metadata,
+        eventMessage 
       } = event;
       
       // Determine console method to use
@@ -203,6 +204,12 @@ export const consoleTransport = (config: Partial<ConsoleTransportConfig> = {}): 
         useColors ? `${colors.userUuid}user UUID:${colors.reset}` : 'user UUID:',
         requestorId || 'null'
       );
+      
+              // Log event message
+        console[consoleMethod](
+          useColors ? `${colors.source}message:${colors.reset}` : 'message:',
+          eventMessage || 'null'
+        );
       
       // Log payload
       console[consoleMethod](
