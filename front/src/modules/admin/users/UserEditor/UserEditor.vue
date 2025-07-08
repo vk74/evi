@@ -38,6 +38,7 @@ import { useValidationRules } from '@/core/validation/rules.common.fields'
 import ChangePassword from '@/core/ui/modals/change-password/ChangePassword.vue'
 import { PasswordChangeMode } from '@/core/ui/modals/change-password/types.change.password'
 import { fetchSettings } from '@/modules/admin/settings/service.fetch.settings'
+import PasswordPoliciesPanel from '@/core/ui/panels/panel.current.password.policies.vue'
 
 // ==================== STORES ====================
 const userEditorStore = useUserEditorStore()
@@ -73,9 +74,9 @@ const hasInteracted = ref(false)      // Form interaction flag
 const showRequiredFieldsWarning = ref(false) // Required fields warning flag
 const showPasswordDialog = ref(false) // Password reset dialog flag
 
-// ==================== PASSWORD POLICY STATE ====================
+// ==================== PASSWORD POLICY STATE (FOR VALIDATION) ====================
 /**
- * Password policy loading state and settings
+ * Password policy loading state and settings for validation purposes
  */
 const isLoadingPasswordPolicies = ref(true)
 const passwordPolicyError = ref(false)
@@ -231,76 +232,7 @@ const dynamicPasswordRules = computed(() => {
   return rules
 })
 
-/**
- * Generate example password based on current password policy settings
- */
-const generateExamplePassword = computed(() => {
-  // Don't generate example if there are loading or error states or null values
-  if (isLoadingPasswordPolicies.value || passwordPolicyError.value || 
-      passwordMinLength.value === null || passwordMaxLength.value === null ||
-      requireLowercase.value === null || requireUppercase.value === null ||
-      requireNumbers.value === null || requireSpecialChars.value === null ||
-      allowedSpecialChars.value === null) {
-    return null
-  }
-  
-  const min = Number(passwordMinLength.value)
-  const max = Number(passwordMaxLength.value)
-  const length = Math.max(min, Math.min(max, 12))
-  let chars: string[] = []
-  if (requireLowercase.value) chars.push('a')
-  if (requireUppercase.value) chars.push('A')
-  if (requireNumbers.value) chars.push('1')
-  if (requireSpecialChars.value && allowedSpecialChars.value.length > 0) chars.push(allowedSpecialChars.value[0])
-  if (chars.length === 0) chars.push('a')
-  let filler: string[] = []
-  if (requireLowercase.value) filler = filler.concat(['b','c','d','e','f','g','h','j','k','m','n','p','q','r','s','t','u','v','w','x','y','z'])
-  if (requireUppercase.value) filler = filler.concat(['B','C','D','E','F','G','H','J','K','M','N','P','Q','R','S','T','U','V','W','X','Y','Z'])
-  if (requireNumbers.value) filler = filler.concat(['2','3','4','5','6','7','8','9'])
-  if (requireSpecialChars.value && allowedSpecialChars.value.length > 0) filler = filler.concat(allowedSpecialChars.value.split(''))
-  if (filler.length === 0) filler = ['a','b','c','d','e','f','g','h','j','k','m','n','p','q','r','s','t','u','v','w','x','y','z']
-  let fillIndex = 0
-  while (chars.length < length) {
-    chars.push(filler[fillIndex % filler.length])
-    fillIndex++
-  }
-  return chars.join('')
-})
 
-/**
- * Get password requirements description
- */
-const getPasswordRequirements = computed(() => {
-  // Don't show requirements if there are loading or error states or null values
-  if (isLoadingPasswordPolicies.value || passwordPolicyError.value || 
-      passwordMinLength.value === null || requireLowercase.value === null ||
-      requireUppercase.value === null || requireNumbers.value === null ||
-      requireSpecialChars.value === null) {
-    return null
-  }
-  
-  const requirements: string[] = []
-  
-  requirements.push(`минимум ${passwordMinLength.value} символов`)
-  
-  if (requireLowercase.value) {
-    requirements.push('строчные буквы')
-  }
-  
-  if (requireUppercase.value) {
-    requirements.push('заглавные буквы')
-  }
-  
-  if (requireNumbers.value) {
-    requirements.push('цифры')
-  }
-  
-  if (requireSpecialChars.value) {
-    requirements.push('специальные символы')
-  }
-  
-  return requirements.join(', ')
-})
 
 /**
  * Check if password policies are ready (loaded and valid)
@@ -329,16 +261,16 @@ const positionRules = [
  (v: string) => !v || /^[\p{L}\p{N}\p{P}\p{Z}]+$/u.test(v) || t('admin.users.editor.validation.fields.position.format')
 ]
 
-// ==================== PASSWORD POLICY METHODS ====================
+// ==================== PASSWORD POLICY METHODS (FOR VALIDATION) ====================
 /**
- * Load password policy settings from backend
+ * Load password policy settings from backend for validation purposes
  */
 const loadPasswordPolicies = async () => {
   isLoadingPasswordPolicies.value = true
   passwordPolicyError.value = false
   
   try {
-    console.log('Loading password policy settings for UserEditor')
+    console.log('Loading password policy settings for UserEditor validation')
     
     const settings = await fetchSettings('Application.Security.PasswordPolicies')
     
@@ -354,7 +286,7 @@ const loadPasswordPolicies = async () => {
       requireSpecialChars.value = Boolean(settingsMap.get('password.require.special.chars') ?? false)
       allowedSpecialChars.value = String(settingsMap.get('password.allowed.special.chars') ?? '!@#$%^&*()_+-=[]{}|;:,.<>?')
       
-      console.log('Password policies loaded successfully:', {
+      console.log('Password policies loaded successfully for validation:', {
         minLength: passwordMinLength.value,
         maxLength: passwordMaxLength.value,
         requireLowercase: requireLowercase.value,
@@ -363,13 +295,11 @@ const loadPasswordPolicies = async () => {
         requireSpecialChars: requireSpecialChars.value,
         allowedSpecialChars: allowedSpecialChars.value
       })
-      
-      uiStore.showSuccessSnackbar('настройки политики паролей загружены')
     } else {
       throw new Error('No password policy settings found')
     }
   } catch (error) {
-    console.error('Failed to load password policies:', error)
+    console.error('Failed to load password policies for validation:', error)
     passwordPolicyError.value = true
     uiStore.showErrorSnackbar('ошибка загрузки настроек политики паролей - создание пользователя заблокировано')
   } finally {
@@ -752,58 +682,12 @@ onBeforeUnmount(() => {
                         </v-btn>
                       </v-col>
                       
-                      <!-- Password policy information block -->
+                      <!-- Password policy information panel -->
                       <v-col
                         cols="12"
                         class="pt-0"
                       >
-                        <div class="mt-2 pa-4 bg-grey-lighten-5 rounded">
-                          <!-- Loading state -->
-                          <div
-                            v-if="isLoadingPasswordPolicies"
-                            class="d-flex align-center"
-                          >
-                            <v-progress-circular
-                              size="16"
-                              width="2"
-                              indeterminate
-                              color="primary"
-                              class="mr-2"
-                            />
-                            <span class="text-caption text-grey">
-                              загрузка настроек политики паролей...
-                            </span>
-                          </div>
-                          
-                          <!-- Error state -->
-                          <div
-                            v-else-if="passwordPolicyError"
-                            class="d-flex align-center"
-                          >
-                            <v-icon
-                              icon="mdi-alert-circle"
-                              color="error"
-                              size="16"
-                              class="mr-2"
-                            />
-                            <span class="text-caption text-error">
-                              ошибка загрузки настроек политики паролей
-                            </span>
-                          </div>
-                          
-                          <!-- Success state with password info -->
-                          <div v-else-if="passwordPoliciesReady">
-                            <p class="text-body-2 text-grey-darken-1 mb-2">
-                              пример пароля пользователя:
-                            </p>
-                            <p class="text-h6 font-weight-bold text-primary mb-2">
-                              {{ generateExamplePassword || '—' }}
-                            </p>
-                            <p class="text-caption text-grey">
-                              требования: {{ getPasswordRequirements || '—' }}
-                            </p>
-                          </div>
-                        </div>
+                        <PasswordPoliciesPanel class="mt-2" />
                       </v-col>
                     </template>
                     
