@@ -144,10 +144,7 @@ async function initializeServer(): Promise<void> {
       await initializeEventReferenceSystem();
       eventSystemInitialized = true;
       
-      // Initialize logger service with event bus integration
-      loggerService.initialize();
-      loggerSubscriptions.initializeSubscriptions();
-      console.log('Logger system initialized successfully');
+      console.log('Event system initialized successfully');
     } catch (eventError) {
       console.error('Failed to initialize event system:', eventError);
       throw eventError;
@@ -159,6 +156,12 @@ async function initializeServer(): Promise<void> {
     await loadSettings();
     settingsLoaded = true;
     console.log('[Server] System settings loaded and ready');
+
+    // 4. Initialize logger service AFTER settings are loaded
+    // This ensures logger can apply correct settings from cache
+    loggerService.initialize();
+    loggerSubscriptions.initializeSubscriptions();
+    console.log('Logger system initialized with current settings');
     // No duplicate logging here, as loadSettings already logs success message
 
     // 4. Setting up middleware
