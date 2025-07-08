@@ -1,13 +1,16 @@
 <!--
-  UserEditor.vue
-  Component for creating and editing user accounts.
+  File: UserEditor.vue
+  Version: 1.2.0
+  Description: User account creation and editing component for frontend
+  Purpose: Provides interface for creating new user accounts and editing existing ones with dynamic password validation
+  Frontend file that manages user account forms, integrates with password policy settings, and handles validation
   
   The component operates in two modes:
   1. Create Mode:
      - Creating a new user account with all required fields
-     - Setting up initial password
+     - Setting up initial password with dynamic validation based on password policies
      - Configuring basic user parameters and profile information
-     - Form validation with required field checking
+     - Form validation with required field checking and password policy enforcement
   
   2. Edit Mode:
      - Editing an existing user account details
@@ -17,9 +20,8 @@
      - Tracking changes for efficient updates
   
   Common functionality:
-  - Two-level form validation:
-    * Required fields validation with informational notifications
-    * All fields validation based on established rules
+  - Two-level form validation with password policy integration
+  - Dynamic password validation rules loaded from Application.Security.PasswordPolicies
   - User interface with clear section organization
   - Responsive design for different screen sizes
 -->
@@ -35,6 +37,7 @@ import { AccountStatus, Gender, EditMode } from './types.user.editor'
 import { useValidationRules } from '@/core/validation/rules.common.fields'
 import ChangePassword from '@/core/ui/modals/change-password/ChangePassword.vue'
 import { PasswordChangeMode } from '@/core/ui/modals/change-password/types.change.password'
+import { fetchSettings } from '@/modules/admin/settings/service.fetch.settings'
 
 // ==================== STORES ====================
 const userEditorStore = useUserEditorStore()
@@ -43,7 +46,6 @@ const { t } = useI18n()
 const {
  usernameRules,
  emailRules,
- passwordRules,
  mobilePhoneRules,
  firstNameRules,
  middleNameRules,
@@ -52,28 +54,42 @@ const {
 
 // ==================== REFS & STATE ====================
 /**
- * Ссылка на форму и её состояние валидации
+ * Form reference and validation state
  */
-const form = ref<any>(null)  // any используем из-за особенностей типизации Vuetify
+const form = ref<any>(null)  // Using any due to Vuetify typing specifics
 const isFormValid = ref(false)
 
 /**
- * Ссылка на поле username для автофокуса
+ * Username field reference for auto-focus
  */
 const usernameField = ref<any>(null)
 
 /**
- * UI состояния
+ * UI state variables
  */
-const isSubmitting = ref(false)       // Флаг отправки формы
-const showPassword = ref(false)       // Управление видимостью пароля
-const hasInteracted = ref(false)      // Флаг взаимодействия с формой
-const showRequiredFieldsWarning = ref(false) // Флаг предупреждения о незаполненных полях
-const showPasswordDialog = ref(false) // Флаг отображения диалога сброса пароля
+const isSubmitting = ref(false)       // Form submission flag
+const showPassword = ref(false)       // Password visibility control
+const hasInteracted = ref(false)      // Form interaction flag
+const showRequiredFieldsWarning = ref(false) // Required fields warning flag
+const showPasswordDialog = ref(false) // Password reset dialog flag
+
+// ==================== PASSWORD POLICY STATE ====================
+/**
+ * Password policy loading state and settings
+ */
+const isLoadingPasswordPolicies = ref(true)
+const passwordPolicyError = ref(false)
+const passwordMinLength = ref<number | null>(null)
+const passwordMaxLength = ref<number | null>(null)
+const requireLowercase = ref<boolean | null>(null)
+const requireUppercase = ref<boolean | null>(null)
+const requireNumbers = ref<boolean | null>(null)
+const requireSpecialChars = ref<boolean | null>(null)
+const allowedSpecialChars = ref<string | null>(null)
 
 // ==================== COMPUTED ====================
 /**
- * Отслеживание заполнения обязательных полей
+ * Track required fields completion
  */
 const requiredFields = computed(() => ({
   username: userEditorStore.account.username,
@@ -88,7 +104,7 @@ const requiredFieldsFilled = computed(() =>
   Object.values(requiredFields.value).every(field => !!field)
 )
 
-// Computed свойства для полей профиля с правильной реактивностью
+// Computed properties for profile fields with proper reactivity
 const profileGender = computed({
   get: () => userEditorStore.profile.gender,
   set: (value) => userEditorStore.updateProfile({ gender: value })
@@ -114,7 +130,7 @@ const profilePosition = computed({
   set: (value) => userEditorStore.updateProfile({ position: value })
 })
 
-// Computed свойства для полей аккаунта с правильной реактивностью
+// Computed properties for account fields with proper reactivity
 const accountUsername = computed({
   get: () => userEditorStore.account.username,
   set: (value) => userEditorStore.updateAccount({ username: value })
@@ -160,6 +176,143 @@ const accountIsStaff = computed({
   set: (value) => userEditorStore.updateAccount({ is_staff: value })
 })
 
+// ==================== DYNAMIC PASSWORD VALIDATION ====================
+/**
+ * Dynamic password validation rules based on loaded password policies
+ */
+const dynamicPasswordRules = computed(() => {
+  // If password policies are not loaded or there's an error, return blocking rules
+  if (isLoadingPasswordPolicies.value || passwordPolicyError.value || 
+      passwordMinLength.value === null || passwordMaxLength.value === null ||
+      requireLowercase.value === null || requireUppercase.value === null ||
+      requireNumbers.value === null || requireSpecialChars.value === null ||
+      allowedSpecialChars.value === null) {
+    return [
+      (v: string) => !!v || 'пароль обязателен',
+      () => !passwordPolicyError.value || 'настройки политики паролей не загружены - создание заблокировано'
+    ]
+  }
+
+  const rules: Array<(v: string) => string | boolean> = []
+  
+  // Required field rule
+  rules.push((v: string) => !!v || 'пароль обязателен')
+  
+  // Length rules
+  rules.push((v: string) => (v && v.length >= passwordMinLength.value!) || `пароль должен содержать минимум ${passwordMinLength.value} символов`)
+  rules.push((v: string) => (v && v.length <= passwordMaxLength.value!) || `пароль не должен превышать ${passwordMaxLength.value} символов`)
+  
+  // Character requirements
+  if (requireLowercase.value) {
+    rules.push((v: string) => /[a-z]/.test(v) || 'пароль должен содержать строчные буквы')
+  }
+  
+  if (requireUppercase.value) {
+    rules.push((v: string) => /[A-Z]/.test(v) || 'пароль должен содержать заглавные буквы')
+  }
+  
+  if (requireNumbers.value) {
+    rules.push((v: string) => /[0-9]/.test(v) || 'пароль должен содержать цифры')
+  }
+  
+  if (requireSpecialChars.value && allowedSpecialChars.value) {
+    const escapedSpecialChars = allowedSpecialChars.value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+    const specialCharsRegex = new RegExp(`[${escapedSpecialChars}]`)
+    rules.push((v: string) => specialCharsRegex.test(v) || 'пароль должен содержать специальные символы')
+  }
+  
+  // Allowed characters rule - only allowed chars
+  if (allowedSpecialChars.value) {
+    const escapedSpecialChars = allowedSpecialChars.value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+    const allowedCharsRegex = new RegExp(`^[A-Za-z0-9${escapedSpecialChars}]+$`)
+    rules.push((v: string) => allowedCharsRegex.test(v) || 'пароль содержит недопустимые символы')
+  }
+  
+  return rules
+})
+
+/**
+ * Generate example password based on current password policy settings
+ */
+const generateExamplePassword = computed(() => {
+  // Don't generate example if there are loading or error states or null values
+  if (isLoadingPasswordPolicies.value || passwordPolicyError.value || 
+      passwordMinLength.value === null || passwordMaxLength.value === null ||
+      requireLowercase.value === null || requireUppercase.value === null ||
+      requireNumbers.value === null || requireSpecialChars.value === null ||
+      allowedSpecialChars.value === null) {
+    return null
+  }
+  
+  const min = Number(passwordMinLength.value)
+  const max = Number(passwordMaxLength.value)
+  const length = Math.max(min, Math.min(max, 12))
+  let chars: string[] = []
+  if (requireLowercase.value) chars.push('a')
+  if (requireUppercase.value) chars.push('A')
+  if (requireNumbers.value) chars.push('1')
+  if (requireSpecialChars.value && allowedSpecialChars.value.length > 0) chars.push(allowedSpecialChars.value[0])
+  if (chars.length === 0) chars.push('a')
+  let filler: string[] = []
+  if (requireLowercase.value) filler = filler.concat(['b','c','d','e','f','g','h','j','k','m','n','p','q','r','s','t','u','v','w','x','y','z'])
+  if (requireUppercase.value) filler = filler.concat(['B','C','D','E','F','G','H','J','K','M','N','P','Q','R','S','T','U','V','W','X','Y','Z'])
+  if (requireNumbers.value) filler = filler.concat(['2','3','4','5','6','7','8','9'])
+  if (requireSpecialChars.value && allowedSpecialChars.value.length > 0) filler = filler.concat(allowedSpecialChars.value.split(''))
+  if (filler.length === 0) filler = ['a','b','c','d','e','f','g','h','j','k','m','n','p','q','r','s','t','u','v','w','x','y','z']
+  let fillIndex = 0
+  while (chars.length < length) {
+    chars.push(filler[fillIndex % filler.length])
+    fillIndex++
+  }
+  return chars.join('')
+})
+
+/**
+ * Get password requirements description
+ */
+const getPasswordRequirements = computed(() => {
+  // Don't show requirements if there are loading or error states or null values
+  if (isLoadingPasswordPolicies.value || passwordPolicyError.value || 
+      passwordMinLength.value === null || requireLowercase.value === null ||
+      requireUppercase.value === null || requireNumbers.value === null ||
+      requireSpecialChars.value === null) {
+    return null
+  }
+  
+  const requirements: string[] = []
+  
+  requirements.push(`минимум ${passwordMinLength.value} символов`)
+  
+  if (requireLowercase.value) {
+    requirements.push('строчные буквы')
+  }
+  
+  if (requireUppercase.value) {
+    requirements.push('заглавные буквы')
+  }
+  
+  if (requireNumbers.value) {
+    requirements.push('цифры')
+  }
+  
+  if (requireSpecialChars.value) {
+    requirements.push('специальные символы')
+  }
+  
+  return requirements.join(', ')
+})
+
+/**
+ * Check if password policies are ready (loaded and valid)
+ */
+const passwordPoliciesReady = computed(() => {
+  return !isLoadingPasswordPolicies.value && !passwordPolicyError.value &&
+         passwordMinLength.value !== null && passwordMaxLength.value !== null &&
+         requireLowercase.value !== null && requireUppercase.value !== null &&
+         requireNumbers.value !== null && requireSpecialChars.value !== null &&
+         allowedSpecialChars.value !== null
+})
+
 // ==================== VALIDATION RULES ====================
 const addressRules = [
  (v: string) => !v || v.length <= 5000 || t('admin.users.editor.validation.fields.address.length'),
@@ -176,9 +329,57 @@ const positionRules = [
  (v: string) => !v || /^[\p{L}\p{N}\p{P}\p{Z}]+$/u.test(v) || t('admin.users.editor.validation.fields.position.format')
 ]
 
+// ==================== PASSWORD POLICY METHODS ====================
+/**
+ * Load password policy settings from backend
+ */
+const loadPasswordPolicies = async () => {
+  isLoadingPasswordPolicies.value = true
+  passwordPolicyError.value = false
+  
+  try {
+    console.log('Loading password policy settings for UserEditor')
+    
+    const settings = await fetchSettings('Application.Security.PasswordPolicies')
+    
+    if (settings && settings.length > 0) {
+      // Extract settings by name
+      const settingsMap = new Map(settings.map(s => [s.setting_name, s.value]))
+      
+      passwordMinLength.value = Number(settingsMap.get('password.min.length') ?? 8)
+      passwordMaxLength.value = Number(settingsMap.get('password.max.length') ?? 40)
+      requireLowercase.value = Boolean(settingsMap.get('password.require.lowercase') ?? true)
+      requireUppercase.value = Boolean(settingsMap.get('password.require.uppercase') ?? true)
+      requireNumbers.value = Boolean(settingsMap.get('password.require.numbers') ?? true)
+      requireSpecialChars.value = Boolean(settingsMap.get('password.require.special.chars') ?? false)
+      allowedSpecialChars.value = String(settingsMap.get('password.allowed.special.chars') ?? '!@#$%^&*()_+-=[]{}|;:,.<>?')
+      
+      console.log('Password policies loaded successfully:', {
+        minLength: passwordMinLength.value,
+        maxLength: passwordMaxLength.value,
+        requireLowercase: requireLowercase.value,
+        requireUppercase: requireUppercase.value,
+        requireNumbers: requireNumbers.value,
+        requireSpecialChars: requireSpecialChars.value,
+        allowedSpecialChars: allowedSpecialChars.value
+      })
+      
+      uiStore.showSuccessSnackbar('настройки политики паролей загружены')
+    } else {
+      throw new Error('No password policy settings found')
+    }
+  } catch (error) {
+    console.error('Failed to load password policies:', error)
+    passwordPolicyError.value = true
+    uiStore.showErrorSnackbar('ошибка загрузки настроек политики паролей - создание пользователя заблокировано')
+  } finally {
+    isLoadingPasswordPolicies.value = false
+  }
+}
+
 // ==================== WATCHERS ====================
 /**
- * Отслеживание заполнения обязательных полей и управление уведомлениями
+ * Track required fields completion and manage notifications
  */
 watch(hasInteracted, (newValue) => {
   if (newValue && !requiredFieldsFilled.value) {
@@ -205,7 +406,7 @@ watch(showRequiredFieldsWarning, (newValue) => {
 // ==================== METHODS ====================
 
 /**
- * Сброс формы
+ * Reset form to initial state
  */
 const resetForm = () => {
   userEditorStore.resetForm()
@@ -216,7 +417,7 @@ const resetForm = () => {
 }
 
 /**
- * Отслеживание взаимодействия с полями формы
+ * Setup form field interaction watchers
  */
 const watchFormFields = () => {
   const fieldsToWatch = Object.keys(requiredFields.value)
@@ -230,10 +431,16 @@ const watchFormFields = () => {
 }
 
 /**
- * Сохранение пользователя
+ * Save new user account
  */
 const saveUser = async () => {
   console.log('Starting user creation...')
+  
+  // Check if password policies are ready
+  if (!passwordPoliciesReady.value) {
+    uiStore.showErrorSnackbar('настройки политики паролей не загружены - создание заблокировано')
+    return
+  }
   
   if (!form.value?.validate()) {
     uiStore.showErrorSnackbar(t('admin.users.editor.messages.validation.formErrors'))
@@ -261,7 +468,7 @@ const saveUser = async () => {
 }
 
 /**
-* Обновление данных пользователя
+* Update existing user data
 */
 const updateUser = async () => {
  console.log('Starting user update...')
@@ -281,7 +488,7 @@ const updateUser = async () => {
    if (success) {
      console.log('User updated successfully')
      uiStore.showSuccessSnackbar(t('admin.users.editor.messages.success.updated'))
-     // Не вызываем resetForm() чтобы остаться в режиме редактирования
+     // Don't call resetForm() to stay in edit mode
    }
    
  } catch (error) {
@@ -295,14 +502,14 @@ const updateUser = async () => {
 }
 
 /**
-* Открытие диалога сброса пароля
+* Open password reset dialog
 */
 const resetPassword = () => {
  showPasswordDialog.value = true
 }
 
 /**
-* Закрытие диалога сброса пароля
+* Close password reset dialog
 */
 const closePasswordDialog = () => {
  showPasswordDialog.value = false
@@ -313,9 +520,14 @@ onMounted(() => {
   console.log('UserEditor mounted')
   watchFormFields()
   
-  // Автофокус на поле username только в режиме создания
+  // Load password policies for create mode
   if (userEditorStore.mode.mode === 'create') {
-    // Небольшая задержка для корректной работы с Vuetify
+    loadPasswordPolicies()
+  }
+  
+  // Auto-focus on username field only in create mode
+  if (userEditorStore.mode.mode === 'create') {
+    // Small delay for proper Vuetify integration
     setTimeout(() => {
       usernameField.value?.focus()
     }, 100)
@@ -330,14 +542,14 @@ onBeforeUnmount(() => {
 
 <template>
   <v-container class="pa-0">
-    <!-- App Bar с фиксированным фоном -->
+    <!-- App Bar with fixed background -->
     <v-app-bar
       flat
       class="editor-app-bar"
     >
       <v-spacer />
       
-      <!-- Динамический заголовок в зависимости от режима -->
+      <!-- Dynamic title based on mode -->
       <v-toolbar-title class="title-text">
         {{ userEditorStore.mode.mode === 'create' 
           ? t('admin.users.editor.title.create') 
@@ -346,9 +558,9 @@ onBeforeUnmount(() => {
       </v-toolbar-title>
     </v-app-bar>
 
-    <!-- Рабочая область с основной формой -->
+    <!-- Work area with main form -->
     <div class="d-flex">
-      <!-- Основное содержимое (левая часть) -->
+      <!-- Main content (left part) -->
       <div class="flex-grow-1">
         <v-container class="content-container">
           <v-card flat>
@@ -357,7 +569,7 @@ onBeforeUnmount(() => {
               v-model="isFormValid"
             >
               <v-row>
-                <!-- Блок 1: Основная информация -->
+                <!-- Block 1: Basic information -->
                 <v-col cols="12">
                   <div class="card-header">
                     <v-card-title class="text-subtitle-1">
@@ -367,7 +579,7 @@ onBeforeUnmount(() => {
                   </div>
 
                   <v-row class="pt-3">
-                    <!-- Поле UUID (только для режима редактирования) -->
+                    <!-- UUID field (only for edit mode) -->
                     <v-col
                       v-if="userEditorStore.mode.mode === 'edit'"
                       cols="12"
@@ -476,10 +688,7 @@ onBeforeUnmount(() => {
                   </v-row>
                 </v-col>
 
-                <!-- Временный отладочный вывод 
-                <p>Current mode: {{ userEditorStore.mode.mode }}</p> -->
-
-                <!-- Блок 2: Безопасность -->
+                <!-- Block 2: Security -->
                 <v-col cols="12">
                   <div class="card-header mt-6">
                     <v-card-title class="text-subtitle-1">
@@ -489,7 +698,7 @@ onBeforeUnmount(() => {
                   </div>
 
                   <v-row class="pt-3">
-                    <!-- Поля пароля показываются только в режиме создания -->
+                    <!-- Password fields shown only in create mode -->
                     <template v-if="userEditorStore.mode.mode === 'create'">
                       <v-col
                         cols="12"
@@ -498,11 +707,13 @@ onBeforeUnmount(() => {
                         <v-text-field
                           v-model="accountPassword"
                           :label="t('admin.users.editor.fields.password.label')"
-                          :rules="passwordRules"
+                          :rules="dynamicPasswordRules"
                           variant="outlined"
                           density="comfortable"
                           :type="showPassword ? 'text' : 'password'"
-                          counter="40"
+                          :counter="passwordMaxLength || 40"
+                          :loading="isLoadingPasswordPolicies"
+                          :disabled="!passwordPoliciesReady"
                           required
                         />
                       </v-col>
@@ -517,7 +728,9 @@ onBeforeUnmount(() => {
                           variant="outlined"
                           density="comfortable"
                           :type="showPassword ? 'text' : 'password'"
-                          counter="40"
+                          :counter="passwordMaxLength || 40"
+                          :loading="isLoadingPasswordPolicies"
+                          :disabled="!passwordPoliciesReady"
                           required
                         />
                       </v-col>
@@ -530,6 +743,7 @@ onBeforeUnmount(() => {
                           icon
                           variant="text"
                           class="ml-n2"
+                          :disabled="!passwordPoliciesReady"
                           @click="showPassword = !showPassword"
                         >
                           <v-icon>
@@ -537,7 +751,62 @@ onBeforeUnmount(() => {
                           </v-icon>
                         </v-btn>
                       </v-col>
+                      
+                      <!-- Password policy information block -->
+                      <v-col
+                        cols="12"
+                        class="pt-0"
+                      >
+                        <div class="mt-2 pa-4 bg-grey-lighten-5 rounded">
+                          <!-- Loading state -->
+                          <div
+                            v-if="isLoadingPasswordPolicies"
+                            class="d-flex align-center"
+                          >
+                            <v-progress-circular
+                              size="16"
+                              width="2"
+                              indeterminate
+                              color="primary"
+                              class="mr-2"
+                            />
+                            <span class="text-caption text-grey">
+                              загрузка настроек политики паролей...
+                            </span>
+                          </div>
+                          
+                          <!-- Error state -->
+                          <div
+                            v-else-if="passwordPolicyError"
+                            class="d-flex align-center"
+                          >
+                            <v-icon
+                              icon="mdi-alert-circle"
+                              color="error"
+                              size="16"
+                              class="mr-2"
+                            />
+                            <span class="text-caption text-error">
+                              ошибка загрузки настроек политики паролей
+                            </span>
+                          </div>
+                          
+                          <!-- Success state with password info -->
+                          <div v-else-if="passwordPoliciesReady">
+                            <p class="text-body-2 text-grey-darken-1 mb-2">
+                              пример пароля пользователя:
+                            </p>
+                            <p class="text-h6 font-weight-bold text-primary mb-2">
+                              {{ generateExamplePassword || '—' }}
+                            </p>
+                            <p class="text-caption text-grey">
+                              требования: {{ getPasswordRequirements || '—' }}
+                            </p>
+                          </div>
+                        </div>
+                      </v-col>
                     </template>
+                    
                     <v-col
                       cols="12"
                       md="6"
@@ -570,7 +839,7 @@ onBeforeUnmount(() => {
                   </v-row>
                 </v-col>
 
-                <!-- Блок 3: Дополнительная информация -->
+                <!-- Block 3: Additional information -->
                 <v-col cols="12">
                   <div class="card-header mt-6">
                     <v-card-title class="text-subtitle-1">
@@ -640,28 +909,28 @@ onBeforeUnmount(() => {
         </v-container>
       </div>
       
-      <!-- Боковая панель (правая часть) -->
+      <!-- Sidebar (right part) -->
       <div class="side-bar-container">
-        <!-- Верхняя часть боковой панели - общие действия -->
+        <!-- Upper part of sidebar - general actions -->
         <div class="side-bar-section">
           <h3 class="text-subtitle-2 px-2 py-2">
             {{ t('admin.users.editor.sidebar.actions') }}
           </h3>
           
-          <!-- Кнопка создания (видна только в режиме создания) -->
+          <!-- Create button (visible only in create mode) -->
           <v-btn
             v-if="userEditorStore.mode.mode === 'create'"
             block
             color="teal"
             variant="outlined"
-            :disabled="!isFormValid || isSubmitting"
+            :disabled="!isFormValid || isSubmitting || !passwordPoliciesReady"
             class="mb-3"
             @click="saveUser"
           >
             {{ t('admin.users.editor.buttons.create') }}
           </v-btn>
 
-          <!-- Кнопка обновления (видна только в режиме редактирования) -->
+          <!-- Update button (visible only in edit mode) -->
           <v-btn
             v-if="userEditorStore.mode.mode === 'edit'"
             block
@@ -675,16 +944,16 @@ onBeforeUnmount(() => {
           </v-btn>
         </div>
         
-        <!-- Разделитель между секциями -->
+        <!-- Divider between sections -->
         <div class="sidebar-divider" />
         
-        <!-- Нижняя часть боковой панели - действия с формой -->
+        <!-- Lower part of sidebar - form actions -->
         <div class="side-bar-section">
           <h3 class="text-subtitle-2 px-2 py-2">
             {{ t('admin.users.editor.sidebar.formActions') }}
           </h3>
           
-          <!-- Кнопка сброса пароля (видна только в режиме редактирования) -->
+          <!-- Password reset button (visible only in edit mode) -->
           <v-btn
             v-if="userEditorStore.mode.mode === 'edit'"
             block
@@ -696,7 +965,7 @@ onBeforeUnmount(() => {
             {{ t('admin.users.editor.buttons.resetPassword') }}
           </v-btn>
 
-          <!-- Кнопка сброса (видна только в режиме создания) -->
+          <!-- Reset button (visible only in create mode) -->
           <v-btn
             v-if="userEditorStore.mode.mode === 'create'"
             block
@@ -710,7 +979,7 @@ onBeforeUnmount(() => {
       </div>
     </div>
 
-    <!-- Диалог сброса пароля -->
+    <!-- Password reset dialog -->
     <v-dialog
       v-model="showPasswordDialog"
       max-width="550"
@@ -737,7 +1006,7 @@ letter-spacing: 0.5px;
 color: rgba(0, 0, 0, 0.6);
 }
 
-/* Стили для боковой панели */
+/* Sidebar styles */
 .side-bar-container {
   width: 18%;
   min-width: 220px;
@@ -750,7 +1019,7 @@ color: rgba(0, 0, 0, 0.6);
   padding: 16px;
 }
 
-/* Разделитель между секциями */
+/* Divider between sections */
 .sidebar-divider {
   height: 20px;
   position: relative;
@@ -770,7 +1039,7 @@ color: rgba(0, 0, 0, 0.6);
   min-width: 240px;
 }
 
-/* Позволяет кнопке переносить текст на новую строку при необходимости */
+/* Allow button to wrap text to new line when needed */
 .v-btn .v-btn__content {
   white-space: normal !important;
   text-align: center;
