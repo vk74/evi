@@ -1,0 +1,10 @@
+{
+  "panels": {
+    "passwordPolicies": {
+      "loading": "loading password policy settings...",
+      "error": "error loading password policy settings",
+      "examplePassword": "example password:",
+      "requirements": "requirements:"
+    }
+  }
+} 

@@ -8,6 +8,9 @@ import appTranslationsEn from '@/modules/AppTranslationEN.json'
 import coreModalsRu from '@/core/ui/modals/translation.modals.ru.json'
 import coreModalsEn from '@/core/ui/modals/translation.modals.en.json'
 
+import corePanelsRu from '@/core/ui/panels/translation.panels.ru.json'
+import corePanelsEn from '@/core/ui/panels/translation.panels.en.json'
+
 // Admin module and sub-modules and functions
 import adminModuleRu from '@/modules/admin/translation.admin.ru.json'
 import adminModuleEn from '@/modules/admin/translation.admin.en.json'
@@ -37,6 +40,7 @@ export default {
     ru: merge({},
       appTranslationsRu,
       coreModalsRu,
+      corePanelsRu,
       adminModuleRu,
       userEditorRu,
       usersListRu,
@@ -48,6 +52,7 @@ export default {
     en: merge({},
       appTranslationsEn,
       coreModalsEn,
+      corePanelsEn,
       adminModuleEn,
       userEditorEn,
       usersListEn,

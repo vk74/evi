@@ -13,10 +13,12 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { useUiStore } from '@/core/state/uistate';
 import { fetchSettings } from '@/modules/admin/settings/service.fetch.settings';
 
 // ==================== STORES ====================
+const { t } = useI18n();
 const uiStore = useUiStore();
 
 // ==================== PASSWORD POLICY STATE ====================
@@ -158,7 +160,7 @@ const loadPasswordPolicies = async () => {
   } catch (error) {
     console.error('[PasswordPoliciesPanel] Failed to load password policies:', error)
     passwordPolicyError.value = true
-    uiStore.showErrorSnackbar('ошибка загрузки настроек политики паролей')
+    uiStore.showErrorSnackbar(t('panels.passwordPolicies.error'))
   } finally {
     isLoadingPasswordPolicies.value = false
   }
@@ -186,7 +188,7 @@ onMounted(async () => {
         class="mr-2"
       />
       <span class="text-caption text-grey">
-        загрузка настроек политики паролей...
+        {{ t('panels.passwordPolicies.loading') }}
       </span>
     </div>
     
@@ -202,20 +204,20 @@ onMounted(async () => {
         class="mr-2"
       />
       <span class="text-caption text-error">
-        ошибка загрузки настроек политики паролей
+        {{ t('panels.passwordPolicies.error') }}
       </span>
     </div>
     
     <!-- Success state with password info -->
     <div v-else-if="passwordPoliciesReady">
       <p class="text-body-2 text-grey-darken-1 mb-2">
-        пример пароля:
+        {{ t('panels.passwordPolicies.examplePassword') }}
       </p>
       <p class="text-h6 font-weight-bold text-primary mb-2">
         {{ generateExamplePassword || '—' }}
       </p>
       <p class="text-caption text-grey">
-        требования: {{ getPasswordRequirements || '—' }}
+        {{ t('panels.passwordPolicies.requirements') }} {{ getPasswordRequirements || '—' }}
       </p>
     </div>
   </div>
@@ -224,7 +226,7 @@ onMounted(async () => {
 <style scoped>
 .password-policies-panel {
   padding: 16px;
-  background-color: rgb(var(--v-theme-surface-variant));
+  background-color: rgba(0, 0, 0, 0.1);
   border-radius: 8px;
 }
 </style> 
