@@ -1,8 +1,8 @@
 /**
  * service.load.settings.ts - backend file
- * version: 1.0.03
+ * version: 1.0.04
  * Service for loading and caching application settings.
- * Uses simple console.log instead of lgr.
+ * Uses event bus for logging operations.
  */
 
 import { Pool, QueryResult } from 'pg';
@@ -10,6 +10,31 @@ import { pool as pgPool } from '../../../core/db/maindb';
 import { queries } from './queries.settings';
 import { AppSetting, Environment, SettingsError } from './types.settings';
 import { setCache, clearCache } from './cache.settings';
+import fabricEvents from '../../../core/eventBus/fabric.events';
+import { SETTINGS_LOAD_EVENTS, SETTINGS_INITIALIZATION_EVENTS } from './events.settings';
+
+/**
+ * Safe event creation that handles cases when event system is not yet initialized
+ */
+function createEventSafely(eventName: string, payload?: any, errorData?: string): void {
+  try {
+    fabricEvents.createAndPublishEvent({
+      eventName,
+      payload,
+      errorData
+    });
+  } catch (error) {
+    // If event system is not ready, fall back to console logging
+    const message = `[Settings] ${eventName}`;
+    if (errorData) {
+      console.error(message, payload || '', 'Error:', errorData);
+    } else if (payload) {
+      console.log(message, payload);
+    } else {
+      console.log(message);
+    }
+  }
+}
 
 // Type assertion for pool
 const pool = pgPool as Pool;
@@ -18,12 +43,16 @@ const pool = pgPool as Pool;
  * Load all settings from database into cache
  */
 export async function loadSettings(): Promise<void> {
+  createEventSafely(SETTINGS_LOAD_EVENTS.STARTED.eventName, {
+    operation: 'loadSettings'
+  });
+  
   try {
     const result: QueryResult = await pool.query(queries.getAllSettings.text);
     
     if (!result.rows || result.rows.length === 0) {
       clearCache();
-      console.warn('[Settings] No settings found in database');
+      createEventSafely(SETTINGS_LOAD_EVENTS.NO_SETTINGS_FOUND.eventName, null);
       return;
     }
 
@@ -41,11 +70,19 @@ export async function loadSettings(): Promise<void> {
     // Update the centralized cache
     setCache(settings);
     
-    console.log(`[Settings] Loaded ${settings.length} settings from database`);
-    console.log('[Settings] System settings are ready for use');
+    createEventSafely(SETTINGS_LOAD_EVENTS.SUCCESS.eventName, {
+      settingsCount: settings.length
+    });
+    
+    createEventSafely(SETTINGS_INITIALIZATION_EVENTS.READY.eventName, null);
 
   } catch (error) {
-    console.error('[Settings] Error loading settings:', error);
+    createEventSafely(
+      SETTINGS_LOAD_EVENTS.ERROR.eventName, 
+      { operation: 'loadSettings' },
+      error instanceof Error ? error.message : String(error)
+    );
+    
     const settingsError: SettingsError = {
       code: 'DB_ERROR',
       message: error instanceof Error ? error.message : 'Failed to load settings from database',
@@ -59,7 +96,8 @@ export async function loadSettings(): Promise<void> {
  * Force reload all settings from database
  */
 export async function reloadSettings(): Promise<void> {
-  console.log('[Settings] Force reloading settings from database');
+  createEventSafely(SETTINGS_LOAD_EVENTS.FORCE_RELOAD_STARTED.eventName, null);
+  
   await loadSettings();
 }
 
@@ -69,11 +107,18 @@ export async function reloadSettings(): Promise<void> {
  */
 export async function initializeSettings(): Promise<void> {
   try {
-    console.log('[Settings] Initializing settings module');
+    createEventSafely(SETTINGS_INITIALIZATION_EVENTS.STARTED.eventName, null);
+    
     await loadSettings();
-    console.log('[Settings] Settings module initialized successfully');
+    
+    createEventSafely(SETTINGS_INITIALIZATION_EVENTS.SUCCESS.eventName, null);
   } catch (error) {
-    console.error('[Settings] Failed to initialize settings module:', error);
+    createEventSafely(
+      SETTINGS_INITIALIZATION_EVENTS.ERROR.eventName, 
+      null,
+      error instanceof Error ? error.message : String(error)
+    );
+    
     throw error;
   }
 }

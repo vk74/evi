@@ -289,6 +289,40 @@ export const SETTINGS_CACHE_EVENTS = {
     eventMessage: 'Setting not found in cache',
     payload: null, // Will be of type { sectionPath: string, settingName: string }
     version: '1.0.0'
+  },
+  
+  // When cache is cleared
+  CLEARED: {
+    eventName: 'settings.cache.cleared',
+    source: 'settings cache module',
+    eventType: 'app' as const,
+    severity: 'warning' as const,
+    eventMessage: 'Settings cache cleared',
+    payload: null,
+    version: '1.0.0'
+  },
+  
+  // When detailed cache sections information is logged
+  SECTIONS_INFO: {
+    eventName: 'settings.cache.sections.info',
+    source: 'settings cache module',
+    eventType: 'app' as const,
+    severity: 'debug' as const,
+    eventMessage: 'Cache sections detailed information',
+    payload: null, // Will be of type { sections: string[] }
+    version: '1.0.0'
+  },
+  
+  // When error occurs parsing setting value
+  PARSE_VALUE_ERROR: {
+    eventName: 'settings.cache.parse.value.error',
+    source: 'settings cache module',
+    eventType: 'app' as const,
+    severity: 'error' as const,
+    eventMessage: 'Error parsing setting value in cache',
+    payload: null, // Will be of type { settingName: string }
+    errorData: null, // Will be filled with error details
+    version: '1.0.0'
   }
 };
 
@@ -389,6 +423,119 @@ export const SETTINGS_UPDATE_CONTROLLER_EVENTS = {
     severity: 'error' as const,
     eventMessage: 'Error in settings update controller',
     payload: null, // Will be of type { sectionPath: string, settingName: string, errorCode: string, statusCode: number }
+    errorData: null, // Will be filled with error details
+    version: '1.0.0'
+  }
+};
+
+/**
+ * Settings Load Events
+ * Events related to loading settings from database
+ */
+export const SETTINGS_LOAD_EVENTS = {
+  // When settings loading from database is initiated
+  STARTED: {
+    eventName: 'settings.load.started',
+    source: 'settings load service',
+    eventType: 'app' as const,
+    severity: 'debug' as const,
+    eventMessage: 'Loading settings from database initiated',
+    payload: null, // Will be of type { operation: string }
+    version: '1.0.0'
+  },
+  
+  // When settings are successfully loaded from database
+  SUCCESS: {
+    eventName: 'settings.load.success',
+    source: 'settings load service',
+    eventType: 'app' as const,
+    severity: 'info' as const,
+    eventMessage: 'Settings successfully loaded from database',
+    payload: null, // Will be of type { settingsCount: number }
+    version: '1.0.0'
+  },
+  
+  // When no settings are found in database
+  NO_SETTINGS_FOUND: {
+    eventName: 'settings.load.no.settings.found',
+    source: 'settings load service',
+    eventType: 'app' as const,
+    severity: 'warning' as const,
+    eventMessage: 'No settings found in database',
+    payload: null,
+    version: '1.0.0'
+  },
+  
+  // When force reload is initiated
+  FORCE_RELOAD_STARTED: {
+    eventName: 'settings.load.force.reload.started',
+    source: 'settings load service',
+    eventType: 'app' as const,
+    severity: 'debug' as const,
+    eventMessage: 'Force reloading settings from database',
+    payload: null,
+    version: '1.0.0'
+  },
+  
+  // When settings loading fails
+  ERROR: {
+    eventName: 'settings.load.error',
+    source: 'settings load service',
+    eventType: 'app' as const,
+    severity: 'error' as const,
+    eventMessage: 'Error loading settings from database',
+    payload: null, // Will be of type error details
+    errorData: null, // Will be filled with error details
+    version: '1.0.0'
+  }
+};
+
+/**
+ * Settings Initialization Events
+ * Events related to settings module initialization
+ */
+export const SETTINGS_INITIALIZATION_EVENTS = {
+  // When settings module initialization is started
+  STARTED: {
+    eventName: 'settings.initialization.started',
+    source: 'settings load service',
+    eventType: 'app' as const,
+    severity: 'debug' as const,
+    eventMessage: 'Settings module initialization started',
+    payload: null,
+    version: '1.0.0'
+  },
+  
+  // When settings module initialization is completed successfully
+  SUCCESS: {
+    eventName: 'settings.initialization.success',
+    source: 'settings load service',
+    eventType: 'app' as const,
+    severity: 'info' as const,
+    eventMessage: 'Settings module initialized successfully',
+    payload: null,
+    version: '1.0.0'
+  },
+  
+  // When system settings are ready for use
+  READY: {
+    eventName: 'settings.initialization.ready',
+    source: 'settings load service',
+    eventType: 'app' as const,
+    severity: 'info' as const,
+    eventMessage: 'System settings are ready for use',
+    payload: null,
+    version: '1.0.0'
+  },
+  
+  // When settings module initialization fails
+  ERROR: {
+    eventName: 'settings.initialization.error',
+    source: 'settings load service',
+    eventType: 'app' as const,
+    severity: 'error' as const,
+    eventMessage: 'Failed to initialize settings module',
+    payload: null, // Will be of type error details
     errorData: null, // Will be filled with error details
     version: '1.0.0'
   }

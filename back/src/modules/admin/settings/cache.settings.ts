@@ -1,24 +1,39 @@
 /**
  * cache.settings.ts - backend file
- * version: 1.0.04
+ * version: 1.0.05
  * In-memory cache for application settings.
- * Uses simple console.log for logging with consistent format.
+ * Uses event bus for logging operations.
  */
 
 import { AppSetting, SettingsCache } from './types.settings';
+import fabricEvents from '../../../core/eventBus/fabric.events';
+import { SETTINGS_CACHE_EVENTS } from './events.settings';
+
+/**
+ * Safe event creation that handles cases when event system is not yet initialized
+ */
+function createEventSafely(eventName: string, payload?: any, errorData?: string): void {
+  try {
+    fabricEvents.createAndPublishEvent({
+      eventName,
+      payload,
+      errorData
+    });
+  } catch (error) {
+    // If event system is not ready, fall back to console logging  
+    const message = `[SettingsCache] ${eventName}`;
+    if (errorData) {
+      console.error(message, payload || '', 'Error:', errorData);
+    } else if (payload) {
+      console.log(message, payload);
+    } else {
+      console.log(message);
+    }
+  }
+}
 
 // In-memory cache object
 let settingsCache: SettingsCache = {};
-
-/**
- * Helper function for consistent log format
- * @param level Log level (INFO, WARN, ERROR, DEBUG)
- * @param message Message to log
- * @param details Optional details to include
- */
-function logMessage(level: string, message: string, details?: any): void {
-  console.log(`[${new Date().toISOString()}] [${level}] [SettingsCache] ${message}`, details || '');
-}
 
 /**
  * Generate cache key from section_path and setting_name
@@ -40,8 +55,15 @@ export function setCache(settings: AppSetting[]): void {
   }, {} as SettingsCache);
 
   const sectionSet = new Set(settings.map(s => s.section_path));
-  console.log(`[SettingsCache] Cache updated: ${settings.length} settings, ${sectionSet.size} sections`);
-  console.log(`[SettingsCache] Sections:`, Array.from(sectionSet));
+  
+  createEventSafely(SETTINGS_CACHE_EVENTS.INITIALIZED.eventName, {
+    settingsCount: settings.length,
+    sectionsCount: sectionSet.size
+  });
+  
+  createEventSafely(SETTINGS_CACHE_EVENTS.SECTIONS_INFO.eventName, {
+    sections: Array.from(sectionSet)
+  });
 }
 
 /**
@@ -49,7 +71,8 @@ export function setCache(settings: AppSetting[]): void {
  */
 export function clearCache(): void {
   settingsCache = {};
-  console.warn('[SettingsCache] Cache cleared');
+  
+  createEventSafely(SETTINGS_CACHE_EVENTS.CLEARED.eventName, null);
 }
 
 /**
@@ -63,7 +86,10 @@ export function getSetting(sectionPath: string, settingName: string): AppSetting
   const setting = settingsCache[cacheKey];
 
   if (!setting) {
-    console.warn('[SettingsCache] Setting not found in cache:', { sectionPath, settingName });
+    createEventSafely(SETTINGS_CACHE_EVENTS.SETTING_NOT_FOUND.eventName, {
+      sectionPath,
+      settingName
+    });
     return null;
   }
 
@@ -98,10 +124,11 @@ export function parseSettingValue(setting: AppSetting): any {
   try {
     return setting.value !== null ? setting.value : setting.default_value;
   } catch (error) {
-    console.error('[SettingsCache] Error parsing setting value:', {
-      settingName: setting.setting_name,
-      error: error instanceof Error ? error.message : error
-    });
+    createEventSafely(
+      SETTINGS_CACHE_EVENTS.PARSE_VALUE_ERROR.eventName, 
+      { settingName: setting.setting_name },
+      error instanceof Error ? error.message : String(error)
+    );
     return null;
   }
 }
@@ -114,6 +141,11 @@ export function parseSettingValue(setting: AppSetting): any {
 export function updateCachedSetting(setting: AppSetting): boolean {
   const cacheKey = generateCacheKey(setting.section_path, setting.setting_name);
   settingsCache[cacheKey] = setting;
-  console.log(`[SettingsCache] Setting updated: ${setting.section_path}/${setting.setting_name}`);
+  
+  createEventSafely(SETTINGS_CACHE_EVENTS.SETTING_UPDATED.eventName, {
+    sectionPath: setting.section_path,
+    settingName: setting.setting_name
+  });
+  
   return true;
 }

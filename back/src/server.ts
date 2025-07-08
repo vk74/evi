@@ -123,15 +123,7 @@ async function initializeServer(): Promise<void> {
     
     console.log('Global private key set successfully');
 
-    // 2. Loading settings
-    console.log('Loading application settings...');
-    
-    await loadSettings();
-    settingsLoaded = true;
-    console.log('[Server] System settings loaded and ready');
-    // No duplicate logging here, as loadSettings already logs success message
-
-    // 3. Initialize event system - event bus, index, cache and event factory
+    // 2. Initialize event system - event bus, index, cache and event factory
     try {
       // Check if event bus is available
       if (!eventBus) {
@@ -160,6 +152,14 @@ async function initializeServer(): Promise<void> {
       console.error('Failed to initialize event system:', eventError);
       throw eventError;
     }
+
+    // 3. Loading settings
+    console.log('Loading application settings...');
+    
+    await loadSettings();
+    settingsLoaded = true;
+    console.log('[Server] System settings loaded and ready');
+    // No duplicate logging here, as loadSettings already logs success message
 
     // 4. Setting up middleware
     // Configure CORS for frontend only
