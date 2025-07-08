@@ -13,6 +13,7 @@
 import './test.get.uuid.helper';
 import './test.queries.users';
 import './test.services.editor';
+import '../server.initialization.test';
 
 // Auth tests
 import './test.auth.issue.token';
