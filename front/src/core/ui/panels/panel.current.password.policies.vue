@@ -86,22 +86,22 @@ const getPasswordRequirements = computed(() => {
   
   const requirements: string[] = []
   
-  requirements.push(`минимум ${passwordMinLength.value} символов`)
+  requirements.push(t('panels.passwordPolicies.rules.minLength', { length: passwordMinLength.value }))
   
   if (requireLowercase.value) {
-    requirements.push('строчные буквы')
+    requirements.push(t('panels.passwordPolicies.rules.lowercase'))
   }
   
   if (requireUppercase.value) {
-    requirements.push('заглавные буквы')
+    requirements.push(t('panels.passwordPolicies.rules.uppercase'))
   }
   
   if (requireNumbers.value) {
-    requirements.push('цифры')
+    requirements.push(t('panels.passwordPolicies.rules.numbers'))
   }
   
   if (requireSpecialChars.value) {
-    requirements.push('специальные символы')
+    requirements.push(t('panels.passwordPolicies.rules.specialChars'))
   }
   
   return requirements.join(', ')
@@ -152,8 +152,6 @@ const loadPasswordPolicies = async () => {
         requireSpecialChars: requireSpecialChars.value,
         allowedSpecialChars: allowedSpecialChars.value
       })
-      
-      uiStore.showSuccessSnackbar('настройки политики паролей загружены')
     } else {
       throw new Error('No password policy settings found')
     }
