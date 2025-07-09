@@ -110,6 +110,16 @@
                   "events": {
                     "label": "log debug events"
                   }
+                },
+                "info": {
+                  "events": {
+                    "label": "log info events"
+                  }
+                },
+                "error": {
+                  "events": {
+                    "label": "log error events"
+                  }
                 }
               },
               "file": {
