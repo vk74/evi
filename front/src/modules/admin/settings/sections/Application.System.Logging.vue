@@ -375,7 +375,7 @@ onMounted(() => {
 <template>
   <div class="logging-container">
     <h2 class="text-h6 mb-4">
-      логирование работы системы
+      {{ t('admin.settings.application.system.logging.title') }}
     </h2>
     
     <!-- Loading indicator -->
@@ -400,7 +400,7 @@ onMounted(() => {
               class="chevron-icon"
             />
             <h3 class="block-title">
-              вывод логов в консоль
+              {{ t('admin.settings.application.system.logging.console.title') }}
             </h3>
           </div>
         </div>
@@ -596,7 +596,7 @@ onMounted(() => {
               class="chevron-icon"
             />
             <h3 class="block-title">
-              запись логов в файл
+              {{ t('admin.settings.application.system.logging.file.title') }}
             </h3>
           </div>
         </div>
@@ -648,7 +648,7 @@ onMounted(() => {
               </div>
               
               <div class="setting-note">
-                функция находится в разработке
+                {{ t('admin.settings.application.security.sessionmanagement.in.development') }}
               </div>
             </div>
             

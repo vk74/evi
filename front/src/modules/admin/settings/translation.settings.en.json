@@ -93,42 +93,6 @@
             },
             "in.development": "feature is under development"
           },
-          "system": {
-            "eventbus": {
-              "title": "event bus",
-              "enabled": {
-                "label": "ENABLE MODULE"
-              }
-            },
-            "logging": {
-              "title": "logging",
-              "console": {
-                "enabled": {
-                  "label": "enable console logging"
-                },
-                "debug": {
-                  "events": {
-                    "label": "log debug events"
-                  }
-                },
-                "info": {
-                  "events": {
-                    "label": "log info events"
-                  }
-                },
-                "error": {
-                  "events": {
-                    "label": "log error events"
-                  }
-                }
-              },
-              "file": {
-                "enabled": {
-                  "label": "enable file logging"
-                }
-              }
-            }
-          },
           "userprofiles": {
             "title": "user profiles management",
             "sections": {
@@ -157,6 +121,44 @@
                     "label": "maximum profile photo size ({size} KB)"
                   }
                 }
+              }
+            }
+          }
+        },
+        "system": {
+          "eventbus": {
+            "title": "event bus",
+            "enabled": {
+              "label": "ENABLE MODULE"
+            }
+          },
+          "logging": {
+            "title": "system logging",
+            "console": {
+              "title": "console output",
+              "enabled": {
+                "label": "enable console logging"
+              },
+              "debug": {
+                "events": {
+                  "label": "log debug events"
+                }
+              },
+              "info": {
+                "events": {
+                  "label": "log info events"
+                }
+              },
+              "error": {
+                "events": {
+                  "label": "log error events"
+                }
+              }
+            },
+            "file": {
+              "title": "file logging",
+              "enabled": {
+                "label": "enable file logging"
               }
             }
           }
