@@ -135,7 +135,7 @@ export const LOGGER_SETTINGS_EVENTS = {
     eventType: 'app' as const,
     severity: 'info' as const,
     eventMessage: 'Initial logger settings loaded successfully',
-    payload: null, // Will be of type { consoleLogging: boolean, debugEvents: boolean }
+    payload: null, // Will be of type { consoleLogging: boolean, debugEvents: boolean, infoEvents: boolean, errorEvents: boolean }
     version: '1.0.0'
   },
   
@@ -179,6 +179,50 @@ export const LOGGER_SETTINGS_EVENTS = {
     eventType: 'app' as const,
     severity: 'info' as const,
     eventMessage: 'Debug events logging disabled',
+    payload: null, // Will be of type { consoleLoggingEnabled: boolean }
+    version: '1.0.0'
+  },
+  
+  // When info events logging is enabled
+  INFO_EVENTS_ENABLED: {
+    eventName: 'logger.settings.info.enabled',
+    source: 'logger service module',
+    eventType: 'app' as const,
+    severity: 'info' as const,
+    eventMessage: 'Info events logging enabled',
+    payload: null, // Will be of type { consoleLoggingEnabled: boolean }
+    version: '1.0.0'
+  },
+  
+  // When info events logging is disabled
+  INFO_EVENTS_DISABLED: {
+    eventName: 'logger.settings.info.disabled',
+    source: 'logger service module',
+    eventType: 'app' as const,
+    severity: 'info' as const,
+    eventMessage: 'Info events logging disabled',
+    payload: null, // Will be of type { consoleLoggingEnabled: boolean }
+    version: '1.0.0'
+  },
+  
+  // When error events logging is enabled
+  ERROR_EVENTS_ENABLED: {
+    eventName: 'logger.settings.error.enabled',
+    source: 'logger service module',
+    eventType: 'app' as const,
+    severity: 'info' as const,
+    eventMessage: 'Error events logging enabled',
+    payload: null, // Will be of type { consoleLoggingEnabled: boolean }
+    version: '1.0.0'
+  },
+  
+  // When error events logging is disabled
+  ERROR_EVENTS_DISABLED: {
+    eventName: 'logger.settings.error.disabled',
+    source: 'logger service module',
+    eventType: 'app' as const,
+    severity: 'info' as const,
+    eventMessage: 'Error events logging disabled',
     payload: null, // Will be of type { consoleLoggingEnabled: boolean }
     version: '1.0.0'
   },

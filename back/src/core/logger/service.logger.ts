@@ -26,8 +26,9 @@ transports.set('console', consoleTransport);
 // Note: Settings hierarchy - console-dependent settings only work when console logging is enabled
 let currentSettings = {
   consoleLoggingEnabled: true,
-  debugEventsEnabled: true  // Depends on consoleLoggingEnabled
-  // Future console-dependent settings should be added here with similar dependency
+  debugEventsEnabled: true,  // Depends on consoleLoggingEnabled
+  infoEventsEnabled: true,   // Depends on consoleLoggingEnabled
+  errorEventsEnabled: true   // Depends on consoleLoggingEnabled
 };
 
 /**
@@ -102,23 +103,39 @@ export const unregisterTransport = (transportName: string): boolean => {
 export const processEvent = (event: BaseEvent): void => {
   // Apply hierarchical settings logic:
   // 1. If console logging is disabled, all console-dependent settings are ignored
-  // 2. Debug events setting only works when console logging is enabled
-  // 3. Future console-dependent settings should follow the same pattern
+  // 2. Level-specific settings (debug, info, error) only work when console logging is enabled
   
-  const isDebugEvent = event.severity === 'debug';
+  const eventSeverity = event.severity?.toLowerCase();
+  const isDebugEvent = eventSeverity === 'debug';
+  const isInfoEvent = eventSeverity === 'info';
+  const isErrorEvent = eventSeverity === 'error' || eventSeverity === 'critical';
   
-  // If console logging is disabled and this is a debug event, skip completely
-  // (debug events are primarily for console output)
-  if (!currentSettings.consoleLoggingEnabled && isDebugEvent) {
-    return;
+  // If console logging is disabled, apply level-specific filtering for console-dependent events
+  if (!currentSettings.consoleLoggingEnabled) {
+    // Skip debug, info, and error events when console logging is disabled
+    // (these events are primarily for console output)
+    if (isDebugEvent || isInfoEvent || isErrorEvent) {
+      return;
+    }
   }
   
-  // If console logging is enabled but debug events are disabled, skip debug events
-  if (currentSettings.consoleLoggingEnabled && !currentSettings.debugEventsEnabled && isDebugEvent) {
-    return;
+  // If console logging is enabled, apply level-specific settings
+  if (currentSettings.consoleLoggingEnabled) {
+    // Skip debug events if debug events are disabled
+    if (!currentSettings.debugEventsEnabled && isDebugEvent) {
+      return;
+    }
+    
+    // Skip info events if info events are disabled
+    if (!currentSettings.infoEventsEnabled && isInfoEvent) {
+      return;
+    }
+    
+    // Skip error/critical events if error events are disabled
+    if (!currentSettings.errorEventsEnabled && isErrorEvent) {
+      return;
+    }
   }
-
-  // TODO: Add similar hierarchical checks for future console-dependent settings here
 
   // Send to each transport that should receive this event
   for (const transport of transports.values()) {
@@ -216,6 +233,56 @@ export const applyDebugEventsSetting = (enabled: boolean): void => {
 };
 
 /**
+ * Apply info events logging setting change
+ * Controls whether info-level events are processed and logged
+ * Note: This setting only works when console logging is enabled (hierarchical dependency)
+ */
+export const applyInfoEventsSetting = (enabled: boolean): void => {
+  currentSettings.infoEventsEnabled = enabled;
+  
+  if (enabled) {
+    fabricEvents.createAndPublishEvent({
+      eventName: LOGGER_SETTINGS_EVENTS.INFO_EVENTS_ENABLED.eventName,
+      payload: {
+        consoleLoggingEnabled: currentSettings.consoleLoggingEnabled
+      }
+    });
+  } else {
+    fabricEvents.createAndPublishEvent({
+      eventName: LOGGER_SETTINGS_EVENTS.INFO_EVENTS_DISABLED.eventName,
+      payload: {
+        consoleLoggingEnabled: currentSettings.consoleLoggingEnabled
+      }
+    });
+  }
+};
+
+/**
+ * Apply error events logging setting change
+ * Controls whether error/critical-level events are processed and logged
+ * Note: This setting only works when console logging is enabled (hierarchical dependency)
+ */
+export const applyErrorEventsSetting = (enabled: boolean): void => {
+  currentSettings.errorEventsEnabled = enabled;
+  
+  if (enabled) {
+    fabricEvents.createAndPublishEvent({
+      eventName: LOGGER_SETTINGS_EVENTS.ERROR_EVENTS_ENABLED.eventName,
+      payload: {
+        consoleLoggingEnabled: currentSettings.consoleLoggingEnabled
+      }
+    });
+  } else {
+    fabricEvents.createAndPublishEvent({
+      eventName: LOGGER_SETTINGS_EVENTS.ERROR_EVENTS_DISABLED.eventName,
+      payload: {
+        consoleLoggingEnabled: currentSettings.consoleLoggingEnabled
+      }
+    });
+  }
+};
+
+/**
  * Get current logger settings
  */
 export const getCurrentSettings = () => {
@@ -261,6 +328,8 @@ export default {
   getTransports,
   applyConsoleLoggingSetting,
   applyDebugEventsSetting,
+  applyInfoEventsSetting,
+  applyErrorEventsSetting,
   getCurrentSettings,
   close
 };

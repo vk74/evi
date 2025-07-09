@@ -94,6 +94,14 @@ const handleLoggerSettingsChange = (event: BaseEvent): void => {
         loggerService.applyDebugEventsSetting(newValue);
         break;
         
+      case 'console.log.info.events':
+        loggerService.applyInfoEventsSetting(newValue);
+        break;
+        
+      case 'console.log.error.events':
+        loggerService.applyErrorEventsSetting(newValue);
+        break;
+        
       default:
         fabricEvents.createAndPublishEvent({
           eventName: LOGGER_ERROR_EVENTS.UNKNOWN_SETTING.eventName,
@@ -131,7 +139,12 @@ const handleLoggerSettingsChange = (event: BaseEvent): void => {
  * Reads current settings values and applies them to logger service
  */
 const loadInitialSettings = (): void => {
-  const settingsToLoad = ['turn.on.console.logging', 'console.log.debug.events'];
+  const settingsToLoad = [
+    'turn.on.console.logging', 
+    'console.log.debug.events',
+    'console.log.info.events',
+    'console.log.error.events'
+  ];
   
   fabricEvents.createAndPublishEvent({
     eventName: LOGGER_SETTINGS_EVENTS.INITIAL_LOAD_STARTED.eventName,
@@ -143,6 +156,8 @@ const loadInitialSettings = (): void => {
   try {
     let consoleEnabled = true;
     let debugEnabled = true;
+    let infoEnabled = true;
+    let errorEnabled = true;
     
     // Load console logging setting
     const consoleLoggingSetting = getSetting('Application.System.Logging', 'turn.on.console.logging');
@@ -158,11 +173,27 @@ const loadInitialSettings = (): void => {
       loggerService.applyDebugEventsSetting(debugEnabled);
     }
     
+    // Load info events setting
+    const infoEventsSetting = getSetting('Application.System.Logging', 'console.log.info.events');
+    if (infoEventsSetting) {
+      infoEnabled = parseSettingValue(infoEventsSetting);
+      loggerService.applyInfoEventsSetting(infoEnabled);
+    }
+    
+    // Load error events setting
+    const errorEventsSetting = getSetting('Application.System.Logging', 'console.log.error.events');
+    if (errorEventsSetting) {
+      errorEnabled = parseSettingValue(errorEventsSetting);
+      loggerService.applyErrorEventsSetting(errorEnabled);
+    }
+    
     fabricEvents.createAndPublishEvent({
       eventName: LOGGER_SETTINGS_EVENTS.INITIAL_LOAD_SUCCESS.eventName,
       payload: {
         consoleLogging: consoleEnabled,
-        debugEvents: debugEnabled
+        debugEvents: debugEnabled,
+        infoEvents: infoEnabled,
+        errorEvents: errorEnabled
       }
     });
     
