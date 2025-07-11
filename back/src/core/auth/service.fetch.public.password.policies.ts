@@ -19,6 +19,7 @@ import {
 import fabricEvents from '../eventBus/fabric.events';
 import { PUBLIC_PASSWORD_POLICIES_EVENT_NAMES } from './events.public.password.policies';
 import { v4 as uuidv4 } from 'uuid';
+import { getClientIp } from '../helpers/get.client.ip.from.req';
 
 // Type assertion for pool
 const pool = pgPool as Pool;
@@ -51,16 +52,6 @@ interface PasswordPolicySetting {
   confidentiality: boolean;
   section_path: string;
   description?: string;
-}
-
-/**
- * Get client IP address from request
- */
-function getClientIp(req: Request): string {
-  return (req.headers['x-forwarded-for'] as string)?.split(',')[0] || 
-         req.connection.remoteAddress || 
-         req.socket.remoteAddress || 
-         'unknown';
 }
 
 /**

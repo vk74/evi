@@ -9,6 +9,7 @@ import { Request, Response } from 'express';
 import { fetchPublicPasswordPolicies } from './service.fetch.public.password.policies';
 import fabricEvents from '../eventBus/fabric.events';
 import { PUBLIC_PASSWORD_POLICIES_EVENT_NAMES } from './events.public.password.policies';
+import { getClientIp } from '../helpers/get.client.ip.from.req';
 
 /**
  * Rate limiting store for tracking requests per IP
@@ -32,16 +33,6 @@ const RATE_LIMIT_CONFIG = {
   MAX_REQUESTS_PER_HOUR: 100,    // 100 requests per hour
   CLEANUP_INTERVAL: 300000       // Clean up old entries every 5 minutes
 };
-
-/**
- * Get client IP address from request
- */
-function getClientIp(req: Request): string {
-  return (req.headers['x-forwarded-for'] as string)?.split(',')[0] || 
-         req.connection.remoteAddress || 
-         req.socket.remoteAddress || 
-         'unknown';
-}
 
 /**
  * Check rate limiting for client IP

@@ -1,99 +1,98 @@
 /**
  * events.public.password.policies.ts - backend file
- * version: 1.0.0
+ * version: 1.0.2
  * Event definitions for public password policies API operations.
  * Contains event types for logging requests, responses, cache hits, rate limiting, and errors.
  */
 
-import { EventObject } from '../eventBus/types.events';
-
 /**
- * Event definitions for public password policies operations
+ * Public Password Policies Events
+ * Events related to public password policies API operations
  */
-export const PUBLIC_PASSWORD_POLICIES_EVENTS: Record<string, EventObject> = {
+export const PUBLIC_PASSWORD_POLICIES_EVENTS = {
   
   /**
    * Request received event
    * Triggered when a public password policies request is received
    */
   REQUEST_RECEIVED: {
-    eventName: 'public.password.policies.request.received',
+    eventName: 'publicPasswordPolicies.request.received',
     eventMessage: 'Public password policies request received',
-    eventType: 'app',
+    eventType: 'app' as const,
     source: 'core.auth.public.password.policies',
-    severity: 'info',
+    severity: 'info' as const,
     version: '1.0.0'
   },
 
   RESPONSE_SENT: {
-    eventName: 'public.password.policies.response.sent',
+    eventName: 'publicPasswordPolicies.response.sent',
     eventMessage: 'Public password policies response sent successfully',
-    eventType: 'app',
+    eventType: 'app' as const,
     source: 'core.auth.public.password.policies',
-    severity: 'info',
+    severity: 'info' as const,
     version: '1.0.0'
   },
 
   CACHE_HIT: {
-    eventName: 'public.password.policies.cache.hit',
+    eventName: 'publicPasswordPolicies.cache.hit',
     eventMessage: 'Password policies retrieved from cache',
-    eventType: 'performance',
+    eventType: 'performance' as const,
     source: 'core.auth.public.password.policies',
-    severity: 'debug',
+    severity: 'debug' as const,
     version: '1.0.0'
   },
 
   CACHE_MISS: {
-    eventName: 'public.password.policies.cache.miss',
+    eventName: 'publicPasswordPolicies.cache.miss',
     eventMessage: 'Password policies not found in cache',
-    eventType: 'performance',
+    eventType: 'performance' as const,
     source: 'core.auth.public.password.policies',
-    severity: 'warning',
+    severity: 'warning' as const,
     version: '1.0.0'
   },
 
   RATE_LIMIT_EXCEEDED: {
-    eventName: 'public.password.policies.rate.limit.exceeded',
+    eventName: 'publicPasswordPolicies.rate.limit.exceeded',
     eventMessage: 'Rate limit exceeded for public password policies requests',
-    eventType: 'security',
+    eventType: 'security' as const,
     source: 'core.auth.public.password.policies',
-    severity: 'warning',
+    severity: 'warning' as const,
     version: '1.0.0'
   },
 
   VALIDATION_ERROR: {
-    eventName: 'public.password.policies.validation.error',
+    eventName: 'publicPasswordPolicies.validation.error',
     eventMessage: 'Request validation error for public password policies',
-    eventType: 'app',
+    eventType: 'app' as const,
     source: 'core.auth.public.password.policies',
-    severity: 'warning',
+    severity: 'warning' as const,
     version: '1.0.0'
   },
 
   SERVICE_ERROR: {
-    eventName: 'public.password.policies.service.error',
+    eventName: 'publicPasswordPolicies.service.error',
     eventMessage: 'Service error in public password policies',
-    eventType: 'system',
+    eventType: 'system' as const,
     source: 'core.auth.public.password.policies',
-    severity: 'error',
+    severity: 'error' as const,
     version: '1.0.0'
   },
 
   HTTP_ERROR: {
-    eventName: 'public.password.policies.http.error',
+    eventName: 'publicPasswordPolicies.http.error',
     eventMessage: 'HTTP error in public password policies endpoint',
-    eventType: 'system',
+    eventType: 'system' as const,
     source: 'core.auth.public.password.policies',
-    severity: 'error',
+    severity: 'error' as const,
     version: '1.0.0'
   },
 
   FALLBACK_DB_QUERY: {
-    eventName: 'public.password.policies.fallback.db.query',
+    eventName: 'publicPasswordPolicies.fallback.db.query',
     eventMessage: 'Fallback to database query for password policies',
-    eventType: 'app',
+    eventType: 'app' as const,
     source: 'core.auth.public.password.policies',
-    severity: 'info',
+    severity: 'info' as const,
     version: '1.0.0'
   }
 };
