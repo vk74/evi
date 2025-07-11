@@ -53,6 +53,7 @@
 <script>
 import { jwtDecode } from 'jwt-decode';  // библиотека для декодирования JWT
 import { useUserStore } from '@/core/state/userstate'; // импорт Pinia store
+import { useAppStore } from '@/core/state/appstate'; // импорт Pinia store для навигации
 import { startSessionTimers } from '@/core/services/sessionServices'; // импорт функции управления сессией
 
 export default {
@@ -101,7 +102,9 @@ export default {
           setTimeout(() => {
             this.closeDialog();
           }, 1000);
-          userStore.setActiveModule('Catalog');
+          
+          const appStore = useAppStore();
+          appStore.setActiveModule('Catalog');
         } else {
           this.showError = true; // показываем ошибку, если валидация неудачна
         }
@@ -115,8 +118,8 @@ export default {
       this.$emit('close'); // оповестить родительский компонент о закрытии
     },
     goToRegistration() {
-      const userStore = useUserStore();
-      userStore.setActiveModule('NewUserRegistration');
+      const appStore = useAppStore();
+      appStore.setActiveModule('NewUserRegistration');
     }
   }
 };

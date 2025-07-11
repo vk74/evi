@@ -38,7 +38,7 @@ const SubModuleAppSettings = defineAsyncComponent(() => import('./modules/admin/
 import ModuleLogin from './modules/account/ModuleLogin.vue';
 import ModalChangeUserPass from './modules/account/ModalChangeUserPass.vue';
 import LoginDialog from './modules/account/ModuleLogin.vue';
-import ModuleNewUserRegistration from './modules/account/ModuleNewUserRegistration.vue';
+import ModuleNewUserSelfRegistration from './modules/account/ModuleNewUserSelfRegistration.vue';
 import AppSnackbar from './core/ui/snackbars/AppSnackbar.vue';
 
 // Store and i18n initialization
@@ -697,7 +697,7 @@ onMounted(() => {
       <ModuleAccount v-if="appStore.isModuleActive('Account')" />
       <ModuleSettings v-if="appStore.isModuleActive('Settings')" />
       <ModuleKnowledgeBase v-if="appStore.isModuleActive('KnowledgeBase')" />
-      <ModuleNewUserRegistration v-if="appStore.isModuleActive('NewUserRegistration')" />
+              <ModuleNewUserSelfRegistration v-if="appStore.isModuleActive('NewUserRegistration')" />
     </v-main>
  
     <!-- Global snackbar -->

@@ -1,0 +1,78 @@
+{
+  "selfRegistration": {
+    "title": "registration",
+    "fields": {
+      "username": {
+        "label": "username*"
+      },
+      "password": {
+        "label": "password*"
+      },
+      "passwordConfirm": {
+        "label": "confirm password*"
+      },
+      "surname": {
+        "label": "last name*"
+      },
+      "name": {
+        "label": "first name*"
+      },
+      "email": {
+        "label": "e-mail*"
+      },
+      "phone": {
+        "label": "phone",
+        "placeholder": "+7 (###) ###-####"
+      },
+      "address": {
+        "label": "address"
+      }
+    },
+    "validation": {
+      "password": {
+        "required": "password is required",
+        "policiesNotLoaded": "password policy settings not loaded - registration blocked",
+        "minLength": "password must contain at least {length} characters",
+        "maxLength": "password must not exceed {length} characters",
+        "lowercase": "password must contain lowercase letters",
+        "uppercase": "password must contain uppercase letters",
+        "numbers": "password must contain numbers",
+        "specialChars": "password must contain special characters",
+        "invalidChars": "password contains invalid characters"
+      },
+      "passwordConfirm": {
+        "required": "password confirmation is required",
+        "mismatch": "passwords do not match"
+      },
+      "address": {
+        "maxLength": "address must not exceed 100 characters",
+        "format": "address contains invalid characters"
+      },
+      "phone": {
+        "format": "phone must contain only digits and be no longer than 15 characters"
+      }
+    },
+    "buttons": {
+      "register": "REGISTER"
+    },
+    "errors": {
+      "validation": "validation error: invalid fields -",
+      "duplicateUsername": "error: this username is already registered",
+      "duplicateEmail": "error: this email address is already in use",
+      "duplicatePhone": "error: this phone number is already in use",
+      "passwordPoliciesLoadFailed": "failed to load password policy settings",
+      "passwordPoliciesNotReady": "password policy settings not ready - registration blocked",
+      "formValidation": "please check the form fields for correctness",
+      "serverError": "server error during registration",
+      "networkError": "network error when sending registration data"
+    },
+    "success": {
+      "registered": "registration completed successfully",
+      "dataSent": "registration form data successfully sent to server"
+    },
+    "login": {
+      "alreadyHaveAccount": "already have an account?",
+      "signIn": "sign in"
+    }
+  }
+} 

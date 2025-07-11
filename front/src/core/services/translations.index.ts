@@ -11,6 +11,10 @@ import coreModalsEn from '@/core/ui/modals/translation.modals.en.json'
 import corePanelsRu from '@/core/ui/panels/translation.panels.ru.json'
 import corePanelsEn from '@/core/ui/panels/translation.panels.en.json'
 
+// Account module
+import userSelfRegistrationRu from '@/modules/account/translation.user.selfregistration.ru.json'
+import userSelfRegistrationEn from '@/modules/account/translation.user.selfregistration.en.json'
+
 // Admin module and sub-modules and functions
 import adminModuleRu from '@/modules/admin/translation.admin.ru.json'
 import adminModuleEn from '@/modules/admin/translation.admin.en.json'
@@ -41,6 +45,7 @@ export default {
       appTranslationsRu,
       coreModalsRu,
       corePanelsRu,
+      userSelfRegistrationRu,
       adminModuleRu,
       userEditorRu,
       usersListRu,
@@ -53,6 +58,7 @@ export default {
       appTranslationsEn,
       coreModalsEn,
       corePanelsEn,
+      userSelfRegistrationEn,
       adminModuleEn,
       userEditorEn,
       usersListEn,
