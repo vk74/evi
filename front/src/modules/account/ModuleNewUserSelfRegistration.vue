@@ -69,11 +69,6 @@ const showPasswordPoliciesPanel = ref(false)
 /**
  * Error state variables
  */
-const showError = ref(false)
-const showSuccess = ref(false)
-const showDuplicateUsernameError = ref(false)
-const showDuplicateEmailError = ref(false)
-const showDuplicatePhoneError = ref(false)
 const invalidFields = ref<string[]>([])
 
 // ==================== PASSWORD POLICY STATE ====================
@@ -223,11 +218,6 @@ const onPasswordBlur = () => {
  * Clear all error and success messages
  */
 const clearMessages = () => {
-  showError.value = false
-  showSuccess.value = false
-  showDuplicateUsernameError.value = false
-  showDuplicateEmailError.value = false
-  showDuplicatePhoneError.value = false
   invalidFields.value = []
 }
 
@@ -266,8 +256,7 @@ const submitForm = async () => {
 
     if (response.ok) {
       console.log('User self-registration data successfully sent to backend server')
-      showSuccess.value = true
-      uiStore.showSuccessSnackbar(t('selfRegistration.success.registered'))
+      uiStore.showSuccessSnackbar(t('selfRegistration.success.dataSent'))
       
       // Reset form after successful registration
       user.value = {
@@ -284,11 +273,11 @@ const submitForm = async () => {
     } else {
       const errorData = await response.json()
       if (errorData.message === 'this username is already registered by another user') {
-        showDuplicateUsernameError.value = true
+        uiStore.showErrorSnackbar(t('selfRegistration.errors.duplicateUsername'))
       } else if (errorData.message === 'this e-mail is already registered by another user') {
-        showDuplicateEmailError.value = true
+        uiStore.showErrorSnackbar(t('selfRegistration.errors.duplicateEmail'))
       } else if (errorData.message === 'this phone number is already registered by another user') {
-        showDuplicatePhoneError.value = true
+        uiStore.showErrorSnackbar(t('selfRegistration.errors.duplicatePhone'))
       } else {
         console.error('Error on sending registration data to backend:', response.status, response.statusText)
         uiStore.showErrorSnackbar(t('selfRegistration.errors.serverError'))
@@ -306,7 +295,7 @@ const submitForm = async () => {
  * Navigate to login page
  */
 const goToLogin = () => {
-  userStore.setActiveModule('Login')
+  userStore.activeModule = 'Login'
 }
 
 // ==================== LIFECYCLE ====================
@@ -362,6 +351,7 @@ onMounted(async () => {
                 size="small"
                 :disabled="!passwordPoliciesReady"
                 @click="togglePasswordVisibility"
+                tabindex="-1"
               >
                 <v-icon>
                   {{ showPassword ? 'mdi-eye-off' : 'mdi-eye' }}
@@ -446,24 +436,8 @@ onMounted(async () => {
         </v-form>
 
         <!-- Error messages -->
-        <div v-if="showError" class="error-message mt-3">
+        <div v-if="invalidFields.length > 0" class="error-message mt-3">
           {{ t('selfRegistration.errors.validation') }} {{ invalidFields.join(', ') }}
-        </div>
-        
-        <div v-if="showDuplicateUsernameError" class="error-message mt-3">
-          {{ t('selfRegistration.errors.duplicateUsername') }}
-        </div>
-        
-        <div v-if="showDuplicateEmailError" class="error-message mt-3">
-          {{ t('selfRegistration.errors.duplicateEmail') }}
-        </div>
-        
-        <div v-if="showDuplicatePhoneError" class="error-message mt-3">
-          {{ t('selfRegistration.errors.duplicatePhone') }}
-        </div>
-        
-        <div v-if="showSuccess" class="success-message mt-3">
-          {{ t('selfRegistration.success.dataSent') }}
         </div>
       </v-card-text>
 
@@ -486,7 +460,7 @@ onMounted(async () => {
         {{ t('selfRegistration.login.alreadyHaveAccount') }}
         <a
           href="#"
-          class="login-link"
+          class="register-link"
           @click.prevent="goToLogin"
         >
           {{ t('selfRegistration.login.signIn') }}
@@ -502,18 +476,12 @@ onMounted(async () => {
   font-size: 0.875rem;
 }
 
-.success-message {
-  color: rgb(var(--v-theme-success));
-  font-size: 0.875rem;
-  text-align: center;
-}
-
-.login-link {
-  color: rgb(var(--v-theme-primary));
+.register-link {
+  color: teal;
   text-decoration: none;
 }
 
-.login-link:hover {
+.register-link:hover {
   text-decoration: underline;
 }
 </style> 
