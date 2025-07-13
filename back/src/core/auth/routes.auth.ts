@@ -1,8 +1,8 @@
 /**
- * version: 1.0.01
- * Backend router file for user account related routes.
+ * version: 1.0.02
+ * Backend router file for authentication related routes.
  * Handles user authentication, registration, profile management and routes to appropriate middleware.
- * File: routes.users.ts
+ * File: routes.auth.ts
  */
 
 import express, { Router } from 'express';
@@ -19,7 +19,7 @@ import fetchPublicPasswordPoliciesController from './controller.fetch.public.pas
 const router: Router = express.Router();
 
 // Public routes (no authentication required)
-router.get('/public/password-policies', fetchPublicPasswordPoliciesController);
+router.get('/api/public/password-policies', fetchPublicPasswordPoliciesController);
 
 // User account routes
 router.post('/register', registerUser);
@@ -29,4 +29,4 @@ router.get('/profile', validateJWT, getUserProfile);
 router.post('/profile', validateJWT, updateUserProfile);
 
 // Export using ES modules syntax
-export default router;
+export default router; 

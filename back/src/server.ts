@@ -16,7 +16,7 @@ import fs from 'fs';
 import ExcelJS from 'exceljs';
 
 // Import routes
-import userRoutes from '@/core/auth/routes.users';
+import authRoutes from '@/core/auth/routes.auth';
 import servicesRoutes from '@/modules/catalog/routes.services';
 import catalogRoutes from '@/modules/catalog/routes.catalog';
 import adminRoutes from '@/modules/admin/routes.admin';
@@ -183,7 +183,7 @@ async function initializeServer(): Promise<void> {
     app.use(checkServerReady);
 
     // 6. Route registration
-    app.use(userRoutes);
+    app.use(authRoutes);
     app.use(servicesRoutes);
     app.use(catalogRoutes);
     app.use(adminRoutes);

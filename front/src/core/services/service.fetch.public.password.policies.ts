@@ -43,9 +43,9 @@ export async function fetchPublicPasswordPolicies(forceRefresh = false): Promise
     publicStore.isLoadingPasswordPolicies = true
     publicStore.passwordPoliciesError = null
     
-    console.log('[PublicPasswordPolicies] Making API request to /public/password-policies')
+    console.log('[PublicPasswordPolicies] Making API request to /api/public/password-policies')
     
-    const response = await api.get<PublicPasswordPoliciesResponse>('/public/password-policies')
+    const response = await api.get<PublicPasswordPoliciesResponse>('/api/public/password-policies')
     
     // Step 3: Handle response
     if (response.data.success && response.data.passwordPolicies) {
