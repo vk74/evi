@@ -192,7 +192,7 @@ onMounted(async () => {
       <p class="text-h6 font-weight-bold text-primary mb-2">
         {{ generateExamplePassword || '—' }}
       </p>
-      <p class="text-caption text-grey">
+      <p class="text-body-2 text-grey-darken-3">
         {{ t('panels.passwordPolicies.requirements') }} {{ getPasswordRequirements || '—' }}
       </p>
     </div>
