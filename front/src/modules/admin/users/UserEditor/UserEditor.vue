@@ -33,6 +33,7 @@ import { useUserEditorStore } from './state.user.editor'
 import { createUserService } from './service.create.new.user'
 import { updateUserService } from './service.update.user'
 import { useUiStore } from '@/core/state/uistate'
+import { useUsersAdminStore } from '../state.users.admin'
 import { AccountStatus, Gender, EditMode } from './types.user.editor'
 import { useValidationRules } from '@/core/validation/rules.common.fields'
 import ChangePassword from '@/core/ui/modals/change-password/ChangePassword.vue'
@@ -43,6 +44,7 @@ import PasswordPoliciesPanel from '@/core/ui/panels/panel.current.password.polic
 // ==================== STORES ====================
 const userEditorStore = useUserEditorStore()
 const uiStore = useUiStore()
+const usersSectionStore = useUsersAdminStore()
 const { t } = useI18n()
 const {
  usernameRules,
@@ -445,6 +447,19 @@ const closePasswordDialog = () => {
  showPasswordDialog.value = false
 }
 
+/**
+* Cancel editing and return to users list
+*/
+const cancelEdit = () => {
+  // Reset form to initial state
+  resetForm()
+  // Set mode back to create
+  userEditorStore.mode = { mode: 'create' }
+  // Switch to users list
+  usersSectionStore.setActiveSection('users-proto')
+  console.log('Edit cancelled, returning to users list')
+}
+
 // ==================== LIFECYCLE ====================
 onMounted(() => {
   console.log('UserEditor mounted')
@@ -825,6 +840,18 @@ onBeforeUnmount(() => {
             @click="updateUser"
           >
             {{ t('admin.users.editor.buttons.update') }}
+          </v-btn>
+
+          <!-- Cancel edit button (visible only in edit mode) -->
+          <v-btn
+            v-if="userEditorStore.mode.mode === 'edit'"
+            block
+            color="grey"
+            variant="outlined"
+            class="mb-3"
+            @click="cancelEdit"
+          >
+            {{ t('admin.users.editor.buttons.cancelEdit') }}
           </v-btn>
         </div>
         

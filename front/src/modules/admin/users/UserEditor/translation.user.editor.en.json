@@ -18,6 +18,7 @@
         "buttons": {
           "create": "create",
           "update": "update user data",
+          "cancelEdit": "cancel edit",
           "reset": "reset form fields",
           "resetPassword": "reset password"
         },
