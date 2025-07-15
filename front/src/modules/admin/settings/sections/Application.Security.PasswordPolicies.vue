@@ -15,6 +15,7 @@ import { updateSettingFromComponent, updateMultipleSettings } from '@/modules/ad
 import { getDefaultValues } from '@/modules/admin/settings/service.fetch.settings';
 import { useUiStore } from '@/core/state/uistate';
 import DataLoading from '@/core/ui/loaders/DataLoading.vue';
+import PanelCurrentPasswordPolicies from '@/core/ui/panels/panel.current.password.policies.vue';
 
 // Section path identifier - using component name for better consistency
 const section_path = 'Application.Security.PasswordPolicies';
@@ -132,77 +133,7 @@ function updateSetting(settingName: string, value: any) {
   }
 }
 
-/**
- * Generate example password based on current settings
- * Only generate if no settings have errors and all values are loaded
- */
-const generateExamplePassword = computed(() => {
-  // Don't generate example if there are loading or error states or null values
-  if (hasLoadingSettings.value || hasErrorSettings.value || 
-      passwordMinLength.value === null || passwordMaxLength.value === null ||
-      requireLowercase.value === null || requireUppercase.value === null ||
-      requireNumbers.value === null || requireSpecialChars.value === null ||
-      allowedSpecialChars.value === null) {
-    return null;
-  }
-  
-  const min = Number(passwordMinLength.value);
-  const max = Number(passwordMaxLength.value);
-  const length = Math.max(min, Math.min(max, 12));
-  let chars: string[] = [];
-  if (requireLowercase.value) chars.push('a');
-  if (requireUppercase.value) chars.push('A');
-  if (requireNumbers.value) chars.push('1');
-  if (requireSpecialChars.value && allowedSpecialChars.value.length > 0) chars.push(allowedSpecialChars.value[0]);
-  if (chars.length === 0) chars.push('a');
-  let filler: string[] = [];
-  if (requireLowercase.value) filler = filler.concat(['b','c','d','e','f','g','h','j','k','m','n','p','q','r','s','t','u','v','w','x','y','z']);
-  if (requireUppercase.value) filler = filler.concat(['B','C','D','E','F','G','H','J','K','M','N','P','Q','R','S','T','U','V','W','X','Y','Z']);
-  if (requireNumbers.value) filler = filler.concat(['2','3','4','5','6','7','8','9']);
-  if (requireSpecialChars.value && allowedSpecialChars.value.length > 0) filler = filler.concat(allowedSpecialChars.value.split(''));
-  if (filler.length === 0) filler = ['a','b','c','d','e','f','g','h','j','k','m','n','p','q','r','s','t','u','v','w','x','y','z'];
-  let fillIndex = 0;
-  while (chars.length < length) {
-    chars.push(filler[fillIndex % filler.length]);
-    fillIndex++;
-  }
-  return chars.join('');
-});
 
-/**
- * Get password requirements description
- */
-const getPasswordRequirements = computed(() => {
-  // Don't show requirements if there are loading or error states or null values
-  if (hasLoadingSettings.value || hasErrorSettings.value || 
-      passwordMinLength.value === null || requireLowercase.value === null ||
-      requireUppercase.value === null || requireNumbers.value === null ||
-      requireSpecialChars.value === null) {
-    return null;
-  }
-  
-  const requirements: string[] = [];
-  
-  requirements.push(`минимум ${passwordMinLength.value} символов`);
-  
-  if (requireLowercase.value) {
-    requirements.push(t('admin.settings.application.security.passwordpolicies.require.lowercase.label'));
-  }
-  
-  if (requireUppercase.value) {
-    requirements.push(t('admin.settings.application.security.passwordpolicies.require.uppercase.label'));
-  }
-  
-  if (requireNumbers.value) {
-    requirements.push(t('admin.settings.application.security.passwordpolicies.require.numbers.label'));
-  }
-  
-  if (requireSpecialChars.value) {
-    requirements.push(t('admin.settings.application.security.passwordpolicies.require.specialchars.label'));
-  }
-  
-  return requirements.join(', ');
-});
 
 /**
  * Load a single setting by name
@@ -788,17 +719,9 @@ onMounted(() => {
           <span class="text-caption text-grey ms-3">{{ t('admin.settings.application.security.passwordpolicies.expiration.note.in.development', 'эта настройка находится в разработке') }}</span>
         </div>
         
-        <!-- Interactive password example -->
-        <div class="mt-6 pa-4 bg-grey-lighten-5 rounded">
-          <p class="text-body-2 text-grey-darken-1 mb-2">
-            {{ t('admin.settings.application.security.passwordpolicies.example.title') }}
-          </p>
-          <p class="text-h6 font-weight-bold text-primary">
-            {{ generateExamplePassword || '—' }}
-          </p>
-          <p class="text-caption text-grey mt-2">
-            {{ t('admin.settings.application.security.passwordpolicies.requirements.label') }} {{ getPasswordRequirements || '—' }}
-          </p>
+        <!-- Password policies information panel -->
+        <div class="mt-6">
+          <panel-current-password-policies />
         </div>
         
         <!-- Кнопка сброса настроек внизу -->
