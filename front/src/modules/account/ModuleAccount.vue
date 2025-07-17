@@ -1,3 +1,107 @@
+<script setup>
+import { ref, computed, onMounted } from 'vue'
+import { useUserStore } from '@/core/state/userstate'
+import { useI18n } from 'vue-i18n'
+import axios from 'axios'
+import ChangePassword from '@/core/ui/modals/change-password/ChangePassword.vue'
+import { PasswordChangeMode } from '@/core/ui/modals/change-password/types.change.password'
+import { getSessionDurations } from '@/core/services/sessionServices'
+
+// ==================== STORES ====================
+const userStore = useUserStore()
+const { t } = useI18n()
+
+// ==================== REFS & STATE ====================
+const profile = ref({
+  last_name: '',
+  first_name: '',
+  middle_name: '',
+  gender: '',
+  phone_number: '',
+  email: '',
+  address: '',
+  company_name: '',
+  position: ''
+})
+
+const settings = ref({
+  workUpdates: false,
+  newsletter: true,
+})
+
+const isChangePasswordModalVisible = ref(false)
+const isTechCardExpanded = ref(true)
+const sessionDurations = ref(getSessionDurations())
+const snackbar = ref(false)
+const snackbarMessage = ref('')
+const snackbarColor = ref('teal')
+
+// ==================== COMPUTED ====================
+const username = computed(() => userStore.username)
+const jwt = computed(() => userStore.jwt)
+const isLoggedIn = computed(() => userStore.isLoggedIn)
+const userID = computed(() => userStore.userID)
+
+const issuedAt = computed(() => {
+  const iat = userStore.issuedAt
+  return iat ? new Date(iat * 1000).toLocaleString() : 'N/A'
+})
+
+const issuer = computed(() => userStore.issuer || 'N/A')
+
+const expiresAt = computed(() => {
+  const exp = userStore.tokenExpires
+  return exp ? new Date(exp * 1000).toLocaleString() : 'N/A'
+})
+
+// ==================== METHODS ====================
+const openChangePasswordModal = () => {
+  isChangePasswordModalVisible.value = true
+}
+
+const closeChangePasswordModal = () => {
+  isChangePasswordModalVisible.value = false
+}
+
+const toggleTechCard = () => {
+  isTechCardExpanded.value = !isTechCardExpanded.value
+}
+
+const saveProfile = async () => {
+  if (userStore.isLoggedIn) {
+    try {
+      console.log('sending request to update user profile data:', profile.value)
+      const response = await axios.post('http://localhost:3000/profile', profile.value, {
+        headers: { Authorization: `Bearer ${userStore.jwt}` },
+      })
+      console.log('Profile updated successfully:', response.data)
+      snackbarMessage.value = 'данные профиля успешно обновлены'
+      snackbarColor.value = 'teal'
+      snackbar.value = true
+    } catch (error) {
+      console.error('Error on save of user profile data:', error)
+      snackbarMessage.value = 'ошибка при обновлении данных профиля'
+      snackbarColor.value = 'red'
+      snackbar.value = true
+    }
+  }
+}
+
+// ==================== LIFECYCLE ====================
+onMounted(async () => {
+  if (userStore.isLoggedIn) {
+    try {
+      const response = await axios.get('http://localhost:3000/profile', {
+        headers: { Authorization: `Bearer ${userStore.jwt}` },
+      })
+      profile.value = response.data
+    } catch (error) {
+      console.error('Error on load of user profile data:', error)
+    }
+  }
+})
+</script>
+
 <template>
   <v-container fluid>
     <v-row>
@@ -155,9 +259,9 @@
       max-width="550px"
     >
       <ChangePassword
-        :title="$t('passwordChange.resetPassword') + ' ' + userStore.username"
-        :uuid="userStore.userID"
-        :username="userStore.username"
+        :title="$t('passwordChange.resetPassword') + ' ' + username"
+        :uuid="userID"
+        :username="username"
         :mode="PasswordChangeMode.SELF"
         :on-close="closeChangePasswordModal"
       />
@@ -175,111 +279,6 @@
     </v-snackbar>
   </v-container>
 </template>
-
-<script>
-import { useUserStore } from '@/core/state/userstate'; 
-import { computed } from 'vue';
-import axios from 'axios';
-import ChangePassword from '@/core/ui/modals/change-password/ChangePassword.vue';
-import { PasswordChangeMode } from '@/core/ui/modals/change-password/types.change.password'; 
-import { getSessionDurations } from '@/core/services/sessionServices';
-
-export default {
-  name: 'ModuleAccount',
-  components: {
-    ChangePassword,
-  },
-  setup() {
-    const userStore = useUserStore();
-
-    return {
-      username: computed(() => userStore.username),
-      jwt: computed(() => userStore.jwt),
-      isLoggedIn: computed(() => userStore.isLoggedIn),
-      issuedAt: computed(() => {
-        const iat = userStore.issuedAt;
-        return iat ? new Date(iat * 1000).toLocaleString() : 'N/A';
-      }),
-      issuer: computed(() => userStore.issuer || 'N/A'),
-      expiresAt: computed(() => {
-        const exp = userStore.tokenExpires;
-        return exp ? new Date(exp * 1000).toLocaleString() : 'N/A';
-      }),
-    };
-  },
-  data() {
-    return {
-      profile: {
-        last_name: '',
-        first_name: '',
-        middle_name: '',
-        gender: '',
-        phone_number: '',
-        email: '',
-        address: '',
-        company_name: '',
-        position: ''
-      },
-      settings: {
-        workUpdates: false,
-        newsletter: true,
-      },
-      isChangePasswordModalVisible: false,
-      isTechCardExpanded: true,
-      sessionDurations: getSessionDurations(),
-      snackbar: false,
-      snackbarMessage: '',
-      snackbarColor: 'teal'
-    };
-  },
-  async mounted() {
-    const userStore = useUserStore();
-
-    if (userStore.isLoggedIn) {
-      try {
-        const response = await axios.get('http://localhost:3000/profile', {
-          headers: { Authorization: `Bearer ${userStore.jwt}` },
-        });
-        this.profile = response.data;
-      } catch (error) {
-        console.error('Error on load of user profile data:', error);
-      }
-    }
-  },
-  methods: {
-    openChangePasswordModal() {
-      this.isChangePasswordModalVisible = true;
-    },
-    closeChangePasswordModal() {
-      this.isChangePasswordModalVisible = false;
-    },
-    toggleTechCard() {
-      this.isTechCardExpanded = !this.isTechCardExpanded;
-    },
-    async saveProfile() {
-      const userStore = useUserStore();
-
-      if (userStore.isLoggedIn) {
-        try {
-          console.log('sending request to update user profile data:', this.profile);
-          const response = await axios.post('http://localhost:3000/profile', this.profile, {
-            headers: { Authorization: `Bearer ${userStore.jwt}` },
-          });
-          console.log('Profile updated successfully:', response.data);
-          this.snackbarMessage = 'данные профиля успешно обновлены';
-          this.snackbarColor = 'teal';
-          this.snackbar = true;
-        } catch (error) {
-          console.error('Error on save of user profile data:', error);
-          this.snackbarMessage = 'ошибка при обновлении данных профиля';
-          this.snackbarColor = 'red';
-          this.snackbar = true;
-        }
-      }
-    }
-  },
-};
-</script>
 
 <style scoped>
 .v-card-title {
