@@ -152,9 +152,15 @@
     <!-- Modal for changing password -->
     <v-dialog
       v-model="isChangePasswordModalVisible"
-      max-width="500px"
+      max-width="550px"
     >
-      <ModalChangeUserPass @close="closeChangePasswordModal" />
+      <ChangePassword
+        :title="$t('passwordChange.resetPassword') + ' ' + userStore.username"
+        :uuid="userStore.userID"
+        :username="userStore.username"
+        :mode="PasswordChangeMode.SELF"
+        :on-close="closeChangePasswordModal"
+      />
     </v-dialog>
 
     <!-- Snackbar for success message -->
@@ -174,13 +180,14 @@
 import { useUserStore } from '@/core/state/userstate'; 
 import { computed } from 'vue';
 import axios from 'axios';
-import ModalChangeUserPass from './ModalChangeUserPass.vue'; 
+import ChangePassword from '@/core/ui/modals/change-password/ChangePassword.vue';
+import { PasswordChangeMode } from '@/core/ui/modals/change-password/types.change.password'; 
 import { getSessionDurations } from '@/core/services/sessionServices';
 
 export default {
   name: 'ModuleAccount',
   components: {
-    ModalChangeUserPass,
+    ChangePassword,
   },
   setup() {
     const userStore = useUserStore();

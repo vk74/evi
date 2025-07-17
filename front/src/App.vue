@@ -36,7 +36,8 @@ const SubModuleAppSettings = defineAsyncComponent(() => import('./modules/admin/
 
 // Regular component imports
 import ModuleLogin from './modules/account/ModuleLogin.vue';
-import ModalChangeUserPass from './modules/account/ModalChangeUserPass.vue';
+import ChangePassword from './core/ui/modals/change-password/ChangePassword.vue';
+import { PasswordChangeMode } from './core/ui/modals/change-password/types.change.password';
 import LoginDialog from './modules/account/ModuleLogin.vue';
 import ModuleNewUserSelfRegistration from './modules/account/ModuleNewUserSelfRegistration.vue';
 import AppSnackbar from './core/ui/snackbars/AppSnackbar.vue';
@@ -321,9 +322,15 @@ onMounted(() => {
 
     <v-dialog
       v-model="isChangePassModalVisible"
-      max-width="500px"
+      max-width="550px"
     >
-      <ModalChangeUserPass @close="isChangePassModalVisible = false" />
+      <ChangePassword
+        :title="$t('passwordChange.resetPassword') + ' ' + userStore.username"
+        :uuid="userStore.userID"
+        :username="userStore.username"
+        :mode="PasswordChangeMode.SELF"
+        :on-close="() => isChangePassModalVisible = false"
+      />
     </v-dialog>
 
     <!-- Navigation Drawer -->
