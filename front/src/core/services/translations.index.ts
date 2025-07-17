@@ -12,8 +12,8 @@ import corePanelsRu from '@/core/ui/panels/translation.panels.ru.json'
 import corePanelsEn from '@/core/ui/panels/translation.panels.en.json'
 
 // Account module
-import userSelfRegistrationRu from '@/modules/account/translation.user.selfregistration.ru.json'
-import userSelfRegistrationEn from '@/modules/account/translation.user.selfregistration.en.json'
+import userSelfRegistrationRu from '@/modules/account/translation.account.ru.json'
+import userSelfRegistrationEn from '@/modules/account/translation.account.en.json'
 
 // Admin module and sub-modules and functions
 import adminModuleRu from '@/modules/admin/translation.admin.ru.json'

@@ -446,7 +446,7 @@ onMounted(async () => {
         <v-btn
           :loading="isSubmitting"
           :disabled="!isFormValid || !passwordPoliciesReady"
-          color="teal darken-1"
+          color="teal"
           variant="outlined"
           @click="submitForm"
         >

@@ -1,4 +1,26 @@
 {
+  "login": {
+    "title": "вход в приложение",
+    "fields": {
+      "username": {
+        "label": "имя пользователя"
+      },
+      "password": {
+        "label": "пароль"
+      }
+    },
+    "buttons": {
+      "signIn": "ВОЙТИ"
+    },
+    "messages": {
+      "error": "неправильное имя пользователя либо пароль",
+      "success": "успешно"
+    },
+    "registration": {
+      "text": "если у вас нет учетной записи ev2,",
+      "link": "зарегистрируйтесь"
+    }
+  },
   "selfRegistration": {
     "title": "регистрация",
     "fields": {

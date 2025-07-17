@@ -1,4 +1,26 @@
 {
+  "login": {
+    "title": "sign in to application",
+    "fields": {
+      "username": {
+        "label": "username"
+      },
+      "password": {
+        "label": "password"
+      }
+    },
+    "buttons": {
+      "signIn": "SIGN IN"
+    },
+    "messages": {
+      "error": "incorrect username or password",
+      "success": "success"
+    },
+    "registration": {
+      "text": "if you don't have an ev2 account,",
+      "link": "register"
+    }
+  },
   "selfRegistration": {
     "title": "registration",
     "fields": {

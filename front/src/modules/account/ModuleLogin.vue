@@ -16,11 +16,15 @@
 
 <script setup>
 import { ref } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { jwtDecode } from 'jwt-decode'
 import { useUserStore } from '@/core/state/userstate'
 import { useAppStore } from '@/core/state/appstate'
 import { startSessionTimers } from '@/core/services/sessionServices'
 import axios from 'axios'
+
+// ==================== I18N ====================
+const { t } = useI18n()
 
 // ==================== STORES ====================
 const userStore = useUserStore()
@@ -117,47 +121,47 @@ const emit = defineEmits(['close'])
   <div class="pt-3 pl-3"> 
     <v-card max-width="500px">
       <v-card-title class="text-h5">
-        вход в приложение
+        {{ t('login.title') }}
       </v-card-title>
       <v-card-text>
         <v-form>
           <v-text-field
             ref="loginInput"
             v-model="username"
-            label="логин"
+            :label="t('login.fields.username.label')"
             required
           />
           <v-text-field
             v-model="password"
-            label="пароль"
+            :label="t('login.fields.password.label')"
             type="password"
             required
           />
         </v-form>
         <p v-if="showError">
-          неправильное имя пользователя либо пароль
+          {{ t('login.messages.error') }}
         </p>
         <p v-if="showSuccess">
-          успешно
+          {{ t('login.messages.success') }}
         </p>
       </v-card-text>
       <v-card-actions>
         <v-spacer />
         <v-btn
-          color="teal darken-1"
-          text
+          color="teal"
+          variant="outlined"
           @click="login"
         >
-          войти
+          {{ t('login.buttons.signIn') }}
         </v-btn>
       </v-card-actions>
       <div class="divider" />
       <p class="register-text">
-        если у вас нет учетной записи ev2, <a
+        {{ t('login.registration.text') }} <a
           href="#"
           class="register-link"
           @click.prevent="goToRegistration"
-        >зарегистрируйтесь</a>
+        >{{ t('login.registration.link') }}</a>
       </p><br>
     </v-card>
   </div>  
