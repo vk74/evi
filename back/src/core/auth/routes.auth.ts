@@ -10,10 +10,9 @@ import validateJWT from '../guards/auth.validate.jwt';
 import checkAccountPassword from '../../guards/auth.check.password';
 import checkAccountStatus from '../../guards/auth.check.status';
 import issueToken from '../../middleware/auth.issue.token';
-import registerUser from '../../middleware/auth.register.user';
-import changeUserPassword from '../../middleware/users.change.password';
-import getUserProfile from '../../middleware/users.get.profile';
-import updateUserProfile from '../../middleware/users.update.profile';
+import registerUser from '../../modules/account/service.register.user';
+import getUserProfile from '../../modules/account/service.get.profile';
+import updateUserProfile from '../../modules/account/service.update.profile';
 import fetchPublicPasswordPoliciesController from './controller.fetch.public.password.policies';
 
 const router: Router = express.Router();
@@ -24,7 +23,6 @@ router.get('/api/public/password-policies', fetchPublicPasswordPoliciesControlle
 // User account routes
 router.post('/register', registerUser);
 router.post('/login', checkAccountPassword, checkAccountStatus, issueToken);
-router.post('/changeuserpass', changeUserPassword);
 router.get('/profile', validateJWT, getUserProfile);
 router.post('/profile', validateJWT, updateUserProfile);
 

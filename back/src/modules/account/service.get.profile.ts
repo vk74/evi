@@ -1,17 +1,16 @@
 /**
- * users.get.profile.ts - version 1.0.1
- * BACKEND middleware for retrieving user profile data
+ * service.get.profile.ts - version 1.0.02
+ * BACKEND service for retrieving user profile data
  * 
- * This file is a candidate for deletion after migration of user profile module to .ts
- * 
- * Retrieves user profile data from the database based on the username in the request
- * Returns profile data to the client or appropriate error responses
+ * Retrieves user profile information from the database
+ * Validates user authentication and returns profile data or appropriate error messages
+ * File: service.get.profile.ts
  */
 
 import { Request, Response } from 'express';
 import { Pool, QueryResult } from 'pg';
-import { pool as pgPool } from '../core/db/maindb';
-import { userQueries } from './queries.users';
+import { pool as pgPool } from '../../core/db/maindb';
+import { userQueries } from '../../middleware/queries.users';
 
 // Type assertion for pool
 const pool = pgPool as Pool;
@@ -86,4 +85,4 @@ const getUserProfile = async (req: EnhancedRequest, res: Response): Promise<void
 };
 
 // Export for ES modules only
-export default getUserProfile;
+export default getUserProfile; 

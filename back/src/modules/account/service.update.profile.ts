@@ -1,17 +1,16 @@
 /**
- * users.update.profile.ts - version 1.0.1
- * BACKEND middleware for updating user profile data
- * 
- * This file is a candidate for deletion after migration of user profile module to .ts
+ * service.update.profile.ts - version 1.0.02
+ * BACKEND service for updating user profile data
  * 
  * Processes requests to update user profile information in the database
  * Validates input data and returns updated profile or appropriate error messages
+ * File: service.update.profile.ts
  */
 
 import { Request, Response } from 'express';
 import { Pool, QueryResult } from 'pg';
-import { pool as pgPool } from '../core/db/maindb';
-import { userQueries } from './queries.users';
+import { pool as pgPool } from '../../core/db/maindb';
+import { userQueries } from '../../middleware/queries.users';
 
 // Type assertion for pool
 const pool = pgPool as Pool;
@@ -136,7 +135,7 @@ const updateUserProfile = async (req: EnhancedRequest, res: Response): Promise<v
            details: error instanceof Error ? error.message : String(error)
        });
    }
-}
+};
 
-// Export for ES modules
-export default updateUserProfile;
+// Export for ES modules only
+export default updateUserProfile; 

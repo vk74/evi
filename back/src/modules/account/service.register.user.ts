@@ -1,6 +1,6 @@
 /**
- * auth.register.user.ts - version 1.0.1
- * BACKEND middleware for user registration
+ * service.register.user.ts - version 1.0.02
+ * BACKEND service for user registration
  * 
  * Processes user registration requests:
  * - Validates required fields
@@ -8,13 +8,14 @@
  * - Hashes password
  * - Stores user data in database (transaction)
  * - Returns success/error response
+ * File: service.register.user.ts
  */
 
 import { Request, Response } from 'express';
 import bcrypt from 'bcrypt';
 import { Pool, QueryResult } from 'pg';
-import { pool as pgPool } from '../core/db/maindb';
-import { userQueries } from './queries.users';
+import { pool as pgPool } from '../../core/db/maindb';
+import { userQueries } from '../../middleware/queries.users';
 
 // Type assertion for pool
 const pool = pgPool as Pool;
@@ -41,7 +42,7 @@ interface EnhancedRequest extends Request {
  * @param res Express response
  * @returns Promise<void>
  */
-const register = async (req: EnhancedRequest, res: Response): Promise<void> => {
+const registerUser = async (req: EnhancedRequest, res: Response): Promise<void> => {
     try {
         const {
             username,
@@ -153,4 +154,4 @@ const register = async (req: EnhancedRequest, res: Response): Promise<void> => {
 };
 
 // Export for ES modules only
-export default register;
+export default registerUser; 
