@@ -11,7 +11,7 @@
   - User state management with Pinia stores
   - Session timer initialization
   - Navigation to registration module
-  - Error and success message handling
+  - Error and success message handling with toast notifications
 -->
 
 <script setup>
@@ -20,6 +20,7 @@ import { useI18n } from 'vue-i18n'
 import { jwtDecode } from 'jwt-decode'
 import { useUserStore } from '@/core/state/userstate'
 import { useAppStore } from '@/core/state/appstate'
+import { useUiStore } from '@/core/state/uistate'
 import { startSessionTimers } from '@/core/services/sessionServices'
 import axios from 'axios'
 
@@ -29,6 +30,7 @@ const { t } = useI18n()
 // ==================== STORES ====================
 const userStore = useUserStore()
 const appStore = useAppStore()
+const uiStore = useUiStore()
 
 // ==================== REFS & STATE ====================
 /**
@@ -36,8 +38,6 @@ const appStore = useAppStore()
  */
 const username = ref('')
 const password = ref('')
-const showError = ref(false)
-const showSuccess = ref(false)
 
 // ==================== METHODS ====================
 /**
@@ -46,8 +46,6 @@ const showSuccess = ref(false)
  */
 const login = async () => {
   console.log("Login:", username.value, "Pass:", password.value)
-  showError.value = false // Reset error on each new login attempt
-  showSuccess.value = false // Reset success message on each new attempt
   
   try {
     const response = await axios.post('http://localhost:3000/login', {
@@ -78,20 +76,35 @@ const login = async () => {
       console.log('User logged in successfully')
       startSessionTimers()
 
-      showSuccess.value = true
-      showError.value = false
-      
       setTimeout(() => {
         closeDialog()
       }, 1000)
       
       appStore.setActiveModule('Catalog')
     } else {
-      showError.value = true // Show error if validation fails
+      // Handle validation failure from backend
+      uiStore.showErrorSnackbar(t('login.errors.invalidCredentials'))
     }
   } catch (error) {
-    showError.value = true // Show error if request fails
     console.error('Error sending request:', error)
+    
+    // Handle different types of errors
+    if (error.response) {
+      // Server responded with error status
+      if (error.response.status >= 500) {
+        uiStore.showErrorSnackbar(t('login.errors.serverError'))
+      } else if (error.response.status === 401) {
+        uiStore.showErrorSnackbar(t('login.errors.invalidCredentials'))
+      } else {
+        uiStore.showErrorSnackbar(t('login.errors.unknownError'))
+      }
+    } else if (error.request) {
+      // Network error - no response received
+      uiStore.showErrorSnackbar(t('login.errors.networkError'))
+    } else {
+      // Other errors
+      uiStore.showErrorSnackbar(t('login.errors.unknownError'))
+    }
   }
 }
 
@@ -138,12 +151,6 @@ const emit = defineEmits(['close'])
             required
           />
         </v-form>
-        <p v-if="showError">
-          {{ t('login.messages.error') }}
-        </p>
-        <p v-if="showSuccess">
-          {{ t('login.messages.success') }}
-        </p>
       </v-card-text>
       <v-card-actions>
         <v-spacer />

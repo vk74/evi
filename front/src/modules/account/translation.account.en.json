@@ -12,9 +12,11 @@
     "buttons": {
       "signIn": "SIGN IN"
     },
-    "messages": {
-      "error": "incorrect username or password",
-      "success": "success"
+    "errors": {
+      "invalidCredentials": "incorrect username or password",
+      "serverError": "server error during sign in",
+      "networkError": "network error when connecting to server",
+      "unknownError": "unknown error during sign in"
     },
     "registration": {
       "text": "if you don't have an ev2 account,",
