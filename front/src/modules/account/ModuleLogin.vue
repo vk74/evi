@@ -17,20 +17,14 @@
 <script setup>
 import { ref } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { jwtDecode } from 'jwt-decode'
-import { useUserStore } from '@/core/state/userstate'
 import { useAppStore } from '@/core/state/appstate'
-import { useUiStore } from '@/core/state/uistate'
-import { startSessionTimers } from '@/core/services/sessionServices'
-import axios from 'axios'
+import { loginService } from './service.login'
 
 // ==================== I18N ====================
 const { t } = useI18n()
 
 // ==================== STORES ====================
-const userStore = useUserStore()
 const appStore = useAppStore()
-const uiStore = useUiStore()
 
 // ==================== REFS & STATE ====================
 /**
@@ -47,64 +41,17 @@ const password = ref('')
 const login = async () => {
   console.log("Login:", username.value, "Pass:", password.value)
   
-  try {
-    const response = await axios.post('http://localhost:3000/login', {
-      username: username.value,
-      password: password.value
-    })
+  const success = await loginService(username.value, password.value)
+  
+  if (success) {
+    console.log('User logged in successfully')
     
-    console.log('reply from backend server:', response)
+    // Close dialog and navigate to catalog
+    setTimeout(() => {
+      closeDialog()
+    }, 1000)
     
-    if (response.data.success) {
-      localStorage.setItem('userToken', response.data.token) // Save token to localStorage for persistent authentication
-      const decoded = jwtDecode(response.data.token) // Decode JWT to extract payload data
-      console.log('decoded JWT:', decoded)
-      
-      // Update Pinia store with token payload data
-      userStore.setUsername(decoded.sub) // Set username
-      userStore.setUserID(decoded.uid) // Set user UUID
-      userStore.setLoggedIn(true) // Set authentication flag to true
-      userStore.setJwt(response.data.token) // Save the token itself
-      
-      // Update remaining fields based on decoded token
-      userStore.setIssuer(decoded.iss)
-      userStore.setAudience(decoded.aud)
-      userStore.setIssuedAt(decoded.iat)
-      userStore.setJwtId(decoded.jti)
-      userStore.setTokenExpires(decoded.exp) // Token expiration time
-      
-      console.log('User logged in successfully')
-      startSessionTimers()
-
-      setTimeout(() => {
-        closeDialog()
-      }, 1000)
-      
-      appStore.setActiveModule('Catalog')
-    } else {
-      // Handle validation failure from backend
-      uiStore.showErrorSnackbar(t('login.errors.invalidCredentials'))
-    }
-  } catch (error) {
-    console.error('Error sending request:', error)
-    
-    // Handle different types of errors
-    if (error.response) {
-      // Server responded with error status
-      if (error.response.status >= 500) {
-        uiStore.showErrorSnackbar(t('login.errors.serverError'))
-      } else if (error.response.status === 401) {
-        uiStore.showErrorSnackbar(t('login.errors.invalidCredentials'))
-      } else {
-        uiStore.showErrorSnackbar(t('login.errors.unknownError'))
-      }
-    } else if (error.request) {
-      // Network error - no response received
-      uiStore.showErrorSnackbar(t('login.errors.networkError'))
-    } else {
-      // Other errors
-      uiStore.showErrorSnackbar(t('login.errors.unknownError'))
-    }
+    appStore.setActiveModule('Catalog')
   }
 }
 
