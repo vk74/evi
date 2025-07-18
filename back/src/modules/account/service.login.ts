@@ -1,0 +1,222 @@
+/**
+ * @file service.login.ts
+ * Version: 1.0.0
+ * Service for user authentication and token issuance.
+ * Backend file that handles user login, validates credentials, and issues access/refresh token pairs.
+ */
+
+import bcrypt from 'bcrypt';
+import jwt from 'jsonwebtoken';
+import { v4 as uuidv4 } from 'uuid';
+import crypto from 'crypto';
+import { pool } from '@/core/db/maindb';
+import { tokensCache } from './cache.tokens';
+import { LoginRequest, LoginResponse, JwtPayload, TokenGenerationResult } from './types.auth';
+import { insertRefreshToken } from './queries.auth';
+
+// Token configuration
+const TOKEN_CONFIG = {
+  ACCESS_TOKEN_EXPIRES_IN: '30m',
+  REFRESH_TOKEN_EXPIRES_IN: '7d',
+  REFRESH_TOKEN_PREFIX: 'token-'
+};
+
+// Brute force protection
+const BRUTE_FORCE_CONFIG = {
+  MAX_ATTEMPTS_PER_IP: 5,
+  WINDOW_MINUTES: 15
+};
+
+// In-memory storage for brute force protection (in production, use Redis)
+const failedAttempts = new Map<string, { count: number; resetTime: number }>();
+
+/**
+ * Checks if IP address is blocked due to brute force attempts
+ */
+function isIpBlocked(ip: string): boolean {
+  const attempt = failedAttempts.get(ip);
+  if (!attempt) return false;
+  
+  if (Date.now() > attempt.resetTime) {
+    failedAttempts.delete(ip);
+    return false;
+  }
+  
+  return attempt.count >= BRUTE_FORCE_CONFIG.MAX_ATTEMPTS_PER_IP;
+}
+
+/**
+ * Records a failed login attempt
+ */
+function recordFailedAttempt(ip: string): void {
+  const now = Date.now();
+  const resetTime = now + (BRUTE_FORCE_CONFIG.WINDOW_MINUTES * 60 * 1000);
+  
+  const attempt = failedAttempts.get(ip);
+  if (attempt) {
+    attempt.count++;
+    attempt.resetTime = resetTime;
+  } else {
+    failedAttempts.set(ip, { count: 1, resetTime });
+  }
+}
+
+/**
+ * Generates a new refresh token
+ */
+function generateRefreshToken(): string {
+  return TOKEN_CONFIG.REFRESH_TOKEN_PREFIX + uuidv4();
+}
+
+/**
+ * Hashes a refresh token for storage
+ */
+function hashRefreshToken(token: string): string {
+  return crypto.createHash('sha256').update(token).digest('hex');
+}
+
+/**
+ * Generates access and refresh token pair
+ */
+function generateTokenPair(username: string, userUuid: string): TokenGenerationResult {
+  // Generate access token
+  const accessTokenExpires = new Date(Date.now() + 30 * 60 * 1000); // 30 minutes
+  const accessTokenPayload: JwtPayload = {
+    iss: 'ev2 app',
+    sub: username,
+    aud: 'ev2 app registered users',
+    jti: uuidv4(),
+    uid: userUuid,
+    iat: Math.floor(Date.now() / 1000),
+    exp: Math.floor(accessTokenExpires.getTime() / 1000)
+  };
+  
+  const accessToken = jwt.sign(accessTokenPayload, global.privateKey, {
+    algorithm: 'RS256',
+    expiresIn: TOKEN_CONFIG.ACCESS_TOKEN_EXPIRES_IN
+  });
+  
+  // Generate refresh token
+  const refreshToken = generateRefreshToken();
+  const refreshTokenExpires = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days
+  
+  return {
+    accessToken,
+    refreshToken,
+    accessTokenExpires,
+    refreshTokenExpires
+  };
+}
+
+/**
+ * Validates user credentials against database
+ */
+async function validateCredentials(username: string, password: string): Promise<{ isValid: boolean; userUuid?: string }> {
+  try {
+    const result = await pool.query(
+      'SELECT user_id, hashed_password FROM app.users WHERE username = $1 AND account_status = $2',
+      [username, 'active']
+    );
+    
+    if (result.rows.length === 0) {
+      return { isValid: false };
+    }
+    
+    const { user_id, hashed_password } = result.rows[0];
+    const isValid = await bcrypt.compare(password, hashed_password);
+    
+    return {
+      isValid,
+      userUuid: isValid ? user_id : undefined
+    };
+  } catch (error) {
+    console.error('[Login Service] Database error during credential validation:', error);
+    throw new Error('Database error during authentication');
+  }
+}
+
+/**
+ * Stores refresh token in database and cache
+ */
+async function storeRefreshToken(userUuid: string, tokenHash: string, expiresAt: Date): Promise<void> {
+  const client = await pool.connect();
+  
+  try {
+    await client.query('BEGIN');
+    
+    // Store in database
+    await client.query(insertRefreshToken.text, [userUuid, tokenHash, expiresAt]);
+    
+    // Store in cache
+    tokensCache.set(
+      { tokenHash },
+      {
+        userUuid,
+        tokenHash,
+        createdAt: new Date(),
+        expiresAt,
+        revoked: false
+      }
+    );
+    
+    await client.query('COMMIT');
+    console.log('[Login Service] Refresh token stored successfully');
+  } catch (error) {
+    await client.query('ROLLBACK');
+    console.error('[Login Service] Error storing refresh token:', error);
+    throw new Error('Failed to store refresh token');
+  } finally {
+    client.release();
+  }
+}
+
+/**
+ * Main login service function
+ */
+export async function loginService(
+  loginData: LoginRequest,
+  clientIp: string
+): Promise<LoginResponse> {
+  console.log('[Login Service] Processing login request for user:', loginData.username);
+  
+  // Check brute force protection
+  if (isIpBlocked(clientIp)) {
+    console.log('[Login Service] IP blocked due to brute force attempts:', clientIp);
+    throw new Error('Too many failed login attempts. Please try again later.');
+  }
+  
+  // Validate input
+  if (!loginData.username || !loginData.password) {
+    throw new Error('Username and password are required');
+  }
+  
+  // Validate credentials
+  const { isValid, userUuid } = await validateCredentials(loginData.username, loginData.password);
+  
+  if (!isValid) {
+    recordFailedAttempt(clientIp);
+    console.log('[Login Service] Invalid credentials for user:', loginData.username);
+    throw new Error('Invalid credentials');
+  }
+  
+  // Generate token pair
+  const tokenPair = generateTokenPair(loginData.username, userUuid!);
+  
+  // Hash refresh token for storage
+  const refreshTokenHash = hashRefreshToken(tokenPair.refreshToken);
+  
+  // Store refresh token in database and cache
+  await storeRefreshToken(userUuid!, refreshTokenHash, tokenPair.refreshTokenExpires);
+  
+  console.log('[Login Service] Login successful for user:', loginData.username);
+  
+  return {
+    success: true,
+    accessToken: tokenPair.accessToken,
+    refreshToken: tokenPair.refreshToken,
+    user: {
+      username: loginData.username,
+      uuid: userUuid!
+    }
+  };
+} 
