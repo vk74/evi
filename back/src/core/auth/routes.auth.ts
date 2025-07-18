@@ -15,10 +15,10 @@ import getUserProfile from '../../modules/account/service.get.profile';
 import updateUserProfile from '../../modules/account/service.update.profile';
 import fetchPublicPasswordPoliciesController from './controller.fetch.public.password.policies';
 
-// TODO: Import new controllers when they are created
-// import controllerLogin from './controller.login';
-// import controllerRefreshTokens from './controller.refresh.tokens';
-// import controllerLogout from './controller.logout';
+// Import new controllers
+import { loginController } from '../../modules/account/controller.login';
+import { refreshTokensController } from '../../modules/account/controller.refresh.tokens';
+import { logoutController } from '../../modules/account/controller.logout';
 // import serviceChangePassword from '../../modules/account/service.change.password';
 
 const router: Router = express.Router();
@@ -27,20 +27,11 @@ const router: Router = express.Router();
 router.get('/api/public/password-policies', fetchPublicPasswordPoliciesController);
 
 // New authentication routes
-router.post('/api/auth/login', (req, res) => {
-    // TODO: Replace with controllerLogin when created
-    res.status(501).json({ error: 'Login controller not implemented yet' });
-});
+router.post('/api/auth/login', loginController);
 
-router.post('/api/auth/refresh', (req, res) => {
-    // TODO: Replace with controllerRefreshTokens when created
-    res.status(501).json({ error: 'Refresh tokens controller not implemented yet' });
-});
+router.post('/api/auth/refresh', refreshTokensController);
 
-router.post('/api/auth/logout', (req, res) => {
-    // TODO: Replace with controllerLogout when created
-    res.status(501).json({ error: 'Logout controller not implemented yet' });
-});
+router.post('/api/auth/logout', validateJWT, logoutController);
 
 // Existing routes (updated imports)
 router.post('/api/auth/register', registerUser);
