@@ -10,7 +10,6 @@ import jwt from 'jsonwebtoken';
 import { v4 as uuidv4 } from 'uuid';
 import crypto from 'crypto';
 import { pool } from '@/core/db/maindb';
-import { tokensCache } from './cache.tokens';
 import { LoginRequest, LoginResponse, JwtPayload, TokenGenerationResult } from './types.auth';
 import { insertRefreshToken } from './queries.auth';
 
@@ -136,37 +135,15 @@ async function validateCredentials(username: string, password: string): Promise<
 }
 
 /**
- * Stores refresh token in database and cache
+ * Stores refresh token in database
  */
 async function storeRefreshToken(userUuid: string, tokenHash: string, expiresAt: Date): Promise<void> {
-  const client = await pool.connect();
-  
   try {
-    await client.query('BEGIN');
-    
-    // Store in database
-    await client.query(insertRefreshToken.text, [userUuid, tokenHash, expiresAt]);
-    
-    // Store in cache
-    tokensCache.set(
-      { tokenHash },
-      {
-        userUuid,
-        tokenHash,
-        createdAt: new Date(),
-        expiresAt,
-        revoked: false
-      }
-    );
-    
-    await client.query('COMMIT');
+    await pool.query(insertRefreshToken.text, [userUuid, tokenHash, expiresAt]);
     console.log('[Login Service] Refresh token stored successfully');
   } catch (error) {
-    await client.query('ROLLBACK');
     console.error('[Login Service] Error storing refresh token:', error);
     throw new Error('Failed to store refresh token');
-  } finally {
-    client.release();
   }
 }
 
@@ -205,7 +182,7 @@ export async function loginService(
   // Hash refresh token for storage
   const refreshTokenHash = hashRefreshToken(tokenPair.refreshToken);
   
-  // Store refresh token in database and cache
+  // Store refresh token in database
   await storeRefreshToken(userUuid!, refreshTokenHash, tokenPair.refreshTokenExpires);
   
   console.log('[Login Service] Login successful for user:', loginData.username);

@@ -137,19 +137,4 @@ export const updateTokenExpiration = {
     RETURNING id, user_uuid, token_hash, created_at, expires_at, revoked
   `,
   values: ['tokenHash', 'newExpiresAt']
-};
-
-// ==================== BRUTE FORCE PROTECTION QUERIES ====================
-
-/**
- * Count failed login attempts for IP address (if implementing IP-based protection)
- * Note: This would require additional table or session storage
- */
-export const countFailedAttemptsForIP = {
-  text: `
-    -- Placeholder for IP-based brute force protection
-    -- Would require additional table structure
-    SELECT 0 as attempt_count
-  `,
-  values: ['ipAddress']
 }; 

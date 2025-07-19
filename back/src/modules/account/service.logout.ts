@@ -7,7 +7,6 @@
 
 import crypto from 'crypto';
 import { pool } from '@/core/db/maindb';
-import { tokensCache } from './cache.tokens';
 import { LogoutRequest, LogoutResponse, TokenValidationResult } from './types.auth';
 import { findTokenByHashIncludeRevoked, revokeTokenByHash } from './queries.auth';
 
@@ -24,18 +23,6 @@ function hashRefreshToken(token: string): string {
 async function validateRefreshTokenForLogout(refreshToken: string): Promise<TokenValidationResult> {
   const tokenHash = hashRefreshToken(refreshToken);
   
-  // First, try to get from cache
-  const cachedToken = tokensCache.get({ tokenHash });
-  
-  if (cachedToken) {
-    // Token found in cache
-    return {
-      isValid: true,
-      userUuid: cachedToken.userUuid
-    };
-  }
-  
-  // If not in cache, check database (including revoked tokens)
   try {
     const result = await pool.query(findTokenByHashIncludeRevoked.text, [tokenHash]);
     
@@ -71,28 +58,15 @@ async function validateRefreshTokenForLogout(refreshToken: string): Promise<Toke
 }
 
 /**
- * Revokes refresh token in database and cache
+ * Revokes refresh token in database
  */
 async function revokeRefreshToken(tokenHash: string): Promise<void> {
-  const client = await pool.connect();
-  
   try {
-    await client.query('BEGIN');
-    
-    // Revoke token in database
-    await client.query(revokeTokenByHash.text, [tokenHash]);
-    
-    // Remove from cache
-    tokensCache.remove({ tokenHash });
-    
-    await client.query('COMMIT');
+    await pool.query(revokeTokenByHash.text, [tokenHash]);
     console.log('[Logout Service] Refresh token revoked successfully');
   } catch (error) {
-    await client.query('ROLLBACK');
     console.error('[Logout Service] Error revoking refresh token:', error);
     throw new Error('Failed to revoke refresh token');
-  } finally {
-    client.release();
   }
 }
 

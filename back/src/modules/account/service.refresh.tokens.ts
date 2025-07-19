@@ -9,7 +9,6 @@ import jwt from 'jsonwebtoken';
 import { v4 as uuidv4 } from 'uuid';
 import crypto from 'crypto';
 import { pool } from '@/core/db/maindb';
-import { tokensCache } from './cache.tokens';
 import { RefreshTokenRequest, RefreshTokenResponse, JwtPayload, TokenGenerationResult, TokenValidationResult } from './types.auth';
 import { findTokenByHash, revokeTokenByHash, insertRefreshToken } from './queries.auth';
 
@@ -68,23 +67,11 @@ function generateTokenPair(username: string, userUuid: string): TokenGenerationR
 }
 
 /**
- * Validates refresh token from cache or database
+ * Validates refresh token from database
  */
 async function validateRefreshToken(refreshToken: string): Promise<TokenValidationResult> {
   const tokenHash = hashRefreshToken(refreshToken);
   
-  // First, try to get from cache
-  const cachedToken = tokensCache.get({ tokenHash });
-  
-  if (cachedToken) {
-    // Token found in cache and is valid
-    return {
-      isValid: true,
-      userUuid: cachedToken.userUuid
-    };
-  }
-  
-  // If not in cache, check database
   try {
     const result = await pool.query(findTokenByHash.text, [tokenHash]);
     
@@ -113,18 +100,6 @@ async function validateRefreshToken(refreshToken: string): Promise<TokenValidati
       };
     }
     
-    // Add to cache for future requests
-    tokensCache.set(
-      { tokenHash },
-      {
-        userUuid: tokenData.user_uuid,
-        tokenHash,
-        createdAt: tokenData.created_at,
-        expiresAt: tokenData.expires_at,
-        revoked: tokenData.revoked
-      }
-    );
-    
     return {
       isValid: true,
       userUuid: tokenData.user_uuid
@@ -152,19 +127,6 @@ async function rotateRefreshToken(oldTokenHash: string, userUuid: string, newTok
     
     // Store new token
     await client.query(insertRefreshToken.text, [userUuid, newTokenHash, expiresAt]);
-    
-    // Update cache
-    tokensCache.remove({ tokenHash: oldTokenHash });
-    tokensCache.set(
-      { tokenHash: newTokenHash },
-      {
-        userUuid,
-        tokenHash: newTokenHash,
-        createdAt: new Date(),
-        expiresAt,
-        revoked: false
-      }
-    );
     
     await client.query('COMMIT');
     console.log('[Refresh Service] Token rotation completed successfully');
