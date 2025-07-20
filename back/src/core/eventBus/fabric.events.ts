@@ -23,6 +23,26 @@ import { EVENT_TEMPLATE_NOT_FOUND } from './reference/errors.reference.events';
 import getRequestorUuidFromReq from '../helpers/get.requestor.uuid.from.req';
 import os from 'os';
 
+// Public routes that don't require user authentication
+// These routes should not attempt to extract user UUID from request
+const PUBLIC_ROUTES = [
+  '/api/auth/login',
+  '/api/public/password-policies'
+];
+
+/**
+ * Checks if the current request path is a public route
+ * @param req Express request object
+ * @returns boolean indicating if the route is public
+ */
+function isPublicRoute(req: any): boolean {
+  if (!req || !req.path) {
+    return false;
+  }
+  
+  return PUBLIC_ROUTES.includes(req.path);
+}
+
 /**
  * Input parameters for creating an event
  */
@@ -254,10 +274,12 @@ export const enrichWithPayload = (event: BaseEvent, payload?: unknown): BaseEven
  */
 export const enrichWithRequestorInfo = (event: BaseEvent, req?: any): BaseEvent => {
   if (req) {
-    // Extract requestorId using helper
-    const requestorId = getRequestorUuidFromReq(req);
-    if (requestorId) {
-      event.requestorId = requestorId;
+    // Only extract requestorId for non-public routes
+    if (!isPublicRoute(req)) {
+      const requestorId = getRequestorUuidFromReq(req);
+      if (requestorId) {
+        event.requestorId = requestorId;
+      }
     }
     
     // Extract IP address if available

@@ -91,8 +91,7 @@ function generateTokenPair(username: string, userUuid: string): TokenGenerationR
   };
   
   const accessToken = jwt.sign(accessTokenPayload, global.privateKey, {
-    algorithm: 'RS256',
-    expiresIn: TOKEN_CONFIG.ACCESS_TOKEN_EXPIRES_IN
+    algorithm: 'RS256'
   });
   
   // Generate refresh token
@@ -112,17 +111,25 @@ function generateTokenPair(username: string, userUuid: string): TokenGenerationR
  */
 async function validateCredentials(username: string, password: string): Promise<{ isValid: boolean; userUuid?: string }> {
   try {
+    console.log('[Login Service] Attempting to validate credentials for user:', username);
+    
     const result = await pool.query(
       'SELECT user_id, hashed_password FROM app.users WHERE username = $1 AND account_status = $2',
       [username, 'active']
     );
     
+    console.log('[Login Service] Database query completed, rows found:', result.rows.length);
+    
     if (result.rows.length === 0) {
+      console.log('[Login Service] User not found in database');
       return { isValid: false };
     }
     
     const { user_id, hashed_password } = result.rows[0];
+    console.log('[Login Service] User found, comparing passwords...');
+    
     const isValid = await bcrypt.compare(password, hashed_password);
+    console.log('[Login Service] Password comparison result:', isValid);
     
     return {
       isValid,
@@ -139,6 +146,7 @@ async function validateCredentials(username: string, password: string): Promise<
  */
 async function storeRefreshToken(userUuid: string, tokenHash: string, expiresAt: Date): Promise<void> {
   try {
+    console.log('[Login Service] Attempting to store refresh token for user:', userUuid);
     await pool.query(insertRefreshToken.text, [userUuid, tokenHash, expiresAt]);
     console.log('[Login Service] Refresh token stored successfully');
   } catch (error) {
@@ -156,44 +164,59 @@ export async function loginService(
 ): Promise<LoginResponse> {
   console.log('[Login Service] Processing login request for user:', loginData.username);
   
-  // Check brute force protection
-  if (isIpBlocked(clientIp)) {
-    console.log('[Login Service] IP blocked due to brute force attempts:', clientIp);
-    throw new Error('Too many failed login attempts. Please try again later.');
-  }
-  
-  // Validate input
-  if (!loginData.username || !loginData.password) {
-    throw new Error('Username and password are required');
-  }
-  
-  // Validate credentials
-  const { isValid, userUuid } = await validateCredentials(loginData.username, loginData.password);
-  
-  if (!isValid) {
-    recordFailedAttempt(clientIp);
-    console.log('[Login Service] Invalid credentials for user:', loginData.username);
-    throw new Error('Invalid credentials');
-  }
-  
-  // Generate token pair
-  const tokenPair = generateTokenPair(loginData.username, userUuid!);
-  
-  // Hash refresh token for storage
-  const refreshTokenHash = hashRefreshToken(tokenPair.refreshToken);
-  
-  // Store refresh token in database
-  await storeRefreshToken(userUuid!, refreshTokenHash, tokenPair.refreshTokenExpires);
-  
-  console.log('[Login Service] Login successful for user:', loginData.username);
-  
-  return {
-    success: true,
-    accessToken: tokenPair.accessToken,
-    refreshToken: tokenPair.refreshToken,
-    user: {
-      username: loginData.username,
-      uuid: userUuid!
+  try {
+    // Check brute force protection
+    if (isIpBlocked(clientIp)) {
+      console.log('[Login Service] IP blocked due to brute force attempts:', clientIp);
+      throw new Error('Too many failed login attempts. Please try again later.');
     }
-  };
+    
+    console.log('[Login Service] Brute force check passed');
+    
+    // Validate input
+    if (!loginData.username || !loginData.password) {
+      throw new Error('Username and password are required');
+    }
+    
+    console.log('[Login Service] Input validation passed');
+    
+    // Validate credentials
+    console.log('[Login Service] Starting credential validation...');
+    const { isValid, userUuid } = await validateCredentials(loginData.username, loginData.password);
+    
+    if (!isValid) {
+      recordFailedAttempt(clientIp);
+      console.log('[Login Service] Invalid credentials for user:', loginData.username);
+      throw new Error('Invalid credentials');
+    }
+    
+    console.log('[Login Service] Credentials validated successfully');
+    
+    // Generate token pair
+    console.log('[Login Service] Generating token pair...');
+    const tokenPair = generateTokenPair(loginData.username, userUuid!);
+    
+    // Hash refresh token for storage
+    console.log('[Login Service] Hashing refresh token...');
+    const refreshTokenHash = hashRefreshToken(tokenPair.refreshToken);
+    
+    // Store refresh token in database
+    console.log('[Login Service] Storing refresh token in database...');
+    await storeRefreshToken(userUuid!, refreshTokenHash, tokenPair.refreshTokenExpires);
+    
+    console.log('[Login Service] Login successful for user:', loginData.username);
+    
+    return {
+      success: true,
+      accessToken: tokenPair.accessToken,
+      refreshToken: tokenPair.refreshToken,
+      user: {
+        username: loginData.username,
+        uuid: userUuid!
+      }
+    };
+  } catch (error) {
+    console.error('[Login Service] Error in loginService:', error);
+    throw error;
+  }
 } 
