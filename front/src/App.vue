@@ -18,6 +18,7 @@ import { useUiStore } from './core/state/uistate';
 import { useAppStore } from './core/state/appstate';
 import { useI18n } from 'vue-i18n';
 import { startSessionTimers } from '@/core/services/sessionServices';
+import { logoutService } from '@/modules/account/service.logout';
 
 // Async component imports
 const ModuleCatalog = defineAsyncComponent(() => import('./modules/catalog/ModuleCatalog.vue'));
@@ -138,14 +139,29 @@ const setActiveAdminSection = (section) => {
   setActiveModule('Admin');
 };
 
-const logout = () => {
+const logout = async () => {
   // Close menus before logout
   safeCloseMenus();
   
   // Small delay to ensure menus are closed
-  setTimeout(() => {
-    userStore.userLogoff();
-    appStore.setActiveModule('Login');
+  setTimeout(async () => {
+    try {
+      // Use new logout service instead of old userLogoff
+      const success = await logoutService();
+      
+      if (success) {
+        console.log('[App] Logout completed successfully');
+        appStore.setActiveModule('Login');
+      } else {
+        console.error('[App] Logout failed');
+        // Even if logout fails, redirect to login
+        appStore.setActiveModule('Login');
+      }
+    } catch (error) {
+      console.error('[App] Logout error:', error);
+      // Even if logout fails, redirect to login
+      appStore.setActiveModule('Login');
+    }
   }, 50);
 };
 

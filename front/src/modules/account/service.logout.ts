@@ -1,6 +1,6 @@
 /**
  * @file service.logout.ts
- * Version: 1.0.0
+ * Version: 1.1.0
  * Service for user logout and session cleanup.
  * Frontend file that handles logout requests, clears tokens, and resets user session.
  */
@@ -20,18 +20,27 @@ const LOGOUT_ENDPOINT = '/api/auth/logout'
  * Clears all authentication tokens from localStorage
  */
 function clearTokens(): void {
-  localStorage.removeItem(STORAGE_KEYS.ACCESS_TOKEN)
-  localStorage.removeItem(STORAGE_KEYS.REFRESH_TOKEN)
-  console.log('[Logout Service] All tokens cleared from localStorage')
+  try {
+    localStorage.removeItem(STORAGE_KEYS.ACCESS_TOKEN)
+    localStorage.removeItem(STORAGE_KEYS.REFRESH_TOKEN)
+    localStorage.removeItem('userToken') // Legacy token key
+    console.log('[Logout Service] All tokens cleared from localStorage')
+  } catch (error) {
+    console.error('[Logout Service] Error clearing tokens from localStorage:', error)
+  }
 }
 
 /**
  * Resets user store to initial state
  */
 function resetUserStore(): void {
-  const userAuthStore = useUserAuthStore()
-  userAuthStore.clearUser()
-  console.log('[Logout Service] User store reset to initial state')
+  try {
+    const userAuthStore = useUserAuthStore()
+    userAuthStore.clearUser()
+    console.log('[Logout Service] User store reset to initial state')
+  } catch (error) {
+    console.error('[Logout Service] Error resetting user store:', error)
+  }
 }
 
 /**
@@ -46,6 +55,7 @@ async function sendLogoutRequest(): Promise<void> {
   }
   
   try {
+    console.log('[Logout Service] Sending logout request to backend...')
     const response = await api.post<LogoutResponse>(LOGOUT_ENDPOINT, {
       refreshToken
     })
@@ -96,6 +106,7 @@ export async function logoutService(): Promise<boolean> {
   try {
     // Clear refresh timer first
     clearRefreshTimer()
+    console.log('[Logout Service] Refresh timer cleared')
     
     // Send logout request to backend
     await sendLogoutRequest()

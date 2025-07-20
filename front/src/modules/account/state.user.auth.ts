@@ -3,7 +3,6 @@
  * Version: 1.1.0
  * TypeScript state management for user authentication.
  * Frontend file that manages user authentication state with persistence and integration with auth services.
- * Enhanced with missing properties from old userstate.js for complete migration compatibility.
  */
 
 import { defineStore } from 'pinia'
@@ -394,7 +393,12 @@ export const useUserAuthStore = defineStore('userAuth', {
      */
     userLogoff(): void {
       const currentLang = this.language // Сохраняем текущий язык
-      localStorage.removeItem('userToken') // Удаляем токен из localStorage
+      
+      // Clear all tokens from localStorage
+      localStorage.removeItem(STORAGE_KEYS.ACCESS_TOKEN)
+      localStorage.removeItem(STORAGE_KEYS.REFRESH_TOKEN)
+      localStorage.removeItem('userToken') // Legacy token key
+      
       this.setLoggedIn(false) // Обновляем состояние на не аутентифицировано
       
       // Очистка других связанных данных
