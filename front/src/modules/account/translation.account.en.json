@@ -24,7 +24,7 @@
     }
   },
   "selfRegistration": {
-    "title": "registration",
+    "title": "new user account registration",
     "fields": {
       "username": {
         "label": "username*"
