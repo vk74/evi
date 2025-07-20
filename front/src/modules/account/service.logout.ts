@@ -1,8 +1,9 @@
 /**
  * @file service.logout.ts
- * Version: 1.1.0
+ * Version: 1.2.0
  * Service for user logout and session cleanup.
  * Frontend file that handles logout requests, clears tokens, and resets user session.
+ * Updated to work with httpOnly cookies for refresh tokens.
  */
 
 import { api } from '@/core/api/service.axios'
@@ -22,9 +23,9 @@ const LOGOUT_ENDPOINT = '/api/auth/logout'
 function clearTokens(): void {
   try {
     localStorage.removeItem(STORAGE_KEYS.ACCESS_TOKEN)
-    localStorage.removeItem(STORAGE_KEYS.REFRESH_TOKEN)
+    // Refresh token is now in httpOnly cookie - no need to clear from localStorage
     localStorage.removeItem('userToken') // Legacy token key
-    console.log('[Logout Service] All tokens cleared from localStorage')
+    console.log('[Logout Service] Access token cleared from localStorage')
   } catch (error) {
     console.error('[Logout Service] Error clearing tokens from localStorage:', error)
   }
@@ -45,20 +46,13 @@ function resetUserStore(): void {
 
 /**
  * Sends logout request to backend
+ * Refresh token is automatically sent as httpOnly cookie
  */
 async function sendLogoutRequest(): Promise<void> {
-  const refreshToken = localStorage.getItem(STORAGE_KEYS.REFRESH_TOKEN)
-  
-  if (!refreshToken) {
-    console.log('[Logout Service] No refresh token found, skipping backend logout')
-    return
-  }
-  
   try {
     console.log('[Logout Service] Sending logout request to backend...')
-    const response = await api.post<LogoutResponse>(LOGOUT_ENDPOINT, {
-      refreshToken
-    })
+    // Send empty request - refresh token will be sent automatically as cookie
+    const response = await api.post<LogoutResponse>(LOGOUT_ENDPOINT, {})
     
     console.log('[Logout Service] Backend logout response:', response.data)
     
@@ -108,7 +102,7 @@ export async function logoutService(): Promise<boolean> {
     clearRefreshTimer()
     console.log('[Logout Service] Refresh timer cleared')
     
-    // Send logout request to backend
+    // Send logout request to backend (refresh token sent automatically as cookie)
     await sendLogoutRequest()
     
     // Clear local tokens

@@ -1,8 +1,9 @@
 /**
  * @file types.auth.ts
- * Version: 1.0.0
+ * Version: 1.1.0
  * Type definitions for authentication system including login, refresh tokens, and logout functionality.
  * Backend file that defines interfaces for all auth-related requests, responses, and data structures.
+ * Updated to support httpOnly cookies for refresh tokens.
  */
 
 import { Request } from 'express';
@@ -21,14 +22,14 @@ export interface LoginRequest {
  * Refresh token request interface
  */
 export interface RefreshTokenRequest {
-  refreshToken: string;
+  refreshToken?: string; // Optional now as it can come from cookie
 }
 
 /**
  * Logout request interface
  */
 export interface LogoutRequest {
-  refreshToken: string;
+  refreshToken?: string; // Optional now as it can come from cookie
 }
 
 // ==================== RESPONSE INTERFACES ====================
@@ -39,7 +40,7 @@ export interface LogoutRequest {
 export interface LoginResponse {
   success: boolean;
   accessToken: string;
-  refreshToken: string;
+  // refreshToken removed from response body - now sent as httpOnly cookie
   user: {
     username: string;
     uuid: string;
@@ -52,7 +53,7 @@ export interface LoginResponse {
 export interface RefreshTokenResponse {
   success: boolean;
   accessToken: string;
-  refreshToken: string;
+  // refreshToken removed from response body - now sent as httpOnly cookie
 }
 
 /**
@@ -62,6 +63,34 @@ export interface LogoutResponse {
   success: boolean;
   message: string;
 }
+
+// ==================== COOKIE CONFIGURATION ====================
+
+/**
+ * Cookie configuration interface
+ */
+export interface CookieConfig {
+  httpOnly: boolean;
+  secure: boolean;
+  sameSite: 'strict' | 'lax' | 'none';
+  maxAge: number;
+  path: string;
+}
+
+/**
+ * Environment-based cookie configuration
+ */
+export const getCookieConfig = (): CookieConfig => {
+  const isProduction = process.env.NODE_ENV === 'production';
+  
+  return {
+    httpOnly: true,
+    secure: isProduction, // false for localhost, true for HTTPS
+    sameSite: 'strict',
+    maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days in milliseconds
+    path: '/'
+  };
+};
 
 // ==================== TOKEN INTERFACES ====================
 

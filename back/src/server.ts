@@ -1,10 +1,11 @@
 /**
- * version: 1.0.03
+ * version: 1.0.04
  * Main server file
  * 
  * This is the entry point for the backend server.
  * It handles server initialization, middleware setup, and route registration.
  * File: server.ts
+ * Updated to support httpOnly cookies for refresh tokens.
  */
 
 // Import module-alias for path aliases
@@ -12,6 +13,7 @@ import 'module-alias/register';
 import express, { Express, Request, Response, NextFunction } from 'express';
 import cors from 'cors';
 import bodyParser from 'body-parser';
+import cookieParser from 'cookie-parser';
 import fs from 'fs';
 import ExcelJS from 'exceljs';
 
@@ -174,6 +176,7 @@ async function initializeServer(): Promise<void> {
     }));
     
     app.use(express.json());
+    app.use(cookieParser()); // Add cookie parser middleware
     //app.use('/profile', getUserProfile); // Route registration
     app.use(bodyParser.json());
 

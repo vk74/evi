@@ -1,8 +1,9 @@
 /**
  * @file service.refresh.tokens.ts
- * Version: 1.0.0
+ * Version: 1.1.0
  * Service for refreshing authentication tokens.
  * Frontend file that handles token refresh requests and updates user session.
+ * Updated to work with httpOnly cookies for refresh tokens.
  */
 
 import { api } from '@/core/api/service.axios'
@@ -19,14 +20,6 @@ const REFRESH_ENDPOINT = '/api/auth/refresh'
 function storeAccessToken(token: string): void {
   localStorage.setItem(STORAGE_KEYS.ACCESS_TOKEN, token)
   console.log('[Refresh Service] Access token stored in localStorage')
-}
-
-/**
- * Stores refresh token in localStorage
- */
-function storeRefreshToken(token: string): void {
-  localStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN, token)
-  console.log('[Refresh Service] Refresh token stored in localStorage')
 }
 
 /**
@@ -64,28 +57,20 @@ function handleRefreshError(error: any): string {
 
 /**
  * Main refresh tokens service function
+ * Now works with httpOnly cookies - refresh token is automatically sent by browser
  */
 export async function refreshTokensService(): Promise<boolean> {
   console.log('[Refresh Service] Processing token refresh request')
   
-  const refreshToken = localStorage.getItem(STORAGE_KEYS.REFRESH_TOKEN)
-  
-  if (!refreshToken) {
-    console.log('[Refresh Service] No refresh token found')
-    return false
-  }
-  
   try {
-    const response = await api.post<RefreshResponse>(REFRESH_ENDPOINT, {
-      refreshToken
-    })
+    // Send request without refresh token in body - it will be sent automatically as cookie
+    const response = await api.post<RefreshResponse>(REFRESH_ENDPOINT, {})
     
     console.log('[Refresh Service] Refresh response received:', response.data)
     
     if (response.data.success) {
-      // Store new tokens
+      // Store only access token (refresh token is now in httpOnly cookie)
       storeAccessToken(response.data.accessToken)
-      storeRefreshToken(response.data.refreshToken)
       
       // Update user store
       updateUserStore(response.data.accessToken)

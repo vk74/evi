@@ -1,14 +1,52 @@
 /**
  * @file service.logout.ts
- * Version: 1.0.0
+ * Version: 1.1.0
  * Service for user logout and token revocation.
  * Backend file that handles user logout, revokes refresh tokens, and cleans up session data.
+ * Updated to support httpOnly cookies for refresh tokens.
  */
 
 import crypto from 'crypto';
+import { Request, Response } from 'express';
 import { pool } from '@/core/db/maindb';
 import { LogoutRequest, LogoutResponse, TokenValidationResult } from './types.auth';
 import { findTokenByHashIncludeRevoked, revokeTokenByHash } from './queries.auth';
+
+// Cookie configuration
+const REFRESH_TOKEN_COOKIE_NAME = 'refreshToken';
+
+/**
+ * Extracts refresh token from request (cookie or body)
+ */
+function extractRefreshToken(req: Request): string | null {
+  // First try to get from cookie
+  const cookieToken = req.cookies?.[REFRESH_TOKEN_COOKIE_NAME];
+  if (cookieToken) {
+    console.log('[Logout Service] Refresh token found in cookie');
+    return cookieToken;
+  }
+  
+  // Fallback to body (for backward compatibility)
+  const bodyToken = req.body?.refreshToken;
+  if (bodyToken) {
+    console.log('[Logout Service] Refresh token found in request body');
+    return bodyToken;
+  }
+  
+  console.log('[Logout Service] No refresh token found');
+  return null;
+}
+
+/**
+ * Clears refresh token cookie
+ */
+function clearRefreshTokenCookie(res: Response): void {
+  res.clearCookie(REFRESH_TOKEN_COOKIE_NAME, {
+    path: '/'
+  });
+  
+  console.log('[Logout Service] Refresh token cookie cleared');
+}
 
 /**
  * Hashes a refresh token for storage and comparison
@@ -74,27 +112,41 @@ async function revokeRefreshToken(tokenHash: string): Promise<void> {
  * Main logout service function
  */
 export async function logoutService(
-  logoutData: LogoutRequest
+  req: Request,
+  res: Response
 ): Promise<LogoutResponse> {
   console.log('[Logout Service] Processing logout request');
   
-  // Validate input
-  if (!logoutData.refreshToken || typeof logoutData.refreshToken !== 'string') {
-    throw new Error('Refresh token is required');
+  // Extract refresh token from request
+  const refreshToken = extractRefreshToken(req);
+  
+  if (!refreshToken) {
+    // If no token found, still clear cookie and return success
+    clearRefreshTokenCookie(res);
+    return {
+      success: true,
+      message: 'Logout completed successfully'
+    };
   }
   
   // Validate refresh token format
-  if (!logoutData.refreshToken.startsWith('token-')) {
-    throw new Error('Invalid refresh token format');
+  if (!refreshToken.startsWith('token-')) {
+    console.log('[Logout Service] Invalid refresh token format');
+    clearRefreshTokenCookie(res);
+    return {
+      success: true,
+      message: 'Logout completed successfully'
+    };
   }
   
   // Validate refresh token
-  const validation = await validateRefreshTokenForLogout(logoutData.refreshToken);
+  const validation = await validateRefreshTokenForLogout(refreshToken);
   
   if (!validation.isValid) {
     console.log('[Logout Service] Invalid refresh token for logout:', validation.error);
     // For logout, we don't throw an error if token is invalid
     // We just return success to avoid revealing information about token validity
+    clearRefreshTokenCookie(res);
     return {
       success: true,
       message: 'Logout completed successfully'
@@ -102,10 +154,13 @@ export async function logoutService(
   }
   
   // Hash token for database lookup
-  const tokenHash = hashRefreshToken(logoutData.refreshToken);
+  const tokenHash = hashRefreshToken(refreshToken);
   
   // Revoke refresh token
   await revokeRefreshToken(tokenHash);
+  
+  // Clear refresh token cookie
+  clearRefreshTokenCookie(res);
   
   console.log('[Logout Service] Logout successful for user:', validation.userUuid);
   

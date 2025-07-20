@@ -1,16 +1,18 @@
 /**
  * @file service.login.ts
- * Version: 1.0.0
+ * Version: 1.1.0
  * Service for user authentication and token issuance.
  * Backend file that handles user login, validates credentials, and issues access/refresh token pairs.
+ * Updated to support httpOnly cookies for refresh tokens.
  */
 
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import { v4 as uuidv4 } from 'uuid';
 import crypto from 'crypto';
+import { Response } from 'express';
 import { pool } from '@/core/db/maindb';
-import { LoginRequest, LoginResponse, JwtPayload, TokenGenerationResult } from './types.auth';
+import { LoginRequest, LoginResponse, JwtPayload, TokenGenerationResult, getCookieConfig } from './types.auth';
 import { insertRefreshToken } from './queries.auth';
 
 // Token configuration
@@ -20,6 +22,9 @@ const TOKEN_CONFIG = {
   REFRESH_TOKEN_PREFIX: 'token-'
 };
 
+// Cookie configuration
+const REFRESH_TOKEN_COOKIE_NAME = 'refreshToken';
+
 // Brute force protection
 const BRUTE_FORCE_CONFIG = {
   MAX_ATTEMPTS_PER_IP: 5,
@@ -28,6 +33,23 @@ const BRUTE_FORCE_CONFIG = {
 
 // In-memory storage for brute force protection (in production, use Redis)
 const failedAttempts = new Map<string, { count: number; resetTime: number }>();
+
+/**
+ * Sets refresh token as httpOnly cookie
+ */
+function setRefreshTokenCookie(res: Response, refreshToken: string): void {
+  const cookieConfig = getCookieConfig();
+  
+  res.cookie(REFRESH_TOKEN_COOKIE_NAME, refreshToken, {
+    httpOnly: cookieConfig.httpOnly,
+    secure: cookieConfig.secure,
+    sameSite: cookieConfig.sameSite,
+    maxAge: cookieConfig.maxAge,
+    path: cookieConfig.path
+  });
+  
+  console.log('[Login Service] Refresh token set as httpOnly cookie');
+}
 
 /**
  * Checks if IP address is blocked due to brute force attempts
@@ -160,7 +182,8 @@ async function storeRefreshToken(userUuid: string, tokenHash: string, expiresAt:
  */
 export async function loginService(
   loginData: LoginRequest,
-  clientIp: string
+  clientIp: string,
+  res: Response
 ): Promise<LoginResponse> {
   console.log('[Login Service] Processing login request for user:', loginData.username);
   
@@ -204,12 +227,16 @@ export async function loginService(
     console.log('[Login Service] Storing refresh token in database...');
     await storeRefreshToken(userUuid!, refreshTokenHash, tokenPair.refreshTokenExpires);
     
+    // Set refresh token as httpOnly cookie
+    console.log('[Login Service] Setting refresh token as httpOnly cookie...');
+    setRefreshTokenCookie(res, tokenPair.refreshToken);
+    
     console.log('[Login Service] Login successful for user:', loginData.username);
     
     return {
       success: true,
       accessToken: tokenPair.accessToken,
-      refreshToken: tokenPair.refreshToken,
+      // refreshToken removed from response body - now sent as httpOnly cookie
       user: {
         username: loginData.username,
         uuid: userUuid!

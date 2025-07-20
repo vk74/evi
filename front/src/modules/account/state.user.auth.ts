@@ -73,7 +73,7 @@ function clearPersistedState(): void {
   try {
     localStorage.removeItem(STORAGE_KEYS.USER_STATE)
     localStorage.removeItem(STORAGE_KEYS.ACCESS_TOKEN)
-    localStorage.removeItem(STORAGE_KEYS.REFRESH_TOKEN)
+    // Refresh token is now in httpOnly cookie - no need to clear from localStorage
     console.log('[User Auth State] Persisted state cleared')
   } catch (error) {
     console.error('[User Auth State] Error clearing persisted state:', error)
@@ -394,9 +394,8 @@ export const useUserAuthStore = defineStore('userAuth', {
     userLogoff(): void {
       const currentLang = this.language // Сохраняем текущий язык
       
-      // Clear all tokens from localStorage
+      // Clear access token from localStorage (refresh token is in httpOnly cookie)
       localStorage.removeItem(STORAGE_KEYS.ACCESS_TOKEN)
-      localStorage.removeItem(STORAGE_KEYS.REFRESH_TOKEN)
       localStorage.removeItem('userToken') // Legacy token key
       
       this.setLoggedIn(false) // Обновляем состояние на не аутентифицировано

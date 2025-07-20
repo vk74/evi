@@ -1,8 +1,9 @@
 /**
  * @file types.auth.ts
- * Version: 1.0.0
+ * Version: 1.1.0
  * TypeScript interfaces for authentication system.
  * Frontend file that defines all types used in authentication services and state management.
+ * Updated to work with httpOnly cookies for refresh tokens.
  */
 
 // JWT Token interfaces
@@ -20,7 +21,11 @@ export interface JwtPayload {
 export interface LoginResponse {
   success: boolean
   accessToken: string
-  refreshToken: string
+  // refreshToken removed - now handled by httpOnly cookies
+  user: {
+    username: string
+    uuid: string
+  }
   message?: string
 }
 
@@ -32,7 +37,7 @@ export interface LogoutResponse {
 export interface RefreshResponse {
   success: boolean
   accessToken: string
-  refreshToken: string
+  // refreshToken removed - now handled by httpOnly cookies
   message?: string
 }
 
@@ -43,11 +48,13 @@ export interface LoginRequest {
 }
 
 export interface LogoutRequest {
-  refreshToken: string
+  // refreshToken is optional - can come from httpOnly cookie
+  refreshToken?: string
 }
 
 export interface RefreshRequest {
-  refreshToken: string
+  // refreshToken is optional - can come from httpOnly cookie
+  refreshToken?: string
 }
 
 // User state interfaces
@@ -88,7 +95,7 @@ export interface AuthError {
 // Storage keys
 export const STORAGE_KEYS = {
   ACCESS_TOKEN: 'userToken',
-  REFRESH_TOKEN: 'refreshToken',
+  // REFRESH_TOKEN removed - now handled by httpOnly cookies
   USER_STATE: 'userState'
 } as const
 

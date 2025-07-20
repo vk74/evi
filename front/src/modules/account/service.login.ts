@@ -1,8 +1,9 @@
 /**
  * @file service.login.ts
- * Version: 1.2.0
+ * Version: 1.2.1
  * Service for user authentication and token management.
  * Frontend file that handles login requests, processes tokens, and manages user session.
+ * Updated to work with httpOnly cookies for refresh tokens.
  */
 
 import { api } from '@/core/api/service.axios'
@@ -20,14 +21,6 @@ const LOGIN_ENDPOINT = '/api/auth/login'
 function storeAccessToken(token: string): void {
   localStorage.setItem(STORAGE_KEYS.ACCESS_TOKEN, token)
   console.log('[Login Service] Access token stored in localStorage')
-}
-
-/**
- * Stores refresh token in localStorage
- */
-function storeRefreshToken(token: string): void {
-  localStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN, token)
-  console.log('[Login Service] Refresh token stored in localStorage')
 }
 
 /**
@@ -70,6 +63,7 @@ function handleLoginError(error: any): string {
  * Sends POST request to /api/auth/login with username and password
  * Request payload: { username: string, password: string }
  * Returns: Promise<{ success: boolean, errorKey?: string }>
+ * Note: Refresh token is now automatically handled by httpOnly cookies
  */
 export async function loginService(username: string, password: string): Promise<{ success: boolean, errorKey?: string }> {
   console.log('[Login Service] Processing login request for user:', username)
@@ -83,9 +77,8 @@ export async function loginService(username: string, password: string): Promise<
     console.log('[Login Service] Login response received:', response.data)
     
     if (response.data.success) {
-      // Store tokens
+      // Store only access token (refresh token is now in httpOnly cookie)
       storeAccessToken(response.data.accessToken)
-      storeRefreshToken(response.data.refreshToken)
       
       // Update user store with token
       updateUserStore(response.data.accessToken)

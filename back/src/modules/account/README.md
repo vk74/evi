@@ -1,39 +1,79 @@
-# Account Module
+# Authentication Module
 
-This module contains user account management services migrated from middleware.
+## Overview
+This module handles user authentication, token management, and session security. The system uses a dual-token approach with enhanced security measures.
 
-## Migrated Services
+## Security Architecture
 
-### service.register.user.ts
-- **Original**: `middleware/auth.register.user.ts`
-- **Purpose**: Handles user registration with validation and database operations
-- **Routes**: `/register` (POST)
+### Token Strategy
+- **Access Token**: JWT stored in localStorage (short-lived, 30 minutes)
+- **Refresh Token**: UUID stored as httpOnly cookie (long-lived, 7 days)
 
-### service.get.profile.ts
-- **Original**: `middleware/users.get.profile.ts`
-- **Purpose**: Retrieves user profile data
-- **Routes**: `/profile` (GET)
+### Security Benefits
+1. **Separation of Concerns**: Access and refresh tokens are stored in different locations
+2. **XSS Protection**: Refresh tokens in httpOnly cookies are inaccessible to JavaScript
+3. **CSRF Protection**: SameSite=Strict prevents cross-site requests
+4. **Automatic Rotation**: Refresh tokens are rotated on each use
+5. **Environment-Aware**: Secure flag is set based on environment (false for localhost, true for HTTPS)
 
-### service.update.profile.ts
-- **Original**: `middleware/users.update.profile.ts`
-- **Purpose**: Updates user profile information
-- **Routes**: `/profile` (POST)
+### Cookie Configuration
+```typescript
+const cookieConfig = {
+  httpOnly: true,           // Prevents JavaScript access
+  secure: isProduction,     // HTTPS only in production
+  sameSite: 'strict',       // CSRF protection
+  maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+  path: '/'
+}
+```
 
-## Removed Files
+## API Endpoints
 
-### users.change.password.ts
-- **Reason**: Duplicated functionality with `core/services/change-password/service.self.change.password.ts`
-- **Status**: Deleted (advanced validation in service.self.change.password.ts is preferred)
+### POST /api/auth/login
+- **Request**: `{ username: string, password: string }`
+- **Response**: `{ success: boolean, accessToken: string, user: { username, uuid } }`
+- **Cookies**: Sets `refreshToken` as httpOnly cookie
 
-## Pending Migration
+### POST /api/auth/refresh
+- **Request**: `{}` (refresh token sent automatically as cookie)
+- **Response**: `{ success: boolean, accessToken: string }`
+- **Cookies**: Updates `refreshToken` httpOnly cookie
 
-### auth.issue.token.ts
-- **Status**: Will be replaced with new authorization system in future tasks
-- **Current**: Still in use for `/login` route
+### POST /api/auth/logout
+- **Request**: `{}` (refresh token sent automatically as cookie)
+- **Response**: `{ success: boolean, message: string }`
+- **Cookies**: Clears `refreshToken` httpOnly cookie
 
-## Notes
+## Additional Security Measures
 
-- All services maintain the same API interface as original middleware
-- Database queries use existing `queries.users.ts` from middleware
-- Error handling and response formats preserved
-- TypeScript interfaces updated for better type safety 
+### 1. Brute Force Protection
+- Rate limiting per IP address
+- Temporary blocking after 5 failed attempts
+- 15-minute window for reset
+
+### 2. Token Validation
+- Database-stored refresh tokens with hashing
+- Automatic token rotation on refresh
+- Expiration checking
+
+### 3. Environment Configuration
+- Development: `secure: false` (localhost)
+- Production: `secure: true` (HTTPS required)
+
+## Browser Compatibility
+- Chrome 80+ (2020)
+- Firefox 75+ (2020)
+- Safari 13+ (2019)
+- Edge 80+ (2020)
+
+## Migration Notes
+- Backward compatibility maintained for existing clients
+- Fallback to request body for refresh token if cookie not available
+- Automatic cleanup of old localStorage refresh tokens
+
+## Future Enhancements
+1. **Redis Integration**: Replace in-memory brute force storage
+2. **Device Fingerprinting**: Track suspicious login patterns
+3. **Geolocation Validation**: Block logins from unexpected locations
+4. **Multi-Factor Authentication**: Add 2FA support
+5. **Session Management**: Allow multiple concurrent sessions 

@@ -1,8 +1,9 @@
 /**
  * @file controller.login.ts
- * Version: 1.0.0
+ * Version: 1.1.0
  * Controller for handling user login requests.
  * Backend file that processes login requests, validates input, and returns authentication tokens.
+ * Updated to support httpOnly cookies for refresh tokens.
  */
 
 import { Request, Response } from 'express';
@@ -61,8 +62,8 @@ async function loginControllerLogic(req: Request, res: Response): Promise<LoginR
   // Get client IP for brute force protection
   const clientIp = getClientIp(req);
   
-  // Call login service
-  const result = await loginService(loginData, clientIp);
+  // Call login service with response object for cookie setting
+  const result = await loginService(loginData, clientIp, res);
   
   console.log('[Login Controller] Login successful for user:', loginData.username);
   

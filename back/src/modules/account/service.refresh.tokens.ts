@@ -1,15 +1,17 @@
 /**
  * @file service.refresh.tokens.ts
- * Version: 1.0.0
+ * Version: 1.1.0
  * Service for refreshing authentication tokens.
  * Backend file that validates refresh tokens, issues new token pairs, and prevents token reuse.
+ * Updated to support httpOnly cookies for refresh tokens.
  */
 
 import jwt from 'jsonwebtoken';
 import { v4 as uuidv4 } from 'uuid';
 import crypto from 'crypto';
+import { Request, Response } from 'express';
 import { pool } from '@/core/db/maindb';
-import { RefreshTokenRequest, RefreshTokenResponse, JwtPayload, TokenGenerationResult, TokenValidationResult } from './types.auth';
+import { RefreshTokenRequest, RefreshTokenResponse, JwtPayload, TokenGenerationResult, TokenValidationResult, getCookieConfig } from './types.auth';
 import { findTokenByHash, revokeTokenByHash, insertRefreshToken } from './queries.auth';
 
 // Token configuration
@@ -18,6 +20,59 @@ const TOKEN_CONFIG = {
   REFRESH_TOKEN_EXPIRES_IN: '7d',
   REFRESH_TOKEN_PREFIX: 'token-'
 };
+
+// Cookie configuration
+const REFRESH_TOKEN_COOKIE_NAME = 'refreshToken';
+
+/**
+ * Extracts refresh token from request (cookie or body)
+ */
+function extractRefreshToken(req: Request): string | null {
+  // First try to get from cookie
+  const cookieToken = req.cookies?.[REFRESH_TOKEN_COOKIE_NAME];
+  if (cookieToken) {
+    console.log('[Refresh Service] Refresh token found in cookie');
+    return cookieToken;
+  }
+  
+  // Fallback to body (for backward compatibility)
+  const bodyToken = req.body?.refreshToken;
+  if (bodyToken) {
+    console.log('[Refresh Service] Refresh token found in request body');
+    return bodyToken;
+  }
+  
+  console.log('[Refresh Service] No refresh token found');
+  return null;
+}
+
+/**
+ * Sets refresh token as httpOnly cookie
+ */
+function setRefreshTokenCookie(res: Response, refreshToken: string): void {
+  const cookieConfig = getCookieConfig();
+  
+  res.cookie(REFRESH_TOKEN_COOKIE_NAME, refreshToken, {
+    httpOnly: cookieConfig.httpOnly,
+    secure: cookieConfig.secure,
+    sameSite: cookieConfig.sameSite,
+    maxAge: cookieConfig.maxAge,
+    path: cookieConfig.path
+  });
+  
+  console.log('[Refresh Service] New refresh token set as httpOnly cookie');
+}
+
+/**
+ * Clears refresh token cookie
+ */
+function clearRefreshTokenCookie(res: Response): void {
+  res.clearCookie(REFRESH_TOKEN_COOKIE_NAME, {
+    path: '/'
+  });
+  
+  console.log('[Refresh Service] Refresh token cookie cleared');
+}
 
 /**
  * Hashes a refresh token for storage and comparison
@@ -164,17 +219,20 @@ async function getUsernameByUuid(userUuid: string): Promise<string> {
  * Main refresh tokens service function
  */
 export async function refreshTokensService(
-  refreshData: RefreshTokenRequest
+  req: Request,
+  res: Response
 ): Promise<RefreshTokenResponse> {
   console.log('[Refresh Service] Processing token refresh request');
   
-  // Validate input
-  if (!refreshData.refreshToken || typeof refreshData.refreshToken !== 'string') {
+  // Extract refresh token from request
+  const refreshToken = extractRefreshToken(req);
+  
+  if (!refreshToken) {
     throw new Error('Refresh token is required');
   }
   
   // Validate refresh token
-  const validation = await validateRefreshToken(refreshData.refreshToken);
+  const validation = await validateRefreshToken(refreshToken);
   
   if (!validation.isValid) {
     console.log('[Refresh Service] Invalid refresh token:', validation.error);
@@ -188,17 +246,20 @@ export async function refreshTokensService(
   const tokenPair = generateTokenPair(username, validation.userUuid!);
   
   // Hash tokens for storage
-  const oldTokenHash = hashRefreshToken(refreshData.refreshToken);
+  const oldTokenHash = hashRefreshToken(refreshToken);
   const newTokenHash = hashRefreshToken(tokenPair.refreshToken);
   
   // Rotate tokens (revoke old, store new)
   await rotateRefreshToken(oldTokenHash, validation.userUuid!, newTokenHash, tokenPair.refreshTokenExpires);
   
+  // Set new refresh token as httpOnly cookie
+  setRefreshTokenCookie(res, tokenPair.refreshToken);
+  
   console.log('[Refresh Service] Token refresh successful for user:', username);
   
   return {
     success: true,
-    accessToken: tokenPair.accessToken,
-    refreshToken: tokenPair.refreshToken
+    accessToken: tokenPair.accessToken
+    // refreshToken removed from response body - now sent as httpOnly cookie
   };
 } 
