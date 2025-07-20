@@ -1,12 +1,14 @@
 /**
-* state.user.editor.ts
-* Pinia store для управления состоянием редактора пользователей.
-*
-* Функциональность:
-* - Хранение данных форм в режиме создания нового пользователя
-* - Управление состоянием UI
-* - Подготовка данных для отправки в API
-*/
+ * @file state.user.editor.ts
+ * Version: 1.0.0
+ * Pinia store for managing user editor state.
+ * Frontend file that handles form data storage, UI state management, and API data preparation.
+ *
+ * Functionality:
+ * - Store form data in new user creation mode
+ * - Manage UI state
+ * - Prepare data for API submission
+ */
 
 import { defineStore } from 'pinia'
 //import { AccountStatus, Gender } from './types.user.editor'
@@ -23,8 +25,8 @@ import type {
 } from './types.user.editor'
 
 /**
-* Начальные значения для формы аккаунта
-*/
+ * Initial values for account form
+ */
 const initialAccountState: IUserAccount = {
  username: '',
  email: '',
@@ -38,8 +40,8 @@ const initialAccountState: IUserAccount = {
 }
 
 /**
-* Начальные значения для формы профиля
-*/
+ * Initial values for profile form
+ */
 const initialProfileState: IUserProfile = {
  mobile_phone_number: '', //null,
  address: '', //null,
@@ -49,8 +51,8 @@ const initialProfileState: IUserProfile = {
 }
 
 /**
-* Начальные значения для состояния UI
-*/
+ * Initial values for UI state
+ */
 const initialUIState: IEditorUIState = {
  activeSection: 'account',
  showPassword: false,
@@ -60,8 +62,8 @@ const initialUIState: IEditorUIState = {
 }
 
 /**
-* Определение хранилища
-*/
+ * Store definition
+ */
 export const useUserEditorStore = defineStore('userEditor', {
   state: (): UserEditorState => ({
     account: { ...initialAccountState },
@@ -81,7 +83,7 @@ getters: {
   
   getChangedFields(): IUpdateUserRequestData {
     if (!this.originalData || this.mode.mode !== 'edit') {
-      return {}  // Возвращаем пустой объект
+      return {}  // Return empty object
     }
 
     const changes: IUpdateUserRequestData = {}
@@ -96,7 +98,7 @@ getters: {
       ...this.originalData.profile
     }
 
-    // Проверяем каждое поле и добавляем только измененные
+    // Check each field and add only changed ones
     if (currentData.username !== originalData.username) {
       changes.username = currentData.username
     }
@@ -142,16 +144,16 @@ getters: {
       return false
     }
     
-    // Получаем измененные поля
+    // Get changed fields
     const changes = this.getChangedFields
-    // Проверяем есть ли изменения
+    // Check if there are changes
     return Object.keys(changes).length > 0
   }
 },
 
  actions: {
    /**
-    * Обновление данных аккаунта
+    * Update account data
     */
    updateAccount(data: Partial<IUserAccount>) {
      console.log('Updating account data:', data)
@@ -159,7 +161,7 @@ getters: {
    },
 
    /**
-    * Обновление данных профиля
+    * Update profile data
     */
    updateProfile(data: Partial<IUserProfile>) {
      console.log('Updating profile data:', data)
@@ -167,29 +169,29 @@ getters: {
    },
 
 
-  // Добавляем новый action
+  // Add new action
   initEditMode(data: { user: IUserAccount; profile: IUserProfile }) {
     console.log('Initializing edit mode with user data')
     
-    // Устанавливаем режим редактирования
+    // Set edit mode
     this.mode = {
       mode: 'edit',
       userId: data.user.user_id as string
     }
     
-    // Сохраняем оригинальные данные
+    // Save original data
     this.originalData = {
       account: { ...data.user },
       profile: { ...data.profile }
     }
     
-    // Обновляем текущие данные через существующие actions
+    // Update current data through existing actions
     this.updateAccount(data.user)
     this.updateProfile(data.profile)
   },
    
    /**
-    * Сброс формы к начальным значениям
+    * Reset form to initial values
     */
    resetForm() {
      console.log('Resetting form to initial state')
@@ -199,7 +201,7 @@ getters: {
    },
 
    /**
-    * Установка состояния отправки формы
+    * Set form submission state
     */
    setSubmitting(isSubmitting: boolean) {
      console.log('Setting submitting state:', isSubmitting)
@@ -207,7 +209,7 @@ getters: {
    },
 
    /**
-    * Подготовка данных для отправки в API
+    * Prepare data for API submission
     */
    prepareRequestData(): ICreateUserRequest {
      console.log('Preparing data for API request')
@@ -231,10 +233,10 @@ getters: {
    },
 
   prepareUpdateData(): IUpdateUserRequestData {
-    // Используем getter для получения изменений
+    // Use getter to get changes
     const changes = this.getChangedFields
 
-    // Логируем для отладки
+    // Log for debugging
     console.log('Preparing data for update:', changes)
 
     return changes

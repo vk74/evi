@@ -1,9 +1,12 @@
 /**
- * service.fetch.settings.ts
- * 
+ * @file service.fetch.settings.ts
+ * Version: 1.0.0
  * Service for fetching application settings from the backend.
- * Provides a unified interface for getting and caching settings.
- * Uses the Pinia store for caching with a TTL of 5 minutes.
+ * Frontend file that provides unified interface for getting and caching settings with 5-minute TTL.
+ *
+ * Functionality:
+ * - Provides a unified interface for getting and caching settings
+ * - Uses the Pinia store for caching with a TTL of 5 minutes
  */
 
 import { api } from '@/core/api/service.axios'
@@ -74,7 +77,7 @@ export async function fetchSettings(section_path: string, forceRefresh = false):
       store.setError(errorMessage);
       
       // Show error message to user
-      uiStore.showErrorSnackbar(`Ошибка загрузки настроек: ${errorMessage}`);
+      uiStore.showErrorSnackbar(`Error loading settings: ${errorMessage}`);
       
       // Return empty settings array
       return [];
@@ -88,7 +91,7 @@ export async function fetchSettings(section_path: string, forceRefresh = false):
     store.setError(errorMessage);
     
     // Show error message to user
-    uiStore.showErrorSnackbar(`Ошибка загрузки настроек: ${errorMessage}`);
+    uiStore.showErrorSnackbar(`Error loading settings: ${errorMessage}`);
     
     // Return empty settings array
     return [];
@@ -161,7 +164,7 @@ export async function fetchSettingByName(section_path: string, settingName: stri
     console.error(`Error fetching setting ${settingName} for section ${section_path}:`, error);
     
     // Show error message to user
-    uiStore.showErrorSnackbar(`Ошибка получения настройки: ${errorMessage}`);
+    uiStore.showErrorSnackbar(`Error getting setting: ${errorMessage}`);
     
     return null;
   }

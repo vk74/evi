@@ -1,7 +1,8 @@
 /**
- * state.users.admin.ts
- * Хранилище состояния для модуля управления пользователями.
- * Управляет состоянием активной секции в модуле SubModuleUserAdmin.
+ * @file state.users.admin.ts
+ * Version: 1.0.0
+ * Pinia store for managing user administration module state.
+ * Frontend file that handles active section state management in SubModuleUserAdmin.
  */
 import { defineStore } from 'pinia'
 import type { UsersAdminState, UserSectionId } from './types.users.admin'
@@ -9,14 +10,14 @@ import type { UsersAdminState, UserSectionId } from './types.users.admin'
 export const useUsersAdminStore = defineStore('users-admin', {
   state: (): UsersAdminState => ({
     /**
-     * Текущая активная секция в модуле управления пользователями
+     * Current active section in user administration module
      */
     activeSection: 'users-proto'
   }),
 
   getters: {
     /**
-     * Получение текущей активной секции
+     * Get current active section
      */
     getCurrentSection(): UserSectionId {
       return this.activeSection
@@ -25,7 +26,7 @@ export const useUsersAdminStore = defineStore('users-admin', {
 
   actions: {
     /**
-     * Установка активной секции
+     * Set active section
      */
     setActiveSection(sectionId: UserSectionId) {
       this.activeSection = sectionId

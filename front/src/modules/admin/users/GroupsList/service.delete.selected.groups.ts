@@ -1,6 +1,8 @@
 /**
  * @file service.delete.selected.groups.ts
+ * Version: 1.0.0
  * Frontend service for deleting selected groups.
+ * Frontend file that handles group deletion requests, cache management, and error handling.
  *
  * Functionality:
  * - Sends a request to delete selected groups by their IDs.
@@ -14,14 +16,14 @@ import { useUiStore } from '@/core/state/uistate'; // UI store
 import { useUserStore } from '@/core/state/userstate'; // User store
 import type { GroupError } from './types.groups.list'; // Types
 
-// Логгер для основных операций
+// Logger for main operations
 const logger = {
     info: (message: string, meta?: object) => console.log(`[DeleteGroupsService] ${message}`, meta || ''),
     error: (message: string, meta?: object) => console.error(`[DeleteGroupsService] ${message}`, meta || '')
 };
 
 /**
- * Сервис для удаления выбранных групп
+ * Service for deleting selected groups
  */
 export const deleteSelectedGroupsService = {
     /**
@@ -35,38 +37,38 @@ export const deleteSelectedGroupsService = {
         const userStore = useUserStore();
         const uiStore = useUiStore();
 
-        // Проверка авторизации пользователя
+        // Check user authentication
         if (!userStore.isLoggedIn) {
             const errorMessage = 'User not authenticated';
             logger.error(errorMessage);
             throw new Error(errorMessage);
         }
 
-        // Логируем начало операции
+        // Log operation start
         logger.info('Starting delete operation', { groupIds });
 
         try {
-            // Отправляем запрос на удаление групп
+            // Send delete request for groups
             const response = await api.post<{ deletedCount: number }>(
                 '/api/admin/groups/delete-selected-groups',
                 { groupIds }
             );
 
-            // Проверяем ответ
+            // Check response
             if (!response.data || typeof response.data.deletedCount !== 'number') {
                 const errorMessage = 'Invalid API response format';
                 logger.error(errorMessage);
                 throw new Error(errorMessage);
             }
 
-            // Логируем успешное удаление
+            // Log successful deletion
             logger.info('Successfully deleted groups', { deletedCount: response.data.deletedCount });
 
-            // Очищаем кеш в хранилище
+            // Clear cache in store
             store.clearCache();
             logger.info('Cache cleared in the frontend store');
 
-            // Возвращаем количество удаленных групп
+            // Return number of deleted groups
             return response.data.deletedCount;
 
         } catch (error: unknown) {

@@ -1,6 +1,8 @@
 /**
- * types.group.editor.ts - frontend
+ * @file types.group.editor.ts
+ * Version: 1.0.0
  * Frontend type definitions for the group editor component.
+ * Frontend file that defines TypeScript types and interfaces for group editor functionality.
  *
  * This module defines TypeScript types and interfaces for:
  * - Component modes and states
@@ -10,7 +12,7 @@
  */
 
 /**
- * Перечисления
+ * Enums
  */
 export enum GroupStatus {
   ACTIVE = 'active',
@@ -33,35 +35,35 @@ export type EditMode = {
 export type EditorMode = CreateMode | EditMode
 
 /**
- * Интерфейс базовой информации группы (таблица app.groups)
+ * Interface for basic group information (app.groups table)
  */
 export interface IGroupData {
-group_id?: string                  // uuid, опционален т.к. генерируется при создании
+group_id?: string                  // uuid, optional as it's generated during creation
 group_name: string                 // character varying(100)
 group_status: GroupStatus          // app.group_status
-group_owner: string                // username пользователя-владельца группы (UUID)
-is_system?: boolean                // boolean, опционально для фронтенда
+group_owner: string                // username of group owner (UUID)
+is_system?: boolean                // boolean, optional for frontend
 ownerUsername?: string             // Username of the group owner, optional
 }
 
 /**
- * Интерфейс дополнительной информации группы (таблица app.group_details)
+ * Interface for additional group information (app.group_details table)
  */
 export interface IGroupDetails {
-  group_id?: string                  // uuid связь с app.groups
+  group_id?: string                  // uuid link to app.groups
   group_description: string          // text
   group_email: string                // character varying(255)
 }
 
 /**
- * Интерфейс для UI состояния
+ * Interface for UI state
  */
 export interface IEditorUIState {
-  activeSection: 'details' | 'members'  // активная секция в редакторе
-  isSubmitting: boolean                 // флаг отправки формы
-  hasInteracted: boolean                // флаг взаимодействия с формой
-  isFormChanged: boolean                // для отслеживания изменений формы
-  showRequiredFieldsWarning: boolean    // показывать ли предупреждение о незаполненных обязательных полях
+  activeSection: 'details' | 'members'  // active section in editor
+  isSubmitting: boolean                 // form submission flag
+  hasInteracted: boolean                // form interaction flag
+  isFormChanged: boolean                // for tracking form changes
+  showRequiredFieldsWarning: boolean    // whether to show warning about unfilled required fields
 }
 
 /**
@@ -77,7 +79,7 @@ export interface ICreateGroupRequest {
 }
 
 export interface IUpdateGroupRequest {
-  group_id: string                   // Обязательное поле для обновления
+  group_id: string                   // Required field for updates
   group_name?: string
   group_status?: GroupStatus
   group_owner?: string
@@ -107,7 +109,7 @@ export interface ILoadGroupResponse extends IApiResponse {
 }
 
 /**
- * Интерфейс ошибки API
+ * Interface for API error
  */
 export interface IApiError {
   message: string
@@ -116,7 +118,7 @@ export interface IApiError {
 }
 
 /**
- * Интерфейс заголовка таблицы
+ * Interface for table header
  */
 export interface TableHeader {
   title: string
@@ -125,45 +127,45 @@ export interface TableHeader {
 }
 
 /**
- * Интерфейс участника группы
+ * Interface for group member
  */
 export interface IGroupMember {
-  member_id: string            // UUID из group_members
-  group_id: string             // UUID связь с app.groups
-  user_id: string              // UUID связь с app.users
-  joined_at: string            // Дата добавления в группу
-  added_by: string             // UUID пользователя, добавившего участника
-  is_active: boolean           // Статус активности участника
-  left_at: string | null       // Дата выхода из группы (если есть)
-  removed_by: string | null    // UUID удалившего (если есть)
+  member_id: string            // UUID from group_members
+  group_id: string             // UUID link to app.groups
+  user_id: string              // UUID link to app.users
+  joined_at: string            // Date added to group
+  added_by: string             // UUID of user who added member
+  is_active: boolean           // Member activity status
+  left_at: string | null       // Date left group (if any)
+  removed_by: string | null    // UUID of remover (if any)
   
-  // Данные из app.users
-  username: string             // Логин пользователя
-  email: string                // Email пользователя 
-  is_staff: boolean            // Флаг сотрудника
-  account_status: string       // Статус учетной записи
-  first_name: string           // Имя
-  middle_name: string          // Отчество
-  last_name: string            // Фамилия
+  // Data from app.users
+  username: string             // User login
+  email: string                // User email
+  is_staff: boolean            // Staff flag
+  account_status: string       // Account status
+  first_name: string           // First name
+  middle_name: string          // Middle name
+  last_name: string            // Last name
 
-  // Опциональные данные из app.user_profiles
-  mobile_phone_number?: string // Мобильный телефон 
-  company_name?: string        // Название компании
-  position?: string            // Должность
+  // Optional data from app.user_profiles
+  mobile_phone_number?: string // Mobile phone
+  company_name?: string        // Company name
+  position?: string            // Position
 }
 
 /**
- * Интерфейс для состояния участников группы
+ * Interface for group members state
  */
 export interface IGroupMembersState {
-  members: IGroupMember[]      // Список участников
-  loading: boolean             // Флаг загрузки
-  error: string | null         // Ошибка (если есть)
-  selectedMembers: string[]    // ID выбранных участников
+  members: IGroupMember[]      // Members list
+  loading: boolean             // Loading flag
+  error: string | null         // Error (if any)
+  selectedMembers: string[]    // Selected member IDs
 }
 
 /**
- * Интерфейс состояния хранилища редактора групп
+ * Interface for group editor store state
  */
 export interface GroupEditorState {
   mode: EditorMode
@@ -174,11 +176,11 @@ export interface GroupEditorState {
     details: IGroupDetails
   }
   ui: IEditorUIState
-  members: IGroupMembersState  // Добавляем состояние участников группы
+  members: IGroupMembersState  // Add group members state
 }
 
 /**
- * Интерфейс геттеров хранилища
+ * Interface for store getters
  */
 export interface GroupEditorStoreGetters {
   isEditMode: () => boolean
@@ -186,7 +188,7 @@ export interface GroupEditorStoreGetters {
 }
 
 /**
-* Интерфейс действий хранилища
+* Interface for store actions
 */
 export interface GroupEditorStoreActions {
 createNewGroup: () => Promise<ICreateGroupResponse>
@@ -198,7 +200,7 @@ resetForm: () => void
 }
 
 /**
-* Интерфейс ответа API при получении участников группы
+* Interface for API response when fetching group members
 */
 export interface IFetchGroupMembersResponse {
   success: boolean
@@ -210,7 +212,7 @@ export interface IFetchGroupMembersResponse {
 }
 
 /**
-* Интерфейс ответа API при удалении участников группы
+* Interface for API response when removing group members
 */
 export interface IRemoveGroupMembersResponse {
 success: boolean

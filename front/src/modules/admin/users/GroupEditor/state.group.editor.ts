@@ -1,11 +1,13 @@
 /**
- * state.group.editor.ts
- * Pinia store для управления состоянием редактора групп.
+ * @file state.group.editor.ts
+ * Version: 1.0.0
+ * Pinia store for managing group editor state.
+ * Frontend file that handles form data storage, UI state management, and API data preparation.
  *
- * Функциональность:
- * - Хранение данных форм в режиме создания новой группы
- * - Управление состоянием UI
- * - Подготовка данных для отправки в API
+ * Functionality:
+ * - Store form data in new group creation mode
+ * - Manage UI state
+ * - Prepare data for API submission
  */
 
 import { defineStore } from 'pinia'
@@ -26,7 +28,7 @@ import { useUserStore } from '@/core/state/userstate'
 import { createGroupService } from './service.create.group'
 
 /**
- * Начальные значения для данных группы
+ * Initial values for group data
  */
 const initialGroupState: IGroupData = {
   group_name: '',
@@ -36,7 +38,7 @@ const initialGroupState: IGroupData = {
 }
 
 /**
- * Начальные значения для дополнительной информации
+ * Initial values for additional information
  */
 const initialDetailsState: IGroupDetails = {
   group_description: '',
@@ -44,7 +46,7 @@ const initialDetailsState: IGroupDetails = {
 }
 
 /**
- * Начальные значения для состояния UI
+ * Initial values for UI state
  */
 const initialUIState: IEditorUIState = {
   activeSection: 'details',
@@ -55,7 +57,7 @@ const initialUIState: IEditorUIState = {
 }
 
 /**
- * Начальные значения для состояния участников группы
+ * Initial values for group members state
  */
 const initialMembersState: IGroupMembersState = {
   members: [],
@@ -65,7 +67,7 @@ const initialMembersState: IGroupMembersState = {
 }
 
 /**
- * Определение хранилища
+ * Store definition
  */
 export const useGroupEditorStore = defineStore('groupEditor', {
   state: (): GroupEditorState => {
@@ -95,15 +97,15 @@ export const useGroupEditorStore = defineStore('groupEditor', {
         return false
       }
 
-      // Получаем измененные поля
+      // Get changed fields
       const changes = this.getChangedFields
-      // Проверяем есть ли изменения помимо group_id
-      return Object.keys(changes).length > 1  // > 1 потому что group_id всегда присутствует
+      // Check if there are changes besides group_id
+      return Object.keys(changes).length > 1  // > 1 because group_id is always present
     },
 
     getChangedFields(): IUpdateGroupRequest {
       if (!this.originalData || this.mode.mode !== 'edit') {
-        return { group_id: '' }  // Возвращаем пустой объект с обязательным полем
+        return { group_id: '' }  // Return empty object with required field
       }
 
       const changes: IUpdateGroupRequest = {
@@ -120,7 +122,7 @@ export const useGroupEditorStore = defineStore('groupEditor', {
         ...this.originalData.details
       }
 
-      // Проверяем каждое поле и добавляем только измененные
+      // Check each field and add only changed ones
       if (currentData.group_name !== originalData.group_name) {
         changes.group_name = currentData.group_name
       }
@@ -144,21 +146,21 @@ export const useGroupEditorStore = defineStore('groupEditor', {
     },
 
     /**
-     * Получение списка участников группы
+     * Get group members list
      */
     getGroupMembers(): IGroupMember[] {
       return this.members.members
     },
 
     /**
-     * Количество выбранных участников
+     * Number of selected members
      */
     selectedMembersCount(): number {
       return this.members.selectedMembers.length
     },
 
     /**
-     * Есть ли выбранные участники
+     * Whether any members are selected
      */
     hasSelectedMembers(): boolean {
       return this.selectedMembersCount > 0
@@ -167,7 +169,7 @@ export const useGroupEditorStore = defineStore('groupEditor', {
 
   actions: {
     /**
-     * Обновление данных группы
+     * Update group data
      */
     updateGroup(data: Partial<IGroupData>) {
       console.log('Updating group data:', data)
@@ -175,7 +177,7 @@ export const useGroupEditorStore = defineStore('groupEditor', {
     },
 
     /**
-     * Обновление дополнительной информации
+     * Update additional information
      */
     updateDetails(data: Partial<IGroupDetails>) {
       console.log('Updating group details:', data)
@@ -183,30 +185,30 @@ export const useGroupEditorStore = defineStore('groupEditor', {
     },
 
     /**
-     * Инициализация режима редактирования
+     * Initialize edit mode
      */
     initEditMode(data: { group: IGroupData; details: IGroupDetails }) {
       console.log('Initializing edit mode with group data')
       
-      // Устанавливаем режим редактирования
+      // Set edit mode
       this.mode = {
         mode: 'edit',
         groupId: data.group.group_id as string
       }
       
-      // Сохраняем оригинальные данные
+      // Save original data
       this.originalData = {
         group: { ...data.group },
         details: { ...data.details }
       }
       
-      // Обновляем текущие данные через существующие actions
+      // Update current data through existing actions
       this.updateGroup(data.group)
       this.updateDetails(data.details)
     },
 
     /**
-     * Установка активной секции
+     * Set active section
      */
     setActiveSection(section: 'details' | 'members') {
       console.log('[GroupEditor] Setting active section:', section)
@@ -215,14 +217,14 @@ export const useGroupEditorStore = defineStore('groupEditor', {
     },
 
     /**
-     * Сброс формы к начальным значениям
-     * Работает только в режиме создания группы
+     * Reset form to initial values
+     * Works only in group creation mode
      */
     // state.group.editor.ts
     resetForm() {
       if (this.mode.mode === 'edit') return
       
-      // Используем Object.assign для реактивности
+      // Use Object.assign for reactivity
       Object.assign(this.group, {
         ...initialGroupState,
         group_owner: useUserStore().username || ''
@@ -231,12 +233,12 @@ export const useGroupEditorStore = defineStore('groupEditor', {
       Object.assign(this.details, initialDetailsState)
       Object.assign(this.ui, initialUIState)
       
-      // Сбрасываем состояние участников группы
+      // Reset group members state
       this.resetMembersState()
     },
 
     /**
-     * Установка состояния отправки формы
+     * Set form submission state
      */
     setSubmitting(isSubmitting: boolean) {
       console.log('Setting submitting state:', isSubmitting)
@@ -244,7 +246,7 @@ export const useGroupEditorStore = defineStore('groupEditor', {
     },
 
     /**
-     * Подготовка данных для создания группы
+     * Prepare data for group creation
      */
     prepareRequestData(): ICreateGroupRequest {
       console.log('Preparing data for API request')
@@ -261,22 +263,22 @@ export const useGroupEditorStore = defineStore('groupEditor', {
     },
 
     /**
-     * Подготовка данных для обновления группы
+     * Prepare data for group update
      */
     prepareUpdateData(): IUpdateGroupRequest {
-      // Используем getter для получения изменений
+      // Use getter to get changes
       const changes = this.getChangedFields
 
-      // Логируем для отладки
+      // Log for debugging
       console.log('Preparing data for update:', changes)
 
       return changes
     },
 
     /**
-     * Создание новой группы
-     * @returns Promise<ICreateGroupResponse> - Ответ от сервера с данными созданной группы
-     * @throws Error при ошибке создания
+     * Create new group
+     * @returns Promise<ICreateGroupResponse> - Server response with created group data
+     * @throws Error when creation fails
      */
     async createNewGroup(): Promise<ICreateGroupResponse> {
       console.log('[GroupEditorStore] Starting group creation')
@@ -284,10 +286,10 @@ export const useGroupEditorStore = defineStore('groupEditor', {
       try {
         this.setSubmitting(true)
         
-        // Получаем подготовленные данные
+        // Get prepared data
         const requestData = this.prepareRequestData()
         
-        // Отправляем запрос через сервис и получаем ответ
+        // Send request through service and get response
         const response = await createGroupService.createGroup(requestData)
         
         console.log('[GroupEditorStore] Group created successfully:', {
@@ -295,7 +297,7 @@ export const useGroupEditorStore = defineStore('groupEditor', {
           groupName: response.group_name
         })
         
-        // Сбрасываем форму после успешного создания
+        // Reset form after successful creation
         // this.resetForm()
         
         return response
@@ -309,11 +311,11 @@ export const useGroupEditorStore = defineStore('groupEditor', {
     },
 
     /**
-     * Действия для работы с участниками группы
+     * Actions for working with group members
      */
 
     /**
-     * Обновление списка участников группы
+     * Update group members list
      */
     updateGroupMembers(members: IGroupMember[]) {
       console.log('[GroupEditorStore] Updating group members list:', members.length)
@@ -321,21 +323,21 @@ export const useGroupEditorStore = defineStore('groupEditor', {
     },
 
     /**
-     * Установка состояния загрузки для участников группы
+     * Set loading state for group members
      */
     setMembersLoading(loading: boolean) {
       this.members.loading = loading
     },
 
     /**
-     * Установка ошибки для участников группы
+     * Set error for group members
      */
     setMembersError(error: string | null) {
       this.members.error = error
     },
 
     /**
-     * Выбор участника группы
+     * Select group member
      */
     selectGroupMember(userId: string) {
       if (!this.members.selectedMembers.includes(userId)) {
@@ -345,7 +347,7 @@ export const useGroupEditorStore = defineStore('groupEditor', {
     },
 
     /**
-     * Отмена выбора участника группы
+     * Deselect group member
      */
     deselectGroupMember(userId: string) {
       this.members.selectedMembers = this.members.selectedMembers.filter(id => id !== userId)
@@ -353,7 +355,7 @@ export const useGroupEditorStore = defineStore('groupEditor', {
     },
 
     /**
-     * Переключение выбора участника группы
+     * Toggle group member selection
      */
     toggleGroupMemberSelection(userId: string, selected: boolean) {
       if (selected) {
@@ -364,7 +366,7 @@ export const useGroupEditorStore = defineStore('groupEditor', {
     },
 
     /**
-     * Очистка выбора участников группы
+     * Clear group members selection
      */
     clearGroupMembersSelection() {
       this.members.selectedMembers = []
@@ -372,7 +374,7 @@ export const useGroupEditorStore = defineStore('groupEditor', {
     },
 
     /**
-     * Сброс состояния участников группы
+     * Reset group members state
      */
     resetMembersState() {
       Object.assign(this.members, initialMembersState)

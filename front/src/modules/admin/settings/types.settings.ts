@@ -1,9 +1,12 @@
 /**
- * types.settings.ts
- * 
+ * @file types.settings.ts
+ * Version: 1.0.0
  * Type definitions for application settings.
- * Centralized location for all settings interfaces, types and enums.
- * Ensures consistent typing across all settings components and services.
+ * Frontend file that provides centralized location for all settings interfaces, types and enums.
+ *
+ * Functionality:
+ * - Centralized location for all settings interfaces, types and enums
+ * - Ensures consistent typing across all settings components and services
  */
 
 /**

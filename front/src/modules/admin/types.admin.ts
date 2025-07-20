@@ -1,6 +1,8 @@
 /**
- * types.admin.ts
- * Типы для основного модуля администрирования
+ * @file types.admin.ts
+ * Version: 1.0.0
+ * Type definitions for main administration module.
+ * Frontend file that defines TypeScript types and interfaces for admin functionality.
  */
 
 export type SubModuleId = 

@@ -1,10 +1,13 @@
 /**
- * service.create.new.group.ts
- * Service used for creation of new groups from admin module.
+ * @file service.create.group.ts
+ * Version: 1.0.0
+ * Service for creating new groups from admin module.
+ * Frontend file that handles group creation requests, error management, and logging.
  *
- * - sending request to api for new group creation
- * - errors management
- * - logging
+ * Functionality:
+ * - Send request to API for new group creation
+ * - Error management and handling
+ * - Operation logging
  */
 import { api } from '@/core/api/service.axios'
 import { groupsService } from '../GroupsList/service.read.groups';
@@ -17,7 +20,7 @@ import type {
 const groupsStore = useStoreGroupsList();
 
 /**
- * Логгер для операций сервиса
+ * Logger for service operations
  */
 const logger = {
   info: (message: string, meta?: object) =>
@@ -27,14 +30,14 @@ const logger = {
 }
 
 /**
- * Сервис создания новой группы
+ * Service for creating new groups
  */
 export const createGroupService = {
   /**
-   * Создает новую группу
-   * @param groupData - данные новой группы
-   * @returns Promise<ICreateGroupResponse> - Ответ от сервера с данными созданной группы
-   * @throws Error при ошибке создания
+   * Creates a new group
+   * @param groupData - New group data
+   * @returns Promise<ICreateGroupResponse> - Server response with created group data
+   * @throws Error when creation fails
    */
   async createGroup(groupData: ICreateGroupRequest): Promise<ICreateGroupResponse> {
     logger.info('Starting group creation with data:', {
@@ -51,7 +54,7 @@ export const createGroupService = {
       )
 
       if (!response?.data) {
-        const errorMessage = 'Некорректный ответ сервера'
+        const errorMessage = 'Invalid server response'
         logger.error(errorMessage)
         throw new Error(errorMessage)
       }
@@ -62,29 +65,29 @@ export const createGroupService = {
           group_name: response.data.group_name
         });
       
-        // Обновляем список групп в кеше хранилища
+        // Update groups list in store cache
         try {
           groupsStore.clearCache();
           groupsService.fetchGroups();
         } catch (error) {
-          // Логируем ошибку, но не прерываем выполнение
+          // Log error but don't interrupt execution
           logger.error('Failed to update groups list after creation', error);
         }
       
         return response.data;
       } else {
-        const errorMessage = response.data.message || 'Неизвестная ошибка создания группы'
+        const errorMessage = response.data.message || 'Unknown error during group creation'
         logger.error(errorMessage)
         throw new Error(errorMessage)
       }
     } catch (error) {
-      // Обработка ошибок axios
+      // Handle axios errors
       if (error instanceof Error) {
         logger.error('Failed to create group', error)
         throw error
       }
 
-      // Обработка неожиданных ошибок
+      // Handle unexpected errors
       const errorMessage = 'Unexpected error during group creation'
       logger.error(errorMessage, error)
       throw new Error(errorMessage)

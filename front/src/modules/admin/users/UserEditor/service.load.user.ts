@@ -1,38 +1,40 @@
 /**
- * service.load.user.ts
- * Сервис для загрузки данных пользователя из API.
+ * @file service.load.user.ts
+ * Version: 1.0.0
+ * Service for loading user data from API.
+ * Frontend file that handles user data fetching, validation, and store initialization.
  * 
- * Функциональность:
- * - Получение данных пользователя по ID
- * - Проверка корректности полученных данных
- * - Инициализация режима редактирования в хранилище
- * - Обработка ошибок при загрузке
+ * Functionality:
+ * - Fetch user data by ID
+ * - Validate received data integrity
+ * - Initialize edit mode in store
+ * - Handle loading errors
  */
 import { api } from '@/core/api/service.axios'
 import { useUserEditorStore } from './state.user.editor'
 import { useUserStore } from '@/core/state/userstate'
 import type { ILoadUserResponse, IApiError } from './types.user.editor'
 
-// Логгер для отслеживания операций
+// Logger for tracking operations
 const logger = {
   info: (message: string, meta?: object) => console.log(`[LoadUserService] ${message}`, meta || ''),
   error: (message: string, error?: unknown) => console.error(`[LoadUserService] ${message}`, error || '')
 }
 
 /**
- * Сервис для загрузки данных пользователя
+ * Service for loading user data
  */
 export const loadUserService = {
   /**
-   * Загружает данные пользователя по ID
-   * @param userId - ID пользователя
-   * @throws {Error} При ошибке загрузки или отсутствии данных
+   * Fetches user data by ID
+   * @param userId - User ID
+   * @throws {Error} When loading fails or data is missing
    */
   async fetchUserById(userId: string): Promise<void> {
     const store = useUserEditorStore()
     const userStore = useUserStore()
 
-    // Проверка авторизации пользователя
+    // Check user authentication
     if (!userStore.isLoggedIn) {
       const errorMessage = 'User not authenticated'
       logger.error(errorMessage)
@@ -42,26 +44,26 @@ export const loadUserService = {
     try {
       logger.info('Fetching user data', { userId })
       
-      // Запрос данных из API
+      // Request data from API
       const response = await api.get<ILoadUserResponse>(
         `/api/admin/users/fetch-user-by-userid/${userId}`
       )
 
-      // Проверка успешности запроса
+      // Check request success
       if (!response.data.success) {
         const errorMessage = response.data.message || 'Failed to fetch user data'
         logger.error(errorMessage)
         throw new Error(errorMessage)
       }
 
-      // Проверка наличия данных пользователя
+      // Check if user data exists
       if (!response.data.data?.user) {
         const errorMessage = 'User data not found'
         logger.error(errorMessage)
         throw new Error(errorMessage)
       }
 
-      // Проверка наличия профиля пользователя
+      // Check if user profile exists
       if (!response.data.data?.profile) {
         const errorMessage = 'User profile not found'
         logger.error(errorMessage)
@@ -74,7 +76,7 @@ export const loadUserService = {
         username: response.data.data.user.username
       })
 
-      // Инициализация режима редактирования
+      // Initialize edit mode
       store.initEditMode({
         user: response.data.data.user,
         profile: response.data.data.profile

@@ -1,6 +1,8 @@
 /**
  * @file types.groups.list.ts
+ * Version: 1.0.0
  * Type definitions for the groups management frontend module.
+ * Frontend file that defines TypeScript types and interfaces for groups management functionality.
  *
  * This module provides TypeScript types and interfaces for:
  * - Group data structure and properties
@@ -31,7 +33,7 @@ export enum GroupStatus {
 export interface IGroup {
   group_id: string; // UUID
   group_name: string; // character varying(100)
-  reserve_1: string; // character varying(100), возможно, резервное поле
+  reserve_1: string; // character varying(100), possibly a reserve field
   group_status: GroupStatus; // app.group_status
   group_owner: string; // UUID
   is_system: boolean; // boolean
@@ -68,7 +70,7 @@ export interface IGroupsResponse {
 }
 
 /**
-* Интерфейс заголовка таблицы для групп
+* Table header interface for groups
 */
 export interface TableHeader {
   title: string;

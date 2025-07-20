@@ -1,6 +1,8 @@
 /**
  * @file service.read.groups.ts
+ * Version: 1.0.0
  * Frontend service for fetching and managing groups list data.
+ * Frontend file that handles groups data fetching, cache management, and error handling.
  *
  * Functionality:
  * - Fetches groups list from the API endpoint.

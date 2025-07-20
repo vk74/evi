@@ -1,6 +1,8 @@
 /**
  * @file service.fetch.group.ts
+ * Version: 1.0.0
  * Service for fetching group data from the API by group ID.
+ * Frontend file that handles group data retrieval, validation, and store initialization.
  * 
  * Functionality:
  * - Retrieves group data by ID
@@ -19,7 +21,7 @@ import type { IGroupData, IGroupDetails, IApiError, ILoadGroupResponse } from '.
 const logger = {
   info: (message: string, meta?: object) => console.log(`[FetchGroupService] ${message}`, meta || ''),
   error: (message: string, error?: unknown) => console.error(`[FetchGroupService] ${message}`, error || ''),
-  warn: (message: string, meta?: object) => console.warn(`[FetchGroupService] ${message}`, meta || '') // Добавлен метод warn
+  warn: (message: string, meta?: object) => console.warn(`[FetchGroupService] ${message}`, meta || '') // Added warn method
 };
 
 /**

@@ -1,6 +1,8 @@
 /**
- * service.delete.group.members.ts
- * FRONTEND service for removing group members from the API.
+ * @file service.delete.group.members.ts
+ * Version: 1.0.0
+ * Frontend service for removing group members from the API.
+ * Frontend file that handles group member removal requests and error processing.
  * 
  * Functionality:
  * - Sends delete requests to the API
@@ -26,14 +28,14 @@ export async function removeGroupMembers(groupId: string, userIds: string[]): Pr
   // Skip if no authorization
   if (!userStore.isLoggedIn || !userStore.jwt) {
     console.warn('[RemoveGroupMembersService] Unauthorized - cannot remove group members')
-    uiStore.showErrorSnackbar('Требуется авторизация для удаления участников группы')
+    uiStore.showErrorSnackbar('Authorization required to remove group members')
     return -1
   }
   
   // Skip if no user IDs provided
   if (!userIds || userIds.length === 0) {
     console.warn('[RemoveGroupMembersService] No user IDs provided')
-    uiStore.showErrorSnackbar('Не выбраны участники для удаления')
+    uiStore.showErrorSnackbar('No members selected for removal')
     return 0
   }
   
@@ -51,16 +53,16 @@ export async function removeGroupMembers(groupId: string, userIds: string[]): Pr
     
     if (success) {
       console.log(`[RemoveGroupMembersService] Successfully removed ${removedCount} members`)
-      uiStore.showSuccessSnackbar(`Успешно удалено ${removedCount} участников группы`)
+      uiStore.showSuccessSnackbar(`Successfully removed ${removedCount} group members`)
       return removedCount
     } else {
-      const errorMessage = message || 'Не удалось удалить участников группы'
+      const errorMessage = message || 'Failed to remove group members'
       console.error(`[RemoveGroupMembersService] API error: ${errorMessage}`)
       uiStore.showErrorSnackbar(errorMessage)
       return 0
     }
   } catch (error) {
-    let errorMessage = 'Ошибка при удалении участников группы'
+    let errorMessage = 'Error removing group members'
     
     // Try to get more informative error message
     if (error instanceof Error) {
@@ -69,13 +71,13 @@ export async function removeGroupMembers(groupId: string, userIds: string[]): Pr
     
     // Make error message more user-friendly
     if (errorMessage.includes('500')) {
-      errorMessage = 'Ошибка на сервере при удалении участников группы'
+      errorMessage = 'Server error while removing group members'
     } else if (errorMessage.includes('404')) {
-      errorMessage = 'Не найдена группа или сервис для удаления участников'
+      errorMessage = 'Group or service for removing members not found'
     } else if (errorMessage.includes('403')) {
-      errorMessage = 'Нет прав доступа для удаления участников группы'
+      errorMessage = 'No access rights to remove group members'
     } else if (errorMessage.includes('401')) {
-      errorMessage = 'Требуется авторизация для удаления участников группы'
+      errorMessage = 'Authorization required to remove group members'
     }
     
     console.error('[RemoveGroupMembersService] Exception:', error)

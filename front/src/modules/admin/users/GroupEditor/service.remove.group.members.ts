@@ -1,6 +1,8 @@
 /**
- * service.remove.group.members.ts
+ * @file service.remove.group.members.ts
+ * Version: 1.0.0
  * Service for removing members from a group.
+ * Frontend file that handles group member removal via API and error processing.
  * 
  * Functionality:
  * - Removes members from a group via API
@@ -33,13 +35,13 @@ class RemoveGroupMembersService {
     // Skip if no authorization
     if (!userStore.isLoggedIn || !userStore.jwt) {
       console.warn('[RemoveGroupMembersService] Unauthorized - cannot remove group members')
-      uiStore.showErrorSnackbar('Требуется авторизация для удаления участников группы')
+      uiStore.showErrorSnackbar('Authorization required to remove group members')
       return 0
     }
     
     if (!userIds.length) {
       console.warn('[RemoveGroupMembersService] No members selected for removal')
-      uiStore.showErrorSnackbar('Не выбраны участники для удаления')
+      uiStore.showErrorSnackbar('No members selected for removal')
       return 0
     }
     
@@ -70,13 +72,13 @@ class RemoveGroupMembersService {
         
         return removedCount
       } else {
-        const errorMessage = message || 'Не удалось удалить участников группы'
+        const errorMessage = message || 'Failed to remove group members'
         console.error(`[RemoveGroupMembersService] API error: ${errorMessage}`)
         uiStore.showErrorSnackbar(errorMessage)
         return 0
       }
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Ошибка при удалении участников группы'
+      const errorMessage = error instanceof Error ? error.message : 'Error removing group members'
       console.error('[RemoveGroupMembersService] Exception:', error)
       uiStore.showErrorSnackbar(errorMessage)
       return 0

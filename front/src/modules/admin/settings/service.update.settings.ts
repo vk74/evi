@@ -1,8 +1,8 @@
 /**
- * service.update.settings.ts
- * 
+ * @file service.update.settings.ts
+ * Version: 1.0.0
  * Service for updating application settings.
- * Communicates with the backend API to update settings and shows feedback via snackbars.
+ * Frontend file that communicates with backend API to update settings and shows feedback via snackbars.
  */
 
 import { api } from '@/core/api/service.axios';
@@ -51,26 +51,26 @@ export async function updateSetting(
       store.updateCachedSetting(sectionPath, settingName, response.data.updatedSetting);
       
       // Show success message
-      uiStore.showSuccessSnackbar(`Настройка успешно обновлена`);
+      uiStore.showSuccessSnackbar(`Setting updated successfully`);
       
       return response.data.updatedSetting;
     } else {
       // Handle error
-      const errorMessage = response.data.error || 'Неизвестная ошибка';
+      const errorMessage = response.data.error || 'Unknown error';
       console.error(`Failed to update setting ${sectionPath}.${settingName}:`, errorMessage);
       
       // Show error message
-      uiStore.showErrorSnackbar(`Ошибка обновления настройки: ${errorMessage}`);
+      uiStore.showErrorSnackbar(`Error updating setting: ${errorMessage}`);
       
       return null;
     }
   } catch (error) {
     // Handle exception
-    const errorMessage = error instanceof Error ? error.message : 'Неизвестная ошибка';
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     console.error(`Exception updating setting ${sectionPath}.${settingName}:`, error);
     
     // Show error message
-    uiStore.showErrorSnackbar(`Ошибка при обновлении настройки: ${errorMessage}`);
+    uiStore.showErrorSnackbar(`Error updating setting: ${errorMessage}`);
     
     return null;
   }
@@ -156,18 +156,18 @@ export async function updateMultipleSettings(
     const failureCount = processedResults.filter(r => !r.success).length;
 
     if (failureCount === 0) {
-      uiStore.showSuccessSnackbar(`Все настройки успешно обновлены (${successCount})`);
+      uiStore.showSuccessSnackbar(`All settings updated successfully (${successCount})`);
     } else if (successCount === 0) {
-      uiStore.showErrorSnackbar(`Ошибка обновления настроек (${failureCount})`);
+      uiStore.showErrorSnackbar(`Error updating settings (${failureCount})`);
     } else {
-      uiStore.showErrorSnackbar(`Обновлено ${successCount} настроек, ошибок: ${failureCount}`);
+      uiStore.showErrorSnackbar(`Updated ${successCount} settings, errors: ${failureCount}`);
     }
 
     return processedResults;
   } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : 'Неизвестная ошибка';
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     console.error('Exception updating multiple settings:', error);
-    uiStore.showErrorSnackbar(`Ошибка при массовом обновлении настроек: ${errorMessage}`);
+    uiStore.showErrorSnackbar(`Error during bulk settings update: ${errorMessage}`);
     
     return updates.map(({ settingName }) => ({
       success: false,

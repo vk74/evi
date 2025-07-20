@@ -1,6 +1,8 @@
 /**
- * types.user.editor.ts - used in frontend
+ * @file types.user.editor.ts
+ * Version: 1.0.0
  * Type definitions for the user editor component.
+ * Frontend file that defines TypeScript types and interfaces for user editor functionality.
  *
  * This module defines TypeScript types and interfaces for:
  * - Component modes and states
@@ -10,7 +12,7 @@
  */
 
 /**
- * Перечисления
+ * Enums
  */
 export enum AccountStatus {
   ACTIVE = 'active',
@@ -40,14 +42,14 @@ export type EditMode = {
 export type EditorMode = CreateMode | EditMode
 
 /**
- * Интерфейс базовой информации пользователя (таблица app.users)
+ * Interface for basic user information (app.users table)
  */
 export interface IUserAccount {
-  user_id?: string                 // uuid, опционален т.к. генерируется при создании
+  user_id?: string                 // uuid, optional as it's generated during creation
   username: string                 // character varying(50)
   email: string                    // character varying(255)
-  password: string                 // text (хранится как hashed_password)
-  passwordConfirm: string          // только для валидации формы
+  password: string                 // text (stored as hashed_password)
+  passwordConfirm: string          // only for form validation
   is_staff: boolean                // boolean
   account_status: string           // app.account_status
   first_name: string               // character varying(50)
@@ -57,11 +59,11 @@ export interface IUserAccount {
 }
 
 /**
- * Интерфейс профиля пользователя (таблица app.user_profiles)
+ * Interface for user profile (app.user_profiles table)
  */
 export interface IUserProfile {
   profile_id?: string             // uuid
-  user_id?: string                // uuid связь с app.users
+  user_id?: string                // uuid link to app.users
   mobile_phone_number: string     // character varying(15)
   address: string                 // 
   company_name: string            // character varying(255)
@@ -70,14 +72,14 @@ export interface IUserProfile {
 }
 
 /**
- * Интерфейс для UI состояния
+ * Interface for UI state
  */
 export interface IEditorUIState {
   activeSection: 'account' | 'profile';
   showPassword: boolean;
   isSubmitting: boolean;
   hasInteracted: boolean;
-  isFormChanged: boolean;  // для отслеживания изменений формы
+  isFormChanged: boolean;  // for tracking form changes
 }
 
 /**
@@ -100,7 +102,7 @@ export interface ICreateUserRequest {
 }
 
 export interface IUpdateUserRequest {
-  user_id: string   // Обязательное поле для обновления
+  user_id: string   // Required field for updates
   username?: string
   email?: string
   account_status?: string
@@ -115,7 +117,7 @@ export interface IUpdateUserRequest {
   position?: string
 }
 
-// Тип для данных обновления без user_id (для API запросов)
+// Type for update data without user_id (for API requests)
 export interface IUpdateUserRequestData {
   username?: string
   email?: string
@@ -131,7 +133,7 @@ export interface IUpdateUserRequestData {
   position?: string
 }
 
-// Интерфейс для ответа API
+// Interface for API response
 export interface ICreateUserResponse {
   success: boolean
   message: string
@@ -144,13 +146,13 @@ export interface ICreateUserResponse {
  * API response interfaces 
  */
 
-// Базовый интерфейс ответа API
+// Base API response interface
 export interface IApiResponse {
   success: boolean;
   message: string;
 }
 
-// Интерфейс ответа API при загрузке пользователя
+// Interface for API response when loading user
 export interface ILoadUserResponse extends IApiResponse {
   data: {
     user: IUserAccount;
@@ -158,7 +160,7 @@ export interface ILoadUserResponse extends IApiResponse {
   };
 }
 
-// Интерфейс ошибки API
+// Interface for API error
 export interface IApiError {
   message: string;
   code?: string;
@@ -166,7 +168,7 @@ export interface IApiError {
 }
 
 /**
- * Интерфейс состояния хранилища редактора пользователей
+ * Interface for user editor store state
  */
 export interface UserEditorState {
   mode: EditorMode;
@@ -179,7 +181,7 @@ export interface UserEditorState {
   ui: IEditorUIState;
 }
 
-// В types.user.editor.ts добавим:
+// In types.user.editor.ts add:
 export interface UserEditorStoreGetters {
   isEditMode: () => boolean;
   hasChanges: () => boolean;

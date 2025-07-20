@@ -1,6 +1,8 @@
 /**
- * types.users.admin.ts
- * Типы для модуля управления пользователями
+ * @file types.users.admin.ts
+ * Version: 1.0.0
+ * Type definitions for user administration module.
+ * Frontend file that defines TypeScript types and interfaces for user admin functionality.
  */
 
 export type UserSectionId = 'users-proto' | 'groups' | 'user-editor' | 'group-editor'

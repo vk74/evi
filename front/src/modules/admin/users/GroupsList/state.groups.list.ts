@@ -1,6 +1,8 @@
 /**
  * @file state.groups.list.ts
+ * Version: 1.0.0
  * Frontend store for managing the state of the groups list.
+ * Frontend file that handles groups state management, caching, and JWT validation.
  *
  * Functionality:
  * - Manages the state of groups, including loading, error, pagination, sorting, and selection.

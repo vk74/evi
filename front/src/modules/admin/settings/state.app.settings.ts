@@ -1,8 +1,13 @@
 /**
- * state.app.settings.ts
- * 
+ * @file state.app.settings.ts
+ * Version: 1.0.0
  * State management for the application settings module using Pinia.
- * Tracks the selected section ID, expanded sections, and caches settings data.
+ * Frontend file that tracks selected section ID, expanded sections, and caches settings data.
+ *
+ * Functionality:
+ * - Tracks the selected section ID, expanded sections, and caches settings data
+ * - Manages settings cache with TTL of 5 minutes
+ * - Provides methods for updating, sorting, selecting, and clearing the cache
  */
 
 import { defineStore } from 'pinia';

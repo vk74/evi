@@ -1,17 +1,19 @@
 /**
- * service.update.groups.ts
- * Сервис для обновления данных группы.
+ * @file service.update.group.ts
+ * Version: 1.0.0
+ * Service for updating group data.
+ * Frontend file that handles group data updates, error handling, and operation logging.
  *
- * Функциональность:
- * - Обновление данных группы через API
- * - Обработка ошибок запроса
- * - Логирование операций
+ * Functionality:
+ * - Update group data via API
+ * - Handle request errors
+ * - Log operations
  */
 import { api } from '@/core/api/service.axios'
 import type { IUpdateGroupRequest, IApiResponse } from './types.group.editor'
 
 /**
- * Логгер для операций сервиса
+ * Logger for service operations
  */
 const logger = {
   info: (message: string, meta?: object) =>
@@ -21,14 +23,14 @@ const logger = {
 }
 
 /**
- * Сервис обновления данных группы
+ * Service for updating group data
  */
 export const updateGroupService = {
   /**
-   * Обновляет данные группы
-   * @param groupData - обновляемые данные группы
-   * @returns Promise<boolean> - успешность операции
-   * @throws Error при ошибке обновления
+   * Updates group data
+   * @param groupData - Group data to update
+   * @returns Promise<boolean> - Success status
+   * @throws Error when update fails
    */
   async updateGroup(groupData: IUpdateGroupRequest): Promise<boolean> {
     logger.info('Starting group update with data:', {
@@ -43,7 +45,7 @@ export const updateGroupService = {
       )
 
       if (!response?.data) {
-        const errorMessage = 'Некорректный ответ сервера'
+        const errorMessage = 'Invalid server response'
         logger.error(errorMessage)
         throw new Error(errorMessage)
       }
@@ -54,7 +56,7 @@ export const updateGroupService = {
         })
         return true
       } else {
-        const errorMessage = response.data.message || 'Неизвестная ошибка обновления данных группы'
+        const errorMessage = response.data.message || 'Unknown error during group data update'
         logger.error(errorMessage)
         throw new Error(errorMessage)
       }

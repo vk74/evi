@@ -1,17 +1,19 @@
 /**
- * service.update.user.ts
- * Сервис для обновления данных пользователя.
+ * @file service.update.user.ts
+ * Version: 1.0.0
+ * Service for updating user data.
+ * Frontend file that handles user data updates, error handling, and operation logging.
  *
- * Функциональность:
- * - Обновление данных пользователя через API
- * - Обработка ошибок запроса
- * - Логирование операций
+ * Functionality:
+ * - Update user data via API
+ * - Handle request errors
+ * - Log operations
  */
 import { api } from '@/core/api/service.axios'
 import type { IUpdateUserRequestData, IApiResponse } from './types.user.editor'
 
 /**
- * Логгер для операций сервиса
+ * Logger for service operations
  */
 const logger = {
   info: (message: string, meta?: object) =>
@@ -21,15 +23,15 @@ const logger = {
 }
 
 /**
- * Сервис обновления данных пользователя
+ * Service for updating user data
  */
 export const updateUserService = {
   /**
-   * Обновляет данные пользователя
-   * @param userId - ID пользователя для обновления
-   * @param userData - обновляемые данные пользователя
-   * @returns Promise<boolean> - успешность операции
-   * @throws Error при ошибке обновления
+   * Updates user data
+   * @param userId - User ID to update
+   * @param userData - User data to update
+   * @returns Promise<boolean> - Success status
+   * @throws Error when update fails
    */
   async updateUser(userId: string, userData: IUpdateUserRequestData): Promise<boolean> {
     logger.info('Starting user update with data:', {
@@ -44,7 +46,7 @@ export const updateUserService = {
       )
 
       if (!response?.data) {
-        const errorMessage = 'Некорректный ответ сервера'
+        const errorMessage = 'Invalid server response'
         logger.error(errorMessage)
         throw new Error(errorMessage)
       }
@@ -55,7 +57,7 @@ export const updateUserService = {
         })
         return true
       } else {
-        const errorMessage = response.data.message || 'Неизвестная ошибка обновления данных пользователя'
+        const errorMessage = response.data.message || 'Unknown error during user data update'
         logger.error(errorMessage)
         throw new Error(errorMessage)
       }

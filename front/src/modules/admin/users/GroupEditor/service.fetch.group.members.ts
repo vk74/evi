@@ -1,6 +1,8 @@
 /**
- * service.fetch.group.members.ts
- * FRONTEND service for fetching group members from the API.
+ * @file service.fetch.group.members.ts
+ * Version: 1.0.0
+ * Frontend service for fetching group members from the API.
+ * Frontend file that handles group member data fetching and error processing.
  * 
  * Functionality:
  * - Fetches group members data from the API
@@ -29,7 +31,7 @@ class FetchGroupMembersService {
     // Skip if no authorization
     if (!userStore.isLoggedIn || !userStore.jwt) {
       console.warn('[FetchGroupMembersService] Unauthorized - cannot fetch group members')
-      uiStore.showErrorSnackbar('Требуется авторизация для получения участников группы')
+      uiStore.showErrorSnackbar('Authorization required to view group members')
       return false
     }
     
@@ -38,7 +40,7 @@ class FetchGroupMembersService {
       groupEditorStore.setMembersError(null)
       console.log(`[FetchGroupMembersService] Fetching members for group ${groupId}`)
       
-      // Используем api из core/api/service.axios и правильный URL
+      // Use api from core/api/service.axios and correct URL
       const response = await api.get<IFetchGroupMembersResponse>(
         `/api/admin/groups/${groupId}/members`
       )
@@ -48,32 +50,32 @@ class FetchGroupMembersService {
       if (success && data && data.members) {
         groupEditorStore.updateGroupMembers(data.members)
         console.log(`[FetchGroupMembersService] Successfully fetched ${data.total} members`)
-        uiStore.showSuccessSnackbar(`Успешно загружено ${data.total} участников группы`)
+        uiStore.showSuccessSnackbar(`Successfully loaded ${data.total} group members`)
         return true
       } else {
-        const errorMessage = message || 'Не удалось получить список участников группы'
+        const errorMessage = message || 'Failed to get group members list'
         console.error(`[FetchGroupMembersService] API error: ${errorMessage}`)
         groupEditorStore.setMembersError(errorMessage)
         uiStore.showErrorSnackbar(errorMessage)
         return false
       }
     } catch (error) {
-      let errorMessage = 'Ошибка при получении участников группы'
+      let errorMessage = 'Error fetching group members'
       
-      // Пытаемся получить более информативное сообщение об ошибке
+      // Try to get more informative error message
       if (error instanceof Error) {
         errorMessage = error.message
       }
       
-      // Делаем сообщение более понятным для пользователя
+      // Make message more user-friendly
       if (errorMessage.includes('500')) {
-        errorMessage = 'Ошибка на сервере при получении участников группы'
+        errorMessage = 'Server error while fetching group members'
       } else if (errorMessage.includes('404')) {
-        errorMessage = 'Не найдена группа или сервис для получения участников'
+        errorMessage = 'Group or service for fetching members not found'
       } else if (errorMessage.includes('403')) {
-        errorMessage = 'Нет прав доступа для просмотра участников группы'
+        errorMessage = 'No access rights to view group members'
       } else if (errorMessage.includes('401')) {
-        errorMessage = 'Требуется авторизация для просмотра участников группы'
+        errorMessage = 'Authorization required to view group members'
       }
       
       console.error('[FetchGroupMembersService] Exception:', error)

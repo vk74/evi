@@ -1,16 +1,19 @@
 /**
- * service.create.new.user.ts
- * Service used for creation of new user account from admin module.
+ * @file service.create.new.user.ts
+ * Version: 1.0.0
+ * Service for creating new user accounts from admin module.
+ * Frontend file that handles user creation requests, error management, and logging.
  *
- * - sending request to api for new user creation
- * - errors management
- * - logging
+ * Functionality:
+ * - Send request to API for new user creation
+ * - Error management and handling
+ * - Operation logging
  */
 import { api } from '@/core/api/service.axios'
 import type { ICreateUserRequest, ICreateUserResponse } from './types.user.editor'
 
 /**
- * Логгер для операций сервиса
+ * Logger for service operations
  */
 const logger = {
   info: (message: string, meta?: object) =>
@@ -20,14 +23,14 @@ const logger = {
 }
 
 /**
- * Сервис создания нового пользователя
+ * Service for creating new users
  */
 export const createUserService = {
   /**
-   * Создает новую учетную запись пользователя
-   * @param userData - данные нового пользователя
-   * @returns Promise<string> - ID созданного пользователя
-   * @throws Error при ошибке создания
+   * Creates a new user account
+   * @param userData - New user data
+   * @returns Promise<string> - ID of created user
+   * @throws Error when creation fails
    */
   async createUser(userData: ICreateUserRequest): Promise<string> {
     logger.info('Starting user creation with data:', {
@@ -44,7 +47,7 @@ export const createUserService = {
       )
 
       if (!response?.data) {
-        const errorMessage = 'Некорректный ответ сервера'
+        const errorMessage = 'Invalid server response'
         logger.error(errorMessage)
         throw new Error(errorMessage)
       }
@@ -57,17 +60,17 @@ export const createUserService = {
         })
         return response.data.userId
       } else {
-        const errorMessage = response.data.message || 'Неизвестная ошибка создания пользователя'
+        const errorMessage = response.data.message || 'Unknown error during user creation'
         logger.error(errorMessage)
         throw new Error(errorMessage)
       }
     } catch (error) {
-      // Обработка ошибок axios
+      // Handle axios errors
       if (error instanceof Error) {
         logger.error('Failed to create user', error)
         throw error
       }
-      // Обработка неожиданных ошибок
+      // Handle unexpected errors
       const errorMessage = 'Unexpected error during user creation'
       logger.error(errorMessage, error)
       throw new Error(errorMessage)

@@ -1,3 +1,9 @@
+/**
+ * @file state.admin.ts
+ * Version: 1.0.0
+ * Pinia store for managing admin module state.
+ * Frontend file that handles active submodule management, drawer mode, and navigation state.
+ */
 import { defineStore } from 'pinia'
 import type {
   AdminState,
