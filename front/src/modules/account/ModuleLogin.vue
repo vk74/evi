@@ -1,6 +1,6 @@
 <!--
   File: ModuleLogin.vue
-  Version: 1.0.0
+  Version: 1.1.0
   Description: User login component for frontend
   Purpose: Handles authentication process, JWT token processing and user state management
   Frontend file that manages user login form, integrates with JWT token processing, and handles user session management
@@ -18,6 +18,7 @@
 import { ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useAppStore } from '@/core/state/appstate'
+import { useUiStore } from '@/core/state/uistate'
 import { loginService } from './service.login'
 
 // ==================== I18N ====================
@@ -25,6 +26,7 @@ const { t } = useI18n()
 
 // ==================== STORES ====================
 const appStore = useAppStore()
+const uiStore = useUiStore()
 
 // ==================== REFS & STATE ====================
 /**
@@ -41,9 +43,9 @@ const password = ref('')
 const login = async () => {
   console.log("Login:", username.value, "Pass:", password.value)
   
-  const success = await loginService(username.value, password.value)
+  const result = await loginService(username.value, password.value)
   
-  if (success) {
+  if (result.success) {
     console.log('User logged in successfully')
     
     // Close dialog and navigate to catalog
@@ -52,6 +54,10 @@ const login = async () => {
     }, 1000)
     
     appStore.setActiveModule('Catalog')
+  } else {
+    // Show error message using i18n translation
+    const errorMessage = result.errorKey ? t(result.errorKey) : t('login.errors.unknownError')
+    uiStore.showErrorSnackbar(errorMessage)
   }
 }
 

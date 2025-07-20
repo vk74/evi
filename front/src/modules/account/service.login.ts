@@ -1,6 +1,6 @@
 /**
  * @file service.login.ts
- * Version: 1.0.0
+ * Version: 1.2.0
  * Service for user authentication and token management.
  * Frontend file that handles login requests, processes tokens, and manages user session.
  */
@@ -8,7 +8,6 @@
 import { api } from '@/core/api/service.axios'
 import { useUserAuthStore } from './state.user.auth'
 import { useUiStore } from '@/core/state/uistate'
-import { refreshTokensService } from './service.refresh.tokens'
 import type { LoginRequest, LoginResponse } from './types.auth'
 import { STORAGE_KEYS } from './types.auth'
 
@@ -41,7 +40,7 @@ function updateUserStore(accessToken: string): void {
 }
 
 /**
- * Handles different types of login errors
+ * Handles different types of login errors and returns error keys for i18n
  */
 function handleLoginError(error: any): string {
   if (error.response) {
@@ -49,34 +48,37 @@ function handleLoginError(error: any): string {
     const status = error.response.status
     
     if (status >= 500) {
-      return 'сервер временно недоступен, попробуйте позже'
+      return 'login.errors.serverError'
     } else if (status === 401) {
-      return 'неверное имя пользователя или пароль'
+      return 'login.errors.invalidCredentials'
     } else if (status === 429) {
-      return 'слишком много попыток входа, попробуйте через 15 минут'
+      return 'login.errors.tooManyAttempts'
     } else {
-      return 'ошибка аутентификации'
+      return 'login.errors.unknownError'
     }
   } else if (error.request) {
     // Network error - no response received
-    return 'ошибка сети, проверьте подключение к интернету'
+    return 'login.errors.networkError'
   } else {
     // Other errors
-    return 'неизвестная ошибка при входе в систему'
+    return 'login.errors.unknownError'
   }
 }
 
 /**
  * Main login service function
+ * Sends POST request to /api/auth/login with username and password
+ * Request payload: { username: string, password: string }
+ * Returns: Promise<{ success: boolean, errorKey?: string }>
  */
-export async function loginService(username: string, password: string): Promise<boolean> {
+export async function loginService(username: string, password: string): Promise<{ success: boolean, errorKey?: string }> {
   console.log('[Login Service] Processing login request for user:', username)
   
   try {
     const response = await api.post<LoginResponse>(LOGIN_ENDPOINT, {
       username,
       password
-    })
+    } as LoginRequest)
     
     console.log('[Login Service] Login response received:', response.data)
     
@@ -89,18 +91,15 @@ export async function loginService(username: string, password: string): Promise<
       updateUserStore(response.data.accessToken)
       
       console.log('[Login Service] Login successful for user:', username)
-      return true
+      return { success: true }
     } else {
-      throw new Error('неверное имя пользователя или пароль')
+      return { success: false, errorKey: 'login.errors.invalidCredentials' }
     }
   } catch (error) {
     console.error('[Login Service] Login error:', error)
     
-    const errorMessage = handleLoginError(error)
-    const uiStore = useUiStore()
-    uiStore.showErrorSnackbar(errorMessage)
-    
-    return false
+    const errorKey = handleLoginError(error)
+    return { success: false, errorKey }
   }
 }
 

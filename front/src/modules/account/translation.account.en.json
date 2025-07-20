@@ -16,7 +16,8 @@
       "invalidCredentials": "incorrect username or password",
       "serverError": "server error during sign in",
       "networkError": "network error when connecting to server",
-      "unknownError": "unknown error during sign in"
+      "unknownError": "unknown error during sign in",
+      "tooManyAttempts": "too many login attempts, try again in 15 minutes"
     },
     "registration": {
       "text": "if you don't have an ev2 account,",
