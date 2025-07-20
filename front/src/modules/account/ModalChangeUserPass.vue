@@ -51,7 +51,7 @@
 
 <script setup>
 import { ref, computed, watch } from 'vue';
-import { useUserStore } from '@/core/state/userstate';
+import { useUserAuthStore } from '@/modules/account/state.user.auth';
 import { useUiStore } from '../../core/state/uistate';
 
 // Props
@@ -63,7 +63,7 @@ const props = defineProps({
 });
 
 // Store initialization
-const userStore = useUserStore();
+const userStore = useUserAuthStore();
 const uiStore = useUiStore();
 
 // Computed

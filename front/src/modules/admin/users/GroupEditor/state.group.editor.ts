@@ -24,7 +24,7 @@ import type {
   IGroupMember,
   IGroupMembersState
 } from './types.group.editor'
-import { useUserStore } from '@/core/state/userstate'
+import { useUserAuthStore } from '@/modules/account/state.user.auth';
 import { createGroupService } from './service.create.group'
 
 /**
@@ -71,7 +71,7 @@ const initialMembersState: IGroupMembersState = {
  */
 export const useGroupEditorStore = defineStore('groupEditor', {
   state: (): GroupEditorState => {
-    const userStore = useUserStore()
+    const userStore = useUserAuthStore()
     return {
       group: { 
         ...initialGroupState,
@@ -227,7 +227,7 @@ export const useGroupEditorStore = defineStore('groupEditor', {
       // Use Object.assign for reactivity
       Object.assign(this.group, {
         ...initialGroupState,
-        group_owner: useUserStore().username || ''
+        group_owner: useUserAuthStore().username || ''
       })
       
       Object.assign(this.details, initialDetailsState)

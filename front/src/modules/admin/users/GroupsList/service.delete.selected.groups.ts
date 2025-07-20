@@ -13,7 +13,7 @@
 import { api } from '@/core/api/service.axios'; // Axios instance
 import { useStoreGroupsList } from './state.groups.list'; // Groups store
 import { useUiStore } from '@/core/state/uistate'; // UI store
-import { useUserStore } from '@/core/state/userstate'; // User store
+import { useUserAuthStore } from '@/modules/account/state.user.auth'; // User store
 import type { GroupError } from './types.groups.list'; // Types
 
 // Logger for main operations
@@ -34,11 +34,11 @@ export const deleteSelectedGroupsService = {
      */
     async deleteSelectedGroups(groupIds: string[]): Promise<number> {
         const store = useStoreGroupsList();
-        const userStore = useUserStore();
+        const userStore = useUserAuthStore();
         const uiStore = useUiStore();
 
         // Check user authentication
-        if (!userStore.isLoggedIn) {
+        if (!userStore.isAuthenticated) {
             const errorMessage = 'User not authenticated';
             logger.error(errorMessage);
             throw new Error(errorMessage);

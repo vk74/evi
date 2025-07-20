@@ -9,7 +9,7 @@
 
 import axios, { AxiosInstance, AxiosError, AxiosRequestConfig } from 'axios';
 import { axiosSettings } from './config';
-import { useUserStore } from '@/core/state/userstate';
+import { useUserAuthStore } from '@/modules/account/state.user.auth';
 import { refreshTokensService } from '@/modules/account/service.refresh.tokens';
 
 // Flag to prevent multiple simultaneous refresh attempts
@@ -48,7 +48,7 @@ const createAxiosInstance = (): AxiosInstance => {
 
   // Add authentication token to requests
   instance.interceptors.request.use((config) => {
-    const userStore = useUserStore();
+    const userStore = useUserAuthStore();
     
     if (userStore.jwt) {
       config.headers.Authorization = `Bearer ${userStore.jwt}`;
@@ -80,7 +80,7 @@ const createAxiosInstance = (): AxiosInstance => {
           failedQueue.push({ resolve, reject });
         }).then(() => {
           // Retry the original request with new token
-          const userStore = useUserStore();
+          const userStore = useUserAuthStore();
           if (userStore.jwt) {
             originalRequest.headers!.Authorization = `Bearer ${userStore.jwt}`;
           }
@@ -102,7 +102,7 @@ const createAxiosInstance = (): AxiosInstance => {
           processQueue(null, null);
           
           // Retry the original request with new token
-          const userStore = useUserStore();
+          const userStore = useUserAuthStore();
           if (userStore.jwt) {
             originalRequest.headers!.Authorization = `Bearer ${userStore.jwt}`;
           }

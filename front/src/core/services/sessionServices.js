@@ -1,5 +1,5 @@
 // src/services/sessionServices.js
-import { useUserStore } from '@/core/state/userstate';
+import { useUserAuthStore } from '@/modules/account/state.user.auth';
 import { createApp, h } from 'vue';
 import vuetify from '../../plugins/vuetify'; 
 import { VBtn } from 'vuetify/lib/components';
@@ -7,7 +7,7 @@ import { VBtn } from 'vuetify/lib/components';
 let sessionTimeout = null;
 
 const startSessionTimers = () => {
-  const userStore = useUserStore();
+  const userStore = useUserAuthStore();
 
   console.log('Starting session timers...');
 
@@ -73,7 +73,7 @@ const resetSessionTimers = () => {
 };
 
 const getSessionDurations = () => ({
-  sessionDuration: (useUserStore().tokenExpires * 1000 - Date.now()) / 1000, // в секундах
+  sessionDuration: (useUserAuthStore().tokenExpires * 1000 - Date.now()) / 1000, // в секундах
 });
 
 export { startSessionTimers, resetSessionTimers, getSessionDurations };

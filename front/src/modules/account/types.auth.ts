@@ -61,6 +61,8 @@ export interface UserState {
   issuedAt: number
   jwtId: string
   tokenExpires: number
+  activeModule: string // Added for compatibility with old store
+  language: string // Added for compatibility with old store
 }
 
 // Service function interfaces

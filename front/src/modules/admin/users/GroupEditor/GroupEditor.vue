@@ -13,14 +13,14 @@ import { fetchGroupService } from './service.fetch.group' // Import fetch servic
 import { fetchGroupMembersService } from './service.fetch.group.members' // Import members fetch service
 import { removeGroupMembers } from './service.delete.group.members' // Import members delete service
 import ItemSelector from '../../../../core/ui/modals/item-selector/ItemSelector.vue'
-import { useUserStore } from '@/core/state/userstate' // Import for JWT check
+import { useUserAuthStore } from '@/modules/account/state.user.auth' // Import for JWT check
 
 // Initialize i18n
 const { t } = useI18n()
 
 const groupEditorStore = useGroupEditorStore()
 const uiStore = useUiStore()
-const userStore = useUserStore()
+const userStore = useUserAuthStore()
 const { 
   optionalEmailRules,
   generalDescriptionRules,
@@ -40,7 +40,7 @@ const isItemSelectorModalOpen = ref(false)
 const isOwnerSelectorModalOpen = ref(false) // New ref for owner change modal
 
 // Computed property for authorization check
-const isAuthorized = computed(() => userStore.isLoggedIn)
+const isAuthorized = computed(() => userStore.isAuthenticated)
 
 // Function to get color based on status (copied from UsersList.vue)
 const getStatusColor = (status: string) => {
@@ -296,7 +296,7 @@ watch(
 // ==================== LIFECYCLE ====================
 onMounted(() => {
   // Check JWT validation on initialization
-  if (!userStore.isLoggedIn) {
+  if (!userStore.isAuthenticated) {
     // Make all app-bar buttons unavailable
     // (we use isAuthorized in the template)
     

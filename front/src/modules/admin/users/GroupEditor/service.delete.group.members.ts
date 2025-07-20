@@ -10,7 +10,7 @@
  */
 import { api } from '@/core/api/service.axios';
 import { useGroupEditorStore } from './state.group.editor'
-import { useUserStore } from '@/core/state/userstate'
+import { useUserAuthStore } from '@/modules/account/state.user.auth';
 import { useUiStore } from '@/core/state/uistate'
 import type { IRemoveGroupMembersResponse } from './types.group.editor'
 
@@ -22,11 +22,11 @@ import type { IRemoveGroupMembersResponse } from './types.group.editor'
  */
 export async function removeGroupMembers(groupId: string, userIds: string[]): Promise<number> {
   const groupEditorStore = useGroupEditorStore()
-  const userStore = useUserStore()
+  const userStore = useUserAuthStore()
   const uiStore = useUiStore()
   
   // Skip if no authorization
-  if (!userStore.isLoggedIn || !userStore.jwt) {
+  if (!userStore.isAuthenticated || !userStore.jwt) {
     console.warn('[RemoveGroupMembersService] Unauthorized - cannot remove group members')
     uiStore.showErrorSnackbar('Authorization required to remove group members')
     return -1

@@ -662,11 +662,11 @@
 
 <script setup>
 import { ref } from 'vue'
-import { useUserStore } from '@/core/state/userstate'
+import { useUserAuthStore } from '@/modules/account/state.user.auth'
 import { useUiStore } from '@/core/state/uistate'
 
 // Инициализируем store в начале, до использования
-const userStore = useUserStore()
+const userStore = useUserAuthStore()
 const uiStore = useUiStore()
 
 const sections = [

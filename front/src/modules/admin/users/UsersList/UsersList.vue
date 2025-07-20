@@ -18,7 +18,7 @@ import { useUsersAdminStore } from '../state.users.admin'
 import loadUserService from '../UserEditor/service.load.user'
 import { useUserEditorStore } from '../UserEditor/state.user.editor'
 import { useUiStore } from '@/core/state/uistate'
-import { useUserStore } from '@/core/state/userstate'
+import { useUserAuthStore } from '@/modules/account/state.user.auth'
 import debounce from 'lodash/debounce'
 import ChangePassword from '../../../../core/ui/modals/change-password/ChangePassword.vue'
 import { PasswordChangeMode } from '../../../../core/ui/modals/change-password/types.change.password'
@@ -28,7 +28,7 @@ const { t } = useI18n()
 const usersStore = useStoreUsersList()
 const usersSectionStore = useUsersAdminStore()
 const uiStore = useUiStore()
-const userStore = useUserStore()
+const userStore = useUserAuthStore()
 
 // Table and search parameters
 const page = ref<number>(usersStore.page);
@@ -51,7 +51,7 @@ const selectedUserData = ref({
 })
 
 // Computed properties
-const isAuthorized = computed(() => userStore.isLoggedIn)
+const isAuthorized = computed(() => userStore.isAuthenticated)
 const selectedCount = computed(() => usersStore.selectedCount)
 const hasSelected = computed(() => usersStore.hasSelected)
 const hasOneSelected = computed(() => usersStore.hasOneSelected)

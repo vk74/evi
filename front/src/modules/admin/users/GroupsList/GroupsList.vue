@@ -13,20 +13,20 @@ import groupsService from './service.read.groups';
 import deleteSelectedGroupsService from './service.delete.selected.groups';
 import { fetchGroupService } from '../GroupEditor/service.fetch.group';
 import type { TableHeader, IGroup, ItemsPerPageOption } from './types.groups.list';
-import { useUserStore } from '@/core/state/userstate';
+import { useUserAuthStore } from '@/modules/account/state.user.auth';
 import { useUiStore } from '@/core/state/uistate';
 import { useUsersAdminStore } from '../state.users.admin';
 import { useGroupEditorStore } from '../GroupEditor/state.group.editor';
 // Initialize stores and i18n
 const { t } = useI18n();
 const groupsStore = useStoreGroupsList();
-const userStore = useUserStore();
+const userStore = useUserAuthStore();
 const uiStore = useUiStore();
 const usersAdminStore = useUsersAdminStore();
 const groupEditorStore = useGroupEditorStore();
 
 // Authentication check
-const isAuthorized = computed(() => userStore.isLoggedIn);
+const isAuthorized = computed(() => userStore.isAuthenticated);
 
 // Table parameters
 const page = ref<number>(groupsStore.page);

@@ -11,7 +11,7 @@
 import { api } from '@/core/api/service.axios';
 import { useUiStore } from '@/core/state/uistate';
 import { useGroupEditorStore } from '@/modules/admin/users/GroupEditor/state.group.editor';
-import { useUserStore } from '@/core/state/userstate';
+import { useUserAuthStore } from '@/modules/account/state.user.auth';
 import { ActionResult } from './types.item.selector';
 
 // Define interfaces for request and response
@@ -41,7 +41,7 @@ const logger = {
 async function changeGroupOwner(userIds: string[]): Promise<ActionResult> {
   const uiStore = useUiStore();
   const groupEditorStore = useGroupEditorStore();
-  const userStore = useUserStore();
+  const userStore = useUserAuthStore();
 
   // Validate input parameters
   if (!userIds || userIds.length === 0) {

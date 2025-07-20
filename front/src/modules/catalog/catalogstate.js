@@ -12,7 +12,7 @@
 */
 
 import { defineStore } from 'pinia';
-import { useUserStore } from '@/core/state/userstate';
+import { useUserAuthStore } from '@/modules/account/state.user.auth';
 import axios from 'axios';
 
 export const useCatalogStore = defineStore('catalog', {
@@ -82,10 +82,10 @@ export const useCatalogStore = defineStore('catalog', {
       console.log('CatalogStore: Fetching services from API...');
 
       try {
-        const userStore = useUserStore();
+        const userStore = useUserAuthStore();
         
         // Проверяем статус авторизации пользователя
-        if (!userStore.isLoggedIn) {
+        if (!userStore.isAuthenticated) {
           console.log('CatalogStore: User is not logged in');
           this.setError('Failed to load services. Please log in to access catalog.');
           return;
@@ -127,9 +127,9 @@ export const useCatalogStore = defineStore('catalog', {
       this.detailsError = null;
 
       try {
-        const userStore = useUserStore();
+        const userStore = useUserAuthStore();
         
-        if (!userStore.isLoggedIn) {
+        if (!userStore.isAuthenticated) {
           throw new Error('User not logged in');
         }
 

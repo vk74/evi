@@ -19,7 +19,7 @@
 import { ref, computed, onMounted } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useUiStore } from '@/core/state/uistate';
-import { useUserStore } from '@/core/state/userstate';
+import { useUserAuthStore } from '@/modules/account/state.user.auth';
 import { ChangePasswordProps, PasswordChangeMode } from './types.change.password';
 import changePassword from './service.self.change.password';
 import resetPassword from './service.admin.change.password';
@@ -29,7 +29,7 @@ import PasswordPoliciesPanel from '@/core/ui/panels/panel.current.password.polic
 // Init i18n and stores
 const { t } = useI18n();
 const uiStore = useUiStore();
-const userStore = useUserStore();
+const userStore = useUserAuthStore();
 
 // Component props
 const props = defineProps<ChangePasswordProps>();

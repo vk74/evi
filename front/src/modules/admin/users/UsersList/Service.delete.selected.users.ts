@@ -10,7 +10,7 @@
  */
 import { api } from '@/core/api/service.axios'
 import { useStoreUsersList } from './State.users.list'
-import { useUserStore } from '@/core/state/userstate'
+import { useUserAuthStore } from '@/modules/account/state.user.auth';
 import usersFetchService from './Service.fetch.users'
 
 // Logger for main operations
@@ -31,10 +31,10 @@ export const deleteSelectedUsersService = {
    */
   async deleteSelectedUsers(userIds: string[]): Promise<number> {
     const store = useStoreUsersList()
-    const userStore = useUserStore()
+    const userStore = useUserAuthStore()
 
     // Check user authentication
-    if (!userStore.isLoggedIn) {
+    if (!userStore.isAuthenticated) {
       const errorMessage = 'User not authenticated'
       logger.error(errorMessage)
       throw new Error(errorMessage)

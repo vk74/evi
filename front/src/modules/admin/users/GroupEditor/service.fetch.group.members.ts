@@ -10,7 +10,7 @@
  */
 import { api } from '@/core/api/service.axios';
 import { useGroupEditorStore } from './state.group.editor'
-import { useUserStore } from '@/core/state/userstate'
+import { useUserAuthStore } from '@/modules/account/state.user.auth';
 import { useUiStore } from '@/core/state/uistate'
 import type { IFetchGroupMembersResponse } from './types.group.editor'
 
@@ -25,11 +25,11 @@ class FetchGroupMembersService {
    */
   async fetchGroupMembers(groupId: string): Promise<boolean> {
     const groupEditorStore = useGroupEditorStore()
-    const userStore = useUserStore()
+    const userStore = useUserAuthStore()
     const uiStore = useUiStore()
     
     // Skip if no authorization
-    if (!userStore.isLoggedIn || !userStore.jwt) {
+    if (!userStore.isAuthenticated || !userStore.jwt) {
       console.warn('[FetchGroupMembersService] Unauthorized - cannot fetch group members')
       uiStore.showErrorSnackbar('Authorization required to view group members')
       return false

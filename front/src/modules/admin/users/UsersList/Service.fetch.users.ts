@@ -13,7 +13,7 @@
  */
 import { api } from '@/core/api/service.axios'
 import { useStoreUsersList } from './State.users.list'
-import { useUserStore } from '@/core/state/userstate'
+import { useUserAuthStore } from '@/modules/account/state.user.auth';
 import { useUiStore } from '@/core/state/uistate'
 import { 
   IFetchUsersParams, 
@@ -43,11 +43,11 @@ export const usersFetchService = {
    */
   async fetchUsers(params?: Partial<IFetchUsersParams>, forceRefresh = false): Promise<void> {
     const store = useStoreUsersList()
-    const userStore = useUserStore()
+    const userStore = useUserAuthStore()
     const uiStore = useUiStore()
 
     // Check user authentication
-    if (!userStore.isLoggedIn) {
+    if (!userStore.isAuthenticated) {
       const errorMessage = 'User not authenticated'
       logger.error(errorMessage)
       store.error = errorMessage

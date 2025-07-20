@@ -17,7 +17,7 @@
 
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
-import { useUserStore } from '@/core/state/userstate'
+import { useUserAuthStore } from '@/modules/account/state.user.auth';
 import type { 
     IUser,
     IFetchUsersParams,
@@ -44,7 +44,7 @@ const logger = {
 
 export const useStoreUsersList = defineStore('viewAllUsers', () => {
     // User store for auth state
-    const userStore = useUserStore();
+    const userStore = useUserAuthStore();
     
     // Cache and statistics
     const cacheMap = ref<Record<string, CacheEntry>>({});
@@ -263,7 +263,7 @@ export const useStoreUsersList = defineStore('viewAllUsers', () => {
     /**
      * Check if current user is authorized
      */
-    const isAuthorized = computed(() => userStore.isLoggedIn);
+    const isAuthorized = computed(() => userStore.isAuthenticated);
     
     /**
      * Number of selected users

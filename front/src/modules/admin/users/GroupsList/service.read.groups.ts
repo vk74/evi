@@ -13,7 +13,7 @@
 
 import { api } from '@/core/api/service.axios'; // Axios instance
 import { useStoreGroupsList } from './state.groups.list'; // Groups store
-import { useUserStore } from '@/core/state/userstate'; // User store
+import { useUserAuthStore } from '@/modules/account/state.user.auth'; // User store
 import type { IGroupsResponse } from './types.groups.list'; // Types
 
 // Logger for main operations
@@ -33,10 +33,10 @@ export const groupsService = {
      */
     async fetchGroups(): Promise<void> {
         const store = useStoreGroupsList(); // Groups store
-        const userStore = useUserStore(); // User store
+        const userStore = useUserAuthStore(); // User store
 
         // Check if the user is authenticated
-        if (!userStore.isLoggedIn) {
+        if (!userStore.isAuthenticated) {
             const errorMessage = 'User not authenticated';
             logger.error(errorMessage);
             store.error = errorMessage;

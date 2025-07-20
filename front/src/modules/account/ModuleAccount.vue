@@ -1,6 +1,6 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
-import { useUserStore } from '@/core/state/userstate'
+import { useUserAuthStore } from '@/modules/account/state.user.auth'
 import { useI18n } from 'vue-i18n'
 import axios from 'axios'
 import ChangePassword from '@/core/ui/modals/change-password/ChangePassword.vue'
@@ -8,7 +8,7 @@ import { PasswordChangeMode } from '@/core/ui/modals/change-password/types.chang
 import { getSessionDurations } from '@/core/services/sessionServices'
 
 // ==================== STORES ====================
-const userStore = useUserStore()
+const userStore = useUserAuthStore()
 const { t } = useI18n()
 
 // ==================== REFS & STATE ====================
@@ -39,7 +39,7 @@ const snackbarColor = ref('teal')
 // ==================== COMPUTED ====================
 const username = computed(() => userStore.username)
 const jwt = computed(() => userStore.jwt)
-const isLoggedIn = computed(() => userStore.isLoggedIn)
+const isLoggedIn = computed(() => userStore.isAuthenticated)
 const userID = computed(() => userStore.userID)
 
 const issuedAt = computed(() => {
@@ -68,7 +68,7 @@ const toggleTechCard = () => {
 }
 
 const saveProfile = async () => {
-  if (userStore.isLoggedIn) {
+  if (userStore.isAuthenticated) {
     try {
       console.log('sending request to update user profile data:', profile.value)
       const response = await axios.post('http://localhost:3000/profile', profile.value, {
@@ -89,7 +89,7 @@ const saveProfile = async () => {
 
 // ==================== LIFECYCLE ====================
 onMounted(async () => {
-  if (userStore.isLoggedIn) {
+  if (userStore.isAuthenticated) {
     try {
       const response = await axios.get('http://localhost:3000/profile', {
         headers: { Authorization: `Bearer ${userStore.jwt}` },

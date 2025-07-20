@@ -13,7 +13,7 @@
  */
 import { api } from '@/core/api/service.axios';
 import { useGroupEditorStore } from './state.group.editor';
-import { useUserStore } from '@/core/state/userstate';
+import { useUserAuthStore } from '@/modules/account/state.user.auth';
 import { fetchUsernameByUuid } from '@/core/services/service.fetch.username.by.uuid';
 import type { IGroupData, IGroupDetails, IApiError, ILoadGroupResponse } from './types.group.editor';
 
@@ -36,10 +36,10 @@ export const fetchGroupService = {
    */
   async fetchGroupById(groupId: string): Promise<{ group: IGroupData, details: IGroupDetails }> {
     const store = useGroupEditorStore();
-    const userStore = useUserStore();
+    const userStore = useUserAuthStore();
 
     // Check user authentication
-    if (!userStore.isLoggedIn) {
+    if (!userStore.isAuthenticated) {
       const errorMessage = 'User not authenticated';
       logger.error(errorMessage);
       throw new Error(errorMessage);

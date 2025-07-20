@@ -1,8 +1,9 @@
 /**
  * @file state.user.auth.ts
- * Version: 1.0.0
+ * Version: 1.1.0
  * TypeScript state management for user authentication.
  * Frontend file that manages user authentication state with persistence and integration with auth services.
+ * Enhanced with missing properties from old userstate.js for complete migration compatibility.
  */
 
 import { defineStore } from 'pinia'
@@ -26,7 +27,9 @@ const initialState: UserState = {
   audience: '',
   issuedAt: 0,
   jwtId: '',
-  tokenExpires: 0
+  tokenExpires: 0,
+  activeModule: 'Catalog', // Added from old store
+  language: localStorage.getItem('userLanguage') || 'ru' // Added from old store
 }
 
 /**
@@ -38,6 +41,12 @@ function loadPersistedState(): UserState {
     if (persistedState) {
       const parsed = JSON.parse(persistedState) as UserState
       console.log('[User Auth State] Loaded persisted state:', parsed)
+      
+      // Ensure language is always a valid string
+      if (!parsed.language || typeof parsed.language !== 'string') {
+        parsed.language = localStorage.getItem('userLanguage') || 'ru'
+      }
+      
       return parsed
     }
   } catch (error) {
@@ -154,6 +163,22 @@ export const useUserAuthStore = defineStore('userAuth', {
     timeUntilExpiry: (state): number => {
       if (!state.tokenExpires) return 0
       return Math.max(0, state.tokenExpires - Math.floor(Date.now() / 1000))
+    },
+    
+    /**
+     * Checks if token is valid (compatibility with old store)
+     */
+    isTokenValid: (state): boolean => {
+      if (!state.tokenExpires) return false
+      const currentTime = Date.now() / 1000
+      return state.tokenExpires > currentTime
+    },
+    
+    /**
+     * Gets user ID (compatibility with old store)
+     */
+    getUserID: (state): string => {
+      return state.userID
     }
   },
   
@@ -306,6 +331,113 @@ export const useUserAuthStore = defineStore('userAuth', {
     setTokenExpires(tokenExpires: number): void {
       this.tokenExpires = tokenExpires
       savePersistedState(this.$state)
+    },
+    
+    /**
+     * Sets active module (compatibility with old store)
+     */
+    setActiveModule(module: string): void {
+      this.activeModule = module
+      savePersistedState(this.$state)
+    },
+    
+    /**
+     * Sets language (compatibility with old store)
+     */
+    setLanguage(lang: string): void {
+      this.language = lang
+      localStorage.setItem('userLanguage', lang)
+      savePersistedState(this.$state)
+    },
+    
+    /**
+     * Update methods for compatibility with old store
+     */
+    updateUsername(username: string): void {
+      this.setUsername(username)
+    },
+    
+    updateUserID(userID: string): void {
+      this.setUserID(userID)
+    },
+    
+    updateJwt(jwt: string): void {
+      this.setJwt(jwt)
+    },
+    
+    updateLoggedIn(loggedIn: boolean): void {
+      this.setLoggedIn(loggedIn)
+    },
+    
+    updateIssuer(issuer: string): void {
+      this.setIssuer(issuer)
+    },
+    
+    updateAudience(audience: string): void {
+      this.setAudience(audience)
+    },
+    
+    updateIssuedAt(issuedAt: number): void {
+      this.setIssuedAt(issuedAt)
+    },
+    
+    updateJwtId(jwtId: string): void {
+      this.setJwtId(jwtId)
+    },
+    
+    updateTokenExpires(exp: number): void {
+      this.setTokenExpires(exp)
+    },
+    
+    /**
+     * User logout method (compatibility with old store)
+     */
+    userLogoff(): void {
+      const currentLang = this.language // Сохраняем текущий язык
+      localStorage.removeItem('userToken') // Удаляем токен из localStorage
+      this.setLoggedIn(false) // Обновляем состояние на не аутентифицировано
+      
+      // Очистка других связанных данных
+      this.setUsername('')
+      this.setUserID('')
+      this.setJwt('')
+      this.setIssuer('')
+      this.setAudience('')
+      this.setIssuedAt(0)
+      this.setJwtId('')
+      this.setTokenExpires(0) // Changed from '' to 0
+      this.language = currentLang // Восстанавливаем язык после очистки
+      
+      // Clear timer
+      clearRefreshTimer()
+      
+      console.log('[User Auth State] User logged off successfully')
+    },
+    
+    /**
+     * Session validation and restoration (compatibility with old store)
+     */
+    validateAndRestoreSession(): boolean {
+      console.log('Validating session...')
+      if (!this.jwt) {
+        console.log('No JWT found, session invalid')
+        return false
+      }
+
+      try {
+        if (!this.isTokenValid) {
+          console.log('Token expired, logging out')
+          this.userLogoff()
+          return false
+        }
+
+        this.setLoggedIn(true)
+        return true
+      } catch (error) {
+        console.error('Error validating session:', error)
+        this.userLogoff()
+        return false
+      }
     },
     
     /**

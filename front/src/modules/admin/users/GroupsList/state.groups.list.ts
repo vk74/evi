@@ -13,7 +13,7 @@
 
 import { defineStore } from 'pinia';
 import { ref, computed, onUnmounted } from 'vue';
-import { useUserStore } from '@/core/state/userstate';
+import { useUserAuthStore } from '@/modules/account/state.user.auth';
 import type {
     IGroup,
     ItemsPerPageOption,
@@ -89,11 +89,11 @@ export const useStoreGroupsList = defineStore('groupsList', () => {
      * @returns { isValid: boolean; expiresIn: number } - Token validation status.
      */
     function validateJWT(): { isValid: boolean; expiresIn: number } {
-        const userStore = useUserStore();
+        const userStore = useUserAuthStore();
         const tokenExpiresTime = userStore.tokenExpires ? Number(userStore.tokenExpires) : 0;
 
         return {
-            isValid: Boolean(userStore.isLoggedIn && tokenExpiresTime > Date.now() / 1000),
+            isValid: Boolean(userStore.isAuthenticated && tokenExpiresTime > Date.now() / 1000),
             expiresIn: tokenExpiresTime ? tokenExpiresTime - Date.now() / 1000 : 0
         };
     }

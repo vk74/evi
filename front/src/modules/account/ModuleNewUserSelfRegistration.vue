@@ -19,7 +19,7 @@
 import { useI18n } from 'vue-i18n'
 import { ref, computed, onMounted } from 'vue'
 import { useUiStore } from '@/core/state/uistate'
-import { useUserStore } from '@/core/state/userstate'
+import { useUserAuthStore } from '@/modules/account/state.user.auth'
 import { useValidationRules } from '@/core/validation/rules.common.fields'
 import { fetchPublicPasswordPolicies } from '@/core/services/service.fetch.public.password.policies'
 import { usePublicSettingsStore, type PasswordPolicies } from '@/core/state/state.public.settings'
@@ -27,7 +27,7 @@ import PasswordPoliciesPanel from '@/core/ui/panels/panel.current.password.polic
 
 // ==================== STORES ====================
 const uiStore = useUiStore()
-const userStore = useUserStore()
+const userStore = useUserAuthStore()
 const publicStore = usePublicSettingsStore()
 const { t } = useI18n()
 const {

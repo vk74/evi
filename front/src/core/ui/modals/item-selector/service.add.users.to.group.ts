@@ -11,7 +11,7 @@
 import { api } from '@/core/api/service.axios';
 import { useUiStore } from '@/core/state/uistate';
 import { useGroupEditorStore } from '@/modules/admin/users/GroupEditor/state.group.editor';
-import { useUserStore } from '@/core/state/userstate';
+import { useUserAuthStore } from '@/modules/account/state.user.auth';
 import { AddUsersResponse, AddUsersToGroupRequest } from './types.action.services';
 
 // Logger for tracking operations
@@ -28,7 +28,7 @@ const logger = {
 async function addUsersToGroup(userIds: string[]): Promise<AddUsersResponse> {
   const uiStore = useUiStore();
   const groupEditorStore = useGroupEditorStore();
-  const userStore = useUserStore(); // Хранилище для получения UUID текущего пользователя
+  const userStore = useUserAuthStore(); // Хранилище для получения UUID текущего пользователя
 
   // Validate input parameters
   if (!userIds || userIds.length === 0) {

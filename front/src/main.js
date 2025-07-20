@@ -21,10 +21,19 @@ console.log('All imports complete');
 // Объединяем переводы
 const messages = translations;
 
-// Создаем экземпляр i18n
+// Создаем экземпляр i18n с безопасной инициализацией
+const getInitialLocale = () => {
+  try {
+    const stored = localStorage.getItem('userLanguage');
+    return stored && (stored === 'ru' || stored === 'en') ? stored : 'ru';
+  } catch {
+    return 'ru';
+  }
+};
+
 const i18n = createI18n({
   legacy: false,
-  locale: localStorage.getItem('userLanguage') || 'ru',
+  locale: getInitialLocale(),
   fallbackLocale: 'ru',
   messages
 });
@@ -43,8 +52,8 @@ app.config.globalProperties.$http = axios;
 
 // Функция инициализации состояния пользователя
 const initializeUserState = async () => {
-  const { useUserStore } = await import('@/core/state/userstate');
-  const userStore = useUserStore();
+  const { useUserAuthStore } = await import('@/modules/account/state.user.auth');
+  const userStore = useUserAuthStore();
   
   const token = localStorage.getItem('userToken');
   if (token) {
@@ -75,6 +84,11 @@ const initializeUserState = async () => {
     }
   } else {
     userStore.setLoggedIn(false);
+  }
+  
+  // Update i18n locale if user has different language preference
+  if (userStore.language && userStore.language !== i18n.global.locale.value) {
+    i18n.global.locale.value = userStore.language;
   }
 };
 

@@ -12,7 +12,7 @@
  */
 import { api } from '@/core/api/service.axios'
 import { useUserEditorStore } from './state.user.editor'
-import { useUserStore } from '@/core/state/userstate'
+import { useUserAuthStore } from '@/modules/account/state.user.auth';
 import type { ILoadUserResponse, IApiError } from './types.user.editor'
 
 // Logger for tracking operations
@@ -32,10 +32,10 @@ export const loadUserService = {
    */
   async fetchUserById(userId: string): Promise<void> {
     const store = useUserEditorStore()
-    const userStore = useUserStore()
+    const userStore = useUserAuthStore()
 
     // Check user authentication
-    if (!userStore.isLoggedIn) {
+    if (!userStore.isAuthenticated) {
       const errorMessage = 'User not authenticated'
       logger.error(errorMessage)
       throw new Error(errorMessage)

@@ -7,7 +7,7 @@
 import { api } from '@/core/api/service.axios';
 import { AxiosError } from 'axios';
 import { AdminResetPasswordRequest, ChangePasswordResponse } from './types.change.password';
-import { useUserStore } from '@/core/state/userstate';
+import { useUserAuthStore } from '@/modules/account/state.user.auth';
 
 /**
  * Send request to reset user's password (admin function)
@@ -15,7 +15,7 @@ import { useUserStore } from '@/core/state/userstate';
  * @returns {Promise<ChangePasswordResponse>} API response
  */
 export async function resetPassword(data: AdminResetPasswordRequest): Promise<ChangePasswordResponse> {
-  const userStore = useUserStore();
+  const userStore = useUserAuthStore();
   const adminId = userStore.userID;
   const adminUsername = userStore.username;
   

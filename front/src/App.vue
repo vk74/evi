@@ -13,7 +13,7 @@ Contains:
 -->
 <script setup>
 import { ref, computed, onMounted, watch, defineAsyncComponent, nextTick } from 'vue';
-import { useUserStore } from '@/core/state/userstate';
+import { useUserAuthStore } from '@/modules/account/state.user.auth';
 import { useUiStore } from './core/state/uistate';
 import { useAppStore } from './core/state/appstate';
 import { useI18n } from 'vue-i18n';
@@ -43,7 +43,7 @@ import ModuleNewUserSelfRegistration from './modules/account/ModuleNewUserSelfRe
 import AppSnackbar from './core/ui/snackbars/AppSnackbar.vue';
 
 // Store and i18n initialization
-const userStore = useUserStore();
+const userStore = useUserAuthStore();
 const uiStore = useUiStore();
 const appStore = useAppStore();
 const i18n = useI18n();
@@ -58,7 +58,7 @@ const isLanguageMenuOpen = ref(false); // Track language menu state
 const menuLocked = ref(false); // Prevent menu interactions during animations
 
 // Computed properties
-const isLoggedIn = computed(() => userStore.isLoggedIn);
+const isLoggedIn = computed(() => userStore.isAuthenticated);
 
 const chevronIcon = computed(() => {
   switch(appStore.drawerMode) {
@@ -274,8 +274,6 @@ const preventResizeErrors = () => {
 
 // Lifecycle hooks
 onMounted(() => {
-  i18n.locale.value = userStore.language;
-  
   // If Admin is the active module on initial load, expand the admin section
   if (appStore.activeModule === 'Admin') {
     isAdminExpanded.value = true;
