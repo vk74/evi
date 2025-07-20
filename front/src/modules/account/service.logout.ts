@@ -5,7 +5,7 @@
  * Frontend file that handles logout requests, clears tokens, and resets user session.
  */
 
-import axios from 'axios'
+import { api } from '@/core/api/service.axios'
 import { useUserAuthStore } from './state.user.auth'
 import { useUiStore } from '@/core/state/uistate'
 import { clearRefreshTimer } from './service.login'
@@ -14,7 +14,6 @@ import type { LogoutRequest, LogoutResponse } from './types.auth'
 import { STORAGE_KEYS } from './types.auth'
 
 // API configuration
-const API_BASE_URL = 'http://localhost:3000'
 const LOGOUT_ENDPOINT = '/api/auth/logout'
 
 /**
@@ -47,7 +46,7 @@ async function sendLogoutRequest(): Promise<void> {
   }
   
   try {
-    const response = await axios.post(`${API_BASE_URL}${LOGOUT_ENDPOINT}`, {
+    const response = await api.post<LogoutResponse>(LOGOUT_ENDPOINT, {
       refreshToken
     })
     

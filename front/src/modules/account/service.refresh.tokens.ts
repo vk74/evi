@@ -5,13 +5,12 @@
  * Frontend file that handles token refresh requests and updates user session.
  */
 
-import axios from 'axios'
+import { api } from '@/core/api/service.axios'
 import { useUserAuthStore } from './state.user.auth'
 import type { RefreshRequest, RefreshResponse } from './types.auth'
 import { STORAGE_KEYS } from './types.auth'
 
 // API configuration
-const API_BASE_URL = 'http://localhost:3000'
 const REFRESH_ENDPOINT = '/api/auth/refresh'
 
 /**
@@ -77,7 +76,7 @@ export async function refreshTokensService(): Promise<boolean> {
   }
   
   try {
-    const response = await axios.post(`${API_BASE_URL}${REFRESH_ENDPOINT}`, {
+    const response = await api.post<RefreshResponse>(REFRESH_ENDPOINT, {
       refreshToken
     })
     

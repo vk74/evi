@@ -5,7 +5,7 @@
  * Frontend file that handles login requests, processes tokens, and manages user session.
  */
 
-import axios from 'axios'
+import { api } from '@/core/api/service.axios'
 import { useUserAuthStore } from './state.user.auth'
 import { useUiStore } from '@/core/state/uistate'
 import { refreshTokensService } from './service.refresh.tokens'
@@ -13,7 +13,6 @@ import type { LoginRequest, LoginResponse } from './types.auth'
 import { STORAGE_KEYS } from './types.auth'
 
 // API configuration
-const API_BASE_URL = 'http://localhost:3000'
 const LOGIN_ENDPOINT = '/api/auth/login'
 
 /**
@@ -74,7 +73,7 @@ export async function loginService(username: string, password: string): Promise<
   console.log('[Login Service] Processing login request for user:', username)
   
   try {
-    const response = await axios.post(`${API_BASE_URL}${LOGIN_ENDPOINT}`, {
+    const response = await api.post<LoginResponse>(LOGIN_ENDPOINT, {
       username,
       password
     })
