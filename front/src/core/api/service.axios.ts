@@ -10,6 +10,7 @@
 import axios, { AxiosInstance, AxiosError, AxiosRequestConfig } from 'axios';
 import { axiosSettings } from './config';
 import { useUserAuthStore } from '@/modules/account/state.user.auth';
+import { useUiStore } from '@/core/state/uistate';
 import { refreshTokensService } from '@/modules/account/service.refresh.tokens';
 
 // Flag to prevent multiple simultaneous refresh attempts
@@ -43,7 +44,8 @@ const createAxiosInstance = (): AxiosInstance => {
   
   const instance = axios.create({
     baseURL: axiosSettings.baseURL,
-    timeout: axiosSettings.timeout
+    timeout: axiosSettings.timeout,
+    withCredentials: true // Enable sending cookies with requests
   });
 
   // Add authentication token to requests
@@ -111,6 +113,10 @@ const createAxiosInstance = (): AxiosInstance => {
           console.log('Token refresh failed, redirecting to login');
           processQueue(new Error('Token refresh failed'), null);
           
+          // Show error message to user
+          const uiStore = useUiStore();
+          uiStore.showErrorSnackbar('ошибка обновления сессии, необходима повторная авторизация');
+          
           // Redirect to login page
           window.location.href = '/login';
           return Promise.reject(new Error('Необходима повторная авторизация'));
@@ -118,6 +124,10 @@ const createAxiosInstance = (): AxiosInstance => {
       } catch (refreshError) {
         console.error('Token refresh error:', refreshError);
         processQueue(refreshError, null);
+        
+        // Show error message to user
+        const uiStore = useUiStore();
+        uiStore.showErrorSnackbar('ошибка обновления сессии, необходима повторная авторизация');
         
         // Redirect to login page
         window.location.href = '/login';

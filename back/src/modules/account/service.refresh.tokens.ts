@@ -28,6 +28,9 @@ const REFRESH_TOKEN_COOKIE_NAME = 'refreshToken';
  * Extracts refresh token from request (cookie or body)
  */
 function extractRefreshToken(req: Request): string | null {
+  console.log('[Refresh Service] Request cookies:', req.cookies);
+  console.log('[Refresh Service] Request headers:', req.headers);
+  
   // First try to get from cookie
   const cookieToken = req.cookies?.[REFRESH_TOKEN_COOKIE_NAME];
   if (cookieToken) {
@@ -57,7 +60,8 @@ function setRefreshTokenCookie(res: Response, refreshToken: string): void {
     secure: cookieConfig.secure,
     sameSite: cookieConfig.sameSite,
     maxAge: cookieConfig.maxAge,
-    path: cookieConfig.path
+    path: cookieConfig.path,
+    domain: cookieConfig.domain
   });
   
   console.log('[Refresh Service] New refresh token set as httpOnly cookie');

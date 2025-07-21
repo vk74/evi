@@ -9,7 +9,7 @@
 import crypto from 'crypto';
 import { Request, Response } from 'express';
 import { pool } from '@/core/db/maindb';
-import { LogoutRequest, LogoutResponse, TokenValidationResult } from './types.auth';
+import { LogoutRequest, LogoutResponse, TokenValidationResult, getCookieConfig } from './types.auth';
 import { findTokenByHashIncludeRevoked, revokeTokenByHash } from './queries.auth';
 
 // Cookie configuration
@@ -41,8 +41,11 @@ function extractRefreshToken(req: Request): string | null {
  * Clears refresh token cookie
  */
 function clearRefreshTokenCookie(res: Response): void {
+  const cookieConfig = getCookieConfig();
+  
   res.clearCookie(REFRESH_TOKEN_COOKIE_NAME, {
-    path: '/'
+    path: cookieConfig.path,
+    domain: cookieConfig.domain
   });
   
   console.log('[Logout Service] Refresh token cookie cleared');

@@ -75,6 +75,7 @@ export interface CookieConfig {
   sameSite: 'strict' | 'lax' | 'none';
   maxAge: number;
   path: string;
+  domain?: string;
 }
 
 /**
@@ -82,13 +83,15 @@ export interface CookieConfig {
  */
 export const getCookieConfig = (): CookieConfig => {
   const isProduction = process.env.NODE_ENV === 'production';
+  const isDevelopment = process.env.NODE_ENV === 'development';
   
   return {
     httpOnly: true,
     secure: isProduction, // false for localhost, true for HTTPS
-    sameSite: 'strict',
+    sameSite: isDevelopment ? 'lax' : 'strict', // Use lax for development, strict for production
     maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days in milliseconds
-    path: '/'
+    path: '/',
+    domain: isDevelopment ? 'localhost' : undefined // Set domain for localhost development
   };
 };
 

@@ -7,6 +7,7 @@
 
 import { defineStore } from 'pinia'
 import { jwtDecode } from 'jwt-decode'
+import { useUiStore } from '@/core/state/uistate'
 import type { 
   UserState, 
   JwtPayload
@@ -15,6 +16,7 @@ import { STORAGE_KEYS, TIMER_CONFIG } from './types.auth'
 
 // Timer reference for automatic token refresh
 let refreshTimer: NodeJS.Timeout | null = null
+let retryCount = 0
 
 // Initial state
 const initialState: UserState = {
@@ -103,27 +105,77 @@ function startRefreshTimer(): void {
     clearTimeout(refreshTimer)
   }
   
-  // Start new timer
-  refreshTimer = setTimeout(async () => {
-    console.log('[User Auth State] Refresh timer expired, attempting token refresh')
-    try {
-      // Import here to avoid circular dependency
-      const { refreshTokensService } = await import('./service.refresh.tokens')
-      const success = await refreshTokensService()
-      
-      if (success) {
-        // Restart timer after successful refresh
-        startRefreshTimer()
-        console.log('[User Auth State] Tokens refreshed successfully')
-      } else {
-        console.log('[User Auth State] Token refresh failed')
-      }
-    } catch (error) {
-      console.error('[User Auth State] Failed to refresh tokens:', error)
-    }
-  }, TIMER_CONFIG.REFRESH_DURATION)
+  // Calculate time until token expires
+  const now = Math.floor(Date.now() / 1000)
+  const timeUntilExpiry = useUserAuthStore().tokenExpires - now
   
-  console.log('[User Auth State] Refresh timer started for 30 minutes')
+  if (timeUntilExpiry <= 0) {
+    console.log('[User Auth State] Token already expired, attempting immediate refresh')
+    attemptTokenRefresh()
+    return
+  }
+  
+  // Calculate time to refresh (30 seconds before expiry)
+  const refreshTime = Math.max(0, (timeUntilExpiry - 30) * 1000)
+  
+  // Start new timer
+  refreshTimer = setTimeout(() => {
+    console.log('[User Auth State] Refresh timer expired, attempting token refresh')
+    attemptTokenRefresh()
+  }, refreshTime)
+  
+  console.log(`[User Auth State] Refresh timer started for ${Math.floor(refreshTime / 1000)} seconds`)
+}
+
+/**
+ * Attempts token refresh with retry logic
+ */
+async function attemptTokenRefresh(): Promise<void> {
+  try {
+    // Import here to avoid circular dependency
+    const { refreshTokensService } = await import('./service.refresh.tokens')
+    const success = await refreshTokensService()
+    
+    if (success) {
+      // Reset retry count on success
+      retryCount = 0
+      // Restart timer after successful refresh
+      startRefreshTimer()
+      console.log('[User Auth State] Tokens refreshed successfully')
+    } else {
+      handleRefreshFailure()
+    }
+  } catch (error) {
+    console.error('[User Auth State] Failed to refresh tokens:', error)
+    handleRefreshFailure()
+  }
+}
+
+/**
+ * Handles refresh failure with retry logic
+ */
+function handleRefreshFailure(): void {
+  retryCount++
+  
+  if (retryCount <= TIMER_CONFIG.MAX_RETRY_ATTEMPTS) {
+    console.log(`[User Auth State] Refresh failed, retry ${retryCount}/${TIMER_CONFIG.MAX_RETRY_ATTEMPTS} in ${TIMER_CONFIG.RETRY_DELAY / 1000} seconds`)
+    
+    setTimeout(() => {
+      attemptTokenRefresh()
+    }, TIMER_CONFIG.RETRY_DELAY)
+  } else {
+    console.error('[User Auth State] Max retry attempts reached, logging out user')
+    retryCount = 0
+    
+    // Show error message to user
+    const uiStore = useUiStore()
+    uiStore.showErrorSnackbar('ошибка обновления сессии, необходима повторная авторизация')
+    
+    // Force logout after max retries
+    const userStore = useUserAuthStore()
+    userStore.clearUser()
+    window.location.href = '/login'
+  }
 }
 
 /**

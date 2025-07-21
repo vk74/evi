@@ -19,10 +19,6 @@ export function areCookiesSupported(): boolean {
   }
 }
 
-/**
- * Checks if httpOnly cookies are supported
- * Note: This is a basic check - httpOnly cookies are primarily a server-side feature
- */
 export function areHttpOnlyCookiesSupported(): boolean {
   // Modern browsers support httpOnly cookies
   // This is mainly a server-side feature, but we can check for basic cookie support

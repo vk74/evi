@@ -101,5 +101,7 @@ export const STORAGE_KEYS = {
 
 // Timer configuration
 export const TIMER_CONFIG = {
-  REFRESH_DURATION: 30 * 60 * 1000 // 30 minutes in milliseconds
+  REFRESH_BEFORE_EXPIRY: 30 * 1000, // 30 seconds before expiry
+  MAX_RETRY_ATTEMPTS: 3,
+  RETRY_DELAY: 10000 // 10 seconds between retries
 } as const 

@@ -169,10 +169,11 @@ async function initializeServer(): Promise<void> {
     // 4. Setting up middleware
     // Configure CORS for frontend only
     app.use(cors({
-      origin: 'http://localhost:8080', // Allow access only from this source
+      origin: ['http://localhost:8080', 'http://localhost:3000', 'http://127.0.0.1:8080'], // Allow access from multiple localhost variants
       methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'], // Allowed methods
-      allowedHeaders: ['Content-Type', 'Authorization'], // Allowed headers
-      credentials: true // Allow sending cookies
+      allowedHeaders: ['Content-Type', 'Authorization', 'Cookie'], // Allow cookies
+      credentials: true, // Allow sending cookies
+      exposedHeaders: ['Set-Cookie'] // Expose Set-Cookie header
     }));
     
     app.use(express.json());

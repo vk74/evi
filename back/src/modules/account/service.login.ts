@@ -45,7 +45,8 @@ function setRefreshTokenCookie(res: Response, refreshToken: string): void {
     secure: cookieConfig.secure,
     sameSite: cookieConfig.sameSite,
     maxAge: cookieConfig.maxAge,
-    path: cookieConfig.path
+    path: cookieConfig.path,
+    domain: cookieConfig.domain
   });
   
   console.log('[Login Service] Refresh token set as httpOnly cookie');
