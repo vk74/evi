@@ -1,10 +1,49 @@
 /**
  * @file types.auth.ts
- * Version: 1.1.0
+ * Version: 1.2.0
  * TypeScript interfaces for authentication system.
  * Frontend file that defines all types used in authentication services and state management.
- * Updated to work with httpOnly cookies for refresh tokens.
+ * Updated to support device fingerprinting for enhanced security.
  */
+
+// ==================== DEVICE FINGERPRINT INTERFACES ====================
+
+/**
+ * Device fingerprint interface for collecting browser characteristics
+ */
+export interface DeviceFingerprint {
+  // Screen characteristics
+  screen: {
+    width: number;
+    height: number;
+    colorDepth: number;
+    pixelDepth: number;
+  };
+  
+  // Browser characteristics
+  timezone: string;
+  language: string;
+  userAgent: string;
+  
+  // Canvas fingerprint
+  canvas: string;
+  webgl: string;
+  
+  // Additional characteristics
+  touchSupport: boolean;
+  hardwareConcurrency: number;
+  deviceMemory?: number;
+  maxTouchPoints: number;
+  platform: string;
+}
+
+/**
+ * Fingerprint hash interface
+ */
+export interface FingerprintHash {
+  hash: string;
+  shortHash: string; // First 16 characters for quick comparison
+}
 
 // JWT Token interfaces
 export interface JwtPayload {
@@ -17,45 +56,68 @@ export interface JwtPayload {
   exp: number // expiration
 }
 
-// API Response interfaces
-export interface LoginResponse {
-  success: boolean
-  accessToken: string
-  // refreshToken removed - now handled by httpOnly cookies
-  user: {
-    username: string
-    uuid: string
-  }
-  message?: string
-}
+// ==================== REQUEST INTERFACES ====================
 
-export interface LogoutResponse {
-  success: boolean
-  message?: string
-}
-
-export interface RefreshResponse {
-  success: boolean
-  accessToken: string
-  // refreshToken removed - now handled by httpOnly cookies
-  message?: string
-}
-
-// API Request interfaces
+/**
+ * Login request interface
+ */
 export interface LoginRequest {
-  username: string
-  password: string
+  username: string;
+  password: string;
+  deviceFingerprint: DeviceFingerprint;
 }
 
+/**
+ * Refresh token request interface
+ */
+export interface RefreshTokenRequest {
+  deviceFingerprint: DeviceFingerprint;
+}
+
+/**
+ * Logout request interface
+ */
 export interface LogoutRequest {
-  // refreshToken is optional - can come from httpOnly cookie
-  refreshToken?: string
+  // Empty interface - logout doesn't require additional data
 }
 
-export interface RefreshRequest {
-  // refreshToken is optional - can come from httpOnly cookie
-  refreshToken?: string
+// ==================== RESPONSE INTERFACES ====================
+
+/**
+ * Login response interface
+ */
+export interface LoginResponse {
+  success: boolean;
+  accessToken: string;
+  user: {
+    username: string;
+    uuid: string;
+  };
 }
+
+/**
+ * Refresh token response interface
+ */
+export interface RefreshTokenResponse {
+  success: boolean;
+  accessToken: string;
+}
+
+/**
+ * Logout response interface
+ */
+export interface LogoutResponse {
+  success: boolean;
+  message: string;
+}
+
+// ==================== TIMER CONFIGURATION ====================
+
+export const TIMER_CONFIG = {
+  REFRESH_BEFORE_EXPIRY: 30, // seconds before token expires to refresh
+  MAX_RETRY_ATTEMPTS: 3,
+  RETRY_DELAY: 5000 // milliseconds
+} as const
 
 // User state interfaces
 export interface UserState {
@@ -72,36 +134,9 @@ export interface UserState {
   language: string // Added for compatibility with old store
 }
 
-// Service function interfaces
-export interface LoginService {
-  (username: string, password: string): Promise<boolean>
-}
-
-export interface LogoutService {
-  (): Promise<boolean>
-}
-
-export interface RefreshTokensService {
-  (): Promise<boolean>
-}
-
-// Error handling interfaces
-export interface AuthError {
-  message: string
-  code?: string
-  status?: number
-}
-
 // Storage keys
 export const STORAGE_KEYS = {
   ACCESS_TOKEN: 'userToken',
   // REFRESH_TOKEN removed - now handled by httpOnly cookies
   USER_STATE: 'userState'
-} as const
-
-// Timer configuration
-export const TIMER_CONFIG = {
-  REFRESH_BEFORE_EXPIRY: 30 * 1000, // 30 seconds before expiry
-  MAX_RETRY_ATTEMPTS: 3,
-  RETRY_DELAY: 10000 // 10 seconds between retries
 } as const 

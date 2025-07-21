@@ -1,32 +1,33 @@
 /**
  * @file queries.auth.ts
- * Version: 1.0.0
+ * Version: 1.1.0
  * Predefined SQL queries for authentication system working with app.tokens table.
  * Backend file that provides secure database operations for token management.
+ * Updated to support device fingerprinting and renamed issued_at column.
  */
 
 // ==================== TOKEN CREATION QUERIES ====================
 
 /**
- * Insert new refresh token into database
+ * Insert new refresh token into database with device fingerprint
  */
 export const insertRefreshToken = {
   text: `
-    INSERT INTO app.tokens (user_uuid, token_hash, expires_at)
-    VALUES ($1, $2, $3)
-    RETURNING id, user_uuid, token_hash, created_at, expires_at, revoked
+    INSERT INTO app.tokens (user_uuid, token_hash, expires_at, device_fingerprint_hash)
+    VALUES ($1, $2, $3, $4)
+    RETURNING id, user_uuid, token_hash, issued_at, expires_at, revoked, device_fingerprint_hash
   `,
-  values: ['userUuid', 'tokenHash', 'expiresAt']
+  values: ['userUuid', 'tokenHash', 'expiresAt', 'deviceFingerprintHash']
 };
 
 // ==================== TOKEN VALIDATION QUERIES ====================
 
 /**
- * Find active refresh token by hash
+ * Find active refresh token by hash with device fingerprint validation
  */
 export const findTokenByHash = {
   text: `
-    SELECT id, user_uuid, token_hash, created_at, expires_at, revoked
+    SELECT id, user_uuid, token_hash, issued_at, expires_at, revoked, device_fingerprint_hash
     FROM app.tokens
     WHERE token_hash = $1 AND revoked = false AND expires_at > NOW()
   `,
@@ -38,9 +39,21 @@ export const findTokenByHash = {
  */
 export const findTokenByHashIncludeRevoked = {
   text: `
-    SELECT id, user_uuid, token_hash, created_at, expires_at, revoked
+    SELECT id, user_uuid, token_hash, issued_at, expires_at, revoked, device_fingerprint_hash
     FROM app.tokens
     WHERE token_hash = $1
+  `,
+  values: ['tokenHash']
+};
+
+/**
+ * Validate token with device fingerprint
+ */
+export const validateToken = {
+  text: `
+    SELECT id, user_uuid, token_hash, issued_at, expires_at, revoked, device_fingerprint_hash
+    FROM app.tokens
+    WHERE token_hash = $1 AND revoked = false AND expires_at > NOW()
   `,
   values: ['tokenHash']
 };
@@ -55,7 +68,7 @@ export const revokeTokenByHash = {
     UPDATE app.tokens
     SET revoked = true
     WHERE token_hash = $1
-    RETURNING id, user_uuid, token_hash, created_at, expires_at, revoked
+    RETURNING id, user_uuid, token_hash, issued_at, expires_at, revoked, device_fingerprint_hash
   `,
   values: ['tokenHash']
 };
@@ -68,7 +81,7 @@ export const revokeAllUserTokens = {
     UPDATE app.tokens
     SET revoked = true
     WHERE user_uuid = $1 AND revoked = false
-    RETURNING id, user_uuid, token_hash, created_at, expires_at, revoked
+    RETURNING id, user_uuid, token_hash, issued_at, expires_at, revoked, device_fingerprint_hash
   `,
   values: ['userUuid']
 };
@@ -92,7 +105,7 @@ export const deleteExpiredTokens = {
 export const deleteOldRevokedTokens = {
   text: `
     DELETE FROM app.tokens
-    WHERE revoked = true AND created_at < NOW() - INTERVAL '$1 days'
+    WHERE revoked = true AND issued_at < NOW() - INTERVAL '$1 days'
   `,
   values: ['daysOld']
 };
@@ -116,10 +129,10 @@ export const countActiveTokensForUser = {
  */
 export const getActiveTokensForUser = {
   text: `
-    SELECT id, user_uuid, token_hash, created_at, expires_at, revoked
+    SELECT id, user_uuid, token_hash, issued_at, expires_at, revoked, device_fingerprint_hash
     FROM app.tokens
     WHERE user_uuid = $1 AND revoked = false AND expires_at > NOW()
-    ORDER BY created_at DESC
+    ORDER BY issued_at DESC
   `,
   values: ['userUuid']
 };
@@ -134,7 +147,20 @@ export const updateTokenExpiration = {
     UPDATE app.tokens
     SET expires_at = $2
     WHERE token_hash = $1
-    RETURNING id, user_uuid, token_hash, created_at, expires_at, revoked
+    RETURNING id, user_uuid, token_hash, issued_at, expires_at, revoked, device_fingerprint_hash
   `,
   values: ['tokenHash', 'newExpiresAt']
+};
+
+/**
+ * Update token with new device fingerprint
+ */
+export const updateToken = {
+  text: `
+    UPDATE app.tokens
+    SET device_fingerprint_hash = $2, expires_at = $3
+    WHERE token_hash = $1
+    RETURNING id, user_uuid, token_hash, issued_at, expires_at, revoked, device_fingerprint_hash
+  `,
+  values: ['tokenHash', 'deviceFingerprintHash', 'newExpiresAt']
 }; 

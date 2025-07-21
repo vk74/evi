@@ -1,16 +1,17 @@
 /**
  * @file service.logout.ts
- * Version: 1.1.0
+ * Version: 1.2.0
  * Service for user logout and token revocation.
  * Backend file that handles user logout, revokes refresh tokens, and cleans up session data.
- * Updated to support httpOnly cookies for refresh tokens.
+ * Updated to support device fingerprinting for enhanced security.
  */
 
 import crypto from 'crypto';
 import { Request, Response } from 'express';
 import { pool } from '@/core/db/maindb';
-import { LogoutRequest, LogoutResponse, TokenValidationResult, getCookieConfig } from './types.auth';
+import { LogoutRequest, LogoutResponse, TokenValidationResult, getCookieConfig, DeviceFingerprint } from './types.auth';
 import { findTokenByHashIncludeRevoked, revokeTokenByHash } from './queries.auth';
+import { logDeviceFingerprint } from './utils.device.fingerprint';
 
 // Cookie configuration
 const REFRESH_TOKEN_COOKIE_NAME = 'refreshToken';
@@ -154,6 +155,12 @@ export async function logoutService(
       success: true,
       message: 'Logout completed successfully'
     };
+  }
+  
+  // Log device fingerprint if available
+  const deviceFingerprint = req.body?.deviceFingerprint as DeviceFingerprint;
+  if (deviceFingerprint && validation.userUuid) {
+    logDeviceFingerprint(validation.userUuid, deviceFingerprint, 'logout');
   }
   
   // Hash token for database lookup

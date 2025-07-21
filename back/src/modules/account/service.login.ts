@@ -1,16 +1,17 @@
 /**
  * @file service.login.ts
- * Version: 1.1.0
+ * Version: 1.2.0
  * Service for user authentication and token issuance.
  * Backend file that handles user login, validates credentials, and issues access/refresh token pairs.
- * Updated to support httpOnly cookies for refresh tokens.
+ * Updated to support device fingerprinting for enhanced security.
  */
 
 import bcrypt from 'bcrypt';
 import { Response } from 'express';
 import { pool } from '@/core/db/maindb';
-import { LoginRequest, LoginResponse, getCookieConfig } from './types.auth';
+import { LoginRequest, LoginResponse, getCookieConfig, DeviceFingerprint } from './types.auth';
 import { issueTokenPair } from './service.issue.tokens';
+import { extractDeviceFingerprintFromRequest, logDeviceFingerprint } from './utils.device.fingerprint';
 
 // Cookie configuration
 const REFRESH_TOKEN_COOKIE_NAME = 'refreshToken';
@@ -134,6 +135,14 @@ export async function loginService(
     
     console.log('[Login Service] Input validation passed');
     
+    // Extract and validate device fingerprint
+    const deviceFingerprint = loginData.deviceFingerprint;
+    if (!deviceFingerprint || !deviceFingerprint.screen || !deviceFingerprint.userAgent) {
+      throw new Error('Valid device fingerprint is required');
+    }
+    
+    console.log('[Login Service] Device fingerprint validation passed');
+    
     // Validate credentials
     console.log('[Login Service] Starting credential validation...');
     const { isValid, userUuid } = await validateCredentials(loginData.username, loginData.password);
@@ -146,9 +155,12 @@ export async function loginService(
     
     console.log('[Login Service] Credentials validated successfully');
     
-    // Generate token pair using token issuance service
+    // Log device fingerprint for security monitoring
+    logDeviceFingerprint(userUuid!, deviceFingerprint, 'login');
+    
+    // Generate token pair using token issuance service with device fingerprint
     console.log('[Login Service] Requesting token pair generation...');
-    const tokenPair = await issueTokenPair(loginData.username, userUuid!);
+    const tokenPair = await issueTokenPair(loginData.username, userUuid!, deviceFingerprint);
     
     // Set refresh token as httpOnly cookie
     console.log('[Login Service] Setting refresh token as httpOnly cookie...');

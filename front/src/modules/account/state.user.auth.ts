@@ -1,8 +1,9 @@
 /**
  * @file state.user.auth.ts
- * Version: 1.1.0
+ * Version: 1.2.0
  * TypeScript state management for user authentication.
  * Frontend file that manages user authentication state with persistence and integration with auth services.
+ * Updated to support device fingerprinting and new database structure.
  */
 
 import { defineStore } from 'pinia'

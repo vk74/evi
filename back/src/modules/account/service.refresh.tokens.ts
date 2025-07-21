@@ -1,17 +1,18 @@
 /**
  * @file service.refresh.tokens.ts
- * Version: 1.1.0
+ * Version: 1.2.0
  * Service for refreshing authentication tokens.
  * Backend file that validates refresh tokens, issues new token pairs, and prevents token reuse.
- * Updated to support httpOnly cookies for refresh tokens.
+ * Updated to support device fingerprinting for enhanced security.
  */
 
 import crypto from 'crypto';
 import { Request, Response } from 'express';
 import { pool } from '@/core/db/maindb';
-import { RefreshTokenRequest, RefreshTokenResponse, TokenValidationResult, getCookieConfig } from './types.auth';
+import { RefreshTokenRequest, RefreshTokenResponse, TokenValidationResult, getCookieConfig, DeviceFingerprint } from './types.auth';
 import { findTokenByHash, revokeTokenByHash } from './queries.auth';
 import { issueTokenPair } from './service.issue.tokens';
+import { validateFingerprint, logDeviceFingerprint } from './utils.device.fingerprint';
 
 // Cookie configuration
 const REFRESH_TOKEN_COOKIE_NAME = 'refreshToken';
@@ -78,9 +79,9 @@ function hashRefreshToken(token: string): string {
 }
 
 /**
- * Validates refresh token from database
+ * Validates refresh token from database with device fingerprint
  */
-async function validateRefreshToken(refreshToken: string): Promise<TokenValidationResult> {
+async function validateRefreshToken(refreshToken: string, deviceFingerprint: DeviceFingerprint): Promise<TokenValidationResult> {
   const tokenHash = hashRefreshToken(refreshToken);
   
   try {
@@ -111,9 +112,24 @@ async function validateRefreshToken(refreshToken: string): Promise<TokenValidati
       };
     }
     
+    // Validate device fingerprint if stored
+    let fingerprintMatch = true;
+    if (tokenData.device_fingerprint_hash) {
+      fingerprintMatch = validateFingerprint(deviceFingerprint, tokenData.device_fingerprint_hash);
+      
+      if (!fingerprintMatch) {
+        console.warn('[Refresh Service] Device fingerprint mismatch for user:', tokenData.user_uuid);
+        return {
+          isValid: false,
+          error: 'Device fingerprint validation failed'
+        };
+      }
+    }
+    
     return {
       isValid: true,
-      userUuid: tokenData.user_uuid
+      userUuid: tokenData.user_uuid,
+      fingerprintMatch
     };
   } catch (error) {
     console.error('[Refresh Service] Database error during token validation:', error);
@@ -163,13 +179,24 @@ export async function refreshTokensService(
     throw new Error('Refresh token is required');
   }
   
-  // Validate refresh token
-  const validation = await validateRefreshToken(refreshToken);
+  // Extract device fingerprint from request
+  const deviceFingerprint = req.body?.deviceFingerprint as DeviceFingerprint;
+  if (!deviceFingerprint || !deviceFingerprint.screen || !deviceFingerprint.userAgent) {
+    throw new Error('Valid device fingerprint is required');
+  }
+  
+  console.log('[Refresh Service] Device fingerprint extracted from request');
+  
+  // Validate refresh token with device fingerprint
+  const validation = await validateRefreshToken(refreshToken, deviceFingerprint);
   
   if (!validation.isValid) {
     console.log('[Refresh Service] Invalid refresh token:', validation.error);
     throw new Error(validation.error || 'Invalid refresh token');
   }
+  
+  // Log device fingerprint for security monitoring
+  logDeviceFingerprint(validation.userUuid!, deviceFingerprint, 'refresh');
   
   // Get username for new token generation
   const username = await getUsernameByUuid(validation.userUuid!);
@@ -180,8 +207,8 @@ export async function refreshTokensService(
   // Revoke old token
   await pool.query(revokeTokenByHash.text, [oldTokenHash]);
   
-  // Generate new token pair using token issuance service
-  const tokenPair = await issueTokenPair(username, validation.userUuid!);
+  // Generate new token pair using token issuance service with device fingerprint
+  const tokenPair = await issueTokenPair(username, validation.userUuid!, deviceFingerprint);
   
   // Set new refresh token as httpOnly cookie
   setRefreshTokenCookie(res, tokenPair.refreshToken);

@@ -1,12 +1,13 @@
 <!--
   File: ModuleLogin.vue
-  Version: 1.1.0
+  Version: 1.2.0
   Description: User login component for frontend
   Purpose: Handles authentication process, JWT token processing and user state management
   Frontend file that manages user login form, integrates with JWT token processing, and handles user session management
   
   Features:
   - User authentication with username and password
+  - Device fingerprint generation and validation
   - JWT token processing and storage
   - User state management with Pinia stores
   - Session timer initialization
@@ -39,6 +40,7 @@ const password = ref('')
 /**
  * Handle user login process
  * Authenticates user with backend, processes JWT token, and updates user state
+ * Now includes device fingerprint generation for enhanced security
  */
 const login = async () => {
   console.log("Login:", username.value, "Pass:", password.value)

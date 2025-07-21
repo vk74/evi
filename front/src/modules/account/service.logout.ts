@@ -1,9 +1,9 @@
 /**
  * @file service.logout.ts
- * Version: 1.2.0
+ * Version: 1.3.0
  * Service for user logout and session cleanup.
  * Frontend file that handles logout requests, clears tokens, and resets user session.
- * Updated to work with httpOnly cookies for refresh tokens.
+ * Updated to support device fingerprinting for enhanced security.
  */
 
 import { api } from '@/core/api/service.axios'
@@ -13,6 +13,7 @@ import { clearRefreshTimer } from './service.login'
 import { refreshTokensService } from './service.refresh.tokens'
 import type { LogoutRequest, LogoutResponse } from './types.auth'
 import { STORAGE_KEYS } from './types.auth'
+import { generateDeviceFingerprint } from './utils.device.fingerprint'
 
 // API configuration
 const LOGOUT_ENDPOINT = '/api/auth/logout'
@@ -45,14 +46,21 @@ function resetUserStore(): void {
 }
 
 /**
- * Sends logout request to backend
+ * Sends logout request to backend with device fingerprint
  * Refresh token is automatically sent as httpOnly cookie
  */
 async function sendLogoutRequest(): Promise<void> {
   try {
     console.log('[Logout Service] Sending logout request to backend...')
-    // Send empty request - refresh token will be sent automatically as cookie
-    const response = await api.post<LogoutResponse>(LOGOUT_ENDPOINT, {})
+    
+    // Generate device fingerprint
+    console.log('[Logout Service] Generating device fingerprint...')
+    const deviceFingerprint = generateDeviceFingerprint()
+    
+    // Send request with device fingerprint - refresh token will be sent automatically as cookie
+    const response = await api.post<LogoutResponse>(LOGOUT_ENDPOINT, {
+      deviceFingerprint
+    } as LogoutRequest)
     
     console.log('[Logout Service] Backend logout response:', response.data)
     
@@ -102,7 +110,7 @@ export async function logoutService(): Promise<boolean> {
     clearRefreshTimer()
     console.log('[Logout Service] Refresh timer cleared')
     
-    // Send logout request to backend (refresh token sent automatically as cookie)
+    // Send logout request to backend with device fingerprint (refresh token sent automatically as cookie)
     await sendLogoutRequest()
     
     // Clear local tokens

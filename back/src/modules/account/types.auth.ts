@@ -1,12 +1,51 @@
 /**
  * @file types.auth.ts
- * Version: 1.1.0
+ * Version: 1.2.0
  * Type definitions for authentication system including login, refresh tokens, and logout functionality.
  * Backend file that defines interfaces for all auth-related requests, responses, and data structures.
- * Updated to support httpOnly cookies for refresh tokens.
+ * Updated to support device fingerprinting for enhanced security.
  */
 
 import { Request } from 'express';
+
+// ==================== DEVICE FINGERPRINT INTERFACES ====================
+
+/**
+ * Device fingerprint interface for collecting browser characteristics
+ */
+export interface DeviceFingerprint {
+  // Screen characteristics
+  screen: {
+    width: number;
+    height: number;
+    colorDepth: number;
+    pixelDepth: number;
+  };
+  
+  // Browser characteristics
+  timezone: string;
+  language: string;
+  userAgent: string;
+  
+  // Canvas fingerprint
+  canvas: string;
+  webgl: string;
+  
+  // Additional characteristics
+  touchSupport: boolean;
+  hardwareConcurrency: number;
+  deviceMemory?: number;
+  maxTouchPoints: number;
+  platform: string;
+}
+
+/**
+ * Fingerprint hash interface
+ */
+export interface FingerprintHash {
+  hash: string;
+  shortHash: string; // First 16 characters for quick comparison
+}
 
 // ==================== REQUEST INTERFACES ====================
 
@@ -16,6 +55,7 @@ import { Request } from 'express';
 export interface LoginRequest {
   username: string;
   password: string;
+  deviceFingerprint: DeviceFingerprint;
 }
 
 /**
@@ -23,6 +63,7 @@ export interface LoginRequest {
  */
 export interface RefreshTokenRequest {
   refreshToken?: string; // Optional now as it can come from cookie
+  deviceFingerprint: DeviceFingerprint;
 }
 
 /**
@@ -117,9 +158,10 @@ export interface RefreshToken {
   id: string;           // UUID with 'token-' prefix
   userUuid: string;     // Associated user UUID
   tokenHash: string;    // Hashed token value
-  createdAt: Date;      // Creation timestamp
+  issuedAt: Date;       // Creation timestamp (renamed from createdAt)
   expiresAt: Date;      // Expiration timestamp
   revoked: boolean;     // Revocation status
+  deviceFingerprintHash?: string; // Hash of device fingerprint
 }
 
 /**
@@ -140,9 +182,10 @@ export interface TokenPair {
 export interface TokenCacheEntry {
   userUuid: string;
   tokenHash: string;
-  createdAt: Date;
+  issuedAt: Date;
   expiresAt: Date;
   revoked: boolean;
+  deviceFingerprintHash?: string;
 }
 
 /**
@@ -194,4 +237,5 @@ export interface TokenValidationResult {
   isValid: boolean;
   userUuid?: string;
   error?: string;
+  fingerprintMatch?: boolean;
 } 

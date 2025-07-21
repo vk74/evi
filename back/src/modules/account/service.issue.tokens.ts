@@ -1,16 +1,18 @@
 /**
  * @file service.issue.tokens.ts
- * Version: 1.0.0
+ * Version: 1.1.0
  * Service for token generation and issuance.
  * Backend file that generates access and refresh token pairs and stores refresh tokens in database.
+ * Updated to support device fingerprinting and new database structure.
  */
 
 import jwt from 'jsonwebtoken';
 import { v4 as uuidv4 } from 'uuid';
 import crypto from 'crypto';
 import { pool } from '@/core/db/maindb';
-import { JwtPayload, TokenGenerationResult } from './types.auth';
+import { JwtPayload, TokenGenerationResult, DeviceFingerprint } from './types.auth';
 import { insertRefreshToken } from './queries.auth';
+import { hashFingerprint } from './utils.device.fingerprint';
 
 // Token configuration
 const TOKEN_CONFIG = {
@@ -27,20 +29,25 @@ function generateRefreshToken(): string {
 }
 
 /**
- * Hashes a refresh token for storage
+ * Hashes a refresh token for storage and comparison
  */
 function hashRefreshToken(token: string): string {
   return crypto.createHash('sha256').update(token).digest('hex');
 }
 
 /**
- * Stores refresh token in database
+ * Stores refresh token in database with device fingerprint
  */
-async function storeRefreshToken(userUuid: string, tokenHash: string, expiresAt: Date): Promise<void> {
+async function storeRefreshToken(
+  userUuid: string, 
+  tokenHash: string, 
+  expiresAt: Date,
+  deviceFingerprintHash: string
+): Promise<void> {
   try {
     console.log('[Token Issue Service] Attempting to store refresh token for user:', userUuid);
-    await pool.query(insertRefreshToken.text, [userUuid, tokenHash, expiresAt]);
-    console.log('[Token Issue Service] Refresh token stored successfully');
+    await pool.query(insertRefreshToken.text, [userUuid, tokenHash, expiresAt, deviceFingerprintHash]);
+    console.log('[Token Issue Service] Refresh token stored successfully with device fingerprint');
   } catch (error) {
     console.error('[Token Issue Service] Error storing refresh token:', error);
     throw new Error('Failed to store refresh token');
@@ -81,9 +88,13 @@ function generateTokenPair(username: string, userUuid: string): TokenGenerationR
 
 /**
  * Main token issuance service function
- * Generates token pair and stores refresh token in database
+ * Generates token pair and stores refresh token in database with device fingerprint
  */
-export async function issueTokenPair(username: string, userUuid: string): Promise<TokenGenerationResult> {
+export async function issueTokenPair(
+  username: string, 
+  userUuid: string, 
+  deviceFingerprint: DeviceFingerprint
+): Promise<TokenGenerationResult> {
   console.log('[Token Issue Service] Generating token pair for user:', username);
   
   try {
@@ -93,8 +104,11 @@ export async function issueTokenPair(username: string, userUuid: string): Promis
     // Hash refresh token for storage
     const refreshTokenHash = hashRefreshToken(tokenPair.refreshToken);
     
-    // Store refresh token in database
-    await storeRefreshToken(userUuid, refreshTokenHash, tokenPair.refreshTokenExpires);
+    // Hash device fingerprint
+    const fingerprintHash = hashFingerprint(deviceFingerprint);
+    
+    // Store refresh token in database with device fingerprint
+    await storeRefreshToken(userUuid, refreshTokenHash, tokenPair.refreshTokenExpires, fingerprintHash.hash);
     
     console.log('[Token Issue Service] Token pair generated and stored successfully for user:', username);
     

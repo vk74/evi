@@ -1,15 +1,16 @@
 /**
  * @file service.refresh.tokens.ts
- * Version: 1.1.0
+ * Version: 1.2.0
  * Service for refreshing authentication tokens.
  * Frontend file that handles token refresh requests and updates user session.
- * Updated to work with httpOnly cookies for refresh tokens.
+ * Updated to support device fingerprinting for enhanced security.
  */
 
 import { api } from '@/core/api/service.axios'
 import { useUserAuthStore } from './state.user.auth'
-import type { RefreshRequest, RefreshResponse } from './types.auth'
+import type { RefreshTokenRequest, RefreshTokenResponse } from './types.auth'
 import { STORAGE_KEYS } from './types.auth'
+import { generateDeviceFingerprint } from './utils.device.fingerprint'
 
 // API configuration
 const REFRESH_ENDPOINT = '/api/auth/refresh'
@@ -57,14 +58,20 @@ function handleRefreshError(error: any): string {
 
 /**
  * Main refresh tokens service function
- * Now works with httpOnly cookies - refresh token is automatically sent by browser
+ * Now works with device fingerprinting - device fingerprint is sent with each request
  */
 export async function refreshTokensService(): Promise<boolean> {
   console.log('[Refresh Service] Processing token refresh request')
   
   try {
-    // Send request without refresh token in body - it will be sent automatically as cookie
-    const response = await api.post<RefreshResponse>(REFRESH_ENDPOINT, {})
+    // Generate device fingerprint
+    console.log('[Refresh Service] Generating device fingerprint...')
+    const deviceFingerprint = generateDeviceFingerprint()
+    
+    // Send request with device fingerprint - refresh token will be sent automatically as cookie
+    const response = await api.post<RefreshTokenResponse>(REFRESH_ENDPOINT, {
+      deviceFingerprint
+    } as RefreshTokenRequest)
     
     console.log('[Refresh Service] Refresh response received:', response.data)
     

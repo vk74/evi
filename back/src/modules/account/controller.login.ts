@@ -1,15 +1,15 @@
 /**
  * @file controller.login.ts
- * Version: 1.1.0
+ * Version: 1.2.0
  * Controller for handling user login requests.
  * Backend file that processes login requests, validates input, and returns authentication tokens.
- * Updated to support httpOnly cookies for refresh tokens.
+ * Updated to support device fingerprinting for enhanced security.
  */
 
 import { Request, Response } from 'express';
 import { connectionHandler } from '@/core/helpers/connection.handler';
 import { loginService } from './service.login';
-import { LoginRequest, LoginResponse } from './types.auth';
+import { LoginRequest, LoginResponse, DeviceFingerprint } from './types.auth';
 
 /**
  * Extracts client IP address from request
@@ -20,6 +20,32 @@ function getClientIp(req: Request): string {
          req.socket.remoteAddress || 
          (req.connection as any).socket?.remoteAddress || 
          'unknown';
+}
+
+/**
+ * Validates device fingerprint from request
+ */
+function validateDeviceFingerprint(req: Request): DeviceFingerprint {
+  const deviceFingerprint = req.body.deviceFingerprint;
+  
+  if (!deviceFingerprint) {
+    throw new Error('Device fingerprint is required');
+  }
+  
+  if (!deviceFingerprint.screen || !deviceFingerprint.userAgent) {
+    throw new Error('Invalid device fingerprint structure');
+  }
+  
+  // Basic validation of required fields
+  if (!deviceFingerprint.screen.width || !deviceFingerprint.screen.height) {
+    throw new Error('Screen dimensions are required in device fingerprint');
+  }
+  
+  if (!deviceFingerprint.timezone || !deviceFingerprint.language) {
+    throw new Error('Timezone and language are required in device fingerprint');
+  }
+  
+  return deviceFingerprint;
 }
 
 /**
@@ -44,9 +70,13 @@ function validateLoginRequest(req: Request): LoginRequest {
     throw new Error('Password cannot be empty');
   }
   
+  // Validate device fingerprint
+  const deviceFingerprint = validateDeviceFingerprint(req);
+  
   return {
     username: username.trim(),
-    password: password.trim()
+    password: password.trim(),
+    deviceFingerprint
   };
 }
 

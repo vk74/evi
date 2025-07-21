@@ -1,9 +1,9 @@
 /**
  * @file service.login.ts
- * Version: 1.2.1
+ * Version: 1.3.0
  * Service for user authentication and token management.
  * Frontend file that handles login requests, processes tokens, and manages user session.
- * Updated to work with httpOnly cookies for refresh tokens.
+ * Updated to support device fingerprinting for enhanced security.
  */
 
 import { api } from '@/core/api/service.axios'
@@ -11,6 +11,7 @@ import { useUserAuthStore } from './state.user.auth'
 import { useUiStore } from '@/core/state/uistate'
 import type { LoginRequest, LoginResponse } from './types.auth'
 import { STORAGE_KEYS } from './types.auth'
+import { generateDeviceFingerprint } from './utils.device.fingerprint'
 
 // API configuration
 const LOGIN_ENDPOINT = '/api/auth/login'
@@ -60,8 +61,8 @@ function handleLoginError(error: any): string {
 
 /**
  * Main login service function
- * Sends POST request to /api/auth/login with username and password
- * Request payload: { username: string, password: string }
+ * Sends POST request to /api/auth/login with username, password, and device fingerprint
+ * Request payload: { username: string, password: string, deviceFingerprint: DeviceFingerprint }
  * Returns: Promise<{ success: boolean, errorKey?: string }>
  * Note: Refresh token is now automatically handled by httpOnly cookies
  */
@@ -69,9 +70,14 @@ export async function loginService(username: string, password: string): Promise<
   console.log('[Login Service] Processing login request for user:', username)
   
   try {
+    // Generate device fingerprint
+    console.log('[Login Service] Generating device fingerprint...')
+    const deviceFingerprint = generateDeviceFingerprint()
+    
     const response = await api.post<LoginResponse>(LOGIN_ENDPOINT, {
       username,
-      password
+      password,
+      deviceFingerprint
     } as LoginRequest)
     
     console.log('[Login Service] Login response received:', response.data)
