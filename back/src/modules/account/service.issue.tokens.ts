@@ -23,16 +23,23 @@ const TOKEN_CONFIG = {
 };
 
 /**
- * Gets access token settings from cache
+ * Gets JWT token settings from cache
  * Throws error if critical settings not found
  */
-function getAccessTokenSettings() {
+function getJwtSettings() {
   // Get access token lifetime setting
   const accessTokenLifetimeSetting = getSetting('Application.Security.SessionManagement', 'access.token.lifetime');
   if (!accessTokenLifetimeSetting) {
     throw new Error('Critical JWT setting not found: access.token.lifetime. Please ensure settings are loaded.');
   }
   const accessTokenLifetimeMinutes = Number(parseSettingValue(accessTokenLifetimeSetting));
+
+  // Get refresh token lifetime setting
+  const refreshTokenLifetimeSetting = getSetting('Application.Security.SessionManagement', 'refresh.token.lifetime');
+  if (!refreshTokenLifetimeSetting) {
+    throw new Error('Critical JWT setting not found: refresh.token.lifetime. Please ensure settings are loaded.');
+  }
+  const refreshTokenLifetimeDays = Number(parseSettingValue(refreshTokenLifetimeSetting));
 
   // Get refresh before expiry setting (for refresh logic)
   const refreshBeforeExpirySetting = getSetting('Application.Security.SessionManagement', 'refresh.jwt.n.seconds.before.expiry');
@@ -43,6 +50,7 @@ function getAccessTokenSettings() {
 
   return {
     accessTokenLifetimeMinutes,
+    refreshTokenLifetimeDays,
     refreshBeforeExpirySeconds
   };
 }
@@ -85,7 +93,7 @@ async function storeRefreshToken(
  */
 function generateTokenPair(username: string, userUuid: string): TokenGenerationResult {
   // Get JWT settings from cache
-  const jwtSettings = getAccessTokenSettings();
+  const jwtSettings = getJwtSettings();
   
   // Generate access token with configurable lifetime
   const accessTokenExpires = new Date(Date.now() + jwtSettings.accessTokenLifetimeMinutes * 60 * 1000);
@@ -103,9 +111,9 @@ function generateTokenPair(username: string, userUuid: string): TokenGenerationR
     algorithm: 'RS256'
   });
   
-  // Generate refresh token
+  // Generate refresh token with configurable lifetime
   const refreshToken = generateRefreshToken();
-  const refreshTokenExpires = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days
+  const refreshTokenExpires = new Date(Date.now() + jwtSettings.refreshTokenLifetimeDays * 24 * 60 * 60 * 1000);
   
   return {
     accessToken,

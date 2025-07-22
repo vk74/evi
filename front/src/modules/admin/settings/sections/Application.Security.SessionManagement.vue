@@ -37,16 +37,16 @@ const settingRetryAttempts = ref<Record<string, number>>({});
 // Local UI state for immediate interaction - initialize with null (not set)
 const accessTokenLifetimeMinutes = ref<number | null>(null);
 const accessTokenRefreshBeforeExpirySeconds = ref<number | null>(null);
+const refreshTokenLifetimeDays = ref<number | null>(null);
 
 // ==================== TOKEN MANAGEMENT SETTINGS ====================
 
 // Refresh Token Settings  
-const refreshTokenLifetimeDays = ref(7);
 const refreshTokenMaxCountPerUser = ref(5);
 const refreshTokenCleanupExpiredAfterDays = ref(30);
 
-// Refresh token lifetime options (0 to 30 days)
-const refreshTokenLifetimeOptions = Array.from({ length: 31 }, (_, i) => i);
+// Refresh token lifetime options (1 to 30 days)
+const refreshTokenLifetimeOptions = Array.from({ length: 30 }, (_, i) => i + 1);
 
 // Token Security Settings
 const tokenAlgorithm = ref('RS256');
@@ -119,7 +119,8 @@ const sessionDurationOptions = computed(() => [
 // Define all settings that need to be loaded
 const allSettings = [
   'access.token.lifetime',
-  'refresh.jwt.n.seconds.before.expiry'
+  'refresh.jwt.n.seconds.before.expiry',
+  'refresh.token.lifetime'
 ];
 
 // Initialize loading states for all settings
@@ -224,6 +225,9 @@ function updateLocalSetting(settingName: string, value: any) {
     case 'refresh.jwt.n.seconds.before.expiry':
       accessTokenRefreshBeforeExpirySeconds.value = Number(value);
       break;
+    case 'refresh.token.lifetime':
+      refreshTokenLifetimeDays.value = Number(value);
+      break;
   }
 }
 
@@ -282,6 +286,12 @@ watch(accessTokenLifetimeMinutes, (newValue) => {
 watch(accessTokenRefreshBeforeExpirySeconds, (newValue) => {
   if (!isFirstLoad.value && newValue !== null) {
     updateSetting('refresh.jwt.n.seconds.before.expiry', Number(newValue));
+  }
+});
+
+watch(refreshTokenLifetimeDays, (newValue) => {
+  if (!isFirstLoad.value && newValue !== null) {
+    updateSetting('refresh.token.lifetime', Number(newValue));
   }
 });
 
@@ -420,12 +430,39 @@ onMounted(() => {
               <v-select
                 v-model="refreshTokenLifetimeDays"
                 :items="refreshTokenLifetimeOptions"
-                label="время жизни refresh token (дни)"
+                :label="t('admin.settings.application.security.sessionmanagement.token.refresh.token.lifetime.label')"
                 variant="outlined"
                 density="comfortable"
                 color="teal-darken-2"
                 style="max-width: 300px;"
+                :disabled="isSettingDisabled('refresh.token.lifetime')"
+                :loading="settingLoadingStates['refresh.token.lifetime']"
               />
+              <v-tooltip
+                v-if="settingErrorStates['refresh.token.lifetime']"
+                location="top"
+                max-width="300"
+              >
+                <template #activator="{ props }">
+                  <v-icon 
+                    icon="mdi-alert-circle" 
+                    size="small" 
+                    class="ms-2" 
+                    color="error"
+                    v-bind="props"
+                    style="cursor: pointer;"
+                    @click="retrySetting('refresh.token.lifetime')"
+                  />
+                </template>
+                <div class="pa-2">
+                  <p class="text-subtitle-2 mb-2">
+                    Ошибка загрузки настройки
+                  </p>
+                  <p class="text-caption">
+                    Нажмите для повторной попытки
+                  </p>
+                </div>
+              </v-tooltip>
             </div>
             
             <div class="d-flex align-center mb-3">
