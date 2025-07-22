@@ -114,7 +114,7 @@ export interface LogoutResponse {
 // ==================== TIMER CONFIGURATION ====================
 
 export const TIMER_CONFIG = {
-  REFRESH_BEFORE_EXPIRY: 30, // seconds before token expires to refresh
+  REFRESH_BEFORE_EXPIRY: 30, // seconds before token expires to refresh - will be overridden by settings
   MAX_RETRY_ATTEMPTS: 3,
   RETRY_DELAY: 5000 // milliseconds
 } as const

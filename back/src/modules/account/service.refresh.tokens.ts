@@ -13,9 +13,27 @@ import { RefreshTokenRequest, RefreshTokenResponse, TokenValidationResult, getCo
 import { findTokenByHash, revokeTokenByHash } from './queries.auth';
 import { issueTokenPair } from './service.issue.tokens';
 import { validateFingerprint, logDeviceFingerprint } from './utils.device.fingerprint';
+import { getSetting, parseSettingValue } from '../../modules/admin/settings/cache.settings';
 
 // Cookie configuration
 const REFRESH_TOKEN_COOKIE_NAME = 'refreshToken';
+
+/**
+ * Gets refresh before expiry setting from cache
+ * Falls back to default value if setting not found
+ */
+function getRefreshBeforeExpiry(): number {
+  try {
+    const setting = getSetting('Application.Security.SessionManagement', 'refresh.jwt.n.seconds.before.expiry');
+    if (setting && setting.value !== null) {
+      return Number(parseSettingValue(setting));
+    }
+  } catch (error) {
+    console.warn('Failed to get refresh before expiry setting, using default:', error);
+  }
+  
+  return 30; // Default fallback
+}
 
 /**
  * Extracts refresh token from request (cookie or body)

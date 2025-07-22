@@ -12,25 +12,33 @@ import { useI18n } from 'vue-i18n';
 import { useAppSettingsStore } from '@/modules/admin/settings/state.app.settings';
 import { fetchSettings } from '@/modules/admin/settings/service.fetch.settings';
 import { updateSettingFromComponent } from '@/modules/admin/settings/service.update.settings';
+import { useUiStore } from '@/core/state/uistate';
 import DataLoading from '@/core/ui/loaders/DataLoading.vue';
 
 // Section path identifier - using component name for better consistency
 const section_path = 'Application.Security.SessionManagement';
 
-// Store reference
+// Store references
 const appSettingsStore = useAppSettingsStore();
+const uiStore = useUiStore();
 
 // Translations
 const { t } = useI18n();
 
-// Loading state
+// Loading states
 const isLoadingSettings = ref(true);
+const isFirstLoad = ref(true);
+
+// Individual setting loading states
+const settingLoadingStates = ref<Record<string, boolean>>({});
+const settingErrorStates = ref<Record<string, boolean>>({});
+const settingRetryAttempts = ref<Record<string, number>>({});
+
+// Local UI state for immediate interaction - initialize with null (not set)
+const accessTokenLifetimeMinutes = ref<number | null>(null);
+const accessTokenRefreshBeforeExpirySeconds = ref<number | null>(null);
 
 // ==================== TOKEN MANAGEMENT SETTINGS ====================
-
-// Access Token Settings
-const accessTokenLifetimeMinutes = ref(30);
-const accessTokenRefreshBeforeExpirySeconds = ref(30);
 
 // Refresh Token Settings  
 const refreshTokenLifetimeDays = ref(7);
@@ -72,11 +80,11 @@ const securityHeadersHstsMaxAgeSeconds = ref(31536000);
 
 // ==================== OPTIONS ====================
 
-// Access token lifetime options (5 to 120 minutes)
-const accessTokenLifetimeOptions = Array.from({ length: 116 }, (_, i) => (i + 5));
+// Access token lifetime options (5 to 120 minutes with step 5)
+const accessTokenLifetimeOptions = Array.from({ length: 24 }, (_, i) => (i + 1) * 5);
 
-// Refresh before expiry options (30 to 240 seconds)
-const refreshBeforeExpiryOptions = Array.from({ length: 211 }, (_, i) => (i + 30));
+// Refresh before expiry options (30 to 240 seconds with step 10)
+const refreshBeforeExpiryOptions = Array.from({ length: 22 }, (_, i) => 30 + (i * 10));
 
 const tokenAlgorithmOptions = [
   { title: 'RS256', value: 'RS256' },
@@ -105,27 +113,174 @@ const sessionDurationOptions = computed(() => [
   { title: t('admin.settings.application.security.sessionmanagement.duration.options.10080'), value: '10080' }
 ]);
 
+// Define all settings that need to be loaded
+const allSettings = [
+  'access.token.lifetime',
+  'refresh.jwt.n.seconds.before.expiry'
+];
+
+// Initialize loading states for all settings
+allSettings.forEach(settingName => {
+  settingLoadingStates.value[settingName] = true;
+  settingErrorStates.value[settingName] = false;
+  settingRetryAttempts.value[settingName] = 0;
+});
+
 /**
- * Load settings from the backend
+ * Check if any settings are still loading
+ */
+const hasLoadingSettings = computed(() => {
+  return Object.values(settingLoadingStates.value).some(loading => loading);
+});
+
+/**
+ * Check if any settings have errors
+ */
+const hasErrorSettings = computed(() => {
+  return Object.values(settingErrorStates.value).some(error => error);
+});
+
+/**
+ * Check if a specific setting is disabled (loading or has error)
+ */
+const isSettingDisabled = (settingName: string) => {
+  return settingLoadingStates.value[settingName] || settingErrorStates.value[settingName];
+};
+
+/**
+ * Update setting in store when local state changes
+ */
+function updateSetting(settingName: string, value: any) {
+  // Only update if setting is not disabled
+  if (!isSettingDisabled(settingName)) {
+    console.log(`Updating setting ${settingName} to:`, value);
+    updateSettingFromComponent(section_path, settingName, value);
+  }
+}
+
+/**
+ * Load a single setting by name
+ */
+async function loadSetting(settingName: string): Promise<boolean> {
+  settingLoadingStates.value[settingName] = true;
+  settingErrorStates.value[settingName] = false;
+  
+  try {
+    console.log(`Loading setting: ${settingName}`);
+    
+    // Try to get setting from cache first
+    const cachedSettings = appSettingsStore.getCachedSettings(section_path);
+    const cachedSetting = cachedSettings?.find(s => s.setting_name === settingName);
+    
+    if (cachedSetting) {
+      console.log(`Found cached setting: ${settingName}`, cachedSetting.value);
+      updateLocalSetting(settingName, cachedSetting.value);
+      settingLoadingStates.value[settingName] = false;
+      return true;
+    }
+    
+    // If not in cache, fetch from backend
+    const settings = await fetchSettings(section_path);
+    const setting = settings?.find(s => s.setting_name === settingName);
+    
+    if (setting) {
+      console.log(`Successfully loaded setting: ${settingName}`, setting.value);
+      updateLocalSetting(settingName, setting.value);
+      settingLoadingStates.value[settingName] = false;
+      return true;
+    } else {
+      throw new Error(`Setting ${settingName} not found`);
+    }
+  } catch (error) {
+    console.error(`Failed to load setting ${settingName}:`, error);
+    settingErrorStates.value[settingName] = true;
+    settingLoadingStates.value[settingName] = false;
+    
+    // Try retry if we haven't exceeded attempts
+    if (settingRetryAttempts.value[settingName] < 1) {
+      settingRetryAttempts.value[settingName]++;
+      console.log(`Retrying setting ${settingName} in 5 seconds...`);
+      setTimeout(() => loadSetting(settingName), 5000);
+    } else {
+      // Show error toast only on final failure
+      uiStore.showErrorSnackbar(`Ошибка загрузки настройки: ${settingName}`);
+    }
+    
+    return false;
+  }
+}
+
+/**
+ * Update local setting value based on setting name
+ */
+function updateLocalSetting(settingName: string, value: any) {
+  switch (settingName) {
+    case 'access.token.lifetime':
+      accessTokenLifetimeMinutes.value = Number(value);
+      break;
+    case 'refresh.jwt.n.seconds.before.expiry':
+      accessTokenRefreshBeforeExpirySeconds.value = Number(value);
+      break;
+  }
+}
+
+/**
+ * Load all settings from the backend and update local state
  */
 async function loadSettings() {
   isLoadingSettings.value = true;
   
   try {
     console.log('Loading settings for Session Management');
-    const settings = await fetchSettings(section_path);
     
-    if (settings && settings.length > 0) {
-      console.log('Received settings:', settings);
+    // Load all settings in parallel
+    const loadPromises = allSettings.map(settingName => loadSetting(settingName));
+    await Promise.allSettled(loadPromises);
+    
+    // Check if we have any successful loads
+    const successfulLoads = allSettings.filter(settingName => 
+      !settingLoadingStates.value[settingName] && !settingErrorStates.value[settingName]
+    );
+    
+    if (successfulLoads.length === 0) {
+      console.log('No settings loaded successfully - using defaults');
     } else {
-      console.log('No settings received for Session Management');
+      console.log(`Successfully loaded ${successfulLoads.length} out of ${allSettings.length} settings`);
+      
+      // Show success toast for initial load
+      uiStore.showSuccessSnackbar('настройки успешно загружены');
     }
+    
   } catch (error) {
     console.error('Failed to load settings:', error);
   } finally {
     isLoadingSettings.value = false;
+    // Enable user changes after initial load is complete
+    isFirstLoad.value = false;
   }
 }
+
+/**
+ * Retry loading a specific setting
+ */
+async function retrySetting(settingName: string) {
+  settingRetryAttempts.value[settingName] = 0;
+  settingErrorStates.value[settingName] = false;
+  await loadSetting(settingName);
+}
+
+// Watch for changes in local state - only after first load is complete
+watch(accessTokenLifetimeMinutes, (newValue) => {
+  if (!isFirstLoad.value && newValue !== null) {
+    updateSetting('access.token.lifetime', Number(newValue));
+  }
+});
+
+watch(accessTokenRefreshBeforeExpirySeconds, (newValue) => {
+  if (!isFirstLoad.value && newValue !== null) {
+    updateSetting('refresh.jwt.n.seconds.before.expiry', Number(newValue));
+  }
+});
 
 // Watch for changes in loading state from the store
 watch(
@@ -182,7 +337,34 @@ onMounted(() => {
                 density="comfortable"
                 color="teal-darken-2"
                 style="max-width: 300px;"
+                :disabled="isSettingDisabled('access.token.lifetime')"
+                :loading="settingLoadingStates['access.token.lifetime']"
               />
+              <v-tooltip
+                v-if="settingErrorStates['access.token.lifetime']"
+                location="top"
+                max-width="300"
+              >
+                <template #activator="{ props }">
+                  <v-icon 
+                    icon="mdi-alert-circle" 
+                    size="small" 
+                    class="ms-2" 
+                    color="error"
+                    v-bind="props"
+                    style="cursor: pointer;"
+                    @click="retrySetting('access.token.lifetime')"
+                  />
+                </template>
+                <div class="pa-2">
+                  <p class="text-subtitle-2 mb-2">
+                    Ошибка загрузки настройки
+                  </p>
+                  <p class="text-caption">
+                    Нажмите для повторной попытки
+                  </p>
+                </div>
+              </v-tooltip>
             </div>
             
             <div class="d-flex align-center mb-3">
@@ -194,7 +376,34 @@ onMounted(() => {
                 density="comfortable"
                 color="teal-darken-2"
                 style="max-width: 300px;"
+                :disabled="isSettingDisabled('refresh.jwt.n.seconds.before.expiry')"
+                :loading="settingLoadingStates['refresh.jwt.n.seconds.before.expiry']"
               />
+              <v-tooltip
+                v-if="settingErrorStates['refresh.jwt.n.seconds.before.expiry']"
+                location="top"
+                max-width="300"
+              >
+                <template #activator="{ props }">
+                  <v-icon 
+                    icon="mdi-alert-circle" 
+                    size="small" 
+                    class="ms-2" 
+                    color="error"
+                    v-bind="props"
+                    style="cursor: pointer;"
+                    @click="retrySetting('refresh.jwt.n.seconds.before.expiry')"
+                  />
+                </template>
+                <div class="pa-2">
+                  <p class="text-subtitle-2 mb-2">
+                    Ошибка загрузки настройки
+                  </p>
+                  <p class="text-caption">
+                    Нажмите для повторной попытки
+                  </p>
+                </div>
+              </v-tooltip>
             </div>
           </div>
           

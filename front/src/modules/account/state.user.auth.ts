@@ -19,6 +19,30 @@ import { STORAGE_KEYS, TIMER_CONFIG } from './types.auth'
 let refreshTimer: NodeJS.Timeout | null = null
 let retryCount = 0
 
+/**
+ * Gets refresh before expiry setting from cache
+ * Falls back to default value if setting not found
+ */
+function getRefreshBeforeExpiry(): number {
+  try {
+    // Import here to avoid circular dependency
+    const { useAppSettingsStore } = require('@/modules/admin/settings/state.app.settings');
+    const store = useAppSettingsStore();
+    
+    const settings = store.getCachedSettings('Application.Security.SessionManagement');
+    if (settings) {
+      const setting = settings.find(s => s.setting_name === 'refresh.jwt.n.seconds.before.expiry');
+      if (setting && setting.value !== null) {
+        return Number(setting.value);
+      }
+    }
+  } catch (error) {
+    console.warn('Failed to get refresh before expiry setting, using default:', error);
+  }
+  
+  return TIMER_CONFIG.REFRESH_BEFORE_EXPIRY;
+}
+
 // Initial state
 const initialState: UserState = {
   username: '',
@@ -98,15 +122,12 @@ function decodeAndProcessToken(token: string): JwtPayload {
 }
 
 /**
- * Starts refresh timer for automatic token renewal
+ * Starts refresh timer based on token expiry time
  */
 function startRefreshTimer(): void {
   // Clear existing timer
-  if (refreshTimer) {
-    clearTimeout(refreshTimer)
-  }
+  clearRefreshTimer()
   
-  // Calculate time until token expires
   const now = Math.floor(Date.now() / 1000)
   const timeUntilExpiry = useUserAuthStore().tokenExpires - now
   
@@ -116,8 +137,11 @@ function startRefreshTimer(): void {
     return
   }
   
-  // Calculate time to refresh (30 seconds before expiry)
-  const refreshTime = Math.max(0, (timeUntilExpiry - 30) * 1000)
+  // Get refresh before expiry setting from cache
+  const refreshBeforeExpiry = getRefreshBeforeExpiry()
+  
+  // Calculate time to refresh based on setting
+  const refreshTime = Math.max(0, (timeUntilExpiry - refreshBeforeExpiry) * 1000)
   
   // Start new timer
   refreshTimer = setTimeout(() => {
@@ -125,7 +149,7 @@ function startRefreshTimer(): void {
     attemptTokenRefresh()
   }, refreshTime)
   
-  console.log(`[User Auth State] Refresh timer started for ${Math.floor(refreshTime / 1000)} seconds`)
+  console.log(`[User Auth State] Refresh timer started for ${Math.floor(refreshTime / 1000)} seconds (refresh ${refreshBeforeExpiry}s before expiry)`)
 }
 
 /**

@@ -13,13 +13,39 @@ import { pool } from '@/core/db/maindb';
 import { JwtPayload, TokenGenerationResult, DeviceFingerprint } from './types.auth';
 import { insertRefreshToken } from './queries.auth';
 import { hashFingerprint } from './utils.device.fingerprint';
+import { getSetting, parseSettingValue } from '../../modules/admin/settings/cache.settings';
 
-// Token configuration
+// Token configuration - fallback values if settings not found
 const TOKEN_CONFIG = {
   ACCESS_TOKEN_EXPIRES_IN: '30m',
   REFRESH_TOKEN_EXPIRES_IN: '7d',
   REFRESH_TOKEN_PREFIX: 'token-'
 };
+
+/**
+ * Gets access token settings from cache
+ * Throws error if critical settings not found
+ */
+function getAccessTokenSettings() {
+  // Get access token lifetime setting
+  const accessTokenLifetimeSetting = getSetting('Application.Security.SessionManagement', 'access.token.lifetime');
+  if (!accessTokenLifetimeSetting) {
+    throw new Error('Critical JWT setting not found: access.token.lifetime. Please ensure settings are loaded.');
+  }
+  const accessTokenLifetimeMinutes = Number(parseSettingValue(accessTokenLifetimeSetting));
+
+  // Get refresh before expiry setting (for refresh logic)
+  const refreshBeforeExpirySetting = getSetting('Application.Security.SessionManagement', 'refresh.jwt.n.seconds.before.expiry');
+  if (!refreshBeforeExpirySetting) {
+    throw new Error('Critical JWT setting not found: refresh.jwt.n.seconds.before.expiry. Please ensure settings are loaded.');
+  }
+  const refreshBeforeExpirySeconds = Number(parseSettingValue(refreshBeforeExpirySetting));
+
+  return {
+    accessTokenLifetimeMinutes,
+    refreshBeforeExpirySeconds
+  };
+}
 
 /**
  * Generates a new refresh token
@@ -58,8 +84,11 @@ async function storeRefreshToken(
  * Generates access and refresh token pair
  */
 function generateTokenPair(username: string, userUuid: string): TokenGenerationResult {
-  // Generate access token
-  const accessTokenExpires = new Date(Date.now() + 30 * 60 * 1000); // 30 minutes
+  // Get JWT settings from cache
+  const jwtSettings = getAccessTokenSettings();
+  
+  // Generate access token with configurable lifetime
+  const accessTokenExpires = new Date(Date.now() + jwtSettings.accessTokenLifetimeMinutes * 60 * 1000);
   const accessTokenPayload: JwtPayload = {
     iss: 'ev2 app',
     sub: username,
