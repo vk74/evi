@@ -72,6 +72,12 @@ const securityHeadersHstsMaxAgeSeconds = ref(31536000);
 
 // ==================== OPTIONS ====================
 
+// Access token lifetime options (5 to 120 minutes)
+const accessTokenLifetimeOptions = Array.from({ length: 116 }, (_, i) => (i + 5));
+
+// Refresh before expiry options (30 to 240 seconds)
+const refreshBeforeExpiryOptions = Array.from({ length: 211 }, (_, i) => (i + 30));
+
 const tokenAlgorithmOptions = [
   { title: 'RS256', value: 'RS256' },
   { title: 'HS256', value: 'HS256' }
@@ -158,43 +164,37 @@ onMounted(() => {
         <!-- ==================== TOKEN MANAGEMENT SECTION ==================== -->
         <div class="settings-group mb-6">
           <h3 class="text-subtitle-1 mb-4 font-weight-medium">
-            управление токенами
+            {{ t('admin.settings.application.security.sessionmanagement.token.management.title') }}
           </h3>
           
           <!-- Access Token Settings -->
           <div class="settings-subgroup mb-4">
             <h4 class="text-subtitle-2 mb-3 font-weight-medium">
-              настройки access token
+              {{ t('admin.settings.application.security.sessionmanagement.token.access.settings.title') }}
             </h4>
             
             <div class="d-flex align-center mb-3">
-              <v-text-field
+              <v-select
                 v-model="accessTokenLifetimeMinutes"
-                label="время жизни access token (минуты)"
-                type="number"
+                :items="accessTokenLifetimeOptions"
+                :label="t('admin.settings.application.security.sessionmanagement.token.access.token.lifetime.label')"
                 variant="outlined"
                 density="comfortable"
                 color="teal-darken-2"
                 style="max-width: 300px;"
-                :min="5"
-                :max="120"
               />
-              <span class="text-caption text-grey ms-3">в разработке</span>
             </div>
             
             <div class="d-flex align-center mb-3">
-              <v-text-field
+              <v-select
                 v-model="accessTokenRefreshBeforeExpirySeconds"
-                label="обновление за N секунд до истечения"
-                type="number"
+                :items="refreshBeforeExpiryOptions"
+                :label="t('admin.settings.application.security.sessionmanagement.token.refresh.before.expiry.label')"
                 variant="outlined"
                 density="comfortable"
                 color="teal-darken-2"
                 style="max-width: 300px;"
-                :min="10"
-                :max="300"
               />
-              <span class="text-caption text-grey ms-3">в разработке</span>
             </div>
           </div>
           

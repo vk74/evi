@@ -63,6 +63,28 @@
           },
           "sessionmanagement": {
             "title": "session management",
+            "token": {
+              "management": {
+                "title": "token management"
+              },
+              "access": {
+                "settings": {
+                  "title": "access token settings"
+                },
+                "token": {
+                  "lifetime": {
+                    "label": "access token lifetime (minutes)"
+                  }
+                }
+              },
+              "refresh": {
+                "before": {
+                  "expiry": {
+                    "label": "refresh N seconds before expiry"
+                  }
+                }
+              }
+            },
             "duration": {
               "label": "session duration",
               "tooltip": "Longer sessions improve user convenience but may reduce security",
