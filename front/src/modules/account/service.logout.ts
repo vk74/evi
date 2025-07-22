@@ -9,6 +9,7 @@
 import { api } from '@/core/api/service.axios'
 import { useUserAuthStore } from './state.user.auth'
 import { useUiStore } from '@/core/state/uistate'
+import { useAppStore } from '@/core/state/appstate'
 import { clearRefreshTimer } from './service.login'
 import { refreshTokensService } from './service.refresh.tokens'
 import type { LogoutRequest, LogoutResponse } from './types.auth'
@@ -119,6 +120,11 @@ export async function logoutService(): Promise<boolean> {
     // Reset user store
     resetUserStore()
     
+    // Set active module to login
+    const appStore = useAppStore()
+    appStore.setActiveModule('Login')
+    console.log('[Logout Service] Redirected to login module')
+    
     console.log('[Logout Service] Logout completed successfully')
     return true
     
@@ -133,6 +139,11 @@ export async function logoutService(): Promise<boolean> {
     clearTokens()
     resetUserStore()
     clearRefreshTimer()
+    
+    // Still redirect to login even on error
+    const appStore = useAppStore()
+    appStore.setActiveModule('Login')
+    console.log('[Logout Service] Redirected to login module after error')
     
     return false
   }
