@@ -5,8 +5,6 @@ import { useI18n } from 'vue-i18n'
 import axios from 'axios'
 import ChangePassword from '@/core/ui/modals/change-password/ChangePassword.vue'
 import { PasswordChangeMode } from '@/core/ui/modals/change-password/types.change.password'
-import { getSessionDurations } from '@/core/services/sessionServices'
-
 // ==================== STORES ====================
 const userStore = useUserAuthStore()
 const { t } = useI18n()
@@ -31,7 +29,6 @@ const settings = ref({
 
 const isChangePasswordModalVisible = ref(false)
 const isTechCardExpanded = ref(true)
-const sessionDurations = ref(getSessionDurations())
 const snackbar = ref(false)
 const snackbarMessage = ref('')
 const snackbarColor = ref('teal')
@@ -245,8 +242,7 @@ onMounted(async () => {
               Token issued at: <b>{{ issuedAt }} </b> <br>
               Token issuer: <b>{{ issuer }} </b> <br>
               Token expires: <b>{{ expiresAt }} </b> <br>
-              Session will expire in: <b>{{ sessionDurations.sessionDuration }} seconds</b> <br>
-              Session warning will be shown in: <b>{{ sessionDurations.warningDuration }} seconds</b> <br>
+              Session will expire in: <b>{{ userStore.timeUntilExpiry }} seconds</b> <br>
             </v-card-text>
           </v-expand-transition>
         </v-card>

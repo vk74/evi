@@ -4,7 +4,7 @@ import App from './App.vue';
 import { createPinia } from 'pinia';
 import piniaPluginPersistedstate from 'pinia-plugin-persistedstate';
 import { createI18n } from 'vue-i18n';
-import { startSessionTimers } from '@/core/services/sessionServices';
+
 import axios from 'axios';
 import '/styles/global.css';
 import vuetify from './plugins/vuetify';
@@ -75,7 +75,6 @@ const initializeUserState = async () => {
         userStore.setIssuedAt(decoded.iat);
         userStore.setJwtId(decoded.jti);
         userStore.setTokenExpires(decoded.exp);
-        startSessionTimers();
       }
     } catch (error) {
       console.error('Ошибка при декодировании JWT:', error);

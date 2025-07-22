@@ -17,7 +17,7 @@ import { useUserAuthStore } from '@/modules/account/state.user.auth';
 import { useUiStore } from './core/state/uistate';
 import { useAppStore } from './core/state/appstate';
 import { useI18n } from 'vue-i18n';
-import { startSessionTimers } from '@/core/services/sessionServices';
+
 import { logoutService } from '@/modules/account/service.logout';
 
 // Async component imports
@@ -296,8 +296,7 @@ onMounted(() => {
   }
   
   if (isLoggedIn.value) {
-    console.log('App mounted. User is logged in. Starting session timers...');
-    startSessionTimers();
+    console.log('App mounted. User is logged in.');
   }
   
   // Set up ResizeObserver error prevention
