@@ -26,6 +26,63 @@ const { t } = useI18n();
 // Loading state
 const isLoadingSettings = ref(true);
 
+// ==================== TOKEN MANAGEMENT SETTINGS ====================
+
+// Access Token Settings
+const accessTokenLifetimeMinutes = ref(30);
+const accessTokenRefreshBeforeExpirySeconds = ref(30);
+
+// Refresh Token Settings  
+const refreshTokenLifetimeDays = ref(7);
+const refreshTokenMaxCountPerUser = ref(5);
+const refreshTokenCleanupExpiredAfterDays = ref(30);
+
+// Token Security Settings
+const tokenAlgorithm = ref('RS256');
+const tokenIssuer = ref('ev2 app');
+const tokenAudience = ref('ev2 app registered users');
+
+// Development Settings
+const devModeEnabled = ref(false);
+const devAllowInsecureCookies = ref(true);
+
+// ==================== SESSION SECURITY SETTINGS ====================
+
+// Device Fingerprinting
+const deviceFingerprintEnabled = ref(true);
+const deviceFingerprintStrictMode = ref(false);
+const deviceFingerprintAllowedMismatchPercentage = ref(10);
+
+// Session Management
+const sessionMaxConcurrentSessions = ref(5);
+const sessionInactivityTimeoutMinutes = ref(30);
+const sessionForceLogoutOnPasswordChange = ref(true);
+
+// ==================== COOKIE AND HTTP SECURITY SETTINGS ====================
+
+// Cookie Settings
+const cookieHttpOnly = ref(true);
+const cookieSecureInProduction = ref(true);
+const cookieSameSitePolicy = ref('strict');
+const cookieMaxAgeDays = ref(7);
+
+// HTTP Security Headers
+const securityHeadersEnabled = ref(true);
+const securityHeadersHstsMaxAgeSeconds = ref(31536000);
+
+// ==================== OPTIONS ====================
+
+const tokenAlgorithmOptions = [
+  { title: 'RS256', value: 'RS256' },
+  { title: 'HS256', value: 'HS256' }
+];
+
+const cookieSameSiteOptions = [
+  { title: 'Strict', value: 'strict' },
+  { title: 'Lax', value: 'lax' },
+  { title: 'None', value: 'none' }
+];
+
 const sessionDurationOptions = computed(() => [
   { title: t('admin.settings.application.security.sessionmanagement.duration.options.10'), value: '10' },
   { title: t('admin.settings.application.security.sessionmanagement.duration.options.15'), value: '15' },
@@ -41,67 +98,6 @@ const sessionDurationOptions = computed(() => [
   { title: t('admin.settings.application.security.sessionmanagement.duration.options.7200'), value: '7200' },
   { title: t('admin.settings.application.security.sessionmanagement.duration.options.10080'), value: '10080' }
 ]);
-
-/**
- * Direct binding to the setting values from Pinia store
- * These computed properties will automatically update when the store changes
- */
-const sessionDuration = computed({
-  get: () => {
-    const settings = appSettingsStore.getCachedSettings(section_path);
-    if (!settings || settings.length === 0) return '30';
-    
-    const setting = settings.find(s => s.setting_name === 'session.duration');
-    const value = setting?.value !== undefined && setting?.value !== null 
-      ? setting.value.toString() 
-      : '30';
-    
-    console.log('Computed setting "session.duration" value:', value);
-    return value;
-  },
-  set: (newValue) => {
-    console.log('Setting session.duration value changed to:', newValue);
-    updateSettingFromComponent(section_path, 'session.duration', Number(newValue));
-  }
-});
-
-const concurrentSessions = computed({
-  get: () => {
-    const settings = appSettingsStore.getCachedSettings(section_path);
-    if (!settings || settings.length === 0) return true;
-    
-    const setting = settings.find(s => s.setting_name === 'session.concurrent.enabled');
-    const value = setting?.value !== undefined && setting?.value !== null 
-      ? setting.value 
-      : true;
-    
-    console.log('Computed setting "session.concurrent.enabled" value:', value);
-    return value;
-  },
-  set: (newValue) => {
-    console.log('Setting session.concurrent.enabled value changed to:', newValue);
-    updateSettingFromComponent(section_path, 'session.concurrent.enabled', newValue);
-  }
-});
-
-const maxSessionsPerUser = computed({
-  get: () => {
-    const settings = appSettingsStore.getCachedSettings(section_path);
-    if (!settings || settings.length === 0) return 2;
-    
-    const setting = settings.find(s => s.setting_name === 'session.max.per.user');
-    const value = setting?.value !== undefined && setting?.value !== null 
-      ? setting.value 
-      : 2;
-    
-    console.log('Computed setting "session.max.per.user" value:', value);
-    return value;
-  },
-  set: (newValue) => {
-    console.log('Setting session.max.per.user value changed to:', newValue);
-    updateSettingFromComponent(section_path, 'session.max.per.user', newValue);
-  }
-});
 
 /**
  * Load settings from the backend
@@ -158,57 +154,362 @@ onMounted(() => {
       class="settings-section"
     >
       <div class="section-content">
-        <div class="d-flex align-center mb-2">
-          <v-select
-            v-model="sessionDuration"
-            :items="sessionDurationOptions"
-            :label="t('admin.settings.application.security.sessionmanagement.duration.label')"
-            variant="outlined"
-            density="comfortable"
-            color="teal-darken-2"
-            style="max-width: 200px;"
-          />
-          <v-tooltip
-            location="top"
-            max-width="300"
-          >
-            <template #activator="{ props }">
-              <v-icon 
-                icon="mdi-help-circle-outline" 
-                size="small" 
-                class="ms-2" 
+        
+        <!-- ==================== TOKEN MANAGEMENT SECTION ==================== -->
+        <div class="settings-group mb-6">
+          <h3 class="text-subtitle-1 mb-4 font-weight-medium">
+            управление токенами
+          </h3>
+          
+          <!-- Access Token Settings -->
+          <div class="settings-subgroup mb-4">
+            <h4 class="text-subtitle-2 mb-3 font-weight-medium">
+              настройки access token
+            </h4>
+            
+            <div class="d-flex align-center mb-3">
+              <v-text-field
+                v-model="accessTokenLifetimeMinutes"
+                label="время жизни access token (минуты)"
+                type="number"
+                variant="outlined"
+                density="comfortable"
                 color="teal-darken-2"
-                v-bind="props"
+                style="max-width: 300px;"
+                :min="5"
+                :max="120"
               />
-            </template>
-            <div class="pa-2">
-              {{ t('admin.settings.application.security.sessionmanagement.duration.tooltip') }}
+              <span class="text-caption text-grey ms-3">в разработке</span>
             </div>
-          </v-tooltip>
+            
+            <div class="d-flex align-center mb-3">
+              <v-text-field
+                v-model="accessTokenRefreshBeforeExpirySeconds"
+                label="обновление за N секунд до истечения"
+                type="number"
+                variant="outlined"
+                density="comfortable"
+                color="teal-darken-2"
+                style="max-width: 300px;"
+                :min="10"
+                :max="300"
+              />
+              <span class="text-caption text-grey ms-3">в разработке</span>
+            </div>
+          </div>
+          
+          <!-- Refresh Token Settings -->
+          <div class="settings-subgroup mb-4">
+            <h4 class="text-subtitle-2 mb-3 font-weight-medium">
+              настройки refresh token
+            </h4>
+            
+            <div class="d-flex align-center mb-3">
+              <v-text-field
+                v-model="refreshTokenLifetimeDays"
+                label="время жизни refresh token (дни)"
+                type="number"
+                variant="outlined"
+                density="comfortable"
+                color="teal-darken-2"
+                style="max-width: 300px;"
+                :min="1"
+                :max="90"
+              />
+              <span class="text-caption text-grey ms-3">в разработке</span>
+            </div>
+            
+            <div class="d-flex align-center mb-3">
+              <v-text-field
+                v-model="refreshTokenMaxCountPerUser"
+                label="максимум активных токенов на пользователя"
+                type="number"
+                variant="outlined"
+                density="comfortable"
+                color="teal-darken-2"
+                style="max-width: 300px;"
+                :min="1"
+                :max="10"
+              />
+              <span class="text-caption text-grey ms-3">в разработке</span>
+            </div>
+            
+            <div class="d-flex align-center mb-3">
+              <v-text-field
+                v-model="refreshTokenCleanupExpiredAfterDays"
+                label="удаление истекших токенов через (дни)"
+                type="number"
+                variant="outlined"
+                density="comfortable"
+                color="teal-darken-2"
+                style="max-width: 300px;"
+                :min="1"
+                :max="365"
+              />
+              <span class="text-caption text-grey ms-3">в разработке</span>
+            </div>
+          </div>
+          
+          <!-- Token Security Settings -->
+          <div class="settings-subgroup mb-4">
+            <h4 class="text-subtitle-2 mb-3 font-weight-medium">
+              безопасность токенов
+            </h4>
+            
+            <div class="d-flex align-center mb-3">
+              <v-select
+                v-model="tokenAlgorithm"
+                :items="tokenAlgorithmOptions"
+                label="алгоритм подписи токенов"
+                variant="outlined"
+                density="comfortable"
+                color="teal-darken-2"
+                style="max-width: 200px;"
+              />
+              <span class="text-caption text-grey ms-3">в разработке</span>
+            </div>
+            
+            <div class="d-flex align-center mb-3">
+              <v-text-field
+                v-model="tokenIssuer"
+                label="issuer для JWT токенов"
+                variant="outlined"
+                density="comfortable"
+                color="teal-darken-2"
+                style="max-width: 300px;"
+              />
+              <span class="text-caption text-grey ms-3">в разработке</span>
+            </div>
+            
+            <div class="d-flex align-center mb-3">
+              <v-text-field
+                v-model="tokenAudience"
+                label="audience для JWT токенов"
+                variant="outlined"
+                density="comfortable"
+                color="teal-darken-2"
+                style="max-width: 300px;"
+              />
+              <span class="text-caption text-grey ms-3">в разработке</span>
+            </div>
+          </div>
+          
+          <!-- Development Settings -->
+          <div class="settings-subgroup">
+            <h4 class="text-subtitle-2 mb-3 font-weight-medium">
+              настройки разработки
+            </h4>
+            
+            <div class="d-flex align-center mb-3">
+              <v-switch
+                v-model="devModeEnabled"
+                color="teal-darken-2"
+                label="режим разработки"
+                hide-details
+              />
+              <span class="text-caption text-grey ms-3">в разработке</span>
+            </div>
+            
+            <div class="d-flex align-center mb-3">
+              <v-switch
+                v-model="devAllowInsecureCookies"
+                color="teal-darken-2"
+                label="разрешить небезопасные cookies в dev режиме"
+                hide-details
+              />
+              <span class="text-caption text-grey ms-3">в разработке</span>
+            </div>
+          </div>
         </div>
-        <div class="d-flex align-center mb-2">
-          <v-switch
-            v-model="concurrentSessions"
-            color="teal-darken-2"
-            :label="t('admin.settings.application.security.sessionmanagement.concurrent.enabled.label')"
-            hide-details
-            class="mb-2"
-          />
-          <span class="text-caption text-grey ms-3">{{ t('admin.settings.application.security.sessionmanagement.in.development') }}</span>
+        
+        <!-- ==================== SESSION SECURITY SECTION ==================== -->
+        <div class="settings-group mb-6">
+          <h3 class="text-subtitle-1 mb-4 font-weight-medium">
+            безопасность сессий
+          </h3>
+          
+          <!-- Device Fingerprinting -->
+          <div class="settings-subgroup mb-4">
+            <h4 class="text-subtitle-2 mb-3 font-weight-medium">
+              отпечаток устройства
+            </h4>
+            
+            <div class="d-flex align-center mb-3">
+              <v-switch
+                v-model="deviceFingerprintEnabled"
+                color="teal-darken-2"
+                label="включить проверку отпечатка устройства"
+                hide-details
+              />
+              <span class="text-caption text-grey ms-3">в разработке</span>
+            </div>
+            
+            <div class="d-flex align-center mb-3">
+              <v-switch
+                v-model="deviceFingerprintStrictMode"
+                color="teal-darken-2"
+                label="строгий режим проверки отпечатка"
+                hide-details
+              />
+              <span class="text-caption text-grey ms-3">в разработке</span>
+            </div>
+            
+            <div class="d-flex align-center mb-3">
+              <v-text-field
+                v-model="deviceFingerprintAllowedMismatchPercentage"
+                label="допустимый процент несовпадения отпечатка (%)"
+                type="number"
+                variant="outlined"
+                density="comfortable"
+                color="teal-darken-2"
+                style="max-width: 300px;"
+                :min="0"
+                :max="50"
+              />
+              <span class="text-caption text-grey ms-3">в разработке</span>
+            </div>
+          </div>
+          
+          <!-- Session Management -->
+          <div class="settings-subgroup">
+            <h4 class="text-subtitle-2 mb-3 font-weight-medium">
+              управление сессиями
+            </h4>
+            
+            <div class="d-flex align-center mb-3">
+              <v-text-field
+                v-model="sessionMaxConcurrentSessions"
+                label="максимум одновременных сессий на пользователя"
+                type="number"
+                variant="outlined"
+                density="comfortable"
+                color="teal-darken-2"
+                style="max-width: 300px;"
+                :min="1"
+                :max="20"
+              />
+              <span class="text-caption text-grey ms-3">в разработке</span>
+            </div>
+            
+            <div class="d-flex align-center mb-3">
+              <v-text-field
+                v-model="sessionInactivityTimeoutMinutes"
+                label="таймаут неактивности сессии (минуты)"
+                type="number"
+                variant="outlined"
+                density="comfortable"
+                color="teal-darken-2"
+                style="max-width: 300px;"
+                :min="5"
+                :max="480"
+              />
+              <span class="text-caption text-grey ms-3">в разработке</span>
+            </div>
+            
+            <div class="d-flex align-center mb-3">
+              <v-switch
+                v-model="sessionForceLogoutOnPasswordChange"
+                color="teal-darken-2"
+                label="принудительный выход при смене пароля"
+                hide-details
+              />
+              <span class="text-caption text-grey ms-3">в разработке</span>
+            </div>
+          </div>
         </div>
-        <div class="d-flex align-center">
-          <v-text-field
-            v-model="maxSessionsPerUser"
-            :label="t('admin.settings.application.security.sessionmanagement.max.per.user.label')"
-            type="number"
-            variant="outlined"
-            density="comfortable"
-            class="mt-4"
-            color="teal-darken-2"
-            :disabled="!concurrentSessions"
-            style="max-width: 400px;"
-          />
-          <span class="text-caption text-grey ms-3">{{ t('admin.settings.application.security.sessionmanagement.in.development') }}</span>
+        
+        <!-- ==================== COOKIE AND HTTP SECURITY SECTION ==================== -->
+        <div class="settings-group">
+          <h3 class="text-subtitle-1 mb-4 font-weight-medium">
+            cookie и http security
+          </h3>
+          
+          <!-- Cookie Settings -->
+          <div class="settings-subgroup mb-4">
+            <h4 class="text-subtitle-2 mb-3 font-weight-medium">
+              настройки cookies
+            </h4>
+            
+            <div class="d-flex align-center mb-3">
+              <v-switch
+                v-model="cookieHttpOnly"
+                color="teal-darken-2"
+                label="HttpOnly флаг для cookies"
+                hide-details
+              />
+              <span class="text-caption text-grey ms-3">в разработке</span>
+            </div>
+            
+            <div class="d-flex align-center mb-3">
+              <v-switch
+                v-model="cookieSecureInProduction"
+                color="teal-darken-2"
+                label="Secure флаг в production"
+                hide-details
+              />
+              <span class="text-caption text-grey ms-3">в разработке</span>
+            </div>
+            
+            <div class="d-flex align-center mb-3">
+              <v-select
+                v-model="cookieSameSitePolicy"
+                :items="cookieSameSiteOptions"
+                label="SameSite политика"
+                variant="outlined"
+                density="comfortable"
+                color="teal-darken-2"
+                style="max-width: 200px;"
+              />
+              <span class="text-caption text-grey ms-3">в разработке</span>
+            </div>
+            
+            <div class="d-flex align-center mb-3">
+              <v-text-field
+                v-model="cookieMaxAgeDays"
+                label="максимальный возраст cookie (дни)"
+                type="number"
+                variant="outlined"
+                density="comfortable"
+                color="teal-darken-2"
+                style="max-width: 300px;"
+                :min="1"
+                :max="365"
+              />
+              <span class="text-caption text-grey ms-3">в разработке</span>
+            </div>
+          </div>
+          
+          <!-- HTTP Security Headers -->
+          <div class="settings-subgroup">
+            <h4 class="text-subtitle-2 mb-3 font-weight-medium">
+              http security headers
+            </h4>
+            
+            <div class="d-flex align-center mb-3">
+              <v-switch
+                v-model="securityHeadersEnabled"
+                color="teal-darken-2"
+                label="включить security headers"
+                hide-details
+              />
+              <span class="text-caption text-grey ms-3">в разработке</span>
+            </div>
+            
+            <div class="d-flex align-center mb-3">
+              <v-text-field
+                v-model="securityHeadersHstsMaxAgeSeconds"
+                label="HSTS max-age (секунды)"
+                type="number"
+                variant="outlined"
+                density="comfortable"
+                color="teal-darken-2"
+                style="max-width: 300px;"
+                :min="0"
+                :max="31536000"
+              />
+              <span class="text-caption text-grey ms-3">в разработке</span>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -228,6 +529,21 @@ onMounted(() => {
 
 .settings-section:hover {
   background-color: rgba(0, 0, 0, 0.01);
+}
+
+.settings-group {
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  border-radius: 8px;
+  padding: 16px;
+  background-color: rgba(0, 0, 0, 0.02);
+}
+
+.settings-subgroup {
+  margin-bottom: 16px;
+}
+
+.settings-subgroup:last-child {
+  margin-bottom: 0;
 }
 
 .section-title {

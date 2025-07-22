@@ -4,7 +4,7 @@
       "application": {
         "security": {
           "passwordpolicies": {
-            "title": "password policies",
+            "title": "password policy",
             "minlength": {
               "label": "minimum password length"
             },
@@ -49,14 +49,17 @@
                 "90days": "90 days",
                 "180days": "180 days",
                 "1year": "1 year"
-              },
-              "reset": {
-                "button": "reset settings",
-                "tooltip": "reset password policy settings to default values",
-                "success": "password settings reset to default values",
-                "error": "error resetting password settings"
               }
+            },
+            "reset": {
+              "button": "set default password policy",
+              "tooltip": "reset password policy settings to default values",
+              "success": "password settings reset to default values",
+              "error": "error resetting password settings"
             }
+          },
+          "authenticationpolicies": {
+            "title": "authentication policies"
           },
           "sessionmanagement": {
             "title": "session management",
@@ -194,6 +197,7 @@
         "security": "security",
         "sessionmanagement": "session management",
         "passwordpolicies": "password policies",
+        "authenticationpolicies": "authentication policies",
         "system": "system",
         "eventbus": "event bus",
         "logging": "logging",

@@ -19,6 +19,7 @@ import { useUiStore } from '@/core/state/uistate';
  import SystemLogging from './sections/Application.System.Logging.vue';
  import SessionManagement from './sections/Application.Security.SessionManagement.vue';
  import PasswordPolicies from './sections/Application.Security.PasswordPolicies.vue';
+ import AuthenticationSettings from './sections/Application.Security.AuthenticationSettings.vue';
  import GroupsManagement from './sections/UsersManagement.GroupsManagement.vue';
  
  // Define section interface
@@ -63,6 +64,11 @@ const { t } = useI18n();
              id: 'Application.Security.PasswordPolicies',
              name: t('admin.settings.sections.passwordpolicies'),
              icon: 'mdi-form-textbox-password',
+           },
+           {
+             id: 'Application.Security.AuthenticationSettings',
+             name: t('admin.settings.sections.authenticationpolicies'),
+             icon: 'mdi-shield-key-outline',
            }
          ]
        },
@@ -121,6 +127,7 @@ const { t } = useI18n();
    'Application.System.Logging': markRaw(SystemLogging),
    'Application.Security.SessionManagement': markRaw(SessionManagement),
    'Application.Security.PasswordPolicies': markRaw(PasswordPolicies),
+   'Application.Security.AuthenticationSettings': markRaw(AuthenticationSettings),
    'UsersManagement.GroupsManagement': markRaw(GroupsManagement),
    // Узлы-контейнеры не имеют компонента
  };

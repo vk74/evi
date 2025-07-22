@@ -49,6 +49,8 @@ const requireSpecialChars = ref<boolean | null>(null);
 const allowedSpecialChars = ref<string | null>(null);
 const passwordExpiration = ref('never');
 
+
+
 // Password length options (4 to 40 characters)
 const passwordLengthOptions = Array.from({ length: 37 }, (_, i) => (i + 4));
 
@@ -420,46 +422,53 @@ onMounted(() => {
       class="settings-section"
     >
       <div class="section-content">
-        <div class="mb-2">
-          <div class="d-flex align-center">
-            <v-select
-              v-model="passwordMinLength"
-              :items="passwordLengthOptions"
-              :label="t('admin.settings.application.security.passwordpolicies.minlength.label')"
-              variant="outlined"
-              density="comfortable"
-              color="teal-darken-2"
-              style="max-width: 240px;"
-              :disabled="isSettingDisabled('password.min.length') || isPasswordLengthDisabled"
-              :loading="settingLoadingStates['password.min.length']"
-            />
-            <v-tooltip
-              v-if="settingErrorStates['password.min.length']"
-              location="top"
-              max-width="300"
-            >
-              <template #activator="{ props }">
-                <v-icon 
-                  icon="mdi-alert-circle" 
-                  size="small" 
-                  class="ms-2" 
-                  color="error"
-                  v-bind="props"
-                  style="cursor: pointer;"
-                  @click="retrySetting('password.min.length')"
-                />
-              </template>
-              <div class="pa-2">
-                <p class="text-subtitle-2 mb-2">
-                  Ошибка загрузки настройки
-                </p>
-                <p class="text-caption">
-                  Нажмите для повторной попытки
-                </p>
-              </div>
-            </v-tooltip>
+        
+        <!-- ==================== PASSWORD POLICIES SECTION ==================== -->
+        <div class="settings-group mb-6">
+          <h3 class="text-subtitle-1 mb-4 font-weight-medium">
+            {{ t('admin.settings.application.security.passwordpolicies.title') }}
+          </h3>
+          
+          <div class="mb-2">
+            <div class="d-flex align-center">
+              <v-select
+                v-model="passwordMinLength"
+                :items="passwordLengthOptions"
+                :label="t('admin.settings.application.security.passwordpolicies.minlength.label')"
+                variant="outlined"
+                density="comfortable"
+                color="teal-darken-2"
+                style="max-width: 240px;"
+                :disabled="isSettingDisabled('password.min.length') || isPasswordLengthDisabled"
+                :loading="settingLoadingStates['password.min.length']"
+              />
+              <v-tooltip
+                v-if="settingErrorStates['password.min.length']"
+                location="top"
+                max-width="300"
+              >
+                <template #activator="{ props }">
+                  <v-icon 
+                    icon="mdi-alert-circle" 
+                    size="small" 
+                    class="ms-2" 
+                    color="error"
+                    v-bind="props"
+                    style="cursor: pointer;"
+                    @click="retrySetting('password.min.length')"
+                  />
+                </template>
+                <div class="pa-2">
+                  <p class="text-subtitle-2 mb-2">
+                    Ошибка загрузки настройки
+                  </p>
+                  <p class="text-caption">
+                    Нажмите для повторной попытки
+                  </p>
+                </div>
+              </v-tooltip>
+            </div>
           </div>
-        </div>
         
         <div class="mb-4">
           <div class="d-flex align-center">
@@ -716,7 +725,7 @@ onMounted(() => {
             style="max-width: 200px;"
             disabled
           />
-          <span class="text-caption text-grey ms-3">{{ t('admin.settings.application.security.passwordpolicies.expiration.note.in.development', 'эта настройка находится в разработке') }}</span>
+          <span class="text-caption text-grey ms-3">в разработке</span>
         </div>
         
         <!-- Password policies information panel -->
@@ -751,6 +760,9 @@ onMounted(() => {
             </div>
           </v-tooltip>
         </div>
+        </div>
+        
+
       </div>
     </div>
   </div>
@@ -779,5 +791,20 @@ onMounted(() => {
 :deep(.v-divider) {
   border-color: rgba(0, 0, 0, 0.12);
   opacity: 1;
+}
+
+.settings-group {
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  border-radius: 8px;
+  padding: 16px;
+  background-color: rgba(0, 0, 0, 0.02);
+}
+
+.settings-subgroup {
+  margin-bottom: 16px;
+}
+
+.settings-subgroup:last-child {
+  margin-bottom: 0;
 }
 </style> 
