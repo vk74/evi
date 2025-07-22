@@ -45,6 +45,9 @@ const refreshTokenLifetimeDays = ref(7);
 const refreshTokenMaxCountPerUser = ref(5);
 const refreshTokenCleanupExpiredAfterDays = ref(30);
 
+// Refresh token lifetime options (0 to 30 days)
+const refreshTokenLifetimeOptions = Array.from({ length: 31 }, (_, i) => i);
+
 // Token Security Settings
 const tokenAlgorithm = ref('RS256');
 const tokenIssuer = ref('ev2 app');
@@ -414,18 +417,15 @@ onMounted(() => {
             </h4>
             
             <div class="d-flex align-center mb-3">
-              <v-text-field
+              <v-select
                 v-model="refreshTokenLifetimeDays"
+                :items="refreshTokenLifetimeOptions"
                 label="время жизни refresh token (дни)"
-                type="number"
                 variant="outlined"
                 density="comfortable"
                 color="teal-darken-2"
                 style="max-width: 300px;"
-                :min="1"
-                :max="90"
               />
-              <span class="text-caption text-grey ms-3">в разработке</span>
             </div>
             
             <div class="d-flex align-center mb-3">
