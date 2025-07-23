@@ -104,13 +104,13 @@
                   "on": {
                     "password": {
                       "change": {
-                        "label": "reset all active tokens except the last one when user changes password"
+                        "label": "drop all active refresh tokens except current from users device when user changes password"
                       }
                     },
                     "admin": {
                       "password": {
                         "reset": {
-                          "label": "reset all active tokens when administrator resets user password"
+                          "label": "drop all active refresh tokens when administrator resets user password"
                         }
                       }
                     }

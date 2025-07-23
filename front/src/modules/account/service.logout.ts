@@ -14,7 +14,7 @@ import { clearRefreshTimer } from './service.login'
 import { refreshTokensService } from './service.refresh.tokens'
 import type { LogoutRequest, LogoutResponse } from './types.auth'
 import { STORAGE_KEYS } from './types.auth'
-import { generateDeviceFingerprint } from './utils.device.fingerprint'
+import { generateDeviceFingerprint } from './helper.generate.device.fingerprint'
 
 // API configuration
 const LOGOUT_ENDPOINT = '/api/auth/logout'

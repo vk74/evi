@@ -1,8 +1,8 @@
 /**
- * @file utils.device.fingerprint.ts
+ * @file helper.generate.device.fingerprint.ts
  * Version: 1.0.0
- * Utility functions for generating device fingerprint on frontend.
- * Frontend file that collects browser characteristics and generates device fingerprint.
+ * Helper functions for generating device fingerprint on frontend.
+ * Core helper that collects browser characteristics and generates device fingerprint.
  */
 
 import type { DeviceFingerprint, FingerprintHash } from './types.auth'

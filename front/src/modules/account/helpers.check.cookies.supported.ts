@@ -1,7 +1,7 @@
 /**
- * @file utils.cookies.ts
+ * @file helpers.check.cookies.supported.ts
  * Version: 1.0.0
- * Utility functions for working with cookies in the frontend.
+ * Helper functions for checking cookie support in the frontend.
  * Frontend file that provides helper functions for cookie management.
  */
 

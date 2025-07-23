@@ -10,7 +10,7 @@ import { api } from '@/core/api/service.axios'
 import { useUserAuthStore } from './state.user.auth'
 import type { RefreshTokenRequest, RefreshTokenResponse } from './types.auth'
 import { STORAGE_KEYS } from './types.auth'
-import { generateDeviceFingerprint } from './utils.device.fingerprint'
+import { generateDeviceFingerprint } from './helper.generate.device.fingerprint'
 
 // API configuration
 const REFRESH_ENDPOINT = '/api/auth/refresh'

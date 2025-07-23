@@ -11,7 +11,7 @@ import { useUserAuthStore } from './state.user.auth'
 import { useUiStore } from '@/core/state/uistate'
 import type { LoginRequest, LoginResponse } from './types.auth'
 import { STORAGE_KEYS } from './types.auth'
-import { generateDeviceFingerprint } from './utils.device.fingerprint'
+import { generateDeviceFingerprint } from './helper.generate.device.fingerprint'
 
 // API configuration
 const LOGIN_ENDPOINT = '/api/auth/login'
