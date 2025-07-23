@@ -86,47 +86,54 @@ onMounted(() => {
       </div>
       
       <div class="section-content">
-        <v-switch
-          v-model="allowUserToChangeOwnProfile"
-          color="teal-darken-2"
-          :label="t('admin.settings.application.userprofiles.allow.user.update.own.profile.label')"
-          hide-details
-          class="mb-3"
-        />
+        <div class="d-flex align-center mb-3">
+          <v-switch
+            v-model="allowUserToChangeOwnProfile"
+            color="teal-darken-2"
+            :label="t('admin.settings.application.userprofiles.allow.user.update.own.profile.label')"
+            hide-details
+          />
+          <span class="text-caption text-grey ms-3">в разработке</span>
+        </div>
         
-        <v-switch
-          v-model="allowUserToUploadAvatar"
-          color="teal-darken-2"
-          :label="t('admin.settings.application.userprofiles.allow.user.upload.avatar.label')"
-          hide-details
-          class="mb-3"
-        />
+        <div class="d-flex align-center mb-3">
+          <v-switch
+            v-model="allowUserToUploadAvatar"
+            color="teal-darken-2"
+            :label="t('admin.settings.application.userprofiles.allow.user.upload.avatar.label')"
+            hide-details
+          />
+          <span class="text-caption text-grey ms-3">в разработке</span>
+        </div>
         
-        <v-slider
-          v-model="maxUserProfilePhotoSize"
-          :disabled="!allowUserToUploadAvatar"
-          min="256"
-          max="5120"
-          step="256"
-          thumb-label
-          :label="t('admin.settings.application.userprofiles.max.profile.photo.size.label', { size: maxUserProfilePhotoSize })"
-          color="teal-darken-2"
-        >
-          <template #append>
-            <v-text-field
-              v-model="maxUserProfilePhotoSize"
-              :disabled="!allowUserToUploadAvatar"
-              density="compact"
-              style="width: 80px"
-              hide-details
-              variant="outlined"
-              type="number"
-              min="256"
-              max="5120"
-              step="256"
-            />
-          </template>
-        </v-slider>
+        <div class="d-flex align-center mb-3">
+          <v-slider
+            v-model="maxUserProfilePhotoSize"
+            :disabled="!allowUserToUploadAvatar"
+            min="256"
+            max="5120"
+            step="256"
+            thumb-label
+            :label="t('admin.settings.application.userprofiles.max.profile.photo.size.label', { size: maxUserProfilePhotoSize })"
+            color="teal-darken-2"
+          >
+            <template #append>
+              <v-text-field
+                v-model="maxUserProfilePhotoSize"
+                :disabled="!allowUserToUploadAvatar"
+                density="compact"
+                style="width: 80px"
+                hide-details
+                variant="outlined"
+                type="number"
+                min="256"
+                max="5120"
+                step="256"
+              />
+            </template>
+          </v-slider>
+          <span class="text-caption text-grey ms-3">в разработке</span>
+        </div>
       </div>
     </div>
   </div>

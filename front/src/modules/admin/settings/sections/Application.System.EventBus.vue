@@ -79,13 +79,15 @@ onMounted(() => {
     <template v-if="!isLoadingSettings">
       <div class="settings-section">
         <div class="section-content">
-          <v-switch
-            v-model="enabled"
-            color="teal-darken-2"
-            :label="t('admin.settings.application.system.eventbus.enabled.label')"
-            hide-details
-            class="mb-4"
-          />
+          <div class="d-flex align-center mb-3">
+            <v-switch
+              v-model="enabled"
+              color="teal-darken-2"
+              :label="t('admin.settings.application.system.eventbus.enabled.label')"
+              hide-details
+            />
+            <span class="text-caption text-grey ms-3">в разработке</span>
+          </div>
         </div>
       </div>
     </template>

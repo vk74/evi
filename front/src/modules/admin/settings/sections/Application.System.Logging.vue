@@ -620,6 +620,7 @@ onMounted(() => {
                   :disabled="isSettingDisabled('turn.on.file.logging')"
                   :loading="settingLoadingStates['turn.on.file.logging']"
                 />
+                <span class="text-caption text-grey ms-3">в разработке</span>
                 <v-tooltip
                   v-if="settingErrorStates['turn.on.file.logging']"
                   location="top"
