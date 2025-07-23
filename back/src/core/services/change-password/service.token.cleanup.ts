@@ -55,6 +55,28 @@ function getTokenCleanupSetting(): boolean {
 }
 
 /**
+ * Get setting value for token cleanup on admin password reset
+ * @returns {boolean} Setting value or throws error if not found
+ */
+function getAdminTokenCleanupSetting(): boolean {
+  console.log('[Token Cleanup Service] Loading admin token cleanup setting...');
+  
+  const setting = getSetting('Application.Security.SessionManagement', 'drop.refresh.tokens.on.admin.password.change');
+  
+  if (!setting) {
+    console.error('[Token Cleanup Service] Critical setting not found: drop.refresh.tokens.on.admin.password.change');
+    throw new Error('Critical setting not found: drop.refresh.tokens.on.admin.password.change. Please ensure settings are loaded.');
+  }
+  
+  const value = parseSettingValue(setting);
+  const isEnabled = Boolean(value);
+  
+  console.log('[Token Cleanup Service] Admin token cleanup setting value:', isEnabled);
+  
+  return isEnabled;
+}
+
+/**
  * Calculate similarity percentage between two fingerprint hashes
  * @param hash1 First fingerprint hash
  * @param hash2 Second fingerprint hash
@@ -190,6 +212,51 @@ export async function cleanupUserTokens(userUuid: string, currentFingerprintHash
     
   } catch (error) {
     console.error('[Token Cleanup Service] Error during token cleanup:', error);
+    throw error;
+  }
+}
+
+/**
+ * Clean up ALL user's refresh tokens (admin password reset)
+ * @param userUuid User UUID
+ */
+export async function cleanupAllUserTokens(userUuid: string): Promise<void> {
+  console.log('[Token Cleanup Service] Starting ALL token cleanup for user:', userUuid);
+  
+  try {
+    // Check if admin token cleanup is enabled
+    const isEnabled = getAdminTokenCleanupSetting();
+    
+    if (!isEnabled) {
+      console.log('[Token Cleanup Service] Admin token cleanup is disabled, skipping');
+      return;
+    }
+    
+    console.log('[Token Cleanup Service] Admin token cleanup is enabled, proceeding...');
+    
+    // Get all active tokens for user
+    const result = await pool.query(tokenQueries.getActiveTokensForUser.text, [userUuid]);
+    const activeTokens = result.rows;
+    
+    console.log('[Token Cleanup Service] Found', activeTokens.length, 'active tokens for user');
+    
+    if (activeTokens.length === 0) {
+      console.log('[Token Cleanup Service] No active tokens found, nothing to clean up');
+      return;
+    }
+    
+    // Revoke ALL tokens (no exceptions for admin reset)
+    let revokedCount = 0;
+    for (const token of activeTokens) {
+      await pool.query(tokenQueries.revokeTokenById.text, [token.id]);
+      console.log('[Token Cleanup Service] Revoked token:', token.id);
+      revokedCount++;
+    }
+    
+    console.log('[Token Cleanup Service] ALL token cleanup completed. Revoked', revokedCount, 'tokens');
+    
+  } catch (error) {
+    console.error('[Token Cleanup Service] Error during ALL token cleanup:', error);
     throw error;
   }
 }

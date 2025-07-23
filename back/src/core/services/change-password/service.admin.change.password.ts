@@ -15,6 +15,7 @@ import { pool } from '../../db/maindb';
 import { getSetting } from '../../../modules/admin/settings/cache.settings';
 import type { AppSetting } from '../../../modules/admin/settings/types.settings';
 import { AdminResetPasswordRequest, ChangePasswordResponse } from './types.change.password';
+import { cleanupAllUserTokens } from './service.token.cleanup';
 
 // SQL queries with correct schema reference
 const passwordQueries = {
@@ -144,9 +145,15 @@ export async function resetPassword(data: AdminResetPasswordRequest): Promise<Ch
     };
   }
 
+  // Start database transaction
+  const client = await pool.connect();
+  
   try {
+    await client.query('BEGIN');
+    console.log('[Admin Reset Password Service] Database transaction started');
+
     // Verify user exists and username matches UUID
-    const userExistsResult = await pool.query(
+    const userExistsResult = await client.query(
       passwordQueries.validateUserIdentity,
       [uuid, username]
     );
@@ -155,6 +162,7 @@ export async function resetPassword(data: AdminResetPasswordRequest): Promise<Ch
     const exists = userExistsResult.rows[0]?.exists as boolean;
     if (!exists) {
       console.log(`[Admin Reset Password Service] Failed: User not found or username mismatch: ${username} (${uuid})`);
+      await client.query('ROLLBACK');
       return {
         success: false,
         message: 'User not found or username mismatch'
@@ -168,31 +176,54 @@ export async function resetPassword(data: AdminResetPasswordRequest): Promise<Ch
     console.log(`[Admin Reset Password Service] Password hashed successfully for user: ${username} (${uuid})`);
 
     // Update the password in the database
-    const updateResult = await pool.query(
+    const updateResult = await client.query(
       passwordQueries.updatePasswordByUuid,
       [hashedNewPassword, uuid]
     );
 
-    if (updateResult.rows.length > 0) {
-      console.log(`[Admin Reset Password Service] Password successfully reset for user: ${username} (${uuid})`);
-      return {
-        success: true,
-        message: 'Password has been successfully reset'
-      };
-    } else {
+    if (updateResult.rows.length === 0) {
       console.log(`[Admin Reset Password Service] Failed: Database update error for user: ${username} (${uuid})`);
+      await client.query('ROLLBACK');
       return {
         success: false,
         message: 'Failed to update password'
       };
     }
+
+    // Clean up ALL refresh tokens for the user
+    console.log('[Admin Reset Password Service] Cleaning up ALL refresh tokens for user...');
+    try {
+      await cleanupAllUserTokens(uuid);
+      console.log('[Admin Reset Password Service] Token cleanup completed successfully');
+    } catch (error) {
+      console.error('[Admin Reset Password Service] Error during token cleanup:', error);
+      await client.query('ROLLBACK');
+      return {
+        success: false,
+        message: 'Password reset failed due to token cleanup error',
+        error: error instanceof Error ? error.message : 'Unknown error'
+      };
+    }
+
+    // Commit transaction
+    await client.query('COMMIT');
+    console.log(`[Admin Reset Password Service] Password successfully reset for user: ${username} (${uuid})`);
+    
+    return {
+      success: true,
+      message: 'Password has been successfully reset'
+    };
+
   } catch (error) {
     console.error('[Admin Reset Password Service] Error:', error);
+    await client.query('ROLLBACK');
     return {
       success: false,
       message: 'An internal server error occurred',
       error: error instanceof Error ? error.message : 'Unknown error'
     };
+  } finally {
+    client.release();
   }
 }
 

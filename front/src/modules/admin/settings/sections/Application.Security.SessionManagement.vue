@@ -40,6 +40,7 @@ const accessTokenRefreshBeforeExpirySeconds = ref<number | null>(null);
 const refreshTokenLifetimeDays = ref<number | null>(null);
 const maxRefreshTokensPerUser = ref<number | null>(null);
 const dropRefreshTokensOnUserChangePassword = ref<boolean | null>(null);
+const dropRefreshTokensOnAdminPasswordChange = ref<boolean | null>(null);
 
 // ==================== TOKEN MANAGEMENT SETTINGS ====================
 
@@ -48,7 +49,6 @@ const refreshTokenCleanupExpiredAfterDays = ref(30);
 
 // New refresh token reset settings
 const refreshTokenResetOnPasswordChange = ref(true);
-const refreshTokenResetOnAdminPasswordReset = ref(true);
 
 // Refresh token lifetime options (1 to 30 days)
 const refreshTokenLifetimeOptions = Array.from({ length: 30 }, (_, i) => i + 1);
@@ -130,7 +130,8 @@ const allSettings = [
   'refresh.jwt.n.seconds.before.expiry',
   'refresh.token.lifetime',
   'max.refresh.tokens.per.user',
-  'drop.refresh.tokens.on.user.change.password'
+  'drop.refresh.tokens.on.user.change.password',
+  'drop.refresh.tokens.on.admin.password.change'
 ];
 
 // Initialize loading states for all settings
@@ -244,6 +245,9 @@ function updateLocalSetting(settingName: string, value: any) {
     case 'drop.refresh.tokens.on.user.change.password':
       dropRefreshTokensOnUserChangePassword.value = Boolean(value);
       break;
+    case 'drop.refresh.tokens.on.admin.password.change':
+      dropRefreshTokensOnAdminPasswordChange.value = Boolean(value);
+      break;
   }
 }
 
@@ -320,6 +324,12 @@ watch(maxRefreshTokensPerUser, (newValue) => {
 watch(dropRefreshTokensOnUserChangePassword, (newValue) => {
   if (!isFirstLoad.value && newValue !== null) {
     updateSetting('drop.refresh.tokens.on.user.change.password', Boolean(newValue));
+  }
+});
+
+watch(dropRefreshTokensOnAdminPasswordChange, (newValue) => {
+  if (!isFirstLoad.value && newValue !== null) {
+    updateSetting('drop.refresh.tokens.on.admin.password.change', Boolean(newValue));
   }
 });
 
@@ -585,11 +595,38 @@ onMounted(() => {
             
             <div class="d-flex align-center mb-3">
               <v-switch
-                v-model="refreshTokenResetOnAdminPasswordReset"
+                v-model="dropRefreshTokensOnAdminPasswordChange"
                 color="teal-darken-2"
                 :label="t('admin.settings.application.security.sessionmanagement.token.refresh.reset.on.admin.password.reset.label')"
                 hide-details
+                :disabled="isSettingDisabled('drop.refresh.tokens.on.admin.password.change')"
+                :loading="settingLoadingStates['drop.refresh.tokens.on.admin.password.change']"
               />
+              <v-tooltip
+                v-if="settingErrorStates['drop.refresh.tokens.on.admin.password.change']"
+                location="top"
+                max-width="300"
+              >
+                <template #activator="{ props }">
+                  <v-icon 
+                    icon="mdi-alert-circle" 
+                    size="small" 
+                    class="ms-2" 
+                    color="error"
+                    v-bind="props"
+                    style="cursor: pointer;"
+                    @click="retrySetting('drop.refresh.tokens.on.admin.password.change')"
+                  />
+                </template>
+                <div class="pa-2">
+                  <p class="text-subtitle-2 mb-2">
+                    Ошибка загрузки настройки
+                  </p>
+                  <p class="text-caption">
+                    Нажмите для повторной попытки
+                  </p>
+                </div>
+              </v-tooltip>
             </div>
           </div>
           
