@@ -78,6 +78,9 @@
                 }
               },
               "refresh": {
+                "settings": {
+                  "title": "настройки refresh token"
+                },
                 "token": {
                   "lifetime": {
                     "label": "время жизни refresh token (дни)"
@@ -86,6 +89,15 @@
                 "before": {
                   "expiry": {
                     "label": "обновление за N секунд до истечения"
+                  }
+                },
+                "max": {
+                  "tokens": {
+                    "per": {
+                      "user": {
+                        "label": "максимум токенов на пользователя"
+                      }
+                    }
                   }
                 }
               },

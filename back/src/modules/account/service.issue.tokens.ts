@@ -11,7 +11,7 @@ import { v4 as uuidv4 } from 'uuid';
 import crypto from 'crypto';
 import { pool } from '@/core/db/maindb';
 import { JwtPayload, TokenGenerationResult, DeviceFingerprint } from './types.auth';
-import { insertRefreshToken } from './queries.auth';
+import { insertRefreshToken, countActiveTokensForUser, getOldestActiveTokensForUser, revokeTokenById } from './queries.auth';
 import { hashFingerprint } from './utils.device.fingerprint';
 import { getSetting, parseSettingValue } from '../../modules/admin/settings/cache.settings';
 
@@ -48,10 +48,18 @@ function getJwtSettings() {
   }
   const refreshBeforeExpirySeconds = Number(parseSettingValue(refreshBeforeExpirySetting));
 
+  // Get max tokens per user setting
+  const maxTokensPerUserSetting = getSetting('Application.Security.SessionManagement', 'max.refresh.tokens.per.user');
+  if (!maxTokensPerUserSetting) {
+    throw new Error('Critical JWT setting not found: max.refresh.tokens.per.user. Please ensure settings are loaded.');
+  }
+  const maxTokensPerUser = Number(parseSettingValue(maxTokensPerUserSetting));
+
   return {
     accessTokenLifetimeMinutes,
     refreshTokenLifetimeDays,
-    refreshBeforeExpirySeconds
+    refreshBeforeExpirySeconds,
+    maxTokensPerUser
   };
 }
 
@@ -67,6 +75,40 @@ function generateRefreshToken(): string {
  */
 function hashRefreshToken(token: string): string {
   return crypto.createHash('sha256').update(token).digest('hex');
+}
+
+/**
+ * Manages token limit by revoking oldest tokens if necessary
+ */
+async function manageTokenLimit(userUuid: string, maxTokensPerUser: number): Promise<void> {
+  try {
+    // Count current active tokens
+    const countResult = await pool.query(countActiveTokensForUser.text, [userUuid]);
+    const currentTokenCount = parseInt(countResult.rows[0]?.token_count || '0');
+    
+    console.log(`[Token Issue Service] User ${userUuid} has ${currentTokenCount} active tokens, limit is ${maxTokensPerUser}`);
+    
+    // If we're at or above the limit, revoke oldest tokens to leave space for new token
+    if (currentTokenCount >= maxTokensPerUser) {
+      const tokensToRevoke = currentTokenCount - (maxTokensPerUser - 1); // Leave space for 1 new token
+      
+      console.log(`[Token Issue Service] Need to revoke ${tokensToRevoke} oldest tokens for user ${userUuid} to leave space for new token`);
+      
+      // Get oldest active tokens
+      const oldestTokensResult = await pool.query(getOldestActiveTokensForUser.text, [userUuid]);
+      const oldestTokens = oldestTokensResult.rows;
+      
+      // Revoke the oldest tokens
+      for (let i = 0; i < Math.min(tokensToRevoke, oldestTokens.length); i++) {
+        const tokenId = oldestTokens[i].id;
+        await pool.query(revokeTokenById.text, [tokenId]);
+        console.log(`[Token Issue Service] Revoked token ${tokenId} for user ${userUuid}`);
+      }
+    }
+  } catch (error) {
+    console.error('[Token Issue Service] Error managing token limit:', error);
+    throw new Error('Failed to manage token limit');
+  }
 }
 
 /**
@@ -135,6 +177,12 @@ export async function issueTokenPair(
   console.log('[Token Issue Service] Generating token pair for user:', username);
   
   try {
+    // Get JWT settings including max tokens per user
+    const jwtSettings = getJwtSettings();
+    
+    // Manage token limit before issuing new token
+    await manageTokenLimit(userUuid, jwtSettings.maxTokensPerUser);
+    
     // Generate token pair
     const tokenPair = generateTokenPair(username, userUuid);
     

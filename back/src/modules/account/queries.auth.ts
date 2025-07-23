@@ -137,6 +137,32 @@ export const getActiveTokensForUser = {
   values: ['userUuid']
 };
 
+/**
+ * Get oldest active tokens for user (for revoking when limit exceeded)
+ */
+export const getOldestActiveTokensForUser = {
+  text: `
+    SELECT id, user_uuid, token_hash, issued_at, expires_at, revoked, device_fingerprint_hash
+    FROM app.tokens
+    WHERE user_uuid = $1 AND revoked = false AND expires_at > NOW()
+    ORDER BY issued_at ASC
+  `,
+  values: ['userUuid']
+};
+
+/**
+ * Revoke specific token by ID
+ */
+export const revokeTokenById = {
+  text: `
+    UPDATE app.tokens
+    SET revoked = true
+    WHERE id = $1
+    RETURNING id, user_uuid, token_hash, issued_at, expires_at, revoked, device_fingerprint_hash
+  `,
+  values: ['tokenId']
+};
+
 // ==================== TOKEN UPDATE QUERIES ====================
 
 /**

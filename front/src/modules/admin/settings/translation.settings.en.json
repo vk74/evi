@@ -78,6 +78,9 @@
                 }
               },
               "refresh": {
+                "settings": {
+                  "title": "refresh token settings"
+                },
                 "token": {
                   "lifetime": {
                     "label": "refresh token lifetime (days)"
@@ -86,6 +89,15 @@
                 "before": {
                   "expiry": {
                     "label": "refresh N seconds before expiry"
+                  }
+                },
+                "max": {
+                  "tokens": {
+                    "per": {
+                      "user": {
+                        "label": "maximum tokens per user"
+                      }
+                    }
                   }
                 }
               }

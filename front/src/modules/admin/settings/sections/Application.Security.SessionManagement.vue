@@ -38,15 +38,18 @@ const settingRetryAttempts = ref<Record<string, number>>({});
 const accessTokenLifetimeMinutes = ref<number | null>(null);
 const accessTokenRefreshBeforeExpirySeconds = ref<number | null>(null);
 const refreshTokenLifetimeDays = ref<number | null>(null);
+const maxRefreshTokensPerUser = ref<number | null>(null);
 
 // ==================== TOKEN MANAGEMENT SETTINGS ====================
 
 // Refresh Token Settings  
-const refreshTokenMaxCountPerUser = ref(5);
 const refreshTokenCleanupExpiredAfterDays = ref(30);
 
 // Refresh token lifetime options (1 to 30 days)
 const refreshTokenLifetimeOptions = Array.from({ length: 30 }, (_, i) => i + 1);
+
+// Refresh token max count options (1 to 10)
+const refreshTokenMaxCountOptions = Array.from({ length: 10 }, (_, i) => i + 1);
 
 // Token Security Settings
 const tokenAlgorithm = ref('RS256');
@@ -120,7 +123,8 @@ const sessionDurationOptions = computed(() => [
 const allSettings = [
   'access.token.lifetime',
   'refresh.jwt.n.seconds.before.expiry',
-  'refresh.token.lifetime'
+  'refresh.token.lifetime',
+  'max.refresh.tokens.per.user'
 ];
 
 // Initialize loading states for all settings
@@ -228,6 +232,9 @@ function updateLocalSetting(settingName: string, value: any) {
     case 'refresh.token.lifetime':
       refreshTokenLifetimeDays.value = Number(value);
       break;
+    case 'max.refresh.tokens.per.user':
+      maxRefreshTokensPerUser.value = Number(value);
+      break;
   }
 }
 
@@ -292,6 +299,12 @@ watch(accessTokenRefreshBeforeExpirySeconds, (newValue) => {
 watch(refreshTokenLifetimeDays, (newValue) => {
   if (!isFirstLoad.value && newValue !== null) {
     updateSetting('refresh.token.lifetime', Number(newValue));
+  }
+});
+
+watch(maxRefreshTokensPerUser, (newValue) => {
+  if (!isFirstLoad.value && newValue !== null) {
+    updateSetting('max.refresh.tokens.per.user', Number(newValue));
   }
 });
 
@@ -423,7 +436,7 @@ onMounted(() => {
           <!-- Refresh Token Settings -->
           <div class="settings-subgroup mb-4">
             <h4 class="text-subtitle-2 mb-3 font-weight-medium">
-              настройки refresh token
+              {{ t('admin.settings.application.security.sessionmanagement.token.refresh.settings.title') }}
             </h4>
             
             <div class="d-flex align-center mb-3">
@@ -466,18 +479,42 @@ onMounted(() => {
             </div>
             
             <div class="d-flex align-center mb-3">
-              <v-text-field
-                v-model="refreshTokenMaxCountPerUser"
-                label="максимум активных токенов на пользователя"
-                type="number"
+              <v-select
+                v-model="maxRefreshTokensPerUser"
+                :items="refreshTokenMaxCountOptions"
+                :label="t('admin.settings.application.security.sessionmanagement.token.refresh.max.tokens.per.user.label')"
                 variant="outlined"
                 density="comfortable"
                 color="teal-darken-2"
                 style="max-width: 300px;"
-                :min="1"
-                :max="10"
+                :disabled="isSettingDisabled('max.refresh.tokens.per.user')"
+                :loading="settingLoadingStates['max.refresh.tokens.per.user']"
               />
-              <span class="text-caption text-grey ms-3">в разработке</span>
+              <v-tooltip
+                v-if="settingErrorStates['max.refresh.tokens.per.user']"
+                location="top"
+                max-width="300"
+              >
+                <template #activator="{ props }">
+                  <v-icon 
+                    icon="mdi-alert-circle" 
+                    size="small" 
+                    class="ms-2" 
+                    color="error"
+                    v-bind="props"
+                    style="cursor: pointer;"
+                    @click="retrySetting('max.refresh.tokens.per.user')"
+                  />
+                </template>
+                <div class="pa-2">
+                  <p class="text-subtitle-2 mb-2">
+                    Ошибка загрузки настройки
+                  </p>
+                  <p class="text-caption">
+                    Нажмите для повторной попытки
+                  </p>
+                </div>
+              </v-tooltip>
             </div>
             
             <div class="d-flex align-center mb-3">
