@@ -99,6 +99,22 @@
                       }
                     }
                   }
+                },
+                "reset": {
+                  "on": {
+                    "password": {
+                      "change": {
+                        "label": "reset all active tokens except the last one when user changes password"
+                      }
+                    },
+                    "admin": {
+                      "password": {
+                        "reset": {
+                          "label": "reset all active tokens when administrator resets user password"
+                        }
+                      }
+                    }
+                  }
                 }
               }
             },

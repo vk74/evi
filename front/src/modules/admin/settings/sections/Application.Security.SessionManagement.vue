@@ -1,6 +1,6 @@
 <!--
   File: Application.Security.SessionManagement.vue
-  Version: 1.0.0
+  Version: 1.0.1
   Description: Session management settings component for frontend
   Purpose: Configure session-related security settings including duration, limits, and concurrent sessions
   Frontend file that manages session configuration UI and integrates with settings store
@@ -44,6 +44,10 @@ const maxRefreshTokensPerUser = ref<number | null>(null);
 
 // Refresh Token Settings  
 const refreshTokenCleanupExpiredAfterDays = ref(30);
+
+// New refresh token reset settings
+const refreshTokenResetOnPasswordChange = ref(true);
+const refreshTokenResetOnAdminPasswordReset = ref(true);
 
 // Refresh token lifetime options (1 to 30 days)
 const refreshTokenLifetimeOptions = Array.from({ length: 30 }, (_, i) => i + 1);
@@ -530,6 +534,24 @@ onMounted(() => {
                 :max="365"
               />
               <span class="text-caption text-grey ms-3">в разработке</span>
+            </div>
+            
+            <div class="d-flex align-center mb-3">
+              <v-switch
+                v-model="refreshTokenResetOnPasswordChange"
+                color="teal-darken-2"
+                :label="t('admin.settings.application.security.sessionmanagement.token.refresh.reset.on.password.change.label')"
+                hide-details
+              />
+            </div>
+            
+            <div class="d-flex align-center mb-3">
+              <v-switch
+                v-model="refreshTokenResetOnAdminPasswordReset"
+                color="teal-darken-2"
+                :label="t('admin.settings.application.security.sessionmanagement.token.refresh.reset.on.admin.password.reset.label')"
+                hide-details
+              />
             </div>
           </div>
           
