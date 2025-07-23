@@ -39,6 +39,7 @@ const accessTokenLifetimeMinutes = ref<number | null>(null);
 const accessTokenRefreshBeforeExpirySeconds = ref<number | null>(null);
 const refreshTokenLifetimeDays = ref<number | null>(null);
 const maxRefreshTokensPerUser = ref<number | null>(null);
+const dropRefreshTokensOnUserChangePassword = ref<boolean | null>(null);
 
 // ==================== TOKEN MANAGEMENT SETTINGS ====================
 
@@ -128,7 +129,8 @@ const allSettings = [
   'access.token.lifetime',
   'refresh.jwt.n.seconds.before.expiry',
   'refresh.token.lifetime',
-  'max.refresh.tokens.per.user'
+  'max.refresh.tokens.per.user',
+  'drop.refresh.tokens.on.user.change.password'
 ];
 
 // Initialize loading states for all settings
@@ -239,6 +241,9 @@ function updateLocalSetting(settingName: string, value: any) {
     case 'max.refresh.tokens.per.user':
       maxRefreshTokensPerUser.value = Number(value);
       break;
+    case 'drop.refresh.tokens.on.user.change.password':
+      dropRefreshTokensOnUserChangePassword.value = Boolean(value);
+      break;
   }
 }
 
@@ -309,6 +314,12 @@ watch(refreshTokenLifetimeDays, (newValue) => {
 watch(maxRefreshTokensPerUser, (newValue) => {
   if (!isFirstLoad.value && newValue !== null) {
     updateSetting('max.refresh.tokens.per.user', Number(newValue));
+  }
+});
+
+watch(dropRefreshTokensOnUserChangePassword, (newValue) => {
+  if (!isFirstLoad.value && newValue !== null) {
+    updateSetting('drop.refresh.tokens.on.user.change.password', Boolean(newValue));
   }
 });
 
@@ -538,11 +549,38 @@ onMounted(() => {
             
             <div class="d-flex align-center mb-3">
               <v-switch
-                v-model="refreshTokenResetOnPasswordChange"
+                v-model="dropRefreshTokensOnUserChangePassword"
                 color="teal-darken-2"
                 :label="t('admin.settings.application.security.sessionmanagement.token.refresh.reset.on.password.change.label')"
                 hide-details
+                :disabled="isSettingDisabled('drop.refresh.tokens.on.user.change.password')"
+                :loading="settingLoadingStates['drop.refresh.tokens.on.user.change.password']"
               />
+              <v-tooltip
+                v-if="settingErrorStates['drop.refresh.tokens.on.user.change.password']"
+                location="top"
+                max-width="300"
+              >
+                <template #activator="{ props }">
+                  <v-icon 
+                    icon="mdi-alert-circle" 
+                    size="small" 
+                    class="ms-2" 
+                    color="error"
+                    v-bind="props"
+                    style="cursor: pointer;"
+                    @click="retrySetting('drop.refresh.tokens.on.user.change.password')"
+                  />
+                </template>
+                <div class="pa-2">
+                  <p class="text-subtitle-2 mb-2">
+                    Ошибка загрузки настройки
+                  </p>
+                  <p class="text-caption">
+                    Нажмите для повторной попытки
+                  </p>
+                </div>
+              </v-tooltip>
             </div>
             
             <div class="d-flex align-center mb-3">

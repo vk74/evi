@@ -25,6 +25,7 @@ export interface SelfChangePasswordRequest {
   username: string;
   currentPassword: string;
   newPassword: string;
+  deviceFingerprint?: string; // Device fingerprint for security validation
 }
 
 export interface AdminResetPasswordRequest {

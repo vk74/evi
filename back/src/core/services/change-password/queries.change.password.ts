@@ -8,12 +8,12 @@
 export const passwordChangeQueries = {
   getUserPasswordByUuid: `
     SELECT hashed_password, username
-    FROM users
+    FROM app.users
     WHERE user_id = $1
   `,
 
   updatePasswordByUuid: `
-    UPDATE users
+    UPDATE app.users
     SET hashed_password = $1
     WHERE user_id = $2
     RETURNING user_id, username
@@ -21,14 +21,14 @@ export const passwordChangeQueries = {
 
   checkUserExists: `
     SELECT EXISTS (
-      SELECT 1 FROM users 
+      SELECT 1 FROM app.users 
       WHERE user_id = $1
     ) as exists
   `,
 
   validateUserIdentity: `
     SELECT EXISTS (
-      SELECT 1 FROM users 
+      SELECT 1 FROM app.users 
       WHERE user_id = $1 AND username = $2
     ) as exists
   `

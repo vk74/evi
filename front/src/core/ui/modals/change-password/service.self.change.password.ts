@@ -6,6 +6,7 @@
 
 import axios from 'axios';
 import { SelfChangePasswordRequest, ChangePasswordResponse } from './types.change.password';
+import { generateDeviceFingerprint } from '@/modules/account/helper.generate.device.fingerprint';
 
 /**
  * Send request to change user's own password
@@ -16,9 +17,24 @@ export async function changePassword(data: SelfChangePasswordRequest): Promise<C
   console.log('[Self Change Password Service] Preparing to change password for user:', data.username);
   
   try {
+    // Generate device fingerprint for security validation
+    console.log('[Self Change Password Service] Generating device fingerprint...');
+    const deviceFingerprint = generateDeviceFingerprint();
+    
+    // Convert fingerprint to string for API
+    const deviceFingerprintString = JSON.stringify(deviceFingerprint);
+    
+    // Add device fingerprint to request data
+    const requestData = {
+      ...data,
+      deviceFingerprint: deviceFingerprintString
+    };
+    
+    console.log('[Self Change Password Service] Sending password change request with device fingerprint');
+    
     const response = await axios.post<ChangePasswordResponse>(
       '/api/core/users/self-change-password',
-      data
+      requestData
     );
     
     console.log('[Self Change Password Service] Password change successful');
