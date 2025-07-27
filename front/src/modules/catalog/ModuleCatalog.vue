@@ -239,21 +239,22 @@ const toggleOptionsBarMode = () => {
   } else if (optionsBarMode.value === 'opened') {
     isOptionsBarVisible.value = true;
   } else if (optionsBarMode.value === 'auto') {
-    isOptionsBarVisible.value = true; // Auto mode shows by default
+    // Auto mode - show by default but can be toggled
+    isOptionsBarVisible.value = true;
   }
 };
 
-// Computed property for chevron icon based on mode
+// Computed property for chevron icon based on mode - using double chevrons like in App.vue
 const optionsBarChevronIcon = computed(() => {
   switch(optionsBarMode.value) {
     case 'opened':
-      return 'mdi-chevron-down'; // Шеврон указывает вниз - панель открыта
+      return 'mdi-chevron-double-down'; // Двойной шеврон указывает вниз - панель открыта
     case 'closed':
-      return 'mdi-chevron-up'; // Шеврон указывает вверх - панель закрыта
+      return 'mdi-chevron-double-up'; // Двойной шеврон указывает вверх - панель закрыта
     case 'auto':
-      return 'mdi-chevron-right'; // Шеврон указывает вправо - автоматический режим
+      return 'mdi-chevron-double-right'; // Двойной шеврон указывает вправо - автоматический режим
     default:
-      return 'mdi-chevron-down';
+      return 'mdi-chevron-double-down';
   }
 });
 </script>
@@ -290,6 +291,17 @@ const optionsBarChevronIcon = computed(() => {
       <v-spacer />
       <div class="module-title">
         Каталог
+      </div>
+      <!-- Options bar toggle button -->
+      <div class="options-bar-toggle-container">
+        <v-btn
+          variant="text"
+          :icon="optionsBarChevronIcon"
+          size="small"
+          class="options-bar-toggle-btn"
+          color="grey-darken-1"
+          @click="toggleOptionsBarMode"
+        />
       </div>
     </v-app-bar>
 
@@ -338,19 +350,13 @@ const optionsBarChevronIcon = computed(() => {
           />
         </div>
       </v-container>
+      
+
     </v-app-bar>
     
-    <!-- Floating Options Bar Control Button - always visible -->
-    <div class="floating-options-control">
-      <v-btn
-        variant="text"
-        :icon="optionsBarChevronIcon"
-        size="small"
-        class="options-bar-toggle-btn"
-        color="grey-darken-1"
-        @click="toggleOptionsBarMode"
-      />
-    </div>
+
+
+
 
     <!-- ==================== WORKSPACE AREA ==================== -->
     <div class="workspace-container">
@@ -497,6 +503,7 @@ const optionsBarChevronIcon = computed(() => {
   height: 100%;
   display: flex;
   flex-direction: column;
+  position: relative;
 }
 
 .sections-app-bar {
@@ -597,13 +604,20 @@ const optionsBarChevronIcon = computed(() => {
   position: relative;
 }
 
-/* Floating options bar control button styles */
-.floating-options-control {
-  position: fixed;
-  left: 10px;
-  top: 80px; /* Position below sections app bar */
-  z-index: 9999;
-  pointer-events: auto;
+/* Options bar toggle container in sections app bar */
+.options-bar-toggle-container {
+  display: flex;
+  align-items: center;
+  margin-left: 16px;
+}
+
+.options-bar-toggle-btn {
+  opacity: 0.7;
+  transition: opacity 0.2s ease;
+}
+
+.options-bar-toggle-btn:hover {
+  opacity: 1;
 }
 
 .options-bar-toggle-btn {
@@ -628,6 +642,43 @@ const optionsBarChevronIcon = computed(() => {
 .options-bar-toggle-btn :deep(.v-btn__overlay) {
   display: none;
 }
+
+/* Options bar control area styles */
+.options-bar-control-area {
+  position: relative;
+  height: 48px;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.options-bar-control-area:hover {
+  background-color: rgba(38, 166, 154, 0.08) !important;
+}
+
+/* Options bar toggle button styles */
+.options-bar-toggle-btn {
+  position: absolute;
+  left: -10px;
+  bottom: 2px;
+  opacity: 0.6;
+  transition: opacity 0.2s ease;
+  background: none !important;
+  box-shadow: none !important;
+}
+
+.options-bar-toggle-btn:hover {
+  opacity: 1;
+}
+
+.options-bar-toggle-btn :deep(.v-btn__content) {
+  background: none;
+}
+
+.options-bar-toggle-btn :deep(.v-btn__overlay) {
+  display: none;
+}
+
+
 
 /* Workspace styling */
 .workspace-container {
