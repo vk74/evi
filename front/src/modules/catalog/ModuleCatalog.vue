@@ -614,10 +614,37 @@ const optionsBarChevronIcon = computed(() => {
 .options-bar-toggle-btn {
   opacity: 0.7;
   transition: opacity 0.2s ease;
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
 }
 
 .options-bar-toggle-btn:hover {
   opacity: 1;
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+
+.options-bar-toggle-btn :deep(.v-btn__content) {
+  background: transparent !important;
+}
+
+.options-bar-toggle-btn :deep(.v-btn__overlay) {
+  display: none !important;
+}
+
+.options-bar-toggle-btn :deep(.v-btn__prepend),
+.options-bar-toggle-btn :deep(.v-btn__append) {
+  background: transparent !important;
+}
+
+.options-bar-toggle-btn :deep(.v-btn__loader) {
+  background: transparent !important;
+}
+
+.options-bar-toggle-btn :deep(.v-btn__underlay) {
+  display: none !important;
 }
 
 .options-bar-toggle-btn {
