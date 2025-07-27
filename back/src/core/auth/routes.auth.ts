@@ -13,7 +13,7 @@ import issueToken from '../../middleware/auth.issue.token';
 import registerUser from '../../modules/account/service.register.user';
 import getUserProfile from '../../modules/account/service.get.profile';
 import updateUserProfile from '../../modules/account/service.update.profile';
-import fetchPublicPasswordPoliciesController from './controller.fetch.public.password.policies';
+import fetchPublicPasswordPoliciesController from '../public/controller.fetch.public.password.policies';
 
 // Import new controllers
 import { loginController } from '../../modules/account/controller.login';

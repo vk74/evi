@@ -19,7 +19,7 @@ export const PUBLIC_PASSWORD_POLICIES_EVENTS = {
     eventName: 'publicPasswordPolicies.request.received',
     eventMessage: 'Public password policies request received',
     eventType: 'app' as const,
-    source: 'core.auth.public.password.policies',
+    source: 'core.public.password.policies',
     severity: 'info' as const,
     version: '1.0.0'
   },
@@ -28,7 +28,7 @@ export const PUBLIC_PASSWORD_POLICIES_EVENTS = {
     eventName: 'publicPasswordPolicies.response.sent',
     eventMessage: 'Public password policies response sent successfully',
     eventType: 'app' as const,
-    source: 'core.auth.public.password.policies',
+    source: 'core.public.password.policies',
     severity: 'info' as const,
     version: '1.0.0'
   },
@@ -37,7 +37,7 @@ export const PUBLIC_PASSWORD_POLICIES_EVENTS = {
     eventName: 'publicPasswordPolicies.cache.hit',
     eventMessage: 'Password policies retrieved from cache',
     eventType: 'performance' as const,
-    source: 'core.auth.public.password.policies',
+    source: 'core.public.password.policies',
     severity: 'debug' as const,
     version: '1.0.0'
   },
@@ -46,7 +46,7 @@ export const PUBLIC_PASSWORD_POLICIES_EVENTS = {
     eventName: 'publicPasswordPolicies.cache.miss',
     eventMessage: 'Password policies not found in cache',
     eventType: 'performance' as const,
-    source: 'core.auth.public.password.policies',
+    source: 'core.public.password.policies',
     severity: 'warning' as const,
     version: '1.0.0'
   },
@@ -55,7 +55,7 @@ export const PUBLIC_PASSWORD_POLICIES_EVENTS = {
     eventName: 'publicPasswordPolicies.rate.limit.exceeded',
     eventMessage: 'Rate limit exceeded for public password policies requests',
     eventType: 'security' as const,
-    source: 'core.auth.public.password.policies',
+    source: 'core.public.password.policies',
     severity: 'warning' as const,
     version: '1.0.0'
   },
@@ -64,7 +64,7 @@ export const PUBLIC_PASSWORD_POLICIES_EVENTS = {
     eventName: 'publicPasswordPolicies.validation.error',
     eventMessage: 'Request validation error for public password policies',
     eventType: 'app' as const,
-    source: 'core.auth.public.password.policies',
+    source: 'core.public.password.policies',
     severity: 'warning' as const,
     version: '1.0.0'
   },
@@ -73,7 +73,7 @@ export const PUBLIC_PASSWORD_POLICIES_EVENTS = {
     eventName: 'publicPasswordPolicies.service.error',
     eventMessage: 'Service error in public password policies',
     eventType: 'system' as const,
-    source: 'core.auth.public.password.policies',
+    source: 'core.public.password.policies',
     severity: 'error' as const,
     version: '1.0.0'
   },
@@ -82,7 +82,7 @@ export const PUBLIC_PASSWORD_POLICIES_EVENTS = {
     eventName: 'publicPasswordPolicies.http.error',
     eventMessage: 'HTTP error in public password policies endpoint',
     eventType: 'system' as const,
-    source: 'core.auth.public.password.policies',
+    source: 'core.public.password.policies',
     severity: 'error' as const,
     version: '1.0.0'
   },
@@ -91,7 +91,7 @@ export const PUBLIC_PASSWORD_POLICIES_EVENTS = {
     eventName: 'publicPasswordPolicies.fallback.db.query',
     eventMessage: 'Fallback to database query for password policies',
     eventType: 'app' as const,
-    source: 'core.auth.public.password.policies',
+    source: 'core.public.password.policies',
     severity: 'info' as const,
     version: '1.0.0'
   }

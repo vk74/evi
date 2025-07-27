@@ -14,7 +14,7 @@ import registerUser from '../../middleware/auth.register.user';
 import changeUserPassword from '../../middleware/users.change.password';
 import getUserProfile from '../../middleware/users.get.profile';
 import updateUserProfile from '../../middleware/users.update.profile';
-import fetchPublicPasswordPoliciesController from './controller.fetch.public.password.policies';
+import fetchPublicPasswordPoliciesController from '../public/controller.fetch.public.password.policies';
 
 const router: Router = express.Router();
 

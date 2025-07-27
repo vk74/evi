@@ -30,6 +30,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@modelcontextprotocol/server-postgres": "^0.6.2",
     "@types/cookie-parser": "^1.4.9",
     "axios": "^1.6.6",
     "bcrypt": "^5.1.1",
