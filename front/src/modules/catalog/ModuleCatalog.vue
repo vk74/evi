@@ -6,33 +6,25 @@ File: ModuleCatalog.vue
 -->
 <script setup lang="ts">
 import { ref, computed } from 'vue';
+import {
+  searchQuery,
+  sortBy,
+  sortDirection,
+  optionsBarMode,
+  isOptionsBarVisible,
+  sortOptions,
+  sortDirections,
+  toggleOptionsBarMode,
+  optionsBarChevronIcon,
+  clearSearch,
+  setHoveringTriggerArea
+} from './state.catalog';
 
 // ==================== SECTIONS DATA ====================
 const sections = ref([
   { id: 1, name: 'main', displayName: 'Основная', icon: 'mdi-home', color: 'teal-darken-2', isActive: true },
   { id: 2, name: 'section2', displayName: 'Секция 2', icon: 'mdi-cog', color: 'teal-darken-2', isActive: false }
 ]);
-
-// ==================== OPTIONS BAR STATE ====================
-const searchQuery = ref('');
-const sortBy = ref('name');
-const sortDirection = ref('asc');
-
-// Options bar display mode (similar to drawer mode in App.vue)
-const optionsBarMode = ref(localStorage.getItem('catalogOptionsBarMode') || 'opened'); // 'opened', 'closed', 'auto'
-const isOptionsBarVisible = ref(optionsBarMode.value !== 'closed');
-
-const sortOptions = [
-  { title: 'По названию', value: 'name' },
-  { title: 'По приоритету', value: 'priority' },
-  { title: 'По статусу', value: 'status' },
-  { title: 'По владельцу', value: 'owner' }
-];
-
-const sortDirections = [
-  { title: 'По возрастанию', value: 'asc' },
-  { title: 'По убыванию', value: 'desc' }
-];
 
 // ==================== TYPES ====================
 interface Service {
@@ -219,49 +211,19 @@ function selectSection(sectionId: number) {
   });
 }
 
-function clearSearch() {
-  searchQuery.value = '';
-}
-
-// ==================== OPTIONS BAR MODE MANAGEMENT ====================
-const toggleOptionsBarMode = () => {
-  const modes = ['opened', 'closed', 'auto'];
-  const currentIndex = modes.indexOf(optionsBarMode.value);
-  const nextIndex = (currentIndex + 1) % modes.length;
-  optionsBarMode.value = modes[nextIndex];
-  
-  // Save to localStorage for persistence
-  localStorage.setItem('catalogOptionsBarMode', optionsBarMode.value);
-  
-  // Update visibility based on mode
-  if (optionsBarMode.value === 'closed') {
-    isOptionsBarVisible.value = false;
-  } else if (optionsBarMode.value === 'opened') {
-    isOptionsBarVisible.value = true;
-  } else if (optionsBarMode.value === 'auto') {
-    // Auto mode - show by default but can be toggled
-    isOptionsBarVisible.value = true;
-  }
+// ==================== HOVER TRIGGER AREA ====================
+const onTriggerAreaEnter = () => {
+  setHoveringTriggerArea(true);
 };
 
-// Computed property for chevron icon based on mode - using double chevrons like in App.vue
-const optionsBarChevronIcon = computed(() => {
-  switch(optionsBarMode.value) {
-    case 'opened':
-      return 'mdi-chevron-double-down'; // Двойной шеврон указывает вниз - панель открыта
-    case 'closed':
-      return 'mdi-chevron-double-up'; // Двойной шеврон указывает вверх - панель закрыта
-    case 'auto':
-      return 'mdi-chevron-double-right'; // Двойной шеврон указывает вправо - автоматический режим
-    default:
-      return 'mdi-chevron-double-down';
-  }
-});
+const onTriggerAreaLeave = () => {
+  setHoveringTriggerArea(false);
+};
 </script>
 
 <template>
   <div class="catalog-module">
-        <!-- ==================== SECTIONS APP BAR ==================== -->
+    <!-- ==================== SECTIONS APP BAR ==================== -->
     <v-app-bar
       app
       flat
@@ -290,20 +252,17 @@ const optionsBarChevronIcon = computed(() => {
       </div>
       <v-spacer />
       <div class="module-title">
-        Каталог
-      </div>
-      <!-- Options bar toggle button -->
-      <div class="options-bar-toggle-container">
-        <v-btn
-          variant="text"
-          :icon="optionsBarChevronIcon"
-          size="small"
-          class="options-bar-toggle-btn"
-          color="grey-darken-1"
-          @click="toggleOptionsBarMode"
-        />
+        каталог
       </div>
     </v-app-bar>
+
+    <!-- ==================== TRIGGER AREA FOR AUTO MODE ==================== -->
+    <div
+      v-if="optionsBarMode === 'auto'"
+      class="options-bar-trigger-area"
+      @mouseenter="onTriggerAreaEnter"
+      @mouseleave="onTriggerAreaLeave"
+    />
 
     <!-- ==================== OPTIONS BAR ==================== -->
     <v-app-bar
@@ -311,10 +270,27 @@ const optionsBarChevronIcon = computed(() => {
       color="white"
       elevation="0"
       class="options-bar"
+      @mouseenter="onTriggerAreaEnter"
+      @mouseleave="onTriggerAreaLeave"
     >
-      <v-container class="d-flex align-center justify-space-between">
-        <!-- Search -->
-        <div class="d-flex align-center me-4">
+      <div class="d-flex align-center justify-space-between w-100 px-4">
+        <!-- Левая часть: кнопка и поиск -->
+        <div class="d-flex align-center">
+          <!-- Options bar toggle control area -->
+          <div
+            class="options-bar-control-area"
+            @click="toggleOptionsBarMode"
+          >
+            <v-btn
+              variant="text"
+              :icon="optionsBarChevronIcon"
+              size="small"
+              class="options-bar-toggle-btn"
+              color="grey-darken-1"
+            />
+          </div>
+
+          <!-- Search -->
           <v-text-field
             v-model="searchQuery"
             placeholder="Поиск сервисов и продуктов..."
@@ -328,7 +304,7 @@ const optionsBarChevronIcon = computed(() => {
           />
         </div>
 
-        <!-- Sort Controls -->
+        <!-- Правая часть: Sort Controls -->
         <div class="d-flex align-center">
           <v-select
             v-model="sortBy"
@@ -349,14 +325,8 @@ const optionsBarChevronIcon = computed(() => {
             style="min-width: 150px;"
           />
         </div>
-      </v-container>
-      
-
+      </div>
     </v-app-bar>
-    
-
-
-
 
     <!-- ==================== WORKSPACE AREA ==================== -->
     <div class="workspace-container">
@@ -387,62 +357,62 @@ const optionsBarChevronIcon = computed(() => {
               elevation="2"
               hover
             >
-                             <v-card-title class="d-flex align-center">
-                 <v-icon
-                   :icon="'icon' in item ? item.icon : item.image"
-                   :color="item.color"
-                   class="me-3"
-                   size="large"
-                 />
-                 <div class="flex-grow-1">
-                   <div class="text-h6">{{ item.name }}</div>
-                   <div class="text-caption text-grey">
-                     {{ item.category }}
-                     <span v-if="'subcategory' in item && item.subcategory"> / {{ item.subcategory }}</span>
-                   </div>
-                 </div>
-               </v-card-title>
+              <v-card-title class="d-flex align-center">
+                <v-icon
+                  :icon="'icon' in item ? item.icon : item.image"
+                  :color="item.color"
+                  class="me-3"
+                  size="large"
+                />
+                <div class="flex-grow-1">
+                  <div class="text-h6">{{ item.name }}</div>
+                  <div class="text-caption text-grey">
+                    {{ item.category }}
+                    <span v-if="'subcategory' in item && item.subcategory"> / {{ item.subcategory }}</span>
+                  </div>
+                </div>
+              </v-card-title>
 
-               <v-card-text>
-                 <p class="text-body-2 mb-3">
-                   {{ item.description }}
-                 </p>
+              <v-card-text>
+                <p class="text-body-2 mb-3">
+                  {{ item.description }}
+                </p>
 
-                 <!-- Service-specific info -->
-                 <div v-if="'priority' in item && item.priority" class="mb-2">
-                   <v-chip
-                     :color="getPriorityColor(item.priority)"
-                     size="small"
-                     class="me-2"
-                   >
-                     {{ item.priority === 'high' ? 'Высокий' : item.priority === 'medium' ? 'Средний' : 'Низкий' }} приоритет
-                   </v-chip>
-                   
-                   <v-chip
-                     :color="getStatusColor(item.status)"
-                     size="small"
-                   >
-                     {{ item.status === 'active' ? 'Активен' : item.status === 'inactive' ? 'Неактивен' : 'Обслуживание' }}
-                   </v-chip>
-                 </div>
+                <!-- Service-specific info -->
+                <div v-if="'priority' in item && item.priority" class="mb-2">
+                  <v-chip
+                    :color="getPriorityColor(item.priority)"
+                    size="small"
+                    class="me-2"
+                  >
+                    {{ item.priority === 'high' ? 'Высокий' : item.priority === 'medium' ? 'Средний' : 'Низкий' }} приоритет
+                  </v-chip>
+                  
+                  <v-chip
+                    :color="getStatusColor(item.status)"
+                    size="small"
+                  >
+                    {{ item.status === 'active' ? 'Активен' : item.status === 'inactive' ? 'Неактивен' : 'Обслуживание' }}
+                  </v-chip>
+                </div>
 
-                 <!-- Product-specific info -->
-                 <div v-if="'sku' in item && item.sku" class="mb-2">
-                   <div class="text-caption text-grey mb-1">
-                     SKU: {{ item.sku }}
-                   </div>
-                   <div class="text-h6 text-teal-darken-2">
-                     {{ item.price }}
-                   </div>
-                 </div>
+                <!-- Product-specific info -->
+                <div v-if="'sku' in item && item.sku" class="mb-2">
+                  <div class="text-caption text-grey mb-1">
+                    SKU: {{ item.sku }}
+                  </div>
+                  <div class="text-h6 text-teal-darken-2">
+                    {{ item.price }}
+                  </div>
+                </div>
 
-                 <!-- Owner info -->
-                 <div v-if="'owner' in item && item.owner" class="mt-3">
-                   <div class="text-caption text-grey">
-                     Владелец: {{ item.owner }}
-                   </div>
-                 </div>
-               </v-card-text>
+                <!-- Owner info -->
+                <div v-if="'owner' in item && item.owner" class="mt-3">
+                  <div class="text-caption text-grey">
+                    Владелец: {{ item.owner }}
+                  </div>
+                </div>
+              </v-card-text>
 
               <v-card-actions>
                 <v-btn
@@ -453,14 +423,14 @@ const optionsBarChevronIcon = computed(() => {
                   Подробнее
                 </v-btn>
                 
-                                 <v-btn
-                   v-if="'sku' in item && item.sku"
-                   color="teal-darken-2"
-                   variant="tonal"
-                   size="small"
-                 >
-                   Заказать
-                 </v-btn>
+                <v-btn
+                  v-if="'sku' in item && item.sku"
+                  color="teal-darken-2"
+                  variant="tonal"
+                  size="small"
+                >
+                  Заказать
+                </v-btn>
                 
                 <v-btn
                   v-else
@@ -604,26 +574,54 @@ const optionsBarChevronIcon = computed(() => {
   position: relative;
 }
 
-/* Options bar toggle container in sections app bar */
-.options-bar-toggle-container {
-  display: flex;
-  align-items: center;
-  margin-left: 16px;
+/* Trigger area for auto mode */
+.options-bar-trigger-area {
+  position: absolute;
+  top: 64px; /* After sections app bar */
+  left: 0;
+  right: 0;
+  height: 8px;
+  z-index: 1000;
+  background: transparent;
 }
 
+/* Options bar control area styles - аналогично drawer control area в App.vue */
+.options-bar-control-area {
+  position: relative;
+  height: 48px;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+  margin-right: 50px; /* Отступ от поля поиска (16px + 15px) */
+}
+
+.options-bar-control-area:hover {
+  background-color: rgba(38, 166, 154, 0.08) !important;
+}
+
+/* Options bar toggle button - позиционирование как в App.vue, но слева */
 .options-bar-toggle-btn {
-  opacity: 0.7;
+  position: absolute;
+  left: -7px; /* Аналогично right: -10px в App.vue */
+  bottom: 2px;
+  opacity: 0.6;
   transition: opacity 0.2s ease;
   background: transparent !important;
-  border: none !important;
   box-shadow: none !important;
+  border: none !important;
 }
 
 .options-bar-toggle-btn:hover {
   opacity: 1;
   background: transparent !important;
-  border: none !important;
   box-shadow: none !important;
+  border: none !important;
+}
+
+.options-bar-toggle-btn:active,
+.options-bar-toggle-btn:focus {
+  background: transparent !important;
+  box-shadow: none !important;
+  border: none !important;
 }
 
 .options-bar-toggle-btn :deep(.v-btn__content) {
@@ -647,65 +645,9 @@ const optionsBarChevronIcon = computed(() => {
   display: none !important;
 }
 
-.options-bar-toggle-btn {
-  opacity: 0.8;
-  transition: opacity 0.2s ease;
-  background: rgba(255, 255, 255, 0.95) !important;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15) !important;
-  border-radius: 4px;
-  border: 1px solid rgba(0, 0, 0, 0.1);
+.options-bar-toggle-btn :deep(.v-ripple__container) {
+  display: none !important;
 }
-
-.options-bar-toggle-btn:hover {
-  opacity: 1;
-  background: rgba(255, 255, 255, 1) !important;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2) !important;
-}
-
-.options-bar-toggle-btn :deep(.v-btn__content) {
-  background: none;
-}
-
-.options-bar-toggle-btn :deep(.v-btn__overlay) {
-  display: none;
-}
-
-/* Options bar control area styles */
-.options-bar-control-area {
-  position: relative;
-  height: 48px;
-  cursor: pointer;
-  transition: background-color 0.2s ease;
-}
-
-.options-bar-control-area:hover {
-  background-color: rgba(38, 166, 154, 0.08) !important;
-}
-
-/* Options bar toggle button styles */
-.options-bar-toggle-btn {
-  position: absolute;
-  left: -10px;
-  bottom: 2px;
-  opacity: 0.6;
-  transition: opacity 0.2s ease;
-  background: none !important;
-  box-shadow: none !important;
-}
-
-.options-bar-toggle-btn:hover {
-  opacity: 1;
-}
-
-.options-bar-toggle-btn :deep(.v-btn__content) {
-  background: none;
-}
-
-.options-bar-toggle-btn :deep(.v-btn__overlay) {
-  display: none;
-}
-
-
 
 /* Workspace styling */
 .workspace-container {
