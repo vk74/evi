@@ -26,6 +26,9 @@ const sections = ref([
   { id: 2, name: 'section2', displayName: 'Секция 2', icon: 'mdi-cog', color: 'teal-darken-2', isActive: false }
 ]);
 
+// ==================== FILTER STATE ====================
+const filterType = ref<'all' | 'services' | 'products'>('all');
+
 // ==================== TYPES ====================
 interface Service {
   id: number;
@@ -128,7 +131,19 @@ const mockProducts = ref<Product[]>([
 
 // ==================== COMPUTED PROPERTIES ====================
 const filteredAndSortedItems = computed(() => {
-  let items: CatalogItem[] = [...mockServices.value, ...mockProducts.value];
+  let items: CatalogItem[] = [];
+  
+  // Filter by type
+  switch (filterType.value) {
+    case 'services':
+      items = [...mockServices.value];
+      break;
+    case 'products':
+      items = [...mockProducts.value];
+      break;
+    default:
+      items = [...mockServices.value, ...mockProducts.value];
+  }
   
   // Filter by search query
   if (searchQuery.value) {
@@ -293,15 +308,40 @@ const onTriggerAreaLeave = () => {
           <!-- Search -->
           <v-text-field
             v-model="searchQuery"
-            placeholder="Поиск сервисов и продуктов..."
+            label="Поиск сервисов и продуктов..."
             prepend-inner-icon="mdi-magnify"
             variant="outlined"
             density="comfortable"
             hide-details
             style="min-width: 300px;"
             clearable
+            color="teal"
             @click:clear="clearSearch"
           />
+          
+          <!-- Filter Radio Buttons -->
+          <v-radio-group
+            v-model="filterType"
+            inline
+            hide-details
+            class="filter-radio-group ml-4"
+          >
+            <v-radio
+              value="all"
+              label="Все"
+              color="teal"
+            />
+            <v-radio
+              value="services"
+              label="Сервисы"
+              color="teal"
+            />
+            <v-radio
+              value="products"
+              label="Продукты"
+              color="teal"
+            />
+          </v-radio-group>
         </div>
 
         <!-- Правая часть: Sort Controls -->
@@ -309,16 +349,6 @@ const onTriggerAreaLeave = () => {
           <v-select
             v-model="sortBy"
             :items="sortOptions"
-            variant="outlined"
-            density="comfortable"
-            hide-details
-            style="min-width: 150px;"
-            class="me-2"
-          />
-          
-          <v-select
-            v-model="sortDirection"
-            :items="sortDirections"
             variant="outlined"
             density="comfortable"
             hide-details
@@ -654,11 +684,22 @@ const onTriggerAreaLeave = () => {
   background-color: white;
 }
 
+/* Filter radio group styling */
+.filter-radio-group :deep(.v-radio) {
+  margin-right: 16px;
+}
+
+.filter-radio-group :deep(.v-radio:last-child) {
+  margin-right: 0;
+}
+
+
+
 /* Card styling */
 .item-card {
   border: 1px solid rgba(0, 0, 0, 0.12);
   border-radius: 8px;
-  background-color: white;
+  background-color: rgb(242, 242, 242);
 }
 
 .item-card:hover {
