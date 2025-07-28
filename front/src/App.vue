@@ -135,9 +135,9 @@ const toggleAdminExpanded = () => {
 
 // Set active admin section and navigate to Admin module
 const setActiveAdminSection = (section) => {
-  appStore.setActiveAdminSubModule(section);
-  setActiveModule('Admin');
-};
+  appStore.setActiveAdminSubModule(section)
+  setActiveModule('Admin')
+}
 
 const logout = async () => {
   // Close menus before logout

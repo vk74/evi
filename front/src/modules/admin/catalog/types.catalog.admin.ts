@@ -1,16 +1,8 @@
-/**
- * types.catalog.admin.ts
- * Типы для модуля управления каталогом
- */
-
-export type CatalogSectionId = 'settings' | 'visualization' | 'access'
-
-export interface CatalogAdminState {
-  activeSection: CatalogSectionId
-}
-
 export interface Section {
-  id: CatalogSectionId
-  title: string
+  id: string
+  name: string
   icon: string
+  children?: Section[]
 }
+
+export type CatalogSectionId = string
