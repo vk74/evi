@@ -24,7 +24,7 @@ interface CatalogSection {
   icon: string
   owner: string
   status: 'active' | 'inactive'
-  visibility: 'visible' | 'hidden'
+  color: string
   isDefault: boolean
   order: number
 }
@@ -78,7 +78,7 @@ const sections = ref<CatalogSection[]>([
     icon: 'mdi-home',
     owner: 'system',
     status: 'active',
-    visibility: 'visible',
+    color: '#1976D2',
     isDefault: true,
     order: 1
   },
@@ -88,7 +88,7 @@ const sections = ref<CatalogSection[]>([
     icon: 'mdi-star',
     owner: 'admin',
     status: 'active',
-    visibility: 'visible',
+    color: '#FF9800',
     isDefault: false,
     order: 2
   }
@@ -104,12 +104,13 @@ const isSearchEnabled = computed(() =>
 
 // Table headers
 const headers = computed<TableHeader[]>(() => [
-  { title: 'Выбор', key: 'selection', width: '40px', sortable: false },
-  { title: 'Название', key: 'name', width: '200px', sortable: true },
-  { title: 'Иконка', key: 'icon', width: '100px', sortable: false },
-  { title: 'Владелец', key: 'owner', width: '150px', sortable: true },
-  { title: 'Статус', key: 'status', width: '100px', sortable: true },
-  { title: 'Видимость', key: 'visibility', width: '100px', sortable: true }
+  { title: 'выбор', key: 'selection', width: '40px', sortable: false },
+  { title: 'порядковый N', key: 'order', width: '150px', sortable: true },
+  { title: 'название', key: 'name', width: '200px', sortable: true },
+  { title: 'иконка', key: 'icon', width: '100px', sortable: false },
+  { title: 'владелец', key: 'owner', width: '150px', sortable: true },
+  { title: 'статус', key: 'status', width: '100px', sortable: true },
+  { title: 'цвет фона', key: 'color', width: '100px', sortable: false }
 ])
 
 // Available icons for selection
@@ -166,7 +167,7 @@ const confirmAdd = () => {
       icon: formData.value.icon,
       owner: 'admin',
       status: 'active',
-      visibility: 'visible',
+      color: '#4CAF50',
       isDefault: false,
       order: sections.value.length + 1
     }
@@ -236,21 +237,7 @@ const cancelDelete = () => {
   showDeleteDialog.value = false
 }
 
-const toggleSectionVisibility = (section: CatalogSection) => {
-  try {
-    section.visibility = section.visibility === 'visible' ? 'hidden' : 'visible'
-    
-    uiStore.showSnackbar({
-      message: `Секция "${section.name}" ${section.visibility === 'visible' ? 'показана' : 'скрыта'}`,
-      type: 'info',
-      timeout: 3000,
-      closable: true,
-      position: 'bottom'
-    })
-  } catch (error) {
-    handleError(error, 'toggling section visibility')
-  }
-}
+
 
 const onSelectSection = (sectionId: string, selected: boolean) => {
   if (selected) {
@@ -531,28 +518,17 @@ const handleItemsPerPageChange = async (newItemsPerPage: ItemsPerPageOption) => 
             </v-chip>
           </template>
 
-          <template #[`item.visibility`]="{ item }">
+          <template #[`item.order`]="{ item }">
+            <span class="text-body-2">{{ item.order }}</span>
+          </template>
+
+          <template #[`item.color`]="{ item }">
             <div class="d-flex align-center">
-              <v-btn
-                icon
-                variant="text"
-                size="x-small"
-                :color="item.visibility === 'visible' ? 'teal' : 'grey'"
-                @click="toggleSectionVisibility(item)"
-              >
-                <v-icon 
-                  :icon="item.visibility === 'visible' ? 'mdi-eye' : 'mdi-eye-off'"
-                  size="small"
-                />
-              </v-btn>
-              <v-chip
-                v-if="item.visibility === 'hidden'"
-                size="x-small"
-                color="grey"
-                class="ml-1"
-              >
-                Скрыта
-              </v-chip>
+              <div
+                class="color-preview mr-2"
+                :style="{ backgroundColor: item.color }"
+              />
+              <span class="text-body-2">{{ item.color }}</span>
             </div>
           </template>
         </v-data-table>
@@ -966,5 +942,13 @@ const handleItemsPerPageChange = async (newItemsPerPage: ItemsPerPageOption) => 
   min-width: 32px;
   height: 32px;
   font-size: 0.875rem;
+}
+
+/* Color preview styles */
+.color-preview {
+  width: 16px;
+  height: 16px;
+  border-radius: 2px;
+  border: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
 }
 </style> 
