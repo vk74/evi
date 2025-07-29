@@ -21,6 +21,7 @@ import fetchGroupById from './users/groupEditor/controller.fetch.group';
 import updateGroupById from './users/groupEditor/controller.update.group';
 import fetchGroupMembers from './users/groupEditor/controller.fetch.group.members';
 import removeGroupMembers from './users/groupEditor/controller.delete.group.members';
+import fetchCatalogSections from './catalog/controller.fetch.sections';
 
 const router: Router = express.Router();
 
@@ -41,6 +42,9 @@ router.get('/api/admin/groups/fetch-group-by-groupid/:groupId', validateJWT, fet
 router.post('/api/admin/groups/update-group-by-groupid', validateJWT, updateGroupById);
 router.get('/api/admin/groups/:groupId/members', validateJWT, fetchGroupMembers);
 router.post('/api/admin/groups/:groupId/members/remove', validateJWT, removeGroupMembers);
+
+// Routes for Catalog
+router.get('/api/admin/catalog/fetch-sections', validateJWT, fetchCatalogSections);
 
 // Export using ES modules syntax
 export default router;

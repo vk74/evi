@@ -42,6 +42,7 @@ interface CacheStats {
 // Cache type prefixes
 const CACHE_TYPES = {
   GROUP_UUID: 'group:uuid:',
+  GROUP_NAME: 'group:name:',
   USER_STATUS: 'user:status:',
   USER_ADMIN: 'user:admin:',
   USER_NAME: 'user:name:'
@@ -50,6 +51,7 @@ const CACHE_TYPES = {
 // Cache configuration for each type
 const cacheConfig: Record<string, CacheTypeConfig> = {
   [CACHE_TYPES.GROUP_UUID]: { ttl: 15 * 60 * 1000, limit: 1000 }, // 15 minutes for group UUIDs
+  [CACHE_TYPES.GROUP_NAME]: { ttl: 30 * 60 * 1000, limit: 1000 }, // 30 minutes for group names
   [CACHE_TYPES.USER_STATUS]: { ttl: 5 * 60 * 1000, limit: 5000 }, // 5 minutes for user statuses
   [CACHE_TYPES.USER_ADMIN]: { ttl: 10 * 60 * 1000, limit: 2000 }, // 10 minutes for admin checks
   [CACHE_TYPES.USER_NAME]: { ttl: 30 * 60 * 1000, limit: 5000 }   // 30 minutes for usernames
@@ -58,6 +60,7 @@ const cacheConfig: Record<string, CacheTypeConfig> = {
 // Cache storage organized by type
 const cacheStorage: Record<string, Map<string, CacheEntry<any>>> = {
   [CACHE_TYPES.GROUP_UUID]: new Map(),
+  [CACHE_TYPES.GROUP_NAME]: new Map(),
   [CACHE_TYPES.USER_STATUS]: new Map(),
   [CACHE_TYPES.USER_ADMIN]: new Map(),
   [CACHE_TYPES.USER_NAME]: new Map()
@@ -66,6 +69,7 @@ const cacheStorage: Record<string, Map<string, CacheEntry<any>>> = {
 // Cache statistics
 const cacheStats: Record<string, CacheStats> = {
   [CACHE_TYPES.GROUP_UUID]: { hits: 0, misses: 0, size: 0 },
+  [CACHE_TYPES.GROUP_NAME]: { hits: 0, misses: 0, size: 0 },
   [CACHE_TYPES.USER_STATUS]: { hits: 0, misses: 0, size: 0 },
   [CACHE_TYPES.USER_ADMIN]: { hits: 0, misses: 0, size: 0 },
   [CACHE_TYPES.USER_NAME]: { hits: 0, misses: 0, size: 0 }
@@ -326,6 +330,7 @@ function logStats(): void {
 // Helper functions for constructing cache keys
 export const CacheKeys = {
   forGroupUuid: (groupName: string): string => `${CACHE_TYPES.GROUP_UUID}${groupName}`,
+  forGroupName: (uuid: string): string => `${CACHE_TYPES.GROUP_NAME}${uuid}`,
   forUserStatus: (uuid: string): string => `${CACHE_TYPES.USER_STATUS}${uuid}`,
   forUserAdmin: (uuid: string): string => `${CACHE_TYPES.USER_ADMIN}${uuid}`,
   forUserName: (uuid: string): string => `${CACHE_TYPES.USER_NAME}${uuid}`
