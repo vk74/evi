@@ -1,4 +1,5 @@
 import { defineStore } from 'pinia'
+import type { CatalogSection, FetchSectionsResponse, ApiError } from './types.catalog.admin'
 
 export const useCatalogAdminStore = defineStore('catalogAdmin', {
   state: () => ({
@@ -7,7 +8,12 @@ export const useCatalogAdminStore = defineStore('catalogAdmin', {
     isLoading: false,
     activeComponent: 'Catalog.Sections' as 'Catalog.Sections' | 'CatalogSectionEditor',
     editorMode: 'creation' as 'creation' | 'edit',
-    editingSectionId: null as string | null
+    editingSectionId: null as string | null,
+    
+    // Catalog sections data
+    sections: [] as CatalogSection[],
+    error: null as string | null,
+    lastFetchTime: null as number | null
   }),
 
   getters: {
@@ -16,7 +22,13 @@ export const useCatalogAdminStore = defineStore('catalogAdmin', {
     getIsLoading: (state) => state.isLoading,
     getActiveComponent: (state) => state.activeComponent,
     getEditorMode: (state) => state.editorMode,
-    getEditingSectionId: (state) => state.editingSectionId
+    getEditingSectionId: (state) => state.editingSectionId,
+    
+    // Catalog sections getters
+    getSections: (state) => state.sections,
+    getError: (state) => state.error,
+    getLastFetchTime: (state) => state.lastFetchTime,
+    hasSections: (state) => state.sections.length > 0
   },
 
   actions: {
@@ -68,6 +80,26 @@ export const useCatalogAdminStore = defineStore('catalogAdmin', {
 
     setActiveComponent(componentId: string) {
       this.activeComponent = componentId as 'Catalog.Sections' | 'CatalogSectionEditor'
+    },
+
+    // Catalog sections actions
+    setSections(sections: CatalogSection[]) {
+      this.sections = sections
+      this.lastFetchTime = Date.now()
+    },
+
+    setError(error: string | null) {
+      this.error = error
+    },
+
+    clearError() {
+      this.error = null
+    },
+
+    clearSections() {
+      this.sections = []
+      this.error = null
+      this.lastFetchTime = null
     }
   }
 })

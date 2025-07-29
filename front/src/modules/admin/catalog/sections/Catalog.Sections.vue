@@ -16,20 +16,16 @@ import { ref, computed, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useUiStore } from '@/core/state/uistate'
 import { useCatalogAdminStore } from '../state.catalog.admin'
+import catalogSectionsFetchService from '../service.fetch.catalog.sections'
 import DataLoading from '@/core/ui/loaders/DataLoading.vue'
+import { CatalogSection, SectionStatus } from '../types.catalog.admin'
 
 // Types
-interface CatalogSection {
-  id: string
-  name: string
-  icon: string
-  owner: string
-  techOwner: string
-  status: 'active' | 'inactive'
-  color: string
-  comments: string
-  isDefault: boolean
-  order: number
+interface TableHeader {
+  title: string
+  key: string
+  width?: string
+  sortable?: boolean
 }
 
 interface TableHeader {
@@ -65,33 +61,35 @@ const selectedSections = ref<Set<string>>(new Set())
 // Loading state
 const isLoading = ref(false)
 
-// Mock data for demonstration
-const sections = ref<CatalogSection[]>([
-  {
-    id: 'main',
-    name: 'Основная',
-    icon: 'mdi-home',
-    owner: 'system',
-    techOwner: 'system',
-    status: 'active',
-    color: '#1976D2',
-    comments: 'Основная секция для всех',
-    isDefault: true,
-    order: 1
-  },
-  {
-    id: 'section-2',
-    name: 'Секция 2',
-    icon: 'mdi-star',
-    owner: 'admin',
-    techOwner: 'admin',
-    status: 'active',
-    color: '#FF9800',
-    comments: 'Секция для администраторов',
-    isDefault: false,
-    order: 2
+// Helper function to get status display text
+const getStatusText = (status: SectionStatus | null) => {
+  if (!status) return 'Не определен'
+  
+  const statusMap = {
+    [SectionStatus.DRAFT]: 'Черновик',
+    [SectionStatus.ACTIVE]: 'Активна',
+    [SectionStatus.ARCHIVED]: 'Архивная',
+    [SectionStatus.DISABLED]: 'Отключена',
+    [SectionStatus.SUSPENDED]: 'Приостановлена'
   }
-])
+  
+  return statusMap[status] || status
+}
+
+// Helper function to get status color
+const getStatusColor = (status: SectionStatus | null) => {
+  if (!status) return 'grey'
+  
+  const colorMap = {
+    [SectionStatus.DRAFT]: 'grey',
+    [SectionStatus.ACTIVE]: 'teal',
+    [SectionStatus.ARCHIVED]: 'orange',
+    [SectionStatus.DISABLED]: 'red',
+    [SectionStatus.SUSPENDED]: 'amber'
+  }
+  
+  return colorMap[status] || 'grey'
+}
 
 // Computed properties
 const selectedCount = computed(() => selectedSections.value.size)
@@ -107,9 +105,10 @@ const headers = computed<TableHeader[]>(() => [
   { title: 'порядковый N', key: 'order', width: '150px', sortable: true },
   { title: 'название', key: 'name', width: '150px', sortable: true },
   { title: 'владелец', key: 'owner', width: '150px', sortable: true },
-  { title: 'тех. владелец', key: 'techOwner', width: '180px', sortable: true },
+  { title: 'резервный владелец', key: 'backup_owner', width: '180px', sortable: true },
   { title: 'статус', key: 'status', width: '100px', sortable: true },
-  { title: 'цвет фона', key: 'color', width: '100px', sortable: false }
+  { title: 'цвет фона', key: 'color', width: '100px', sortable: false },
+  { title: 'публичная', key: 'is_public', width: '100px', sortable: true }
 ])
 
 // Available icons for selection
@@ -152,14 +151,12 @@ const deleteSection = () => {
 const confirmDelete = () => {
   try {
     const sectionsToDelete = Array.from(selectedSections.value)
-    const deletedSections = sections.value.filter(section => 
-      sectionsToDelete.includes(section.id) && !section.isDefault
+    const deletedSections = catalogStore.sections.filter(section => 
+      sectionsToDelete.includes(section.id)
     )
     
-    sections.value = sections.value.filter(section => 
-      !sectionsToDelete.includes(section.id) || section.isDefault
-    )
-    
+    // In a real implementation, you would call API to delete sections
+    // For now, we'll just show a message
     selectedSections.value.clear()
     showDeleteDialog.value = false
     
@@ -203,10 +200,8 @@ const clearSelections = () => {
 }
 
 const selectAll = () => {
-  sections.value.forEach(section => {
-    if (!section.isDefault) {
-      selectedSections.value.add(section.id)
-    }
+  catalogStore.sections.forEach(section => {
+    selectedSections.value.add(section.id)
   })
 }
 
@@ -219,8 +214,8 @@ const performSearch = async () => {
   isSearching.value = true
   
   try {
-    // Mock search implementation
-    await new Promise(resolve => setTimeout(resolve, 500))
+    // Refresh data from API
+    await catalogSectionsFetchService.refreshSections()
   } catch (error) {
     handleError(error, 'performing search')
   } finally {
@@ -283,13 +278,14 @@ const updateOptionsAndFetch = async (options: { page?: number, itemsPerPage?: nu
 
 // Computed properties for table
 const filteredSections = computed(() => {
-  let result = sections.value
+  let result = catalogStore.sections
 
   // Apply search filter
   if (searchQuery.value.length >= 2) {
     result = result.filter(section =>
       section.name.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
-      section.owner.toLowerCase().includes(searchQuery.value.toLowerCase())
+      (section.owner && section.owner.toLowerCase().includes(searchQuery.value.toLowerCase())) ||
+      (section.backup_owner && section.backup_owner.toLowerCase().includes(searchQuery.value.toLowerCase()))
     )
   }
 
@@ -305,6 +301,10 @@ const filteredSections = computed(() => {
           : aValue.localeCompare(bValue)
       }
       
+      if (typeof aValue === 'number' && typeof bValue === 'number') {
+        return sortDesc.value ? bValue - aValue : aValue - bValue
+      }
+      
       return 0
     })
   }
@@ -318,8 +318,7 @@ const totalItems = computed(() => filteredSections.value.length)
 onMounted(async () => {
   isLoading.value = true
   try {
-    // Mock loading
-    await new Promise(resolve => setTimeout(resolve, 1000))
+    await catalogSectionsFetchService.fetchSections()
   } catch (error) {
     handleError(error, 'loading sections')
   } finally {
@@ -423,47 +422,56 @@ const handleItemsPerPageChange = async (newItemsPerPage: ItemsPerPageOption) => 
               :model-value="isSelected(item.id)"
               density="compact"
               hide-details
-              :disabled="item.isDefault"
               @update:model-value="(value: boolean | null) => onSelectSection(item.id, value ?? false)"
             />
           </template>
 
           <template #[`item.name`]="{ item }">
             <div class="d-flex align-center">
-              <v-icon :icon="item.icon" class="mr-2" size="small" />
+              <v-icon :icon="item.icon || 'mdi-folder'" class="mr-2" size="small" />
               <span>{{ item.name }}</span>
             </div>
           </template>
 
           <template #[`item.order`]="{ item }">
-            <span class="text-body-2">{{ item.order }}</span>
+            <span class="text-body-2">{{ item.order || '-' }}</span>
           </template>
 
           <template #[`item.owner`]="{ item }">
-            <span>{{ item.owner }}</span>
+            <span>{{ item.owner || '-' }}</span>
           </template>
 
-          <template #[`item.techOwner`]="{ item }">
-            <span>{{ item.techOwner }}</span>
+          <template #[`item.backup_owner`]="{ item }">
+            <span>{{ item.backup_owner || '-' }}</span>
           </template>
 
           <template #[`item.status`]="{ item }">
             <v-chip 
-              :color="item.status === 'active' ? 'teal' : 'grey'" 
+              :color="getStatusColor(item.status)" 
               size="x-small"
             >
-              {{ item.status === 'active' ? 'Активна' : 'Неактивна' }}
+              {{ getStatusText(item.status) }}
             </v-chip>
           </template>
 
           <template #[`item.color`]="{ item }">
             <div class="d-flex align-center">
               <div
+                v-if="item.color"
                 class="color-preview mr-2"
                 :style="{ backgroundColor: item.color }"
               />
-              <span class="text-body-2">{{ item.color }}</span>
+              <span class="text-body-2">{{ item.color || '-' }}</span>
             </div>
+          </template>
+
+          <template #[`item.is_public`]="{ item }">
+            <v-chip 
+              :color="item.is_public ? 'green' : 'grey'" 
+              size="x-small"
+            >
+              {{ item.is_public ? 'Да' : 'Нет' }}
+            </v-chip>
           </template>
 
 
