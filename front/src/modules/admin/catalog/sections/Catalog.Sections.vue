@@ -105,7 +105,7 @@ const headers = computed<TableHeader[]>(() => [
   { title: 'порядковый N', key: 'order', width: '150px', sortable: true },
   { title: 'название', key: 'name', width: '150px', sortable: true },
   { title: 'владелец', key: 'owner', width: '150px', sortable: true },
-  { title: 'резервный владелец', key: 'backup_owner', width: '180px', sortable: true },
+  { title: 'заместитель владельца', key: 'backup_owner', width: '180px', sortable: true },
   { title: 'статус', key: 'status', width: '100px', sortable: true },
   { title: 'цвет фона', key: 'color', width: '100px', sortable: false },
   { title: 'публичная', key: 'is_public', width: '100px', sortable: true }
