@@ -104,16 +104,6 @@ const { t } = useI18n();
      ]
    },
    {
-     id: 'Catalog',
-     name: t('admin.settings.sections.catalog'),
-     icon: 'mdi-folder-table-outline',
-   },
-   {
-     id: 'Services',
-     name: t('admin.settings.sections.services'),
-     icon: 'mdi-puzzle-outline',
-   },
-   {
      id: 'Processes',
      name: t('admin.settings.sections.processes'),
      icon: 'mdi-chart-timeline-variant',

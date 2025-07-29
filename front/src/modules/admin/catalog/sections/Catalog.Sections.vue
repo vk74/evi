@@ -102,8 +102,8 @@ const isSearchEnabled = computed(() =>
 // Table headers
 const headers = computed<TableHeader[]>(() => [
   { title: 'выбор', key: 'selection', width: '40px', sortable: false },
-  { title: 'порядковый N', key: 'order', width: '150px', sortable: true },
-  { title: 'название', key: 'name', width: '150px', sortable: true },
+  { title: 'порядковый N', key: 'order', width: '160px', sortable: true },
+  { title: 'название', key: 'name', width: '140px', sortable: true },
   { title: 'владелец', key: 'owner', width: '150px', sortable: true },
   { title: 'заместитель владельца', key: 'backup_owner', width: '180px', sortable: true },
   { title: 'статус', key: 'status', width: '100px', sortable: true },
