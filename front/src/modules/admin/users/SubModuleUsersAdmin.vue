@@ -15,6 +15,14 @@ import { useI18n } from 'vue-i18n'
 import { useUsersAdminStore } from './state.users.admin'
 import type { UserSectionId, Section } from './types.users.admin'
 
+// Импортируем Phosphor иконки
+import { 
+  PhUserList, 
+  PhUserPlus, 
+  PhUsersThree, 
+  PhUsersFour 
+} from '@phosphor-icons/vue'
+
 // Async components for lazy loading
 const UsersListProto = defineAsyncComponent(() => import('./UsersList/UsersList.vue'))
 const GroupsList = defineAsyncComponent(() => import('./GroupsList/GroupsList.vue'))
@@ -30,29 +38,45 @@ const sections = computed((): Section[] => [
   {
     id: 'users-proto',
     title: t('admin.users.sections.usersList'),
-    icon: 'mdi-account-multiple-outline'
+    icon: 'PhUserList'
   },
   {
     id: 'user-editor',
     title: t('admin.users.sections.userEditor'),
-    icon: 'mdi-account-plus-outline'
+    icon: 'PhUserPlus'
   },
   {
     id: 'groups',
     title: t('admin.users.sections.groupsList'),
-    icon: 'mdi-account-group-outline'
+    icon: 'PhUsersThree'
   },
-  {
-    id: 'group-editor',
-    title: t('admin.users.sections.groupEditor'),
-    icon: 'mdi-account-multiple-plus-outline'
-  }
+      {
+      id: 'group-editor',
+      title: t('admin.users.sections.groupEditor'),
+      icon: 'PhUsersFour'
+    }
 ])
 
 // Computed properties and methods for section management
 const activeSection = computed((): UserSectionId => usersStore.getCurrentSection)
 const switchSection = (sectionId: UserSectionId): void => {
   usersStore.setActiveSection(sectionId)
+}
+
+// Функция для получения компонента иконки
+const getIconComponent = (iconName: string) => {
+  switch (iconName) {
+    case 'PhUserList':
+      return PhUserList
+    case 'PhUserPlus':
+      return PhUserPlus
+    case 'PhUsersThree':
+      return PhUsersThree
+    case 'PhUsersFour':
+      return PhUsersFour
+    default:
+      return null
+  }
 }
 </script>
 
@@ -76,12 +100,13 @@ const switchSection = (sectionId: UserSectionId): void => {
           variant="text"
           @click="switchSection(section.id)"
         >
-          <v-icon
-            v-if="section.icon"
-            start
-          >
-            {{ section.icon }}
-          </v-icon>
+          <!-- Используем Phosphor иконки -->
+          <component
+            :is="getIconComponent(section.icon)"
+            :size="20"
+            weight="regular"
+            class="me-2"
+          />
           {{ section.title }}
         </v-btn>
       </div>
