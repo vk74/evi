@@ -104,13 +104,12 @@ const isSearchEnabled = computed(() =>
 // Table headers
 const headers = computed<TableHeader[]>(() => [
   { title: 'выбор', key: 'selection', width: '40px', sortable: false },
-  { title: 'порядковый N', key: 'order', width: '100px', sortable: true },
+  { title: 'порядковый N', key: 'order', width: '150px', sortable: true },
   { title: 'название', key: 'name', width: '150px', sortable: true },
   { title: 'владелец', key: 'owner', width: '150px', sortable: true },
-  { title: 'тех. владелец', key: 'techOwner', width: '150px', sortable: true },
+  { title: 'тех. владелец', key: 'techOwner', width: '180px', sortable: true },
   { title: 'статус', key: 'status', width: '100px', sortable: true },
-  { title: 'цвет фона', key: 'color', width: '100px', sortable: false },
-  { title: 'комментарии', key: 'comments', width: '300px', sortable: false }
+  { title: 'цвет фона', key: 'color', width: '100px', sortable: false }
 ])
 
 // Available icons for selection
@@ -467,9 +466,7 @@ const handleItemsPerPageChange = async (newItemsPerPage: ItemsPerPageOption) => 
             </div>
           </template>
 
-          <template #[`item.comments`]="{ item }">
-            <span>{{ item.comments }}</span>
-          </template>
+
         </v-data-table>
 
         <!-- Custom paginator -->
