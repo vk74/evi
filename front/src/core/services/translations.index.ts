@@ -33,6 +33,9 @@ import groupsEditorRu from '@/modules/admin/users/GroupEditor/translation.group.
 
 import settingsRu from '@/modules/admin/settings/translation.settings.ru.json'
 import settingsEn from '@/modules/admin/settings/translation.settings.en.json'
+
+import catalogAdminRu from '@/modules/admin/catalog/translation.admin.catalog.ru.json'
+import catalogAdminEn from '@/modules/admin/catalog/translation.admin.catalog.en.json'
 // 
 
 // validation rules
@@ -52,7 +55,8 @@ export default {
       validationCommonFieldsRulesRu,
       groupsListRu,
       groupsEditorRu,
-      settingsRu
+      settingsRu,
+      catalogAdminRu
     ),
     en: merge({},
       appTranslationsEn,
@@ -65,6 +69,7 @@ export default {
       validationCommonFieldsRulesEn,
       groupsListEn,
       groupsEditorEn,
-      settingsEn
+      settingsEn,
+      catalogAdminEn
     )
   }

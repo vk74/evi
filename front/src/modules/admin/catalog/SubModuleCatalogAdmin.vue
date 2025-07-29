@@ -4,7 +4,8 @@
  * и отображает соответствующие подмодули в рабочей области.
 -->
 <script setup lang="ts">
-import { ref, computed, onMounted, markRaw } from 'vue'
+import { ref, computed, onMounted, markRaw, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useCatalogAdminStore } from './state.catalog.admin'
 import type { Section } from './types.catalog.admin'
 
@@ -22,29 +23,35 @@ import {
   PhCaretRight 
 } from '@phosphor-icons/vue'
 
-// Инициализация store
+// Инициализация store и i18n
 const catalogStore = useCatalogAdminStore()
+const { t, locale } = useI18n()
 
-// Определение секций
-const sections: Section[] = [
-  {
-    id: 'Catalog',
-    name: 'catalog',
-    icon: 'PhFolder',
-    children: [
-      {
-        id: 'Catalog.Sections',
-        name: 'sections',
-        icon: 'PhList'
-      },
-      {
-        id: 'Catalog.Settings',
-        name: 'settings',
-        icon: 'PhGear'
-      }
-    ]
-  }
-]
+// Определение секций с поддержкой локализации
+const sections = computed<Section[]>(() => {
+  // Явно используем locale.value для создания зависимости
+  const currentLocale = locale.value
+  
+  return [
+    {
+      id: 'Catalog',
+      name: t('admin.catalog.navigation.catalog'),
+      icon: 'PhFolder',
+      children: [
+        {
+          id: 'Catalog.Sections',
+          name: t('admin.catalog.navigation.sections'),
+          icon: 'PhList'
+        },
+        {
+          id: 'Catalog.Settings',
+          name: t('admin.catalog.navigation.settings'),
+          icon: 'PhGear'
+        }
+      ]
+    }
+  ]
+})
 
 // Map section IDs to components
 const sectionComponents = {
@@ -118,7 +125,7 @@ const flattenedSections = computed(() => {
     })
   }
 
-  processSections(sections)
+  processSections(sections.value)
   return result
 })
 
@@ -166,7 +173,7 @@ const findFirstLeafSectionInTree = (sectionList: Section[]): string => {
  * Helper function to validate if a section exists in the tree
  */
 const isValidSection = (id: string): boolean => {
-  return findSectionById(id, sections) !== null
+  return findSectionById(id, sections.value) !== null
 }
 
 /**
@@ -202,15 +209,15 @@ const handleSectionClick = (section: { id: string; hasChildren: boolean }) => {
     
     // If we're expanding (was collapsed, now will be expanded)
     if (!isCurrentlyExpanded) {
-      const sectionObj = findSectionById(section.id, sections)
-      if (sectionObj && sectionObj.children && sectionObj.children.length > 0) {
-        const firstChildId = findFirstLeafSection(sectionObj.children[0])
-        catalogStore.setSelectedSection(firstChildId)
-        catalogStore.setActiveComponent(firstChildId)
-        
-        // Expand all parent sections of the selected child
-        expandParentSections(firstChildId)
-      }
+          const sectionObj = findSectionById(section.id, sections.value)
+    if (sectionObj && sectionObj.children && sectionObj.children.length > 0) {
+      const firstChildId = findFirstLeafSection(sectionObj.children[0])
+      catalogStore.setSelectedSection(firstChildId)
+      catalogStore.setActiveComponent(firstChildId)
+      
+      // Expand all parent sections of the selected child
+      expandParentSections(firstChildId)
+    }
     }
     // If we're collapsing, we don't change the selected section
     // The user can still see the content of the previously selected section
@@ -226,7 +233,7 @@ const handleSectionClick = (section: { id: string; hasChildren: boolean }) => {
 
 // Get the selected section object with fallback to avoid null reference errors
 const selectedSection = computed(() => {
-  const section = findSectionById(catalogStore.getSelectedSectionPath, sections)
+  const section = findSectionById(catalogStore.getSelectedSectionPath, sections.value)
   // Provide default values to avoid "Cannot read properties of undefined" error
   return section || { id: '', name: 'Catalog', icon: 'PhFolder' }
 })
@@ -254,6 +261,12 @@ const toggleMobileMenu = () => {
   isMobileMenuOpen.value = !isMobileMenuOpen.value
 }
 
+// Watch for language changes to force re-render
+watch(locale, () => {
+  // Force re-computation of sections when language changes
+  console.log('Language changed to:', locale.value)
+})
+
 // On component mount
 onMounted(() => {
   // Validate the saved section path
@@ -261,7 +274,7 @@ onMounted(() => {
   
   if (!validSectionPath || !isValidSection(validSectionPath)) {
     // If no section is selected or the section doesn't exist, select the first leaf section
-    validSectionPath = findFirstLeafSectionInTree(sections)
+    validSectionPath = findFirstLeafSectionInTree(sections.value)
     if (validSectionPath) {
       catalogStore.setSelectedSection(validSectionPath)
     }

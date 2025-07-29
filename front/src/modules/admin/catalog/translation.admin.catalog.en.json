@@ -1,0 +1,169 @@
+{
+  "admin": {
+    "catalog": {
+      "navigation": {
+        "catalog": "catalog",
+        "sections": "sections",
+        "settings": "settings"
+      },
+      "editor": {
+        "creation": {
+          "title": "creating new section"
+        },
+        "edit": {
+          "title": "editing section"
+        },
+        "information": {
+          "title": "information",
+          "name": {
+            "label": "section name",
+            "required": "name is required",
+            "minLength": "name must contain at least 2 characters",
+            "maxLength": "name must not exceed 100 characters"
+          },
+          "order": {
+            "label": "order N",
+            "required": "order number is required",
+            "numbersOnly": "only numbers allowed",
+            "positive": "number must be greater than 0"
+          },
+          "owner": {
+            "label": "owner",
+            "required": "owner is required",
+            "maxLength": "owner name must not exceed 50 characters",
+            "select": "select owner"
+          },
+          "backupOwner": {
+            "label": "backup owner",
+            "maxLength": "backup owner name must not exceed 50 characters",
+            "select": "select backup owner"
+          }
+        },
+        "settings": {
+          "title": "settings",
+          "status": {
+            "label": "status",
+            "options": {
+              "draft": "draft",
+              "active": "active",
+              "archived": "archived",
+              "disabled": "disabled",
+              "suspended": "suspended"
+            }
+          },
+          "isPublic": {
+            "label": "public section"
+          },
+          "color": {
+            "label": "background color",
+            "picker": {
+              "title": "select section background color",
+              "basicColors": "basic colors:",
+              "customColor": "custom color:",
+              "hexCode": "hex code",
+              "validHex": "valid hex code",
+              "white": "white"
+            }
+          }
+        },
+        "description": {
+          "title": "description",
+          "section": {
+            "label": "section description",
+            "maxLength": "description must not exceed 1000 characters"
+          },
+          "comments": {
+            "label": "comments",
+            "maxLength": "comments must not exceed 500 characters"
+          }
+        },
+        "actions": {
+          "title": "actions",
+          "create": "create",
+          "save": "save",
+          "cancel": "cancel"
+        },
+        "messages": {
+          "create": {
+            "success": "section created successfully",
+            "error": "error creating section"
+          },
+          "update": {
+            "success": "section updated successfully",
+            "error": "error updating section"
+          },
+          "validation": {
+            "fillRequired": "please fill in all required fields"
+          },
+          "owner": {
+            "selected": "owner selected successfully",
+            "error": "error selecting owner"
+          },
+          "backupOwner": {
+            "selected": "backup owner selected successfully",
+            "error": "error selecting backup owner"
+          }
+        }
+      },
+      "sections": {
+        "table": {
+          "headers": {
+            "selection": "selection",
+            "order": "order N",
+            "name": "name",
+            "owner": "owner",
+            "backupOwner": "backup owner",
+            "techOwner": "tech owner",
+            "status": "status",
+            "color": "background color",
+            "isPublic": "public",
+            "comments": "comments"
+          },
+          "status": {
+            "active": "active",
+            "inactive": "inactive",
+            "yes": "yes",
+            "no": "no",
+            "undefined": "undefined",
+            "draft": "draft",
+            "archived": "archived",
+            "disabled": "disabled",
+            "suspended": "suspended"
+          }
+        },
+        "search": {
+          "placeholder": "Search sections...",
+          "minChars": "Minimum 2 characters"
+        },
+        "pagination": {
+          "recordsPerPage": "Records per page:",
+          "recordsInfo": "Records {start}-{end} of {total}",
+          "firstPage": "First page",
+          "previousPage": "Previous page",
+          "nextPage": "Next page",
+          "lastPage": "Last page"
+        },
+        "actions": {
+          "title": "actions",
+          "addSection": "add section",
+          "refresh": "refresh",
+          "clearSelection": "clear selection",
+          "selectedElements": "selected elements",
+          "edit": "edit",
+          "delete": "delete",
+          "selectAll": "select all"
+        },
+        "messages": {
+          "selectionCleared": "Selection cleared",
+          "sectionsDeleted": "Sections deleted: {count}",
+          "deleteConfirm": {
+            "title": "Confirm deletion",
+            "message": "Are you sure you want to delete the selected sections? This action cannot be undone.",
+            "cancel": "Cancel",
+            "confirm": "Delete"
+          }
+        }
+      }
+    }
+  }
+} 

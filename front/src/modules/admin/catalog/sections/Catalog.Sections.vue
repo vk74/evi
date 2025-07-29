@@ -63,14 +63,14 @@ const isLoading = ref(false)
 
 // Helper function to get status display text
 const getStatusText = (status: SectionStatus | null) => {
-  if (!status) return 'Не определен'
+  if (!status) return t('admin.catalog.sections.table.status.undefined')
   
   const statusMap = {
-    [SectionStatus.DRAFT]: 'Черновик',
-    [SectionStatus.ACTIVE]: 'Активна',
-    [SectionStatus.ARCHIVED]: 'Архивная',
-    [SectionStatus.DISABLED]: 'Отключена',
-    [SectionStatus.SUSPENDED]: 'Приостановлена'
+    [SectionStatus.DRAFT]: t('admin.catalog.sections.table.status.draft'),
+    [SectionStatus.ACTIVE]: t('admin.catalog.sections.table.status.active'),
+    [SectionStatus.ARCHIVED]: t('admin.catalog.sections.table.status.archived'),
+    [SectionStatus.DISABLED]: t('admin.catalog.sections.table.status.disabled'),
+    [SectionStatus.SUSPENDED]: t('admin.catalog.sections.table.status.suspended')
   }
   
   return statusMap[status] || status
@@ -101,14 +101,14 @@ const isSearchEnabled = computed(() =>
 
 // Table headers
 const headers = computed<TableHeader[]>(() => [
-  { title: 'выбор', key: 'selection', width: '40px', sortable: false },
-  { title: 'порядковый N', key: 'order', width: '160px', sortable: true },
-  { title: 'название', key: 'name', width: '140px', sortable: true },
-  { title: 'владелец', key: 'owner', width: '150px', sortable: true },
-  { title: 'заместитель владельца', key: 'backup_owner', width: '180px', sortable: true },
-  { title: 'статус', key: 'status', width: '100px', sortable: true },
-  { title: 'цвет фона', key: 'color', width: '100px', sortable: false },
-  { title: 'публичная', key: 'is_public', width: '100px', sortable: true }
+  { title: t('admin.catalog.sections.table.headers.selection'), key: 'selection', width: '40px', sortable: false },
+  { title: t('admin.catalog.sections.table.headers.order'), key: 'order', width: '160px', sortable: true },
+  { title: t('admin.catalog.sections.table.headers.name'), key: 'name', width: '140px', sortable: true },
+  { title: t('admin.catalog.sections.table.headers.owner'), key: 'owner', width: '150px', sortable: true },
+  { title: t('admin.catalog.sections.table.headers.backupOwner'), key: 'backup_owner', width: '180px', sortable: true },
+  { title: t('admin.catalog.sections.table.headers.status'), key: 'status', width: '100px', sortable: true },
+  { title: t('admin.catalog.sections.table.headers.color'), key: 'color', width: '100px', sortable: false },
+  { title: t('admin.catalog.sections.table.headers.isPublic'), key: 'is_public', width: '100px', sortable: true }
 ])
 
 // Available icons for selection
@@ -161,7 +161,7 @@ const confirmDelete = () => {
     showDeleteDialog.value = false
     
     uiStore.showSnackbar({
-      message: `Удалено секций: ${deletedSections.length}`,
+      message: t('admin.catalog.sections.messages.sectionsDeleted', { count: deletedSections.length }),
       type: 'success',
       timeout: 3000,
       closable: true,
@@ -191,7 +191,7 @@ const isSelected = (sectionId: string) => selectedSections.value.has(sectionId)
 const clearSelections = () => {
   selectedSections.value.clear()
   uiStore.showSnackbar({
-    message: 'Выбор очищен',
+    message: t('admin.catalog.sections.messages.selectionCleared'),
     type: 'info',
     timeout: 3000,
     closable: true,
@@ -330,7 +330,7 @@ onMounted(async () => {
 const getPaginationInfo = () => {
   const start = (page.value - 1) * itemsPerPage.value + 1
   const end = Math.min(page.value * itemsPerPage.value, totalItems.value)
-  return `Записи ${start}-${end} из ${totalItems.value}`
+  return t('admin.catalog.sections.pagination.recordsInfo', { start, end, total: totalItems.value })
 }
 
 const getTotalPages = () => Math.ceil(totalItems.value / itemsPerPage.value)
@@ -392,10 +392,10 @@ const handleItemsPerPageChange = async (newItemsPerPage: ItemsPerPageOption) => 
             clearable
             clear-icon="mdi-close"
             color="teal"
-            label="Поиск секций..."
+            :label="t('admin.catalog.sections.search.placeholder')"
             prepend-inner-icon="mdi-magnify"
             :loading="isSearching"
-            :hint="searchQuery.length === 1 ? 'Минимум 2 символа' : ''"
+            :hint="searchQuery.length === 1 ? t('admin.catalog.sections.search.minChars') : ''"
             persistent-hint
             @keydown="handleSearchKeydown"
             @click:clear="handleClearSearch"
@@ -470,7 +470,7 @@ const handleItemsPerPageChange = async (newItemsPerPage: ItemsPerPageOption) => 
               :color="item.is_public ? 'green' : 'grey'" 
               size="x-small"
             >
-              {{ item.is_public ? 'Да' : 'Нет' }}
+              {{ item.is_public ? t('admin.catalog.sections.table.status.yes') : t('admin.catalog.sections.table.status.no') }}
             </v-chip>
           </template>
 
@@ -484,7 +484,7 @@ const handleItemsPerPageChange = async (newItemsPerPage: ItemsPerPageOption) => 
             <div class="d-flex align-center">
               <!-- Record count per page selector -->
               <div class="d-flex align-center mr-4">
-                <span class="text-body-2 mr-2">Записей на странице:</span>
+                <span class="text-body-2 mr-2">{{ t('admin.catalog.sections.pagination.recordsPerPage') }}</span>
                 <v-select
                   v-model="itemsPerPage"
                   :items="[25, 50, 100]"
@@ -516,7 +516,7 @@ const handleItemsPerPageChange = async (newItemsPerPage: ItemsPerPageOption) => 
                     activator="parent"
                     location="top"
                   >
-                    Первая страница
+                    {{ t('admin.catalog.sections.pagination.firstPage') }}
                   </v-tooltip>
                 </v-btn>
                 
@@ -532,7 +532,7 @@ const handleItemsPerPageChange = async (newItemsPerPage: ItemsPerPageOption) => 
                     activator="parent"
                     location="top"
                   >
-                    Предыдущая страница
+                    {{ t('admin.catalog.sections.pagination.previousPage') }}
                   </v-tooltip>
                 </v-btn>
                 
@@ -570,7 +570,7 @@ const handleItemsPerPageChange = async (newItemsPerPage: ItemsPerPageOption) => 
                     activator="parent"
                     location="top"
                   >
-                    Следующая страница
+                    {{ t('admin.catalog.sections.pagination.nextPage') }}
                   </v-tooltip>
                 </v-btn>
                 
@@ -586,7 +586,7 @@ const handleItemsPerPageChange = async (newItemsPerPage: ItemsPerPageOption) => 
                     activator="parent"
                     location="top"
                   >
-                    Последняя страница
+                    {{ t('admin.catalog.sections.pagination.lastPage') }}
                   </v-tooltip>
                 </v-btn>
               </div>
@@ -600,7 +600,7 @@ const handleItemsPerPageChange = async (newItemsPerPage: ItemsPerPageOption) => 
         <!-- Top part of sidebar - buttons for component operations -->
         <div class="side-bar-section">
           <h3 class="text-subtitle-2 px-2 py-2">
-            Действия
+            {{ t('admin.catalog.sections.actions.title') }}
           </h3>
           
           <v-btn
@@ -611,7 +611,7 @@ const handleItemsPerPageChange = async (newItemsPerPage: ItemsPerPageOption) => 
             :disabled="hasSelected"
             @click="addSection"
           >
-            Добавить секцию
+            {{ t('admin.catalog.sections.actions.addSection') }}
           </v-btn>
           
           <v-btn
@@ -626,7 +626,7 @@ const handleItemsPerPageChange = async (newItemsPerPage: ItemsPerPageOption) => 
               icon="mdi-refresh"
               class="mr-2"
             />
-            Обновить
+            {{ t('admin.catalog.sections.actions.refresh') }}
           </v-btn>
           
           <v-btn
@@ -641,7 +641,7 @@ const handleItemsPerPageChange = async (newItemsPerPage: ItemsPerPageOption) => 
               icon="mdi-checkbox-blank-outline"
               class="mr-2"
             />
-            Снять выбор
+            {{ t('admin.catalog.sections.actions.clearSelection') }}
           </v-btn>
         </div>
         
@@ -651,7 +651,7 @@ const handleItemsPerPageChange = async (newItemsPerPage: ItemsPerPageOption) => 
         <!-- Bottom part of sidebar - buttons for operations over selected elements -->
         <div class="side-bar-section">
           <h3 class="text-subtitle-2 px-2 py-2">
-            Выбранные элементы
+            {{ t('admin.catalog.sections.actions.selectedElements') }}
           </h3>
           
           <v-btn
@@ -662,7 +662,7 @@ const handleItemsPerPageChange = async (newItemsPerPage: ItemsPerPageOption) => 
             :disabled="!hasOneSelected"
             @click="editSection"
           >
-            Редактировать
+            {{ t('admin.catalog.sections.actions.edit') }}
           </v-btn>
           
           <v-btn
@@ -673,7 +673,7 @@ const handleItemsPerPageChange = async (newItemsPerPage: ItemsPerPageOption) => 
             :disabled="!hasSelected"
             @click="deleteSection"
           >
-            Удалить
+            {{ t('admin.catalog.sections.actions.delete') }}
             <span class="ml-2">({{ selectedCount }})</span>
           </v-btn>
         </div>
@@ -689,10 +689,10 @@ const handleItemsPerPageChange = async (newItemsPerPage: ItemsPerPageOption) => 
     >
       <v-card>
         <v-card-title class="text-subtitle-1 text-wrap">
-          Подтвердить удаление
+          {{ t('admin.catalog.sections.messages.deleteConfirm.title') }}
         </v-card-title>
         <v-card-text>
-          Вы уверены, что хотите удалить выбранные секции? Это действие нельзя отменить.
+          {{ t('admin.catalog.sections.messages.deleteConfirm.message') }}
         </v-card-text>
         <v-card-actions>
           <v-spacer />
@@ -702,7 +702,7 @@ const handleItemsPerPageChange = async (newItemsPerPage: ItemsPerPageOption) => 
             class="text-none"
             @click="cancelDelete"
           >
-            Отмена
+            {{ t('admin.catalog.sections.messages.deleteConfirm.cancel') }}
           </v-btn>
           <v-btn
             color="error"
@@ -710,7 +710,7 @@ const handleItemsPerPageChange = async (newItemsPerPage: ItemsPerPageOption) => 
             class="text-none"
             @click="confirmDelete"
           >
-            Удалить
+            {{ t('admin.catalog.sections.messages.deleteConfirm.confirm') }}
           </v-btn>
         </v-card-actions>
       </v-card>

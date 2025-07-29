@@ -13,7 +13,7 @@
 -->
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useCatalogAdminStore } from './state.catalog.admin'
 import { useUiStore } from '@/core/state/uistate'
@@ -34,7 +34,7 @@ interface CatalogSection {
 }
 
 // Initialize stores and i18n
-const { t } = useI18n()
+const { t, locale } = useI18n()
 const catalogStore = useCatalogAdminStore()
 const uiStore = useUiStore()
 
@@ -72,8 +72,8 @@ const editingSectionId = computed(() => catalogStore.getEditingSectionId)
 
 const pageTitle = computed(() => {
   return isCreationMode.value 
-    ? 'создание новой секции' 
-    : 'изменение секции'
+    ? t('admin.catalog.editor.creation.title')
+    : t('admin.catalog.editor.edit.title')
 })
 
 // Mock data for demonstration (in real app this would come from API)
@@ -91,62 +91,68 @@ const mockSection = ref<CatalogSection>({
 })
 
 // Preset colors for quick selection - 8 rows of 7 colors each (56 colors)
+// Each row has saturation from 3% to 20%
 const presetColors = [
-  // Row 1: Red gradient (from very light red to light red)
-  '#FEF5F5', '#FDF0F0', '#FCEAEA', '#FBE0E0', '#FAD5D5', '#F9CBCB', '#F8C0C0',
-  // Row 2: Orange gradient
-  '#FEF8F5', '#FDF3F0', '#FCF1EA', '#FBE9E0', '#FAE2D5', '#F9DACB', '#F8D3C0',
-  // Row 3: Yellow gradient
-  '#FEFDF5', '#FDF8F0', '#FCFCEA', '#FBFBE0', '#FAFAD5', '#F9F9CB', '#F8F8C0',
-  // Row 4: Green (teal) gradient
-  '#F0FEF8', '#E8FDF3', '#E0FCF1', '#D8FBE9', '#D0FAE2', '#C8F9DA', '#C0F8D3',
-  // Row 5: Cyan gradient
-  '#F5FEFD', '#F0FDF8', '#EAFCFC', '#E0FBFB', '#D5FAFA', '#CBF9F9', '#C0F8F8',
-  // Row 6: Blue gradient
-  '#F5F8FE', '#F0F3FD', '#EAF1FC', '#E0E9FB', '#D5E2FA', '#CBDAF9', '#C0D3F8',
-  // Row 7: Purple gradient
-  '#F8F5FE', '#F3F0FD', '#F1EAFB', '#E9E0FA', '#E2D5F9', '#DACBF8', '#D3C0F7',
-  // Row 8: Gray gradient (starting with white)
-  '#FFFFFF', '#F8F8F8', '#F1F1F1', '#EAEAEA', '#E3E3E3', '#DCDCDC', '#D5D5D5'
+  // Row 1: Red gradient (3% to 20% saturation)
+  '#F8F0F0', '#F5F0F0', '#F2E8E8', '#EFE0E0', '#ECD8D8', '#E9D0D0', '#E6C8C8',
+  // Row 2: Orange gradient (3% to 20% saturation)
+  '#F8F2F0', '#F5F2F0', '#F2ECE8', '#EFE6E0', '#ECE0D8', '#E9DAD0', '#E6D4C8',
+  // Row 3: Yellow gradient (3% to 20% saturation)
+  '#F8F8F0', '#F5F5F0', '#F2F2E8', '#EFEFE0', '#ECECD8', '#E9E9D0', '#E6E6C8',
+  // Row 4: Green (teal) gradient (3% to 20% saturation)
+  '#F0F8F8', '#E8F5F0', '#E0F2E8', '#D8EFE0', '#D0ECD8', '#C8E9D0', '#C0E6C8',
+  // Row 5: Cyan gradient (3% to 20% saturation)
+  '#F0F8F8', '#E8F5F5', '#E0F2F2', '#D8EFEF', '#D0ECEC', '#C8E9E9', '#C0E6E6',
+  // Row 6: Blue gradient (3% to 20% saturation)
+  '#F0F0F8', '#E8E8F5', '#E0E0F2', '#D8D8EF', '#D0D0EC', '#C8C8E9', '#C0C0E6',
+  // Row 7: Purple gradient (3% to 20% saturation)
+  '#F5F0F8', '#F2E8F5', '#EFE0F2', '#ECD8EF', '#E9D0EC', '#E6C8E9', '#E3C0E6',
+  // Row 8: Gray gradient (0% to 20% saturation)
+  '#FFFFFF', '#F8F8F8', '#F0F0F0', '#E8E8E8', '#E0E0E0', '#D8D8D8', '#D0D0D0'
 ]
 
 // Status options
-const statusOptions = [
-  { title: 'черновик', value: 'draft' },
-  { title: 'активна', value: 'active' },
-  { title: 'архивирована', value: 'archived' },
-  { title: 'отключена', value: 'disabled' },
-  { title: 'приостановлена', value: 'suspended' }
-]
+const statusOptions = computed(() => {
+  // Добавляем зависимость от locale для реактивности при смене языка
+  locale.value
+  
+  return [
+    { title: t('admin.catalog.editor.settings.status.options.draft'), value: 'draft' },
+    { title: t('admin.catalog.editor.settings.status.options.active'), value: 'active' },
+    { title: t('admin.catalog.editor.settings.status.options.archived'), value: 'archived' },
+    { title: t('admin.catalog.editor.settings.status.options.disabled'), value: 'disabled' },
+    { title: t('admin.catalog.editor.settings.status.options.suspended'), value: 'suspended' }
+  ]
+})
 
 // Validation rules
 const nameRules = [
-  (v: string) => !!v || 'название обязательно',
-  (v: string) => v.length >= 2 || 'название должно содержать минимум 2 символа',
-  (v: string) => v.length <= 100 || 'название не должно превышать 100 символов'
+  (v: string) => !!v || t('admin.catalog.editor.information.name.required'),
+  (v: string) => v.length >= 2 || t('admin.catalog.editor.information.name.minLength'),
+  (v: string) => v.length <= 100 || t('admin.catalog.editor.information.name.maxLength')
 ]
 
 const ownerRules = [
-  (v: string) => !!v || 'владелец обязателен',
-  (v: string) => v.length <= 50 || 'имя владельца не должно превышать 50 символов'
+  (v: string) => !!v || t('admin.catalog.editor.information.owner.required'),
+  (v: string) => v.length <= 50 || t('admin.catalog.editor.information.owner.maxLength')
 ]
 
 const backupOwnerRules = [
-  (v: string) => !v || v.length <= 50 || 'имя резервного владельца не должно превышать 50 символов'
+  (v: string) => !v || v.length <= 50 || t('admin.catalog.editor.information.backupOwner.maxLength')
 ]
 
 const descriptionRules = [
-  (v: string) => !v || v.length <= 1000 || 'описание не должно превышать 1000 символов'
+  (v: string) => !v || v.length <= 1000 || t('admin.catalog.editor.description.section.maxLength')
 ]
 
 const commentsRules = [
-  (v: string) => !v || v.length <= 500 || 'комментарии не должны превышать 500 символов'
+  (v: string) => !v || v.length <= 500 || t('admin.catalog.editor.description.comments.maxLength')
 ]
 
 const orderRules = [
-  (v: any) => !!v || 'порядковый номер обязателен',
-  (v: any) => /^\d+$/.test(v) || 'можно вводить только цифры',
-  (v: any) => parseInt(v) > 0 || 'номер должен быть больше 0'
+  (v: any) => !!v || t('admin.catalog.editor.information.order.required'),
+  (v: any) => /^\d+$/.test(v) || t('admin.catalog.editor.information.order.numbersOnly'),
+  (v: any) => parseInt(v) > 0 || t('admin.catalog.editor.information.order.positive')
 ]
 
 // Methods
@@ -186,7 +192,7 @@ const loadSectionData = () => {
 
 const createSection = async () => {
   if (!form.value?.validate()) {
-    uiStore.showErrorSnackbar('пожалуйста, заполните все обязательные поля')
+    uiStore.showErrorSnackbar(t('admin.catalog.editor.messages.validation.fillRequired'))
     return
   }
 
@@ -196,12 +202,12 @@ const createSection = async () => {
     // В реальном приложении здесь был бы запрос к API
     await new Promise(resolve => setTimeout(resolve, 1000))
     
-    uiStore.showSuccessSnackbar('секция успешно создана')
+    uiStore.showSuccessSnackbar(t('admin.catalog.editor.messages.create.success'))
     catalogStore.closeSectionEditor()
     
   } catch (error) {
     console.error('Error creating section:', error)
-    uiStore.showErrorSnackbar('ошибка при создании секции')
+    uiStore.showErrorSnackbar(t('admin.catalog.editor.messages.create.error'))
   } finally {
     isSubmitting.value = false
   }
@@ -209,7 +215,7 @@ const createSection = async () => {
 
 const updateSection = async () => {
   if (!form.value?.validate()) {
-    uiStore.showErrorSnackbar('пожалуйста, заполните все обязательные поля')
+    uiStore.showErrorSnackbar(t('admin.catalog.editor.messages.validation.fillRequired'))
     return
   }
 
@@ -219,12 +225,12 @@ const updateSection = async () => {
     // В реальном приложении здесь был бы запрос к API
     await new Promise(resolve => setTimeout(resolve, 1000))
     
-    uiStore.showSuccessSnackbar('секция успешно обновлена')
+    uiStore.showSuccessSnackbar(t('admin.catalog.editor.messages.update.success'))
     catalogStore.closeSectionEditor()
     
   } catch (error) {
     console.error('Error updating section:', error)
-    uiStore.showErrorSnackbar('ошибка при обновлении секции')
+    uiStore.showErrorSnackbar(t('admin.catalog.editor.messages.update.error'))
   } finally {
     isSubmitting.value = false
   }
@@ -247,9 +253,9 @@ const openBackupOwnerSelector = () => {
 const handleOwnerSelected = async (result: any) => {
   if (result && result.success && result.selectedUser && result.selectedUser.name) {
     formData.value.owner = result.selectedUser.name
-    uiStore.showSuccessSnackbar('владелец успешно выбран')
+    uiStore.showSuccessSnackbar(t('admin.catalog.editor.messages.owner.selected'))
   } else {
-    uiStore.showErrorSnackbar(result?.message || 'ошибка при выборе владельца')
+    uiStore.showErrorSnackbar(result?.message || t('admin.catalog.editor.messages.owner.error'))
   }
   showOwnerSelector.value = false
 }
@@ -257,9 +263,9 @@ const handleOwnerSelected = async (result: any) => {
 const handleBackupOwnerSelected = async (result: any) => {
   if (result && result.success && result.selectedUser && result.selectedUser.name) {
     formData.value.backupOwner = result.selectedUser.name
-    uiStore.showSuccessSnackbar('резервный владелец успешно выбран')
+    uiStore.showSuccessSnackbar(t('admin.catalog.editor.messages.backupOwner.selected'))
   } else {
-    uiStore.showErrorSnackbar(result?.message || 'ошибка при выборе резервного владельца')
+    uiStore.showErrorSnackbar(result?.message || t('admin.catalog.editor.messages.backupOwner.error'))
   }
   showBackupOwnerSelector.value = false
 }
@@ -285,6 +291,12 @@ const getRgbFromHex = (hex: string) => {
   }
   return 'rgb(0, 0, 0)'
 }
+
+// Watch for language changes to force re-render
+watch(locale, () => {
+  // Force re-computation of status options when language changes
+  console.log('Language changed to:', locale.value)
+})
 
 // Lifecycle
 onMounted(() => {
@@ -319,7 +331,7 @@ onMounted(() => {
                 <v-col cols="12">
                   <div class="card-header">
                     <v-card-title class="text-subtitle-1">
-                      информация
+                      {{ t('admin.catalog.editor.information.title') }}
                     </v-card-title>
                     <v-divider class="section-divider" />
                   </div>
@@ -332,7 +344,7 @@ onMounted(() => {
                     >
                       <v-text-field
                         v-model="formData.order"
-                        label="порядковый N"
+                        :label="t('admin.catalog.editor.information.order.label')"
                         variant="outlined"
                         density="comfortable"
                         type="number"
@@ -347,7 +359,7 @@ onMounted(() => {
                     >
                       <v-text-field
                         v-model="formData.name"
-                        label="название секции"
+                        :label="t('admin.catalog.editor.information.name.label')"
                         :rules="nameRules"
                         variant="outlined"
                         density="comfortable"
@@ -365,7 +377,7 @@ onMounted(() => {
                       <div class="d-flex align-center">
                         <v-text-field
                           v-model="formData.owner"
-                          label="владелец"
+                          :label="t('admin.catalog.editor.information.owner.label')"
                           :rules="ownerRules"
                           readonly
                           append-inner-icon="mdi-account-search"
@@ -381,7 +393,7 @@ onMounted(() => {
                       <div class="d-flex align-center">
                         <v-text-field
                           v-model="formData.backupOwner"
-                          label="резервный владелец"
+                          :label="t('admin.catalog.editor.information.backupOwner.label')"
                           readonly
                           append-inner-icon="mdi-account-search"
                           @click:append-inner="showBackupOwnerSelector = true"
@@ -395,7 +407,7 @@ onMounted(() => {
                 <v-col cols="12">
                   <div class="card-header mt-6">
                     <v-card-title class="text-subtitle-1">
-                      настройки
+                      {{ t('admin.catalog.editor.settings.title') }}
                     </v-card-title>
                     <v-divider class="section-divider" />
                   </div>
@@ -407,7 +419,7 @@ onMounted(() => {
                     >
                       <v-select
                         v-model="formData.status"
-                        label="статус"
+                        :label="t('admin.catalog.editor.settings.status.label')"
                         variant="outlined"
                         density="comfortable"
                         :items="statusOptions"
@@ -421,7 +433,7 @@ onMounted(() => {
                     >
                       <v-checkbox
                         v-model="formData.isPublic"
-                        label="публичная секция"
+                        :label="t('admin.catalog.editor.settings.isPublic.label')"
                         variant="outlined"
                         density="comfortable"
                       />
@@ -433,11 +445,11 @@ onMounted(() => {
                       <div class="color-picker-container">
                         <v-text-field
                           v-model="formData.color"
-                          label="цвет фона"
+                          :label="t('admin.catalog.editor.settings.color.label')"
                           variant="outlined"
                           density="comfortable"
                           placeholder="#1976D2"
-                          :rules="[v => /^#[0-9A-Fa-f]{6}$/.test(v) || 'введите корректный hex-код цвета']"
+                          :rules="[v => /^#[0-9A-Fa-f]{6}$/.test(v) || t('admin.catalog.editor.settings.color.picker.validHex')]"
                         >
                           <template #prepend-inner>
                             <div
@@ -465,7 +477,7 @@ onMounted(() => {
                         >
                           <v-card>
                             <v-card-title class="text-subtitle-1">
-                              выбор цвета фона
+                              {{ t('admin.catalog.editor.settings.color.picker.title') }}
                             </v-card-title>
                             <v-card-text>
                               <div class="color-picker-content">
@@ -483,7 +495,7 @@ onMounted(() => {
                                 
                                 <!-- Preset Colors -->
                                 <div class="preset-colors mb-4">
-                                  <div class="preset-title mb-2">базовые цвета:</div>
+                                  <div class="preset-title mb-2">{{ t('admin.catalog.editor.settings.color.picker.basicColors') }}</div>
                                   <div class="color-grid">
                                     <div
                                       v-for="(color, index) in presetColors"
@@ -499,14 +511,14 @@ onMounted(() => {
                                 
                                 <!-- Custom Color Input -->
                                 <div class="custom-color-input">
-                                  <div class="input-title mb-2">пользовательский цвет:</div>
+                                  <div class="input-title mb-2">{{ t('admin.catalog.editor.settings.color.picker.customColor') }}</div>
                                   <v-text-field
                                     v-model="selectedColor"
-                                    label="hex код"
+                                    :label="t('admin.catalog.editor.settings.color.picker.hexCode')"
                                     variant="outlined"
                                     density="compact"
                                     placeholder="#000000"
-                                    :rules="[v => /^#[0-9A-Fa-f]{6}$/.test(v) || 'корректный hex-код']"
+                                    :rules="[v => /^#[0-9A-Fa-f]{6}$/.test(v) || t('admin.catalog.editor.settings.color.picker.validHex')]"
                                   />
                                 </div>
                               </div>
@@ -518,14 +530,14 @@ onMounted(() => {
                                 variant="text"
                                 @click="showColorPicker = false"
                               >
-                                отмена
+                                {{ t('admin.catalog.editor.actions.cancel') }}
                               </v-btn>
                               <v-btn
                                 color="teal"
                                 variant="text"
                                 @click="applyColor"
                               >
-                                применить
+                                {{ t('admin.catalog.editor.actions.save') }}
                               </v-btn>
                             </v-card-actions>
                           </v-card>
@@ -539,7 +551,7 @@ onMounted(() => {
                 <v-col cols="12">
                   <div class="card-header mt-6">
                     <v-card-title class="text-subtitle-1">
-                      описание
+                      {{ t('admin.catalog.editor.description.title') }}
                     </v-card-title>
                     <v-divider class="section-divider" />
                   </div>
@@ -548,7 +560,7 @@ onMounted(() => {
                     <v-col cols="12">
                       <v-textarea
                         v-model="formData.description"
-                        label="описание секции"
+                        :label="t('admin.catalog.editor.description.section.label')"
                         :rules="descriptionRules"
                         variant="outlined"
                         rows="3"
@@ -562,7 +574,7 @@ onMounted(() => {
                     <v-col cols="12">
                       <v-textarea
                         v-model="formData.comments"
-                        label="комментарии"
+                        :label="t('admin.catalog.editor.description.comments.label')"
                         :rules="commentsRules"
                         variant="outlined"
                         rows="3"
@@ -583,7 +595,7 @@ onMounted(() => {
         <!-- Actions section -->
         <div class="side-bar-section">
           <h3 class="text-subtitle-2 px-2 py-2">
-            действия
+            {{ t('admin.catalog.editor.actions.title') }}
           </h3>
           
           <!-- Create button (visible only in creation mode) -->
@@ -596,7 +608,7 @@ onMounted(() => {
             class="mb-3"
             @click="createSection"
           >
-            создать
+            {{ t('admin.catalog.editor.actions.create') }}
           </v-btn>
 
           <!-- Update button (visible only in edit mode) -->
@@ -609,7 +621,7 @@ onMounted(() => {
             class="mb-3"
             @click="updateSection"
           >
-            сохранить
+            {{ t('admin.catalog.editor.actions.save') }}
           </v-btn>
 
           <!-- Cancel button (visible always) -->
@@ -620,7 +632,7 @@ onMounted(() => {
             class="mb-3"
             @click="cancelEdit"
           >
-            отменить
+            {{ t('admin.catalog.editor.actions.cancel') }}
           </v-btn>
         </div>
       </div>
@@ -634,12 +646,12 @@ onMounted(() => {
     max-width="700"
   >
     <ItemSelector 
-      title="выбор владельца секции каталога"
+      :title="t('admin.catalog.editor.information.owner.select')"
       search-service="searchUsers"
       action-service="returnSelectedUsername"
       :max-results="20"
       :max-items="1"
-      action-button-text="выбрать"
+      :action-button-text="t('admin.catalog.editor.actions.save')"
       @close="showOwnerSelector = false" 
       @action-performed="handleOwnerSelected"
     />
@@ -651,12 +663,12 @@ onMounted(() => {
     max-width="700"
   >
     <ItemSelector 
-      title="выбор резервного владельца секции каталога"
+      :title="t('admin.catalog.editor.information.backupOwner.select')"
       search-service="searchUsers"
       action-service="returnSelectedUsername"
       :max-results="20"
       :max-items="1"
-      action-button-text="выбрать"
+      :action-button-text="t('admin.catalog.editor.actions.save')"
       @close="showBackupOwnerSelector = false" 
       @action-performed="handleBackupOwnerSelected"
     />
