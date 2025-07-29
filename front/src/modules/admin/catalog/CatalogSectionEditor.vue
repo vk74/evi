@@ -60,7 +60,7 @@ const formData = ref({
   order: 1,
   status: 'draft' as 'draft' | 'active' | 'archived' | 'disabled' | 'suspended',
   isPublic: false,
-  color: '#1976D2',
+  color: '#FFFFFF',
   description: '',
   comments: ''
 })
@@ -90,12 +90,24 @@ const mockSection = ref<CatalogSection>({
   color: '#FF9800'
 })
 
-// Preset colors for quick selection
+// Preset colors for quick selection - 8 rows of 7 colors each (56 colors)
 const presetColors = [
-  '#1976D2', '#2196F3', '#03A9F4', '#00BCD4', '#009688',
-  '#4CAF50', '#8BC34A', '#CDDC39', '#FFEB3B', '#FFC107',
-  '#FF9800', '#FF5722', '#F44336', '#E91E63', '#9C27B0',
-  '#673AB7', '#3F51B5', '#607D8B', '#795548', '#9E9E9E'
+  // Row 1: Red gradient (from very light red to light red)
+  '#FEF5F5', '#FDF0F0', '#FCEAEA', '#FBE0E0', '#FAD5D5', '#F9CBCB', '#F8C0C0',
+  // Row 2: Orange gradient
+  '#FEF8F5', '#FDF3F0', '#FCF1EA', '#FBE9E0', '#FAE2D5', '#F9DACB', '#F8D3C0',
+  // Row 3: Yellow gradient
+  '#FEFDF5', '#FDF8F0', '#FCFCEA', '#FBFBE0', '#FAFAD5', '#F9F9CB', '#F8F8C0',
+  // Row 4: Green (teal) gradient
+  '#F0FEF8', '#E8FDF3', '#E0FCF1', '#D8FBE9', '#D0FAE2', '#C8F9DA', '#C0F8D3',
+  // Row 5: Cyan gradient
+  '#F5FEFD', '#F0FDF8', '#EAFCFC', '#E0FBFB', '#D5FAFA', '#CBF9F9', '#C0F8F8',
+  // Row 6: Blue gradient
+  '#F5F8FE', '#F0F3FD', '#EAF1FC', '#E0E9FB', '#D5E2FA', '#CBDAF9', '#C0D3F8',
+  // Row 7: Purple gradient
+  '#F8F5FE', '#F3F0FD', '#F1EAFB', '#E9E0FA', '#E2D5F9', '#DACBF8', '#D3C0F7',
+  // Row 8: Gray gradient (starting with white)
+  '#FFFFFF', '#F8F8F8', '#F1F1F1', '#EAEAEA', '#E3E3E3', '#DCDCDC', '#D5D5D5'
 ]
 
 // Status options
@@ -131,6 +143,12 @@ const commentsRules = [
   (v: string) => !v || v.length <= 500 || 'комментарии не должны превышать 500 символов'
 ]
 
+const orderRules = [
+  (v: any) => !!v || 'порядковый номер обязателен',
+  (v: any) => /^\d+$/.test(v) || 'можно вводить только цифры',
+  (v: any) => parseInt(v) > 0 || 'номер должен быть больше 0'
+]
+
 // Methods
 const resetForm = () => {
   formData.value = {
@@ -140,7 +158,7 @@ const resetForm = () => {
     order: 1,
     status: 'draft',
     isPublic: false,
-    color: '#1976D2',
+    color: '#FFFFFF',
     description: '',
     comments: ''
   }
@@ -309,7 +327,23 @@ onMounted(() => {
                   <v-row class="pt-3">
                     <v-col
                       cols="12"
-                      md="6"
+                      md="auto"
+                      style="width: 350px;"
+                    >
+                      <v-text-field
+                        v-model="formData.order"
+                        label="порядковый N"
+                        variant="outlined"
+                        density="comfortable"
+                        type="number"
+                        min="1"
+                        :rules="orderRules"
+                      />
+                    </v-col>
+                    <v-col
+                      cols="12"
+                      md="auto"
+                      style="flex-grow: 1;"
                     >
                       <v-text-field
                         v-model="formData.name"
@@ -319,19 +353,6 @@ onMounted(() => {
                         density="comfortable"
                         counter="100"
                         required
-                      />
-                    </v-col>
-                    <v-col
-                      cols="12"
-                      md="6"
-                    >
-                      <v-text-field
-                        v-model="formData.order"
-                        label="порядковый номер"
-                        variant="outlined"
-                        density="comfortable"
-                        type="number"
-                        min="1"
                       />
                     </v-col>
                   </v-row>
@@ -345,9 +366,11 @@ onMounted(() => {
                         <v-text-field
                           v-model="formData.owner"
                           label="владелец"
+                          :rules="ownerRules"
                           readonly
                           append-inner-icon="mdi-account-search"
                           @click:append-inner="showOwnerSelector = true"
+                          required
                         />
                       </div>
                     </v-col>
@@ -438,11 +461,11 @@ onMounted(() => {
                         <!-- Custom Color Picker Dialog -->
                         <v-dialog
                           v-model="showColorPicker"
-                          max-width="400"
+                          max-width="600"
                         >
                           <v-card>
                             <v-card-title class="text-subtitle-1">
-                              выбор цвета
+                              выбор цвета фона
                             </v-card-title>
                             <v-card-text>
                               <div class="color-picker-content">
@@ -463,7 +486,7 @@ onMounted(() => {
                                   <div class="preset-title mb-2">базовые цвета:</div>
                                   <div class="color-grid">
                                     <div
-                                      v-for="color in presetColors"
+                                      v-for="(color, index) in presetColors"
                                       :key="color"
                                       class="color-swatch"
                                       :style="{ backgroundColor: color }"
@@ -471,6 +494,8 @@ onMounted(() => {
                                     />
                                   </div>
                                 </div>
+                                
+
                                 
                                 <!-- Custom Color Input -->
                                 <div class="custom-color-input">
@@ -532,18 +557,8 @@ onMounted(() => {
                       />
                     </v-col>
                   </v-row>
-                </v-col>
-
-                <!-- Comments section -->
-                <v-col cols="12">
-                  <div class="card-header mt-6">
-                    <v-card-title class="text-subtitle-1">
-                      комментарии
-                    </v-card-title>
-                    <v-divider class="section-divider" />
-                  </div>
-
-                  <v-row class="pt-3">
+                  
+                  <v-row>
                     <v-col cols="12">
                       <v-textarea
                         v-model="formData.comments"
@@ -729,7 +744,7 @@ onMounted(() => {
 
 .color-grid {
   display: grid;
-  grid-template-columns: repeat(5, 1fr);
+  grid-template-columns: repeat(7, 1fr);
   gap: 8px;
 }
 
@@ -746,6 +761,8 @@ onMounted(() => {
   transform: scale(1.1);
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
 }
+
+
 
 /* Content container */
 .content-container {
