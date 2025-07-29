@@ -8,6 +8,7 @@
   - Edit existing sections
   - Form validation
   - Color picker for background color
+  - User selection via ItemSelector
   - Two modes: creation and edit
 -->
 
@@ -16,19 +17,20 @@ import { ref, computed, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useCatalogAdminStore } from './state.catalog.admin'
 import { useUiStore } from '@/core/state/uistate'
+import ItemSelector from '@/core/ui/modals/item-selector/ItemSelector.vue'
 
 // Types
 interface CatalogSection {
   id: string
   name: string
-  icon: string
   owner: string
-  techOwner: string
-  status: 'active' | 'inactive'
-  color: string
+  backupOwner: string
+  description: string
   comments: string
-  isDefault: boolean
+  status: 'draft' | 'active' | 'archived' | 'disabled' | 'suspended'
+  isPublic: boolean
   order: number
+  color: string
 }
 
 // Initialize stores and i18n
@@ -46,15 +48,21 @@ const hasInteracted = ref(false)
 const showColorPicker = ref(false)
 const selectedColor = ref('#1976D2')
 
+// ItemSelector state
+const showOwnerSelector = ref(false)
+const showBackupOwnerSelector = ref(false)
+
 // Form data
 const formData = ref({
   name: '',
   owner: '',
-  techOwner: '',
-  status: 'active' as 'active' | 'inactive',
+  backupOwner: '',
+  order: 1,
+  status: 'draft' as 'draft' | 'active' | 'archived' | 'disabled' | 'suspended',
+  isPublic: false,
   color: '#1976D2',
-  comments: '',
-  order: 1
+  description: '',
+  comments: ''
 })
 
 // Computed properties
@@ -64,22 +72,22 @@ const editingSectionId = computed(() => catalogStore.getEditingSectionId)
 
 const pageTitle = computed(() => {
   return isCreationMode.value 
-    ? 'Создание новой секции' 
-    : 'Изменение секции'
+    ? 'создание новой секции' 
+    : 'изменение секции'
 })
 
 // Mock data for demonstration (in real app this would come from API)
 const mockSection = ref<CatalogSection>({
   id: 'section-1',
-  name: 'Тестовая секция',
-  icon: 'mdi-star',
+  name: 'тестовая секция',
   owner: 'admin',
-  techOwner: 'tech-admin',
+  backupOwner: 'backup-admin',
+  description: 'описание тестовой секции',
+  comments: 'комментарии к тестовой секции',
   status: 'active',
-  color: '#FF9800',
-  comments: 'Тестовая секция для демонстрации',
-  isDefault: false,
-  order: 1
+  isPublic: true,
+  order: 1,
+  color: '#FF9800'
 })
 
 // Preset colors for quick selection
@@ -90,25 +98,37 @@ const presetColors = [
   '#673AB7', '#3F51B5', '#607D8B', '#795548', '#9E9E9E'
 ]
 
+// Status options
+const statusOptions = [
+  { title: 'черновик', value: 'draft' },
+  { title: 'активна', value: 'active' },
+  { title: 'архивирована', value: 'archived' },
+  { title: 'отключена', value: 'disabled' },
+  { title: 'приостановлена', value: 'suspended' }
+]
+
 // Validation rules
 const nameRules = [
-  (v: string) => !!v || 'Название обязательно',
-  (v: string) => v.length >= 2 || 'Название должно содержать минимум 2 символа',
-  (v: string) => v.length <= 100 || 'Название не должно превышать 100 символов'
+  (v: string) => !!v || 'название обязательно',
+  (v: string) => v.length >= 2 || 'название должно содержать минимум 2 символа',
+  (v: string) => v.length <= 100 || 'название не должно превышать 100 символов'
 ]
 
 const ownerRules = [
-  (v: string) => !!v || 'Владелец обязателен',
-  (v: string) => v.length <= 50 || 'Имя владельца не должно превышать 50 символов'
+  (v: string) => !!v || 'владелец обязателен',
+  (v: string) => v.length <= 50 || 'имя владельца не должно превышать 50 символов'
 ]
 
-const techOwnerRules = [
-  (v: string) => !!v || 'Тех. владелец обязателен',
-  (v: string) => v.length <= 50 || 'Имя тех. владельца не должно превышать 50 символов'
+const backupOwnerRules = [
+  (v: string) => !v || v.length <= 50 || 'имя резервного владельца не должно превышать 50 символов'
+]
+
+const descriptionRules = [
+  (v: string) => !v || v.length <= 1000 || 'описание не должно превышать 1000 символов'
 ]
 
 const commentsRules = [
-  (v: string) => !v || v.length <= 500 || 'Комментарии не должны превышать 500 символов'
+  (v: string) => !v || v.length <= 500 || 'комментарии не должны превышать 500 символов'
 ]
 
 // Methods
@@ -116,11 +136,13 @@ const resetForm = () => {
   formData.value = {
     name: '',
     owner: '',
-    techOwner: '',
-    status: 'active',
+    backupOwner: '',
+    order: 1,
+    status: 'draft',
+    isPublic: false,
     color: '#1976D2',
-    comments: '',
-    order: 1
+    description: '',
+    comments: ''
   }
   form.value?.reset()
   hasInteracted.value = false
@@ -133,18 +155,20 @@ const loadSectionData = () => {
     formData.value = {
       name: mockSection.value.name,
       owner: mockSection.value.owner,
-      techOwner: mockSection.value.techOwner,
+      backupOwner: mockSection.value.backupOwner,
+      order: mockSection.value.order,
       status: mockSection.value.status,
+      isPublic: mockSection.value.isPublic,
       color: mockSection.value.color,
-      comments: mockSection.value.comments,
-      order: mockSection.value.order
+      description: mockSection.value.description,
+      comments: mockSection.value.comments
     }
   }
 }
 
 const createSection = async () => {
   if (!form.value?.validate()) {
-    uiStore.showErrorSnackbar('Пожалуйста, заполните все обязательные поля')
+    uiStore.showErrorSnackbar('пожалуйста, заполните все обязательные поля')
     return
   }
 
@@ -154,12 +178,12 @@ const createSection = async () => {
     // В реальном приложении здесь был бы запрос к API
     await new Promise(resolve => setTimeout(resolve, 1000))
     
-    uiStore.showSuccessSnackbar('Секция успешно создана')
+    uiStore.showSuccessSnackbar('секция успешно создана')
     catalogStore.closeSectionEditor()
     
   } catch (error) {
     console.error('Error creating section:', error)
-    uiStore.showErrorSnackbar('Ошибка при создании секции')
+    uiStore.showErrorSnackbar('ошибка при создании секции')
   } finally {
     isSubmitting.value = false
   }
@@ -167,7 +191,7 @@ const createSection = async () => {
 
 const updateSection = async () => {
   if (!form.value?.validate()) {
-    uiStore.showErrorSnackbar('Пожалуйста, заполните все обязательные поля')
+    uiStore.showErrorSnackbar('пожалуйста, заполните все обязательные поля')
     return
   }
 
@@ -177,12 +201,12 @@ const updateSection = async () => {
     // В реальном приложении здесь был бы запрос к API
     await new Promise(resolve => setTimeout(resolve, 1000))
     
-    uiStore.showSuccessSnackbar('Секция успешно обновлена')
+    uiStore.showSuccessSnackbar('секция успешно обновлена')
     catalogStore.closeSectionEditor()
     
   } catch (error) {
     console.error('Error updating section:', error)
-    uiStore.showErrorSnackbar('Ошибка при обновлении секции')
+    uiStore.showErrorSnackbar('ошибка при обновлении секции')
   } finally {
     isSubmitting.value = false
   }
@@ -190,6 +214,36 @@ const updateSection = async () => {
 
 const cancelEdit = () => {
   catalogStore.closeSectionEditor()
+}
+
+// ItemSelector methods
+const openOwnerSelector = () => {
+  showOwnerSelector.value = true
+}
+
+const openBackupOwnerSelector = () => {
+  showBackupOwnerSelector.value = true
+}
+
+// Исправленные обработчики
+const handleOwnerSelected = async (result: any) => {
+  if (result && result.success && result.selectedUser && result.selectedUser.name) {
+    formData.value.owner = result.selectedUser.name
+    uiStore.showSuccessSnackbar('владелец успешно выбран')
+  } else {
+    uiStore.showErrorSnackbar(result?.message || 'ошибка при выборе владельца')
+  }
+  showOwnerSelector.value = false
+}
+
+const handleBackupOwnerSelected = async (result: any) => {
+  if (result && result.success && result.selectedUser && result.selectedUser.name) {
+    formData.value.backupOwner = result.selectedUser.name
+    uiStore.showSuccessSnackbar('резервный владелец успешно выбран')
+  } else {
+    uiStore.showErrorSnackbar(result?.message || 'ошибка при выборе резервного владельца')
+  }
+  showBackupOwnerSelector.value = false
 }
 
 // Color picker methods
@@ -225,6 +279,13 @@ onMounted(() => {
 
 <template>
   <v-container class="pa-0">
+    <!-- Form header -->
+    <div class="form-header mb-4">
+      <h2 class="text-h5 font-weight-medium">
+        {{ pageTitle }}
+      </h2>
+    </div>
+    
     <!-- Work area with main form -->
     <div class="d-flex">
       <!-- Main content (left part) -->
@@ -236,11 +297,11 @@ onMounted(() => {
               v-model="isFormValid"
             >
               <v-row>
-                <!-- Basic information section -->
+                <!-- Information section -->
                 <v-col cols="12">
                   <div class="card-header">
                     <v-card-title class="text-subtitle-1">
-                      {{ pageTitle }}
+                      информация
                     </v-card-title>
                     <v-divider class="section-divider" />
                   </div>
@@ -252,7 +313,7 @@ onMounted(() => {
                     >
                       <v-text-field
                         v-model="formData.name"
-                        label="Название секции"
+                        label="название секции"
                         :rules="nameRules"
                         variant="outlined"
                         density="comfortable"
@@ -266,54 +327,43 @@ onMounted(() => {
                     >
                       <v-text-field
                         v-model="formData.order"
-                        label="Порядковый номер"
+                        label="порядковый номер"
                         variant="outlined"
                         density="comfortable"
                         type="number"
-                        readonly
-                        disabled
+                        min="1"
                       />
                     </v-col>
                   </v-row>
-                </v-col>
 
-                <!-- Ownership section -->
-                <v-col cols="12">
-                  <div class="card-header mt-6">
-                    <v-card-title class="text-subtitle-1">
-                      Владение
-                    </v-card-title>
-                    <v-divider class="section-divider" />
-                  </div>
-
-                  <v-row class="pt-3">
+                  <v-row>
                     <v-col
                       cols="12"
                       md="6"
                     >
-                      <v-text-field
-                        v-model="formData.owner"
-                        label="Владелец"
-                        :rules="ownerRules"
-                        variant="outlined"
-                        density="comfortable"
-                        counter="50"
-                        required
-                      />
+                      <div class="d-flex align-center">
+                        <v-text-field
+                          v-model="formData.owner"
+                          label="владелец"
+                          readonly
+                          append-inner-icon="mdi-account-search"
+                          @click:append-inner="showOwnerSelector = true"
+                        />
+                      </div>
                     </v-col>
                     <v-col
                       cols="12"
                       md="6"
                     >
-                      <v-text-field
-                        v-model="formData.techOwner"
-                        label="Тех. владелец"
-                        :rules="techOwnerRules"
-                        variant="outlined"
-                        density="comfortable"
-                        counter="50"
-                        required
-                      />
+                      <div class="d-flex align-center">
+                        <v-text-field
+                          v-model="formData.backupOwner"
+                          label="резервный владелец"
+                          readonly
+                          append-inner-icon="mdi-account-search"
+                          @click:append-inner="showBackupOwnerSelector = true"
+                        />
+                      </div>
                     </v-col>
                   </v-row>
                 </v-col>
@@ -322,7 +372,7 @@ onMounted(() => {
                 <v-col cols="12">
                   <div class="card-header mt-6">
                     <v-card-title class="text-subtitle-1">
-                      Настройки
+                      настройки
                     </v-card-title>
                     <v-divider class="section-divider" />
                   </div>
@@ -330,33 +380,41 @@ onMounted(() => {
                   <v-row class="pt-3">
                     <v-col
                       cols="12"
-                      md="6"
+                      md="4"
                     >
                       <v-select
                         v-model="formData.status"
-                        label="Статус"
+                        label="статус"
                         variant="outlined"
                         density="comfortable"
-                        :items="[
-                          { title: 'Активна', value: 'active' },
-                          { title: 'Неактивна', value: 'inactive' }
-                        ]"
+                        :items="statusOptions"
                         item-title="title"
                         item-value="value"
                       />
                     </v-col>
                     <v-col
                       cols="12"
-                      md="6"
+                      md="4"
+                    >
+                      <v-checkbox
+                        v-model="formData.isPublic"
+                        label="публичная секция"
+                        variant="outlined"
+                        density="comfortable"
+                      />
+                    </v-col>
+                    <v-col
+                      cols="12"
+                      md="4"
                     >
                       <div class="color-picker-container">
                         <v-text-field
                           v-model="formData.color"
-                          label="Цвет фона"
+                          label="цвет фона"
                           variant="outlined"
                           density="comfortable"
                           placeholder="#1976D2"
-                          :rules="[v => /^#[0-9A-Fa-f]{6}$/.test(v) || 'Введите корректный hex-код цвета']"
+                          :rules="[v => /^#[0-9A-Fa-f]{6}$/.test(v) || 'введите корректный hex-код цвета']"
                         >
                           <template #prepend-inner>
                             <div
@@ -384,7 +442,7 @@ onMounted(() => {
                         >
                           <v-card>
                             <v-card-title class="text-subtitle-1">
-                              Выбор цвета
+                              выбор цвета
                             </v-card-title>
                             <v-card-text>
                               <div class="color-picker-content">
@@ -402,7 +460,7 @@ onMounted(() => {
                                 
                                 <!-- Preset Colors -->
                                 <div class="preset-colors mb-4">
-                                  <div class="preset-title mb-2">Базовые цвета:</div>
+                                  <div class="preset-title mb-2">базовые цвета:</div>
                                   <div class="color-grid">
                                     <div
                                       v-for="color in presetColors"
@@ -416,14 +474,14 @@ onMounted(() => {
                                 
                                 <!-- Custom Color Input -->
                                 <div class="custom-color-input">
-                                  <div class="input-title mb-2">Пользовательский цвет:</div>
+                                  <div class="input-title mb-2">пользовательский цвет:</div>
                                   <v-text-field
                                     v-model="selectedColor"
-                                    label="Hex код"
+                                    label="hex код"
                                     variant="outlined"
                                     density="compact"
                                     placeholder="#000000"
-                                    :rules="[v => /^#[0-9A-Fa-f]{6}$/.test(v) || 'Корректный hex-код']"
+                                    :rules="[v => /^#[0-9A-Fa-f]{6}$/.test(v) || 'корректный hex-код']"
                                   />
                                 </div>
                               </div>
@@ -435,14 +493,14 @@ onMounted(() => {
                                 variant="text"
                                 @click="showColorPicker = false"
                               >
-                                Отмена
+                                отмена
                               </v-btn>
                               <v-btn
                                 color="teal"
                                 variant="text"
                                 @click="applyColor"
                               >
-                                Применить
+                                применить
                               </v-btn>
                             </v-card-actions>
                           </v-card>
@@ -452,11 +510,35 @@ onMounted(() => {
                   </v-row>
                 </v-col>
 
+                <!-- Description section -->
+                <v-col cols="12">
+                  <div class="card-header mt-6">
+                    <v-card-title class="text-subtitle-1">
+                      описание
+                    </v-card-title>
+                    <v-divider class="section-divider" />
+                  </div>
+
+                  <v-row class="pt-3">
+                    <v-col cols="12">
+                      <v-textarea
+                        v-model="formData.description"
+                        label="описание секции"
+                        :rules="descriptionRules"
+                        variant="outlined"
+                        rows="3"
+                        counter="1000"
+                        no-resize
+                      />
+                    </v-col>
+                  </v-row>
+                </v-col>
+
                 <!-- Comments section -->
                 <v-col cols="12">
                   <div class="card-header mt-6">
                     <v-card-title class="text-subtitle-1">
-                      Комментарии
+                      комментарии
                     </v-card-title>
                     <v-divider class="section-divider" />
                   </div>
@@ -465,7 +547,7 @@ onMounted(() => {
                     <v-col cols="12">
                       <v-textarea
                         v-model="formData.comments"
-                        label="Комментарии"
+                        label="комментарии"
                         :rules="commentsRules"
                         variant="outlined"
                         rows="3"
@@ -486,7 +568,7 @@ onMounted(() => {
         <!-- Actions section -->
         <div class="side-bar-section">
           <h3 class="text-subtitle-2 px-2 py-2">
-            Действия
+            действия
           </h3>
           
           <!-- Create button (visible only in creation mode) -->
@@ -499,7 +581,7 @@ onMounted(() => {
             class="mb-3"
             @click="createSection"
           >
-            Создать
+            создать
           </v-btn>
 
           <!-- Update button (visible only in edit mode) -->
@@ -512,7 +594,7 @@ onMounted(() => {
             class="mb-3"
             @click="updateSection"
           >
-            Сохранить
+            сохранить
           </v-btn>
 
           <!-- Cancel button (visible always) -->
@@ -523,12 +605,47 @@ onMounted(() => {
             class="mb-3"
             @click="cancelEdit"
           >
-            Отменить
+            отменить
           </v-btn>
         </div>
       </div>
     </div>
+
   </v-container>
+
+  <!-- Модальное окно для выбора владельца -->
+  <v-dialog
+    v-model="showOwnerSelector"
+    max-width="700"
+  >
+    <ItemSelector 
+      title="выбор владельца секции каталога"
+      search-service="searchUsers"
+      action-service="returnSelectedUsername"
+      :max-results="20"
+      :max-items="1"
+      action-button-text="выбрать"
+      @close="showOwnerSelector = false" 
+      @action-performed="handleOwnerSelected"
+    />
+  </v-dialog>
+
+  <!-- Модальное окно для выбора резервного владельца -->
+  <v-dialog
+    v-model="showBackupOwnerSelector"
+    max-width="700"
+  >
+    <ItemSelector 
+      title="выбор резервного владельца секции каталога"
+      search-service="searchUsers"
+      action-service="returnSelectedUsername"
+      :max-results="20"
+      :max-items="1"
+      action-button-text="выбрать"
+      @close="showBackupOwnerSelector = false" 
+      @action-performed="handleBackupOwnerSelected"
+    />
+  </v-dialog>
 </template>
 
 <style scoped>

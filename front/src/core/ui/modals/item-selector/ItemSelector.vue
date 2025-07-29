@@ -27,6 +27,7 @@ import { ItemSelectorItem } from './types.item.selector'
 import searchUsers from '@/core/ui/modals/item-selector/service.search.users'
 import addUsersToGroup from '@/core/ui/modals/item-selector/service.add.users.to.group'
 import changeGroupOwner from './service.change.group.owner'
+import returnSelectedUsername from './service.return.selected.username'
 // При добавлении новых сервисов, импортируйте их здесь
 
 // Маппинг имен сервисов в функции
@@ -38,6 +39,7 @@ const searchServiceMap = {
 const actionServiceMap = {
   addUsersToGroup: addUsersToGroup,
   changeGroupOwner: changeGroupOwner,
+  returnSelectedUsername: returnSelectedUsername,
   // Добавьте новые сервисы действий здесь
 }
 
@@ -237,8 +239,9 @@ const handleAction = async () => {
       throw new Error(`Сервис действия "${props.actionService}" не найден`)
     }
     
-    // Вызываем сервис действия с UUID выбранных элементов
-    const result = await actionServiceFn(selectedItems.value.map(item => item.uuid))
+    // Вызываем сервис действия с UUID выбранных элементов и всеми результатами поиска (включая выбранные)
+    const allSearchResults = [...searchResultItems.value, ...selectedItems.value]
+    const result = await actionServiceFn(selectedItems.value.map(item => item.uuid), allSearchResults)
     console.log('[ItemSelector] Результат действия:', result)
     
     if (result.success) {
