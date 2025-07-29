@@ -6,11 +6,12 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, markRaw } from 'vue'
 import { useCatalogAdminStore } from './state.catalog.admin'
-import type { Section, CatalogSectionId } from './types.catalog.admin'
+import type { Section } from './types.catalog.admin'
 
 // Импорты компонентов секций
 import CatalogSections from './sections/Catalog.Sections.vue'
 import CatalogSettings from './sections/Catalog.Settings.vue'
+import CatalogSectionEditor from './CatalogSectionEditor.vue'
 
 // Импортируем Phosphor иконки
 import { 
@@ -48,15 +49,16 @@ const sections: Section[] = [
 // Map section IDs to components
 const sectionComponents = {
   'Catalog.Sections': markRaw(CatalogSections),
-  'Catalog.Settings': markRaw(CatalogSettings)
+  'Catalog.Settings': markRaw(CatalogSettings),
+  'CatalogSectionEditor': markRaw(CatalogSectionEditor)
 }
 
 // Mobile menu state
 const isMobileMenuOpen = ref(false)
 
-// Get selected section path from store
-const selectedSectionPath = computed(() => {
-  return catalogStore.getSelectedSectionPath
+// Get active component from store
+const activeComponent = computed(() => {
+  return catalogStore.getActiveComponent
 })
 
 // Get expanded sections from store
@@ -65,11 +67,11 @@ const expandedSections = computed(() => {
 })
 
 /**
- * Get the component that should be displayed for the selected section
- * Returns null if no component is mapped to the selected section ID
+ * Get the component that should be displayed for the active component
+ * Returns null if no component is mapped to the active component ID
  */
 const currentComponent = computed(() => {
-  return sectionComponents[selectedSectionPath.value] || null
+  return sectionComponents[activeComponent.value] || null
 })
 
 /**
@@ -204,6 +206,7 @@ const handleSectionClick = (section: { id: string; hasChildren: boolean }) => {
       if (sectionObj && sectionObj.children && sectionObj.children.length > 0) {
         const firstChildId = findFirstLeafSection(sectionObj.children[0])
         catalogStore.setSelectedSection(firstChildId)
+        catalogStore.setActiveComponent(firstChildId)
         
         // Expand all parent sections of the selected child
         expandParentSections(firstChildId)
@@ -214,6 +217,7 @@ const handleSectionClick = (section: { id: string; hasChildren: boolean }) => {
   } else {
     // If section has no children, just select it
     catalogStore.setSelectedSection(section.id)
+    catalogStore.setActiveComponent(section.id)
     
     // Expand all parent sections
     expandParentSections(section.id)
@@ -222,7 +226,7 @@ const handleSectionClick = (section: { id: string; hasChildren: boolean }) => {
 
 // Get the selected section object with fallback to avoid null reference errors
 const selectedSection = computed(() => {
-  const section = findSectionById(selectedSectionPath.value, sections)
+  const section = findSectionById(catalogStore.getSelectedSectionPath, sections)
   // Provide default values to avoid "Cannot read properties of undefined" error
   return section || { id: '', name: 'Catalog', icon: 'PhFolder' }
 })
@@ -299,7 +303,7 @@ onMounted(() => {
           <v-list-item
             v-for="section in flattenedSections"
             :key="section.id"
-            :class="['mobile-section-item', { 'section-active': section.id === selectedSectionPath }]"
+            :class="['mobile-section-item', { 'section-active': section.id === catalogStore.getSelectedSectionPath }]"
             :style="{ paddingLeft: `${16 + section.level * 20}px` }"
             @click="handleSectionClick(section)"
           >
@@ -338,7 +342,7 @@ onMounted(() => {
             :class="[
               'section-item', 
               `level-${section.level}`,
-              { 'section-active': section.id === selectedSectionPath },
+              { 'section-active': section.id === catalogStore.getSelectedSectionPath },
               { 'has-children': section.hasChildren },
               { 'is-expanded': expandedSections.includes(section.id) },
               { 'is-last-in-level': section.isLastInLevel }
@@ -376,7 +380,7 @@ onMounted(() => {
           v-if="currentComponent"
         />
         <h2 v-else>
-          Selected section: {{ selectedSectionPath }}
+          Selected section: {{ catalogStore.getSelectedSectionPath }}
         </h2>
       </div>
     </div>

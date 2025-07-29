@@ -4,13 +4,19 @@ export const useCatalogAdminStore = defineStore('catalogAdmin', {
   state: () => ({
     selectedSectionPath: 'Catalog.Sections' as string,
     expandedSections: ['Catalog'] as string[],
-    isLoading: false
+    isLoading: false,
+    activeComponent: 'Catalog.Sections' as 'Catalog.Sections' | 'CatalogSectionEditor',
+    editorMode: 'creation' as 'creation' | 'edit',
+    editingSectionId: null as string | null
   }),
 
   getters: {
     getSelectedSectionPath: (state) => state.selectedSectionPath,
     getExpandedSections: (state) => state.expandedSections,
-    getIsLoading: (state) => state.isLoading
+    getIsLoading: (state) => state.isLoading,
+    getActiveComponent: (state) => state.activeComponent,
+    getEditorMode: (state) => state.editorMode,
+    getEditingSectionId: (state) => state.editingSectionId
   },
 
   actions: {
@@ -45,6 +51,23 @@ export const useCatalogAdminStore = defineStore('catalogAdmin', {
 
     setLoading(loading: boolean) {
       this.isLoading = loading
+    },
+
+    // Новые методы для управления редактором
+    openSectionEditor(mode: 'creation' | 'edit', sectionId?: string) {
+      this.activeComponent = 'CatalogSectionEditor'
+      this.editorMode = mode
+      this.editingSectionId = sectionId || null
+    },
+
+    closeSectionEditor() {
+      this.activeComponent = 'Catalog.Sections'
+      this.editorMode = 'creation'
+      this.editingSectionId = null
+    },
+
+    setActiveComponent(componentId: string) {
+      this.activeComponent = componentId as 'Catalog.Sections' | 'CatalogSectionEditor'
     }
   }
 })
