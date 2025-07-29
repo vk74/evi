@@ -12,6 +12,15 @@ import type { Section, CatalogSectionId } from './types.catalog.admin'
 import CatalogSections from './sections/Catalog.Sections.vue'
 import CatalogSettings from './sections/Catalog.Settings.vue'
 
+// Импортируем Phosphor иконки
+import { 
+  PhFolder, 
+  PhList, 
+  PhGear, 
+  PhCaretDown, 
+  PhCaretRight 
+} from '@phosphor-icons/vue'
+
 // Инициализация store
 const catalogStore = useCatalogAdminStore()
 
@@ -20,17 +29,17 @@ const sections: Section[] = [
   {
     id: 'Catalog',
     name: 'catalog',
-    icon: 'mdi-folder-table-outline',
+    icon: 'PhFolder',
     children: [
       {
         id: 'Catalog.Sections',
         name: 'sections',
-        icon: 'mdi-view-list-outline'
+        icon: 'PhList'
       },
       {
         id: 'Catalog.Settings',
         name: 'settings',
-        icon: 'mdi-cog-outline'
+        icon: 'PhGear'
       }
     ]
   }
@@ -215,8 +224,26 @@ const handleSectionClick = (section: { id: string; hasChildren: boolean }) => {
 const selectedSection = computed(() => {
   const section = findSectionById(selectedSectionPath.value, sections)
   // Provide default values to avoid "Cannot read properties of undefined" error
-  return section || { id: '', name: 'Catalog', icon: 'mdi-folder-table-outline' }
+  return section || { id: '', name: 'Catalog', icon: 'PhFolder' }
 })
+
+// Функция для получения компонента иконки
+const getIconComponent = (iconName: string) => {
+  switch (iconName) {
+    case 'PhFolder':
+      return PhFolder
+    case 'PhList':
+      return PhList
+    case 'PhGear':
+      return PhGear
+    case 'PhCaretDown':
+      return PhCaretDown
+    case 'PhCaretRight':
+      return PhCaretRight
+    default:
+      return null
+  }
+}
 
 // Toggle mobile menu
 const toggleMobileMenu = () => {
@@ -253,9 +280,13 @@ onMounted(() => {
       <v-btn
         variant="text"
         class="mobile-menu-button"
-        prepend-icon="mdi-menu"
         @click="toggleMobileMenu"
       >
+        <PhList
+          :size="20"
+          weight="regular"
+          class="me-2"
+        />
         {{ selectedSection.name }}
       </v-btn>
        
@@ -273,16 +304,18 @@ onMounted(() => {
             @click="handleSectionClick(section)"
           >
             <template #prepend>
-              <v-icon
+              <component
                 v-if="section.hasChildren"
-                :icon="expandedSections.includes(section.id) ? 'mdi-chevron-down' : 'mdi-chevron-right'"
-                size="small"
-                class="mr-2"
+                :is="expandedSections.includes(section.id) ? 'PhCaretDown' : 'PhCaretRight'"
+                :size="16"
+                weight="regular"
+                class="me-2"
               />
-              <v-icon
-                :icon="section.icon"
-                size="small"
-                class="mr-2"
+              <component
+                :is="getIconComponent(section.icon)"
+                :size="16"
+                weight="regular"
+                class="me-2"
               />
             </template>
             {{ section.name }}
@@ -315,16 +348,18 @@ onMounted(() => {
           >
             <template #prepend>
               <div class="section-indicator">
-                <v-icon
+                <component
                   v-if="section.hasChildren"
-                  :icon="expandedSections.includes(section.id) ? 'mdi-chevron-down' : 'mdi-chevron-right'"
-                  size="small"
+                  :is="expandedSections.includes(section.id) ? 'PhCaretDown' : 'PhCaretRight'"
+                  :size="16"
+                  weight="regular"
                   class="chevron-icon"
                 />
               </div>
-              <v-icon
-                :icon="section.icon"
-                size="small"
+              <component
+                :is="getIconComponent(section.icon)"
+                :size="16"
+                weight="regular"
                 class="section-icon"
               />
             </template>
