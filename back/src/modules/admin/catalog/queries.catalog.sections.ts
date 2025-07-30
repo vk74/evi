@@ -1,7 +1,7 @@
 /**
  * queries.catalog.sections.ts
  * SQL queries for catalog sections functionality in admin panel.
- * Includes queries for fetching, creating and updating catalog sections data.
+ * Includes queries for fetching, creating, updating and deleting catalog sections data.
  */
 
 // Query type definitions
@@ -17,6 +17,8 @@ interface CatalogSectionsQueries {
     createSection: string;
     // Update existing section
     updateSection: string;
+    // Delete existing section
+    deleteSection: string;
     // Check if section exists
     checkSectionExists: string;
     // Check if section name exists (excluding current section)
@@ -25,6 +27,8 @@ interface CatalogSectionsQueries {
     checkOrderExistsExcluding: string;
     // Update order numbers for sections after the changed one
     updateOrderNumbersAfter: string;
+    // Update order numbers for sections after deletion
+    updateOrderNumbersAfterDeletion: string;
     // Check if section name exists
     checkSectionNameExists: string;
     // Check if order number exists
@@ -110,6 +114,13 @@ export const queries: CatalogSectionsQueries = {
         RETURNING id, name
     `,
     
+    // Delete existing section
+    deleteSection: `
+        DELETE FROM app.catalog_sections 
+        WHERE id = $1
+        RETURNING id, name, "order"
+    `,
+    
     // Check if section exists
     checkSectionExists: `
         SELECT id, name, "order" FROM app.catalog_sections WHERE id = $1
@@ -130,6 +141,13 @@ export const queries: CatalogSectionsQueries = {
         UPDATE app.catalog_sections 
         SET "order" = "order" + 1 
         WHERE "order" >= $1 AND id != $2
+    `,
+    
+    // Update order numbers for sections after deletion
+    updateOrderNumbersAfterDeletion: `
+        UPDATE app.catalog_sections 
+        SET "order" = "order" - 1 
+        WHERE "order" > $1
     `,
     
     // Check if section name exists

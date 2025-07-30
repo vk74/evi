@@ -128,6 +128,23 @@ export interface UpdateSectionResponse extends ApiResponse {
 }
 
 /**
+ * Delete section request interface
+ */
+export interface DeleteSectionRequest {
+    id: string
+}
+
+/**
+ * Delete section response interface
+ */
+export interface DeleteSectionResponse extends ApiResponse {
+    data?: {
+        id: string
+        name: string
+    }
+}
+
+/**
  * Error handling interfaces
  */
 export interface ApiError {
