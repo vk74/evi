@@ -12,7 +12,7 @@
  */
 
 import { Request, Response } from 'express';
-import { fetchSections as fetchSectionsService } from './service.fetch.sections';
+import { fetchSections as fetchSectionsService } from './service.admin.fetch.sections';
 import { connectionHandler } from '../../../core/helpers/connection.handler';
 
 /**

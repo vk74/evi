@@ -12,7 +12,7 @@
  */
 
 import { Request, Response } from 'express';
-import { deleteSection as deleteSectionService } from './service.delete.section';
+import { deleteSection as deleteSectionService } from './service.admin.delete.sections';
 import { connectionHandler } from '../../../core/helpers/connection.handler';
 
 /**

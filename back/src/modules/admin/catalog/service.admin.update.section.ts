@@ -26,13 +26,13 @@
 import { Request } from 'express';
 import { Pool } from 'pg';
 import { pool as pgPool } from '../../../core/db/maindb';
-import { queries } from './queries.catalog.sections';
+import { queries } from './queries.admin.catalog.sections';
 import type { 
     UpdateSectionRequest, 
     UpdateSectionResponse, 
     ServiceError
-} from './types.catalog.sections';
-import { SectionStatus } from './types.catalog.sections';
+} from './types.admin.catalog.sections';
+import { SectionStatus } from './types.admin.catalog.sections';
 import { getRequestorUuidFromReq } from '../../../core/helpers/get.requestor.uuid.from.req';
 import { checkUserExists } from '../../../core/helpers/check.user.exists';
 import { checkGroupExists } from '../../../core/helpers/check.group.exists';

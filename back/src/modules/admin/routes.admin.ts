@@ -21,10 +21,10 @@ import fetchGroupById from './users/groupEditor/controller.fetch.group';
 import updateGroupById from './users/groupEditor/controller.update.group';
 import fetchGroupMembers from './users/groupEditor/controller.fetch.group.members';
 import removeGroupMembers from './users/groupEditor/controller.delete.group.members';
-import fetchCatalogSections from './catalog/controller.fetch.sections';
-import createCatalogSection from './catalog/controller.create.section';
-import updateCatalogSection from './catalog/controller.update.section';
-import deleteCatalogSection from './catalog/controller.delete.section';
+import fetchCatalogSections from './catalog/controller.admin.fetch.sections';
+import createCatalogSection from './catalog/controller.admin.create.section';
+import updateCatalogSection from './catalog/controller.admin.update.section';
+import deleteCatalogSection from './catalog/controller.admin.delete.sections';
 
 const router: Router = express.Router();
 

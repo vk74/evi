@@ -24,12 +24,12 @@
 import { Request } from 'express';
 import { Pool } from 'pg';
 import { pool as pgPool } from '../../../core/db/maindb';
-import { queries } from './queries.catalog.sections';
+import { queries } from './queries.admin.catalog.sections';
 import type { 
     DeleteSectionRequest, 
     DeleteSectionResponse, 
     ServiceError
-} from './types.catalog.sections';
+} from './types.admin.catalog.sections';
 import { getRequestorUuidFromReq } from '../../../core/helpers/get.requestor.uuid.from.req';
 
 // Type assertion for pool

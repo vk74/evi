@@ -18,8 +18,8 @@
 import { Request } from 'express';
 import { Pool } from 'pg';
 import { pool as pgPool } from '../../../core/db/maindb';
-import { queries } from './queries.catalog.sections';
-import type { DbCatalogSection, CatalogSection, FetchSectionsResponse, ServiceError } from './types.catalog.sections';
+import { queries } from './queries.admin.catalog.sections';
+import type { DbCatalogSection, CatalogSection, FetchSectionsResponse, ServiceError } from './types.admin.catalog.sections';
 import { fetchUsernameByUuid } from '../../../core/helpers/get.username.by.uuid';
 import { fetchGroupnameByUuid } from '../../../core/helpers/get.groupname.by.uuid';
 

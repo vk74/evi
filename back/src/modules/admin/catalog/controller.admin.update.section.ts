@@ -12,7 +12,7 @@
  */
 
 import { Request, Response } from 'express';
-import { updateSection as updateSectionService } from './service.update.section';
+import { updateSection as updateSectionService } from './service.admin.update.section';
 import { connectionHandler } from '../../../core/helpers/connection.handler';
 
 /**

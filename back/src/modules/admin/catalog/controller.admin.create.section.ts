@@ -12,7 +12,7 @@
  */
 
 import { Request, Response } from 'express';
-import { createSection as createSectionService } from './service.create.section';
+import { createSection as createSectionService } from './service.admin.create.section';
 import { connectionHandler } from '../../../core/helpers/connection.handler';
 
 /**
