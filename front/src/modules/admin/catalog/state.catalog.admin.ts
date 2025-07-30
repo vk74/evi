@@ -100,6 +100,15 @@ export const useCatalogAdminStore = defineStore('catalogAdmin', {
       this.sections = []
       this.error = null
       this.lastFetchTime = null
+    },
+
+    async refreshSections() {
+      try {
+        const { catalogSectionsFetchService } = await import('./service.fetch.catalog.sections')
+        await catalogSectionsFetchService.fetchSections(true)
+      } catch (error) {
+        console.error('Error refreshing sections:', error)
+      }
     }
   }
 })

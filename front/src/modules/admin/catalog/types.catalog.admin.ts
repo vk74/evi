@@ -58,3 +58,23 @@ export interface CatalogSection {
   modified_at: Date | null
   modified_by: string | null
 }
+
+// Create section request interface
+export interface CreateSectionRequest {
+  name: string
+  owner: string
+  order: number
+  description?: string
+  comments?: string
+  backup_owner?: string
+  parent_id?: string
+  color?: string
+}
+
+// Create section response interface
+export interface CreateSectionResponse extends ApiResponse {
+  data?: {
+    id: string
+    name: string
+  }
+}

@@ -18,6 +18,7 @@ import { useI18n } from 'vue-i18n'
 import { useCatalogAdminStore } from './state.catalog.admin'
 import { useUiStore } from '@/core/state/uistate'
 import ItemSelector from '@/core/ui/modals/item-selector/ItemSelector.vue'
+import { catalogSectionCreateService } from './service.create.catalog.section'
 
 // Types
 interface CatalogSection {
@@ -199,15 +200,26 @@ const createSection = async () => {
   isSubmitting.value = true
   
   try {
-    // В реальном приложении здесь был бы запрос к API
-    await new Promise(resolve => setTimeout(resolve, 1000))
+    // Prepare data for API request
+    const sectionData = {
+      name: formData.value.name.trim(),
+      owner: formData.value.owner,
+      order: formData.value.order,
+      description: formData.value.description?.trim() || undefined,
+      comments: formData.value.comments?.trim() || undefined,
+      backup_owner: formData.value.backupOwner?.trim() || undefined,
+      color: formData.value.color || undefined
+    }
+
+    // Create section via API
+    await catalogSectionCreateService.createSection(sectionData)
     
-    uiStore.showSuccessSnackbar(t('admin.catalog.editor.messages.create.success'))
+    // Close editor and return to sections list
     catalogStore.closeSectionEditor()
     
   } catch (error) {
     console.error('Error creating section:', error)
-    uiStore.showErrorSnackbar(t('admin.catalog.editor.messages.create.error'))
+    // Error messages are already handled by the service
   } finally {
     isSubmitting.value = false
   }
@@ -311,9 +323,9 @@ onMounted(() => {
   <v-container class="pa-0">
     <!-- Form header -->
     <div class="form-header mb-4">
-      <h2 class="text-h5 font-weight-medium">
+      <h4 class="text-h6 font-weight-medium">
         {{ pageTitle }}
-      </h2>
+      </h4>
     </div>
     
     <!-- Work area with main form -->

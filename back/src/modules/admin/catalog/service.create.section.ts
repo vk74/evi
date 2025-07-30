@@ -32,6 +32,7 @@ import { SectionStatus } from './types.catalog.sections';
 import { getRequestorUuidFromReq } from '../../../core/helpers/get.requestor.uuid.from.req';
 import { checkUserExists } from '../../../core/helpers/check.user.exists';
 import { checkGroupExists } from '../../../core/helpers/check.group.exists';
+import { getUuidByUsername } from '../../../core/helpers/get.uuid.by.username';
 
 // Type assertion for pool
 const pool = pgPool as Pool;
@@ -133,7 +134,7 @@ async function validateCreateSectionData(data: CreateSectionRequest): Promise<vo
     }
 
     // Validate order format
-    if (!isValidOrder(data.order)) {
+    if (isNaN(data.order) || !isValidOrder(data.order)) {
         const error: ServiceError = {
             code: 'VALIDATION_ERROR',
             message: 'Order must be a positive integer',
@@ -153,8 +154,8 @@ async function validateCreateSectionData(data: CreateSectionRequest): Promise<vo
     }
 
     // Check if owner exists
-    const ownerExists = await checkEntityExists(data.owner);
-    if (!ownerExists) {
+    const ownerUuid = await getUuidByUsername(data.owner);
+    if (!ownerUuid) {
         const error: ServiceError = {
             code: 'VALIDATION_ERROR',
             message: 'Owner does not exist',
@@ -165,8 +166,8 @@ async function validateCreateSectionData(data: CreateSectionRequest): Promise<vo
 
     // Check if backup_owner exists (if provided)
     if (data.backup_owner) {
-        const backupOwnerExists = await checkEntityExists(data.backup_owner);
-        if (!backupOwnerExists) {
+        const backupOwnerUuid = await getUuidByUsername(data.backup_owner);
+        if (!backupOwnerUuid) {
             const error: ServiceError = {
                 code: 'VALIDATION_ERROR',
                 message: 'Backup owner does not exist',
@@ -207,20 +208,38 @@ async function validateCreateSectionData(data: CreateSectionRequest): Promise<vo
  */
 export async function createSection(req: Request): Promise<CreateSectionResponse> {
     try {
-        // Get request data
-        const requestData: CreateSectionRequest = req.body;
+        // Get request data and convert types
+        const rawData = req.body;
+        const requestData: CreateSectionRequest = {
+            ...rawData,
+            order: typeof rawData.order === 'string' ? parseInt(rawData.order, 10) : rawData.order
+        };
         
         // Get requestor UUID for created_by field
         const requestorUuid = getRequestorUuidFromReq(req);
         
-        // Validate input data
+        // Validate input data and get UUIDs
         await validateCreateSectionData(requestData);
+        
+        // Get UUIDs for owner and backup_owner
+        const ownerUuid = await getUuidByUsername(requestData.owner);
+        if (!ownerUuid) {
+            throw new Error('Owner not found');
+        }
+        
+        let backupOwnerUuid: string | null = null;
+        if (requestData.backup_owner) {
+            backupOwnerUuid = await getUuidByUsername(requestData.backup_owner);
+            if (!backupOwnerUuid) {
+                throw new Error('Backup owner not found');
+            }
+        }
         
         // Prepare data for database insertion
         const insertData = [
             requestData.name.trim(),
-            requestData.owner,
-            requestData.backup_owner || null,
+            ownerUuid, // Use UUID instead of username
+            backupOwnerUuid, // Use UUID instead of username
             requestData.description?.trim() || null,
             requestData.comments?.trim() || null,
             SectionStatus.DRAFT, // Default status
