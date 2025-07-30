@@ -78,3 +78,25 @@ export interface CreateSectionResponse extends ApiResponse {
     name: string
   }
 }
+
+// Update section request interface
+export interface UpdateSectionRequest {
+  name?: string
+  owner?: string
+  order?: number
+  description?: string
+  comments?: string
+  backup_owner?: string
+  parent_id?: string
+  color?: string
+  status?: SectionStatus
+  is_public?: boolean
+}
+
+// Update section response interface
+export interface UpdateSectionResponse extends ApiResponse {
+  data?: {
+    id: string
+    name: string
+  }
+}

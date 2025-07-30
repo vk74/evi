@@ -23,6 +23,8 @@ import ItemSelector from '@/core/ui/modals/item-selector/ItemSelector.vue'
 import DataLoading from '@/core/ui/loaders/DataLoading.vue'
 import { catalogSectionCreateService } from './service.create.catalog.section'
 import { catalogSectionsFetchService } from './service.fetch.catalog.sections'
+import { catalogSectionUpdateService } from './service.update.catalog.section'
+import type { SectionStatus } from './types.catalog.admin'
 
 // Types
 interface CatalogSection {
@@ -253,15 +255,28 @@ const updateSection = async () => {
   isSubmitting.value = true
   
   try {
-    // В реальном приложении здесь был бы запрос к API
-    await new Promise(resolve => setTimeout(resolve, 1000))
+    // Prepare data for API request
+    const sectionData = {
+      name: formData.value.name.trim(),
+      owner: formData.value.owner,
+      order: formData.value.order,
+      description: formData.value.description?.trim() || undefined,
+      comments: formData.value.comments?.trim() || undefined,
+      backup_owner: formData.value.backupOwner?.trim() || undefined,
+      color: formData.value.color || undefined,
+      status: formData.value.status as SectionStatus,
+      is_public: formData.value.isPublic
+    }
+
+    // Update section via API
+    await catalogSectionUpdateService.updateSection(editingSectionId.value!, sectionData)
     
-    uiStore.showSuccessSnackbar(t('admin.catalog.editor.messages.update.success'))
+    // Close editor and return to sections list
     catalogStore.closeSectionEditor()
     
   } catch (error) {
     console.error('Error updating section:', error)
-    uiStore.showErrorSnackbar(t('admin.catalog.editor.messages.update.error'))
+    // Error messages are already handled by the service
   } finally {
     isSubmitting.value = false
   }

@@ -36,6 +36,7 @@ import { SectionStatus } from './types.catalog.sections';
 import { getRequestorUuidFromReq } from '../../../core/helpers/get.requestor.uuid.from.req';
 import { checkUserExists } from '../../../core/helpers/check.user.exists';
 import { checkGroupExists } from '../../../core/helpers/check.group.exists';
+import { getUuidByUsername } from '../../../core/helpers/get.uuid.by.username';
 
 // Type assertion for pool
 const pool = pgPool as Pool;
@@ -182,10 +183,10 @@ async function validateUpdateSectionData(data: UpdateSectionRequest, sectionId: 
         throw error;
     }
 
-    // Check if owner exists (if provided)
+    // Check if owner exists (if provided) and convert username to UUID
     if (data.owner) {
-        const ownerExists = await checkEntityExists(data.owner);
-        if (!ownerExists) {
+        const ownerUuid = await getUuidByUsername(data.owner);
+        if (!ownerUuid) {
             const error: ServiceError = {
                 code: 'VALIDATION_ERROR',
                 message: 'Owner does not exist',
@@ -193,12 +194,14 @@ async function validateUpdateSectionData(data: UpdateSectionRequest, sectionId: 
             };
             throw error;
         }
+        // Replace username with UUID for database update
+        data.owner = ownerUuid;
     }
 
-    // Check if backup_owner exists (if provided)
+    // Check if backup_owner exists (if provided) and convert username to UUID
     if (data.backup_owner) {
-        const backupOwnerExists = await checkEntityExists(data.backup_owner);
-        if (!backupOwnerExists) {
+        const backupOwnerUuid = await getUuidByUsername(data.backup_owner);
+        if (!backupOwnerUuid) {
             const error: ServiceError = {
                 code: 'VALIDATION_ERROR',
                 message: 'Backup owner does not exist',
@@ -206,6 +209,8 @@ async function validateUpdateSectionData(data: UpdateSectionRequest, sectionId: 
             };
             throw error;
         }
+        // Replace username with UUID for database update
+        data.backup_owner = backupOwnerUuid;
     }
 
     // Check if section name already exists (excluding current section)
