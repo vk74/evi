@@ -1,6 +1,6 @@
 <!--
   File: CatalogSectionEditor.vue
-  Version: 1.0.0
+  Version: 1.0.1
   Description: Component for creating and editing catalog sections
   Purpose: Provides interface for creating new sections and editing existing ones
   Features:
@@ -10,6 +10,8 @@
   - Color picker for background color
   - User selection via ItemSelector
   - Two modes: creation and edit
+  - Real data loading from API
+  - Section UUID display in edit mode
 -->
 
 <script setup lang="ts">
@@ -18,20 +20,28 @@ import { useI18n } from 'vue-i18n'
 import { useCatalogAdminStore } from './state.catalog.admin'
 import { useUiStore } from '@/core/state/uistate'
 import ItemSelector from '@/core/ui/modals/item-selector/ItemSelector.vue'
+import DataLoading from '@/core/ui/loaders/DataLoading.vue'
 import { catalogSectionCreateService } from './service.create.catalog.section'
+import { catalogSectionsFetchService } from './service.fetch.catalog.sections'
 
 // Types
 interface CatalogSection {
   id: string
   name: string
-  owner: string
-  backupOwner: string
-  description: string
-  comments: string
-  status: 'draft' | 'active' | 'archived' | 'disabled' | 'suspended'
-  isPublic: boolean
-  order: number
-  color: string
+  owner: string | null
+  backup_owner: string | null
+  description: string | null
+  comments: string | null
+  status: 'draft' | 'active' | 'archived' | 'disabled' | 'suspended' | null
+  is_public: boolean
+  order: number | null
+  parent_id: string | null
+  icon: string | null
+  color: string | null
+  created_at: Date
+  created_by: string
+  modified_at: Date | null
+  modified_by: string | null
 }
 
 // Initialize stores and i18n
@@ -48,6 +58,9 @@ const isSubmitting = ref(false)
 const hasInteracted = ref(false)
 const showColorPicker = ref(false)
 const selectedColor = ref('#1976D2')
+
+// Loading state for section data
+const isLoadingSection = ref(false)
 
 // ItemSelector state
 const showOwnerSelector = ref(false)
@@ -75,20 +88,6 @@ const pageTitle = computed(() => {
   return isCreationMode.value 
     ? t('admin.catalog.editor.creation.title')
     : t('admin.catalog.editor.edit.title')
-})
-
-// Mock data for demonstration (in real app this would come from API)
-const mockSection = ref<CatalogSection>({
-  id: 'section-1',
-  name: 'тестовая секция',
-  owner: 'admin',
-  backupOwner: 'backup-admin',
-  description: 'описание тестовой секции',
-  comments: 'комментарии к тестовой секции',
-  status: 'active',
-  isPublic: true,
-  order: 1,
-  color: '#FF9800'
 })
 
 // Preset colors for quick selection - 8 rows of 7 colors each (56 colors)
@@ -173,22 +172,42 @@ const resetForm = () => {
   hasInteracted.value = false
 }
 
-const loadSectionData = () => {
+const loadSectionData = async () => {
   if (isEditMode.value && editingSectionId.value) {
-    // В реальном приложении здесь был бы запрос к API
-    // Пока используем моковые данные
-    formData.value = {
-      name: mockSection.value.name,
-      owner: mockSection.value.owner,
-      backupOwner: mockSection.value.backupOwner,
-      order: mockSection.value.order,
-      status: mockSection.value.status,
-      isPublic: mockSection.value.isPublic,
-      color: mockSection.value.color,
-      description: mockSection.value.description,
-      comments: mockSection.value.comments
+    isLoadingSection.value = true
+    
+    try {
+      // Fetch fresh data from API
+      console.log('Fetching section data from API for editing')
+      const section = await catalogSectionsFetchService.fetchSection(editingSectionId.value)
+      
+      // Populate form with fetched data
+      populateFormWithSection(section)
+      
+    } catch (error) {
+      console.error('Error loading section data:', error)
+      // Error messages are already handled by the service
+      // Return to sections list on error
+      catalogStore.closeSectionEditor()
+    } finally {
+      isLoadingSection.value = false
     }
   }
+}
+
+const populateFormWithSection = (section: CatalogSection) => {
+  formData.value = {
+    name: section.name,
+    owner: section.owner || '',
+    backupOwner: section.backup_owner || '',
+    order: section.order || 1,
+    status: section.status || 'draft',
+    isPublic: section.is_public,
+    color: section.color || '#FFFFFF',
+    description: section.description || '',
+    comments: section.comments || ''
+  }
+  selectedColor.value = formData.value.color
 }
 
 const createSection = async () => {
@@ -321,6 +340,15 @@ onMounted(() => {
 
 <template>
   <v-container class="pa-0">
+    <!-- Loading state for section data -->
+    <DataLoading 
+      v-if="isLoadingSection" 
+      :loading="isLoadingSection"
+      loading-text="Загрузка данных секции..."
+      size="medium"
+      overlay
+    />
+    
     <!-- Form header -->
     <div class="form-header mb-4">
       <h4 class="text-h6 font-weight-medium">
@@ -347,6 +375,16 @@ onMounted(() => {
                     </v-card-title>
                     <v-divider class="section-divider" />
                   </div>
+
+                  <!-- Section UUID display (only in edit mode) -->
+                  <v-row v-if="isEditMode && editingSectionId">
+                    <v-col cols="12">
+                      <div class="uuid-display">
+                        <span class="uuid-label">{{ t('admin.catalog.editor.information.uuid.label') }}:</span>
+                        <span class="uuid-value">{{ editingSectionId }}</span>
+                      </div>
+                    </v-col>
+                  </v-row>
 
                   <v-row class="pt-3">
                     <v-col
@@ -710,6 +748,30 @@ onMounted(() => {
   margin-top: 8px;
 }
 
+/* UUID display styles */
+.uuid-display {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 0;
+}
+
+.uuid-label {
+  font-size: 0.875rem;
+  color: rgba(0, 0, 0, 0.75);
+  font-weight: 500;
+}
+
+.uuid-value {
+  font-family: 'Roboto Mono', monospace;
+  font-size: 0.875rem;
+  color: rgba(0, 0, 0, 0.75);
+  background-color: rgba(0, 0, 0, 0.05);
+  padding: 4px 8px;
+  border-radius: 4px;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+}
+
 /* Color picker styles */
 .color-picker-container {
   position: relative;
@@ -785,8 +847,6 @@ onMounted(() => {
   transform: scale(1.1);
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
 }
-
-
 
 /* Content container */
 .content-container {

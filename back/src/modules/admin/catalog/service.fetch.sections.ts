@@ -90,8 +90,28 @@ async function resolveUuidsToNames(sections: DbCatalogSection[]): Promise<Catalo
  */
 export async function fetchSections(req: Request): Promise<FetchSectionsResponse> {
     try {
-        // Get catalog sections data
-        const result = await pool.query<DbCatalogSection>(queries.getAllSections);
+        // Check if sectionId parameter is provided
+        const sectionId = req.query.sectionId as string;
+        
+        let result;
+        
+        if (sectionId) {
+            // Fetch single section by ID
+            result = await pool.query<DbCatalogSection>(queries.getSectionById, [sectionId]);
+            
+            // Check if section was found
+            if (result.rows.length === 0) {
+                const serviceError: ServiceError = {
+                    code: 'NOT_FOUND',
+                    message: `Section with ID ${sectionId} not found`,
+                    details: null
+                };
+                throw serviceError;
+            }
+        } else {
+            // Fetch all sections
+            result = await pool.query<DbCatalogSection>(queries.getAllSections);
+        }
         
         // Resolve UUIDs to usernames/groupnames
         const resolvedSections = await resolveUuidsToNames(result.rows);
@@ -99,7 +119,7 @@ export async function fetchSections(req: Request): Promise<FetchSectionsResponse
         // Combine data into response format
         const response: FetchSectionsResponse = {
             success: true,
-            message: 'Catalog sections loaded successfully',
+            message: sectionId ? 'Catalog section loaded successfully' : 'Catalog sections loaded successfully',
             data: resolvedSections
         };
         

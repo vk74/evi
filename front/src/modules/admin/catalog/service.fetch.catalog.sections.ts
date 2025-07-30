@@ -1,11 +1,12 @@
 /**
  * @file service.fetch.catalog.sections.ts
  * Service for fetching catalog sections data from API.
- * Version: 1.0.01
+ * Version: 1.0.03
  * FRONTEND service for fetching and managing catalog sections data from API.
  *
  * Functionality:
  * - Fetches catalog sections from API
+ * - Fetches single section by ID
  * - Manages state through Pinia store
  * - Handles request cancellation for concurrent requests
  * - Provides error handling and logging
@@ -36,11 +37,12 @@ let currentController: AbortController | null = null
 export const catalogSectionsFetchService = {
   /**
    * Fetches catalog sections from API
-   * @param forceRefresh Flag to bypass cache
+   * @param forceRefresh Flag to bypass cache (kept for compatibility)
+   * @param sectionId Optional section ID to fetch single section
    * @returns Promise<void>
    * @throws {Error} When request fails
    */
-  async fetchSections(forceRefresh = false): Promise<void> {
+  async fetchSections(forceRefresh = false, sectionId?: string): Promise<void> {
     const store = useCatalogAdminStore()
     const userStore = useUserAuthStore()
     const uiStore = useUiStore()
@@ -51,20 +53,6 @@ export const catalogSectionsFetchService = {
       logger.error(errorMessage)
       store.setError(errorMessage)
       throw new Error(errorMessage)
-    }
-
-    // Check if we can use cached data (5 minutes cache)
-    if (!forceRefresh && store.lastFetchTime) {
-      const cacheAge = Date.now() - store.lastFetchTime
-      const cacheValid = cacheAge < 5 * 60 * 1000 // 5 minutes
-      
-      if (cacheValid && store.sections.length > 0) {
-        logger.info('Using cached catalog sections data', {
-          cacheAge: Math.round(cacheAge / 1000),
-          sectionsCount: store.sections.length
-        })
-        return
-      }
     }
 
     // Prepare for API request
@@ -78,12 +66,19 @@ export const catalogSectionsFetchService = {
     currentController = new AbortController()
 
     try {
-      logger.info('Fetching catalog sections from API')
+      logger.info('Fetching catalog sections from API', { sectionId })
+      
+      // Prepare request parameters
+      const params: any = {}
+      if (sectionId) {
+        params.sectionId = sectionId
+      }
       
       // Make API request
       const response = await api.get<FetchSectionsResponse>(
         '/api/admin/catalog/fetch-sections',
         {
+          params,
           signal: currentController.signal
         }
       )
@@ -148,6 +143,97 @@ export const catalogSectionsFetchService = {
         const errorMessage = error.message || 'Failed to fetch catalog sections data'
         store.setError(errorMessage)
         logger.error('Error fetching catalog sections:', error)
+        uiStore.showErrorSnackbar(errorMessage)
+      }
+      
+      throw error
+    } finally {
+      store.setLoading(false)
+      currentController = null
+    }
+  },
+
+  /**
+   * Fetches single catalog section by ID
+   * @param sectionId ID of the section to fetch
+   * @param forceRefresh Flag to bypass cache (kept for compatibility)
+   * @returns Promise<CatalogSection>
+   * @throws {Error} When request fails or section not found
+   */
+  async fetchSection(sectionId: string, forceRefresh = false): Promise<CatalogSection> {
+    const store = useCatalogAdminStore()
+    const userStore = useUserAuthStore()
+    const uiStore = useUiStore()
+
+    // Check user authentication
+    if (!userStore.isAuthenticated) {
+      const errorMessage = 'User not authenticated'
+      logger.error(errorMessage)
+      throw new Error(errorMessage)
+    }
+
+    // Prepare for API request
+    store.setLoading(true)
+    store.clearError()
+
+    // Cancel any in-progress request
+    if (currentController) {
+      currentController.abort()
+    }
+    currentController = new AbortController()
+
+    try {
+      logger.info('Fetching single catalog section from API', { sectionId })
+      
+      // Make API request for single section
+      const response = await api.get<FetchSectionsResponse>(
+        '/api/admin/catalog/fetch-sections',
+        {
+          params: { sectionId },
+          signal: currentController.signal
+        }
+      )
+
+      // Validate response format
+      if (!response.data || !response.data.success || !Array.isArray(response.data.data)) {
+        throw new Error('Invalid API response format')
+      }
+
+      // Check if section was found
+      if (response.data.data.length === 0) {
+        const errorMessage = `Section with ID ${sectionId} not found`
+        logger.error(errorMessage)
+        uiStore.showErrorSnackbar(errorMessage)
+        throw new Error(errorMessage)
+      }
+
+      const section = response.data.data[0]
+      logger.info('Successfully received section data', {
+        sectionId: section.id,
+        sectionName: section.name
+      })
+
+      return section
+
+    } catch (error: any) {
+      // Don't process aborted requests
+      if (error.name === 'AbortError' || error.name === 'CanceledError') {
+        logger.info('Request was cancelled')
+        throw error
+      }
+      
+      // Handle API error responses
+      if (error.response?.data) {
+        const apiError = error.response.data as ApiError
+        const errorMessage = apiError.message || 'Error fetching section'
+        store.setError(errorMessage)
+        logger.error('API error:', apiError)
+        uiStore.showErrorSnackbar(errorMessage)
+      } else {
+        // Handle other errors
+        const errorMessage = error.message || 'Failed to fetch section data'
+        store.setError(errorMessage)
+        logger.error('Error fetching section:', error)
         uiStore.showErrorSnackbar(errorMessage)
       }
       

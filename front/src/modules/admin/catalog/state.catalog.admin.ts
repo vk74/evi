@@ -12,8 +12,7 @@ export const useCatalogAdminStore = defineStore('catalogAdmin', {
     
     // Catalog sections data
     sections: [] as CatalogSection[],
-    error: null as string | null,
-    lastFetchTime: null as number | null
+    error: null as string | null
   }),
 
   getters: {
@@ -27,7 +26,6 @@ export const useCatalogAdminStore = defineStore('catalogAdmin', {
     // Catalog sections getters
     getSections: (state) => state.sections,
     getError: (state) => state.error,
-    getLastFetchTime: (state) => state.lastFetchTime,
     hasSections: (state) => state.sections.length > 0
   },
 
@@ -85,7 +83,6 @@ export const useCatalogAdminStore = defineStore('catalogAdmin', {
     // Catalog sections actions
     setSections(sections: CatalogSection[]) {
       this.sections = sections
-      this.lastFetchTime = Date.now()
     },
 
     setError(error: string | null) {
@@ -99,7 +96,6 @@ export const useCatalogAdminStore = defineStore('catalogAdmin', {
     clearSections() {
       this.sections = []
       this.error = null
-      this.lastFetchTime = null
     },
 
     async refreshSections() {

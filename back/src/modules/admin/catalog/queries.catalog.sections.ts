@@ -13,6 +13,8 @@ interface SQLQuery {
 interface CatalogSectionsQueries {
     // Get catalog sections data
     getAllSections: string;
+    // Get single section by ID
+    getSectionById: string;
     // Create new section
     createSection: string;
     // Update existing section
@@ -58,6 +60,29 @@ export const queries: CatalogSectionsQueries = {
             modified_by
         FROM app.catalog_sections
         ORDER BY "order" ASC, name ASC
+    `,
+    
+    // Get single section by ID
+    getSectionById: `
+        SELECT
+            id,
+            name,
+            owner,
+            backup_owner,
+            description,
+            comments,
+            status,
+            is_public,
+            "order",
+            parent_id,
+            icon,
+            color,
+            created_at,
+            created_by,
+            modified_at,
+            modified_by
+        FROM app.catalog_sections
+        WHERE id = $1
     `,
     
     // Create new section

@@ -15,6 +15,9 @@
         },
         "information": {
           "title": "information",
+          "uuid": {
+            "label": "section UUID"
+          },
           "name": {
             "label": "section name",
             "required": "name is required",

@@ -15,6 +15,9 @@
         },
         "information": {
           "title": "информация",
+          "uuid": {
+            "label": "UUID секции"
+          },
           "name": {
             "label": "название секции",
             "required": "название обязательно",
