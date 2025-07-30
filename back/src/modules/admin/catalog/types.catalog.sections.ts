@@ -103,6 +103,31 @@ export interface CreateSectionResponse extends ApiResponse {
 }
 
 /**
+ * Update section request interface
+ */
+export interface UpdateSectionRequest {
+    name?: string
+    owner?: string
+    backup_owner?: string
+    description?: string
+    comments?: string
+    status?: SectionStatus
+    is_public?: boolean
+    order?: number
+    color?: string
+}
+
+/**
+ * Update section response interface
+ */
+export interface UpdateSectionResponse extends ApiResponse {
+    data?: {
+        id: string
+        name: string
+    }
+}
+
+/**
  * Error handling interfaces
  */
 export interface ApiError {

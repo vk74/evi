@@ -1,0 +1,35 @@
+/**
+ * controller.update.section.ts - backend file
+ * version: 1.0.0
+ * 
+ * Controller for updating catalog sections data.
+ * 
+ * Handles HTTP POST requests to the /api/admin/catalog/update-section endpoint.
+ * Validates JWT (handled by middleware), processes catalog section update through the service,
+ * and sends the response. Uses event bus to track operations.
+ * 
+ * Note: HTTP request/response events are now handled by the universal connection handler.
+ */
+
+import { Request, Response } from 'express';
+import { updateSection as updateSectionService } from './service.update.section';
+import { connectionHandler } from '../../../core/helpers/connection.handler';
+
+/**
+ * Business logic for updating catalog sections data
+ * 
+ * @param req - Express Request object
+ * @param res - Express Response object
+ */
+async function updateSectionLogic(req: Request, res: Response): Promise<any> {
+    // JWT validation is already performed by route guards
+    // If request reaches controller, JWT is valid
+
+    // Update catalog section
+    const result = await updateSectionService(req);
+
+    return result;
+}
+
+// Export controller using universal connection handler
+export default connectionHandler(updateSectionLogic, 'UpdateCatalogSectionController'); 

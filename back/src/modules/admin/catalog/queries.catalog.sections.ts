@@ -1,7 +1,7 @@
 /**
  * queries.catalog.sections.ts
  * SQL queries for catalog sections functionality in admin panel.
- * Includes queries for fetching and creating catalog sections data.
+ * Includes queries for fetching, creating and updating catalog sections data.
  */
 
 // Query type definitions
@@ -15,6 +15,16 @@ interface CatalogSectionsQueries {
     getAllSections: string;
     // Create new section
     createSection: string;
+    // Update existing section
+    updateSection: string;
+    // Check if section exists
+    checkSectionExists: string;
+    // Check if section name exists (excluding current section)
+    checkSectionNameExistsExcluding: string;
+    // Check if order number exists (excluding current section)
+    checkOrderExistsExcluding: string;
+    // Update order numbers for sections after the changed one
+    updateOrderNumbersAfter: string;
     // Check if section name exists
     checkSectionNameExists: string;
     // Check if order number exists
@@ -79,6 +89,47 @@ export const queries: CatalogSectionsQueries = {
             NOW(),
             $12
         ) RETURNING id, name
+    `,
+    
+    // Update existing section
+    updateSection: `
+        UPDATE app.catalog_sections 
+        SET 
+            name = COALESCE($2, name),
+            owner = COALESCE($3, owner),
+            backup_owner = $4,
+            description = $5,
+            comments = $6,
+            status = COALESCE($7, status),
+            is_public = COALESCE($8, is_public),
+            "order" = COALESCE($9, "order"),
+            color = $10,
+            modified_at = NOW(),
+            modified_by = $11
+        WHERE id = $1
+        RETURNING id, name
+    `,
+    
+    // Check if section exists
+    checkSectionExists: `
+        SELECT id, name, "order" FROM app.catalog_sections WHERE id = $1
+    `,
+    
+    // Check if section name exists (excluding current section)
+    checkSectionNameExistsExcluding: `
+        SELECT id FROM app.catalog_sections WHERE name = $1 AND id != $2
+    `,
+    
+    // Check if order number exists (excluding current section)
+    checkOrderExistsExcluding: `
+        SELECT id FROM app.catalog_sections WHERE "order" = $1 AND id != $2
+    `,
+    
+    // Update order numbers for sections after the changed one
+    updateOrderNumbersAfter: `
+        UPDATE app.catalog_sections 
+        SET "order" = "order" + 1 
+        WHERE "order" >= $1 AND id != $2
     `,
     
     // Check if section name exists
