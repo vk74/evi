@@ -28,6 +28,7 @@ const ModuleXLS = defineAsyncComponent(() => import('./modules/proto/ModuleXLS.v
 const ModuleAccount = defineAsyncComponent(() => import('./modules/account/ModuleAccount.vue'));
 const ModuleSettings = defineAsyncComponent(() => import('./modules/settings/ModuleSettings.vue'));
 const ModuleKnowledgeBase = defineAsyncComponent(() => import('./modules/KB/ModuleKnowledgeBase.vue'));
+const ModuleSessionData = defineAsyncComponent(() => import('./modules/account/ModuleSessionData.vue'));
 
 // Admin submodule imports
 const SubModuleCatalogAdmin = defineAsyncComponent(() => import('./modules/admin/catalog/SubModuleCatalogAdmin.vue'));
@@ -646,6 +647,9 @@ onMounted(() => {
                 <v-list-item @click="isChangePassModalVisible = true">
                   <v-list-item-title>{{ $t('navigation.systemMenu.changePassword') }}</v-list-item-title>
                 </v-list-item>
+                <v-list-item @click="setActiveModule('SessionData')">
+                  <v-list-item-title>{{ $t('navigation.systemMenu.sessionData') }}</v-list-item-title>
+                </v-list-item>
                 <v-list-item @click="logout">
                   <v-list-item-title>{{ $t('navigation.systemMenu.logout') }}</v-list-item-title>
                 </v-list-item>
@@ -716,6 +720,7 @@ onMounted(() => {
       <ModuleXLS v-if="appStore.isModuleActive('XLS')" />
       <ModuleAccount v-if="appStore.isModuleActive('Account')" />
       <ModuleSettings v-if="appStore.isModuleActive('Settings')" />
+      <ModuleSessionData v-if="appStore.isModuleActive('SessionData')" />
       <ModuleKnowledgeBase v-if="appStore.isModuleActive('KnowledgeBase')" />
               <ModuleNewUserSelfRegistration v-if="appStore.isModuleActive('NewUserRegistration')" />
     </v-main>

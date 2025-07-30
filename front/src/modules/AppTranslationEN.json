@@ -8,7 +8,7 @@
       "xlsPrototyping": "xls prototyping",
       "knowledgeBase": "knowledge base",
       "account": "account",
-      "appPreferences": "app preferences",
+      "appPreferences": "preferences",
       "language": "language",
       "profile": "profile",
       "login": "login",
@@ -22,7 +22,8 @@
     },
     "systemMenu": {
       "test": "test command",
-      "changePassword": "change password", 
+      "changePassword": "change password",
+      "sessionData": "session data",
       "logout": "logout"
     }
   }

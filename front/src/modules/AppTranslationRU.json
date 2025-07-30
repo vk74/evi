@@ -8,7 +8,7 @@
       "xlsPrototyping": "прототипирование",
       "knowledgeBase": "база знаний",
       "account": "личный кабинет",
-      "appPreferences": "настройки приложения",
+      "appPreferences": "персонализация",
       "language": "язык",
       "profile": "профиль",
       "login": "вход",
@@ -23,6 +23,7 @@
     "systemMenu": {
       "test": "тестовая команда",
       "changePassword": "изменить пароль",
+      "sessionData": "данные сессии",
       "logout": "выйти"
     }
   }

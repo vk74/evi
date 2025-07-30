@@ -15,6 +15,7 @@ export type ModuleName =
   | 'XLS'
   | 'Account'
   | 'Settings'
+  | 'SessionData'
   | 'KnowledgeBase'
   | 'Login'
   | 'NewUserRegistration';
@@ -45,6 +46,7 @@ const DEFAULT_MODULES: ModuleName[] = [
   'XLS',
   'Account',
   'Settings',
+  'SessionData',
   'KnowledgeBase',
   'Login',
   'NewUserRegistration'
