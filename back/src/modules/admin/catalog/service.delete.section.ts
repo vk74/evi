@@ -1,23 +1,24 @@
 /**
- * service.delete.section.ts - version 1.0.0
+ * service.delete.section.ts - version 2.0.0
  * Service for deleting catalog sections operations.
  * 
  * Functionality:
- * - Validates section exists before deletion
+ * - Validates sections exist before deletion
  * - Checks for system section protection (main)
  * - Handles order number recalculation after deletion
- * - Deletes catalog section from database
+ * - Deletes multiple catalog sections from database
  * - Handles data transformation and business logic
  * - Manages database interactions and error handling
+ * - Provides detailed success/failure information
  * 
  * Data flow:
- * 1. Receive request object with section ID
- * 2. Validate section exists
- * 3. Check if section is system section (main)
- * 4. Get current order for recalculation
- * 5. Delete section from database
+ * 1. Receive request object with array of section IDs
+ * 2. Validate all sections exist
+ * 3. Check if any section is system section (main)
+ * 4. Get current orders for recalculation
+ * 5. Delete sections from database
  * 6. Recalculate order numbers for remaining sections
- * 7. Return formatted response
+ * 7. Return formatted response with detailed results
  */
 
 import { Request } from 'express';
@@ -35,80 +36,108 @@ import { getRequestorUuidFromReq } from '../../../core/helpers/get.requestor.uui
 const pool = pgPool as Pool;
 
 /**
- * Checks if section exists and returns current data
- * @param sectionId - ID of section to check
- * @returns Promise with section data or null if not exists
+ * Interface for section validation result
  */
-async function checkSectionExists(sectionId: string): Promise<{ id: string, name: string, order: number } | null> {
+interface SectionValidationResult {
+    id: string;
+    name: string;
+    order: number;
+    canDelete: boolean;
+    error?: string;
+    errorCode?: string;
+}
+
+/**
+ * Checks if sections exist and validates them for deletion
+ * @param sectionIds - Array of section IDs to check
+ * @returns Promise with validation results
+ */
+async function validateSectionsForDeletion(sectionIds: string[]): Promise<SectionValidationResult[]> {
     try {
-        const result = await pool.query(queries.checkSectionExists, [sectionId]);
-        return result.rows.length > 0 ? result.rows[0] : null;
+        // Get all sections that exist
+        const result = await pool.query(queries.checkMultipleSectionsExist, [sectionIds]);
+        const existingSections = result.rows;
+        
+        const validationResults: SectionValidationResult[] = [];
+        
+        for (const sectionId of sectionIds) {
+            const existingSection = existingSections.find(s => s.id === sectionId);
+            
+            if (!existingSection) {
+                validationResults.push({
+                    id: sectionId,
+                    name: 'Unknown',
+                    order: 0,
+                    canDelete: false,
+                    error: 'Section not found',
+                    errorCode: 'NOT_FOUND'
+                });
+                continue;
+            }
+            
+            // Check if trying to delete system section (main)
+            if (existingSection.name === 'main') {
+                validationResults.push({
+                    id: sectionId,
+                    name: existingSection.name,
+                    order: existingSection.order,
+                    canDelete: false,
+                    error: 'Cannot delete system section "main"',
+                    errorCode: 'FORBIDDEN'
+                });
+                continue;
+            }
+            
+            validationResults.push({
+                id: sectionId,
+                name: existingSection.name,
+                order: existingSection.order,
+                canDelete: true
+            });
+        }
+        
+        return validationResults;
     } catch (error) {
-        console.error('[DeleteSectionService] Error checking section existence:', error);
-        return null;
+        console.error('[DeleteSectionService] Error validating sections for deletion:', error);
+        throw error;
     }
 }
 
 /**
- * Updates order numbers for sections after deletion
- * @param deletedOrder - Order number of deleted section
+ * Updates order numbers for sections after multiple deletions
+ * @param deletedOrders - Array of order numbers of deleted sections
  * @returns Promise<void>
  */
-async function updateOrderNumbersAfterDeletion(deletedOrder: number): Promise<void> {
+async function updateOrderNumbersAfterMultipleDeletion(deletedOrders: number[]): Promise<void> {
     try {
-        await pool.query(queries.updateOrderNumbersAfterDeletion, [deletedOrder]);
+        // Sort orders in descending order to avoid conflicts
+        const sortedOrders = [...deletedOrders].sort((a, b) => b - a);
+        
+        for (const order of sortedOrders) {
+            await pool.query(queries.updateOrderNumbersAfterMultipleDeletion, [order]);
+        }
     } catch (error) {
-        console.error('[DeleteSectionService] Error updating order numbers after deletion:', error);
+        console.error('[DeleteSectionService] Error updating order numbers after multiple deletions:', error);
         throw error;
     }
 }
 
 /**
- * Validates delete section request data
- * @param sectionId - ID of section to delete
- * @returns Promise<void> - throws error if validation fails
- */
-async function validateDeleteSectionData(sectionId: string): Promise<{ id: string, name: string, order: number }> {
-    // Check if section exists
-    const existingSection = await checkSectionExists(sectionId);
-    if (!existingSection) {
-        const error: ServiceError = {
-            code: 'NOT_FOUND',
-            message: 'Section not found',
-            details: { sectionId }
-        };
-        throw error;
-    }
-
-    // Check if trying to delete system section (main)
-    if (existingSection.name === 'main') {
-        const error: ServiceError = {
-            code: 'FORBIDDEN',
-            message: 'Cannot delete system section "main"',
-            details: { sectionId, sectionName: existingSection.name }
-        };
-        throw error;
-    }
-
-    return existingSection;
-}
-
-/**
- * Deletes a catalog section from database
+ * Deletes multiple catalog sections from database
  * @param req - Express request object for accessing user context and request data
  * @returns Promise with deletion result
  * @throws Error if validation or database error occurs
  */
 export async function deleteSection(req: Request): Promise<DeleteSectionResponse> {
     try {
-        // Get section ID from request body
-        const { id }: DeleteSectionRequest = req.body;
+        // Get section IDs from request body
+        const { ids }: DeleteSectionRequest = req.body;
         
-        if (!id) {
+        if (!ids || !Array.isArray(ids) || ids.length === 0) {
             const error: ServiceError = {
                 code: 'REQUIRED_FIELD_ERROR',
-                message: 'Section ID is required',
-                details: { field: 'id' }
+                message: 'Section IDs array is required and must not be empty',
+                details: { field: 'ids' }
             };
             throw error;
         }
@@ -116,34 +145,71 @@ export async function deleteSection(req: Request): Promise<DeleteSectionResponse
         // Get requestor UUID for logging
         const requestorUuid = getRequestorUuidFromReq(req);
         
-        // Validate section exists and can be deleted
-        const existingSection = await validateDeleteSectionData(id);
+        // Validate sections exist and can be deleted
+        const validationResults = await validateSectionsForDeletion(ids);
+        
+        // Separate valid and invalid sections
+        const validSections = validationResults.filter(r => r.canDelete);
+        const invalidSections = validationResults.filter(r => !r.canDelete);
         
         // Log deletion attempt
-        console.log(`[DeleteSectionService] User ${requestorUuid} attempting to delete section: ${existingSection.name} (ID: ${id})`);
+        console.log(`[DeleteSectionService] User ${requestorUuid} attempting to delete ${validSections.length} sections: ${validSections.map(s => s.name).join(', ')}`);
         
-        // Delete section from database
-        const result = await pool.query(queries.deleteSection, [id]);
+        let deletedSections: Array<{ id: string, name: string, order: number }> = [];
         
-        if (result.rows.length === 0) {
-            throw new Error('Failed to delete section - no data returned');
+        // Delete valid sections if any exist
+        if (validSections.length > 0) {
+            const validIds = validSections.map(s => s.id);
+            const result = await pool.query(queries.deleteMultipleSections, [validIds]);
+            deletedSections = result.rows;
+            
+            // Recalculate order numbers for remaining sections
+            if (deletedSections.length > 0) {
+                const deletedOrders = deletedSections.map(s => s.order);
+                await updateOrderNumbersAfterMultipleDeletion(deletedOrders);
+            }
         }
         
-        const deletedSection = result.rows[0];
-        
-        // Recalculate order numbers for remaining sections
-        await updateOrderNumbersAfterDeletion(deletedSection.order);
-        
         // Log successful deletion
-        console.log(`[DeleteSectionService] Successfully deleted section: ${deletedSection.name} (ID: ${id}) by user: ${requestorUuid}`);
+        if (deletedSections.length > 0) {
+            console.log(`[DeleteSectionService] Successfully deleted ${deletedSections.length} sections: ${deletedSections.map(s => s.name).join(', ')} by user: ${requestorUuid}`);
+        }
         
-        // Return success response
+        // Prepare response data
+        const deleted = deletedSections.map(s => ({ id: s.id, name: s.name }));
+        const failed = invalidSections.map(s => ({
+            id: s.id,
+            name: s.name,
+            error: s.error || 'Unknown error',
+            code: s.errorCode || 'UNKNOWN_ERROR'
+        }));
+        
+        const totalRequested = ids.length;
+        const totalDeleted = deleted.length;
+        const totalFailed = failed.length;
+        
+        // Determine response message based on results
+        let message: string;
+        if (totalDeleted === 0 && totalFailed > 0) {
+            message = 'No sections were deleted due to validation errors';
+        } else if (totalDeleted > 0 && totalFailed === 0) {
+            message = `Successfully deleted ${totalDeleted} section${totalDeleted > 1 ? 's' : ''}`;
+        } else if (totalDeleted > 0 && totalFailed > 0) {
+            message = `Partially successful: deleted ${totalDeleted} section${totalDeleted > 1 ? 's' : ''}, failed to delete ${totalFailed} section${totalFailed > 1 ? 's' : ''}`;
+        } else {
+            message = 'No sections were deleted';
+        }
+        
+        // Return response
         const response: DeleteSectionResponse = {
-            success: true,
-            message: 'Catalog section deleted successfully',
+            success: totalDeleted > 0,
+            message,
             data: {
-                id: deletedSection.id,
-                name: deletedSection.name
+                deleted,
+                failed,
+                totalRequested,
+                totalDeleted,
+                totalFailed
             }
         };
         
@@ -158,7 +224,7 @@ export async function deleteSection(req: Request): Promise<DeleteSectionResponse
         // Create generic error response for unexpected errors
         const serviceError: ServiceError = {
             code: 'INTERNAL_SERVER_ERROR',
-            message: error instanceof Error ? error.message : 'Failed to delete catalog section',
+            message: error instanceof Error ? error.message : 'Failed to delete catalog sections',
             details: error
         };
         

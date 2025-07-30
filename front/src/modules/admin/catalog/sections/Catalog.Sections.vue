@@ -17,6 +17,7 @@ import { useI18n } from 'vue-i18n'
 import { useUiStore } from '@/core/state/uistate'
 import { useCatalogAdminStore } from '../state.catalog.admin'
 import catalogSectionsFetchService from '../service.fetch.catalog.sections'
+import catalogSectionsDeleteService from '../service.delete.catalog.sections'
 import DataLoading from '@/core/ui/loaders/DataLoading.vue'
 import { CatalogSection, SectionStatus } from '../types.catalog.admin'
 
@@ -148,25 +149,17 @@ const deleteSection = () => {
 
 
 
-const confirmDelete = () => {
+const confirmDelete = async () => {
   try {
     const sectionsToDelete = Array.from(selectedSections.value)
-    const deletedSections = catalogStore.sections.filter(section => 
-      sectionsToDelete.includes(section.id)
-    )
     
-    // In a real implementation, you would call API to delete sections
-    // For now, we'll just show a message
+    // Call the delete service with translation function
+    await catalogSectionsDeleteService.deleteSectionsWithUIUpdate(sectionsToDelete, t)
+    
+    // Clear selections and close dialog
     selectedSections.value.clear()
     showDeleteDialog.value = false
     
-    uiStore.showSnackbar({
-      message: t('admin.catalog.sections.messages.sectionsDeleted', { count: deletedSections.length }),
-      type: 'success',
-      timeout: 3000,
-      closable: true,
-      position: 'bottom'
-    })
   } catch (error) {
     handleError(error, 'deleting sections')
   }

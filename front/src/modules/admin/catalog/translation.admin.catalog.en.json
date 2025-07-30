@@ -164,6 +164,14 @@
             "message": "Are you sure you want to delete the selected sections? This action cannot be undone.",
             "cancel": "Cancel",
             "confirm": "Delete"
+          },
+          "delete": {
+            "success": "Sections deleted successfully",
+            "partialSuccess": "Partially successful: {deleted} deleted, {failed} failed",
+            "noSectionsDeleted": "No sections were deleted",
+            "error": "Failed to delete sections",
+            "networkError": "Network error occurred",
+            "validationError": "Validation error occurred"
           }
         }
       }

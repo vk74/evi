@@ -21,8 +21,12 @@ interface CatalogSectionsQueries {
     updateSection: string;
     // Delete existing section
     deleteSection: string;
+    // Delete multiple sections
+    deleteMultipleSections: string;
     // Check if section exists
     checkSectionExists: string;
+    // Check if multiple sections exist
+    checkMultipleSectionsExist: string;
     // Check if section name exists (excluding current section)
     checkSectionNameExistsExcluding: string;
     // Check if order number exists (excluding current section)
@@ -31,6 +35,8 @@ interface CatalogSectionsQueries {
     updateOrderNumbersAfter: string;
     // Update order numbers for sections after deletion
     updateOrderNumbersAfterDeletion: string;
+    // Update order numbers for sections after multiple deletions
+    updateOrderNumbersAfterMultipleDeletion: string;
     // Check if section name exists
     checkSectionNameExists: string;
     // Check if order number exists
@@ -146,9 +152,21 @@ export const queries: CatalogSectionsQueries = {
         RETURNING id, name, "order"
     `,
     
+    // Delete multiple sections
+    deleteMultipleSections: `
+        DELETE FROM app.catalog_sections 
+        WHERE id = ANY($1)
+        RETURNING id, name, "order"
+    `,
+    
     // Check if section exists
     checkSectionExists: `
         SELECT id, name, "order" FROM app.catalog_sections WHERE id = $1
+    `,
+    
+    // Check if multiple sections exist
+    checkMultipleSectionsExist: `
+        SELECT id, name, "order" FROM app.catalog_sections WHERE id = ANY($1)
     `,
     
     // Check if section name exists (excluding current section)
@@ -175,6 +193,13 @@ export const queries: CatalogSectionsQueries = {
         WHERE "order" > $1
     `,
     
+    // Update order numbers for sections after multiple deletions
+    updateOrderNumbersAfterMultipleDeletion: `
+        UPDATE app.catalog_sections 
+        SET "order" = "order" - 1 
+        WHERE "order" > $1
+    `,
+    
     // Check if section name exists
     checkSectionNameExists: `
         SELECT id FROM app.catalog_sections WHERE name = $1
@@ -183,5 +208,5 @@ export const queries: CatalogSectionsQueries = {
     // Check if order number exists
     checkOrderExists: `
         SELECT id FROM app.catalog_sections WHERE "order" = $1
-    `
+    `,
 }; 

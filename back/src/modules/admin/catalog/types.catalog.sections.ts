@@ -131,7 +131,7 @@ export interface UpdateSectionResponse extends ApiResponse {
  * Delete section request interface
  */
 export interface DeleteSectionRequest {
-    id: string
+    ids: string[]  // Changed from single id to array of ids
 }
 
 /**
@@ -139,8 +139,19 @@ export interface DeleteSectionRequest {
  */
 export interface DeleteSectionResponse extends ApiResponse {
     data?: {
-        id: string
-        name: string
+        deleted: Array<{
+            id: string
+            name: string
+        }>
+        failed: Array<{
+            id: string
+            name?: string
+            error: string
+            code: string
+        }>
+        totalRequested: number
+        totalDeleted: number
+        totalFailed: number
     }
 }
 

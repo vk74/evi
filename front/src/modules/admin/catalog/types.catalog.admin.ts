@@ -100,3 +100,27 @@ export interface UpdateSectionResponse extends ApiResponse {
     name: string
   }
 }
+
+// Delete section request interface
+export interface DeleteSectionRequest {
+    ids: string[]
+}
+
+// Delete section response interface
+export interface DeleteSectionResponse extends ApiResponse {
+    data?: {
+        deleted: Array<{
+            id: string
+            name: string
+        }>
+        failed: Array<{
+            id: string
+            name?: string
+            error: string
+            code: string
+        }>
+        totalRequested: number
+        totalDeleted: number
+        totalFailed: number
+    }
+}
