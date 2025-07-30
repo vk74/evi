@@ -22,6 +22,7 @@ import updateGroupById from './users/groupEditor/controller.update.group';
 import fetchGroupMembers from './users/groupEditor/controller.fetch.group.members';
 import removeGroupMembers from './users/groupEditor/controller.delete.group.members';
 import fetchCatalogSections from './catalog/controller.fetch.sections';
+import createCatalogSection from './catalog/controller.create.section';
 
 const router: Router = express.Router();
 
@@ -45,6 +46,7 @@ router.post('/api/admin/groups/:groupId/members/remove', validateJWT, removeGrou
 
 // Routes for Catalog
 router.get('/api/admin/catalog/fetch-sections', validateJWT, fetchCatalogSections);
+router.post('/api/admin/catalog/create-section', validateJWT, createCatalogSection);
 
 // Export using ES modules syntax
 export default router;

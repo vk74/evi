@@ -1,0 +1,35 @@
+/**
+ * controller.create.section.ts - backend file
+ * version: 1.0.0
+ * 
+ * Controller for creating catalog sections data.
+ * 
+ * Handles HTTP POST requests to the /api/admin/catalog/create-section endpoint.
+ * Validates JWT (handled by middleware), processes catalog section creation through the service,
+ * and sends the response. Uses event bus to track operations.
+ * 
+ * Note: HTTP request/response events are now handled by the universal connection handler.
+ */
+
+import { Request, Response } from 'express';
+import { createSection as createSectionService } from './service.create.section';
+import { connectionHandler } from '../../../core/helpers/connection.handler';
+
+/**
+ * Business logic for creating catalog sections data
+ * 
+ * @param req - Express Request object
+ * @param res - Express Response object
+ */
+async function createSectionLogic(req: Request, res: Response): Promise<any> {
+    // JWT validation is already performed by route guards
+    // If request reaches controller, JWT is valid
+
+    // Create catalog section
+    const result = await createSectionService(req);
+
+    return result;
+}
+
+// Export controller using universal connection handler
+export default connectionHandler(createSectionLogic, 'CreateCatalogSectionController'); 
