@@ -187,7 +187,7 @@ async function initializeServer(): Promise<void> {
 
     // 6. Route registration
     app.use(authRoutes);
-    app.use(catalogRoutes);
+    app.use('/api/catalog', catalogRoutes);
     app.use(adminRoutes);
     app.use(coreRoutes);
     app.use(workRoutes);

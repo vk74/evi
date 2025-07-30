@@ -5,7 +5,10 @@ Catalog interface with sections, filters, and service/product cards.
 File: ModuleCatalog.vue
 -->
 <script setup lang="ts">
-import { ref, computed } from 'vue';
+import { ref, computed, onMounted } from 'vue';
+import DataLoading from '@/core/ui/loaders/DataLoading.vue';
+import { fetchCatalogSections, isCatalogLoading, getCatalogError } from './service.fetch.catalog.sections';
+import type { CatalogSection } from './types.catalog';
 import {
   searchQuery,
   sortBy,
@@ -21,10 +24,8 @@ import {
 } from './state.catalog';
 
 // ==================== SECTIONS DATA ====================
-const sections = ref([
-  { id: 1, name: 'main', displayName: 'Основная', icon: 'mdi-home', color: 'teal-darken-2', isActive: true },
-  { id: 2, name: 'section2', displayName: 'Секция 2', icon: 'mdi-cog', color: 'teal-darken-2', isActive: false }
-]);
+const sections = ref<CatalogSection[]>([]);
+const selectedSectionId = ref<string | null>(null);
 
 // ==================== FILTER STATE ====================
 const filterType = ref<'all' | 'services' | 'products'>('all');
@@ -219,11 +220,28 @@ function getStatusColor(status: string): string {
   }
 }
 
+// ==================== CATALOG SECTIONS FUNCTIONS ====================
+async function loadCatalogSections() {
+  try {
+    const fetchedSections = await fetchCatalogSections();
+    sections.value = fetchedSections;
+    
+    // Set first section as active if no section is selected
+    if (sections.value.length > 0 && !selectedSectionId.value) {
+      selectedSectionId.value = sections.value[0].id;
+    }
+  } catch (error) {
+    console.error('Failed to load catalog sections:', error);
+  }
+}
+
+async function refreshCatalogSections() {
+  await loadCatalogSections();
+}
+
 // ==================== EVENT HANDLERS ====================
-function selectSection(sectionId: number) {
-  sections.value.forEach(section => {
-    section.isActive = section.id === sectionId;
-  });
+function selectSection(sectionId: string) {
+  selectedSectionId.value = sectionId;
 }
 
 // ==================== HOVER TRIGGER AREA ====================
@@ -234,6 +252,11 @@ const onTriggerAreaEnter = () => {
 const onTriggerAreaLeave = () => {
   setHoveringTriggerArea(false);
 };
+
+// ==================== LIFECYCLE ====================
+onMounted(() => {
+  loadCatalogSections();
+});
 </script>
 
 <template>
@@ -251,7 +274,7 @@ const onTriggerAreaLeave = () => {
           :key="section.id"
           :class="[
             'section-btn', 
-            { 'section-active': section.isActive }
+            { 'section-active': selectedSectionId === section.id }
           ]"
           variant="text"
           @click="selectSection(section.id)"
@@ -262,7 +285,7 @@ const onTriggerAreaLeave = () => {
           >
             {{ section.icon }}
           </v-icon>
-          {{ section.displayName }}
+          {{ section.name }}
         </v-btn>
       </div>
       <v-spacer />
@@ -361,136 +384,199 @@ const onTriggerAreaLeave = () => {
     <!-- ==================== WORKSPACE AREA ==================== -->
     <div class="workspace-container">
       <v-container class="py-6">
-        <!-- Results Info -->
-        <div class="d-flex justify-space-between align-center mb-4">
-          <div class="text-subtitle-1">
-            Найдено: {{ filteredAndSortedItems.length }} элементов
+        <!-- Loading State -->
+        <DataLoading
+          :loading="isCatalogLoading()"
+          loading-text="Загрузка секций каталога..."
+          size="large"
+          color="teal"
+        />
+
+        <!-- Error State -->
+        <div
+          v-if="getCatalogError()"
+          class="text-center py-8"
+        >
+          <v-icon
+            icon="mdi-alert-circle"
+            size="64"
+            color="error"
+            class="mb-4"
+          />
+          <div class="text-h6 text-error mb-2">
+            Ошибка загрузки секций
           </div>
-          <div class="text-caption text-grey">
-            {{ sections.find(s => s.isActive)?.displayName }}
+          <div class="text-body-2 text-grey mb-4">
+            {{ getCatalogError() }}
           </div>
+          <v-btn
+            color="teal"
+            variant="outlined"
+            @click="refreshCatalogSections"
+          >
+            Попробовать снова
+          </v-btn>
         </div>
 
-        <!-- Items Grid -->
-        <v-row>
-          <v-col
-            v-for="item in filteredAndSortedItems"
-            :key="item.id"
-            cols="12"
-            sm="6"
-            md="4"
-            lg="3"
-          >
-            <!-- Service/Product Card -->
-            <v-card
-              class="item-card"
-              elevation="2"
-              hover
-            >
-              <v-card-title class="d-flex align-center">
-                <v-icon
-                  :icon="'icon' in item ? item.icon : item.image"
-                  :color="item.color"
-                  class="me-3"
-                  size="large"
-                />
-                <div class="flex-grow-1">
-                  <div class="text-h6">{{ item.name }}</div>
-                  <div class="text-caption text-grey">
-                    {{ item.category }}
-                    <span v-if="'subcategory' in item && item.subcategory"> / {{ item.subcategory }}</span>
-                  </div>
-                </div>
-              </v-card-title>
-
-              <v-card-text>
-                <p class="text-body-2 mb-3">
-                  {{ item.description }}
-                </p>
-
-                <!-- Service-specific info -->
-                <div v-if="'priority' in item && item.priority" class="mb-2">
-                  <v-chip
-                    :color="getPriorityColor(item.priority)"
-                    size="small"
-                    class="me-2"
-                  >
-                    {{ item.priority === 'high' ? 'Высокий' : item.priority === 'medium' ? 'Средний' : 'Низкий' }} приоритет
-                  </v-chip>
-                  
-                  <v-chip
-                    :color="getStatusColor(item.status)"
-                    size="small"
-                  >
-                    {{ item.status === 'active' ? 'Активен' : item.status === 'inactive' ? 'Неактивен' : 'Обслуживание' }}
-                  </v-chip>
-                </div>
-
-                <!-- Product-specific info -->
-                <div v-if="'sku' in item && item.sku" class="mb-2">
-                  <div class="text-caption text-grey mb-1">
-                    SKU: {{ item.sku }}
-                  </div>
-                  <div class="text-h6 text-teal-darken-2">
-                    {{ item.price }}
-                  </div>
-                </div>
-
-                <!-- Owner info -->
-                <div v-if="'owner' in item && item.owner" class="mt-3">
-                  <div class="text-caption text-grey">
-                    Владелец: {{ item.owner }}
-                  </div>
-                </div>
-              </v-card-text>
-
-              <v-card-actions>
-                <v-btn
-                  color="teal-darken-2"
-                  variant="outlined"
-                  size="small"
-                >
-                  Подробнее
-                </v-btn>
-                
-                <v-btn
-                  v-if="'sku' in item && item.sku"
-                  color="teal-darken-2"
-                  variant="tonal"
-                  size="small"
-                >
-                  Заказать
-                </v-btn>
-                
-                <v-btn
-                  v-else
-                  color="teal-darken-2"
-                  variant="tonal"
-                  size="small"
-                >
-                  Запросить
-                </v-btn>
-              </v-card-actions>
-            </v-card>
-          </v-col>
-        </v-row>
-
-        <!-- Empty State -->
+        <!-- Empty State (no sections) -->
         <div
-          v-if="filteredAndSortedItems.length === 0"
+          v-else-if="!isCatalogLoading() && sections.length === 0"
           class="text-center py-12"
         >
           <v-icon
-            icon="mdi-magnify"
+            icon="mdi-folder-open"
             size="64"
             color="grey-lighten-1"
             class="mb-4"
           />
           <div class="text-h6 text-grey mb-2">
-            Ничего не найдено
+            Секции каталога не найдены
           </div>
-          <div class="text-body-2 text-grey">
-            Попробуйте изменить параметры поиска
+          <div class="text-body-2 text-grey mb-4">
+            В каталоге пока нет активных секций
+          </div>
+          <v-btn
+            color="teal"
+            variant="outlined"
+            @click="refreshCatalogSections"
+          >
+            Обновить
+          </v-btn>
+        </div>
+
+        <!-- Content when sections are loaded -->
+        <div v-else-if="!isCatalogLoading() && sections.length > 0">
+          <!-- Results Info -->
+          <div class="d-flex justify-space-between align-center mb-4">
+            <div class="text-subtitle-1">
+              Найдено: {{ filteredAndSortedItems.length }} элементов
+            </div>
+            <div class="text-caption text-grey">
+              {{ sections.find(s => s.id === selectedSectionId)?.name }}
+            </div>
+          </div>
+
+          <!-- Items Grid -->
+          <v-row>
+            <v-col
+              v-for="item in filteredAndSortedItems"
+              :key="item.id"
+              cols="12"
+              sm="6"
+              md="4"
+              lg="3"
+            >
+              <!-- Service/Product Card -->
+              <v-card
+                class="item-card"
+                elevation="2"
+                hover
+              >
+                <v-card-title class="d-flex align-center">
+                  <v-icon
+                    :icon="'icon' in item ? item.icon : item.image"
+                    :color="item.color"
+                    class="me-3"
+                    size="large"
+                  />
+                  <div class="flex-grow-1">
+                    <div class="text-h6">{{ item.name }}</div>
+                    <div class="text-caption text-grey">
+                      {{ item.category }}
+                      <span v-if="'subcategory' in item && item.subcategory"> / {{ item.subcategory }}</span>
+                    </div>
+                  </div>
+                </v-card-title>
+
+                <v-card-text>
+                  <p class="text-body-2 mb-3">
+                    {{ item.description }}
+                  </p>
+
+                  <!-- Service-specific info -->
+                  <div v-if="'priority' in item && item.priority" class="mb-2">
+                    <v-chip
+                      :color="getPriorityColor(item.priority)"
+                      size="small"
+                      class="me-2"
+                    >
+                      {{ item.priority === 'high' ? 'Высокий' : item.priority === 'medium' ? 'Средний' : 'Низкий' }} приоритет
+                    </v-chip>
+                    
+                    <v-chip
+                      :color="getStatusColor(item.status)"
+                      size="small"
+                    >
+                      {{ item.status === 'active' ? 'Активен' : item.status === 'inactive' ? 'Неактивен' : 'Обслуживание' }}
+                    </v-chip>
+                  </div>
+
+                  <!-- Product-specific info -->
+                  <div v-if="'sku' in item && item.sku" class="mb-2">
+                    <div class="text-caption text-grey mb-1">
+                      SKU: {{ item.sku }}
+                    </div>
+                    <div class="text-h6 text-teal-darken-2">
+                      {{ item.price }}
+                    </div>
+                  </div>
+
+                  <!-- Owner info -->
+                  <div v-if="'owner' in item && item.owner" class="mt-3">
+                    <div class="text-caption text-grey">
+                      Владелец: {{ item.owner }}
+                    </div>
+                  </div>
+                </v-card-text>
+
+                <v-card-actions>
+                  <v-btn
+                    color="teal-darken-2"
+                    variant="outlined"
+                    size="small"
+                  >
+                    Подробнее
+                  </v-btn>
+                  
+                  <v-btn
+                    v-if="'sku' in item && item.sku"
+                    color="teal-darken-2"
+                    variant="tonal"
+                    size="small"
+                  >
+                    Заказать
+                  </v-btn>
+                  
+                  <v-btn
+                    v-else
+                    color="teal-darken-2"
+                    variant="tonal"
+                    size="small"
+                  >
+                    Запросить
+                  </v-btn>
+                </v-card-actions>
+              </v-card>
+            </v-col>
+          </v-row>
+
+          <!-- Empty State (no items in current filter) -->
+          <div
+            v-if="filteredAndSortedItems.length === 0"
+            class="text-center py-12"
+          >
+            <v-icon
+              icon="mdi-magnify"
+              size="64"
+              color="grey-lighten-1"
+              class="mb-4"
+            />
+            <div class="text-h6 text-grey mb-2">
+              Ничего не найдено
+            </div>
+            <div class="text-body-2 text-grey">
+              Попробуйте изменить параметры поиска
+            </div>
           </div>
         </div>
       </v-container>
