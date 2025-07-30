@@ -229,7 +229,8 @@ const createSection = async () => {
       description: formData.value.description?.trim() || undefined,
       comments: formData.value.comments?.trim() || undefined,
       backup_owner: formData.value.backupOwner?.trim() || undefined,
-      color: formData.value.color || undefined
+      color: formData.value.color || undefined,
+      is_public: formData.value.isPublic
     }
 
     // Create section via API

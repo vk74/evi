@@ -153,6 +153,16 @@ async function validateCreateSectionData(data: CreateSectionRequest): Promise<vo
         throw error;
     }
 
+    // Validate is_public if provided
+    if (data.is_public !== undefined && typeof data.is_public !== 'boolean') {
+        const error: ServiceError = {
+            code: 'VALIDATION_ERROR',
+            message: 'is_public must be a boolean value',
+            details: { field: 'is_public', value: data.is_public }
+        };
+        throw error;
+    }
+
     // Check if owner exists
     const ownerUuid = await getUuidByUsername(data.owner);
     if (!ownerUuid) {
@@ -243,7 +253,7 @@ export async function createSection(req: Request): Promise<CreateSectionResponse
             requestData.description?.trim() || null,
             requestData.comments?.trim() || null,
             SectionStatus.DRAFT, // Default status
-            false, // Default is_public
+            requestData.is_public ?? false, // Use provided is_public or default to false
             requestData.order,
             requestData.parent_id || null,
             null, // icon - not used for now

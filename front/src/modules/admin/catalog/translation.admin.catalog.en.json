@@ -25,7 +25,7 @@
             "maxLength": "name must not exceed 100 characters"
           },
           "order": {
-            "label": "order N",
+            "label": "section N",
             "required": "order number is required",
             "numbersOnly": "only numbers allowed",
             "positive": "number must be greater than 0"
@@ -112,7 +112,7 @@
         "table": {
           "headers": {
             "selection": "selection",
-            "order": "order N",
+            "order": "section N",
             "name": "name",
             "owner": "owner",
             "backupOwner": "backup owner",

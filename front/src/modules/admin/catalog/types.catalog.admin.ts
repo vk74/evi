@@ -69,6 +69,7 @@ export interface CreateSectionRequest {
   backup_owner?: string
   parent_id?: string
   color?: string
+  is_public?: boolean
 }
 
 // Create section response interface
