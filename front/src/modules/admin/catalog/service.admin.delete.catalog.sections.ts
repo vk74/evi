@@ -18,7 +18,7 @@
 import { useCatalogAdminStore } from './state.catalog.admin'
 import { useUiStore } from '@/core/state/uistate'
 import { api } from '@/core/api/service.axios'
-import catalogSectionsFetchService from './service.fetch.catalog.sections'
+import catalogSectionsFetchService from './service.admin.fetch.catalog.sections'
 import type { 
     DeleteSectionRequest, 
     DeleteSectionResponse, 

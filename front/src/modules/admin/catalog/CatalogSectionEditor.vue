@@ -21,9 +21,9 @@ import { useCatalogAdminStore } from './state.catalog.admin'
 import { useUiStore } from '@/core/state/uistate'
 import ItemSelector from '@/core/ui/modals/item-selector/ItemSelector.vue'
 import DataLoading from '@/core/ui/loaders/DataLoading.vue'
-import { catalogSectionCreateService } from './service.create.catalog.section'
-import { catalogSectionsFetchService } from './service.fetch.catalog.sections'
-import { catalogSectionUpdateService } from './service.update.catalog.section'
+import { catalogSectionCreateService } from './service.admin.create.catalog.section'
+import { catalogSectionsFetchService } from './service.admin.fetch.catalog.sections'
+import { catalogSectionUpdateService } from './service.admin.update.catalog.section'
 import type { SectionStatus } from './types.catalog.admin'
 
 // Types
