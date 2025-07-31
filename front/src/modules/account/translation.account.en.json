@@ -1,117 +1,208 @@
 {
-  "login": {
-    "title": "sign in to application",
-    "fields": {
-      "username": {
-        "label": "username"
-      },
-      "password": {
-        "label": "password"
-      }
-    },
-    "buttons": {
-      "signIn": "SIGN IN"
-    },
-    "errors": {
-      "invalidCredentials": "incorrect username or password",
-      "serverError": "server error during sign in",
-      "networkError": "network error when connecting to server",
-      "unknownError": "unknown error during sign in",
-      "tooManyAttempts": "too many login attempts, try again in 15 minutes"
-    },
-    "registration": {
-      "text": "if you don't have an ev2 account,",
-      "link": "register"
-    }
-  },
-  "selfRegistration": {
-    "title": "new user account registration",
-    "fields": {
-      "username": {
-        "label": "username*"
-      },
-      "password": {
-        "label": "password*"
-      },
-      "passwordConfirm": {
-        "label": "confirm password*"
-      },
-      "surname": {
-        "label": "last name*"
-      },
-      "name": {
-        "label": "first name*"
-      },
-      "email": {
-        "label": "e-mail*"
-      },
-      "phone": {
-        "label": "phone",
-        "placeholder": "+7 (###) ###-####"
-      },
-      "address": {
-        "label": "address"
-      }
-    },
-    "validation": {
-      "password": {
-        "required": "password is required",
-        "policiesNotLoaded": "password policy settings not loaded - registration blocked",
-        "minLength": "password must contain at least {length} characters",
-        "maxLength": "password must not exceed {length} characters",
-        "lowercase": "password must contain lowercase letters",
-        "uppercase": "password must contain uppercase letters",
-        "numbers": "password must contain numbers",
-        "specialChars": "password must contain special characters",
-        "invalidChars": "password contains invalid characters"
-      },
-      "passwordConfirm": {
-        "required": "password confirmation is required",
-        "mismatch": "passwords do not match"
-      },
-      "address": {
-        "maxLength": "address must not exceed 100 characters",
-        "format": "address contains invalid characters"
-      },
-      "phone": {
-        "format": "phone must contain only digits and be no longer than 15 characters"
-      }
-    },
-    "buttons": {
-      "register": "REGISTER"
-    },
-    "errors": {
-      "validation": "validation error: invalid fields -",
-      "duplicateUsername": "error: this username is already registered",
-      "duplicateEmail": "error: this email address is already in use",
-      "duplicatePhone": "error: this phone number is already in use",
-      "passwordPoliciesLoadFailed": "failed to load password policy settings",
-      "passwordPoliciesNotReady": "password policy settings not ready - registration blocked",
-      "formValidation": "please check the form fields for correctness",
-      "serverError": "server error during registration",
-      "networkError": "network error when sending registration data"
-    },
-    "success": {
-      "registered": "registration completed successfully",
-      "dataSent": "registration form data successfully sent to server"
-    },
+  "account": {
     "login": {
-      "alreadyHaveAccount": "already have an account?",
-      "signIn": "sign in"
+      "title": "sign in to application",
+      "fields": {
+        "username": {
+          "label": "username"
+        },
+        "password": {
+          "label": "password"
+        }
+      },
+      "buttons": {
+        "signIn": "SIGN IN"
+      },
+      "errors": {
+        "invalidCredentials": "incorrect username or password",
+        "serverError": "server error during sign in",
+        "networkError": "network error when connecting to server",
+        "unknownError": "unknown error during sign in",
+        "tooManyAttempts": "too many login attempts, try again in 15 minutes"
+      },
+      "registration": {
+        "text": "if you don't have an ev2 account,",
+        "link": "register"
+      }
+    },
+    "selfRegistration": {
+      "title": "new user account registration",
+      "fields": {
+        "username": {
+          "label": "username*"
+        },
+        "password": {
+          "label": "password*"
+        },
+        "passwordConfirm": {
+          "label": "confirm password*"
+        },
+        "surname": {
+          "label": "last name*"
+        },
+        "name": {
+          "label": "first name*"
+        },
+        "email": {
+          "label": "e-mail*"
+        },
+        "phone": {
+          "label": "phone",
+          "placeholder": "+7 (###) ###-####"
+        },
+        "address": {
+          "label": "address"
+        }
+      },
+      "validation": {
+        "password": {
+          "required": "password is required",
+          "policiesNotLoaded": "password policy settings not loaded - registration blocked",
+          "minLength": "password must contain at least {length} characters",
+          "maxLength": "password must not exceed {length} characters",
+          "lowercase": "password must contain lowercase letters",
+          "uppercase": "password must contain uppercase letters",
+          "numbers": "password must contain numbers",
+          "specialChars": "password must contain special characters",
+          "invalidChars": "password contains invalid characters"
+        },
+        "passwordConfirm": {
+          "required": "password confirmation is required",
+          "mismatch": "passwords do not match"
+        },
+        "address": {
+          "maxLength": "address must not exceed 100 characters",
+          "format": "address contains invalid characters"
+        },
+        "phone": {
+          "format": "phone must contain only digits and be no longer than 15 characters"
+        }
+      },
+      "buttons": {
+        "register": "REGISTER"
+      },
+      "errors": {
+        "validation": "validation error: invalid fields -",
+        "duplicateUsername": "error: this username is already registered",
+        "duplicateEmail": "error: this email address is already in use",
+        "duplicatePhone": "error: this phone number is already in use",
+        "passwordPoliciesLoadFailed": "failed to load password policy settings",
+        "passwordPoliciesNotReady": "password policy settings not ready - registration blocked",
+        "formValidation": "please check the form fields for correctness",
+        "serverError": "server error during registration",
+        "networkError": "network error when sending registration data"
+      },
+      "success": {
+        "registered": "registration completed successfully",
+        "dataSent": "registration form data successfully sent to server"
+      },
+      "login": {
+        "alreadyHaveAccount": "already have an account?",
+        "signIn": "sign in"
+      }
+    },
+    "sessionData": {
+      "title": "technical session data",
+      "username": "username",
+      "jwt": "jwt token",
+      "isLoggedIn": "is logged in",
+      "userID": "user id",
+      "issuedAt": "token issued at",
+      "issuer": "token issuer",
+      "expiresAt": "token expires at",
+      "timeUntilExpiry": "session expires in",
+      "seconds": "seconds",
+      "yes": "yes",
+      "no": "no"
+    },
+    "profile": {
+      "title": "user profile",
+      "sections": {
+        "personalInfo": "personal information",
+        "contactInfo": "contact information",
+        "workInfo": "work information"
+      },
+      "fields": {
+        "lastName": {
+          "label": "last name",
+          "validation": {
+            "required": "last name is required",
+            "minLength": "last name must contain at least 2 characters",
+            "maxLength": "last name must not exceed 50 characters"
+          }
+        },
+        "firstName": {
+          "label": "first name",
+          "validation": {
+            "required": "first name is required",
+            "minLength": "first name must contain at least 2 characters",
+            "maxLength": "first name must not exceed 50 characters"
+          }
+        },
+        "middleName": {
+          "label": "middle name",
+          "validation": {
+            "maxLength": "middle name must not exceed 50 characters"
+          }
+        },
+        "gender": {
+          "label": "gender",
+          "validation": {
+            "maxLength": "gender must not exceed 20 characters"
+          },
+          "options": {
+            "male": "male",
+            "female": "female",
+            "notDefined": "not specified",
+            "notSelected": "not selected"
+          }
+        },
+        "phoneNumber": {
+          "label": "phone number",
+          "validation": {
+            "format": "invalid phone number format",
+            "maxLength": "phone number must not exceed 20 characters"
+          }
+        },
+        "email": {
+          "label": "e-mail",
+          "validation": {
+            "format": "invalid email format",
+            "maxLength": "email must not exceed 100 characters"
+          }
+        },
+        "address": {
+          "label": "address",
+          "validation": {
+            "maxLength": "address must not exceed 200 characters"
+          }
+        },
+        "companyName": {
+          "label": "company name",
+          "validation": {
+            "maxLength": "company name must not exceed 100 characters"
+          },
+          "hint": "in development"
+        },
+        "position": {
+          "label": "position",
+          "validation": {
+            "maxLength": "position must not exceed 100 characters"
+          },
+          "hint": "in development"
+        }
+      },
+      "actions": {
+        "title": "actions",
+        "save": "save",
+        "changePassword": "change password"
+      },
+      "messages": {
+        "saveSuccess": "profile data updated successfully",
+        "saveError": "error updating profile data",
+        "loadError": "error loading profile data",
+        "validationError": "please fill in all required fields"
+      }
     }
-  },
-  "sessionData": {
-    "title": "technical session data",
-    "username": "username",
-    "jwt": "jwt token",
-    "isLoggedIn": "is logged in",
-    "userID": "user id",
-    "issuedAt": "token issued at",
-    "issuer": "token issuer",
-    "expiresAt": "token expires at",
-    "timeUntilExpiry": "session expires in",
-    "seconds": "seconds",
-    "yes": "yes",
-    "no": "no"
   }
 } 
