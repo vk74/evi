@@ -19,6 +19,7 @@
 import { useI18n } from 'vue-i18n'
 import { ref, computed, onMounted } from 'vue'
 import { useUiStore } from '@/core/state/uistate'
+import { useAppStore } from '@/core/state/appstate'
 import { useUserAuthStore } from '@/core/auth/state.user.auth'
 import { useValidationRules } from '@/core/validation/rules.common.fields'
 import { fetchPublicPasswordPolicies } from '@/core/services/service.fetch.public.password.policies'
@@ -27,6 +28,7 @@ import PasswordPoliciesPanel from '@/core/ui/panels/panel.current.password.polic
 
 // ==================== STORES ====================
 const uiStore = useUiStore()
+const appStore = useAppStore()
 const userStore = useUserAuthStore()
 const publicStore = usePublicSettingsStore()
 const { t } = useI18n()
@@ -295,7 +297,7 @@ const submitForm = async () => {
  * Navigate to login page
  */
 const goToLogin = () => {
-  userStore.activeModule = 'Login'
+  appStore.setActiveModule('Login')
 }
 
 // ==================== LIFECYCLE ====================

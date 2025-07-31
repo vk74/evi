@@ -1,23 +1,23 @@
 {
   "login": {
-    "title": "Sign In",
+    "title": "sign in",
     "fields": {
       "username": {
-        "label": "Username"
+        "label": "username"
       },
       "password": {
-        "label": "Password"
+        "label": "password"
       }
     },
     "buttons": {
-      "signIn": "Sign In"
+      "signIn": "sign in"
     },
     "registration": {
-      "text": "Don't have an account?",
-      "link": "Register"
+      "text": "don't have an account?",
+      "link": "register"
     },
     "errors": {
-      "unknownError": "An unknown error occurred"
+      "unknownError": "an unknown error occurred"
     }
   }
 }
