@@ -16,9 +16,9 @@ import updateUserProfile from '../../modules/account/service.update.profile';
 import fetchPublicPasswordPoliciesController from '../public/controller.fetch.public.password.policies';
 
 // Import new controllers
-import { loginController } from '../../modules/account/controller.login';
-import { refreshTokensController } from '../../modules/account/controller.refresh.tokens';
-import { logoutController } from '../../modules/account/controller.logout';
+import { loginController } from './controller.login';
+import { refreshTokensController } from './controller.refresh.tokens';
+import { logoutController } from './controller.logout';
 // import serviceChangePassword from '../../modules/account/service.change.password';
 
 const router: Router = express.Router();
