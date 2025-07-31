@@ -12,6 +12,8 @@ import { pool } from '@/core/db/maindb';
 import { LoginRequest, LoginResponse, getCookieConfig, DeviceFingerprint } from './types.auth';
 import { issueTokenPair } from './service.issue.tokens';
 import { extractDeviceFingerprintFromRequest, logDeviceFingerprint } from './utils.device.fingerprint';
+import fabricEvents from '@/core/eventBus/fabric.events';
+import { AUTH_LOGIN_EVENTS, AUTH_SECURITY_EVENTS } from './events.auth';
 
 // Cookie configuration
 const REFRESH_TOKEN_COOKIE_NAME = 'refreshToken';
@@ -117,23 +119,34 @@ export async function loginService(
   clientIp: string,
   res: Response
 ): Promise<LoginResponse> {
-  console.log('[Login Service] Processing login request for user:', loginData.username);
+  // Create login attempt event
+  await fabricEvents.createAndPublishEvent({
+    eventName: AUTH_LOGIN_EVENTS.LOGIN_ATTEMPT.eventName,
+    payload: {
+      username: loginData.username,
+      clientIp,
+      deviceFingerprint: loginData.deviceFingerprint
+    }
+  });
   
   try {
     // Check brute force protection
     if (isIpBlocked(clientIp)) {
-      console.log('[Login Service] IP blocked due to brute force attempts:', clientIp);
+      // Create brute force detected event
+      await fabricEvents.createAndPublishEvent({
+        eventName: AUTH_SECURITY_EVENTS.BRUTE_FORCE_DETECTED.eventName,
+        payload: {
+          clientIp,
+          username: loginData.username
+        }
+      });
       throw new Error('Too many failed login attempts. Please try again later.');
     }
-    
-    console.log('[Login Service] Brute force check passed');
     
     // Validate input
     if (!loginData.username || !loginData.password) {
       throw new Error('Username and password are required');
     }
-    
-    console.log('[Login Service] Input validation passed');
     
     // Extract and validate device fingerprint
     const deviceFingerprint = loginData.deviceFingerprint;
@@ -141,32 +154,42 @@ export async function loginService(
       throw new Error('Valid device fingerprint is required');
     }
     
-    console.log('[Login Service] Device fingerprint validation passed');
-    
     // Validate credentials
-    console.log('[Login Service] Starting credential validation...');
     const { isValid, userUuid } = await validateCredentials(loginData.username, loginData.password);
     
     if (!isValid) {
       recordFailedAttempt(clientIp);
-      console.log('[Login Service] Invalid credentials for user:', loginData.username);
+      
+      // Create invalid credentials event
+      await fabricEvents.createAndPublishEvent({
+        eventName: AUTH_SECURITY_EVENTS.INVALID_CREDENTIALS.eventName,
+        payload: {
+          username: loginData.username,
+          clientIp
+        }
+      });
+      
       throw new Error('Invalid credentials');
     }
-    
-    console.log('[Login Service] Credentials validated successfully');
     
     // Log device fingerprint for security monitoring
     logDeviceFingerprint(userUuid!, deviceFingerprint, 'login');
     
     // Generate token pair using token issuance service with device fingerprint
-    console.log('[Login Service] Requesting token pair generation...');
     const tokenPair = await issueTokenPair(loginData.username, userUuid!, deviceFingerprint);
     
     // Set refresh token as httpOnly cookie
-    console.log('[Login Service] Setting refresh token as httpOnly cookie...');
     setRefreshTokenCookie(res, tokenPair.refreshToken);
     
-    console.log('[Login Service] Login successful for user:', loginData.username);
+    // Create successful login event
+    await fabricEvents.createAndPublishEvent({
+      eventName: AUTH_LOGIN_EVENTS.LOGIN_SUCCESS.eventName,
+      payload: {
+        userUuid: userUuid!,
+        username: loginData.username,
+        clientIp
+      }
+    });
     
     return {
       success: true,

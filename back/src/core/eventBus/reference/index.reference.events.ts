@@ -57,6 +57,11 @@ export const eventReferenceFiles: Record<string, string[]> = {
     path.resolve(__dirname, './errors.reference.events.ts')
   ],
   
+  // Authentication events - events for authentication operations
+  auth: [
+    path.resolve(__dirname, '../../../auth/events.auth.ts')
+  ],
+  
   // Add other domains here as they are created
 };
 
