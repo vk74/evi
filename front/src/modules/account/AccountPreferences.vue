@@ -1,17 +1,17 @@
 <template>
-  <div class="ModuleSettings">
-    <h4>Settings Module</h4>
+  <div class="AccountPreferences">
+    <h4>user preferences</h4>
     Модуль будет использоваться для настроек отображения интерфейса, логики работы веб-приложения и пр.
   </div>
 </template>
 
-<script>
-export default {
-  name: 'ModuleSettings'
-};
+<script setup lang="ts">
+// Component name for debugging
+defineOptions({
+  name: 'AccountPreferences'
+});
 </script>
-
 
 <style>
 
-</style>
+</style> 

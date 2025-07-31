@@ -26,7 +26,7 @@ const ModuleWork = defineAsyncComponent(() => import('./modules/work/ModuleWork.
 const ModuleAR = defineAsyncComponent(() => import('./modules/ar/ModuleAR.vue'));
 const ModuleXLS = defineAsyncComponent(() => import('./modules/proto/ModuleXLS.vue'));
 const ModuleAccount = defineAsyncComponent(() => import('./modules/account/ModuleAccount.vue'));
-const ModuleSettings = defineAsyncComponent(() => import('./modules/settings/ModuleSettings.vue'));
+const AccountPreferences = defineAsyncComponent(() => import('./modules/account/AccountPreferences.vue'));
 const ModuleKnowledgeBase = defineAsyncComponent(() => import('./modules/KB/ModuleKnowledgeBase.vue'));
 const ModuleSessionData = defineAsyncComponent(() => import('./modules/account/ModuleSessionData.vue'));
 
@@ -719,7 +719,7 @@ onMounted(() => {
       />
       <ModuleXLS v-if="appStore.isModuleActive('XLS')" />
       <ModuleAccount v-if="appStore.isModuleActive('Account')" />
-      <ModuleSettings v-if="appStore.isModuleActive('Settings')" />
+      <AccountPreferences v-if="appStore.isModuleActive('Settings')" />
       <ModuleSessionData v-if="appStore.isModuleActive('SessionData')" />
       <ModuleKnowledgeBase v-if="appStore.isModuleActive('KnowledgeBase')" />
               <ModuleNewUserSelfRegistration v-if="appStore.isModuleActive('NewUserRegistration')" />
