@@ -660,16 +660,32 @@
   </v-container>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { ref } from 'vue'
 import { useUserAuthStore } from '@/core/auth/state.user.auth'
 import { useUiStore } from '@/core/state/uistate'
+
+interface Section {
+  id: string;
+  title: string;
+  icon: string;
+}
+
+interface ValidationRule {
+  (value: any): boolean | string;
+}
+
+interface ValidationRules {
+  required: ValidationRule;
+  integer: ValidationRule;
+  range: ValidationRule;
+}
 
 // Инициализируем store в начале, до использования
 const userStore = useUserAuthStore()
 const uiStore = useUiStore()
 
-const sections = [
+const sections: Section[] = [
   { id: 'description', title: 'описание', icon: 'mdi-book-open-page-variant-outline' },
   { id: 'visualization', title: 'визуализация', icon: 'mdi-pencil-ruler' },
   { id: 'access', title: 'доступ', icon: 'mdi-shield-outline' },
@@ -677,10 +693,10 @@ const sections = [
 ]
 
 // Section Navigation
-const activeSection = ref('description')
+const activeSection = ref<string>('description')
 
 // Form Items
-const statusItems = [
+const statusItems: string[] = [
   'drafted',
   'being_developed',
   'being_tested',
@@ -692,39 +708,39 @@ const statusItems = [
   'being_upgraded',
   'discontinued'
 ]
-const visibilityItems = ['public', 'private']
-const priorityItems = ['critical', 'high', 'medium', 'low']
+const visibilityItems: string[] = ['public', 'private']
+const priorityItems: string[] = ['critical', 'high', 'medium', 'low']
 
 // Form Validation Rules
-const rules = {
-  required: v => !!v || 'поле обязательно для заполнения',
-  integer: v => Number.isInteger(Number(v)) || 'введите целое число',
-  range: v => (v >= 0 && v <= 99) || 'введите значение от 0 до 99'
+const rules: ValidationRules = {
+  required: (v: any): boolean | string => !!v || 'поле обязательно для заполнения',
+  integer: (v: any): boolean | string => Number.isInteger(Number(v)) || 'введите целое число',
+  range: (v: any): boolean | string => (v >= 0 && v <= 99) || 'введите значение от 0 до 99'
 }
 
 // Description Section Refs
-const serviceName = ref('')
-const status = ref('')
-const visibility = ref('')
-const priority = ref('')
-const shortDescription = ref('')
-const purpose = ref('')
-const fullDescription = ref('')
-const comments = ref('')
-const isSaving = ref(false)
+const serviceName = ref<string>('')
+const status = ref<string>('')
+const visibility = ref<string>('')
+const priority = ref<string>('')
+const shortDescription = ref<string>('')
+const purpose = ref<string>('')
+const fullDescription = ref<string>('')
+const comments = ref<string>('')
+const isSaving = ref<boolean>(false)
 
 // Visualization Section Refs
-const closedWidth = ref('')
-const closedHeight = ref('')
-const openWidth = ref('')
-const openHeight = ref('')
-const closedWidthError = ref('')
-const closedHeightError = ref('')
-const openWidthError = ref('')
-const openHeightError = ref('')
+const closedWidth = ref<string>('')
+const closedHeight = ref<string>('')
+const openWidth = ref<string>('')
+const openHeight = ref<string>('')
+const closedWidthError = ref<string>('')
+const closedHeightError = ref<string>('')
+const openWidthError = ref<string>('')
+const openHeightError = ref<string>('')
 
 // Validation Method
-const validateField = (field) => {
+const validateField = (field: string): void => {
   const value = eval(field).value
   const errorField = eval(field + 'Error')
   
@@ -742,7 +758,7 @@ const validateField = (field) => {
 }
 
 // Save Description Section Data Method
-const submitDescriptionSection = async () => {
+const submitDescriptionSection = async (): Promise<void> => {
   console.log('Save button clicked - Description Section')
   console.log('Current form values:', {
     name: serviceName.value,

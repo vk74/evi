@@ -112,16 +112,30 @@
   </div>
 </template>
   
-<script>
+<script lang="ts">
 import axios from 'axios';
 import Datepicker from 'vue3-datepicker';
+
+interface FormData {
+  orgname: string;
+  region: string;
+  location: string;
+  checkbox: boolean;
+  radio: string;
+  date: Date;
+}
+
+interface Location {
+  id: number;
+  name: string;
+}
 
 export default {
   name: 'ModuleXLS',
   components: {
     Datepicker
   },
-  data() {
+  data(): { formData: FormData; locations: Location[] } {
     return {
       formData: {
         orgname: '',
@@ -140,7 +154,7 @@ export default {
   
   methods: {
   // получить список локаций
-    async fetchLocations() {
+    async fetchLocations(): Promise<void> {
       try {
         const response = await axios.get('http://localhost:3000/protolocations');
         this.locations = response.data;
@@ -150,7 +164,7 @@ export default {
     },
 
   // записать данные в postgres
-    async handleSubmit() {
+    async handleSubmit(): Promise<void> {
       try {
         const response = await axios.post('http://localhost:3000/protosubmit', this.formData);
         console.log('Ответ сервера:', response.data); // Вывод в консоль ответа сервера
@@ -163,7 +177,7 @@ export default {
   
 
   // вариант с запросом пользователя куда файл должен быть сохранен
-  async generateExcelFile() {
+  async generateExcelFile(): Promise<void> {
     console.log("Генерация файла Excel начата.");
   try {
     const response = await axios.post('http://localhost:3000/proto-generate-excel', this.formData, {

@@ -9,7 +9,7 @@ Located in the KB folder to organize knowledge base related components.
   </div>
 </template>
 
-<script>
+<script lang="ts">
 export default {
   name: 'ModuleKnowledgeBase'
 };
