@@ -309,12 +309,12 @@ onMounted(async () => {
 
 <template>
   <div class="pt-3 pl-3">
-    <v-card max-width="500px">
-      <v-card-title class="text-h5">
+    <div style="max-width: 500px; padding-left: 24px;">
+      <div class="text-h5" style="margin-bottom: 16px;">
         {{ t('account.selfRegistration.title') }}
-      </v-card-title>
+      </div>
       
-      <v-card-text>
+      <div>
         <v-form 
           ref="form"
           v-model="isFormValid"
@@ -328,6 +328,7 @@ onMounted(async () => {
             variant="outlined"
             density="comfortable"
             counter="25"
+            color="teal"
             required
           />
 
@@ -342,6 +343,7 @@ onMounted(async () => {
             :disabled="!passwordPoliciesReady"
             variant="outlined"
             density="comfortable"
+            color="teal"
             required
             @focus="onPasswordFocus"
             @blur="onPasswordBlur"
@@ -373,6 +375,7 @@ onMounted(async () => {
             :disabled="!passwordPoliciesReady"
             variant="outlined"
             density="comfortable"
+            color="teal"
             required
             @focus="onPasswordFocus"
             @blur="onPasswordBlur"
@@ -391,6 +394,7 @@ onMounted(async () => {
             variant="outlined"
             density="comfortable"
             counter="25"
+            color="teal"
             required
           />
 
@@ -402,6 +406,7 @@ onMounted(async () => {
             variant="outlined"
             density="comfortable"
             counter="25"
+            color="teal"
             required
           />
 
@@ -413,6 +418,7 @@ onMounted(async () => {
             variant="outlined"
             density="comfortable"
             type="email"
+            color="teal"
             required
           />
 
@@ -424,6 +430,7 @@ onMounted(async () => {
             :rules="phoneRules"
             variant="outlined"
             density="comfortable"
+            color="teal"
           />
 
           <!-- Address field -->
@@ -434,6 +441,7 @@ onMounted(async () => {
             variant="outlined"
             density="comfortable"
             counter="100"
+            color="teal"
           />
         </v-form>
 
@@ -441,10 +449,9 @@ onMounted(async () => {
         <div v-if="invalidFields.length > 0" class="error-message mt-3">
           {{ t('account.selfRegistration.errors.validation') }} {{ invalidFields.join(', ') }}
         </div>
-      </v-card-text>
+      </div>
 
-      <v-card-actions>
-        <v-spacer />
+      <div style="display: flex; justify-content: flex-end; margin-top: 16px;">
         <v-btn
           :loading="isSubmitting"
           :disabled="!isFormValid || !passwordPoliciesReady"
@@ -454,9 +461,9 @@ onMounted(async () => {
         >
           {{ t('account.selfRegistration.buttons.register') }}
         </v-btn>
-      </v-card-actions>
+      </div>
 
-      <v-divider class="mx-4" />
+      <div class="divider" />
       
       <div class="pa-4 text-center">
         {{ t('account.selfRegistration.login.alreadyHaveAccount') }}
@@ -468,7 +475,7 @@ onMounted(async () => {
           {{ t('account.selfRegistration.login.signIn') }}
         </a>
       </div>
-    </v-card>
+    </div>
   </div>
 </template>
 
@@ -485,5 +492,12 @@ onMounted(async () => {
 
 .register-link:hover {
   text-decoration: underline;
+}
+
+.divider {
+  width: calc(100% - 32px);
+  height: 1px;
+  background-color: #ccc;
+  margin: 16px auto;
 }
 </style> 

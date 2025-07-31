@@ -87,28 +87,33 @@ const emit = defineEmits(['close'])
 
 <template>
   <div class="pt-3 pl-3"> 
-    <v-card max-width="500px">
-      <v-card-title class="text-h5">
+    <div style="max-width: 500px; padding-left: 24px;">
+      <div class="text-h5" style="margin-bottom: 16px;">
         {{ t('login.title') }}
-      </v-card-title>
-      <v-card-text>
+      </div>
+      <div>
         <v-form>
           <v-text-field
             ref="loginInput"
             v-model="username"
             :label="t('login.fields.username.label')"
+            variant="outlined"
+            density="comfortable"
+            color="teal"
             required
           />
           <v-text-field
             v-model="password"
             :label="t('login.fields.password.label')"
             type="password"
+            variant="outlined"
+            density="comfortable"
+            color="teal"
             required
           />
         </v-form>
-      </v-card-text>
-      <v-card-actions>
-        <v-spacer />
+      </div>
+      <div style="display: flex; justify-content: flex-end; margin-top: 16px;">
         <v-btn
           color="teal"
           variant="outlined"
@@ -116,7 +121,7 @@ const emit = defineEmits(['close'])
         >
           {{ t('login.buttons.signIn') }}
         </v-btn>
-      </v-card-actions>
+      </div>
       <div class="divider" />
       <p class="register-text">
         {{ t('login.registration.text') }} <a
@@ -125,7 +130,7 @@ const emit = defineEmits(['close'])
           @click.prevent="goToRegistration"
         >{{ t('login.registration.link') }}</a>
       </p><br>
-    </v-card>
+    </div>
   </div>  
 </template>
 
