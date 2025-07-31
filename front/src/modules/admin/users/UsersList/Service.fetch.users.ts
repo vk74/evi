@@ -13,7 +13,7 @@
  */
 import { api } from '@/core/api/service.axios'
 import { useStoreUsersList } from './State.users.list'
-import { useUserAuthStore } from '@/modules/account/state.user.auth';
+import { useUserAuthStore } from '@/core/auth/state.user.auth';
 import { useUiStore } from '@/core/state/uistate'
 import { 
   IFetchUsersParams, 

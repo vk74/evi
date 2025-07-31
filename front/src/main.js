@@ -52,7 +52,7 @@ app.config.globalProperties.$http = axios;
 
 // Функция инициализации состояния пользователя
 const initializeUserState = async () => {
-  const { useUserAuthStore } = await import('@/modules/account/state.user.auth');
+  const { useUserAuthStore } = await import('@/core/auth/state.user.auth');
   const userStore = useUserAuthStore();
   
   const token = localStorage.getItem('userToken');

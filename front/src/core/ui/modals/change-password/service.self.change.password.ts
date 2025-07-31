@@ -6,7 +6,7 @@
 
 import axios from 'axios';
 import { SelfChangePasswordRequest, ChangePasswordResponse } from './types.change.password';
-import { generateDeviceFingerprint } from '@/modules/account/helper.generate.device.fingerprint';
+import { generateDeviceFingerprint } from '@/core/auth/helper.generate.device.fingerprint';
 
 /**
  * Send request to change user's own password

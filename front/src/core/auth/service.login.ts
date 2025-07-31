@@ -7,7 +7,7 @@
  */
 
 import { api } from '@/core/api/service.axios'
-import { useUserAuthStore } from './state.user.auth'
+import { useUserAuthStore } from '../auth/state.user.auth'
 import { useUiStore } from '@/core/state/uistate'
 import type { LoginRequest, LoginResponse } from './types.auth'
 import { STORAGE_KEYS } from './types.auth'

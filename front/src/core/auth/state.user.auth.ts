@@ -158,7 +158,7 @@ function startRefreshTimer(): void {
 async function attemptTokenRefresh(): Promise<void> {
   try {
     // Import here to avoid circular dependency
-    const { refreshTokensService } = await import('./service.refresh.tokens')
+    const { refreshTokensService } = await import('@/modules/account/service.refresh.tokens')
     const success = await refreshTokensService()
     
     if (success) {

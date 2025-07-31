@@ -7,7 +7,7 @@
 import { api } from '@/core/api/service.axios';
 import { AxiosError } from 'axios';
 import { AdminResetPasswordRequest, ChangePasswordResponse } from './types.change.password';
-import { useUserAuthStore } from '@/modules/account/state.user.auth';
+import { useUserAuthStore } from '@/core/auth/state.user.auth';
 
 /**
  * Send request to reset user's password (admin function)

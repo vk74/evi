@@ -1,6 +1,6 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
-import { useUserAuthStore } from '@/modules/account/state.user.auth'
+import { useUserAuthStore } from '@/core/auth/state.user.auth'
 import { useUserAccountStore } from '@/modules/account/state.user.account'
 import { useI18n } from 'vue-i18n'
 import axios from 'axios'

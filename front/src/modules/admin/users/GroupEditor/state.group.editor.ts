@@ -24,7 +24,7 @@ import type {
   IGroupMember,
   IGroupMembersState
 } from './types.group.editor'
-import { useUserAuthStore } from '@/modules/account/state.user.auth';
+import { useUserAuthStore } from '@/core/auth/state.user.auth';
 import { createGroupService } from './service.create.group'
 
 /**

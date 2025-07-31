@@ -13,7 +13,7 @@ import { fetchGroupService } from './service.fetch.group' // Import fetch servic
 import { fetchGroupMembersService } from './service.fetch.group.members' // Import members fetch service
 import { removeGroupMembers } from './service.delete.group.members' // Import members delete service
 import ItemSelector from '../../../../core/ui/modals/item-selector/ItemSelector.vue'
-import { useUserAuthStore } from '@/modules/account/state.user.auth' // Import for JWT check
+import { useUserAuthStore } from '@/core/auth/state.user.auth' // Import for JWT check
 
 // Initialize i18n
 const { t } = useI18n()

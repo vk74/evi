@@ -13,7 +13,7 @@
 
 import { defineStore } from 'pinia';
 import { ref, computed, onUnmounted } from 'vue';
-import { useUserAuthStore } from '@/modules/account/state.user.auth';
+import { useUserAuthStore } from '@/core/auth/state.user.auth';
 import type {
     IGroup,
     ItemsPerPageOption,

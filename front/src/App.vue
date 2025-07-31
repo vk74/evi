@@ -13,12 +13,12 @@ Contains:
 -->
 <script setup>
 import { ref, computed, onMounted, watch, defineAsyncComponent, nextTick } from 'vue';
-import { useUserAuthStore } from '@/modules/account/state.user.auth';
+import { useUserAuthStore } from '@/core/auth/state.user.auth';
 import { useUiStore } from './core/state/uistate';
 import { useAppStore } from './core/state/appstate';
 import { useI18n } from 'vue-i18n';
 
-import { logoutService } from '@/modules/account/service.logout';
+import { logoutService } from '@/core/auth/service.logout';
 
 // Async component imports
 const ModuleCatalog = defineAsyncComponent(() => import('./modules/catalog/ModuleCatalog.vue'));
@@ -37,10 +37,10 @@ const SubModuleUsersAdmin = defineAsyncComponent(() => import('./modules/admin/u
 const SubModuleAppSettings = defineAsyncComponent(() => import('./modules/admin/settings/SubModuleAppSettings.vue'));
 
 // Regular component imports
-import ModuleLogin from './modules/account/ModuleLogin.vue';
+import ModuleLogin from './core/auth/ModuleLogin.vue';
 import ChangePassword from './core/ui/modals/change-password/ChangePassword.vue';
 import { PasswordChangeMode } from './core/ui/modals/change-password/types.change.password';
-import LoginDialog from './modules/account/ModuleLogin.vue';
+import LoginDialog from './core/auth/ModuleLogin.vue';
 import ModuleNewUserSelfRegistration from './modules/account/ModuleNewUserSelfRegistration.vue';
 import AppSnackbar from './core/ui/snackbars/AppSnackbar.vue';
 

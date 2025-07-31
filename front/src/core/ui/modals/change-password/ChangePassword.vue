@@ -19,7 +19,7 @@
 import { ref, computed, onMounted } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useUiStore } from '@/core/state/uistate';
-import { useUserAuthStore } from '@/modules/account/state.user.auth';
+import { useUserAuthStore } from '@/core/auth/state.user.auth';
 import { ChangePasswordProps, PasswordChangeMode } from './types.change.password';
 import changePassword from './service.self.change.password';
 import resetPassword from './service.admin.change.password';

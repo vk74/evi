@@ -13,7 +13,7 @@ import groupsService from './service.read.groups';
 import deleteSelectedGroupsService from './service.delete.selected.groups';
 import { fetchGroupService } from '../GroupEditor/service.fetch.group';
 import type { TableHeader, IGroup, ItemsPerPageOption } from './types.groups.list';
-import { useUserAuthStore } from '@/modules/account/state.user.auth';
+import { useUserAuthStore } from '@/core/auth/state.user.auth';
 import { useUiStore } from '@/core/state/uistate';
 import { useUsersAdminStore } from '../state.users.admin';
 import { useGroupEditorStore } from '../GroupEditor/state.group.editor';

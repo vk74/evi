@@ -13,7 +13,7 @@
  */
 import { api } from '@/core/api/service.axios';
 import { useGroupEditorStore } from './state.group.editor';
-import { useUserAuthStore } from '@/modules/account/state.user.auth';
+import { useUserAuthStore } from '@/core/auth/state.user.auth';
 import { fetchUsernameByUuid } from '@/core/services/service.fetch.username.by.uuid';
 import type { IGroupData, IGroupDetails, IApiError, ILoadGroupResponse } from './types.group.editor';
 

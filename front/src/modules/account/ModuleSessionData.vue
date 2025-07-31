@@ -12,7 +12,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { useUserAuthStore } from './state.user.auth'
+import { useUserAuthStore } from '@/core/auth/state.user.auth'
 import { useUserAccountStore } from './state.user.account'
 
 // Initialize stores and i18n

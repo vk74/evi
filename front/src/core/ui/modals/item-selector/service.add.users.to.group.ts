@@ -11,7 +11,7 @@
 import { api } from '@/core/api/service.axios';
 import { useUiStore } from '@/core/state/uistate';
 import { useGroupEditorStore } from '@/modules/admin/users/GroupEditor/state.group.editor';
-import { useUserAuthStore } from '@/modules/account/state.user.auth';
+import { useUserAuthStore } from '@/core/auth/state.user.auth';
 import { AddUsersResponse, AddUsersToGroupRequest } from './types.action.services';
 
 // Logger for tracking operations

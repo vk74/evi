@@ -10,7 +10,7 @@
  */
 import { api } from '@/core/api/service.axios'
 import { useStoreUsersList } from './State.users.list'
-import { useUserAuthStore } from '@/modules/account/state.user.auth';
+import { useUserAuthStore } from '@/core/auth/state.user.auth';
 import usersFetchService from './Service.fetch.users'
 
 // Logger for main operations

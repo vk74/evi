@@ -13,7 +13,7 @@
 
 import { api } from '@/core/api/service.axios'; // Axios instance
 import { useStoreGroupsList } from './state.groups.list'; // Groups store
-import { useUserAuthStore } from '@/modules/account/state.user.auth'; // User store
+import { useUserAuthStore } from '@/core/auth/state.user.auth'; // User store
 import type { IGroupsResponse } from './types.groups.list'; // Types
 
 // Logger for main operations

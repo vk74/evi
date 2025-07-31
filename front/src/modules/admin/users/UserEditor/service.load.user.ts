@@ -12,7 +12,7 @@
  */
 import { api } from '@/core/api/service.axios'
 import { useUserEditorStore } from './state.user.editor'
-import { useUserAuthStore } from '@/modules/account/state.user.auth';
+import { useUserAuthStore } from '@/core/auth/state.user.auth';
 import type { ILoadUserResponse, IApiError } from './types.user.editor'
 
 // Logger for tracking operations

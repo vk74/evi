@@ -17,7 +17,7 @@
 
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
-import { useUserAuthStore } from '@/modules/account/state.user.auth';
+import { useUserAuthStore } from '@/core/auth/state.user.auth';
 import type { 
     IUser,
     IFetchUsersParams,

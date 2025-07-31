@@ -9,7 +9,7 @@
 
 import axios, { AxiosInstance, AxiosError, AxiosRequestConfig } from 'axios';
 import { axiosSettings } from './config';
-import { useUserAuthStore } from '@/modules/account/state.user.auth';
+import { useUserAuthStore } from '@/core/auth/state.user.auth';
 import { useUiStore } from '@/core/state/uistate';
 import { refreshTokensService } from '@/modules/account/service.refresh.tokens';
 

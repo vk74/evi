@@ -19,7 +19,7 @@
 import { useI18n } from 'vue-i18n'
 import { ref, computed, onMounted } from 'vue'
 import { useUiStore } from '@/core/state/uistate'
-import { useUserAuthStore } from '@/modules/account/state.user.auth'
+import { useUserAuthStore } from '@/core/auth/state.user.auth'
 import { useValidationRules } from '@/core/validation/rules.common.fields'
 import { fetchPublicPasswordPolicies } from '@/core/services/service.fetch.public.password.policies'
 import { usePublicSettingsStore, type PasswordPolicies } from '@/core/state/state.public.settings'

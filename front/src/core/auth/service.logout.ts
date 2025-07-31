@@ -7,11 +7,11 @@
  */
 
 import { api } from '@/core/api/service.axios'
-import { useUserAuthStore } from './state.user.auth'
+import { useUserAuthStore } from '../auth/state.user.auth'
 import { useUiStore } from '@/core/state/uistate'
 import { useAppStore } from '@/core/state/appstate'
 import { clearRefreshTimer } from './service.login'
-import { refreshTokensService } from './service.refresh.tokens'
+import { refreshTokensService } from '../../modules/account/service.refresh.tokens'
 import type { LogoutRequest, LogoutResponse } from './types.auth'
 import { STORAGE_KEYS } from './types.auth'
 import { generateDeviceFingerprint } from './helper.generate.device.fingerprint'

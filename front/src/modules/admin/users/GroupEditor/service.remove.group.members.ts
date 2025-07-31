@@ -10,7 +10,7 @@
  */
 import axios from 'axios'
 import { useGroupEditorStore } from './state.group.editor'
-import { useUserAuthStore } from '@/modules/account/state.user.auth';
+import { useUserAuthStore } from '@/core/auth/state.user.auth';
 import { useUiStore } from '@/core/state/uistate'
 import { fetchGroupMembersService } from './service.fetch.group.members'
 import type { IRemoveGroupMembersResponse } from './types.group.editor'
