@@ -11,7 +11,7 @@ Contains:
 - Fixed active state tracking for bottom navigation items
 - Improved handling of ResizeObserver errors with a more robust implementation
 -->
-<script setup>
+<script setup lang="ts">
 import { ref, computed, onMounted, watch, defineAsyncComponent, nextTick } from 'vue';
 import { useUserAuthStore } from '@/core/auth/state.user.auth';
 import { useUiStore } from './core/state/uistate';
@@ -51,18 +51,18 @@ const appStore = useAppStore();
 const i18n = useI18n();
 
 // Refs
-const drawer = ref(true);
-const isChangePassModalVisible = ref(false);
-const isLoginDialogVisible = ref(false);
-const isAdminExpanded = ref(false); // Track admin section expansion
-const isProfileMenuOpen = ref(false); // Track profile menu state
-const isLanguageMenuOpen = ref(false); // Track language menu state
-const menuLocked = ref(false); // Prevent menu interactions during animations
+const drawer = ref<boolean>(true);
+const isChangePassModalVisible = ref<boolean>(false);
+const isLoginDialogVisible = ref<boolean>(false);
+const isAdminExpanded = ref<boolean>(false); // Track admin section expansion
+const isProfileMenuOpen = ref<boolean>(false); // Track profile menu state
+const isLanguageMenuOpen = ref<boolean>(false); // Track language menu state
+const menuLocked = ref<boolean>(false); // Prevent menu interactions during animations
 
 // Computed properties
-const isLoggedIn = computed(() => userStore.isAuthenticated);
+const isLoggedIn = computed((): boolean => userStore.isAuthenticated);
 
-const chevronIcon = computed(() => {
+const chevronIcon = computed((): string => {
   switch(appStore.drawerMode) {
     case 'auto':
       return 'mdi-chevron-double-right';
@@ -76,7 +76,7 @@ const chevronIcon = computed(() => {
 });
 
 // Admin expansion indicator icon
-const adminExpandIcon = computed(() => {
+const adminExpandIcon = computed((): string => {
   return isAdminExpanded.value ? 'mdi-chevron-up' : 'mdi-chevron-down';
 });
 
@@ -100,7 +100,7 @@ const currentAdminSubmodule = computed(() => {
 });
 
 // Safe menu interaction methods with debouncing
-const safeCloseMenus = () => {
+const safeCloseMenus = (): void => {
   if (menuLocked.value) return;
   
   menuLocked.value = true;
@@ -114,7 +114,7 @@ const safeCloseMenus = () => {
 };
 
 // Methods
-const setActiveModule = (module) => {
+const setActiveModule = (module: string): void => {
   // Close menus safely before changing modules
   safeCloseMenus();
   
@@ -125,7 +125,7 @@ const setActiveModule = (module) => {
 };
 
 // Toggle admin accordion expansion and set Admin as active module
-const toggleAdminExpanded = () => {
+const toggleAdminExpanded = (): void => {
   isAdminExpanded.value = !isAdminExpanded.value;
   
   // When expanding, always set Admin as the active module
@@ -135,12 +135,12 @@ const toggleAdminExpanded = () => {
 };
 
 // Set active admin section and navigate to Admin module
-const setActiveAdminSection = (section) => {
+const setActiveAdminSection = (section: string): void => {
   appStore.setActiveAdminSubModule(section)
   setActiveModule('Admin')
 }
 
-const logout = async () => {
+const logout = async (): Promise<void> => {
   // Close menus before logout
   safeCloseMenus();
   
@@ -166,7 +166,7 @@ const logout = async () => {
   }, 50);
 };
 
-const changeLanguage = (lang) => {
+const changeLanguage = (lang: string): void => {
   // Close language menu
   safeCloseMenus();
   
@@ -177,11 +177,11 @@ const changeLanguage = (lang) => {
   }, 50);
 };
 
-const handleLoginSuccess = () => {
+const handleLoginSuccess = (): void => {
   appStore.setActiveModule('Work');
 };
 
-const toggleDrawerMode = () => {
+const toggleDrawerMode = (): void => {
   // Close menus safely before toggling drawer mode
   safeCloseMenus();
   
@@ -196,7 +196,7 @@ const toggleDrawerMode = () => {
 };
 
 // Controlled menu toggle functions
-const toggleProfileMenu = () => {
+const toggleProfileMenu = (): void => {
   if (menuLocked.value) return;
   
   // Close language menu if open
@@ -212,7 +212,7 @@ const toggleProfileMenu = () => {
   }
 };
 
-const toggleLanguageMenu = () => {
+const toggleLanguageMenu = (): void => {
   if (menuLocked.value) return;
   
   // Close profile menu if open
@@ -257,9 +257,9 @@ watch(
 );
 
 // Prevent ResizeObserver errors - more robust implementation
-const preventResizeErrors = () => {
+const preventResizeErrors = (): void => {
   // Error handler for ResizeObserver errors
-  const errorHandler = (event) => {
+  const errorHandler = (event: ErrorEvent) => {
     if (event.message && event.message.includes('ResizeObserver')) {
       event.stopImmediatePropagation();
       event.preventDefault();
@@ -269,7 +269,7 @@ const preventResizeErrors = () => {
 
   // Add multiple listeners to catch all variations of the error
   window.addEventListener('error', errorHandler);
-  window.addEventListener('unhandledrejection', (event) => {
+  window.addEventListener('unhandledrejection', (event: PromiseRejectionEvent) => {
     if (event.reason && event.reason.message && 
         event.reason.message.includes('ResizeObserver')) {
       event.preventDefault();

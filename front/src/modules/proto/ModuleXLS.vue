@@ -130,12 +130,17 @@ interface Location {
   name: string;
 }
 
+interface ComponentData {
+  formData: FormData;
+  locations: Location[];
+}
+
 export default {
   name: 'ModuleXLS',
   components: {
     Datepicker
   },
-  data(): { formData: FormData; locations: Location[] } {
+  data(): ComponentData {
     return {
       formData: {
         orgname: '',
@@ -149,7 +154,7 @@ export default {
     };
   },
   created() {
-    this.fetchLocations();
+    (this as any).fetchLocations();
   },
   
   methods: {
@@ -157,7 +162,7 @@ export default {
     async fetchLocations(): Promise<void> {
       try {
         const response = await axios.get('http://localhost:3000/protolocations');
-        this.locations = response.data;
+        (this as any).locations = response.data;
       } catch (error) {
         console.error('Ошибка при загрузке локаций:', error);
       }
@@ -166,7 +171,7 @@ export default {
   // записать данные в postgres
     async handleSubmit(): Promise<void> {
       try {
-        const response = await axios.post('http://localhost:3000/protosubmit', this.formData);
+        const response = await axios.post('http://localhost:3000/protosubmit', (this as any).formData);
         console.log('Ответ сервера:', response.data); // Вывод в консоль ответа сервера
       } catch (error) {
         console.error('Ошибка при отправке данных:', error);
@@ -180,7 +185,7 @@ export default {
   async generateExcelFile(): Promise<void> {
     console.log("Генерация файла Excel начата.");
   try {
-    const response = await axios.post('http://localhost:3000/proto-generate-excel', this.formData, {
+    const response = await axios.post('http://localhost:3000/proto-generate-excel', (this as any).formData, {
       responseType: 'blob' // Указываем, что ожидаем ответ в формате Blob
     });
 

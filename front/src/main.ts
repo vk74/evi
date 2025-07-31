@@ -1,4 +1,4 @@
-// src/main.js
+// src/main.ts
 import { createApp } from 'vue';
 import App from './App.vue';
 import { createPinia } from 'pinia';
@@ -14,6 +14,15 @@ import { jwtDecode } from 'jwt-decode';
 // Импорт всех файлов локализации
 import translations from '@/core/services/translations.index'
 
+interface JwtPayload {
+  sub: string;
+  iss: string;
+  aud: string;
+  iat: number;
+  jti: string;
+  exp: number;
+}
+
 console.log('Starting application...');
 console.log('App component:', App);
 console.log('All imports complete');
@@ -22,7 +31,7 @@ console.log('All imports complete');
 const messages = translations;
 
 // Создаем экземпляр i18n с безопасной инициализацией
-const getInitialLocale = () => {
+const getInitialLocale = (): string => {
   try {
     const stored = localStorage.getItem('userLanguage');
     return stored && (stored === 'ru' || stored === 'en') ? stored : 'ru';
@@ -51,14 +60,14 @@ app.use(vuetify);
 app.config.globalProperties.$http = axios;
 
 // Функция инициализации состояния пользователя
-const initializeUserState = async () => {
+const initializeUserState = async (): Promise<void> => {
   const { useUserAuthStore } = await import('@/core/auth/state.user.auth');
   const userStore = useUserAuthStore();
   
   const token = localStorage.getItem('userToken');
   if (token) {
     try {
-      const decoded = jwtDecode(token);
+      const decoded: JwtPayload = jwtDecode(token);
       const currentTime = Date.now() / 1000;
       
       if (decoded.exp < currentTime) {
@@ -87,11 +96,11 @@ const initializeUserState = async () => {
   
   // Update i18n locale if user has different language preference
   if (userStore.language && userStore.language !== i18n.global.locale.value) {
-    i18n.global.locale.value = userStore.language;
+    i18n.global.locale.value = userStore.language as 'ru' | 'en';
   }
 };
 
 // Монтируем приложение и инициализируем состояние
 app.mount('#app');
 console.log('App mounted');
-initializeUserState();
+initializeUserState(); 

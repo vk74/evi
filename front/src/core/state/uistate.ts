@@ -1,13 +1,34 @@
 /**
- * uitate.js
- * Store для управления ...
+ * uistate.ts
+ * Store для управления UI состоянием приложения
  */
 import { defineStore } from 'pinia';
 import { SNACKBAR_DEFAULTS } from '../ui/snackbars/constants';
 import { SnackbarType } from '../ui/snackbars/types';
 
+interface SnackbarState {
+  show: boolean;
+  message: string;
+  type: string;
+  timeout: number;
+  closable: boolean;
+  position: string;
+}
+
+interface SnackbarOptions {
+  message: string;
+  type: typeof SnackbarType[keyof typeof SnackbarType];
+  timeout?: number;
+  closable?: boolean;
+  position?: string;
+}
+
+interface UiState {
+  snackbar: SnackbarState;
+}
+
 export const useUiStore = defineStore('ui', {
-  state: () => ({
+  state: (): UiState => ({
     snackbar: {
       show: false,           // флаг отображения
       message: '',           // текст сообщения
@@ -19,7 +40,7 @@ export const useUiStore = defineStore('ui', {
   }),
 
   actions: {
-    showSnackbar({ message, type, timeout, closable, position }) {
+    showSnackbar(options: SnackbarOptions): void {
       // Сначала скрываем snackbar
       this.snackbar.show = false;
       
@@ -27,22 +48,22 @@ export const useUiStore = defineStore('ui', {
       setTimeout(() => {
         this.snackbar = {
           show: true,
-          message,
-          type,
-          timeout: timeout || SNACKBAR_DEFAULTS.TIMEOUT,
-          closable: closable ?? SNACKBAR_DEFAULTS.CLOSABLE,
-          position: position || SNACKBAR_DEFAULTS.POSITION
+          message: options.message,
+          type: options.type,
+          timeout: options.timeout || SNACKBAR_DEFAULTS.TIMEOUT,
+          closable: options.closable ?? SNACKBAR_DEFAULTS.CLOSABLE,
+          position: options.position || SNACKBAR_DEFAULTS.POSITION
         };
       }, 100); // Небольшая задержка для гарантированного повторного показа
     },
 
     // Закрытие snackbar
-    hideSnackbar() {
+    hideSnackbar(): void {
       this.snackbar.show = false;
     },
 
     // Удобные методы для разных типов уведомлений
-    showSuccessSnackbar(message, options = {}) {
+    showSuccessSnackbar(message: string, options: Partial<SnackbarOptions> = {}): void {
       this.showSnackbar({
         message,
         type: SnackbarType.SUCCESS,
@@ -50,7 +71,7 @@ export const useUiStore = defineStore('ui', {
       });
     },
 
-    showErrorSnackbar(message, options = {}) {
+    showErrorSnackbar(message: string, options: Partial<SnackbarOptions> = {}): void {
       this.showSnackbar({
         message,
         type: SnackbarType.ERROR,
@@ -58,7 +79,7 @@ export const useUiStore = defineStore('ui', {
       });
     },
 
-    showWarningSnackbar(message, options = {}) {
+    showWarningSnackbar(message: string, options: Partial<SnackbarOptions> = {}): void {
       this.showSnackbar({
         message,
         type: SnackbarType.WARNING,
@@ -66,7 +87,7 @@ export const useUiStore = defineStore('ui', {
       });
     },
 
-    showInfoSnackbar(message, options = {}) {
+    showInfoSnackbar(message: string, options: Partial<SnackbarOptions> = {}): void {
       this.showSnackbar({
         message,
         type: SnackbarType.INFO,
@@ -74,4 +95,4 @@ export const useUiStore = defineStore('ui', {
       });
     }
   }
-});
+}); 

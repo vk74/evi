@@ -5,7 +5,7 @@ module.exports = {
   },
   configureWebpack: {
     entry: {
-      app: './src/main.js'  // Указываем более конкретно точку входа
+      app: './src/main.ts'  // Указываем более конкретно точку входа
     },
     cache: true,
     optimization: {

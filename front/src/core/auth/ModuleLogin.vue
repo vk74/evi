@@ -15,12 +15,17 @@
   - Error and success message handling with toast notifications
 -->
 
-<script setup>
+<script setup lang="ts">
 import { ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useAppStore } from '@/core/state/appstate'
 import { useUiStore } from '@/core/state/uistate'
 import { loginService } from './service.login'
+
+interface LoginResult {
+  success: boolean;
+  errorKey?: string;
+}
 
 // ==================== I18N ====================
 const { t } = useI18n()
@@ -33,8 +38,8 @@ const uiStore = useUiStore()
 /**
  * Form data and UI state
  */
-const username = ref('')
-const password = ref('')
+const username = ref<string>('')
+const password = ref<string>('')
 
 // ==================== METHODS ====================
 /**
@@ -42,10 +47,10 @@ const password = ref('')
  * Authenticates user with backend, processes JWT token, and updates user state
  * Now includes device fingerprint generation for enhanced security
  */
-const login = async () => {
+const login = async (): Promise<void> => {
   console.log("Login:", username.value, "Pass:", password.value)
   
-  const result = await loginService(username.value, password.value)
+  const result: LoginResult = await loginService(username.value, password.value)
   
   if (result.success) {
     console.log('User logged in successfully')
@@ -67,7 +72,7 @@ const login = async () => {
  * Close login dialog
  * Emits close event to parent component
  */
-const closeDialog = () => {
+const closeDialog = (): void => {
   // Note: dialog variable is not defined in this component
   // This method is kept for compatibility but may need adjustment
   emit('close') // Notify parent component about closure
@@ -77,12 +82,14 @@ const closeDialog = () => {
  * Navigate to registration module
  * Changes active module to NewUserRegistration
  */
-const goToRegistration = () => {
+const goToRegistration = (): void => {
   appStore.setActiveModule('NewUserRegistration')
 }
 
 // ==================== EMITS ====================
-const emit = defineEmits(['close'])
+const emit = defineEmits<{
+  close: []
+}>()
 </script>
 
 <template>
