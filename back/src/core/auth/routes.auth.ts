@@ -42,11 +42,7 @@ router.post('/api/auth/change-password', (req, res) => {
 router.get('/api/auth/profile', validateJWT, getUserProfile);
 router.post('/api/auth/profile', validateJWT, updateUserProfile);
 
-// Legacy routes (keeping for backward compatibility)
-router.post('/register', registerUser);
-router.post('/login', checkAccountPassword, checkAccountStatus, issueToken);
-router.get('/profile', validateJWT, getUserProfile);
-router.post('/profile', validateJWT, updateUserProfile);
+
 
 // Export using ES modules syntax
 export default router; 

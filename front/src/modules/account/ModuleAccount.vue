@@ -17,7 +17,7 @@ import { useUserAuthStore } from '@/core/auth/state.user.auth'
 import { useUserAccountStore } from '@/modules/account/state.user.account'
 import { useI18n } from 'vue-i18n'
 import { useUiStore } from '@/core/state/uistate'
-import axios from 'axios'
+import { api } from '@/core/api/service.axios'
 import ChangePassword from '@/core/ui/modals/change-password/ChangePassword.vue'
 import { PasswordChangeMode } from '@/core/ui/modals/change-password/types.change.password'
 import { UserProfile, Gender, GenderOption } from '@/modules/account/types.user.account'
@@ -121,9 +121,7 @@ const saveProfile = async () => {
     
     try {
       console.log('sending request to update user profile data:', profile.value)
-      const response = await axios.post('http://localhost:3000/profile', profile.value, {
-        headers: { Authorization: `Bearer ${userStore.jwt}` },
-      })
+      const response = await api.post('/api/auth/profile', profile.value)
       console.log('Profile updated successfully:', response.data)
       uiStore.showSuccessSnackbar(t('account.profile.messages.saveSuccess'))
       // Update profile in account store
@@ -142,9 +140,7 @@ const saveProfile = async () => {
 const loadProfileData = async () => {
   if (userStore.isAuthenticated) {
     try {
-      const response = await axios.get('http://localhost:3000/profile', {
-        headers: { Authorization: `Bearer ${userStore.jwt}` },
-      })
+      const response = await api.get('/api/auth/profile')
       profile.value = response.data
       // Update profile in account store
       userAccountStore.updateProfile(profile.value)

@@ -51,8 +51,9 @@
 
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue';
-import { useUserAuthStore } from '@/modules/account/state.user.auth';
+import { useUserAuthStore } from '@/core/auth/state.user.auth';
 import { useUiStore } from '../../core/state/uistate';
+import { api } from '@/core/api/service.axios';
 
 interface ChangePasswordRequest {
   username: string;
@@ -135,19 +136,8 @@ const changePassword = async (): Promise<void> => {
       newPassword: password.value,
     };
 
-    const response = await fetch('http://localhost:3000/changeuserpass', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(requestData),
-    });
-
-    if (!response.ok) {
-      throw new Error(`Ошибка HTTP: ${response.status}`);
-    }
-
-    const result: ChangePasswordResponse = await response.json();
+    const response = await api.post('/api/auth/change-password', requestData);
+    const result: ChangePasswordResponse = response.data;
     console.log('Результат смены пароля:', result);
 
     if (result.success) {

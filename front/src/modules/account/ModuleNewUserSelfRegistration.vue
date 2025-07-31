@@ -25,6 +25,7 @@ import { useValidationRules } from '@/core/validation/rules.common.fields'
 import { fetchPublicPasswordPolicies } from '@/core/services/service.fetch.public.password.policies'
 import { usePublicSettingsStore, type PasswordPolicies } from '@/core/state/state.public.settings'
 import PasswordPoliciesPanel from '@/core/ui/panels/panel.current.password.policies.vue'
+import { api } from '@/core/api/service.axios'
 
 // ==================== STORES ====================
 const uiStore = useUiStore()
@@ -248,15 +249,9 @@ const submitForm = async () => {
   isSubmitting.value = true
 
   try {
-    const response = await fetch('http://localhost:3000/register', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(user.value)
-    })
+    const response = await api.post('/api/auth/register', user.value)
 
-    if (response.ok) {
+    if (response.status === 200 || response.status === 201) {
       console.log('User self-registration data successfully sent to backend server')
       uiStore.showSuccessSnackbar(t('account.selfRegistration.success.dataSent'))
       
@@ -273,7 +268,7 @@ const submitForm = async () => {
       }
       form.value?.reset()
     } else {
-      const errorData = await response.json()
+      const errorData = response.data
       if (errorData.message === 'this username is already registered by another user') {
         uiStore.showErrorSnackbar(t('account.selfRegistration.errors.duplicateUsername'))
       } else if (errorData.message === 'this e-mail is already registered by another user') {
