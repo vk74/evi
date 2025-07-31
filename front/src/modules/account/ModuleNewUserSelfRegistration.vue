@@ -94,8 +94,8 @@ const dynamicPasswordRules = computed(() => {
   // If password policies are not loaded or there's an error, return basic rules
   if (publicStore.isLoadingPasswordPolicies || publicStore.passwordPoliciesError || !currentPasswordPolicies.value) {
     return [
-      (v: string) => !!v || t('selfRegistration.validation.password.required'),
-      () => !publicStore.passwordPoliciesError || t('selfRegistration.validation.password.policiesNotLoaded')
+              (v: string) => !!v || t('account.selfRegistration.validation.password.required'),
+        () => !publicStore.passwordPoliciesError || t('account.selfRegistration.validation.password.policiesNotLoaded')
     ]
   }
 
@@ -103,36 +103,36 @@ const dynamicPasswordRules = computed(() => {
   const rules: Array<(v: string) => string | boolean> = []
   
   // Required field rule
-  rules.push((v: string) => !!v || t('selfRegistration.validation.password.required'))
+  rules.push((v: string) => !!v || t('account.selfRegistration.validation.password.required'))
   
   // Length rules
-  rules.push((v: string) => (v && v.length >= policies.minLength) || t('selfRegistration.validation.password.minLength', { length: policies.minLength }))
-  rules.push((v: string) => (v && v.length <= policies.maxLength) || t('selfRegistration.validation.password.maxLength', { length: policies.maxLength }))
+  rules.push((v: string) => (v && v.length >= policies.minLength) || t('account.selfRegistration.validation.password.minLength', { length: policies.minLength }))
+  rules.push((v: string) => (v && v.length <= policies.maxLength) || t('account.selfRegistration.validation.password.maxLength', { length: policies.maxLength }))
   
   // Character requirements
   if (policies.requireLowercase) {
-    rules.push((v: string) => /[a-z]/.test(v) || t('selfRegistration.validation.password.lowercase'))
+    rules.push((v: string) => /[a-z]/.test(v) || t('account.selfRegistration.validation.password.lowercase'))
   }
   
   if (policies.requireUppercase) {
-    rules.push((v: string) => /[A-Z]/.test(v) || t('selfRegistration.validation.password.uppercase'))
+    rules.push((v: string) => /[A-Z]/.test(v) || t('account.selfRegistration.validation.password.uppercase'))
   }
   
   if (policies.requireNumbers) {
-    rules.push((v: string) => /[0-9]/.test(v) || t('selfRegistration.validation.password.numbers'))
+    rules.push((v: string) => /[0-9]/.test(v) || t('account.selfRegistration.validation.password.numbers'))
   }
   
   if (policies.requireSpecialChars && policies.allowedSpecialChars) {
     const escapedSpecialChars = policies.allowedSpecialChars.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
     const specialCharsRegex = new RegExp(`[${escapedSpecialChars}]`)
-    rules.push((v: string) => specialCharsRegex.test(v) || t('selfRegistration.validation.password.specialChars'))
+    rules.push((v: string) => specialCharsRegex.test(v) || t('account.selfRegistration.validation.password.specialChars'))
   }
   
   // Allowed characters rule - only allowed chars
   if (policies.allowedSpecialChars) {
     const escapedSpecialChars = policies.allowedSpecialChars.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
     const allowedCharsRegex = new RegExp(`^[A-Za-z0-9${escapedSpecialChars}]+$`)
-    rules.push((v: string) => allowedCharsRegex.test(v) || t('selfRegistration.validation.password.invalidChars'))
+    rules.push((v: string) => allowedCharsRegex.test(v) || t('account.selfRegistration.validation.password.invalidChars'))
   }
   
   return rules
@@ -142,23 +142,23 @@ const dynamicPasswordRules = computed(() => {
  * Password confirmation validation rules
  */
 const passwordConfirmRules = computed(() => [
-  (v: string) => !!v || t('selfRegistration.validation.passwordConfirm.required'),
-  (v: string) => v === user.value.password || t('selfRegistration.validation.passwordConfirm.mismatch')
+  (v: string) => !!v || t('account.selfRegistration.validation.passwordConfirm.required'),
+  (v: string) => v === user.value.password || t('account.selfRegistration.validation.passwordConfirm.mismatch')
 ])
 
 /**
  * Address validation rules
  */
 const addressRules = [
-  (v: string) => !v || v.length <= 100 || t('selfRegistration.validation.address.maxLength'),
-  (v: string) => !v || /^[\p{L}\p{N}\p{P}\p{Z}]+$/u.test(v) || t('selfRegistration.validation.address.format')
+  (v: string) => !v || v.length <= 100 || t('account.selfRegistration.validation.address.maxLength'),
+  (v: string) => !v || /^[\p{L}\p{N}\p{P}\p{Z}]+$/u.test(v) || t('account.selfRegistration.validation.address.format')
 ]
 
 /**
  * Phone validation rules
  */
 const phoneRules = [
-  (v: string) => !v || /^[+0-9]{0,15}$/.test(v) || t('selfRegistration.validation.phone.format')
+  (v: string) => !v || /^[+0-9]{0,15}$/.test(v) || t('account.selfRegistration.validation.phone.format')
 ]
 
 // ==================== METHODS ====================
@@ -233,13 +233,13 @@ const submitForm = async () => {
 
   // Check if password policies are ready
   if (!passwordPoliciesReady.value) {
-    uiStore.showErrorSnackbar(t('selfRegistration.errors.passwordPoliciesNotReady'))
+    uiStore.showErrorSnackbar(t('account.selfRegistration.errors.passwordPoliciesNotReady'))
     return
   }
 
   // Validate form
   if (!form.value?.validate()) {
-    uiStore.showErrorSnackbar(t('selfRegistration.errors.formValidation'))
+    uiStore.showErrorSnackbar(t('account.selfRegistration.errors.formValidation'))
     return
   }
 
@@ -256,7 +256,7 @@ const submitForm = async () => {
 
     if (response.ok) {
       console.log('User self-registration data successfully sent to backend server')
-      uiStore.showSuccessSnackbar(t('selfRegistration.success.dataSent'))
+      uiStore.showSuccessSnackbar(t('account.selfRegistration.success.dataSent'))
       
       // Reset form after successful registration
       user.value = {
@@ -273,19 +273,19 @@ const submitForm = async () => {
     } else {
       const errorData = await response.json()
       if (errorData.message === 'this username is already registered by another user') {
-        uiStore.showErrorSnackbar(t('selfRegistration.errors.duplicateUsername'))
+        uiStore.showErrorSnackbar(t('account.selfRegistration.errors.duplicateUsername'))
       } else if (errorData.message === 'this e-mail is already registered by another user') {
-        uiStore.showErrorSnackbar(t('selfRegistration.errors.duplicateEmail'))
+        uiStore.showErrorSnackbar(t('account.selfRegistration.errors.duplicateEmail'))
       } else if (errorData.message === 'this phone number is already registered by another user') {
-        uiStore.showErrorSnackbar(t('selfRegistration.errors.duplicatePhone'))
+        uiStore.showErrorSnackbar(t('account.selfRegistration.errors.duplicatePhone'))
       } else {
         console.error('Error on sending registration data to backend:', response.status, response.statusText)
-        uiStore.showErrorSnackbar(t('selfRegistration.errors.serverError'))
+        uiStore.showErrorSnackbar(t('account.selfRegistration.errors.serverError'))
       }
     }
   } catch (error) {
     console.error('Error on sending registration data to backend:', error)
-    uiStore.showErrorSnackbar(t('selfRegistration.errors.networkError'))
+    uiStore.showErrorSnackbar(t('account.selfRegistration.errors.networkError'))
   } finally {
     isSubmitting.value = false
   }
@@ -309,7 +309,7 @@ onMounted(async () => {
   <div class="pt-3 pl-3">
     <v-card max-width="500px">
       <v-card-title class="text-h5">
-        {{ t('selfRegistration.title') }}
+        {{ t('account.selfRegistration.title') }}
       </v-card-title>
       
       <v-card-text>
@@ -321,7 +321,7 @@ onMounted(async () => {
           <!-- Username field -->
           <v-text-field
             v-model="user.username"
-            :label="t('selfRegistration.fields.username.label')"
+            :label="t('account.selfRegistration.fields.username.label')"
             :rules="usernameRules"
             variant="outlined"
             density="comfortable"
@@ -332,7 +332,7 @@ onMounted(async () => {
           <!-- Password field -->
           <v-text-field
             v-model="user.password"
-            :label="t('selfRegistration.fields.password.label')"
+            :label="t('account.selfRegistration.fields.password.label')"
             :rules="dynamicPasswordRules"
             :type="showPassword ? 'text' : 'password'"
             :counter="currentPasswordPolicies?.maxLength || 40"
@@ -363,7 +363,7 @@ onMounted(async () => {
           <!-- Password confirmation field -->
           <v-text-field
             v-model="user.passwordConfirm"
-            :label="t('selfRegistration.fields.passwordConfirm.label')"
+            :label="t('account.selfRegistration.fields.passwordConfirm.label')"
             :rules="passwordConfirmRules"
             :type="showPassword ? 'text' : 'password'"
             :counter="currentPasswordPolicies?.maxLength || 40"
@@ -384,7 +384,7 @@ onMounted(async () => {
           <!-- Last name field -->
           <v-text-field
             v-model="user.surname"
-            :label="t('selfRegistration.fields.surname.label')"
+            :label="t('account.selfRegistration.fields.surname.label')"
             :rules="lastNameRules"
             variant="outlined"
             density="comfortable"
@@ -395,7 +395,7 @@ onMounted(async () => {
           <!-- First name field -->
           <v-text-field
             v-model="user.name"
-            :label="t('selfRegistration.fields.name.label')"
+            :label="t('account.selfRegistration.fields.name.label')"
             :rules="firstNameRules"
             variant="outlined"
             density="comfortable"
@@ -406,7 +406,7 @@ onMounted(async () => {
           <!-- Email field -->
           <v-text-field
             v-model="user.email"
-            :label="t('selfRegistration.fields.email.label')"
+            :label="t('account.selfRegistration.fields.email.label')"
             :rules="emailRules"
             variant="outlined"
             density="comfortable"
@@ -417,8 +417,8 @@ onMounted(async () => {
           <!-- Phone field -->
           <v-text-field
             v-model="user.phone"
-            :label="t('selfRegistration.fields.phone.label')"
-            :placeholder="t('selfRegistration.fields.phone.placeholder')"
+            :label="t('account.selfRegistration.fields.phone.label')"
+            :placeholder="t('account.selfRegistration.fields.phone.placeholder')"
             :rules="phoneRules"
             variant="outlined"
             density="comfortable"
@@ -427,7 +427,7 @@ onMounted(async () => {
           <!-- Address field -->
           <v-text-field
             v-model="user.address"
-            :label="t('selfRegistration.fields.address.label')"
+            :label="t('account.selfRegistration.fields.address.label')"
             :rules="addressRules"
             variant="outlined"
             density="comfortable"
@@ -437,7 +437,7 @@ onMounted(async () => {
 
         <!-- Error messages -->
         <div v-if="invalidFields.length > 0" class="error-message mt-3">
-          {{ t('selfRegistration.errors.validation') }} {{ invalidFields.join(', ') }}
+          {{ t('account.selfRegistration.errors.validation') }} {{ invalidFields.join(', ') }}
         </div>
       </v-card-text>
 
@@ -450,20 +450,20 @@ onMounted(async () => {
           variant="outlined"
           @click="submitForm"
         >
-          {{ t('selfRegistration.buttons.register') }}
+          {{ t('account.selfRegistration.buttons.register') }}
         </v-btn>
       </v-card-actions>
 
       <v-divider class="mx-4" />
       
       <div class="pa-4 text-center">
-        {{ t('selfRegistration.login.alreadyHaveAccount') }}
+        {{ t('account.selfRegistration.login.alreadyHaveAccount') }}
         <a
           href="#"
           class="register-link"
           @click.prevent="goToLogin"
         >
-          {{ t('selfRegistration.login.signIn') }}
+          {{ t('account.selfRegistration.login.signIn') }}
         </a>
       </div>
     </v-card>

@@ -1,0 +1,23 @@
+{
+  "login": {
+    "title": "Вход в систему",
+    "fields": {
+      "username": {
+        "label": "Имя пользователя"
+      },
+      "password": {
+        "label": "Пароль"
+      }
+    },
+    "buttons": {
+      "signIn": "Войти"
+    },
+    "registration": {
+      "text": "Нет аккаунта?",
+      "link": "Зарегистрироваться"
+    },
+    "errors": {
+      "unknownError": "Произошла неизвестная ошибка"
+    }
+  }
+}

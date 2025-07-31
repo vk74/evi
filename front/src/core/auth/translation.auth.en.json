@@ -1,0 +1,23 @@
+{
+  "login": {
+    "title": "Sign In",
+    "fields": {
+      "username": {
+        "label": "Username"
+      },
+      "password": {
+        "label": "Password"
+      }
+    },
+    "buttons": {
+      "signIn": "Sign In"
+    },
+    "registration": {
+      "text": "Don't have an account?",
+      "link": "Register"
+    },
+    "errors": {
+      "unknownError": "An unknown error occurred"
+    }
+  }
+}
