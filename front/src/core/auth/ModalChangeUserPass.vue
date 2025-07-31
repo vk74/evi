@@ -49,18 +49,28 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { ref, computed, watch } from 'vue';
 import { useUserAuthStore } from '@/modules/account/state.user.auth';
 import { useUiStore } from '../../core/state/uistate';
 
+interface ChangePasswordRequest {
+  username: string;
+  currentPassword: string;
+  newPassword: string;
+}
+
+interface ChangePasswordResponse {
+  success: boolean;
+  error?: string;
+}
+
+interface Props {
+  onClose: () => void;
+}
+
 // Props
-const props = defineProps({
-  onClose: {
-    type: Function,
-    required: true,
-  },
-});
+const props = defineProps<Props>();
 
 // Store initialization
 const userStore = useUserAuthStore();
@@ -70,15 +80,15 @@ const uiStore = useUiStore();
 const username = computed(() => userStore.username);
 
 // Refs
-const currentPassword = ref('');
-const password = ref('');
-const confirmPassword = ref('');
-const currentPasswordError = ref('');
-const passwordError = ref('');
-const confirmPasswordError = ref('');
+const currentPassword = ref<string>('');
+const password = ref<string>('');
+const confirmPassword = ref<string>('');
+const currentPasswordError = ref<string>('');
+const passwordError = ref<string>('');
+const confirmPasswordError = ref<string>('');
 
 // Watchers
-watch(password, (newVal) => {
+watch(password, (newVal: string) => {
   validatePassword(newVal);
 });
 
@@ -87,7 +97,7 @@ watch(confirmPassword, () => {
 });
 
 // Validation
-const validatePassword = (password) => {
+const validatePassword = (password: string): void => {
   const regex = /^[a-zA-Zа-яА-Я0-9\p{P}]+$/u;
   passwordError.value = '';
 
@@ -98,7 +108,7 @@ const validatePassword = (password) => {
 };
 
 // Change password handler
-const changePassword = async () => {
+const changePassword = async (): Promise<void> => {
   // Validation checks
   if (password.value.length < 8 || password.value.length > 40) {
     passwordError.value = 'Длина пароля должна быть от 8 до 40 символов.';
@@ -119,23 +129,25 @@ const changePassword = async () => {
   }
 
   try {
+    const requestData: ChangePasswordRequest = {
+      username: username.value,
+      currentPassword: currentPassword.value,
+      newPassword: password.value,
+    };
+
     const response = await fetch('http://localhost:3000/changeuserpass', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({
-        username: username.value,
-        currentPassword: currentPassword.value,
-        newPassword: password.value,
-      }),
+      body: JSON.stringify(requestData),
     });
 
     if (!response.ok) {
       throw new Error(`Ошибка HTTP: ${response.status}`);
     }
 
-    const result = await response.json();
+    const result: ChangePasswordResponse = await response.json();
     console.log('Результат смены пароля:', result);
 
     if (result.success) {

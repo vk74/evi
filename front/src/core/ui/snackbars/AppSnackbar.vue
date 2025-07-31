@@ -35,46 +35,38 @@
   </v-snackbar>
 </template>
   
-  <script setup>
+  <script setup lang="ts">
   import { ref, computed } from 'vue'
   import { SnackbarType } from './types'
   import { SNACKBAR_DEFAULTS } from './constants'
   
-  // Пропсы
-  const props = defineProps({
+  interface Props {
     // Тип уведомления
-    type: {
-      type: String,
-      required: true,
-      validator: (value) => Object.values(SnackbarType).includes(value)
-    },
+    type: SnackbarType;
     // Текст сообщения
-    message: {
-      type: String,
-      required: true
-    },
+    message: string;
     // Время показа
-    timeout: {
-      type: Number,
-      default: SNACKBAR_DEFAULTS.TIMEOUT
-    },
+    timeout?: number;
     // Можно ли закрыть
-    closable: {
-      type: Boolean,
-      default: SNACKBAR_DEFAULTS.CLOSABLE
-    },
+    closable?: boolean;
     // Позиция
-    position: {
-      type: String,
-      default: SNACKBAR_DEFAULTS.POSITION
-    }
+    position?: string;
+  }
+  
+  // Пропсы
+  const props = withDefaults(defineProps<Props>(), {
+    timeout: SNACKBAR_DEFAULTS.TIMEOUT,
+    closable: SNACKBAR_DEFAULTS.CLOSABLE,
+    position: SNACKBAR_DEFAULTS.POSITION
   })
   
   // События
-  const emit = defineEmits(['close'])
+  const emit = defineEmits<{
+    close: []
+  }>()
   
   // Состояние
-  const isVisible = ref(true)
+  const isVisible = ref<boolean>(true)
   
   // Вычисляемые свойства
   const snackbarColor = computed(() => SNACKBAR_DEFAULTS.COLORS[props.type])
@@ -83,7 +75,7 @@
   const currentPosition = computed(() => props.position)
   
   // Методы
-  const close = () => {
+  const close = (): void => {
     isVisible.value = false
     emit('close')
   }
