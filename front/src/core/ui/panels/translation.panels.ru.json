@@ -5,8 +5,11 @@
       "error": "ошибка загрузки настроек политики паролей",
       "examplePassword": "пример пароля:",
       "requirements": "требования:",
+      "refresh": "обновить политики паролей",
       "rules": {
         "minLength": "минимум {length} символов",
+        "maxLength": "максимум {length} символов",
+        "lengthRange": "от {minLength} до {maxLength} символов",
         "lowercase": "строчные буквы",
         "uppercase": "заглавные буквы",
         "numbers": "цифры",

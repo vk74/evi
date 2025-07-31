@@ -6,6 +6,8 @@
     "serve": "vue-cli-service serve",
     "serve:dev": "NODE_ENV=development vue-cli-service serve",
     "build": "vue-cli-service build",
+    "build:type-check": "vue-tsc --noEmit && vue-cli-service build",
+    "type-check": "vue-tsc --noEmit",
     "lint": "vue-cli-service lint",
     "test-front:all": "jest --config jest.config.js"
   },

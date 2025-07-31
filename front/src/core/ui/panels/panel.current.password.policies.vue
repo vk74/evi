@@ -77,7 +77,11 @@ const getPasswordRequirements = computed(() => {
   const policies = currentPasswordPolicies.value
   const requirements: string[] = []
   
-  requirements.push(t('panels.passwordPolicies.rules.minLength', { length: policies.minLength }))
+  // Add length requirement (min and max)
+  requirements.push(t('panels.passwordPolicies.rules.lengthRange', { 
+    minLength: policies.minLength, 
+    maxLength: policies.maxLength 
+  }))
   
   if (policies.requireLowercase) {
     requirements.push(t('panels.passwordPolicies.rules.lowercase'))
@@ -109,15 +113,15 @@ const passwordPoliciesReady = computed(() => {
 /**
  * Load password policy settings from public API
  */
-const loadPasswordPolicies = async () => {
+const loadPasswordPolicies = async (forceRefresh = false) => {
   isLoadingPasswordPolicies.value = true
   passwordPolicyError.value = false
   
   try {
-    console.log('[PasswordPoliciesPanel] Loading password policy settings')
+    console.log('[PasswordPoliciesPanel] Loading password policy settings', forceRefresh ? '(forced refresh)' : '')
     
     // Use public API instead of admin settings API
-    const policies = await fetchPublicPasswordPolicies()
+    const policies = await fetchPublicPasswordPolicies(forceRefresh)
     currentPasswordPolicies.value = policies
     
     console.log('[PasswordPoliciesPanel] Password policies loaded successfully:', policies)
@@ -140,6 +144,15 @@ const loadPasswordPolicies = async () => {
   } finally {
     isLoadingPasswordPolicies.value = false
   }
+}
+
+// ==================== METHODS ====================
+/**
+ * Force refresh password policies (for admin use)
+ */
+const refreshPasswordPolicies = async () => {
+  console.log('[PasswordPoliciesPanel] Force refreshing password policies')
+  await loadPasswordPolicies(true)
 }
 
 // ==================== LIFECYCLE ====================
@@ -186,9 +199,20 @@ onMounted(async () => {
     
     <!-- Success state with password info -->
     <div v-else-if="passwordPoliciesReady">
-      <p class="text-body-2 text-grey-darken-1 mb-2">
-        {{ t('panels.passwordPolicies.examplePassword') }}
-      </p>
+      <div class="d-flex align-center justify-space-between mb-2">
+        <p class="text-body-2 text-grey-darken-1 mb-0">
+          {{ t('panels.passwordPolicies.examplePassword') }}
+        </p>
+        <v-btn
+          icon="mdi-refresh"
+          size="small"
+          variant="text"
+          color="primary"
+          :loading="isLoadingPasswordPolicies"
+          @click="refreshPasswordPolicies"
+          :title="t('panels.passwordPolicies.refresh')"
+        />
+      </div>
       <p class="text-h6 font-weight-bold text-primary mb-2">
         {{ generateExamplePassword || '—' }}
       </p>

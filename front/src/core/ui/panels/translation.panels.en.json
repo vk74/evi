@@ -5,8 +5,11 @@
       "error": "error loading password policy settings",
       "examplePassword": "example password:",
       "requirements": "requirements:",
+      "refresh": "refresh password policies",
       "rules": {
         "minLength": "minimum {length} characters",
+        "maxLength": "maximum {length} characters",
+        "lengthRange": "between {minLength} and {maxLength} characters",
         "lowercase": "lowercase letters",
         "uppercase": "uppercase letters",
         "numbers": "numbers",

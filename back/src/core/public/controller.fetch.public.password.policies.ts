@@ -190,7 +190,9 @@ export async function fetchPublicPasswordPoliciesController(req: Request, res: R
     // Set response headers
     res.set({
       'Content-Type': 'application/json',
-      'Cache-Control': 'public, max-age=300', // Cache for 5 minutes
+      'Cache-Control': 'no-cache, no-store, must-revalidate', // No caching for public password policies
+      'Pragma': 'no-cache',
+      'Expires': '0',
       'X-Response-Time': `${responseTime}ms`
     });
 

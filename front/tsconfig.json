@@ -20,7 +20,9 @@
     "checkJs": false,
     "noEmit": true,
     "resolveJsonModule": true,    // Добавляем поддержку JSON
-    "noImplicitAny": false       // Отключаем строгую типизацию
+    "noImplicitAny": false,       // Отключаем строгую типизацию
+    "incremental": true,
+    "tsBuildInfoFile": "./node_modules/.cache/.tsbuildinfo"
   },
   "include": [
     "src/**/*.ts",
