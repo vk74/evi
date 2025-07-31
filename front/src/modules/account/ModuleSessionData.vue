@@ -1,17 +1,205 @@
+<!--
+  File: ModuleSessionData.vue
+  Version: 1.0.0
+  Description: Component for displaying session technical data
+  Purpose: Shows user session information in a structured format
+  Features:
+  - Displays session technical data
+  - Expandable/collapsible view
+  - Styled similar to UUID display in CatalogSectionEditor
+-->
+
+<script setup lang="ts">
+import { ref, computed, onMounted } from 'vue'
+import { useI18n } from 'vue-i18n'
+import { useUserAuthStore } from './state.user.auth'
+import { useUserAccountStore } from './state.user.account'
+
+// Initialize stores and i18n
+const { t } = useI18n()
+const userAuthStore = useUserAuthStore()
+const userAccountStore = useUserAccountStore()
+
+// Computed properties for session data
+const sessionData = computed(() => ({
+  username: userAuthStore.username,
+  jwt: userAuthStore.jwt,
+  isLoggedIn: userAuthStore.isAuthenticated,
+  userID: userAuthStore.userID,
+  issuedAt: userAuthStore.issuedAt ? new Date(userAuthStore.issuedAt * 1000).toLocaleString() : 'N/A',
+  issuer: userAuthStore.issuer || 'N/A',
+  expiresAt: userAuthStore.tokenExpires ? new Date(userAuthStore.tokenExpires * 1000).toLocaleString() : 'N/A',
+  timeUntilExpiry: userAuthStore.timeUntilExpiry
+}))
+
+// Update session data in store when component mounts
+onMounted(() => {
+  userAccountStore.updateSessionData(sessionData.value)
+})
+</script>
+
 <template>
-  <div class="ModuleSD">
-    <h5>данные сессии</h5>
+  <div class="session-data-wrapper">
+    <div class="session-data-title">
+      <span>{{ t('sessionData.title') }}</span>
+    </div>
+    
+    <div class="session-data-container">
+                <!-- Username -->
+          <div class="data-row">
+            <div class="data-label">
+              {{ t('sessionData.username') }}:
+            </div>
+            <div class="data-value">
+              {{ sessionData.username }}
+            </div>
+          </div>
+
+          <!-- JWT Token -->
+          <div class="data-row">
+            <div class="data-label">
+              {{ t('sessionData.jwt') }}:
+            </div>
+            <div class="data-value jwt-token">
+              {{ sessionData.jwt }}
+            </div>
+          </div>
+
+          <!-- Is Logged In -->
+          <div class="data-row">
+            <div class="data-label">
+              {{ t('sessionData.isLoggedIn') }}:
+            </div>
+            <div class="data-value">
+              <v-chip 
+                :color="sessionData.isLoggedIn ? 'teal' : 'grey'" 
+                size="x-small"
+              >
+                {{ sessionData.isLoggedIn ? t('sessionData.yes') : t('sessionData.no') }}
+              </v-chip>
+            </div>
+          </div>
+
+          <!-- User ID -->
+          <div class="data-row">
+            <div class="data-label">
+              {{ t('sessionData.userID') }}:
+            </div>
+            <div class="data-value uuid-value">
+              {{ sessionData.userID }}
+            </div>
+          </div>
+
+          <!-- Issued At -->
+          <div class="data-row">
+            <div class="data-label">
+              {{ t('sessionData.issuedAt') }}:
+            </div>
+            <div class="data-value">
+              {{ sessionData.issuedAt }}
+            </div>
+          </div>
+
+          <!-- Issuer -->
+          <div class="data-row">
+            <div class="data-label">
+              {{ t('sessionData.issuer') }}:
+            </div>
+            <div class="data-value">
+              {{ sessionData.issuer }}
+            </div>
+          </div>
+
+          <!-- Expires At -->
+          <div class="data-row">
+            <div class="data-label">
+              {{ t('sessionData.expiresAt') }}:
+            </div>
+            <div class="data-value">
+              {{ sessionData.expiresAt }}
+            </div>
+          </div>
+
+          <!-- Time Until Expiry -->
+          <div class="data-row">
+            <div class="data-label">
+              {{ t('sessionData.timeUntilExpiry') }}:
+            </div>
+            <div class="data-value">
+              {{ sessionData.timeUntilExpiry }} {{ t('sessionData.seconds') }}
+            </div>
+          </div>
+    </div>
   </div>
 </template>
 
-<script setup>
-import { defineComponent } from 'vue';
+<style scoped>
+.session-data-wrapper {
+  padding: 16px;
+}
 
-defineComponent({
-  name: 'ModuleSD'
-});
-</script>
+.session-data-title {
+  font-size: 1.25rem;
+  font-weight: 500;
+  color: rgba(0, 0, 0, 0.87);
+  margin-bottom: 16px;
+}
 
-<style>
+.session-data-container {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
 
+.data-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 8px 0;
+  border-bottom: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
+}
+
+.data-row:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.data-label {
+  font-size: 0.875rem;
+  color: rgba(0, 0, 0, 0.75);
+  font-weight: 500;
+  min-width: 140px;
+  flex-shrink: 0;
+}
+
+.data-value {
+  font-size: 0.875rem;
+  color: rgba(0, 0, 0, 0.87);
+  word-break: break-word;
+  flex-grow: 1;
+}
+
+.uuid-value {
+  font-family: 'Roboto Mono', monospace;
+  font-size: 0.875rem;
+  color: rgba(0, 0, 0, 0.75);
+  background-color: rgba(0, 0, 0, 0.05);
+  padding: 4px 8px;
+  border-radius: 4px;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  display: inline-block;
+}
+
+.jwt-token {
+  font-family: 'Roboto Mono', monospace;
+  font-size: 0.75rem;
+  color: rgba(0, 0, 0, 0.75);
+  background-color: rgba(0, 0, 0, 0.05);
+  padding: 4px 8px;
+  border-radius: 4px;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  max-width: 100%;
+  word-break: break-all;
+  white-space: pre-wrap;
+}
 </style>

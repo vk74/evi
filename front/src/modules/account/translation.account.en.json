@@ -99,5 +99,19 @@
       "alreadyHaveAccount": "already have an account?",
       "signIn": "sign in"
     }
+  },
+  "sessionData": {
+    "title": "technical session data",
+    "username": "username",
+    "jwt": "jwt token",
+    "isLoggedIn": "is logged in",
+    "userID": "user id",
+    "issuedAt": "token issued at",
+    "issuer": "token issuer",
+    "expiresAt": "token expires at",
+    "timeUntilExpiry": "session expires in",
+    "seconds": "seconds",
+    "yes": "yes",
+    "no": "no"
   }
 } 

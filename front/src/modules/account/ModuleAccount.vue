@@ -1,12 +1,14 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { useUserAuthStore } from '@/modules/account/state.user.auth'
+import { useUserAccountStore } from '@/modules/account/state.user.account'
 import { useI18n } from 'vue-i18n'
 import axios from 'axios'
 import ChangePassword from '@/core/ui/modals/change-password/ChangePassword.vue'
 import { PasswordChangeMode } from '@/core/ui/modals/change-password/types.change.password'
 // ==================== STORES ====================
 const userStore = useUserAuthStore()
+const userAccountStore = useUserAccountStore()
 const { t } = useI18n()
 
 // ==================== REFS & STATE ====================
@@ -28,28 +30,12 @@ const settings = ref({
 })
 
 const isChangePasswordModalVisible = ref(false)
-const isTechCardExpanded = ref(true)
 const snackbar = ref(false)
 const snackbarMessage = ref('')
 const snackbarColor = ref('teal')
 
 // ==================== COMPUTED ====================
 const username = computed(() => userStore.username)
-const jwt = computed(() => userStore.jwt)
-const isLoggedIn = computed(() => userStore.isAuthenticated)
-const userID = computed(() => userStore.userID)
-
-const issuedAt = computed(() => {
-  const iat = userStore.issuedAt
-  return iat ? new Date(iat * 1000).toLocaleString() : 'N/A'
-})
-
-const issuer = computed(() => userStore.issuer || 'N/A')
-
-const expiresAt = computed(() => {
-  const exp = userStore.tokenExpires
-  return exp ? new Date(exp * 1000).toLocaleString() : 'N/A'
-})
 
 // ==================== METHODS ====================
 const openChangePasswordModal = () => {
@@ -60,9 +46,7 @@ const closeChangePasswordModal = () => {
   isChangePasswordModalVisible.value = false
 }
 
-const toggleTechCard = () => {
-  isTechCardExpanded.value = !isTechCardExpanded.value
-}
+
 
 const saveProfile = async () => {
   if (userStore.isAuthenticated) {
@@ -92,6 +76,8 @@ onMounted(async () => {
         headers: { Authorization: `Bearer ${userStore.jwt}` },
       })
       profile.value = response.data
+      // Update profile in account store
+      userAccountStore.updateProfile(profile.value)
     } catch (error) {
       console.error('Error on load of user profile data:', error)
     }
@@ -214,39 +200,7 @@ onMounted(async () => {
         </v-card>
       </v-col>
 
-      <!-- tech card -->
-      <v-col
-        cols="12"
-        md="6"
-      >
-        <v-card
-          class="pa-4"
-          outlined
-          elevation="2"
-        >
-          <v-card-title>
-            <span>технические данные сессии</span>
-            <v-spacer />
-            <v-btn
-              icon
-              @click="toggleTechCard"
-            >
-              <v-icon>{{ isTechCardExpanded ? 'mdi-chevron-up' : 'mdi-chevron-down' }}</v-icon>
-            </v-btn>
-          </v-card-title>
-          <v-expand-transition>
-            <v-card-text v-show="isTechCardExpanded">
-              Username: <b>{{ username }} </b> <br>
-              Issued <b>JSON web token:</b> {{ jwt }} <br>
-              isLoggedIn attribute: <b>{{ isLoggedIn }}</b> <br>
-              Token issued at: <b>{{ issuedAt }} </b> <br>
-              Token issuer: <b>{{ issuer }} </b> <br>
-              Token expires: <b>{{ expiresAt }} </b> <br>
-              Session will expire in: <b>{{ userStore.timeUntilExpiry }} seconds</b> <br>
-            </v-card-text>
-          </v-expand-transition>
-        </v-card>
-      </v-col>
+
     </v-row>
 
     <!-- Modal for changing password -->
@@ -256,7 +210,7 @@ onMounted(async () => {
     >
       <ChangePassword
         :title="$t('passwordChange.resetPassword') + ' ' + username"
-        :uuid="userID"
+        :uuid="userStore.userID"
         :username="username"
         :mode="PasswordChangeMode.SELF"
         :on-close="closeChangePasswordModal"

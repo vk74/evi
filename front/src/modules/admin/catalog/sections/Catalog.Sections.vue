@@ -460,7 +460,7 @@ const handleItemsPerPageChange = async (newItemsPerPage: ItemsPerPageOption) => 
 
           <template #[`item.is_public`]="{ item }">
             <v-chip 
-              :color="item.is_public ? 'green' : 'grey'" 
+              :color="item.is_public ? 'teal' : 'grey'" 
               size="x-small"
             >
               {{ item.is_public ? t('admin.catalog.sections.table.status.yes') : t('admin.catalog.sections.table.status.no') }}
