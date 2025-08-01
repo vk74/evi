@@ -15,6 +15,7 @@ export const queries = {
      * technical_owner, backup_technical_owner, dispatcher, priority, status, description_short, 
      * description_long, purpose, comments, is_public, access_allowed_groups, access_denied_groups, 
      * access_denied_users, created_by]
+     * Note: id is generated automatically by database default value
      */
     createService: `
         INSERT INTO app.services (

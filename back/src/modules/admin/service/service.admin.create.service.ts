@@ -30,8 +30,6 @@ import type {
 } from './types.admin.service';
 import { ServicePriority, ServiceStatus } from './types.admin.service';
 import { getRequestorUuidFromReq } from '../../../core/helpers/get.requestor.uuid.from.req';
-import { checkUserExists } from '../../../core/helpers/check.user.exists';
-import { checkGroupExists } from '../../../core/helpers/check.group.exists';
 import { getUuidByUsername } from '../../../core/helpers/get.uuid.by.username';
 
 // Type assertion for pool
@@ -53,19 +51,6 @@ function isValidPriority(priority: string): boolean {
  */
 function isValidStatus(status: string): boolean {
     return Object.values(ServiceStatus).includes(status as ServiceStatus);
-}
-
-/**
- * Checks if a UUID exists as either user or group
- * @param uuid - UUID to check
- * @returns Promise<boolean> indicating if entity exists
- */
-async function checkEntityExists(uuid: string): Promise<boolean> {
-    const isUser = await checkUserExists(uuid);
-    if (isUser) return true;
-    
-    const isGroup = await checkGroupExists(uuid);
-    return isGroup;
 }
 
 /**
@@ -138,8 +123,6 @@ async function validateCreateServiceData(data: CreateServiceRequest): Promise<vo
             const ownerUuid = await getUuidByUsername(data.owner);
             if (!ownerUuid) {
                 errors.push('Owner user does not exist');
-            } else if (!await checkUserExists(ownerUuid)) {
-                errors.push('Owner user does not exist');
             }
         } catch (error) {
             errors.push('Invalid owner username');
@@ -151,8 +134,6 @@ async function validateCreateServiceData(data: CreateServiceRequest): Promise<vo
         try {
             const backupOwnerUuid = await getUuidByUsername(data.backup_owner);
             if (!backupOwnerUuid) {
-                errors.push('Backup owner user does not exist');
-            } else if (!await checkUserExists(backupOwnerUuid)) {
                 errors.push('Backup owner user does not exist');
             }
         } catch (error) {
@@ -166,8 +147,6 @@ async function validateCreateServiceData(data: CreateServiceRequest): Promise<vo
             const technicalOwnerUuid = await getUuidByUsername(data.technical_owner);
             if (!technicalOwnerUuid) {
                 errors.push('Technical owner user does not exist');
-            } else if (!await checkUserExists(technicalOwnerUuid)) {
-                errors.push('Technical owner user does not exist');
             }
         } catch (error) {
             errors.push('Invalid technical owner username');
@@ -179,8 +158,6 @@ async function validateCreateServiceData(data: CreateServiceRequest): Promise<vo
         try {
             const backupTechnicalOwnerUuid = await getUuidByUsername(data.backup_technical_owner);
             if (!backupTechnicalOwnerUuid) {
-                errors.push('Backup technical owner user does not exist');
-            } else if (!await checkUserExists(backupTechnicalOwnerUuid)) {
                 errors.push('Backup technical owner user does not exist');
             }
         } catch (error) {
@@ -194,8 +171,6 @@ async function validateCreateServiceData(data: CreateServiceRequest): Promise<vo
             const dispatcherUuid = await getUuidByUsername(data.dispatcher);
             if (!dispatcherUuid) {
                 errors.push('Dispatcher user does not exist');
-            } else if (!await checkUserExists(dispatcherUuid)) {
-                errors.push('Dispatcher user does not exist');
             }
         } catch (error) {
             errors.push('Invalid dispatcher username');
@@ -208,8 +183,6 @@ async function validateCreateServiceData(data: CreateServiceRequest): Promise<vo
             const supportTier1Uuid = await getUuidByUsername(data.support_tier1);
             if (!supportTier1Uuid) {
                 errors.push('Support tier 1 user does not exist');
-            } else if (!await checkUserExists(supportTier1Uuid)) {
-                errors.push('Support tier 1 user does not exist');
             }
         } catch (error) {
             errors.push('Invalid support tier 1 username');
@@ -221,8 +194,6 @@ async function validateCreateServiceData(data: CreateServiceRequest): Promise<vo
             const supportTier2Uuid = await getUuidByUsername(data.support_tier2);
             if (!supportTier2Uuid) {
                 errors.push('Support tier 2 user does not exist');
-            } else if (!await checkUserExists(supportTier2Uuid)) {
-                errors.push('Support tier 2 user does not exist');
             }
         } catch (error) {
             errors.push('Invalid support tier 2 username');
@@ -233,8 +204,6 @@ async function validateCreateServiceData(data: CreateServiceRequest): Promise<vo
         try {
             const supportTier3Uuid = await getUuidByUsername(data.support_tier3);
             if (!supportTier3Uuid) {
-                errors.push('Support tier 3 user does not exist');
-            } else if (!await checkUserExists(supportTier3Uuid)) {
                 errors.push('Support tier 3 user does not exist');
             }
         } catch (error) {
@@ -260,17 +229,27 @@ async function validateCreateServiceData(data: CreateServiceRequest): Promise<vo
  */
 async function createServiceInDatabase(data: CreateServiceRequest, requestorUuid: string): Promise<CreateServiceResponse> {
     try {
+        // Convert usernames to UUIDs
+        const ownerUuid = data.owner ? await getUuidByUsername(data.owner) : null;
+        const backupOwnerUuid = data.backup_owner ? await getUuidByUsername(data.backup_owner) : null;
+        const technicalOwnerUuid = data.technical_owner ? await getUuidByUsername(data.technical_owner) : null;
+        const backupTechnicalOwnerUuid = data.backup_technical_owner ? await getUuidByUsername(data.backup_technical_owner) : null;
+        const dispatcherUuid = data.dispatcher ? await getUuidByUsername(data.dispatcher) : null;
+        const supportTier1Uuid = data.support_tier1 ? await getUuidByUsername(data.support_tier1) : null;
+        const supportTier2Uuid = data.support_tier2 ? await getUuidByUsername(data.support_tier2) : null;
+        const supportTier3Uuid = data.support_tier3 ? await getUuidByUsername(data.support_tier3) : null;
+
         // Prepare data for insertion
         const insertData = {
             name: data.name.trim(),
-            support_tier1: data.support_tier1 || null,
-            support_tier2: data.support_tier2 || null,
-            support_tier3: data.support_tier3 || null,
-            owner: data.owner || null,
-            backup_owner: data.backup_owner || null,
-            technical_owner: data.technical_owner || null,
-            backup_technical_owner: data.backup_technical_owner || null,
-            dispatcher: data.dispatcher || null,
+            support_tier1: supportTier1Uuid,
+            support_tier2: supportTier2Uuid,
+            support_tier3: supportTier3Uuid,
+            owner: ownerUuid,
+            backup_owner: backupOwnerUuid,
+            technical_owner: technicalOwnerUuid,
+            backup_technical_owner: backupTechnicalOwnerUuid,
+            dispatcher: dispatcherUuid,
             priority: data.priority || ServicePriority.LOW,
             status: data.status || ServiceStatus.DRAFTED,
             description_short: data.description_short?.trim() || null,
