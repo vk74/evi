@@ -31,6 +31,7 @@ import type {
 import { ServicePriority, ServiceStatus } from './types.admin.service';
 import { getRequestorUuidFromReq } from '../../../core/helpers/get.requestor.uuid.from.req';
 import { getUuidByUsername } from '../../../core/helpers/get.uuid.by.username';
+import { getUuidByGroupName } from '../../../core/helpers/get.uuid.by.group.name';
 
 // Type assertion for pool
 const pool = pgPool as Pool;
@@ -180,34 +181,34 @@ async function validateCreateServiceData(data: CreateServiceRequest): Promise<vo
     // Support tier validation (if provided)
     if (data.support_tier1) {
         try {
-            const supportTier1Uuid = await getUuidByUsername(data.support_tier1);
+            const supportTier1Uuid = await getUuidByGroupName(data.support_tier1);
             if (!supportTier1Uuid) {
-                errors.push('Support tier 1 user does not exist');
+                errors.push('Support tier 1 group does not exist');
             }
         } catch (error) {
-            errors.push('Invalid support tier 1 username');
+            errors.push('Invalid support tier 1 group name');
         }
     }
 
     if (data.support_tier2) {
         try {
-            const supportTier2Uuid = await getUuidByUsername(data.support_tier2);
+            const supportTier2Uuid = await getUuidByGroupName(data.support_tier2);
             if (!supportTier2Uuid) {
-                errors.push('Support tier 2 user does not exist');
+                errors.push('Support tier 2 group does not exist');
             }
         } catch (error) {
-            errors.push('Invalid support tier 2 username');
+            errors.push('Invalid support tier 2 group name');
         }
     }
 
     if (data.support_tier3) {
         try {
-            const supportTier3Uuid = await getUuidByUsername(data.support_tier3);
+            const supportTier3Uuid = await getUuidByGroupName(data.support_tier3);
             if (!supportTier3Uuid) {
-                errors.push('Support tier 3 user does not exist');
+                errors.push('Support tier 3 group does not exist');
             }
         } catch (error) {
-            errors.push('Invalid support tier 3 username');
+            errors.push('Invalid support tier 3 group name');
         }
     }
 
@@ -235,9 +236,9 @@ async function createServiceInDatabase(data: CreateServiceRequest, requestorUuid
         const technicalOwnerUuid = data.technical_owner ? await getUuidByUsername(data.technical_owner) : null;
         const backupTechnicalOwnerUuid = data.backup_technical_owner ? await getUuidByUsername(data.backup_technical_owner) : null;
         const dispatcherUuid = data.dispatcher ? await getUuidByUsername(data.dispatcher) : null;
-        const supportTier1Uuid = data.support_tier1 ? await getUuidByUsername(data.support_tier1) : null;
-        const supportTier2Uuid = data.support_tier2 ? await getUuidByUsername(data.support_tier2) : null;
-        const supportTier3Uuid = data.support_tier3 ? await getUuidByUsername(data.support_tier3) : null;
+        const supportTier1Uuid = data.support_tier1 ? await getUuidByGroupName(data.support_tier1) : null;
+        const supportTier2Uuid = data.support_tier2 ? await getUuidByGroupName(data.support_tier2) : null;
+        const supportTier3Uuid = data.support_tier3 ? await getUuidByGroupName(data.support_tier3) : null;
 
         // Prepare data for insertion
         const insertData = {

@@ -1,0 +1,7 @@
+---
+description: when agent needs to connect to project database
+alwaysApply: false
+---
+when agent needs to connect to project database it should use #query tool from mcp server for postgres. agent has read-only access to database. 
+
+if agents needs to change something in the database than it should make a script and give it to user for implementation in db. 
