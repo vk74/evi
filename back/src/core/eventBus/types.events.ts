@@ -33,7 +33,7 @@ export interface BaseEvent {
   eventType: 'app' | 'system' | 'security' | 'integration' | 'performance';
 
   // 🪵 Severity level of the event
-  severity?: 'trace' | 'debug' | 'info' | 'warning' | 'error' | 'critical';
+  severity?: 'debug' | 'info' | 'warning' | 'error' | 'critical';
 
   // message to be used in logging and other services
   eventMessage?: string;
@@ -157,7 +157,7 @@ export interface CreateEventOptions {
   // Category of the event (classification)
   eventType?: 'app' | 'system' | 'security' | 'integration' | 'performance';
   // Severity level for the event
-  severity?: 'trace' | 'debug' | 'info' | 'warning' | 'error' | 'critical';
+  severity?: 'debug' | 'info' | 'warning' | 'error' | 'critical';
   // Event duration in milliseconds
   duration?: number;
   // Distributed tracing IDs
@@ -208,7 +208,7 @@ export interface SubscriptionOptions {
   // Only receive events of this type (category)
   eventType?: 'app' | 'system' | 'security' | 'integration' | 'performance';
   // Only receive events with this severity level
-  severity?: 'trace' | 'debug' | 'info' | 'warning' | 'error' | 'critical';
+  severity?: 'debug' | 'info' | 'warning' | 'error' | 'critical';
   // Custom filter function
   filter?: EventFilterPredicate;
   // Whether to handle errors from this handler
@@ -375,7 +375,7 @@ export interface CreateSystemErrorEventParams {
   errorData?: string;
   
   // Optional override for error severity
-  severity?: 'trace' | 'debug' | 'info' | 'warning' | 'error' | 'critical';
+  severity?: 'debug' | 'info' | 'warning' | 'error' | 'critical';
 }
 
 /**
@@ -401,7 +401,7 @@ export interface CachedEventSchema extends EventSchema {
   eventName: string;
   source: string;
   eventType: 'app' | 'system' | 'security' | 'integration' | 'performance';
-  severity?: 'trace' | 'debug' | 'info' | 'warning' | 'error' | 'critical';
+  severity?: 'debug' | 'info' | 'warning' | 'error' | 'critical';
   eventMessage?: string;
   version: string; 
 }
@@ -414,7 +414,7 @@ export interface EventObject {
   eventName: string;
   source?: string;
   eventType?: 'app' | 'system' | 'security' | 'integration' | 'performance';
-  severity?: 'trace' | 'debug' | 'info' | 'warning' | 'error' | 'critical';
+  severity?: 'debug' | 'info' | 'warning' | 'error' | 'critical';
   eventMessage?: string;
   version?: string;
   [key: string]: any;

@@ -418,7 +418,7 @@ export const whereEventType = (
  */
 export const whereSeverity = (
   state: FilterBuilderState, 
-  severity: 'trace' | 'debug' | 'info' | 'warning' | 'error' | 'critical'
+  severity: 'debug' | 'info' | 'warning' | 'error' | 'critical'
 ): FilterBuilderState => {
   return where(state, 'severity', severity);
 };
@@ -428,10 +428,9 @@ export const whereSeverity = (
  */
 export const whereMinSeverity = (
   state: FilterBuilderState,
-  minSeverity: 'trace' | 'debug' | 'info' | 'warning' | 'error' | 'critical'
+  minSeverity: 'debug' | 'info' | 'warning' | 'error' | 'critical'
 ): FilterBuilderState => {
   const severityLevels = {
-    trace: -1,
     debug: 0,
     info: 1,
     warning: 2,

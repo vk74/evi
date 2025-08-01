@@ -6,7 +6,6 @@
  * 
  * Payload Guidelines:
  * - severity 'info'/'warning'/'error': Only user UUID and basic info
- * - severity 'trace': Full details including IP, device fingerprint, timestamps
  * - severity 'debug': Internal system details for troubleshooting
  */
 
