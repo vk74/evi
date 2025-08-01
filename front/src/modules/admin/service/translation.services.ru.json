@@ -1,0 +1,78 @@
+{
+  "admin": {
+    "services": {
+      "navigation": {
+        "services": "Сервисы",
+        "list": "Список",
+        "settings": "Настройки"
+      },
+      "search": {
+        "placeholder": "Поиск сервисов по названию, владельцу или техническому владельцу...",
+        "minChars": "Введите минимум 2 символа для поиска"
+      },
+      "table": {
+        "headers": {
+          "selection": "",
+          "name": "Название",
+          "priority": "Приоритет",
+          "status": "Статус",
+          "owner": "Владелец",
+          "technicalOwner": "Технический владелец",
+          "isPublic": "Публичный"
+        },
+        "priority": {
+          "critical": "Критический",
+          "high": "Высокий",
+          "medium": "Средний",
+          "low": "Низкий"
+        },
+        "status": {
+          "undefined": "Не определен",
+          "drafted": "Черновик",
+          "being_developed": "В разработке",
+          "being_tested": "На тестировании",
+          "non_compliant": "Не соответствует",
+          "pending_approval": "Ожидает одобрения",
+          "in_production": "В продакшене",
+          "under_maintenance": "На обслуживании",
+          "suspended": "Приостановлен",
+          "being_upgraded": "Обновляется",
+          "discontinued": "Прекращен",
+          "yes": "Да",
+          "no": "Нет"
+        }
+      },
+      "actions": {
+        "title": "Действия",
+        "addService": "Добавить сервис",
+        "refresh": "Обновить",
+        "clearSelection": "Очистить выбор",
+        "selectedElements": "Выбранные элементы",
+        "edit": "Редактировать",
+        "delete": "Удалить",
+        "assignOwner": "Назначить владельца"
+      },
+      "pagination": {
+        "recordsPerPage": "Записей на странице:",
+        "recordsInfo": "Показано {start} - {end} из {total} записей",
+        "firstPage": "Первая страница",
+        "previousPage": "Предыдущая страница",
+        "nextPage": "Следующая страница",
+        "lastPage": "Последняя страница"
+      },
+      "messages": {
+        "selectionCleared": "Выбор очищен",
+        "addServiceNotImplemented": "Функция добавления сервиса пока не реализована",
+        "editServiceNotImplemented": "Функция редактирования сервиса пока не реализована",
+        "deleteServiceNotImplemented": "Функция удаления сервиса пока не реализована",
+        "assignOwnerNotImplemented": "Функция назначения владельца пока не реализована",
+        "deleteConfirm": {
+          "title": "Подтвердить удаление",
+          "message": "Вы уверены, что хотите удалить выбранные сервисы? Это действие нельзя отменить.",
+          "cancel": "Отмена",
+          "confirm": "Удалить"
+        }
+      }
+    }
+  }
+} 

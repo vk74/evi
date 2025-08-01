@@ -40,6 +40,10 @@ import settingsEn from '@/modules/admin/settings/translation.settings.en.json'
 
 import catalogAdminRu from '@/modules/admin/catalog/translation.admin.catalog.ru.json'
 import catalogAdminEn from '@/modules/admin/catalog/translation.admin.catalog.en.json'
+
+// services admin module
+import servicesAdminRu from '@/modules/admin/service/translation.services.ru.json'
+import servicesAdminEn from '@/modules/admin/service/translation.services.en.json'
 // 
 
 // validation rules
@@ -61,7 +65,8 @@ export default {
       groupsListRu,
       groupsEditorRu,
       settingsRu,
-      catalogAdminRu
+      catalogAdminRu,
+      servicesAdminRu
     ),
     en: merge({},
       appTranslationsEn,
@@ -76,6 +81,7 @@ export default {
       groupsListEn,
       groupsEditorEn,
       settingsEn,
-      catalogAdminEn
+      catalogAdminEn,
+      servicesAdminEn
     )
   }

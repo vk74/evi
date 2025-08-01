@@ -1,0 +1,78 @@
+{
+  "admin": {
+    "services": {
+      "navigation": {
+        "services": "Services",
+        "list": "List",
+        "settings": "Settings"
+      },
+      "search": {
+        "placeholder": "Search services by name, owner, or technical owner...",
+        "minChars": "Enter at least 2 characters to search"
+      },
+      "table": {
+        "headers": {
+          "selection": "",
+          "name": "Name",
+          "priority": "Priority",
+          "status": "Status",
+          "owner": "Owner",
+          "technicalOwner": "Technical Owner",
+          "isPublic": "Public"
+        },
+        "priority": {
+          "critical": "Critical",
+          "high": "High",
+          "medium": "Medium",
+          "low": "Low"
+        },
+        "status": {
+          "undefined": "Undefined",
+          "drafted": "Drafted",
+          "being_developed": "Being Developed",
+          "being_tested": "Being Tested",
+          "non_compliant": "Non Compliant",
+          "pending_approval": "Pending Approval",
+          "in_production": "In Production",
+          "under_maintenance": "Under Maintenance",
+          "suspended": "Suspended",
+          "being_upgraded": "Being Upgraded",
+          "discontinued": "Discontinued",
+          "yes": "Yes",
+          "no": "No"
+        }
+      },
+      "actions": {
+        "title": "Actions",
+        "addService": "Add Service",
+        "refresh": "Refresh",
+        "clearSelection": "Clear Selection",
+        "selectedElements": "Selected Elements",
+        "edit": "Edit",
+        "delete": "Delete",
+        "assignOwner": "Assign Owner"
+      },
+      "pagination": {
+        "recordsPerPage": "Records per page:",
+        "recordsInfo": "Showing {start} to {end} of {total} records",
+        "firstPage": "First page",
+        "previousPage": "Previous page",
+        "nextPage": "Next page",
+        "lastPage": "Last page"
+      },
+      "messages": {
+        "selectionCleared": "Selection cleared",
+        "addServiceNotImplemented": "Add service functionality not implemented yet",
+        "editServiceNotImplemented": "Edit service functionality not implemented yet",
+        "deleteServiceNotImplemented": "Delete service functionality not implemented yet",
+        "assignOwnerNotImplemented": "Assign owner functionality not implemented yet",
+        "deleteConfirm": {
+          "title": "Confirm Delete",
+          "message": "Are you sure you want to delete the selected services? This action cannot be undone.",
+          "cancel": "Cancel",
+          "confirm": "Delete"
+        }
+      }
+    }
+  }
+} 

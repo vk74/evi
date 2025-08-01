@@ -20,13 +20,7 @@
         "main": "application settings"
       }
     },
-    "services": {
-      "navigation": {
-        "services": "Services",
-        "list": "List",
-        "settings": "Settings"
-      }
-    },
+
     "users": {
       "sections": {
         "usersList": "users list",
