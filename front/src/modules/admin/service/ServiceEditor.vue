@@ -37,6 +37,9 @@ const showDispatcherSelector = ref(false)
 const showSupportTier1Selector = ref(false)
 const showSupportTier2Selector = ref(false)
 const showSupportTier3Selector = ref(false)
+const showAccessAllowedGroupsSelector = ref(false)
+const showAccessDeniedGroupsSelector = ref(false)
+const showAccessDeniedUsersSelector = ref(false)
 
 // Form data
 const formData = ref({
@@ -105,6 +108,18 @@ const nameRules = [
   (v: string) => !!v || t('admin.services.editor.information.name.required'),
   (v: string) => v.length >= 2 || t('admin.services.editor.information.name.minLength'),
   (v: string) => v.length <= 250 || t('admin.services.editor.information.name.maxLength')
+]
+
+const ownerRules = [
+  (v: string) => !!v || t('admin.services.editor.owners.owner.required')
+]
+
+const priorityRules = [
+  (v: any) => !!v || t('admin.services.editor.information.priority.required')
+]
+
+const statusRules = [
+  (v: any) => !!v || t('admin.services.editor.information.status.required')
 ]
 
 const descriptionShortRules = [
@@ -399,6 +414,36 @@ const handleSupportTier3Selected = async (result: any) => {
   showSupportTier3Selector.value = false
 }
 
+const handleAccessAllowedGroupsSelected = async (result: any) => {
+  if (result && result.success && result.selectedGroup && result.selectedGroup.name) {
+    formData.value.accessAllowedGroups = result.selectedGroup.name
+    uiStore.showSuccessSnackbar(t('admin.services.editor.messages.accessAllowedGroups.selected'))
+  } else {
+    uiStore.showErrorSnackbar(result?.message || t('admin.services.editor.messages.accessAllowedGroups.error'))
+  }
+  showAccessAllowedGroupsSelector.value = false
+}
+
+const handleAccessDeniedGroupsSelected = async (result: any) => {
+  if (result && result.success && result.selectedGroup && result.selectedGroup.name) {
+    formData.value.accessDeniedGroups = result.selectedGroup.name
+    uiStore.showSuccessSnackbar(t('admin.services.editor.messages.accessDeniedGroups.selected'))
+  } else {
+    uiStore.showErrorSnackbar(result?.message || t('admin.services.editor.messages.accessDeniedGroups.error'))
+  }
+  showAccessDeniedGroupsSelector.value = false
+}
+
+const handleAccessDeniedUsersSelected = async (result: any) => {
+  if (result && result.success && result.selectedUser && result.selectedUser.name) {
+    formData.value.accessDeniedUsers = result.selectedUser.name
+    uiStore.showSuccessSnackbar(t('admin.services.editor.messages.accessDeniedUsers.selected'))
+  } else {
+    uiStore.showErrorSnackbar(result?.message || t('admin.services.editor.messages.accessDeniedUsers.error'))
+  }
+  showAccessDeniedUsersSelector.value = false
+}
+
 // Watch for language changes
 watch(locale, () => {
   console.log('Language changed to:', locale.value)
@@ -495,6 +540,7 @@ onMounted(() => {
                       <v-select
                         v-model="formData.priority"
                         :label="t('admin.services.editor.information.priority.label')"
+                        :rules="priorityRules"
                         variant="outlined"
                         density="comfortable"
                         :items="priorityOptions"
@@ -511,11 +557,13 @@ onMounted(() => {
                       <v-select
                         v-model="formData.status"
                         :label="t('admin.services.editor.information.status.label')"
+                        :rules="statusRules"
                         variant="outlined"
                         density="comfortable"
                         :items="statusOptions"
                         item-title="title"
                         item-value="value"
+                        required
                         color="teal"
                       />
                     </v-col>
@@ -540,7 +588,9 @@ onMounted(() => {
                         <v-text-field
                           v-model="formData.owner"
                           :label="t('admin.services.editor.owners.owner.label')"
+                          :rules="ownerRules"
                           readonly
+                          required
                           append-inner-icon="mdi-account-search"
                           @click:append-inner="showOwnerSelector = true"
                           color="teal"
@@ -760,37 +810,46 @@ onMounted(() => {
                       cols="12"
                       md="4"
                     >
-                      <v-text-field
-                        v-model="formData.accessAllowedGroups"
-                        :label="t('admin.services.editor.access.allowedGroups.label')"
-                        variant="outlined"
-                        density="comfortable"
-                        color="teal"
-                      />
+                      <div class="d-flex align-center">
+                        <v-text-field
+                          v-model="formData.accessAllowedGroups"
+                          :label="t('admin.services.editor.access.allowedGroups.label')"
+                          readonly
+                          append-inner-icon="mdi-account-search"
+                          @click:append-inner="showAccessAllowedGroupsSelector = true"
+                          color="teal"
+                        />
+                      </div>
                     </v-col>
                     <v-col
                       cols="12"
                       md="4"
                     >
-                      <v-text-field
-                        v-model="formData.accessDeniedGroups"
-                        :label="t('admin.services.editor.access.deniedGroups.label')"
-                        variant="outlined"
-                        density="comfortable"
-                        color="teal"
-                      />
+                      <div class="d-flex align-center">
+                        <v-text-field
+                          v-model="formData.accessDeniedGroups"
+                          :label="t('admin.services.editor.access.deniedGroups.label')"
+                          readonly
+                          append-inner-icon="mdi-account-search"
+                          @click:append-inner="showAccessDeniedGroupsSelector = true"
+                          color="teal"
+                        />
+                      </div>
                     </v-col>
                     <v-col
                       cols="12"
                       md="4"
                     >
-                      <v-text-field
-                        v-model="formData.accessDeniedUsers"
-                        :label="t('admin.services.editor.access.deniedUsers.label')"
-                        variant="outlined"
-                        density="comfortable"
-                        color="teal"
-                      />
+                      <div class="d-flex align-center">
+                        <v-text-field
+                          v-model="formData.accessDeniedUsers"
+                          :label="t('admin.services.editor.access.deniedUsers.label')"
+                          readonly
+                          append-inner-icon="mdi-account-search"
+                          @click:append-inner="showAccessDeniedUsersSelector = true"
+                          color="teal"
+                        />
+                      </div>
                     </v-col>
                   </v-row>
                 </v-col>
@@ -976,6 +1035,54 @@ onMounted(() => {
       :action-button-text="t('admin.services.editor.actions.save')"
       @close="showSupportTier3Selector = false" 
       @action-performed="handleSupportTier3Selected"
+    />
+  </v-dialog>
+
+  <v-dialog
+    v-model="showAccessAllowedGroupsSelector"
+    max-width="700"
+  >
+    <ItemSelector 
+      :title="t('admin.services.editor.access.allowedGroups.select')"
+      search-service="searchGroups"
+      action-service="returnSelectedGroup"
+      :max-results="20"
+      :max-items="1"
+      :action-button-text="t('admin.services.editor.actions.save')"
+      @close="showAccessAllowedGroupsSelector = false" 
+      @action-performed="handleAccessAllowedGroupsSelected"
+    />
+  </v-dialog>
+
+  <v-dialog
+    v-model="showAccessDeniedGroupsSelector"
+    max-width="700"
+  >
+    <ItemSelector 
+      :title="t('admin.services.editor.access.deniedGroups.select')"
+      search-service="searchGroups"
+      action-service="returnSelectedGroup"
+      :max-results="20"
+      :max-items="1"
+      :action-button-text="t('admin.services.editor.actions.save')"
+      @close="showAccessDeniedGroupsSelector = false" 
+      @action-performed="handleAccessDeniedGroupsSelected"
+    />
+  </v-dialog>
+
+  <v-dialog
+    v-model="showAccessDeniedUsersSelector"
+    max-width="700"
+  >
+    <ItemSelector 
+      :title="t('admin.services.editor.access.deniedUsers.select')"
+      search-service="searchUsers"
+      action-service="returnSelectedUsername"
+      :max-results="20"
+      :max-items="1"
+      :action-button-text="t('admin.services.editor.actions.save')"
+      @close="showAccessDeniedUsersSelector = false" 
+      @action-performed="handleAccessDeniedUsersSelected"
     />
   </v-dialog>
 </template>
