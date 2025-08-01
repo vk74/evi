@@ -416,6 +416,7 @@ onMounted(() => {
                         type="number"
                         min="1"
                         :rules="orderRules"
+                        color="teal"
                       />
                     </v-col>
                     <v-col
@@ -431,6 +432,7 @@ onMounted(() => {
                         density="comfortable"
                         counter="100"
                         required
+                        color="teal"
                       />
                     </v-col>
                   </v-row>
@@ -449,6 +451,7 @@ onMounted(() => {
                           append-inner-icon="mdi-account-search"
                           @click:append-inner="showOwnerSelector = true"
                           required
+                          color="teal"
                         />
                       </div>
                     </v-col>
@@ -463,6 +466,7 @@ onMounted(() => {
                           readonly
                           append-inner-icon="mdi-account-search"
                           @click:append-inner="showBackupOwnerSelector = true"
+                          color="teal"
                         />
                       </div>
                     </v-col>
@@ -491,6 +495,7 @@ onMounted(() => {
                         :items="statusOptions"
                         item-title="title"
                         item-value="value"
+                        color="teal"
                       />
                     </v-col>
                     <v-col
@@ -502,6 +507,7 @@ onMounted(() => {
                         :label="t('admin.catalog.editor.settings.isPublic.label')"
                         variant="outlined"
                         density="comfortable"
+                        color="teal"
                       />
                     </v-col>
                     <v-col
@@ -516,6 +522,7 @@ onMounted(() => {
                           density="comfortable"
                           placeholder="#1976D2"
                           :rules="[v => /^#[0-9A-Fa-f]{6}$/.test(v) || t('admin.catalog.editor.settings.color.picker.validHex')]"
+                          color="teal"
                         >
                           <template #prepend-inner>
                             <div
@@ -585,6 +592,7 @@ onMounted(() => {
                                     density="compact"
                                     placeholder="#000000"
                                     :rules="[v => /^#[0-9A-Fa-f]{6}$/.test(v) || t('admin.catalog.editor.settings.color.picker.validHex')]"
+                                    color="teal"
                                   />
                                 </div>
                               </div>
@@ -632,6 +640,7 @@ onMounted(() => {
                         rows="3"
                         counter="1000"
                         no-resize
+                        color="teal"
                       />
                     </v-col>
                   </v-row>
@@ -646,6 +655,7 @@ onMounted(() => {
                         rows="3"
                         counter="500"
                         no-resize
+                        color="teal"
                       />
                     </v-col>
                   </v-row>
