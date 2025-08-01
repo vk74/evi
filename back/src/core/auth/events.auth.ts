@@ -19,14 +19,14 @@ export const AUTH_LOGIN_EVENTS = {
   /**
    * Login attempt event
    * Triggered when user attempts to log in
-   * severity: trace - includes full request details
+   * severity: debug - includes full request details
    */
   LOGIN_ATTEMPT: {
     eventName: 'auth.login.attempt',
     eventMessage: 'User login attempt initiated',
     eventType: 'security' as const,
     source: 'core.auth.login',
-    severity: 'trace' as const,
+    severity: 'debug' as const,
     version: '1.0.0'
   },
 
@@ -75,14 +75,14 @@ export const AUTH_LOGIN_EVENTS = {
   /**
    * Credentials validation attempt event
    * Triggered when attempting to validate user credentials
-   * severity: trace - includes username being validated
+   * severity: debug - includes username being validated
    */
   CREDENTIALS_VALIDATION_ATTEMPT: {
     eventName: 'auth.login.credentials.validation.attempt',
     eventMessage: 'Attempting to validate user credentials',
     eventType: 'security' as const,
     source: 'core.auth.login',
-    severity: 'trace' as const,
+    severity: 'debug' as const,
     version: '1.0.0'
   },
 
@@ -103,42 +103,42 @@ export const AUTH_LOGIN_EVENTS = {
   /**
    * Database query completed event
    * Triggered when database query for credentials validation completes
-   * severity: trace - includes query result details
+   * severity: debug - includes query result details
    */
   DATABASE_QUERY_COMPLETED: {
     eventName: 'auth.login.database.query.completed',
     eventMessage: 'Database query for credentials validation completed',
     eventType: 'system' as const,
     source: 'core.auth.login',
-    severity: 'trace' as const,
+    severity: 'debug' as const,
     version: '1.0.0'
   },
 
   /**
    * User not found event
    * Triggered when user is not found in database during validation
-   * severity: trace - includes username that was not found
+   * severity: debug - includes username that was not found
    */
   USER_NOT_FOUND: {
     eventName: 'auth.login.user.not.found',
     eventMessage: 'User not found in database during validation',
     eventType: 'security' as const,
     source: 'core.auth.login',
-    severity: 'trace' as const,
+    severity: 'debug' as const,
     version: '1.0.0'
   },
 
   /**
    * User found password comparison event
    * Triggered when user is found and password comparison begins
-   * severity: trace - includes user UUID
+   * severity: debug - includes user UUID
    */
   USER_FOUND_PASSWORD_COMPARISON: {
     eventName: 'auth.login.user.found.password.comparison',
     eventMessage: 'User found, beginning password comparison',
     eventType: 'security' as const,
     source: 'core.auth.login',
-    severity: 'trace' as const,
+    severity: 'debug' as const,
     version: '1.0.0'
   }
 };
@@ -152,14 +152,14 @@ export const AUTH_LOGOUT_EVENTS = {
   /**
    * Logout attempt event
    * Triggered when user attempts to log out
-   * severity: trace - includes full request details
+   * severity: debug - includes full request details
    */
   LOGOUT_ATTEMPT: {
     eventName: 'auth.logout.attempt',
     eventMessage: 'User logout attempt initiated',
     eventType: 'security' as const,
     source: 'core.auth.logout',
-    severity: 'trace' as const,
+    severity: 'debug' as const,
     version: '1.0.0'
   },
 
@@ -180,14 +180,14 @@ export const AUTH_LOGOUT_EVENTS = {
   /**
    * Logout processing attempt event
    * Triggered when attempting to process logout request
-   * severity: trace - includes request details
+   * severity: debug - includes request details
    */
   LOGOUT_PROCESSING_ATTEMPT: {
     eventName: 'auth.logout.processing.attempt',
     eventMessage: 'Processing logout request',
     eventType: 'security' as const,
     source: 'core.auth.logout',
-    severity: 'trace' as const,
+    severity: 'debug' as const,
     version: '1.0.0'
   },
 
@@ -208,56 +208,56 @@ export const AUTH_LOGOUT_EVENTS = {
   /**
    * Refresh token extraction attempt event for logout
    * Triggered when attempting to extract refresh token from request during logout
-   * severity: trace - includes request details
+   * severity: debug - includes request details
    */
   LOGOUT_REFRESH_TOKEN_EXTRACTION_ATTEMPT: {
     eventName: 'auth.logout.refresh.token.extraction.attempt',
     eventMessage: 'Attempting to extract refresh token from request during logout',
     eventType: 'security' as const,
     source: 'core.auth.logout',
-    severity: 'trace' as const,
+    severity: 'debug' as const,
     version: '1.0.0'
   },
 
   /**
    * Refresh token found in cookie for logout event
    * Triggered when refresh token is found in cookie during logout
-   * severity: trace - includes token source
+   * severity: debug - includes token source
    */
   LOGOUT_REFRESH_TOKEN_FOUND_COOKIE: {
     eventName: 'auth.logout.refresh.token.found.cookie',
     eventMessage: 'Refresh token found in cookie during logout',
     eventType: 'security' as const,
     source: 'core.auth.logout',
-    severity: 'trace' as const,
+    severity: 'debug' as const,
     version: '1.0.0'
   },
 
   /**
    * Refresh token found in body for logout event
    * Triggered when refresh token is found in request body during logout
-   * severity: trace - includes token source
+   * severity: debug - includes token source
    */
   LOGOUT_REFRESH_TOKEN_FOUND_BODY: {
     eventName: 'auth.logout.refresh.token.found.body',
     eventMessage: 'Refresh token found in request body during logout',
     eventType: 'security' as const,
     source: 'core.auth.logout',
-    severity: 'trace' as const,
+    severity: 'debug' as const,
     version: '1.0.0'
   },
 
   /**
    * Refresh token not found for logout event
    * Triggered when no refresh token is found in request during logout
-   * severity: trace - includes request details
+   * severity: debug - includes request details
    */
   LOGOUT_REFRESH_TOKEN_NOT_FOUND: {
     eventName: 'auth.logout.refresh.token.not.found',
     eventMessage: 'No refresh token found in request during logout',
     eventType: 'security' as const,
     source: 'core.auth.logout',
-    severity: 'trace' as const,
+    severity: 'debug' as const,
     version: '1.0.0'
   },
 
@@ -278,28 +278,28 @@ export const AUTH_LOGOUT_EVENTS = {
   /**
    * Invalid refresh token format for logout event
    * Triggered when refresh token has invalid format during logout
-   * severity: trace - includes format validation details
+   * severity: debug - includes format validation details
    */
   LOGOUT_INVALID_REFRESH_TOKEN_FORMAT: {
     eventName: 'auth.logout.invalid.refresh.token.format',
     eventMessage: 'Invalid refresh token format during logout',
     eventType: 'security' as const,
     source: 'core.auth.logout',
-    severity: 'trace' as const,
+    severity: 'debug' as const,
     version: '1.0.0'
   },
 
   /**
    * Invalid refresh token for logout event
    * Triggered when refresh token is invalid during logout
-   * severity: trace - includes validation error
+   * severity: debug - includes validation error
    */
   LOGOUT_INVALID_REFRESH_TOKEN: {
     eventName: 'auth.logout.invalid.refresh.token',
     eventMessage: 'Invalid refresh token for logout',
     eventType: 'security' as const,
     source: 'core.auth.logout',
-    severity: 'trace' as const,
+    severity: 'debug' as const,
     version: '1.0.0'
   },
 
@@ -327,14 +327,14 @@ export const AUTH_TOKEN_EVENTS = {
   /**
    * Token refresh attempt event
    * Triggered when token refresh is attempted
-   * severity: trace - includes full request details
+   * severity: debug - includes full request details
    */
   TOKEN_REFRESH_ATTEMPT: {
     eventName: 'auth.token.refresh.attempt',
     eventMessage: 'Token refresh attempt initiated',
     eventType: 'security' as const,
     source: 'core.auth.token.refresh',
-    severity: 'trace' as const,
+    severity: 'debug' as const,
     version: '1.0.0'
   },
 
@@ -425,14 +425,14 @@ export const AUTH_TOKEN_EVENTS = {
   /**
    * Token issue attempt event
    * Triggered when token issuance is initiated
-   * severity: trace - includes full request details
+   * severity: debug - includes full request details
    */
   TOKEN_ISSUE_ATTEMPT: {
     eventName: 'auth.token.issue.attempt',
     eventMessage: 'Token issuance attempt initiated',
     eventType: 'security' as const,
     source: 'core.auth.token.issue',
-    severity: 'trace' as const,
+    severity: 'debug' as const,
     version: '1.0.0'
   },
 
@@ -453,14 +453,14 @@ export const AUTH_TOKEN_EVENTS = {
   /**
    * Token pair generation attempt event
    * Triggered when attempting to generate token pair
-   * severity: trace - includes username
+   * severity: debug - includes username
    */
   TOKEN_PAIR_GENERATION_ATTEMPT: {
     eventName: 'auth.token.pair.generation.attempt',
     eventMessage: 'Attempting to generate token pair',
     eventType: 'security' as const,
     source: 'core.auth.token.issue',
-    severity: 'trace' as const,
+    severity: 'debug' as const,
     version: '1.0.0'
   },
 
@@ -481,14 +481,14 @@ export const AUTH_TOKEN_EVENTS = {
   /**
    * Refresh token storage attempt event
    * Triggered when attempting to store refresh token
-   * severity: trace - includes user UUID
+   * severity: debug - includes user UUID
    */
   REFRESH_TOKEN_STORAGE_ATTEMPT: {
     eventName: 'auth.token.refresh.storage.attempt',
     eventMessage: 'Attempting to store refresh token',
     eventType: 'security' as const,
     source: 'core.auth.token.issue',
-    severity: 'trace' as const,
+    severity: 'debug' as const,
     version: '1.0.0'
   },
 
@@ -509,28 +509,28 @@ export const AUTH_TOKEN_EVENTS = {
   /**
    * Token refresh processing attempt event
    * Triggered when attempting to process token refresh request
-   * severity: trace - includes request details
+   * severity: debug - includes request details
    */
   TOKEN_REFRESH_PROCESSING_ATTEMPT: {
     eventName: 'auth.token.refresh.processing.attempt',
     eventMessage: 'Processing token refresh request',
     eventType: 'security' as const,
     source: 'core.auth.token.refresh',
-    severity: 'trace' as const,
+    severity: 'debug' as const,
     version: '1.0.0'
   },
 
   /**
    * Refresh token extraction attempt event
    * Triggered when attempting to extract refresh token from request
-   * severity: trace - includes request details
+   * severity: debug - includes request details
    */
   REFRESH_TOKEN_EXTRACTION_ATTEMPT: {
     eventName: 'auth.token.refresh.extraction.attempt',
     eventMessage: 'Attempting to extract refresh token from request',
     eventType: 'security' as const,
     source: 'core.auth.token.refresh',
-    severity: 'trace' as const,
+    severity: 'debug' as const,
     version: '1.0.0'
   },
 
@@ -607,14 +607,14 @@ export const AUTH_TOKEN_EVENTS = {
   /**
    * Device fingerprint extracted event
    * Triggered when device fingerprint is successfully extracted from the request
-   * severity: trace - includes full device fingerprint details
+   * severity: debug - includes full device fingerprint details
    */
   DEVICE_FINGERPRINT_EXTRACTED: {
     eventName: 'auth.token.device.fingerprint.extracted',
     eventMessage: 'Device fingerprint extracted from request',
     eventType: 'security' as const,
     source: 'core.auth.token.refresh',
-    severity: 'trace' as const,
+    severity: 'debug' as const,
     version: '1.0.0'
   },
 
@@ -684,14 +684,14 @@ export const AUTH_SECURITY_EVENTS = {
   /**
    * Database error during credentials validation event
    * Triggered when database error occurs during credentials validation
-   * severity: trace - includes error details
+   * severity: debug - includes error details
    */
   DATABASE_ERROR_CREDENTIALS: {
     eventName: 'auth.security.database.error.credentials',
     eventMessage: 'Database error during credentials validation',
     eventType: 'security' as const,
     source: 'core.auth.security',
-    severity: 'trace' as const,
+    severity: 'debug' as const,
     version: '1.0.0'
   },
 
@@ -831,14 +831,14 @@ export const AUTH_DEVICE_EVENTS = {
   /**
    * Device fingerprint logged event
    * Triggered when device fingerprint is logged for security
-   * severity: trace - includes full device fingerprint details
+   * severity: debug - includes full device fingerprint details
    */
   DEVICE_FINGERPRINT_LOGGED: {
     eventName: 'auth.device.fingerprint.logged',
     eventMessage: 'Device fingerprint logged for security monitoring',
     eventType: 'security' as const,
     source: 'core.auth.device',
-    severity: 'trace' as const,
+    severity: 'debug' as const,
     version: '1.0.0'
   },
 
@@ -859,14 +859,14 @@ export const AUTH_DEVICE_EVENTS = {
   /**
    * Device fingerprint validation result event
    * Triggered when device fingerprint validation completes
-   * severity: trace - includes validation details
+   * severity: debug - includes validation details
    */
   DEVICE_FINGERPRINT_VALIDATION_RESULT: {
     eventName: 'auth.device.fingerprint.validation.result',
     eventMessage: 'Device fingerprint validation result',
     eventType: 'security' as const,
     source: 'core.auth.device',
-    severity: 'trace' as const,
+    severity: 'debug' as const,
     version: '1.0.0'
   }
 };
@@ -908,70 +908,70 @@ export const AUTH_INTERNAL_EVENTS = {
   /**
    * Token limit managed event
    * Triggered when token limit management occurs
-   * severity: trace - includes full management details
+   * severity: debug - includes full management details
    */
   TOKEN_LIMIT_MANAGED: {
     eventName: 'auth.internal.token.limit.managed',
     eventMessage: 'Token limit management operation performed',
     eventType: 'system' as const,
     source: 'core.auth.internal',
-    severity: 'trace' as const,
+    severity: 'debug' as const,
     version: '1.0.0'
   },
 
   /**
    * Old tokens cleaned event
    * Triggered when old tokens are cleaned up
-   * severity: trace - includes cleanup details
+   * severity: debug - includes cleanup details
    */
   OLD_TOKENS_CLEANED: {
     eventName: 'auth.internal.old.tokens.cleaned',
     eventMessage: 'Old tokens cleaned up from database',
     eventType: 'system' as const,
     source: 'core.auth.internal',
-    severity: 'trace' as const,
+    severity: 'debug' as const,
     version: '1.0.0'
   },
 
   /**
    * Token count check event
    * Triggered when checking current token count for user
-   * severity: trace - includes user UUID and token count
+   * severity: debug - includes user UUID and token count
    */
   TOKEN_COUNT_CHECK: {
     eventName: 'auth.internal.token.count.check',
     eventMessage: 'Checking current token count for user',
     eventType: 'system' as const,
     source: 'core.auth.internal',
-    severity: 'trace' as const,
+    severity: 'debug' as const,
     version: '1.0.0'
   },
 
   /**
    * Token revocation needed event
    * Triggered when token revocation is needed to make space
-   * severity: trace - includes user UUID and tokens to revoke count
+   * severity: debug - includes user UUID and tokens to revoke count
    */
   TOKEN_REVOCATION_NEEDED: {
     eventName: 'auth.internal.token.revocation.needed',
     eventMessage: 'Token revocation needed to make space for new token',
     eventType: 'system' as const,
     source: 'core.auth.internal',
-    severity: 'trace' as const,
+    severity: 'debug' as const,
     version: '1.0.0'
   },
 
   /**
    * Token revoked event
    * Triggered when specific token is revoked
-   * severity: trace - includes user UUID and token ID
+   * severity: debug - includes user UUID and token ID
    */
   TOKEN_REVOKED: {
     eventName: 'auth.internal.token.revoked',
     eventMessage: 'Specific token revoked for user',
     eventType: 'system' as const,
     source: 'core.auth.internal',
-    severity: 'trace' as const,
+    severity: 'debug' as const,
     version: '1.0.0'
   }
 };
