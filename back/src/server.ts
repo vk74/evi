@@ -15,7 +15,7 @@ import cors from 'cors';
 import bodyParser from 'body-parser';
 import cookieParser from 'cookie-parser';
 import fs from 'fs';
-import ExcelJS from 'exceljs';
+
 
 // Import routes
 import authRoutes from '@/core/auth/routes.auth';
@@ -43,7 +43,7 @@ import loggerService from '@/core/logger/service.logger';
 import loggerSubscriptions from '@/core/logger/subscriptions.logger';
 
 // Import database functions
-import { insertData, getLocations } from '@/core/db/database';
+
 
 // Import cache helpers
 import { initCache as initHelpersCache } from '@/core/helpers/cache.helpers';
@@ -65,15 +65,7 @@ let settingsLoaded: boolean = false;
 // Event system ready flag
 let eventSystemInitialized: boolean = false;
 
-// Interface for form data in Excel generation
-interface ExcelFormData {
-  orgname: string;
-  region: string;
-  location: string;
-  checkbox: boolean;
-  radio: string;
-  date: string;
-}
+
 
 // Middleware to check if critical components are loaded
 const checkServerReady = (req: Request, res: Response, next: NextFunction): void => {
@@ -199,67 +191,7 @@ async function initializeServer(): Promise<void> {
       res.send('Backend server is running');
     });
 
-    ////////////////////////// Excel route prototypes ////////////////////////// 
 
-    // Route to get locations list
-    app.get('/protolocations', async (req: Request, res: Response) => {
-      try {
-        const locations = await getLocations();
-        res.status(200).json(locations);
-      } catch (error) {
-        res.status(500).json({ error: (error as Error).message });
-      }
-    });
-
-    // Route to save prototype form data to postgres database
-    app.post('/protosubmit', async (req: Request, res: Response) => {
-      try {
-        // Debug line removed
-        const { orgname, region, location, checkbox, radioOption, date } = req.body;
-        const result = await insertData(orgname, region, location, checkbox, radioOption, date);
-        res.status(200).json(result);
-      } catch (error) {
-        // Logging removed
-        res.status(500).json({ error: (error as Error).message });
-      }
-    });
-
-    // Route to generate Excel file to user-selected directory
-    app.post('/proto-generate-excel', async (req: Request, res: Response) => {
-      try {
-        // Data from request
-        const formData: ExcelFormData = req.body;
-        const workbook = new ExcelJS.Workbook();
-        const worksheet = workbook.addWorksheet('Data Sheet');
-
-        // Write headers
-        worksheet.columns = [
-          { header: 'Field', key: 'field', width: 30 },
-          { header: 'Value', key: 'value', width: 30 }
-        ];
-
-        // Add data to rows
-        worksheet.addRow({ field: 'Organization Name', value: formData.orgname });
-        worksheet.addRow({ field: 'Country / Region', value: formData.region });
-        worksheet.addRow({ field: 'Location', value: formData.location });
-        worksheet.addRow({ field: 'Monitoring Station Deployed', value: formData.checkbox ? 'Yes' : 'No' });
-        worksheet.addRow({ field: 'Selected Option', value: formData.radio });
-        worksheet.addRow({ field: 'Date Filled', value: formData.date });
-
-        // Instead of saving file on server, send it to client
-        res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-        res.setHeader('Content-Disposition', 'attachment; filename=estimatorFile.xlsx');
-        await workbook.xlsx.write(res);
-        res.end();
-        
-        // Logging removed
-      } catch (error) {
-        // Logging removed
-        res.status(500).send('Error generating Excel file');
-      }
-    });
-
-    ////////////////////////// End of Excel route prototypes ////////////////////////// 
 
     // 8. Server startup
     app.listen(port, () => {

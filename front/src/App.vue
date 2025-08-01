@@ -26,7 +26,7 @@ import { logoutService } from '@/core/auth/service.logout';
 const ModuleCatalog = defineAsyncComponent(() => import('./modules/catalog/ModuleCatalog.vue'));
 const ModuleWork = defineAsyncComponent(() => import('./modules/work/ModuleWork.vue'));
 const ModuleAR = defineAsyncComponent(() => import('./modules/ar/ModuleAR.vue'));
-const ModuleXLS = defineAsyncComponent(() => import('./modules/proto/ModuleXLS.vue'));
+
 const ModuleAccount = defineAsyncComponent(() => import('./modules/account/ModuleAccount.vue'));
 const AccountPreferences = defineAsyncComponent(() => import('./modules/account/AccountPreferences.vue'));
 const ModuleKnowledgeBase = defineAsyncComponent(() => import('./modules/KB/ModuleKnowledgeBase.vue'));
@@ -602,20 +602,7 @@ onMounted(async () => {
           class="border-opacity-25"
         />
         
-        <!-- XLS Prototyping module -->
-        <v-list-item 
-          v-if="isLoggedIn"
-          v-tooltip="{
-            text: $t('navigation.drawer.xlsPrototyping'),
-            location: 'right',
-            disabled: appStore.drawerMode !== 'closed'
-          }" 
-          prepend-icon="mdi-microsoft-excel" 
-          :title="$t('navigation.drawer.xlsPrototyping')" 
-          value="xlsPrototyping"
-          :active="appStore.isModuleActive('XLS')"
-          @click="setActiveModule('XLS')"
-        />
+
       </v-list>
  
       <!-- Append slot for drawer controls and bottom navigation items -->
@@ -787,7 +774,7 @@ onMounted(async () => {
         :is="currentAdminSubmodule"
         v-if="appStore.isModuleActive('Admin')"
       />
-      <ModuleXLS v-if="appStore.isModuleActive('XLS')" />
+
       <ModuleAccount v-if="appStore.isModuleActive('Account')" />
       <AccountPreferences v-if="appStore.isModuleActive('Settings')" />
       <ModuleSessionData v-if="appStore.isModuleActive('SessionData')" />
