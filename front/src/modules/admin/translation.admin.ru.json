@@ -20,6 +20,13 @@
         "main": "настройки приложения"
       }
     },
+    "services": {
+      "navigation": {
+        "services": "Сервисы",
+        "list": "Список",
+        "settings": "Настройки"
+      }
+    },
     "users": {
       "sections": {
         "usersList": "список пользователей",
