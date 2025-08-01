@@ -75,127 +75,127 @@
       },
       "editor": {
         "creation": {
-          "title": "Create New Service"
+          "title": "create new service"
         },
         "edit": {
-          "title": "Edit Service"
+          "title": "edit service"
         },
         "information": {
-          "title": "Basic Information",
+          "title": "basic information",
           "uuid": {
-            "label": "Service UUID"
+            "label": "service uuid"
           },
           "name": {
-            "label": "Service Name",
+            "label": "service name",
             "required": "Service name is required",
             "minLength": "Service name must be at least 2 characters",
             "maxLength": "Service name cannot exceed 250 characters"
           },
           "priority": {
-            "label": "Priority",
+            "label": "priority",
             "options": {
-              "critical": "Critical",
-              "high": "High",
-              "medium": "Medium",
-              "low": "Low"
+              "critical": "critical",
+              "high": "high",
+              "medium": "medium",
+              "low": "low"
             }
           },
           "status": {
-            "label": "Status",
+            "label": "status",
             "options": {
-              "drafted": "Drafted",
-              "being_developed": "Being Developed",
-              "being_tested": "Being Tested",
-              "non_compliant": "Non Compliant",
-              "pending_approval": "Pending Approval",
-              "in_production": "In Production",
-              "under_maintenance": "Under Maintenance",
-              "suspended": "Suspended",
-              "being_upgraded": "Being Upgraded",
-              "discontinued": "Discontinued"
+              "drafted": "drafted",
+              "being_developed": "being developed",
+              "being_tested": "being tested",
+              "non_compliant": "non compliant",
+              "pending_approval": "pending approval",
+              "in_production": "in production",
+              "under_maintenance": "under maintenance",
+              "suspended": "suspended",
+              "being_upgraded": "being upgraded",
+              "discontinued": "discontinued"
             }
           }
         },
         "owners": {
-          "title": "Owners and Contacts",
+          "title": "owners and contacts",
           "owner": {
-            "label": "Owner",
-            "select": "Select Service Owner"
+            "label": "owner",
+            "select": "select service owner"
           },
           "backupOwner": {
-            "label": "Backup Owner",
-            "select": "Select Backup Owner"
+            "label": "backup owner",
+            "select": "select backup owner"
           },
           "technicalOwner": {
-            "label": "Technical Owner",
-            "select": "Select Technical Owner"
+            "label": "technical owner",
+            "select": "select technical owner"
           },
           "backupTechnicalOwner": {
-            "label": "Backup Technical Owner",
-            "select": "Select Backup Technical Owner"
+            "label": "backup technical owner",
+            "select": "select backup technical owner"
           },
           "dispatcher": {
-            "label": "Dispatcher",
-            "select": "Select Dispatcher"
+            "label": "dispatcher",
+            "select": "select dispatcher"
           }
         },
         "support": {
-          "title": "Support Team",
+          "title": "support team",
           "tier1": {
-            "label": "Support Tier 1",
-            "select": "Select Support Tier 1"
+            "label": "support tier 1",
+            "select": "select support tier 1"
           },
           "tier2": {
-            "label": "Support Tier 2",
-            "select": "Select Support Tier 2"
+            "label": "support tier 2",
+            "select": "select support tier 2"
           },
           "tier3": {
-            "label": "Support Tier 3",
-            "select": "Select Support Tier 3"
+            "label": "support tier 3",
+            "select": "select support tier 3"
           }
         },
         "settings": {
-          "title": "Settings",
+          "title": "settings",
           "isPublic": {
-            "label": "Public Service"
+            "label": "public"
           }
         },
         "description": {
-          "title": "Description and Purpose",
+          "title": "description and purpose",
           "short": {
-            "label": "Short Description",
+            "label": "short description",
             "maxLength": "Short description cannot exceed 250 characters"
           },
           "long": {
-            "label": "Detailed Description",
+            "label": "detailed description",
             "maxLength": "Detailed description cannot exceed 10000 characters"
           },
           "purpose": {
-            "label": "Purpose",
+            "label": "purpose",
             "maxLength": "Purpose cannot exceed 10000 characters"
           },
           "comments": {
-            "label": "Comments",
+            "label": "comments",
             "maxLength": "Comments cannot exceed 10000 characters"
           }
         },
         "access": {
-          "title": "Access Control",
+          "title": "access control",
           "allowedGroups": {
-            "label": "Allowed Groups"
+            "label": "allowed groups"
           },
           "deniedGroups": {
-            "label": "Denied Groups"
+            "label": "denied groups"
           },
           "deniedUsers": {
-            "label": "Denied Users"
+            "label": "denied users"
           }
         },
         "actions": {
-          "title": "Actions",
-          "create": "Create Service",
-          "save": "Save Changes",
-          "cancel": "Cancel"
+          "title": "actions",
+          "create": "create service",
+          "save": "save changes",
+          "cancel": "cancel"
         },
         "messages": {
           "validation": {

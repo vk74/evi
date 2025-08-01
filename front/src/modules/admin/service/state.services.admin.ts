@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
+import type { Service } from './types.services.admin'
 
 export const useServicesAdminStore = defineStore('servicesAdmin', () => {
   // State
@@ -10,6 +11,7 @@ export const useServicesAdminStore = defineStore('servicesAdmin', () => {
   // Editor state
   const editorMode = ref<'creation' | 'edit'>('creation')
   const editingServiceId = ref<string | null>(null)
+  const editingServiceData = ref<Service | null>(null)
 
   // Getters
   const getSelectedSectionPath = computed(() => selectedSectionPath.value)
@@ -17,6 +19,7 @@ export const useServicesAdminStore = defineStore('servicesAdmin', () => {
   const getExpandedSections = computed(() => expandedSections.value)
   const getEditorMode = computed(() => editorMode.value)
   const getEditingServiceId = computed(() => editingServiceId.value)
+  const getEditingServiceData = computed(() => editingServiceData.value)
 
   // Actions
   const setSelectedSection = (sectionPath: string) => {
@@ -49,16 +52,18 @@ export const useServicesAdminStore = defineStore('servicesAdmin', () => {
   }
 
   // Editor actions
-  const openServiceEditor = (mode: 'creation' | 'edit', serviceId?: string) => {
+  const openServiceEditor = (mode: 'creation' | 'edit', serviceId?: string, serviceData?: Service) => {
     activeComponent.value = 'ServiceEditor'
     editorMode.value = mode
     editingServiceId.value = serviceId || null
+    editingServiceData.value = serviceData || null
   }
 
   const closeServiceEditor = () => {
     activeComponent.value = 'Services.List'
     editorMode.value = 'creation'
     editingServiceId.value = null
+    editingServiceData.value = null
   }
 
   return {
@@ -68,6 +73,7 @@ export const useServicesAdminStore = defineStore('servicesAdmin', () => {
     expandedSections,
     editorMode,
     editingServiceId,
+    editingServiceData,
     
     // Getters
     getSelectedSectionPath,
@@ -75,6 +81,7 @@ export const useServicesAdminStore = defineStore('servicesAdmin', () => {
     getExpandedSections,
     getEditorMode,
     getEditingServiceId,
+    getEditingServiceData,
     
     // Actions
     setSelectedSection,

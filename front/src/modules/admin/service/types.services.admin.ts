@@ -27,21 +27,34 @@ export enum ServiceStatus {
   DISCONTINUED = 'discontinued'
 }
 
-// Service interface
+// Service interface - полная версия для редактора
 export interface Service {
   id: string
   name: string
+  support_tier1: string | null
+  support_tier2: string | null
+  support_tier3: string | null
+  owner: string | null
+  backup_owner: string | null
+  technical_owner: string | null
+  backup_technical_owner: string | null
+  dispatcher: string | null
   priority: ServicePriority
   status: ServiceStatus | null
-  owner: string | null
-  technical_owner: string | null
-  is_public: boolean
   description_short: string | null
+  description_long: string | null
   purpose: string | null
+  comments: string | null
+  is_public: boolean
+  access_allowed_groups: string | null
+  access_denied_groups: string | null
+  access_denied_users: string | null
   created_at: Date
   created_by: string
   modified_at: Date | null
   modified_by: string | null
+  tile_preferred_width: number | null
+  tile_preferred_height: number | null
 }
 
 // API Response interfaces
@@ -70,13 +83,26 @@ export interface ServiceError {
 // Create service request interface
 export interface CreateServiceRequest {
   name: string
+  support_tier1?: string
+  support_tier2?: string
+  support_tier3?: string
+  owner?: string
+  backup_owner?: string
+  technical_owner?: string
+  backup_technical_owner?: string
+  dispatcher?: string
   priority: ServicePriority
   status?: ServiceStatus
-  owner?: string
-  technical_owner?: string
-  is_public?: boolean
   description_short?: string
+  description_long?: string
   purpose?: string
+  comments?: string
+  is_public?: boolean
+  access_allowed_groups?: string
+  access_denied_groups?: string
+  access_denied_users?: string
+  tile_preferred_width?: number
+  tile_preferred_height?: number
 }
 
 // Create service response interface
@@ -90,13 +116,26 @@ export interface CreateServiceResponse extends ApiResponse {
 // Update service request interface
 export interface UpdateServiceRequest {
   name?: string
+  support_tier1?: string
+  support_tier2?: string
+  support_tier3?: string
+  owner?: string
+  backup_owner?: string
+  technical_owner?: string
+  backup_technical_owner?: string
+  dispatcher?: string
   priority?: ServicePriority
   status?: ServiceStatus
-  owner?: string
-  technical_owner?: string
-  is_public?: boolean
   description_short?: string
+  description_long?: string
   purpose?: string
+  comments?: string
+  is_public?: boolean
+  access_allowed_groups?: string
+  access_denied_groups?: string
+  access_denied_users?: string
+  tile_preferred_width?: number
+  tile_preferred_height?: number
 }
 
 // Update service response interface

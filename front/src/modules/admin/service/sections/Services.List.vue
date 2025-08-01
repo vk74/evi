@@ -18,8 +18,7 @@ import { useI18n } from 'vue-i18n'
 import { useUiStore } from '@/core/state/uistate'
 import { useServicesAdminStore } from '../state.services.admin'
 import DataLoading from '@/core/ui/loaders/DataLoading.vue'
-import { ServicePriority, ServiceStatus } from '../types.services.admin'
-import type { Service } from '../types.services.admin'
+import { ServicePriority, ServiceStatus, type Service } from '../types.services.admin'
 
 // Types
 interface TableHeader {
@@ -60,47 +59,86 @@ const mockServices = ref<Service[]>([
   {
     id: '1',
     name: 'User Management Service',
+    support_tier1: 'support.tier1@company.com',
+    support_tier2: 'support.tier2@company.com',
+    support_tier3: 'support.tier3@company.com',
+    owner: 'john.doe@company.com',
+    backup_owner: 'backup.owner@company.com',
+    technical_owner: 'tech.lead@company.com',
+    backup_technical_owner: 'backup.tech@company.com',
+    dispatcher: 'dispatcher@company.com',
     priority: ServicePriority.HIGH,
     status: ServiceStatus.IN_PRODUCTION,
-    owner: 'john.doe@company.com',
-    technical_owner: 'tech.lead@company.com',
-    is_public: true,
     description_short: 'Service for managing user accounts',
+    description_long: 'Comprehensive user management service for internal user accounts and permissions',
     purpose: 'Internal user management',
+    comments: 'Critical service for user administration',
+    is_public: true,
+    access_allowed_groups: 'admin,users',
+    access_denied_groups: null,
+    access_denied_users: null,
     created_at: new Date('2024-01-15'),
     created_by: 'admin@company.com',
     modified_at: new Date('2024-02-20'),
-    modified_by: 'admin@company.com'
+    modified_by: 'admin@company.com',
+    tile_preferred_width: 2,
+    tile_preferred_height: 1
   },
   {
     id: '2',
     name: 'Payment Processing',
+    support_tier1: 'payment.support@company.com',
+    support_tier2: 'payment.tier2@company.com',
+    support_tier3: 'payment.tier3@company.com',
+    owner: 'finance.team@company.com',
+    backup_owner: 'finance.backup@company.com',
+    technical_owner: 'payment.tech@company.com',
+    backup_technical_owner: 'payment.backup.tech@company.com',
+    dispatcher: 'payment.dispatcher@company.com',
     priority: ServicePriority.CRITICAL,
     status: ServiceStatus.IN_PRODUCTION,
-    owner: 'finance.team@company.com',
-    technical_owner: 'payment.tech@company.com',
-    is_public: false,
     description_short: 'Payment processing service',
+    description_long: 'Secure payment processing service for financial transactions',
     purpose: 'Financial transactions',
+    comments: 'High security requirements',
+    is_public: false,
+    access_allowed_groups: 'finance,admin',
+    access_denied_groups: null,
+    access_denied_users: null,
     created_at: new Date('2024-01-10'),
     created_by: 'admin@company.com',
     modified_at: null,
-    modified_by: null
+    modified_by: null,
+    tile_preferred_width: 3,
+    tile_preferred_height: 2
   },
   {
     id: '3',
     name: 'Reporting Dashboard',
+    support_tier1: 'analytics.support@company.com',
+    support_tier2: 'analytics.tier2@company.com',
+    support_tier3: 'analytics.tier3@company.com',
+    owner: 'analytics.team@company.com',
+    backup_owner: 'analytics.backup@company.com',
+    technical_owner: 'dashboard.dev@company.com',
+    backup_technical_owner: 'dashboard.backup.dev@company.com',
+    dispatcher: 'analytics.dispatcher@company.com',
     priority: ServicePriority.MEDIUM,
     status: ServiceStatus.BEING_DEVELOPED,
-    owner: 'analytics.team@company.com',
-    technical_owner: 'dashboard.dev@company.com',
-    is_public: true,
     description_short: 'Analytics and reporting dashboard',
+    description_long: 'Advanced analytics and reporting dashboard for business intelligence',
     purpose: 'Business intelligence',
+    comments: 'Under active development',
+    is_public: true,
+    access_allowed_groups: 'analytics,managers',
+    access_denied_groups: null,
+    access_denied_users: null,
     created_at: new Date('2024-02-01'),
     created_by: 'admin@company.com',
     modified_at: new Date('2024-02-15'),
-    modified_by: 'analytics.team@company.com'
+    modified_by: 'analytics.team@company.com',
+    tile_preferred_width: 2,
+    tile_preferred_height: 2
   }
 ])
 
@@ -178,13 +216,12 @@ const isSearchEnabled = computed(() =>
 
 // Table headers
 const headers = computed<TableHeader[]>(() => [
-  { title: t('admin.services.table.headers.selection'), key: 'selection', width: '40px', sortable: false },
-  { title: t('admin.services.table.headers.name'), key: 'name', width: '200px', sortable: true },
-  { title: t('admin.services.table.headers.priority'), key: 'priority', width: '120px', sortable: true },
-  { title: t('admin.services.table.headers.status'), key: 'status', width: '140px', sortable: true },
-  { title: t('admin.services.table.headers.owner'), key: 'owner', width: '180px', sortable: true },
-  { title: t('admin.services.table.headers.technicalOwner'), key: 'technical_owner', width: '180px', sortable: true },
-  { title: t('admin.services.table.headers.isPublic'), key: 'is_public', width: '100px', sortable: true }
+  { title: t('admin.services.table.headers.selection').toLowerCase(), key: 'selection', width: '40px', sortable: false },
+  { title: t('admin.services.table.headers.name').toLowerCase(), key: 'name', width: '250px', sortable: true },
+  { title: t('admin.services.table.headers.priority').toLowerCase(), key: 'priority', width: '120px', sortable: true },
+  { title: t('admin.services.table.headers.status').toLowerCase(), key: 'status', width: '140px', sortable: true },
+  { title: t('admin.services.table.headers.owner').toLowerCase(), key: 'owner', width: '180px', sortable: true },
+  { title: t('admin.services.table.headers.technicalOwner').toLowerCase(), key: 'technical_owner', width: '180px', sortable: true }
 ])
 
 // Helper function for error handling
@@ -197,13 +234,18 @@ const handleError = (error: unknown, context: string) => {
 
 // Service action handlers
 const addService = () => {
-  servicesStore.openServiceEditor('creation')
+  servicesStore.openServiceEditor('creation', undefined, undefined)
 }
 
 const editService = () => {
   const selectedIds = Array.from(selectedServices.value)
   if (selectedIds.length === 1) {
-    servicesStore.openServiceEditor('edit', selectedIds[0])
+    const serviceId = selectedIds[0]
+    // Найти сервис в mock данных для передачи в редактор
+    const serviceToEdit = mockServices.value.find(service => service.id === serviceId)
+    if (serviceToEdit) {
+      servicesStore.openServiceEditor('edit', serviceId, serviceToEdit)
+    }
   }
 }
 
@@ -511,9 +553,17 @@ const handleItemsPerPageChange = async (newItemsPerPage: ItemsPerPageOption) => 
           </template>
 
           <template #[`item.name`]="{ item }">
-            <div class="d-flex align-center">
-              <v-icon icon="mdi-cog" class="mr-2" size="small" />
-              <span>{{ item.name }}</span>
+            <div class="d-flex align-center justify-space-between">
+              <div class="d-flex align-center">
+                <v-icon icon="mdi-cog" class="mr-2" size="small" />
+                <span>{{ item.name }}</span>
+              </div>
+              <v-chip 
+                :color="item.is_public ? 'teal' : 'grey'" 
+                size="x-small"
+              >
+                {{ item.is_public ? t('admin.services.table.status.yes') : t('admin.services.table.status.no') }}
+              </v-chip>
             </div>
           </template>
 
@@ -543,14 +593,7 @@ const handleItemsPerPageChange = async (newItemsPerPage: ItemsPerPageOption) => 
             <span>{{ item.technical_owner || '-' }}</span>
           </template>
 
-          <template #[`item.is_public`]="{ item }">
-            <v-chip 
-              :color="item.is_public ? 'teal' : 'grey'" 
-              size="x-small"
-            >
-              {{ item.is_public ? t('admin.services.table.status.yes') : t('admin.services.table.status.no') }}
-            </v-chip>
-          </template>
+
         </v-data-table>
 
         <!-- Custom paginator -->
@@ -676,7 +719,7 @@ const handleItemsPerPageChange = async (newItemsPerPage: ItemsPerPageOption) => 
         <!-- Top part of sidebar - buttons for component operations -->
         <div class="side-bar-section">
           <h3 class="text-subtitle-2 px-2 py-2">
-            {{ t('admin.services.actions.title') }}
+            {{ t('admin.services.actions.title').toLowerCase() }}
           </h3>
           
           <v-btn
@@ -687,7 +730,7 @@ const handleItemsPerPageChange = async (newItemsPerPage: ItemsPerPageOption) => 
             :disabled="hasSelected"
             @click="addService"
           >
-            {{ t('admin.services.actions.addService') }}
+            {{ t('admin.services.actions.addService').toUpperCase() }}
           </v-btn>
           
           <v-btn
@@ -702,7 +745,7 @@ const handleItemsPerPageChange = async (newItemsPerPage: ItemsPerPageOption) => 
               icon="mdi-refresh"
               class="mr-2"
             />
-            {{ t('admin.services.actions.refresh') }}
+            {{ t('admin.services.actions.refresh').toUpperCase() }}
           </v-btn>
           
           <v-btn
@@ -717,7 +760,7 @@ const handleItemsPerPageChange = async (newItemsPerPage: ItemsPerPageOption) => 
               icon="mdi-checkbox-blank-outline"
               class="mr-2"
             />
-            {{ t('admin.services.actions.clearSelection') }}
+            {{ t('admin.services.actions.clearSelection').toUpperCase() }}
           </v-btn>
         </div>
         
@@ -727,7 +770,7 @@ const handleItemsPerPageChange = async (newItemsPerPage: ItemsPerPageOption) => 
         <!-- Bottom part of sidebar - buttons for operations over selected elements -->
         <div class="side-bar-section">
           <h3 class="text-subtitle-2 px-2 py-2">
-            {{ t('admin.services.actions.selectedElements') }}
+            {{ t('admin.services.actions.selectedElements').toLowerCase() }}
           </h3>
           
           <v-btn
@@ -738,7 +781,7 @@ const handleItemsPerPageChange = async (newItemsPerPage: ItemsPerPageOption) => 
             :disabled="!hasOneSelected"
             @click="editService"
           >
-            {{ t('admin.services.actions.edit') }}
+            {{ t('admin.services.actions.edit').toUpperCase() }}
           </v-btn>
           
           <v-btn
@@ -749,7 +792,7 @@ const handleItemsPerPageChange = async (newItemsPerPage: ItemsPerPageOption) => 
             :disabled="!hasSelected"
             @click="assignOwner"
           >
-            {{ t('admin.services.actions.assignOwner') }}
+            {{ t('admin.services.actions.assignOwner').toUpperCase() }}
             <span class="ml-2">({{ selectedCount }})</span>
           </v-btn>
           
@@ -761,7 +804,7 @@ const handleItemsPerPageChange = async (newItemsPerPage: ItemsPerPageOption) => 
             :disabled="!hasSelected"
             @click="deleteService"
           >
-            {{ t('admin.services.actions.delete') }}
+            {{ t('admin.services.actions.delete').toUpperCase() }}
             <span class="ml-2">({{ selectedCount }})</span>
           </v-btn>
         </div>

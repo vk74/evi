@@ -12,37 +12,7 @@ import { useServicesAdminStore } from './state.services.admin'
 import { useUiStore } from '@/core/state/uistate'
 import ItemSelector from '@/core/ui/modals/item-selector/ItemSelector.vue'
 import DataLoading from '@/core/ui/loaders/DataLoading.vue'
-import type { ServicePriority, ServiceStatus } from './types.services.admin'
-
-// Types
-interface Service {
-  id: string
-  name: string
-  support_tier1: string | null
-  support_tier2: string | null
-  support_tier3: string | null
-  owner: string | null
-  backup_owner: string | null
-  technical_owner: string | null
-  backup_technical_owner: string | null
-  dispatcher: string | null
-  priority: ServicePriority
-  status: ServiceStatus | null
-  description_short: string | null
-  description_long: string | null
-  purpose: string | null
-  comments: string | null
-  is_public: boolean
-  access_allowed_groups: string | null
-  access_denied_groups: string | null
-  access_denied_users: string | null
-  created_at: Date
-  created_by: string
-  modified_at: Date | null
-  modified_by: string | null
-  tile_preferred_width: number | null
-  tile_preferred_height: number | null
-}
+import { ServicePriority, ServiceStatus, type Service } from './types.services.admin'
 
 // Initialize stores and i18n
 const { t, locale } = useI18n()
@@ -78,8 +48,8 @@ const formData = ref({
   technicalOwner: '',
   backupTechnicalOwner: '',
   dispatcher: '',
-  priority: 'low' as ServicePriority,
-  status: 'drafted' as ServiceStatus,
+  priority: ServicePriority.LOW,
+  status: ServiceStatus.DRAFTED,
   descriptionShort: '',
   descriptionLong: '',
   purpose: '',
@@ -105,10 +75,10 @@ const pageTitle = computed(() => {
 const priorityOptions = computed(() => {
   locale.value
   return [
-    { title: t('admin.services.editor.information.priority.options.critical'), value: 'critical' },
-    { title: t('admin.services.editor.information.priority.options.high'), value: 'high' },
-    { title: t('admin.services.editor.information.priority.options.medium'), value: 'medium' },
-    { title: t('admin.services.editor.information.priority.options.low'), value: 'low' }
+    { title: t('admin.services.editor.information.priority.options.critical'), value: ServicePriority.CRITICAL },
+    { title: t('admin.services.editor.information.priority.options.high'), value: ServicePriority.HIGH },
+    { title: t('admin.services.editor.information.priority.options.medium'), value: ServicePriority.MEDIUM },
+    { title: t('admin.services.editor.information.priority.options.low'), value: ServicePriority.LOW }
   ]
 })
 
@@ -116,16 +86,16 @@ const priorityOptions = computed(() => {
 const statusOptions = computed(() => {
   locale.value
   return [
-    { title: t('admin.services.editor.information.status.options.drafted'), value: 'drafted' },
-    { title: t('admin.services.editor.information.status.options.being_developed'), value: 'being_developed' },
-    { title: t('admin.services.editor.information.status.options.being_tested'), value: 'being_tested' },
-    { title: t('admin.services.editor.information.status.options.non_compliant'), value: 'non_compliant' },
-    { title: t('admin.services.editor.information.status.options.pending_approval'), value: 'pending_approval' },
-    { title: t('admin.services.editor.information.status.options.in_production'), value: 'in_production' },
-    { title: t('admin.services.editor.information.status.options.under_maintenance'), value: 'under_maintenance' },
-    { title: t('admin.services.editor.information.status.options.suspended'), value: 'suspended' },
-    { title: t('admin.services.editor.information.status.options.being_upgraded'), value: 'being_upgraded' },
-    { title: t('admin.services.editor.information.status.options.discontinued'), value: 'discontinued' }
+    { title: t('admin.services.editor.information.status.options.drafted'), value: ServiceStatus.DRAFTED },
+    { title: t('admin.services.editor.information.status.options.being_developed'), value: ServiceStatus.BEING_DEVELOPED },
+    { title: t('admin.services.editor.information.status.options.being_tested'), value: ServiceStatus.BEING_TESTED },
+    { title: t('admin.services.editor.information.status.options.non_compliant'), value: ServiceStatus.NON_COMPLIANT },
+    { title: t('admin.services.editor.information.status.options.pending_approval'), value: ServiceStatus.PENDING_APPROVAL },
+    { title: t('admin.services.editor.information.status.options.in_production'), value: ServiceStatus.IN_PRODUCTION },
+    { title: t('admin.services.editor.information.status.options.under_maintenance'), value: ServiceStatus.UNDER_MAINTENANCE },
+    { title: t('admin.services.editor.information.status.options.suspended'), value: ServiceStatus.SUSPENDED },
+    { title: t('admin.services.editor.information.status.options.being_upgraded'), value: ServiceStatus.BEING_UPGRADED },
+    { title: t('admin.services.editor.information.status.options.discontinued'), value: ServiceStatus.DISCONTINUED }
   ]
 })
 
@@ -164,8 +134,8 @@ const resetForm = () => {
     technicalOwner: '',
     backupTechnicalOwner: '',
     dispatcher: '',
-    priority: 'low',
-    status: 'drafted',
+    priority: ServicePriority.LOW,
+    status: ServiceStatus.DRAFTED,
     descriptionShort: '',
     descriptionLong: '',
     purpose: '',
@@ -182,8 +152,51 @@ const loadServiceData = async () => {
   if (isEditMode.value && editingServiceId.value) {
     isLoadingService.value = true
     try {
-      // TODO: Fetch fresh data from API
-      console.log('Fetching service data from API for editing')
+      // Получаем данные сервиса из store
+      const serviceData = servicesStore.getEditingServiceData
+      
+      if (serviceData) {
+        // Заполняем форму данными сервиса
+        populateFormWithService(serviceData)
+      } else {
+        // TODO: Fetch fresh data from API if not in store
+        console.log('Fetching service data from API for editing')
+        
+        // Временная логика для демонстрации - используем mock данные
+        // В реальном приложении здесь будет API вызов
+        const mockServiceData = {
+          id: '1',
+          name: 'User Management Service',
+          support_tier1: 'support.tier1@company.com',
+          support_tier2: 'support.tier2@company.com',
+          support_tier3: 'support.tier3@company.com',
+          owner: 'john.doe@company.com',
+          backup_owner: 'backup.owner@company.com',
+          technical_owner: 'tech.lead@company.com',
+          backup_technical_owner: 'backup.tech@company.com',
+          dispatcher: 'dispatcher@company.com',
+          priority: ServicePriority.HIGH,
+          status: ServiceStatus.IN_PRODUCTION,
+          description_short: 'Service for managing user accounts',
+          description_long: 'Comprehensive user management service for internal user accounts and permissions',
+          purpose: 'Internal user management',
+          comments: 'Critical service for user administration',
+          is_public: true,
+          access_allowed_groups: 'admin,users',
+          access_denied_groups: null,
+          access_denied_users: null,
+          created_at: new Date('2024-01-15'),
+          created_by: 'admin@company.com',
+          modified_at: new Date('2024-02-20'),
+          modified_by: 'admin@company.com',
+          tile_preferred_width: 2,
+          tile_preferred_height: 1
+        }
+        
+        // Заполняем форму данными сервиса
+        populateFormWithService(mockServiceData)
+      }
+      
     } catch (error) {
       console.error('Error loading service data:', error)
       servicesStore.closeServiceEditor()
@@ -205,7 +218,7 @@ const populateFormWithService = (service: Service) => {
     backupTechnicalOwner: service.backup_technical_owner || '',
     dispatcher: service.dispatcher || '',
     priority: service.priority,
-    status: service.status || 'drafted',
+    status: service.status || ServiceStatus.DRAFTED,
     descriptionShort: service.description_short || '',
     descriptionLong: service.description_long || '',
     purpose: service.purpose || '',
@@ -393,6 +406,9 @@ watch(locale, () => {
 onMounted(() => {
   if (isEditMode.value) {
     loadServiceData()
+  } else {
+    // Сбрасываем форму для режима создания
+    resetForm()
   }
 })
 </script>
@@ -430,7 +446,7 @@ onMounted(() => {
                 <v-col cols="12">
                   <div class="card-header">
                     <v-card-title class="text-subtitle-1">
-                      {{ t('admin.services.editor.information.title') }}
+                      {{ t('admin.services.editor.information.title').toLowerCase() }}
                     </v-card-title>
                     <v-divider class="section-divider" />
                   </div>
@@ -446,7 +462,7 @@ onMounted(() => {
                   </v-row>
 
                   <v-row class="pt-3">
-                    <v-col cols="12">
+                    <v-col cols="12" md="8">
                       <v-text-field
                         v-model="formData.name"
                         :label="t('admin.services.editor.information.name.label')"
@@ -455,6 +471,15 @@ onMounted(() => {
                         density="comfortable"
                         counter="250"
                         required
+                        color="teal"
+                      />
+                    </v-col>
+                    <v-col cols="12" md="4" class="d-flex align-center">
+                      <v-checkbox
+                        v-model="formData.isPublic"
+                        :label="t('admin.services.editor.settings.isPublic.label')"
+                        variant="outlined"
+                        density="comfortable"
                         color="teal"
                       />
                     </v-col>
@@ -499,7 +524,7 @@ onMounted(() => {
                 <v-col cols="12">
                   <div class="card-header mt-6">
                     <v-card-title class="text-subtitle-1">
-                      {{ t('admin.services.editor.owners.title') }}
+                      {{ t('admin.services.editor.owners.title').toLowerCase() }}
                     </v-card-title>
                     <v-divider class="section-divider" />
                   </div>
@@ -593,7 +618,7 @@ onMounted(() => {
                 <v-col cols="12">
                   <div class="card-header mt-6">
                     <v-card-title class="text-subtitle-1">
-                      {{ t('admin.services.editor.support.title') }}
+                      {{ t('admin.services.editor.support.title').toLowerCase() }}
                     </v-card-title>
                     <v-divider class="section-divider" />
                   </div>
@@ -647,36 +672,13 @@ onMounted(() => {
                   </v-row>
                 </v-col>
 
-                <!-- Settings section -->
-                <v-col cols="12">
-                  <div class="card-header mt-6">
-                    <v-card-title class="text-subtitle-1">
-                      {{ t('admin.services.editor.settings.title') }}
-                    </v-card-title>
-                    <v-divider class="section-divider" />
-                  </div>
 
-                  <v-row class="pt-3">
-                    <v-col
-                      cols="12"
-                      md="6"
-                    >
-                      <v-checkbox
-                        v-model="formData.isPublic"
-                        :label="t('admin.services.editor.settings.isPublic.label')"
-                        variant="outlined"
-                        density="comfortable"
-                        color="teal"
-                      />
-                    </v-col>
-                  </v-row>
-                </v-col>
 
                 <!-- Description section -->
                 <v-col cols="12">
                   <div class="card-header mt-6">
                     <v-card-title class="text-subtitle-1">
-                      {{ t('admin.services.editor.description.title') }}
+                      {{ t('admin.services.editor.description.title').toLowerCase() }}
                     </v-card-title>
                     <v-divider class="section-divider" />
                   </div>
@@ -746,7 +748,7 @@ onMounted(() => {
                 <v-col cols="12">
                   <div class="card-header mt-6">
                     <v-card-title class="text-subtitle-1">
-                      {{ t('admin.services.editor.access.title') }}
+                      {{ t('admin.services.editor.access.title').toLowerCase() }}
                     </v-card-title>
                     <v-divider class="section-divider" />
                   </div>
@@ -801,7 +803,7 @@ onMounted(() => {
         <!-- Actions section -->
         <div class="side-bar-section">
           <h3 class="text-subtitle-2 px-2 py-2">
-            {{ t('admin.services.editor.actions.title') }}
+            {{ t('admin.services.editor.actions.title').toLowerCase() }}
           </h3>
           
           <!-- Create button (visible only in creation mode) -->
@@ -814,7 +816,7 @@ onMounted(() => {
             class="mb-3"
             @click="createService"
           >
-            {{ t('admin.services.editor.actions.create') }}
+            {{ t('admin.services.editor.actions.create').toUpperCase() }}
           </v-btn>
 
           <!-- Update button (visible only in edit mode) -->
@@ -827,7 +829,7 @@ onMounted(() => {
             class="mb-3"
             @click="updateService"
           >
-            {{ t('admin.services.editor.actions.save') }}
+            {{ t('admin.services.editor.actions.save').toUpperCase() }}
           </v-btn>
 
           <!-- Cancel button (visible always) -->
@@ -838,7 +840,7 @@ onMounted(() => {
             class="mb-3"
             @click="cancelEdit"
           >
-            {{ t('admin.services.editor.actions.cancel') }}
+            {{ t('admin.services.editor.actions.cancel').toUpperCase() }}
           </v-btn>
         </div>
       </div>
