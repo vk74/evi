@@ -6,7 +6,7 @@
   Frontend file
 -->
 <script setup lang="ts">
-import { ref, computed, onMounted, onBeforeUnmount, PropType, defineProps, defineEmits } from 'vue'
+import { ref, computed, onMounted, onBeforeUnmount, PropType, defineProps, defineEmits, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useUiStore } from '@/core/state/uistate'
 import { ItemSelectorItem } from './types.item.selector'
@@ -79,7 +79,24 @@ const isLoading = ref(false)
 const uiStore = useUiStore()
 
 // Ref для автофокуса на поле поиска
-const searchInputRef = ref(null)
+const searchInputRef = ref<HTMLElement | null>(null)
+
+// Дебаунс для автоматического поиска
+let searchDebounceTimer: NodeJS.Timeout | null = null
+
+// Функция для сохранения фокуса в поле ввода
+const maintainFocus = () => {
+  setTimeout(() => {
+    if (searchInputRef.value) {
+      const inputElement = searchInputRef.value.querySelector('input')
+      if (inputElement) {
+        inputElement.focus()
+      } else {
+        searchInputRef.value.focus()
+      }
+    }
+  }, 50)
+}
 
 // Инициализация
 onMounted(() => {
@@ -95,22 +112,39 @@ onMounted(() => {
   }
   
   // Устанавливаем фокус на поле поиска с небольшой задержкой
-  setTimeout(() => {
-    if (searchInputRef.value) {
-      const inputElement = searchInputRef.value.$el.querySelector('input')
-      if (inputElement) {
-        inputElement.focus()
-      } else {
-        searchInputRef.value.focus()
-      }
-    }
-  }, 50)
+  maintainFocus()
 })
 
 onBeforeUnmount(() => {
   console.log('[ItemSelector] Компонент удаляется')
   searchResultItems.value = []
   selectedItems.value = []
+  
+  // Очищаем таймер дебаунса
+  if (searchDebounceTimer) {
+    clearTimeout(searchDebounceTimer)
+  }
+})
+
+// Watch для автоматического поиска с дебаунсом
+watch(searchQuery, (newQuery) => {
+  // Очищаем предыдущий таймер
+  if (searchDebounceTimer) {
+    clearTimeout(searchDebounceTimer)
+  }
+  
+  // Очищаем результаты если запрос меньше 2 символов
+  if ((newQuery?.length || 0) < 2) {
+    searchResultItems.value = []
+    return
+  }
+  
+  // Устанавливаем дебаунс для автоматического поиска
+  searchDebounceTimer = setTimeout(() => {
+    if (canSearch.value) {
+      handleSearch()
+    }
+  }, 300) // Стандартный дебаунс 300ms
 })
 
 // Вычисляемые свойства
@@ -181,6 +215,8 @@ const handleSearch = async () => {
     uiStore.showErrorSnackbar(t('itemSelector.messages.searchError'))
   } finally {
     isLoading.value = false
+    // Сохраняем фокус после завершения поиска (как автоматического, так и ручного)
+    maintainFocus()
   }
 }
 
