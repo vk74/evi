@@ -13,7 +13,7 @@ import { LoginRequest, LoginResponse, getCookieConfig, DeviceFingerprint } from 
 import { issueTokenPair } from './service.issue.tokens';
 import { extractDeviceFingerprintFromRequest, logDeviceFingerprint } from './utils.device.fingerprint';
 import fabricEvents from '@/core/eventBus/fabric.events';
-import { AUTH_LOGIN_EVENTS, AUTH_SECURITY_EVENTS } from './events.auth';
+import { AUTH_LOGIN_EVENTS, AUTH_SECURITY_EVENTS, AUTH_TOKEN_EVENTS } from './events.auth';
 
 // Cookie configuration
 const REFRESH_TOKEN_COOKIE_NAME = 'refreshToken';
@@ -30,7 +30,7 @@ const failedAttempts = new Map<string, { count: number; resetTime: number }>();
 /**
  * Sets refresh token as httpOnly cookie
  */
-function setRefreshTokenCookie(res: Response, refreshToken: string): void {
+async function setRefreshTokenCookie(res: Response, refreshToken: string, userUuid: string): Promise<void> {
   const cookieConfig = getCookieConfig();
   
   res.cookie(REFRESH_TOKEN_COOKIE_NAME, refreshToken, {
@@ -42,7 +42,12 @@ function setRefreshTokenCookie(res: Response, refreshToken: string): void {
     domain: cookieConfig.domain
   });
   
-  console.log('[Login Service] Refresh token set as httpOnly cookie');
+  await fabricEvents.createAndPublishEvent({
+    eventName: AUTH_TOKEN_EVENTS.REFRESH_TOKEN_COOKIE_SET.eventName,
+    payload: {
+      userUuid
+    }
+  });
 }
 
 /**
@@ -81,32 +86,69 @@ function recordFailedAttempt(ip: string): void {
  */
 async function validateCredentials(username: string, password: string): Promise<{ isValid: boolean; userUuid?: string }> {
   try {
-    console.log('[Login Service] Attempting to validate credentials for user:', username);
+    await fabricEvents.createAndPublishEvent({
+      eventName: AUTH_LOGIN_EVENTS.CREDENTIALS_VALIDATION_ATTEMPT.eventName,
+      payload: {
+        username
+      }
+    });
     
     const result = await pool.query(
       'SELECT user_id, hashed_password FROM app.users WHERE username = $1 AND account_status = $2',
       [username, 'active']
     );
     
-    console.log('[Login Service] Database query completed, rows found:', result.rows.length);
+    await fabricEvents.createAndPublishEvent({
+      eventName: AUTH_LOGIN_EVENTS.DATABASE_QUERY_COMPLETED.eventName,
+      payload: {
+        username,
+        rowsFound: result.rows.length
+      }
+    });
     
     if (result.rows.length === 0) {
-      console.log('[Login Service] User not found in database');
+      await fabricEvents.createAndPublishEvent({
+        eventName: AUTH_LOGIN_EVENTS.USER_NOT_FOUND.eventName,
+        payload: {
+          username
+        }
+      });
       return { isValid: false };
     }
     
     const { user_id, hashed_password } = result.rows[0];
-    console.log('[Login Service] User found, comparing passwords...');
+    await fabricEvents.createAndPublishEvent({
+      eventName: AUTH_LOGIN_EVENTS.USER_FOUND_PASSWORD_COMPARISON.eventName,
+      payload: {
+        username,
+        userUuid: user_id
+      }
+    });
     
     const isValid = await bcrypt.compare(password, hashed_password);
-    console.log('[Login Service] Password comparison result:', isValid);
+    
+    if (isValid) {
+      await fabricEvents.createAndPublishEvent({
+        eventName: AUTH_LOGIN_EVENTS.CREDENTIALS_VALIDATION_SUCCESS.eventName,
+        payload: {
+          username,
+          userUuid: user_id
+        }
+      });
+    }
     
     return {
       isValid,
       userUuid: isValid ? user_id : undefined
     };
   } catch (error) {
-    console.error('[Login Service] Database error during credential validation:', error);
+    await fabricEvents.createAndPublishEvent({
+      eventName: AUTH_SECURITY_EVENTS.DATABASE_ERROR_CREDENTIALS.eventName,
+      payload: {
+        username,
+        error: error instanceof Error ? error.message : 'Unknown error'
+      }
+    });
     throw new Error('Database error during authentication');
   }
 }
@@ -179,7 +221,7 @@ export async function loginService(
     const tokenPair = await issueTokenPair(loginData.username, userUuid!, deviceFingerprint);
     
     // Set refresh token as httpOnly cookie
-    setRefreshTokenCookie(res, tokenPair.refreshToken);
+    await setRefreshTokenCookie(res, tokenPair.refreshToken, userUuid!);
     
     // Create successful login event
     await fabricEvents.createAndPublishEvent({

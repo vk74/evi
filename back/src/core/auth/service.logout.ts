@@ -12,6 +12,8 @@ import { pool } from '@/core/db/maindb';
 import { LogoutRequest, LogoutResponse, TokenValidationResult, getCookieConfig, DeviceFingerprint } from './types.auth';
 import { findTokenByHashIncludeRevoked, revokeTokenByHash } from './queries.auth';
 import { logDeviceFingerprint } from './utils.device.fingerprint';
+import fabricEvents from '@/core/eventBus/fabric.events';
+import { AUTH_LOGOUT_EVENTS, AUTH_SECURITY_EVENTS } from './events.auth';
 
 // Cookie configuration
 const REFRESH_TOKEN_COOKIE_NAME = 'refreshToken';
@@ -19,29 +21,53 @@ const REFRESH_TOKEN_COOKIE_NAME = 'refreshToken';
 /**
  * Extracts refresh token from request (cookie or body)
  */
-function extractRefreshToken(req: Request): string | null {
+async function extractRefreshToken(req: Request): Promise<string | null> {
+  await fabricEvents.createAndPublishEvent({
+    eventName: AUTH_LOGOUT_EVENTS.LOGOUT_REFRESH_TOKEN_EXTRACTION_ATTEMPT.eventName,
+    payload: {
+      hasCookies: !!req.cookies,
+      hasBody: !!req.body
+    }
+  });
+  
   // First try to get from cookie
   const cookieToken = req.cookies?.[REFRESH_TOKEN_COOKIE_NAME];
   if (cookieToken) {
-    console.log('[Logout Service] Refresh token found in cookie');
+    await fabricEvents.createAndPublishEvent({
+      eventName: AUTH_LOGOUT_EVENTS.LOGOUT_REFRESH_TOKEN_FOUND_COOKIE.eventName,
+      payload: {
+        tokenSource: 'cookie'
+      }
+    });
     return cookieToken;
   }
   
   // Fallback to body (for backward compatibility)
   const bodyToken = req.body?.refreshToken;
   if (bodyToken) {
-    console.log('[Logout Service] Refresh token found in request body');
+    await fabricEvents.createAndPublishEvent({
+      eventName: AUTH_LOGOUT_EVENTS.LOGOUT_REFRESH_TOKEN_FOUND_BODY.eventName,
+      payload: {
+        tokenSource: 'body'
+      }
+    });
     return bodyToken;
   }
   
-  console.log('[Logout Service] No refresh token found');
+  await fabricEvents.createAndPublishEvent({
+    eventName: AUTH_LOGOUT_EVENTS.LOGOUT_REFRESH_TOKEN_NOT_FOUND.eventName,
+    payload: {
+      hasCookies: !!req.cookies,
+      hasBody: !!req.body
+    }
+  });
   return null;
 }
 
 /**
  * Clears refresh token cookie
  */
-function clearRefreshTokenCookie(res: Response): void {
+async function clearRefreshTokenCookie(res: Response): Promise<void> {
   const cookieConfig = getCookieConfig();
   
   res.clearCookie(REFRESH_TOKEN_COOKIE_NAME, {
@@ -49,7 +75,12 @@ function clearRefreshTokenCookie(res: Response): void {
     domain: cookieConfig.domain
   });
   
-  console.log('[Logout Service] Refresh token cookie cleared');
+  await fabricEvents.createAndPublishEvent({
+    eventName: AUTH_LOGOUT_EVENTS.LOGOUT_REFRESH_TOKEN_COOKIE_CLEARED.eventName,
+    payload: {
+      cookieCleared: true
+    }
+  });
 }
 
 /**
@@ -91,7 +122,12 @@ async function validateRefreshTokenForLogout(refreshToken: string): Promise<Toke
       userUuid: tokenData.user_uuid
     };
   } catch (error) {
-    console.error('[Logout Service] Database error during token validation:', error);
+    await fabricEvents.createAndPublishEvent({
+      eventName: AUTH_SECURITY_EVENTS.LOGOUT_TOKEN_VALIDATION_ERROR.eventName,
+      payload: {
+        error: error instanceof Error ? error.message : 'Unknown error'
+      }
+    });
     return {
       isValid: false,
       error: 'Database error during token validation'
@@ -105,9 +141,19 @@ async function validateRefreshTokenForLogout(refreshToken: string): Promise<Toke
 async function revokeRefreshToken(tokenHash: string): Promise<void> {
   try {
     await pool.query(revokeTokenByHash.text, [tokenHash]);
-    console.log('[Logout Service] Refresh token revoked successfully');
+    await fabricEvents.createAndPublishEvent({
+      eventName: AUTH_LOGOUT_EVENTS.LOGOUT_REFRESH_TOKEN_REVOKED.eventName,
+      payload: {
+        tokenRevoked: true
+      }
+    });
   } catch (error) {
-    console.error('[Logout Service] Error revoking refresh token:', error);
+    await fabricEvents.createAndPublishEvent({
+      eventName: AUTH_SECURITY_EVENTS.LOGOUT_TOKEN_REVOCATION_ERROR.eventName,
+      payload: {
+        error: error instanceof Error ? error.message : 'Unknown error'
+      }
+    });
     throw new Error('Failed to revoke refresh token');
   }
 }
@@ -119,14 +165,20 @@ export async function logoutService(
   req: Request,
   res: Response
 ): Promise<LogoutResponse> {
-  console.log('[Logout Service] Processing logout request');
+  await fabricEvents.createAndPublishEvent({
+    eventName: AUTH_LOGOUT_EVENTS.LOGOUT_PROCESSING_ATTEMPT.eventName,
+    payload: {
+      hasBody: !!req.body,
+      hasCookies: !!req.cookies
+    }
+  });
   
   // Extract refresh token from request
-  const refreshToken = extractRefreshToken(req);
+  const refreshToken = await extractRefreshToken(req);
   
   if (!refreshToken) {
     // If no token found, still clear cookie and return success
-    clearRefreshTokenCookie(res);
+    await clearRefreshTokenCookie(res);
     return {
       success: true,
       message: 'Logout completed successfully'
@@ -135,8 +187,13 @@ export async function logoutService(
   
   // Validate refresh token format
   if (!refreshToken.startsWith('token-')) {
-    console.log('[Logout Service] Invalid refresh token format');
-    clearRefreshTokenCookie(res);
+    await fabricEvents.createAndPublishEvent({
+      eventName: AUTH_LOGOUT_EVENTS.LOGOUT_INVALID_REFRESH_TOKEN_FORMAT.eventName,
+      payload: {
+        tokenFormat: 'invalid'
+      }
+    });
+    await clearRefreshTokenCookie(res);
     return {
       success: true,
       message: 'Logout completed successfully'
@@ -147,10 +204,15 @@ export async function logoutService(
   const validation = await validateRefreshTokenForLogout(refreshToken);
   
   if (!validation.isValid) {
-    console.log('[Logout Service] Invalid refresh token for logout:', validation.error);
+    await fabricEvents.createAndPublishEvent({
+      eventName: AUTH_LOGOUT_EVENTS.LOGOUT_INVALID_REFRESH_TOKEN.eventName,
+      payload: {
+        error: validation.error || 'Invalid refresh token'
+      }
+    });
     // For logout, we don't throw an error if token is invalid
     // We just return success to avoid revealing information about token validity
-    clearRefreshTokenCookie(res);
+    await clearRefreshTokenCookie(res);
     return {
       success: true,
       message: 'Logout completed successfully'
@@ -170,9 +232,14 @@ export async function logoutService(
   await revokeRefreshToken(tokenHash);
   
   // Clear refresh token cookie
-  clearRefreshTokenCookie(res);
+  await clearRefreshTokenCookie(res);
   
-  console.log('[Logout Service] Logout successful for user:', validation.userUuid);
+  await fabricEvents.createAndPublishEvent({
+    eventName: AUTH_LOGOUT_EVENTS.LOGOUT_SUCCESS.eventName,
+    payload: {
+      userUuid: validation.userUuid
+    }
+  });
   
   return {
     success: true,

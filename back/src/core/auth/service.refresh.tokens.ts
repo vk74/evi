@@ -14,6 +14,8 @@ import { findTokenByHash, revokeTokenByHash } from './queries.auth';
 import { issueTokenPair } from './service.issue.tokens';
 import { validateFingerprint, logDeviceFingerprint } from './utils.device.fingerprint';
 import { getSetting, parseSettingValue } from '../../modules/admin/settings/cache.settings';
+import fabricEvents from '@/core/eventBus/fabric.events';
+import { AUTH_TOKEN_EVENTS, AUTH_SECURITY_EVENTS } from './events.auth';
 
 // Cookie configuration
 const REFRESH_TOKEN_COOKIE_NAME = 'refreshToken';
@@ -22,14 +24,19 @@ const REFRESH_TOKEN_COOKIE_NAME = 'refreshToken';
  * Gets refresh before expiry setting from cache
  * Falls back to default value if setting not found
  */
-function getRefreshBeforeExpiry(): number {
+async function getRefreshBeforeExpiry(): Promise<number> {
   try {
     const setting = getSetting('Application.Security.SessionManagement', 'refresh.jwt.n.seconds.before.expiry');
     if (setting && setting.value !== null) {
       return Number(parseSettingValue(setting));
     }
   } catch (error) {
-    console.warn('Failed to get refresh before expiry setting, using default:', error);
+    await fabricEvents.createAndPublishEvent({
+      eventName: AUTH_SECURITY_EVENTS.SETTINGS_RETRIEVAL_WARNING.eventName,
+      payload: {
+        error: error instanceof Error ? error.message : 'Unknown error'
+      }
+    });
   }
   
   return 30; // Default fallback
@@ -38,32 +45,53 @@ function getRefreshBeforeExpiry(): number {
 /**
  * Extracts refresh token from request (cookie or body)
  */
-function extractRefreshToken(req: Request): string | null {
-  console.log('[Refresh Service] Request cookies:', req.cookies);
-  console.log('[Refresh Service] Request headers:', req.headers);
+async function extractRefreshToken(req: Request): Promise<string | null> {
+  await fabricEvents.createAndPublishEvent({
+    eventName: AUTH_TOKEN_EVENTS.REFRESH_TOKEN_EXTRACTION_ATTEMPT.eventName,
+    payload: {
+      hasCookies: !!req.cookies,
+      hasHeaders: !!req.headers
+    }
+  });
   
   // First try to get from cookie
   const cookieToken = req.cookies?.[REFRESH_TOKEN_COOKIE_NAME];
   if (cookieToken) {
-    console.log('[Refresh Service] Refresh token found in cookie');
+    await fabricEvents.createAndPublishEvent({
+      eventName: AUTH_TOKEN_EVENTS.REFRESH_TOKEN_FOUND_COOKIE.eventName,
+      payload: {
+        tokenSource: 'cookie'
+      }
+    });
     return cookieToken;
   }
   
   // Fallback to body (for backward compatibility)
   const bodyToken = req.body?.refreshToken;
   if (bodyToken) {
-    console.log('[Refresh Service] Refresh token found in request body');
+    await fabricEvents.createAndPublishEvent({
+      eventName: AUTH_TOKEN_EVENTS.REFRESH_TOKEN_FOUND_BODY.eventName,
+      payload: {
+        tokenSource: 'body'
+      }
+    });
     return bodyToken;
   }
   
-  console.log('[Refresh Service] No refresh token found');
+  await fabricEvents.createAndPublishEvent({
+    eventName: AUTH_TOKEN_EVENTS.REFRESH_TOKEN_NOT_FOUND.eventName,
+    payload: {
+      hasCookies: !!req.cookies,
+      hasBody: !!req.body
+    }
+  });
   return null;
 }
 
 /**
  * Sets refresh token as httpOnly cookie
  */
-function setRefreshTokenCookie(res: Response, refreshToken: string): void {
+async function setRefreshTokenCookie(res: Response, refreshToken: string): Promise<void> {
   const cookieConfig = getCookieConfig();
   
   res.cookie(REFRESH_TOKEN_COOKIE_NAME, refreshToken, {
@@ -75,18 +103,28 @@ function setRefreshTokenCookie(res: Response, refreshToken: string): void {
     domain: cookieConfig.domain
   });
   
-  console.log('[Refresh Service] New refresh token set as httpOnly cookie');
+  await fabricEvents.createAndPublishEvent({
+    eventName: AUTH_TOKEN_EVENTS.NEW_REFRESH_TOKEN_COOKIE_SET.eventName,
+    payload: {
+      cookieSet: true
+    }
+  });
 }
 
 /**
  * Clears refresh token cookie
  */
-function clearRefreshTokenCookie(res: Response): void {
+async function clearRefreshTokenCookie(res: Response): Promise<void> {
   res.clearCookie(REFRESH_TOKEN_COOKIE_NAME, {
     path: '/'
   });
   
-  console.log('[Refresh Service] Refresh token cookie cleared');
+  await fabricEvents.createAndPublishEvent({
+    eventName: AUTH_TOKEN_EVENTS.REFRESH_TOKEN_COOKIE_CLEARED.eventName,
+    payload: {
+      cookieCleared: true
+    }
+  });
 }
 
 /**
@@ -136,7 +174,12 @@ async function validateRefreshToken(refreshToken: string, deviceFingerprint: Dev
       fingerprintMatch = validateFingerprint(deviceFingerprint, tokenData.device_fingerprint_hash);
       
       if (!fingerprintMatch) {
-        console.warn('[Refresh Service] Device fingerprint mismatch for user:', tokenData.user_uuid);
+        await fabricEvents.createAndPublishEvent({
+          eventName: AUTH_SECURITY_EVENTS.DEVICE_FINGERPRINT_MISMATCH_REFRESH.eventName,
+          payload: {
+            userUuid: tokenData.user_uuid
+          }
+        });
         return {
           isValid: false,
           error: 'Device fingerprint validation failed'
@@ -150,7 +193,12 @@ async function validateRefreshToken(refreshToken: string, deviceFingerprint: Dev
       fingerprintMatch
     };
   } catch (error) {
-    console.error('[Refresh Service] Database error during token validation:', error);
+    await fabricEvents.createAndPublishEvent({
+      eventName: AUTH_SECURITY_EVENTS.REFRESH_TOKEN_VALIDATION_ERROR.eventName,
+      payload: {
+        error: error instanceof Error ? error.message : 'Unknown error'
+      }
+    });
     return {
       isValid: false,
       error: 'Database error during token validation'
@@ -176,7 +224,13 @@ async function getUsernameByUuid(userUuid: string): Promise<string> {
     
     return result.rows[0].username;
   } catch (error) {
-    console.error('[Refresh Service] Error getting username by UUID:', error);
+    await fabricEvents.createAndPublishEvent({
+      eventName: AUTH_SECURITY_EVENTS.USERNAME_RETRIEVAL_ERROR.eventName,
+      payload: {
+        userUuid,
+        error: error instanceof Error ? error.message : 'Unknown error'
+      }
+    });
     throw new Error('Failed to get user information');
   }
 }
@@ -188,10 +242,16 @@ export async function refreshTokensService(
   req: Request,
   res: Response
 ): Promise<RefreshTokenResponse> {
-  console.log('[Refresh Service] Processing token refresh request');
+  await fabricEvents.createAndPublishEvent({
+    eventName: AUTH_TOKEN_EVENTS.TOKEN_REFRESH_PROCESSING_ATTEMPT.eventName,
+    payload: {
+      hasBody: !!req.body,
+      hasCookies: !!req.cookies
+    }
+  });
   
   // Extract refresh token from request
-  const refreshToken = extractRefreshToken(req);
+  const refreshToken = await extractRefreshToken(req);
   
   if (!refreshToken) {
     throw new Error('Refresh token is required');
@@ -203,13 +263,24 @@ export async function refreshTokensService(
     throw new Error('Valid device fingerprint is required');
   }
   
-  console.log('[Refresh Service] Device fingerprint extracted from request');
+  await fabricEvents.createAndPublishEvent({
+    eventName: AUTH_TOKEN_EVENTS.DEVICE_FINGERPRINT_EXTRACTED.eventName,
+    payload: {
+      hasScreen: !!deviceFingerprint.screen,
+      hasUserAgent: !!deviceFingerprint.userAgent
+    }
+  });
   
   // Validate refresh token with device fingerprint
   const validation = await validateRefreshToken(refreshToken, deviceFingerprint);
   
   if (!validation.isValid) {
-    console.log('[Refresh Service] Invalid refresh token:', validation.error);
+    await fabricEvents.createAndPublishEvent({
+      eventName: AUTH_TOKEN_EVENTS.INVALID_REFRESH_TOKEN.eventName,
+      payload: {
+        error: validation.error || 'Invalid refresh token'
+      }
+    });
     throw new Error(validation.error || 'Invalid refresh token');
   }
   
@@ -229,9 +300,15 @@ export async function refreshTokensService(
   const tokenPair = await issueTokenPair(username, validation.userUuid!, deviceFingerprint);
   
   // Set new refresh token as httpOnly cookie
-  setRefreshTokenCookie(res, tokenPair.refreshToken);
+  await setRefreshTokenCookie(res, tokenPair.refreshToken);
   
-  console.log('[Refresh Service] Token refresh successful for user:', username);
+  await fabricEvents.createAndPublishEvent({
+    eventName: AUTH_TOKEN_EVENTS.TOKEN_REFRESH_SUCCESS.eventName,
+    payload: {
+      username,
+      userUuid: validation.userUuid!
+    }
+  });
   
   return {
     success: true,
