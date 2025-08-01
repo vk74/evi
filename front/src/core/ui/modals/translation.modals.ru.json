@@ -15,7 +15,8 @@
   },
   "itemSelector": {
     "title": {
-      "addUsersToGroup": "добавление пользователей в группу"
+      "addUsersToGroup": "добавление пользователей в группу",
+      "selectGroupFor": "Выберите группу для"
     },
     "search": {
       "placeholder": {

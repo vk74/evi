@@ -15,6 +15,7 @@ import validateJWT from '../guards/auth.validate.jwt';
 // Импорт контроллеров
 import getUsernameByUuidController from '../middleware/controller.get.username.by.uuid';
 import searchUsers from '../services/item-selector/controller.search.users';
+import searchGroups from '../services/item-selector/controller.search.groups';
 import addUsersToGroup from '../services/item-selector/controller.add.users.to.group';
 import changeGroupOwner from '../services/item-selector/controller.change.group.owner';
 
@@ -30,6 +31,7 @@ router.get('/api/core/users/fetch-username-by-uuid/:userId', validateJWT, getUse
 
 // item selector universal component services
 router.get('/api/core/item-selector/search-users', validateJWT, searchUsers); 
+router.get('/api/core/item-selector/search-groups', validateJWT, searchGroups);
 router.post('/api/core/item-selector/add-users-to-group', validateJWT, addUsersToGroup);
 router.post('/api/core/item-selector/change-group-owner', validateJWT, changeGroupOwner);
 

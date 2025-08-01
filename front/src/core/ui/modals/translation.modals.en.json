@@ -15,7 +15,8 @@
   },
   "itemSelector": {
     "title": {
-      "addUsersToGroup": "adding users to group"
+      "addUsersToGroup": "adding users to group",
+      "selectGroupFor": "Select group for"
     },
     "search": {
       "placeholder": {

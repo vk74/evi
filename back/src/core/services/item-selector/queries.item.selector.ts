@@ -22,6 +22,7 @@ interface SQLQuery {
 
 interface ItemSelectorQueries {
   searchUsers: SQLQuery;
+  searchGroups: SQLQuery;             // New query for searching groups
   checkGroupExists: SQLQuery;
   checkUsersExist: SQLQuery;
   checkExistingMembers: SQLQuery;
@@ -46,6 +47,20 @@ export const queries: ItemSelectorQueries = {
          OR user_id::text ILIKE $1  -- Case-insensitive search by UUID
          OR email ILIKE $1  -- Case-insensitive search by email
       ORDER BY username
+      LIMIT $2
+    `
+  },
+
+  // Search groups by query string (group_name) with a limit on the number of results
+  searchGroups: {
+    text: `
+      SELECT 
+        group_id AS uuid,
+        group_name AS name
+      FROM app.groups
+      WHERE group_status = 'active'
+        AND group_name ILIKE $1  -- Case-insensitive search by group name
+      ORDER BY group_name
       LIMIT $2
     `
   },

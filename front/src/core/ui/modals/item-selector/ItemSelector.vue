@@ -1,21 +1,9 @@
-<!-- ItemSelector.vue -->
 <!--
-  Универсальный модальный компонент для поиска и выбора объектов.
-  
-  Компонент позволяет пользователям искать объекты через предоставленный searchService,
-  выбирать их и выполнять действие с помощью actionService.
-  
-  Интерфейс состоит из двух окон:
-  - Левое окно отображает результаты поиска
-  - Правое окно отображает выбранные объекты
-  
-  Пропсы:
-  - title: String (обязательный) - Заголовок модального окна
-  - searchService: String (обязательный) - Имя сервиса поиска (например "searchUsers")
-  - actionService: String (обязательный) - Имя сервиса действия (например "addUsersToGroup")
-  - maxResults: Number (по умолчанию: 30) - Максимальное количество объектов в результатах поиска
-  - maxItems: Number (по умолчанию: 20) - Максимальное количество объектов в списке выбора
-  - actionButtonText: String (по умолчанию: из i18n) - Текст кнопки действия
+  File: ItemSelector.vue
+  Version: 1.0.0
+  Description: Universal modal component for searching and selecting objects
+  Purpose: Provides interface for searching objects via searchService and performing actions via actionService
+  Frontend file
 -->
 <script setup lang="ts">
 import { ref, computed, onMounted, onBeforeUnmount, PropType, defineProps, defineEmits } from 'vue'
@@ -25,14 +13,17 @@ import { ItemSelectorItem } from './types.item.selector'
 
 // Импорт сервисов
 import searchUsers from '@/core/ui/modals/item-selector/service.search.users'
+import searchGroups from '@/core/ui/modals/item-selector/service.search.groups'
 import addUsersToGroup from '@/core/ui/modals/item-selector/service.add.users.to.group'
 import changeGroupOwner from './service.change.group.owner'
 import returnSelectedUsername from './service.return.selected.username'
+import returnSelectedGroup from './service.return.selected.group'
 // При добавлении новых сервисов, импортируйте их здесь
 
 // Маппинг имен сервисов в функции
 const searchServiceMap = {
   searchUsers: searchUsers,
+  searchGroups: searchGroups,
   // Добавьте новые сервисы поиска здесь
 }
 
@@ -40,6 +31,7 @@ const actionServiceMap = {
   addUsersToGroup: addUsersToGroup,
   changeGroupOwner: changeGroupOwner,
   returnSelectedUsername: returnSelectedUsername,
+  returnSelectedGroup: returnSelectedGroup,
   // Добавьте новые сервисы действий здесь
 }
 

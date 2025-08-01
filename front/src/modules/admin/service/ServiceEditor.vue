@@ -368,8 +368,8 @@ const handleDispatcherSelected = async (result: any) => {
 }
 
 const handleSupportTier1Selected = async (result: any) => {
-  if (result && result.success && result.selectedUser && result.selectedUser.name) {
-    formData.value.supportTier1 = result.selectedUser.name
+  if (result && result.success && result.selectedGroup && result.selectedGroup.name) {
+    formData.value.supportTier1 = result.selectedGroup.name
     uiStore.showSuccessSnackbar(t('admin.services.editor.messages.supportTier1.selected'))
   } else {
     uiStore.showErrorSnackbar(result?.message || t('admin.services.editor.messages.supportTier1.error'))
@@ -378,8 +378,8 @@ const handleSupportTier1Selected = async (result: any) => {
 }
 
 const handleSupportTier2Selected = async (result: any) => {
-  if (result && result.success && result.selectedUser && result.selectedUser.name) {
-    formData.value.supportTier2 = result.selectedUser.name
+  if (result && result.success && result.selectedGroup && result.selectedGroup.name) {
+    formData.value.supportTier2 = result.selectedGroup.name
     uiStore.showSuccessSnackbar(t('admin.services.editor.messages.supportTier2.selected'))
   } else {
     uiStore.showErrorSnackbar(result?.message || t('admin.services.editor.messages.supportTier2.error'))
@@ -388,8 +388,8 @@ const handleSupportTier2Selected = async (result: any) => {
 }
 
 const handleSupportTier3Selected = async (result: any) => {
-  if (result && result.success && result.selectedUser && result.selectedUser.name) {
-    formData.value.supportTier3 = result.selectedUser.name
+  if (result && result.success && result.selectedGroup && result.selectedGroup.name) {
+    formData.value.supportTier3 = result.selectedGroup.name
     uiStore.showSuccessSnackbar(t('admin.services.editor.messages.supportTier3.selected'))
   } else {
     uiStore.showErrorSnackbar(result?.message || t('admin.services.editor.messages.supportTier3.error'))
@@ -934,9 +934,9 @@ onMounted(() => {
     max-width="700"
   >
     <ItemSelector 
-      :title="t('admin.services.editor.support.tier1.select')"
-      search-service="searchUsers"
-      action-service="returnSelectedUsername"
+      :title="`${t('itemSelector.title.selectGroupFor')} ${t('admin.services.editor.support.tier1.label')}`"
+      search-service="searchGroups"
+      action-service="returnSelectedGroup"
       :max-results="20"
       :max-items="1"
       :action-button-text="t('admin.services.editor.actions.save')"
@@ -950,9 +950,9 @@ onMounted(() => {
     max-width="700"
   >
     <ItemSelector 
-      :title="t('admin.services.editor.support.tier2.select')"
-      search-service="searchUsers"
-      action-service="returnSelectedUsername"
+      :title="`${t('admin.itemSelector.selectGroupFor')} ${t('admin.services.editor.support.tier2.label')}`"
+      search-service="searchGroups"
+      action-service="returnSelectedGroup"
       :max-results="20"
       :max-items="1"
       :action-button-text="t('admin.services.editor.actions.save')"
@@ -966,9 +966,9 @@ onMounted(() => {
     max-width="700"
   >
     <ItemSelector 
-      :title="t('admin.services.editor.support.tier3.select')"
-      search-service="searchUsers"
-      action-service="returnSelectedUsername"
+      :title="`${t('admin.itemSelector.selectGroupFor')} ${t('admin.services.editor.support.tier3.label')}`"
+      search-service="searchGroups"
+      action-service="returnSelectedGroup"
       :max-results="20"
       :max-items="1"
       :action-button-text="t('admin.services.editor.actions.save')"
