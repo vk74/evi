@@ -14,6 +14,9 @@ import { fetchSettings } from './service.fetch.settings';
 import { useUiStore } from '@/core/state/uistate';
  
  // Import components from sections directory with hierarchical naming
+ import Work from './sections/Application.Work.vue';
+ import Reports from './sections/Application.Reports.vue';
+ import KnowledgeBase from './sections/Application.KnowledgeBase.vue';
  import UserProfiles from './sections/Application.UserProfiles.vue';
  import SystemEventBus from './sections/Application.System.EventBus.vue';
  import SystemLogging from './sections/Application.System.Logging.vue';
@@ -45,6 +48,21 @@ const { t } = useI18n();
      name: t('admin.settings.sections.application'),
      icon: 'mdi-cog-outline',
      children: [
+       {
+         id: 'Application.Work',
+         name: t('admin.settings.sections.work'),
+         icon: 'mdi-briefcase-outline',
+       },
+       {
+         id: 'Application.Reports',
+         name: t('admin.settings.sections.reports'),
+         icon: 'mdi-chart-box-outline',
+       },
+       {
+         id: 'Application.KnowledgeBase',
+         name: t('admin.settings.sections.knowledgebase'),
+         icon: 'mdi-book-open-outline',
+       },
        {
          id: 'Application.UserProfiles',
          name: t('admin.settings.sections.userprofiles'),
@@ -112,6 +130,9 @@ const { t } = useI18n();
  
  // Map section IDs to components
  const sectionComponents = {
+   'Application.Work': markRaw(Work),
+   'Application.Reports': markRaw(Reports),
+   'Application.KnowledgeBase': markRaw(KnowledgeBase),
    'Application.UserProfiles': markRaw(UserProfiles),
    'Application.System.EventBus': markRaw(SystemEventBus),
    'Application.System.Logging': markRaw(SystemLogging),

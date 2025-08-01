@@ -183,6 +183,24 @@
             }
           }
         },
+        "work": {
+          "title": "work module",
+          "enabled": {
+            "label": "use work module"
+          }
+        },
+        "reports": {
+          "title": "reports module",
+          "enabled": {
+            "label": "use reports module"
+          }
+        },
+        "knowledgebase": {
+          "title": "knowledge base module",
+          "enabled": {
+            "label": "use knowledge base module"
+          }
+        },
         "system": {
           "eventbus": {
             "title": "event bus",
@@ -248,6 +266,9 @@
       },
       "sections": {
         "application": "application",
+        "work": "work module",
+        "reports": "reports module",
+        "knowledgebase": "knowledge base module",
         "userprofiles": "user profiles",
         "security": "security",
         "sessionmanagement": "session management",
