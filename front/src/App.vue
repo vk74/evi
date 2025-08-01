@@ -16,7 +16,9 @@ import { ref, computed, onMounted, watch, defineAsyncComponent, nextTick } from 
 import { useUserAuthStore } from '@/core/auth/state.user.auth';
 import { useUiStore } from './core/state/uistate';
 import { useAppStore } from './core/state/appstate';
+import { useAppSettingsStore } from './modules/admin/settings/state.app.settings';
 import { useI18n } from 'vue-i18n';
+import { ModuleName, DrawerMode, AdminSubModule } from './types.app';
 
 import { logoutService } from '@/core/auth/service.logout';
 
@@ -48,6 +50,7 @@ import AppSnackbar from './core/ui/snackbars/AppSnackbar.vue';
 const userStore = useUserAuthStore();
 const uiStore = useUiStore();
 const appStore = useAppStore();
+const appSettingsStore = useAppSettingsStore();
 const i18n = useI18n();
 
 // Refs
@@ -61,6 +64,21 @@ const menuLocked = ref<boolean>(false); // Prevent menu interactions during anim
 
 // Computed properties
 const isLoggedIn = computed((): boolean => userStore.isAuthenticated);
+
+// Check if Work module should be visible based on settings
+const isWorkModuleVisible = computed((): boolean => {
+  return appSettingsStore.isWorkModuleVisible();
+});
+
+// Check if Reports module should be visible based on settings
+const isReportsModuleVisible = computed((): boolean => {
+  return appSettingsStore.isReportsModuleVisible();
+});
+
+// Check if KnowledgeBase module should be visible based on settings
+const isKnowledgeBaseModuleVisible = computed((): boolean => {
+  return appSettingsStore.isKnowledgeBaseModuleVisible();
+});
 
 const chevronIcon = computed((): string => {
   switch(appStore.drawerMode) {
@@ -114,7 +132,7 @@ const safeCloseMenus = (): void => {
 };
 
 // Methods
-const setActiveModule = (module: string): void => {
+const setActiveModule = (module: ModuleName): void => {
   // Close menus safely before changing modules
   safeCloseMenus();
   
@@ -135,7 +153,7 @@ const toggleAdminExpanded = (): void => {
 };
 
 // Set active admin section and navigate to Admin module
-const setActiveAdminSection = (section: string): void => {
+const setActiveAdminSection = (section: AdminSubModule): void => {
   appStore.setActiveAdminSubModule(section)
   setActiveModule('Admin')
 }
@@ -185,7 +203,7 @@ const toggleDrawerMode = (): void => {
   // Close menus safely before toggling drawer mode
   safeCloseMenus();
   
-  const modes = ['auto', 'opened', 'closed'];
+  const modes: DrawerMode[] = ['auto', 'opened', 'closed'];
   const currentIndex = modes.indexOf(appStore.drawerMode);
   const nextIndex = (currentIndex + 1) % modes.length;
   
@@ -256,6 +274,16 @@ watch(
   }
 );
 
+// Watch for settings cache changes to react to Work module visibility updates
+watch(
+  () => appSettingsStore.settingsCache,
+  () => {
+    // Force reactivity update for Work module visibility
+    // This will trigger recomputation of isWorkModuleVisible
+  },
+  { deep: true }
+);
+
 // Prevent ResizeObserver errors - more robust implementation
 const preventResizeErrors = (): void => {
   // Error handler for ResizeObserver errors
@@ -290,7 +318,7 @@ const preventResizeErrors = (): void => {
 };
 
 // Lifecycle hooks
-onMounted(() => {
+onMounted(async () => {
   // If Admin is the active module on initial load, expand the admin section
   if (appStore.activeModule === 'Admin') {
     isAdminExpanded.value = true;
@@ -298,6 +326,48 @@ onMounted(() => {
   
   if (isLoggedIn.value) {
     console.log('App mounted. User is logged in.');
+    
+    // Load Work module settings if not already cached
+    if (!appSettingsStore.hasValidCache('Application.Work')) {
+      try {
+        // Import the service to fetch settings
+        const { fetchSettings } = await import('./modules/admin/settings/service.fetch.settings');
+        const settings = await fetchSettings('Application.Work');
+        if (settings) {
+          appSettingsStore.cacheSettings('Application.Work', settings);
+        }
+      } catch (error) {
+        console.warn('Failed to load Work module settings:', error);
+      }
+    }
+    
+    // Load Reports module settings if not already cached
+    if (!appSettingsStore.hasValidCache('Application.Reports')) {
+      try {
+        // Import the service to fetch settings
+        const { fetchSettings } = await import('./modules/admin/settings/service.fetch.settings');
+        const settings = await fetchSettings('Application.Reports');
+        if (settings) {
+          appSettingsStore.cacheSettings('Application.Reports', settings);
+        }
+      } catch (error) {
+        console.warn('Failed to load Reports module settings:', error);
+      }
+    }
+    
+    // Load KnowledgeBase module settings if not already cached
+    if (!appSettingsStore.hasValidCache('Application.KnowledgeBase')) {
+      try {
+        // Import the service to fetch settings
+        const { fetchSettings } = await import('./modules/admin/settings/service.fetch.settings');
+        const settings = await fetchSettings('Application.KnowledgeBase');
+        if (settings) {
+          appSettingsStore.cacheSettings('Application.KnowledgeBase', settings);
+        }
+      } catch (error) {
+        console.warn('Failed to load KnowledgeBase module settings:', error);
+      }
+    }
   }
   
   // Set up ResizeObserver error prevention
@@ -377,7 +447,7 @@ onMounted(() => {
           @click="setActiveModule('Catalog')"
         />
         <v-list-item 
-          v-if="isLoggedIn"
+          v-if="isLoggedIn && isWorkModuleVisible"
           v-tooltip="{
             text: $t('navigation.drawer.workModule'),
             location: 'right',
@@ -390,7 +460,7 @@ onMounted(() => {
           @click="setActiveModule('Work')"
         />
         <v-list-item 
-          v-if="isLoggedIn"
+          v-if="isLoggedIn && isReportsModuleVisible"
           v-tooltip="{
             text: $t('navigation.drawer.reports'),
             location: 'right',
@@ -403,7 +473,7 @@ onMounted(() => {
           @click="setActiveModule('AR')"
         />
         <v-list-item 
-          v-if="isLoggedIn"
+          v-if="isLoggedIn && isKnowledgeBaseModuleVisible"
           v-tooltip="{
             text: $t('navigation.drawer.knowledgeBase'),
             location: 'right',
@@ -710,8 +780,8 @@ onMounted(() => {
     <v-main>
       <ModuleLogin v-if="appStore.isModuleActive('Login')" />
       <ModuleCatalog v-if="appStore.isModuleActive('Catalog')" />
-      <ModuleWork v-if="appStore.isModuleActive('Work')" />
-      <ModuleAR v-if="appStore.isModuleActive('AR')" />
+      <ModuleWork v-if="appStore.isModuleActive('Work') && isWorkModuleVisible" />
+      <ModuleAR v-if="appStore.isModuleActive('AR') && isReportsModuleVisible" />
       <!-- Directly render the appropriate admin submodule based on selection -->
       <component
         :is="currentAdminSubmodule"
@@ -721,8 +791,8 @@ onMounted(() => {
       <ModuleAccount v-if="appStore.isModuleActive('Account')" />
       <AccountPreferences v-if="appStore.isModuleActive('Settings')" />
       <ModuleSessionData v-if="appStore.isModuleActive('SessionData')" />
-      <ModuleKnowledgeBase v-if="appStore.isModuleActive('KnowledgeBase')" />
-              <ModuleNewUserSelfRegistration v-if="appStore.isModuleActive('NewUserRegistration')" />
+            <ModuleKnowledgeBase v-if="appStore.isModuleActive('KnowledgeBase') && isKnowledgeBaseModuleVisible" />
+      <ModuleNewUserSelfRegistration v-if="appStore.isModuleActive('NewUserRegistration')" />
     </v-main>
  
     <!-- Global snackbar -->

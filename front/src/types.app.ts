@@ -1,0 +1,50 @@
+/**
+ * @file types.app.ts
+ * Version: 1.0.0
+ * Type definitions for the application
+ */
+
+// Module names
+export type ModuleName = 
+  | 'Login'
+  | 'Catalog'
+  | 'Work'
+  | 'AR'
+  | 'Admin'
+  | 'XLS'
+  | 'Account'
+  | 'Settings'
+  | 'SessionData'
+  | 'KnowledgeBase'
+  | 'NewUserRegistration';
+
+// Drawer modes
+export type DrawerMode = 'auto' | 'opened' | 'closed';
+
+// Admin sub-modules
+export type AdminSubModule = 
+  | 'catalogAdmin'
+  | 'serviceAdmin'
+  | 'usersAdmin'
+  | 'appAdmin';
+
+// Work module visibility setting interface
+export interface WorkModuleVisibility {
+  setting_name: string;
+  value: boolean;
+  section_path: string;
+}
+
+// Reports module visibility setting interface
+export interface ReportsModuleVisibility {
+  setting_name: string;
+  value: boolean;
+  section_path: string;
+}
+
+// KnowledgeBase module visibility setting interface
+export interface KnowledgeBaseModuleVisibility {
+  setting_name: string;
+  value: boolean;
+  section_path: string;
+} 

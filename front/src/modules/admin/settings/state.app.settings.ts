@@ -120,6 +120,63 @@ export const useAppSettingsStore = defineStore('appSettings', {
     isBlockExpanded: (state) => (blockPath: string): boolean => {
       return state.expandedBlocks.includes(blockPath);
     },
+    
+    // Check if Work module is visible based on settings
+    isWorkModuleVisible: (state) => (): boolean => {
+      const cacheEntry = state.settingsCache['Application.Work'];
+      if (!cacheEntry) return false; // Hide if no cache entry
+      
+      // Check if cache has expired
+      const now = Date.now();
+      if ((now - cacheEntry.timestamp) >= SETTINGS_CACHE_TTL) {
+        return false; // Hide if cache expired
+      }
+      
+      // Find the work.module.is.visible setting
+      const visibilitySetting = cacheEntry.data.find(
+        setting => setting.setting_name === 'work.module.is.visible'
+      );
+      
+      return visibilitySetting ? visibilitySetting.value === true : false;
+    },
+    
+    // Check if Reports module is visible based on settings
+    isReportsModuleVisible: (state) => (): boolean => {
+      const cacheEntry = state.settingsCache['Application.Reports'];
+      if (!cacheEntry) return false; // Hide if no cache entry
+      
+      // Check if cache has expired
+      const now = Date.now();
+      if ((now - cacheEntry.timestamp) >= SETTINGS_CACHE_TTL) {
+        return false; // Hide if cache expired
+      }
+      
+      // Find the reports.module.is.visible setting
+      const visibilitySetting = cacheEntry.data.find(
+        setting => setting.setting_name === 'reports.module.is.visible'
+      );
+      
+      return visibilitySetting ? visibilitySetting.value === true : false;
+    },
+    
+    // Check if KnowledgeBase module is visible based on settings
+    isKnowledgeBaseModuleVisible: (state) => (): boolean => {
+      const cacheEntry = state.settingsCache['Application.KnowledgeBase'];
+      if (!cacheEntry) return false; // Hide if no cache entry
+      
+      // Check if cache has expired
+      const now = Date.now();
+      if ((now - cacheEntry.timestamp) >= SETTINGS_CACHE_TTL) {
+        return false; // Hide if cache expired
+      }
+      
+      // Find the knowledgebase.module.is.visible setting
+      const visibilitySetting = cacheEntry.data.find(
+        setting => setting.setting_name === 'knowledgebase.module.is.visible'
+      );
+      
+      return visibilitySetting ? visibilitySetting.value === true : false;
+    },
   },
   
   // Actions

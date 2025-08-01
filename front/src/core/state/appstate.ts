@@ -5,28 +5,7 @@
  * and preserves states between user sessions.
  */
 import { defineStore } from 'pinia';
-
-// Type definitions
-export type ModuleName = 
-  | 'Catalog'
-  | 'Work'
-  | 'AR'
-  | 'Admin'
-  | 'XLS'
-  | 'Account'
-  | 'Settings'
-  | 'SessionData'
-  | 'KnowledgeBase'
-  | 'Login'
-  | 'NewUserRegistration';
-
-export type AdminSubModule = 
-  | 'catalogAdmin'
-  | 'serviceAdmin'
-  | 'usersAdmin'
-  | 'appAdmin';
-
-export type DrawerMode = 'auto' | 'opened' | 'closed';
+import { ModuleName, AdminSubModule, DrawerMode } from '../../types.app';
 
 // Interface for the store state
 interface AppState {
