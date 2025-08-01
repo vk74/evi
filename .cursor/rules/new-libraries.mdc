@@ -1,0 +1,5 @@
+---
+description: If agent thinks that it needs a library, npm package or a framework which is not yet imported into the project
+alwaysApply: false
+---
+When agent thinks that it needs a new library, package or framework to be imported into a project, the agent should discuss the implementation and seek for explicit approval.

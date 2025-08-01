@@ -13,6 +13,7 @@ import { useUiStore } from '@/core/state/uistate'
 import ItemSelector from '@/core/ui/modals/item-selector/ItemSelector.vue'
 import DataLoading from '@/core/ui/loaders/DataLoading.vue'
 import { ServicePriority, ServiceStatus, type Service } from './types.services.admin'
+import { serviceCreateService } from './service.create.service'
 
 // Initialize stores and i18n
 const { t, locale } = useI18n()
@@ -261,11 +262,12 @@ const createService = async () => {
       access_denied_users: formData.value.accessDeniedUsers || undefined
     }
 
-    // TODO: Create service via API
-    servicesStore.closeServiceEditor()
+    // Create service via API
+    await serviceCreateService.createService(serviceData)
     
   } catch (error) {
     console.error('Error creating service:', error)
+    // Error messages are already handled by the service
   } finally {
     isSubmitting.value = false
   }

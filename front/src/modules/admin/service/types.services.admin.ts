@@ -80,6 +80,19 @@ export interface ServiceError {
   details?: unknown
 }
 
+// Error handling interfaces
+export interface ApiError {
+  message: string
+  code?: string
+  details?: Record<string, unknown>
+}
+
+export interface ServiceError {
+  code?: string
+  message: string
+  details?: unknown
+}
+
 // Create service request interface
 export interface CreateServiceRequest {
   name: string
