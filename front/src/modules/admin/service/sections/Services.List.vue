@@ -16,6 +16,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useUiStore } from '@/core/state/uistate'
+import { useServicesAdminStore } from '../state.services.admin'
 import DataLoading from '@/core/ui/loaders/DataLoading.vue'
 import { ServicePriority, ServiceStatus } from '../types.services.admin'
 import type { Service } from '../types.services.admin'
@@ -33,6 +34,7 @@ type ItemsPerPageOption = 25 | 50 | 100
 // Initialize stores and i18n
 const { t } = useI18n()
 const uiStore = useUiStore()
+const servicesStore = useServicesAdminStore()
 
 // Table and search parameters
 const page = ref<number>(1)
@@ -195,27 +197,13 @@ const handleError = (error: unknown, context: string) => {
 
 // Service action handlers
 const addService = () => {
-  // TODO: Implement service editor
-  uiStore.showSnackbar({
-    message: t('admin.services.messages.addServiceNotImplemented'),
-    type: 'info',
-    timeout: 3000,
-    closable: true,
-    position: 'bottom'
-  })
+  servicesStore.openServiceEditor('creation')
 }
 
 const editService = () => {
   const selectedIds = Array.from(selectedServices.value)
   if (selectedIds.length === 1) {
-    // TODO: Implement service editor
-    uiStore.showSnackbar({
-      message: t('admin.services.messages.editServiceNotImplemented'),
-      type: 'info',
-      timeout: 3000,
-      closable: true,
-      position: 'bottom'
-    })
+    servicesStore.openServiceEditor('edit', selectedIds[0])
   }
 }
 

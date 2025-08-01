@@ -6,11 +6,17 @@ export const useServicesAdminStore = defineStore('servicesAdmin', () => {
   const selectedSectionPath = ref('Services.List')
   const activeComponent = ref('Services.List')
   const expandedSections = ref<string[]>(['Services'])
+  
+  // Editor state
+  const editorMode = ref<'creation' | 'edit'>('creation')
+  const editingServiceId = ref<string | null>(null)
 
   // Getters
   const getSelectedSectionPath = computed(() => selectedSectionPath.value)
   const getActiveComponent = computed(() => activeComponent.value)
   const getExpandedSections = computed(() => expandedSections.value)
+  const getEditorMode = computed(() => editorMode.value)
+  const getEditingServiceId = computed(() => editingServiceId.value)
 
   // Actions
   const setSelectedSection = (sectionPath: string) => {
@@ -42,22 +48,41 @@ export const useServicesAdminStore = defineStore('servicesAdmin', () => {
     }
   }
 
+  // Editor actions
+  const openServiceEditor = (mode: 'creation' | 'edit', serviceId?: string) => {
+    activeComponent.value = 'ServiceEditor'
+    editorMode.value = mode
+    editingServiceId.value = serviceId || null
+  }
+
+  const closeServiceEditor = () => {
+    activeComponent.value = 'Services.List'
+    editorMode.value = 'creation'
+    editingServiceId.value = null
+  }
+
   return {
     // State
     selectedSectionPath,
     activeComponent,
     expandedSections,
+    editorMode,
+    editingServiceId,
     
     // Getters
     getSelectedSectionPath,
     getActiveComponent,
     getExpandedSections,
+    getEditorMode,
+    getEditingServiceId,
     
     // Actions
     setSelectedSection,
     setActiveComponent,
     expandSection,
     collapseSection,
-    toggleSection
+    toggleSection,
+    openServiceEditor,
+    closeServiceEditor
   }
 }) 

@@ -12,6 +12,7 @@ import type { Section } from './types.services.admin'
 // Импорты компонентов секций
 import ServicesList from './sections/Services.List.vue'
 import ServicesSettings from './sections/Services.Settings.vue'
+import ServiceEditor from './ServiceEditor.vue'
 
 // Импортируем Phosphor иконки
 import { 
@@ -55,7 +56,8 @@ const sections = computed<Section[]>(() => {
 // Map section IDs to components
 const sectionComponents = {
   'Services.List': markRaw(ServicesList),
-  'Services.Settings': markRaw(ServicesSettings)
+  'Services.Settings': markRaw(ServicesSettings),
+  'ServiceEditor': markRaw(ServiceEditor)
 }
 
 // Mobile menu state

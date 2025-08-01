@@ -72,6 +72,168 @@
           "cancel": "Cancel",
           "confirm": "Delete"
         }
+      },
+      "editor": {
+        "creation": {
+          "title": "Create New Service"
+        },
+        "edit": {
+          "title": "Edit Service"
+        },
+        "information": {
+          "title": "Basic Information",
+          "uuid": {
+            "label": "Service UUID"
+          },
+          "name": {
+            "label": "Service Name",
+            "required": "Service name is required",
+            "minLength": "Service name must be at least 2 characters",
+            "maxLength": "Service name cannot exceed 250 characters"
+          },
+          "priority": {
+            "label": "Priority",
+            "options": {
+              "critical": "Critical",
+              "high": "High",
+              "medium": "Medium",
+              "low": "Low"
+            }
+          },
+          "status": {
+            "label": "Status",
+            "options": {
+              "drafted": "Drafted",
+              "being_developed": "Being Developed",
+              "being_tested": "Being Tested",
+              "non_compliant": "Non Compliant",
+              "pending_approval": "Pending Approval",
+              "in_production": "In Production",
+              "under_maintenance": "Under Maintenance",
+              "suspended": "Suspended",
+              "being_upgraded": "Being Upgraded",
+              "discontinued": "Discontinued"
+            }
+          }
+        },
+        "owners": {
+          "title": "Owners and Contacts",
+          "owner": {
+            "label": "Owner",
+            "select": "Select Service Owner"
+          },
+          "backupOwner": {
+            "label": "Backup Owner",
+            "select": "Select Backup Owner"
+          },
+          "technicalOwner": {
+            "label": "Technical Owner",
+            "select": "Select Technical Owner"
+          },
+          "backupTechnicalOwner": {
+            "label": "Backup Technical Owner",
+            "select": "Select Backup Technical Owner"
+          },
+          "dispatcher": {
+            "label": "Dispatcher",
+            "select": "Select Dispatcher"
+          }
+        },
+        "support": {
+          "title": "Support Team",
+          "tier1": {
+            "label": "Support Tier 1",
+            "select": "Select Support Tier 1"
+          },
+          "tier2": {
+            "label": "Support Tier 2",
+            "select": "Select Support Tier 2"
+          },
+          "tier3": {
+            "label": "Support Tier 3",
+            "select": "Select Support Tier 3"
+          }
+        },
+        "settings": {
+          "title": "Settings",
+          "isPublic": {
+            "label": "Public Service"
+          }
+        },
+        "description": {
+          "title": "Description and Purpose",
+          "short": {
+            "label": "Short Description",
+            "maxLength": "Short description cannot exceed 250 characters"
+          },
+          "long": {
+            "label": "Detailed Description",
+            "maxLength": "Detailed description cannot exceed 10000 characters"
+          },
+          "purpose": {
+            "label": "Purpose",
+            "maxLength": "Purpose cannot exceed 10000 characters"
+          },
+          "comments": {
+            "label": "Comments",
+            "maxLength": "Comments cannot exceed 10000 characters"
+          }
+        },
+        "access": {
+          "title": "Access Control",
+          "allowedGroups": {
+            "label": "Allowed Groups"
+          },
+          "deniedGroups": {
+            "label": "Denied Groups"
+          },
+          "deniedUsers": {
+            "label": "Denied Users"
+          }
+        },
+        "actions": {
+          "title": "Actions",
+          "create": "Create Service",
+          "save": "Save Changes",
+          "cancel": "Cancel"
+        },
+        "messages": {
+          "validation": {
+            "fillRequired": "Please fill in all required fields"
+          },
+          "owner": {
+            "selected": "Owner selected successfully",
+            "error": "Failed to select owner"
+          },
+          "backupOwner": {
+            "selected": "Backup owner selected successfully",
+            "error": "Failed to select backup owner"
+          },
+          "technicalOwner": {
+            "selected": "Technical owner selected successfully",
+            "error": "Failed to select technical owner"
+          },
+          "backupTechnicalOwner": {
+            "selected": "Backup technical owner selected successfully",
+            "error": "Failed to select backup technical owner"
+          },
+          "dispatcher": {
+            "selected": "Dispatcher selected successfully",
+            "error": "Failed to select dispatcher"
+          },
+          "supportTier1": {
+            "selected": "Support Tier 1 selected successfully",
+            "error": "Failed to select Support Tier 1"
+          },
+          "supportTier2": {
+            "selected": "Support Tier 2 selected successfully",
+            "error": "Failed to select Support Tier 2"
+          },
+          "supportTier3": {
+            "selected": "Support Tier 3 selected successfully",
+            "error": "Failed to select Support Tier 3"
+          }
+        }
       }
     }
   }

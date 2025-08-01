@@ -129,4 +129,12 @@ export interface DeleteServiceResponse extends ApiResponse {
     totalDeleted: number
     totalFailed: number
   }
+}
+
+// Navigation section interface
+export interface Section {
+  id: string
+  name: string
+  icon: string
+  children?: Section[]
 } 
