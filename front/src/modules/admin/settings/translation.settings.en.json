@@ -186,19 +186,19 @@
         "work": {
           "title": "work module",
           "enabled": {
-            "label": "use work module"
+            "label": "display work module"
           }
         },
         "reports": {
           "title": "reports module",
           "enabled": {
-            "label": "use reports module"
+            "label": "display reports module"
           }
         },
         "knowledgebase": {
           "title": "knowledge base module",
           "enabled": {
-            "label": "use knowledge base module"
+            "label": "display knowledge base module"
           }
         },
         "system": {
