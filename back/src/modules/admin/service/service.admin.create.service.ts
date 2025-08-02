@@ -6,7 +6,7 @@
  * - Validates input data for creating services
  * - Checks existence of users/groups for owners and support tiers
  * - Validates unique constraints (name)
- * - Creates new service in database
+ * - Creates new service in database with roles in separate tables
  * - Handles data transformation and business logic
  * - Manages database interactions and error handling
  * 
@@ -15,8 +15,9 @@
  * 2. Validate required fields and data formats
  * 3. Check existence of referenced entities (users/groups)
  * 4. Check unique constraints (name)
- * 5. Create service in database
- * 6. Return formatted response
+ * 5. Create service in database with transaction
+ * 6. Add user and group roles in separate tables
+ * 7. Return formatted response
  */
 
 import { Request } from 'express';
@@ -28,7 +29,7 @@ import type {
     CreateServiceResponse, 
     ServiceError
 } from './types.admin.service';
-import { ServicePriority, ServiceStatus } from './types.admin.service';
+import { ServicePriority, ServiceStatus, ServiceUserRole, ServiceGroupRole } from './types.admin.service';
 import { getRequestorUuidFromReq } from '../../../core/helpers/get.requestor.uuid.from.req';
 import { getUuidByUsername } from '../../../core/helpers/get.uuid.by.username';
 import { getUuidByGroupName } from '../../../core/helpers/get.uuid.by.group.name';
@@ -223,78 +224,181 @@ async function validateCreateServiceData(data: CreateServiceRequest): Promise<vo
 }
 
 /**
- * Creates a new service in the database
+ * Creates user roles for a service
+ * @param client - Database client for transaction
+ * @param serviceId - Service ID
+ * @param data - Service data with user roles
+ * @param requestorUuid - UUID of the user creating the service
+ */
+async function createServiceUserRoles(client: any, serviceId: string, data: CreateServiceRequest, requestorUuid: string): Promise<void> {
+    const userRoles = [
+        { username: data.owner, roleType: ServiceUserRole.OWNER },
+        { username: data.backup_owner, roleType: ServiceUserRole.BACKUP_OWNER },
+        { username: data.technical_owner, roleType: ServiceUserRole.TECHNICAL_OWNER },
+        { username: data.backup_technical_owner, roleType: ServiceUserRole.BACKUP_TECHNICAL_OWNER },
+        { username: data.dispatcher, roleType: ServiceUserRole.DISPATCHER }
+    ];
+
+    for (const userRole of userRoles) {
+        if (userRole.username) {
+            try {
+                const userId = await getUuidByUsername(userRole.username);
+                if (userId) {
+                    await client.query(queries.createServiceUser, [
+                        serviceId, userId, userRole.roleType, requestorUuid
+                    ]);
+                    console.log(`[CreateServiceService] Created user role: ${userRole.roleType} = ${userRole.username}`);
+                }
+            } catch (error) {
+                console.error(`[CreateServiceService] Error creating user role ${userRole.roleType}:`, error);
+                throw error;
+            }
+        }
+    }
+}
+
+/**
+ * Creates group roles for a service
+ * @param client - Database client for transaction
+ * @param serviceId - Service ID
+ * @param data - Service data with group roles
+ * @param requestorUuid - UUID of the user creating the service
+ */
+async function createServiceGroupRoles(client: any, serviceId: string, data: CreateServiceRequest, requestorUuid: string): Promise<void> {
+    const groupRoles = [
+        { groupName: data.support_tier1, roleType: ServiceGroupRole.SUPPORT_TIER1 },
+        { groupName: data.support_tier2, roleType: ServiceGroupRole.SUPPORT_TIER2 },
+        { groupName: data.support_tier3, roleType: ServiceGroupRole.SUPPORT_TIER3 }
+    ];
+
+    for (const groupRole of groupRoles) {
+        if (groupRole.groupName) {
+            try {
+                const groupId = await getUuidByGroupName(groupRole.groupName);
+                if (groupId) {
+                    await client.query(queries.createServiceGroup, [
+                        serviceId, groupId, groupRole.roleType, requestorUuid
+                    ]);
+                    console.log(`[CreateServiceService] Created group role: ${groupRole.roleType} = ${groupRole.groupName}`);
+                }
+            } catch (error) {
+                console.error(`[CreateServiceService] Error creating group role ${groupRole.roleType}:`, error);
+                throw error;
+            }
+        }
+    }
+}
+
+/**
+ * Creates access control roles for a service
+ * @param client - Database client for transaction
+ * @param serviceId - Service ID
+ * @param data - Service data with access control
+ * @param requestorUuid - UUID of the user creating the service
+ */
+async function createServiceAccessRoles(client: any, serviceId: string, data: CreateServiceRequest, requestorUuid: string): Promise<void> {
+    // Handle access allowed groups (multiple groups)
+    if (data.access_allowed_groups) {
+        const allowedGroups = data.access_allowed_groups.split(',').map(g => g.trim()).filter(g => g);
+        for (const groupName of allowedGroups) {
+            try {
+                const groupId = await getUuidByGroupName(groupName);
+                if (groupId) {
+                    await client.query(queries.createServiceGroup, [
+                        serviceId, groupId, ServiceGroupRole.ACCESS_ALLOWED, requestorUuid
+                    ]);
+                    console.log(`[CreateServiceService] Created access allowed group: ${groupName}`);
+                }
+            } catch (error) {
+                console.error(`[CreateServiceService] Error creating access allowed group ${groupName}:`, error);
+                throw error;
+            }
+        }
+    }
+
+    // Handle access denied groups (multiple groups)
+    if (data.access_denied_groups) {
+        const deniedGroups = data.access_denied_groups.split(',').map(g => g.trim()).filter(g => g);
+        for (const groupName of deniedGroups) {
+            try {
+                const groupId = await getUuidByGroupName(groupName);
+                if (groupId) {
+                    await client.query(queries.createServiceGroup, [
+                        serviceId, groupId, ServiceGroupRole.ACCESS_DENIED, requestorUuid
+                    ]);
+                    console.log(`[CreateServiceService] Created access denied group: ${groupName}`);
+                }
+            } catch (error) {
+                console.error(`[CreateServiceService] Error creating access denied group ${groupName}:`, error);
+                throw error;
+            }
+        }
+    }
+
+    // Handle access denied users (multiple users)
+    if (data.access_denied_users) {
+        const deniedUsers = data.access_denied_users.split(',').map(u => u.trim()).filter(u => u);
+        for (const username of deniedUsers) {
+            try {
+                const userId = await getUuidByUsername(username);
+                if (userId) {
+                    await client.query(queries.createServiceUser, [
+                        serviceId, userId, ServiceUserRole.ACCESS_DENIED, requestorUuid
+                    ]);
+                    console.log(`[CreateServiceService] Created access denied user: ${username}`);
+                }
+            } catch (error) {
+                console.error(`[CreateServiceService] Error creating access denied user ${username}:`, error);
+                throw error;
+            }
+        }
+    }
+}
+
+/**
+ * Creates a new service in the database with all roles
  * @param data - Service data to create
  * @param requestorUuid - UUID of the user creating the service
  * @returns Promise<CreateServiceResponse>
  */
 async function createServiceInDatabase(data: CreateServiceRequest, requestorUuid: string): Promise<CreateServiceResponse> {
+    const client = await pool.connect();
+    
     try {
-        // Convert usernames to UUIDs
-        const ownerUuid = data.owner ? await getUuidByUsername(data.owner) : null;
-        const backupOwnerUuid = data.backup_owner ? await getUuidByUsername(data.backup_owner) : null;
-        const technicalOwnerUuid = data.technical_owner ? await getUuidByUsername(data.technical_owner) : null;
-        const backupTechnicalOwnerUuid = data.backup_technical_owner ? await getUuidByUsername(data.backup_technical_owner) : null;
-        const dispatcherUuid = data.dispatcher ? await getUuidByUsername(data.dispatcher) : null;
-        const supportTier1Uuid = data.support_tier1 ? await getUuidByGroupName(data.support_tier1) : null;
-        const supportTier2Uuid = data.support_tier2 ? await getUuidByGroupName(data.support_tier2) : null;
-        const supportTier3Uuid = data.support_tier3 ? await getUuidByGroupName(data.support_tier3) : null;
+        await client.query('BEGIN');
 
-        // Prepare data for insertion
-        const insertData = {
-            name: data.name.trim(),
-            support_tier1: supportTier1Uuid,
-            support_tier2: supportTier2Uuid,
-            support_tier3: supportTier3Uuid,
-            owner: ownerUuid,
-            backup_owner: backupOwnerUuid,
-            technical_owner: technicalOwnerUuid,
-            backup_technical_owner: backupTechnicalOwnerUuid,
-            dispatcher: dispatcherUuid,
-            priority: data.priority || ServicePriority.LOW,
-            status: data.status || ServiceStatus.DRAFTED,
-            description_short: data.description_short?.trim() || null,
-            description_long: data.description_long?.trim() || null,
-            purpose: data.purpose?.trim() || null,
-            comments: data.comments?.trim() || null,
-            is_public: data.is_public || false,
-            access_allowed_groups: data.access_allowed_groups || null,
-            access_denied_groups: data.access_denied_groups || null,
-            access_denied_users: data.access_denied_users || null,
-            created_by: requestorUuid
-        };
-
-        // Execute insert query
-        const result = await pool.query(queries.createService, [
-            insertData.name,
-            insertData.support_tier1,
-            insertData.support_tier2,
-            insertData.support_tier3,
-            insertData.owner,
-            insertData.backup_owner,
-            insertData.technical_owner,
-            insertData.backup_technical_owner,
-            insertData.dispatcher,
-            insertData.priority,
-            insertData.status,
-            insertData.description_short,
-            insertData.description_long,
-            insertData.purpose,
-            insertData.comments,
-            insertData.is_public,
-            insertData.access_allowed_groups,
-            insertData.access_denied_groups,
-            insertData.access_denied_users,
-            insertData.created_by
+        // Create service in main table
+        const serviceResult = await client.query(queries.createService, [
+            data.name.trim(),
+            data.priority || ServicePriority.LOW,
+            data.status || ServiceStatus.DRAFTED,
+            data.description_short?.trim() || null,
+            data.description_long?.trim() || null,
+            data.purpose?.trim() || null,
+            data.comments?.trim() || null,
+            data.is_public || false,
+            requestorUuid
         ]);
 
-        const createdService = result.rows[0];
+        const createdService = serviceResult.rows[0];
+        const serviceId = createdService.id;
 
         console.log('[CreateServiceService] Service created successfully', {
-            serviceId: createdService.id,
+            serviceId,
             serviceName: createdService.name,
             createdBy: requestorUuid
         });
+
+        // Create user roles
+        await createServiceUserRoles(client, serviceId, data, requestorUuid);
+
+        // Create group roles
+        await createServiceGroupRoles(client, serviceId, data, requestorUuid);
+
+        // Create access control roles
+        await createServiceAccessRoles(client, serviceId, data, requestorUuid);
+
+        await client.query('COMMIT');
 
         return {
             success: true,
@@ -306,12 +410,15 @@ async function createServiceInDatabase(data: CreateServiceRequest, requestorUuid
         };
 
     } catch (error) {
+        await client.query('ROLLBACK');
         console.error('[CreateServiceService] Database error creating service:', error);
         throw {
             code: 'DATABASE_ERROR',
             message: 'Failed to create service in database',
             details: { error }
         };
+    } finally {
+        client.release();
     }
 }
 
@@ -345,7 +452,7 @@ export async function createService(req: Request): Promise<CreateServiceResponse
         // Validate service data
         await validateCreateServiceData(serviceData);
 
-        // Create service in database
+        // Create service in database with all roles
         const result = await createServiceInDatabase(serviceData, requestorUuid);
 
         return result;

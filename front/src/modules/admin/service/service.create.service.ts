@@ -5,11 +5,12 @@
  * FRONTEND service for creating services through API.
  *
  * Functionality:
- * - Creates services via API
+ * - Creates services via API with new architecture
  * - Handles validation and error responses
  * - Provides user-friendly error messages
  * - Integrates with UI store for toast notifications
  * - Follows established patterns from other services
+ * - Supports multiple access groups and users
  */
 
 import { api } from '@/core/api/service.axios'
@@ -48,10 +49,25 @@ export const serviceCreateService = {
     })
 
     try {
+      // Prepare data for API - convert arrays to comma-separated strings for access fields
+      const apiData = {
+        ...serviceData,
+        // Convert access arrays to comma-separated strings if they are arrays
+        access_allowed_groups: Array.isArray(serviceData.access_allowed_groups) 
+          ? serviceData.access_allowed_groups.join(',') 
+          : serviceData.access_allowed_groups,
+        access_denied_groups: Array.isArray(serviceData.access_denied_groups) 
+          ? serviceData.access_denied_groups.join(',') 
+          : serviceData.access_denied_groups,
+        access_denied_users: Array.isArray(serviceData.access_denied_users) 
+          ? serviceData.access_denied_users.join(',') 
+          : serviceData.access_denied_users
+      }
+
       // Make API request
       const response = await api.post<CreateServiceResponse>(
         '/api/admin/services/create',
-        serviceData
+        apiData
       )
 
       // Validate response format

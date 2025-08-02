@@ -59,9 +59,9 @@ const formData = ref({
   purpose: '',
   comments: '',
   isPublic: false,
-  accessAllowedGroups: '',
-  accessDeniedGroups: '',
-  accessDeniedUsers: ''
+  accessAllowedGroups: [] as string[],
+  accessDeniedGroups: [] as string[],
+  accessDeniedUsers: [] as string[]
 })
 
 // Computed properties
@@ -157,9 +157,9 @@ const resetForm = () => {
     purpose: '',
     comments: '',
     isPublic: false,
-    accessAllowedGroups: '',
-    accessDeniedGroups: '',
-    accessDeniedUsers: ''
+    accessAllowedGroups: [],
+    accessDeniedGroups: [],
+    accessDeniedUsers: []
   }
   form.value?.reset()
 }
@@ -240,9 +240,9 @@ const populateFormWithService = (service: Service) => {
     purpose: service.purpose || '',
     comments: service.comments || '',
     isPublic: service.is_public,
-    accessAllowedGroups: service.access_allowed_groups || '',
-    accessDeniedGroups: service.access_denied_groups || '',
-    accessDeniedUsers: service.access_denied_users || ''
+    accessAllowedGroups: service.access_allowed_groups ? service.access_allowed_groups.split(',').map(g => g.trim()) : [],
+    accessDeniedGroups: service.access_denied_groups ? service.access_denied_groups.split(',').map(g => g.trim()) : [],
+    accessDeniedUsers: service.access_denied_users ? service.access_denied_users.split(',').map(u => u.trim()) : []
   }
 }
 
@@ -272,9 +272,9 @@ const createService = async () => {
       purpose: formData.value.purpose?.trim() || undefined,
       comments: formData.value.comments?.trim() || undefined,
       is_public: formData.value.isPublic,
-      access_allowed_groups: formData.value.accessAllowedGroups || undefined,
-      access_denied_groups: formData.value.accessDeniedGroups || undefined,
-      access_denied_users: formData.value.accessDeniedUsers || undefined
+      access_allowed_groups: formData.value.accessAllowedGroups.length > 0 ? formData.value.accessAllowedGroups : undefined,
+      access_denied_groups: formData.value.accessDeniedGroups.length > 0 ? formData.value.accessDeniedGroups : undefined,
+      access_denied_users: formData.value.accessDeniedUsers.length > 0 ? formData.value.accessDeniedUsers : undefined
     }
 
     // Create service via API
@@ -415,8 +415,10 @@ const handleSupportTier3Selected = async (result: any) => {
 }
 
 const handleAccessAllowedGroupsSelected = async (result: any) => {
-  if (result && result.success && result.selectedGroup && result.selectedGroup.name) {
-    formData.value.accessAllowedGroups = result.selectedGroup.name
+  if (result && result.success && result.selectedItems) {
+    // Handle multiple selected groups
+    const groupNames = result.selectedItems.map((item: any) => item.name).filter(Boolean)
+    formData.value.accessAllowedGroups = groupNames
     uiStore.showSuccessSnackbar(t('admin.services.editor.messages.accessAllowedGroups.selected'))
   } else {
     uiStore.showErrorSnackbar(result?.message || t('admin.services.editor.messages.accessAllowedGroups.error'))
@@ -425,8 +427,10 @@ const handleAccessAllowedGroupsSelected = async (result: any) => {
 }
 
 const handleAccessDeniedGroupsSelected = async (result: any) => {
-  if (result && result.success && result.selectedGroup && result.selectedGroup.name) {
-    formData.value.accessDeniedGroups = result.selectedGroup.name
+  if (result && result.success && result.selectedItems) {
+    // Handle multiple selected groups
+    const groupNames = result.selectedItems.map((item: any) => item.name).filter(Boolean)
+    formData.value.accessDeniedGroups = groupNames
     uiStore.showSuccessSnackbar(t('admin.services.editor.messages.accessDeniedGroups.selected'))
   } else {
     uiStore.showErrorSnackbar(result?.message || t('admin.services.editor.messages.accessDeniedGroups.error'))
@@ -435,8 +439,10 @@ const handleAccessDeniedGroupsSelected = async (result: any) => {
 }
 
 const handleAccessDeniedUsersSelected = async (result: any) => {
-  if (result && result.success && result.selectedUser && result.selectedUser.name) {
-    formData.value.accessDeniedUsers = result.selectedUser.name
+  if (result && result.success && result.selectedItems) {
+    // Handle multiple selected users
+    const userNames = result.selectedItems.map((item: any) => item.name).filter(Boolean)
+    formData.value.accessDeniedUsers = userNames
     uiStore.showSuccessSnackbar(t('admin.services.editor.messages.accessDeniedUsers.selected'))
   } else {
     uiStore.showErrorSnackbar(result?.message || t('admin.services.editor.messages.accessDeniedUsers.error'))
@@ -812,7 +818,7 @@ onMounted(() => {
                     >
                       <div class="d-flex align-center">
                         <v-text-field
-                          v-model="formData.accessAllowedGroups"
+                          :model-value="formData.accessAllowedGroups.join(', ')"
                           :label="t('admin.services.editor.access.allowedGroups.label')"
                           readonly
                           append-inner-icon="mdi-account-search"
@@ -827,7 +833,7 @@ onMounted(() => {
                     >
                       <div class="d-flex align-center">
                         <v-text-field
-                          v-model="formData.accessDeniedGroups"
+                          :model-value="formData.accessDeniedGroups.join(', ')"
                           :label="t('admin.services.editor.access.deniedGroups.label')"
                           readonly
                           append-inner-icon="mdi-account-search"
@@ -842,7 +848,7 @@ onMounted(() => {
                     >
                       <div class="d-flex align-center">
                         <v-text-field
-                          v-model="formData.accessDeniedUsers"
+                          :model-value="formData.accessDeniedUsers.join(', ')"
                           :label="t('admin.services.editor.access.deniedUsers.label')"
                           readonly
                           append-inner-icon="mdi-account-search"
@@ -1047,7 +1053,7 @@ onMounted(() => {
       search-service="searchGroups"
       action-service="returnSelectedGroup"
       :max-results="20"
-      :max-items="1"
+      :max-items="10"
       :action-button-text="t('admin.services.editor.actions.save')"
       @close="showAccessAllowedGroupsSelector = false" 
       @action-performed="handleAccessAllowedGroupsSelected"
@@ -1063,7 +1069,7 @@ onMounted(() => {
       search-service="searchGroups"
       action-service="returnSelectedGroup"
       :max-results="20"
-      :max-items="1"
+      :max-items="10"
       :action-button-text="t('admin.services.editor.actions.save')"
       @close="showAccessDeniedGroupsSelector = false" 
       @action-performed="handleAccessDeniedGroupsSelected"
@@ -1079,7 +1085,7 @@ onMounted(() => {
       search-service="searchUsers"
       action-service="returnSelectedUsername"
       :max-results="20"
-      :max-items="1"
+      :max-items="10"
       :action-button-text="t('admin.services.editor.actions.save')"
       @close="showAccessDeniedUsersSelector = false" 
       @action-performed="handleAccessDeniedUsersSelected"

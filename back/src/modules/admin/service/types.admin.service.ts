@@ -29,6 +29,25 @@ export enum ServiceStatus {
     DISCONTINUED = 'discontinued'
 }
 
+// Service user roles enum
+export enum ServiceUserRole {
+    OWNER = 'owner',
+    BACKUP_OWNER = 'backup_owner',
+    TECHNICAL_OWNER = 'technical_owner',
+    BACKUP_TECHNICAL_OWNER = 'backup_technical_owner',
+    DISPATCHER = 'dispatcher',
+    ACCESS_DENIED = 'access_denied'
+}
+
+// Service group roles enum
+export enum ServiceGroupRole {
+    SUPPORT_TIER1 = 'support_tier1',
+    SUPPORT_TIER2 = 'support_tier2',
+    SUPPORT_TIER3 = 'support_tier3',
+    ACCESS_ALLOWED = 'access_allowed',
+    ACCESS_DENIED = 'access_denied'
+}
+
 // Service interface - полная версия для редактора
 export interface Service {
     id: string
