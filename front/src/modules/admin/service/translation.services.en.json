@@ -182,14 +182,20 @@
         "access": {
           "title": "access control",
           "allowedGroups": {
-            "label": "allowed groups"
+            "label": "allowed groups",
+            "select": "select allowed groups"
           },
           "deniedGroups": {
-            "label": "denied groups"
+            "label": "denied groups",
+            "select": "select denied groups"
           },
           "deniedUsers": {
-            "label": "denied users"
-          }
+            "label": "denied users",
+            "select": "select denied users"
+          },
+          "addGroups": "add groups",
+          "addUsers": "add users",
+          "addMore": "add more"
         },
         "actions": {
           "title": "actions",
@@ -232,6 +238,21 @@
           "supportTier3": {
             "selected": "Support Tier 3 selected successfully",
             "error": "Failed to select Support Tier 3"
+          },
+          "accessAllowedGroups": {
+            "selected": "Allowed groups selected successfully",
+            "error": "Failed to select allowed groups",
+            "removed": "Group removed from allowed groups"
+          },
+          "accessDeniedGroups": {
+            "selected": "Denied groups selected successfully",
+            "error": "Failed to select denied groups",
+            "removed": "Group removed from denied groups"
+          },
+          "accessDeniedUsers": {
+            "selected": "Denied users selected successfully",
+            "error": "Failed to select denied users",
+            "removed": "User removed from denied users"
           }
         }
       }

@@ -416,9 +416,16 @@ const handleSupportTier3Selected = async (result: any) => {
 
 const handleAccessAllowedGroupsSelected = async (result: any) => {
   if (result && result.success && result.selectedItems) {
-    // Handle multiple selected groups
-    const groupNames = result.selectedItems.map((item: any) => item.name).filter(Boolean)
-    formData.value.accessAllowedGroups = groupNames
+    // Handle multiple selected groups - add to existing ones
+    const newGroupNames = result.selectedItems.map((item: any) => item.name).filter(Boolean)
+    
+    // Add new groups to existing ones, avoiding duplicates
+    newGroupNames.forEach(groupName => {
+      if (!formData.value.accessAllowedGroups.includes(groupName)) {
+        formData.value.accessAllowedGroups.push(groupName)
+      }
+    })
+    
     uiStore.showSuccessSnackbar(t('admin.services.editor.messages.accessAllowedGroups.selected'))
   } else {
     uiStore.showErrorSnackbar(result?.message || t('admin.services.editor.messages.accessAllowedGroups.error'))
@@ -428,9 +435,16 @@ const handleAccessAllowedGroupsSelected = async (result: any) => {
 
 const handleAccessDeniedGroupsSelected = async (result: any) => {
   if (result && result.success && result.selectedItems) {
-    // Handle multiple selected groups
-    const groupNames = result.selectedItems.map((item: any) => item.name).filter(Boolean)
-    formData.value.accessDeniedGroups = groupNames
+    // Handle multiple selected groups - add to existing ones
+    const newGroupNames = result.selectedItems.map((item: any) => item.name).filter(Boolean)
+    
+    // Add new groups to existing ones, avoiding duplicates
+    newGroupNames.forEach(groupName => {
+      if (!formData.value.accessDeniedGroups.includes(groupName)) {
+        formData.value.accessDeniedGroups.push(groupName)
+      }
+    })
+    
     uiStore.showSuccessSnackbar(t('admin.services.editor.messages.accessDeniedGroups.selected'))
   } else {
     uiStore.showErrorSnackbar(result?.message || t('admin.services.editor.messages.accessDeniedGroups.error'))
@@ -440,14 +454,46 @@ const handleAccessDeniedGroupsSelected = async (result: any) => {
 
 const handleAccessDeniedUsersSelected = async (result: any) => {
   if (result && result.success && result.selectedItems) {
-    // Handle multiple selected users
-    const userNames = result.selectedItems.map((item: any) => item.name).filter(Boolean)
-    formData.value.accessDeniedUsers = userNames
+    // Handle multiple selected users - add to existing ones
+    const newUserNames = result.selectedItems.map((item: any) => item.name).filter(Boolean)
+    
+    // Add new users to existing ones, avoiding duplicates
+    newUserNames.forEach(userName => {
+      if (!formData.value.accessDeniedUsers.includes(userName)) {
+        formData.value.accessDeniedUsers.push(userName)
+      }
+    })
+    
     uiStore.showSuccessSnackbar(t('admin.services.editor.messages.accessDeniedUsers.selected'))
   } else {
     uiStore.showErrorSnackbar(result?.message || t('admin.services.editor.messages.accessDeniedUsers.error'))
   }
   showAccessDeniedUsersSelector.value = false
+}
+
+// Methods for removing items from chips
+const removeAllowedGroup = (groupName: string) => {
+  const index = formData.value.accessAllowedGroups.indexOf(groupName)
+  if (index > -1) {
+    formData.value.accessAllowedGroups.splice(index, 1)
+    uiStore.showSuccessSnackbar(t('admin.services.editor.messages.accessAllowedGroups.removed'))
+  }
+}
+
+const removeDeniedGroup = (groupName: string) => {
+  const index = formData.value.accessDeniedGroups.indexOf(groupName)
+  if (index > -1) {
+    formData.value.accessDeniedGroups.splice(index, 1)
+    uiStore.showSuccessSnackbar(t('admin.services.editor.messages.accessDeniedGroups.removed'))
+  }
+}
+
+const removeDeniedUser = (userName: string) => {
+  const index = formData.value.accessDeniedUsers.indexOf(userName)
+  if (index > -1) {
+    formData.value.accessDeniedUsers.splice(index, 1)
+    uiStore.showSuccessSnackbar(t('admin.services.editor.messages.accessDeniedUsers.removed'))
+  }
 }
 
 // Watch for language changes
@@ -816,45 +862,138 @@ onMounted(() => {
                       cols="12"
                       md="4"
                     >
-                      <div class="d-flex align-center">
-                        <v-text-field
-                          :model-value="formData.accessAllowedGroups.join(', ')"
-                          :label="t('admin.services.editor.access.allowedGroups.label')"
-                          readonly
-                          append-inner-icon="mdi-account-search"
-                          @click:append-inner="showAccessAllowedGroupsSelector = true"
-                          color="teal"
-                        />
+                      <div class="access-control-field">
+                        <v-label class="text-body-2 mb-2">
+                          {{ t('admin.services.editor.access.allowedGroups.label') }}
+                        </v-label>
+                        <div class="chips-container">
+                          <v-chip
+                            v-for="group in formData.accessAllowedGroups"
+                            :key="group"
+                            closable
+                            color="teal"
+                            variant="outlined"
+                            size="small"
+                            class="ma-1"
+                            @click:close="removeAllowedGroup(group)"
+                          >
+                            {{ group }}
+                          </v-chip>
+                          <v-btn
+                            v-if="formData.accessAllowedGroups.length === 0"
+                            variant="outlined"
+                            color="teal"
+                            size="small"
+                            prepend-icon="mdi-account-search"
+                            @click="showAccessAllowedGroupsSelector = true"
+                            class="ma-1"
+                          >
+                            {{ t('admin.services.editor.access.addGroups') }}
+                          </v-btn>
+                          <v-btn
+                            v-else
+                            variant="text"
+                            color="teal"
+                            size="small"
+                            prepend-icon="mdi-plus"
+                            @click="showAccessAllowedGroupsSelector = true"
+                            class="ma-1"
+                          >
+                            {{ t('admin.services.editor.access.addMore') }}
+                          </v-btn>
+                        </div>
                       </div>
                     </v-col>
                     <v-col
                       cols="12"
                       md="4"
                     >
-                      <div class="d-flex align-center">
-                        <v-text-field
-                          :model-value="formData.accessDeniedGroups.join(', ')"
-                          :label="t('admin.services.editor.access.deniedGroups.label')"
-                          readonly
-                          append-inner-icon="mdi-account-search"
-                          @click:append-inner="showAccessDeniedGroupsSelector = true"
-                          color="teal"
-                        />
+                      <div class="access-control-field">
+                        <v-label class="text-body-2 mb-2">
+                          {{ t('admin.services.editor.access.deniedGroups.label') }}
+                        </v-label>
+                        <div class="chips-container">
+                          <v-chip
+                            v-for="group in formData.accessDeniedGroups"
+                            :key="group"
+                            closable
+                            color="red"
+                            variant="outlined"
+                            size="small"
+                            class="ma-1"
+                            @click:close="removeDeniedGroup(group)"
+                          >
+                            {{ group }}
+                          </v-chip>
+                          <v-btn
+                            v-if="formData.accessDeniedGroups.length === 0"
+                            variant="outlined"
+                            color="red"
+                            size="small"
+                            prepend-icon="mdi-account-search"
+                            @click="showAccessDeniedGroupsSelector = true"
+                            class="ma-1"
+                          >
+                            {{ t('admin.services.editor.access.addGroups') }}
+                          </v-btn>
+                          <v-btn
+                            v-else
+                            variant="text"
+                            color="red"
+                            size="small"
+                            prepend-icon="mdi-plus"
+                            @click="showAccessDeniedGroupsSelector = true"
+                            class="ma-1"
+                          >
+                            {{ t('admin.services.editor.access.addMore') }}
+                          </v-btn>
+                        </div>
                       </div>
                     </v-col>
                     <v-col
                       cols="12"
                       md="4"
                     >
-                      <div class="d-flex align-center">
-                        <v-text-field
-                          :model-value="formData.accessDeniedUsers.join(', ')"
-                          :label="t('admin.services.editor.access.deniedUsers.label')"
-                          readonly
-                          append-inner-icon="mdi-account-search"
-                          @click:append-inner="showAccessDeniedUsersSelector = true"
-                          color="teal"
-                        />
+                      <div class="access-control-field">
+                        <v-label class="text-body-2 mb-2">
+                          {{ t('admin.services.editor.access.deniedUsers.label') }}
+                        </v-label>
+                        <div class="chips-container">
+                          <v-chip
+                            v-for="user in formData.accessDeniedUsers"
+                            :key="user"
+                            closable
+                            color="red"
+                            variant="outlined"
+                            size="small"
+                            class="ma-1"
+                            @click:close="removeDeniedUser(user)"
+                          >
+                            {{ user }}
+                          </v-chip>
+                          <v-btn
+                            v-if="formData.accessDeniedUsers.length === 0"
+                            variant="outlined"
+                            color="red"
+                            size="small"
+                            prepend-icon="mdi-account-search"
+                            @click="showAccessDeniedUsersSelector = true"
+                            class="ma-1"
+                          >
+                            {{ t('admin.services.editor.access.addUsers') }}
+                          </v-btn>
+                          <v-btn
+                            v-else
+                            variant="text"
+                            color="red"
+                            size="small"
+                            prepend-icon="mdi-plus"
+                            @click="showAccessDeniedUsersSelector = true"
+                            class="ma-1"
+                          >
+                            {{ t('admin.services.editor.access.addMore') }}
+                          </v-btn>
+                        </div>
                       </div>
                     </v-col>
                   </v-row>
@@ -1143,5 +1282,31 @@ onMounted(() => {
 /* Content container */
 .content-container {
   padding: 16px;
+}
+
+/* Access control field styles */
+.access-control-field {
+  width: 100%;
+}
+
+.chips-container {
+  min-height: 40px;
+  padding: 8px;
+  border: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
+  border-radius: 4px;
+  background-color: rgba(var(--v-theme-surface), 1);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+}
+
+.chips-container:hover {
+  border-color: rgba(var(--v-theme-primary), 0.5);
+}
+
+.chips-container:focus-within {
+  border-color: rgba(var(--v-theme-primary), 1);
+  box-shadow: 0 0 0 2px rgba(var(--v-theme-primary), 0.2);
 }
 </style> 
