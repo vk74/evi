@@ -1051,7 +1051,7 @@ onMounted(() => {
     <ItemSelector 
       :title="t('admin.services.editor.access.allowedGroups.select')"
       search-service="searchGroups"
-      action-service="returnSelectedGroup"
+      action-service="returnMultipleGroups"
       :max-results="20"
       :max-items="10"
       :action-button-text="t('admin.services.editor.actions.save')"
@@ -1067,7 +1067,7 @@ onMounted(() => {
     <ItemSelector 
       :title="t('admin.services.editor.access.deniedGroups.select')"
       search-service="searchGroups"
-      action-service="returnSelectedGroup"
+      action-service="returnMultipleGroups"
       :max-results="20"
       :max-items="10"
       :action-button-text="t('admin.services.editor.actions.save')"
@@ -1083,7 +1083,7 @@ onMounted(() => {
     <ItemSelector 
       :title="t('admin.services.editor.access.deniedUsers.select')"
       search-service="searchUsers"
-      action-service="returnSelectedUsername"
+      action-service="returnMultipleUsernames"
       :max-results="20"
       :max-items="10"
       :action-button-text="t('admin.services.editor.actions.save')"

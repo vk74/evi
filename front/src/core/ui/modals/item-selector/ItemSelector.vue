@@ -18,6 +18,8 @@ import addUsersToGroup from '@/core/ui/modals/item-selector/service.add.users.to
 import changeGroupOwner from './service.change.group.owner'
 import returnSelectedUsername from './service.return.selected.username'
 import returnSelectedGroup from './service.return.selected.group'
+import returnMultipleGroups from './service.return.multiple.groups'
+import returnMultipleUsernames from './service.return.multiple.usernames'
 // При добавлении новых сервисов, импортируйте их здесь
 
 // Маппинг имен сервисов в функции
@@ -32,6 +34,8 @@ const actionServiceMap = {
   changeGroupOwner: changeGroupOwner,
   returnSelectedUsername: returnSelectedUsername,
   returnSelectedGroup: returnSelectedGroup,
+  returnMultipleGroups: returnMultipleGroups,
+  returnMultipleUsernames: returnMultipleUsernames,
   // Добавьте новые сервисы действий здесь
 }
 
