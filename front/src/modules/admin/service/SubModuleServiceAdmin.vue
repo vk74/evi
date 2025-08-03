@@ -12,7 +12,7 @@ import type { Section } from './types.services.admin'
 // Импорты компонентов секций
 import ServicesList from './sections/Services.List.vue'
 import ServicesSettings from './sections/Services.Settings.vue'
-import ServiceEditor from './ServiceEditor.vue'
+import ServiceEditor from './sections/ServiceEditor.vue'
 
 // Импортируем Phosphor иконки
 import { 
@@ -20,7 +20,8 @@ import {
   PhList, 
   PhGear, 
   PhCaretDown, 
-  PhCaretRight 
+  PhCaretRight,
+  PhPencilSimple
 } from '@phosphor-icons/vue'
 
 // Инициализация store и i18n
@@ -34,17 +35,22 @@ const sections = computed<Section[]>(() => {
   
   return [
     {
-      id: 'Services',
+      id: 'services',
       name: t('admin.services.navigation.services'),
       icon: 'PhFolder',
       children: [
         {
-          id: 'Services.List',
-          name: t('admin.services.navigation.list'),
+          id: 'services.serviceslist',
+          name: t('admin.services.navigation.serviceslist'),
           icon: 'PhList'
         },
         {
-          id: 'Services.Settings',
+          id: 'services.serviceeditor',
+          name: t('admin.services.navigation.serviceeditor'),
+          icon: 'PhPencilSimple'
+        },
+        {
+          id: 'services.settings',
           name: t('admin.services.navigation.settings'),
           icon: 'PhGear'
         }
@@ -55,8 +61,9 @@ const sections = computed<Section[]>(() => {
 
 // Map section IDs to components
 const sectionComponents = {
-  'Services.List': markRaw(ServicesList),
-  'Services.Settings': markRaw(ServicesSettings),
+  'services.serviceslist': markRaw(ServicesList),
+  'services.settings': markRaw(ServicesSettings),
+  'services.serviceeditor': markRaw(ServiceEditor),
   'ServiceEditor': markRaw(ServiceEditor)
 }
 
@@ -251,6 +258,8 @@ const getIconComponent = (iconName: string) => {
       return PhCaretDown
     case 'PhCaretRight':
       return PhCaretRight
+    case 'PhPencilSimple':
+      return PhPencilSimple
     default:
       return null
   }

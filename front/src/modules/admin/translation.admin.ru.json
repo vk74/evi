@@ -21,6 +21,15 @@
       }
     },
 
+    "services": {
+      "navigation": {
+        "services": "сервисы",
+        "serviceslist": "список сервисов",
+        "serviceeditor": "редактор сервисов",
+        "settings": "настройки"
+      }
+    },
+
     "users": {
       "sections": {
         "usersList": "список пользователей",

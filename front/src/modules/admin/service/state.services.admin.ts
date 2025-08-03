@@ -4,9 +4,9 @@ import type { Service } from './types.services.admin'
 
 export const useServicesAdminStore = defineStore('servicesAdmin', () => {
   // State
-  const selectedSectionPath = ref('Services.List')
-  const activeComponent = ref('Services.List')
-  const expandedSections = ref<string[]>(['Services'])
+  const selectedSectionPath = ref('services.serviceslist')
+  const activeComponent = ref('services.serviceslist')
+  const expandedSections = ref<string[]>(['services'])
   
   // Editor state
   const editorMode = ref<'creation' | 'edit'>('creation')
@@ -56,6 +56,7 @@ export const useServicesAdminStore = defineStore('servicesAdmin', () => {
   // Editor actions
   const openServiceEditor = (mode: 'creation' | 'edit', serviceId?: string, serviceData?: Service) => {
     activeComponent.value = 'ServiceEditor'
+    selectedSectionPath.value = 'services.serviceeditor'
     editorMode.value = mode
     editingServiceId.value = serviceId || null
     editingServiceData.value = serviceData || null
@@ -63,7 +64,7 @@ export const useServicesAdminStore = defineStore('servicesAdmin', () => {
   }
 
   const closeServiceEditor = () => {
-    activeComponent.value = 'Services.List'
+    activeComponent.value = 'services.serviceslist'
     editorMode.value = 'creation'
     editingServiceId.value = null
     editingServiceData.value = null

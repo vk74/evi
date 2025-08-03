@@ -11,13 +11,13 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, watch, nextTick } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { useServicesAdminStore } from './state.services.admin'
+import { useServicesAdminStore } from '../state.services.admin'
 import { useUiStore } from '@/core/state/uistate'
 import ItemSelector from '@/core/ui/modals/item-selector/ItemSelector.vue'
 import DataLoading from '@/core/ui/loaders/DataLoading.vue'
 import IconPicker from '@/core/ui/modals/icon-picker/IconPicker.vue'
-import { ServicePriority, ServiceStatus, type Service } from './types.services.admin'
-import { serviceCreateService } from './service.create.service'
+import { ServicePriority, ServiceStatus, type Service } from '../types.services.admin'
+import { serviceCreateService } from '../service.create.service'
 import * as PhosphorIcons from '@phosphor-icons/vue'
 
 // Initialize stores and i18n

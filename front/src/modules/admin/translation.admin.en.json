@@ -21,6 +21,15 @@
       }
     },
 
+    "services": {
+      "navigation": {
+        "services": "services",
+        "serviceslist": "services list",
+        "serviceeditor": "service editor",
+        "settings": "settings"
+      }
+    },
+
     "users": {
       "sections": {
         "usersList": "users list",
