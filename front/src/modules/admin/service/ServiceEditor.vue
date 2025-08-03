@@ -6,7 +6,7 @@
 -->
 
 <script setup lang="ts">
-import { ref, computed, onMounted, watch } from 'vue'
+import { ref, computed, onMounted, watch, nextTick } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useServicesAdminStore } from './state.services.admin'
 import { useUiStore } from '@/core/state/uistate'
@@ -550,6 +550,11 @@ onMounted(() => {
   } else {
     // Сбрасываем форму для режима создания
     resetForm()
+    // Принудительно устанавливаем значение по умолчанию для приоритета после сброса
+    nextTick(() => {
+      formData.value.priority = ServicePriority.LOW
+      formData.value.status = ServiceStatus.DRAFTED
+    })
   }
 })
 </script>
@@ -609,7 +614,7 @@ onMounted(() => {
                           v-if="selectedIconComponent"
                           :is="selectedIconComponent"
                           :size="24"
-                          color="currentColor"
+                          color="rgb(20, 184, 166)"
                           class="placeholder-icon"
                         />
                         <div 
@@ -618,14 +623,14 @@ onMounted(() => {
                         >
                           <v-icon 
                             size="24"
-                            color="rgba(0, 0, 0, 0.38)"
+                            color="rgb(20, 184, 166)"
                           >
                             mdi-image-outline
                           </v-icon>
                         </div>
                       </div>
                     </v-col>
-                    <v-col cols="12" md="7">
+                    <v-col cols="12" md="11">
                       <v-text-field
                         v-model="formData.name"
                         :label="t('admin.services.editor.information.name.label')"
@@ -634,15 +639,6 @@ onMounted(() => {
                         density="comfortable"
                         counter="250"
                         required
-                        color="teal"
-                      />
-                    </v-col>
-                    <v-col cols="12" md="4" class="d-flex align-center">
-                      <v-checkbox
-                        v-model="formData.isPublic"
-                        :label="t('admin.services.editor.settings.isPublic.label')"
-                        variant="outlined"
-                        density="comfortable"
                         color="teal"
                       />
                     </v-col>
@@ -920,6 +916,25 @@ onMounted(() => {
                     </v-card-title>
                     <v-divider class="section-divider" />
                   </div>
+
+                  <v-row class="pt-3">
+                    <v-col
+                      cols="12"
+                    >
+                      <div class="d-flex align-center">
+                        <v-checkbox
+                          v-model="formData.isPublic"
+                          :label="t('admin.services.editor.access.isPublic.label')"
+                          variant="outlined"
+                          density="compact"
+                          color="teal"
+                        />
+                        <span class="text-caption text-grey ml-2">
+                          в разработке
+                        </span>
+                      </div>
+                    </v-col>
+                  </v-row>
 
                   <v-row class="pt-3">
                     <v-col

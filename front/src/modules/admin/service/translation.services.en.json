@@ -185,6 +185,9 @@
         },
         "access": {
           "title": "access control",
+          "isPublic": {
+            "label": "public service"
+          },
           "allowedGroups": {
             "label": "allowed groups",
             "select": "select allowed groups"

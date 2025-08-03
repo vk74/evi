@@ -278,7 +278,7 @@ watch(() => props.selectedSize, (newValue) => {
               :is="icon.component"
               :size="selectedIconSize"
               :weight="selectedIconStyle"
-              color="currentColor"
+              color="rgb(20, 184, 166)"
             />
             <span class="icon-label">{{ icon.displayName.toLowerCase() }}</span>
           </div>
