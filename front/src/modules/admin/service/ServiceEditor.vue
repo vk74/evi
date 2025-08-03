@@ -609,7 +609,11 @@ onMounted(() => {
 
                   <v-row>
                     <v-col cols="12" md="1">
-                      <div class="icon-placeholder">
+                      <div 
+                        class="icon-placeholder"
+                        @click="openIconPicker"
+                        style="cursor: pointer;"
+                      >
                         <component 
                           v-if="selectedIconComponent"
                           :is="selectedIconComponent"
