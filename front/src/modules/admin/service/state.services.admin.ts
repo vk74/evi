@@ -12,6 +12,7 @@ export const useServicesAdminStore = defineStore('servicesAdmin', () => {
   const editorMode = ref<'creation' | 'edit'>('creation')
   const editingServiceId = ref<string | null>(null)
   const editingServiceData = ref<Service | null>(null)
+  const activeSection = ref<'details' | 'publication'>('details')
 
   // Getters
   const getSelectedSectionPath = computed(() => selectedSectionPath.value)
@@ -20,6 +21,7 @@ export const useServicesAdminStore = defineStore('servicesAdmin', () => {
   const getEditorMode = computed(() => editorMode.value)
   const getEditingServiceId = computed(() => editingServiceId.value)
   const getEditingServiceData = computed(() => editingServiceData.value)
+  const getActiveSection = computed(() => activeSection.value)
 
   // Actions
   const setSelectedSection = (sectionPath: string) => {
@@ -57,6 +59,7 @@ export const useServicesAdminStore = defineStore('servicesAdmin', () => {
     editorMode.value = mode
     editingServiceId.value = serviceId || null
     editingServiceData.value = serviceData || null
+    activeSection.value = 'details' // По умолчанию открываем секцию "данные сервиса"
   }
 
   const closeServiceEditor = () => {
@@ -64,6 +67,11 @@ export const useServicesAdminStore = defineStore('servicesAdmin', () => {
     editorMode.value = 'creation'
     editingServiceId.value = null
     editingServiceData.value = null
+    activeSection.value = 'details'
+  }
+
+  const setActiveSection = (section: 'details' | 'publication') => {
+    activeSection.value = section
   }
 
   return {
@@ -74,6 +82,7 @@ export const useServicesAdminStore = defineStore('servicesAdmin', () => {
     editorMode,
     editingServiceId,
     editingServiceData,
+    activeSection,
     
     // Getters
     getSelectedSectionPath,
@@ -82,6 +91,7 @@ export const useServicesAdminStore = defineStore('servicesAdmin', () => {
     getEditorMode,
     getEditingServiceId,
     getEditingServiceData,
+    getActiveSection,
     
     // Actions
     setSelectedSection,
@@ -90,6 +100,7 @@ export const useServicesAdminStore = defineStore('servicesAdmin', () => {
     collapseSection,
     toggleSection,
     openServiceEditor,
-    closeServiceEditor
+    closeServiceEditor,
+    setActiveSection
   }
 }) 
