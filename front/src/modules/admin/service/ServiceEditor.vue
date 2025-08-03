@@ -12,6 +12,7 @@ import { useServicesAdminStore } from './state.services.admin'
 import { useUiStore } from '@/core/state/uistate'
 import ItemSelector from '@/core/ui/modals/item-selector/ItemSelector.vue'
 import DataLoading from '@/core/ui/loaders/DataLoading.vue'
+import IconPicker from '@/core/ui/modals/icon-picker/IconPicker.vue'
 import { ServicePriority, ServiceStatus, type Service } from './types.services.admin'
 import { serviceCreateService } from './service.create.service'
 
@@ -44,6 +45,7 @@ const showAccessDeniedUsersSelector = ref(false)
 // Form data
 const formData = ref({
   name: '',
+  icon_name: '', // Добавляем поле для иконки
   supportTier1: '',
   supportTier2: '',
   supportTier3: '',
@@ -63,6 +65,11 @@ const formData = ref({
   accessDeniedGroups: [] as string[],
   accessDeniedUsers: [] as string[]
 })
+
+// Icon picker state
+const showIconPicker = ref(false)
+const selectedIconStyle = ref('regular')
+const selectedIconSize = ref(24)
 
 // Computed properties
 const isCreationMode = computed(() => servicesStore.getEditorMode === 'creation')
@@ -142,6 +149,7 @@ const commentsRules = [
 const resetForm = () => {
   formData.value = {
     name: '',
+    icon_name: '', // Сбрасываем поле для иконки
     supportTier1: '',
     supportTier2: '',
     supportTier3: '',
@@ -183,6 +191,7 @@ const loadServiceData = async () => {
         const mockServiceData = {
           id: '1',
           name: 'User Management Service',
+          icon_name: 'mdi-account-circle', // Добавляем иконку для mock данных
           support_tier1: 'support.tier1@company.com',
           support_tier2: 'support.tier2@company.com',
           support_tier3: 'support.tier3@company.com',
@@ -225,6 +234,7 @@ const loadServiceData = async () => {
 const populateFormWithService = (service: Service) => {
   formData.value = {
     name: service.name,
+    icon_name: service.icon_name || '', // Заполняем поле для иконки
     supportTier1: service.support_tier1 || '',
     supportTier2: service.support_tier2 || '',
     supportTier3: service.support_tier3 || '',
@@ -257,6 +267,7 @@ const createService = async () => {
   try {
     const serviceData = {
       name: formData.value.name.trim(),
+      icon_name: formData.value.icon_name || undefined, // Добавляем иконку в данные
       support_tier1: formData.value.supportTier1 || undefined,
       support_tier2: formData.value.supportTier2 || undefined,
       support_tier3: formData.value.supportTier3 || undefined,
@@ -299,6 +310,7 @@ const updateService = async () => {
   try {
     const serviceData = {
       name: formData.value.name.trim(),
+      icon_name: formData.value.icon_name || undefined, // Добавляем иконку в данные
       support_tier1: formData.value.supportTier1 || undefined,
       support_tier2: formData.value.supportTier2 || undefined,
       support_tier3: formData.value.supportTier3 || undefined,
@@ -496,6 +508,29 @@ const removeDeniedUser = (userName: string) => {
   }
 }
 
+// Icon picker methods
+const openIconPicker = () => {
+  showIconPicker.value = true
+}
+
+const handleIconSelected = (iconName: string) => {
+  formData.value.icon_name = iconName
+  uiStore.showSuccessSnackbar(t('itemSelector.messages.icon.selected'))
+}
+
+const handleStyleChanged = (style: string) => {
+  selectedIconStyle.value = style
+}
+
+const handleSizeChanged = (size: number) => {
+  selectedIconSize.value = size
+}
+
+const clearIcon = () => {
+  formData.value.icon_name = ''
+  uiStore.showSuccessSnackbar(t('itemSelector.messages.icon.cleared'))
+}
+
 // Watch for language changes
 watch(locale, () => {
   console.log('Language changed to:', locale.value)
@@ -560,7 +595,51 @@ onMounted(() => {
                     </v-col>
                   </v-row>
 
+                  <!-- Icon picker section -->
                   <v-row class="pt-3">
+                    <v-col cols="12">
+                      <div class="icon-picker-section">
+                        <v-label class="text-body-2 mb-2">
+                          {{ t('admin.services.editor.information.icon.label') }}
+                        </v-label>
+                        <div class="icon-picker-container">
+                          <div 
+                            v-if="formData.icon_name"
+                            class="selected-icon-display"
+                            @click="openIconPicker"
+                          >
+                            <v-icon 
+                              :size="selectedIconSize"
+                              color="currentColor"
+                              class="selected-icon"
+                            >
+                              {{ formData.icon_name }}
+                            </v-icon>
+                            <span class="icon-name">{{ formData.icon_name.replace('Ph', '') }}</span>
+                            <v-btn
+                              icon="mdi-close"
+                              size="small"
+                              variant="text"
+                              @click.stop="clearIcon"
+                              class="clear-icon-btn"
+                            />
+                          </div>
+                          <v-btn
+                            v-else
+                            variant="outlined"
+                            color="teal"
+                            prepend-icon="mdi-image-outline"
+                            @click="openIconPicker"
+                            class="select-icon-btn"
+                          >
+                            {{ t('admin.services.editor.information.icon.select') }}
+                          </v-btn>
+                        </div>
+                      </div>
+                    </v-col>
+                  </v-row>
+
+                  <v-row>
                     <v-col cols="12" md="8">
                       <v-text-field
                         v-model="formData.name"
@@ -1230,6 +1309,17 @@ onMounted(() => {
       @action-performed="handleAccessDeniedUsersSelected"
     />
   </v-dialog>
+
+  <!-- Icon Picker Component -->
+  <IconPicker
+    v-model="showIconPicker"
+    :selected-icon="formData.icon_name"
+    :selected-style="selectedIconStyle"
+    :selected-size="selectedIconSize"
+    @icon-selected="handleIconSelected"
+    @style-changed="handleStyleChanged"
+    @size-changed="handleSizeChanged"
+  />
 </template>
 
 <style scoped>
@@ -1308,5 +1398,51 @@ onMounted(() => {
 .chips-container:focus-within {
   border-color: rgba(var(--v-theme-primary), 1);
   box-shadow: 0 0 0 2px rgba(var(--v-theme-primary), 0.2);
+}
+
+/* Icon picker styles */
+.icon-picker-section {
+  width: 100%;
+}
+
+.icon-picker-container {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.selected-icon-display {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
+  border-radius: 4px;
+  background-color: rgba(var(--v-theme-surface), 1);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.selected-icon-display:hover {
+  border-color: rgba(var(--v-theme-primary), 0.5);
+  background-color: rgba(var(--v-theme-primary), 0.05);
+}
+
+.icon-name {
+  font-size: 0.875rem;
+  color: rgba(0, 0, 0, 0.87);
+  font-weight: 500;
+}
+
+.clear-icon-btn {
+  margin-left: auto;
+}
+
+.select-icon-btn {
+  min-width: 160px;
+}
+
+.selected-icon {
+  font-size: 1.5rem;
 }
 </style> 

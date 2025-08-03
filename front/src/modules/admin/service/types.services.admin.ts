@@ -50,6 +50,7 @@ export enum ServiceGroupRole {
 export interface Service {
   id: string
   name: string
+  icon_name: string | null
   support_tier1: string | null
   support_tier2: string | null
   support_tier3: string | null
@@ -115,6 +116,7 @@ export interface ServiceError {
 // Create service request interface
 export interface CreateServiceRequest {
   name: string
+  icon_name?: string
   support_tier1?: string
   support_tier2?: string
   support_tier3?: string
@@ -148,6 +150,7 @@ export interface CreateServiceResponse extends ApiResponse {
 // Update service request interface
 export interface UpdateServiceRequest {
   name?: string
+  icon_name?: string
   support_tier1?: string
   support_tier2?: string
   support_tier3?: string

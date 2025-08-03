@@ -16,13 +16,15 @@
   "itemSelector": {
     "title": {
       "addUsersToGroup": "adding users to group",
-      "selectGroupFor": "Select group for"
+      "selectGroupFor": "Select group for",
+      "selectIcon": "Select Icon"
     },
     "search": {
       "placeholder": {
         "userAccount": "search (by username, uuid or email)",
         "group": "search (by group name or uuid)",
         "workspace": "search (by object name)",
+        "icon": "search icons...",
         "default": "search"
       },
       "limit": "maximum items: {count}",
@@ -40,7 +42,8 @@
       "reset": "reset results",
       "add": "add",
       "remove": "remove",
-      "execute": "execute"
+      "execute": "execute",
+      "loadMore": "Load More"
     },
     "messages": {
       "noResults": "no results to add",
@@ -58,7 +61,12 @@
       "emptySelection": "no items selected",
       "noObjectsForAction": "no items selected for action",
       "actionSuccess": "operation completed successfully with {count} items",
-      "actionError": "error performing the operation"
+      "actionError": "error performing the operation",
+      "loading": "Loading..."
+    },
+    "icon": {
+      "selected": "Icon selected successfully",
+      "cleared": "Icon cleared successfully"
     }
   }
 }
