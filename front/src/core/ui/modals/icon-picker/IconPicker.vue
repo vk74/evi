@@ -49,24 +49,29 @@ const uiStore = useUiStore()
 const isLoadingIcons = ref(false)
 const icons = ref<any[]>([])
 const searchQuery = ref('')
+const selectedIconLibrary = ref('phosphor')
 const selectedIconStyle = ref(props.selectedStyle)
 const selectedIconSize = ref(props.selectedSize)
 const selectedIcon = ref(props.selectedIcon)
 
 // Icon picker options
+const iconLibraries = [
+  { title: 'phosphor icons', value: 'phosphor' }
+]
+
 const iconStyles = [
-  { title: 'Regular', value: 'regular' },
-  { title: 'Bold', value: 'bold' },
-  { title: 'Fill', value: 'fill' },
-  { title: 'Light', value: 'light' },
-  { title: 'Thin', value: 'thin' }
+  { title: 'regular', value: 'regular' },
+  { title: 'bold', value: 'bold' },
+  { title: 'fill', value: 'fill' },
+  { title: 'light', value: 'light' },
+  { title: 'thin', value: 'thin' }
 ]
 
 const iconSizes = [
-  { title: 'Small (16px)', value: 16 },
-  { title: 'Medium (24px)', value: 24 },
-  { title: 'Large (32px)', value: 32 },
-  { title: 'Extra Large (48px)', value: 48 }
+  { title: 'small (16px)', value: 16 },
+  { title: 'medium (24px)', value: 24 },
+  { title: 'large (32px)', value: 32 },
+  { title: 'extra large (48px)', value: 48 }
 ]
 
 // Computed properties
@@ -148,7 +153,11 @@ const handleSizeChange = (size: number) => {
   emit('size-changed', size)
 }
 
-
+const handleLibraryChange = (library: string) => {
+  selectedIconLibrary.value = library
+  // For now, just reload icons since we only have one library
+  loadIcons()
+}
 
 // Watch for dialog open
 watch(() => props.modelValue, async (newValue) => {
@@ -180,7 +189,7 @@ watch(() => props.selectedSize, (newValue) => {
   >
     <v-card>
       <v-card-title class="d-flex align-center justify-space-between pa-4">
-        <span class="text-h6">{{ t('itemSelector.title.selectIcon') }}</span>
+        <span class="text-h6">{{ t('itemSelector.title.selectIcon').toLowerCase() }}</span>
         <v-btn
           icon="mdi-close"
           variant="text"
@@ -189,34 +198,48 @@ watch(() => props.selectedSize, (newValue) => {
       </v-card-title>
 
       <v-card-text class="pa-4">
-        <!-- Style and size controls -->
-        <div class="d-flex align-center gap-4 mb-3">
-          <v-select
-            v-model="selectedIconStyle"
-            :items="iconStyles"
-            item-title="title"
-            item-value="value"
-            variant="outlined"
-            density="comfortable"
-            hide-details
-            class="style-select"
-            style="min-width: 60px;"
-            @update:model-value="handleStyleChange"
-          />
-          
-          <v-select
-            v-model="selectedIconSize"
-            :items="iconSizes"
-            item-title="title"
-            item-value="value"
-            variant="outlined"
-            density="comfortable"
-            hide-details
-            class="size-select"
-            style="min-width: 60px;"
-            @update:model-value="handleSizeChange"
-          />
-        </div>
+        <!-- Library, style and size controls -->
+        <v-row class="mb-3">
+          <v-col cols="12" md="4">
+            <v-select
+              v-model="selectedIconLibrary"
+              :items="iconLibraries"
+              item-title="title"
+              item-value="value"
+              variant="outlined"
+              density="comfortable"
+              hide-details
+              class="library-select"
+              @update:model-value="handleLibraryChange"
+            />
+          </v-col>
+          <v-col cols="12" md="4">
+            <v-select
+              v-model="selectedIconStyle"
+              :items="iconStyles"
+              item-title="title"
+              item-value="value"
+              variant="outlined"
+              density="comfortable"
+              hide-details
+              class="style-select"
+              @update:model-value="handleStyleChange"
+            />
+          </v-col>
+          <v-col cols="12" md="4">
+            <v-select
+              v-model="selectedIconSize"
+              :items="iconSizes"
+              item-title="title"
+              item-value="value"
+              variant="outlined"
+              density="comfortable"
+              hide-details
+              class="size-select"
+              @update:model-value="handleSizeChange"
+            />
+          </v-col>
+        </v-row>
 
         <!-- Search field -->
         <div class="mb-4">
@@ -228,6 +251,7 @@ watch(() => props.selectedSize, (newValue) => {
             density="comfortable"
             hide-details
             class="search-field"
+            color="teal"
           />
         </div>
 
@@ -238,7 +262,7 @@ watch(() => props.selectedSize, (newValue) => {
             color="teal"
             size="48"
           />
-          <span class="ml-3">{{ t('itemSelector.messages.loading') }}</span>
+          <span class="ml-3">{{ t('itemSelector.messages.loading').toLowerCase() }}</span>
         </div>
 
         <!-- Icons grid -->
@@ -256,7 +280,7 @@ watch(() => props.selectedSize, (newValue) => {
               :weight="selectedIconStyle"
               color="currentColor"
             />
-            <span class="icon-label">{{ icon.displayName }}</span>
+            <span class="icon-label">{{ icon.displayName.toLowerCase() }}</span>
           </div>
         </div>
 
@@ -264,7 +288,7 @@ watch(() => props.selectedSize, (newValue) => {
         <div v-if="!isLoadingIcons && filteredIcons.length === 0" class="d-flex justify-center align-center pa-8">
           <div class="text-center">
             <v-icon size="48" color="grey">mdi-magnify</v-icon>
-            <p class="text-body-1 mt-2">{{ t('itemSelector.items.notFound') }}</p>
+            <p class="text-body-1 mt-2">{{ t('itemSelector.items.notFound').toLowerCase() }}</p>
           </div>
         </div>
       </v-card-text>
@@ -276,6 +300,14 @@ watch(() => props.selectedSize, (newValue) => {
 /* Search field styles */
 .search-field {
   width: 100%;
+}
+
+.search-field :deep(.v-field--focused) {
+  border-color: rgb(20, 184, 166) !important;
+}
+
+.search-field :deep(.v-field--focused .v-field__outline) {
+  border-color: rgb(20, 184, 166) !important;
 }
 
 /* Icons grid styles */
