@@ -81,8 +81,8 @@
           "title": "edit service"
         },
         "sections": {
-          "details": "Details",
-          "publication": "Publication"
+          "details": "details",
+          "catalog publication": "catalog publication"
         },
         "information": {
           "title": "basic information",

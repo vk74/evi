@@ -81,8 +81,8 @@
           "title": "редактировать сервис"
         },
         "sections": {
-          "details": "Данные",
-          "publication": "Публикация"
+          "details": "данные",
+          "catalog publication": "публикация в каталоге"
         },
         "information": {
           "title": "основная информация",

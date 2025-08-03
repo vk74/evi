@@ -18,7 +18,7 @@ const { t } = useI18n()
 <template>
   <v-container class="pa-4">
     <h4 class="text-h6 font-weight-medium mb-4">
-      {{ t('admin.services.editor.sections.publication') }}
+      {{ t('admin.services.editor.sections.catalog publication') }}
     </h4>
     <p class="text-body-1">
       тест публикации

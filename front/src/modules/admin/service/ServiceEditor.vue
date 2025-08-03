@@ -21,7 +21,7 @@ const { t } = useI18n()
 const servicesStore = useServicesAdminStore()
 
 // Section management
-const switchSection = (section: 'details' | 'publication') => {
+const switchSection = (section: 'details' | 'catalog publication') => {
   servicesStore.setActiveSection(section)
 }
 
@@ -49,11 +49,11 @@ const pageTitle = computed(() => {
           {{ t('admin.services.editor.sections.details') }}
         </v-btn>
         <v-btn
-          :class="['section-btn', { 'section-active': servicesStore.getActiveSection === 'publication' }]"
+          :class="['section-btn', { 'section-active': servicesStore.getActiveSection === 'catalog publication' }]"
           variant="text"
-          @click="switchSection('publication')"
+          @click="switchSection('catalog publication')"
         >
-          {{ t('admin.services.editor.sections.publication') }}
+          {{ t('admin.services.editor.sections.catalog publication') }}
         </v-btn>
       </div>
 
@@ -72,7 +72,7 @@ const pageTitle = computed(() => {
           v-if="servicesStore.getActiveSection === 'details'"
         />
         <ServiceEditorMapping 
-          v-else-if="servicesStore.getActiveSection === 'publication'"
+          v-else-if="servicesStore.getActiveSection === 'catalog publication'"
         />
       </v-container>
     </div>
