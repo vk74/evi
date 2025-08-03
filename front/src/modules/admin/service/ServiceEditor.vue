@@ -1399,57 +1399,7 @@ onMounted(() => {
   box-shadow: 0 0 0 2px rgba(var(--v-theme-primary), 0.2);
 }
 
-/* Icon picker styles */
-.icon-picker-section {
-  width: 100%;
-}
 
-.icon-picker-container {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.selected-icon-display {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 8px 12px;
-  border: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
-  border-radius: 4px;
-  background-color: rgba(var(--v-theme-surface), 1);
-  cursor: pointer;
-  transition: all 0.2s ease;
-  min-height: 40px;
-}
-
-.selected-icon-display:hover {
-  border-color: rgba(var(--v-theme-primary), 0.5);
-  background-color: rgba(var(--v-theme-primary), 0.05);
-}
-
-.icon-name {
-  font-size: 0.75rem;
-  color: rgba(0, 0, 0, 0.87);
-  font-weight: 500;
-  max-width: 80px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.clear-icon-btn {
-  margin-left: auto;
-}
-
-.select-icon-btn {
-  min-width: 120px;
-  height: 40px;
-}
-
-.selected-icon {
-  font-size: 1.25rem;
-}
 
 /* Icon picker sidebar styles */
 .icon-picker-sidebar {
