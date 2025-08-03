@@ -59,6 +59,7 @@ const mockServices = ref<Service[]>([
   {
     id: '1',
     name: 'User Management Service',
+    icon_name: 'mdi-cog',
     support_tier1: 'support.tier1@company.com',
     support_tier2: 'support.tier2@company.com',
     support_tier3: 'support.tier3@company.com',
@@ -87,6 +88,7 @@ const mockServices = ref<Service[]>([
   {
     id: '2',
     name: 'Payment Processing',
+    icon_name: 'mdi-credit-card',
     support_tier1: 'payment.support@company.com',
     support_tier2: 'payment.tier2@company.com',
     support_tier3: 'payment.tier3@company.com',
@@ -115,6 +117,7 @@ const mockServices = ref<Service[]>([
   {
     id: '3',
     name: 'Reporting Dashboard',
+    icon_name: 'mdi-chart-line',
     support_tier1: 'analytics.support@company.com',
     support_tier2: 'analytics.tier2@company.com',
     support_tier3: 'analytics.tier3@company.com',
@@ -196,7 +199,7 @@ const getStatusColor = (status: ServiceStatus | null) => {
     [ServiceStatus.BEING_TESTED]: 'orange',
     [ServiceStatus.NON_COMPLIANT]: 'red',
     [ServiceStatus.PENDING_APPROVAL]: 'amber',
-    [ServiceStatus.IN_PRODUCTION]: 'green',
+    [ServiceStatus.IN_PRODUCTION]: 'teal',
     [ServiceStatus.UNDER_MAINTENANCE]: 'orange',
     [ServiceStatus.SUSPENDED]: 'red',
     [ServiceStatus.BEING_UPGRADED]: 'blue',
@@ -216,12 +219,13 @@ const isSearchEnabled = computed(() =>
 
 // Table headers
 const headers = computed<TableHeader[]>(() => [
-  { title: t('admin.services.table.headers.selection').toLowerCase(), key: 'selection', width: '40px', sortable: false },
-  { title: t('admin.services.table.headers.name').toLowerCase(), key: 'name', width: '250px', sortable: true },
-  { title: t('admin.services.table.headers.priority').toLowerCase(), key: 'priority', width: '120px', sortable: true },
-  { title: t('admin.services.table.headers.status').toLowerCase(), key: 'status', width: '140px', sortable: true },
-  { title: t('admin.services.table.headers.owner').toLowerCase(), key: 'owner', width: '180px', sortable: true },
-  { title: t('admin.services.table.headers.technicalOwner').toLowerCase(), key: 'technical_owner', width: '180px', sortable: true }
+  { title: t('admin.services.table.headers.selection'), key: 'selection', width: '40px', sortable: false },
+  { title: t('admin.services.table.headers.name'), key: 'name', width: '250px', sortable: true },
+  { title: t('admin.services.table.headers.priority'), key: 'priority', width: '120px', sortable: true },
+  { title: t('admin.services.table.headers.status'), key: 'status', width: '140px', sortable: true },
+  { title: t('admin.services.table.headers.owner'), key: 'owner', width: '180px', sortable: true },
+  { title: t('admin.services.table.headers.technicalOwner'), key: 'technical_owner', width: '180px', sortable: true },
+  { title: t('admin.services.table.headers.isPublic'), key: 'public', width: '100px', sortable: true }
 ])
 
 // Helper function for error handling
@@ -553,18 +557,19 @@ const handleItemsPerPageChange = async (newItemsPerPage: ItemsPerPageOption) => 
           </template>
 
           <template #[`item.name`]="{ item }">
-            <div class="d-flex align-center justify-space-between">
-              <div class="d-flex align-center">
-                <v-icon icon="mdi-cog" class="mr-2" size="small" />
-                <span>{{ item.name }}</span>
-              </div>
-              <v-chip 
-                :color="item.is_public ? 'teal' : 'grey'" 
-                size="x-small"
-              >
-                {{ item.is_public ? t('admin.services.table.status.yes') : t('admin.services.table.status.no') }}
-              </v-chip>
+            <div class="d-flex align-center">
+              <v-icon :icon="item.icon_name || 'mdi-cog'" class="mr-2" size="small" />
+              <span>{{ item.name }}</span>
             </div>
+          </template>
+
+          <template #[`item.public`]="{ item }">
+            <v-chip 
+              :color="item.is_public ? 'teal' : 'grey'" 
+              size="x-small"
+            >
+              {{ item.is_public ? t('admin.services.table.status.yes') : t('admin.services.table.status.no') }}
+            </v-chip>
           </template>
 
           <template #[`item.priority`]="{ item }">

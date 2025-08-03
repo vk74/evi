@@ -13,7 +13,7 @@
 
 import { Request, Response } from 'express';
 import { createService as createServiceService } from './service.admin.create.service';
-import { connectionHandler } from '../../../core/helpers/connection.handler';
+import { connectionHandler } from '../../../../../core/helpers/connection.handler';
 
 /**
  * Business logic for creating services data

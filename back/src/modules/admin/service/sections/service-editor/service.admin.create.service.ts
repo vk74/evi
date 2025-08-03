@@ -22,17 +22,17 @@
 
 import { Request } from 'express';
 import { Pool } from 'pg';
-import { pool as pgPool } from '../../../core/db/maindb';
-import { queries } from './queries.admin.service';
+import { pool as pgPool } from '../../../../../core/db/maindb';
+import { queries } from '../../queries.admin.service';
 import type { 
     CreateServiceRequest, 
     CreateServiceResponse, 
     ServiceError
-} from './types.admin.service';
-import { ServicePriority, ServiceStatus, ServiceUserRole, ServiceGroupRole } from './types.admin.service';
-import { getRequestorUuidFromReq } from '../../../core/helpers/get.requestor.uuid.from.req';
-import { getUuidByUsername } from '../../../core/helpers/get.uuid.by.username';
-import { getUuidByGroupName } from '../../../core/helpers/get.uuid.by.group.name';
+} from '../../types.admin.service';
+import { ServicePriority, ServiceStatus, ServiceUserRole, ServiceGroupRole } from '../../types.admin.service';
+import { getRequestorUuidFromReq } from '../../../../../core/helpers/get.requestor.uuid.from.req';
+import { getUuidByUsername } from '../../../../../core/helpers/get.uuid.by.username';
+import { getUuidByGroupName } from '../../../../../core/helpers/get.uuid.by.group.name';
 
 // Type assertion for pool
 const pool = pgPool as Pool;

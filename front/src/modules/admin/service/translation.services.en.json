@@ -13,12 +13,12 @@
       "table": {
         "headers": {
           "selection": "",
-          "name": "Name",
-          "priority": "Priority",
-          "status": "Status",
-          "owner": "Owner",
-          "technicalOwner": "Technical Owner",
-          "isPublic": "Public"
+          "name": "name",
+          "priority": "priority",
+          "status": "status",
+          "owner": "owner",
+          "technicalOwner": "technical owner",
+          "isPublic": "public"
         },
         "priority": {
           "critical": "Critical",

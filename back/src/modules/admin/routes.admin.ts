@@ -25,7 +25,7 @@ import fetchCatalogSections from './catalog/controller.admin.fetch.sections';
 import createCatalogSection from './catalog/controller.admin.create.section';
 import updateCatalogSection from './catalog/controller.admin.update.section';
 import deleteCatalogSection from './catalog/controller.admin.delete.sections';
-import createServiceController from './service/controller.admin.create.service';
+import createServiceController from './service/sections/service-editor/controller.admin.create.service';
 import fetchPublishingSectionsController from './service/sections/service-editor/controller.admin.fetch.publishingsections';
 
 const router: Router = express.Router();

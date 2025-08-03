@@ -13,12 +13,12 @@
       "table": {
         "headers": {
           "selection": "",
-          "name": "Название",
-          "priority": "Приоритет",
-          "status": "Статус",
-          "owner": "Владелец",
-          "technicalOwner": "Технический владелец",
-          "isPublic": "Публичный"
+          "name": "название",
+          "priority": "приоритет",
+          "status": "статус",
+          "owner": "владелец",
+          "technicalOwner": "технический владелец",
+          "isPublic": "публичный"
         },
         "priority": {
           "critical": "Критический",
@@ -33,7 +33,7 @@
           "being_tested": "На тестировании",
           "non_compliant": "Не соответствует",
           "pending_approval": "Ожидает одобрения",
-          "in_production": "В продакшене",
+          "in_production": "в эксплуатации",
           "under_maintenance": "На обслуживании",
           "suspended": "Приостановлен",
           "being_upgraded": "Обновляется",
@@ -149,7 +149,7 @@
               "being_tested": "на тестировании",
               "non_compliant": "не соответствует",
               "pending_approval": "ожидает одобрения",
-              "in_production": "в продакшене",
+              "in_production": "в эксплуатации",
               "under_maintenance": "на обслуживании",
               "suspended": "приостановлен",
               "being_upgraded": "обновляется",
