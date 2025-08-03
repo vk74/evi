@@ -211,5 +211,20 @@ export const queries = {
     checkServiceNameExistsExcluding: `
         SELECT id FROM app.services 
         WHERE LOWER(name) = LOWER($1) AND id != $2
+    `,
+
+    /**
+     * Fetches publishing sections for services
+     * Returns: name, owner, status, is_public from catalog_sections
+     */
+    fetchPublishingSections: `
+        SELECT 
+            id,
+            name,
+            owner,
+            status,
+            is_public
+        FROM app.catalog_sections
+        ORDER BY name ASC
     `
 }; 
