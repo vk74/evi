@@ -71,20 +71,30 @@ const iconSizes = [
 
 // Computed properties
 const filteredIcons = computed(() => {
-  if (!searchQuery.value) return icons.value
+  let filtered = icons.value
   
-  return icons.value.filter(icon => 
-    icon.displayName.toLowerCase().includes(searchQuery.value.toLowerCase())
-  )
+  // Filter by style first
+  filtered = filtered.filter(icon => {
+    // Check if icon supports the selected style
+    const iconComponent = icon.component
+    return iconComponent && typeof iconComponent === 'object' && iconComponent.name
+  })
+  
+  // Then filter by search query
+  if (searchQuery.value) {
+    filtered = filtered.filter(icon => 
+      icon.displayName.toLowerCase().includes(searchQuery.value.toLowerCase())
+    )
+  }
+  
+  return filtered
 })
 
 const displayedIcons = computed(() => {
-  return filteredIcons.value.slice(0, 24) // 4x6 grid
+  return filteredIcons.value // Show all filtered icons
 })
 
-const hasMoreIcons = computed(() => {
-  return filteredIcons.value.length > 24
-})
+// Remove hasMoreIcons computed property as we're showing all icons
 
 // Methods
 const loadIcons = async () => {
@@ -138,11 +148,7 @@ const handleSizeChange = (size: number) => {
   emit('size-changed', size)
 }
 
-const loadMoreIcons = () => {
-  // Увеличиваем количество отображаемых иконок
-  // В реальной реализации здесь будет пагинация
-  console.log('Load more icons clicked')
-}
+
 
 // Watch for dialog open
 watch(() => props.modelValue, async (newValue) => {
@@ -183,18 +189,8 @@ watch(() => props.selectedSize, (newValue) => {
       </v-card-title>
 
       <v-card-text class="pa-4">
-        <!-- Search and controls -->
-        <div class="d-flex align-center gap-4 mb-4">
-          <v-text-field
-            v-model="searchQuery"
-            :placeholder="t('itemSelector.search.placeholder.icon')"
-            prepend-inner-icon="mdi-magnify"
-            variant="outlined"
-            density="comfortable"
-            hide-details
-            class="flex-grow-1"
-          />
-          
+        <!-- Style and size controls -->
+        <div class="d-flex align-center gap-4 mb-3">
           <v-select
             v-model="selectedIconStyle"
             :items="iconStyles"
@@ -204,7 +200,7 @@ watch(() => props.selectedSize, (newValue) => {
             density="comfortable"
             hide-details
             class="style-select"
-            style="min-width: 120px;"
+            style="min-width: 60px;"
             @update:model-value="handleStyleChange"
           />
           
@@ -217,8 +213,21 @@ watch(() => props.selectedSize, (newValue) => {
             density="comfortable"
             hide-details
             class="size-select"
-            style="min-width: 140px;"
+            style="min-width: 60px;"
             @update:model-value="handleSizeChange"
+          />
+        </div>
+
+        <!-- Search field -->
+        <div class="mb-4">
+          <v-text-field
+            v-model="searchQuery"
+            :placeholder="t('itemSelector.search.placeholder.icon')"
+            prepend-inner-icon="mdi-magnify"
+            variant="outlined"
+            density="comfortable"
+            hide-details
+            class="search-field"
           />
         </div>
 
@@ -251,17 +260,6 @@ watch(() => props.selectedSize, (newValue) => {
           </div>
         </div>
 
-        <!-- Load more button -->
-        <div v-if="hasMoreIcons" class="d-flex justify-center mt-4">
-          <v-btn
-            variant="outlined"
-            color="teal"
-            @click="loadMoreIcons"
-          >
-            {{ t('itemSelector.buttons.loadMore') }}
-          </v-btn>
-        </div>
-
         <!-- No results -->
         <div v-if="!isLoadingIcons && filteredIcons.length === 0" class="d-flex justify-center align-center pa-8">
           <div class="text-center">
@@ -275,6 +273,11 @@ watch(() => props.selectedSize, (newValue) => {
 </template>
 
 <style scoped>
+/* Search field styles */
+.search-field {
+  width: 100%;
+}
+
 /* Icons grid styles */
 .icons-grid {
   display: grid;
