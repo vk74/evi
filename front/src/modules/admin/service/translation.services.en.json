@@ -260,7 +260,8 @@
             "selected": "Denied users selected successfully",
             "error": "Failed to select denied users",
             "removed": "User removed from denied users"
-          }
+          },
+          "createdAndSwitchedToEdit": "Service created successfully and switched to edit mode"
         }
       }
     }

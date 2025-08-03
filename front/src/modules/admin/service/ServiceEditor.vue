@@ -296,7 +296,47 @@ const createService = async () => {
     }
 
     // Create service via API
-    await serviceCreateService.createService(serviceData)
+    const response = await serviceCreateService.createService(serviceData)
+    
+    // After successful creation, switch to edit mode with the created service data
+    if (response && response.data && response.data.id) {
+      // Create service object from form data for editing
+      const createdService: Service = {
+        id: response.data.id,
+        name: formData.value.name.trim(),
+        icon_name: formData.value.icon_name || null,
+        support_tier1: formData.value.supportTier1 || null,
+        support_tier2: formData.value.supportTier2 || null,
+        support_tier3: formData.value.supportTier3 || null,
+        owner: formData.value.owner || null,
+        backup_owner: formData.value.backupOwner || null,
+        technical_owner: formData.value.technicalOwner || null,
+        backup_technical_owner: formData.value.backupTechnicalOwner || null,
+        dispatcher: formData.value.dispatcher || null,
+        priority: formData.value.priority,
+        status: formData.value.status,
+        description_short: formData.value.descriptionShort?.trim() || null,
+        description_long: formData.value.descriptionLong?.trim() || null,
+        purpose: formData.value.purpose?.trim() || null,
+        comments: formData.value.comments?.trim() || null,
+        is_public: formData.value.isPublic,
+        access_allowed_groups: formData.value.accessAllowedGroups.length > 0 ? formData.value.accessAllowedGroups.join(',') : null,
+        access_denied_groups: formData.value.accessDeniedGroups.length > 0 ? formData.value.accessDeniedGroups.join(',') : null,
+        access_denied_users: formData.value.accessDeniedUsers.length > 0 ? formData.value.accessDeniedUsers.join(',') : null,
+        created_at: new Date(),
+        created_by: 'current_user', // TODO: Get from auth context
+        modified_at: null,
+        modified_by: null,
+        tile_preferred_width: null,
+        tile_preferred_height: null
+      }
+      
+      // Switch to edit mode with the created service
+      servicesStore.openServiceEditor('edit', response.data.id, createdService)
+      
+      // Show success message about switching to edit mode
+      uiStore.showSuccessSnackbar(t('admin.services.editor.messages.createdAndSwitchedToEdit'))
+    }
     
   } catch (error) {
     console.error('Error creating service:', error)

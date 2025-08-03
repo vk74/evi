@@ -84,9 +84,6 @@ export const serviceCreateService = {
       // Show success message
       uiStore.showSuccessSnackbar(response.data.message || 'Сервис успешно создан')
 
-      // Close editor and return to services list
-      store.closeServiceEditor()
-
       return response.data
 
     } catch (error: any) {
