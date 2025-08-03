@@ -18,6 +18,7 @@ import DataLoading from '@/core/ui/loaders/DataLoading.vue'
 import IconPicker from '@/core/ui/modals/icon-picker/IconPicker.vue'
 import { ServicePriority, ServiceStatus, type Service } from '../../types.services.admin'
 import { serviceCreateService } from '../../service.create.service'
+import { serviceAdminFetchSingleService } from './service.admin.fetchsingleservice'
 import * as PhosphorIcons from '@phosphor-icons/vue'
 
 // Initialize stores and i18n
@@ -187,47 +188,24 @@ const loadServiceData = async () => {
         // Заполняем форму данными сервиса
         populateFormWithService(serviceData)
       } else {
-        // TODO: Fetch fresh data from API if not in store
+        // Fetch fresh data from API if not in store
         console.log('Fetching service data from API for editing')
         
-        // Временная логика для демонстрации - используем mock данные
-        // В реальном приложении здесь будет API вызов
-        const mockServiceData = {
-          id: '1',
-          name: 'User Management Service',
-          icon_name: 'PhUser', // Используем Phosphor иконку для mock данных
-          support_tier1: 'support.tier1@company.com',
-          support_tier2: 'support.tier2@company.com',
-          support_tier3: 'support.tier3@company.com',
-          owner: 'john.doe@company.com',
-          backup_owner: 'backup.owner@company.com',
-          technical_owner: 'tech.lead@company.com',
-          backup_technical_owner: 'backup.tech@company.com',
-          dispatcher: 'dispatcher@company.com',
-          priority: ServicePriority.HIGH,
-          status: ServiceStatus.IN_PRODUCTION,
-          description_short: 'Service for managing user accounts',
-          description_long: 'Comprehensive user management service for internal user accounts and permissions',
-          purpose: 'Internal user management',
-          comments: 'Critical service for user administration',
-          is_public: true,
-          access_allowed_groups: 'admin,users',
-          access_denied_groups: null,
-          access_denied_users: null,
-          created_at: new Date('2024-01-15'),
-          created_by: 'admin@company.com',
-          modified_at: new Date('2024-02-20'),
-          modified_by: 'admin@company.com',
-          tile_preferred_width: 2,
-          tile_preferred_height: 1
-        }
+        const response = await serviceAdminFetchSingleService.fetchSingleService(editingServiceId.value)
         
-        // Заполняем форму данными сервиса
-        populateFormWithService(mockServiceData)
+        if (response.success && response.data) {
+          // Заполняем форму данными сервиса из API
+          populateFormWithService(response.data)
+        } else {
+          // Show error message
+          uiStore.showErrorSnackbar(response.message || t('admin.services.editor.messages.error.loadingService'))
+          servicesStore.closeServiceEditor()
+        }
       }
       
     } catch (error) {
       console.error('Error loading service data:', error)
+      uiStore.showErrorSnackbar(t('admin.services.editor.messages.error.loadingService'))
       servicesStore.closeServiceEditor()
     } finally {
       isLoadingService.value = false
@@ -295,44 +273,27 @@ const createService = async () => {
     // Create service via API
     const response = await serviceCreateService.createService(serviceData)
     
-    // After successful creation, switch to edit mode with the created service data
+        // After successful creation, switch to edit mode and load fresh data from API
     if (response && response.data && response.data.id) {
-      // Create service object from form data for editing
-      const createdService: Service = {
-        id: response.data.id,
-        name: formData.value.name.trim(),
-        icon_name: formData.value.icon_name || null,
-        support_tier1: formData.value.supportTier1 || null,
-        support_tier2: formData.value.supportTier2 || null,
-        support_tier3: formData.value.supportTier3 || null,
-        owner: formData.value.owner || null,
-        backup_owner: formData.value.backupOwner || null,
-        technical_owner: formData.value.technicalOwner || null,
-        backup_technical_owner: formData.value.backupTechnicalOwner || null,
-        dispatcher: formData.value.dispatcher || null,
-        priority: formData.value.priority,
-        status: formData.value.status,
-        description_short: formData.value.descriptionShort?.trim() || null,
-        description_long: formData.value.descriptionLong?.trim() || null,
-        purpose: formData.value.purpose?.trim() || null,
-        comments: formData.value.comments?.trim() || null,
-        is_public: formData.value.isPublic,
-        access_allowed_groups: formData.value.accessAllowedGroups.length > 0 ? formData.value.accessAllowedGroups.join(',') : null,
-        access_denied_groups: formData.value.accessDeniedGroups.length > 0 ? formData.value.accessDeniedGroups.join(',') : null,
-        access_denied_users: formData.value.accessDeniedUsers.length > 0 ? formData.value.accessDeniedUsers.join(',') : null,
-        created_at: new Date(),
-        created_by: 'current_user', // TODO: Get from auth context
-        modified_at: null,
-        modified_by: null,
-        tile_preferred_width: null,
-        tile_preferred_height: null
+      // Switch to edit mode without service data (will be loaded from API)
+      servicesStore.openServiceEditor('edit', response.data.id, null)
+      
+      // Load fresh service data from API
+      const serviceResponse = await serviceAdminFetchSingleService.fetchSingleService(response.data.id)
+      
+      if (serviceResponse.success && serviceResponse.data) {
+        // Update store with fresh data
+        servicesStore.editingServiceData = serviceResponse.data
+        // Populate form with fresh data
+        populateFormWithService(serviceResponse.data)
+        
+        // Show success message
+        uiStore.showSuccessSnackbar(t('admin.services.editor.messages.createdAndSwitchedToEdit'))
+      } else {
+        // If failed to load fresh data, show warning but stay in edit mode
+        uiStore.showWarningSnackbar(t('admin.services.editor.messages.createdButFailedToLoadData'))
+        console.warn('Failed to load fresh service data after creation:', serviceResponse.message)
       }
-      
-      // Switch to edit mode with the created service
-      servicesStore.openServiceEditor('edit', response.data.id, createdService)
-      
-      // Show success message about switching to edit mode
-      uiStore.showSuccessSnackbar(t('admin.services.editor.messages.createdAndSwitchedToEdit'))
     }
     
   } catch (error) {

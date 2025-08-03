@@ -27,6 +27,15 @@
         "serviceslist": "services list",
         "serviceeditor": "service editor",
         "settings": "settings"
+      },
+      "editor": {
+        "messages": {
+          "createdAndSwitchedToEdit": "Service created successfully and switched to edit mode",
+          "createdButFailedToLoadData": "Service created but failed to load fresh data",
+          "error": {
+            "loadingService": "Error loading service data"
+          }
+        }
       }
     },
 

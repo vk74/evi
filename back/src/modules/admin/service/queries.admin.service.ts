@@ -99,7 +99,7 @@ export const queries = {
      */
     fetchServiceWithRoles: `
         SELECT 
-            s.id, s.name, s.priority, s.status, s.description_short,
+            s.id, s.name, s.icon_name, s.priority, s.status, s.description_short,
             s.description_long, s.purpose, s.comments, s.is_public,
             s.created_at, s.created_by, s.modified_at, s.modified_by,
             s.tile_preferred_width, s.tile_preferred_height,

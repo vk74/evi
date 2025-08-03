@@ -28,6 +28,7 @@ import deleteCatalogSection from './catalog/controller.admin.delete.sections';
 import createServiceController from './service/sections/service-editor/controller.admin.create.service';
 import fetchPublishingSectionsController from './service/sections/service-editor/controller.admin.fetch.publishingsections';
 import fetchAllServicesController from './service/sections/controller.admin.fetchallservices';
+import fetchSingleServiceController from './service/sections/controller.admin.fetchsingleservice';
 
 const router: Router = express.Router();
 
@@ -59,6 +60,7 @@ router.post('/api/admin/catalog/delete-section', validateJWT, deleteCatalogSecti
 router.post('/api/admin/services/create', validateJWT, createServiceController);
 router.get('/api/admin/services/fetchallservices', validateJWT, fetchAllServicesController);
 router.get('/api/admin/services/fetchpublishingsections', validateJWT, fetchPublishingSectionsController);
+router.get('/api/admin/services/fetchsingleservice', validateJWT, fetchSingleServiceController);
 
 // Export using ES modules syntax
 export default router;

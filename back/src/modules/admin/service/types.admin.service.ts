@@ -52,6 +52,7 @@ export enum ServiceGroupRole {
 export interface Service {
     id: string
     name: string
+    icon_name: string | null
     support_tier1: string | null
     support_tier2: string | null
     support_tier3: string | null

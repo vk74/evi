@@ -27,6 +27,15 @@
         "serviceslist": "список сервисов",
         "serviceeditor": "редактор сервисов",
         "settings": "настройки"
+      },
+      "editor": {
+        "messages": {
+          "createdAndSwitchedToEdit": "Сервис успешно создан и переключен в режим редактирования",
+          "createdButFailedToLoadData": "Сервис создан, но не удалось загрузить свежие данные",
+          "error": {
+            "loadingService": "Ошибка загрузки данных сервиса"
+          }
+        }
       }
     },
 
