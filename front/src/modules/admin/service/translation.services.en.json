@@ -80,6 +80,10 @@
         "edit": {
           "title": "edit service"
         },
+        "sections": {
+          "details": "Details",
+          "publication": "Publication"
+        },
         "information": {
           "title": "basic information",
           "uuid": {

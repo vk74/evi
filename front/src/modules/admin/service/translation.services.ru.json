@@ -80,6 +80,10 @@
         "edit": {
           "title": "редактировать сервис"
         },
+        "sections": {
+          "details": "Данные",
+          "publication": "Публикация"
+        },
         "information": {
           "title": "основная информация",
           "uuid": {

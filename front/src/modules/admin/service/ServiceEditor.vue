@@ -1,11 +1,12 @@
 <!--
   File: ServiceEditor.vue
-  Version: 1.0.0
+  Version: 1.1.0
   Description: Component for creating and editing services
   Purpose: Provides interface for creating new services and editing existing ones
   Frontend file - ServiceEditor.vue
   Created: 2024-12-19
   Last Updated: 2024-12-19
+  Changes: Removed v-app-bar layout, integrated into SubModuleServiceAdmin.vue content panel
 -->
 
 <script setup lang="ts">
@@ -36,11 +37,9 @@ const pageTitle = computed(() => {
 </script>
 
 <template>
-  <div class="module-root">
-    <v-app-bar
-      flat
-      class="app-bar"
-    >
+  <div class="service-editor-container">
+    <!-- Navigation tabs -->
+    <div class="editor-navigation">
       <div class="nav-section">
         <v-btn
           :class="['section-btn', { 'section-active': servicesStore.getActiveSection === 'details' }]"
@@ -63,9 +62,10 @@ const pageTitle = computed(() => {
       <div class="module-title">
         {{ pageTitle }}
       </div>
-    </v-app-bar>
+    </div>
 
-    <div class="working-area">
+    <!-- Content area -->
+    <div class="editor-content">
       <v-container class="pa-0">
         <!-- Render appropriate component based on active section -->
         <ServiceEditorData 
@@ -80,11 +80,26 @@ const pageTitle = computed(() => {
 </template>
 
 <style scoped>
-/* App-bar styles */
+/* Service editor container */
+.service-editor-container {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Navigation styles */
+.editor-navigation {
+  display: flex;
+  align-items: center;
+  padding: 0 16px;
+  height: 64px;
+  border-bottom: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
+  background-color: rgba(var(--v-theme-surface), 1);
+}
+
 .nav-section {
   display: flex;
   align-items: center;
-  margin-left: 15px;
 }
 
 .section-btn {
@@ -107,9 +122,11 @@ const pageTitle = computed(() => {
   font-size: 16px;
 }
 
-.working-area {
-  height: calc(100vh - 64px);
+/* Content area */
+.editor-content {
+  flex: 1;
   overflow-y: auto;
+  height: calc(100vh - 64px);
 }
 </style>
 
@@ -202,37 +219,7 @@ const pageTitle = computed(() => {
   height: 40px;
 }
 
-/* App-bar styles */
-.nav-section {
-  display: flex;
-  align-items: center;
-  margin-left: 15px;
-}
 
-.section-btn {
-  text-transform: none;
-  font-weight: 400;
-  height: 64px;
-  border-radius: 0;
-  color: rgba(0, 0, 0, 0.6) !important;
-}
-
-.section-active {
-  border-bottom: 2px solid #009688;
-  font-weight: 500;
-  color: rgba(0, 0, 0, 0.87) !important;
-}
-
-.module-title {
-  margin-right: 15px;
-  color: rgba(0, 0, 0, 0.87);
-  font-size: 16px;
-}
-
-.working-area {
-  height: calc(100vh - 64px);
-  overflow-y: auto;
-}
 
 /* Icon placeholder styles */
 .icon-placeholder {
