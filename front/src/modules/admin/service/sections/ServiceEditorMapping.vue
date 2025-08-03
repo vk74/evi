@@ -24,7 +24,9 @@ interface TableHeader {
 interface CatalogSection {
   id: string
   name: string
+  owner: string
   status: string
+  public: boolean
 }
 
 type ItemsPerPageOption = 25 | 50 | 100
@@ -53,13 +55,13 @@ const isLoading = ref(false)
 
 // Mock data for catalog sections
 const mockSections = ref<CatalogSection[]>([
-  { id: '1', name: 'Основные сервисы', status: 'Активна' },
-  { id: '2', name: 'Вспомогательные сервисы', status: 'Активна' },
-  { id: '3', name: 'Инфраструктурные сервисы', status: 'Активна' },
-  { id: '4', name: 'Бизнес-сервисы', status: 'Неактивна' },
-  { id: '5', name: 'Технические сервисы', status: 'Активна' },
-  { id: '6', name: 'Административные сервисы', status: 'Активна' },
-  { id: '7', name: 'Пользовательские сервисы', status: 'Неактивна' }
+  { id: '1', name: 'Основные сервисы', owner: 'Иван Петров', status: 'Активна', public: true },
+  { id: '2', name: 'Вспомогательные сервисы', owner: 'Мария Сидорова', status: 'Активна', public: false },
+  { id: '3', name: 'Инфраструктурные сервисы', owner: 'Алексей Козлов', status: 'Активна', public: true },
+  { id: '4', name: 'Бизнес-сервисы', owner: 'Елена Волкова', status: 'Неактивна', public: false },
+  { id: '5', name: 'Технические сервисы', owner: 'Дмитрий Соколов', status: 'Активна', public: true },
+  { id: '6', name: 'Административные сервисы', owner: 'Ольга Морозова', status: 'Активна', public: false },
+  { id: '7', name: 'Пользовательские сервисы', owner: 'Сергей Лебедев', status: 'Неактивна', public: true }
 ])
 
 // Computed properties
@@ -73,7 +75,9 @@ const isSearchEnabled = computed(() =>
 const headers = computed<TableHeader[]>(() => [
   { title: t('admin.services.editor.mapping.table.headers.selection'), key: 'selection', width: '40px', sortable: false },
   { title: t('admin.services.editor.mapping.table.headers.section'), key: 'section', width: 'auto', sortable: true },
-  { title: t('admin.services.editor.mapping.table.headers.status'), key: 'status', width: '120px', sortable: true }
+  { title: t('admin.services.editor.mapping.table.headers.owner'), key: 'owner', width: '150px', sortable: true },
+  { title: t('admin.services.editor.mapping.table.headers.status'), key: 'status', width: '120px', sortable: true },
+  { title: t('admin.services.editor.mapping.table.headers.public'), key: 'public', width: '100px', sortable: true }
 ])
 
 // Helper function for error handling
@@ -320,12 +324,25 @@ const handleItemsPerPageChange = async (newItemsPerPage: ItemsPerPageOption) => 
             <span>{{ item.name }}</span>
           </template>
 
+          <template #[`item.owner`]="{ item }">
+            <span>{{ item.owner }}</span>
+          </template>
+
           <template #[`item.status`]="{ item }">
             <v-chip 
               :color="item.status === 'Активна' ? 'teal' : 'grey'" 
               size="x-small"
             >
               {{ item.status }}
+            </v-chip>
+          </template>
+
+          <template #[`item.public`]="{ item }">
+            <v-chip 
+              :color="item.public ? 'teal' : 'grey'" 
+              size="x-small"
+            >
+              {{ item.public ? t('admin.services.editor.mapping.table.status.yes') : t('admin.services.editor.mapping.table.status.no') }}
             </v-chip>
           </template>
         </v-data-table>
@@ -462,12 +479,17 @@ const handleItemsPerPageChange = async (newItemsPerPage: ItemsPerPageOption) => 
             variant="outlined"
             class="mb-3"
             :disabled="!hasSelected"
+            v-tooltip="{
+              text: t('admin.services.editor.mapping.tooltips.publish'),
+              location: 'left',
+              disabled: !hasSelected
+            }"
           >
             <v-icon
-              icon="mdi-content-save"
+              icon="mdi-publish"
               class="mr-2"
             />
-            {{ t('admin.services.editor.mapping.actions.save') }}
+            {{ t('admin.services.editor.mapping.actions.publish') }}
           </v-btn>
         </div>
       </div>

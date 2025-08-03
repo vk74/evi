@@ -92,13 +92,19 @@
           "table": {
             "headers": {
               "selection": "",
-              "section": "Catalog Section",
-              "status": "Status"
+              "section": "catalog section",
+              "owner": "owner",
+              "status": "status",
+              "public": "public"
+            },
+            "status": {
+              "yes": "Yes",
+              "no": "No"
             }
           },
           "actions": {
             "title": "Actions",
-            "save": "Save"
+            "publish": "Publish"
           },
           "pagination": {
             "recordsPerPage": "Records per page:",
@@ -110,6 +116,9 @@
           },
           "messages": {
             "selectionCleared": "Selection cleared"
+          },
+          "tooltips": {
+            "publish": "Publish service to selected catalog sections"
           }
         },
         "information": {

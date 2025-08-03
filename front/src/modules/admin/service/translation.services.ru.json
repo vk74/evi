@@ -92,13 +92,19 @@
           "table": {
             "headers": {
               "selection": "",
-              "section": "Секция каталога",
-              "status": "Статус"
+              "section": "секция каталога",
+              "owner": "владелец",
+              "status": "статус",
+              "public": "публичный"
+            },
+            "status": {
+              "yes": "Да",
+              "no": "Нет"
             }
           },
           "actions": {
             "title": "Действия",
-            "save": "Сохранить"
+            "publish": "Опубликовать"
           },
           "pagination": {
             "recordsPerPage": "Записей на странице:",
@@ -110,6 +116,9 @@
           },
           "messages": {
             "selectionCleared": "Выбор очищен"
+          },
+          "tooltips": {
+            "publish": "Опубликовать сервис в выбранных секциях каталога"
           }
         },
         "information": {
