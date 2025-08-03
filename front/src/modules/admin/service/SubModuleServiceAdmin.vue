@@ -12,7 +12,7 @@ import type { Section } from './types.services.admin'
 // Импорты компонентов секций
 import ServicesList from './sections/Services.List.vue'
 import ServicesSettings from './sections/Services.Settings.vue'
-import ServiceEditor from './sections/ServiceEditor.vue'
+import ServiceEditor from './sections/service-editor/ServiceEditor.vue'
 
 // Импортируем Phosphor иконки
 import { 
