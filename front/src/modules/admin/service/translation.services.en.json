@@ -84,6 +84,34 @@
           "details": "details",
           "catalog publication": "catalog publication"
         },
+        "mapping": {
+          "search": {
+            "placeholder": "Search catalog sections...",
+            "minChars": "Enter at least 2 characters to search"
+          },
+          "table": {
+            "headers": {
+              "selection": "",
+              "section": "Catalog Section",
+              "status": "Status"
+            }
+          },
+          "actions": {
+            "title": "Actions",
+            "save": "Save"
+          },
+          "pagination": {
+            "recordsPerPage": "Records per page:",
+            "recordsInfo": "Showing {start} to {end} of {total} records",
+            "firstPage": "First page",
+            "previousPage": "Previous page",
+            "nextPage": "Next page",
+            "lastPage": "Last page"
+          },
+          "messages": {
+            "selectionCleared": "Selection cleared"
+          }
+        },
         "information": {
           "title": "basic information",
           "uuid": {

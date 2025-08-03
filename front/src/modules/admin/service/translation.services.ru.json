@@ -84,6 +84,34 @@
           "details": "данные",
           "catalog publication": "публикация в каталоге"
         },
+        "mapping": {
+          "search": {
+            "placeholder": "Поиск секций каталога...",
+            "minChars": "Введите минимум 2 символа для поиска"
+          },
+          "table": {
+            "headers": {
+              "selection": "",
+              "section": "Секция каталога",
+              "status": "Статус"
+            }
+          },
+          "actions": {
+            "title": "Действия",
+            "save": "Сохранить"
+          },
+          "pagination": {
+            "recordsPerPage": "Записей на странице:",
+            "recordsInfo": "Показано {start} - {end} из {total} записей",
+            "firstPage": "Первая страница",
+            "previousPage": "Предыдущая страница",
+            "nextPage": "Следующая страница",
+            "lastPage": "Последняя страница"
+          },
+          "messages": {
+            "selectionCleared": "Выбор очищен"
+          }
+        },
         "information": {
           "title": "основная информация",
           "uuid": {
