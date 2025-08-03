@@ -56,6 +56,27 @@ function isValidStatus(status: string): boolean {
 }
 
 /**
+ * Validates icon_name field
+ * @param iconName - Icon name to validate
+ * @returns boolean indicating if icon name is valid
+ */
+function isValidIconName(iconName: string): boolean {
+    if (!iconName) return true; // Allow empty/null values
+    
+    // Check length
+    if (iconName.length > 100) return false;
+    
+    // Check for special characters and codes
+    const specialCharRegex = /[<>\"'&%$#@!*()+=|\\\/\[\]{};:,?]/;
+    if (specialCharRegex.test(iconName)) return false;
+    
+    // Check for control characters
+    if (/[\x00-\x1F\x7F]/.test(iconName)) return false;
+    
+    return true;
+}
+
+/**
  * Checks if service name already exists
  * @param name - Service name to check
  * @returns Promise<boolean> indicating if name exists
@@ -112,6 +133,11 @@ async function validateCreateServiceData(data: CreateServiceRequest): Promise<vo
 
     if (data.comments && data.comments.length > 10000) {
         errors.push('Comments must not exceed 10000 characters');
+    }
+
+    // Icon name validation
+    if (data.icon_name && !isValidIconName(data.icon_name)) {
+        errors.push('Icon name contains invalid characters or exceeds 100 characters');
     }
 
     // Check if service name already exists
@@ -377,6 +403,7 @@ async function createServiceInDatabase(data: CreateServiceRequest, requestorUuid
             data.purpose?.trim() || null,
             data.comments?.trim() || null,
             data.is_public || false,
+            data.icon_name?.trim() || null,
             requestorUuid
         ]);
 

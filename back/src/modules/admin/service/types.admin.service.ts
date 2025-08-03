@@ -104,6 +104,7 @@ export interface ServiceError {
 // Create service request interface
 export interface CreateServiceRequest {
     name: string
+    icon_name?: string
     support_tier1?: string
     support_tier2?: string
     support_tier3?: string

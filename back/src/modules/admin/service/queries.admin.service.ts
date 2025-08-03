@@ -12,14 +12,14 @@ export const queries = {
     /**
      * Creates a new service (only basic fields)
      * Parameters: [name, priority, status, description_short, description_long, 
-     * purpose, comments, is_public, created_by]
+     * purpose, comments, is_public, icon_name, created_by]
      * Note: id is generated automatically by database default value
      */
     createService: `
         INSERT INTO app.services (
             name, priority, status, description_short, description_long, 
-            purpose, comments, is_public, created_by
-        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+            purpose, comments, is_public, icon_name, created_by
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
         RETURNING id, name, created_at
     `,
 
