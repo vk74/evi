@@ -211,4 +211,18 @@ export interface Section {
   name: string
   icon: string
   children?: Section[]
+}
+
+// Publishing section interface
+export interface PublishingSection {
+  id: string
+  name: string
+  owner: string | null
+  status: string | null
+  is_public: boolean
+}
+
+// Fetch publishing sections response interface
+export interface FetchPublishingSectionsResponse extends ApiResponse {
+  data: PublishingSection[]
 } 

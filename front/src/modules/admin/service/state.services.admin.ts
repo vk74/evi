@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
-import type { Service } from './types.services.admin'
+import type { Service, PublishingSection } from './types.services.admin'
 
 export const useServicesAdminStore = defineStore('servicesAdmin', () => {
   // State
@@ -13,6 +13,11 @@ export const useServicesAdminStore = defineStore('servicesAdmin', () => {
   const editingServiceId = ref<string | null>(null)
   const editingServiceData = ref<Service | null>(null)
   const activeSection = ref<'details' | 'catalog publication'>('details')
+  
+  // Publishing sections state
+  const publishingSections = ref<PublishingSection[]>([])
+  const isPublishingSectionsLoading = ref(false)
+  const publishingSectionsError = ref<string | null>(null)
 
   // Getters
   const getSelectedSectionPath = computed(() => selectedSectionPath.value)
@@ -22,6 +27,11 @@ export const useServicesAdminStore = defineStore('servicesAdmin', () => {
   const getEditingServiceId = computed(() => editingServiceId.value)
   const getEditingServiceData = computed(() => editingServiceData.value)
   const getActiveSection = computed(() => activeSection.value)
+  
+  // Publishing sections getters
+  const getPublishingSections = computed(() => publishingSections.value)
+  const getIsPublishingSectionsLoading = computed(() => isPublishingSectionsLoading.value)
+  const getPublishingSectionsError = computed(() => publishingSectionsError.value)
 
   // Actions
   const setSelectedSection = (sectionPath: string) => {
@@ -74,6 +84,23 @@ export const useServicesAdminStore = defineStore('servicesAdmin', () => {
   const setActiveSection = (section: 'details' | 'catalog publication') => {
     activeSection.value = section
   }
+  
+  // Publishing sections actions
+  const setPublishingSections = (sections: PublishingSection[]) => {
+    publishingSections.value = sections
+  }
+  
+  const setPublishingSectionsLoading = (loading: boolean) => {
+    isPublishingSectionsLoading.value = loading
+  }
+  
+  const setPublishingSectionsError = (error: string | null) => {
+    publishingSectionsError.value = error
+  }
+  
+  const clearPublishingSectionsError = () => {
+    publishingSectionsError.value = null
+  }
 
   return {
     // State
@@ -84,6 +111,9 @@ export const useServicesAdminStore = defineStore('servicesAdmin', () => {
     editingServiceId,
     editingServiceData,
     activeSection,
+    publishingSections,
+    isPublishingSectionsLoading,
+    publishingSectionsError,
     
     // Getters
     getSelectedSectionPath,
@@ -93,6 +123,9 @@ export const useServicesAdminStore = defineStore('servicesAdmin', () => {
     getEditingServiceId,
     getEditingServiceData,
     getActiveSection,
+    getPublishingSections,
+    getIsPublishingSectionsLoading,
+    getPublishingSectionsError,
     
     // Actions
     setSelectedSection,
@@ -102,6 +135,10 @@ export const useServicesAdminStore = defineStore('servicesAdmin', () => {
     toggleSection,
     openServiceEditor,
     closeServiceEditor,
-    setActiveSection
+    setActiveSection,
+    setPublishingSections,
+    setPublishingSectionsLoading,
+    setPublishingSectionsError,
+    clearPublishingSectionsError
   }
 }) 

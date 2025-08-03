@@ -12,6 +12,8 @@
 import { ref, computed, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useUiStore } from '@/core/state/uistate'
+import { useServicesAdminStore } from '../../state.services.admin'
+import { fetchPublishingSections } from './service.admin.fetchpublishingsections'
 
 // Types
 interface TableHeader {
@@ -34,6 +36,7 @@ type ItemsPerPageOption = 25 | 50 | 100
 // Initialize stores and i18n
 const { t } = useI18n()
 const uiStore = useUiStore()
+const servicesStore = useServicesAdminStore()
 
 
 
@@ -53,7 +56,12 @@ const selectedSections = ref<Set<string>>(new Set())
 // Loading state
 const isLoading = ref(false)
 
-// Mock data for catalog sections
+// Get sections from store
+const sections = computed(() => servicesStore.getPublishingSections)
+const isSectionsLoading = computed(() => servicesStore.getIsPublishingSectionsLoading)
+const sectionsError = computed(() => servicesStore.getPublishingSectionsError)
+
+// Mock data for catalog sections (fallback)
 const mockSections = ref<CatalogSection[]>([
   { id: '1', name: 'Основные сервисы', owner: 'Иван Петров', status: 'Активна', public: true },
   { id: '2', name: 'Вспомогательные сервисы', owner: 'Мария Сидорова', status: 'Активна', public: false },
@@ -88,6 +96,24 @@ const handleError = (error: unknown, context: string) => {
   )
 }
 
+// Load publishing sections from API
+const loadPublishingSections = async () => {
+  try {
+    servicesStore.setPublishingSectionsLoading(true)
+    servicesStore.clearPublishingSectionsError()
+    
+    const sectionsData = await fetchPublishingSections()
+    servicesStore.setPublishingSections(sectionsData)
+    
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : 'Произошла ошибка при загрузке секций'
+    servicesStore.setPublishingSectionsError(errorMessage)
+    uiStore.showErrorSnackbar(errorMessage)
+  } finally {
+    servicesStore.setPublishingSectionsLoading(false)
+  }
+}
+
 // Section action handlers
 const onSelectSection = (sectionId: string, selected: boolean) => {
   if (selected) {
@@ -116,8 +142,8 @@ const performSearch = async () => {
   isSearching.value = true
   
   try {
-    // Simulate API call delay
-    await new Promise(resolve => setTimeout(resolve, 300))
+    // Reload sections from API when search is performed
+    await loadPublishingSections()
   } catch (error) {
     handleError(error, 'performing search')
   } finally {
@@ -180,7 +206,16 @@ const updateOptionsAndFetch = async (options: { page?: number, itemsPerPage?: nu
 
 // Computed properties for table
 const filteredSections = computed(() => {
-  let result = mockSections.value
+  // Use real sections from store, fallback to mock data if empty
+  let result = sections.value.length > 0 
+    ? sections.value.map(section => ({
+        id: section.id,
+        name: section.name,
+        owner: section.owner || 'Не указан',
+        status: section.status || 'Не указан',
+        public: section.is_public
+      }))
+    : mockSections.value
 
   // Apply search filter
   if (searchQuery.value.length >= 2) {
@@ -214,8 +249,8 @@ const totalItems = computed(() => filteredSections.value.length)
 onMounted(async () => {
   isLoading.value = true
   try {
-    // Simulate loading delay
-    await new Promise(resolve => setTimeout(resolve, 500))
+    // Load publishing sections from API
+    await loadPublishingSections()
   } catch (error) {
     handleError(error, 'loading sections')
   } finally {
@@ -274,6 +309,18 @@ const handleItemsPerPageChange = async (newItemsPerPage: ItemsPerPageOption) => 
 
 <template>
   <v-card flat>
+    <!-- Error display -->
+    <v-alert
+      v-if="sectionsError"
+      type="error"
+      variant="tonal"
+      closable
+      class="ma-4"
+      @click:close="servicesStore.clearPublishingSectionsError()"
+    >
+      {{ sectionsError }}
+    </v-alert>
+    
     <div class="d-flex">
       <!-- Main content (left part) -->
       <div class="flex-grow-1 main-content-area">
@@ -301,7 +348,7 @@ const handleItemsPerPageChange = async (newItemsPerPage: ItemsPerPageOption) => 
           :items-per-page="itemsPerPage"
           :headers="headers"
           :items="filteredSections"
-          :loading="isLoading"
+          :loading="isLoading || isSectionsLoading"
           :items-length="totalItems"
           :items-per-page-options="[25, 50, 100]"
           class="sections-table"
