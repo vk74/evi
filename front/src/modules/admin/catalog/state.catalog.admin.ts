@@ -66,12 +66,14 @@ export const useCatalogAdminStore = defineStore('catalogAdmin', {
     // Новые методы для управления редактором
     openSectionEditor(mode: 'creation' | 'edit', sectionId?: string) {
       this.activeComponent = 'CatalogSectionEditor'
+      this.selectedSectionPath = 'Catalog.SectionEditor'
       this.editorMode = mode
       this.editingSectionId = sectionId || null
     },
 
     closeSectionEditor() {
       this.activeComponent = 'Catalog.Sections'
+      this.selectedSectionPath = 'Catalog.Sections'
       this.editorMode = 'creation'
       this.editingSectionId = null
     },

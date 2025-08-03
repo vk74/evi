@@ -3,7 +3,8 @@
     "catalog": {
       "navigation": {
         "catalog": "catalog",
-        "sections": "sections",
+        "sections": "sections list",
+        "sectioneditor": "section editor",
         "settings": "settings"
       },
       "editor": {

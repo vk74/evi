@@ -20,7 +20,8 @@ import {
   PhList, 
   PhGear, 
   PhCaretDown, 
-  PhCaretRight 
+  PhCaretRight,
+  PhPencilSimple
 } from '@phosphor-icons/vue'
 
 // Инициализация store и i18n
@@ -44,6 +45,11 @@ const sections = computed<Section[]>(() => {
           icon: 'PhList'
         },
         {
+          id: 'Catalog.SectionEditor',
+          name: t('admin.catalog.navigation.sectioneditor'),
+          icon: 'PhPencilSimple'
+        },
+        {
           id: 'Catalog.Settings',
           name: t('admin.catalog.navigation.settings'),
           icon: 'PhGear'
@@ -57,6 +63,7 @@ const sections = computed<Section[]>(() => {
 const sectionComponents = {
   'Catalog.Sections': markRaw(CatalogSections),
   'Catalog.Settings': markRaw(CatalogSettings),
+  'Catalog.SectionEditor': markRaw(CatalogSectionEditor),
   'CatalogSectionEditor': markRaw(CatalogSectionEditor)
 }
 
@@ -251,6 +258,8 @@ const getIconComponent = (iconName: string) => {
       return PhCaretDown
     case 'PhCaretRight':
       return PhCaretRight
+    case 'PhPencilSimple':
+      return PhPencilSimple
     default:
       return null
   }
