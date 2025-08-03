@@ -1465,7 +1465,7 @@ onMounted(() => {
   display: flex;
   align-items: center;
   justify-content: center;
-  height: 56px; /* Высота поля ввода */
+  height: 48px; /* Высота поля ввода */
   border: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
   border-radius: 4px;
   background-color: rgba(var(--v-theme-surface), 1);
