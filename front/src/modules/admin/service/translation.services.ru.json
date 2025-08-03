@@ -21,25 +21,25 @@
           "isPublic": "публичный"
         },
         "priority": {
-          "critical": "Критический",
-          "high": "Высокий",
-          "medium": "Средний",
-          "low": "Низкий"
+          "critical": "критический",
+          "high": "высокий",
+          "medium": "средний",
+          "low": "низкий"
         },
         "status": {
-          "undefined": "Не определен",
-          "drafted": "Черновик",
-          "being_developed": "В разработке",
-          "being_tested": "На тестировании",
-          "non_compliant": "Не соответствует",
-          "pending_approval": "Ожидает одобрения",
+          "undefined": "не определен",
+          "drafted": "черновик",
+          "being_developed": "в разработке",
+          "being_tested": "на тестировании",
+          "non_compliant": "не соответствует",
+          "pending_approval": "ожидает одобрения",
           "in_production": "в эксплуатации",
-          "under_maintenance": "На обслуживании",
-          "suspended": "Приостановлен",
-          "being_upgraded": "Обновляется",
-          "discontinued": "Прекращен",
-          "yes": "Да",
-          "no": "Нет"
+          "under_maintenance": "на обслуживании",
+          "suspended": "приостановлен",
+          "being_upgraded": "обновляется",
+          "discontinued": "прекращен",
+          "yes": "да",
+          "no": "нет"
         }
       },
       "actions": {

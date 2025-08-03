@@ -21,25 +21,25 @@
           "isPublic": "public"
         },
         "priority": {
-          "critical": "Critical",
-          "high": "High",
-          "medium": "Medium",
-          "low": "Low"
+          "critical": "critical",
+          "high": "high",
+          "medium": "medium",
+          "low": "low"
         },
         "status": {
-          "undefined": "Undefined",
-          "drafted": "Drafted",
-          "being_developed": "Being Developed",
-          "being_tested": "Being Tested",
-          "non_compliant": "Non Compliant",
-          "pending_approval": "Pending Approval",
-          "in_production": "In Production",
-          "under_maintenance": "Under Maintenance",
-          "suspended": "Suspended",
-          "being_upgraded": "Being Upgraded",
-          "discontinued": "Discontinued",
-          "yes": "Yes",
-          "no": "No"
+          "undefined": "undefined",
+          "drafted": "drafted",
+          "being_developed": "being developed",
+          "being_tested": "being tested",
+          "non_compliant": "non compliant",
+          "pending_approval": "pending approval",
+          "in_production": "in production",
+          "under_maintenance": "under maintenance",
+          "suspended": "suspended",
+          "being_upgraded": "being upgraded",
+          "discontinued": "discontinued",
+          "yes": "yes",
+          "no": "no"
         }
       },
       "actions": {

@@ -77,9 +77,9 @@ export const fetchAllServices = async (
         u2.username as technical_owner
       FROM app.services s
       LEFT JOIN app.service_users su1 ON s.id = su1.service_id AND su1.role_type = 'owner'
-      LEFT JOIN app.users u1 ON su1.user_id = u1.id
+      LEFT JOIN app.users u1 ON su1.user_id = u1.user_id
       LEFT JOIN app.service_users su2 ON s.id = su2.service_id AND su2.role_type = 'technical_owner'
-      LEFT JOIN app.users u2 ON su2.user_id = u2.id
+      LEFT JOIN app.users u2 ON su2.user_id = u2.user_id
       WHERE ($1::text IS NULL OR LOWER(s.name) LIKE LOWER('%' || $1 || '%'))
       ORDER BY ${actualSortField} ${sortDirection} NULLS LAST
       LIMIT $2 OFFSET $3
