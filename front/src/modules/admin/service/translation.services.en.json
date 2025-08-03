@@ -114,6 +114,10 @@
               "being_upgraded": "being upgraded",
               "discontinued": "discontinued"
             }
+          },
+          "icon": {
+            "label": "service icon",
+            "select": "select icon"
           }
         },
         "owners": {

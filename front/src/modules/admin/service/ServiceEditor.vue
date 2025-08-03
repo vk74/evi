@@ -15,6 +15,7 @@ import DataLoading from '@/core/ui/loaders/DataLoading.vue'
 import IconPicker from '@/core/ui/modals/icon-picker/IconPicker.vue'
 import { ServicePriority, ServiceStatus, type Service } from './types.services.admin'
 import { serviceCreateService } from './service.create.service'
+import * as PhosphorIcons from '@phosphor-icons/vue'
 
 // Initialize stores and i18n
 const { t, locale } = useI18n()
@@ -75,6 +76,12 @@ const selectedIconSize = ref(24)
 const isCreationMode = computed(() => servicesStore.getEditorMode === 'creation')
 const isEditMode = computed(() => servicesStore.getEditorMode === 'edit')
 const editingServiceId = computed(() => servicesStore.getEditingServiceId)
+
+// Get Phosphor icon component
+const selectedIconComponent = computed(() => {
+  if (!formData.value.icon_name) return null
+  return PhosphorIcons[formData.value.icon_name as keyof typeof PhosphorIcons]
+})
 
 const pageTitle = computed(() => {
   return isCreationMode.value 
@@ -191,7 +198,7 @@ const loadServiceData = async () => {
         const mockServiceData = {
           id: '1',
           name: 'User Management Service',
-          icon_name: 'mdi-account-circle', // Добавляем иконку для mock данных
+          icon_name: 'PhUser', // Используем Phosphor иконку для mock данных
           support_tier1: 'support.tier1@company.com',
           support_tier2: 'support.tier2@company.com',
           support_tier3: 'support.tier3@company.com',
@@ -595,52 +602,30 @@ onMounted(() => {
                     </v-col>
                   </v-row>
 
-                  <!-- Icon picker section -->
-                  <v-row class="pt-3">
-                    <v-col cols="12">
-                      <div class="icon-picker-section">
-                        <v-label class="text-body-2 mb-2">
-                          {{ t('admin.services.editor.information.icon.label') }}
-                        </v-label>
-                        <div class="icon-picker-container">
-                          <div 
-                            v-if="formData.icon_name"
-                            class="selected-icon-display"
-                            @click="openIconPicker"
+                  <v-row>
+                    <v-col cols="12" md="1">
+                      <div class="icon-placeholder">
+                        <component 
+                          v-if="selectedIconComponent"
+                          :is="selectedIconComponent"
+                          :size="24"
+                          color="currentColor"
+                          class="placeholder-icon"
+                        />
+                        <div 
+                          v-else
+                          class="empty-placeholder"
+                        >
+                          <v-icon 
+                            size="24"
+                            color="rgba(0, 0, 0, 0.38)"
                           >
-                            <v-icon 
-                              :size="selectedIconSize"
-                              color="currentColor"
-                              class="selected-icon"
-                            >
-                              {{ formData.icon_name }}
-                            </v-icon>
-                            <span class="icon-name">{{ formData.icon_name.replace('Ph', '') }}</span>
-                            <v-btn
-                              icon="mdi-close"
-                              size="small"
-                              variant="text"
-                              @click.stop="clearIcon"
-                              class="clear-icon-btn"
-                            />
-                          </div>
-                          <v-btn
-                            v-else
-                            variant="outlined"
-                            color="teal"
-                            prepend-icon="mdi-image-outline"
-                            @click="openIconPicker"
-                            class="select-icon-btn"
-                          >
-                            {{ t('admin.services.editor.information.icon.select') }}
-                          </v-btn>
+                            mdi-image-outline
+                          </v-icon>
                         </div>
                       </div>
                     </v-col>
-                  </v-row>
-
-                  <v-row>
-                    <v-col cols="12" md="8">
+                    <v-col cols="12" md="7">
                       <v-text-field
                         v-model="formData.name"
                         :label="t('admin.services.editor.information.name.label')"
@@ -1091,6 +1076,20 @@ onMounted(() => {
             {{ t('admin.services.editor.actions.title').toLowerCase() }}
           </h3>
           
+          <!-- Icon picker button -->
+          <div class="icon-picker-sidebar mb-3">
+            <v-btn
+              block
+              variant="outlined"
+              color="teal"
+              prepend-icon="mdi-image-outline"
+              @click="openIconPicker"
+              class="select-icon-btn-sidebar"
+            >
+              {{ t('admin.services.editor.information.icon.select') }}
+            </v-btn>
+          </div>
+          
           <!-- Create button (visible only in creation mode) -->
           <v-btn
             v-if="isCreationMode"
@@ -1421,6 +1420,7 @@ onMounted(() => {
   background-color: rgba(var(--v-theme-surface), 1);
   cursor: pointer;
   transition: all 0.2s ease;
+  min-height: 40px;
 }
 
 .selected-icon-display:hover {
@@ -1429,9 +1429,13 @@ onMounted(() => {
 }
 
 .icon-name {
-  font-size: 0.875rem;
+  font-size: 0.75rem;
   color: rgba(0, 0, 0, 0.87);
   font-weight: 500;
+  max-width: 80px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .clear-icon-btn {
@@ -1439,10 +1443,44 @@ onMounted(() => {
 }
 
 .select-icon-btn {
-  min-width: 160px;
+  min-width: 120px;
+  height: 40px;
 }
 
 .selected-icon {
-  font-size: 1.5rem;
+  font-size: 1.25rem;
+}
+
+/* Icon picker sidebar styles */
+.icon-picker-sidebar {
+  width: 100%;
+}
+
+.select-icon-btn-sidebar {
+  height: 40px;
+}
+
+/* Icon placeholder styles */
+.icon-placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 56px; /* Высота поля ввода */
+  border: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
+  border-radius: 4px;
+  background-color: rgba(var(--v-theme-surface), 1);
+  margin-top: 0; /* Убираем отступ для выравнивания */
+}
+
+.placeholder-icon {
+  color: rgba(var(--v-theme-primary), 1);
+}
+
+.empty-placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
 }
 </style> 

@@ -114,6 +114,10 @@
               "being_upgraded": "обновляется",
               "discontinued": "прекращен"
             }
+          },
+          "icon": {
+            "label": "иконка сервиса",
+            "select": "выбрать иконку"
           }
         },
         "owners": {
