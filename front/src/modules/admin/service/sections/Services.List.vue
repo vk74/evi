@@ -19,6 +19,7 @@ import { useUiStore } from '@/core/state/uistate'
 import { useServicesAdminStore } from '../state.services.admin'
 import DataLoading from '@/core/ui/loaders/DataLoading.vue'
 import { ServicePriority, ServiceStatus, type Service } from '../types.services.admin'
+import { fetchAllServices, type FetchServicesParams } from './service.admin.fetchallservices'
 
 // Types
 interface TableHeader {
@@ -54,96 +55,10 @@ const selectedServices = ref<Set<string>>(new Set())
 // Loading state
 const isLoading = ref(false)
 
-// Mock data for development
-const mockServices = ref<Service[]>([
-  {
-    id: '1',
-    name: 'User Management Service',
-    icon_name: 'mdi-cog',
-    support_tier1: 'support.tier1@company.com',
-    support_tier2: 'support.tier2@company.com',
-    support_tier3: 'support.tier3@company.com',
-    owner: 'john.doe@company.com',
-    backup_owner: 'backup.owner@company.com',
-    technical_owner: 'tech.lead@company.com',
-    backup_technical_owner: 'backup.tech@company.com',
-    dispatcher: 'dispatcher@company.com',
-    priority: ServicePriority.HIGH,
-    status: ServiceStatus.IN_PRODUCTION,
-    description_short: 'Service for managing user accounts',
-    description_long: 'Comprehensive user management service for internal user accounts and permissions',
-    purpose: 'Internal user management',
-    comments: 'Critical service for user administration',
-    is_public: true,
-    access_allowed_groups: 'admin,users',
-    access_denied_groups: null,
-    access_denied_users: null,
-    created_at: new Date('2024-01-15'),
-    created_by: 'admin@company.com',
-    modified_at: new Date('2024-02-20'),
-    modified_by: 'admin@company.com',
-    tile_preferred_width: 2,
-    tile_preferred_height: 1
-  },
-  {
-    id: '2',
-    name: 'Payment Processing',
-    icon_name: 'mdi-credit-card',
-    support_tier1: 'payment.support@company.com',
-    support_tier2: 'payment.tier2@company.com',
-    support_tier3: 'payment.tier3@company.com',
-    owner: 'finance.team@company.com',
-    backup_owner: 'finance.backup@company.com',
-    technical_owner: 'payment.tech@company.com',
-    backup_technical_owner: 'payment.backup.tech@company.com',
-    dispatcher: 'payment.dispatcher@company.com',
-    priority: ServicePriority.CRITICAL,
-    status: ServiceStatus.IN_PRODUCTION,
-    description_short: 'Payment processing service',
-    description_long: 'Secure payment processing service for financial transactions',
-    purpose: 'Financial transactions',
-    comments: 'High security requirements',
-    is_public: false,
-    access_allowed_groups: 'finance,admin',
-    access_denied_groups: null,
-    access_denied_users: null,
-    created_at: new Date('2024-01-10'),
-    created_by: 'admin@company.com',
-    modified_at: null,
-    modified_by: null,
-    tile_preferred_width: 3,
-    tile_preferred_height: 2
-  },
-  {
-    id: '3',
-    name: 'Reporting Dashboard',
-    icon_name: 'mdi-chart-line',
-    support_tier1: 'analytics.support@company.com',
-    support_tier2: 'analytics.tier2@company.com',
-    support_tier3: 'analytics.tier3@company.com',
-    owner: 'analytics.team@company.com',
-    backup_owner: 'analytics.backup@company.com',
-    technical_owner: 'dashboard.dev@company.com',
-    backup_technical_owner: 'dashboard.backup.dev@company.com',
-    dispatcher: 'analytics.dispatcher@company.com',
-    priority: ServicePriority.MEDIUM,
-    status: ServiceStatus.BEING_DEVELOPED,
-    description_short: 'Analytics and reporting dashboard',
-    description_long: 'Advanced analytics and reporting dashboard for business intelligence',
-    purpose: 'Business intelligence',
-    comments: 'Under active development',
-    is_public: true,
-    access_allowed_groups: 'analytics,managers',
-    access_denied_groups: null,
-    access_denied_users: null,
-    created_at: new Date('2024-02-01'),
-    created_by: 'admin@company.com',
-    modified_at: new Date('2024-02-15'),
-    modified_by: 'analytics.team@company.com',
-    tile_preferred_width: 2,
-    tile_preferred_height: 2
-  }
-])
+// Services data from API
+const services = ref<Service[]>([])
+const totalItemsCount = ref<number>(0)
+const totalPagesCount = ref<number>(0)
 
 // Helper function to get priority display text
 const getPriorityText = (priority: ServicePriority) => {
@@ -245,8 +160,8 @@ const editService = () => {
   const selectedIds = Array.from(selectedServices.value)
   if (selectedIds.length === 1) {
     const serviceId = selectedIds[0]
-    // Найти сервис в mock данных для передачи в редактор
-    const serviceToEdit = mockServices.value.find(service => service.id === serviceId)
+    // Найти сервис в данных для передачи в редактор
+    const serviceToEdit = services.value.find(service => service.id === serviceId)
     if (serviceToEdit) {
       servicesStore.openServiceEditor('edit', serviceId, serviceToEdit)
     }
@@ -321,7 +236,7 @@ const clearSelections = () => {
 }
 
 const selectAll = () => {
-  mockServices.value.forEach(service => {
+  services.value.forEach(service => {
     selectedServices.value.add(service.id)
   })
 }
@@ -333,18 +248,32 @@ const performSearch = async () => {
   }
   
   isSearching.value = true
+  isLoading.value = true
   
   try {
-    // TODO: Implement search API call
-    console.log('Searching for:', searchQuery.value)
+    const params: FetchServicesParams = {
+      page: page.value,
+      itemsPerPage: itemsPerPage.value,
+      searchQuery: searchQuery.value || undefined,
+      sortBy: sortBy.value || undefined,
+      sortDesc: sortDesc.value
+    }
     
-    // Simulate API delay
-    await new Promise(resolve => setTimeout(resolve, 500))
+    const response = await fetchAllServices(params)
+    
+    if (response.success) {
+      services.value = response.data.services
+      totalItemsCount.value = response.data.pagination.totalItems
+      totalPagesCount.value = response.data.pagination.totalPages
+    } else {
+      uiStore.showErrorSnackbar(response.message)
+    }
     
   } catch (error) {
     handleError(error, 'performing search')
   } finally {
     isSearching.value = false
+    isLoading.value = false
   }
 }
 
@@ -403,67 +332,24 @@ const updateOptionsAndFetch = async (options: { page?: number, itemsPerPage?: nu
 
 // Computed properties for table
 const filteredServices = computed(() => {
-  let result = mockServices.value
-
-  // Apply search filter
-  if (searchQuery.value.length >= 2) {
-    result = result.filter(service =>
-      service.name.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
-      (service.owner && service.owner.toLowerCase().includes(searchQuery.value.toLowerCase())) ||
-      (service.technical_owner && service.technical_owner.toLowerCase().includes(searchQuery.value.toLowerCase()))
-    )
-  }
-
-  // Apply sorting
-  if (sortBy.value) {
-    result = [...result].sort((a, b) => {
-      const aValue = a[sortBy.value as keyof Service]
-      const bValue = b[sortBy.value as keyof Service]
-      
-      if (typeof aValue === 'string' && typeof bValue === 'string') {
-        return sortDesc.value 
-          ? bValue.localeCompare(aValue)
-          : aValue.localeCompare(bValue)
-      }
-      
-      if (typeof aValue === 'number' && typeof bValue === 'number') {
-        return sortDesc.value ? bValue - aValue : aValue - bValue
-      }
-      
-      return 0
-    })
-  }
-
-  return result
+  return services.value
 })
 
-const totalItems = computed(() => filteredServices.value.length)
+const totalItems = computed(() => totalItemsCount.value)
 
 // Initialize on mount
 onMounted(async () => {
-  isLoading.value = true
-  try {
-    // TODO: Implement fetch services API call
-    console.log('Loading services...')
-    
-    // Simulate API delay
-    await new Promise(resolve => setTimeout(resolve, 1000))
-    
-  } catch (error) {
-    handleError(error, 'loading services')
-  } finally {
-    isLoading.value = false
-  }
+  await performSearch()
 })
 
 // Pagination helpers
 const getPaginationInfo = () => {
   const start = (page.value - 1) * itemsPerPage.value + 1
-  const end = Math.min(page.value * itemsPerPage.value, totalItems.value)
-  return t('admin.services.pagination.recordsInfo', { start, end, total: totalItems.value })
+  const end = Math.min(page.value * itemsPerPage.value, totalItemsCount.value)
+  return t('admin.services.pagination.recordsInfo', { start, end, total: totalItemsCount.value })
 }
 
-const getTotalPages = () => Math.ceil(totalItems.value / itemsPerPage.value)
+const getTotalPages = () => totalPagesCount.value
 
 const getVisiblePages = () => {
   const totalPages = getTotalPages()

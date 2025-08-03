@@ -74,8 +74,6 @@ export interface Service {
     created_by: string
     modified_at: Date | null
     modified_by: string | null
-    tile_preferred_width: number | null
-    tile_preferred_height: number | null
 }
 
 // API Response interfaces
