@@ -173,8 +173,41 @@
         "system": {
           "eventbus": {
             "title": "шина событий",
-            "enabled": {
-              "label": "ВКЛЮЧИТЬ МОДУЛЬ"
+            "domains": {
+              "title": "генерировать события в следующих доменах:",
+              "helpers": {
+                "label": "домен helpers"
+              },
+              "connectionHandler": {
+                "label": "домен connection handler"
+              },
+              "userEditor": {
+                "label": "домен редактор пользователей"
+              },
+              "groupEditor": {
+                "label": "домен редактор групп"
+              },
+              "usersList": {
+                "label": "домен список пользователей"
+              },
+              "groupsList": {
+                "label": "домен список групп"
+              },
+              "settings": {
+                "label": "домен настройки"
+              },
+              "logger": {
+                "label": "домен логгер"
+              },
+              "system": {
+                "label": "домен система"
+              },
+              "auth": {
+                "label": "домен аутентификация"
+              },
+              "PublicPasswordPolicies": {
+                "label": "домен публичные политики паролей"
+              }
             }
           },
           "logging": {
@@ -282,6 +315,12 @@
         "catalog": "каталог",
         "services": "сервисы",
         "processes": "процессы"
+      },
+      "groups": {
+        "security": "безопасность",
+        "usersmanagement": "управление пользователями",
+        "system": "система", 
+        "coreServices": "основные сервисы"
       },
       "common": {
         "loading": "загрузка настроек...",

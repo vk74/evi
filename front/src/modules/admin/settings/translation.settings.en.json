@@ -204,8 +204,41 @@
         "system": {
           "eventbus": {
             "title": "event bus",
-            "enabled": {
-              "label": "ENABLE MODULE"
+            "domains": {
+              "title": "generate events in the following domains:",
+              "helpers": {
+                "label": "domain helpers"
+              },
+              "connectionHandler": {
+                "label": "domain connection handler"
+              },
+              "userEditor": {
+                "label": "domain user editor"
+              },
+              "groupEditor": {
+                "label": "domain group editor"
+              },
+              "usersList": {
+                "label": "domain users list"
+              },
+              "groupsList": {
+                "label": "domain groups list"
+              },
+              "settings": {
+                "label": "domain settings"
+              },
+              "logger": {
+                "label": "domain logger"
+              },
+              "system": {
+                "label": "domain system"
+              },
+              "auth": {
+                "label": "domain authentication"
+              },
+              "PublicPasswordPolicies": {
+                "label": "domain public password policies"
+              }
             }
           },
           "logging": {
@@ -282,6 +315,12 @@
         "catalog": "catalog",
         "services": "services",
         "processes": "processes"
+      },
+      "groups": {
+        "security": "security",
+        "usersmanagement": "user management", 
+        "system": "system",
+        "coreServices": "core services"
       },
       "common": {
         "loading": "loading settings...",
