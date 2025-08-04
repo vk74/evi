@@ -102,9 +102,6 @@ async function initializeServer(): Promise<void> {
   try {
     console.log('Starting server initialization');
 
-    // 0. Initialize helpers cache
-    initHelpersCache();
-
     // 1. Loading private key
     const privateKeyPath = './src/keys/private_key.pem';
     const privateKey = fs.readFileSync(privateKeyPath, 'utf8');
@@ -143,21 +140,26 @@ async function initializeServer(): Promise<void> {
       throw eventError;
     }
 
-    // 3. Loading settings
+    // 3. Initialize helpers cache AFTER event system is ready
+    console.log('Initializing helpers cache...');
+    initHelpersCache();
+    console.log('Helpers cache initialized successfully');
+
+    // 4. Loading settings
     console.log('Loading application settings...');
     
     await loadSettings();
     settingsLoaded = true;
     console.log('[Server] System settings loaded and ready');
 
-    // 4. Initialize logger service AFTER settings are loaded
+    // 5. Initialize logger service AFTER settings are loaded
     // This ensures logger can apply correct settings from cache
     loggerService.initialize();
     loggerSubscriptions.initializeSubscriptions();
     console.log('Logger system initialized with current settings');
     // No duplicate logging here, as loadSettings already logs success message
 
-    // 4. Setting up middleware
+    // 6. Setting up middleware
     // Configure CORS for frontend only
     app.use(cors({
       origin: ['http://localhost:8080', 'http://localhost:3000', 'http://127.0.0.1:8080'], // Allow access from multiple localhost variants
@@ -174,10 +176,10 @@ async function initializeServer(): Promise<void> {
 
     console.log('Middleware configuration completed');
 
-    // 5. Add server readiness check middleware for all routes
+    // 7. Add server readiness check middleware for all routes
     app.use(checkServerReady);
 
-    // 6. Route registration
+    // 8. Route registration
     app.use(authRoutes);
     app.use('/api/catalog', catalogRoutes);
     app.use(adminRoutes);
@@ -186,14 +188,14 @@ async function initializeServer(): Promise<void> {
 
     console.log('All routes registered successfully');
 
-    // 7. Base route
+    // 9. Base route
     app.get('/', (req: Request, res: Response) => {
       res.send('Backend server is running');
     });
 
 
 
-    // 8. Server startup
+    // 10. Server startup
     app.listen(port, () => {
       const now = new Date();
       const dateOptions: Intl.DateTimeFormatOptions = { 

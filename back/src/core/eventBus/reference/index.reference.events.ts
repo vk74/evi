@@ -42,6 +42,11 @@ export const eventReferenceFiles: Record<string, string[]> = {
     path.resolve(__dirname, '../../helpers/events.helpers.ts')
   ],
   
+  // Helpers events - events for helper services (cache, etc.)
+  helpers: [
+    path.resolve(__dirname, '../../helpers/events.helpers.ts')
+  ],
+  
   // Logger events - events for logger service operations
   logger: [
     path.resolve(__dirname, '../../logger/events.logger.ts')

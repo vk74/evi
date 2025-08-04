@@ -11,18 +11,14 @@
 
 import { Pool, QueryResult } from 'pg';
 import { pool as pgPool } from '../db/maindb';
-import { createSystemLgr, Lgr } from '../lgr/lgr.index';
-import { Events } from '../lgr/codes';
+import { createAndPublishEvent } from '../eventBus/fabric.events';
+import { GET_UUID_BY_GROUP_NAME_EVENTS } from './events.helpers';
 import { get, set, CacheKeys } from './cache.helpers';
 
 // Type assertion for pool
 const pool = pgPool as Pool;
 
-// Create lgr for helper
-const lgr: Lgr = createSystemLgr({
-  module: 'GroupUuidHelper',
-  fileName: 'get.uuid.by.group.name.ts'
-});
+
 
 // Interface for potential errors
 interface GroupUuidError {
@@ -39,10 +35,10 @@ interface GroupUuidError {
  */
 export async function getUuidByGroupName(groupName: string): Promise<string | null> {
   try {
-    lgr.info({
-      code: Events.CORE.HELPERS.GET_UUID_BY_GROUP_NAME.PROCESS.START.code,
-      message: `Getting group UUID for group: ${groupName}`,
-      details: { groupName }
+    // Log start of UUID retrieval
+    await createAndPublishEvent({
+      eventName: GET_UUID_BY_GROUP_NAME_EVENTS.START.eventName,
+      payload: { groupName }
     });
 
     // Try to get result from cache first
@@ -50,10 +46,10 @@ export async function getUuidByGroupName(groupName: string): Promise<string | nu
     const cachedUuid = get<string | null>(cacheKey);
     
     if (cachedUuid !== undefined) {
-      lgr.debug({
-        code: Events.CORE.HELPERS.GET_UUID_BY_GROUP_NAME.PROCESS.SUCCESS.code,
-        message: `Retrieved UUID for group ${groupName} from cache`,
-        details: { groupName, groupId: cachedUuid, source: 'cache' }
+      // Log cache hit
+      await createAndPublishEvent({
+        eventName: GET_UUID_BY_GROUP_NAME_EVENTS.SUCCESS_CACHE.eventName,
+        payload: { groupName, groupId: cachedUuid, source: 'cache' }
       });
       return cachedUuid;
     }
@@ -67,10 +63,10 @@ export async function getUuidByGroupName(groupName: string): Promise<string | nu
     const result: QueryResult = await pool.query(query);
     
     if (!result.rows || result.rows.length === 0) {
-      lgr.warn({
-        code: Events.CORE.HELPERS.GET_UUID_BY_GROUP_NAME.PROCESS.NOT_FOUND.code,
-        message: `Group not found with name: ${groupName}`,
-        details: { groupName }
+      // Log group not found
+      await createAndPublishEvent({
+        eventName: GET_UUID_BY_GROUP_NAME_EVENTS.NOT_FOUND.eventName,
+        payload: { groupName }
       });
       
       // Cache the null result
@@ -83,22 +79,19 @@ export async function getUuidByGroupName(groupName: string): Promise<string | nu
     // Cache the result
     set(cacheKey, groupId);
     
-    lgr.info({
-      code: Events.CORE.HELPERS.GET_UUID_BY_GROUP_NAME.PROCESS.SUCCESS.code,
-      message: `Retrieved UUID [${groupId}] for group: ${groupName}`,
-      details: { groupName, groupId, source: 'database' }
+    // Log successful retrieval from database
+    await createAndPublishEvent({
+      eventName: GET_UUID_BY_GROUP_NAME_EVENTS.SUCCESS_DB.eventName,
+      payload: { groupName, groupId, source: 'database' }
     });
 
     return groupId;
   } catch (error) {
-    lgr.error({
-      code: Events.CORE.HELPERS.GET_UUID_BY_GROUP_NAME.PROCESS.ERROR.code,
-      message: `Error getting UUID for group: ${groupName}`,
-      error,
-      details: {
-        groupName,
-        errorMessage: error instanceof Error ? error.message : 'Unknown error'
-      }
+    // Log error during UUID retrieval
+    await createAndPublishEvent({
+      eventName: GET_UUID_BY_GROUP_NAME_EVENTS.ERROR.eventName,
+      payload: { groupName, error: error instanceof Error ? error.message : String(error) },
+      errorData: error instanceof Error ? error.message : String(error)
     });
     
     const groupUuidError: GroupUuidError = {

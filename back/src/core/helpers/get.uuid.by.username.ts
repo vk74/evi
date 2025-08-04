@@ -11,6 +11,8 @@
 
 import { Pool, QueryResult } from 'pg';
 import { pool as pgPool } from '../db/maindb';
+import { createAndPublishEvent } from '../eventBus/fabric.events';
+import { GET_UUID_BY_USERNAME_EVENTS } from './events.helpers';
 
 // Type assertion for pool
 const pool = pgPool as Pool;
@@ -32,22 +34,40 @@ export async function getUuidByUsername(username: string): Promise<string | null
   const client = await pool.connect();
   
   try {
-    console.log(`Getting UUID for username: ${username}`);
+    // Log start of UUID search
+    await createAndPublishEvent({
+      eventName: GET_UUID_BY_USERNAME_EVENTS.START.eventName,
+      payload: { username }
+    });
 
     const userQuery = 'SELECT user_id FROM app.users WHERE username = $1';
     const userResult: QueryResult = await client.query(userQuery, [username]);
     
     if (!userResult.rows || userResult.rows.length === 0) {
-      console.log(`User not found in database: ${username}`);
+      // Log user not found
+      await createAndPublishEvent({
+        eventName: GET_UUID_BY_USERNAME_EVENTS.NOT_FOUND.eventName,
+        payload: { username, found: false }
+      });
       return null;
     }
     
     const uuid = userResult.rows[0].user_id;
-    console.log(`UUID found for user ${username}: ${uuid}`);
+    
+    // Log successful UUID retrieval
+    await createAndPublishEvent({
+      eventName: GET_UUID_BY_USERNAME_EVENTS.SUCCESS.eventName,
+      payload: { username, uuid }
+    });
     
     return uuid;
   } catch (error) {
-    console.error('Error getting user UUID:', error);
+    // Log error during UUID retrieval
+    await createAndPublishEvent({
+      eventName: GET_UUID_BY_USERNAME_EVENTS.ERROR.eventName,
+      payload: { username, error: error instanceof Error ? error.message : String(error) },
+      errorData: error instanceof Error ? error.message : String(error)
+    });
     
     const getUserUuidError: GetUserUuidError = {
       code: 'DB_ERROR',

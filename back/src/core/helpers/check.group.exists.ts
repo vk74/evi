@@ -14,6 +14,8 @@
 
 import { Pool } from 'pg';
 import { pool as pgPool } from '../db/maindb';
+import { createAndPublishEvent } from '../eventBus/fabric.events';
+import { GROUP_EXISTS_EVENTS } from './events.helpers';
 
 // Type assertion for pool
 const pool = pgPool as Pool;
@@ -25,6 +27,12 @@ const pool = pgPool as Pool;
  */
 export async function checkGroupExists(uuid: string): Promise<boolean> {
     try {
+        // Log start of group existence check
+        await createAndPublishEvent({
+            eventName: GROUP_EXISTS_EVENTS.START.eventName,
+            payload: { uuid }
+        });
+
         const query = `
             SELECT id 
             FROM app.groups 
@@ -32,10 +40,30 @@ export async function checkGroupExists(uuid: string): Promise<boolean> {
         `;
         
         const result = await pool.query(query, [uuid]);
-        return result.rows.length > 0;
+        const exists = result.rows.length > 0;
+        
+        // Log result of group existence check
+        if (exists) {
+            await createAndPublishEvent({
+                eventName: GROUP_EXISTS_EVENTS.FOUND.eventName,
+                payload: { uuid, exists: true }
+            });
+        } else {
+            await createAndPublishEvent({
+                eventName: GROUP_EXISTS_EVENTS.NOT_FOUND.eventName,
+                payload: { uuid, exists: false }
+            });
+        }
+        
+        return exists;
         
     } catch (error) {
-        console.error('[checkGroupExists] Error checking group existence:', error);
+        // Log error during group existence check
+        await createAndPublishEvent({
+            eventName: GROUP_EXISTS_EVENTS.ERROR.eventName,
+            payload: { uuid, error: error instanceof Error ? error.message : String(error) },
+            errorData: error instanceof Error ? error.message : String(error)
+        });
         return false;
     }
 }

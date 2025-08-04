@@ -12,19 +12,15 @@
 
 import { Pool, QueryResult } from 'pg';
 import { pool as pgPool } from '../db/maindb';
-import { createSystemLgr, Lgr } from '../lgr/lgr.index';
-import { Events } from '../lgr/codes';
+import { createAndPublishEvent } from '../eventBus/fabric.events';
+import { CHECK_IS_USER_ADMIN_EVENTS } from './events.helpers';
 import { getUuidByGroupName } from './get.uuid.by.group.name';
 import { get, set, CacheKeys } from './cache.helpers';
 
 // Type assertion for pool
 const pool = pgPool as Pool;
 
-// Create lgr for helper
-const lgr: Lgr = createSystemLgr({
-  module: 'UserAdminCheckHelper',
-  fileName: 'check.is.user.admin.ts'
-});
+
 
 // Interface for potential errors
 interface AdminCheckError {
@@ -41,10 +37,10 @@ interface AdminCheckError {
  */
 export async function checkIsUserAdmin(userId: string): Promise<boolean> {
   try {
-    lgr.info({
-      code: Events.CORE.HELPERS.CHECK_IS_USER_ADMIN.PROCESS.START.code,
-      message: `Checking if user ${userId} is an administrator`,
-      details: { userId }
+    // Log start of admin status check
+    await createAndPublishEvent({
+      eventName: CHECK_IS_USER_ADMIN_EVENTS.START.eventName,
+      payload: { userId }
     });
 
     // Try to get result from cache first
@@ -52,10 +48,10 @@ export async function checkIsUserAdmin(userId: string): Promise<boolean> {
     const cachedResult = get<boolean>(cacheKey);
     
     if (cachedResult !== undefined) {
-      lgr.debug({
-        code: Events.CORE.HELPERS.CHECK_IS_USER_ADMIN.PROCESS.SUCCESS.code,
-        message: `Retrieved admin status for user ${userId} from cache`,
-        details: { userId, isAdmin: cachedResult, source: 'cache' }
+      // Log cache hit
+      await createAndPublishEvent({
+        eventName: CHECK_IS_USER_ADMIN_EVENTS.SUCCESS_CACHE.eventName,
+        payload: { userId, isAdmin: cachedResult, source: 'cache' }
       });
       return cachedResult;
     }
@@ -66,10 +62,10 @@ export async function checkIsUserAdmin(userId: string): Promise<boolean> {
 
     // If administrators group not found
     if (!groupId) {
-      lgr.warn({
-        code: Events.CORE.HELPERS.CHECK_IS_USER_ADMIN.PROCESS.GROUP_NOT_FOUND.code,
-        message: 'Administrators group not found in the system',
-        details: { administratorsGroupName }
+      // Log group not found
+      await createAndPublishEvent({
+        eventName: CHECK_IS_USER_ADMIN_EVENTS.GROUP_NOT_FOUND.eventName,
+        payload: { administratorsGroupName }
       });
       
       // Cache negative result
@@ -99,35 +95,32 @@ export async function checkIsUserAdmin(userId: string): Promise<boolean> {
     set(cacheKey, isAdmin);
     
     if (isAdmin) {
-      lgr.info({
-        code: Events.CORE.HELPERS.CHECK_IS_USER_ADMIN.PROCESS.USER_IS_ADMIN.code,
-        message: `User ${userId} is an administrator`,
-        details: { userId, groupId }
+      // Log user is admin
+      await createAndPublishEvent({
+        eventName: CHECK_IS_USER_ADMIN_EVENTS.USER_IS_ADMIN.eventName,
+        payload: { userId, groupId }
       });
     } else {
-      lgr.info({
-        code: Events.CORE.HELPERS.CHECK_IS_USER_ADMIN.PROCESS.USER_NOT_ADMIN.code,
-        message: `User ${userId} is not an administrator`,
-        details: { userId, groupId }
+      // Log user is not admin
+      await createAndPublishEvent({
+        eventName: CHECK_IS_USER_ADMIN_EVENTS.USER_NOT_ADMIN.eventName,
+        payload: { userId, groupId }
       });
     }
     
-    lgr.info({
-      code: Events.CORE.HELPERS.CHECK_IS_USER_ADMIN.PROCESS.SUCCESS.code,
-      message: `Completed admin status check for user ${userId}`,
-      details: { userId, isAdmin, source: 'database' }
+    // Log successful completion
+    await createAndPublishEvent({
+      eventName: CHECK_IS_USER_ADMIN_EVENTS.SUCCESS_DB.eventName,
+      payload: { userId, isAdmin, source: 'database' }
     });
 
     return isAdmin;
   } catch (error) {
-    lgr.error({
-      code: Events.CORE.HELPERS.CHECK_IS_USER_ADMIN.PROCESS.ERROR.code,
-      message: `Error checking admin status for user: ${userId}`,
-      error,
-      details: {
-        userId,
-        errorMessage: error instanceof Error ? error.message : 'Unknown error'
-      }
+    // Log error during admin status check
+    await createAndPublishEvent({
+      eventName: CHECK_IS_USER_ADMIN_EVENTS.ERROR.eventName,
+      payload: { userId, error: error instanceof Error ? error.message : String(error) },
+      errorData: error instanceof Error ? error.message : String(error)
     });
     
     const adminCheckError: AdminCheckError = {

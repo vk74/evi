@@ -12,6 +12,8 @@
 
 import { createSystemLgr, Lgr } from '../lgr/lgr.index';
 import { Events } from '../lgr/codes';
+import { createAndPublishEvent } from '../eventBus/fabric.events';
+import { CACHE_HELPER_EVENTS } from './events.helpers';
 
 // Create lgr for cache
 const lgr: Lgr = createSystemLgr({
@@ -77,9 +79,13 @@ const cacheStats: Record<string, CacheStats> = {
 
 // Initialize the cache and start periodic stats logging
 export function initCache(): void {
-  console.log('[HelpersCache] Initialized successfully', {
-    cacheTypes: Object.keys(cacheStorage),
-    config: cacheConfig
+  // Publish cache initialization event
+  createAndPublishEvent({
+    eventName: CACHE_HELPER_EVENTS.INIT_SUCCESS.eventName,
+    payload: {
+      cacheTypes: Object.keys(cacheStorage),
+      config: cacheConfig
+    }
   });
 
   // Set up periodic stats logging (every 10 minutes)
@@ -324,7 +330,12 @@ export function clearAll(): void {
  */
 function logStats(): void {
   const stats = Object.entries(cacheStats).map(([type, stat]) => ({ type, ...stat }));
-  console.log('[HelpersCache] Stats:', stats);
+  
+  // Publish cache statistics event
+  createAndPublishEvent({
+    eventName: CACHE_HELPER_EVENTS.STATS_REPORT.eventName,
+    payload: { stats }
+  });
 }
 
 // Helper functions for constructing cache keys

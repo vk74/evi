@@ -11,18 +11,14 @@
 
 import { Pool, QueryResult } from 'pg';
 import { pool as pgPool } from '../db/maindb';
-import { createSystemLgr, Lgr } from '../lgr/lgr.index';
-import { Events } from '../lgr/codes';
+import { createAndPublishEvent } from '../eventBus/fabric.events';
+import { GET_USER_ACCOUNT_STATUS_EVENTS } from './events.helpers';
 import { get, set, CacheKeys } from './cache.helpers';
 
 // Type assertion for pool
 const pool = pgPool as Pool;
 
-// Create lgr for helper
-const lgr: Lgr = createSystemLgr({
-  module: 'UserAccountStatusHelper',
-  fileName: 'get.user.account.status.ts'
-});
+
 
 // Interface for potential errors
 interface AccountStatusError {
@@ -39,10 +35,10 @@ interface AccountStatusError {
  */
 export async function getUserAccountStatus(userId: string): Promise<string | null> {
   try {
-    lgr.info({
-      code: Events.CORE.HELPERS.GET_USER_ACCOUNT_STATUS.PROCESS.START.code,
-      message: `Getting user account status for user: ${userId}`,
-      details: { userId }
+    // Log start of account status retrieval
+    await createAndPublishEvent({
+      eventName: GET_USER_ACCOUNT_STATUS_EVENTS.START.eventName,
+      payload: { userId }
     });
 
     // Try to get result from cache first
@@ -50,10 +46,10 @@ export async function getUserAccountStatus(userId: string): Promise<string | nul
     const cachedStatus = get<string | null>(cacheKey);
     
     if (cachedStatus !== undefined) {
-      lgr.debug({
-        code: Events.CORE.HELPERS.GET_USER_ACCOUNT_STATUS.PROCESS.SUCCESS.code,
-        message: `Retrieved account status for user ${userId} from cache`,
-        details: { userId, accountStatus: cachedStatus, source: 'cache' }
+      // Log cache hit
+      await createAndPublishEvent({
+        eventName: GET_USER_ACCOUNT_STATUS_EVENTS.SUCCESS_CACHE.eventName,
+        payload: { userId, accountStatus: cachedStatus, source: 'cache' }
       });
       return cachedStatus;
     }
@@ -67,10 +63,10 @@ export async function getUserAccountStatus(userId: string): Promise<string | nul
     const result: QueryResult = await pool.query(query);
     
     if (!result.rows || result.rows.length === 0) {
-      lgr.warn({
-        code: Events.CORE.HELPERS.GET_USER_ACCOUNT_STATUS.PROCESS.NOT_FOUND.code,
-        message: `User not found with UUID: ${userId}`,
-        details: { userId }
+      // Log user not found
+      await createAndPublishEvent({
+        eventName: GET_USER_ACCOUNT_STATUS_EVENTS.NOT_FOUND.eventName,
+        payload: { userId }
       });
       
       // Cache the null result
@@ -83,22 +79,19 @@ export async function getUserAccountStatus(userId: string): Promise<string | nul
     // Cache the result
     set(cacheKey, accountStatus);
     
-    lgr.info({
-      code: Events.CORE.HELPERS.GET_USER_ACCOUNT_STATUS.PROCESS.SUCCESS.code,
-      message: `Retrieved account status [${accountStatus}] for user: ${userId}`,
-      details: { userId, accountStatus, source: 'database' }
+    // Log successful retrieval from database
+    await createAndPublishEvent({
+      eventName: GET_USER_ACCOUNT_STATUS_EVENTS.SUCCESS_DB.eventName,
+      payload: { userId, accountStatus, source: 'database' }
     });
 
     return accountStatus;
   } catch (error) {
-    lgr.error({
-      code: Events.CORE.HELPERS.GET_USER_ACCOUNT_STATUS.PROCESS.ERROR.code,
-      message: `Error getting account status for user: ${userId}`,
-      error,
-      details: {
-        userId,
-        errorMessage: error instanceof Error ? error.message : 'Unknown error'
-      }
+    // Log error during account status retrieval
+    await createAndPublishEvent({
+      eventName: GET_USER_ACCOUNT_STATUS_EVENTS.ERROR.eventName,
+      payload: { userId, error: error instanceof Error ? error.message : String(error) },
+      errorData: error instanceof Error ? error.message : String(error)
     });
     
     const accountStatusError: AccountStatusError = {

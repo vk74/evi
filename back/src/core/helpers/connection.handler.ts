@@ -47,7 +47,7 @@ export function connectionHandler<T = any>(
     const controller = controllerName || 'unknown';
     
     try {
-      // Log request received
+      // Log request received with enhanced details
       await fabricEvents.createAndPublishEvent({
         req,
         eventName: CONNECTION_HANDLER_EVENTS.REQUEST_RECEIVED.eventName,
@@ -55,9 +55,34 @@ export function connectionHandler<T = any>(
           method: req.method,
           url: req.url,
           controllerName: controller,
-          requestId
+          requestId,
+          userAgent: req.headers['user-agent'],
+          ipAddress: req.ip || req.connection?.remoteAddress
         }
       });
+
+      // Log HTTP method specific event
+      const methodEventMap = {
+        'GET': CONNECTION_HANDLER_EVENTS.REQUEST_GET,
+        'POST': CONNECTION_HANDLER_EVENTS.REQUEST_POST,
+        'PUT': CONNECTION_HANDLER_EVENTS.REQUEST_PUT,
+        'DELETE': CONNECTION_HANDLER_EVENTS.REQUEST_DELETE
+      };
+
+      const methodEvent = methodEventMap[req.method as keyof typeof methodEventMap];
+      if (methodEvent) {
+        await fabricEvents.createAndPublishEvent({
+          req,
+          eventName: methodEvent.eventName,
+          payload: {
+            url: req.url,
+            controllerName: controller,
+            requestId,
+            ...(req.method === 'GET' && { queryParams: req.query }),
+            ...(req.method === 'POST' || req.method === 'PUT') && { bodySize: JSON.stringify(req.body).length }
+          }
+        });
+      }
 
       // Log business logic start
       await fabricEvents.createAndPublishEvent({
@@ -90,12 +115,12 @@ export function connectionHandler<T = any>(
         res.status(200).json(result);
       }
 
-      // Log response sent
+      // Log response sent with status code specific event
       await fabricEvents.createAndPublishEvent({
         req,
-        eventName: CONNECTION_HANDLER_EVENTS.RESPONSE_SENT.eventName,
+        eventName: CONNECTION_HANDLER_EVENTS.RESPONSE_SENT_200.eventName,
         payload: {
-          statusCode: 200,
+          controllerName: controller,
           responseSize,
           duration
         }
@@ -133,18 +158,29 @@ export function connectionHandler<T = any>(
 
         res.status(statusCode).json(errorResponse);
 
-        // Log error response sent
-        await fabricEvents.createAndPublishEvent({
-          req,
-          eventName: CONNECTION_HANDLER_EVENTS.ERROR_RESPONSE_SENT.eventName,
-          payload: {
-            statusCode,
-            errorCode,
-            errorType: error.constructor.name,
-            duration
-          },
-          errorData: error.message || String(error)
-        });
+        // Log error response sent with status code specific event
+        const statusEventMap = {
+          400: CONNECTION_HANDLER_EVENTS.RESPONSE_SENT_400,
+          401: CONNECTION_HANDLER_EVENTS.RESPONSE_SENT_401,
+          403: CONNECTION_HANDLER_EVENTS.RESPONSE_SENT_403,
+          404: CONNECTION_HANDLER_EVENTS.RESPONSE_SENT_404,
+          500: CONNECTION_HANDLER_EVENTS.RESPONSE_SENT_500
+        };
+
+        const statusEvent = statusEventMap[statusCode as keyof typeof statusEventMap];
+        if (statusEvent) {
+          await fabricEvents.createAndPublishEvent({
+            req,
+            eventName: statusEvent.eventName,
+            payload: {
+              controllerName: controller,
+              errorCode,
+              errorType: error.constructor.name,
+              duration
+            },
+            errorData: error.message || String(error)
+          });
+        }
       }
     }
   };
