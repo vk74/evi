@@ -5,14 +5,8 @@
 
 import { AppSetting, SettingsError } from './types.settings';
 import Ajv, { ErrorObject } from 'ajv';
-import { createSystemLgr, Lgr } from '../../../core/lgr/lgr.index';
-import { Events } from '../../../core/lgr/codes';
-
-// Create lgr for validation service
-const lgr: Lgr = createSystemLgr({
-  module: 'SettingsValidationService',
-  fileName: 'service.validate.settings.ts'
-});
+import { createAndPublishEvent } from '../../../core/eventBus/fabric.events';
+import { SETTINGS_VALIDATION_EVENTS } from './events.settings';
 
 // Initialize JSON schema validator
 const ajv = new Ajv({
@@ -25,16 +19,17 @@ const ajv = new Ajv({
  * 
  * @param setting - The setting containing the schema to validate against
  * @param value - The value to validate
+ * @param req - Express request object for event context
  * @returns Result object with validation status and potential errors
  */
-export function validateSettingValue(setting: AppSetting, value: any): { isValid: boolean; errors?: string[] } {
+export async function validateSettingValue(setting: AppSetting, value: any, req?: any): Promise<{ isValid: boolean; errors?: string[] }> {
   try {
     // If no validation schema provided, consider valid
     if (!setting.validation_schema) {
-      lgr.debug({
-        code: Events.CORE.SETTINGS.VALIDATE.PROCESS.SKIP.code,
-        message: 'No validation schema defined for setting, skipping validation',
-        details: {
+      await createAndPublishEvent({
+        req,
+        eventName: SETTINGS_VALIDATION_EVENTS.SKIP.eventName,
+        payload: {
           sectionPath: setting.section_path,
           settingName: setting.setting_name
         }
@@ -42,10 +37,10 @@ export function validateSettingValue(setting: AppSetting, value: any): { isValid
       return { isValid: true };
     }
 
-    lgr.debug({
-      code: Events.CORE.SETTINGS.VALIDATE.PROCESS.START.code,
-      message: 'Validating setting value against schema',
-      details: {
+    await createAndPublishEvent({
+      req,
+      eventName: SETTINGS_VALIDATION_EVENTS.START.eventName,
+      payload: {
         sectionPath: setting.section_path,
         settingName: setting.setting_name,
         schema: setting.validation_schema
@@ -67,10 +62,10 @@ export function validateSettingValue(setting: AppSetting, value: any): { isValid
         return `${path} ${error.message || 'Invalid value'}`;
       });
 
-      lgr.warn({
-        code: Events.CORE.SETTINGS.VALIDATE.PROCESS.ERROR.code,
-        message: 'Setting value failed validation',
-        details: {
+      await createAndPublishEvent({
+        req,
+        eventName: SETTINGS_VALIDATION_EVENTS.ERROR.eventName,
+        payload: {
           sectionPath: setting.section_path,
           settingName: setting.setting_name,
           errors
@@ -80,10 +75,10 @@ export function validateSettingValue(setting: AppSetting, value: any): { isValid
       return { isValid: false, errors };
     }
 
-    lgr.debug({
-      code: Events.CORE.SETTINGS.VALIDATE.PROCESS.SUCCESS.code,
-      message: 'Setting value passed validation',
-      details: {
+    await createAndPublishEvent({
+      req,
+      eventName: SETTINGS_VALIDATION_EVENTS.SUCCESS.eventName,
+      payload: {
         sectionPath: setting.section_path,
         settingName: setting.setting_name
       }
@@ -94,15 +89,14 @@ export function validateSettingValue(setting: AppSetting, value: any): { isValid
     // Handle validation errors
     const errorMessage = error instanceof Error ? error.message : String(error);
     
-    lgr.error({
-      code: Events.CORE.SETTINGS.VALIDATE.PROCESS.ERROR.code,
-      message: 'Error during setting validation',
-      error,
-      details: {
+    await createAndPublishEvent({
+      req,
+      eventName: SETTINGS_VALIDATION_EVENTS.FAILED.eventName,
+      payload: {
         sectionPath: setting.section_path,
-        settingName: setting.setting_name,
-        errorMessage
-      }
+        settingName: setting.setting_name
+      },
+      errorData: errorMessage
     });
     
     return {
@@ -132,10 +126,11 @@ export function createValidationError(message: string, details?: unknown): Setti
  * 
  * @param setting - The setting containing the schema
  * @param value - The value to validate
+ * @param req - Express request object for event context
  * @throws SettingsError if validation fails
  */
-export function validateOrThrow(setting: AppSetting, value: any): void {
-  const result = validateSettingValue(setting, value);
+export async function validateOrThrow(setting: AppSetting, value: any, req?: any): Promise<void> {
+  const result = await validateSettingValue(setting, value, req);
   
   if (!result.isValid) {
     const errorMessage = `Validation failed for ${setting.section_path}/${setting.setting_name}: ${result.errors?.join('; ')}`;

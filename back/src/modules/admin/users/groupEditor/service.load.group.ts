@@ -11,42 +11,37 @@
 import { Pool } from 'pg';
 import { pool as pgPool } from '../../../../core/db/maindb';
 import { queries } from './queries.group.editor';
-import { createSystemLgr, Lgr } from '../../../../core/lgr/lgr.index';
-import { GroupEvents } from '../../../../core/lgr/codes/admin/users';
+import { createAndPublishEvent } from '../../../../core/eventBus/fabric.events';
+import { GROUP_LOAD_EVENTS } from './events.group.editor';
 import { GroupData } from './types.group.editor';
 
 // Explicitly set type for pool
 const pool = pgPool as Pool;
 
-// Create lgr for service
-const lgr: Lgr = createSystemLgr({
-  module: 'LoadGroupService',
-  fileName: 'service.load.group.ts'
-});
-
 /**
  * Loads a single group by its ID
  * @param groupId - UUID of the group to load
  * @param username - Username of the user performing the load
+ * @param req - Express request object for event context
  * @returns Promise<GroupData | null> - Group data or null if not found
  * @throws {Error} - If an error occurs
  */
-export async function loadGroup(groupId: string, username: string): Promise<GroupData | null> {
+export async function loadGroup(groupId: string, username: string, req?: any): Promise<GroupData | null> {
   try {
-    lgr.info({
-      code: GroupEvents.LOAD.INITIATED.code,
-      message: 'Starting group load',
-      details: { groupId, username }
+    await createAndPublishEvent({
+      req,
+      eventName: GROUP_LOAD_EVENTS.INITIATED.eventName,
+      payload: { groupId, username }
     });
 
     // Load group base data
     const groupResult = await pool.query(queries.getGroupById, [groupId]);
     
     if (groupResult.rows.length === 0) {
-      lgr.warn({
-        code: GroupEvents.LOAD.GROUP_NOT_FOUND.code,
-        message: 'Group not found',
-        details: { groupId, username }
+      await createAndPublishEvent({
+        req,
+        eventName: GROUP_LOAD_EVENTS.GROUP_NOT_FOUND.eventName,
+        payload: { groupId, username }
       });
       
       return null;
@@ -81,23 +76,23 @@ export async function loadGroup(groupId: string, username: string): Promise<Grou
       } : null
     };
 
-    lgr.info({
-      code: GroupEvents.LOAD.SUCCESS.code,
-      message: 'Group loaded successfully',
-      details: { groupId, username, hasDetails: !!detailsData }
+    await createAndPublishEvent({
+      req,
+      eventName: GROUP_LOAD_EVENTS.SUCCESS.eventName,
+      payload: { groupId, username, hasDetails: !!detailsData }
     });
 
     return result;
 
   } catch (error) {
-    lgr.error({
-      code: GroupEvents.LOAD.FAILED.code,
-      message: 'Error during group load',
-      details: { 
+    await createAndPublishEvent({
+      req,
+      eventName: GROUP_LOAD_EVENTS.FAILED.eventName,
+      payload: { 
         groupId, 
-        username,
-        error: error instanceof Error ? error.message : String(error)
-      }
+        username
+      },
+      errorData: error instanceof Error ? error.message : String(error)
     });
 
     // Re-throw error

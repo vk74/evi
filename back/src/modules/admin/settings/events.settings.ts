@@ -540,3 +540,65 @@ export const SETTINGS_INITIALIZATION_EVENTS = {
     version: '1.0.0'
   }
 };
+
+/**
+ * Settings Validation Events
+ * Events related to settings validation
+ */
+export const SETTINGS_VALIDATION_EVENTS = {
+  // When validation is skipped due to missing schema
+  SKIP: {
+    eventName: 'admin.settings.validate.skip',
+    source: 'settings validation service',
+    eventType: 'app' as const,
+    severity: 'debug' as const,
+    eventMessage: 'Settings validation skipped - no schema defined',
+    payload: null, // Will be of type { sectionPath: string, settingName: string }
+    version: '1.0.0'
+  },
+  
+  // When validation process starts
+  START: {
+    eventName: 'admin.settings.validate.start',
+    source: 'settings validation service',
+    eventType: 'app' as const,
+    severity: 'debug' as const,
+    eventMessage: 'Settings validation started',
+    payload: null, // Will be of type { sectionPath: string, settingName: string, schema: object }
+    version: '1.0.0'
+  },
+  
+  // When validation is successful
+  SUCCESS: {
+    eventName: 'admin.settings.validate.success',
+    source: 'settings validation service',
+    eventType: 'app' as const,
+    severity: 'debug' as const,
+    eventMessage: 'Settings validation successful',
+    payload: null, // Will be of type { sectionPath: string, settingName: string }
+    version: '1.0.0'
+  },
+  
+  // When validation fails
+  ERROR: {
+    eventName: 'admin.settings.validate.error',
+    source: 'settings validation service',
+    eventType: 'app' as const,
+    severity: 'warning' as const,
+    eventMessage: 'Settings validation failed',
+    payload: null, // Will be of type { sectionPath: string, settingName: string, errors: string[] }
+    version: '1.0.0'
+  },
+  
+  // When validation process encounters an error
+  FAILED: {
+    eventName: 'admin.settings.validate.failed',
+    source: 'settings validation service',
+    eventType: 'app' as const,
+    severity: 'error' as const,
+    eventMessage: 'Settings validation process failed',
+    payload: null, // Will be of type { sectionPath: string, settingName: string }
+    errorData: null, // Will be filled with error details
+    version: '1.0.0'
+  }
+};

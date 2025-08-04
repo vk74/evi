@@ -829,3 +829,54 @@ export const USER_SEARCH_EVENTS = {
     version: '1.0.0'
   }
 };
+
+/**
+ * Group Load Events
+ * Events related to loading group data
+ */
+export const GROUP_LOAD_EVENTS = {
+  // When group load is initiated
+  INITIATED: {
+    eventName: 'groupEditor.load.initiated',
+    source: 'group editor admin submodule',
+    eventType: 'app' as const,
+    severity: 'debug' as const,
+    eventMessage: 'Group load initiated',
+    payload: null, // Will be of type { groupId: string, username: string }
+    version: '1.0.0'
+  },
+  
+  // When group is not found during load
+  GROUP_NOT_FOUND: {
+    eventName: 'groupEditor.load.group_not_found',
+    source: 'group editor admin submodule',
+    eventType: 'app' as const,
+    severity: 'debug' as const,
+    eventMessage: 'Group not found during load',
+    payload: null, // Will be of type { groupId: string, username: string }
+    version: '1.0.0'
+  },
+  
+  // When group load is successfully completed
+  SUCCESS: {
+    eventName: 'groupEditor.load.success',
+    source: 'group editor admin submodule',
+    eventType: 'app' as const,
+    severity: 'debug' as const,
+    eventMessage: 'Group loaded successfully',
+    payload: null, // Will be of type { groupId: string, username: string, hasDetails: boolean }
+    version: '1.0.0'
+  },
+  
+  // When group load operation fails
+  FAILED: {
+    eventName: 'groupEditor.load.error',
+    source: 'group editor admin submodule',
+    eventType: 'app' as const,
+    severity: 'error' as const,
+    eventMessage: 'Group load failed',
+    payload: null, // Will be of type { groupId: string, username: string }
+    errorData: null, // Will be filled with error message
+    version: '1.0.0'
+  }
+};
