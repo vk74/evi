@@ -8,6 +8,7 @@
  * - Calls service to add users to group
  * - Returns response with operation status
  * - Handles and logs errors
+ * - Publishes events to event bus for monitoring and tracking
  */
 import { Request, Response } from 'express';
 import { addUsersToGroup } from './service.add.users.to.group';
@@ -15,17 +16,8 @@ import type {
   AddUsersToGroupRequest,
   ServiceError
 } from './types.item.selector';
-
-// lgr for tracking operations
-const lgr = {
-  info: (message: string, meta?: object) => 
-    console.log(`[${new Date().toISOString()}] [AddUsersToGroup] ${message}`, meta || ''),
-  error: (message: string, error: unknown, meta?: object) => 
-    console.error(
-      `[${new Date().toISOString()}] [AddUsersToGroup] ${message}`,
-      { error, ...meta }
-    )
-};
+import { createAndPublishEvent } from '../../eventBus/fabric.events';
+import { ADD_USERS_TO_GROUP_EVENTS } from './events.item.selector';
 
 /**
  * Controller function that handles HTTP requests for adding users to group
@@ -35,18 +27,28 @@ const lgr = {
 async function addUsersToGroupController(req: Request & { user?: { uuid: string } }, res: Response) {
   const requestData: AddUsersToGroupRequest = req.body;
   
-  // Log request data for debugging
-  lgr.info('Received request to add users to group', {
-    groupId: requestData.groupId,
-    userCount: requestData.userIds?.length || 0,
-    requestedBy: req.user?.uuid
+  // Publish request received event
+  await createAndPublishEvent({
+    req,
+    eventName: ADD_USERS_TO_GROUP_EVENTS.REQUEST_RECEIVED.eventName,
+    payload: {
+      groupId: requestData.groupId,
+      userCount: requestData.userIds?.length || 0,
+      requestedBy: req.user?.uuid
+    }
   });
 
   // Basic validation
   if (!requestData.groupId || !requestData.userIds || !Array.isArray(requestData.userIds) || requestData.userIds.length === 0) {
-    lgr.error('Invalid request data', null, {
-      groupId: requestData.groupId,
-      userIds: requestData.userIds
+    // Publish validation error event
+    await createAndPublishEvent({
+      req,
+      eventName: ADD_USERS_TO_GROUP_EVENTS.VALIDATION_ERROR.eventName,
+      payload: {
+        groupId: requestData.groupId,
+        userIds: requestData.userIds
+      },
+      errorData: 'Invalid request. Group ID and at least one user ID are required.'
     });
     
     res.status(400).json({
@@ -65,26 +67,62 @@ async function addUsersToGroupController(req: Request & { user?: { uuid: string 
       requestData.addedBy || req.user?.uuid || ''
     );
 
-    // Log success and return result
-    lgr.info('Successfully added users to group', {
-      groupId: requestData.groupId,
-      addedCount: result.count
+    // Publish success event
+    await createAndPublishEvent({
+      req,
+      eventName: ADD_USERS_TO_GROUP_EVENTS.RESPONSE_SUCCESS.eventName,
+      payload: {
+        groupId: requestData.groupId,
+        addedCount: result.count
+      }
     });
 
     res.status(200).json(result);
   } catch (err) {
     const error = err as ServiceError;
     
-    // Log error with details
-    lgr.error('Failed to add users to group', error, {
-      groupId: requestData.groupId,
-      code: error.code
+    // Publish error event
+    await createAndPublishEvent({
+      req,
+      eventName: ADD_USERS_TO_GROUP_EVENTS.RESPONSE_ERROR.eventName,
+      payload: {
+        groupId: requestData.groupId,
+        error: error
+      },
+      errorData: error.message
     });
 
     // Handle specific error cases
     switch (error.code) {
       case 'VALIDATION_ERROR':
+        // Publish validation error event
+        await createAndPublishEvent({
+          req,
+          eventName: ADD_USERS_TO_GROUP_EVENTS.RESPONSE_VALIDATION_ERROR.eventName,
+          payload: {
+            groupId: requestData.groupId,
+            error: error
+          },
+          errorData: error.message
+        });
+        res.status(400).json({
+          success: false,
+          message: error.message,
+          count: 0
+        });
+        break;
+
       case 'NOT_FOUND_ERROR':
+        // Publish not found error event
+        await createAndPublishEvent({
+          req,
+          eventName: ADD_USERS_TO_GROUP_EVENTS.RESPONSE_NOT_FOUND_ERROR.eventName,
+          payload: {
+            groupId: requestData.groupId,
+            error: error
+          },
+          errorData: error.message
+        });
         res.status(400).json({
           success: false,
           message: error.message,
@@ -93,6 +131,16 @@ async function addUsersToGroupController(req: Request & { user?: { uuid: string 
         break;
 
       case 'PERMISSION_ERROR':
+        // Publish permission error event
+        await createAndPublishEvent({
+          req,
+          eventName: ADD_USERS_TO_GROUP_EVENTS.RESPONSE_PERMISSION_ERROR.eventName,
+          payload: {
+            groupId: requestData.groupId,
+            error: error
+          },
+          errorData: error.message
+        });
         res.status(403).json({
           success: false,
           message: error.message,

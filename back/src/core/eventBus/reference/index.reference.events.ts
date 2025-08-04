@@ -82,6 +82,11 @@ export const eventReferenceFiles: Record<string, string[]> = {
     path.resolve(__dirname, '../../middleware/events.middleware.ts')
   ],
   
+  // Item selector events - events for item selector operations
+  itemSelector: [
+    path.resolve(__dirname, '../../services/item-selector/events.item.selector.ts')
+  ],
+  
   // Add other domains here as they are created
 };
 
