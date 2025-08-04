@@ -77,6 +77,11 @@ export const eventReferenceFiles: Record<string, string[]> = {
     path.resolve(__dirname, '../../../modules/admin/service/events.admin.services.ts')
   ],
   
+  // Middleware events - events for middleware operations
+  middleware: [
+    path.resolve(__dirname, '../../middleware/events.middleware.ts')
+  ],
+  
   // Add other domains here as they are created
 };
 

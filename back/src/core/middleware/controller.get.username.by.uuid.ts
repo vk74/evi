@@ -7,18 +7,13 @@
  * - Validates input parameters
  * - Uses helper for data retrieval
  * - Formats and returns HTTP responses
+ * - Publishes events to event bus for monitoring and tracking
  */
 
 import { Request, Response, NextFunction } from 'express';
-import { createSystemLgr, Lgr } from '../lgr/lgr.index';
-import { Events } from '../lgr/codes';
 import { fetchUsernameByUuid } from '../helpers/get.username.by.uuid';
-
-// Create logger for controller
-const logger: Lgr = createSystemLgr({
-  module: 'UsernameByUuidController',
-  fileName: 'controller.get.username.by.uuid.ts'
-});
+import { createAndPublishEvent } from '../eventBus/fabric.events';
+import { USERNAME_BY_UUID_EVENTS } from './events.middleware';
 
 // Define response interface
 interface UsernameResponse {
@@ -41,18 +36,21 @@ export async function getUsernameByUuidController(req: Request, res: Response, n
   const userId = req.params.userId;
 
   try {
-    logger.info({
-      code: Events.CORE.MIDDLEWARE.GET_USERNAME_BY_UUID.REQUEST.RECEIVED.code,
-      message: `Received request to fetch username for userId: ${userId}`,
-      details: { userId, requestPath: req.path }
+    // Publish request received event
+    await createAndPublishEvent({
+      req,
+      eventName: USERNAME_BY_UUID_EVENTS.REQUEST_RECEIVED.eventName,
+      payload: { userId, requestPath: req.path }
     });
 
     // Validate input parameters
     if (!userId) {
-      logger.warn({
-        code: Events.CORE.MIDDLEWARE.GET_USERNAME_BY_UUID.REQUEST.VALIDATION_ERROR.code,
-        message: 'Validation failed: User ID is required',
-        details: { request: req.params }
+      // Publish validation error event
+      await createAndPublishEvent({
+        req,
+        eventName: USERNAME_BY_UUID_EVENTS.VALIDATION_ERROR.eventName,
+        payload: { userId, request: req.params },
+        errorData: 'User ID is required'
       });
       
       const response: UsernameResponse = {
@@ -70,10 +68,12 @@ export async function getUsernameByUuidController(req: Request, res: Response, n
 
     // Handle case when user not found
     if (username === null) {
-      logger.warn({
-        code: Events.CORE.MIDDLEWARE.GET_USERNAME_BY_UUID.RESPONSE.NOT_FOUND.code,
-        message: `User not found for userId: ${userId}`,
-        details: { userId }
+      // Publish not found event
+      await createAndPublishEvent({
+        req,
+        eventName: USERNAME_BY_UUID_EVENTS.RESPONSE_NOT_FOUND.eventName,
+        payload: { userId },
+        errorData: 'User not found'
       });
       
       const response: UsernameResponse = {
@@ -86,11 +86,11 @@ export async function getUsernameByUuidController(req: Request, res: Response, n
       return;
     }
 
-    // Success case
-    logger.info({
-      code: Events.CORE.MIDDLEWARE.GET_USERNAME_BY_UUID.RESPONSE.SUCCESS.code,
-      message: `Successfully retrieved username for userId: ${userId}`,
-      details: { userId, username }
+    // Success case - publish success event
+    await createAndPublishEvent({
+      req,
+      eventName: USERNAME_BY_UUID_EVENTS.RESPONSE_SUCCESS.eventName,
+      payload: { userId, username }
     });
 
     const response: UsernameResponse = {
@@ -101,15 +101,15 @@ export async function getUsernameByUuidController(req: Request, res: Response, n
     
     res.status(200).json(response);
   } catch (error) {
-    // Error handling
-    logger.error({
-      code: Events.CORE.MIDDLEWARE.GET_USERNAME_BY_UUID.RESPONSE.ERROR.code,
-      message: `Error fetching username for userId: ${userId}`,
-      error,
-      details: {
-        userId,
-        errorMessage: error instanceof Error ? error.message : 'Unknown error'
-      }
+    // Error handling - publish error event
+    await createAndPublishEvent({
+      req,
+      eventName: USERNAME_BY_UUID_EVENTS.RESPONSE_ERROR.eventName,
+      payload: { 
+        userId, 
+        errorMessage: error instanceof Error ? error.message : 'Unknown error' 
+      },
+      errorData: error instanceof Error ? error.message : 'Unknown error'
     });
 
     const response: UsernameResponse = {
