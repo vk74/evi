@@ -9,7 +9,7 @@
 
 import { Request, Response, NextFunction } from 'express';
 import fabricEvents from '../eventBus/fabric.events';
-import { CONNECTION_HANDLER_EVENTS } from './events.connection.handler';
+import { CONNECTION_HANDLER_EVENTS } from './events.helpers';
 
 // Define error code type
 type ErrorCode = 'INVALID_REQUEST' | 'REQUIRED_FIELD_ERROR' | 'VALIDATION_ERROR' | 

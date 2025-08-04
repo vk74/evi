@@ -1,5 +1,5 @@
 /**
- * @file events.connection.handler.ts
+ * @file events.helpers.ts
  * @version 1.0.0
  * @description Backend file. Contains event definitions for the connection handler domain.
  * These events track HTTP connection handling operations including request processing,

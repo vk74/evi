@@ -39,7 +39,7 @@ export const eventReferenceFiles: Record<string, string[]> = {
   
   // Connection handler events
   connectionHandler: [
-    path.resolve(__dirname, '../../helpers/events.connection.handler.ts')
+    path.resolve(__dirname, '../../helpers/events.helpers.ts')
   ],
   
   // Logger events - events for logger service operations
