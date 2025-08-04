@@ -8,23 +8,16 @@
  * - Calls service to change group owner
  * - Returns response with operation status
  * - Handles and logs errors
+ * - Publishes events to event bus for monitoring and tracking
  */
 import { Request, Response } from 'express';
 import { changeGroupOwner } from './service.change.group.owner';
-import { 
-  createAppLgr,
-  Events 
-} from '../../../core/lgr/lgr.index';
 import type { 
   ChangeGroupOwnerRequest,
   ServiceError
 } from './types.item.selector';
-
-// Create lgr for the controller
-const lgr = createAppLgr({
-  module: 'ItemSelectorController',
-  fileName: 'controller.change.group.owner.ts'
-});
+import { createAndPublishEvent } from '../../eventBus/fabric.events';
+import { CHANGE_GROUP_OWNER_EVENTS } from './events.item.selector';
 
 /**
  * Controller function that handles HTTP requests for changing group owner
@@ -34,11 +27,11 @@ const lgr = createAppLgr({
 async function changeGroupOwnerController(req: Request & { user?: { uuid: string } }, res: Response) {
   const requestData: ChangeGroupOwnerRequest = req.body;
   
-  // Log request data for debugging
-  lgr.info({
-    code: Events.CORE.ITEM_SELECTOR.GROUP_OWNER.REQUEST.RECEIVED.code,
-    message: 'Received request to change group owner',
-    details: {
+  // Publish request received event
+  await createAndPublishEvent({
+    req,
+    eventName: CHANGE_GROUP_OWNER_EVENTS.REQUEST_RECEIVED.eventName,
+    payload: {
       groupId: requestData.groupId,
       newOwnerId: requestData.newOwnerId,
       requestedBy: req.user?.uuid
@@ -49,14 +42,16 @@ async function changeGroupOwnerController(req: Request & { user?: { uuid: string
   if (!requestData.groupId || !requestData.newOwnerId) {
     const missingField = !requestData.groupId ? 'groupId' : 'newOwnerId';
     
-    lgr.warn({
-      code: Events.CORE.ITEM_SELECTOR.GROUP_OWNER.REQUEST.INVALID.code,
-      message: 'Invalid request data for changing group owner',
-      details: {
+    // Publish validation error event
+    await createAndPublishEvent({
+      req,
+      eventName: CHANGE_GROUP_OWNER_EVENTS.VALIDATION_ERROR.eventName,
+      payload: {
         groupId: requestData.groupId,
         newOwnerId: requestData.newOwnerId,
         missingField
-      }
+      },
+      errorData: 'Invalid request. Group ID and new owner ID are required.'
     });
     
     res.status(400).json({
@@ -74,11 +69,11 @@ async function changeGroupOwnerController(req: Request & { user?: { uuid: string
       requestData.changedBy || req.user?.uuid || ''
     );
 
-    // Log success and return result
-    lgr.info({
-      code: Events.CORE.ITEM_SELECTOR.GROUP_OWNER.RESPONSE.SUCCESS.code,
-      message: 'Successfully changed group owner',
-      details: {
+    // Publish success event
+    await createAndPublishEvent({
+      req,
+      eventName: CHANGE_GROUP_OWNER_EVENTS.RESPONSE_SUCCESS.eventName,
+      payload: {
         groupId: requestData.groupId,
         newOwnerId: requestData.newOwnerId,
         oldOwnerId: result.oldOwnerId
@@ -89,23 +84,51 @@ async function changeGroupOwnerController(req: Request & { user?: { uuid: string
   } catch (err) {
     const error = err as ServiceError;
     
-    // Log error with details
-    lgr.error({
-      code: Events.CORE.ITEM_SELECTOR.GROUP_OWNER.RESPONSE.ERROR.code,
-      message: 'Failed to change group owner',
-      details: {
+    // Publish error event
+    await createAndPublishEvent({
+      req,
+      eventName: CHANGE_GROUP_OWNER_EVENTS.RESPONSE_ERROR.eventName,
+      payload: {
         groupId: requestData.groupId,
         newOwnerId: requestData.newOwnerId,
         errorCode: error.code,
         errorMessage: error.message
       },
-      error
+      errorData: error.message
     });
 
     // Handle specific error cases
     switch (error.code) {
       case 'VALIDATION_ERROR':
+        // Publish validation error event
+        await createAndPublishEvent({
+          req,
+          eventName: CHANGE_GROUP_OWNER_EVENTS.RESPONSE_VALIDATION_ERROR.eventName,
+          payload: {
+            groupId: requestData.groupId,
+            newOwnerId: requestData.newOwnerId,
+            error: error
+          },
+          errorData: error.message
+        });
+        res.status(400).json({
+          success: false,
+          message: error.message
+        });
+        break;
+
       case 'NOT_FOUND_ERROR':
+        // Publish not found error event
+        await createAndPublishEvent({
+          req,
+          eventName: CHANGE_GROUP_OWNER_EVENTS.RESPONSE_NOT_FOUND_ERROR.eventName,
+          payload: {
+            groupId: requestData.groupId,
+            newOwnerId: requestData.newOwnerId,
+            error: error
+          },
+          errorData: error.message
+        });
         res.status(400).json({
           success: false,
           message: error.message
@@ -113,6 +136,17 @@ async function changeGroupOwnerController(req: Request & { user?: { uuid: string
         break;
 
       case 'PERMISSION_ERROR':
+        // Publish permission error event
+        await createAndPublishEvent({
+          req,
+          eventName: CHANGE_GROUP_OWNER_EVENTS.RESPONSE_PERMISSION_ERROR.eventName,
+          payload: {
+            groupId: requestData.groupId,
+            newOwnerId: requestData.newOwnerId,
+            error: error
+          },
+          errorData: error.message
+        });
         res.status(403).json({
           success: false,
           message: error.message
@@ -120,16 +154,16 @@ async function changeGroupOwnerController(req: Request & { user?: { uuid: string
         break;
 
       default:
-        // Handle unexpected errors
-        lgr.error({
-          code: Events.CORE.ITEM_SELECTOR.GROUP_OWNER.RESPONSE.INTERNAL_ERROR.code,
-          message: 'Internal server error occurred while changing group owner',
-          details: {
+        // Handle unexpected errors - publish internal error event
+        await createAndPublishEvent({
+          req,
+          eventName: CHANGE_GROUP_OWNER_EVENTS.RESPONSE_INTERNAL_ERROR.eventName,
+          payload: {
             groupId: requestData.groupId,
             newOwnerId: requestData.newOwnerId,
-            error: error.details || error.message
+            error: error
           },
-          error
+          errorData: error.message
         });
         
         res.status(500).json({

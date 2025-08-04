@@ -96,4 +96,104 @@ export const ADD_USERS_TO_GROUP_EVENTS = {
     errorData: null, // Error details
     version: '1.0.0'
   }
+};
+
+/**
+ * Change Group Owner Events
+ * Events related to changing group owner operations
+ */
+export const CHANGE_GROUP_OWNER_EVENTS = {
+  // Request received for changing group owner
+  REQUEST_RECEIVED: {
+    eventName: 'itemSelector.changeGroupOwner.request.received',
+    source: 'item-selector service',
+    eventType: 'app' as const,
+    severity: 'debug' as const,
+    eventMessage: 'Request received to change group owner',
+    payload: null, // { groupId: string, newOwnerId: string, requestedBy: string }
+    version: '1.0.0'
+  },
+  
+  // Validation error for changing group owner
+  VALIDATION_ERROR: {
+    eventName: 'itemSelector.changeGroupOwner.validation.error',
+    source: 'item-selector service',
+    eventType: 'app' as const,
+    severity: 'warning' as const,
+    eventMessage: 'Validation error in change group owner request',
+    payload: null, // { groupId: string, newOwnerId: string, missingField: string }
+    errorData: null, // Validation error details
+    version: '1.0.0'
+  },
+  
+  // Success response for changing group owner
+  RESPONSE_SUCCESS: {
+    eventName: 'itemSelector.changeGroupOwner.response.success',
+    source: 'item-selector service',
+    eventType: 'app' as const,
+    severity: 'info' as const,
+    eventMessage: 'Successfully changed group owner',
+    payload: null, // { groupId: string, newOwnerId: string, oldOwnerId: string }
+    version: '1.0.0'
+  },
+  
+  // Validation error response
+  RESPONSE_VALIDATION_ERROR: {
+    eventName: 'itemSelector.changeGroupOwner.response.validationError',
+    source: 'item-selector service',
+    eventType: 'app' as const,
+    severity: 'warning' as const,
+    eventMessage: 'Validation error occurred while changing group owner',
+    payload: null, // { groupId: string, newOwnerId: string, error: ServiceError }
+    errorData: null, // Error details
+    version: '1.0.0'
+  },
+  
+  // Not found error response
+  RESPONSE_NOT_FOUND_ERROR: {
+    eventName: 'itemSelector.changeGroupOwner.response.notFoundError',
+    source: 'item-selector service',
+    eventType: 'app' as const,
+    severity: 'warning' as const,
+    eventMessage: 'Group or user not found while changing group owner',
+    payload: null, // { groupId: string, newOwnerId: string, error: ServiceError }
+    errorData: null, // Error details
+    version: '1.0.0'
+  },
+  
+  // Permission error response
+  RESPONSE_PERMISSION_ERROR: {
+    eventName: 'itemSelector.changeGroupOwner.response.permissionError',
+    source: 'item-selector service',
+    eventType: 'app' as const,
+    severity: 'warning' as const,
+    eventMessage: 'Permission denied while changing group owner',
+    payload: null, // { groupId: string, newOwnerId: string, error: ServiceError }
+    errorData: null, // Error details
+    version: '1.0.0'
+  },
+  
+  // Internal error response
+  RESPONSE_INTERNAL_ERROR: {
+    eventName: 'itemSelector.changeGroupOwner.response.internalError',
+    source: 'item-selector service',
+    eventType: 'app' as const,
+    severity: 'error' as const,
+    eventMessage: 'Internal server error occurred while changing group owner',
+    payload: null, // { groupId: string, newOwnerId: string, error: ServiceError }
+    errorData: null, // Error details
+    version: '1.0.0'
+  },
+  
+  // General error response
+  RESPONSE_ERROR: {
+    eventName: 'itemSelector.changeGroupOwner.response.error',
+    source: 'item-selector service',
+    eventType: 'app' as const,
+    severity: 'error' as const,
+    eventMessage: 'Error occurred while changing group owner',
+    payload: null, // { groupId: string, newOwnerId: string, error: ServiceError }
+    errorData: null, // Error details
+    version: '1.0.0'
+  }
 }; 
