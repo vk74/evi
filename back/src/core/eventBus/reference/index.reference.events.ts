@@ -67,6 +67,11 @@ export const eventReferenceFiles: Record<string, string[]> = {
     path.resolve(__dirname, '../../../core/auth/events.auth.ts')
   ],
   
+  // Event Bus events - events for event bus service operations
+  eventBus: [
+    path.resolve(__dirname, '../events.eventBus.ts')
+  ],
+  
   // Add other domains here as they are created
 };
 

@@ -22,6 +22,7 @@ import { eventBus } from './bus.events';
 import { EVENT_TEMPLATE_NOT_FOUND } from './reference/errors.reference.events';
 import getRequestorUuidFromReq from '../helpers/get.requestor.uuid.from.req';
 import os from 'os';
+import * as eventBusService from './service.eventBus.settings';
 
 // Public routes that don't require user authentication
 // These routes should not attempt to extract user UUID from request
@@ -73,6 +74,12 @@ export interface CreateEventParams {
  */
 export const createAndPublishEvent = async (params: CreateEventParams): Promise<void> => {
   try {
+    // Check if event generation is enabled for this domain
+    if (!eventBusService.shouldGenerateEvent(params.eventName)) {
+      // Event generation is disabled for this domain, silently ignore
+      return;
+    }
+    
     // Create the event
     const event = await createEvent(params);
     

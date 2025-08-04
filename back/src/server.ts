@@ -42,6 +42,10 @@ import {
 import loggerService from '@/core/logger/service.logger';
 import loggerSubscriptions from '@/core/logger/subscriptions.logger';
 
+// Import event bus system
+import * as eventBusService from '@/core/eventBus/service.eventBus.settings';
+import * as eventBusSubscriptions from '@/core/eventBus/subscriptions.eventBus';
+
 // Import database functions
 
 
@@ -157,9 +161,15 @@ async function initializeServer(): Promise<void> {
     loggerService.initialize();
     loggerSubscriptions.initializeSubscriptions();
     console.log('Logger system initialized with current settings');
+
+    // 6. Initialize event bus service AFTER settings are loaded
+    // This ensures event bus can apply correct settings from cache
+    eventBusService.initialize();
+    eventBusSubscriptions.initializeSubscriptions();
+    console.log('Event Bus system initialized with current settings');
     // No duplicate logging here, as loadSettings already logs success message
 
-    // 6. Setting up middleware
+    // 7. Setting up middleware
     // Configure CORS for frontend only
     app.use(cors({
       origin: ['http://localhost:8080', 'http://localhost:3000', 'http://127.0.0.1:8080'], // Allow access from multiple localhost variants
@@ -176,10 +186,10 @@ async function initializeServer(): Promise<void> {
 
     console.log('Middleware configuration completed');
 
-    // 7. Add server readiness check middleware for all routes
+    // 8. Add server readiness check middleware for all routes
     app.use(checkServerReady);
 
-    // 8. Route registration
+    // 9. Route registration
     app.use(authRoutes);
     app.use('/api/catalog', catalogRoutes);
     app.use(adminRoutes);
@@ -188,14 +198,14 @@ async function initializeServer(): Promise<void> {
 
     console.log('All routes registered successfully');
 
-    // 9. Base route
+    // 10. Base route
     app.get('/', (req: Request, res: Response) => {
       res.send('Backend server is running');
     });
 
 
 
-    // 10. Server startup
+    // 11. Server startup
     app.listen(port, () => {
       const now = new Date();
       const dateOptions: Intl.DateTimeFormatOptions = { 
