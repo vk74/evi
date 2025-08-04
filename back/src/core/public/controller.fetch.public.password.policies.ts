@@ -136,7 +136,7 @@ function validateRequest(req: Request): { isValid: boolean; errors: string[] } {
  * @param res Express response
  */
 export async function fetchPublicPasswordPoliciesController(req: Request, res: Response): Promise<void> {
-  const clientIp = getClientIp(req);
+  const clientIp = await getClientIp(req);
   const userAgent = req.headers['user-agent'] || 'unknown';
   const startTime = Date.now();
 

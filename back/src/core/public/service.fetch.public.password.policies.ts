@@ -221,7 +221,7 @@ async function fetchFromDatabase(requestId: string): Promise<PasswordPolicySetti
  */
 export async function fetchPublicPasswordPolicies(req: Request): Promise<PublicPasswordPoliciesResponse> {
   const requestId = uuidv4();
-  const clientIp = getClientIp(req);
+  const clientIp = await getClientIp(req);
   const startTime = Date.now();
 
   try {
