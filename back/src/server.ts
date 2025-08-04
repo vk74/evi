@@ -32,11 +32,7 @@ import fabricEvents from '@/core/eventBus/fabric.events';
 import { initializeEventReferenceSystem } from '@/core/eventBus/reference/index.reference.events';
 
 // Import centralized logger
-import { 
-  createSystemLgr, 
-  Events,
-  OperationType
-} from '@/core/lgr/lgr.index';
+// Removed unused lgr import - system was replaced with new logger
 
 // Import new logger system
 import loggerService from '@/core/logger/service.logger';
