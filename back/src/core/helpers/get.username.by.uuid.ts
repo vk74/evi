@@ -43,7 +43,7 @@ export async function fetchUsernameByUuid(uuid: string): Promise<string | null> 
 
     // Try to get result from cache first
     const cacheKey = CacheKeys.forUserName(uuid);
-    const cachedUsername = get<string | null>(cacheKey);
+    const cachedUsername = await get<string | null>(cacheKey);
     
     if (cachedUsername !== undefined) {
       // Log cache hit
@@ -70,14 +70,14 @@ export async function fetchUsernameByUuid(uuid: string): Promise<string | null> 
       });
       
       // Cache the null result
-      set(cacheKey, null);
+      await set(cacheKey, null);
       return null;
     }
     
     const username = result.rows[0].username;
     
     // Cache the result
-    set(cacheKey, username);
+    await set(cacheKey, username);
     
     // Log successful retrieval from database
     await createAndPublishEvent({

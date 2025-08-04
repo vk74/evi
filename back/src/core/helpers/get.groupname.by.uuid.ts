@@ -43,7 +43,7 @@ export async function fetchGroupnameByUuid(uuid: string): Promise<string | null>
 
     // Try to get result from cache first
     const cacheKey = CacheKeys.forGroupName(uuid);
-    const cachedGroupname = get<string | null>(cacheKey);
+    const cachedGroupname = await get<string | null>(cacheKey);
     
     if (cachedGroupname !== undefined) {
       // Log cache hit
@@ -70,14 +70,14 @@ export async function fetchGroupnameByUuid(uuid: string): Promise<string | null>
       });
       
       // Cache the null result
-      set(cacheKey, null);
+      await set(cacheKey, null);
       return null;
     }
     
     const groupname = result.rows[0].name;
     
     // Cache the result
-    set(cacheKey, groupname);
+    await set(cacheKey, groupname);
     
     // Log successful retrieval from database
     await createAndPublishEvent({

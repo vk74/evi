@@ -559,4 +559,144 @@ export const GET_CLIENT_IP_EVENTS = {
     payload: null, // Will contain: { attemptedMethods }
     version: '1.0.0'
   }
+};
+
+/**
+ * Cache Operations Events
+ * Events for tracking individual cache operations
+ */
+export const CACHE_OPERATION_EVENTS = {
+  // Cache GET operations
+  GET_INVALID_KEY: {
+    eventName: 'helpers.cache.get.invalid_key',
+    source: 'helpers cache service',
+    eventType: 'app' as const,
+    severity: 'debug' as const,
+    eventMessage: 'Invalid cache key format for GET operation',
+    payload: null, // Will contain: { key }
+    version: '1.0.0'
+  },
+
+  GET_MISS: {
+    eventName: 'helpers.cache.get.miss',
+    source: 'helpers cache service',
+    eventType: 'app' as const,
+    severity: 'debug' as const,
+    eventMessage: 'Cache miss for key',
+    payload: null, // Will contain: { key, type, id }
+    version: '1.0.0'
+  },
+
+  GET_EXPIRED: {
+    eventName: 'helpers.cache.get.expired',
+    source: 'helpers cache service',
+    eventType: 'app' as const,
+    severity: 'debug' as const,
+    eventMessage: 'Cache entry expired',
+    payload: null, // Will contain: { key, type, id, expiredAt }
+    version: '1.0.0'
+  },
+
+  GET_HIT: {
+    eventName: 'helpers.cache.get.hit',
+    source: 'helpers cache service',
+    eventType: 'app' as const,
+    severity: 'debug' as const,
+    eventMessage: 'Cache hit for key',
+    payload: null, // Will contain: { key, type, id }
+    version: '1.0.0'
+  },
+
+  // Cache SET operations
+  SET_INVALID_KEY: {
+    eventName: 'helpers.cache.set.invalid_key',
+    source: 'helpers cache service',
+    eventType: 'app' as const,
+    severity: 'debug' as const,
+    eventMessage: 'Invalid cache key format for SET operation',
+    payload: null, // Will contain: { key, value }
+    version: '1.0.0'
+  },
+
+  SET_EVICT: {
+    eventName: 'helpers.cache.set.evict',
+    source: 'helpers cache service',
+    eventType: 'app' as const,
+    severity: 'debug' as const,
+    eventMessage: 'Cache entry evicted due to size limit',
+    payload: null, // Will contain: { type, key, lastAccessed }
+    version: '1.0.0'
+  },
+
+  SET_SUCCESS: {
+    eventName: 'helpers.cache.set.success',
+    source: 'helpers cache service',
+    eventType: 'app' as const,
+    severity: 'debug' as const,
+    eventMessage: 'Cache entry set successfully',
+    payload: null, // Will contain: { key, type, id, expiresAt, isUpdate }
+    version: '1.0.0'
+  },
+
+  // Cache DELETE operations
+  DELETE_INVALID_KEY: {
+    eventName: 'helpers.cache.delete.invalid_key',
+    source: 'helpers cache service',
+    eventType: 'app' as const,
+    severity: 'debug' as const,
+    eventMessage: 'Invalid cache key format for DELETE operation',
+    payload: null, // Will contain: { key }
+    version: '1.0.0'
+  },
+
+  DELETE_NOT_FOUND: {
+    eventName: 'helpers.cache.delete.not_found',
+    source: 'helpers cache service',
+    eventType: 'app' as const,
+    severity: 'debug' as const,
+    eventMessage: 'Cache entry not found for deletion',
+    payload: null, // Will contain: { key, type, id }
+    version: '1.0.0'
+  },
+
+  DELETE_SUCCESS: {
+    eventName: 'helpers.cache.delete.success',
+    source: 'helpers cache service',
+    eventType: 'app' as const,
+    severity: 'debug' as const,
+    eventMessage: 'Cache entry deleted successfully',
+    payload: null, // Will contain: { key, type, id }
+    version: '1.0.0'
+  },
+
+  // Cache CLEAR operations
+  CLEAR_TYPE_NOT_FOUND: {
+    eventName: 'helpers.cache.clear.type_not_found',
+    source: 'helpers cache service',
+    eventType: 'app' as const,
+    severity: 'warn' as const,
+    eventMessage: 'Cache type not found for clearing',
+    payload: null, // Will contain: { type }
+    version: '1.0.0'
+  },
+
+  CLEAR_TYPE: {
+    eventName: 'helpers.cache.clear.type',
+    source: 'helpers cache service',
+    eventType: 'app' as const,
+    severity: 'info' as const,
+    eventMessage: 'Cleared all cache entries for type',
+    payload: null, // Will contain: { type, entriesCount }
+    version: '1.0.0'
+  },
+
+  CLEAR_ALL: {
+    eventName: 'helpers.cache.clear.all',
+    source: 'helpers cache service',
+    eventType: 'app' as const,
+    severity: 'info' as const,
+    eventMessage: 'Cleared all cache entries from all types',
+    payload: null, // Will contain: { types }
+    version: '1.0.0'
+  }
 }; 

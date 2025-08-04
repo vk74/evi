@@ -43,7 +43,7 @@ export async function getUserAccountStatus(userId: string): Promise<string | nul
 
     // Try to get result from cache first
     const cacheKey = CacheKeys.forUserStatus(userId);
-    const cachedStatus = get<string | null>(cacheKey);
+    const cachedStatus = await get<string | null>(cacheKey);
     
     if (cachedStatus !== undefined) {
       // Log cache hit
@@ -70,14 +70,14 @@ export async function getUserAccountStatus(userId: string): Promise<string | nul
       });
       
       // Cache the null result
-      set(cacheKey, null);
+      await set(cacheKey, null);
       return null;
     }
     
     const accountStatus = result.rows[0].account_status;
     
     // Cache the result
-    set(cacheKey, accountStatus);
+    await set(cacheKey, accountStatus);
     
     // Log successful retrieval from database
     await createAndPublishEvent({

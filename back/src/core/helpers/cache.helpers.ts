@@ -1,6 +1,9 @@
 /**
- * @file cache.helpers.ts
- * BACKEND Cache service for helpers
+ * @file cache.helpers.t * @version 1.0.0
+ * @description BACKEND Cache service for helpers
+ * @filename cache.helpers.ts
+ * @created 2024-01-01
+ * @updated 2024-12-19
  *
  * Functionality:
  * - Provides caching capabilities for helpers to reduce database load
@@ -10,16 +13,11 @@
  * - Tracks and logs cache statistics
  */
 
-import { createSystemLgr, Lgr } from '../lgr/lgr.index';
-import { Events } from '../lgr/codes';
 import { createAndPublishEvent } from '../eventBus/fabric.events';
-import { CACHE_HELPER_EVENTS } from './events.helpers';
+import { CACHE_HELPER_EVENTS, CACHE_OPERATION_EVENTS } from './events.helpers';
+import { Request } from 'express';
 
-// Create lgr for cache
-const lgr: Lgr = createSystemLgr({
-  module: 'HelpersCacheService',
-  fileName: 'cache.helpers.ts'
-});
+
 
 // Interface for cache entry
 interface CacheEntry<T> {
@@ -78,19 +76,20 @@ const cacheStats: Record<string, CacheStats> = {
 };
 
 // Initialize the cache and start periodic stats logging
-export function initCache(): void {
+export async function initCache(req?: Request): Promise<void> {
   // Publish cache initialization event
-  createAndPublishEvent({
+  await createAndPublishEvent({
     eventName: CACHE_HELPER_EVENTS.INIT_SUCCESS.eventName,
     payload: {
       cacheTypes: Object.keys(cacheStorage),
       config: cacheConfig
-    }
+    },
+    req
   });
 
   // Set up periodic stats logging (every 10 minutes)
-  setInterval(() => {
-    logStats();
+  setInterval(async () => {
+    await logStats(req);
   }, 10 * 60 * 1000);
 }
 
@@ -115,16 +114,17 @@ function parseKey(key: string): { type: string; id: string } | null {
 /**
  * Get value from cache
  * @param key The cache key with type prefix
+ * @param req Express request object for event context
  * @returns The cached value or undefined if not found or expired
  */
-export function get<T>(key: string): T | undefined {
+export async function get<T>(key: string, req?: Request): Promise<T | undefined> {
   const parsedKey = parseKey(key);
   
   if (!parsedKey) {
-    lgr.debug({
-      code: Events.CORE.HELPERS.CACHE.GET.INVALID_KEY.code,
-      message: `Invalid cache key format: ${key}`,
-      details: { key }
+    await createAndPublishEvent({
+      eventName: CACHE_OPERATION_EVENTS.GET_INVALID_KEY.eventName,
+      payload: { key },
+      req
     });
     return undefined;
   }
@@ -136,10 +136,10 @@ export function get<T>(key: string): T | undefined {
   // If entry doesn't exist
   if (!entry) {
     cacheStats[type].misses++;
-    lgr.debug({
-      code: Events.CORE.HELPERS.CACHE.GET.MISS.code,
-      message: `Cache miss for key: ${key}`,
-      details: { key, type, id }
+    await createAndPublishEvent({
+      eventName: CACHE_OPERATION_EVENTS.GET_MISS.eventName,
+      payload: { key, type, id },
+      req
     });
     return undefined;
   }
@@ -152,10 +152,10 @@ export function get<T>(key: string): T | undefined {
     cacheStats[type].misses++;
     cacheStats[type].size--;
     
-    lgr.debug({
-      code: Events.CORE.HELPERS.CACHE.GET.EXPIRED.code,
-      message: `Cache entry expired for key: ${key}`,
-      details: { key, type, id, expiredAt: new Date(entry.expiry) }
+    await createAndPublishEvent({
+      eventName: CACHE_OPERATION_EVENTS.GET_EXPIRED.eventName,
+      payload: { key, type, id, expiredAt: new Date(entry.expiry) },
+      req
     });
     return undefined;
   }
@@ -164,10 +164,10 @@ export function get<T>(key: string): T | undefined {
   entry.lastAccessed = now;
   cacheStats[type].hits++;
   
-  lgr.debug({
-    code: Events.CORE.HELPERS.CACHE.GET.HIT.code,
-    message: `Cache hit for key: ${key}`,
-    details: { key, type, id }
+  await createAndPublishEvent({
+    eventName: CACHE_OPERATION_EVENTS.GET_HIT.eventName,
+    payload: { key, type, id },
+    req
   });
   
   return entry.value;
@@ -177,15 +177,16 @@ export function get<T>(key: string): T | undefined {
  * Set value in cache
  * @param key The cache key with type prefix
  * @param value The value to store
+ * @param req Express request object for event context
  */
-export function set<T>(key: string, value: T): void {
+export async function set<T>(key: string, value: T, req?: Request): Promise<void> {
   const parsedKey = parseKey(key);
   
   if (!parsedKey) {
-    lgr.debug({
-      code: Events.CORE.HELPERS.CACHE.SET.INVALID_KEY.code,
-      message: `Invalid cache key format: ${key}`,
-      details: { key, value }
+    await createAndPublishEvent({
+      eventName: CACHE_OPERATION_EVENTS.SET_INVALID_KEY.eventName,
+      payload: { key, value },
+      req
     });
     return;
   }
@@ -213,10 +214,10 @@ export function set<T>(key: string, value: T): void {
       cache.delete(oldestKey);
       cacheStats[type].size--;
       
-      lgr.debug({
-        code: Events.CORE.HELPERS.CACHE.SET.EVICT.code,
-        message: `Evicted LRU cache entry: ${type}${oldestKey}`,
-        details: { type, key: oldestKey, lastAccessed: new Date(oldestTime) }
+      await createAndPublishEvent({
+        eventName: CACHE_OPERATION_EVENTS.SET_EVICT.eventName,
+        payload: { type, key: oldestKey, lastAccessed: new Date(oldestTime) },
+        req
       });
     }
   }
@@ -235,31 +236,32 @@ export function set<T>(key: string, value: T): void {
     cacheStats[type].size++;
   }
   
-  lgr.debug({
-    code: Events.CORE.HELPERS.CACHE.SET.SUCCESS.code,
-    message: `Cache ${isUpdate ? 'updated' : 'set'} for key: ${key}`,
-    details: {
+  await createAndPublishEvent({
+    eventName: CACHE_OPERATION_EVENTS.SET_SUCCESS.eventName,
+    payload: {
       key,
       type,
       id,
       expiresAt: new Date(entry.expiry),
       isUpdate
-    }
+    },
+    req
   });
 }
 
 /**
  * Delete entry from cache
  * @param key The cache key with type prefix
+ * @param req Express request object for event context
  */
-export function del(key: string): void {
+export async function del(key: string, req?: Request): Promise<void> {
   const parsedKey = parseKey(key);
   
   if (!parsedKey) {
-    lgr.debug({
-      code: Events.CORE.HELPERS.CACHE.DELETE.INVALID_KEY.code,
-      message: `Invalid cache key format: ${key}`,
-      details: { key }
+    await createAndPublishEvent({
+      eventName: CACHE_OPERATION_EVENTS.DELETE_INVALID_KEY.eventName,
+      payload: { key },
+      req
     });
     return;
   }
@@ -270,16 +272,16 @@ export function del(key: string): void {
   if (cache.delete(id)) {
     cacheStats[type].size--;
     
-    lgr.debug({
-      code: Events.CORE.HELPERS.CACHE.DELETE.SUCCESS.code,
-      message: `Cache entry deleted for key: ${key}`,
-      details: { key, type, id }
+    await createAndPublishEvent({
+      eventName: CACHE_OPERATION_EVENTS.DELETE_SUCCESS.eventName,
+      payload: { key, type, id },
+      req
     });
   } else {
-    lgr.debug({
-      code: Events.CORE.HELPERS.CACHE.DELETE.NOT_FOUND.code,
-      message: `Cache entry not found for deletion: ${key}`,
-      details: { key, type, id }
+    await createAndPublishEvent({
+      eventName: CACHE_OPERATION_EVENTS.DELETE_NOT_FOUND.eventName,
+      payload: { key, type, id },
+      req
     });
   }
 }
@@ -287,13 +289,14 @@ export function del(key: string): void {
 /**
  * Clear all entries for a specific cache type
  * @param type The cache type prefix
+ * @param req Express request object for event context
  */
-export function clearByType(type: string): void {
+export async function clearByType(type: string, req?: Request): Promise<void> {
   if (!cacheStorage[type]) {
-    lgr.warn({
-      code: Events.CORE.HELPERS.CACHE.CLEAR.TYPE_NOT_FOUND.code,
-      message: `Cache type not found for clearing: ${type}`,
-      details: { type }
+    await createAndPublishEvent({
+      eventName: CACHE_OPERATION_EVENTS.CLEAR_TYPE_NOT_FOUND.eventName,
+      payload: { type },
+      req
     });
     return;
   }
@@ -304,37 +307,41 @@ export function clearByType(type: string): void {
   cache.clear();
   cacheStats[type] = { hits: 0, misses: 0, size: 0 };
   
-  lgr.info({
-    code: Events.CORE.HELPERS.CACHE.CLEAR.TYPE.code,
-    message: `Cleared all cache entries for type: ${type}`,
-    details: { type, entriesCount }
+  await createAndPublishEvent({
+    eventName: CACHE_OPERATION_EVENTS.CLEAR_TYPE.eventName,
+    payload: { type, entriesCount },
+    req
   });
 }
 
 /**
  * Clear all cache entries from all types
+ * @param req Express request object for event context
  */
-export function clearAll(): void {
+export async function clearAll(req?: Request): Promise<void> {
   for (const type of Object.values(CACHE_TYPES)) {
-    clearByType(type);
+    await clearByType(type, req);
   }
   
-  lgr.info({
-    code: Events.CORE.HELPERS.CACHE.CLEAR.ALL.code,
-    message: 'Cleared all cache entries from all types'
+  await createAndPublishEvent({
+    eventName: CACHE_OPERATION_EVENTS.CLEAR_ALL.eventName,
+    payload: { types: Object.values(CACHE_TYPES) },
+    req
   });
 }
 
 /**
  * Log cache statistics
+ * @param req Express request object for event context
  */
-function logStats(): void {
+async function logStats(req?: Request): Promise<void> {
   const stats = Object.entries(cacheStats).map(([type, stat]) => ({ type, ...stat }));
   
   // Publish cache statistics event
-  createAndPublishEvent({
+  await createAndPublishEvent({
     eventName: CACHE_HELPER_EVENTS.STATS_REPORT.eventName,
-    payload: { stats }
+    payload: { stats },
+    req
   });
 }
 

@@ -45,7 +45,7 @@ export async function checkIsUserAdmin(userId: string): Promise<boolean> {
 
     // Try to get result from cache first
     const cacheKey = CacheKeys.forUserAdmin(userId);
-    const cachedResult = get<boolean>(cacheKey);
+    const cachedResult = await get<boolean>(cacheKey);
     
     if (cachedResult !== undefined) {
       // Log cache hit
@@ -69,7 +69,7 @@ export async function checkIsUserAdmin(userId: string): Promise<boolean> {
       });
       
       // Cache negative result
-      set(cacheKey, false);
+      await set(cacheKey, false);
       return false;
     }
 
@@ -92,7 +92,7 @@ export async function checkIsUserAdmin(userId: string): Promise<boolean> {
     const isAdmin = result.rowCount !== null && result.rowCount > 0;
     
     // Cache the result
-    set(cacheKey, isAdmin);
+    await set(cacheKey, isAdmin);
     
     if (isAdmin) {
       // Log user is admin
