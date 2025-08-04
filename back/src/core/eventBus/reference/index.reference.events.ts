@@ -72,6 +72,11 @@ export const eventReferenceFiles: Record<string, string[]> = {
     path.resolve(__dirname, '../events.eventBus.ts')
   ],
   
+  // Admin service events - events for admin service operations
+  adminServices: [
+    path.resolve(__dirname, '../../../modules/admin/service/events.admin.services.ts')
+  ],
+  
   // Add other domains here as they are created
 };
 

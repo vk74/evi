@@ -9,7 +9,7 @@
  */
 
 import { queries } from '../queries.admin.service'
-import { createAppLgr } from '../../../../core/lgr/lgr.factory'
+import { createAndPublishEvent } from '../../../../core/eventBus/fabric.events'
 import type { Service, ApiResponse } from '../types.admin.service'
 import { pool } from '../../../../core/db/maindb'
 
@@ -22,27 +22,24 @@ export interface FetchSingleServiceResponse extends ApiResponse {
  * Service class for fetching single service data
  */
 export class ServiceAdminFetchSingleService {
-  private logger = createAppLgr({ 
-    module: 'admin', 
-    component: 'service', 
-    operation: 'fetchSingleService' 
-  })
 
   /**
    * Fetches single service data by ID
    * @param serviceId - The UUID of the service to fetch
+   * @param req - Express request object for event context
    * @returns Promise with service data or error
    */
-  async fetchSingleService(serviceId: string): Promise<FetchSingleServiceResponse> {
+  async fetchSingleService(serviceId: string, req?: any): Promise<FetchSingleServiceResponse> {
     const client = await pool.connect()
     
     try {
       // Validate service ID format (basic UUID check)
       if (!serviceId || typeof serviceId !== 'string' || serviceId.trim().length === 0) {
-        this.logger.error({
-          code: 'ADMIN:SERVICE:FETCH_SINGLE:VALIDATION_ERROR:001',
-          message: 'Invalid service ID provided',
-          details: { serviceId }
+        await createAndPublishEvent({
+          req,
+          eventName: 'admin.service.fetch.validation.error',
+          payload: { serviceId },
+          errorData: 'Invalid service ID provided'
         })
         return {
           success: false,
@@ -54,10 +51,10 @@ export class ServiceAdminFetchSingleService {
       const serviceExistsResult = await client.query(queries.checkServiceExists, [serviceId])
       
       if (serviceExistsResult.rows.length === 0) {
-        this.logger.warn({
-          code: 'ADMIN:SERVICE:FETCH_SINGLE:NOT_FOUND:002',
-          message: 'Service not found',
-          details: { serviceId }
+        await createAndPublishEvent({
+          req,
+          eventName: 'admin.service.fetch.not_found',
+          payload: { serviceId }
         })
         return {
           success: false,
@@ -69,10 +66,11 @@ export class ServiceAdminFetchSingleService {
       const serviceResult = await client.query(queries.fetchServiceWithRoles, [serviceId])
       
       if (serviceResult.rows.length === 0) {
-        this.logger.error({
-          code: 'ADMIN:SERVICE:FETCH_SINGLE:DATA_ERROR:003',
-          message: 'Service data not found after existence check',
-          details: { serviceId }
+        await createAndPublishEvent({
+          req,
+          eventName: 'admin.service.fetch.data_error',
+          payload: { serviceId },
+          errorData: 'Service data not found after existence check'
         })
         return {
           success: false,
@@ -136,10 +134,15 @@ export class ServiceAdminFetchSingleService {
         modified_by: serviceRow.modified_by
       }
 
-      this.logger.info({
-        code: 'ADMIN:SERVICE:FETCH_SINGLE:SUCCESS:004',
-        message: 'Service data fetched successfully',
-        details: { serviceId, serviceName: service.name }
+      await createAndPublishEvent({
+        req,
+        eventName: 'admin.service.fetch.success',
+        payload: { 
+          serviceId, 
+          serviceName: service.name,
+          serviceOwner: service.owner,
+          serviceStatus: service.status
+        }
       })
       
       return {
@@ -149,10 +152,11 @@ export class ServiceAdminFetchSingleService {
       }
 
     } catch (error) {
-      this.logger.error({
-        code: 'ADMIN:SERVICE:FETCH_SINGLE:ERROR:005',
-        message: 'Error fetching single service',
-        details: { serviceId, error: error instanceof Error ? error.message : String(error) }
+      await createAndPublishEvent({
+        req,
+        eventName: 'admin.service.fetch.error',
+        payload: { serviceId },
+        errorData: error instanceof Error ? error.message : String(error)
       })
       
       return {
