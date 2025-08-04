@@ -313,4 +313,121 @@ export const CHANGE_GROUP_OWNER_SERVICE_EVENTS = {
     errorData: null, // Error details
     version: '1.0.0'
   }
+};
+
+/**
+ * Add Users To Group Service Events
+ * Events related to service operations for adding users to group
+ */
+export const ADD_USERS_TO_GROUP_SERVICE_EVENTS = {
+  // Service initiated
+  SERVICE_INITIATED: {
+    eventName: 'itemSelector.addUsersToGroup.service.initiated',
+    source: 'item-selector service',
+    eventType: 'app' as const,
+    severity: 'debug' as const,
+    eventMessage: 'Service initiated for adding users to group',
+    payload: null, // { groupId: string, usersCount: number, addedBy: string }
+    version: '1.0.0'
+  },
+  
+  // Group validation
+  VALIDATION_GROUP: {
+    eventName: 'itemSelector.addUsersToGroup.validation.group',
+    source: 'item-selector service',
+    eventType: 'app' as const,
+    severity: 'debug' as const,
+    eventMessage: 'Validating group existence',
+    payload: null, // { groupId: string }
+    version: '1.0.0'
+  },
+  
+  // Users validation
+  VALIDATION_USERS: {
+    eventName: 'itemSelector.addUsersToGroup.validation.users',
+    source: 'item-selector service',
+    eventType: 'app' as const,
+    severity: 'debug' as const,
+    eventMessage: 'Validating user existence',
+    payload: null, // { userCount: number }
+    version: '1.0.0'
+  },
+  
+  // Account status validation
+  VALIDATION_ACCOUNT_STATUS: {
+    eventName: 'itemSelector.addUsersToGroup.validation.accountStatus',
+    source: 'item-selector service',
+    eventType: 'app' as const,
+    severity: 'debug' as const,
+    eventMessage: 'Validating user account status',
+    payload: null, // { userId: string }
+    version: '1.0.0'
+  },
+  
+  // Database transaction start
+  DATABASE_TRANSACTION_START: {
+    eventName: 'itemSelector.addUsersToGroup.database.transactionStart',
+    source: 'item-selector service',
+    eventType: 'app' as const,
+    severity: 'debug' as const,
+    eventMessage: 'Database transaction started for adding users to group',
+    payload: null, // { groupId: string }
+    version: '1.0.0'
+  },
+  
+  // Database update
+  DATABASE_UPDATE: {
+    eventName: 'itemSelector.addUsersToGroup.database.update',
+    source: 'item-selector service',
+    eventType: 'app' as const,
+    severity: 'debug' as const,
+    eventMessage: 'Adding users to group',
+    payload: null, // { groupId: string, userCount: number }
+    version: '1.0.0'
+  },
+  
+  // Database success
+  DATABASE_SUCCESS: {
+    eventName: 'itemSelector.addUsersToGroup.database.success',
+    source: 'item-selector service',
+    eventType: 'app' as const,
+    severity: 'info' as const,
+    eventMessage: 'Database operation completed successfully',
+    payload: null, // { groupId: string, addedCount: number, skippedCount: number }
+    version: '1.0.0'
+  },
+  
+  // Service response success
+  SERVICE_RESPONSE_SUCCESS: {
+    eventName: 'itemSelector.addUsersToGroup.response.serviceSuccess',
+    source: 'item-selector service',
+    eventType: 'app' as const,
+    severity: 'info' as const,
+    eventMessage: 'Users successfully added to group',
+    payload: null, // { groupId: string, addedCount: number, skippedCount: number }
+    version: '1.0.0'
+  },
+  
+  // Service response no change
+  SERVICE_RESPONSE_NO_CHANGE: {
+    eventName: 'itemSelector.addUsersToGroup.response.noChange',
+    source: 'item-selector service',
+    eventType: 'app' as const,
+    severity: 'info' as const,
+    eventMessage: 'No new users to add, all are already members',
+    payload: null, // { groupId: string }
+    version: '1.0.0'
+  },
+  
+  // Service response error
+  SERVICE_RESPONSE_ERROR: {
+    eventName: 'itemSelector.addUsersToGroup.response.serviceError',
+    source: 'item-selector service',
+    eventType: 'app' as const,
+    severity: 'error' as const,
+    eventMessage: 'Failed to add users to group',
+    payload: null, // { groupId: string, errorCode: string }
+    errorData: null, // Error details
+    version: '1.0.0'
+  }
 }; 
