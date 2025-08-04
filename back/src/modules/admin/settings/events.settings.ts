@@ -548,7 +548,7 @@ export const SETTINGS_INITIALIZATION_EVENTS = {
 export const SETTINGS_VALIDATION_EVENTS = {
   // When validation is skipped due to missing schema
   SKIP: {
-    eventName: 'admin.settings.validate.skip',
+    eventName: 'settings.validate.skip',
     source: 'settings validation service',
     eventType: 'app' as const,
     severity: 'debug' as const,
@@ -559,7 +559,7 @@ export const SETTINGS_VALIDATION_EVENTS = {
   
   // When validation process starts
   START: {
-    eventName: 'admin.settings.validate.start',
+    eventName: 'settings.validate.start',
     source: 'settings validation service',
     eventType: 'app' as const,
     severity: 'debug' as const,
@@ -570,7 +570,7 @@ export const SETTINGS_VALIDATION_EVENTS = {
   
   // When validation is successful
   SUCCESS: {
-    eventName: 'admin.settings.validate.success',
+    eventName: 'settings.validate.success',
     source: 'settings validation service',
     eventType: 'app' as const,
     severity: 'debug' as const,
@@ -581,7 +581,7 @@ export const SETTINGS_VALIDATION_EVENTS = {
   
   // When validation fails
   ERROR: {
-    eventName: 'admin.settings.validate.error',
+    eventName: 'settings.validate.error',
     source: 'settings validation service',
     eventType: 'app' as const,
     severity: 'warning' as const,
@@ -592,7 +592,7 @@ export const SETTINGS_VALIDATION_EVENTS = {
   
   // When validation process encounters an error
   FAILED: {
-    eventName: 'admin.settings.validate.failed',
+    eventName: 'settings.validate.failed',
     source: 'settings validation service',
     eventType: 'app' as const,
     severity: 'error' as const,
