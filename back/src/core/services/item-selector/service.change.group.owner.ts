@@ -8,20 +8,19 @@
  * - Manages transactions for atomic updates
  * - Provides comprehensive error handling
  * - Returns formatted response with old owner ID
+ * - Publishes events to event bus for monitoring and tracking
  */
 import { Pool } from 'pg';
 import { pool as pgPool } from '../../db/maindb';
 import { queries } from './queries.item.selector';
-import { 
-  createAppLgr,
-  Events 
-} from '../../../core/lgr/lgr.index';
 import type { 
   ChangeGroupOwnerResponse,
   ServiceError, 
   ValidationError,
   NotFoundError
 } from './types.item.selector';
+import { createAndPublishEvent } from '../../eventBus/fabric.events';
+import { CHANGE_GROUP_OWNER_SERVICE_EVENTS } from './events.item.selector';
 
 const pool = pgPool as Pool;
 
@@ -38,12 +37,6 @@ interface UpdatedRow {
   group_id: string;
 }
 
-// Create lgr for the service
-const lgr = createAppLgr({
-  module: 'ItemSelectorService',
-  fileName: 'service.change.group.owner.ts'
-});
-
 /**
  * Validates if a group exists in the database and returns its current owner
  * @param groupId UUID of the group to validate
@@ -52,20 +45,15 @@ const lgr = createAppLgr({
  * @throws NotFoundError if group doesn't exist
  */
 async function validateGroupAndGetCurrentOwner(groupId: string, client: any): Promise<string> {
-  lgr.debug({
-    code: Events.CORE.ITEM_SELECTOR.GROUP_OWNER.VALIDATE.GROUP.code,
-    message: 'Validating group existence and getting current owner',
-    details: { groupId }
+  // Publish group validation event
+  await createAndPublishEvent({
+    eventName: CHANGE_GROUP_OWNER_SERVICE_EVENTS.VALIDATION_GROUP.eventName,
+    payload: { groupId }
   });
 
   const result = await client.query(queries.checkGroupExists.text, [groupId]);
   if (result.rows.length === 0) {
-    lgr.warn({
-      code: Events.CORE.ITEM_SELECTOR.GROUP_OWNER.VALIDATE.GROUP_NOT_FOUND.code,
-      message: 'Group not found during owner change operation',
-      details: { groupId }
-    });
-
+    // Group not found - this will be handled by the calling function
     throw {
       code: 'NOT_FOUND_ERROR',
       message: 'Group not found',
@@ -76,10 +64,10 @@ async function validateGroupAndGetCurrentOwner(groupId: string, client: any): Pr
   // Get the current owner
   const ownerResult = await client.query(queries.getCurrentGroupOwner.text, [groupId]);
   
-  lgr.debug({
-    code: Events.CORE.ITEM_SELECTOR.GROUP_OWNER.VALIDATE.SUCCESS.code,
-    message: 'Successfully found group and current owner',
-    details: { 
+  // Publish validation success event
+  await createAndPublishEvent({
+    eventName: CHANGE_GROUP_OWNER_SERVICE_EVENTS.VALIDATION_SUCCESS.eventName,
+    payload: { 
       groupId, 
       currentOwner: ownerResult.rows[0].group_owner 
     }
@@ -95,20 +83,15 @@ async function validateGroupAndGetCurrentOwner(groupId: string, client: any): Pr
  * @throws ValidationError if user doesn't exist
  */
 async function validateUserExists(userId: string, client: any): Promise<void> {
-  lgr.debug({
-    code: Events.CORE.ITEM_SELECTOR.GROUP_OWNER.VALIDATE.USER.code,
-    message: 'Validating new owner existence',
-    details: { userId }
+  // Publish user validation event
+  await createAndPublishEvent({
+    eventName: CHANGE_GROUP_OWNER_SERVICE_EVENTS.VALIDATION_USER.eventName,
+    payload: { userId }
   });
   
   const result = await client.query(queries.checkUserExists.text, [userId]);
   if (result.rows.length === 0) {
-    lgr.warn({
-      code: Events.CORE.ITEM_SELECTOR.GROUP_OWNER.VALIDATE.USER_NOT_FOUND.code,
-      message: 'New owner user not found',
-      details: { userId }
-    });
-
+    // User not found - this will be handled by the calling function
     throw {
       code: 'VALIDATION_ERROR',
       message: 'New owner user not found',
@@ -116,10 +99,10 @@ async function validateUserExists(userId: string, client: any): Promise<void> {
     } as ValidationError;
   }
   
-  lgr.debug({
-    code: Events.CORE.ITEM_SELECTOR.GROUP_OWNER.VALIDATE.SUCCESS.code,
-    message: 'Successfully validated new owner existence',
-    details: { userId }
+  // Publish validation success event
+  await createAndPublishEvent({
+    eventName: CHANGE_GROUP_OWNER_SERVICE_EVENTS.VALIDATION_SUCCESS.eventName,
+    payload: { userId }
   });
 }
 
@@ -138,10 +121,10 @@ export async function changeGroupOwner(
   const client = await pool.connect();
   
   try {
-    lgr.info({
-      code: Events.CORE.ITEM_SELECTOR.GROUP_OWNER.CHANGE.INITIATED.code,
-      message: 'Starting process to change group owner',
-      details: { 
+    // Publish service initiated event
+    await createAndPublishEvent({
+      eventName: CHANGE_GROUP_OWNER_SERVICE_EVENTS.SERVICE_INITIATED.eventName,
+      payload: { 
         groupId, 
         newOwnerId,
         changedBy 
@@ -152,17 +135,6 @@ export async function changeGroupOwner(
     if (!groupId || !newOwnerId || !changedBy) {
       const missingField = !groupId ? 'groupId' : !newOwnerId ? 'newOwnerId' : 'changedBy';
       
-      lgr.warn({
-        code: Events.CORE.ITEM_SELECTOR.GROUP_OWNER.VALIDATE.REQUIRED_FIELD.code,
-        message: 'Missing required parameter for group owner change',
-        details: { 
-          missingField,
-          groupId, 
-          newOwnerId,
-          changedBy
-        }
-      });
-
       throw {
         code: 'VALIDATION_ERROR',
         message: 'Missing required parameters',
@@ -172,9 +144,11 @@ export async function changeGroupOwner(
 
     // Start transaction
     await client.query('BEGIN');
-    lgr.debug({
-      code: Events.CORE.ITEM_SELECTOR.GROUP_OWNER.DATABASE.TRANSACTION_START.code,
-      message: 'Database transaction started for group owner change'
+    
+    // Publish transaction start event
+    await createAndPublishEvent({
+      eventName: CHANGE_GROUP_OWNER_SERVICE_EVENTS.DATABASE_TRANSACTION_START.eventName,
+      payload: { groupId }
     });
 
     // Validate group exists and get current owner
@@ -187,10 +161,10 @@ export async function changeGroupOwner(
     if (currentOwnerId === newOwnerId) {
       await client.query('COMMIT');
       
-      lgr.info({
-        code: Events.CORE.ITEM_SELECTOR.GROUP_OWNER.CHANGE.NO_CHANGE.code,
-        message: 'New owner is the same as current owner, no update needed',
-        details: { 
+      // Publish no change event
+      await createAndPublishEvent({
+        eventName: CHANGE_GROUP_OWNER_SERVICE_EVENTS.SERVICE_RESPONSE_NO_CHANGE.eventName,
+        payload: { 
           groupId, 
           ownerId: currentOwnerId 
         }
@@ -204,10 +178,9 @@ export async function changeGroupOwner(
     }
 
     // Update the group owner
-    lgr.info({
-      code: Events.CORE.ITEM_SELECTOR.GROUP_OWNER.CHANGE.UPDATING.code,
-      message: 'Updating group owner',
-      details: { 
+    await createAndPublishEvent({
+      eventName: CHANGE_GROUP_OWNER_SERVICE_EVENTS.DATABASE_UPDATE.eventName,
+      payload: { 
         groupId, 
         currentOwnerId,
         newOwnerId 
@@ -220,16 +193,6 @@ export async function changeGroupOwner(
     );
     
     if (!updateResult.rowCount || updateResult.rowCount === 0) {
-      lgr.error({
-        code: Events.CORE.ITEM_SELECTOR.GROUP_OWNER.DATABASE.ERROR.code,
-        message: 'Failed to update group owner - no rows were updated',
-        details: { 
-          groupId, 
-          newOwnerId,
-          updateResult 
-        }
-      });
-
       throw {
         code: 'INTERNAL_SERVER_ERROR',
         message: 'Failed to update group owner',
@@ -243,10 +206,10 @@ export async function changeGroupOwner(
       [groupId, changedBy]
     );
     
-    lgr.debug({
-      code: Events.CORE.ITEM_SELECTOR.GROUP_OWNER.DATABASE.SUCCESS.code,
-      message: 'Successfully updated group details with modification info',
-      details: { 
+    // Publish database success event
+    await createAndPublishEvent({
+      eventName: CHANGE_GROUP_OWNER_SERVICE_EVENTS.DATABASE_SUCCESS.eventName,
+      payload: { 
         groupId,
         changedBy,
         detailsUpdated: detailsResult.rowCount ? detailsResult.rowCount > 0 : false
@@ -256,10 +219,10 @@ export async function changeGroupOwner(
     // Commit transaction
     await client.query('COMMIT');
     
-    lgr.info({
-      code: Events.CORE.ITEM_SELECTOR.GROUP_OWNER.CHANGE.SUCCESS.code,
-      message: 'Group owner successfully changed',
-      details: { 
+    // Publish service success event
+    await createAndPublishEvent({
+      eventName: CHANGE_GROUP_OWNER_SERVICE_EVENTS.SERVICE_RESPONSE_SUCCESS.eventName,
+      payload: { 
         groupId, 
         oldOwnerId: currentOwnerId,
         newOwnerId
@@ -276,15 +239,15 @@ export async function changeGroupOwner(
     // Rollback transaction on error
     await client.query('ROLLBACK');
     
-    lgr.error({
-      code: Events.CORE.ITEM_SELECTOR.GROUP_OWNER.CHANGE.ERROR.code,
-      message: 'Failed to change group owner',
-      details: { 
+    // Publish service error event
+    await createAndPublishEvent({
+      eventName: CHANGE_GROUP_OWNER_SERVICE_EVENTS.SERVICE_RESPONSE_ERROR.eventName,
+      payload: { 
         groupId, 
         newOwnerId,
         errorCode: (error as ServiceError).code || 'UNKNOWN_ERROR'
       },
-      error
+      errorData: error instanceof Error ? error.message : String(error)
     });
     
     if ((error as ServiceError).code) {
@@ -301,10 +264,6 @@ export async function changeGroupOwner(
   } finally {
     // Release client back to pool
     client.release();
-    lgr.debug({
-      code: Events.CORE.ITEM_SELECTOR.DATABASE.CLIENT_RELEASED.code,
-      message: 'Database client released'
-    });
   }
 }
 
