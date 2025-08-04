@@ -11,40 +11,36 @@
 import { Pool } from 'pg';
 import { pool as pgPool } from '../../../../core/db/maindb';
 import { queries } from './queries.group.editor';
-import { createSystemLgr, Lgr } from '../../../../core/lgr/lgr.index';
-import { GroupEvents } from '../../../../core/lgr/codes/admin/users';
+import { createAndPublishEvent } from '../../../../core/eventBus/fabric.events';
+import { GROUP_DELETE_EVENTS } from './events.group.editor';
 
 // Explicitly set type for pool
 const pool = pgPool as Pool;
-
-// Create lgr for service
-const lgr: Lgr = createSystemLgr({
-  module: 'DeleteGroupService',
-  fileName: 'service.delete.group.ts'
-});
 
 /**
  * Deletes a single group by its ID
  * @param groupId - UUID of the group to delete
  * @param username - Username of the user performing the deletion
+ * @param req - Express request object for event context
  * @returns Promise<boolean> - Success status
  * @throws {Error} - If an error occurs
  */
-export async function deleteGroup(groupId: string, username: string): Promise<boolean> {
+export async function deleteGroup(groupId: string, username: string, req?: any): Promise<boolean> {
   try {
-    lgr.info({
-      code: GroupEvents.DELETE.INITIATED.code,
-      message: 'Starting group deletion',
-      details: { groupId, username }
+    await createAndPublishEvent({
+      req,
+      eventName: GROUP_DELETE_EVENTS.TRANSACTION_START.eventName,
+      payload: { groupId, username }
     });
 
     // Check if group exists
     const groupExists = await pool.query(queries.checkGroupExists, [groupId]);
     if (groupExists.rows.length === 0) {
-      lgr.error({
-        code: GroupEvents.DELETE.GROUP_NOT_FOUND.code,
-        message: 'Group not found for deletion',
-        details: { groupId, username }
+      await createAndPublishEvent({
+        req,
+        eventName: GROUP_DELETE_EVENTS.GROUP_NOT_FOUND.eventName,
+        payload: { groupId, username },
+        errorData: 'Group not found for deletion'
       });
       
       throw {
@@ -58,10 +54,11 @@ export async function deleteGroup(groupId: string, username: string): Promise<bo
     const result = await pool.query(queries.deleteGroup, [groupId]);
     
     if (result.rowCount === 0) {
-      lgr.error({
-        code: GroupEvents.DELETE.FAILED.code,
-        message: 'Failed to delete group',
-        details: { groupId, username }
+      await createAndPublishEvent({
+        req,
+        eventName: GROUP_DELETE_EVENTS.FAILED.eventName,
+        payload: { groupId, username },
+        errorData: 'Failed to delete group - no rows affected'
       });
       
       throw {
@@ -71,23 +68,23 @@ export async function deleteGroup(groupId: string, username: string): Promise<bo
       };
     }
 
-    lgr.info({
-      code: GroupEvents.DELETE.SUCCESS.code,
-      message: 'Group deleted successfully',
-      details: { groupId, username }
+    await createAndPublishEvent({
+      req,
+      eventName: GROUP_DELETE_EVENTS.COMPLETE.eventName,
+      payload: { groupId, username }
     });
 
     return true;
 
   } catch (error) {
-    lgr.error({
-      code: GroupEvents.DELETE.FAILED.code,
-      message: 'Error during group deletion',
-      details: { 
+    await createAndPublishEvent({
+      req,
+      eventName: GROUP_DELETE_EVENTS.FAILED.eventName,
+      payload: { 
         groupId, 
-        username,
-        error: error instanceof Error ? error.message : String(error)
-      }
+        username
+      },
+      errorData: error instanceof Error ? error.message : String(error)
     });
 
     // Re-throw error

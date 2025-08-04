@@ -63,5 +63,45 @@ export const eventsAdminServices: EventCollection = {
     severity: 'error',
     eventMessage: 'General error occurred during service fetch operation',
     version: '1.0.0'
+  },
+
+  // Controller validation error
+  'admin.service.fetch.controller.validation.error': {
+    eventName: 'admin.service.fetch.controller.validation.error',
+    source: 'admin-service',
+    eventType: 'system',
+    severity: 'error',
+    eventMessage: 'Controller validation error for service fetch request',
+    version: '1.0.0'
+  },
+
+  // Controller fetch error
+  'admin.service.fetch.controller.fetch_error': {
+    eventName: 'admin.service.fetch.controller.fetch_error',
+    source: 'admin-service',
+    eventType: 'system',
+    severity: 'error',
+    eventMessage: 'Controller fetch error for service data',
+    version: '1.0.0'
+  },
+
+  // Controller success
+  'admin.service.fetch.controller.success': {
+    eventName: 'admin.service.fetch.controller.success',
+    source: 'admin-service',
+    eventType: 'system',
+    severity: 'debug',
+    eventMessage: 'Controller successfully fetched service data',
+    version: '1.0.0'
+  },
+
+  // Controller unexpected error
+  'admin.service.fetch.controller.unexpected_error': {
+    eventName: 'admin.service.fetch.controller.unexpected_error',
+    source: 'admin-service',
+    eventType: 'system',
+    severity: 'error',
+    eventMessage: 'Unexpected error in service fetch controller',
+    version: '1.0.0'
   }
 } 

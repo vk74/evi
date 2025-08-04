@@ -428,6 +428,18 @@ export const GROUP_DELETE_EVENTS = {
     version: '1.0.0'
   },
   
+  // When group is not found for deletion
+  GROUP_NOT_FOUND: {
+    eventName: 'groupEditor.delete.group.not_found',
+    source: 'group editor admin submodule',
+    eventType: 'app' as const,
+    severity: 'error' as const,
+    eventMessage: 'Group not found for deletion',
+    payload: null, // Will be of type { groupId: string }
+    errorData: null, // Will be filled with error message
+    version: '1.0.0'
+  },
+  
   // When cache is cleared after group deletion
   CACHE_CLEARED: {
     eventName: 'groupEditor.delete.cache.cleared',

@@ -11,7 +11,7 @@
 import { Request, Response } from 'express'
 import { AuthenticatedRequest } from '../../../../guards/types.guards'
 import { serviceAdminFetchSingleService } from './service.admin.fetchsingleservice'
-import { createAppLgr } from '../../../../core/lgr/lgr.factory'
+import { createAndPublishEvent } from '../../../../core/eventBus/fabric.events'
 import { connectionHandler } from '../../../../core/helpers/connection.handler'
 
 /**
@@ -20,21 +20,20 @@ import { connectionHandler } from '../../../../core/helpers/connection.handler'
  * @param res - Express response object
  */
 async function fetchSingleServiceLogic(req: AuthenticatedRequest, res: Response): Promise<any> {
-  const logger = createAppLgr({ 
-    module: 'admin', 
-    component: 'service', 
-    operation: 'fetchSingleServiceController' 
-  })
 
   try {
     const { id } = req.query
 
     // Validate required parameter
     if (!id || typeof id !== 'string') {
-      logger.warn({
-        code: 'ADMIN:SERVICE:FETCH_SINGLE:VALIDATION_ERROR:001',
-        message: 'Missing or invalid service ID in request',
-        details: { query: req.query, user: req.user?.username }
+      await createAndPublishEvent({
+        req,
+        eventName: 'admin.service.fetch.controller.validation.error',
+        payload: { 
+          query: req.query, 
+          user: req.user?.username 
+        },
+        errorData: 'Missing or invalid service ID in request'
       })
       
       return {
@@ -44,13 +43,18 @@ async function fetchSingleServiceLogic(req: AuthenticatedRequest, res: Response)
     }
 
     // Fetch service data
-    const result = await serviceAdminFetchSingleService.fetchSingleService(id)
+    const result = await serviceAdminFetchSingleService.fetchSingleService(id, req)
 
     if (!result.success) {
-      logger.warn({
-        code: 'ADMIN:SERVICE:FETCH_SINGLE:FETCH_ERROR:002',
-        message: 'Failed to fetch service data',
-        details: { serviceId: id, error: result.message, user: req.user?.username }
+      await createAndPublishEvent({
+        req,
+        eventName: 'admin.service.fetch.controller.fetch_error',
+        payload: { 
+          serviceId: id, 
+          error: result.message, 
+          user: req.user?.username 
+        },
+        errorData: 'Failed to fetch service data'
       })
 
       return {
@@ -60,19 +64,26 @@ async function fetchSingleServiceLogic(req: AuthenticatedRequest, res: Response)
     }
 
     // Return successful response
-    logger.info({
-      code: 'ADMIN:SERVICE:FETCH_SINGLE:SUCCESS:003',
-      message: 'Service data fetched successfully via API',
-      details: { serviceId: id, serviceName: result.data?.name, user: req.user?.username }
+    await createAndPublishEvent({
+      req,
+      eventName: 'admin.service.fetch.controller.success',
+      payload: { 
+        serviceId: id, 
+        serviceName: result.data?.name, 
+        user: req.user?.username 
+      }
     })
 
     return result.data
 
   } catch (error) {
-    logger.error({
-      code: 'ADMIN:SERVICE:FETCH_SINGLE:UNEXPECTED_ERROR:004',
-      message: 'Unexpected error in fetchSingleService controller',
-      details: { error: error instanceof Error ? error.message : String(error), user: req.user?.username }
+    await createAndPublishEvent({
+      req,
+      eventName: 'admin.service.fetch.controller.unexpected_error',
+      payload: { 
+        user: req.user?.username 
+      },
+      errorData: error instanceof Error ? error.message : String(error)
     })
 
     return {
