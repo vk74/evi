@@ -4,15 +4,7 @@
 
 ### Import the service
 ```typescript
-import { 
-  validateField, 
-  validateFieldAndThrow, 
-  validateFieldSecurity, 
-  validateFieldSecurityAndThrow,
-  validateMultipleFields,
-  validateMultipleUsernames,
-  validateMultipleGroupNames
-} from '@/core/validation/service.validation';
+import { validateField, validateFieldAndThrow, validateFieldSecurity, validateFieldSecurityAndThrow, validateMultipleFields, validateMultipleUsernames, validateMultipleGroupNames } from '@/core/validation/service.validation';
 ```
 
 ### Basic validation
@@ -126,6 +118,37 @@ function validateMultipleFieldsSecurity(fields: ValidationRequest[]): string[] {
     }
   });
   return errors;
+}
+```
+
+### Validate multiple fields (comma-separated)
+```typescript
+// Validate multiple usernames
+const usernamesResult = validateMultipleFields("user1,user2,user3", "username");
+if (!usernamesResult.isValid) {
+  console.log('Multiple usernames validation failed:', usernamesResult.error);
+}
+
+// Validate multiple group names
+const groupsResult = validateMultipleFields("group1,group2", "group_name");
+if (!groupsResult.isValid) {
+  console.log('Multiple groups validation failed:', groupsResult.error);
+}
+```
+
+### Validate multiple usernames (format only)
+```typescript
+const usernamesResult = validateMultipleUsernames("user1,user2,user3");
+if (!usernamesResult.isValid) {
+  console.log('Multiple usernames validation failed:', usernamesResult.error);
+}
+```
+
+### Validate multiple group names (format only)
+```typescript
+const groupsResult = validateMultipleGroupNames("group1,group2");
+if (!groupsResult.isValid) {
+  console.log('Multiple groups validation failed:', groupsResult.error);
 }
 ```
 

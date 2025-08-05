@@ -80,6 +80,19 @@ export class ServiceAdminFetchSingleService {
 
       const serviceRow = serviceResult.rows[0]
 
+      // Log the raw service data from database
+      console.log('[FetchSingleService] Raw service data from database:', {
+        id: serviceRow.id,
+        name: serviceRow.name,
+        icon_name: serviceRow.icon_name,
+        description_short: serviceRow.description_short,
+        description_long: serviceRow.description_long,
+        purpose: serviceRow.purpose,
+        comments: serviceRow.comments,
+        priority: serviceRow.priority,
+        status: serviceRow.status
+      })
+
       // Fetch access control groups
       const accessGroupsResult = await client.query(queries.fetchServiceAccessGroups, [serviceId])
       
@@ -134,6 +147,19 @@ export class ServiceAdminFetchSingleService {
         modified_by: serviceRow.modified_by
       }
 
+      // Log the final service object
+      console.log('[FetchSingleService] Final service object:', {
+        id: service.id,
+        name: service.name,
+        icon_name: service.icon_name,
+        description_short: service.description_short,
+        description_long: service.description_long,
+        purpose: service.purpose,
+        comments: service.comments,
+        priority: service.priority,
+        status: service.status
+      })
+
       await createAndPublishEvent({
         req,
         eventName: 'admin.service.fetch.success',
@@ -152,6 +178,8 @@ export class ServiceAdminFetchSingleService {
       }
 
     } catch (error) {
+      console.error('[FetchSingleService] Error fetching service:', error)
+      
       await createAndPublishEvent({
         req,
         eventName: 'admin.service.fetch.error',

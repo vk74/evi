@@ -19,6 +19,7 @@ export type FieldType =
   | 'group_name'
   | 'service_name'
   | 'description'
+  | 'long_description'
   | 'icon_name';
 
 // Validation request interface

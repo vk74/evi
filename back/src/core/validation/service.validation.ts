@@ -10,8 +10,8 @@ import { ValidationRequest, ValidationResponse, ValidationError, SecurityError, 
 import { getRule } from './cache.validation';
 import { validateByRule } from './rules.validation';
 import { securityCheck } from './security.validation';
-import { checkUserExists } from '../helpers/check.user.exists';
-import { checkGroupExists } from '../helpers/check.group.exists';
+import { getUuidByUsername } from '../helpers/get.uuid.by.username';
+import { getUuidByGroupName } from '../helpers/get.uuid.by.group.name';
 
 /**
  * Validate a single field
@@ -143,29 +143,19 @@ export function validateMultipleFields(values: string, fieldType: FieldType): Va
 }
 
 /**
- * Validate multiple usernames and check existence
+ * Validate multiple usernames (format only)
  * @param usernames - Comma-separated usernames
- * @returns Validation response with existence errors
+ * @returns Validation response with format errors
  */
-export async function validateMultipleUsernames(usernames: string): Promise<ValidationResponse> {
+export function validateMultipleUsernames(usernames: string): ValidationResponse {
   const errors: string[] = [];
   const items = usernames.split(',').map(v => v.trim()).filter(v => v);
   
-  // First validate format for each username
+  // Validate format for each username
   for (const item of items) {
     const result = validateField({ value: item, fieldType: 'username' });
     if (!result.isValid && result.error) {
       errors.push(`Username "${item}": ${result.error}`);
-    }
-  }
-  
-  // If format validation passed, check existence
-  if (errors.length === 0) {
-    for (const username of items) {
-      const exists = await checkUserExists(username);
-      if (!exists) {
-        errors.push(`Username "${username}" does not exist`);
-      }
     }
   }
   
@@ -176,29 +166,19 @@ export async function validateMultipleUsernames(usernames: string): Promise<Vali
 }
 
 /**
- * Validate multiple group names and check existence
+ * Validate multiple group names (format only)
  * @param groupNames - Comma-separated group names
- * @returns Validation response with existence errors
+ * @returns Validation response with format errors
  */
-export async function validateMultipleGroupNames(groupNames: string): Promise<ValidationResponse> {
+export function validateMultipleGroupNames(groupNames: string): ValidationResponse {
   const errors: string[] = [];
   const items = groupNames.split(',').map(v => v.trim()).filter(v => v);
   
-  // First validate format for each group name
+  // Validate format for each group name
   for (const item of items) {
     const result = validateField({ value: item, fieldType: 'group_name' });
     if (!result.isValid && result.error) {
       errors.push(`Group name "${item}": ${result.error}`);
-    }
-  }
-  
-  // If format validation passed, check existence
-  if (errors.length === 0) {
-    for (const groupName of items) {
-      const exists = await checkGroupExists(groupName);
-      if (!exists) {
-        errors.push(`Group name "${groupName}" does not exist`);
-      }
     }
   }
   

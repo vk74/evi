@@ -189,6 +189,15 @@ const COMMON_FIELDS: ValidationRule[] = [
       maxLength: 'Description cannot exceed 2000 characters',
       invalidChars: 'Description contains invalid characters'
     }
+  },
+  {
+    fieldType: 'long_description',
+    regex: REGEX.DESCRIPTION,
+    maxLength: 10000,
+    messages: {
+      maxLength: 'Description cannot exceed 10000 characters',
+      invalidChars: 'Description contains invalid characters'
+    }
   }
 ];
 

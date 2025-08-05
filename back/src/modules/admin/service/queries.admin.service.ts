@@ -20,7 +20,7 @@ export const queries = {
             name, priority, status, description_short, description_long, 
             purpose, comments, is_public, icon_name, created_by
         ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
-        RETURNING id, name, created_at
+        RETURNING id, name, description_short, description_long, purpose, comments, created_at
     `,
 
     /**
@@ -60,6 +60,7 @@ export const queries = {
         SELECT 
             s.id,
             s.name,
+            s.icon_name,
             s.priority,
             s.status,
             s.description_short,

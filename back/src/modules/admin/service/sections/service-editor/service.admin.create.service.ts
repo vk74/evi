@@ -33,7 +33,7 @@ import { ServicePriority, ServiceStatus, ServiceUserRole, ServiceGroupRole } fro
 import { getRequestorUuidFromReq } from '../../../../../core/helpers/get.requestor.uuid.from.req';
 import { getUuidByUsername } from '../../../../../core/helpers/get.uuid.by.username';
 import { getUuidByGroupName } from '../../../../../core/helpers/get.uuid.by.group.name';
-import { validateField, validateFieldSecurity } from '../../../../../core/validation/service.validation';
+import { validateField, validateFieldSecurity, validateMultipleUsernames, validateMultipleGroupNames } from '../../../../../core/validation/service.validation';
 
 // Type assertion for pool
 const pool = pgPool as Pool;
@@ -76,7 +76,7 @@ async function validateCreateServiceData(data: CreateServiceRequest): Promise<vo
     if (data.priority) {
         const priorityResult = validateFieldSecurity({
             value: data.priority,
-            fieldType: 'description'
+            fieldType: 'service_name'
         });
         if (!priorityResult.isValid && priorityResult.error) {
             errors.push(priorityResult.error);
@@ -87,7 +87,7 @@ async function validateCreateServiceData(data: CreateServiceRequest): Promise<vo
     if (data.status) {
         const statusResult = validateFieldSecurity({
             value: data.status,
-            fieldType: 'description'
+            fieldType: 'service_name'
         });
         if (!statusResult.isValid && statusResult.error) {
             errors.push(statusResult.error);
@@ -119,7 +119,7 @@ async function validateCreateServiceData(data: CreateServiceRequest): Promise<vo
     if (data.description_long) {
         const descLongResult = validateField({
             value: data.description_long,
-            fieldType: 'description'
+            fieldType: 'long_description'
         });
         if (!descLongResult.isValid && descLongResult.error) {
             errors.push(descLongResult.error);
@@ -129,7 +129,7 @@ async function validateCreateServiceData(data: CreateServiceRequest): Promise<vo
     if (data.purpose) {
         const purposeResult = validateField({
             value: data.purpose,
-            fieldType: 'description'
+            fieldType: 'long_description'
         });
         if (!purposeResult.isValid && purposeResult.error) {
             errors.push(purposeResult.error);
@@ -139,7 +139,7 @@ async function validateCreateServiceData(data: CreateServiceRequest): Promise<vo
     if (data.comments) {
         const commentsResult = validateField({
             value: data.comments,
-            fieldType: 'description'
+            fieldType: 'long_description'
         });
         if (!commentsResult.isValid && commentsResult.error) {
             errors.push(commentsResult.error);
@@ -302,69 +302,24 @@ async function validateCreateServiceData(data: CreateServiceRequest): Promise<vo
 
     // Validate access control groups (multiple values)
     if (data.access_allowed_groups) {
-        const allowedGroups = data.access_allowed_groups.split(',').map(g => g.trim()).filter(g => g);
-        for (const groupName of allowedGroups) {
-            const groupResult = validateField({
-                value: groupName,
-                fieldType: 'group_name'
-            });
-            if (!groupResult.isValid && groupResult.error) {
-                errors.push(`Access allowed group "${groupName}": ${groupResult.error}`);
-            } else {
-                try {
-                    const groupId = await getUuidByGroupName(groupName);
-                    if (!groupId) {
-                        errors.push(`Access allowed group "${groupName}" does not exist`);
-                    }
-                } catch (error) {
-                    errors.push(`Invalid access allowed group name: ${groupName}`);
-                }
-            }
+        const allowedGroupsResult = validateMultipleGroupNames(data.access_allowed_groups);
+        if (!allowedGroupsResult.isValid && allowedGroupsResult.error) {
+            errors.push(`Access allowed groups: ${allowedGroupsResult.error}`);
         }
     }
 
     if (data.access_denied_groups) {
-        const deniedGroups = data.access_denied_groups.split(',').map(g => g.trim()).filter(g => g);
-        for (const groupName of deniedGroups) {
-            const groupResult = validateField({
-                value: groupName,
-                fieldType: 'group_name'
-            });
-            if (!groupResult.isValid && groupResult.error) {
-                errors.push(`Access denied group "${groupName}": ${groupResult.error}`);
-            } else {
-                try {
-                    const groupId = await getUuidByGroupName(groupName);
-                    if (!groupId) {
-                        errors.push(`Access denied group "${groupName}" does not exist`);
-                    }
-                } catch (error) {
-                    errors.push(`Invalid access denied group name: ${groupName}`);
-                }
-            }
+        const deniedGroupsResult = validateMultipleGroupNames(data.access_denied_groups);
+        if (!deniedGroupsResult.isValid && deniedGroupsResult.error) {
+            errors.push(`Access denied groups: ${deniedGroupsResult.error}`);
         }
     }
 
     // Validate access denied users (multiple values)
     if (data.access_denied_users) {
-        const deniedUsers = data.access_denied_users.split(',').map(u => u.trim()).filter(u => u);
-        for (const username of deniedUsers) {
-            const userResult = validateField({
-                value: username,
-                fieldType: 'username'
-            });
-            if (!userResult.isValid && userResult.error) {
-                errors.push(`Access denied user "${username}": ${userResult.error}`);
-            } else {
-                try {
-                    const userId = await getUuidByUsername(username);
-                    if (!userId) {
-                        errors.push(`Access denied user "${username}" does not exist`);
-                    }
-                } catch (error) {
-                    errors.push(`Invalid access denied username: ${username}`);
-                }
-            }
+        const deniedUsersResult = validateMultipleUsernames(data.access_denied_users);
+        if (!deniedUsersResult.isValid && deniedUsersResult.error) {
+            errors.push(`Access denied users: ${deniedUsersResult.error}`);
         }
     }
 
@@ -463,6 +418,8 @@ async function createServiceAccessRoles(client: any, serviceId: string, data: Cr
                         serviceId, groupId, ServiceGroupRole.ACCESS_ALLOWED, requestorUuid
                     ]);
                     console.log(`[CreateServiceService] Created access allowed group: ${groupName}`);
+                } else {
+                    throw new Error(`Group "${groupName}" does not exist`);
                 }
             } catch (error) {
                 console.error(`[CreateServiceService] Error creating access allowed group ${groupName}:`, error);
@@ -482,6 +439,8 @@ async function createServiceAccessRoles(client: any, serviceId: string, data: Cr
                         serviceId, groupId, ServiceGroupRole.ACCESS_DENIED, requestorUuid
                     ]);
                     console.log(`[CreateServiceService] Created access denied group: ${groupName}`);
+                } else {
+                    throw new Error(`Group "${groupName}" does not exist`);
                 }
             } catch (error) {
                 console.error(`[CreateServiceService] Error creating access denied group ${groupName}:`, error);
@@ -501,6 +460,8 @@ async function createServiceAccessRoles(client: any, serviceId: string, data: Cr
                         serviceId, userId, ServiceUserRole.ACCESS_DENIED, requestorUuid
                     ]);
                     console.log(`[CreateServiceService] Created access denied user: ${username}`);
+                } else {
+                    throw new Error(`User "${username}" does not exist`);
                 }
             } catch (error) {
                 console.error(`[CreateServiceService] Error creating access denied user ${username}:`, error);
@@ -523,6 +484,18 @@ async function createServiceInDatabase(data: CreateServiceRequest, requestorUuid
         await client.query('BEGIN');
 
         // Create service in main table
+        console.log('[CreateServiceService] Inserting service with data:', {
+            name: data.name.trim(),
+            priority: data.priority || ServicePriority.LOW,
+            status: data.status || ServiceStatus.DRAFTED,
+            description_short: data.description_short?.trim() || null,
+            description_long: data.description_long?.trim() || null,
+            purpose: data.purpose?.trim() || null,
+            comments: data.comments?.trim() || null,
+            is_public: data.is_public || false,
+            icon_name: data.icon_name?.trim() || null
+        });
+
         const serviceResult = await client.query(queries.createService, [
             data.name.trim(),
             data.priority || ServicePriority.LOW,
@@ -542,7 +515,8 @@ async function createServiceInDatabase(data: CreateServiceRequest, requestorUuid
         console.log('[CreateServiceService] Service created successfully', {
             serviceId,
             serviceName: createdService.name,
-            createdBy: requestorUuid
+            createdBy: requestorUuid,
+            createdService: createdService
         });
 
         // Create user roles
@@ -602,6 +576,10 @@ export async function createService(req: Request): Promise<CreateServiceResponse
             name: serviceData.name,
             owner: serviceData.owner,
             priority: serviceData.priority,
+            description_short: serviceData.description_short,
+            description_long: serviceData.description_long,
+            purpose: serviceData.purpose,
+            comments: serviceData.comments,
             requestorUuid
         });
 

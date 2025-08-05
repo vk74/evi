@@ -71,7 +71,8 @@ export const fetchAllServices = async (
     // Build dynamic query
     const baseQuery = `
       SELECT 
-        s.id, s.name, s.priority, s.status, s.is_public,
+        s.id, s.name, s.icon_name, s.priority, s.status, s.is_public,
+        s.description_short, s.description_long, s.purpose, s.comments,
         s.created_at, s.created_by, s.modified_at, s.modified_by,
         u1.username as owner,
         u2.username as technical_owner
@@ -97,11 +98,24 @@ export const fetchAllServices = async (
       client.query(countQuery, [searchTerm])
     ])
     
+    // Log first service data for debugging
+    if (servicesResult.rows.length > 0) {
+      console.log('[FetchAllServices] First service raw data from DB:', {
+        id: servicesResult.rows[0].id,
+        name: servicesResult.rows[0].name,
+        icon_name: servicesResult.rows[0].icon_name,
+        description_short: servicesResult.rows[0].description_short,
+        description_long: servicesResult.rows[0].description_long,
+        purpose: servicesResult.rows[0].purpose,
+        comments: servicesResult.rows[0].comments
+      })
+    }
+    
     // Process results
     const services: Service[] = servicesResult.rows.map((row: any) => ({
       id: row.id,
       name: row.name,
-      icon_name: null, // Not included in this query
+      icon_name: row.icon_name || null,
       support_tier1: null, // Not included in this query
       support_tier2: null, // Not included in this query
       support_tier3: null, // Not included in this query
@@ -112,10 +126,10 @@ export const fetchAllServices = async (
       dispatcher: null, // Not included in this query
       priority: row.priority,
       status: row.status,
-      description_short: null, // Not included in this query
-      description_long: null, // Not included in this query
-      purpose: null, // Not included in this query
-      comments: null, // Not included in this query
+      description_short: row.description_short || null,
+      description_long: row.description_long || null,
+      purpose: row.purpose || null,
+      comments: row.comments || null,
       is_public: row.is_public,
       access_allowed_groups: null, // Not included in this query
       access_denied_groups: null, // Not included in this query
@@ -125,6 +139,19 @@ export const fetchAllServices = async (
       modified_at: row.modified_at,
       modified_by: row.modified_by
     }))
+    
+    // Log first mapped service for debugging
+    if (services.length > 0) {
+      console.log('[FetchAllServices] First service after mapping:', {
+        id: services[0].id,
+        name: services[0].name,
+        icon_name: services[0].icon_name,
+        description_short: services[0].description_short,
+        description_long: services[0].description_long,
+        purpose: services[0].purpose,
+        comments: services[0].comments
+      })
+    }
     
     const totalItems = parseInt(countResult.rows[0].total)
     const totalPages = Math.ceil(totalItems / itemsPerPage)
