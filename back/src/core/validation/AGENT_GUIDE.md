@@ -4,7 +4,15 @@
 
 ### Import the service
 ```typescript
-import { validateField, validateFieldAndThrow, validateFieldSecurity, validateFieldSecurityAndThrow } from '@/core/validation/service.validation';
+import { 
+  validateField, 
+  validateFieldAndThrow, 
+  validateFieldSecurity, 
+  validateFieldSecurityAndThrow,
+  validateMultipleFields,
+  validateMultipleUsernames,
+  validateMultipleGroupNames
+} from '@/core/validation/service.validation';
 ```
 
 ### Basic validation
@@ -68,9 +76,9 @@ try {
 
 ### Security-only validation
 ```typescript
-// For database fields with data_types - perform only security validation
+// For user-defined data types (custom types) - perform only security validation
 const securityResult = validateFieldSecurity({
-  value: databaseFieldValue,
+  value: customTypeFieldValue,
   fieldType: 'description'  // fieldType is not important for security-only validation
 });
 
@@ -83,7 +91,7 @@ if (!securityResult.isValid) {
 ```typescript
 try {
   validateFieldSecurityAndThrow({
-    value: databaseFieldValue,
+    value: customTypeFieldValue,
     fieldType: 'description'
   });
   // Proceed if security check passed
@@ -121,6 +129,52 @@ function validateMultipleFieldsSecurity(fields: ValidationRequest[]): string[] {
 }
 ```
 
+### Mixed validation (standard + security-only)
+```typescript
+function validateMixedFields(standardFields: ValidationRequest[], customTypeFields: ValidationRequest[]): string[] {
+  const errors: string[] = [];
+  
+  // Validate standard data types with full validation
+  standardFields.forEach(field => {
+    const result = validateField(field);
+    if (!result.isValid && result.error) {
+      errors.push(result.error);
+    }
+  });
+  
+  // Validate user-defined data types with security-only validation
+  customTypeFields.forEach(field => {
+    const result = validateFieldSecurity(field);
+    if (!result.isValid && result.error) {
+      errors.push(result.error);
+    }
+  });
+  
+  return errors;
+}
+```
+
+### Multiple fields validation
+```typescript
+// Validate multiple comma-separated values
+const result = validateMultipleFields('user1,user2,user3', 'username');
+if (!result.isValid) {
+  console.log('Multiple fields validation failed:', result.error);
+}
+
+// Validate multiple usernames with existence check
+const usernamesResult = await validateMultipleUsernames('john,alice,bob');
+if (!usernamesResult.isValid) {
+  console.log('Usernames validation failed:', usernamesResult.error);
+}
+
+// Validate multiple group names with existence check
+const groupsResult = await validateMultipleGroupNames('admins,users,guests');
+if (!groupsResult.isValid) {
+  console.log('Group names validation failed:', groupsResult.error);
+}
+```
+
 ## Security Features
 
 The validator automatically checks for security threats before validation rules are applied:
@@ -133,7 +187,19 @@ Security threats are blocked with clear error messages.
 - **Field types and rules**: `rules.validation.ts` - organized by sections (USER_FIELDS, GROUP_FIELDS, etc.)
 - **Security patterns**: `rules.security.ts` - threat detection patterns
 - **Types and interfaces**: `types.validation.ts` - ValidationRequest, ValidationResponse, FieldType
-- **Main service**: `service.validation.ts` - validateField, validateFieldAndThrow, validateFieldSecurity, validateFieldSecurityAndThrow functions
+- **Main service**: `service.validation.ts` - validateField, validateFieldAndThrow, validateFieldSecurity, validateFieldSecurityAndThrow, validateMultipleFields, validateMultipleUsernames, validateMultipleGroupNames functions
+
+## When to Use Which Method
+
+### Use `validateField()` for:
+- **Standard data types**: character varying, integer, text, boolean, etc.
+- **Fields with specific validation rules**: username, email, password, etc.
+- **When you need both security and format validation**
+
+### Use `validateFieldSecurity()` for:
+- **User-defined data types** (custom types)
+- **Fields where only security matters**: JSON fields, custom enum types, etc.
+- **When format validation is not applicable or needed**
 
 ## Adding New Field Types
 
@@ -204,4 +270,4 @@ The cache will be automatically updated with new patterns.
 3. **Use appropriate field types** - Match field types to data
 4. **Security first** - Validator blocks threats automatically
 5. **Clear error messages** - Errors are user-friendly
-6. **Database fields with data_types** - For fields that have database data_types, use `validateFieldSecurity()` method to perform only security validation, skip regular validation rules 
+6. **User-defined data types** - For fields with user-defined data types (custom types), use `validateFieldSecurity()` method to perform only security validation, skip regular validation rules. For standard data types (character varying, integer, etc.) use `validateField()` for full validation. 

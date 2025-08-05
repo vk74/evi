@@ -57,7 +57,7 @@ export function validateServiceName(serviceName: string): void {
     });
     console.log('Service name validation passed');
   } catch (error) {
-    console.error('Service name validation failed:', error.message);
+    console.error('Service name validation failed:', (error as Error).message);
     throw error; // Re-throw to be handled by calling service
   }
 }
@@ -67,7 +67,7 @@ export function validateServiceName(serviceName: string): void {
  * This demonstrates how security threats are detected
  */
 export function testSecurityValidation(): void {
-  const testCases = [
+  const testCases: ValidationRequest[] = [
     { value: "admin'; DROP TABLE users; --", fieldType: 'username' },
     { value: "<script>alert('xss')</script>", fieldType: 'description' },
     { value: "normal_username", fieldType: 'username' },

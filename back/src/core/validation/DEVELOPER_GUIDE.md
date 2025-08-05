@@ -67,21 +67,56 @@ type FieldType =
 
 ### Available Functions
 ```typescript
-// Standard validation (security + regular validation rules)
+// Full validation (security + regular validation rules) - for standard data types
 validateField(request: ValidationRequest): ValidationResponse
 validateFieldAndThrow(request: ValidationRequest): void
 
-// Security-only validation (skip regular validation rules)
+// Security-only validation (skip regular validation rules) - for user-defined data types
 validateFieldSecurity(request: ValidationRequest): ValidationResponse
 validateFieldSecurityAndThrow(request: ValidationRequest): void
+
+// Multiple fields validation
+validateMultipleFields(values: string, fieldType: FieldType): ValidationResponse
+validateMultipleUsernames(usernames: string): Promise<ValidationResponse>
+validateMultipleGroupNames(groupNames: string): Promise<ValidationResponse>
 ```
+
+### When to Use Which Method
+
+#### Use `validateField()` for:
+- **Standard data types**: character varying, integer, text, boolean, etc.
+- **Fields with specific validation rules**: username, email, password, etc.
+- **When you need both security and format validation**
+
+#### Use `validateFieldSecurity()` for:
+- **User-defined data types** (custom types)
+- **Fields where only security matters**: JSON fields, custom enum types, etc.
+- **When format validation is not applicable or needed**
+
+#### Use `validateMultipleFields()` for:
+- **Multiple comma-separated values** of the same type
+- **Batch validation** of similar fields
+- **When you need to validate multiple items at once**
+
+#### Use `validateMultipleUsernames()` and `validateMultipleGroupNames()` for:
+- **Multiple usernames/group names** with existence checking
+- **When you need to validate format AND existence**
+- **For bulk operations** involving multiple users/groups
 
 ## Usage
 
 ### Basic Usage
 
 ```typescript
-import { validateField, validateFieldAndThrow, validateFieldSecurity, validateFieldSecurityAndThrow } from '@/core/validation/service.validation';
+import { 
+  validateField, 
+  validateFieldAndThrow, 
+  validateFieldSecurity, 
+  validateFieldSecurityAndThrow,
+  validateMultipleFields,
+  validateMultipleUsernames,
+  validateMultipleGroupNames
+} from '@/core/validation/service.validation';
 
 // Validate single field
 const result = validateField({
@@ -103,9 +138,9 @@ try {
   console.error('Validation failed:', error.message);
 }
 
-// Security-only validation for database fields with data_types
+// Security-only validation for user-defined data types (custom types)
 const securityResult = validateFieldSecurity({
-  value: databaseFieldValue,
+  value: customTypeFieldValue,
   fieldType: "description"  // fieldType is not important for security-only validation
 });
 
@@ -116,13 +151,30 @@ if (!securityResult.isValid) {
 // Security-only validation with exception throwing
 try {
   validateFieldSecurityAndThrow({
-    value: databaseFieldValue,
+    value: customTypeFieldValue,
     fieldType: "description"
   });
 } catch (error) {
   console.error('Security validation failed:', error.message);
 }
-```
+
+// Multiple fields validation
+const multipleResult = validateMultipleFields('user1,user2,user3', 'username');
+if (!multipleResult.isValid) {
+  console.log('Multiple fields validation failed:', multipleResult.error);
+}
+
+// Multiple usernames with existence check
+const usernamesResult = await validateMultipleUsernames('john,alice,bob');
+if (!usernamesResult.isValid) {
+  console.log('Usernames validation failed:', usernamesResult.error);
+}
+
+// Multiple group names with existence check
+const groupsResult = await validateMultipleGroupNames('admins,users,guests');
+if (!groupsResult.isValid) {
+  console.log('Group names validation failed:', groupsResult.error);
+}
 
 ### Business Service Integration
 
@@ -153,8 +205,8 @@ export function createUser(userData: any) {
   // Proceed with user creation
 }
 
-export function updateDatabaseField(fieldData: any) {
-  // For database fields with data_types - security-only validation
+export function updateUserDefinedFields(fieldData: any) {
+  // For user-defined data types (custom types) - security-only validation
   const securityValidations = [
     { value: fieldData.description, fieldType: 'description' },
     { value: fieldData.content, fieldType: 'general_description' }
@@ -173,7 +225,48 @@ export function updateDatabaseField(fieldData: any) {
     throw new Error(`Security validation failed: ${errors.join(', ')}`);
   }
   
-  // Proceed with database field update
+  // Proceed with user-defined field update
+}
+
+export function updateStandardFields(fieldData: any) {
+  // For standard data types (character varying, integer, etc.) - full validation
+  const standardValidations = [
+    { value: fieldData.username, fieldType: 'username' },
+    { value: fieldData.email, fieldType: 'email' },
+    { value: fieldData.password, fieldType: 'password' }
+  ];
+  
+  const errors: string[] = [];
+  
+  standardValidations.forEach(validation => {
+    const result = validateField(validation);
+    if (!result.isValid && result.error) {
+      errors.push(result.error);
+    }
+  });
+  
+  if (errors.length > 0) {
+    throw new Error(`Validation failed: ${errors.join(', ')}`);
+  }
+  
+  // Proceed with standard field update
+}
+
+export async function addMultipleUsersToGroup(userList: string, groupName: string) {
+  // Validate multiple usernames with existence check
+  const usernamesResult = await validateMultipleUsernames(userList);
+  if (!usernamesResult.isValid) {
+    throw new Error(`User validation failed: ${usernamesResult.error}`);
+  }
+  
+  // Validate group name with existence check
+  const groupResult = await validateMultipleGroupNames(groupName);
+  if (!groupResult.isValid) {
+    throw new Error(`Group validation failed: ${groupResult.error}`);
+  }
+  
+  // Proceed with adding users to group
+  console.log('All validations passed, proceeding with group assignment');
 }
 ```
 
@@ -322,6 +415,9 @@ describe('Validation Service', () => {
 - ✅ `FieldType` - field types (11 supported types)
 - ✅ `validateFieldSecurity` - security-only validation method
 - ✅ `validateFieldSecurityAndThrow` - security-only validation with exception throwing
+- ✅ `validateMultipleFields` - multiple comma-separated values validation
+- ✅ `validateMultipleUsernames` - multiple usernames with existence check
+- ✅ `validateMultipleGroupNames` - multiple group names with existence check
 
 #### 4. Workflow
 - ✅ Initialization when server starts in `server.ts`
@@ -401,6 +497,7 @@ describe('Validation Service', () => {
 - **Threat levels**: 4 (low, medium, high, critical)
 - **Tests**: 19 (12 validation + 7 security)
 - **Security-only validation methods**: 2 (validateFieldSecurity, validateFieldSecurityAndThrow)
+- **Multiple fields validation methods**: 3 (validateMultipleFields, validateMultipleUsernames, validateMultipleGroupNames)
 
 ### 🚀 Ready for Use
 

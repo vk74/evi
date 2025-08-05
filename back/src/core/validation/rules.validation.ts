@@ -154,6 +154,16 @@ const SERVICE_FIELDS: ValidationRule[] = [
       maxLength: 'Service name cannot exceed 100 characters',
       invalidChars: 'Service name can only contain Latin letters, numbers, spaces, hyphens and underscores'
     }
+  },
+  {
+    fieldType: 'icon_name',
+    regex: /^[a-zA-Z0-9\-_]+$/,
+    maxLength: 100,
+    required: false,
+    messages: {
+      maxLength: 'Icon name cannot exceed 100 characters',
+      invalidChars: 'Icon name can only contain Latin letters, numbers, hyphens and underscores'
+    }
   }
 ];
 
