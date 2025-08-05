@@ -189,11 +189,11 @@ const loadServiceData = async () => {
         populateFormWithService(serviceData)
       } else {
         // Fetch fresh data from API if not in store
-        console.log('Fetching service data from API for editing')
         
         const response = await serviceAdminFetchSingleService.fetchSingleService(editingServiceId.value)
         
         if (response.success && response.data) {
+          
           // Заполняем форму данными сервиса из API
           populateFormWithService(response.data)
         } else {
@@ -214,6 +214,7 @@ const loadServiceData = async () => {
 }
 
 const populateFormWithService = (service: Service) => {
+  
   formData.value = {
     name: service.name,
     icon_name: service.icon_name || '', // Заполняем поле для иконки
@@ -538,7 +539,7 @@ const clearIcon = () => {
 
 // Watch for language changes
 watch(locale, () => {
-  console.log('Language changed to:', locale.value)
+  // Language change handled automatically by i18n
 })
 
 // Lifecycle

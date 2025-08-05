@@ -20,20 +20,26 @@ import ServiceEditorMapping from './ServiceEditorMapping.vue'
 const { t } = useI18n()
 const servicesStore = useServicesAdminStore()
 
-// Section management
-const switchSection = (section: 'details' | 'catalog publication') => {
-  servicesStore.setActiveSection(section)
-}
-
 // Computed properties
 const isCreationMode = computed(() => servicesStore.getEditorMode === 'creation')
 const isEditMode = computed(() => servicesStore.getEditorMode === 'edit')
+
+
 
 const pageTitle = computed(() => {
   return isCreationMode.value 
     ? t('admin.services.editor.creation.title')
     : t('admin.services.editor.edit.title')
 })
+
+// Section management
+const switchSection = (section: 'details' | 'catalog publication') => {
+  // Prevent switching to catalog publication in creation mode
+  if (section === 'catalog publication' && isCreationMode.value) {
+    return
+  }
+  servicesStore.setActiveSection(section)
+}
 </script>
 
 <template>
@@ -52,6 +58,7 @@ const pageTitle = computed(() => {
           :class="['section-btn', { 'section-active': servicesStore.getActiveSection === 'catalog publication' }]"
           variant="text"
           @click="switchSection('catalog publication')"
+          :disabled="isCreationMode"
         >
           {{ t('admin.services.editor.sections.catalog publication') }}
         </v-btn>
@@ -114,6 +121,11 @@ const pageTitle = computed(() => {
   border-bottom: 2px solid #009688;
   font-weight: 500;
   color: rgba(0, 0, 0, 0.87) !important;
+}
+
+.section-btn:disabled {
+  color: rgba(0, 0, 0, 0.38) !important;
+  cursor: not-allowed;
 }
 
 .module-title {
