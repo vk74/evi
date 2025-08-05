@@ -48,6 +48,9 @@ import * as eventBusSubscriptions from '@/core/eventBus/subscriptions.eventBus';
 // Import cache helpers
 import { initCache as initHelpersCache } from '@/core/helpers/cache.helpers';
 
+// Import validation service
+import { initializeValidationService } from '@/core/validation/init.validation';
+
 // Define global declarations for TypeScript
 declare global {
   var privateKey: string;
@@ -145,27 +148,32 @@ async function initializeServer(): Promise<void> {
     initHelpersCache();
     console.log('Helpers cache initialized successfully');
 
-    // 4. Loading settings
+    // 4. Initialize validation service AFTER helpers cache is ready
+    console.log('Initializing validation service...');
+    initializeValidationService();
+    console.log('Validation service initialized successfully');
+
+    // 5. Loading settings
     console.log('Loading application settings...');
     
     await loadSettings();
     settingsLoaded = true;
     console.log('[Server] System settings loaded and ready');
 
-    // 5. Initialize logger service AFTER settings are loaded
+    // 6. Initialize logger service AFTER settings are loaded
     // This ensures logger can apply correct settings from cache
     loggerService.initialize();
     loggerSubscriptions.initializeSubscriptions();
     console.log('Logger system initialized with current settings');
 
-    // 6. Initialize event bus service AFTER settings are loaded
+    // 7. Initialize event bus service AFTER settings are loaded
     // This ensures event bus can apply correct settings from cache
     eventBusService.initialize();
     eventBusSubscriptions.initializeSubscriptions();
     console.log('Event Bus system initialized with current settings');
     // No duplicate logging here, as loadSettings already logs success message
 
-    // 7. Setting up middleware
+    // 8. Setting up middleware
     // Configure CORS for frontend only
     app.use(cors({
       origin: ['http://localhost:8080', 'http://localhost:3000', 'http://127.0.0.1:8080'], // Allow access from multiple localhost variants
@@ -182,10 +190,10 @@ async function initializeServer(): Promise<void> {
 
     console.log('Middleware configuration completed');
 
-    // 8. Add server readiness check middleware for all routes
+    // 9. Add server readiness check middleware for all routes
     app.use(checkServerReady);
 
-    // 9. Route registration
+    // 10. Route registration
     app.use(authRoutes);
     app.use('/api/catalog', catalogRoutes);
     app.use(adminRoutes);
@@ -194,14 +202,14 @@ async function initializeServer(): Promise<void> {
 
     console.log('All routes registered successfully');
 
-    // 10. Base route
+    // 11. Base route
     app.get('/', (req: Request, res: Response) => {
       res.send('Backend server is running');
     });
 
 
 
-    // 11. Server startup
+    // 12. Server startup
     app.listen(port, () => {
       const now = new Date();
       const dateOptions: Intl.DateTimeFormatOptions = { 
