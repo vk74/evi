@@ -18,7 +18,7 @@ import { securityCheck } from './security.validation';
  */
 export function validateField(request: ValidationRequest): ValidationResponse {
   try {
-    const { value, fieldType } = request;
+    const { value, fieldType, securityOnly = false } = request;
     
     // Step 1: Security check (FIRST PRIORITY)
     const securityResult = securityCheck(value);
@@ -32,6 +32,14 @@ export function validateField(request: ValidationRequest): ValidationResponse {
       return {
         isValid: false,
         error: securityResult.error?.message || 'Security threat detected'
+      };
+    }
+    
+    // If securityOnly is true, skip regular validation rules
+    if (securityOnly) {
+      console.log('Security-only validation passed for field type:', fieldType);
+      return {
+        isValid: true
       };
     }
     
@@ -82,6 +90,30 @@ export function validateFieldAndThrow(request: ValidationRequest): void {
   
   if (!result.isValid) {
     throw new Error(result.error || 'Validation failed');
+  }
+}
+
+/**
+ * Validate field security only (skip regular validation rules)
+ * @param request - Validation request with securityOnly flag
+ * @returns Validation response with result and optional error
+ */
+export function validateFieldSecurity(request: ValidationRequest): ValidationResponse {
+  // Set securityOnly to true for this method
+  const securityRequest = { ...request, securityOnly: true };
+  return validateField(securityRequest);
+}
+
+/**
+ * Validate field security only and throw exception if invalid
+ * @param request - Validation request
+ * @throws Error with validation error message
+ */
+export function validateFieldSecurityAndThrow(request: ValidationRequest): void {
+  const result = validateFieldSecurity(request);
+  
+  if (!result.isValid) {
+    throw new Error(result.error || 'Security validation failed');
   }
 }
 

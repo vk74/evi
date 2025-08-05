@@ -24,6 +24,7 @@ export type FieldType =
 export interface ValidationRequest {
   value: string | number;
   fieldType: FieldType;
+  securityOnly?: boolean;  // If true, perform only security validation, skip regular validation rules
 }
 
 // Validation response interface

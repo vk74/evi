@@ -37,6 +37,7 @@ back/src/core/validation/
 interface ValidationRequest {
   value: string | number;
   fieldType: FieldType;
+  securityOnly?: boolean;  // If true, perform only security validation, skip regular validation rules
 }
 ```
 
@@ -64,12 +65,23 @@ type FieldType =
   | 'description';
 ```
 
+### Available Functions
+```typescript
+// Standard validation (security + regular validation rules)
+validateField(request: ValidationRequest): ValidationResponse
+validateFieldAndThrow(request: ValidationRequest): void
+
+// Security-only validation (skip regular validation rules)
+validateFieldSecurity(request: ValidationRequest): ValidationResponse
+validateFieldSecurityAndThrow(request: ValidationRequest): void
+```
+
 ## Usage
 
 ### Basic Usage
 
 ```typescript
-import { validateField, validateFieldAndThrow } from '@/core/validation/service.validation';
+import { validateField, validateFieldAndThrow, validateFieldSecurity, validateFieldSecurityAndThrow } from '@/core/validation/service.validation';
 
 // Validate single field
 const result = validateField({
@@ -90,12 +102,32 @@ try {
 } catch (error) {
   console.error('Validation failed:', error.message);
 }
+
+// Security-only validation for database fields with data_types
+const securityResult = validateFieldSecurity({
+  value: databaseFieldValue,
+  fieldType: "description"  // fieldType is not important for security-only validation
+});
+
+if (!securityResult.isValid) {
+  console.log('Security validation failed:', securityResult.error);
+}
+
+// Security-only validation with exception throwing
+try {
+  validateFieldSecurityAndThrow({
+    value: databaseFieldValue,
+    fieldType: "description"
+  });
+} catch (error) {
+  console.error('Security validation failed:', error.message);
+}
 ```
 
 ### Business Service Integration
 
 ```typescript
-import { validateField } from '@/core/validation/service.validation';
+import { validateField, validateFieldSecurity } from '@/core/validation/service.validation';
 
 export function createUser(userData: any) {
   // Validate each field individually
@@ -119,6 +151,29 @@ export function createUser(userData: any) {
   }
   
   // Proceed with user creation
+}
+
+export function updateDatabaseField(fieldData: any) {
+  // For database fields with data_types - security-only validation
+  const securityValidations = [
+    { value: fieldData.description, fieldType: 'description' },
+    { value: fieldData.content, fieldType: 'general_description' }
+  ];
+  
+  const errors: string[] = [];
+  
+  securityValidations.forEach(validation => {
+    const result = validateFieldSecurity(validation);
+    if (!result.isValid && result.error) {
+      errors.push(result.error);
+    }
+  });
+  
+  if (errors.length > 0) {
+    throw new Error(`Security validation failed: ${errors.join(', ')}`);
+  }
+  
+  // Proceed with database field update
 }
 ```
 
@@ -262,18 +317,21 @@ describe('Validation Service', () => {
 - ✅ **Performance** - caching of compiled rules
 
 #### 3. Validator API
-- ✅ `ValidationRequest` - input data (value, fieldType)
+- ✅ `ValidationRequest` - input data (value, fieldType, securityOnly)
 - ✅ `ValidationResponse` - output data (isValid, error)
 - ✅ `FieldType` - field types (11 supported types)
+- ✅ `validateFieldSecurity` - security-only validation method
+- ✅ `validateFieldSecurityAndThrow` - security-only validation with exception throwing
 
 #### 4. Workflow
 - ✅ Initialization when server starts in `server.ts`
 - ✅ Receiving validation request for single field
 - ✅ Security check (FIRST STEP)
-- ✅ Getting rules from cache
-- ✅ Applying validation rules
+- ✅ Getting rules from cache (if not securityOnly)
+- ✅ Applying validation rules (if not securityOnly)
 - ✅ Forming response
 - ✅ Returning result
+- ✅ Security-only validation workflow (skip regular validation rules)
 
 #### 5. Security Checks
 - ✅ SQL Injection (basic commands, comments, quotes)
@@ -342,6 +400,7 @@ describe('Validation Service', () => {
 - **Security patterns**: 11
 - **Threat levels**: 4 (low, medium, high, critical)
 - **Tests**: 19 (12 validation + 7 security)
+- **Security-only validation methods**: 2 (validateFieldSecurity, validateFieldSecurityAndThrow)
 
 ### 🚀 Ready for Use
 
