@@ -163,14 +163,20 @@ export const buildEventReferences = async (): Promise<Record<string, Record<stri
         // Dynamically import the module using ES modules syntax
         const eventModule = await import(filePath);
         
+        console.log(`[EventReference] Loading module from ${filePath}:`, Object.keys(eventModule));
+        
         // Find all exported constants that look like event collections
         const collections = Object.entries(eventModule)
-          .filter(([key, value]) => 
-            key.toUpperCase() === key && // All uppercase indicates a constant
-            typeof value === 'object' && 
-            value !== null &&
-            !Array.isArray(value))
-          .map(([_, value]) => value as EventCollection);
+          .filter(([key, value]) => {
+            const isUpperCase = key.toUpperCase() === key;
+            const isObject = typeof value === 'object' && value !== null && !Array.isArray(value);
+            console.log(`[EventReference] Checking export '${key}': isUpperCase=${isUpperCase}, isObject=${isObject}`);
+            return isUpperCase && isObject;
+          })
+          .map(([key, value]) => {
+            console.log(`[EventReference] Found collection: ${key}`);
+            return value as EventCollection;
+          });
         
         // Process each collection
         collections.forEach(collection => {

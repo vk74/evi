@@ -16,8 +16,8 @@ import { EventCollection } from '../../../core/eventBus/types.events'
  */
 export const EVENTS_ADMIN_SERVICES: EventCollection = {
   // Service fetch validation error
-  'admin.service.fetch.validation.error': {
-    eventName: 'admin.service.fetch.validation.error',
+  'service.fetch.validation.error': {
+    eventName: 'adminServices.service.fetch.validation.error',
     source: 'admin-service',
     eventType: 'system',
     severity: 'error',
@@ -26,8 +26,8 @@ export const EVENTS_ADMIN_SERVICES: EventCollection = {
   },
 
   // Service not found
-  'admin.service.fetch.not_found': {
-    eventName: 'admin.service.fetch.not_found',
+  'service.fetch.not_found': {
+    eventName: 'adminServices.service.fetch.not_found',
     source: 'admin-service',
     eventType: 'system',
     severity: 'debug',
@@ -36,8 +36,8 @@ export const EVENTS_ADMIN_SERVICES: EventCollection = {
   },
 
   // Service data error
-  'admin.service.fetch.data_error': {
-    eventName: 'admin.service.fetch.data_error',
+  'service.fetch.data_error': {
+    eventName: 'adminServices.service.fetch.data_error',
     source: 'admin-service',
     eventType: 'system',
     severity: 'error',
@@ -46,8 +46,8 @@ export const EVENTS_ADMIN_SERVICES: EventCollection = {
   },
 
   // Service fetch success
-  'admin.service.fetch.success': {
-    eventName: 'admin.service.fetch.success',
+  'service.fetch.success': {
+    eventName: 'adminServices.service.fetch.success',
     source: 'admin-service',
     eventType: 'system',
     severity: 'debug',
@@ -56,8 +56,8 @@ export const EVENTS_ADMIN_SERVICES: EventCollection = {
   },
 
   // Service fetch general error
-  'admin.service.fetch.error': {
-    eventName: 'admin.service.fetch.error',
+  'service.fetch.error': {
+    eventName: 'adminServices.service.fetch.error',
     source: 'admin-service',
     eventType: 'system',
     severity: 'error',
@@ -66,8 +66,8 @@ export const EVENTS_ADMIN_SERVICES: EventCollection = {
   },
 
   // Controller validation error
-  'admin.service.fetch.controller.validation.error': {
-    eventName: 'admin.service.fetch.controller.validation.error',
+  'service.fetch.controller.validation.error': {
+    eventName: 'adminServices.service.fetch.controller.validation.error',
     source: 'admin-service',
     eventType: 'system',
     severity: 'error',
@@ -76,8 +76,8 @@ export const EVENTS_ADMIN_SERVICES: EventCollection = {
   },
 
   // Controller fetch error
-  'admin.service.fetch.controller.fetch_error': {
-    eventName: 'admin.service.fetch.controller.fetch_error',
+  'service.fetch.controller.fetch_error': {
+    eventName: 'adminServices.service.fetch.controller.fetch_error',
     source: 'admin-service',
     eventType: 'system',
     severity: 'error',
@@ -86,8 +86,8 @@ export const EVENTS_ADMIN_SERVICES: EventCollection = {
   },
 
   // Controller success
-  'admin.service.fetch.controller.success': {
-    eventName: 'admin.service.fetch.controller.success',
+  'service.fetch.controller.success': {
+    eventName: 'adminServices.service.fetch.controller.success',
     source: 'admin-service',
     eventType: 'system',
     severity: 'debug',
@@ -96,8 +96,8 @@ export const EVENTS_ADMIN_SERVICES: EventCollection = {
   },
 
   // Controller unexpected error
-  'admin.service.fetch.controller.unexpected_error': {
-    eventName: 'admin.service.fetch.controller.unexpected_error',
+  'service.fetch.controller.unexpected_error': {
+    eventName: 'adminServices.service.fetch.controller.unexpected_error',
     source: 'admin-service',
     eventType: 'system',
     severity: 'error',

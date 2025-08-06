@@ -32,19 +32,19 @@ export class ServiceAdminFetchSingleService {
    * @returns Promise with service data or error
    */
   async fetchSingleService(serviceId: string, req?: any): Promise<FetchSingleServiceResponse> {
-    console.log('[FetchSingleService] Starting fetchSingleService for serviceId:', serviceId)
+    
     const client = await pool.connect()
     
     try {
       // Validate service ID format (basic UUID check)
       if (!serviceId || typeof serviceId !== 'string' || serviceId.trim().length === 0) {
-        // Temporarily comment out events to debug
-        // await createAndPublishEvent({
-        //   req,
-        //   eventName: 'admin.service.fetch.validation.error',
-        //   payload: { serviceId },
-        //   errorData: 'Invalid service ID provided'
-        // })
+        console.log('[Service] Publishing event: adminServices.service.fetch.validation.error')
+        await createAndPublishEvent({
+          req,
+          eventName: 'adminServices.service.fetch.validation.error',
+          payload: { serviceId },
+          errorData: 'Invalid service ID provided'
+        })
         return {
           success: false,
           message: 'Invalid service ID format'
@@ -55,12 +55,12 @@ export class ServiceAdminFetchSingleService {
       const serviceExistsResult = await client.query(queries.checkServiceExists, [serviceId])
       
       if (serviceExistsResult.rows.length === 0) {
-        // Temporarily comment out events to debug
-        // await createAndPublishEvent({
-        //   req,
-        //   eventName: 'admin.service.fetch.not_found',
-        //   payload: { serviceId }
-        // })
+        console.log('[Service] Publishing event: adminServices.service.fetch.not_found')
+        await createAndPublishEvent({
+          req,
+          eventName: 'adminServices.service.fetch.not_found',
+          payload: { serviceId }
+        })
         return {
           success: false,
           message: 'Service not found'
@@ -68,20 +68,19 @@ export class ServiceAdminFetchSingleService {
       }
 
       // Fetch service with all roles
-      console.log('[FetchSingleService] Executing fetchServiceWithRoles query for serviceId:', serviceId)
+
       const serviceResult = await client.query(queries.fetchServiceWithRoles, [serviceId])
       
-      console.log('[FetchSingleService] Query result rows count:', serviceResult.rows.length)
+
       
       if (serviceResult.rows.length === 0) {
-        console.log('[FetchSingleService] No service data found')
-        // Temporarily comment out events to debug
-        // await createAndPublishEvent({
-        //   req,
-        //   eventName: 'admin.service.fetch.data_error',
-        //   payload: { serviceId },
-        //   errorData: 'Service data not found after existence check'
-        // })
+        console.log('[Service] Publishing event: adminServices.service.fetch.data_error')
+        await createAndPublishEvent({
+          req,
+          eventName: 'adminServices.service.fetch.data_error',
+          payload: { serviceId },
+          errorData: 'Service data not found after existence check'
+        })
         return {
           success: false,
           message: 'Service data not found'
@@ -89,20 +88,8 @@ export class ServiceAdminFetchSingleService {
       }
 
       const serviceRow = serviceResult.rows[0]
-      console.log('[FetchSingleService] Service row data:', serviceRow)
 
-      // Log the raw service data from database
-      console.log('[FetchSingleService] Raw service data from database:', {
-        id: serviceRow.id,
-        name: serviceRow.name,
-        icon_name: serviceRow.icon_name,
-        description_short: serviceRow.description_short,
-        description_long: serviceRow.description_long,
-        purpose: serviceRow.purpose,
-        comments: serviceRow.comments,
-        priority: serviceRow.priority,
-        status: serviceRow.status
-      })
+
 
       // Fetch access control groups and users using helpers
       const accessGroupsResult = await client.query(`
@@ -119,9 +106,7 @@ export class ServiceAdminFetchSingleService {
         ORDER BY user_id
       `, [serviceId])
 
-      // Log access control query results
-      console.log('[FetchSingleService] Access groups result:', accessGroupsResult.rows)
-      console.log('[FetchSingleService] Access users result:', accessUsersResult.rows)
+
 
       // Process access control data using helpers
       const accessAllowedGroups: string[] = []
@@ -148,12 +133,7 @@ export class ServiceAdminFetchSingleService {
         }
       }
 
-      // Log processed access control data
-      console.log('[FetchSingleService] Processed access data:', {
-        accessAllowedGroups,
-        accessDeniedGroups,
-        accessDeniedUsers
-      })
+
 
       // Build service object
       const service: Service = {
@@ -184,36 +164,19 @@ export class ServiceAdminFetchSingleService {
         modified_by: serviceRow.modified_by
       }
 
-      // Log the final service object
-      console.log('[FetchSingleService] Final service object:', {
-        id: service.id,
-        name: service.name,
-        icon_name: service.icon_name,
-        description_short: service.description_short,
-        description_long: service.description_long,
-        purpose: service.purpose,
-        comments: service.comments,
-        priority: service.priority,
-        status: service.status,
-        access_allowed_groups: service.access_allowed_groups,
-        access_denied_groups: service.access_denied_groups,
-        access_denied_users: service.access_denied_users
+
+
+      console.log('[Service] Publishing event: adminServices.service.fetch.success')
+      await createAndPublishEvent({
+        req,
+        eventName: 'adminServices.service.fetch.success',
+        payload: { 
+          serviceId, 
+          serviceName: service.name,
+          serviceOwner: service.owner,
+          serviceStatus: service.status
+        }
       })
-
-      // Log the raw service object for debugging
-      console.log('[FetchSingleService] Raw service object for API response:', JSON.stringify(service, null, 2))
-
-      // Temporarily comment out event publishing to debug the issue
-      // await createAndPublishEvent({
-      //   req,
-      //   eventName: 'admin.service.fetch.success',
-      //   payload: { 
-      //     serviceId, 
-      //     serviceName: service.name,
-      //     serviceOwner: service.owner,
-      //     serviceStatus: service.status
-      //   }
-      // })
       
       return {
         success: true,
@@ -223,15 +186,14 @@ export class ServiceAdminFetchSingleService {
 
     } catch (error) {
       console.error('[FetchSingleService] Error fetching service:', error)
-      console.error('[FetchSingleService] Error stack:', error instanceof Error ? error.stack : 'No stack trace')
       
-      // Temporarily comment out events to debug
-      // await createAndPublishEvent({
-      //   req,
-      //   eventName: 'admin.service.fetch.error',
-      //   payload: { serviceId },
-      //   errorData: error instanceof Error ? error.message : String(error)
-      // })
+      console.log('[Service] Publishing event: adminServices.service.fetch.error')
+      await createAndPublishEvent({
+        req,
+        eventName: 'adminServices.service.fetch.error',
+        payload: { serviceId },
+        errorData: error instanceof Error ? error.message : String(error)
+      })
       
       return {
         success: false,

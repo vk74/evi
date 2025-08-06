@@ -26,7 +26,11 @@ let currentSettings = {
   logger: true,
   system: true,
   auth: true,
-  publicPasswordPolicies: true
+  publicPasswordPolicies: true,
+  catalog: true,
+  services: true,
+  products: true,
+  adminServices: true
 };
 
 /**

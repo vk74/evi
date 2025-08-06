@@ -181,15 +181,10 @@ const loadServiceData = async () => {
   if (isEditMode.value && editingServiceId.value) {
     isLoadingService.value = true
     try {
-      console.log('[ServiceEditorData] Fetching fresh data from API for service ID:', editingServiceId.value)
-      
       // Always fetch fresh data from API for edit mode to ensure we have complete data including access control
       const response = await serviceAdminFetchSingleService.fetchSingleService(editingServiceId.value)
       
-      console.log('[ServiceEditorData] API response:', response)
-      
       if (response.success && response.data) {
-        console.log('[ServiceEditorData] Service data from API:', response.data)
         // Update store with fresh data
         servicesStore.editingServiceData = response.data
         // Заполняем форму данными сервиса из API
@@ -240,11 +235,7 @@ const populateFormWithService = (service: Service) => {
     accessDeniedUsers: service.access_denied_users && service.access_denied_users.trim() ? service.access_denied_users.split(',').map(u => u.trim()).filter(u => u) : []
   }
   
-  console.log('Form data populated:', {
-    accessAllowedGroups: formData.value.accessAllowedGroups,
-    accessDeniedGroups: formData.value.accessDeniedGroups,
-    accessDeniedUsers: formData.value.accessDeniedUsers
-  })
+
 }
 
 const createService = async () => {
