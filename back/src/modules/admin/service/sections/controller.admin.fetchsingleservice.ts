@@ -11,7 +11,6 @@
 import { Request, Response } from 'express'
 import { AuthenticatedRequest } from '../../../../guards/types.guards'
 import { serviceAdminFetchSingleService } from './service.admin.fetchsingleservice'
-import { createAndPublishEvent } from '../../../../core/eventBus/fabric.events'
 import { connectionHandler } from '../../../../core/helpers/connection.handler'
 
 /**
@@ -24,72 +23,19 @@ async function fetchSingleServiceLogic(req: AuthenticatedRequest, res: Response)
   try {
     const { id } = req.query
 
-    // Validate required parameter
-    if (!id || typeof id !== 'string') {
-      console.log('[Controller] Publishing event: adminServices.service.fetch.controller.validation.error')
-      await createAndPublishEvent({
-        req,
-        eventName: 'adminServices.service.fetch.controller.validation.error',
-        payload: { 
-          query: req.query, 
-          user: req.user?.username 
-        },
-        errorData: 'Missing or invalid service ID in request'
-      })
-      
-      return {
-        success: false,
-        message: 'Service ID is required'
-      }
+    // Fetch service data using service
+    const result = await serviceAdminFetchSingleService.fetchSingleService(id as string, req)
+
+    // Return data directly on success, or error response on failure
+    if (result.success) {
+      return result.data
+    } else {
+      return result
     }
-
-    // Fetch service data
-    const result = await serviceAdminFetchSingleService.fetchSingleService(id, req)
-
-    if (!result.success) {
-      console.log('[Controller] Publishing event: adminServices.service.fetch.controller.fetch_error')
-      await createAndPublishEvent({
-        req,
-        eventName: 'adminServices.service.fetch.controller.fetch_error',
-        payload: { 
-          serviceId: id, 
-          error: result.message, 
-          user: req.user?.username 
-        },
-        errorData: 'Failed to fetch service data'
-      })
-
-      return {
-        success: false,
-        message: result.message
-      }
-    }
-
-    // Return successful response
-    console.log('[Controller] Publishing event: adminServices.service.fetch.controller.success')
-    await createAndPublishEvent({
-      req,
-      eventName: 'adminServices.service.fetch.controller.success',
-      payload: { 
-        serviceId: id, 
-        serviceName: result.data?.name, 
-        user: req.user?.username 
-      }
-    })
-
-    return result.data
 
   } catch (error) {
-    console.log('[Controller] Publishing event: adminServices.service.fetch.controller.unexpected_error')
-    await createAndPublishEvent({
-      req,
-      eventName: 'adminServices.service.fetch.controller.unexpected_error',
-      payload: { 
-        user: req.user?.username 
-      },
-      errorData: error instanceof Error ? error.message : String(error)
-    })
-
+    console.error('[FetchSingleServiceController] Unexpected error:', error)
+    
     return {
       success: false,
       message: 'Internal server error'

@@ -38,7 +38,6 @@ export class ServiceAdminFetchSingleService {
     try {
       // Validate service ID format (basic UUID check)
       if (!serviceId || typeof serviceId !== 'string' || serviceId.trim().length === 0) {
-        console.log('[Service] Publishing event: adminServices.service.fetch.validation.error')
         await createAndPublishEvent({
           req,
           eventName: 'adminServices.service.fetch.validation.error',
@@ -55,7 +54,6 @@ export class ServiceAdminFetchSingleService {
       const serviceExistsResult = await client.query(queries.checkServiceExists, [serviceId])
       
       if (serviceExistsResult.rows.length === 0) {
-        console.log('[Service] Publishing event: adminServices.service.fetch.not_found')
         await createAndPublishEvent({
           req,
           eventName: 'adminServices.service.fetch.not_found',
@@ -74,7 +72,6 @@ export class ServiceAdminFetchSingleService {
 
       
       if (serviceResult.rows.length === 0) {
-        console.log('[Service] Publishing event: adminServices.service.fetch.data_error')
         await createAndPublishEvent({
           req,
           eventName: 'adminServices.service.fetch.data_error',
@@ -166,7 +163,6 @@ export class ServiceAdminFetchSingleService {
 
 
 
-      console.log('[Service] Publishing event: adminServices.service.fetch.success')
       await createAndPublishEvent({
         req,
         eventName: 'adminServices.service.fetch.success',
@@ -187,7 +183,6 @@ export class ServiceAdminFetchSingleService {
     } catch (error) {
       console.error('[FetchSingleService] Error fetching service:', error)
       
-      console.log('[Service] Publishing event: adminServices.service.fetch.error')
       await createAndPublishEvent({
         req,
         eventName: 'adminServices.service.fetch.error',

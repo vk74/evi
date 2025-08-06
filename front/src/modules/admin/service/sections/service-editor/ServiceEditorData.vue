@@ -185,14 +185,14 @@ const loadServiceData = async () => {
       // Always fetch fresh data from API for edit mode to ensure we have complete data including access control
       const response = await serviceAdminFetchSingleService.fetchSingleService(editingServiceId.value)
       
-      if (response.success && response.data) {
+      if (response && !('success' in response)) {
         // Update store with fresh data
-        servicesStore.editingServiceData = response.data
+        servicesStore.editingServiceData = response as Service
         // Заполняем форму данными сервиса из API
-        populateFormWithService(response.data)
+        populateFormWithService(response as Service)
       } else {
         // Show error message
-        uiStore.showErrorSnackbar(response.message || t('admin.services.editor.messages.error.loadingService'))
+        uiStore.showErrorSnackbar((response as any)?.message || t('admin.services.editor.messages.error.loadingService'))
         servicesStore.closeServiceEditor()
       }
       
@@ -231,9 +231,9 @@ const populateFormWithService = (service: Service) => {
     purpose: service.purpose || '',
     comments: service.comments || '',
     isPublic: service.is_public,
-    accessAllowedGroups: service.access_allowed_groups && service.access_allowed_groups.trim() ? service.access_allowed_groups.split(',').map(g => g.trim()).filter(g => g) : [],
-    accessDeniedGroups: service.access_denied_groups && service.access_denied_groups.trim() ? service.access_denied_groups.split(',').map(g => g.trim()).filter(g => g) : [],
-    accessDeniedUsers: service.access_denied_users && service.access_denied_users.trim() ? service.access_denied_users.split(',').map(u => u.trim()).filter(u => u) : []
+    accessAllowedGroups: service.access_allowed_groups && typeof service.access_allowed_groups === 'string' && service.access_allowed_groups.trim() ? service.access_allowed_groups.split(',').map(g => g.trim()).filter(g => g) : [],
+    accessDeniedGroups: service.access_denied_groups && typeof service.access_denied_groups === 'string' && service.access_denied_groups.trim() ? service.access_denied_groups.split(',').map(g => g.trim()).filter(g => g) : [],
+    accessDeniedUsers: service.access_denied_users && typeof service.access_denied_users === 'string' && service.access_denied_users.trim() ? service.access_denied_users.split(',').map(u => u.trim()).filter(u => u) : []
   }
   
 
@@ -282,18 +282,18 @@ const createService = async () => {
       // Load fresh service data from API
       const serviceResponse = await serviceAdminFetchSingleService.fetchSingleService(response.data.id)
       
-      if (serviceResponse.success && serviceResponse.data) {
+      if (serviceResponse && !('success' in serviceResponse)) {
         // Update store with fresh data
-        servicesStore.editingServiceData = serviceResponse.data
+        servicesStore.editingServiceData = serviceResponse as Service
         // Populate form with fresh data
-        populateFormWithService(serviceResponse.data)
+        populateFormWithService(serviceResponse as Service)
         
         // Show success message
         uiStore.showSuccessSnackbar(t('admin.services.editor.messages.createdAndSwitchedToEdit'))
       } else {
         // If failed to load fresh data, show warning but stay in edit mode
         uiStore.showWarningSnackbar(t('admin.services.editor.messages.createdButFailedToLoadData'))
-        console.warn('Failed to load fresh service data after creation:', serviceResponse.message)
+        console.warn('Failed to load fresh service data after creation:', (serviceResponse as any)?.message || 'Unknown error')
       }
     }
     
@@ -338,7 +338,7 @@ const updateService = async () => {
     }
 
     // Update service via API
-    const response = await serviceUpdateService.updateService(editingServiceId.value, serviceData)
+    const response = await serviceUpdateService.updateService(editingServiceId.value as string, serviceData)
     
     if (response.success) {
       // Close editor after successful update

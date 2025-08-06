@@ -11,11 +11,6 @@
 import { api } from '@/core/api/service.axios'
 import type { Service, ApiResponse } from '../../types.services.admin'
 
-// Response interface for single service fetch
-export interface FetchSingleServiceResponse extends ApiResponse {
-  data?: Service
-}
-
 /**
  * Service class for fetching single service data
  */
@@ -25,17 +20,13 @@ export class ServiceAdminFetchSingleService {
    * @param serviceId - The UUID of the service to fetch
    * @returns Promise with service data or error
    */
-  async fetchSingleService(serviceId: string): Promise<FetchSingleServiceResponse> {
+  async fetchSingleService(serviceId: string): Promise<Service | ApiResponse> {
     try {
       const response = await api.get(`/api/admin/services/fetchsingleservice`, {
         params: { id: serviceId }
       })
 
-      return {
-        success: true,
-        message: 'Service data fetched successfully',
-        data: response.data
-      }
+      return response.data
     } catch (error: any) {
       console.error('Error fetching single service:', error)
       
