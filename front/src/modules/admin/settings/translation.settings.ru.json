@@ -176,37 +176,49 @@
             "domains": {
               "title": "генерировать события в следующих доменах:",
               "helpers": {
-                "label": "домен helpers"
+                "label": "helpers"
               },
               "connectionHandler": {
-                "label": "домен connection handler"
+                "label": "connection handler"
               },
               "userEditor": {
-                "label": "домен редактор пользователей"
+                "label": "редактор пользователей"
               },
               "groupEditor": {
-                "label": "домен редактор групп"
+                "label": "редактор групп"
               },
               "usersList": {
-                "label": "домен список пользователей"
+                "label": "список пользователей"
               },
               "groupsList": {
-                "label": "домен список групп"
+                "label": "список групп"
               },
               "settings": {
-                "label": "домен настройки"
+                "label": "настройки"
               },
               "logger": {
-                "label": "домен логгер"
+                "label": "логгер"
               },
               "system": {
-                "label": "домен система"
+                "label": "система"
               },
               "auth": {
-                "label": "домен аутентификация"
+                "label": "аутентификация"
               },
               "PublicPasswordPolicies": {
-                "label": "домен публичные политики паролей"
+                "label": "публичные политики паролей"
+              },
+              "catalog": {
+                "label": "каталог"
+              },
+              "services": {
+                "label": "сервисы"
+              },
+              "adminServices": {
+                "label": "сервисы админ"
+              },
+              "products": {
+                "label": "продукты"
               }
             }
           },
@@ -320,7 +332,8 @@
         "security": "безопасность",
         "usersmanagement": "управление пользователями",
         "system": "система", 
-        "coreServices": "основные сервисы"
+        "coreServices": "основные сервисы",
+        "businessServices": "бизнес-сервисы"
       },
       "common": {
         "loading": "загрузка настроек...",

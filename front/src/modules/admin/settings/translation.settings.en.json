@@ -207,37 +207,49 @@
             "domains": {
               "title": "generate events in the following domains:",
               "helpers": {
-                "label": "domain helpers"
+                "label": "helpers"
               },
               "connectionHandler": {
-                "label": "domain connection handler"
+                "label": "connection handler"
               },
               "userEditor": {
-                "label": "domain user editor"
+                "label": "user editor"
               },
               "groupEditor": {
-                "label": "domain group editor"
+                "label": "group editor"
               },
               "usersList": {
-                "label": "domain users list"
+                "label": "users list"
               },
               "groupsList": {
-                "label": "domain groups list"
+                "label": "groups list"
               },
               "settings": {
-                "label": "domain settings"
+                "label": "settings"
               },
               "logger": {
-                "label": "domain logger"
+                "label": "logger"
               },
               "system": {
-                "label": "domain system"
+                "label": "system"
               },
               "auth": {
-                "label": "domain authentication"
+                "label": "authentication"
               },
               "PublicPasswordPolicies": {
-                "label": "domain public password policies"
+                "label": "public password policies"
+              },
+              "catalog": {
+                "label": "catalog"
+              },
+              "services": {
+                "label": "services"
+              },
+              "adminServices": {
+                "label": "services admin"
+              },
+              "products": {
+                "label": "products"
               }
             }
           },
@@ -320,7 +332,8 @@
         "security": "security",
         "usersmanagement": "user management", 
         "system": "system",
-        "coreServices": "core services"
+        "coreServices": "core services",
+        "businessServices": "business services"
       },
       "common": {
         "loading": "loading settings...",

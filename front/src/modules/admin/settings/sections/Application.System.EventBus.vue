@@ -55,7 +55,11 @@ const domainSettings = ref<Record<string, boolean | null>>({
   'generate.events.in.domain.logger': null,
   'generate.events.in.domain.system': null,
   'generate.events.in.domain.auth': null,
-  'generate.events.in.domain.PublicPasswordPolicies': null
+  'generate.events.in.domain.PublicPasswordPolicies': null,
+  'generate.events.in.domain.catalog': null,
+  'generate.events.in.domain.services': null,
+  'generate.events.in.domain.adminServices': null,
+  'generate.events.in.domain.products': null
 });
 
 // Define all settings that need to be loaded
@@ -70,7 +74,11 @@ const allSettings = [
   'generate.events.in.domain.logger',
   'generate.events.in.domain.system',
   'generate.events.in.domain.auth',
-  'generate.events.in.domain.PublicPasswordPolicies'
+  'generate.events.in.domain.PublicPasswordPolicies',
+  'generate.events.in.domain.catalog',
+  'generate.events.in.domain.services',
+  'generate.events.in.domain.adminServices',
+  'generate.events.in.domain.products'
 ];
 
 // Initialize loading states for all settings
@@ -161,6 +169,10 @@ const domainGroups = computed(() => {
         {
           name: 'generate.events.in.domain.system',
           translationKey: 'system'
+        },
+        {
+          name: 'generate.events.in.domain.adminServices',
+          translationKey: 'adminServices'
         }
       ]
     },
@@ -174,6 +186,23 @@ const domainGroups = computed(() => {
         {
           name: 'generate.events.in.domain.connectionHandler',
           translationKey: 'connectionHandler'
+        }
+      ]
+    },
+    {
+      title: t('admin.settings.groups.businessServices'),
+      settings: [
+        {
+          name: 'generate.events.in.domain.catalog',
+          translationKey: 'catalog'
+        },
+        {
+          name: 'generate.events.in.domain.services',
+          translationKey: 'services'
+        },
+        {
+          name: 'generate.events.in.domain.products',
+          translationKey: 'products'
         }
       ]
     }
