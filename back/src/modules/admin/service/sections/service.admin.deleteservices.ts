@@ -13,20 +13,7 @@ import { Pool } from 'pg'
 import { queries } from '../queries.admin.service'
 import { EVENTS_ADMIN_SERVICES } from '../events.admin.services'
 import { createAndPublishEvent } from '@/core/eventBus/fabric.events'
-
-// Request parameters interface
-interface DeleteServicesParams {
-  serviceIds: string[]
-}
-
-// Response interface
-interface DeleteServicesResult {
-  deletedServices: Array<{id: string, name: string}>
-  errors: Array<{id: string, error: string}>
-  totalRequested: number
-  totalDeleted: number
-  totalErrors: number
-}
+import { DeleteServicesParams, DeleteServicesResult } from '../types.admin.service'
 
 /**
  * Validates service IDs

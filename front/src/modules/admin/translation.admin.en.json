@@ -29,6 +29,11 @@
         "settings": "settings"
       },
       "editor": {
+        "owners": {
+          "owner": {
+            "required": "Owner is required"
+          }
+        },
         "messages": {
           "createdAndSwitchedToEdit": "Service created successfully and switched to edit mode",
           "createdButFailedToLoadData": "Service created but failed to load fresh data",
@@ -36,6 +41,13 @@
             "loadingService": "Error loading service data"
           }
         }
+      },
+      "messages": {
+        "deleteSuccess": "Successfully deleted {count} service(s)",
+        "deletePartialSuccess": "Partially successful. Deleted {deleted} of {total} services. Errors: {errors}",
+        "deleteFailure": "Failed to delete any services. Errors: {errors}",
+        "selectionCleared": "Selection cleared",
+        "assignOwnerNotImplemented": "Owner assignment not implemented yet"
       }
     },
 

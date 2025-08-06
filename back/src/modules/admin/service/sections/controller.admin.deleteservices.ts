@@ -12,74 +12,34 @@
 import { Request, Response } from 'express'
 import { pool } from '@/core/db/maindb'
 import { deleteServices } from './service.admin.deleteservices'
-
-// Request body interface
-interface DeleteServicesRequest {
-  serviceIds: string[]
-}
+import { connectionHandler } from '@/core/helpers/connection.handler'
+import { DeleteServicesParams } from '../types.admin.service'
 
 /**
  * Controller for deleting services
  */
-const deleteServicesController = async (req: Request, res: Response): Promise<void> => {
-  try {
-    const { serviceIds } = req.body as DeleteServicesRequest
-    
-    // Validate request body
-    if (!serviceIds || !Array.isArray(serviceIds)) {
-      res.status(400).json({
-        success: false,
-        message: 'Service IDs array is required'
-      })
-      return
+const deleteServicesController = async (req: Request, res: Response): Promise<any> => {
+  const { serviceIds } = req.body as DeleteServicesParams
+  
+  // Call service
+  const result = await deleteServices(pool, { serviceIds })
+  
+  // Return result for connectionHandler to process
+  return {
+    success: result.totalErrors === 0,
+    message: result.totalErrors === 0 
+      ? `Successfully deleted ${result.totalDeleted} service(s).`
+      : result.totalDeleted > 0 
+        ? `Partially successful. Deleted ${result.totalDeleted} of ${result.totalRequested} services.`
+        : `Failed to delete any services. ${result.totalErrors} error(s) occurred.`,
+    data: {
+      deletedServices: result.deletedServices,
+      errors: result.errors,
+      totalRequested: result.totalRequested,
+      totalDeleted: result.totalDeleted,
+      totalErrors: result.totalErrors
     }
-    
-    // Call service
-    const result = await deleteServices(pool, { serviceIds })
-    
-    // Determine response based on results
-    const { totalRequested, totalDeleted, totalErrors } = result
-    
-    if (totalDeleted === 0 && totalErrors > 0) {
-      // All services failed to delete
-      res.status(400).json({
-        success: false,
-        message: `Failed to delete any services. ${totalErrors} error(s) occurred.`,
-        data: {
-          deletedServices: result.deletedServices,
-          errors: result.errors
-        }
-      })
-    } else if (totalDeleted > 0 && totalErrors > 0) {
-      // Partial success
-      res.status(207).json({
-        success: true,
-        message: `Partially successful. Deleted ${totalDeleted} of ${totalRequested} services.`,
-        data: {
-          deletedServices: result.deletedServices,
-          errors: result.errors
-        }
-      })
-    } else {
-      // Complete success
-      res.status(200).json({
-        success: true,
-        message: `Successfully deleted ${totalDeleted} service(s).`,
-        data: {
-          deletedServices: result.deletedServices,
-          errors: result.errors
-        }
-      })
-    }
-    
-  } catch (error) {
-    console.error('[DeleteServicesController] Error:', error)
-    
-    res.status(500).json({
-      success: false,
-      message: error instanceof Error ? error.message : 'Internal server error'
-    })
   }
 }
 
-export default deleteServicesController 
+export default connectionHandler(deleteServicesController, 'DeleteServicesController') 

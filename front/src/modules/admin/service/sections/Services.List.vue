@@ -191,10 +191,8 @@ const confirmDelete = async () => {
     // Call delete service API
     const response = await deleteServices({ serviceIds: servicesToDelete })
     
-    if (response.success) {
-      const { deletedServices, errors } = response.data
-      const totalDeleted = deletedServices.length
-      const totalErrors = errors.length
+    if (response.success && response.data) {
+      const { deletedServices = [], errors = [], totalDeleted = 0, totalErrors = 0, totalRequested = 0 } = response.data
       
       // Show appropriate message based on results
       if (totalErrors === 0) {
@@ -212,7 +210,7 @@ const confirmDelete = async () => {
         uiStore.showSnackbar({
           message: t('admin.services.messages.deletePartialSuccess', { 
             deleted: totalDeleted, 
-            total: servicesToDelete.length,
+            total: totalRequested,
             errors: errorMessages 
           }),
           type: 'warning',
@@ -235,7 +233,7 @@ const confirmDelete = async () => {
       // Refresh the list to show updated data
       await performSearch()
     } else {
-      uiStore.showErrorSnackbar(response.message)
+      uiStore.showErrorSnackbar(response.message || 'Failed to delete services')
     }
     
     // Clear selections and close dialog

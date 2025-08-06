@@ -188,6 +188,20 @@ export interface DeleteServiceResponse extends ApiResponse {
     }
 }
 
+// Delete services parameters interface
+export interface DeleteServicesParams {
+    serviceIds: string[]
+}
+
+// Delete services result interface
+export interface DeleteServicesResult {
+    deletedServices: Array<{id: string, name: string}>
+    errors: Array<{id: string, error: string}>
+    totalRequested: number
+    totalDeleted: number
+    totalErrors: number
+}
+
 // Publishing section interface
 export interface PublishingSection {
     id: string

@@ -29,6 +29,11 @@
         "settings": "настройки"
       },
       "editor": {
+        "owners": {
+          "owner": {
+            "required": "Владелец обязателен"
+          }
+        },
         "messages": {
           "createdAndSwitchedToEdit": "Сервис успешно создан и переключен в режим редактирования",
           "createdButFailedToLoadData": "Сервис создан, но не удалось загрузить свежие данные",
@@ -36,6 +41,13 @@
             "loadingService": "Ошибка загрузки данных сервиса"
           }
         }
+      },
+      "messages": {
+        "deleteSuccess": "Успешно удалено {count} сервис(ов)",
+        "deletePartialSuccess": "Частичный успех. Удалено {deleted} из {total} сервисов. Ошибки: {errors}",
+        "deleteFailure": "Не удалось удалить ни одного сервиса. Ошибки: {errors}",
+        "selectionCleared": "Выбор очищен",
+        "assignOwnerNotImplemented": "Назначение владельца пока не реализовано"
       }
     },
 

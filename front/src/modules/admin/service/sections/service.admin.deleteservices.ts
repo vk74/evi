@@ -23,6 +23,9 @@ export interface DeleteServicesResponse {
   data: {
     deletedServices: Array<{id: string, name: string}>
     errors: Array<{id: string, error: string}>
+    totalRequested: number
+    totalDeleted: number
+    totalErrors: number
   }
 }
 
