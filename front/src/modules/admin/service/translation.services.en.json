@@ -302,7 +302,11 @@
             "error": "Failed to select denied users",
             "removed": "User removed from denied users"
           },
-          "createdAndSwitchedToEdit": "Service created successfully and switched to edit mode"
+          "createdAndSwitchedToEdit": "Service created successfully and switched to edit mode",
+          "deleteSuccess": "Successfully deleted {count} service(s)",
+          "deletePartialSuccess": "Deleted {deleted} of {total} services. Errors: {errors}",
+          "deleteFailure": "Failed to delete services. Errors: {errors}",
+          "deleteServiceNotImplemented": "Delete service functionality not yet implemented"
         }
       }
     }

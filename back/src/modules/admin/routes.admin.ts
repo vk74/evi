@@ -30,6 +30,7 @@ import updateServiceController from './service/sections/service-editor/controlle
 import fetchPublishingSectionsController from './service/sections/service-editor/controller.admin.fetch.publishingsections';
 import fetchAllServicesController from './service/sections/controller.admin.fetchallservices';
 import fetchSingleServiceController from './service/sections/controller.admin.fetchsingleservice';
+import deleteServicesController from './service/sections/controller.admin.deleteservices';
 
 const router: Router = express.Router();
 
@@ -63,6 +64,7 @@ router.post('/api/admin/services/update', validateJWT, updateServiceController);
 router.get('/api/admin/services/fetchallservices', validateJWT, fetchAllServicesController);
 router.get('/api/admin/services/fetchpublishingsections', validateJWT, fetchPublishingSectionsController);
 router.get('/api/admin/services/fetchsingleservice', validateJWT, fetchSingleServiceController);
+router.post('/api/admin/services/deleteservices', validateJWT, deleteServicesController);
 
 // Export using ES modules syntax
 export default router;

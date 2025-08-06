@@ -20,6 +20,7 @@ import { useServicesAdminStore } from '../state.services.admin'
 import DataLoading from '@/core/ui/loaders/DataLoading.vue'
 import { ServicePriority, ServiceStatus, type Service } from '../types.services.admin'
 import { fetchAllServices, type FetchServicesParams } from './service.admin.fetchallservices'
+import { deleteServices, type DeleteServicesRequest } from './service.admin.deleteservices'
 
 // Types
 interface TableHeader {
@@ -187,20 +188,59 @@ const confirmDelete = async () => {
   try {
     const servicesToDelete = Array.from(selectedServices.value)
     
-    // TODO: Implement delete service API call
-    console.log('Deleting services:', servicesToDelete)
+    // Call delete service API
+    const response = await deleteServices({ serviceIds: servicesToDelete })
+    
+    if (response.success) {
+      const { deletedServices, errors } = response.data
+      const totalDeleted = deletedServices.length
+      const totalErrors = errors.length
+      
+      // Show appropriate message based on results
+      if (totalErrors === 0) {
+        // Complete success
+        uiStore.showSnackbar({
+          message: t('admin.services.messages.deleteSuccess', { count: totalDeleted }),
+          type: 'success',
+          timeout: 5000,
+          closable: true,
+          position: 'bottom'
+        })
+      } else if (totalDeleted > 0) {
+        // Partial success
+        const errorMessages = errors.map(e => e.error).join(', ')
+        uiStore.showSnackbar({
+          message: t('admin.services.messages.deletePartialSuccess', { 
+            deleted: totalDeleted, 
+            total: servicesToDelete.length,
+            errors: errorMessages 
+          }),
+          type: 'warning',
+          timeout: 7000,
+          closable: true,
+          position: 'bottom'
+        })
+      } else {
+        // Complete failure
+        const errorMessages = errors.map(e => e.error).join(', ')
+        uiStore.showSnackbar({
+          message: t('admin.services.messages.deleteFailure', { errors: errorMessages }),
+          type: 'error',
+          timeout: 7000,
+          closable: true,
+          position: 'bottom'
+        })
+      }
+      
+      // Refresh the list to show updated data
+      await performSearch()
+    } else {
+      uiStore.showErrorSnackbar(response.message)
+    }
     
     // Clear selections and close dialog
     selectedServices.value.clear()
     showDeleteDialog.value = false
-    
-    uiStore.showSnackbar({
-      message: t('admin.services.messages.deleteServiceNotImplemented'),
-      type: 'info',
-      timeout: 3000,
-      closable: true,
-      position: 'bottom'
-    })
     
   } catch (error) {
     handleError(error, 'deleting services')

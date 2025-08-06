@@ -143,6 +143,76 @@ export const EVENTS_ADMIN_SERVICES: EventCollection = {
     severity: 'error',
     eventMessage: 'Database error occurred during service update',
     version: '1.0.0'
+  },
+
+  // Service delete validation error
+  'service.delete.validation.error': {
+    eventName: 'adminServices.service.delete.validation.error',
+    source: 'admin-service',
+    eventType: 'system',
+    severity: 'error',
+    eventMessage: 'Service delete validation error occurred',
+    version: '1.0.0'
+  },
+
+  // Service delete validation success
+  'service.delete.validation.success': {
+    eventName: 'adminServices.service.delete.validation.success',
+    source: 'admin-service',
+    eventType: 'system',
+    severity: 'debug',
+    eventMessage: 'Service delete validation successful',
+    version: '1.0.0'
+  },
+
+  // Service delete not found
+  'service.delete.not_found': {
+    eventName: 'adminServices.service.delete.not_found',
+    source: 'admin-service',
+    eventType: 'system',
+    severity: 'debug',
+    eventMessage: 'Service not found during delete operation',
+    version: '1.0.0'
+  },
+
+  // Service delete exists
+  'service.delete.exists': {
+    eventName: 'adminServices.service.delete.exists',
+    source: 'admin-service',
+    eventType: 'system',
+    severity: 'debug',
+    eventMessage: 'Service found during delete operation',
+    version: '1.0.0'
+  },
+
+  // Service delete database error
+  'service.delete.database_error': {
+    eventName: 'adminServices.service.delete.database_error',
+    source: 'admin-service',
+    eventType: 'system',
+    severity: 'error',
+    eventMessage: 'Database error occurred during service delete',
+    version: '1.0.0'
+  },
+
+  // Service delete success
+  'service.delete.success': {
+    eventName: 'adminServices.service.delete.success',
+    source: 'admin-service',
+    eventType: 'system',
+    severity: 'debug',
+    eventMessage: 'Service deleted successfully',
+    version: '1.0.0'
+  },
+
+  // Service delete partial success
+  'service.delete.partial_success': {
+    eventName: 'adminServices.service.delete.partial_success',
+    source: 'admin-service',
+    eventType: 'system',
+    severity: 'warning',
+    eventMessage: 'Partial success during service delete operation',
+    version: '1.0.0'
   }
 }
 
