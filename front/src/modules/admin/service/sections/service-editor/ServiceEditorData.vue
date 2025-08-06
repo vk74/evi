@@ -18,6 +18,7 @@ import DataLoading from '@/core/ui/loaders/DataLoading.vue'
 import IconPicker from '@/core/ui/modals/icon-picker/IconPicker.vue'
 import { ServicePriority, ServiceStatus, type Service } from '../../types.services.admin'
 import { serviceCreateService } from '../../service.create.service'
+import { serviceUpdateService } from '../../service.update.service'
 import { serviceAdminFetchSingleService } from './service.admin.fetchsingleservice'
 import * as PhosphorIcons from '@phosphor-icons/vue'
 
@@ -315,7 +316,7 @@ const updateService = async () => {
   try {
     const serviceData = {
       name: formData.value.name.trim(),
-      icon_name: formData.value.icon_name || undefined, // Добавляем иконку в данные
+      icon_name: formData.value.icon_name || undefined,
       support_tier1: formData.value.supportTier1 || undefined,
       support_tier2: formData.value.supportTier2 || undefined,
       support_tier3: formData.value.supportTier3 || undefined,
@@ -331,16 +332,22 @@ const updateService = async () => {
       purpose: formData.value.purpose?.trim() || undefined,
       comments: formData.value.comments?.trim() || undefined,
       is_public: formData.value.isPublic,
-      access_allowed_groups: formData.value.accessAllowedGroups || undefined,
-      access_denied_groups: formData.value.accessDeniedGroups || undefined,
-      access_denied_users: formData.value.accessDeniedUsers || undefined
+      access_allowed_groups: formData.value.accessAllowedGroups.length > 0 ? formData.value.accessAllowedGroups : undefined,
+      access_denied_groups: formData.value.accessDeniedGroups.length > 0 ? formData.value.accessDeniedGroups : undefined,
+      access_denied_users: formData.value.accessDeniedUsers.length > 0 ? formData.value.accessDeniedUsers : undefined
     }
 
-    // TODO: Update service via API
-    servicesStore.closeServiceEditor()
+    // Update service via API
+    const response = await serviceUpdateService.updateService(editingServiceId.value, serviceData)
+    
+    if (response.success) {
+      // Close editor after successful update
+      servicesStore.closeServiceEditor()
+    }
     
   } catch (error) {
     console.error('Error updating service:', error)
+    // Error messages are already handled by the service
   } finally {
     isSubmitting.value = false
   }

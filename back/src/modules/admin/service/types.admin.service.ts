@@ -132,9 +132,10 @@ export interface CreateServiceResponse extends ApiResponse {
     }
 }
 
-// Update service request interface
-export interface UpdateServiceRequest {
+// Update service interface
+export interface UpdateService {
     name?: string
+    icon_name?: string
     support_tier1?: string
     support_tier2?: string
     support_tier3?: string

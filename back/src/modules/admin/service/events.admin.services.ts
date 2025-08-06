@@ -103,6 +103,46 @@ export const EVENTS_ADMIN_SERVICES: EventCollection = {
     severity: 'error',
     eventMessage: 'Unexpected error in service fetch controller',
     version: '1.0.0'
+  },
+
+  // Service update validation error
+  'service.update.validation.error': {
+    eventName: 'adminServices.service.update.validation.error',
+    source: 'admin-service',
+    eventType: 'system',
+    severity: 'error',
+    eventMessage: 'Service update validation error occurred',
+    version: '1.0.0'
+  },
+
+  // Service update not found
+  'service.update.not_found': {
+    eventName: 'adminServices.service.update.not_found',
+    source: 'admin-service',
+    eventType: 'system',
+    severity: 'debug',
+    eventMessage: 'Service not found during update operation',
+    version: '1.0.0'
+  },
+
+  // Service update success
+  'service.update.success': {
+    eventName: 'adminServices.service.update.success',
+    source: 'admin-service',
+    eventType: 'system',
+    severity: 'debug',
+    eventMessage: 'Service updated successfully',
+    version: '1.0.0'
+  },
+
+  // Service update database error
+  'service.update.database_error': {
+    eventName: 'adminServices.service.update.database_error',
+    source: 'admin-service',
+    eventType: 'system',
+    severity: 'error',
+    eventMessage: 'Database error occurred during service update',
+    version: '1.0.0'
   }
 }
 

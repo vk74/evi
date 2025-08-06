@@ -228,10 +228,10 @@ async function initializeServer(): Promise<void> {
       const formattedTime = now.toLocaleTimeString('en-US', timeOptions);
       const timestamp = `${formattedDate}, ${formattedTime}`;
 
-      console.log(`Server listening at http://localhost:${port} | ${timestamp}`);
+      console.log(`backend system is ready, server is listening at http://localhost:${port} | ${timestamp}`);
     });
 
-    console.log('Server initialization completed successfully');
+    //console.log('Server initialization completed successfully');
 
   } catch (error) {
     console.error('Failed to initialize server:', error);
