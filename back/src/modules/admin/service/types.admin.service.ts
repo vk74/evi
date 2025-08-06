@@ -214,4 +214,31 @@ export interface PublishingSection {
 // Fetch publishing sections response interface
 export interface FetchPublishingSectionsResponse extends ApiResponse {
     data: PublishingSection[]
+}
+
+// Fetch services parameters interface
+export interface FetchServicesParams {
+  page: number
+  itemsPerPage: number
+  searchQuery?: string
+  sortBy?: string
+  sortDesc?: boolean
+}
+
+// Fetch services result interface
+export interface FetchServicesResult {
+  services: Service[]
+  totalItems: number
+  totalPages: number
+  currentPage: number
+  itemsPerPage: number
+}
+
+// Fetch services query interface (for controller)
+export interface FetchServicesQuery {
+  page?: string
+  itemsPerPage?: string
+  searchQuery?: string
+  sortBy?: string
+  sortDesc?: string
 } 

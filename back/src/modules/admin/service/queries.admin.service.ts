@@ -232,5 +232,36 @@ export const queries = {
             is_public
         FROM app.catalog_sections
         ORDER BY name ASC
+    `,
+
+    /**
+     * Fetches all services with pagination, search and sorting
+     * Parameters: [searchTerm, limit, offset]
+     */
+    fetchServicesWithRoles: `
+        SELECT 
+            s.id, s.name, s.icon_name, s.priority, s.status, s.is_public,
+            s.description_short, s.description_long, s.purpose, s.comments,
+            s.created_at, s.created_by, s.modified_at, s.modified_by,
+            u1.username as owner,
+            u2.username as technical_owner
+        FROM app.services s
+        LEFT JOIN app.service_users su1 ON s.id = su1.service_id AND su1.role_type = 'owner'
+        LEFT JOIN app.users u1 ON su1.user_id = u1.user_id
+        LEFT JOIN app.service_users su2 ON s.id = su2.service_id AND su2.role_type = 'technical_owner'
+        LEFT JOIN app.users u2 ON su2.user_id = u2.user_id
+        WHERE ($1::text IS NULL OR LOWER(s.name) LIKE LOWER('%' || $1 || '%'))
+        ORDER BY s.name ASC
+        LIMIT $2 OFFSET $3
+    `,
+
+    /**
+     * Counts total services for pagination with search
+     * Parameters: [searchTerm]
+     */
+    countServicesWithSearch: `
+        SELECT COUNT(*) as total
+        FROM app.services s
+        WHERE ($1::text IS NULL OR LOWER(s.name) LIKE LOWER('%' || $1 || '%'))
     `
 }; 

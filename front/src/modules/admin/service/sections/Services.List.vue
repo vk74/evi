@@ -21,6 +21,7 @@ import DataLoading from '@/core/ui/loaders/DataLoading.vue'
 import { ServicePriority, ServiceStatus, type Service } from '../types.services.admin'
 import { fetchAllServices, type FetchServicesParams } from './service.admin.fetchallservices'
 import { deleteServices, type DeleteServicesRequest } from './service.admin.deleteservices'
+import { defineAsyncComponent } from 'vue'
 
 // Types
 interface TableHeader {
@@ -124,6 +125,30 @@ const getStatusColor = (status: ServiceStatus | null) => {
   
   return colorMap[status] || 'grey'
 }
+
+// Helper function to get Phosphor icon component
+const phosphorIcons = ref<Record<string, any>>({})
+
+const loadPhosphorIcons = async () => {
+  if (Object.keys(phosphorIcons.value).length > 0) return // Already loaded
+  
+  try {
+    const icons = await import('@phosphor-icons/vue')
+    phosphorIcons.value = icons
+  } catch (error) {
+    console.error('Error loading Phosphor icons:', error)
+  }
+}
+
+const getPhosphorIcon = (iconName: string | null) => {
+  if (!iconName || !phosphorIcons.value[iconName]) return null
+  return phosphorIcons.value[iconName]
+}
+
+// Load icons on component mount
+onMounted(() => {
+  loadPhosphorIcons()
+})
 
 // Computed properties
 const selectedCount = computed(() => selectedServices.value.size)
@@ -479,7 +504,15 @@ const handleItemsPerPageChange = async (newItemsPerPage: ItemsPerPageOption) => 
 
           <template #[`item.name`]="{ item }">
             <div class="d-flex align-center">
-              <v-icon :icon="item.icon_name || 'mdi-cog'" class="mr-2" size="small" />
+              <component 
+                v-if="item.icon_name"
+                :is="getPhosphorIcon(item.icon_name)"
+                size="16"
+                weight="regular"
+                color="rgb(20, 184, 166)"
+                class="mr-2"
+              />
+              <v-icon v-else icon="mdi-cog" class="mr-2" size="small" color="teal" />
               <span>{{ item.name }}</span>
             </div>
           </template>
