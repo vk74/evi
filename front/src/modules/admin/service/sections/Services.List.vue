@@ -160,11 +160,8 @@ const editService = () => {
   const selectedIds = Array.from(selectedServices.value)
   if (selectedIds.length === 1) {
     const serviceId = selectedIds[0]
-    // Найти сервис в данных для передачи в редактор
-    const serviceToEdit = services.value.find(service => service.id === serviceId)
-    if (serviceToEdit) {
-      servicesStore.openServiceEditor('edit', serviceId, serviceToEdit)
-    }
+    // Open editor without service data - it will be loaded from API
+    servicesStore.openServiceEditor('edit', serviceId, undefined)
   }
 }
 

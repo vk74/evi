@@ -56,7 +56,7 @@ export async function fetchGroupnameByUuid(uuid: string): Promise<string | null>
 
     // Query to get group name
     const query = {
-      text: 'SELECT name FROM app.groups WHERE group_id = $1 LIMIT 1',
+      text: 'SELECT group_name FROM app.groups WHERE group_id = $1 LIMIT 1',
       values: [uuid]
     };
 
@@ -74,7 +74,7 @@ export async function fetchGroupnameByUuid(uuid: string): Promise<string | null>
       return null;
     }
     
-    const groupname = result.rows[0].name;
+    const groupname = result.rows[0].group_name;
     
     // Cache the result
     await set(cacheKey, groupname);

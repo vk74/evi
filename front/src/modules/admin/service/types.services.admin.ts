@@ -133,8 +133,7 @@ export interface CreateServiceRequest {
   access_allowed_groups?: string | string[]
   access_denied_groups?: string | string[]
   access_denied_users?: string | string[]
-  tile_preferred_width?: number
-  tile_preferred_height?: number
+
 }
 
 // Create service response interface
@@ -167,8 +166,7 @@ export interface UpdateServiceRequest {
   access_allowed_groups?: string
   access_denied_groups?: string
   access_denied_users?: string
-  tile_preferred_width?: number
-  tile_preferred_height?: number
+
 }
 
 // Update service response interface

@@ -71,9 +71,7 @@ export const queries = {
             s.created_at,
             s.created_by,
             s.modified_at,
-            s.modified_by,
-            s.tile_preferred_width,
-            s.tile_preferred_height
+            s.modified_by
         FROM app.services s
         WHERE ($3::text IS NULL OR 
                LOWER(s.name) LIKE LOWER('%' || $3 || '%') OR
@@ -103,7 +101,6 @@ export const queries = {
             s.id, s.name, s.icon_name, s.priority, s.status, s.description_short,
             s.description_long, s.purpose, s.comments, s.is_public,
             s.created_at, s.created_by, s.modified_at, s.modified_by,
-            s.tile_preferred_width, s.tile_preferred_height,
             -- Пользователи
             u1.username as owner,
             u2.username as backup_owner,
@@ -111,18 +108,26 @@ export const queries = {
             u4.username as backup_technical_owner,
             u5.username as dispatcher,
             -- Группы поддержки
-            g1.name as support_tier1,
-            g2.name as support_tier2,
-            g3.name as support_tier3
+            g1.group_name as support_tier1,
+            g2.group_name as support_tier2,
+            g3.group_name as support_tier3
         FROM app.services s
-        LEFT JOIN app.service_users u1 ON s.id = u1.service_id AND u1.role_type = 'owner'
-        LEFT JOIN app.service_users u2 ON s.id = u2.service_id AND u2.role_type = 'backup_owner'
-        LEFT JOIN app.service_users u3 ON s.id = u3.service_id AND u3.role_type = 'technical_owner'
-        LEFT JOIN app.service_users u4 ON s.id = u4.service_id AND u4.role_type = 'backup_technical_owner'
-        LEFT JOIN app.service_users u5 ON s.id = u5.service_id AND u5.role_type = 'dispatcher'
-        LEFT JOIN app.service_groups g1 ON s.id = g1.service_id AND g1.role_type = 'support_tier1'
-        LEFT JOIN app.service_groups g2 ON s.id = g2.service_id AND g2.role_type = 'support_tier2'
-        LEFT JOIN app.service_groups g3 ON s.id = g3.service_id AND g3.role_type = 'support_tier3'
+        LEFT JOIN app.service_users su1 ON s.id = su1.service_id AND su1.role_type = 'owner'
+        LEFT JOIN app.users u1 ON su1.user_id = u1.user_id
+        LEFT JOIN app.service_users su2 ON s.id = su2.service_id AND su2.role_type = 'backup_owner'
+        LEFT JOIN app.users u2 ON su2.user_id = u2.user_id
+        LEFT JOIN app.service_users su3 ON s.id = su3.service_id AND su3.role_type = 'technical_owner'
+        LEFT JOIN app.users u3 ON su3.user_id = u3.user_id
+        LEFT JOIN app.service_users su4 ON s.id = su4.service_id AND su4.role_type = 'backup_technical_owner'
+        LEFT JOIN app.users u4 ON su4.user_id = u4.user_id
+        LEFT JOIN app.service_users su5 ON s.id = su5.service_id AND su5.role_type = 'dispatcher'
+        LEFT JOIN app.users u5 ON su5.user_id = u5.user_id
+        LEFT JOIN app.service_groups sg1 ON s.id = sg1.service_id AND sg1.role_type = 'support_tier1'
+        LEFT JOIN app.groups g1 ON sg1.group_id = g1.group_id
+        LEFT JOIN app.service_groups sg2 ON s.id = sg2.service_id AND sg2.role_type = 'support_tier2'
+        LEFT JOIN app.groups g2 ON sg2.group_id = g2.group_id
+        LEFT JOIN app.service_groups sg3 ON s.id = sg3.service_id AND sg3.role_type = 'support_tier3'
+        LEFT JOIN app.groups g3 ON sg3.group_id = g3.group_id
         WHERE s.id = $1
     `,
 

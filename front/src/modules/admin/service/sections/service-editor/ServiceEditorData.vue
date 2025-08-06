@@ -181,26 +181,23 @@ const loadServiceData = async () => {
   if (isEditMode.value && editingServiceId.value) {
     isLoadingService.value = true
     try {
-      // Получаем данные сервиса из store
-      const serviceData = servicesStore.getEditingServiceData
+      console.log('[ServiceEditorData] Fetching fresh data from API for service ID:', editingServiceId.value)
       
-      if (serviceData) {
-        // Заполняем форму данными сервиса
-        populateFormWithService(serviceData)
+      // Always fetch fresh data from API for edit mode to ensure we have complete data including access control
+      const response = await serviceAdminFetchSingleService.fetchSingleService(editingServiceId.value)
+      
+      console.log('[ServiceEditorData] API response:', response)
+      
+      if (response.success && response.data) {
+        console.log('[ServiceEditorData] Service data from API:', response.data)
+        // Update store with fresh data
+        servicesStore.editingServiceData = response.data
+        // Заполняем форму данными сервиса из API
+        populateFormWithService(response.data)
       } else {
-        // Fetch fresh data from API if not in store
-        
-        const response = await serviceAdminFetchSingleService.fetchSingleService(editingServiceId.value)
-        
-        if (response.success && response.data) {
-          
-          // Заполняем форму данными сервиса из API
-          populateFormWithService(response.data)
-        } else {
-          // Show error message
-          uiStore.showErrorSnackbar(response.message || t('admin.services.editor.messages.error.loadingService'))
-          servicesStore.closeServiceEditor()
-        }
+        // Show error message
+        uiStore.showErrorSnackbar(response.message || t('admin.services.editor.messages.error.loadingService'))
+        servicesStore.closeServiceEditor()
       }
       
     } catch (error) {
@@ -214,6 +211,11 @@ const loadServiceData = async () => {
 }
 
 const populateFormWithService = (service: Service) => {
+  console.log('Populating form with service data:', {
+    access_allowed_groups: service.access_allowed_groups,
+    access_denied_groups: service.access_denied_groups,
+    access_denied_users: service.access_denied_users
+  })
   
   formData.value = {
     name: service.name,
@@ -233,10 +235,16 @@ const populateFormWithService = (service: Service) => {
     purpose: service.purpose || '',
     comments: service.comments || '',
     isPublic: service.is_public,
-    accessAllowedGroups: service.access_allowed_groups ? service.access_allowed_groups.split(',').map(g => g.trim()) : [],
-    accessDeniedGroups: service.access_denied_groups ? service.access_denied_groups.split(',').map(g => g.trim()) : [],
-    accessDeniedUsers: service.access_denied_users ? service.access_denied_users.split(',').map(u => u.trim()) : []
+    accessAllowedGroups: service.access_allowed_groups && service.access_allowed_groups.trim() ? service.access_allowed_groups.split(',').map(g => g.trim()).filter(g => g) : [],
+    accessDeniedGroups: service.access_denied_groups && service.access_denied_groups.trim() ? service.access_denied_groups.split(',').map(g => g.trim()).filter(g => g) : [],
+    accessDeniedUsers: service.access_denied_users && service.access_denied_users.trim() ? service.access_denied_users.split(',').map(u => u.trim()).filter(u => u) : []
   }
+  
+  console.log('Form data populated:', {
+    accessAllowedGroups: formData.value.accessAllowedGroups,
+    accessDeniedGroups: formData.value.accessDeniedGroups,
+    accessDeniedUsers: formData.value.accessDeniedUsers
+  })
 }
 
 const createService = async () => {
@@ -277,7 +285,7 @@ const createService = async () => {
         // After successful creation, switch to edit mode and load fresh data from API
     if (response && response.data && response.data.id) {
       // Switch to edit mode without service data (will be loaded from API)
-      servicesStore.openServiceEditor('edit', response.data.id, null)
+      servicesStore.openServiceEditor('edit', response.data.id, undefined)
       
       // Load fresh service data from API
       const serviceResponse = await serviceAdminFetchSingleService.fetchSingleService(response.data.id)

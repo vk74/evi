@@ -14,7 +14,7 @@ import { EventCollection } from '../../../core/eventBus/types.events'
  * Event reference catalog for admin service operations
  * Contains all events related to service management in admin module
  */
-export const eventsAdminServices: EventCollection = {
+export const EVENTS_ADMIN_SERVICES: EventCollection = {
   // Service fetch validation error
   'admin.service.fetch.validation.error': {
     eventName: 'admin.service.fetch.validation.error',
@@ -104,4 +104,7 @@ export const eventsAdminServices: EventCollection = {
     eventMessage: 'Unexpected error in service fetch controller',
     version: '1.0.0'
   }
-} 
+}
+
+// Export for backward compatibility
+export const eventsAdminServices = EVENTS_ADMIN_SERVICES 

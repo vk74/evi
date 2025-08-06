@@ -26,15 +26,16 @@ async function fetchSingleServiceLogic(req: AuthenticatedRequest, res: Response)
 
     // Validate required parameter
     if (!id || typeof id !== 'string') {
-      await createAndPublishEvent({
-        req,
-        eventName: 'admin.service.fetch.controller.validation.error',
-        payload: { 
-          query: req.query, 
-          user: req.user?.username 
-        },
-        errorData: 'Missing or invalid service ID in request'
-      })
+      // Temporarily comment out events to debug
+      // await createAndPublishEvent({
+      //   req,
+      //   eventName: 'admin.service.fetch.controller.validation.error',
+      //   payload: { 
+      //     query: req.query, 
+      //     user: req.user?.username 
+      //   },
+      //   errorData: 'Missing or invalid service ID in request'
+      // })
       
       return {
         success: false,
@@ -46,16 +47,17 @@ async function fetchSingleServiceLogic(req: AuthenticatedRequest, res: Response)
     const result = await serviceAdminFetchSingleService.fetchSingleService(id, req)
 
     if (!result.success) {
-      await createAndPublishEvent({
-        req,
-        eventName: 'admin.service.fetch.controller.fetch_error',
-        payload: { 
-          serviceId: id, 
-          error: result.message, 
-          user: req.user?.username 
-        },
-        errorData: 'Failed to fetch service data'
-      })
+      // Temporarily comment out events to debug
+      // await createAndPublishEvent({
+      //   req,
+      //   eventName: 'admin.service.fetch.controller.fetch_error',
+      //   payload: { 
+      //     serviceId: id, 
+      //     error: result.message, 
+      //     user: req.user?.username 
+      //   },
+      //   errorData: 'Failed to fetch service data'
+      // })
 
       return {
         success: false,
@@ -64,27 +66,29 @@ async function fetchSingleServiceLogic(req: AuthenticatedRequest, res: Response)
     }
 
     // Return successful response
-    await createAndPublishEvent({
-      req,
-      eventName: 'admin.service.fetch.controller.success',
-      payload: { 
-        serviceId: id, 
-        serviceName: result.data?.name, 
-        user: req.user?.username 
-      }
-    })
+    // Temporarily comment out events to debug
+    // await createAndPublishEvent({
+    //   req,
+    //   eventName: 'admin.service.fetch.controller.success',
+    //   payload: { 
+    //     serviceId: id, 
+    //     serviceName: result.data?.name, 
+    //     user: req.user?.username 
+    //   }
+    // })
 
     return result.data
 
   } catch (error) {
-    await createAndPublishEvent({
-      req,
-      eventName: 'admin.service.fetch.controller.unexpected_error',
-      payload: { 
-        user: req.user?.username 
-      },
-      errorData: error instanceof Error ? error.message : String(error)
-    })
+    // Temporarily comment out events to debug
+    // await createAndPublishEvent({
+    //   req,
+    //   eventName: 'admin.service.fetch.controller.unexpected_error',
+    //   payload: { 
+    //     user: req.user?.username 
+    //   },
+    //   errorData: error instanceof Error ? error.message : String(error)
+    // })
 
     return {
       success: false,
