@@ -56,7 +56,17 @@ async function validateUpdateServiceData(data: UpdateService, serviceId: string)
             errors.push('Service not found');
         }
     } catch (error) {
-        console.error('[UpdateServiceService] Error checking service existence:', error);
+        // Publish error event instead of console.error
+        await fabricEvents.createAndPublishEvent({
+            req: null,
+            eventName: EVENTS_ADMIN_SERVICES['service.update.validation.error'].eventName,
+            payload: {
+                serviceId,
+                error: 'Error checking service existence',
+                details: { error: String(error) }
+            },
+            errorData: String(error)
+        });
         errors.push('Error checking service existence');
     }
 
@@ -76,7 +86,17 @@ async function validateUpdateServiceData(data: UpdateService, serviceId: string)
                     errors.push('Service with this name already exists');
                 }
             } catch (error) {
-                console.error('[UpdateServiceService] Error checking service name existence:', error);
+                // Publish error event instead of console.error
+                await fabricEvents.createAndPublishEvent({
+                    req: null,
+                    eventName: EVENTS_ADMIN_SERVICES['service.update.validation.error'].eventName,
+                    payload: {
+                        serviceId,
+                        error: 'Error checking service name existence',
+                        details: { error: String(error) }
+                    },
+                    errorData: String(error)
+                });
                 errors.push('Error checking service name existence');
             }
         }
@@ -371,10 +391,21 @@ async function updateServiceUserRoles(client: any, serviceId: string, data: Upda
                     await client.query(queries.createServiceUser, [
                         serviceId, userId, userRole.roleType, requestorUuid
                     ]);
-                    console.log(`[UpdateServiceService] Updated user role: ${userRole.roleType} = ${userRole.username}`);
                 }
             } catch (error) {
-                console.error(`[UpdateServiceService] Error updating user role ${userRole.roleType}:`, error);
+                // Publish error event instead of console.error
+                await fabricEvents.createAndPublishEvent({
+                    req: null,
+                    eventName: EVENTS_ADMIN_SERVICES['service.update.user_role_error'].eventName,
+                    payload: {
+                        serviceId,
+                        roleType: userRole.roleType,
+                        username: userRole.username,
+                        error: `Error updating user role ${userRole.roleType}`,
+                        details: { error: String(error) }
+                    },
+                    errorData: String(error)
+                });
                 throw error;
             }
         }
@@ -407,10 +438,21 @@ async function updateServiceGroupRoles(client: any, serviceId: string, data: Upd
                     await client.query(queries.createServiceGroup, [
                         serviceId, groupId, groupRole.roleType, requestorUuid
                     ]);
-                    console.log(`[UpdateServiceService] Updated group role: ${groupRole.roleType} = ${groupRole.groupName}`);
                 }
             } catch (error) {
-                console.error(`[UpdateServiceService] Error updating group role ${groupRole.roleType}:`, error);
+                // Publish error event instead of console.error
+                await fabricEvents.createAndPublishEvent({
+                    req: null,
+                    eventName: EVENTS_ADMIN_SERVICES['service.update.group_role_error'].eventName,
+                    payload: {
+                        serviceId,
+                        roleType: groupRole.roleType,
+                        groupName: groupRole.groupName,
+                        error: `Error updating group role ${groupRole.roleType}`,
+                        details: { error: String(error) }
+                    },
+                    errorData: String(error)
+                });
                 throw error;
             }
         }
@@ -435,12 +477,22 @@ async function updateServiceAccessRoles(client: any, serviceId: string, data: Up
                     await client.query(queries.createServiceGroup, [
                         serviceId, groupId, ServiceGroupRole.ACCESS_ALLOWED, requestorUuid
                     ]);
-                    console.log(`[UpdateServiceService] Updated access allowed group: ${groupName}`);
                 } else {
                     throw new Error(`Group "${groupName}" does not exist`);
                 }
             } catch (error) {
-                console.error(`[UpdateServiceService] Error updating access allowed group ${groupName}:`, error);
+                // Publish error event instead of console.error
+                await fabricEvents.createAndPublishEvent({
+                    req: null,
+                    eventName: EVENTS_ADMIN_SERVICES['service.update.access_allowed_group_error'].eventName,
+                    payload: {
+                        serviceId,
+                        groupName,
+                        error: `Error updating access allowed group ${groupName}`,
+                        details: { error: String(error) }
+                    },
+                    errorData: String(error)
+                });
                 throw error;
             }
         }
@@ -456,12 +508,22 @@ async function updateServiceAccessRoles(client: any, serviceId: string, data: Up
                     await client.query(queries.createServiceGroup, [
                         serviceId, groupId, ServiceGroupRole.ACCESS_DENIED, requestorUuid
                     ]);
-                    console.log(`[UpdateServiceService] Updated access denied group: ${groupName}`);
                 } else {
                     throw new Error(`Group "${groupName}" does not exist`);
                 }
             } catch (error) {
-                console.error(`[UpdateServiceService] Error updating access denied group ${groupName}:`, error);
+                // Publish error event instead of console.error
+                await fabricEvents.createAndPublishEvent({
+                    req: null,
+                    eventName: EVENTS_ADMIN_SERVICES['service.update.access_denied_group_error'].eventName,
+                    payload: {
+                        serviceId,
+                        groupName,
+                        error: `Error updating access denied group ${groupName}`,
+                        details: { error: String(error) }
+                    },
+                    errorData: String(error)
+                });
                 throw error;
             }
         }
@@ -477,12 +539,22 @@ async function updateServiceAccessRoles(client: any, serviceId: string, data: Up
                     await client.query(queries.createServiceUser, [
                         serviceId, userId, ServiceUserRole.ACCESS_DENIED, requestorUuid
                     ]);
-                    console.log(`[UpdateServiceService] Updated access denied user: ${username}`);
                 } else {
                     throw new Error(`User "${username}" does not exist`);
                 }
             } catch (error) {
-                console.error(`[UpdateServiceService] Error updating access denied user ${username}:`, error);
+                // Publish error event instead of console.error
+                await fabricEvents.createAndPublishEvent({
+                    req: null,
+                    eventName: EVENTS_ADMIN_SERVICES['service.update.access_denied_user_error'].eventName,
+                    payload: {
+                        serviceId,
+                        username,
+                        error: `Error updating access denied user ${username}`,
+                        details: { error: String(error) }
+                    },
+                    errorData: String(error)
+                });
                 throw error;
             }
         }
@@ -503,19 +575,6 @@ async function updateServiceInDatabase(serviceId: string, data: UpdateService, r
         await client.query('BEGIN');
 
         // Update service in main table
-        console.log('[UpdateServiceService] Updating service with data:', {
-            serviceId,
-            name: data.name?.trim(),
-            priority: data.priority,
-            status: data.status,
-            description_short: data.description_short?.trim() || null,
-            description_long: data.description_long?.trim() || null,
-            purpose: data.purpose?.trim() || null,
-            comments: data.comments?.trim() || null,
-            is_public: data.is_public,
-            icon_name: data.icon_name?.trim() || null
-        });
-
         const serviceResult = await client.query(queries.updateService, [
             serviceId,
             data.name?.trim(),
@@ -526,17 +585,11 @@ async function updateServiceInDatabase(serviceId: string, data: UpdateService, r
             data.purpose?.trim() || null,
             data.comments?.trim() || null,
             data.is_public,
+            data.icon_name?.trim() || null,
             requestorUuid
         ]);
 
         const updatedService = serviceResult.rows[0];
-
-        console.log('[UpdateServiceService] Service updated successfully', {
-            serviceId,
-            serviceName: updatedService.name,
-            updatedBy: requestorUuid,
-            updatedService: updatedService
-        });
 
         // Update user roles
         await updateServiceUserRoles(client, serviceId, data, requestorUuid);
@@ -560,7 +613,17 @@ async function updateServiceInDatabase(serviceId: string, data: UpdateService, r
 
     } catch (error) {
         await client.query('ROLLBACK');
-        console.error('[UpdateServiceService] Database error updating service:', error);
+        // Publish database error event instead of console.error
+        await fabricEvents.createAndPublishEvent({
+            req: null,
+            eventName: EVENTS_ADMIN_SERVICES['service.update.database_error'].eventName,
+            payload: {
+                serviceId,
+                error: 'Failed to update service in database',
+                details: { error: String(error) }
+            },
+            errorData: String(error)
+        });
         throw {
             code: 'DATABASE_ERROR',
             message: 'Failed to update service in database',
@@ -599,18 +662,6 @@ export async function updateService(req: Request): Promise<UpdateServiceResponse
             };
         }
 
-        console.log('[UpdateServiceService] Updating service', {
-            serviceId: id,
-            name: serviceData.name,
-            owner: serviceData.owner,
-            priority: serviceData.priority,
-            description_short: serviceData.description_short,
-            description_long: serviceData.description_long,
-            purpose: serviceData.purpose,
-            comments: serviceData.comments,
-            requestorUuid
-        });
-
         // Validate service data
         await validateUpdateServiceData(serviceData, id);
 
@@ -631,9 +682,7 @@ export async function updateService(req: Request): Promise<UpdateServiceResponse
         return result;
 
     } catch (error: any) {
-        console.error('[UpdateServiceService] Error updating service:', error);
-
-        // Publish error event
+        // Publish error event instead of console.error
         await fabricEvents.createAndPublishEvent({
             req,
             eventName: EVENTS_ADMIN_SERVICES['service.update.validation.error'].eventName,

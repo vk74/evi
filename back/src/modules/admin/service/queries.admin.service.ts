@@ -156,9 +156,9 @@ export const queries = {
     `,
 
     /**
-     * Updates an existing service (basic fields only)
+     * Updates an existing service
      * Parameters: [id, name, priority, status, description_short, description_long,
-     * purpose, comments, is_public, modified_by]
+     * purpose, comments, is_public, icon_name, modified_by]
      */
     updateService: `
         UPDATE app.services SET
@@ -170,7 +170,8 @@ export const queries = {
             purpose = $7,
             comments = $8,
             is_public = $9,
-            modified_by = $10,
+            icon_name = $10,
+            modified_by = $11,
             modified_at = CURRENT_TIMESTAMP
         WHERE id = $1
         RETURNING id, name, modified_at

@@ -223,6 +223,56 @@ export const EVENTS_ADMIN_SERVICES: EventCollection = {
     severity: 'warning',
     eventMessage: 'Partial success during service delete operation',
     version: '1.0.0'
+  },
+
+  // Service update user role error
+  'service.update.user_role_error': {
+    eventName: 'adminServices.service.update.user_role_error',
+    source: 'admin-service',
+    eventType: 'system',
+    severity: 'error',
+    eventMessage: 'Error occurred while updating user role for service',
+    version: '1.0.0'
+  },
+
+  // Service update group role error
+  'service.update.group_role_error': {
+    eventName: 'adminServices.service.update.group_role_error',
+    source: 'admin-service',
+    eventType: 'system',
+    severity: 'error',
+    eventMessage: 'Error occurred while updating group role for service',
+    version: '1.0.0'
+  },
+
+  // Service update access allowed group error
+  'service.update.access_allowed_group_error': {
+    eventName: 'adminServices.service.update.access_allowed_group_error',
+    source: 'admin-service',
+    eventType: 'system',
+    severity: 'error',
+    eventMessage: 'Error occurred while updating access allowed group for service',
+    version: '1.0.0'
+  },
+
+  // Service update access denied group error
+  'service.update.access_denied_group_error': {
+    eventName: 'adminServices.service.update.access_denied_group_error',
+    source: 'admin-service',
+    eventType: 'system',
+    severity: 'error',
+    eventMessage: 'Error occurred while updating access denied group for service',
+    version: '1.0.0'
+  },
+
+  // Service update access denied user error
+  'service.update.access_denied_user_error': {
+    eventName: 'adminServices.service.update.access_denied_user_error',
+    source: 'admin-service',
+    eventType: 'system',
+    severity: 'error',
+    eventMessage: 'Error occurred while updating access denied user for service',
+    version: '1.0.0'
   }
 }
 
