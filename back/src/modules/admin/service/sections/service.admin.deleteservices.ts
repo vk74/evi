@@ -77,7 +77,14 @@ const checkServicesExist = async (client: any, serviceIds: string[]): Promise<{e
         })
       }
     } catch (error) {
-      console.error(`[DeleteServices] Error checking service ${id}:`, error)
+      await createAndPublishEvent({
+        eventName: EVENTS_ADMIN_SERVICES['service.delete.check_error'].eventName,
+        payload: {
+          serviceId: id,
+          error: error instanceof Error ? error.message : 'Unknown error',
+          timestamp: new Date().toISOString()
+        }
+      })
       notFound.push(id)
     }
   }
@@ -161,7 +168,6 @@ export const deleteServices = async (
       })
       
     } catch (error) {
-      console.error('[DeleteServices] Database error:', error)
       await createAndPublishEvent({
         eventName: EVENTS_ADMIN_SERVICES['service.delete.database_error'].eventName,
         payload: {

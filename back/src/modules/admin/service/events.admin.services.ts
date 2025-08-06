@@ -185,6 +185,16 @@ export const EVENTS_ADMIN_SERVICES: EventCollection = {
     version: '1.0.0'
   },
 
+  // Service delete check error
+  'service.delete.check_error': {
+    eventName: 'adminServices.service.delete.check_error',
+    source: 'admin-service',
+    eventType: 'system',
+    severity: 'error',
+    eventMessage: 'Error occurred while checking service existence',
+    version: '1.0.0'
+  },
+
   // Service delete database error
   'service.delete.database_error': {
     eventName: 'adminServices.service.delete.database_error',
