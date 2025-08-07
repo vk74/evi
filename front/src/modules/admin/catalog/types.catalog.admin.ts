@@ -51,7 +51,7 @@ export interface CatalogSection {
   is_public: boolean
   order: number | null
   parent_id: string | null
-  icon: string | null
+  icon_name: string | null
   color: string | null
   created_at: Date
   created_by: string
@@ -70,6 +70,7 @@ export interface CreateSectionRequest {
   parent_id?: string
   color?: string
   is_public?: boolean
+  icon_name?: string
 }
 
 // Create section response interface
@@ -92,6 +93,7 @@ export interface UpdateSectionRequest {
   color?: string
   status?: SectionStatus
   is_public?: boolean
+  icon_name?: string
 }
 
 // Update section response interface

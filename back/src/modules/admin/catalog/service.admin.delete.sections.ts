@@ -4,7 +4,6 @@
  * 
  * Functionality:
  * - Validates sections exist before deletion
- * - Checks for system section protection (main)
  * - Handles order number recalculation after deletion
  * - Deletes multiple catalog sections from database
  * - Handles data transformation and business logic
@@ -14,11 +13,10 @@
  * Data flow:
  * 1. Receive request object with array of section IDs
  * 2. Validate all sections exist
- * 3. Check if any section is system section (main)
- * 4. Get current orders for recalculation
- * 5. Delete sections from database
- * 6. Recalculate order numbers for remaining sections
- * 7. Return formatted response with detailed results
+ * 3. Get current orders for recalculation
+ * 4. Delete sections from database
+ * 5. Recalculate order numbers for remaining sections
+ * 6. Return formatted response with detailed results
  */
 
 import { Request } from 'express';
@@ -75,18 +73,7 @@ async function validateSectionsForDeletion(sectionIds: string[]): Promise<Sectio
                 continue;
             }
             
-            // Check if trying to delete system section (main)
-            if (existingSection.name === 'main') {
-                validationResults.push({
-                    id: sectionId,
-                    name: existingSection.name,
-                    order: existingSection.order,
-                    canDelete: false,
-                    error: 'Cannot delete system section "main"',
-                    errorCode: 'FORBIDDEN'
-                });
-                continue;
-            }
+
             
             validationResults.push({
                 id: sectionId,

@@ -5,7 +5,7 @@
   Purpose: Provides interface for adding, removing, and editing catalog sections
   Features:
   - Add new sections with custom names and icons
-  - Remove sections (except the default "main" section)
+  - Remove sections
   - Edit section names and icons
   - Section visibility toggle
   - Bulk operations

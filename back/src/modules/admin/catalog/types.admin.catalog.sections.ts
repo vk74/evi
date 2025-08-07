@@ -35,7 +35,7 @@ export interface DbCatalogSection {
     is_public: boolean           // boolean
     order: number | null         // integer
     parent_id: string | null     // uuid
-    icon: string | null          // character varying
+    icon_name: string | null     // character varying
     color: string | null         // character varying
     created_at: Date             // timestamp with time zone
     created_by: string           // uuid (will be replaced with username)
@@ -57,7 +57,7 @@ export interface CatalogSection {
     is_public: boolean
     order: number | null
     parent_id: string | null
-    icon: string | null
+    icon_name: string | null
     color: string | null
     created_at: Date
     created_by: string            // username instead of UUID
@@ -91,6 +91,7 @@ export interface CreateSectionRequest {
     parent_id?: string
     color?: string
     is_public?: boolean
+    icon_name?: string
 }
 
 /**
@@ -116,6 +117,7 @@ export interface UpdateSectionRequest {
     is_public?: boolean
     order?: number
     color?: string
+    icon_name?: string
 }
 
 /**

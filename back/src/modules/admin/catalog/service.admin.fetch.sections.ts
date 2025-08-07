@@ -70,7 +70,7 @@ async function resolveUuidsToNames(sections: DbCatalogSection[]): Promise<Catalo
             is_public: section.is_public,
             order: section.order,
             parent_id: section.parent_id,
-            icon: section.icon,
+            icon_name: section.icon_name,
             color: section.color,
             created_at: section.created_at,
             created_by: createdByName || 'Unknown',

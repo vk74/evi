@@ -153,15 +153,7 @@ async function validateUpdateSectionData(data: UpdateSectionRequest, sectionId: 
         throw error;
     }
 
-    // Check if trying to update system section (main)
-    if (existingSection.name === 'main') {
-        const error: ServiceError = {
-            code: 'FORBIDDEN',
-            message: 'Cannot update system section "main"',
-            details: { sectionId, sectionName: existingSection.name }
-        };
-        throw error;
-    }
+
 
     // Validate order format if provided
     if (data.order !== undefined && !isValidOrder(data.order)) {
@@ -288,6 +280,7 @@ export async function updateSection(req: Request): Promise<UpdateSectionResponse
             updateData.status || null,
             updateData.is_public !== undefined ? updateData.is_public : null,
             updateData.order || null,
+            updateData.icon_name || null, // Add icon_name field
             updateData.color || null,
             requestorUuid // modified_by
         ];

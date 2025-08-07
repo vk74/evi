@@ -198,6 +198,8 @@ const loadSectionData = async () => {
       console.log('Fetching section data from API for editing')
       const section = await catalogSectionsFetchService.fetchSection(editingSectionId.value)
       
+
+      
       // Populate form with fetched data
       populateFormWithSection(section)
       
@@ -215,7 +217,7 @@ const loadSectionData = async () => {
 const populateFormWithSection = (section: CatalogSection) => {
   formData.value = {
     name: section.name,
-    icon_name: section.icon || '', // Заполняем поле для иконки
+    icon_name: section.icon_name || '', // Заполняем поле для иконки
     owner: section.owner || '',
     backupOwner: section.backup_owner || '',
     order: section.order || 1,
@@ -247,7 +249,7 @@ const createSection = async () => {
       backup_owner: formData.value.backupOwner?.trim() || undefined,
       color: formData.value.color || undefined,
       is_public: formData.value.isPublic,
-      icon_name: formData.value.icon_name || undefined // Add icon_name to data
+      icon_name: formData.value.icon_name || undefined
     }
 
     // Create section via API
@@ -284,7 +286,7 @@ const updateSection = async () => {
       color: formData.value.color || undefined,
       status: formData.value.status as SectionStatus,
       is_public: formData.value.isPublic,
-      icon_name: formData.value.icon_name || undefined // Add icon_name to data
+      icon_name: formData.value.icon_name || undefined
     }
 
     // Update section via API
@@ -334,6 +336,8 @@ const handleBackupOwnerSelected = async (result: any) => {
   }
   showBackupOwnerSelector.value = false
 }
+
+
 
 // Icon picker methods
 const openIconPicker = () => {
@@ -524,6 +528,7 @@ onMounted(() => {
                           required
                           color="teal"
                         />
+
                       </div>
                     </v-col>
                     <v-col
@@ -539,6 +544,7 @@ onMounted(() => {
                           @click:append-inner="showBackupOwnerSelector = true"
                           color="teal"
                         />
+
                       </div>
                     </v-col>
                   </v-row>

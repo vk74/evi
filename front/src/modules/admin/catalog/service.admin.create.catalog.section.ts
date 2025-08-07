@@ -44,7 +44,8 @@ export const catalogSectionCreateService = {
     logger.info('Creating catalog section', {
       name: sectionData.name,
       owner: sectionData.owner,
-      order: sectionData.order
+      order: sectionData.order,
+      icon_name: sectionData.icon_name
     })
 
     try {

@@ -35,7 +35,7 @@ export interface DbCatalogSection {
     is_public: boolean           // boolean
     order: number | null         // integer
     parent_id: string | null     // uuid
-    icon: string | null          // character varying
+    icon_name: string | null     // character varying
     color: string | null         // character varying
     created_at: Date             // timestamp with time zone
     created_by: string           // uuid

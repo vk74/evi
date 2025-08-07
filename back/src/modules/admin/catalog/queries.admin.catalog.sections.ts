@@ -58,7 +58,7 @@ export const queries: CatalogSectionsQueries = {
             is_public,
             "order",
             parent_id,
-            icon,
+            icon_name,
             color,
             created_at,
             created_by,
@@ -81,7 +81,7 @@ export const queries: CatalogSectionsQueries = {
             is_public,
             "order",
             parent_id,
-            icon,
+            icon_name,
             color,
             created_at,
             created_by,
@@ -104,7 +104,7 @@ export const queries: CatalogSectionsQueries = {
             is_public,
             "order",
             parent_id,
-            icon,
+            icon_name,
             color,
             created_at,
             created_by
@@ -138,9 +138,10 @@ export const queries: CatalogSectionsQueries = {
             status = COALESCE($7, status),
             is_public = COALESCE($8, is_public),
             "order" = COALESCE($9, "order"),
-            color = $10,
+            icon_name = $10,
+            color = $11,
             modified_at = NOW(),
-            modified_by = $11
+            modified_by = $12
         WHERE id = $1
         RETURNING id, name
     `,

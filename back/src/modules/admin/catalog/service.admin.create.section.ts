@@ -256,7 +256,7 @@ export async function createSection(req: Request): Promise<CreateSectionResponse
             requestData.is_public ?? false, // Use provided is_public or default to false
             requestData.order,
             requestData.parent_id || null,
-            null, // icon - not used for now
+            requestData.icon_name || null, // Add icon_name field
             requestData.color || null,
             requestorUuid // created_by
         ];

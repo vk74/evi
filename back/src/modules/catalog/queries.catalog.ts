@@ -25,7 +25,7 @@ export const queries: CatalogQueries = {
             id,
             name,
             description,
-            icon,
+            icon_name,
             color,
             "order"
         FROM app.catalog_sections
@@ -39,7 +39,7 @@ export const queries: CatalogQueries = {
             id,
             name,
             description,
-            icon,
+            icon_name,
             color,
             "order"
         FROM app.catalog_sections

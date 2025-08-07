@@ -46,7 +46,8 @@ export const catalogSectionUpdateService = {
       sectionId,
       name: sectionData.name,
       owner: sectionData.owner,
-      order: sectionData.order
+      order: sectionData.order,
+      icon_name: sectionData.icon_name
     })
 
     try {
@@ -94,7 +95,7 @@ export const catalogSectionUpdateService = {
           if (apiError.code === 'NOT_FOUND') {
             userMessage = 'Секция не найдена'
           } else if (apiError.code === 'FORBIDDEN') {
-            userMessage = 'Нельзя обновить системную секцию "main"'
+            userMessage = 'Доступ запрещен'
           } else if (apiError.code === 'REQUIRED_FIELD_ERROR') {
             const field = apiError.details?.field as string
             userMessage = `Обязательное поле не заполнено: ${field}`
