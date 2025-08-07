@@ -32,7 +32,7 @@ function transformDbSectionToCatalogSection(dbSection: DbCatalogSection): Catalo
         id: dbSection.id,
         name: dbSection.name,
         description: dbSection.description,
-        icon: dbSection.icon_name,
+        icon_name: dbSection.icon_name,
         color: dbSection.color,
         order: dbSection.order
     };

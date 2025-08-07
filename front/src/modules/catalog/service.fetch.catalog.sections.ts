@@ -49,8 +49,6 @@ function isCacheValid(): boolean {
 export async function fetchCatalogSections(options: FetchSectionsOptions = {}): Promise<CatalogSection[]> {
   const uiStore = useUiStore();
   
-  console.log(`Fetching catalog sections${options.forceRefresh ? ' (forced refresh)' : ''}`);
-  
   try {
     // Check if we have valid cache and not forcing refresh
     if (!options.forceRefresh && isCacheValid()) {
@@ -175,4 +173,13 @@ export function clearCatalogCache(): void {
   catalogState.sections = [];
   catalogState.lastFetched = null;
   catalogState.error = null;
+}
+
+/**
+ * Forces cache refresh by clearing and refetching data
+ * @returns Promise that resolves to fresh catalog sections
+ */
+export async function forceRefreshCatalogSections(): Promise<CatalogSection[]> {
+  clearCatalogCache();
+  return fetchCatalogSections({ forceRefresh: true });
 } 

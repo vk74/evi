@@ -7,7 +7,11 @@ File: ModuleCatalog.vue
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue';
 import DataLoading from '@/core/ui/loaders/DataLoading.vue';
-import { fetchCatalogSections, isCatalogLoading, getCatalogError } from './service.fetch.catalog.sections';
+import { 
+  fetchCatalogSections, 
+  isCatalogLoading, 
+  getCatalogError
+} from './service.fetch.catalog.sections';
 import type { CatalogSection } from './types.catalog';
 import {
   searchQuery,
@@ -22,6 +26,25 @@ import {
   clearSearch,
   setHoveringTriggerArea
 } from './state.catalog';
+
+// ==================== PHOSPHOR ICONS SUPPORT ====================
+const phosphorIcons = ref<Record<string, any>>({})
+
+const loadPhosphorIcons = async () => {
+  if (Object.keys(phosphorIcons.value).length > 0) return // Already loaded
+  
+  try {
+    const icons = await import('@phosphor-icons/vue')
+    phosphorIcons.value = icons
+  } catch (error) {
+    console.error('Error loading Phosphor icons:', error)
+  }
+}
+
+const getPhosphorIcon = (iconName: string | null) => {
+  if (!iconName || !phosphorIcons.value[iconName]) return null
+  return phosphorIcons.value[iconName]
+}
 
 // ==================== SECTIONS DATA ====================
 const sections = ref<CatalogSection[]>([]);
@@ -256,6 +279,7 @@ const onTriggerAreaLeave = () => {
 // ==================== LIFECYCLE ====================
 onMounted(() => {
   loadCatalogSections();
+  loadPhosphorIcons(); // Load Phosphor icons on mount
 });
 </script>
 
@@ -279,12 +303,17 @@ onMounted(() => {
           variant="text"
           @click="selectSection(section.id)"
         >
-          <v-icon
-            v-if="section.icon"
-            start
-          >
-            {{ section.icon }}
-          </v-icon>
+                            <component 
+                    v-if="section.icon_name"
+                    :is="getPhosphorIcon(section.icon_name)"
+                    size="16"
+                    weight="regular"
+                    color="rgb(20, 184, 166)"
+                    class="mr-2"
+                  />
+                  <v-icon v-else start size="small" color="teal">
+                    mdi-folder
+                  </v-icon>
           {{ section.name }}
         </v-btn>
       </div>

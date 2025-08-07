@@ -28,7 +28,7 @@ export interface CatalogSection {
     id: string
     name: string
     description: string | null
-    icon: string | null
+    icon_name: string | null
     color: string | null
     order: number | null
 }
