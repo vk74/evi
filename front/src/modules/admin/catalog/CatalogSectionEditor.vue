@@ -21,10 +21,12 @@ import { useCatalogAdminStore } from './state.catalog.admin'
 import { useUiStore } from '@/core/state/uistate'
 import ItemSelector from '@/core/ui/modals/item-selector/ItemSelector.vue'
 import DataLoading from '@/core/ui/loaders/DataLoading.vue'
+import IconPicker from '@/core/ui/modals/icon-picker/IconPicker.vue'
 import { catalogSectionCreateService } from './service.admin.create.catalog.section'
 import { catalogSectionsFetchService } from './service.admin.fetch.catalog.sections'
 import { catalogSectionUpdateService } from './service.admin.update.catalog.section'
 import type { SectionStatus } from './types.catalog.admin'
+import * as PhosphorIcons from '@phosphor-icons/vue'
 
 // Types
 interface CatalogSection {
@@ -68,9 +70,15 @@ const isLoadingSection = ref(false)
 const showOwnerSelector = ref(false)
 const showBackupOwnerSelector = ref(false)
 
+// Icon picker state
+const showIconPicker = ref(false)
+const selectedIconStyle = ref('regular')
+const selectedIconSize = ref(24)
+
 // Form data
 const formData = ref({
   name: '',
+  icon_name: '', // Добавляем поле для иконки
   owner: '',
   backupOwner: '',
   order: 1,
@@ -90,6 +98,12 @@ const pageTitle = computed(() => {
   return isCreationMode.value 
     ? t('admin.catalog.editor.creation.title')
     : t('admin.catalog.editor.edit.title')
+})
+
+// Get Phosphor icon component
+const selectedIconComponent = computed(() => {
+  if (!formData.value.icon_name) return null
+  return PhosphorIcons[formData.value.icon_name as keyof typeof PhosphorIcons]
 })
 
 // Preset colors for quick selection - 8 rows of 7 colors each (56 colors)
@@ -161,6 +175,7 @@ const orderRules = [
 const resetForm = () => {
   formData.value = {
     name: '',
+    icon_name: '', // Сбрасываем поле для иконки
     owner: '',
     backupOwner: '',
     order: 1,
@@ -200,6 +215,7 @@ const loadSectionData = async () => {
 const populateFormWithSection = (section: CatalogSection) => {
   formData.value = {
     name: section.name,
+    icon_name: section.icon || '', // Заполняем поле для иконки
     owner: section.owner || '',
     backupOwner: section.backup_owner || '',
     order: section.order || 1,
@@ -230,7 +246,8 @@ const createSection = async () => {
       comments: formData.value.comments?.trim() || undefined,
       backup_owner: formData.value.backupOwner?.trim() || undefined,
       color: formData.value.color || undefined,
-      is_public: formData.value.isPublic
+      is_public: formData.value.isPublic,
+      icon_name: formData.value.icon_name || undefined // Add icon_name to data
     }
 
     // Create section via API
@@ -266,7 +283,8 @@ const updateSection = async () => {
       backup_owner: formData.value.backupOwner?.trim() || undefined,
       color: formData.value.color || undefined,
       status: formData.value.status as SectionStatus,
-      is_public: formData.value.isPublic
+      is_public: formData.value.isPublic,
+      icon_name: formData.value.icon_name || undefined // Add icon_name to data
     }
 
     // Update section via API
@@ -315,6 +333,29 @@ const handleBackupOwnerSelected = async (result: any) => {
     uiStore.showErrorSnackbar(result?.message || t('admin.catalog.editor.messages.backupOwner.error'))
   }
   showBackupOwnerSelector.value = false
+}
+
+// Icon picker methods
+const openIconPicker = () => {
+  showIconPicker.value = true
+}
+
+const handleIconSelected = (iconName: string) => {
+  formData.value.icon_name = iconName
+  uiStore.showSuccessSnackbar(t('itemSelector.messages.icon.selected'))
+}
+
+const handleStyleChanged = (style: string) => {
+  selectedIconStyle.value = style
+}
+
+const handleSizeChanged = (size: number) => {
+  selectedIconSize.value = size
+}
+
+const clearIcon = () => {
+  formData.value.icon_name = ''
+  uiStore.showSuccessSnackbar(t('itemSelector.messages.icon.cleared'))
 }
 
 // Color picker methods
@@ -406,7 +447,37 @@ onMounted(() => {
                     <v-col
                       cols="12"
                       md="auto"
-                      style="width: 350px;"
+                      style="width: 80px;"
+                    >
+                      <div 
+                        class="icon-placeholder"
+                        @click="openIconPicker"
+                        style="cursor: pointer;"
+                      >
+                        <component 
+                          v-if="selectedIconComponent"
+                          :is="selectedIconComponent"
+                          :size="24"
+                          color="rgb(20, 184, 166)"
+                          class="placeholder-icon"
+                        />
+                        <div 
+                          v-else
+                          class="empty-placeholder"
+                        >
+                          <v-icon 
+                            size="24"
+                            color="rgb(20, 184, 166)"
+                          >
+                            mdi-image-outline
+                          </v-icon>
+                        </div>
+                      </div>
+                    </v-col>
+                    <v-col
+                      cols="12"
+                      md="auto"
+                      style="width: 200px;"
                     >
                       <v-text-field
                         v-model="formData.order"
@@ -674,6 +745,20 @@ onMounted(() => {
             {{ t('admin.catalog.editor.actions.title') }}
           </h3>
           
+          <!-- Icon picker button -->
+          <div class="icon-picker-sidebar mb-3">
+            <v-btn
+              block
+              variant="outlined"
+              color="teal"
+              prepend-icon="mdi-image-outline"
+              @click="openIconPicker"
+              class="select-icon-btn-sidebar"
+            >
+              {{ t('admin.catalog.editor.information.icon.select') }}
+            </v-btn>
+          </div>
+          
           <!-- Create button (visible only in creation mode) -->
           <v-btn
             v-if="isCreationMode"
@@ -749,6 +834,17 @@ onMounted(() => {
       @action-performed="handleBackupOwnerSelected"
     />
   </v-dialog>
+
+  <!-- Icon Picker Component -->
+  <IconPicker
+    v-model="showIconPicker"
+    :selected-icon="formData.icon_name"
+    :selected-style="selectedIconStyle"
+    :selected-size="selectedIconSize"
+    @icon-selected="handleIconSelected"
+    @style-changed="handleStyleChanged"
+    @size-changed="handleSizeChanged"
+  />
 </template>
 
 <style scoped>
@@ -877,5 +973,38 @@ onMounted(() => {
 /* Content container */
 .content-container {
   padding: 16px;
+}
+
+/* Icon picker sidebar styles */
+.icon-picker-sidebar {
+  width: 100%;
+}
+
+.select-icon-btn-sidebar {
+  height: 40px;
+}
+
+/* Icon placeholder styles */
+.icon-placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 48px; /* Высота поля ввода */
+  border: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
+  border-radius: 4px;
+  background-color: rgba(var(--v-theme-surface), 1);
+  margin-top: 0; /* Убираем отступ для выравнивания */
+}
+
+.placeholder-icon {
+  color: rgba(var(--v-theme-primary), 1);
+}
+
+.empty-placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
 }
 </style> 

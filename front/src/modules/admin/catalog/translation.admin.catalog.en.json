@@ -41,6 +41,9 @@
             "label": "backup owner",
             "maxLength": "backup owner name must not exceed 50 characters",
             "select": "select backup owner"
+          },
+          "icon": {
+            "select": "select icon"
           }
         },
         "settings": {
