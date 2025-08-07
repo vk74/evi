@@ -312,22 +312,8 @@ onMounted(() => {
       @mouseleave="onTriggerAreaLeave"
     >
       <div class="d-flex align-center justify-space-between w-100 px-4">
-        <!-- Левая часть: кнопка и поиск -->
+        <!-- Левая часть: поиск и фильтры -->
         <div class="d-flex align-center">
-          <!-- Options bar toggle control area -->
-          <div
-            class="options-bar-control-area"
-            @click="toggleOptionsBarMode"
-          >
-            <v-btn
-              variant="text"
-              :icon="optionsBarChevronIcon"
-              size="small"
-              class="options-bar-toggle-btn"
-              color="grey-darken-1"
-            />
-          </div>
-
           <!-- Search -->
           <v-text-field
             v-model="searchQuery"
@@ -367,7 +353,7 @@ onMounted(() => {
           </v-radio-group>
         </div>
 
-        <!-- Правая часть: Sort Controls -->
+        <!-- Правая часть: Sort Controls и кнопка переключения -->
         <div class="d-flex align-center">
           <v-select
             v-model="sortBy"
@@ -376,7 +362,22 @@ onMounted(() => {
             density="comfortable"
             hide-details
             style="min-width: 150px;"
+            class="me-4"
           />
+          
+          <!-- Options bar toggle control area -->
+          <div
+            class="options-bar-control-area"
+            @click="toggleOptionsBarMode"
+          >
+            <v-btn
+              variant="text"
+              :icon="optionsBarChevronIcon"
+              size="small"
+              class="options-bar-toggle-btn"
+              color="grey-darken-1"
+            />
+          </div>
         </div>
       </div>
     </v-app-bar>
@@ -707,17 +708,16 @@ onMounted(() => {
   height: 48px;
   cursor: pointer;
   transition: background-color 0.2s ease;
-  margin-right: 50px; /* Отступ от поля поиска (16px + 15px) */
 }
 
 .options-bar-control-area:hover {
   background-color: rgba(38, 166, 154, 0.08) !important;
 }
 
-/* Options bar toggle button - позиционирование как в App.vue, но слева */
+/* Options bar toggle button - позиционирование справа */
 .options-bar-toggle-btn {
   position: absolute;
-  left: -7px; /* Аналогично right: -10px в App.vue */
+  right: -7px; /* Позиционирование справа */
   bottom: 2px;
   opacity: 0.6;
   transition: opacity 0.2s ease;

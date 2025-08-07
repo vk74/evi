@@ -58,11 +58,11 @@ export const toggleOptionsBarMode = () => {
 export const optionsBarChevronIcon = computed(() => {
   switch(optionsBarMode.value) {
     case 'opened':
-      return 'mdi-chevron-double-down'; // Панель открыта
+      return 'mdi-chevron-down'; // Панель открыта
     case 'auto':
-      return 'mdi-chevron-double-right'; // Автоматический режим
+      return 'mdi-chevron-right'; // Автоматический режим
     default:
-      return 'mdi-chevron-double-down';
+      return 'mdi-chevron-down';
   }
 });
 
