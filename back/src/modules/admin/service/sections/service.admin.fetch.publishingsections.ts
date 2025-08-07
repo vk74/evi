@@ -21,11 +21,11 @@
 
 import { Request } from 'express';
 import { Pool } from 'pg';
-import { pool as pgPool } from '../../../../../core/db/maindb';
-import { queries } from '../../queries.admin.service';
-import type { PublishingSection, FetchPublishingSectionsResponse, ServiceError } from '../../types.admin.service';
-import { fetchUsernameByUuid } from '../../../../../core/helpers/get.username.by.uuid';
-import { fetchGroupnameByUuid } from '../../../../../core/helpers/get.groupname.by.uuid';
+import { pool as pgPool } from '@/core/db/maindb';
+import { queries } from '../queries.admin.service';
+import type { PublishingSection, FetchPublishingSectionsResponse, ServiceError } from '../types.admin.service';
+import { fetchUsernameByUuid } from '@/core/helpers/get.username.by.uuid';
+import { fetchGroupnameByUuid } from '@/core/helpers/get.groupname.by.uuid';
 
 // Type assertion for pool
 const pool = pgPool as Pool;

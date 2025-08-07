@@ -9,11 +9,11 @@
  */
 
 import { queries } from '../queries.admin.service'
-import { createAndPublishEvent } from '../../../../core/eventBus/fabric.events'
+import { createAndPublishEvent } from '@/core/eventBus/fabric.events'
 import type { Service, ApiResponse } from '../types.admin.service'
-import { pool } from '../../../../core/db/maindb'
-import { fetchGroupnameByUuid } from '../../../../core/helpers/get.groupname.by.uuid'
-import { fetchUsernameByUuid } from '../../../../core/helpers/get.username.by.uuid'
+import { pool } from '@/core/db/maindb'
+import { fetchGroupnameByUuid } from '@/core/helpers/get.groupname.by.uuid'
+import { fetchUsernameByUuid } from '@/core/helpers/get.username.by.uuid'
 
 // Response interface for single service fetch
 export interface FetchSingleServiceResponse extends ApiResponse {

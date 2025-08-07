@@ -9,9 +9,9 @@
  */
 
 import { Request, Response } from 'express'
-import { AuthenticatedRequest } from '../../../../guards/types.guards'
+import { AuthenticatedRequest } from '@/guards/types.guards'
 import { serviceAdminFetchSingleService } from './service.admin.fetchsingleservice'
-import { connectionHandler } from '../../../../core/helpers/connection.handler'
+import { connectionHandler } from '@/core/helpers/connection.handler'
 
 /**
  * Business logic for fetching single service data

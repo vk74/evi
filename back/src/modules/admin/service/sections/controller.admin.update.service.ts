@@ -13,7 +13,7 @@
 
 import { Request, Response } from 'express';
 import { updateService as updateServiceService } from './service.admin.update.service';
-import { connectionHandler } from '../../../../../core/helpers/connection.handler';
+import { connectionHandler } from '@/core/helpers/connection.handler';
 
 /**
  * Business logic for updating services data

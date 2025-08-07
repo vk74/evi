@@ -22,20 +22,20 @@
 
 import { Request } from 'express';
 import { Pool } from 'pg';
-import { pool as pgPool } from '../../../../../core/db/maindb';
-import { queries } from '../../queries.admin.service';
+import { pool as pgPool } from '@/core/db/maindb';
+import { queries } from '../queries.admin.service';
 import type { 
     UpdateService, 
     UpdateServiceResponse, 
     ServiceError
-} from '../../types.admin.service';
-import { ServicePriority, ServiceStatus, ServiceUserRole, ServiceGroupRole } from '../../types.admin.service';
-import { getRequestorUuidFromReq } from '../../../../../core/helpers/get.requestor.uuid.from.req';
-import { getUuidByUsername } from '../../../../../core/helpers/get.uuid.by.username';
-import { getUuidByGroupName } from '../../../../../core/helpers/get.uuid.by.group.name';
-import { validateField, validateFieldSecurity, validateMultipleUsernames, validateMultipleGroupNames } from '../../../../../core/validation/service.validation';
-import fabricEvents from '../../../../../core/eventBus/fabric.events';
-import { EVENTS_ADMIN_SERVICES } from '../../events.admin.services';
+} from '../types.admin.service';
+import { ServicePriority, ServiceStatus, ServiceUserRole, ServiceGroupRole } from '../types.admin.service';
+import { getRequestorUuidFromReq } from '@/core/helpers/get.requestor.uuid.from.req';
+import { getUuidByUsername } from '@/core/helpers/get.uuid.by.username';
+import { getUuidByGroupName } from '@/core/helpers/get.uuid.by.group.name';
+import { validateField, validateFieldSecurity, validateMultipleUsernames, validateMultipleGroupNames } from '@/core/validation/service.validation';
+import fabricEvents from '@/core/eventBus/fabric.events';
+import { EVENTS_ADMIN_SERVICES } from '../events.admin.services';
 
 // Type assertion for pool
 const pool = pgPool as Pool;
@@ -469,7 +469,7 @@ async function updateServiceGroupRoles(client: any, serviceId: string, data: Upd
 async function updateServiceAccessRoles(client: any, serviceId: string, data: UpdateService, requestorUuid: string): Promise<void> {
     // Handle access allowed groups (multiple groups)
     if (data.access_allowed_groups) {
-        const allowedGroups = data.access_allowed_groups.split(',').map(g => g.trim()).filter(g => g);
+        const allowedGroups = data.access_allowed_groups.split(',').map((g: string) => g.trim()).filter((g: string) => g);
         for (const groupName of allowedGroups) {
             try {
                 const groupId = await getUuidByGroupName(groupName);
@@ -500,7 +500,7 @@ async function updateServiceAccessRoles(client: any, serviceId: string, data: Up
 
     // Handle access denied groups (multiple groups)
     if (data.access_denied_groups) {
-        const deniedGroups = data.access_denied_groups.split(',').map(g => g.trim()).filter(g => g);
+        const deniedGroups = data.access_denied_groups.split(',').map((g: string) => g.trim()).filter((g: string) => g);
         for (const groupName of deniedGroups) {
             try {
                 const groupId = await getUuidByGroupName(groupName);
@@ -531,7 +531,7 @@ async function updateServiceAccessRoles(client: any, serviceId: string, data: Up
 
     // Handle access denied users (multiple users)
     if (data.access_denied_users) {
-        const deniedUsers = data.access_denied_users.split(',').map(u => u.trim()).filter(u => u);
+        const deniedUsers = data.access_denied_users.split(',').map((u: string) => u.trim()).filter((u: string) => u);
         for (const username of deniedUsers) {
             try {
                 const userId = await getUuidByUsername(username);
@@ -589,7 +589,7 @@ async function updateServiceInDatabase(serviceId: string, data: UpdateService, r
             requestorUuid
         ]);
 
-        const updatedService = serviceResult.rows[0];
+        const updatedService = serviceResult.rows[0] as { id: string; name: string };
 
         // Update user roles
         await updateServiceUserRoles(client, serviceId, data, requestorUuid);

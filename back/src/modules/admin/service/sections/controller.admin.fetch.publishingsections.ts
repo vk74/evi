@@ -17,7 +17,7 @@
 
 import { Request, Response } from 'express';
 import { fetchPublishingSections as fetchPublishingSectionsService } from './service.admin.fetch.publishingsections';
-import { connectionHandler } from '../../../../../core/helpers/connection.handler';
+import { connectionHandler } from '@/core/helpers/connection.handler';
 
 /**
  * Business logic for fetching publishing sections data
