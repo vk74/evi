@@ -27,6 +27,7 @@ import {
   setHoveringTriggerArea
 } from './state.catalog';
 
+
 // ==================== PHOSPHOR ICONS SUPPORT ====================
 const phosphorIcons = ref<Record<string, any>>({})
 
@@ -54,194 +55,16 @@ const selectedSectionId = ref<string | null>(null);
 const filterType = ref<'all' | 'services' | 'products'>('all');
 
 // ==================== TYPES ====================
-interface Service {
-  id: number;
-  name: string;
-  description: string;
-  priority: string;
-  status: string;
-  owner: string;
-  category: string;
-  icon: string;
-  color: string;
-}
-
-interface Product {
-  id: number;
-  name: string;
-  sku: string;
-  category: string;
-  subcategory: string;
-  description: string;
-  price: string;
-  image: string;
-  color: string;
-}
-
-type CatalogItem = Service | Product;
+// Types will be added when integrating with real data
 
 // ==================== MOCK DATA ====================
-const mockServices = ref<Service[]>([
-  {
-    id: 1,
-    name: 'IT Support Service',
-    description: 'Комплексная поддержка IT инфраструктуры',
-    priority: 'high',
-    status: 'active',
-    owner: 'IT Department',
-    category: 'Support',
-    icon: 'mdi-headset',
-    color: 'teal-darken-2'
-  },
-  {
-    id: 2,
-    name: 'Network Monitoring',
-    description: 'Мониторинг сетевой инфраструктуры',
-    priority: 'medium',
-    status: 'active',
-    owner: 'Network Team',
-    category: 'Monitoring',
-    icon: 'mdi-network',
-    color: 'teal-darken-2'
-  },
-  {
-    id: 3,
-    name: 'Security Audit',
-    description: 'Аудит безопасности систем',
-    priority: 'high',
-    status: 'active',
-    owner: 'Security Team',
-    category: 'Security',
-    icon: 'mdi-shield-check',
-    color: 'teal-darken-2'
-  },
-  {
-    id: 4,
-    name: 'Backup Service',
-    description: 'Резервное копирование данных',
-    priority: 'medium',
-    status: 'active',
-    owner: 'Infrastructure Team',
-    category: 'Infrastructure',
-    icon: 'mdi-backup-restore',
-    color: 'teal-darken-2'
-  }
-]);
-
-const mockProducts = ref<Product[]>([
-  {
-    id: 1,
-    name: 'Laptop Dell XPS 13',
-    sku: 'DELL-XPS-13-2024',
-    category: 'Hardware',
-    subcategory: 'Laptops',
-    description: 'Мощный ноутбук для разработчиков',
-    price: '120,000 ₽',
-    image: 'mdi-laptop',
-    color: 'teal-darken-2'
-  },
-  {
-    id: 2,
-    name: 'Monitor Samsung 27"',
-    sku: 'SAMS-27-4K-2024',
-    category: 'Hardware',
-    subcategory: 'Monitors',
-    description: '4K монитор для профессиональной работы',
-    price: '45,000 ₽',
-    image: 'mdi-monitor',
-    color: 'teal-darken-2'
-  }
-]);
+// Mock data will be replaced with real data from API
 
 // ==================== COMPUTED PROPERTIES ====================
-const filteredAndSortedItems = computed(() => {
-  let items: CatalogItem[] = [];
-  
-  // Filter by type
-  switch (filterType.value) {
-    case 'services':
-      items = [...mockServices.value];
-      break;
-    case 'products':
-      items = [...mockProducts.value];
-      break;
-    default:
-      items = [...mockServices.value, ...mockProducts.value];
-  }
-  
-  // Filter by search query
-  if (searchQuery.value) {
-    const query = searchQuery.value.toLowerCase();
-    items = items.filter(item => 
-      item.name.toLowerCase().includes(query) ||
-      item.description.toLowerCase().includes(query) ||
-      ('owner' in item && item.owner && item.owner.toLowerCase().includes(query))
-    );
-  }
-  
-  // Sort items
-  items.sort((a, b) => {
-    let aValue: string | number, bValue: string | number;
-    
-    switch (sortBy.value) {
-      case 'name':
-        aValue = a.name.toLowerCase();
-        bValue = b.name.toLowerCase();
-        break;
-      case 'priority':
-        aValue = 'priority' in a ? getPriorityValue(a.priority) : 0;
-        bValue = 'priority' in b ? getPriorityValue(b.priority) : 0;
-        break;
-      case 'status':
-        aValue = 'status' in a ? a.status.toLowerCase() : '';
-        bValue = 'status' in b ? b.status.toLowerCase() : '';
-        break;
-      case 'owner':
-        aValue = 'owner' in a ? (a.owner || '').toLowerCase() : '';
-        bValue = 'owner' in b ? (b.owner || '').toLowerCase() : '';
-        break;
-      default:
-        aValue = a.name.toLowerCase();
-        bValue = b.name.toLowerCase();
-    }
-    
-    if (sortDirection.value === 'asc') {
-      return aValue > bValue ? 1 : -1;
-    } else {
-      return aValue < bValue ? 1 : -1;
-    }
-  });
-  
-  return items;
-});
+// Filtering and sorting logic will be added when integrating with real data
 
 // ==================== HELPER FUNCTIONS ====================
-function getPriorityValue(priority: string): number {
-  switch (priority) {
-    case 'high': return 3;
-    case 'medium': return 2;
-    case 'low': return 1;
-    default: return 0;
-  }
-}
-
-function getPriorityColor(priority: string): string {
-  switch (priority) {
-    case 'high': return 'error';
-    case 'medium': return 'warning';
-    case 'low': return 'success';
-    default: return 'grey';
-  }
-}
-
-function getStatusColor(status: string): string {
-  switch (status) {
-    case 'active': return 'success';
-    case 'inactive': return 'grey';
-    case 'maintenance': return 'warning';
-    default: return 'grey';
-  }
-}
+// Helper functions will be added when integrating with real data
 
 // ==================== CATALOG SECTIONS FUNCTIONS ====================
 async function loadCatalogSections() {
@@ -479,133 +302,26 @@ onMounted(() => {
           <!-- Results Info -->
           <div class="d-flex justify-space-between align-center mb-4">
             <div class="text-subtitle-1">
-              Найдено: {{ filteredAndSortedItems.length }} элементов
+              Найдено сервисов: 0
             </div>
             <div class="text-caption text-grey">
               {{ sections.find(s => s.id === selectedSectionId)?.name }}
             </div>
           </div>
 
-          <!-- Items Grid -->
-          <v-row>
-            <v-col
-              v-for="item in filteredAndSortedItems"
-              :key="item.id"
-              cols="12"
-              sm="6"
-              md="4"
-              lg="3"
-            >
-              <!-- Service/Product Card -->
-              <v-card
-                class="item-card"
-                elevation="2"
-                hover
-              >
-                <v-card-title class="d-flex align-center">
-                  <v-icon
-                    :icon="'icon' in item ? item.icon : item.image"
-                    :color="item.color"
-                    class="me-3"
-                    size="large"
-                  />
-                  <div class="flex-grow-1">
-                    <div class="text-h6">{{ item.name }}</div>
-                    <div class="text-caption text-grey">
-                      {{ item.category }}
-                      <span v-if="'subcategory' in item && item.subcategory"> / {{ item.subcategory }}</span>
-                    </div>
-                  </div>
-                </v-card-title>
-
-                <v-card-text>
-                  <p class="text-body-2 mb-3">
-                    {{ item.description }}
-                  </p>
-
-                  <!-- Service-specific info -->
-                  <div v-if="'priority' in item && item.priority" class="mb-2">
-                    <v-chip
-                      :color="getPriorityColor(item.priority)"
-                      size="small"
-                      class="me-2"
-                    >
-                      {{ item.priority === 'high' ? 'Высокий' : item.priority === 'medium' ? 'Средний' : 'Низкий' }} приоритет
-                    </v-chip>
-                    
-                    <v-chip
-                      :color="getStatusColor(item.status)"
-                      size="small"
-                    >
-                      {{ item.status === 'active' ? 'Активен' : item.status === 'inactive' ? 'Неактивен' : 'Обслуживание' }}
-                    </v-chip>
-                  </div>
-
-                  <!-- Product-specific info -->
-                  <div v-if="'sku' in item && item.sku" class="mb-2">
-                    <div class="text-caption text-grey mb-1">
-                      SKU: {{ item.sku }}
-                    </div>
-                    <div class="text-h6 text-teal-darken-2">
-                      {{ item.price }}
-                    </div>
-                  </div>
-
-                  <!-- Owner info -->
-                  <div v-if="'owner' in item && item.owner" class="mt-3">
-                    <div class="text-caption text-grey">
-                      Владелец: {{ item.owner }}
-                    </div>
-                  </div>
-                </v-card-text>
-
-                <v-card-actions>
-                  <v-btn
-                    color="teal-darken-2"
-                    variant="outlined"
-                    size="small"
-                  >
-                    Подробнее
-                  </v-btn>
-                  
-                  <v-btn
-                    v-if="'sku' in item && item.sku"
-                    color="teal-darken-2"
-                    variant="tonal"
-                    size="small"
-                  >
-                    Заказать
-                  </v-btn>
-                  
-                  <v-btn
-                    v-else
-                    color="teal-darken-2"
-                    variant="tonal"
-                    size="small"
-                  >
-                    Запросить
-                  </v-btn>
-                </v-card-actions>
-              </v-card>
-            </v-col>
-          </v-row>
-
-          <!-- Empty State (no items in current filter) -->
-          <div
-            v-if="filteredAndSortedItems.length === 0"
-            class="text-center py-12"
-          >
+          <!-- Empty State (no services/products loaded) -->
+          <div class="text-center py-12">
             <v-icon
-              icon="mdi-magnify"
+              icon="mdi-package-variant"
               size="64"
               color="grey-lighten-1"
               class="mb-4"
             />
             <div class="text-h6 text-grey mb-2">
-              Ничего не найдено
+              Сервисы и продукты не загружены
             </div>
             <div class="text-body-2 text-grey">
-              Попробуйте изменить параметры поиска
+              Интеграция с API будет добавлена на следующих этапах
             </div>
           </div>
         </div>
@@ -636,31 +352,7 @@ onMounted(() => {
   overflow-y: auto;
 }
 
-.item-card {
-  height: 100%;
-  display: flex;
-  flex-direction: column;
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
-}
 
-.item-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-}
-
-.item-card .v-card-title {
-  padding-bottom: 8px;
-}
-
-.item-card .v-card-text {
-  flex-grow: 1;
-  padding-top: 0;
-}
-
-.item-card .v-card-actions {
-  padding-top: 8px;
-  padding-bottom: 16px;
-}
 
 /* Sections app bar styling */
 .sections-app-bar {
@@ -810,14 +502,5 @@ onMounted(() => {
 
 
 
-/* Card styling */
-.item-card {
-  border: 1px solid rgba(0, 0, 0, 0.12);
-  border-radius: 8px;
-  background-color: rgb(242, 242, 242);
-}
 
-.item-card:hover {
-  border-color: rgba(0, 0, 0, 0.24);
-}
 </style>
