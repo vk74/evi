@@ -115,7 +115,12 @@ watch(() => props.serviceId, () => { loadDetails() })
 </template>
 
 <style scoped>
-.service-details { padding: 16px; }
+.service-details {
+  padding: 16px;
+  background-color: rgb(242, 242, 242);
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  border-radius: 8px;
+}
 .details-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; }
 .detail-block { background: #fff; border: 1px solid rgba(0,0,0,0.08); border-radius: 8px; padding: 12px; }
 .block-title { font-weight: 600; margin-bottom: 8px; }
