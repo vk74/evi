@@ -5,6 +5,7 @@ Displays service information in a card format.
 File: CatalogServiceCard.vue
 -->
 <script setup lang="ts">
+import { ref } from 'vue';
 import type { CatalogService } from './types.services';
 
 // ==================== PROPS ====================
@@ -14,41 +15,24 @@ interface Props {
 
 const props = defineProps<Props>();
 
-// ==================== HELPER FUNCTIONS ====================
-function getPriorityColor(priority: string): string {
-  switch (priority) {
-    case 'high': return 'error';
-    case 'medium': return 'warning';
-    case 'low': return 'success';
-    default: return 'grey';
+// ==================== PHOSPHOR ICONS SUPPORT ====================
+const phosphorIcons = ref<Record<string, any>>({})
+
+const loadPhosphorIcons = async () => {
+  if (Object.keys(phosphorIcons.value).length > 0) return
+  try {
+    const icons = await import('@phosphor-icons/vue')
+    phosphorIcons.value = icons
+  } catch (error) {
+    console.error('Error loading Phosphor icons:', error)
   }
 }
 
-function getStatusColor(status: string): string {
-  switch (status) {
-    case 'active': return 'success';
-    case 'inactive': return 'grey';
-    case 'maintenance': return 'warning';
-    default: return 'grey';
-  }
-}
+loadPhosphorIcons()
 
-function getPriorityText(priority: string): string {
-  switch (priority) {
-    case 'high': return 'Высокий';
-    case 'medium': return 'Средний';
-    case 'low': return 'Низкий';
-    default: return priority;
-  }
-}
-
-function getStatusText(status: string): string {
-  switch (status) {
-    case 'active': return 'Активен';
-    case 'inactive': return 'Неактивен';
-    case 'maintenance': return 'Обслуживание';
-    default: return status;
-  }
+const getPhosphorIcon = (iconName: string | null) => {
+  if (!iconName || !phosphorIcons.value[iconName]) return null
+  return phosphorIcons.value[iconName]
 }
 </script>
 
@@ -59,17 +43,17 @@ function getStatusText(status: string): string {
     hover
   >
     <v-card-title class="d-flex align-center">
-      <v-icon
-        :icon="service.icon"
-        :color="service.color"
+      <component
+        v-if="service.icon && getPhosphorIcon(service.icon)"
+        :is="getPhosphorIcon(service.icon)"
+        size="24"
+        weight="regular"
+        color="rgb(20, 184, 166)"
         class="me-3"
-        size="large"
       />
+      <v-icon v-else class="me-3" size="large" color="teal">mdi-cube</v-icon>
       <div class="flex-grow-1">
         <div class="text-h6">{{ service.name }}</div>
-        <div class="text-caption text-grey">
-          {{ service.category }}
-        </div>
       </div>
     </v-card-title>
 
@@ -78,29 +62,9 @@ function getStatusText(status: string): string {
         {{ service.description }}
       </p>
 
-      <!-- Service-specific info -->
-      <div class="mb-2">
-        <v-chip
-          :color="getPriorityColor(service.priority)"
-          size="small"
-          class="me-2"
-        >
-          {{ getPriorityText(service.priority) }} приоритет
-        </v-chip>
-        
-        <v-chip
-          :color="getStatusColor(service.status)"
-          size="small"
-        >
-          {{ getStatusText(service.status) }}
-        </v-chip>
-      </div>
-
       <!-- Owner info -->
       <div class="mt-3">
-        <div class="text-caption text-grey">
-          Владелец: {{ service.owner }}
-        </div>
+        <div class="text-caption text-grey">Владелец: {{ service.owner }}</div>
       </div>
     </v-card-text>
   </v-card>

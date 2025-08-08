@@ -7,12 +7,15 @@ File: ModuleCatalog.vue
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue';
 import DataLoading from '@/core/ui/loaders/DataLoading.vue';
+import CatalogServiceCard from './services/CatalogServiceCard.vue';
 import { 
   fetchCatalogSections, 
   isCatalogLoading, 
   getCatalogError
 } from './service.fetch.catalog.sections';
 import type { CatalogSection } from './types.catalog';
+import { fetchActiveServices } from './service.fetch.active.services';
+import type { CatalogService } from './services/types.services';
 import {
   searchQuery,
   sortBy,
@@ -54,17 +57,27 @@ const selectedSectionId = ref<string | null>(null);
 // ==================== FILTER STATE ====================
 const filterType = ref<'all' | 'services' | 'products'>('all');
 
-// ==================== TYPES ====================
-// Types will be added when integrating with real data
-
-// ==================== MOCK DATA ====================
-// Mock data will be replaced with real data from API
+// ==================== SERVICES DATA ====================
+const services = ref<CatalogService[]>([]);
 
 // ==================== COMPUTED PROPERTIES ====================
-// Filtering and sorting logic will be added when integrating with real data
+const filteredServices = computed(() => {
+  const q = (searchQuery.value || '').trim().toLowerCase();
+  let list = services.value;
+  if (q) {
+    list = list.filter(s =>
+      s.name.toLowerCase().includes(q) ||
+      (s.description || '').toLowerCase().includes(q) ||
+      (s.owner || '').toLowerCase().includes(q)
+    );
+  }
+  // Simple sort by name for MVP
+  const sorted = [...list].sort((a, b) => a.name.localeCompare(b.name));
+  return sorted;
+});
 
 // ==================== HELPER FUNCTIONS ====================
-// Helper functions will be added when integrating with real data
+// Future helpers can be added here
 
 // ==================== CATALOG SECTIONS FUNCTIONS ====================
 async function loadCatalogSections() {
@@ -85,6 +98,15 @@ async function refreshCatalogSections() {
   await loadCatalogSections();
 }
 
+async function loadActiveServices() {
+  try {
+    const fetched = await fetchActiveServices();
+    services.value = fetched;
+  } catch (error) {
+    console.error('Failed to load active services:', error);
+  }
+}
+
 // ==================== EVENT HANDLERS ====================
 function selectSection(sectionId: string) {
   selectedSectionId.value = sectionId;
@@ -102,6 +124,7 @@ const onTriggerAreaLeave = () => {
 // ==================== LIFECYCLE ====================
 onMounted(() => {
   loadCatalogSections();
+  loadActiveServices();
   loadPhosphorIcons(); // Load Phosphor icons on mount
 });
 </script>
@@ -302,15 +325,29 @@ onMounted(() => {
           <!-- Results Info -->
           <div class="d-flex justify-space-between align-center mb-4">
             <div class="text-subtitle-1">
-              Найдено сервисов: 0
+              Найдено сервисов: {{ filteredServices.length }}
             </div>
             <div class="text-caption text-grey">
               {{ sections.find(s => s.id === selectedSectionId)?.name }}
             </div>
           </div>
 
-          <!-- Empty State (no services/products loaded) -->
-          <div class="text-center py-12">
+          <!-- Services Grid -->
+          <v-row v-if="filteredServices.length > 0" dense>
+            <v-col
+              v-for="svc in filteredServices"
+              :key="svc.id"
+              cols="12"
+              md="6"
+              lg="4"
+              xl="3"
+            >
+              <CatalogServiceCard :service="svc" />
+            </v-col>
+          </v-row>
+
+          <!-- Empty State (no services loaded) -->
+          <div v-else class="text-center py-12">
             <v-icon
               icon="mdi-package-variant"
               size="64"
@@ -318,10 +355,10 @@ onMounted(() => {
               class="mb-4"
             />
             <div class="text-h6 text-grey mb-2">
-              Сервисы и продукты не загружены
+              Активные сервисы не найдены
             </div>
             <div class="text-body-2 text-grey">
-              Интеграция с API будет добавлена на следующих этапах
+              В каталоге пока нет сервисов в эксплуатации
             </div>
           </div>
         </div>

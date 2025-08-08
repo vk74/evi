@@ -77,6 +77,11 @@ export const eventReferenceFiles: Record<string, string[]> = {
     path.resolve(__dirname, '../../../modules/admin/service/events.admin.services.ts')
   ],
   
+  // Catalog events - events for catalog module operations
+  catalog: [
+    path.resolve(__dirname, '../../../modules/catalog/events.catalog.ts')
+  ],
+  
   // Middleware events - events for middleware operations
   middleware: [
     path.resolve(__dirname, '../../middleware/events.middleware.ts')

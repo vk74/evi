@@ -96,3 +96,47 @@ export interface RequiredFieldError extends ValidationError {
     code: 'REQUIRED_FIELD_ERROR'
     field: string
 } 
+
+/**
+ * Service enums (match DB enum labels)
+ */
+export enum ServicePriority {
+    CRITICAL = 'critical',
+    HIGH = 'high',
+    MEDIUM = 'medium',
+    LOW = 'low',
+}
+
+export enum ServiceStatus {
+    IN_PRODUCTION = 'in_production',
+}
+
+/**
+ * Database interface for services (join with owner username)
+ */
+export interface DbService {
+    id: string;
+    name: string;
+    priority: ServicePriority;
+    status: ServiceStatus; // constrained to in_production in query
+    description_short: string | null;
+    icon_name: string | null;
+    owner: string | null; // username
+}
+
+/**
+ * Frontend-compatible DTO for catalog services (backend side)
+ */
+export interface CatalogServiceDTO {
+    id: string;
+    name: string;
+    description: string | null;
+    priority: ServicePriority;
+    status: ServiceStatus;
+    owner: string | null;
+    icon: string | null;
+}
+
+export interface FetchServicesResponse extends ApiResponse {
+    data: CatalogServiceDTO[];
+}
