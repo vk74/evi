@@ -41,18 +41,21 @@ function isCacheValid(): boolean {
   return now - servicesState.lastFetched < SERVICES_CACHE_TTL;
 }
 
-export async function fetchActiveServices(options: FetchServicesOptions = {}): Promise<CatalogService[]> {
+export async function fetchActiveServices(options: FetchServicesOptions & { sectionId?: string } = {}): Promise<CatalogService[]> {
   const uiStore = useUiStore();
 
   try {
-    if (!options.forceRefresh && isCacheValid()) {
+    // Disable global cache when filtering by section to avoid leaking across sections
+    if (!options.forceRefresh && !options.sectionId && isCacheValid()) {
       return servicesState.services;
     }
 
     servicesState.loading = true;
     servicesState.error = null;
 
-    const response = await api.get<FetchServicesResponse>('/api/catalog/fetch-services');
+    const response = await api.get<FetchServicesResponse>('/api/catalog/fetch-services', {
+      params: options.sectionId ? { sectionId: options.sectionId } : undefined,
+    });
 
     if (response.data.success && response.data.data) {
       servicesState.services = response.data.data;

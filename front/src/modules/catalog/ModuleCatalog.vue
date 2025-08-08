@@ -115,7 +115,7 @@ async function refreshCatalogSections() {
 
 async function loadActiveServices() {
   try {
-    const fetched = await fetchActiveServices();
+    const fetched = await fetchActiveServices({ sectionId: selectedSectionId.value || undefined });
     services.value = fetched;
   } catch (error) {
     console.error('Failed to load active services:', error);
@@ -125,6 +125,8 @@ async function loadActiveServices() {
 // ==================== EVENT HANDLERS ====================
 function selectSection(sectionId: string) {
   selectedSectionId.value = sectionId;
+  // reload services for this section
+  loadActiveServices();
 }
 
 // ==================== HOVER TRIGGER AREA ====================

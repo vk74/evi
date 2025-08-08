@@ -27,19 +27,13 @@ function transformRow(row: DbService): CatalogServiceDTO {
   };
 }
 
-export async function fetchActiveServices(_req: Request): Promise<FetchServicesResponse> {
+export async function fetchActiveServices(req: Request): Promise<FetchServicesResponse> {
   try {
-    const result = await pool.query<DbService>(queries.getActiveServices);
+    const sectionId = req.query.sectionId as string | undefined;
+    const result = sectionId
+      ? await pool.query<DbService>(queries.getActiveServicesBySection, [sectionId])
+      : await pool.query<DbService>(queries.getActiveServices);
     const services = result.rows.map(transformRow);
-
-    if (services.length === 0) {
-      // No data case
-      return {
-        success: true,
-        message: 'No active services found',
-        data: [],
-      };
-    }
 
     return {
       success: true,

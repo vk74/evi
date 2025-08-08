@@ -12,7 +12,6 @@ import { connectionHandler } from '../../core/helpers/connection.handler';
 import { fetchActiveServices } from './service.fetch.active.services';
 
 async function fetchActiveServicesLogic(req: Request, _res: Response) {
-  // No request params for MVP
   return fetchActiveServices(req);
 }
 
