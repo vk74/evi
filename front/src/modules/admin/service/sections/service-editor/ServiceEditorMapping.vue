@@ -14,6 +14,7 @@ import { useI18n } from 'vue-i18n'
 import { useUiStore } from '@/core/state/uistate'
 import { useServicesAdminStore } from '../../state.services.admin'
 import { fetchPublishingSections } from './service.admin.fetchpublishingsections'
+import { updateServiceSectionsPublish } from './service.admin.update.sections.publish'
 
 // Types
 interface TableHeader {
@@ -55,11 +56,13 @@ const selectedSections = ref<Set<string>>(new Set())
 
 // Loading state
 const isLoading = ref(false)
+const isPublishing = ref(false)
 
 // Get sections from store
 const sections = computed(() => servicesStore.getPublishingSections)
 const isSectionsLoading = computed(() => servicesStore.getIsPublishingSectionsLoading)
 const sectionsError = computed(() => servicesStore.getPublishingSectionsError)
+const editingServiceId = computed(() => servicesStore.getEditingServiceId)
 
 // Mock data for catalog sections (fallback)
 const mockSections = ref<CatalogSection[]>([
@@ -102,8 +105,15 @@ const loadPublishingSections = async () => {
     servicesStore.setPublishingSectionsLoading(true)
     servicesStore.clearPublishingSectionsError()
     
-    const sectionsData = await fetchPublishingSections()
+    const sectionsData = await fetchPublishingSections(editingServiceId?.value || undefined)
     servicesStore.setPublishingSections(sectionsData)
+    // Preselect sections if API provided selected flags
+    selectedSections.value.clear()
+    sectionsData.forEach(s => {
+      if ((s as any).selected) {
+        selectedSections.value.add(s.id)
+      }
+    })
     
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : 'Произошла ошибка при загрузке секций'
@@ -159,6 +169,13 @@ const handleSearchKeydown = (event: KeyboardEvent) => {
   if (event.key === 'Enter') {
     performSearch()
   }
+}
+
+// Helper: determines if section status is active (supports RU/EN, case-insensitive)
+const isSectionStatusActive = (status: string | null | undefined) => {
+  if (!status) return false
+  const normalized = String(status).trim().toLowerCase()
+  return normalized === 'активна' || normalized === 'active'
 }
 
 // Type for v-data-table sort options
@@ -305,6 +322,25 @@ const handleItemsPerPageChange = async (newItemsPerPage: ItemsPerPageOption) => 
   page.value = 1
   await performSearch()
 }
+
+// Publish handler (full replace; empty selection = unpublish)
+const handlePublish = async () => {
+  if (!editingServiceId?.value) {
+    uiStore.showErrorSnackbar('Не удалось определить сервис для публикации')
+    return
+  }
+  try {
+    isPublishing.value = true
+    const sectionIds = Array.from(selectedSections.value)
+    const resp = await updateServiceSectionsPublish(editingServiceId.value, sectionIds)
+    uiStore.showSuccessSnackbar(`Публикация обновлена: +${resp.addedCount} / -${resp.removedCount}`)
+    await loadPublishingSections()
+  } catch (error: any) {
+    uiStore.showErrorSnackbar(error?.message || 'Не удалось обновить публикацию')
+  } finally {
+    isPublishing.value = false
+  }
+}
 </script>
 
 <template>
@@ -377,7 +413,7 @@ const handleItemsPerPageChange = async (newItemsPerPage: ItemsPerPageOption) => 
 
           <template #[`item.status`]="{ item }">
             <v-chip 
-              :color="item.status === 'Активна' ? 'teal' : 'grey'" 
+              :color="isSectionStatusActive(item.status) ? 'teal' : 'grey'" 
               size="x-small"
             >
               {{ item.status }}
@@ -525,12 +561,14 @@ const handleItemsPerPageChange = async (newItemsPerPage: ItemsPerPageOption) => 
             color="teal"
             variant="outlined"
             class="mb-3"
-            :disabled="!hasSelected"
+            :disabled="!editingServiceId || isPublishing"
+            :loading="isPublishing"
             v-tooltip="{
               text: t('admin.services.editor.mapping.tooltips.publish'),
               location: 'left',
-              disabled: !hasSelected
+              disabled: !editingServiceId || isPublishing
             }"
+            @click="handlePublish"
           >
             <v-icon
               icon="mdi-publish"

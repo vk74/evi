@@ -264,5 +264,71 @@ export const queries = {
         SELECT COUNT(*) as total
         FROM app.services s
         WHERE ($1::text IS NULL OR LOWER(s.name) LIKE LOWER('%' || $1 || '%'))
+    `,
+
+    /**
+     * Checks if all provided catalog section IDs exist
+     * Parameters: [section_ids uuid[]]
+     */
+    checkSectionsExist: `
+        SELECT id
+        FROM app.catalog_sections
+        WHERE id = ANY($1)
+    `,
+
+    /**
+     * Fetches current section bindings for a service
+     * Parameters: [service_id]
+     */
+    fetchServiceSectionIds: `
+        SELECT section_id
+        FROM app.section_services
+        WHERE service_id = $1
+        ORDER BY section_id
+    `,
+
+    /**
+     * Deletes mapping of a service from a section
+     * Parameters: [service_id, section_id]
+     */
+    deleteServiceFromSection: `
+        DELETE FROM app.section_services
+        WHERE service_id = $1 AND section_id = $2
+    `,
+
+    /**
+     * Gets next service order (append index) within a section
+     * Parameters: [section_id]
+     */
+    getNextOrderInSection: `
+        SELECT COALESCE(MAX(service_order) + 1, 0) AS next_order
+        FROM app.section_services
+        WHERE section_id = $1
+    `,
+
+    /**
+     * Inserts mapping into section_services with explicit order
+     * Parameters: [section_id, service_id, service_order]
+     */
+    insertSectionService: `
+        INSERT INTO app.section_services(section_id, service_id, service_order)
+        VALUES ($1, $2, $3)
+    `,
+
+    /**
+     * Resequences service_order within a section to be contiguous from 0
+     * Parameters: [section_id]
+     */
+    resequenceSectionServices: `
+        WITH ordered AS (
+            SELECT service_id,
+                   ROW_NUMBER() OVER (ORDER BY service_order ASC, service_id) - 1 AS new_order
+            FROM app.section_services
+            WHERE section_id = $1
+        )
+        UPDATE app.section_services ss
+        SET service_order = o.new_order
+        FROM ordered o
+        WHERE ss.section_id = $1 AND ss.service_id = o.service_id
     `
 }; 

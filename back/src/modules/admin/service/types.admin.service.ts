@@ -209,6 +209,7 @@ export interface PublishingSection {
     owner: string | null
     status: string | null
     is_public: boolean
+    selected?: boolean
 }
 
 // Fetch publishing sections response interface
@@ -232,6 +233,19 @@ export interface FetchServicesResult {
   totalPages: number
   currentPage: number
   itemsPerPage: number
+}
+
+// Update sections publish request
+export interface UpdateSectionsPublishRequest {
+    service_id: string
+    section_ids: string[]
+}
+
+// Update sections publish response
+export interface UpdateSectionsPublishResponse extends ApiResponse {
+    updatedCount: number
+    addedCount: number
+    removedCount: number
 }
 
 // Fetch services query interface (for controller)

@@ -28,6 +28,7 @@ import deleteCatalogSection from './catalog/controller.admin.delete.sections';
 import createServiceController from './service/sections/controller.admin.create.service';
 import updateServiceController from './service/sections/controller.admin.update.service';
 import fetchPublishingSectionsController from './service/sections/controller.admin.fetch.publishingsections';
+import updateSectionsPublishController from './service/sections/controller.admin.update.sections.publish';
 import fetchAllServicesController from './service/sections/controller.admin.fetchallservices';
 import fetchSingleServiceController from './service/sections/controller.admin.fetchsingleservice';
 import deleteServicesController from './service/sections/controller.admin.deleteservices';
@@ -61,6 +62,7 @@ router.post('/api/admin/catalog/delete-section', validateJWT, deleteCatalogSecti
 // Routes for Services
 router.post('/api/admin/services/create', validateJWT, createServiceController);
 router.post('/api/admin/services/update', validateJWT, updateServiceController);
+router.post('/api/admin/services/update-sections-publish', validateJWT, updateSectionsPublishController);
 router.get('/api/admin/services/fetchallservices', validateJWT, fetchAllServicesController);
 router.get('/api/admin/services/fetchpublishingsections', validateJWT, fetchPublishingSectionsController);
 router.get('/api/admin/services/fetchsingleservice', validateJWT, fetchSingleServiceController);

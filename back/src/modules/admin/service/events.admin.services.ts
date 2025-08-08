@@ -273,6 +273,48 @@ export const EVENTS_ADMIN_SERVICES: EventCollection = {
     severity: 'error',
     eventMessage: 'Error occurred while updating access denied user for service',
     version: '1.0.0'
+  },
+
+  // Sections publish mapping update events
+  'service.sections.publish.update.validation.error': {
+    eventName: 'adminServices.service.sections.publish.update.validation.error',
+    source: 'admin-service',
+    eventType: 'system',
+    severity: 'error',
+    eventMessage: 'Validation error during service sections publish update',
+    version: '1.0.0'
+  },
+  'service.sections.publish.update.not_found': {
+    eventName: 'adminServices.service.sections.publish.update.not_found',
+    source: 'admin-service',
+    eventType: 'system',
+    severity: 'debug',
+    eventMessage: 'Service not found during sections publish update',
+    version: '1.0.0'
+  },
+  'service.sections.publish.update.database_error': {
+    eventName: 'adminServices.service.sections.publish.update.database_error',
+    source: 'admin-service',
+    eventType: 'system',
+    severity: 'error',
+    eventMessage: 'Database error during sections publish update',
+    version: '1.0.0'
+  },
+  'service.sections.publish.update.changed': {
+    eventName: 'adminServices.service.sections.publish.update.changed',
+    source: 'admin-service',
+    eventType: 'system',
+    severity: 'debug',
+    eventMessage: 'Sections publish mapping updated for service',
+    version: '1.0.0'
+  },
+  'service.sections.publish.update.resequenced': {
+    eventName: 'adminServices.service.sections.publish.update.resequenced',
+    source: 'admin-service',
+    eventType: 'system',
+    severity: 'debug',
+    eventMessage: 'Resequenced service order in affected section',
+    version: '1.0.0'
   }
 }
 

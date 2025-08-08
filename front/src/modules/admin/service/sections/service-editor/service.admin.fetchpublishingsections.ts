@@ -20,9 +20,11 @@ import type { PublishingSection, FetchPublishingSectionsResponse } from '../../t
  * @returns Promise with publishing sections data
  * @throws Error if API call fails
  */
-export const fetchPublishingSections = async (): Promise<PublishingSection[]> => {
+export const fetchPublishingSections = async (serviceId?: string): Promise<PublishingSection[]> => {
   try {
-    const response = await api.get<FetchPublishingSectionsResponse>('/api/admin/services/fetchpublishingsections')
+    const response = await api.get<FetchPublishingSectionsResponse>('/api/admin/services/fetchpublishingsections', {
+      params: serviceId ? { serviceId } : undefined
+    })
     
     if (response.data.success) {
       return response.data.data

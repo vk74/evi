@@ -216,6 +216,7 @@ export interface PublishingSection {
   owner: string | null
   status: string | null
   is_public: boolean
+  selected?: boolean
 }
 
 // Fetch publishing sections response interface

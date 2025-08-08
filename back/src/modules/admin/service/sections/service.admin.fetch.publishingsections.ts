@@ -78,11 +78,37 @@ async function resolveUuidsToNames(sections: DbPublishingSection[]): Promise<Pub
  */
 export async function fetchPublishingSections(req: Request): Promise<FetchPublishingSectionsResponse> {
     try {
+        const serviceId = (req.query.serviceId as string) || undefined;
+
         // Fetch publishing sections from database
         const result = await pool.query<DbPublishingSection>(queries.fetchPublishingSections);
         
         // Resolve UUIDs to usernames/groupnames
-        const resolvedSections = await resolveUuidsToNames(result.rows);
+        let resolvedSections = await resolveUuidsToNames(result.rows);
+
+        // If serviceId is provided, mark selected sections
+        if (serviceId) {
+            // Validate service exists
+            const exists = await pool.query(queries.checkServiceExists, [serviceId]);
+            if (exists.rowCount === 0) {
+                const serviceError: ServiceError = {
+                    code: 'NOT_FOUND',
+                    message: `Service with ID ${serviceId} not found`,
+                    details: null
+                };
+                throw serviceError;
+            }
+
+            // Fetch current mappings for the service
+            const currentRes = await pool.query(queries.fetchServiceSectionIds, [serviceId]);
+            const selectedSet = new Set<string>(currentRes.rows.map((r: any) => r.section_id));
+
+            // Add selected flag
+            resolvedSections = resolvedSections.map((s) => ({
+                ...s,
+                selected: selectedSet.has(s.id)
+            }));
+        }
 
         // Combine data into response format
         const response: FetchPublishingSectionsResponse = {
