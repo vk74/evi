@@ -46,6 +46,10 @@ import servicesAdminRu from '@/modules/admin/service/translation.services.ru.jso
 import servicesAdminEn from '@/modules/admin/service/translation.services.en.json'
 // 
 
+// catalog module (frontend user-facing)
+import catalogRu from '@/modules/catalog/translation.catalog.ru.json'
+import catalogEn from '@/modules/catalog/translation.catalog.en.json'
+
 // validation rules
 import validationCommonFieldsRulesRu from '@/core/validation/translation.rules.common.fields.ru.json'
 import validationCommonFieldsRulesEn from '@/core/validation/translation.rules.common.fields.en.json'
@@ -66,7 +70,8 @@ export default {
       groupsEditorRu,
       settingsRu,
       catalogAdminRu,
-      servicesAdminRu
+      servicesAdminRu,
+      catalogRu
     ),
     en: merge({},
       appTranslationsEn,
@@ -82,6 +87,7 @@ export default {
       groupsEditorEn,
       settingsEn,
       catalogAdminEn,
-      servicesAdminEn
+      servicesAdminEn,
+      catalogEn
     )
   }

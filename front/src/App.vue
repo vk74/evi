@@ -138,6 +138,14 @@ const setActiveModule = (module: ModuleName): void => {
   
   // Small delay to ensure menus are closed before module change
   setTimeout(() => {
+    // Soft reset for Catalog module to return to root view on menu click
+    if (module === 'Catalog') {
+      import('./modules/catalog/state.catalog').then(m => {
+        if (m && typeof m.resetCatalogView === 'function') {
+          m.resetCatalogView()
+        }
+      })
+    }
     appStore.setActiveModule(module);
   }, 50);
 };

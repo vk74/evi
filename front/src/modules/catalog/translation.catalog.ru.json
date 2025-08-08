@@ -1,0 +1,59 @@
+{
+  "catalog": {
+    "common": {
+      "moduleTitle": "каталог",
+      "resultsFoundServices": "Найдено сервисов: {count}"
+    },
+    "options": {
+      "searchPlaceholder": "Поиск сервисов и продуктов...",
+      "filterAll": "Все",
+      "filterServices": "Сервисы",
+      "filterProducts": "Продукты",
+      "sortByName": "По названию",
+      "sortByPriority": "По приоритету",
+      "sortByStatus": "По статусу",
+      "sortByOwner": "По владельцу",
+      "sortAsc": "По возрастанию",
+      "sortDesc": "По убыванию"
+    },
+    "loading": {
+      "sections": "Загрузка секций каталога..."
+    },
+    "errors": {
+      "sectionsTitle": "Ошибка загрузки секций",
+      "tryAgain": "Попробовать снова"
+    },
+    "empty": {
+      "sectionsTitle": "Секции каталога не найдены",
+      "sectionsSubtitle": "В каталоге пока нет активных секций",
+      "refresh": "Обновить",
+      "servicesTitle": "Активные сервисы не найдены",
+      "servicesSubtitle": "В каталоге пока нет сервисов в эксплуатации"
+    },
+    "serviceDetails": {
+      "title": "Детали сервиса",
+      "main": "Основные",
+      "roles": "Контакты",
+      "supportGroups": "Группы поддержки",
+      "description": "Описание",
+      "priority": "Приоритет",
+      "status": "Статус",
+      "createdAt": "Дата создания",
+      "owner": "Владелец",
+      "backupOwner": "Резервный владелец",
+      "technicalOwner": "Тех. владелец",
+      "backupTechnicalOwner": "Резервный тех. владелец",
+      "dispatcher": "Диспетчер",
+      "tier1": "1-я линия",
+      "tier2": "2-я линия",
+      "tier3": "3-я линия",
+      "purpose": "Назначение",
+      "longDescription": "Расширенное описание",
+      "offerings": "Сервисные предложения",
+      "offeringsEmpty": "Сервисные предложения не найдены",
+      "inProduction": "В эксплуатации"
+    }
+  }
+}
+
+

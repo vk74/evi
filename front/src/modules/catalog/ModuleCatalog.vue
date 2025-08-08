@@ -6,8 +6,10 @@ File: ModuleCatalog.vue
 -->
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue';
+import { useI18n } from 'vue-i18n'
 import DataLoading from '@/core/ui/loaders/DataLoading.vue';
 import CatalogServiceCard from './services/CatalogServiceCard.vue';
+import ServiceDetails from './services/ServiceDetails.vue'
 import { 
   fetchCatalogSections, 
   isCatalogLoading, 
@@ -22,14 +24,17 @@ import {
   sortDirection,
   optionsBarMode,
   isOptionsBarVisible,
-  sortOptions,
   sortDirections,
   toggleOptionsBarMode,
   optionsBarChevronIcon,
   clearSearch,
-  setHoveringTriggerArea
+  setHoveringTriggerArea,
+  selectedServiceId,
+  setSelectedServiceId
 } from './state.catalog';
 
+
+const { t } = useI18n()
 
 // ==================== PHOSPHOR ICONS SUPPORT ====================
 const phosphorIcons = ref<Record<string, any>>({})
@@ -76,8 +81,18 @@ const filteredServices = computed(() => {
   return sorted;
 });
 
+const sortOptionsI18n = computed(() => [
+  { title: t('catalog.options.sortByName'), value: 'name' },
+  { title: t('catalog.options.sortByPriority'), value: 'priority' },
+  { title: t('catalog.options.sortByStatus'), value: 'status' },
+  { title: t('catalog.options.sortByOwner'), value: 'owner' }
+])
+
 // ==================== HELPER FUNCTIONS ====================
 // Future helpers can be added here
+const onSelectService = (serviceId: string) => {
+  setSelectedServiceId(serviceId)
+}
 
 // ==================== CATALOG SECTIONS FUNCTIONS ====================
 async function loadCatalogSections() {
@@ -164,9 +179,7 @@ onMounted(() => {
         </v-btn>
       </div>
       <v-spacer />
-      <div class="module-title">
-        каталог
-      </div>
+      <div class="module-title">{{ t('catalog.common.moduleTitle') }}</div>
     </v-app-bar>
 
     <!-- ==================== TRIGGER AREA FOR AUTO MODE ==================== -->
@@ -192,7 +205,7 @@ onMounted(() => {
           <!-- Search -->
           <v-text-field
             v-model="searchQuery"
-            label="Поиск сервисов и продуктов..."
+            :label="t('catalog.options.searchPlaceholder')"
             prepend-inner-icon="mdi-magnify"
             variant="outlined"
             density="comfortable"
@@ -212,17 +225,17 @@ onMounted(() => {
           >
             <v-radio
               value="all"
-              label="Все"
+              :label="t('catalog.options.filterAll')"
               color="teal"
             />
             <v-radio
               value="services"
-              label="Сервисы"
+              :label="t('catalog.options.filterServices')"
               color="teal"
             />
             <v-radio
               value="products"
-              label="Продукты"
+              :label="t('catalog.options.filterProducts')"
               color="teal"
             />
           </v-radio-group>
@@ -232,7 +245,7 @@ onMounted(() => {
         <div class="d-flex align-center">
           <v-select
             v-model="sortBy"
-            :items="sortOptions"
+            :items="sortOptionsI18n"
             variant="outlined"
             density="comfortable"
             hide-details
@@ -260,10 +273,15 @@ onMounted(() => {
     <!-- ==================== WORKSPACE AREA ==================== -->
     <div class="workspace-container">
       <v-container class="py-6">
+        <!-- Service details view -->
+        <div v-if="selectedServiceId">
+          <ServiceDetails :service-id="selectedServiceId" />
+        </div>
+        <div v-else>
         <!-- Loading State -->
         <DataLoading
           :loading="isCatalogLoading()"
-          loading-text="Загрузка секций каталога..."
+          :loading-text="t('catalog.loading.sections')"
           size="large"
           color="teal"
         />
@@ -279,9 +297,7 @@ onMounted(() => {
             color="error"
             class="mb-4"
           />
-          <div class="text-h6 text-error mb-2">
-            Ошибка загрузки секций
-          </div>
+          <div class="text-h6 text-error mb-2">{{ t('catalog.errors.sectionsTitle') }}</div>
           <div class="text-body-2 text-grey mb-4">
             {{ getCatalogError() }}
           </div>
@@ -290,7 +306,7 @@ onMounted(() => {
             variant="outlined"
             @click="refreshCatalogSections"
           >
-            Попробовать снова
+            {{ t('catalog.errors.tryAgain') }}
           </v-btn>
         </div>
 
@@ -305,18 +321,16 @@ onMounted(() => {
             color="grey-lighten-1"
             class="mb-4"
           />
-          <div class="text-h6 text-grey mb-2">
-            Секции каталога не найдены
-          </div>
+          <div class="text-h6 text-grey mb-2">{{ t('catalog.empty.sectionsTitle') }}</div>
           <div class="text-body-2 text-grey mb-4">
-            В каталоге пока нет активных секций
+            {{ t('catalog.empty.sectionsSubtitle') }}
           </div>
           <v-btn
             color="teal"
             variant="outlined"
             @click="refreshCatalogSections"
           >
-            Обновить
+            {{ t('catalog.empty.refresh') }}
           </v-btn>
         </div>
 
@@ -324,9 +338,7 @@ onMounted(() => {
         <div v-else-if="!isCatalogLoading() && sections.length > 0">
           <!-- Results Info -->
           <div class="d-flex justify-space-between align-center mb-4">
-            <div class="text-subtitle-1">
-              Найдено сервисов: {{ filteredServices.length }}
-            </div>
+            <div class="text-subtitle-1">{{ t('catalog.common.resultsFoundServices', { count: filteredServices.length }) }}</div>
             <div class="text-caption text-grey">
               {{ sections.find(s => s.id === selectedSectionId)?.name }}
             </div>
@@ -342,7 +354,7 @@ onMounted(() => {
               lg="4"
               xl="3"
             >
-              <CatalogServiceCard :service="svc" />
+              <CatalogServiceCard :service="svc" @select="onSelectService" />
             </v-col>
           </v-row>
 
@@ -354,13 +366,10 @@ onMounted(() => {
               color="grey-lighten-1"
               class="mb-4"
             />
-            <div class="text-h6 text-grey mb-2">
-              Активные сервисы не найдены
-            </div>
-            <div class="text-body-2 text-grey">
-              В каталоге пока нет сервисов в эксплуатации
-            </div>
+            <div class="text-h6 text-grey mb-2">{{ t('catalog.empty.servicesTitle') }}</div>
+            <div class="text-body-2 text-grey">{{ t('catalog.empty.servicesSubtitle') }}</div>
           </div>
+        </div>
         </div>
       </v-container>
     </div>

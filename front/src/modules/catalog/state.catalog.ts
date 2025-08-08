@@ -74,3 +74,16 @@ export const clearSearch = () => {
 export const setHoveringTriggerArea = (isHovering: boolean) => {
   isHoveringTriggerArea.value = isHovering;
 }; 
+
+// ==================== VIEW STATE (INTRA-MODULE) ====================
+// Selected service for details view (null means catalog root view)
+export const selectedServiceId = ref<string | null>(null);
+
+export const setSelectedServiceId = (serviceId: string | null) => {
+  selectedServiceId.value = serviceId;
+};
+
+// Soft reset to root view: leave filters/sort/sections intact, just exit details view
+export const resetCatalogView = () => {
+  selectedServiceId.value = null;
+};

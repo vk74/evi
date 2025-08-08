@@ -14,6 +14,7 @@ interface Props {
 }
 
 const props = defineProps<Props>();
+const emit = defineEmits<{ (e: 'select', serviceId: string): void }>()
 
 // ==================== PHOSPHOR ICONS SUPPORT ====================
 const phosphorIcons = ref<Record<string, any>>({})
@@ -41,6 +42,7 @@ const getPhosphorIcon = (iconName: string | null) => {
     class="service-card"
     elevation="2"
     hover
+    @click="emit('select', props.service.id)"
   >
     <v-card-title class="d-flex align-center">
       <component

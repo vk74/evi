@@ -140,3 +140,51 @@ export interface CatalogServiceDTO {
 export interface FetchServicesResponse extends ApiResponse {
     data: CatalogServiceDTO[];
 }
+
+/**
+ * Database interface for single service details
+ */
+export interface DbServiceDetails {
+    id: string;
+    name: string;
+    priority: ServicePriority;
+    status: ServiceStatus; // constrained to in_production in query
+    description_long: string | null;
+    purpose: string | null;
+    icon_name: string | null;
+    created_at: string;
+    owner: string | null;
+    backup_owner: string | null;
+    technical_owner: string | null;
+    backup_technical_owner: string | null;
+    dispatcher: string | null;
+    support_tier1: string | null;
+    support_tier2: string | null;
+    support_tier3: string | null;
+}
+
+/**
+ * Frontend-compatible DTO for single service details (backend side)
+ */
+export interface CatalogServiceDetailsDTO {
+    id: string;
+    name: string;
+    priority: ServicePriority;
+    status: ServiceStatus;
+    description_long: string | null;
+    purpose: string | null;
+    icon: string | null;
+    created_at: string;
+    owner: string | null;
+    backup_owner: string | null;
+    technical_owner: string | null;
+    backup_technical_owner: string | null;
+    dispatcher: string | null;
+    support_tier1: string | null;
+    support_tier2: string | null;
+    support_tier3: string | null;
+}
+
+export interface FetchServiceDetailsResponse extends ApiResponse {
+    data: CatalogServiceDetailsDTO | null;
+}
