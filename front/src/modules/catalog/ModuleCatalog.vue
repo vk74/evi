@@ -55,6 +55,40 @@ const getPhosphorIcon = (iconName: string | null) => {
   return phosphorIcons.value[iconName]
 }
 
+// ==================== SECTION COLORS HELPERS ====================
+function isValidHexColor(value: string | null | undefined): boolean {
+  if (!value) return false
+  return /^#([A-Fa-f0-9]{3}|[A-Fa-f0-9]{6})$/.test(value.trim())
+}
+
+function darkenHexColor(hex: string, percent: number): string {
+  const clean = hex.replace('#', '')
+  const full = clean.length === 3 ? clean.split('').map(ch => ch + ch).join('') : clean
+  const amount = Math.max(0, Math.min(100, percent)) / 100
+  const r = parseInt(full.substring(0, 2), 16)
+  const g = parseInt(full.substring(2, 4), 16)
+  const b = parseInt(full.substring(4, 6), 16)
+  const dark = (c: number) => Math.max(0, Math.min(255, Math.round(c * (1 - amount))))
+  const toHex = (c: number) => c.toString(16).padStart(2, '0')
+  return `#${toHex(dark(r))}${toHex(dark(g))}${toHex(dark(b))}`
+}
+
+function resolveSectionColors(color: string | null): { bg: string; hover: string } | null {
+  if (!isValidHexColor(color)) return null
+  const bg = color!.trim()
+  const hover = darkenHexColor(bg, 6)
+  return { bg, hover }
+}
+
+function sectionBtnStyle(section: CatalogSection): Record<string, string> {
+  const resolved = resolveSectionColors(section.color || null)
+  if (!resolved) return {}
+  return {
+    '--section-bg': resolved.bg,
+    '--section-bg-hover': resolved.hover
+  }
+}
+
 // ==================== SECTIONS DATA ====================
 const sections = ref<CatalogSection[]>([]);
 const selectedSectionId = ref<string | null>(null);
@@ -163,6 +197,7 @@ onMounted(() => {
             'section-btn', 
             { 'section-active': selectedSectionId === section.id }
           ]"
+          :style="sectionBtnStyle(section)"
           variant="text"
           @click="selectSection(section.id)"
         >
@@ -419,12 +454,18 @@ onMounted(() => {
   height: 64px;
   border-radius: 0;
   color: rgba(0, 0, 0, 0.6) !important;
+  background-color: var(--section-bg, transparent) !important;
+  transition: background-color 0.15s ease;
 }
 
 .section-active {
   border-bottom: 2px solid #009688;
   font-weight: 500;
   color: rgba(0, 0, 0, 0.87) !important;
+}
+
+.section-btn:hover {
+  background-color: var(--section-bg-hover, rgba(0, 0, 0, 0.04)) !important;
 }
 
 .module-title {
