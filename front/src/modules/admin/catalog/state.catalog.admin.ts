@@ -8,6 +8,8 @@ export const useCatalogAdminStore = defineStore('catalogAdmin', {
     isLoading: false,
     activeComponent: 'Catalog.Sections' as 'Catalog.Sections' | 'CatalogSectionEditor',
     editorMode: 'creation' as 'creation' | 'edit',
+    // Active tab inside section editor: 'information' | 'service mappings'
+    activeEditorSection: 'information' as 'information' | 'service mappings',
     editingSectionId: null as string | null,
     
     // Catalog sections data
@@ -21,6 +23,7 @@ export const useCatalogAdminStore = defineStore('catalogAdmin', {
     getIsLoading: (state) => state.isLoading,
     getActiveComponent: (state) => state.activeComponent,
     getEditorMode: (state) => state.editorMode,
+    getActiveEditorSection: (state) => state.activeEditorSection,
     getEditingSectionId: (state) => state.editingSectionId,
     
     // Catalog sections getters
@@ -69,6 +72,8 @@ export const useCatalogAdminStore = defineStore('catalogAdmin', {
       this.selectedSectionPath = 'Catalog.SectionEditor'
       this.editorMode = mode
       this.editingSectionId = sectionId || null
+      // Default to information tab when opening
+      this.activeEditorSection = 'information'
     },
 
     closeSectionEditor() {
@@ -76,10 +81,15 @@ export const useCatalogAdminStore = defineStore('catalogAdmin', {
       this.selectedSectionPath = 'Catalog.Sections'
       this.editorMode = 'creation'
       this.editingSectionId = null
+      this.activeEditorSection = 'information'
     },
 
     setActiveComponent(componentId: string) {
       this.activeComponent = componentId as 'Catalog.Sections' | 'CatalogSectionEditor'
+    },
+
+    setActiveEditorSection(section: 'information' | 'service mappings') {
+      this.activeEditorSection = section
     },
 
     // Catalog sections actions

@@ -69,6 +69,11 @@ const createAxiosInstance = (): AxiosInstance => {
   }, async (error: AxiosError) => {
     const originalRequest = error.config as AxiosRequestConfig & { _retry?: boolean };
     
+    // Treat canceled requests distinctly to avoid false "server not responding" errors
+    if ((axios as any).isCancel?.(error) || (error as any).code === 'ERR_CANCELED' || (error as any).name === 'CanceledError') {
+      return Promise.reject(error);
+    }
+
     if (!error.response) {
       console.error('Network error: Server is not responding');
       return Promise.reject(new Error('Сервер не отвечает'));

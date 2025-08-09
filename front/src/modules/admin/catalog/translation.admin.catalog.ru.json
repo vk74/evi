@@ -8,6 +8,26 @@
         "settings": "настройки"
       },
       "editor": {
+        "mapping": {
+          "title": "привязки сервисов",
+          "search": { "placeholder": "Поиск сервисов..." },
+          "table": {
+            "headers": {
+              "selection": "выбор",
+              "service": "сервис",
+              "owner": "владелец",
+              "status": "статус",
+              "public": "публичный"
+            },
+            "status": { "yes": "да", "no": "нет" }
+          },
+          "actions": {
+            "title": "действия",
+            "publish": "обновить публикации",
+            "saveOrder": "сохранить порядок"
+          },
+          "emptySelected": "Нет выбранных сервисов"
+        },
         "creation": {
           "title": "создание новой секции"
         },

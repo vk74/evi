@@ -25,6 +25,8 @@ import fetchCatalogSections from './catalog/controller.admin.fetch.sections';
 import createCatalogSection from './catalog/controller.admin.create.section';
 import updateCatalogSection from './catalog/controller.admin.update.section';
 import deleteCatalogSection from './catalog/controller.admin.delete.sections';
+import fetchPublishingServicesController from './catalog/controller.admin.fetch.publishingservices';
+import updateSectionServicesPublishController from './catalog/controller.admin.update.services.publish';
 import createServiceController from './service/sections/controller.admin.create.service';
 import updateServiceController from './service/sections/controller.admin.update.service';
 import fetchPublishingSectionsController from './service/sections/controller.admin.fetch.publishingsections';
@@ -58,6 +60,9 @@ router.get('/api/admin/catalog/fetch-sections', validateJWT, fetchCatalogSection
 router.post('/api/admin/catalog/create-section', validateJWT, createCatalogSection);
 router.post('/api/admin/catalog/update-section', validateJWT, updateCatalogSection);
 router.post('/api/admin/catalog/delete-section', validateJWT, deleteCatalogSection);
+router.get('/api/admin/catalog/fetchpublishingservices', validateJWT, fetchPublishingServicesController);
+router.post('/api/admin/catalog/update-services-publish', validateJWT, updateSectionServicesPublishController);
+// Ordering disabled: route removed
 
 // Routes for Services
 router.post('/api/admin/services/create', validateJWT, createServiceController);

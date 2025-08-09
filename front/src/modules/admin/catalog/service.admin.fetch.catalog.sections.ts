@@ -28,8 +28,9 @@ const logger = {
   error: (message: string, error?: any) => console.error(`[CatalogSectionsFetchService] ${message}`, error || '')
 }
 
-// For request cancellation
-let currentController: AbortController | null = null
+// For request cancellation (separate controllers for list and single requests to avoid cross-cancel)
+let currentListController: AbortController | null = null
+let currentSingleController: AbortController | null = null
 
 /**
  * Service for fetching and managing catalog sections data
@@ -59,11 +60,11 @@ export const catalogSectionsFetchService = {
     store.setLoading(true)
     store.clearError()
 
-    // Cancel any in-progress request
-    if (currentController) {
-      currentController.abort()
+    // Cancel any in-progress LIST request only
+    if (currentListController) {
+      currentListController.abort()
     }
-    currentController = new AbortController()
+    currentListController = new AbortController()
 
     try {
       logger.info('Fetching catalog sections from API', { sectionId })
@@ -79,7 +80,7 @@ export const catalogSectionsFetchService = {
         '/api/admin/catalog/fetch-sections',
         {
           params,
-          signal: currentController.signal
+          signal: currentListController.signal
         }
       )
 
@@ -149,7 +150,7 @@ export const catalogSectionsFetchService = {
       throw error
     } finally {
       store.setLoading(false)
-      currentController = null
+      currentListController = null
     }
   },
 
@@ -176,11 +177,11 @@ export const catalogSectionsFetchService = {
     store.setLoading(true)
     store.clearError()
 
-    // Cancel any in-progress request
-    if (currentController) {
-      currentController.abort()
+    // Cancel any in-progress SINGLE request only
+    if (currentSingleController) {
+      currentSingleController.abort()
     }
-    currentController = new AbortController()
+    currentSingleController = new AbortController()
 
     try {
       logger.info('Fetching single catalog section from API', { sectionId })
@@ -190,7 +191,7 @@ export const catalogSectionsFetchService = {
         '/api/admin/catalog/fetch-sections',
         {
           params: { sectionId },
-          signal: currentController.signal
+          signal: currentSingleController.signal
         }
       )
 
@@ -216,7 +217,7 @@ export const catalogSectionsFetchService = {
       return section
 
     } catch (error: any) {
-      // Don't process aborted requests
+      // Don't process aborted requests (silently propagate so caller can decide)
       if (error.name === 'AbortError' || error.name === 'CanceledError') {
         logger.info('Request was cancelled')
         throw error
@@ -240,7 +241,7 @@ export const catalogSectionsFetchService = {
       throw error
     } finally {
       store.setLoading(false)
-      currentController = null
+      currentSingleController = null
     }
   },
 

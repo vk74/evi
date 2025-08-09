@@ -8,6 +8,26 @@
         "settings": "settings"
       },
       "editor": {
+        "mapping": {
+          "title": "service mappings",
+          "search": { "placeholder": "Search services..." },
+          "table": {
+            "headers": {
+              "selection": "selection",
+              "service": "service",
+              "owner": "owner",
+              "status": "status",
+              "public": "public"
+            },
+            "status": { "yes": "yes", "no": "no" }
+          },
+          "actions": {
+            "title": "actions",
+            "publish": "update publish",
+            "saveOrder": "save order"
+          },
+          "emptySelected": "No services selected"
+        },
         "creation": {
           "title": "creation of new section"
         },
