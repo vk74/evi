@@ -15,6 +15,7 @@ import {
   buildEventReferences,
   eventReferenceFiles
 } from './index.reference.events';
+import fs from 'fs';
 
 /**
  * Cache structure that stores fully resolved event schemas by event name
@@ -33,6 +34,19 @@ let eventSchemaCache: EventSchemaCache = {};
  * Flag to track if the cache has been initialized
  */
 let cacheInitialized = false;
+
+/**
+ * Resolves a module path to the correct runtime file.
+ * When running compiled JS in Docker (dist), event reference files are .js.
+ * During development they may be .ts. This helper maps .ts → .js if the .js file exists.
+ */
+const resolveRuntimeModulePath = (tsFilePath: string): string => {
+  const jsFilePath = tsFilePath.replace(/\.ts$/, '.js');
+  if (fs.existsSync(jsFilePath)) {
+    return jsFilePath;
+  }
+  return tsFilePath;
+};
 
 /**
  * Initializes the event reference cache
@@ -110,7 +124,12 @@ const findSourceEventTemplate = async (fullEventName: string): Promise<Partial<B
     // Iterate through all files registered for this domain
     for (const filePath of eventReferenceFiles[domain]) {
       try {
-        const moduleExports = await import(filePath);
+        const modulePath = resolveRuntimeModulePath(filePath);
+        if (!fs.existsSync(modulePath)) {
+          console.error(`Error importing from ${modulePath}: File not found`);
+          continue;
+        }
+        const moduleExports = await import(modulePath);
         
         // Find all exported event collections (constants with UPPERCASE names)
         for (const [collectionName, collection] of Object.entries(moduleExports)) {
@@ -132,8 +151,8 @@ const findSourceEventTemplate = async (fullEventName: string): Promise<Partial<B
             }
           }
         }
-      } catch (error) {
-        console.error(`Error importing from ${filePath}:`, error);
+        } catch (error) {
+          console.error(`Error importing from ${resolveRuntimeModulePath(filePath)}:`, error);
       }
     }
     

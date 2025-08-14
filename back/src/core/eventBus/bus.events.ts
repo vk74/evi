@@ -15,10 +15,12 @@ import {
 import { validateEvent } from './validate.events';
 import { eventBusTelemetry } from './telemetry.events';
 
-// Stack trace elements for authorized callers
+// Stack trace elements for authorized callers (support both TS and compiled JS)
 const AUTHORIZED_CALLERS = [
   'validate.events.ts',
-  'fabric.events.ts'
+  'validate.events.js',
+  'fabric.events.ts',
+  'fabric.events.js'
 ];
 
 /**

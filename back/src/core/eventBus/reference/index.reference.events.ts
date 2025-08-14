@@ -8,6 +8,19 @@ import { initializeEventCache } from './cache.reference.events';
 import fs from 'fs';
 
 /**
+ * Resolves a module path to the correct runtime file.
+ * When running compiled JS in Docker (dist), event reference files are .js.
+ * During development they may be .ts. This helper maps .ts → .js if the .js file exists.
+ */
+const resolveRuntimeModulePath = (tsFilePath: string): string => {
+  const jsFilePath = tsFilePath.replace(/\.ts$/, '.js');
+  if (fs.existsSync(jsFilePath)) {
+    return jsFilePath;
+  }
+  return tsFilePath;
+};
+
+/**
  * Registry of event reference files
  * Each entry contains the path to a file containing event definitions
  */
@@ -159,16 +172,17 @@ export const buildEventReferences = async (): Promise<Record<string, Record<stri
     
     // Process each file in the domain
     for (const filePath of files) {
+      const modulePath = resolveRuntimeModulePath(filePath);
       try {
-        if (!fs.existsSync(filePath)) {
-          console.warn(`[EventReference] File not found for domain '${domain}': ${filePath}`);
+        if (!fs.existsSync(modulePath)) {
+          console.warn(`[EventReference] File not found for domain '${domain}': ${modulePath}`);
           domainsWithErrors.push(domain);
           continue;
         }
         // Dynamically import the module using ES modules syntax
-        const eventModule = await import(filePath);
+        const eventModule = await import(modulePath);
         
-        console.log(`[EventReference] Loading module from ${filePath}:`, Object.keys(eventModule));
+        console.log(`[EventReference] Loading module from ${modulePath}:`, Object.keys(eventModule));
         
         // Find all exported constants that look like event collections
         const collections = Object.entries(eventModule)
