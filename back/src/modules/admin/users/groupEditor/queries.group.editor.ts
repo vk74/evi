@@ -82,7 +82,7 @@ export const queries: GroupEditorQueries = {
         is_system
       )
       VALUES (
-        uuid_generate_v4(),
+        gen_random_uuid(),
         $1, $2, $3, $4
       )
       RETURNING group_id
