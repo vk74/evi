@@ -292,6 +292,68 @@ watch(
   { deep: true }
 );
 
+// Watch for login state changes to load UI settings
+watch(
+  isLoggedIn,
+  async (newLoginState) => {
+    if (newLoginState) {
+      console.log('User logged in. Loading UI settings...');
+      try {
+        await appSettingsStore.loadUiSettings();
+        console.log('UI settings loaded successfully');
+      } catch (error) {
+        console.warn('Failed to load UI settings:', error);
+        // Continue with default values
+      }
+      
+      console.log('Loading additional settings...');
+      
+      // Load Work module settings if not already cached
+      if (!appSettingsStore.hasValidCache('Application.Work')) {
+        try {
+          // Import the service to fetch settings
+          const { fetchSettings } = await import('./modules/admin/settings/service.fetch.settings');
+          const settings = await fetchSettings('Application.Work');
+          if (settings) {
+            appSettingsStore.cacheSettings('Application.Work', settings);
+          }
+        } catch (error) {
+          console.warn('Failed to load Work module settings:', error);
+        }
+      }
+      
+      // Load Reports module settings if not already cached
+      if (!appSettingsStore.hasValidCache('Application.Reports')) {
+        try {
+          // Import the service to fetch settings
+          const { fetchSettings } = await import('./modules/admin/settings/service.fetch.settings');
+          const settings = await fetchSettings('Application.Reports');
+          if (settings) {
+            appSettingsStore.cacheSettings('Application.Reports', settings);
+          }
+        } catch (error) {
+          console.warn('Failed to load Reports module settings:', error);
+        }
+      }
+      
+      // Load KnowledgeBase module settings if not already cached
+      if (!appSettingsStore.hasValidCache('Application.KnowledgeBase')) {
+        try {
+          // Import the service to fetch settings
+          const { fetchSettings } = await import('./modules/admin/settings/service.fetch.settings');
+          const settings = await fetchSettings('Application.KnowledgeBase');
+          if (settings) {
+            appSettingsStore.cacheSettings('Application.KnowledgeBase', settings);
+          }
+        } catch (error) {
+          console.warn('Failed to load KnowledgeBase module settings:', error);
+        }
+      }
+    }
+  },
+  { immediate: false }
+);
+
 // Prevent ResizeObserver errors - more robust implementation
 const preventResizeErrors = (): void => {
   // Error handler for ResizeObserver errors
@@ -332,49 +394,15 @@ onMounted(async () => {
     isAdminExpanded.value = true;
   }
   
+  // If user is already logged in, load UI settings
   if (isLoggedIn.value) {
-    console.log('App mounted. User is logged in.');
-    
-    // Load Work module settings if not already cached
-    if (!appSettingsStore.hasValidCache('Application.Work')) {
-      try {
-        // Import the service to fetch settings
-        const { fetchSettings } = await import('./modules/admin/settings/service.fetch.settings');
-        const settings = await fetchSettings('Application.Work');
-        if (settings) {
-          appSettingsStore.cacheSettings('Application.Work', settings);
-        }
-      } catch (error) {
-        console.warn('Failed to load Work module settings:', error);
-      }
-    }
-    
-    // Load Reports module settings if not already cached
-    if (!appSettingsStore.hasValidCache('Application.Reports')) {
-      try {
-        // Import the service to fetch settings
-        const { fetchSettings } = await import('./modules/admin/settings/service.fetch.settings');
-        const settings = await fetchSettings('Application.Reports');
-        if (settings) {
-          appSettingsStore.cacheSettings('Application.Reports', settings);
-        }
-      } catch (error) {
-        console.warn('Failed to load Reports module settings:', error);
-      }
-    }
-    
-    // Load KnowledgeBase module settings if not already cached
-    if (!appSettingsStore.hasValidCache('Application.KnowledgeBase')) {
-      try {
-        // Import the service to fetch settings
-        const { fetchSettings } = await import('./modules/admin/settings/service.fetch.settings');
-        const settings = await fetchSettings('Application.KnowledgeBase');
-        if (settings) {
-          appSettingsStore.cacheSettings('Application.KnowledgeBase', settings);
-        }
-      } catch (error) {
-        console.warn('Failed to load KnowledgeBase module settings:', error);
-      }
+    console.log('User already logged in. Loading UI settings...');
+    try {
+      await appSettingsStore.loadUiSettings();
+      console.log('UI settings loaded successfully');
+    } catch (error) {
+      console.warn('Failed to load UI settings:', error);
+      // Continue with default values
     }
   }
   

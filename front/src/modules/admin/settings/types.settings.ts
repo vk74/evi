@@ -15,6 +15,11 @@
 export const SETTINGS_CACHE_TTL = 5 * 60 * 1000;
 
 /**
+ * UI Settings Cache TTL in milliseconds (5 minutes)
+ */
+export const UI_SETTINGS_CACHE_TTL = 10 * 60 * 1000; // 10 minutes
+
+/**
  * Environment type enum for settings
  */
 export enum Environment {
@@ -36,6 +41,7 @@ export interface AppSetting {
   default_value?: any;        // Default value for the setting
   confidentiality: boolean;   // Whether this setting contains sensitive data
   description?: string;       // Optional setting description
+  is_ui: boolean;             // Whether this setting affects UI visibility
 }
 
 /**
@@ -69,6 +75,12 @@ export interface FetchSettingsBaseRequest {
    * Default: false
    */
   includeConfidential?: boolean;
+
+  /**
+   * Whether to filter by UI settings only
+   * Default: undefined (no filtering)
+   */
+  isUiOnly?: boolean;
 }
 
 /**

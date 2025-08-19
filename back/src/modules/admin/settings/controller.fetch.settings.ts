@@ -219,6 +219,7 @@ async function fetchSettings(req: AuthenticatedRequest, res: Response): Promise<
     // Set defaults
     // Only administrators can access confidential settings
     const includeConfidential = isAdmin && params.includeConfidential === true;
+    const isUiOnly = params.isUiOnly;
     
     if (params.includeConfidential && !isAdmin) {
       fabricEvents.createAndPublishEvent({
@@ -325,7 +326,8 @@ async function fetchSettings(req: AuthenticatedRequest, res: Response): Promise<
         const request: FetchSettingsBySectionRequest = {
           sectionPath: params.sectionPath,
           environment,
-          includeConfidential
+          includeConfidential,
+          isUiOnly
         };
 
         // Передаём объект запроса в сервис
@@ -341,7 +343,8 @@ async function fetchSettings(req: AuthenticatedRequest, res: Response): Promise<
       case 'all': {
         const request: FetchAllSettingsRequest = {
           environment,
-          includeConfidential
+          includeConfidential,
+          isUiOnly
         };
 
         // Передаём объект запроса в сервис
@@ -383,6 +386,7 @@ async function fetchSettings(req: AuthenticatedRequest, res: Response): Promise<
         type,
         settingsCount: result.settings?.length || (result.setting ? 1 : 0),
         confidentialIncluded: includeConfidential,
+        isUiOnly,
         userId,
         username,
         requestorUuid,

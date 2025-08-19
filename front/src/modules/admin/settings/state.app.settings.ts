@@ -13,7 +13,8 @@
 import { defineStore } from 'pinia';
 import { 
   AppSetting, 
-  SettingsCacheEntry 
+  SettingsCacheEntry,
+  UI_SETTINGS_CACHE_TTL
 } from './types.settings';
 
 // Define the interface for the store state
@@ -25,6 +26,7 @@ interface AppSettingsState {
   
   // Settings Data State
   settingsCache: Record<string, SettingsCacheEntry>; // Cache of settings by section
+  uiSettingsCache: Record<string, SettingsCacheEntry>; // Cache of UI settings
   isLoading: boolean;             // Whether settings are currently being loaded
   lastError: string | null;       // Last error encountered when loading settings
 }
@@ -47,6 +49,7 @@ export const useAppSettingsStore = defineStore('appSettings', {
       'Application.System.Logging.FileLoggingBlock'
     ],
     settingsCache: {}, // Empty cache to start
+    uiSettingsCache: {}, // Empty UI settings cache to start
     isLoading: false,
     lastError: null
   }),
@@ -123,13 +126,26 @@ export const useAppSettingsStore = defineStore('appSettings', {
     
     // Check if Work module is visible based on settings
     isWorkModuleVisible: (state) => (): boolean => {
+      // First check UI settings cache
+      const uiCacheEntry = state.uiSettingsCache['Application.Work'];
+      if (uiCacheEntry) {
+        const now = Date.now();
+        if ((now - uiCacheEntry.timestamp) < UI_SETTINGS_CACHE_TTL) {
+          const visibilitySetting = uiCacheEntry.data.find(
+            setting => setting.setting_name === 'work.module.is.visible'
+          );
+          return visibilitySetting ? visibilitySetting.value === true : false; // Default to false
+        }
+      }
+      
+      // Fallback to regular cache
       const cacheEntry = state.settingsCache['Application.Work'];
-      if (!cacheEntry) return false; // Hide if no cache entry
+      if (!cacheEntry) return false; // Default to hidden if no cache entry
       
       // Check if cache has expired
       const now = Date.now();
       if ((now - cacheEntry.timestamp) >= SETTINGS_CACHE_TTL) {
-        return false; // Hide if cache expired
+        return false; // Default to hidden if cache expired
       }
       
       // Find the work.module.is.visible setting
@@ -137,18 +153,31 @@ export const useAppSettingsStore = defineStore('appSettings', {
         setting => setting.setting_name === 'work.module.is.visible'
       );
       
-      return visibilitySetting ? visibilitySetting.value === true : false;
+      return visibilitySetting ? visibilitySetting.value === true : false; // Default to false
     },
     
     // Check if Reports module is visible based on settings
     isReportsModuleVisible: (state) => (): boolean => {
+      // First check UI settings cache
+      const uiCacheEntry = state.uiSettingsCache['Application.Reports'];
+      if (uiCacheEntry) {
+        const now = Date.now();
+        if ((now - uiCacheEntry.timestamp) < UI_SETTINGS_CACHE_TTL) {
+          const visibilitySetting = uiCacheEntry.data.find(
+            setting => setting.setting_name === 'reports.module.is.visible'
+          );
+          return visibilitySetting ? visibilitySetting.value === true : false; // Default to false
+        }
+      }
+      
+      // Fallback to regular cache
       const cacheEntry = state.settingsCache['Application.Reports'];
-      if (!cacheEntry) return false; // Hide if no cache entry
+      if (!cacheEntry) return false; // Default to hidden if no cache entry
       
       // Check if cache has expired
       const now = Date.now();
       if ((now - cacheEntry.timestamp) >= SETTINGS_CACHE_TTL) {
-        return false; // Hide if cache expired
+        return false; // Default to hidden if cache expired
       }
       
       // Find the reports.module.is.visible setting
@@ -156,18 +185,31 @@ export const useAppSettingsStore = defineStore('appSettings', {
         setting => setting.setting_name === 'reports.module.is.visible'
       );
       
-      return visibilitySetting ? visibilitySetting.value === true : false;
+      return visibilitySetting ? visibilitySetting.value === true : false; // Default to false
     },
     
     // Check if KnowledgeBase module is visible based on settings
     isKnowledgeBaseModuleVisible: (state) => (): boolean => {
+      // First check UI settings cache
+      const uiCacheEntry = state.uiSettingsCache['Application.KnowledgeBase'];
+      if (uiCacheEntry) {
+        const now = Date.now();
+        if ((now - uiCacheEntry.timestamp) < UI_SETTINGS_CACHE_TTL) {
+          const visibilitySetting = uiCacheEntry.data.find(
+            setting => setting.setting_name === 'knowledgebase.module.is.visible'
+          );
+          return visibilitySetting ? visibilitySetting.value === true : false; // Default to false
+        }
+      }
+      
+      // Fallback to regular cache
       const cacheEntry = state.settingsCache['Application.KnowledgeBase'];
-      if (!cacheEntry) return false; // Hide if no cache entry
+      if (!cacheEntry) return false; // Default to hidden if no cache entry
       
       // Check if cache has expired
       const now = Date.now();
       if ((now - cacheEntry.timestamp) >= SETTINGS_CACHE_TTL) {
-        return false; // Hide if cache expired
+        return false; // Default to hidden if cache expired
       }
       
       // Find the knowledgebase.module.is.visible setting
@@ -175,7 +217,7 @@ export const useAppSettingsStore = defineStore('appSettings', {
         setting => setting.setting_name === 'knowledgebase.module.is.visible'
       );
       
-      return visibilitySetting ? visibilitySetting.value === true : false;
+      return visibilitySetting ? visibilitySetting.value === true : false; // Default to false
     },
   },
   
@@ -264,6 +306,7 @@ export const useAppSettingsStore = defineStore('appSettings', {
     // Clear all cache
     clearAllCache() {
       this.settingsCache = {};
+      this.uiSettingsCache = {};
       console.log('Cleared all settings cache');
     },
     
@@ -337,6 +380,63 @@ export const useAppSettingsStore = defineStore('appSettings', {
     rollbackSetting(sectionPath: string, settingName: string, originalValue: any): void {
       this.setSetting(sectionPath, settingName, originalValue);
       console.log(`Rolled back setting ${sectionPath}.${settingName} to:`, originalValue);
+    },
+
+    /**
+     * Load UI settings from backend
+     * @returns Promise that resolves when UI settings are loaded
+     */
+    async loadUiSettings(): Promise<void> {
+      try {
+        // Import the service to fetch UI settings
+        const { fetchUiSettings } = await import('./service.fetch.settings');
+        const uiSettings = await fetchUiSettings();
+        
+        // Group UI settings by section
+        const settingsBySection: Record<string, AppSetting[]> = {};
+        uiSettings.forEach(setting => {
+          if (!settingsBySection[setting.section_path]) {
+            settingsBySection[setting.section_path] = [];
+          }
+          settingsBySection[setting.section_path].push(setting);
+        });
+        
+        // Cache UI settings by section
+        Object.entries(settingsBySection).forEach(([sectionPath, settings]) => {
+          this.uiSettingsCache[sectionPath] = {
+            timestamp: Date.now(),
+            data: settings
+          };
+        });
+        
+        console.log(`Loaded ${uiSettings.length} UI settings for ${Object.keys(settingsBySection).length} sections`);
+      } catch (error) {
+        console.warn('Failed to load UI settings:', error);
+        // Don't throw error - continue with default values
+      }
+    },
+
+    /**
+     * Get all UI settings from cache
+     * @returns Array of all UI settings
+     */
+    getUiSettings(): AppSetting[] {
+      const allSettings: AppSetting[] = [];
+      Object.values(this.uiSettingsCache).forEach(cacheEntry => {
+        allSettings.push(...cacheEntry.data);
+      });
+      return allSettings;
+    },
+
+    /**
+     * Check if UI settings cache is valid
+     * @returns boolean indicating if UI settings cache is valid
+     */
+    hasValidUiSettingsCache(): boolean {
+      const now = Date.now();
+      return Object.values(this.uiSettingsCache).some(cacheEntry => 
+        (now - cacheEntry.timestamp) < UI_SETTINGS_CACHE_TTL
+      );
     }
   },
   

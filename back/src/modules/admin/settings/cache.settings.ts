@@ -56,6 +56,8 @@ export function setCache(settings: AppSetting[]): void {
 
   const sectionSet = new Set(settings.map(s => s.section_path));
   
+
+  
   createEventSafely(SETTINGS_CACHE_EVENTS.INITIALIZED.eventName, {
     settingsCount: settings.length,
     sectionsCount: sectionSet.size

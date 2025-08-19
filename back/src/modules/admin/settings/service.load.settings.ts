@@ -63,9 +63,12 @@ export async function loadSettings(): Promise<void> {
         value: row.value, // JSONB field, already parsed by pg
         validation_schema: row.validation_schema, // JSONB field
         default_value: row.default_value, // JSONB field
+        is_ui: row.is_ui, // Boolean field for UI filtering
         updated_at: new Date(row.updated_at)
       } as AppSetting;
     });
+
+
 
     // Update the centralized cache
     setCache(settings);

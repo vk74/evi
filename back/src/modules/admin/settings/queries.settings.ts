@@ -27,6 +27,7 @@ export const queries: SettingsQueries = {
         default_value,
         confidentiality,
         description,
+        is_ui,
         updated_at
       FROM app.app_settings
       ORDER BY section_path, setting_name
@@ -45,6 +46,7 @@ export const queries: SettingsQueries = {
         default_value,
         confidentiality,
         description,
+        is_ui,
         updated_at
       FROM app.app_settings
       WHERE section_path = $1
@@ -65,6 +67,7 @@ export const queries: SettingsQueries = {
         default_value,
         confidentiality,
         description,
+        is_ui,
         updated_at
       FROM app.app_settings
       WHERE section_path LIKE $1 || '%'
@@ -90,6 +93,7 @@ export const queries: SettingsQueries = {
         default_value,
         confidentiality,
         description,
+        is_ui,
         updated_at
     `
   }

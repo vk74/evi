@@ -25,6 +25,7 @@ export interface AppSetting {
   default_value?: any;         // Optional default value
   confidentiality: boolean;    // Whether this setting contains sensitive data
   description?: string;        // Optional setting description
+  is_ui: boolean;              // Whether this setting affects UI visibility
   updated_at: Date;           // Last update timestamp
 }
 
@@ -62,6 +63,11 @@ export interface FetchSettingsBaseRequest {
    * Default: false
    */
   includeConfidential?: boolean;
+  /**
+   * Whether to filter by UI settings only
+   * Default: undefined (no filtering)
+   */
+  isUiOnly?: boolean;
 }
 
 /**

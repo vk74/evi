@@ -17,6 +17,7 @@ import {
   FetchSettingsRequest,
   FetchSettingByNameRequest, 
   FetchSettingsBySectionRequest,
+  FetchAllSettingsRequest,
   FetchSettingsResponse,
   SETTINGS_CACHE_TTL
 } from './types.settings';
@@ -27,9 +28,10 @@ import {
  * 
  * @param section_path - The section path to fetch settings for
  * @param forceRefresh - Whether to force a refresh from the server (bypass cache)
+ * @param isUiOnly - Whether to fetch only UI settings
  * @returns Promise that resolves to an array of settings
  */
-export async function fetchSettings(section_path: string, forceRefresh = false): Promise<AppSetting[]> {
+export async function fetchSettings(section_path: string, forceRefresh = false, isUiOnly = false): Promise<AppSetting[]> {
   const store = useAppSettingsStore();
   const uiStore = useUiStore();
   
@@ -52,7 +54,8 @@ export async function fetchSettings(section_path: string, forceRefresh = false):
       type: 'bySection',  // Using bySection type to fetch settings for a specific section
       sectionPath: section_path,
       environment: 'all', // Get settings for all environments
-      includeConfidential: false // Don't include confidential settings
+      includeConfidential: false, // Don't include confidential settings
+      isUiOnly: isUiOnly || undefined // Only apply filter if explicitly requested
     };
     
     // Make API request using the centralized api client
@@ -179,6 +182,59 @@ export async function fetchSettingByName(section_path: string, settingName: stri
 export function isSettingsCacheExpired(section_path: string): boolean {
   const store = useAppSettingsStore();
   return !store.hasValidCache(section_path);
+}
+
+/**
+ * Fetches UI settings from the backend
+ * 
+ * @returns Promise that resolves to an array of UI settings
+ */
+export async function fetchUiSettings(): Promise<AppSetting[]> {
+  const uiStore = useUiStore();
+  
+  console.log('Fetching UI settings from backend');
+  
+  try {
+    // Prepare request parameters for all UI settings
+    const requestData: FetchAllSettingsRequest = {
+      type: 'all',
+      environment: 'all',
+      includeConfidential: false,
+      isUiOnly: true // Only fetch UI settings
+    };
+    
+    // Make API request using the centralized api client
+    const response = await api.post<FetchSettingsResponse>(
+      '/api/core/settings/fetch-settings',
+      requestData
+    );
+    
+    // Handle response
+    if (response.data.success && response.data.settings) {
+      console.log(`Fetched ${response.data.settings.length} UI settings`);
+      return response.data.settings;
+    } else {
+      // Handle error case
+      const errorMessage = response.data.error || 'Unknown error fetching UI settings';
+      console.warn('Error fetching UI settings:', errorMessage);
+      
+      // Show error message to user
+      uiStore.showErrorSnackbar(`Error loading UI settings: ${errorMessage}`);
+      
+      // Return empty settings array
+      return [];
+    }
+  } catch (error) {
+    // Handle exception
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    console.error('Error fetching UI settings:', error);
+    
+    // Show error message to user
+    uiStore.showErrorSnackbar(`Error loading UI settings: ${errorMessage}`);
+    
+    // Return empty settings array
+    return [];
+  }
 }
 
 /**

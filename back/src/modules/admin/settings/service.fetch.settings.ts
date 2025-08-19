@@ -56,6 +56,22 @@ function filterConfidentialSettings(settings: AppSetting[], includeConfidential 
 }
 
 /**
+ * Filter settings by UI flag
+ * @param settings Settings to filter
+ * @param isUiOnly Whether to filter by UI settings only
+ * @returns Filtered settings
+ */
+function filterSettingsByUiFlag(settings: AppSetting[], isUiOnly?: boolean): AppSetting[] {
+  if (isUiOnly === undefined || isUiOnly === null) {
+    return settings;
+  }
+  
+  const filteredSettings = settings.filter(setting => setting.is_ui === isUiOnly);
+  
+  return filteredSettings;
+}
+
+/**
  * Normalize section path to support both PascalCase and snake_case formats
  * @param path Section path to normalize
  * @returns Array of normalized path variants for comparison
@@ -213,7 +229,7 @@ export async function fetchSettingByName(request: FetchSettingByNameRequest, req
  */
 export async function fetchSettingsBySection(request: FetchSettingsBySectionRequest, req: Request): Promise<AppSetting[]> {
   try {
-    const { sectionPath, environment, includeConfidential = false } = request;
+    const { sectionPath, environment, includeConfidential = false, isUiOnly } = request;
     const requestorUuid = getRequestorUuidFromReq(req);
     
     // Publish initiated event
@@ -244,6 +260,7 @@ export async function fetchSettingsBySection(request: FetchSettingsBySectionRequ
     // Apply filters
     settings = filterSettingsByEnvironment(settings, environment);
     settings = filterConfidentialSettings(settings, includeConfidential);
+    settings = filterSettingsByUiFlag(settings, isUiOnly);
 
     // Publish success event
     fabricEvents.createAndPublishEvent({
@@ -253,7 +270,8 @@ export async function fetchSettingsBySection(request: FetchSettingsBySectionRequ
         sectionPath, 
         settingsCount: settings.length,
         pathVariants,
-        requestorUuid
+        requestorUuid,
+        isUiOnly
       }
     });
 
@@ -291,7 +309,7 @@ export async function fetchSettingsBySection(request: FetchSettingsBySectionRequ
  */
 export async function fetchAllSettings(request: FetchAllSettingsRequest, req: Request): Promise<AppSetting[]> {
   try {
-    const { environment, includeConfidential = false } = request;
+    const { environment, includeConfidential = false, isUiOnly } = request;
     const requestorUuid = getRequestorUuidFromReq(req);
     
     // Publish initiated event
@@ -301,6 +319,7 @@ export async function fetchAllSettings(request: FetchAllSettingsRequest, req: Re
       payload: { 
         environment, 
         includeConfidential,
+        isUiOnly,
         requestorUuid
       }
     });
@@ -310,6 +329,7 @@ export async function fetchAllSettings(request: FetchAllSettingsRequest, req: Re
     // Apply filters
     settings = filterSettingsByEnvironment(settings, environment);
     settings = filterConfidentialSettings(settings, includeConfidential);
+    settings = filterSettingsByUiFlag(settings, isUiOnly);
 
     // Publish success event
     fabricEvents.createAndPublishEvent({
@@ -317,6 +337,7 @@ export async function fetchAllSettings(request: FetchAllSettingsRequest, req: Re
       req,
       payload: { 
         settingsCount: settings.length,
+        isUiOnly,
         requestorUuid
       }
     });

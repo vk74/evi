@@ -25,6 +25,28 @@ export const SETTINGS_FETCH_EVENTS = {
     payload: null, // Will be of type { fetchType: string, environment?: string }
     version: '1.0.0'
   },
+
+  // When UI filter is applied to settings fetch
+  UI_FILTER_APPLIED: {
+    eventName: 'settings.fetch.ui.filter.applied',
+    source: 'settings service module',
+    eventType: 'app' as const,
+    severity: 'debug' as const,
+    eventMessage: 'UI filter applied to settings fetch',
+    payload: null, // Will be of type { isUiOnly: boolean }
+    version: '1.0.0'
+  },
+
+  // When UI settings are successfully fetched
+  UI_SETTINGS_FETCHED: {
+    eventName: 'settings.fetch.ui.settings.fetched',
+    source: 'settings service module',
+    eventType: 'app' as const,
+    severity: 'debug' as const,
+    eventMessage: 'UI settings successfully fetched',
+    payload: null, // Will be of type { settingsCount: number, isUiOnly: boolean }
+    version: '1.0.0'
+  },
   
   // When a settings fetch operation is completed successfully
   SUCCESS: {
