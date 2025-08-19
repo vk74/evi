@@ -105,6 +105,7 @@ CREATE TABLE IF NOT EXISTS app.app_settings (
     default_value JSONB,
     confidentiality BOOLEAN NOT NULL DEFAULT false,
     description TEXT,
+    is_ui BOOLEAN DEFAULT FALSE,
     updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
     PRIMARY KEY (section_path, setting_name, environment)
 );
@@ -264,3 +265,6 @@ BEGIN
     WHERE expires_at < now();
 END;
 $function$;
+
+-- Set sequence ownership
+ALTER SEQUENCE app.tokens_id_seq OWNED BY app.tokens.id;

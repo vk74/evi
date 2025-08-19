@@ -2,6 +2,9 @@
 -- Description: Insert seed data
 -- Backend file: init_seeds
 
+-- Import application settings
+\i /docker-entrypoint-initdb.d/seeds/004_app_settings.sql
+
 -- Insert system users
 INSERT INTO app.users (user_id, username, hashed_password, email, is_staff, account_status, first_name, last_name, created_at) VALUES
 -- System administrator
