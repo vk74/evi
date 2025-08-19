@@ -1,5 +1,52 @@
 {
-  "dependencies": {
-    "@modelcontextprotocol/server-postgres": "^0.6.2"
+  "name": "ev2",
+  "version": "0.5.0",
+  "description": "EV2 Application - Backend, Frontend, and Database",
+  "private": true,
+  "workspaces": [
+    "back",
+    "front"
+  ],
+  "scripts": {
+    "version:sync": "node scripts/sync-version.js",
+    "version:bump:patch": "npm version patch && npm run version:sync",
+    "version:bump:minor": "npm version minor && npm run version:sync",
+    "version:bump:major": "npm version major && npm run version:sync",
+    "version:set": "node scripts/sync-version.js",
+    "install:all": "npm install && cd back && npm install && cd ../front && npm install",
+    "build:all": "npm run build:backend && npm run build:frontend",
+    "build:backend": "cd back && npm run build",
+    "build:frontend": "cd front && npm run build",
+    "test:all": "npm run test:backend && npm run test:frontend",
+    "test:backend": "cd back && npm test",
+    "test:frontend": "cd front && npm run test-front:all",
+    "dev:backend": "cd back && npm run dev",
+    "dev:frontend": "cd front && npm run serve:dev",
+    "start:backend": "cd back && npm start",
+    "start:frontend": "cd front && npm run serve",
+    "clean": "rm -rf back/dist front/dist back/node_modules front/node_modules node_modules",
+    "docker:build": "docker-compose build",
+    "docker:up": "docker-compose up -d",
+    "docker:down": "docker-compose down",
+    "docker:logs": "docker-compose logs -f"
+  },
+  "keywords": [
+    "ev2",
+    "backend",
+    "frontend",
+    "database",
+    "postgresql",
+    "vue",
+    "express",
+    "typescript"
+  ],
+  "author": "EV2 Team",
+  "license": "ISC",
+  "devDependencies": {
+    "rimraf": "^6.0.1"
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=8.0.0"
   }
 }
