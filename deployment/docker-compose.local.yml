@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   # EV2 Database
   ev2-database:

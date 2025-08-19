@@ -10,16 +10,13 @@ LABEL version="1.0.0"
 LABEL description="EV2 PostgreSQL Database with pre-configured schema"
 
 # Copy initialization scripts
-COPY init/ /docker-entrypoint-initdb.d/
+COPY init_prepared/ /docker-entrypoint-initdb.d/
 
 # Set default environment variables
 ENV POSTGRES_DB=maindb
 ENV POSTGRES_USER=postgres
-ENV POSTGRES_PASSWORD=postgres_admin_password_change_this
-
-# Application user defaults
-ENV APP_DB_USER=app_service
-ENV APP_DB_PASSWORD=P@ssw0rd_change_this
+# POSTGRES_PASSWORD will be set from docker-compose
+# APP_DB_PASSWORD will be set from docker-compose
 
 # Database configuration
 ENV POSTGRES_INITDB_ARGS="--encoding=UTF-8 --lc-collate=C --lc-ctype=C"

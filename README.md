@@ -46,7 +46,12 @@ npm run dev:docker
 
 # Follow the prompts to build images
 # Then start containers:
-docker-compose -f docker-compose.local.yml up -d
+docker-compose -f deployment/docker-compose.local.yml --env-file .env.local up -d
+
+# Useful commands:
+# docker-compose -f deployment/docker-compose.local.yml ps          # Check status
+# docker-compose -f deployment/docker-compose.local.yml logs -f    # View logs
+# docker-compose -f deployment/docker-compose.local.yml down       # Stop containers
 ```
 
 ## Запуск в Production режиме

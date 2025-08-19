@@ -79,4 +79,5 @@ temp/
 .npm
 
 # Output of 'npm pack'
-*.tgz
+*.tgzdb/init_prepared/
+*.bak

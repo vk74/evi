@@ -476,14 +476,11 @@ INSERT INTO app.group_members (group_id, user_id, added_by) VALUES
 ON CONFLICT (group_id, user_id, is_active) DO NOTHING;
 
 INSERT INTO app.catalog_sections (id, name, owner, description, status, is_public, "order", icon_name, color, created_by) VALUES
-('880e8400-e29b-41d4-a716-446655440001', 'IT Services', '550e8400-e29b-41d4-a716-446655440001', 'Information Technology Services', 'active', true, 1, 'Monitor', '#3B82F6', '550e8400-e29b-41d4-a716-446655440001'),
-('880e8400-e29b-41d4-a716-446655440002', 'Business Solutions', '550e8400-e29b-41d4-a716-446655440001', 'Business Process Solutions', 'active', true, 2, 'Briefcase', '#10B981', '550e8400-e29b-41d4-a716-446655440001'),
-('880e8400-e29b-41d4-a716-446655440003', 'Support Services', '550e8400-e29b-41d4-a716-446655440001', 'Technical Support and Maintenance', 'active', true, 3, 'Headset', '#F59E0B', '550e8400-e29b-41d4-a716-446655440001'),
-('880e8400-e29b-41d4-a716-446655440004', 'Security Services', '550e8400-e29b-41d4-a716-446655440001', 'Cybersecurity and Compliance', 'active', true, 4, 'Shield', '#EF4444', '550e8400-e29b-41d4-a716-446655440001'),
-('880e8400-e29b-41d4-a716-446655440005', 'Cloud Solutions', '550e8400-e29b-41d4-a716-446655440001', 'Cloud Infrastructure and Services', 'active', true, 5, 'Cloud', '#8B5CF6', '550e8400-e29b-41d4-a716-446655440001'),
-('880e8400-e29b-41d4-a716-446655440006', 'Software Development', '550e8400-e29b-41d4-a716-446655440001', 'Custom Software Development', 'active', true, 1, 'Code', '#06B6D4', '550e8400-e29b-41d4-a716-446655440001'),
-('880e8400-e29b-41d4-a716-446655440007', 'System Administration', '550e8400-e29b-41d4-a716-446655440001', 'System Management and Maintenance', 'active', true, 2, 'Server', '#84CC16', '550e8400-e29b-41d4-a716-446655440001'),
-('880e8400-e29b-41d4-a716-446655440008', 'Network Services', '550e8400-e29b-41d4-a716-446655440001', 'Network Infrastructure and Management', 'active', true, 3, 'Network', '#F97316', '550e8400-e29b-41d4-a716-446655440001')
+('880e8400-e29b-41d4-a716-446655440001', 'IT Services', '550e8400-e29b-41d4-a716-446655440001', 'Information Technology Services', 'active', true, 1, 'Monitor', '#64748B', '550e8400-e29b-41d4-a716-446655440001'),
+('880e8400-e29b-41d4-a716-446655440002', 'Business Solutions', '550e8400-e29b-41d4-a716-446655440001', 'Business Process Solutions', 'active', true, 2, 'Briefcase', '#6B7280', '550e8400-e29b-41d4-a716-446655440001'),
+('880e8400-e29b-41d4-a716-446655440003', 'Support Services', '550e8400-e29b-41d4-a716-446655440001', 'Technical Support and Maintenance', 'active', true, 3, 'Headset', '#7C3AED', '550e8400-e29b-41d4-a716-446655440001'),
+('880e8400-e29b-41d4-a716-446655440004', 'Security Services', '550e8400-e29b-41d4-a716-446655440001', 'Cybersecurity and Compliance', 'active', true, 4, 'Shield', '#DC2626', '550e8400-e29b-41d4-a716-446655440001'),
+('880e8400-e29b-41d4-a716-446655440005', 'Cloud Solutions', '550e8400-e29b-41d4-a716-446655440001', 'Cloud Infrastructure and Services', 'active', true, 5, 'Cloud', '#0891B2', '550e8400-e29b-41d4-a716-446655440001')
 ON CONFLICT (id) DO UPDATE SET
     name = EXCLUDED.name,
     description = EXCLUDED.description,
@@ -493,9 +490,7 @@ ON CONFLICT (id) DO UPDATE SET
     icon_name = EXCLUDED.icon_name,
     color = EXCLUDED.color;
 
-UPDATE app.catalog_sections SET parent_id = '880e8400-e29b-41d4-a716-446655440001' WHERE id = '880e8400-e29b-41d4-a716-446655440006';
-UPDATE app.catalog_sections SET parent_id = '880e8400-e29b-41d4-a716-446655440001' WHERE id = '880e8400-e29b-41d4-a716-446655440007';
-UPDATE app.catalog_sections SET parent_id = '880e8400-e29b-41d4-a716-446655440001' WHERE id = '880e8400-e29b-41d4-a716-446655440008';
+-- Note: Sub-sections removed for simplicity
 
 INSERT INTO app.services (id, name, priority, status, description_short, description_long, purpose, is_public, icon_name, created_by) VALUES
 ('990e8400-e29b-41d4-a716-446655440001', 'Web Application Development', 'high', 'in_production', 'Custom web applications', 'Full-stack web application development using modern technologies', 'Create scalable web solutions for business needs', true, 'Globe', '550e8400-e29b-41d4-a716-446655440001'),

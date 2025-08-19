@@ -62,13 +62,79 @@ FRONTEND_API_URL=http://localhost:3000
 # 
 # This file is generated for local Docker testing
 # Images are built locally with tag 'latest'
-# Use docker-compose -f docker-compose.local.yml up -d to start containers
+# Use docker-compose -f deployment/docker-compose.local.yml --env-file .env.local up -d to start containers
 # Access application at http://localhost:8080
 #
 `;
 
   fs.writeFileSync('.env.local', envContent);
   log('✅ Created .env.local with default development settings', 'green');
+}
+
+function cleanupOldImages() {
+  log(`🧹 Cleaning up old development images...`, 'yellow');
+  
+  try {
+    // Stop and remove old containers by name (force removal if running)
+    const containers = ['ev2-database-local', 'ev2-backend-local', 'ev2-frontend-local'];
+    
+    for (const container of containers) {
+      try {
+        // Stop container if running
+        execSync(`docker stop ${container} 2>/dev/null || true`, { 
+          stdio: 'inherit',
+          cwd: process.cwd()
+        });
+        
+        // Remove container
+        execSync(`docker rm ${container} 2>/dev/null || true`, { 
+          stdio: 'inherit',
+          cwd: process.cwd()
+        });
+      } catch (containerError) {
+        // Container might not exist, which is fine
+      }
+    }
+    
+    // Also try docker-compose down as backup
+    execSync('docker-compose -f deployment/docker-compose.local.yml --env-file .env.local down -v 2>/dev/null || true', { 
+      stdio: 'inherit',
+      cwd: process.cwd()
+    });
+    
+    // Remove old images
+    execSync('docker rmi ev2/database:latest ev2/backend:latest ev2/frontend:latest 2>/dev/null || true', { 
+      stdio: 'inherit',
+      cwd: process.cwd()
+    });
+    
+    log(`✅ Cleanup completed`, 'green');
+  } catch (error) {
+    log(`⚠️  Cleanup warning (this is normal if no old images exist)`, 'yellow');
+  }
+}
+
+function prepareDatabaseFiles() {
+  log(`🔧 Preparing database initialization files...`, 'yellow');
+  
+  try {
+    // Make script executable and run it
+    execSync('chmod +x db/prepare-init.sh', { 
+      stdio: 'inherit',
+      cwd: process.cwd()
+    });
+    
+    execSync('./db/prepare-init.sh', { 
+      stdio: 'inherit',
+      cwd: process.cwd()
+    });
+    
+    log(`✅ Database files prepared`, 'green');
+  } catch (error) {
+    log(`❌ Failed to prepare database files`, 'red');
+    return false;
+  }
+  return true;
 }
 
 function buildImage(imageName, context, dockerfile) {
@@ -92,9 +158,7 @@ function buildImage(imageName, context, dockerfile) {
 }
 
 function createDockerComposeLocal() {
-  const composeContent = `version: '3.8'
-
-services:
+  const composeContent = `services:
   # EV2 Database
   ev2-database:
     image: ev2/database:latest
@@ -193,8 +257,8 @@ networks:
     driver: bridge
 `;
 
-  fs.writeFileSync('docker-compose.local.yml', composeContent);
-  log('✅ Created docker-compose.local.yml for local development', 'green');
+      fs.writeFileSync('deployment/docker-compose.local.yml', composeContent);
+    log('✅ Created deployment/docker-compose.local.yml for local development', 'green');
 }
 
 function showUsageInstructions() {
@@ -202,13 +266,13 @@ function showUsageInstructions() {
   log('====================', 'blue');
   log('');
   log('1. Start containers:', 'cyan');
-  log('   docker-compose -f docker-compose.local.yml up -d', 'yellow');
+  log('   docker-compose -f deployment/docker-compose.local.yml --env-file .env.local up -d', 'yellow');
   log('');
   log('2. View logs:', 'cyan');
-  log('   docker-compose -f docker-compose.local.yml logs -f', 'yellow');
+  log('   docker-compose -f deployment/docker-compose.local.yml --env-file .env.local logs -f', 'yellow');
   log('');
   log('3. Stop containers:', 'cyan');
-  log('   docker-compose -f docker-compose.local.yml down', 'yellow');
+  log('   docker-compose -f deployment/docker-compose.local.yml --env-file .env.local down', 'yellow');
   log('');
   log('4. Access application:', 'cyan');
   log('   Frontend: http://localhost:8080', 'yellow');
@@ -220,7 +284,7 @@ function showUsageInstructions() {
   log('');
   log('📁 Generated files:', 'blue');
   log('   - .env.local (environment configuration)', 'cyan');
-  log('   - docker-compose.local.yml (container configuration)', 'cyan');
+  log('   - deployment/docker-compose.local.yml (container configuration)', 'cyan');
   log('');
 }
 
@@ -238,6 +302,10 @@ async function main() {
   const question = (query) => new Promise((resolve) => rl.question(query, resolve));
 
   try {
+    // Clean up old images first
+    cleanupOldImages();
+    log('');
+    
     // Show options
     log('What would you like to build?', 'cyan');
     log('1. Frontend only', 'yellow');
@@ -267,16 +335,24 @@ async function main() {
 
       case '3':
         log('\n🔨 Building Database only...', 'blue');
-        buildSuccess = buildImage('database', 'db', 'db/Dockerfile');
-        if (buildSuccess) builtImages.push('database');
+        if (prepareDatabaseFiles()) {
+          buildSuccess = buildImage('database', 'db', 'db/Dockerfile');
+          if (buildSuccess) builtImages.push('database');
+        } else {
+          buildSuccess = false;
+        }
         break;
 
       case '4':
         log('\n🔨 Building all images...', 'blue');
-        buildSuccess = buildImage('database', 'db', 'db/Dockerfile') &&
-                      buildImage('backend', 'back', 'back/Dockerfile') &&
-                      buildImage('frontend', 'front', 'front/Dockerfile');
-        if (buildSuccess) builtImages = ['database', 'backend', 'frontend'];
+        if (prepareDatabaseFiles()) {
+          buildSuccess = buildImage('database', 'db', 'db/Dockerfile') &&
+                        buildImage('backend', 'back', 'back/Dockerfile') &&
+                        buildImage('frontend', 'front', 'front/Dockerfile');
+          if (buildSuccess) builtImages = ['database', 'backend', 'frontend'];
+        } else {
+          buildSuccess = false;
+        }
         break;
 
       case '5':
