@@ -7,7 +7,7 @@ CREATE SCHEMA IF NOT EXISTS app;
 
 -- Enable required extensions
 CREATE EXTENSION IF NOT EXISTS "pg_trgm";
-CREATE EXTENSION IF NOT EXISTS "pg_cron";
+-- CREATE EXTENSION IF NOT EXISTS "pg_cron"; -- Commented out for local development
 
 -- Create schema migrations table to track applied migrations
 CREATE TABLE IF NOT EXISTS app.schema_migrations (

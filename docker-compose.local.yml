@@ -1,0 +1,99 @@
+version: '3.8'
+
+services:
+  # EV2 Database
+  ev2-database:
+    image: ev2/database:latest
+    container_name: ev2-database-local
+    restart: unless-stopped
+    
+    # Environment variables
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-maindb}
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      APP_DB_USER: ${APP_DB_USER:-app_service}
+      APP_DB_PASSWORD: ${APP_DB_PASSWORD}
+    
+    # Port mapping
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    
+    # Volume for persistent data
+    volumes:
+      - ev2_database_data:/var/lib/postgresql/data
+    
+    # Health check
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-maindb}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    
+    # Network
+    networks:
+      - ev2-network
+
+  # EV2 Backend API
+  ev2-backend:
+    image: ev2/backend:latest
+    container_name: ev2-backend-local
+    restart: unless-stopped
+    
+    # Environment variables
+    environment:
+      DATABASE_URL: postgresql://${APP_DB_USER:-app_service}:${APP_DB_PASSWORD}@ev2-database:5432/${POSTGRES_DB:-maindb}
+      PGHOST: ev2-database
+      PGPORT: 5432
+      PGDATABASE: ${POSTGRES_DB:-maindb}
+      PGUSER: ${APP_DB_USER:-app_service}
+      PGPASSWORD: ${APP_DB_PASSWORD}
+      NODE_ENV: development
+      API_PORT: ${API_PORT:-3000}
+    
+    # Port mapping
+    ports:
+      - "${API_PORT:-3000}:3000"
+    
+    # Dependencies
+    depends_on:
+      ev2-database:
+        condition: service_healthy
+    
+    # Network
+    networks:
+      - ev2-network
+
+  # EV2 Frontend
+  ev2-frontend:
+    image: ev2/frontend:latest
+    container_name: ev2-frontend-local
+    restart: unless-stopped
+    
+    # Environment variables
+    environment:
+      NODE_ENV: development
+      VITE_API_URL: ${FRONTEND_API_URL:-http://localhost:3000}
+    
+    # Port mapping
+    ports:
+      - "${FRONTEND_PORT:-8080}:80"
+    
+    # Dependencies
+    depends_on:
+      - ev2-backend
+    
+    # Network
+    networks:
+      - ev2-network
+
+# Volumes
+volumes:
+  ev2_database_data:
+    driver: local
+
+# Networks
+networks:
+  ev2-network:
+    driver: bridge

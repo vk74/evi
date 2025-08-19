@@ -30,9 +30,9 @@ function log(message, color = 'reset') {
 
 function readVersion() {
   try {
-    return fs.readFileSync('deployment/VERSION', 'utf8').trim();
+    return fs.readFileSync('VERSION', 'utf8').trim();
   } catch (error) {
-    log('❌ Error reading deployment/VERSION file', 'red');
+    log('❌ Error reading VERSION file', 'red');
     process.exit(1);
   }
 }

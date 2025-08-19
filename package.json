@@ -8,11 +8,8 @@
     "front"
   ],
   "scripts": {
-    "version:sync": "node scripts/sync-version.js",
-    "version:bump:patch": "npm version patch && npm run version:sync",
-    "version:bump:minor": "npm version minor && npm run version:sync",
-    "version:bump:major": "npm version major && npm run version:sync",
-    "version:set": "node scripts/sync-version.js",
+    "version:sync": "node deployment/sync-version.js",
+    "dev:docker": "node deployment/dev-docker.js",
     "install:all": "npm install && cd back && npm install && cd ../front && npm install",
     "build:all": "npm run build:backend && npm run build:frontend",
     "build:backend": "cd back && npm run build",

@@ -1,6 +1,6 @@
 # EV2 Project
 
-**Version:** 0.5.0
+**Version:** [See VERSION file]
 
 EV2 is a full-stack application with backend (Express.js + TypeScript), frontend (Vue.js + Vuetify), and PostgreSQL database.
 
@@ -26,18 +26,27 @@ npm run install:all
 
 ### Development Mode
 
+#### Option 1: Local Development (recommended for coding)
 Для локальной разработки с менее строгими настройками cookies:
 
-### Backend
 ```bash
-cd back
-npm run dev
+# Backend
+npm run dev:backend
+
+# Frontend (in another terminal)
+npm run dev:frontend
 ```
 
-### Frontend
+#### Option 2: Docker Development (recommended for testing)
+Для тестирования полного приложения в контейнерах:
+
 ```bash
-cd front
-npm run serve:dev
+# Interactive Docker build
+npm run dev:docker
+
+# Follow the prompts to build images
+# Then start containers:
+docker-compose -f docker-compose.local.yml up -d
 ```
 
 ## Запуск в Production режиме
@@ -59,16 +68,16 @@ npm run start:frontend
 cat VERSION
 ```
 
-### Sync Versions Across Components
+### Automatic Versioning
+Versions are automatically managed during GitHub releases:
+1. Create a release tag (e.g., `v1.0.0`)
+2. GitHub Actions automatically updates all version files
+3. Docker images are built with the new version
+4. Deployment package is created
+
+### Manual Version Sync (if needed)
 ```bash
 npm run version:sync
-```
-
-### Bump Version
-```bash
-npm run version:bump:patch    # 0.5.0 → 0.5.1
-npm run version:bump:minor    # 0.5.0 → 0.6.0
-npm run version:bump:major    # 0.5.0 → 1.0.0
 ```
 
 ## Build and Test
@@ -149,11 +158,11 @@ npm run dev:frontend
 
 4. **Create Pull Request on GitHub**
 
-5. **After merge, bump version:**
+5. **Create release:**
    ```bash
-   npm run version:bump:minor
-   git add .
-   git commit -m "Release v0.6.0"
-   git tag v0.6.0
-   git push origin main --tags
+   # Create and push tag
+   git tag v1.0.0
+   git push origin v1.0.0
+   
+   # Create release on GitHub (this triggers automatic build)
    ```

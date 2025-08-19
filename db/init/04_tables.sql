@@ -202,7 +202,7 @@ CREATE TABLE IF NOT EXISTS app.section_services (
 -- Create section_products table
 CREATE TABLE IF NOT EXISTS app.section_products (
     section_id UUID NOT NULL REFERENCES app.catalog_sections(id) ON DELETE CASCADE,
-    product_id UUID NOT NULL REFERENCES app.products(id) ON DELETE CASCADE,
+    product_id UUID NOT NULL REFERENCES app.products(product_id) ON DELETE CASCADE,
     product_order INTEGER DEFAULT 0,
     PRIMARY KEY (section_id, product_id),
     CONSTRAINT chk_product_order_positive CHECK (product_order >= 0)
@@ -267,11 +267,11 @@ END;
 $function$;
 
 -- Schedule periodic cleanup of expired tokens (runs every hour)
-SELECT cron.schedule(
-    'cleanup-expired-tokens',
-    '0 * * * *',  -- Every hour at minute 0
-    'SELECT app.cleanup_expired_tokens();'
-);
+-- SELECT cron.schedule(
+--     'cleanup-expired-tokens',
+--     '0 * * * *',  -- Every hour at minute 0
+--     'SELECT app.cleanup_expired_tokens();'
+-- ); -- Commented out for local development
 
 -- Set sequence ownership
 ALTER SEQUENCE app.tokens_id_seq OWNED BY app.tokens.id;
