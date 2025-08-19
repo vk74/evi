@@ -1,19 +1,29 @@
--- Version: 4.0
+-- Version: 1.0
 -- Description: Create all tables
--- Backend file: tables
+-- Backend file: init_tables
+
+-- Create sequences
+CREATE SEQUENCE IF NOT EXISTS app.tokens_id_seq
+    INCREMENT 1
+    START 1
+    MINVALUE 1
+    MAXVALUE 9223372036854775807
+    CACHE 1;
 
 -- Create users table
 CREATE TABLE IF NOT EXISTS app.users (
     user_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    username VARCHAR(50) UNIQUE,
+    username VARCHAR(50),
     hashed_password TEXT,
-    email VARCHAR(255) UNIQUE,
+    email VARCHAR(255),
     is_staff BOOLEAN DEFAULT false,
     account_status app.account_status DEFAULT 'active'::app.account_status,
     first_name VARCHAR(50),
     middle_name VARCHAR(50),
     last_name VARCHAR(50),
-    created_at TIMESTAMP WITH TIME ZONE
+    created_at TIMESTAMP WITH TIME ZONE,
+    CONSTRAINT unique_user_name UNIQUE (username),
+    CONSTRAINT unique_email UNIQUE (email)
 );
 
 -- Create user_profiles table
@@ -23,35 +33,38 @@ CREATE TABLE IF NOT EXISTS app.user_profiles (
     reserve1 VARCHAR(50),
     reserve2 VARCHAR(50),
     reserve3 VARCHAR(50),
-    mobile_phone_number VARCHAR(15) UNIQUE,
+    mobile_phone_number VARCHAR(15),
     address TEXT,
     company_name VARCHAR(255),
     position VARCHAR(255),
-    gender app.gender
+    gender app.gender,
+    CONSTRAINT unique_mobile_number UNIQUE (mobile_phone_number)
 );
 
 -- Create groups table
 CREATE TABLE IF NOT EXISTS app.groups (
     group_id UUID PRIMARY KEY,
-    group_name VARCHAR(100) UNIQUE NOT NULL,
+    group_name VARCHAR(100) NOT NULL,
     reserve_1 VARCHAR(100),
     group_status app.group_status NOT NULL DEFAULT 'active'::app.group_status,
     group_owner UUID NOT NULL REFERENCES app.users(user_id),
-    is_system BOOLEAN NOT NULL DEFAULT false
+    is_system BOOLEAN NOT NULL DEFAULT false,
+    CONSTRAINT unique_group_name UNIQUE (group_name)
 );
 
 -- Create group_details table
 CREATE TABLE IF NOT EXISTS app.group_details (
     group_id UUID PRIMARY KEY REFERENCES app.groups(group_id) ON DELETE CASCADE,
     group_description TEXT,
-    group_email VARCHAR(255) UNIQUE,
+    group_email VARCHAR(255),
     reserve_field_1 VARCHAR(100),
     reserve_field_2 VARCHAR(100),
     reserve_field_3 SMALLINT,
     group_created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
     group_created_by UUID NOT NULL REFERENCES app.users(user_id),
     group_modified_at TIMESTAMP WITH TIME ZONE,
-    group_modified_by UUID REFERENCES app.users(user_id)
+    group_modified_by UUID REFERENCES app.users(user_id),
+    CONSTRAINT unique_group_email UNIQUE (group_email)
 );
 
 -- Create group_members table
@@ -64,19 +77,23 @@ CREATE TABLE IF NOT EXISTS app.group_members (
     is_active BOOLEAN NOT NULL DEFAULT true,
     left_at TIMESTAMP WITH TIME ZONE,
     removed_by UUID REFERENCES app.users(user_id),
-    UNIQUE(group_id, user_id, is_active)
+    CONSTRAINT group_members_group_id_user_id_is_active_key UNIQUE(group_id, user_id, is_active)
 );
 
 -- Create tokens table
 CREATE TABLE IF NOT EXISTS app.tokens (
     id BIGINT PRIMARY KEY DEFAULT nextval('app.tokens_id_seq'::regclass),
     user_uuid UUID NOT NULL,
-    token_hash TEXT NOT NULL UNIQUE,
+    token_hash TEXT NOT NULL,
     issued_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
     expires_at TIMESTAMP WITH TIME ZONE NOT NULL,
     revoked BOOLEAN NOT NULL DEFAULT false,
-    device_fingerprint_hash VARCHAR(64)
+    device_fingerprint_hash VARCHAR(64),
+    CONSTRAINT tokens_token_hash_key UNIQUE (token_hash)
 );
+
+-- Set ownership for sequence
+ALTER SEQUENCE app.tokens_id_seq OWNED BY app.tokens.id;
 
 -- Create app_settings table
 CREATE TABLE IF NOT EXISTS app.app_settings (
@@ -136,7 +153,7 @@ CREATE TABLE IF NOT EXISTS app.services (
 CREATE TABLE IF NOT EXISTS app.products (
     product_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     product_name VARCHAR(250) NOT NULL,
-    product_sku VARCHAR(100) UNIQUE,
+    product_sku VARCHAR(100),
     product_code VARCHAR(100),
     product_lineup VARCHAR(100),
     product_model VARCHAR(100),
@@ -168,7 +185,8 @@ CREATE TABLE IF NOT EXISTS app.products (
         (product_width IS NULL OR product_width > 0) AND
         (product_height IS NULL OR product_height > 0)
     ),
-    CONSTRAINT chk_product_lead_time_positive CHECK (product_lead_time_days IS NULL OR product_lead_time_days > 0)
+    CONSTRAINT chk_product_lead_time_positive CHECK (product_lead_time_days IS NULL OR product_lead_time_days > 0),
+    CONSTRAINT products_product_sku_key UNIQUE (product_sku)
 );
 
 -- Create section_services table
@@ -199,7 +217,7 @@ CREATE TABLE IF NOT EXISTS app.service_users (
     created_by UUID NOT NULL REFERENCES app.users(user_id),
     modified_at TIMESTAMP WITH TIME ZONE,
     modified_by UUID REFERENCES app.users(user_id),
-    UNIQUE(service_id, user_id, role_type)
+    CONSTRAINT service_users_service_id_user_id_role_type_key UNIQUE(service_id, user_id, role_type)
 );
 
 -- Create service_groups table
@@ -212,5 +230,40 @@ CREATE TABLE IF NOT EXISTS app.service_groups (
     created_by UUID NOT NULL REFERENCES app.users(user_id),
     modified_at TIMESTAMP WITH TIME ZONE,
     modified_by UUID REFERENCES app.users(user_id),
-    UNIQUE(service_id, group_id, role_type)
+    CONSTRAINT service_groups_service_id_group_id_role_type_key UNIQUE(service_id, group_id, role_type)
 );
+
+-- ============================================
+-- Functions and Triggers
+-- ============================================
+
+-- Function to prevent deletion of system groups
+CREATE OR REPLACE FUNCTION app.prevent_system_group_deletion()
+RETURNS trigger
+LANGUAGE plpgsql
+AS $function$
+BEGIN
+    RAISE EXCEPTION 'Cannot delete system group';
+END;
+$function$;
+
+-- Trigger to protect system groups from deletion
+CREATE TRIGGER prevent_system_group_deletion
+    BEFORE DELETE ON app.groups
+    FOR EACH ROW
+    WHEN (OLD.is_system = true)
+    EXECUTE FUNCTION app.prevent_system_group_deletion();
+
+-- Function to cleanup expired tokens
+CREATE OR REPLACE FUNCTION app.cleanup_expired_tokens()
+RETURNS void
+LANGUAGE plpgsql
+AS $function$
+BEGIN
+    DELETE FROM app.tokens
+    WHERE expires_at < now();
+END;
+$function$;
+
+-- Set sequence ownership
+ALTER SEQUENCE app.tokens_id_seq OWNED BY app.tokens.id;

@@ -8,31 +8,28 @@ This directory contains the database schema, migrations, and seed data for the E
 
 ```
 db/
-├── migrations/           # Incremental schema changes
-│   ├── 001_create_schema_migrations.sql
-│   ├── 002_create_enums.sql
-│   ├── 003_create_sequences.sql
-│   ├── 004_create_tables.sql
-│   └── 005_create_indexes.sql
+├── migrations/           # Future incremental schema changes
+│   └── 001_future_migrations.sql
 ├── seeds/               # Initial data
 │   ├── 001_system_users.sql
 │   ├── 002_system_groups.sql
 │   └── 003_demo_catalog_data.sql
-├── init/                # For docker-entrypoint-initdb.d
-│   ├── 01_schema.sql
-│   ├── 02_enums.sql
-│   ├── 03_tables.sql
-│   ├── 04_indexes.sql
-│   └── 05_seeds.sql
+├── init/                # Complete schema for new database initialization
+│   ├── 01_schema.sql        # Schema, extensions, migration tracking
+│   ├── 02_sequences.sql     # Database sequences
+│   ├── 03_enums.sql         # Enum types
+│   ├── 04_tables.sql        # Tables, functions, triggers
+│   ├── 05_indexes.sql       # Database indexes
+│   └── 06_seeds.sql         # Initial data
 ├── versions/            # Snapshots for quick deployment
-│   └── (future version snapshots)
+│   └── v0.5.0.sql
 └── README.md           # This file
 ```
 
 ## Directory Purposes
 
 ### migrations/
-Contains incremental changes to the database schema. Each file represents a single change and is numbered sequentially.
+Contains future incremental changes to the database schema. Currently contains a placeholder file with instructions for future development.
 
 **Rules:**
 - Each file describes ONE change to the schema
@@ -40,12 +37,12 @@ Contains incremental changes to the database schema. Each file represents a sing
 - All files are idempotent (can be applied multiple times safely)
 - Use descriptive names that explain the change
 - One change = one file
+- Always test migrations on a copy of production data
 
 **Examples:**
-- `001_create_schema_migrations.sql` - Creates tracking tables
-- `002_create_enums.sql` - Creates all enum types
-- `003_add_user_preferences.sql` - Adds new table
-- `004_add_service_ratings.sql` - Adds new column
+- `001_future_migrations.sql` - Placeholder with instructions
+- `002_add_user_preferences.sql` - Adds new table (future)
+- `003_add_service_ratings.sql` - Adds new column (future)
 
 ### seeds/
 Contains initial data that should be present in the database after initialization.
@@ -61,12 +58,13 @@ Contains initial data that should be present in the database after initializatio
 - `004_demo_products.sql` - Demo products (future)
 
 ### init/
-Files for automatic initialization of new database containers via `docker-entrypoint-initdb.d`.
+Complete schema files for automatic initialization of new database containers via `docker-entrypoint-initdb.d`.
 
 **Content:**
-- Automatically generated from `migrations/` and `seeds/`
+- Complete database schema for v0.5.0
 - Used only for new database instances
-- Contains complete schema and initial data
+- Contains all tables, functions, triggers, indexes, and initial data
+- Self-contained and ready for deployment
 
 ### versions/
 Complete database snapshots for specific application versions.
@@ -76,14 +74,32 @@ Complete database snapshots for specific application versions.
 - For testing specific versions
 - For recovery after issues
 
-## Migration Workflow
+## Current State (v0.5.0)
+
+For the initial release v0.5.0, all database schema has been consolidated into the `init/` directory. This provides a clean, self-contained setup for new database instances.
+
+### Key Changes:
+- ✅ All schema components moved to `init/`
+- ✅ Single source of truth for database creation
+- ✅ Simplified structure for first release
+- ✅ Ready for production deployment
+
+### File Order in init/:
+1. `01_schema.sql` - Schema, extensions, migration tracking tables
+2. `02_sequences.sql` - Database sequences
+3. `03_enums.sql` - Enum type definitions
+4. `04_tables.sql` - Tables, functions, triggers
+5. `05_indexes.sql` - Database indexes
+6. `06_seeds.sql` - Initial data
+
+## Future Migration Workflow (Post v0.5.0)
 
 ### 1. Development
-When developing new features:
+When developing new features that require schema changes:
 
 ```bash
 # Create new migration
-echo "CREATE TABLE app.new_feature (...);" > db/migrations/006_add_new_feature.sql
+echo "CREATE TABLE app.new_feature (...);" > db/migrations/002_add_new_feature.sql
 
 # Create seed data (if needed)
 echo "INSERT INTO app.new_feature VALUES (...);" > db/seeds/004_demo_new_feature.sql
