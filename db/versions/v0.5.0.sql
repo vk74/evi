@@ -11,6 +11,7 @@ CREATE SCHEMA IF NOT EXISTS app;
 
 -- Enable required extensions
 CREATE EXTENSION IF NOT EXISTS "pg_trgm";
+CREATE EXTENSION IF NOT EXISTS "pg_cron";
 
 -- Create schema migrations table to track applied migrations
 CREATE TABLE IF NOT EXISTS app.schema_migrations (
@@ -368,6 +369,13 @@ BEGIN
     WHERE expires_at < now();
 END;
 $function$;
+
+-- Schedule periodic cleanup of expired tokens (runs every hour)
+SELECT cron.schedule(
+    'cleanup-expired-tokens',
+    '0 * * * *',  -- Every hour at minute 0
+    'SELECT app.cleanup_expired_tokens();'
+);
 
 -- Create all indexes
 CREATE INDEX IF NOT EXISTS idx_app_sections_path ON app.app_settings USING btree (section_path);

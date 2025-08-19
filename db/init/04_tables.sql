@@ -266,5 +266,12 @@ BEGIN
 END;
 $function$;
 
+-- Schedule periodic cleanup of expired tokens (runs every hour)
+SELECT cron.schedule(
+    'cleanup-expired-tokens',
+    '0 * * * *',  -- Every hour at minute 0
+    'SELECT app.cleanup_expired_tokens();'
+);
+
 -- Set sequence ownership
 ALTER SEQUENCE app.tokens_id_seq OWNED BY app.tokens.id;
