@@ -1,8 +1,24 @@
 node_modules
-npm-debug.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-store
+.cache
+coverage
+.dist
+.DS_Store
+.vscode
+.idea
 .git
 .gitignore
+**/*.map
+**/*.log
+**/*.local.*
+**/.env*
+.env*
 dist
-coverage
-.DS_Store
 
+# Exclude test-only files
+src/tests
+**/*.spec.*
+**/*.test.*

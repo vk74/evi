@@ -4,6 +4,8 @@
 # Logic: Multi-stage build (Node for build → Nginx for runtime). Stateless, serves compiled assets from /usr/share/nginx/html.
 #
 
+# syntax=docker/dockerfile:1.5-labs
+
 # =========================
 # Build stage
 # =========================
@@ -12,18 +14,20 @@ FROM node:18-alpine AS build
 WORKDIR /app
 
 # Install dependencies first (leverage layer cache)
-COPY package*.json ./
+COPY package-lock.json package.json ./
 COPY babel.config.js ./
 COPY tsconfig.json ./
 COPY jsconfig.json ./
 
-RUN npm install
+RUN --mount=type=cache,target=/root/.npm \
+    npm ci --no-audit --fund=false --progress=false
 
 # Copy source code
 COPY ./ .
 
-# Build production assets
-RUN npm run build
+# Build production assets (cache webpack/babel caches)
+RUN --mount=type=cache,target=/app/node_modules/.cache \
+    npm run build
 
 
 # =========================

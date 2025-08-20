@@ -172,7 +172,8 @@ function buildImage(imageName, context, dockerfile) {
   log(`🔨 Building ${imageName} image...`, 'yellow');
   
   try {
-    const command = `docker build -f ${dockerfile} -t ev2/${imageName}:latest ${context}`;
+    // Enable BuildKit and inline cache to improve rebuild performance
+    const command = `DOCKER_BUILDKIT=1 docker build --progress=plain --build-arg BUILDKIT_INLINE_CACHE=1 -f ${dockerfile} -t ev2/${imageName}:latest ${context}`;
     log(`Running: ${command}`, 'cyan');
     
     execSync(command, { 
