@@ -20,7 +20,27 @@ This guide explains how to create and distribute EV2 using GitHub Packages and s
 
 ## Development Workflow
 
-### 1. Automatic Build Process
+### 1. Local Development Setup
+
+For local development with Docker:
+
+```bash
+# Clean up old Docker resources (optional)
+./deployment/cleanup-docker.sh
+
+# Build and setup local environment
+node deployment/dev-docker.js
+
+# Start containers
+docker-compose -f deployment/docker-compose.local.yml --env-file .env.local up -d
+
+# Access application
+# Frontend: http://localhost:8080
+# Backend API: http://localhost:3000
+# Database: localhost:5445
+```
+
+### 2. Automatic Build Process
 
 Images are automatically built and published to GitHub Packages when:
 - Push to `main` or `develop` branches

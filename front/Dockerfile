@@ -17,7 +17,7 @@ COPY babel.config.js ./
 COPY tsconfig.json ./
 COPY jsconfig.json ./
 
-RUN npm ci
+RUN npm install
 
 # Copy source code
 COPY ./ .

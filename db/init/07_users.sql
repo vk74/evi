@@ -8,7 +8,7 @@
 DO $$
 BEGIN
     IF NOT EXISTS (SELECT FROM pg_catalog.pg_roles WHERE rolname = 'app_service') THEN
-        CREATE USER app_service WITH PASSWORD 'dev_app_password';
+        CREATE USER app_service WITH PASSWORD '${APP_DB_PASSWORD}';
     END IF;
 END
 $$;

@@ -47,7 +47,7 @@ APP_DB_PASSWORD=dev_app_password
 # Database settings
 POSTGRES_DB=maindb
 POSTGRES_USER=postgres
-POSTGRES_PORT=5432
+POSTGRES_PORT=5445
 
 # Application ports
 API_PORT=3000
@@ -71,8 +71,17 @@ FRONTEND_API_URL=http://localhost:3000
   log('✅ Created .env.local with default development settings', 'green');
 }
 
+function ensureEnvLocal() {
+  // Create .env.local if it doesn't exist yet
+  if (!fs.existsSync('.env.local')) {
+    createEnvLocal();
+  } else {
+    log('ℹ️  Using existing .env.local', 'cyan');
+  }
+}
+
 function cleanupOldImages() {
-  log(`🧹 Cleaning up old development images...`, 'yellow');
+  log(`🧹 Cleaning up old development images and builds...`, 'yellow');
   
   try {
     // Stop and remove old containers by name (force removal if running)
@@ -102,8 +111,30 @@ function cleanupOldImages() {
       cwd: process.cwd()
     });
     
-    // Remove old images
+    // Remove old images (including dangling images)
+    log(`🗑️  Removing old images...`, 'cyan');
     execSync('docker rmi ev2/database:latest ev2/backend:latest ev2/frontend:latest 2>/dev/null || true', { 
+      stdio: 'inherit',
+      cwd: process.cwd()
+    });
+    
+    // Remove dangling images (untagged images)
+    log(`🗑️  Removing dangling images...`, 'cyan');
+    execSync('docker image prune -f 2>/dev/null || true', { 
+      stdio: 'inherit',
+      cwd: process.cwd()
+    });
+    
+    // Remove unused build cache
+    log(`🗑️  Cleaning build cache...`, 'cyan');
+    execSync('docker builder prune -f 2>/dev/null || true', { 
+      stdio: 'inherit',
+      cwd: process.cwd()
+    });
+    
+    // Remove unused networks
+    log(`🗑️  Cleaning unused networks...`, 'cyan');
+    execSync('docker network prune -f 2>/dev/null || true', { 
       stdio: 'inherit',
       cwd: process.cwd()
     });
@@ -175,7 +206,7 @@ function createDockerComposeLocal() {
     
     # Port mapping
     ports:
-      - "\${POSTGRES_PORT:-5432}:5432"
+      - "\${POSTGRES_PORT:-5445}:5432"
     
     # Volume for persistent data
     volumes:
@@ -277,6 +308,7 @@ function showUsageInstructions() {
   log('4. Access application:', 'cyan');
   log('   Frontend: http://localhost:8080', 'yellow');
   log('   Backend API: http://localhost:3000', 'yellow');
+  log('   Database: localhost:5445', 'yellow');
   log('');
   log('5. Default login:', 'cyan');
   log('   Username: admin', 'yellow');
@@ -306,6 +338,10 @@ async function main() {
     cleanupOldImages();
     log('');
     
+    // Ensure env file exists before any DB preparation/build that depends on it
+    ensureEnvLocal();
+    log('');
+
     // Show options
     log('What would you like to build?', 'cyan');
     log('1. Frontend only', 'yellow');
@@ -370,8 +406,7 @@ async function main() {
       log('\n✅ Build completed successfully!', 'green');
       log(`Built images: ${builtImages.join(', ')}`, 'cyan');
       
-      // Always create env and compose files
-      createEnvLocal();
+      // Create compose file (env already ensured earlier)
       createDockerComposeLocal();
       showUsageInstructions();
     } else {

@@ -5,11 +5,11 @@
 -- Insert catalog sections
 INSERT INTO app.catalog_sections (id, name, owner, description, status, is_public, "order", icon_name, color, created_by) VALUES
 -- Catalog sections
-('880e8400-e29b-41d4-a716-446655440001', 'IT Services', '550e8400-e29b-41d4-a716-446655440001', 'Information Technology Services', 'active', true, 1, 'Monitor', '#64748B', '550e8400-e29b-41d4-a716-446655440001'),
-('880e8400-e29b-41d4-a716-446655440002', 'Business Solutions', '550e8400-e29b-41d4-a716-446655440001', 'Business Process Solutions', 'active', true, 2, 'Briefcase', '#6B7280', '550e8400-e29b-41d4-a716-446655440001'),
-('880e8400-e29b-41d4-a716-446655440003', 'Support Services', '550e8400-e29b-41d4-a716-446655440001', 'Technical Support and Maintenance', 'active', true, 3, 'Headset', '#7C3AED', '550e8400-e29b-41d4-a716-446655440001'),
-('880e8400-e29b-41d4-a716-446655440004', 'Security Services', '550e8400-e29b-41d4-a716-446655440001', 'Cybersecurity and Compliance', 'active', true, 4, 'Shield', '#DC2626', '550e8400-e29b-41d4-a716-446655440001'),
-('880e8400-e29b-41d4-a716-446655440005', 'Cloud Solutions', '550e8400-e29b-41d4-a716-446655440001', 'Cloud Infrastructure and Services', 'active', true, 5, 'Cloud', '#0891B2', '550e8400-e29b-41d4-a716-446655440001')
+('880e8400-e29b-41d4-a716-446655440001', 'IT Services', '550e8400-e29b-41d4-a716-446655440001', 'Information Technology Services', 'active', true, 1, 'Monitor', '#F8F0F0', '550e8400-e29b-41d4-a716-446655440001'),
+('880e8400-e29b-41d4-a716-446655440002', 'Business Solutions', '550e8400-e29b-41d4-a716-446655440001', 'Business Process Solutions', 'active', true, 2, 'Briefcase', '#F5F5F0', '550e8400-e29b-41d4-a716-446655440001'),
+('880e8400-e29b-41d4-a716-446655440003', 'Support Services', '550e8400-e29b-41d4-a716-446655440001', 'Technical Support and Maintenance', 'active', true, 3, 'Headset', '#E8F5F0', '550e8400-e29b-41d4-a716-446655440001'),
+('880e8400-e29b-41d4-a716-446655440004', 'Security Services', '550e8400-e29b-41d4-a716-446655440001', 'Cybersecurity and Compliance', 'active', true, 4, 'Shield', '#E8E8F5', '550e8400-e29b-41d4-a716-446655440001'),
+('880e8400-e29b-41d4-a716-446655440005', 'Cloud Solutions', '550e8400-e29b-41d4-a716-446655440001', 'Cloud Infrastructure and Services', 'active', true, 5, 'Cloud', '#F8F8F8', '550e8400-e29b-41d4-a716-446655440001')
 ON CONFLICT (id) DO UPDATE SET
     name = EXCLUDED.name,
     description = EXCLUDED.description,
