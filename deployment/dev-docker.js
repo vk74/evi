@@ -1,9 +1,11 @@
 #!/usr/bin/env node
 
-/**
- * Interactive Docker build script for developers
- * Allows building individual or all Docker images locally
- */
+/*
+  File version: 1.2.0
+  This is a backend file. Backend file: dev-docker.js
+  Purpose: Interactive Docker build script for developers
+  Logic: Builds Docker images (database, backend, frontend), generates .env.local and compose file, with detailed timing per image and total time for 'all images'
+*/
 
 const { execSync } = require('child_process');
 const fs = require('fs');
@@ -25,6 +27,19 @@ const colors = {
 function log(message, color = 'reset') {
   console.log(`${colors[color]}${message}${colors.reset}`);
 }
+
+// Timing helpers
+function nowNs() {
+  return process.hrtime.bigint();
+}
+
+function formatDuration(ms) {
+  if (ms < 1000) return `${ms.toFixed(0)} ms`;
+  const seconds = ms / 1000;
+  return `${seconds.toFixed(1)} s`;
+}
+
+const buildTimingsMs = {}; // imageName -> milliseconds
 
 function createEnvLocal() {
   const envContent = `# EV2 Local Development Environment
@@ -82,6 +97,7 @@ function ensureEnvLocal() {
 
 function cleanupOldImages() {
   log(`🧹 Cleaning up old development images and builds...`, 'yellow');
+  const startNs = nowNs();
   
   try {
     // Stop and remove old containers by name (force removal if running)
@@ -143,10 +159,15 @@ function cleanupOldImages() {
   } catch (error) {
     log(`⚠️  Cleanup warning (this is normal if no old images exist)`, 'yellow');
   }
+
+  const elapsedMs = Number((nowNs() - startNs) / 1000000n);
+  buildTimingsMs['cleanup'] = elapsedMs;
+  log(`⏱️  cleanup time: ${formatDuration(elapsedMs)}`, 'magenta');
 }
 
 function prepareDatabaseFiles() {
   log(`🔧 Preparing database initialization files...`, 'yellow');
+  const startNs = nowNs();
   
   try {
     // Make script executable and run it
@@ -165,6 +186,9 @@ function prepareDatabaseFiles() {
     log(`❌ Failed to prepare database files`, 'red');
     return false;
   }
+  const elapsedMs = Number((nowNs() - startNs) / 1000000n);
+  buildTimingsMs['db_prep'] = (buildTimingsMs['db_prep'] || 0) + elapsedMs;
+  log(`⏱️  db prep time: ${formatDuration(elapsedMs)}`, 'magenta');
   return true;
 }
 
@@ -175,15 +199,21 @@ function buildImage(imageName, context, dockerfile) {
     // Enable BuildKit and inline cache to improve rebuild performance
     const command = `DOCKER_BUILDKIT=1 docker build --progress=plain --build-arg BUILDKIT_INLINE_CACHE=1 -f ${dockerfile} -t ev2/${imageName}:latest ${context}`;
     log(`Running: ${command}`, 'cyan');
-    
+    const startNs = nowNs();
     execSync(command, { 
       stdio: 'inherit',
       cwd: process.cwd()
     });
-    
+    const elapsedMs = Number((nowNs() - startNs) / 1000000n);
+    buildTimingsMs[imageName] = elapsedMs;
+    log(`⏱️  ${imageName} build time: ${formatDuration(elapsedMs)}`, 'magenta');
     log(`✅ ${imageName} image built successfully`, 'green');
     return true;
   } catch (error) {
+    const elapsedMs = buildTimingsMs[imageName] || 0;
+    if (elapsedMs) {
+      log(`⏱️  ${imageName} partial build time before failure: ${formatDuration(elapsedMs)}`, 'red');
+    }
     log(`❌ Failed to build ${imageName} image`, 'red');
     return false;
   }
@@ -325,6 +355,7 @@ async function main() {
   log('🚀 EV2 Local Docker Build', 'blue');
   log('========================', 'blue');
   log('');
+  const sessionStartNs = nowNs();
   
   // Create readline interface
   const rl = readline.createInterface({
@@ -356,6 +387,7 @@ async function main() {
 
     let buildSuccess = true;
     let builtImages = [];
+    let builtAll = false;
 
     switch (choice.trim()) {
       case '1':
@@ -387,6 +419,7 @@ async function main() {
                         buildImage('backend', 'back', 'back/Dockerfile') &&
                         buildImage('frontend', 'front', 'front/Dockerfile');
           if (buildSuccess) builtImages = ['database', 'backend', 'frontend'];
+          builtAll = true;
         } else {
           buildSuccess = false;
         }
@@ -409,6 +442,29 @@ async function main() {
       
       // Create compose file (env already ensured earlier)
       createDockerComposeLocal();
+
+      // Timing summary
+      const totalElapsedMs = Number((nowNs() - sessionStartNs) / 1000000n);
+      const imagesOnlyTotalMs = builtImages.reduce((acc, name) => acc + (buildTimingsMs[name] || 0), 0);
+      log('', 'reset');
+      log('🕒 Build time summary:', 'blue');
+      for (const imageName of builtImages) {
+        const ms = buildTimingsMs[imageName];
+        if (ms != null) {
+          log(` - ${imageName}: ${formatDuration(ms)}`, 'cyan');
+        }
+      }
+      if (buildTimingsMs['cleanup'] != null) {
+        log(` - cleanup: ${formatDuration(buildTimingsMs['cleanup'])}`, 'cyan');
+      }
+      if (buildTimingsMs['db_prep'] != null) {
+        log(` - db prep: ${formatDuration(buildTimingsMs['db_prep'])}`, 'cyan');
+      }
+      if (builtAll) {
+        // Show totals
+        log(` - Total build (images only): ${formatDuration(imagesOnlyTotalMs)}`, 'yellow');
+        log(` - Total elapsed (full session): ${formatDuration(totalElapsedMs)}`, 'yellow');
+      }
       showUsageInstructions();
     } else {
       log('\n❌ Build failed. Please check the errors above.', 'red');
