@@ -1,6 +1,10 @@
 -- Version: 1.0
--- Description: System groups seed data
--- Backend file: system_groups
+-- Description: Seeds the database with initial system groups and memberships.
+-- Backend file: 07_system_groups.sql
+
+-- This script establishes the core user groups required by the application,
+-- such as administrators and general users. It also populates these groups
+-- with the system users created in the previous script. The script is idempotent.
 
 -- Insert system groups
 INSERT INTO app.groups (group_id, group_name, group_status, group_owner, is_system) VALUES

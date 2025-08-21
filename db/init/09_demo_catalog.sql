@@ -1,6 +1,10 @@
 -- Version: 1.0
--- Description: Demo catalog data (sections and services)
--- Backend file: demo_catalog
+-- Description: Seeds the database with demo catalog data, including sections and services.
+-- Backend file: 09_demo_catalog.sql
+
+-- This script populates the product/service catalog with a set of demo entries
+-- to provide a meaningful example for new users. It includes creating catalog
+-- sections and linking services to them. The script is idempotent.
 
 -- Insert catalog sections
 INSERT INTO app.catalog_sections (id, name, owner, description, status, is_public, "order", icon_name, color, created_by) VALUES

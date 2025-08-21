@@ -1,6 +1,6 @@
--- Version: 1.0
--- Description: Create sequences
--- Backend file: init_sequences
+-- Version: 1.1
+-- Description: Create sequences for the application.
+-- Backend file: 02_sequences.sql
 
 -- Create sequences
 CREATE SEQUENCE IF NOT EXISTS app.tokens_id_seq

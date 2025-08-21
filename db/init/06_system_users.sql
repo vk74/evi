@@ -1,6 +1,11 @@
 -- Version: 1.0
--- Description: System users seed data
--- Backend file: system_users
+-- Description: Seeds the database with initial system users and their profiles.
+-- Backend file: 06_system_users.sql
+
+-- This script inserts the essential system users required for the application to function,
+-- including a default administrator and several test/demo users.
+-- Passwords are pre-hashed. The script is idempotent, using ON CONFLICT to prevent
+-- errors on subsequent runs.
 
 -- Insert system users
 INSERT INTO app.users (user_id, username, hashed_password, email, is_staff, account_status, first_name, last_name, created_at) VALUES
@@ -9,9 +14,9 @@ INSERT INTO app.users (user_id, username, hashed_password, email, is_staff, acco
 -- Test user t1 (with original hash)
 ('550e8400-e29b-41d4-a716-446655440002', 't1', '$2b$10$USKBfWFGWHx8oIG3O2GxWej0cFtgDY4DGKzBn4vH7VGNxqQZhDBGy', 't1@example.com', false, 'active', 'Test', 'User', NOW()),
 -- Demo users
-('550e8400-e29b-41d4-a716-446655440003', 'john.doe', '$2b$10$USKBfWFGWHx8oIG3O2GxWej0cFtgDY4DGKzBn4vH7VGNxqQZhDBGy', 'john.doe@example.com', false, 'active', 'John', 'Doe', NOW()),
-('550e8400-e29b-41d4-a716-446655440004', 'jane.smith', '$2b$10$USKBfWFGWHx8oIG3O2GxWej0cFtgDY4DGKzBn4vH7VGNxqQZhDBGy', 'jane.smith@example.com', false, 'active', 'Jane', 'Smith', NOW()),
-('550e8400-e29b-41d4-a716-446655440005', 'bob.wilson', '$2b$10$USKBfWFGWHx8oIG3O2GxWej0cFtgDY4DGKzBn4vH7VGNxqQZhDBGy', 'bob.wilson@example.com', false, 'active', 'Bob', 'Wilson', NOW())
+('550e8400-e29b-41d4-a716-446655440003', 'johndoe', '$2b$10$USKBfWFGWHx8oIG3O2GxWej0cFtgDY4DGKzBn4vH7VGNxqQZhDBGy', 'john.doe@example.com', false, 'active', 'John', 'Doe', NOW()),
+('550e8400-e29b-41d4-a716-446655440004', 'janesmith', '$2b$10$USKBfWFGWHx8oIG3O2GxWej0cFtgDY4DGKzBn4vH7VGNxqQZhDBGy', 'jane.smith@example.com', false, 'active', 'Jane', 'Smith', NOW()),
+('550e8400-e29b-41d4-a716-446655440005', 'bobwilson', '$2b$10$USKBfWFGWHx8oIG3O2GxWej0cFtgDY4DGKzBn4vH7VGNxqQZhDBGy', 'bob.wilson@example.com', false, 'active', 'Bob', 'Wilson', NOW())
 ON CONFLICT (user_id) DO UPDATE SET
     username = EXCLUDED.username,
     email = EXCLUDED.email,

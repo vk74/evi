@@ -1,6 +1,6 @@
--- Version: 1.0
--- Description: Create enum types
--- Backend file: init_enums
+-- Version: 1.1
+-- Description: Create enum types for the application.
+-- Backend file: 03_enums.sql
 
 -- Create enum types
 DO $$ BEGIN

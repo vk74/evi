@@ -1,32 +1,26 @@
-# EV2 Database Image
-# Version: 1.0.0
-# Description: PostgreSQL database with EV2 application schema and data
+# ev2 Database Image
+# Version: 1.1
+# Description: This Dockerfile prepares the PostgreSQL image for the ev2 application.
+# Backend file: Dockerfile
 
-FROM postgres:17
+# Use the official PostgreSQL 17 image as the base
+FROM postgres:17-alpine
 
-# Set labels
-LABEL maintainer="EV2 Team"
-LABEL version="1.0.0"
-LABEL description="EV2 PostgreSQL Database with pre-configured schema"
-
-# Copy initialization scripts
-COPY init_prepared/ /docker-entrypoint-initdb.d/
-
-# Set default environment variables
+# Set environment variables for application database setup
+# These are used by the official postgres entrypoint script
 ENV POSTGRES_DB=maindb
 ENV POSTGRES_USER=postgres
-# POSTGRES_PASSWORD will be set from docker-compose
-# APP_DB_PASSWORD will be set from docker-compose
+# The POSTGRES_PASSWORD will be provided from docker-compose at runtime
 
-# Database configuration
-ENV POSTGRES_INITDB_ARGS="--encoding=UTF-8 --lc-collate=C --lc-ctype=C"
+# The main purpose of this Dockerfile is to copy all initialization scripts
+# into the standard PostgreSQL entrypoint directory.
+# Scripts in /docker-entrypoint-initdb.d are automatically executed in alphabetical
+# order when the container is started for the first time with an empty data directory.
+# This initializes the database schema, creates users, and seeds initial data.
+COPY init/ /docker-entrypoint-initdb.d/
 
-# Health check
-HEALTHCHECK --interval=10s --timeout=5s --start-period=30s --retries=5 \
-    CMD pg_isready -U $POSTGRES_USER -d $POSTGRES_DB
-
-# Expose port
+# Expose the standard PostgreSQL port
 EXPOSE 5432
 
-# Set volume for persistent data
-VOLUME ["/var/lib/postgresql/data"]
+# The default command is inherited from the base postgres image,
+# which starts the PostgreSQL server.

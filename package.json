@@ -25,7 +25,8 @@
     "docker:build": "docker-compose build",
     "docker:up": "docker-compose up -d",
     "docker:down": "docker-compose down",
-    "docker:logs": "docker-compose logs -f"
+    "docker:logs": "docker-compose logs -f",
+    "local:build": "node deployment/build.js"
   },
   "keywords": [
     "ev2",

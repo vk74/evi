@@ -1,52 +1,60 @@
 services:
-  # EV2 Database
+  # ev2 Database
   ev2-database:
-    image: ev2/database:latest
+    # Build the image from the local Dockerfile in the 'db' directory
+    build:
+      context: ../db
+      dockerfile: Dockerfile
     container_name: ev2-database-local
     restart: unless-stopped
     
-    # Environment variables
+    # Environment variables passed to the container
     environment:
-      POSTGRES_DB: ${POSTGRES_DB:-maindb}
-      POSTGRES_USER: ${POSTGRES_USER:-postgres}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-      APP_DB_USER: ${APP_DB_USER:-app_service}
-      APP_DB_PASSWORD: ${APP_DB_PASSWORD}
+      # Sets the superuser password for PostgreSQL.
+      # This is required by the official postgres image.
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-dev_admin_password}
+      
+      # Note: APP_DB_USER and APP_DB_PASSWORD are NOT needed here anymore.
+      # The 'app_service' user is now created and configured by the 00_init.sql script.
     
-    # Port mapping
+    # Port mapping: Exposes the container's port 5432 on the host's port 5445
     ports:
       - "${POSTGRES_PORT:-5445}:5432"
     
-    # Volume for persistent data
+    # Volume for persistent data. This ensures that database data survives container restarts.
     volumes:
       - ev2_database_data:/var/lib/postgresql/data
     
-    # Health check
+    # Health check to ensure the database is ready before other services start
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-maindb}"]
+      test: ["CMD-SHELL", "psql -U postgres -d maindb -c 'SELECT 1 FROM app.app_settings LIMIT 1'"]
       interval: 10s
       timeout: 5s
       retries: 5
-      start_period: 30s
+      start_period: 10s # Reduced start_period for faster local startup
     
-    # Network
+    # Network configuration
     networks:
       - ev2-network
 
-  # EV2 Backend API
+  # ev2 Backend API
   ev2-backend:
-    image: ev2/backend:latest
+    # Build the image from the local Dockerfile in the 'back' directory
+    build:
+      context: ../back
+      dockerfile: Dockerfile
     container_name: ev2-backend-local
     restart: unless-stopped
     
     # Environment variables
     environment:
-      DATABASE_URL: postgresql://${APP_DB_USER:-app_service}:${APP_DB_PASSWORD}@ev2-database:5432/${POSTGRES_DB:-maindb}
+      # Database connection string for the backend application.
+      # It now uses the hardcoded user/password for local development simplicity.
       PGHOST: ev2-database
       PGPORT: 5432
       PGDATABASE: ${POSTGRES_DB:-maindb}
-      PGUSER: ${APP_DB_USER:-app_service}
-      PGPASSWORD: ${APP_DB_PASSWORD}
+      PGUSER: app_service
+      PGPASSWORD: P@ssw0rd
       NODE_ENV: development
       API_PORT: ${API_PORT:-3000}
     
@@ -54,18 +62,21 @@ services:
     ports:
       - "${API_PORT:-3000}:3000"
     
-    # Dependencies
+    # Ensures that the backend container starts only after the database is healthy
     depends_on:
       ev2-database:
         condition: service_healthy
     
-    # Network
+    # Network configuration
     networks:
       - ev2-network
 
-  # EV2 Frontend
+  # ev2 Frontend
   ev2-frontend:
-    image: ev2/frontend:latest
+    # Build the image from the local Dockerfile in the 'front' directory
+    build:
+      context: ../front
+      dockerfile: Dockerfile
     container_name: ev2-frontend-local
     restart: unless-stopped
     
@@ -78,20 +89,20 @@ services:
     ports:
       - "${FRONTEND_PORT:-8080}:80"
     
-    # Dependencies
+    # Ensures that the frontend container starts only after the backend is available
     depends_on:
       - ev2-backend
     
-    # Network
+    # Network configuration
     networks:
       - ev2-network
 
-# Volumes
+# Volumes configuration
 volumes:
   ev2_database_data:
     driver: local
 
-# Networks
+# Networks configuration
 networks:
   ev2-network:
     driver: bridge

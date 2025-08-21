@@ -1,9 +1,6 @@
--- Version: 1.0
--- Description: Create app schema and migration tracking
--- Backend file: init_schema
-
--- Create app schema
-CREATE SCHEMA IF NOT EXISTS app;
+-- Version: 1.2
+-- Description: Enables extensions and creates migration tracking tables.
+-- Backend file: 01_schema.sql
 
 -- Enable required extensions
 CREATE EXTENSION IF NOT EXISTS "pg_trgm";

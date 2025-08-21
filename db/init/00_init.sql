@@ -1,0 +1,38 @@
+-- Version: 1.1
+-- Description: Creates the app schema and application user, then grants necessary privileges. This script runs first.
+-- Backend file: 00_init.sql
+
+-- This script creates the dedicated application user ('app_service') with a hardcoded
+-- password for simplified local development. In a production environment, this password
+-- should be managed securely, for example, through environment variables or a secrets manager.
+-- The script is idempotent and can be run multiple times without causing errors.
+
+-- Create the application schema FIRST
+CREATE SCHEMA IF NOT EXISTS app;
+
+DO $$
+BEGIN
+   -- Create the role only if it does not already exist
+   IF NOT EXISTS (SELECT FROM pg_roles WHERE rolname = 'app_service') THEN
+      CREATE ROLE app_service LOGIN PASSWORD 'P@ssw0rd';
+   END IF;
+END
+$$;
+
+-- Grant basic connection rights to the database
+GRANT CONNECT ON DATABASE maindb TO app_service;
+
+-- Grant usage on the 'app' schema, allowing the user to see and access objects within it
+GRANT USAGE ON SCHEMA app TO app_service;
+
+-- Grant comprehensive CRUD permissions on all existing tables within the 'app' schema
+GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA app TO app_service;
+
+-- Grant permissions for using all existing sequences, which is crucial for tables with auto-incrementing IDs
+GRANT USAGE, SELECT, UPDATE ON ALL SEQUENCES IN SCHEMA app TO app_service;
+
+-- IMPORTANT: Set default privileges for future objects.
+-- This ensures that any new tables or sequences created in the 'app' schema
+-- will automatically have the correct permissions granted to 'app_service'.
+ALTER DEFAULT PRIVILEGES IN SCHEMA app GRANT SELECT, INSERT, UPDATE, DELETE ON TABLES TO app_service;
+ALTER DEFAULT PRIVILEGES IN SCHEMA app GRANT USAGE, SELECT, UPDATE ON SEQUENCES TO app_service;

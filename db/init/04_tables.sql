@@ -1,14 +1,6 @@
--- Version: 1.0
--- Description: Create all tables
--- Backend file: init_tables
-
--- Create sequences
-CREATE SEQUENCE IF NOT EXISTS app.tokens_id_seq
-    INCREMENT 1
-    START 1
-    MINVALUE 1
-    MAXVALUE 9223372036854775807
-    CACHE 1;
+-- Version: 1.1
+-- Description: Create all application tables, functions, and triggers.
+-- Backend file: 04_tables.sql
 
 -- Create users table
 CREATE TABLE IF NOT EXISTS app.users (
@@ -92,7 +84,7 @@ CREATE TABLE IF NOT EXISTS app.tokens (
     CONSTRAINT tokens_token_hash_key UNIQUE (token_hash)
 );
 
--- Set ownership for sequence
+-- Set sequence ownership
 ALTER SEQUENCE app.tokens_id_seq OWNED BY app.tokens.id;
 
 -- Create app_settings table
@@ -272,6 +264,3 @@ $function$;
 --     '0 * * * *',  -- Every hour at minute 0
 --     'SELECT app.cleanup_expired_tokens();'
 -- ); -- Commented out for local development
-
--- Set sequence ownership
-ALTER SEQUENCE app.tokens_id_seq OWNED BY app.tokens.id;

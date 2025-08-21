@@ -1,6 +1,6 @@
--- Version: 1.0
--- Description: Create all indexes
--- Backend file: init_indexes
+-- Version: 1.1
+-- Description: Create all indexes for the application tables.
+-- Backend file: 05_indexes.sql
 
 -- Create indexes for app_settings
 CREATE INDEX IF NOT EXISTS idx_app_sections_path ON app.app_settings USING btree (section_path);
