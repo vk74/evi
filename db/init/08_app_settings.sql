@@ -22,7 +22,7 @@ INSERT INTO app.app_settings (
 ('Application.Security.PasswordPolicies', 'password.require.lowercase', 'all', 'false', '{"type":"boolean"}', 'true', 'Require lowercase letters in password', false),
 ('Application.Security.PasswordPolicies', 'password.require.numbers', 'all', 'false', '{"type":"boolean"}', 'true', 'Require numbers in password', false),
 ('Application.Security.PasswordPolicies', 'password.require.special.chars', 'all', 'false', '{"type":"boolean"}', 'false', 'Require special characters in password', false),
-('Application.Security.PasswordPolicies', 'password.allowed.special.chars', 'all', '"!@#$%^&*()_+-=[]{}|;:,.<>?"', '{"type":"string","pattern":"^[!@#$%^&*()_+\\\\-=\\\[\\\]{}|;:,.<>?]+$"}', '"!@#$%^&*()_+-=[]{}|;:,.<>?"', 'Allowed special characters', false),
+('Application.Security.PasswordPolicies', 'password.allowed.special.chars', 'all', '"!@#$%^&*()_+-=[]{}|;:,.<>?"', '{"type":"string","pattern":"^[!@#$%^&*()_+\\\\-=\\[\\]{}|;:,.<>?]+$"}', '"!@#$%^&*()_+-=[]{}|;:,.<>?"', 'Allowed special characters', false),
 
 -- Session Management Settings
 ('Application.Security.SessionManagement', 'access.token.lifetime', 'all', '120', '{"type":"integer","enum":[5,10,15,20,25,30,35,40,45,50,55,60,65,70,75,80,85,90,95,100,105,110,115,120]}', '30', 'Validity period of JWT access token issued to users', false),
