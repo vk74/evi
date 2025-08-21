@@ -1,8 +1,7 @@
-#
-# version: 1.0.0
-# Purpose: Backend container build for Node.js API server. BACKEND file: Dockerfile
-# Logic: Multi-stage build (Node for build → Node for runtime). Copies dist and runtime assets; exposes 3000.
-#
+# Version: 1.2
+# Description: Multi-stage Dockerfile for the ev2 backend.
+# Creates a build stage to compile TypeScript and a lean runtime stage.
+# Backend file: Dockerfile
 
 # =========================
 # Build stage
@@ -11,15 +10,15 @@ FROM node:20-alpine AS build
 
 WORKDIR /app
 
-# Install dependencies first (use cache)
+# Copy package files and install all dependencies (including dev)
 COPY package*.json ./
 RUN npm ci
 
-# Copy sources
+# Copy the rest of the source code
 COPY tsconfig.json ./
-COPY src ./src
+COPY ./src ./src
 
-# Build TypeScript and copy runtime assets
+# Build the application (npm run build will correctly use the tsc from node_modules)
 RUN npm run build
 
 
@@ -30,28 +29,26 @@ FROM node:20-alpine
 
 WORKDIR /app
 
-# Copy only production deps
+# Copy only production dependencies
 COPY package*.json ./
 RUN npm ci --omit=dev
 
-# Copy compiled app
+# Copy the compiled code from the build stage
 COPY --from=build /app/dist ./dist
 
-# Create module-alias-compatible path: map '@'→'src' to compiled code in 'dist'
-RUN ln -s /app/dist /app/src
-
-# Copy runtime keys where server expects them via './src/keys/...'
-# Since /app/src is a symlink to /app/dist, place keys under dist/keys
+# Copy the private keys from the build stage into the correct location
 COPY --from=build /app/src/keys ./dist/keys
 
-ENV NODE_ENV=production
+# Create a symlink for module-alias to work correctly.
+# The application uses '@/' which points to 'src/', so we link 'src' to 'dist'
+# where the compiled code and keys now reside.
+RUN ln -s /app/dist /app/src
 
+
+# Expose the application port
 EXPOSE 3000
 
-# Basic healthcheck (root route returns text when server is up)
-HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=5 \
-  CMD wget -qO- http://127.0.0.1:3000/ || exit 1
-
+# Command to run the application
 CMD ["node", "dist/server.js"]
 
 
