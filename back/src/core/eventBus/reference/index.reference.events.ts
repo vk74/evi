@@ -100,6 +100,11 @@ export const eventReferenceFiles: Record<string, string[]> = {
     path.resolve(__dirname, '../../middleware/events.middleware.ts')
   ],
   
+  // Guards events - events for guard middleware operations
+  guards: [
+    path.resolve(__dirname, '../../guards/events.guards.ts')
+  ],
+  
   // Item selector events - events for item selector operations
   itemSelector: [
     path.resolve(__dirname, '../../services/item-selector/events.item.selector.ts')

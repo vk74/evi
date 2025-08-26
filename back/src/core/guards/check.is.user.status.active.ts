@@ -1,5 +1,7 @@
 /**
- * @file check.is.user.status.active.ts
+ * check.is.user.status.active.ts - backend file
+ * version: 1.0.0
+ * 
  * BACKEND Guard middleware for checking user activity status
  * 
  * Functionality:
@@ -9,12 +11,14 @@
  * - Returns 404 Not Found for non-existent users
  * - Returns 500 Internal Server Error for database errors
  * - Includes comprehensive logging and error handling
+ * - Publishes events to event bus for monitoring and tracking (errors and warnings only)
  */
 
 import { Response, NextFunction } from 'express';
 import { AuthenticatedRequest, GuardFunction } from '../../guards/types.guards';
 import { isUserActive } from '../helpers/is.user.active';
 import { createAndPublishEvent } from '../eventBus/fabric.events';
+import { CHECK_USER_STATUS_ACTIVE_EVENTS } from './events.guards';
 
 /**
  * Guard middleware to check if user account is active
@@ -32,7 +36,19 @@ const checkIsUserStatusActive: GuardFunction = async (
   const userId = req.user?.user_id;
 
   if (!userId) {
-    console.log('User status check failed: Missing user_id from JWT');
+    // Publish warning event
+    await createAndPublishEvent({
+      req,
+      eventName: CHECK_USER_STATUS_ACTIVE_EVENTS.MISSING_USER_ID.eventName,
+      payload: {
+        requestInfo: {
+          hasReq: !!req,
+          hasUser: !!(req && req.user),
+          hasUserId: !!(req && req.user && req.user.user_id)
+        }
+      }
+    });
+    
     res.status(401).json({
       message: 'User authentication required'
     });
@@ -40,14 +56,19 @@ const checkIsUserStatusActive: GuardFunction = async (
   }
 
   try {
-    console.log('Checking user activity status for user:', userId);
-    
     // Use optimized helper to check user activity
     const isActive = await isUserActive(userId);
     
     if (isActive === null) {
       // User not found in database
-      console.log('User status check failed: User not found in database');
+      await createAndPublishEvent({
+        req,
+        eventName: CHECK_USER_STATUS_ACTIVE_EVENTS.USER_NOT_FOUND.eventName,
+        payload: {
+          userId
+        }
+      });
+      
       res.status(404).json({
         message: 'User not found'
       });
@@ -56,7 +77,14 @@ const checkIsUserStatusActive: GuardFunction = async (
     
     if (!isActive) {
       // User account is disabled
-      console.log('User status check failed: Account is disabled for user:', userId);
+      await createAndPublishEvent({
+        req,
+        eventName: CHECK_USER_STATUS_ACTIVE_EVENTS.ACCOUNT_DISABLED.eventName,
+        payload: {
+          userId
+        }
+      });
+      
       res.status(403).json({
         message: 'Account is disabled'
       });
@@ -64,12 +92,20 @@ const checkIsUserStatusActive: GuardFunction = async (
     }
     
     // User is active, proceed to next middleware
-    console.log('User status check successful for user:', userId);
     next();
     
   } catch (error) {
     // Database or other error occurred
-    console.error('Error checking user activity status:', error);
+    await createAndPublishEvent({
+      req,
+      eventName: CHECK_USER_STATUS_ACTIVE_EVENTS.DATABASE_ERROR.eventName,
+      payload: {
+        userId,
+        error: error
+      },
+      errorData: error instanceof Error ? error.message : String(error)
+    });
+    
     res.status(500).json({
       message: 'Server error during user status check',
       details: error instanceof Error ? error.message : String(error)
