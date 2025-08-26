@@ -1,20 +1,146 @@
 /**
  * @file connection.handler.ts
- * @version 1.0.03
+ * @version 1.0.04
  * @description Backend file. Provides a universal handler for Express controllers in the ev2 backend application.
  * The handler standardizes HTTP connection and error handling for all controllers. It accepts a business logic function (async),
  * executes it, and sends a standard response or error. The business logic itself remains in the controller or service files.
  * This file includes comprehensive event logging for monitoring and debugging purposes.
+ * Now includes built-in rate limiting functionality.
  */
 
 import { Request, Response, NextFunction } from 'express';
 import fabricEvents from '../eventBus/fabric.events';
 import { CONNECTION_HANDLER_EVENTS } from './events.connection.handler';
+// Rate limiting configuration
+interface RateLimitConfig {
+  enabled?: boolean;
+  maxRequestsPerMinute?: number;
+  maxRequestsPerHour?: number;
+  blockDurationMinutes?: number;
+}
+
+// Default rate limiting configuration
+const DEFAULT_RATE_LIMIT_CONFIG: RateLimitConfig = {
+  enabled: true,
+  maxRequestsPerMinute: 1000,
+  maxRequestsPerHour: 10000,
+  blockDurationMinutes: 5
+};
+
+// In-memory rate limiting store
+const rateLimitStore = new Map<string, {
+  requestCount: number;
+  windowStart: number;
+  lastReset: number;
+  blockedUntil?: number;
+}>();
+
+// Rate limiting cleanup
+setInterval(() => {
+  const now = Date.now();
+  const hourWindow = 60 * 60 * 1000; // 1 hour in milliseconds
+  
+  for (const [clientId, entry] of rateLimitStore.entries()) {
+    if (now - entry.lastReset > hourWindow * 2) {
+      rateLimitStore.delete(clientId);
+    }
+  }
+}, 60 * 60 * 1000); // Clean up every hour
+
+// Rate limiting function
+function checkRateLimit(req: Request, config: RateLimitConfig = DEFAULT_RATE_LIMIT_CONFIG): {
+  allowed: boolean;
+  retryAfter?: number;
+  remainingRequests?: number;
+  resetTime?: number;
+  reason?: string;
+} {
+  if (!config.enabled) {
+    return { allowed: true };
+  }
+
+  const clientId = req.ip || req.connection?.remoteAddress || req.socket?.remoteAddress || 'unknown';
+  const now = Date.now();
+  const minuteWindow = 60 * 1000; // 1 minute in milliseconds
+  const hourWindow = 60 * 60 * 1000; // 1 hour in milliseconds
+  
+  let entry = rateLimitStore.get(clientId);
+  if (!entry) {
+    entry = {
+      requestCount: 0,
+      windowStart: now,
+      lastReset: now
+    };
+    rateLimitStore.set(clientId, entry);
+  }
+
+  // Check temporary block
+  if (entry.blockedUntil && now < entry.blockedUntil) {
+    const retryAfter = Math.ceil((entry.blockedUntil - now) / 1000);
+    return {
+      allowed: false,
+      retryAfter,
+      reason: 'temporarily_blocked'
+    };
+  }
+
+  // Reset windows
+  if (now - entry.windowStart >= minuteWindow) {
+    entry.requestCount = 0;
+    entry.windowStart = now;
+  }
+  if (now - entry.lastReset >= hourWindow) {
+    entry.requestCount = 0;
+    entry.lastReset = now;
+    entry.windowStart = now;
+  }
+
+  // Check limits
+  if (entry.requestCount >= config.maxRequestsPerMinute!) {
+    if (config.blockDurationMinutes) {
+      entry.blockedUntil = now + (config.blockDurationMinutes * 60 * 1000);
+    }
+    rateLimitStore.set(clientId, entry);
+    
+    const retryAfter = Math.ceil(minuteWindow / 1000);
+    return {
+      allowed: false,
+      retryAfter,
+      resetTime: Math.floor((entry.windowStart + minuteWindow) / 1000),
+      reason: 'minute_limit_exceeded'
+    };
+  }
+
+  if (entry.requestCount >= config.maxRequestsPerHour!) {
+    const retryAfter = Math.ceil(hourWindow / 1000);
+    return {
+      allowed: false,
+      retryAfter,
+      resetTime: Math.floor((entry.lastReset + hourWindow) / 1000),
+      reason: 'hour_limit_exceeded'
+    };
+  }
+
+  // Increment and return success
+  entry.requestCount++;
+  rateLimitStore.set(clientId, entry);
+  
+  const remainingRequests = Math.min(
+    config.maxRequestsPerMinute! - entry.requestCount,
+    config.maxRequestsPerHour! - entry.requestCount
+  );
+  
+  return {
+    allowed: true,
+    remainingRequests,
+    resetTime: Math.floor((entry.windowStart + minuteWindow) / 1000)
+  };
+}
 
 // Define error code type
 type ErrorCode = 'INVALID_REQUEST' | 'REQUIRED_FIELD_ERROR' | 'VALIDATION_ERROR' | 
                 'NOT_FOUND' | 'UNAUTHORIZED' | 'FORBIDDEN' | 'CONFLICT' | 
-                'INTERNAL_SERVER_ERROR';
+                'RATE_LIMIT_EXCEEDED' | 'TEMPORARILY_BLOCKED' | 'INTERNAL_SERVER_ERROR';
 
 // Error status code mapping
 const ERROR_STATUS_CODES: Record<ErrorCode, number> = {
@@ -25,6 +151,8 @@ const ERROR_STATUS_CODES: Record<ErrorCode, number> = {
   'UNAUTHORIZED': 401,
   'FORBIDDEN': 403,
   'CONFLICT': 409,
+  'RATE_LIMIT_EXCEEDED': 429,
+  'TEMPORARILY_BLOCKED': 429,
   'INTERNAL_SERVER_ERROR': 500
 };
 
@@ -39,14 +167,80 @@ const ERROR_STATUS_CODES: Record<ErrorCode, number> = {
  */
 export function connectionHandler<T = any>(
   controllerLogic: (req: Request, res: Response) => Promise<T>,
-  controllerName?: string
+  controllerName?: string,
+  rateLimitConfig?: RateLimitConfig
 ) {
   return async (req: Request, res: Response, next: NextFunction) => {
     const startTime = Date.now();
     const requestId = req.headers['x-request-id'] || `req-${Date.now()}`;
     const controller = controllerName || 'unknown';
+    const ipAddress = req.ip || req.connection?.remoteAddress || 'unknown';
     
     try {
+      // Rate limiting check - FIRST, before any other processing
+      const rateLimitResult = checkRateLimit(req, rateLimitConfig);
+      
+      // Log rate limit check
+      await fabricEvents.createAndPublishEvent({
+        req,
+        eventName: CONNECTION_HANDLER_EVENTS.RATE_LIMIT_CHECK.eventName,
+        payload: {
+          controllerName: controller,
+          requestId,
+          ipAddress,
+          allowed: rateLimitResult.allowed,
+          remainingRequests: rateLimitResult.remainingRequests,
+          reason: rateLimitResult.reason
+        }
+      });
+
+      // If rate limit exceeded, return error immediately
+      if (!rateLimitResult.allowed) {
+        // Log rate limit exceeded event
+        await fabricEvents.createAndPublishEvent({
+          req,
+          eventName: CONNECTION_HANDLER_EVENTS.RATE_LIMIT_EXCEEDED.eventName,
+          payload: {
+            controllerName: controller,
+            requestId,
+            ipAddress,
+            reason: rateLimitResult.reason,
+            retryAfter: rateLimitResult.retryAfter
+          }
+        });
+
+        // Set rate limit headers
+        res.set({
+          'Retry-After': rateLimitResult.retryAfter?.toString() || '60',
+          'X-RateLimit-Limit': '10',
+          'X-RateLimit-Remaining': '0',
+          'X-RateLimit-Reset': rateLimitResult.resetTime?.toString() || Math.floor(Date.now() / 1000 + 60).toString()
+        });
+
+        // Return rate limit error
+        const errorCode = rateLimitResult.reason === 'temporarily_blocked' ? 'TEMPORARILY_BLOCKED' : 'RATE_LIMIT_EXCEEDED';
+        const errorResponse = {
+          code: errorCode,
+          message: rateLimitResult.reason === 'temporarily_blocked' 
+            ? 'Too many requests. Please try again later.'
+            : 'Rate limit exceeded',
+          retryAfter: rateLimitResult.retryAfter,
+          details: process.env.NODE_ENV === 'development' ? rateLimitResult.reason : undefined
+        };
+
+        res.status(429).json(errorResponse);
+        return;
+      }
+
+      // Set rate limit headers for successful requests
+      if (rateLimitResult.remainingRequests !== undefined && rateLimitResult.resetTime) {
+        res.set({
+          'X-RateLimit-Limit': '10',
+          'X-RateLimit-Remaining': rateLimitResult.remainingRequests.toString(),
+          'X-RateLimit-Reset': rateLimitResult.resetTime.toString()
+        });
+      }
+
       // Log request received with enhanced details
       await fabricEvents.createAndPublishEvent({
         req,
@@ -57,7 +251,7 @@ export function connectionHandler<T = any>(
           controllerName: controller,
           requestId,
           userAgent: req.headers['user-agent'],
-          ipAddress: req.ip || req.connection?.remoteAddress
+          ipAddress
         }
       });
 
@@ -164,6 +358,7 @@ export function connectionHandler<T = any>(
           401: CONNECTION_HANDLER_EVENTS.RESPONSE_SENT_401,
           403: CONNECTION_HANDLER_EVENTS.RESPONSE_SENT_403,
           404: CONNECTION_HANDLER_EVENTS.RESPONSE_SENT_404,
+          429: CONNECTION_HANDLER_EVENTS.RATE_LIMIT_EXCEEDED,
           500: CONNECTION_HANDLER_EVENTS.RESPONSE_SENT_500
         };
 

@@ -245,9 +245,29 @@ export const CONNECTION_HANDLER_EVENTS = {
     eventName: 'connectionHandler.rate.limit.exceeded',
     source: 'connection handler',
     eventType: 'security' as const,
-    severity: 'debug' as const,
+    severity: 'warning' as const,
     eventMessage: 'Rate limit exceeded',
-    payload: null, // Will contain: { controllerName, requestId, ipAddress, limit, window }
+    payload: null, // Will contain: { controllerName, requestId, ipAddress, limit, window, reason }
+    version: '1.0.0'
+  },
+
+  RATE_LIMIT_CHECK: {
+    eventName: 'connectionHandler.rate.limit.check',
+    source: 'connection handler',
+    eventType: 'security' as const,
+    severity: 'debug' as const,
+    eventMessage: 'Rate limit check performed',
+    payload: null, // Will contain: { controllerName, requestId, ipAddress, allowed, remainingRequests }
+    version: '1.0.0'
+  },
+
+  RATE_LIMIT_TEMPORARY_BLOCK: {
+    eventName: 'connectionHandler.rate.limit.temporary.block',
+    source: 'connection handler',
+    eventType: 'security' as const,
+    severity: 'warning' as const,
+    eventMessage: 'Client temporarily blocked due to rate limit violations',
+    payload: null, // Will contain: { controllerName, requestId, ipAddress, blockDuration, reason }
     version: '1.0.0'
   },
 
