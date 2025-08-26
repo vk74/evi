@@ -30,7 +30,8 @@ let currentSettings = {
   catalog: true,
   services: true,
   products: true,
-  adminServices: true
+  adminServices: true,
+  account: true
 };
 
 /**

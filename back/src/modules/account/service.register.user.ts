@@ -15,7 +15,9 @@ import { Request, Response } from 'express';
 import bcrypt from 'bcrypt';
 import { Pool, QueryResult } from 'pg';
 import { pool as pgPool } from '../../core/db/maindb';
-import { userQueries } from '../../middleware/queries.users';
+import { userRegistrationQueries } from './queries.account';
+import fabricEvents from '../../core/eventBus/fabric.events';
+import { ACCOUNT_REGISTRATION_EVENTS } from './events.account';
 
 // Type assertion for pool
 const pool = pgPool as Pool;
@@ -66,7 +68,7 @@ const registerUser = async (req: EnhancedRequest, res: Response): Promise<void> 
         }
 
         // Проверка уникальности username
-        const usernameResult: QueryResult = await pool.query(userQueries.checkUsername.text, [username]);
+        const usernameResult: QueryResult = await pool.query(userRegistrationQueries.checkUsername.text, [username]);
         if (usernameResult.rows.length > 0) {
             res.status(400).json({
                 message: 'this username is already registered by another user'
@@ -75,7 +77,7 @@ const registerUser = async (req: EnhancedRequest, res: Response): Promise<void> 
         }
 
         // Проверка уникальности email
-        const emailResult: QueryResult = await pool.query(userQueries.checkEmail.text, [email]);
+        const emailResult: QueryResult = await pool.query(userRegistrationQueries.checkEmail.text, [email]);
         if (emailResult.rows.length > 0) {
             res.status(400).json({
                 message: 'this e-mail is already registered by another user'
@@ -85,7 +87,7 @@ const registerUser = async (req: EnhancedRequest, res: Response): Promise<void> 
 
         // Проверка уникальности телефона (только если он предоставлен)
         if (phone) {
-            const phoneResult: QueryResult = await pool.query(userQueries.checkPhone.text, [phone]);
+            const phoneResult: QueryResult = await pool.query(userRegistrationQueries.checkPhone.text, [phone]);
             if (phoneResult.rows.length > 0) {
                 res.status(400).json({
                     message: 'this phone number is already registered by another user'
@@ -103,7 +105,7 @@ const registerUser = async (req: EnhancedRequest, res: Response): Promise<void> 
         try {
             // Вставка основных данных пользователя в app.users
             const userResult: QueryResult = await pool.query(
-                userQueries.insertUserWithNames.text,
+                userRegistrationQueries.insertUserWithNames.text,
                 [
                     username,         // $1
                     hashedPassword,   // $2
@@ -120,7 +122,7 @@ const registerUser = async (req: EnhancedRequest, res: Response): Promise<void> 
 
             // Вставка дополнительных данных в app.user_profiles
             await pool.query(
-                userQueries.insertAdminUserProfileWithoutNames.text,
+                userRegistrationQueries.insertAdminUserProfileWithoutNames.text,
                 [
                     userId,          // $1
                     null,            // $2 (gender)
@@ -132,6 +134,18 @@ const registerUser = async (req: EnhancedRequest, res: Response): Promise<void> 
             );
 
             await pool.query('COMMIT');
+
+            // Log successful registration
+            await fabricEvents.createAndPublishEvent({
+                eventName: ACCOUNT_REGISTRATION_EVENTS.REGISTRATION_SUCCESS.eventName,
+                req,
+                payload: {
+                    userId,
+                    username,
+                    email,
+                    timestamp: new Date().toISOString()
+                }
+            });
 
             res.status(201).json({
                 message: 'user registration successful',
@@ -146,6 +160,20 @@ const registerUser = async (req: EnhancedRequest, res: Response): Promise<void> 
 
     } catch (error) {
         console.error('Registration error:', error);
+        
+        // Log failed registration
+        await fabricEvents.createAndPublishEvent({
+            eventName: ACCOUNT_REGISTRATION_EVENTS.REGISTRATION_FAILED.eventName,
+            req,
+            payload: {
+                username: req.body.username,
+                email: req.body.email,
+                error: error instanceof Error ? error.message : String(error),
+                timestamp: new Date().toISOString()
+            },
+            errorData: error instanceof Error ? error.message : String(error)
+        });
+        
         res.status(500).json({
             message: 'registration failed',
             details: error instanceof Error ? error.message : String(error)

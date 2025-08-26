@@ -34,6 +34,7 @@ import updateSectionsPublishController from './service/sections/controller.admin
 import fetchAllServicesController from './service/sections/controller.admin.fetchallservices';
 import fetchSingleServiceController from './service/sections/controller.admin.fetchsingleservice';
 import deleteServicesController from './service/sections/controller.admin.deleteservices';
+import registerUserController from '../account/controller.register.user';
 
 const router: Router = express.Router();
 
@@ -55,7 +56,7 @@ router.post('/api/admin/groups/update-group-by-groupid', validateJWT, updateGrou
 router.get('/api/admin/groups/:groupId/members', validateJWT, fetchGroupMembers);
 router.post('/api/admin/groups/:groupId/members/remove', validateJWT, removeGroupMembers);
 
-// Routes for Catalog
+// Routes for Catalog Admin
 router.get('/api/admin/catalog/fetch-sections', validateJWT, fetchCatalogSections);
 router.post('/api/admin/catalog/create-section', validateJWT, createCatalogSection);
 router.post('/api/admin/catalog/update-section', validateJWT, updateCatalogSection);
@@ -64,7 +65,7 @@ router.get('/api/admin/catalog/fetchpublishingservices', validateJWT, fetchPubli
 router.post('/api/admin/catalog/update-services-publish', validateJWT, updateSectionServicesPublishController);
 // Ordering disabled: route removed
 
-// Routes for Services
+// Routes for Services Admin
 router.post('/api/admin/services/create', validateJWT, createServiceController);
 router.post('/api/admin/services/update', validateJWT, updateServiceController);
 router.post('/api/admin/services/update-sections-publish', validateJWT, updateSectionsPublishController);
@@ -72,6 +73,9 @@ router.get('/api/admin/services/fetchallservices', validateJWT, fetchAllServices
 router.get('/api/admin/services/fetchpublishingsections', validateJWT, fetchPublishingSectionsController);
 router.get('/api/admin/services/fetchsingleservice', validateJWT, fetchSingleServiceController);
 router.post('/api/admin/services/deleteservices', validateJWT, deleteServicesController);
+
+// Routes for Account Management
+router.post('/api/admin/users/register', validateJWT, registerUserController);
 
 // Export using ES modules syntax
 export default router;

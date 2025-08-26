@@ -10,7 +10,7 @@ import validateJWT from '../guards/auth.validate.jwt';
 import checkAccountPassword from '../../guards/auth.check.password';
 import checkAccountStatus from '../../guards/auth.check.status';
 import issueToken from '../../middleware/auth.issue.token';
-import registerUser from '../../modules/account/service.register.user';
+// Registration service moved to controller
 import getUserProfile from '../../modules/account/service.get.profile';
 import updateUserProfile from '../../modules/account/service.update.profile';
 import fetchPublicPasswordPoliciesController from '../public/controller.fetch.public.password.policies';
@@ -34,7 +34,7 @@ router.post('/api/auth/refresh', refreshTokensController);
 router.post('/api/auth/logout', validateJWT, logoutController);
 
 // Existing routes (updated imports)
-router.post('/api/auth/register', registerUser);
+// Registration route moved to admin routes
 router.post('/api/auth/change-password', (req, res) => {
     // TODO: Replace with serviceChangePassword when created
     res.status(501).json({ error: 'Change password service not implemented yet' });
