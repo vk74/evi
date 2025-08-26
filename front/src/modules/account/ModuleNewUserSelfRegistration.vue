@@ -26,6 +26,7 @@ import { fetchPublicPasswordPolicies } from '@/core/services/service.fetch.publi
 import { usePublicSettingsStore, type PasswordPolicies } from '@/core/state/state.public.settings'
 import PasswordPoliciesPanel from '@/core/ui/panels/panel.current.password.policies.vue'
 import { api } from '@/core/api/service.axios'
+import { fetchSettings } from '@/modules/admin/settings/service.fetch.settings'
 
 // ==================== STORES ====================
 const uiStore = useUiStore()
@@ -80,6 +81,13 @@ const invalidFields = ref<string[]>([])
  */
 const currentPasswordPolicies = ref<PasswordPolicies | null>(null)
 
+// ==================== REGISTRATION SETTINGS STATE ====================
+/**
+ * Registration page enabled/disabled state
+ */
+const registrationPageEnabled = ref<boolean | null>(null)
+const isLoadingRegistrationSettings = ref(true)
+
 // ==================== COMPUTED ====================
 /**
  * Check if password policies are ready (loaded and valid)
@@ -88,6 +96,28 @@ const passwordPoliciesReady = computed(() => {
   return !publicStore.isLoadingPasswordPolicies && 
          !publicStore.passwordPoliciesError && 
          currentPasswordPolicies.value !== null
+})
+
+/**
+ * Check if registration settings are ready (loaded and valid)
+ */
+const registrationSettingsReady = computed(() => {
+  return !isLoadingRegistrationSettings.value && 
+         registrationPageEnabled.value !== null
+})
+
+/**
+ * Check if registration is enabled
+ */
+const isRegistrationEnabled = computed(() => {
+  return registrationSettingsReady.value && registrationPageEnabled.value === true
+})
+
+/**
+ * Check if form should be disabled (registration disabled or settings not ready)
+ */
+const isFormDisabled = computed(() => {
+  return !isRegistrationEnabled.value || !passwordPoliciesReady.value
 })
 
 /**
@@ -197,6 +227,33 @@ const loadPasswordPolicies = async () => {
 }
 
 /**
+ * Load registration page settings from backend
+ */
+const loadRegistrationSettings = async () => {
+  try {
+    console.log('Loading registration page settings')
+    
+    const settings = await fetchSettings('UsersManagement.RegistrationPage')
+    const registrationSetting = settings?.find(s => s.setting_name === 'registration.page.enabled')
+    
+    if (registrationSetting) {
+      registrationPageEnabled.value = Boolean(registrationSetting.value)
+      console.log('Registration page setting loaded:', registrationPageEnabled.value)
+    } else {
+      console.warn('Registration page setting not found, defaulting to disabled')
+      registrationPageEnabled.value = false
+    }
+    
+  } catch (error) {
+    console.error('Error loading registration settings:', error)
+    // Default to disabled on error
+    registrationPageEnabled.value = false
+  } finally {
+    isLoadingRegistrationSettings.value = false
+  }
+}
+
+/**
  * Toggle password visibility
  */
 const togglePasswordVisibility = () => {
@@ -298,7 +355,10 @@ const goToLogin = () => {
 // ==================== LIFECYCLE ====================
 onMounted(async () => {
   console.log('ModuleNewUserSelfRegistration mounted')
-  await loadPasswordPolicies()
+  await Promise.all([
+    loadPasswordPolicies(),
+    loadRegistrationSettings()
+  ])
 })
 </script>
 
@@ -306,7 +366,7 @@ onMounted(async () => {
   <div class="pt-3 pl-3">
     <div style="max-width: 500px; padding-left: 24px;">
       <div class="text-h5" style="margin-bottom: 16px;">
-        {{ t('account.selfRegistration.title') }}
+        {{ isRegistrationEnabled ? t('account.selfRegistration.title') : t('account.selfRegistration.titleDisabled') }}
       </div>
       
       <div>
@@ -315,11 +375,23 @@ onMounted(async () => {
           v-model="isFormValid"
           @submit.prevent="submitForm"
         >
+          <!-- Loading indicator for registration settings -->
+          <div v-if="isLoadingRegistrationSettings" class="mb-4">
+            <v-progress-linear
+              indeterminate
+              color="teal"
+              height="2"
+            />
+            <div class="text-caption text-center mt-1">
+              {{ t('account.selfRegistration.loading') }}
+            </div>
+          </div>
           <!-- Username field -->
           <v-text-field
             v-model="user.username"
             :label="t('account.selfRegistration.fields.username.label')"
             :rules="usernameRules"
+            :disabled="isFormDisabled"
             variant="outlined"
             density="comfortable"
             counter="25"
@@ -335,7 +407,7 @@ onMounted(async () => {
             :type="showPassword ? 'text' : 'password'"
             :counter="currentPasswordPolicies?.maxLength || 40"
             :loading="publicStore.isLoadingPasswordPolicies"
-            :disabled="!passwordPoliciesReady"
+            :disabled="isFormDisabled"
             variant="outlined"
             density="comfortable"
             color="teal"
@@ -367,7 +439,7 @@ onMounted(async () => {
             :type="showPassword ? 'text' : 'password'"
             :counter="currentPasswordPolicies?.maxLength || 40"
             :loading="publicStore.isLoadingPasswordPolicies"
-            :disabled="!passwordPoliciesReady"
+            :disabled="isFormDisabled"
             variant="outlined"
             density="comfortable"
             color="teal"
@@ -386,6 +458,7 @@ onMounted(async () => {
             v-model="user.surname"
             :label="t('account.selfRegistration.fields.surname.label')"
             :rules="lastNameRules"
+            :disabled="isFormDisabled"
             variant="outlined"
             density="comfortable"
             counter="25"
@@ -398,6 +471,7 @@ onMounted(async () => {
             v-model="user.name"
             :label="t('account.selfRegistration.fields.name.label')"
             :rules="firstNameRules"
+            :disabled="isFormDisabled"
             variant="outlined"
             density="comfortable"
             counter="25"
@@ -410,6 +484,7 @@ onMounted(async () => {
             v-model="user.email"
             :label="t('account.selfRegistration.fields.email.label')"
             :rules="emailRules"
+            :disabled="isFormDisabled"
             variant="outlined"
             density="comfortable"
             type="email"
@@ -423,6 +498,7 @@ onMounted(async () => {
             :label="t('account.selfRegistration.fields.phone.label')"
             :placeholder="t('account.selfRegistration.fields.phone.placeholder')"
             :rules="phoneRules"
+            :disabled="isFormDisabled"
             variant="outlined"
             density="comfortable"
             color="teal"
@@ -433,6 +509,7 @@ onMounted(async () => {
             v-model="user.address"
             :label="t('account.selfRegistration.fields.address.label')"
             :rules="addressRules"
+            :disabled="isFormDisabled"
             variant="outlined"
             density="comfortable"
             counter="100"
@@ -449,7 +526,7 @@ onMounted(async () => {
       <div style="display: flex; justify-content: flex-end; margin-top: 16px;">
         <v-btn
           :loading="isSubmitting"
-          :disabled="!isFormValid || !passwordPoliciesReady"
+          :disabled="!isFormValid || !passwordPoliciesReady || !isRegistrationEnabled"
           color="teal"
           variant="outlined"
           @click="submitForm"

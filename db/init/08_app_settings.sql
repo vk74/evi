@@ -58,7 +58,7 @@ INSERT INTO app.app_settings (
 
 -- Users Management Settings
 ('UsersManagement.GroupsManagement', 'add.only.active.users.to.groups', 'all', 'false', '{"type":"boolean"}', 'true', 'Allow adding to groups only those users with status ACTIVE', false),
-('UsersManagement.RegistrationPage', 'registration.page.enabled', 'all', 'false', '{"type": "boolean"}', 'false', 'Users self-registration page', false)
+('UsersManagement.RegistrationPage', 'registration.page.enabled', 'all', 'false', '{"type": "boolean"}', 'false', 'Users self-registration page', true)
 ON CONFLICT (section_path, setting_name, environment) DO UPDATE SET
     value = EXCLUDED.value,
     validation_schema = EXCLUDED.validation_schema,

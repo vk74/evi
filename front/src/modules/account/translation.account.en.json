@@ -27,6 +27,8 @@
     },
     "selfRegistration": {
       "title": "new user account registration",
+      "titleDisabled": "new user registration is disabled",
+      "loading": "loading registration settings...",
       "fields": {
         "username": {
           "label": "username*"
