@@ -219,6 +219,12 @@
               },
               "products": {
                 "label": "продукты"
+              },
+              "account": {
+                "label": "аккаунт"
+              },
+              "validation": {
+                "label": "валидация"
               }
             }
           },

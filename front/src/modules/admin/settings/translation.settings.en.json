@@ -250,6 +250,12 @@
               },
               "products": {
                 "label": "products"
+              },
+              "account": {
+                "label": "account"
+              },
+              "validation": {
+                "label": "validation"
               }
             }
           },

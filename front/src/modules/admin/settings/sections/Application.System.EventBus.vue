@@ -59,7 +59,9 @@ const domainSettings = ref<Record<string, boolean | null>>({
   'generate.events.in.domain.catalog': null,
   'generate.events.in.domain.services': null,
   'generate.events.in.domain.adminServices': null,
-  'generate.events.in.domain.products': null
+  'generate.events.in.domain.products': null,
+  'generate.events.in.domain.account': null,
+  'generate.events.in.domain.validation': null
 });
 
 // Define all settings that need to be loaded
@@ -78,7 +80,9 @@ const allSettings = [
   'generate.events.in.domain.catalog',
   'generate.events.in.domain.services',
   'generate.events.in.domain.adminServices',
-  'generate.events.in.domain.products'
+  'generate.events.in.domain.products',
+  'generate.events.in.domain.account',
+  'generate.events.in.domain.validation'
 ];
 
 // Initialize loading states for all settings
@@ -131,6 +135,10 @@ const domainGroups = computed(() => {
         {
           name: 'generate.events.in.domain.PublicPasswordPolicies',
           translationKey: 'PublicPasswordPolicies'
+        },
+        {
+          name: 'generate.events.in.domain.validation',
+          translationKey: 'validation'
         }
       ]
     },
@@ -173,6 +181,10 @@ const domainGroups = computed(() => {
         {
           name: 'generate.events.in.domain.adminServices',
           translationKey: 'adminServices'
+        },
+        {
+          name: 'generate.events.in.domain.account',
+          translationKey: 'account'
         }
       ]
     },
@@ -351,6 +363,11 @@ watch(
 // Initialize component
 onMounted(() => {
   console.log('Application.System.EventBus component initialized');
+  
+  // Clear cache and force fresh load to ensure we get all settings including new ones
+  appSettingsStore.clearSectionCache(section_path);
+  console.log('Cleared cache for EventBus section to ensure fresh data load');
+  
   loadSettings();
 });
 </script>

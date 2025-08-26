@@ -31,7 +31,8 @@ let currentSettings = {
   services: true,
   products: true,
   adminServices: true,
-  account: true
+  account: true,
+  validation: true
 };
 
 /**
@@ -84,6 +85,11 @@ export const shouldGenerateEvent = (eventName: string): boolean => {
   
   if (!domain) {
     // If no domain found, allow generation (fallback behavior)
+    return true;
+  }
+  
+  // EventBus domain events should always be generated (critical for settings management)
+  if (domain === 'eventBus') {
     return true;
   }
   

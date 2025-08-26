@@ -96,10 +96,10 @@ export const createAndPublishEvent = async (params: CreateEventParams): Promise<
 };
 
 /**
- * ALGORITHM 2: System error event creation - bypasses validation
+ * ALGORITHM 2: System error event creation
  * 
  * 1. Creates a system error event based on provided parameters
- * 2. Publishes directly to event bus WITHOUT validation
+ * 2. Validates and publishes the event (same as regular events)
  * 3. Designed specifically for system-level errors, especially validation errors
  * 
  * @param params System error event parameters
@@ -110,10 +110,10 @@ export const createAndPublishSystemErrorEvent = async (params: CreateSystemError
     // Create the system error event
     const errorEvent = await createSystemErrorEvent(params);
     
-    // Publish directly to event bus, bypassing validation
-    eventBus.publish(errorEvent);
+    // Send to validator for validation and publishing (no bypassing!)
+    await validateAndPublishEvent(errorEvent);
     
-    console.log(`System error event '${params.eventName}' published directly to event bus`);
+    console.log(`System error event '${params.eventName}' validated and published`);
     return true;
   } catch (error) {
     console.error(`Failed to publish system error event '${params.eventName}':`, error);
