@@ -56,3 +56,6 @@ CREATE INDEX IF NOT EXISTS idx_tokens_user_uuid ON app.tokens USING btree (user_
 CREATE INDEX IF NOT EXISTS idx_users_email_trgm ON app.users USING gin (email gin_trgm_ops);
 CREATE INDEX IF NOT EXISTS idx_users_username_trgm ON app.users USING gin (username gin_trgm_ops);
 CREATE INDEX IF NOT EXISTS idx_users_uuid_trgm ON app.users USING gin ((user_id::text) gin_trgm_ops);
+
+-- Create optimized index for guard middleware queries
+CREATE INDEX IF NOT EXISTS idx_users_id_active ON app.users USING btree (user_id, is_active);

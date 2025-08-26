@@ -10,6 +10,7 @@ CREATE TABLE IF NOT EXISTS app.users (
     email VARCHAR(255),
     is_staff BOOLEAN DEFAULT false,
     account_status app.account_status DEFAULT 'active'::app.account_status,
+    is_active BOOLEAN GENERATED ALWAYS AS (account_status = 'active') STORED,
     first_name VARCHAR(50),
     middle_name VARCHAR(50),
     last_name VARCHAR(50),

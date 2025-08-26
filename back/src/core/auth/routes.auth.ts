@@ -34,7 +34,6 @@ router.post('/api/auth/refresh', refreshTokensController);
 router.post('/api/auth/logout', validateJWT, logoutController);
 
 // Existing routes (updated imports)
-// Registration route moved to admin routes
 router.post('/api/auth/change-password', (req, res) => {
     // TODO: Replace with serviceChangePassword when created
     res.status(501).json({ error: 'Change password service not implemented yet' });

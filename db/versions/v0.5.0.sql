@@ -137,6 +137,7 @@ CREATE TABLE IF NOT EXISTS app.users (
     email VARCHAR(255),
     is_staff BOOLEAN DEFAULT false,
     account_status app.account_status DEFAULT 'active'::app.account_status,
+    is_active BOOLEAN GENERATED ALWAYS AS (account_status = 'active') STORED,
     first_name VARCHAR(50),
     middle_name VARCHAR(50),
     last_name VARCHAR(50),
@@ -412,6 +413,9 @@ CREATE INDEX IF NOT EXISTS idx_tokens_user_uuid ON app.tokens USING btree (user_
 CREATE INDEX IF NOT EXISTS idx_users_email_trgm ON app.users USING gin (email gin_trgm_ops);
 CREATE INDEX IF NOT EXISTS idx_users_username_trgm ON app.users USING gin (username gin_trgm_ops);
 CREATE INDEX IF NOT EXISTS idx_users_uuid_trgm ON app.users USING gin ((user_id::text) gin_trgm_ops);
+
+-- Create optimized index for guard middleware queries
+CREATE INDEX IF NOT EXISTS idx_users_id_active ON app.users USING btree (user_id, is_active);
 
 -- Insert all seed data
 INSERT INTO app.users (user_id, username, hashed_password, email, is_staff, account_status, first_name, last_name, created_at) VALUES
