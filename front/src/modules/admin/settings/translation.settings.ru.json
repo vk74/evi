@@ -308,8 +308,8 @@
             }
           }
         },
-        "usersregistration": {
-          "title": "регистрация пользователей",
+        "usersmanagement": {
+          "title": "управление пользователями",
           "page": {
             "enabled": {
               "label": "включить страницу регистрации пользователей"
@@ -344,7 +344,7 @@
         "logging": "журналирование",
         "usersmanagement": "управление пользователями",
         "groupsmanagement": "управление группами",
-        "usersregistration": "регистрация пользователей",
+        "usersmanagement": "управление пользователями",
         "catalog": "каталог",
         "services": "сервисы",
         "processes": "процессы"

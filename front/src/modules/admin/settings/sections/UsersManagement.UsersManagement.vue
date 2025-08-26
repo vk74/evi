@@ -1,8 +1,8 @@
 <!--
-  File: UsersManagement.UsersRegistration.vue
+  File: UsersManagement.UsersManagement.vue
   Version: 1.0.0
-  Description: Users registration settings component
-  Purpose: Configure user registration page settings
+  Description: Users management settings component
+  Purpose: Configure user management settings including registration
 -->
 
 <script setup lang="ts">
@@ -127,7 +127,7 @@ async function loadSetting(settingName: string): Promise<boolean> {
       setTimeout(() => loadSetting(settingName), 5000);
     } else {
       // Show error toast only on final failure
-      uiStore.showErrorSnackbar(`${t('admin.settings.usersmanagement.usersregistration.messages.error.loading')}: ${settingName}`);
+      uiStore.showErrorSnackbar(`${t('admin.settings.usersmanagement.usersmanagement.messages.error.loading')}: ${settingName}`);
     }
     
     return false;
@@ -169,7 +169,7 @@ async function loadSettings() {
       console.log(`Successfully loaded ${successfulLoads.length} out of ${allSettings.length} settings`);
       
       // Show success toast for initial load
-      uiStore.showSuccessSnackbar(t('admin.settings.usersmanagement.usersregistration.messages.settings.loaded'));
+      uiStore.showSuccessSnackbar(t('admin.settings.usersmanagement.usersmanagement.messages.settings.loaded'));
     }
     
   } catch (error) {
@@ -210,15 +210,15 @@ watch(
 
 // Initialize component
 onMounted(() => {
-  console.log('UsersManagement.UsersRegistration component initialized');
+  console.log('UsersManagement.UsersManagement component initialized');
   loadSettings();
 });
 </script>
 
 <template>
-  <div class="users-registration-container">
+  <div class="users-management-container">
     <h2 class="text-h6 mb-4">
-      {{ t('admin.settings.usersmanagement.usersregistration.title') }}
+      {{ t('admin.settings.usersmanagement.usersmanagement.title') }}
     </h2>
     
     <!-- Loading indicator -->
@@ -237,7 +237,7 @@ onMounted(() => {
           <v-switch
             v-model="registrationPageEnabled"
             color="teal-darken-2"
-            :label="t('admin.settings.usersmanagement.usersregistration.page.enabled.label')"
+            :label="t('admin.settings.usersmanagement.usersmanagement.page.enabled.label')"
             hide-details
             :disabled="isSettingDisabled('registration.page.enabled')"
             :loading="settingLoadingStates['registration.page.enabled']"
@@ -260,10 +260,10 @@ onMounted(() => {
             </template>
             <div class="pa-2">
               <p class="text-subtitle-2 mb-2">
-                {{ t('admin.settings.usersmanagement.usersregistration.messages.error.tooltip.title') }}
+                {{ t('admin.settings.usersmanagement.usersmanagement.messages.error.tooltip.title') }}
               </p>
               <p class="text-caption">
-                {{ t('admin.settings.usersmanagement.usersregistration.messages.error.tooltip.retry') }}
+                {{ t('admin.settings.usersmanagement.usersmanagement.messages.error.tooltip.retry') }}
               </p>
             </div>
           </v-tooltip>
@@ -274,7 +274,7 @@ onMounted(() => {
 </template>
 
 <style scoped>
-.users-registration-container {
+.users-management-container {
   /* Base container styling */
   position: relative;
 }
