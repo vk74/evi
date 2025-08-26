@@ -1,5 +1,7 @@
 /**
- * get.requestor.uuid.from.req.ts - version 1.0.0
+ * get.requestor.uuid.from.req.ts - backend file
+ * version: 1.0.0
+ * 
  * BACKEND helper for extracting UUID from request object
  * 
  * Functionality:
@@ -7,7 +9,11 @@
  * - Handles validation of request and user object
  * - Safely returns null if UUID is not available
  * - Used by service layer to identify the user making API calls
+ * - Publishes events to event bus for monitoring and tracking
  */
+
+import { createAndPublishEvent } from '../eventBus/fabric.events';
+import { GET_REQUESTOR_UUID_EVENTS } from './events.helpers';
 
 /**
  * Extract the UUID of the requesting user from the request object
@@ -20,7 +26,18 @@
 export function getRequestorUuidFromReq(req: any): string | null {
   // Check if request and user objects are valid
   if (!req || !req.user || !req.user.user_id) {
-    console.log('[getRequestorUuidFromReq] Unable to extract UUID: invalid request or missing user data');
+    // Publish warning event
+    createAndPublishEvent({
+      eventName: GET_REQUESTOR_UUID_EVENTS.UNABLE_TO_EXTRACT.eventName,
+      payload: {
+        requestInfo: {
+          hasReq: !!req,
+          hasUser: !!(req && req.user),
+          hasUserId: !!(req && req.user && req.user.user_id)
+        }
+      }
+    });
+    
     return null;
   }
   

@@ -760,4 +760,21 @@ export const IS_USER_ACTIVE_EVENTS = {
     payload: null, // Will contain: { userId, error }
     version: '1.0.0'
   }
-}; 
+};
+
+/**
+ * Get Requestor UUID From Request Events
+ * Events for tracking UUID extraction from request objects
+ */
+export const GET_REQUESTOR_UUID_EVENTS = {
+  // When unable to extract UUID from request
+  UNABLE_TO_EXTRACT: {
+    eventName: 'helpers.get.requestor.uuid.unable_to_extract',
+    source: 'helper function for extracting UUID from request',
+    eventType: 'app' as const,
+    severity: 'warning' as const,
+    eventMessage: 'Unable to extract UUID: invalid request or missing user data',
+    payload: null, // Will contain: { requestInfo }
+    version: '1.0.0'
+  }
+};

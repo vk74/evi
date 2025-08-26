@@ -1,12 +1,14 @@
 /**
- * service.search.users.ts
+ * service.search.users.ts - backend file
+ * version: 1.0.0
+ * 
  * BACKEND service for searching users based on a query string and maxItems limit.
  * 
  * Functionality:
  * - Searches for users in the database based on a query and limit
  * - Handles data transformation and business logic
  * - Manages database interactions and error handling
- * - Provides logging for operations
+ * - Publishes events to event bus for monitoring and tracking
  * 
  * Data flow:
  * 1. Receive search query and limit
@@ -23,14 +25,11 @@ import {
   ServiceError 
 } from './types.item.selector';
 import { pool as pgPool } from '../../db/maindb'; // Обновленный путь к maindb
+import { createAndPublishEvent } from '../../eventBus/fabric.events';
+import { SEARCH_USERS_EVENTS } from './events.item.selector';
 
 // Type assertion for pool
 const pool = pgPool as Pool;
-
-// Logging helper
-function logService(message: string, meta?: object): void {
-  console.log(`[${new Date().toISOString()}] [SearchUsersService] ${message}`, meta || '');
-}
 
 /**
  * Service function to search users based on query and limit
@@ -41,8 +40,14 @@ export async function searchUsers(params: SearchParams): Promise<SearchResult[]>
   const { query, limit } = params;
 
   try {
-    // Log operation start
-    logService('Searching users in database', { query, limit });
+    // Publish service initiated event
+    await createAndPublishEvent({
+      eventName: SEARCH_USERS_EVENTS.REQUEST_RECEIVED.eventName,
+      payload: {
+        searchTerm: query,
+        limit
+      }
+    });
 
     // Perform search query with parameterized values to prevent SQL injection
     const result: QueryResult = await pool.query(queries.searchUsers.text, [
@@ -59,17 +64,26 @@ export async function searchUsers(params: SearchParams): Promise<SearchResult[]>
       uuid: row.uuid,         // Это поле уже преобразовано из user_id в запросе
     }));
 
-    // Log successful search
-    logService('Successfully retrieved search results', {
-      query,
-      limit,
-      totalResults: searchResults.length,
+    // Publish success event
+    await createAndPublishEvent({
+      eventName: SEARCH_USERS_EVENTS.RESPONSE_SUCCESS.eventName,
+      payload: {
+        searchTerm: query,
+        resultCount: searchResults.length
+      }
     });
 
     return searchResults;
   } catch (error) {
-    // Log error
-    logService('Error searching users', { query, limit, error });
+    // Publish error event
+    await createAndPublishEvent({
+      eventName: SEARCH_USERS_EVENTS.RESPONSE_ERROR.eventName,
+      payload: {
+        searchTerm: query,
+        error: error as ServiceError
+      },
+      errorData: error instanceof Error ? error.message : 'Unknown error'
+    });
 
     const serviceError: ServiceError = {
       code: 'INTERNAL_SERVER_ERROR',

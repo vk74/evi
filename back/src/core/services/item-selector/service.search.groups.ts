@@ -1,9 +1,13 @@
 /**
- * File: service.search.groups.ts
- * Version: 1.0.0
- * Description: BACKEND service for searching groups based on a query string and maxItems limit
- * Purpose: Searches for groups in the database, handles data transformation and business logic
- * Backend file
+ * service.search.groups.ts - backend file
+ * version: 1.0.0
+ * 
+ * BACKEND service for searching groups based on a query string and maxItems limit
+ * 
+ * Functionality:
+ * - Searches for groups in the database, handles data transformation and business logic
+ * - Manages database interactions and error handling
+ * - Publishes events to event bus for monitoring and tracking
  */
 
 import { Pool, QueryResult } from 'pg';
@@ -15,14 +19,11 @@ import {
   ServiceError 
 } from './types.item.selector';
 import { pool as pgPool } from '../../db/maindb';
+import { createAndPublishEvent } from '../../eventBus/fabric.events';
+import { SEARCH_GROUPS_EVENTS } from './events.item.selector';
 
 // Type assertion for pool
 const pool = pgPool as Pool;
-
-// Logging helper
-function logService(message: string, meta?: object): void {
-  console.log(`[${new Date().toISOString()}] [SearchGroupsService] ${message}`, meta || '');
-}
 
 /**
  * Service function to search groups based on query and limit
@@ -33,8 +34,14 @@ export async function searchGroups(params: SearchParams): Promise<SearchResult[]
   const { query, limit } = params;
 
   try {
-    // Log operation start
-    logService('Searching groups in database', { query, limit });
+    // Publish service initiated event
+    await createAndPublishEvent({
+      eventName: SEARCH_GROUPS_EVENTS.REQUEST_RECEIVED.eventName,
+      payload: {
+        searchTerm: query,
+        limit
+      }
+    });
 
     // Perform search query with parameterized values to prevent SQL injection
     const result: QueryResult = await pool.query(queries.searchGroups.text, [
@@ -50,17 +57,26 @@ export async function searchGroups(params: SearchParams): Promise<SearchResult[]
       uuid: row.uuid,         // This field is already transformed from group_id in the query
     }));
 
-    // Log successful search
-    logService('Successfully retrieved search results', {
-      query,
-      limit,
-      totalResults: searchResults.length,
+    // Publish success event
+    await createAndPublishEvent({
+      eventName: SEARCH_GROUPS_EVENTS.RESPONSE_SUCCESS.eventName,
+      payload: {
+        searchTerm: query,
+        resultCount: searchResults.length
+      }
     });
 
     return searchResults;
   } catch (error) {
-    // Log error
-    logService('Error searching groups', { query, limit, error });
+    // Publish error event
+    await createAndPublishEvent({
+      eventName: SEARCH_GROUPS_EVENTS.RESPONSE_ERROR.eventName,
+      payload: {
+        searchTerm: query,
+        error: error as ServiceError
+      },
+      errorData: error instanceof Error ? error.message : 'Unknown error'
+    });
 
     const serviceError: ServiceError = {
       code: 'INTERNAL_SERVER_ERROR',

@@ -430,4 +430,84 @@ export const ADD_USERS_TO_GROUP_SERVICE_EVENTS = {
     errorData: null, // Error details
     version: '1.0.0'
   }
-}; 
+};
+
+/**
+ * Search Users Events
+ * Events related to searching users operations
+ */
+export const SEARCH_USERS_EVENTS = {
+  // Request received for searching users
+  REQUEST_RECEIVED: {
+    eventName: 'itemSelector.searchUsers.request.received',
+    source: 'item-selector service',
+    eventType: 'app' as const,
+    severity: 'debug' as const,
+    eventMessage: 'Request received to search users',
+    payload: null, // { searchTerm: string, limit: number, requestedBy: string }
+    version: '1.0.0'
+  },
+  
+  // Success response for searching users
+  RESPONSE_SUCCESS: {
+    eventName: 'itemSelector.searchUsers.response.success',
+    source: 'item-selector service',
+    eventType: 'app' as const,
+    severity: 'debug' as const,
+    eventMessage: 'Successfully searched users',
+    payload: null, // { searchTerm: string, resultCount: number }
+    version: '1.0.0'
+  },
+  
+  // Error response for searching users
+  RESPONSE_ERROR: {
+    eventName: 'itemSelector.searchUsers.response.error',
+    source: 'item-selector service',
+    eventType: 'app' as const,
+    severity: 'error' as const,
+    eventMessage: 'Error occurred while searching users',
+    payload: null, // { searchTerm: string, error: ServiceError }
+    errorData: null, // Error details
+    version: '1.0.0'
+  }
+};
+
+/**
+ * Search Groups Events
+ * Events related to searching groups operations
+ */
+export const SEARCH_GROUPS_EVENTS = {
+  // Request received for searching groups
+  REQUEST_RECEIVED: {
+    eventName: 'itemSelector.searchGroups.request.received',
+    source: 'item-selector service',
+    eventType: 'app' as const,
+    severity: 'debug' as const,
+    eventMessage: 'Request received to search groups',
+    payload: null, // { searchTerm: string, limit: number, requestedBy: string }
+    version: '1.0.0'
+  },
+  
+  // Success response for searching groups
+  RESPONSE_SUCCESS: {
+    eventName: 'itemSelector.searchGroups.response.success',
+    source: 'item-selector service',
+    eventType: 'app' as const,
+    severity: 'debug' as const,
+    eventMessage: 'Successfully searched groups',
+    payload: null, // { searchTerm: string, resultCount: number }
+    version: '1.0.0'
+  },
+  
+  // Error response for searching groups
+  RESPONSE_ERROR: {
+    eventName: 'itemSelector.searchGroups.response.error',
+    source: 'item-selector service',
+    eventType: 'app' as const,
+    severity: 'error' as const,
+    eventMessage: 'Error occurred while searching groups',
+    payload: null, // { searchTerm: string, error: ServiceError }
+    errorData: null, // Error details
+    version: '1.0.0'
+  }
+};

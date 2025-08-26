@@ -1,12 +1,15 @@
 /**
- * controller.search.users.ts
+ * controller.search.users.ts - backend file
+ * version: 1.0.0
+ * 
  * Controller for handling user search requests in the item selector.
  * 
  * Functionality:
  * - Handles HTTP GET requests to search for users
  * - Validates request parameters
  * - Delegates search logic to the service layer
- * - Now uses universal connection handler for standardized HTTP processing
+ * - Uses universal connection handler for standardized HTTP processing
+ * - Publishes events to event bus for monitoring and tracking
  * 
  * Note: Business logic and database operations are managed in the service layer (service.search.users.ts), not in this controller.
  */
@@ -20,15 +23,8 @@ import {
   ServiceError 
 } from './types.item.selector';
 import { connectionHandler } from '../../helpers/connection.handler';
-
-// Logging helper functions
-function logRequest(message: string, meta: object): void {
-  console.log(`[${new Date().toISOString()}] [SearchUsers] ${message}`, meta);
-}
-
-function logError(message: string, error: unknown, meta: object): void {
-  console.error(`[${new Date().toISOString()}] [SearchUsers] ${message}`, { error, ...meta });
-}
+import { createAndPublishEvent } from '../../eventBus/fabric.events';
+import { SEARCH_USERS_EVENTS } from './events.item.selector';
 
 /**
  * Business logic for searching users based on query and limit
@@ -38,12 +34,15 @@ async function searchUsersLogic(req: Request, res: Response): Promise<SearchResp
   const query = req.query.query as string;
   const limit = parseInt(req.query.limit as string, 10) || 20; // Default limit to 20 if not provided
 
-  // Log incoming request
-  logRequest('Received request to search users', {
-    method: req.method,
-    url: req.url,
-    query,
-    limit,
+  // Publish request received event
+  await createAndPublishEvent({
+    req,
+    eventName: SEARCH_USERS_EVENTS.REQUEST_RECEIVED.eventName,
+    payload: {
+      searchTerm: query,
+      limit,
+      requestedBy: (req as any).user?.uuid
+    }
   });
 
   if (!query || query.trim() === '') {
@@ -54,25 +53,43 @@ async function searchUsersLogic(req: Request, res: Response): Promise<SearchResp
     throw new Error('Invalid limit value. Must be between 1 and 100');
   }
 
-  // Call service layer to search users
-  const searchParams: SearchParams = { query, limit };
-  const result: SearchResult[] = await searchUsersService(searchParams);
+  try {
+    // Call service layer to search users
+    const searchParams: SearchParams = { query, limit };
+    const result: SearchResult[] = await searchUsersService(searchParams);
 
-  // Format response
-  const response: SearchResponse = {
-    success: true,
-    items: result,
-    total: result.length,
-  };
+    // Format response
+    const response: SearchResponse = {
+      success: true,
+      items: result,
+      total: result.length,
+    };
 
-  // Log successful response
-  logRequest('Successfully searched users', {
-    query,
-    limit,
-    totalResults: result.length,
-  });
+    // Publish success event
+    await createAndPublishEvent({
+      req,
+      eventName: SEARCH_USERS_EVENTS.RESPONSE_SUCCESS.eventName,
+      payload: {
+        searchTerm: query,
+        resultCount: result.length
+      }
+    });
 
-  return response;
+    return response;
+  } catch (error) {
+    // Publish error event
+    await createAndPublishEvent({
+      req,
+      eventName: SEARCH_USERS_EVENTS.RESPONSE_ERROR.eventName,
+      payload: {
+        searchTerm: query,
+        error: error as ServiceError
+      },
+      errorData: (error as Error).message
+    });
+
+    throw error;
+  }
 }
 
 // Export controller using universal connection handler
