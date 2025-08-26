@@ -271,6 +271,16 @@ export const CONNECTION_HANDLER_EVENTS = {
     version: '1.0.0'
   },
 
+  RATE_LIMIT_CONFIG_LOADED: {
+    eventName: 'connectionHandler.rate.limit.config.loaded',
+    source: 'connection handler',
+    eventType: 'security' as const,
+    severity: 'debug' as const,
+    eventMessage: 'Rate limiting configuration loaded from cache',
+    payload: null, // Will contain: { source, enabled, maxRequestsPerMinute, maxRequestsPerHour, blockDurationMinutes }
+    version: '1.0.0'
+  },
+
   // Legacy events for backward compatibility
   RESPONSE_SENT: {
     eventName: 'connectionHandler.response.sent',

@@ -63,6 +63,42 @@
           },
           "sessionmanagement": {
             "title": "session management",
+            "connection": {
+              "handling": {
+                "title": "connection handling",
+                "rate": {
+                  "limiting": {
+                    "title": "requests rate limiting per user",
+                    "enabled": {
+                      "label": "use request rate limiting"
+                    },
+                    "max": {
+                      "requests": {
+                        "per": {
+                          "minute": {
+                            "label": "maximum requests per minute"
+                          },
+                          "hour": {
+                            "label": "maximum requests per hour"
+                          }
+                        }
+                      }
+                    },
+                        "block": {
+      "duration": {
+        "label": "block duration when limit exceeded (minutes)"
+      }
+    }
+  }
+},
+"errors": {
+  "loading": {
+    "title": "error loading setting",
+    "retry": "click to retry"
+  }
+}
+}
+            },
             "token": {
               "management": {
                 "title": "token management"

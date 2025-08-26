@@ -48,8 +48,69 @@ import * as eventBusSubscriptions from '@/core/eventBus/subscriptions.eventBus';
 // Import cache helpers
 import { initCache as initHelpersCache } from '@/core/helpers/cache.helpers';
 
+// Import connection handler for validation
+import { getSetting, parseSettingValue } from '@/modules/admin/settings/cache.settings';
+
 // Import validation service
 import { initializeValidationService } from '@/core/validation/init.validation';
+
+/**
+ * Validate that connection handler can access rate limiting settings from cache
+ * @returns Promise<boolean> indicating if connection handler is ready
+ */
+async function validateConnectionHandlerReadiness(): Promise<boolean> {
+  try {
+    console.log('Validating connection handler readiness...');
+    
+    // Check if all required rate limiting settings are available in cache
+    const requiredSettings = [
+      { section: 'Application.Security.SessionManagement', name: 'rate.limiting.enabled' },
+      { section: 'Application.Security.SessionManagement', name: 'rate.limiting.max.requests.per.minute' },
+      { section: 'Application.Security.SessionManagement', name: 'rate.limiting.max.requests.per.hour' },
+      { section: 'Application.Security.SessionManagement', name: 'rate.limiting.block.duration.minutes' }
+    ];
+    
+    const missingSettings: string[] = [];
+    const loadedSettings: any = {};
+    
+    // Check each required setting
+    for (const setting of requiredSettings) {
+      const settingObj = getSetting(setting.section, setting.name);
+      if (!settingObj) {
+        missingSettings.push(`${setting.section}.${setting.name}`);
+        continue;
+      }
+      
+      const value = parseSettingValue(settingObj);
+      loadedSettings[setting.name] = value;
+      
+      // Validate value types
+      if (setting.name === 'rate.limiting.enabled' && typeof value !== 'boolean') {
+        missingSettings.push(`${setting.section}.${setting.name} (invalid type: expected boolean)`);
+      } else if (setting.name !== 'rate.limiting.enabled' && typeof value !== 'number') {
+        missingSettings.push(`${setting.section}.${setting.name} (invalid type: expected number)`);
+      }
+    }
+    
+    if (missingSettings.length > 0) {
+      console.error('Connection handler validation failed - missing or invalid settings:', missingSettings);
+      return false;
+    }
+    
+    // Log successful validation
+    console.log('Connection handler validation successful - rate limiting settings loaded:', {
+      enabled: loadedSettings['rate.limiting.enabled'],
+      maxRequestsPerMinute: loadedSettings['rate.limiting.max.requests.per.minute'],
+      maxRequestsPerHour: loadedSettings['rate.limiting.max.requests.per.hour'],
+      blockDurationMinutes: loadedSettings['rate.limiting.block.duration.minutes']
+    });
+    
+    return true;
+  } catch (error) {
+    console.error('Connection handler validation failed with error:', error);
+    return false;
+  }
+}
 
 // Define global declarations for TypeScript
 declare global {
@@ -68,6 +129,9 @@ let settingsLoaded: boolean = false;
 // Event system ready flag
 let eventSystemInitialized: boolean = false;
 
+// Connection handler ready flag
+let connectionHandlerReady: boolean = false;
+
 
 
 // Middleware to check if critical components are loaded
@@ -80,6 +144,10 @@ const checkServerReady = (req: Request, res: Response, next: NextFunction): void
   
   if (!eventSystemInitialized) {
     notReadyComponents.push('Event System');
+  }
+  
+  if (!connectionHandlerReady) {
+    notReadyComponents.push('Connection Handler');
   }
   
   if (notReadyComponents.length > 0) {
@@ -160,20 +228,29 @@ async function initializeServer(): Promise<void> {
     settingsLoaded = true;
     console.log('[Server] System settings loaded and ready');
 
-    // 6. Initialize logger service AFTER settings are loaded
+    // 6. Validate connection handler readiness
+    console.log('Validating connection handler readiness...');
+    const connectionHandlerValid = await validateConnectionHandlerReadiness();
+    if (!connectionHandlerValid) {
+      throw new Error('Connection handler validation failed - rate limiting settings not available');
+    }
+    connectionHandlerReady = true;
+    console.log('[Server] Connection handler validated and ready');
+
+    // 7. Initialize logger service AFTER settings are loaded
     // This ensures logger can apply correct settings from cache
     loggerService.initialize();
     loggerSubscriptions.initializeSubscriptions();
     console.log('Logger system initialized with current settings');
 
-    // 7. Initialize event bus service AFTER settings are loaded
+    // 8. Initialize event bus service AFTER settings are loaded
     // This ensures event bus can apply correct settings from cache
     eventBusService.initialize();
     eventBusSubscriptions.initializeSubscriptions();
     console.log('Event Bus system initialized with current settings');
     // No duplicate logging here, as loadSettings already logs success message
 
-    // 8. Setting up middleware
+    // 9. Setting up middleware
     // Configure CORS for frontend only
     app.use(cors({
       origin: ['http://localhost:8080', 'http://localhost:3000', 'http://127.0.0.1:8080'], // Allow access from multiple localhost variants
@@ -190,10 +267,10 @@ async function initializeServer(): Promise<void> {
 
     console.log('Middleware configuration completed');
 
-    // 9. Add server readiness check middleware for all routes
+    // 10. Add server readiness check middleware for all routes
     app.use(checkServerReady);
 
-    // 10. Route registration
+    // 11. Route registration
     app.use(authRoutes);
     app.use('/api/catalog', catalogRoutes);
     app.use(adminRoutes);
@@ -202,14 +279,14 @@ async function initializeServer(): Promise<void> {
 
     console.log('All routes registered successfully');
 
-    // 11. Base route
+    // 12. Base route
     app.get('/', (req: Request, res: Response) => {
       res.send('Backend server is running');
     });
 
 
 
-    // 12. Server startup
+    // 13. Server startup
     app.listen(port, () => {
       const now = new Date();
       const dateOptions: Intl.DateTimeFormatOptions = { 

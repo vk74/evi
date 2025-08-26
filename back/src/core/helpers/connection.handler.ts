@@ -11,6 +11,7 @@
 import { Request, Response, NextFunction } from 'express';
 import fabricEvents from '../eventBus/fabric.events';
 import { CONNECTION_HANDLER_EVENTS } from './events.connection.handler';
+import { getSetting, parseSettingValue } from '../../modules/admin/settings/cache.settings';
 // Rate limiting configuration
 interface RateLimitConfig {
   enabled?: boolean;
@@ -19,13 +20,54 @@ interface RateLimitConfig {
   blockDurationMinutes?: number;
 }
 
-// Default rate limiting configuration
+// Default rate limiting configuration (fallback values)
 const DEFAULT_RATE_LIMIT_CONFIG: RateLimitConfig = {
   enabled: true,
   maxRequestsPerMinute: 1000,
   maxRequestsPerHour: 10000,
   blockDurationMinutes: 5
 };
+
+/**
+ * Get rate limiting configuration from settings cache
+ * @returns Rate limiting configuration with fallback to defaults
+ */
+async function getRateLimitConfigFromCache(): Promise<RateLimitConfig> {
+  try {
+    const enabledSetting = getSetting('Application.Security.SessionManagement', 'rate.limiting.enabled');
+    const maxRequestsPerMinuteSetting = getSetting('Application.Security.SessionManagement', 'rate.limiting.max.requests.per.minute');
+    const maxRequestsPerHourSetting = getSetting('Application.Security.SessionManagement', 'rate.limiting.max.requests.per.hour');
+    const blockDurationSetting = getSetting('Application.Security.SessionManagement', 'rate.limiting.block.duration.minutes');
+
+    const config = {
+      enabled: enabledSetting ? parseSettingValue(enabledSetting) : DEFAULT_RATE_LIMIT_CONFIG.enabled,
+      maxRequestsPerMinute: maxRequestsPerMinuteSetting ? parseSettingValue(maxRequestsPerMinuteSetting) : DEFAULT_RATE_LIMIT_CONFIG.maxRequestsPerMinute,
+      maxRequestsPerHour: maxRequestsPerHourSetting ? parseSettingValue(maxRequestsPerHourSetting) : DEFAULT_RATE_LIMIT_CONFIG.maxRequestsPerHour,
+      blockDurationMinutes: blockDurationSetting ? parseSettingValue(blockDurationSetting) : DEFAULT_RATE_LIMIT_CONFIG.blockDurationMinutes
+    };
+
+    // Log config source for debugging
+    const source = enabledSetting ? 'cache' : 'defaults';
+    
+    // Create event for rate limiting config loading
+    await fabricEvents.createAndPublishEvent({
+      eventName: CONNECTION_HANDLER_EVENTS.RATE_LIMIT_CONFIG_LOADED.eventName,
+      payload: {
+        source,
+        enabled: config.enabled,
+        maxRequestsPerMinute: config.maxRequestsPerMinute,
+        maxRequestsPerHour: config.maxRequestsPerHour,
+        blockDurationMinutes: config.blockDurationMinutes
+      }
+    });
+
+    return config;
+  } catch (error) {
+    // Log error and return default config
+    console.warn('Failed to load rate limiting config from cache, using defaults:', error);
+    return DEFAULT_RATE_LIMIT_CONFIG;
+  }
+}
 
 // In-memory rate limiting store
 const rateLimitStore = new Map<string, {
@@ -48,14 +90,17 @@ setInterval(() => {
 }, 60 * 60 * 1000); // Clean up every hour
 
 // Rate limiting function
-function checkRateLimit(req: Request, config: RateLimitConfig = DEFAULT_RATE_LIMIT_CONFIG): {
+async function checkRateLimit(req: Request, config?: RateLimitConfig): Promise<{
   allowed: boolean;
   retryAfter?: number;
   remainingRequests?: number;
   resetTime?: number;
   reason?: string;
-} {
-  if (!config.enabled) {
+}> {
+  // Get config from cache if not provided, fallback to defaults
+  const rateLimitConfig = config || await getRateLimitConfigFromCache();
+  
+  if (!rateLimitConfig.enabled) {
     return { allowed: true };
   }
 
@@ -96,9 +141,9 @@ function checkRateLimit(req: Request, config: RateLimitConfig = DEFAULT_RATE_LIM
   }
 
   // Check limits
-  if (entry.requestCount >= config.maxRequestsPerMinute!) {
-    if (config.blockDurationMinutes) {
-      entry.blockedUntil = now + (config.blockDurationMinutes * 60 * 1000);
+  if (entry.requestCount >= rateLimitConfig.maxRequestsPerMinute!) {
+    if (rateLimitConfig.blockDurationMinutes) {
+      entry.blockedUntil = now + (rateLimitConfig.blockDurationMinutes * 60 * 1000);
     }
     rateLimitStore.set(clientId, entry);
     
@@ -111,7 +156,7 @@ function checkRateLimit(req: Request, config: RateLimitConfig = DEFAULT_RATE_LIM
     };
   }
 
-  if (entry.requestCount >= config.maxRequestsPerHour!) {
+  if (entry.requestCount >= rateLimitConfig.maxRequestsPerHour!) {
     const retryAfter = Math.ceil(hourWindow / 1000);
     return {
       allowed: false,
@@ -126,8 +171,8 @@ function checkRateLimit(req: Request, config: RateLimitConfig = DEFAULT_RATE_LIM
   rateLimitStore.set(clientId, entry);
   
   const remainingRequests = Math.min(
-    config.maxRequestsPerMinute! - entry.requestCount,
-    config.maxRequestsPerHour! - entry.requestCount
+    rateLimitConfig.maxRequestsPerMinute! - entry.requestCount,
+    rateLimitConfig.maxRequestsPerHour! - entry.requestCount
   );
   
   return {
@@ -178,7 +223,7 @@ export function connectionHandler<T = any>(
     
     try {
       // Rate limiting check - FIRST, before any other processing
-      const rateLimitResult = checkRateLimit(req, rateLimitConfig);
+      const rateLimitResult = await checkRateLimit(req, rateLimitConfig);
       
       // Log rate limit check
       await fabricEvents.createAndPublishEvent({

@@ -34,6 +34,9 @@ const settingLoadingStates = ref<Record<string, boolean>>({});
 const settingErrorStates = ref<Record<string, boolean>>({});
 const settingRetryAttempts = ref<Record<string, number>>({});
 
+// Validation states for rate limiting fields
+const validationErrors = ref<Record<string, string>>({});
+
 // Local UI state for immediate interaction - initialize with null (not set)
 const accessTokenLifetimeMinutes = ref<number | null>(null);
 const accessTokenRefreshBeforeExpirySeconds = ref<number | null>(null);
@@ -41,6 +44,14 @@ const refreshTokenLifetimeDays = ref<number | null>(null);
 const maxRefreshTokensPerUser = ref<number | null>(null);
 const dropRefreshTokensOnUserChangePassword = ref<boolean | null>(null);
 const dropRefreshTokensOnAdminPasswordChange = ref<boolean | null>(null);
+
+// ==================== CONNECTION HANDLING SETTINGS ====================
+
+// Rate limiting settings
+const rateLimitingEnabled = ref<boolean | null>(null);
+const maxRequestsPerMinute = ref<number | null>(null);
+const maxRequestsPerHour = ref<number | null>(null);
+const blockDurationMinutes = ref<number | null>(null);
 
 // ==================== TOKEN MANAGEMENT SETTINGS ====================
 
@@ -124,6 +135,28 @@ const sessionDurationOptions = computed(() => [
   { title: t('admin.settings.application.security.sessionmanagement.duration.options.10080'), value: '10080' }
 ]);
 
+// Validation rules for rate limiting fields
+const maxRequestsPerMinuteRules = computed(() => [
+  (v: any) => !!v || 'Обязательное поле',
+  (v: any) => !isNaN(v) || 'Должно быть числом',
+  (v: any) => v >= 1 || 'Минимум 1 запрос',
+  (v: any) => v <= 1000000 || 'Максимум 1,000,000 запросов'
+]);
+
+const maxRequestsPerHourRules = computed(() => [
+  (v: any) => !!v || 'Обязательное поле',
+  (v: any) => !isNaN(v) || 'Должно быть числом',
+  (v: any) => v >= 1 || 'Минимум 1 запрос',
+  (v: any) => v <= 1000000 || 'Максимум 1,000,000 запросов'
+]);
+
+const blockDurationMinutesRules = computed(() => [
+  (v: any) => !!v || 'Обязательное поле',
+  (v: any) => !isNaN(v) || 'Должно быть числом',
+  (v: any) => v >= 1 || 'Минимум 1 минута',
+  (v: any) => v <= 60 || 'Максимум 60 минут'
+]);
+
 // Define all settings that need to be loaded
 const allSettings = [
   'access.token.lifetime',
@@ -131,7 +164,11 @@ const allSettings = [
   'refresh.token.lifetime',
   'max.refresh.tokens.per.user',
   'drop.refresh.tokens.on.user.change.password',
-  'drop.refresh.tokens.on.admin.password.change'
+  'drop.refresh.tokens.on.admin.password.change',
+  'rate.limiting.enabled',
+  'rate.limiting.max.requests.per.minute',
+  'rate.limiting.max.requests.per.hour',
+  'rate.limiting.block.duration.minutes'
 ];
 
 // Initialize loading states for all settings
@@ -166,8 +203,8 @@ const isSettingDisabled = (settingName: string) => {
  * Update setting in store when local state changes
  */
 function updateSetting(settingName: string, value: any) {
-  // Only update if setting is not disabled
-  if (!isSettingDisabled(settingName)) {
+  // Only update if setting is not disabled and has no validation errors
+  if (!isSettingDisabled(settingName) && !validationErrors.value[settingName]) {
     console.log(`Updating setting ${settingName} to:`, value);
     updateSettingFromComponent(section_path, settingName, value);
   }
@@ -247,6 +284,18 @@ function updateLocalSetting(settingName: string, value: any) {
       break;
     case 'drop.refresh.tokens.on.admin.password.change':
       dropRefreshTokensOnAdminPasswordChange.value = Boolean(value);
+      break;
+    case 'rate.limiting.enabled':
+      rateLimitingEnabled.value = Boolean(value);
+      break;
+    case 'rate.limiting.max.requests.per.minute':
+      maxRequestsPerMinute.value = Number(value);
+      break;
+    case 'rate.limiting.max.requests.per.hour':
+      maxRequestsPerHour.value = Number(value);
+      break;
+    case 'rate.limiting.block.duration.minutes':
+      blockDurationMinutes.value = Number(value);
       break;
   }
 }
@@ -333,6 +382,66 @@ watch(dropRefreshTokensOnAdminPasswordChange, (newValue) => {
   }
 });
 
+// ==================== RATE LIMITING WATCHERS ====================
+
+// Watch for changes in rate limiting settings - only after first load is complete
+watch(rateLimitingEnabled, (newValue) => {
+  if (!isFirstLoad.value && newValue !== null) {
+    updateSetting('rate.limiting.enabled', Boolean(newValue));
+  }
+});
+
+watch(maxRequestsPerMinute, (newValue) => {
+  if (!isFirstLoad.value && newValue !== null) {
+    // Check validation before updating
+    const rules = maxRequestsPerMinuteRules.value;
+    for (const rule of rules) {
+      const result = rule(newValue);
+      if (result !== true) {
+        validationErrors.value['rate.limiting.max.requests.per.minute'] = result;
+        return; // Don't update if validation fails
+      }
+    }
+    // Clear validation error if validation passes
+    validationErrors.value['rate.limiting.max.requests.per.minute'] = '';
+    updateSetting('rate.limiting.max.requests.per.minute', Number(newValue));
+  }
+});
+
+watch(maxRequestsPerHour, (newValue) => {
+  if (!isFirstLoad.value && newValue !== null) {
+    // Check validation before updating
+    const rules = maxRequestsPerHourRules.value;
+    for (const rule of rules) {
+      const result = rule(newValue);
+      if (result !== true) {
+        validationErrors.value['rate.limiting.max.requests.per.hour'] = result;
+        return; // Don't update if validation fails
+      }
+    }
+    // Clear validation error if validation passes
+    validationErrors.value['rate.limiting.max.requests.per.hour'] = '';
+    updateSetting('rate.limiting.max.requests.per.hour', Number(newValue));
+  }
+});
+
+watch(blockDurationMinutes, (newValue) => {
+  if (!isFirstLoad.value && newValue !== null) {
+    // Check validation before updating
+    const rules = blockDurationMinutesRules.value;
+    for (const rule of rules) {
+      const result = rule(newValue);
+      if (result !== true) {
+        validationErrors.value['rate.limiting.block.duration.minutes'] = result;
+        return; // Don't update if validation fails
+      }
+    }
+    // Clear validation error if validation passes
+    validationErrors.value['rate.limiting.block.duration.minutes'] = '';
+    updateSetting('rate.limiting.block.duration.minutes', Number(newValue));
+  }
+});
+
 // Watch for changes in loading state from the store
 watch(
   () => appSettingsStore.isLoading,
@@ -409,10 +518,10 @@ onMounted(() => {
                 </template>
                 <div class="pa-2">
                   <p class="text-subtitle-2 mb-2">
-                    Ошибка загрузки настройки
+                    {{ t('admin.settings.errors.loading.title') }}
                   </p>
                   <p class="text-caption">
-                    Нажмите для повторной попытки
+                    {{ t('admin.settings.errors.loading.retry') }}
                   </p>
                 </div>
               </v-tooltip>
@@ -448,10 +557,10 @@ onMounted(() => {
                 </template>
                 <div class="pa-2">
                   <p class="text-subtitle-2 mb-2">
-                    Ошибка загрузки настройки
+                    {{ t('admin.settings.errors.loading.title') }}
                   </p>
                   <p class="text-caption">
-                    Нажмите для повторной попытки
+                    {{ t('admin.settings.errors.loading.retry') }}
                   </p>
                 </div>
               </v-tooltip>
@@ -494,10 +603,10 @@ onMounted(() => {
                 </template>
                 <div class="pa-2">
                   <p class="text-subtitle-2 mb-2">
-                    Ошибка загрузки настройки
+                    {{ t('admin.settings.errors.loading.title') }}
                   </p>
                   <p class="text-caption">
-                    Нажмите для повторной попытки
+                    {{ t('admin.settings.errors.loading.retry') }}
                   </p>
                 </div>
               </v-tooltip>
@@ -533,10 +642,10 @@ onMounted(() => {
                 </template>
                 <div class="pa-2">
                   <p class="text-subtitle-2 mb-2">
-                    Ошибка загрузки настройки
+                    {{ t('admin.settings.errors.loading.title') }}
                   </p>
                   <p class="text-caption">
-                    Нажмите для повторной попытки
+                    {{ t('admin.settings.errors.loading.retry') }}
                   </p>
                 </div>
               </v-tooltip>
@@ -584,10 +693,10 @@ onMounted(() => {
                 </template>
                 <div class="pa-2">
                   <p class="text-subtitle-2 mb-2">
-                    Ошибка загрузки настройки
+                    {{ t('admin.settings.errors.loading.title') }}
                   </p>
                   <p class="text-caption">
-                    Нажмите для повторной попытки
+                    {{ t('admin.settings.errors.loading.retry') }}
                   </p>
                 </div>
               </v-tooltip>
@@ -620,10 +729,10 @@ onMounted(() => {
                 </template>
                 <div class="pa-2">
                   <p class="text-subtitle-2 mb-2">
-                    Ошибка загрузки настройки
+                    {{ t('admin.settings.errors.loading.title') }}
                   </p>
                   <p class="text-caption">
-                    Нажмите для повторной попытки
+                    {{ t('admin.settings.errors.loading.retry') }}
                   </p>
                 </div>
               </v-tooltip>
@@ -698,6 +807,188 @@ onMounted(() => {
                 hide-details
               />
               <span class="text-caption text-grey ms-3">в разработке</span>
+            </div>
+          </div>
+        </div>
+        
+        <!-- ==================== CONNECTION HANDLING SECTION ==================== -->
+        <div class="settings-group mb-6">
+          <h3 class="text-subtitle-1 mb-4 font-weight-medium">
+            {{ t('admin.settings.application.security.sessionmanagement.connection.handling.title') }}
+          </h3>
+          
+          <!-- Rate Limiting Settings -->
+          <div class="settings-subgroup mb-4">
+            <h4 class="text-subtitle-2 mb-3 font-weight-medium">
+              {{ t('admin.settings.application.security.sessionmanagement.connection.handling.rate.limiting.title') }}
+            </h4>
+            
+            <div class="d-flex align-center mb-3">
+              <v-switch
+                v-model="rateLimitingEnabled"
+                color="teal-darken-2"
+                :label="t('admin.settings.application.security.sessionmanagement.connection.handling.rate.limiting.enabled.label')"
+                hide-details
+                :disabled="isSettingDisabled('rate.limiting.enabled')"
+                :loading="settingLoadingStates['rate.limiting.enabled']"
+              />
+              <v-tooltip
+                v-if="settingErrorStates['rate.limiting.enabled']"
+                location="top"
+                max-width="300"
+              >
+                <template #activator="{ props }">
+                  <v-icon 
+                    icon="mdi-alert-circle" 
+                    size="small" 
+                    class="ms-2" 
+                    color="error"
+                    v-bind="props"
+                    style="cursor: pointer;"
+                    @click="retrySetting('rate.limiting.enabled')"
+                  />
+                </template>
+                <div class="pa-2">
+                  <p class="text-subtitle-2 mb-2">
+                    {{ t('admin.settings.errors.loading.title') }}
+                  </p>
+                  <p class="text-caption">
+                    {{ t('admin.settings.errors.loading.retry') }}
+                  </p>
+                </div>
+              </v-tooltip>
+            </div>
+            
+            <div class="d-flex align-center mb-3">
+              <v-text-field
+                v-model="maxRequestsPerMinute"
+                :label="t('admin.settings.application.security.sessionmanagement.connection.handling.rate.limiting.max.requests.per.minute.label')"
+                type="number"
+                variant="outlined"
+                density="comfortable"
+                color="teal-darken-2"
+                style="max-width: 300px;"
+                :min="1"
+                :max="1000000"
+                :disabled="!rateLimitingEnabled || isSettingDisabled('rate.limiting.max.requests.per.minute')"
+                :loading="settingLoadingStates['rate.limiting.max.requests.per.minute']"
+                :rules="maxRequestsPerMinuteRules"
+                :error-messages="validationErrors['rate.limiting.max.requests.per.minute']"
+                validate-on-blur
+              />
+              <v-tooltip
+                v-if="settingErrorStates['rate.limiting.max.requests.per.minute']"
+                location="top"
+                max-width="300"
+              >
+                <template #activator="{ props }">
+                  <v-icon 
+                    icon="mdi-alert-circle" 
+                    size="small" 
+                    class="ms-2" 
+                    color="error"
+                    v-bind="props"
+                    style="cursor: pointer;"
+                    @click="retrySetting('rate.limiting.max.requests.per.minute')"
+                  />
+                </template>
+                <div class="pa-2">
+                  <p class="text-subtitle-2 mb-2">
+                    {{ t('admin.settings.errors.loading.title') }}
+                  </p>
+                  <p class="text-caption">
+                    {{ t('admin.settings.errors.loading.retry') }}
+                  </p>
+                </div>
+              </v-tooltip>
+            </div>
+            
+            <div class="d-flex align-center mb-3">
+              <v-text-field
+                v-model="maxRequestsPerHour"
+                :label="t('admin.settings.application.security.sessionmanagement.connection.handling.rate.limiting.max.requests.per.hour.label')"
+                type="number"
+                variant="outlined"
+                density="comfortable"
+                color="teal-darken-2"
+                style="max-width: 300px;"
+                :min="1"
+                :max="1000000"
+                :disabled="!rateLimitingEnabled || isSettingDisabled('rate.limiting.max.requests.per.hour')"
+                :loading="settingLoadingStates['rate.limiting.max.requests.per.hour']"
+                :rules="maxRequestsPerHourRules"
+                :error-messages="validationErrors['rate.limiting.max.requests.per.hour']"
+                validate-on-blur
+              />
+              <v-tooltip
+                v-if="settingErrorStates['rate.limiting.max.requests.per.hour']"
+                location="top"
+                max-width="300"
+              >
+                <template #activator="{ props }">
+                  <v-icon 
+                    icon="mdi-alert-circle" 
+                    size="small" 
+                    class="ms-2" 
+                    color="error"
+                    v-bind="props"
+                    style="cursor: pointer;"
+                    @click="retrySetting('rate.limiting.max.requests.per.hour')"
+                  />
+                </template>
+                <div class="pa-2">
+                  <p class="text-subtitle-2 mb-2">
+                    {{ t('admin.settings.errors.loading.title') }}
+                  </p>
+                  <p class="text-caption">
+                    {{ t('admin.settings.errors.loading.retry') }}
+                  </p>
+                </div>
+              </v-tooltip>
+            </div>
+            
+            <div class="d-flex align-center mb-3">
+              <v-text-field
+                v-model="blockDurationMinutes"
+                :label="t('admin.settings.application.security.sessionmanagement.connection.handling.rate.limiting.block.duration.label')"
+                type="number"
+                variant="outlined"
+                density="comfortable"
+                color="teal-darken-2"
+                style="max-width: 300px;"
+                :min="1"
+                :max="60"
+                :disabled="!rateLimitingEnabled || isSettingDisabled('rate.limiting.block.duration.minutes')"
+                :loading="settingLoadingStates['rate.limiting.block.duration.minutes']"
+                :rules="blockDurationMinutesRules"
+                :error-messages="validationErrors['rate.limiting.block.duration.minutes']"
+                validate-on-blur
+              />
+              <v-tooltip
+                v-if="settingErrorStates['rate.limiting.block.duration.minutes']"
+                location="top"
+                max-width="300"
+              >
+                <template #activator="{ props }">
+                  <v-icon 
+                    icon="mdi-alert-circle" 
+                    size="small" 
+                    class="ms-2" 
+                    color="error"
+                    v-bind="props"
+                    style="cursor: pointer;"
+                    @click="retrySetting('rate.limiting.block.duration.minutes')"
+                  />
+                </template>
+                <div class="pa-2">
+                  <p class="text-subtitle-2 mb-2">
+                    {{ t('admin.settings.errors.loading.title') }}
+                  </p>
+                  <p class="text-caption">
+                    {{ t('admin.settings.errors.loading.retry') }}
+                  </p>
+                </div>
+              </v-tooltip>
             </div>
           </div>
         </div>

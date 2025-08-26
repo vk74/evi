@@ -32,6 +32,12 @@ INSERT INTO app.app_settings (
 ('Application.Security.SessionManagement', 'drop.refresh.tokens.on.user.change.password', 'all', 'true', '{"type":"boolean"}', 'true', 'Drop all active refresh tokens except current from users device when user changes password', false),
 ('Application.Security.SessionManagement', 'drop.refresh.tokens.on.admin.password.change', 'all', 'true', '{"type":"boolean"}', 'true', 'Drop all active refresh tokens for a user which password is changed by admin', false),
 
+-- Rate Limiting Settings
+('Application.Security.SessionManagement', 'rate.limiting.enabled', 'all', 'true', '{"type":"boolean"}', 'true', 'Enable or disable request rate limiting for all API endpoints per user', false),
+('Application.Security.SessionManagement', 'rate.limiting.max.requests.per.minute', 'all', '100', '{"type":"integer","minimum":1,"maximum":1000000}', '100', 'Maximum number of requests allowed per minute per user IP address', false),
+('Application.Security.SessionManagement', 'rate.limiting.max.requests.per.hour', 'all', '1000', '{"type":"integer","minimum":1,"maximum":1000000}', '1000', 'Maximum number of requests allowed per hour per user IP address', false),
+('Application.Security.SessionManagement', 'rate.limiting.block.duration.minutes', 'all', '5', '{"type":"integer","minimum":1,"maximum":60}', '5', 'Duration of temporary block when rate limit is exceeded (in minutes)', false),
+
 -- System Logging Settings
 ('Application.System.Logging', 'turn.on.console.logging', 'all', 'true', '{"type":"boolean"}', 'true', 'Enable console logging output', false),
 ('Application.System.Logging', 'turn.on.file.logging', 'all', 'false', '{"type":"boolean"}', 'false', 'Enable file logging output', false),
