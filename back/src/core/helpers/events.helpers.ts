@@ -699,4 +699,65 @@ export const CACHE_OPERATION_EVENTS = {
     payload: null, // Will contain: { types }
     version: '1.0.0'
   }
+};
+
+/**
+ * Is User Active Events
+ * Events for tracking user activity status checks
+ */
+export const IS_USER_ACTIVE_EVENTS = {
+  // When user activity check starts
+  START: {
+    eventName: 'helpers.is.user.active.start',
+    source: 'helper function for quick check of current user status',
+    eventType: 'app' as const,
+    severity: 'debug' as const,
+    eventMessage: 'Checking user activity status',
+    payload: null, // Will contain: { userId }
+    version: '1.0.0'
+  },
+
+  // When user activity status retrieved from cache
+  SUCCESS_CACHE: {
+    eventName: 'helpers.is.user.active.success_cache',
+    source: 'helper function for quick check of current user status',
+    eventType: 'app' as const,
+    severity: 'debug' as const,
+    eventMessage: 'User activity status retrieved from cache',
+    payload: null, // Will contain: { userId, isActive, source: 'cache' }
+    version: '1.0.0'
+  },
+
+  // When user not found
+  NOT_FOUND: {
+    eventName: 'helpers.is.user.active.not_found',
+    source: 'helper function for quick check of current user status',
+    eventType: 'app' as const,
+    severity: 'info' as const,
+    eventMessage: 'User not found with UUID',
+    payload: null, // Will contain: { userId }
+    version: '1.0.0'
+  },
+
+  // When user activity status retrieved from database
+  SUCCESS_DB: {
+    eventName: 'helpers.is.user.active.success_db',
+    source: 'helper function for quick check of current user status',
+    eventType: 'app' as const,
+    severity: 'debug' as const,
+    eventMessage: 'User activity status retrieved from database',
+    payload: null, // Will contain: { userId, isActive, source: 'database' }
+    version: '1.0.0'
+  },
+
+  // When error occurs during user activity check
+  ERROR: {
+    eventName: 'helpers.is.user.active.error',
+    source: 'helper function for quick check of current user status',
+    eventType: 'app' as const,
+    severity: 'error' as const,
+    eventMessage: 'Error checking user activity status',
+    payload: null, // Will contain: { userId, error }
+    version: '1.0.0'
+  }
 }; 

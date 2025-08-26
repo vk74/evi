@@ -1,7 +1,7 @@
 /**
- * version: 1.0.0
+ * version: 1.0.1
  * Backend router file for catalog module.
- * Catalog routes implementation.
+ * Catalog routes implementation with user status check middleware.
  * File: routes.catalog.ts
  */
 
@@ -10,15 +10,16 @@ import fetchSectionsController from './controller.catalog.sections';
 import fetchServicesController from './controller.catalog.services';
 import fetchServiceDetailsController from './controller.catalog.service.details';
 import validateJwt from '../../core/guards/auth.validate.jwt';
+import checkIsUserStatusActive from '../../core/guards/check.is.user.status.active';
 
 const router: Router = express.Router();
 
 // Catalog sections routes
-router.get('/fetch-sections', validateJwt, fetchSectionsController);
+router.get('/fetch-sections', validateJwt, checkIsUserStatusActive, fetchSectionsController);
 // Catalog services routes
-router.get('/fetch-services', validateJwt, fetchServicesController);
+router.get('/fetch-services', validateJwt, checkIsUserStatusActive, fetchServicesController);
 // Single service details
-router.get('/fetch-service-details', validateJwt, fetchServiceDetailsController);
+router.get('/fetch-service-details', validateJwt, checkIsUserStatusActive, fetchServiceDetailsController);
 
 // Export using ES modules syntax
 export default router;
