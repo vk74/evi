@@ -26,7 +26,6 @@ import { fetchPublicPasswordPolicies } from '@/core/services/service.fetch.publi
 import { usePublicSettingsStore, type PasswordPolicies } from '@/core/state/state.public.settings'
 import PasswordPoliciesPanel from '@/core/ui/panels/panel.current.password.policies.vue'
 import { api } from '@/core/api/service.axios'
-import { fetchSettings } from '@/modules/admin/settings/service.fetch.settings'
 
 // ==================== STORES ====================
 const uiStore = useUiStore()
@@ -233,11 +232,10 @@ const loadRegistrationSettings = async () => {
   try {
     console.log('Loading registration page settings')
     
-    const settings = await fetchSettings('UsersManagement.RegistrationPage')
-    const registrationSetting = settings?.find(s => s.setting_name === 'registration.page.enabled')
+    const response = await api.get('/api/public/registration-status')
     
-    if (registrationSetting) {
-      registrationPageEnabled.value = Boolean(registrationSetting.value)
+    if (response.status === 200 && response.data.success) {
+      registrationPageEnabled.value = response.data.enabled
       console.log('Registration page setting loaded:', registrationPageEnabled.value)
     } else {
       console.warn('Registration page setting not found, defaulting to disabled')
@@ -306,7 +304,7 @@ const submitForm = async () => {
   isSubmitting.value = true
 
   try {
-    const response = await api.post('/api/auth/register', user.value)
+    const response = await api.post('/api/admin/users/register', user.value)
 
     if (response.status === 200 || response.status === 201) {
       console.log('User self-registration data successfully sent to backend server')

@@ -1087,4 +1087,219 @@ export const AUTH_EVENT_NAMES = {
   TOKEN_COUNT_CHECK: AUTH_INTERNAL_EVENTS.TOKEN_COUNT_CHECK.eventName,
   TOKEN_REVOCATION_NEEDED: AUTH_INTERNAL_EVENTS.TOKEN_REVOCATION_NEEDED.eventName,
   TOKEN_REVOKED: AUTH_INTERNAL_EVENTS.TOKEN_REVOKED.eventName
-} as const; 
+} as const;
+
+/**
+ * Authentication Token Issue Events
+ * Events related to JWT token issue operations
+ */
+export const AUTH_TOKEN_ISSUE_EVENTS = {
+  // Token issue failed due to missing user data
+  TOKEN_ISSUE_FAILED: {
+    eventName: 'auth.token.issue.failed',
+    source: 'auth token middleware',
+    eventType: 'security' as const,
+    severity: 'warning' as const,
+    eventMessage: 'Token issue failed: No user data in request',
+    payload: null, // { requestInfo }
+    version: '1.0.0'
+  },
+  
+  // Token issue started
+  TOKEN_ISSUE_STARTED: {
+    eventName: 'auth.token.issue.started',
+    source: 'auth token middleware',
+    eventType: 'security' as const,
+    severity: 'debug' as const,
+    eventMessage: 'User authenticated, issuing token',
+    payload: null, // { username, userUUID }
+    version: '1.0.0'
+  },
+  
+  // Token issue successful
+  TOKEN_ISSUE_SUCCESS: {
+    eventName: 'auth.token.issue.success',
+    source: 'auth token middleware',
+    eventType: 'security' as const,
+    severity: 'debug' as const,
+    eventMessage: 'JWT successfully created and issued to the user',
+    payload: null, // { username }
+    version: '1.0.0'
+  },
+  
+  // Token creation error
+  TOKEN_CREATION_ERROR: {
+    eventName: 'auth.token.creation.error',
+    source: 'auth token middleware',
+    eventType: 'security' as const,
+    severity: 'error' as const,
+    eventMessage: 'Token creation error',
+    payload: null, // { username, error }
+    errorData: null, // Error details
+    version: '1.0.0'
+  }
+};
+
+/**
+ * Authentication Password Check Events
+ * Events related to password verification operations
+ */
+export const AUTH_PASSWORD_CHECK_EVENTS = {
+  // Password check failed due to missing credentials
+  PASSWORD_CHECK_FAILED_MISSING_CREDENTIALS: {
+    eventName: 'auth.password.check.failed.missing_credentials',
+    source: 'auth password check guard',
+    eventType: 'security' as const,
+    severity: 'warning' as const,
+    eventMessage: 'Password check failed: Missing credentials',
+    payload: null, // { requestInfo }
+    version: '1.0.0'
+  },
+  
+  // Password check started
+  PASSWORD_CHECK_STARTED: {
+    eventName: 'auth.password.check.started',
+    source: 'auth password check guard',
+    eventType: 'security' as const,
+    severity: 'debug' as const,
+    eventMessage: 'Password check for user',
+    payload: null, // { username }
+    version: '1.0.0'
+  },
+  
+  // Password check failed - user not found
+  PASSWORD_CHECK_FAILED_USER_NOT_FOUND: {
+    eventName: 'auth.password.check.failed.user_not_found',
+    source: 'auth password check guard',
+    eventType: 'security' as const,
+    severity: 'warning' as const,
+    eventMessage: 'Password check failed: User not found',
+    payload: null, // { username }
+    version: '1.0.0'
+  },
+  
+  // Password check successful
+  PASSWORD_CHECK_SUCCESS: {
+    eventName: 'auth.password.check.success',
+    source: 'auth password check guard',
+    eventType: 'security' as const,
+    severity: 'info' as const,
+    eventMessage: 'Password check successful for user',
+    payload: null, // { username }
+    version: '1.0.0'
+  },
+  
+  // Password check failed - invalid password
+  PASSWORD_CHECK_FAILED_INVALID_PASSWORD: {
+    eventName: 'auth.password.check.failed.invalid_password',
+    source: 'auth password check guard',
+    eventType: 'security' as const,
+    severity: 'warning' as const,
+    eventMessage: 'Password check failed: Invalid password for user',
+    payload: null, // { username }
+    version: '1.0.0'
+  },
+  
+  // Password check error
+  PASSWORD_CHECK_ERROR: {
+    eventName: 'auth.password.check.error',
+    source: 'auth password check guard',
+    eventType: 'security' as const,
+    severity: 'error' as const,
+    eventMessage: 'Error checking account password',
+    payload: null, // { username, error }
+    errorData: null, // Error details
+    version: '1.0.0'
+  }
+};
+
+/**
+ * Authentication Status Check Events
+ * Events related to account status verification operations
+ */
+export const AUTH_STATUS_CHECK_EVENTS = {
+  // Status check failed due to missing username
+  STATUS_CHECK_FAILED_MISSING_USERNAME: {
+    eventName: 'auth.status.check.failed.missing_username',
+    source: 'auth status check guard',
+    eventType: 'security' as const,
+    severity: 'warning' as const,
+    eventMessage: 'Status check failed: Missing username',
+    payload: null, // { requestInfo }
+    version: '1.0.0'
+  },
+  
+  // Status check started
+  STATUS_CHECK_STARTED: {
+    eventName: 'auth.status.check.started',
+    source: 'auth status check guard',
+    eventType: 'security' as const,
+    severity: 'debug' as const,
+    eventMessage: 'Checking account status for user',
+    payload: null, // { username }
+    version: '1.0.0'
+  },
+  
+  // Status check failed - user not found
+  STATUS_CHECK_FAILED_USER_NOT_FOUND: {
+    eventName: 'auth.status.check.failed.user_not_found',
+    source: 'auth status check guard',
+    eventType: 'security' as const,
+    severity: 'warning' as const,
+    eventMessage: 'Status check failed: User not found',
+    payload: null, // { username }
+    version: '1.0.0'
+  },
+  
+  // Status check failed - account disabled
+  STATUS_CHECK_FAILED_ACCOUNT_DISABLED: {
+    eventName: 'auth.status.check.failed.account_disabled',
+    source: 'auth status check guard',
+    eventType: 'security' as const,
+    severity: 'warning' as const,
+    eventMessage: 'Status check failed: Account is disabled for user',
+    payload: null, // { username }
+    version: '1.0.0'
+  },
+  
+  // Status check successful
+  STATUS_CHECK_SUCCESS: {
+    eventName: 'auth.status.check.success',
+    source: 'auth status check guard',
+    eventType: 'security' as const,
+    severity: 'debug' as const,
+    eventMessage: 'Status check successful for user',
+    payload: null, // { username }
+    version: '1.0.0'
+  },
+  
+  // Status check error
+  STATUS_CHECK_ERROR: {
+    eventName: 'auth.status.check.error',
+    source: 'auth status check guard',
+    eventType: 'security' as const,
+    severity: 'error' as const,
+    eventMessage: 'Error checking account status',
+    payload: null, // { username, error }
+    errorData: null, // Error details
+    version: '1.0.0'
+  }
+};
+
+/**
+ * Authentication Registration Events
+ * Events related to user registration operations
+ */
+export const AUTH_REGISTRATION_EVENTS = {
+  // Registration error
+  REGISTRATION_ERROR: {
+    eventName: 'auth.registration.error',
+    source: 'auth registration middleware',
+    eventType: 'security' as const,
+    severity: 'error' as const,
+    eventMessage: 'Registration error',
+    payload: null, // { registrationData, error }
+    errorData: null, // Error details
+    version: '1.0.0'
+  }
+}; 

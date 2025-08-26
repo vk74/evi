@@ -1,12 +1,17 @@
 /**
- * auth.issue.token.ts - version 1.0.1
+ * auth.issue.token.ts - backend file
+ * version: 1.0.0
+ * 
  * Middleware responsible for creating and issuing JWT tokens to authenticated users
+ * Publishes events to event bus for monitoring and tracking
  */
 
 import { Request, Response } from 'express';
 import jwt from 'jsonwebtoken';
 import { v4 as uuidv4 } from 'uuid';
 import { getUuidByUsername } from '../core/helpers/get.uuid.by.username';
+import { createAndPublishEvent } from '../core/eventBus/fabric.events';
+import { AUTH_TOKEN_ISSUE_EVENTS } from '../core/auth/events.auth';
 
 // Interface for enhanced request object
 interface UserInfo {
@@ -36,7 +41,18 @@ interface JwtPayload {
  */
 const issueToken = async (req: EnhancedRequest, res: Response): Promise<void> => {
   if (!req.user) {
-    console.log('Token issuance failed: No user data in request');
+    // Publish warning event
+    await createAndPublishEvent({
+      req,
+      eventName: AUTH_TOKEN_ISSUE_EVENTS.TOKEN_ISSUE_FAILED.eventName,
+      payload: {
+        requestInfo: {
+          hasReq: !!req,
+          hasUser: !!(req && req.user)
+        }
+      }
+    });
+    
     res.status(401).json({
       success: false,
       message: 'Unauthorized'
@@ -52,7 +68,15 @@ const issueToken = async (req: EnhancedRequest, res: Response): Promise<void> =>
       throw new Error('User not found in database');
     }
 
-    console.log('User authenticated, issuing token for:', req.user.username, 'UUID:', userUUID);
+    // Publish debug event for token issuance started
+    await createAndPublishEvent({
+      req,
+      eventName: AUTH_TOKEN_ISSUE_EVENTS.TOKEN_ISSUE_STARTED.eventName,
+      payload: {
+        username: req.user.username,
+        userUUID
+      }
+    });
 
     const payload: JwtPayload = {
       iss: 'ev2 app',
@@ -67,14 +91,32 @@ const issueToken = async (req: EnhancedRequest, res: Response): Promise<void> =>
       expiresIn: '30m'
     });
 
-    console.log('JWT successfully created and issued to the user:', req.user.username);
+    // Publish debug event for token issuance success
+    await createAndPublishEvent({
+      req,
+      eventName: AUTH_TOKEN_ISSUE_EVENTS.TOKEN_ISSUE_SUCCESS.eventName,
+      payload: {
+        username: req.user.username
+      }
+    });
+    
     res.json({
       success: true,
       token
     });
 
   } catch (error) {
-    console.error('Token creation error:', error);
+    // Publish error event
+    await createAndPublishEvent({
+      req,
+      eventName: AUTH_TOKEN_ISSUE_EVENTS.TOKEN_CREATION_ERROR.eventName,
+      payload: {
+        username: req.user?.username,
+        error: error
+      },
+      errorData: error instanceof Error ? error.message : String(error)
+    });
+    
     res.status(500).json({
       success: false,
       message: 'Error creating token',

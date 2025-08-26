@@ -157,6 +157,7 @@ const registerUserControllerLogic = async (req: EnhancedRequest, res: Response):
     
     // Delegate to service layer
     await registerUserService(req, res);
+    return; // Important: return after service handles the response
     
   } catch (error) {
     console.error('Registration controller error:', error);

@@ -110,6 +110,16 @@ export const eventReferenceFiles: Record<string, string[]> = {
     path.resolve(__dirname, '../../services/item-selector/events.item.selector.ts')
   ],
   
+  // Account events - events for account module operations (registration, profile)
+  account: [
+    path.resolve(__dirname, '../../../modules/account/events.account.ts')
+  ],
+  
+  // Validation events - events for validation service operations
+  validation: [
+    path.resolve(__dirname, '../../validation/events.validation.ts')
+  ],
+  
   // Add other domains here as they are created
 };
 

@@ -15,6 +15,8 @@ import bcrypt from 'bcrypt';
 import { Pool, QueryResult } from 'pg';
 import { pool as pgPool } from '../core/db/maindb';
 import { userQueries } from './queries.users';
+import { createAndPublishEvent } from '../core/eventBus/fabric.events';
+import { AUTH_REGISTRATION_EVENTS } from '../core/auth/events.auth';
 
 // Type assertion for pool
 const pool = pgPool as Pool;
@@ -144,7 +146,21 @@ const register = async (req: EnhancedRequest, res: Response): Promise<void> => {
         }
 
     } catch (error) {
-        console.error('Registration error:', error);
+        // Publish error event
+        await createAndPublishEvent({
+            req,
+            eventName: AUTH_REGISTRATION_EVENTS.REGISTRATION_ERROR.eventName,
+            payload: {
+                registrationData: {
+                    username: req.body.username,
+                    email: req.body.email,
+                    phone: req.body.phone
+                },
+                error: error
+            },
+            errorData: error instanceof Error ? error.message : String(error)
+        });
+        
         res.status(500).json({
             message: 'registration failed',
             details: error instanceof Error ? error.message : String(error)

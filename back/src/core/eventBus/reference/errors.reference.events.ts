@@ -82,14 +82,23 @@ export const EVENT_BUS_EVENTS = {
 };
 
 /**
- * Events related to event template errors
+ * System Error Events
+ * Events related to internal system errors and template issues
  */
-export const EVENT_TEMPLATE_NOT_FOUND = {
-  eventName: 'system.events.template.not.found',
-  source: 'event factory system',
-  eventType: 'system' as const,
-  severity: 'error' as const,
-  eventMessage: 'Event template not found in cache',
-  version: '1.0.0'
+export const SYSTEM_ERROR_EVENTS = {
+  // When an event template is not found in cache
+  TEMPLATE_NOT_FOUND: {
+    eventName: 'system.events.template.not.found',
+    source: 'event factory system',
+    eventType: 'system' as const,
+    severity: 'error' as const,
+    eventMessage: 'Event template not found in cache',
+    version: '1.0.0'
+  }
 };
+
+/**
+ * Legacy export for backward compatibility
+ */
+export const EVENT_TEMPLATE_NOT_FOUND = SYSTEM_ERROR_EVENTS.TEMPLATE_NOT_FOUND;
 

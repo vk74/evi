@@ -76,7 +76,7 @@ router.get('/api/admin/services/fetchsingleservice', validateJWT, checkIsUserSta
 router.post('/api/admin/services/deleteservices', validateJWT, checkIsUserStatusActive, deleteServicesController);
 
 // Routes for Account Management
-router.post('/api/admin/users/register', validateJWT, checkIsUserStatusActive, registerUserController);
+router.post('/api/admin/users/register', registerUserController);
 
 // Export using ES modules syntax
 export default router;

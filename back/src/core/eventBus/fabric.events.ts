@@ -28,7 +28,9 @@ import * as eventBusService from './service.eventBus.settings';
 // These routes should not attempt to extract user UUID from request
 const PUBLIC_ROUTES = [
   '/api/auth/login',
-  '/api/public/password-policies'
+  '/api/public/password-policies',
+  '/api/public/registration-status',
+  '/api/admin/users/register'
 ];
 
 /**

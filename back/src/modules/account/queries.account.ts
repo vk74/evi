@@ -45,20 +45,19 @@ export const userRegistrationQueries = {
     text: `
       SELECT up.user_id 
       FROM app.user_profiles up
-      WHERE up.phone_number = $1
+      WHERE up.mobile_phone_number = $1
     `,
-    values: ['phone_number']
+    values: ['mobile_phone_number']
   },
 
   /**
-   * Insert new user with names
    * Creates a new user record with basic information
    */
   insertUserWithNames: {
     text: `
       INSERT INTO app.users (
         username, 
-        password_hash, 
+        hashed_password, 
         email, 
         first_name, 
         last_name, 
@@ -71,7 +70,7 @@ export const userRegistrationQueries = {
     `,
     values: [
       'username',      // $1
-      'password_hash', // $2
+      'hashed_password', // $2
       'email',         // $3
       'first_name',    // $4
       'last_name',     // $5
@@ -90,7 +89,7 @@ export const userRegistrationQueries = {
       INSERT INTO app.user_profiles (
         user_id, 
         gender, 
-        phone_number, 
+        mobile_phone_number, 
         address, 
         company_name, 
         position
@@ -100,7 +99,7 @@ export const userRegistrationQueries = {
     values: [
       'user_id',      // $1
       'gender',       // $2
-      'phone_number', // $3
+      'mobile_phone_number', // $3
       'address',      // $4
       'company_name', // $5
       'position'      // $6
@@ -128,7 +127,7 @@ export const userProfileQueries = {
         u.middle_name,
         u.account_status,
         up.gender,
-        up.phone_number,
+        up.mobile_phone_number,
         up.address,
         up.company_name,
         up.position
@@ -171,7 +170,7 @@ export const userProfileQueries = {
       UPDATE app.user_profiles 
       SET 
         gender = $2,
-        phone_number = $3,
+        mobile_phone_number = $3,
         address = $4,
         company_name = $5,
         position = $6
@@ -180,7 +179,7 @@ export const userProfileQueries = {
     values: [
       'user_id',      // $1
       'gender',       // $2
-      'phone_number', // $3
+      'mobile_phone_number', // $3
       'address',      // $4
       'company_name', // $5
       'position'      // $6
@@ -196,7 +195,7 @@ export const userProfileQueries = {
       INSERT INTO app.user_profiles (
         user_id, 
         gender, 
-        phone_number, 
+        mobile_phone_number, 
         address, 
         company_name, 
         position
@@ -207,7 +206,7 @@ export const userProfileQueries = {
     values: [
       'user_id',      // $1
       'gender',       // $2
-      'phone_number', // $3
+      'mobile_phone_number', // $3
       'address',      // $4
       'company_name', // $5
       'position'      // $6

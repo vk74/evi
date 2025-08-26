@@ -1,13 +1,18 @@
-/*
-  File version: 1.0.02
-  This is a backend file. The file provides account status verification functionality.
-  It checks if a user account exists and is not disabled before allowing further request processing.
-*/
+/**
+ * auth.check.status.ts - backend file
+ * version: 1.0.0
+ * 
+ * This file provides account status verification functionality.
+ * It checks if a user account exists and is not disabled before allowing further request processing.
+ * Publishes events to event bus for monitoring and tracking
+ */
 
 import { Response, NextFunction } from 'express';
 import { pool } from '../core/db/maindb';
 import { userQueries } from '../middleware/queries.users';
 import { AuthenticatedRequest, GuardFunction } from './types.guards';
+import { createAndPublishEvent } from '../core/eventBus/fabric.events';
+import { AUTH_STATUS_CHECK_EVENTS } from '../core/auth/events.auth';
 
 /**
  * Middleware to check if a user account is active
@@ -23,7 +28,17 @@ const checkAccountStatus: GuardFunction = async (
    const { username } = req.body;
 
    if (!username) {
-       console.log('Status check failed: Missing username');
+       // Publish warning event
+       await createAndPublishEvent({
+           req,
+           eventName: AUTH_STATUS_CHECK_EVENTS.STATUS_CHECK_FAILED_MISSING_USERNAME.eventName,
+           payload: {
+               requestInfo: {
+                   hasUsername: !!username
+               }
+           }
+       });
+       
        res.status(400).json({
            message: 'Username is required'
        });
@@ -31,7 +46,14 @@ const checkAccountStatus: GuardFunction = async (
    }
 
    try {
-       console.log("Checking account status for user:", username);
+       // Publish debug event for status check started
+       await createAndPublishEvent({
+           req,
+           eventName: AUTH_STATUS_CHECK_EVENTS.STATUS_CHECK_STARTED.eventName,
+           payload: {
+               username
+           }
+       });
        
        const queryResult = await pool.query(
            userQueries.getUserStatus,
@@ -39,7 +61,15 @@ const checkAccountStatus: GuardFunction = async (
        );
 
        if (queryResult.rows.length === 0) {
-           console.log("Status check failed: User not found");
+           // Publish warning event for user not found
+           await createAndPublishEvent({
+               req,
+               eventName: AUTH_STATUS_CHECK_EVENTS.STATUS_CHECK_FAILED_USER_NOT_FOUND.eventName,
+               payload: {
+                   username
+               }
+           });
+           
            res.status(404).json({
                message: 'User not found'
            });
@@ -49,18 +79,44 @@ const checkAccountStatus: GuardFunction = async (
        const { account_status } = queryResult.rows[0];
        
        if (account_status === 'disabled') {
-           console.log("Status check failed: Account is disabled for user:", username);
+           // Publish warning event for account disabled
+           await createAndPublishEvent({
+               req,
+               eventName: AUTH_STATUS_CHECK_EVENTS.STATUS_CHECK_FAILED_ACCOUNT_DISABLED.eventName,
+               payload: {
+                   username
+               }
+           });
+           
            res.status(403).json({
                message: 'Account is disabled'
            });
            return;
        }
 
-       console.log("Status check successful for user:", username);
+       // Publish debug event for status check success
+       await createAndPublishEvent({
+           req,
+           eventName: AUTH_STATUS_CHECK_EVENTS.STATUS_CHECK_SUCCESS.eventName,
+           payload: {
+               username
+           }
+       });
+       
        next();
 
    } catch (error) {
-       console.error('Error checking account status:', error);
+       // Publish error event
+       await createAndPublishEvent({
+           req,
+           eventName: AUTH_STATUS_CHECK_EVENTS.STATUS_CHECK_ERROR.eventName,
+           payload: {
+               username,
+               error: error
+           },
+           errorData: (error as Error).message
+       });
+       
        res.status(500).json({
            message: 'Server error during account status check',
            details: (error as Error).message

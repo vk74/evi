@@ -1,14 +1,19 @@
-/*
-  File version: 1.0.02
-  This is a backend file. The file provides password verification functionality.
-  It validates user credentials by checking username and password against the database.
-*/
+/**
+ * auth.check.password.ts - backend file
+ * version: 1.0.0
+ * 
+ * This file provides password verification functionality.
+ * It validates user credentials by checking username and password against the database.
+ * Publishes events to event bus for monitoring and tracking
+ */
 
 import bcrypt from 'bcrypt';
 import { Response, NextFunction } from 'express';
 import { pool } from '../core/db/maindb';
 import { userQueries } from '../middleware/queries.users';
 import { AuthenticatedRequest, GuardFunction } from './types.guards';
+import { createAndPublishEvent } from '../core/eventBus/fabric.events';
+import { AUTH_PASSWORD_CHECK_EVENTS } from '../core/auth/events.auth';
 
 /**
  * Middleware to validate user credentials
@@ -24,7 +29,18 @@ const checkAccountPassword: GuardFunction = async (
    const { username, password } = req.body;
 
    if (!username || !password) {
-       console.log('Password check failed: Missing credentials');
+       // Publish warning event
+       await createAndPublishEvent({
+           req,
+           eventName: AUTH_PASSWORD_CHECK_EVENTS.PASSWORD_CHECK_FAILED_MISSING_CREDENTIALS.eventName,
+           payload: {
+               requestInfo: {
+                   hasUsername: !!username,
+                   hasPassword: !!password
+               }
+           }
+       });
+       
        res.status(400).json({ 
            message: 'Username and password are required' 
        });
@@ -32,7 +48,14 @@ const checkAccountPassword: GuardFunction = async (
    }
 
    try {
-       console.log("Password check for user:", username);
+       // Publish debug event for password check started
+       await createAndPublishEvent({
+           req,
+           eventName: AUTH_PASSWORD_CHECK_EVENTS.PASSWORD_CHECK_STARTED.eventName,
+           payload: {
+               username
+           }
+       });
        
        const userResult = await pool.query(
            userQueries.getUserPassword,
@@ -40,7 +63,15 @@ const checkAccountPassword: GuardFunction = async (
        );
 
        if (userResult.rows.length === 0) {
-           console.log("Password check failed: User not found");
+           // Publish warning event for user not found
+           await createAndPublishEvent({
+               req,
+               eventName: AUTH_PASSWORD_CHECK_EVENTS.PASSWORD_CHECK_FAILED_USER_NOT_FOUND.eventName,
+               payload: {
+                   username
+               }
+           });
+           
            res.status(401).json({ 
                message: 'Invalid credentials' 
            });
@@ -51,21 +82,47 @@ const checkAccountPassword: GuardFunction = async (
        const isValid = await bcrypt.compare(password, hashed_password);
 
        if (isValid) {
-           console.log("Password check successful for user:", username);
+           // Publish info event for password check success
+           await createAndPublishEvent({
+               req,
+               eventName: AUTH_PASSWORD_CHECK_EVENTS.PASSWORD_CHECK_SUCCESS.eventName,
+               payload: {
+                   username
+               }
+           });
+           
            req.user = { 
                user_id,
                username 
            };
            next();
        } else {
-           console.log("Password check failed: Invalid password for user:", username);
+           // Publish warning event for invalid password
+           await createAndPublishEvent({
+               req,
+               eventName: AUTH_PASSWORD_CHECK_EVENTS.PASSWORD_CHECK_FAILED_INVALID_PASSWORD.eventName,
+               payload: {
+                   username
+               }
+           });
+           
            res.status(401).json({ 
                message: 'Invalid credentials' 
            });
        }
 
    } catch (error) {
-       console.error('Error checking account password:', error);
+       // Publish error event
+       await createAndPublishEvent({
+           req,
+           eventName: AUTH_PASSWORD_CHECK_EVENTS.PASSWORD_CHECK_ERROR.eventName,
+           payload: {
+               username,
+               error: error
+           },
+           errorData: (error as Error).message
+       });
+       
        res.status(500).json({
            message: 'Server error during authentication',
            details: (error as Error).message

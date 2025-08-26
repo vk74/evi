@@ -16,6 +16,7 @@ import issueToken from '../../middleware/auth.issue.token';
 import getUserProfile from '../../modules/account/service.get.profile';
 import updateUserProfile from '../../modules/account/service.update.profile';
 import fetchPublicPasswordPoliciesController from '../public/controller.fetch.public.password.policies';
+import getRegistrationStatusController from '../public/controller.public.registration.status';
 
 // Import new controllers
 import { loginController } from './controller.login';
@@ -27,6 +28,7 @@ const router: Router = express.Router();
 
 // Public routes (no authentication required)
 router.get('/api/public/password-policies', fetchPublicPasswordPoliciesController);
+router.get('/api/public/registration-status', getRegistrationStatusController);
 
 // New authentication routes
 router.post('/api/auth/login', loginController);
