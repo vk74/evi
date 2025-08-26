@@ -1,9 +1,10 @@
 /**
  * @file service.login.ts
- * Version: 1.2.0
+ * Version: 1.2.1
  * Service for user authentication and token issuance.
  * Backend file that handles user login, validates credentials, and issues access/refresh token pairs.
  * Updated to support device fingerprinting for enhanced security.
+ * Enhanced with improved account status checking and logging.
  */
 
 import bcrypt from 'bcrypt';
@@ -14,6 +15,7 @@ import { issueTokenPair } from './service.issue.tokens';
 import { extractDeviceFingerprintFromRequest, logDeviceFingerprint } from './utils.device.fingerprint';
 import fabricEvents from '@/core/eventBus/fabric.events';
 import { AUTH_LOGIN_EVENTS, AUTH_SECURITY_EVENTS, AUTH_TOKEN_EVENTS } from './events.auth';
+import { isUserActive } from '@/core/helpers/is.user.active';
 
 // Cookie configuration
 const REFRESH_TOKEN_COOKIE_NAME = 'refreshToken';
@@ -82,9 +84,34 @@ function recordFailedAttempt(ip: string): void {
 }
 
 /**
+ * Gets detailed account status for logging purposes
+ */
+async function getAccountStatus(userUuid: string): Promise<string | null> {
+  try {
+    const result = await pool.query(
+      'SELECT account_status FROM app.users WHERE user_id = $1',
+      [userUuid]
+    );
+    
+    if (result.rows.length === 0) {
+      return null;
+    }
+    
+    return result.rows[0].account_status;
+  } catch (error) {
+    console.error('[Login Service] Error getting account status:', error);
+    return null;
+  }
+}
+
+/**
  * Validates user credentials against database
  */
-async function validateCredentials(username: string, password: string): Promise<{ isValid: boolean; userUuid?: string }> {
+async function validateCredentials(username: string, password: string): Promise<{ 
+  isValid: boolean; 
+  userUuid?: string; 
+  reason?: 'invalid_password' | 'account_disabled' | 'account_requires_action' | 'user_not_found' 
+}> {
   try {
     await fabricEvents.createAndPublishEvent({
       eventName: AUTH_LOGIN_EVENTS.CREDENTIALS_VALIDATION_ATTEMPT.eventName,
@@ -93,9 +120,10 @@ async function validateCredentials(username: string, password: string): Promise<
       }
     });
     
+    // First, find user by username without status filter
     const result = await pool.query(
-      'SELECT user_id, hashed_password FROM app.users WHERE username = $1 AND account_status = $2',
-      [username, 'active']
+      'SELECT user_id, hashed_password FROM app.users WHERE username = $1',
+      [username]
     );
     
     await fabricEvents.createAndPublishEvent({
@@ -106,17 +134,49 @@ async function validateCredentials(username: string, password: string): Promise<
       }
     });
     
-    if (result.rows.length === 0) {
-      await fabricEvents.createAndPublishEvent({
-        eventName: AUTH_LOGIN_EVENTS.USER_NOT_FOUND.eventName,
-        payload: {
-          username
-        }
-      });
-      return { isValid: false };
-    }
+          if (result.rows.length === 0) {
+        await fabricEvents.createAndPublishEvent({
+          eventName: AUTH_LOGIN_EVENTS.USER_NOT_FOUND.eventName,
+          payload: {
+            username
+          }
+        });
+        return { isValid: false, reason: 'user_not_found' };
+      }
     
     const { user_id, hashed_password } = result.rows[0];
+    
+    // Check account status using isUserActive helper
+    const isActive = await isUserActive(user_id);
+    
+    if (isActive === false) {
+      // Get detailed account status for logging
+      const accountStatus = await getAccountStatus(user_id);
+      
+      if (accountStatus === 'disabled') {
+        await fabricEvents.createAndPublishEvent({
+          eventName: 'auth.login.account.disabled',
+          payload: {
+            username,
+            userUuid: user_id
+          }
+        });
+        return { isValid: false, reason: 'account_disabled', userUuid: user_id };
+      } else if (accountStatus === 'requires_user_action') {
+        await fabricEvents.createAndPublishEvent({
+          eventName: 'auth.login.account.requires.action',
+          payload: {
+            username,
+            userUuid: user_id
+          }
+        });
+        return { isValid: false, reason: 'account_requires_action', userUuid: user_id };
+      }
+      
+      // Fallback for unknown status
+      return { isValid: false, reason: 'account_disabled', userUuid: user_id };
+    }
+    
     await fabricEvents.createAndPublishEvent({
       eventName: AUTH_LOGIN_EVENTS.USER_FOUND_PASSWORD_COMPARISON.eventName,
       payload: {
@@ -135,12 +195,17 @@ async function validateCredentials(username: string, password: string): Promise<
           userUuid: user_id
         }
       });
+      return {
+        isValid: true,
+        userUuid: user_id
+      };
+    } else {
+      return {
+        isValid: false,
+        reason: 'invalid_password',
+        userUuid: user_id
+      };
     }
-    
-    return {
-      isValid,
-      userUuid: isValid ? user_id : undefined
-    };
   } catch (error) {
     await fabricEvents.createAndPublishEvent({
       eventName: AUTH_SECURITY_EVENTS.DATABASE_ERROR_CREDENTIALS.eventName,
@@ -197,24 +262,58 @@ export async function loginService(
     }
     
     // Validate credentials
-    const { isValid, userUuid } = await validateCredentials(loginData.username, loginData.password);
+    const { isValid, userUuid, reason } = await validateCredentials(loginData.username, loginData.password);
     
     if (!isValid) {
       recordFailedAttempt(clientIp);
       
-      // Create invalid credentials event
-      await fabricEvents.createAndPublishEvent({
-        eventName: AUTH_SECURITY_EVENTS.INVALID_CREDENTIALS.eventName,
-        payload: {
-          username: loginData.username,
-          clientIp
-        }
-      });
+      // Handle different failure reasons
+      if (reason === 'account_disabled') {
+        throw {
+          code: 'FORBIDDEN',
+          message: 'Account is disabled'
+        };
+      } else if (reason === 'account_requires_action') {
+        throw {
+          code: 'FORBIDDEN',
+          message: 'Account requires user action'
+        };
+      } else if (reason === 'user_not_found') {
+        // Create invalid credentials event for user not found
+        await fabricEvents.createAndPublishEvent({
+          eventName: AUTH_SECURITY_EVENTS.INVALID_CREDENTIALS.eventName,
+          payload: {
+            username: loginData.username,
+            clientIp
+          }
+        });
+        throw {
+          code: 'UNAUTHORIZED',
+          message: 'Invalid credentials'
+        };
+      } else if (reason === 'invalid_password') {
+        // Create invalid credentials event for wrong password
+        await fabricEvents.createAndPublishEvent({
+          eventName: AUTH_SECURITY_EVENTS.INVALID_CREDENTIALS.eventName,
+          payload: {
+            username: loginData.username,
+            clientIp
+          }
+        });
+        throw {
+          code: 'UNAUTHORIZED',
+          message: 'Invalid credentials'
+        };
+      }
       
-      throw new Error('Invalid credentials');
+      // Fallback
+      throw {
+        code: 'UNAUTHORIZED',
+        message: 'Invalid credentials'
+      };
     }
     
-    // Log device fingerprint for security monitoring
+    // If we get here, credentials are valid - process successful login
     logDeviceFingerprint(userUuid!, deviceFingerprint, 'login');
     
     // Generate token pair using token issuance service with device fingerprint

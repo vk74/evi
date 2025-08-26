@@ -818,7 +818,36 @@ export const AUTH_SECURITY_EVENTS = {
     source: 'core.auth.security',
     severity: 'error' as const,
     version: '1.0.0'
+  },
+
+  /**
+   * Account disabled event
+   * Triggered when login attempt is made to disabled account
+   * severity: warning - includes username and user UUID
+   */
+  ACCOUNT_DISABLED: {
+    eventName: 'auth.login.account.disabled',
+    eventMessage: 'Login attempt to disabled account',
+    eventType: 'security' as const,
+    source: 'core.auth.login',
+    severity: 'warning' as const,
+    version: '1.0.0'
+  },
+
+  /**
+   * Account requires action event
+   * Triggered when login attempt is made to account requiring user action
+   * severity: warning - includes username and user UUID
+   */
+  ACCOUNT_REQUIRES_ACTION: {
+    eventName: 'auth.login.account.requires.action',
+    eventMessage: 'Login attempt to account requiring user action',
+    eventType: 'security' as const,
+    source: 'core.auth.login',
+    severity: 'warning' as const,
+    version: '1.0.0'
   }
+
 };
 
 /**
@@ -1040,10 +1069,12 @@ export const AUTH_EVENT_NAMES = {
   USERNAME_RETRIEVAL_ERROR: AUTH_SECURITY_EVENTS.USERNAME_RETRIEVAL_ERROR.eventName,
   DEVICE_FINGERPRINT_MISMATCH_REFRESH: AUTH_SECURITY_EVENTS.DEVICE_FINGERPRINT_MISMATCH_REFRESH.eventName,
   SETTINGS_RETRIEVAL_WARNING: AUTH_SECURITY_EVENTS.SETTINGS_RETRIEVAL_WARNING.eventName,
-  LOGOUT_TOKEN_VALIDATION_ERROR: AUTH_SECURITY_EVENTS.LOGOUT_TOKEN_VALIDATION_ERROR.eventName,
+    LOGOUT_TOKEN_VALIDATION_ERROR: AUTH_SECURITY_EVENTS.LOGOUT_TOKEN_VALIDATION_ERROR.eventName,
   LOGOUT_TOKEN_REVOCATION_ERROR: AUTH_SECURITY_EVENTS.LOGOUT_TOKEN_REVOCATION_ERROR.eventName,
-  
-  // Device events
+  ACCOUNT_DISABLED: AUTH_SECURITY_EVENTS.ACCOUNT_DISABLED.eventName,
+  ACCOUNT_REQUIRES_ACTION: AUTH_SECURITY_EVENTS.ACCOUNT_REQUIRES_ACTION.eventName,
+    
+    // Device events
   DEVICE_FINGERPRINT_LOGGED: AUTH_DEVICE_EVENTS.DEVICE_FINGERPRINT_LOGGED.eventName,
   DEVICE_FINGERPRINT_VALIDATION_FAILED: AUTH_DEVICE_EVENTS.DEVICE_FINGERPRINT_VALIDATION_FAILED.eventName,
   DEVICE_FINGERPRINT_VALIDATION_RESULT: AUTH_DEVICE_EVENTS.DEVICE_FINGERPRINT_VALIDATION_RESULT.eventName,
