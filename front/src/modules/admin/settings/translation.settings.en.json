@@ -307,6 +307,26 @@
               }
             }
           }
+        },
+        "usersregistration": {
+          "title": "users registration",
+          "page": {
+            "enabled": {
+              "label": "enable users registration page"
+            }
+          },
+          "messages": {
+            "settings": {
+              "loaded": "settings loaded successfully"
+            },
+            "error": {
+              "loading": "error loading setting",
+              "tooltip": {
+                "title": "error loading setting",
+                "retry": "click to retry"
+              }
+            }
+          }
         }
       },
       "sections": {
@@ -324,6 +344,7 @@
         "logging": "logging",
         "usersmanagement": "users management",
         "groupsmanagement": "groups management",
+        "usersregistration": "users registration",
         "catalog": "catalog",
         "services": "services",
         "processes": "processes"

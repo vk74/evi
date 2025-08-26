@@ -1,0 +1,300 @@
+<!--
+  File: UsersManagement.UsersRegistration.vue
+  Version: 1.0.0
+  Description: Users registration settings component
+  Purpose: Configure user registration page settings
+-->
+
+<script setup lang="ts">
+import { computed, onMounted, watch, ref } from 'vue';
+import { useI18n } from 'vue-i18n';
+import { useAppSettingsStore } from '@/modules/admin/settings/state.app.settings';
+import { fetchSettings } from '@/modules/admin/settings/service.fetch.settings';
+import { updateSettingFromComponent } from '@/modules/admin/settings/service.update.settings';
+import { useUiStore } from '@/core/state/uistate';
+import DataLoading from '@/core/ui/loaders/DataLoading.vue';
+
+// Section path identifier - using component name for better consistency
+const section_path = 'UsersManagement.RegistrationPage';
+
+// Store references
+const appSettingsStore = useAppSettingsStore();
+const uiStore = useUiStore();
+
+// Translations
+const { t } = useI18n();
+
+// Loading states
+const isLoadingSettings = ref(true);
+
+// Flag to track first load vs user changes
+const isFirstLoad = ref(true);
+
+// Individual setting loading states
+const settingLoadingStates = ref<Record<string, boolean>>({});
+const settingErrorStates = ref<Record<string, boolean>>({});
+const settingRetryAttempts = ref<Record<string, number>>({});
+
+// Local UI state for immediate interaction - initialize with null (not set)
+const registrationPageEnabled = ref<boolean | null>(null);
+
+// Define all settings that need to be loaded
+const allSettings = [
+  'registration.page.enabled'
+];
+
+// Initialize loading states for all settings
+allSettings.forEach(settingName => {
+  settingLoadingStates.value[settingName] = true;
+  settingErrorStates.value[settingName] = false;
+  settingRetryAttempts.value[settingName] = 0;
+});
+
+/**
+ * Check if any settings are still loading
+ */
+const hasLoadingSettings = computed(() => {
+  return Object.values(settingLoadingStates.value).some(loading => loading);
+});
+
+/**
+ * Check if any settings have errors
+ */
+const hasErrorSettings = computed(() => {
+  return Object.values(settingErrorStates.value).some(error => error);
+});
+
+/**
+ * Check if a specific setting is disabled (loading or has error)
+ */
+const isSettingDisabled = (settingName: string) => {
+  return settingLoadingStates.value[settingName] || settingErrorStates.value[settingName];
+};
+
+/**
+ * Update setting in store when local state changes
+ */
+function updateSetting(settingName: string, value: any) {
+  // Only update if setting is not disabled
+  if (!isSettingDisabled(settingName)) {
+    console.log(`Updating setting ${settingName} to:`, value);
+    updateSettingFromComponent(section_path, settingName, value);
+  }
+}
+
+/**
+ * Load a single setting by name
+ */
+async function loadSetting(settingName: string): Promise<boolean> {
+  settingLoadingStates.value[settingName] = true;
+  settingErrorStates.value[settingName] = false;
+  
+  try {
+    console.log(`Loading setting: ${settingName}`);
+    
+    // Try to get setting from cache first
+    const cachedSettings = appSettingsStore.getCachedSettings(section_path);
+    const cachedSetting = cachedSettings?.find(s => s.setting_name === settingName);
+    
+    if (cachedSetting) {
+      console.log(`Found cached setting: ${settingName}`, cachedSetting.value);
+      updateLocalSetting(settingName, cachedSetting.value);
+      settingLoadingStates.value[settingName] = false;
+      return true;
+    }
+    
+    // If not in cache, fetch from backend
+    const settings = await fetchSettings(section_path);
+    const setting = settings?.find(s => s.setting_name === settingName);
+    
+    if (setting) {
+      console.log(`Successfully loaded setting: ${settingName}`, setting.value);
+      updateLocalSetting(settingName, setting.value);
+      settingLoadingStates.value[settingName] = false;
+      return true;
+    } else {
+      throw new Error(`Setting ${settingName} not found`);
+    }
+  } catch (error) {
+    console.error(`Failed to load setting ${settingName}:`, error);
+    settingErrorStates.value[settingName] = true;
+    settingLoadingStates.value[settingName] = false;
+    
+    // Try retry if we haven't exceeded attempts
+    if (settingRetryAttempts.value[settingName] < 1) {
+      settingRetryAttempts.value[settingName]++;
+      console.log(`Retrying setting ${settingName} in 5 seconds...`);
+      setTimeout(() => loadSetting(settingName), 5000);
+    } else {
+      // Show error toast only on final failure
+      uiStore.showErrorSnackbar(`${t('admin.settings.usersmanagement.usersregistration.messages.error.loading')}: ${settingName}`);
+    }
+    
+    return false;
+  }
+}
+
+/**
+ * Update local setting value based on setting name
+ */
+function updateLocalSetting(settingName: string, value: any) {
+  switch (settingName) {
+    case 'registration.page.enabled':
+      registrationPageEnabled.value = Boolean(value);
+      break;
+  }
+}
+
+/**
+ * Load all settings from the backend and update local state
+ */
+async function loadSettings() {
+  isLoadingSettings.value = true;
+  
+  try {
+    console.log('Loading settings for Users Registration');
+    
+    // Load all settings in parallel
+    const loadPromises = allSettings.map(settingName => loadSetting(settingName));
+    await Promise.allSettled(loadPromises);
+    
+    // Check if we have any successful loads
+    const successfulLoads = allSettings.filter(settingName => 
+      !settingLoadingStates.value[settingName] && !settingErrorStates.value[settingName]
+    );
+    
+    if (successfulLoads.length === 0) {
+      console.log('No settings loaded successfully - using defaults');
+    } else {
+      console.log(`Successfully loaded ${successfulLoads.length} out of ${allSettings.length} settings`);
+      
+      // Show success toast for initial load
+      uiStore.showSuccessSnackbar(t('admin.settings.usersmanagement.usersregistration.messages.settings.loaded'));
+    }
+    
+  } catch (error) {
+    console.error('Failed to load settings:', error);
+  } finally {
+    isLoadingSettings.value = false;
+    // Enable user changes after initial load is complete
+    isFirstLoad.value = false;
+  }
+}
+
+/**
+ * Retry loading a specific setting
+ */
+async function retrySetting(settingName: string) {
+  settingRetryAttempts.value[settingName] = 0;
+  settingErrorStates.value[settingName] = false;
+  await loadSetting(settingName);
+}
+
+// Watch for changes in local state - only after first load is complete
+watch(
+  registrationPageEnabled, 
+  (newValue) => {
+    if (!isFirstLoad.value) {
+      updateSetting('registration.page.enabled', newValue);
+    }
+  }
+);
+
+// Watch for changes in loading state from the store
+watch(
+  () => appSettingsStore.isLoading,
+  (isLoading) => {
+    isLoadingSettings.value = isLoading;
+  }
+);
+
+// Initialize component
+onMounted(() => {
+  console.log('UsersManagement.UsersRegistration component initialized');
+  loadSettings();
+});
+</script>
+
+<template>
+  <div class="users-registration-container">
+    <h2 class="text-h6 mb-4">
+      {{ t('admin.settings.usersmanagement.usersregistration.title') }}
+    </h2>
+    
+    <!-- Loading indicator -->
+    <DataLoading
+      :loading="isLoadingSettings"
+      size="medium"
+    />
+    
+    <!-- Settings content (only shown when not loading) -->
+    <div
+      v-if="!isLoadingSettings"
+      class="settings-section"
+    >
+      <div class="section-content">
+        <div class="d-flex align-center mb-2">
+          <v-switch
+            v-model="registrationPageEnabled"
+            color="teal-darken-2"
+            :label="t('admin.settings.usersmanagement.usersregistration.page.enabled.label')"
+            hide-details
+            :disabled="isSettingDisabled('registration.page.enabled')"
+            :loading="settingLoadingStates['registration.page.enabled']"
+          />
+          <v-tooltip
+            v-if="settingErrorStates['registration.page.enabled']"
+            location="top"
+            max-width="300"
+          >
+            <template #activator="{ props }">
+              <v-icon 
+                icon="mdi-alert-circle" 
+                size="small" 
+                class="ms-2" 
+                color="error"
+                v-bind="props"
+                style="cursor: pointer;"
+                @click="retrySetting('registration.page.enabled')"
+              />
+            </template>
+            <div class="pa-2">
+              <p class="text-subtitle-2 mb-2">
+                {{ t('admin.settings.usersmanagement.usersregistration.messages.error.tooltip.title') }}
+              </p>
+              <p class="text-caption">
+                {{ t('admin.settings.usersmanagement.usersregistration.messages.error.tooltip.retry') }}
+              </p>
+            </div>
+          </v-tooltip>
+        </div>
+      </div>
+    </div>
+  </div>
+</template>
+
+<style scoped>
+.users-registration-container {
+  /* Base container styling */
+  position: relative;
+}
+
+.settings-section {
+  padding: 16px 0;
+  transition: background-color 0.2s ease;
+}
+
+.settings-section:hover {
+  background-color: rgba(0, 0, 0, 0.01);
+}
+
+.section-title {
+  font-weight: 500;
+}
+
+/* Make dividers same color as border in parent component */
+:deep(.v-divider) {
+  border-color: rgba(0, 0, 0, 0.12);
+  opacity: 1;
+}
+</style>

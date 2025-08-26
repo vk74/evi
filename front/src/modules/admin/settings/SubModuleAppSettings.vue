@@ -24,6 +24,7 @@ import { useUiStore } from '@/core/state/uistate';
  import PasswordPolicies from './sections/Application.Security.PasswordPolicies.vue';
  import AuthenticationSettings from './sections/Application.Security.AuthenticationSettings.vue';
  import GroupsManagement from './sections/UsersManagement.GroupsManagement.vue';
+ import UsersRegistration from './sections/UsersManagement.UsersRegistration.vue';
  
  // Define section interface
  interface Section {
@@ -118,6 +119,11 @@ const { t } = useI18n();
          id: 'UsersManagement.GroupsManagement',
          name: t('admin.settings.sections.groupsmanagement'),
          icon: 'mdi-account-multiple-outline',
+       },
+       {
+         id: 'UsersManagement.UsersRegistration',
+         name: t('admin.settings.sections.usersregistration'),
+         icon: 'mdi-account-plus-outline',
        }
      ]
    },
@@ -140,6 +146,7 @@ const { t } = useI18n();
    'Application.Security.PasswordPolicies': markRaw(PasswordPolicies),
    'Application.Security.AuthenticationSettings': markRaw(AuthenticationSettings),
    'UsersManagement.GroupsManagement': markRaw(GroupsManagement),
+   'UsersManagement.UsersRegistration': markRaw(UsersRegistration),
    // Узлы-контейнеры не имеют компонента
  };
  
