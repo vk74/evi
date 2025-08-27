@@ -21,6 +21,27 @@ import { useI18n } from 'vue-i18n';
 import { ModuleName, DrawerMode, AdminSubModule } from './types.app';
 
 import { logoutService } from '@/core/auth/service.logout';
+import {
+  PhList,
+  PhCaretRight,
+  PhCaretLeft,
+  PhCaretDown,
+  PhCaretUp,
+  PhSquaresFour,
+  PhFiles,
+  PhChartLineUp,
+  PhBooks,
+  PhGear,
+  PhPlusSquare,
+  PhCubeFocus,
+  PhUserGear,
+  PhTranslate,
+  PhUserCircle,
+  PhSignIn,
+  PhUserPlus,
+  PhBrowsers,
+  PhSlidersHorizontal
+} from '@phosphor-icons/vue'
 
 // Async component imports
 const ModuleCatalog = defineAsyncComponent(() => import('./modules/catalog/ModuleCatalog.vue'));
@@ -80,23 +101,29 @@ const isKnowledgeBaseModuleVisible = computed((): boolean => {
   return appSettingsStore.isKnowledgeBaseModuleVisible();
 });
 
-const chevronIcon = computed((): string => {
+const chevronComponent = computed(() => {
   switch(appStore.drawerMode) {
     case 'auto':
-      return 'mdi-chevron-right';
+      return PhCaretRight;
     case 'opened':
-      return 'mdi-chevron-left';
+      return PhCaretLeft;
     case 'closed':
-      return 'mdi-chevron-down';
+      return PhCaretDown;
     default:
-      return 'mdi-chevron-right';
+      return PhCaretRight;
   }
 });
 
 // Admin expansion indicator icon
-const adminExpandIcon = computed((): string => {
-  return isAdminExpanded.value ? 'mdi-chevron-up' : 'mdi-chevron-down';
+const adminExpandComponent = computed(() => {
+  return isAdminExpanded.value ? PhCaretUp : PhCaretDown;
 });
+
+// Detect rail mode (drawer shows icons only)
+const isRailMode = computed(() => appStore.drawerMode === 'auto' || appStore.drawerMode === 'closed');
+
+// Unified icon color (teal)
+const iconColor = '#026c6c';
 
 // Get the current active admin sub-module from the store
 const activeAdminSubModule = computed(() => appStore.getActiveAdminSubModule);
@@ -425,7 +452,7 @@ onMounted(async () => {
         :class="{ 'transparent-bg': drawer }"
         @click="drawer = !drawer"
       >
-        <v-icon>mdi-menu</v-icon>
+        <PhList size="26" :color="iconColor" />
       </v-btn>
     </div>
 
@@ -476,12 +503,15 @@ onMounted(async () => {
             location: 'right',
             disabled: appStore.drawerMode !== 'closed'
           }" 
-          prepend-icon="mdi-view-dashboard" 
           :title="$t('navigation.drawer.catalog')" 
           value="catalog"
           :active="appStore.isModuleActive('Catalog')"
           @click="setActiveModule('Catalog')"
-        />
+        >
+          <template #prepend>
+            <PhBrowsers size="22" :color="iconColor" class="mr-2" />
+          </template>
+        </v-list-item>
         <v-list-item 
           v-if="isLoggedIn && isWorkModuleVisible"
           v-tooltip="{
@@ -489,12 +519,15 @@ onMounted(async () => {
             location: 'right',
             disabled: appStore.drawerMode !== 'closed'
           }" 
-          prepend-icon="mdi-text-box-multiple-outline" 
           :title="$t('navigation.drawer.workModule')" 
           value="workItems"
           :active="appStore.isModuleActive('Work')"
           @click="setActiveModule('Work')"
-        />
+        >
+          <template #prepend>
+            <PhFiles size="22" :color="iconColor" class="mr-2" />
+          </template>
+        </v-list-item>
         <v-list-item 
           v-if="isLoggedIn && isReportsModuleVisible"
           v-tooltip="{
@@ -502,12 +535,15 @@ onMounted(async () => {
             location: 'right',
             disabled: appStore.drawerMode !== 'closed'
           }" 
-          prepend-icon="mdi-chart-timeline" 
           :title="$t('navigation.drawer.reports')" 
           value="reports"
           :active="appStore.isModuleActive('AR')"
           @click="setActiveModule('AR')"
-        />
+        >
+          <template #prepend>
+            <PhChartLineUp size="22" :color="iconColor" class="mr-2" />
+          </template>
+        </v-list-item>
         <v-list-item 
           v-if="isLoggedIn && isKnowledgeBaseModuleVisible"
           v-tooltip="{
@@ -516,11 +552,14 @@ onMounted(async () => {
             disabled: appStore.drawerMode !== 'closed'
           }" 
           :title="$t('navigation.drawer.knowledgeBase')" 
-          prepend-icon="mdi-library" 
           value="KnowledgeBase"
           :active="appStore.isModuleActive('KnowledgeBase')"
           @click="setActiveModule('KnowledgeBase')"
-        />
+        >
+          <template #prepend>
+            <PhBooks size="22" :color="iconColor" class="mr-2" />
+          </template>
+        </v-list-item>
         <v-divider
           v-if="isLoggedIn"
           class="border-opacity-25"
@@ -540,17 +579,25 @@ onMounted(async () => {
             }"
             class="admin-header-item"
             :class="{ 'admin-expanded': isAdminExpanded }" 
-            prepend-icon="mdi-application-cog" 
             :title="$t('navigation.drawer.Admin')" 
             value="admin"
             :active="appStore.isModuleActive('Admin')"
             @click="toggleAdminExpanded"
           >
+            <template #prepend>
+              <div class="admin-icon-with-badge">
+                <PhGear size="22" :color="iconColor" />
+                <span v-if="isRailMode" class="admin-chevron-badge">
+                  <component :is="PhCaretDown" size="10" />
+                </span>
+              </div>
+            </template>
             <!-- Expansion indicator -->
-            <template #append>
-              <v-icon 
-                size="small" 
-                :icon="adminExpandIcon"
+            <template v-if="!isRailMode" #append>
+              <component 
+                :is="adminExpandComponent"
+                size="16"
+                :color="iconColor"
                 class="admin-expand-icon"
               />
             </template>
@@ -571,13 +618,16 @@ onMounted(async () => {
                 }"
                 class="admin-sub-item"
                 :class="{ 'admin-sub-active': activeAdminSubModule === 'catalogAdmin' }"
-                prepend-icon="mdi-view-grid-plus-outline"
                 :title="$t('admin.nav.catalog.main')"
                 value="catalogAdmin"
                 density="compact"
                 :active="appStore.isModuleActive('Admin') && activeAdminSubModule === 'catalogAdmin'"
                 @click="setActiveAdminSection('catalogAdmin')"
-              />
+              >
+                <template #prepend>
+                  <PhPlusSquare size="20" :color="iconColor" class="mr-2" />
+                </template>
+              </v-list-item>
               
               <!-- Service Admin -->
               <v-list-item
@@ -588,13 +638,16 @@ onMounted(async () => {
                 }"
                 class="admin-sub-item"
                 :class="{ 'admin-sub-active': activeAdminSubModule === 'serviceAdmin' }"
-                prepend-icon="mdi-cube-scan"
                 :title="$t('admin.nav.services.main')"
                 value="serviceAdmin"
                 density="compact"
                 :active="appStore.isModuleActive('Admin') && activeAdminSubModule === 'serviceAdmin'"
                 @click="setActiveAdminSection('serviceAdmin')"
-              />
+              >
+                <template #prepend>
+                  <PhCubeFocus size="20" :color="iconColor" class="mr-2" />
+                </template>
+              </v-list-item>
               
               <!-- Users Admin -->
               <v-list-item
@@ -605,13 +658,16 @@ onMounted(async () => {
                 }"
                 class="admin-sub-item"
                 :class="{ 'admin-sub-active': activeAdminSubModule === 'usersAdmin' }"
-                prepend-icon="mdi-account-cog"
                 :title="$t('admin.nav.users.main')"
                 value="usersAdmin"
                 density="compact"
                 :active="appStore.isModuleActive('Admin') && activeAdminSubModule === 'usersAdmin'"
                 @click="setActiveAdminSection('usersAdmin')"
-              />
+              >
+                <template #prepend>
+                  <PhUserGear size="20" :color="iconColor" class="mr-2" />
+                </template>
+              </v-list-item>
               
               <!-- App Settings Admin -->
               <v-list-item
@@ -622,13 +678,16 @@ onMounted(async () => {
                 }"
                 class="admin-sub-item"
                 :class="{ 'admin-sub-active': activeAdminSubModule === 'appAdmin' }"
-                prepend-icon="mdi-cog-outline"
                 :title="$t('admin.nav.settings.main')"
                 value="appAdmin"
                 density="compact"
                 :active="appStore.isModuleActive('Admin') && activeAdminSubModule === 'appAdmin'"
                 @click="setActiveAdminSection('appAdmin')"
-              />
+              >
+                <template #prepend>
+                  <PhSlidersHorizontal size="20" :color="iconColor" class="mr-2" />
+                </template>
+              </v-list-item>
             </div>
           </v-expand-transition>
         </div>
@@ -654,13 +713,16 @@ onMounted(async () => {
                 location: 'right',
                 disabled: appStore.drawerMode !== 'closed'
               }"
-              prepend-icon="mdi-translate"
               :title="$t('navigation.drawer.language')"
               value="language"
               class="bottom-list-item"
               :active="isLanguageMenuOpen"
               @click="toggleLanguageMenu"
-            />
+            >
+              <template #prepend>
+                <PhTranslate size="22" :color="iconColor" class="mr-2" />
+              </template>
+            </v-list-item>
             
             <v-menu
               v-model="isLanguageMenuOpen"
@@ -706,13 +768,16 @@ onMounted(async () => {
                 location: 'right',
                 disabled: appStore.drawerMode !== 'closed'
               }"
-              prepend-icon="mdi-account"
               :title="$t('navigation.drawer.profile')"
               value="profile"
               class="bottom-list-item"
               :active="isProfileMenuOpen || appStore.isModuleActive('Account') || appStore.isModuleActive('Settings')"
               @click="toggleProfileMenu"
-            />
+            >
+              <template #prepend>
+                <PhUserCircle size="22" :color="iconColor" class="mr-2" />
+              </template>
+            </v-list-item>
             
             <v-menu
               v-model="isProfileMenuOpen"
@@ -756,13 +821,16 @@ onMounted(async () => {
               location: 'right',
               disabled: appStore.drawerMode !== 'closed'
             }"
-            prepend-icon="mdi-login"
             :title="$t('navigation.drawer.login')"
             value="login"
             :active="appStore.isModuleActive('Login')"
             class="bottom-list-item"
             @click="setActiveModule('Login')"
-          />
+          >
+            <template #prepend>
+              <PhSignIn size="22" :color="iconColor" class="mr-2" />
+            </template>
+          </v-list-item>
           
           <!-- Register item (when not logged in) -->
           <v-list-item
@@ -772,13 +840,16 @@ onMounted(async () => {
               location: 'right',
               disabled: appStore.drawerMode !== 'closed'
             }"
-            prepend-icon="mdi-account-plus"
             :title="$t('navigation.drawer.register')"
             value="register"
             :active="appStore.isModuleActive('NewUserRegistration')"
             class="bottom-list-item"
             @click="setActiveModule('NewUserRegistration')"
-          />
+          >
+            <template #prepend>
+              <PhUserPlus size="22" :color="iconColor" class="mr-2" />
+            </template>
+          </v-list-item>
         </v-list>
         
         <!-- Drawer control area -->
@@ -788,11 +859,12 @@ onMounted(async () => {
         >
           <v-btn
             variant="text"
-            :icon="chevronIcon"
             size="small"
             class="drawer-toggle-btn"
             color="grey-darken-1"
-          />
+          >
+            <component :is="chevronComponent" size="18" :color="iconColor" />
+          </v-btn>
         </div>
       </template>
     </v-navigation-drawer>
@@ -1016,5 +1088,33 @@ onMounted(async () => {
 
 .drawer-padding-top {
   height: 56px;
+}
+
+/* Rail mode: show only icons (hide titles and append content) and tighten icon spacing */
+::deep(.v-navigation-drawer--rail) .v-list-item .v-list-item-title { display: none !important; }
+::deep(.v-navigation-drawer--rail) .v-list-item .v-list-item__append { display: none !important; }
+::deep(.v-navigation-drawer--rail) .v-list-item .mr-2 { margin-right: 0 !important; }
+
+/* Admin icon chevron badge for rail mode */
+.admin-icon-with-badge {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.admin-chevron-badge {
+  position: absolute;
+  right: -2px;
+  bottom: -2px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background-color: rgba(19, 84, 122, 0.9);
+  color: white;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.6);
 }
 </style>
