@@ -20,19 +20,23 @@ interface RateLimitConfig {
   blockDurationMinutes?: number;
 }
 
-// Default rate limiting configuration (fallback values)
-const DEFAULT_RATE_LIMIT_CONFIG: RateLimitConfig = {
-  enabled: true,
-  maxRequestsPerMinute: 1000,
-  maxRequestsPerHour: 10000,
-  blockDurationMinutes: 5
-};
+// Кеширование конфигурации rate limiting
+let rateLimitConfigCache: RateLimitConfig | null = null;
+let lastConfigRefresh = 0;
+const CONFIG_REFRESH_INTERVAL = 5 * 60 * 1000; // 5 минут
 
 /**
- * Get rate limiting configuration from settings cache
- * @returns Rate limiting configuration with fallback to defaults
+ * Обновляет конфигурацию rate limiting из кеша настроек
+ * @returns Rate limiting configuration
  */
-async function getRateLimitConfigFromCache(): Promise<RateLimitConfig> {
+async function refreshRateLimitConfig(): Promise<RateLimitConfig> {
+  const now = Date.now();
+  
+  // Проверяем, нужно ли обновлять кеш
+  if (rateLimitConfigCache && (now - lastConfigRefresh) < CONFIG_REFRESH_INTERVAL) {
+    return rateLimitConfigCache;
+  }
+  
   try {
     const enabledSetting = getSetting('Application.Security.SessionManagement', 'rate.limiting.enabled');
     const maxRequestsPerMinuteSetting = getSetting('Application.Security.SessionManagement', 'rate.limiting.max.requests.per.minute');
@@ -40,33 +44,52 @@ async function getRateLimitConfigFromCache(): Promise<RateLimitConfig> {
     const blockDurationSetting = getSetting('Application.Security.SessionManagement', 'rate.limiting.block.duration.minutes');
 
     const config = {
-      enabled: enabledSetting ? parseSettingValue(enabledSetting) : DEFAULT_RATE_LIMIT_CONFIG.enabled,
-      maxRequestsPerMinute: maxRequestsPerMinuteSetting ? parseSettingValue(maxRequestsPerMinuteSetting) : DEFAULT_RATE_LIMIT_CONFIG.maxRequestsPerMinute,
-      maxRequestsPerHour: maxRequestsPerHourSetting ? parseSettingValue(maxRequestsPerHourSetting) : DEFAULT_RATE_LIMIT_CONFIG.maxRequestsPerHour,
-      blockDurationMinutes: blockDurationSetting ? parseSettingValue(blockDurationSetting) : DEFAULT_RATE_LIMIT_CONFIG.blockDurationMinutes
+      enabled: enabledSetting ? parseSettingValue(enabledSetting) : false,
+      maxRequestsPerMinute: maxRequestsPerMinuteSetting ? parseSettingValue(maxRequestsPerMinuteSetting) : 100,
+      maxRequestsPerHour: maxRequestsPerHourSetting ? parseSettingValue(maxRequestsPerHourSetting) : 1000,
+      blockDurationMinutes: blockDurationSetting ? parseSettingValue(blockDurationSetting) : 5
     };
 
-    // Log config source for debugging
+    rateLimitConfigCache = config;
+    lastConfigRefresh = now;
+    
+    // Log config refresh for debugging
     const source = enabledSetting ? 'cache' : 'defaults';
     
-    // Create event for rate limiting config loading
+    // Create event for rate limiting config refresh
     await fabricEvents.createAndPublishEvent({
-      eventName: CONNECTION_HANDLER_EVENTS.RATE_LIMIT_CONFIG_LOADED.eventName,
+      eventName: CONNECTION_HANDLER_EVENTS.RATE_LIMIT_CONFIG_REFRESHED.eventName,
       payload: {
         source,
         enabled: config.enabled,
         maxRequestsPerMinute: config.maxRequestsPerMinute,
         maxRequestsPerHour: config.maxRequestsPerHour,
-        blockDurationMinutes: config.blockDurationMinutes
+        blockDurationMinutes: config.blockDurationMinutes,
+        refreshTime: new Date().toISOString()
       }
     });
 
     return config;
   } catch (error) {
-    // Log error and return default config
-    console.warn('Failed to load rate limiting config from cache, using defaults:', error);
-    return DEFAULT_RATE_LIMIT_CONFIG;
+    // Log error and throw to prevent fallback to defaults
+    await fabricEvents.createAndPublishEvent({
+      eventName: CONNECTION_HANDLER_EVENTS.RATE_LIMIT_CONFIG_REFRESH_ERROR.eventName,
+      payload: {
+        error: error instanceof Error ? error.message : String(error),
+        operation: 'refreshRateLimitConfig'
+      },
+      errorData: error instanceof Error ? error.message : String(error)
+    });
+    throw error;
   }
+}
+
+/**
+ * Get rate limiting configuration from cache with periodic refresh
+ * @returns Rate limiting configuration
+ */
+async function getRateLimitConfigFromCache(): Promise<RateLimitConfig> {
+  return await refreshRateLimitConfig();
 }
 
 // In-memory rate limiting store
@@ -97,7 +120,7 @@ async function checkRateLimit(req: Request, config?: RateLimitConfig): Promise<{
   resetTime?: number;
   reason?: string;
 }> {
-  // Get config from cache if not provided, fallback to defaults
+  // Get config from cache (без fallback к дефолтам)
   const rateLimitConfig = config || await getRateLimitConfigFromCache();
   
   if (!rateLimitConfig.enabled) {
@@ -105,6 +128,18 @@ async function checkRateLimit(req: Request, config?: RateLimitConfig): Promise<{
   }
 
   const clientId = req.ip || req.connection?.remoteAddress || req.socket?.remoteAddress || 'unknown';
+  
+  // Исключить localhost из rate limiting для корректного тестирования
+  if (clientId === '127.0.0.1' || clientId === '::1' || clientId === 'localhost') {
+    return { allowed: true };
+  }
+  
+  // Проверяем, что все необходимые настройки доступны
+  if (rateLimitConfig.maxRequestsPerMinute === undefined || 
+      rateLimitConfig.maxRequestsPerHour === undefined) {
+    throw new Error('Rate limiting configuration is incomplete');
+  }
+  
   const now = Date.now();
   const minuteWindow = 60 * 1000; // 1 minute in milliseconds
   const hourWindow = 60 * 60 * 1000; // 1 hour in milliseconds

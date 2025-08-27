@@ -281,6 +281,58 @@ export const CONNECTION_HANDLER_EVENTS = {
     version: '1.0.0'
   },
 
+  RATE_LIMIT_CONFIG_REFRESHED: {
+    eventName: 'connectionHandler.rate.limit.config.refreshed',
+    source: 'connection handler',
+    eventType: 'security' as const,
+    severity: 'debug' as const,
+    eventMessage: 'Rate limiting configuration refreshed from cache',
+    payload: null, // Will contain: { source, enabled, maxRequestsPerMinute, maxRequestsPerHour, blockDurationMinutes, refreshTime }
+    version: '1.0.0'
+  },
+
+  RATE_LIMIT_CONFIG_REFRESH_ERROR: {
+    eventName: 'connectionHandler.rate.limit.config.refresh.error',
+    source: 'connection handler',
+    eventType: 'security' as const,
+    severity: 'error' as const,
+    eventMessage: 'Failed to refresh rate limiting configuration from cache',
+    payload: null, // Will contain: { error, operation }
+    errorData: null, // Will contain error details
+    version: '1.0.0'
+  },
+
+  VALIDATION_STARTED: {
+    eventName: 'connectionHandler.validation.started',
+    source: 'connection handler',
+    eventType: 'system' as const,
+    severity: 'debug' as const,
+    eventMessage: 'Connection handler validation started',
+    payload: null, // Will contain: { validationType }
+    version: '1.0.0'
+  },
+
+  VALIDATION_SUCCESS: {
+    eventName: 'connectionHandler.validation.success',
+    source: 'connection handler',
+    eventType: 'system' as const,
+    severity: 'debug' as const,
+    eventMessage: 'Connection handler validation successful',
+    payload: null, // Will contain: { enabled, maxRequestsPerMinute, maxRequestsPerHour, blockDurationMinutes }
+    version: '1.0.0'
+  },
+
+  VALIDATION_FAILED: {
+    eventName: 'connectionHandler.validation.failed',
+    source: 'connection handler',
+    eventType: 'system' as const,
+    severity: 'error' as const,
+    eventMessage: 'Connection handler validation failed',
+    payload: null, // Will contain: { missingSettings, error }
+    errorData: null, // Will contain error details
+    version: '1.0.0'
+  },
+
   // Legacy events for backward compatibility
   RESPONSE_SENT: {
     eventName: 'connectionHandler.response.sent',
