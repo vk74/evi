@@ -7,6 +7,8 @@
 import jwt from 'jsonwebtoken';
 import { Response, NextFunction } from 'express';
 import { AuthenticatedRequest, JwtPayload, GuardFunction } from './types.guards';
+import { createAndPublishEvent } from '@/core/eventBus/fabric.events';
+import { JWT_VALIDATION_EVENTS } from './events.guards';
 
 // Declare global privateKey property for TypeScript
 declare global {
@@ -22,7 +24,16 @@ declare global {
 const validateJWT: GuardFunction = (req: AuthenticatedRequest, res: Response, next: NextFunction): void => {
   const authHeader = req.headers.authorization;
   if (!authHeader) {
-    console.log('JWT validation failed: Authorization header is missing');
+    createAndPublishEvent({
+      eventName: JWT_VALIDATION_EVENTS.MISSING_AUTHORIZATION_HEADER.eventName,
+      payload: {
+        requestInfo: {
+          method: req.method,
+          url: req.url,
+          userAgent: req.get('User-Agent')
+        }
+      }
+    });
     res.status(401).json({
       message: 'Authorization header is missing'
     });
@@ -31,7 +42,16 @@ const validateJWT: GuardFunction = (req: AuthenticatedRequest, res: Response, ne
 
   const token = authHeader.split(' ')[1];
   if (!token) {
-    console.log('JWT validation failed: Token is missing or invalid');
+    createAndPublishEvent({
+      eventName: JWT_VALIDATION_EVENTS.MISSING_OR_INVALID_TOKEN.eventName,
+      payload: {
+        requestInfo: {
+          method: req.method,
+          url: req.url,
+          userAgent: req.get('User-Agent')
+        }
+      }
+    });
     res.status(401).json({
       message: 'Token is missing or invalid'
     });
@@ -49,11 +69,22 @@ const validateJWT: GuardFunction = (req: AuthenticatedRequest, res: Response, ne
       user_id: decoded.uid // Add user UUID from token (uid)
     };
     
-    console.log('JWT validation successful for user:', decoded.sub);
-    console.log('Decoded user info:', req.user);  // Debug log
+    createAndPublishEvent({
+      eventName: JWT_VALIDATION_EVENTS.VALIDATION_SUCCESS.eventName,
+      payload: {
+        username: decoded.sub,
+        userUuid: decoded.uid
+      }
+    });
     next();
   } catch (error) {
-    console.log('JWT validation failed:', (error as Error).message);
+    createAndPublishEvent({
+      eventName: JWT_VALIDATION_EVENTS.VALIDATION_FAILED.eventName,
+      payload: {
+        error: error instanceof Error ? error.message : 'Unknown error'
+      },
+      errorData: error instanceof Error ? error.message : undefined
+    });
     res.status(401).json({
       message: 'Token is invalid or expired',
       details: (error as Error).message

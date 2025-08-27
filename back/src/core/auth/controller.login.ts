@@ -10,6 +10,8 @@ import { Request, Response } from 'express';
 import { connectionHandler } from '@/core/helpers/connection.handler';
 import { loginService } from './service.login';
 import { LoginRequest, LoginResponse, DeviceFingerprint } from './types.auth';
+import { createAndPublishEvent } from '@/core/eventBus/fabric.events';
+import { AUTH_CONTROLLER_EVENTS } from './events.auth';
 
 /**
  * Extracts client IP address from request
@@ -84,18 +86,29 @@ function validateLoginRequest(req: Request): LoginRequest {
  * Main login controller logic
  */
 async function loginControllerLogic(req: Request, res: Response): Promise<LoginResponse> {
-  console.log('[Login Controller] Processing login request');
-  
   // Validate and extract request data
   const loginData = validateLoginRequest(req);
   
   // Get client IP for brute force protection
   const clientIp = getClientIp(req);
   
+  await createAndPublishEvent({
+    eventName: AUTH_CONTROLLER_EVENTS.LOGIN_CONTROLLER_PROCESSING.eventName,
+    payload: {
+      username: loginData.username,
+      clientIp
+    }
+  });
+  
   // Call login service with response object for cookie setting
   const result = await loginService(loginData, clientIp, res);
   
-  console.log('[Login Controller] Login successful for user:', loginData.username);
+  await createAndPublishEvent({
+    eventName: AUTH_CONTROLLER_EVENTS.LOGIN_CONTROLLER_SUCCESS.eventName,
+    payload: {
+      username: loginData.username
+    }
+  });
   
   return result;
 }

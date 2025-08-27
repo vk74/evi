@@ -1,12 +1,14 @@
 /**
  * @file utils.device.fingerprint.ts
  * Version: 1.0.0
- * Utility functions for processing device fingerprint on backend.
- * Backend file that validates and processes device fingerprints from frontend.
+ * Utility functions for device fingerprint operations.
+ * Backend file that handles device fingerprint hashing, validation, and logging.
  */
 
-import crypto from 'crypto'
-import type { DeviceFingerprint, FingerprintHash } from './types.auth'
+import crypto from 'crypto';
+import { DeviceFingerprint, FingerprintHash } from './types.auth';
+import { createAndPublishEvent } from '@/core/eventBus/fabric.events';
+import { AUTH_DEVICE_FINGERPRINT_EVENTS } from './events.auth';
 
 /**
  * Hashes device fingerprint using SHA-256
@@ -24,7 +26,13 @@ export function hashFingerprint(fingerprint: DeviceFingerprint): FingerprintHash
       shortHash: hash.substring(0, 16)
     }
   } catch (error) {
-    console.error('[Device Fingerprint] Error hashing fingerprint:', error)
+    createAndPublishEvent({
+      eventName: AUTH_DEVICE_FINGERPRINT_EVENTS.DEVICE_FINGERPRINT_HASHING_ERROR.eventName,
+      payload: {
+        error: error instanceof Error ? error.message : 'Unknown error'
+      },
+      errorData: error instanceof Error ? error.message : undefined
+    });
     return {
       hash: '',
       shortHash: ''
@@ -55,7 +63,13 @@ export function validateFingerprint(
     
     return isValid
   } catch (error) {
-    console.error('[Device Fingerprint] Error validating fingerprint:', error)
+    createAndPublishEvent({
+      eventName: AUTH_DEVICE_FINGERPRINT_EVENTS.DEVICE_FINGERPRINT_VALIDATION_ERROR.eventName,
+      payload: {
+        error: error instanceof Error ? error.message : 'Unknown error'
+      },
+      errorData: error instanceof Error ? error.message : undefined
+    });
     return false
   }
 }
@@ -80,7 +94,13 @@ export function extractDeviceFingerprintFromRequest(req: any): DeviceFingerprint
     
     return fingerprint
   } catch (error) {
-    console.error('[Device Fingerprint] Error extracting fingerprint from request:', error)
+    createAndPublishEvent({
+      eventName: AUTH_DEVICE_FINGERPRINT_EVENTS.DEVICE_FINGERPRINT_EXTRACTION_ERROR.eventName,
+      payload: {
+        error: error instanceof Error ? error.message : 'Unknown error'
+      },
+      errorData: error instanceof Error ? error.message : undefined
+    });
     return null
   }
 }
@@ -104,6 +124,14 @@ export function logDeviceFingerprint(
       platform: fingerprint.platform
     })
   } catch (error) {
-    console.error('[Device Fingerprint] Error logging fingerprint:', error)
+    createAndPublishEvent({
+      eventName: AUTH_DEVICE_FINGERPRINT_EVENTS.DEVICE_FINGERPRINT_LOGGING_ERROR.eventName,
+      payload: {
+        userUuid,
+        action,
+        error: error instanceof Error ? error.message : 'Unknown error'
+      },
+      errorData: error instanceof Error ? error.message : undefined
+    });
   }
 } 

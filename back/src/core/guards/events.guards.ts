@@ -56,3 +56,54 @@ export const CHECK_USER_STATUS_ACTIVE_EVENTS = {
     version: '1.0.0'
   }
 };
+
+/**
+ * JWT Validation Events
+ * Events for tracking JWT validation operations
+ */
+export const JWT_VALIDATION_EVENTS = {
+  // Missing authorization header
+  MISSING_AUTHORIZATION_HEADER: {
+    eventName: 'guards.jwt.validation.missing_authorization_header',
+    source: 'JWT validation guard',
+    eventType: 'security' as const,
+    severity: 'warning' as const,
+    eventMessage: 'JWT validation failed: Authorization header is missing',
+    payload: null, // { requestInfo }
+    version: '1.0.0'
+  },
+  
+  // Missing or invalid token
+  MISSING_OR_INVALID_TOKEN: {
+    eventName: 'guards.jwt.validation.missing_or_invalid_token',
+    source: 'JWT validation guard',
+    eventType: 'security' as const,
+    severity: 'warning' as const,
+    eventMessage: 'JWT validation failed: Token is missing or invalid',
+    payload: null, // { requestInfo }
+    version: '1.0.0'
+  },
+  
+  // JWT validation successful
+  VALIDATION_SUCCESS: {
+    eventName: 'guards.jwt.validation.success',
+    source: 'JWT validation guard',
+    eventType: 'security' as const,
+    severity: 'debug' as const,
+    eventMessage: 'JWT validation successful for user',
+    payload: null, // { username, userUuid }
+    version: '1.0.0'
+  },
+  
+  // JWT validation failed
+  VALIDATION_FAILED: {
+    eventName: 'guards.jwt.validation.failed',
+    source: 'JWT validation guard',
+    eventType: 'security' as const,
+    severity: 'warning' as const,
+    eventMessage: 'JWT validation failed',
+    payload: null, // { error }
+    errorData: null, // Error details
+    version: '1.0.0'
+  }
+};

@@ -14,7 +14,7 @@ import { LoginRequest, LoginResponse, getCookieConfig, DeviceFingerprint } from 
 import { issueTokenPair } from './service.issue.tokens';
 import { extractDeviceFingerprintFromRequest, logDeviceFingerprint } from './utils.device.fingerprint';
 import fabricEvents from '@/core/eventBus/fabric.events';
-import { AUTH_LOGIN_EVENTS, AUTH_SECURITY_EVENTS, AUTH_TOKEN_EVENTS } from './events.auth';
+import { AUTH_LOGIN_EVENTS, AUTH_SECURITY_EVENTS, AUTH_TOKEN_EVENTS, AUTH_SERVICE_EVENTS } from './events.auth';
 import { isUserActive } from '@/core/helpers/is.user.active';
 
 // Cookie configuration
@@ -99,7 +99,14 @@ async function getAccountStatus(userUuid: string): Promise<string | null> {
     
     return result.rows[0].account_status;
   } catch (error) {
-    console.error('[Login Service] Error getting account status:', error);
+    await fabricEvents.createAndPublishEvent({
+      eventName: AUTH_SERVICE_EVENTS.LOGIN_SERVICE_ACCOUNT_STATUS_ERROR.eventName,
+      payload: {
+        username: 'unknown', // We don't have username here, but we have userId
+        error: error instanceof Error ? error.message : 'Unknown error'
+      },
+      errorData: error instanceof Error ? error.message : undefined
+    });
     return null;
   }
 }
@@ -342,7 +349,13 @@ export async function loginService(
       }
     };
   } catch (error) {
-    console.error('[Login Service] Error in loginService:', error);
+    await fabricEvents.createAndPublishEvent({
+      eventName: AUTH_SERVICE_EVENTS.LOGIN_SERVICE_ERROR.eventName,
+      payload: {
+        error: error instanceof Error ? error.message : 'Unknown error'
+      },
+      errorData: error instanceof Error ? error.message : undefined
+    });
     throw error;
   }
 } 

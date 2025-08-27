@@ -1302,4 +1302,138 @@ export const AUTH_REGISTRATION_EVENTS = {
     errorData: null, // Error details
     version: '1.0.0'
   }
+};
+
+/**
+ * Authentication Controller Events
+ * Events related to authentication controllers
+ */
+export const AUTH_CONTROLLER_EVENTS = {
+  // Login controller processing
+  LOGIN_CONTROLLER_PROCESSING: {
+    eventName: 'auth.controller.login.processing',
+    source: 'auth login controller',
+    eventType: 'security' as const,
+    severity: 'debug' as const,
+    eventMessage: 'Processing login request',
+    payload: null, // { username, clientIp }
+    version: '1.0.0'
+  },
+  
+  // Login controller success
+  LOGIN_CONTROLLER_SUCCESS: {
+    eventName: 'auth.controller.login.success',
+    source: 'auth login controller',
+    eventType: 'security' as const,
+    severity: 'info' as const,
+    eventMessage: 'Login successful for user',
+    payload: null, // { username }
+    version: '1.0.0'
+  },
+  
+  // Refresh tokens controller processing
+  REFRESH_CONTROLLER_PROCESSING: {
+    eventName: 'auth.controller.refresh.processing',
+    source: 'auth refresh tokens controller',
+    eventType: 'security' as const,
+    severity: 'debug' as const,
+    eventMessage: 'Processing token refresh request',
+    payload: null, // { requestInfo }
+    version: '1.0.0'
+  },
+  
+  // Refresh tokens controller success
+  REFRESH_CONTROLLER_SUCCESS: {
+    eventName: 'auth.controller.refresh.success',
+    source: 'auth refresh tokens controller',
+    eventType: 'security' as const,
+    severity: 'info' as const,
+    eventMessage: 'Token refresh successful',
+    payload: null, // { requestInfo }
+    version: '1.0.0'
+  }
+};
+
+/**
+ * Authentication Device Fingerprint Events
+ * Events related to device fingerprint operations
+ */
+export const AUTH_DEVICE_FINGERPRINT_EVENTS = {
+  // Device fingerprint hashing error
+  DEVICE_FINGERPRINT_HASHING_ERROR: {
+    eventName: 'auth.device.fingerprint.hashing.error',
+    source: 'auth device fingerprint utils',
+    eventType: 'security' as const,
+    severity: 'error' as const,
+    eventMessage: 'Error hashing device fingerprint',
+    payload: null, // { error }
+    errorData: null, // Error details
+    version: '1.0.0'
+  },
+  
+  // Device fingerprint validation error
+  DEVICE_FINGERPRINT_VALIDATION_ERROR: {
+    eventName: 'auth.device.fingerprint.validation.error',
+    source: 'auth device fingerprint utils',
+    eventType: 'security' as const,
+    severity: 'error' as const,
+    eventMessage: 'Error validating device fingerprint',
+    payload: null, // { error }
+    errorData: null, // Error details
+    version: '1.0.0'
+  },
+  
+  // Device fingerprint extraction error
+  DEVICE_FINGERPRINT_EXTRACTION_ERROR: {
+    eventName: 'auth.device.fingerprint.extraction.error',
+    source: 'auth device fingerprint utils',
+    eventType: 'security' as const,
+    severity: 'error' as const,
+    eventMessage: 'Error extracting device fingerprint from request',
+    payload: null, // { error }
+    errorData: null, // Error details
+    version: '1.0.0'
+  },
+  
+  // Device fingerprint logging error
+  DEVICE_FINGERPRINT_LOGGING_ERROR: {
+    eventName: 'auth.device.fingerprint.logging.error',
+    source: 'auth device fingerprint utils',
+    eventType: 'security' as const,
+    severity: 'error' as const,
+    eventMessage: 'Error logging device fingerprint',
+    payload: null, // { userUuid, action, error }
+    errorData: null, // Error details
+    version: '1.0.0'
+  }
+};
+
+/**
+ * Authentication Service Events
+ * Events related to authentication services
+ */
+export const AUTH_SERVICE_EVENTS = {
+  // Login service account status error
+  LOGIN_SERVICE_ACCOUNT_STATUS_ERROR: {
+    eventName: 'auth.service.login.account.status.error',
+    source: 'auth login service',
+    eventType: 'security' as const,
+    severity: 'error' as const,
+    eventMessage: 'Error getting account status',
+    payload: null, // { username, error }
+    errorData: null, // Error details
+    version: '1.0.0'
+  },
+  
+  // Login service error
+  LOGIN_SERVICE_ERROR: {
+    eventName: 'auth.service.login.error',
+    source: 'auth login service',
+    eventType: 'security' as const,
+    severity: 'error' as const,
+    eventMessage: 'Error in login service',
+    payload: null, // { error }
+    errorData: null, // Error details
+    version: '1.0.0'
+  }
 }; 
