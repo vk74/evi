@@ -838,34 +838,33 @@ onMounted(async () => {
   background-color: rgb(210, 210, 210) !important;
 }
 
-/* Active menu item style */
+/* Active menu item styles */
 .v-navigation-drawer .v-list-item--active {
   background-color: rgba(38, 166, 154, 0.08) !important;
   color: #13547a !important;
 }
 
-/* Active menu item icon style */
 .v-navigation-drawer .v-list-item--active .v-icon {
   color: #13547a !important;
   filter: drop-shadow(0 0 2px rgba(9, 181, 26, 0.245));
 }
 
-/* Bottom list items styling */
-.bottom-list-item {
-  min-height: 40px !important;
-}
-
-.bottom-list-item:hover {
+/* Hover effects for interactive elements */
+.bottom-list-item:hover,
+.drawer-control-area:hover {
   background-color: rgba(38, 166, 154, 0.08) !important;
   cursor: pointer;
 }
 
-/* Menu wrapper to help with positioning */
+.bottom-list-item {
+  min-height: 40px !important;
+}
+
+/* Menu positioning and stability */
 .menu-wrapper {
   position: relative;
 }
 
-/* Hidden activator to prevent resize issues */
 .hidden-activator {
   position: absolute;
   width: 1px;
@@ -878,12 +877,11 @@ onMounted(async () => {
   border: 0;
 }
 
-/* Stable menu to prevent layout shifts */
 .stable-menu {
   min-width: 200px;
 }
 
-/* Drawer control area styles */
+/* Drawer control area */
 .drawer-control-area {
   position: relative;
   height: 48px;
@@ -891,11 +889,7 @@ onMounted(async () => {
   transition: background-color 0.2s ease;
 }
 
-.drawer-control-area:hover {
-  background-color: rgba(38, 166, 154, 0.08) !important;
-}
-
-/* Toggle button styles */
+/* Drawer toggle button */
 .drawer-toggle-btn {
   position: absolute;
   right: -10px;
@@ -932,7 +926,6 @@ onMounted(async () => {
   border-bottom: 1px solid rgba(19, 84, 122, 0.1);
 }
 
-/* Only apply background color when Admin is both expanded AND active */
 .admin-header-item.admin-expanded.v-list-item--active {
   background-color: rgba(38, 166, 154, 0.08) !important;
 }
@@ -945,7 +938,7 @@ onMounted(async () => {
   transform: rotate(180deg);
 }
 
-/* Admin submenu styling */
+/* Admin submenu */
 .admin-submenu {
   background-color: rgba(38, 166, 154, 0.05);
   margin-top: 1px;
@@ -975,7 +968,7 @@ onMounted(async () => {
   opacity: 0.85;
 }
 
-/* For rail mode (icon-only) */
+/* Rail mode adjustments */
 :deep(.v-navigation-drawer--rail) .admin-submenu {
   padding-left: 0;
   border-left: none;
@@ -991,39 +984,37 @@ onMounted(async () => {
   border-right: 3px solid #13547a;
 }
 
-/* Floating menu button styles */
+/* Floating menu button */
 .floating-menu-btn {
   position: fixed;
   top: 0;
   left: 0;
-  z-index: 2000; /* Ensure it's above the navigation drawer */
-  width: 64px; /* Width matching the navigation drawer in rail mode */
+  z-index: 2000;
+  width: 64px;
 }
 
 .menu-toggle-btn {
-  background-color: rgba(210, 210, 210, 0.85) !important; /* Semi-transparent gray matching drawer */
-  color: #555 !important; /* Darker icon color to match drawer icons */
-  border-radius: 0; /* Remove border radius for flush edges */
+  background-color: rgba(210, 210, 210, 0.85) !important;
+  color: #555 !important;
+  border-radius: 0;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
   transition: background-color 0.3s ease;
-  width: 100%; /* Make button fill the container width */
-  justify-content: flex-start; /* Align icon to the left */
+  width: 100%;
+  justify-content: flex-start;
   padding-left: 12px;
-  height: 56px; /* Fixed height to match drawer header height */
+  height: 56px;
 }
 
-/* Transparent background when drawer is open */
 .menu-toggle-btn.transparent-bg {
   background-color: transparent !important;
   box-shadow: none !important;
 }
 
 .menu-toggle-btn:hover:not(.transparent-bg) {
-  background-color: rgba(190, 190, 190, 0.95) !important; /* Slightly darker on hover */
+  background-color: rgba(190, 190, 190, 0.95) !important;
 }
 
-/* Top padding in navigation drawer to make room for menu button */
 .drawer-padding-top {
-  height: 56px; /* Match height of menu button + padding */
+  height: 56px;
 }
 </style>
