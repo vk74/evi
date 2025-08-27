@@ -284,6 +284,9 @@
               "adminServices": {
                 "label": "services admin"
               },
+              "adminCatalog": {
+                "label": "catalog admin"
+              },
               "products": {
                 "label": "products"
               },

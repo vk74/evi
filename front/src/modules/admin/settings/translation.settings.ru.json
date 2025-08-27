@@ -253,6 +253,9 @@
               "adminServices": {
                 "label": "сервисы админ"
               },
+              "adminCatalog": {
+                "label": "каталог админ"
+              },
               "products": {
                 "label": "продукты"
               },

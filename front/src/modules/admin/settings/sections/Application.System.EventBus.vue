@@ -61,7 +61,8 @@ const domainSettings = ref<Record<string, boolean | null>>({
   'generate.events.in.domain.adminServices': null,
   'generate.events.in.domain.products': null,
   'generate.events.in.domain.account': null,
-  'generate.events.in.domain.validation': null
+  'generate.events.in.domain.validation': null,
+  'generate.events.in.domain.adminCatalog': null
 });
 
 // Define all settings that need to be loaded
@@ -82,7 +83,8 @@ const allSettings = [
   'generate.events.in.domain.adminServices',
   'generate.events.in.domain.products',
   'generate.events.in.domain.account',
-  'generate.events.in.domain.validation'
+  'generate.events.in.domain.validation',
+  'generate.events.in.domain.adminCatalog'
 ];
 
 // Initialize loading states for all settings
@@ -160,6 +162,10 @@ const domainGroups = computed(() => {
         {
           name: 'generate.events.in.domain.groupsList',
           translationKey: 'groupsList'
+        },
+        {
+          name: 'generate.events.in.domain.account',
+          translationKey: 'account'
         }
       ]
     },
@@ -183,8 +189,8 @@ const domainGroups = computed(() => {
           translationKey: 'adminServices'
         },
         {
-          name: 'generate.events.in.domain.account',
-          translationKey: 'account'
+          name: 'generate.events.in.domain.adminCatalog',
+          translationKey: 'adminCatalog'
         }
       ]
     },

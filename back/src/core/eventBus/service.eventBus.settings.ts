@@ -31,6 +31,7 @@ let currentSettings = {
   services: true,
   products: true,
   adminServices: true,
+  adminCatalog: true,
   account: true,
   validation: true
 };
