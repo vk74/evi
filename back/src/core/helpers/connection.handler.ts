@@ -98,19 +98,54 @@ const rateLimitStore = new Map<string, {
   windowStart: number;
   lastReset: number;
   blockedUntil?: number;
+  lastAccess: number; // Добавляем время последнего доступа
 }>();
 
-// Rate limiting cleanup
-setInterval(() => {
+// Константы для очистки
+const CLEANUP_INTERVAL = 60 * 60 * 1000; // 1 час
+const MAX_ENTRY_AGE = 1 * 60 * 60 * 1000; // 1 час
+const MAX_STORE_SIZE = 500000; // Максимальный размер Map (500k записей)
+
+/**
+ * Очищает устаревшие записи из rate limit store
+ */
+function cleanupRateLimitStore(): void {
   const now = Date.now();
-  const hourWindow = 60 * 60 * 1000; // 1 hour in milliseconds
+  const entriesToDelete: string[] = [];
   
+  // Собираем записи для удаления
   for (const [clientId, entry] of rateLimitStore.entries()) {
-    if (now - entry.lastReset > hourWindow * 2) {
-      rateLimitStore.delete(clientId);
+    if (now - entry.lastAccess > MAX_ENTRY_AGE) {
+      entriesToDelete.push(clientId);
     }
   }
-}, 60 * 60 * 1000); // Clean up every hour
+  
+  // Удаляем устаревшие записи
+  entriesToDelete.forEach(clientId => rateLimitStore.delete(clientId));
+  
+  // Если Map слишком большой, удаляем самые старые записи
+  if (rateLimitStore.size > MAX_STORE_SIZE) {
+    const sortedEntries = Array.from(rateLimitStore.entries())
+      .sort((a, b) => a[1].lastAccess - b[1].lastAccess);
+    
+    const toRemove = sortedEntries.slice(0, rateLimitStore.size - MAX_STORE_SIZE + 1000);
+    toRemove.forEach(([clientId]) => rateLimitStore.delete(clientId));
+  }
+  
+  // Логируем очистку только если что-то удалили
+  if (entriesToDelete.length > 0) {
+    fabricEvents.createAndPublishEvent({
+      eventName: CONNECTION_HANDLER_EVENTS.RATE_LIMIT_STORE_CLEANUP.eventName,
+      payload: {
+        deletedEntries: entriesToDelete.length,
+        remainingEntries: rateLimitStore.size
+      }
+    });
+  }
+}
+
+// Периодическая очистка раз в час
+setInterval(cleanupRateLimitStore, CLEANUP_INTERVAL);
 
 // Rate limiting function
 async function checkRateLimit(req: Request, config?: RateLimitConfig): Promise<{
@@ -149,9 +184,13 @@ async function checkRateLimit(req: Request, config?: RateLimitConfig): Promise<{
     entry = {
       requestCount: 0,
       windowStart: now,
-      lastReset: now
+      lastReset: now,
+      lastAccess: now
     };
     rateLimitStore.set(clientId, entry);
+  } else {
+    // Обновляем время последнего доступа
+    entry.lastAccess = now;
   }
 
   // Check temporary block

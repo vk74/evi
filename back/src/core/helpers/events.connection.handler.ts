@@ -302,6 +302,16 @@ export const CONNECTION_HANDLER_EVENTS = {
     version: '1.0.0'
   },
 
+  RATE_LIMIT_STORE_CLEANUP: {
+    eventName: 'connectionHandler.rate.limit.store.cleanup',
+    source: 'connection handler',
+    eventType: 'system' as const,
+    severity: 'debug' as const,
+    eventMessage: 'Rate limiting store cleanup completed',
+    payload: null, // Will contain: { deletedEntries, remainingEntries }
+    version: '1.0.0'
+  },
+
   VALIDATION_STARTED: {
     eventName: 'connectionHandler.validation.started',
     source: 'connection handler',
