@@ -10,6 +10,8 @@ import { passwordChangeQueries } from './queries.change.password';
 import { SelfChangePasswordRequest, ChangePasswordResponse } from './types.change.password';
 import { getSetting } from '../../../modules/admin/settings/cache.settings';
 import { cleanupUserTokens } from './service.token.cleanup';
+import { createAndPublishEvent } from '@/core/eventBus/fabric.events';
+import { SELF_PASSWORD_CHANGE_EVENTS } from './events.change.password';
 
 /**
  * Password validation using dynamic settings from cache
@@ -123,7 +125,13 @@ export async function changePassword(data: SelfChangePasswordRequest): Promise<C
     );
 
     if (userResult.rows.length === 0) {
-      console.log(`[Self Change Password Service] Failed: User not found: ${username} (${uuid})`);
+      await createAndPublishEvent({
+        eventName: SELF_PASSWORD_CHANGE_EVENTS.USER_NOT_FOUND.eventName,
+        payload: {
+          username,
+          uuid
+        }
+      });
       await client.query('ROLLBACK');
       return {
         success: false,
@@ -135,7 +143,13 @@ export async function changePassword(data: SelfChangePasswordRequest): Promise<C
     // Using type casting to handle typings for database results
     const dbUsername = userResult.rows[0]?.username as string;
     if (dbUsername !== username) {
-      console.log(`[Self Change Password Service] Failed: Username mismatch for UUID: ${uuid}`);
+      await createAndPublishEvent({
+        eventName: SELF_PASSWORD_CHANGE_EVENTS.USERNAME_MISMATCH.eventName,
+        payload: {
+          username,
+          uuid
+        }
+      });
       await client.query('ROLLBACK');
       return {
         success: false,
@@ -148,7 +162,13 @@ export async function changePassword(data: SelfChangePasswordRequest): Promise<C
     const isMatch = await bcrypt.compare(currentPassword, hashedCurrentPassword);
 
     if (!isMatch) {
-      console.log(`[Self Change Password Service] Failed: Invalid current password for user: ${username} (${uuid})`);
+      await createAndPublishEvent({
+        eventName: SELF_PASSWORD_CHANGE_EVENTS.INVALID_CURRENT_PASSWORD.eventName,
+        payload: {
+          username,
+          uuid
+        }
+      });
       await client.query('ROLLBACK');
       return {
         success: false,
@@ -167,7 +187,13 @@ export async function changePassword(data: SelfChangePasswordRequest): Promise<C
     );
 
     if (updateResult.rows.length === 0) {
-      console.log(`[Self Change Password Service] Failed: Database update error for user: ${username} (${uuid})`);
+      await createAndPublishEvent({
+        eventName: SELF_PASSWORD_CHANGE_EVENTS.DATABASE_UPDATE_ERROR.eventName,
+        payload: {
+          username,
+          uuid
+        }
+      });
       await client.query('ROLLBACK');
       return {
         success: false,
@@ -177,12 +203,32 @@ export async function changePassword(data: SelfChangePasswordRequest): Promise<C
 
     // Clean up refresh tokens if device fingerprint is provided
     if (deviceFingerprint) {
-      console.log('[Self Change Password Service] Device fingerprint provided, cleaning up tokens...');
+      await createAndPublishEvent({
+        eventName: SELF_PASSWORD_CHANGE_EVENTS.DEVICE_FINGERPRINT_PROVIDED.eventName,
+        payload: {
+          username,
+          uuid
+        }
+      });
       try {
         await cleanupUserTokens(uuid, deviceFingerprint);
-        console.log('[Self Change Password Service] Token cleanup completed successfully');
+        await createAndPublishEvent({
+          eventName: SELF_PASSWORD_CHANGE_EVENTS.TOKEN_CLEANUP_COMPLETED.eventName,
+          payload: {
+            username,
+            uuid
+          }
+        });
       } catch (error) {
-        console.error('[Self Change Password Service] Error during token cleanup:', error);
+        await createAndPublishEvent({
+          eventName: SELF_PASSWORD_CHANGE_EVENTS.TOKEN_CLEANUP_ERROR.eventName,
+          payload: {
+            username,
+            uuid,
+            error: error instanceof Error ? error.message : 'Unknown error'
+          },
+          errorData: error instanceof Error ? error.message : undefined
+        });
         await client.query('ROLLBACK');
         return {
           success: false,
@@ -191,12 +237,24 @@ export async function changePassword(data: SelfChangePasswordRequest): Promise<C
         };
       }
     } else {
-      console.log('[Self Change Password Service] No device fingerprint provided, skipping token cleanup');
+      await createAndPublishEvent({
+        eventName: SELF_PASSWORD_CHANGE_EVENTS.NO_DEVICE_FINGERPRINT_PROVIDED.eventName,
+        payload: {
+          username,
+          uuid
+        }
+      });
     }
 
     // Commit transaction
     await client.query('COMMIT');
-    console.log(`[Self Change Password Service] Password successfully changed for user: ${username} (${uuid})`);
+    await createAndPublishEvent({
+      eventName: SELF_PASSWORD_CHANGE_EVENTS.PASSWORD_CHANGE_SUCCESSFUL.eventName,
+      payload: {
+        username,
+        uuid
+      }
+    });
     
     return {
       success: true,
@@ -204,7 +262,15 @@ export async function changePassword(data: SelfChangePasswordRequest): Promise<C
     };
 
   } catch (error) {
-    console.error('[Self Change Password Service] Error:', error);
+    await createAndPublishEvent({
+      eventName: SELF_PASSWORD_CHANGE_EVENTS.SERVICE_ERROR.eventName,
+      payload: {
+        username,
+        uuid,
+        error: error instanceof Error ? error.message : 'Unknown error'
+      },
+      errorData: error instanceof Error ? error.message : undefined
+    });
     await client.query('ROLLBACK');
     return {
       success: false,

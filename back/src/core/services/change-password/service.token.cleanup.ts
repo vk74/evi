@@ -1,11 +1,16 @@
 /**
- * service.token.cleanup.ts
- * Service for cleaning up refresh tokens when user changes password.
- * Handles device fingerprint validation and token removal logic.
+ * service.token.cleanup.ts - version 1.0.02
+ * BACKEND service for token cleanup operations during password changes
+ * 
+ * Handles cleanup of refresh tokens when passwords are changed
+ * File: service.token.cleanup.ts
  */
 
-import { pool } from '../../db/maindb';
-import { getSetting, parseSettingValue } from '@/modules/admin/settings/cache.settings';
+import { Pool } from 'pg';
+import { pool as pgPool } from '../../db/maindb';
+import { getSetting } from '../../../modules/admin/settings/cache.settings';
+import { createAndPublishEvent } from '@/core/eventBus/fabric.events';
+import { TOKEN_CLEANUP_EVENTS } from './events.change.password';
 
 // SQL queries for token operations
 const tokenQueries = {
@@ -32,24 +37,63 @@ const tokenQueries = {
   }
 };
 
+// Type assertion for pool
+const pool = pgPool as Pool;
+
 /**
- * Get setting value for token cleanup on password change
+ * Parse setting value to boolean
+ * @param setting Setting object
+ * @returns {boolean} Parsed boolean value
+ */
+function parseSettingValue(setting: any): boolean {
+  if (typeof setting.value === 'boolean') {
+    return setting.value;
+  }
+  if (typeof setting.value === 'string') {
+    return setting.value.toLowerCase() === 'true';
+  }
+  if (typeof setting.value === 'number') {
+    return setting.value !== 0;
+  }
+  return false;
+}
+
+/**
+ * Get setting value for token cleanup on user password change
  * @returns {boolean} Setting value or throws error if not found
  */
 function getTokenCleanupSetting(): boolean {
-  console.log('[Token Cleanup Service] Loading token cleanup setting...');
+  const settingName = 'drop.refresh.tokens.on.user.change.password';
   
-  const setting = getSetting('Application.Security.SessionManagement', 'drop.refresh.tokens.on.user.change.password');
+  createAndPublishEvent({
+    eventName: TOKEN_CLEANUP_EVENTS.LOADING_TOKEN_CLEANUP_SETTING.eventName,
+    payload: {
+      settingName
+    }
+  });
+  
+  const setting = getSetting('Application.Security.SessionManagement', settingName);
   
   if (!setting) {
-    console.error('[Token Cleanup Service] Critical setting not found: drop.refresh.tokens.on.user.change.password');
+    createAndPublishEvent({
+      eventName: TOKEN_CLEANUP_EVENTS.CRITICAL_SETTING_NOT_FOUND.eventName,
+      payload: {
+        settingName
+      }
+    });
     throw new Error('Critical setting not found: drop.refresh.tokens.on.user.change.password. Please ensure settings are loaded.');
   }
   
   const value = parseSettingValue(setting);
   const isEnabled = Boolean(value);
   
-  console.log('[Token Cleanup Service] Token cleanup setting value:', isEnabled);
+  createAndPublishEvent({
+    eventName: TOKEN_CLEANUP_EVENTS.TOKEN_CLEANUP_SETTING_VALUE.eventName,
+    payload: {
+      settingName,
+      value: isEnabled
+    }
+  });
   
   return isEnabled;
 }
@@ -59,19 +103,37 @@ function getTokenCleanupSetting(): boolean {
  * @returns {boolean} Setting value or throws error if not found
  */
 function getAdminTokenCleanupSetting(): boolean {
-  console.log('[Token Cleanup Service] Loading admin token cleanup setting...');
+  const settingName = 'drop.refresh.tokens.on.admin.password.change';
   
-  const setting = getSetting('Application.Security.SessionManagement', 'drop.refresh.tokens.on.admin.password.change');
+  createAndPublishEvent({
+    eventName: TOKEN_CLEANUP_EVENTS.LOADING_TOKEN_CLEANUP_SETTING.eventName,
+    payload: {
+      settingName
+    }
+  });
+  
+  const setting = getSetting('Application.Security.SessionManagement', settingName);
   
   if (!setting) {
-    console.error('[Token Cleanup Service] Critical setting not found: drop.refresh.tokens.on.admin.password.change');
+    createAndPublishEvent({
+      eventName: TOKEN_CLEANUP_EVENTS.CRITICAL_SETTING_NOT_FOUND.eventName,
+      payload: {
+        settingName
+      }
+    });
     throw new Error('Critical setting not found: drop.refresh.tokens.on.admin.password.change. Please ensure settings are loaded.');
   }
   
   const value = parseSettingValue(setting);
   const isEnabled = Boolean(value);
   
-  console.log('[Token Cleanup Service] Admin token cleanup setting value:', isEnabled);
+  createAndPublishEvent({
+    eventName: TOKEN_CLEANUP_EVENTS.TOKEN_CLEANUP_SETTING_VALUE.eventName,
+    payload: {
+      settingName,
+      value: isEnabled
+    }
+  });
   
   return isEnabled;
 }
@@ -108,7 +170,12 @@ function calculateFingerprintSimilarity(hash1: string, hash2: string): number {
 function findTokenToKeep(tokens: any[], currentFingerprintHash: string): string | null {
   if (tokens.length === 0) return null;
   
-  console.log('[Token Cleanup Service] Finding token to keep among', tokens.length, 'active tokens');
+  createAndPublishEvent({
+    eventName: TOKEN_CLEANUP_EVENTS.FINDING_TOKEN_TO_KEEP.eventName,
+    payload: {
+      tokenCount: tokens.length
+    }
+  });
   
   let bestMatch = null;
   let bestSimilarity = 0;
@@ -132,56 +199,75 @@ function findTokenToKeep(tokens: any[], currentFingerprintHash: string): string 
         currentFingerprintHash
       );
       
-      console.log('[Token Cleanup Service] Token similarity:', similarity.toFixed(2) + '%');
+      createAndPublishEvent({
+        eventName: TOKEN_CLEANUP_EVENTS.TOKEN_SIMILARITY.eventName,
+        payload: {
+          tokenId: token.id,
+          similarity: similarity.toFixed(2)
+        }
+      });
       
       // If this is a better match OR same match but newer token
       if (similarity > bestSimilarity || 
           (similarity === bestSimilarity && tokenTime > bestMatchTime)) {
         bestSimilarity = similarity;
-        bestMatch = token.id;
         bestMatchTime = tokenTime;
+        bestMatch = token.id;
       }
     }
   }
   
-  // If we found a good match (95% or higher), use it
-  if (bestSimilarity >= 95) {
-    console.log('[Token Cleanup Service] Found good fingerprint match:', bestSimilarity.toFixed(2) + '%', 'issued at:', bestMatchTime);
-    return bestMatch;
-  }
-  
-  // Otherwise, keep the most recent token
-  console.log('[Token Cleanup Service] No good fingerprint match found, keeping most recent token issued at:', mostRecentTime);
-  return mostRecentToken;
+  // Return best match if similarity is above threshold, otherwise most recent
+  const SIMILARITY_THRESHOLD = 80; // 80% similarity threshold
+  return bestSimilarity >= SIMILARITY_THRESHOLD ? bestMatch : mostRecentToken;
 }
 
 /**
- * Clean up user's refresh tokens except the current device
+ * Clean up user's refresh tokens (self password change)
  * @param userUuid User UUID
  * @param currentFingerprintHash Current device fingerprint hash
  */
 export async function cleanupUserTokens(userUuid: string, currentFingerprintHash: string): Promise<void> {
-  console.log('[Token Cleanup Service] Starting token cleanup for user:', userUuid);
-  
   try {
     // Check if token cleanup is enabled
     const isEnabled = getTokenCleanupSetting();
     
     if (!isEnabled) {
-      console.log('[Token Cleanup Service] Token cleanup is disabled, skipping');
+      createAndPublishEvent({
+        eventName: TOKEN_CLEANUP_EVENTS.TOKEN_CLEANUP_DISABLED.eventName,
+        payload: {
+          settingName: 'drop.refresh.tokens.on.user.change.password'
+        }
+      });
       return;
     }
     
-    console.log('[Token Cleanup Service] Token cleanup is enabled, proceeding...');
+    createAndPublishEvent({
+      eventName: TOKEN_CLEANUP_EVENTS.TOKEN_CLEANUP_ENABLED.eventName,
+      payload: {
+        settingName: 'drop.refresh.tokens.on.user.change.password'
+      }
+    });
     
     // Get all active tokens for user
     const result = await pool.query(tokenQueries.getActiveTokensForUser.text, [userUuid]);
     const activeTokens = result.rows;
     
-    console.log('[Token Cleanup Service] Found', activeTokens.length, 'active tokens for user');
+    createAndPublishEvent({
+      eventName: TOKEN_CLEANUP_EVENTS.FOUND_ACTIVE_TOKENS.eventName,
+      payload: {
+        userUuid,
+        tokenCount: activeTokens.length
+      }
+    });
     
     if (activeTokens.length === 0) {
-      console.log('[Token Cleanup Service] No active tokens found, nothing to clean up');
+      createAndPublishEvent({
+        eventName: TOKEN_CLEANUP_EVENTS.NO_ACTIVE_TOKENS_FOUND.eventName,
+        payload: {
+          userUuid
+        }
+      });
       return;
     }
     
@@ -189,11 +275,22 @@ export async function cleanupUserTokens(userUuid: string, currentFingerprintHash
     const tokenToKeep = findTokenToKeep(activeTokens, currentFingerprintHash);
     
     if (!tokenToKeep) {
-      console.log('[Token Cleanup Service] No token to keep found, revoking all tokens');
+      createAndPublishEvent({
+        eventName: TOKEN_CLEANUP_EVENTS.NO_TOKEN_TO_KEEP_FOUND.eventName,
+        payload: {
+          userUuid
+        }
+      });
       // Revoke all tokens if no good match found
       for (const token of activeTokens) {
         await pool.query(tokenQueries.revokeTokenById.text, [token.id]);
-        console.log('[Token Cleanup Service] Revoked token:', token.id);
+        createAndPublishEvent({
+          eventName: TOKEN_CLEANUP_EVENTS.TOKEN_REVOKED.eventName,
+          payload: {
+            userUuid,
+            tokenId: token.id
+          }
+        });
       }
       return;
     }
@@ -203,15 +300,35 @@ export async function cleanupUserTokens(userUuid: string, currentFingerprintHash
     for (const token of activeTokens) {
       if (token.id !== tokenToKeep) {
         await pool.query(tokenQueries.revokeTokenById.text, [token.id]);
-        console.log('[Token Cleanup Service] Revoked token:', token.id);
+        createAndPublishEvent({
+          eventName: TOKEN_CLEANUP_EVENTS.TOKEN_REVOKED.eventName,
+          payload: {
+            userUuid,
+            tokenId: token.id
+          }
+        });
         revokedCount++;
       }
     }
     
-    console.log('[Token Cleanup Service] Token cleanup completed. Revoked', revokedCount, 'tokens, kept 1 token');
+    createAndPublishEvent({
+      eventName: TOKEN_CLEANUP_EVENTS.TOKEN_CLEANUP_COMPLETED.eventName,
+      payload: {
+        userUuid,
+        revokedCount,
+        keptCount: 1
+      }
+    });
     
   } catch (error) {
-    console.error('[Token Cleanup Service] Error during token cleanup:', error);
+    createAndPublishEvent({
+      eventName: TOKEN_CLEANUP_EVENTS.TOKEN_CLEANUP_ERROR.eventName,
+      payload: {
+        userUuid,
+        error: error instanceof Error ? error.message : 'Unknown error'
+      },
+      errorData: error instanceof Error ? error.message : undefined
+    });
     throw error;
   }
 }
@@ -221,27 +338,53 @@ export async function cleanupUserTokens(userUuid: string, currentFingerprintHash
  * @param userUuid User UUID
  */
 export async function cleanupAllUserTokens(userUuid: string): Promise<void> {
-  console.log('[Token Cleanup Service] Starting ALL token cleanup for user:', userUuid);
+  createAndPublishEvent({
+    eventName: TOKEN_CLEANUP_EVENTS.ALL_TOKEN_CLEANUP_STARTED.eventName,
+    payload: {
+      userUuid
+    }
+  });
   
   try {
     // Check if admin token cleanup is enabled
     const isEnabled = getAdminTokenCleanupSetting();
     
     if (!isEnabled) {
-      console.log('[Token Cleanup Service] Admin token cleanup is disabled, skipping');
+      createAndPublishEvent({
+        eventName: TOKEN_CLEANUP_EVENTS.ADMIN_TOKEN_CLEANUP_DISABLED.eventName,
+        payload: {
+          settingName: 'drop.refresh.tokens.on.admin.password.change'
+        }
+      });
       return;
     }
     
-    console.log('[Token Cleanup Service] Admin token cleanup is enabled, proceeding...');
+    createAndPublishEvent({
+      eventName: TOKEN_CLEANUP_EVENTS.ADMIN_TOKEN_CLEANUP_ENABLED.eventName,
+      payload: {
+        settingName: 'drop.refresh.tokens.on.admin.password.change'
+      }
+    });
     
     // Get all active tokens for user
     const result = await pool.query(tokenQueries.getActiveTokensForUser.text, [userUuid]);
     const activeTokens = result.rows;
     
-    console.log('[Token Cleanup Service] Found', activeTokens.length, 'active tokens for user');
+    createAndPublishEvent({
+      eventName: TOKEN_CLEANUP_EVENTS.FOUND_ACTIVE_TOKENS.eventName,
+      payload: {
+        userUuid,
+        tokenCount: activeTokens.length
+      }
+    });
     
     if (activeTokens.length === 0) {
-      console.log('[Token Cleanup Service] No active tokens found, nothing to clean up');
+      createAndPublishEvent({
+        eventName: TOKEN_CLEANUP_EVENTS.NO_ACTIVE_TOKENS_FOUND.eventName,
+        payload: {
+          userUuid
+        }
+      });
       return;
     }
     
@@ -249,14 +392,33 @@ export async function cleanupAllUserTokens(userUuid: string): Promise<void> {
     let revokedCount = 0;
     for (const token of activeTokens) {
       await pool.query(tokenQueries.revokeTokenById.text, [token.id]);
-      console.log('[Token Cleanup Service] Revoked token:', token.id);
+      createAndPublishEvent({
+        eventName: TOKEN_CLEANUP_EVENTS.TOKEN_REVOKED.eventName,
+        payload: {
+          userUuid,
+          tokenId: token.id
+        }
+      });
       revokedCount++;
     }
     
-    console.log('[Token Cleanup Service] ALL token cleanup completed. Revoked', revokedCount, 'tokens');
+    createAndPublishEvent({
+      eventName: TOKEN_CLEANUP_EVENTS.ALL_TOKEN_CLEANUP_COMPLETED.eventName,
+      payload: {
+        userUuid,
+        revokedCount
+      }
+    });
     
   } catch (error) {
-    console.error('[Token Cleanup Service] Error during ALL token cleanup:', error);
+    createAndPublishEvent({
+      eventName: TOKEN_CLEANUP_EVENTS.ALL_TOKEN_CLEANUP_ERROR.eventName,
+      payload: {
+        userUuid,
+        error: error instanceof Error ? error.message : 'Unknown error'
+      },
+      errorData: error instanceof Error ? error.message : undefined
+    });
     throw error;
   }
 }

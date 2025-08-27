@@ -8,6 +8,8 @@ import { Request as ExpressRequest, Response } from 'express';
 import { AdminResetPasswordRequest, ChangePasswordResponse } from './types.change.password';
 import resetPassword from './service.admin.change.password';
 import { connectionHandler } from '../../helpers/connection.handler';
+import { createAndPublishEvent } from '@/core/eventBus/fabric.events';
+import { ADMIN_PASSWORD_RESET_CONTROLLER_EVENTS } from './events.change.password';
 
 // Расширяем тип Request для включения свойства user, добавляемого middleware validateJWT
 interface Request extends ExpressRequest {
@@ -48,11 +50,16 @@ async function adminResetPasswordLogic(req: Request, res: Response): Promise<Cha
   
   // Проверка наличия данных в запросе
   if (!req.body || !req.body.uuid || !req.body.username || !req.body.newPassword) {
-    console.error('[Admin Reset Password Controller] Invalid request data:', {
-      hasBody: !!req.body,
-      hasUuid: req.body?.uuid ? true : false,
-      hasUsername: req.body?.username ? true : false,
-      hasNewPassword: req.body?.newPassword ? true : false
+    await createAndPublishEvent({
+      eventName: ADMIN_PASSWORD_RESET_CONTROLLER_EVENTS.INVALID_REQUEST_DATA.eventName,
+      payload: {
+        requestInfo: {
+          hasBody: !!req.body,
+          hasUuid: req.body?.uuid ? true : false,
+          hasUsername: req.body?.username ? true : false,
+          hasNewPassword: req.body?.newPassword ? true : false
+        }
+      }
     });
     
     throw new Error('Missing required fields in request');

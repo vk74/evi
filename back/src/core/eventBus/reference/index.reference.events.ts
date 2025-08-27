@@ -73,7 +73,8 @@ export const eventReferenceFiles: Record<string, string[]> = {
   // System events - events for internal system operations
   system: [
     path.resolve(__dirname, './errors.reference.events.ts'),
-    path.resolve(__dirname, '../../controllers/events.core.controllers.ts')
+    path.resolve(__dirname, '../../controllers/events.core.controllers.ts'),
+    path.resolve(__dirname, '../../services/change-password/events.change.password.ts')
   ],
   
   // Authentication events - events for authentication operations

@@ -1,21 +1,19 @@
 /**
- * File: service.admin.change.password.ts  
- * Version: 1.1.0
- * Description: BACKEND service for handling admin password reset operations
- * Purpose: Contains business logic for validating and resetting user passwords with dynamic password policy validation
- * Backend file that manages admin password reset functionality, integrates with settings cache for password policies
+ * service.admin.change.password.ts - version 1.0.02
+ * BACKEND service for admin password reset operations
  * 
- * The service validates new passwords against dynamic policies from Application.Security.PasswordPolicies settings,
- * verifies user identity, hashes passwords securely, and updates user passwords in the database.
- * Uses settings cache to ensure password policies are consistently applied across the system.
+ * Handles admin requests to reset user passwords with proper validation and security measures
+ * File: service.admin.change.password.ts
  */
 
+import { Pool } from 'pg';
 import bcrypt from 'bcrypt';
-import { pool } from '../../db/maindb';
-import { getSetting } from '../../../modules/admin/settings/cache.settings';
-import type { AppSetting } from '../../../modules/admin/settings/types.settings';
+import { pool as pgPool } from '../../db/maindb';
 import { AdminResetPasswordRequest, ChangePasswordResponse } from './types.change.password';
 import { cleanupAllUserTokens } from './service.token.cleanup';
+import { getSetting } from '../../../modules/admin/settings/cache.settings';
+import { createAndPublishEvent } from '@/core/eventBus/fabric.events';
+import { ADMIN_PASSWORD_RESET_EVENTS } from './events.change.password';
 
 // SQL queries with correct schema reference
 const passwordQueries = {
@@ -47,6 +45,9 @@ const passwordQueries = {
   `
 };
 
+// Type assertion for pool
+const pool = pgPool as Pool;
+
 /**
  * Password validation using dynamic settings from cache
  * @param {string} password - Password to validate
@@ -54,7 +55,12 @@ const passwordQueries = {
  * @returns {Promise<void>} Throws error if validation fails
  */
 async function validatePassword(password: string, username: string): Promise<void> {
-  console.log(`[Admin Reset Password Service] Starting password policy validation for user: ${username}`);
+  await createAndPublishEvent({
+    eventName: ADMIN_PASSWORD_RESET_EVENTS.PASSWORD_POLICY_VALIDATION_STARTED.eventName,
+    payload: {
+      username
+    }
+  });
 
   // Get password policy settings from cache
   const minLengthSetting = getSetting('Application.Security.PasswordPolicies', 'password.min.length');
@@ -68,7 +74,12 @@ async function validatePassword(password: string, username: string): Promise<voi
   // Check if all required settings are found
   if (!minLengthSetting || !maxLengthSetting || !requireUppercaseSetting || 
       !requireLowercaseSetting || !requireNumbersSetting || !requireSpecialCharsSetting || !allowedSpecialCharsSetting) {
-    console.log(`[Admin Reset Password Service] Failed: Password policy settings not found in cache for user: ${username}`);
+    await createAndPublishEvent({
+      eventName: ADMIN_PASSWORD_RESET_EVENTS.PASSWORD_POLICY_SETTINGS_NOT_FOUND.eventName,
+      payload: {
+        username
+      }
+    });
     throw new Error('Password policy settings not found. Please contact the system administrator.');
   }
 
@@ -107,11 +118,22 @@ async function validatePassword(password: string, username: string): Promise<voi
   }
 
   if (policyViolations.length > 0) {
-    console.log(`[Admin Reset Password Service] Failed: Password policy validation failed for user: ${username}. Violations: ${policyViolations.join(', ')}`);
+    await createAndPublishEvent({
+      eventName: ADMIN_PASSWORD_RESET_EVENTS.PASSWORD_POLICY_VALIDATION_FAILED.eventName,
+      payload: {
+        username,
+        violations: policyViolations
+      }
+    });
     throw new Error('Password does not meet account security policies');
   }
 
-  console.log(`[Admin Reset Password Service] Password policy validation passed for user: ${username}`);
+  await createAndPublishEvent({
+    eventName: ADMIN_PASSWORD_RESET_EVENTS.PASSWORD_POLICY_VALIDATION_PASSED.eventName,
+    payload: {
+      username
+    }
+  });
 }
 
 /**
@@ -123,11 +145,26 @@ export async function resetPassword(data: AdminResetPasswordRequest): Promise<Ch
   const { uuid, username, newPassword } = data;
 
   // Log the operation start
-  console.log(`[Admin Reset Password Service] Starting password reset for user: ${username} (${uuid})`);
+  await createAndPublishEvent({
+    eventName: ADMIN_PASSWORD_RESET_EVENTS.PASSWORD_RESET_STARTED.eventName,
+    payload: {
+      username,
+      uuid
+    }
+  });
 
   // Validate required fields
   if (!uuid || !username || !newPassword) {
-    console.log('[Admin Reset Password Service] Failed: Missing required fields');
+    await createAndPublishEvent({
+      eventName: ADMIN_PASSWORD_RESET_EVENTS.MISSING_REQUIRED_FIELDS.eventName,
+      payload: {
+        requestInfo: {
+          hasUuid: !!uuid,
+          hasUsername: !!username,
+          hasNewPassword: !!newPassword
+        }
+      }
+    });
     return {
       success: false,
       message: 'User ID, username and new password are required'
@@ -138,7 +175,13 @@ export async function resetPassword(data: AdminResetPasswordRequest): Promise<Ch
   try {
     await validatePassword(newPassword, username);
   } catch (error) {
-    console.log(`[Admin Reset Password Service] Failed: Password validation error for user: ${username}`);
+    await createAndPublishEvent({
+      eventName: ADMIN_PASSWORD_RESET_EVENTS.PASSWORD_VALIDATION_ERROR.eventName,
+      payload: {
+        username,
+        error: error instanceof Error ? error.message : 'Unknown error'
+      }
+    });
     return {
       success: false,
       message: error instanceof Error ? error.message : 'Password validation failed'
@@ -150,7 +193,12 @@ export async function resetPassword(data: AdminResetPasswordRequest): Promise<Ch
   
   try {
     await client.query('BEGIN');
-    console.log('[Admin Reset Password Service] Database transaction started');
+    await createAndPublishEvent({
+      eventName: ADMIN_PASSWORD_RESET_EVENTS.DATABASE_TRANSACTION_STARTED.eventName,
+      payload: {
+        username
+      }
+    });
 
     // Verify user exists and username matches UUID
     const userExistsResult = await client.query(
@@ -161,7 +209,13 @@ export async function resetPassword(data: AdminResetPasswordRequest): Promise<Ch
     // Type casting for exists property
     const exists = userExistsResult.rows[0]?.exists as boolean;
     if (!exists) {
-      console.log(`[Admin Reset Password Service] Failed: User not found or username mismatch: ${username} (${uuid})`);
+      await createAndPublishEvent({
+        eventName: ADMIN_PASSWORD_RESET_EVENTS.USER_NOT_FOUND_OR_MISMATCH.eventName,
+        payload: {
+          username,
+          uuid
+        }
+      });
       await client.query('ROLLBACK');
       return {
         success: false,
@@ -173,7 +227,13 @@ export async function resetPassword(data: AdminResetPasswordRequest): Promise<Ch
     const saltRounds = 10;
     const hashedNewPassword = await bcrypt.hash(newPassword, saltRounds);
     
-    console.log(`[Admin Reset Password Service] Password hashed successfully for user: ${username} (${uuid})`);
+    await createAndPublishEvent({
+      eventName: ADMIN_PASSWORD_RESET_EVENTS.PASSWORD_HASHED_SUCCESSFULLY.eventName,
+      payload: {
+        username,
+        uuid
+      }
+    });
 
     // Update the password in the database
     const updateResult = await client.query(
@@ -182,7 +242,13 @@ export async function resetPassword(data: AdminResetPasswordRequest): Promise<Ch
     );
 
     if (updateResult.rows.length === 0) {
-      console.log(`[Admin Reset Password Service] Failed: Database update error for user: ${username} (${uuid})`);
+      await createAndPublishEvent({
+        eventName: ADMIN_PASSWORD_RESET_EVENTS.DATABASE_UPDATE_ERROR.eventName,
+        payload: {
+          username,
+          uuid
+        }
+      });
       await client.query('ROLLBACK');
       return {
         success: false,
@@ -191,12 +257,32 @@ export async function resetPassword(data: AdminResetPasswordRequest): Promise<Ch
     }
 
     // Clean up ALL refresh tokens for the user
-    console.log('[Admin Reset Password Service] Cleaning up ALL refresh tokens for user...');
+    await createAndPublishEvent({
+      eventName: ADMIN_PASSWORD_RESET_EVENTS.TOKEN_CLEANUP_STARTED.eventName,
+      payload: {
+        username,
+        uuid
+      }
+    });
     try {
       await cleanupAllUserTokens(uuid);
-      console.log('[Admin Reset Password Service] Token cleanup completed successfully');
+      await createAndPublishEvent({
+        eventName: ADMIN_PASSWORD_RESET_EVENTS.TOKEN_CLEANUP_COMPLETED.eventName,
+        payload: {
+          username,
+          uuid
+        }
+      });
     } catch (error) {
-      console.error('[Admin Reset Password Service] Error during token cleanup:', error);
+      await createAndPublishEvent({
+        eventName: ADMIN_PASSWORD_RESET_EVENTS.TOKEN_CLEANUP_ERROR.eventName,
+        payload: {
+          username,
+          uuid,
+          error: error instanceof Error ? error.message : 'Unknown error'
+        },
+        errorData: error instanceof Error ? error.message : undefined
+      });
       await client.query('ROLLBACK');
       return {
         success: false,
@@ -207,7 +293,13 @@ export async function resetPassword(data: AdminResetPasswordRequest): Promise<Ch
 
     // Commit transaction
     await client.query('COMMIT');
-    console.log(`[Admin Reset Password Service] Password successfully reset for user: ${username} (${uuid})`);
+    await createAndPublishEvent({
+      eventName: ADMIN_PASSWORD_RESET_EVENTS.PASSWORD_RESET_SUCCESSFUL.eventName,
+      payload: {
+        username,
+        uuid
+      }
+    });
     
     return {
       success: true,
@@ -215,7 +307,15 @@ export async function resetPassword(data: AdminResetPasswordRequest): Promise<Ch
     };
 
   } catch (error) {
-    console.error('[Admin Reset Password Service] Error:', error);
+    await createAndPublishEvent({
+      eventName: ADMIN_PASSWORD_RESET_EVENTS.SERVICE_ERROR.eventName,
+      payload: {
+        username,
+        uuid,
+        error: error instanceof Error ? error.message : 'Unknown error'
+      },
+      errorData: error instanceof Error ? error.message : undefined
+    });
     await client.query('ROLLBACK');
     return {
       success: false,
