@@ -14,6 +14,8 @@
 import { Request, Response } from 'express';
 import { createSection as createSectionService } from './service.admin.create.section';
 import { connectionHandler } from '../../../core/helpers/connection.handler';
+import { createAndPublishEvent } from '@/core/eventBus/fabric.events';
+import { EVENTS_ADMIN_CATALOG } from './events.admin.catalog';
 
 /**
  * Business logic for creating catalog sections data
@@ -22,13 +24,26 @@ import { connectionHandler } from '../../../core/helpers/connection.handler';
  * @param res - Express Response object
  */
 async function createSectionLogic(req: Request, res: Response): Promise<any> {
-    // JWT validation is already performed by route guards
-    // If request reaches controller, JWT is valid
+    try {
+        // JWT validation is already performed by route guards
+        // If request reaches controller, JWT is valid
 
-    // Create catalog section
-    const result = await createSectionService(req);
+        // Create catalog section
+        const result = await createSectionService(req);
 
-    return result;
+        return result;
+    } catch (error) {
+        createAndPublishEvent({
+            eventName: EVENTS_ADMIN_CATALOG['controller.unexpected_error'].eventName,
+            payload: {
+                controller: 'CreateCatalogSectionController',
+                error: error instanceof Error ? error.message : String(error)
+            },
+            errorData: error instanceof Error ? error.message : String(error)
+        });
+        
+        throw error;
+    }
 }
 
 // Export controller using universal connection handler

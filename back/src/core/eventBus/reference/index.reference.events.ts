@@ -92,6 +92,11 @@ export const eventReferenceFiles: Record<string, string[]> = {
     path.resolve(__dirname, '../../../modules/admin/service/events.admin.services.ts')
   ],
   
+  // Admin catalog events - events for admin catalog operations (sections, services)
+  adminCatalog: [
+    path.resolve(__dirname, '../../../modules/admin/catalog/events.admin.catalog.ts')
+  ],
+  
   // Catalog events - events for catalog module operations
   catalog: [
     path.resolve(__dirname, '../../../modules/catalog/events.catalog.ts')

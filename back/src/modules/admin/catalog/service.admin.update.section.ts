@@ -34,6 +34,8 @@ import type {
 } from './types.admin.catalog.sections';
 import { SectionStatus } from './types.admin.catalog.sections';
 import { getRequestorUuidFromReq } from '../../../core/helpers/get.requestor.uuid.from.req';
+import { createAndPublishEvent } from '@/core/eventBus/fabric.events';
+import { EVENTS_ADMIN_CATALOG } from './events.admin.catalog';
 import { checkUserExists } from '../../../core/helpers/check.user.exists';
 import { checkGroupExists } from '../../../core/helpers/check.group.exists';
 import { getUuidByUsername } from '../../../core/helpers/get.uuid.by.username';
@@ -83,7 +85,14 @@ async function checkSectionExists(sectionId: string): Promise<{ id: string, name
         const result = await pool.query(queries.checkSectionExists, [sectionId]);
         return result.rows.length > 0 ? result.rows[0] : null;
     } catch (error) {
-        console.error('[UpdateSectionService] Error checking section existence:', error);
+        createAndPublishEvent({
+            eventName: EVENTS_ADMIN_CATALOG['section.update.validation.error'].eventName,
+            payload: {
+                sectionId,
+                error: error instanceof Error ? error.message : String(error)
+            },
+            errorData: error instanceof Error ? error.message : String(error)
+        });
         return null;
     }
 }
@@ -99,7 +108,15 @@ async function checkSectionNameExistsExcluding(name: string, sectionId: string):
         const result = await pool.query(queries.checkSectionNameExistsExcluding, [name, sectionId]);
         return result.rows.length > 0;
     } catch (error) {
-        console.error('[UpdateSectionService] Error checking section name existence:', error);
+        createAndPublishEvent({
+            eventName: EVENTS_ADMIN_CATALOG['section.update.validation.error'].eventName,
+            payload: {
+                sectionName: name,
+                sectionId,
+                error: error instanceof Error ? error.message : String(error)
+            },
+            errorData: error instanceof Error ? error.message : String(error)
+        });
         return false;
     }
 }
@@ -115,7 +132,15 @@ async function checkOrderExistsExcluding(order: number, sectionId: string): Prom
         const result = await pool.query(queries.checkOrderExistsExcluding, [order, sectionId]);
         return result.rows.length > 0;
     } catch (error) {
-        console.error('[UpdateSectionService] Error checking order existence:', error);
+        createAndPublishEvent({
+            eventName: EVENTS_ADMIN_CATALOG['section.update.validation.error'].eventName,
+            payload: {
+                order,
+                sectionId,
+                error: error instanceof Error ? error.message : String(error)
+            },
+            errorData: error instanceof Error ? error.message : String(error)
+        });
         return false;
     }
 }
@@ -130,7 +155,15 @@ async function updateOrderNumbersAfter(newOrder: number, sectionId: string): Pro
     try {
         await pool.query(queries.updateOrderNumbersAfter, [newOrder, sectionId]);
     } catch (error) {
-        console.error('[UpdateSectionService] Error updating order numbers:', error);
+        createAndPublishEvent({
+            eventName: EVENTS_ADMIN_CATALOG['section.update.database_error'].eventName,
+            payload: {
+                newOrder,
+                sectionId,
+                error: error instanceof Error ? error.message : String(error)
+            },
+            errorData: error instanceof Error ? error.message : String(error)
+        });
         throw error;
     }
 }
@@ -243,6 +276,14 @@ export async function updateSection(req: Request): Promise<UpdateSectionResponse
         // Get section ID from request body
         const { id, ...updateData }: UpdateSectionRequest & { id: string } = req.body;
         
+        createAndPublishEvent({
+            eventName: EVENTS_ADMIN_CATALOG['section.update.started'].eventName,
+            payload: {
+                sectionId: id,
+                updateFields: Object.keys(updateData)
+            }
+        });
+        
         if (!id) {
             const error: ServiceError = {
                 code: 'REQUIRED_FIELD_ERROR',
@@ -303,6 +344,15 @@ export async function updateSection(req: Request): Promise<UpdateSectionResponse
                 name: updatedSection.name
             }
         };
+        
+        createAndPublishEvent({
+            eventName: EVENTS_ADMIN_CATALOG['section.update.success'].eventName,
+            payload: {
+                sectionId: updatedSection.id,
+                sectionName: updatedSection.name,
+                updateFields: Object.keys(updateData)
+            }
+        });
         
         return response;
 

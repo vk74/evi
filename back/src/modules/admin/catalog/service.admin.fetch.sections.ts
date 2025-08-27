@@ -22,6 +22,8 @@ import { queries } from './queries.admin.catalog.sections';
 import type { DbCatalogSection, CatalogSection, FetchSectionsResponse, ServiceError } from './types.admin.catalog.sections';
 import { fetchUsernameByUuid } from '../../../core/helpers/get.username.by.uuid';
 import { fetchGroupnameByUuid } from '../../../core/helpers/get.groupname.by.uuid';
+import { createAndPublishEvent } from '@/core/eventBus/fabric.events';
+import { EVENTS_ADMIN_CATALOG } from './events.admin.catalog';
 
 // Type assertion for pool
 const pool = pgPool as Pool;
@@ -93,6 +95,14 @@ export async function fetchSections(req: Request): Promise<FetchSectionsResponse
         // Check if sectionId parameter is provided
         const sectionId = req.query.sectionId as string;
         
+        createAndPublishEvent({
+            eventName: EVENTS_ADMIN_CATALOG['section.fetch.started'].eventName,
+            payload: {
+                sectionId: sectionId || null,
+                hasSectionId: !!sectionId
+            }
+        });
+        
         let result;
         
         if (sectionId) {
@@ -101,6 +111,13 @@ export async function fetchSections(req: Request): Promise<FetchSectionsResponse
             
             // Check if section was found
             if (result.rows.length === 0) {
+                createAndPublishEvent({
+                    eventName: EVENTS_ADMIN_CATALOG['section.fetch.not_found'].eventName,
+                    payload: {
+                        sectionId
+                    }
+                });
+                
                 const serviceError: ServiceError = {
                     code: 'NOT_FOUND',
                     message: `Section with ID ${sectionId} not found`,
@@ -123,9 +140,27 @@ export async function fetchSections(req: Request): Promise<FetchSectionsResponse
             data: resolvedSections
         };
         
+        createAndPublishEvent({
+            eventName: EVENTS_ADMIN_CATALOG['section.fetch.success'].eventName,
+            payload: {
+                sectionId: sectionId || null,
+                sectionsCount: resolvedSections.length,
+                hasSectionId: !!sectionId
+            }
+        });
+        
         return response;
 
     } catch (error) {
+        createAndPublishEvent({
+            eventName: EVENTS_ADMIN_CATALOG['section.fetch.error'].eventName,
+            payload: {
+                sectionId: req.query.sectionId as string || null,
+                error: error instanceof Error ? error.message : String(error)
+            },
+            errorData: error instanceof Error ? error.message : String(error)
+        });
+        
         // Create error response
         const serviceError: ServiceError = {
             code: 'INTERNAL_SERVER_ERROR',

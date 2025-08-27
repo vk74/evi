@@ -9,6 +9,8 @@
 import { Request } from 'express'
 import { Pool } from 'pg'
 import { pool as defaultPool } from '@/core/db/maindb'
+import { createAndPublishEvent } from '@/core/eventBus/fabric.events'
+import { EVENTS_ADMIN_CATALOG } from './events.admin.catalog'
 
 const pgPool: Pool = (defaultPool as unknown as Pool)
 
@@ -20,7 +22,26 @@ export async function fetchPublishingServices(req: Request) {
   const sortBy = (req.query.sortBy as string) || 'name'
   const sortOrder = ((req.query.sortOrder as string) || 'asc').toLowerCase() === 'desc' ? 'DESC' : 'ASC'
 
+  createAndPublishEvent({
+    eventName: EVENTS_ADMIN_CATALOG['services.publish.fetch.started'].eventName,
+    payload: {
+      sectionId,
+      page,
+      perPage,
+      search,
+      sortBy,
+      sortOrder
+    }
+  });
+
   if (!sectionId) {
+    createAndPublishEvent({
+      eventName: EVENTS_ADMIN_CATALOG['services.publish.fetch.validation_error'].eventName,
+      payload: {
+        error: 'sectionId is required'
+      },
+      errorData: 'sectionId is required'
+    });
     return { success: false, message: 'sectionId is required' }
   }
 
@@ -82,7 +103,7 @@ export async function fetchPublishingServices(req: Request) {
     order: selectedOrder.get(r.id) ?? null
   }))
 
-  return {
+  const result = {
     success: true,
     message: 'ok',
     data: {
@@ -91,7 +112,20 @@ export async function fetchPublishingServices(req: Request) {
       perPage,
       total: Number(countRes.rows[0]?.total ?? 0)
     }
-  }
+  };
+
+  createAndPublishEvent({
+    eventName: EVENTS_ADMIN_CATALOG['services.publish.fetch.success'].eventName,
+    payload: {
+      sectionId,
+      itemsCount: items.length,
+      total: Number(countRes.rows[0]?.total ?? 0),
+      page,
+      perPage
+    }
+  });
+
+  return result;
 }
 
 export default fetchPublishingServices

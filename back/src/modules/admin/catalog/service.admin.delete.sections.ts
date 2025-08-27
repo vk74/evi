@@ -29,6 +29,8 @@ import type {
     ServiceError
 } from './types.admin.catalog.sections';
 import { getRequestorUuidFromReq } from '../../../core/helpers/get.requestor.uuid.from.req';
+import { createAndPublishEvent } from '@/core/eventBus/fabric.events';
+import { EVENTS_ADMIN_CATALOG } from './events.admin.catalog';
 
 // Type assertion for pool
 const pool = pgPool as Pool;
@@ -85,7 +87,14 @@ async function validateSectionsForDeletion(sectionIds: string[]): Promise<Sectio
         
         return validationResults;
     } catch (error) {
-        console.error('[DeleteSectionService] Error validating sections for deletion:', error);
+        createAndPublishEvent({
+            eventName: EVENTS_ADMIN_CATALOG['section.delete.validation.error'].eventName,
+            payload: {
+                sectionIds,
+                error: error instanceof Error ? error.message : String(error)
+            },
+            errorData: error instanceof Error ? error.message : String(error)
+        });
         throw error;
     }
 }
@@ -104,7 +113,14 @@ async function updateOrderNumbersAfterMultipleDeletion(deletedOrders: number[]):
             await pool.query(queries.updateOrderNumbersAfterMultipleDeletion, [order]);
         }
     } catch (error) {
-        console.error('[DeleteSectionService] Error updating order numbers after multiple deletions:', error);
+        createAndPublishEvent({
+            eventName: EVENTS_ADMIN_CATALOG['section.delete.database_error'].eventName,
+            payload: {
+                deletedOrders,
+                error: error instanceof Error ? error.message : String(error)
+            },
+            errorData: error instanceof Error ? error.message : String(error)
+        });
         throw error;
     }
 }
@@ -140,7 +156,14 @@ export async function deleteSection(req: Request): Promise<DeleteSectionResponse
         const invalidSections = validationResults.filter(r => !r.canDelete);
         
         // Log deletion attempt
-        console.log(`[DeleteSectionService] User ${requestorUuid} attempting to delete ${validSections.length} sections: ${validSections.map(s => s.name).join(', ')}`);
+        createAndPublishEvent({
+            eventName: EVENTS_ADMIN_CATALOG['section.delete.started'].eventName,
+            payload: {
+                requestorUuid,
+                sectionCount: validSections.length,
+                sectionNames: validSections.map(s => s.name)
+            }
+        });
         
         let deletedSections: Array<{ id: string, name: string, order: number }> = [];
         
@@ -159,7 +182,14 @@ export async function deleteSection(req: Request): Promise<DeleteSectionResponse
         
         // Log successful deletion
         if (deletedSections.length > 0) {
-            console.log(`[DeleteSectionService] Successfully deleted ${deletedSections.length} sections: ${deletedSections.map(s => s.name).join(', ')} by user: ${requestorUuid}`);
+            createAndPublishEvent({
+                eventName: EVENTS_ADMIN_CATALOG['section.delete.success'].eventName,
+                payload: {
+                    requestorUuid,
+                    deletedCount: deletedSections.length,
+                    deletedSections: deletedSections.map(s => ({ id: s.id, name: s.name }))
+                }
+            });
         }
         
         // Prepare response data

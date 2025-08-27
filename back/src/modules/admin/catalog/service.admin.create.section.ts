@@ -30,6 +30,8 @@ import type {
 } from './types.admin.catalog.sections';
 import { SectionStatus } from './types.admin.catalog.sections';
 import { getRequestorUuidFromReq } from '../../../core/helpers/get.requestor.uuid.from.req';
+import { createAndPublishEvent } from '@/core/eventBus/fabric.events';
+import { EVENTS_ADMIN_CATALOG } from './events.admin.catalog';
 import { checkUserExists } from '../../../core/helpers/check.user.exists';
 import { checkGroupExists } from '../../../core/helpers/check.group.exists';
 import { getUuidByUsername } from '../../../core/helpers/get.uuid.by.username';
@@ -79,7 +81,14 @@ async function checkSectionNameExists(name: string): Promise<boolean> {
         const result = await pool.query(queries.checkSectionNameExists, [name]);
         return result.rows.length > 0;
     } catch (error) {
-        console.error('[CreateSectionService] Error checking section name existence:', error);
+        createAndPublishEvent({
+            eventName: EVENTS_ADMIN_CATALOG['section.create.validation.error'].eventName,
+            payload: {
+                sectionName: name,
+                error: error instanceof Error ? error.message : String(error)
+            },
+            errorData: error instanceof Error ? error.message : String(error)
+        });
         return false;
     }
 }
@@ -94,7 +103,14 @@ async function checkOrderExists(order: number): Promise<boolean> {
         const result = await pool.query(queries.checkOrderExists, [order]);
         return result.rows.length > 0;
     } catch (error) {
-        console.error('[CreateSectionService] Error checking order existence:', error);
+        createAndPublishEvent({
+            eventName: EVENTS_ADMIN_CATALOG['section.create.validation.error'].eventName,
+            payload: {
+                order,
+                error: error instanceof Error ? error.message : String(error)
+            },
+            errorData: error instanceof Error ? error.message : String(error)
+        });
         return false;
     }
 }
@@ -220,6 +236,14 @@ export async function createSection(req: Request): Promise<CreateSectionResponse
     try {
         // Get request data and convert types
         const rawData = req.body;
+        
+        createAndPublishEvent({
+            eventName: EVENTS_ADMIN_CATALOG['section.create.started'].eventName,
+            payload: {
+                sectionName: rawData.name,
+                sectionOrder: rawData.order
+            }
+        });
         const requestData: CreateSectionRequest = {
             ...rawData,
             order: typeof rawData.order === 'string' ? parseInt(rawData.order, 10) : rawData.order
@@ -279,6 +303,15 @@ export async function createSection(req: Request): Promise<CreateSectionResponse
                 name: createdSection.name
             }
         };
+        
+        createAndPublishEvent({
+            eventName: EVENTS_ADMIN_CATALOG['section.create.success'].eventName,
+            payload: {
+                sectionId: createdSection.id,
+                sectionName: createdSection.name,
+                sectionOrder: requestData.order
+            }
+        });
         
         return response;
 

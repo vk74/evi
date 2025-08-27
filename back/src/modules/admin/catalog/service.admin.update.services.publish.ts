@@ -9,12 +9,22 @@
 import { Request } from 'express'
 import { Pool } from 'pg'
 import { pool as defaultPool } from '@/core/db/maindb'
+import { createAndPublishEvent } from '@/core/eventBus/fabric.events'
+import { EVENTS_ADMIN_CATALOG } from './events.admin.catalog'
 
 const pgPool: Pool = (defaultPool as unknown as Pool)
 
 export async function updateSectionServicesPublish(req: Request) {
   const sectionId = (req.body?.section_id || req.body?.sectionId) as string
   const serviceIds: string[] = Array.isArray(req.body?.service_ids) ? req.body.service_ids : []
+
+  createAndPublishEvent({
+    eventName: EVENTS_ADMIN_CATALOG['services.publish.update.started'].eventName,
+    payload: {
+      sectionId,
+      serviceIdsCount: serviceIds.length
+    }
+  });
 
   if (!sectionId) {
     return { success: false, message: 'section_id is required' }
@@ -30,9 +40,30 @@ export async function updateSectionServicesPublish(req: Request) {
       await client.query('INSERT INTO app.section_services(section_id, service_id, service_order) VALUES ($1, $2, $3)', [sectionId, serviceIds[i], i])
     }
     await client.query('COMMIT')
+    
+    createAndPublishEvent({
+      eventName: EVENTS_ADMIN_CATALOG['services.publish.update.success'].eventName,
+      payload: {
+        sectionId,
+        addedCount: serviceIds.length,
+        removedCount: 0
+      }
+    });
+    
     return { success: true, message: 'Section publish updated', addedCount: serviceIds.length, removedCount: 0 }
   } catch (e: any) {
     await client.query('ROLLBACK')
+    
+    createAndPublishEvent({
+      eventName: EVENTS_ADMIN_CATALOG['services.publish.update.database_error'].eventName,
+      payload: {
+        sectionId,
+        serviceIdsCount: serviceIds.length,
+        error: e?.message || 'Failed to update section publish'
+      },
+      errorData: e?.message || 'Failed to update section publish'
+    });
+    
     throw { success: false, message: e?.message || 'Failed to update section publish' }
   } finally {
     client.release()

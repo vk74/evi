@@ -9,9 +9,24 @@
 import { Request, Response } from 'express'
 import { connectionHandler } from '@/core/helpers/connection.handler'
 import { updateSectionServicesPublish } from './service.admin.update.services.publish'
+import { createAndPublishEvent } from '@/core/eventBus/fabric.events'
+import { EVENTS_ADMIN_CATALOG } from './events.admin.catalog'
 
 async function updateSectionServicesPublishLogic(req: Request, res: Response): Promise<any> {
-  return await updateSectionServicesPublish(req)
+  try {
+    return await updateSectionServicesPublish(req)
+  } catch (error) {
+    createAndPublishEvent({
+      eventName: EVENTS_ADMIN_CATALOG['controller.unexpected_error'].eventName,
+      payload: {
+        controller: 'CatalogUpdateServicesPublishController',
+        error: error instanceof Error ? error.message : String(error)
+      },
+      errorData: error instanceof Error ? error.message : String(error)
+    });
+    
+    throw error;
+  }
 }
 
 export default connectionHandler(updateSectionServicesPublishLogic, 'CatalogUpdateSectionServicesPublishController')
