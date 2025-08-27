@@ -65,10 +65,10 @@
             "title": "session management",
             "connection": {
               "handling": {
-                "title": "connection handling",
+                "title": "api requests limiting",
                 "rate": {
                   "limiting": {
-                    "title": "api requests rate limiting per user",
+                    "title": "api requests rate limiting, applied per user",
                     "enabled": {
                       "label": "use request rate limiting"
                     },
