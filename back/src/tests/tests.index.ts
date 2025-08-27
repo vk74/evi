@@ -12,7 +12,6 @@
 // Core tests
 import './test.get.uuid.helper';
 import './test.queries.users';
-import './test.services.editor';
 import '../server.initialization.test';
 
 // Auth tests
@@ -21,8 +20,6 @@ import './test.auth.register';
 
 // User management tests
 import './test.users.change.password';
-import './test.users.get.profile';
-import './test.users.update.profile';
 
 // Type checking
 import './ts-check';

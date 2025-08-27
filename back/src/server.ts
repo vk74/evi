@@ -262,7 +262,6 @@ async function initializeServer(): Promise<void> {
     
     app.use(express.json());
     app.use(cookieParser()); // Add cookie parser middleware
-    //app.use('/profile', getUserProfile); // Route registration
     app.use(bodyParser.json());
 
     console.log('Middleware configuration completed');

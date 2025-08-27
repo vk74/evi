@@ -14,7 +14,7 @@ import validateJWT from '../guards/auth.validate.jwt';
 import checkIsUserStatusActive from '../guards/check.is.user.status.active';
 
 // Импорт контроллеров
-import getUsernameByUuidController from '../middleware/controller.get.username.by.uuid';
+import getUsernameByUuidController from '../controllers/controller.get.username.by.uuid';
 import searchUsers from '../services/item-selector/controller.search.users';
 import searchGroups from '../services/item-selector/controller.search.groups';
 import addUsersToGroup from '../services/item-selector/controller.add.users.to.group';

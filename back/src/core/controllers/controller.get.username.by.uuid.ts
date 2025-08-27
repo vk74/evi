@@ -1,17 +1,18 @@
 /**
- * @file controller.get.username.by.uuid.ts
- * BACKEND Controller for fetching username by user UUID
+ * controller.get.username.by.uuid.ts - version 1.0.0
+ * BACKEND controller for fetching username by user UUID
  * 
  * Functionality:
  * - Handles HTTP GET requests to retrieve username by UUID
  * - Validates input parameters
  * - Uses helper for data retrieval
- * - Now uses universal connection handler for standardized HTTP processing
+ * - Uses universal connection handler for standardized HTTP processing
  */
 
-import { Request, Response, NextFunction } from 'express';
+import { Request, Response } from 'express';
 import { fetchUsernameByUuid } from '../helpers/get.username.by.uuid';
 import { connectionHandler } from '../helpers/connection.handler';
+import { USERNAME_BY_UUID_CONTROLLER_EVENTS } from './events.core.controllers';
 
 // Define response interface
 interface UsernameResponse {
@@ -23,7 +24,7 @@ interface UsernameResponse {
 }
 
 /**
- * Controller to fetch username by UUID
+ * Controller logic to fetch username by UUID
  * Handles HTTP requests and communicates with the helper
  * 
  * @param req Express Request object containing userId in params
