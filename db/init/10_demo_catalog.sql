@@ -1,6 +1,6 @@
 -- Version: 1.0
 -- Description: Seeds the database with demo catalog data, including sections and services.
--- Backend file: 09_demo_catalog.sql
+-- Backend file: 10_demo_catalog.sql
 
 -- This script populates the product/service catalog with a set of demo entries
 -- to provide a meaningful example for new users. It includes creating catalog

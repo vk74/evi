@@ -1,10 +1,20 @@
 # ev2 Database Image
-# Version: 1.1
-# Description: This Dockerfile prepares the PostgreSQL image for the ev2 application.
+# Version: 1.3
+# Description: This Dockerfile prepares the PostgreSQL image for the ev2 application with pg_cron extension.
 # Backend file: Dockerfile
 
-# Use the official PostgreSQL 17 image as the base
-FROM postgres:17-alpine
+# Use the official PostgreSQL 17 Debian-based image for better extension support
+FROM postgres:17
+
+# Install pg_cron extension and other useful extensions
+RUN apt-get update && \
+    apt-get install -y postgresql-17-cron postgresql-contrib && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
+
+# Configure PostgreSQL to load pg_cron
+RUN echo "shared_preload_libraries = 'pg_cron'" >> /usr/share/postgresql/postgresql.conf.sample
+RUN echo "cron.database_name = 'maindb'" >> /usr/share/postgresql/postgresql.conf.sample
 
 # Set environment variables for application database setup
 # These are used by the official postgres entrypoint script

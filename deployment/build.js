@@ -43,20 +43,28 @@ function log(message, color = colors.reset, isBold = false) {
  * Records and returns the execution time.
  * @param {string} command - The command to execute.
  * @param {string} description - A description of the action being performed.
+ * @param {boolean} quiet - If true, suppresses command output (default: false).
  */
-function runCommand(command, description) {
+function runCommand(command, description, quiet = false) {
   log(`\n🚀 Executing: ${description}...`, colors.yellow, true);
-  log(`   Command: ${command}`, colors.reset);
+  if (!quiet) {
+    log(`   Command: ${command}`, colors.reset);
+  }
   const startTime = Date.now();
   try {
-    execSync(command, { stdio: 'inherit' });
+    const stdio = quiet ? ['pipe', 'pipe', 'pipe'] : 'inherit';
+    execSync(command, { stdio });
     const endTime = Date.now();
     const duration = ((endTime - startTime) / 1000).toFixed(2);
     log(`✅ Success: "${description}" completed in ${duration}s.`, colors.green);
     return parseFloat(duration);
   } catch (error) {
     log(`❌ Error: "${description}" failed.`, colors.red, true);
-    // The error output from the command is already printed due to stdio: 'inherit'
+    if (quiet) {
+      log(`   Command that failed: ${command}`, colors.red);
+      // Show error output even in quiet mode
+      log(`   Error details: ${error.message}`, colors.red);
+    }
     process.exit(1);
   }
 }
@@ -109,6 +117,26 @@ function buildAndUpSingle(serviceName) {
 }
 
 /**
+ * Performs full rebuild of all services without cache, including cleanup and restart.
+ */
+function fullRebuildNoCache() {
+  const timings = {};
+  timings['Stop All Services'] = runCommand(
+    `docker-compose -f ${DOCKER_COMPOSE_FILE} --env-file ${ENV_FILE} down`,
+    'Stop All Services'
+  );
+  timings['Build All Services (No Cache)'] = runCommand(
+    `docker-compose -f ${DOCKER_COMPOSE_FILE} --env-file ${ENV_FILE} build --no-cache --parallel`,
+    'Build All Services (No Cache)'
+  );
+  timings['Start All Services'] = runCommand(
+    `docker-compose -f ${DOCKER_COMPOSE_FILE} --env-file ${ENV_FILE} up -d`,
+    'Start All Services'
+  );
+  return timings;
+}
+
+/**
  * Displays a summary of the execution timings.
  * @param {object} timings - An object containing action descriptions and their durations.
  */
@@ -145,7 +173,8 @@ ${colors.yellow}[2]${colors.reset} Build & Start ev2-frontend
 ${colors.yellow}[3]${colors.reset} Build & Start ev2-backend
 ${colors.yellow}[4]${colors.reset} Build & Start ev2-database
 ${colors.yellow}[5]${colors.reset} Full Docker Cleanup (down -v)
-${colors.yellow}[6]${colors.reset} Exit
+${colors.yellow}[6]${colors.reset} Rebuild & Start All (No Cache)
+${colors.yellow}[7]${colors.reset} Exit
 `;
 
   console.log(menu);
@@ -172,6 +201,9 @@ ${colors.yellow}[6]${colors.reset} Exit
         timings = cleanDocker();
         break;
       case '6':
+        timings = fullRebuildNoCache();
+        break;
+      case '7':
         log('👋 Exiting. No action taken.', colors.yellow);
         return;
       default:

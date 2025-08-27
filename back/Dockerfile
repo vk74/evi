@@ -18,6 +18,9 @@ RUN npm ci
 COPY tsconfig.json ./
 COPY ./src ./src
 
+# Copy keys explicitly (they are ignored by .gitignore but needed for runtime)
+COPY ./src/core/keys ./src/core/keys
+
 # Build the application (npm run build will correctly use the tsc from node_modules)
 RUN npm run build
 
@@ -26,6 +29,9 @@ RUN npm run build
 # Runtime stage
 # =========================
 FROM node:20-alpine
+
+# Set production environment
+ENV NODE_ENV=production
 
 WORKDIR /app
 
@@ -37,7 +43,7 @@ RUN npm ci --omit=dev
 COPY --from=build /app/dist ./dist
 
 # Copy the private keys from the build stage into the correct location
-COPY --from=build /app/src/keys ./dist/keys
+COPY --from=build /app/src/core/keys ./dist/keys
 
 # Create a symlink for module-alias to work correctly.
 # The application uses '@/' which points to 'src/', so we link 'src' to 'dist'

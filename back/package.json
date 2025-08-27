@@ -22,7 +22,7 @@
     "test:debug": "jest --verbose --detectOpenHandles",
     "ts-check": "tsc --noEmit",
     "build": "rimraf dist && tsc && npm run copy-assets",
-    "copy-assets": "cp -r src/keys dist/",
+    "copy-assets": "cp -r src/core/keys dist/",
     "serve": "node dist/server.js",
     "build:prod": "NODE_ENV=production rimraf dist && tsc && npm run copy-assets"
   },

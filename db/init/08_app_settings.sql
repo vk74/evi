@@ -63,6 +63,7 @@ INSERT INTO app.app_settings (
 ('Application.System.EventBus', 'generate.events.in.domain.usersList', 'all', 'true', '{"type":"boolean"}', 'true', 'Enable event generation in domain users list', false),
 ('Application.System.EventBus', 'generate.events.in.domain.account', 'all', 'true', '{"type":"boolean"}', 'true', 'Enable event generation in account domain', false),
 ('Application.System.EventBus', 'generate.events.in.domain.validation', 'all', 'true', '{"type":"boolean"}', 'true', 'Enable event generation in validation domain', false),
+('Application.System.EventBus', 'generate.events.in.domain.adminCatalog', 'all', 'true', '{"type":"boolean"}', 'true', 'Enable event generation in admin catalog domain', false),
 
 -- Users Management Settings
 ('UsersManagement.GroupsManagement', 'add.only.active.users.to.groups', 'all', 'false', '{"type":"boolean"}', 'true', 'Allow adding to groups only those users with status ACTIVE', false),

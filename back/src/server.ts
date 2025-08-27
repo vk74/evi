@@ -174,7 +174,9 @@ async function initializeServer(): Promise<void> {
     console.log('Starting server initialization');
 
     // 1. Loading private key
-    const privateKeyPath = './src/core/keys/private_key.pem';
+    const privateKeyPath = process.env.NODE_ENV === 'production' 
+      ? './dist/keys/private_key.pem' 
+      : './src/core/keys/private_key.pem';
     const privateKey = fs.readFileSync(privateKeyPath, 'utf8');
     global.privateKey = privateKey;
 
