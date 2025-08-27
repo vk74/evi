@@ -11,6 +11,8 @@ import { Request, Response } from 'express';
 import { Pool, QueryResult } from 'pg';
 import { pool as pgPool } from '../../core/db/maindb';
 import { userProfileQueries } from './queries.account';
+import { createAndPublishEvent } from '@/core/eventBus/fabric.events';
+import { ACCOUNT_SERVICE_EVENTS } from './events.account';
 
 // Type assertion for pool
 const pool = pgPool as Pool;
@@ -50,7 +52,16 @@ const getUserProfile = async (req: EnhancedRequest, res: Response): Promise<void
    const username = req.user?.username;
 
    if (!username) {
-       console.log('Get profile failed: Username is missing');
+       await createAndPublishEvent({
+         eventName: ACCOUNT_SERVICE_EVENTS.GET_PROFILE_MISSING_USERNAME.eventName,
+         payload: {
+           requestInfo: {
+             method: req.method,
+             url: req.url,
+             userAgent: req.get('User-Agent')
+           }
+         }
+       });
        res.status(400).json({
            message: 'Username is required'
        });
@@ -58,7 +69,12 @@ const getUserProfile = async (req: EnhancedRequest, res: Response): Promise<void
    }
 
    try {
-       console.log('Retrieving profile data for user:', username);
+       await createAndPublishEvent({
+         eventName: ACCOUNT_SERVICE_EVENTS.GET_PROFILE_RETRIEVING.eventName,
+         payload: {
+           username
+         }
+       });
        
        const result: QueryResult<UserProfile> = await pool.query(
            userProfileQueries.getProfile.text,
@@ -66,17 +82,34 @@ const getUserProfile = async (req: EnhancedRequest, res: Response): Promise<void
        );
 
        if (result.rows.length > 0) {
-           console.log('Profile data found for user:', username);
+           await createAndPublishEvent({
+             eventName: ACCOUNT_SERVICE_EVENTS.GET_PROFILE_FOUND.eventName,
+             payload: {
+               username
+             }
+           });
            res.json(result.rows[0]);
        } else {
-           console.log('Profile not found for user:', username);
+           await createAndPublishEvent({
+             eventName: ACCOUNT_SERVICE_EVENTS.GET_PROFILE_NOT_FOUND.eventName,
+             payload: {
+               username
+             }
+           });
            res.status(404).json({
                message: 'User profile not found'
            });
        }
 
    } catch (error) {
-       console.error('Error in getUserProfile:', error);
+       await createAndPublishEvent({
+         eventName: ACCOUNT_SERVICE_EVENTS.GET_PROFILE_ERROR.eventName,
+         payload: {
+           username,
+           error: error instanceof Error ? error.message : 'Unknown error'
+         },
+         errorData: error instanceof Error ? error.message : undefined
+       });
        res.status(500).json({
            message: 'Internal server error',
            details: error instanceof Error ? error.message : String(error)

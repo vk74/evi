@@ -18,6 +18,8 @@ import { pool as pgPool } from '../../core/db/maindb';
 import { userRegistrationQueries } from './queries.account';
 import fabricEvents from '../../core/eventBus/fabric.events';
 import { ACCOUNT_REGISTRATION_EVENTS } from './events.account';
+import { createAndPublishEvent } from '@/core/eventBus/fabric.events';
+import { ACCOUNT_SERVICE_EVENTS } from './events.account';
 
 // Type assertion for pool
 const pool = pgPool as Pool;
@@ -159,7 +161,18 @@ const registerUser = async (req: EnhancedRequest, res: Response): Promise<void> 
         }
 
     } catch (error) {
-        console.error('Registration error:', error);
+        await createAndPublishEvent({
+          eventName: ACCOUNT_SERVICE_EVENTS.REGISTER_USER_ERROR.eventName,
+          payload: {
+            registrationData: {
+              username: req.body.username,
+              email: req.body.email,
+              phone: req.body.phone
+            },
+            error: error instanceof Error ? error.message : 'Unknown error'
+          },
+          errorData: error instanceof Error ? error.message : undefined
+        });
         
         // Log failed registration
         await fabricEvents.createAndPublishEvent({

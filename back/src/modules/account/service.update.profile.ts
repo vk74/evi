@@ -2,8 +2,8 @@
  * service.update.profile.ts - version 1.0.02
  * BACKEND service for updating user profile data
  * 
- * Processes requests to update user profile information in the database
- * Validates input data and returns updated profile or appropriate error messages
+ * Updates user profile information in the database
+ * Validates user authentication and updates profile data or returns appropriate error messages
  * File: service.update.profile.ts
  */
 
@@ -11,6 +11,8 @@ import { Request, Response } from 'express';
 import { Pool, QueryResult } from 'pg';
 import { pool as pgPool } from '../../core/db/maindb';
 import { userProfileQueries } from './queries.account';
+import { createAndPublishEvent } from '@/core/eventBus/fabric.events';
+import { ACCOUNT_SERVICE_EVENTS } from './events.account';
 
 // Type assertion for pool
 const pool = pgPool as Pool;
@@ -26,7 +28,7 @@ interface EnhancedRequest extends Request {
   user?: UserInfo;
 }
 
-// Interface for profile update request body
+// Interface for profile update request
 interface ProfileUpdateRequest {
   first_name?: string;
   last_name?: string;
@@ -61,13 +63,36 @@ interface UserProfileData {
  * @returns Promise<void>
  */
 const updateUserProfile = async (req: EnhancedRequest, res: Response): Promise<void> => {
-   console.log('Received request for user profile data update');
+   await createAndPublishEvent({
+     eventName: ACCOUNT_SERVICE_EVENTS.UPDATE_PROFILE_REQUEST_RECEIVED.eventName,
+     payload: {
+       requestInfo: {
+         method: req.method,
+         url: req.url,
+         userAgent: req.get('User-Agent')
+       }
+     }
+   });
 
    const username = req.user?.username;
-   console.log('Processing update for user:', username);
+   await createAndPublishEvent({
+     eventName: ACCOUNT_SERVICE_EVENTS.UPDATE_PROFILE_PROCESSING.eventName,
+     payload: {
+       username
+     }
+   });
 
    if (!username) {
-       console.error('Request does not contain username');
+       await createAndPublishEvent({
+         eventName: ACCOUNT_SERVICE_EVENTS.UPDATE_PROFILE_MISSING_USERNAME.eventName,
+         payload: {
+           requestInfo: {
+             method: req.method,
+             url: req.url,
+             userAgent: req.get('User-Agent')
+           }
+         }
+       });
        res.status(400).json({
            message: 'Username is required'
        });
@@ -86,16 +111,22 @@ const updateUserProfile = async (req: EnhancedRequest, res: Response): Promise<v
        position
    } = req.body as ProfileUpdateRequest;
 
-   console.log('Received profile update data:', {
-       first_name,
-       last_name,
-       middle_name,
-       gender,
-       phone_number,
-       email,
-       address,
-       company_name,
-       position
+   await createAndPublishEvent({
+     eventName: ACCOUNT_SERVICE_EVENTS.UPDATE_PROFILE_DATA_RECEIVED.eventName,
+     payload: {
+       username,
+       updateData: {
+         first_name,
+         last_name,
+         middle_name,
+         gender,
+         phone_number,
+         email,
+         address,
+         company_name,
+         position
+       }
+     }
    });
 
    try {
@@ -111,7 +142,13 @@ const updateUserProfile = async (req: EnhancedRequest, res: Response): Promise<v
            username
        ];
 
-       console.log('Executing profile update query with values:', values);
+       await createAndPublishEvent({
+         eventName: ACCOUNT_SERVICE_EVENTS.UPDATE_PROFILE_EXECUTING.eventName,
+         payload: {
+           username,
+           values
+         }
+       });
        
        const result: QueryResult<UserProfileData> = await pool.query(
            userProfileQueries.updateProfile.text,
@@ -119,17 +156,34 @@ const updateUserProfile = async (req: EnhancedRequest, res: Response): Promise<v
        );
 
        if (result.rows.length > 0) {
-           console.log('Profile successfully updated for user:', username);
+           await createAndPublishEvent({
+             eventName: ACCOUNT_SERVICE_EVENTS.UPDATE_PROFILE_SUCCESS.eventName,
+             payload: {
+               username
+             }
+           });
            res.json(result.rows[0]);
        } else {
-           console.error('Profile not found for user:', username);
+           await createAndPublishEvent({
+             eventName: ACCOUNT_SERVICE_EVENTS.UPDATE_PROFILE_NOT_FOUND.eventName,
+             payload: {
+               username
+             }
+           });
            res.status(404).json({
                message: 'User profile not found'
            });
        }
 
    } catch (error) {
-       console.error('Error updating profile:', error);
+       await createAndPublishEvent({
+         eventName: ACCOUNT_SERVICE_EVENTS.UPDATE_PROFILE_ERROR.eventName,
+         payload: {
+           username,
+           error: error instanceof Error ? error.message : 'Unknown error'
+         },
+         errorData: error instanceof Error ? error.message : undefined
+       });
        res.status(500).json({
            message: 'Failed to update profile',
            details: error instanceof Error ? error.message : String(error)

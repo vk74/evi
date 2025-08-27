@@ -192,6 +192,209 @@ export const ACCOUNT_PROFILE_EVENTS = {
 };
 
 /**
+ * Account Service Events
+ * Events related to account service operations
+ */
+export const ACCOUNT_SERVICE_EVENTS = {
+  // Get profile service events
+  GET_PROFILE_MISSING_USERNAME: {
+    eventName: 'account.service.get.profile.missing_username',
+    source: 'account get profile service',
+    eventType: 'security' as const,
+    severity: 'warning' as const,
+    eventMessage: 'Get profile failed: Username is missing',
+    payload: null, // { requestInfo }
+    version: '1.0.0'
+  },
+  
+  GET_PROFILE_RETRIEVING: {
+    eventName: 'account.service.get.profile.retrieving',
+    source: 'account get profile service',
+    eventType: 'security' as const,
+    severity: 'debug' as const,
+    eventMessage: 'Retrieving profile data for user',
+    payload: null, // { username }
+    version: '1.0.0'
+  },
+  
+  GET_PROFILE_FOUND: {
+    eventName: 'account.service.get.profile.found',
+    source: 'account get profile service',
+    eventType: 'security' as const,
+    severity: 'debug' as const,
+    eventMessage: 'Profile data found for user',
+    payload: null, // { username }
+    version: '1.0.0'
+  },
+  
+  GET_PROFILE_NOT_FOUND: {
+    eventName: 'account.service.get.profile.not_found',
+    source: 'account get profile service',
+    eventType: 'security' as const,
+    severity: 'warning' as const,
+    eventMessage: 'Profile not found for user',
+    payload: null, // { username }
+    version: '1.0.0'
+  },
+  
+  GET_PROFILE_ERROR: {
+    eventName: 'account.service.get.profile.error',
+    source: 'account get profile service',
+    eventType: 'security' as const,
+    severity: 'error' as const,
+    eventMessage: 'Error in getUserProfile',
+    payload: null, // { username, error }
+    errorData: null, // Error details
+    version: '1.0.0'
+  },
+  
+  // Update profile service events
+  UPDATE_PROFILE_REQUEST_RECEIVED: {
+    eventName: 'account.service.update.profile.request_received',
+    source: 'account update profile service',
+    eventType: 'security' as const,
+    severity: 'debug' as const,
+    eventMessage: 'Received request for user profile data update',
+    payload: null, // { requestInfo }
+    version: '1.0.0'
+  },
+  
+  UPDATE_PROFILE_PROCESSING: {
+    eventName: 'account.service.update.profile.processing',
+    source: 'account update profile service',
+    eventType: 'security' as const,
+    severity: 'debug' as const,
+    eventMessage: 'Processing update for user',
+    payload: null, // { username }
+    version: '1.0.0'
+  },
+  
+  UPDATE_PROFILE_MISSING_USERNAME: {
+    eventName: 'account.service.update.profile.missing_username',
+    source: 'account update profile service',
+    eventType: 'security' as const,
+    severity: 'error' as const,
+    eventMessage: 'Request does not contain username',
+    payload: null, // { requestInfo }
+    version: '1.0.0'
+  },
+  
+  UPDATE_PROFILE_DATA_RECEIVED: {
+    eventName: 'account.service.update.profile.data_received',
+    source: 'account update profile service',
+    eventType: 'security' as const,
+    severity: 'debug' as const,
+    eventMessage: 'Received profile update data',
+    payload: null, // { username, updateData }
+    version: '1.0.0'
+  },
+  
+  UPDATE_PROFILE_EXECUTING: {
+    eventName: 'account.service.update.profile.executing',
+    source: 'account update profile service',
+    eventType: 'security' as const,
+    severity: 'debug' as const,
+    eventMessage: 'Executing profile update query with values',
+    payload: null, // { username, values }
+    version: '1.0.0'
+  },
+  
+  UPDATE_PROFILE_SUCCESS: {
+    eventName: 'account.service.update.profile.success',
+    source: 'account update profile service',
+    eventType: 'security' as const,
+    severity: 'info' as const,
+    eventMessage: 'Profile successfully updated for user',
+    payload: null, // { username }
+    version: '1.0.0'
+  },
+  
+  UPDATE_PROFILE_NOT_FOUND: {
+    eventName: 'account.service.update.profile.not_found',
+    source: 'account update profile service',
+    eventType: 'security' as const,
+    severity: 'error' as const,
+    eventMessage: 'Profile not found for user',
+    payload: null, // { username }
+    version: '1.0.0'
+  },
+  
+  UPDATE_PROFILE_ERROR: {
+    eventName: 'account.service.update.profile.error',
+    source: 'account update profile service',
+    eventType: 'security' as const,
+    severity: 'error' as const,
+    eventMessage: 'Error updating profile',
+    payload: null, // { username, error }
+    errorData: null, // Error details
+    version: '1.0.0'
+  },
+  
+  // Register user service events
+  REGISTER_USER_ERROR: {
+    eventName: 'account.service.register.user.error',
+    source: 'account register user service',
+    eventType: 'security' as const,
+    severity: 'error' as const,
+    eventMessage: 'Registration error',
+    payload: null, // { registrationData, error }
+    errorData: null, // Error details
+    version: '1.0.0'
+  }
+};
+
+/**
+ * Account Controller Events
+ * Events related to account controller operations
+ */
+export const ACCOUNT_CONTROLLER_EVENTS = {
+  // Register user controller events
+  REGISTER_CONTROLLER_SETTINGS_ERROR: {
+    eventName: 'account.controller.register.settings.error',
+    source: 'account register user controller',
+    eventType: 'security' as const,
+    severity: 'error' as const,
+    eventMessage: 'Error checking registration setting',
+    payload: null, // { error }
+    errorData: null, // Error details
+    version: '1.0.0'
+  },
+  
+  REGISTER_CONTROLLER_LOGGING_ERROR: {
+    eventName: 'account.controller.register.logging.error',
+    source: 'account register user controller',
+    eventType: 'security' as const,
+    severity: 'error' as const,
+    eventMessage: 'Error logging registration attempt',
+    payload: null, // { error }
+    errorData: null, // Error details
+    version: '1.0.0'
+  },
+  
+  REGISTER_CONTROLLER_SETTINGS_CHECK_ERROR: {
+    eventName: 'account.controller.register.settings.check.error',
+    source: 'account register user controller',
+    eventType: 'security' as const,
+    severity: 'error' as const,
+    eventMessage: 'Error logging settings check',
+    payload: null, // { error }
+    errorData: null, // Error details
+    version: '1.0.0'
+  },
+  
+  REGISTER_CONTROLLER_ERROR: {
+    eventName: 'account.controller.register.error',
+    source: 'account register user controller',
+    eventType: 'security' as const,
+    severity: 'error' as const,
+    eventMessage: 'Registration controller error',
+    payload: null, // { error }
+    errorData: null, // Error details
+    version: '1.0.0'
+  }
+};
+
+/**
  * Quick access to event names for use in code
  */
 export const ACCOUNT_EVENT_NAMES = {

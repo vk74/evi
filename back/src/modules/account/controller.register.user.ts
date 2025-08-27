@@ -12,6 +12,8 @@ import fabricEvents from '../../core/eventBus/fabric.events';
 import { ACCOUNT_REGISTRATION_EVENTS } from './events.account';
 import registerUserService from './service.register.user';
 import { connectionHandler } from '../../core/helpers/connection.handler';
+import { createAndPublishEvent } from '@/core/eventBus/fabric.events';
+import { ACCOUNT_CONTROLLER_EVENTS } from './events.account';
 
 // Interface for registration request body
 interface RegistrationRequest {
@@ -44,7 +46,13 @@ const isRegistrationEnabled = async (): Promise<boolean> => {
     
     return Boolean(registrationSetting.value);
   } catch (error) {
-    console.error('Error checking registration setting:', error);
+    await createAndPublishEvent({
+      eventName: ACCOUNT_CONTROLLER_EVENTS.REGISTER_CONTROLLER_SETTINGS_ERROR.eventName,
+      payload: {
+        error: error instanceof Error ? error.message : 'Unknown error'
+      },
+      errorData: error instanceof Error ? error.message : undefined
+    });
     return false; // Default to disabled on error
   }
 };
@@ -86,7 +94,13 @@ const logRegistrationAttempt = async (req: EnhancedRequest, isEnabled: boolean, 
       });
     }
   } catch (error) {
-    console.error('Error logging registration attempt:', error);
+    await createAndPublishEvent({
+      eventName: ACCOUNT_CONTROLLER_EVENTS.REGISTER_CONTROLLER_LOGGING_ERROR.eventName,
+      payload: {
+        error: error instanceof Error ? error.message : 'Unknown error'
+      },
+      errorData: error instanceof Error ? error.message : undefined
+    });
   }
 };
 
@@ -121,7 +135,13 @@ const logSettingsCheck = async (req: EnhancedRequest, settingFound: boolean): Pr
       });
     }
   } catch (error) {
-    console.error('Error logging settings check:', error);
+    await createAndPublishEvent({
+      eventName: ACCOUNT_CONTROLLER_EVENTS.REGISTER_CONTROLLER_SETTINGS_CHECK_ERROR.eventName,
+      payload: {
+        error: error instanceof Error ? error.message : 'Unknown error'
+      },
+      errorData: error instanceof Error ? error.message : undefined
+    });
   }
 };
 
@@ -160,19 +180,12 @@ const registerUserControllerLogic = async (req: EnhancedRequest, res: Response):
     return; // Important: return after service handles the response
     
   } catch (error) {
-    console.error('Registration controller error:', error);
-    
-    // Log failed attempt
-    await fabricEvents.createAndPublishEvent({
-      eventName: ACCOUNT_REGISTRATION_EVENTS.REGISTRATION_FAILED.eventName,
-      req,
+    await createAndPublishEvent({
+      eventName: ACCOUNT_CONTROLLER_EVENTS.REGISTER_CONTROLLER_ERROR.eventName,
       payload: {
-        username: req.body.username,
-        email: req.body.email,
-        error: error instanceof Error ? error.message : String(error),
-        timestamp: new Date().toISOString()
+        error: error instanceof Error ? error.message : 'Unknown error'
       },
-      errorData: error instanceof Error ? error.message : String(error)
+      errorData: error instanceof Error ? error.message : undefined
     });
     
     // Return 500 Internal Server Error
