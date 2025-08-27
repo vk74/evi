@@ -557,17 +557,17 @@ const handlePublish = async () => {
           </h3>
           
           <v-btn
+            v-tooltip="{
+              text: t('admin.services.editor.mapping.tooltips.publish'),
+              location: 'left',
+              disabled: !editingServiceId || isPublishing
+            }"
             block
             color="teal"
             variant="outlined"
             class="mb-3"
             :disabled="!editingServiceId || isPublishing"
             :loading="isPublishing"
-            v-tooltip="{
-              text: t('admin.services.editor.mapping.tooltips.publish'),
-              location: 'left',
-              disabled: !editingServiceId || isPublishing
-            }"
             @click="handlePublish"
           >
             <v-icon

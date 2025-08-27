@@ -475,7 +475,6 @@ onMounted(() => {
       class="settings-section"
     >
       <div class="section-content">
-        
         <!-- ==================== TOKEN MANAGEMENT SECTION ==================== -->
         <div class="settings-group mb-6">
           <h3 class="text-subtitle-1 mb-4 font-weight-medium">

@@ -2,7 +2,7 @@
  * Temporary test file to check queries.users.ts functionality
  */
 
-import { userQueries } from '../middleware/queries.users';
+import { userQueries } from '../core/guards/queries.users';
 
 function testQueriesUsersTs() {
   console.log('Testing queries.users.ts');

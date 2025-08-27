@@ -363,7 +363,10 @@ onMounted(async () => {
 <template>
   <div class="pt-3 pl-3">
     <div style="max-width: 500px; padding-left: 24px;">
-      <div class="text-h5" style="margin-bottom: 16px;">
+      <div
+        class="text-h5"
+        style="margin-bottom: 16px;"
+      >
         {{ isRegistrationEnabled ? t('account.selfRegistration.title') : t('account.selfRegistration.titleDisabled') }}
       </div>
       
@@ -374,7 +377,10 @@ onMounted(async () => {
           @submit.prevent="submitForm"
         >
           <!-- Loading indicator for registration settings -->
-          <div v-if="isLoadingRegistrationSettings" class="mb-4">
+          <div
+            v-if="isLoadingRegistrationSettings"
+            class="mb-4"
+          >
             <v-progress-linear
               indeterminate
               color="teal"
@@ -419,8 +425,8 @@ onMounted(async () => {
                 variant="text"
                 size="small"
                 :disabled="!passwordPoliciesReady"
-                @click="togglePasswordVisibility"
                 tabindex="-1"
+                @click="togglePasswordVisibility"
               >
                 <v-icon>
                   {{ showPassword ? 'mdi-eye-off' : 'mdi-eye' }}
@@ -447,7 +453,10 @@ onMounted(async () => {
           />
 
           <!-- Password policies panel -->
-          <div v-if="showPasswordPoliciesPanel" class="mb-3">
+          <div
+            v-if="showPasswordPoliciesPanel"
+            class="mb-3"
+          >
             <PasswordPoliciesPanel />
           </div>
 
@@ -516,7 +525,10 @@ onMounted(async () => {
         </v-form>
 
         <!-- Error messages -->
-        <div v-if="invalidFields.length > 0" class="error-message mt-3">
+        <div
+          v-if="invalidFields.length > 0"
+          class="error-message mt-3"
+        >
           {{ t('account.selfRegistration.errors.validation') }} {{ invalidFields.join(', ') }}
         </div>
       </div>

@@ -28,7 +28,7 @@ interface ActiveServicesState {
 }
 
 // Local state for caching
-let servicesState: ActiveServicesState = {
+const servicesState: ActiveServicesState = {
   services: [],
   loading: false,
   error: null,

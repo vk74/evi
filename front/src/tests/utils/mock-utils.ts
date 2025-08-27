@@ -102,13 +102,13 @@ export function createFormDataMock() {
 /**
  * Создает мок для File
  */
-export function createFileMock(name: string, content: string, type: string = 'text/plain') {
+export function createFileMock(name: string, content: string, type = 'text/plain') {
   return new File([content], name, { type });
 }
 
 /**
  * Создает мок для Blob
  */
-export function createBlobMock(content: string, type: string = 'text/plain') {
+export function createBlobMock(content: string, type = 'text/plain') {
   return new Blob([content], { type });
 } 

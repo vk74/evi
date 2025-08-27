@@ -137,7 +137,19 @@ onMounted(async () => {
     <!-- Left: services table -->
     <div class="flex-grow-1 main-content-area">
       <div class="px-4 pt-4">
-        <v-text-field v-model="searchQuery" density="compact" variant="outlined" clearable clear-icon="mdi-close" color="teal" :label="t('admin.catalog.editor.mapping.search.placeholder')" prepend-inner-icon="mdi-magnify" :loading="isSearching" @keydown.enter="performSearch" @click:clear="() => { searchQuery = ''; performSearch() }" />
+        <v-text-field
+          v-model="searchQuery"
+          density="compact"
+          variant="outlined"
+          clearable
+          clear-icon="mdi-close"
+          color="teal"
+          :label="t('admin.catalog.editor.mapping.search.placeholder')"
+          prepend-inner-icon="mdi-magnify"
+          :loading="isSearching"
+          @keydown.enter="performSearch"
+@click:clear="() => { searchQuery = ''; performSearch() }"
+        />
       </div>
       <v-data-table
         :page="page"
@@ -153,7 +165,12 @@ onMounted(async () => {
         @update:options="updateOptionsAndFetch"
       >
         <template #item.selection="{ item }">
-          <v-checkbox :model-value="selectedServiceIds.includes(item.id)" density="compact" hide-details @update:model-value="(v:boolean|null)=> onToggleService(item.id, !!v)" />
+          <v-checkbox
+            :model-value="selectedServiceIds.includes(item.id)"
+            density="compact"
+            hide-details
+            @update:model-value="(v:boolean|null)=> onToggleService(item.id, !!v)"
+          />
         </template>
         <template #item.name="{ item }">
           <span>{{ item.name }}</span>
@@ -162,10 +179,20 @@ onMounted(async () => {
           <span>{{ item.owner || '—' }}</span>
         </template>
         <template #item.status="{ item }">
-          <v-chip :color="(item.status||'').toString().toLowerCase()==='active' ? 'teal' : 'grey'" size="x-small">{{ item.status || '—' }}</v-chip>
+          <v-chip
+            :color="(item.status||'').toString().toLowerCase()==='active' ? 'teal' : 'grey'"
+            size="x-small"
+          >
+            {{ item.status || '—' }}
+          </v-chip>
         </template>
         <template #item.is_public="{ item }">
-          <v-chip :color="item.is_public ? 'teal' : 'grey'" size="x-small">{{ item.is_public ? t('admin.catalog.editor.mapping.table.status.yes') : t('admin.catalog.editor.mapping.table.status.no') }}</v-chip>
+          <v-chip
+            :color="item.is_public ? 'teal' : 'grey'"
+            size="x-small"
+          >
+            {{ item.is_public ? t('admin.catalog.editor.mapping.table.status.yes') : t('admin.catalog.editor.mapping.table.status.no') }}
+          </v-chip>
         </template>
       </v-data-table>
 
@@ -173,14 +200,56 @@ onMounted(async () => {
       <div class="custom-pagination-container pa-4 d-flex align-center justify-end">
         <div class="d-flex align-center mr-4">
           <span class="text-body-2 mr-2">{{ t('admin.services.editor.mapping.pagination.recordsPerPage') }}</span>
-          <v-select v-model="itemsPerPage" :items="[25,50,100]" density="compact" variant="outlined" hide-details style="width: 100px" @update:model-value="()=>{ page=1; loadServices() }" />
+          <v-select
+            v-model="itemsPerPage"
+            :items="[25,50,100]"
+            density="compact"
+            variant="outlined"
+            hide-details
+            style="width: 100px"
+            @update:model-value="()=>{ page=1; loadServices() }"
+          />
         </div>
-        <div class="text-body-2 mr-4">{{ page }} / {{ Math.max(1, Math.ceil(totalItems/itemsPerPage)) }}</div>
+        <div class="text-body-2 mr-4">
+          {{ page }} / {{ Math.max(1, Math.ceil(totalItems/itemsPerPage)) }}
+        </div>
         <div class="d-flex align-center">
-          <v-btn icon variant="text" size="small" :disabled="page===1" @click="page=1; loadServices()"><v-icon>mdi-chevron-double-left</v-icon></v-btn>
-          <v-btn icon variant="text" size="small" :disabled="page===1" @click="page=Math.max(1,page-1); loadServices()"><v-icon>mdi-chevron-left</v-icon></v-btn>
-          <v-btn icon variant="text" size="small" :disabled="page>=Math.ceil(totalItems/itemsPerPage)" @click="page=Math.min(Math.ceil(totalItems/itemsPerPage), page+1); loadServices()"><v-icon>mdi-chevron-right</v-icon></v-btn>
-          <v-btn icon variant="text" size="small" :disabled="page>=Math.ceil(totalItems/itemsPerPage)" @click="page=Math.ceil(totalItems/itemsPerPage); loadServices()"><v-icon>mdi-chevron-double-right</v-icon></v-btn>
+          <v-btn
+            icon
+            variant="text"
+            size="small"
+            :disabled="page===1"
+            @click="page=1; loadServices()"
+          >
+            <v-icon>mdi-chevron-double-left</v-icon>
+          </v-btn>
+          <v-btn
+            icon
+            variant="text"
+            size="small"
+            :disabled="page===1"
+            @click="page=Math.max(1,page-1); loadServices()"
+          >
+            <v-icon>mdi-chevron-left</v-icon>
+          </v-btn>
+          <v-btn
+            icon
+            variant="text"
+            size="small"
+            :disabled="page>=Math.ceil(totalItems/itemsPerPage)"
+            @click="page=Math.min(Math.ceil(totalItems/itemsPerPage), page+1); loadServices()"
+          >
+            <v-icon>mdi-chevron-right</v-icon>
+          </v-btn>
+          <v-btn
+            icon
+            variant="text"
+            size="small"
+            :disabled="page>=Math.ceil(totalItems/itemsPerPage)"
+            @click="page=Math.ceil(totalItems/itemsPerPage); loadServices()"
+          >
+            <v-icon>mdi-chevron-double-right</v-icon>
+          </v-btn>
         </div>
       </div>
     </div>
@@ -188,10 +257,23 @@ onMounted(async () => {
     <!-- Right: actions only (no ordering, no selected list editor) -->
     <div class="side-bar-container">
       <div class="side-bar-section">
-        <h3 class="text-subtitle-2 px-2 py-2">{{ t('admin.catalog.editor.mapping.actions.title') }}</h3>
+        <h3 class="text-subtitle-2 px-2 py-2">
+          {{ t('admin.catalog.editor.mapping.actions.title') }}
+        </h3>
         <!-- no widgets here by request -->
-        <v-btn block color="teal" variant="outlined" class="mb-2" :disabled="!editingSectionId" :loading="isPublishing" @click="handlePublish">
-          <v-icon icon="mdi-publish" class="mr-2" />
+        <v-btn
+          block
+          color="teal"
+          variant="outlined"
+          class="mb-2"
+          :disabled="!editingSectionId"
+          :loading="isPublishing"
+          @click="handlePublish"
+        >
+          <v-icon
+            icon="mdi-publish"
+            class="mr-2"
+          />
           {{ t('admin.catalog.editor.mapping.actions.publish') }}
         </v-btn>
       </div>

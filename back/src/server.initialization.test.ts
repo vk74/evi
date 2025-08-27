@@ -92,7 +92,7 @@ describe('Server Initialization Sequence', () => {
     initHelpersCache();
 
     // 1. Loading private key
-    const privateKeyPath = './src/keys/private_key.pem';
+    const privateKeyPath = './src/core/keys/private_key.pem';
     const privateKey = fs.readFileSync(privateKeyPath, 'utf8');
     global.privateKey = privateKey;
 
@@ -149,7 +149,7 @@ describe('Server Initialization Sequence', () => {
     const privateKeyIndex = callOrder.indexOf('privateKey');
     
     expect(privateKeyIndex).toBeGreaterThan(helpersCacheIndex);
-    expect(mockFs.readFileSync).toHaveBeenCalledWith('./src/keys/private_key.pem', 'utf8');
+    expect(mockFs.readFileSync).toHaveBeenCalledWith('./src/core/keys/private_key.pem', 'utf8');
   });
 
   test('should initialize event system before settings', async () => {

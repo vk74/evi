@@ -9,9 +9,9 @@
 import express, { Router } from 'express';
 import validateJWT from '../guards/auth.validate.jwt';
 import checkIsUserStatusActive from '../guards/check.is.user.status.active';
-import checkAccountPassword from '../../guards/auth.check.password';
-import checkAccountStatus from '../../guards/auth.check.status';
-import issueToken from '../../middleware/auth.issue.token';
+import checkAccountPassword from '../guards/auth.check.password';
+import checkAccountStatus from '../guards/auth.check.status';
+// import issueToken from '../../middleware/auth.issue.token';
 // Registration service moved to controller
 import getUserProfile from '../../modules/account/service.get.profile';
 import updateUserProfile from '../../modules/account/service.update.profile';

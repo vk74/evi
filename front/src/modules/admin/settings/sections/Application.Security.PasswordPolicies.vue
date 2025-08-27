@@ -422,7 +422,6 @@ onMounted(() => {
       class="settings-section"
     >
       <div class="section-content">
-        
         <!-- ==================== PASSWORD POLICIES SECTION ==================== -->
         <div class="settings-group mb-6">
           <h3 class="text-subtitle-1 mb-4 font-weight-medium">
@@ -470,218 +469,21 @@ onMounted(() => {
             </div>
           </div>
         
-        <div class="mb-4">
-          <div class="d-flex align-center">
-            <v-select
-              v-model="passwordMaxLength"
-              :items="maxPasswordLengthOptions"
-              :label="t('admin.settings.application.security.passwordpolicies.maxlength.label', 'максимальная длина пароля')"
-              variant="outlined"
-              density="comfortable"
-              color="teal-darken-2"
-              style="max-width: 240px;"
-              :disabled="isSettingDisabled('password.max.length') || isPasswordLengthDisabled"
-              :loading="settingLoadingStates['password.max.length']"
-            />
-            <v-tooltip
-              v-if="settingErrorStates['password.max.length']"
-              location="top"
-              max-width="300"
-            >
-              <template #activator="{ props }">
-                <v-icon 
-                  icon="mdi-alert-circle" 
-                  size="small" 
-                  class="ms-2" 
-                  color="error"
-                  v-bind="props"
-                  style="cursor: pointer;"
-                  @click="retrySetting('password.max.length')"
-                />
-              </template>
-              <div class="pa-2">
-                <p class="text-subtitle-2 mb-2">
-                  Ошибка загрузки настройки
-                </p>
-                <p class="text-caption">
-                  Нажмите для повторной попытки
-                </p>
-              </div>
-            </v-tooltip>
-          </div>
-        </div>
-        
-        <div class="d-flex align-center mb-2">
-          <v-switch
-            v-model="requireLowercase"
-            color="teal-darken-2"
-            :label="t('admin.settings.application.security.passwordpolicies.require.lowercase.label')"
-            hide-details
-            :disabled="isSettingDisabled('password.require.lowercase')"
-            :loading="settingLoadingStates['password.require.lowercase']"
-          />
-          <v-tooltip
-            v-if="settingErrorStates['password.require.lowercase']"
-            location="top"
-            max-width="300"
-          >
-            <template #activator="{ props }">
-              <v-icon 
-                icon="mdi-alert-circle" 
-                size="small" 
-                class="ms-2" 
-                color="error"
-                v-bind="props"
-                style="cursor: pointer;"
-                @click="retrySetting('password.require.lowercase')"
-              />
-            </template>
-            <div class="pa-2">
-              <p class="text-subtitle-2 mb-2">
-                Ошибка загрузки настройки
-              </p>
-              <p class="text-caption">
-                Нажмите для повторной попытки
-              </p>
-            </div>
-          </v-tooltip>
-        </div>
-        
-        <div class="d-flex align-center mb-2">
-          <v-switch
-            v-model="requireUppercase"
-            color="teal-darken-2"
-            :label="t('admin.settings.application.security.passwordpolicies.require.uppercase.label')"
-            hide-details
-            :disabled="isSettingDisabled('password.require.uppercase')"
-            :loading="settingLoadingStates['password.require.uppercase']"
-          />
-          <v-tooltip
-            v-if="settingErrorStates['password.require.uppercase']"
-            location="top"
-            max-width="300"
-          >
-            <template #activator="{ props }">
-              <v-icon 
-                icon="mdi-alert-circle" 
-                size="small" 
-                class="ms-2" 
-                color="error"
-                v-bind="props"
-                style="cursor: pointer;"
-                @click="retrySetting('password.require.uppercase')"
-              />
-            </template>
-            <div class="pa-2">
-              <p class="text-subtitle-2 mb-2">
-                Ошибка загрузки настройки
-              </p>
-              <p class="text-caption">
-                Нажмите для повторной попытки
-              </p>
-            </div>
-          </v-tooltip>
-        </div>
-        
-        <div class="d-flex align-center mb-2">
-          <v-switch
-            v-model="requireNumbers"
-            color="teal-darken-2"
-            :label="t('admin.settings.application.security.passwordpolicies.require.numbers.label')"
-            hide-details
-            :disabled="isSettingDisabled('password.require.numbers')"
-            :loading="settingLoadingStates['password.require.numbers']"
-          />
-          <v-tooltip
-            v-if="settingErrorStates['password.require.numbers']"
-            location="top"
-            max-width="300"
-          >
-            <template #activator="{ props }">
-              <v-icon 
-                icon="mdi-alert-circle" 
-                size="small" 
-                class="ms-2" 
-                color="error"
-                v-bind="props"
-                style="cursor: pointer;"
-                @click="retrySetting('password.require.numbers')"
-              />
-            </template>
-            <div class="pa-2">
-              <p class="text-subtitle-2 mb-2">
-                Ошибка загрузки настройки
-              </p>
-              <p class="text-caption">
-                Нажмите для повторной попытки
-              </p>
-            </div>
-          </v-tooltip>
-        </div>
-        
-        <div class="d-flex align-center mb-2">
-          <v-switch
-            v-model="requireSpecialChars"
-            color="teal-darken-2"
-            :label="t('admin.settings.application.security.passwordpolicies.require.specialchars.label')"
-            hide-details
-            :disabled="isSettingDisabled('password.require.special.chars')"
-            :loading="settingLoadingStates['password.require.special.chars']"
-          />
-          <v-tooltip
-            v-if="settingErrorStates['password.require.special.chars']"
-            location="top"
-            max-width="300"
-          >
-            <template #activator="{ props }">
-              <v-icon 
-                icon="mdi-alert-circle" 
-                size="small" 
-                class="ms-2" 
-                color="error"
-                v-bind="props"
-                style="cursor: pointer;"
-                @click="retrySetting('password.require.special.chars')"
-              />
-            </template>
-            <div class="pa-2">
-              <p class="text-subtitle-2 mb-2">
-                Ошибка загрузки настройки
-              </p>
-              <p class="text-caption">
-                Нажмите для повторной попытки
-              </p>
-            </div>
-          </v-tooltip>
-          <v-tooltip
-            location="top"
-            max-width="400"
-          >
-            <template #activator="{ props }">
-              <v-icon 
-                icon="mdi-help-circle-outline" 
-                size="small" 
-                class="ms-2" 
-                color="teal-darken-2"
-                v-bind="props"
-              />
-            </template>
-            <div class="pa-2">
-              <p class="text-subtitle-2 mb-2">
-                {{ t('admin.settings.application.security.passwordpolicies.specialchars.allowed.title') }}
-              </p>
-              <v-text-field
-                :model-value="allowedSpecialChars"
-                readonly
+          <div class="mb-4">
+            <div class="d-flex align-center">
+              <v-select
+                v-model="passwordMaxLength"
+                :items="maxPasswordLengthOptions"
+                :label="t('admin.settings.application.security.passwordpolicies.maxlength.label', 'максимальная длина пароля')"
                 variant="outlined"
-                density="compact"
-                class="mb-0"
-                style="max-width: 320px;"
-                :disabled="isSettingDisabled('password.allowed.special.chars')"
-                :loading="settingLoadingStates['password.allowed.special.chars']"
+                density="comfortable"
+                color="teal-darken-2"
+                style="max-width: 240px;"
+                :disabled="isSettingDisabled('password.max.length') || isPasswordLengthDisabled"
+                :loading="settingLoadingStates['password.max.length']"
               />
               <v-tooltip
-                v-if="settingErrorStates['password.allowed.special.chars']"
+                v-if="settingErrorStates['password.max.length']"
                 location="top"
                 max-width="300"
               >
@@ -693,7 +495,7 @@ onMounted(() => {
                     color="error"
                     v-bind="props"
                     style="cursor: pointer;"
-                    @click="retrySetting('password.allowed.special.chars')"
+                    @click="retrySetting('password.max.length')"
                   />
                 </template>
                 <div class="pa-2">
@@ -706,63 +508,258 @@ onMounted(() => {
                 </div>
               </v-tooltip>
             </div>
-          </v-tooltip>
-        </div>
+          </div>
         
-        <div
-          class="section-content mt-4 mb-4 d-flex align-center"
-          style="gap: 16px;"
-        >
-          <v-select
-            v-model="passwordExpiration"
-            :items="passwordExpirationOptions"
-            item-title="label"
-            item-value="value"
-            :label="t('admin.settings.application.security.passwordpolicies.expiration.label', 'срок действия пароля')"
-            variant="outlined"
-            density="comfortable"
-            color="teal-darken-2"
-            style="max-width: 200px;"
-            disabled
-          />
-          <span class="text-caption text-grey ms-3">в разработке</span>
-        </div>
+          <div class="d-flex align-center mb-2">
+            <v-switch
+              v-model="requireLowercase"
+              color="teal-darken-2"
+              :label="t('admin.settings.application.security.passwordpolicies.require.lowercase.label')"
+              hide-details
+              :disabled="isSettingDisabled('password.require.lowercase')"
+              :loading="settingLoadingStates['password.require.lowercase']"
+            />
+            <v-tooltip
+              v-if="settingErrorStates['password.require.lowercase']"
+              location="top"
+              max-width="300"
+            >
+              <template #activator="{ props }">
+                <v-icon 
+                  icon="mdi-alert-circle" 
+                  size="small" 
+                  class="ms-2" 
+                  color="error"
+                  v-bind="props"
+                  style="cursor: pointer;"
+                  @click="retrySetting('password.require.lowercase')"
+                />
+              </template>
+              <div class="pa-2">
+                <p class="text-subtitle-2 mb-2">
+                  Ошибка загрузки настройки
+                </p>
+                <p class="text-caption">
+                  Нажмите для повторной попытки
+                </p>
+              </div>
+            </v-tooltip>
+          </div>
         
-        <!-- Password policies information panel -->
-        <div class="mt-6">
-          <panel-current-password-policies />
-        </div>
+          <div class="d-flex align-center mb-2">
+            <v-switch
+              v-model="requireUppercase"
+              color="teal-darken-2"
+              :label="t('admin.settings.application.security.passwordpolicies.require.uppercase.label')"
+              hide-details
+              :disabled="isSettingDisabled('password.require.uppercase')"
+              :loading="settingLoadingStates['password.require.uppercase']"
+            />
+            <v-tooltip
+              v-if="settingErrorStates['password.require.uppercase']"
+              location="top"
+              max-width="300"
+            >
+              <template #activator="{ props }">
+                <v-icon 
+                  icon="mdi-alert-circle" 
+                  size="small" 
+                  class="ms-2" 
+                  color="error"
+                  v-bind="props"
+                  style="cursor: pointer;"
+                  @click="retrySetting('password.require.uppercase')"
+                />
+              </template>
+              <div class="pa-2">
+                <p class="text-subtitle-2 mb-2">
+                  Ошибка загрузки настройки
+                </p>
+                <p class="text-caption">
+                  Нажмите для повторной попытки
+                </p>
+              </div>
+            </v-tooltip>
+          </div>
         
-        <!-- Кнопка сброса настроек внизу -->
-        <div class="mt-6 d-flex justify-start">
-          <v-tooltip
-            location="top"
-            max-width="300"
+          <div class="d-flex align-center mb-2">
+            <v-switch
+              v-model="requireNumbers"
+              color="teal-darken-2"
+              :label="t('admin.settings.application.security.passwordpolicies.require.numbers.label')"
+              hide-details
+              :disabled="isSettingDisabled('password.require.numbers')"
+              :loading="settingLoadingStates['password.require.numbers']"
+            />
+            <v-tooltip
+              v-if="settingErrorStates['password.require.numbers']"
+              location="top"
+              max-width="300"
+            >
+              <template #activator="{ props }">
+                <v-icon 
+                  icon="mdi-alert-circle" 
+                  size="small" 
+                  class="ms-2" 
+                  color="error"
+                  v-bind="props"
+                  style="cursor: pointer;"
+                  @click="retrySetting('password.require.numbers')"
+                />
+              </template>
+              <div class="pa-2">
+                <p class="text-subtitle-2 mb-2">
+                  Ошибка загрузки настройки
+                </p>
+                <p class="text-caption">
+                  Нажмите для повторной попытки
+                </p>
+              </div>
+            </v-tooltip>
+          </div>
+        
+          <div class="d-flex align-center mb-2">
+            <v-switch
+              v-model="requireSpecialChars"
+              color="teal-darken-2"
+              :label="t('admin.settings.application.security.passwordpolicies.require.specialchars.label')"
+              hide-details
+              :disabled="isSettingDisabled('password.require.special.chars')"
+              :loading="settingLoadingStates['password.require.special.chars']"
+            />
+            <v-tooltip
+              v-if="settingErrorStates['password.require.special.chars']"
+              location="top"
+              max-width="300"
+            >
+              <template #activator="{ props }">
+                <v-icon 
+                  icon="mdi-alert-circle" 
+                  size="small" 
+                  class="ms-2" 
+                  color="error"
+                  v-bind="props"
+                  style="cursor: pointer;"
+                  @click="retrySetting('password.require.special.chars')"
+                />
+              </template>
+              <div class="pa-2">
+                <p class="text-subtitle-2 mb-2">
+                  Ошибка загрузки настройки
+                </p>
+                <p class="text-caption">
+                  Нажмите для повторной попытки
+                </p>
+              </div>
+            </v-tooltip>
+            <v-tooltip
+              location="top"
+              max-width="400"
+            >
+              <template #activator="{ props }">
+                <v-icon 
+                  icon="mdi-help-circle-outline" 
+                  size="small" 
+                  class="ms-2" 
+                  color="teal-darken-2"
+                  v-bind="props"
+                />
+              </template>
+              <div class="pa-2">
+                <p class="text-subtitle-2 mb-2">
+                  {{ t('admin.settings.application.security.passwordpolicies.specialchars.allowed.title') }}
+                </p>
+                <v-text-field
+                  :model-value="allowedSpecialChars"
+                  readonly
+                  variant="outlined"
+                  density="compact"
+                  class="mb-0"
+                  style="max-width: 320px;"
+                  :disabled="isSettingDisabled('password.allowed.special.chars')"
+                  :loading="settingLoadingStates['password.allowed.special.chars']"
+                />
+                <v-tooltip
+                  v-if="settingErrorStates['password.allowed.special.chars']"
+                  location="top"
+                  max-width="300"
+                >
+                  <template #activator="{ props }">
+                    <v-icon 
+                      icon="mdi-alert-circle" 
+                      size="small" 
+                      class="ms-2" 
+                      color="error"
+                      v-bind="props"
+                      style="cursor: pointer;"
+                      @click="retrySetting('password.allowed.special.chars')"
+                    />
+                  </template>
+                  <div class="pa-2">
+                    <p class="text-subtitle-2 mb-2">
+                      Ошибка загрузки настройки
+                    </p>
+                    <p class="text-caption">
+                      Нажмите для повторной попытки
+                    </p>
+                  </div>
+                </v-tooltip>
+              </div>
+            </v-tooltip>
+          </div>
+        
+          <div
+            class="section-content mt-4 mb-4 d-flex align-center"
+            style="gap: 16px;"
           >
-            <template #activator="{ props }">
-              <v-btn
-                color="teal"
-                variant="outlined"
-                size="small"
-                :loading="isResetting"
-                :disabled="isResetting || isFirstLoad"
-                v-bind="props"
-                @click="resetToDefaults"
-              >
-                <v-icon start>
-                  mdi-refresh
-                </v-icon>
-                {{ t('admin.settings.application.security.passwordpolicies.reset.button') }}
-              </v-btn>
-            </template>
-            <div class="pa-2">
-              {{ t('admin.settings.application.security.passwordpolicies.reset.tooltip') }}
-            </div>
-          </v-tooltip>
-        </div>
-        </div>
+            <v-select
+              v-model="passwordExpiration"
+              :items="passwordExpirationOptions"
+              item-title="label"
+              item-value="value"
+              :label="t('admin.settings.application.security.passwordpolicies.expiration.label', 'срок действия пароля')"
+              variant="outlined"
+              density="comfortable"
+              color="teal-darken-2"
+              style="max-width: 200px;"
+              disabled
+            />
+            <span class="text-caption text-grey ms-3">в разработке</span>
+          </div>
         
-
+          <!-- Password policies information panel -->
+          <div class="mt-6">
+            <panel-current-password-policies />
+          </div>
+        
+          <!-- Кнопка сброса настроек внизу -->
+          <div class="mt-6 d-flex justify-start">
+            <v-tooltip
+              location="top"
+              max-width="300"
+            >
+              <template #activator="{ props }">
+                <v-btn
+                  color="teal"
+                  variant="outlined"
+                  size="small"
+                  :loading="isResetting"
+                  :disabled="isResetting || isFirstLoad"
+                  v-bind="props"
+                  @click="resetToDefaults"
+                >
+                  <v-icon start>
+                    mdi-refresh
+                  </v-icon>
+                  {{ t('admin.settings.application.security.passwordpolicies.reset.button') }}
+                </v-btn>
+              </template>
+              <div class="pa-2">
+                {{ t('admin.settings.application.security.passwordpolicies.reset.tooltip') }}
+              </div>
+            </v-tooltip>
+          </div>
+        </div>
       </div>
     </div>
   </div>

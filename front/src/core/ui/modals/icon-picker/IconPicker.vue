@@ -183,9 +183,9 @@ watch(() => props.selectedSize, (newValue) => {
 <template>
   <v-dialog
     :model-value="modelValue"
-    @update:model-value="(value) => emit('update:modelValue', value)"
     max-width="800"
     persistent
+    @update:model-value="(value) => emit('update:modelValue', value)"
   >
     <v-card>
       <v-card-title class="d-flex align-center justify-space-between pa-4">
@@ -200,7 +200,10 @@ watch(() => props.selectedSize, (newValue) => {
       <v-card-text class="pa-4">
         <!-- Library, style and size controls -->
         <v-row class="mb-3">
-          <v-col cols="12" md="4">
+          <v-col
+            cols="12"
+            md="4"
+          >
             <v-select
               v-model="selectedIconLibrary"
               :items="iconLibraries"
@@ -213,7 +216,10 @@ watch(() => props.selectedSize, (newValue) => {
               @update:model-value="handleLibraryChange"
             />
           </v-col>
-          <v-col cols="12" md="4">
+          <v-col
+            cols="12"
+            md="4"
+          >
             <v-select
               v-model="selectedIconStyle"
               :items="iconStyles"
@@ -226,7 +232,10 @@ watch(() => props.selectedSize, (newValue) => {
               @update:model-value="handleStyleChange"
             />
           </v-col>
-          <v-col cols="12" md="4">
+          <v-col
+            cols="12"
+            md="4"
+          >
             <v-select
               v-model="selectedIconSize"
               :items="iconSizes"
@@ -256,7 +265,10 @@ watch(() => props.selectedSize, (newValue) => {
         </div>
 
         <!-- Loading state -->
-        <div v-if="isLoadingIcons" class="d-flex justify-center align-center pa-8">
+        <div
+          v-if="isLoadingIcons"
+          class="d-flex justify-center align-center pa-8"
+        >
           <v-progress-circular
             indeterminate
             color="teal"
@@ -266,13 +278,16 @@ watch(() => props.selectedSize, (newValue) => {
         </div>
 
         <!-- Icons grid -->
-        <div v-else class="icons-grid">
+        <div
+          v-else
+          class="icons-grid"
+        >
           <div
             v-for="icon in displayedIcons"
             :key="icon.name"
             class="icon-item"
-            @click="selectIcon(icon.name)"
             :title="icon.displayName"
+            @click="selectIcon(icon.name)"
           >
             <component 
               :is="icon.component"
@@ -285,10 +300,20 @@ watch(() => props.selectedSize, (newValue) => {
         </div>
 
         <!-- No results -->
-        <div v-if="!isLoadingIcons && filteredIcons.length === 0" class="d-flex justify-center align-center pa-8">
+        <div
+          v-if="!isLoadingIcons && filteredIcons.length === 0"
+          class="d-flex justify-center align-center pa-8"
+        >
           <div class="text-center">
-            <v-icon size="48" color="grey">mdi-magnify</v-icon>
-            <p class="text-body-1 mt-2">{{ t('itemSelector.items.notFound').toLowerCase() }}</p>
+            <v-icon
+              size="48"
+              color="grey"
+            >
+              mdi-magnify
+            </v-icon>
+            <p class="text-body-1 mt-2">
+              {{ t('itemSelector.items.notFound').toLowerCase() }}
+            </p>
           </div>
         </div>
       </v-card-text>

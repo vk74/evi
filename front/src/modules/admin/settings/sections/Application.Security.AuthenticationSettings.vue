@@ -103,7 +103,6 @@ onMounted(() => {
       class="settings-section"
     >
       <div class="section-content">
-        
         <!-- ==================== AUTHENTICATION POLICIES SECTION ==================== -->
         <div class="settings-group">
           <h3 class="text-subtitle-1 mb-4 font-weight-medium">

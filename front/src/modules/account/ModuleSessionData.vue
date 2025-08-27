@@ -45,90 +45,90 @@ onMounted(() => {
     </div>
     
     <div class="session-data-container">
-                <!-- Username -->
-          <div class="data-row">
-            <div class="data-label">
-              {{ t('account.sessionData.username') }}:
-            </div>
-            <div class="data-value">
-              {{ sessionData.username }}
-            </div>
-          </div>
+      <!-- Username -->
+      <div class="data-row">
+        <div class="data-label">
+          {{ t('account.sessionData.username') }}:
+        </div>
+        <div class="data-value">
+          {{ sessionData.username }}
+        </div>
+      </div>
 
-          <!-- JWT Token -->
-          <div class="data-row">
-            <div class="data-label">
-              {{ t('account.sessionData.jwt') }}:
-            </div>
-            <div class="data-value jwt-token">
-              {{ sessionData.jwt }}
-            </div>
-          </div>
+      <!-- JWT Token -->
+      <div class="data-row">
+        <div class="data-label">
+          {{ t('account.sessionData.jwt') }}:
+        </div>
+        <div class="data-value jwt-token">
+          {{ sessionData.jwt }}
+        </div>
+      </div>
 
-          <!-- Is Logged In -->
-          <div class="data-row">
-            <div class="data-label">
-              {{ t('account.sessionData.isLoggedIn') }}:
-            </div>
-            <div class="data-value">
-              <v-chip 
-                :color="sessionData.isLoggedIn ? 'teal' : 'grey'" 
-                size="x-small"
-              >
-                {{ sessionData.isLoggedIn ? t('account.sessionData.yes') : t('account.sessionData.no') }}
-              </v-chip>
-            </div>
-          </div>
+      <!-- Is Logged In -->
+      <div class="data-row">
+        <div class="data-label">
+          {{ t('account.sessionData.isLoggedIn') }}:
+        </div>
+        <div class="data-value">
+          <v-chip 
+            :color="sessionData.isLoggedIn ? 'teal' : 'grey'" 
+            size="x-small"
+          >
+            {{ sessionData.isLoggedIn ? t('account.sessionData.yes') : t('account.sessionData.no') }}
+          </v-chip>
+        </div>
+      </div>
 
-          <!-- User ID -->
-          <div class="data-row">
-            <div class="data-label">
-              {{ t('account.sessionData.userID') }}:
-            </div>
-            <div class="data-value uuid-value">
-              {{ sessionData.userID }}
-            </div>
-          </div>
+      <!-- User ID -->
+      <div class="data-row">
+        <div class="data-label">
+          {{ t('account.sessionData.userID') }}:
+        </div>
+        <div class="data-value uuid-value">
+          {{ sessionData.userID }}
+        </div>
+      </div>
 
-          <!-- Issued At -->
-          <div class="data-row">
-            <div class="data-label">
-              {{ t('account.sessionData.issuedAt') }}:
-            </div>
-            <div class="data-value">
-              {{ sessionData.issuedAt }}
-            </div>
-          </div>
+      <!-- Issued At -->
+      <div class="data-row">
+        <div class="data-label">
+          {{ t('account.sessionData.issuedAt') }}:
+        </div>
+        <div class="data-value">
+          {{ sessionData.issuedAt }}
+        </div>
+      </div>
 
-          <!-- Issuer -->
-          <div class="data-row">
-            <div class="data-label">
-              {{ t('account.sessionData.issuer') }}:
-            </div>
-            <div class="data-value">
-              {{ sessionData.issuer }}
-            </div>
-          </div>
+      <!-- Issuer -->
+      <div class="data-row">
+        <div class="data-label">
+          {{ t('account.sessionData.issuer') }}:
+        </div>
+        <div class="data-value">
+          {{ sessionData.issuer }}
+        </div>
+      </div>
 
-          <!-- Expires At -->
-          <div class="data-row">
-            <div class="data-label">
-              {{ t('account.sessionData.expiresAt') }}:
-            </div>
-            <div class="data-value">
-              {{ sessionData.expiresAt }}
-            </div>
-          </div>
+      <!-- Expires At -->
+      <div class="data-row">
+        <div class="data-label">
+          {{ t('account.sessionData.expiresAt') }}:
+        </div>
+        <div class="data-value">
+          {{ sessionData.expiresAt }}
+        </div>
+      </div>
 
-          <!-- Time Until Expiry -->
-          <div class="data-row">
-            <div class="data-label">
-              {{ t('account.sessionData.timeUntilExpiry') }}:
-            </div>
-            <div class="data-value">
-              {{ sessionData.timeUntilExpiry }} {{ t('account.sessionData.seconds') }}
-            </div>
-          </div>
+      <!-- Time Until Expiry -->
+      <div class="data-row">
+        <div class="data-label">
+          {{ t('account.sessionData.timeUntilExpiry') }}:
+        </div>
+        <div class="data-value">
+          {{ sessionData.timeUntilExpiry }} {{ t('account.sessionData.seconds') }}
+        </div>
+      </div>
     </div>
   </div>
 </template>

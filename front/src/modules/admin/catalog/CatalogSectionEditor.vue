@@ -55,7 +55,9 @@ const switchSection = (section: 'information' | 'service mappings') => {
 
       <v-spacer />
 
-      <div class="module-title">{{ pageTitle }}</div>
+      <div class="module-title">
+        {{ pageTitle }}
+      </div>
     </div>
 
     <!-- Content area -->

@@ -15,7 +15,7 @@
  */
 
 import { Response, NextFunction } from 'express';
-import { AuthenticatedRequest, GuardFunction } from '../../guards/types.guards';
+import { AuthenticatedRequest, GuardFunction } from './types.guards';
 import { isUserActive } from '../helpers/is.user.active';
 import { createAndPublishEvent } from '../eventBus/fabric.events';
 import { CHECK_USER_STATUS_ACTIVE_EVENTS } from './events.guards';

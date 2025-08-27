@@ -331,8 +331,8 @@ onMounted(() => {
           >
             <template #prepend>
               <component
-                v-if="section.hasChildren"
                 :is="expandedSections.includes(section.id) ? 'PhCaretDown' : 'PhCaretRight'"
+                v-if="section.hasChildren"
                 :size="16"
                 weight="regular"
                 class="me-2"
@@ -375,8 +375,8 @@ onMounted(() => {
             <template #prepend>
               <div class="section-indicator">
                 <component
-                  v-if="section.hasChildren"
                   :is="expandedSections.includes(section.id) ? 'PhCaretDown' : 'PhCaretRight'"
+                  v-if="section.hasChildren"
                   :size="16"
                   weight="regular"
                   class="chevron-icon"

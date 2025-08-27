@@ -605,15 +605,18 @@ onMounted(() => {
                 </v-row>
 
                 <v-row>
-                  <v-col cols="12" md="1">
+                  <v-col
+                    cols="12"
+                    md="1"
+                  >
                     <div 
                       class="icon-placeholder"
-                      @click="openIconPicker"
                       style="cursor: pointer;"
+                      @click="openIconPicker"
                     >
                       <component 
-                        v-if="selectedIconComponent"
                         :is="selectedIconComponent"
+                        v-if="selectedIconComponent"
                         :size="24"
                         color="rgb(20, 184, 166)"
                         class="placeholder-icon"
@@ -631,7 +634,10 @@ onMounted(() => {
                       </div>
                     </div>
                   </v-col>
-                  <v-col cols="12" md="11">
+                  <v-col
+                    cols="12"
+                    md="11"
+                  >
                     <v-text-field
                       v-model="formData.name"
                       :label="t('admin.services.editor.information.name.label')"
@@ -705,8 +711,8 @@ onMounted(() => {
                         readonly
                         required
                         append-inner-icon="mdi-account-search"
-                        @click:append-inner="showOwnerSelector = true"
                         color="teal"
+                        @click:append-inner="showOwnerSelector = true"
                       />
                     </div>
                   </v-col>
@@ -720,8 +726,8 @@ onMounted(() => {
                         :label="t('admin.services.editor.owners.backupOwner.label')"
                         readonly
                         append-inner-icon="mdi-account-search"
-                        @click:append-inner="showBackupOwnerSelector = true"
                         color="teal"
+                        @click:append-inner="showBackupOwnerSelector = true"
                       />
                     </div>
                   </v-col>
@@ -738,8 +744,8 @@ onMounted(() => {
                         :label="t('admin.services.editor.owners.technicalOwner.label')"
                         readonly
                         append-inner-icon="mdi-account-search"
-                        @click:append-inner="showTechnicalOwnerSelector = true"
                         color="teal"
+                        @click:append-inner="showTechnicalOwnerSelector = true"
                       />
                     </div>
                   </v-col>
@@ -753,8 +759,8 @@ onMounted(() => {
                         :label="t('admin.services.editor.owners.backupTechnicalOwner.label')"
                         readonly
                         append-inner-icon="mdi-account-search"
-                        @click:append-inner="showBackupTechnicalOwnerSelector = true"
                         color="teal"
+                        @click:append-inner="showBackupTechnicalOwnerSelector = true"
                       />
                     </div>
                   </v-col>
@@ -771,8 +777,8 @@ onMounted(() => {
                         :label="t('admin.services.editor.owners.dispatcher.label')"
                         readonly
                         append-inner-icon="mdi-account-search"
-                        @click:append-inner="showDispatcherSelector = true"
                         color="teal"
+                        @click:append-inner="showDispatcherSelector = true"
                       />
                     </div>
                   </v-col>
@@ -799,8 +805,8 @@ onMounted(() => {
                         :label="t('admin.services.editor.support.tier1.label')"
                         readonly
                         append-inner-icon="mdi-account-search"
-                        @click:append-inner="showSupportTier1Selector = true"
                         color="teal"
+                        @click:append-inner="showSupportTier1Selector = true"
                       />
                     </div>
                   </v-col>
@@ -814,8 +820,8 @@ onMounted(() => {
                         :label="t('admin.services.editor.support.tier2.label')"
                         readonly
                         append-inner-icon="mdi-account-search"
-                        @click:append-inner="showSupportTier2Selector = true"
                         color="teal"
+                        @click:append-inner="showSupportTier2Selector = true"
                       />
                     </div>
                   </v-col>
@@ -829,8 +835,8 @@ onMounted(() => {
                         :label="t('admin.services.editor.support.tier3.label')"
                         readonly
                         append-inner-icon="mdi-account-search"
-                        @click:append-inner="showSupportTier3Selector = true"
                         color="teal"
+                        @click:append-inner="showSupportTier3Selector = true"
                       />
                     </div>
                   </v-col>
@@ -963,8 +969,8 @@ onMounted(() => {
                           color="teal"
                           size="small"
                           prepend-icon="mdi-account-search"
-                          @click="showAccessAllowedGroupsSelector = true"
                           class="ma-1"
+                          @click="showAccessAllowedGroupsSelector = true"
                         >
                           {{ t('admin.services.editor.access.addGroups') }}
                         </v-btn>
@@ -974,8 +980,8 @@ onMounted(() => {
                           color="teal"
                           size="small"
                           prepend-icon="mdi-plus"
-                          @click="showAccessAllowedGroupsSelector = true"
                           class="ma-1"
+                          @click="showAccessAllowedGroupsSelector = true"
                         >
                           {{ t('admin.services.editor.access.addMore') }}
                         </v-btn>
@@ -1009,8 +1015,8 @@ onMounted(() => {
                           color="red"
                           size="small"
                           prepend-icon="mdi-account-search"
-                          @click="showAccessDeniedGroupsSelector = true"
                           class="ma-1"
+                          @click="showAccessDeniedGroupsSelector = true"
                         >
                           {{ t('admin.services.editor.access.addGroups') }}
                         </v-btn>
@@ -1020,8 +1026,8 @@ onMounted(() => {
                           color="red"
                           size="small"
                           prepend-icon="mdi-plus"
-                          @click="showAccessDeniedGroupsSelector = true"
                           class="ma-1"
+                          @click="showAccessDeniedGroupsSelector = true"
                         >
                           {{ t('admin.services.editor.access.addMore') }}
                         </v-btn>
@@ -1055,8 +1061,8 @@ onMounted(() => {
                           color="red"
                           size="small"
                           prepend-icon="mdi-account-search"
-                          @click="showAccessDeniedUsersSelector = true"
                           class="ma-1"
+                          @click="showAccessDeniedUsersSelector = true"
                         >
                           {{ t('admin.services.editor.access.addUsers') }}
                         </v-btn>
@@ -1066,8 +1072,8 @@ onMounted(() => {
                           color="red"
                           size="small"
                           prepend-icon="mdi-plus"
-                          @click="showAccessDeniedUsersSelector = true"
                           class="ma-1"
+                          @click="showAccessDeniedUsersSelector = true"
                         >
                           {{ t('admin.services.editor.access.addMore') }}
                         </v-btn>
@@ -1097,8 +1103,8 @@ onMounted(() => {
             variant="outlined"
             color="teal"
             prepend-icon="mdi-image-outline"
-            @click="openIconPicker"
             class="select-icon-btn-sidebar"
+            @click="openIconPicker"
           >
             {{ t('admin.services.editor.information.icon.select') }}
           </v-btn>

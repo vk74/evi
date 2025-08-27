@@ -209,8 +209,8 @@ onMounted(async () => {
           variant="text"
           color="primary"
           :loading="isLoadingPasswordPolicies"
-          @click="refreshPasswordPolicies"
           :title="t('panels.passwordPolicies.refresh')"
+          @click="refreshPasswordPolicies"
         />
       </div>
       <p class="text-h6 font-weight-bold text-primary mb-2">

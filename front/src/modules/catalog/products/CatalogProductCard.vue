@@ -29,7 +29,9 @@ const props = defineProps<Props>();
         size="large"
       />
       <div class="flex-grow-1">
-        <div class="text-h6">{{ product.name }}</div>
+        <div class="text-h6">
+          {{ product.name }}
+        </div>
         <div class="text-caption text-grey">
           {{ product.category }}
           <span v-if="product.subcategory"> / {{ product.subcategory }}</span>

@@ -95,7 +95,10 @@ const emit = defineEmits<{
 <template>
   <div class="pt-3 pl-3"> 
     <div style="max-width: 500px; padding-left: 24px;">
-      <div class="text-h5" style="margin-bottom: 16px;">
+      <div
+        class="text-h5"
+        style="margin-bottom: 16px;"
+      >
         {{ t('login.title') }}
       </div>
       <div>

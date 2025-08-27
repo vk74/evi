@@ -4,7 +4,8 @@
  * Makes API calls to backend self change password endpoint.
  */
 
-import axios from 'axios';
+import { api } from '@/core/api/service.axios';
+import { AxiosError } from 'axios';
 import { SelfChangePasswordRequest, ChangePasswordResponse } from './types.change.password';
 import { generateDeviceFingerprint } from '@/core/auth/helper.generate.device.fingerprint';
 
@@ -32,27 +33,38 @@ export async function changePassword(data: SelfChangePasswordRequest): Promise<C
     
     console.log('[Self Change Password Service] Sending password change request with device fingerprint');
     
-    const response = await axios.post<ChangePasswordResponse>(
+    const response = await api.post<ChangePasswordResponse>(
       '/api/core/users/self-change-password',
       requestData
     );
     
-    console.log('[Self Change Password Service] Password change successful');
+    // Log the actual response
+    if (response.data.success) {
+      console.log('[Self Change Password Service] Password change successful:', response.data.message);
+    } else {
+      console.error('[Self Change Password Service] Password change failed:', response.data.message);
+    }
+    
     return response.data;
   } catch (error) {
     console.error('[Self Change Password Service] Error changing password:', error);
     
     // Handle axios error responses
-    if (axios.isAxiosError(error) && error.response) {
-      return error.response.data as ChangePasswordResponse;
+    if (error instanceof AxiosError && error.response) {
+      const errorResponse = error.response.data as ChangePasswordResponse;
+      console.error('[Self Change Password Service] Server error response:', errorResponse);
+      return errorResponse;
     }
     
     // Handle other errors
-    return {
+    const errorResponse: ChangePasswordResponse = {
       success: false,
       message: 'Failed to change password',
       error: error instanceof Error ? error.message : 'Unknown error'
     };
+    
+    console.error('[Self Change Password Service] Generic error response:', errorResponse);
+    return errorResponse;
   }
 }
 

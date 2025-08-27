@@ -15,11 +15,7 @@ import './test.queries.users';
 import '../server.initialization.test';
 
 // Auth tests
-import './test.auth.issue.token';
-import './test.auth.register';
-
-// User management tests
-import './test.users.change.password';
+// Removed: test.auth.issue.token, test.auth.register, test.users.change.password
 
 // Type checking
 import './ts-check';

@@ -23,7 +23,7 @@ import {
 const CATALOG_CACHE_TTL = 5 * 60 * 1000;
 
 // Local state for caching
-let catalogState: CatalogSectionsState = {
+const catalogState: CatalogSectionsState = {
   sections: [],
   loading: false,
   error: null,

@@ -398,7 +398,10 @@ const handleItemsPerPageChange = async (newItemsPerPage: ItemsPerPageOption) => 
       <!-- Main content (left part) -->
       <div class="flex-grow-1 main-content-area">
         <!-- Loading State -->
-        <DataLoading v-if="isLoading" :loading="isLoading" />
+        <DataLoading
+          v-if="isLoading"
+          :loading="isLoading"
+        />
         
         <!-- Search row -->
         <div class="px-4 pt-4">
@@ -446,14 +449,20 @@ const handleItemsPerPageChange = async (newItemsPerPage: ItemsPerPageOption) => 
           <template #[`item.name`]="{ item }">
             <div class="d-flex align-center">
               <component 
-                v-if="item.icon_name"
                 :is="getPhosphorIcon(item.icon_name)"
+                v-if="item.icon_name"
                 size="16"
                 weight="regular"
                 color="rgb(20, 184, 166)"
                 class="mr-2"
               />
-              <v-icon v-else icon="mdi-folder" class="mr-2" size="small" color="teal" />
+              <v-icon
+                v-else
+                icon="mdi-folder"
+                class="mr-2"
+                size="small"
+                color="teal"
+              />
               <span>{{ item.name }}</span>
             </div>
           </template>
@@ -498,8 +507,6 @@ const handleItemsPerPageChange = async (newItemsPerPage: ItemsPerPageOption) => 
               {{ item.is_public ? t('admin.catalog.sections.table.status.yes') : t('admin.catalog.sections.table.status.no') }}
             </v-chip>
           </template>
-
-
         </v-data-table>
 
         <!-- Custom paginator -->

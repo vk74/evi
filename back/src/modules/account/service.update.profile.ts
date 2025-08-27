@@ -10,7 +10,7 @@
 import { Request, Response } from 'express';
 import { Pool, QueryResult } from 'pg';
 import { pool as pgPool } from '../../core/db/maindb';
-import { userQueries } from '../../middleware/queries.users';
+import { userQueries } from '../../core/guards/queries.users';
 
 // Type assertion for pool
 const pool = pgPool as Pool;

@@ -8,8 +8,75 @@ import bcrypt from 'bcrypt';
 import { pool } from '../../db/maindb';
 import { passwordChangeQueries } from './queries.change.password';
 import { SelfChangePasswordRequest, ChangePasswordResponse } from './types.change.password';
-import { REGEX, VALIDATION } from '../../validation/rules.common.fields';
+import { getSetting } from '../../../modules/admin/settings/cache.settings';
 import { cleanupUserTokens } from './service.token.cleanup';
+
+/**
+ * Password validation using dynamic settings from cache
+ * @param {string} password - Password to validate
+ * @param {string} username - Username for logging context
+ * @returns {Promise<void>} Throws error if validation fails
+ */
+async function validatePassword(password: string, username: string): Promise<void> {
+  console.log(`[Self Change Password Service] Starting password policy validation for user: ${username}`);
+
+  // Get password policy settings from cache
+  const minLengthSetting = getSetting('Application.Security.PasswordPolicies', 'password.min.length');
+  const maxLengthSetting = getSetting('Application.Security.PasswordPolicies', 'password.max.length');
+  const requireUppercaseSetting = getSetting('Application.Security.PasswordPolicies', 'password.require.uppercase');
+  const requireLowercaseSetting = getSetting('Application.Security.PasswordPolicies', 'password.require.lowercase');
+  const requireNumbersSetting = getSetting('Application.Security.PasswordPolicies', 'password.require.numbers');
+  const requireSpecialCharsSetting = getSetting('Application.Security.PasswordPolicies', 'password.require.special.chars');
+  const allowedSpecialCharsSetting = getSetting('Application.Security.PasswordPolicies', 'password.allowed.special.chars');
+
+  // Check if all required settings are found
+  if (!minLengthSetting || !maxLengthSetting || !requireUppercaseSetting || 
+      !requireLowercaseSetting || !requireNumbersSetting || !requireSpecialCharsSetting || !allowedSpecialCharsSetting) {
+    console.log(`[Self Change Password Service] Failed: Password policy settings not found in cache for user: ${username}`);
+    throw new Error('Password policy settings not found. Please contact the system administrator.');
+  }
+
+  const policyViolations: string[] = [];
+
+  // Parse settings values
+  const minLength = Number(minLengthSetting.value);
+  const maxLength = Number(maxLengthSetting.value);
+  const requireUppercase = Boolean(requireUppercaseSetting.value);
+  const requireLowercase = Boolean(requireLowercaseSetting.value);
+  const requireNumbers = Boolean(requireNumbersSetting.value);
+  const requireSpecialChars = Boolean(requireSpecialCharsSetting.value);
+  const allowedSpecialChars = allowedSpecialCharsSetting.value || '!@#$%^&*()_+-=[]{}|;:,.<>?';
+
+  // Checks
+  if (password.length < minLength) {
+    policyViolations.push(`Password must be at least ${minLength} characters long`);
+  }
+  if (password.length > maxLength) {
+    policyViolations.push(`Password must be no more than ${maxLength} characters long`);
+  }
+  if (requireUppercase && !/[A-Z]/.test(password)) {
+    policyViolations.push('Password must contain at least one uppercase letter');
+  }
+  if (requireLowercase && !/[a-z]/.test(password)) {
+    policyViolations.push('Password must contain at least one lowercase letter');
+  }
+  if (requireNumbers && !/\d/.test(password)) {
+    policyViolations.push('Password must contain at least one digit');
+  }
+  if (requireSpecialChars) {
+    const specialCharRegex = new RegExp(`[${allowedSpecialChars.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}]`);
+    if (!specialCharRegex.test(password)) {
+      policyViolations.push('Password must contain at least one special character');
+    }
+  }
+
+  if (policyViolations.length > 0) {
+    console.log(`[Self Change Password Service] Failed: Password policy validation failed for user: ${username}. Violations: ${policyViolations.join(', ')}`);
+    throw new Error('Password does not meet account security policies');
+  }
+
+  console.log(`[Self Change Password Service] Password policy validation passed for user: ${username}`);
+}
 
 /**
  * Change user's own password
@@ -31,40 +98,14 @@ export async function changePassword(data: SelfChangePasswordRequest): Promise<C
     };
   }
 
-  // Validate new password length
-  if (newPassword.length < VALIDATION.PASSWORD.MIN_LENGTH || 
-      newPassword.length > VALIDATION.PASSWORD.MAX_LENGTH) {
-    console.log('[Self Change Password Service] Failed: Invalid password length');
+  // Validate new password using dynamic settings from cache
+  try {
+    await validatePassword(newPassword, username);
+  } catch (error) {
+    console.log(`[Self Change Password Service] Failed: Password validation error for user: ${username}`);
     return {
       success: false,
-      message: VALIDATION.PASSWORD.MESSAGES.MIN_LENGTH
-    };
-  }
-
-  // Check password format
-  if (!REGEX.PASSWORD.test(newPassword)) {
-    console.log('[Self Change Password Service] Failed: Invalid password format');
-    return {
-      success: false,
-      message: VALIDATION.PASSWORD.MESSAGES.INVALID_CHARS
-    };
-  }
-
-  // Check password contains at least one letter
-  if (!REGEX.PASSWORD_CONTAINS_LETTER.test(newPassword)) {
-    console.log('[Self Change Password Service] Failed: Password missing letter');
-    return {
-      success: false,
-      message: VALIDATION.PASSWORD.MESSAGES.NO_LETTER
-    };
-  }
-
-  // Check password contains at least one number
-  if (!REGEX.PASSWORD_CONTAINS_NUMBER.test(newPassword)) {
-    console.log('[Self Change Password Service] Failed: Password missing number');
-    return {
-      success: false,
-      message: VALIDATION.PASSWORD.MESSAGES.NO_NUMBER
+      message: error instanceof Error ? error.message : 'Password validation failed'
     };
   }
 

@@ -9,11 +9,11 @@
 
 import bcrypt from 'bcrypt';
 import { Response, NextFunction } from 'express';
-import { pool } from '../core/db/maindb';
-import { userQueries } from '../middleware/queries.users';
+import { pool } from '../db/maindb';
+import { userQueries } from './queries.users';
 import { AuthenticatedRequest, GuardFunction } from './types.guards';
-import { createAndPublishEvent } from '../core/eventBus/fabric.events';
-import { AUTH_PASSWORD_CHECK_EVENTS } from '../core/auth/events.auth';
+import { createAndPublishEvent } from '../eventBus/fabric.events';
+import { AUTH_PASSWORD_CHECK_EVENTS } from '../auth/events.auth';
 
 /**
  * Middleware to validate user credentials

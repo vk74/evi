@@ -164,7 +164,10 @@ onMounted(async () => {
       <!-- Main content (left part) -->
       <div class="flex-grow-1">
         <v-container class="content-container pa-0 ma-0">
-          <v-card flat class="ma-0 pa-6">
+          <v-card
+            flat
+            class="ma-0 pa-6"
+          >
             <v-form
               ref="form"
               v-model="isFormValid"
@@ -383,12 +386,9 @@ onMounted(async () => {
           >
             {{ t('account.profile.actions.changePassword') }}
           </v-btn>
-
-
         </div>
       </div>
     </div>
-
   </v-container>
 
   <!-- Modal for changing password -->

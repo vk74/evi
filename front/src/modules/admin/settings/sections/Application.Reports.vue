@@ -237,7 +237,6 @@ onMounted(() => {
       <!-- Settings content -->
       <div class="settings-section">
         <div class="section-content">
-          
           <!-- ==================== REPORTS MODULE SECTION ==================== -->
           <div class="d-flex align-center mb-2">
             <v-switch
@@ -274,7 +273,6 @@ onMounted(() => {
               </div>
             </v-tooltip>
           </div>
-          
         </div>
       </div>
     </template>

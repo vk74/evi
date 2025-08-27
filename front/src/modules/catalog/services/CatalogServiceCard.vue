@@ -46,16 +46,25 @@ const getPhosphorIcon = (iconName: string | null) => {
   >
     <v-card-title class="d-flex align-center">
       <component
-        v-if="service.icon && getPhosphorIcon(service.icon)"
         :is="getPhosphorIcon(service.icon)"
+        v-if="service.icon && getPhosphorIcon(service.icon)"
         size="24"
         weight="regular"
         color="rgb(20, 184, 166)"
         class="me-3"
       />
-      <v-icon v-else class="me-3" size="large" color="teal">mdi-cube</v-icon>
+      <v-icon
+        v-else
+        class="me-3"
+        size="large"
+        color="teal"
+      >
+        mdi-cube
+      </v-icon>
       <div class="flex-grow-1">
-        <div class="text-h6">{{ service.name }}</div>
+        <div class="text-h6">
+          {{ service.name }}
+        </div>
       </div>
     </v-card-title>
 
@@ -66,7 +75,9 @@ const getPhosphorIcon = (iconName: string | null) => {
 
       <!-- Owner info -->
       <div class="mt-3">
-        <div class="text-caption text-grey">Владелец: {{ service.owner }}</div>
+        <div class="text-caption text-grey">
+          Владелец: {{ service.owner }}
+        </div>
       </div>
     </v-card-text>
   </v-card>

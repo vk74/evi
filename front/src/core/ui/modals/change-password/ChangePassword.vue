@@ -9,7 +9,7 @@
  * - Works as a modal dialog
  * - Supports self password change (requires current password)
  * - Supports admin password reset
- * - Validates password according to dynamic system policies from Application.Security.PasswordPolicies
+ * - Validates password according to dynamic system policies from public password policies API
  * - Provides password visibility toggle and example password generation
  * - Shows current password requirements and policy information
  * - Logs comprehensive information about operations
@@ -23,13 +23,15 @@ import { useUserAuthStore } from '@/core/auth/state.user.auth';
 import { ChangePasswordProps, PasswordChangeMode } from './types.change.password';
 import changePassword from './service.self.change.password';
 import resetPassword from './service.admin.change.password';
-import { fetchSettings } from '@/modules/admin/settings/service.fetch.settings';
+import { fetchPublicPasswordPolicies } from '@/core/services/service.fetch.public.password.policies';
+import { usePublicSettingsStore, type PasswordPolicies } from '@/core/state/state.public.settings';
 import PasswordPoliciesPanel from '@/core/ui/panels/panel.current.password.policies.vue';
 
 // Init i18n and stores
 const { t } = useI18n();
 const uiStore = useUiStore();
 const userStore = useUserAuthStore();
+const publicStore = usePublicSettingsStore();
 
 // Component props
 const props = defineProps<ChangePasswordProps>();
@@ -58,13 +60,7 @@ const showConfirmPassword = ref(false);
  */
 const isLoadingPasswordPolicies = ref(true)
 const passwordPolicyError = ref(false)
-const passwordMinLength = ref<number | null>(null)
-const passwordMaxLength = ref<number | null>(null)
-const requireLowercase = ref<boolean | null>(null)
-const requireUppercase = ref<boolean | null>(null)
-const requireNumbers = ref<boolean | null>(null)
-const requireSpecialChars = ref<boolean | null>(null)
-const allowedSpecialChars = ref<string | null>(null)
+const currentPasswordPolicies = ref<PasswordPolicies | null>(null)
 
 // ==================== DYNAMIC PASSWORD VALIDATION ====================
 /**
@@ -72,48 +68,45 @@ const allowedSpecialChars = ref<string | null>(null)
  */
 const dynamicPasswordRules = computed(() => {
   // If password policies are not loaded or there's an error, return blocking rules
-  if (isLoadingPasswordPolicies.value || passwordPolicyError.value || 
-      passwordMinLength.value === null || passwordMaxLength.value === null ||
-      requireLowercase.value === null || requireUppercase.value === null ||
-      requireNumbers.value === null || requireSpecialChars.value === null ||
-      allowedSpecialChars.value === null) {
+  if (isLoadingPasswordPolicies.value || passwordPolicyError.value || !currentPasswordPolicies.value) {
     return [
       (v: string) => !!v || 'пароль обязателен',
       () => !passwordPolicyError.value || 'настройки политики паролей не загружены - смена пароля заблокирована'
     ]
   }
 
+  const policies = currentPasswordPolicies.value;
   const rules: Array<(v: string) => string | boolean> = []
   
   // Required field rule
   rules.push((v: string) => !!v || 'пароль обязателен')
   
   // Length rules
-  rules.push((v: string) => (v && v.length >= passwordMinLength.value!) || `пароль должен содержать минимум ${passwordMinLength.value} символов`)
-  rules.push((v: string) => (v && v.length <= passwordMaxLength.value!) || `пароль не должен превышать ${passwordMaxLength.value} символов`)
+  rules.push((v: string) => (v && v.length >= policies.minLength) || `пароль должен содержать минимум ${policies.minLength} символов`)
+  rules.push((v: string) => (v && v.length <= policies.maxLength) || `пароль не должен превышать ${policies.maxLength} символов`)
   
   // Character requirements
-  if (requireLowercase.value) {
+  if (policies.requireLowercase) {
     rules.push((v: string) => /[a-z]/.test(v) || 'пароль должен содержать строчные буквы')
   }
   
-  if (requireUppercase.value) {
+  if (policies.requireUppercase) {
     rules.push((v: string) => /[A-Z]/.test(v) || 'пароль должен содержать заглавные буквы')
   }
   
-  if (requireNumbers.value) {
+  if (policies.requireNumbers) {
     rules.push((v: string) => /[0-9]/.test(v) || 'пароль должен содержать цифры')
   }
   
-  if (requireSpecialChars.value && allowedSpecialChars.value) {
-    const escapedSpecialChars = allowedSpecialChars.value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+  if (policies.requireSpecialChars && policies.allowedSpecialChars) {
+    const escapedSpecialChars = policies.allowedSpecialChars.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
     const specialCharsRegex = new RegExp(`[${escapedSpecialChars}]`)
     rules.push((v: string) => specialCharsRegex.test(v) || 'пароль должен содержать специальные символы')
   }
   
   // Allowed characters rule - only allowed chars
-  if (allowedSpecialChars.value) {
-    const escapedSpecialChars = allowedSpecialChars.value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+  if (policies.allowedSpecialChars) {
+    const escapedSpecialChars = policies.allowedSpecialChars.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
     const allowedCharsRegex = new RegExp(`^[A-Za-z0-9${escapedSpecialChars}]+$`)
     rules.push((v: string) => allowedCharsRegex.test(v) || 'пароль содержит недопустимые символы')
   }
@@ -121,22 +114,16 @@ const dynamicPasswordRules = computed(() => {
   return rules
 })
 
-
-
 /**
  * Check if password policies are ready (loaded and valid)
  */
 const passwordPoliciesReady = computed(() => {
-  return !isLoadingPasswordPolicies.value && !passwordPolicyError.value &&
-         passwordMinLength.value !== null && passwordMaxLength.value !== null &&
-         requireLowercase.value !== null && requireUppercase.value !== null &&
-         requireNumbers.value !== null && requireSpecialChars.value !== null &&
-         allowedSpecialChars.value !== null
+  return !isLoadingPasswordPolicies.value && !passwordPolicyError.value && currentPasswordPolicies.value !== null
 })
 
 // ==================== PASSWORD POLICY METHODS (FOR VALIDATION) ====================
 /**
- * Load password policy settings from backend for validation purposes
+ * Load password policy settings from public API for validation purposes
  */
 const loadPasswordPolicies = async () => {
   isLoadingPasswordPolicies.value = true
@@ -145,32 +132,12 @@ const loadPasswordPolicies = async () => {
   try {
     console.log('[ChangePassword] Loading password policy settings for validation')
     
-    const settings = await fetchSettings('Application.Security.PasswordPolicies')
+    // Use public API instead of admin settings API for consistency and efficiency
+    const policies = await fetchPublicPasswordPolicies()
+    currentPasswordPolicies.value = policies
     
-    if (settings && settings.length > 0) {
-      // Extract settings by name
-      const settingsMap = new Map(settings.map(s => [s.setting_name, s.value]))
-      
-      passwordMinLength.value = Number(settingsMap.get('password.min.length') ?? 8)
-      passwordMaxLength.value = Number(settingsMap.get('password.max.length') ?? 40)
-      requireLowercase.value = Boolean(settingsMap.get('password.require.lowercase') ?? true)
-      requireUppercase.value = Boolean(settingsMap.get('password.require.uppercase') ?? true)
-      requireNumbers.value = Boolean(settingsMap.get('password.require.numbers') ?? true)
-      requireSpecialChars.value = Boolean(settingsMap.get('password.require.special.chars') ?? false)
-      allowedSpecialChars.value = String(settingsMap.get('password.allowed.special.chars') ?? '!@#$%^&*()_+-=[]{}|;:,.<>?')
-      
-      console.log('[ChangePassword] Password policies loaded successfully for validation:', {
-        minLength: passwordMinLength.value,
-        maxLength: passwordMaxLength.value,
-        requireLowercase: requireLowercase.value,
-        requireUppercase: requireUppercase.value,
-        requireNumbers: requireNumbers.value,
-        requireSpecialChars: requireSpecialChars.value,
-        allowedSpecialChars: allowedSpecialChars.value
-      })
-    } else {
-      throw new Error('No password policy settings found')
-    }
+    console.log('[ChangePassword] Password policies loaded successfully for validation:', policies)
+    
   } catch (error) {
     console.error('[ChangePassword] Failed to load password policies for validation:', error)
     passwordPolicyError.value = true
@@ -388,7 +355,7 @@ onMounted(async () => {
               :type="showNewPassword ? 'text' : 'password'"
               :append-icon="showNewPassword ? 'mdi-eye' : 'mdi-eye-off'"
               :error-messages="newPasswordError ? [newPasswordError] : []"
-              :counter="passwordMaxLength || 40"
+              :counter="currentPasswordPolicies?.maxLength || 40"
               :loading="isLoadingPasswordPolicies"
               :disabled="!passwordPoliciesReady"
               outlined
@@ -407,7 +374,7 @@ onMounted(async () => {
               :type="showConfirmPassword ? 'text' : 'password'"
               :append-icon="showConfirmPassword ? 'mdi-eye' : 'mdi-eye-off'"
               :error-messages="confirmPasswordError ? [confirmPasswordError] : []"
-              :counter="passwordMaxLength || 40"
+              :counter="currentPasswordPolicies?.maxLength || 40"
               :loading="isLoadingPasswordPolicies"
               :disabled="!passwordPoliciesReady"
               outlined

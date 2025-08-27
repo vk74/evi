@@ -637,8 +637,6 @@ onMounted(async () => {
           v-if="isLoggedIn"
           class="border-opacity-25"
         />
-        
-
       </v-list>
  
       <!-- Append slot for drawer controls and bottom navigation items -->
@@ -814,7 +812,7 @@ onMounted(async () => {
       <ModuleAccount v-if="appStore.isModuleActive('Account')" />
       <AccountPreferences v-if="appStore.isModuleActive('Settings')" />
       <ModuleSessionData v-if="appStore.isModuleActive('SessionData')" />
-            <ModuleKnowledgeBase v-if="appStore.isModuleActive('KnowledgeBase') && isKnowledgeBaseModuleVisible" />
+      <ModuleKnowledgeBase v-if="appStore.isModuleActive('KnowledgeBase') && isKnowledgeBaseModuleVisible" />
       <ModuleNewUserSelfRegistration v-if="appStore.isModuleActive('NewUserRegistration')" />
     </v-main>
  

@@ -57,8 +57,8 @@ const switchSection = (section: 'details' | 'catalog publication') => {
         <v-btn
           :class="['section-btn', { 'section-active': servicesStore.getActiveSection === 'catalog publication' }]"
           variant="text"
-          @click="switchSection('catalog publication')"
           :disabled="isCreationMode"
+          @click="switchSection('catalog publication')"
         >
           {{ t('admin.services.editor.sections.catalog publication') }}
         </v-btn>

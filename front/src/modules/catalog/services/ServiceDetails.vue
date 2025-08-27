@@ -55,21 +55,32 @@ watch(() => props.serviceId, () => { loadDetails() })
     <!-- Header -->
     <div class="header d-flex align-center mb-4">
       <component
-        v-if="details?.icon && getPhosphorIcon(details.icon)"
         :is="getPhosphorIcon(details.icon)"
+        v-if="details?.icon && getPhosphorIcon(details.icon)"
         size="28"
         weight="regular"
         color="rgb(20, 184, 166)"
         class="me-3"
       />
-      <v-icon v-else size="large" color="teal" class="me-3">mdi-cube</v-icon>
-      <div class="text-h6">{{ details?.name }}</div>
+      <v-icon
+        v-else
+        size="large"
+        color="teal"
+        class="me-3"
+      >
+        mdi-cube
+      </v-icon>
+      <div class="text-h6">
+        {{ details?.name }}
+      </div>
     </div>
 
     <!-- Details blocks (MVP skeleton) -->
     <div class="details-grid">
       <div class="detail-block">
-        <div class="block-title">{{ t('catalog.serviceDetails.main') }}</div>
+        <div class="block-title">
+          {{ t('catalog.serviceDetails.main') }}
+        </div>
         <div class="block-body">
           <div>{{ t('catalog.serviceDetails.priority') }}: {{ details?.priority }}</div>
           <div>{{ t('catalog.serviceDetails.status') }}: {{ t('catalog.serviceDetails.inProduction') }}</div>
@@ -78,7 +89,9 @@ watch(() => props.serviceId, () => { loadDetails() })
       </div>
 
       <div class="detail-block">
-        <div class="block-title">{{ t('catalog.serviceDetails.roles') }}</div>
+        <div class="block-title">
+          {{ t('catalog.serviceDetails.roles') }}
+        </div>
         <div class="block-body">
           <div>{{ t('catalog.serviceDetails.owner') }}: {{ details?.owner }}</div>
           <div>{{ t('catalog.serviceDetails.backupOwner') }}: {{ details?.backup_owner }}</div>
@@ -88,7 +101,9 @@ watch(() => props.serviceId, () => { loadDetails() })
       </div>
 
       <div class="detail-block">
-        <div class="block-title">{{ t('catalog.serviceDetails.supportGroups') }}</div>
+        <div class="block-title">
+          {{ t('catalog.serviceDetails.supportGroups') }}
+        </div>
         <div class="block-body">
           <div>{{ t('catalog.serviceDetails.tier1') }}: {{ details?.support_tier1 }}</div>
           <div>{{ t('catalog.serviceDetails.tier2') }}: {{ details?.support_tier2 }}</div>
@@ -98,9 +113,13 @@ watch(() => props.serviceId, () => { loadDetails() })
       </div>
 
       <div class="detail-block">
-        <div class="block-title">{{ t('catalog.serviceDetails.description') }}</div>
+        <div class="block-title">
+          {{ t('catalog.serviceDetails.description') }}
+        </div>
         <div class="block-body">
-          <div class="mb-2">{{ t('catalog.serviceDetails.purpose') }}: {{ details?.purpose }}</div>
+          <div class="mb-2">
+            {{ t('catalog.serviceDetails.purpose') }}: {{ details?.purpose }}
+          </div>
           <div>{{ t('catalog.serviceDetails.longDescription') }}: {{ details?.description_long }}</div>
         </div>
       </div>
@@ -108,8 +127,12 @@ watch(() => props.serviceId, () => { loadDetails() })
 
     <!-- Offerings area -->
     <div class="offerings mt-6">
-      <div class="text-subtitle-1 mb-2">{{ t('catalog.serviceDetails.offerings') }}</div>
-      <div class="text-body-2 text-grey">{{ t('catalog.serviceDetails.offeringsEmpty') }}</div>
+      <div class="text-subtitle-1 mb-2">
+        {{ t('catalog.serviceDetails.offerings') }}
+      </div>
+      <div class="text-body-2 text-grey">
+        {{ t('catalog.serviceDetails.offeringsEmpty') }}
+      </div>
     </div>
   </div>
 </template>

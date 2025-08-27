@@ -201,22 +201,29 @@ onMounted(() => {
           variant="text"
           @click="selectSection(section.id)"
         >
-                            <component 
-                    v-if="section.icon_name"
-                    :is="getPhosphorIcon(section.icon_name)"
-                    size="16"
-                    weight="regular"
-                    color="rgb(20, 184, 166)"
-                    class="mr-2"
-                  />
-                  <v-icon v-else start size="small" color="teal">
-                    mdi-folder
-                  </v-icon>
+          <component 
+            :is="getPhosphorIcon(section.icon_name)"
+            v-if="section.icon_name"
+            size="16"
+            weight="regular"
+            color="rgb(20, 184, 166)"
+            class="mr-2"
+          />
+          <v-icon
+            v-else
+            start
+            size="small"
+            color="teal"
+          >
+            mdi-folder
+          </v-icon>
           {{ section.name }}
         </v-btn>
       </div>
       <v-spacer />
-      <div class="module-title">{{ t('catalog.common.moduleTitle') }}</div>
+      <div class="module-title">
+        {{ t('catalog.common.moduleTitle') }}
+      </div>
     </v-app-bar>
 
     <!-- ==================== TRIGGER AREA FOR AUTO MODE ==================== -->
@@ -315,98 +322,117 @@ onMounted(() => {
           <ServiceDetails :service-id="selectedServiceId" />
         </div>
         <div v-else>
-        <!-- Loading State -->
-        <DataLoading
-          :loading="isCatalogLoading()"
-          :loading-text="t('catalog.loading.sections')"
-          size="large"
-          color="teal"
-        />
-
-        <!-- Error State -->
-        <div
-          v-if="getCatalogError()"
-          class="text-center py-8"
-        >
-          <v-icon
-            icon="mdi-alert-circle"
-            size="64"
-            color="error"
-            class="mb-4"
-          />
-          <div class="text-h6 text-error mb-2">{{ t('catalog.errors.sectionsTitle') }}</div>
-          <div class="text-body-2 text-grey mb-4">
-            {{ getCatalogError() }}
-          </div>
-          <v-btn
+          <!-- Loading State -->
+          <DataLoading
+            :loading="isCatalogLoading()"
+            :loading-text="t('catalog.loading.sections')"
+            size="large"
             color="teal"
-            variant="outlined"
-            @click="refreshCatalogSections"
-          >
-            {{ t('catalog.errors.tryAgain') }}
-          </v-btn>
-        </div>
-
-        <!-- Empty State (no sections) -->
-        <div
-          v-else-if="!isCatalogLoading() && sections.length === 0"
-          class="text-center py-12"
-        >
-          <v-icon
-            icon="mdi-folder-open"
-            size="64"
-            color="grey-lighten-1"
-            class="mb-4"
           />
-          <div class="text-h6 text-grey mb-2">{{ t('catalog.empty.sectionsTitle') }}</div>
-          <div class="text-body-2 text-grey mb-4">
-            {{ t('catalog.empty.sectionsSubtitle') }}
-          </div>
-          <v-btn
-            color="teal"
-            variant="outlined"
-            @click="refreshCatalogSections"
+
+          <!-- Error State -->
+          <div
+            v-if="getCatalogError()"
+            class="text-center py-8"
           >
-            {{ t('catalog.empty.refresh') }}
-          </v-btn>
-        </div>
-
-        <!-- Content when sections are loaded -->
-        <div v-else-if="!isCatalogLoading() && sections.length > 0">
-          <!-- Results Info -->
-          <div class="d-flex justify-space-between align-center mb-4">
-            <div class="text-subtitle-1">{{ t('catalog.common.resultsFoundServices', { count: filteredServices.length }) }}</div>
-            <div class="text-caption text-grey">
-              {{ sections.find(s => s.id === selectedSectionId)?.name }}
-            </div>
-          </div>
-
-          <!-- Services Grid -->
-          <v-row v-if="filteredServices.length > 0" dense>
-            <v-col
-              v-for="svc in filteredServices"
-              :key="svc.id"
-              cols="12"
-              md="6"
-              lg="4"
-              xl="3"
-            >
-              <CatalogServiceCard :service="svc" @select="onSelectService" />
-            </v-col>
-          </v-row>
-
-          <!-- Empty State (no services loaded) -->
-          <div v-else class="text-center py-12">
             <v-icon
-              icon="mdi-package-variant"
+              icon="mdi-alert-circle"
+              size="64"
+              color="error"
+              class="mb-4"
+            />
+            <div class="text-h6 text-error mb-2">
+              {{ t('catalog.errors.sectionsTitle') }}
+            </div>
+            <div class="text-body-2 text-grey mb-4">
+              {{ getCatalogError() }}
+            </div>
+            <v-btn
+              color="teal"
+              variant="outlined"
+              @click="refreshCatalogSections"
+            >
+              {{ t('catalog.errors.tryAgain') }}
+            </v-btn>
+          </div>
+
+          <!-- Empty State (no sections) -->
+          <div
+            v-else-if="!isCatalogLoading() && sections.length === 0"
+            class="text-center py-12"
+          >
+            <v-icon
+              icon="mdi-folder-open"
               size="64"
               color="grey-lighten-1"
               class="mb-4"
             />
-            <div class="text-h6 text-grey mb-2">{{ t('catalog.empty.servicesTitle') }}</div>
-            <div class="text-body-2 text-grey">{{ t('catalog.empty.servicesSubtitle') }}</div>
+            <div class="text-h6 text-grey mb-2">
+              {{ t('catalog.empty.sectionsTitle') }}
+            </div>
+            <div class="text-body-2 text-grey mb-4">
+              {{ t('catalog.empty.sectionsSubtitle') }}
+            </div>
+            <v-btn
+              color="teal"
+              variant="outlined"
+              @click="refreshCatalogSections"
+            >
+              {{ t('catalog.empty.refresh') }}
+            </v-btn>
           </div>
-        </div>
+
+          <!-- Content when sections are loaded -->
+          <div v-else-if="!isCatalogLoading() && sections.length > 0">
+            <!-- Results Info -->
+            <div class="d-flex justify-space-between align-center mb-4">
+              <div class="text-subtitle-1">
+                {{ t('catalog.common.resultsFoundServices', { count: filteredServices.length }) }}
+              </div>
+              <div class="text-caption text-grey">
+                {{ sections.find(s => s.id === selectedSectionId)?.name }}
+              </div>
+            </div>
+
+            <!-- Services Grid -->
+            <v-row
+              v-if="filteredServices.length > 0"
+              dense
+            >
+              <v-col
+                v-for="svc in filteredServices"
+                :key="svc.id"
+                cols="12"
+                md="6"
+                lg="4"
+                xl="3"
+              >
+                <CatalogServiceCard
+                  :service="svc"
+                  @select="onSelectService"
+                />
+              </v-col>
+            </v-row>
+
+            <!-- Empty State (no services loaded) -->
+            <div
+              v-else
+              class="text-center py-12"
+            >
+              <v-icon
+                icon="mdi-package-variant"
+                size="64"
+                color="grey-lighten-1"
+                class="mb-4"
+              />
+              <div class="text-h6 text-grey mb-2">
+                {{ t('catalog.empty.servicesTitle') }}
+              </div>
+              <div class="text-body-2 text-grey">
+                {{ t('catalog.empty.servicesSubtitle') }}
+              </div>
+            </div>
+          </div>
         </div>
       </v-container>
     </div>

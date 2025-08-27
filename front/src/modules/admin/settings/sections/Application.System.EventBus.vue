@@ -387,7 +387,9 @@ onMounted(() => {
     <template v-if="!isLoadingSettings">
       <!-- Common title for all domain groups -->
       <div class="common-title mb-4">
-        <h3 class="text-subtitle-1">{{ t('admin.settings.application.system.eventbus.domains.title') }}</h3>
+        <h3 class="text-subtitle-1">
+          {{ t('admin.settings.application.system.eventbus.domains.title') }}
+        </h3>
       </div>
 
       <!-- Domain Settings Grid -->
@@ -397,7 +399,9 @@ onMounted(() => {
           :key="group.title"
           class="domain-group"
         >
-          <h3 class="group-title mb-3">{{ group.title }}</h3>
+          <h3 class="group-title mb-3">
+            {{ group.title }}
+          </h3>
           <div class="group-settings">
             <div 
               v-for="setting in group.settings" 
