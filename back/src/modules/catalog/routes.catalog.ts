@@ -9,8 +9,8 @@ import express, { Router } from 'express';
 import fetchSectionsController from './controller.catalog.sections';
 import fetchServicesController from './controller.catalog.services';
 import fetchServiceDetailsController from './controller.catalog.service.details';
-import validateJwt from '../../core/guards/auth.validate.jwt';
-import checkIsUserStatusActive from '../../core/guards/check.is.user.status.active';
+import validateJwt from '../../core/guards/guard.validate.jwt';
+import checkIsUserStatusActive from '../../core/guards/guard.check.is.user.status.active';
 
 const router: Router = express.Router();
 

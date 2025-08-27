@@ -7,10 +7,9 @@
  */
 
 import express, { Router } from 'express';
-import validateJWT from '../guards/auth.validate.jwt';
-import checkIsUserStatusActive from '../guards/check.is.user.status.active';
-import checkAccountPassword from '../guards/auth.check.password';
-import checkAccountStatus from '../guards/auth.check.status';
+import validateJWT from '../guards/guard.validate.jwt';
+import checkIsUserStatusActive from '../guards/guard.check.is.user.status.active';
+// Removed: checkAccountPassword, checkAccountStatus - not used in routes
 // import issueToken from '../../middleware/auth.issue.token';
 // Registration service moved to controller
 import getUserProfile from '../../modules/account/service.get.profile';

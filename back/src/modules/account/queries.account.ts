@@ -211,6 +211,74 @@ export const userProfileQueries = {
       'company_name', // $5
       'position'      // $6
     ]
+  },
+
+  /**
+   * Get user profile by username
+   * Retrieves complete user profile information by username
+   */
+  getProfile: {
+    text: `
+      SELECT
+        u.email,
+        u.first_name,
+        u.last_name,
+        u.middle_name,
+        up.mobile_phone_number,
+        up.address,
+        up.company_name,
+        up.position,
+        up.gender
+        FROM app.users u
+        LEFT JOIN app.user_profiles up ON u.user_id = up.user_id
+        WHERE u.username = $1
+    `,
+    values: ['username']
+  },
+
+  /**
+   * Update user profile by username
+   * Updates user profile information using username
+   */
+  updateProfile: {
+    text: `
+      WITH user_update AS (
+        UPDATE app.users
+        SET first_name = $1,
+            last_name = $2,
+            middle_name = $3
+        WHERE username = $9
+        RETURNING user_id
+      )
+      UPDATE app.user_profiles up
+      SET gender = $4,
+          mobile_phone_number = $5,
+          address = $6,
+          company_name = $7,
+          position = $8
+      FROM user_update
+      WHERE up.user_id = user_update.user_id
+      RETURNING up.user_id, 
+                $1 as first_name, 
+                $2 as last_name, 
+                $3 as middle_name, 
+                up.gender, 
+                up.mobile_phone_number, 
+                up.address, 
+                up.company_name, 
+                up.position
+    `,
+    values: [
+      'first_name',   // $1
+      'last_name',    // $2
+      'middle_name',  // $3
+      'gender',       // $4
+      'mobile_phone_number', // $5
+      'address',      // $6
+      'company_name', // $7
+      'position',     // $8
+      'username'      // $9
+    ]
   }
 };
 

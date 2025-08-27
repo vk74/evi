@@ -7,8 +7,8 @@
  */
 
 import express, { Router } from 'express';
-import validateJWT from '../../core/guards/auth.validate.jwt';
-import checkIsUserStatusActive from '../../core/guards/check.is.user.status.active';
+import validateJWT from '../../core/guards/guard.validate.jwt';
+import checkIsUserStatusActive from '../../core/guards/guard.check.is.user.status.active';
 
 // Import controllers
 import { fetchUsers, deleteSelectedUsers } from './users/usersList/routes.users.list';

@@ -10,8 +10,8 @@
  */
 
 import express, { Router } from 'express';
-import validateJWT from '../guards/auth.validate.jwt';
-import checkIsUserStatusActive from '../guards/check.is.user.status.active';
+import validateJWT from '../guards/guard.validate.jwt';
+import checkIsUserStatusActive from '../guards/guard.check.is.user.status.active';
 
 // Импорт контроллеров
 import getUsernameByUuidController from '../controllers/controller.get.username.by.uuid';

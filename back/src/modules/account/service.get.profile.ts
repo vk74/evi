@@ -10,7 +10,7 @@
 import { Request, Response } from 'express';
 import { Pool, QueryResult } from 'pg';
 import { pool as pgPool } from '../../core/db/maindb';
-import { userQueries } from '../../core/guards/queries.users';
+import { userProfileQueries } from './queries.account';
 
 // Type assertion for pool
 const pool = pgPool as Pool;
@@ -61,7 +61,7 @@ const getUserProfile = async (req: EnhancedRequest, res: Response): Promise<void
        console.log('Retrieving profile data for user:', username);
        
        const result: QueryResult<UserProfile> = await pool.query(
-           userQueries.getProfile.text,
+           userProfileQueries.getProfile.text,
            [username]
        );
 

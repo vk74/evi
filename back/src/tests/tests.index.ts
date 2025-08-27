@@ -11,7 +11,7 @@
 
 // Core tests
 import './test.get.uuid.helper';
-import './test.queries.users';
+// Removed: test.queries.users - file deleted
 import '../server.initialization.test';
 
 // Auth tests
