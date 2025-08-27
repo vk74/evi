@@ -550,14 +550,66 @@ export const SETTINGS_INITIALIZATION_EVENTS = {
     version: '1.0.0'
   },
   
-  // When settings module initialization fails
+    // When settings module initialization fails
   ERROR: {
     eventName: 'settings.initialization.error',
     source: 'settings load service',
     eventType: 'app' as const,
     severity: 'error' as const,
-    eventMessage: 'Failed to initialize settings module',
+    eventMessage: 'Settings module initialization failed',
     payload: null, // Will be of type error details
+    errorData: null, // Will be filled with error details
+    version: '1.0.0'
+  }
+};
+
+/**
+ * Settings Fallback Logging Events
+ * Events for fallback logging when event system is not ready
+ */
+export const SETTINGS_FALLBACK_EVENTS = {
+  // When fallback console logging is used for cache operations
+  CACHE_FALLBACK_LOG: {
+    eventName: 'settings.fallback.cache.log',
+    source: 'settings cache module',
+    eventType: 'system' as const,
+    severity: 'debug' as const,
+    eventMessage: 'Fallback console logging for cache operation',
+    payload: null, // Will be of type { eventName: string, payload?: any }
+    version: '1.0.0'
+  },
+  
+  // When fallback console error logging is used for cache operations
+  CACHE_FALLBACK_ERROR: {
+    eventName: 'settings.fallback.cache.error',
+    source: 'settings cache module',
+    eventType: 'system' as const,
+    severity: 'error' as const,
+    eventMessage: 'Fallback console error logging for cache operation',
+    payload: null, // Will be of type { eventName: string, payload?: any, errorData?: any }
+    errorData: null, // Will be filled with error details
+    version: '1.0.0'
+  },
+  
+  // When fallback console logging is used for load operations
+  LOAD_FALLBACK_LOG: {
+    eventName: 'settings.fallback.load.log',
+    source: 'settings load service',
+    eventType: 'system' as const,
+    severity: 'debug' as const,
+    eventMessage: 'Fallback console logging for load operation',
+    payload: null, // Will be of type { eventName: string, payload?: any }
+    version: '1.0.0'
+  },
+  
+  // When fallback console error logging is used for load operations
+  LOAD_FALLBACK_ERROR: {
+    eventName: 'settings.fallback.load.error',
+    source: 'settings load service',
+    eventType: 'system' as const,
+    severity: 'error' as const,
+    eventMessage: 'Fallback console error logging for load operation',
+    payload: null, // Will be of type { eventName: string, payload?: any, errorData?: any }
     errorData: null, // Will be filled with error details
     version: '1.0.0'
   }

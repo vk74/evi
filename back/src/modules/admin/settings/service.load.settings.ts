@@ -11,7 +11,7 @@ import { queries } from './queries.settings';
 import { AppSetting, Environment, SettingsError } from './types.settings';
 import { setCache, clearCache } from './cache.settings';
 import fabricEvents from '../../../core/eventBus/fabric.events';
-import { SETTINGS_LOAD_EVENTS, SETTINGS_INITIALIZATION_EVENTS } from './events.settings';
+import { SETTINGS_LOAD_EVENTS, SETTINGS_INITIALIZATION_EVENTS, SETTINGS_FALLBACK_EVENTS } from './events.settings';
 
 /**
  * Safe event creation that handles cases when event system is not yet initialized
@@ -28,10 +28,50 @@ function createEventSafely(eventName: string, payload?: any, errorData?: string)
     const message = `[Settings] ${eventName}`;
     if (errorData) {
       console.error(message, payload || '', 'Error:', errorData);
+      // Also try to publish fallback error event
+      try {
+        fabricEvents.createAndPublishEvent({
+          eventName: SETTINGS_FALLBACK_EVENTS.LOAD_FALLBACK_ERROR.eventName,
+          payload: {
+            eventName,
+            payload,
+            errorData
+          },
+          errorData: errorData
+        });
+      } catch (fallbackError) {
+        // If even fallback event fails, just log to console
+        console.error('[Settings] Fallback event failed:', fallbackError);
+      }
     } else if (payload) {
       console.log(message, payload);
+      // Also try to publish fallback log event
+      try {
+        fabricEvents.createAndPublishEvent({
+          eventName: SETTINGS_FALLBACK_EVENTS.LOAD_FALLBACK_LOG.eventName,
+          payload: {
+            eventName,
+            payload
+          }
+        });
+      } catch (fallbackError) {
+        // If even fallback event fails, just log to console
+        console.error('[Settings] Fallback event failed:', fallbackError);
+      }
     } else {
       console.log(message);
+      // Also try to publish fallback log event
+      try {
+        fabricEvents.createAndPublishEvent({
+          eventName: SETTINGS_FALLBACK_EVENTS.LOAD_FALLBACK_LOG.eventName,
+          payload: {
+            eventName
+          }
+        });
+      } catch (fallbackError) {
+        // If even fallback event fails, just log to console
+        console.error('[Settings] Fallback event failed:', fallbackError);
+      }
     }
   }
 }
