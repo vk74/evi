@@ -148,6 +148,19 @@ export const processEvent = (event: BaseEvent): void => {
       transport.log(event);
     } catch (error) {
       console.error(`Error in transport '${transport.name}':`, error);
+      // Also publish transport error event
+      try {
+        fabricEvents.createAndPublishEvent({
+          eventName: LOGGER_TRANSPORT_EVENTS.TRANSPORT_LOG_ERROR.eventName,
+          payload: {
+            transportName: transport.name
+          },
+          errorData: error instanceof Error ? error.message : String(error)
+        });
+      } catch (eventError) {
+        // If event publishing fails, just log to console
+        console.error('[Logger] Failed to publish transport error event:', eventError);
+      }
     }
   }
 };

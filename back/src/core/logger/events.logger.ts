@@ -109,6 +109,18 @@ export const LOGGER_TRANSPORT_EVENTS = {
     payload: null, // Will be of type { transportName: string }
     errorData: null, // Will be filled with error details
     version: '1.0.0'
+  },
+  
+  // When transport logging fails
+  TRANSPORT_LOG_ERROR: {
+    eventName: 'logger.transport.log.error',
+    source: 'logger service module',
+    eventType: 'app' as const,
+    severity: 'error' as const,
+    eventMessage: 'Error in transport logging',
+    payload: null, // Will be of type { transportName: string }
+    errorData: null, // Will be filled with error details
+    version: '1.0.0'
   }
 };
 
