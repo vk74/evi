@@ -10,6 +10,7 @@
 
 import { queries } from '../queries.admin.service'
 import { createAndPublishEvent } from '@/core/eventBus/fabric.events'
+import { EVENTS_ADMIN_SERVICES } from '../events.admin.services'
 import type { Service, ApiResponse } from '../types.admin.service'
 import { pool } from '@/core/db/maindb'
 import { fetchGroupnameByUuid } from '@/core/helpers/get.groupname.by.uuid'
@@ -181,12 +182,12 @@ export class ServiceAdminFetchSingleService {
       }
 
     } catch (error) {
-      console.error('[FetchSingleService] Error fetching service:', error)
-      
-      await createAndPublishEvent({
-        req,
-        eventName: 'adminServices.service.fetch.error',
-        payload: { serviceId },
+      createAndPublishEvent({
+        eventName: EVENTS_ADMIN_SERVICES['service.fetch.error'].eventName,
+        payload: { 
+          serviceId,
+          error: error instanceof Error ? error.message : String(error)
+        },
         errorData: error instanceof Error ? error.message : String(error)
       })
       

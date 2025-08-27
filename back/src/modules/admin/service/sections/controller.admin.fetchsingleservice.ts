@@ -12,6 +12,8 @@ import { Request, Response } from 'express'
 import { AuthenticatedRequest } from '@/core/guards/types.guards'
 import { serviceAdminFetchSingleService } from './service.admin.fetchsingleservice'
 import { connectionHandler } from '@/core/helpers/connection.handler'
+import { createAndPublishEvent } from '@/core/eventBus/fabric.events'
+import { EVENTS_ADMIN_SERVICES } from '../events.admin.services'
 
 /**
  * Business logic for fetching single service data
@@ -34,7 +36,13 @@ async function fetchSingleServiceLogic(req: AuthenticatedRequest, res: Response)
     }
 
   } catch (error) {
-    console.error('[FetchSingleServiceController] Unexpected error:', error)
+    createAndPublishEvent({
+      eventName: EVENTS_ADMIN_SERVICES['service.fetch.controller.unexpected_error'].eventName,
+      payload: {
+        error: error instanceof Error ? error.message : String(error)
+      },
+      errorData: error instanceof Error ? error.message : String(error)
+    })
     
     return {
       success: false,

@@ -225,6 +225,176 @@ export const EVENTS_ADMIN_SERVICES: EventCollection = {
     version: '1.0.0'
   },
 
+  // Service create validation error
+  'service.create.validation.error': {
+    eventName: 'adminServices.service.create.validation.error',
+    source: 'admin-service',
+    eventType: 'system',
+    severity: 'error',
+    eventMessage: 'Service create validation error occurred',
+    version: '1.0.0'
+  },
+
+  // Service create name check error
+  'service.create.name_check_error': {
+    eventName: 'adminServices.service.create.name_check_error',
+    source: 'admin-service',
+    eventType: 'system',
+    severity: 'error',
+    eventMessage: 'Error checking service name existence',
+    version: '1.0.0'
+  },
+
+  // Service create user role created
+  'service.create.user_role_created': {
+    eventName: 'adminServices.service.create.user_role_created',
+    source: 'admin-service',
+    eventType: 'system',
+    severity: 'debug',
+    eventMessage: 'User role created for service',
+    version: '1.0.0'
+  },
+
+  // Service create user role error
+  'service.create.user_role_error': {
+    eventName: 'adminServices.service.create.user_role_error',
+    source: 'admin-service',
+    eventType: 'system',
+    severity: 'error',
+    eventMessage: 'Error creating user role for service',
+    version: '1.0.0'
+  },
+
+  // Service create group role created
+  'service.create.group_role_created': {
+    eventName: 'adminServices.service.create.group_role_created',
+    source: 'admin-service',
+    eventType: 'system',
+    severity: 'debug',
+    eventMessage: 'Group role created for service',
+    version: '1.0.0'
+  },
+
+  // Service create group role error
+  'service.create.group_role_error': {
+    eventName: 'adminServices.service.create.group_role_error',
+    source: 'admin-service',
+    eventType: 'system',
+    severity: 'error',
+    eventMessage: 'Error creating group role for service',
+    version: '1.0.0'
+  },
+
+  // Service create access allowed group created
+  'service.create.access_allowed_group_created': {
+    eventName: 'adminServices.service.create.access_allowed_group_created',
+    source: 'admin-service',
+    eventType: 'system',
+    severity: 'debug',
+    eventMessage: 'Access allowed group created for service',
+    version: '1.0.0'
+  },
+
+  // Service create access allowed group error
+  'service.create.access_allowed_group_error': {
+    eventName: 'adminServices.service.create.access_allowed_group_error',
+    source: 'admin-service',
+    eventType: 'system',
+    severity: 'error',
+    eventMessage: 'Error creating access allowed group for service',
+    version: '1.0.0'
+  },
+
+  // Service create access denied group created
+  'service.create.access_denied_group_created': {
+    eventName: 'adminServices.service.create.access_denied_group_created',
+    source: 'admin-service',
+    eventType: 'system',
+    severity: 'debug',
+    eventMessage: 'Access denied group created for service',
+    version: '1.0.0'
+  },
+
+  // Service create access denied group error
+  'service.create.access_denied_group_error': {
+    eventName: 'adminServices.service.create.access_denied_group_error',
+    source: 'admin-service',
+    eventType: 'system',
+    severity: 'error',
+    eventMessage: 'Error creating access denied group for service',
+    version: '1.0.0'
+  },
+
+  // Service create access denied user created
+  'service.create.access_denied_user_created': {
+    eventName: 'adminServices.service.create.access_denied_user_created',
+    source: 'admin-service',
+    eventType: 'system',
+    severity: 'debug',
+    eventMessage: 'Access denied user created for service',
+    version: '1.0.0'
+  },
+
+  // Service create access denied user error
+  'service.create.access_denied_user_error': {
+    eventName: 'adminServices.service.create.access_denied_user_error',
+    source: 'admin-service',
+    eventType: 'system',
+    severity: 'error',
+    eventMessage: 'Error creating access denied user for service',
+    version: '1.0.0'
+  },
+
+  // Service create inserting data
+  'service.create.inserting_data': {
+    eventName: 'adminServices.service.create.inserting_data',
+    source: 'admin-service',
+    eventType: 'system',
+    severity: 'debug',
+    eventMessage: 'Inserting service with data',
+    version: '1.0.0'
+  },
+
+  // Service create database error
+  'service.create.database_error': {
+    eventName: 'adminServices.service.create.database_error',
+    source: 'admin-service',
+    eventType: 'system',
+    severity: 'error',
+    eventMessage: 'Database error creating service',
+    version: '1.0.0'
+  },
+
+  // Service create success
+  'service.create.success': {
+    eventName: 'adminServices.service.create.success',
+    source: 'admin-service',
+    eventType: 'system',
+    severity: 'info',
+    eventMessage: 'Service created successfully',
+    version: '1.0.0'
+  },
+
+  // Service create general error
+  'service.create.error': {
+    eventName: 'adminServices.service.create.error',
+    source: 'admin-service',
+    eventType: 'system',
+    severity: 'error',
+    eventMessage: 'Error creating service',
+    version: '1.0.0'
+  },
+
+  // Service create started
+  'service.create.started': {
+    eventName: 'adminServices.service.create.started',
+    source: 'admin-service',
+    eventType: 'system',
+    severity: 'debug',
+    eventMessage: 'Creating service',
+    version: '1.0.0'
+  },
+
   // Service update user role error
   'service.update.user_role_error': {
     eventName: 'adminServices.service.update.user_role_error',

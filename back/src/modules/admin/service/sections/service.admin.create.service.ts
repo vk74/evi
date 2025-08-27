@@ -34,6 +34,8 @@ import { getRequestorUuidFromReq } from '@/core/helpers/get.requestor.uuid.from.
 import { getUuidByUsername } from '@/core/helpers/get.uuid.by.username';
 import { getUuidByGroupName } from '@/core/helpers/get.uuid.by.group.name';
 import { validateField, validateFieldSecurity, validateMultipleUsernames, validateMultipleGroupNames } from '@/core/validation/service.validation';
+import { createAndPublishEvent } from '@/core/eventBus/fabric.events';
+import { EVENTS_ADMIN_SERVICES } from '../events.admin.services';
 
 // Type assertion for pool
 const pool = pgPool as Pool;
@@ -64,7 +66,14 @@ async function validateCreateServiceData(data: CreateServiceRequest): Promise<vo
                     errors.push('Service with this name already exists');
                 }
             } catch (error) {
-                console.error('[CreateServiceService] Error checking service name existence:', error);
+                createAndPublishEvent({
+                    eventName: EVENTS_ADMIN_SERVICES['service.create.name_check_error'].eventName,
+                    payload: {
+                        serviceName: data.name,
+                        error: error instanceof Error ? error.message : String(error)
+                    },
+                    errorData: error instanceof Error ? error.message : String(error)
+                });
                 errors.push('Error checking service name existence');
             }
         }
@@ -357,10 +366,26 @@ async function createServiceUserRoles(client: any, serviceId: string, data: Crea
                     await client.query(queries.createServiceUser, [
                         serviceId, userId, userRole.roleType, requestorUuid
                     ]);
-                    console.log(`[CreateServiceService] Created user role: ${userRole.roleType} = ${userRole.username}`);
+                    createAndPublishEvent({
+                        eventName: EVENTS_ADMIN_SERVICES['service.create.user_role_created'].eventName,
+                        payload: {
+                            serviceId,
+                            roleType: userRole.roleType,
+                            username: userRole.username
+                        }
+                    });
                 }
             } catch (error) {
-                console.error(`[CreateServiceService] Error creating user role ${userRole.roleType}:`, error);
+                createAndPublishEvent({
+                    eventName: EVENTS_ADMIN_SERVICES['service.create.user_role_error'].eventName,
+                    payload: {
+                        serviceId,
+                        roleType: userRole.roleType,
+                        username: userRole.username,
+                        error: error instanceof Error ? error.message : String(error)
+                    },
+                    errorData: error instanceof Error ? error.message : String(error)
+                });
                 throw error;
             }
         }
@@ -389,10 +414,26 @@ async function createServiceGroupRoles(client: any, serviceId: string, data: Cre
                     await client.query(queries.createServiceGroup, [
                         serviceId, groupId, groupRole.roleType, requestorUuid
                     ]);
-                    console.log(`[CreateServiceService] Created group role: ${groupRole.roleType} = ${groupRole.groupName}`);
+                    createAndPublishEvent({
+                        eventName: EVENTS_ADMIN_SERVICES['service.create.group_role_created'].eventName,
+                        payload: {
+                            serviceId,
+                            roleType: groupRole.roleType,
+                            groupName: groupRole.groupName
+                        }
+                    });
                 }
             } catch (error) {
-                console.error(`[CreateServiceService] Error creating group role ${groupRole.roleType}:`, error);
+                createAndPublishEvent({
+                    eventName: EVENTS_ADMIN_SERVICES['service.create.group_role_error'].eventName,
+                    payload: {
+                        serviceId,
+                        roleType: groupRole.roleType,
+                        groupName: groupRole.groupName,
+                        error: error instanceof Error ? error.message : String(error)
+                    },
+                    errorData: error instanceof Error ? error.message : String(error)
+                });
                 throw error;
             }
         }
@@ -417,12 +458,26 @@ async function createServiceAccessRoles(client: any, serviceId: string, data: Cr
                     await client.query(queries.createServiceGroup, [
                         serviceId, groupId, ServiceGroupRole.ACCESS_ALLOWED, requestorUuid
                     ]);
-                    console.log(`[CreateServiceService] Created access allowed group: ${groupName}`);
+                    createAndPublishEvent({
+                        eventName: EVENTS_ADMIN_SERVICES['service.create.access_allowed_group_created'].eventName,
+                        payload: {
+                            serviceId,
+                            groupName
+                        }
+                    });
                 } else {
                     throw new Error(`Group "${groupName}" does not exist`);
                 }
             } catch (error) {
-                console.error(`[CreateServiceService] Error creating access allowed group ${groupName}:`, error);
+                createAndPublishEvent({
+                    eventName: EVENTS_ADMIN_SERVICES['service.create.access_allowed_group_error'].eventName,
+                    payload: {
+                        serviceId,
+                        groupName,
+                        error: error instanceof Error ? error.message : String(error)
+                    },
+                    errorData: error instanceof Error ? error.message : String(error)
+                });
                 throw error;
             }
         }
@@ -438,12 +493,26 @@ async function createServiceAccessRoles(client: any, serviceId: string, data: Cr
                     await client.query(queries.createServiceGroup, [
                         serviceId, groupId, ServiceGroupRole.ACCESS_DENIED, requestorUuid
                     ]);
-                    console.log(`[CreateServiceService] Created access denied group: ${groupName}`);
+                    createAndPublishEvent({
+                        eventName: EVENTS_ADMIN_SERVICES['service.create.access_denied_group_created'].eventName,
+                        payload: {
+                            serviceId,
+                            groupName
+                        }
+                    });
                 } else {
                     throw new Error(`Group "${groupName}" does not exist`);
                 }
             } catch (error) {
-                console.error(`[CreateServiceService] Error creating access denied group ${groupName}:`, error);
+                createAndPublishEvent({
+                    eventName: EVENTS_ADMIN_SERVICES['service.create.access_denied_group_error'].eventName,
+                    payload: {
+                        serviceId,
+                        groupName,
+                        error: error instanceof Error ? error.message : String(error)
+                    },
+                    errorData: error instanceof Error ? error.message : String(error)
+                });
                 throw error;
             }
         }
@@ -459,12 +528,26 @@ async function createServiceAccessRoles(client: any, serviceId: string, data: Cr
                     await client.query(queries.createServiceUser, [
                         serviceId, userId, ServiceUserRole.ACCESS_DENIED, requestorUuid
                     ]);
-                    console.log(`[CreateServiceService] Created access denied user: ${username}`);
+                    createAndPublishEvent({
+                        eventName: EVENTS_ADMIN_SERVICES['service.create.access_denied_user_created'].eventName,
+                        payload: {
+                            serviceId,
+                            username
+                        }
+                    });
                 } else {
                     throw new Error(`User "${username}" does not exist`);
                 }
             } catch (error) {
-                console.error(`[CreateServiceService] Error creating access denied user ${username}:`, error);
+                createAndPublishEvent({
+                    eventName: EVENTS_ADMIN_SERVICES['service.create.access_denied_user_error'].eventName,
+                    payload: {
+                        serviceId,
+                        username,
+                        error: error instanceof Error ? error.message : String(error)
+                    },
+                    errorData: error instanceof Error ? error.message : String(error)
+                });
                 throw error;
             }
         }
@@ -484,16 +567,19 @@ async function createServiceInDatabase(data: CreateServiceRequest, requestorUuid
         await client.query('BEGIN');
 
         // Create service in main table
-        console.log('[CreateServiceService] Inserting service with data:', {
-            name: data.name.trim(),
-            priority: data.priority || ServicePriority.LOW,
-            status: data.status || ServiceStatus.DRAFTED,
-            description_short: data.description_short?.trim() || null,
-            description_long: data.description_long?.trim() || null,
-            purpose: data.purpose?.trim() || null,
-            comments: data.comments?.trim() || null,
-            is_public: data.is_public || false,
-            icon_name: data.icon_name?.trim() || null
+        createAndPublishEvent({
+            eventName: EVENTS_ADMIN_SERVICES['service.create.inserting_data'].eventName,
+            payload: {
+                name: data.name.trim(),
+                priority: data.priority || ServicePriority.LOW,
+                status: data.status || ServiceStatus.DRAFTED,
+                description_short: data.description_short?.trim() || null,
+                description_long: data.description_long?.trim() || null,
+                purpose: data.purpose?.trim() || null,
+                comments: data.comments?.trim() || null,
+                is_public: data.is_public || false,
+                icon_name: data.icon_name?.trim() || null
+            }
         });
 
         const serviceResult = await client.query(queries.createService, [
@@ -512,11 +598,13 @@ async function createServiceInDatabase(data: CreateServiceRequest, requestorUuid
         const createdService = serviceResult.rows[0] as { id: string; name: string };
         const serviceId = createdService.id;
 
-        console.log('[CreateServiceService] Service created successfully', {
-            serviceId,
-            serviceName: createdService.name,
-            createdBy: requestorUuid,
-            createdService: createdService
+        createAndPublishEvent({
+            eventName: EVENTS_ADMIN_SERVICES['service.create.success'].eventName,
+            payload: {
+                serviceId,
+                serviceName: createdService.name,
+                createdBy: requestorUuid
+            }
         });
 
         // Create user roles
@@ -541,7 +629,13 @@ async function createServiceInDatabase(data: CreateServiceRequest, requestorUuid
 
     } catch (error) {
         await client.query('ROLLBACK');
-        console.error('[CreateServiceService] Database error creating service:', error);
+        createAndPublishEvent({
+            eventName: EVENTS_ADMIN_SERVICES['service.create.database_error'].eventName,
+            payload: {
+                error: error instanceof Error ? error.message : String(error)
+            },
+            errorData: error instanceof Error ? error.message : String(error)
+        });
         throw {
             code: 'DATABASE_ERROR',
             message: 'Failed to create service in database',
@@ -572,15 +666,18 @@ export async function createService(req: Request): Promise<CreateServiceResponse
         // Extract service data from request body
         const serviceData: CreateServiceRequest = req.body;
 
-        console.log('[CreateServiceService] Creating service', {
-            name: serviceData.name,
-            owner: serviceData.owner,
-            priority: serviceData.priority,
-            description_short: serviceData.description_short,
-            description_long: serviceData.description_long,
-            purpose: serviceData.purpose,
-            comments: serviceData.comments,
-            requestorUuid
+        createAndPublishEvent({
+            eventName: EVENTS_ADMIN_SERVICES['service.create.started'].eventName,
+            payload: {
+                name: serviceData.name,
+                owner: serviceData.owner,
+                priority: serviceData.priority,
+                description_short: serviceData.description_short,
+                description_long: serviceData.description_long,
+                purpose: serviceData.purpose,
+                comments: serviceData.comments,
+                requestorUuid
+            }
         });
 
         // Validate service data
@@ -592,7 +689,13 @@ export async function createService(req: Request): Promise<CreateServiceResponse
         return result;
 
     } catch (error: any) {
-        console.error('[CreateServiceService] Error creating service:', error);
+        createAndPublishEvent({
+            eventName: EVENTS_ADMIN_SERVICES['service.create.error'].eventName,
+            payload: {
+                error: error instanceof Error ? error.message : String(error)
+            },
+            errorData: error instanceof Error ? error.message : String(error)
+        });
 
         // Return structured error response
         return {
