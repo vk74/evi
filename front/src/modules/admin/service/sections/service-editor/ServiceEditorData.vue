@@ -13,9 +13,10 @@ import { ref, computed, onMounted, watch, nextTick } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useServicesAdminStore } from '../../state.services.admin'
 import { useUiStore } from '@/core/state/uistate'
-import ItemSelector from '@/core/ui/modals/item-selector/ItemSelector.vue'
-import DataLoading from '@/core/ui/loaders/DataLoading.vue'
-import IconPicker from '@/core/ui/modals/icon-picker/IconPicker.vue'
+import { defineAsyncComponent } from 'vue'
+const ItemSelector = defineAsyncComponent(() => import(/* webpackChunkName: "ui-item-selector" */ '@/core/ui/modals/item-selector/ItemSelector.vue'))
+const DataLoading = defineAsyncComponent(() => import(/* webpackChunkName: "ui-data-loading" */ '@/core/ui/loaders/DataLoading.vue'))
+const IconPicker = defineAsyncComponent(() => import(/* webpackChunkName: "ui-icon-picker" */ '@/core/ui/modals/icon-picker/IconPicker.vue'))
 import { ServicePriority, ServiceStatus, type Service } from '../../types.services.admin'
 import { serviceCreateService } from '../../service.create.service'
 import { serviceUpdateService } from '../../service.update.service'
@@ -332,9 +333,9 @@ const updateService = async () => {
       purpose: formData.value.purpose?.trim() || undefined,
       comments: formData.value.comments?.trim() || undefined,
       is_public: formData.value.isPublic,
-      access_allowed_groups: formData.value.accessAllowedGroups.length > 0 ? formData.value.accessAllowedGroups : undefined,
-      access_denied_groups: formData.value.accessDeniedGroups.length > 0 ? formData.value.accessDeniedGroups : undefined,
-      access_denied_users: formData.value.accessDeniedUsers.length > 0 ? formData.value.accessDeniedUsers : undefined
+      access_allowed_groups: formData.value.accessAllowedGroups.length > 0 ? formData.value.accessAllowedGroups.join(',') : undefined,
+      access_denied_groups: formData.value.accessDeniedGroups.length > 0 ? formData.value.accessDeniedGroups.join(',') : undefined,
+      access_denied_users: formData.value.accessDeniedUsers.length > 0 ? formData.value.accessDeniedUsers.join(',') : undefined
     }
 
     // Update service via API

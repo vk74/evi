@@ -11,9 +11,10 @@ import { ref, computed, onMounted, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useCatalogAdminStore } from '@/modules/admin/catalog/state.catalog.admin'
 import { useUiStore } from '@/core/state/uistate'
-import ItemSelector from '@/core/ui/modals/item-selector/ItemSelector.vue'
-import DataLoading from '@/core/ui/loaders/DataLoading.vue'
-import IconPicker from '@/core/ui/modals/icon-picker/IconPicker.vue'
+import { defineAsyncComponent } from 'vue'
+const ItemSelector = defineAsyncComponent(() => import(/* webpackChunkName: "ui-item-selector" */ '@/core/ui/modals/item-selector/ItemSelector.vue'))
+const DataLoading = defineAsyncComponent(() => import(/* webpackChunkName: "ui-data-loading" */ '@/core/ui/loaders/DataLoading.vue'))
+const IconPicker = defineAsyncComponent(() => import(/* webpackChunkName: "ui-icon-picker" */ '@/core/ui/modals/icon-picker/IconPicker.vue'))
 import { catalogSectionCreateService } from '@/modules/admin/catalog/service.admin.create.catalog.section'
 import { catalogSectionsFetchService } from '@/modules/admin/catalog/service.admin.fetch.catalog.sections'
 import { catalogSectionUpdateService } from '@/modules/admin/catalog/service.admin.update.catalog.section'

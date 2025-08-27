@@ -12,7 +12,8 @@ import { updateGroupService } from './service.update.group' // Import update ser
 import { fetchGroupService } from './service.fetch.group' // Import fetch service
 import { fetchGroupMembersService } from './service.fetch.group.members' // Import members fetch service
 import { removeGroupMembers } from './service.delete.group.members' // Import members delete service
-import ItemSelector from '../../../../core/ui/modals/item-selector/ItemSelector.vue'
+import { defineAsyncComponent } from 'vue'
+const ItemSelector = defineAsyncComponent(() => import(/* webpackChunkName: "ui-item-selector" */ '../../../../core/ui/modals/item-selector/ItemSelector.vue'))
 import { useUserAuthStore } from '@/core/auth/state.user.auth' // Import for JWT check
 
 // Initialize i18n
