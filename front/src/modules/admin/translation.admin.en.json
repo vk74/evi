@@ -5,7 +5,7 @@
         "main": "catalog management"
       },
       "services": {
-        "main": "service management",
+        "main": "services management",
         "items": {
           "all": "all services",
           "active": "active",
@@ -14,7 +14,7 @@
         }
       },
       "users": {
-        "main": "user management"
+        "main": "users management"
       },
       "settings": {
         "main": "application settings"

@@ -83,13 +83,13 @@ const isKnowledgeBaseModuleVisible = computed((): boolean => {
 const chevronIcon = computed((): string => {
   switch(appStore.drawerMode) {
     case 'auto':
-      return 'mdi-chevron-double-right';
+      return 'mdi-chevron-right';
     case 'opened':
-      return 'mdi-chevron-double-left';
+      return 'mdi-chevron-left';
     case 'closed':
-      return 'mdi-chevron-double-down';
+      return 'mdi-chevron-down';
     default:
-      return 'mdi-chevron-double-right';
+      return 'mdi-chevron-right';
   }
 });
 
