@@ -15,7 +15,17 @@ import { useUiStore } from '@/core/state/uistate'
 import { useServicesAdminStore } from '../../state.services.admin'
 import { fetchPublishingSections } from './service.admin.fetchpublishingsections'
 import { updateServiceSectionsPublish } from './service.admin.update.sections.publish'
-import PhIcon from '@/core/ui/icons/PhIcon.vue'
+import {
+  PhMagnifyingGlass,
+  PhX,
+  PhCheckSquare,
+  PhSquare,
+  PhCaretDoubleLeft,
+  PhCaretLeft,
+  PhCaretRight,
+  PhCaretDoubleRight,
+  PhUploadSimple
+} from '@phosphor-icons/vue'
 
 // Types
 interface TableHeader {
@@ -375,7 +385,7 @@ const handlePublish = async () => {
             @keydown="handleSearchKeydown"
           >
             <template #prepend-inner>
-              <PhIcon name="mdi-magnify" />
+              <PhMagnifyingGlass />
             </template>
             <template #append-inner>
               <div
@@ -384,7 +394,7 @@ const handlePublish = async () => {
                 style="cursor: pointer"
                 @click="handleClearSearch"
               >
-                <PhIcon name="mdi-close" />
+                <PhX />
               </div>
             </template>
           </v-text-field>
@@ -413,11 +423,8 @@ const handlePublish = async () => {
               :aria-pressed="isSelected(item.id)"
               @click="onSelectSection(item.id, !isSelected(item.id))"
             >
-              <PhIcon
-                :name="isSelected(item.id) ? 'mdi-checkbox-marked' : 'mdi-checkbox-blank-outline'"
-                :color="isSelected(item.id) ? 'teal' : 'grey'"
-                :size="18"
-              />
+              <PhCheckSquare v-if="isSelected(item.id)" :size="18" color="teal" />
+              <PhSquare v-else :size="18" color="grey" />
             </v-btn>
           </template>
 
@@ -482,7 +489,7 @@ const handlePublish = async () => {
                   :disabled="page === 1"
                   @click="goToPage(1)"
                 >
-                  <PhIcon name="mdi-chevron-double-left" />
+                  <PhCaretDoubleLeft />
                   <v-tooltip
                     activator="parent"
                     location="top"
@@ -498,7 +505,7 @@ const handlePublish = async () => {
                   :disabled="page === 1"
                   @click="goToPage(page - 1)"
                 >
-                  <PhIcon name="mdi-chevron-left" />
+                  <PhCaretLeft />
                   <v-tooltip
                     activator="parent"
                     location="top"
@@ -536,7 +543,7 @@ const handlePublish = async () => {
                   :disabled="page >= getTotalPages()"
                   @click="goToPage(page + 1)"
                 >
-                  <PhIcon name="mdi-chevron-right" />
+                  <PhCaretRight />
                   <v-tooltip
                     activator="parent"
                     location="top"
@@ -552,7 +559,7 @@ const handlePublish = async () => {
                   :disabled="page >= getTotalPages()"
                   @click="goToPage(getTotalPages())"
                 >
-                  <PhIcon name="mdi-chevron-double-right" />
+                  <PhCaretDoubleRight />
                   <v-tooltip
                     activator="parent"
                     location="top"
@@ -588,7 +595,7 @@ const handlePublish = async () => {
             :loading="isPublishing"
             @click="handlePublish"
           >
-            <PhIcon name="mdi-publish" class="mr-2" />
+            <PhUploadSimple class="mr-2" />
             {{ t('admin.services.editor.mapping.actions.publish') }}
           </v-btn>
         </div>

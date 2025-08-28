@@ -26,7 +26,7 @@ import resetPassword from './service.admin.change.password';
 import { fetchPublicPasswordPolicies } from '@/core/services/service.fetch.public.password.policies';
 import { usePublicSettingsStore, type PasswordPolicies } from '@/core/state/state.public.settings';
 import PasswordPoliciesPanel from '@/core/ui/panels/panel.current.password.policies.vue';
-import PhIcon from '@/core/ui/icons/PhIcon.vue';
+import { PhEye, PhEyeSlash } from '@phosphor-icons/vue';
 
 // Init i18n and stores
 const { t } = useI18n();
@@ -327,7 +327,8 @@ onMounted(async () => {
                   style="cursor: pointer"
                   @click="showCurrentPassword = !showCurrentPassword"
                 >
-                  <PhIcon :name="showCurrentPassword ? 'mdi-eye' : 'mdi-eye-off'" />
+                  <PhEye v-if="showCurrentPassword" />
+                  <PhEyeSlash v-else />
                 </div>
               </template>
             </v-text-field>
@@ -355,7 +356,8 @@ onMounted(async () => {
                   style="cursor: pointer"
                   @click="showNewPassword = !showNewPassword"
                 >
-                  <PhIcon :name="showNewPassword ? 'mdi-eye' : 'mdi-eye-off'" />
+                  <PhEye v-if="showNewPassword" />
+                  <PhEyeSlash v-else />
                 </div>
               </template>
             </v-text-field>
@@ -382,7 +384,8 @@ onMounted(async () => {
                   style="cursor: pointer"
                   @click="showConfirmPassword = !showConfirmPassword"
                 >
-                  <PhIcon :name="showConfirmPassword ? 'mdi-eye' : 'mdi-eye-off'" />
+                  <PhEye v-if="showConfirmPassword" />
+                  <PhEyeSlash v-else />
                 </div>
               </template>
             </v-text-field>

@@ -17,7 +17,14 @@ import { useUserAuthStore } from '@/core/auth/state.user.auth';
 import { useUiStore } from '@/core/state/uistate';
 import { useUsersAdminStore } from '../state.users.admin';
 import { useGroupEditorStore } from '../GroupEditor/state.group.editor';
-import PhIcon from '@/core/ui/icons/PhIcon.vue'
+import {
+  PhMagnifyingGlass,
+  PhX,
+  PhCheckSquare,
+  PhSquare,
+  PhCheckCircle,
+  PhMinusCircle
+} from '@phosphor-icons/vue'
 // Initialize stores and i18n
 const { t } = useI18n();
 const groupsStore = useStoreGroupsList();
@@ -157,10 +164,10 @@ watch([page, itemsPerPage], ([newPage, newItemsPerPage]) => {
             color="teal"
           >
             <template #prepend-inner>
-              <PhIcon name="mdi-magnify" />
+              <PhMagnifyingGlass />
             </template>
             <template #clear="{ props }">
-              <v-btn v-bind="props" icon variant="text"><PhIcon name="mdi-close" /></v-btn>
+              <v-btn v-bind="props" icon variant="text"><PhX /></v-btn>
             </template>
           </v-text-field>
         </div>
@@ -187,11 +194,8 @@ watch([page, itemsPerPage], ([newPage, newItemsPerPage]) => {
               :aria-pressed="isSelected(item.group_id)"
               @click="onSelectGroup(item.group_id, !isSelected(item.group_id))"
             >
-              <PhIcon
-                :name="isSelected(item.group_id) ? 'mdi-checkbox-marked' : 'mdi-checkbox-blank-outline'"
-                :color="isSelected(item.group_id) ? 'teal' : 'grey'"
-                :size="18"
-              />
+              <PhCheckSquare v-if="isSelected(item.group_id)" :size="18" color="teal" />
+              <PhSquare v-else :size="18" color="grey" />
             </v-btn>
           </template>
           <template #item.group_status="{ item }">
@@ -203,11 +207,8 @@ watch([page, itemsPerPage], ([newPage, newItemsPerPage]) => {
             </v-chip>
           </template>
           <template #item.is_system="{ item }">
-            <PhIcon
-              :name="item.is_system ? 'mdi-check-circle' : 'mdi-minus-circle'"
-              :color="item.is_system ? 'teal' : 'red-darken-4'"
-              size="16"
-            />
+            <PhCheckCircle v-if="item.is_system" size="16" color="teal" />
+            <PhMinusCircle v-else size="16" color="red-darken-4" />
           </template>
         </v-data-table>
       </div>
@@ -240,7 +241,7 @@ watch([page, itemsPerPage], ([newPage, newItemsPerPage]) => {
             :disabled="!hasSelected"
             @click="clearSelections"
           >
-            <PhIcon name="mdi-checkbox-blank-outline" class="mr-2" size="16" />
+            <PhSquare class="mr-2" size="16" />
             {{ t('admin.groups.list.buttons.clearSelections') }}
           </v-btn>
         </div>

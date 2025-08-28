@@ -17,7 +17,7 @@ import { useI18n } from 'vue-i18n';
 import { useUiStore } from '@/core/state/uistate';
 import { fetchPublicPasswordPolicies } from '@/core/services/service.fetch.public.password.policies';
 import { usePublicSettingsStore, type PasswordPolicies } from '@/core/state/state.public.settings';
-import PhIcon from '@/core/ui/icons/PhIcon.vue'
+import { PhWarningCircle, PhArrowClockwise } from '@phosphor-icons/vue'
 
 // ==================== STORES ====================
 const { t } = useI18n();
@@ -183,7 +183,7 @@ onMounted(async () => {
       v-else-if="passwordPolicyError"
       class="d-flex align-center"
     >
-      <PhIcon name="mdi-alert-circle" :size="16" color="rgb(var(--v-theme-error))" class="mr-2" />
+      <PhWarningCircle :size="16" color="rgb(var(--v-theme-error))" class="mr-2" />
       <span class="text-caption text-error">
         {{ t('panels.passwordPolicies.error') }}
       </span>
@@ -205,7 +205,7 @@ onMounted(async () => {
           @click="refreshPasswordPolicies"
         >
           <template #default>
-            <PhIcon name="mdi-refresh" />
+            <PhArrowClockwise />
           </template>
         </v-btn>
       </div>

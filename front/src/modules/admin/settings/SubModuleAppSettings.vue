@@ -11,7 +11,7 @@
 import { useI18n } from 'vue-i18n';
 import { useAppSettingsStore } from './state.app.settings';
 import { fetchSettings } from './service.fetch.settings';
-import PhIcon from '@/core/ui/icons/PhIcon.vue';
+import { PhList, PhCaretDown, PhCaretRight, PhGear, PhBriefcase, PhChartBar, PhBookOpen, PhUserGear, PhShield, PhUserClock, PhPassword, PhShieldCheck, PhServer, PhShareNetwork, PhTextT, PhUsersThree, PhUsers } from '@phosphor-icons/vue';
 import { useUiStore } from '@/core/state/uistate';
  
  // Import components from sections directory with hierarchical naming
@@ -153,6 +153,28 @@ const { t } = useI18n();
  
  // Mobile menu state
  const isMobileMenuOpen = ref(false);
+// Resolve section icon string (mdi-*) to a Phosphor component
+const resolveSectionIcon = (iconName: string) => {
+  const map: Record<string, any> = {
+    'mdi-cog-outline': PhGear,
+    'mdi-cog': PhGear,
+    'mdi-briefcase-outline': PhBriefcase,
+    'mdi-chart-box-outline': PhChartBar,
+    'mdi-book-open-outline': PhBookOpen,
+    'mdi-account-cog-outline': PhUserGear,
+    'mdi-shield-outline': PhShield,
+    'mdi-account-clock-outline': PhUserClock,
+    'mdi-form-textbox-password': PhPassword,
+    'mdi-shield-key-outline': PhShieldCheck,
+    'mdi-server': PhServer,
+    'mdi-transit-connection-variant': PhShareNetwork,
+    'mdi-text-box-outline': PhTextT,
+    'mdi-account-group-outline': PhUsersThree,
+    'mdi-account-multiple-outline': PhUsers,
+    'mdi-chart-timeline-variant': PhChartBar
+  }
+  return map[iconName] || PhGear
+}
  
  // Get selected section path from store
  const selectedSectionPath = computed(() => {
@@ -428,7 +450,7 @@ const { t } = useI18n();
         @click="toggleMobileMenu"
       >
         <template #prepend>
-          <PhIcon name="mdi-menu" :size="18" />
+          <PhList :size="18" />
         </template>
         {{ selectedSection.name }}
       </v-btn>
@@ -447,17 +469,8 @@ const { t } = useI18n();
             @click="handleSectionClick(section)"
           >
             <template #prepend>
-              <PhIcon
-                v-if="section.hasChildren"
-                :name="expandedSections.includes(section.id) ? 'mdi-chevron-down' : 'mdi-chevron-right'"
-                :size="16"
-                class="mr-2"
-              />
-              <PhIcon
-                :name="section.icon"
-                :size="16"
-                class="mr-2"
-              />
+              <component :is="expandedSections.includes(section.id) ? PhCaretDown : PhCaretRight" v-if="section.hasChildren" :size="16" class="mr-2" />
+              <component :is="resolveSectionIcon(section.icon)" :size="16" class="mr-2" />
             </template>
             {{ section.name }}
           </v-list-item>
@@ -489,18 +502,9 @@ const { t } = useI18n();
           >
             <template #prepend>
               <div class="section-indicator">
-                <PhIcon
-                  v-if="section.hasChildren"
-                  :name="expandedSections.includes(section.id) ? 'mdi-chevron-down' : 'mdi-chevron-right'"
-                  :size="16"
-                  class="chevron-icon"
-                />
+                <component :is="expandedSections.includes(section.id) ? PhCaretDown : PhCaretRight" v-if="section.hasChildren" :size="16" class="chevron-icon" />
               </div>
-              <PhIcon
-                :name="section.icon"
-                :size="16"
-                class="section-icon"
-              />
+              <component :is="resolveSectionIcon(section.icon)" :size="16" class="section-icon" />
             </template>
             <v-list-item-title>{{ section.name }}</v-list-item-title>
           </v-list-item>

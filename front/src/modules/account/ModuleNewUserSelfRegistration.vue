@@ -26,7 +26,7 @@ import { fetchPublicPasswordPolicies } from '@/core/services/service.fetch.publi
 import { usePublicSettingsStore, type PasswordPolicies } from '@/core/state/state.public.settings'
 import PasswordPoliciesPanel from '@/core/ui/panels/panel.current.password.policies.vue'
 import { api } from '@/core/api/service.axios'
-import PhIcon from '@/core/ui/icons/PhIcon.vue'
+import { PhEye, PhEyeSlash } from '@phosphor-icons/vue'
 
 // ==================== STORES ====================
 const uiStore = useUiStore()
@@ -422,7 +422,8 @@ onMounted(async () => {
                 tabindex="-1"
                 @click="togglePasswordVisibility"
               >
-                <PhIcon :name="showPassword ? 'mdi-eye-off' : 'mdi-eye'" />
+                <PhEyeSlash v-if="showPassword" />
+                <PhEye v-else />
               </v-btn>
             </template>
           </v-text-field>

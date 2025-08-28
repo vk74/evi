@@ -22,7 +22,19 @@ import { useUserAuthStore } from '@/core/auth/state.user.auth'
 import debounce from 'lodash/debounce'
 import ChangePassword from '../../../../core/ui/modals/change-password/ChangePassword.vue'
 import { PasswordChangeMode } from '../../../../core/ui/modals/change-password/types.change.password'
-import PhIcon from '@/core/ui/icons/PhIcon.vue'
+import {
+  PhMagnifyingGlass,
+  PhX,
+  PhCheckSquare,
+  PhSquare,
+  PhCheckCircle,
+  PhMinusCircle,
+  PhCaretDoubleLeft,
+  PhCaretLeft,
+  PhCaretRight,
+  PhCaretDoubleRight,
+  PhArrowClockwise
+} from '@phosphor-icons/vue'
 
 // Initialize stores and i18n
 const { t } = useI18n()
@@ -358,10 +370,10 @@ const handleItemsPerPageChange = async (newItemsPerPage: ItemsPerPageOption) => 
             @click:clear="handleClearSearch"
           >
             <template #prepend-inner>
-              <PhIcon name="mdi-magnify" />
+              <PhMagnifyingGlass />
             </template>
             <template #clear="{ props }">
-              <v-btn v-bind="props" icon variant="text"><PhIcon name="mdi-close" /></v-btn>
+              <v-btn v-bind="props" icon variant="text"><PhX /></v-btn>
             </template>
           </v-text-field>
         </div>
@@ -389,11 +401,8 @@ const handleItemsPerPageChange = async (newItemsPerPage: ItemsPerPageOption) => 
               :aria-pressed="isSelected(item.user_id)"
               @click="onSelectUser(item.user_id, !isSelected(item.user_id))"
             >
-              <PhIcon
-                :name="isSelected(item.user_id) ? 'mdi-checkbox-marked' : 'mdi-checkbox-blank-outline'"
-                :color="isSelected(item.user_id) ? 'teal' : 'grey'"
-                :size="18"
-              />
+              <PhCheckSquare v-if="isSelected(item.user_id)" :size="18" color="teal" />
+              <PhSquare v-else :size="18" color="grey" />
             </v-btn>
           </template>
 
@@ -411,11 +420,8 @@ const handleItemsPerPageChange = async (newItemsPerPage: ItemsPerPageOption) => 
           </template>
 
           <template #[`item.is_staff`]="{ item }">
-            <PhIcon
-              :name="item.is_staff ? 'mdi-check-circle' : 'mdi-minus-circle'"
-              :color="item.is_staff ? 'teal' : 'red-darken-4'"
-              size="16"
-            />
+            <PhCheckCircle v-if="item.is_staff" size="16" color="teal" />
+            <PhMinusCircle v-else size="16" color="red-darken-4" />
           </template>
         </v-data-table>
 
@@ -453,7 +459,7 @@ const handleItemsPerPageChange = async (newItemsPerPage: ItemsPerPageOption) => 
                   :disabled="page === 1"
                   @click="goToPage(1)"
                 >
-                  <PhIcon name="mdi-chevron-double-left" />
+                  <PhCaretDoubleLeft />
                   <v-tooltip
                     activator="parent"
                     location="top"
@@ -469,7 +475,7 @@ const handleItemsPerPageChange = async (newItemsPerPage: ItemsPerPageOption) => 
                   :disabled="page === 1"
                   @click="goToPage(page - 1)"
                 >
-                  <PhIcon name="mdi-chevron-left" />
+                  <PhCaretLeft />
                   <v-tooltip
                     activator="parent"
                     location="top"
@@ -507,7 +513,7 @@ const handleItemsPerPageChange = async (newItemsPerPage: ItemsPerPageOption) => 
                   :disabled="page >= getTotalPages()"
                   @click="goToPage(page + 1)"
                 >
-                  <PhIcon name="mdi-chevron-right" />
+                  <PhCaretRight />
                   <v-tooltip
                     activator="parent"
                     location="top"
@@ -523,7 +529,7 @@ const handleItemsPerPageChange = async (newItemsPerPage: ItemsPerPageOption) => 
                   :disabled="page >= getTotalPages()"
                   @click="goToPage(getTotalPages())"
                 >
-                  <PhIcon name="mdi-chevron-double-right" />
+                  <PhCaretDoubleRight />
                   <v-tooltip
                     activator="parent"
                     location="top"
@@ -566,7 +572,7 @@ const handleItemsPerPageChange = async (newItemsPerPage: ItemsPerPageOption) => 
             :loading="loading"
             @click="refreshList"
           >
-            <PhIcon name="mdi-refresh" class="mr-2" />
+            <PhArrowClockwise class="mr-2" />
             {{ t('list.buttons.refresh') }}
           </v-btn>
           
@@ -579,7 +585,7 @@ const handleItemsPerPageChange = async (newItemsPerPage: ItemsPerPageOption) => 
             :disabled="!hasSelected"
             @click="clearSelections"
           >
-            <PhIcon name="mdi-checkbox-blank-outline" class="mr-2" />
+            <PhSquare class="mr-2" />
             {{ t('list.buttons.clearSelections') }}
           </v-btn>
         </div>

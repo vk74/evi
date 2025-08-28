@@ -9,10 +9,11 @@
 -->
 
 <script setup lang="ts">
-import { ref, computed, defineAsyncComponent } from 'vue'
+import { ref, computed, defineAsyncComponent, onMounted } from 'vue'
 import { useAdminStore } from './state.admin'
 import type { SubModuleId } from './types.admin'
 import { useI18n } from 'vue-i18n'
+import { loadPhosphorModule } from '@/core/ui/icons/phosphor.cache'
 
 // Асинхронная загрузка подмодулей
 const SubModuleCatalogAdmin = defineAsyncComponent(() => import('./catalog/SubModuleCatalogAdmin.vue'))
@@ -72,6 +73,11 @@ const toggleDrawerMode = (): void => {
   const nextIndex = (currentIndex + 1) % modes.length
   adminStore.setDrawerMode(modes[nextIndex])
 }
+
+// Prefetch Phosphor icon library after admin module mounts to warm cache
+onMounted(() => {
+  loadPhosphorModule().catch(() => {})
+})
 </script>
 
 <template>

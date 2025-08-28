@@ -20,7 +20,7 @@ import { catalogSectionsFetchService } from '@/modules/admin/catalog/service.adm
 import { catalogSectionUpdateService } from '@/modules/admin/catalog/service.admin.update.catalog.section'
 import type { SectionStatus, CatalogSection } from '@/modules/admin/catalog/types.catalog.admin'
 import * as PhosphorIcons from '@phosphor-icons/vue'
-import PhIcon from '@/core/ui/icons/PhIcon.vue'
+import { PhMagnifyingGlass, PhCaretUpDown, PhCheckSquare, PhSquare, PhPaintBrush, PhImage } from '@phosphor-icons/vue'
 
 const { t, locale } = useI18n()
 const catalogStore = useCatalogAdminStore()
@@ -287,7 +287,7 @@ const handleBackupOwnerSelected = (result: any) => {
                         class="placeholder-icon"
                       />
                       <div v-else class="empty-placeholder">
-                        <PhIcon name="mdi-image-outline" :size="24" color="rgb(20, 184, 166)" />
+                        <PhImage :size="24" color="rgb(20, 184, 166)" />
                       </div>
                     </div>
                   </v-col>
@@ -341,7 +341,7 @@ const handleBackupOwnerSelected = (result: any) => {
                       >
                         <template #append-inner>
                           <div class="d-flex align-center" style="cursor: pointer" @click="showOwnerSelector = true">
-                            <PhIcon name="mdi-magnify" />
+                            <PhMagnifyingGlass />
                           </div>
                         </template>
                       </v-text-field>
@@ -360,7 +360,7 @@ const handleBackupOwnerSelected = (result: any) => {
                       >
                         <template #append-inner>
                           <div class="d-flex align-center" style="cursor: pointer" @click="showBackupOwnerSelector = true">
-                            <PhIcon name="mdi-magnify" />
+                            <PhMagnifyingGlass />
                           </div>
                         </template>
                       </v-text-field>
@@ -392,7 +392,7 @@ const handleBackupOwnerSelected = (result: any) => {
                       color="teal"
                     >
                       <template #append-inner>
-                        <PhIcon name="PhCaretUpDown" />
+                        <PhCaretUpDown />
                       </template>
                     </v-select>
                   </v-col>
@@ -408,11 +408,8 @@ const handleBackupOwnerSelected = (result: any) => {
                         :aria-pressed="formData.isPublic"
                         @click="formData.isPublic = !formData.isPublic"
                       >
-                        <PhIcon
-                          :name="formData.isPublic ? 'mdi-checkbox-marked' : 'mdi-checkbox-blank-outline'"
-                          :color="formData.isPublic ? 'teal' : 'grey'"
-                          :size="18"
-                        />
+                        <PhCheckSquare v-if="formData.isPublic" :size="18" color="teal" />
+                        <PhSquare v-else :size="18" color="grey" />
                       </v-btn>
                       <span style="margin-left: 8px;">{{ t('admin.catalog.editor.settings.isPublic.label') }}</span>
                     </div>
@@ -440,7 +437,7 @@ const handleBackupOwnerSelected = (result: any) => {
                         </template>
                         <template #append-inner>
                           <v-btn icon variant="text" size="small" @click="showColorPicker = true">
-                            <PhIcon name="mdi-palette" />
+                            <PhPaintBrush />
                           </v-btn>
                         </template>
                       </v-text-field>
@@ -578,7 +575,7 @@ const handleBackupOwnerSelected = (result: any) => {
             @click="openIconPicker"
           >
             <template #prepend>
-              <PhIcon name="mdi-image-outline" />
+              <PhImage />
             </template>
             {{ t('admin.catalog.editor.information.icon.select') }}
           </v-btn>

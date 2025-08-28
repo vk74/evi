@@ -22,7 +22,18 @@ import { ServicePriority, ServiceStatus, type Service } from '../types.services.
 import { fetchAllServices, type FetchServicesParams } from './service.admin.fetchallservices'
 import { deleteServices, type DeleteServicesRequest } from './service.admin.deleteservices'
 import { defineAsyncComponent } from 'vue'
-import PhIcon from '@/core/ui/icons/PhIcon.vue'
+import {
+  PhMagnifyingGlass,
+  PhX,
+  PhCheckSquare,
+  PhSquare,
+  PhCaretDoubleLeft,
+  PhCaretLeft,
+  PhCaretRight,
+  PhCaretDoubleRight,
+  PhArrowClockwise,
+  PhGear
+} from '@phosphor-icons/vue'
 
 // Types
 interface TableHeader {
@@ -477,7 +488,7 @@ const handleItemsPerPageChange = async (newItemsPerPage: ItemsPerPageOption) => 
             @keydown="handleSearchKeydown"
           >
             <template #prepend-inner>
-              <PhIcon name="mdi-magnify" />
+              <PhMagnifyingGlass />
             </template>
             <template #append-inner>
               <div
@@ -486,7 +497,7 @@ const handleItemsPerPageChange = async (newItemsPerPage: ItemsPerPageOption) => 
                 style="cursor: pointer"
                 @click="handleClearSearch"
               >
-                <PhIcon name="mdi-close" />
+                <PhX />
               </div>
             </template>
           </v-text-field>
@@ -515,11 +526,8 @@ const handleItemsPerPageChange = async (newItemsPerPage: ItemsPerPageOption) => 
               :aria-pressed="isSelected(item.id)"
               @click="onSelectService(item.id, !isSelected(item.id))"
             >
-              <PhIcon
-                :name="isSelected(item.id) ? 'mdi-checkbox-marked' : 'mdi-checkbox-blank-outline'"
-                :color="isSelected(item.id) ? 'teal' : 'grey'"
-                :size="18"
-              />
+              <PhCheckSquare v-if="isSelected(item.id)" :size="18" color="teal" />
+              <PhSquare v-else :size="18" color="grey" />
             </v-btn>
           </template>
 
@@ -533,13 +541,7 @@ const handleItemsPerPageChange = async (newItemsPerPage: ItemsPerPageOption) => 
                 color="rgb(20, 184, 166)"
                 class="mr-2"
               />
-              <PhIcon
-                v-else
-                name="mdi-cog"
-                :size="16"
-                color="teal"
-                class="mr-2"
-              />
+              <PhGear v-else size="16" color="teal" class="mr-2" />
               <span>{{ item.name }}</span>
             </div>
           </template>
@@ -614,7 +616,7 @@ const handleItemsPerPageChange = async (newItemsPerPage: ItemsPerPageOption) => 
                   :disabled="page === 1"
                   @click="goToPage(1)"
                 >
-                  <PhIcon name="mdi-chevron-double-left" />
+                  <PhCaretDoubleLeft />
                   <v-tooltip
                     activator="parent"
                     location="top"
@@ -630,7 +632,7 @@ const handleItemsPerPageChange = async (newItemsPerPage: ItemsPerPageOption) => 
                   :disabled="page === 1"
                   @click="goToPage(page - 1)"
                 >
-                  <PhIcon name="mdi-chevron-left" />
+                  <PhCaretLeft />
                   <v-tooltip
                     activator="parent"
                     location="top"
@@ -668,7 +670,7 @@ const handleItemsPerPageChange = async (newItemsPerPage: ItemsPerPageOption) => 
                   :disabled="page >= getTotalPages()"
                   @click="goToPage(page + 1)"
                 >
-                  <PhIcon name="mdi-chevron-right" />
+                  <PhCaretRight />
                   <v-tooltip
                     activator="parent"
                     location="top"
@@ -684,7 +686,7 @@ const handleItemsPerPageChange = async (newItemsPerPage: ItemsPerPageOption) => 
                   :disabled="page >= getTotalPages()"
                   @click="goToPage(getTotalPages())"
                 >
-                  <PhIcon name="mdi-chevron-double-right" />
+                  <PhCaretDoubleRight />
                   <v-tooltip
                     activator="parent"
                     location="top"
@@ -726,7 +728,7 @@ const handleItemsPerPageChange = async (newItemsPerPage: ItemsPerPageOption) => 
             @click="performSearch"
           >
             <template #prepend>
-              <PhIcon name="mdi-refresh" />
+              <PhArrowClockwise />
             </template>
             {{ t('admin.services.actions.refresh').toUpperCase() }}
           </v-btn>
@@ -740,7 +742,7 @@ const handleItemsPerPageChange = async (newItemsPerPage: ItemsPerPageOption) => 
             @click="clearSelections"
           >
             <template #prepend>
-              <PhIcon name="mdi-checkbox-blank-outline" />
+              <PhSquare />
             </template>
             {{ t('admin.services.actions.clearSelection').toUpperCase() }}
           </v-btn>

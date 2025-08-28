@@ -9,7 +9,7 @@ import { ref, onMounted, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import type { CatalogServiceDetails } from './types.service.details'
 import { fetchServiceDetails } from './service.fetch.service.details'
-import PhIcon from '@/core/ui/icons/PhIcon.vue'
+import { PhCube } from '@phosphor-icons/vue'
 
 // Props (MVP): accept serviceId from parent context/navigation state
 interface Props { serviceId: string }
@@ -63,13 +63,7 @@ watch(() => props.serviceId, () => { loadDetails() })
         color="rgb(20, 184, 166)"
         class="me-3"
       />
-      <PhIcon
-        v-else
-        name="mdi-cube"
-        :size="28"
-        color="teal"
-        class="me-3"
-      />
+      <PhCube v-else :size="28" color="teal" class="me-3" />
       <div class="text-h6">
         {{ details?.name }}
       </div>

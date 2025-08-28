@@ -12,7 +12,7 @@
 import { ref, computed, onMounted, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useUiStore } from '@/core/state/uistate'
-import PhIcon from '@/core/ui/icons/PhIcon.vue'
+import { PhX, PhCaretUpDown, PhMagnifyingGlass, PhQuestion } from '@phosphor-icons/vue'
 
 // Props
 interface Props {
@@ -190,7 +190,7 @@ watch(() => props.selectedSize, (newValue) => {
           @click="closeDialog"
         >
           <template #prepend>
-            <PhIcon name="mdi-close" />
+            <PhX />
           </template>
         </v-btn>
       </v-card-title>
@@ -214,7 +214,7 @@ watch(() => props.selectedSize, (newValue) => {
               @update:model-value="handleLibraryChange"
             >
               <template #append-inner>
-                <PhIcon name="PhCaretUpDown" />
+                <PhCaretUpDown />
               </template>
             </v-select>
           </v-col>
@@ -234,7 +234,7 @@ watch(() => props.selectedSize, (newValue) => {
               @update:model-value="handleStyleChange"
             >
               <template #append-inner>
-                <PhIcon name="PhCaretUpDown" />
+                <PhCaretUpDown />
               </template>
             </v-select>
           </v-col>
@@ -254,7 +254,7 @@ watch(() => props.selectedSize, (newValue) => {
               @update:model-value="handleSizeChange"
             >
               <template #append-inner>
-                <PhIcon name="PhCaretUpDown" />
+                <PhCaretUpDown />
               </template>
             </v-select>
           </v-col>
@@ -273,7 +273,7 @@ watch(() => props.selectedSize, (newValue) => {
             color="teal"
           >
             <template #prepend-inner>
-              <PhIcon name="mdi-magnify" />
+              <PhMagnifyingGlass />
             </template>
           </v-text-field>
         </div>
@@ -319,11 +319,7 @@ watch(() => props.selectedSize, (newValue) => {
           class="d-flex justify-center align-center pa-8"
         >
           <div class="text-center">
-            <PhIcon
-              name="PhQuestion"
-              size="48"
-              color="grey"
-            />
+            <PhQuestion size="48" color="grey" />
             <p class="text-body-1 mt-2">
               {{ t('itemSelector.items.notFound').toLowerCase() }}
             </p>

@@ -21,7 +21,7 @@ import { fetchSettings } from '@/modules/admin/settings/service.fetch.settings';
 import { updateSettingFromComponent } from '@/modules/admin/settings/service.update.settings';
 import { useUiStore } from '@/core/state/uistate';
 import DataLoading from '@/core/ui/loaders/DataLoading.vue';
-import PhIcon from '@/core/ui/icons/PhIcon.vue';
+import { PhWarningCircle } from '@phosphor-icons/vue';
 
 // Section path identifier
 const section_path = 'Application.System.EventBus';
@@ -432,7 +432,7 @@ onMounted(() => {
                 >
                   <template #activator="{ props }">
                     <span v-bind="props" style="cursor: pointer;" @click="retrySetting(setting.name)">
-                      <PhIcon name="mdi-alert-circle" :size="16" class="ms-2" />
+                      <PhWarningCircle :size="16" class="ms-2" />
                     </span>
                   </template>
                   <div class="pa-2">

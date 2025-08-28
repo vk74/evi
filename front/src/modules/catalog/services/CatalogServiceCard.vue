@@ -7,7 +7,7 @@ File: CatalogServiceCard.vue
 <script setup lang="ts">
 import { ref } from 'vue';
 import type { CatalogService } from './types.services';
-import PhIcon from '@/core/ui/icons/PhIcon.vue'
+import { PhCube } from '@phosphor-icons/vue'
 
 // ==================== PROPS ====================
 interface Props {
@@ -54,13 +54,7 @@ const getPhosphorIcon = (iconName: string | null) => {
         color="rgb(20, 184, 166)"
         class="me-3"
       />
-      <PhIcon
-        v-else
-        name="mdi-cube"
-        :size="24"
-        color="teal"
-        class="me-3"
-      />
+      <PhCube v-else :size="24" color="teal" class="me-3" />
       <div class="flex-grow-1">
         <div class="text-h6">
           {{ service.name }}

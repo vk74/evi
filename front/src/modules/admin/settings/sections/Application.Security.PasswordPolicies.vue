@@ -16,7 +16,7 @@ import { getDefaultValues } from '@/modules/admin/settings/service.fetch.setting
 import { useUiStore } from '@/core/state/uistate';
 import DataLoading from '@/core/ui/loaders/DataLoading.vue';
 import PanelCurrentPasswordPolicies from '@/core/ui/panels/panel.current.password.policies.vue';
-import PhIcon from '@/core/ui/icons/PhIcon.vue';
+import { PhWarningCircle, PhQuestion, PhArrowClockwise } from '@phosphor-icons/vue';
 
 // Section path identifier - using component name for better consistency
 const section_path = 'Application.Security.PasswordPolicies';
@@ -449,7 +449,7 @@ onMounted(() => {
               >
                 <template #activator="{ props }">
                   <span v-bind="props" style="cursor: pointer;" @click="retrySetting('password.min.length')">
-                    <PhIcon name="mdi-alert-circle" :size="16" class="ms-2" />
+                    <PhWarningCircle :size="16" class="ms-2" />
                   </span>
                 </template>
                 <div class="pa-2">
@@ -484,7 +484,7 @@ onMounted(() => {
               >
                 <template #activator="{ props }">
                   <span v-bind="props" style="cursor: pointer;" @click="retrySetting('password.max.length')">
-                    <PhIcon name="mdi-alert-circle" :size="16" class="ms-2" />
+                    <PhWarningCircle :size="16" class="ms-2" />
                   </span>
                 </template>
                 <div class="pa-2">
@@ -515,7 +515,7 @@ onMounted(() => {
             >
               <template #activator="{ props }">
                 <span v-bind="props" style="cursor: pointer;" @click="retrySetting('password.require.lowercase')">
-                  <PhIcon name="mdi-alert-circle" :size="16" class="ms-2" />
+                  <PhWarningCircle :size="16" class="ms-2" />
                 </span>
               </template>
               <div class="pa-2">
@@ -545,7 +545,7 @@ onMounted(() => {
             >
               <template #activator="{ props }">
                 <span v-bind="props" style="cursor: pointer;" @click="retrySetting('password.require.uppercase')">
-                  <PhIcon name="mdi-alert-circle" :size="16" class="ms-2" />
+                  <PhWarningCircle :size="16" class="ms-2" />
                 </span>
               </template>
               <div class="pa-2">
@@ -575,7 +575,7 @@ onMounted(() => {
             >
               <template #activator="{ props }">
                 <span v-bind="props" style="cursor: pointer;" @click="retrySetting('password.require.numbers')">
-                  <PhIcon name="mdi-alert-circle" :size="16" class="ms-2" />
+                  <PhWarningCircle :size="16" class="ms-2" />
                 </span>
               </template>
               <div class="pa-2">
@@ -605,7 +605,7 @@ onMounted(() => {
             >
               <template #activator="{ props }">
                 <span v-bind="props" style="cursor: pointer;" @click="retrySetting('password.require.special.chars')">
-                  <PhIcon name="mdi-alert-circle" :size="16" class="ms-2" />
+                  <PhWarningCircle :size="16" class="ms-2" />
                 </span>
               </template>
               <div class="pa-2">
@@ -623,7 +623,7 @@ onMounted(() => {
             >
               <template #activator="{ props }">
                 <span v-bind="props">
-                  <PhIcon name="mdi-help-circle-outline" :size="16" class="ms-2" />
+                  <PhQuestion :size="16" class="ms-2" />
                 </span>
               </template>
               <div class="pa-2">
@@ -647,7 +647,7 @@ onMounted(() => {
                 >
                   <template #activator="{ props }">
                     <span v-bind="props" style="cursor: pointer;" @click="retrySetting('password.allowed.special.chars')">
-                      <PhIcon name="mdi-alert-circle" :size="16" class="ms-2" />
+                      <PhWarningCircle :size="16" class="ms-2" />
                     </span>
                   </template>
                   <div class="pa-2">
@@ -704,7 +704,7 @@ onMounted(() => {
                   @click="resetToDefaults"
                 >
                   <template #prepend>
-                    <PhIcon name="mdi-refresh" />
+                    <PhArrowClockwise />
                   </template>
                   {{ t('admin.settings.application.security.passwordpolicies.reset.button') }}
                 </v-btn>

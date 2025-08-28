@@ -22,7 +22,7 @@ import { serviceCreateService } from '../../service.create.service'
 import { serviceUpdateService } from '../../service.update.service'
 import { serviceAdminFetchSingleService } from './service.admin.fetchsingleservice'
 import * as PhosphorIcons from '@phosphor-icons/vue'
-import PhIcon from '@/core/ui/icons/PhIcon.vue'
+import { PhImage, PhMagnifyingGlass, PhCaretUpDown, PhX, PhPlus } from '@phosphor-icons/vue'
 
 // Initialize stores and i18n
 const { t, locale } = useI18n()
@@ -618,7 +618,7 @@ onMounted(() => {
                         v-else
                         class="empty-placeholder"
                       >
-                        <PhIcon name="mdi-image-outline" :size="24" color="rgb(20, 184, 166)" />
+                        <PhImage :size="24" color="rgb(20, 184, 166)" />
                       </div>
                     </div>
                   </v-col>
@@ -657,7 +657,7 @@ onMounted(() => {
                       color="teal"
                     >
                       <template #append-inner>
-                        <PhIcon name="PhCaretUpDown" />
+                        <PhCaretUpDown />
                       </template>
                     </v-select>
                   </v-col>
@@ -678,7 +678,7 @@ onMounted(() => {
                       color="teal"
                     >
                       <template #append-inner>
-                        <PhIcon name="PhCaretUpDown" />
+                        <PhCaretUpDown />
                       </template>
                     </v-select>
                   </v-col>
@@ -711,7 +711,7 @@ onMounted(() => {
                       >
                         <template #append-inner>
                           <div style="cursor: pointer" @click="showOwnerSelector = true">
-                            <PhIcon name="mdi-magnify" />
+                            <PhMagnifyingGlass />
                           </div>
                         </template>
                       </v-text-field>
@@ -731,7 +731,7 @@ onMounted(() => {
                       >
                         <template #append-inner>
                           <div style="cursor: pointer" @click="showBackupOwnerSelector = true">
-                            <PhIcon name="mdi-magnify" />
+                            <PhMagnifyingGlass />
                           </div>
                         </template>
                       </v-text-field>
@@ -754,7 +754,7 @@ onMounted(() => {
                       >
                         <template #append-inner>
                           <div style="cursor: pointer" @click="showTechnicalOwnerSelector = true">
-                            <PhIcon name="mdi-magnify" />
+                            <PhMagnifyingGlass />
                           </div>
                         </template>
                       </v-text-field>
@@ -774,7 +774,7 @@ onMounted(() => {
                       >
                         <template #append-inner>
                           <div style="cursor: pointer" @click="showBackupTechnicalOwnerSelector = true">
-                            <PhIcon name="mdi-magnify" />
+                            <PhMagnifyingGlass />
                           </div>
                         </template>
                       </v-text-field>
@@ -797,7 +797,7 @@ onMounted(() => {
                       >
                         <template #append-inner>
                           <div style="cursor: pointer" @click="showDispatcherSelector = true">
-                            <PhIcon name="mdi-magnify" />
+                            <PhMagnifyingGlass />
                           </div>
                         </template>
                       </v-text-field>
@@ -830,7 +830,7 @@ onMounted(() => {
                       >
                         <template #append-inner>
                           <div style="cursor: pointer" @click="showSupportTier1Selector = true">
-                            <PhIcon name="mdi-magnify" />
+                            <PhMagnifyingGlass />
                           </div>
                         </template>
                       </v-text-field>
@@ -850,7 +850,7 @@ onMounted(() => {
                       >
                         <template #append-inner>
                           <div style="cursor: pointer" @click="showSupportTier2Selector = true">
-                            <PhIcon name="mdi-magnify" />
+                            <PhMagnifyingGlass />
                           </div>
                         </template>
                       </v-text-field>
@@ -870,7 +870,7 @@ onMounted(() => {
                       >
                         <template #append-inner>
                           <div style="cursor: pointer" @click="showSupportTier3Selector = true">
-                            <PhIcon name="mdi-magnify" />
+                            <PhMagnifyingGlass />
                           </div>
                         </template>
                       </v-text-field>
@@ -1003,7 +1003,7 @@ onMounted(() => {
                             color="teal"
                             @click="removeAllowedGroup(group)"
                           >
-                            <PhIcon name="mdi-close" :size="12" />
+                            <PhX :size="12" />
                           </v-btn>
                         </v-chip>
                         <v-btn
@@ -1015,7 +1015,7 @@ onMounted(() => {
                           @click="showAccessAllowedGroupsSelector = true"
                         >
                           <template #prepend>
-                            <PhIcon name="mdi-plus" />
+                            <PhPlus />
                           </template>
                           {{ t('admin.services.editor.access.addGroups') }}
                         </v-btn>
@@ -1028,7 +1028,7 @@ onMounted(() => {
                           @click="showAccessAllowedGroupsSelector = true"
                         >
                           <template #prepend>
-                            <PhIcon name="mdi-plus" />
+                            <PhPlus />
                           </template>
                           {{ t('admin.services.editor.access.addMore') }}
                         </v-btn>
@@ -1060,7 +1060,7 @@ onMounted(() => {
                             color="red"
                             @click="removeDeniedGroup(group)"
                           >
-                            <PhIcon name="mdi-close" :size="12" />
+                            <PhX :size="12" />
                           </v-btn>
                         </v-chip>
                         <v-btn
@@ -1072,7 +1072,7 @@ onMounted(() => {
                           @click="showAccessDeniedGroupsSelector = true"
                         >
                           <template #prepend>
-                            <PhIcon name="mdi-plus" />
+                            <PhPlus />
                           </template>
                           {{ t('admin.services.editor.access.addGroups') }}
                         </v-btn>
@@ -1085,7 +1085,7 @@ onMounted(() => {
                           @click="showAccessDeniedGroupsSelector = true"
                         >
                           <template #prepend>
-                            <PhIcon name="mdi-plus" />
+                            <PhPlus />
                           </template>
                           {{ t('admin.services.editor.access.addMore') }}
                         </v-btn>
@@ -1117,7 +1117,7 @@ onMounted(() => {
                             color="red"
                             @click="removeDeniedUser(user)"
                           >
-                            <PhIcon name="mdi-close" :size="12" />
+                            <PhX :size="12" />
                           </v-btn>
                         </v-chip>
                         <v-btn
@@ -1129,7 +1129,7 @@ onMounted(() => {
                           @click="showAccessDeniedUsersSelector = true"
                         >
                           <template #prepend>
-                            <PhIcon name="mdi-plus" />
+                            <PhPlus />
                           </template>
                           {{ t('admin.services.editor.access.addUsers') }}
                         </v-btn>
@@ -1142,7 +1142,7 @@ onMounted(() => {
                           @click="showAccessDeniedUsersSelector = true"
                         >
                           <template #prepend>
-                            <PhIcon name="mdi-plus" />
+                            <PhPlus />
                           </template>
                           {{ t('admin.services.editor.access.addMore') }}
                         </v-btn>
@@ -1175,7 +1175,7 @@ onMounted(() => {
             @click="openIconPicker"
           >
             <template #prepend>
-              <PhIcon name="mdi-image-outline" />
+              <PhImage />
             </template>
             {{ t('admin.services.editor.information.icon.select') }}
           </v-btn>

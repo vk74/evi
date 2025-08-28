@@ -15,7 +15,7 @@ import { removeGroupMembers } from './service.delete.group.members' // Import me
 import { defineAsyncComponent } from 'vue'
 const ItemSelector = defineAsyncComponent(() => import(/* webpackChunkName: "ui-item-selector" */ '../../../../core/ui/modals/item-selector/ItemSelector.vue'))
 import { useUserAuthStore } from '@/core/auth/state.user.auth' // Import for JWT check
-import PhIcon from '@/core/ui/icons/PhIcon.vue'
+import { PhMagnifyingGlass, PhX, PhCheckCircle, PhMinusCircle } from '@phosphor-icons/vue'
 
 // Initialize i18n
 const { t } = useI18n()
@@ -474,10 +474,10 @@ onBeforeUnmount(() => {
                   class="mb-4"
                 >
                   <template #prepend-inner>
-                    <PhIcon name="mdi-magnify" />
+                    <PhMagnifyingGlass />
                   </template>
                   <template #append-inner>
-                    <PhIcon name="mdi-close" />
+                    <PhX />
                   </template>
                 </v-text-field>
               </v-container>
@@ -507,7 +507,8 @@ onBeforeUnmount(() => {
                   </v-chip>
                 </template>
                 <template #item.is_staff="{ item }">
-                  <PhIcon :name="item.is_staff ? 'mdi-check-circle' : 'mdi-minus-circle'" />
+                  <PhCheckCircle v-if="item.is_staff" />
+                  <PhMinusCircle v-else />
                 </template>
                 <template #no-data>
                   <div class="pa-4 text-center">

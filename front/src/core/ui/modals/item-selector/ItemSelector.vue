@@ -10,7 +10,7 @@ import { ref, computed, onMounted, onBeforeUnmount, PropType, defineProps, defin
 import { useI18n } from 'vue-i18n'
 import { useUiStore } from '@/core/state/uistate'
 import { ItemSelectorItem } from './types.item.selector'
-import PhIcon from '@/core/ui/icons/PhIcon.vue'
+import { PhMagnifyingGlass, PhX, PhPlus, PhMinus } from '@phosphor-icons/vue'
 
 // Импорт сервисов
 import searchUsers from '@/core/ui/modals/item-selector/service.search.users'
@@ -346,10 +346,10 @@ const onKeyPress = (event: KeyboardEvent) => {
                 @click:prepend-inner="handleSearch"
               >
                 <template #prepend-inner>
-                  <PhIcon name="mdi-magnify" />
+                  <PhMagnifyingGlass />
                 </template>
                 <template #clear="{ props }">
-                  <v-btn v-bind="props" icon variant="text"><PhIcon name="mdi-close" /></v-btn>
+                  <v-btn v-bind="props" icon variant="text"><PhX /></v-btn>
                 </template>
               </v-text-field>
             </v-col>
@@ -381,7 +381,7 @@ const onKeyPress = (event: KeyboardEvent) => {
                         :title="t('itemSelector.buttons.add')" 
                         @click="addItemToSelection(item)"
                       >
-                        <PhIcon name="mdi-plus" />
+                        <PhPlus />
                       </v-btn>
                     </template>
                   </v-list-item>
@@ -420,7 +420,7 @@ const onKeyPress = (event: KeyboardEvent) => {
                         :title="t('itemSelector.buttons.remove')" 
                         @click="removeItemFromSelection(item)"
                       >
-                        <PhIcon name="mdi-minus" />
+                        <PhMinus />
                       </v-btn>
                     </template>
                   </v-list-item>
