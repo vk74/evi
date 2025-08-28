@@ -102,10 +102,10 @@ const loadIcons = async () => {
   
   isLoadingIcons.value = true
   try {
-    // Асинхронная загрузка всех иконок phosphor
+    // Asynchronously load all phosphor icons
     const phosphorIcons = await import('@phosphor-icons/vue')
     
-    // Фильтруем только иконки (исключаем служебные объекты)
+    // Keep only icon components (exclude internal helpers)
     const iconNames = Object.keys(phosphorIcons).filter(name => 
       name.startsWith('Ph') && 
       typeof phosphorIcons[name] === 'object' &&
@@ -264,7 +264,7 @@ watch(() => props.selectedSize, (newValue) => {
         <div class="mb-4">
           <v-text-field
             v-model="searchQuery"
-            :placeholder="t('itemSelector.search.placeholder.icon')"
+            :label="t('itemSelector.search.placeholder.icon')"
             :prepend-inner-icon="undefined"
             variant="outlined"
             density="comfortable"

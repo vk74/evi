@@ -859,6 +859,21 @@ const handleItemsPerPageChange = async (newItemsPerPage: ItemsPerPageOption) => 
   border-bottom: none !important;
 }
 
+/* Header bottom separator */
+.services-table :deep(thead) {
+  position: relative;
+}
+
+.services-table :deep(thead::after) {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 7px;
+  right: 17px;
+  height: 1px;
+  background-color: rgba(var(--v-border-color), var(--v-border-opacity));
+}
+
 /* Sidebar styles */
 .side-bar-container {
   width: 280px;
