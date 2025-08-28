@@ -309,7 +309,7 @@ onMounted(() => {
         @click="toggleMobileMenu"
       >
         <PhList
-          :size="20"
+          :size="25"
           weight="regular"
           class="me-2"
         />
@@ -333,13 +333,13 @@ onMounted(() => {
               <component
                 :is="expandedSections.includes(section.id) ? 'PhCaretDown' : 'PhCaretRight'"
                 v-if="section.hasChildren"
-                :size="16"
+                :size="20"
                 weight="regular"
                 class="me-2"
               />
               <component
                 :is="getIconComponent(section.icon)"
-                :size="16"
+                :size="20"
                 weight="regular"
                 class="me-2"
               />
@@ -377,14 +377,14 @@ onMounted(() => {
                 <component
                   :is="expandedSections.includes(section.id) ? 'PhCaretDown' : 'PhCaretRight'"
                   v-if="section.hasChildren"
-                  :size="16"
+                  :size="20"
                   weight="regular"
                   class="chevron-icon"
                 />
               </div>
               <component
                 :is="getIconComponent(section.icon)"
-                :size="16"
+                :size="20"
                 weight="regular"
                 class="section-icon"
               />

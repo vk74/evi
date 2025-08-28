@@ -450,7 +450,7 @@ const resolveSectionIcon = (iconName: string) => {
         @click="toggleMobileMenu"
       >
         <template #prepend>
-          <PhList :size="18" />
+          <PhList :size="23" />
         </template>
         {{ selectedSection.name }}
       </v-btn>
@@ -469,8 +469,8 @@ const resolveSectionIcon = (iconName: string) => {
             @click="handleSectionClick(section)"
           >
             <template #prepend>
-              <component :is="expandedSections.includes(section.id) ? PhCaretDown : PhCaretRight" v-if="section.hasChildren" :size="16" class="mr-2" />
-              <component :is="resolveSectionIcon(section.icon)" :size="16" class="mr-2" />
+              <component :is="expandedSections.includes(section.id) ? PhCaretDown : PhCaretRight" v-if="section.hasChildren" :size="20" class="mr-2" />
+              <component :is="resolveSectionIcon(section.icon)" :size="20" class="mr-2" />
             </template>
             {{ section.name }}
           </v-list-item>
@@ -502,9 +502,9 @@ const resolveSectionIcon = (iconName: string) => {
           >
             <template #prepend>
               <div class="section-indicator">
-                <component :is="expandedSections.includes(section.id) ? PhCaretDown : PhCaretRight" v-if="section.hasChildren" :size="16" class="chevron-icon" />
+                <component :is="expandedSections.includes(section.id) ? PhCaretDown : PhCaretRight" v-if="section.hasChildren" :size="20" class="chevron-icon" />
               </div>
-              <component :is="resolveSectionIcon(section.icon)" :size="16" class="section-icon" />
+              <component :is="resolveSectionIcon(section.icon)" :size="20" class="section-icon" />
             </template>
             <v-list-item-title>{{ section.name }}</v-list-item-title>
           </v-list-item>
