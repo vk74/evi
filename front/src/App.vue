@@ -466,7 +466,7 @@ onMounted(async () => {
         :class="{ 'transparent-bg': drawer }"
         @click="drawer = !drawer"
       >
-        <component :is="icons.PhList" size="26" :color="iconColor" />
+        <component :is="icons.PhList" size="31" :color="iconColor" />
       </v-btn>
     </div>
 
@@ -523,7 +523,7 @@ onMounted(async () => {
           @click="setActiveModule('Catalog')"
         >
           <template #prepend>
-            <component :is="icons.PhBrowsers" size="22" :color="iconColor" class="mr-2" />
+            <component :is="icons.PhBrowsers" size="26" :color="iconColor" class="mr-2" />
           </template>
         </v-list-item>
         <v-list-item 
@@ -539,7 +539,7 @@ onMounted(async () => {
           @click="setActiveModule('Work')"
         >
           <template #prepend>
-            <component :is="icons.PhFiles" size="22" :color="iconColor" class="mr-2" />
+            <component :is="icons.PhFiles" size="26" :color="iconColor" class="mr-2" />
           </template>
         </v-list-item>
         <v-list-item 
@@ -555,7 +555,7 @@ onMounted(async () => {
           @click="setActiveModule('AR')"
         >
           <template #prepend>
-            <component :is="icons.PhChartLineUp" size="22" :color="iconColor" class="mr-2" />
+            <component :is="icons.PhChartLineUp" size="26" :color="iconColor" class="mr-2" />
           </template>
         </v-list-item>
         <v-list-item 
@@ -571,7 +571,7 @@ onMounted(async () => {
           @click="setActiveModule('KnowledgeBase')"
         >
           <template #prepend>
-            <component :is="icons.PhBooks" size="22" :color="iconColor" class="mr-2" />
+            <component :is="icons.PhBooks" size="26" :color="iconColor" class="mr-2" />
           </template>
         </v-list-item>
         <v-divider
@@ -600,9 +600,9 @@ onMounted(async () => {
           >
             <template #prepend>
               <div class="admin-icon-with-badge">
-                <component :is="icons.PhGear" size="22" :color="iconColor" />
+                <component :is="icons.PhGear" size="26" :color="iconColor" />
                 <span v-if="isRailMode" class="admin-chevron-badge">
-                  <component :is="icons.PhCaretDown" size="10" />
+                  <component :is="icons.PhCaretDown" size="12" />
                 </span>
               </div>
             </template>
@@ -610,7 +610,7 @@ onMounted(async () => {
             <template v-if="!isRailMode" #append>
               <component 
                 :is="adminExpandComponent"
-                size="16"
+                size="19"
                 :color="iconColor"
                 class="admin-expand-icon"
               />
@@ -639,7 +639,7 @@ onMounted(async () => {
                 @click="setActiveAdminSection('catalogAdmin')"
               >
                 <template #prepend>
-                  <component :is="icons.PhPlusSquare" size="20" :color="iconColor" class="mr-2" />
+                  <component :is="icons.PhPlusSquare" size="24" :color="iconColor" class="mr-2" />
                 </template>
               </v-list-item>
               
@@ -659,7 +659,7 @@ onMounted(async () => {
                 @click="setActiveAdminSection('serviceAdmin')"
               >
                 <template #prepend>
-                  <component :is="icons.PhCubeFocus" size="20" :color="iconColor" class="mr-2" />
+                  <component :is="icons.PhCubeFocus" size="24" :color="iconColor" class="mr-2" />
                 </template>
               </v-list-item>
               
@@ -679,7 +679,7 @@ onMounted(async () => {
                 @click="setActiveAdminSection('usersAdmin')"
               >
                 <template #prepend>
-                  <component :is="icons.PhUserGear" size="20" :color="iconColor" class="mr-2" />
+                  <component :is="icons.PhUserGear" size="24" :color="iconColor" class="mr-2" />
                 </template>
               </v-list-item>
               
@@ -699,7 +699,7 @@ onMounted(async () => {
                 @click="setActiveAdminSection('appAdmin')"
               >
                 <template #prepend>
-                  <component :is="icons.PhSlidersHorizontal" size="20" :color="iconColor" class="mr-2" />
+                  <component :is="icons.PhSlidersHorizontal" size="24" :color="iconColor" class="mr-2" />
                 </template>
               </v-list-item>
             </div>
@@ -734,7 +734,7 @@ onMounted(async () => {
               @click="toggleLanguageMenu"
             >
               <template #prepend>
-                <component :is="icons.PhTranslate" size="22" :color="iconColor" class="mr-2" />
+                <component :is="icons.PhTranslate" size="26" :color="iconColor" class="mr-2" />
               </template>
             </v-list-item>
             
@@ -789,7 +789,7 @@ onMounted(async () => {
               @click="toggleProfileMenu"
             >
               <template #prepend>
-                <component :is="icons.PhUserCircle" size="22" :color="iconColor" class="mr-2" />
+                <component :is="icons.PhUserCircle" size="26" :color="iconColor" class="mr-2" />
               </template>
             </v-list-item>
             
@@ -842,7 +842,7 @@ onMounted(async () => {
             @click="setActiveModule('Login')"
           >
             <template #prepend>
-              <component :is="icons.PhSignIn" size="22" :color="iconColor" class="mr-2" />
+              <component :is="icons.PhSignIn" size="26" :color="iconColor" class="mr-2" />
             </template>
           </v-list-item>
           
@@ -861,7 +861,7 @@ onMounted(async () => {
             @click="setActiveModule('NewUserRegistration')"
           >
             <template #prepend>
-              <component :is="icons.PhUserPlus" size="22" :color="iconColor" class="mr-2" />
+              <component :is="icons.PhUserPlus" size="26" :color="iconColor" class="mr-2" />
             </template>
           </v-list-item>
         </v-list>
@@ -877,7 +877,7 @@ onMounted(async () => {
             class="drawer-toggle-btn"
             color="grey-darken-1"
           >
-            <component :is="chevronComponent" size="18" :color="iconColor" />
+            <component :is="chevronComponent" size="22" :color="iconColor" />
           </v-btn>
         </div>
       </template>
