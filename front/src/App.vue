@@ -21,27 +21,8 @@ import { useI18n } from 'vue-i18n';
 import { ModuleName, DrawerMode, AdminSubModule } from './types.app';
 
 import { logoutService } from '@/core/auth/service.logout';
-import {
-  PhList,
-  PhCaretRight,
-  PhCaretLeft,
-  PhCaretDown,
-  PhCaretUp,
-  PhSquaresFour,
-  PhFiles,
-  PhChartLineUp,
-  PhBooks,
-  PhGear,
-  PhPlusSquare,
-  PhCubeFocus,
-  PhUserGear,
-  PhTranslate,
-  PhUserCircle,
-  PhSignIn,
-  PhUserPlus,
-  PhBrowsers,
-  PhSlidersHorizontal
-} from '@phosphor-icons/vue'
+// Defer loading of Phosphor icons to avoid pulling the whole library in the initial chunk
+const icons = ref<Record<string, any>>({})
 
 // Async component imports with named chunks and prefetch hints
 const ModuleCatalog = defineAsyncComponent(() => import(/* webpackChunkName: "mod-catalog" */ /* webpackPrefetch: true */ './modules/catalog/ModuleCatalog.vue'));
@@ -102,22 +83,24 @@ const isKnowledgeBaseModuleVisible = computed((): boolean => {
 });
 
 const chevronComponent = computed(() => {
+  const ic = icons.value
   switch(appStore.drawerMode) {
     case 'auto':
-      return PhCaretRight;
+      return ic.PhCaretRight
     case 'opened':
-      return PhCaretLeft;
+      return ic.PhCaretLeft
     case 'closed':
-      return PhCaretDown;
+      return ic.PhCaretDown
     default:
-      return PhCaretRight;
+      return ic.PhCaretRight
   }
-});
+})
 
 // Admin expansion indicator icon
 const adminExpandComponent = computed(() => {
-  return isAdminExpanded.value ? PhCaretUp : PhCaretDown;
-});
+  const ic = icons.value
+  return isAdminExpanded.value ? ic.PhCaretUp : ic.PhCaretDown
+})
 
 // Detect rail mode (drawer shows icons only)
 const isRailMode = computed(() => appStore.drawerMode === 'auto' || appStore.drawerMode === 'closed');
@@ -436,6 +419,14 @@ onMounted(async () => {
   // Set up ResizeObserver error prevention
   preventResizeErrors();
 
+  // Lazy-load phosphor icons only after mount to keep initial chunk small
+  try {
+    const mod = await import('@phosphor-icons/vue')
+    icons.value = mod
+  } catch (e) {
+    console.warn('Failed to lazy-load phosphor icons', e)
+  }
+
   // Opportunistically warm up likely next views (only when logged in)
   if (isLoggedIn.value) {
     // Warm up admin container chunk and the selected admin submodule
@@ -475,7 +466,7 @@ onMounted(async () => {
         :class="{ 'transparent-bg': drawer }"
         @click="drawer = !drawer"
       >
-        <PhList size="26" :color="iconColor" />
+        <component :is="icons.PhList" size="26" :color="iconColor" />
       </v-btn>
     </div>
 
@@ -532,7 +523,7 @@ onMounted(async () => {
           @click="setActiveModule('Catalog')"
         >
           <template #prepend>
-            <PhBrowsers size="22" :color="iconColor" class="mr-2" />
+            <component :is="icons.PhBrowsers" size="22" :color="iconColor" class="mr-2" />
           </template>
         </v-list-item>
         <v-list-item 
@@ -548,7 +539,7 @@ onMounted(async () => {
           @click="setActiveModule('Work')"
         >
           <template #prepend>
-            <PhFiles size="22" :color="iconColor" class="mr-2" />
+            <component :is="icons.PhFiles" size="22" :color="iconColor" class="mr-2" />
           </template>
         </v-list-item>
         <v-list-item 
@@ -564,7 +555,7 @@ onMounted(async () => {
           @click="setActiveModule('AR')"
         >
           <template #prepend>
-            <PhChartLineUp size="22" :color="iconColor" class="mr-2" />
+            <component :is="icons.PhChartLineUp" size="22" :color="iconColor" class="mr-2" />
           </template>
         </v-list-item>
         <v-list-item 
@@ -580,7 +571,7 @@ onMounted(async () => {
           @click="setActiveModule('KnowledgeBase')"
         >
           <template #prepend>
-            <PhBooks size="22" :color="iconColor" class="mr-2" />
+            <component :is="icons.PhBooks" size="22" :color="iconColor" class="mr-2" />
           </template>
         </v-list-item>
         <v-divider
@@ -609,9 +600,9 @@ onMounted(async () => {
           >
             <template #prepend>
               <div class="admin-icon-with-badge">
-                <PhGear size="22" :color="iconColor" />
+                <component :is="icons.PhGear" size="22" :color="iconColor" />
                 <span v-if="isRailMode" class="admin-chevron-badge">
-                  <component :is="PhCaretDown" size="10" />
+                  <component :is="icons.PhCaretDown" size="10" />
                 </span>
               </div>
             </template>
@@ -648,7 +639,7 @@ onMounted(async () => {
                 @click="setActiveAdminSection('catalogAdmin')"
               >
                 <template #prepend>
-                  <PhPlusSquare size="20" :color="iconColor" class="mr-2" />
+                  <component :is="icons.PhPlusSquare" size="20" :color="iconColor" class="mr-2" />
                 </template>
               </v-list-item>
               
@@ -668,7 +659,7 @@ onMounted(async () => {
                 @click="setActiveAdminSection('serviceAdmin')"
               >
                 <template #prepend>
-                  <PhCubeFocus size="20" :color="iconColor" class="mr-2" />
+                  <component :is="icons.PhCubeFocus" size="20" :color="iconColor" class="mr-2" />
                 </template>
               </v-list-item>
               
@@ -688,7 +679,7 @@ onMounted(async () => {
                 @click="setActiveAdminSection('usersAdmin')"
               >
                 <template #prepend>
-                  <PhUserGear size="20" :color="iconColor" class="mr-2" />
+                  <component :is="icons.PhUserGear" size="20" :color="iconColor" class="mr-2" />
                 </template>
               </v-list-item>
               
@@ -708,7 +699,7 @@ onMounted(async () => {
                 @click="setActiveAdminSection('appAdmin')"
               >
                 <template #prepend>
-                  <PhSlidersHorizontal size="20" :color="iconColor" class="mr-2" />
+                  <component :is="icons.PhSlidersHorizontal" size="20" :color="iconColor" class="mr-2" />
                 </template>
               </v-list-item>
             </div>
@@ -743,7 +734,7 @@ onMounted(async () => {
               @click="toggleLanguageMenu"
             >
               <template #prepend>
-                <PhTranslate size="22" :color="iconColor" class="mr-2" />
+                <component :is="icons.PhTranslate" size="22" :color="iconColor" class="mr-2" />
               </template>
             </v-list-item>
             
@@ -798,7 +789,7 @@ onMounted(async () => {
               @click="toggleProfileMenu"
             >
               <template #prepend>
-                <PhUserCircle size="22" :color="iconColor" class="mr-2" />
+                <component :is="icons.PhUserCircle" size="22" :color="iconColor" class="mr-2" />
               </template>
             </v-list-item>
             
@@ -851,7 +842,7 @@ onMounted(async () => {
             @click="setActiveModule('Login')"
           >
             <template #prepend>
-              <PhSignIn size="22" :color="iconColor" class="mr-2" />
+              <component :is="icons.PhSignIn" size="22" :color="iconColor" class="mr-2" />
             </template>
           </v-list-item>
           
@@ -870,7 +861,7 @@ onMounted(async () => {
             @click="setActiveModule('NewUserRegistration')"
           >
             <template #prepend>
-              <PhUserPlus size="22" :color="iconColor" class="mr-2" />
+              <component :is="icons.PhUserPlus" size="22" :color="iconColor" class="mr-2" />
             </template>
           </v-list-item>
         </v-list>

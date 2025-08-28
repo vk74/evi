@@ -15,6 +15,7 @@ import { useUiStore } from '@/core/state/uistate'
 import { useServicesAdminStore } from '../../state.services.admin'
 import { fetchPublishingSections } from './service.admin.fetchpublishingsections'
 import { updateServiceSectionsPublish } from './service.admin.update.sections.publish'
+import PhIcon from '@/core/ui/icons/PhIcon.vue'
 
 // Types
 interface TableHeader {
@@ -93,7 +94,6 @@ const headers = computed<TableHeader[]>(() => [
 
 // Helper function for error handling
 const handleError = (error: unknown, context: string) => {
-  console.error(`[ServiceEditorMapping] ${context}:`, error)
   uiStore.showErrorSnackbar(
     error instanceof Error ? error.message : `Error ${context.toLowerCase()}`
   )
@@ -366,17 +366,28 @@ const handlePublish = async () => {
             v-model="searchQuery"
             density="compact"
             variant="outlined"
-            clearable
-            clear-icon="mdi-close"
+            :prepend-inner-icon="undefined"
             color="teal"
             :label="t('admin.services.editor.mapping.search.placeholder')"
-            prepend-inner-icon="mdi-magnify"
             :loading="isSearching"
             :hint="searchQuery.length === 1 ? t('admin.services.editor.mapping.search.minChars') : ''"
             persistent-hint
             @keydown="handleSearchKeydown"
-            @click:clear="handleClearSearch"
-          />
+          >
+            <template #prepend-inner>
+              <PhIcon name="mdi-magnify" />
+            </template>
+            <template #append-inner>
+              <div
+                v-if="(searchQuery || '').length > 0"
+                class="d-flex align-center"
+                style="cursor: pointer"
+                @click="handleClearSearch"
+              >
+                <PhIcon name="mdi-close" />
+              </div>
+            </template>
+          </v-text-field>
         </div>
 
         <v-data-table
@@ -395,12 +406,19 @@ const handlePublish = async () => {
         >
           <!-- Template for checkbox column -->
           <template #[`item.selection`]="{ item }">
-            <v-checkbox
-              :model-value="isSelected(item.id)"
-              density="compact"
-              hide-details
-              @update:model-value="(value: boolean | null) => onSelectSection(item.id, value ?? false)"
-            />
+            <v-btn
+              icon
+              variant="text"
+              density="comfortable"
+              :aria-pressed="isSelected(item.id)"
+              @click="onSelectSection(item.id, !isSelected(item.id))"
+            >
+              <PhIcon
+                :name="isSelected(item.id) ? 'mdi-checkbox-marked' : 'mdi-checkbox-blank-outline'"
+                :color="isSelected(item.id) ? 'teal' : 'grey'"
+                :size="18"
+              />
+            </v-btn>
           </template>
 
           <template #[`item.section`]="{ item }">
@@ -464,7 +482,7 @@ const handlePublish = async () => {
                   :disabled="page === 1"
                   @click="goToPage(1)"
                 >
-                  <v-icon>mdi-chevron-double-left</v-icon>
+                  <PhIcon name="mdi-chevron-double-left" />
                   <v-tooltip
                     activator="parent"
                     location="top"
@@ -480,7 +498,7 @@ const handlePublish = async () => {
                   :disabled="page === 1"
                   @click="goToPage(page - 1)"
                 >
-                  <v-icon>mdi-chevron-left</v-icon>
+                  <PhIcon name="mdi-chevron-left" />
                   <v-tooltip
                     activator="parent"
                     location="top"
@@ -518,7 +536,7 @@ const handlePublish = async () => {
                   :disabled="page >= getTotalPages()"
                   @click="goToPage(page + 1)"
                 >
-                  <v-icon>mdi-chevron-right</v-icon>
+                  <PhIcon name="mdi-chevron-right" />
                   <v-tooltip
                     activator="parent"
                     location="top"
@@ -534,7 +552,7 @@ const handlePublish = async () => {
                   :disabled="page >= getTotalPages()"
                   @click="goToPage(getTotalPages())"
                 >
-                  <v-icon>mdi-chevron-double-right</v-icon>
+                  <PhIcon name="mdi-chevron-double-right" />
                   <v-tooltip
                     activator="parent"
                     location="top"
@@ -570,10 +588,7 @@ const handlePublish = async () => {
             :loading="isPublishing"
             @click="handlePublish"
           >
-            <v-icon
-              icon="mdi-publish"
-              class="mr-2"
-            />
+            <PhIcon name="mdi-publish" class="mr-2" />
             {{ t('admin.services.editor.mapping.actions.publish') }}
           </v-btn>
         </div>

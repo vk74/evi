@@ -52,7 +52,7 @@ export async function fetchCatalogSections(options: FetchSectionsOptions = {}): 
   try {
     // Check if we have valid cache and not forcing refresh
     if (!options.forceRefresh && isCacheValid()) {
-      console.log('Using cached catalog sections', catalogState.sections);
+      
       return catalogState.sections;
     }
     
@@ -81,7 +81,7 @@ export async function fetchCatalogSections(options: FetchSectionsOptions = {}): 
       // Clear any previous errors
       catalogState.error = null;
       
-      console.log('Catalog sections fetched successfully:', catalogState.sections);
+      
       
       // Return the sections
       return catalogState.sections;
@@ -99,7 +99,7 @@ export async function fetchCatalogSections(options: FetchSectionsOptions = {}): 
   } catch (error) {
     // Handle exception
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-    console.error('Error fetching catalog sections:', error);
+    
     
     // Set error in state
     catalogState.error = errorMessage;

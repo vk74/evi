@@ -15,6 +15,7 @@ import { removeGroupMembers } from './service.delete.group.members' // Import me
 import { defineAsyncComponent } from 'vue'
 const ItemSelector = defineAsyncComponent(() => import(/* webpackChunkName: "ui-item-selector" */ '../../../../core/ui/modals/item-selector/ItemSelector.vue'))
 import { useUserAuthStore } from '@/core/auth/state.user.auth' // Import for JWT check
+import PhIcon from '@/core/ui/icons/PhIcon.vue'
 
 // Initialize i18n
 const { t } = useI18n()
@@ -122,7 +123,6 @@ const handleCreateGroup = async () => {
 }
 
 const handleUpdateGroup = async () => {
-  console.log('Starting group update...')
   
   if (!(await validate())) {
     uiStore.showErrorSnackbar(t('admin.groups.editor.messages.requiredFields'))
@@ -141,12 +141,10 @@ const handleUpdateGroup = async () => {
     const success = await updateGroupService.updateGroup(requestData)
 
     if (success) {
-      console.log('Group updated successfully')
       uiStore.showSuccessSnackbar(t('admin.groups.editor.messages.updateSuccess'))
       isFormDirty.value = false // Reset changes flag
     }
   } catch (error) {
-    console.error('Error updating group:', error)
     uiStore.showErrorSnackbar(
       error instanceof Error ? error.message : t('admin.groups.editor.messages.updateError')
     )
@@ -192,7 +190,6 @@ const openItemSelectorModal = () => {
 
 // Обработчик добавления участников
 const handleAddMembers = async (result: any) => {
-  console.log('[GroupEditor] Members added via ItemSelector, result:', result)
   
   // Проверяем успешность операции
   if (result && result.success) {
@@ -205,7 +202,7 @@ const handleAddMembers = async (result: any) => {
         // Очищаем выбор
         groupEditorStore.clearGroupMembersSelection()
       } catch (error) {
-        console.error('Error refreshing group members:', error)
+        
       }
     }
   }
@@ -243,13 +240,11 @@ const handleRemoveMembers = async () => {
 
 // ==================== OWNER CHANGE HANDLERS ====================
 const handleChangeOwner = () => {
-  console.log('Opening owner change selector')
   isOwnerSelectorModalOpen.value = true
 }
 
 // Обработчик события смены владельца группы
 const handleOwnerChanged = async (result: any) => {
-  console.log('[GroupEditor] Owner change result:', result)
   
   if (result && result.success) {
     // Получаем ID группы
@@ -265,7 +260,6 @@ const handleOwnerChanged = async (result: any) => {
       // Показываем сообщение об успехе
       uiStore.showSuccessSnackbar(t('admin.groups.editor.messages.ownerChangeSuccess'))
     } catch (error) {
-      console.error('Error refreshing group data after owner change:', error)
       uiStore.showErrorSnackbar(
         error instanceof Error ? error.message : t('admin.groups.editor.messages.ownerChangeError')
       )
@@ -473,12 +467,19 @@ onBeforeUnmount(() => {
                   :label="t('admin.groups.editor.search')"
                   variant="outlined"
                   density="comfortable"
-                  prepend-inner-icon="mdi-magnify"
+                  :prepend-inner-icon="undefined"
                   clearable
                   color="teal"
-                  clear-icon="mdi-close"
+                  :clear-icon="undefined"
                   class="mb-4"
-                />
+                >
+                  <template #prepend-inner>
+                    <PhIcon name="mdi-magnify" />
+                  </template>
+                  <template #append-inner>
+                    <PhIcon name="mdi-close" />
+                  </template>
+                </v-text-field>
               </v-container>
               <v-data-table
                 v-model:page="page"
@@ -506,11 +507,7 @@ onBeforeUnmount(() => {
                   </v-chip>
                 </template>
                 <template #item.is_staff="{ item }">
-                  <v-icon
-                    :color="item.is_staff ? 'teal' : 'red-darken-4'"
-                    :icon="item.is_staff ? 'mdi-check-circle' : 'mdi-minus-circle'"
-                    size="x-small"
-                  />
+                  <PhIcon :name="item.is_staff ? 'mdi-check-circle' : 'mdi-minus-circle'" />
                 </template>
                 <template #no-data>
                   <div class="pa-4 text-center">

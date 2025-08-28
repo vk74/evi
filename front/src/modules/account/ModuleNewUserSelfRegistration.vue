@@ -26,6 +26,7 @@ import { fetchPublicPasswordPolicies } from '@/core/services/service.fetch.publi
 import { usePublicSettingsStore, type PasswordPolicies } from '@/core/state/state.public.settings'
 import PasswordPoliciesPanel from '@/core/ui/panels/panel.current.password.policies.vue'
 import { api } from '@/core/api/service.axios'
+import PhIcon from '@/core/ui/icons/PhIcon.vue'
 
 // ==================== STORES ====================
 const uiStore = useUiStore()
@@ -199,15 +200,13 @@ const phoneRules = [
  */
 const loadPasswordPolicies = async () => {
   try {
-    console.log('Loading password policy settings for self-registration')
     
     const policies = await fetchPublicPasswordPolicies()
     currentPasswordPolicies.value = policies
     
-    console.log('Password policies loaded successfully:', policies)
+    
     
   } catch (error) {
-    console.error('Error loading password policies:', error)
     
     // Error handling is done in the service layer
     // Just ensure we have some fallback value
@@ -230,20 +229,18 @@ const loadPasswordPolicies = async () => {
  */
 const loadRegistrationSettings = async () => {
   try {
-    console.log('Loading registration page settings')
     
     const response = await api.get('/api/public/registration-status')
     
     if (response.status === 200 && response.data.success) {
       registrationPageEnabled.value = response.data.enabled
-      console.log('Registration page setting loaded:', registrationPageEnabled.value)
+      
     } else {
-      console.warn('Registration page setting not found, defaulting to disabled')
+      
       registrationPageEnabled.value = false
     }
     
   } catch (error) {
-    console.error('Error loading registration settings:', error)
     // Default to disabled on error
     registrationPageEnabled.value = false
   } finally {
@@ -307,7 +304,6 @@ const submitForm = async () => {
     const response = await api.post('/api/admin/users/register', user.value)
 
     if (response.status === 200 || response.status === 201) {
-      console.log('User self-registration data successfully sent to backend server')
       uiStore.showSuccessSnackbar(t('account.selfRegistration.success.dataSent'))
       
       // Reset form after successful registration
@@ -331,12 +327,11 @@ const submitForm = async () => {
       } else if (errorData.message === 'this phone number is already registered by another user') {
         uiStore.showErrorSnackbar(t('account.selfRegistration.errors.duplicatePhone'))
       } else {
-        console.error('Error on sending registration data to backend:', response.status, response.statusText)
         uiStore.showErrorSnackbar(t('account.selfRegistration.errors.serverError'))
       }
     }
   } catch (error) {
-    console.error('Error on sending registration data to backend:', error)
+    
     uiStore.showErrorSnackbar(t('account.selfRegistration.errors.networkError'))
   } finally {
     isSubmitting.value = false
@@ -352,7 +347,6 @@ const goToLogin = () => {
 
 // ==================== LIFECYCLE ====================
 onMounted(async () => {
-  console.log('ModuleNewUserSelfRegistration mounted')
   await Promise.all([
     loadPasswordPolicies(),
     loadRegistrationSettings()
@@ -428,9 +422,7 @@ onMounted(async () => {
                 tabindex="-1"
                 @click="togglePasswordVisibility"
               >
-                <v-icon>
-                  {{ showPassword ? 'mdi-eye-off' : 'mdi-eye' }}
-                </v-icon>
+                <PhIcon :name="showPassword ? 'mdi-eye-off' : 'mdi-eye'" />
               </v-btn>
             </template>
           </v-text-field>

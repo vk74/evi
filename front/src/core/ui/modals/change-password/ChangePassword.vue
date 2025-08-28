@@ -26,6 +26,7 @@ import resetPassword from './service.admin.change.password';
 import { fetchPublicPasswordPolicies } from '@/core/services/service.fetch.public.password.policies';
 import { usePublicSettingsStore, type PasswordPolicies } from '@/core/state/state.public.settings';
 import PasswordPoliciesPanel from '@/core/ui/panels/panel.current.password.policies.vue';
+import PhIcon from '@/core/ui/icons/PhIcon.vue';
 
 // Init i18n and stores
 const { t } = useI18n();
@@ -130,16 +131,14 @@ const loadPasswordPolicies = async () => {
   passwordPolicyError.value = false
   
   try {
-    console.log('[ChangePassword] Loading password policy settings for validation')
     
     // Use public API instead of admin settings API for consistency and efficiency
     const policies = await fetchPublicPasswordPolicies()
     currentPasswordPolicies.value = policies
     
-    console.log('[ChangePassword] Password policies loaded successfully for validation:', policies)
+    
     
   } catch (error) {
-    console.error('[ChangePassword] Failed to load password policies for validation:', error)
     passwordPolicyError.value = true
     uiStore.showErrorSnackbar('ошибка загрузки настроек политики паролей - смена пароля заблокирована')
   } finally {
@@ -162,7 +161,6 @@ const validatePasswordMatch = () => {
  * Resets the form fields and errors
  */
 const resetForm = () => {
-  console.log('[ChangePassword] Resetting form fields');
   currentPassword.value = '';
   newPassword.value = '';
   confirmPassword.value = '';
@@ -179,7 +177,6 @@ const resetForm = () => {
  * Closes the modal dialog
  */
 const closeModal = () => {
-  console.log('[ChangePassword] Closing modal');
   props.onClose();
 };
 
@@ -231,11 +228,9 @@ const validateForm = (): boolean => {
  * Submits the form with appropriate service based on mode
  */
 const submitForm = async () => {
-  console.log(`[ChangePassword] Submitting form in ${props.mode} mode for user ${props.username} (${props.uuid})`);
-  console.log(`[ChangePassword] Current admin user: ${userStore.username} (${userStore.userID})`);
+  
   
   if (!validateForm()) {
-    console.log('[ChangePassword] Form validation failed');
     return;
   }
   
@@ -252,12 +247,6 @@ const submitForm = async () => {
         currentPassword: currentPassword.value,
         newPassword: newPassword.value
       };
-      console.log('[ChangePassword] Self mode data:', JSON.stringify({
-        uuid: selfData.uuid || 'missing',
-        username: selfData.username || 'missing',
-        currentPassword: selfData.currentPassword ? '[REDACTED]' : 'missing',
-        newPassword: selfData.newPassword ? '[REDACTED]' : 'missing'
-      }));
       response = await changePassword(selfData);
     } else {
       // Admin reset password
@@ -266,11 +255,6 @@ const submitForm = async () => {
         username: props.username,
         newPassword: newPassword.value
       };
-      console.log('[ChangePassword] Admin mode data:', JSON.stringify({
-        uuid: adminData.uuid || 'missing',
-        username: adminData.username || 'missing',
-        newPassword: adminData.newPassword ? '[REDACTED]' : 'missing'
-      }));
       response = await resetPassword(adminData);
     }
     
@@ -283,7 +267,6 @@ const submitForm = async () => {
       uiStore.showErrorSnackbar(response.message || t('passwordChange.error'));
     }
   } catch (error) {
-    console.error('[ChangePassword] Error during password change:', error);
     uiStore.showErrorSnackbar(t('passwordChange.unexpectedError'));
   } finally {
     loading.value = false;
@@ -292,15 +275,9 @@ const submitForm = async () => {
 
 // Initialize form on mount
 onMounted(async () => {
-  console.log(`[ChangePassword] Mounted in ${props.mode} mode for user ${props.username} (${props.uuid})`);
-  console.log(`[ChangePassword] Current admin user: ${userStore.username} (${userStore.userID})`);
   
   // Verify all props are present
-  if (!props.title) console.warn('[ChangePassword] Missing prop: title');
-  if (!props.uuid) console.warn('[ChangePassword] Missing prop: uuid');
-  if (!props.username) console.warn('[ChangePassword] Missing prop: username');
-  if (!props.mode) console.warn('[ChangePassword] Missing prop: mode');
-  if (!props.onClose) console.warn('[ChangePassword] Missing prop: onClose');
+  
   
   // Load password policies for all modes
   await loadPasswordPolicies();
@@ -337,15 +314,23 @@ onMounted(async () => {
               v-model="currentPassword"
               :label="$t('passwordChange.currentPassword')"
               :type="showCurrentPassword ? 'text' : 'password'"
-              :append-icon="showCurrentPassword ? 'mdi-eye' : 'mdi-eye-off'"
               :error-messages="currentPasswordError ? [currentPasswordError] : []"
               outlined
               dense
               class="mb-3"
               tabindex="1"
-              @click:append="showCurrentPassword = !showCurrentPassword"
               @keyup.enter="submitForm"
-            />
+            >
+              <template #append-inner>
+                <div
+                  class="d-flex align-center"
+                  style="cursor: pointer"
+                  @click="showCurrentPassword = !showCurrentPassword"
+                >
+                  <PhIcon :name="showCurrentPassword ? 'mdi-eye' : 'mdi-eye-off'" />
+                </div>
+              </template>
+            </v-text-field>
             
             <!-- New password field -->
             <v-text-field
@@ -353,7 +338,6 @@ onMounted(async () => {
               v-model="newPassword"
               :label="$t('passwordChange.newPassword')"
               :type="showNewPassword ? 'text' : 'password'"
-              :append-icon="showNewPassword ? 'mdi-eye' : 'mdi-eye-off'"
               :error-messages="newPasswordError ? [newPasswordError] : []"
               :counter="currentPasswordPolicies?.maxLength || 40"
               :loading="isLoadingPasswordPolicies"
@@ -362,17 +346,25 @@ onMounted(async () => {
               dense
               class="mb-3"
               tabindex="2"
-              @click:append="showNewPassword = !showNewPassword"
               @input="validatePasswordMatch"
               @keyup.enter="submitForm"
-            />
+            >
+              <template #append-inner>
+                <div
+                  class="d-flex align-center"
+                  style="cursor: pointer"
+                  @click="showNewPassword = !showNewPassword"
+                >
+                  <PhIcon :name="showNewPassword ? 'mdi-eye' : 'mdi-eye-off'" />
+                </div>
+              </template>
+            </v-text-field>
             
             <!-- Confirm password field -->
             <v-text-field
               v-model="confirmPassword"
               :label="$t('passwordChange.confirmPassword')"
               :type="showConfirmPassword ? 'text' : 'password'"
-              :append-icon="showConfirmPassword ? 'mdi-eye' : 'mdi-eye-off'"
               :error-messages="confirmPasswordError ? [confirmPasswordError] : []"
               :counter="currentPasswordPolicies?.maxLength || 40"
               :loading="isLoadingPasswordPolicies"
@@ -381,10 +373,19 @@ onMounted(async () => {
               dense
               class="mb-3"
               tabindex="3"
-              @click:append="showConfirmPassword = !showConfirmPassword"
               @input="validatePasswordMatch"
               @keyup.enter="submitForm"
-            />
+            >
+              <template #append-inner>
+                <div
+                  class="d-flex align-center"
+                  style="cursor: pointer"
+                  @click="showConfirmPassword = !showConfirmPassword"
+                >
+                  <PhIcon :name="showConfirmPassword ? 'mdi-eye' : 'mdi-eye-off'" />
+                </div>
+              </template>
+            </v-text-field>
             
             <!-- Password policy information panel -->
             <PasswordPoliciesPanel class="mt-2" />

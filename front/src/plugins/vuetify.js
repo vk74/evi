@@ -3,9 +3,9 @@ import { createVuetify } from 'vuetify'
 import 'vuetify/styles'
 import ru from 'vuetify/lib/locale/ru'
 import en from 'vuetify/lib/locale/en'
-
-// импорт иконок из @mdi/js
-import { mdiAccount } from '@mdi/js'
+// Configure Vuetify to use SVG MDI set (no font) so built-in components like
+// v-checkbox, v-select, etc. render their icons without loading MDI font.
+import { aliases as mdiAliases, mdi } from 'vuetify/iconsets/mdi'
 
 // определение кастомизированных переводов для русской локализации
 const customRussianTranslations = {
@@ -46,10 +46,9 @@ export default createVuetify({
     },
   },
   icons: {
-    iconfont: 'mdiSvg',
-    values: {
-      account: mdiAccount, // добавление иконки account
-    },
+    defaultSet: 'mdi',
+    aliases: mdiAliases,
+    sets: { mdi },
   },
   // дополнительные настройки Vuetify
 });

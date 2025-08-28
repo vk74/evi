@@ -16,6 +16,7 @@ import { getDefaultValues } from '@/modules/admin/settings/service.fetch.setting
 import { useUiStore } from '@/core/state/uistate';
 import DataLoading from '@/core/ui/loaders/DataLoading.vue';
 import PanelCurrentPasswordPolicies from '@/core/ui/panels/panel.current.password.policies.vue';
+import PhIcon from '@/core/ui/icons/PhIcon.vue';
 
 // Section path identifier - using component name for better consistency
 const section_path = 'Application.Security.PasswordPolicies';
@@ -447,15 +448,9 @@ onMounted(() => {
                 max-width="300"
               >
                 <template #activator="{ props }">
-                  <v-icon 
-                    icon="mdi-alert-circle" 
-                    size="small" 
-                    class="ms-2" 
-                    color="error"
-                    v-bind="props"
-                    style="cursor: pointer;"
-                    @click="retrySetting('password.min.length')"
-                  />
+                  <span v-bind="props" style="cursor: pointer;" @click="retrySetting('password.min.length')">
+                    <PhIcon name="mdi-alert-circle" :size="16" class="ms-2" />
+                  </span>
                 </template>
                 <div class="pa-2">
                   <p class="text-subtitle-2 mb-2">
@@ -488,15 +483,9 @@ onMounted(() => {
                 max-width="300"
               >
                 <template #activator="{ props }">
-                  <v-icon 
-                    icon="mdi-alert-circle" 
-                    size="small" 
-                    class="ms-2" 
-                    color="error"
-                    v-bind="props"
-                    style="cursor: pointer;"
-                    @click="retrySetting('password.max.length')"
-                  />
+                  <span v-bind="props" style="cursor: pointer;" @click="retrySetting('password.max.length')">
+                    <PhIcon name="mdi-alert-circle" :size="16" class="ms-2" />
+                  </span>
                 </template>
                 <div class="pa-2">
                   <p class="text-subtitle-2 mb-2">
@@ -525,15 +514,9 @@ onMounted(() => {
               max-width="300"
             >
               <template #activator="{ props }">
-                <v-icon 
-                  icon="mdi-alert-circle" 
-                  size="small" 
-                  class="ms-2" 
-                  color="error"
-                  v-bind="props"
-                  style="cursor: pointer;"
-                  @click="retrySetting('password.require.lowercase')"
-                />
+                <span v-bind="props" style="cursor: pointer;" @click="retrySetting('password.require.lowercase')">
+                  <PhIcon name="mdi-alert-circle" :size="16" class="ms-2" />
+                </span>
               </template>
               <div class="pa-2">
                 <p class="text-subtitle-2 mb-2">
@@ -561,15 +544,9 @@ onMounted(() => {
               max-width="300"
             >
               <template #activator="{ props }">
-                <v-icon 
-                  icon="mdi-alert-circle" 
-                  size="small" 
-                  class="ms-2" 
-                  color="error"
-                  v-bind="props"
-                  style="cursor: pointer;"
-                  @click="retrySetting('password.require.uppercase')"
-                />
+                <span v-bind="props" style="cursor: pointer;" @click="retrySetting('password.require.uppercase')">
+                  <PhIcon name="mdi-alert-circle" :size="16" class="ms-2" />
+                </span>
               </template>
               <div class="pa-2">
                 <p class="text-subtitle-2 mb-2">
@@ -597,15 +574,9 @@ onMounted(() => {
               max-width="300"
             >
               <template #activator="{ props }">
-                <v-icon 
-                  icon="mdi-alert-circle" 
-                  size="small" 
-                  class="ms-2" 
-                  color="error"
-                  v-bind="props"
-                  style="cursor: pointer;"
-                  @click="retrySetting('password.require.numbers')"
-                />
+                <span v-bind="props" style="cursor: pointer;" @click="retrySetting('password.require.numbers')">
+                  <PhIcon name="mdi-alert-circle" :size="16" class="ms-2" />
+                </span>
               </template>
               <div class="pa-2">
                 <p class="text-subtitle-2 mb-2">
@@ -633,15 +604,9 @@ onMounted(() => {
               max-width="300"
             >
               <template #activator="{ props }">
-                <v-icon 
-                  icon="mdi-alert-circle" 
-                  size="small" 
-                  class="ms-2" 
-                  color="error"
-                  v-bind="props"
-                  style="cursor: pointer;"
-                  @click="retrySetting('password.require.special.chars')"
-                />
+                <span v-bind="props" style="cursor: pointer;" @click="retrySetting('password.require.special.chars')">
+                  <PhIcon name="mdi-alert-circle" :size="16" class="ms-2" />
+                </span>
               </template>
               <div class="pa-2">
                 <p class="text-subtitle-2 mb-2">
@@ -657,13 +622,9 @@ onMounted(() => {
               max-width="400"
             >
               <template #activator="{ props }">
-                <v-icon 
-                  icon="mdi-help-circle-outline" 
-                  size="small" 
-                  class="ms-2" 
-                  color="teal-darken-2"
-                  v-bind="props"
-                />
+                <span v-bind="props">
+                  <PhIcon name="mdi-help-circle-outline" :size="16" class="ms-2" />
+                </span>
               </template>
               <div class="pa-2">
                 <p class="text-subtitle-2 mb-2">
@@ -685,15 +646,9 @@ onMounted(() => {
                   max-width="300"
                 >
                   <template #activator="{ props }">
-                    <v-icon 
-                      icon="mdi-alert-circle" 
-                      size="small" 
-                      class="ms-2" 
-                      color="error"
-                      v-bind="props"
-                      style="cursor: pointer;"
-                      @click="retrySetting('password.allowed.special.chars')"
-                    />
+                    <span v-bind="props" style="cursor: pointer;" @click="retrySetting('password.allowed.special.chars')">
+                      <PhIcon name="mdi-alert-circle" :size="16" class="ms-2" />
+                    </span>
                   </template>
                   <div class="pa-2">
                     <p class="text-subtitle-2 mb-2">
@@ -748,9 +703,9 @@ onMounted(() => {
                   v-bind="props"
                   @click="resetToDefaults"
                 >
-                  <v-icon start>
-                    mdi-refresh
-                  </v-icon>
+                  <template #prepend>
+                    <PhIcon name="mdi-refresh" />
+                  </template>
                   {{ t('admin.settings.application.security.passwordpolicies.reset.button') }}
                 </v-btn>
               </template>

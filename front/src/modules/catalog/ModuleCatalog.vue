@@ -10,6 +10,7 @@ import { useI18n } from 'vue-i18n'
 import DataLoading from '@/core/ui/loaders/DataLoading.vue';
 import CatalogServiceCard from './services/CatalogServiceCard.vue';
 import ServiceDetails from './services/ServiceDetails.vue'
+import PhIcon from '@/core/ui/icons/PhIcon.vue'
 import { 
   fetchCatalogSections, 
   isCatalogLoading, 
@@ -46,7 +47,7 @@ const loadPhosphorIcons = async () => {
     const icons = await import('@phosphor-icons/vue')
     phosphorIcons.value = icons
   } catch (error) {
-    console.error('Error loading Phosphor icons:', error)
+    
   }
 }
 
@@ -139,7 +140,6 @@ async function loadCatalogSections() {
       selectedSectionId.value = sections.value[0].id;
     }
   } catch (error) {
-    console.error('Failed to load catalog sections:', error);
   }
 }
 
@@ -152,7 +152,6 @@ async function loadActiveServices() {
     const fetched = await fetchActiveServices({ sectionId: selectedSectionId.value || undefined });
     services.value = fetched;
   } catch (error) {
-    console.error('Failed to load active services:', error);
   }
 }
 
@@ -209,14 +208,13 @@ onMounted(() => {
             color="rgb(20, 184, 166)"
             class="mr-2"
           />
-          <v-icon
+          <PhIcon
             v-else
-            start
-            size="small"
+            name="mdi-folder"
+            :size="16"
             color="teal"
-          >
-            mdi-folder
-          </v-icon>
+            class="mr-2"
+          />
           {{ section.name }}
         </v-btn>
       </div>
@@ -250,15 +248,27 @@ onMounted(() => {
           <v-text-field
             v-model="searchQuery"
             :label="t('catalog.options.searchPlaceholder')"
-            prepend-inner-icon="mdi-magnify"
+            :prepend-inner-icon="undefined"
             variant="outlined"
             density="comfortable"
             hide-details
             style="min-width: 300px;"
-            clearable
             color="teal"
-            @click:clear="clearSearch"
-          />
+          >
+            <template #prepend-inner>
+              <PhIcon name="mdi-magnify" />
+            </template>
+            <template #append-inner>
+              <div
+                v-if="(searchQuery || '').length > 0"
+                class="d-flex align-center"
+                style="cursor: pointer"
+                @click="clearSearch"
+              >
+                <PhIcon name="mdi-close" />
+              </div>
+            </template>
+          </v-text-field>
           
           <!-- Filter Radio Buttons -->
           <v-radio-group
@@ -293,9 +303,12 @@ onMounted(() => {
             variant="outlined"
             density="comfortable"
             hide-details
-            style="min-width: 150px;"
-            class="me-4"
-          />
+            style="min-width: 150px; margin-right: 48px;"
+          >
+            <template #append-inner>
+              <PhIcon name="PhCaretUpDown" />
+            </template>
+          </v-select>
           
           <!-- Options bar toggle control area -->
           <div
@@ -304,11 +317,13 @@ onMounted(() => {
           >
             <v-btn
               variant="text"
-              :icon="optionsBarChevronIcon"
+              :icon="undefined"
               size="small"
               class="options-bar-toggle-btn"
               color="grey-darken-1"
-            />
+            >
+              <PhIcon :name="optionsBarChevronIcon" />
+            </v-btn>
           </div>
         </div>
       </div>
@@ -335,12 +350,7 @@ onMounted(() => {
             v-if="getCatalogError()"
             class="text-center py-8"
           >
-            <v-icon
-              icon="mdi-alert-circle"
-              size="64"
-              color="error"
-              class="mb-4"
-            />
+            <PhIcon name="mdi-alert-circle" :size="64" color="rgb(211, 47, 47)" class="mb-4" />
             <div class="text-h6 text-error mb-2">
               {{ t('catalog.errors.sectionsTitle') }}
             </div>
@@ -361,12 +371,7 @@ onMounted(() => {
             v-else-if="!isCatalogLoading() && sections.length === 0"
             class="text-center py-12"
           >
-            <v-icon
-              icon="mdi-folder-open"
-              size="64"
-              color="grey-lighten-1"
-              class="mb-4"
-            />
+            <PhIcon name="mdi-folder-open" :size="64" color="rgb(189, 189, 189)" class="mb-4" />
             <div class="text-h6 text-grey mb-2">
               {{ t('catalog.empty.sectionsTitle') }}
             </div>
@@ -419,12 +424,7 @@ onMounted(() => {
               v-else
               class="text-center py-12"
             >
-              <v-icon
-                icon="mdi-package-variant"
-                size="64"
-                color="grey-lighten-1"
-                class="mb-4"
-              />
+              <PhIcon name="mdi-package-variant" :size="64" color="rgb(189, 189, 189)" class="mb-4" />
               <div class="text-h6 text-grey mb-2">
                 {{ t('catalog.empty.servicesTitle') }}
               </div>

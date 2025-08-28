@@ -14,6 +14,7 @@ import { fetchSettings } from '@/modules/admin/settings/service.fetch.settings';
 import { updateSettingFromComponent } from '@/modules/admin/settings/service.update.settings';
 import { useUiStore } from '@/core/state/uistate';
 import DataLoading from '@/core/ui/loaders/DataLoading.vue';
+import PhIcon from '@/core/ui/icons/PhIcon.vue';
 
 // Section path identifier - using component name for better consistency
 const section_path = 'Application.Security.SessionManagement';
@@ -505,15 +506,9 @@ onMounted(() => {
                 max-width="300"
               >
                 <template #activator="{ props }">
-                  <v-icon 
-                    icon="mdi-alert-circle" 
-                    size="small" 
-                    class="ms-2" 
-                    color="error"
-                    v-bind="props"
-                    style="cursor: pointer;"
-                    @click="retrySetting('access.token.lifetime')"
-                  />
+                  <span v-bind="props" style="cursor: pointer;" @click="retrySetting('access.token.lifetime')">
+                    <PhIcon name="mdi-alert-circle" :size="16" class="ms-2" />
+                  </span>
                 </template>
                 <div class="pa-2">
                   <p class="text-subtitle-2 mb-2">
@@ -544,15 +539,9 @@ onMounted(() => {
                 max-width="300"
               >
                 <template #activator="{ props }">
-                  <v-icon 
-                    icon="mdi-alert-circle" 
-                    size="small" 
-                    class="ms-2" 
-                    color="error"
-                    v-bind="props"
-                    style="cursor: pointer;"
-                    @click="retrySetting('refresh.jwt.n.seconds.before.expiry')"
-                  />
+                  <span v-bind="props" style="cursor: pointer;" @click="retrySetting('refresh.jwt.n.seconds.before.expiry')">
+                    <PhIcon name="mdi-alert-circle" :size="16" class="ms-2" />
+                  </span>
                 </template>
                 <div class="pa-2">
                   <p class="text-subtitle-2 mb-2">
@@ -590,15 +579,9 @@ onMounted(() => {
                 max-width="300"
               >
                 <template #activator="{ props }">
-                  <v-icon 
-                    icon="mdi-alert-circle" 
-                    size="small" 
-                    class="ms-2" 
-                    color="error"
-                    v-bind="props"
-                    style="cursor: pointer;"
-                    @click="retrySetting('refresh.token.lifetime')"
-                  />
+                  <span v-bind="props" style="cursor: pointer;" @click="retrySetting('refresh.token.lifetime')">
+                    <PhIcon name="mdi-alert-circle" :size="16" class="ms-2" />
+                  </span>
                 </template>
                 <div class="pa-2">
                   <p class="text-subtitle-2 mb-2">
@@ -629,15 +612,9 @@ onMounted(() => {
                 max-width="300"
               >
                 <template #activator="{ props }">
-                  <v-icon 
-                    icon="mdi-alert-circle" 
-                    size="small" 
-                    class="ms-2" 
-                    color="error"
-                    v-bind="props"
-                    style="cursor: pointer;"
-                    @click="retrySetting('max.refresh.tokens.per.user')"
-                  />
+                  <span v-bind="props" style="cursor: pointer;" @click="retrySetting('max.refresh.tokens.per.user')">
+                    <PhIcon name="mdi-alert-circle" :size="16" class="ms-2" />
+                  </span>
                 </template>
                 <div class="pa-2">
                   <p class="text-subtitle-2 mb-2">
@@ -680,15 +657,9 @@ onMounted(() => {
                 max-width="300"
               >
                 <template #activator="{ props }">
-                  <v-icon 
-                    icon="mdi-alert-circle" 
-                    size="small" 
-                    class="ms-2" 
-                    color="error"
-                    v-bind="props"
-                    style="cursor: pointer;"
-                    @click="retrySetting('drop.refresh.tokens.on.user.change.password')"
-                  />
+                  <span v-bind="props" style="cursor: pointer;" @click="retrySetting('drop.refresh.tokens.on.user.change.password')">
+                    <PhIcon name="mdi-alert-circle" :size="16" class="ms-2" />
+                  </span>
                 </template>
                 <div class="pa-2">
                   <p class="text-subtitle-2 mb-2">
@@ -716,15 +687,9 @@ onMounted(() => {
                 max-width="300"
               >
                 <template #activator="{ props }">
-                  <v-icon 
-                    icon="mdi-alert-circle" 
-                    size="small" 
-                    class="ms-2" 
-                    color="error"
-                    v-bind="props"
-                    style="cursor: pointer;"
-                    @click="retrySetting('drop.refresh.tokens.on.admin.password.change')"
-                  />
+                  <span v-bind="props" style="cursor: pointer;" @click="retrySetting('drop.refresh.tokens.on.admin.password.change')">
+                    <PhIcon name="mdi-alert-circle" :size="16" class="ms-2" />
+                  </span>
                 </template>
                 <div class="pa-2">
                   <p class="text-subtitle-2 mb-2">
@@ -837,15 +802,9 @@ onMounted(() => {
                 max-width="300"
               >
                 <template #activator="{ props }">
-                  <v-icon 
-                    icon="mdi-alert-circle" 
-                    size="small" 
-                    class="ms-2" 
-                    color="error"
-                    v-bind="props"
-                    style="cursor: pointer;"
-                    @click="retrySetting('rate.limiting.enabled')"
-                  />
+                  <span v-bind="props" style="cursor: pointer;" @click="retrySetting('rate.limiting.enabled')">
+                    <PhIcon name="mdi-alert-circle" :size="16" class="ms-2" />
+                  </span>
                 </template>
                 <div class="pa-2">
                   <p class="text-subtitle-2 mb-2">
@@ -881,15 +840,9 @@ onMounted(() => {
                 max-width="300"
               >
                 <template #activator="{ props }">
-                  <v-icon 
-                    icon="mdi-alert-circle" 
-                    size="small" 
-                    class="ms-2" 
-                    color="error"
-                    v-bind="props"
-                    style="cursor: pointer;"
-                    @click="retrySetting('rate.limiting.max.requests.per.minute')"
-                  />
+                  <span v-bind="props" style="cursor: pointer;" @click="retrySetting('rate.limiting.max.requests.per.minute')">
+                    <PhIcon name="mdi-alert-circle" :size="16" class="ms-2" />
+                  </span>
                 </template>
                 <div class="pa-2">
                   <p class="text-subtitle-2 mb-2">
@@ -925,15 +878,9 @@ onMounted(() => {
                 max-width="300"
               >
                 <template #activator="{ props }">
-                  <v-icon 
-                    icon="mdi-alert-circle" 
-                    size="small" 
-                    class="ms-2" 
-                    color="error"
-                    v-bind="props"
-                    style="cursor: pointer;"
-                    @click="retrySetting('rate.limiting.max.requests.per.hour')"
-                  />
+                  <span v-bind="props" style="cursor: pointer;" @click="retrySetting('rate.limiting.max.requests.per.hour')">
+                    <PhIcon name="mdi-alert-circle" :size="16" class="ms-2" />
+                  </span>
                 </template>
                 <div class="pa-2">
                   <p class="text-subtitle-2 mb-2">
@@ -969,15 +916,9 @@ onMounted(() => {
                 max-width="300"
               >
                 <template #activator="{ props }">
-                  <v-icon 
-                    icon="mdi-alert-circle" 
-                    size="small" 
-                    class="ms-2" 
-                    color="error"
-                    v-bind="props"
-                    style="cursor: pointer;"
-                    @click="retrySetting('rate.limiting.block.duration.minutes')"
-                  />
+                  <span v-bind="props" style="cursor: pointer;" @click="retrySetting('rate.limiting.block.duration.minutes')">
+                    <PhIcon name="mdi-alert-circle" :size="16" class="ms-2" />
+                  </span>
                 </template>
                 <div class="pa-2">
                   <p class="text-subtitle-2 mb-2">

@@ -20,6 +20,7 @@ import { catalogSectionsFetchService } from '@/modules/admin/catalog/service.adm
 import { catalogSectionUpdateService } from '@/modules/admin/catalog/service.admin.update.catalog.section'
 import type { SectionStatus, CatalogSection } from '@/modules/admin/catalog/types.catalog.admin'
 import * as PhosphorIcons from '@phosphor-icons/vue'
+import PhIcon from '@/core/ui/icons/PhIcon.vue'
 
 const { t, locale } = useI18n()
 const catalogStore = useCatalogAdminStore()
@@ -115,7 +116,6 @@ const loadSectionData = async () => {
       const section = await catalogSectionsFetchService.fetchSection(editingSectionId.value)
       populateFormWithSection(section as CatalogSection)
     } catch (error) {
-      console.error('Error loading section data:', error)
       catalogStore.closeSectionEditor()
     } finally {
       isLoadingSection.value = false
@@ -160,7 +160,7 @@ const createSection = async () => {
     await catalogSectionCreateService.createSection(sectionData)
     catalogStore.closeSectionEditor()
   } catch (error) {
-    console.error('Error creating section:', error)
+    
   } finally {
     isSubmitting.value = false
   }
@@ -188,7 +188,7 @@ const updateSection = async () => {
     await catalogSectionUpdateService.updateSection(editingSectionId.value as string, sectionData)
     catalogStore.closeSectionEditor()
   } catch (error) {
-    console.error('Error updating section:', error)
+    
   } finally {
     isSubmitting.value = false
   }
@@ -286,16 +286,8 @@ const handleBackupOwnerSelected = (result: any) => {
                         color="rgb(20, 184, 166)"
                         class="placeholder-icon"
                       />
-                      <div
-                        v-else
-                        class="empty-placeholder"
-                      >
-                        <v-icon
-                          size="24"
-                          color="rgb(20, 184, 166)"
-                        >
-                          mdi-image-outline
-                        </v-icon>
+                      <div v-else class="empty-placeholder">
+                        <PhIcon name="mdi-image-outline" :size="24" color="rgb(20, 184, 166)" />
                       </div>
                     </div>
                   </v-col>
@@ -344,11 +336,15 @@ const handleBackupOwnerSelected = (result: any) => {
                         :label="t('admin.catalog.editor.information.owner.label')"
                         :rules="ownerRules"
                         readonly
-                        append-inner-icon="mdi-account-search"
                         required
                         color="teal"
-                        @click:append-inner="showOwnerSelector = true"
-                      />
+                      >
+                        <template #append-inner>
+                          <div class="d-flex align-center" style="cursor: pointer" @click="showOwnerSelector = true">
+                            <PhIcon name="mdi-magnify" />
+                          </div>
+                        </template>
+                      </v-text-field>
                     </div>
                   </v-col>
                   <v-col
@@ -360,10 +356,14 @@ const handleBackupOwnerSelected = (result: any) => {
                         v-model="formData.backupOwner"
                         :label="t('admin.catalog.editor.information.backupOwner.label')"
                         readonly
-                        append-inner-icon="mdi-account-search"
                         color="teal"
-                        @click:append-inner="showBackupOwnerSelector = true"
-                      />
+                      >
+                        <template #append-inner>
+                          <div class="d-flex align-center" style="cursor: pointer" @click="showBackupOwnerSelector = true">
+                            <PhIcon name="mdi-magnify" />
+                          </div>
+                        </template>
+                      </v-text-field>
                     </div>
                   </v-col>
                 </v-row>
@@ -426,13 +426,8 @@ const handleBackupOwnerSelected = (result: any) => {
                           />
                         </template>
                         <template #append-inner>
-                          <v-btn
-                            icon
-                            variant="text"
-                            size="small"
-                            @click="showColorPicker = true"
-                          >
-                            <v-icon>mdi-palette</v-icon>
+                          <v-btn icon variant="text" size="small" @click="showColorPicker = true">
+                            <PhIcon name="mdi-palette" />
                           </v-btn>
                         </template>
                       </v-text-field>
@@ -566,10 +561,12 @@ const handleBackupOwnerSelected = (result: any) => {
             block
             variant="outlined"
             color="teal"
-            prepend-icon="mdi-image-outline"
             class="select-icon-btn-sidebar"
             @click="openIconPicker"
           >
+            <template #prepend>
+              <PhIcon name="mdi-image-outline" />
+            </template>
             {{ t('admin.catalog.editor.information.icon.select') }}
           </v-btn>
         </div>

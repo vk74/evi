@@ -141,15 +141,26 @@ onMounted(async () => {
           v-model="searchQuery"
           density="compact"
           variant="outlined"
-          clearable
-          clear-icon="mdi-close"
+          :prepend-inner-icon="undefined"
           color="teal"
           :label="t('admin.catalog.editor.mapping.search.placeholder')"
-          prepend-inner-icon="mdi-magnify"
           :loading="isSearching"
           @keydown.enter="performSearch"
-@click:clear="() => { searchQuery = ''; performSearch() }"
-        />
+        >
+          <template #prepend-inner>
+            <PhIcon name="mdi-magnify" />
+          </template>
+          <template #append-inner>
+            <div
+              v-if="(searchQuery || '').length > 0"
+              class="d-flex align-center"
+              style="cursor: pointer"
+              @click="() => { searchQuery = ''; performSearch() }"
+            >
+              <PhIcon name="mdi-close" />
+            </div>
+          </template>
+        </v-text-field>
       </div>
       <v-data-table
         :page="page"
@@ -221,7 +232,7 @@ onMounted(async () => {
             :disabled="page===1"
             @click="page=1; loadServices()"
           >
-            <v-icon>mdi-chevron-double-left</v-icon>
+            <PhIcon name="mdi-chevron-double-left" />
           </v-btn>
           <v-btn
             icon
@@ -230,7 +241,7 @@ onMounted(async () => {
             :disabled="page===1"
             @click="page=Math.max(1,page-1); loadServices()"
           >
-            <v-icon>mdi-chevron-left</v-icon>
+            <PhIcon name="mdi-chevron-left" />
           </v-btn>
           <v-btn
             icon
@@ -239,7 +250,7 @@ onMounted(async () => {
             :disabled="page>=Math.ceil(totalItems/itemsPerPage)"
             @click="page=Math.min(Math.ceil(totalItems/itemsPerPage), page+1); loadServices()"
           >
-            <v-icon>mdi-chevron-right</v-icon>
+            <PhIcon name="mdi-chevron-right" />
           </v-btn>
           <v-btn
             icon
@@ -248,7 +259,7 @@ onMounted(async () => {
             :disabled="page>=Math.ceil(totalItems/itemsPerPage)"
             @click="page=Math.ceil(totalItems/itemsPerPage); loadServices()"
           >
-            <v-icon>mdi-chevron-double-right</v-icon>
+            <PhIcon name="mdi-chevron-double-right" />
           </v-btn>
         </div>
       </div>
@@ -270,10 +281,9 @@ onMounted(async () => {
           :loading="isPublishing"
           @click="handlePublish"
         >
-          <v-icon
-            icon="mdi-publish"
-            class="mr-2"
-          />
+          <template #prepend>
+            <PhIcon name="mdi-publish" />
+          </template>
           {{ t('admin.catalog.editor.mapping.actions.publish') }}
         </v-btn>
       </div>

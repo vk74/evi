@@ -22,6 +22,7 @@ import { useUserAuthStore } from '@/core/auth/state.user.auth'
 import debounce from 'lodash/debounce'
 import ChangePassword from '../../../../core/ui/modals/change-password/ChangePassword.vue'
 import { PasswordChangeMode } from '../../../../core/ui/modals/change-password/types.change.password'
+import PhIcon from '@/core/ui/icons/PhIcon.vue'
 
 // Initialize stores and i18n
 const { t } = useI18n()
@@ -73,7 +74,6 @@ const getFetchParams = () => ({
 
 // Helper function for error handling
 const handleError = (error: unknown, context: string) => {
-  console.error(`[UsersList] ${context}:`, error)
   uiStore.showErrorSnackbar(
     error instanceof Error ? error.message : `Error ${context.toLowerCase()}`
   )
@@ -349,16 +349,21 @@ const handleItemsPerPageChange = async (newItemsPerPage: ItemsPerPageOption) => 
             density="compact"
             variant="outlined"
             clearable
-            clear-icon="mdi-close"
             color="teal"
             :label="t('list.search.placeholder')"
-            prepend-inner-icon="mdi-magnify"
             :loading="isSearching"
             :hint="searchQuery.length === 1 ? t('list.search.minChars') : ''"
             persistent-hint
             @keydown="handleSearchKeydown"
             @click:clear="handleClearSearch"
-          />
+          >
+            <template #prepend-inner>
+              <PhIcon name="mdi-magnify" />
+            </template>
+            <template #clear="{ props }">
+              <v-btn v-bind="props" icon variant="text"><PhIcon name="mdi-close" /></v-btn>
+            </template>
+          </v-text-field>
         </div>
 
         <v-data-table
@@ -377,12 +382,19 @@ const handleItemsPerPageChange = async (newItemsPerPage: ItemsPerPageOption) => 
         >
           <!-- Template for checkbox column -->
           <template #[`item.selection`]="{ item }">
-            <v-checkbox
-              :model-value="isSelected(item.user_id)"
-              density="compact"
-              hide-details
-              @update:model-value="(value: boolean | null) => onSelectUser(item.user_id, value ?? false)"
-            />
+            <v-btn
+              icon
+              variant="text"
+              density="comfortable"
+              :aria-pressed="isSelected(item.user_id)"
+              @click="onSelectUser(item.user_id, !isSelected(item.user_id))"
+            >
+              <PhIcon
+                :name="isSelected(item.user_id) ? 'mdi-checkbox-marked' : 'mdi-checkbox-blank-outline'"
+                :color="isSelected(item.user_id) ? 'teal' : 'grey'"
+                :size="18"
+              />
+            </v-btn>
           </template>
 
           <template #[`item.user_id`]="{ item }">
@@ -399,10 +411,10 @@ const handleItemsPerPageChange = async (newItemsPerPage: ItemsPerPageOption) => 
           </template>
 
           <template #[`item.is_staff`]="{ item }">
-            <v-icon
+            <PhIcon
+              :name="item.is_staff ? 'mdi-check-circle' : 'mdi-minus-circle'"
               :color="item.is_staff ? 'teal' : 'red-darken-4'"
-              :icon="item.is_staff ? 'mdi-check-circle' : 'mdi-minus-circle'"
-              size="x-small"
+              size="16"
             />
           </template>
         </v-data-table>
@@ -441,7 +453,7 @@ const handleItemsPerPageChange = async (newItemsPerPage: ItemsPerPageOption) => 
                   :disabled="page === 1"
                   @click="goToPage(1)"
                 >
-                  <v-icon>mdi-chevron-double-left</v-icon>
+                  <PhIcon name="mdi-chevron-double-left" />
                   <v-tooltip
                     activator="parent"
                     location="top"
@@ -457,7 +469,7 @@ const handleItemsPerPageChange = async (newItemsPerPage: ItemsPerPageOption) => 
                   :disabled="page === 1"
                   @click="goToPage(page - 1)"
                 >
-                  <v-icon>mdi-chevron-left</v-icon>
+                  <PhIcon name="mdi-chevron-left" />
                   <v-tooltip
                     activator="parent"
                     location="top"
@@ -495,7 +507,7 @@ const handleItemsPerPageChange = async (newItemsPerPage: ItemsPerPageOption) => 
                   :disabled="page >= getTotalPages()"
                   @click="goToPage(page + 1)"
                 >
-                  <v-icon>mdi-chevron-right</v-icon>
+                  <PhIcon name="mdi-chevron-right" />
                   <v-tooltip
                     activator="parent"
                     location="top"
@@ -511,7 +523,7 @@ const handleItemsPerPageChange = async (newItemsPerPage: ItemsPerPageOption) => 
                   :disabled="page >= getTotalPages()"
                   @click="goToPage(getTotalPages())"
                 >
-                  <v-icon>mdi-chevron-double-right</v-icon>
+                  <PhIcon name="mdi-chevron-double-right" />
                   <v-tooltip
                     activator="parent"
                     location="top"
@@ -554,10 +566,7 @@ const handleItemsPerPageChange = async (newItemsPerPage: ItemsPerPageOption) => 
             :loading="loading"
             @click="refreshList"
           >
-            <v-icon
-              icon="mdi-refresh"
-              class="mr-2"
-            />
+            <PhIcon name="mdi-refresh" class="mr-2" />
             {{ t('list.buttons.refresh') }}
           </v-btn>
           
@@ -570,10 +579,7 @@ const handleItemsPerPageChange = async (newItemsPerPage: ItemsPerPageOption) => 
             :disabled="!hasSelected"
             @click="clearSelections"
           >
-            <v-icon
-              icon="mdi-checkbox-blank-outline"
-              class="mr-2"
-            />
+            <PhIcon name="mdi-checkbox-blank-outline" class="mr-2" />
             {{ t('list.buttons.clearSelections') }}
           </v-btn>
         </div>

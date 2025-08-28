@@ -7,6 +7,7 @@ File: CatalogServiceCard.vue
 <script setup lang="ts">
 import { ref } from 'vue';
 import type { CatalogService } from './types.services';
+import PhIcon from '@/core/ui/icons/PhIcon.vue'
 
 // ==================== PROPS ====================
 interface Props {
@@ -25,7 +26,7 @@ const loadPhosphorIcons = async () => {
     const icons = await import('@phosphor-icons/vue')
     phosphorIcons.value = icons
   } catch (error) {
-    console.error('Error loading Phosphor icons:', error)
+    
   }
 }
 
@@ -53,14 +54,13 @@ const getPhosphorIcon = (iconName: string | null) => {
         color="rgb(20, 184, 166)"
         class="me-3"
       />
-      <v-icon
+      <PhIcon
         v-else
-        class="me-3"
-        size="large"
+        name="mdi-cube"
+        :size="24"
         color="teal"
-      >
-        mdi-cube
-      </v-icon>
+        class="me-3"
+      />
       <div class="flex-grow-1">
         <div class="text-h6">
           {{ service.name }}

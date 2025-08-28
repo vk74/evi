@@ -22,6 +22,7 @@ import { serviceCreateService } from '../../service.create.service'
 import { serviceUpdateService } from '../../service.update.service'
 import { serviceAdminFetchSingleService } from './service.admin.fetchsingleservice'
 import * as PhosphorIcons from '@phosphor-icons/vue'
+import PhIcon from '@/core/ui/icons/PhIcon.vue'
 
 // Initialize stores and i18n
 const { t, locale } = useI18n()
@@ -198,7 +199,6 @@ const loadServiceData = async () => {
       }
       
     } catch (error) {
-      console.error('Error loading service data:', error)
       uiStore.showErrorSnackbar(t('admin.services.editor.messages.error.loadingService'))
       servicesStore.closeServiceEditor()
     } finally {
@@ -208,11 +208,6 @@ const loadServiceData = async () => {
 }
 
 const populateFormWithService = (service: Service) => {
-  console.log('Populating form with service data:', {
-    access_allowed_groups: service.access_allowed_groups,
-    access_denied_groups: service.access_denied_groups,
-    access_denied_users: service.access_denied_users
-  })
   
   formData.value = {
     name: service.name,
@@ -294,12 +289,10 @@ const createService = async () => {
       } else {
         // If failed to load fresh data, show warning but stay in edit mode
         uiStore.showWarningSnackbar(t('admin.services.editor.messages.createdButFailedToLoadData'))
-        console.warn('Failed to load fresh service data after creation:', (serviceResponse as any)?.message || 'Unknown error')
       }
     }
     
   } catch (error) {
-    console.error('Error creating service:', error)
     // Error messages are already handled by the service
   } finally {
     isSubmitting.value = false
@@ -347,7 +340,6 @@ const updateService = async () => {
     }
     
   } catch (error) {
-    console.error('Error updating service:', error)
     // Error messages are already handled by the service
   } finally {
     isSubmitting.value = false
@@ -626,12 +618,7 @@ onMounted(() => {
                         v-else
                         class="empty-placeholder"
                       >
-                        <v-icon 
-                          size="24"
-                          color="rgb(20, 184, 166)"
-                        >
-                          mdi-image-outline
-                        </v-icon>
+                        <PhIcon name="mdi-image-outline" :size="24" color="rgb(20, 184, 166)" />
                       </div>
                     </div>
                   </v-col>
@@ -668,7 +655,11 @@ onMounted(() => {
                       item-value="value"
                       required
                       color="teal"
-                    />
+                    >
+                      <template #append-inner>
+                        <PhIcon name="PhCaretUpDown" />
+                      </template>
+                    </v-select>
                   </v-col>
                   <v-col
                     cols="12"
@@ -685,7 +676,11 @@ onMounted(() => {
                       item-value="value"
                       required
                       color="teal"
-                    />
+                    >
+                      <template #append-inner>
+                        <PhIcon name="PhCaretUpDown" />
+                      </template>
+                    </v-select>
                   </v-col>
                 </v-row>
               </v-col>
@@ -711,10 +706,15 @@ onMounted(() => {
                         :rules="ownerRules"
                         readonly
                         required
-                        append-inner-icon="mdi-account-search"
+                        :append-inner-icon="undefined"
                         color="teal"
-                        @click:append-inner="showOwnerSelector = true"
-                      />
+                      >
+                        <template #append-inner>
+                          <div style="cursor: pointer" @click="showOwnerSelector = true">
+                            <PhIcon name="mdi-magnify" />
+                          </div>
+                        </template>
+                      </v-text-field>
                     </div>
                   </v-col>
                   <v-col
@@ -726,10 +726,15 @@ onMounted(() => {
                         v-model="formData.backupOwner"
                         :label="t('admin.services.editor.owners.backupOwner.label')"
                         readonly
-                        append-inner-icon="mdi-account-search"
+                        :append-inner-icon="undefined"
                         color="teal"
-                        @click:append-inner="showBackupOwnerSelector = true"
-                      />
+                      >
+                        <template #append-inner>
+                          <div style="cursor: pointer" @click="showBackupOwnerSelector = true">
+                            <PhIcon name="mdi-magnify" />
+                          </div>
+                        </template>
+                      </v-text-field>
                     </div>
                   </v-col>
                 </v-row>
@@ -744,10 +749,15 @@ onMounted(() => {
                         v-model="formData.technicalOwner"
                         :label="t('admin.services.editor.owners.technicalOwner.label')"
                         readonly
-                        append-inner-icon="mdi-account-search"
+                        :append-inner-icon="undefined"
                         color="teal"
-                        @click:append-inner="showTechnicalOwnerSelector = true"
-                      />
+                      >
+                        <template #append-inner>
+                          <div style="cursor: pointer" @click="showTechnicalOwnerSelector = true">
+                            <PhIcon name="mdi-magnify" />
+                          </div>
+                        </template>
+                      </v-text-field>
                     </div>
                   </v-col>
                   <v-col
@@ -759,10 +769,15 @@ onMounted(() => {
                         v-model="formData.backupTechnicalOwner"
                         :label="t('admin.services.editor.owners.backupTechnicalOwner.label')"
                         readonly
-                        append-inner-icon="mdi-account-search"
+                        :append-inner-icon="undefined"
                         color="teal"
-                        @click:append-inner="showBackupTechnicalOwnerSelector = true"
-                      />
+                      >
+                        <template #append-inner>
+                          <div style="cursor: pointer" @click="showBackupTechnicalOwnerSelector = true">
+                            <PhIcon name="mdi-magnify" />
+                          </div>
+                        </template>
+                      </v-text-field>
                     </div>
                   </v-col>
                 </v-row>
@@ -777,10 +792,15 @@ onMounted(() => {
                         v-model="formData.dispatcher"
                         :label="t('admin.services.editor.owners.dispatcher.label')"
                         readonly
-                        append-inner-icon="mdi-account-search"
+                        :append-inner-icon="undefined"
                         color="teal"
-                        @click:append-inner="showDispatcherSelector = true"
-                      />
+                      >
+                        <template #append-inner>
+                          <div style="cursor: pointer" @click="showDispatcherSelector = true">
+                            <PhIcon name="mdi-magnify" />
+                          </div>
+                        </template>
+                      </v-text-field>
                     </div>
                   </v-col>
                 </v-row>
@@ -805,10 +825,15 @@ onMounted(() => {
                         v-model="formData.supportTier1"
                         :label="t('admin.services.editor.support.tier1.label')"
                         readonly
-                        append-inner-icon="mdi-account-search"
+                        :append-inner-icon="undefined"
                         color="teal"
-                        @click:append-inner="showSupportTier1Selector = true"
-                      />
+                      >
+                        <template #append-inner>
+                          <div style="cursor: pointer" @click="showSupportTier1Selector = true">
+                            <PhIcon name="mdi-magnify" />
+                          </div>
+                        </template>
+                      </v-text-field>
                     </div>
                   </v-col>
                   <v-col
@@ -820,10 +845,15 @@ onMounted(() => {
                         v-model="formData.supportTier2"
                         :label="t('admin.services.editor.support.tier2.label')"
                         readonly
-                        append-inner-icon="mdi-account-search"
+                        :append-inner-icon="undefined"
                         color="teal"
-                        @click:append-inner="showSupportTier2Selector = true"
-                      />
+                      >
+                        <template #append-inner>
+                          <div style="cursor: pointer" @click="showSupportTier2Selector = true">
+                            <PhIcon name="mdi-magnify" />
+                          </div>
+                        </template>
+                      </v-text-field>
                     </div>
                   </v-col>
                   <v-col
@@ -835,10 +865,15 @@ onMounted(() => {
                         v-model="formData.supportTier3"
                         :label="t('admin.services.editor.support.tier3.label')"
                         readonly
-                        append-inner-icon="mdi-account-search"
+                        :append-inner-icon="undefined"
                         color="teal"
-                        @click:append-inner="showSupportTier3Selector = true"
-                      />
+                      >
+                        <template #append-inner>
+                          <div style="cursor: pointer" @click="showSupportTier3Selector = true">
+                            <PhIcon name="mdi-magnify" />
+                          </div>
+                        </template>
+                      </v-text-field>
                     </div>
                   </v-col>
                 </v-row>
@@ -955,24 +990,33 @@ onMounted(() => {
                         <v-chip
                           v-for="group in formData.accessAllowedGroups"
                           :key="group"
-                          closable
                           color="teal"
                           variant="outlined"
                           size="small"
-                          class="ma-1"
-                          @click:close="removeAllowedGroup(group)"
+                          class="ma-1 d-flex align-center"
                         >
-                          {{ group }}
+                          <span class="mr-2">{{ group }}</span>
+                          <v-btn
+                            icon
+                            variant="text"
+                            density="compact"
+                            color="teal"
+                            @click="removeAllowedGroup(group)"
+                          >
+                            <PhIcon name="mdi-close" :size="12" />
+                          </v-btn>
                         </v-chip>
                         <v-btn
                           v-if="formData.accessAllowedGroups.length === 0"
                           variant="outlined"
                           color="teal"
                           size="small"
-                          prepend-icon="mdi-account-search"
                           class="ma-1"
                           @click="showAccessAllowedGroupsSelector = true"
                         >
+                          <template #prepend>
+                            <PhIcon name="mdi-plus" />
+                          </template>
                           {{ t('admin.services.editor.access.addGroups') }}
                         </v-btn>
                         <v-btn
@@ -980,10 +1024,12 @@ onMounted(() => {
                           variant="text"
                           color="teal"
                           size="small"
-                          prepend-icon="mdi-plus"
                           class="ma-1"
                           @click="showAccessAllowedGroupsSelector = true"
                         >
+                          <template #prepend>
+                            <PhIcon name="mdi-plus" />
+                          </template>
                           {{ t('admin.services.editor.access.addMore') }}
                         </v-btn>
                       </div>
@@ -1001,24 +1047,33 @@ onMounted(() => {
                         <v-chip
                           v-for="group in formData.accessDeniedGroups"
                           :key="group"
-                          closable
                           color="red"
                           variant="outlined"
                           size="small"
-                          class="ma-1"
-                          @click:close="removeDeniedGroup(group)"
+                          class="ma-1 d-flex align-center"
                         >
-                          {{ group }}
+                          <span class="mr-2">{{ group }}</span>
+                          <v-btn
+                            icon
+                            variant="text"
+                            density="compact"
+                            color="red"
+                            @click="removeDeniedGroup(group)"
+                          >
+                            <PhIcon name="mdi-close" :size="12" />
+                          </v-btn>
                         </v-chip>
                         <v-btn
                           v-if="formData.accessDeniedGroups.length === 0"
                           variant="outlined"
                           color="red"
                           size="small"
-                          prepend-icon="mdi-account-search"
                           class="ma-1"
                           @click="showAccessDeniedGroupsSelector = true"
                         >
+                          <template #prepend>
+                            <PhIcon name="mdi-plus" />
+                          </template>
                           {{ t('admin.services.editor.access.addGroups') }}
                         </v-btn>
                         <v-btn
@@ -1026,10 +1081,12 @@ onMounted(() => {
                           variant="text"
                           color="red"
                           size="small"
-                          prepend-icon="mdi-plus"
                           class="ma-1"
                           @click="showAccessDeniedGroupsSelector = true"
                         >
+                          <template #prepend>
+                            <PhIcon name="mdi-plus" />
+                          </template>
                           {{ t('admin.services.editor.access.addMore') }}
                         </v-btn>
                       </div>
@@ -1047,24 +1104,33 @@ onMounted(() => {
                         <v-chip
                           v-for="user in formData.accessDeniedUsers"
                           :key="user"
-                          closable
                           color="red"
                           variant="outlined"
                           size="small"
-                          class="ma-1"
-                          @click:close="removeDeniedUser(user)"
+                          class="ma-1 d-flex align-center"
                         >
-                          {{ user }}
+                          <span class="mr-2">{{ user }}</span>
+                          <v-btn
+                            icon
+                            variant="text"
+                            density="compact"
+                            color="red"
+                            @click="removeDeniedUser(user)"
+                          >
+                            <PhIcon name="mdi-close" :size="12" />
+                          </v-btn>
                         </v-chip>
                         <v-btn
                           v-if="formData.accessDeniedUsers.length === 0"
                           variant="outlined"
                           color="red"
                           size="small"
-                          prepend-icon="mdi-account-search"
                           class="ma-1"
                           @click="showAccessDeniedUsersSelector = true"
                         >
+                          <template #prepend>
+                            <PhIcon name="mdi-plus" />
+                          </template>
                           {{ t('admin.services.editor.access.addUsers') }}
                         </v-btn>
                         <v-btn
@@ -1072,10 +1138,12 @@ onMounted(() => {
                           variant="text"
                           color="red"
                           size="small"
-                          prepend-icon="mdi-plus"
                           class="ma-1"
                           @click="showAccessDeniedUsersSelector = true"
                         >
+                          <template #prepend>
+                            <PhIcon name="mdi-plus" />
+                          </template>
                           {{ t('admin.services.editor.access.addMore') }}
                         </v-btn>
                       </div>
@@ -1103,10 +1171,12 @@ onMounted(() => {
             block
             variant="outlined"
             color="teal"
-            prepend-icon="mdi-image-outline"
             class="select-icon-btn-sidebar"
             @click="openIconPicker"
           >
+            <template #prepend>
+              <PhIcon name="mdi-image-outline" />
+            </template>
             {{ t('admin.services.editor.information.icon.select') }}
           </v-btn>
         </div>

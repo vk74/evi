@@ -17,6 +17,7 @@ import { useUserAuthStore } from '@/core/auth/state.user.auth';
 import { useUiStore } from '@/core/state/uistate';
 import { useUsersAdminStore } from '../state.users.admin';
 import { useGroupEditorStore } from '../GroupEditor/state.group.editor';
+import PhIcon from '@/core/ui/icons/PhIcon.vue'
 // Initialize stores and i18n
 const { t } = useI18n();
 const groupsStore = useStoreGroupsList();
@@ -36,10 +37,7 @@ const searchQuery = ref<string>('');
 // Computed properties
 const groups = computed(() => groupsStore.getGroups);
 const loading = computed(() => groupsStore.loading);
-const totalNumOfGroups = computed(() => {
-  console.log('[Component] totalNumberOfGroups:', groupsStore.totalNumberOfGroups);
-  return groupsStore.totalNumberOfGroups;
-});
+const totalNumOfGroups = computed(() => groupsStore.totalNumberOfGroups);
 
 // Selected groups state
 const selectedCount = computed(() => groupsStore.selectedCount);
@@ -69,25 +67,17 @@ const getStatusColor = (status: string) => {
 };
 
 const onSelectGroup = (groupId: string, selected: boolean) => {
-  if (!groupId) {
-    console.warn('Invalid groupId provided to onSelectGroup:', groupId);
-    return;
-  }
+  if (!groupId) return;
   if (selected) groupsStore.selectGroup(groupId);
   else groupsStore.deselectGroup(groupId);
-  console.log('Selected groupId:', groupId);
 };
 
 const isSelected = (groupId: string) => {
-  if (!groupId) {
-    console.warn('Invalid groupId provided to isSelected:', groupId);
-    return false;
-  }
+  if (!groupId) return false;
   return groupsStore.selectedGroups.includes(groupId);
 };
 
 const createGroup = () => {
-  console.log('Create group clicked');
   // Сбрасываем форму и устанавливаем режим создания
   groupEditorStore.resetForm(); // Очищает поля, сохраняя group_owner
   groupEditorStore.mode = { mode: 'create' }; // Явно устанавливаем режим создания
@@ -95,10 +85,8 @@ const createGroup = () => {
 };
 
 const editGroup = async () => {
-  console.log('Edit group clicked');
   if (hasOneSelected.value) {
     const selectedGroupId = groupsStore.selectedGroups[0];
-    console.log('Loading group for editing with groupId:', selectedGroupId);
     try {
       const { group, details } = await fetchGroupService.fetchGroupById(selectedGroupId);
       groupEditorStore.initEditMode({
@@ -107,11 +95,9 @@ const editGroup = async () => {
       });
       usersAdminStore.setActiveSection('group-editor');
     } catch (error) {
-      console.error('Error loading group for editing:', error);
       uiStore.showErrorSnackbar('Не удалось загрузить данные группы для редактирования');
     }
   } else {
-    console.warn('No single group selected for editing');
     uiStore.showErrorSnackbar(t('admin.groups.list.messages.noGroupSelected'));
   }
 };
@@ -127,12 +113,10 @@ const onSortUpdate = (sortParams: { key: string; order: 'asc' | 'desc' | null })
 
 const onDeleteSelected = async () => {
   try {
-    console.log('Deleting selected groups:', groupsStore.selectedGroups);
     const deletedCount = await deleteSelectedGroupsService.deleteSelectedGroups(groupsStore.selectedGroups);
     uiStore.showSuccessSnackbar(t('admin.groups.list.messages.deleteSuccess', { count: deletedCount }));
     await groupsService.fetchGroups();
   } catch (error) {
-    console.error('Error deleting groups:', error);
     uiStore.showErrorSnackbar(error instanceof Error ? error.message : 'Error deleting groups');
   } finally {
     showDeleteDialog.value = false;
@@ -149,7 +133,6 @@ onMounted(async () => {
   try {
     await groupsService.fetchGroups();
   } catch (error) {
-    console.error('Error loading initial groups list:', error);
     uiStore.showErrorSnackbar(error instanceof Error ? error.message : 'Error loading groups list');
   }
 });
@@ -171,10 +154,15 @@ watch([page, itemsPerPage], ([newPage, newItemsPerPage]) => {
             variant="outlined"
             density="compact"
             clearable
-            clear-icon="mdi-close"
             color="teal"
-            prepend-inner-icon="mdi-magnify"
-          />
+          >
+            <template #prepend-inner>
+              <PhIcon name="mdi-magnify" />
+            </template>
+            <template #clear="{ props }">
+              <v-btn v-bind="props" icon variant="text"><PhIcon name="mdi-close" /></v-btn>
+            </template>
+          </v-text-field>
         </div>
 
         <v-data-table
@@ -192,12 +180,19 @@ watch([page, itemsPerPage], ([newPage, newItemsPerPage]) => {
           @update:sort="(sortParams) => onSortUpdate(sortParams)"
         >
           <template #item.selection="{ item }">
-            <v-checkbox
-              :model-value="isSelected(item.group_id)"
-              density="compact"
-              hide-details
-              @update:model-value="(value: boolean | null) => onSelectGroup(item.group_id, value ?? false)"
-            />
+            <v-btn
+              icon
+              variant="text"
+              density="comfortable"
+              :aria-pressed="isSelected(item.group_id)"
+              @click="onSelectGroup(item.group_id, !isSelected(item.group_id))"
+            >
+              <PhIcon
+                :name="isSelected(item.group_id) ? 'mdi-checkbox-marked' : 'mdi-checkbox-blank-outline'"
+                :color="isSelected(item.group_id) ? 'teal' : 'grey'"
+                :size="18"
+              />
+            </v-btn>
           </template>
           <template #item.group_status="{ item }">
             <v-chip
@@ -208,10 +203,10 @@ watch([page, itemsPerPage], ([newPage, newItemsPerPage]) => {
             </v-chip>
           </template>
           <template #item.is_system="{ item }">
-            <v-icon
+            <PhIcon
+              :name="item.is_system ? 'mdi-check-circle' : 'mdi-minus-circle'"
               :color="item.is_system ? 'teal' : 'red-darken-4'"
-              :icon="item.is_system ? 'mdi-check-circle' : 'mdi-minus-circle'"
-              size="x-small"
+              size="16"
             />
           </template>
         </v-data-table>
@@ -245,10 +240,7 @@ watch([page, itemsPerPage], ([newPage, newItemsPerPage]) => {
             :disabled="!hasSelected"
             @click="clearSelections"
           >
-            <v-icon
-              icon="mdi-checkbox-blank-outline"
-              class="mr-2"
-            />
+            <PhIcon name="mdi-checkbox-blank-outline" class="mr-2" size="16" />
             {{ t('admin.groups.list.buttons.clearSelections') }}
           </v-btn>
         </div>

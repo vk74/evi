@@ -11,6 +11,7 @@
 import { useI18n } from 'vue-i18n';
 import { useAppSettingsStore } from './state.app.settings';
 import { fetchSettings } from './service.fetch.settings';
+import PhIcon from '@/core/ui/icons/PhIcon.vue';
 import { useUiStore } from '@/core/state/uistate';
  
  // Import components from sections directory with hierarchical naming
@@ -351,7 +352,6 @@ const { t } = useI18n();
  async function loadCurrentSectionSettings() {
    const section_path = selectedSectionPath.value;
    
-   console.log(`Loading settings for selected section: ${section_path}`);
    
    try {
      // For the root 'Application' section, we expect it might not have settings yet
@@ -361,7 +361,7 @@ const { t } = useI18n();
          await fetchSettings(section_path);
        } catch (error) {
          // Silent fail for root section
-         console.log('No settings found for root Application section - this is expected');
+         
        }
      } else {
        // For all other sections, fetch normally
@@ -369,7 +369,7 @@ const { t } = useI18n();
      }
    } catch (error) {
      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-     console.error(`Error loading settings for section ${section_path}:`, error);
+     
      
      // Show warning for settings load failure
      uiStore.showWarningSnackbar(`Предупреждение: Не удалось загрузить настройки для секции. ${errorMessage}`);
@@ -424,9 +424,12 @@ const { t } = useI18n();
       <v-btn
         variant="text"
         class="mobile-menu-button"
-        prepend-icon="mdi-menu"
+        :prepend-icon="undefined"
         @click="toggleMobileMenu"
       >
+        <template #prepend>
+          <PhIcon name="mdi-menu" :size="18" />
+        </template>
         {{ selectedSection.name }}
       </v-btn>
        
@@ -444,15 +447,15 @@ const { t } = useI18n();
             @click="handleSectionClick(section)"
           >
             <template #prepend>
-              <v-icon
+              <PhIcon
                 v-if="section.hasChildren"
-                :icon="expandedSections.includes(section.id) ? 'mdi-chevron-down' : 'mdi-chevron-right'"
-                size="small"
+                :name="expandedSections.includes(section.id) ? 'mdi-chevron-down' : 'mdi-chevron-right'"
+                :size="16"
                 class="mr-2"
               />
-              <v-icon
-                :icon="section.icon"
-                size="small"
+              <PhIcon
+                :name="section.icon"
+                :size="16"
                 class="mr-2"
               />
             </template>
@@ -486,16 +489,16 @@ const { t } = useI18n();
           >
             <template #prepend>
               <div class="section-indicator">
-                <v-icon
+                <PhIcon
                   v-if="section.hasChildren"
-                  :icon="expandedSections.includes(section.id) ? 'mdi-chevron-down' : 'mdi-chevron-right'"
-                  size="small"
+                  :name="expandedSections.includes(section.id) ? 'mdi-chevron-down' : 'mdi-chevron-right'"
+                  :size="16"
                   class="chevron-icon"
                 />
               </div>
-              <v-icon
-                :icon="section.icon"
-                size="small"
+              <PhIcon
+                :name="section.icon"
+                :size="16"
                 class="section-icon"
               />
             </template>

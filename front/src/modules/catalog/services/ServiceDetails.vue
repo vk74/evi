@@ -9,6 +9,7 @@ import { ref, onMounted, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import type { CatalogServiceDetails } from './types.service.details'
 import { fetchServiceDetails } from './service.fetch.service.details'
+import PhIcon from '@/core/ui/icons/PhIcon.vue'
 
 // Props (MVP): accept serviceId from parent context/navigation state
 interface Props { serviceId: string }
@@ -26,7 +27,7 @@ const { t } = useI18n()
 const phosphorIcons = ref<Record<string, any>>({})
 const loadPhosphorIcons = async () => {
   if (Object.keys(phosphorIcons.value).length > 0) return
-  try { const icons = await import('@phosphor-icons/vue'); phosphorIcons.value = icons } catch (e) { console.error(e) }
+  try { const icons = await import('@phosphor-icons/vue'); phosphorIcons.value = icons } catch (e) { }
 }
 const getPhosphorIcon = (iconName: string | null) => {
   if (!iconName || !phosphorIcons.value[iconName]) return null
@@ -62,14 +63,13 @@ watch(() => props.serviceId, () => { loadDetails() })
         color="rgb(20, 184, 166)"
         class="me-3"
       />
-      <v-icon
+      <PhIcon
         v-else
-        size="large"
+        name="mdi-cube"
+        :size="28"
         color="teal"
         class="me-3"
-      >
-        mdi-cube
-      </v-icon>
+      />
       <div class="text-h6">
         {{ details?.name }}
       </div>

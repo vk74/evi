@@ -17,6 +17,7 @@ import { useI18n } from 'vue-i18n';
 import { useUiStore } from '@/core/state/uistate';
 import { fetchPublicPasswordPolicies } from '@/core/services/service.fetch.public.password.policies';
 import { usePublicSettingsStore, type PasswordPolicies } from '@/core/state/state.public.settings';
+import PhIcon from '@/core/ui/icons/PhIcon.vue'
 
 // ==================== STORES ====================
 const { t } = useI18n();
@@ -118,16 +119,14 @@ const loadPasswordPolicies = async (forceRefresh = false) => {
   passwordPolicyError.value = false
   
   try {
-    console.log('[PasswordPoliciesPanel] Loading password policy settings', forceRefresh ? '(forced refresh)' : '')
     
     // Use public API instead of admin settings API
     const policies = await fetchPublicPasswordPolicies(forceRefresh)
     currentPasswordPolicies.value = policies
     
-    console.log('[PasswordPoliciesPanel] Password policies loaded successfully:', policies)
+    
     
   } catch (error) {
-    console.error('[PasswordPoliciesPanel] Failed to load password policies:', error)
     passwordPolicyError.value = true
     uiStore.showErrorSnackbar(t('panels.passwordPolicies.error'))
     
@@ -151,13 +150,11 @@ const loadPasswordPolicies = async (forceRefresh = false) => {
  * Force refresh password policies (for admin use)
  */
 const refreshPasswordPolicies = async () => {
-  console.log('[PasswordPoliciesPanel] Force refreshing password policies')
   await loadPasswordPolicies(true)
 }
 
 // ==================== LIFECYCLE ====================
 onMounted(async () => {
-  console.log('[PasswordPoliciesPanel] Mounted - loading password policies')
   await loadPasswordPolicies()
 })
 </script>
@@ -186,12 +183,7 @@ onMounted(async () => {
       v-else-if="passwordPolicyError"
       class="d-flex align-center"
     >
-      <v-icon
-        icon="mdi-alert-circle"
-        color="error"
-        size="16"
-        class="mr-2"
-      />
+      <PhIcon name="mdi-alert-circle" :size="16" color="rgb(var(--v-theme-error))" class="mr-2" />
       <span class="text-caption text-error">
         {{ t('panels.passwordPolicies.error') }}
       </span>
@@ -204,14 +196,18 @@ onMounted(async () => {
           {{ t('panels.passwordPolicies.examplePassword') }}
         </p>
         <v-btn
-          icon="mdi-refresh"
+          :icon="undefined"
           size="small"
           variant="text"
           color="primary"
           :loading="isLoadingPasswordPolicies"
           :title="t('panels.passwordPolicies.refresh')"
           @click="refreshPasswordPolicies"
-        />
+        >
+          <template #default>
+            <PhIcon name="mdi-refresh" />
+          </template>
+        </v-btn>
       </div>
       <p class="text-h6 font-weight-bold text-primary mb-2">
         {{ generateExamplePassword || '—' }}

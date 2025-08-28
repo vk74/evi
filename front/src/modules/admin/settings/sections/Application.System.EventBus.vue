@@ -21,6 +21,7 @@ import { fetchSettings } from '@/modules/admin/settings/service.fetch.settings';
 import { updateSettingFromComponent } from '@/modules/admin/settings/service.update.settings';
 import { useUiStore } from '@/core/state/uistate';
 import DataLoading from '@/core/ui/loaders/DataLoading.vue';
+import PhIcon from '@/core/ui/icons/PhIcon.vue';
 
 // Section path identifier
 const section_path = 'Application.System.EventBus';
@@ -430,15 +431,9 @@ onMounted(() => {
                   max-width="300"
                 >
                   <template #activator="{ props }">
-                    <v-icon 
-                      icon="mdi-alert-circle" 
-                      size="small" 
-                      class="ms-2" 
-                      color="error"
-                      v-bind="props"
-                      style="cursor: pointer;"
-                      @click="retrySetting(setting.name)"
-                    />
+                    <span v-bind="props" style="cursor: pointer;" @click="retrySetting(setting.name)">
+                      <PhIcon name="mdi-alert-circle" :size="16" class="ms-2" />
+                    </span>
                   </template>
                   <div class="pa-2">
                     <p class="text-subtitle-2 mb-2">

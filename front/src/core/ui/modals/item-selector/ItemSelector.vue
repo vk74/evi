@@ -10,6 +10,7 @@ import { ref, computed, onMounted, onBeforeUnmount, PropType, defineProps, defin
 import { useI18n } from 'vue-i18n'
 import { useUiStore } from '@/core/state/uistate'
 import { ItemSelectorItem } from './types.item.selector'
+import PhIcon from '@/core/ui/icons/PhIcon.vue'
 
 // Импорт сервисов
 import searchUsers from '@/core/ui/modals/item-selector/service.search.users'
@@ -104,15 +105,13 @@ const maintainFocus = () => {
 
 // Инициализация
 onMounted(() => {
-  console.log('[ItemSelector] Компонент инициализирован с пропсами:', props)
-  
   // Проверяем, что сервисы существуют
   if (!searchServiceMap[props.searchService]) {
-    console.error(`[ItemSelector] Сервис поиска "${props.searchService}" не найден`)
+    return
   }
   
   if (!actionServiceMap[props.actionService]) {
-    console.error(`[ItemSelector] Сервис действия "${props.actionService}" не найден`)
+    return
   }
   
   // Устанавливаем фокус на поле поиска с небольшой задержкой
@@ -120,7 +119,6 @@ onMounted(() => {
 })
 
 onBeforeUnmount(() => {
-  console.log('[ItemSelector] Компонент удаляется')
   searchResultItems.value = []
   selectedItems.value = []
   
@@ -161,7 +159,6 @@ const actionButtonLabel = computed(() => props.actionButtonText || t('itemSelect
  * Выполнить поиск и обновить результаты
  */
 const handleSearch = async () => {
-  console.log('[ItemSelector] Начинаем поиск с запросом:', searchQuery.value)
   
   // Проверка минимальной длины запроса
   if (!canSearch.value) {
@@ -187,15 +184,12 @@ const handleSearch = async () => {
       limit: props.maxResults
     })
     
-    console.log('[ItemSelector] Получены результаты поиска:', results)
-    
     // Фильтруем элементы, которые уже в списке выбранных, чтобы избежать дубликатов
     const uniqueResults = results.filter(newItem => 
       !selectedItems.value.some(existingItem => existingItem.uuid === newItem.uuid)
     )
     
     searchResultItems.value = uniqueResults
-    console.log('[ItemSelector] Отфильтрованные уникальные результаты:', uniqueResults.length)
     
     // Показываем соответствующее уведомление в зависимости от результатов
     if (results.length === 0) {
@@ -215,7 +209,6 @@ const handleSearch = async () => {
       }
     }
   } catch (error) {
-    console.error('[ItemSelector] Ошибка поиска:', error)
     uiStore.showErrorSnackbar(t('itemSelector.messages.searchError'))
   } finally {
     isLoading.value = false
@@ -228,7 +221,6 @@ const handleSearch = async () => {
  * Переместить элемент из результатов поиска в выбранные
  */
 const addItemToSelection = (item: ItemSelectorItem) => {
-  console.log('[ItemSelector] Добавляем элемент в выбранные:', item)
   
   // Проверяем, не достигли ли мы максимального лимита элементов
   if (selectedItems.value.length >= props.maxItems) {
@@ -245,7 +237,6 @@ const addItemToSelection = (item: ItemSelectorItem) => {
  * Удалить элемент из выбранных
  */
 const removeItemFromSelection = (item: ItemSelectorItem) => {
-  console.log('[ItemSelector] Удаляем элемент из выбранных:', item)
   selectedItems.value = selectedItems.value.filter(i => i.uuid !== item.uuid)
   // Примечание: Мы не добавляем его обратно в результаты поиска, как указано в требованиях
 }
@@ -254,7 +245,6 @@ const removeItemFromSelection = (item: ItemSelectorItem) => {
  * Обработать нажатие кнопки действия
  */
 const handleAction = async () => {
-  console.log('[ItemSelector] Выполняем действие с выбранными элементами:', selectedItems.value.map(item => item.uuid))
   
   // Проверяем, что у нас есть элементы для обработки
   if (selectedItems.value.length === 0) {
@@ -274,7 +264,6 @@ const handleAction = async () => {
     // Вызываем сервис действия с UUID выбранных элементов и всеми результатами поиска (включая выбранные)
     const allSearchResults = [...searchResultItems.value, ...selectedItems.value]
     const result = await actionServiceFn(selectedItems.value.map(item => item.uuid), allSearchResults)
-    console.log('[ItemSelector] Результат действия:', result)
     
     if (result.success) {
       // Показываем уведомление об успехе
@@ -292,7 +281,6 @@ const handleAction = async () => {
       uiStore.showErrorSnackbar(result.message || t('itemSelector.messages.actionError'))
     }
   } catch (error) {
-    console.error('[ItemSelector] Ошибка выполнения действия:', error)
     uiStore.showErrorSnackbar(t('itemSelector.messages.actionError'))
   } finally {
     isLoading.value = false
@@ -303,7 +291,6 @@ const handleAction = async () => {
  * Сбросить поиск и выбор
  */
 const resetSearch = () => {
-  console.log('[ItemSelector] Сбрасываем поиск и выбор')
   searchQuery.value = ''
   searchResultItems.value = []
   selectedItems.value = []
@@ -313,7 +300,6 @@ const resetSearch = () => {
  * Закрыть модальное окно
  */
 const closeModal = () => {
-  console.log('[ItemSelector] Закрываем модальное окно ItemSelector')
   emit('close')
 }
 
@@ -353,13 +339,19 @@ const onKeyPress = (event: KeyboardEvent) => {
                 variant="outlined"
                 density="compact"
                 color="teal"
-                prepend-inner-icon="mdi-magnify"
                 clearable
                 :disabled="isLoading"
                 class="mb-0"
                 @keypress="onKeyPress"
                 @click:prepend-inner="handleSearch"
-              />
+              >
+                <template #prepend-inner>
+                  <PhIcon name="mdi-magnify" />
+                </template>
+                <template #clear="{ props }">
+                  <v-btn v-bind="props" icon variant="text"><PhIcon name="mdi-close" /></v-btn>
+                </template>
+              </v-text-field>
             </v-col>
           </v-row>
           
@@ -389,7 +381,7 @@ const onKeyPress = (event: KeyboardEvent) => {
                         :title="t('itemSelector.buttons.add')" 
                         @click="addItemToSelection(item)"
                       >
-                        <v-icon>mdi-plus</v-icon>
+                        <PhIcon name="mdi-plus" />
                       </v-btn>
                     </template>
                   </v-list-item>
@@ -428,7 +420,7 @@ const onKeyPress = (event: KeyboardEvent) => {
                         :title="t('itemSelector.buttons.remove')" 
                         @click="removeItemFromSelection(item)"
                       >
-                        <v-icon>mdi-close</v-icon>
+                        <PhIcon name="mdi-minus" />
                       </v-btn>
                     </template>
                   </v-list-item>

@@ -20,6 +20,7 @@ import catalogSectionsFetchService from '../service.admin.fetch.catalog.sections
 import catalogSectionsDeleteService from '../service.admin.delete.catalog.sections'
 import DataLoading from '@/core/ui/loaders/DataLoading.vue'
 import { CatalogSection, SectionStatus } from '../types.catalog.admin'
+import PhIcon from '@/core/ui/icons/PhIcon.vue'
 
 // Types
 interface TableHeader {
@@ -148,7 +149,6 @@ const availableIcons = [
 
 // Helper function for error handling
 const handleError = (error: unknown, context: string) => {
-  console.error(`[CatalogSections] ${context}:`, error)
   uiStore.showErrorSnackbar(
     error instanceof Error ? error.message : `Error ${context.toLowerCase()}`
   )
@@ -410,16 +410,30 @@ const handleItemsPerPageChange = async (newItemsPerPage: ItemsPerPageOption) => 
             density="compact"
             variant="outlined"
             clearable
-            clear-icon="mdi-close"
+            :clear-icon="undefined"
             color="teal"
             :label="t('admin.catalog.sections.search.placeholder')"
-            prepend-inner-icon="mdi-magnify"
+            :prepend-inner-icon="undefined"
             :loading="isSearching"
             :hint="searchQuery.length === 1 ? t('admin.catalog.sections.search.minChars') : ''"
             persistent-hint
             @keydown="handleSearchKeydown"
             @click:clear="handleClearSearch"
-          />
+          >
+            <template #prepend-inner>
+              <PhIcon name="mdi-magnify" />
+            </template>
+            <template #append-inner>
+              <div
+                v-if="(searchQuery || '').length > 0"
+                class="d-flex align-center"
+                style="cursor: pointer"
+                @click="handleClearSearch"
+              >
+                <PhIcon name="mdi-close" />
+              </div>
+            </template>
+          </v-text-field>
         </div>
 
         <v-data-table
@@ -438,12 +452,19 @@ const handleItemsPerPageChange = async (newItemsPerPage: ItemsPerPageOption) => 
         >
           <!-- Template for checkbox column -->
           <template #[`item.selection`]="{ item }">
-            <v-checkbox
-              :model-value="isSelected(item.id)"
-              density="compact"
-              hide-details
-              @update:model-value="(value: boolean | null) => onSelectSection(item.id, value ?? false)"
-            />
+            <v-btn
+              icon
+              variant="text"
+              density="comfortable"
+              :aria-pressed="isSelected(item.id)"
+              @click="onSelectSection(item.id, !isSelected(item.id))"
+            >
+              <PhIcon
+                :name="isSelected(item.id) ? 'mdi-checkbox-marked' : 'mdi-checkbox-blank-outline'"
+                :color="isSelected(item.id) ? 'teal' : 'grey'"
+                :size="18"
+              />
+            </v-btn>
           </template>
 
           <template #[`item.name`]="{ item }">
@@ -456,12 +477,12 @@ const handleItemsPerPageChange = async (newItemsPerPage: ItemsPerPageOption) => 
                 color="rgb(20, 184, 166)"
                 class="mr-2"
               />
-              <v-icon
+              <PhIcon
                 v-else
-                icon="mdi-folder"
+                name="mdi-folder"
+                :size="16"
                 class="mr-2"
-                size="small"
-                color="teal"
+                color="rgb(20, 184, 166)"
               />
               <span>{{ item.name }}</span>
             </div>
@@ -543,7 +564,7 @@ const handleItemsPerPageChange = async (newItemsPerPage: ItemsPerPageOption) => 
                   :disabled="page === 1"
                   @click="goToPage(1)"
                 >
-                  <v-icon>mdi-chevron-double-left</v-icon>
+                  <PhIcon name="mdi-chevron-double-left" />
                   <v-tooltip
                     activator="parent"
                     location="top"
@@ -559,7 +580,7 @@ const handleItemsPerPageChange = async (newItemsPerPage: ItemsPerPageOption) => 
                   :disabled="page === 1"
                   @click="goToPage(page - 1)"
                 >
-                  <v-icon>mdi-chevron-left</v-icon>
+                  <PhIcon name="mdi-chevron-left" />
                   <v-tooltip
                     activator="parent"
                     location="top"
@@ -597,7 +618,7 @@ const handleItemsPerPageChange = async (newItemsPerPage: ItemsPerPageOption) => 
                   :disabled="page >= getTotalPages()"
                   @click="goToPage(page + 1)"
                 >
-                  <v-icon>mdi-chevron-right</v-icon>
+                  <PhIcon name="mdi-chevron-right" />
                   <v-tooltip
                     activator="parent"
                     location="top"
@@ -613,7 +634,7 @@ const handleItemsPerPageChange = async (newItemsPerPage: ItemsPerPageOption) => 
                   :disabled="page >= getTotalPages()"
                   @click="goToPage(getTotalPages())"
                 >
-                  <v-icon>mdi-chevron-double-right</v-icon>
+                  <PhIcon name="mdi-chevron-double-right" />
                   <v-tooltip
                     activator="parent"
                     location="top"
@@ -654,10 +675,9 @@ const handleItemsPerPageChange = async (newItemsPerPage: ItemsPerPageOption) => 
             :loading="isLoading"
             @click="performSearch"
           >
-            <v-icon
-              icon="mdi-refresh"
-              class="mr-2"
-            />
+            <template #prepend>
+              <PhIcon name="mdi-refresh" />
+            </template>
             {{ t('admin.catalog.sections.actions.refresh') }}
           </v-btn>
           
@@ -669,10 +689,9 @@ const handleItemsPerPageChange = async (newItemsPerPage: ItemsPerPageOption) => 
             :disabled="!hasSelected"
             @click="clearSelections"
           >
-            <v-icon
-              icon="mdi-checkbox-blank-outline"
-              class="mr-2"
-            />
+            <template #prepend>
+              <PhIcon name="mdi-checkbox-blank-outline" />
+            </template>
             {{ t('admin.catalog.sections.actions.clearSelection') }}
           </v-btn>
         </div>

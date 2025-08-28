@@ -12,12 +12,7 @@
 import { ref, computed, onMounted, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useUiStore } from '@/core/state/uistate'
-import { 
-  PhPlaceholder, 
-  PhMagnifyingGlass, 
-  PhCaretDown,
-  PhCheck
-} from '@phosphor-icons/vue'
+import PhIcon from '@/core/ui/icons/PhIcon.vue'
 
 // Props
 interface Props {
@@ -124,7 +119,6 @@ const loadIcons = async () => {
     }))
     
   } catch (error) {
-    console.error('Error loading icons:', error)
     uiStore.showErrorSnackbar(t('itemSelector.messages.searchError'))
   } finally {
     isLoadingIcons.value = false
@@ -184,17 +178,21 @@ watch(() => props.selectedSize, (newValue) => {
   <v-dialog
     :model-value="modelValue"
     max-width="800"
-    persistent
     @update:model-value="(value) => emit('update:modelValue', value)"
+    @click:outside="closeDialog"
   >
     <v-card>
       <v-card-title class="d-flex align-center justify-space-between pa-4">
         <span class="text-h6">{{ t('itemSelector.title.selectIcon').toLowerCase() }}</span>
         <v-btn
-          icon="mdi-close"
           variant="text"
+          :icon="undefined"
           @click="closeDialog"
-        />
+        >
+          <template #prepend>
+            <PhIcon name="mdi-close" />
+          </template>
+        </v-btn>
       </v-card-title>
 
       <v-card-text class="pa-4">
@@ -214,7 +212,11 @@ watch(() => props.selectedSize, (newValue) => {
               hide-details
               class="library-select"
               @update:model-value="handleLibraryChange"
-            />
+            >
+              <template #append-inner>
+                <PhIcon name="PhCaretUpDown" />
+              </template>
+            </v-select>
           </v-col>
           <v-col
             cols="12"
@@ -230,7 +232,11 @@ watch(() => props.selectedSize, (newValue) => {
               hide-details
               class="style-select"
               @update:model-value="handleStyleChange"
-            />
+            >
+              <template #append-inner>
+                <PhIcon name="PhCaretUpDown" />
+              </template>
+            </v-select>
           </v-col>
           <v-col
             cols="12"
@@ -246,7 +252,11 @@ watch(() => props.selectedSize, (newValue) => {
               hide-details
               class="size-select"
               @update:model-value="handleSizeChange"
-            />
+            >
+              <template #append-inner>
+                <PhIcon name="PhCaretUpDown" />
+              </template>
+            </v-select>
           </v-col>
         </v-row>
 
@@ -255,13 +265,17 @@ watch(() => props.selectedSize, (newValue) => {
           <v-text-field
             v-model="searchQuery"
             :placeholder="t('itemSelector.search.placeholder.icon')"
-            prepend-inner-icon="mdi-magnify"
+            :prepend-inner-icon="undefined"
             variant="outlined"
             density="comfortable"
             hide-details
             class="search-field"
             color="teal"
-          />
+          >
+            <template #prepend-inner>
+              <PhIcon name="mdi-magnify" />
+            </template>
+          </v-text-field>
         </div>
 
         <!-- Loading state -->
@@ -305,12 +319,11 @@ watch(() => props.selectedSize, (newValue) => {
           class="d-flex justify-center align-center pa-8"
         >
           <div class="text-center">
-            <v-icon
+            <PhIcon
+              name="PhQuestion"
               size="48"
               color="grey"
-            >
-              mdi-magnify
-            </v-icon>
+            />
             <p class="text-body-1 mt-2">
               {{ t('itemSelector.items.notFound').toLowerCase() }}
             </p>
