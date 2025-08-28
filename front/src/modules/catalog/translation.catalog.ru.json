@@ -2,58 +2,56 @@
   "catalog": {
     "common": {
       "moduleTitle": "каталог",
-      "resultsFoundServices": "Найдено сервисов: {count}"
+      "resultsFoundServices": "найдено сервисов: {count}"
     },
     "options": {
-      "searchPlaceholder": "Поиск сервисов и продуктов...",
-      "filterAll": "Все",
-      "filterServices": "Сервисы",
-      "filterProducts": "Продукты",
-      "sortByName": "По названию",
-      "sortByPriority": "По приоритету",
-      "sortByStatus": "По статусу",
-      "sortByOwner": "По владельцу",
-      "sortAsc": "По возрастанию",
-      "sortDesc": "По убыванию"
+      "searchPlaceholder": "поиск сервисов и продуктов...",
+      "filterAll": "все",
+      "filterServices": "сервисы",
+      "filterProducts": "продукты",
+      "sortByName": "по названию",
+      "sortByPriority": "по приоритету",
+      "sortByStatus": "по статусу",
+      "sortByOwner": "по владельцу",
+      "sortAsc": "по возрастанию",
+      "sortDesc": "по убыванию"
     },
     "loading": {
-      "sections": "Загрузка секций каталога..."
+      "sections": "загрузка секций каталога..."
     },
     "errors": {
-      "sectionsTitle": "Ошибка загрузки секций",
-      "tryAgain": "Попробовать снова"
+      "sectionsTitle": "ошибка загрузки секций",
+      "tryAgain": "попробовать снова"
     },
     "empty": {
-      "sectionsTitle": "Секции каталога не найдены",
-      "sectionsSubtitle": "В каталоге пока нет активных секций",
-      "refresh": "Обновить",
-      "servicesTitle": "Активные сервисы не найдены",
-      "servicesSubtitle": "В каталоге пока нет сервисов в эксплуатации"
+      "sectionsTitle": "секции каталога не найдены",
+      "sectionsSubtitle": "в каталоге пока нет активных секций",
+      "refresh": "обновить",
+      "servicesTitle": "активные сервисы не найдены",
+      "servicesSubtitle": "в каталоге пока нет сервисов в эксплуатации"
     },
     "serviceDetails": {
-      "title": "Детали сервиса",
-      "main": "Основные",
-      "roles": "Контакты",
-      "supportGroups": "Группы поддержки",
-      "description": "Описание",
-      "priority": "Приоритет",
-      "status": "Статус",
-      "createdAt": "Дата создания",
-      "owner": "Владелец",
-      "backupOwner": "Резервный владелец",
-      "technicalOwner": "Тех. владелец",
-      "backupTechnicalOwner": "Резервный тех. владелец",
-      "dispatcher": "Диспетчер",
+      "title": "детали сервиса",
+      "main": "основные",
+      "roles": "контакты",
+      "supportGroups": "группы поддержки",
+      "description": "описание",
+      "priority": "приоритет",
+      "status": "статус",
+      "createdAt": "дата создания",
+      "owner": "владелец",
+      "backupOwner": "резервный владелец",
+      "technicalOwner": "тех. владелец",
+      "backupTechnicalOwner": "резервный тех. владелец",
+      "dispatcher": "диспетчер",
       "tier1": "1-я линия",
       "tier2": "2-я линия",
       "tier3": "3-я линия",
-      "purpose": "Назначение",
-      "longDescription": "Расширенное описание",
-      "offerings": "Сервисные предложения",
-      "offeringsEmpty": "Сервисные предложения не найдены",
-      "inProduction": "В эксплуатации"
+      "purpose": "назначение",
+      "longDescription": "расширенное описание",
+      "offerings": "сервисные предложения",
+      "offeringsEmpty": "сервисные предложения не найдены",
+      "inProduction": "в эксплуатации"
     }
   }
 }
-
-

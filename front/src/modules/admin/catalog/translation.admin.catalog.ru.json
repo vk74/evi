@@ -10,7 +10,9 @@
       "editor": {
         "mapping": {
           "title": "привязки сервисов",
-          "search": { "placeholder": "Поиск сервисов..." },
+          "search": {
+            "placeholder": "поиск сервисов..."
+          },
           "table": {
             "headers": {
               "selection": "выбор",
@@ -19,14 +21,17 @@
               "status": "статус",
               "public": "публичный"
             },
-            "status": { "yes": "да", "no": "нет" }
+            "status": {
+              "yes": "да",
+              "no": "нет"
+            }
           },
           "actions": {
             "title": "действия",
             "publish": "обновить публикации",
             "saveOrder": "сохранить порядок"
           },
-          "emptySelected": "Нет выбранных сервисов"
+          "emptySelected": "нет выбранных сервисов"
         },
         "creation": {
           "title": "создание новой секции"
@@ -37,7 +42,7 @@
         "information": {
           "title": "информация",
           "uuid": {
-            "label": "UUID секции"
+            "label": "uuid секции"
           },
           "name": {
             "label": "название секции",
@@ -46,7 +51,7 @@
             "maxLength": "название не должно превышать 100 символов"
           },
           "order": {
-            "label": "порядковый N",
+            "label": "порядковый n",
             "required": "порядковый номер обязателен",
             "numbersOnly": "можно вводить только цифры",
             "positive": "номер должен быть больше 0"
@@ -136,7 +141,7 @@
         "table": {
           "headers": {
             "selection": "выбор",
-            "order": "порядковый N",
+            "order": "порядковый n",
             "name": "название",
             "owner": "владелец",
             "backupOwner": "заместитель владельца",
@@ -159,16 +164,16 @@
           }
         },
         "search": {
-          "placeholder": "Поиск секций...",
-          "minChars": "Минимум 2 символа"
+          "placeholder": "поиск секций...",
+          "minChars": "минимум 2 символа"
         },
         "pagination": {
-          "recordsPerPage": "Записей на странице:",
-          "recordsInfo": "Записи {start}-{end} из {total}",
-          "firstPage": "Первая страница",
-          "previousPage": "Предыдущая страница",
-          "nextPage": "Следующая страница",
-          "lastPage": "Последняя страница"
+          "recordsPerPage": "записей на странице:",
+          "recordsInfo": "записи {start}-{end} из {total}",
+          "firstPage": "первая страница",
+          "previousPage": "предыдущая страница",
+          "nextPage": "следующая страница",
+          "lastPage": "последняя страница"
         },
         "actions": {
           "title": "действия",
@@ -181,24 +186,24 @@
           "selectAll": "выбрать все"
         },
         "messages": {
-          "selectionCleared": "Выбор очищен",
-          "sectionsDeleted": "Удалено секций: {count}",
+          "selectionCleared": "выбор очищен",
+          "sectionsDeleted": "удалено секций: {count}",
           "deleteConfirm": {
-            "title": "Подтвердить удаление",
-            "message": "Вы уверены, что хотите удалить выбранные секции? Это действие нельзя отменить.",
-            "cancel": "Отмена",
-            "confirm": "Удалить"
+            "title": "подтвердить удаление",
+            "message": "вы уверены, что хотите удалить выбранные секции? это действие нельзя отменить.",
+            "cancel": "отмена",
+            "confirm": "удалить"
           },
           "delete": {
-            "success": "Секции успешно удалены",
-            "partialSuccess": "Частично успешно: {deleted} удалено, {failed} не удалось",
-            "noSectionsDeleted": "Секции не были удалены",
-            "error": "Ошибка при удалении секций",
-            "networkError": "Произошла ошибка сети",
-            "validationError": "Произошла ошибка валидации"
+            "success": "секции успешно удалены",
+            "partialSuccess": "частично успешно: {deleted} удалено, {failed} не удалось",
+            "noSectionsDeleted": "секции не были удалены",
+            "error": "ошибка при удалении секций",
+            "networkError": "произошла ошибка сети",
+            "validationError": "произошла ошибка валидации"
           }
         }
       }
     }
   }
-} 
+}

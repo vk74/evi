@@ -20,7 +20,6 @@
         "main": "настройки приложения"
       }
     },
-
     "services": {
       "navigation": {
         "services": "сервисы",
@@ -31,26 +30,25 @@
       "editor": {
         "owners": {
           "owner": {
-            "required": "Владелец обязателен"
+            "required": "владелец обязателен"
           }
         },
         "messages": {
-          "createdAndSwitchedToEdit": "Сервис успешно создан и переключен в режим редактирования",
-          "createdButFailedToLoadData": "Сервис создан, но не удалось загрузить свежие данные",
+          "createdAndSwitchedToEdit": "сервис успешно создан и переключен в режим редактирования",
+          "createdButFailedToLoadData": "сервис создан, но не удалось загрузить свежие данные",
           "error": {
-            "loadingService": "Ошибка загрузки данных сервиса"
+            "loadingService": "ошибка загрузки данных сервиса"
           }
         }
       },
       "messages": {
-        "deleteSuccess": "Успешно удалено {count} сервис(ов)",
-        "deletePartialSuccess": "Частичный успех. Удалено {deleted} из {total} сервисов. Ошибки: {errors}",
-        "deleteFailure": "Не удалось удалить ни одного сервиса. Ошибки: {errors}",
-        "selectionCleared": "Выбор очищен",
-        "assignOwnerNotImplemented": "Назначение владельца пока не реализовано"
+        "deleteSuccess": "успешно удалено {count} сервис(ов)",
+        "deletePartialSuccess": "частичный успех. удалено {deleted} из {total} сервисов. ошибки: {errors}",
+        "deleteFailure": "не удалось удалить ни одного сервиса. ошибки: {errors}",
+        "selectionCleared": "выбор очищен",
+        "assignOwnerNotImplemented": "назначение владельца пока не реализовано"
       }
     },
-
     "users": {
       "sections": {
         "usersList": "список пользователей",

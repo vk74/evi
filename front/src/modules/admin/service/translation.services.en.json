@@ -2,13 +2,13 @@
   "admin": {
     "services": {
       "navigation": {
-        "services": "Services",
-        "list": "List",
-        "settings": "Settings"
+        "services": "services",
+        "list": "list",
+        "settings": "settings"
       },
       "search": {
-        "placeholder": "Search services by name, owner, or technical owner...",
-        "minChars": "Enter at least 2 characters to search"
+        "placeholder": "search services by name, owner, or technical owner...",
+        "minChars": "enter at least 2 characters to search"
       },
       "table": {
         "headers": {
@@ -53,24 +53,24 @@
         "assignOwner": "Assign Owner"
       },
       "pagination": {
-        "recordsPerPage": "Records per page:",
-        "recordsInfo": "Showing {start} to {end} of {total} records",
-        "firstPage": "First page",
-        "previousPage": "Previous page",
-        "nextPage": "Next page",
-        "lastPage": "Last page"
+        "recordsPerPage": "records per page:",
+        "recordsInfo": "showing {start} to {end} of {total} records",
+        "firstPage": "first page",
+        "previousPage": "previous page",
+        "nextPage": "next page",
+        "lastPage": "last page"
       },
       "messages": {
-        "selectionCleared": "Selection cleared",
-        "addServiceNotImplemented": "Add service functionality not implemented yet",
-        "editServiceNotImplemented": "Edit service functionality not implemented yet",
-        "deleteServiceNotImplemented": "Delete service functionality not implemented yet",
-        "assignOwnerNotImplemented": "Assign owner functionality not implemented yet",
+        "selectionCleared": "selection cleared",
+        "addServiceNotImplemented": "add service functionality not implemented yet",
+        "editServiceNotImplemented": "edit service functionality not implemented yet",
+        "deleteServiceNotImplemented": "delete service functionality not implemented yet",
+        "assignOwnerNotImplemented": "assign owner functionality not implemented yet",
         "deleteConfirm": {
-          "title": "Confirm Delete",
-          "message": "Are you sure you want to delete the selected services? This action cannot be undone.",
-          "cancel": "Cancel",
-          "confirm": "Delete"
+          "title": "confirm delete",
+          "message": "are you sure you want to delete the selected services? this action cannot be undone.",
+          "cancel": "cancel",
+          "confirm": "delete"
         }
       },
       "editor": {
@@ -86,8 +86,8 @@
         },
         "mapping": {
           "search": {
-            "placeholder": "Search catalog sections...",
-            "minChars": "Enter at least 2 characters to search"
+            "placeholder": "search catalog sections...",
+            "minChars": "enter at least 2 characters to search"
           },
           "table": {
             "headers": {
@@ -98,8 +98,8 @@
               "public": "public"
             },
             "status": {
-              "yes": "Yes",
-              "no": "No"
+              "yes": "yes",
+              "no": "no"
             }
           },
           "actions": {
@@ -107,18 +107,18 @@
             "publish": "Publish"
           },
           "pagination": {
-            "recordsPerPage": "Records per page:",
-            "recordsInfo": "Showing {start} to {end} of {total} records",
-            "firstPage": "First page",
-            "previousPage": "Previous page",
-            "nextPage": "Next page",
-            "lastPage": "Last page"
+            "recordsPerPage": "records per page:",
+            "recordsInfo": "showing {start} to {end} of {total} records",
+            "firstPage": "first page",
+            "previousPage": "previous page",
+            "nextPage": "next page",
+            "lastPage": "last page"
           },
           "messages": {
-            "selectionCleared": "Selection cleared"
+            "selectionCleared": "selection cleared"
           },
           "tooltips": {
-            "publish": "Publish service to selected catalog sections"
+            "publish": "publish service to selected catalog sections"
           }
         },
         "information": {
@@ -128,9 +128,9 @@
           },
           "name": {
             "label": "service name",
-            "required": "Service name is required",
-            "minLength": "Service name must be at least 2 characters",
-            "maxLength": "Service name cannot exceed 250 characters"
+            "required": "service name is required",
+            "minLength": "service name must be at least 2 characters",
+            "maxLength": "service name cannot exceed 250 characters"
           },
           "priority": {
             "label": "priority",
@@ -209,19 +209,19 @@
           "title": "description and purpose",
           "short": {
             "label": "short description",
-            "maxLength": "Short description cannot exceed 250 characters"
+            "maxLength": "short description cannot exceed 250 characters"
           },
           "long": {
             "label": "detailed description",
-            "maxLength": "Detailed description cannot exceed 10000 characters"
+            "maxLength": "detailed description cannot exceed 10000 characters"
           },
           "purpose": {
             "label": "purpose",
-            "maxLength": "Purpose cannot exceed 10000 characters"
+            "maxLength": "purpose cannot exceed 10000 characters"
           },
           "comments": {
             "label": "comments",
-            "maxLength": "Comments cannot exceed 10000 characters"
+            "maxLength": "comments cannot exceed 10000 characters"
           }
         },
         "access": {
@@ -253,62 +253,62 @@
         },
         "messages": {
           "validation": {
-            "fillRequired": "Please fill in all required fields"
+            "fillRequired": "please fill in all required fields"
           },
           "owner": {
-            "selected": "Owner selected successfully",
-            "error": "Failed to select owner"
+            "selected": "owner selected successfully",
+            "error": "failed to select owner"
           },
           "backupOwner": {
-            "selected": "Backup owner selected successfully",
-            "error": "Failed to select backup owner"
+            "selected": "backup owner selected successfully",
+            "error": "failed to select backup owner"
           },
           "technicalOwner": {
-            "selected": "Technical owner selected successfully",
-            "error": "Failed to select technical owner"
+            "selected": "technical owner selected successfully",
+            "error": "failed to select technical owner"
           },
           "backupTechnicalOwner": {
-            "selected": "Backup technical owner selected successfully",
-            "error": "Failed to select backup technical owner"
+            "selected": "backup technical owner selected successfully",
+            "error": "failed to select backup technical owner"
           },
           "dispatcher": {
-            "selected": "Dispatcher selected successfully",
-            "error": "Failed to select dispatcher"
+            "selected": "dispatcher selected successfully",
+            "error": "failed to select dispatcher"
           },
           "supportTier1": {
-            "selected": "Support Tier 1 selected successfully",
-            "error": "Failed to select Support Tier 1"
+            "selected": "support tier 1 selected successfully",
+            "error": "failed to select support tier 1"
           },
           "supportTier2": {
-            "selected": "Support Tier 2 selected successfully",
-            "error": "Failed to select Support Tier 2"
+            "selected": "support tier 2 selected successfully",
+            "error": "failed to select support tier 2"
           },
           "supportTier3": {
-            "selected": "Support Tier 3 selected successfully",
-            "error": "Failed to select Support Tier 3"
+            "selected": "support tier 3 selected successfully",
+            "error": "failed to select support tier 3"
           },
           "accessAllowedGroups": {
-            "selected": "Allowed groups selected successfully",
-            "error": "Failed to select allowed groups",
-            "removed": "Group removed from allowed groups"
+            "selected": "allowed groups selected successfully",
+            "error": "failed to select allowed groups",
+            "removed": "group removed from allowed groups"
           },
           "accessDeniedGroups": {
-            "selected": "Denied groups selected successfully",
-            "error": "Failed to select denied groups",
-            "removed": "Group removed from denied groups"
+            "selected": "denied groups selected successfully",
+            "error": "failed to select denied groups",
+            "removed": "group removed from denied groups"
           },
           "accessDeniedUsers": {
-            "selected": "Denied users selected successfully",
-            "error": "Failed to select denied users",
-            "removed": "User removed from denied users"
+            "selected": "denied users selected successfully",
+            "error": "failed to select denied users",
+            "removed": "user removed from denied users"
           },
-          "createdAndSwitchedToEdit": "Service created successfully and switched to edit mode",
-          "deleteSuccess": "Successfully deleted {count} service(s)",
-          "deletePartialSuccess": "Deleted {deleted} of {total} services. Errors: {errors}",
-          "deleteFailure": "Failed to delete services. Errors: {errors}",
-          "deleteServiceNotImplemented": "Delete service functionality not yet implemented"
+          "createdAndSwitchedToEdit": "service created successfully and switched to edit mode",
+          "deleteSuccess": "successfully deleted {count} service(s)",
+          "deletePartialSuccess": "deleted {deleted} of {total} services. errors: {errors}",
+          "deleteFailure": "failed to delete services. errors: {errors}",
+          "deleteServiceNotImplemented": "delete service functionality not yet implemented"
         }
       }
     }
   }
-} 
+}

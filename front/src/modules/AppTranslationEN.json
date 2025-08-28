@@ -2,10 +2,9 @@
   "navigation": {
     "drawer": {
       "catalog": "catalog",
-      "workModule": "work module", 
+      "workModule": "work module",
       "reports": "reports",
       "Admin": "admin module",
-  
       "knowledgeBase": "knowledge base",
       "account": "account",
       "appPreferences": "preferences",

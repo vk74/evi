@@ -20,7 +20,6 @@
         "main": "application settings"
       }
     },
-
     "services": {
       "navigation": {
         "services": "services",
@@ -31,26 +30,25 @@
       "editor": {
         "owners": {
           "owner": {
-            "required": "Owner is required"
+            "required": "owner is required"
           }
         },
         "messages": {
-          "createdAndSwitchedToEdit": "Service created successfully and switched to edit mode",
-          "createdButFailedToLoadData": "Service created but failed to load fresh data",
+          "createdAndSwitchedToEdit": "service created successfully and switched to edit mode",
+          "createdButFailedToLoadData": "service created but failed to load fresh data",
           "error": {
-            "loadingService": "Error loading service data"
+            "loadingService": "error loading service data"
           }
         }
       },
       "messages": {
-        "deleteSuccess": "Successfully deleted {count} service(s)",
-        "deletePartialSuccess": "Partially successful. Deleted {deleted} of {total} services. Errors: {errors}",
-        "deleteFailure": "Failed to delete any services. Errors: {errors}",
-        "selectionCleared": "Selection cleared",
-        "assignOwnerNotImplemented": "Owner assignment not implemented yet"
+        "deleteSuccess": "successfully deleted {count} service(s)",
+        "deletePartialSuccess": "partially successful. deleted {deleted} of {total} services. errors: {errors}",
+        "deleteFailure": "failed to delete any services. errors: {errors}",
+        "selectionCleared": "selection cleared",
+        "assignOwnerNotImplemented": "owner assignment not implemented yet"
       }
     },
-
     "users": {
       "sections": {
         "usersList": "users list",

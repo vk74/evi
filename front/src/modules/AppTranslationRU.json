@@ -3,9 +3,8 @@
     "drawer": {
       "catalog": "каталог",
       "workModule": "рабочий модуль",
-      "reports": "отчеты", 
+      "reports": "отчеты",
       "Admin": "модуль управления",
-  
       "knowledgeBase": "база знаний",
       "account": "личный кабинет",
       "appPreferences": "персонализация",

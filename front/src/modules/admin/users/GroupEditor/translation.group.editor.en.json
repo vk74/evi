@@ -23,7 +23,7 @@
           "selectedItem": "selected item"
         },
         "form": {
-          "groupId": "group UUID",
+          "groupId": "group uuid",
           "name": "name*",
           "status": "status*",
           "description": "description",
@@ -82,7 +82,7 @@
     }
   },
   "common": {
-    "unnamed": "Unnamed",
+    "unnamed": "unnamed",
     "noData": "no data to display"
   }
 }

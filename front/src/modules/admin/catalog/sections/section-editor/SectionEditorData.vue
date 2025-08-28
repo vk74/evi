@@ -390,19 +390,32 @@ const handleBackupOwnerSelected = (result: any) => {
                       item-title="title"
                       item-value="value"
                       color="teal"
-                    />
+                    >
+                      <template #append-inner>
+                        <PhIcon name="PhCaretUpDown" />
+                      </template>
+                    </v-select>
                   </v-col>
                   <v-col
                     cols="12"
                     md="4"
                   >
-                    <v-checkbox
-                      v-model="formData.isPublic"
-                      :label="t('admin.catalog.editor.settings.isPublic.label')"
-                      variant="outlined"
-                      density="comfortable"
-                      color="teal"
-                    />
+                    <div class="d-flex align-center">
+                      <v-btn
+                        icon
+                        variant="text"
+                        density="comfortable"
+                        :aria-pressed="formData.isPublic"
+                        @click="formData.isPublic = !formData.isPublic"
+                      >
+                        <PhIcon
+                          :name="formData.isPublic ? 'mdi-checkbox-marked' : 'mdi-checkbox-blank-outline'"
+                          :color="formData.isPublic ? 'teal' : 'grey'"
+                          :size="18"
+                        />
+                      </v-btn>
+                      <span style="margin-left: 8px;">{{ t('admin.catalog.editor.settings.isPublic.label') }}</span>
+                    </div>
                   </v-col>
                   <v-col
                     cols="12"

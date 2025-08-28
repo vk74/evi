@@ -16,8 +16,8 @@
   "itemSelector": {
     "title": {
       "addUsersToGroup": "adding users to group",
-      "selectGroupFor": "Select group for",
-      "selectIcon": "Select Icon"
+      "selectGroupFor": "select group for",
+      "selectIcon": "select icon"
     },
     "search": {
       "placeholder": {
@@ -43,7 +43,7 @@
       "add": "add",
       "remove": "remove",
       "execute": "execute",
-      "loadMore": "Load More"
+      "loadMore": "load more"
     },
     "messages": {
       "noResults": "no results to add",
@@ -62,11 +62,11 @@
       "noObjectsForAction": "no items selected for action",
       "actionSuccess": "operation completed successfully with {count} items",
       "actionError": "error performing the operation",
-      "loading": "Loading..."
+      "loading": "loading..."
     },
     "icon": {
-      "selected": "Icon selected successfully",
-      "cleared": "Icon cleared successfully"
+      "selected": "icon selected successfully",
+      "cleared": "icon cleared successfully"
     }
   }
 }

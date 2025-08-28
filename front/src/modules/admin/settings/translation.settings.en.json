@@ -84,20 +84,20 @@
                         }
                       }
                     },
-                        "block": {
-      "duration": {
-        "label": "block duration when limit exceeded (minutes)"
-      }
-    }
-  }
-},
-"errors": {
-  "loading": {
-    "title": "error loading setting",
-    "retry": "click to retry"
-  }
-}
-}
+                    "block": {
+                      "duration": {
+                        "label": "block duration when limit exceeded (minutes)"
+                      }
+                    }
+                  }
+                },
+                "errors": {
+                  "loading": {
+                    "title": "error loading setting",
+                    "retry": "click to retry"
+                  }
+                }
+              }
             },
             "token": {
               "management": {
@@ -124,7 +124,7 @@
                 },
                 "before": {
                   "expiry": {
-                    "label": "refresh N seconds before expiry"
+                    "label": "refresh n seconds before expiry"
                   }
                 },
                 "max": {
@@ -156,7 +156,7 @@
             },
             "duration": {
               "label": "session duration",
-              "tooltip": "Longer sessions improve user convenience but may reduce security",
+              "tooltip": "longer sessions improve user convenience but may reduce security",
               "options": {
                 "10": "10 minutes",
                 "15": "15 minutes",
@@ -212,7 +212,7 @@
               "profile": {
                 "photo": {
                   "size": {
-                    "label": "maximum profile photo size ({size} KB)"
+                    "label": "maximum profile photo size ({size} kb)"
                   }
                 }
               }
@@ -389,14 +389,13 @@
         "logging": "logging",
         "usersmanagement": "users management",
         "groupsmanagement": "groups management",
-        "usersmanagement": "users management",
         "catalog": "catalog",
         "services": "services",
         "processes": "processes"
       },
       "groups": {
         "security": "security",
-        "usersmanagement": "user management", 
+        "usersmanagement": "user management",
         "system": "system",
         "coreServices": "core services",
         "businessServices": "business services"
@@ -413,4 +412,4 @@
       }
     }
   }
-} 
+}

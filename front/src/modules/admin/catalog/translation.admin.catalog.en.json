@@ -10,7 +10,9 @@
       "editor": {
         "mapping": {
           "title": "service mappings",
-          "search": { "placeholder": "Search services..." },
+          "search": {
+            "placeholder": "search services..."
+          },
           "table": {
             "headers": {
               "selection": "selection",
@@ -19,14 +21,17 @@
               "status": "status",
               "public": "public"
             },
-            "status": { "yes": "yes", "no": "no" }
+            "status": {
+              "yes": "yes",
+              "no": "no"
+            }
           },
           "actions": {
             "title": "actions",
             "publish": "update publish",
             "saveOrder": "save order"
           },
-          "emptySelected": "No services selected"
+          "emptySelected": "no services selected"
         },
         "creation": {
           "title": "creation of new section"
@@ -37,7 +42,7 @@
         "information": {
           "title": "information",
           "uuid": {
-            "label": "section UUID"
+            "label": "section uuid"
           },
           "name": {
             "label": "section name",
@@ -46,7 +51,7 @@
             "maxLength": "name must not exceed 100 characters"
           },
           "order": {
-            "label": "section N",
+            "label": "section n",
             "required": "order number is required",
             "numbersOnly": "only numbers allowed",
             "positive": "number must be greater than 0"
@@ -136,7 +141,7 @@
         "table": {
           "headers": {
             "selection": "selection",
-            "order": "section N",
+            "order": "section n",
             "name": "name",
             "owner": "owner",
             "backupOwner": "backup owner",
@@ -159,16 +164,16 @@
           }
         },
         "search": {
-          "placeholder": "Search sections...",
-          "minChars": "Minimum 2 characters"
+          "placeholder": "search sections...",
+          "minChars": "minimum 2 characters"
         },
         "pagination": {
-          "recordsPerPage": "Records per page:",
-          "recordsInfo": "Records {start}-{end} of {total}",
-          "firstPage": "First page",
-          "previousPage": "Previous page",
-          "nextPage": "Next page",
-          "lastPage": "Last page"
+          "recordsPerPage": "records per page:",
+          "recordsInfo": "records {start}-{end} of {total}",
+          "firstPage": "first page",
+          "previousPage": "previous page",
+          "nextPage": "next page",
+          "lastPage": "last page"
         },
         "actions": {
           "title": "actions",
@@ -181,24 +186,24 @@
           "selectAll": "select all"
         },
         "messages": {
-          "selectionCleared": "Selection cleared",
-          "sectionsDeleted": "Sections deleted: {count}",
+          "selectionCleared": "selection cleared",
+          "sectionsDeleted": "sections deleted: {count}",
           "deleteConfirm": {
-            "title": "Confirm deletion",
-            "message": "Are you sure you want to delete the selected sections? This action cannot be undone.",
-            "cancel": "Cancel",
-            "confirm": "Delete"
+            "title": "confirm deletion",
+            "message": "are you sure you want to delete the selected sections? this action cannot be undone.",
+            "cancel": "cancel",
+            "confirm": "delete"
           },
           "delete": {
-            "success": "Sections deleted successfully",
-            "partialSuccess": "Partially successful: {deleted} deleted, {failed} failed",
-            "noSectionsDeleted": "No sections were deleted",
-            "error": "Failed to delete sections",
-            "networkError": "Network error occurred",
-            "validationError": "Validation error occurred"
+            "success": "sections deleted successfully",
+            "partialSuccess": "partially successful: {deleted} deleted, {failed} failed",
+            "noSectionsDeleted": "no sections were deleted",
+            "error": "failed to delete sections",
+            "networkError": "network error occurred",
+            "validationError": "validation error occurred"
           }
         }
       }
     }
   }
-} 
+}

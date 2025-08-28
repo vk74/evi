@@ -11,13 +11,13 @@
     "reset": "сбросить",
     "change": "изменить",
     "resetPassword": "сменить пароль",
-    "resetPasswordFor": "Сброс пароля для"
+    "resetPasswordFor": "сброс пароля для"
   },
   "itemSelector": {
     "title": {
       "addUsersToGroup": "добавление пользователей в группу",
-      "selectGroupFor": "Выберите группу для",
-      "selectIcon": "Выбрать иконку"
+      "selectGroupFor": "выберите группу для",
+      "selectIcon": "выбрать иконку"
     },
     "search": {
       "placeholder": {
@@ -43,7 +43,7 @@
       "add": "добавить",
       "remove": "удалить",
       "execute": "выполнить",
-      "loadMore": "Загрузить еще"
+      "loadMore": "загрузить еще"
     },
     "messages": {
       "noResults": "нет результатов для добавления",
@@ -62,11 +62,11 @@
       "noObjectsForAction": "нет объектов для выполнения действия",
       "actionSuccess": "операция успешно выполнена с {count} объектами",
       "actionError": "ошибка выполнения операции",
-      "loading": "Загрузка..."
+      "loading": "загрузка..."
     },
     "icon": {
-      "selected": "Иконка успешно выбрана",
-      "cleared": "Иконка успешно очищена"
+      "selected": "иконка успешно выбрана",
+      "cleared": "иконка успешно очищена"
     }
   }
 }

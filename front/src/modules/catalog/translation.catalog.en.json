@@ -2,58 +2,56 @@
   "catalog": {
     "common": {
       "moduleTitle": "catalog",
-      "resultsFoundServices": "Services found: {count}"
+      "resultsFoundServices": "services found: {count}"
     },
     "options": {
-      "searchPlaceholder": "Search services and products...",
-      "filterAll": "All",
-      "filterServices": "Services",
-      "filterProducts": "Products",
-      "sortByName": "By name",
-      "sortByPriority": "By priority",
-      "sortByStatus": "By status",
-      "sortByOwner": "By owner",
-      "sortAsc": "Ascending",
-      "sortDesc": "Descending"
+      "searchPlaceholder": "search services and products...",
+      "filterAll": "all",
+      "filterServices": "services",
+      "filterProducts": "products",
+      "sortByName": "by name",
+      "sortByPriority": "by priority",
+      "sortByStatus": "by status",
+      "sortByOwner": "by owner",
+      "sortAsc": "ascending",
+      "sortDesc": "descending"
     },
     "loading": {
-      "sections": "Loading catalog sections..."
+      "sections": "loading catalog sections..."
     },
     "errors": {
-      "sectionsTitle": "Failed to load sections",
-      "tryAgain": "Try again"
+      "sectionsTitle": "failed to load sections",
+      "tryAgain": "try again"
     },
     "empty": {
-      "sectionsTitle": "No catalog sections found",
-      "sectionsSubtitle": "There are no active sections in the catalog yet",
-      "refresh": "Refresh",
-      "servicesTitle": "No active services found",
-      "servicesSubtitle": "There are currently no services in production"
+      "sectionsTitle": "no catalog sections found",
+      "sectionsSubtitle": "there are no active sections in the catalog yet",
+      "refresh": "refresh",
+      "servicesTitle": "no active services found",
+      "servicesSubtitle": "there are currently no services in production"
     },
     "serviceDetails": {
-      "title": "Service Details",
-      "main": "Main",
-      "roles": "Contacts",
-      "supportGroups": "Support Groups",
-      "description": "Description",
-      "priority": "Priority",
-      "status": "Status",
-      "createdAt": "Created at",
-      "owner": "Owner",
-      "backupOwner": "Backup owner",
-      "technicalOwner": "Technical owner",
-      "backupTechnicalOwner": "Backup technical owner",
-      "dispatcher": "Dispatcher",
-      "tier1": "Tier 1",
-      "tier2": "Tier 2",
-      "tier3": "Tier 3",
-      "purpose": "Purpose",
-      "longDescription": "Extended description",
-      "offerings": "Service offerings",
-      "offeringsEmpty": "No service offerings found",
-      "inProduction": "In production"
+      "title": "service details",
+      "main": "main",
+      "roles": "contacts",
+      "supportGroups": "support groups",
+      "description": "description",
+      "priority": "priority",
+      "status": "status",
+      "createdAt": "created at",
+      "owner": "owner",
+      "backupOwner": "backup owner",
+      "technicalOwner": "technical owner",
+      "backupTechnicalOwner": "backup technical owner",
+      "dispatcher": "dispatcher",
+      "tier1": "tier 1",
+      "tier2": "tier 2",
+      "tier3": "tier 3",
+      "purpose": "purpose",
+      "longDescription": "extended description",
+      "offerings": "service offerings",
+      "offeringsEmpty": "no service offerings found",
+      "inProduction": "in production"
     }
   }
 }
-
-

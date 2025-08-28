@@ -13,6 +13,7 @@ import { useUiStore } from '@/core/state/uistate'
 import { useCatalogAdminStore } from '@/modules/admin/catalog/state.catalog.admin'
 import { fetchPublishingServices } from './service.admin.fetchpublishingservices'
 import { updateSectionServicesPublish } from './service.admin.update.services.publish'
+import PhIcon from '@/core/ui/icons/PhIcon.vue'
 // Ordering is temporarily disabled, no order API import
 
 type ItemsPerPageOption = 25 | 50 | 100
@@ -176,12 +177,19 @@ onMounted(async () => {
         @update:options="updateOptionsAndFetch"
       >
         <template #item.selection="{ item }">
-          <v-checkbox
-            :model-value="selectedServiceIds.includes(item.id)"
-            density="compact"
-            hide-details
-            @update:model-value="(v:boolean|null)=> onToggleService(item.id, !!v)"
-          />
+          <v-btn
+            icon
+            variant="text"
+            density="comfortable"
+            :aria-pressed="selectedServiceIds.includes(item.id)"
+            @click="onToggleService(item.id, !selectedServiceIds.includes(item.id))"
+          >
+            <PhIcon
+              :name="selectedServiceIds.includes(item.id) ? 'mdi-checkbox-marked' : 'mdi-checkbox-blank-outline'"
+              :color="selectedServiceIds.includes(item.id) ? 'teal' : 'grey'"
+              :size="18"
+            />
+          </v-btn>
         </template>
         <template #item.name="{ item }">
           <span>{{ item.name }}</span>

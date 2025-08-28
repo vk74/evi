@@ -15,13 +15,13 @@
       "clearSelections": "clear selections"
     },
     "search": {
-      "placeholder": "Search users...",
-      "minChars": "Enter at least 2 characters"
+      "placeholder": "search users...",
+      "minChars": "enter at least 2 characters"
     },
     "table": {
       "headers": {
         "select": "select",
-        "id": "ID",
+        "id": "id",
         "username": "username",
         "email": "email",
         "isStaff": "staff",
@@ -32,9 +32,9 @@
       }
     },
     "messages": {
-      "confirmDelete": "Are you sure you want to delete {count} selected users?",
-      "deleteUsersSuccess": "Successfully deleted {count} users.",
-      "refreshSuccess": "Users list refreshed successfully.",
+      "confirmDelete": "are you sure you want to delete {count} selected users?",
+      "deleteUsersSuccess": "successfully deleted {count} users.",
+      "refreshSuccess": "users list refreshed successfully.",
       "clearSelectionsSuccess": "all selections cleared"
     }
   },
@@ -53,6 +53,6 @@
     }
   },
   "passwordChange": {
-    "resetPasswordFor": "Reset password for"
+    "resetPasswordFor": "reset password for"
   }
 }

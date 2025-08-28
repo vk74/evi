@@ -11,7 +11,7 @@
         }
       },
       "buttons": {
-        "signIn": "SIGN IN"
+        "signIn": "sign in"
       },
       "errors": {
         "invalidCredentials": "incorrect username or password",
@@ -81,7 +81,7 @@
         }
       },
       "buttons": {
-        "register": "REGISTER"
+        "register": "register"
       },
       "errors": {
         "validation": "validation error: invalid fields -",
@@ -207,4 +207,4 @@
       }
     }
   }
-} 
+}

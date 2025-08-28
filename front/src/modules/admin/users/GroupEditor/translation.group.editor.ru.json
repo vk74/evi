@@ -23,7 +23,7 @@
           "selectedItem": "выбранный элемент"
         },
         "form": {
-          "groupId": "UUID группы",
+          "groupId": "uuid группы",
           "name": "название*",
           "status": "статус*",
           "description": "описание",
@@ -82,7 +82,7 @@
     }
   },
   "common": {
-    "unnamed": "Без названия",
+    "unnamed": "без названия",
     "noData": "нет данных для отображения"
   }
 }
