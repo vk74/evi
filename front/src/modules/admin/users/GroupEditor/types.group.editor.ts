@@ -177,6 +177,8 @@ export interface GroupEditorState {
   }
   ui: IEditorUIState
   members: IGroupMembersState  // Add group members state
+  // Cache to preserve fetched members per group across navigation between sections
+  membersCache: Record<string, IGroupMember[]>
 }
 
 /**

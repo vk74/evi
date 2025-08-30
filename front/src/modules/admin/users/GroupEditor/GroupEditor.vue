@@ -312,7 +312,10 @@ onMounted(() => {
     uiStore.showErrorSnackbar(t('admin.groups.editor.messages.notLoggedIn'))
   }
 
-  groupEditorStore.resetForm()
+  // Only reset form when not in edit mode to preserve loaded data and members
+  if (!groupEditorStore.isEditMode) {
+    groupEditorStore.resetForm()
+  }
   isFormDirty.value = false // Form starts clean
   isInitialLoad.value = true // Mark as initial load
   setTimeout(() => { isInitialLoad.value = false }, 0) // Simulate async loading
@@ -320,7 +323,7 @@ onMounted(() => {
 
 onBeforeUnmount(() => {
   uiStore.hideSnackbar()
-  groupEditorStore.resetMembersState() // Clear members state when leaving component
+  // Preserve members across navigation; do not reset here
 })
 </script>
 

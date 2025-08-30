@@ -36,6 +36,11 @@ class FetchGroupMembersService {
     }
     
     try {
+      // Use cache if available to avoid refetch on navigation back
+      if (groupEditorStore.loadMembersFromCacheIfAvailable(groupId)) {
+        return true
+      }
+
       groupEditorStore.setMembersLoading(true)
       groupEditorStore.setMembersError(null)
       console.log(`[FetchGroupMembersService] Fetching members for group ${groupId}`)
@@ -48,7 +53,7 @@ class FetchGroupMembersService {
       const { success, data, message } = response.data
       
       if (success && data && data.members) {
-        groupEditorStore.updateGroupMembers(data.members)
+        groupEditorStore.setMembersForGroup(groupId, data.members)
         console.log(`[FetchGroupMembersService] Successfully fetched ${data.total} members`)
         uiStore.showSuccessSnackbar(`Successfully loaded ${data.total} group members`)
         return true

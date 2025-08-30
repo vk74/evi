@@ -83,7 +83,10 @@ export const useGroupEditorStore = defineStore('groupEditor', {
         mode: 'create'
       },
       originalData: undefined,
-      members: { ...initialMembersState }
+      members: { ...initialMembersState },
+      // Cache of members per group id to preserve between navigations
+      // Key: groupId, Value: list of members
+      membersCache: {} as Record<string, IGroupMember[]>
     }
   },
 
@@ -323,6 +326,26 @@ export const useGroupEditorStore = defineStore('groupEditor', {
     },
 
     /**
+     * Store members in cache per group and update current view
+     */
+    setMembersForGroup(groupId: string, members: IGroupMember[]) {
+      this.membersCache[groupId] = [...members]
+      this.members.members = [...members]
+    },
+
+    /**
+     * Try to load members for a group from cache; returns true if loaded
+     */
+    loadMembersFromCacheIfAvailable(groupId: string): boolean {
+      const cached = this.membersCache[groupId]
+      if (cached && cached.length > 0) {
+        this.members.members = [...cached]
+        return true
+      }
+      return false
+    },
+
+    /**
      * Set loading state for group members
      */
     setMembersLoading(loading: boolean) {
@@ -377,6 +400,7 @@ export const useGroupEditorStore = defineStore('groupEditor', {
      * Reset group members state
      */
     resetMembersState() {
+      // Reset view state only; keep cached members so navigation back is instant
       Object.assign(this.members, initialMembersState)
       console.log('[GroupEditorStore] Members state reset')
     }
