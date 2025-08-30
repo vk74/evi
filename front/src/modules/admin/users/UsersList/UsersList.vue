@@ -29,12 +29,9 @@ import {
   PhSquare,
   PhCheckCircle,
   PhMinusCircle,
-  PhCaretDoubleLeft,
-  PhCaretLeft,
-  PhCaretRight,
-  PhCaretDoubleRight,
   PhArrowClockwise
 } from '@phosphor-icons/vue'
+import Paginator from '@/core/ui/paginator/Paginator.vue'
 
 // Initialize stores and i18n
 const { t } = useI18n()
@@ -425,121 +422,17 @@ const handleItemsPerPageChange = async (newItemsPerPage: ItemsPerPageOption) => 
           </template>
         </v-data-table>
 
-        <!-- Custom paginator -->
+        <!-- Universal paginator -->
         <div class="custom-pagination-container pa-4">
-          <div class="d-flex align-center justify-end">
-            <!-- Paginator controls -->
-            <div class="d-flex align-center">
-              <!-- Record count per page selector -->
-              <div class="d-flex align-center mr-4">
-                <span class="text-body-2 mr-2">{{ t('pagination.itemsPerPage') }}:</span>
-                <v-select
-                  v-model="itemsPerPage"
-                  :items="[25, 50, 100]"
-                  density="compact"
-                  variant="outlined"
-                  hide-details
-                  class="items-per-page-select"
-                  style="width: 100px"
-                  @update:model-value="handleItemsPerPageChange"
-                />
-              </div>
-              
-              <!-- Record information -->
-              <div class="text-body-2 mr-4">
-                {{ getPaginationInfo() }}
-              </div>
-              
-              <!-- Navigation buttons -->
-              <div class="d-flex align-center">
-                <v-btn
-                  icon
-                  variant="text"
-                  size="small"
-                  :disabled="page === 1"
-                  @click="goToPage(1)"
-                >
-                  <PhCaretDoubleLeft />
-                  <v-tooltip
-                    activator="parent"
-                    location="top"
-                  >
-                    {{ t('pagination.navigation.firstPage') }}
-                  </v-tooltip>
-                </v-btn>
-                
-                <v-btn
-                  icon
-                  variant="text"
-                  size="small"
-                  :disabled="page === 1"
-                  @click="goToPage(page - 1)"
-                >
-                  <PhCaretLeft />
-                  <v-tooltip
-                    activator="parent"
-                    location="top"
-                  >
-                    {{ t('pagination.navigation.previousPage') }}
-                  </v-tooltip>
-                </v-btn>
-                
-                <!-- Page numbers -->
-                <div class="d-flex align-center mx-2">
-                  <template
-                    v-for="pageNum in getVisiblePages()"
-                    :key="pageNum"
-                  >
-                    <v-btn
-                      v-if="pageNum !== '...'"
-                      :variant="pageNum === page ? 'tonal' : 'text'"
-                      size="small"
-                      class="mx-1"
-                      @click="goToPage(Number(pageNum))"
-                    >
-                      {{ pageNum }}
-                    </v-btn>
-                    <span
-                      v-else
-                      class="mx-1"
-                    >...</span>
-                  </template>
-                </div>
-                
-                <v-btn
-                  icon
-                  variant="text"
-                  size="small"
-                  :disabled="page >= getTotalPages()"
-                  @click="goToPage(page + 1)"
-                >
-                  <PhCaretRight />
-                  <v-tooltip
-                    activator="parent"
-                    location="top"
-                  >
-                    {{ t('pagination.navigation.nextPage') }}
-                  </v-tooltip>
-                </v-btn>
-                
-                <v-btn
-                  icon
-                  variant="text"
-                  size="small"
-                  :disabled="page >= getTotalPages()"
-                  @click="goToPage(getTotalPages())"
-                >
-                  <PhCaretDoubleRight />
-                  <v-tooltip
-                    activator="parent"
-                    location="top"
-                  >
-                    {{ t('pagination.navigation.lastPage') }}
-                  </v-tooltip>
-                </v-btn>
-              </div>
-            </div>
-          </div>
+          <Paginator
+            :page="page"
+            :items-per-page="itemsPerPage"
+            :total-items="totalItems"
+            :items-per-page-options="[25, 50, 100]"
+            :show-records-info="true"
+            @update:page="goToPage($event)"
+            @update:itemsPerPage="handleItemsPerPageChange($event as any)"
+          />
         </div>
       </div>
       
@@ -711,6 +604,11 @@ const handleItemsPerPageChange = async (newItemsPerPage: ItemsPerPageOption) => 
   background-color: rgba(var(--v-border-color), var(--v-border-opacity));
 }
 
+/* Hide the separator on the last row to avoid double line with paginator */
+.users-table :deep(tbody > tr:last-child::after) {
+  display: none;
+}
+
 .users-table :deep(.v-data-table__td),
 .users-table :deep(.v-data-table__th) {
   border-bottom: none !important;
@@ -763,7 +661,6 @@ const handleItemsPerPageChange = async (newItemsPerPage: ItemsPerPageOption) => 
 
 /* Pagination styles */
 .custom-pagination-container {
-  border-top: thin solid rgba(var(--v-border-color), var(--v-border-opacity));
   background-color: rgba(var(--v-theme-surface), 1);
 }
 

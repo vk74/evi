@@ -25,7 +25,8 @@ export interface IGroup {
   group_id: string;        // Group UUID
   group_name: string;      // Group name
   group_status: GroupStatus; // Group status
-  group_owner: string;     // Group owner UUID
+  is_system: boolean;      // System flag
+  owner_username: string | null; // Owner's username
 }
 
 /**

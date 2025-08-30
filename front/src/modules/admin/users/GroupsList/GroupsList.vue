@@ -14,6 +14,7 @@ import deleteSelectedGroupsService from './service.delete.selected.groups';
 import { fetchGroupService } from '../GroupEditor/service.fetch.group';
 import type { TableHeader, IGroup, ItemsPerPageOption } from './types.groups.list';
 import { useUserAuthStore } from '@/core/auth/state.user.auth';
+import Paginator from '@/core/ui/paginator/Paginator.vue'
 import { useUiStore } from '@/core/state/uistate';
 import { useUsersAdminStore } from '../state.users.admin';
 import { useGroupEditorStore } from '../GroupEditor/state.group.editor';
@@ -60,7 +61,7 @@ const headers = computed<TableHeader[]>(() => [
   { title: t('admin.groups.list.table.headers.id'), key: 'group_id', width: '200px' },
   { title: t('admin.groups.list.table.headers.name'), key: 'group_name', width: '300px' },
   { title: t('admin.groups.list.table.headers.status'), key: 'group_status', width: '120px' },
-  { title: t('admin.groups.list.table.headers.owner'), key: 'group_owner', width: '200px' },
+  { title: t('admin.groups.list.table.headers.owner'), key: 'owner_username', width: '200px' },
   { title: t('admin.groups.list.table.headers.system'), key: 'is_system', width: '80px' }
 ]);
 
@@ -182,6 +183,7 @@ watch([page, itemsPerPage], ([newPage, newItemsPerPage]) => {
           :items-length="totalNumOfGroups"
           :items-per-page-options="[10, 25, 50, 100]"
           class="groups-table"
+          hide-default-footer
           @update:page="(newPage) => page = newPage"
           @update:items-per-page="(newItemsPerPage) => itemsPerPage = newItemsPerPage as ItemsPerPageOption"
           @update:sort="(sortParams) => onSortUpdate(sortParams)"
@@ -211,6 +213,17 @@ watch([page, itemsPerPage], ([newPage, newItemsPerPage]) => {
             <PhMinusCircle v-else size="16" color="red-darken-4" />
           </template>
         </v-data-table>
+        <div class="pa-4">
+          <Paginator
+            :page="page"
+            :items-per-page="itemsPerPage"
+            :total-items="totalNumOfGroups"
+            :items-per-page-options="[10, 25, 50, 100]"
+            :show-records-info="true"
+            @update:page="(p: number) => page = p"
+            @update:itemsPerPage="(ipp: number) => itemsPerPage = ipp as ItemsPerPageOption"
+          />
+        </div>
       </div>
       
       <!-- Sidebar (right part) -->

@@ -58,22 +58,34 @@ export const useStoreGroupsList = defineStore('groupsList', () => {
         });
       
         const result = [...groups.value];
-      
+
         if (sorting.value.sortBy) {
+            const compare = (aVal: unknown, bVal: unknown): number => {
+                // Nulls last
+                if (aVal == null && bVal == null) return 0;
+                if (aVal == null) return 1;
+                if (bVal == null) return -1;
+
+                if (typeof aVal === 'string' && typeof bVal === 'string') {
+                    return aVal.localeCompare(bVal);
+                }
+
+                if (typeof aVal === 'boolean' && typeof bVal === 'boolean') {
+                    return aVal === bVal ? 0 : aVal ? 1 : -1;
+                }
+
+                if (typeof aVal === 'number' && typeof bVal === 'number') {
+                    return aVal - bVal;
+                }
+
+                return String(aVal).localeCompare(String(bVal));
+            };
+
             result.sort((a, b) => {
-                const aValue = a[sorting.value.sortBy as keyof IGroup];
-                const bValue = b[sorting.value.sortBy as keyof IGroup];
+                const aValue = a[sorting.value.sortBy as keyof IGroup] as unknown;
+                const bValue = b[sorting.value.sortBy as keyof IGroup] as unknown;
                 const modifier = sorting.value.sortDesc ? -1 : 1;
-      
-                if (typeof aValue === 'string' && typeof bValue === 'string') {
-                    return aValue.localeCompare(bValue) * modifier;
-                }
-      
-                if (typeof aValue === 'boolean' && typeof bValue === 'boolean') {
-                    return (aValue === bValue) ? 0 : (aValue ? modifier : -modifier);
-                }
-      
-                return aValue > bValue ? modifier : -modifier;
+                return compare(aValue, bValue) * modifier;
             });
         }
       

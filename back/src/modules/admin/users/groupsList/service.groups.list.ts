@@ -78,8 +78,8 @@ export async function getAllGroups(req: Request): Promise<IGroupsResponse> {
             group_id: row.group_id,
             group_name: row.group_name,
             group_status: row.group_status,
-            group_owner: row.group_owner,
-            is_system: row.is_system
+            is_system: row.is_system,
+            owner_username: row.owner_username ?? null
         }));
 
         const response: IGroupsResponse = {

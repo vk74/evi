@@ -35,8 +35,8 @@ export interface IGroup {
   group_name: string; // character varying(100)
   reserve_1: string; // character varying(100), possibly a reserve field
   group_status: GroupStatus; // app.group_status
-  group_owner: string; // UUID
   is_system: boolean; // boolean
+  owner_username: string | null; // Resolved owner username
 }
 
 /**

@@ -10,13 +10,14 @@ import type { SQLQueries } from './types.groups.list';
 export const queries: SQLQueries = {
   getAllGroups: `
     SELECT 
-      group_id,
-      group_name,
-      group_status,
-      group_owner,
-      is_system
-    FROM app.groups
-    ORDER BY group_name DESC
+      g.group_id,
+      g.group_name,
+      g.group_status,
+      g.is_system,
+      u.username AS owner_username
+    FROM app.groups g
+    LEFT JOIN app.users u ON u.user_id = g.group_owner
+    ORDER BY g.group_name DESC
   `,
 
   deleteSelectedGroups: `
