@@ -11,7 +11,7 @@
 import { useI18n } from 'vue-i18n';
 import { useAppSettingsStore } from './state.app.settings';
 import { fetchSettings } from './service.fetch.settings';
-import { PhList, PhCaretDown, PhCaretRight, PhGear, PhBriefcase, PhChartBar, PhBookOpen, PhUserGear, PhShield, PhUserClock, PhPassword, PhShieldCheck, PhServer, PhShareNetwork, PhTextT, PhUsersThree, PhUsers } from '@phosphor-icons/vue';
+import { PhList, PhCaretDown, PhCaretRight, PhGear, PhBriefcase, PhChartLineUp, PhBooks, PhUserGear, PhShield, PhClockUser, PhPassword, PhShieldCheck, PhDesktopTower, PhShareNetwork, PhTextT, PhUsersThree, PhUsers } from '@phosphor-icons/vue';
 import { useUiStore } from '@/core/state/uistate';
  
  // Import components from sections directory with hierarchical naming
@@ -159,19 +159,19 @@ const resolveSectionIcon = (iconName: string) => {
     'mdi-cog-outline': PhGear,
     'mdi-cog': PhGear,
     'mdi-briefcase-outline': PhBriefcase,
-    'mdi-chart-box-outline': PhChartBar,
-    'mdi-book-open-outline': PhBookOpen,
+    'mdi-chart-box-outline': PhChartLineUp,
+    'mdi-book-open-outline': PhBooks,
     'mdi-account-cog-outline': PhUserGear,
     'mdi-shield-outline': PhShield,
-    'mdi-account-clock-outline': PhUserClock,
+    'mdi-account-clock-outline': PhClockUser,
     'mdi-form-textbox-password': PhPassword,
     'mdi-shield-key-outline': PhShieldCheck,
-    'mdi-server': PhServer,
+    'mdi-server': PhDesktopTower,
     'mdi-transit-connection-variant': PhShareNetwork,
     'mdi-text-box-outline': PhTextT,
     'mdi-account-group-outline': PhUsersThree,
     'mdi-account-multiple-outline': PhUsers,
-    'mdi-chart-timeline-variant': PhChartBar
+    'mdi-chart-timeline-variant': PhChartLineUp
   }
   return map[iconName] || PhGear
 }

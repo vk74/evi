@@ -539,7 +539,7 @@ onMounted(async () => {
           @click="setActiveModule('Work')"
         >
           <template #prepend>
-            <component :is="icons.PhFiles" size="26" :color="iconColor" class="mr-2" />
+            <component :is="icons.PhBriefcase" size="26" :color="iconColor" class="mr-2" />
           </template>
         </v-list-item>
         <v-list-item 
@@ -600,7 +600,7 @@ onMounted(async () => {
           >
             <template #prepend>
               <div class="admin-icon-with-badge">
-                <component :is="icons.PhGear" size="26" :color="iconColor" />
+                <component :is="icons.PhFaders" size="26" :color="iconColor" />
                 <span v-if="isRailMode" class="admin-chevron-badge">
                   <component :is="icons.PhCaretDown" size="12" />
                 </span>
@@ -699,7 +699,7 @@ onMounted(async () => {
                 @click="setActiveAdminSection('appAdmin')"
               >
                 <template #prepend>
-                  <component :is="icons.PhSlidersHorizontal" size="24" :color="iconColor" class="mr-2" />
+                  <component :is="icons.PhGear" size="24" :color="iconColor" class="mr-2" />
                 </template>
               </v-list-item>
             </div>

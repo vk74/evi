@@ -1,5 +1,5 @@
 <!--
-version: 1.0.0
+version: 1.0.1
 Frontend file for catalog module.
 Catalog interface with sections, filters, and service/product cards.
 File: ModuleCatalog.vue
@@ -173,10 +173,12 @@ const onTriggerAreaLeave = () => {
 };
 
 // ==================== LIFECYCLE ====================
-onMounted(() => {
-  loadCatalogSections();
-  loadActiveServices();
-  loadPhosphorIcons(); // Load Phosphor icons on mount
+onMounted(async () => {
+  // Ensure sections (and default selectedSectionId) are loaded before fetching services
+  await loadCatalogSections();
+  await loadActiveServices();
+  // Load Phosphor icons (non-blocking for data correctness)
+  loadPhosphorIcons();
 });
 </script>
 
