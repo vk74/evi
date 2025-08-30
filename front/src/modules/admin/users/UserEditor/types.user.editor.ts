@@ -75,7 +75,7 @@ export interface IUserProfile {
  * Interface for UI state
  */
 export interface IEditorUIState {
-  activeSection: 'account' | 'profile';
+  activeSection: 'details' | 'groups';
   showPassword: boolean;
   isSubmitting: boolean;
   hasInteracted: boolean;

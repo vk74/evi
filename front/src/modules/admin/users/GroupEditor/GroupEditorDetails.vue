@@ -12,6 +12,7 @@ import { GroupStatus, type EditMode } from './types.group.editor'
 import { useValidationRules } from '@/core/validation/rules.common.fields'
 import { defineAsyncComponent } from 'vue'
 import { fetchGroupService } from './service.fetch.group'
+import { PhCaretUpDown } from '@phosphor-icons/vue'
 
 const ItemSelector = defineAsyncComponent(() => import(/* webpackChunkName: "ui-item-selector" */ '../../../../core/ui/modals/item-selector/ItemSelector.vue'))
 
@@ -179,7 +180,11 @@ const handleOwnerChanged = async (result: any) => {
                   :rules="groupStatusRules"
                   variant="outlined"
                   density="comfortable"
-                />
+                >
+                  <template #append-inner>
+                    <PhCaretUpDown />
+                  </template>
+                </v-select>
               </v-col>
 
               <v-col cols="12">

@@ -9,7 +9,14 @@
         "sections": {
           "basicInfo": "основная информация",
           "security": "безопасность",
-          "additionalInfo": "дополнительная информация"
+          "additionalInfo": "дополнительная информация",
+          "details": "данные пользователя",
+          "groups": "участие в группах"
+        },
+        "groups": {
+          "placeholder": {
+            "disabled": "доступно в режиме редактирования"
+          }
         },
         "sidebar": {
           "actions": "действия",

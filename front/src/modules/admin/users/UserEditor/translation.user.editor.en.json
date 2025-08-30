@@ -9,7 +9,14 @@
         "sections": {
           "basicInfo": "basic information",
           "security": "security",
-          "additionalInfo": "additional information"
+          "additionalInfo": "additional information",
+          "details": "user details",
+          "groups": "member of groups"
+        },
+        "groups": {
+          "placeholder": {
+            "disabled": "available in edit mode"
+          }
         },
         "sidebar": {
           "actions": "actions",

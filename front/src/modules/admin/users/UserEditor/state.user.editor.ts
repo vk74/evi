@@ -54,11 +54,11 @@ const initialProfileState: IUserProfile = {
  * Initial values for UI state
  */
 const initialUIState: IEditorUIState = {
- activeSection: 'account',
- showPassword: false,
- isSubmitting: false,
- hasInteracted: false,
- isFormChanged: false,
+  activeSection: 'details',
+  showPassword: false,
+  isSubmitting: false,
+  hasInteracted: false,
+  isFormChanged: false,
 }
 
 /**
@@ -198,6 +198,14 @@ getters: {
      this.account = { ...initialAccountState }
      this.profile = { ...initialProfileState }
      this.ui = { ...initialUIState }
+   },
+
+   /**
+    * Switch active UI section
+    */
+   setActiveSection(section: 'details' | 'groups') {
+     this.ui.activeSection = section
+     this.ui.hasInteracted = true
    },
 
    /**
