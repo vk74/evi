@@ -13,6 +13,7 @@ import { useUiStore } from '@/core/state/uistate';
 import { useGroupEditorStore } from '@/modules/admin/users/GroupEditor/state.group.editor';
 import { useUserAuthStore } from '@/core/auth/state.user.auth';
 import { ActionResult } from './types.item.selector';
+import { useStoreGroupsList } from '@/modules/admin/users/GroupsList/state.groups.list';
 
 // Define interfaces for request and response
 interface ChangeGroupOwnerRequest {
@@ -98,6 +99,15 @@ async function changeGroupOwner(userIds: string[]): Promise<ActionResult> {
     // Check if the request was successful
     if (!response.data.success) {
       throw new Error(response.data.message || 'Failed to change group owner');
+    }
+
+    // Invalidate GroupsList cache to reflect new owner in list
+    try {
+      const groupsListStore = useStoreGroupsList();
+      groupsListStore.clearCache();
+    } catch (e) {
+      // Non-fatal: log but don't block success flow
+      logger.error('Failed to invalidate GroupsList cache after owner change', e);
     }
 
     // Return success response with optional oldOwnerId as part of the result

@@ -21,6 +21,7 @@ import type {
 } from './types.item.selector';
 import { createAndPublishEvent } from '../../eventBus/fabric.events';
 import { CHANGE_GROUP_OWNER_SERVICE_EVENTS } from './events.item.selector';
+import { groupsRepository } from '../../../modules/admin/users/groupsList/repository.groups.list';
 
 const pool = pgPool as Pool;
 
@@ -228,6 +229,18 @@ export async function changeGroupOwner(
         newOwnerId
       }
     });
+
+    // Invalidate groups list repository cache so list reflects new owner
+    try {
+      groupsRepository.clearCache();
+    } catch (cacheError) {
+      // Non-fatal cache invalidation failure, log via event
+      await createAndPublishEvent({
+        eventName: CHANGE_GROUP_OWNER_SERVICE_EVENTS.SERVICE_RESPONSE_SUCCESS.eventName,
+        payload: { note: 'Failed to clear groups list cache after owner change' },
+        errorData: cacheError instanceof Error ? cacheError.message : String(cacheError)
+      });
+    }
 
     return {
       success: true,
