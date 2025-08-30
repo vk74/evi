@@ -27,6 +27,9 @@ interface SQLQuery {
     // Create user operations
     insertUser: SQLQuery;
     insertUserProfile: SQLQuery;
+
+    // User groups (membership) helpers
+    userGroupsWhereClause: string;
   }
   
   // Query definitions
@@ -150,5 +153,13 @@ interface SQLQuery {
         )
         VALUES ($1, $2, $3, $4, $5, $6)
       `
-    }
+    },
+
+    // Common WHERE clause for fetching user group memberships with optional search
+    userGroupsWhereClause: `
+      FROM app.group_members gm
+      JOIN app.groups g ON g.group_id = gm.group_id
+      WHERE gm.user_id = $1
+        AND ($2::text IS NULL OR g.group_name ILIKE ('%' || $2 || '%'))
+    `
   };

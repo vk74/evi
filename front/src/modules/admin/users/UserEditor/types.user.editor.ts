@@ -133,6 +133,22 @@ export interface IUpdateUserRequestData {
   position?: string
 }
 
+// Interface for a single group membership item in user editor
+export interface IUserGroupMembership {
+  group_id: string
+  group_name: string
+  group_status: 'active' | 'disabled' | 'archived'
+  is_system: boolean
+}
+
+// Response for fetching groups of a user with pagination
+export interface IFetchUserGroupsResponse extends IApiResponse {
+  data?: {
+    items: IUserGroupMembership[]
+    total: number
+  }
+}
+
 // Interface for API response
 export interface ICreateUserResponse {
   success: boolean

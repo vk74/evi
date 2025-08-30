@@ -36,6 +36,7 @@ import fetchAllServicesController from './service/sections/controller.admin.fetc
 import fetchSingleServiceController from './service/sections/controller.admin.fetchsingleservice';
 import deleteServicesController from './service/sections/controller.admin.deleteservices';
 import registerUserController from '../account/controller.register.user';
+import fetchUserGroupsController from './users/userEditor/controller.fetch.user.groups'
 
 const router: Router = express.Router();
 
@@ -47,6 +48,7 @@ router.post('/users/delete', validateJWT, checkIsUserStatusActive, deleteSelecte
 router.get('/api/admin/users/fetch-user-by-userid/:userId', validateJWT, checkIsUserStatusActive, loadUserById);
 router.post('/api/admin/users/update-user-by-userid/:userId', validateJWT, checkIsUserStatusActive, updateUserById);
 router.post('/api/admin/users/delete-selected-users', validateJWT, checkIsUserStatusActive, deleteSelectedUsers);
+router.get('/api/admin/users/:userId/groups', validateJWT, checkIsUserStatusActive, fetchUserGroupsController);
 
 // Routes for Groups
 router.post('/api/admin/groups/create-new-group', validateJWT, checkIsUserStatusActive, createGroupController);
