@@ -487,21 +487,16 @@ onBeforeUnmount(() => {
 
 <template>
   <v-container class="pa-0">
-    <!-- App Bar with fixed background -->
-    <v-app-bar
-      flat
-      class="editor-app-bar"
-    >
+    <!-- Internal header moved inside work area to avoid overlapping sidebar -->
+    <div class="internal-app-bar d-flex align-center">
       <v-spacer />
-      
-      <!-- Dynamic title based on mode -->
-      <v-toolbar-title class="title-text">
+      <div class="title-text">
         {{ userEditorStore.mode.mode === 'create' 
           ? t('admin.users.editor.title.create') 
           : t('admin.users.editor.title.edit') 
         }}
-      </v-toolbar-title>
-    </v-app-bar>
+      </div>
+    </div>
 
     <!-- Work area with main form -->
     <div class="d-flex">
@@ -915,6 +910,12 @@ font-size: 1.1rem;
 font-weight: 300;
 letter-spacing: 0.5px;
 color: rgba(0, 0, 0, 0.6);
+}
+
+/* Internal app bar styling so it sits inside the working area */
+.internal-app-bar {
+  padding: 6px 8px;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
 }
 
 /* Sidebar styles */

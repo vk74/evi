@@ -81,43 +81,39 @@ const getIconComponent = (iconName: string) => {
 </script>
 
 <template>
-  <div class="module-root">
-    <!-- App Bar -->
-    <v-app-bar
-      app
-      flat
-      class="app-bar"
-    >
-      <!-- Section navigation -->
-      <div class="nav-section">
-        <v-btn
+  <div class="settings-layout fill-height">
+    <!-- Left side menu (simple list) -->
+    <div class="menu-panel d-none d-sm-block">
+      <v-list
+        density="compact"
+        nav
+        class="sections-list"
+      >
+        <v-list-item
           v-for="section in sections.filter(s => s.visible !== false)"
           :key="section.id"
           :class="[
-            'section-btn', 
+            'section-item',
             { 'section-active': activeSection === section.id }
           ]"
-          variant="text"
+          active-class=""
           @click="switchSection(section.id)"
         >
-          <!-- Используем Phosphor иконки -->
-          <component
-            :is="getIconComponent(section.icon)"
-            :size="20"
-            weight="regular"
-            class="me-2"
-          />
-          {{ section.title }}
-        </v-btn>
-      </div>
-      <v-spacer />
-      <div class="module-title">
-        {{ t('admin.users.moduleTitle') }}
-      </div>
-    </v-app-bar>
+          <template #prepend>
+            <component
+              :is="getIconComponent(section.icon)"
+              :size="24"
+              weight="regular"
+              class="section-icon"
+            />
+          </template>
+          <v-list-item-title>{{ section.title }}</v-list-item-title>
+        </v-list-item>
+      </v-list>
+    </div>
 
-    <!-- Working area -->
-    <div class="working-area">
+    <!-- Content Panel -->
+    <div class="content-panel pa-4">
       <UsersListProto v-if="activeSection === 'users-proto'" />
       <UserEditor
         v-if="activeSection === 'user-editor'"
@@ -133,37 +129,53 @@ const getIconComponent = (iconName: string) => {
 </template>
 
 <style scoped>
-.app-bar {
-  background-color: rgb(242, 242, 242) !important;
-}
-
-.nav-section {
+/* Layout mirrors service admin, but flat list */
+.settings-layout {
   display: flex;
-  align-items: center;
-  margin-left: 15px;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
 }
 
-.section-btn {
-  text-transform: none;
-  font-weight: 400;
-  height: 64px;
-  border-radius: 0;
-  color: rgba(0, 0, 0, 0.6) !important;
+.menu-panel {
+  width: 220px;
+  min-width: 220px;
+  border-right: 1px solid rgba(0, 0, 0, 0.12);
+  background-color: white;
+  flex-shrink: 0;
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  overflow-y: auto;
+}
+
+.content-panel {
+  flex-grow: 1;
+  overflow-y: auto;
+  height: 100vh;
+  padding: 16px;
+}
+
+.section-item {
+  min-height: 40px;
+  position: relative;
+  transition: all 0.1s ease;
+  margin: 2px 0;
+  padding-top: 6px;
+  padding-bottom: 6px;
 }
 
 .section-active {
-  border-bottom: 2px solid #009688;
-  font-weight: 500;
-  color: rgba(0, 0, 0, 0.87) !important;
+  background-color: rgba(38, 166, 154, 0.08) !important;
 }
 
-.module-title {
-  margin-right: 15px;
-  color: rgba(0, 0, 0, 0.87);
-  font-size: 16px;
+.section-active :deep(.v-list-item-title),
+.section-active :deep(.v-icon) {
+  color: #13547a !important;
+  filter: drop-shadow(0 0 2px rgba(9, 181, 26, 0.245));
 }
 
-.working-area {
-  overflow-y: auto;
+.section-icon {
+  margin-right: 8px;
 }
 </style>

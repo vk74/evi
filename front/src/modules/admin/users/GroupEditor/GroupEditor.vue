@@ -55,6 +55,12 @@ const getStatusColor = (status: string) => {
   }
 };
 
+// Helper: resolve member status safely for template type-checking
+const getMemberStatus = (member: unknown): string => {
+  const m: any = member as any
+  return (m?.status ?? m?.user_status ?? m?.state ?? '').toString()
+}
+
 // ==================== TABLE CONFIG ====================
 const headers = computed<TableHeader[]>(() => [
   { title: t('admin.groups.editor.table.headers.select'), key: 'selection', width: '40px' },
@@ -318,10 +324,7 @@ onBeforeUnmount(() => {
 
 <template>
   <div class="module-root">
-    <v-app-bar
-      flat
-      class="app-bar"
-    >
+    <div class="internal-app-bar d-flex align-center">
       <div class="nav-section">
         <v-btn
           :class="['section-btn', { 'section-active': groupEditorStore.ui.activeSection === 'details' }]"
@@ -348,7 +351,7 @@ onBeforeUnmount(() => {
           ? t('admin.groups.editor.title.edit') 
           : t('admin.groups.editor.title.create') }}
       </div>
-    </v-app-bar>
+    </div>
 
     <div class="working-area">
       <div class="d-flex">
@@ -495,15 +498,15 @@ onBeforeUnmount(() => {
                     density="compact"
                     hide-details
                     :disabled="!isAuthorized"
-                    @update:model-value="(val) => onSelectMember(item.user_id, val)"
+                    @update:model-value="(val: boolean | null) => onSelectMember(item.user_id, Boolean(val))"
                   />
                 </template>
                 <template #item.status="{ item }">
                   <v-chip 
-                    :color="getStatusColor(item.status)" 
+                    :color="getStatusColor(getMemberStatus(item))" 
                     size="x-small"
                   >
-                    {{ item.status }}
+                    {{ getMemberStatus(item) }}
                   </v-chip>
                 </template>
                 <template #item.is_staff="{ item }">
@@ -684,6 +687,12 @@ onBeforeUnmount(() => {
 .control-buttons {
   display: flex;
   align-items: center;
+}
+
+/* Internal app bar styling so it sits inside the working area */
+.internal-app-bar {
+  padding: 6px 8px;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
 }
 
 /* Стили для боковой панели */
