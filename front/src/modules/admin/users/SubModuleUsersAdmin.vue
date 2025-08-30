@@ -20,7 +20,8 @@ import {
   PhUserList, 
   PhUserPlus, 
   PhUsersThree, 
-  PhUsersFour 
+  PhUsersFour,
+  PhUserFocus
 } from '@phosphor-icons/vue'
 
 // Async components for lazy loading
@@ -43,7 +44,7 @@ const sections = computed((): Section[] => [
   {
     id: 'user-editor',
     title: t('admin.users.sections.userEditor'),
-    icon: 'PhUserPlus'
+    icon: 'PhUserFocus'
   },
   {
     id: 'groups',
@@ -70,6 +71,8 @@ const getIconComponent = (iconName: string) => {
       return PhUserList
     case 'PhUserPlus':
       return PhUserPlus
+    case 'PhUserFocus':
+      return PhUserFocus
     case 'PhUsersThree':
       return PhUsersThree
     case 'PhUsersFour':
