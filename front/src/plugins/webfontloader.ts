@@ -1,23 +1,11 @@
 /**
  * plugins/webfontloader.ts
- *
- * webfontloader documentation: https://github.com/typekit/webfontloader
+ * Version: 1.1.0
+ * Purpose: Previously used webfontloader; now Roboto is provided via roboto-fontface package.
+ * This module remains to avoid import breakage but performs no runtime loading.
  */
 
-interface WebFontLoader {
-  load(config: {
-    google?: {
-      families: string[];
-    };
-  }): void;
-}
-
 export async function loadFonts(): Promise<void> {
-  const webFontLoader: WebFontLoader = await import(/* webpackChunkName: "webfontloader" */'webfontloader')
-
-  webFontLoader.load({
-    google: {
-      families: ['Roboto:100,300,400,500,700,900&display=swap'],
-    },
-  })
+  // No-op: fonts are provided via roboto-fontface CSS
+  return
 } 
