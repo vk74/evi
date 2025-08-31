@@ -116,7 +116,7 @@ const getIconComponent = (iconName: string) => {
     </div>
 
     <!-- Content Panel -->
-    <div class="content-panel pa-4">
+    <div class="content-panel pa-0">
       <UsersListProto v-if="activeSection === 'users-proto'" />
       <UserEditor
         v-if="activeSection === 'user-editor'"
@@ -156,7 +156,7 @@ const getIconComponent = (iconName: string) => {
   flex-grow: 1;
   overflow-y: auto;
   height: 100vh;
-  padding: 16px;
+  padding: 0;
 }
 
 .section-item {

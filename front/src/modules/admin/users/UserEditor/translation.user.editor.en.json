@@ -20,7 +20,8 @@
         },
         "sidebar": {
           "actions": "actions",
-          "formActions": "form actions"
+          "formActions": "form actions",
+          "selectedItem": "selected item"
         },
         "buttons": {
           "create": "create",

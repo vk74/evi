@@ -148,10 +148,10 @@ onBeforeUnmount(() => {
 <template>
   <div class="d-flex">
     <div class="flex-grow-1">
-      <v-container class="content-container">
+      <v-container class="content-container pa-0">
         <v-card flat>
           <v-form ref="form" v-model="isFormValid">
-            <v-row>
+            <v-row class="pa-4">
               <v-col cols="12">
                 <div class="card-header">
                   <v-card-title class="text-subtitle-1">{{ t('admin.users.editor.sections.basicInfo') }}</v-card-title>
@@ -256,7 +256,13 @@ onBeforeUnmount(() => {
         <v-btn v-if="userEditorStore.mode.mode === 'create'" block color="teal" variant="outlined" :disabled="!isFormValid || isSubmitting" class="mb-3" @click="saveUser">{{ t('admin.users.editor.buttons.create') }}</v-btn>
         <v-btn v-if="userEditorStore.mode.mode === 'edit'" block color="teal" variant="outlined" :disabled="!isFormValid || isSubmitting || !userEditorStore.hasChanges" class="mb-3" @click="updateUser">{{ t('admin.users.editor.buttons.update') }}</v-btn>
         <v-btn v-if="userEditorStore.mode.mode === 'edit'" block color="teal" variant="outlined" class="mb-3" @click="() => showPasswordDialog = true">{{ t('admin.users.editor.buttons.resetPassword') }}</v-btn>
-        <v-btn v-if="userEditorStore.mode.mode === 'create'" block variant="outlined" class="mb-3 wide-btn" @click="resetForm">{{ t('admin.users.editor.buttons.reset') }}</v-btn>
+      </div>
+
+      <div class="sidebar-divider" />
+
+      <div class="side-bar-section">
+        <h3 class="text-subtitle-2 px-2 py-2">{{ t('admin.users.editor.sidebar.selectedItem') }}</h3>
+        <v-btn v-if="userEditorStore.mode.mode === 'create'" block variant="outlined" class="mb-3" @click="resetForm">{{ t('admin.users.editor.buttons.reset') }}</v-btn>
       </div>
     </div>
 
@@ -269,5 +275,7 @@ onBeforeUnmount(() => {
 <style scoped>
 .side-bar-container { width: 18%; min-width: 220px; border-left: thin solid rgba(var(--v-border-color), var(--v-border-opacity)); display: flex; flex-direction: column; }
 .side-bar-section { padding: 16px; }
+.sidebar-divider { height: 20px; position: relative; margin: 0 16px; }
+.sidebar-divider::after { content: ''; position: absolute; top: 50%; left: 0; right: 0; border-top: thin solid rgba(var(--v-border-color), var(--v-border-opacity)); }
 .wide-btn { min-width: 240px; }
 </style>

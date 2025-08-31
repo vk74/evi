@@ -20,7 +20,8 @@
         },
         "sidebar": {
           "actions": "действия",
-          "formActions": "действия с формой"
+          "formActions": "действия с формой",
+          "selectedItem": "выбранный элемент"
         },
         "buttons": {
           "create": "создать",
