@@ -751,58 +751,6 @@ onMounted(async () => {
           density="compact"
           nav
         >
-          <!-- Language selection with menu - using click trigger -->
-          <div class="menu-wrapper">
-            <v-list-item
-              v-tooltip="{
-                text: $t('navigation.tooltips.language'),
-                location: 'right',
-                disabled: appStore.drawerMode !== 'closed'
-              }"
-              :title="$t('navigation.drawer.language')"
-              value="language"
-              class="bottom-list-item"
-              :active="isLanguageMenuOpen"
-              @click="toggleLanguageMenu"
-            >
-              <template #prepend>
-                <component :is="icons.PhTranslate" size="26" :color="iconColor" class="mr-2" />
-              </template>
-            </v-list-item>
-            
-            <v-menu
-              v-model="isLanguageMenuOpen"
-              :close-on-content-click="true"
-              location="start"
-              offset="5"
-              transition="slide-y-transition"
-              content-class="stable-menu"
-            >
-              <template #activator="{ props }">
-                <div
-                  v-bind="props"
-                  class="hidden-activator"
-                />
-              </template>
-              <v-list>
-                <v-list-item
-                  :active="userStore.language === 'en'"
-                  @click="changeLanguage('en')"
-                >
-                  <v-list-item-title>English</v-list-item-title>
-                </v-list-item>
-                <v-list-item
-                  :active="userStore.language === 'ru'"
-                  @click="changeLanguage('ru')"
-                >
-                  <v-list-item-title>Русский</v-list-item-title>
-                </v-list-item>
-              </v-list>
-            </v-menu>
-          </div>
-          
-          <v-divider class="border-opacity-25" />
-          
           <!-- Profile menu (when logged in) - using click trigger -->
           <div
             v-if="isLoggedIn"
@@ -859,6 +807,57 @@ onMounted(async () => {
             </v-menu>
           </div>
           
+          <v-divider class="border-opacity-25" />
+          
+          <!-- Language selection with menu - using click trigger -->
+          <div class="menu-wrapper">
+            <v-list-item
+              v-tooltip="{
+                text: $t('navigation.tooltips.language'),
+                location: 'right',
+                disabled: appStore.drawerMode !== 'closed'
+              }"
+              :title="$t('navigation.drawer.language')"
+              value="language"
+              class="bottom-list-item"
+              :active="isLanguageMenuOpen"
+              @click="toggleLanguageMenu"
+            >
+              <template #prepend>
+                <component :is="icons.PhTranslate" size="26" :color="iconColor" class="mr-2" />
+              </template>
+            </v-list-item>
+            
+            <v-menu
+              v-model="isLanguageMenuOpen"
+              :close-on-content-click="true"
+              location="start"
+              offset="5"
+              transition="slide-y-transition"
+              content-class="stable-menu"
+            >
+              <template #activator="{ props }">
+                <div
+                  v-bind="props"
+                  class="hidden-activator"
+                />
+              </template>
+              <v-list>
+                <v-list-item
+                  :active="userStore.language === 'en'"
+                  @click="changeLanguage('en')"
+                >
+                  <v-list-item-title>English</v-list-item-title>
+                </v-list-item>
+                <v-list-item
+                  :active="userStore.language === 'ru'"
+                  @click="changeLanguage('ru')"
+                >
+                  <v-list-item-title>Русский</v-list-item-title>
+                </v-list-item>
+              </v-list>
+            </v-menu>
+          </div>
           <!-- Login item (when not logged in) -->
           <v-list-item
             v-if="!isLoggedIn"
