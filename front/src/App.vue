@@ -39,6 +39,7 @@ const SubModuleCatalogAdmin = defineAsyncComponent(() => import(/* webpackChunkN
 const SubModuleServiceAdmin = defineAsyncComponent(() => import(/* webpackChunkName: "admin-service" */ './modules/admin/service/SubModuleServiceAdmin.vue'));
 const SubModuleUsersAdmin = defineAsyncComponent(() => import(/* webpackChunkName: "admin-users" */ './modules/admin/users/SubModuleUsersAdmin.vue'));
 const SubModuleAppSettings = defineAsyncComponent(() => import(/* webpackChunkName: "admin-settings" */ './modules/admin/settings/SubModuleAppSettings.vue'));
+const SubModuleProducts = defineAsyncComponent(() => import(/* webpackChunkName: "admin-products" */ './modules/admin/products/SubModuleProducts.vue'));
 
 // Regular component imports
 import ModuleLogin from './core/auth/ModuleLogin.vue';
@@ -122,6 +123,8 @@ const currentAdminSubmodule = computed(() => {
       return SubModuleUsersAdmin;
     case 'appAdmin':
       return SubModuleAppSettings;
+    case 'productsAdmin':
+      return SubModuleProducts;
     default:
       return SubModuleAppSettings; // Default to app settings
   }
@@ -427,28 +430,31 @@ onMounted(async () => {
     console.warn('Failed to lazy-load phosphor icons', e)
   }
 
-  // Opportunistically warm up likely next views (only when logged in)
-  if (isLoggedIn.value) {
-    // Warm up admin container chunk and the selected admin submodule
-    if (appStore.isModuleActive('Admin')) {
-      // Trigger background fetch of the currently active submodule
-      switch (activeAdminSubModule.value) {
-        case 'catalogAdmin':
-          import(/* webpackChunkName: "admin-catalog" */ './modules/admin/catalog/SubModuleCatalogAdmin.vue');
-          break;
-        case 'serviceAdmin':
-          import(/* webpackChunkName: "admin-service" */ './modules/admin/service/SubModuleServiceAdmin.vue');
-          break;
-        case 'usersAdmin':
-          import(/* webpackChunkName: "admin-users" */ './modules/admin/users/SubModuleUsersAdmin.vue');
-          break;
-        case 'appAdmin':
-        default:
-          import(/* webpackChunkName: "admin-settings" */ './modules/admin/settings/SubModuleAppSettings.vue');
-          break;
+      // Opportunistically warm up likely next views (only when logged in)
+    if (isLoggedIn.value) {
+      // Warm up admin container chunk and the selected admin submodule
+      if (appStore.isModuleActive('Admin')) {
+        // Trigger background fetch of the currently active submodule
+        switch (activeAdminSubModule.value) {
+          case 'catalogAdmin':
+            import(/* webpackChunkName: "admin-catalog" */ './modules/admin/catalog/SubModuleCatalogAdmin.vue');
+            break;
+          case 'serviceAdmin':
+            import(/* webpackChunkName: "admin-service" */ './modules/admin/service/SubModuleServiceAdmin.vue');
+            break;
+          case 'usersAdmin':
+            import(/* webpackChunkName: "admin-users" */ './modules/admin/users/SubModuleUsersAdmin.vue');
+            break;
+          case 'productsAdmin':
+            import(/* webpackChunkName: "admin-products" */ './modules/admin/products/SubModuleProducts.vue');
+            break;
+          case 'appAdmin':
+          default:
+            import(/* webpackChunkName: "admin-settings" */ './modules/admin/settings/SubModuleAppSettings.vue');
+            break;
+        }
       }
     }
-  }
 });
 </script>
 
@@ -660,6 +666,26 @@ onMounted(async () => {
               >
                 <template #prepend>
                   <component :is="icons.PhCubeFocus" size="24" :color="iconColor" class="mr-2" />
+                </template>
+              </v-list-item>
+              
+              <!-- Products Admin -->
+              <v-list-item
+                v-tooltip="{
+                  text: $t('admin.nav.products.main'),
+                  location: 'right',
+                  disabled: appStore.drawerMode !== 'closed'
+                }"
+                class="admin-sub-item"
+                :class="{ 'admin-sub-active': activeAdminSubModule === 'productsAdmin' }"
+                :title="$t('admin.nav.products.main')"
+                value="productsAdmin"
+                density="compact"
+                :active="appStore.isModuleActive('Admin') && activeAdminSubModule === 'productsAdmin'"
+                @click="setActiveAdminSection('productsAdmin')"
+              >
+                <template #prepend>
+                  <component :is="icons.PhPackage" size="24" :color="iconColor" class="mr-2" />
                 </template>
               </v-list-item>
               

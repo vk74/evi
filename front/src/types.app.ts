@@ -26,7 +26,8 @@ export type AdminSubModule =
   | 'catalogAdmin'
   | 'serviceAdmin'
   | 'usersAdmin'
-  | 'appAdmin';
+  | 'appAdmin'
+  | 'productsAdmin';
 
 // Work module visibility setting interface
 export interface WorkModuleVisibility {

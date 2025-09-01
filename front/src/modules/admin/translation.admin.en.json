@@ -16,6 +16,9 @@
       "users": {
         "main": "users management"
       },
+      "products": {
+        "main": "products management"
+      },
       "settings": {
         "main": "application settings"
       }

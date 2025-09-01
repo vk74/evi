@@ -10,6 +10,7 @@ export type SubModuleId =
   | 'SubModuleCatalogAdmin' 
   | 'SubModuleUsersAdmin'
   | 'SubModuleAppSettings'
+  | 'SubModuleProducts'
 
 export type DrawerMode = 'auto' | 'opened' | 'closed'
 
