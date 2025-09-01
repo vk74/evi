@@ -1414,7 +1414,7 @@ onMounted(() => {
 /* Sidebar styles */
 .side-bar-container {
   width: 18%;
-  min-width: 220px;
+  min-width: 240px;
   border-left: thin solid rgba(var(--v-border-color), var(--v-border-opacity));
   display: flex;
   flex-direction: column;
@@ -1495,6 +1495,12 @@ onMounted(() => {
 
 .select-icon-btn-sidebar {
   height: 40px;
+  min-width: 240px;
+}
+
+/* Sidebar button styles */
+.side-bar-section .v-btn {
+  min-width: 240px;
 }
 
 /* Icon placeholder styles */

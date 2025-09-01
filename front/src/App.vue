@@ -672,13 +672,13 @@ onMounted(async () => {
               <!-- Products Admin -->
               <v-list-item
                 v-tooltip="{
-                  text: $t('admin.nav.products.main'),
+                  text: $t('admin.products.sections.productsList'),
                   location: 'right',
                   disabled: appStore.drawerMode !== 'closed'
                 }"
                 class="admin-sub-item"
                 :class="{ 'admin-sub-active': activeAdminSubModule === 'productsAdmin' }"
-                :title="$t('admin.nav.products.main')"
+                :title="$t('admin.products.sections.productsList')"
                 value="productsAdmin"
                 density="compact"
                 :active="appStore.isModuleActive('Admin') && activeAdminSubModule === 'productsAdmin'"

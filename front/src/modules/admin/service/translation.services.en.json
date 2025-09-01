@@ -3,8 +3,9 @@
     "services": {
       "navigation": {
         "services": "services",
-        "list": "list",
-        "settings": "settings"
+        "serviceslist": "services list",
+        "serviceeditor": "service editor",
+        "settings": "service settings"
       },
       "search": {
         "placeholder": "search services by name, owner, or technical owner...",

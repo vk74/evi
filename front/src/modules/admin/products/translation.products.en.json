@@ -1,0 +1,14 @@
+{
+  "admin": {
+    "products": {
+      "sections": {
+        "productsList": "products list",
+        "productEditor": "product editor",
+        "optionsList": "options list",
+        "optionEditor": "option editor",
+        "settings": "settings"
+      },
+      "moduleTitle": "products management"
+    }
+  }
+}

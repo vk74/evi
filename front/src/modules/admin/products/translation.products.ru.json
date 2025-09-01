@@ -1,0 +1,14 @@
+{
+  "admin": {
+    "products": {
+      "sections": {
+        "productsList": "список продуктов",
+        "productEditor": "редактор продукта",
+        "optionsList": "список опций",
+        "optionEditor": "редактор опции",
+        "settings": "настройки"
+      },
+      "moduleTitle": "управление продуктами"
+    }
+  }
+}

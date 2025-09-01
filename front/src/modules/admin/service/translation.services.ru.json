@@ -3,8 +3,9 @@
     "services": {
       "navigation": {
         "services": "сервисы",
-        "list": "список",
-        "settings": "настройки"
+        "serviceslist": "список сервисов",
+        "serviceeditor": "редактор сервиса",
+        "settings": "настройки сервисов"
       },
       "search": {
         "placeholder": "поиск сервисов по названию, владельцу или техническому владельцу...",
