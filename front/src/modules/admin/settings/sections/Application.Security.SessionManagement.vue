@@ -14,7 +14,7 @@ import { fetchSettings } from '@/modules/admin/settings/service.fetch.settings';
 import { updateSettingFromComponent } from '@/modules/admin/settings/service.update.settings';
 import { useUiStore } from '@/core/state/uistate';
 import DataLoading from '@/core/ui/loaders/DataLoading.vue';
-import { PhWarningCircle } from '@phosphor-icons/vue';
+import { PhWarningCircle, PhCaretUpDown } from '@phosphor-icons/vue';
 
 // Section path identifier - using component name for better consistency
 const section_path = 'Application.Security.SessionManagement';
@@ -499,7 +499,11 @@ onMounted(() => {
                 style="max-width: 300px;"
                 :disabled="isSettingDisabled('access.token.lifetime')"
                 :loading="settingLoadingStates['access.token.lifetime']"
-              />
+              >
+                <template #append-inner>
+                  <PhCaretUpDown />
+                </template>
+              </v-select>
               <v-tooltip
                 v-if="settingErrorStates['access.token.lifetime']"
                 location="top"
@@ -532,7 +536,11 @@ onMounted(() => {
                 style="max-width: 300px;"
                 :disabled="isSettingDisabled('refresh.jwt.n.seconds.before.expiry')"
                 :loading="settingLoadingStates['refresh.jwt.n.seconds.before.expiry']"
-              />
+              >
+                <template #append-inner>
+                  <PhCaretUpDown />
+                </template>
+              </v-select>
               <v-tooltip
                 v-if="settingErrorStates['refresh.jwt.n.seconds.before.expiry']"
                 location="top"
@@ -572,7 +580,11 @@ onMounted(() => {
                 style="max-width: 300px;"
                 :disabled="isSettingDisabled('refresh.token.lifetime')"
                 :loading="settingLoadingStates['refresh.token.lifetime']"
-              />
+              >
+                <template #append-inner>
+                  <PhCaretUpDown />
+                </template>
+              </v-select>
               <v-tooltip
                 v-if="settingErrorStates['refresh.token.lifetime']"
                 location="top"
@@ -605,7 +617,11 @@ onMounted(() => {
                 style="max-width: 300px;"
                 :disabled="isSettingDisabled('max.refresh.tokens.per.user')"
                 :loading="settingLoadingStates['max.refresh.tokens.per.user']"
-              />
+              >
+                <template #append-inner>
+                  <PhCaretUpDown />
+                </template>
+              </v-select>
               <v-tooltip
                 v-if="settingErrorStates['max.refresh.tokens.per.user']"
                 location="top"

@@ -105,7 +105,7 @@
               },
               "access": {
                 "settings": {
-                  "title": "настройки access token"
+                  "title": "настройки access token (jwt)"
                 },
                 "token": {
                   "lifetime": {
@@ -124,14 +124,14 @@
                 },
                 "before": {
                   "expiry": {
-                    "label": "обновление за n секунд до истечения"
+                    "label": "обновление jwt за n секунд до истечения"
                   }
                 },
                 "max": {
                   "tokens": {
                     "per": {
                       "user": {
-                        "label": "максимум токенов на пользователя"
+                        "label": "макс. кол-во refresh токенов на пользователя"
                       }
                     }
                   }

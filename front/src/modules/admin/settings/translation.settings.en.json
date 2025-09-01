@@ -105,11 +105,11 @@
               },
               "access": {
                 "settings": {
-                  "title": "access token settings"
+                  "title": "access token (jwt) settings"
                 },
                 "token": {
                   "lifetime": {
-                    "label": "access token lifetime (minutes)"
+                    "label": "token lifetime (minutes)"
                   }
                 }
               },
@@ -124,7 +124,7 @@
                 },
                 "before": {
                   "expiry": {
-                    "label": "refresh n seconds before expiry"
+                    "label": "jwt refresh n seconds before expiry"
                   }
                 },
                 "max": {
