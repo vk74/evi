@@ -83,6 +83,7 @@
         },
         "sections": {
           "details": "details",
+          "preferences": "preferences",
           "catalog publication": "catalog publication"
         },
         "mapping": {

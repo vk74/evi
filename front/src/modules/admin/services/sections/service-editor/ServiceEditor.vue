@@ -15,6 +15,7 @@ import { useI18n } from 'vue-i18n'
 import { useServicesAdminStore } from '../../state.services.admin'
 import { defineAsyncComponent } from 'vue'
 const ServiceEditorData = defineAsyncComponent(() => import(/* webpackChunkName: "admin-service-editor-data" */ './ServiceEditorData.vue'))
+const ServiceEditorPreferences = defineAsyncComponent(() => import(/* webpackChunkName: "admin-service-editor-preferences" */ './ServiceEditorPreferences.vue'))
 const ServiceEditorMapping = defineAsyncComponent(() => import(/* webpackChunkName: "admin-service-editor-mapping" */ './ServiceEditorMapping.vue'))
 
 // Initialize stores and i18n
@@ -34,7 +35,7 @@ const pageTitle = computed(() => {
 })
 
 // Section management
-const switchSection = (section: 'details' | 'catalog publication') => {
+const switchSection = (section: 'details' | 'preferences' | 'catalog publication') => {
   // Prevent switching to catalog publication in creation mode
   if (section === 'catalog publication' && isCreationMode.value) {
     return
@@ -54,6 +55,13 @@ const switchSection = (section: 'details' | 'catalog publication') => {
           @click="switchSection('details')"
         >
           {{ t('admin.services.editor.sections.details') }}
+        </v-btn>
+        <v-btn
+          :class="['section-btn', { 'section-active': servicesStore.getActiveSection === 'preferences' }]"
+          variant="text"
+          @click="switchSection('preferences')"
+        >
+          {{ t('admin.services.editor.sections.preferences') }}
         </v-btn>
         <v-btn
           :class="['section-btn', { 'section-active': servicesStore.getActiveSection === 'catalog publication' }]"
@@ -78,6 +86,9 @@ const switchSection = (section: 'details' | 'catalog publication') => {
         <!-- Render appropriate component based on active section -->
         <ServiceEditorData 
           v-if="servicesStore.getActiveSection === 'details'"
+        />
+        <ServiceEditorPreferences 
+          v-else-if="servicesStore.getActiveSection === 'preferences'"
         />
         <ServiceEditorMapping 
           v-else-if="servicesStore.getActiveSection === 'catalog publication'"
