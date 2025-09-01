@@ -24,6 +24,10 @@
       "changePassword": "change password",
       "sessionData": "session data",
       "logout": "logout"
+    },
+    "aboutMenu": {
+      "about": "about",
+      "sessionData": "session data"
     }
   },
   "panels": {

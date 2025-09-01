@@ -63,6 +63,7 @@ const isLoginDialogVisible = ref<boolean>(false);
 const isAdminExpanded = ref<boolean>(false); // Track admin section expansion
 const isProfileMenuOpen = ref<boolean>(false); // Track profile menu state
 const isLanguageMenuOpen = ref<boolean>(false); // Track language menu state
+const isAboutMenuOpen = ref<boolean>(false); // Track about menu state
 const menuLocked = ref<boolean>(false); // Prevent menu interactions during animations
 
 // Computed properties
@@ -143,6 +144,7 @@ const safeCloseMenus = (): void => {
   menuLocked.value = true;
   isProfileMenuOpen.value = false;
   isLanguageMenuOpen.value = false;
+  isAboutMenuOpen.value = false;
   
   // Unlock after animation completes
   setTimeout(() => {
@@ -244,33 +246,52 @@ const toggleDrawerMode = (): void => {
 const toggleProfileMenu = (): void => {
   if (menuLocked.value) return;
   
-  // Close language menu if open
+  // Close other menus if open
   if (isLanguageMenuOpen.value) {
     isLanguageMenuOpen.value = false;
-    
-    // Wait for animation to complete before opening profile menu
-    setTimeout(() => {
-      isProfileMenuOpen.value = !isProfileMenuOpen.value;
-    }, 100);
-  } else {
-    isProfileMenuOpen.value = !isProfileMenuOpen.value;
   }
+  if (isAboutMenuOpen.value) {
+    isAboutMenuOpen.value = false;
+  }
+  
+  // Wait for animation to complete before opening profile menu
+  setTimeout(() => {
+    isProfileMenuOpen.value = !isProfileMenuOpen.value;
+  }, 100);
 };
 
 const toggleLanguageMenu = (): void => {
   if (menuLocked.value) return;
   
-  // Close profile menu if open
+  // Close other menus if open
   if (isProfileMenuOpen.value) {
     isProfileMenuOpen.value = false;
-    
-    // Wait for animation to complete before opening language menu
-    setTimeout(() => {
-      isLanguageMenuOpen.value = !isLanguageMenuOpen.value;
-    }, 100);
-  } else {
-    isLanguageMenuOpen.value = !isLanguageMenuOpen.value;
   }
+  if (isAboutMenuOpen.value) {
+    isAboutMenuOpen.value = false;
+  }
+  
+  // Wait for animation to complete before opening language menu
+  setTimeout(() => {
+    isLanguageMenuOpen.value = !isLanguageMenuOpen.value;
+  }, 100);
+};
+
+const toggleAboutMenu = (): void => {
+  if (menuLocked.value) return;
+  
+  // Close other menus if open
+  if (isProfileMenuOpen.value) {
+    isProfileMenuOpen.value = false;
+  }
+  if (isLanguageMenuOpen.value) {
+    isLanguageMenuOpen.value = false;
+  }
+  
+  // Wait for animation to complete before opening about menu
+  setTimeout(() => {
+    isAboutMenuOpen.value = !isAboutMenuOpen.value;
+  }, 100);
 };
 
 // Watch for active module changes
@@ -807,6 +828,44 @@ onMounted(async () => {
             </v-menu>
           </div>
           
+          <!-- Login item (when not logged in) -->
+          <v-list-item
+            v-if="!isLoggedIn"
+            v-tooltip="{
+              text: $t('navigation.tooltips.login'),
+              location: 'right',
+              disabled: appStore.drawerMode !== 'closed'
+            }"
+            :title="$t('navigation.drawer.login')"
+            value="login"
+            :active="appStore.isModuleActive('Login')"
+            class="bottom-list-item"
+            @click="setActiveModule('Login')"
+          >
+            <template #prepend>
+              <component :is="icons.PhSignIn" size="26" :color="iconColor" class="mr-2" />
+            </template>
+          </v-list-item>
+          
+          <!-- Register item (when not logged in) -->
+          <v-list-item
+            v-if="!isLoggedIn"
+            v-tooltip="{
+              text: $t('navigation.tooltips.register'),
+              location: 'right',
+              disabled: appStore.drawerMode !== 'closed'
+            }"
+            :title="$t('navigation.drawer.register')"
+            value="register"
+            :active="appStore.isModuleActive('NewUserRegistration')"
+            class="bottom-list-item"
+            @click="setActiveModule('NewUserRegistration')"
+          >
+            <template #prepend>
+              <component :is="icons.PhUserPlus" size="26" :color="iconColor" class="mr-2" />
+            </template>
+          </v-list-item>
+          
           <v-divider class="border-opacity-25" />
           
           <!-- Language selection with menu - using click trigger -->
@@ -858,43 +917,47 @@ onMounted(async () => {
               </v-list>
             </v-menu>
           </div>
-          <!-- Login item (when not logged in) -->
-          <v-list-item
-            v-if="!isLoggedIn"
-            v-tooltip="{
-              text: $t('navigation.tooltips.login'),
-              location: 'right',
-              disabled: appStore.drawerMode !== 'closed'
-            }"
-            :title="$t('navigation.drawer.login')"
-            value="login"
-            :active="appStore.isModuleActive('Login')"
-            class="bottom-list-item"
-            @click="setActiveModule('Login')"
-          >
-            <template #prepend>
-              <component :is="icons.PhSignIn" size="26" :color="iconColor" class="mr-2" />
-            </template>
-          </v-list-item>
           
-          <!-- Register item (when not logged in) -->
-          <v-list-item
-            v-if="!isLoggedIn"
-            v-tooltip="{
-              text: $t('navigation.tooltips.register'),
-              location: 'right',
-              disabled: appStore.drawerMode !== 'closed'
-            }"
-            :title="$t('navigation.drawer.register')"
-            value="register"
-            :active="appStore.isModuleActive('NewUserRegistration')"
-            class="bottom-list-item"
-            @click="setActiveModule('NewUserRegistration')"
-          >
-            <template #prepend>
-              <component :is="icons.PhUserPlus" size="26" :color="iconColor" class="mr-2" />
-            </template>
-          </v-list-item>
+          <!-- About menu - using click trigger -->
+          <div class="menu-wrapper">
+            <v-list-item
+              v-tooltip="{
+                text: $t('navigation.aboutMenu.about'),
+                location: 'right',
+                disabled: appStore.drawerMode !== 'closed'
+              }"
+              :title="$t('navigation.aboutMenu.about')"
+              value="about"
+              class="bottom-list-item"
+              :active="isAboutMenuOpen"
+              @click="toggleAboutMenu"
+            >
+              <template #prepend>
+                <component :is="icons.PhInfo" size="26" :color="iconColor" class="mr-2" />
+              </template>
+            </v-list-item>
+            
+            <v-menu
+              v-model="isAboutMenuOpen"
+              :close-on-content-click="true"
+              location="start"
+              offset="5"
+              transition="slide-y-transition"
+              content-class="stable-menu"
+            >
+              <template #activator="{ props }">
+                <div
+                  v-bind="props"
+                  class="hidden-activator"
+                />
+              </template>
+              <v-list>
+                <v-list-item @click="setActiveModule('SessionData')">
+                  <v-list-item-title>{{ $t('navigation.aboutMenu.sessionData') }}</v-list-item-title>
+                </v-list-item>
+              </v-list>
+            </v-menu>
+          </div>
         </v-list>
         
         <!-- Drawer control area -->

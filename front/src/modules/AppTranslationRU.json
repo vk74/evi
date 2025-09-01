@@ -24,6 +24,10 @@
       "changePassword": "изменить пароль",
       "sessionData": "данные сессии",
       "logout": "выйти"
+    },
+    "aboutMenu": {
+      "about": "о программе",
+      "sessionData": "данные сессии"
     }
   },
   "panels": {
