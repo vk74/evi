@@ -57,7 +57,6 @@ const blockDurationMinutes = ref<number | null>(null);
 // ==================== TOKEN MANAGEMENT SETTINGS ====================
 
 // Refresh Token Settings  
-const refreshTokenCleanupExpiredAfterDays = ref(30);
 
 // New refresh token reset settings
 const refreshTokenResetOnPasswordChange = ref(true);
@@ -73,9 +72,7 @@ const tokenAlgorithm = ref('RS256');
 const tokenIssuer = ref('ev2 app');
 const tokenAudience = ref('ev2 app registered users');
 
-// Development Settings
-const devModeEnabled = ref(false);
-const devAllowInsecureCookies = ref(true);
+// Development Settings (removed)
 
 // ==================== SESSION SECURITY SETTINGS ====================
 
@@ -91,15 +88,7 @@ const sessionForceLogoutOnPasswordChange = ref(true);
 
 // ==================== COOKIE AND HTTP SECURITY SETTINGS ====================
 
-// Cookie Settings
-const cookieHttpOnly = ref(true);
-const cookieSecureInProduction = ref(true);
-const cookieSameSitePolicy = ref('strict');
-const cookieMaxAgeDays = ref(7);
-
-// HTTP Security Headers
-const securityHeadersEnabled = ref(true);
-const securityHeadersHstsMaxAgeSeconds = ref(31536000);
+// Cookie and HTTP Security settings removed
 
 // ==================== OPTIONS ====================
 
@@ -114,11 +103,7 @@ const tokenAlgorithmOptions = [
   { title: 'HS256', value: 'HS256' }
 ];
 
-const cookieSameSiteOptions = [
-  { title: 'Strict', value: 'strict' },
-  { title: 'Lax', value: 'lax' },
-  { title: 'None', value: 'none' }
-];
+// Cookie SameSite options removed
 
 const sessionDurationOptions = computed(() => [
   { title: t('admin.settings.application.security.sessionmanagement.duration.options.10'), value: '10' },
@@ -643,20 +628,7 @@ onMounted(() => {
               </v-tooltip>
             </div>
             
-            <div class="d-flex align-center mb-3">
-              <v-text-field
-                v-model="refreshTokenCleanupExpiredAfterDays"
-                label="удаление истекших токенов через (дни)"
-                type="number"
-                variant="outlined"
-                density="comfortable"
-                color="teal-darken-2"
-                style="max-width: 300px;"
-                :min="1"
-                :max="365"
-              />
-              <span class="text-caption text-grey ms-3">в разработке</span>
-            </div>
+
             
             <div class="d-flex align-center mb-3">
               <v-switch
@@ -763,32 +735,7 @@ onMounted(() => {
             </div>
           </div>
           
-          <!-- Development Settings -->
-          <div class="settings-subgroup">
-            <h4 class="text-subtitle-2 mb-3 font-weight-medium">
-              настройки разработки
-            </h4>
-            
-            <div class="d-flex align-center mb-3">
-              <v-switch
-                v-model="devModeEnabled"
-                color="teal-darken-2"
-                label="режим разработки"
-                hide-details
-              />
-              <span class="text-caption text-grey ms-3">в разработке</span>
-            </div>
-            
-            <div class="d-flex align-center mb-3">
-              <v-switch
-                v-model="devAllowInsecureCookies"
-                color="teal-darken-2"
-                label="разрешить небезопасные cookies в dev режиме"
-                hide-details
-              />
-              <span class="text-caption text-grey ms-3">в разработке</span>
-            </div>
-          </div>
+          
         </div>
         
         <!-- ==================== CONNECTION HANDLING SECTION ==================== -->
@@ -1033,111 +980,11 @@ onMounted(() => {
               <span class="text-caption text-grey ms-3">в разработке</span>
             </div>
             
-            <div class="d-flex align-center mb-3">
-              <v-switch
-                v-model="sessionForceLogoutOnPasswordChange"
-                color="teal-darken-2"
-                label="принудительный выход при смене пароля"
-                hide-details
-              />
-              <span class="text-caption text-grey ms-3">в разработке</span>
-            </div>
+            
           </div>
         </div>
         
-        <!-- ==================== COOKIE AND HTTP SECURITY SECTION ==================== -->
-        <div class="settings-group">
-          <h3 class="text-subtitle-1 mb-4 font-weight-medium">
-            cookie и http security
-          </h3>
-          
-          <!-- Cookie Settings -->
-          <div class="settings-subgroup mb-4">
-            <h4 class="text-subtitle-2 mb-3 font-weight-medium">
-              настройки cookies
-            </h4>
-            
-            <div class="d-flex align-center mb-3">
-              <v-switch
-                v-model="cookieHttpOnly"
-                color="teal-darken-2"
-                label="HttpOnly флаг для cookies"
-                hide-details
-              />
-              <span class="text-caption text-grey ms-3">в разработке</span>
-            </div>
-            
-            <div class="d-flex align-center mb-3">
-              <v-switch
-                v-model="cookieSecureInProduction"
-                color="teal-darken-2"
-                label="Secure флаг в production"
-                hide-details
-              />
-              <span class="text-caption text-grey ms-3">в разработке</span>
-            </div>
-            
-            <div class="d-flex align-center mb-3">
-              <v-select
-                v-model="cookieSameSitePolicy"
-                :items="cookieSameSiteOptions"
-                label="SameSite политика"
-                variant="outlined"
-                density="comfortable"
-                color="teal-darken-2"
-                style="max-width: 200px;"
-              />
-              <span class="text-caption text-grey ms-3">в разработке</span>
-            </div>
-            
-            <div class="d-flex align-center mb-3">
-              <v-text-field
-                v-model="cookieMaxAgeDays"
-                label="максимальный возраст cookie (дни)"
-                type="number"
-                variant="outlined"
-                density="comfortable"
-                color="teal-darken-2"
-                style="max-width: 300px;"
-                :min="1"
-                :max="365"
-              />
-              <span class="text-caption text-grey ms-3">в разработке</span>
-            </div>
-          </div>
-          
-          <!-- HTTP Security Headers -->
-          <div class="settings-subgroup">
-            <h4 class="text-subtitle-2 mb-3 font-weight-medium">
-              http security headers
-            </h4>
-            
-            <div class="d-flex align-center mb-3">
-              <v-switch
-                v-model="securityHeadersEnabled"
-                color="teal-darken-2"
-                label="включить security headers"
-                hide-details
-              />
-              <span class="text-caption text-grey ms-3">в разработке</span>
-            </div>
-            
-            <div class="d-flex align-center mb-3">
-              <v-text-field
-                v-model="securityHeadersHstsMaxAgeSeconds"
-                label="HSTS max-age (секунды)"
-                type="number"
-                variant="outlined"
-                density="comfortable"
-                color="teal-darken-2"
-                style="max-width: 300px;"
-                :min="0"
-                :max="31536000"
-              />
-              <span class="text-caption text-grey ms-3">в разработке</span>
-            </div>
-          </div>
-        </div>
+        
       </div>
     </div>
   </div>

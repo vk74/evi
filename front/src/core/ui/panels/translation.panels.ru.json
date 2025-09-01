@@ -9,7 +9,7 @@
       "rules": {
         "minLength": "минимум {length} символов",
         "maxLength": "максимум {length} символов",
-        "lengthRange": "от {minlength} до {maxlength} символов",
+        "lengthRange": "от {minLength} до {maxLength} символов",
         "lowercase": "строчные буквы",
         "uppercase": "заглавные буквы",
         "numbers": "цифры",

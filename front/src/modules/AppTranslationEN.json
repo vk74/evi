@@ -25,5 +25,17 @@
       "sessionData": "session data",
       "logout": "logout"
     }
+  },
+  "panels": {
+    "passwordPolicies": {
+      "rules": {
+        "lengthRange": "password length from {minLength} to {maxLength} characters"
+      },
+      "loading": "loading password policies...",
+      "error": "failed to load password policies",
+      "examplePassword": "example password:",
+      "requirements": "requirements: ",
+      "refresh": "refresh"
+    }
   }
 }

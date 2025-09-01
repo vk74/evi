@@ -9,7 +9,7 @@
       "rules": {
         "minLength": "minimum {length} characters",
         "maxLength": "maximum {length} characters",
-        "lengthRange": "between {minlength} and {maxlength} characters",
+        "lengthRange": "between {minLength} and {maxLength} characters",
         "lowercase": "lowercase letters",
         "uppercase": "uppercase letters",
         "numbers": "numbers",

@@ -25,5 +25,12 @@
       "sessionData": "данные сессии",
       "logout": "выйти"
     }
+  },
+  "panels": {
+    "passwordPolicies": {
+      "rules": {
+        "lengthRange": "длина пароля от {minLength} до {maxLength} символов"
+      }
+    }
   }
 }

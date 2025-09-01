@@ -16,7 +16,7 @@ import { getDefaultValues } from '@/modules/admin/settings/service.fetch.setting
 import { useUiStore } from '@/core/state/uistate';
 import DataLoading from '@/core/ui/loaders/DataLoading.vue';
 import PanelCurrentPasswordPolicies from '@/core/ui/panels/panel.current.password.policies.vue';
-import { PhWarningCircle, PhQuestion, PhArrowClockwise } from '@phosphor-icons/vue';
+import { PhWarningCircle, PhQuestion, PhArrowClockwise, PhCaretUpDown } from '@phosphor-icons/vue';
 
 // Section path identifier - using component name for better consistency
 const section_path = 'Application.Security.PasswordPolicies';
@@ -441,7 +441,11 @@ onMounted(() => {
                 style="max-width: 240px;"
                 :disabled="isSettingDisabled('password.min.length') || isPasswordLengthDisabled"
                 :loading="settingLoadingStates['password.min.length']"
-              />
+              >
+                <template #append-inner>
+                  <PhCaretUpDown />
+                </template>
+              </v-select>
               <v-tooltip
                 v-if="settingErrorStates['password.min.length']"
                 location="top"
@@ -476,7 +480,11 @@ onMounted(() => {
                 style="max-width: 240px;"
                 :disabled="isSettingDisabled('password.max.length') || isPasswordLengthDisabled"
                 :loading="settingLoadingStates['password.max.length']"
-              />
+              >
+                <template #append-inner>
+                  <PhCaretUpDown />
+                </template>
+              </v-select>
               <v-tooltip
                 v-if="settingErrorStates['password.max.length']"
                 location="top"
