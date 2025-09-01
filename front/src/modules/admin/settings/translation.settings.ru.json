@@ -297,37 +297,6 @@
               }
             }
           }
-        },
-        "userprofiles": {
-          "title": "управление профилями пользователей",
-          "sections": {
-            "profiles": "профили"
-          },
-          "allow": {
-            "user": {
-              "update": {
-                "own": {
-                  "profile": {
-                    "label": "разрешить пользователю изменять свой профиль"
-                  }
-                }
-              },
-              "upload": {
-                "avatar": {
-                  "label": "разрешить пользователям загружать фотографии профиля"
-                }
-              }
-            }
-          },
-          "max": {
-            "profile": {
-              "photo": {
-                "size": {
-                  "label": "максимальный размер фотографии профиля ({size} кб)"
-                }
-              }
-            }
-          }
         }
       },
       "usersmanagement": {
@@ -375,11 +344,10 @@
         }
       },
       "sections": {
-        "application": "приложение",
+        "application": "настройки приложения",
         "work": "модуль работа",
         "reports": "модуль отчетность",
         "knowledgebase": "модуль база знаний",
-        "userprofiles": "профили пользователей",
         "security": "безопасность",
         "sessionmanagement": "управление сессиями",
         "passwordpolicies": "политика паролей",
@@ -390,8 +358,7 @@
         "usersmanagement": "управление пользователями",
         "groupsmanagement": "управление группами",
         "catalog": "каталог",
-        "services": "сервисы",
-        "processes": "процессы"
+        "services": "сервисы"
       },
       "groups": {
         "security": "безопасность",

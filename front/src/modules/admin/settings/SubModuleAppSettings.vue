@@ -18,7 +18,6 @@ import { useUiStore } from '@/core/state/uistate';
  import Work from './sections/Application.Work.vue';
  import Reports from './sections/Application.Reports.vue';
  import KnowledgeBase from './sections/Application.KnowledgeBase.vue';
- import UserProfiles from './sections/Application.UserProfiles.vue';
  import SystemEventBus from './sections/Application.System.EventBus.vue';
  import SystemLogging from './sections/Application.System.Logging.vue';
  import SessionManagement from './sections/Application.Security.SessionManagement.vue';
@@ -64,11 +63,6 @@ const { t } = useI18n();
          id: 'Application.KnowledgeBase',
          name: t('admin.settings.sections.knowledgebase'),
          icon: 'mdi-book-open-outline',
-       },
-       {
-         id: 'Application.UserProfiles',
-         name: t('admin.settings.sections.userprofiles'),
-         icon: 'mdi-account-cog-outline',
        },
        {
          id: 'Application.Security',
@@ -127,11 +121,6 @@ const { t } = useI18n();
            icon: 'mdi-account-cog-outline',
          }
      ]
-   },
-   {
-     id: 'Processes',
-     name: t('admin.settings.sections.processes'),
-     icon: 'mdi-chart-timeline-variant',
    }
  ]);
  
@@ -140,7 +129,6 @@ const { t } = useI18n();
    'Application.Work': markRaw(Work),
    'Application.Reports': markRaw(Reports),
    'Application.KnowledgeBase': markRaw(KnowledgeBase),
-   'Application.UserProfiles': markRaw(UserProfiles),
    'Application.System.EventBus': markRaw(SystemEventBus),
    'Application.System.Logging': markRaw(SystemLogging),
    'Application.Security.SessionManagement': markRaw(SessionManagement),
