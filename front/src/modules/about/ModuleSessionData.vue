@@ -7,13 +7,15 @@
   - Displays session technical data
   - Expandable/collapsible view
   - Styled similar to UUID display in CatalogSectionEditor
+  Type: Frontend file - ModuleSessionData.vue
 -->
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useUserAuthStore } from '@/core/auth/state.user.auth'
-import { useUserAccountStore } from './state.user.account'
+import { useUserAccountStore } from '../account/state.user.account'
+import type { SessionData } from './types.about'
 
 // Initialize stores and i18n
 const { t } = useI18n()
@@ -21,7 +23,7 @@ const userAuthStore = useUserAuthStore()
 const userAccountStore = useUserAccountStore()
 
 // Computed properties for session data
-const sessionData = computed(() => ({
+const sessionData = computed<SessionData>(() => ({
   username: userAuthStore.username,
   jwt: userAuthStore.jwt,
   isLoggedIn: userAuthStore.isAuthenticated,

@@ -15,6 +15,9 @@ export type ModuleName =
   | 'Account'
   | 'Settings'
   | 'SessionData'
+  | 'License'
+  | 'DeveloperInfo'
+  | 'Components'
   | 'KnowledgeBase'
   | 'NewUserRegistration';
 

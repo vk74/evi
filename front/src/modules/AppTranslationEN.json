@@ -27,7 +27,10 @@
     },
     "aboutMenu": {
       "about": "about",
-      "sessionData": "session data"
+      "sessionData": "session data",
+      "license": "license",
+      "developerInfo": "developer info",
+      "components": "components"
     }
   },
   "panels": {
@@ -40,6 +43,22 @@
       "examplePassword": "example password:",
       "requirements": "requirements: ",
       "refresh": "refresh"
+    }
+  },
+  "about": {
+    "license": {
+      "title": "software license",
+      "message": "license data for ev2 software is hidden. please return later."
+    },
+    "developerInfo": {
+      "title": "developer information",
+      "message": "developer information for ev2 software is hidden. please return later."
+    },
+    "components": {
+      "title": "system components",
+      "frontend": "frontend",
+      "backend": "backend",
+      "database": "database"
     }
   }
 }

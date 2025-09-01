@@ -26,6 +26,9 @@ const DEFAULT_MODULES: ModuleName[] = [
   'Account',
   'Settings',
   'SessionData',
+  'License',
+  'DeveloperInfo',
+  'Components',
   'KnowledgeBase',
   'Login',
   'NewUserRegistration'

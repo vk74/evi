@@ -32,7 +32,10 @@ const ModuleAR = defineAsyncComponent(() => import(/* webpackChunkName: "mod-rep
 const ModuleAccount = defineAsyncComponent(() => import(/* webpackChunkName: "mod-account" */ './modules/account/ModuleAccount.vue'));
 const AccountPreferences = defineAsyncComponent(() => import(/* webpackChunkName: "mod-preferences" */ './modules/account/AccountPreferences.vue'));
 const ModuleKnowledgeBase = defineAsyncComponent(() => import(/* webpackChunkName: "mod-kb" */ /* webpackPrefetch: true */ './modules/KB/ModuleKnowledgeBase.vue'));
-const ModuleSessionData = defineAsyncComponent(() => import(/* webpackChunkName: "mod-session" */ './modules/account/ModuleSessionData.vue'));
+const ModuleSessionData = defineAsyncComponent(() => import(/* webpackChunkName: "mod-session" */ './modules/about/ModuleSessionData.vue'));
+const ModuleLicense = defineAsyncComponent(() => import(/* webpackChunkName: "mod-license" */ './modules/about/ModuleLicense.vue'));
+const ModuleDeveloperInfo = defineAsyncComponent(() => import(/* webpackChunkName: "mod-developer-info" */ './modules/about/ModuleDeveloperInfo.vue'));
+const ModuleComponents = defineAsyncComponent(() => import(/* webpackChunkName: "mod-components" */ './modules/about/ModuleComponents.vue'));
 
 // Admin submodule imports (split per submodule; no prefetch for non-admin users)
 const SubModuleCatalogAdmin = defineAsyncComponent(() => import(/* webpackChunkName: "admin-catalog" */ './modules/admin/catalog/SubModuleCatalogAdmin.vue'));
@@ -818,9 +821,7 @@ onMounted(async () => {
                 <v-list-item @click="isChangePassModalVisible = true">
                   <v-list-item-title>{{ $t('navigation.systemMenu.changePassword') }}</v-list-item-title>
                 </v-list-item>
-                <v-list-item @click="setActiveModule('SessionData')">
-                  <v-list-item-title>{{ $t('navigation.systemMenu.sessionData') }}</v-list-item-title>
-                </v-list-item>
+
                 <v-list-item @click="logout">
                   <v-list-item-title>{{ $t('navigation.systemMenu.logout') }}</v-list-item-title>
                 </v-list-item>
@@ -955,6 +956,15 @@ onMounted(async () => {
                 <v-list-item @click="setActiveModule('SessionData')">
                   <v-list-item-title>{{ $t('navigation.aboutMenu.sessionData') }}</v-list-item-title>
                 </v-list-item>
+                <v-list-item @click="setActiveModule('License')">
+                  <v-list-item-title>{{ $t('navigation.aboutMenu.license') }}</v-list-item-title>
+                </v-list-item>
+                <v-list-item @click="setActiveModule('DeveloperInfo')">
+                  <v-list-item-title>{{ $t('navigation.aboutMenu.developerInfo') }}</v-list-item-title>
+                </v-list-item>
+                <v-list-item @click="setActiveModule('Components')">
+                  <v-list-item-title>{{ $t('navigation.aboutMenu.components') }}</v-list-item-title>
+                </v-list-item>
               </v-list>
             </v-menu>
           </div>
@@ -992,6 +1002,9 @@ onMounted(async () => {
       <ModuleAccount v-if="appStore.isModuleActive('Account')" />
       <AccountPreferences v-if="appStore.isModuleActive('Settings')" />
       <ModuleSessionData v-if="appStore.isModuleActive('SessionData')" />
+      <ModuleLicense v-if="appStore.isModuleActive('License')" />
+      <ModuleDeveloperInfo v-if="appStore.isModuleActive('DeveloperInfo')" />
+      <ModuleComponents v-if="appStore.isModuleActive('Components')" />
       <ModuleKnowledgeBase v-if="appStore.isModuleActive('KnowledgeBase') && isKnowledgeBaseModuleVisible" />
       <ModuleNewUserSelfRegistration v-if="appStore.isModuleActive('NewUserRegistration')" />
     </v-main>
