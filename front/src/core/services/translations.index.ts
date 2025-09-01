@@ -42,8 +42,8 @@ import catalogAdminRu from '@/modules/admin/catalog/translation.admin.catalog.ru
 import catalogAdminEn from '@/modules/admin/catalog/translation.admin.catalog.en.json'
 
 // services admin module
-import servicesAdminRu from '@/modules/admin/service/translation.services.ru.json'
-import servicesAdminEn from '@/modules/admin/service/translation.services.en.json'
+import servicesAdminRu from '@/modules/admin/services/translation.services.ru.json'
+import servicesAdminEn from '@/modules/admin/services/translation.services.en.json'
 
 // products admin module
 import productsAdminRu from '@/modules/admin/products/translation.products.ru.json'

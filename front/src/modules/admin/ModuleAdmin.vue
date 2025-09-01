@@ -25,7 +25,7 @@ import {
 
 // Асинхронная загрузка подмодулей
 const SubModuleCatalogAdmin = defineAsyncComponent(() => import('./catalog/SubModuleCatalogAdmin.vue'))
-const SubModuleServiceAdmin = defineAsyncComponent(() => import('./service/SubModuleServiceAdmin.vue'))
+const SubModuleServiceAdmin = defineAsyncComponent(() => import('./services/SubModuleServiceAdmin.vue'))
 const SubModuleUsersAdmin = defineAsyncComponent(() => import('./users/SubModuleUsersAdmin.vue'))
 const SubModuleAppSettings = defineAsyncComponent(() => import('./app/SubModuleAppSettings.vue'))
 

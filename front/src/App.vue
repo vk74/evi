@@ -39,7 +39,7 @@ const ModuleComponents = defineAsyncComponent(() => import(/* webpackChunkName: 
 
 // Admin submodule imports (split per submodule; no prefetch for non-admin users)
 const SubModuleCatalogAdmin = defineAsyncComponent(() => import(/* webpackChunkName: "admin-catalog" */ './modules/admin/catalog/SubModuleCatalogAdmin.vue'));
-const SubModuleServiceAdmin = defineAsyncComponent(() => import(/* webpackChunkName: "admin-service" */ './modules/admin/service/SubModuleServiceAdmin.vue'));
+const SubModuleServiceAdmin = defineAsyncComponent(() => import(/* webpackChunkName: "admin-service" */ './modules/admin/services/SubModuleServiceAdmin.vue'));
 const SubModuleUsersAdmin = defineAsyncComponent(() => import(/* webpackChunkName: "admin-users" */ './modules/admin/users/SubModuleUsersAdmin.vue'));
 const SubModuleAppSettings = defineAsyncComponent(() => import(/* webpackChunkName: "admin-settings" */ './modules/admin/settings/SubModuleAppSettings.vue'));
 const SubModuleProducts = defineAsyncComponent(() => import(/* webpackChunkName: "admin-products" */ './modules/admin/products/SubModuleProducts.vue'));
@@ -470,7 +470,7 @@ onMounted(async () => {
             import(/* webpackChunkName: "admin-catalog" */ './modules/admin/catalog/SubModuleCatalogAdmin.vue');
             break;
           case 'serviceAdmin':
-            import(/* webpackChunkName: "admin-service" */ './modules/admin/service/SubModuleServiceAdmin.vue');
+            import(/* webpackChunkName: "admin-service" */ './modules/admin/services/SubModuleServiceAdmin.vue');
             break;
           case 'usersAdmin':
             import(/* webpackChunkName: "admin-users" */ './modules/admin/users/SubModuleUsersAdmin.vue');
