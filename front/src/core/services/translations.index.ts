@@ -57,6 +57,10 @@ import workEn from '@/modules/work/translation.work.en.json'
 import arRu from '@/modules/ar/translation.ar.ru.json'
 import arEn from '@/modules/ar/translation.ar.en.json'
 
+// kb module
+import kbRu from '@/modules/KB/translation.kb.ru.json'
+import kbEn from '@/modules/KB/translation.kb.en.json'
+
 // catalog module (frontend user-facing)
 import catalogRu from '@/modules/catalog/translation.catalog.ru.json'
 import catalogEn from '@/modules/catalog/translation.catalog.en.json'
@@ -85,6 +89,7 @@ export default {
       productsAdminRu,
       workRu,
       arRu,
+      kbRu,
       catalogRu
     ),
     en: merge({},
@@ -105,6 +110,7 @@ export default {
       productsAdminEn,
       workEn,
       arEn,
+      kbEn,
       catalogEn
     )
   }
