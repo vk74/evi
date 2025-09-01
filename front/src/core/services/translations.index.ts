@@ -48,7 +48,10 @@ import servicesAdminEn from '@/modules/admin/service/translation.services.en.jso
 // products admin module
 import productsAdminRu from '@/modules/admin/products/translation.products.ru.json'
 import productsAdminEn from '@/modules/admin/products/translation.products.en.json'
-// 
+
+// work module
+import workRu from '@/modules/work/translation.work.ru.json'
+import workEn from '@/modules/work/translation.work.en.json'
 
 // catalog module (frontend user-facing)
 import catalogRu from '@/modules/catalog/translation.catalog.ru.json'
@@ -76,6 +79,7 @@ export default {
       catalogAdminRu,
       servicesAdminRu,
       productsAdminRu,
+      workRu,
       catalogRu
     ),
     en: merge({},
@@ -94,6 +98,7 @@ export default {
       catalogAdminEn,
       servicesAdminEn,
       productsAdminEn,
+      workEn,
       catalogEn
     )
   }

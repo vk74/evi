@@ -1,0 +1,9 @@
+{
+  "work": {
+    "sections": {
+      "allWorkItems": "все рабочие элементы",
+      "myGroupWorkItems": "рабочие элементы моих групп",
+      "myRequests": "мои заявки"
+    }
+  }
+}
