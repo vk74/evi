@@ -103,6 +103,12 @@ const adminExpandComponent = computed(() => {
   return isAdminExpanded.value ? ic.PhCaretUp : ic.PhCaretDown
 })
 
+// Admin expansion indicator icon for rail mode
+const adminRailExpandComponent = computed(() => {
+  const ic = icons.value
+  return isAdminExpanded.value ? ic.PhCaretDown : ic.PhCaretRight
+})
+
 // Detect rail mode (drawer shows icons only)
 const isRailMode = computed(() => appStore.drawerMode === 'auto' || appStore.drawerMode === 'closed');
 
@@ -608,7 +614,7 @@ onMounted(async () => {
               <div class="admin-icon-with-badge">
                 <component :is="icons.PhFaders" size="26" :color="iconColor" />
                 <span v-if="isRailMode" class="admin-chevron-badge">
-                  <component :is="icons.PhCaretDown" size="12" />
+                  <component :is="adminRailExpandComponent" size="12" />
                 </span>
               </div>
             </template>

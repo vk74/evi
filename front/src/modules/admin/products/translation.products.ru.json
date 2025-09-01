@@ -2,7 +2,7 @@
   "admin": {
     "products": {
       "sections": {
-        "productsList": "список продуктов",
+        "productsList": "управление продуктами",
         "productEditor": "редактор продукта",
         "optionsList": "список опций",
         "optionEditor": "редактор опции",
