@@ -80,7 +80,15 @@ export const queries = {
       u_disp.username AS dispatcher,
       g_t1.group_name AS support_tier1,
       g_t2.group_name AS support_tier2,
-      g_t3.group_name AS support_tier3
+      g_t3.group_name AS support_tier3,
+      s.show_owner,
+      s.show_backup_owner,
+      s.show_technical_owner,
+      s.show_backup_technical_owner,
+      s.show_dispatcher,
+      s.show_support_tier1,
+      s.show_support_tier2,
+      s.show_support_tier3
     FROM app.services s
     -- users
     LEFT JOIN app.service_users su_owner ON s.id = su_owner.service_id AND su_owner.role_type = 'owner'

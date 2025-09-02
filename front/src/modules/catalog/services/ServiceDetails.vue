@@ -5,7 +5,7 @@ Displays extended info and placeholders for service offerings.
 File: ServiceDetails.vue
 -->
 <script setup lang="ts">
-import { ref, onMounted, watch } from 'vue'
+import { ref, onMounted, watch, computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import type { CatalogServiceDetails } from './types.service.details'
 import { fetchServiceDetails } from './service.fetch.service.details'
@@ -22,6 +22,23 @@ const error = ref<string | null>(null)
 
 // i18n
 const { t } = useI18n()
+
+// Computed properties for visibility
+const hasVisibleRoles = computed(() => {
+  if (!details.value) return false
+  return details.value.show_owner || 
+         details.value.show_backup_owner || 
+         details.value.show_technical_owner || 
+         details.value.show_backup_technical_owner
+})
+
+const hasVisibleSupportGroups = computed(() => {
+  if (!details.value) return false
+  return details.value.show_support_tier1 || 
+         details.value.show_support_tier2 || 
+         details.value.show_support_tier3 || 
+         details.value.show_dispatcher
+})
 
 // Phosphor icons support
 const phosphorIcons = ref<Record<string, any>>({})
@@ -82,27 +99,27 @@ watch(() => props.serviceId, () => { loadDetails() })
         </div>
       </div>
 
-      <div class="detail-block">
+      <div v-if="hasVisibleRoles" class="detail-block">
         <div class="block-title">
           {{ t('catalog.serviceDetails.roles') }}
         </div>
         <div class="block-body">
-          <div>{{ t('catalog.serviceDetails.owner') }}: {{ details?.owner }}</div>
-          <div>{{ t('catalog.serviceDetails.backupOwner') }}: {{ details?.backup_owner }}</div>
-          <div>{{ t('catalog.serviceDetails.technicalOwner') }}: {{ details?.technical_owner }}</div>
-          <div>{{ t('catalog.serviceDetails.backupTechnicalOwner') }}: {{ details?.backup_technical_owner }}</div>
+          <div v-if="details?.show_owner">{{ t('catalog.serviceDetails.owner') }}: {{ details?.owner }}</div>
+          <div v-if="details?.show_backup_owner">{{ t('catalog.serviceDetails.backupOwner') }}: {{ details?.backup_owner }}</div>
+          <div v-if="details?.show_technical_owner">{{ t('catalog.serviceDetails.technicalOwner') }}: {{ details?.technical_owner }}</div>
+          <div v-if="details?.show_backup_technical_owner">{{ t('catalog.serviceDetails.backupTechnicalOwner') }}: {{ details?.backup_technical_owner }}</div>
         </div>
       </div>
 
-      <div class="detail-block">
+      <div v-if="hasVisibleSupportGroups" class="detail-block">
         <div class="block-title">
           {{ t('catalog.serviceDetails.supportGroups') }}
         </div>
         <div class="block-body">
-          <div>{{ t('catalog.serviceDetails.tier1') }}: {{ details?.support_tier1 }}</div>
-          <div>{{ t('catalog.serviceDetails.tier2') }}: {{ details?.support_tier2 }}</div>
-          <div>{{ t('catalog.serviceDetails.tier3') }}: {{ details?.support_tier3 }}</div>
-          <div>{{ t('catalog.serviceDetails.dispatcher') }}: {{ details?.dispatcher }}</div>
+          <div v-if="details?.show_support_tier1">{{ t('catalog.serviceDetails.tier1') }}: {{ details?.support_tier1 }}</div>
+          <div v-if="details?.show_support_tier2">{{ t('catalog.serviceDetails.tier2') }}: {{ details?.support_tier2 }}</div>
+          <div v-if="details?.show_support_tier3">{{ t('catalog.serviceDetails.tier3') }}: {{ details?.support_tier3 }}</div>
+          <div v-if="details?.show_dispatcher">{{ t('catalog.serviceDetails.dispatcher') }}: {{ details?.dispatcher }}</div>
         </div>
       </div>
 

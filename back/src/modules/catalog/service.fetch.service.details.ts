@@ -34,6 +34,14 @@ function transform(row: DbServiceDetails): CatalogServiceDetailsDTO {
     support_tier1: row.support_tier1 ?? null,
     support_tier2: row.support_tier2 ?? null,
     support_tier3: row.support_tier3 ?? null,
+    show_owner: row.show_owner,
+    show_backup_owner: row.show_backup_owner,
+    show_technical_owner: row.show_technical_owner,
+    show_backup_technical_owner: row.show_backup_technical_owner,
+    show_dispatcher: row.show_dispatcher,
+    show_support_tier1: row.show_support_tier1,
+    show_support_tier2: row.show_support_tier2,
+    show_support_tier3: row.show_support_tier3,
   };
 }
 

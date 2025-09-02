@@ -37,8 +37,27 @@ export async function fetchServiceDetails(serviceId: string, options: FetchServi
     state.error = null
     const response = await api.get<FetchServiceDetailsResponse>('/api/catalog/fetch-service-details', { params: { serviceId } })
     if (response.data.success) {
-      state.byId[serviceId] = { data: response.data.data, fetchedAt: Date.now() }
-      return response.data.data
+      const serviceData = response.data.data
+      
+      // Check for visibility data errors and show toast if needed
+      if (serviceData) {
+        const visibilityFields = [
+          'show_owner', 'show_backup_owner', 'show_technical_owner', 
+          'show_backup_technical_owner', 'show_dispatcher',
+          'show_support_tier1', 'show_support_tier2', 'show_support_tier3'
+        ]
+        
+        const hasVisibilityErrors = visibilityFields.some(field => 
+          serviceData[field as keyof CatalogServiceDetails] === null
+        )
+        
+        if (hasVisibilityErrors) {
+          ui.showErrorSnackbar('Ошибка чтения данных о контактах и сервисных группах')
+        }
+      }
+      
+      state.byId[serviceId] = { data: serviceData, fetchedAt: Date.now() }
+      return serviceData
     } else {
       const msg = response.data.message || 'Unknown error'
       state.error = msg
