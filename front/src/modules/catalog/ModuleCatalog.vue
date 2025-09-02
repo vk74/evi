@@ -31,7 +31,8 @@ import {
   clearSearch,
   setHoveringTriggerArea,
   selectedServiceId,
-  setSelectedServiceId
+  setSelectedServiceId,
+  resetCatalogView
 } from './state.catalog';
 
 
@@ -163,6 +164,42 @@ function selectSection(sectionId: string) {
   loadActiveServices();
 }
 
+// ==================== CARD COLLAPSE HANDLERS ====================
+function handleWorkspaceClick(event: Event) {
+  // Only handle clicks when a service card is expanded
+  if (!selectedServiceId.value) return;
+  
+  // Check if click target is within the service details component
+  const target = event.target as HTMLElement;
+  const serviceDetailsElement = document.querySelector('.service-details');
+  
+  // Check if click is on a service card - if so, don't collapse
+  if (target.closest('.service-card')) {
+    return;
+  }
+  
+  // Check if click is on the workspace container itself (empty space) or outside service details
+  if (target.classList.contains('workspace-container') || 
+      (serviceDetailsElement && !serviceDetailsElement.contains(target))) {
+    // Click is on empty space or outside service details - collapse the card
+    resetCatalogView();
+  }
+}
+
+function handleSectionHeaderClick() {
+  // Collapse service card when clicking on section headers
+  if (selectedServiceId.value) {
+    resetCatalogView();
+  }
+}
+
+function handleOptionsBarClick() {
+  // Collapse service card when clicking on options bar
+  if (selectedServiceId.value) {
+    resetCatalogView();
+  }
+}
+
 // ==================== HOVER TRIGGER AREA ====================
 const onTriggerAreaEnter = () => {
   setHoveringTriggerArea(true);
@@ -202,6 +239,7 @@ onMounted(async () => {
           :style="sectionBtnStyle(section)"
           variant="text"
           @click="selectSection(section.id)"
+          @click.stop="handleSectionHeaderClick"
         >
           <component 
             :is="getPhosphorIcon(section.icon_name)"
@@ -237,6 +275,7 @@ onMounted(async () => {
       class="options-bar"
       @mouseenter="onTriggerAreaEnter"
       @mouseleave="onTriggerAreaLeave"
+      @click="handleOptionsBarClick"
     >
       <div class="d-flex align-center justify-space-between w-100 px-4">
         <!-- Левая часть: поиск и фильтры -->
@@ -327,7 +366,7 @@ onMounted(async () => {
     </v-app-bar>
 
     <!-- ==================== WORKSPACE AREA ==================== -->
-    <div class="workspace-container">
+    <div class="workspace-container" @click="handleWorkspaceClick">
       <v-container class="py-6">
         <!-- Service details view -->
         <div v-if="selectedServiceId">
