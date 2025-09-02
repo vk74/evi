@@ -59,3 +59,9 @@ CREATE INDEX IF NOT EXISTS idx_users_uuid_trgm ON app.users USING gin ((user_id:
 
 -- Create optimized index for guard middleware queries
 CREATE INDEX IF NOT EXISTS idx_users_id_active ON app.users USING btree (user_id, is_active);
+
+-- Create indexes for services visibility preferences
+CREATE INDEX IF NOT EXISTS idx_services_visibility_prefs ON app.services USING btree (
+    show_owner, show_backup_owner, show_technical_owner, show_backup_technical_owner,
+    show_dispatcher, show_support_tier1, show_support_tier2, show_support_tier3
+);

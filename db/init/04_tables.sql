@@ -140,7 +140,16 @@ CREATE TABLE IF NOT EXISTS app.services (
     modified_at TIMESTAMP WITH TIME ZONE,
     modified_by UUID REFERENCES app.users(user_id),
     is_public BOOLEAN NOT NULL DEFAULT false,
-    icon_name VARCHAR(100)
+    icon_name VARCHAR(100),
+    -- Visibility preferences for service card roles
+    show_owner BOOLEAN NOT NULL DEFAULT false,
+    show_backup_owner BOOLEAN NOT NULL DEFAULT false,
+    show_technical_owner BOOLEAN NOT NULL DEFAULT false,
+    show_backup_technical_owner BOOLEAN NOT NULL DEFAULT false,
+    show_dispatcher BOOLEAN NOT NULL DEFAULT true,
+    show_support_tier1 BOOLEAN NOT NULL DEFAULT true,
+    show_support_tier2 BOOLEAN NOT NULL DEFAULT false,
+    show_support_tier3 BOOLEAN NOT NULL DEFAULT false
 );
 
 -- Create products table
@@ -265,3 +274,17 @@ $function$;
 --     '0 * * * *',  -- Every hour at minute 0
 --     'SELECT app.cleanup_expired_tokens();'
 -- ); -- Commented out for local development
+
+-- ============================================
+-- Column Comments for Services Table
+-- ============================================
+
+-- Add comments for service visibility preference columns
+COMMENT ON COLUMN app.services.show_owner IS 'Whether to show owner in service card';
+COMMENT ON COLUMN app.services.show_backup_owner IS 'Whether to show backup owner in service card';
+COMMENT ON COLUMN app.services.show_technical_owner IS 'Whether to show technical owner in service card';
+COMMENT ON COLUMN app.services.show_backup_technical_owner IS 'Whether to show backup technical owner in service card';
+COMMENT ON COLUMN app.services.show_dispatcher IS 'Whether to show dispatcher in service card';
+COMMENT ON COLUMN app.services.show_support_tier1 IS 'Whether to show support tier 1 in service card';
+COMMENT ON COLUMN app.services.show_support_tier2 IS 'Whether to show support tier 2 in service card';
+COMMENT ON COLUMN app.services.show_support_tier3 IS 'Whether to show support tier 3 in service card';

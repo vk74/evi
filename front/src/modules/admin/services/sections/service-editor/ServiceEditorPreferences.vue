@@ -20,7 +20,7 @@
           <!-- Block for component card visibility switches -->
           <div class="preferences-block">
             <h3 class="block-title mb-4">
-              показывать в карточке компонента:
+              показывать в карточке сервиса:
             </h3>
             <div class="switches-grid">
               <div class="switch-item">
