@@ -307,28 +307,35 @@ onMounted(async () => {
           </v-text-field>
           
           <!-- Filter Radio Buttons -->
-          <v-radio-group
+          <v-btn-toggle
             v-model="filterType"
-            inline
-            hide-details
-            class="filter-radio-group ml-4"
+            mandatory
+            color="teal"
+            class="filter-toggle-group ml-4"
+            density="compact"
           >
-            <v-radio
+            <v-btn
               value="all"
-              :label="t('catalog.options.filterAll')"
-              color="teal"
-            />
-            <v-radio
+              variant="outlined"
+              size="small"
+            >
+              {{ t('catalog.options.filterAll') }}
+            </v-btn>
+            <v-btn
               value="services"
-              :label="t('catalog.options.filterServices')"
-              color="teal"
-            />
-            <v-radio
+              variant="outlined"
+              size="small"
+            >
+              {{ t('catalog.options.filterServices') }}
+            </v-btn>
+            <v-btn
               value="products"
-              :label="t('catalog.options.filterProducts')"
-              color="teal"
-            />
-          </v-radio-group>
+              variant="outlined"
+              size="small"
+            >
+              {{ t('catalog.options.filterProducts') }}
+            </v-btn>
+          </v-btn-toggle>
         </div>
 
         <!-- Правая часть: Sort Controls и кнопка переключения -->
