@@ -600,6 +600,9 @@ async function updateServiceInDatabase(serviceId: string, data: UpdateService, r
         // Update access control roles
         await updateServiceAccessRoles(client, serviceId, data, requestorUuid);
 
+        // Update visibility preferences
+        await updateServiceVisibilityPreferences(client, serviceId, data, requestorUuid);
+
         await client.query('COMMIT');
 
         return {
@@ -654,6 +657,31 @@ export async function updateService(req: Request): Promise<UpdateServiceResponse
         // Extract service data from request body
         const { id, ...serviceData }: UpdateService & { id: string } = req.body;
 
+        // Log incoming request data for debugging
+        console.log('[ServiceUpdateService] Updating service:', {
+            serviceId: id,
+            hasVisibilityPreferences: {
+                show_owner: serviceData.show_owner !== undefined,
+                show_backup_owner: serviceData.show_backup_owner !== undefined,
+                show_technical_owner: serviceData.show_technical_owner !== undefined,
+                show_backup_technical_owner: serviceData.show_backup_technical_owner !== undefined,
+                show_dispatcher: serviceData.show_dispatcher !== undefined,
+                show_support_tier1: serviceData.show_support_tier1 !== undefined,
+                show_support_tier2: serviceData.show_support_tier2 !== undefined,
+                show_support_tier3: serviceData.show_support_tier3 !== undefined
+            },
+            visibilityValues: {
+                show_owner: serviceData.show_owner,
+                show_backup_owner: serviceData.show_backup_owner,
+                show_technical_owner: serviceData.show_technical_owner,
+                show_backup_technical_owner: serviceData.show_backup_technical_owner,
+                show_dispatcher: serviceData.show_dispatcher,
+                show_support_tier1: serviceData.show_support_tier1,
+                show_support_tier2: serviceData.show_support_tier2,
+                show_support_tier3: serviceData.show_support_tier3
+            }
+        });
+
         if (!id) {
             throw {
                 code: 'REQUIRED_FIELD_ERROR',
@@ -700,5 +728,56 @@ export async function updateService(req: Request): Promise<UpdateServiceResponse
             message: error.message || 'Failed to update service',
             data: undefined
         };
+    }
+}
+
+/**
+ * Updates visibility preferences for a service
+ * @param client - Database client for transaction
+ * @param serviceId - Service ID
+ * @param data - Service data with visibility preferences
+ * @param requestorUuid - UUID of the user updating the service
+ */
+async function updateServiceVisibilityPreferences(client: any, serviceId: string, data: UpdateService, requestorUuid: string): Promise<void> {
+    // Only update if any visibility preference fields are provided
+    if (data.show_owner !== undefined || 
+        data.show_backup_owner !== undefined || 
+        data.show_technical_owner !== undefined || 
+        data.show_backup_technical_owner !== undefined || 
+        data.show_dispatcher !== undefined || 
+        data.show_support_tier1 !== undefined || 
+        data.show_support_tier2 !== undefined || 
+        data.show_support_tier3 !== undefined) {
+        
+        console.log('[ServiceUpdateService] Updating visibility preferences for service:', {
+            serviceId,
+            visibilityValues: {
+                show_owner: data.show_owner ?? false,
+                show_backup_owner: data.show_backup_owner ?? false,
+                show_technical_owner: data.show_technical_owner ?? false,
+                show_backup_technical_owner: data.show_backup_technical_owner ?? false,
+                show_dispatcher: data.show_dispatcher ?? false,
+                show_support_tier1: data.show_support_tier1 ?? false,
+                show_support_tier2: data.show_support_tier2 ?? false,
+                show_support_tier3: data.show_support_tier3 ?? false
+            }
+        });
+        
+        await client.query(queries.updateServiceVisibilityPreferences, [
+            serviceId,
+            data.show_owner ?? false,
+            data.show_backup_owner ?? false,
+            data.show_technical_owner ?? false,
+            data.show_backup_technical_owner ?? false,
+            data.show_dispatcher ?? false,
+            data.show_support_tier1 ?? false,
+            data.show_support_tier2 ?? false,
+            data.show_support_tier3 ?? false,
+            requestorUuid
+        ]);
+        
+        console.log('[ServiceUpdateService] Visibility preferences updated successfully for service:', serviceId);
+    } else {
+        console.log('[ServiceUpdateService] No visibility preferences to update for service:', serviceId);
     }
 } 
