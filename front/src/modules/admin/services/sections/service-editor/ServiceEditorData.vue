@@ -65,8 +65,14 @@ const editingServiceId = computed(() => servicesStore.getEditingServiceId)
 
 // Get Phosphor icon component
 const selectedIconComponent = computed(() => {
-  if (!formData.value.icon_name) return null
-  return PhosphorIcons[formData.value.icon_name as keyof typeof PhosphorIcons]
+  console.log('[ServiceEditorData] Icon debug:', {
+    iconName: formData.value.iconName,
+    hasIconName: !!formData.value.iconName,
+    iconExists: formData.value.iconName ? !!PhosphorIcons[formData.value.iconName as keyof typeof PhosphorIcons] : false
+  })
+  
+  if (!formData.value.iconName) return null
+  return PhosphorIcons[formData.value.iconName as keyof typeof PhosphorIcons]
 })
 
 // Priority options
@@ -166,6 +172,12 @@ const loadServiceData = async () => {
 }
 
 const populateFormWithService = (service: Service) => {
+  console.log('[ServiceEditorData] Populating form with service:', {
+    serviceId: service.id,
+    serviceName: service.name,
+    icon_name: service.icon_name,
+    hasIconName: !!service.icon_name
+  })
   servicesStore.populateFormDataFromService(service)
 }
 
@@ -180,7 +192,7 @@ const createService = async () => {
   try {
     const serviceData = {
       name: formData.value.name.trim(),
-      icon_name: formData.value.icon_name || undefined, // Добавляем иконку в данные
+      icon_name: formData.value.iconName || undefined, // Добавляем иконку в данные
       support_tier1: formData.value.supportTier1 || undefined,
       support_tier2: formData.value.supportTier2 || undefined,
       support_tier3: formData.value.supportTier3 || undefined,
@@ -244,7 +256,7 @@ const updateService = async () => {
   try {
     const serviceData = {
       name: formData.value.name.trim(),
-      icon_name: formData.value.icon_name || undefined,
+      icon_name: formData.value.iconName || undefined,
       support_tier1: formData.value.supportTier1 || undefined,
       support_tier2: formData.value.supportTier2 || undefined,
       support_tier3: formData.value.supportTier3 || undefined,
@@ -453,7 +465,7 @@ const openIconPicker = () => {
 }
 
 const handleIconSelected = (iconName: string) => {
-  formData.value.icon_name = iconName
+  formData.value.iconName = iconName
   uiStore.showSuccessSnackbar(t('itemSelector.messages.icon.selected'))
 }
 
@@ -466,7 +478,7 @@ const handleSizeChanged = (size: number) => {
 }
 
 const clearIcon = () => {
-  formData.value.icon_name = ''
+  formData.value.iconName = ''
   uiStore.showSuccessSnackbar(t('itemSelector.messages.icon.cleared'))
 }
 
@@ -1335,7 +1347,7 @@ onMounted(() => {
   <!-- Icon Picker Component -->
   <IconPicker
     v-model="showIconPicker"
-    :selected-icon="formData.icon_name"
+    :selected-icon="formData.iconName"
     :selected-style="selectedIconStyle"
     :selected-size="selectedIconSize"
     @icon-selected="handleIconSelected"
