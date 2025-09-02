@@ -46,7 +46,7 @@ export enum ServiceGroupRole {
   ACCESS_DENIED = 'access_denied'
 }
 
-// Service interface - полная версия для редактора
+// Service interface - полная версия для редактора и списка
 export interface Service {
   id: string
   name: string
@@ -69,6 +69,15 @@ export interface Service {
   access_allowed_groups: string | null
   access_denied_groups: string | null
   access_denied_users: string | null
+  // Visibility preferences for service card roles - опциональные для обратной совместимости
+  show_owner?: boolean
+  show_backup_owner?: boolean
+  show_technical_owner?: boolean
+  show_backup_technical_owner?: boolean
+  show_dispatcher?: boolean
+  show_support_tier1?: boolean
+  show_support_tier2?: boolean
+  show_support_tier3?: boolean
   created_at: Date
   created_by: string
   modified_at: Date | null
@@ -133,7 +142,15 @@ export interface CreateServiceRequest {
   access_allowed_groups?: string | string[]
   access_denied_groups?: string | string[]
   access_denied_users?: string | string[]
-
+  // Visibility preferences for service card roles
+  show_owner?: boolean
+  show_backup_owner?: boolean
+  show_technical_owner?: boolean
+  show_backup_technical_owner?: boolean
+  show_dispatcher?: boolean
+  show_support_tier1?: boolean
+  show_support_tier2?: boolean
+  show_support_tier3?: boolean
 }
 
 // Create service response interface
@@ -166,7 +183,15 @@ export interface UpdateService {
   access_allowed_groups?: string
   access_denied_groups?: string
   access_denied_users?: string
-
+  // Visibility preferences for service card roles
+  show_owner?: boolean
+  show_backup_owner?: boolean
+  show_technical_owner?: boolean
+  show_backup_technical_owner?: boolean
+  show_dispatcher?: boolean
+  show_support_tier1?: boolean
+  show_support_tier2?: boolean
+  show_support_tier3?: boolean
 }
 
 // Update service response interface

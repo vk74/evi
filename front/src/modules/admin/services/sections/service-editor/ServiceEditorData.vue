@@ -71,7 +71,16 @@ const formData = ref({
   isPublic: false,
   accessAllowedGroups: [] as string[],
   accessDeniedGroups: [] as string[],
-  accessDeniedUsers: [] as string[]
+  accessDeniedUsers: [] as string[],
+  // Visibility preferences for service card roles
+  showOwner: false,
+  showBackupOwner: false,
+  showTechnicalOwner: false,
+  showBackupTechnicalOwner: false,
+  showDispatcher: false,
+  showSupportTier1: false,
+  showSupportTier2: false,
+  showSupportTier3: false
 })
 
 // Icon picker state
@@ -175,7 +184,16 @@ const resetForm = () => {
     isPublic: false,
     accessAllowedGroups: [],
     accessDeniedGroups: [],
-    accessDeniedUsers: []
+    accessDeniedUsers: [],
+    // Visibility preferences for service card roles
+    showOwner: false,
+    showBackupOwner: false,
+    showTechnicalOwner: false,
+    showBackupTechnicalOwner: false,
+    showDispatcher: false,
+    showSupportTier1: false,
+    showSupportTier2: false,
+    showSupportTier3: false
   }
   form.value?.reset()
 }
@@ -229,7 +247,16 @@ const populateFormWithService = (service: Service) => {
     isPublic: service.is_public,
     accessAllowedGroups: service.access_allowed_groups && typeof service.access_allowed_groups === 'string' && service.access_allowed_groups.trim() ? service.access_allowed_groups.split(',').map(g => g.trim()).filter(g => g) : [],
     accessDeniedGroups: service.access_denied_groups && typeof service.access_denied_groups === 'string' && service.access_denied_groups.trim() ? service.access_denied_groups.split(',').map(g => g.trim()).filter(g => g) : [],
-    accessDeniedUsers: service.access_denied_users && typeof service.access_denied_users === 'string' && service.access_denied_users.trim() ? service.access_denied_users.split(',').map(u => u.trim()).filter(u => u) : []
+    accessDeniedUsers: service.access_denied_users && typeof service.access_denied_users === 'string' && service.access_denied_users.trim() ? service.access_denied_users.split(',').map(u => u.trim()).filter(u => u) : [],
+    // Visibility preferences for service card roles
+    showOwner: service.show_owner ?? false,
+    showBackupOwner: service.show_backup_owner ?? false,
+    showTechnicalOwner: service.show_technical_owner ?? false,
+    showBackupTechnicalOwner: service.show_backup_technical_owner ?? false,
+    showDispatcher: service.show_dispatcher ?? false,
+    showSupportTier1: service.show_support_tier1 ?? false,
+    showSupportTier2: service.show_support_tier2 ?? false,
+    showSupportTier3: service.show_support_tier3 ?? false
   }
   
 

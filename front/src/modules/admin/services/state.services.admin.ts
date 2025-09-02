@@ -12,7 +12,7 @@ export const useServicesAdminStore = defineStore('servicesAdmin', () => {
   const editorMode = ref<'creation' | 'edit'>('creation')
   const editingServiceId = ref<string | null>(null)
   const editingServiceData = ref<Service | null>(null)
-  const activeSection = ref<'details' | 'catalog publication'>('details')
+  const activeSection = ref<'details' | 'preferences' | 'catalog publication'>('details')
   
   // Publishing sections state
   const publishingSections = ref<PublishingSection[]>([])
@@ -81,7 +81,7 @@ export const useServicesAdminStore = defineStore('servicesAdmin', () => {
     activeSection.value = 'details'
   }
 
-  const setActiveSection = (section: 'details' | 'catalog publication') => {
+  const setActiveSection = (section: 'details' | 'preferences' | 'catalog publication') => {
     activeSection.value = section
   }
   

@@ -86,6 +86,15 @@ export const fetchAllServices = async (
       access_allowed_groups: null, // Not included in this query
       access_denied_groups: null, // Not included in this query
       access_denied_users: null, // Not included in this query
+      // Visibility preferences with fallback to false for NULL values
+      show_owner: row.show_owner ?? false,
+      show_backup_owner: row.show_backup_owner ?? false,
+      show_technical_owner: row.show_technical_owner ?? false,
+      show_backup_technical_owner: row.show_backup_technical_owner ?? false,
+      show_dispatcher: row.show_dispatcher ?? false,
+      show_support_tier1: row.show_support_tier1 ?? false,
+      show_support_tier2: row.show_support_tier2 ?? false,
+      show_support_tier3: row.show_support_tier3 ?? false,
       created_at: row.created_at,
       created_by: row.created_by,
       modified_at: row.modified_at,

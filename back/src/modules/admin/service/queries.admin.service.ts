@@ -14,6 +14,7 @@ export const queries = {
      * Parameters: [name, priority, status, description_short, description_long, 
      * purpose, comments, is_public, icon_name, created_by]
      * Note: id is generated automatically by database default value
+     * Note: visibility preferences use database defaults
      */
     createService: `
         INSERT INTO app.services (
@@ -110,7 +111,16 @@ export const queries = {
             -- Группы поддержки
             g1.group_name as support_tier1,
             g2.group_name as support_tier2,
-            g3.group_name as support_tier3
+            g3.group_name as support_tier3,
+            -- Visibility preferences for service card roles
+            s.show_owner,
+            s.show_backup_owner,
+            s.show_technical_owner,
+            s.show_backup_technical_owner,
+            s.show_dispatcher,
+            s.show_support_tier1,
+            s.show_support_tier2,
+            s.show_support_tier3
         FROM app.services s
         LEFT JOIN app.service_users su1 ON s.id = su1.service_id AND su1.role_type = 'owner'
         LEFT JOIN app.users u1 ON su1.user_id = u1.user_id
@@ -159,6 +169,7 @@ export const queries = {
      * Updates an existing service
      * Parameters: [id, name, priority, status, description_short, description_long,
      * purpose, comments, is_public, icon_name, modified_by]
+     * Note: visibility preferences are updated separately if needed
      */
     updateService: `
         UPDATE app.services SET
@@ -245,7 +256,16 @@ export const queries = {
             s.description_short, s.description_long, s.purpose, s.comments,
             s.created_at, s.created_by, s.modified_at, s.modified_by,
             u1.username as owner,
-            u2.username as technical_owner
+            u2.username as technical_owner,
+            -- Visibility preferences for service card roles
+            s.show_owner,
+            s.show_backup_owner,
+            s.show_technical_owner,
+            s.show_backup_technical_owner,
+            s.show_dispatcher,
+            s.show_support_tier1,
+            s.show_support_tier2,
+            s.show_support_tier3
         FROM app.services s
         LEFT JOIN app.service_users su1 ON s.id = su1.service_id AND su1.role_type = 'owner'
         LEFT JOIN app.users u1 ON su1.user_id = u1.user_id
@@ -330,5 +350,27 @@ export const queries = {
         SET service_order = o.new_order
         FROM ordered o
         WHERE ss.section_id = $1 AND ss.service_id = o.service_id
+    `,
+
+    /**
+     * Updates visibility preferences for a service
+     * Parameters: [service_id, show_owner, show_backup_owner, show_technical_owner, 
+     * show_backup_technical_owner, show_dispatcher, show_support_tier1, 
+     * show_support_tier2, show_support_tier3, modified_by]
+     */
+    updateServiceVisibilityPreferences: `
+        UPDATE app.services SET
+            show_owner = $2,
+            show_backup_owner = $3,
+            show_technical_owner = $4,
+            show_backup_technical_owner = $5,
+            show_dispatcher = $6,
+            show_support_tier1 = $7,
+            show_support_tier2 = $8,
+            show_support_tier3 = $9,
+            modified_by = $10,
+            modified_at = CURRENT_TIMESTAMP
+        WHERE id = $1
+        RETURNING id, name, modified_at
     `
 }; 

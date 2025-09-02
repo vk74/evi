@@ -36,8 +36,8 @@ const pageTitle = computed(() => {
 
 // Section management
 const switchSection = (section: 'details' | 'preferences' | 'catalog publication') => {
-  // Prevent switching to catalog publication in creation mode
-  if (section === 'catalog publication' && isCreationMode.value) {
+  // Prevent switching to catalog publication and preferences in creation mode
+  if ((section === 'catalog publication' || section === 'preferences') && isCreationMode.value) {
     return
   }
   servicesStore.setActiveSection(section)
@@ -59,6 +59,7 @@ const switchSection = (section: 'details' | 'preferences' | 'catalog publication
         <v-btn
           :class="['section-btn', { 'section-active': servicesStore.getActiveSection === 'preferences' }]"
           variant="text"
+          :disabled="isCreationMode"
           @click="switchSection('preferences')"
         >
           {{ t('admin.services.editor.sections.preferences') }}

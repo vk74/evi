@@ -86,6 +86,11 @@
           "preferences": "preferences",
           "catalog publication": "catalog publication"
         },
+        "preferences": {
+          "visibility": {
+            "title": "show in service card:"
+          }
+        },
         "mapping": {
           "search": {
             "placeholder": "search catalog sections...",

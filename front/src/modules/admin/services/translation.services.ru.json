@@ -86,6 +86,11 @@
           "preferences": "настройки",
           "catalog publication": "публикация в каталоге"
         },
+        "preferences": {
+          "visibility": {
+            "title": "показывать в карточке сервиса:"
+          }
+        },
         "mapping": {
           "search": {
             "placeholder": "поиск секций каталога...",
