@@ -20,7 +20,7 @@ export const REGEX = {
   NAME: /^[a-zA-Zа-яА-Я\- ]+$/,
   GENERAL_DESCRIPTION: /^[a-zA-Zа-яА-ЯёЁ0-9\s\-_.,!?()@#$%&'*+=/<>[\]{}"`~;:|]+$/,
   GROUP_NAME: /^[a-zA-Z0-9-]+$/,
-  SERVICE_NAME: /^[a-zA-Z0-9\s\-_]+$/,
+  SERVICE_NAME: /^[a-zA-Zа-яА-ЯёЁ0-9\s\-_]+$/,
   DESCRIPTION: /^[a-zA-Zа-яА-ЯёЁ0-9\s\-_.,!?()@#$%&'*+=/<>[\]{}"`~;:|]+$/
 };
 
@@ -146,13 +146,13 @@ const SERVICE_FIELDS: ValidationRule[] = [
     fieldType: 'service_name',
     regex: REGEX.SERVICE_NAME,
     minLength: 2,
-    maxLength: 100,
+    maxLength: 250,
     required: true,
     messages: {
       required: 'Service name is required',
       minLength: 'Service name must be at least 2 characters long',
-      maxLength: 'Service name cannot exceed 100 characters',
-      invalidChars: 'Service name can only contain Latin letters, numbers, spaces, hyphens and underscores'
+      maxLength: 'Service name cannot exceed 250 characters',
+      invalidChars: 'Service name can only contain Latin and Cyrillic letters, numbers, spaces, hyphens and underscores'
     }
   },
   {
