@@ -10,7 +10,7 @@
 import { Request } from 'express';
 import { Pool } from 'pg';
 import { pool as pgPool } from '../../core/db/maindb';
-import queries from './queries.catalog.service.details';
+import queries from './queries.catalog.services';
 import type { ServiceError, DbServiceDetails, CatalogServiceDetailsDTO, FetchServiceDetailsResponse } from './types.catalog';
 
 
