@@ -144,8 +144,10 @@
 import { ref, computed, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useServicesAdminStore } from '../../state.services.admin'
+import { useUiStore } from '@/core/state/uistate'
 const { t } = useI18n()
 const servicesStore = useServicesAdminStore()
+const uiStore = useUiStore()
 
 // Local state for visibility switches with fallback to false
 const showOwner = ref(false)
@@ -181,8 +183,78 @@ watch(currentService, (service) => {
 
 // Methods
 const updateService = async () => {
-  // TODO: Пока просто логируем, позже будет интеграция с основным сервисом обновления
-  console.log('Update service from preferences - preferences will be included in main form data')
+  try {
+    // Log the current preferences values
+    console.log('Current preferences values:', {
+      showOwner: showOwner.value,
+      showBackupOwner: showBackupOwner.value,
+      showTechnicalOwner: showTechnicalOwner.value,
+      showBackupTechnicalOwner: showBackupTechnicalOwner.value,
+      showDispatcher: showDispatcher.value,
+      showSupportTier1: showSupportTier1.value,
+      showSupportTier2: showSupportTier2.value,
+      showSupportTier3: showSupportTier3.value
+    })
+
+    // Get current form data from store
+    const currentFormData = servicesStore.getFormData
+    
+    // Log the current form data to see what we have
+    console.log('Current form data from store:', currentFormData)
+    
+    // Prepare data for API - convert to snake_case for backend
+    const serviceData = {
+      name: currentFormData.name.trim(),
+      icon_name: currentFormData.iconName || undefined,
+      support_tier1: currentFormData.supportTier1 || undefined,
+      support_tier2: currentFormData.supportTier2 || undefined,
+      support_tier3: currentFormData.supportTier3 || undefined,
+      owner: currentFormData.owner || undefined,
+      backup_owner: currentFormData.backupOwner || undefined,
+      technical_owner: currentFormData.technicalOwner || undefined,
+      backup_technical_owner: currentFormData.backupTechnicalOwner || undefined,
+      dispatcher: currentFormData.dispatcher || undefined,
+      priority: currentFormData.priority,
+      status: currentFormData.status,
+      description_short: currentFormData.descriptionShort?.trim() || undefined,
+      description_long: currentFormData.descriptionLong?.trim() || undefined,
+      purpose: currentFormData.purpose?.trim() || undefined,
+      comments: currentFormData.comments?.trim() || undefined,
+      is_public: currentFormData.isPublic,
+      access_allowed_groups: currentFormData.accessAllowedGroups.length > 0 ? currentFormData.accessAllowedGroups.join(',') : undefined,
+      access_denied_groups: currentFormData.accessDeniedGroups.length > 0 ? currentFormData.accessDeniedGroups.join(',') : undefined,
+      access_denied_users: currentFormData.accessDeniedUsers.length > 0 ? currentFormData.accessDeniedUsers.join(',') : undefined,
+      // Visibility preferences - use local variables directly
+      show_owner: showOwner.value,
+      show_backup_owner: showBackupOwner.value,
+      show_technical_owner: showTechnicalOwner.value,
+      show_backup_technical_owner: showBackupTechnicalOwner.value,
+      show_dispatcher: showDispatcher.value,
+      show_support_tier1: showSupportTier1.value,
+      show_support_tier2: showSupportTier2.value,
+      show_support_tier3: showSupportTier3.value
+    }
+
+    // Log the service data being sent to API
+    console.log('Service data being sent to API:', JSON.stringify(serviceData, null, 2))
+
+    // Import and use the update service
+    const { serviceUpdateService } = await import('../../service.update.service')
+    const response = await serviceUpdateService.updateService(editingServiceId.value as string, serviceData)
+    
+    if (response.success) {
+      // Show success message
+      uiStore.showSuccessSnackbar('Preferences updated successfully')
+      // Close editor after successful update
+      servicesStore.closeServiceEditor()
+    }
+    
+  } catch (error: any) {
+    // Show error message
+    const errorMessage = error.message || 'Failed to update service preferences'
+    uiStore.showErrorSnackbar(errorMessage)
+    console.error('Error updating service preferences:', error)
+  }
 }
 
 const cancelEdit = () => {
