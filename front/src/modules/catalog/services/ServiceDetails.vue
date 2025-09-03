@@ -7,7 +7,7 @@ File: ServiceDetails.vue
 <script setup lang="ts">
 import { ref, onMounted, watch, computed } from 'vue'
 import { useI18n } from 'vue-i18n'
-import type { CatalogServiceDetails } from './types.service.details'
+import type { CatalogServiceDetails } from './types.services'
 import { fetchServiceDetails } from './service.fetch.service.details'
 import { PhCube } from '@phosphor-icons/vue'
 

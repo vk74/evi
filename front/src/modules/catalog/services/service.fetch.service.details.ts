@@ -7,7 +7,7 @@
 
 import { api } from '@/core/api/service.axios'
 import { useUiStore } from '@/core/state/uistate'
-import type { CatalogServiceDetails, FetchServiceDetailsResponse, FetchServiceDetailsOptions } from './types.service.details'
+import type { CatalogServiceDetails, FetchServiceDetailsResponse, FetchServiceDetailsOptions } from './types.services'
 
 const DETAILS_CACHE_TTL = 5 * 60 * 1000
 

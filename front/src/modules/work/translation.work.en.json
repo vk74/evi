@@ -2,7 +2,7 @@
   "work": {
     "sections": {
       "allWorkItems": "all work items",
-      "myGroupWorkItems": "workitems of my groups",
+      "myGroupWorkItems": "work items of my groups",
       "myRequests": "my requests"
     }
   }
