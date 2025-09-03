@@ -152,6 +152,36 @@ function showSummary(timings) {
   log(`${'Total Time'.padEnd(30)}: ${total.toFixed(2)}s`, colors.blue, true);
 }
 
+/**
+ * Starts existing containers without rebuilding them.
+ * Throws an error if no containers exist.
+ */
+function startCurrentContainers() {
+  const timings = {};
+  
+  // Check if containers exist (even if stopped)
+  log('🔍 Checking if containers exist...', colors.cyan);
+  try {
+    const checkCommand = `docker-compose -f ${DOCKER_COMPOSE_FILE} --env-file ${ENV_FILE} ps -a -q`;
+    const containerIds = execSync(checkCommand, { encoding: 'utf8' }).trim();
+    
+    if (!containerIds) {
+      log('❌ Error: No containers found. Please build containers first using option 1 or 6.', colors.red, true);
+      process.exit(1);
+    }
+    
+    log(`✅ Found ${containerIds.split('\n').filter(id => id).length} existing container(s)`, colors.green);
+  } catch (error) {
+    log('❌ Error: Failed to check container status.', colors.red, true);
+    process.exit(1);
+  }
+  
+  timings['Start Existing Containers'] = runCommand(
+    `docker-compose -f ${DOCKER_COMPOSE_FILE} --env-file ${ENV_FILE} up -d`,
+    'Start Existing Containers'
+  );
+  return timings;
+}
 
 // --- Main Application Logic ---
 
@@ -174,7 +204,8 @@ ${colors.yellow}[3]${colors.reset} Build & Start ev2-backend
 ${colors.yellow}[4]${colors.reset} Build & Start ev2-database
 ${colors.yellow}[5]${colors.reset} Full Docker Cleanup (down -v)
 ${colors.yellow}[6]${colors.reset} Rebuild & Start All (No Cache)
-${colors.yellow}[7]${colors.reset} Exit
+${colors.yellow}[7]${colors.reset} Start Current Set of Containers
+${colors.yellow}[8]${colors.reset} Exit
 `;
 
   console.log(menu);
@@ -204,6 +235,9 @@ ${colors.yellow}[7]${colors.reset} Exit
         timings = fullRebuildNoCache();
         break;
       case '7':
+        timings = startCurrentContainers();
+        break;
+      case '8':
         log('👋 Exiting. No action taken.', colors.yellow);
         return;
       default:
