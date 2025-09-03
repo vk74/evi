@@ -1,5 +1,5 @@
 # ev2 Database Image
-# Version: 1.3
+# Version: 0.5.0
 # Description: This Dockerfile prepares the PostgreSQL image for the ev2 application with pg_cron extension.
 # Backend file: Dockerfile
 
