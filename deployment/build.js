@@ -72,14 +72,71 @@ function runCommand(command, description, quiet = false) {
 // --- Core Functions ---
 
 /**
- * Performs a full cleanup of the Docker environment, removing containers, volumes, and networks.
+ * Performs a complete cleanup of the Docker environment, removing ALL containers, images, volumes, builds, and networks.
+ * This will make Docker Desktop completely clean as if no containers were ever created.
  */
 function cleanDocker() {
-  const totalTime = runCommand(
-    `docker-compose -f ${DOCKER_COMPOSE_FILE} --env-file ${ENV_FILE} down -v --remove-orphans`,
-    'Full Docker Cleanup'
-  );
-  return { 'Full Cleanup': totalTime };
+  const rl = readline.createInterface({
+    input: process.stdin,
+    output: process.stdout
+  });
+
+  return new Promise((resolve) => {
+    log('\n⚠️  WARNING: This will perform a COMPLETE Docker cleanup!', colors.red, true);
+    log('   This operation will remove:', colors.yellow);
+    log('   • All containers (running and stopped)', colors.yellow);
+    log('   • All images', colors.yellow);
+    log('   • All volumes', colors.yellow);
+    log('   • All builds', colors.yellow);
+    log('   • All networks', colors.yellow);
+    log('   • All unused Docker resources', colors.yellow);
+    log('   Docker Desktop will be completely clean!', colors.red, true);
+    
+    rl.question('\nAre you sure you want to continue? Type "YES" to confirm: ', (answer) => {
+      rl.close();
+      
+      if (answer.trim() !== 'YES') {
+        log('❌ Cleanup cancelled by user.', colors.yellow);
+        resolve({ 'Cleanup Cancelled': 0 });
+        return;
+      }
+
+      log('\n🧹 Starting complete Docker cleanup...', colors.cyan, true);
+      
+      const timings = {};
+      const startTime = Date.now();
+      
+      try {
+        // Stop and remove containers, networks, and volumes
+        timings['Stop & Remove Containers'] = runCommand(
+          `docker-compose -f ${DOCKER_COMPOSE_FILE} --env-file ${ENV_FILE} down -v --remove-orphans`,
+          'Stop & Remove Containers'
+        );
+        
+        // Remove all unused containers, networks, images, and build cache
+        timings['Remove All Unused Resources'] = runCommand(
+          'docker system prune -a -f --volumes',
+          'Remove All Unused Resources'
+        );
+        
+        // Additional cleanup for any remaining volumes
+        timings['Remove Remaining Volumes'] = runCommand(
+          'docker volume prune -f',
+          'Remove Remaining Volumes'
+        );
+        
+        const totalTime = ((Date.now() - startTime) / 1000).toFixed(2);
+        timings['Total Cleanup Time'] = parseFloat(totalTime);
+        
+        log('\n✨ Docker Desktop is now completely clean!', colors.green, true);
+        resolve(timings);
+        
+      } catch (error) {
+        log('❌ Error during cleanup process.', colors.red, true);
+        resolve({ 'Cleanup Failed': 0 });
+      }
+    });
+  });
 }
 
 /**
@@ -229,7 +286,7 @@ ${colors.yellow}[8]${colors.reset} Exit
         timings = buildAndUpSingle('ev2-database');
         break;
       case '5':
-        timings = cleanDocker();
+        timings = await cleanDocker();
         break;
       case '6':
         timings = fullRebuildNoCache();
