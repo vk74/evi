@@ -37,12 +37,12 @@
   
   <script setup lang="ts">
   import { ref, computed } from 'vue'
-  import { SnackbarType } from './types'
+  import { SnackbarTypeValue } from './types'
   import { SNACKBAR_DEFAULTS } from './constants'
   
   interface Props {
     // Тип уведомления
-    type: SnackbarType;
+    type: SnackbarTypeValue;
     // Текст сообщения
     message: string;
     // Время показа
@@ -72,7 +72,7 @@
   const snackbarColor = computed(() => SNACKBAR_DEFAULTS.COLORS[props.type])
   const currentIcon = computed(() => SNACKBAR_DEFAULTS.ICONS[props.type])
   const currentTimeout = computed(() => props.timeout)
-  const currentPosition = computed(() => props.position)
+  const currentPosition = computed(() => props.position as any)
   
   // Методы
   const close = (): void => {

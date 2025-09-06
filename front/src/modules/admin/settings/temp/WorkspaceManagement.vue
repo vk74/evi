@@ -165,7 +165,7 @@ const showTemplateSelection = ref(true);
       
       <div class="section-content">
         <v-list
-          select-strategy="single-select"
+          :select-strategy="'single-select' as any"
           class="pa-0 bg-transparent"
         >
           <v-list-item

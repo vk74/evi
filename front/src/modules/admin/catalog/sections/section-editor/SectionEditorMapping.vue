@@ -70,7 +70,7 @@ const loadServices = async () => {
   if (!editingSectionId.value) return
   isLoading.value = true
   try {
-    const sortParam = sortBy.value ? { sortBy: sortBy.value, sortOrder: sortDesc.value ? 'desc' : 'asc' } : {}
+    const sortParam = sortBy.value ? { sortBy: sortBy.value, sortOrder: (sortDesc.value ? 'desc' : 'asc') as 'desc' | 'asc' } : {}
     const resp = await fetchPublishingServices({
       sectionId: editingSectionId.value,
       page: page.value,

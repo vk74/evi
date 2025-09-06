@@ -1008,7 +1008,7 @@ onMounted(async () => {
     <!-- Global snackbar -->
     <AppSnackbar
       v-if="uiStore.snackbar.show"
-      :type="uiStore.snackbar.type"
+      :type="uiStore.snackbar.type as any"
       :message="uiStore.snackbar.message"
       :timeout="uiStore.snackbar.timeout"
       :closable="uiStore.snackbar.closable"
