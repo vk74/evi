@@ -90,14 +90,12 @@ const isKnowledgeBaseModuleVisible = computed((): boolean => {
 const chevronComponent = computed(() => {
   const ic = icons.value
   switch(appStore.drawerMode) {
-    case 'auto':
-      return ic.PhCaretRight
     case 'opened':
       return ic.PhCaretLeft
     case 'closed':
       return ic.PhCaretDown
     default:
-      return ic.PhCaretRight
+      return ic.PhCaretDown
   }
 })
 
@@ -114,7 +112,7 @@ const adminRailExpandComponent = computed(() => {
 })
 
 // Detect rail mode (drawer shows icons only)
-const isRailMode = computed(() => appStore.drawerMode === 'auto' || appStore.drawerMode === 'closed');
+const isRailMode = computed(() => appStore.drawerMode === 'closed');
 
 // Unified icon color (teal)
 const iconColor = '#026c6c';
@@ -235,13 +233,12 @@ const toggleDrawerMode = (): void => {
   // Close menus safely before toggling drawer mode
   safeCloseMenus();
   
-  const modes: DrawerMode[] = ['auto', 'opened', 'closed'];
-  const currentIndex = modes.indexOf(appStore.drawerMode);
-  const nextIndex = (currentIndex + 1) % modes.length;
+  // Toggle between opened and closed modes
+  const newMode: DrawerMode = appStore.drawerMode === 'opened' ? 'closed' : 'opened';
   
   // Small delay to ensure menus are closed before toggling
   setTimeout(() => {
-    appStore.setDrawerMode(modes[nextIndex]);
+    appStore.setDrawerMode(newMode);
   }, 50);
 };
 
@@ -493,7 +490,7 @@ onMounted(async () => {
     <!-- Floating menu button - always visible regardless of drawer state -->
     <div 
       class="floating-menu-btn"
-      :style="{ width: drawer && appStore.drawerMode !== 'closed' ? '256px' : '64px' }"
+      :style="{ width: drawer && appStore.drawerMode === 'opened' ? '256px' : '64px' }"
     >
       <v-btn
         icon
@@ -533,8 +530,7 @@ onMounted(async () => {
     <!-- Navigation Drawer -->
     <v-navigation-drawer 
       v-model="drawer" 
-      :expand-on-hover="appStore.drawerMode === 'auto'"
-      :rail="appStore.drawerMode === 'auto' || appStore.drawerMode === 'closed'"
+      :rail="appStore.drawerMode === 'closed'"
       elevation="5" 
       class="custom-drawer"
     >
@@ -1027,6 +1023,7 @@ onMounted(async () => {
   top: 50px !important;
 }
 
+/* Simple navigation drawer styles */
 .custom-drawer {
   background-color: rgb(210, 210, 210) !important;
 }
@@ -1039,7 +1036,6 @@ onMounted(async () => {
 
 .v-navigation-drawer .v-list-item--active .v-icon {
   color: #13547a !important;
-  filter: drop-shadow(0 0 2px rgba(9, 181, 26, 0.245));
 }
 
 /* Hover effects for interactive elements */
@@ -1161,20 +1157,9 @@ onMounted(async () => {
   opacity: 0.85;
 }
 
-/* Rail mode adjustments */
-:deep(.v-navigation-drawer--rail) .admin-submenu {
-  padding-left: 0;
-  border-left: none;
-}
-
-:deep(.v-navigation-drawer--rail) .admin-sub-item {
+/* Simple admin styles for rail mode */
+.v-navigation-drawer--rail .admin-sub-item {
   padding-left: 0 !important;
-}
-
-:deep(.v-navigation-drawer--rail) .admin-sub-active {
-  margin-left: 0;
-  border-left: none;
-  border-right: 3px solid #13547a;
 }
 
 /* Floating menu button */
@@ -1211,10 +1196,23 @@ onMounted(async () => {
   height: 56px;
 }
 
-/* Rail mode: show only icons (hide titles and append content) and tighten icon spacing */
-::deep(.v-navigation-drawer--rail) .v-list-item .v-list-item-title { display: none !important; }
-::deep(.v-navigation-drawer--rail) .v-list-item .v-list-item__append { display: none !important; }
-::deep(.v-navigation-drawer--rail) .v-list-item .mr-2 { margin-right: 0 !important; }
+/* Simple rail mode styles - let Vuetify handle most of the styling */
+.v-navigation-drawer--rail .v-list-item__prepend {
+  margin-right: 0 !important;
+  justify-content: center !important;
+}
+
+.v-navigation-drawer--rail .v-list-item__prepend .v-icon,
+.v-navigation-drawer--rail .v-list-item__prepend img,
+.v-navigation-drawer--rail .v-list-item__prepend svg {
+  margin-right: 0 !important;
+  margin-left: 0 !important;
+}
+
+/* Hide text labels in rail mode */
+.v-navigation-drawer--rail .v-list-item-title {
+  display: none !important;
+}
 
 /* Admin icon chevron badge for rail mode */
 .admin-icon-with-badge {

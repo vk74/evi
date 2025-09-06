@@ -6,7 +6,7 @@
   Frontend file
 -->
 <script setup lang="ts">
-import { ref, computed, onMounted, onBeforeUnmount, PropType, defineProps, defineEmits, watch } from 'vue'
+import { ref, computed, onMounted, onBeforeUnmount, PropType, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useUiStore } from '@/core/state/uistate'
 import { ItemSelectorItem } from './types.item.selector'

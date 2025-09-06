@@ -22,7 +22,7 @@ export type ModuleName =
   | 'NewUserRegistration';
 
 // Drawer modes
-export type DrawerMode = 'auto' | 'opened' | 'closed';
+export type DrawerMode = 'opened' | 'closed';
 
 // Admin sub-modules
 export type AdminSubModule = 

@@ -5,7 +5,6 @@
 -->
 
 <script setup lang="ts">
-import { defineProps } from 'vue';
 
 // Component props
 interface Props {
