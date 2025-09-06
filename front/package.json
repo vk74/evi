@@ -46,7 +46,7 @@
     "jsdom": "^26.1.0",
     "remove-trailing-separator": "^1.1.0",
     "ts-jest": "^29.1.2",
-    "typescript": "^5.7.2",
+    "typescript": "^5.9.2",
     "vue-cli-plugin-vuetify": "~2.5.8",
     "vue-tsc": "^3.0.6",
     "webpack": "^5.96.1",
