@@ -144,7 +144,7 @@ function tagImage(imageName, registryTag) {
  * @returns {number} Execution time in seconds
  */
 function pushImage(registryTag) {
-  const command = `docker push ${registryTag}`;
+  const command = `docker push "${registryTag}"`;
   return runCommand(command, `Push image ${registryTag}`);
 }
 

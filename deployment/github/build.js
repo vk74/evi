@@ -70,7 +70,7 @@ function cleanArtifacts() {
 }
 
 // Build Docker images
-function buildImages() {
+function buildImages(noCache = false) {
   logger.step('Building Docker images...');
   
   const timings = {};
@@ -90,8 +90,8 @@ function buildImages() {
     timings['Build Docker Images'] = dockerUtils.buildImages(
       CONFIG.localComposeFile,
       CONFIG.localEnvFile,
-      false, // noCache
-      true   // parallel
+      noCache, // noCache parameter
+      true     // parallel
     );
     
     logger.success('Docker images built successfully');
@@ -296,6 +296,174 @@ function displaySummary(version, timings) {
   logger.summary(timings);
 }
 
+// Check if GitHub CLI is available
+function checkGitHubCLI() {
+  try {
+    require('child_process').execSync('gh --version', { stdio: 'pipe' });
+    return true;
+  } catch (error) {
+    return false;
+  }
+}
+
+// Push images to GitHub Container Registry
+function pushImages() {
+  logger.step('Pushing images to GitHub Container Registry...');
+  
+  const timings = {};
+  const imageTags = generateImageTags('latest');
+  
+  try {
+    // Push database image
+    timings['Push Database Image'] = dockerUtils.pushImage(imageTags.databaseLatest);
+    
+    // Push backend image
+    timings['Push Backend Image'] = dockerUtils.pushImage(imageTags.backendLatest);
+    
+    // Push frontend image
+    timings['Push Frontend Image'] = dockerUtils.pushImage(imageTags.frontendLatest);
+    
+    logger.success('Images pushed successfully');
+    return timings;
+  } catch (error) {
+    logger.error(`Failed to push images: ${error.message}`);
+    throw error;
+  }
+}
+
+// Create GitHub release
+function createGitHubRelease(version) {
+  logger.step('Creating GitHub release...');
+  
+  const timings = {};
+  
+  try {
+    if (!checkGitHubCLI()) {
+      logger.warning('GitHub CLI not found. Please install it first:');
+      logger.info('  brew install gh  # macOS');
+      logger.info('  or visit: https://cli.github.com/');
+      logger.info('Then run: gh auth login');
+      return { 'GitHub CLI Check': 0 };
+    }
+    
+    const packageDir = path.join(CONFIG.artifactsDir, `ev2-deployment-${version}`);
+    
+    // Create release with deployment package
+    const command = `gh release create v${version} "${packageDir}" --title "ev2 v${version}" --notes "ev2 Application Release v${version}"`;
+    timings['Create GitHub Release'] = dockerUtils.runCommand(command, 'Create GitHub Release');
+    
+    logger.success('GitHub release created successfully');
+    return timings;
+  } catch (error) {
+    logger.error(`Failed to create GitHub release: ${error.message}`);
+    throw error;
+  }
+}
+
+// Update image tags in production templates
+function updateImageTags(version) {
+  logger.step('Updating image tags in production templates...');
+  
+  const timings = {};
+  
+  try {
+    const imageTags = generateImageTags('latest');
+    
+    // Update docker-compose template
+    const composeTemplate = path.join(CONFIG.templatesDir, 'docker-compose.production.yml');
+    const composeContent = fileUtils.readFile(composeTemplate);
+    
+    // Replace version tags with latest
+    const updatedCompose = composeContent
+      .replace(/ghcr\.io\/your-org\/ev2-database:{{APP_VERSION}}/g, imageTags.databaseLatest)
+      .replace(/ghcr\.io\/your-org\/ev2-backend:{{APP_VERSION}}/g, imageTags.backendLatest)
+      .replace(/ghcr\.io\/your-org\/ev2-frontend:{{APP_VERSION}}/g, imageTags.frontendLatest);
+    
+    fileUtils.writeFile(composeTemplate, updatedCompose);
+    timings['Update Docker Compose Template'] = 0.1;
+    
+    // Regenerate artifacts with updated tags
+    timings = { ...timings, ...generateArtifacts(version) };
+    timings = { ...timings, ...generateDeploymentPackage(version) };
+    
+    logger.success('Image tags updated successfully');
+    return timings;
+  } catch (error) {
+    logger.error(`Failed to update image tags: ${error.message}`);
+    throw error;
+  }
+}
+
+// Display main menu and handle user input
+async function mainMenu() {
+  const readline = require('readline');
+  const rl = readline.createInterface({
+    input: process.stdin,
+    output: process.stdout
+  });
+
+  const menu = `
+${logger.colors.cyan}=========================================${logger.colors.reset}
+${logger.colors.cyan}  ev2 GitHub Build & Deployment Manager${logger.colors.reset}
+${logger.colors.cyan}=========================================${logger.colors.reset}
+${logger.colors.yellow}[1]${logger.colors.reset} Build all containers from cache
+${logger.colors.yellow}[2]${logger.colors.reset} Rebuild all containers without cache
+${logger.colors.yellow}[3]${logger.colors.reset} Push built containers to GitHub registry
+${logger.colors.yellow}[4]${logger.colors.reset} Create GitHub release with deployment package
+${logger.colors.yellow}[5]${logger.colors.reset} Update image tags in production templates
+${logger.colors.yellow}[6]${logger.colors.reset} Exit
+`;
+
+  console.log(menu);
+
+  rl.question('Please select an option: ', async (option) => {
+    rl.close();
+    let timings = {};
+    const scriptStartTime = Date.now();
+
+    try {
+      const version = getPackageVersion();
+      
+      switch (option.trim()) {
+        case '1':
+          timings = { ...timings, ...buildImages() };
+          timings = { ...timings, ...tagImages(version) };
+          break;
+        case '2':
+          timings = { ...timings, ...buildImages(true) }; // noCache = true
+          timings = { ...timings, ...tagImages(version) };
+          break;
+        case '3':
+          timings = { ...timings, ...pushImages() };
+          break;
+        case '4':
+          timings = { ...timings, ...createGitHubRelease(version) };
+          break;
+        case '5':
+          timings = { ...timings, ...updateImageTags(version) };
+          break;
+        case '6':
+          logger.info('👋 Exiting. No action taken.');
+          return;
+        default:
+          logger.error('❌ Invalid option. Please run the script again.');
+          return;
+      }
+
+      const scriptEndTime = Date.now();
+      const totalScriptDuration = ((scriptEndTime - scriptStartTime) / 1000).toFixed(2);
+      timings['Total Script Duration'] = parseFloat(totalScriptDuration);
+
+      logger.summary(timings);
+      logger.complete('GitHub build operation completed successfully!');
+      
+    } catch (error) {
+      logger.error(`Operation failed: ${error.message}`);
+      process.exit(1);
+    }
+  });
+}
+
 // Main execution function
 async function main() {
   const startTime = Date.now();
@@ -311,12 +479,19 @@ async function main() {
     // Parse command line arguments
     const args = process.argv.slice(2);
     const shouldClean = args.includes('--clean');
+    const useMenu = !args.includes('--no-menu');
     
     if (shouldClean) {
       logger.info('Clean mode enabled - will perform complete cleanup');
     }
     
-    // Execute build steps
+    // If menu is requested, show interactive menu
+    if (useMenu) {
+      mainMenu();
+      return;
+    }
+    
+    // Execute build steps (legacy mode)
     if (shouldClean) {
       timings = { ...timings, ...cleanArtifacts() };
     }
