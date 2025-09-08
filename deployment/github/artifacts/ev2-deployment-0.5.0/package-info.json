@@ -1,0 +1,13 @@
+{
+  "name": "ev2-deployment",
+  "version": "0.5.0",
+  "generated": "2025-09-08T20:22:52.115Z",
+  "description": "ev2 Production Deployment Package",
+  "files": [
+    ".env.template",
+    "README.md",
+    "docker-compose.production.yml",
+    "init.sh",
+    "package-info.json"
+  ]
+}

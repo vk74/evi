@@ -11,7 +11,7 @@ const os = require('os');
 const path = require('path');
 
 // --- Configuration ---
-const DOCKER_COMPOSE_FILE = 'deployment/docker-compose.local.yml';
+const DOCKER_COMPOSE_FILE = 'deployment/local/docker-compose.yml';
 const ENV_FILE = '.env.local'; // This script assumes the .env.local file exists.
 
 // ANSI colors for better output visibility
@@ -92,10 +92,10 @@ function cleanDocker() {
     log('   • All unused Docker resources', colors.yellow);
     log('   Docker Desktop will be completely clean!', colors.red, true);
     
-    rl.question('\nAre you sure you want to continue? Type "YES" to confirm: ', (answer) => {
+    rl.question('\nAre you sure you want to continue? Type "y" to confirm: ', (answer) => {
       rl.close();
       
-      if (answer.trim() !== 'YES') {
+      if (answer.trim().toLowerCase() !== 'y') {
         log('❌ Cleanup cancelled by user.', colors.yellow);
         resolve({ 'Cleanup Cancelled': 0 });
         return;
@@ -109,7 +109,7 @@ function cleanDocker() {
       try {
         // Stop and remove containers, networks, and volumes
         timings['Stop & Remove Containers'] = runCommand(
-          `docker-compose -f ${DOCKER_COMPOSE_FILE} --env-file ${ENV_FILE} down -v --remove-orphans`,
+          `docker compose -f "${DOCKER_COMPOSE_FILE}" --env-file "${ENV_FILE}" down -v --remove-orphans`,
           'Stop & Remove Containers'
         );
         
@@ -145,11 +145,11 @@ function cleanDocker() {
 function buildAndUpAll() {
   const timings = {};
   timings['Build All Services'] = runCommand(
-    `docker-compose -f ${DOCKER_COMPOSE_FILE} --env-file ${ENV_FILE} build --parallel`,
+    `docker compose -f "${DOCKER_COMPOSE_FILE}" --env-file "${ENV_FILE}" build --parallel`,
     'Build All Services'
   );
   timings['Start All Services'] = runCommand(
-    `docker-compose -f ${DOCKER_COMPOSE_FILE} --env-file ${ENV_FILE} up -d`,
+    `docker compose -f "${DOCKER_COMPOSE_FILE}" --env-file "${ENV_FILE}" up -d`,
     'Start All Services'
   );
   return timings;
@@ -163,11 +163,11 @@ function buildAndUpSingle(serviceName) {
   const timings = {};
   const capitalizedName = serviceName.charAt(0).toUpperCase() + serviceName.slice(1);
   timings[`Build ${capitalizedName}`] = runCommand(
-    `docker-compose -f ${DOCKER_COMPOSE_FILE} --env-file ${ENV_FILE} build ${serviceName}`,
+    `docker compose -f "${DOCKER_COMPOSE_FILE}" --env-file "${ENV_FILE}" build ${serviceName}`,
     `Build ${capitalizedName}`
   );
   timings[`Start ${capitalizedName}`] = runCommand(
-    `docker-compose -f ${DOCKER_COMPOSE_FILE} --env-file ${ENV_FILE} up -d ${serviceName}`,
+    `docker compose -f "${DOCKER_COMPOSE_FILE}" --env-file "${ENV_FILE}" up -d ${serviceName}`,
     `Start ${capitalizedName} and its dependencies`
   );
   return timings;
@@ -179,15 +179,15 @@ function buildAndUpSingle(serviceName) {
 function fullRebuildNoCache() {
   const timings = {};
   timings['Stop All Services'] = runCommand(
-    `docker-compose -f ${DOCKER_COMPOSE_FILE} --env-file ${ENV_FILE} down`,
+    `docker compose -f "${DOCKER_COMPOSE_FILE}" --env-file "${ENV_FILE}" down`,
     'Stop All Services'
   );
   timings['Build All Services (No Cache)'] = runCommand(
-    `docker-compose -f ${DOCKER_COMPOSE_FILE} --env-file ${ENV_FILE} build --no-cache --parallel`,
+    `docker compose -f "${DOCKER_COMPOSE_FILE}" --env-file "${ENV_FILE}" build --no-cache --parallel`,
     'Build All Services (No Cache)'
   );
   timings['Start All Services'] = runCommand(
-    `docker-compose -f ${DOCKER_COMPOSE_FILE} --env-file ${ENV_FILE} up -d`,
+    `docker compose -f "${DOCKER_COMPOSE_FILE}" --env-file "${ENV_FILE}" up -d`,
     'Start All Services'
   );
   return timings;
@@ -219,7 +219,7 @@ function startCurrentContainers() {
   // Check if containers exist (even if stopped)
   log('🔍 Checking if containers exist...', colors.cyan);
   try {
-    const checkCommand = `docker-compose -f ${DOCKER_COMPOSE_FILE} --env-file ${ENV_FILE} ps -a -q`;
+    const checkCommand = `docker compose -f "${DOCKER_COMPOSE_FILE}" --env-file "${ENV_FILE}" ps -a -q`;
     const containerIds = execSync(checkCommand, { encoding: 'utf8' }).trim();
     
     if (!containerIds) {
@@ -234,7 +234,7 @@ function startCurrentContainers() {
   }
   
   timings['Start Existing Containers'] = runCommand(
-    `docker-compose -f ${DOCKER_COMPOSE_FILE} --env-file ${ENV_FILE} up -d`,
+    `docker compose -f "${DOCKER_COMPOSE_FILE}" --env-file "${ENV_FILE}" up -d`,
     'Start Existing Containers'
   );
   return timings;
@@ -255,14 +255,11 @@ async function mainMenu() {
 ${colors.cyan}=========================================${colors.reset}
 ${colors.cyan}  ev2 Local Docker Environment Manager${colors.reset}
 ${colors.cyan}=========================================${colors.reset}
-${colors.yellow}[1]${colors.reset} Build & Start All Services
-${colors.yellow}[2]${colors.reset} Build & Start ev2-frontend
-${colors.yellow}[3]${colors.reset} Build & Start ev2-backend
-${colors.yellow}[4]${colors.reset} Build & Start ev2-database
-${colors.yellow}[5]${colors.reset} Full Docker Cleanup (down -v)
-${colors.yellow}[6]${colors.reset} Rebuild & Start All (No Cache)
-${colors.yellow}[7]${colors.reset} Start Current Set of Containers
-${colors.yellow}[8]${colors.reset} Exit
+${colors.yellow}[1]${colors.reset} Build from cache & start all containers
+${colors.yellow}[2]${colors.reset} Rebuild & start all containers
+${colors.yellow}[3]${colors.reset} Start current set of containers
+${colors.yellow}[4]${colors.reset} Full docker cleanup (down -v)
+${colors.yellow}[5]${colors.reset} Exit
 `;
 
   console.log(menu);
@@ -277,24 +274,15 @@ ${colors.yellow}[8]${colors.reset} Exit
         timings = buildAndUpAll();
         break;
       case '2':
-        timings = buildAndUpSingle('ev2-frontend');
-        break;
-      case '3':
-        timings = buildAndUpSingle('ev2-backend');
-        break;
-      case '4':
-        timings = buildAndUpSingle('ev2-database');
-        break;
-      case '5':
-        timings = await cleanDocker();
-        break;
-      case '6':
         timings = fullRebuildNoCache();
         break;
-      case '7':
+      case '3':
         timings = startCurrentContainers();
         break;
-      case '8':
+      case '4':
+        timings = await cleanDocker();
+        break;
+      case '5':
         log('👋 Exiting. No action taken.', colors.yellow);
         return;
       default:

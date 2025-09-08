@@ -1,0 +1,116 @@
+# ev2 Production Docker Compose Configuration
+# Version: 1.0
+# Description: Production-ready docker-compose configuration for ev2 application
+# Generated automatically by build:github command
+
+services:
+  # ev2 Database
+  ev2-database:
+    image: {{DATABASE_IMAGE}}
+    container_name: ev2-database
+    restart: unless-stopped
+    
+    environment:
+      POSTGRES_PASSWORD: {{POSTGRES_PASSWORD}}
+      POSTGRES_DB: {{POSTGRES_DB}}
+      POSTGRES_USER: {{POSTGRES_USER}}
+    
+    ports:
+      - "{{POSTGRES_PORT}}:5432"
+    
+    volumes:
+      - ev2_database_data:/var/lib/postgresql/data
+      - ./config/init:/docker-entrypoint-initdb.d
+    
+    healthcheck:
+      test: ["CMD-SHELL", "psql -U {{POSTGRES_USER}} -d {{POSTGRES_DB}} -c 'SELECT 1'"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    
+    networks:
+      - ev2-network
+
+  # ev2 Backend API
+  ev2-backend:
+    image: {{BACKEND_IMAGE}}
+    container_name: ev2-backend
+    restart: unless-stopped
+    
+    environment:
+      PGHOST: ev2-database
+      PGPORT: 5432
+      PGDATABASE: {{POSTGRES_DB}}
+      PGUSER: {{POSTGRES_USER}}
+      PGPASSWORD: {{POSTGRES_PASSWORD}}
+      NODE_ENV: production
+      API_PORT: 3000
+      JWT_SECRET: {{JWT_SECRET}}
+      JWT_PUBLIC_KEY: {{JWT_PUBLIC_KEY}}
+      JWT_PRIVATE_KEY: {{JWT_PRIVATE_KEY}}
+    
+    ports:
+      - "{{API_PORT}}:3000"
+    
+    depends_on:
+      ev2-database:
+        condition: service_healthy
+    
+    volumes:
+      - ./config/keys:/app/keys:ro
+      - ./logs/backend:/app/logs
+    
+    networks:
+      - ev2-network
+
+  # ev2 Frontend
+  ev2-frontend:
+    image: {{FRONTEND_IMAGE}}
+    container_name: ev2-frontend
+    restart: unless-stopped
+    
+    environment:
+      NODE_ENV: production
+      VITE_API_URL: {{FRONTEND_API_URL}}
+    
+    ports:
+      - "{{FRONTEND_PORT}}:80"
+    
+    depends_on:
+      - ev2-backend
+    
+    networks:
+      - ev2-network
+
+  # Nginx Reverse Proxy (Optional)
+  nginx:
+    image: nginx:alpine
+    container_name: ev2-nginx
+    restart: unless-stopped
+    
+    ports:
+      - "80:80"
+      - "443:443"
+    
+    volumes:
+      - ./config/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./config/ssl:/etc/nginx/ssl:ro
+      - ./logs/nginx:/var/log/nginx
+    
+    depends_on:
+      - ev2-frontend
+      - ev2-backend
+    
+    networks:
+      - ev2-network
+
+# Volumes
+volumes:
+  ev2_database_data:
+    driver: local
+
+# Networks
+networks:
+  ev2-network:
+    driver: bridge

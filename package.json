@@ -22,7 +22,10 @@
     "docker:up": "docker-compose up -d",
     "docker:down": "docker-compose down",
     "docker:logs": "docker-compose logs -f",
-    "local:build": "node deployment/build.js"
+    "build:local": "node deployment/local/build.js",
+    "build:github": "node deployment/github/build.js",
+    "build:local:clean": "node deployment/local/build.js --clean",
+    "build:github:clean": "node deployment/github/build.js --clean"
   },
   "keywords": [
     "ev2",

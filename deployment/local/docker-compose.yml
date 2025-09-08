@@ -3,7 +3,7 @@ services:
   ev2-database:
     # Build the image from the local Dockerfile in the 'db' directory
     build:
-      context: ../db
+      context: ../../db
       dockerfile: Dockerfile
     container_name: ev2-database-local
     restart: unless-stopped
@@ -41,7 +41,7 @@ services:
   ev2-backend:
     # Build the image from the local Dockerfile in the 'back' directory
     build:
-      context: ../back
+      context: ../../back
       dockerfile: Dockerfile
     container_name: ev2-backend-local
     restart: unless-stopped
@@ -75,7 +75,7 @@ services:
   ev2-frontend:
     # Build the image from the local Dockerfile in the 'front' directory
     build:
-      context: ../front
+      context: ../../front
       dockerfile: Dockerfile
     container_name: ev2-frontend-local
     restart: unless-stopped
