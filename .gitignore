@@ -6,6 +6,7 @@
 /docs/logo/*
 /docs/temp/*
 /docs/*
+/front/node_modules/*
 
 # Environment files
 .env
