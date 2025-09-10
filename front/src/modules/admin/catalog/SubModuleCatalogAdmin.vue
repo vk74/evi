@@ -16,11 +16,8 @@ import CatalogSectionEditor from './CatalogSectionEditor.vue'
 
 // Импортируем Phosphor иконки
 import { 
-  PhFolder, 
   PhList, 
   PhGear, 
-  PhCaretDown, 
-  PhCaretRight,
   PhPencilSimple
 } from '@phosphor-icons/vue'
 
@@ -35,26 +32,19 @@ const sections = computed<Section[]>(() => {
   
   return [
     {
-      id: 'Catalog',
-      name: t('admin.catalog.navigation.catalog'),
-      icon: 'PhFolder',
-      children: [
-        {
-          id: 'Catalog.Sections',
-          name: t('admin.catalog.navigation.sections'),
-          icon: 'PhList'
-        },
-        {
-          id: 'Catalog.SectionEditor',
-          name: t('admin.catalog.navigation.sectioneditor'),
-          icon: 'PhPencilSimple'
-        },
-        {
-          id: 'Catalog.Settings',
-          name: t('admin.catalog.navigation.settings'),
-          icon: 'PhGear'
-        }
-      ]
+      id: 'Catalog.Sections',
+      name: t('admin.catalog.navigation.sections'),
+      icon: 'PhList'
+    },
+    {
+      id: 'Catalog.SectionEditor',
+      name: t('admin.catalog.navigation.sectioneditor'),
+      icon: 'PhPencilSimple'
+    },
+    {
+      id: 'Catalog.Settings',
+      name: t('admin.catalog.navigation.settings'),
+      icon: 'PhGear'
     }
   ]
 })
@@ -89,51 +79,19 @@ const currentComponent = computed(() => {
 })
 
 /**
- * Converts hierarchical sections structure to a flat list for display
- * Only includes sections that should be visible based on expanded state
+ * Converts sections structure to a flat list for display
+ * Since sections are now flat, this just returns the sections with additional properties
  */
 const flattenedSections = computed(() => {
-  const result: Array<{
-    id: string
-    name: string
-    icon: string
-    level: number
-    hasChildren: boolean
-    isLastInLevel: boolean
-    parentId: string | null
-  }> = []
-
-  // Helper function to recursively process sections
-  const processSections = (
-    sectionList: Section[],
-    level = 0,
-    parentId: string | null = null
-  ) => {
-    sectionList.forEach((section, index) => {
-      // Add the current section to the result
-      result.push({
-        id: section.id,
-        name: section.name,
-        icon: section.icon,
-        level,
-        hasChildren: !!section.children && section.children.length > 0,
-        isLastInLevel: index === sectionList.length - 1,
-        parentId
-      })
-
-      // If section is expanded and has children, process them
-      if (
-        section.children &&
-        section.children.length > 0 &&
-        expandedSections.value.includes(section.id)
-      ) {
-        processSections(section.children, level + 1, section.id)
-      }
-    })
-  }
-
-  processSections(sections.value)
-  return result
+  return sections.value.map((section, index) => ({
+    id: section.id,
+    name: section.name,
+    icon: section.icon,
+    level: 0,
+    hasChildren: false,
+    isLastInLevel: index === sections.value.length - 1,
+    parentId: null
+  }))
 })
 
 /**
@@ -206,58 +164,26 @@ const expandParentSections = (id: string) => {
 /**
  * Handle section click
  */
-const handleSectionClick = (section: { id: string; hasChildren: boolean }) => {
-  if (section.hasChildren) {
-    // Check if section is currently expanded
-    const isCurrentlyExpanded = expandedSections.value.includes(section.id)
-    
-    // Toggle the section (expand/collapse)
-    catalogStore.toggleSection(section.id)
-    
-    // If we're expanding (was collapsed, now will be expanded)
-    if (!isCurrentlyExpanded) {
-          const sectionObj = findSectionById(section.id, sections.value)
-    if (sectionObj && sectionObj.children && sectionObj.children.length > 0) {
-      const firstChildId = findFirstLeafSection(sectionObj.children[0])
-      catalogStore.setSelectedSection(firstChildId)
-      catalogStore.setActiveComponent(firstChildId)
-      
-      // Expand all parent sections of the selected child
-      expandParentSections(firstChildId)
-    }
-    }
-    // If we're collapsing, we don't change the selected section
-    // The user can still see the content of the previously selected section
-  } else {
-    // If section has no children, just select it
-    catalogStore.setSelectedSection(section.id)
-    catalogStore.setActiveComponent(section.id)
-    
-    // Expand all parent sections
-    expandParentSections(section.id)
-  }
+const handleSectionClick = (section: { id: string }) => {
+  // Simply select the section since there are no children to expand
+  catalogStore.setSelectedSection(section.id)
+  catalogStore.setActiveComponent(section.id)
 }
 
 // Get the selected section object with fallback to avoid null reference errors
 const selectedSection = computed(() => {
   const section = findSectionById(catalogStore.getSelectedSectionPath, sections.value)
   // Provide default values to avoid "Cannot read properties of undefined" error
-  return section || { id: '', name: 'Catalog', icon: 'PhFolder' }
+  return section || { id: '', name: 'Sections', icon: 'PhList' }
 })
 
 // Функция для получения компонента иконки
 const getIconComponent = (iconName: string) => {
   switch (iconName) {
-    case 'PhFolder':
-      return PhFolder
     case 'PhList':
       return PhList
     case 'PhGear':
       return PhGear
-    case 'PhCaretDown':
-      return PhCaretDown
-    case 'PhCaretRight':
-      return PhCaretRight
     case 'PhPencilSimple':
       return PhPencilSimple
     default:
@@ -282,16 +208,12 @@ onMounted(() => {
   let validSectionPath = catalogStore.getSelectedSectionPath
   
   if (!validSectionPath || !isValidSection(validSectionPath)) {
-    // If no section is selected or the section doesn't exist, select the first leaf section
-    validSectionPath = findFirstLeafSectionInTree(sections.value)
+    // If no section is selected or the section doesn't exist, select the first section
+    validSectionPath = sections.value[0]?.id
     if (validSectionPath) {
       catalogStore.setSelectedSection(validSectionPath)
+      catalogStore.setActiveComponent(validSectionPath)
     }
-  }
-  
-  // Expand all parent sections of the selected section
-  if (validSectionPath) {
-    expandParentSections(validSectionPath)
   }
 })
 </script>
@@ -326,17 +248,10 @@ onMounted(() => {
             v-for="section in flattenedSections"
             :key="section.id"
             :class="['mobile-section-item', { 'section-active': section.id === catalogStore.getSelectedSectionPath }]"
-            :style="{ paddingLeft: `${16 + section.level * 20}px` }"
+            style="padding-left: 16px"
             @click="handleSectionClick(section)"
           >
             <template #prepend>
-              <component
-                :is="expandedSections.includes(section.id) ? 'PhCaretDown' : 'PhCaretRight'"
-                v-if="section.hasChildren"
-                :size="20"
-                weight="regular"
-                class="me-2"
-              />
               <component
                 :is="getIconComponent(section.icon)"
                 :size="20"
@@ -362,26 +277,13 @@ onMounted(() => {
             v-for="section in flattenedSections"
             :key="section.id"
             :class="[
-              'section-item', 
-              `level-${section.level}`,
-              { 'section-active': section.id === catalogStore.getSelectedSectionPath },
-              { 'has-children': section.hasChildren },
-              { 'is-expanded': expandedSections.includes(section.id) },
-              { 'is-last-in-level': section.isLastInLevel }
+              'section-item',
+              { 'section-active': section.id === catalogStore.getSelectedSectionPath }
             ]"
             active-class=""
             @click="handleSectionClick(section)"
           >
             <template #prepend>
-              <div class="section-indicator">
-                <component
-                  :is="expandedSections.includes(section.id) ? 'PhCaretDown' : 'PhCaretRight'"
-                  v-if="section.hasChildren"
-                  :size="20"
-                  weight="regular"
-                  class="chevron-icon"
-                />
-              </div>
               <component
                 :is="getIconComponent(section.icon)"
                 :size="20"
@@ -419,8 +321,8 @@ onMounted(() => {
 }
 
 .menu-panel {
-  width: 255px;
-  min-width: 255px;
+  width: 220px;
+  min-width: 220px;
   border-right: 1px solid rgba(0, 0, 0, 0.12);
   background-color: white;
   flex-shrink: 0;
@@ -462,28 +364,12 @@ onMounted(() => {
   overflow-wrap: break-word !important;
   line-height: 1.3 !important;
   padding-right: 8px !important;
-  max-width: calc(255px - 50px - 16px) !important;
+  max-width: calc(220px - 50px - 16px) !important;
 }
 
-/* Apply indentation based on level */
-.section-item.level-0 {
+/* Apply consistent padding for all sections */
+.section-item {
   padding-left: 16px;
-}
-
-.section-item.level-1 {
-  padding-left: 26px;
-}
-
-.section-item.level-2 {
-  padding-left: 36px;
-}
-
-.section-item.level-3 {
-  padding-left: 46px;
-}
-
-.section-item.level-4 {
-  padding-left: 56px;
 }
 
 /* Active section */
@@ -498,12 +384,6 @@ onMounted(() => {
 }
 
 /* Section icons */
-.section-indicator {
-  display: inline-flex;
-  width: 16px;
-  margin-right: 4px;
-}
-
 .section-icon {
   margin-right: 8px;
 }
@@ -562,12 +442,12 @@ onMounted(() => {
 /* Tablet responsiveness */
 @media (min-width: 600px) and (max-width: 960px) {
   .menu-panel {
-    width: 230px;
-    min-width: 230px;
+    width: 200px;
+    min-width: 200px;
   }
 
   .section-item :deep(.v-list-item-title) {
-    max-width: calc(230px - 50px - 16px) !important;
+    max-width: calc(200px - 50px - 16px) !important;
   }
 }
 </style>
