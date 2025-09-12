@@ -1,6 +1,23 @@
--- Version: 1.1
+-- Version: 1.1.1
 -- Description: Create all application tables, functions, and triggers.
 -- Backend file: 04_tables.sql
+
+-- ===========================================
+-- Helper Functions
+-- ===========================================
+
+-- Audit helper: update updated_at on row change
+CREATE FUNCTION app.tgr_set_updated_at()
+RETURNS trigger
+LANGUAGE plpgsql AS $$
+BEGIN
+  NEW.updated_at := now();
+  RETURN NEW;
+END $$;
+
+-- ===========================================
+-- Tables
+-- ===========================================
 
 -- Create users table
 CREATE TABLE IF NOT EXISTS app.users (
@@ -152,45 +169,49 @@ CREATE TABLE IF NOT EXISTS app.services (
     show_support_tier3 BOOLEAN NOT NULL DEFAULT false
 );
 
--- Create products table
+-- Create products table (moved here to be available for foreign key references)
 CREATE TABLE IF NOT EXISTS app.products (
-    product_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    product_name VARCHAR(250) NOT NULL,
-    product_sku VARCHAR(100),
-    product_code VARCHAR(100),
-    product_lineup VARCHAR(100),
-    product_model VARCHAR(100),
-    product_category VARCHAR(100),
-    product_subcategory VARCHAR(100),
-    product_status app.product_status DEFAULT 'active'::app.product_status,
-    product_is_public BOOLEAN NOT NULL DEFAULT false,
-    product_weight NUMERIC,
-    product_weight_unit app.weight_unit DEFAULT 'kg'::app.weight_unit,
-    product_length NUMERIC,
-    product_width NUMERIC,
-    product_height NUMERIC,
-    product_dimension_unit app.dimension_unit DEFAULT 'cm'::app.dimension_unit,
-    product_specifications JSONB,
-    product_description_short VARCHAR(500),
-    product_description_long VARCHAR(10000),
-    product_features TEXT,
-    product_warranty_info VARCHAR(200),
-    product_main_image_url VARCHAR(500),
-    product_images JSONB,
-    product_lead_time_days INTEGER,
-    product_created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    product_created_by UUID NOT NULL REFERENCES app.users(user_id),
-    product_modified_at TIMESTAMP WITH TIME ZONE,
-    product_modified_by UUID REFERENCES app.users(user_id),
-    CONSTRAINT chk_product_weight_positive CHECK (product_weight IS NULL OR product_weight > 0),
-    CONSTRAINT chk_product_dimensions_positive CHECK (
-        (product_length IS NULL OR product_length > 0) AND
-        (product_width IS NULL OR product_width > 0) AND
-        (product_height IS NULL OR product_height > 0)
-    ),
-    CONSTRAINT chk_product_lead_time_positive CHECK (product_lead_time_days IS NULL OR product_lead_time_days > 0),
-    CONSTRAINT products_product_sku_key UNIQUE (product_sku)
+  product_id       UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  product_code     VARCHAR(150) UNIQUE,
+  translation_key  VARCHAR(150) NOT NULL UNIQUE,
+
+  -- Option flags (A/B/C) and publication
+  can_be_option    BOOLEAN NOT NULL DEFAULT false,
+  option_only      BOOLEAN NOT NULL DEFAULT false,
+  is_published     BOOLEAN NOT NULL DEFAULT false,
+
+  -- Owner
+  owner_id         UUID NOT NULL,
+
+  -- Visibility flags
+  is_visible_owner              BOOLEAN NOT NULL DEFAULT false,
+  is_visible_groups             BOOLEAN NOT NULL DEFAULT false,
+  is_visible_tech_specs         BOOLEAN NOT NULL DEFAULT false,
+  is_visible_area_specs         BOOLEAN NOT NULL DEFAULT false,
+  is_visible_industry_specs     BOOLEAN NOT NULL DEFAULT false,
+  is_visible_key_features       BOOLEAN NOT NULL DEFAULT false,
+  is_visible_overview           BOOLEAN NOT NULL DEFAULT false,
+  is_visible_long_description   BOOLEAN NOT NULL DEFAULT false,
+
+  -- Audit
+  created_by      UUID NOT NULL DEFAULT '00000000-0000-0000-0000-00000000dead',
+  created_at      TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_by      UUID,
+  updated_at      TIMESTAMPTZ NOT NULL DEFAULT now(),
+
+  -- Business rule: option_only => can_be_option
+  CONSTRAINT products_option_only_impl_can_be_option
+    CHECK (option_only = false OR can_be_option = true),
+
+  -- Relations
+  FOREIGN KEY (owner_id)   REFERENCES app.users(user_id) ON DELETE RESTRICT,
+  FOREIGN KEY (created_by) REFERENCES app.users(user_id) ON DELETE SET DEFAULT,
+  FOREIGN KEY (updated_by) REFERENCES app.users(user_id) ON DELETE SET NULL
 );
+
+CREATE TRIGGER tgr_products_set_updated_at
+BEFORE UPDATE ON app.products
+FOR EACH ROW EXECUTE FUNCTION app.tgr_set_updated_at();
 
 -- Create section_services table
 CREATE TABLE IF NOT EXISTS app.section_services (
@@ -288,3 +309,55 @@ COMMENT ON COLUMN app.services.show_dispatcher IS 'Whether to show dispatcher in
 COMMENT ON COLUMN app.services.show_support_tier1 IS 'Whether to show support tier 1 in service card';
 COMMENT ON COLUMN app.services.show_support_tier2 IS 'Whether to show support tier 2 in service card';
 COMMENT ON COLUMN app.services.show_support_tier3 IS 'Whether to show support tier 3 in service card';
+
+-- ===========================================
+-- Product core tables & triggers
+-- ===========================================
+
+-- Products table is already defined above
+
+-- Product translations (by product_id)
+CREATE TABLE app.product_translations (
+  translation_id   UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  product_id       UUID NOT NULL,
+  language_code    app.system_language_code NOT NULL,
+
+  name             VARCHAR(300) NOT NULL,
+  short_desc       VARCHAR(250),
+  long_desc        TEXT,
+
+  tech_specs         JSONB,
+  area_specifics     JSONB,
+  industry_specifics JSONB,
+  key_features       JSONB,
+  product_overview   JSONB,
+
+  -- Audit
+  created_by      UUID NOT NULL DEFAULT '00000000-0000-0000-0000-00000000dead',
+  created_at      TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_by      UUID,
+  updated_at      TIMESTAMPTZ NOT NULL DEFAULT now(),
+
+  -- Integrity
+  CONSTRAINT product_translations_name_not_blank CHECK (btrim(name) <> ''),
+  CONSTRAINT uq_product_translations_one_per_lang UNIQUE (product_id, language_code),
+
+  -- Relations
+  FOREIGN KEY (product_id)  REFERENCES app.products(product_id) ON DELETE CASCADE,
+  FOREIGN KEY (created_by)  REFERENCES app.users(user_id)      ON DELETE SET DEFAULT,
+  FOREIGN KEY (updated_by)  REFERENCES app.users(user_id)      ON DELETE SET NULL
+);
+
+CREATE TRIGGER tgr_product_translations_set_updated_at
+BEFORE UPDATE ON app.product_translations
+FOR EACH ROW EXECUTE FUNCTION app.tgr_set_updated_at();
+
+-- Product-to-group link
+CREATE TABLE app.product_groups (
+  product_id UUID NOT NULL,
+  group_id   UUID NOT NULL,
+  created_at TIMESTAMPTZ DEFAULT now(),
+  PRIMARY KEY (product_id, group_id),
+  FOREIGN KEY (product_id) REFERENCES app.products(product_id) ON DELETE CASCADE,
+  FOREIGN KEY (group_id)   REFERENCES app.groups(group_id)     ON DELETE CASCADE
+);

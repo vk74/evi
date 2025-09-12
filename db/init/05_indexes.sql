@@ -1,4 +1,4 @@
--- Version: 1.1
+-- Version: 1.1.1
 -- Description: Create all indexes for the application tables.
 -- Backend file: 05_indexes.sql
 
@@ -19,14 +19,12 @@ CREATE INDEX IF NOT EXISTS idx_group_members_active ON app.group_members USING b
 CREATE INDEX IF NOT EXISTS idx_group_members_group_id ON app.group_members USING btree (group_id);
 CREATE INDEX IF NOT EXISTS idx_group_members_user_id ON app.group_members USING btree (user_id);
 
--- Create indexes for products
-CREATE INDEX IF NOT EXISTS idx_products_category ON app.products USING btree (product_category);
-CREATE INDEX IF NOT EXISTS idx_products_created_at ON app.products USING btree (product_created_at);
-CREATE INDEX IF NOT EXISTS idx_products_public ON app.products USING btree (product_is_public);
-CREATE INDEX IF NOT EXISTS idx_products_sku ON app.products USING btree (product_sku);
-CREATE INDEX IF NOT EXISTS idx_products_specifications ON app.products USING gin (product_specifications);
-CREATE INDEX IF NOT EXISTS idx_products_status ON app.products USING btree (product_status);
-CREATE INDEX IF NOT EXISTS product_code ON app.products USING btree (product_code);
+-- Create indexes for products (updated for new structure)
+CREATE INDEX IF NOT EXISTS idx_products_created_at ON app.products USING btree (created_at);
+CREATE INDEX IF NOT EXISTS idx_products_owner ON app.products USING btree (owner_id);
+CREATE INDEX IF NOT EXISTS idx_products_published ON app.products USING btree (is_published);
+CREATE INDEX IF NOT EXISTS idx_products_code ON app.products USING btree (product_code);
+CREATE INDEX IF NOT EXISTS idx_products_translation_key ON app.products USING btree (translation_key);
 
 -- Create indexes for section_products
 CREATE INDEX IF NOT EXISTS idx_section_products_order ON app.section_products USING btree (product_order);
@@ -65,3 +63,20 @@ CREATE INDEX IF NOT EXISTS idx_services_visibility_prefs ON app.services USING b
     show_owner, show_backup_owner, show_technical_owner, show_backup_technical_owner,
     show_dispatcher, show_support_tier1, show_support_tier2, show_support_tier3
 );
+
+-- ===========================================
+-- Product core indexes
+-- ===========================================
+
+-- Products indexes are already defined above
+
+-- Translations
+CREATE INDEX idx_product_translations_product ON app.product_translations(product_id);
+CREATE INDEX idx_product_translations_lang    ON app.product_translations(language_code);
+
+-- Case-insensitive trigram search by name
+CREATE INDEX idx_product_translations_name_trgm
+  ON app.product_translations USING GIN (lower(name) gin_trgm_ops);
+
+-- Groups reverse lookup
+CREATE INDEX idx_product_groups_group      ON app.product_groups(group_id);

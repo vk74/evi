@@ -113,6 +113,12 @@ function cleanDocker() {
           'Stop & Remove Containers'
         );
         
+        // Remove all ev2 images specifically
+        timings['Remove ev2 Images'] = runCommand(
+          'docker images --filter "reference=local-ev2-*" -q | xargs -r docker rmi -f',
+          'Remove ev2 Images'
+        );
+        
         // Remove all unused containers, networks, images, and build cache
         timings['Remove All Unused Resources'] = runCommand(
           'docker system prune -a -f --volumes',

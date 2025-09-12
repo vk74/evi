@@ -1,4 +1,4 @@
--- Version: 1.1
+-- Version: 1.1.1
 -- Description: Create enum types for the application.
 -- Backend file: 03_enums.sql
 
@@ -77,6 +77,12 @@ END $$;
 
 DO $$ BEGIN
     CREATE TYPE app.weight_unit AS ENUM ('kg', 'g', 'lb', 'oz');
+EXCEPTION
+    WHEN duplicate_object THEN null;
+END $$;
+
+DO $$ BEGIN
+    CREATE TYPE app.system_language_code AS ENUM ('en', 'ru');
 EXCEPTION
     WHEN duplicate_object THEN null;
 END $$;
