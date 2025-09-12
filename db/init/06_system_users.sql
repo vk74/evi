@@ -10,6 +10,8 @@
 
 -- Insert system users
 INSERT INTO app.users (user_id, username, hashed_password, email, is_staff, account_status, first_name, last_name, created_at) VALUES
+-- Deleted user (system) - GDPR-friendly placeholder
+('00000000-0000-0000-0000-00000000dead', NULL, NULL, NULL, false, 'disabled', 'Deleted', 'User', NOW()),
 -- System administrator (active)
 ('550e8400-e29b-41d4-a716-446655440001', 'admin', '$2b$10$rkRimJQnKoqxf7riMA2XnOM.t0ch726cq.e65xe9FfZ1/8UMU89F6', 'admin@example.com', true, 'active', 'System', 'Administrator', NOW()),
 -- Test user t1 (disabled)
@@ -28,6 +30,7 @@ ON CONFLICT (user_id) DO UPDATE SET
 
 -- Insert user profiles
 INSERT INTO app.user_profiles (profile_id, user_id, mobile_phone_number, address, company_name, position, gender) VALUES
+('660e8400-e29b-41d4-a716-446655440000', '00000000-0000-0000-0000-00000000dead', NULL, NULL, 'System', 'Deleted', NULL),
 ('660e8400-e29b-41d4-a716-446655440001', '550e8400-e29b-41d4-a716-446655440001', '+1234567890', '123 Admin St, City', 'System Corp', 'System Administrator', 'm'),
 ('660e8400-e29b-41d4-a716-446655440002', '550e8400-e29b-41d4-a716-446655440002', '+1234567891', '456 Test Ave, City', 'Test Company', 'Test Engineer', 'm'),
 ('660e8400-e29b-41d4-a716-446655440003', '550e8400-e29b-41d4-a716-446655440003', '+1234567892', '789 Main St, City', 'Tech Solutions', 'Software Developer', 'm'),
