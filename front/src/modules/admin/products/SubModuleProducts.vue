@@ -14,16 +14,12 @@ import type { ProductSectionId, Section } from './types.products.admin'
 import { 
   PhAlignLeft, 
   PhPencilSimple, 
-  PhListChecks,
-  PhCheckSquareOffset,
   PhFadersHorizontal
 } from '@phosphor-icons/vue'
 
 // Async components for lazy loading (placeholder components)
 const ProductsList = defineAsyncComponent(() => import('./sections/ProductsList.vue'))
 const ProductEditor = defineAsyncComponent(() => import('./sections/ProductEditor.vue'))
-const OptionsList = defineAsyncComponent(() => import('./sections/OptionsList.vue'))
-const OptionEditor = defineAsyncComponent(() => import('./sections/OptionEditor.vue'))
 const ProductsSettings = defineAsyncComponent(() => import('./sections/ProductsSettings.vue'))
 
 // Initialize i18n and store
@@ -41,16 +37,6 @@ const sections = computed((): Section[] => [
     id: 'product-editor',
     title: t('admin.products.sections.productEditor'),
     icon: 'PhPencilSimple'
-  },
-  {
-    id: 'options-list',
-    title: t('admin.products.sections.optionsList'),
-    icon: 'PhListChecks'
-  },
-  {
-    id: 'option-editor',
-    title: t('admin.products.sections.optionEditor'),
-    icon: 'PhCheckSquareOffset'
   },
   {
     id: 'settings',
@@ -72,10 +58,6 @@ const getIconComponent = (iconName: string) => {
       return PhAlignLeft
     case 'PhPencilSimple':
       return PhPencilSimple
-    case 'PhListChecks':
-      return PhListChecks
-    case 'PhCheckSquareOffset':
-      return PhCheckSquareOffset
     case 'PhFadersHorizontal':
       return PhFadersHorizontal
     default:
@@ -121,11 +103,6 @@ const getIconComponent = (iconName: string) => {
       <ProductsList v-if="activeSection === 'products-list'" />
       <ProductEditor
         v-if="activeSection === 'product-editor'"
-        mode="create"
-      />
-      <OptionsList v-if="activeSection === 'options-list'" />
-      <OptionEditor
-        v-if="activeSection === 'option-editor'"
         mode="create"
       />
       <ProductsSettings v-if="activeSection === 'settings'" />

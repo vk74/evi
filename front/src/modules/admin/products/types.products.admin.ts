@@ -8,8 +8,6 @@
 export type ProductSectionId = 
   | 'products-list'
   | 'product-editor'
-  | 'options-list'
-  | 'option-editor'
   | 'settings'
 
 export interface Section {
