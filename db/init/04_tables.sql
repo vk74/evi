@@ -361,3 +361,86 @@ CREATE TABLE app.product_groups (
   FOREIGN KEY (product_id) REFERENCES app.products(product_id) ON DELETE CASCADE,
   FOREIGN KEY (group_id)   REFERENCES app.groups(group_id)     ON DELETE CASCADE
 );
+
+-- ===========================================
+-- Product Options Relationship Table
+-- ===========================================
+
+CREATE TABLE IF NOT EXISTS app.product_options (
+    -- Primary key
+    option_relation_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    
+    -- Foreign keys
+    main_product_id UUID NOT NULL REFERENCES app.products(product_id) ON DELETE CASCADE,
+    option_product_id UUID NOT NULL REFERENCES app.products(product_id) ON DELETE CASCADE,
+    
+    -- Business logic fields
+    is_required BOOLEAN NOT NULL DEFAULT false,
+    units_count INTEGER CHECK (units_count IS NULL OR (units_count >= 1 AND units_count <= 1000)),
+    
+    -- Audit fields (same structure as products table)
+    created_by UUID NOT NULL DEFAULT '00000000-0000-0000-0000-00000000dead'::uuid,
+    created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
+    updated_by UUID,
+    updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
+    
+    -- Constraints
+    CONSTRAINT chk_product_options_different_products 
+        CHECK (main_product_id != option_product_id),
+    
+    -- Constraint to ensure units_count is only set for required options
+    CONSTRAINT chk_units_count_required 
+        CHECK ((is_required = true AND units_count IS NOT NULL) OR (is_required = false AND units_count IS NULL)),
+    
+    -- Unique constraint to prevent duplicate relationships
+    CONSTRAINT uk_product_options_relation 
+        UNIQUE (main_product_id, option_product_id)
+);
+
+-- ===========================================
+-- Product Options Triggers
+-- ===========================================
+
+-- Trigger to automatically update updated_at timestamp
+CREATE TRIGGER trg_product_options_updated_at
+    BEFORE UPDATE ON app.product_options
+    FOR EACH ROW
+    EXECUTE FUNCTION app.tgr_set_updated_at();
+
+-- Trigger to check maximum number of options per product
+CREATE OR REPLACE FUNCTION app.check_max_options_per_product()
+RETURNS trigger AS $$
+DECLARE
+    max_options INTEGER;
+    current_count INTEGER;
+BEGIN
+    -- Get max options limit from settings
+    SELECT value::INTEGER INTO max_options
+    FROM app.app_settings 
+    WHERE section_path = 'products.options' 
+    AND setting_name = 'max.options.per.product';
+    
+    -- If setting not found, raise error - this is a configuration issue
+    IF max_options IS NULL THEN
+        RAISE EXCEPTION 'Configuration error: max.options.per.product setting not found in app.app_settings. Please check database initialization.';
+    END IF;
+    
+    -- Count current options for the main product
+    SELECT COUNT(*) INTO current_count
+    FROM app.product_options
+    WHERE main_product_id = NEW.main_product_id;
+    
+    -- Check if adding this option would exceed the limit
+    IF current_count >= max_options THEN
+        RAISE EXCEPTION 'Maximum number of options (%) exceeded for product %', 
+            max_options, NEW.main_product_id;
+    END IF;
+    
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER trg_check_max_options_per_product
+    BEFORE INSERT ON app.product_options
+    FOR EACH ROW
+    EXECUTE FUNCTION app.check_max_options_per_product();

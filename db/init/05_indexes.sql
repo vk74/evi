@@ -80,3 +80,24 @@ CREATE INDEX idx_product_translations_name_trgm
 
 -- Groups reverse lookup
 CREATE INDEX idx_product_groups_group      ON app.product_groups(group_id);
+
+-- ===========================================
+-- Product Options Indexes
+-- ===========================================
+
+-- Index for main product lookups (which options does this product have)
+CREATE INDEX IF NOT EXISTS idx_product_options_main_product 
+    ON app.product_options USING btree (main_product_id);
+
+-- Index for option product lookups (which products use this as option)
+CREATE INDEX IF NOT EXISTS idx_product_options_option_product 
+    ON app.product_options USING btree (option_product_id);
+
+-- Index for required options queries
+CREATE INDEX IF NOT EXISTS idx_product_options_required 
+    ON app.product_options USING btree (main_product_id, is_required) 
+    WHERE is_required = true;
+
+-- Index for audit queries
+CREATE INDEX IF NOT EXISTS idx_product_options_created_at 
+    ON app.product_options USING btree (created_at);
