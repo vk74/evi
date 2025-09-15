@@ -81,6 +81,10 @@ CREATE INDEX idx_product_translations_name_trgm
 -- Groups reverse lookup
 CREATE INDEX idx_product_groups_group      ON app.product_groups(group_id);
 
+-- Product users indexes
+CREATE INDEX idx_product_users_user        ON app.product_users(user_id);
+CREATE INDEX idx_product_users_role        ON app.product_users(role_type);
+
 -- ===========================================
 -- Product Options Indexes
 -- ===========================================

@@ -180,9 +180,6 @@ CREATE TABLE IF NOT EXISTS app.products (
   option_only      BOOLEAN NOT NULL DEFAULT false,
   is_published     BOOLEAN NOT NULL DEFAULT false,
 
-  -- Owner
-  owner_id         UUID NOT NULL,
-
   -- Visibility flags
   is_visible_owner              BOOLEAN NOT NULL DEFAULT false,
   is_visible_groups             BOOLEAN NOT NULL DEFAULT false,
@@ -204,7 +201,6 @@ CREATE TABLE IF NOT EXISTS app.products (
     CHECK (option_only = false OR can_be_option = true),
 
   -- Relations
-  FOREIGN KEY (owner_id)   REFERENCES app.users(user_id) ON DELETE RESTRICT,
   FOREIGN KEY (created_by) REFERENCES app.users(user_id) ON DELETE SET DEFAULT,
   FOREIGN KEY (updated_by) REFERENCES app.users(user_id) ON DELETE SET NULL
 );
@@ -352,14 +348,38 @@ CREATE TRIGGER tgr_product_translations_set_updated_at
 BEFORE UPDATE ON app.product_translations
 FOR EACH ROW EXECUTE FUNCTION app.tgr_set_updated_at();
 
--- Product-to-group link
+-- Product-to-group link with roles
 CREATE TABLE app.product_groups (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   product_id UUID NOT NULL,
   group_id   UUID NOT NULL,
+  role_type app.product_group_role NOT NULL DEFAULT 'product_specialists',
   created_at TIMESTAMPTZ DEFAULT now(),
-  PRIMARY KEY (product_id, group_id),
+  created_by UUID NOT NULL DEFAULT '00000000-0000-0000-0000-00000000dead',
+  modified_at TIMESTAMPTZ,
+  modified_by UUID,
+  CONSTRAINT uk_product_groups_product_group_role UNIQUE (product_id, group_id, role_type),
   FOREIGN KEY (product_id) REFERENCES app.products(product_id) ON DELETE CASCADE,
-  FOREIGN KEY (group_id)   REFERENCES app.groups(group_id)     ON DELETE CASCADE
+  FOREIGN KEY (group_id)   REFERENCES app.groups(group_id)     ON DELETE CASCADE,
+  FOREIGN KEY (created_by) REFERENCES app.users(user_id) ON DELETE SET DEFAULT,
+  FOREIGN KEY (modified_by) REFERENCES app.users(user_id) ON DELETE SET NULL
+);
+
+-- Product-to-user link with roles
+CREATE TABLE app.product_users (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  product_id UUID NOT NULL,
+  user_id UUID NOT NULL,
+  role_type app.product_user_role NOT NULL DEFAULT 'owner',
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  created_by UUID NOT NULL DEFAULT '00000000-0000-0000-0000-00000000dead',
+  modified_at TIMESTAMPTZ,
+  modified_by UUID,
+  CONSTRAINT uk_product_users_product_user_role UNIQUE (product_id, user_id, role_type),
+  FOREIGN KEY (product_id) REFERENCES app.products(product_id) ON DELETE CASCADE,
+  FOREIGN KEY (user_id) REFERENCES app.users(user_id) ON DELETE CASCADE,
+  FOREIGN KEY (created_by) REFERENCES app.users(user_id) ON DELETE SET DEFAULT,
+  FOREIGN KEY (modified_by) REFERENCES app.users(user_id) ON DELETE SET NULL
 );
 
 -- ===========================================
@@ -444,3 +464,13 @@ CREATE TRIGGER trg_check_max_options_per_product
     BEFORE INSERT ON app.product_options
     FOR EACH ROW
     EXECUTE FUNCTION app.check_max_options_per_product();
+
+-- ============================================
+-- Column Comments for Product Roles
+-- ============================================
+
+-- Add comments for product role types
+COMMENT ON TYPE app.product_user_role IS 'User roles for products: owner, backup_owner';
+COMMENT ON TYPE app.product_group_role IS 'Group roles for products: product_specialists';
+COMMENT ON COLUMN app.product_users.role_type IS 'Role type for the user in this product';
+COMMENT ON COLUMN app.product_groups.role_type IS 'Role type for the group in this product';

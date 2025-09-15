@@ -86,3 +86,15 @@ DO $$ BEGIN
 EXCEPTION
     WHEN duplicate_object THEN null;
 END $$;
+
+DO $$ BEGIN
+    CREATE TYPE app.product_user_role AS ENUM ('owner', 'backup_owner');
+EXCEPTION
+    WHEN duplicate_object THEN null;
+END $$;
+
+DO $$ BEGIN
+    CREATE TYPE app.product_group_role AS ENUM ('product_specialists');
+EXCEPTION
+    WHEN duplicate_object THEN null;
+END $$;
