@@ -67,7 +67,10 @@ INSERT INTO app.app_settings (
 
 -- Users Management Settings
 ('UsersManagement.GroupsManagement', 'add.only.active.users.to.groups', 'all', 'false', '{"type":"boolean"}', 'true', 'Allow adding to groups only those users with status ACTIVE', false),
-('UsersManagement.RegistrationPage', 'registration.page.enabled', 'all', 'false', '{"type": "boolean"}', 'false', 'Users self-registration page', true)
+('UsersManagement.RegistrationPage', 'registration.page.enabled', 'all', 'false', '{"type": "boolean"}', 'false', 'Users self-registration page', true),
+
+-- Products Options Settings
+('products.options', 'max.options.per.product', 'all', to_jsonb(100), '{"type":"integer","minimum":1,"maximum":1000}', to_jsonb(100), 'Maximum number of direct options per product', false)
 ON CONFLICT (section_path, setting_name, environment) DO UPDATE SET
     value = EXCLUDED.value,
     validation_schema = EXCLUDED.validation_schema,
