@@ -6,7 +6,155 @@
         "productEditor": "редактор продукта",
         "settings": "настройки"
       },
-      "moduleTitle": "управление продуктами"
+      "moduleTitle": "управление продуктами",
+      "editor": {
+        "creation": {
+          "title": "создать продукт"
+        },
+        "edit": {
+          "title": "редактировать продукт"
+        },
+        "sections": {
+          "details": "детали",
+          "options": "опции",
+          "preferences": "предпочтения",
+          "catalog publication": "публикация в каталоге"
+        },
+        "languages": {
+          "english": "английский",
+          "russian": "русский"
+        },
+        "basic": {
+          "title": "основная информация",
+          "productCode": {
+            "label": "код продукта"
+          },
+          "translationKey": {
+            "label": "ключ перевода"
+          },
+          "canBeOption": {
+            "label": "может быть опцией"
+          },
+          "optionOnly": {
+            "label": "только опция"
+          },
+          "isPublished": {
+            "label": "опубликован"
+          }
+        },
+        "responsible": {
+          "title": "ответственные",
+          "owner": {
+            "label": "владелец"
+          },
+          "specialistsGroups": {
+            "label": "группы специалистов"
+          },
+          "addGroups": "добавить группы",
+          "addMore": "добавить еще"
+        },
+        "translations": {
+          "title": "переводы",
+          "language": {
+            "label": "язык"
+          },
+          "name": {
+            "label": "название"
+          },
+          "shortDesc": {
+            "label": "краткое описание"
+          },
+          "longDesc": {
+            "label": "подробное описание"
+          }
+        },
+        "jsonb": {
+          "title": "дополнительная информация",
+          "techSpecs": {
+            "label": "технические характеристики"
+          },
+          "areaSpecifics": {
+            "label": "специфика области"
+          },
+          "industrySpecifics": {
+            "label": "отраслевая специфика"
+          },
+          "keyFeatures": {
+            "label": "ключевые особенности"
+          },
+          "productOverview": {
+            "label": "обзор продукта"
+          }
+        },
+        "visibility": {
+          "title": "настройки видимости",
+          "isVisibleOwner": {
+            "label": "видимый владелец"
+          },
+          "isVisibleGroups": {
+            "label": "видимые группы"
+          },
+          "isVisibleTechSpecs": {
+            "label": "видимые теххарактеристики"
+          },
+          "isVisibleAreaSpecs": {
+            "label": "видимая специфика области"
+          },
+          "isVisibleIndustrySpecs": {
+            "label": "видимая отраслевая специфика"
+          },
+          "isVisibleKeyFeatures": {
+            "label": "видимые ключевые особенности"
+          },
+          "isVisibleOverview": {
+            "label": "видимый обзор"
+          },
+          "isVisibleLongDescription": {
+            "label": "видимое подробное описание"
+          }
+        },
+        "actions": {
+          "cancel": "отмена",
+          "create": "создать",
+          "update": "обновить"
+        },
+        "validation": {
+          "productCode": {
+            "required": "код продукта обязателен",
+            "minLength": "код продукта должен содержать минимум 3 символа"
+          },
+          "translationKey": {
+            "required": "ключ перевода обязателен"
+          },
+          "owner": {
+            "required": "владелец обязателен"
+          },
+          "specialistsGroups": {
+            "required": "необходима минимум одна группа специалистов"
+          },
+          "name": {
+            "required": "название обязательно",
+            "minLength": "название должно содержать минимум 2 символа"
+          },
+          "shortDesc": {
+            "required": "краткое описание обязательно",
+            "minLength": "краткое описание должно содержать минимум 10 символов"
+          },
+          "fillRequired": "заполните все обязательные поля"
+        },
+        "messages": {
+          "created": "продукт успешно создан",
+          "updated": "продукт успешно обновлен",
+          "owner": {
+            "selected": "владелец успешно выбран",
+            "error": "не удалось выбрать владельца"
+          },
+          "specialistsGroups": {
+            "selected": "группы специалистов успешно выбраны",
+            "error": "не удалось выбрать группы специалистов"
+          }
+        }
+      }
     }
   }
 }

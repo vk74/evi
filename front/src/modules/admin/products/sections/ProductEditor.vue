@@ -1,22 +1,15 @@
 /**
  * @file ProductEditor.vue
- * Version: 1.0.0
+ * Version: 1.1.0
  * Product editor section component.
  * Frontend file that provides product editing interface for admin users.
  */
 <script setup lang="ts">
-// Component logic will be implemented here
+import { defineAsyncComponent } from 'vue'
+
+const ProductEditorMain = defineAsyncComponent(() => import('./product-editor/ProductEditor.vue'))
 </script>
 
 <template>
-  <div class="product-editor">
-    <h3>Product Editor</h3>
-    <p>This section will contain the product editor functionality.</p>
-  </div>
+  <ProductEditorMain />
 </template>
-
-<style scoped>
-.product-editor {
-  padding: 20px;
-}
-</style>

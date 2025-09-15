@@ -6,7 +6,155 @@
         "productEditor": "product editor",
         "settings": "settings"
       },
-      "moduleTitle": "products management"
+      "moduleTitle": "products management",
+      "editor": {
+        "creation": {
+          "title": "create product"
+        },
+        "edit": {
+          "title": "edit product"
+        },
+        "sections": {
+          "details": "details",
+          "options": "options",
+          "preferences": "preferences",
+          "catalog publication": "catalog publication"
+        },
+        "languages": {
+          "english": "english",
+          "russian": "russian"
+        },
+        "basic": {
+          "title": "basic information",
+          "productCode": {
+            "label": "product code"
+          },
+          "translationKey": {
+            "label": "translation key"
+          },
+          "canBeOption": {
+            "label": "can be option"
+          },
+          "optionOnly": {
+            "label": "option only"
+          },
+          "isPublished": {
+            "label": "published"
+          }
+        },
+        "responsible": {
+          "title": "responsible",
+          "owner": {
+            "label": "owner"
+          },
+          "specialistsGroups": {
+            "label": "specialists groups"
+          },
+          "addGroups": "add groups",
+          "addMore": "add more"
+        },
+        "translations": {
+          "title": "translations",
+          "language": {
+            "label": "language"
+          },
+          "name": {
+            "label": "name"
+          },
+          "shortDesc": {
+            "label": "short description"
+          },
+          "longDesc": {
+            "label": "long description"
+          }
+        },
+        "jsonb": {
+          "title": "additional information",
+          "techSpecs": {
+            "label": "technical specifications"
+          },
+          "areaSpecifics": {
+            "label": "area specifics"
+          },
+          "industrySpecifics": {
+            "label": "industry specifics"
+          },
+          "keyFeatures": {
+            "label": "key features"
+          },
+          "productOverview": {
+            "label": "product overview"
+          }
+        },
+        "visibility": {
+          "title": "visibility settings",
+          "isVisibleOwner": {
+            "label": "visible owner"
+          },
+          "isVisibleGroups": {
+            "label": "visible groups"
+          },
+          "isVisibleTechSpecs": {
+            "label": "visible tech specs"
+          },
+          "isVisibleAreaSpecs": {
+            "label": "visible area specs"
+          },
+          "isVisibleIndustrySpecs": {
+            "label": "visible industry specs"
+          },
+          "isVisibleKeyFeatures": {
+            "label": "visible key features"
+          },
+          "isVisibleOverview": {
+            "label": "visible overview"
+          },
+          "isVisibleLongDescription": {
+            "label": "visible long description"
+          }
+        },
+        "actions": {
+          "cancel": "cancel",
+          "create": "create",
+          "update": "update"
+        },
+        "validation": {
+          "productCode": {
+            "required": "product code is required",
+            "minLength": "product code must be at least 3 characters"
+          },
+          "translationKey": {
+            "required": "translation key is required"
+          },
+          "owner": {
+            "required": "owner is required"
+          },
+          "specialistsGroups": {
+            "required": "at least one specialists group is required"
+          },
+          "name": {
+            "required": "name is required",
+            "minLength": "name must be at least 2 characters"
+          },
+          "shortDesc": {
+            "required": "short description is required",
+            "minLength": "short description must be at least 10 characters"
+          },
+          "fillRequired": "please fill all required fields"
+        },
+        "messages": {
+          "created": "product created successfully",
+          "updated": "product updated successfully",
+          "owner": {
+            "selected": "owner selected successfully",
+            "error": "failed to select owner"
+          },
+          "specialistsGroups": {
+            "selected": "specialists groups selected successfully",
+            "error": "failed to select specialists groups"
+          }
+        }
+      }
     }
   }
 }
