@@ -31,7 +31,7 @@
           },
           "type": {
             "product": "product",
-            "productAndOption": "product and option",
+            "productAndOption": "product or option",
             "option": "option"
           },
           "isPublished": {

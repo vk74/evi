@@ -31,7 +31,7 @@
           },
           "type": {
             "product": "продукт",
-            "productAndOption": "продукт и опция",
+            "productAndOption": "продукт или опция",
             "option": "опция"
           },
           "isPublished": {

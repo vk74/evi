@@ -19,7 +19,7 @@ import { defineAsyncComponent } from 'vue'
 const ItemSelector = defineAsyncComponent(() => import(/* webpackChunkName: "ui-item-selector" */ '@/core/ui/modals/item-selector/ItemSelector.vue'))
 const DataLoading = defineAsyncComponent(() => import(/* webpackChunkName: "ui-data-loading" */ '@/core/ui/loaders/DataLoading.vue'))
 
-import { PhMagnifyingGlass, PhX, PhPlus, PhCaretUpDown } from '@phosphor-icons/vue'
+import { PhMagnifyingGlass, PhX, PhPlus, PhCaretUpDown, PhImage } from '@phosphor-icons/vue'
 
 // Initialize stores and i18n
 const { t, locale } = useI18n()
@@ -259,20 +259,8 @@ onMounted(() => {
               <v-divider class="section-divider" />
             </div>
 
+            <!-- Product Type Selector and Published Switch -->
             <v-row class="pt-3">
-              <v-col
-                cols="12"
-                md="6"
-              >
-                <v-text-field
-                  v-model="formData.productCode"
-                  :label="t('admin.products.editor.basic.productCode.label')"
-                  :rules="productCodeRules"
-                  variant="outlined"
-                  color="teal"
-                  required
-                />
-              </v-col>
               <v-col
                 cols="12"
                 md="6"
@@ -305,14 +293,11 @@ onMounted(() => {
                   </v-btn>
                 </v-btn-toggle>
               </v-col>
-            </v-row>
-
-            <v-row>
               <v-col
                 cols="12"
                 md="6"
               >
-                <div class="d-flex align-center">
+                <div class="d-flex align-center justify-start published-switch-container">
                   <v-switch
                     v-model="formData.isPublished"
                     color="teal-darken-2"
@@ -320,6 +305,23 @@ onMounted(() => {
                     hide-details
                   />
                 </div>
+              </v-col>
+            </v-row>
+
+            <!-- Product Code -->
+            <v-row>
+              <v-col
+                cols="12"
+                md="6"
+              >
+                <v-text-field
+                  v-model="formData.productCode"
+                  :label="t('admin.products.editor.basic.productCode.label')"
+                  :rules="productCodeRules"
+                  variant="outlined"
+                  color="teal"
+                  required
+                />
               </v-col>
             </v-row>
 
@@ -367,10 +369,11 @@ onMounted(() => {
               <v-divider class="section-divider" />
             </div>
 
+            <!-- Owner and Backup Owner -->
             <v-row class="pt-3">
               <v-col
                 cols="12"
-                md="4"
+                md="6"
               >
                 <div class="d-flex align-center">
                   <v-text-field
@@ -392,7 +395,7 @@ onMounted(() => {
               </v-col>
               <v-col
                 cols="12"
-                md="4"
+                md="6"
               >
                 <div class="d-flex align-center">
                   <v-text-field
@@ -410,9 +413,12 @@ onMounted(() => {
                   </v-text-field>
                 </div>
               </v-col>
+            </v-row>
+
+            <!-- Specialists Groups -->
+            <v-row>
               <v-col
                 cols="12"
-                md="4"
               >
                 <div class="access-control-field">
                   <v-label class="text-body-2 mb-2">
@@ -815,6 +821,13 @@ onMounted(() => {
   flex: 1;
   text-transform: none;
   font-weight: 400;
+}
+
+/* Published switch container styling */
+.published-switch-container {
+  margin-left: 25px;
+  height: 40px; /* Match the height of the toggle group */
+  align-items: center;
 }
 
 /* Sidebar styles */
