@@ -29,26 +29,32 @@
           "productCode": {
             "label": "product code"
           },
-          "translationKey": {
-            "label": "translation key"
-          },
-          "canBeOption": {
-            "label": "can be option"
-          },
-          "optionOnly": {
-            "label": "option only"
+          "type": {
+            "product": "product",
+            "productAndOption": "product and option",
+            "option": "option"
           },
           "isPublished": {
             "label": "published"
+          },
+          "picture": {
+            "select": "select picture",
+            "placeholder": "click to select picture"
           }
         },
-        "responsible": {
-          "title": "responsible",
+        "contacts": {
+          "title": "contacts",
           "owner": {
-            "label": "owner"
+            "label": "owner",
+            "select": "select owner"
           },
-          "specialistsGroups": {
-            "label": "specialists groups"
+          "backupOwner": {
+            "label": "backup owner",
+            "select": "select backup owner"
+          },
+          "specialists": {
+            "label": "specialists",
+            "select": "select specialists"
           },
           "addGroups": "add groups",
           "addMore": "add more"
@@ -114,17 +120,19 @@
           }
         },
         "actions": {
+          "title": "actions",
           "cancel": "cancel",
           "create": "create",
-          "update": "update"
+          "update": "update",
+          "save": "save"
         },
         "validation": {
           "productCode": {
             "required": "product code is required",
             "minLength": "product code must be at least 3 characters"
           },
-          "translationKey": {
-            "required": "translation key is required"
+          "productType": {
+            "required": "product type is required"
           },
           "owner": {
             "required": "owner is required"
@@ -149,9 +157,17 @@
             "selected": "owner selected successfully",
             "error": "failed to select owner"
           },
+          "backupOwner": {
+            "selected": "backup owner selected successfully",
+            "error": "failed to select backup owner"
+          },
           "specialistsGroups": {
             "selected": "specialists groups selected successfully",
             "error": "failed to select specialists groups"
+          },
+          "picture": {
+            "selected": "picture selected successfully",
+            "cleared": "picture cleared successfully"
           }
         }
       }

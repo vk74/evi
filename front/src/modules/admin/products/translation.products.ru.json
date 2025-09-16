@@ -29,26 +29,32 @@
           "productCode": {
             "label": "код продукта"
           },
-          "translationKey": {
-            "label": "ключ перевода"
-          },
-          "canBeOption": {
-            "label": "может быть опцией"
-          },
-          "optionOnly": {
-            "label": "только опция"
+          "type": {
+            "product": "продукт",
+            "productAndOption": "продукт и опция",
+            "option": "опция"
           },
           "isPublished": {
             "label": "опубликован"
+          },
+          "picture": {
+            "select": "выбрать изображение",
+            "placeholder": "нажмите для выбора изображения"
           }
         },
-        "responsible": {
-          "title": "ответственные",
+        "contacts": {
+          "title": "контакты",
           "owner": {
-            "label": "владелец"
+            "label": "владелец",
+            "select": "выбрать владельца"
           },
-          "specialistsGroups": {
-            "label": "группы специалистов"
+          "backupOwner": {
+            "label": "резервный владелец",
+            "select": "выбрать резервного владельца"
+          },
+          "specialists": {
+            "label": "специалисты",
+            "select": "выбрать специалистов"
           },
           "addGroups": "добавить группы",
           "addMore": "добавить еще"
@@ -114,17 +120,19 @@
           }
         },
         "actions": {
+          "title": "действия",
           "cancel": "отмена",
           "create": "создать",
-          "update": "обновить"
+          "update": "обновить",
+          "save": "сохранить"
         },
         "validation": {
           "productCode": {
             "required": "код продукта обязателен",
             "minLength": "код продукта должен содержать минимум 3 символа"
           },
-          "translationKey": {
-            "required": "ключ перевода обязателен"
+          "productType": {
+            "required": "тип продукта обязателен"
           },
           "owner": {
             "required": "владелец обязателен"
@@ -149,9 +157,17 @@
             "selected": "владелец успешно выбран",
             "error": "не удалось выбрать владельца"
           },
+          "backupOwner": {
+            "selected": "резервный владелец успешно выбран",
+            "error": "не удалось выбрать резервного владельца"
+          },
           "specialistsGroups": {
             "selected": "группы специалистов успешно выбраны",
             "error": "не удалось выбрать группы специалистов"
+          },
+          "picture": {
+            "selected": "изображение успешно выбрано",
+            "cleared": "изображение успешно удалено"
           }
         }
       }

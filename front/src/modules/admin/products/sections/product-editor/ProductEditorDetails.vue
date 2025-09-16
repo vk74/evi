@@ -19,7 +19,7 @@ import { defineAsyncComponent } from 'vue'
 const ItemSelector = defineAsyncComponent(() => import(/* webpackChunkName: "ui-item-selector" */ '@/core/ui/modals/item-selector/ItemSelector.vue'))
 const DataLoading = defineAsyncComponent(() => import(/* webpackChunkName: "ui-data-loading" */ '@/core/ui/loaders/DataLoading.vue'))
 
-import { PhMagnifyingGlass, PhX, PhPlus } from '@phosphor-icons/vue'
+import { PhMagnifyingGlass, PhX, PhPlus, PhCaretUpDown } from '@phosphor-icons/vue'
 
 // Initialize stores and i18n
 const { t, locale } = useI18n()
@@ -36,7 +36,11 @@ const isLoadingProduct = ref(false)
 
 // ItemSelector state
 const showOwnerSelector = ref(false)
+const showBackupOwnerSelector = ref(false)
 const showSpecialistsGroupsSelector = ref(false)
+
+// Picture picker state
+const showPicturePicker = ref(false)
 
 // Form data - now using store
 const formData = computed(() => productsStore.formData)
@@ -52,8 +56,21 @@ const languageOptions = computed(() => [
   { title: t('admin.products.editor.languages.russian'), value: 'ru' }
 ])
 
+// Product type options
+const productTypeOptions = computed(() => [
+  { title: t('admin.products.editor.basic.type.product'), value: 'product' },
+  { title: t('admin.products.editor.basic.type.productAndOption'), value: 'product_and_option' },
+  { title: t('admin.products.editor.basic.type.option'), value: 'option' }
+])
+
 // Selected language for translations
 const selectedLanguage = ref('en')
+
+// Get selected picture component (placeholder for now)
+const selectedPictureComponent = computed(() => {
+  // TODO: Implement picture selection logic
+  return null
+})
 
 // Validation rules
 const productCodeRules = computed(() => [
@@ -61,8 +78,8 @@ const productCodeRules = computed(() => [
   (v: string) => (v && v.length >= 3) || t('admin.products.editor.validation.productCode.minLength')
 ])
 
-const translationKeyRules = computed(() => [
-  (v: string) => !!v || t('admin.products.editor.validation.translationKey.required')
+const productTypeRules = computed(() => [
+  (v: string) => !!v || t('admin.products.editor.validation.productType.required')
 ])
 
 const ownerRules = computed(() => [
@@ -160,6 +177,16 @@ const handleOwnerSelected = async (result: any) => {
   showOwnerSelector.value = false
 }
 
+const handleBackupOwnerSelected = async (result: any) => {
+  if (result && result.success && result.selectedUser && result.selectedUser.name) {
+    formData.value.backupOwner = result.selectedUser.name
+    uiStore.showSuccessSnackbar(t('admin.products.editor.messages.backupOwner.selected'))
+  } else {
+    uiStore.showErrorSnackbar(result?.message || t('admin.products.editor.messages.backupOwner.error'))
+  }
+  showBackupOwnerSelector.value = false
+}
+
 const handleSpecialistsGroupsSelected = async (result: any) => {
   if (result && result.success && result.selectedItems) {
     // Handle multiple selected groups - add to existing ones
@@ -187,23 +214,41 @@ const removeSpecialistsGroup = (groupName: string) => {
   }
 }
 
+// Picture picker methods
+const openPicturePicker = () => {
+  showPicturePicker.value = true
+}
+
+const handlePictureSelected = (pictureData: any) => {
+  // TODO: Implement picture selection logic
+  console.log('Picture selected:', pictureData)
+  uiStore.showSuccessSnackbar(t('admin.products.editor.messages.picture.selected'))
+}
+
+const clearPicture = () => {
+  // TODO: Implement picture clearing logic
+  uiStore.showSuccessSnackbar(t('admin.products.editor.messages.picture.cleared'))
+}
+
 // Initialize form data on mount
 onMounted(() => {
   if (isCreationMode.value) {
-    // Generate translation key automatically
-    formData.value.translationKey = generateUUID()
+    // Set default product type
+    formData.value.productType = 'product'
   }
 })
 </script>
 
 <template>
-  <div class="product-editor-details">
-    <v-form
-      ref="form"
-      v-model="isFormValid"
-      @submit.prevent="isCreationMode ? createProduct() : updateProduct()"
-    >
-      <v-container class="pa-6">
+  <div class="d-flex">
+    <!-- Main content (left part) -->
+    <div class="flex-grow-1">
+      <v-container class="content-container">
+        <v-form
+          ref="form"
+          v-model="isFormValid"
+          @submit.prevent="isCreationMode ? createProduct() : updateProduct()"
+        >
         <!-- Basic Information Section -->
         <v-row>
           <v-col cols="12">
@@ -217,7 +262,7 @@ onMounted(() => {
             <v-row class="pt-3">
               <v-col
                 cols="12"
-                md="4"
+                md="6"
               >
                 <v-text-field
                   v-model="formData.productCode"
@@ -230,43 +275,49 @@ onMounted(() => {
               </v-col>
               <v-col
                 cols="12"
-                md="4"
+                md="6"
               >
-                <div class="d-flex align-center">
-                  <v-text-field
-                    v-model="formData.translationKey"
-                    :label="t('admin.products.editor.basic.translationKey.label')"
-                    :rules="translationKeyRules"
-                    readonly
-                    variant="outlined"
-                    color="teal"
+                <v-btn-toggle
+                  v-model="formData.productType"
+                  mandatory
+                  color="teal"
+                  class="product-type-toggle-group"
+                  density="compact"
+                  variant="outlined"
+                >
+                  <v-btn
+                    value="product"
+                    size="small"
                   >
-                    <template #append-inner>
-                      <div class="uuid-display">
-                        <span class="uuid-value">{{ formData.translationKey || 'Generated automatically' }}</span>
-                      </div>
-                    </template>
-                  </v-text-field>
-                </div>
+                    {{ t('admin.products.editor.basic.type.product') }}
+                  </v-btn>
+                  <v-btn
+                    value="product_and_option"
+                    size="small"
+                  >
+                    {{ t('admin.products.editor.basic.type.productAndOption') }}
+                  </v-btn>
+                  <v-btn
+                    value="option"
+                    size="small"
+                  >
+                    {{ t('admin.products.editor.basic.type.option') }}
+                  </v-btn>
+                </v-btn-toggle>
               </v-col>
+            </v-row>
+
+            <v-row>
               <v-col
                 cols="12"
-                md="4"
+                md="6"
               >
-                <div class="d-flex align-center gap-2">
-                  <v-checkbox
-                    v-model="formData.canBeOption"
-                    :label="t('admin.products.editor.basic.canBeOption.label')"
-                    variant="outlined"
-                    density="compact"
-                    color="teal"
-                  />
-                  <v-checkbox
-                    v-model="formData.optionOnly"
-                    :label="t('admin.products.editor.basic.optionOnly.label')"
-                    variant="outlined"
-                    density="compact"
-                    color="teal"
+                <div class="d-flex align-center">
+                  <v-switch
+                    v-model="formData.isPublished"
+                    color="teal-darken-2"
+                    :label="t('admin.products.editor.basic.isPublished.label')"
+                    hide-details
                   />
                 </div>
               </v-col>
@@ -277,24 +328,41 @@ onMounted(() => {
                 cols="12"
                 md="6"
               >
-                <v-checkbox
-                  v-model="formData.isPublished"
-                  :label="t('admin.products.editor.basic.isPublished.label')"
-                  variant="outlined"
-                  density="compact"
-                  color="teal"
-                />
+                <div class="picture-placeholder">
+                  <div 
+                    class="picture-placeholder-content"
+                    style="cursor: pointer;"
+                    @click="openPicturePicker"
+                  >
+                    <component 
+                      :is="selectedPictureComponent"
+                      v-if="selectedPictureComponent"
+                      :size="48"
+                      color="rgb(20, 184, 166)"
+                      class="placeholder-picture"
+                    />
+                    <div 
+                      v-else
+                      class="empty-placeholder"
+                    >
+                      <PhImage :size="48" color="rgb(20, 184, 166)" />
+                      <div class="placeholder-text">
+                        {{ t('admin.products.editor.basic.picture.placeholder') }}
+                      </div>
+                    </div>
+                  </div>
+                </div>
               </v-col>
             </v-row>
           </v-col>
         </v-row>
 
-        <!-- Responsible Section -->
+        <!-- Contacts Section -->
         <v-row>
           <v-col cols="12">
             <div class="card-header mt-6">
               <v-card-title class="text-subtitle-1">
-                {{ t('admin.products.editor.responsible.title').toLowerCase() }}
+                {{ t('admin.products.editor.contacts.title').toLowerCase() }}
               </v-card-title>
               <v-divider class="section-divider" />
             </div>
@@ -302,12 +370,12 @@ onMounted(() => {
             <v-row class="pt-3">
               <v-col
                 cols="12"
-                md="6"
+                md="4"
               >
                 <div class="d-flex align-center">
                   <v-text-field
                     v-model="formData.owner"
-                    :label="t('admin.products.editor.responsible.owner.label')"
+                    :label="t('admin.products.editor.contacts.owner.label')"
                     :rules="ownerRules"
                     readonly
                     variant="outlined"
@@ -324,11 +392,31 @@ onMounted(() => {
               </v-col>
               <v-col
                 cols="12"
-                md="6"
+                md="4"
+              >
+                <div class="d-flex align-center">
+                  <v-text-field
+                    v-model="formData.backupOwner"
+                    :label="t('admin.products.editor.contacts.backupOwner.label')"
+                    readonly
+                    variant="outlined"
+                    color="teal"
+                  >
+                    <template #append-inner>
+                      <div style="cursor: pointer" @click="showBackupOwnerSelector = true">
+                        <PhMagnifyingGlass />
+                      </div>
+                    </template>
+                  </v-text-field>
+                </div>
+              </v-col>
+              <v-col
+                cols="12"
+                md="4"
               >
                 <div class="access-control-field">
                   <v-label class="text-body-2 mb-2">
-                    {{ t('admin.products.editor.responsible.specialistsGroups.label') }}
+                    {{ t('admin.products.editor.contacts.specialists.label') }}
                   </v-label>
                   <div class="chips-container">
                     <v-chip
@@ -361,7 +449,7 @@ onMounted(() => {
                       <template #prepend>
                         <PhPlus />
                       </template>
-                      {{ t('admin.products.editor.responsible.addGroups') }}
+                      {{ t('admin.products.editor.contacts.addGroups') }}
                     </v-btn>
                     <v-btn
                       v-else
@@ -374,7 +462,7 @@ onMounted(() => {
                       <template #prepend>
                         <PhPlus />
                       </template>
-                      {{ t('admin.products.editor.responsible.addMore') }}
+                      {{ t('admin.products.editor.contacts.addMore') }}
                     </v-btn>
                   </div>
                 </div>
@@ -404,7 +492,11 @@ onMounted(() => {
                   :label="t('admin.products.editor.translations.language.label')"
                   variant="outlined"
                   color="teal"
-                />
+                >
+                  <template #append-inner>
+                    <PhCaretUpDown />
+                  </template>
+                </v-select>
               </v-col>
             </v-row>
 
@@ -536,164 +628,123 @@ onMounted(() => {
           </v-col>
         </v-row>
 
-        <!-- Visibility Settings Section -->
-        <v-row>
-          <v-col cols="12">
-            <div class="card-header mt-6">
-              <v-card-title class="text-subtitle-1">
-                {{ t('admin.products.editor.visibility.title').toLowerCase() }}
-              </v-card-title>
-              <v-divider class="section-divider" />
-            </div>
 
-            <v-row class="pt-3">
-              <v-col
-                cols="12"
-                md="3"
-              >
-                <v-checkbox
-                  v-model="formData.visibility.isVisibleOwner"
-                  :label="t('admin.products.editor.visibility.isVisibleOwner.label')"
-                  variant="outlined"
-                  density="compact"
-                  color="teal"
-                />
-              </v-col>
-              <v-col
-                cols="12"
-                md="3"
-              >
-                <v-checkbox
-                  v-model="formData.visibility.isVisibleGroups"
-                  :label="t('admin.products.editor.visibility.isVisibleGroups.label')"
-                  variant="outlined"
-                  density="compact"
-                  color="teal"
-                />
-              </v-col>
-              <v-col
-                cols="12"
-                md="3"
-              >
-                <v-checkbox
-                  v-model="formData.visibility.isVisibleTechSpecs"
-                  :label="t('admin.products.editor.visibility.isVisibleTechSpecs.label')"
-                  variant="outlined"
-                  density="compact"
-                  color="teal"
-                />
-              </v-col>
-              <v-col
-                cols="12"
-                md="3"
-              >
-                <v-checkbox
-                  v-model="formData.visibility.isVisibleAreaSpecs"
-                  :label="t('admin.products.editor.visibility.isVisibleAreaSpecs.label')"
-                  variant="outlined"
-                  density="compact"
-                  color="teal"
-                />
-              </v-col>
-            </v-row>
-
-            <v-row>
-              <v-col
-                cols="12"
-                md="3"
-              >
-                <v-checkbox
-                  v-model="formData.visibility.isVisibleIndustrySpecs"
-                  :label="t('admin.products.editor.visibility.isVisibleIndustrySpecs.label')"
-                  variant="outlined"
-                  density="compact"
-                  color="teal"
-                />
-              </v-col>
-              <v-col
-                cols="12"
-                md="3"
-              >
-                <v-checkbox
-                  v-model="formData.visibility.isVisibleKeyFeatures"
-                  :label="t('admin.products.editor.visibility.isVisibleKeyFeatures.label')"
-                  variant="outlined"
-                  density="compact"
-                  color="teal"
-                />
-              </v-col>
-              <v-col
-                cols="12"
-                md="3"
-              >
-                <v-checkbox
-                  v-model="formData.visibility.isVisibleOverview"
-                  :label="t('admin.products.editor.visibility.isVisibleOverview.label')"
-                  variant="outlined"
-                  density="compact"
-                  color="teal"
-                />
-              </v-col>
-              <v-col
-                cols="12"
-                md="3"
-              >
-                <v-checkbox
-                  v-model="formData.visibility.isVisibleLongDescription"
-                  :label="t('admin.products.editor.visibility.isVisibleLongDescription.label')"
-                  variant="outlined"
-                  density="compact"
-                  color="teal"
-                />
-              </v-col>
-            </v-row>
-          </v-col>
-        </v-row>
-
-        <!-- Action Buttons -->
-        <v-row class="mt-6">
-          <v-col cols="12">
-            <div class="d-flex justify-end gap-2">
-              <v-btn
-                variant="outlined"
-                color="grey"
-                @click="cancelEdit"
-              >
-                {{ t('admin.products.editor.actions.cancel') }}
-              </v-btn>
-              <v-btn
-                :loading="isSubmitting"
-                :disabled="!isFormValid"
-                color="teal"
-                @click="isCreationMode ? createProduct() : updateProduct()"
-              >
-                {{ isCreationMode ? t('admin.products.editor.actions.create') : t('admin.products.editor.actions.update') }}
-              </v-btn>
-            </div>
-          </v-col>
-        </v-row>
+        </v-form>
       </v-container>
-    </v-form>
+    </div>
+    
+    <!-- Sidebar (right part) -->
+    <div class="side-bar-container">
+      <!-- Actions section -->
+      <div class="side-bar-section">
+        <h3 class="text-subtitle-2 px-2 py-2">
+          {{ t('admin.products.editor.actions.title').toLowerCase() }}
+        </h3>
+        
+        <!-- Picture picker button -->
+        <div class="picture-picker-sidebar mb-3">
+          <v-btn
+            block
+            variant="outlined"
+            color="teal"
+            class="select-picture-btn-sidebar"
+            @click="openPicturePicker"
+          >
+            <template #prepend>
+              <PhImage />
+            </template>
+            {{ t('admin.products.editor.basic.picture.select') }}
+          </v-btn>
+        </div>
+        
+        <!-- Create button (visible only in creation mode) -->
+        <v-btn
+          v-if="isCreationMode"
+          block
+          color="teal"
+          variant="outlined"
+          :disabled="!isFormValid || isSubmitting"
+          class="mb-3"
+          @click="createProduct"
+        >
+          {{ t('admin.products.editor.actions.create').toUpperCase() }}
+        </v-btn>
 
-    <!-- ItemSelector Modals -->
-    <ItemSelector
-      v-if="showOwnerSelector"
-      :show="showOwnerSelector"
-      :mode="'users'"
-      :multiple="false"
-      @close="showOwnerSelector = false"
-      @selected="handleOwnerSelected"
-    />
+        <!-- Update button (visible only in edit mode) -->
+        <v-btn
+          v-if="isEditMode"
+          block
+          color="teal"
+          variant="outlined"
+          :disabled="!isFormValid || isSubmitting"
+          class="mb-3"
+          @click="updateProduct"
+        >
+          {{ t('admin.products.editor.actions.update').toUpperCase() }}
+        </v-btn>
 
-    <ItemSelector
-      v-if="showSpecialistsGroupsSelector"
-      :show="showSpecialistsGroupsSelector"
-      :mode="'groups'"
-      :multiple="true"
-      @close="showSpecialistsGroupsSelector = false"
-      @selected="handleSpecialistsGroupsSelected"
-    />
+        <!-- Cancel button (visible always) -->
+        <v-btn
+          block
+          color="grey"
+          variant="outlined"
+          class="mb-3"
+          @click="cancelEdit"
+        >
+          {{ t('admin.products.editor.actions.cancel').toUpperCase() }}
+        </v-btn>
+      </div>
+    </div>
   </div>
+
+  <!-- ItemSelector Modals -->
+  <v-dialog
+    v-model="showOwnerSelector"
+    max-width="700"
+  >
+    <ItemSelector 
+      :title="t('admin.products.editor.contacts.owner.select')"
+      search-service="searchUsers"
+      action-service="returnSelectedUsername"
+      :max-results="20"
+      :max-items="1"
+      :action-button-text="t('admin.products.editor.actions.save')"
+      @close="showOwnerSelector = false" 
+      @action-performed="handleOwnerSelected"
+    />
+  </v-dialog>
+
+  <v-dialog
+    v-model="showBackupOwnerSelector"
+    max-width="700"
+  >
+    <ItemSelector 
+      :title="t('admin.products.editor.contacts.backupOwner.select')"
+      search-service="searchUsers"
+      action-service="returnSelectedUsername"
+      :max-results="20"
+      :max-items="1"
+      :action-button-text="t('admin.products.editor.actions.save')"
+      @close="showBackupOwnerSelector = false" 
+      @action-performed="handleBackupOwnerSelected"
+    />
+  </v-dialog>
+
+  <v-dialog
+    v-model="showSpecialistsGroupsSelector"
+    max-width="700"
+  >
+    <ItemSelector 
+      :title="t('admin.products.editor.contacts.specialists.select')"
+      search-service="searchGroups"
+      action-service="returnMultipleGroups"
+      :max-results="20"
+      :max-items="10"
+      :action-button-text="t('admin.products.editor.actions.save')"
+      @close="showSpecialistsGroupsSelector = false" 
+      @action-performed="handleSpecialistsGroupsSelected"
+    />
+  </v-dialog>
 </template>
 
 <style scoped>
@@ -753,5 +804,91 @@ onMounted(() => {
 /* Gap utility */
 .gap-2 {
   gap: 8px;
+}
+
+/* Product type toggle group styling */
+.product-type-toggle-group {
+  width: 100%;
+}
+
+.product-type-toggle-group :deep(.v-btn) {
+  flex: 1;
+  text-transform: none;
+  font-weight: 400;
+}
+
+/* Sidebar styles */
+.side-bar-container {
+  width: 18%;
+  min-width: 240px;
+  border-left: thin solid rgba(var(--v-border-color), var(--v-border-opacity));
+  display: flex;
+  flex-direction: column;
+}
+
+.side-bar-section {
+  padding: 16px;
+}
+
+/* Content container */
+.content-container {
+  padding: 16px;
+}
+
+/* Picture picker sidebar styles */
+.picture-picker-sidebar {
+  width: 100%;
+}
+
+.select-picture-btn-sidebar {
+  height: 40px;
+  min-width: 240px;
+}
+
+/* Sidebar button styles */
+.side-bar-section .v-btn {
+  min-width: 240px;
+}
+
+/* Picture placeholder styles */
+.picture-placeholder {
+  width: 100%;
+  max-width: 300px;
+}
+
+.picture-placeholder-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 200px;
+  border: 2px dashed rgba(var(--v-border-color), var(--v-border-opacity));
+  border-radius: 8px;
+  background-color: rgba(var(--v-theme-surface), 1);
+  transition: border-color 0.2s ease;
+}
+
+.picture-placeholder-content:hover {
+  border-color: rgba(var(--v-theme-primary), 0.5);
+}
+
+.placeholder-picture {
+  color: rgba(var(--v-theme-primary), 1);
+}
+
+.empty-placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  gap: 8px;
+}
+
+.placeholder-text {
+  font-size: 0.875rem;
+  color: rgba(0, 0, 0, 0.6);
+  text-align: center;
 }
 </style>
