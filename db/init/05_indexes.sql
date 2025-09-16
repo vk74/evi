@@ -21,7 +21,6 @@ CREATE INDEX IF NOT EXISTS idx_group_members_user_id ON app.group_members USING 
 
 -- Create indexes for products (updated for new structure)
 CREATE INDEX IF NOT EXISTS idx_products_created_at ON app.products USING btree (created_at);
-CREATE INDEX IF NOT EXISTS idx_products_owner ON app.products USING btree (owner_id);
 CREATE INDEX IF NOT EXISTS idx_products_published ON app.products USING btree (is_published);
 CREATE INDEX IF NOT EXISTS idx_products_code ON app.products USING btree (product_code);
 CREATE INDEX IF NOT EXISTS idx_products_translation_key ON app.products USING btree (translation_key);
