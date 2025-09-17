@@ -10,7 +10,7 @@
 -->
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useProductsAdminStore } from '../../state.products.admin'
 import { useUiStore } from '@/core/state/uistate'
@@ -337,14 +337,37 @@ const loadProductData = async () => {
   }
 }
 
+// Watch for changes in editingProductId to reload data when needed
+watch(editingProductId, (newProductId, oldProductId) => {
+  if (newProductId && newProductId !== oldProductId && isEditMode.value) {
+    // Check if we need to load data
+    if (productsStore.needsProductDataLoad(newProductId)) {
+      loadProductData()
+    }
+  }
+}, { immediate: false })
+
+// Watch for changes in editor mode
+watch(isEditMode, (newMode) => {
+  if (newMode && editingProductId.value) {
+    // Check if we need to load data
+    if (productsStore.needsProductDataLoad(editingProductId.value)) {
+      loadProductData()
+    }
+  }
+}, { immediate: false })
+
 // Initialize form data on mount
 onMounted(() => {
   if (isCreationMode.value) {
     // Set default product type
     productType.value = 'product'
-  } else if (isEditMode.value) {
-    // Load product data for editing
-    loadProductData()
+  } else if (isEditMode.value && editingProductId.value) {
+    // Check if we need to load data
+    if (productsStore.needsProductDataLoad(editingProductId.value)) {
+      // Load product data for editing
+      loadProductData()
+    }
   }
 })
 </script>

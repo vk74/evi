@@ -142,7 +142,7 @@ export interface ProductsAdminState {
   activeEditorSection: ProductEditorSectionId
   editorMode: ProductEditorMode
   editingProductId: string | null
-  editingProductData: Product | null
+  editingProductData: ProductWithFullData | null
   formData: ProductFormData
 }
 

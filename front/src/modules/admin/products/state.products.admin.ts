@@ -77,7 +77,7 @@ export const useProductsAdminStore = defineStore('productsAdmin', {
       this.activeEditorSection = section
     },
 
-    openProductEditor(mode: ProductEditorMode, productId?: string, productData?: Product): void {
+    openProductEditor(mode: ProductEditorMode, productId?: string, productData?: ProductWithFullData): void {
       this.editorMode = mode
       this.editingProductId = productId || null
       this.editingProductData = productData || null
@@ -85,7 +85,7 @@ export const useProductsAdminStore = defineStore('productsAdmin', {
       if (mode === 'creation') {
         this.resetFormData()
       } else if (productData) {
-        this.populateFormWithProduct(productData)
+        this.populateFormWithFullProductData(productData)
       }
     },
 
@@ -140,18 +140,19 @@ export const useProductsAdminStore = defineStore('productsAdmin', {
       }
     },
 
-    populateFormWithProduct(product: Product): void {
+    populateFormWithProduct(product: ProductWithFullData): void {
       this.formData = {
         productCode: product.product_code,
         translationKey: product.translation_key,
         canBeOption: product.can_be_option,
         optionOnly: product.option_only,
-        owner: '', // Will be populated from separate API call
-        specialistsGroups: [], // Will be populated from separate API call
-        translations: { 
-          en: { name: '', shortDesc: '' }, 
-          ru: { name: '', shortDesc: '' } 
-        }, // Will be populated from separate API call
+        owner: product.owner || '',
+        backupOwner: product.backupOwner || '',
+        specialistsGroups: product.specialistsGroups || [],
+        translations: product.translations || {
+          en: { name: '', shortDesc: '', longDesc: '', techSpecs: {}, areaSpecifics: {}, industrySpecifics: {}, keyFeatures: {}, productOverview: {} },
+          ru: { name: '', shortDesc: '', longDesc: '', techSpecs: {}, areaSpecifics: {}, industrySpecifics: {}, keyFeatures: {}, productOverview: {} }
+        },
         visibility: {
           isVisibleOwner: product.is_visible_owner,
           isVisibleGroups: product.is_visible_groups,
@@ -210,6 +211,34 @@ export const useProductsAdminStore = defineStore('productsAdmin', {
       this.editingProductId = productId
       this.activeSection = 'product-editor'
       this.activeEditorSection = 'details'
+    },
+
+    /**
+     * Checks if product data needs to be loaded
+     */
+    needsProductDataLoad(productId: string): boolean {
+      return !this.editingProductData || this.editingProductData.product_id !== productId
+    },
+
+    /**
+     * Gets current product data if available
+     */
+    getCurrentProductData(): ProductWithFullData | null {
+      return this.editingProductData
+    },
+
+    /**
+     * Clears product data (useful for cache invalidation)
+     */
+    clearProductData(): void {
+      this.editingProductData = null
+    },
+
+    /**
+     * Forces reload of product data by clearing cache
+     */
+    invalidateProductData(): void {
+      this.clearProductData()
     },
 
     resetState(): void {
