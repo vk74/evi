@@ -166,3 +166,37 @@ export interface ProductWithFullData extends Product {
     backupOwner?: string
     specialistsGroups: string[]
 }
+
+// Update product request interface
+export interface UpdateProductRequest {
+    productId: string
+    productCode?: string
+    translationKey?: string
+    canBeOption?: boolean
+    optionOnly?: boolean
+    owner?: string
+    backupOwner?: string
+    specialistsGroups?: string[]
+    translations?: ProductTranslations
+    visibility?: {
+        isVisibleOwner?: boolean
+        isVisibleGroups?: boolean
+        isVisibleTechSpecs?: boolean
+        isVisibleAreaSpecs?: boolean
+        isVisibleIndustrySpecs?: boolean
+        isVisibleKeyFeatures?: boolean
+        isVisibleOverview?: boolean
+        isVisibleLongDescription?: boolean
+    }
+}
+
+// Update product response interface
+export interface UpdateProductResponse extends ApiResponse {
+    data?: {
+        product: Product
+        translations: ProductTranslation[]
+        owner?: string
+        backupOwner?: string
+        specialistsGroups: string[]
+    }
+}

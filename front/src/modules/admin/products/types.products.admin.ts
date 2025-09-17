@@ -71,27 +71,6 @@ export interface CreateProductResponse {
   }
 }
 
-// Update product request interface
-export interface UpdateProductRequest {
-  productCode: string
-  translationKey: string
-  canBeOption: boolean
-  optionOnly: boolean
-  owner: string
-  specialistsGroups: string[]
-  translations: ProductTranslations
-}
-
-// Update product response interface
-export interface UpdateProductResponse {
-  success: boolean
-  message: string
-  data?: {
-    id: string
-    productCode: string
-    translationKey: string
-  }
-}
 
 // Product interface for list view
 export interface Product {
@@ -208,4 +187,40 @@ export interface ProductWithFullData extends Product {
   owner?: string
   backupOwner?: string
   specialistsGroups: string[]
+}
+
+// Update product request interface
+export interface UpdateProductRequest {
+  productId: string
+  productCode?: string
+  translationKey?: string
+  canBeOption?: boolean
+  optionOnly?: boolean
+  owner?: string
+  backupOwner?: string
+  specialistsGroups?: string[]
+  translations?: ProductTranslations
+  visibility?: {
+    isVisibleOwner?: boolean
+    isVisibleGroups?: boolean
+    isVisibleTechSpecs?: boolean
+    isVisibleAreaSpecs?: boolean
+    isVisibleIndustrySpecs?: boolean
+    isVisibleKeyFeatures?: boolean
+    isVisibleOverview?: boolean
+    isVisibleLongDescription?: boolean
+  }
+}
+
+// Update product response interface
+export interface UpdateProductResponse {
+  success: boolean
+  message: string
+  data?: {
+    product: Product
+    translations: ProductTranslation[]
+    owner?: string
+    backupOwner?: string
+    specialistsGroups: string[]
+  }
 }

@@ -161,6 +161,60 @@ export const EVENTS_ADMIN_PRODUCTS: EventCollection = {
         version: '1.0.0'
     },
 
+    'product.update.validation_started': {
+        eventName: 'products.update.validation_started',
+        source: 'admin-products',
+        eventType: 'system',
+        severity: 'debug',
+        eventMessage: 'Product update validation started',
+        version: '1.0.0'
+    },
+
+    'product.update.not_found': {
+        eventName: 'products.update.not_found',
+        source: 'admin-products',
+        eventType: 'system',
+        severity: 'warning',
+        eventMessage: 'Product not found for update',
+        version: '1.0.0'
+    },
+
+    'product.update.main_data_updated': {
+        eventName: 'products.update.main_data_updated',
+        source: 'admin-products',
+        eventType: 'system',
+        severity: 'info',
+        eventMessage: 'Product main data updated successfully',
+        version: '1.0.0'
+    },
+
+    'product.update.translations_updated': {
+        eventName: 'products.update.translations_updated',
+        source: 'admin-products',
+        eventType: 'system',
+        severity: 'info',
+        eventMessage: 'Product translations updated successfully',
+        version: '1.0.0'
+    },
+
+    'product.update.owners_updated': {
+        eventName: 'products.update.owners_updated',
+        source: 'admin-products',
+        eventType: 'system',
+        severity: 'info',
+        eventMessage: 'Product owners updated successfully',
+        version: '1.0.0'
+    },
+
+    'product.update.groups_updated': {
+        eventName: 'products.update.groups_updated',
+        source: 'admin-products',
+        eventType: 'system',
+        severity: 'info',
+        eventMessage: 'Product specialist groups updated successfully',
+        version: '1.0.0'
+    },
+
     'product.update.success': {
         eventName: 'products.update.success',
         source: 'admin-products',

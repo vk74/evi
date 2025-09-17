@@ -175,6 +175,16 @@
           "data": {
             "loaded": "product data loaded successfully",
             "loadError": "error loading product data"
+          },
+          "update": {
+            "success": "product updated successfully",
+            "error": "error updating product",
+            "saving": "saving product...",
+            "unsavedChanges": "you have unsaved changes",
+            "confirmDiscard": "discard changes?",
+            "discard": "discard",
+            "save": "save",
+            "noProductId": "unable to determine product ID for update"
           }
         }
       }

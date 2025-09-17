@@ -17,6 +17,7 @@ import { useUiStore } from '@/core/state/uistate'
 import { defineAsyncComponent } from 'vue'
 import { serviceCreateProduct } from '../../service.create.product'
 import { serviceFetchProduct } from '../../service.fetch.product'
+import { serviceUpdateProduct } from '../../service.update.product'
 
 const ItemSelector = defineAsyncComponent(() => import(/* webpackChunkName: "ui-item-selector" */ '@/core/ui/modals/item-selector/ItemSelector.vue'))
 const DataLoading = defineAsyncComponent(() => import(/* webpackChunkName: "ui-data-loading" */ '@/core/ui/loaders/DataLoading.vue'))
@@ -213,17 +214,64 @@ const updateProduct = async () => {
     return
   }
 
+  if (!editingProductId.value) {
+    uiStore.showErrorSnackbar(t('admin.products.editor.messages.update.noProductId'))
+    return
+  }
+
   isSubmitting.value = true
   
   try {
-    // TODO: Implement product update logic
-    console.log('Updating product with data:', formData.value)
+    // Prepare data for API - only send filled languages
+    const translations: any = {}
     
-    // Show success message
-    uiStore.showSuccessSnackbar(t('admin.products.editor.messages.updated'))
+    // Check if English is filled
+    if (formData.value.translations.en && 
+        formData.value.translations.en.name && 
+        formData.value.translations.en.name.trim().length > 0 &&
+        formData.value.translations.en.shortDesc && 
+        formData.value.translations.en.shortDesc.trim().length > 0) {
+      translations.en = formData.value.translations.en
+    }
+    
+    // Check if Russian is filled
+    if (formData.value.translations.ru && 
+        formData.value.translations.ru.name && 
+        formData.value.translations.ru.name.trim().length > 0 &&
+        formData.value.translations.ru.shortDesc && 
+        formData.value.translations.ru.shortDesc.trim().length > 0) {
+      translations.ru = formData.value.translations.ru
+    }
+
+    const updateData = {
+      productId: editingProductId.value,
+      productCode: formData.value.productCode,
+      translationKey: formData.value.translationKey,
+      canBeOption: formData.value.canBeOption,
+      optionOnly: formData.value.optionOnly,
+      owner: formData.value.owner,
+      backupOwner: formData.value.backupOwner,
+      specialistsGroups: formData.value.specialistsGroups,
+      translations: translations,
+      visibility: formData.value.visibility
+    }
+
+    // Debug: Log prepared update data
+    console.log('[ProductEditorDetails] Prepared updateData:', JSON.stringify(updateData, null, 2))
+    console.log('[ProductEditorDetails] Translations object:', translations)
+    console.log('[ProductEditorDetails] Form translations:', formData.value.translations)
+
+    // Call service to update product
+    const result = await serviceUpdateProduct.updateProduct(updateData)
+    
+    if (result) {
+      // Product was updated successfully, data is already updated in store
+      console.log('Product updated successfully:', result)
+    }
     
   } catch (error) {
-    // Error messages will be handled by the service
+    // Error messages are handled by the service
+    console.error('Error updating product:', error)
   } finally {
     isSubmitting.value = false
   }
@@ -233,12 +281,24 @@ const cancelEdit = () => {
   productsStore.closeProductEditor()
 }
 
+// Helper method for updating translation fields
+const updateTranslationField = (fieldName: string, value: any) => {
+  if (!formData.value.translations[selectedLanguage.value]) {
+    formData.value.translations[selectedLanguage.value] = {
+      name: '', shortDesc: '', longDesc: '', techSpecs: {}, areaSpecifics: {}, industrySpecifics: {}, keyFeatures: {}, productOverview: {}
+    }
+  }
+  formData.value.translations[selectedLanguage.value][fieldName] = value
+}
+
 // Helper method for updating JSONB fields
 const updateJsonbField = (fieldName: string, event: Event) => {
   const target = event.target as HTMLTextAreaElement
   try {
     const parsed = JSON.parse(target.value)
-    formData.value.translations[selectedLanguage.value][fieldName] = parsed
+    if (formData.value.translations[selectedLanguage.value]) {
+      formData.value.translations[selectedLanguage.value][fieldName] = parsed
+    }
   } catch (error) {
     // Invalid JSON, keep the current value
     console.warn('Invalid JSON for field:', fieldName)
@@ -638,7 +698,8 @@ onMounted(() => {
             <v-row>
               <v-col cols="12">
                 <v-text-field
-                  v-model="formData.translations[selectedLanguage].name"
+                  :model-value="formData.translations[selectedLanguage]?.name || ''"
+                  @update:model-value="(value) => updateTranslationField('name', value)"
                   :label="t('admin.products.editor.translations.name.label')"
                   :rules="nameRules"
                   variant="outlined"
@@ -651,7 +712,8 @@ onMounted(() => {
             <v-row>
               <v-col cols="12">
                 <v-textarea
-                  v-model="formData.translations[selectedLanguage].shortDesc"
+                  :model-value="formData.translations[selectedLanguage]?.shortDesc || ''"
+                  @update:model-value="(value) => updateTranslationField('shortDesc', value)"
                   :label="t('admin.products.editor.translations.shortDesc.label')"
                   :rules="shortDescRules"
                   variant="outlined"
@@ -667,7 +729,8 @@ onMounted(() => {
             <v-row>
               <v-col cols="12">
                 <v-textarea
-                  v-model="formData.translations[selectedLanguage].longDesc"
+                  :model-value="formData.translations[selectedLanguage]?.longDesc || ''"
+                  @update:model-value="(value) => updateTranslationField('longDesc', value)"
                   :label="t('admin.products.editor.translations.longDesc.label')"
                   variant="outlined"
                   rows="5"
@@ -696,7 +759,7 @@ onMounted(() => {
                 md="6"
               >
                 <v-textarea
-                  :model-value="JSON.stringify(formData.translations[selectedLanguage].techSpecs, null, 2)"
+                  :model-value="JSON.stringify(formData.translations[selectedLanguage]?.techSpecs, null, 2)"
                   :label="t('admin.products.editor.jsonb.techSpecs.label')"
                   variant="outlined"
                   rows="4"
@@ -709,7 +772,7 @@ onMounted(() => {
                 md="6"
               >
                 <v-textarea
-                  :model-value="JSON.stringify(formData.translations[selectedLanguage].areaSpecifics, null, 2)"
+                  :model-value="JSON.stringify(formData.translations[selectedLanguage]?.areaSpecifics, null, 2)"
                   :label="t('admin.products.editor.jsonb.areaSpecifics.label')"
                   variant="outlined"
                   rows="4"
@@ -725,7 +788,7 @@ onMounted(() => {
                 md="6"
               >
                 <v-textarea
-                  :model-value="JSON.stringify(formData.translations[selectedLanguage].industrySpecifics, null, 2)"
+                  :model-value="JSON.stringify(formData.translations[selectedLanguage]?.industrySpecifics, null, 2)"
                   :label="t('admin.products.editor.jsonb.industrySpecifics.label')"
                   variant="outlined"
                   rows="4"
@@ -738,7 +801,7 @@ onMounted(() => {
                 md="6"
               >
                 <v-textarea
-                  :model-value="JSON.stringify(formData.translations[selectedLanguage].keyFeatures, null, 2)"
+                  :model-value="JSON.stringify(formData.translations[selectedLanguage]?.keyFeatures, null, 2)"
                   :label="t('admin.products.editor.jsonb.keyFeatures.label')"
                   variant="outlined"
                   rows="4"
@@ -751,7 +814,7 @@ onMounted(() => {
             <v-row>
               <v-col cols="12">
                 <v-textarea
-                  :model-value="JSON.stringify(formData.translations[selectedLanguage].productOverview, null, 2)"
+                  :model-value="JSON.stringify(formData.translations[selectedLanguage]?.productOverview, null, 2)"
                   :label="t('admin.products.editor.jsonb.productOverview.label')"
                   variant="outlined"
                   rows="4"

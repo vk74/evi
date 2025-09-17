@@ -170,6 +170,20 @@ export const useProductsAdminStore = defineStore('productsAdmin', {
      * Populates form with full product data including translations and relationships
      */
     populateFormWithFullProductData(productData: ProductWithFullData): void {
+      // Ensure translations have proper structure
+      const defaultTranslations = {
+        en: { name: '', shortDesc: '', longDesc: '', techSpecs: {}, areaSpecifics: {}, industrySpecifics: {}, keyFeatures: {}, productOverview: {} },
+        ru: { name: '', shortDesc: '', longDesc: '', techSpecs: {}, areaSpecifics: {}, industrySpecifics: {}, keyFeatures: {}, productOverview: {} }
+      }
+      
+      const translations = productData.translations || defaultTranslations
+      
+      // Ensure each language has all required fields
+      const safeTranslations = {
+        en: { ...defaultTranslations.en, ...translations.en },
+        ru: { ...defaultTranslations.ru, ...translations.ru }
+      }
+      
       this.formData = {
         productCode: productData.product_code,
         translationKey: productData.translation_key,
@@ -178,10 +192,7 @@ export const useProductsAdminStore = defineStore('productsAdmin', {
         owner: productData.owner || '',
         backupOwner: productData.backupOwner || '',
         specialistsGroups: productData.specialistsGroups || [],
-        translations: productData.translations || {
-          en: { name: '', shortDesc: '', longDesc: '', techSpecs: {}, areaSpecifics: {}, industrySpecifics: {}, keyFeatures: {}, productOverview: {} },
-          ru: { name: '', shortDesc: '', longDesc: '', techSpecs: {}, areaSpecifics: {}, industrySpecifics: {}, keyFeatures: {}, productOverview: {} }
-        },
+        translations: safeTranslations,
         visibility: {
           isVisibleOwner: productData.is_visible_owner,
           isVisibleGroups: productData.is_visible_groups,
@@ -248,6 +259,67 @@ export const useProductsAdminStore = defineStore('productsAdmin', {
       this.editingProductId = null
       this.editingProductData = null
       this.resetFormData()
+    },
+
+    /**
+     * Updates product data from form
+     */
+    async updateProductFromForm(): Promise<boolean> {
+      if (!this.editingProductId) {
+        return false
+      }
+
+      try {
+        const { serviceUpdateProduct } = await import('./service.update.product')
+        const result = await serviceUpdateProduct.updateProductFromForm()
+        return result !== null
+      } catch (error) {
+        console.error('Error updating product from form:', error)
+        return false
+      }
+    },
+
+    /**
+     * Checks if form has unsaved changes
+     */
+    hasUnsavedChanges(): boolean {
+      if (!this.editingProductData) {
+        return false
+      }
+
+      // Compare current form data with stored product data
+      const current = this.formData
+      const stored = this.editingProductData
+
+      return (
+        current.productCode !== stored.product_code ||
+        current.translationKey !== stored.translation_key ||
+        current.canBeOption !== stored.can_be_option ||
+        current.optionOnly !== stored.option_only ||
+        current.owner !== (stored.owner || '') ||
+        current.backupOwner !== (stored.backupOwner || '') ||
+        JSON.stringify(current.specialistsGroups) !== JSON.stringify(stored.specialistsGroups || []) ||
+        JSON.stringify(current.translations) !== JSON.stringify(stored.translations || {}) ||
+        JSON.stringify(current.visibility) !== JSON.stringify({
+          isVisibleOwner: stored.is_visible_owner,
+          isVisibleGroups: stored.is_visible_groups,
+          isVisibleTechSpecs: stored.is_visible_tech_specs,
+          isVisibleAreaSpecs: stored.is_visible_area_specs,
+          isVisibleIndustrySpecs: stored.is_visible_industry_specs,
+          isVisibleKeyFeatures: stored.is_visible_key_features,
+          isVisibleOverview: stored.is_visible_overview,
+          isVisibleLongDescription: stored.is_visible_long_description
+        })
+      )
+    },
+
+    /**
+     * Resets form to match stored product data
+     */
+    resetFormToStoredData(): void {
+      if (this.editingProductData) {
+        this.populateFormWithFullProductData(this.editingProductData)
+      }
     }
   },
 
