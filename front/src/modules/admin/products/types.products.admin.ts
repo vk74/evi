@@ -1,41 +1,29 @@
 /**
  * @file types.products.admin.ts
- * Version: 1.1.0
  * Type definitions for products administration module.
- * Frontend file that defines TypeScript types and interfaces for products admin functionality.
+ * Version: 1.0.0
+ * Frontend types for products admin functionality.
  */
 
-export type ProductSectionId = 
-  | 'products-list'
-  | 'product-editor'
-  | 'settings'
-
-export type ProductEditorSectionId = 
-  | 'details'
-  | 'options'
-  | 'preferences'
-  | 'catalog publication'
-
-export type ProductEditorMode = 'creation' | 'edit'
-
-export interface Section {
-  id: ProductSectionId
-  title: string
-  icon: string
-  visible?: boolean
-}
-
-export interface ProductTranslation {
+// Product translation data interface
+export interface ProductTranslationData {
   name: string
   shortDesc: string
-  longDesc: string
-  techSpecs: Record<string, any>
-  areaSpecifics: Record<string, any>
-  industrySpecifics: Record<string, any>
-  keyFeatures: Record<string, any>
-  productOverview: Record<string, any>
+  longDesc?: string
+  techSpecs?: Record<string, any>
+  areaSpecifics?: Record<string, any>
+  industrySpecifics?: Record<string, any>
+  keyFeatures?: Record<string, any>
+  productOverview?: Record<string, any>
 }
 
+// Product translations interface
+export interface ProductTranslations {
+  en?: ProductTranslationData
+  ru?: ProductTranslationData
+}
+
+// Product visibility settings interface
 export interface ProductVisibility {
   isVisibleOwner: boolean
   isVisibleGroups: boolean
@@ -47,45 +35,108 @@ export interface ProductVisibility {
   isVisibleLongDescription: boolean
 }
 
+// Product form data interface
 export interface ProductFormData {
   productCode: string
   translationKey: string
   canBeOption: boolean
   optionOnly: boolean
-  isPublished: boolean
   owner: string
+  backupOwner?: string
   specialistsGroups: string[]
-  translations: {
-    en: ProductTranslation
-    ru: ProductTranslation
-  }
+  translations: ProductTranslations
   visibility: ProductVisibility
 }
 
-export interface Product {
-  productId: string
+// Create product request interface
+export interface CreateProductRequest {
   productCode: string
   translationKey: string
   canBeOption: boolean
   optionOnly: boolean
-  isPublished: boolean
-  ownerId: string
-  ownerName: string
-  specialistsGroups: Array<{
-    groupId: string
-    groupName: string
-  }>
-  translations: {
-    en: ProductTranslation
-    ru: ProductTranslation
-  }
-  visibility: ProductVisibility
-  createdAt: string
-  updatedAt: string
-  createdBy: string
-  updatedBy: string
+  owner: string
+  backupOwner?: string
+  specialistsGroups: string[]
+  translations: ProductTranslations
 }
 
+// Create product response interface
+export interface CreateProductResponse {
+  success: boolean
+  message: string
+  data?: {
+    id: string
+    productCode: string
+    translationKey: string
+  }
+}
+
+// Update product request interface
+export interface UpdateProductRequest {
+  productCode: string
+  translationKey: string
+  canBeOption: boolean
+  optionOnly: boolean
+  owner: string
+  specialistsGroups: string[]
+  translations: ProductTranslations
+}
+
+// Update product response interface
+export interface UpdateProductResponse {
+  success: boolean
+  message: string
+  data?: {
+    id: string
+    productCode: string
+    translationKey: string
+  }
+}
+
+// Product interface for list view
+export interface Product {
+  product_id: string
+  product_code: string
+  translation_key: string
+  can_be_option: boolean
+  option_only: boolean
+  is_published: boolean
+  is_visible_owner: boolean
+  is_visible_groups: boolean
+  is_visible_tech_specs: boolean
+  is_visible_area_specs: boolean
+  is_visible_industry_specs: boolean
+  is_visible_key_features: boolean
+  is_visible_overview: boolean
+  is_visible_long_description: boolean
+  created_at: Date
+  created_by: string
+  updated_at?: Date
+  updated_by?: string
+}
+
+// Product with translations interface
+export interface ProductWithTranslations extends Product {
+  translations: ProductTranslations
+}
+
+// API error interface
+export interface ApiError {
+  code: string
+  message: string
+  details?: Record<string, any>
+}
+
+// Product editor mode
+export type ProductEditorMode = 'creation' | 'edit'
+
+// Product editor sections
+export type ProductEditorSectionId = 'details' | 'options' | 'preferences' | 'catalog publication'
+
+// Product admin sections
+export type ProductSectionId = 'products-list' | 'product-editor'
+
+// Products admin state interface
 export interface ProductsAdminState {
   activeSection: ProductSectionId
   activeEditorSection: ProductEditorSectionId
@@ -93,4 +144,28 @@ export interface ProductsAdminState {
   editingProductId: string | null
   editingProductData: Product | null
   formData: ProductFormData
+}
+
+// Fetch products query interface
+export interface FetchProductsQuery {
+  page?: string
+  itemsPerPage?: string
+  searchQuery?: string
+  sortBy?: string
+  sortDesc?: string
+}
+
+// Fetch products response interface
+export interface FetchProductsResponse {
+  success: boolean
+  message: string
+  data?: {
+    products: Product[]
+    pagination: {
+      totalItems: number
+      totalPages: number
+      currentPage: number
+      itemsPerPage: number
+    }
+  }
 }

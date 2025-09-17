@@ -35,6 +35,7 @@ import updateSectionsPublishController from './service/sections/controller.admin
 import fetchAllServicesController from './service/sections/controller.admin.fetchallservices';
 import fetchSingleServiceController from './service/sections/controller.admin.fetchsingleservice';
 import deleteServicesController from './service/sections/controller.admin.deleteservices';
+import createProductController from './products/controller.admin.create.product';
 import registerUserController from '../account/controller.register.user';
 import fetchUserGroupsController from './users/userEditor/controller.fetch.user.groups'
 
@@ -76,6 +77,9 @@ router.get('/api/admin/services/fetchallservices', validateJWT, checkIsUserStatu
 router.get('/api/admin/services/fetchpublishingsections', validateJWT, checkIsUserStatusActive, fetchPublishingSectionsController);
 router.get('/api/admin/services/fetchsingleservice', validateJWT, checkIsUserStatusActive, fetchSingleServiceController);
 router.post('/api/admin/services/deleteservices', validateJWT, checkIsUserStatusActive, deleteServicesController);
+
+// Routes for Products Admin
+router.post('/api/admin/products/create', validateJWT, checkIsUserStatusActive, createProductController);
 
 // Routes for Account Management
 router.post('/api/admin/users/register', registerUserController);

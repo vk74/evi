@@ -29,6 +29,9 @@
           "productCode": {
             "label": "код продукта"
           },
+          "translationKey": {
+            "label": "ключ перевода"
+          },
           "type": {
             "product": "продукт",
             "productAndOption": "продукт или опция",

@@ -29,6 +29,9 @@
           "productCode": {
             "label": "product code"
           },
+          "translationKey": {
+            "label": "translation key"
+          },
           "type": {
             "product": "product",
             "productAndOption": "product or option",

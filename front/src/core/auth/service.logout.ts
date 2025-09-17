@@ -10,6 +10,7 @@ import { api } from '@/core/api/service.axios'
 import { useUserAuthStore } from '../auth/state.user.auth'
 import { useUiStore } from '@/core/state/uistate'
 import { useAppStore } from '@/core/state/appstate'
+import { useProductsAdminStore } from '../../modules/admin/products/state.products.admin'
 import { clearRefreshTimer } from './service.login'
 import { refreshTokensService } from '../../modules/account/service.refresh.tokens'
 import type { LogoutRequest, LogoutResponse } from './types.auth'
@@ -43,6 +44,19 @@ function resetUserStore(): void {
     console.log('[Logout Service] User store reset to initial state')
   } catch (error) {
     console.error('[Logout Service] Error resetting user store:', error)
+  }
+}
+
+/**
+ * Resets products admin store to initial state
+ */
+function resetProductsStore(): void {
+  try {
+    const productsStore = useProductsAdminStore()
+    productsStore.resetState()
+    console.log('[Logout Service] Products admin store reset to initial state')
+  } catch (error) {
+    console.error('[Logout Service] Error resetting products store:', error)
   }
 }
 
@@ -120,6 +134,9 @@ export async function logoutService(): Promise<boolean> {
     // Reset user store
     resetUserStore()
     
+    // Reset products admin store
+    resetProductsStore()
+    
     // Set active module to login
     const appStore = useAppStore()
     appStore.setActiveModule('Login')
@@ -138,6 +155,7 @@ export async function logoutService(): Promise<boolean> {
     // Even if backend logout fails, clear local state
     clearTokens()
     resetUserStore()
+    resetProductsStore()
     clearRefreshTimer()
     
     // Still redirect to login even on error

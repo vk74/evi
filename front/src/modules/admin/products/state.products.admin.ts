@@ -26,7 +26,6 @@ export const useProductsAdminStore = defineStore('productsAdmin', {
       translationKey: '',
       canBeOption: false,
       optionOnly: false,
-      isPublished: false,
       owner: '',
       specialistsGroups: [],
       translations: {
@@ -103,7 +102,6 @@ export const useProductsAdminStore = defineStore('productsAdmin', {
         translationKey: '',
         canBeOption: false,
         optionOnly: false,
-        isPublished: false,
         owner: '',
         specialistsGroups: [],
         translations: {
@@ -143,15 +141,26 @@ export const useProductsAdminStore = defineStore('productsAdmin', {
 
     populateFormWithProduct(product: Product): void {
       this.formData = {
-        productCode: product.productCode,
-        translationKey: product.translationKey,
-        canBeOption: product.canBeOption,
-        optionOnly: product.optionOnly,
-        isPublished: product.isPublished,
-        owner: product.ownerName,
-        specialistsGroups: product.specialistsGroups.map(g => g.groupName),
-        translations: product.translations,
-        visibility: product.visibility
+        productCode: product.product_code,
+        translationKey: product.translation_key,
+        canBeOption: product.can_be_option,
+        optionOnly: product.option_only,
+        owner: '', // Will be populated from separate API call
+        specialistsGroups: [], // Will be populated from separate API call
+        translations: { 
+          en: { name: '', shortDesc: '' }, 
+          ru: { name: '', shortDesc: '' } 
+        }, // Will be populated from separate API call
+        visibility: {
+          isVisibleOwner: product.is_visible_owner,
+          isVisibleGroups: product.is_visible_groups,
+          isVisibleTechSpecs: product.is_visible_tech_specs,
+          isVisibleAreaSpecs: product.is_visible_area_specs,
+          isVisibleIndustrySpecs: product.is_visible_industry_specs,
+          isVisibleKeyFeatures: product.is_visible_key_features,
+          isVisibleOverview: product.is_visible_overview,
+          isVisibleLongDescription: product.is_visible_long_description
+        }
       }
     },
 

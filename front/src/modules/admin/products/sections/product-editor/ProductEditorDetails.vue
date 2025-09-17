@@ -15,6 +15,7 @@ import { useI18n } from 'vue-i18n'
 import { useProductsAdminStore } from '../../state.products.admin'
 import { useUiStore } from '@/core/state/uistate'
 import { defineAsyncComponent } from 'vue'
+import { serviceCreateProduct } from '../../service.create.product'
 
 const ItemSelector = defineAsyncComponent(() => import(/* webpackChunkName: "ui-item-selector" */ '@/core/ui/modals/item-selector/ItemSelector.vue'))
 const DataLoading = defineAsyncComponent(() => import(/* webpackChunkName: "ui-data-loading" */ '@/core/ui/loaders/DataLoading.vue'))
@@ -62,6 +63,31 @@ const productTypeOptions = computed(() => [
   { title: t('admin.products.editor.basic.type.productAndOption'), value: 'product_and_option' },
   { title: t('admin.products.editor.basic.type.option'), value: 'option' }
 ])
+
+// Computed property for product type with two-way binding
+const productType = computed({
+  get: () => {
+    if (formData.value.optionOnly) return 'option'
+    if (formData.value.canBeOption) return 'product_and_option'
+    return 'product'
+  },
+  set: (value: string) => {
+    switch (value) {
+      case 'product':
+        formData.value.canBeOption = false
+        formData.value.optionOnly = false
+        break
+      case 'product_and_option':
+        formData.value.canBeOption = true
+        formData.value.optionOnly = false
+        break
+      case 'option':
+        formData.value.canBeOption = false
+        formData.value.optionOnly = true
+        break
+    }
+  }
+})
 
 // Selected language for translations
 const selectedLanguage = ref('en')
@@ -115,14 +141,63 @@ const createProduct = async () => {
   isSubmitting.value = true
   
   try {
-    // TODO: Implement product creation logic
-    console.log('Creating product with data:', formData.value)
+    // Debug: Log formData before preparing API data
+    console.log('[ProductEditorDetails] Full formData.value:', formData.value)
+    console.log('[ProductEditorDetails] formData.value.translations:', JSON.stringify(formData.value.translations, null, 2))
+    console.log('[ProductEditorDetails] formData.value.translations.en:', JSON.stringify(formData.value.translations?.en, null, 2))
+    console.log('[ProductEditorDetails] formData.value.translations.ru:', JSON.stringify(formData.value.translations?.ru, null, 2))
+    console.log('[ProductEditorDetails] formData.value.specialistsGroups:', JSON.stringify(formData.value.specialistsGroups, null, 2))
+    // isPublished removed from product creation
+
+    // Prepare data for API - only send filled languages
+    const translations: any = {}
     
-    // Show success message
-    uiStore.showSuccessSnackbar(t('admin.products.editor.messages.created'))
+    // Check if English is filled
+    if (formData.value.translations.en && 
+        formData.value.translations.en.name && 
+        formData.value.translations.en.name.trim().length > 0 &&
+        formData.value.translations.en.shortDesc && 
+        formData.value.translations.en.shortDesc.trim().length > 0) {
+      translations.en = formData.value.translations.en
+    }
+    
+    // Check if Russian is filled
+    if (formData.value.translations.ru && 
+        formData.value.translations.ru.name && 
+        formData.value.translations.ru.name.trim().length > 0 &&
+        formData.value.translations.ru.shortDesc && 
+        formData.value.translations.ru.shortDesc.trim().length > 0) {
+      translations.ru = formData.value.translations.ru
+    }
+
+    // Generate translationKey if not provided
+    const translationKey = formData.value.translationKey || generateUUID()
+
+    const productData = {
+      productCode: formData.value.productCode,
+      translationKey: translationKey,
+      canBeOption: formData.value.canBeOption,
+      optionOnly: formData.value.optionOnly,
+      owner: formData.value.owner,
+      backupOwner: formData.value.backupOwner,
+      specialistsGroups: formData.value.specialistsGroups,
+      translations: translations
+    }
+
+    // Debug: Log prepared productData
+    console.log('[ProductEditorDetails] Prepared productData:', JSON.stringify(productData, null, 2))
+
+    // Call service to create product
+    const result = await serviceCreateProduct.createProduct(productData)
+    
+    if (result.success) {
+      // Close editor and return to products list
+      productsStore.closeProductEditor()
+    }
     
   } catch (error) {
-    // Error messages will be handled by the service
+    // Error messages are handled by the service
+    console.error('Error creating product:', error)
   } finally {
     isSubmitting.value = false
   }
@@ -234,7 +309,7 @@ const clearPicture = () => {
 onMounted(() => {
   if (isCreationMode.value) {
     // Set default product type
-    formData.value.productType = 'product'
+    productType.value = 'product'
   }
 })
 </script>
@@ -266,7 +341,7 @@ onMounted(() => {
                 md="6"
               >
                 <v-btn-toggle
-                  v-model="formData.productType"
+                  v-model="productType"
                   mandatory
                   color="teal"
                   class="product-type-toggle-group"
@@ -297,14 +372,7 @@ onMounted(() => {
                 cols="12"
                 md="6"
               >
-                <div class="d-flex align-center justify-start published-switch-container">
-                  <v-switch
-                    v-model="formData.isPublished"
-                    color="teal-darken-2"
-                    :label="t('admin.products.editor.basic.isPublished.label')"
-                    hide-details
-                  />
-                </div>
+                <!-- Published switch removed - will be moved to ProductEditorCatalogPublication.vue -->
               </v-col>
             </v-row>
 
