@@ -179,13 +179,58 @@ export const EVENTS_ADMIN_PRODUCTS: EventCollection = {
         version: '1.0.0'
     },
 
-    // Product fetch events (for future use)
+    // Product fetch events
     'product.fetch.started': {
         eventName: 'products.fetch.started',
         source: 'admin-products',
         eventType: 'system',
         severity: 'debug',
         eventMessage: 'Product fetch process started',
+        version: '1.0.0'
+    },
+
+    'product.fetch.validation_started': {
+        eventName: 'products.fetch.validation_started',
+        source: 'admin-products',
+        eventType: 'system',
+        severity: 'debug',
+        eventMessage: 'Product fetch validation started',
+        version: '1.0.0'
+    },
+
+    'product.fetch.not_found': {
+        eventName: 'products.fetch.not_found',
+        source: 'admin-products',
+        eventType: 'system',
+        severity: 'warning',
+        eventMessage: 'Product not found',
+        version: '1.0.0'
+    },
+
+    'product.fetch.translations_fetched': {
+        eventName: 'products.fetch.translations_fetched',
+        source: 'admin-products',
+        eventType: 'system',
+        severity: 'debug',
+        eventMessage: 'Product translations fetched successfully',
+        version: '1.0.0'
+    },
+
+    'product.fetch.owners_fetched': {
+        eventName: 'products.fetch.owners_fetched',
+        source: 'admin-products',
+        eventType: 'system',
+        severity: 'debug',
+        eventMessage: 'Product owners fetched successfully',
+        version: '1.0.0'
+    },
+
+    'product.fetch.groups_fetched': {
+        eventName: 'products.fetch.groups_fetched',
+        source: 'admin-products',
+        eventType: 'system',
+        severity: 'debug',
+        eventMessage: 'Product specialist groups fetched successfully',
         version: '1.0.0'
     },
 

@@ -171,6 +171,10 @@
           "picture": {
             "selected": "picture selected successfully",
             "cleared": "picture cleared successfully"
+          },
+          "data": {
+            "loaded": "product data loaded successfully",
+            "loadError": "error loading product data"
           }
         }
       }

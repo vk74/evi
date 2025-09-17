@@ -11,7 +11,8 @@ import type {
   ProductEditorSectionId,
   ProductEditorMode,
   ProductFormData,
-  Product
+  Product,
+  ProductWithFullData
 } from './types.products.admin'
 
 export const useProductsAdminStore = defineStore('productsAdmin', {
@@ -162,6 +163,53 @@ export const useProductsAdminStore = defineStore('productsAdmin', {
           isVisibleLongDescription: product.is_visible_long_description
         }
       }
+    },
+
+    /**
+     * Populates form with full product data including translations and relationships
+     */
+    populateFormWithFullProductData(productData: ProductWithFullData): void {
+      this.formData = {
+        productCode: productData.product_code,
+        translationKey: productData.translation_key,
+        canBeOption: productData.can_be_option,
+        optionOnly: productData.option_only,
+        owner: productData.owner || '',
+        backupOwner: productData.backupOwner || '',
+        specialistsGroups: productData.specialistsGroups || [],
+        translations: productData.translations || {
+          en: { name: '', shortDesc: '', longDesc: '', techSpecs: {}, areaSpecifics: {}, industrySpecifics: {}, keyFeatures: {}, productOverview: {} },
+          ru: { name: '', shortDesc: '', longDesc: '', techSpecs: {}, areaSpecifics: {}, industrySpecifics: {}, keyFeatures: {}, productOverview: {} }
+        },
+        visibility: {
+          isVisibleOwner: productData.is_visible_owner,
+          isVisibleGroups: productData.is_visible_groups,
+          isVisibleTechSpecs: productData.is_visible_tech_specs,
+          isVisibleAreaSpecs: productData.is_visible_area_specs,
+          isVisibleIndustrySpecs: productData.is_visible_industry_specs,
+          isVisibleKeyFeatures: productData.is_visible_key_features,
+          isVisibleOverview: productData.is_visible_overview,
+          isVisibleLongDescription: productData.is_visible_long_description
+        }
+      }
+    },
+
+    /**
+     * Sets editing product data
+     */
+    setEditingProductData(productData: ProductWithFullData): void {
+      this.editingProductData = productData
+      this.populateFormWithFullProductData(productData)
+    },
+
+    /**
+     * Opens product editor in edit mode with product ID
+     */
+    openProductEditorForEdit(productId: string): void {
+      this.editorMode = 'edit'
+      this.editingProductId = productId
+      this.activeSection = 'product-editor'
+      this.activeEditorSection = 'details'
     },
 
     resetState(): void {

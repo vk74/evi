@@ -16,6 +16,7 @@ import { useProductsAdminStore } from '../../state.products.admin'
 import { useUiStore } from '@/core/state/uistate'
 import { defineAsyncComponent } from 'vue'
 import { serviceCreateProduct } from '../../service.create.product'
+import { serviceFetchProduct } from '../../service.fetch.product'
 
 const ItemSelector = defineAsyncComponent(() => import(/* webpackChunkName: "ui-item-selector" */ '@/core/ui/modals/item-selector/ItemSelector.vue'))
 const DataLoading = defineAsyncComponent(() => import(/* webpackChunkName: "ui-data-loading" */ '@/core/ui/loaders/DataLoading.vue'))
@@ -190,9 +191,12 @@ const createProduct = async () => {
     // Call service to create product
     const result = await serviceCreateProduct.createProduct(productData)
     
-    if (result.success) {
-      // Close editor and return to products list
-      productsStore.closeProductEditor()
+    if (result.success && result.data?.id) {
+      // Switch to edit mode with the newly created product
+      productsStore.openProductEditorForEdit(result.data.id)
+      
+      // Load the newly created product data
+      await loadProductData()
     }
     
   } catch (error) {
@@ -305,19 +309,53 @@ const clearPicture = () => {
   uiStore.showSuccessSnackbar(t('admin.products.editor.messages.picture.cleared'))
 }
 
+// Load product data when in edit mode
+const loadProductData = async () => {
+  if (isEditMode.value && editingProductId.value) {
+    isLoadingProduct.value = true
+    
+    try {
+      const productData = await serviceFetchProduct.fetchProduct(editingProductId.value)
+      
+      if (productData) {
+        // Update store with fetched data
+        productsStore.setEditingProductData(productData)
+        uiStore.showSuccessSnackbar(t('admin.products.editor.messages.data.loaded'))
+      } else {
+        uiStore.showErrorSnackbar(t('admin.products.editor.messages.data.loadError'))
+        // Close editor if product not found
+        productsStore.closeProductEditor()
+      }
+    } catch (error) {
+      console.error('Error loading product data:', error)
+      uiStore.showErrorSnackbar(t('admin.products.editor.messages.data.loadError'))
+      // Close editor on error
+      productsStore.closeProductEditor()
+    } finally {
+      isLoadingProduct.value = false
+    }
+  }
+}
+
 // Initialize form data on mount
 onMounted(() => {
   if (isCreationMode.value) {
     // Set default product type
     productType.value = 'product'
+  } else if (isEditMode.value) {
+    // Load product data for editing
+    loadProductData()
   }
 })
 </script>
 
 <template>
   <div class="d-flex">
+    <!-- Loading indicator -->
+    <DataLoading v-if="isLoadingProduct" :loading="true" />
+    
     <!-- Main content (left part) -->
-    <div class="flex-grow-1">
+    <div v-else class="flex-grow-1">
       <v-container class="content-container">
         <v-form
           ref="form"

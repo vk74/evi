@@ -46,7 +46,8 @@ const CACHE_TYPES = {
   USER_STATUS: 'user:status:',
   USER_ADMIN: 'user:admin:',
   USER_NAME: 'user:name:',
-  USER_ACTIVE: 'user:active:'
+  USER_ACTIVE: 'user:active:',
+  PRODUCT_UUID: 'product:uuid:'
 };
 
 // Cache configuration for each type
@@ -56,7 +57,8 @@ const cacheConfig: Record<string, CacheTypeConfig> = {
   [CACHE_TYPES.USER_STATUS]: { ttl: 5 * 60 * 1000, limit: 5000 }, // 5 minutes for user statuses
   [CACHE_TYPES.USER_ADMIN]: { ttl: 10 * 60 * 1000, limit: 2000 }, // 10 minutes for admin checks
   [CACHE_TYPES.USER_NAME]: { ttl: 30 * 60 * 1000, limit: 5000 },  // 30 minutes for usernames
-  [CACHE_TYPES.USER_ACTIVE]: { ttl: 5 * 60 * 1000, limit: 5000 }  // 5 minutes for user activity checks
+  [CACHE_TYPES.USER_ACTIVE]: { ttl: 5 * 60 * 1000, limit: 5000 },  // 5 minutes for user activity checks
+  [CACHE_TYPES.PRODUCT_UUID]: { ttl: 30 * 60 * 1000, limit: 1000 } // 30 minutes for product UUIDs
 };
 
 // Cache storage organized by type
@@ -66,7 +68,8 @@ const cacheStorage: Record<string, Map<string, CacheEntry<any>>> = {
   [CACHE_TYPES.USER_STATUS]: new Map(),
   [CACHE_TYPES.USER_ADMIN]: new Map(),
   [CACHE_TYPES.USER_NAME]: new Map(),
-  [CACHE_TYPES.USER_ACTIVE]: new Map()
+  [CACHE_TYPES.USER_ACTIVE]: new Map(),
+  [CACHE_TYPES.PRODUCT_UUID]: new Map()
 };
 
 // Cache statistics
@@ -76,7 +79,8 @@ const cacheStats: Record<string, CacheStats> = {
   [CACHE_TYPES.USER_STATUS]: { hits: 0, misses: 0, size: 0 },
   [CACHE_TYPES.USER_ADMIN]: { hits: 0, misses: 0, size: 0 },
   [CACHE_TYPES.USER_NAME]: { hits: 0, misses: 0, size: 0 },
-  [CACHE_TYPES.USER_ACTIVE]: { hits: 0, misses: 0, size: 0 }
+  [CACHE_TYPES.USER_ACTIVE]: { hits: 0, misses: 0, size: 0 },
+  [CACHE_TYPES.PRODUCT_UUID]: { hits: 0, misses: 0, size: 0 }
 };
 
 // Initialize the cache and start periodic stats logging
@@ -356,7 +360,8 @@ export const CacheKeys = {
   forUserStatus: (uuid: string): string => `${CACHE_TYPES.USER_STATUS}${uuid}`,
   forUserAdmin: (uuid: string): string => `${CACHE_TYPES.USER_ADMIN}${uuid}`,
   forUserName: (uuid: string): string => `${CACHE_TYPES.USER_NAME}${uuid}`,
-  forUserActive: (uuid: string): string => `${CACHE_TYPES.USER_ACTIVE}${uuid}`
+  forUserActive: (uuid: string): string => `${CACHE_TYPES.USER_ACTIVE}${uuid}`,
+  forProductUuid: (productCode: string): string => `${CACHE_TYPES.PRODUCT_UUID}${productCode}`
 };
 
 // Export CACHE_TYPES for use in other modules

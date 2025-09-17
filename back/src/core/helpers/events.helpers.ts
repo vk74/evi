@@ -778,3 +778,64 @@ export const GET_REQUESTOR_UUID_EVENTS = {
     version: '1.0.0'
   }
 };
+
+/**
+ * Get UUID By Product Code Events
+ * Events for tracking product UUID retrieval by product code
+ */
+export const GET_UUID_BY_PRODUCT_CODE_EVENTS = {
+  // When product UUID search starts
+  START: {
+    eventName: 'helpers.get.uuid.by.product.code.start',
+    source: 'helpers product uuid service',
+    eventType: 'app' as const,
+    severity: 'debug' as const,
+    eventMessage: 'Searching for product UUID by product code',
+    payload: null, // Will contain: { productCode }
+    version: '1.0.0'
+  },
+
+  // When product UUID retrieved from cache
+  SUCCESS_CACHE: {
+    eventName: 'helpers.get.uuid.by.product.code.success_cache',
+    source: 'helpers product uuid service',
+    eventType: 'app' as const,
+    severity: 'debug' as const,
+    eventMessage: 'Product UUID retrieved from cache',
+    payload: null, // Will contain: { productCode, productId, source: 'cache' }
+    version: '1.0.0'
+  },
+
+  // When product not found
+  NOT_FOUND: {
+    eventName: 'helpers.get.uuid.by.product.code.not_found',
+    source: 'helpers product uuid service',
+    eventType: 'app' as const,
+    severity: 'info' as const,
+    eventMessage: 'Product not found with code',
+    payload: null, // Will contain: { productCode }
+    version: '1.0.0'
+  },
+
+  // When product UUID retrieved from database
+  SUCCESS_DB: {
+    eventName: 'helpers.get.uuid.by.product.code.success_db',
+    source: 'helpers product uuid service',
+    eventType: 'app' as const,
+    severity: 'debug' as const,
+    eventMessage: 'Product UUID retrieved from database',
+    payload: null, // Will contain: { productCode, productId, source: 'database' }
+    version: '1.0.0'
+  },
+
+  // When error occurs during product UUID search
+  ERROR: {
+    eventName: 'helpers.get.uuid.by.product.code.error',
+    source: 'helpers product uuid service',
+    eventType: 'app' as const,
+    severity: 'error' as const,
+    eventMessage: 'Error searching for product UUID',
+    payload: null, // Will contain: { productCode, error }
+    version: '1.0.0'
+  }
+};

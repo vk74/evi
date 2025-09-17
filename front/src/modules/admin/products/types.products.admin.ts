@@ -169,3 +169,43 @@ export interface FetchProductsResponse {
     }
   }
 }
+
+// Fetch single product response interface
+export interface FetchProductResponse {
+  success: boolean
+  message: string
+  data?: {
+    product: Product
+    translations: ProductTranslation[]
+    owner?: string
+    backupOwner?: string
+    specialistsGroups: string[]
+  }
+}
+
+// Product translation interface for API responses
+export interface ProductTranslation {
+  translation_id: string
+  product_id: string
+  language_code: string
+  name: string
+  short_desc: string
+  long_desc?: string
+  tech_specs?: Record<string, any>
+  area_specifics?: Record<string, any>
+  industry_specifics?: Record<string, any>
+  key_features?: Record<string, any>
+  product_overview?: Record<string, any>
+  created_by: string
+  created_at: Date
+  updated_by?: string
+  updated_at: Date
+}
+
+// Product with full data interface (for editor)
+export interface ProductWithFullData extends Product {
+  translations: ProductTranslations
+  owner?: string
+  backupOwner?: string
+  specialistsGroups: string[]
+}

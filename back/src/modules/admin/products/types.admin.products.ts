@@ -147,3 +147,22 @@ export interface FetchProductsParams {
     sortBy: string
     sortDesc: boolean
 }
+
+// Fetch single product response interface
+export interface FetchProductResponse extends ApiResponse {
+    data?: {
+        product: Product
+        translations: ProductTranslation[]
+        owner?: string
+        backupOwner?: string
+        specialistsGroups: string[]
+    }
+}
+
+// Product with full data interface (for editor)
+export interface ProductWithFullData extends Product {
+    translations: ProductTranslations
+    owner?: string
+    backupOwner?: string
+    specialistsGroups: string[]
+}

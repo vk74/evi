@@ -36,6 +36,7 @@ import fetchAllServicesController from './service/sections/controller.admin.fetc
 import fetchSingleServiceController from './service/sections/controller.admin.fetchsingleservice';
 import deleteServicesController from './service/sections/controller.admin.deleteservices';
 import createProductController from './products/controller.admin.create.product';
+import fetchProductController from './products/controller.admin.fetch.product';
 import registerUserController from '../account/controller.register.user';
 import fetchUserGroupsController from './users/userEditor/controller.fetch.user.groups'
 
@@ -80,6 +81,7 @@ router.post('/api/admin/services/deleteservices', validateJWT, checkIsUserStatus
 
 // Routes for Products Admin
 router.post('/api/admin/products/create', validateJWT, checkIsUserStatusActive, createProductController);
+router.get('/api/admin/products/fetch', validateJWT, checkIsUserStatusActive, fetchProductController);
 
 // Routes for Account Management
 router.post('/api/admin/users/register', registerUserController);
