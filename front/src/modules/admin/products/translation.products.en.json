@@ -232,7 +232,9 @@
           "message": "are you sure you want to delete selected products?",
           "cancel": "cancel",
           "confirm": "delete"
-        }
+        },
+        "editSuccess": "product loaded for editing",
+        "editError": "failed to load product for editing"
       }
     }
   }

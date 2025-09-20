@@ -12,6 +12,7 @@ import { useProductsAdminStore } from '../state.products.admin'
 import DataLoading from '@/core/ui/loaders/DataLoading.vue'
 import type { Product, ProductWithTranslations, ProductWithFullData, ProductListItem, FetchAllProductsResult } from '../types.products.admin'
 import { serviceFetchAllProducts } from '../service.fetch.all.products'
+import { serviceFetchSingleProduct } from '../service.fetch.single.product'
 import {
   PhMagnifyingGlass,
   PhX,
@@ -112,11 +113,35 @@ const addProduct = () => {
   productsStore.openProductEditor('creation', undefined, undefined)
 }
 
-const editProduct = () => {
+const editProduct = async () => {
   const selectedIds = Array.from(selectedProducts.value)
   if (selectedIds.length === 1) {
     const productId = selectedIds[0]
-    productsStore.openProductEditor('edit', productId, undefined)
+    
+    try {
+      // Show loading state
+      isLoading.value = true
+      
+      // Load product data and update store
+      const success = await serviceFetchSingleProduct.fetchAndUpdateStore(productId)
+      
+      if (success) {
+        // Set editor mode to edit and switch to editor section
+        productsStore.openProductEditorForEdit(productId)
+        
+        // Clear selections
+        clearSelections()
+        
+        uiStore.showSuccessSnackbar(t('admin.products.messages.editSuccess'))
+      } else {
+        uiStore.showErrorSnackbar(t('admin.products.messages.editError'))
+      }
+    } catch (error) {
+      console.error('Error loading product for edit:', error)
+      uiStore.showErrorSnackbar(t('admin.products.messages.editError'))
+    } finally {
+      isLoading.value = false
+    }
   }
 }
 
@@ -626,7 +651,7 @@ const clearFilters = async () => {
           </v-btn>
         </div>
       </div>
-    </div>
+  </div>
     
     <!-- Delete confirmation dialog -->
     <v-dialog
