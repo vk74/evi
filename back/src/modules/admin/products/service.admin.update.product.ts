@@ -80,19 +80,17 @@ async function validateUpdateProductData(data: UpdateProductRequest): Promise<vo
         }
     }
 
-    // Validate owner if provided
+    // Validate owner if provided (only check if not empty, since usernames can contain various characters)
     if (data.owner !== undefined && data.owner !== '') {
-        const ownerValidation = validateField({ value: data.owner, fieldType: 'username' });
-        if (!ownerValidation.isValid) {
-            errors.push(`Invalid owner: ${ownerValidation.error}`);
+        if (typeof data.owner !== 'string' || data.owner.trim() === '') {
+            errors.push('Invalid owner: Owner must be a non-empty string');
         }
     }
 
-    // Validate backup owner if provided
+    // Validate backup owner if provided (only check if not empty, since usernames can contain various characters)
     if (data.backupOwner !== undefined && data.backupOwner !== '') {
-        const backupOwnerValidation = validateField({ value: data.backupOwner, fieldType: 'username' });
-        if (!backupOwnerValidation.isValid) {
-            errors.push(`Invalid backup owner: ${backupOwnerValidation.error}`);
+        if (typeof data.backupOwner !== 'string' || data.backupOwner.trim() === '') {
+            errors.push('Invalid backup owner: Backup owner must be a non-empty string');
         }
     }
 
@@ -305,23 +303,32 @@ async function updateProductTranslations(
 ): Promise<void> {
     for (const [langCode, translationData] of Object.entries(translations)) {
         if (translationData && typeof translationData === 'object') {
+            // Use UPSERT (INSERT ... ON CONFLICT) to handle both new and existing translations
             const query = `
-                UPDATE app.product_translations 
-                SET 
-                    name = $1,
-                    short_desc = $2,
-                    long_desc = $3,
-                    tech_specs = $4,
-                    area_specifics = $5,
-                    industry_specifics = $6,
-                    key_features = $7,
-                    product_overview = $8,
-                    updated_by = $9,
+                INSERT INTO app.product_translations (
+                    product_id, language_code, name, short_desc, long_desc,
+                    tech_specs, area_specifics, industry_specifics, key_features, product_overview,
+                    created_by, updated_by, created_at, updated_at
+                ) VALUES (
+                    $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
+                )
+                ON CONFLICT (product_id, language_code) 
+                DO UPDATE SET
+                    name = EXCLUDED.name,
+                    short_desc = EXCLUDED.short_desc,
+                    long_desc = EXCLUDED.long_desc,
+                    tech_specs = EXCLUDED.tech_specs,
+                    area_specifics = EXCLUDED.area_specifics,
+                    industry_specifics = EXCLUDED.industry_specifics,
+                    key_features = EXCLUDED.key_features,
+                    product_overview = EXCLUDED.product_overview,
+                    updated_by = EXCLUDED.updated_by,
                     updated_at = CURRENT_TIMESTAMP
-                WHERE product_id = $10 AND language_code = $11
             `;
             
             await client.query(query, [
+                productId,
+                langCode,
                 (translationData as any).name,
                 (translationData as any).shortDesc,
                 (translationData as any).longDesc || null,
@@ -331,8 +338,7 @@ async function updateProductTranslations(
                 (translationData as any).keyFeatures ? JSON.stringify((translationData as any).keyFeatures) : null,
                 (translationData as any).productOverview ? JSON.stringify((translationData as any).productOverview) : null,
                 updatedBy,
-                productId,
-                langCode
+                updatedBy
             ]);
         }
     }
@@ -542,9 +548,9 @@ export async function updateProduct(data: UpdateProductRequest, req: Request): P
         let owner: string | undefined;
         let backupOwner: string | undefined;
         ownersResult.rows.forEach((row: any) => {
-            if (row.role_type === 'product_owner') {
+            if (row.role_type === 'owner') {
                 owner = row.username;
-            } else if (row.role_type === 'product_backup_owner') {
+            } else if (row.role_type === 'backup_owner') {
                 backupOwner = row.username;
             }
         });
