@@ -110,7 +110,16 @@ const handleError = (error: unknown, context: string) => {
 
 // Product action handlers
 const addProduct = () => {
+  // Set editor mode to creation and switch to editor section
   productsStore.openProductEditor('creation', undefined, undefined)
+  productsStore.setActiveSection('product-editor')
+  productsStore.setActiveEditorSection('details')
+  
+  // Clear any existing selections
+  clearSelections()
+  
+  // Show success message
+  uiStore.showSuccessSnackbar(t('admin.products.messages.createMode'))
 }
 
 const editProduct = async () => {

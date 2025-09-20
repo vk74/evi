@@ -234,7 +234,8 @@
           "confirm": "delete"
         },
         "editSuccess": "product loaded for editing",
-        "editError": "failed to load product for editing"
+        "editError": "failed to load product for editing",
+        "createMode": "product creation mode activated"
       }
     }
   }
