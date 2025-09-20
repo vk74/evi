@@ -6,7 +6,7 @@ Purpose: Reusable, clean pagination control matching UsersList paginator UX.
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { PhCaretDoubleLeft, PhCaretLeft, PhCaretRight, PhCaretDoubleRight } from '@phosphor-icons/vue'
+import { PhCaretDoubleLeft, PhCaretLeft, PhCaretRight, PhCaretDoubleRight, PhCaretUpDown } from '@phosphor-icons/vue'
 
 interface Props {
   page: number
@@ -82,7 +82,11 @@ function updateItemsPerPage(v: number) {
         class="items-per-page-select"
         style="width: 100px"
         @update:model-value="updateItemsPerPage($event as number)"
-      />
+      >
+        <template #append-inner>
+          <PhCaretUpDown class="dropdown-icon" />
+        </template>
+      </v-select>
     </div>
     <div class="text-body-2 mr-4" v-if="showRecordsInfo">
       {{ recordsInfo }}
@@ -116,8 +120,18 @@ function updateItemsPerPage(v: number) {
 
 <style scoped>
 .paginator-container { border-top: thin solid rgba(var(--v-border-color), var(--v-border-opacity)); background-color: rgba(var(--v-theme-surface), 1); padding: 16px; }
-.items-per-page-select { min-width: 100px; }
+.items-per-page-select { 
+  min-width: 100px; 
+  position: relative;
+}
 .paginator .v-btn { min-width: 32px; height: 32px; font-size: 0.875rem; }
+.dropdown-icon { 
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  pointer-events: none;
+}
 </style>
 
 
