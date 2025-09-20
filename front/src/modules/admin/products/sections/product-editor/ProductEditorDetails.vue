@@ -689,7 +689,7 @@ onMounted(() => {
                   color="teal"
                 >
                   <template #append-inner>
-                    <PhCaretUpDown />
+                    <PhCaretUpDown class="dropdown-icon" />
                   </template>
                 </v-select>
               </v-col>
@@ -1059,6 +1059,15 @@ onMounted(() => {
 .picture-placeholder {
   width: 100%;
   max-width: 300px;
+}
+
+/* Dropdown icon positioning */
+.dropdown-icon {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  pointer-events: none;
 }
 
 .picture-placeholder-content {

@@ -349,7 +349,7 @@ onMounted(async () => {
             style="min-width: 150px; margin-right: 48px;"
           >
             <template #append-inner>
-              <PhCaretUpDown />
+              <PhCaretUpDown class="dropdown-icon" />
             </template>
           </v-select>
           
@@ -582,6 +582,15 @@ onMounted(async () => {
 }
 
 /* Options bar control area styles - аналогично drawer control area в App.vue */
+/* Dropdown icon positioning */
+.dropdown-icon {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  pointer-events: none;
+}
+
 .options-bar-control-area {
   position: relative;
   height: 48px;

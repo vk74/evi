@@ -21,6 +21,7 @@ import { api } from '@/core/api/service.axios'
 import ChangePassword from '@/core/ui/modals/change-password/ChangePassword.vue'
 import { PasswordChangeMode } from '@/core/ui/modals/change-password/types.change.password'
 import { UserProfile, Gender, GenderOption } from '@/modules/account/types.user.account'
+import { PhCaretUpDown } from '@phosphor-icons/vue'
 
 // ==================== STORES ====================
 const userStore = useUserAuthStore()
@@ -249,7 +250,11 @@ onMounted(async () => {
                         item-title="title"
                         item-value="value"
                         clearable
-                      />
+                      >
+                        <template #append-inner>
+                          <PhCaretUpDown class="dropdown-icon" />
+                        </template>
+                      </v-select>
                     </v-col>
                   </v-row>
                 </v-col>
@@ -432,5 +437,14 @@ onMounted(async () => {
 /* Content container */
 .content-container {
   padding: 0 15px;
+}
+
+/* Dropdown icon positioning */
+.dropdown-icon {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  pointer-events: none;
 }
 </style>

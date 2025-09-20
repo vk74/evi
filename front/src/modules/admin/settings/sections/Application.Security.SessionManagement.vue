@@ -486,7 +486,7 @@ onMounted(() => {
                 :loading="settingLoadingStates['access.token.lifetime']"
               >
                 <template #append-inner>
-                  <PhCaretUpDown />
+                  <PhCaretUpDown class="dropdown-icon" />
                 </template>
               </v-select>
               <v-tooltip
@@ -523,7 +523,7 @@ onMounted(() => {
                 :loading="settingLoadingStates['refresh.jwt.n.seconds.before.expiry']"
               >
                 <template #append-inner>
-                  <PhCaretUpDown />
+                  <PhCaretUpDown class="dropdown-icon" />
                 </template>
               </v-select>
               <v-tooltip
@@ -567,7 +567,7 @@ onMounted(() => {
                 :loading="settingLoadingStates['refresh.token.lifetime']"
               >
                 <template #append-inner>
-                  <PhCaretUpDown />
+                  <PhCaretUpDown class="dropdown-icon" />
                 </template>
               </v-select>
               <v-tooltip
@@ -604,7 +604,7 @@ onMounted(() => {
                 :loading="settingLoadingStates['max.refresh.tokens.per.user']"
               >
                 <template #append-inner>
-                  <PhCaretUpDown />
+                  <PhCaretUpDown class="dropdown-icon" />
                 </template>
               </v-select>
               <v-tooltip
@@ -991,6 +991,15 @@ onMounted(() => {
 </template>
 
 <style scoped>
+/* Dropdown icon positioning */
+.dropdown-icon {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  pointer-events: none;
+}
+
 .session-management-container {
   /* Base container styling */
   position: relative;

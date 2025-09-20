@@ -182,7 +182,7 @@ const handleOwnerChanged = async (result: any) => {
                   density="comfortable"
                 >
                   <template #append-inner>
-                    <PhCaretUpDown />
+                    <PhCaretUpDown class="dropdown-icon" />
                   </template>
                 </v-select>
               </v-col>
@@ -295,6 +295,15 @@ const handleOwnerChanged = async (result: any) => {
 </template>
 
 <style scoped>
+/* Dropdown icon positioning */
+.dropdown-icon {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  pointer-events: none;
+}
+
 .side-bar-container { width: 18%; min-width: 220px; border-left: thin solid rgba(var(--v-border-color), var(--v-border-opacity)); display: flex; flex-direction: column; }
 .side-bar-section { padding: 16px; }
 .sidebar-divider { height: 20px; position: relative; margin: 0 16px; }

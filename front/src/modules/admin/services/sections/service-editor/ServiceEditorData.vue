@@ -603,7 +603,7 @@ onMounted(() => {
                       color="teal"
                     >
                       <template #append-inner>
-                        <PhCaretUpDown />
+                        <PhCaretUpDown class="dropdown-icon" />
                       </template>
                     </v-select>
                   </v-col>
@@ -624,7 +624,7 @@ onMounted(() => {
                       color="teal"
                     >
                       <template #append-inner>
-                        <PhCaretUpDown />
+                        <PhCaretUpDown class="dropdown-icon" />
                       </template>
                     </v-select>
                   </v-col>
@@ -1447,6 +1447,15 @@ onMounted(() => {
 /* Sidebar button styles */
 .side-bar-section .v-btn {
   min-width: 240px;
+}
+
+/* Dropdown icon positioning */
+.dropdown-icon {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  pointer-events: none;
 }
 
 /* Icon placeholder styles */

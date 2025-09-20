@@ -18,12 +18,9 @@ import {
   PhX,
   PhCheckSquare,
   PhSquare,
-  PhCaretDoubleLeft,
-  PhCaretLeft,
-  PhCaretRight,
-  PhCaretDoubleRight,
   PhUploadSimple
 } from '@phosphor-icons/vue'
+import Paginator from '@/core/ui/paginator/Paginator.vue'
 // Ordering is temporarily disabled, no order API import
 
 type ItemsPerPageOption = 25 | 50 | 100
@@ -222,62 +219,15 @@ onMounted(async () => {
         </template>
       </v-data-table>
 
-      <!-- Simple paginator (mirrors ServiceEditorMapping style) -->
-      <div class="custom-pagination-container pa-4 d-flex align-center justify-end">
-        <div class="d-flex align-center mr-4">
-          <span class="text-body-2 mr-2">{{ t('admin.services.editor.mapping.pagination.recordsPerPage') }}</span>
-          <v-select
-            v-model="itemsPerPage"
-            :items="[25,50,100]"
-            density="compact"
-            variant="outlined"
-            hide-details
-            style="width: 100px"
-            @update:model-value="()=>{ page=1; loadServices() }"
-          />
-        </div>
-        <div class="text-body-2 mr-4">
-          {{ page }} / {{ Math.max(1, Math.ceil(totalItems/itemsPerPage)) }}
-        </div>
-        <div class="d-flex align-center">
-          <v-btn
-            icon
-            variant="text"
-            size="small"
-            :disabled="page===1"
-            @click="page=1; loadServices()"
-          >
-            <PhCaretDoubleLeft />
-          </v-btn>
-          <v-btn
-            icon
-            variant="text"
-            size="small"
-            :disabled="page===1"
-            @click="page=Math.max(1,page-1); loadServices()"
-          >
-            <PhCaretLeft />
-          </v-btn>
-          <v-btn
-            icon
-            variant="text"
-            size="small"
-            :disabled="page>=Math.ceil(totalItems/itemsPerPage)"
-            @click="page=Math.min(Math.ceil(totalItems/itemsPerPage), page+1); loadServices()"
-          >
-            <PhCaretRight />
-          </v-btn>
-          <v-btn
-            icon
-            variant="text"
-            size="small"
-            :disabled="page>=Math.ceil(totalItems/itemsPerPage)"
-            @click="page=Math.ceil(totalItems/itemsPerPage); loadServices()"
-          >
-            <PhCaretDoubleRight />
-          </v-btn>
-        </div>
-      </div>
+      <!-- Paginator component -->
+      <Paginator
+        :current-page="page"
+        :items-per-page="itemsPerPage"
+        :total-items="totalItems"
+        :items-per-page-options="[25, 50, 100]"
+        @update:current-page="(newPage) => { page = newPage; loadServices() }"
+        @update:items-per-page="(newItemsPerPage) => { itemsPerPage = newItemsPerPage; page = 1; loadServices() }"
+      />
     </div>
 
     <!-- Right: actions only (no ordering, no selected list editor) -->
@@ -311,7 +261,6 @@ onMounted(async () => {
 .side-bar-container { width: 280px; min-width: 280px; border-left: thin solid rgba(var(--v-border-color), var(--v-border-opacity)); display: flex; flex-direction: column; background-color: rgba(var(--v-theme-surface), 1); overflow-y: auto; }
 .side-bar-section { padding: 16px; }
 .selected-list { display: none; }
-.custom-pagination-container { border-top: thin solid rgba(var(--v-border-color), var(--v-border-opacity)); background-color: rgba(var(--v-theme-surface), 1); }
 /* Row separators */
 .sections-table :deep(.v-data-table__tr) { position: relative; }
 .sections-table :deep(.v-data-table__tr::after) { content: ''; position: absolute; bottom: 0; left: 7px; right: 17px; height: 1px; background-color: rgba(var(--v-border-color), var(--v-border-opacity)); }

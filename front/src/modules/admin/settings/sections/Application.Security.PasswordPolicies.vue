@@ -443,7 +443,7 @@ onMounted(() => {
                 :loading="settingLoadingStates['password.min.length']"
               >
                 <template #append-inner>
-                  <PhCaretUpDown />
+                  <PhCaretUpDown class="dropdown-icon" />
                 </template>
               </v-select>
               <v-tooltip
@@ -482,7 +482,7 @@ onMounted(() => {
                 :loading="settingLoadingStates['password.max.length']"
               >
                 <template #append-inner>
-                  <PhCaretUpDown />
+                  <PhCaretUpDown class="dropdown-icon" />
                 </template>
               </v-select>
               <v-tooltip
@@ -729,6 +729,15 @@ onMounted(() => {
 </template>
 
 <style scoped>
+/* Dropdown icon positioning */
+.dropdown-icon {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  pointer-events: none;
+}
+
 .password-policies-container {
   /* Base container styling */
   position: relative;

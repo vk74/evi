@@ -214,7 +214,7 @@ watch(() => props.selectedSize, (newValue) => {
               @update:model-value="handleLibraryChange"
             >
               <template #append-inner>
-                <PhCaretUpDown />
+                <PhCaretUpDown class="dropdown-icon" />
               </template>
             </v-select>
           </v-col>
@@ -234,7 +234,7 @@ watch(() => props.selectedSize, (newValue) => {
               @update:model-value="handleStyleChange"
             >
               <template #append-inner>
-                <PhCaretUpDown />
+                <PhCaretUpDown class="dropdown-icon" />
               </template>
             </v-select>
           </v-col>
@@ -254,7 +254,7 @@ watch(() => props.selectedSize, (newValue) => {
               @update:model-value="handleSizeChange"
             >
               <template #append-inner>
-                <PhCaretUpDown />
+                <PhCaretUpDown class="dropdown-icon" />
               </template>
             </v-select>
           </v-col>
@@ -331,6 +331,15 @@ watch(() => props.selectedSize, (newValue) => {
 </template>
 
 <style scoped>
+/* Dropdown icon positioning */
+.dropdown-icon {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  pointer-events: none;
+}
+
 /* Search field styles */
 .search-field {
   width: 100%;

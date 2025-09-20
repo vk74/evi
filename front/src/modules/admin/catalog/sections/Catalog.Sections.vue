@@ -651,9 +651,29 @@ const handleItemsPerPageChange = async (newItemsPerPage: ItemsPerPageOption) => 
   background-color: rgba(var(--v-border-color), var(--v-border-opacity));
 }
 
+/* Hide the separator on the last row to avoid double line with paginator */
+.sections-table :deep(tbody > tr:last-child::after) {
+  display: none;
+}
+
 .sections-table :deep(.v-data-table__td),
 .sections-table :deep(.v-data-table__th) {
   border-bottom: none !important;
+}
+
+/* Header bottom separator */
+.sections-table :deep(thead) {
+  position: relative;
+}
+
+.sections-table :deep(thead::after) {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 7px;
+  right: 17px;
+  height: 1px;
+  background-color: rgba(var(--v-border-color), var(--v-border-opacity));
 }
 
 /* Sidebar styles */
@@ -688,7 +708,6 @@ const handleItemsPerPageChange = async (newItemsPerPage: ItemsPerPageOption) => 
 
 /* Pagination styles */
 .custom-pagination-container {
-  border-top: thin solid rgba(var(--v-border-color), var(--v-border-opacity));
   background-color: rgba(var(--v-theme-surface), 1);
 }
 
