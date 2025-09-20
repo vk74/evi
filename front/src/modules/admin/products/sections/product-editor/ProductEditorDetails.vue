@@ -84,7 +84,7 @@ const productType = computed({
         formData.value.optionOnly = false
         break
       case 'option':
-        formData.value.canBeOption = false
+        formData.value.canBeOption = true
         formData.value.optionOnly = true
         break
     }
