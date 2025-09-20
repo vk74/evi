@@ -11,7 +11,6 @@
  */
 
 import { api } from '@/core/api/service.axios'
-import { useI18n } from 'vue-i18n'
 import type { 
     FetchAllProductsParams, 
     FetchAllProductsResult,
@@ -61,10 +60,6 @@ export class ServiceFetchAllProducts {
      */
     async fetchAllProducts(params: FetchAllProductsRequest): Promise<FetchAllProductsResult> {
         try {
-            // Get current language from i18n
-            const { locale } = useI18n()
-            const currentLanguage = locale.value || 'en'
-            
             // Prepare query parameters
             const queryParams = new URLSearchParams()
             
@@ -90,8 +85,8 @@ export class ServiceFetchAllProducts {
                 queryParams.append('publishedFilter', params.publishedFilter)
             }
             
-            // Add language parameter (use provided language or current app language)
-            const languageToUse = params.language || currentLanguage
+            // Add language parameter (use provided language or default to 'en')
+            const languageToUse = params.language || 'en'
             queryParams.append('language', languageToUse)
 
             // Make API request

@@ -5,7 +5,7 @@
  * Frontend file that displays list of products for admin users.
  */
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useUiStore } from '@/core/state/uistate'
 import { useProductsAdminStore } from '../state.products.admin'
@@ -23,6 +23,7 @@ import {
   PhCaretUpDown
 } from '@phosphor-icons/vue'
 import Paginator from '@/core/ui/paginator/Paginator.vue'
+import debounce from 'lodash/debounce'
 
 // Types
 interface TableHeader {
@@ -269,7 +270,8 @@ const selectAll = () => {
 
 // Search functionality
 const performSearch = async () => {
-  if (!isSearchEnabled.value && searchQuery.value.length === 1) {
+  // Allow search if query is empty (to show all) or has at least 2 characters
+  if (searchQuery.value.length === 1) {
     return
   }
   
@@ -277,6 +279,9 @@ const performSearch = async () => {
   isLoading.value = true
   
   try {
+    // Get current language from i18n (already available from setup)
+    const currentLanguage = locale.value || 'en'
+    
     // Prepare API request parameters
     const params = {
       page: page.value,
@@ -285,7 +290,8 @@ const performSearch = async () => {
       sortBy: sortBy.value || 'product_code',
       sortDesc: sortDesc.value || false,
       typeFilter: typeFilter.value !== 'all' ? typeFilter.value : undefined,
-      publishedFilter: publishedFilter.value !== 'all' ? publishedFilter.value : undefined
+      publishedFilter: publishedFilter.value !== 'all' ? publishedFilter.value : undefined,
+      language: currentLanguage
     }
     
     // Call API service
@@ -320,8 +326,15 @@ const handleClearSearch = () => {
   searchQuery.value = ''
 }
 
+const debouncedSearch = debounce(performSearch, 500)
+
+watch(searchQuery, () => {
+  debouncedSearch()
+})
+
 const handleSearchKeydown = (event: KeyboardEvent) => {
   if (event.key === 'Enter') {
+    debouncedSearch.cancel()
     performSearch()
   }
 }

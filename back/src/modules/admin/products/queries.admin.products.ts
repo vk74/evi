@@ -280,7 +280,7 @@ export const queries = {
             WHERE pg.role_type = 'product_specialists'
         ) specialist_group ON p.product_id = specialist_group.product_id
         WHERE 1=1
-        AND ($3::text IS NULL OR $3::text = '' OR LOWER(p.product_code) LIKE LOWER($3::text) OR LOWER(pt.name) LIKE LOWER($3::text))
+        AND ($3::text IS NULL OR $3::text = '' OR LOWER(p.product_code) LIKE LOWER($3::text) OR LOWER(pt.name) LIKE LOWER($3::text) OR LOWER(p.translation_key) LIKE LOWER($3::text))
         AND ($6::text IS NULL OR $6::text = '' OR 
             ($6::text = 'product' AND p.can_be_option = false AND p.option_only = false) OR
             ($6::text = 'productAndOption' AND p.can_be_option = true AND p.option_only = false) OR
@@ -323,10 +323,11 @@ export const queries = {
      * Parameters: [searchQuery, typeFilter, publishedFilter]
      */
     countAllProducts: `
-        SELECT COUNT(*) as total
+        SELECT COUNT(DISTINCT p.product_id) as total
         FROM app.products p
+        LEFT JOIN app.product_translations pt ON p.product_id = pt.product_id
         WHERE 1=1
-        AND ($1::text IS NULL OR $1::text = '' OR LOWER(p.product_code) LIKE LOWER($1::text))
+        AND ($1::text IS NULL OR $1::text = '' OR LOWER(p.product_code) LIKE LOWER($1::text) OR LOWER(pt.name) LIKE LOWER($1::text) OR LOWER(p.translation_key) LIKE LOWER($1::text))
         AND ($2::text IS NULL OR $2::text = '' OR 
             ($2::text = 'product' AND p.can_be_option = false AND p.option_only = false) OR
             ($2::text = 'productAndOption' AND p.can_be_option = true AND p.option_only = false) OR
