@@ -58,17 +58,9 @@ const updateProduct = async () => {
 
     const result = await serviceUpdateProduct.updateProduct(updateData)
     
-    if (result && result.success) {
-      uiStore.showSnackbar({
-        message: t('admin.products.editor.messages.update.success'),
-        type: 'success',
-        timeout: 3000,
-        closable: true,
-        position: 'bottom'
-      })
-    } else {
-      uiStore.showErrorSnackbar(result?.message || t('admin.products.editor.messages.update.error'))
-    }
+    console.log('[ProductEditorPreferences] Update result:', result)
+    
+    // Messages are now handled by the service
     
   } catch (error) {
     console.error('Error updating product:', error)
