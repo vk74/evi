@@ -26,6 +26,7 @@ interface FetchAllProductsQuery {
   sortDesc?: string
   typeFilter?: string
   publishedFilter?: string
+  language?: string
 }
 
 /**
@@ -43,8 +44,10 @@ const fetchAllProductsController = async (req: Request, res: Response): Promise<
   const typeFilter = query.typeFilter || undefined
   const publishedFilter = query.publishedFilter || undefined
   
-  // Get language code from request headers or default to 'en'
-  const languageCode = req.headers['accept-language']?.toString().split(',')[0]?.split('-')[0] || 'en'
+  // Get language code from query parameter first, then from headers, then default to 'en'
+  const queryLanguage = query.language
+  const headerLanguage = req.headers['accept-language']?.toString().split(',')[0]?.split('-')[0]
+  const languageCode = queryLanguage || headerLanguage || 'en'
   
   // Validate language code
   const validLanguages = ['en', 'ru']
