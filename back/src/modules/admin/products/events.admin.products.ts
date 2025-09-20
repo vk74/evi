@@ -288,6 +288,15 @@ export const EVENTS_ADMIN_PRODUCTS: EventCollection = {
         version: '1.0.0'
     },
 
+    'product.fetch.count_completed': {
+        eventName: 'products.fetch.count_completed',
+        source: 'admin-products',
+        eventType: 'system',
+        severity: 'debug',
+        eventMessage: 'Product count query completed successfully',
+        version: '1.0.0'
+    },
+
     'product.fetch.success': {
         eventName: 'products.fetch.success',
         source: 'admin-products',

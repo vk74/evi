@@ -126,7 +126,7 @@ export interface ProductListItem {
     is_published: boolean
     created_at: Date
     created_by: string
-    updated_at: Date
+    updated_at?: Date
     updated_by?: string
 }
 
@@ -198,5 +198,58 @@ export interface UpdateProductResponse extends ApiResponse {
         owner?: string
         backupOwner?: string
         specialistsGroups: string[]
+    }
+}
+
+// Fetch all products parameters interface
+export interface FetchAllProductsParams {
+    page: number
+    itemsPerPage: number
+    searchQuery?: string
+    sortBy?: string
+    sortDesc?: boolean
+    typeFilter?: string
+    publishedFilter?: string
+}
+
+// Product list item interface (for list view)
+export interface ProductListItem {
+    product_id: string
+    product_code: string
+    translation_key: string
+    can_be_option: boolean
+    option_only: boolean
+    is_published: boolean
+    is_visible_owner: boolean
+    is_visible_groups: boolean
+    is_visible_tech_specs: boolean
+    is_visible_area_specs: boolean
+    is_visible_industry_specs: boolean
+    is_visible_key_features: boolean
+    is_visible_overview: boolean
+    is_visible_long_description: boolean
+    created_at: Date
+    created_by: string
+    updated_at?: Date
+    updated_by?: string
+    // Computed fields
+    owner?: string
+    specialists_groups?: string[]
+    // Translation data for current language
+    name?: string
+}
+
+// Fetch all products result interface
+export interface FetchAllProductsResult {
+    success: boolean
+    message: string
+    data?: {
+        products: ProductListItem[]
+        pagination: {
+            totalItems: number
+            totalPages: number
+            currentPage: number
+            itemsPerPage: number
+        }
     }
 }

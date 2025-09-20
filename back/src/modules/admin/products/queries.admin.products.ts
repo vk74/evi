@@ -235,5 +235,106 @@ export const queries = {
             product_id, group_id, role_type, created_by
         ) VALUES ($1, $2, $3, $4)
         RETURNING id, product_id, group_id, role_type, created_at
+    `,
+
+    /**
+     * Fetches all products with pagination, search, sorting and filtering
+     * Parameters: [offset, limit, searchQuery, sortBy, sortDesc, typeFilter, publishedFilter, languageCode]
+     */
+    fetchAllProducts: `
+        SELECT 
+            p.product_id,
+            p.product_code,
+            p.translation_key,
+            p.can_be_option,
+            p.option_only,
+            p.is_published,
+            p.is_visible_owner,
+            p.is_visible_groups,
+            p.is_visible_tech_specs,
+            p.is_visible_area_specs,
+            p.is_visible_industry_specs,
+            p.is_visible_key_features,
+            p.is_visible_overview,
+            p.is_visible_long_description,
+            p.created_by,
+            p.created_at,
+            p.updated_by,
+            p.updated_at,
+            pt.name as translation_name,
+            pt.language_code,
+            owner_user.username as owner_name,
+            array_agg(DISTINCT specialist_group.group_name) FILTER (WHERE specialist_group.group_name IS NOT NULL) as specialists_groups
+        FROM app.products p
+        LEFT JOIN app.product_translations pt ON p.product_id = pt.product_id AND pt.language_code = $8
+        LEFT JOIN (
+            SELECT pu.product_id, u.username
+            FROM app.product_users pu
+            JOIN app.users u ON pu.user_id = u.user_id
+            WHERE pu.role_type = 'owner'
+        ) owner_user ON p.product_id = owner_user.product_id
+        LEFT JOIN (
+            SELECT pg.product_id, g.group_name
+            FROM app.product_groups pg
+            JOIN app.groups g ON pg.group_id = g.group_id
+            WHERE pg.role_type = 'product_specialists'
+        ) specialist_group ON p.product_id = specialist_group.product_id
+        WHERE 1=1
+        AND ($3::text IS NULL OR $3::text = '' OR LOWER(p.product_code) LIKE LOWER($3::text) OR LOWER(pt.name) LIKE LOWER($3::text))
+        AND ($6::text IS NULL OR $6::text = '' OR 
+            ($6::text = 'product' AND p.can_be_option = false AND p.option_only = false) OR
+            ($6::text = 'productAndOption' AND p.can_be_option = true AND p.option_only = false) OR
+            ($6::text = 'option' AND p.option_only = true)
+        )
+        AND ($7::text IS NULL OR $7::text = '' OR 
+            ($7::text = 'published' AND p.is_published = true) OR
+            ($7::text = 'unpublished' AND p.is_published = false)
+        )
+        GROUP BY p.product_id, p.product_code, p.translation_key, p.can_be_option, p.option_only,
+                 p.is_published, p.is_visible_owner, p.is_visible_groups, p.is_visible_tech_specs,
+                 p.is_visible_area_specs, p.is_visible_industry_specs, p.is_visible_key_features,
+                 p.is_visible_overview, p.is_visible_long_description, p.created_by, p.created_at,
+                 p.updated_by, p.updated_at, pt.name, pt.language_code, owner_user.username
+        ORDER BY 
+            CASE WHEN $4 = 'product_code' AND $5 = false THEN p.product_code END ASC,
+            CASE WHEN $4 = 'product_code' AND $5 = true THEN p.product_code END DESC,
+            CASE WHEN $4 = 'name' AND $5 = false THEN pt.name END ASC,
+            CASE WHEN $4 = 'name' AND $5 = true THEN pt.name END DESC,
+            CASE WHEN $4 = 'type' AND $5 = false THEN 
+                CASE 
+                    WHEN p.option_only = true THEN 3
+                    WHEN p.can_be_option = true THEN 2
+                    ELSE 1
+                END
+            END ASC,
+            CASE WHEN $4 = 'type' AND $5 = true THEN 
+                CASE 
+                    WHEN p.option_only = true THEN 3
+                    WHEN p.can_be_option = true THEN 2
+                    ELSE 1
+                END
+            END DESC,
+            p.product_code ASC
+        LIMIT $2 OFFSET $1
+    `,
+
+    /**
+     * Counts total products with same filters as fetchAllProducts
+     * Parameters: [searchQuery, typeFilter, publishedFilter]
+     */
+    countAllProducts: `
+        SELECT COUNT(*) as total
+        FROM app.products p
+        WHERE 1=1
+        AND ($1::text IS NULL OR $1::text = '' OR LOWER(p.product_code) LIKE LOWER($1::text))
+        AND ($2::text IS NULL OR $2::text = '' OR 
+            ($2::text = 'product' AND p.can_be_option = false AND p.option_only = false) OR
+            ($2::text = 'productAndOption' AND p.can_be_option = true AND p.option_only = false) OR
+            ($2::text = 'option' AND p.option_only = true)
+        )
+        AND ($3::text IS NULL OR $3::text = '' OR 
+            ($3::text = 'published' AND p.is_published = true) OR
+            ($3::text = 'unpublished' AND p.is_published = false)
+        )
     `
 };

@@ -10,7 +10,8 @@ import { useI18n } from 'vue-i18n'
 import { useUiStore } from '@/core/state/uistate'
 import { useProductsAdminStore } from '../state.products.admin'
 import DataLoading from '@/core/ui/loaders/DataLoading.vue'
-import type { Product, ProductWithTranslations, ProductWithFullData } from '../types.products.admin'
+import type { Product, ProductWithTranslations, ProductWithFullData, ProductListItem, FetchAllProductsResult } from '../types.products.admin'
+import { serviceFetchAllProducts } from '../services/service.fetch.all.products'
 import {
   PhMagnifyingGlass,
   PhX,
@@ -59,8 +60,8 @@ const selectedProducts = ref<Set<string>>(new Set())
 // Loading state
 const isLoading = ref(false)
 
-// Products data (mock data for visualization)
-const products = ref<ProductWithFullData[]>([])
+// Products data
+const products = ref<ProductListItem[]>([])
 const totalItemsCount = ref<number>(0)
 const totalPagesCount = ref<number>(0)
 
@@ -76,9 +77,8 @@ const getProductTypeText = (canBeOption: boolean, optionOnly: boolean) => {
 }
 
 // Helper function to get product name in current language
-const getProductName = (product: ProductWithFullData) => {
-  const currentLang = locale.value as 'en' | 'ru'
-  return product.translations?.[currentLang]?.name || product.translation_key || '-'
+const getProductName = (product: ProductListItem) => {
+  return product.name || product.translation_key || '-'
 }
 
 // Computed properties
@@ -206,171 +206,36 @@ const performSearch = async () => {
   isLoading.value = true
   
   try {
-    // TODO: Call fetch products API
-    console.log('Searching products with params:', {
+    // Prepare API request parameters
+    const params = {
       page: page.value,
       itemsPerPage: itemsPerPage.value,
-      searchQuery: searchQuery.value || undefined,
-      sortBy: sortBy.value || undefined,
-      sortDesc: sortDesc.value,
-      typeFilter: typeFilter.value,
-      publishedFilter: publishedFilter.value
-    })
+      searchQuery: searchQuery.value && searchQuery.value.length >= 2 ? searchQuery.value : undefined,
+      sortBy: sortBy.value || 'product_code',
+      sortDesc: sortDesc.value || false,
+      typeFilter: typeFilter.value !== 'all' ? typeFilter.value : undefined,
+      publishedFilter: publishedFilter.value !== 'all' ? publishedFilter.value : undefined
+    }
     
-    // Mock data for visualization
-    await new Promise(resolve => setTimeout(resolve, 500)) // Simulate API call
+    // Call API service
+    const result: FetchAllProductsResult = await serviceFetchAllProducts.fetchAllProducts(params)
     
-    // Mock products data
-    const allMockProducts: ProductWithFullData[] = [
-      {
-        product_id: '1',
-        product_code: 'PROD-001',
-        translation_key: 'product.software.solution',
-        can_be_option: false,
-        option_only: false,
-        is_published: true,
-        is_visible_owner: true,
-        is_visible_groups: true,
-        is_visible_tech_specs: true,
-        is_visible_area_specs: true,
-        is_visible_industry_specs: true,
-        is_visible_key_features: true,
-        is_visible_overview: true,
-        is_visible_long_description: true,
-        created_at: new Date('2024-01-15'),
-        created_by: 'user-1',
-        updated_at: new Date('2024-01-20'),
-        updated_by: 'user-2',
-        translations: {
-          en: { name: 'Software Solution', shortDesc: 'Complete software solution for business' },
-          ru: { name: 'Программное решение', shortDesc: 'Полное программное решение для бизнеса' }
-        },
-        owner: 'John Smith',
-        specialistsGroups: ['Development Team']
-      },
-      {
-        product_id: '2',
-        product_code: 'PROD-002',
-        translation_key: 'product.cloud.service',
-        can_be_option: true,
-        option_only: false,
-        is_published: false,
-        is_visible_owner: true,
-        is_visible_groups: false,
-        is_visible_tech_specs: true,
-        is_visible_area_specs: false,
-        is_visible_industry_specs: true,
-        is_visible_key_features: true,
-        is_visible_overview: true,
-        is_visible_long_description: false,
-        created_at: new Date('2024-01-10'),
-        created_by: 'user-2',
-        updated_at: new Date('2024-01-18'),
-        updated_by: 'user-1',
-        translations: {
-          en: { name: 'Cloud Service', shortDesc: 'Scalable cloud infrastructure service' },
-          ru: { name: 'Облачный сервис', shortDesc: 'Масштабируемый сервис облачной инфраструктуры' }
-        },
-        owner: 'Jane Doe',
-        specialistsGroups: ['Cloud Team', 'DevOps Team']
-      },
-      {
-        product_id: '3',
-        product_code: 'OPT-001',
-        translation_key: 'option.premium.support',
-        can_be_option: false,
-        option_only: true,
-        is_published: true,
-        is_visible_owner: false,
-        is_visible_groups: true,
-        is_visible_tech_specs: false,
-        is_visible_area_specs: true,
-        is_visible_industry_specs: false,
-        is_visible_key_features: true,
-        is_visible_overview: false,
-        is_visible_long_description: true,
-        created_at: new Date('2024-01-05'),
-        created_by: 'user-3',
-        updated_at: new Date('2024-01-12'),
-        updated_by: 'user-3',
-        translations: {
-          en: { name: 'Premium Support', shortDesc: '24/7 premium customer support' },
-          ru: { name: 'Премиум поддержка', shortDesc: 'Премиум поддержка клиентов 24/7' }
-        },
-        owner: 'Mike Johnson',
-        specialistsGroups: ['Support Team']
-      },
-      {
-        product_id: '4',
-        product_code: 'PROD-003',
-        translation_key: 'product.mobile.app',
-        can_be_option: false,
-        option_only: false,
-        is_published: false,
-        is_visible_owner: true,
-        is_visible_groups: true,
-        is_visible_tech_specs: true,
-        is_visible_area_specs: true,
-        is_visible_industry_specs: true,
-        is_visible_key_features: true,
-        is_visible_overview: true,
-        is_visible_long_description: true,
-        created_at: new Date('2024-01-08'),
-        created_by: 'user-4',
-        updated_at: new Date('2024-01-15'),
-        updated_by: 'user-4',
-        translations: {
-          en: { name: 'Mobile App', shortDesc: 'Cross-platform mobile application' },
-          ru: { name: 'Мобильное приложение', shortDesc: 'Кроссплатформенное мобильное приложение' }
-        },
-        owner: 'Sarah Wilson',
-        specialistsGroups: ['Mobile Team']
+    if (result.success && result.data) {
+      products.value = result.data.products
+      totalItemsCount.value = result.data.pagination.totalItems
+      totalPagesCount.value = result.data.pagination.totalPages
+      
+      // Update current page if it's beyond total pages
+      if (page.value > result.data.pagination.totalPages && result.data.pagination.totalPages > 0) {
+        page.value = result.data.pagination.totalPages
       }
-    ]
-    
-    // Apply filters to mock data
-    let filteredProducts = allMockProducts
-    
-    // Type filter
-    if (typeFilter.value !== 'all') {
-      filteredProducts = filteredProducts.filter(product => {
-        if (typeFilter.value === 'product') {
-          return !product.can_be_option && !product.option_only
-        } else if (typeFilter.value === 'productAndOption') {
-          return product.can_be_option && !product.option_only
-        } else if (typeFilter.value === 'option') {
-          return product.option_only
-        }
-        return true
-      })
+    } else {
+      // Handle API error
+      uiStore.showErrorSnackbar(result.message || 'Failed to fetch products')
+      products.value = []
+      totalItemsCount.value = 0
+      totalPagesCount.value = 0
     }
-    
-    // Published filter
-    if (publishedFilter.value !== 'all') {
-      filteredProducts = filteredProducts.filter(product => {
-        if (publishedFilter.value === 'published') {
-          return product.is_published
-        } else if (publishedFilter.value === 'unpublished') {
-          return !product.is_published
-        }
-        return true
-      })
-    }
-    
-    // Search filter
-    if (searchQuery.value && searchQuery.value.length >= 2) {
-      const query = searchQuery.value.toLowerCase()
-      filteredProducts = filteredProducts.filter(product => {
-        const currentLang = locale.value as 'en' | 'ru'
-        const name = product.translations?.[currentLang]?.name?.toLowerCase() || ''
-        const code = product.product_code.toLowerCase()
-        return name.includes(query) || code.includes(query)
-      })
-    }
-    
-    products.value = filteredProducts
-    totalItemsCount.value = filteredProducts.length
-    totalPagesCount.value = Math.ceil(filteredProducts.length / itemsPerPage.value)
     
   } catch (error) {
     handleError(error, 'performing search')
@@ -650,7 +515,7 @@ const clearFilters = async () => {
           </template>
 
           <template #[`item.specialists_group`]="{ item }">
-            <span>{{ item.specialistsGroups?.join(', ') || '-' }}</span>
+            <span>{{ item.specialists_groups?.join(', ') || '-' }}</span>
           </template>
         </v-data-table>
 
