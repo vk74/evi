@@ -221,7 +221,7 @@ watch([page, itemsPerPage], ([newPage, newItemsPerPage]) => {
             :items-per-page-options="[10, 25, 50, 100]"
             :show-records-info="true"
             @update:page="(p: number) => page = p"
-            @update:itemsPerPage="(ipp: number) => itemsPerPage = ipp as ItemsPerPageOption"
+            @update:items-per-page="(ipp: number) => itemsPerPage = ipp as ItemsPerPageOption"
           />
         </div>
       </div>

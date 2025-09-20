@@ -221,11 +221,11 @@ onMounted(async () => {
 
       <!-- Paginator component -->
       <Paginator
-        :current-page="page"
+        :page="page"
         :items-per-page="itemsPerPage"
         :total-items="totalItems"
         :items-per-page-options="[25, 50, 100]"
-        @update:current-page="(newPage) => { page = newPage; loadServices() }"
+        @update:page="(newPage) => { page = newPage; loadServices() }"
         @update:items-per-page="(newItemsPerPage) => { itemsPerPage = newItemsPerPage; page = 1; loadServices() }"
       />
     </div>

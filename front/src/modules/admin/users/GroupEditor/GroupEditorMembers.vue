@@ -173,7 +173,7 @@ const refreshMembers = async () => {
               :items-per-page-options="[25, 50, 100]"
               :show-records-info="false"
               @update:page="page = $event"
-              @update:itemsPerPage="itemsPerPage = $event"
+              @update:items-per-page="itemsPerPage = $event"
             />
           </div>
         </template>

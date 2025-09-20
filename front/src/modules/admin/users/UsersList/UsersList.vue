@@ -431,7 +431,7 @@ const handleItemsPerPageChange = async (newItemsPerPage: ItemsPerPageOption) => 
             :items-per-page-options="[25, 50, 100]"
             :show-records-info="true"
             @update:page="goToPage($event)"
-            @update:itemsPerPage="handleItemsPerPageChange($event as any)"
+            @update:items-per-page="handleItemsPerPageChange($event as any)"
           />
         </div>
       </div>
