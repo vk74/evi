@@ -20,7 +20,8 @@ import catalogSectionsFetchService from '../service.admin.fetch.catalog.sections
 import catalogSectionsDeleteService from '../service.admin.delete.catalog.sections'
 import DataLoading from '@/core/ui/loaders/DataLoading.vue'
 import { CatalogSection, SectionStatus } from '../types.catalog.admin'
-import { PhMagnifyingGlass, PhX, PhCheckSquare, PhSquare, PhFolder, PhCaretDoubleLeft, PhCaretLeft, PhCaretRight, PhCaretDoubleRight, PhArrowClockwise } from '@phosphor-icons/vue'
+import { PhMagnifyingGlass, PhX, PhCheckSquare, PhSquare, PhFolder, PhArrowClockwise } from '@phosphor-icons/vue'
+import Paginator from '@/core/ui/paginator/Paginator.vue'
 
 // Types
 interface TableHeader {
@@ -343,41 +344,10 @@ onMounted(async () => {
   }
 })
 
-// Pagination helpers
-const getPaginationInfo = () => {
-  const start = (page.value - 1) * itemsPerPage.value + 1
-  const end = Math.min(page.value * itemsPerPage.value, totalItems.value)
-  return t('admin.catalog.sections.pagination.recordsInfo', { start, end, total: totalItems.value })
-}
-
-const getTotalPages = () => Math.ceil(totalItems.value / itemsPerPage.value)
-
-const getVisiblePages = () => {
-  const totalPages = getTotalPages()
-  const currentPage = page.value
-  const pages: (number | string)[] = []
-  
-  if (totalPages <= 7) {
-    for (let i = 1; i <= totalPages; i++) pages.push(i)
-  } else {
-    if (currentPage <= 4) {
-      for (let i = 1; i <= 5; i++) pages.push(i)
-      pages.push('...', totalPages)
-    } else if (currentPage >= totalPages - 3) {
-      pages.push(1, '...')
-      for (let i = totalPages - 4; i <= totalPages; i++) pages.push(i)
-    } else {
-      pages.push(1, '...')
-      for (let i = currentPage - 1; i <= currentPage + 1; i++) pages.push(i)
-      pages.push('...', totalPages)
-    }
-  }
-  
-  return pages
-}
 
 const goToPage = async (newPage: number) => {
-  if (newPage < 1 || newPage > getTotalPages() || newPage === page.value) {
+  const totalPages = Math.ceil(totalItems.value / itemsPerPage.value)
+  if (newPage < 1 || newPage > totalPages || newPage === page.value) {
     return
   }
   
@@ -521,121 +491,17 @@ const handleItemsPerPageChange = async (newItemsPerPage: ItemsPerPageOption) => 
           </template>
         </v-data-table>
 
-        <!-- Custom paginator -->
+        <!-- Universal paginator -->
         <div class="custom-pagination-container pa-4">
-          <div class="d-flex align-center justify-end">
-            <!-- Paginator controls -->
-            <div class="d-flex align-center">
-              <!-- Record count per page selector -->
-              <div class="d-flex align-center mr-4">
-                <span class="text-body-2 mr-2">{{ t('admin.catalog.sections.pagination.recordsPerPage') }}</span>
-                <v-select
-                  v-model="itemsPerPage"
-                  :items="[25, 50, 100]"
-                  density="compact"
-                  variant="outlined"
-                  hide-details
-                  class="items-per-page-select"
-                  style="width: 100px"
-                  @update:model-value="handleItemsPerPageChange"
-                />
-              </div>
-              
-              <!-- Record information -->
-              <div class="text-body-2 mr-4">
-                {{ getPaginationInfo() }}
-              </div>
-              
-              <!-- Navigation buttons -->
-              <div class="d-flex align-center">
-                <v-btn
-                  icon
-                  variant="text"
-                  size="small"
-                  :disabled="page === 1"
-                  @click="goToPage(1)"
-                >
-                  <PhCaretDoubleLeft />
-                  <v-tooltip
-                    activator="parent"
-                    location="top"
-                  >
-                    {{ t('admin.catalog.sections.pagination.firstPage') }}
-                  </v-tooltip>
-                </v-btn>
-                
-                <v-btn
-                  icon
-                  variant="text"
-                  size="small"
-                  :disabled="page === 1"
-                  @click="goToPage(page - 1)"
-                >
-                  <PhCaretLeft />
-                  <v-tooltip
-                    activator="parent"
-                    location="top"
-                  >
-                    {{ t('admin.catalog.sections.pagination.previousPage') }}
-                  </v-tooltip>
-                </v-btn>
-                
-                <!-- Page numbers -->
-                <div class="d-flex align-center mx-2">
-                  <template
-                    v-for="pageNum in getVisiblePages()"
-                    :key="pageNum"
-                  >
-                    <v-btn
-                      v-if="pageNum !== '...'"
-                      :variant="pageNum === page ? 'tonal' : 'text'"
-                      size="small"
-                      class="mx-1"
-                      @click="goToPage(Number(pageNum))"
-                    >
-                      {{ pageNum }}
-                    </v-btn>
-                    <span
-                      v-else
-                      class="mx-1"
-                    >...</span>
-                  </template>
-                </div>
-                
-                <v-btn
-                  icon
-                  variant="text"
-                  size="small"
-                  :disabled="page >= getTotalPages()"
-                  @click="goToPage(page + 1)"
-                >
-                  <PhCaretRight />
-                  <v-tooltip
-                    activator="parent"
-                    location="top"
-                  >
-                    {{ t('admin.catalog.sections.pagination.nextPage') }}
-                  </v-tooltip>
-                </v-btn>
-                
-                <v-btn
-                  icon
-                  variant="text"
-                  size="small"
-                  :disabled="page >= getTotalPages()"
-                  @click="goToPage(getTotalPages())"
-                >
-                  <PhCaretDoubleRight />
-                  <v-tooltip
-                    activator="parent"
-                    location="top"
-                  >
-                    {{ t('admin.catalog.sections.pagination.lastPage') }}
-                  </v-tooltip>
-                </v-btn>
-              </div>
-            </div>
-          </div>
+          <Paginator
+            :page="page"
+            :items-per-page="itemsPerPage"
+            :total-items="totalItems"
+            :items-per-page-options="[25, 50, 100]"
+            :show-records-info="true"
+            @update:page="goToPage($event)"
+            @update:itemsPerPage="handleItemsPerPageChange($event as any)"
+          />
         </div>
       </div>
       
