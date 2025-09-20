@@ -36,10 +36,10 @@ export const serviceUpdateProduct = {
   /**
    * Updates an existing product
    * @param productData - Data for updating the product
-   * @returns Promise<ProductWithFullData | null>
+   * @returns Promise<UpdateProductResponse>
    * @throws {Error} When request fails
    */
-  async updateProduct(productData: UpdateProductRequest): Promise<ProductWithFullData | null> {
+  async updateProduct(productData: UpdateProductRequest): Promise<UpdateProductResponse> {
     const store = useProductsAdminStore()
     const uiStore = useUiStore()
 
@@ -53,6 +53,7 @@ export const serviceUpdateProduct = {
     })
 
     try {
+      console.log('[ProductUpdateService] Sending to API:', JSON.stringify(productData, null, 2))
       const response = await api.post<UpdateProductResponse>('/api/admin/products/update', productData)
 
       if (!response.data || !response.data.success || !response.data.data) {
@@ -93,7 +94,7 @@ export const serviceUpdateProduct = {
       })
 
       uiStore.showSuccessSnackbar('Продукт успешно обновлен')
-      return updatedProductData
+      return response.data
 
     } catch (error: any) {
       if (error.response?.data) {
@@ -105,25 +106,26 @@ export const serviceUpdateProduct = {
           message: apiError.message, 
           details: apiError.details 
         })
+        return { success: false, message: apiError.message || 'Ошибка обновления продукта', data: undefined }
       } else {
         const errorMessage = error.message || 'Неизвестная ошибка при обновлении продукта'
         uiStore.showErrorSnackbar(errorMessage)
         logger.error('Network error updating product', error)
       }
-      return null
+      return { success: false, message: error.message || 'Ошибка обновления продукта', data: undefined }
     }
   },
 
   /**
    * Updates product with current form data from store
-   * @returns Promise<ProductWithFullData | null>
+   * @returns Promise<UpdateProductResponse>
    */
-  async updateProductFromForm(): Promise<ProductWithFullData | null> {
+  async updateProductFromForm(): Promise<UpdateProductResponse> {
     const store = useProductsAdminStore()
     
     if (!store.editingProductId) {
       logger.error('No product ID available for update')
-      return null
+      return { success: false, message: 'No product ID available for update', data: undefined }
     }
 
     // Prepare update data from current form state

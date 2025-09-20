@@ -24,6 +24,11 @@
           "english": "english",
           "russian": "russian"
         },
+        "productInfo": {
+          "title": "product information",
+          "productCode": "product code",
+          "productName": "product name"
+        },
         "basic": {
           "title": "basic information",
           "productCode": {

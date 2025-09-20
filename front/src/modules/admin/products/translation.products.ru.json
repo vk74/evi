@@ -24,6 +24,11 @@
           "english": "английский",
           "russian": "русский"
         },
+        "productInfo": {
+          "title": "информация о продукте",
+          "productCode": "код продукта",
+          "productName": "название продукта"
+        },
         "basic": {
           "title": "основная информация",
           "productCode": {
