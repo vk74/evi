@@ -15,7 +15,7 @@ import type {
     FetchAllProductsParams, 
     FetchAllProductsResult,
     ProductListItem 
-} from '../types.products.admin'
+} from './types.products.admin'
 
 /**
  * Interface for API request parameters

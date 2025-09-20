@@ -1,11 +1,11 @@
 /**
- * @file service.fetch.product.ts
+ * @file service.fetch.single.product.ts
  * Service for fetching single product data via API.
  * Version: 1.0.0
- * FRONTEND service for fetching product data through API.
+ * FRONTEND service for fetching single product data through API.
  *
  * Functionality:
- * - Fetches product data via API with new architecture
+ * - Fetches single product data via API with new architecture
  * - Handles validation and error responses
  * - Provides user-friendly error messages
  * - Integrates with UI store for toast notifications
@@ -25,18 +25,18 @@ import type {
 
 // Logger for main operations
 const logger = {
-  info: (message: string, meta?: any) => console.log(`[ProductFetchService] ${message}`, meta || ''),
-  error: (message: string, error?: any) => console.error(`[ProductFetchService] ${message}`, error || '')
+  info: (message: string, meta?: any) => console.log(`[ProductFetchSingleService] ${message}`, meta || ''),
+  error: (message: string, error?: any) => console.error(`[ProductFetchSingleService] ${message}`, error || '')
 }
 
 /**
- * Service for fetching product data
+ * Service for fetching single product data
  */
-export const serviceFetchProduct = {
+export const serviceFetchSingleProduct = {
   /**
    * Fetches product data by ID
    * @param productId - UUID of the product to fetch
-   * @returns Promise<FetchProductResponse>
+   * @returns Promise<ProductWithFullData | null>
    * @throws {Error} When request fails
    */
   async fetchProduct(productId: string): Promise<ProductWithFullData | null> {

@@ -16,7 +16,7 @@ import { useProductsAdminStore } from '../../state.products.admin'
 import { useUiStore } from '@/core/state/uistate'
 import { defineAsyncComponent } from 'vue'
 import { serviceCreateProduct } from '../../service.create.product'
-import { serviceFetchProduct } from '../../service.fetch.product'
+import { serviceFetchSingleProduct } from '../../service.fetch.single.product'
 import { serviceUpdateProduct } from '../../service.update.product'
 
 const ItemSelector = defineAsyncComponent(() => import(/* webpackChunkName: "ui-item-selector" */ '@/core/ui/modals/item-selector/ItemSelector.vue'))
@@ -375,7 +375,7 @@ const loadProductData = async () => {
     isLoadingProduct.value = true
     
     try {
-      const productData = await serviceFetchProduct.fetchProduct(editingProductId.value)
+      const productData = await serviceFetchSingleProduct.fetchProduct(editingProductId.value)
       
       if (productData) {
         // Update store with fetched data

@@ -11,7 +11,7 @@ import { useUiStore } from '@/core/state/uistate'
 import { useProductsAdminStore } from '../state.products.admin'
 import DataLoading from '@/core/ui/loaders/DataLoading.vue'
 import type { Product, ProductWithTranslations, ProductWithFullData, ProductListItem, FetchAllProductsResult } from '../types.products.admin'
-import { serviceFetchAllProducts } from '../services/service.fetch.all.products'
+import { serviceFetchAllProducts } from '../service.fetch.all.products'
 import {
   PhMagnifyingGlass,
   PhX,

@@ -19,7 +19,7 @@ import {
 
 // Async components for lazy loading (placeholder components)
 const ProductsList = defineAsyncComponent(() => import('./sections/ProductsList.vue'))
-const ProductEditor = defineAsyncComponent(() => import('./sections/ProductEditor.vue'))
+const ProductEditor = defineAsyncComponent(() => import('./sections/product-editor/ProductEditor.vue'))
 const ProductsSettings = defineAsyncComponent(() => import('./sections/ProductsSettings.vue'))
 
 // Initialize i18n and store
