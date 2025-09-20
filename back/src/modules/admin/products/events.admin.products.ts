@@ -297,6 +297,61 @@ export const EVENTS_ADMIN_PRODUCTS: EventCollection = {
         version: '1.0.0'
     },
 
+    // Delete events
+    'product.delete.started': {
+        eventName: 'products.delete.started',
+        source: 'admin-products',
+        eventType: 'system',
+        severity: 'debug',
+        eventMessage: 'Product deletion started',
+        version: '1.0.0'
+    },
+
+    'product.delete.validation.success': {
+        eventName: 'products.delete.validation.success',
+        source: 'admin-products',
+        eventType: 'system',
+        severity: 'debug',
+        eventMessage: 'Product deletion validation successful',
+        version: '1.0.0'
+    },
+
+    'product.delete.validation.error': {
+        eventName: 'products.delete.validation.error',
+        source: 'admin-products',
+        eventType: 'system',
+        severity: 'error',
+        eventMessage: 'Product deletion validation failed',
+        version: '1.0.0'
+    },
+
+    'product.delete.success': {
+        eventName: 'products.delete.success',
+        source: 'admin-products',
+        eventType: 'system',
+        severity: 'info',
+        eventMessage: 'Products deleted successfully',
+        version: '1.0.0'
+    },
+
+    'product.delete.database_error': {
+        eventName: 'products.delete.database_error',
+        source: 'admin-products',
+        eventType: 'system',
+        severity: 'error',
+        eventMessage: 'Database error during product deletion',
+        version: '1.0.0'
+    },
+
+    'product.delete.partial_success': {
+        eventName: 'products.delete.partial_success',
+        source: 'admin-products',
+        eventType: 'system',
+        severity: 'warning',
+        eventMessage: 'Partial success during product deletion',
+        version: '1.0.0'
+    },
+
     'product.fetch.success': {
         eventName: 'products.fetch.success',
         source: 'admin-products',
@@ -312,34 +367,6 @@ export const EVENTS_ADMIN_PRODUCTS: EventCollection = {
         eventType: 'system',
         severity: 'error',
         eventMessage: 'Product fetch failed',
-        version: '1.0.0'
-    },
-
-    // Product delete events (for future use)
-    'product.delete.started': {
-        eventName: 'products.delete.started',
-        source: 'admin-products',
-        eventType: 'system',
-        severity: 'debug',
-        eventMessage: 'Product deletion process started',
-        version: '1.0.0'
-    },
-
-    'product.delete.success': {
-        eventName: 'products.delete.success',
-        source: 'admin-products',
-        eventType: 'system',
-        severity: 'info',
-        eventMessage: 'Product deleted successfully',
-        version: '1.0.0'
-    },
-
-    'product.delete.error': {
-        eventName: 'products.delete.error',
-        source: 'admin-products',
-        eventType: 'system',
-        severity: 'error',
-        eventMessage: 'Product deletion failed',
         version: '1.0.0'
     }
 };

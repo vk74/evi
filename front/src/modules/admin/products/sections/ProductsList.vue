@@ -13,6 +13,7 @@ import DataLoading from '@/core/ui/loaders/DataLoading.vue'
 import type { Product, ProductWithTranslations, ProductWithFullData, ProductListItem, FetchAllProductsResult } from '../types.products.admin'
 import { serviceFetchAllProducts } from '../service.fetch.all.products'
 import { serviceFetchSingleProduct } from '../service.fetch.single.product'
+import { serviceDeleteProducts } from '../service.delete.products'
 import {
   PhMagnifyingGlass,
   PhX,
@@ -176,26 +177,62 @@ const confirmDelete = async () => {
   try {
     const productsToDelete = Array.from(selectedProducts.value)
     
-    // TODO: Call delete product API
-    console.log('Deleting products:', productsToDelete)
+    if (productsToDelete.length === 0) {
+      uiStore.showErrorSnackbar(t('admin.products.messages.noProductsSelected'))
+      showDeleteDialog.value = false
+      return
+    }
+
+    // Show loading state
+    isLoading.value = true
     
-    uiStore.showSnackbar({
-      message: t('admin.products.messages.deleteSuccess', { count: productsToDelete.length }),
-      type: 'success',
-      timeout: 5000,
-      closable: true,
-      position: 'bottom'
-    })
+    // Call delete products API
+    const result = await serviceDeleteProducts.deleteProducts(productsToDelete)
     
-    // Clear selections and close dialog
-    selectedProducts.value.clear()
-    showDeleteDialog.value = false
-    
-    // Refresh the list
-    await performSearch()
+    if (result.success && result.data) {
+      const { totalDeleted, totalErrors } = result.data
+      
+      // Clear selections and close dialog
+      selectedProducts.value.clear()
+      showDeleteDialog.value = false
+      
+      // Show success message
+      if (totalErrors === 0) {
+        uiStore.showSnackbar({
+          message: t('admin.products.messages.deleteSuccess', { count: totalDeleted }),
+          type: 'success',
+          timeout: 5000,
+          closable: true,
+          position: 'bottom'
+        })
+      } else if (totalDeleted > 0) {
+        uiStore.showSnackbar({
+          message: t('admin.products.messages.deletePartialSuccess', { 
+            deleted: totalDeleted, 
+            total: productsToDelete.length 
+          }),
+          type: 'warning',
+          timeout: 5000,
+          closable: true,
+          position: 'bottom'
+        })
+      } else {
+        uiStore.showErrorSnackbar(t('admin.products.messages.deleteError'))
+      }
+      
+      // Refresh the list
+      await performSearch()
+      
+    } else {
+      uiStore.showErrorSnackbar(result.message || t('admin.products.messages.deleteError'))
+      showDeleteDialog.value = false
+    }
     
   } catch (error) {
     handleError(error, 'deleting products')
+    showDeleteDialog.value = false
+  } finally {
+    isLoading.value = false
   }
 }
 

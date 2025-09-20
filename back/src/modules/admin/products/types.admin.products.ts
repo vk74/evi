@@ -253,3 +253,33 @@ export interface FetchAllProductsResult {
         }
     }
 }
+
+// Delete products request interface
+export interface DeleteProductsRequest {
+    productIds: string[]
+}
+
+// Delete products response interface
+export interface DeleteProductsResponse extends ApiResponse {
+    data?: {
+        deletedProducts: Array<{id: string, product_code: string}>
+        errors: Array<{id: string, error: string}>
+        totalRequested: number
+        totalDeleted: number
+        totalErrors: number
+    }
+}
+
+// Delete products parameters interface
+export interface DeleteProductsParams {
+    productIds: string[]
+}
+
+// Delete products result interface
+export interface DeleteProductsResult {
+    deletedProducts: Array<{id: string, product_code: string}>
+    errors: Array<{id: string, error: string}>
+    totalRequested: number
+    totalDeleted: number
+    totalErrors: number
+}

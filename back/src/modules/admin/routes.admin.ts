@@ -39,6 +39,7 @@ import createProductController from './products/controller.admin.create.product'
 import fetchProductController from './products/controller.admin.fetch.product';
 import updateProductController from './products/controller.admin.update.product';
 import fetchAllProductsController from './products/controller.admin.fetch.all.products';
+import deleteProductsController from './products/controller.admin.delete.products';
 import registerUserController from '../account/controller.register.user';
 import fetchUserGroupsController from './users/userEditor/controller.fetch.user.groups'
 
@@ -86,6 +87,7 @@ router.get('/api/admin/products/fetch-all-products', validateJWT, checkIsUserSta
 router.post('/api/admin/products/create', validateJWT, checkIsUserStatusActive, createProductController);
 router.get('/api/admin/products/fetch', validateJWT, checkIsUserStatusActive, fetchProductController);
 router.post('/api/admin/products/update', validateJWT, checkIsUserStatusActive, updateProductController);
+router.post('/api/admin/products/delete', validateJWT, checkIsUserStatusActive, deleteProductsController);
 
 // Routes for Account Management
 router.post('/api/admin/users/register', registerUserController);

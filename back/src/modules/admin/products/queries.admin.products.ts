@@ -336,5 +336,12 @@ export const queries = {
             ($3::text = 'published' AND p.is_published = true) OR
             ($3::text = 'unpublished' AND p.is_published = false)
         )
+    `,
+
+    // Delete products query - deletes products and cascades to related tables
+    deleteProducts: `
+        DELETE FROM app.products 
+        WHERE product_id = ANY($1)
+        RETURNING product_id, product_code
     `
 };

@@ -235,7 +235,11 @@
         },
         "editSuccess": "product loaded for editing",
         "editError": "failed to load product for editing",
-        "createMode": "product creation mode activated"
+        "createMode": "product creation mode activated",
+        "deleteSuccess": "{count} product(s) deleted successfully",
+        "deletePartialSuccess": "deleted {deleted} of {total} products",
+        "deleteError": "failed to delete products",
+        "noProductsSelected": "no products selected for deletion"
       }
     }
   }
