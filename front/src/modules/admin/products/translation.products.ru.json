@@ -185,7 +185,53 @@
             "discard": "отменить",
             "save": "сохранить",
             "noProductId": "не удалось определить ID продукта для обновления"
-          }
+          },
+          "deleteSuccess": "{{count}} продукт(ов) успешно удален(о)",
+          "selectionCleared": "выбор очищен",
+          "assignOwnerNotImplemented": "назначение владельца пока не реализовано"
+        }
+      },
+      "table": {
+        "headers": {
+          "selection": "выбор",
+          "productCode": "код продукта",
+          "productName": "название продукта",
+          "type": "тип",
+          "published": "опубликован",
+          "owner": "владелец",
+          "specialistsGroup": "группа специалистов"
+        },
+        "status": {
+          "yes": "да",
+          "no": "нет"
+        }
+      },
+      "search": {
+        "placeholder": "поиск продуктов...",
+        "minChars": "введите минимум 2 символа"
+      },
+      "filters": {
+        "type": "тип",
+        "published": "опубликован",
+        "all": "все",
+        "clear": "очистить фильтры"
+      },
+      "actions": {
+        "title": "действия",
+        "addProduct": "добавить продукт",
+        "refresh": "обновить",
+        "clearSelection": "очистить выбор",
+        "selectedElements": "выбранные элементы",
+        "edit": "редактировать",
+        "assignOwner": "назначить владельца",
+        "delete": "удалить"
+      },
+      "messages": {
+        "deleteConfirm": {
+          "title": "подтверждение удаления",
+          "message": "вы уверены, что хотите удалить выбранные продукты?",
+          "cancel": "отмена",
+          "confirm": "удалить"
         }
       }
     }

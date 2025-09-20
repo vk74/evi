@@ -185,7 +185,53 @@
             "discard": "discard",
             "save": "save",
             "noProductId": "unable to determine product ID for update"
-          }
+          },
+          "deleteSuccess": "{{count}} product(s) deleted successfully",
+          "selectionCleared": "selection cleared",
+          "assignOwnerNotImplemented": "owner assignment not implemented yet"
+        }
+      },
+      "table": {
+        "headers": {
+          "selection": "selection",
+          "productCode": "product code",
+          "productName": "product name",
+          "type": "type",
+          "published": "published",
+          "owner": "owner",
+          "specialistsGroup": "specialists group"
+        },
+        "status": {
+          "yes": "yes",
+          "no": "no"
+        }
+      },
+      "search": {
+        "placeholder": "search products...",
+        "minChars": "enter at least 2 characters"
+      },
+      "filters": {
+        "type": "type",
+        "published": "published",
+        "all": "all",
+        "clear": "clear filters"
+      },
+      "actions": {
+        "title": "actions",
+        "addProduct": "add product",
+        "refresh": "refresh",
+        "clearSelection": "clear selection",
+        "selectedElements": "selected elements",
+        "edit": "edit",
+        "assignOwner": "assign owner",
+        "delete": "delete"
+      },
+      "messages": {
+        "deleteConfirm": {
+          "title": "confirm deletion",
+          "message": "are you sure you want to delete selected products?",
+          "cancel": "cancel",
+          "confirm": "delete"
         }
       }
     }
