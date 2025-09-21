@@ -344,5 +344,91 @@ export const queries = {
         DELETE FROM app.products 
         WHERE product_id = ANY($1)
         RETURNING product_id, product_code
+    `,
+
+    /**
+     * Fetches all options (products with can_be_option = true OR option_only = true)
+     * Parameters: [offset, itemsPerPage, searchQuery, sortBy, sortDesc, languageCode]
+     */
+    fetchAllOptions: `
+        SELECT 
+            p.product_id,
+            p.product_code,
+            p.translation_key,
+            p.can_be_option,
+            p.option_only,
+            p.is_published,
+            p.is_visible_owner,
+            p.is_visible_groups,
+            p.is_visible_tech_specs,
+            p.is_visible_area_specs,
+            p.is_visible_industry_specs,
+            p.is_visible_key_features,
+            p.is_visible_overview,
+            p.is_visible_long_description,
+            p.created_by,
+            p.created_at,
+            p.updated_by,
+            p.updated_at,
+            pt.name as translation_name,
+            pt.language_code,
+            owner_user.username as owner_name,
+            array_agg(DISTINCT specialist_group.group_name) FILTER (WHERE specialist_group.group_name IS NOT NULL) as specialists_groups
+        FROM app.products p
+        LEFT JOIN app.product_translations pt ON p.product_id = pt.product_id AND pt.language_code = $6
+        LEFT JOIN (
+            SELECT pu.product_id, u.username
+            FROM app.product_users pu
+            JOIN app.users u ON pu.user_id = u.user_id
+            WHERE pu.role_type = 'owner'
+        ) owner_user ON p.product_id = owner_user.product_id
+        LEFT JOIN (
+            SELECT pg.product_id, g.group_name
+            FROM app.product_groups pg
+            JOIN app.groups g ON pg.group_id = g.group_id
+            WHERE pg.role_type = 'product_specialists'
+        ) specialist_group ON p.product_id = specialist_group.product_id
+        WHERE 1=1
+        AND (p.can_be_option = true OR p.option_only = true)
+        AND ($3::text IS NULL OR $3::text = '' OR LOWER(p.product_code) LIKE LOWER($3::text) OR LOWER(pt.name) LIKE LOWER($3::text) OR LOWER(p.translation_key) LIKE LOWER($3::text))
+        GROUP BY p.product_id, p.product_code, p.translation_key, p.can_be_option, p.option_only,
+                 p.is_published, p.is_visible_owner, p.is_visible_groups, p.is_visible_tech_specs,
+                 p.is_visible_area_specs, p.is_visible_industry_specs, p.is_visible_key_features,
+                 p.is_visible_overview, p.is_visible_long_description, p.created_by, p.created_at,
+                 p.updated_by, p.updated_at, pt.name, pt.language_code, owner_user.username
+        ORDER BY 
+            CASE WHEN $4 = 'product_code' AND $5 = false THEN p.product_code END ASC,
+            CASE WHEN $4 = 'product_code' AND $5 = true THEN p.product_code END DESC,
+            CASE WHEN $4 = 'name' AND $5 = false THEN pt.name END ASC,
+            CASE WHEN $4 = 'name' AND $5 = true THEN pt.name END DESC,
+            CASE WHEN $4 = 'type' AND $5 = false THEN 
+                CASE 
+                    WHEN p.option_only = true THEN 3
+                    WHEN p.can_be_option = true THEN 2
+                    ELSE 1
+                END
+            END ASC,
+            CASE WHEN $4 = 'type' AND $5 = true THEN 
+                CASE 
+                    WHEN p.option_only = true THEN 3
+                    WHEN p.can_be_option = true THEN 2
+                    ELSE 1
+                END
+            END DESC,
+            p.product_code ASC
+        LIMIT $2 OFFSET $1
+    `,
+
+    /**
+     * Counts total options with same filters as fetchAllOptions
+     * Parameters: [searchQuery]
+     */
+    countAllOptions: `
+        SELECT COUNT(DISTINCT p.product_id) as total
+        FROM app.products p
+        LEFT JOIN app.product_translations pt ON p.product_id = pt.product_id
+        WHERE 1=1
+        AND (p.can_be_option = true OR p.option_only = true)
+        AND ($1::text IS NULL OR $1::text = '' OR LOWER(p.product_code) LIKE LOWER($1::text) OR LOWER(pt.name) LIKE LOWER($1::text) OR LOWER(p.translation_key) LIKE LOWER($1::text))
     `
 };

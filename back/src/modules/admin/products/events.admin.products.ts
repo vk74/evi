@@ -368,5 +368,42 @@ export const EVENTS_ADMIN_PRODUCTS: EventCollection = {
         severity: 'error',
         eventMessage: 'Product fetch failed',
         version: '1.0.0'
+    },
+
+    // Options fetch events
+    'options.fetch.started': {
+        eventName: 'options.fetch.started',
+        source: 'admin-products',
+        eventType: 'system',
+        severity: 'debug',
+        eventMessage: 'Options fetch started',
+        version: '1.0.0'
+    },
+
+    'options.fetch.count_completed': {
+        eventName: 'options.fetch.count_completed',
+        source: 'admin-products',
+        eventType: 'system',
+        severity: 'info',
+        eventMessage: 'Options count completed',
+        version: '1.0.0'
+    },
+
+    'options.fetch.success': {
+        eventName: 'options.fetch.success',
+        source: 'admin-products',
+        eventType: 'system',
+        severity: 'info',
+        eventMessage: 'Options fetched successfully',
+        version: '1.0.0'
+    },
+
+    'options.fetch.error': {
+        eventName: 'options.fetch.error',
+        source: 'admin-products',
+        eventType: 'system',
+        severity: 'error',
+        eventMessage: 'Options fetch failed',
+        version: '1.0.0'
     }
 };

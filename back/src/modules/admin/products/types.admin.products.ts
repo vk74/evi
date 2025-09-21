@@ -117,18 +117,7 @@ export interface ProductTranslation {
 }
 
 // Product list item interface (for future use)
-export interface ProductListItem {
-    product_id: string
-    product_code: string
-    translation_key: string
-    can_be_option: boolean
-    option_only: boolean
-    is_published: boolean
-    created_at: Date
-    created_by: string
-    updated_at?: Date
-    updated_by?: string
-}
+// ProductListItem interface moved to line 216 to avoid duplication
 
 // Fetch products query interface (for future use)
 export interface FetchProductsQuery {
