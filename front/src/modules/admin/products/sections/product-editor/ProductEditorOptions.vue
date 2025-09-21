@@ -100,11 +100,11 @@ const isSearchEnabled = computed(() =>
 // Table headers
 const headers = computed<TableHeader[]>(() => [
   { title: t('admin.products.table.headers.selection'), key: 'selection', width: '40px', sortable: false },
-  { title: 'option code', key: 'option_code', width: '150px', sortable: true },
-  { title: 'option name', key: 'name', width: '250px', sortable: true },
+  { title: t('admin.products.table.headers.optionCode'), key: 'option_code', width: '165px', sortable: true },
+  { title: t('admin.products.table.headers.optionName'), key: 'name', width: '250px', sortable: true },
   { title: t('admin.products.table.headers.type'), key: 'type', width: '120px', sortable: true },
   { title: t('admin.products.table.headers.published'), key: 'published', width: '100px', sortable: false },
-  { title: t('admin.products.table.headers.owner'), key: 'owner', width: '180px', sortable: false }
+  { title: t('admin.products.table.headers.owner'), key: 'owner', width: '165px', sortable: false }
 ])
 
 // Search functionality
@@ -404,7 +404,32 @@ onMounted(async () => {
         <!-- Actions section -->
         <div class="side-bar-section">
           <h3 class="text-subtitle-2 px-2 py-2">
-            Actions
+            {{ t('admin.products.actions.title').toLowerCase() }}
+          </h3>
+
+          <!-- Unpair All button -->
+          <v-btn
+            block
+            color="grey"
+            variant="outlined"
+            :disabled="!hasSelected"
+            class="mb-3"
+            @click="unpairAll"
+          >
+            <template #prepend>
+              <PhSquare />
+            </template>
+            {{ t('admin.products.actions.unpairAll').toUpperCase() }}
+          </v-btn>
+        </div>
+        
+        <!-- Divider between sections -->
+        <div class="sidebar-divider" />
+        
+        <!-- Selected items section -->
+        <div class="side-bar-section">
+          <h3 class="text-subtitle-2 px-2 py-2">
+            {{ t('admin.products.actions.selectedItems').toLowerCase() }}
           </h3>
 
           <!-- Pair Options button -->
@@ -413,25 +438,13 @@ onMounted(async () => {
             color="teal"
             variant="outlined"
             :disabled="!hasSelected"
-            class="mb-3"
             @click="pairOptions"
           >
-            PAIR OPTIONS
-            <span v-if="hasSelected" class="ml-2">({{ selectedCount }})</span>
-          </v-btn>
-
-          <!-- Unpair All button -->
-          <v-btn
-            block
-            color="grey"
-            variant="outlined"
-            :disabled="!hasSelected"
-            @click="unpairAll"
-          >
             <template #prepend>
-              <PhSquare />
+              <PhCheckSquare />
             </template>
-            UNPAIR ALL
+            {{ t('admin.products.actions.pairSelected').toUpperCase() }}
+            <span v-if="hasSelected" class="ml-2">({{ selectedCount }})</span>
           </v-btn>
         </div>
       </div>
@@ -550,6 +563,21 @@ onMounted(async () => {
 
 .side-bar-section {
   padding: 16px;
+}
+
+.sidebar-divider {
+  height: 20px;
+  position: relative;
+  margin: 0 16px;
+}
+
+.sidebar-divider::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 0;
+  right: 0;
+  border-top: thin solid rgba(var(--v-border-color), var(--v-border-opacity));
 }
 
 /* Pagination styles */

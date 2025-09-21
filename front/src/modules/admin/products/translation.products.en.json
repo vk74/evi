@@ -201,6 +201,8 @@
           "selection": "selection",
           "productCode": "product code",
           "productName": "product name",
+          "optionCode": "product code",
+          "optionName": "product name",
           "type": "type",
           "published": "published",
           "owner": "owner",
@@ -227,9 +229,12 @@
         "refresh": "refresh",
         "clearSelection": "clear selection",
         "selectedElements": "selected elements",
+        "selectedItems": "selected items",
         "edit": "edit",
         "assignOwner": "assign owner",
-        "delete": "delete"
+        "delete": "delete",
+        "pairSelected": "pair selected",
+        "unpairAll": "unpair all"
       },
       "messages": {
         "deleteConfirm": {

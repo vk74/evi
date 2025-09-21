@@ -201,6 +201,8 @@
           "selection": "выбор",
           "productCode": "код продукта",
           "productName": "название продукта",
+          "optionCode": "код продукта",
+          "optionName": "название продукта",
           "type": "тип",
           "published": "опубликован",
           "owner": "владелец",
@@ -227,9 +229,12 @@
         "refresh": "обновить",
         "clearSelection": "очистить выбор",
         "selectedElements": "выбранные элементы",
+        "selectedItems": "выбранные элементы",
         "edit": "редактировать",
         "assignOwner": "назначить владельца",
-        "delete": "удалить"
+        "delete": "удалить",
+        "pairSelected": "связать выбранные",
+        "unpairAll": "разорвать все связи"
       },
       "messages": {
         "deleteConfirm": {
