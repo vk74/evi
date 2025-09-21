@@ -16,8 +16,7 @@ import { EventCollection } from '../../../core/eventBus/types.events'
  */
 // Product creation events
 export const PRODUCT_CREATE_EVENTS = {
-    // Product creation events
-    'product.create.started': {
+    STARTED: {
         eventName: 'products.create.started',
         source: 'admin-products',
         eventType: 'system',
@@ -26,7 +25,7 @@ export const PRODUCT_CREATE_EVENTS = {
         version: '1.0.0'
     },
 
-    'product.create.validation_started': {
+    VALIDATION_STARTED: {
         eventName: 'products.create.validation_started',
         source: 'admin-products',
         eventType: 'system',
@@ -35,7 +34,7 @@ export const PRODUCT_CREATE_EVENTS = {
         version: '1.0.0'
     },
 
-    'product.create.code_check_started': {
+    CODE_CHECK_STARTED: {
         eventName: 'products.create.code_check_started',
         source: 'admin-products',
         eventType: 'system',
@@ -44,7 +43,7 @@ export const PRODUCT_CREATE_EVENTS = {
         version: '1.0.0'
     },
 
-    'product.create.code_check_success': {
+    CODE_CHECK_SUCCESS: {
         eventName: 'products.create.code_check_success',
         source: 'admin-products',
         eventType: 'system',
@@ -53,7 +52,7 @@ export const PRODUCT_CREATE_EVENTS = {
         version: '1.0.0'
     },
 
-    'product.create.code_check_error': {
+    CODE_CHECK_ERROR: {
         eventName: 'products.create.code_check_error',
         source: 'admin-products',
         eventType: 'system',
@@ -62,7 +61,7 @@ export const PRODUCT_CREATE_EVENTS = {
         version: '1.0.0'
     },
 
-    'product.create.translation_key_check_started': {
+    TRANSLATION_KEY_CHECK_STARTED: {
         eventName: 'products.create.translation_key_check_started',
         source: 'admin-products',
         eventType: 'system',
@@ -71,7 +70,7 @@ export const PRODUCT_CREATE_EVENTS = {
         version: '1.0.0'
     },
 
-    'product.create.translation_key_check_success': {
+    TRANSLATION_KEY_CHECK_SUCCESS: {
         eventName: 'products.create.translation_key_check_success',
         source: 'admin-products',
         eventType: 'system',
@@ -80,7 +79,7 @@ export const PRODUCT_CREATE_EVENTS = {
         version: '1.0.0'
     },
 
-    'product.create.translation_key_check_error': {
+    TRANSLATION_KEY_CHECK_ERROR: {
         eventName: 'products.create.translation_key_check_error',
         source: 'admin-products',
         eventType: 'system',
@@ -89,7 +88,7 @@ export const PRODUCT_CREATE_EVENTS = {
         version: '1.0.0'
     },
 
-    'product.create.inserting_data': {
+    INSERTING_DATA: {
         eventName: 'products.create.inserting_data',
         source: 'admin-products',
         eventType: 'system',
@@ -98,7 +97,7 @@ export const PRODUCT_CREATE_EVENTS = {
         version: '1.0.0'
     },
 
-    'product.create.success': {
+    SUCCESS: {
         eventName: 'products.create.success',
         source: 'admin-products',
         eventType: 'system',
@@ -107,7 +106,7 @@ export const PRODUCT_CREATE_EVENTS = {
         version: '1.0.0'
     },
 
-    'product.create.translation_created': {
+    TRANSLATION_CREATED: {
         eventName: 'products.create.translation_created',
         source: 'admin-products',
         eventType: 'system',
@@ -116,7 +115,7 @@ export const PRODUCT_CREATE_EVENTS = {
         version: '1.0.0'
     },
 
-    'product.create.translation_error': {
+    TRANSLATION_ERROR: {
         eventName: 'products.create.translation_error',
         source: 'admin-products',
         eventType: 'system',
@@ -125,7 +124,7 @@ export const PRODUCT_CREATE_EVENTS = {
         version: '1.0.0'
     },
 
-    'product.create.database_error': {
+    DATABASE_ERROR: {
         eventName: 'products.create.database_error',
         source: 'admin-products',
         eventType: 'system',
@@ -134,7 +133,7 @@ export const PRODUCT_CREATE_EVENTS = {
         version: '1.0.0'
     },
 
-    'product.create.transaction_rollback': {
+    TRANSACTION_ROLLBACK: {
         eventName: 'products.create.transaction_rollback',
         source: 'admin-products',
         eventType: 'system',
@@ -143,7 +142,7 @@ export const PRODUCT_CREATE_EVENTS = {
         version: '1.0.0'
     },
 
-    'product.create.error': {
+    ERROR: {
         eventName: 'products.create.error',
         source: 'admin-products',
         eventType: 'system',
@@ -155,7 +154,7 @@ export const PRODUCT_CREATE_EVENTS = {
 
 // Product update events
 export const PRODUCT_UPDATE_EVENTS = {
-    'product.update.started': {
+    STARTED: {
         eventName: 'products.update.started',
         source: 'admin-products',
         eventType: 'system',
@@ -164,7 +163,7 @@ export const PRODUCT_UPDATE_EVENTS = {
         version: '1.0.0'
     },
 
-    'product.update.validation_started': {
+    VALIDATION_STARTED: {
         eventName: 'products.update.validation_started',
         source: 'admin-products',
         eventType: 'system',
@@ -173,7 +172,7 @@ export const PRODUCT_UPDATE_EVENTS = {
         version: '1.0.0'
     },
 
-    'product.update.not_found': {
+    NOT_FOUND: {
         eventName: 'products.update.not_found',
         source: 'admin-products',
         eventType: 'system',
@@ -182,7 +181,7 @@ export const PRODUCT_UPDATE_EVENTS = {
         version: '1.0.0'
     },
 
-    'product.update.main_data_updated': {
+    MAIN_DATA_UPDATED: {
         eventName: 'products.update.main_data_updated',
         source: 'admin-products',
         eventType: 'system',
@@ -191,7 +190,7 @@ export const PRODUCT_UPDATE_EVENTS = {
         version: '1.0.0'
     },
 
-    'product.update.translations_updated': {
+    TRANSLATIONS_UPDATED: {
         eventName: 'products.update.translations_updated',
         source: 'admin-products',
         eventType: 'system',
@@ -200,7 +199,7 @@ export const PRODUCT_UPDATE_EVENTS = {
         version: '1.0.0'
     },
 
-    'product.update.owners_updated': {
+    OWNERS_UPDATED: {
         eventName: 'products.update.owners_updated',
         source: 'admin-products',
         eventType: 'system',
@@ -209,7 +208,7 @@ export const PRODUCT_UPDATE_EVENTS = {
         version: '1.0.0'
     },
 
-    'product.update.groups_updated': {
+    GROUPS_UPDATED: {
         eventName: 'products.update.groups_updated',
         source: 'admin-products',
         eventType: 'system',
@@ -218,7 +217,7 @@ export const PRODUCT_UPDATE_EVENTS = {
         version: '1.0.0'
     },
 
-    'product.update.success': {
+    SUCCESS: {
         eventName: 'products.update.success',
         source: 'admin-products',
         eventType: 'system',
@@ -227,7 +226,7 @@ export const PRODUCT_UPDATE_EVENTS = {
         version: '1.0.0'
     },
 
-    'product.update.error': {
+    ERROR: {
         eventName: 'products.update.error',
         source: 'admin-products',
         eventType: 'system',
@@ -239,7 +238,7 @@ export const PRODUCT_UPDATE_EVENTS = {
 
 // Product fetch events
 export const PRODUCT_FETCH_EVENTS = {
-    'product.fetch.started': {
+    STARTED: {
         eventName: 'products.fetch.started',
         source: 'admin-products',
         eventType: 'system',
@@ -248,7 +247,7 @@ export const PRODUCT_FETCH_EVENTS = {
         version: '1.0.0'
     },
 
-    'product.fetch.validation_started': {
+    VALIDATION_STARTED: {
         eventName: 'products.fetch.validation_started',
         source: 'admin-products',
         eventType: 'system',
@@ -257,7 +256,7 @@ export const PRODUCT_FETCH_EVENTS = {
         version: '1.0.0'
     },
 
-    'product.fetch.not_found': {
+    NOT_FOUND: {
         eventName: 'products.fetch.not_found',
         source: 'admin-products',
         eventType: 'system',
@@ -266,7 +265,7 @@ export const PRODUCT_FETCH_EVENTS = {
         version: '1.0.0'
     },
 
-    'product.fetch.translations_fetched': {
+    TRANSLATIONS_FETCHED: {
         eventName: 'products.fetch.translations_fetched',
         source: 'admin-products',
         eventType: 'system',
@@ -275,7 +274,7 @@ export const PRODUCT_FETCH_EVENTS = {
         version: '1.0.0'
     },
 
-    'product.fetch.owners_fetched': {
+    OWNERS_FETCHED: {
         eventName: 'products.fetch.owners_fetched',
         source: 'admin-products',
         eventType: 'system',
@@ -284,7 +283,7 @@ export const PRODUCT_FETCH_EVENTS = {
         version: '1.0.0'
     },
 
-    'product.fetch.groups_fetched': {
+    GROUPS_FETCHED: {
         eventName: 'products.fetch.groups_fetched',
         source: 'admin-products',
         eventType: 'system',
@@ -293,7 +292,7 @@ export const PRODUCT_FETCH_EVENTS = {
         version: '1.0.0'
     },
 
-    'product.fetch.count_completed': {
+    COUNT_COMPLETED: {
         eventName: 'products.fetch.count_completed',
         source: 'admin-products',
         eventType: 'system',
@@ -302,7 +301,7 @@ export const PRODUCT_FETCH_EVENTS = {
         version: '1.0.0'
     },
 
-    'product.fetch.success': {
+    SUCCESS: {
         eventName: 'products.fetch.success',
         source: 'admin-products',
         eventType: 'system',
@@ -311,7 +310,7 @@ export const PRODUCT_FETCH_EVENTS = {
         version: '1.0.0'
     },
 
-    'product.fetch.error': {
+    ERROR: {
         eventName: 'products.fetch.error',
         source: 'admin-products',
         eventType: 'system',
@@ -323,7 +322,7 @@ export const PRODUCT_FETCH_EVENTS = {
 
 // Product delete events
 export const PRODUCT_DELETE_EVENTS = {
-    'product.delete.started': {
+    STARTED: {
         eventName: 'products.delete.started',
         source: 'admin-products',
         eventType: 'system',
@@ -332,7 +331,7 @@ export const PRODUCT_DELETE_EVENTS = {
         version: '1.0.0'
     },
 
-    'product.delete.validation.success': {
+    VALIDATION_SUCCESS: {
         eventName: 'products.delete.validation.success',
         source: 'admin-products',
         eventType: 'system',
@@ -341,7 +340,7 @@ export const PRODUCT_DELETE_EVENTS = {
         version: '1.0.0'
     },
 
-    'product.delete.validation.error': {
+    VALIDATION_ERROR: {
         eventName: 'products.delete.validation.error',
         source: 'admin-products',
         eventType: 'system',
@@ -350,7 +349,7 @@ export const PRODUCT_DELETE_EVENTS = {
         version: '1.0.0'
     },
 
-    'product.delete.success': {
+    SUCCESS: {
         eventName: 'products.delete.success',
         source: 'admin-products',
         eventType: 'system',
@@ -359,7 +358,7 @@ export const PRODUCT_DELETE_EVENTS = {
         version: '1.0.0'
     },
 
-    'product.delete.database_error': {
+    DATABASE_ERROR: {
         eventName: 'products.delete.database_error',
         source: 'admin-products',
         eventType: 'system',
@@ -368,7 +367,7 @@ export const PRODUCT_DELETE_EVENTS = {
         version: '1.0.0'
     },
 
-    'product.delete.partial_success': {
+    PARTIAL_SUCCESS: {
         eventName: 'products.delete.partial_success',
         source: 'admin-products',
         eventType: 'system',
@@ -380,7 +379,7 @@ export const PRODUCT_DELETE_EVENTS = {
 
 // Options fetch events
 export const OPTIONS_FETCH_EVENTS = {
-    'options.fetch.started': {
+    STARTED: {
         eventName: 'options.fetch.started',
         source: 'admin-products',
         eventType: 'system',
@@ -389,7 +388,7 @@ export const OPTIONS_FETCH_EVENTS = {
         version: '1.0.0'
     },
 
-    'options.fetch.count_completed': {
+    COUNT_COMPLETED: {
         eventName: 'options.fetch.count_completed',
         source: 'admin-products',
         eventType: 'system',
@@ -398,7 +397,7 @@ export const OPTIONS_FETCH_EVENTS = {
         version: '1.0.0'
     },
 
-    'options.fetch.success': {
+    SUCCESS: {
         eventName: 'options.fetch.success',
         source: 'admin-products',
         eventType: 'system',
@@ -407,7 +406,7 @@ export const OPTIONS_FETCH_EVENTS = {
         version: '1.0.0'
     },
 
-    'options.fetch.error': {
+    ERROR: {
         eventName: 'options.fetch.error',
         source: 'admin-products',
         eventType: 'system',
@@ -416,3 +415,9 @@ export const OPTIONS_FETCH_EVENTS = {
         version: '1.0.0'
     }
 };
+
+// Export individual event constants for compatibility
+export const OPTIONS_FETCH_STARTED = OPTIONS_FETCH_EVENTS.STARTED;
+export const OPTIONS_FETCH_COUNT_COMPLETED = OPTIONS_FETCH_EVENTS.COUNT_COMPLETED;
+export const OPTIONS_FETCH_SUCCESS = OPTIONS_FETCH_EVENTS.SUCCESS;
+export const OPTIONS_FETCH_ERROR = OPTIONS_FETCH_EVENTS.ERROR;

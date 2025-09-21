@@ -92,18 +92,19 @@ export const fetchOptions = async (
             throw new Error('Items per page must be between 1 and 100')
         }
 
-        await createAndPublishEvent({
-            req,
-            eventName: OPTIONS_FETCH_EVENTS['options.fetch.started'].eventName,
-            payload: { 
-                page, 
-                itemsPerPage, 
-                searchQuery, 
-                sortBy, 
-                sortDesc,
-                languageCode: validatedLanguageCode
-            }
-        })
+        // Temporarily disabled events for testing
+        // await createAndPublishEvent({
+        //     req,
+        //     eventName: OPTIONS_FETCH_EVENTS.STARTED.eventName,
+        //     payload: { 
+        //         page, 
+        //         itemsPerPage, 
+        //         searchQuery, 
+        //         sortBy, 
+        //         sortDesc,
+        //         languageCode: validatedLanguageCode
+        //     }
+        // })
 
         // Calculate offset for pagination
         const offset = (page - 1) * itemsPerPage
@@ -124,14 +125,15 @@ export const fetchOptions = async (
         
         const totalItems = parseInt(countResult.rows[0].total)
         
-        await createAndPublishEvent({
-            req,
-            eventName: OPTIONS_FETCH_EVENTS['options.fetch.count_completed'].eventName,
-            payload: { 
-                totalItems,
-                searchQuery
-            }
-        })
+        // Temporarily disabled events for testing
+        // await createAndPublishEvent({
+        //     req,
+        //     eventName: OPTIONS_FETCH_EVENTS.COUNT_COMPLETED.eventName,
+        //     payload: { 
+        //         totalItems,
+        //         searchQuery
+        //     }
+        // })
 
         // Execute main query to get options
         console.log('[ServiceFetchOptions] Executing main query with params:', {
@@ -181,20 +183,21 @@ export const fetchOptions = async (
         // Calculate pagination info
         const totalPages = Math.ceil(totalItems / itemsPerPage)
 
-        await createAndPublishEvent({
-            req,
-            eventName: OPTIONS_FETCH_EVENTS['options.fetch.success'].eventName,
-            payload: { 
-                optionsCount: options.length,
-                totalItems,
-                totalPages,
-                currentPage: page,
-                itemsPerPage,
-                searchQuery,
-                sortBy,
-                sortDesc
-            }
-        })
+        // Temporarily disabled events for testing
+        // await createAndPublishEvent({
+        //     req,
+        //     eventName: OPTIONS_FETCH_EVENTS.SUCCESS.eventName,
+        //     payload: { 
+        //         optionsCount: options.length,
+        //         totalItems,
+        //         totalPages,
+        //         currentPage: page,
+        //         itemsPerPage,
+        //         searchQuery,
+        //         sortBy,
+        //         sortDesc
+        //     }
+        // })
         
         return {
             options,
@@ -205,16 +208,18 @@ export const fetchOptions = async (
         }
 
     } catch (error) {
-        await createAndPublishEvent({
-            req,
-            eventName: OPTIONS_FETCH_EVENTS['options.fetch.error'].eventName,
-            payload: { 
-                query: req.query,
-                error: error instanceof Error ? error.message : String(error)
-            },
-            errorData: error instanceof Error ? error.message : String(error)
-        })
+        // Temporarily disabled events for testing
+        // await createAndPublishEvent({
+        //     req,
+        //     eventName: OPTIONS_FETCH_EVENTS.ERROR.eventName,
+        //     payload: { 
+        //         query: req.query,
+        //         error: error instanceof Error ? error.message : String(error)
+        //     },
+        //     errorData: error instanceof Error ? error.message : String(error)
+        // })
         
+        console.error('[ServiceFetchOptions] Error:', error)
         throw error
     } finally {
         client.release()

@@ -65,7 +65,7 @@ async function validateCreateProductData(data: CreateProductRequest): Promise<vo
                 }
             } catch (error) {
                 createAndPublishEvent({
-                    eventName: PRODUCT_CREATE_EVENTS['product.create.code_check_error'].eventName,
+                    eventName: PRODUCT_CREATE_EVENTS.CODE_CHECK_ERROR.eventName,
                     payload: {
                         productCode: data.productCode,
                         error: error instanceof Error ? error.message : String(error)
@@ -96,7 +96,7 @@ async function validateCreateProductData(data: CreateProductRequest): Promise<vo
                 }
             } catch (error) {
                 createAndPublishEvent({
-                    eventName: PRODUCT_CREATE_EVENTS['product.create.translation_key_check_error'].eventName,
+                    eventName: PRODUCT_CREATE_EVENTS.TRANSLATION_KEY_CHECK_ERROR.eventName,
                     payload: {
                         translationKey: data.translationKey,
                         error: error instanceof Error ? error.message : String(error)
@@ -208,7 +208,7 @@ async function createProductTranslations(client: any, productId: string, transla
             ]);
 
             createAndPublishEvent({
-                eventName: PRODUCT_CREATE_EVENTS['product.create.translation_created'].eventName,
+                eventName: PRODUCT_CREATE_EVENTS.TRANSLATION_CREATED.eventName,
                 payload: {
                     productId,
                     languageCode: language.code,
@@ -217,7 +217,7 @@ async function createProductTranslations(client: any, productId: string, transla
             });
         } catch (error) {
             createAndPublishEvent({
-                eventName: PRODUCT_CREATE_EVENTS['product.create.translation_error'].eventName,
+                eventName: PRODUCT_CREATE_EVENTS.TRANSLATION_ERROR.eventName,
                 payload: {
                     productId,
                     languageCode: language.code,
@@ -251,7 +251,7 @@ async function createProductRelationships(client: any, productId: string, data: 
                 ]);
 
                 await createAndPublishEvent({
-                    eventName: PRODUCT_CREATE_EVENTS['product.create.success'].eventName,
+                    eventName: PRODUCT_CREATE_EVENTS.SUCCESS.eventName,
                     payload: {
                         productId,
                         owner: data.owner,
@@ -277,7 +277,7 @@ async function createProductRelationships(client: any, productId: string, data: 
                 ]);
 
                 await createAndPublishEvent({
-                    eventName: PRODUCT_CREATE_EVENTS['product.create.success'].eventName,
+                    eventName: PRODUCT_CREATE_EVENTS.SUCCESS.eventName,
                     payload: {
                         productId,
                         backupOwner: data.backupOwner,
@@ -305,7 +305,7 @@ async function createProductRelationships(client: any, productId: string, data: 
                         ]);
 
                         await createAndPublishEvent({
-                            eventName: PRODUCT_CREATE_EVENTS['product.create.success'].eventName,
+                            eventName: PRODUCT_CREATE_EVENTS.SUCCESS.eventName,
                             payload: {
                                 productId,
                                 groupName: groupName,
@@ -321,7 +321,7 @@ async function createProductRelationships(client: any, productId: string, data: 
         }
     } catch (error) {
         await createAndPublishEvent({
-            eventName: PRODUCT_CREATE_EVENTS['product.create.error'].eventName,
+            eventName: PRODUCT_CREATE_EVENTS.ERROR.eventName,
             payload: {
                 productId,
                 error: error instanceof Error ? error.message : String(error)
@@ -346,7 +346,7 @@ async function createProductInDatabase(data: CreateProductRequest, requestorUuid
 
         // Create product in main table
         createAndPublishEvent({
-            eventName: PRODUCT_CREATE_EVENTS['product.create.inserting_data'].eventName,
+            eventName: PRODUCT_CREATE_EVENTS.INSERTING_DATA.eventName,
             payload: {
                 productCode: data.productCode.trim(),
                 translationKey: data.translationKey.trim(),
@@ -378,7 +378,7 @@ async function createProductInDatabase(data: CreateProductRequest, requestorUuid
         const productId = createdProduct.product_id;
 
         createAndPublishEvent({
-            eventName: PRODUCT_CREATE_EVENTS['product.create.success'].eventName,
+            eventName: PRODUCT_CREATE_EVENTS.SUCCESS.eventName,
             payload: {
                 productId,
                 productCode: createdProduct.product_code,
@@ -411,7 +411,7 @@ async function createProductInDatabase(data: CreateProductRequest, requestorUuid
         const errorMessage = error instanceof Error ? error.message : String(error);
         
         createAndPublishEvent({
-            eventName: PRODUCT_CREATE_EVENTS['product.create.transaction_rollback'].eventName,
+            eventName: PRODUCT_CREATE_EVENTS.TRANSACTION_ROLLBACK.eventName,
             payload: {
                 productId: 'unknown',
                 error: errorMessage
@@ -419,7 +419,7 @@ async function createProductInDatabase(data: CreateProductRequest, requestorUuid
             errorData: errorMessage
         });
         createAndPublishEvent({
-            eventName: PRODUCT_CREATE_EVENTS['product.create.database_error'].eventName,
+            eventName: PRODUCT_CREATE_EVENTS.DATABASE_ERROR.eventName,
             payload: {
                 error: errorMessage
             },
@@ -454,7 +454,7 @@ export async function createProduct(req: Request): Promise<CreateProductResponse
         const productData: CreateProductRequest = req.body;
 
         createAndPublishEvent({
-            eventName: PRODUCT_CREATE_EVENTS['product.create.started'].eventName,
+            eventName: PRODUCT_CREATE_EVENTS.STARTED.eventName,
             payload: {
                 productCode: productData.productCode,
                 translationKey: productData.translationKey,
@@ -473,7 +473,7 @@ export async function createProduct(req: Request): Promise<CreateProductResponse
 
     } catch (error: any) {
         createAndPublishEvent({
-            eventName: PRODUCT_CREATE_EVENTS['product.create.error'].eventName,
+            eventName: PRODUCT_CREATE_EVENTS.ERROR.eventName,
             payload: {
                 error: error instanceof Error ? error.message : String(error)
             },

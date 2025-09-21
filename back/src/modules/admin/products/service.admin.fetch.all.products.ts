@@ -54,7 +54,7 @@ export const fetchAllProducts = async (
 
         await createAndPublishEvent({
             req,
-            eventName: PRODUCT_FETCH_EVENTS['product.fetch.started'].eventName,
+            eventName: PRODUCT_FETCH_EVENTS.STARTED.eventName,
             payload: { 
                 page, 
                 itemsPerPage, 
@@ -95,7 +95,7 @@ export const fetchAllProducts = async (
         
         await createAndPublishEvent({
             req,
-            eventName: PRODUCT_FETCH_EVENTS['product.fetch.count_completed'].eventName,
+            eventName: PRODUCT_FETCH_EVENTS.COUNT_COMPLETED.eventName,
             payload: { 
                 totalItems,
                 filters: { searchQuery, typeFilter, publishedFilter }
@@ -145,7 +145,7 @@ export const fetchAllProducts = async (
 
         await createAndPublishEvent({
             req,
-            eventName: PRODUCT_FETCH_EVENTS['product.fetch.success'].eventName,
+            eventName: PRODUCT_FETCH_EVENTS.SUCCESS.eventName,
             payload: { 
                 productsCount: products.length,
                 totalItems,
@@ -167,7 +167,7 @@ export const fetchAllProducts = async (
     } catch (error) {
         await createAndPublishEvent({
             req,
-            eventName: PRODUCT_FETCH_EVENTS['product.fetch.error'].eventName,
+            eventName: PRODUCT_FETCH_EVENTS.ERROR.eventName,
             payload: { 
                 params,
                 error: error instanceof Error ? error.message : String(error)
