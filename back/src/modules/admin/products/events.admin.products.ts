@@ -22,6 +22,7 @@ export const PRODUCT_CREATE_EVENTS = {
         eventType: 'system',
         severity: 'debug',
         eventMessage: 'Product creation process started',
+        payload: null,
         version: '1.0.0'
     },
 
@@ -31,6 +32,7 @@ export const PRODUCT_CREATE_EVENTS = {
         eventType: 'system',
         severity: 'debug',
         eventMessage: 'Product creation validation started',
+        payload: null,
         version: '1.0.0'
     },
 
@@ -40,6 +42,7 @@ export const PRODUCT_CREATE_EVENTS = {
         eventType: 'system',
         severity: 'debug',
         eventMessage: 'Product code uniqueness check started',
+        payload: null,
         version: '1.0.0'
     },
 
@@ -49,6 +52,7 @@ export const PRODUCT_CREATE_EVENTS = {
         eventType: 'system',
         severity: 'debug',
         eventMessage: 'Product code uniqueness check passed',
+        payload: null,
         version: '1.0.0'
     },
 
@@ -58,6 +62,8 @@ export const PRODUCT_CREATE_EVENTS = {
         eventType: 'system',
         severity: 'error',
         eventMessage: 'Product code uniqueness check failed',
+        payload: null,
+        errorData: null,
         version: '1.0.0'
     },
 
@@ -67,6 +73,7 @@ export const PRODUCT_CREATE_EVENTS = {
         eventType: 'system',
         severity: 'debug',
         eventMessage: 'Translation key uniqueness check started',
+        payload: null,
         version: '1.0.0'
     },
 
@@ -76,6 +83,7 @@ export const PRODUCT_CREATE_EVENTS = {
         eventType: 'system',
         severity: 'debug',
         eventMessage: 'Translation key uniqueness check passed',
+        payload: null,
         version: '1.0.0'
     },
 
@@ -85,6 +93,8 @@ export const PRODUCT_CREATE_EVENTS = {
         eventType: 'system',
         severity: 'error',
         eventMessage: 'Translation key uniqueness check failed',
+        payload: null, // Will be of type { translationKey: string, error: string }
+        errorData: null,
         version: '1.0.0'
     },
 
@@ -94,6 +104,7 @@ export const PRODUCT_CREATE_EVENTS = {
         eventType: 'system',
         severity: 'debug',
         eventMessage: 'Inserting product data into database',
+        payload: null,
         version: '1.0.0'
     },
 
@@ -103,6 +114,7 @@ export const PRODUCT_CREATE_EVENTS = {
         eventType: 'system',
         severity: 'info',
         eventMessage: 'Product created successfully',
+        payload: null,
         version: '1.0.0'
     },
 
@@ -112,6 +124,7 @@ export const PRODUCT_CREATE_EVENTS = {
         eventType: 'system',
         severity: 'debug',
         eventMessage: 'Product translation created successfully',
+        payload: null,
         version: '1.0.0'
     },
 
@@ -121,6 +134,8 @@ export const PRODUCT_CREATE_EVENTS = {
         eventType: 'system',
         severity: 'error',
         eventMessage: 'Product translation creation failed',
+        payload: null,
+        errorData: null,
         version: '1.0.0'
     },
 
@@ -130,6 +145,8 @@ export const PRODUCT_CREATE_EVENTS = {
         eventType: 'system',
         severity: 'error',
         eventMessage: 'Database error during product creation',
+        payload: null,
+        errorData: null,
         version: '1.0.0'
     },
 
@@ -139,6 +156,8 @@ export const PRODUCT_CREATE_EVENTS = {
         eventType: 'system',
         severity: 'error',
         eventMessage: 'Transaction rolled back during product creation',
+        payload: null,
+        errorData: null,
         version: '1.0.0'
     },
 
@@ -148,6 +167,8 @@ export const PRODUCT_CREATE_EVENTS = {
         eventType: 'system',
         severity: 'error',
         eventMessage: 'Product creation failed',
+        payload: null,
+        errorData: null,
         version: '1.0.0'
     }
 };
@@ -160,6 +181,7 @@ export const PRODUCT_UPDATE_EVENTS = {
         eventType: 'system',
         severity: 'debug',
         eventMessage: 'Product update process started',
+        payload: null,
         version: '1.0.0'
     },
 
@@ -169,6 +191,7 @@ export const PRODUCT_UPDATE_EVENTS = {
         eventType: 'system',
         severity: 'debug',
         eventMessage: 'Product update validation started',
+        payload: null,
         version: '1.0.0'
     },
 
@@ -178,6 +201,7 @@ export const PRODUCT_UPDATE_EVENTS = {
         eventType: 'system',
         severity: 'warning',
         eventMessage: 'Product not found for update',
+        payload: null,
         version: '1.0.0'
     },
 
@@ -187,6 +211,7 @@ export const PRODUCT_UPDATE_EVENTS = {
         eventType: 'system',
         severity: 'info',
         eventMessage: 'Product main data updated successfully',
+        payload: null,
         version: '1.0.0'
     },
 
@@ -196,6 +221,7 @@ export const PRODUCT_UPDATE_EVENTS = {
         eventType: 'system',
         severity: 'info',
         eventMessage: 'Product translations updated successfully',
+        payload: null,
         version: '1.0.0'
     },
 
@@ -205,6 +231,7 @@ export const PRODUCT_UPDATE_EVENTS = {
         eventType: 'system',
         severity: 'info',
         eventMessage: 'Product owners updated successfully',
+        payload: null,
         version: '1.0.0'
     },
 
@@ -214,6 +241,7 @@ export const PRODUCT_UPDATE_EVENTS = {
         eventType: 'system',
         severity: 'info',
         eventMessage: 'Product specialist groups updated successfully',
+        payload: null,
         version: '1.0.0'
     },
 
@@ -223,6 +251,7 @@ export const PRODUCT_UPDATE_EVENTS = {
         eventType: 'system',
         severity: 'info',
         eventMessage: 'Product updated successfully',
+        payload: null,
         version: '1.0.0'
     },
 
@@ -232,6 +261,8 @@ export const PRODUCT_UPDATE_EVENTS = {
         eventType: 'system',
         severity: 'error',
         eventMessage: 'Product update failed',
+        payload: null,
+        errorData: null,
         version: '1.0.0'
     }
 };
@@ -244,6 +275,7 @@ export const PRODUCT_FETCH_EVENTS = {
         eventType: 'system',
         severity: 'debug',
         eventMessage: 'Product fetch process started',
+        payload: null,
         version: '1.0.0'
     },
 
@@ -253,6 +285,7 @@ export const PRODUCT_FETCH_EVENTS = {
         eventType: 'system',
         severity: 'debug',
         eventMessage: 'Product fetch validation started',
+        payload: null,
         version: '1.0.0'
     },
 
@@ -262,6 +295,7 @@ export const PRODUCT_FETCH_EVENTS = {
         eventType: 'system',
         severity: 'warning',
         eventMessage: 'Product not found',
+        payload: null,
         version: '1.0.0'
     },
 
@@ -271,6 +305,7 @@ export const PRODUCT_FETCH_EVENTS = {
         eventType: 'system',
         severity: 'debug',
         eventMessage: 'Product translations fetched successfully',
+        payload: null,
         version: '1.0.0'
     },
 
@@ -280,6 +315,7 @@ export const PRODUCT_FETCH_EVENTS = {
         eventType: 'system',
         severity: 'debug',
         eventMessage: 'Product owners fetched successfully',
+        payload: null,
         version: '1.0.0'
     },
 
@@ -289,6 +325,7 @@ export const PRODUCT_FETCH_EVENTS = {
         eventType: 'system',
         severity: 'debug',
         eventMessage: 'Product specialist groups fetched successfully',
+        payload: null,
         version: '1.0.0'
     },
 
@@ -298,6 +335,7 @@ export const PRODUCT_FETCH_EVENTS = {
         eventType: 'system',
         severity: 'debug',
         eventMessage: 'Product count query completed successfully',
+        payload: null,
         version: '1.0.0'
     },
 
@@ -307,6 +345,7 @@ export const PRODUCT_FETCH_EVENTS = {
         eventType: 'system',
         severity: 'debug',
         eventMessage: 'Product fetched successfully',
+        payload: null,
         version: '1.0.0'
     },
 
@@ -316,6 +355,8 @@ export const PRODUCT_FETCH_EVENTS = {
         eventType: 'system',
         severity: 'error',
         eventMessage: 'Product fetch failed',
+        payload: null,
+        errorData: null,
         version: '1.0.0'
     }
 };
@@ -328,6 +369,7 @@ export const PRODUCT_DELETE_EVENTS = {
         eventType: 'system',
         severity: 'debug',
         eventMessage: 'Product deletion started',
+        payload: null,
         version: '1.0.0'
     },
 
@@ -337,6 +379,7 @@ export const PRODUCT_DELETE_EVENTS = {
         eventType: 'system',
         severity: 'debug',
         eventMessage: 'Product deletion validation successful',
+        payload: null,
         version: '1.0.0'
     },
 
@@ -346,6 +389,8 @@ export const PRODUCT_DELETE_EVENTS = {
         eventType: 'system',
         severity: 'error',
         eventMessage: 'Product deletion validation failed',
+        payload: null,
+        errorData: null,
         version: '1.0.0'
     },
 
@@ -355,6 +400,7 @@ export const PRODUCT_DELETE_EVENTS = {
         eventType: 'system',
         severity: 'info',
         eventMessage: 'Products deleted successfully',
+        payload: null,
         version: '1.0.0'
     },
 
@@ -364,6 +410,8 @@ export const PRODUCT_DELETE_EVENTS = {
         eventType: 'system',
         severity: 'error',
         eventMessage: 'Database error during product deletion',
+        payload: null,
+        errorData: null,
         version: '1.0.0'
     },
 
@@ -373,6 +421,7 @@ export const PRODUCT_DELETE_EVENTS = {
         eventType: 'system',
         severity: 'warning',
         eventMessage: 'Partial success during product deletion',
+        payload: null,
         version: '1.0.0'
     }
 };
@@ -385,6 +434,7 @@ export const OPTIONS_FETCH_EVENTS = {
         eventType: 'system',
         severity: 'debug',
         eventMessage: 'Options fetch started',
+        payload: null,
         version: '1.0.0'
     },
 
@@ -394,6 +444,7 @@ export const OPTIONS_FETCH_EVENTS = {
         eventType: 'system',
         severity: 'info',
         eventMessage: 'Options count completed',
+        payload: null,
         version: '1.0.0'
     },
 
@@ -403,6 +454,7 @@ export const OPTIONS_FETCH_EVENTS = {
         eventType: 'system',
         severity: 'info',
         eventMessage: 'Options fetched successfully',
+        payload: null,
         version: '1.0.0'
     },
 
@@ -412,6 +464,8 @@ export const OPTIONS_FETCH_EVENTS = {
         eventType: 'system',
         severity: 'error',
         eventMessage: 'Options fetch failed',
+        payload: null,
+        errorData: null,
         version: '1.0.0'
     }
 };
