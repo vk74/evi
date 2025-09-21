@@ -14,7 +14,8 @@ import { EventCollection } from '../../../core/eventBus/types.events'
  * Event reference catalog for admin products operations
  * Contains all events related to product management in admin module
  */
-export const EVENTS_ADMIN_PRODUCTS: EventCollection = {
+// Product creation events
+export const PRODUCT_CREATE_EVENTS = {
     // Product creation events
     'product.create.started': {
         eventName: 'products.create.started',
@@ -149,9 +150,11 @@ export const EVENTS_ADMIN_PRODUCTS: EventCollection = {
         severity: 'error',
         eventMessage: 'Product creation failed',
         version: '1.0.0'
-    },
+    }
+};
 
-    // Product update events (for future use)
+// Product update events
+export const PRODUCT_UPDATE_EVENTS = {
     'product.update.started': {
         eventName: 'products.update.started',
         source: 'admin-products',
@@ -231,9 +234,11 @@ export const EVENTS_ADMIN_PRODUCTS: EventCollection = {
         severity: 'error',
         eventMessage: 'Product update failed',
         version: '1.0.0'
-    },
+    }
+};
 
-    // Product fetch events
+// Product fetch events
+export const PRODUCT_FETCH_EVENTS = {
     'product.fetch.started': {
         eventName: 'products.fetch.started',
         source: 'admin-products',
@@ -297,7 +302,27 @@ export const EVENTS_ADMIN_PRODUCTS: EventCollection = {
         version: '1.0.0'
     },
 
-    // Delete events
+    'product.fetch.success': {
+        eventName: 'products.fetch.success',
+        source: 'admin-products',
+        eventType: 'system',
+        severity: 'debug',
+        eventMessage: 'Product fetched successfully',
+        version: '1.0.0'
+    },
+
+    'product.fetch.error': {
+        eventName: 'products.fetch.error',
+        source: 'admin-products',
+        eventType: 'system',
+        severity: 'error',
+        eventMessage: 'Product fetch failed',
+        version: '1.0.0'
+    }
+};
+
+// Product delete events
+export const PRODUCT_DELETE_EVENTS = {
     'product.delete.started': {
         eventName: 'products.delete.started',
         source: 'admin-products',
@@ -350,27 +375,11 @@ export const EVENTS_ADMIN_PRODUCTS: EventCollection = {
         severity: 'warning',
         eventMessage: 'Partial success during product deletion',
         version: '1.0.0'
-    },
+    }
+};
 
-    'product.fetch.success': {
-        eventName: 'products.fetch.success',
-        source: 'admin-products',
-        eventType: 'system',
-        severity: 'debug',
-        eventMessage: 'Product fetched successfully',
-        version: '1.0.0'
-    },
-
-    'product.fetch.error': {
-        eventName: 'products.fetch.error',
-        source: 'admin-products',
-        eventType: 'system',
-        severity: 'error',
-        eventMessage: 'Product fetch failed',
-        version: '1.0.0'
-    },
-
-    // Options fetch events
+// Options fetch events
+export const OPTIONS_FETCH_EVENTS = {
     'options.fetch.started': {
         eventName: 'options.fetch.started',
         source: 'admin-products',

@@ -27,7 +27,7 @@ import type {
 import { getRequestorUuidFromReq } from '@/core/helpers/get.requestor.uuid.from.req';
 import { validateFieldSecurity } from '@/core/validation/service.validation';
 import { createAndPublishEvent } from '@/core/eventBus/fabric.events';
-import { EVENTS_ADMIN_PRODUCTS } from './events.admin.products';
+import { PRODUCT_DELETE_EVENTS } from './events.admin.products';
 
 // Type assertion for pool
 const pool = pgPool as Pool;
@@ -85,7 +85,7 @@ export async function deleteProducts(
         console.log('[DeleteProducts] Incoming data:', JSON.stringify(params, null, 2));
         
         await createAndPublishEvent({
-            eventName: EVENTS_ADMIN_PRODUCTS['product.delete.started'].eventName,
+            eventName: PRODUCT_DELETE_EVENTS['product.delete.started'].eventName,
             payload: { 
                 productIds: params.productIds,
                 count: params.productIds.length
@@ -108,7 +108,7 @@ export async function deleteProducts(
         validateProductIds(params.productIds);
 
         await createAndPublishEvent({
-            eventName: EVENTS_ADMIN_PRODUCTS['product.delete.validation.success'].eventName,
+            eventName: PRODUCT_DELETE_EVENTS['product.delete.validation.success'].eventName,
             payload: { productIds: params.productIds }
         });
 
@@ -141,7 +141,7 @@ export async function deleteProducts(
         // Log success or partial success
         if (totalErrors === 0) {
             await createAndPublishEvent({
-                eventName: EVENTS_ADMIN_PRODUCTS['product.delete.success'].eventName,
+                eventName: PRODUCT_DELETE_EVENTS['product.delete.success'].eventName,
                 payload: { 
                     productIds: params.productIds,
                     totalDeleted,
@@ -150,7 +150,7 @@ export async function deleteProducts(
             });
         } else if (totalDeleted > 0) {
             await createAndPublishEvent({
-                eventName: EVENTS_ADMIN_PRODUCTS['product.delete.partial_success'].eventName,
+                eventName: PRODUCT_DELETE_EVENTS['product.delete.partial_success'].eventName,
                 payload: { 
                     productIds: params.productIds,
                     totalDeleted,
@@ -173,7 +173,7 @@ export async function deleteProducts(
         const errorStack = error instanceof Error ? error.stack : undefined;
         
         await createAndPublishEvent({
-            eventName: EVENTS_ADMIN_PRODUCTS['product.delete.database_error'].eventName,
+            eventName: PRODUCT_DELETE_EVENTS['product.delete.database_error'].eventName,
             payload: { 
                 productIds: params.productIds,
                 error: errorMessage,

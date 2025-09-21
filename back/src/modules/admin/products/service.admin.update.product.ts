@@ -40,7 +40,7 @@ import { fetchUsernameByUuid } from '@/core/helpers/get.username.by.uuid';
 import { fetchGroupnameByUuid } from '@/core/helpers/get.groupname.by.uuid';
 import { validateField, validateFieldSecurity } from '@/core/validation/service.validation';
 import { createAndPublishEvent } from '@/core/eventBus/fabric.events';
-import { EVENTS_ADMIN_PRODUCTS } from './events.admin.products';
+import { PRODUCT_UPDATE_EVENTS } from './events.admin.products';
 
 // Type assertion for pool
 const pool = pgPool as Pool;
@@ -432,7 +432,7 @@ export async function updateProduct(data: UpdateProductRequest, req: Request): P
         console.log('[UpdateProduct] Incoming data:', JSON.stringify(data, null, 2));
         
         await createAndPublishEvent({
-            eventName: EVENTS_ADMIN_PRODUCTS['product.update.started'].eventName,
+            eventName: PRODUCT_UPDATE_EVENTS['product.update.started'].eventName,
             payload: { 
                 productId: data.productId,
                 hasTranslations: !!data.translations,
@@ -442,7 +442,7 @@ export async function updateProduct(data: UpdateProductRequest, req: Request): P
 
         // Validate input data
         await createAndPublishEvent({
-            eventName: EVENTS_ADMIN_PRODUCTS['product.update.validation_started'].eventName,
+            eventName: PRODUCT_UPDATE_EVENTS['product.update.validation_started'].eventName,
             payload: { productId: data.productId }
         });
 
@@ -452,7 +452,7 @@ export async function updateProduct(data: UpdateProductRequest, req: Request): P
         const existingProduct = await checkProductExists(data.productId);
         if (!existingProduct) {
             await createAndPublishEvent({
-                eventName: EVENTS_ADMIN_PRODUCTS['product.update.not_found'].eventName,
+                eventName: PRODUCT_UPDATE_EVENTS['product.update.not_found'].eventName,
                 payload: { productId: data.productId }
             });
 
@@ -482,7 +482,7 @@ export async function updateProduct(data: UpdateProductRequest, req: Request): P
         // Update main product data
         await updateMainProductData(client, data.productId, data, requestorUuid);
         await createAndPublishEvent({
-            eventName: EVENTS_ADMIN_PRODUCTS['product.update.main_data_updated'].eventName,
+            eventName: PRODUCT_UPDATE_EVENTS['product.update.main_data_updated'].eventName,
             payload: { productId: data.productId }
         });
 
@@ -490,7 +490,7 @@ export async function updateProduct(data: UpdateProductRequest, req: Request): P
         if (data.translations && Object.keys(data.translations).length > 0) {
             await updateProductTranslations(client, data.productId, data.translations, requestorUuid);
             await createAndPublishEvent({
-                eventName: EVENTS_ADMIN_PRODUCTS['product.update.translations_updated'].eventName,
+                eventName: PRODUCT_UPDATE_EVENTS['product.update.translations_updated'].eventName,
                 payload: { productId: data.productId }
             });
         }
@@ -499,7 +499,7 @@ export async function updateProduct(data: UpdateProductRequest, req: Request): P
         if (data.owner !== undefined || data.backupOwner !== undefined) {
             await updateProductOwners(client, data.productId, data.owner, data.backupOwner, requestorUuid);
             await createAndPublishEvent({
-                eventName: EVENTS_ADMIN_PRODUCTS['product.update.owners_updated'].eventName,
+                eventName: PRODUCT_UPDATE_EVENTS['product.update.owners_updated'].eventName,
                 payload: { productId: data.productId }
             });
         }
@@ -508,7 +508,7 @@ export async function updateProduct(data: UpdateProductRequest, req: Request): P
         if (data.specialistsGroups !== undefined) {
             await updateProductGroups(client, data.productId, data.specialistsGroups, requestorUuid);
             await createAndPublishEvent({
-                eventName: EVENTS_ADMIN_PRODUCTS['product.update.groups_updated'].eventName,
+                eventName: PRODUCT_UPDATE_EVENTS['product.update.groups_updated'].eventName,
                 payload: { productId: data.productId }
             });
         }
@@ -559,7 +559,7 @@ export async function updateProduct(data: UpdateProductRequest, req: Request): P
         const specialistsGroups = groupsResult.rows.map((row: any) => row.group_name);
 
         await createAndPublishEvent({
-            eventName: EVENTS_ADMIN_PRODUCTS['product.update.success'].eventName,
+            eventName: PRODUCT_UPDATE_EVENTS['product.update.success'].eventName,
             payload: { 
                 productId: data.productId,
                 productCode: updatedProduct.product_code
@@ -585,7 +585,7 @@ export async function updateProduct(data: UpdateProductRequest, req: Request): P
         const errorStack = error instanceof Error ? error.stack : undefined;
         
         await createAndPublishEvent({
-            eventName: EVENTS_ADMIN_PRODUCTS['product.update.error'].eventName,
+            eventName: PRODUCT_UPDATE_EVENTS['product.update.error'].eventName,
             payload: { 
                 productId: data.productId,
                 error: errorMessage,

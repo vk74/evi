@@ -9,7 +9,7 @@
 
 import { queries } from './queries.admin.products'
 import { createAndPublishEvent } from '@/core/eventBus/fabric.events'
-import { EVENTS_ADMIN_PRODUCTS } from './events.admin.products'
+import { PRODUCT_FETCH_EVENTS } from './events.admin.products'
 import type { Product, ProductTranslation, FetchProductResponse, ProductWithFullData } from './types.admin.products'
 import { pool } from '@/core/db/maindb'
 import { fetchGroupnameByUuid } from '@/core/helpers/get.groupname.by.uuid'
@@ -35,7 +35,7 @@ export class ServiceAdminFetchProduct {
       if (!productId || typeof productId !== 'string' || productId.trim().length === 0) {
         await createAndPublishEvent({
           req,
-          eventName: EVENTS_ADMIN_PRODUCTS['product.fetch.validation_started'].eventName,
+          eventName: PRODUCT_FETCH_EVENTS['product.fetch.validation_started'].eventName,
           payload: { productId },
           errorData: 'Invalid product ID provided'
         })
@@ -47,7 +47,7 @@ export class ServiceAdminFetchProduct {
 
       await createAndPublishEvent({
         req,
-        eventName: EVENTS_ADMIN_PRODUCTS['product.fetch.started'].eventName,
+        eventName: PRODUCT_FETCH_EVENTS['product.fetch.started'].eventName,
         payload: { productId }
       })
 
@@ -57,7 +57,7 @@ export class ServiceAdminFetchProduct {
       if (productResult.rows.length === 0) {
         await createAndPublishEvent({
           req,
-          eventName: EVENTS_ADMIN_PRODUCTS['product.fetch.not_found'].eventName,
+          eventName: PRODUCT_FETCH_EVENTS['product.fetch.not_found'].eventName,
           payload: { productId }
         })
         return {
@@ -73,7 +73,7 @@ export class ServiceAdminFetchProduct {
       
       await createAndPublishEvent({
         req,
-        eventName: EVENTS_ADMIN_PRODUCTS['product.fetch.translations_fetched'].eventName,
+        eventName: PRODUCT_FETCH_EVENTS['product.fetch.translations_fetched'].eventName,
         payload: { 
           productId, 
           translationsCount: translationsResult.rows.length 
@@ -121,7 +121,7 @@ export class ServiceAdminFetchProduct {
 
       await createAndPublishEvent({
         req,
-        eventName: EVENTS_ADMIN_PRODUCTS['product.fetch.owners_fetched'].eventName,
+        eventName: PRODUCT_FETCH_EVENTS['product.fetch.owners_fetched'].eventName,
         payload: { 
           productId, 
           owner, 
@@ -148,7 +148,7 @@ export class ServiceAdminFetchProduct {
 
       await createAndPublishEvent({
         req,
-        eventName: EVENTS_ADMIN_PRODUCTS['product.fetch.groups_fetched'].eventName,
+        eventName: PRODUCT_FETCH_EVENTS['product.fetch.groups_fetched'].eventName,
         payload: { 
           productId, 
           groupsCount: specialistsGroups.length,
@@ -189,7 +189,7 @@ export class ServiceAdminFetchProduct {
 
       await createAndPublishEvent({
         req,
-        eventName: EVENTS_ADMIN_PRODUCTS['product.fetch.success'].eventName,
+        eventName: PRODUCT_FETCH_EVENTS['product.fetch.success'].eventName,
         payload: { 
           productId, 
           productCode: product.product_code,
@@ -208,7 +208,7 @@ export class ServiceAdminFetchProduct {
     } catch (error) {
       await createAndPublishEvent({
         req,
-        eventName: EVENTS_ADMIN_PRODUCTS['product.fetch.error'].eventName,
+        eventName: PRODUCT_FETCH_EVENTS['product.fetch.error'].eventName,
         payload: { 
           productId,
           error: error instanceof Error ? error.message : String(error)

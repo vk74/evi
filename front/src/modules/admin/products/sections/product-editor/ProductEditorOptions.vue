@@ -79,6 +79,17 @@ const totalPagesCount = ref<number>(0)
 // Selected options
 const selectedOptions = ref<Set<string>>(new Set())
 
+// Helper function to get product type display text
+const getProductTypeText = (canBeOption: boolean, optionOnly: boolean) => {
+  if (optionOnly) {
+    return t('admin.products.editor.basic.type.option')
+  } else if (canBeOption) {
+    return t('admin.products.editor.basic.type.productAndOption')
+  } else {
+    return t('admin.products.editor.basic.type.product')
+  }
+}
+
 // Computed properties
 const selectedCount = computed(() => selectedOptions.value.size)
 const hasSelected = computed(() => selectedOptions.value.size > 0)
@@ -91,6 +102,7 @@ const headers = computed<TableHeader[]>(() => [
   { title: t('admin.products.table.headers.selection'), key: 'selection', width: '40px', sortable: false },
   { title: 'option code', key: 'option_code', width: '150px', sortable: true },
   { title: 'option name', key: 'name', width: '250px', sortable: true },
+  { title: t('admin.products.table.headers.type'), key: 'type', width: '120px', sortable: true },
   { title: t('admin.products.table.headers.published'), key: 'published', width: '100px', sortable: false },
   { title: t('admin.products.table.headers.owner'), key: 'owner', width: '180px', sortable: false }
 ])
@@ -334,6 +346,15 @@ onMounted(async () => {
 
               <template #[`item.name`]="{ item }">
                 <span>{{ item.name || item.translation_key || '-' }}</span>
+              </template>
+
+              <template #[`item.type`]="{ item }">
+                <v-chip 
+                  :color="item.option_only ? 'violet' : item.can_be_option ? 'blue' : 'teal'" 
+                  size="small"
+                >
+                  {{ getProductTypeText(item.can_be_option, item.option_only) }}
+                </v-chip>
               </template>
 
               <template #[`item.published`]="{ item }">
