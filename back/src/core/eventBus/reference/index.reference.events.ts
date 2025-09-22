@@ -50,6 +50,11 @@ export const eventReferenceFiles: Record<string, string[]> = {
     path.resolve(__dirname, '../../../modules/admin/settings/events.settings.ts')
   ],
   
+  // Products module events
+  products: [
+    path.resolve(__dirname, '../../../modules/admin/products/events.admin.products.ts')
+  ],
+  
   // Connection handler events
   connectionHandler: [
     path.resolve(__dirname, '../../helpers/events.connection.handler.ts')
@@ -95,11 +100,6 @@ export const eventReferenceFiles: Record<string, string[]> = {
   // Admin catalog events - events for admin catalog operations (sections, services)
   adminCatalog: [
     path.resolve(__dirname, '../../../modules/admin/catalog/events.admin.catalog.ts')
-  ],
-  
-  // Admin products events - events for admin products operations
-  products: [
-    path.resolve(__dirname, '../../../modules/admin/products/events.admin.products.ts')
   ],
   
   // Catalog events - events for catalog module operations

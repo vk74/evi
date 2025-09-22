@@ -429,49 +429,44 @@ export const PRODUCT_DELETE_EVENTS = {
 // Options fetch events
 export const OPTIONS_FETCH_EVENTS = {
     STARTED: {
-        eventName: 'options.fetch.started',
+        eventName: 'products.options.fetch.started',
         source: 'admin-products',
-        eventType: 'system',
-        severity: 'debug',
+        eventType: 'app' as const,
+        severity: 'debug' as const,
         eventMessage: 'Options fetch started',
-        payload: null,
+        payload: null, // Will be of type { page: number, itemsPerPage: number, searchQuery?: string, sortBy?: string, sortDesc?: boolean, languageCode: string }
         version: '1.0.0'
     },
 
     COUNT_COMPLETED: {
-        eventName: 'options.fetch.count_completed',
+        eventName: 'products.options.fetch.count_completed',
         source: 'admin-products',
-        eventType: 'system',
-        severity: 'info',
+        eventType: 'app' as const,
+        severity: 'info' as const,
         eventMessage: 'Options count completed',
-        payload: null,
+        payload: null, // Will be of type { totalItems: number, searchQuery?: string }
         version: '1.0.0'
     },
 
     SUCCESS: {
-        eventName: 'options.fetch.success',
+        eventName: 'products.options.fetch.success',
         source: 'admin-products',
-        eventType: 'system',
-        severity: 'info',
+        eventType: 'app' as const,
+        severity: 'info' as const,
         eventMessage: 'Options fetched successfully',
-        payload: null,
+        payload: null, // Will be of type { optionsCount: number, totalItems: number, totalPages: number, currentPage: number, itemsPerPage: number, searchQuery?: string, sortBy?: string, sortDesc?: boolean }
         version: '1.0.0'
     },
 
     ERROR: {
-        eventName: 'options.fetch.error',
+        eventName: 'products.options.fetch.error',
         source: 'admin-products',
-        eventType: 'system',
-        severity: 'error',
+        eventType: 'app' as const,
+        severity: 'error' as const,
         eventMessage: 'Options fetch failed',
-        payload: null,
+        payload: null, // Will be of type { query: any, error: string }
         errorData: null,
         version: '1.0.0'
     }
 };
 
-// Export individual event constants for compatibility
-export const OPTIONS_FETCH_STARTED = OPTIONS_FETCH_EVENTS.STARTED;
-export const OPTIONS_FETCH_COUNT_COMPLETED = OPTIONS_FETCH_EVENTS.COUNT_COMPLETED;
-export const OPTIONS_FETCH_SUCCESS = OPTIONS_FETCH_EVENTS.SUCCESS;
-export const OPTIONS_FETCH_ERROR = OPTIONS_FETCH_EVENTS.ERROR;

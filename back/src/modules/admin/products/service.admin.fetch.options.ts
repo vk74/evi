@@ -92,19 +92,18 @@ export const fetchOptions = async (
             throw new Error('Items per page must be between 1 and 100')
         }
 
-        // Temporarily disabled events for testing
-        // await createAndPublishEvent({
-        //     req,
-        //     eventName: OPTIONS_FETCH_EVENTS.STARTED.eventName,
-        //     payload: { 
-        //         page, 
-        //         itemsPerPage, 
-        //         searchQuery, 
-        //         sortBy, 
-        //         sortDesc,
-        //         languageCode: validatedLanguageCode
-        //     }
-        // })
+        await createAndPublishEvent({
+            req,
+            eventName: OPTIONS_FETCH_EVENTS.STARTED.eventName,
+            payload: { 
+                page, 
+                itemsPerPage, 
+                searchQuery, 
+                sortBy, 
+                sortDesc,
+                languageCode: validatedLanguageCode
+            }
+        })
 
         // Calculate offset for pagination
         const offset = (page - 1) * itemsPerPage
@@ -125,15 +124,14 @@ export const fetchOptions = async (
         
         const totalItems = parseInt(countResult.rows[0].total)
         
-        // Temporarily disabled events for testing
-        // await createAndPublishEvent({
-        //     req,
-        //     eventName: OPTIONS_FETCH_EVENTS.COUNT_COMPLETED.eventName,
-        //     payload: { 
-        //         totalItems,
-        //         searchQuery
-        //     }
-        // })
+        await createAndPublishEvent({
+            req,
+            eventName: OPTIONS_FETCH_EVENTS.COUNT_COMPLETED.eventName,
+            payload: { 
+                totalItems,
+                searchQuery
+            }
+        })
 
         // Execute main query to get options
         console.log('[ServiceFetchOptions] Executing main query with params:', {
@@ -183,21 +181,20 @@ export const fetchOptions = async (
         // Calculate pagination info
         const totalPages = Math.ceil(totalItems / itemsPerPage)
 
-        // Temporarily disabled events for testing
-        // await createAndPublishEvent({
-        //     req,
-        //     eventName: OPTIONS_FETCH_EVENTS.SUCCESS.eventName,
-        //     payload: { 
-        //         optionsCount: options.length,
-        //         totalItems,
-        //         totalPages,
-        //         currentPage: page,
-        //         itemsPerPage,
-        //         searchQuery,
-        //         sortBy,
-        //         sortDesc
-        //     }
-        // })
+        await createAndPublishEvent({
+            req,
+            eventName: OPTIONS_FETCH_EVENTS.SUCCESS.eventName,
+            payload: { 
+                optionsCount: options.length,
+                totalItems,
+                totalPages,
+                currentPage: page,
+                itemsPerPage,
+                searchQuery,
+                sortBy,
+                sortDesc
+            }
+        })
         
         return {
             options,
@@ -208,16 +205,15 @@ export const fetchOptions = async (
         }
 
     } catch (error) {
-        // Temporarily disabled events for testing
-        // await createAndPublishEvent({
-        //     req,
-        //     eventName: OPTIONS_FETCH_EVENTS.ERROR.eventName,
-        //     payload: { 
-        //         query: req.query,
-        //         error: error instanceof Error ? error.message : String(error)
-        //     },
-        //     errorData: error instanceof Error ? error.message : String(error)
-        // })
+        await createAndPublishEvent({
+            req,
+            eventName: OPTIONS_FETCH_EVENTS.ERROR.eventName,
+            payload: { 
+                query: req.query,
+                error: error instanceof Error ? error.message : String(error)
+            },
+            errorData: error instanceof Error ? error.message : String(error)
+        })
         
         console.error('[ServiceFetchOptions] Error:', error)
         throw error
