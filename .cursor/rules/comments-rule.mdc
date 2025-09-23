@@ -3,7 +3,7 @@ alwaysApply: true
 ---
 All comments must be in English!
 Every file should start with a header comment including: 
-1. version number  
+1. version number. if you update existing file, don't forget to increment file version number.
 2. short explanation of the file purpose and logic
 3. mention it's a frontend or backend file and include filename (without path)
 The rest part of the file should have a comment for each major function

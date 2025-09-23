@@ -21,6 +21,7 @@ import {
 } from '@phosphor-icons/vue'
 import Paginator from '@/core/ui/paginator/Paginator.vue'
 import type { CatalogSection } from '../../types.products.admin'
+import { fetchPublishingSections } from './service.admin.fetchpublishingsections'
 
 // Types
 interface TableHeader {
@@ -55,16 +56,9 @@ const isPublishing = ref(false)
 const isUnpublishing = ref(false)
 const isCancellingAll = ref(false)
 
-// Mock data for catalog sections (fallback)
-const mockSections = ref<CatalogSection[]>([
-  { id: '1', name: 'Основные продукты', owner: 'Иван Петров', status: 'Активна', is_public: true },
-  { id: '2', name: 'Вспомогательные продукты', owner: 'Мария Сидорова', status: 'Активна', is_public: false },
-  { id: '3', name: 'Инфраструктурные продукты', owner: 'Алексей Козлов', status: 'Активна', is_public: true },
-  { id: '4', name: 'Бизнес-продукты', owner: 'Елена Волкова', status: 'Неактивна', is_public: false },
-  { id: '5', name: 'Технические продукты', owner: 'Дмитрий Соколов', status: 'Активна', is_public: true },
-  { id: '6', name: 'Административные продукты', owner: 'Ольга Морозова', status: 'Активна', is_public: false },
-  { id: '7', name: 'Пользовательские продукты', owner: 'Сергей Лебедев', status: 'Неактивна', is_public: true }
-])
+// Sections data from API
+const sections = ref<CatalogSection[]>([])
+const sectionsError = ref<string | null>(null)
 
 // Computed properties
 const selectedCount = computed(() => selectedSections.value.size)
@@ -101,13 +95,36 @@ const onSelectSection = (sectionId: string, selected: boolean) => {
 const isSelected = (sectionId: string) => selectedSections.value.has(sectionId)
 
 const selectAll = () => {
-  mockSections.value.forEach(section => {
+  sections.value.forEach(section => {
     selectedSections.value.add(section.id)
   })
 }
 
 const clearSelection = () => {
   selectedSections.value.clear()
+}
+
+// Load publishing sections from API
+const loadPublishingSections = async () => {
+  try {
+    sectionsError.value = null
+    
+    const sectionsData = await fetchPublishingSections()
+    sections.value = sectionsData
+    
+    // Preselect sections if API provided selected flags
+    selectedSections.value.clear()
+    sectionsData.forEach(s => {
+      if (s.selected) {
+        selectedSections.value.add(s.id)
+      }
+    })
+    
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : 'Произошла ошибка при загрузке секций'
+    sectionsError.value = errorMessage
+    uiStore.showErrorSnackbar(errorMessage)
+  }
 }
 
 // Search functionality
@@ -119,8 +136,7 @@ const performSearch = async () => {
   isSearching.value = true
   
   try {
-    // TODO: Replace with actual API call when backend integration is ready
-    // await loadPublishingSections()
+    await loadPublishingSections()
   } catch (error) {
     handleError(error, 'performing search')
   } finally {
@@ -190,7 +206,7 @@ const updateOptionsAndFetch = async (options: { page?: number, itemsPerPage?: nu
 
 // Computed properties for table
 const filteredSections = computed(() => {
-  let result = mockSections.value
+  let result = sections.value
 
   // Apply search filter
   if (searchQuery.value.length >= 2) {
@@ -224,8 +240,7 @@ const totalItems = computed(() => filteredSections.value.length)
 onMounted(async () => {
   isLoading.value = true
   try {
-    // TODO: Replace with actual API call when backend integration is ready
-    // await loadPublishingSections()
+    await loadPublishingSections()
   } catch (error) {
     handleError(error, 'loading sections')
   } finally {
@@ -254,8 +269,8 @@ const handlePublish = async () => {
       t('admin.products.editor.catalogPublication.messages.publishSuccess', { count: resp.addedCount })
     )
     
-    // TODO: Reload sections from API
-    // await loadPublishingSections()
+    // Reload sections from API
+    await loadPublishingSections()
   } catch (error: any) {
     uiStore.showErrorSnackbar(error?.message || t('admin.products.editor.catalogPublication.messages.publishError'))
   } finally {
@@ -284,8 +299,8 @@ const handleUnpublish = async () => {
       t('admin.products.editor.catalogPublication.messages.unpublishSuccess', { count: resp.removedCount })
     )
     
-    // TODO: Reload sections from API
-    // await loadPublishingSections()
+    // Reload sections from API
+    await loadPublishingSections()
   } catch (error: any) {
     uiStore.showErrorSnackbar(error?.message || t('admin.products.editor.catalogPublication.messages.unpublishError'))
   } finally {
@@ -309,8 +324,8 @@ const handleCancelAllPublications = async () => {
     // Clear selections
     selectedSections.value.clear()
     
-    // TODO: Reload sections from API
-    // await loadPublishingSections()
+    // Reload sections from API
+    await loadPublishingSections()
   } catch (error: any) {
     uiStore.showErrorSnackbar(error?.message || t('admin.products.editor.catalogPublication.messages.cancelAllPublicationsError'))
   } finally {
@@ -321,6 +336,18 @@ const handleCancelAllPublications = async () => {
 
 <template>
   <v-card flat>
+    <!-- Error display -->
+    <v-alert
+      v-if="sectionsError"
+      type="error"
+      variant="tonal"
+      closable
+      class="ma-4"
+      @click:close="sectionsError = null"
+    >
+      {{ sectionsError }}
+    </v-alert>
+    
     <div class="d-flex">
       <!-- Main content (left part) -->
       <div class="flex-grow-1 main-content-area">

@@ -1,0 +1,132 @@
+/**
+ * service.admin.fetch.publishingsections.ts - version 1.0.1
+ * Service for fetching publishing sections from catalog for products.
+ * 
+ * Retrieves publishing sections data from app.catalog_sections table,
+ * resolves UUIDs to usernames/groupnames for owners, and marks sections
+ * as selected if product is published in them.
+ * 
+ * Backend file - service.admin.fetch.publishingsections.ts
+ */
+
+import { Request } from 'express';
+import { Pool } from 'pg';
+import { pool as pgPool } from '@/core/db/maindb';
+import { queries } from '../queries.admin.products';
+import type { CatalogSection, FetchPublishingSectionsResponse, ProductError } from '../types.admin.products';
+import { fetchUsernameByUuid } from '@/core/helpers/get.username.by.uuid';
+import { fetchGroupnameByUuid } from '@/core/helpers/get.groupname.by.uuid';
+
+// Type assertion for pool
+const pool = pgPool as Pool;
+
+/**
+ * Database interface for publishing sections
+ */
+interface DbPublishingSection {
+    id: string
+    name: string
+    owner: string | null
+    status: string | null
+    is_public: boolean
+}
+
+/**
+ * Resolves UUIDs to usernames/groupnames for publishing sections
+ * @param sections - Array of database publishing sections
+ * @returns Promise with sections with resolved usernames/groupnames
+ */
+async function resolveUuidsToNames(sections: DbPublishingSection[]): Promise<CatalogSection[]> {
+    const resolvedSections: CatalogSection[] = [];
+
+    for (const section of sections) {
+        // Resolve owner (could be user or group)
+        let ownerName: string | null = null;
+        if (section.owner) {
+            // Try to resolve as username first, then as groupname
+            ownerName = await fetchUsernameByUuid(section.owner) || 
+                       await fetchGroupnameByUuid(section.owner);
+        }
+
+        resolvedSections.push({
+            id: section.id,
+            name: section.name,
+            owner: ownerName || 'Не указан',
+            status: section.status || 'Не указан',
+            is_public: section.is_public
+        });
+    }
+
+    return resolvedSections;
+}
+
+/**
+ * Fetches publishing sections from database for products
+ * @param req - Express request object for accessing user context
+ * @returns Promise with publishing sections data in frontend-compatible format
+ * @throws Error if database error occurs
+ */
+export async function fetchPublishingSections(req: Request): Promise<FetchPublishingSectionsResponse> {
+    try {
+        const productId = (req.query.productId as string) || undefined;
+
+        // Fetch publishing sections from database
+        const result = await pool.query<DbPublishingSection>(queries.fetchPublishingSections);
+        
+        // Resolve UUIDs to usernames/groupnames
+        let resolvedSections = await resolveUuidsToNames(result.rows);
+
+        // If productId is provided, mark selected sections
+        if (productId) {
+            // Validate product exists
+            const exists = await pool.query(queries.checkProductExists, [productId]);
+            if (exists.rowCount === 0) {
+                const productError: ProductError = {
+                    code: 'NOT_FOUND',
+                    message: `Product with ID ${productId} not found`,
+                    details: undefined
+                };
+                throw productError;
+            }
+
+            // Fetch current mappings for the product
+            const currentRes = await pool.query(queries.fetchProductSectionIds, [productId]);
+            const selectedSet = new Set<string>(currentRes.rows.map((r: any) => r.section_id));
+
+            // Add selected flag
+            resolvedSections = resolvedSections.map((s) => ({
+                ...s,
+                selected: selectedSet.has(s.id)
+            }));
+        }
+
+        // Combine data into response format
+        const response: FetchPublishingSectionsResponse = {
+            success: true,
+            message: 'Publishing sections loaded successfully',
+            data: {
+                sections: resolvedSections,
+                pagination: {
+                    totalItems: resolvedSections.length,
+                    totalPages: 1,
+                    currentPage: 1,
+                    itemsPerPage: resolvedSections.length
+                }
+            }
+        };
+        
+        return response;
+
+    } catch (error) {
+        // Create error response
+        const productError: ProductError = {
+            code: 'INTERNAL_SERVER_ERROR',
+            message: error instanceof Error ? error.message : 'Failed to fetch publishing sections',
+            details: error instanceof Error ? { stack: error.stack } : undefined
+        };
+        
+        throw productError; // Pass error to controller for handling
+    }
+}
+
+export default fetchPublishingSections;

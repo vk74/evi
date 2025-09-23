@@ -1,10 +1,10 @@
 /**
- * types.admin.products.ts - version 1.0.0
+ * types.admin.products.ts - version 1.0.1
  * Type definitions for products administration module.
  * 
  * Contains TypeScript interfaces and types for products admin functionality.
  * 
- * File: types.admin.products.ts
+ * Backend file - types.admin.products.ts
  */
 
 // Product type enum
@@ -271,4 +271,29 @@ export interface DeleteProductsResult {
     totalRequested: number
     totalDeleted: number
     totalErrors: number
+}
+
+// Catalog section interface for product publication
+export interface CatalogSection {
+    id: string
+    name: string
+    owner: string
+    status: string
+    is_public: boolean
+    selected?: boolean // For API responses indicating current selection
+}
+
+// Fetch publishing sections response interface
+export interface FetchPublishingSectionsResponse {
+    success: boolean
+    message: string
+    data?: {
+        sections: CatalogSection[]
+        pagination: {
+            totalItems: number
+            totalPages: number
+            currentPage: number
+            itemsPerPage: number
+        }
+    }
 }

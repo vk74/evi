@@ -1,11 +1,11 @@
 /**
- * queries.admin.products.ts - version 1.0.0
+ * queries.admin.products.ts - version 1.0.1
  * SQL queries for products administration operations.
  * 
  * Contains all SQL queries used by products admin module.
  * Queries are parameterized to prevent SQL injection.
  * 
- * File: queries.admin.products.ts
+ * Backend file - queries.admin.products.ts
  */
 
 export const queries = {
@@ -430,5 +430,39 @@ export const queries = {
         WHERE 1=1
         AND (p.can_be_option = true OR p.option_only = true)
         AND ($1::text IS NULL OR $1::text = '' OR LOWER(p.product_code) LIKE LOWER($1::text) OR LOWER(pt.name) LIKE LOWER($1::text) OR LOWER(p.translation_key) LIKE LOWER($1::text))
+    `,
+
+    /**
+     * Fetches all catalog sections for product publication
+     * Returns sections with basic info for publication management
+     */
+    fetchPublishingSections: `
+        SELECT 
+            cs.id,
+            cs.name,
+            cs.owner,
+            cs.status,
+            cs.is_public
+        FROM app.catalog_sections cs
+        ORDER BY cs.name ASC
+    `,
+
+    /**
+     * Checks if product exists
+     * Parameters: [product_id]
+     */
+    checkProductExists: `
+        SELECT product_id FROM app.products 
+        WHERE product_id = $1
+    `,
+
+    /**
+     * Fetches section IDs where product is currently published
+     * Parameters: [product_id]
+     */
+    fetchProductSectionIds: `
+        SELECT section_id 
+        FROM app.section_products 
+        WHERE product_id = $1
     `
 };
