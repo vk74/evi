@@ -222,10 +222,13 @@ CREATE TABLE IF NOT EXISTS app.section_services (
 CREATE TABLE IF NOT EXISTS app.section_products (
     section_id UUID NOT NULL REFERENCES app.catalog_sections(id) ON DELETE CASCADE,
     product_id UUID NOT NULL REFERENCES app.products(product_id) ON DELETE CASCADE,
-    product_order INTEGER DEFAULT 0,
-    PRIMARY KEY (section_id, product_id),
-    CONSTRAINT chk_product_order_positive CHECK (product_order >= 0)
+    PRIMARY KEY (section_id, product_id)
 );
+
+-- Add table and column comments
+COMMENT ON TABLE app.section_products IS 'Relationships between catalog sections and products (product publication in sections)';
+COMMENT ON COLUMN app.section_products.section_id IS 'Reference to catalog section';
+COMMENT ON COLUMN app.section_products.product_id IS 'Reference to product';
 
 -- Create service_users table
 CREATE TABLE IF NOT EXISTS app.service_users (

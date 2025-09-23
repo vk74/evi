@@ -26,7 +26,6 @@ CREATE INDEX IF NOT EXISTS idx_products_code ON app.products USING btree (produc
 CREATE INDEX IF NOT EXISTS idx_products_translation_key ON app.products USING btree (translation_key);
 
 -- Create indexes for section_products
-CREATE INDEX IF NOT EXISTS idx_section_products_order ON app.section_products USING btree (product_order);
 CREATE INDEX IF NOT EXISTS idx_section_products_product ON app.section_products USING btree (product_id);
 CREATE INDEX IF NOT EXISTS idx_section_products_section ON app.section_products USING btree (section_id);
 
