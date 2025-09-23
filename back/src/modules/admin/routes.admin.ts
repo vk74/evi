@@ -1,5 +1,5 @@
 /**
- * version: 1.0.06
+ * version: 1.0.07
  * Backend router file for admin functionality.
  * Defines routes for administrative functions focused on user and group management.
  * All routes are protected by JWT validation and user status check middleware.
@@ -42,6 +42,7 @@ import fetchAllProductsController from './products/controller.admin.fetch.all.pr
 import fetchOptionsController from './products/controller.admin.fetch.options';
 import deleteProductsController from './products/controller.admin.delete.products';
 import fetchPublishingSectionsProductsController from './products/sections/controller.admin.fetch.publishingsections';
+import updateProductSectionsPublishController from './products/sections/controller.admin.update.sections.publish';
 import registerUserController from '../account/controller.register.user';
 import fetchUserGroupsController from './users/userEditor/controller.fetch.user.groups'
 
@@ -88,6 +89,7 @@ router.post('/api/admin/services/deleteservices', validateJWT, checkIsUserStatus
 router.get('/api/admin/products/fetch-all-products', validateJWT, checkIsUserStatusActive, fetchAllProductsController);
 router.get('/api/admin/products/fetch-options', validateJWT, checkIsUserStatusActive, fetchOptionsController);
 router.get('/api/admin/products/fetchpublishingsections', validateJWT, checkIsUserStatusActive, fetchPublishingSectionsProductsController);
+router.post('/api/admin/products/update-sections-publish', validateJWT, checkIsUserStatusActive, updateProductSectionsPublishController);
 router.post('/api/admin/products/create', validateJWT, checkIsUserStatusActive, createProductController);
 router.get('/api/admin/products/fetch', validateJWT, checkIsUserStatusActive, fetchProductController);
 router.post('/api/admin/products/update', validateJWT, checkIsUserStatusActive, updateProductController);

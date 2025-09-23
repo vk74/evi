@@ -1,7 +1,7 @@
 /**
  * @file types.products.admin.ts
  * Type definitions for products administration module.
- * Version: 1.0.0
+ * Version: 1.0.1
  * Frontend types for products admin functionality.
  */
 
@@ -354,12 +354,11 @@ export interface UpdateProductSectionsPublishRequest {
 export interface UpdateProductSectionsPublishResponse {
   success: boolean
   message: string
-  data?: {
-    addedCount: number
-    removedCount: number
-    totalSections: number
-  }
+  updatedCount: number
+  addedCount: number
+  removedCount: number
 }
+
 
 // Product catalog publication state interface
 export interface ProductCatalogPublicationState {

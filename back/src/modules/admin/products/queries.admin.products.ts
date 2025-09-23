@@ -1,5 +1,5 @@
 /**
- * queries.admin.products.ts - version 1.0.1
+ * queries.admin.products.ts - version 1.0.2
  * SQL queries for products administration operations.
  * 
  * Contains all SQL queries used by products admin module.
@@ -464,5 +464,34 @@ export const queries = {
         SELECT section_id 
         FROM app.section_products 
         WHERE product_id = $1
+    `,
+
+    /**
+     * Checks if sections exist
+     * Parameters: [section_ids_array]
+     */
+    checkSectionsExist: `
+        SELECT id 
+        FROM app.catalog_sections 
+        WHERE id = ANY($1)
+    `,
+
+    /**
+     * Deletes product from section
+     * Parameters: [product_id, section_id]
+     */
+    deleteProductFromSection: `
+        DELETE FROM app.section_products 
+        WHERE product_id = $1 AND section_id = $2
+    `,
+
+    /**
+     * Inserts product into section
+     * Parameters: [section_id, product_id]
+     */
+    insertSectionProduct: `
+        INSERT INTO app.section_products (section_id, product_id)
+        VALUES ($1, $2)
+        ON CONFLICT (section_id, product_id) DO NOTHING
     `
 };

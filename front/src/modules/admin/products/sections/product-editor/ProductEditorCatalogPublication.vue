@@ -1,6 +1,6 @@
 <!--
   File: ProductEditorCatalogPublication.vue
-  Version: 1.0.0
+  Version: 1.0.1
   Description: Component for product catalog publication management
   Purpose: Provides interface for managing product catalog publication
   Frontend file - ProductEditorCatalogPublication.vue
@@ -13,6 +13,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useUiStore } from '@/core/state/uistate'
+import { useProductsAdminStore } from '../../state.products.admin'
 import {
   PhMagnifyingGlass,
   PhX,
@@ -22,6 +23,7 @@ import {
 import Paginator from '@/core/ui/paginator/Paginator.vue'
 import type { CatalogSection } from '../../types.products.admin'
 import { fetchPublishingSections } from './service.admin.fetchpublishingsections'
+import { updateProductSectionsPublish } from './service.admin.update.sections.publish'
 
 // Types
 interface TableHeader {
@@ -36,6 +38,7 @@ type ItemsPerPageOption = 25 | 50 | 100
 // Initialize stores and i18n
 const { t } = useI18n()
 const uiStore = useUiStore()
+const productsStore = useProductsAdminStore()
 
 // Table and search parameters
 const page = ref<number>(1)
@@ -109,7 +112,8 @@ const loadPublishingSections = async () => {
   try {
     sectionsError.value = null
     
-    const sectionsData = await fetchPublishingSections()
+    const productId = productsStore.editingProductId
+    const sectionsData = await fetchPublishingSections(productId || undefined)
     sections.value = sectionsData
     
     // Preselect sections if API provided selected flags
@@ -238,13 +242,16 @@ const totalItems = computed(() => filteredSections.value.length)
 
 // Initialize on mount
 onMounted(async () => {
-  isLoading.value = true
-  try {
-    await loadPublishingSections()
-  } catch (error) {
-    handleError(error, 'loading sections')
-  } finally {
-    isLoading.value = false
+  // Only load sections if we're in edit mode and have a product ID
+  if (productsStore.editorMode === 'edit' && productsStore.editingProductId) {
+    isLoading.value = true
+    try {
+      await loadPublishingSections()
+    } catch (error) {
+      handleError(error, 'loading sections')
+    } finally {
+      isLoading.value = false
+    }
   }
 })
 
@@ -255,15 +262,23 @@ const handlePublish = async () => {
     return
   }
 
+  const productId = productsStore.editingProductId
+  if (!productId) {
+    uiStore.showErrorSnackbar(t('admin.products.editor.catalogPublication.messages.noProductId'))
+    return
+  }
+
   try {
     isPublishing.value = true
     const sectionIds = Array.from(selectedSections.value)
     
-    // TODO: Replace with actual API call when backend integration is ready
-    // const resp = await updateProductSectionsPublish(productId, sectionIds)
+    // Get current sections where product is published
+    const currentSections = sections.value.filter(s => s.selected).map(s => s.id)
     
-    // Mock success response
-    const resp = { addedCount: sectionIds.length, removedCount: 0 }
+    // Combine current and new sections (avoid duplicates)
+    const allSections = [...new Set([...currentSections, ...sectionIds])]
+    
+    const resp = await updateProductSectionsPublish(productId, allSections)
     
     uiStore.showSuccessSnackbar(
       t('admin.products.editor.catalogPublication.messages.publishSuccess', { count: resp.addedCount })
@@ -285,15 +300,23 @@ const handleUnpublish = async () => {
     return
   }
 
+  const productId = productsStore.editingProductId
+  if (!productId) {
+    uiStore.showErrorSnackbar(t('admin.products.editor.catalogPublication.messages.noProductId'))
+    return
+  }
+
   try {
     isUnpublishing.value = true
-    const sectionIds = Array.from(selectedSections.value)
+    const sectionIdsToRemove = Array.from(selectedSections.value)
     
-    // TODO: Replace with actual API call when backend integration is ready
-    // const resp = await updateProductSectionsUnpublish(productId, sectionIds)
+    // Get current sections where product is published
+    const currentSections = sections.value.filter(s => s.selected).map(s => s.id)
     
-    // Mock success response
-    const resp = { addedCount: 0, removedCount: sectionIds.length }
+    // Remove selected sections from current sections
+    const remainingSections = currentSections.filter(id => !sectionIdsToRemove.includes(id))
+    
+    const resp = await updateProductSectionsPublish(productId, remainingSections)
     
     uiStore.showSuccessSnackbar(
       t('admin.products.editor.catalogPublication.messages.unpublishSuccess', { count: resp.removedCount })
@@ -310,13 +333,18 @@ const handleUnpublish = async () => {
 
 // Cancel all publications handler
 const handleCancelAllPublications = async () => {
+  const productId = productsStore.editingProductId
+  if (!productId) {
+    uiStore.showErrorSnackbar(t('admin.products.editor.catalogPublication.messages.noProductId'))
+    return
+  }
+
   try {
     isCancellingAll.value = true
     
-    // TODO: Replace with actual API call when backend integration is ready
-    // const resp = await cancelAllProductPublications(productId)
+    // Remove product from all sections (empty array)
+    const resp = await updateProductSectionsPublish(productId, [])
     
-    // Mock success response
     uiStore.showSuccessSnackbar(
       t('admin.products.editor.catalogPublication.messages.cancelAllPublicationsSuccess')
     )
@@ -346,6 +374,16 @@ const handleCancelAllPublications = async () => {
       @click:close="sectionsError = null"
     >
       {{ sectionsError }}
+    </v-alert>
+    
+    <!-- Creation mode message -->
+    <v-alert
+      v-if="productsStore.editorMode === 'creation'"
+      type="info"
+      variant="tonal"
+      class="ma-4"
+    >
+      {{ t('admin.products.editor.catalogPublication.messages.creationMode') }}
     </v-alert>
     
     <div class="d-flex">

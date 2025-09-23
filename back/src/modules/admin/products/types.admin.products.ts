@@ -1,5 +1,5 @@
 /**
- * types.admin.products.ts - version 1.0.1
+ * types.admin.products.ts - version 1.0.2
  * Type definitions for products administration module.
  * 
  * Contains TypeScript interfaces and types for products admin functionality.
@@ -296,4 +296,19 @@ export interface FetchPublishingSectionsResponse {
             itemsPerPage: number
         }
     }
+}
+
+// Update product sections publish request interface
+export interface UpdateProductSectionsPublishRequest {
+    productId: string
+    sectionIds: string[]
+}
+
+// Update product sections publish response interface
+export interface UpdateProductSectionsPublishResponse {
+    success: boolean
+    message: string
+    updatedCount: number
+    addedCount: number
+    removedCount: number
 }
