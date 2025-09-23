@@ -1,6 +1,6 @@
 <!--
   File: ProductEditorCatalogPublication.vue
-  Version: 1.0.6
+  Version: 1.0.7
   Description: Component for product catalog publication management
   Purpose: Provides interface for managing product catalog publication
   Frontend file - ProductEditorCatalogPublication.vue
@@ -37,9 +37,19 @@ interface TableHeader {
 type ItemsPerPageOption = 25 | 50 | 100
 
 // Initialize stores and i18n
-const { t } = useI18n()
+const { t, locale } = useI18n()
 const uiStore = useUiStore()
 const productsStore = useProductsAdminStore()
+
+// Form data - using store
+const formData = computed(() => productsStore.formData)
+
+// Product info for display
+const productCode = computed(() => formData.value.productCode || 'N/A')
+const productName = computed(() => {
+  const currentLanguage = locale.value || 'en'
+  return formData.value.translations?.[currentLanguage]?.name || 'N/A'
+})
 
 // Table and search parameters
 const page = ref<number>(1)
@@ -413,6 +423,31 @@ const handleRefresh = async () => {
     <div class="d-flex">
       <!-- Main content (left part) -->
       <div class="flex-grow-1 main-content-area">
+        <!-- Product Info Section -->
+        <div class="product-info-section px-4 pt-4">
+          <div class="info-row-inline">
+            <!-- Product Code -->
+            <div class="info-item">
+              <div class="info-label">
+                {{ t('admin.products.editor.productInfo.productCode') }}:
+              </div>
+              <div class="info-value product-code">
+                {{ productCode }}
+              </div>
+            </div>
+
+            <!-- Product Name -->
+            <div class="info-item">
+              <div class="info-label">
+                {{ t('admin.products.editor.productInfo.productName') }}:
+              </div>
+              <div class="info-value product-name">
+                {{ productName }}
+              </div>
+            </div>
+          </div>
+        </div>
+
         <!-- Search row -->
         <div class="px-4 pt-4">
           <v-text-field
@@ -576,13 +611,57 @@ const handleRefresh = async () => {
         </div>
       </div>
     </div>
-  </v-card>
+          </v-card>
 </template>
 
 <style scoped>
 /* Main content area */
 .main-content-area {
   min-width: 0;
+}
+
+/* Product info section styles */
+.product-info-section {
+  padding: 16px;
+}
+
+.info-row-inline {
+  display: flex;
+  gap: 40px;
+  align-items: center;
+}
+
+.info-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.info-label {
+  font-size: 0.875rem;
+  color: rgba(0, 0, 0, 0.75);
+  font-weight: 500;
+}
+
+.info-value {
+  font-family: 'Roboto Mono', monospace;
+  font-size: 0.875rem;
+  color: rgba(0, 0, 0, 0.75);
+  background-color: rgba(0, 0, 0, 0.05);
+  padding: 4px 8px;
+  border-radius: 4px;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  display: inline-block;
+  word-break: break-word;
+  flex-grow: 1;
+}
+
+.product-code {
+  /* Inherits from .info-value */
+}
+
+.product-name {
+  /* Inherits from .info-value */
 }
 
 /* Table styles */
