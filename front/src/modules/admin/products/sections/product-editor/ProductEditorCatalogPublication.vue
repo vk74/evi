@@ -1,6 +1,6 @@
 <!--
   File: ProductEditorCatalogPublication.vue
-  Version: 1.0.1
+  Version: 1.0.6
   Description: Component for product catalog publication management
   Purpose: Provides interface for managing product catalog publication
   Frontend file - ProductEditorCatalogPublication.vue
@@ -18,7 +18,8 @@ import {
   PhMagnifyingGlass,
   PhX,
   PhCheckSquare,
-  PhSquare
+  PhSquare,
+  PhArrowClockwise
 } from '@phosphor-icons/vue'
 import Paginator from '@/core/ui/paginator/Paginator.vue'
 import type { CatalogSection } from '../../types.products.admin'
@@ -62,10 +63,42 @@ const isCancellingAll = ref(false)
 // Sections data from API
 const sections = ref<CatalogSection[]>([])
 const sectionsError = ref<string | null>(null)
+const initialSelectedSections = ref<Set<string>>(new Set())
 
 // Computed properties
 const selectedCount = computed(() => selectedSections.value.size)
 const hasSelected = computed(() => selectedSections.value.size > 0)
+
+// Check if there are newly selected sections (not in initial state)
+const hasNewSelections = computed(() => {
+  for (const sectionId of selectedSections.value) {
+    if (!initialSelectedSections.value.has(sectionId)) {
+      return true
+    }
+  }
+  return false
+})
+
+// Check if there are sections to unpublish (selected sections that were initially published)
+const hasSelectionsToUnpublish = computed(() => {
+  for (const sectionId of selectedSections.value) {
+    if (initialSelectedSections.value.has(sectionId)) {
+      return true
+    }
+  }
+  return false
+})
+
+// Count sections that will be unpublished (selected sections that were initially published)
+const sectionsToUnpublishCount = computed(() => {
+  let count = 0
+  for (const sectionId of selectedSections.value) {
+    if (initialSelectedSections.value.has(sectionId)) {
+      count++
+    }
+  }
+  return count
+})
 const isSearchEnabled = computed(() => 
   searchQuery.value.length >= 2 || searchQuery.value.length === 0
 )
@@ -118,9 +151,12 @@ const loadPublishingSections = async () => {
     
     // Preselect sections if API provided selected flags
     selectedSections.value.clear()
+    initialSelectedSections.value.clear()
+    
     sectionsData.forEach(s => {
       if (s.selected) {
         selectedSections.value.add(s.id)
+        initialSelectedSections.value.add(s.id)
       }
     })
     
@@ -255,10 +291,10 @@ onMounted(async () => {
   }
 })
 
-// Publish handler
+// Publish handler - publishes only newly selected sections
 const handlePublish = async () => {
-  if (!hasSelected.value) {
-    uiStore.showErrorSnackbar(t('admin.products.editor.catalogPublication.messages.noSectionsSelected'))
+  if (!hasNewSelections.value) {
+    uiStore.showErrorSnackbar(t('admin.products.editor.catalogPublication.messages.noNewSectionsSelected'))
     return
   }
 
@@ -270,19 +306,17 @@ const handlePublish = async () => {
 
   try {
     isPublishing.value = true
-    const sectionIds = Array.from(selectedSections.value)
     
-    // Get current sections where product is published
-    const currentSections = sections.value.filter(s => s.selected).map(s => s.id)
-    
-    // Combine current and new sections (avoid duplicates)
-    const allSections = [...new Set([...currentSections, ...sectionIds])]
+    // Get all sections where product should be published (current + new)
+    const allSections = Array.from(selectedSections.value)
     
     const resp = await updateProductSectionsPublish(productId, allSections)
     
-    uiStore.showSuccessSnackbar(
-      t('admin.products.editor.catalogPublication.messages.publishSuccess', { count: resp.addedCount })
-    )
+    // Create message manually to ensure proper interpolation
+    const baseMessage = t('admin.products.editor.catalogPublication.messages.publishSuccess')
+    const successMessage = baseMessage.replace('{{count}}', resp.addedCount.toString())
+    
+    uiStore.showSuccessSnackbar(successMessage)
     
     // Reload sections from API
     await loadPublishingSections()
@@ -293,10 +327,10 @@ const handlePublish = async () => {
   }
 }
 
-// Unpublish handler
+// Unpublish handler - unpublishes only selected sections that were initially published
 const handleUnpublish = async () => {
-  if (!hasSelected.value) {
-    uiStore.showErrorSnackbar(t('admin.products.editor.catalogPublication.messages.noSectionsSelected'))
+  if (!hasSelectionsToUnpublish.value) {
+    uiStore.showErrorSnackbar(t('admin.products.editor.catalogPublication.messages.noSectionsToUnpublish'))
     return
   }
 
@@ -308,19 +342,18 @@ const handleUnpublish = async () => {
 
   try {
     isUnpublishing.value = true
-    const sectionIdsToRemove = Array.from(selectedSections.value)
     
-    // Get current sections where product is published
-    const currentSections = sections.value.filter(s => s.selected).map(s => s.id)
+    // Get all sections where product should be published after unpublish operation
+    // This includes: newly selected sections + initially published sections that remain selected
+    const allSectionsToKeep = Array.from(selectedSections.value)
     
-    // Remove selected sections from current sections
-    const remainingSections = currentSections.filter(id => !sectionIdsToRemove.includes(id))
+    const resp = await updateProductSectionsPublish(productId, allSectionsToKeep)
     
-    const resp = await updateProductSectionsPublish(productId, remainingSections)
+    // Create message manually to ensure proper interpolation
+    const baseMessage = t('admin.products.editor.catalogPublication.messages.unpublishSuccess')
+    const successMessage = baseMessage.replace('{{count}}', resp.removedCount.toString())
     
-    uiStore.showSuccessSnackbar(
-      t('admin.products.editor.catalogPublication.messages.unpublishSuccess', { count: resp.removedCount })
-    )
+    uiStore.showSuccessSnackbar(successMessage)
     
     // Reload sections from API
     await loadPublishingSections()
@@ -331,31 +364,22 @@ const handleUnpublish = async () => {
   }
 }
 
-// Cancel all publications handler
-const handleCancelAllPublications = async () => {
-  const productId = productsStore.editingProductId
-  if (!productId) {
-    uiStore.showErrorSnackbar(t('admin.products.editor.catalogPublication.messages.noProductId'))
-    return
-  }
-
+// Refresh handler - reloads sections from API
+const handleRefresh = async () => {
   try {
-    isCancellingAll.value = true
+    isCancellingAll.value = true // Reuse loading state
     
-    // Remove product from all sections (empty array)
-    const resp = await updateProductSectionsPublish(productId, [])
-    
-    uiStore.showSuccessSnackbar(
-      t('admin.products.editor.catalogPublication.messages.cancelAllPublicationsSuccess')
-    )
-    
-    // Clear selections
+    // Clear current selections
     selectedSections.value.clear()
     
     // Reload sections from API
     await loadPublishingSections()
+    
+    uiStore.showSuccessSnackbar(
+      t('admin.products.editor.catalogPublication.messages.refreshSuccess')
+    )
   } catch (error: any) {
-    uiStore.showErrorSnackbar(error?.message || t('admin.products.editor.catalogPublication.messages.cancelAllPublicationsError'))
+    uiStore.showErrorSnackbar(error?.message || t('admin.products.editor.catalogPublication.messages.refreshError'))
   } finally {
     isCancellingAll.value = false
   }
@@ -495,14 +519,15 @@ const handleCancelAllPublications = async () => {
           
           <v-btn
             block
-            color="red"
+            color="teal"
             variant="outlined"
             class="mb-3"
             :disabled="isCancellingAll || isPublishing || isUnpublishing"
             :loading="isCancellingAll"
-            @click="handleCancelAllPublications"
+            @click="handleRefresh"
           >
-            {{ t('admin.products.editor.catalogPublication.actions.cancelAllPublications').toUpperCase() }}
+            <PhArrowClockwise class="mr-2" />
+            {{ t('admin.products.editor.catalogPublication.actions.refresh').toUpperCase() }}
           </v-btn>
         </div>
         
@@ -519,13 +544,13 @@ const handleCancelAllPublications = async () => {
             v-tooltip="{
               text: t('admin.products.editor.catalogPublication.tooltips.publish'),
               location: 'left',
-              disabled: !hasSelected || isPublishing || isUnpublishing || isCancellingAll
+              disabled: !hasNewSelections || isPublishing || isUnpublishing || isCancellingAll
             }"
             block
             color="teal"
             variant="outlined"
             class="mb-3"
-            :disabled="!hasSelected || isPublishing || isUnpublishing || isCancellingAll"
+            :disabled="!hasNewSelections || isPublishing || isUnpublishing || isCancellingAll"
             :loading="isPublishing"
             @click="handlePublish"
           >
@@ -536,17 +561,17 @@ const handleCancelAllPublications = async () => {
             v-tooltip="{
               text: t('admin.products.editor.catalogPublication.tooltips.unpublish'),
               location: 'left',
-              disabled: !hasSelected || isPublishing || isUnpublishing || isCancellingAll
+              disabled: !hasSelectionsToUnpublish || isPublishing || isUnpublishing || isCancellingAll
             }"
             block
             color="red"
             variant="outlined"
             class="mb-3"
-            :disabled="!hasSelected || isPublishing || isUnpublishing || isCancellingAll"
+            :disabled="!hasSelectionsToUnpublish || isPublishing || isUnpublishing || isCancellingAll"
             :loading="isUnpublishing"
             @click="handleUnpublish"
           >
-            {{ t('admin.products.editor.catalogPublication.selectedElements.unpublish').toUpperCase() }}
+            {{ t('admin.products.editor.catalogPublication.selectedElements.unpublish').toUpperCase() }} ({{ sectionsToUnpublishCount }})
           </v-btn>
         </div>
       </div>

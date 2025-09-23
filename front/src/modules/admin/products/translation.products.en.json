@@ -176,10 +176,11 @@
               "no": "no"
             }
           },
-          "actions": {
-            "title": "actions",
-            "cancelAllPublications": "cancel all publications"
-          },
+        "actions": {
+          "title": "actions",
+          "cancelAllPublications": "cancel all publications",
+          "refresh": "refresh"
+        },
           "selectedElements": {
             "title": "selected elements",
             "publish": "publish",
@@ -198,7 +199,11 @@
           "cancelAllPublicationsError": "failed to cancel all publications",
           "noProductId": "unable to determine product ID for publication",
           "noSectionsSelected": "no sections selected for publication",
-          "creationMode": "catalog publication is available only in edit mode. create the product first, then configure its publication in catalog sections."
+          "noNewSectionsSelected": "no new sections selected for publication",
+          "noSectionsToUnpublish": "no sections selected to unpublish",
+          "creationMode": "catalog publication is available only in edit mode. create the product first, then configure its publication in catalog sections.",
+          "refreshSuccess": "sections refreshed successfully",
+          "refreshError": "failed to refresh sections"
         }
         },
         "messages": {
