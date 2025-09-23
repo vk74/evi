@@ -8,8 +8,6 @@
  * - Returns formatted data for ServiceEditorMapping component
  * 
  * File: service.admin.fetchpublishingsections.ts
- * Created: 2024-12-19
- * Last updated: 2024-12-19
  */
 
 import { api } from '@/core/api/service.axios'

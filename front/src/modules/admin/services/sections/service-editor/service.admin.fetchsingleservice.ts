@@ -4,8 +4,6 @@
  * Description: Service for fetching single service data by ID
  * Purpose: Provides API calls to fetch detailed service information
  * Frontend file - service.admin.fetchsingleservice.ts
- * Created: 2024-12-19
- * Last Updated: 2024-12-19
  */
 
 import { api } from '@/core/api/service.axios'
