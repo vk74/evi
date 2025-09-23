@@ -348,7 +348,7 @@ export const queries = {
 
     /**
      * Fetches all options (products with can_be_option = true OR option_only = true)
-     * Parameters: [offset, itemsPerPage, searchQuery, sortBy, sortDesc, languageCode]
+     * Parameters: [offset, itemsPerPage, searchQuery, sortBy, sortDesc, languageCode, excludeProductId]
      */
     fetchAllOptions: `
         SELECT 
@@ -391,6 +391,7 @@ export const queries = {
         WHERE 1=1
         AND (p.can_be_option = true OR p.option_only = true)
         AND ($3::text IS NULL OR $3::text = '' OR LOWER(p.product_code) LIKE LOWER($3::text) OR LOWER(pt.name) LIKE LOWER($3::text) OR LOWER(p.translation_key) LIKE LOWER($3::text))
+        AND ($7::uuid IS NULL OR p.product_id != $7)
         GROUP BY p.product_id, p.product_code, p.translation_key, p.can_be_option, p.option_only,
                  p.is_published, p.is_visible_owner, p.is_visible_groups, p.is_visible_tech_specs,
                  p.is_visible_area_specs, p.is_visible_industry_specs, p.is_visible_key_features,
@@ -421,7 +422,7 @@ export const queries = {
 
     /**
      * Counts total options with same filters as fetchAllOptions
-     * Parameters: [searchQuery]
+     * Parameters: [searchQuery, excludeProductId]
      */
     countAllOptions: `
         SELECT COUNT(DISTINCT p.product_id) as total
@@ -430,6 +431,7 @@ export const queries = {
         WHERE 1=1
         AND (p.can_be_option = true OR p.option_only = true)
         AND ($1::text IS NULL OR $1::text = '' OR LOWER(p.product_code) LIKE LOWER($1::text) OR LOWER(pt.name) LIKE LOWER($1::text) OR LOWER(p.translation_key) LIKE LOWER($1::text))
+        AND ($2::uuid IS NULL OR p.product_id != $2)
     `,
 
     /**

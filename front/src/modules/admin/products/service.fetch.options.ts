@@ -1,5 +1,5 @@
 /**
- * service.fetch.options.ts - version 1.0.0
+ * service.fetch.options.ts - version 1.1.0
  * Frontend service for fetching options (products with type 'option' or 'productAndOption').
  * 
  * This is a frontend file. The file provides API client for options list operations.
@@ -27,6 +27,7 @@ export interface FetchOptionsRequest {
     sortBy?: string
     sortDesc?: boolean
     language?: string
+    excludeProductId?: string
 }
 
 /**
@@ -73,6 +74,11 @@ export const serviceFetchOptions = {
             // Add language parameter
             const languageToUse = params.language || 'en'
             queryParams.append('language', languageToUse)
+            
+            // Add exclude product ID parameter
+            if (params.excludeProductId) {
+                queryParams.append('excludeProductId', params.excludeProductId)
+            }
             
             console.log('[ServiceFetchOptions] Sending request:', `/api/admin/products/fetch-options?${queryParams.toString()}`)
 

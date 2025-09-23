@@ -51,6 +51,7 @@ interface FetchOptionsQuery {
   sortBy?: string
   sortDesc?: string
   language?: string
+  excludeProductId?: string
 }
 
 /**
@@ -73,6 +74,7 @@ export const fetchOptions = async (
         const searchQuery = query.searchQuery || undefined
         const sortBy = query.sortBy || 'product_code'
         const sortDesc = query.sortDesc === 'true'
+        const excludeProductId = query.excludeProductId || undefined
         
         // Get language code from query parameter first, then from headers, then default to 'en'
         const queryLanguage = query.language
@@ -116,9 +118,10 @@ export const fetchOptions = async (
         const validatedSortBy = sortBy && validSortFields.includes(sortBy) ? sortBy : 'product_code'
 
         // Execute count query first to get total items
-        console.log('[ServiceFetchOptions] Executing count query with searchPattern:', searchPattern)
+        console.log('[ServiceFetchOptions] Executing count query with searchPattern:', searchPattern, 'excludeProductId:', excludeProductId)
         const countResult = await client.query(queries.countAllOptions, [
-            searchPattern
+            searchPattern,
+            excludeProductId
         ])
         console.log('[ServiceFetchOptions] Count result:', countResult.rows[0])
         
@@ -140,7 +143,8 @@ export const fetchOptions = async (
             searchPattern,
             validatedSortBy,
             sortDesc: sortDesc || false,
-            validatedLanguageCode
+            validatedLanguageCode,
+            excludeProductId
         })
         const optionsResult = await client.query(queries.fetchAllOptions, [
             offset,
@@ -148,7 +152,8 @@ export const fetchOptions = async (
             searchPattern,
             validatedSortBy,
             sortDesc || false,
-            validatedLanguageCode
+            validatedLanguageCode,
+            excludeProductId
         ])
         console.log('[ServiceFetchOptions] Options result rows count:', optionsResult.rows.length)
         

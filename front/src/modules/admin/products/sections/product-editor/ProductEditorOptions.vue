@@ -1,12 +1,12 @@
 <!--
   File: ProductEditorOptions.vue
-  Version: 1.2.0
+  Version: 1.3.0
   Description: Component for product options management
   Purpose: Provides interface for managing product options pairing
   Frontend file - ProductEditorOptions.vue
   Created: 2024-12-20
   Last Updated: 2024-12-20
-  Changes: Added options pairing interface with table and search functionality
+  Changes: Added options pairing interface with table and search functionality, excluded current product from options list
 -->
 
 <script setup lang="ts">
@@ -127,7 +127,8 @@ const performSearch = async () => {
       searchQuery: searchQuery.value && searchQuery.value.length >= 2 ? searchQuery.value : undefined,
       sortBy: sortBy.value || 'product_code',
       sortDesc: sortDesc.value || false,
-      language: currentLanguage
+      language: currentLanguage,
+      excludeProductId: productsStore.editingProductId || undefined
     }
     
     // Call API service
