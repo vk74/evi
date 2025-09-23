@@ -1,5 +1,5 @@
 /**
- * service.admin.fetch.publishingsections.ts - version 1.0.1
+ * service.admin.fetch.publishingsections.ts - version 1.0.2
  * Service for fetching publishing sections from catalog for products.
  * 
  * Retrieves publishing sections data from app.catalog_sections table,
@@ -16,6 +16,8 @@ import { queries } from '../queries.admin.products';
 import type { CatalogSection, FetchPublishingSectionsResponse, ProductError } from '../types.admin.products';
 import { fetchUsernameByUuid } from '@/core/helpers/get.username.by.uuid';
 import { fetchGroupnameByUuid } from '@/core/helpers/get.groupname.by.uuid';
+import { createAndPublishEvent } from '@/core/eventBus/fabric.events';
+import { PRODUCT_CATALOG_PUBLICATION_FETCH_EVENTS } from '../events.admin.products';
 
 // Type assertion for pool
 const pool = pgPool as Pool;
@@ -70,6 +72,19 @@ export async function fetchPublishingSections(req: Request): Promise<FetchPublis
     try {
         const productId = (req.query.productId as string) || undefined;
 
+        await createAndPublishEvent({
+            eventName: PRODUCT_CATALOG_PUBLICATION_FETCH_EVENTS.STARTED.eventName,
+            payload: { 
+                productId: productId || null,
+                hasProductId: !!productId
+            }
+        });
+
+        await createAndPublishEvent({
+            eventName: PRODUCT_CATALOG_PUBLICATION_FETCH_EVENTS.VALIDATION_STARTED.eventName,
+            payload: { productId: productId || null }
+        });
+
         // Fetch publishing sections from database
         const result = await pool.query<DbPublishingSection>(queries.fetchPublishingSections);
         
@@ -114,15 +129,36 @@ export async function fetchPublishingSections(req: Request): Promise<FetchPublis
                 }
             }
         };
+
+        await createAndPublishEvent({
+            eventName: PRODUCT_CATALOG_PUBLICATION_FETCH_EVENTS.SUCCESS.eventName,
+            payload: { 
+                productId: productId || null,
+                sectionsCount: resolvedSections.length,
+                selectedSectionsCount: resolvedSections.filter(s => s.selected).length
+            }
+        });
         
         return response;
 
     } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : 'Failed to fetch publishing sections';
+        const errorStack = error instanceof Error ? error.stack : undefined;
+
+        await createAndPublishEvent({
+            eventName: PRODUCT_CATALOG_PUBLICATION_FETCH_EVENTS.ERROR.eventName,
+            payload: { 
+                productId: (req.query.productId as string) || null,
+                error: errorMessage
+            },
+            errorData: errorMessage
+        });
+
         // Create error response
         const productError: ProductError = {
             code: 'INTERNAL_SERVER_ERROR',
-            message: error instanceof Error ? error.message : 'Failed to fetch publishing sections',
-            details: error instanceof Error ? { stack: error.stack } : undefined
+            message: errorMessage,
+            details: errorStack ? { stack: errorStack } : undefined
         };
         
         throw productError; // Pass error to controller for handling

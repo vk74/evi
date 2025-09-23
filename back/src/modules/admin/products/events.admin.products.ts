@@ -1,5 +1,5 @@
 /**
- * events.admin.products.ts - version 1.0.0
+ * events.admin.products.ts - version 1.0.3
  * Event definitions for products administration module.
  * 
  * Contains event templates for products admin functionality.
@@ -465,6 +465,124 @@ export const OPTIONS_FETCH_EVENTS = {
         severity: 'error' as const,
         eventMessage: 'Options fetch failed',
         payload: null, // Will be of type { query: any, error: string }
+        errorData: null,
+        version: '1.0.0'
+    }
+};
+
+// Product catalog publication fetch events
+export const PRODUCT_CATALOG_PUBLICATION_FETCH_EVENTS = {
+    STARTED: {
+        eventName: 'products.catalog_publication.fetch.started',
+        source: 'admin-products',
+        eventType: 'system',
+        severity: 'debug',
+        eventMessage: 'Product catalog publication sections fetch started',
+        payload: null,
+        version: '1.0.0'
+    },
+
+    VALIDATION_STARTED: {
+        eventName: 'products.catalog_publication.fetch.validation_started',
+        source: 'admin-products',
+        eventType: 'system',
+        severity: 'debug',
+        eventMessage: 'Product catalog publication fetch validation started',
+        payload: null,
+        version: '1.0.0'
+    },
+
+    SUCCESS: {
+        eventName: 'products.catalog_publication.fetch.success',
+        source: 'admin-products',
+        eventType: 'system',
+        severity: 'info',
+        eventMessage: 'Product catalog publication sections fetched successfully',
+        payload: null,
+        version: '1.0.0'
+    },
+
+    ERROR: {
+        eventName: 'products.catalog_publication.fetch.error',
+        source: 'admin-products',
+        eventType: 'system',
+        severity: 'error',
+        eventMessage: 'Product catalog publication sections fetch failed',
+        payload: null,
+        errorData: null,
+        version: '1.0.0'
+    }
+};
+
+// Product catalog publication update events
+export const PRODUCT_CATALOG_PUBLICATION_UPDATE_EVENTS = {
+    STARTED: {
+        eventName: 'products.catalog_publication.update.started',
+        source: 'admin-products',
+        eventType: 'system',
+        severity: 'debug',
+        eventMessage: 'Product catalog publication update started',
+        payload: null,
+        version: '1.0.0'
+    },
+
+    VALIDATION_STARTED: {
+        eventName: 'products.catalog_publication.update.validation_started',
+        source: 'admin-products',
+        eventType: 'system',
+        severity: 'debug',
+        eventMessage: 'Product catalog publication update validation started',
+        payload: null,
+        version: '1.0.0'
+    },
+
+    DATABASE_UPDATE_STARTED: {
+        eventName: 'products.catalog_publication.update.database_started',
+        source: 'admin-products',
+        eventType: 'system',
+        severity: 'debug',
+        eventMessage: 'Product catalog publication database update started',
+        payload: null,
+        version: '1.0.0'
+    },
+
+    PUBLISHED_TO_CATALOG: {
+        eventName: 'products.catalog_publication.update.published_to_catalog',
+        source: 'admin-products',
+        eventType: 'system',
+        severity: 'info',
+        eventMessage: 'Product published to catalog sections',
+        payload: null,
+        version: '1.0.0'
+    },
+
+    UNPUBLISHED_FROM_CATALOG: {
+        eventName: 'products.catalog_publication.update.unpublished_from_catalog',
+        source: 'admin-products',
+        eventType: 'system',
+        severity: 'info',
+        eventMessage: 'Product unpublished from catalog sections',
+        payload: null,
+        version: '1.0.0'
+    },
+
+    SUCCESS: {
+        eventName: 'products.catalog_publication.update.success',
+        source: 'admin-products',
+        eventType: 'system',
+        severity: 'info',
+        eventMessage: 'Product catalog publication updated successfully',
+        payload: null,
+        version: '1.0.0'
+    },
+
+    ERROR: {
+        eventName: 'products.catalog_publication.update.error',
+        source: 'admin-products',
+        eventType: 'system',
+        severity: 'error',
+        eventMessage: 'Product catalog publication update failed',
+        payload: null,
         errorData: null,
         version: '1.0.0'
     }
