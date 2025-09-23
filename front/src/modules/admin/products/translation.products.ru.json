@@ -158,6 +158,48 @@
           },
           "fillRequired": "заполните все обязательные поля"
         },
+        "catalogPublication": {
+          "search": {
+            "placeholder": "поиск секций каталога...",
+            "minChars": "введите минимум 2 символа"
+          },
+          "table": {
+            "headers": {
+              "selection": "выбор",
+              "section": "секция",
+              "owner": "владелец",
+              "status": "статус",
+              "public": "публичный"
+            },
+            "status": {
+              "yes": "да",
+              "no": "нет"
+            }
+          },
+          "actions": {
+            "title": "действия",
+            "cancelAllPublications": "отменить все публикации"
+          },
+          "selectedElements": {
+            "title": "выбранные элементы",
+            "publish": "опубликовать",
+            "unpublish": "отменить публикацию"
+          },
+          "tooltips": {
+            "publish": "опубликовать продукт в выбранных секциях каталога",
+            "unpublish": "отменить публикацию продукта в выбранных секциях каталога"
+          },
+          "messages": {
+            "publishSuccess": "продукт успешно опубликован в {{count}} секции(ях)",
+            "unpublishSuccess": "публикация продукта успешно отменена в {{count}} секции(ях)",
+            "cancelAllPublicationsSuccess": "все публикации успешно отменены",
+            "publishError": "не удалось опубликовать продукт",
+            "unpublishError": "не удалось отменить публикацию продукта",
+            "cancelAllPublicationsError": "не удалось отменить все публикации",
+            "noProductId": "не удалось определить ID продукта для публикации",
+            "noSectionsSelected": "не выбрано секций для публикации"
+          }
+        },
         "messages": {
           "created": "продукт успешно создан",
           "updated": "продукт успешно обновлен",

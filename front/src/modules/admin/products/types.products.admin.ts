@@ -308,3 +308,65 @@ export interface DeleteProductsResult {
     totalErrors: number
   }
 }
+
+// Catalog section interface for product publication
+export interface CatalogSection {
+  id: string
+  name: string
+  owner: string
+  status: string
+  is_public: boolean
+  selected?: boolean // For API responses indicating current selection
+}
+
+// Fetch publishing sections request interface
+export interface FetchPublishingSectionsRequest {
+  productId?: string
+  searchQuery?: string
+  page?: number
+  itemsPerPage?: number
+  sortBy?: string
+  sortDesc?: boolean
+}
+
+// Fetch publishing sections response interface
+export interface FetchPublishingSectionsResponse {
+  success: boolean
+  message: string
+  data?: {
+    sections: CatalogSection[]
+    pagination: {
+      totalItems: number
+      totalPages: number
+      currentPage: number
+      itemsPerPage: number
+    }
+  }
+}
+
+// Update product sections publish request interface
+export interface UpdateProductSectionsPublishRequest {
+  productId: string
+  sectionIds: string[]
+}
+
+// Update product sections publish response interface
+export interface UpdateProductSectionsPublishResponse {
+  success: boolean
+  message: string
+  data?: {
+    addedCount: number
+    removedCount: number
+    totalSections: number
+  }
+}
+
+// Product catalog publication state interface
+export interface ProductCatalogPublicationState {
+  publishingSections: CatalogSection[]
+  isPublishingSectionsLoading: boolean
+  publishingSectionsError: string | null
+  selectedSections: Set<string>
+  isPublishing: boolean
+  isUnpublishing: boolean
+}

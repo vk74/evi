@@ -158,6 +158,48 @@
           },
           "fillRequired": "please fill all required fields"
         },
+        "catalogPublication": {
+          "search": {
+            "placeholder": "search catalog sections...",
+            "minChars": "enter at least 2 characters"
+          },
+          "table": {
+            "headers": {
+              "selection": "selection",
+              "section": "section",
+              "owner": "owner",
+              "status": "status",
+              "public": "public"
+            },
+            "status": {
+              "yes": "yes",
+              "no": "no"
+            }
+          },
+          "actions": {
+            "title": "actions",
+            "cancelAllPublications": "cancel all publications"
+          },
+          "selectedElements": {
+            "title": "selected elements",
+            "publish": "publish",
+            "unpublish": "unpublish"
+          },
+          "tooltips": {
+            "publish": "publish product in selected catalog sections",
+            "unpublish": "unpublish product from selected catalog sections"
+          },
+          "messages": {
+            "publishSuccess": "product published successfully in {{count}} section(s)",
+            "unpublishSuccess": "product unpublished successfully from {{count}} section(s)",
+            "cancelAllPublicationsSuccess": "all publications cancelled successfully",
+            "publishError": "failed to publish product",
+            "unpublishError": "failed to unpublish product",
+            "cancelAllPublicationsError": "failed to cancel all publications",
+            "noProductId": "unable to determine product ID for publication",
+            "noSectionsSelected": "no sections selected for publication"
+          }
+        },
         "messages": {
           "created": "product created successfully",
           "updated": "product updated successfully",
