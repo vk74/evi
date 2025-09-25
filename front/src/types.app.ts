@@ -28,7 +28,7 @@ export type DrawerMode = 'opened' | 'closed';
 export type AdminSubModule = 
   | 'catalogAdmin'
   | 'serviceAdmin'
-  | 'usersAdmin'
+  | 'orgAdmin'
   | 'appAdmin'
   | 'productsAdmin';
 

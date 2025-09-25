@@ -8,11 +8,11 @@ import { useI18n } from 'vue-i18n'
 import { ref, computed, onMounted, onBeforeUnmount, defineAsyncComponent } from 'vue'
 import { useUserEditorStore } from './state.user.editor'
 import { useUiStore } from '@/core/state/uistate'
-import { useUsersAdminStore } from '../state.users.admin'
+import { useOrgAdminStore } from '../state.org.admin'
 
 const userEditorStore = useUserEditorStore()
 const uiStore = useUiStore()
-const usersSectionStore = useUsersAdminStore()
+const usersSectionStore = useOrgAdminStore()
 const { t } = useI18n()
 
 const UserEditorDetails = defineAsyncComponent(() => import('./UserEditorDetails.vue'))
@@ -41,15 +41,15 @@ onBeforeUnmount(() => {
     <div class="internal-app-bar d-flex align-center">
       <div class="nav-section">
         <v-btn :class="['section-btn', { 'section-active': userEditorStore.ui.activeSection === 'details' }]" variant="text" @click="setSection('details')">
-          {{ t('admin.users.editor.sections.details') }}
+          {{ t('admin.org.editor.sections.details') }}
         </v-btn>
         <v-btn :class="['section-btn', { 'section-active': userEditorStore.ui.activeSection === 'groups' }]" :disabled="!isEditMode" variant="text" @click="setSection('groups')">
-          {{ t('admin.users.editor.sections.groups') }}
+          {{ t('admin.org.editor.sections.groups') }}
         </v-btn>
       </div>
       <v-spacer />
       <div class="title-text">
-        {{ userEditorStore.mode.mode === 'create' ? t('admin.users.editor.title.create') : t('admin.users.editor.title.edit') }}
+        {{ userEditorStore.mode.mode === 'create' ? t('admin.org.editor.title.create') : t('admin.org.editor.title.edit') }}
       </div>
     </div>
 

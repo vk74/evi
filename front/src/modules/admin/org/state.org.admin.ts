@@ -1,16 +1,16 @@
 /**
- * @file state.users.admin.ts
+ * @file state.org.admin.ts
  * Version: 1.0.0
- * Pinia store for managing user administration module state.
- * Frontend file that handles active section state management in SubModuleUserAdmin.
+ * Pinia store for managing organization administration module state.
+ * Frontend file that handles active section state management in SubModuleOrgAdmin.
  */
 import { defineStore } from 'pinia'
-import type { UsersAdminState, UserSectionId } from './types.users.admin'
+import type { OrgAdminState, UserSectionId } from './types.org.admin'
 
-export const useUsersAdminStore = defineStore('users-admin', {
-  state: (): UsersAdminState => ({
+export const useOrgAdminStore = defineStore('org-admin', {
+  state: (): OrgAdminState => ({
     /**
-     * Current active section in user administration module
+     * Current active section in organization administration module
      */
     activeSection: 'users-proto'
   }),

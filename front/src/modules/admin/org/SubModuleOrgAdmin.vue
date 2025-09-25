@@ -1,6 +1,6 @@
 /**
- * @file SubModuleUsersAdmin.vue
- * Component for managing sections of administrative module for users and groups.
+ * @file SubModuleOrgAdmin.vue
+ * Component for managing sections of administrative module for organization management.
  * 
  * Functionality:
  * - Navigation between sections (users list, groups list, editors)
@@ -12,8 +12,8 @@
 <script setup lang="ts">
 import { computed, defineAsyncComponent } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { useUsersAdminStore } from './state.users.admin'
-import type { UserSectionId, Section } from './types.users.admin'
+import { useOrgAdminStore } from './state.org.admin'
+import type { UserSectionId, Section } from './types.org.admin'
 
 // Импортируем Phosphor иконки
 import { 
@@ -32,36 +32,36 @@ const GroupEditor = defineAsyncComponent(() => import('./GroupEditor/GroupEditor
 
 // Initialize i18n and store
 const { t } = useI18n()
-const usersStore = useUsersAdminStore()
+const orgStore = useOrgAdminStore()
 
 // Define administrative module sections as computed property
 const sections = computed((): Section[] => [
   {
     id: 'users-proto',
-    title: t('admin.users.sections.usersList'),
+    title: t('admin.org.sections.usersList'),
     icon: 'PhUserList'
   },
   {
     id: 'user-editor',
-    title: t('admin.users.sections.userEditor'),
+    title: t('admin.org.sections.userEditor'),
     icon: 'PhUserFocus'
   },
   {
     id: 'groups',
-    title: t('admin.users.sections.groupsList'),
+    title: t('admin.org.sections.groupsList'),
     icon: 'PhUsersThree'
   },
       {
       id: 'group-editor',
-      title: t('admin.users.sections.groupEditor'),
+      title: t('admin.org.sections.groupEditor'),
       icon: 'PhUsersFour'
     }
 ])
 
 // Computed properties and methods for section management
-const activeSection = computed((): UserSectionId => usersStore.getCurrentSection)
+const activeSection = computed((): UserSectionId => orgStore.getCurrentSection)
 const switchSection = (sectionId: UserSectionId): void => {
-  usersStore.setActiveSection(sectionId)
+  orgStore.setActiveSection(sectionId)
 }
 
 // Функция для получения компонента иконки

@@ -21,7 +21,7 @@ import type {
 } from './types.item.selector';
 import { createAndPublishEvent } from '../../eventBus/fabric.events';
 import { CHANGE_GROUP_OWNER_SERVICE_EVENTS } from './events.item.selector';
-import { groupsRepository } from '../../../modules/admin/users/groupsList/repository.groups.list';
+import { groupsRepository } from '../../../modules/admin/org/groupsList/repository.groups.list';
 
 const pool = pgPool as Pool;
 

@@ -40,7 +40,7 @@ const ModuleComponents = defineAsyncComponent(() => import(/* webpackChunkName: 
 // Admin submodule imports (split per submodule; no prefetch for non-admin users)
 const SubModuleCatalogAdmin = defineAsyncComponent(() => import(/* webpackChunkName: "admin-catalog" */ './modules/admin/catalog/SubModuleCatalogAdmin.vue'));
 const SubModuleServiceAdmin = defineAsyncComponent(() => import(/* webpackChunkName: "admin-service" */ './modules/admin/services/SubModuleServiceAdmin.vue'));
-const SubModuleUsersAdmin = defineAsyncComponent(() => import(/* webpackChunkName: "admin-users" */ './modules/admin/users/SubModuleUsersAdmin.vue'));
+const SubModuleOrgAdmin = defineAsyncComponent(() => import(/* webpackChunkName: "admin-org" */ './modules/admin/org/SubModuleOrgAdmin.vue'));
 const SubModuleAppSettings = defineAsyncComponent(() => import(/* webpackChunkName: "admin-settings" */ './modules/admin/settings/SubModuleAppSettings.vue'));
 const SubModuleProducts = defineAsyncComponent(() => import(/* webpackChunkName: "admin-products" */ './modules/admin/products/SubModuleProducts.vue'));
 
@@ -127,8 +127,8 @@ const currentAdminSubmodule = computed(() => {
       return SubModuleCatalogAdmin;
     case 'serviceAdmin':
       return SubModuleServiceAdmin;
-    case 'usersAdmin':
-      return SubModuleUsersAdmin;
+    case 'orgAdmin':
+      return SubModuleOrgAdmin;
     case 'appAdmin':
       return SubModuleAppSettings;
     case 'productsAdmin':
@@ -469,8 +469,8 @@ onMounted(async () => {
           case 'serviceAdmin':
             import(/* webpackChunkName: "admin-service" */ './modules/admin/services/SubModuleServiceAdmin.vue');
             break;
-          case 'usersAdmin':
-            import(/* webpackChunkName: "admin-users" */ './modules/admin/users/SubModuleUsersAdmin.vue');
+          case 'orgAdmin':
+            import(/* webpackChunkName: "admin-org" */ './modules/admin/org/SubModuleOrgAdmin.vue');
             break;
           case 'productsAdmin':
             import(/* webpackChunkName: "admin-products" */ './modules/admin/products/SubModuleProducts.vue');
@@ -715,23 +715,23 @@ onMounted(async () => {
                 </template>
               </v-list-item>
               
-              <!-- Users Admin -->
+              <!-- Organization Admin -->
               <v-list-item
                 v-tooltip="{
-                  text: $t('admin.nav.users.main'),
+                  text: $t('admin.nav.org.main'),
                   location: 'right',
                   disabled: appStore.drawerMode !== 'closed'
                 }"
                 class="admin-sub-item"
-                :class="{ 'admin-sub-active': activeAdminSubModule === 'usersAdmin' }"
-                :title="$t('admin.nav.users.main')"
-                value="usersAdmin"
+                :class="{ 'admin-sub-active': activeAdminSubModule === 'orgAdmin' }"
+                :title="$t('admin.nav.org.main')"
+                value="orgAdmin"
                 density="compact"
-                :active="appStore.isModuleActive('Admin') && activeAdminSubModule === 'usersAdmin'"
-                @click="setActiveAdminSection('usersAdmin')"
+                :active="appStore.isModuleActive('Admin') && activeAdminSubModule === 'orgAdmin'"
+                @click="setActiveAdminSection('orgAdmin')"
               >
                 <template #prepend>
-                  <component :is="icons.PhUserGear" size="24" :color="iconColor" class="mr-2" />
+                  <component :is="icons.PhBuildings" size="24" :color="iconColor" class="mr-2" />
                 </template>
               </v-list-item>
               

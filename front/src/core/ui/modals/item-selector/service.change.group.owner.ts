@@ -10,10 +10,10 @@
  */
 import { api } from '@/core/api/service.axios';
 import { useUiStore } from '@/core/state/uistate';
-import { useGroupEditorStore } from '@/modules/admin/users/GroupEditor/state.group.editor';
+import { useGroupEditorStore } from '@/modules/admin/org/GroupEditor/state.group.editor';
 import { useUserAuthStore } from '@/core/auth/state.user.auth';
 import { ActionResult } from './types.item.selector';
-import { useStoreGroupsList } from '@/modules/admin/users/GroupsList/state.groups.list';
+import { useStoreGroupsList } from '@/modules/admin/org/GroupsList/state.groups.list';
 
 // Define interfaces for request and response
 interface ChangeGroupOwnerRequest {

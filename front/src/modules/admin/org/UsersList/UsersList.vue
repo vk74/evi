@@ -14,7 +14,7 @@ import type {
   TableHeader, 
   ItemsPerPageOption
 } from './Types.users.list'
-import { useUsersAdminStore } from '../state.users.admin'
+import { useOrgAdminStore } from '../state.org.admin'
 import loadUserService from '../UserEditor/service.load.user'
 import { useUserEditorStore } from '../UserEditor/state.user.editor'
 import { useUiStore } from '@/core/state/uistate'
@@ -36,7 +36,7 @@ import Paginator from '@/core/ui/paginator/Paginator.vue'
 // Initialize stores and i18n
 const { t } = useI18n()
 const usersStore = useStoreUsersList()
-const usersSectionStore = useUsersAdminStore()
+const usersSectionStore = useOrgAdminStore()
 const uiStore = useUiStore()
 const userStore = useUserAuthStore()
 

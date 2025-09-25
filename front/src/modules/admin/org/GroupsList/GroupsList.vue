@@ -16,7 +16,7 @@ import type { TableHeader, IGroup, ItemsPerPageOption } from './types.groups.lis
 import { useUserAuthStore } from '@/core/auth/state.user.auth';
 import Paginator from '@/core/ui/paginator/Paginator.vue'
 import { useUiStore } from '@/core/state/uistate';
-import { useUsersAdminStore } from '../state.users.admin';
+import { useOrgAdminStore } from '../state.org.admin';
 import { useGroupEditorStore } from '../GroupEditor/state.group.editor';
 import {
   PhMagnifyingGlass,
@@ -31,7 +31,7 @@ const { t } = useI18n();
 const groupsStore = useStoreGroupsList();
 const userStore = useUserAuthStore();
 const uiStore = useUiStore();
-const usersAdminStore = useUsersAdminStore();
+const orgAdminStore = useOrgAdminStore();
 const groupEditorStore = useGroupEditorStore();
 
 // Authentication check
@@ -89,7 +89,7 @@ const createGroup = () => {
   // Сбрасываем форму и устанавливаем режим создания
   groupEditorStore.resetForm(); // Очищает поля, сохраняя group_owner
   groupEditorStore.mode = { mode: 'create' }; // Явно устанавливаем режим создания
-  usersAdminStore.setActiveSection('group-editor');
+  orgAdminStore.setActiveSection('group-editor');
 };
 
 const editGroup = async () => {
@@ -101,7 +101,7 @@ const editGroup = async () => {
         group: group,
         details: details
       });
-      usersAdminStore.setActiveSection('group-editor');
+      orgAdminStore.setActiveSection('group-editor');
     } catch (error) {
       uiStore.showErrorSnackbar('Не удалось загрузить данные группы для редактирования');
     }

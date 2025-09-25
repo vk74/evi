@@ -1,7 +1,7 @@
 /**
  * version: 1.0.07
  * Backend router file for admin functionality.
- * Defines routes for administrative functions focused on user and group management.
+ * Defines routes for administrative functions focused on organization management.
  * All routes are protected by JWT validation and user status check middleware.
  * File: routes.admin.ts
  */
@@ -11,17 +11,17 @@ import validateJWT from '../../core/guards/guard.validate.jwt';
 import checkIsUserStatusActive from '../../core/guards/guard.check.is.user.status.active';
 
 // Import controllers
-import { fetchUsers, deleteSelectedUsers } from './users/usersList/routes.users.list';
-import updateUserById from './users/userEditor/controller.update.user';
-import loadUserById from './users/userEditor/controller.load.user';
-import createUserController from './users/userEditor/controller.create.user';
-import createGroupController from './users/groupEditor/controller.create.group';
-import fetchGroups from './users/groupsList/controller.groups.list';
-import deleteSelectedGroupsController from './users/groupsList/controller.delete.selected.groups';
-import fetchGroupById from './users/groupEditor/controller.fetch.group';
-import updateGroupById from './users/groupEditor/controller.update.group';
-import fetchGroupMembers from './users/groupEditor/controller.fetch.group.members';
-import removeGroupMembers from './users/groupEditor/controller.delete.group.members';
+import { fetchUsers, deleteSelectedUsers } from './org/usersList/routes.users.list';
+import updateUserById from './org/userEditor/controller.update.user';
+import loadUserById from './org/userEditor/controller.load.user';
+import createUserController from './org/userEditor/controller.create.user';
+import createGroupController from './org/groupEditor/controller.create.group';
+import fetchGroups from './org/groupsList/controller.groups.list';
+import deleteSelectedGroupsController from './org/groupsList/controller.delete.selected.groups';
+import fetchGroupById from './org/groupEditor/controller.fetch.group';
+import updateGroupById from './org/groupEditor/controller.update.group';
+import fetchGroupMembers from './org/groupEditor/controller.fetch.group.members';
+import removeGroupMembers from './org/groupEditor/controller.delete.group.members';
 import fetchCatalogSections from './catalog/controller.admin.fetch.sections';
 import createCatalogSection from './catalog/controller.admin.create.section';
 import updateCatalogSection from './catalog/controller.admin.update.section';
@@ -44,7 +44,7 @@ import deleteProductsController from './products/controller.admin.delete.product
 import fetchPublishingSectionsProductsController from './products/sections/controller.admin.fetch.publishingsections';
 import updateProductSectionsPublishController from './products/sections/controller.admin.update.sections.publish';
 import registerUserController from '../account/controller.register.user';
-import fetchUserGroupsController from './users/userEditor/controller.fetch.user.groups'
+import fetchUserGroupsController from './org/userEditor/controller.fetch.user.groups'
 
 const router: Router = express.Router();
 

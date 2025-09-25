@@ -23,17 +23,17 @@ import userSelfRegistrationEn from '@/modules/account/translation.account.en.jso
 import adminModuleRu from '@/modules/admin/translation.admin.ru.json'
 import adminModuleEn from '@/modules/admin/translation.admin.en.json'
 
-import userEditorRu from '@/modules/admin/users/UserEditor/translation.user.editor.ru.json'
-import userEditorEn from '@/modules/admin/users/UserEditor/translation.user.editor.en.json'
+import userEditorRu from '@/modules/admin/org/UserEditor/translation.user.editor.ru.json'
+import userEditorEn from '@/modules/admin/org/UserEditor/translation.user.editor.en.json'
 
-import usersListRu from '@/modules/admin/users/UsersList/Translation.users.list.ru.json'
-import usersListEn from '@/modules/admin/users/UsersList/Translation.users.list.en.json'
+import usersListRu from '@/modules/admin/org/UsersList/Translation.users.list.ru.json'
+import usersListEn from '@/modules/admin/org/UsersList/Translation.users.list.en.json'
 
-import groupsListRu from '@/modules/admin/users/GroupsList/translation.groups.list.ru.json'
-import groupsListEn from '@/modules/admin/users/GroupsList/translation.groups.list.en.json'
+import groupsListRu from '@/modules/admin/org/GroupsList/translation.groups.list.ru.json'
+import groupsListEn from '@/modules/admin/org/GroupsList/translation.groups.list.en.json'
 
-import groupsEditorEn from '@/modules/admin/users/GroupEditor/translation.group.editor.en.json'
-import groupsEditorRu from '@/modules/admin/users/GroupEditor/translation.group.editor.ru.json'
+import groupsEditorEn from '@/modules/admin/org/GroupEditor/translation.group.editor.en.json'
+import groupsEditorRu from '@/modules/admin/org/GroupEditor/translation.group.editor.ru.json'
 
 import settingsRu from '@/modules/admin/settings/translation.settings.ru.json'
 import settingsEn from '@/modules/admin/settings/translation.settings.en.json'

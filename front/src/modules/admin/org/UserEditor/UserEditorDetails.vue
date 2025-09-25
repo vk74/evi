@@ -8,7 +8,7 @@ import { ref, computed, onMounted, watch, onBeforeUnmount } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useUserEditorStore } from './state.user.editor'
 import { useUiStore } from '@/core/state/uistate'
-import { useUsersAdminStore } from '../state.users.admin'
+import { useOrgAdminStore } from '../state.org.admin'
 import { AccountStatus, Gender, EditMode } from './types.user.editor'
 import { useValidationRules } from '@/core/validation/rules.common.fields'
 import ChangePassword from '@/core/ui/modals/change-password/ChangePassword.vue'
@@ -19,7 +19,7 @@ import { PhCaretUpDown } from '@phosphor-icons/vue'
 
 const userEditorStore = useUserEditorStore()
 const uiStore = useUiStore()
-const usersSectionStore = useUsersAdminStore()
+const usersSectionStore = useOrgAdminStore()
 const { t } = useI18n()
 const { usernameRules, emailRules, mobilePhoneRules, firstNameRules, middleNameRules, lastNameRules } = useValidationRules()
 
@@ -79,7 +79,7 @@ watch(requiredFieldsFilled, (newValue) => {
 watch(showRequiredFieldsWarning, (newValue) => {
   if (newValue) {
     uiStore.showInfoSnackbar(
-      t('admin.users.editor.messages.validation.requiredFields'),
+      t('admin.org.editor.messages.validation.requiredFields'),
       { timeout: -1 }
     )
   }
@@ -94,17 +94,17 @@ const resetForm = () => {
 
 const saveUser = async () => {
   if (!form.value?.validate()) {
-    uiStore.showErrorSnackbar(t('admin.users.editor.messages.validation.formErrors'))
+    uiStore.showErrorSnackbar(t('admin.org.editor.messages.validation.formErrors'))
     return
   }
   isSubmitting.value = true
   try {
     const requestData = userEditorStore.prepareRequestData()
     await createUserService.createUser(requestData)
-    uiStore.showSuccessSnackbar(t('admin.users.editor.messages.success.created'))
+    uiStore.showSuccessSnackbar(t('admin.org.editor.messages.success.created'))
     resetForm()
   } catch (error) {
-    uiStore.showErrorSnackbar(error instanceof Error ? error.message : t('admin.users.editor.messages.error.create'))
+    uiStore.showErrorSnackbar(error instanceof Error ? error.message : t('admin.org.editor.messages.error.create'))
   } finally {
     isSubmitting.value = false
   }
@@ -112,7 +112,7 @@ const saveUser = async () => {
 
 const updateUser = async () => {
   if (!form.value?.validate()) {
-    uiStore.showErrorSnackbar(t('admin.users.editor.messages.validation.formErrors'))
+    uiStore.showErrorSnackbar(t('admin.org.editor.messages.validation.formErrors'))
     return
   }
   isSubmitting.value = true
@@ -121,10 +121,10 @@ const updateUser = async () => {
     const userId = (userEditorStore.mode as EditMode).userId
     const success = await updateUserService.updateUser(userId, requestData)
     if (success) {
-      uiStore.showSuccessSnackbar(t('admin.users.editor.messages.success.updated'))
+      uiStore.showSuccessSnackbar(t('admin.org.editor.messages.success.updated'))
     }
   } catch (error) {
-    uiStore.showErrorSnackbar(error instanceof Error ? error.message : t('admin.users.editor.messages.error.update'))
+    uiStore.showErrorSnackbar(error instanceof Error ? error.message : t('admin.org.editor.messages.error.update'))
   } finally {
     isSubmitting.value = false
   }
@@ -154,33 +154,33 @@ onBeforeUnmount(() => {
             <v-row class="pa-4">
               <v-col cols="12">
                 <div class="card-header">
-                  <v-card-title class="text-subtitle-1">{{ t('admin.users.editor.sections.basicInfo') }}</v-card-title>
+                  <v-card-title class="text-subtitle-1">{{ t('admin.org.editor.sections.basicInfo') }}</v-card-title>
                   <v-divider class="section-divider" />
                 </div>
                 <v-row class="pt-3">
                   <v-col v-if="userEditorStore.mode.mode === 'edit'" cols="12" md="12">
-                    <v-text-field v-model="userEditorStore.account.user_id" :label="t('admin.users.editor.fields.uuid.label')" variant="outlined" density="comfortable" readonly disabled />
+                    <v-text-field v-model="userEditorStore.account.user_id" :label="t('admin.org.editor.fields.uuid.label')" variant="outlined" density="comfortable" readonly disabled />
                   </v-col>
                   <v-col cols="12" md="6">
-                    <v-text-field ref="usernameField" v-model="accountUsername" :label="t('admin.users.editor.fields.username.label')" :rules="usernameRules" variant="outlined" density="comfortable" counter="25" required />
+                    <v-text-field ref="usernameField" v-model="accountUsername" :label="t('admin.org.editor.fields.username.label')" :rules="usernameRules" variant="outlined" density="comfortable" counter="25" required />
                   </v-col>
                   <v-col cols="12" md="6">
-                    <v-text-field v-model="accountEmail" :label="t('admin.users.editor.fields.email.label')" :rules="emailRules" variant="outlined" density="comfortable" type="email" required />
+                    <v-text-field v-model="accountEmail" :label="t('admin.org.editor.fields.email.label')" :rules="emailRules" variant="outlined" density="comfortable" type="email" required />
                   </v-col>
                   <v-col cols="12" md="4">
-                    <v-text-field v-model="accountFirstName" :label="t('admin.users.editor.fields.firstName.label')" :rules="firstNameRules" variant="outlined" density="comfortable" counter="50" required />
+                    <v-text-field v-model="accountFirstName" :label="t('admin.org.editor.fields.firstName.label')" :rules="firstNameRules" variant="outlined" density="comfortable" counter="50" required />
                   </v-col>
                   <v-col cols="12" md="4">
-                    <v-text-field v-model="accountMiddleName" :label="t('admin.users.editor.fields.middleName.label')" :rules="middleNameRules" variant="outlined" density="comfortable" counter="50" />
+                    <v-text-field v-model="accountMiddleName" :label="t('admin.org.editor.fields.middleName.label')" :rules="middleNameRules" variant="outlined" density="comfortable" counter="50" />
                   </v-col>
                   <v-col cols="12" md="4">
-                    <v-text-field v-model="accountLastName" :label="t('admin.users.editor.fields.lastName.label')" :rules="lastNameRules" variant="outlined" density="comfortable" counter="50" required />
+                    <v-text-field v-model="accountLastName" :label="t('admin.org.editor.fields.lastName.label')" :rules="lastNameRules" variant="outlined" density="comfortable" counter="50" required />
                   </v-col>
                   <v-col cols="12" md="4">
-                    <v-select v-model="profileGender" :label="t('admin.users.editor.fields.gender.label')" variant="outlined" density="comfortable" :items="[
-                      { title: t('admin.users.editor.fields.gender.options.male'), value: Gender.MALE },
-                      { title: t('admin.users.editor.fields.gender.options.female'), value: Gender.FEMALE },
-                      { title: t('admin.users.editor.fields.gender.options.notDefined'), value: Gender.NOT_DEFINED }
+                    <v-select v-model="profileGender" :label="t('admin.org.editor.fields.gender.label')" variant="outlined" density="comfortable" :items="[
+                      { title: t('admin.org.editor.fields.gender.options.male'), value: Gender.MALE },
+                      { title: t('admin.org.editor.fields.gender.options.female'), value: Gender.FEMALE },
+                      { title: t('admin.org.editor.fields.gender.options.notDefined'), value: Gender.NOT_DEFINED }
                     ]" item-title="title" item-value="value">
                     <template #append-inner>
                       <PhCaretUpDown class="dropdown-icon" />
@@ -192,26 +192,26 @@ onBeforeUnmount(() => {
 
               <v-col cols="12">
                 <div class="card-header mt-6">
-                  <v-card-title class="text-subtitle-1">{{ t('admin.users.editor.sections.security') }}</v-card-title>
+                  <v-card-title class="text-subtitle-1">{{ t('admin.org.editor.sections.security') }}</v-card-title>
                   <v-divider class="section-divider" />
                 </div>
                 <v-row class="pt-3">
                   <template v-if="userEditorStore.mode.mode === 'create'">
                     <v-col cols="12" md="5">
-                      <v-text-field v-model="accountPassword" :label="t('admin.users.editor.fields.password.label')" variant="outlined" density="comfortable" :type="showPassword ? 'text' : 'password'" :counter="40" />
+                      <v-text-field v-model="accountPassword" :label="t('admin.org.editor.fields.password.label')" variant="outlined" density="comfortable" :type="showPassword ? 'text' : 'password'" :counter="40" />
                     </v-col>
                     <v-col cols="12" md="5">
-                      <v-text-field v-model="accountPasswordConfirm" :label="t('admin.users.editor.fields.password.confirm')" :rules="[(v) => v === accountPassword || t('admin.users.editor.validation.fields.password.mismatch')]" variant="outlined" density="comfortable" :type="showPassword ? 'text' : 'password'" :counter="40" />
+                      <v-text-field v-model="accountPasswordConfirm" :label="t('admin.org.editor.fields.password.confirm')" :rules="[(v) => v === accountPassword || t('admin.org.editor.validation.fields.password.mismatch')]" variant="outlined" density="comfortable" :type="showPassword ? 'text' : 'password'" :counter="40" />
                     </v-col>
                     <v-col cols="12" md="2" class="d-flex align-center">
                       <v-btn icon variant="text" class="ml-n2" @click="showPassword = !showPassword"><v-icon>{{ showPassword ? 'mdi-eye-off' : 'mdi-eye' }}</v-icon></v-btn>
                     </v-col>
                   </template>
                   <v-col cols="12" md="6">
-                    <v-select v-model="accountStatus" :label="t('admin.users.editor.fields.accountStatus.label')" variant="outlined" density="comfortable" :items="[
-                      { title: t('admin.users.editor.fields.accountStatus.options.active'), value: AccountStatus.ACTIVE },
-                      { title: t('admin.users.editor.fields.accountStatus.options.disabled'), value: AccountStatus.DISABLED },
-                      { title: t('admin.users.editor.fields.accountStatus.options.requiresAction'), value: AccountStatus.REQUIRES_USER_ACTION }
+                    <v-select v-model="accountStatus" :label="t('admin.org.editor.fields.accountStatus.label')" variant="outlined" density="comfortable" :items="[
+                      { title: t('admin.org.editor.fields.accountStatus.options.active'), value: AccountStatus.ACTIVE },
+                      { title: t('admin.org.editor.fields.accountStatus.options.disabled'), value: AccountStatus.DISABLED },
+                      { title: t('admin.org.editor.fields.accountStatus.options.requiresAction'), value: AccountStatus.REQUIRES_USER_ACTION }
                     ]" item-title="title" item-value="value">
                     <template #append-inner>
                       <PhCaretUpDown class="dropdown-icon" />
@@ -219,28 +219,28 @@ onBeforeUnmount(() => {
                   </v-select>
                   </v-col>
                   <v-col cols="12" md="6">
-                    <v-checkbox v-model="accountIsStaff" :label="t('admin.users.editor.fields.isStaff.label')" color="teal" hide-details />
+                    <v-checkbox v-model="accountIsStaff" :label="t('admin.org.editor.fields.isStaff.label')" color="teal" hide-details />
                   </v-col>
                 </v-row>
               </v-col>
 
               <v-col cols="12">
                 <div class="card-header mt-6">
-                  <v-card-title class="text-subtitle-1">{{ t('admin.users.editor.sections.additionalInfo') }}</v-card-title>
+                  <v-card-title class="text-subtitle-1">{{ t('admin.org.editor.sections.additionalInfo') }}</v-card-title>
                   <v-divider class="section-divider" />
                 </div>
                 <v-row class="pt-3">
                   <v-col cols="12" md="6">
-                    <v-text-field v-model="profileMobilePhone" :label="t('admin.users.editor.fields.mobilePhone.label')" :placeholder="t('admin.users.editor.fields.mobilePhone.placeholder')" :rules="mobilePhoneRules" variant="outlined" density="comfortable" />
+                    <v-text-field v-model="profileMobilePhone" :label="t('admin.org.editor.fields.mobilePhone.label')" :placeholder="t('admin.org.editor.fields.mobilePhone.placeholder')" :rules="mobilePhoneRules" variant="outlined" density="comfortable" />
                   </v-col>
                   <v-col cols="12">
-                    <v-textarea v-model="profileAddress" :label="t('admin.users.editor.fields.address.label')" :rules="[]" variant="outlined" rows="3" counter="5000" no-resize />
+                    <v-textarea v-model="profileAddress" :label="t('admin.org.editor.fields.address.label')" :rules="[]" variant="outlined" rows="3" counter="5000" no-resize />
                   </v-col>
                   <v-col cols="12" md="6">
-                    <v-text-field v-model="profileCompanyName" :label="t('admin.users.editor.fields.company.label')" :rules="[]" variant="outlined" density="comfortable" readonly counter="255" />
+                    <v-text-field v-model="profileCompanyName" :label="t('admin.org.editor.fields.company.label')" :rules="[]" variant="outlined" density="comfortable" readonly counter="255" />
                   </v-col>
                   <v-col cols="12" md="6">
-                    <v-text-field v-model="profilePosition" :label="t('admin.users.editor.fields.position.label')" :rules="[]" variant="outlined" density="comfortable" readonly counter="255" />
+                    <v-text-field v-model="profilePosition" :label="t('admin.org.editor.fields.position.label')" :rules="[]" variant="outlined" density="comfortable" readonly counter="255" />
                   </v-col>
                 </v-row>
               </v-col>
@@ -252,22 +252,22 @@ onBeforeUnmount(() => {
 
     <div class="side-bar-container">
       <div class="side-bar-section">
-        <h3 class="text-subtitle-2 px-2 py-2">{{ t('admin.users.editor.sidebar.actions') }}</h3>
-        <v-btn v-if="userEditorStore.mode.mode === 'create'" block color="teal" variant="outlined" :disabled="!isFormValid || isSubmitting" class="mb-3" @click="saveUser">{{ t('admin.users.editor.buttons.create') }}</v-btn>
-        <v-btn v-if="userEditorStore.mode.mode === 'edit'" block color="teal" variant="outlined" :disabled="!isFormValid || isSubmitting || !userEditorStore.hasChanges" class="mb-3" @click="updateUser">{{ t('admin.users.editor.buttons.update') }}</v-btn>
-        <v-btn v-if="userEditorStore.mode.mode === 'edit'" block color="teal" variant="outlined" class="mb-3" @click="() => showPasswordDialog = true">{{ t('admin.users.editor.buttons.resetPassword') }}</v-btn>
+        <h3 class="text-subtitle-2 px-2 py-2">{{ t('admin.org.editor.sidebar.actions') }}</h3>
+        <v-btn v-if="userEditorStore.mode.mode === 'create'" block color="teal" variant="outlined" :disabled="!isFormValid || isSubmitting" class="mb-3" @click="saveUser">{{ t('admin.org.editor.buttons.create') }}</v-btn>
+        <v-btn v-if="userEditorStore.mode.mode === 'edit'" block color="teal" variant="outlined" :disabled="!isFormValid || isSubmitting || !userEditorStore.hasChanges" class="mb-3" @click="updateUser">{{ t('admin.org.editor.buttons.update') }}</v-btn>
+        <v-btn v-if="userEditorStore.mode.mode === 'edit'" block color="teal" variant="outlined" class="mb-3" @click="() => showPasswordDialog = true">{{ t('admin.org.editor.buttons.resetPassword') }}</v-btn>
       </div>
 
       <div class="sidebar-divider" />
 
       <div class="side-bar-section">
-        <h3 class="text-subtitle-2 px-2 py-2">{{ t('admin.users.editor.sidebar.selectedItem') }}</h3>
-        <v-btn v-if="userEditorStore.mode.mode === 'create'" block variant="outlined" class="mb-3" @click="resetForm">{{ t('admin.users.editor.buttons.reset') }}</v-btn>
+        <h3 class="text-subtitle-2 px-2 py-2">{{ t('admin.org.editor.sidebar.selectedItem') }}</h3>
+        <v-btn v-if="userEditorStore.mode.mode === 'create'" block variant="outlined" class="mb-3" @click="resetForm">{{ t('admin.org.editor.buttons.reset') }}</v-btn>
       </div>
     </div>
 
     <v-dialog v-model="showPasswordDialog" max-width="550">
-      <ChangePassword :title="t('admin.users.editor.buttons.resetPassword') + ' ' + userEditorStore.account.username" :uuid="userEditorStore.account.user_id || ''" :username="userEditorStore.account.username" :mode="PasswordChangeMode.ADMIN" :on-close="closePasswordDialog" />
+      <ChangePassword :title="t('admin.org.editor.buttons.resetPassword') + ' ' + userEditorStore.account.username" :uuid="userEditorStore.account.user_id || ''" :username="userEditorStore.account.username" :mode="PasswordChangeMode.ADMIN" :on-close="closePasswordDialog" />
     </v-dialog>
   </div>
 </template>

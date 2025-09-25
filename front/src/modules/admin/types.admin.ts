@@ -8,7 +8,7 @@
 export type SubModuleId = 
   | 'SubModuleServiceAdmin'
   | 'SubModuleCatalogAdmin' 
-  | 'SubModuleUsersAdmin'
+  | 'SubModuleOrgAdmin'
   | 'SubModuleAppSettings'
   | 'SubModuleProducts'
 

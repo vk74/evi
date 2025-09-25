@@ -27,22 +27,22 @@ const resolveRuntimeModulePath = (tsFilePath: string): string => {
 export const eventReferenceFiles: Record<string, string[]> = {
   // User editor events
   userEditor: [
-    path.resolve(__dirname, '../../../modules/admin/users/userEditor/events.user.editor.ts')
+    path.resolve(__dirname, '../../../modules/admin/org/userEditor/events.user.editor.ts')
   ],
   
   // Users list events (production implementation)
   usersList: [
-    path.resolve(__dirname, '../../../modules/admin/users/usersList/events.users.list.ts')
+    path.resolve(__dirname, '../../../modules/admin/org/usersList/events.users.list.ts')
   ],
   
   // Groups list events
   groupsList: [
-    path.resolve(__dirname, '../../../modules/admin/users/groupsList/events.groups.list.ts')
+    path.resolve(__dirname, '../../../modules/admin/org/groupsList/events.groups.list.ts')
   ],
   
   // Group editor events
   groupEditor: [
-    path.resolve(__dirname, '../../../modules/admin/users/groupEditor/events.group.editor.ts')
+    path.resolve(__dirname, '../../../modules/admin/org/groupEditor/events.group.editor.ts')
   ],
   
   // Settings module events

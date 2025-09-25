@@ -108,7 +108,7 @@ watch(isEditMode, (v) => { if (v) { page.value = 1; fetchRows() } })
   <div class="pa-4">
     <template v-if="!isEditMode">
       <v-card flat class="pa-6 d-flex flex-column align-center justify-center placeholder-disabled">
-        <div class="text-body-2">{{ t('admin.users.editor.groups.placeholder.disabled') }}</div>
+        <div class="text-body-2">{{ t('admin.org.editor.groups.placeholder.disabled') }}</div>
       </v-card>
     </template>
     <template v-else>
@@ -130,7 +130,7 @@ watch(isEditMode, (v) => { if (v) { page.value = 1; fetchRows() } })
       </v-text-field>
 
       <div class="d-flex align-center mb-2">
-        <div class="text-subtitle-2">{{ t('admin.users.editor.sections.groups') }}</div>
+        <div class="text-subtitle-2">{{ t('admin.org.editor.sections.groups') }}</div>
         <v-btn variant="text" :icon="undefined" class="ml-3" :disabled="loading || refreshing" @click="refresh">
           <PhArrowsClockwise :size="25" color="teal" :class="{ rotating: refreshing }" />
         </v-btn>

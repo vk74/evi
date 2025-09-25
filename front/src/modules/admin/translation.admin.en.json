@@ -13,8 +13,8 @@
           "deactivated": "deactivated"
         }
       },
-      "users": {
-        "main": "users management"
+      "org": {
+        "main": "organization management"
       },
       "settings": {
         "main": "application settings"
@@ -49,14 +49,14 @@
         "assignOwnerNotImplemented": "owner assignment not implemented yet"
       }
     },
-    "users": {
+    "org": {
       "sections": {
         "usersList": "users list",
         "groupsList": "groups list",
         "userEditor": "user editor",
         "groupEditor": "group editor"
       },
-      "moduleTitle": "users and groups management"
+      "moduleTitle": "organization management"
     },
     "settings": {
       "application": {
