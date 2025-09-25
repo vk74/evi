@@ -1,6 +1,6 @@
 {
   "admin": {
-    "users": {
+    "org": {
       "editor": {
         "title": {
           "create": "create user account",
