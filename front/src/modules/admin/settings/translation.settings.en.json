@@ -362,7 +362,62 @@
         "services": "services"
       },
       "datavalidation": {
-        "description": "Configure data validation rules and patterns for application data integrity"
+        "description": "Configure data validation rules and patterns for application data integrity",
+        "categories": {
+          "text": "Text Fields",
+          "identifier": "Identifiers",
+          "personal": "Personal Data",
+          "contact": "Contact Information",
+          "security": "Security",
+          "special": "Special Fields"
+        },
+        "actions": {
+          "save": "Save Settings",
+          "reset": "Reset to Defaults"
+        },
+        "fieldTypes": "field types",
+        "settings": {
+          "required": "Required field",
+          "minLength": "Minimum length",
+          "maxLength": "Maximum length",
+          "allowSpecialChars": "Allow special characters",
+          "allowNumbers": "Allow numbers",
+          "allowSpaces": "Allow spaces",
+          "uniqueCheck": "Check uniqueness",
+          "caseSensitive": "Case sensitive"
+        },
+        "security": {
+          "title": "Security Settings",
+          "description": "Security validation is automatically enabled for all fields. These settings cannot be modified as they protect against common security threats.",
+          "sqlInjection": "SQL Injection Protection",
+          "xssProtection": "XSS Protection",
+          "commandInjection": "Command Injection Protection",
+          "pathTraversal": "Path Traversal Protection"
+        },
+        "standardFields": {
+          "title": "standard fields",
+          "maxLengthPerFieldType": "max length per field type",
+          "micro": "micro",
+          "mini": "mini", 
+          "short": "short",
+          "medium": "medium",
+          "long": "long",
+          "extraLong": "extra long"
+        },
+        "wellKnownFields": {
+          "title": "well-known fields",
+          "userName": "user name",
+          "groupName": "group name",
+          "email": "e-mail",
+          "telephoneNumber": "telephone number",
+          "minimumLength": "minimum length",
+          "maximumLength": "maximum length",
+          "allowNumbers": "allow numbers",
+          "allowUsernameChars": "allow \". , _ -\" characters in {fieldName}",
+          "allowSpecialChars": "allow special characters",
+          "allowSpaces": "allow spaces",
+          "latinOnly": "latin only"
+        }
       },
       "groups": {
         "security": "security",
