@@ -11,15 +11,16 @@
 import { useI18n } from 'vue-i18n';
 import { useAppSettingsStore } from './state.app.settings';
 import { fetchSettings } from './service.fetch.settings';
-import { PhList, PhCaretDown, PhCaretRight, PhGear, PhBriefcase, PhChartLineUp, PhBooks, PhUserGear, PhShield, PhClockUser, PhPassword, PhShieldCheck, PhDesktopTower, PhShareNetwork, PhTextT, PhUsersThree, PhUsers } from '@phosphor-icons/vue';
+import { PhList, PhCaretDown, PhCaretRight, PhGear, PhBriefcase, PhChartLineUp, PhBooks, PhUserGear, PhShield, PhClockUser, PhPassword, PhShieldCheck, PhDesktopTower, PhShareNetwork, PhTextT, PhCheckCircle, PhUsersThree, PhUsers } from '@phosphor-icons/vue';
 import { useUiStore } from '@/core/state/uistate';
  
  // Import components from sections directory with hierarchical naming
  import Work from './sections/Application.Work.vue';
  import Reports from './sections/Application.Reports.vue';
  import KnowledgeBase from './sections/Application.KnowledgeBase.vue';
- import SystemEventBus from './sections/Application.System.EventBus.vue';
- import SystemLogging from './sections/Application.System.Logging.vue';
+import SystemEventBus from './sections/Application.System.EventBus.vue';
+import SystemLogging from './sections/Application.System.Logging.vue';
+import SystemDataValidation from './sections/Application.System.DataValidation.vue';
  import SessionManagement from './sections/Application.Security.SessionManagement.vue';
  import PasswordPolicies from './sections/Application.Security.PasswordPolicies.vue';
  import AuthenticationSettings from './sections/Application.Security.AuthenticationSettings.vue';
@@ -100,6 +101,11 @@ const { t } = useI18n();
              id: 'Application.System.Logging',
              name: t('admin.settings.sections.logging'),
              icon: 'mdi-text-box-outline',
+           },
+           {
+             id: 'Application.System.DataValidation',
+             name: t('admin.settings.sections.datavalidation'),
+             icon: 'mdi-check-circle-outline',
            }
          ]
        }
@@ -131,6 +137,7 @@ const { t } = useI18n();
    'Application.KnowledgeBase': markRaw(KnowledgeBase),
    'Application.System.EventBus': markRaw(SystemEventBus),
    'Application.System.Logging': markRaw(SystemLogging),
+   'Application.System.DataValidation': markRaw(SystemDataValidation),
    'Application.Security.SessionManagement': markRaw(SessionManagement),
    'Application.Security.PasswordPolicies': markRaw(PasswordPolicies),
    'Application.Security.AuthenticationSettings': markRaw(AuthenticationSettings),
@@ -157,6 +164,7 @@ const resolveSectionIcon = (iconName: string) => {
     'mdi-server': PhDesktopTower,
     'mdi-transit-connection-variant': PhShareNetwork,
     'mdi-text-box-outline': PhTextT,
+    'mdi-check-circle-outline': PhCheckCircle,
     'mdi-account-group-outline': PhUsersThree,
     'mdi-account-multiple-outline': PhUsers,
     'mdi-chart-timeline-variant': PhChartLineUp
