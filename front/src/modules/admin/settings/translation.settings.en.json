@@ -404,7 +404,8 @@
           "short": "short",
           "medium": "medium",
           "long": "long",
-          "extraLong": "extra long"
+          "extraLong": "extra long",
+          "extralong": "extra long"
         },
         "wellKnownFields": {
           "title": "well-known fields",

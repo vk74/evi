@@ -43,13 +43,13 @@ const standardFields = ref([
     id: 'text-long',
     name: 'long',
     maxLength: 1000,
-    maxLengthOptions: Array.from({ length: 100 }, (_, i) => 50 + (i * 100))
+    maxLengthOptions: Array.from({ length: 100 }, (_, i) => 50 + (i * 50))
   },
   {
     id: 'text-extralong',
     name: 'extra long',
     maxLength: 2000,
-    maxLengthOptions: Array.from({ length: 100 }, (_, i) => 100 + (i * 500))
+    maxLengthOptions: Array.from({ length: 100 }, (_, i) => 100 + (i * 100))
   }
 ]);
 
@@ -59,9 +59,10 @@ const wellKnownFields = ref([
     id: 'user-name',
     name: 'user name',
     description: 'имя пользователя',
-    maxLength: 25,
-    minLength: 3,
-    minLengthOptions: Array.from({ length: 8 }, (_, i) => i + 1),
+    maxLength: 20,
+    minLength: 1,
+    minLengthOptions: Array.from({ length: 5 }, (_, i) => i + 1),
+    maxLengthOptions: Array.from({ length: 10 }, (_, i) => 5 + (i * 5)),
     allowNumbers: true,
     allowUsernameChars: true,
     latinOnly: true
@@ -70,9 +71,10 @@ const wellKnownFields = ref([
     id: 'group-name',
     name: 'group name',
     description: 'имя группы',
-    maxLength: 100,
-    minLength: 3,
-    minLengthOptions: Array.from({ length: 8 }, (_, i) => i + 1),
+    maxLength: 20,
+    minLength: 1,
+    minLengthOptions: Array.from({ length: 5 }, (_, i) => i + 1),
+    maxLengthOptions: Array.from({ length: 10 }, (_, i) => 5 + (i * 5)),
     allowNumbers: true,
     allowUsernameChars: true,
     latinOnly: true
@@ -180,7 +182,7 @@ const updateStandardFieldsGlobalSetting = (setting: string, value: any) => {
                 {{ field.id === 'text-micro' ? '2-10' : 
                    field.id === 'text-mini' ? '2-50' : 
                    field.id === 'text-short' ? '10-200' : 
-                   field.id === 'text-medium' ? '10-500' : 
+                   field.id === 'text-medium' ? '20-500' : 
                    field.id === 'text-long' ? '50-5000' : 
                    '100-10000' }}
               </span>
@@ -264,13 +266,15 @@ const updateStandardFieldsGlobalSetting = (setting: string, value: any) => {
                             <PhCaretUpDown class="dropdown-icon" />
                           </template>
                         </v-select>
-                        <span class="text-caption text-grey-darken-1 ml-2">1-8</span>
+                        <span class="text-caption text-grey-darken-1 ml-2">
+                          {{ field.id === 'user-name' || field.id === 'group-name' ? '1-5' : '1-8' }}
+                        </span>
                       </div>
                       
                       <div class="d-flex align-center mb-2">
                         <v-select
                           :model-value="field.maxLength"
-                          :items="Array.from({ length: 100 }, (_, i) => i + 1)"
+                          :items="field.id === 'user-name' || field.id === 'group-name' ? field.maxLengthOptions : Array.from({ length: 100 }, (_, i) => i + 1)"
                           :label="t('admin.settings.datavalidation.wellKnownFields.maximumLength')"
                           variant="outlined"
                           density="compact"
@@ -282,7 +286,9 @@ const updateStandardFieldsGlobalSetting = (setting: string, value: any) => {
                             <PhCaretUpDown class="dropdown-icon" />
                           </template>
                         </v-select>
-                        <span class="text-caption text-grey-darken-1 ml-2">1-100</span>
+                        <span class="text-caption text-grey-darken-1 ml-2">
+                          {{ field.id === 'user-name' || field.id === 'group-name' ? '5-50' : '1-100' }}
+                        </span>
                       </div>
                     </template>
                     

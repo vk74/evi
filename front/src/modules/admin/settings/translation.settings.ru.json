@@ -404,7 +404,8 @@
           "short": "короткое",
           "medium": "среднее",
           "long": "длинное",
-          "extraLong": "очень длинное"
+          "extraLong": "очень длинное",
+          "extralong": "очень длинное"
         },
         "wellKnownFields": {
           "title": "известные поля",
