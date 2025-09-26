@@ -418,7 +418,11 @@
           "allowUsernameChars": "allow \". , _ -\" characters in {fieldName}",
           "allowSpecialChars": "allow special characters",
           "allowSpaces": "allow spaces",
-          "latinOnly": "latin only"
+          "latinOnly": "latin only",
+          "phoneMask": "phone input mask (e.g.: +7 (###) ###-####)",
+          "phoneMaskTooltip": "use # for digits, other characters as separators. brackets will be displayed in the field during input.",
+          "phoneRegex": "regex for phone validation",
+          "emailRegex": "regex for validation"
         }
       },
       "groups": {

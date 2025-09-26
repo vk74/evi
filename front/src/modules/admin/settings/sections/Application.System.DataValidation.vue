@@ -37,7 +37,7 @@ const standardFields = ref([
     id: 'text-medium',
     name: 'medium',
     maxLength: 400,
-    maxLengthOptions: Array.from({ length: 50 }, (_, i) => 10 + (i * 10))
+    maxLengthOptions: Array.from({ length: 25 }, (_, i) => 20 + (i * 20))
   },
   {
     id: 'text-long',
@@ -88,9 +88,8 @@ const wellKnownFields = ref([
     name: 'telephone number',
     description: 'номер телефона',
     maxLength: 15,
-    allowSpecialChars: true,
-    allowNumbers: true,
-    allowSpaces: false
+    mask: '+# (###) ###-####',
+    regex: '^\\+?[1-9]\\d{1,14}$'
   }
 ]);
 
@@ -159,7 +158,7 @@ const updateStandardFieldsGlobalSetting = (setting: string, value: any) => {
           <!-- Standard fields list -->
           <div class="settings-subgroup">
             <h4 class="text-subtitle-2 mb-3 font-weight-medium">
-              max length per field type
+              {{ t('admin.settings.datavalidation.standardFields.maxLengthPerFieldType') }}
             </h4>
             
             <div v-for="field in standardFields" :key="field.id" class="d-flex align-center mb-3">
@@ -192,7 +191,7 @@ const updateStandardFieldsGlobalSetting = (setting: string, value: any) => {
         <!-- ==================== WELL-KNOWN FIELDS SECTION ==================== -->
         <div class="settings-group mb-6">
           <h3 class="text-subtitle-1 mb-4 font-weight-medium">
-            well-known fields
+            {{ t('admin.settings.datavalidation.wellKnownFields.title') }}
           </h3>
           
           <!-- Well-known fields list -->
@@ -209,7 +208,7 @@ const updateStandardFieldsGlobalSetting = (setting: string, value: any) => {
                     <v-text-field
                       v-if="field.id === 'e-mail'"
                       :model-value="field.regex"
-                      label="regex для валидации"
+                      :label="t('admin.settings.datavalidation.wellKnownFields.emailRegex')"
                       variant="outlined"
                       density="compact"
                       color="teal-darken-2"
@@ -218,8 +217,37 @@ const updateStandardFieldsGlobalSetting = (setting: string, value: any) => {
                       @update:model-value="updateWellKnownFieldSetting(field.id, 'regex', $event)"
                     />
                     
+                    <!-- Special handling for telephone field -->
+                    <template v-if="field.id === 'telephone-number'">
+                      <v-text-field
+                        :model-value="field.mask"
+                        :label="t('admin.settings.datavalidation.wellKnownFields.phoneMask')"
+                        variant="outlined"
+                        density="compact"
+                        color="teal-darken-2"
+                        style="width: 450px;"
+                        class="mb-2"
+                        v-tooltip="{
+                          text: t('admin.settings.datavalidation.wellKnownFields.phoneMaskTooltip'),
+                          location: 'top',
+                          maxWidth: 300
+                        }"
+                        @update:model-value="updateWellKnownFieldSetting(field.id, 'mask', $event)"
+                      />
+                      <v-text-field
+                        :model-value="field.regex"
+                        :label="t('admin.settings.datavalidation.wellKnownFields.phoneRegex')"
+                        variant="outlined"
+                        density="compact"
+                        color="teal-darken-2"
+                        style="width: 450px;"
+                        class="mb-2"
+                        @update:model-value="updateWellKnownFieldSetting(field.id, 'regex', $event)"
+                      />
+                    </template>
+                    
                     <!-- Regular fields with min/max length -->
-                    <template v-else>
+                    <template v-else-if="field.id !== 'telephone-number' && field.id !== 'e-mail'">
                       <div class="d-flex align-center mb-2">
                         <v-select
                           v-if="field.minLength !== undefined"
@@ -258,13 +286,13 @@ const updateStandardFieldsGlobalSetting = (setting: string, value: any) => {
                       </div>
                     </template>
                     
-                    <!-- Switches only for non-e-mail fields -->
-                    <template v-if="field.id !== 'e-mail'">
+                    <!-- Switches only for non-e-mail and non-telephone fields -->
+                    <template v-if="field.id !== 'e-mail' && field.id !== 'telephone-number'">
                       <v-switch
-                        v-if="field.allowSpecialChars !== undefined"
+                        v-if="'allowSpecialChars' in field && field.allowSpecialChars !== undefined"
                         :model-value="field.allowSpecialChars"
                         color="teal-darken-2"
-                        label="allow special characters"
+                        :label="t('admin.settings.datavalidation.wellKnownFields.allowSpecialChars')"
                         hide-details
                         density="compact"
                         class="mb-1"
@@ -301,7 +329,7 @@ const updateStandardFieldsGlobalSetting = (setting: string, value: any) => {
                         @update:model-value="updateWellKnownFieldSetting(field.id, 'latinOnly', $event)"
                       />
                       <v-switch
-                        v-if="field.allowSpaces !== undefined"
+                        v-if="'allowSpaces' in field && field.allowSpaces !== undefined"
                         :model-value="field.allowSpaces"
                         color="teal-darken-2"
                         :label="t('admin.settings.datavalidation.wellKnownFields.allowSpaces')"
