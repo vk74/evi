@@ -359,7 +359,9 @@
         "usersmanagement": "users management",
         "groupsmanagement": "groups management",
         "catalog": "catalog",
-        "services": "services"
+        "services": "services",
+        "products": "products",
+        "settings": "settings"
       },
       "datavalidation": {
         "description": "Configure data validation rules and patterns for application data integrity",
@@ -434,7 +436,8 @@
         },
         "selected": {
           "section": "selected section: {section}"
-        }
+        },
+        "in.development": "feature is under development"
       }
     }
   }

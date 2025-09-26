@@ -11,7 +11,7 @@
 import { useI18n } from 'vue-i18n';
 import { useAppSettingsStore } from './state.app.settings';
 import { fetchSettings } from './service.fetch.settings';
-import { PhList, PhCaretDown, PhCaretRight, PhGear, PhBriefcase, PhChartLineUp, PhBooks, PhUserGear, PhShield, PhClockUser, PhPassword, PhShieldCheck, PhDesktopTower, PhShareNetwork, PhTextT, PhCheckCircle, PhUsersThree, PhUsers } from '@phosphor-icons/vue';
+import { PhList, PhCaretDown, PhCaretRight, PhGear, PhBriefcase, PhChartLineUp, PhBooks, PhUserGear, PhShield, PhClockUser, PhPassword, PhShieldCheck, PhDesktopTower, PhShareNetwork, PhTextT, PhCheckCircle, PhUsersThree, PhUsers, PhPackage, PhWrench, PhFadersHorizontal } from '@phosphor-icons/vue';
 import { useUiStore } from '@/core/state/uistate';
  
  // Import components from sections directory with hierarchical naming
@@ -23,9 +23,11 @@ import SystemLogging from './sections/Application.System.Logging.vue';
 import SystemDataValidation from './sections/Application.System.DataValidation.vue';
  import SessionManagement from './sections/Application.Security.SessionManagement.vue';
  import PasswordPolicies from './sections/Application.Security.PasswordPolicies.vue';
- import AuthenticationSettings from './sections/Application.Security.AuthenticationSettings.vue';
- import GroupsManagement from './sections/UsersManagement.GroupsManagement.vue';
- import UsersManagement from './sections/UsersManagement.UsersManagement.vue';
+import AuthenticationSettings from './sections/Application.Security.AuthenticationSettings.vue';
+import GroupsManagement from './sections/UsersManagement.GroupsManagement.vue';
+import UsersManagement from './sections/UsersManagement.UsersManagement.vue';
+import ProductsSettings from './sections/Products.Settings.vue';
+import ServicesSettings from './sections/Services.Settings.vue';
  
  // Define section interface
  interface Section {
@@ -43,92 +45,116 @@ const { t } = useI18n();
  // Flag to track initial loading of settings for current section
  const isInitialLoadComplete = ref(false);
  
- // Hierarchical sections structure - using computed to support reactive translations
- const sections = computed<Section[]>(() => [
-   {
-     id: 'Application',
-     name: t('admin.settings.sections.application'),
-     icon: 'mdi-cog-outline',
-     children: [
-       {
-         id: 'Application.Work',
-         name: t('admin.settings.sections.work'),
-         icon: 'mdi-briefcase-outline',
-       },
-       {
-         id: 'Application.Reports',
-         name: t('admin.settings.sections.reports'),
-         icon: 'mdi-chart-box-outline',
-       },
-       {
-         id: 'Application.KnowledgeBase',
-         name: t('admin.settings.sections.knowledgebase'),
-         icon: 'mdi-book-open-outline',
-       },
-       {
-         id: 'Application.Security',
-         name: t('admin.settings.sections.security'),
-         icon: 'mdi-shield-outline',
-         children: [
-           {
-             id: 'Application.Security.SessionManagement',
-             name: t('admin.settings.sections.sessionmanagement'),
-             icon: 'mdi-account-clock-outline',
-           },
-           {
-             id: 'Application.Security.PasswordPolicies',
-             name: t('admin.settings.sections.passwordpolicies'),
-             icon: 'mdi-form-textbox-password',
-           },
-           {
-             id: 'Application.Security.AuthenticationSettings',
-             name: t('admin.settings.sections.authenticationpolicies'),
-             icon: 'mdi-shield-key-outline',
-           }
-         ]
-       },
-       {
-         id: 'Application.System',
-         name: t('admin.settings.sections.system'),
-         icon: 'mdi-server',
-         children: [
-           {
-             id: 'Application.System.EventBus',
-             name: t('admin.settings.sections.eventbus'),
-             icon: 'mdi-transit-connection-variant',
-           },
-           {
-             id: 'Application.System.Logging',
-             name: t('admin.settings.sections.logging'),
-             icon: 'mdi-text-box-outline',
-           },
-           {
-             id: 'Application.System.DataValidation',
-             name: t('admin.settings.sections.datavalidation'),
-             icon: 'mdi-check-circle-outline',
-           }
-         ]
-       }
-     ]
-   },
-   {
-     id: 'UsersManagement',
-     name: t('admin.settings.sections.usersmanagement'),
-     icon: 'mdi-account-group-outline',
-     children: [
-       {
-         id: 'UsersManagement.GroupsManagement',
-         name: t('admin.settings.sections.groupsmanagement'),
-         icon: 'mdi-account-multiple-outline',
-       },
-                {
-           id: 'UsersManagement.UsersManagement',
-           name: t('admin.settings.sections.usersmanagement'),
-           icon: 'mdi-account-cog-outline',
-         }
-     ]
-   }
- ]);
+// Hierarchical sections structure - using computed to support reactive translations
+const sections = computed<Section[]>(() => [
+  {
+    id: 'Products',
+    name: t('admin.settings.sections.products'),
+    icon: 'mdi-package-variant',
+    children: [
+      {
+        id: 'Products.Settings',
+        name: t('admin.settings.sections.settings'),
+        icon: 'PhFadersHorizontal',
+      }
+    ]
+  },
+  {
+    id: 'Services',
+    name: t('admin.settings.sections.services'),
+    icon: 'mdi-wrench-outline',
+    children: [
+      {
+        id: 'Services.Settings',
+        name: t('admin.settings.sections.settings'),
+        icon: 'PhFadersHorizontal',
+      }
+    ]
+  },
+  {
+    id: 'Application',
+    name: t('admin.settings.sections.application'),
+    icon: 'mdi-cog-outline',
+    children: [
+      {
+        id: 'Application.Work',
+        name: t('admin.settings.sections.work'),
+        icon: 'mdi-briefcase-outline',
+      },
+      {
+        id: 'Application.Reports',
+        name: t('admin.settings.sections.reports'),
+        icon: 'mdi-chart-box-outline',
+      },
+      {
+        id: 'Application.KnowledgeBase',
+        name: t('admin.settings.sections.knowledgebase'),
+        icon: 'mdi-book-open-outline',
+      },
+      {
+        id: 'Application.Security',
+        name: t('admin.settings.sections.security'),
+        icon: 'mdi-shield-outline',
+        children: [
+          {
+            id: 'Application.Security.SessionManagement',
+            name: t('admin.settings.sections.sessionmanagement'),
+            icon: 'mdi-account-clock-outline',
+          },
+          {
+            id: 'Application.Security.PasswordPolicies',
+            name: t('admin.settings.sections.passwordpolicies'),
+            icon: 'mdi-form-textbox-password',
+          },
+          {
+            id: 'Application.Security.AuthenticationSettings',
+            name: t('admin.settings.sections.authenticationpolicies'),
+            icon: 'mdi-shield-key-outline',
+          }
+        ]
+      },
+      {
+        id: 'Application.System',
+        name: t('admin.settings.sections.system'),
+        icon: 'mdi-server',
+        children: [
+          {
+            id: 'Application.System.EventBus',
+            name: t('admin.settings.sections.eventbus'),
+            icon: 'mdi-transit-connection-variant',
+          },
+          {
+            id: 'Application.System.Logging',
+            name: t('admin.settings.sections.logging'),
+            icon: 'mdi-text-box-outline',
+          },
+          {
+            id: 'Application.System.DataValidation',
+            name: t('admin.settings.sections.datavalidation'),
+            icon: 'mdi-check-circle-outline',
+          }
+        ]
+      }
+    ]
+  },
+  {
+    id: 'UsersManagement',
+    name: t('admin.settings.sections.usersmanagement'),
+    icon: 'mdi-account-group-outline',
+    children: [
+      {
+        id: 'UsersManagement.GroupsManagement',
+        name: t('admin.settings.sections.groupsmanagement'),
+        icon: 'mdi-account-multiple-outline',
+      },
+              {
+          id: 'UsersManagement.UsersManagement',
+          name: t('admin.settings.sections.usersmanagement'),
+          icon: 'mdi-account-cog-outline',
+        }
+    ]
+  }
+]);
  
  // Map section IDs to components
  const sectionComponents = {
@@ -141,6 +167,8 @@ const { t } = useI18n();
    'Application.Security.SessionManagement': markRaw(SessionManagement),
    'Application.Security.PasswordPolicies': markRaw(PasswordPolicies),
    'Application.Security.AuthenticationSettings': markRaw(AuthenticationSettings),
+   'Products.Settings': markRaw(ProductsSettings),
+   'Services.Settings': markRaw(ServicesSettings),
    'UsersManagement.GroupsManagement': markRaw(GroupsManagement),
    'UsersManagement.UsersManagement': markRaw(UsersManagement),
    // Узлы-контейнеры не имеют компонента
@@ -167,7 +195,10 @@ const resolveSectionIcon = (iconName: string) => {
     'mdi-check-circle-outline': PhCheckCircle,
     'mdi-account-group-outline': PhUsersThree,
     'mdi-account-multiple-outline': PhUsers,
-    'mdi-chart-timeline-variant': PhChartLineUp
+    'mdi-chart-timeline-variant': PhChartLineUp,
+    'mdi-package-variant': PhPackage,
+    'mdi-wrench-outline': PhWrench,
+    'PhFadersHorizontal': PhFadersHorizontal
   }
   return map[iconName] || PhGear
 }
