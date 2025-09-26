@@ -58,7 +58,6 @@ const wellKnownFields = ref([
   {
     id: 'user-name',
     name: 'user name',
-    description: 'имя пользователя',
     maxLength: 20,
     minLength: 1,
     minLengthOptions: Array.from({ length: 5 }, (_, i) => i + 1),
@@ -70,7 +69,6 @@ const wellKnownFields = ref([
   {
     id: 'group-name',
     name: 'group name',
-    description: 'имя группы',
     maxLength: 20,
     minLength: 1,
     minLengthOptions: Array.from({ length: 5 }, (_, i) => i + 1),
@@ -82,13 +80,11 @@ const wellKnownFields = ref([
   {
     id: 'e-mail',
     name: 'e-mail',
-    description: 'email адрес',
     regex: '^[a-zA-Z0-9.!#$%&\'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$'
   },
   {
     id: 'telephone-number',
     name: 'telephone number',
-    description: 'номер телефона',
     maxLength: 15,
     mask: '+# (###) ###-####',
     regex: '^\\+?[1-9]\\d{1,14}$'
