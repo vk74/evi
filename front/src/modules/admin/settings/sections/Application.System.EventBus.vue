@@ -404,12 +404,12 @@ onMounted(() => {
         <div 
           v-for="group in domainGroups" 
           :key="group.title"
-          class="domain-group"
+          class="settings-group"
         >
-          <h3 class="group-title mb-3">
+          <h3 class="text-subtitle-1 mb-2 font-weight-medium">
             {{ group.title }}
           </h3>
-          <div class="group-settings">
+          <div class="settings-subgroup">
             <div 
               v-for="setting in group.settings" 
               :key="setting.name"
@@ -464,33 +464,22 @@ onMounted(() => {
 .domain-settings-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-  gap: 32px;
+  gap: 16px;
 }
 
-.domain-group {
-  background-color: rgba(0, 0, 0, 0.01);
+.settings-group {
+  border: 1px solid rgba(0, 0, 0, 0.12);
   border-radius: 8px;
-  padding: 20px;
-  transition: background-color 0.2s ease;
-}
-
-.domain-group:hover {
+  padding: 16px;
   background-color: rgba(0, 0, 0, 0.02);
 }
 
-.group-title {
-  font-size: 0.95rem;
-  font-weight: 500;
-  color: rgba(0, 0, 0, 0.87);
-  margin: 0 0 16px 0;
-  padding-bottom: 8px;
-  border-bottom: 1px solid rgba(0, 0, 0, 0.12);
+.settings-subgroup {
+  margin-bottom: 16px;
 }
 
-.group-settings {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
+.settings-subgroup:last-child {
+  margin-bottom: 0;
 }
 
 .setting-item {
@@ -505,21 +494,13 @@ onMounted(() => {
 @media (max-width: 960px) {
   .domain-settings-grid {
     grid-template-columns: 1fr;
-    gap: 20px;
-  }
-  
-  .domain-group {
-    padding: 16px;
+    gap: 16px;
   }
 }
 
 @media (max-width: 600px) {
   .domain-settings-grid {
     gap: 16px;
-  }
-  
-  .domain-group {
-    padding: 12px;
   }
 }
 </style> 
