@@ -25,13 +25,13 @@ const standardFields = ref([
     id: 'text-mini',
     name: 'mini',
     maxLength: 20,
-    maxLengthOptions: Array.from({ length: 29 }, (_, i) => i + 2)
+    maxLengthOptions: Array.from({ length: 49 }, (_, i) => i + 2)
   },
   {
     id: 'text-short',
     name: 'short',
     maxLength: 100,
-    maxLengthOptions: Array.from({ length: 19 }, (_, i) => 10 + (i * 5))
+    maxLengthOptions: Array.from({ length: 20 }, (_, i) => 10 + (i * 10))
   },
   {
     id: 'text-medium',
@@ -43,13 +43,13 @@ const standardFields = ref([
     id: 'text-long',
     name: 'long',
     maxLength: 1000,
-    maxLengthOptions: Array.from({ length: 100 }, (_, i) => 50 + (i * 50))
+    maxLengthOptions: Array.from({ length: 100 }, (_, i) => 50 + (i * 100))
   },
   {
     id: 'text-extralong',
     name: 'extra long',
     maxLength: 2000,
-    maxLengthOptions: Array.from({ length: 100 }, (_, i) => 100 + (i * 100))
+    maxLengthOptions: Array.from({ length: 100 }, (_, i) => 100 + (i * 500))
   }
 ]);
 
@@ -81,12 +81,7 @@ const wellKnownFields = ref([
     id: 'e-mail',
     name: 'e-mail',
     description: 'email адрес',
-    maxLength: 255,
-    minLength: 5,
-    minLengthOptions: Array.from({ length: 8 }, (_, i) => i + 1),
-    allowSpecialChars: true,
-    allowNumbers: true,
-    latinOnly: true
+    regex: '^[a-zA-Z0-9.!#$%&\'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$'
   },
   {
     id: 'telephone-number',
@@ -125,6 +120,7 @@ const updateWellKnownFieldSetting = (fieldId: string, setting: string, value: an
 const updateStandardFieldsGlobalSetting = (setting: string, value: any) => {
   (standardFieldsSettings.value as any)[setting] = value;
 };
+
 </script>
 
 <template>
@@ -174,13 +170,21 @@ const updateStandardFieldsGlobalSetting = (setting: string, value: any) => {
                 variant="outlined"
                 density="comfortable"
                 color="teal-darken-2"
-                style="max-width: 150px;"
+                class="dropdown-select"
                 @update:model-value="updateStandardFieldMaxLength(field.id, $event)"
               >
                 <template #append-inner>
                   <PhCaretUpDown class="dropdown-icon" />
                 </template>
               </v-select>
+              <span class="text-caption text-grey-darken-1 ml-2">
+                {{ field.id === 'text-micro' ? '2-10' : 
+                   field.id === 'text-mini' ? '2-50' : 
+                   field.id === 'text-short' ? '10-200' : 
+                   field.id === 'text-medium' ? '10-500' : 
+                   field.id === 'text-long' ? '50-5000' : 
+                   '100-10000' }}
+              </span>
             </div>
           </div>
         </div>
@@ -201,87 +205,111 @@ const updateStandardFieldsGlobalSetting = (setting: string, value: any) => {
                 
                 <div class="field-settings">
                   <div class="d-flex flex-column mb-2">
-                    <v-select
-                      v-if="field.minLength !== undefined"
-                      :model-value="field.minLength"
-                      :items="field.minLengthOptions"
-                      :label="t('admin.settings.datavalidation.wellKnownFields.minimumLength')"
+                    <!-- Special handling for e-mail field -->
+                    <v-text-field
+                      v-if="field.id === 'e-mail'"
+                      :model-value="field.regex"
+                      label="regex для валидации"
                       variant="outlined"
                       density="compact"
                       color="teal-darken-2"
-                      style="max-width: 150px;"
+                      style="width: 450px;"
                       class="mb-2"
-                      @update:model-value="updateWellKnownFieldSetting(field.id, 'minLength', $event)"
-                    >
-                      <template #append-inner>
-                        <PhCaretUpDown class="dropdown-icon" />
-                      </template>
-                    </v-select>
+                      @update:model-value="updateWellKnownFieldSetting(field.id, 'regex', $event)"
+                    />
                     
-                    <v-select
-                      :model-value="field.maxLength"
-                      :items="Array.from({ length: 100 }, (_, i) => i + 1)"
-                      :label="t('admin.settings.datavalidation.wellKnownFields.maximumLength')"
-                      variant="outlined"
-                      density="compact"
-                      color="teal-darken-2"
-                      style="max-width: 150px;"
-                      class="mb-2"
-                      @update:model-value="updateWellKnownFieldSetting(field.id, 'maxLength', $event)"
-                    >
-                      <template #append-inner>
-                        <PhCaretUpDown class="dropdown-icon" />
-                      </template>
-                    </v-select>
+                    <!-- Regular fields with min/max length -->
+                    <template v-else>
+                      <div class="d-flex align-center mb-2">
+                        <v-select
+                          v-if="field.minLength !== undefined"
+                          :model-value="field.minLength"
+                          :items="field.minLengthOptions"
+                          :label="t('admin.settings.datavalidation.wellKnownFields.minimumLength')"
+                          variant="outlined"
+                          density="compact"
+                          color="teal-darken-2"
+                          class="dropdown-select"
+                          @update:model-value="updateWellKnownFieldSetting(field.id, 'minLength', $event)"
+                        >
+                          <template #append-inner>
+                            <PhCaretUpDown class="dropdown-icon" />
+                          </template>
+                        </v-select>
+                        <span class="text-caption text-grey-darken-1 ml-2">1-8</span>
+                      </div>
+                      
+                      <div class="d-flex align-center mb-2">
+                        <v-select
+                          :model-value="field.maxLength"
+                          :items="Array.from({ length: 100 }, (_, i) => i + 1)"
+                          :label="t('admin.settings.datavalidation.wellKnownFields.maximumLength')"
+                          variant="outlined"
+                          density="compact"
+                          color="teal-darken-2"
+                          class="dropdown-select"
+                          @update:model-value="updateWellKnownFieldSetting(field.id, 'maxLength', $event)"
+                        >
+                          <template #append-inner>
+                            <PhCaretUpDown class="dropdown-icon" />
+                          </template>
+                        </v-select>
+                        <span class="text-caption text-grey-darken-1 ml-2">1-100</span>
+                      </div>
+                    </template>
                     
-                    <v-switch
-                      v-if="field.allowSpecialChars !== undefined"
-                      :model-value="field.allowSpecialChars"
-                      color="teal-darken-2"
-                      label="allow special characters"
-                      hide-details
-                      density="compact"
-                      class="mb-1"
-                      @update:model-value="updateWellKnownFieldSetting(field.id, 'allowSpecialChars', $event)"
-                    />
-                    <v-switch
-                      :model-value="field.allowNumbers"
-                      color="teal-darken-2"
-                      :label="t('admin.settings.datavalidation.wellKnownFields.allowNumbers')"
-                      hide-details
-                      density="compact"
-                      class="mb-1"
-                      @update:model-value="updateWellKnownFieldSetting(field.id, 'allowNumbers', $event)"
-                    />
-                    <v-switch
-                      v-if="field.allowUsernameChars !== undefined"
-                      :model-value="field.allowUsernameChars"
-                      color="teal-darken-2"
-                      :label="t('admin.settings.datavalidation.wellKnownFields.allowUsernameChars', { fieldName: field.id === 'user-name' ? t('admin.settings.datavalidation.wellKnownFields.userName') : t('admin.settings.datavalidation.wellKnownFields.groupName') })"
-                      hide-details
-                      density="compact"
-                      class="mb-1"
-                      @update:model-value="updateWellKnownFieldSetting(field.id, 'allowUsernameChars', $event)"
-                    />
-                    <v-switch
-                      v-if="field.latinOnly !== undefined"
-                      :model-value="field.latinOnly"
-                      color="teal-darken-2"
-                      :label="t('admin.settings.datavalidation.wellKnownFields.latinOnly')"
-                      hide-details
-                      density="compact"
-                      class="mb-1"
-                      @update:model-value="updateWellKnownFieldSetting(field.id, 'latinOnly', $event)"
-                    />
-                    <v-switch
-                      v-if="field.allowSpaces !== undefined"
-                      :model-value="field.allowSpaces"
-                      color="teal-darken-2"
-                      :label="t('admin.settings.datavalidation.wellKnownFields.allowSpaces')"
-                      hide-details
-                      density="compact"
-                      @update:model-value="updateWellKnownFieldSetting(field.id, 'allowSpaces', $event)"
-                    />
+                    <!-- Switches only for non-e-mail fields -->
+                    <template v-if="field.id !== 'e-mail'">
+                      <v-switch
+                        v-if="field.allowSpecialChars !== undefined"
+                        :model-value="field.allowSpecialChars"
+                        color="teal-darken-2"
+                        label="allow special characters"
+                        hide-details
+                        density="compact"
+                        class="mb-1"
+                        @update:model-value="updateWellKnownFieldSetting(field.id, 'allowSpecialChars', $event)"
+                      />
+                      <v-switch
+                        v-if="field.allowNumbers !== undefined"
+                        :model-value="field.allowNumbers"
+                        color="teal-darken-2"
+                        :label="t('admin.settings.datavalidation.wellKnownFields.allowNumbers')"
+                        hide-details
+                        density="compact"
+                        class="mb-1"
+                        @update:model-value="updateWellKnownFieldSetting(field.id, 'allowNumbers', $event)"
+                      />
+                      <v-switch
+                        v-if="field.allowUsernameChars !== undefined"
+                        :model-value="field.allowUsernameChars"
+                        color="teal-darken-2"
+                        :label="t('admin.settings.datavalidation.wellKnownFields.allowUsernameChars', { fieldName: field.id === 'user-name' ? t('admin.settings.datavalidation.wellKnownFields.userName') : t('admin.settings.datavalidation.wellKnownFields.groupName') })"
+                        hide-details
+                        density="compact"
+                        class="mb-1"
+                        @update:model-value="updateWellKnownFieldSetting(field.id, 'allowUsernameChars', $event)"
+                      />
+                      <v-switch
+                        v-if="field.latinOnly !== undefined"
+                        :model-value="field.latinOnly"
+                        color="teal-darken-2"
+                        :label="t('admin.settings.datavalidation.wellKnownFields.latinOnly')"
+                        hide-details
+                        density="compact"
+                        class="mb-1"
+                        @update:model-value="updateWellKnownFieldSetting(field.id, 'latinOnly', $event)"
+                      />
+                      <v-switch
+                        v-if="field.allowSpaces !== undefined"
+                        :model-value="field.allowSpaces"
+                        color="teal-darken-2"
+                        :label="t('admin.settings.datavalidation.wellKnownFields.allowSpaces')"
+                        hide-details
+                        density="compact"
+                        @update:model-value="updateWellKnownFieldSetting(field.id, 'allowSpaces', $event)"
+                      />
+                    </template>
                   </div>
                 </div>
               </div>
@@ -331,7 +359,7 @@ const updateStandardFieldsGlobalSetting = (setting: string, value: any) => {
   border-radius: 6px;
   padding: 12px;
   background-color: rgba(0, 0, 0, 0.01);
-  width: 450px;
+  width: 500px;
 }
 
 .well-known-fields-grid {
@@ -367,5 +395,34 @@ const updateStandardFieldsGlobalSetting = (setting: string, value: any) => {
 :deep(.v-divider) {
   border-color: rgba(0, 0, 0, 0.12);
   opacity: 1;
+}
+
+/* Unified dropdown width - force all selects to be exactly 150px */
+.dropdown-select {
+  width: 150px !important;
+  min-width: 150px !important;
+  max-width: 150px !important;
+  flex: none !important;
+}
+
+/* Target the actual input field inside v-select */
+.dropdown-select :deep(.v-field__input) {
+  width: 150px !important;
+  min-width: 150px !important;
+  max-width: 150px !important;
+}
+
+/* Target the field wrapper */
+.dropdown-select :deep(.v-field) {
+  width: 150px !important;
+  min-width: 150px !important;
+  max-width: 150px !important;
+}
+
+/* Force container width */
+.dropdown-select :deep(.v-input__control) {
+  width: 150px !important;
+  min-width: 150px !important;
+  max-width: 150px !important;
 }
 </style>
