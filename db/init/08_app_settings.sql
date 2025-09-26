@@ -70,7 +70,30 @@ INSERT INTO app.app_settings (
 ('UsersManagement.RegistrationPage', 'registration.page.enabled', 'all', 'false', '{"type": "boolean"}', 'false', 'Users self-registration page', true),
 
 -- Products Options Settings
-('products.options', 'max.options.per.product', 'all', to_jsonb(100), '{"type":"integer","minimum":1,"maximum":1000}', to_jsonb(100), 'Maximum number of direct options per product', false)
+('products.options', 'max.options.per.product', 'all', to_jsonb(100), '{"type":"integer","minimum":1,"maximum":1000}', to_jsonb(100), 'Maximum number of direct options per product', false),
+
+-- Data Validation Settings
+('Application.System.DataValidation', 'standardFields.allowSpecialChars', 'all', 'true', '{"type":"boolean"}', 'true', 'Allow special characters in standard text fields', true),
+('Application.System.DataValidation', 'standardFields.textMicro.maxLength', 'all', '5', '{"type":"integer","minimum":2,"maximum":10}', '5', 'Maximum length for micro text fields', true),
+('Application.System.DataValidation', 'standardFields.textMini.maxLength', 'all', '20', '{"type":"integer","minimum":2,"maximum":50}', '20', 'Maximum length for mini text fields', true),
+('Application.System.DataValidation', 'standardFields.textShort.maxLength', 'all', '100', '{"type":"integer","minimum":10,"maximum":200}', '100', 'Maximum length for short text fields', true),
+('Application.System.DataValidation', 'standardFields.textMedium.maxLength', 'all', '400', '{"type":"integer","minimum":20,"maximum":500}', '400', 'Maximum length for medium text fields', true),
+('Application.System.DataValidation', 'standardFields.textLong.maxLength', 'all', '1000', '{"type":"integer","minimum":50,"maximum":5000}', '1000', 'Maximum length for long text fields', true),
+('Application.System.DataValidation', 'standardFields.textExtraLong.maxLength', 'all', '2000', '{"type":"integer","minimum":100,"maximum":10000}', '2000', 'Maximum length for extra long text fields', true),
+('Application.System.DataValidation', 'wellKnownFields.userName.minLength', 'all', '1', '{"type":"integer","minimum":1,"maximum":5}', '1', 'Minimum length for user name fields', true),
+('Application.System.DataValidation', 'wellKnownFields.userName.maxLength', 'all', '20', '{"type":"integer","minimum":5,"maximum":50}', '20', 'Maximum length for user name fields', true),
+('Application.System.DataValidation', 'wellKnownFields.userName.allowNumbers', 'all', 'true', '{"type":"boolean"}', 'true', 'Allow numbers in user name fields', true),
+('Application.System.DataValidation', 'wellKnownFields.userName.allowUsernameChars', 'all', 'true', '{"type":"boolean"}', 'true', 'Allow username characters in user name fields', true),
+('Application.System.DataValidation', 'wellKnownFields.userName.latinOnly', 'all', 'true', '{"type":"boolean"}', 'true', 'Allow only Latin characters in user name fields', true),
+('Application.System.DataValidation', 'wellKnownFields.groupName.minLength', 'all', '1', '{"type":"integer","minimum":1,"maximum":5}', '1', 'Minimum length for group name fields', true),
+('Application.System.DataValidation', 'wellKnownFields.groupName.maxLength', 'all', '20', '{"type":"integer","minimum":5,"maximum":50}', '20', 'Maximum length for group name fields', true),
+('Application.System.DataValidation', 'wellKnownFields.groupName.allowNumbers', 'all', 'true', '{"type":"boolean"}', 'true', 'Allow numbers in group name fields', true),
+('Application.System.DataValidation', 'wellKnownFields.groupName.allowUsernameChars', 'all', 'true', '{"type":"boolean"}', 'true', 'Allow username characters in group name fields', true),
+('Application.System.DataValidation', 'wellKnownFields.groupName.latinOnly', 'all', 'true', '{"type":"boolean"}', 'true', 'Allow only Latin characters in group name fields', true),
+('Application.System.DataValidation', 'wellKnownFields.email.regex', 'all', '"^[a-zA-Z0-9.!#$%&''*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$"', '{"type":"string","format":"regex"}', '"^[a-zA-Z0-9.!#$%&''*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$"', 'Regular expression for email validation', true),
+('Application.System.DataValidation', 'wellKnownFields.telephoneNumber.maxLength', 'all', '15', '{"type":"integer","minimum":5,"maximum":20}', '15', 'Maximum length for telephone number fields', true),
+('Application.System.DataValidation', 'wellKnownFields.telephoneNumber.mask', 'all', '"+# (###) ###-####"', '{"type":"string","minLength":1,"maxLength":50}', '"+# (###) ###-####"', 'Input mask for telephone number fields', true),
+('Application.System.DataValidation', 'wellKnownFields.telephoneNumber.regex', 'all', '"^\\\\+?[1-9]\\\\d{1,14}$"', '{"type":"string","format":"regex"}', '"^\\\\+?[1-9]\\\\d{1,14}$"', 'Regular expression for telephone number validation', true)
 ON CONFLICT (section_path, setting_name, environment) DO UPDATE SET
     value = EXCLUDED.value,
     validation_schema = EXCLUDED.validation_schema,
