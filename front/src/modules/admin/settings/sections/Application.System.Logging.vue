@@ -224,26 +224,46 @@ async function loadSettings() {
   try {
     console.log('Loading settings for Application.System.Logging');
     
-    // Load all settings in parallel
-    const loadPromises = allSettings.map(settingName => loadSetting(settingName));
-    await Promise.allSettled(loadPromises);
+    // Load all settings for the section in one request
+    const settings = await fetchSettings(section_path);
     
-    // Check if we have any successful loads
-    const successfulLoads = allSettings.filter(settingName => 
-      !settingLoadingStates.value[settingName] && !settingErrorStates.value[settingName]
-    );
-    
-    if (successfulLoads.length === 0) {
-      console.log('No settings loaded successfully - using defaults');
-    } else {
-      console.log(`Successfully loaded ${successfulLoads.length} out of ${allSettings.length} settings`);
+    if (settings && settings.length > 0) {
+      console.log(`Successfully loaded ${settings.length} settings for section: ${section_path}`);
+      
+      // Update local state for each setting
+      allSettings.forEach(settingName => {
+        const setting = settings.find(s => s.setting_name === settingName);
+        if (setting) {
+          updateLocalSetting(settingName, setting.value);
+          settingLoadingStates.value[settingName] = false;
+          settingErrorStates.value[settingName] = false;
+        } else {
+          console.warn(`Setting ${settingName} not found in loaded settings`);
+          settingLoadingStates.value[settingName] = false;
+          settingErrorStates.value[settingName] = true;
+        }
+      });
       
       // Show success toast for initial load
       uiStore.showSuccessSnackbar('настройки успешно загружены');
+    } else {
+      console.log('No settings loaded - using defaults');
+      
+      // Mark all settings as failed to load
+      allSettings.forEach(settingName => {
+        settingLoadingStates.value[settingName] = false;
+        settingErrorStates.value[settingName] = true;
+      });
     }
     
   } catch (error) {
     console.error('Failed to load logging settings:', error);
+    
+    // Mark all settings as failed to load
+    allSettings.forEach(settingName => {
+      settingLoadingStates.value[settingName] = false;
+      settingErrorStates.value[settingName] = true;
+    });
   } finally {
     isLoadingSettings.value = false;
     // Enable user changes after initial load is complete

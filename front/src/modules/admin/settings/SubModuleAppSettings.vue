@@ -10,7 +10,6 @@
  import { ref, computed, onMounted, markRaw, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useAppSettingsStore } from './state.app.settings';
-import { fetchSettings } from './service.fetch.settings';
 import { PhList, PhCaretDown, PhCaretRight, PhGear, PhBriefcase, PhChartLineUp, PhBooks, PhUserGear, PhShield, PhClockUser, PhPassword, PhShieldCheck, PhDesktopTower, PhShareNetwork, PhTextT, PhCheckCircle, PhUsersThree, PhUsers, PhPackage, PhWrench, PhFadersHorizontal } from '@phosphor-icons/vue';
 import { useUiStore } from '@/core/state/uistate';
  
@@ -394,46 +393,22 @@ const resolveSectionIcon = (iconName: string) => {
    }
  };
  
- /**
-  * Fetches settings for the current section
-  * Special handling for the root 'Application' section which may not have settings yet
-  */
- async function loadCurrentSectionSettings() {
-   const section_path = selectedSectionPath.value;
-   
-   
-   try {
-     // For the root 'Application' section, we expect it might not have settings yet
-     if (section_path === 'Application') {
-       try {
-         // Try to fetch settings, but don't display errors if none found
-         await fetchSettings(section_path);
-       } catch (error) {
-         // Silent fail for root section
-         
-       }
-     } else {
-       // For all other sections, fetch normally
-       await fetchSettings(section_path);
-     }
-   } catch (error) {
-     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-     
-     
-     // Show warning for settings load failure
-     uiStore.showWarningSnackbar(`Предупреждение: Не удалось загрузить настройки для секции. ${errorMessage}`);
-   } finally {
-     isInitialLoadComplete.value = true;
-   }
- }
+/**
+ * Initialize component state
+ * Component initialization is now handled by individual section components
+ * No need to preload settings as each component loads its own settings
+ */
+function initializeComponent() {
+  isInitialLoadComplete.value = true;
+}
  
- // Watch for changes to selected section
- watch(selectedSectionPath, (newSectionPath, oldSectionPath) => {
-   if (newSectionPath !== oldSectionPath && isInitialLoadComplete.value) {
-     // Load settings for newly selected section
-     loadCurrentSectionSettings();
-   }
- });
+// Watch for changes to selected section
+watch(selectedSectionPath, (newSectionPath, oldSectionPath) => {
+  if (newSectionPath !== oldSectionPath && isInitialLoadComplete.value) {
+    // Section components handle their own settings loading
+    // No need to preload settings here
+  }
+});
  
  // On component mount
  onMounted(() => {
@@ -453,8 +428,8 @@ const resolveSectionIcon = (iconName: string) => {
      expandParentSections(validSectionPath);
    }
    
-   // Load settings for initially selected section
-   loadCurrentSectionSettings();
+  // Initialize component state
+  initializeComponent();
  });
  
  // Toggle mobile menu
