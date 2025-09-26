@@ -23,9 +23,6 @@ import DataLoading from '@/core/ui/loaders/DataLoading.vue';
 // Section path identifier
 const section_path = 'Application.System.Logging';
 
-// Block identifiers
-const consoleBlockPath = 'Application.System.Logging.ConsoleLoggingBlock';
-const fileBlockPath = 'Application.System.Logging.FileLoggingBlock';
 
 // Store references
 const appSettingsStore = useAppSettingsStore();
@@ -131,37 +128,6 @@ const isErrorEventsDisabled = computed(() => {
   return standardDisabled || hierarchicalDisabled;
 });
 
-// Computed properties for block expansion state
-const isConsoleBlockExpanded = computed(() => 
-  appSettingsStore.isBlockExpanded(consoleBlockPath)
-);
-
-const isFileBlockExpanded = computed(() => 
-  appSettingsStore.isBlockExpanded(fileBlockPath)
-);
-
-// Icons for block expansion
-const consoleChevronIcon = computed(() => 
-  isConsoleBlockExpanded.value ? 'mdi-chevron-up' : 'mdi-chevron-down'
-);
-
-const fileChevronIcon = computed(() => 
-  isFileBlockExpanded.value ? 'mdi-chevron-up' : 'mdi-chevron-down'
-);
-
-/**
- * Toggle console block expansion
- */
-function toggleConsoleBlock() {
-  appSettingsStore.toggleBlock(consoleBlockPath);
-}
-
-/**
- * Toggle file block expansion
- */
-function toggleFileBlock() {
-  appSettingsStore.toggleBlock(fileBlockPath);
-}
 
 /**
  * Update setting in store when local state changes
@@ -385,244 +351,28 @@ onMounted(() => {
     />
     
     <template v-if="!isLoadingSettings">
-      <!-- Console Logging Block -->
-      <div class="logging-block">
-        <!-- Console block header -->
-        <div 
-          class="block-header"
-          :class="{ 'block-expanded': isConsoleBlockExpanded }"
-          @click="toggleConsoleBlock"
-        >
-          <div class="block-header-content">
-            <v-icon 
-              :icon="consoleChevronIcon"
-              size="small"
-              class="chevron-icon"
-            />
-            <h3 class="block-title">
-              {{ t('admin.settings.application.system.logging.console.title') }}
-            </h3>
-          </div>
-        </div>
+      <!-- Console Logging Section -->
+      <div class="settings-group mb-4">
+        <h3 class="text-subtitle-1 mb-2 font-weight-medium">
+          {{ t('admin.settings.application.system.logging.console.title') }}
+        </h3>
         
-        <!-- Divider line -->
-        <div class="block-divider" />
-        
-        <!-- Console block content -->
-        <v-expand-transition>
-          <div
-            v-if="isConsoleBlockExpanded"
-            class="block-content"
-          >
-            <div class="settings-content">
-              <!-- Main console logging row with event types on the right -->
-              <div class="console-logging-row">
-                <!-- Left side: Main console logging switch -->
-                <div class="console-main-switch">
-                  <div class="d-flex align-center">
-                    <v-switch
-                      v-model="consoleLoggingEnabled"
-                      color="teal-darken-2"
-                      :label="t('admin.settings.application.system.logging.console.enabled.label')"
-                      hide-details
-                      :disabled="isSettingDisabled('turn.on.console.logging')"
-                      :loading="settingLoadingStates['turn.on.console.logging']"
-                    />
-                    <v-tooltip
-                      v-if="settingErrorStates['turn.on.console.logging']"
-                      location="top"
-                      max-width="300"
-                    >
-                      <template #activator="{ props }">
-                        <v-icon 
-                          icon="mdi-alert-circle" 
-                          size="small" 
-                          class="ms-2" 
-                          color="error"
-                          v-bind="props"
-                          style="cursor: pointer;"
-                          @click="retrySetting('turn.on.console.logging')"
-                        />
-                      </template>
-                      <div class="pa-2">
-                        <p class="text-subtitle-2 mb-2">
-                          {{ t('admin.settings.usersmanagement.groupsmanagement.messages.error.tooltip.title') }}
-                        </p>
-                        <p class="text-caption">
-                          {{ t('admin.settings.usersmanagement.groupsmanagement.messages.error.tooltip.retry') }}
-                        </p>
-                      </div>
-                    </v-tooltip>
-                  </div>
-                </div>
-
-                <!-- Right side: Event type switches -->
-                <div class="console-event-switches">
-                  <!-- Debug events -->
-                  <div class="d-flex align-center mb-2">
-                    <v-switch
-                      v-model="debugEventsEnabled"
-                      color="teal-darken-2"
-                      :label="t('admin.settings.application.system.logging.console.debug.events.label')"
-                      hide-details
-                      :disabled="isDebugEventsDisabled"
-                      :loading="settingLoadingStates['console.log.debug.events']"
-                      density="compact"
-                    />
-                    <v-tooltip
-                      v-if="settingErrorStates['console.log.debug.events']"
-                      location="top"
-                      max-width="300"
-                    >
-                      <template #activator="{ props }">
-                        <v-icon 
-                          icon="mdi-alert-circle" 
-                          size="small" 
-                          class="ms-2" 
-                          color="error"
-                          v-bind="props"
-                          style="cursor: pointer;"
-                          @click="retrySetting('console.log.debug.events')"
-                        />
-                      </template>
-                      <div class="pa-2">
-                        <p class="text-subtitle-2 mb-2">
-                          {{ t('admin.settings.usersmanagement.groupsmanagement.messages.error.tooltip.title') }}
-                        </p>
-                        <p class="text-caption">
-                          {{ t('admin.settings.usersmanagement.groupsmanagement.messages.error.tooltip.retry') }}
-                        </p>
-                      </div>
-                    </v-tooltip>
-                  </div>
-
-                  <!-- Info events -->
-                  <div class="d-flex align-center mb-2">
-                    <v-switch
-                      v-model="infoEventsEnabled"
-                      color="teal-darken-2"
-                      :label="t('admin.settings.application.system.logging.console.info.events.label')"
-                      hide-details
-                      :disabled="isInfoEventsDisabled"
-                      :loading="settingLoadingStates['console.log.info.events']"
-                      density="compact"
-                    />
-                    <v-tooltip
-                      v-if="settingErrorStates['console.log.info.events']"
-                      location="top"
-                      max-width="300"
-                    >
-                      <template #activator="{ props }">
-                        <v-icon 
-                          icon="mdi-alert-circle" 
-                          size="small" 
-                          class="ms-2" 
-                          color="error"
-                          v-bind="props"
-                          style="cursor: pointer;"
-                          @click="retrySetting('console.log.info.events')"
-                        />
-                      </template>
-                      <div class="pa-2">
-                        <p class="text-subtitle-2 mb-2">
-                          {{ t('admin.settings.usersmanagement.groupsmanagement.messages.error.tooltip.title') }}
-                        </p>
-                        <p class="text-caption">
-                          {{ t('admin.settings.usersmanagement.groupsmanagement.messages.error.tooltip.retry') }}
-                        </p>
-                      </div>
-                    </v-tooltip>
-                  </div>
-
-                  <!-- Error events -->
-                  <div class="d-flex align-center">
-                    <v-switch
-                      v-model="errorEventsEnabled"
-                      color="teal-darken-2"
-                      :label="t('admin.settings.application.system.logging.console.error.events.label')"
-                      hide-details
-                      :disabled="isErrorEventsDisabled"
-                      :loading="settingLoadingStates['console.log.error.events']"
-                      density="compact"
-                    />
-                    <v-tooltip
-                      v-if="settingErrorStates['console.log.error.events']"
-                      location="top"
-                      max-width="300"
-                    >
-                      <template #activator="{ props }">
-                        <v-icon 
-                          icon="mdi-alert-circle" 
-                          size="small" 
-                          class="ms-2" 
-                          color="error"
-                          v-bind="props"
-                          style="cursor: pointer;"
-                          @click="retrySetting('console.log.error.events')"
-                        />
-                      </template>
-                      <div class="pa-2">
-                        <p class="text-subtitle-2 mb-2">
-                          {{ t('admin.settings.usersmanagement.groupsmanagement.messages.error.tooltip.title') }}
-                        </p>
-                        <p class="text-caption">
-                          {{ t('admin.settings.usersmanagement.groupsmanagement.messages.error.tooltip.retry') }}
-                        </p>
-                      </div>
-                    </v-tooltip>
-                  </div>
-                </div>
-              </div>
-            </div>
-            
-            <!-- Bottom divider when expanded -->
-            <div class="block-divider" />
-          </div>
-        </v-expand-transition>
-      </div>
-      
-      <!-- File Logging Block -->
-      <div class="logging-block">
-        <!-- File block header -->
-        <div 
-          class="block-header"
-          :class="{ 'block-expanded': isFileBlockExpanded }"
-          @click="toggleFileBlock"
-        >
-          <div class="block-header-content">
-            <v-icon 
-              :icon="fileChevronIcon"
-              size="small"
-              class="chevron-icon"
-            />
-            <h3 class="block-title">
-              {{ t('admin.settings.application.system.logging.file.title') }}
-            </h3>
-          </div>
-        </div>
-        
-        <!-- Divider line -->
-        <div class="block-divider" />
-        
-        <!-- File block content -->
-        <v-expand-transition>
-          <div
-            v-if="isFileBlockExpanded"
-            class="block-content"
-          >
-            <div class="settings-content">
-              <div class="d-flex align-center mb-3">
+        <div class="settings-subgroup">
+          <!-- Main console logging row with event types on the right -->
+          <div class="console-logging-row">
+            <!-- Left side: Main console logging switch -->
+            <div class="console-main-switch">
+              <div class="d-flex align-center">
                 <v-switch
-                  v-model="fileLoggingEnabled"
+                  v-model="consoleLoggingEnabled"
                   color="teal-darken-2"
-                  :label="t('admin.settings.application.system.logging.file.enabled.label')"
+                  :label="t('admin.settings.application.system.logging.console.enabled.label')"
                   hide-details
-                  :disabled="isSettingDisabled('turn.on.file.logging')"
-                  :loading="settingLoadingStates['turn.on.file.logging']"
+                  :disabled="isSettingDisabled('turn.on.console.logging')"
+                  :loading="settingLoadingStates['turn.on.console.logging']"
                 />
-                <span class="text-caption text-grey ms-3">в разработке</span>
                 <v-tooltip
-                  v-if="settingErrorStates['turn.on.file.logging']"
+                  v-if="settingErrorStates['turn.on.console.logging']"
                   location="top"
                   max-width="300"
                 >
@@ -634,7 +384,7 @@ onMounted(() => {
                       color="error"
                       v-bind="props"
                       style="cursor: pointer;"
-                      @click="retrySetting('turn.on.file.logging')"
+                      @click="retrySetting('turn.on.console.logging')"
                     />
                   </template>
                   <div class="pa-2">
@@ -647,16 +397,176 @@ onMounted(() => {
                   </div>
                 </v-tooltip>
               </div>
-              
-              <div class="setting-note">
-                {{ t('admin.settings.application.security.sessionmanagement.in.development') }}
+            </div>
+
+            <!-- Right side: Event type switches -->
+            <div class="console-event-switches">
+              <!-- Debug events -->
+              <div class="d-flex align-center mb-2">
+                <v-switch
+                  v-model="debugEventsEnabled"
+                  color="teal-darken-2"
+                  :label="t('admin.settings.application.system.logging.console.debug.events.label')"
+                  hide-details
+                  :disabled="isDebugEventsDisabled"
+                  :loading="settingLoadingStates['console.log.debug.events']"
+                  density="compact"
+                />
+                <v-tooltip
+                  v-if="settingErrorStates['console.log.debug.events']"
+                  location="top"
+                  max-width="300"
+                >
+                  <template #activator="{ props }">
+                    <v-icon 
+                      icon="mdi-alert-circle" 
+                      size="small" 
+                      class="ms-2" 
+                      color="error"
+                      v-bind="props"
+                      style="cursor: pointer;"
+                      @click="retrySetting('console.log.debug.events')"
+                    />
+                  </template>
+                  <div class="pa-2">
+                    <p class="text-subtitle-2 mb-2">
+                      {{ t('admin.settings.usersmanagement.groupsmanagement.messages.error.tooltip.title') }}
+                    </p>
+                    <p class="text-caption">
+                      {{ t('admin.settings.usersmanagement.groupsmanagement.messages.error.tooltip.retry') }}
+                    </p>
+                  </div>
+                </v-tooltip>
+              </div>
+
+              <!-- Info events -->
+              <div class="d-flex align-center mb-2">
+                <v-switch
+                  v-model="infoEventsEnabled"
+                  color="teal-darken-2"
+                  :label="t('admin.settings.application.system.logging.console.info.events.label')"
+                  hide-details
+                  :disabled="isInfoEventsDisabled"
+                  :loading="settingLoadingStates['console.log.info.events']"
+                  density="compact"
+                />
+                <v-tooltip
+                  v-if="settingErrorStates['console.log.info.events']"
+                  location="top"
+                  max-width="300"
+                >
+                  <template #activator="{ props }">
+                    <v-icon 
+                      icon="mdi-alert-circle" 
+                      size="small" 
+                      class="ms-2" 
+                      color="error"
+                      v-bind="props"
+                      style="cursor: pointer;"
+                      @click="retrySetting('console.log.info.events')"
+                    />
+                  </template>
+                  <div class="pa-2">
+                    <p class="text-subtitle-2 mb-2">
+                      {{ t('admin.settings.usersmanagement.groupsmanagement.messages.error.tooltip.title') }}
+                    </p>
+                    <p class="text-caption">
+                      {{ t('admin.settings.usersmanagement.groupsmanagement.messages.error.tooltip.retry') }}
+                    </p>
+                  </div>
+                </v-tooltip>
+              </div>
+
+              <!-- Error events -->
+              <div class="d-flex align-center">
+                <v-switch
+                  v-model="errorEventsEnabled"
+                  color="teal-darken-2"
+                  :label="t('admin.settings.application.system.logging.console.error.events.label')"
+                  hide-details
+                  :disabled="isErrorEventsDisabled"
+                  :loading="settingLoadingStates['console.log.error.events']"
+                  density="compact"
+                />
+                <v-tooltip
+                  v-if="settingErrorStates['console.log.error.events']"
+                  location="top"
+                  max-width="300"
+                >
+                  <template #activator="{ props }">
+                    <v-icon 
+                      icon="mdi-alert-circle" 
+                      size="small" 
+                      class="ms-2" 
+                      color="error"
+                      v-bind="props"
+                      style="cursor: pointer;"
+                      @click="retrySetting('console.log.error.events')"
+                    />
+                  </template>
+                  <div class="pa-2">
+                    <p class="text-subtitle-2 mb-2">
+                      {{ t('admin.settings.usersmanagement.groupsmanagement.messages.error.tooltip.title') }}
+                    </p>
+                    <p class="text-caption">
+                      {{ t('admin.settings.usersmanagement.groupsmanagement.messages.error.tooltip.retry') }}
+                    </p>
+                  </div>
+                </v-tooltip>
               </div>
             </div>
-            
-            <!-- Bottom divider when expanded -->
-            <div class="block-divider" />
           </div>
-        </v-expand-transition>
+        </div>
+      </div>
+      
+      <!-- File Logging Section -->
+      <div class="settings-group mb-6">
+        <h3 class="text-subtitle-1 mb-2 font-weight-medium">
+          {{ t('admin.settings.application.system.logging.file.title') }}
+        </h3>
+        
+        <div class="settings-subgroup">
+          <div class="d-flex align-center mb-3">
+            <v-switch
+              v-model="fileLoggingEnabled"
+              color="teal-darken-2"
+              :label="t('admin.settings.application.system.logging.file.enabled.label')"
+              hide-details
+              :disabled="isSettingDisabled('turn.on.file.logging')"
+              :loading="settingLoadingStates['turn.on.file.logging']"
+            />
+            <span class="text-caption text-grey ms-3">в разработке</span>
+            <v-tooltip
+              v-if="settingErrorStates['turn.on.file.logging']"
+              location="top"
+              max-width="300"
+            >
+              <template #activator="{ props }">
+                <v-icon 
+                  icon="mdi-alert-circle" 
+                  size="small" 
+                  class="ms-2" 
+                  color="error"
+                  v-bind="props"
+                  style="cursor: pointer;"
+                  @click="retrySetting('turn.on.file.logging')"
+                />
+              </template>
+              <div class="pa-2">
+                <p class="text-subtitle-2 mb-2">
+                  {{ t('admin.settings.usersmanagement.groupsmanagement.messages.error.tooltip.title') }}
+                </p>
+                <p class="text-caption">
+                  {{ t('admin.settings.usersmanagement.groupsmanagement.messages.error.tooltip.retry') }}
+                </p>
+              </div>
+            </v-tooltip>
+          </div>
+          
+          <div class="setting-note">
+            {{ t('admin.settings.application.security.sessionmanagement.in.development') }}
+          </div>
+        </div>
       </div>
     </template>
   </div>
@@ -668,54 +578,19 @@ onMounted(() => {
   position: relative;
 }
 
-.logging-block {
-  margin-bottom: 16px;
-}
-
-.block-header {
-  display: flex;
-  align-items: center;
-  padding: 12px 16px;
-  cursor: pointer;
-  transition: background-color 0.2s ease;
-  user-select: none;
-}
-
-.block-header:hover {
+.settings-group {
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  border-radius: 8px;
+  padding: 16px;
   background-color: rgba(0, 0, 0, 0.02);
 }
 
-.block-header-content {
-  display: flex;
-  align-items: center;
-  gap: 12px;
+.settings-subgroup {
+  margin-bottom: 16px;
 }
 
-.chevron-icon {
-  color: rgba(0, 0, 0, 0.6);
-  transition: transform 0.3s ease;
-}
-
-.block-expanded .chevron-icon {
-  transform: rotate(180deg);
-}
-
-.block-title {
-  font-size: 0.95rem;
-  font-weight: 500;
-  color: rgba(0, 0, 0, 0.87);
-  margin: 0;
-}
-
-.block-divider {
-  height: 1px;
-  background-color: rgba(0, 0, 0, 0.3);
-  margin: 0;
-}
-
-.block-content {
-  background-color: rgba(0, 0, 0, 0.01);
-  transition: background-color 0.2s ease;
+.settings-subgroup:last-child {
+  margin-bottom: 0;
 }
 
 .settings-content {
