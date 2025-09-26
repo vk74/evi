@@ -2,7 +2,7 @@
   File: Application.System.DataValidation.vue - frontend file
   Description: Data validation system settings for application data integrity
   Purpose: Configure data validation rules, patterns, and validation policies
-  Version: 1.1.0
+  Version: 1.3.0
   
   Features:
   - Standard fields validation settings (text-micro, text-mini, etc.)
@@ -13,7 +13,7 @@
 -->
 
 <script setup lang="ts">
-import { ref, onMounted, watch, computed } from 'vue';
+import { ref, onMounted, watch, computed, nextTick } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { PhCaretUpDown } from '@phosphor-icons/vue';
 import { useAppSettingsStore } from '@/modules/admin/settings/state.app.settings';
@@ -244,69 +244,74 @@ async function loadSetting(settingName: string): Promise<boolean> {
  * Update local setting value based on setting name
  */
 function updateLocalSetting(settingName: string, value: any) {
+  // Helper function to safely convert values without changing null
+  const safeBoolean = (val: any) => val === null ? null : Boolean(val);
+  const safeNumber = (val: any) => val === null ? null : Number(val);
+  const safeString = (val: any) => val === null ? null : String(val);
+
   switch (settingName) {
     case 'standardFields.allowSpecialChars':
-      standardFieldsSettings.value.allowSpecialChars = Boolean(value);
+      standardFieldsSettings.value.allowSpecialChars = safeBoolean(value);
       break;
     case 'standardFields.textMicro.maxLength':
-      standardFields.value[0].maxLength = Number(value);
+      standardFields.value[0].maxLength = safeNumber(value);
       break;
     case 'standardFields.textMini.maxLength':
-      standardFields.value[1].maxLength = Number(value);
+      standardFields.value[1].maxLength = safeNumber(value);
       break;
     case 'standardFields.textShort.maxLength':
-      standardFields.value[2].maxLength = Number(value);
+      standardFields.value[2].maxLength = safeNumber(value);
       break;
     case 'standardFields.textMedium.maxLength':
-      standardFields.value[3].maxLength = Number(value);
+      standardFields.value[3].maxLength = safeNumber(value);
       break;
     case 'standardFields.textLong.maxLength':
-      standardFields.value[4].maxLength = Number(value);
+      standardFields.value[4].maxLength = safeNumber(value);
       break;
     case 'standardFields.textExtraLong.maxLength':
-      standardFields.value[5].maxLength = Number(value);
+      standardFields.value[5].maxLength = safeNumber(value);
       break;
     case 'wellKnownFields.userName.minLength':
-      wellKnownFields.value[0].minLength = Number(value);
+      wellKnownFields.value[0].minLength = safeNumber(value);
       break;
     case 'wellKnownFields.userName.maxLength':
-      wellKnownFields.value[0].maxLength = Number(value);
+      wellKnownFields.value[0].maxLength = safeNumber(value);
       break;
     case 'wellKnownFields.userName.allowNumbers':
-      wellKnownFields.value[0].allowNumbers = Boolean(value);
+      wellKnownFields.value[0].allowNumbers = safeBoolean(value);
       break;
     case 'wellKnownFields.userName.allowUsernameChars':
-      wellKnownFields.value[0].allowUsernameChars = Boolean(value);
+      wellKnownFields.value[0].allowUsernameChars = safeBoolean(value);
       break;
     case 'wellKnownFields.userName.latinOnly':
-      wellKnownFields.value[0].latinOnly = Boolean(value);
+      wellKnownFields.value[0].latinOnly = safeBoolean(value);
       break;
     case 'wellKnownFields.groupName.minLength':
-      wellKnownFields.value[1].minLength = Number(value);
+      wellKnownFields.value[1].minLength = safeNumber(value);
       break;
     case 'wellKnownFields.groupName.maxLength':
-      wellKnownFields.value[1].maxLength = Number(value);
+      wellKnownFields.value[1].maxLength = safeNumber(value);
       break;
     case 'wellKnownFields.groupName.allowNumbers':
-      wellKnownFields.value[1].allowNumbers = Boolean(value);
+      wellKnownFields.value[1].allowNumbers = safeBoolean(value);
       break;
     case 'wellKnownFields.groupName.allowUsernameChars':
-      wellKnownFields.value[1].allowUsernameChars = Boolean(value);
+      wellKnownFields.value[1].allowUsernameChars = safeBoolean(value);
       break;
     case 'wellKnownFields.groupName.latinOnly':
-      wellKnownFields.value[1].latinOnly = Boolean(value);
+      wellKnownFields.value[1].latinOnly = safeBoolean(value);
       break;
     case 'wellKnownFields.email.regex':
-      wellKnownFields.value[2].regex = String(value);
+      wellKnownFields.value[2].regex = safeString(value);
       break;
     case 'wellKnownFields.telephoneNumber.maxLength':
-      wellKnownFields.value[3].maxLength = Number(value);
+      wellKnownFields.value[3].maxLength = safeNumber(value);
       break;
     case 'wellKnownFields.telephoneNumber.mask':
-      wellKnownFields.value[3].mask = String(value);
+      wellKnownFields.value[3].mask = safeString(value);
       break;
     case 'wellKnownFields.telephoneNumber.regex':
-      wellKnownFields.value[3].regex = String(value);
+      wellKnownFields.value[3].regex = safeString(value);
       break;
   }
 }
@@ -319,6 +324,9 @@ async function loadSettings() {
   
   try {
     console.log('Loading settings for Application.System.DataValidation');
+    
+    // Disable watch effects during initial load
+    isFirstLoad.value = true;
     
     // Load all settings for the section in one request
     const settings = await fetchSettings(section_path);
@@ -340,6 +348,11 @@ async function loadSettings() {
         }
       });
       
+      // Enable user changes after all settings are loaded and local state is updated
+      // Use nextTick to ensure all synchronous updates complete before enabling watchers
+      await nextTick();
+      isFirstLoad.value = false;
+      
       // Show success toast for initial load
       uiStore.showSuccessSnackbar('настройки успешно загружены');
     } else {
@@ -350,6 +363,10 @@ async function loadSettings() {
         settingLoadingStates.value[settingName] = false;
         settingErrorStates.value[settingName] = true;
       });
+      
+      // Enable user changes even if no settings loaded
+      await nextTick();
+      isFirstLoad.value = false;
     }
     
   } catch (error) {
@@ -360,10 +377,12 @@ async function loadSettings() {
       settingLoadingStates.value[settingName] = false;
       settingErrorStates.value[settingName] = true;
     });
+    
+    // Enable user changes even on error
+    await nextTick();
+    isFirstLoad.value = false;
   } finally {
     isLoadingSettings.value = false;
-    // Enable user changes after initial load is complete
-    isFirstLoad.value = false;
   }
 }
 
@@ -400,20 +419,24 @@ const updateStandardFieldsGlobalSetting = (setting: string, value: any) => {
 // Watch for changes in local state - only after first load is complete
 watch(
   () => standardFieldsSettings.value.allowSpecialChars,
-  (newValue) => {
-    if (!isFirstLoad.value && newValue !== null) {
+  (newValue, oldValue) => {
+    // Only update if: not first load, value is not null, and value actually changed
+    if (!isFirstLoad.value && newValue !== null && newValue !== oldValue) {
+      console.log('Watch triggered: standardFields.allowSpecialChars', { newValue, oldValue, isFirstLoad: isFirstLoad.value });
       updateSetting('standardFields.allowSpecialChars', newValue);
     }
-  }
+  },
+  { flush: 'post' } // Ensure this runs after DOM updates
 );
 
 // Watch for standard fields max length changes
 watch(
   () => standardFields.value.map(f => f.maxLength),
-  (newValues) => {
+  (newValues, oldValues) => {
     if (!isFirstLoad.value) {
       newValues.forEach((value, index) => {
-        if (value !== null) {
+        // Only update if value is not null and actually changed
+        if (value !== null && value !== oldValues?.[index]) {
           // Map field IDs to correct setting names
           const fieldIdToSettingName = {
             'text-micro': 'textMicro',
@@ -424,43 +447,88 @@ watch(
             'text-extralong': 'textExtraLong'
           };
           const settingName = `standardFields.${fieldIdToSettingName[standardFields.value[index].id]}.maxLength`;
+          console.log('Watch triggered: standardFields maxLength', { settingName, value, oldValue: oldValues?.[index], isFirstLoad: isFirstLoad.value });
           updateSetting(settingName, value);
         }
       });
     }
   },
-  { deep: true }
+  { deep: true, flush: 'post' } // Ensure this runs after DOM updates
 );
 
 // Watch for well-known fields changes
 watch(
   () => wellKnownFields.value,
-  (newFields) => {
+  (newFields, oldFields) => {
     if (!isFirstLoad.value) {
-      newFields.forEach(field => {
+      newFields.forEach((field, index) => {
+        const oldField = oldFields?.[index];
+        
         if (field.id === 'user-name') {
-          if (field.minLength !== null) updateSetting('wellKnownFields.userName.minLength', field.minLength);
-          if (field.maxLength !== null) updateSetting('wellKnownFields.userName.maxLength', field.maxLength);
-          if (field.allowNumbers !== null) updateSetting('wellKnownFields.userName.allowNumbers', field.allowNumbers);
-          if (field.allowUsernameChars !== null) updateSetting('wellKnownFields.userName.allowUsernameChars', field.allowUsernameChars);
-          if (field.latinOnly !== null) updateSetting('wellKnownFields.userName.latinOnly', field.latinOnly);
+          if (field.minLength !== null && field.minLength !== oldField?.minLength) {
+            console.log('Watch triggered: wellKnownFields.userName.minLength', { value: field.minLength, oldValue: oldField?.minLength, isFirstLoad: isFirstLoad.value });
+            updateSetting('wellKnownFields.userName.minLength', field.minLength);
+          }
+          if (field.maxLength !== null && field.maxLength !== oldField?.maxLength) {
+            console.log('Watch triggered: wellKnownFields.userName.maxLength', { value: field.maxLength, oldValue: oldField?.maxLength, isFirstLoad: isFirstLoad.value });
+            updateSetting('wellKnownFields.userName.maxLength', field.maxLength);
+          }
+          if (field.allowNumbers !== null && field.allowNumbers !== oldField?.allowNumbers) {
+            console.log('Watch triggered: wellKnownFields.userName.allowNumbers', { value: field.allowNumbers, oldValue: oldField?.allowNumbers, isFirstLoad: isFirstLoad.value });
+            updateSetting('wellKnownFields.userName.allowNumbers', field.allowNumbers);
+          }
+          if (field.allowUsernameChars !== null && field.allowUsernameChars !== oldField?.allowUsernameChars) {
+            console.log('Watch triggered: wellKnownFields.userName.allowUsernameChars', { value: field.allowUsernameChars, oldValue: oldField?.allowUsernameChars, isFirstLoad: isFirstLoad.value });
+            updateSetting('wellKnownFields.userName.allowUsernameChars', field.allowUsernameChars);
+          }
+          if (field.latinOnly !== null && field.latinOnly !== oldField?.latinOnly) {
+            console.log('Watch triggered: wellKnownFields.userName.latinOnly', { value: field.latinOnly, oldValue: oldField?.latinOnly, isFirstLoad: isFirstLoad.value });
+            updateSetting('wellKnownFields.userName.latinOnly', field.latinOnly);
+          }
         } else if (field.id === 'group-name') {
-          if (field.minLength !== null) updateSetting('wellKnownFields.groupName.minLength', field.minLength);
-          if (field.maxLength !== null) updateSetting('wellKnownFields.groupName.maxLength', field.maxLength);
-          if (field.allowNumbers !== null) updateSetting('wellKnownFields.groupName.allowNumbers', field.allowNumbers);
-          if (field.allowUsernameChars !== null) updateSetting('wellKnownFields.groupName.allowUsernameChars', field.allowUsernameChars);
-          if (field.latinOnly !== null) updateSetting('wellKnownFields.groupName.latinOnly', field.latinOnly);
+          if (field.minLength !== null && field.minLength !== oldField?.minLength) {
+            console.log('Watch triggered: wellKnownFields.groupName.minLength', { value: field.minLength, oldValue: oldField?.minLength, isFirstLoad: isFirstLoad.value });
+            updateSetting('wellKnownFields.groupName.minLength', field.minLength);
+          }
+          if (field.maxLength !== null && field.maxLength !== oldField?.maxLength) {
+            console.log('Watch triggered: wellKnownFields.groupName.maxLength', { value: field.maxLength, oldValue: oldField?.maxLength, isFirstLoad: isFirstLoad.value });
+            updateSetting('wellKnownFields.groupName.maxLength', field.maxLength);
+          }
+          if (field.allowNumbers !== null && field.allowNumbers !== oldField?.allowNumbers) {
+            console.log('Watch triggered: wellKnownFields.groupName.allowNumbers', { value: field.allowNumbers, oldValue: oldField?.allowNumbers, isFirstLoad: isFirstLoad.value });
+            updateSetting('wellKnownFields.groupName.allowNumbers', field.allowNumbers);
+          }
+          if (field.allowUsernameChars !== null && field.allowUsernameChars !== oldField?.allowUsernameChars) {
+            console.log('Watch triggered: wellKnownFields.groupName.allowUsernameChars', { value: field.allowUsernameChars, oldValue: oldField?.allowUsernameChars, isFirstLoad: isFirstLoad.value });
+            updateSetting('wellKnownFields.groupName.allowUsernameChars', field.allowUsernameChars);
+          }
+          if (field.latinOnly !== null && field.latinOnly !== oldField?.latinOnly) {
+            console.log('Watch triggered: wellKnownFields.groupName.latinOnly', { value: field.latinOnly, oldValue: oldField?.latinOnly, isFirstLoad: isFirstLoad.value });
+            updateSetting('wellKnownFields.groupName.latinOnly', field.latinOnly);
+          }
         } else if (field.id === 'e-mail') {
-          if (field.regex !== null) updateSetting('wellKnownFields.email.regex', field.regex);
+          if (field.regex !== null && field.regex !== oldField?.regex) {
+            console.log('Watch triggered: wellKnownFields.email.regex', { value: field.regex, oldValue: oldField?.regex, isFirstLoad: isFirstLoad.value });
+            updateSetting('wellKnownFields.email.regex', field.regex);
+          }
         } else if (field.id === 'telephone-number') {
-          if (field.maxLength !== null) updateSetting('wellKnownFields.telephoneNumber.maxLength', field.maxLength);
-          if (field.mask !== null) updateSetting('wellKnownFields.telephoneNumber.mask', field.mask);
-          if (field.regex !== null) updateSetting('wellKnownFields.telephoneNumber.regex', field.regex);
+          if (field.maxLength !== null && field.maxLength !== oldField?.maxLength) {
+            console.log('Watch triggered: wellKnownFields.telephoneNumber.maxLength', { value: field.maxLength, oldValue: oldField?.maxLength, isFirstLoad: isFirstLoad.value });
+            updateSetting('wellKnownFields.telephoneNumber.maxLength', field.maxLength);
+          }
+          if (field.mask !== null && field.mask !== oldField?.mask) {
+            console.log('Watch triggered: wellKnownFields.telephoneNumber.mask', { value: field.mask, oldValue: oldField?.mask, isFirstLoad: isFirstLoad.value });
+            updateSetting('wellKnownFields.telephoneNumber.mask', field.mask);
+          }
+          if (field.regex !== null && field.regex !== oldField?.regex) {
+            console.log('Watch triggered: wellKnownFields.telephoneNumber.regex', { value: field.regex, oldValue: oldField?.regex, isFirstLoad: isFirstLoad.value });
+            updateSetting('wellKnownFields.telephoneNumber.regex', field.regex);
+          }
         }
       });
     }
   },
-  { deep: true }
+  { deep: true, flush: 'post' } // Ensure this runs after DOM updates
 );
 
 // Watch for changes in loading state from the store

@@ -56,15 +56,25 @@ async function loadSettings() {
   
   try {
     console.log('Loading settings for Authentication Policies');
+    
+    // Disable watch effects during initial load
+    isFirstLoad.value = true;
+    
+    // Load all settings for the section in one request
     const settings = await fetchSettings(section_path);
     
     if (settings && settings.length > 0) {
+      console.log(`Successfully loaded ${settings.length} settings for section: ${section_path}`);
       console.log('Received settings:', settings);
+      
+      // Show success toast for initial load
+      // Note: This component doesn't have individual setting management yet
+      // When settings are implemented, they should be processed here
     } else {
-      console.log('No settings received for Authentication Policies');
+      console.log('No settings loaded - using defaults');
     }
   } catch (error) {
-    console.error('Failed to load settings:', error);
+    console.error('Failed to load authentication settings:', error);
   } finally {
     isLoadingSettings.value = false;
   }
