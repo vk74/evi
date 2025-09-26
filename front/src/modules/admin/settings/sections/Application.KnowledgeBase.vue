@@ -2,7 +2,7 @@
   File: Application.KnowledgeBase.vue - frontend file
   Description: Knowledge base module visibility settings
   Purpose: Enable/disable knowledge base module visibility
-  Version: 1.1.0
+  Version: 1.2.0
   
   Features:
   - Knowledge base module visibility enable/disable
@@ -12,7 +12,7 @@
 -->
 
 <script setup lang="ts">
-import { ref, onMounted, watch, computed } from 'vue';
+import { ref, onMounted, watch, computed, nextTick } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useAppSettingsStore } from '@/modules/admin/settings/state.app.settings';
 import { fetchSettings } from '@/modules/admin/settings/service.fetch.settings';
@@ -144,9 +144,12 @@ async function loadSetting(settingName: string): Promise<boolean> {
  * Update local setting value based on setting name
  */
 function updateLocalSetting(settingName: string, value: any) {
+  // Helper function to safely convert values without changing null
+  const safeBoolean = (val: any) => val === null ? null : Boolean(val);
+
   switch (settingName) {
     case 'knowledgebase.module.is.visible':
-      knowledgeBaseModuleVisible.value = Boolean(value);
+      knowledgeBaseModuleVisible.value = safeBoolean(value);
       break;
   }
 }
@@ -183,6 +186,11 @@ async function loadSettings() {
         }
       });
       
+      // Enable user changes after all settings are loaded and local state is updated
+      // Use nextTick to ensure all synchronous updates complete before enabling watchers
+      await nextTick();
+      isFirstLoad.value = false;
+      
       // Show success toast for initial load
       uiStore.showSuccessSnackbar('настройки успешно загружены');
     } else {
@@ -193,6 +201,10 @@ async function loadSettings() {
         settingLoadingStates.value[settingName] = false;
         settingErrorStates.value[settingName] = true;
       });
+      
+      // Enable user changes even if no settings loaded
+      await nextTick();
+      isFirstLoad.value = false;
     }
     
   } catch (error) {
@@ -203,10 +215,12 @@ async function loadSettings() {
       settingLoadingStates.value[settingName] = false;
       settingErrorStates.value[settingName] = true;
     });
+    
+    // Enable user changes even on error
+    await nextTick();
+    isFirstLoad.value = false;
   } finally {
     isLoadingSettings.value = false;
-    // Enable user changes after initial load is complete
-    isFirstLoad.value = false;
   }
 }
 

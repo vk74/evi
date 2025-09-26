@@ -1,13 +1,13 @@
 <!--
   File: Application.Security.PasswordPolicies.vue
-  Version: 1.2.0
+  Version: 1.3.0
   Description: Password policies settings component for frontend
   Purpose: Configure password-related security settings including length, complexity, and expiration
   Frontend file that manages password policy configuration UI and integrates with settings store
 -->
 
 <script setup lang="ts">
-import { computed, onMounted, watch, ref } from 'vue';
+import { computed, onMounted, watch, ref, nextTick } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useAppSettingsStore } from '@/modules/admin/settings/state.app.settings';
 import { fetchSettings } from '@/modules/admin/settings/service.fetch.settings';
@@ -194,27 +194,32 @@ async function loadSetting(settingName: string): Promise<boolean> {
  * Update local setting value based on setting name
  */
 function updateLocalSetting(settingName: string, value: any) {
+  // Helper functions to safely convert values without changing null
+  const safeBoolean = (val: any) => val === null ? null : Boolean(val);
+  const safeNumber = (val: any) => val === null ? null : Number(val);
+  const safeString = (val: any) => val === null ? null : String(val);
+
   switch (settingName) {
     case 'password.min.length':
-      passwordMinLength.value = Number(value);
+      passwordMinLength.value = safeNumber(value);
       break;
     case 'password.max.length':
-      passwordMaxLength.value = Number(value);
+      passwordMaxLength.value = safeNumber(value);
       break;
     case 'password.require.lowercase':
-      requireLowercase.value = Boolean(value);
+      requireLowercase.value = safeBoolean(value);
       break;
     case 'password.require.uppercase':
-      requireUppercase.value = Boolean(value);
+      requireUppercase.value = safeBoolean(value);
       break;
     case 'password.require.numbers':
-      requireNumbers.value = Boolean(value);
+      requireNumbers.value = safeBoolean(value);
       break;
     case 'password.require.special.chars':
-      requireSpecialChars.value = Boolean(value);
+      requireSpecialChars.value = safeBoolean(value);
       break;
     case 'password.allowed.special.chars':
-      allowedSpecialChars.value = String(value);
+      allowedSpecialChars.value = safeString(value);
       break;
   }
 }
@@ -251,6 +256,11 @@ async function loadSettings() {
         }
       });
       
+      // Enable user changes after all settings are loaded and local state is updated
+      // Use nextTick to ensure all synchronous updates complete before enabling watchers
+      await nextTick();
+      isFirstLoad.value = false;
+      
       // Show success toast for initial load
       uiStore.showSuccessSnackbar('настройки успешно загружены');
     } else {
@@ -261,6 +271,10 @@ async function loadSettings() {
         settingLoadingStates.value[settingName] = false;
         settingErrorStates.value[settingName] = true;
       });
+      
+      // Enable user changes even if no settings loaded
+      await nextTick();
+      isFirstLoad.value = false;
     }
     
   } catch (error) {
@@ -271,10 +285,12 @@ async function loadSettings() {
       settingLoadingStates.value[settingName] = false;
       settingErrorStates.value[settingName] = true;
     });
+    
+    // Enable user changes even on error
+    await nextTick();
+    isFirstLoad.value = false;
   } finally {
     isLoadingSettings.value = false;
-    // Enable user changes after initial load is complete
-    isFirstLoad.value = false;
   }
 }
 

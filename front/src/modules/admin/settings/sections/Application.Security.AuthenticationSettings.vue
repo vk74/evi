@@ -1,13 +1,13 @@
 <!--
   File: Application.Security.AuthenticationSettings.vue
-  Version: 1.0.0
+  Version: 1.1.0
   Description: Authentication policies settings component for frontend
   Purpose: Configure authentication-related security settings including login attempts, monitoring, and audit
   Frontend file that manages authentication policy configuration UI and integrates with settings store
 -->
 
 <script setup lang="ts">
-import { computed, onMounted, watch, ref } from 'vue';
+import { computed, onMounted, watch, ref, nextTick } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useAppSettingsStore } from '@/modules/admin/settings/state.app.settings';
 import { fetchSettings } from '@/modules/admin/settings/service.fetch.settings';

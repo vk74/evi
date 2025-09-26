@@ -1,13 +1,13 @@
 <!--
   File: Application.Security.SessionManagement.vue
-  Version: 1.0.1
+  Version: 1.1.0
   Description: Session management settings component for frontend
   Purpose: Configure session-related security settings including duration, limits, and concurrent sessions
   Frontend file that manages session configuration UI and integrates with settings store
 -->
 
 <script setup lang="ts">
-import { computed, onMounted, watch, ref } from 'vue';
+import { computed, onMounted, watch, ref, nextTick } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useAppSettingsStore } from '@/modules/admin/settings/state.app.settings';
 import { fetchSettings } from '@/modules/admin/settings/service.fetch.settings';
@@ -252,36 +252,40 @@ async function loadSetting(settingName: string): Promise<boolean> {
  * Update local setting value based on setting name
  */
 function updateLocalSetting(settingName: string, value: any) {
+  // Helper functions to safely convert values without changing null
+  const safeBoolean = (val: any) => val === null ? null : Boolean(val);
+  const safeNumber = (val: any) => val === null ? null : Number(val);
+
   switch (settingName) {
     case 'access.token.lifetime':
-      accessTokenLifetimeMinutes.value = Number(value);
+      accessTokenLifetimeMinutes.value = safeNumber(value);
       break;
     case 'refresh.jwt.n.seconds.before.expiry':
-      accessTokenRefreshBeforeExpirySeconds.value = Number(value);
+      accessTokenRefreshBeforeExpirySeconds.value = safeNumber(value);
       break;
     case 'refresh.token.lifetime':
-      refreshTokenLifetimeDays.value = Number(value);
+      refreshTokenLifetimeDays.value = safeNumber(value);
       break;
     case 'max.refresh.tokens.per.user':
-      maxRefreshTokensPerUser.value = Number(value);
+      maxRefreshTokensPerUser.value = safeNumber(value);
       break;
     case 'drop.refresh.tokens.on.user.change.password':
-      dropRefreshTokensOnUserChangePassword.value = Boolean(value);
+      dropRefreshTokensOnUserChangePassword.value = safeBoolean(value);
       break;
     case 'drop.refresh.tokens.on.admin.password.change':
-      dropRefreshTokensOnAdminPasswordChange.value = Boolean(value);
+      dropRefreshTokensOnAdminPasswordChange.value = safeBoolean(value);
       break;
     case 'rate.limiting.enabled':
-      rateLimitingEnabled.value = Boolean(value);
+      rateLimitingEnabled.value = safeBoolean(value);
       break;
     case 'rate.limiting.max.requests.per.minute':
-      maxRequestsPerMinute.value = Number(value);
+      maxRequestsPerMinute.value = safeNumber(value);
       break;
     case 'rate.limiting.max.requests.per.hour':
-      maxRequestsPerHour.value = Number(value);
+      maxRequestsPerHour.value = safeNumber(value);
       break;
     case 'rate.limiting.block.duration.minutes':
-      blockDurationMinutes.value = Number(value);
+      blockDurationMinutes.value = safeNumber(value);
       break;
   }
 }
@@ -318,6 +322,11 @@ async function loadSettings() {
         }
       });
       
+      // Enable user changes after all settings are loaded and local state is updated
+      // Use nextTick to ensure all synchronous updates complete before enabling watchers
+      await nextTick();
+      isFirstLoad.value = false;
+      
       // Show success toast for initial load
       uiStore.showSuccessSnackbar('настройки успешно загружены');
     } else {
@@ -328,6 +337,10 @@ async function loadSettings() {
         settingLoadingStates.value[settingName] = false;
         settingErrorStates.value[settingName] = true;
       });
+      
+      // Enable user changes even if no settings loaded
+      await nextTick();
+      isFirstLoad.value = false;
     }
     
   } catch (error) {
@@ -338,10 +351,12 @@ async function loadSettings() {
       settingLoadingStates.value[settingName] = false;
       settingErrorStates.value[settingName] = true;
     });
+    
+    // Enable user changes even on error
+    await nextTick();
+    isFirstLoad.value = false;
   } finally {
     isLoadingSettings.value = false;
-    // Enable user changes after initial load is complete
-    isFirstLoad.value = false;
   }
 }
 
