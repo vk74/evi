@@ -28,14 +28,8 @@ async function fetchPublicPasswordPoliciesLogic(req: Request, res: Response): Pr
   return result;
 }
 
-// Export controller using universal connection handler with rate limiting
+// Export controller using universal connection handler
 export default connectionHandler(
   fetchPublicPasswordPoliciesLogic, 
-  'FetchPublicPasswordPoliciesController',
-  {
-    enabled: true,
-    maxRequestsPerMinute: 10,
-    maxRequestsPerHour: 100,
-    blockDurationMinutes: 5
-  }
+  'FetchPublicPasswordPoliciesController'
 ); 
