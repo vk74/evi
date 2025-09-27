@@ -2,7 +2,7 @@
   File: Application.System.DataValidation.vue - frontend file
   Description: Data validation system settings for application data integrity
   Purpose: Configure data validation rules, patterns, and validation policies
-  Version: 1.3.0
+  Version: 1.4.0
   
   Features:
   - Standard fields validation settings (text-micro, text-mini, etc.)
@@ -616,55 +616,59 @@ onMounted(() => {
               {{ t('admin.settings.datavalidation.standardFields.maxLengthPerFieldType') }}
             </h4>
             
-            <div v-for="(field, index) in standardFields" :key="field.id" class="d-flex align-center mb-3">
-              <v-select
-                v-model="field.maxLength"
-                :items="field.maxLengthOptions"
-                :label="t(`admin.settings.datavalidation.standardFields.${field.id.replace('text-', '')}`)"
-                variant="outlined"
-                density="comfortable"
-                color="teal-darken-2"
-                class="dropdown-select"
-                :disabled="isSettingDisabled(`standardFields.${field.id.replace('text-', 'text')}.maxLength`)"
-                :loading="settingLoadingStates[`standardFields.${field.id.replace('text-', 'text')}.maxLength`]"
-              >
-                <template #append-inner>
-                  <PhCaretUpDown class="dropdown-icon" />
-                </template>
-              </v-select>
-              <span class="text-caption text-grey-darken-1 ml-2">
-                {{ field.id === 'text-micro' ? '2-10' : 
-                   field.id === 'text-mini' ? '2-50' : 
-                   field.id === 'text-short' ? '10-200' : 
-                   field.id === 'text-medium' ? '20-500' : 
-                   field.id === 'text-long' ? '50-5000' : 
-                   '100-10000' }}
-              </span>
-              <v-tooltip
-                v-if="settingErrorStates[`standardFields.${field.id.replace('text-', 'text')}.maxLength`]"
-                location="top"
-                max-width="300"
-              >
-                <template #activator="{ props }">
-                  <v-icon 
-                    icon="mdi-alert-circle" 
-                    size="small" 
-                    class="ms-2" 
-                    color="error"
-                    v-bind="props"
-                    style="cursor: pointer;"
-                    @click="retrySetting(`standardFields.${field.id.replace('text-', 'text')}.maxLength`)"
-                  />
-                </template>
-                <div class="pa-2">
-                  <p class="text-subtitle-2 mb-2">
-                    {{ t('admin.settings.usersmanagement.groupsmanagement.messages.error.tooltip.title') }}
-                  </p>
-                  <p class="text-caption">
-                    {{ t('admin.settings.usersmanagement.groupsmanagement.messages.error.tooltip.retry') }}
-                  </p>
+            <div class="standard-fields-grid">
+              <div v-for="(field, index) in standardFields" :key="field.id" class="field-row">
+                <div class="d-flex align-center">
+                  <v-select
+                    v-model="field.maxLength"
+                    :items="field.maxLengthOptions"
+                    :label="t(`admin.settings.datavalidation.standardFields.${field.id.replace('text-', '')}`)"
+                    variant="outlined"
+                    density="comfortable"
+                    color="teal-darken-2"
+                    class="dropdown-select"
+                    :disabled="isSettingDisabled(`standardFields.${field.id.replace('text-', 'text')}.maxLength`)"
+                    :loading="settingLoadingStates[`standardFields.${field.id.replace('text-', 'text')}.maxLength`]"
+                  >
+                    <template #append-inner>
+                      <PhCaretUpDown class="dropdown-icon" />
+                    </template>
+                  </v-select>
+                  <span class="text-caption text-grey-darken-1 ml-2">
+                    {{ field.id === 'text-micro' ? '2-10' : 
+                       field.id === 'text-mini' ? '2-50' : 
+                       field.id === 'text-short' ? '10-200' : 
+                       field.id === 'text-medium' ? '20-500' : 
+                       field.id === 'text-long' ? '50-5000' : 
+                       '100-10000' }}
+                  </span>
+                  <v-tooltip
+                    v-if="settingErrorStates[`standardFields.${field.id.replace('text-', 'text')}.maxLength`]"
+                    location="top"
+                    max-width="300"
+                  >
+                    <template #activator="{ props }">
+                      <v-icon 
+                        icon="mdi-alert-circle" 
+                        size="small" 
+                        class="ms-2" 
+                        color="error"
+                        v-bind="props"
+                        style="cursor: pointer;"
+                        @click="retrySetting(`standardFields.${field.id.replace('text-', 'text')}.maxLength`)"
+                      />
+                    </template>
+                    <div class="pa-2">
+                      <p class="text-subtitle-2 mb-2">
+                        {{ t('admin.settings.usersmanagement.groupsmanagement.messages.error.tooltip.title') }}
+                      </p>
+                      <p class="text-caption">
+                        {{ t('admin.settings.usersmanagement.groupsmanagement.messages.error.tooltip.retry') }}
+                      </p>
+                    </div>
+                  </v-tooltip>
                 </div>
-              </v-tooltip>
+              </div>
             </div>
           </div>
         </div>
@@ -977,5 +981,25 @@ onMounted(() => {
   width: 150px !important;
   min-width: 150px !important;
   max-width: 150px !important;
+}
+
+/* Standard fields grid layout */
+.standard-fields-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+}
+
+.field-row {
+  display: flex;
+  align-items: center;
+}
+
+/* Responsive adjustments for standard fields */
+@media (max-width: 960px) {
+  .standard-fields-grid {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
 }
 </style>
