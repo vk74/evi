@@ -15,6 +15,7 @@ import ChangePassword from '@/core/ui/modals/change-password/ChangePassword.vue'
 import { PasswordChangeMode } from '@/core/ui/modals/change-password/types.change.password'
 import { createUserService } from './service.create.new.user'
 import { updateUserService } from './service.update.user'
+import PasswordPoliciesPanel from '@/core/ui/panels/panel.current.password.policies.vue'
 import { PhCaretUpDown, PhCheckSquare, PhSquare, PhEye, PhEyeSlash } from '@phosphor-icons/vue'
 
 const userEditorStore = useUserEditorStore()
@@ -31,6 +32,7 @@ const showPassword = ref(false)
 const hasInteracted = ref(false)
 const showRequiredFieldsWarning = ref(false)
 const showPasswordDialog = ref(false)
+const showPasswordPoliciesPanel = ref(false)
 
 const profileGender = computed({ get: () => userEditorStore.profile.gender, set: (value) => userEditorStore.updateProfile({ gender: value }) })
 const profileMobilePhone = computed({ get: () => userEditorStore.profile.mobile_phone_number, set: (value) => userEditorStore.updateProfile({ mobile_phone_number: value }) })
@@ -133,6 +135,9 @@ const updateUser = async () => {
 const resetPassword = () => { showPasswordDialog.value = true }
 const closePasswordDialog = () => { showPasswordDialog.value = false }
 
+const onPasswordFocus = () => { showPasswordPoliciesPanel.value = true }
+const onPasswordBlur = () => { showPasswordPoliciesPanel.value = false }
+
 onMounted(() => {
   if (userEditorStore.mode.mode === 'create') {
     setTimeout(() => { usernameField.value?.focus() }, 100)
@@ -198,10 +203,10 @@ onBeforeUnmount(() => {
                 <v-row class="pt-3">
                   <template v-if="userEditorStore.mode.mode === 'create'">
                     <v-col cols="12" md="5">
-                      <v-text-field v-model="accountPassword" :label="t('admin.org.editor.fields.password.label')" variant="outlined" density="comfortable" :type="showPassword ? 'text' : 'password'" :counter="40" />
+                      <v-text-field v-model="accountPassword" :label="t('admin.org.editor.fields.password.label')" variant="outlined" density="comfortable" :type="showPassword ? 'text' : 'password'" :counter="40" @focus="onPasswordFocus" @blur="onPasswordBlur" />
                     </v-col>
                     <v-col cols="12" md="5">
-                      <v-text-field v-model="accountPasswordConfirm" :label="t('admin.org.editor.fields.password.confirm')" :rules="[(v) => v === accountPassword || t('admin.org.editor.validation.fields.password.mismatch')]" variant="outlined" density="comfortable" :type="showPassword ? 'text' : 'password'" :counter="40" />
+                      <v-text-field v-model="accountPasswordConfirm" :label="t('admin.org.editor.fields.password.confirm')" :rules="[(v) => v === accountPassword || t('admin.org.editor.validation.fields.password.mismatch')]" variant="outlined" density="comfortable" :type="showPassword ? 'text' : 'password'" :counter="40" @focus="onPasswordFocus" @blur="onPasswordBlur" />
                     </v-col>
                     <v-col cols="12" md="2" class="d-flex align-center">
                       <v-btn icon variant="text" color="teal" @click="showPassword = !showPassword" class="password-toggle-btn">
@@ -210,6 +215,12 @@ onBeforeUnmount(() => {
                       </v-btn>
                     </v-col>
                   </template>
+                  
+                  <!-- Password policies panel -->
+                  <v-col v-if="showPasswordPoliciesPanel" cols="12" class="mb-3">
+                    <PasswordPoliciesPanel />
+                  </v-col>
+                  
                   <v-col cols="12" md="6">
                     <v-select v-model="accountStatus" :label="t('admin.org.editor.fields.accountStatus.label')" variant="outlined" density="comfortable" :items="[
                       { title: t('admin.org.editor.fields.accountStatus.options.active'), value: AccountStatus.ACTIVE },
