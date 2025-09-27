@@ -15,7 +15,7 @@ import ChangePassword from '@/core/ui/modals/change-password/ChangePassword.vue'
 import { PasswordChangeMode } from '@/core/ui/modals/change-password/types.change.password'
 import { createUserService } from './service.create.new.user'
 import { updateUserService } from './service.update.user'
-import { PhCaretUpDown } from '@phosphor-icons/vue'
+import { PhCaretUpDown, PhCheckSquare, PhSquare, PhEye, PhEyeSlash } from '@phosphor-icons/vue'
 
 const userEditorStore = useUserEditorStore()
 const uiStore = useUiStore()
@@ -204,7 +204,10 @@ onBeforeUnmount(() => {
                       <v-text-field v-model="accountPasswordConfirm" :label="t('admin.org.editor.fields.password.confirm')" :rules="[(v) => v === accountPassword || t('admin.org.editor.validation.fields.password.mismatch')]" variant="outlined" density="comfortable" :type="showPassword ? 'text' : 'password'" :counter="40" />
                     </v-col>
                     <v-col cols="12" md="2" class="d-flex align-center">
-                      <v-btn icon variant="text" class="ml-n2" @click="showPassword = !showPassword"><v-icon>{{ showPassword ? 'mdi-eye-off' : 'mdi-eye' }}</v-icon></v-btn>
+                      <v-btn icon variant="text" color="teal" @click="showPassword = !showPassword" class="password-toggle-btn">
+                        <PhEye v-if="!showPassword" :size="18" color="teal" />
+                        <PhEyeSlash v-else :size="18" color="teal" />
+                      </v-btn>
                     </v-col>
                   </template>
                   <v-col cols="12" md="6">
@@ -219,7 +222,19 @@ onBeforeUnmount(() => {
                   </v-select>
                   </v-col>
                   <v-col cols="12" md="6">
-                    <v-checkbox v-model="accountIsStaff" :label="t('admin.org.editor.fields.isStaff.label')" color="teal" hide-details />
+                    <div class="d-flex align-center">
+                      <v-btn
+                        icon
+                        variant="text"
+                        density="comfortable"
+                        :aria-pressed="accountIsStaff"
+                        @click="accountIsStaff = !accountIsStaff"
+                      >
+                        <PhCheckSquare v-if="accountIsStaff" :size="18" color="teal" />
+                        <PhSquare v-else :size="18" color="grey" />
+                      </v-btn>
+                      <span style="margin-left: 8px;">{{ t('admin.org.editor.fields.isStaff.label') }}</span>
+                    </div>
                   </v-col>
                 </v-row>
               </v-col>
@@ -287,4 +302,18 @@ onBeforeUnmount(() => {
 .sidebar-divider { height: 20px; position: relative; margin: 0 16px; }
 .sidebar-divider::after { content: ''; position: absolute; top: 50%; left: 0; right: 0; border-top: thin solid rgba(var(--v-border-color), var(--v-border-opacity)); }
 .wide-btn { min-width: 240px; }
+
+/* Password toggle button visibility */
+.password-toggle-btn {
+  color: #14b8a6 !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+}
+
+.password-toggle-btn :deep(.v-btn__content) {
+  color: #14b8a6 !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+}
+
 </style>
