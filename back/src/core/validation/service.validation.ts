@@ -1,8 +1,9 @@
 /**
- * version: 1.0.0
+ * version: 1.0.1
  * Main validation service
  * 
  * This is the main validation service that other services use to validate fields.
+ * Now integrates with database settings instead of hardcoded rules.
  * Backend file: service.validation.ts
  */
 
@@ -12,13 +13,15 @@ import { validateByRule } from './rules.validation';
 import { securityCheck } from './security.validation';
 import { getUuidByUsername } from '../helpers/get.uuid.by.username';
 import { getUuidByGroupName } from '../helpers/get.uuid.by.group.name';
+import { Request } from 'express';
 
 /**
  * Validate a single field
  * @param request - Validation request with value and field type
+ * @param req - Express request object for context (required for database access)
  * @returns Validation response with result and optional error
  */
-export function validateField(request: ValidationRequest): ValidationResponse {
+export async function validateField(request: ValidationRequest, req: Request): Promise<ValidationResponse> {
   try {
     const { value, fieldType, securityOnly = false } = request;
     
@@ -45,8 +48,8 @@ export function validateField(request: ValidationRequest): ValidationResponse {
       };
     }
     
-    // Step 2: Get validation rule from cache
-    const rule = getRule(fieldType);
+    // Step 2: Get validation rule from cache (now async and loads from DB if needed)
+    const rule = await getRule(fieldType, req);
     if (!rule) {
       console.log(`Validation rule not found for field type: ${fieldType}`);
       return {
@@ -85,10 +88,11 @@ export function validateField(request: ValidationRequest): ValidationResponse {
 /**
  * Validate field and throw exception if invalid
  * @param request - Validation request
+ * @param req - Express request object for context (required for database access)
  * @throws Error with validation error message
  */
-export function validateFieldAndThrow(request: ValidationRequest): void {
-  const result = validateField(request);
+export async function validateFieldAndThrow(request: ValidationRequest, req: Request): Promise<void> {
+  const result = await validateField(request, req);
   
   if (!result.isValid) {
     throw new Error(result.error || 'Validation failed');
@@ -98,21 +102,23 @@ export function validateFieldAndThrow(request: ValidationRequest): void {
 /**
  * Validate field security only (skip regular validation rules)
  * @param request - Validation request with securityOnly flag
+ * @param req - Express request object for context (required for database access)
  * @returns Validation response with result and optional error
  */
-export function validateFieldSecurity(request: ValidationRequest): ValidationResponse {
+export async function validateFieldSecurity(request: ValidationRequest, req: Request): Promise<ValidationResponse> {
   // Set securityOnly to true for this method
   const securityRequest = { ...request, securityOnly: true };
-  return validateField(securityRequest);
+  return await validateField(securityRequest, req);
 }
 
 /**
  * Validate field security only and throw exception if invalid
  * @param request - Validation request
+ * @param req - Express request object for context (required for database access)
  * @throws Error with validation error message
  */
-export function validateFieldSecurityAndThrow(request: ValidationRequest): void {
-  const result = validateFieldSecurity(request);
+export async function validateFieldSecurityAndThrow(request: ValidationRequest, req: Request): Promise<void> {
+  const result = await validateFieldSecurity(request, req);
   
   if (!result.isValid) {
     throw new Error(result.error || 'Security validation failed');
@@ -123,14 +129,15 @@ export function validateFieldSecurityAndThrow(request: ValidationRequest): void 
  * Validate multiple values separated by comma
  * @param values - Comma-separated string
  * @param fieldType - Type of field to validate
+ * @param req - Express request object for context (required for database access)
  * @returns Validation response with all errors
  */
-export function validateMultipleFields(values: string, fieldType: FieldType): ValidationResponse {
+export async function validateMultipleFields(values: string, fieldType: FieldType, req: Request): Promise<ValidationResponse> {
   const errors: string[] = [];
   const items = values.split(',').map(v => v.trim()).filter(v => v);
   
   for (const item of items) {
-    const result = validateField({ value: item, fieldType });
+    const result = await validateField({ value: item, fieldType }, req);
     if (!result.isValid && result.error) {
       errors.push(result.error);
     }
@@ -145,15 +152,16 @@ export function validateMultipleFields(values: string, fieldType: FieldType): Va
 /**
  * Validate multiple usernames (format only)
  * @param usernames - Comma-separated usernames
+ * @param req - Express request object for context (required for database access)
  * @returns Validation response with format errors
  */
-export function validateMultipleUsernames(usernames: string): ValidationResponse {
+export async function validateMultipleUsernames(usernames: string, req: Request): Promise<ValidationResponse> {
   const errors: string[] = [];
   const items = usernames.split(',').map(v => v.trim()).filter(v => v);
   
   // Validate format for each username
   for (const item of items) {
-    const result = validateField({ value: item, fieldType: 'username' });
+    const result = await validateField({ value: item, fieldType: 'userName' }, req);
     if (!result.isValid && result.error) {
       errors.push(`Username "${item}": ${result.error}`);
     }
@@ -168,15 +176,16 @@ export function validateMultipleUsernames(usernames: string): ValidationResponse
 /**
  * Validate multiple group names (format only)
  * @param groupNames - Comma-separated group names
+ * @param req - Express request object for context (required for database access)
  * @returns Validation response with format errors
  */
-export function validateMultipleGroupNames(groupNames: string): ValidationResponse {
+export async function validateMultipleGroupNames(groupNames: string, req: Request): Promise<ValidationResponse> {
   const errors: string[] = [];
   const items = groupNames.split(',').map(v => v.trim()).filter(v => v);
   
   // Validate format for each group name
   for (const item of items) {
-    const result = validateField({ value: item, fieldType: 'group_name' });
+    const result = await validateField({ value: item, fieldType: 'groupName' }, req);
     if (!result.isValid && result.error) {
       errors.push(`Group name "${item}": ${result.error}`);
     }

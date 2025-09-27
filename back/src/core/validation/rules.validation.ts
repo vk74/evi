@@ -1,8 +1,9 @@
 /**
- * version: 1.0.0
+ * version: 1.0.1
  * Validation rules for different field types
  * 
- * This file contains validation rules organized by sections.
+ * This file contains hardcoded security validation rules.
+ * Regular validation rules are now loaded from database settings.
  * Backend file: rules.validation.ts
  */
 
@@ -25,24 +26,10 @@ export const REGEX = {
 };
 
 // ============================================================================
-// USER FIELDS SECTION
+// SECURITY VALIDATION RULES (HARDCODED FOR SECURITY)
 // ============================================================================
 
-const USER_FIELDS: ValidationRule[] = [
-  {
-    fieldType: 'username',
-    regex: REGEX.USERNAME,
-    minLength: 3,
-    maxLength: 25,
-    required: true,
-    messages: {
-      required: 'Username is required',
-      minLength: 'Username must be at least 3 characters long',
-      maxLength: 'Username cannot exceed 25 characters',
-      invalidChars: 'Username can only contain Latin letters, numbers and underscores',
-      noLetter: 'Username must contain at least one letter'
-    }
-  },
+const SECURITY_FIELDS: ValidationRule[] = [
   {
     fieldType: 'password',
     regex: REGEX.PASSWORD,
@@ -57,159 +44,15 @@ const USER_FIELDS: ValidationRule[] = [
       noLetter: 'Password must contain at least one letter',
       noNumber: 'Password must contain at least one number'
     }
-  },
-  {
-    fieldType: 'email',
-    regex: REGEX.EMAIL,
-    maxLength: 255,
-    required: true,
-    messages: {
-      required: 'Email is required',
-      invalid: 'Invalid email address format',
-      maxLength: 'Email cannot exceed 255 characters'
-    }
-  },
-  {
-    fieldType: 'mobile_phone',
-    regex: REGEX.MOBILE_PHONE,
-    minLength: 10,
-    maxLength: 15,
-    messages: {
-      invalid: 'Invalid mobile phone number format'
-    }
-  },
-  {
-    fieldType: 'first_name',
-    regex: REGEX.NAME,
-    minLength: 2,
-    maxLength: 50,
-    required: true,
-    messages: {
-      required: 'First name is required',
-      minLength: 'First name must be at least 2 characters long',
-      maxLength: 'First name cannot exceed 50 characters',
-      invalidChars: 'First name can only contain letters, spaces and hyphens'
-    }
-  },
-  {
-    fieldType: 'middle_name',
-    regex: REGEX.NAME,
-    minLength: 2,
-    maxLength: 50,
-    messages: {
-      minLength: 'Middle name must be at least 2 characters long',
-      maxLength: 'Middle name cannot exceed 50 characters',
-      invalidChars: 'Middle name can only contain letters, spaces and hyphens'
-    }
-  },
-  {
-    fieldType: 'last_name',
-    regex: REGEX.NAME,
-    minLength: 2,
-    maxLength: 50,
-    required: true,
-    messages: {
-      required: 'Last name is required',
-      minLength: 'Last name must be at least 2 characters long',
-      maxLength: 'Last name cannot exceed 50 characters',
-      invalidChars: 'Last name can only contain letters, spaces and hyphens'
-    }
   }
 ];
 
 // ============================================================================
-// GROUP FIELDS SECTION
-// ============================================================================
-
-const GROUP_FIELDS: ValidationRule[] = [
-  {
-    fieldType: 'group_name',
-    regex: REGEX.GROUP_NAME,
-    minLength: 2,
-    maxLength: 100,
-    required: true,
-    messages: {
-      required: 'Group name is required',
-      minLength: 'Group name must be at least 2 characters long',
-      maxLength: 'Group name cannot exceed 100 characters',
-      invalidChars: 'Group name can only contain Latin letters, numbers, and hyphens'
-    }
-  }
-];
-
-// ============================================================================
-// SERVICE FIELDS SECTION
-// ============================================================================
-
-const SERVICE_FIELDS: ValidationRule[] = [
-  {
-    fieldType: 'service_name',
-    regex: REGEX.SERVICE_NAME,
-    minLength: 2,
-    maxLength: 250,
-    required: true,
-    messages: {
-      required: 'Service name is required',
-      minLength: 'Service name must be at least 2 characters long',
-      maxLength: 'Service name cannot exceed 250 characters',
-      invalidChars: 'Service name can only contain Latin and Cyrillic letters, numbers, spaces, hyphens and underscores'
-    }
-  },
-  {
-    fieldType: 'icon_name',
-    regex: /^[a-zA-Z0-9\-_]+$/,
-    maxLength: 100,
-    required: false,
-    messages: {
-      maxLength: 'Icon name cannot exceed 100 characters',
-      invalidChars: 'Icon name can only contain Latin letters, numbers, hyphens and underscores'
-    }
-  }
-];
-
-// ============================================================================
-// COMMON FIELDS SECTION
-// ============================================================================
-
-const COMMON_FIELDS: ValidationRule[] = [
-  {
-    fieldType: 'general_description',
-    regex: REGEX.GENERAL_DESCRIPTION,
-    maxLength: 5000,
-    messages: {
-      maxLength: 'Description cannot exceed 5000 characters',
-      invalidChars: 'Description contains invalid characters'
-    }
-  },
-  {
-    fieldType: 'description',
-    regex: REGEX.DESCRIPTION,
-    maxLength: 2000,
-    messages: {
-      maxLength: 'Description cannot exceed 2000 characters',
-      invalidChars: 'Description contains invalid characters'
-    }
-  },
-  {
-    fieldType: 'long_description',
-    regex: REGEX.DESCRIPTION,
-    maxLength: 10000,
-    messages: {
-      maxLength: 'Description cannot exceed 10000 characters',
-      invalidChars: 'Description contains invalid characters'
-    }
-  }
-];
-
-// ============================================================================
-// COMBINED VALIDATION RULES
+// COMBINED VALIDATION RULES (ONLY SECURITY FIELDS)
 // ============================================================================
 
 export const VALIDATION_RULES: ValidationRule[] = [
-  ...USER_FIELDS,
-  ...GROUP_FIELDS,
-  ...SERVICE_FIELDS,
-  ...COMMON_FIELDS
+  ...SECURITY_FIELDS
 ];
 
 /**
@@ -265,8 +108,8 @@ export function validateByRule(value: string | number, rule: ValidationRule): { 
     }
   }
 
-  // Check for required characters in username
-  if (rule.fieldType === 'username' && !REGEX.USERNAME_CONTAINS_LETTER.test(stringValue)) {
+  // Check for required characters in userName (well-known field)
+  if (rule.fieldType === 'userName' && !REGEX.USERNAME_CONTAINS_LETTER.test(stringValue)) {
     return { isValid: false, error: rule.messages.noLetter };
   }
 

@@ -33,7 +33,7 @@ import { ServicePriority, ServiceStatus, ServiceUserRole, ServiceGroupRole } fro
 import { getRequestorUuidFromReq } from '@/core/helpers/get.requestor.uuid.from.req';
 import { getUuidByUsername } from '@/core/helpers/get.uuid.by.username';
 import { getUuidByGroupName } from '@/core/helpers/get.uuid.by.group.name';
-import { validateField, validateFieldSecurity, validateMultipleUsernames, validateMultipleGroupNames } from '@/core/validation/service.validation';
+import { validateFieldLegacy, validateFieldSecurityLegacy, validateMultipleUsernames, validateMultipleGroupNames } from '@/core/validation/legacy.validation';
 import { createAndPublishEvent } from '@/core/eventBus/fabric.events';
 import { EVENTS_ADMIN_SERVICES } from '../events.admin.services';
 
@@ -52,7 +52,7 @@ async function validateCreateServiceData(data: CreateServiceRequest): Promise<vo
 
     // Validate service name
     if (data.name) {
-        const nameResult = validateField({
+        const nameResult = validateFieldLegacy({
             value: data.name,
             fieldType: 'service_name'
         });
@@ -83,7 +83,7 @@ async function validateCreateServiceData(data: CreateServiceRequest): Promise<vo
 
     // Validate priority (USER-DEFINED type - security only)
     if (data.priority) {
-        const priorityResult = validateFieldSecurity({
+        const priorityResult = validateFieldSecurityLegacy({
             value: data.priority,
             fieldType: 'service_name'
         });
@@ -94,7 +94,7 @@ async function validateCreateServiceData(data: CreateServiceRequest): Promise<vo
 
     // Validate status (USER-DEFINED type - security only)
     if (data.status) {
-        const statusResult = validateFieldSecurity({
+        const statusResult = validateFieldSecurityLegacy({
             value: data.status,
             fieldType: 'service_name'
         });
@@ -105,7 +105,7 @@ async function validateCreateServiceData(data: CreateServiceRequest): Promise<vo
 
     // Validate icon_name (character varying - full validation)
     if (data.icon_name) {
-        const iconResult = validateField({
+        const iconResult = validateFieldLegacy({
             value: data.icon_name,
             fieldType: 'icon_name'
         });
@@ -116,7 +116,7 @@ async function validateCreateServiceData(data: CreateServiceRequest): Promise<vo
 
     // Validate description fields (character varying - full validation)
     if (data.description_short) {
-        const descShortResult = validateField({
+        const descShortResult = validateFieldLegacy({
             value: data.description_short,
             fieldType: 'description'
         });
@@ -126,7 +126,7 @@ async function validateCreateServiceData(data: CreateServiceRequest): Promise<vo
     }
 
     if (data.description_long) {
-        const descLongResult = validateField({
+        const descLongResult = validateFieldLegacy({
             value: data.description_long,
             fieldType: 'long_description'
         });
@@ -136,7 +136,7 @@ async function validateCreateServiceData(data: CreateServiceRequest): Promise<vo
     }
 
     if (data.purpose) {
-        const purposeResult = validateField({
+        const purposeResult = validateFieldLegacy({
             value: data.purpose,
             fieldType: 'long_description'
         });
@@ -146,7 +146,7 @@ async function validateCreateServiceData(data: CreateServiceRequest): Promise<vo
     }
 
     if (data.comments) {
-        const commentsResult = validateField({
+        const commentsResult = validateFieldLegacy({
             value: data.comments,
             fieldType: 'long_description'
         });
@@ -157,7 +157,7 @@ async function validateCreateServiceData(data: CreateServiceRequest): Promise<vo
 
     // Validate owner usernames
     if (data.owner) {
-        const ownerResult = validateField({
+        const ownerResult = validateFieldLegacy({
             value: data.owner,
             fieldType: 'username'
         });
@@ -176,7 +176,7 @@ async function validateCreateServiceData(data: CreateServiceRequest): Promise<vo
     }
 
     if (data.backup_owner) {
-        const backupOwnerResult = validateField({
+        const backupOwnerResult = validateFieldLegacy({
             value: data.backup_owner,
             fieldType: 'username'
         });
@@ -195,7 +195,7 @@ async function validateCreateServiceData(data: CreateServiceRequest): Promise<vo
     }
 
     if (data.technical_owner) {
-        const technicalOwnerResult = validateField({
+        const technicalOwnerResult = validateFieldLegacy({
             value: data.technical_owner,
             fieldType: 'username'
         });
@@ -214,7 +214,7 @@ async function validateCreateServiceData(data: CreateServiceRequest): Promise<vo
     }
 
     if (data.backup_technical_owner) {
-        const backupTechnicalOwnerResult = validateField({
+        const backupTechnicalOwnerResult = validateFieldLegacy({
             value: data.backup_technical_owner,
             fieldType: 'username'
         });
@@ -233,7 +233,7 @@ async function validateCreateServiceData(data: CreateServiceRequest): Promise<vo
     }
 
     if (data.dispatcher) {
-        const dispatcherResult = validateField({
+        const dispatcherResult = validateFieldLegacy({
             value: data.dispatcher,
             fieldType: 'username'
         });
@@ -253,7 +253,7 @@ async function validateCreateServiceData(data: CreateServiceRequest): Promise<vo
 
     // Validate support tier groups
     if (data.support_tier1) {
-        const supportTier1Result = validateField({
+        const supportTier1Result = validateFieldLegacy({
             value: data.support_tier1,
             fieldType: 'group_name'
         });
@@ -272,7 +272,7 @@ async function validateCreateServiceData(data: CreateServiceRequest): Promise<vo
     }
 
     if (data.support_tier2) {
-        const supportTier2Result = validateField({
+        const supportTier2Result = validateFieldLegacy({
             value: data.support_tier2,
             fieldType: 'group_name'
         });
@@ -291,7 +291,7 @@ async function validateCreateServiceData(data: CreateServiceRequest): Promise<vo
     }
 
     if (data.support_tier3) {
-        const supportTier3Result = validateField({
+        const supportTier3Result = validateFieldLegacy({
             value: data.support_tier3,
             fieldType: 'group_name'
         });

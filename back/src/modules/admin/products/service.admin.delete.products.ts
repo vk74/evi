@@ -25,7 +25,7 @@ import type {
     ProductError
 } from './types.admin.products';
 import { getRequestorUuidFromReq } from '@/core/helpers/get.requestor.uuid.from.req';
-import { validateFieldSecurity } from '@/core/validation/service.validation';
+import { validateFieldLegacy, validateFieldSecurityLegacy } from '@/core/validation/legacy.validation';
 import { createAndPublishEvent } from '@/core/eventBus/fabric.events';
 import { PRODUCT_DELETE_EVENTS } from './events.admin.products';
 
@@ -50,7 +50,7 @@ function validateProductIds(productIds: string[]): void {
             if (!id || typeof id !== 'string') {
                 errors.push('Product ID must be a non-empty string');
             } else {
-                const validation = validateFieldSecurity({ value: id, fieldType: 'service_name' });
+                const validation = validateFieldSecurityLegacy({ value: id, fieldType: 'service_name' });
                 if (!validation.isValid) {
                     errors.push(`Invalid product ID: ${validation.error}`);
                 }

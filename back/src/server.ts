@@ -218,17 +218,19 @@ async function initializeServer(): Promise<void> {
     initHelpersCache();
     console.log('Helpers cache initialized successfully');
 
-    // 4. Initialize validation service AFTER helpers cache is ready
-    console.log('Initializing validation service...');
-    initializeValidationService();
-    console.log('Validation service initialized successfully');
-
-    // 5. Loading settings
+    // 4. Loading settings FIRST (validation service needs settings from DB)
     console.log('Loading application settings...');
     
     await loadSettings();
     settingsLoaded = true;
     console.log('[Server] System settings loaded and ready');
+
+    // 5. Initialize validation service AFTER settings are loaded
+    console.log('Initializing validation service...');
+    // Create a mock request object for initialization (validation service needs req context)
+    const mockReq = {} as Request;
+    await initializeValidationService(mockReq);
+    console.log('Validation service initialized successfully');
 
     // 6. Validate connection handler readiness
     console.log('Validating connection handler readiness...');

@@ -45,15 +45,15 @@ const pool = pgPool as Pool;
  * @param data - Product data to validate
  * @throws {ProductError} When validation fails
  */
-async function validateCreateProductData(data: CreateProductRequest): Promise<void> {
+async function validateCreateProductData(data: CreateProductRequest, req: Request): Promise<void> {
     const errors: string[] = [];
 
     // Validate product code
     if (data.productCode) {
-        const productCodeResult = validateField({
+        const productCodeResult = await validateField({
             value: data.productCode,
-            fieldType: 'service_name'
-        });
+            fieldType: 'text-medium'
+        }, req);
         if (!productCodeResult.isValid && productCodeResult.error) {
             errors.push(`Product code: ${productCodeResult.error}`);
         } else {
@@ -81,10 +81,10 @@ async function validateCreateProductData(data: CreateProductRequest): Promise<vo
 
     // Validate translation key
     if (data.translationKey) {
-        const translationKeyResult = validateField({
+        const translationKeyResult = await validateField({
             value: data.translationKey,
-            fieldType: 'service_name'
-        });
+            fieldType: 'text-medium'
+        }, req);
         if (!translationKeyResult.isValid && translationKeyResult.error) {
             errors.push(`Translation key: ${translationKeyResult.error}`);
         } else {
@@ -112,10 +112,10 @@ async function validateCreateProductData(data: CreateProductRequest): Promise<vo
 
     // Validate owner username
     if (data.owner) {
-        const ownerResult = validateField({
+        const ownerResult = await validateField({
             value: data.owner,
-            fieldType: 'username'
-        });
+            fieldType: 'userName'
+        }, req);
         if (!ownerResult.isValid && ownerResult.error) {
             errors.push(`Owner: ${ownerResult.error}`);
         } else {
@@ -464,7 +464,7 @@ export async function createProduct(req: Request): Promise<CreateProductResponse
         });
 
         // Validate product data
-        await validateCreateProductData(productData);
+        await validateCreateProductData(productData, req);
 
         // Create product in database with all translations
         const result = await createProductInDatabase(productData, requestorUuid);

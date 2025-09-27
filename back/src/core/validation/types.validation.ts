@@ -8,19 +8,22 @@
 
 // Field types supported by the validator
 export type FieldType = 
-  | 'username'
-  | 'password'
-  | 'email'
-  | 'mobile_phone'
-  | 'first_name'
-  | 'middle_name'
-  | 'last_name'
-  | 'general_description'
-  | 'group_name'
-  | 'service_name'
-  | 'description'
-  | 'long_description'
-  | 'icon_name';
+  // Well-known fields (from database settings)
+  | 'userName'           // wellKnownFields.userName
+  | 'groupName'          // wellKnownFields.groupName  
+  | 'email'              // wellKnownFields.email
+  | 'telephoneNumber'    // wellKnownFields.telephoneNumber
+  
+  // Standard fields (from database settings)
+  | 'text-micro'         // standardFields.textMicro
+  | 'text-mini'          // standardFields.textMini
+  | 'text-short'         // standardFields.textShort
+  | 'text-medium'        // standardFields.textMedium
+  | 'text-long'          // standardFields.textLong
+  | 'text-extralong'     // standardFields.textExtraLong
+  
+  // Security fields (hardcoded for security)
+  | 'password';
 
 // Validation request interface
 export interface ValidationRequest {

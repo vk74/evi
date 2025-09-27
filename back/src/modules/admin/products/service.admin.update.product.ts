@@ -38,7 +38,7 @@ import { getUuidByUsername } from '@/core/helpers/get.uuid.by.username';
 import { getUuidByGroupName } from '@/core/helpers/get.uuid.by.group.name';
 import { fetchUsernameByUuid } from '@/core/helpers/get.username.by.uuid';
 import { fetchGroupnameByUuid } from '@/core/helpers/get.groupname.by.uuid';
-import { validateField, validateFieldSecurity } from '@/core/validation/service.validation';
+import { validateFieldLegacy, validateFieldSecurityLegacy } from '@/core/validation/legacy.validation';
 import { createAndPublishEvent } from '@/core/eventBus/fabric.events';
 import { PRODUCT_UPDATE_EVENTS } from './events.admin.products';
 
@@ -58,7 +58,7 @@ async function validateUpdateProductData(data: UpdateProductRequest): Promise<vo
         errors.push('Product ID is required');
     } else {
         // UUID validation - use security validation since it's a technical identifier
-        const productIdValidation = validateFieldSecurity({ value: data.productId, fieldType: 'service_name' });
+        const productIdValidation = validateFieldSecurityLegacy({ value: data.productId, fieldType: 'service_name' });
         if (!productIdValidation.isValid) {
             errors.push(`Invalid product ID: ${productIdValidation.error}`);
         }
@@ -66,7 +66,7 @@ async function validateUpdateProductData(data: UpdateProductRequest): Promise<vo
 
     // Validate product code if provided
     if (data.productCode !== undefined) {
-        const productCodeValidation = validateFieldSecurity({ value: data.productCode, fieldType: 'service_name' });
+        const productCodeValidation = validateFieldSecurityLegacy({ value: data.productCode, fieldType: 'service_name' });
         if (!productCodeValidation.isValid) {
             errors.push(`Invalid product code: ${productCodeValidation.error}`);
         }
@@ -74,7 +74,7 @@ async function validateUpdateProductData(data: UpdateProductRequest): Promise<vo
 
     // Validate translation key if provided
     if (data.translationKey !== undefined) {
-        const translationKeyValidation = validateFieldSecurity({ value: data.translationKey, fieldType: 'service_name' });
+        const translationKeyValidation = validateFieldSecurityLegacy({ value: data.translationKey, fieldType: 'service_name' });
         if (!translationKeyValidation.isValid) {
             errors.push(`Invalid translation key: ${translationKeyValidation.error}`);
         }
@@ -100,7 +100,7 @@ async function validateUpdateProductData(data: UpdateProductRequest): Promise<vo
             errors.push('Specialist groups must be an array');
         } else {
             for (const group of data.specialistsGroups) {
-                const groupValidation = validateField({ value: group, fieldType: 'group_name' });
+                const groupValidation = validateFieldLegacy({ value: group, fieldType: 'group_name' });
                 if (!groupValidation.isValid) {
                     errors.push(`Invalid specialist group: ${groupValidation.error}`);
                 }

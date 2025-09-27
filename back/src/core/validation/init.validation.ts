@@ -1,31 +1,34 @@
 /**
- * version: 1.0.0
+ * version: 1.0.1
  * Validation service initialization
  * 
  * This file handles initialization of validation caches during server startup.
+ * Now loads validation rules from database settings instead of hardcoded rules.
  * Backend file: init.validation.ts
  */
 
 import { initializeValidationCache } from './cache.validation';
 import { initializeSecurityCache } from './cache.security.validation';
+import { Request } from 'express';
 
 /**
  * Initialize validation service
  * This function initializes both validation and security caches
+ * @param req - Express request object for context (required for database access)
  */
-export function initializeValidationService(): void {
+export async function initializeValidationService(req: Request): Promise<void> {
   try {
     console.log('Initializing validation service...');
     
-    // Initialize validation cache
-    initializeValidationCache();
-    
-    // Initialize security cache
+    // Initialize security cache first (hardcoded security patterns)
     initializeSecurityCache();
+    
+    // Initialize validation cache from database
+    await initializeValidationCache(req);
     
     console.log('Validation service initialized successfully');
   } catch (error) {
     console.error('Failed to initialize validation service:', error);
-    throw error;
+    throw new Error(`Critical error: Failed to initialize validation service - ${error instanceof Error ? error.message : 'Unknown error'}`);
   }
 } 

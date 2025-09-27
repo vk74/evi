@@ -11,7 +11,7 @@ import { Pool } from 'pg';
 import bcrypt from 'bcrypt';
 import { pool as pgPool } from '../../../../core/db/maindb';
 import { queries } from './queries.user.editor';
-import { REGEX, VALIDATION } from '../../../../core/validation/rules.common.fields';
+import { validateFieldAndThrow } from '../../../../core/validation/service.validation';
 import type { 
   CreateUserRequest, 
   CreateUserResponse,
@@ -62,41 +62,19 @@ async function validateRequiredFields(data: CreateUserRequest): Promise<void> {
   }
 }
 
-function validateUsername(username: string): void {
-  if (username.length < VALIDATION.USERNAME.MIN_LENGTH) {
+async function validateUsername(username: string, req: Request): Promise<void> {
+  try {
+    await validateFieldAndThrow({ value: username, fieldType: 'userName' }, req);
+  } catch (error) {
     throw {
       code: 'VALIDATION_ERROR',
-      message: VALIDATION.USERNAME.MESSAGES.MIN_LENGTH,
-      field: 'username'
-    } as ValidationError;
-  }
-
-  if (username.length > VALIDATION.USERNAME.MAX_LENGTH) {
-    throw {
-      code: 'VALIDATION_ERROR',
-      message: VALIDATION.USERNAME.MESSAGES.MAX_LENGTH,
-      field: 'username'
-    } as ValidationError;
-  }
-
-  if (!REGEX.USERNAME.test(username)) {
-    throw {
-      code: 'VALIDATION_ERROR',
-      message: VALIDATION.USERNAME.MESSAGES.INVALID_CHARS,
-      field: 'username'
-    } as ValidationError;
-  }
-
-  if (!REGEX.USERNAME_CONTAINS_LETTER.test(username)) {
-    throw {
-      code: 'VALIDATION_ERROR',
-      message: VALIDATION.USERNAME.MESSAGES.NO_LETTER,
+      message: error instanceof Error ? error.message : 'Username validation failed',
       field: 'username'
     } as ValidationError;
   }
 }
 
-// Password validation using dynamic settings from cache
+// Password validation using new validation service (hardcoded security rules)
 async function validatePassword(password: string, username: string, req: Request): Promise<void> {
   // Create event for password policy check start
   await createAndPublishEvent({
@@ -105,71 +83,17 @@ async function validatePassword(password: string, username: string, req: Request
     payload: { username }
   });
 
-  // Get password policy settings from cache
-  const minLengthSetting = getSetting('Application.Security.PasswordPolicies', 'password.min.length');
-  const maxLengthSetting = getSetting('Application.Security.PasswordPolicies', 'password.max.length');
-  const requireUppercaseSetting = getSetting('Application.Security.PasswordPolicies', 'password.require.uppercase');
-  const requireLowercaseSetting = getSetting('Application.Security.PasswordPolicies', 'password.require.lowercase');
-  const requireNumbersSetting = getSetting('Application.Security.PasswordPolicies', 'password.require.numbers');
-  const requireSpecialCharsSetting = getSetting('Application.Security.PasswordPolicies', 'password.require.special.chars');
-  const allowedSpecialCharsSetting = getSetting('Application.Security.PasswordPolicies', 'password.allowed.special.chars');
-
-  // Check if all required settings are found
-  if (!minLengthSetting || !maxLengthSetting || !requireUppercaseSetting || 
-      !requireLowercaseSetting || !requireNumbersSetting || !requireSpecialCharsSetting || !allowedSpecialCharsSetting) {
-    await createAndPublishEvent({
-      req,
-      eventName: USER_CREATION_EVENTS.PASSWORD_POLICY_SETTINGS_NOT_FOUND.eventName,
-      payload: { username },
-      errorData: 'Password policy settings not found in cache'
-    });
-    throw {
-      code: 'VALIDATION_ERROR',
-      message: 'Password policy settings not found. Please contact the system administrator.',
-      field: 'password'
-    } as ValidationError;
-  }
-
-  const policyViolations: string[] = [];
-
-  // Parse settings values
-  const minLength = Number(minLengthSetting.value);
-  const maxLength = Number(maxLengthSetting.value);
-  const requireUppercase = Boolean(requireUppercaseSetting.value);
-  const requireLowercase = Boolean(requireLowercaseSetting.value);
-  const requireNumbers = Boolean(requireNumbersSetting.value);
-  const requireSpecialChars = Boolean(requireSpecialCharsSetting.value);
-  const allowedSpecialChars = allowedSpecialCharsSetting.value || '!@#$%^&*()_+-=[]{}|;:,.<>?';
-
-  // Checks
-  if (password.length < minLength) {
-    policyViolations.push(`Password must be at least ${minLength} characters long`);
-  }
-  if (password.length > maxLength) {
-    policyViolations.push(`Password must be no more than ${maxLength} characters long`);
-  }
-  if (requireUppercase && !/[A-Z]/.test(password)) {
-    policyViolations.push('Password must contain at least one uppercase letter');
-  }
-  if (requireLowercase && !/[a-z]/.test(password)) {
-    policyViolations.push('Password must contain at least one lowercase letter');
-  }
-  if (requireNumbers && !/\d/.test(password)) {
-    policyViolations.push('Password must contain at least one digit');
-  }
-  if (requireSpecialChars) {
-    const specialCharRegex = new RegExp(`[${allowedSpecialChars.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}]`);
-    if (!specialCharRegex.test(password)) {
-      policyViolations.push('Password must contain at least one special character');
-    }
-  }
-
-  if (policyViolations.length > 0) {
+  try {
+    await validateFieldAndThrow({ value: password, fieldType: 'password' }, req);
+  } catch (error) {
     await createAndPublishEvent({
       req,
       eventName: USER_CREATION_EVENTS.PASSWORD_POLICY_CHECK_FAILED.eventName,
-      payload: { username, policyViolations },
-      errorData: policyViolations.join(', ')
+      payload: { 
+        username,
+        policyViolations: [error instanceof Error ? error.message : 'Password validation failed']
+      },
+      errorData: error instanceof Error ? error.message : 'Password validation failed'
     });
     throw {
       code: 'VALIDATION_ERROR',
@@ -178,6 +102,7 @@ async function validatePassword(password: string, username: string, req: Request
     } as ValidationError;
   }
 
+  // Create event for successful password policy check
   await createAndPublishEvent({
     req,
     eventName: USER_CREATION_EVENTS.PASSWORD_POLICY_CHECK_PASSED.eventName,
@@ -185,61 +110,38 @@ async function validatePassword(password: string, username: string, req: Request
   });
 }
 
-function validateEmail(email: string): void {
-  if (email.length > VALIDATION.EMAIL.MAX_LENGTH) {
+async function validateEmail(email: string, req: Request): Promise<void> {
+  try {
+    await validateFieldAndThrow({ value: email, fieldType: 'email' }, req);
+  } catch (error) {
     throw {
       code: 'VALIDATION_ERROR',
-      message: VALIDATION.EMAIL.MESSAGES.MAX_LENGTH,
-      field: 'email'
-    } as ValidationError;
-  }
-
-  if (!REGEX.EMAIL.test(email)) {
-    throw {
-      code: 'VALIDATION_ERROR',
-      message: VALIDATION.EMAIL.MESSAGES.INVALID,
+      message: error instanceof Error ? error.message : 'Email validation failed',
       field: 'email'
     } as ValidationError;
   }
 }
 
-function validateName(name: string, field: 'first_name' | 'middle_name' | 'last_name'): void {
-  const validationRules = field === 'middle_name' 
-    ? VALIDATION.MIDDLE_NAME 
-    : field === 'first_name' 
-      ? VALIDATION.FIRST_NAME 
-      : VALIDATION.LAST_NAME;
-
-  if (field !== 'middle_name' && name.length < validationRules.MIN_LENGTH) {
+async function validateName(name: string, field: 'first_name' | 'middle_name' | 'last_name', req: Request): Promise<void> {
+  try {
+    // Use text-mini for names (up to 20 characters)
+    await validateFieldAndThrow({ value: name, fieldType: 'text-mini' }, req);
+  } catch (error) {
     throw {
       code: 'VALIDATION_ERROR',
-      message: validationRules.MESSAGES.MIN_LENGTH,
-      field
-    } as ValidationError;
-  }
-
-  if (name.length > validationRules.MAX_LENGTH) {
-    throw {
-      code: 'VALIDATION_ERROR',
-      message: validationRules.MESSAGES.MAX_LENGTH,
-      field
-    } as ValidationError;
-  }
-
-  if (!REGEX.NAME.test(name)) {
-    throw {
-      code: 'VALIDATION_ERROR',
-      message: validationRules.MESSAGES.INVALID_CHARS,
+      message: error instanceof Error ? error.message : `${field} validation failed`,
       field
     } as ValidationError;
   }
 }
 
-function validateMobilePhone(phone: string): void {
-  if (!REGEX.MOBILE_PHONE.test(phone)) {
+async function validateMobilePhone(phone: string, req: Request): Promise<void> {
+  try {
+    await validateFieldAndThrow({ value: phone, fieldType: 'telephoneNumber' }, req);
+  } catch (error) {
     throw {
       code: 'VALIDATION_ERROR',
-      message: VALIDATION.MOBILE_PHONE.MESSAGES.INVALID,
+      message: error instanceof Error ? error.message : 'Mobile phone validation failed',
       field: 'mobile_phone_number'
     } as ValidationError;
   }
@@ -248,18 +150,18 @@ function validateMobilePhone(phone: string): void {
 // Main validation function
 async function validateData(data: CreateUserRequest, req: Request): Promise<void> {
   try {
-    validateUsername(data.username);
+    await validateUsername(data.username, req);
     await validatePassword(data.password, data.username, req);
-    validateEmail(data.email);
-    validateName(data.first_name, 'first_name');
-    validateName(data.last_name, 'last_name');
+    await validateEmail(data.email, req);
+    await validateName(data.first_name, 'first_name', req);
+    await validateName(data.last_name, 'last_name', req);
     
     if (data.middle_name) {
-      validateName(data.middle_name, 'middle_name');
+      await validateName(data.middle_name, 'middle_name', req);
     }
     
     if (data.mobile_phone_number) {
-      validateMobilePhone(data.mobile_phone_number);
+      await validateMobilePhone(data.mobile_phone_number, req);
     }
     
     // Create event for validation start

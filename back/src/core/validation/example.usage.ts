@@ -1,43 +1,45 @@
 /**
- * version: 1.0.0
+ * version: 1.0.1
  * Example usage of validation service
  * 
  * This file demonstrates how to use the validation service in business services.
+ * Updated for new async API with database settings integration.
  * Backend file: example.usage.ts
  */
 
 import { validateField, validateFieldAndThrow } from './service.validation';
 import { ValidationRequest } from './types.validation';
+import { Request } from 'express';
 
 /**
  * Example: Validate user registration data
  * This shows how business services should use the validator
  */
-export function validateUserRegistration(userData: {
+export async function validateUserRegistration(userData: {
   username: string;
   password: string;
   email: string;
   firstName: string;
   lastName: string;
-}): { isValid: boolean; errors: string[] } {
+}, req: Request): Promise<{ isValid: boolean; errors: string[] }> {
   const errors: string[] = [];
   
   // Validate each field individually
   const validations: ValidationRequest[] = [
-    { value: userData.username, fieldType: 'username' },
+    { value: userData.username, fieldType: 'userName' },        // Updated field type
     { value: userData.password, fieldType: 'password' },
     { value: userData.email, fieldType: 'email' },
-    { value: userData.firstName, fieldType: 'first_name' },
-    { value: userData.lastName, fieldType: 'last_name' }
+    { value: userData.firstName, fieldType: 'text-mini' },     // Use standard field
+    { value: userData.lastName, fieldType: 'text-mini' }       // Use standard field
   ];
   
-  // Check each field
-  validations.forEach(validation => {
-    const result = validateField(validation);
+  // Check each field (now async)
+  for (const validation of validations) {
+    const result = await validateField(validation, req);
     if (!result.isValid && result.error) {
       errors.push(result.error);
     }
-  });
+  }
   
   return {
     isValid: errors.length === 0,
@@ -49,12 +51,12 @@ export function validateUserRegistration(userData: {
  * Example: Validate field and throw exception
  * This shows how to use the throw version for immediate error handling
  */
-export function validateServiceName(serviceName: string): void {
+export async function validateServiceName(serviceName: string, req: Request): Promise<void> {
   try {
-    validateFieldAndThrow({
+    await validateFieldAndThrow({
       value: serviceName,
-      fieldType: 'service_name'
-    });
+      fieldType: 'text-medium'  // Use standard field instead of service_name
+    }, req);
     console.log('Service name validation passed');
   } catch (error) {
     console.error('Service name validation failed:', (error as Error).message);
@@ -66,20 +68,20 @@ export function validateServiceName(serviceName: string): void {
  * Example: Security threat detection
  * This demonstrates how security threats are detected
  */
-export function testSecurityValidation(): void {
+export async function testSecurityValidation(req: Request): Promise<void> {
   const testCases: ValidationRequest[] = [
-    { value: "admin'; DROP TABLE users; --", fieldType: 'username' },
-    { value: "<script>alert('xss')</script>", fieldType: 'description' },
-    { value: "normal_username", fieldType: 'username' },
+    { value: "admin'; DROP TABLE users; --", fieldType: 'userName' },     // Updated field type
+    { value: "<script>alert('xss')</script>", fieldType: 'text-long' },  // Use standard field
+    { value: "normal_username", fieldType: 'userName' },                  // Updated field type
     { value: "valid@email.com", fieldType: 'email' }
   ];
   
-  testCases.forEach(testCase => {
+  for (const testCase of testCases) {
     console.log(`\nTesting: ${testCase.value} (${testCase.fieldType})`);
-    const result = validateField(testCase);
+    const result = await validateField(testCase, req);
     console.log(`Result: ${result.isValid ? 'VALID' : 'INVALID'}`);
     if (!result.isValid) {
       console.log(`Error: ${result.error}`);
     }
-  });
+  }
 } 
