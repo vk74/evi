@@ -23,6 +23,7 @@ import catalogRoutes from '@/modules/catalog/routes.catalog';
 import adminRoutes from '@/modules/admin/routes.admin';
 import coreRoutes from '@/core/routes/routes.core';
 import workRoutes from '@/modules/work/routes.work';
+import publicRoutes from '@/core/routes/routes.public';
 import { loadSettings } from '@/modules/admin/settings/service.load.settings';
 
 // Import event bus system
@@ -274,6 +275,7 @@ async function initializeServer(): Promise<void> {
     app.use(checkServerReady);
 
     // 11. Route registration
+    app.use(publicRoutes);
     app.use(authRoutes);
     app.use('/api/catalog', catalogRoutes);
     app.use(adminRoutes);
