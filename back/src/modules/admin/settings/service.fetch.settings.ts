@@ -2,7 +2,6 @@
  * service.fetch.settings.ts - backend file
  * version: 1.0.02
  * Service for fetching settings from cache with filtering.
- * Now uses event system instead of logging.
  */
 
 import { Request } from 'express';

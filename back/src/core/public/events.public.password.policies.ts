@@ -1,8 +1,8 @@
 /**
  * events.public.password.policies.ts - backend file
- * version: 1.0.2
+ * version: 1.0.3
  * Event definitions for public password policies API operations.
- * Contains event types for logging requests, responses, cache hits, rate limiting, and errors.
+ * Contains event types for logging requests, responses, and errors.
  */
 
 /**
@@ -35,19 +35,10 @@ export const PUBLIC_PASSWORD_POLICIES_EVENTS = {
 
   CACHE_HIT: {
     eventName: 'publicPasswordPolicies.cache.hit',
-    eventMessage: 'Password policies retrieved from cache',
+    eventMessage: 'Password policies retrieved from settings service',
     eventType: 'performance' as const,
     source: 'core.public.password.policies',
     severity: 'debug' as const,
-    version: '1.0.0'
-  },
-
-  CACHE_MISS: {
-    eventName: 'publicPasswordPolicies.cache.miss',
-    eventMessage: 'Password policies not found in cache',
-    eventType: 'performance' as const,
-    source: 'core.public.password.policies',
-    severity: 'warning' as const,
     version: '1.0.0'
   },
 
@@ -87,14 +78,6 @@ export const PUBLIC_PASSWORD_POLICIES_EVENTS = {
     version: '1.0.0'
   },
 
-  FALLBACK_DB_QUERY: {
-    eventName: 'publicPasswordPolicies.fallback.db.query',
-    eventMessage: 'Fallback to database query for password policies',
-    eventType: 'app' as const,
-    source: 'core.public.password.policies',
-    severity: 'info' as const,
-    version: '1.0.0'
-  }
 };
 
 /**
@@ -104,10 +87,8 @@ export const PUBLIC_PASSWORD_POLICIES_EVENT_NAMES = {
   REQUEST_RECEIVED: PUBLIC_PASSWORD_POLICIES_EVENTS.REQUEST_RECEIVED.eventName,
   RESPONSE_SENT: PUBLIC_PASSWORD_POLICIES_EVENTS.RESPONSE_SENT.eventName,
   CACHE_HIT: PUBLIC_PASSWORD_POLICIES_EVENTS.CACHE_HIT.eventName,
-  CACHE_MISS: PUBLIC_PASSWORD_POLICIES_EVENTS.CACHE_MISS.eventName,
   RATE_LIMIT_EXCEEDED: PUBLIC_PASSWORD_POLICIES_EVENTS.RATE_LIMIT_EXCEEDED.eventName,
   VALIDATION_ERROR: PUBLIC_PASSWORD_POLICIES_EVENTS.VALIDATION_ERROR.eventName,
   SERVICE_ERROR: PUBLIC_PASSWORD_POLICIES_EVENTS.SERVICE_ERROR.eventName,
-  HTTP_ERROR: PUBLIC_PASSWORD_POLICIES_EVENTS.HTTP_ERROR.eventName,
-  FALLBACK_DB_QUERY: PUBLIC_PASSWORD_POLICIES_EVENTS.FALLBACK_DB_QUERY.eventName
+  HTTP_ERROR: PUBLIC_PASSWORD_POLICIES_EVENTS.HTTP_ERROR.eventName
 } as const; 

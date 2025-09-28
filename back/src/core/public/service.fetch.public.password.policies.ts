@@ -1,28 +1,40 @@
 /**
  * service.fetch.public.password.policies.ts - backend file
- * version: 1.0.0
+ * version: 1.0.1
  * Service for fetching public password policy settings.
- * Uses cache first, falls back to database queries if needed.
+ * Uses centralized settings service for data access.
  * Provides structured response for public consumption.
  */
 
 import { Request } from 'express';
-import { Pool, QueryResult } from 'pg';
-import { pool as pgPool } from '../db/maindb';
-import { getSetting, getAllSettings } from '../../modules/admin/settings/cache.settings';
-import { 
-  passwordPoliciesQueries, 
-  ALLOWED_PUBLIC_PASSWORD_POLICY_SETTINGS,
-  DEFAULT_PASSWORD_POLICIES,
-  PASSWORD_POLICIES_SECTION_PATH
-} from './queries.public.password.policies';
+import { fetchSettingsBySection } from '../../modules/admin/settings/service.fetch.settings';
 import fabricEvents from '../eventBus/fabric.events';
 import { PUBLIC_PASSWORD_POLICIES_EVENT_NAMES } from './events.public.password.policies';
 import { v4 as uuidv4 } from 'uuid';
 import { getClientIp } from '../helpers/get.client.ip.from.req';
 
-// Type assertion for pool
-const pool = pgPool as Pool;
+// Constants moved from deleted queries file
+const PASSWORD_POLICIES_SECTION_PATH = 'Application.Security.PasswordPolicies';
+
+const ALLOWED_PUBLIC_PASSWORD_POLICY_SETTINGS = [
+  'password.min.length',
+  'password.max.length', 
+  'password.require.lowercase',
+  'password.require.uppercase',
+  'password.require.numbers',
+  'password.require.special.chars',
+  'password.allowed.special.chars'
+];
+
+const DEFAULT_PASSWORD_POLICIES = {
+  'password.min.length': 8,
+  'password.max.length': 40,
+  'password.require.lowercase': true,
+  'password.require.uppercase': true, 
+  'password.require.numbers': true,
+  'password.require.special.chars': false,
+  'password.allowed.special.chars': '!@#$%^&*()_+-=[]{}|;:,.<>?'
+};
 
 /**
  * Interface for public password policies response
@@ -101,111 +113,49 @@ function transformToPasswordPolicies(settings: PasswordPolicySetting[]): PublicP
 }
 
 /**
- * Fetch password policies from cache
+ * Fetch password policies using centralized settings service
  */
-function fetchFromCache(requestId: string, clientIp: string): PasswordPolicySetting[] | null {
+async function fetchPasswordPoliciesFromSettings(requestId: string, req: Request): Promise<PasswordPolicySetting[]> {
   try {
-    const cachedSettings: PasswordPolicySetting[] = [];
-    
-    // Try to get each password policy setting from cache
-    for (const settingName of ALLOWED_PUBLIC_PASSWORD_POLICY_SETTINGS) {
-      const setting = getSetting(PASSWORD_POLICIES_SECTION_PATH, settingName);
-      if (setting) {
-        cachedSettings.push({
-          setting_name: setting.setting_name,
-          value: setting.value,
-          default_value: setting.default_value,
-          confidentiality: setting.confidentiality,
-          section_path: setting.section_path,
-          description: setting.description
-        });
-      }
-    }
+    // Use centralized settings service
+    const settings = await fetchSettingsBySection({
+      sectionPath: PASSWORD_POLICIES_SECTION_PATH,
+      includeConfidential: false
+    }, req);
 
-    if (cachedSettings.length > 0) {
-      // Log cache hit
-      fabricEvents.createAndPublishEvent({
-        eventName: PUBLIC_PASSWORD_POLICIES_EVENT_NAMES.CACHE_HIT,
-        payload: {
-          requestId,
-          sectionPath: PASSWORD_POLICIES_SECTION_PATH,
-          settingsFound: cachedSettings.length,
-          cacheSource: 'settings_cache'
-        }
-      });
-      
-      return cachedSettings;
-    }
-
-    // Log cache miss
-    fabricEvents.createAndPublishEvent({
-      eventName: PUBLIC_PASSWORD_POLICIES_EVENT_NAMES.CACHE_MISS,
-      payload: {
-        requestId,
-        sectionPath: PASSWORD_POLICIES_SECTION_PATH,
-        fallbackUsed: true
-      }
-    });
-
-    return null;
-  } catch (error) {
-    // Log cache error
-    fabricEvents.createAndPublishEvent({
-      eventName: PUBLIC_PASSWORD_POLICIES_EVENT_NAMES.SERVICE_ERROR,
-      payload: {
-        requestId,
-        errorMessage: error instanceof Error ? error.message : 'Unknown cache error',
-        errorCode: 'CACHE_ERROR',
-        operation: 'fetchFromCache'
-      },
-      errorData: error instanceof Error ? error.message : 'Unknown error'
-    });
-
-    return null;
-  }
-}
-
-/**
- * Fetch password policies from database (fallback)
- */
-async function fetchFromDatabase(requestId: string): Promise<PasswordPolicySetting[]> {
-  try {
-    // Log fallback database query
-    fabricEvents.createAndPublishEvent({
-      eventName: PUBLIC_PASSWORD_POLICIES_EVENT_NAMES.FALLBACK_DB_QUERY,
-      payload: {
-        requestId,
-        sectionPath: PASSWORD_POLICIES_SECTION_PATH,
-        queryExecuted: 'fetchPasswordPoliciesBySection',
-        resultsCount: 0 // Will be updated after query
-      }
-    });
-
-    const result: QueryResult<PasswordPolicySetting> = await pool.query(
-      passwordPoliciesQueries.fetchPasswordPoliciesBySection.text,
-      [PASSWORD_POLICIES_SECTION_PATH]
+    // Filter to only allowed password policy settings
+    const filteredSettings = settings.filter(setting => 
+      ALLOWED_PUBLIC_PASSWORD_POLICY_SETTINGS.includes(setting.setting_name)
     );
 
-    // Update the event with actual results count
+    // Log successful fetch
     fabricEvents.createAndPublishEvent({
-      eventName: PUBLIC_PASSWORD_POLICIES_EVENT_NAMES.FALLBACK_DB_QUERY,
+      eventName: PUBLIC_PASSWORD_POLICIES_EVENT_NAMES.CACHE_HIT,
       payload: {
         requestId,
         sectionPath: PASSWORD_POLICIES_SECTION_PATH,
-        queryExecuted: 'fetchPasswordPoliciesBySection',
-        resultsCount: result.rows.length
+        settingsFound: filteredSettings.length,
+        cacheSource: 'settings_service'
       }
     });
 
-    return result.rows;
+    return filteredSettings.map(setting => ({
+      setting_name: setting.setting_name,
+      value: setting.value,
+      default_value: setting.default_value,
+      confidentiality: setting.confidentiality,
+      section_path: setting.section_path,
+      description: setting.description
+    }));
   } catch (error) {
+    // Log service error
     fabricEvents.createAndPublishEvent({
       eventName: PUBLIC_PASSWORD_POLICIES_EVENT_NAMES.SERVICE_ERROR,
       payload: {
         requestId,
-        errorMessage: error instanceof Error ? error.message : 'Unknown database error',
-        errorCode: 'DATABASE_ERROR',
-        operation: 'fetchFromDatabase'
+        errorMessage: error instanceof Error ? error.message : 'Unknown settings service error',
+        errorCode: 'SETTINGS_SERVICE_ERROR',
+        operation: 'fetchPasswordPoliciesFromSettings'
       },
       errorData: error instanceof Error ? error.message : 'Unknown error'
     });
@@ -241,25 +191,19 @@ export async function fetchPublicPasswordPolicies(req: Request): Promise<PublicP
 
     let settings: PasswordPolicySetting[] = [];
 
-    // Try cache first
-    const cachedSettings = fetchFromCache(requestId, clientIp);
-    if (cachedSettings && cachedSettings.length > 0) {
-      settings = cachedSettings;
-    } else {
-      // Fallback to database
-      try {
-        settings = await fetchFromDatabase(requestId);
-      } catch (dbError) {
-        // If database also fails, use defaults
-        console.warn('Database fallback failed, using default password policies');
-        settings = Object.entries(DEFAULT_PASSWORD_POLICIES).map(([key, value]) => ({
-          setting_name: key,
-          value: value,
-          default_value: value,
-          confidentiality: false,
-          section_path: PASSWORD_POLICIES_SECTION_PATH
-        }));
-      }
+    try {
+      // Use centralized settings service
+      settings = await fetchPasswordPoliciesFromSettings(requestId, req);
+    } catch (settingsError) {
+      // If settings service fails, use defaults
+      console.warn('Settings service failed, using default password policies');
+      settings = Object.entries(DEFAULT_PASSWORD_POLICIES).map(([key, value]) => ({
+        setting_name: key,
+        value: value,
+        default_value: value,
+        confidentiality: false,
+        section_path: PASSWORD_POLICIES_SECTION_PATH
+      }));
     }
 
     // Transform to structured format
@@ -275,7 +219,6 @@ export async function fetchPublicPasswordPolicies(req: Request): Promise<PublicP
         clientIp,
         statusCode: 200,
         responseTime,
-        cacheUsed: cachedSettings !== null,
         policiesCount: passwordPolicies ? Object.keys(passwordPolicies).length : 0
       }
     });
