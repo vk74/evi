@@ -241,8 +241,8 @@
               "auth": {
                 "label": "аутентификация"
               },
-              "PublicPasswordPolicies": {
-                "label": "публичные политики паролей"
+              "publicPolicies": {
+                "label": "публичные политики"
               },
               "catalog": {
                 "label": "каталог"

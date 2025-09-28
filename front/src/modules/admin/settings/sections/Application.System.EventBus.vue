@@ -56,7 +56,7 @@ const domainSettings = ref<Record<string, boolean | null>>({
   'generate.events.in.domain.logger': null,
   'generate.events.in.domain.system': null,
   'generate.events.in.domain.auth': null,
-  'generate.events.in.domain.PublicPasswordPolicies': null,
+  'generate.events.in.domain.publicPolicies': null,
   'generate.events.in.domain.catalog': null,
   'generate.events.in.domain.services': null,
   'generate.events.in.domain.adminServices': null,
@@ -78,7 +78,7 @@ const allSettings = [
   'generate.events.in.domain.logger',
   'generate.events.in.domain.system',
   'generate.events.in.domain.auth',
-  'generate.events.in.domain.PublicPasswordPolicies',
+  'generate.events.in.domain.publicPolicies',
   'generate.events.in.domain.catalog',
   'generate.events.in.domain.services',
   'generate.events.in.domain.adminServices',
@@ -136,8 +136,8 @@ const domainGroups = computed(() => {
           translationKey: 'auth'
         },
         {
-          name: 'generate.events.in.domain.PublicPasswordPolicies',
-          translationKey: 'PublicPasswordPolicies'
+          name: 'generate.events.in.domain.publicPolicies',
+          translationKey: 'publicPolicies'
         },
         {
           name: 'generate.events.in.domain.validation',

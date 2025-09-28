@@ -9,7 +9,7 @@
 import { Request } from 'express';
 import { fetchSettingsBySection } from '../../modules/admin/settings/service.fetch.settings';
 import fabricEvents from '../eventBus/fabric.events';
-import { PUBLIC_VALIDATION_RULES_EVENT_NAMES } from './events.public.validation.rules';
+import { PUBLIC_VALIDATION_RULES_EVENT_NAMES } from './events.public.policies';
 import { v4 as uuidv4 } from 'uuid';
 import { getClientIp } from '../helpers/get.client.ip.from.req';
 
@@ -31,7 +31,6 @@ const ALLOWED_VALIDATION_RULES_SETTINGS = [
   'wellKnownFields.groupName.maxLength',
   'wellKnownFields.groupName.minLength',
   'wellKnownFields.telephoneNumber.mask',
-  'wellKnownFields.telephoneNumber.maxLength',
   'wellKnownFields.telephoneNumber.regex',
   'wellKnownFields.userName.allowNumbers',
   'wellKnownFields.userName.allowUsernameChars',
@@ -48,13 +47,14 @@ const DEFAULT_VALIDATION_RULES = {
   'standardFields.textMedium.maxLength': 400,
   'standardFields.textLong.maxLength': 1000,
   'standardFields.textExtraLong.maxLength': 2000,
+  'wellKnownFields.email.regex': '^[a-zA-Z0-9.!#$%&\'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$',
   'wellKnownFields.groupName.allowNumbers': true,
   'wellKnownFields.groupName.allowUsernameChars': true,
   'wellKnownFields.groupName.latinOnly': true,
   'wellKnownFields.groupName.maxLength': 20,
   'wellKnownFields.groupName.minLength': 1,
   'wellKnownFields.telephoneNumber.mask': '+# (###) ###-####',
-  'wellKnownFields.telephoneNumber.maxLength': 15,
+  'wellKnownFields.telephoneNumber.regex': '^[+\\\\d() -]{7,20}$',
   'wellKnownFields.userName.allowNumbers': true,
   'wellKnownFields.userName.allowUsernameChars': true,
   'wellKnownFields.userName.latinOnly': true,
@@ -87,7 +87,7 @@ export interface PublicValidationRulesResponse {
         allowUsernameChars: boolean; 
       };
       telephoneNumber: { 
-        maxLength: number; 
+        regex: string;
         mask: string; 
       };
       userName: { 
@@ -130,7 +130,9 @@ function transformToValidationRules(settings: ValidationRuleSetting[]): PublicVa
       allowSpecialChars: true
     },
     wellKnownFields: {
-      email: {},
+      email: {
+        regex: '^[a-zA-Z0-9.!#$%&\'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$'
+      },
       groupName: {
         minLength: 1,
         maxLength: 20,
@@ -139,7 +141,7 @@ function transformToValidationRules(settings: ValidationRuleSetting[]): PublicVa
         allowUsernameChars: true
       },
       telephoneNumber: {
-        maxLength: 15,
+        regex: '^[+\\\\d() -]{7,20}$',
         mask: '+# (###) ###-####'
       },
       userName: {
@@ -197,14 +199,18 @@ function transformToValidationRules(settings: ValidationRuleSetting[]): PublicVa
         rules.wellKnownFields.groupName.allowUsernameChars = Boolean(value);
         break;
       
-      // Well-known fields - Telephone Number
-      case 'wellKnownFields.telephoneNumber.maxLength':
-        rules.wellKnownFields.telephoneNumber.maxLength = Number(value) || rules.wellKnownFields.telephoneNumber.maxLength;
+      // Well-known fields - Email
+      case 'wellKnownFields.email.regex':
+        rules.wellKnownFields.email.regex = String(value) || rules.wellKnownFields.email.regex;
         break;
+      
+      // Well-known fields - Telephone Number
       case 'wellKnownFields.telephoneNumber.mask':
         rules.wellKnownFields.telephoneNumber.mask = String(value) || rules.wellKnownFields.telephoneNumber.mask;
         break;
-      // Note: regex is excluded for security reasons
+      case 'wellKnownFields.telephoneNumber.regex':
+        rules.wellKnownFields.telephoneNumber.regex = String(value) || rules.wellKnownFields.telephoneNumber.regex;
+        break;
       
       // Well-known fields - User Name
       case 'wellKnownFields.userName.minLength':

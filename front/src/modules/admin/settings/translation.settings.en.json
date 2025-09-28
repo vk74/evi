@@ -241,8 +241,8 @@
               "auth": {
                 "label": "authentication"
               },
-              "PublicPasswordPolicies": {
-                "label": "public password policies"
+              "publicPolicies": {
+                "label": "public policies"
               },
               "catalog": {
                 "label": "catalog"

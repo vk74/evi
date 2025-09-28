@@ -77,7 +77,9 @@
           "format": "address contains invalid characters"
         },
         "phone": {
-          "format": "phone must contain only digits and be no longer than 15 characters"
+          "format": "invalid phone number format",
+          "rulesNotLoaded": "validation rules not loaded - phone validation disabled",
+          "invalidRegex": "invalid phone regex in system settings"
         }
       },
       "buttons": {

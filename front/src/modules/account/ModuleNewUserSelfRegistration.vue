@@ -23,7 +23,8 @@ import { useAppStore } from '@/core/state/appstate'
 import { useUserAuthStore } from '@/core/auth/state.user.auth'
 import { useValidationRules } from '@/core/validation/rules.common.fields'
 import { fetchPublicPasswordPolicies } from '@/core/services/service.fetch.public.password.policies'
-import { usePublicSettingsStore, type PasswordPolicies } from '@/core/state/state.public.settings'
+import { fetchPublicValidationRules } from '@/core/services/service.fetch.public.validation.rules'
+import { usePublicSettingsStore, type PasswordPolicies, type ValidationRules } from '@/core/state/state.public.settings'
 import PasswordPoliciesPanel from '@/core/ui/panels/panel.current.password.policies.vue'
 import { api } from '@/core/api/service.axios'
 import { PhEye, PhEyeSlash } from '@phosphor-icons/vue'
@@ -35,7 +36,6 @@ const userStore = useUserAuthStore()
 const publicStore = usePublicSettingsStore()
 const { t } = useI18n()
 const {
-  usernameRules,
   emailRules,
   mobilePhoneRules,
   firstNameRules,
@@ -81,6 +81,12 @@ const invalidFields = ref<string[]>([])
  */
 const currentPasswordPolicies = ref<PasswordPolicies | null>(null)
 
+// ==================== VALIDATION RULES STATE ====================
+/**
+ * Validation rules state using public settings store
+ */
+const currentValidationRules = ref<ValidationRules | null>(null)
+
 // ==================== REGISTRATION SETTINGS STATE ====================
 /**
  * Registration page enabled/disabled state
@@ -96,6 +102,15 @@ const passwordPoliciesReady = computed(() => {
   return !publicStore.isLoadingPasswordPolicies && 
          !publicStore.passwordPoliciesError && 
          currentPasswordPolicies.value !== null
+})
+
+/**
+ * Check if validation rules are ready (loaded and valid)
+ */
+const validationRulesReady = computed(() => {
+  return !publicStore.isLoadingValidationRules && 
+         !publicStore.validationRulesError && 
+         currentValidationRules.value !== null
 })
 
 /**
@@ -117,7 +132,7 @@ const isRegistrationEnabled = computed(() => {
  * Check if form should be disabled (registration disabled or settings not ready)
  */
 const isFormDisabled = computed(() => {
-  return !isRegistrationEnabled.value || !passwordPoliciesReady.value
+  return !isRegistrationEnabled.value || !passwordPoliciesReady.value || !validationRulesReady.value
 })
 
 /**
@@ -172,6 +187,43 @@ const dynamicPasswordRules = computed(() => {
 })
 
 /**
+ * Dynamic username validation rules based on loaded validation rules
+ */
+const dynamicUsernameRules = computed(() => {
+  if (!validationRulesReady.value || !currentValidationRules.value) {
+    return [
+      (v: string) => !!v || t('account.selfRegistration.validation.username.required'),
+      () => !publicStore.validationRulesError || t('account.selfRegistration.validation.username.rulesNotLoaded')
+    ]
+  }
+
+  const rules = currentValidationRules.value.wellKnownFields.userName
+  const validationRules: Array<(v: string) => string | boolean> = []
+  
+  // Required field rule
+  validationRules.push((v: string) => !!v || t('account.selfRegistration.validation.username.required'))
+  
+  // Length rules
+  validationRules.push((v: string) => (v && v.length >= rules.minLength) || t('account.selfRegistration.validation.username.minLength', { length: rules.minLength }))
+  validationRules.push((v: string) => (v && v.length <= rules.maxLength) || t('account.selfRegistration.validation.username.maxLength', { length: rules.maxLength }))
+  
+  // Character requirements
+  if (rules.latinOnly) {
+    validationRules.push((v: string) => /^[a-zA-Z0-9._-]+$/.test(v) || t('account.selfRegistration.validation.username.latinOnly'))
+  }
+  
+  if (!rules.allowNumbers) {
+    validationRules.push((v: string) => !/[0-9]/.test(v) || t('account.selfRegistration.validation.username.noNumbers'))
+  }
+  
+  if (!rules.allowUsernameChars) {
+    validationRules.push((v: string) => !/[._-]/.test(v) || t('account.selfRegistration.validation.username.noSpecialChars'))
+  }
+  
+  return validationRules
+})
+
+/**
  * Password confirmation validation rules
  */
 const passwordConfirmRules = computed(() => [
@@ -180,19 +232,66 @@ const passwordConfirmRules = computed(() => [
 ])
 
 /**
- * Address validation rules
+ * Address validation rules - REMOVED: field is not used in the form
  */
-const addressRules = [
-  (v: string) => !v || v.length <= 100 || t('account.selfRegistration.validation.address.maxLength'),
-  (v: string) => !v || /^[\p{L}\p{N}\p{P}\p{Z}]+$/u.test(v) || t('account.selfRegistration.validation.address.format')
-]
 
 /**
- * Phone validation rules
+ * Dynamic email validation rules based on loaded validation rules
  */
-const phoneRules = [
-  (v: string) => !v || /^[+0-9]{0,15}$/.test(v) || t('account.selfRegistration.validation.phone.format')
-]
+const dynamicEmailRules = computed(() => {
+  if (!validationRulesReady.value || !currentValidationRules.value) {
+    return [
+      (v: string) => !!v || t('account.selfRegistration.validation.email.required'),
+      () => !publicStore.validationRulesError || t('account.selfRegistration.validation.email.rulesNotLoaded')
+    ]
+  }
+
+  const rules = currentValidationRules.value.wellKnownFields.email
+  const validationRules: Array<(v: string) => string | boolean> = []
+  
+  // Required field rule
+  validationRules.push((v: string) => !!v || t('account.selfRegistration.validation.email.required'))
+  
+  // Regex validation
+  try {
+    const emailRegex = new RegExp(rules.regex)
+    validationRules.push((v: string) => emailRegex.test(v) || t('account.selfRegistration.validation.email.format'))
+  } catch (error) {
+    console.error('Invalid email regex:', rules.regex, error)
+    // Fallback to basic email validation
+    validationRules.push((v: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v) || t('account.selfRegistration.validation.email.format'))
+  }
+  
+  return validationRules
+})
+
+/**
+ * Dynamic phone validation rules based on loaded validation rules
+ */
+const dynamicPhoneRules = computed(() => {
+  if (!validationRulesReady.value || !currentValidationRules.value) {
+    return [
+      () => !publicStore.validationRulesError || t('account.selfRegistration.validation.phone.rulesNotLoaded')
+    ]
+  }
+
+  const rules = currentValidationRules.value.wellKnownFields.telephoneNumber
+  const validationRules: Array<(v: string) => string | boolean> = []
+  
+  // Optional field, but if provided, must match regex from public policies
+  if (rules.regex) {
+    try {
+      const phoneRegex = new RegExp(rules.regex)
+      validationRules.push((v: string) => !v || phoneRegex.test(v) || t('account.selfRegistration.validation.phone.format'))
+    } catch (error) {
+      console.error('Invalid phone regex from public policies:', rules.regex, error)
+      // No fallback - if regex is invalid, form will be disabled
+      validationRules.push(() => t('account.selfRegistration.validation.phone.invalidRegex'))
+    }
+  }
+  
+  return validationRules
+})
 
 // ==================== METHODS ====================
 /**
@@ -209,19 +308,62 @@ const loadPasswordPolicies = async () => {
   } catch (error) {
     
     // Error handling is done in the service layer
-    // Just ensure we have some fallback value
-    if (!currentPasswordPolicies.value) {
-      currentPasswordPolicies.value = {
-        minLength: 8,
-        maxLength: 40,
-        requireLowercase: true,
-        requireUppercase: true,
-        requireNumbers: true,
-        requireSpecialChars: false,
-        allowedSpecialChars: '!@#$%^&*()_+-=[]{}|;:,.<>?'
-      }
+    // No fallback - if password policies fail, form will be disabled
+  }
+}
+
+/**
+ * Load validation rules from public API
+ */
+const loadValidationRules = async () => {
+  try {
+    
+    const rules = await fetchPublicValidationRules()
+    currentValidationRules.value = rules
+    
+    
+    
+  } catch (error) {
+    
+    // Error handling is done in the service layer
+    // No fallback - if validation rules fail, form will be disabled
+    console.error('Failed to load validation rules:', error)
+  }
+}
+
+/**
+ * Apply phone mask in real-time
+ */
+const applyPhoneMask = (value: string) => {
+  if (!currentValidationRules.value?.wellKnownFields?.telephoneNumber?.mask) {
+    return value
+  }
+  
+  const mask = currentValidationRules.value.wellKnownFields.telephoneNumber.mask
+  const digits = value.replace(/\D/g, '') // Remove all non-digits
+  
+  let maskedValue = ''
+  let digitIndex = 0
+  
+  for (let i = 0; i < mask.length && digitIndex < digits.length; i++) {
+    if (mask[i] === '#') {
+      maskedValue += digits[digitIndex]
+      digitIndex++
+    } else {
+      maskedValue += mask[i]
     }
   }
+  
+  return maskedValue
+}
+
+/**
+ * Handle phone input with real-time masking
+ */
+const handlePhoneInput = (event: Event) => {
+  const target = event.target as HTMLInputElement
+  const maskedValue = applyPhoneMask(target.value)
+  user.value.phone = maskedValue
 }
 
 /**
@@ -349,6 +491,7 @@ const goToLogin = () => {
 onMounted(async () => {
   await Promise.all([
     loadPasswordPolicies(),
+    loadValidationRules(),
     loadRegistrationSettings()
   ])
 })
@@ -388,11 +531,12 @@ onMounted(async () => {
           <v-text-field
             v-model="user.username"
             :label="t('account.selfRegistration.fields.username.label')"
-            :rules="usernameRules"
+            :rules="dynamicUsernameRules"
             :disabled="isFormDisabled"
+            :loading="publicStore.isLoadingValidationRules"
+            :counter="currentValidationRules?.wellKnownFields?.userName?.maxLength"
             variant="outlined"
             density="comfortable"
-            counter="25"
             color="teal"
             required
           />
@@ -403,7 +547,7 @@ onMounted(async () => {
             :label="t('account.selfRegistration.fields.password.label')"
             :rules="dynamicPasswordRules"
             :type="showPassword ? 'text' : 'password'"
-            :counter="currentPasswordPolicies?.maxLength || 40"
+            :counter="currentPasswordPolicies?.maxLength"
             :loading="publicStore.isLoadingPasswordPolicies"
             :disabled="isFormDisabled"
             variant="outlined"
@@ -434,7 +578,7 @@ onMounted(async () => {
             :label="t('account.selfRegistration.fields.passwordConfirm.label')"
             :rules="passwordConfirmRules"
             :type="showPassword ? 'text' : 'password'"
-            :counter="currentPasswordPolicies?.maxLength || 40"
+            :counter="currentPasswordPolicies?.maxLength"
             :loading="publicStore.isLoadingPasswordPolicies"
             :disabled="isFormDisabled"
             variant="outlined"
@@ -459,9 +603,10 @@ onMounted(async () => {
             :label="t('account.selfRegistration.fields.surname.label')"
             :rules="lastNameRules"
             :disabled="isFormDisabled"
+            :loading="publicStore.isLoadingValidationRules"
+            :counter="currentValidationRules?.standardFields?.textMini?.maxLength"
             variant="outlined"
             density="comfortable"
-            counter="25"
             color="teal"
             required
           />
@@ -472,9 +617,10 @@ onMounted(async () => {
             :label="t('account.selfRegistration.fields.name.label')"
             :rules="firstNameRules"
             :disabled="isFormDisabled"
+            :loading="publicStore.isLoadingValidationRules"
+            :counter="currentValidationRules?.standardFields?.textMini?.maxLength"
             variant="outlined"
             density="comfortable"
-            counter="25"
             color="teal"
             required
           />
@@ -483,8 +629,9 @@ onMounted(async () => {
           <v-text-field
             v-model="user.email"
             :label="t('account.selfRegistration.fields.email.label')"
-            :rules="emailRules"
+            :rules="dynamicEmailRules"
             :disabled="isFormDisabled"
+            :loading="publicStore.isLoadingValidationRules"
             variant="outlined"
             density="comfortable"
             type="email"
@@ -496,25 +643,18 @@ onMounted(async () => {
           <v-text-field
             v-model="user.phone"
             :label="t('account.selfRegistration.fields.phone.label')"
-            :placeholder="t('account.selfRegistration.fields.phone.placeholder')"
-            :rules="phoneRules"
+            :placeholder="currentValidationRules?.wellKnownFields?.telephoneNumber?.mask || t('account.selfRegistration.fields.phone.placeholder')"
+            :rules="dynamicPhoneRules"
             :disabled="isFormDisabled"
+            :loading="publicStore.isLoadingValidationRules"
+            @input="handlePhoneInput"
             variant="outlined"
             density="comfortable"
             color="teal"
           />
 
-          <!-- Address field -->
-          <v-text-field
-            v-model="user.address"
-            :label="t('account.selfRegistration.fields.address.label')"
-            :rules="addressRules"
-            :disabled="isFormDisabled"
-            variant="outlined"
-            density="comfortable"
-            counter="100"
-            color="teal"
-          />
+          <!-- Address field - HIDDEN for now -->
+          <!-- Address field is not used in this form -->
         </v-form>
 
         <!-- Error messages -->
@@ -523,6 +663,25 @@ onMounted(async () => {
           class="error-message mt-3"
         >
           {{ t('account.selfRegistration.errors.validation') }} {{ invalidFields.join(', ') }}
+        </div>
+
+        <!-- Validation rules error -->
+        <div
+          v-if="publicStore.validationRulesError"
+          class="text-error text-center mb-3"
+        >
+          <div class="mb-2">
+            {{ t('account.selfRegistration.validation.rulesError') }}
+          </div>
+          <v-btn
+            @click="loadValidationRules"
+            :loading="publicStore.isLoadingValidationRules"
+            color="error"
+            variant="outlined"
+            size="small"
+          >
+            {{ t('account.selfRegistration.retry') }}
+          </v-btn>
         </div>
       </div>
 

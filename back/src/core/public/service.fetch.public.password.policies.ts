@@ -9,7 +9,7 @@
 import { Request } from 'express';
 import { fetchSettingsBySection } from '../../modules/admin/settings/service.fetch.settings';
 import fabricEvents from '../eventBus/fabric.events';
-import { PUBLIC_PASSWORD_POLICIES_EVENT_NAMES } from './events.public.password.policies';
+import { PUBLIC_PASSWORD_POLICIES_EVENT_NAMES } from './events.public.policies';
 import { v4 as uuidv4 } from 'uuid';
 import { getClientIp } from '../helpers/get.client.ip.from.req';
 
