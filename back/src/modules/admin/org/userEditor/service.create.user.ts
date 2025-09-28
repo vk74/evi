@@ -74,7 +74,7 @@ async function validateUsername(username: string, req: Request): Promise<void> {
   }
 }
 
-// Password validation using new validation service (hardcoded security rules)
+// Password validation using dynamic settings from cache (separate from main validator)
 async function validatePassword(password: string, username: string, req: Request): Promise<void> {
   // Create event for password policy check start
   await createAndPublishEvent({
@@ -83,17 +83,71 @@ async function validatePassword(password: string, username: string, req: Request
     payload: { username }
   });
 
-  try {
-    await validateFieldAndThrow({ value: password, fieldType: 'password' }, req);
-  } catch (error) {
+  // Get password policy settings from cache
+  const minLengthSetting = getSetting('Application.Security.PasswordPolicies', 'password.min.length');
+  const maxLengthSetting = getSetting('Application.Security.PasswordPolicies', 'password.max.length');
+  const requireUppercaseSetting = getSetting('Application.Security.PasswordPolicies', 'password.require.uppercase');
+  const requireLowercaseSetting = getSetting('Application.Security.PasswordPolicies', 'password.require.lowercase');
+  const requireNumbersSetting = getSetting('Application.Security.PasswordPolicies', 'password.require.numbers');
+  const requireSpecialCharsSetting = getSetting('Application.Security.PasswordPolicies', 'password.require.special.chars');
+  const allowedSpecialCharsSetting = getSetting('Application.Security.PasswordPolicies', 'password.allowed.special.chars');
+
+  // Check if all required settings are found
+  if (!minLengthSetting || !maxLengthSetting || !requireUppercaseSetting || 
+      !requireLowercaseSetting || !requireNumbersSetting || !requireSpecialCharsSetting || !allowedSpecialCharsSetting) {
+    await createAndPublishEvent({
+      req,
+      eventName: USER_CREATION_EVENTS.PASSWORD_POLICY_SETTINGS_NOT_FOUND.eventName,
+      payload: { username },
+      errorData: 'Password policy settings not found in cache'
+    });
+    throw {
+      code: 'VALIDATION_ERROR',
+      message: 'Password policy settings not found. Please contact the system administrator.',
+      field: 'password'
+    } as ValidationError;
+  }
+
+  const policyViolations: string[] = [];
+
+  // Parse settings values
+  const minLength = Number(minLengthSetting.value);
+  const maxLength = Number(maxLengthSetting.value);
+  const requireUppercase = Boolean(requireUppercaseSetting.value);
+  const requireLowercase = Boolean(requireLowercaseSetting.value);
+  const requireNumbers = Boolean(requireNumbersSetting.value);
+  const requireSpecialChars = Boolean(requireSpecialCharsSetting.value);
+  const allowedSpecialChars = allowedSpecialCharsSetting.value || '!@#$%^&*()_+-=[]{}|;:,.<>?';
+
+  // Checks
+  if (password.length < minLength) {
+    policyViolations.push(`Password must be at least ${minLength} characters long`);
+  }
+  if (password.length > maxLength) {
+    policyViolations.push(`Password must be no more than ${maxLength} characters long`);
+  }
+  if (requireUppercase && !/[A-Z]/.test(password)) {
+    policyViolations.push('Password must contain at least one uppercase letter');
+  }
+  if (requireLowercase && !/[a-z]/.test(password)) {
+    policyViolations.push('Password must contain at least one lowercase letter');
+  }
+  if (requireNumbers && !/\d/.test(password)) {
+    policyViolations.push('Password must contain at least one digit');
+  }
+  if (requireSpecialChars) {
+    const specialCharRegex = new RegExp(`[${allowedSpecialChars.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}]`);
+    if (!specialCharRegex.test(password)) {
+      policyViolations.push('Password must contain at least one special character');
+    }
+  }
+
+  if (policyViolations.length > 0) {
     await createAndPublishEvent({
       req,
       eventName: USER_CREATION_EVENTS.PASSWORD_POLICY_CHECK_FAILED.eventName,
-      payload: { 
-        username,
-        policyViolations: [error instanceof Error ? error.message : 'Password validation failed']
-      },
-      errorData: error instanceof Error ? error.message : 'Password validation failed'
+      payload: { username, policyViolations },
+      errorData: policyViolations.join(', ')
     });
     throw {
       code: 'VALIDATION_ERROR',
@@ -102,7 +156,6 @@ async function validatePassword(password: string, username: string, req: Request
     } as ValidationError;
   }
 
-  // Create event for successful password policy check
   await createAndPublishEvent({
     req,
     eventName: USER_CREATION_EVENTS.PASSWORD_POLICY_CHECK_PASSED.eventName,

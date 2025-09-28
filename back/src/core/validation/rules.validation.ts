@@ -29,30 +29,15 @@ export const REGEX = {
 // SECURITY VALIDATION RULES (HARDCODED FOR SECURITY)
 // ============================================================================
 
-const SECURITY_FIELDS: ValidationRule[] = [
-  {
-    fieldType: 'password',
-    regex: REGEX.PASSWORD,
-    minLength: 8,
-    maxLength: 40,
-    required: true,
-    messages: {
-      required: 'Password is required',
-      minLength: 'Password must be at least 8 characters long',
-      maxLength: 'Password cannot exceed 40 characters',
-      invalidChars: 'Password may contain only Latin letters, numbers and common special characters',
-      noLetter: 'Password must contain at least one letter',
-      noNumber: 'Password must contain at least one number'
-    }
-  }
-];
+// Password validation is handled separately by password policies system
+// No hardcoded security fields in main validator anymore
 
 // ============================================================================
-// COMBINED VALIDATION RULES (ONLY SECURITY FIELDS)
+// COMBINED VALIDATION RULES (NO HARDCODED SECURITY FIELDS)
 // ============================================================================
 
 export const VALIDATION_RULES: ValidationRule[] = [
-  ...SECURITY_FIELDS
+  // No hardcoded security fields - all validation rules come from database
 ];
 
 /**
@@ -96,16 +81,6 @@ export function validateByRule(value: string | number, rule: ValidationRule): { 
   // Check regex pattern
   if (rule.regex && !rule.regex.test(stringValue)) {
     return { isValid: false, error: rule.messages.invalidChars || rule.messages.invalid };
-  }
-
-  // Check for required characters in password
-  if (rule.fieldType === 'password') {
-    if (!REGEX.PASSWORD_CONTAINS_LETTER.test(stringValue)) {
-      return { isValid: false, error: rule.messages.noLetter };
-    }
-    if (!REGEX.PASSWORD_CONTAINS_NUMBER.test(stringValue)) {
-      return { isValid: false, error: rule.messages.noNumber };
-    }
   }
 
   // Check for required characters in userName (well-known field)

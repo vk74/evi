@@ -27,7 +27,7 @@ export async function validateUserRegistration(userData: {
   // Validate each field individually
   const validations: ValidationRequest[] = [
     { value: userData.username, fieldType: 'userName' },        // Updated field type
-    { value: userData.password, fieldType: 'password' },
+    // Note: password validation is handled separately by password policies system
     { value: userData.email, fieldType: 'email' },
     { value: userData.firstName, fieldType: 'text-mini' },     // Use standard field
     { value: userData.lastName, fieldType: 'text-mini' }       // Use standard field

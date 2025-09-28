@@ -20,10 +20,10 @@ export type FieldType =
   | 'text-short'         // standardFields.textShort
   | 'text-medium'        // standardFields.textMedium
   | 'text-long'          // standardFields.textLong
-  | 'text-extralong'     // standardFields.textExtraLong
-  
-  // Security fields (hardcoded for security)
-  | 'password';
+  | 'text-extralong';    // standardFields.textExtraLong
+
+// Note: Password validation is handled separately by password policies system
+// and is not part of the main validator
 
 // Validation request interface
 export interface ValidationRequest {
