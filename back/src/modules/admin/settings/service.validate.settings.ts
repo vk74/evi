@@ -1,6 +1,9 @@
 /**
- * service.validate.settings.ts
+ * service.validate.settings.ts - backend file
+ * version: 1.1.0
  * Service for validating setting values against their JSON schema definitions.
+ * Handles both standard JSON schema validation and custom validation for special field types.
+ * Provides centralized validation logic for all application settings with event logging.
  */
 
 import { AppSetting, SettingsError } from './types.settings';
@@ -9,14 +12,25 @@ import { createAndPublishEvent } from '../../../core/eventBus/fabric.events';
 import { SETTINGS_VALIDATION_EVENTS } from './events.settings';
 import { validateRegexString } from '../../../core/helpers/validate.regex';
 
-// Initialize JSON schema validator
+/**
+ * Validation result interface for custom validation functions
+ */
+interface ValidationResult {
+  isValid: boolean;
+  errors?: string[];
+}
+
+/**
+ * Initialize JSON schema validator with comprehensive error reporting
+ */
 const ajv = new Ajv({
   allErrors: true,
   verbose: true
 });
 
 /**
- * Validates a setting value against its schema
+ * Main validation function that handles different types of setting validation
+ * Routes to appropriate validation method based on setting type (standard, regex, phone mask)
  * 
  * @param setting - The setting containing the schema to validate against
  * @param value - The value to validate
@@ -41,6 +55,11 @@ export async function validateSettingValue(setting: AppSetting, value: any, req?
     // Special handling for regex fields - use custom validation instead of AJV
     if (isRegexField(setting)) {
       return await validateRegexField(setting, value, req);
+    }
+
+    // Special handling for phone mask fields - use custom validation
+    if (isPhoneMaskField(setting)) {
+      return await validatePhoneMaskField(setting, value, req);
     }
 
     await createAndPublishEvent({
@@ -113,7 +132,7 @@ export async function validateSettingValue(setting: AppSetting, value: any, req?
 }
 
 /**
- * Creates a validation error object
+ * Creates a standardized validation error object for consistent error handling
  * 
  * @param message - Error message
  * @param details - Optional error details
@@ -129,6 +148,7 @@ export function createValidationError(message: string, details?: unknown): Setti
 
 /**
  * Validates a setting value and throws an error if invalid
+ * Used by service.update.settings.ts to enforce validation before database updates
  * 
  * @param setting - The setting containing the schema
  * @param value - The value to validate
@@ -146,6 +166,7 @@ export async function validateOrThrow(setting: AppSetting, value: any, req?: any
 
 /**
  * Checks if a setting is a regex field that needs special validation
+ * Identifies regex fields by name pattern or schema format
  * 
  * @param setting - The setting to check
  * @returns True if this is a regex field
@@ -161,7 +182,20 @@ function isRegexField(setting: AppSetting): boolean {
 }
 
 /**
+ * Checks if a setting is a phone mask field that needs custom validation
+ * Identifies phone mask fields by name pattern
+ * 
+ * @param setting - The setting to check
+ * @returns True if this is a phone mask field
+ */
+function isPhoneMaskField(setting: AppSetting): boolean {
+  return setting.setting_name.includes('telephoneNumber.mask') || 
+         setting.setting_name.includes('phone.mask');
+}
+
+/**
  * Validates a regex field using custom validation instead of AJV
+ * Uses validateRegexString helper for comprehensive regex validation
  * 
  * @param setting - The setting containing the regex field
  * @param value - The regex string to validate
@@ -209,4 +243,87 @@ async function validateRegexField(setting: AppSetting, value: any, req?: any): P
   });
 
   return { isValid: true };
+}
+
+/**
+ * Validates a phone mask field using custom validation
+ * Handles JSON string parsing and uses validatePhoneMask helper for validation
+ * 
+ * @param setting - The setting containing the phone mask field
+ * @param value - The phone mask string to validate
+ * @param req - Express request object for event context
+ * @returns Result object with validation status and potential errors
+ */
+async function validatePhoneMaskField(setting: AppSetting, value: any, req: Request): Promise<ValidationResult> {
+  try {
+    await createAndPublishEvent({
+      req,
+      eventName: SETTINGS_VALIDATION_EVENTS.START.eventName,
+      payload: {
+        sectionPath: setting.section_path,
+        settingName: setting.setting_name,
+        customValidation: 'phoneMask'
+      }
+    });
+
+    // Import phone mask validation helper
+    const { validatePhoneMask } = await import('@/core/helpers/validate.phone.mask');
+    
+    // Parse JSON string if needed (same as regex validation)
+    let phoneMaskValue = String(value);
+    try {
+      // Try to parse as JSON first (in case it's a JSON string)
+      const parsed = JSON.parse(phoneMaskValue);
+      if (typeof parsed === 'string') {
+        phoneMaskValue = parsed;
+      }
+    } catch (error) {
+      // If not JSON, use as is
+    }
+    
+    // Validate phone mask
+    const validation = validatePhoneMask(phoneMaskValue);
+    
+    if (!validation.isValid) {
+      await createAndPublishEvent({
+        req,
+        eventName: SETTINGS_VALIDATION_EVENTS.ERROR.eventName,
+        payload: {
+          sectionPath: setting.section_path,
+          settingName: setting.setting_name,
+          errors: [validation.error || 'Invalid phone mask']
+        }
+      });
+
+      return { isValid: false, errors: [validation.error || 'Invalid phone mask'] };
+    }
+
+    await createAndPublishEvent({
+      req,
+      eventName: SETTINGS_VALIDATION_EVENTS.SUCCESS.eventName,
+      payload: {
+        sectionPath: setting.section_path,
+        settingName: setting.setting_name
+      }
+    });
+
+    return { isValid: true };
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    
+    await createAndPublishEvent({
+      req,
+      eventName: SETTINGS_VALIDATION_EVENTS.FAILED.eventName,
+      payload: {
+        sectionPath: setting.section_path,
+        settingName: setting.setting_name
+      },
+      errorData: errorMessage
+    });
+    
+    return {
+      isValid: false,
+      errors: [`Phone mask validation failed: ${errorMessage}`]
+    };
+  }
 }

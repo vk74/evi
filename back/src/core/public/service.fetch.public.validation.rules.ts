@@ -31,7 +31,6 @@ const ALLOWED_VALIDATION_RULES_SETTINGS = [
   'wellKnownFields.groupName.maxLength',
   'wellKnownFields.groupName.minLength',
   'wellKnownFields.telephoneNumber.mask',
-  'wellKnownFields.telephoneNumber.regex',
   'wellKnownFields.userName.allowNumbers',
   'wellKnownFields.userName.allowUsernameChars',
   'wellKnownFields.userName.latinOnly',
@@ -185,9 +184,6 @@ function transformToValidationRules(settings: ValidationRuleSetting[]): PublicVa
       // Well-known fields - Telephone Number
       case 'wellKnownFields.telephoneNumber.mask':
         rules.wellKnownFields.telephoneNumber.mask = String(value) || rules.wellKnownFields.telephoneNumber.mask;
-        break;
-      case 'wellKnownFields.telephoneNumber.regex':
-        rules.wellKnownFields.telephoneNumber.regex = String(value) || rules.wellKnownFields.telephoneNumber.regex;
         break;
       
       // Well-known fields - User Name

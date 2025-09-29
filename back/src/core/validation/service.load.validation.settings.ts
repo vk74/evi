@@ -149,20 +149,24 @@ function buildEmailRule(settings: AppSetting[]): ValidationRule {
  * @returns ValidationRule for telephoneNumber
  */
 function buildTelephoneNumberRule(settings: AppSetting[]): ValidationRule {
-  const maxLength = getSettingValue(settings, 'wellKnownFields.telephoneNumber.maxLength') || 15;
-  const regexPattern = getSettingValue(settings, 'wellKnownFields.telephoneNumber.regex') || 
-    '^\\+?[1-9]\\d{1,14}$';
+  const mask = getSettingValue(settings, 'wellKnownFields.telephoneNumber.mask') || '+# ### ###-####';
+  
+  // Generate regex from mask
+  let regexPattern = mask
+    .replace(/[.*+?^${}()|[\]\\]/g, '\\$&') // Escape special regex chars
+    .replace(/#/g, '\\d'); // Replace # with digit pattern
+  
+  // Add anchors
+  regexPattern = '^' + regexPattern + '$';
   
   const regex = new RegExp(regexPattern);
 
   return {
     fieldType: 'telephoneNumber',
     regex,
-    maxLength,
     required: false,
     messages: {
-      invalid: 'Invalid telephone number format',
-      maxLength: `Telephone number cannot exceed ${maxLength} characters`
+      invalid: 'Invalid telephone number format'
     }
   };
 }

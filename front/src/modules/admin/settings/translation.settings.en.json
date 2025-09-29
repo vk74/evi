@@ -421,9 +421,12 @@
           "allowSpaces": "allow spaces",
           "latinOnly": "latin only",
           "phoneMask": "phone input mask (e.g.: +7 (###) ###-####)",
-          "phoneMaskTooltip": "use # for digits, other characters as separators. brackets will be displayed in the field during input.",
+          "phoneMaskLabel": "phone input mask",
           "phoneRegex": "regex for phone validation",
-          "emailRegex": "regex for validation"
+          "emailRegex": "regex for validation",
+          "emailRegexLabel": "email validation regex",
+          "emailRegexHint": "Enter a correct regular expression",
+          "phoneMaskHint": "Enter a correct phone mask (allowed: digits, +, spaces, parentheses, commas, hyphens, #)"
         }
       },
       "groups": {

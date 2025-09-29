@@ -47,6 +47,14 @@ export interface SettingsError {
 }
 
 /**
+ * Validation result for settings
+ */
+export interface ValidationResult {
+  isValid: boolean;
+  errors?: string[];
+}
+
+/**
  * Request types for settings fetch operations
  */
 

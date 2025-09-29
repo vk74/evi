@@ -22,6 +22,7 @@ import { updateSettingFromComponent } from '@/modules/admin/settings/service.upd
 import { useUiStore } from '@/core/state/uistate';
 import DataLoading from '@/core/ui/loaders/DataLoading.vue';
 import { validateRegexString, validateRegexStringDetailed } from '@/core/helpers/validate.regex';
+import { validatePhoneMask } from '@/core/helpers/validate.phone.mask';
 
 // Section path identifier
 const section_path = 'Application.System.DataValidation';
@@ -50,16 +51,18 @@ const settingRetryAttempts = ref<Record<string, number>>({});
 // State for tracking regex values - initial (from DB) and current (user input)
 const initialEmailRegex = ref<string | null>(null);
 const currentEmailRegex = ref<string | null>(null);
-const initialTelephoneRegex = ref<string | null>(null);
-const currentTelephoneRegex = ref<string | null>(null);
+
+// State for tracking phone mask values - initial (from DB) and current (user input)
+const initialPhoneMask = ref<string | null>(null);
+const currentPhoneMask = ref<string | null>(null);
 
 // Flags to prevent recursive watcher calls during validation restoration
 const isRestoringEmailRegex = ref(false);
-const isRestoringTelephoneRegex = ref(false);
+const isRestoringPhoneMask = ref(false);
 
 // Keys for forcing component re-render
 const emailRegexKey = ref(0);
-const telephoneRegexKey = ref(0);
+const phoneMaskKey = ref(0);
 
 // Define all settings that need to be loaded
 const allSettings = [
@@ -81,9 +84,7 @@ const allSettings = [
   'wellKnownFields.groupName.allowUsernameChars',
   'wellKnownFields.groupName.latinOnly',
   'wellKnownFields.email.regex',
-  'wellKnownFields.telephoneNumber.maxLength',
   'wellKnownFields.telephoneNumber.mask',
-  'wellKnownFields.telephoneNumber.regex'
 ];
 
 // Initialize loading states for all settings
@@ -228,6 +229,22 @@ function validateRegexDetailed(regexString: string): { isValid: boolean; error?:
   }
   
   return validation;
+}
+
+/**
+ * Validate phone mask string for correctness
+ */
+function validatePhoneMaskString(maskString: string): boolean {
+  console.log('🔍 validatePhoneMaskString called with:', maskString);
+  const validation = validatePhoneMask(maskString);
+  
+  if (validation.isValid) {
+    console.log('✅ Phone mask validation passed');
+    return true;
+  } else {
+    console.log('❌ Phone mask validation failed:', validation.error);
+    return false;
+  }
 }
 
 /**
@@ -385,20 +402,14 @@ function updateLocalSetting(settingName: string, value: any) {
       currentEmailRegex.value = emailValue;
       console.log('📧 Initial values set - initialEmailRegex:', initialEmailRegex.value, 'currentEmailRegex:', currentEmailRegex.value);
       break;
-    case 'wellKnownFields.telephoneNumber.maxLength':
-      wellKnownFields.value[3].maxLength = safeNumber(value);
-      break;
     case 'wellKnownFields.telephoneNumber.mask':
-      wellKnownFields.value[3].mask = safeString(value);
-      break;
-    case 'wellKnownFields.telephoneNumber.regex':
-      const telephoneValue = safeString(value);
-      console.log('📞 Telephone regex initialization:', telephoneValue);
-      wellKnownFields.value[3].regex = telephoneValue;
+      const maskValue = safeString(value);
+      console.log('📞 Phone mask initialization:', maskValue);
+      wellKnownFields.value[3].mask = maskValue;
       // Устанавливаем исходное и текущее значения равными значению из БД
-      initialTelephoneRegex.value = telephoneValue;
-      currentTelephoneRegex.value = telephoneValue;
-      console.log('📞 Initial values set - initialTelephoneRegex:', initialTelephoneRegex.value, 'currentTelephoneRegex:', currentTelephoneRegex.value);
+      initialPhoneMask.value = maskValue;
+      currentPhoneMask.value = maskValue;
+      console.log('📞 Initial values set - initialPhoneMask:', initialPhoneMask.value, 'currentPhoneMask:', currentPhoneMask.value);
       break;
   }
 }
@@ -713,54 +724,37 @@ watch(
 );
 
 // Watch for telephone-number field changes - individual field watchers
-watch(
-  () => wellKnownFields.value[3]?.maxLength,
-  (newValue, oldValue) => {
-    if (!isFirstLoad.value && newValue !== undefined && newValue !== oldValue) {
-      updateSettingFromComponent(section_path, 'wellKnownFields.telephoneNumber.maxLength', newValue);
-    }
-  }
-);
 
 watch(
-  () => wellKnownFields.value[3]?.mask,
+  () => currentPhoneMask.value,
   (newValue, oldValue) => {
-    if (!isFirstLoad.value && newValue !== undefined && newValue !== oldValue) {
-      updateSettingFromComponent(section_path, 'wellKnownFields.telephoneNumber.mask', newValue);
-    }
-  }
-);
-
-watch(
-  () => currentTelephoneRegex.value,
-  (newValue, oldValue) => {
-    console.log('👀 Telephone regex watcher triggered:', { newValue, oldValue, isFirstLoad: isFirstLoad.value, isRestoring: isRestoringTelephoneRegex.value });
+    console.log('👀 Phone mask watcher triggered:', { newValue, oldValue, isFirstLoad: isFirstLoad.value, isRestoring: isRestoringPhoneMask.value });
     
     // Skip processing if we're currently restoring a value to prevent recursive calls
-    if (isRestoringTelephoneRegex.value) {
-      console.log('📞 Skipping telephone regex processing - currently restoring');
+    if (isRestoringPhoneMask.value) {
+      console.log('📞 Skipping phone mask processing - currently restoring');
       return;
     }
     
     if (!isFirstLoad.value && newValue !== undefined && newValue !== oldValue) {
-      console.log('📞 Processing telephone regex change...');
+      console.log('📞 Processing phone mask change...');
       
-      // Validate regex with detailed checks before sending to backend
+      // Validate phone mask before sending to backend
       if (newValue) {
-        const validation = validateRegexDetailed(newValue);
+        const isValid = validatePhoneMaskString(newValue);
         
-        if (!validation.isValid) {
-          console.log('❌ Telephone regex validation failed, restoring to initial value');
-          console.log('📞 Before restore - currentTelephoneRegex:', currentTelephoneRegex.value, 'initialTelephoneRegex:', initialTelephoneRegex.value);
+        if (!isValid) {
+          console.log('❌ Phone mask validation failed, restoring to initial value');
+          console.log('📞 Before restore - currentPhoneMask:', currentPhoneMask.value, 'initialPhoneMask:', initialPhoneMask.value);
           
           // Set flag to prevent recursive watcher calls
-          isRestoringTelephoneRegex.value = true;
+          isRestoringPhoneMask.value = true;
           
           // Восстанавливаем к исходному значению из БД
-          currentTelephoneRegex.value = initialTelephoneRegex.value;
+          currentPhoneMask.value = initialPhoneMask.value;
           
           // Force component re-render by changing key
-          telephoneRegexKey.value++;
+          phoneMaskKey.value++;
           
           // Force update the component instance
           if (instance?.proxy) {
@@ -769,43 +763,38 @@ watch(
           
           // Reset flag after restoration
           nextTick(() => {
-            isRestoringTelephoneRegex.value = false;
-            console.log('📞 Telephone regex restoration completed with key:', telephoneRegexKey.value);
+            isRestoringPhoneMask.value = false;
+            console.log('📞 Phone mask restoration completed with key:', phoneMaskKey.value);
           });
           
-          console.log('📞 After restore - currentTelephoneRegex:', currentTelephoneRegex.value);
+          console.log('📞 After restore - currentPhoneMask:', currentPhoneMask.value);
           
           // Show comprehensive error message with restoration info
-          const errorMessage = `Некорректное регулярное выражение: ${validation.error}. Восстановлено последнее корректное значение.`;
+          const errorMessage = `Некорректная маска телефона. Восстановлено последнее корректное значение.`;
           uiStore.showErrorSnackbar(errorMessage, { timeout: 6000 }); // Show longer for detailed message
           console.log('📞 Error message shown, returning without API call');
           return; // НЕ отправляем запрос
         }
         
-        // Show warnings if any
-        if (validation.warnings && validation.warnings.length > 0) {
-          console.log('⚠️ Telephone regex warnings:', validation.warnings);
-          // Можно показать предупреждения пользователю, но не блокировать отправку
-        }
+        console.log('✅ Phone mask validation passed, sending to server');
+        console.log('📞 Before update - initialPhoneMask:', initialPhoneMask.value);
         
-        console.log('✅ Telephone regex validation passed, sending to server');
-        console.log('📞 Before update - initialTelephoneRegex:', initialTelephoneRegex.value);
-        
-        // Wrap regex in JSON string for PostgreSQL JSON field
+        // Wrap phone mask in JSON string for PostgreSQL JSON field
         const jsonValue = JSON.stringify(newValue); // Convert to JSON string
-        console.log('📞 Sending regex to server:', newValue);
+        console.log('📞 Sending phone mask to server:', newValue);
         console.log('📞 JSON wrapped for PostgreSQL:', jsonValue);
-        updateSettingFromComponent(section_path, 'wellKnownFields.telephoneNumber.regex', jsonValue);
+        updateSettingFromComponent(section_path, 'wellKnownFields.telephoneNumber.mask', jsonValue);
         
         // Обновляем исходное значение
-        initialTelephoneRegex.value = newValue;
-        console.log('📞 After update - initialTelephoneRegex:', initialTelephoneRegex.value);
+        initialPhoneMask.value = newValue;
+        console.log('📞 After update - initialPhoneMask:', initialPhoneMask.value);
       }
     } else {
-      console.log('📞 Telephone regex watcher skipped:', { isFirstLoad: isFirstLoad.value, newValue, oldValue });
+      console.log('📞 Phone mask watcher skipped:', { isFirstLoad: isFirstLoad.value, newValue, oldValue });
     }
   }
 );
+
 
 // Watch for changes in loading state from the store
 watch(
@@ -970,7 +959,7 @@ onMounted(() => {
                       v-if="field.id === 'e-mail'"
                       :key="`email-regex-${emailRegexKey}`"
                       v-model="currentEmailRegex"
-                      :label="t('admin.settings.datavalidation.wellKnownFields.emailRegex')"
+                      :label="t('admin.settings.datavalidation.wellKnownFields.emailRegexLabel')"
                       variant="outlined"
                       density="compact"
                       color="teal-darken-2"
@@ -981,7 +970,7 @@ onMounted(() => {
                       :loading="settingLoadingStates['wellKnownFields.email.regex']"
                       :error="currentEmailRegex ? !validateRegexString(currentEmailRegex).isValid : false"
                       :error-messages="currentEmailRegex && !validateRegexString(currentEmailRegex).isValid ? validateRegexString(currentEmailRegex).error : ''"
-                      hint="Введите корректное регулярное выражение"
+                      :hint="t('admin.settings.datavalidation.wellKnownFields.emailRegexHint')"
                       persistent-hint
                     />
                     <v-tooltip
@@ -1013,40 +1002,24 @@ onMounted(() => {
                     <!-- Special handling for telephone field -->
                     <template v-if="field.id === 'telephone-number'">
                       <v-text-field
-                        v-model="field.mask"
-                        :label="t('admin.settings.datavalidation.wellKnownFields.phoneMask')"
+                        :key="`phone-mask-${phoneMaskKey}`"
+                        v-model="currentPhoneMask"
+                        :label="t('admin.settings.datavalidation.wellKnownFields.phoneMaskLabel')"
                         variant="outlined"
                         density="compact"
                         color="teal-darken-2"
                         style="width: 450px;"
                         class="mb-2"
+                        data-testid="phone-mask-input"
                         :disabled="isSettingDisabled('wellKnownFields.telephoneNumber.mask')"
                         :loading="settingLoadingStates['wellKnownFields.telephoneNumber.mask']"
-                        v-tooltip="{
-                          text: t('admin.settings.datavalidation.wellKnownFields.phoneMaskTooltip'),
-                          location: 'top',
-                          maxWidth: 300
-                        }"
-                      />
-                      <v-text-field
-                        :key="`telephone-regex-${telephoneRegexKey}`"
-                        v-model="currentTelephoneRegex"
-                        :label="t('admin.settings.datavalidation.wellKnownFields.phoneRegex')"
-                        variant="outlined"
-                        density="compact"
-                        color="teal-darken-2"
-                        style="width: 450px;"
-                        class="mb-2"
-                        data-testid="telephone-regex-input"
-                        :disabled="isSettingDisabled('wellKnownFields.telephoneNumber.regex')"
-                        :loading="settingLoadingStates['wellKnownFields.telephoneNumber.regex']"
-                        :error="currentTelephoneRegex ? !validateRegexString(currentTelephoneRegex).isValid : false"
-                        :error-messages="currentTelephoneRegex && !validateRegexString(currentTelephoneRegex).isValid ? validateRegexString(currentTelephoneRegex).error : ''"
-                        hint="Введите корректное регулярное выражение"
+                        :error="currentPhoneMask ? !validatePhoneMask(currentPhoneMask).isValid : false"
+                        :error-messages="currentPhoneMask && !validatePhoneMask(currentPhoneMask).isValid ? validatePhoneMask(currentPhoneMask).error : ''"
+                        :hint="t('admin.settings.datavalidation.wellKnownFields.phoneMaskHint')"
                         persistent-hint
                       />
                       <v-tooltip
-                        v-if="settingErrorStates['wellKnownFields.telephoneNumber.mask'] || settingErrorStates['wellKnownFields.telephoneNumber.regex']"
+                        v-if="settingErrorStates['wellKnownFields.telephoneNumber.mask']"
                         location="top"
                         max-width="300"
                       >
