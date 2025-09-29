@@ -50,6 +50,10 @@ const currentEmailRegex = ref<string | null>(null);
 const initialTelephoneRegex = ref<string | null>(null);
 const currentTelephoneRegex = ref<string | null>(null);
 
+// Flags to prevent recursive watcher calls during validation restoration
+const isRestoringEmailRegex = ref(false);
+const isRestoringTelephoneRegex = ref(false);
+
 // Define all settings that need to be loaded
 const allSettings = [
   'standardFields.allowSpecialChars',
@@ -628,7 +632,13 @@ watch(
 watch(
   () => currentEmailRegex.value,
   (newValue, oldValue) => {
-    console.log('👀 Email regex watcher triggered:', { newValue, oldValue, isFirstLoad: isFirstLoad.value });
+    console.log('👀 Email regex watcher triggered:', { newValue, oldValue, isFirstLoad: isFirstLoad.value, isRestoring: isRestoringEmailRegex.value });
+    
+    // Skip processing if we're currently restoring a value to prevent recursive calls
+    if (isRestoringEmailRegex.value) {
+      console.log('📧 Skipping email regex processing - currently restoring');
+      return;
+    }
     
     if (!isFirstLoad.value && newValue !== undefined && newValue !== oldValue) {
       console.log('📧 Processing email regex change...');
@@ -641,13 +651,26 @@ watch(
           console.log('❌ Email regex validation failed, restoring to initial value');
           console.log('📧 Before restore - currentEmailRegex:', currentEmailRegex.value, 'initialEmailRegex:', initialEmailRegex.value);
           
+          // Set flag to prevent recursive watcher calls
+          isRestoringEmailRegex.value = true;
+          
           // Восстанавливаем к исходному значению из БД
           currentEmailRegex.value = initialEmailRegex.value;
           
+          // Force DOM update to immediately show the restored value
+          nextTick(() => {
+            isRestoringEmailRegex.value = false;
+            // Double nextTick to ensure DOM is fully updated
+            nextTick(() => {
+              console.log('📧 DOM update completed for email regex restoration');
+            });
+          });
+          
           console.log('📧 After restore - currentEmailRegex:', currentEmailRegex.value);
           
-          // Show error message with specific error details
-          uiStore.showErrorSnackbar(`Некорректное регулярное выражение: ${validation.error}`);
+          // Show comprehensive error message with restoration info
+          const errorMessage = `Некорректное регулярное выражение: ${validation.error}. Восстановлено последнее корректное значение.`;
+          uiStore.showErrorSnackbar(errorMessage, { timeout: 6000 }); // Show longer for detailed message
           console.log('📧 Error message shown, returning without API call');
           return; // НЕ отправляем запрос
         }
@@ -699,7 +722,13 @@ watch(
 watch(
   () => currentTelephoneRegex.value,
   (newValue, oldValue) => {
-    console.log('👀 Telephone regex watcher triggered:', { newValue, oldValue, isFirstLoad: isFirstLoad.value });
+    console.log('👀 Telephone regex watcher triggered:', { newValue, oldValue, isFirstLoad: isFirstLoad.value, isRestoring: isRestoringTelephoneRegex.value });
+    
+    // Skip processing if we're currently restoring a value to prevent recursive calls
+    if (isRestoringTelephoneRegex.value) {
+      console.log('📞 Skipping telephone regex processing - currently restoring');
+      return;
+    }
     
     if (!isFirstLoad.value && newValue !== undefined && newValue !== oldValue) {
       console.log('📞 Processing telephone regex change...');
@@ -712,13 +741,26 @@ watch(
           console.log('❌ Telephone regex validation failed, restoring to initial value');
           console.log('📞 Before restore - currentTelephoneRegex:', currentTelephoneRegex.value, 'initialTelephoneRegex:', initialTelephoneRegex.value);
           
+          // Set flag to prevent recursive watcher calls
+          isRestoringTelephoneRegex.value = true;
+          
           // Восстанавливаем к исходному значению из БД
           currentTelephoneRegex.value = initialTelephoneRegex.value;
           
+          // Force DOM update to immediately show the restored value
+          nextTick(() => {
+            isRestoringTelephoneRegex.value = false;
+            // Double nextTick to ensure DOM is fully updated
+            nextTick(() => {
+              console.log('📞 DOM update completed for telephone regex restoration');
+            });
+          });
+          
           console.log('📞 After restore - currentTelephoneRegex:', currentTelephoneRegex.value);
           
-          // Show error message with specific error details
-          uiStore.showErrorSnackbar(`Некорректное регулярное выражение: ${validation.error}`);
+          // Show comprehensive error message with restoration info
+          const errorMessage = `Некорректное регулярное выражение: ${validation.error}. Восстановлено последнее корректное значение.`;
+          uiStore.showErrorSnackbar(errorMessage, { timeout: 6000 }); // Show longer for detailed message
           console.log('📞 Error message shown, returning without API call');
           return; // НЕ отправляем запрос
         }
@@ -916,6 +958,7 @@ onMounted(() => {
                       color="teal-darken-2"
                       style="width: 450px;"
                       class="mb-2"
+                      data-testid="email-regex-input"
                       :disabled="isSettingDisabled('wellKnownFields.email.regex')"
                       :loading="settingLoadingStates['wellKnownFields.email.regex']"
                       :error="currentEmailRegex ? !validateRegexString(currentEmailRegex).isValid : false"
@@ -975,6 +1018,7 @@ onMounted(() => {
                         color="teal-darken-2"
                         style="width: 450px;"
                         class="mb-2"
+                        data-testid="telephone-regex-input"
                         :disabled="isSettingDisabled('wellKnownFields.telephoneNumber.regex')"
                         :loading="settingLoadingStates['wellKnownFields.telephoneNumber.regex']"
                         :error="currentTelephoneRegex ? !validateRegexString(currentTelephoneRegex).isValid : false"
