@@ -39,28 +39,6 @@ const ALLOWED_VALIDATION_RULES_SETTINGS = [
   'wellKnownFields.userName.minLength'
 ];
 
-const DEFAULT_VALIDATION_RULES = {
-  'standardFields.allowSpecialChars': true,
-  'standardFields.textMicro.maxLength': 5,
-  'standardFields.textMini.maxLength': 20,
-  'standardFields.textShort.maxLength': 100,
-  'standardFields.textMedium.maxLength': 400,
-  'standardFields.textLong.maxLength': 1000,
-  'standardFields.textExtraLong.maxLength': 2000,
-  'wellKnownFields.email.regex': '^[a-zA-Z0-9.!#$%&\'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$',
-  'wellKnownFields.groupName.allowNumbers': true,
-  'wellKnownFields.groupName.allowUsernameChars': true,
-  'wellKnownFields.groupName.latinOnly': true,
-  'wellKnownFields.groupName.maxLength': 20,
-  'wellKnownFields.groupName.minLength': 1,
-  'wellKnownFields.telephoneNumber.mask': '+# (###) ###-####',
-  'wellKnownFields.telephoneNumber.regex': '^[+\\\\d() -]{7,20}$',
-  'wellKnownFields.userName.allowNumbers': true,
-  'wellKnownFields.userName.allowUsernameChars': true,
-  'wellKnownFields.userName.latinOnly': true,
-  'wellKnownFields.userName.maxLength': 20,
-  'wellKnownFields.userName.minLength': 1
-};
 
 /**
  * Interface for public validation rules response
@@ -141,8 +119,8 @@ function transformToValidationRules(settings: ValidationRuleSetting[]): PublicVa
         allowUsernameChars: true
       },
       telephoneNumber: {
-        regex: '^[+\\\\d() -]{7,20}$',
-        mask: '+# (###) ###-####'
+        regex: '^\\\\+?[1-9]\\\\d{1,14}$',
+        mask: '+# ### ###-####'
       },
       userName: {
         minLength: 1,
@@ -340,22 +318,8 @@ export async function fetchPublicValidationRules(req: Request): Promise<PublicVa
       }
     });
 
-    let settings: ValidationRuleSetting[] = [];
-
-    try {
-      // Use centralized settings service with retry
-      settings = await fetchValidationRulesFromSettings(requestId, req);
-    } catch (settingsError) {
-      // If settings service fails after retries, use defaults
-      console.warn('Settings service failed after retries, using default validation rules');
-      settings = Object.entries(DEFAULT_VALIDATION_RULES).map(([key, value]) => ({
-        setting_name: key,
-        value: value,
-        default_value: value,
-        confidentiality: false,
-        section_path: VALIDATION_RULES_SECTION_PATH
-      }));
-    }
+    // Use centralized settings service with retry
+    const settings = await fetchValidationRulesFromSettings(requestId, req);
 
     // Transform to structured format
     const validationRules = transformToValidationRules(settings);

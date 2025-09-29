@@ -139,11 +139,10 @@ const isFormDisabled = computed(() => {
  * Dynamic password validation rules based on loaded password policies
  */
 const dynamicPasswordRules = computed(() => {
-  // If password policies are not loaded or there's an error, return basic rules
+  // Password policies must be loaded and valid
   if (publicStore.isLoadingPasswordPolicies || publicStore.passwordPoliciesError || !currentPasswordPolicies.value) {
     return [
-              (v: string) => !!v || t('account.selfRegistration.validation.password.required'),
-        () => !publicStore.passwordPoliciesError || t('account.selfRegistration.validation.password.policiesNotLoaded')
+      () => !publicStore.passwordPoliciesError || t('account.selfRegistration.validation.password.policiesNotLoaded')
     ]
   }
 
@@ -192,7 +191,6 @@ const dynamicPasswordRules = computed(() => {
 const dynamicUsernameRules = computed(() => {
   if (!validationRulesReady.value || !currentValidationRules.value) {
     return [
-      (v: string) => !!v || t('account.selfRegistration.validation.username.required'),
       () => !publicStore.validationRulesError || t('account.selfRegistration.validation.username.rulesNotLoaded')
     ]
   }
@@ -241,7 +239,6 @@ const passwordConfirmRules = computed(() => [
 const dynamicEmailRules = computed(() => {
   if (!validationRulesReady.value || !currentValidationRules.value) {
     return [
-      (v: string) => !!v || t('account.selfRegistration.validation.email.required'),
       () => !publicStore.validationRulesError || t('account.selfRegistration.validation.email.rulesNotLoaded')
     ]
   }
