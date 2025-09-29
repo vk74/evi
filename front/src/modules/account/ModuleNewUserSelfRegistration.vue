@@ -59,8 +59,7 @@ const user = ref({
   surname: '',  // last_name in backend
   name: '',     // first_name in backend
   email: '',
-  phone: '',
-  address: ''
+  phone: ''
 })
 
 /**
@@ -230,7 +229,6 @@ const passwordConfirmRules = computed(() => [
 ])
 
 /**
- * Address validation rules - REMOVED: field is not used in the form
  */
 
 /**
@@ -454,7 +452,6 @@ const submitForm = async () => {
         name: '',
         email: '',
         phone: '',
-        address: ''
       }
       form.value?.reset()
     } else {
@@ -650,8 +647,6 @@ onMounted(async () => {
             color="teal"
           />
 
-          <!-- Address field - HIDDEN for now -->
-          <!-- Address field is not used in this form -->
         </v-form>
 
         <!-- Error messages -->

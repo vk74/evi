@@ -150,8 +150,6 @@ export interface IGroupMember {
 
   // Optional data from app.user_profiles
   mobile_phone_number?: string // Mobile phone
-  company_name?: string        // Company name
-  position?: string            // Position
 }
 
 /**

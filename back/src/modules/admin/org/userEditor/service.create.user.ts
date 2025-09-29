@@ -325,10 +325,7 @@ export async function createUser(userData: CreateUserRequest, req: Request): Pro
       [
         userId,
         trimmedData.gender ? trimmedData.gender : 'n',
-        trimmedData.mobile_phone_number ? trimmedData.mobile_phone_number : null,
-        trimmedData.address ? trimmedData.address : null,
-        trimmedData.company_name ? trimmedData.company_name : null,
-        trimmedData.position ? trimmedData.position : null
+        trimmedData.mobile_phone_number ? trimmedData.mobile_phone_number : null
       ]
     );
 

@@ -36,9 +36,6 @@ const TEST_CONFIG = {
     last_name: 'jest',
     gender: 'm',
     mobile_phone_number: `+1234567${Date.now().toString().slice(-6)}`,
-    address: '123 Test Street',
-    company_name: 'Test Company',
-    position: 'Test Position'
   },
   serverStartTimeout: 10000
 };
@@ -373,9 +370,6 @@ describe('User Lifecycle Integration Test: Full Flow', () => {
       last_name: 'jest',
       gender: 'f',
       mobile_phone_number: uniqueUpdate.phone,
-      address: '456 Updated Street',
-      company_name: 'Updated Company',
-      position: 'Updated Position'
     };
     const updateResp = await api.post(`/api/admin/users/update-user-by-userid/${testUserId}`, updateData);
     expect(updateResp.data.success).toBe(true);
@@ -383,7 +377,6 @@ describe('User Lifecycle Integration Test: Full Flow', () => {
     const fetchUpdated = await api.get(`/api/admin/users/fetch-user-by-userid/${testUserId}`);
     expect(fetchUpdated.data.success).toBe(true);
     expect(fetchUpdated.data.data?.user?.email).toBe(updateData.email);
-    expect(fetchUpdated.data.data?.profile?.company_name).toBe(updateData.company_name);
   });
 
   it('should delete user via public API', async () => {

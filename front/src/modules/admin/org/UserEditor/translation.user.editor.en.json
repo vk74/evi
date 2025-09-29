@@ -75,15 +75,6 @@
           "mobilePhone": {
             "label": "telephone",
             "placeholder": "+7 xxx xxx xxxx"
-          },
-          "address": {
-            "label": "address"
-          },
-          "company": {
-            "label": "company name (field being developed)"
-          },
-          "position": {
-            "label": "position (field being developed)"
           }
         },
         "validation": {
@@ -118,18 +109,6 @@
             "invalidRegex": "phone validation rules are invalid"
           },
           "fields": {
-            "address": {
-              "length": "address cannot be longer than 5000 characters",
-              "format": "address contains invalid characters"
-            },
-            "company": {
-              "length": "company name cannot be longer than 255 characters",
-              "format": "company name contains invalid characters"
-            },
-            "position": {
-              "length": "position cannot be longer than 255 characters",
-              "format": "position contains invalid characters"
-            },
             "password": {
               "mismatch": "passwords do not match"
             }

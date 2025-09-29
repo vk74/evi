@@ -29,16 +29,13 @@ ON CONFLICT (user_id) DO UPDATE SET
     last_name = EXCLUDED.last_name;
 
 -- Insert user profiles
-INSERT INTO app.user_profiles (profile_id, user_id, mobile_phone_number, address, company_name, position, gender) VALUES
-('660e8400-e29b-41d4-a716-446655440000', '00000000-0000-0000-0000-00000000dead', NULL, NULL, 'System', 'Deleted', NULL),
-('660e8400-e29b-41d4-a716-446655440001', '550e8400-e29b-41d4-a716-446655440001', '+1234567890', '123 Admin St, City', 'System Corp', 'System Administrator', 'm'),
-('660e8400-e29b-41d4-a716-446655440002', '550e8400-e29b-41d4-a716-446655440002', '+1234567891', '456 Test Ave, City', 'Test Company', 'Test Engineer', 'm'),
-('660e8400-e29b-41d4-a716-446655440003', '550e8400-e29b-41d4-a716-446655440003', '+1234567892', '789 Main St, City', 'Tech Solutions', 'Software Developer', 'm'),
-('660e8400-e29b-41d4-a716-446655440004', '550e8400-e29b-41d4-a716-446655440004', '+1234567893', '321 Oak Rd, City', 'Design Studio', 'UI/UX Designer', 'f'),
-('660e8400-e29b-41d4-a716-446655440005', '550e8400-e29b-41d4-a716-446655440005', '+1234567894', '654 Pine Ln, City', 'Consulting Inc', 'Project Manager', 'm')
+INSERT INTO app.user_profiles (profile_id, user_id, mobile_phone_number, gender) VALUES
+('660e8400-e29b-41d4-a716-446655440000', '00000000-0000-0000-0000-00000000dead', NULL, NULL),
+('660e8400-e29b-41d4-a716-446655440001', '550e8400-e29b-41d4-a716-446655440001', '+1234567890', 'm'),
+('660e8400-e29b-41d4-a716-446655440002', '550e8400-e29b-41d4-a716-446655440002', '+1234567891', 'm'),
+('660e8400-e29b-41d4-a716-446655440003', '550e8400-e29b-41d4-a716-446655440003', '+1234567892', 'm'),
+('660e8400-e29b-41d4-a716-446655440004', '550e8400-e29b-41d4-a716-446655440004', '+1234567893', 'f'),
+('660e8400-e29b-41d4-a716-446655440005', '550e8400-e29b-41d4-a716-446655440005', '+1234567894', 'm')
 ON CONFLICT (profile_id) DO UPDATE SET
     mobile_phone_number = EXCLUDED.mobile_phone_number,
-    address = EXCLUDED.address,
-    company_name = EXCLUDED.company_name,
-    position = EXCLUDED.position,
     gender = EXCLUDED.gender;

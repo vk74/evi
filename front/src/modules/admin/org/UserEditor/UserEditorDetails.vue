@@ -46,9 +46,6 @@ const isLoadingValidationRules = ref(false)
 
 const profileGender = computed({ get: () => userEditorStore.profile.gender, set: (value) => userEditorStore.updateProfile({ gender: value }) })
 const profileMobilePhone = computed({ get: () => userEditorStore.profile.mobile_phone_number, set: (value) => userEditorStore.updateProfile({ mobile_phone_number: value }) })
-const profileAddress = computed({ get: () => userEditorStore.profile.address, set: (value) => userEditorStore.updateProfile({ address: value }) })
-const profileCompanyName = computed({ get: () => userEditorStore.profile.company_name, set: (value) => userEditorStore.updateProfile({ company_name: value }) })
-const profilePosition = computed({ get: () => userEditorStore.profile.position, set: (value) => userEditorStore.updateProfile({ position: value }) })
 
 const accountUsername = computed({ get: () => userEditorStore.account.username, set: (value) => userEditorStore.updateAccount({ username: value }) })
 const accountEmail = computed({ get: () => userEditorStore.account.email, set: (value) => userEditorStore.updateAccount({ email: value }) })
@@ -549,15 +546,6 @@ onBeforeUnmount(() => {
                       density="comfortable"
                       @input="handlePhoneInput"
                     />
-                  </v-col>
-                  <v-col cols="12">
-                    <v-textarea v-model="profileAddress" :label="t('admin.org.editor.fields.address.label')" :rules="[]" variant="outlined" rows="3" counter="5000" no-resize />
-                  </v-col>
-                  <v-col cols="12" md="6">
-                    <v-text-field v-model="profileCompanyName" :label="t('admin.org.editor.fields.company.label')" :rules="[]" variant="outlined" density="comfortable" readonly counter="255" />
-                  </v-col>
-                  <v-col cols="12" md="6">
-                    <v-text-field v-model="profilePosition" :label="t('admin.org.editor.fields.position.label')" :rules="[]" variant="outlined" density="comfortable" readonly counter="255" />
                   </v-col>
                 </v-row>
               </v-col>

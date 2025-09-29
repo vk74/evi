@@ -45,9 +45,6 @@ export interface DbUserProfile {
     profile_id: string       // uuid PRIMARY KEY
     user_id: string         // uuid FOREIGN KEY
     mobile_phone_number: string | null  // character varying(15)
-    address: string | null   // text
-    company_name: string | null // character varying(255)
-    position: string | null  // character varying(255)
     gender: 'm' | 'f' | 'n' | null    // app.gender
 }
 
@@ -67,9 +64,6 @@ export interface UpdateUserRequest {
     
     // Поля таблицы app.user_profiles
     mobile_phone_number?: string
-    address?: string
-    company_name?: string
-    position?: string
     gender?: Gender
 }
 
@@ -140,9 +134,6 @@ export interface CreateUserRequest {
     // Profile table fields
     gender?: 'm' | 'f' | 'n'
     mobile_phone_number?: string
-    address?: string
-    company_name?: string
-    position?: string
 }
 
 export interface CreateUserResponse extends ApiResponse {

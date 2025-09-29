@@ -44,9 +44,6 @@ CREATE TABLE IF NOT EXISTS app.user_profiles (
     reserve2 VARCHAR(50),
     reserve3 VARCHAR(50),
     mobile_phone_number VARCHAR(15),
-    address TEXT,
-    company_name VARCHAR(255),
-    position VARCHAR(255),
     gender app.gender,
     CONSTRAINT unique_mobile_number UNIQUE (mobile_phone_number)
 );

@@ -32,7 +32,6 @@ interface RegistrationRequest {
   name: string;    // will be first_name in DB
   email: string;
   phone?: string;  // optional
-  address?: string; // optional
   [key: string]: any; // for any additional fields
 }
 
@@ -54,8 +53,7 @@ const registerUser = async (req: EnhancedRequest, res: Response): Promise<void> 
             surname,    // будет last_name в БД
             name,      // будет first_name в БД
             email,
-            phone,
-            address
+            phone
         } = req.body;
 
         // Проверка наличия обязательных полей
@@ -129,9 +127,6 @@ const registerUser = async (req: EnhancedRequest, res: Response): Promise<void> 
                     userId,          // $1
                     null,            // $2 (gender)
                     phone || null,   // $3
-                    address || null, // $4
-                    null,            // $5 (company_name)
-                    null            // $6 (position)
                 ]
             );
 

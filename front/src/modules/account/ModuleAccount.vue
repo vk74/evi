@@ -40,10 +40,7 @@ const profile = ref<UserProfile>({
   middle_name: '',
   gender: '',
   phone_number: '',
-  email: '',
-  address: '',
-  company_name: '',
-  position: ''
+  email: ''
 })
 
 const isChangePasswordModalVisible = ref(false)
@@ -90,17 +87,6 @@ const emailRules = [
   (v: string) => !v || v.length <= 100 || t('account.profile.fields.email.validation.maxLength')
 ]
 
-const addressRules = [
-  (v: string) => !v || v.length <= 200 || t('account.profile.fields.address.validation.maxLength')
-]
-
-const companyRules = [
-  (v: string) => !v || v.length <= 100 || t('account.profile.fields.companyName.validation.maxLength')
-]
-
-const positionRules = [
-  (v: string) => !v || v.length <= 100 || t('account.profile.fields.position.validation.maxLength')
-]
 
 // ==================== METHODS ====================
 const openChangePasswordModal = () => {
@@ -297,63 +283,6 @@ onMounted(async () => {
                     </v-col>
                   </v-row>
 
-                  <v-row>
-                    <v-col cols="12">
-                      <v-text-field
-                        v-model="profile.address"
-                        :label="t('account.profile.fields.address.label')"
-                        :rules="addressRules"
-                        variant="outlined"
-                        density="comfortable"
-                        color="teal"
-                      />
-                    </v-col>
-                  </v-row>
-                </v-col>
-
-                <!-- Work Information section -->
-                <v-col cols="12">
-                  <div class="card-header mt-6">
-                    <v-card-title class="text-subtitle-1">
-                      {{ t('account.profile.sections.workInfo') }}
-                    </v-card-title>
-                    <v-divider class="section-divider" />
-                  </div>
-
-                  <v-row class="pt-3">
-                    <v-col
-                      cols="12"
-                      md="6"
-                    >
-                      <v-text-field
-                        v-model="profile.company_name"
-                        :label="t('account.profile.fields.companyName.label')"
-                        :rules="companyRules"
-                        variant="outlined"
-                        density="comfortable"
-                        color="teal"
-                        disabled
-                        :hint="t('account.profile.fields.companyName.hint')"
-                        persistent-hint
-                      />
-                    </v-col>
-                    <v-col
-                      cols="12"
-                      md="6"
-                    >
-                      <v-text-field
-                        v-model="profile.position"
-                        :label="t('account.profile.fields.position.label')"
-                        :rules="positionRules"
-                        variant="outlined"
-                        density="comfortable"
-                        color="teal"
-                        disabled
-                        :hint="t('account.profile.fields.position.hint')"
-                        persistent-hint
-                      />
-                    </v-col>
-                  </v-row>
                 </v-col>
               </v-row>
             </v-form>

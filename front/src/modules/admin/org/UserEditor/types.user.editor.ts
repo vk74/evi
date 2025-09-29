@@ -65,9 +65,6 @@ export interface IUserProfile {
   profile_id?: string             // uuid
   user_id?: string                // uuid link to app.users
   mobile_phone_number: string     // character varying(15)
-  address: string                 // 
-  company_name: string            // character varying(255)
-  position: string                // character varying(255)
   gender: 'm' | 'f' | 'n'        // app.gender
 }
 
@@ -96,9 +93,6 @@ export interface ICreateUserRequest {
   middle_name: string 
   gender: 'm' | 'f' | 'n' // null
   mobile_phone_number: string 
-  address: string 
-  company_name: string 
-  position: string 
 }
 
 export interface IUpdateUserRequest {
@@ -112,9 +106,6 @@ export interface IUpdateUserRequest {
   middle_name?: string
   gender?: 'm' | 'f' | 'n'
   mobile_phone_number?: string
-  address?: string
-  company_name?: string
-  position?: string
 }
 
 // Type for update data without user_id (for API requests)
@@ -128,9 +119,6 @@ export interface IUpdateUserRequestData {
   middle_name?: string
   gender?: 'm' | 'f' | 'n'
   mobile_phone_number?: string
-  address?: string
-  company_name?: string
-  position?: string
 }
 
 // Interface for a single group membership item in user editor

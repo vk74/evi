@@ -202,9 +202,6 @@ describe('Update User Controller', () => {
         middle_name: 'Middle',
         last_name: 'User',
         mobile_phone_number: '+1234567890',
-        address: '123 Main St',
-        company_name: 'Tech Corp',
-        position: 'Manager',
         gender: 'm'
       };
 

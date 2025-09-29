@@ -85,9 +85,6 @@ describe('Load User Service', () => {
         profile_id: '456e7890-e89b-12d3-a456-426614174000',
         user_id: userId,
         mobile_phone_number: '+1234567890',
-        address: null,
-        company_name: null,
-        position: null,
         gender: 'm'
       };
 
@@ -148,9 +145,6 @@ describe('Load User Service', () => {
         profile_id: '456e7890-e89b-12d3-a456-426614174000',
         user_id: userId,
         mobile_phone_number: null,
-        address: null,
-        company_name: null,
-        position: null,
         gender: null
       };
 
@@ -311,9 +305,6 @@ describe('Load User Service', () => {
         profile_id: '456e7890-e89b-12d3-a456-426614174000',
         user_id: userId,
         mobile_phone_number: null,
-        address: null,
-        company_name: null,
-        position: null,
         gender: null
       };
 
@@ -416,9 +407,6 @@ describe('Load User Service', () => {
         profile_id: '456e7890-e89b-12d3-a456-426614174000',
         user_id: userId,
         mobile_phone_number: null,
-        address: null,
-        company_name: null,
-        position: null,
         gender: null
       };
 

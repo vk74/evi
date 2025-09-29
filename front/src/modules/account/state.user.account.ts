@@ -10,10 +10,7 @@ export const useUserAccountStore = defineStore('userAccount', () => {
     middle_name: '',
     gender: '',
     phone_number: '',
-    email: '',
-    address: '',
-    company_name: '',
-    position: ''
+    email: ''
   })
 
   const settings = ref<UserSettings>({
@@ -57,10 +54,7 @@ export const useUserAccountStore = defineStore('userAccount', () => {
       middle_name: '',
       gender: '',
       phone_number: '',
-      email: '',
-      address: '',
-      company_name: '',
-      position: ''
+      email: ''
     }
   }
 

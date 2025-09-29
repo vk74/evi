@@ -24,9 +24,6 @@ export interface UserProfile {
   gender: Gender | ''
   phone_number: string
   email: string
-  address: string
-  company_name: string
-  position: string
 }
 
 export interface UserSettings {

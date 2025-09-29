@@ -23,7 +23,6 @@ interface RegistrationRequest {
   name: string;    // will be first_name in DB
   email: string;
   phone?: string;  // optional
-  address?: string; // optional
   [key: string]: any; // for any additional fields
 }
 

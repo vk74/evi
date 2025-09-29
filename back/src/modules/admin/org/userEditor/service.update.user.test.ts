@@ -92,9 +92,6 @@ describe('Update User Service', () => {
         middle_name: 'Middle',
         last_name: 'User',
         mobile_phone_number: '+1234567890',
-        address: '123 Main St',
-        company_name: 'Tech Corp',
-        position: 'Manager',
         gender: Gender.MALE
       };
 
@@ -122,7 +119,7 @@ describe('Update User Service', () => {
         'Updated', 'Middle', 'User'
       ]);
       expect(mockClient.query).toHaveBeenNthCalledWith(3, expect.any(String), [
-        userId, '+1234567890', '123 Main St', 'Tech Corp', 'Manager', 'm'
+        userId, '+1234567890', 'm'
       ]);
       expect(mockClient.query).toHaveBeenNthCalledWith(4, 'COMMIT');
 
@@ -138,8 +135,7 @@ describe('Update User Service', () => {
           requestorUuid,
           updatedFields: [
             'username', 'email', 'is_staff', 'account_status', 'first_name', 
-            'middle_name', 'last_name', 'mobile_phone_number', 'address', 
-            'company_name', 'position', 'gender'
+            'middle_name', 'last_name', 'mobile_phone_number', 'gender'
           ]
         }
       });
@@ -152,8 +148,7 @@ describe('Update User Service', () => {
           userId,
           updatedFields: [
             'username', 'email', 'is_staff', 'account_status', 'first_name', 
-            'middle_name', 'last_name', 'mobile_phone_number', 'address', 
-            'company_name', 'position', 'gender'
+            'middle_name', 'last_name', 'mobile_phone_number', 'gender'
           ],
           requestorUuid
         }
@@ -270,7 +265,6 @@ describe('Update User Service', () => {
       const updateData: UpdateUserRequest = {
         user_id: userId,
         mobile_phone_number: '+9876543210',
-        address: '456 Oak Ave',
         gender: Gender.FEMALE
       };
 
@@ -301,7 +295,7 @@ describe('Update User Service', () => {
         payload: {
           userId,
           requestorUuid: 'requestor-uuid-123',
-          updatedFields: ['mobile_phone_number', 'address', 'gender']
+          updatedFields: ['mobile_phone_number', 'gender']
         }
       });
     });

@@ -55,9 +55,6 @@ interface SQLQuery {
         profile_id,
         user_id,
         mobile_phone_number,
-        address,
-        company_name,
-        position,
         gender
       FROM app.user_profiles
       WHERE user_id = $1::uuid
@@ -82,10 +79,7 @@ interface SQLQuery {
       UPDATE app.user_profiles
       SET
         mobile_phone_number = COALESCE($2, mobile_phone_number),
-        address = COALESCE($3, address),
-        company_name = COALESCE($4, company_name),
-        position = COALESCE($5, position),
-        gender = COALESCE($6, gender)
+        gender = COALESCE($3, gender)
       WHERE user_id = $1::uuid
       RETURNING *
     `,
@@ -146,12 +140,9 @@ interface SQLQuery {
         INSERT INTO app.user_profiles (
           user_id,
           gender,
-          mobile_phone_number,
-          address,
-          company_name,
-          position
+          mobile_phone_number
         )
-        VALUES ($1, $2, $3, $4, $5, $6)
+        VALUES ($1, $2, $3)
       `
     },
 

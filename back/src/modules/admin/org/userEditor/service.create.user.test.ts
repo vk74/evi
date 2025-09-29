@@ -78,9 +78,6 @@ describe('Create User Service', () => {
       email: `${timestamp}@jesttest.dev`,
       mobile_phone_number: '+98765432111',
       gender: 'm',
-      address: '',
-      company_name: '',
-      position: '',
       middle_name: '',
       is_staff: false,
       account_status: AccountStatus.ACTIVE
@@ -317,10 +314,7 @@ describe('Create User Service', () => {
         middle_name: 'middlename',
         is_staff: true,
         account_status: AccountStatus.ACTIVE,
-        gender: Gender.MALE,
-        address: 'Test Address',
-        company_name: 'Test Company',
-        position: 'Developer'
+        gender: Gender.MALE
       };
 
       // Smart mock for all query calls

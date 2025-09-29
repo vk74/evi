@@ -44,9 +44,6 @@ const initialAccountState: IUserAccount = {
  */
 const initialProfileState: IUserProfile = {
  mobile_phone_number: '', //null,
- address: '', //null,
- company_name: '', //null,
- position: '', //null,
  gender: 'n' //null,
 }
 
@@ -125,15 +122,6 @@ getters: {
     }
     if (currentData.mobile_phone_number !== originalData.mobile_phone_number) {
       changes.mobile_phone_number = currentData.mobile_phone_number
-    }
-    if (currentData.address !== originalData.address) {
-      changes.address = currentData.address
-    }
-    if (currentData.company_name !== originalData.company_name) {
-      changes.company_name = currentData.company_name
-    }
-    if (currentData.position !== originalData.position) {
-      changes.position = currentData.position
     }
 
     return changes
@@ -232,11 +220,8 @@ getters: {
        first_name: account.first_name,
        last_name: account.last_name,
        middle_name: account.middle_name || '',
-       gender: profile.gender || 'n',
-       mobile_phone_number: profile.mobile_phone_number || '',
-       address: profile.address || '',
-       company_name: profile.company_name || '',
-       position: profile.position || ''
+      gender: profile.gender || 'n',
+      mobile_phone_number: profile.mobile_phone_number || ''
      }
    },
 

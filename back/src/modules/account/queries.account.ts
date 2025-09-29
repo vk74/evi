@@ -89,20 +89,14 @@ export const userRegistrationQueries = {
       INSERT INTO app.user_profiles (
         user_id, 
         gender, 
-        mobile_phone_number, 
-        address, 
-        company_name, 
-        position
+        mobile_phone_number
       ) 
-      VALUES ($1, $2, $3, $4, $5, $6)
+      VALUES ($1, $2, $3)
     `,
     values: [
       'user_id',      // $1
       'gender',       // $2
-      'mobile_phone_number', // $3
-      'address',      // $4
-      'company_name', // $5
-      'position'      // $6
+      'mobile_phone_number' // $3
     ]
   }
 };
@@ -127,10 +121,7 @@ export const userProfileQueries = {
         u.middle_name,
         u.account_status,
         up.gender,
-        up.mobile_phone_number,
-        up.address,
-        up.company_name,
-        up.position
+        up.mobile_phone_number
       FROM app.users u
       LEFT JOIN app.user_profiles up ON u.user_id = up.user_id
       WHERE u.user_id = $1
@@ -170,19 +161,13 @@ export const userProfileQueries = {
       UPDATE app.user_profiles 
       SET 
         gender = $2,
-        mobile_phone_number = $3,
-        address = $4,
-        company_name = $5,
-        position = $6
+        mobile_phone_number = $3
       WHERE user_id = $1
     `,
     values: [
       'user_id',      // $1
       'gender',       // $2
-      'mobile_phone_number', // $3
-      'address',      // $4
-      'company_name', // $5
-      'position'      // $6
+      'mobile_phone_number' // $3
     ]
   },
 
@@ -195,21 +180,15 @@ export const userProfileQueries = {
       INSERT INTO app.user_profiles (
         user_id, 
         gender, 
-        mobile_phone_number, 
-        address, 
-        company_name, 
-        position
+        mobile_phone_number
       ) 
-      VALUES ($1, $2, $3, $4, $5, $6)
+      VALUES ($1, $2, $3)
       ON CONFLICT (user_id) DO NOTHING
     `,
     values: [
       'user_id',      // $1
       'gender',       // $2
-      'mobile_phone_number', // $3
-      'address',      // $4
-      'company_name', // $5
-      'position'      // $6
+      'mobile_phone_number' // $3
     ]
   },
 
@@ -225,9 +204,6 @@ export const userProfileQueries = {
         u.last_name,
         u.middle_name,
         up.mobile_phone_number,
-        up.address,
-        up.company_name,
-        up.position,
         up.gender
         FROM app.users u
         LEFT JOIN app.user_profiles up ON u.user_id = up.user_id
@@ -247,15 +223,12 @@ export const userProfileQueries = {
         SET first_name = $1,
             last_name = $2,
             middle_name = $3
-        WHERE username = $9
+        WHERE username = $5
         RETURNING user_id
       )
       UPDATE app.user_profiles up
       SET gender = $4,
-          mobile_phone_number = $5,
-          address = $6,
-          company_name = $7,
-          position = $8
+          mobile_phone_number = $5
       FROM user_update
       WHERE up.user_id = user_update.user_id
       RETURNING up.user_id, 
@@ -263,10 +236,7 @@ export const userProfileQueries = {
                 $2 as last_name, 
                 $3 as middle_name, 
                 up.gender, 
-                up.mobile_phone_number, 
-                up.address, 
-                up.company_name, 
-                up.position
+                up.mobile_phone_number
     `,
     values: [
       'first_name',   // $1
@@ -274,10 +244,7 @@ export const userProfileQueries = {
       'middle_name',  // $3
       'gender',       // $4
       'mobile_phone_number', // $5
-      'address',      // $6
-      'company_name', // $7
-      'position',     // $8
-      'username'      // $9
+      'username'      // $6
     ]
   }
 };

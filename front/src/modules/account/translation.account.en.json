@@ -51,9 +51,6 @@
         "phone": {
           "label": "phone",
           "placeholder": "+7 (###) ###-####"
-        },
-        "address": {
-          "label": "address"
         }
       },
       "validation": {
@@ -71,10 +68,6 @@
         "passwordConfirm": {
           "required": "password confirmation is required",
           "mismatch": "passwords do not match"
-        },
-        "address": {
-          "maxLength": "address must not exceed 100 characters",
-          "format": "address contains invalid characters"
         },
         "username": {
           "required": "username is required",
@@ -188,26 +181,6 @@
             "format": "invalid email format",
             "maxLength": "email must not exceed 100 characters"
           }
-        },
-        "address": {
-          "label": "address",
-          "validation": {
-            "maxLength": "address must not exceed 200 characters"
-          }
-        },
-        "companyName": {
-          "label": "company name",
-          "validation": {
-            "maxLength": "company name must not exceed 100 characters"
-          },
-          "hint": "in development"
-        },
-        "position": {
-          "label": "position",
-          "validation": {
-            "maxLength": "position must not exceed 100 characters"
-          },
-          "hint": "in development"
         }
       },
       "actions": {

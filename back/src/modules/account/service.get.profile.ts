@@ -35,9 +35,6 @@ interface UserProfile {
   last_name: string;
   middle_name: string | null;
   mobile_phone_number: string | null;
-  address: string | null;
-  company_name: string | null;
-  position: string | null;
   gender: string | null;
   [key: string]: any;
 }

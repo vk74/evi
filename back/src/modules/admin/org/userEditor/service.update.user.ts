@@ -32,9 +32,6 @@ function trimUpdateData(data: UpdateUserRequest): UpdateUserRequest {
     first_name: data.first_name?.trim(),
     last_name: data.last_name?.trim(),
     middle_name: data.middle_name?.trim(),
-    address: data.address?.trim(),
-    company_name: data.company_name?.trim(),
-    position: data.position?.trim()
   };
 }
 
@@ -79,7 +76,7 @@ function findChanges(oldData: any, newData: UpdateUserRequest): {
   });
   
   // Check profile table fields
-  const profileFields = ['mobile_phone_number', 'address', 'company_name', 'position', 'gender'];
+  const profileFields = ['mobile_phone_number', 'gender'];
   profileFields.forEach(field => {
     if (newData[field as keyof UpdateUserRequest] !== undefined) {
       const oldValue = oldData.profile?.[field];
@@ -159,17 +156,6 @@ async function validatePhoneUpdate(phone: string, userId: string, req: Request):
   }
 }
 
-async function validateTextUpdate(text: string, field: 'address' | 'company_name' | 'position', req: Request): Promise<void> {
-  try {
-    await validateFieldAndThrow({ value: text, fieldType: 'text-medium' }, req);
-  } catch (error) {
-    throw {
-      code: 'VALIDATION_ERROR',
-      message: error instanceof Error ? error.message : `${field} validation failed`,
-      field
-    } as ValidationError;
-  }
-}
 
 async function validateEnumFields(data: UpdateUserRequest): Promise<void> {
   // Validate account_status
@@ -301,17 +287,6 @@ async function validateUpdateData(data: UpdateUserRequest, req: Request): Promis
       await validatePhoneUniqueness(data.mobile_phone_number, data.user_id);
     }
     
-    if (data.address) {
-      await validateTextUpdate(data.address, 'address', req);
-    }
-    
-    if (data.company_name) {
-      await validateTextUpdate(data.company_name, 'company_name', req);
-    }
-    
-    if (data.position) {
-      await validateTextUpdate(data.position, 'position', req);
-    }
     
     // Create event for validation passed
     await fabricEvents.createAndPublishEvent({
@@ -413,9 +388,6 @@ export async function updateUserById(updateData: UpdateUserRequest, req: Request
       const profileParams = [
         trimmedData.user_id,
         trimmedData.mobile_phone_number,
-        trimmedData.address,
-        trimmedData.company_name,
-        trimmedData.position,
         trimmedData.gender
       ];
   

@@ -36,9 +36,6 @@ interface ProfileUpdateRequest {
   gender?: string | null;
   phone_number?: string | null;
   email?: string | null;
-  address?: string | null;
-  company_name?: string | null;
-  position?: string | null;
   [key: string]: any;
 }
 
@@ -50,9 +47,6 @@ interface UserProfileData {
   middle_name?: string | null;
   gender?: string | null;
   mobile_phone_number?: string | null;
-  address?: string | null;
-  company_name?: string | null;
-  position?: string | null;
   [key: string]: any;
 }
 
@@ -105,10 +99,7 @@ const updateUserProfile = async (req: EnhancedRequest, res: Response): Promise<v
        middle_name,
        gender,
        phone_number,
-       email,
-       address,
-       company_name,
-       position
+       email
    } = req.body as ProfileUpdateRequest;
 
    await createAndPublishEvent({
@@ -121,10 +112,7 @@ const updateUserProfile = async (req: EnhancedRequest, res: Response): Promise<v
          middle_name,
          gender,
          phone_number,
-         email,
-         address,
-         company_name,
-         position
+         email
        }
      }
    });
@@ -136,9 +124,6 @@ const updateUserProfile = async (req: EnhancedRequest, res: Response): Promise<v
            middle_name,
            gender,
            phone_number,
-           address,
-           company_name,
-           position,
            username
        ];
 
