@@ -13,7 +13,7 @@
 -->
 
 <script setup lang="ts">
-import { ref, onMounted, watch, computed, nextTick } from 'vue';
+import { ref, onMounted, watch, computed, nextTick, getCurrentInstance } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { PhCaretUpDown } from '@phosphor-icons/vue';
 import { useAppSettingsStore } from '@/modules/admin/settings/state.app.settings';
@@ -29,6 +29,9 @@ const section_path = 'Application.System.DataValidation';
 // Store references
 const appSettingsStore = useAppSettingsStore();
 const uiStore = useUiStore();
+
+// Get current instance for force update
+const instance = getCurrentInstance();
 
 // Translations
 const { t, locale } = useI18n();
@@ -53,6 +56,10 @@ const currentTelephoneRegex = ref<string | null>(null);
 // Flags to prevent recursive watcher calls during validation restoration
 const isRestoringEmailRegex = ref(false);
 const isRestoringTelephoneRegex = ref(false);
+
+// Keys for forcing component re-render
+const emailRegexKey = ref(0);
+const telephoneRegexKey = ref(0);
 
 // Define all settings that need to be loaded
 const allSettings = [
@@ -657,13 +664,18 @@ watch(
           // Восстанавливаем к исходному значению из БД
           currentEmailRegex.value = initialEmailRegex.value;
           
-          // Force DOM update to immediately show the restored value
+          // Force component re-render by changing key
+          emailRegexKey.value++;
+          
+          // Force update the component instance
+          if (instance?.proxy) {
+            (instance.proxy as any).$forceUpdate();
+          }
+          
+          // Reset flag after restoration
           nextTick(() => {
             isRestoringEmailRegex.value = false;
-            // Double nextTick to ensure DOM is fully updated
-            nextTick(() => {
-              console.log('📧 DOM update completed for email regex restoration');
-            });
+            console.log('📧 Email regex restoration completed with key:', emailRegexKey.value);
           });
           
           console.log('📧 After restore - currentEmailRegex:', currentEmailRegex.value);
@@ -747,13 +759,18 @@ watch(
           // Восстанавливаем к исходному значению из БД
           currentTelephoneRegex.value = initialTelephoneRegex.value;
           
-          // Force DOM update to immediately show the restored value
+          // Force component re-render by changing key
+          telephoneRegexKey.value++;
+          
+          // Force update the component instance
+          if (instance?.proxy) {
+            (instance.proxy as any).$forceUpdate();
+          }
+          
+          // Reset flag after restoration
           nextTick(() => {
             isRestoringTelephoneRegex.value = false;
-            // Double nextTick to ensure DOM is fully updated
-            nextTick(() => {
-              console.log('📞 DOM update completed for telephone regex restoration');
-            });
+            console.log('📞 Telephone regex restoration completed with key:', telephoneRegexKey.value);
           });
           
           console.log('📞 After restore - currentTelephoneRegex:', currentTelephoneRegex.value);
@@ -951,6 +968,7 @@ onMounted(() => {
                     <!-- Special handling for e-mail field -->
                     <v-text-field
                       v-if="field.id === 'e-mail'"
+                      :key="`email-regex-${emailRegexKey}`"
                       v-model="currentEmailRegex"
                       :label="t('admin.settings.datavalidation.wellKnownFields.emailRegex')"
                       variant="outlined"
@@ -1011,6 +1029,7 @@ onMounted(() => {
                         }"
                       />
                       <v-text-field
+                        :key="`telephone-regex-${telephoneRegexKey}`"
                         v-model="currentTelephoneRegex"
                         :label="t('admin.settings.datavalidation.wellKnownFields.phoneRegex')"
                         variant="outlined"
