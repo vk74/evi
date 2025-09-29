@@ -76,6 +76,20 @@
           "maxLength": "address must not exceed 100 characters",
           "format": "address contains invalid characters"
         },
+        "username": {
+          "required": "username is required",
+          "rulesNotLoaded": "validation rules not loaded - username validation disabled",
+          "minLength": "username must contain at least {length} characters",
+          "maxLength": "username must not exceed {length} characters",
+          "latinOnly": "username must contain only latin letters, numbers, dots, underscores and hyphens",
+          "noNumbers": "username must not contain numbers",
+          "noSpecialChars": "username must not contain special characters"
+        },
+        "email": {
+          "required": "email is required",
+          "rulesNotLoaded": "validation rules not loaded - email validation disabled",
+          "format": "invalid email format"
+        },
         "phone": {
           "format": "invalid phone number format",
           "rulesNotLoaded": "validation rules not loaded - phone validation disabled",
