@@ -416,7 +416,7 @@
           "minimumLength": "minimum length",
           "maximumLength": "maximum length",
           "allowNumbers": "allow numbers",
-          "allowUsernameChars": "allow \". , _ -\" characters in {fieldName}",
+          "allowUsernameChars": "allow \". - _\" characters in {fieldName}",
           "allowSpecialChars": "allow special characters",
           "allowSpaces": "allow spaces",
           "latinOnly": "latin only",

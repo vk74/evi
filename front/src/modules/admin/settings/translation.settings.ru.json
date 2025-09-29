@@ -416,7 +416,7 @@
           "minimumLength": "минимальная длина",
           "maximumLength": "максимальная длина",
           "allowNumbers": "разрешить цифры",
-          "allowUsernameChars": "разрешить символы \". , _ -\" в {fieldName}",
+          "allowUsernameChars": "разрешить символы \". - _\" в имени пользователя",
           "allowSpecialChars": "разрешить специальные символы",
           "allowSpaces": "разрешить пробелы",
           "latinOnly": "только латиница",
