@@ -94,44 +94,45 @@ interface ValidationRuleSetting {
 
 /**
  * Transform raw settings into structured validation rules object
+ * Only uses values from database - no hardcoded fallbacks
  */
 function transformToValidationRules(settings: ValidationRuleSetting[]): PublicValidationRulesResponse['validationRules'] {
   const rules = {
     standardFields: {
-      textMicro: { maxLength: 5 },
-      textMini: { maxLength: 20 },
-      textShort: { maxLength: 100 },
-      textMedium: { maxLength: 400 },
-      textLong: { maxLength: 1000 },
-      textExtraLong: { maxLength: 2000 },
-      allowSpecialChars: true
+      textMicro: { maxLength: 0 },
+      textMini: { maxLength: 0 },
+      textShort: { maxLength: 0 },
+      textMedium: { maxLength: 0 },
+      textLong: { maxLength: 0 },
+      textExtraLong: { maxLength: 0 },
+      allowSpecialChars: false
     },
     wellKnownFields: {
       email: {
-        regex: '^[a-zA-Z0-9.!#$%&\'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$'
+        regex: ''
       },
       groupName: {
-        minLength: 1,
-        maxLength: 20,
-        latinOnly: true,
-        allowNumbers: true,
-        allowUsernameChars: true
+        minLength: 0,
+        maxLength: 0,
+        latinOnly: false,
+        allowNumbers: false,
+        allowUsernameChars: false
       },
       telephoneNumber: {
-        regex: '^\\\\+?[1-9]\\\\d{1,14}$',
-        mask: '+# ### ###-####'
+        regex: '',
+        mask: ''
       },
       userName: {
-        minLength: 1,
-        maxLength: 20,
-        latinOnly: true,
-        allowNumbers: true,
-        allowUsernameChars: true
+        minLength: 0,
+        maxLength: 0,
+        latinOnly: false,
+        allowNumbers: false,
+        allowUsernameChars: false
       }
     }
   };
 
-  // Map database settings to structured format
+  // Map database settings to structured format - only use actual database values
   settings.forEach(setting => {
     const value = setting.value !== null ? setting.value : setting.default_value;
     
@@ -141,30 +142,30 @@ function transformToValidationRules(settings: ValidationRuleSetting[]): PublicVa
         rules.standardFields.allowSpecialChars = Boolean(value);
         break;
       case 'standardFields.textMicro.maxLength':
-        rules.standardFields.textMicro.maxLength = Number(value) || rules.standardFields.textMicro.maxLength;
+        rules.standardFields.textMicro.maxLength = Number(value);
         break;
       case 'standardFields.textMini.maxLength':
-        rules.standardFields.textMini.maxLength = Number(value) || rules.standardFields.textMini.maxLength;
+        rules.standardFields.textMini.maxLength = Number(value);
         break;
       case 'standardFields.textShort.maxLength':
-        rules.standardFields.textShort.maxLength = Number(value) || rules.standardFields.textShort.maxLength;
+        rules.standardFields.textShort.maxLength = Number(value);
         break;
       case 'standardFields.textMedium.maxLength':
-        rules.standardFields.textMedium.maxLength = Number(value) || rules.standardFields.textMedium.maxLength;
+        rules.standardFields.textMedium.maxLength = Number(value);
         break;
       case 'standardFields.textLong.maxLength':
-        rules.standardFields.textLong.maxLength = Number(value) || rules.standardFields.textLong.maxLength;
+        rules.standardFields.textLong.maxLength = Number(value);
         break;
       case 'standardFields.textExtraLong.maxLength':
-        rules.standardFields.textExtraLong.maxLength = Number(value) || rules.standardFields.textExtraLong.maxLength;
+        rules.standardFields.textExtraLong.maxLength = Number(value);
         break;
       
       // Well-known fields - Group Name
       case 'wellKnownFields.groupName.minLength':
-        rules.wellKnownFields.groupName.minLength = Number(value) || rules.wellKnownFields.groupName.minLength;
+        rules.wellKnownFields.groupName.minLength = Number(value);
         break;
       case 'wellKnownFields.groupName.maxLength':
-        rules.wellKnownFields.groupName.maxLength = Number(value) || rules.wellKnownFields.groupName.maxLength;
+        rules.wellKnownFields.groupName.maxLength = Number(value);
         break;
       case 'wellKnownFields.groupName.latinOnly':
         rules.wellKnownFields.groupName.latinOnly = Boolean(value);
@@ -178,20 +179,28 @@ function transformToValidationRules(settings: ValidationRuleSetting[]): PublicVa
       
       // Well-known fields - Email
       case 'wellKnownFields.email.regex':
-        rules.wellKnownFields.email.regex = String(value) || rules.wellKnownFields.email.regex;
+        rules.wellKnownFields.email.regex = String(value);
         break;
       
       // Well-known fields - Telephone Number
       case 'wellKnownFields.telephoneNumber.mask':
-        rules.wellKnownFields.telephoneNumber.mask = String(value) || rules.wellKnownFields.telephoneNumber.mask;
+        rules.wellKnownFields.telephoneNumber.mask = String(value);
+        // Generate regex from mask
+        const mask = String(value);
+        let regexPattern = mask
+          .replace(/[.*+?^${}()|[\]\\]/g, '\\$&') // Escape special regex chars
+          .replace(/#/g, '\\d'); // Replace # with digit pattern
+        // Add anchors
+        regexPattern = '^' + regexPattern + '$';
+        rules.wellKnownFields.telephoneNumber.regex = regexPattern;
         break;
       
       // Well-known fields - User Name
       case 'wellKnownFields.userName.minLength':
-        rules.wellKnownFields.userName.minLength = Number(value) || rules.wellKnownFields.userName.minLength;
+        rules.wellKnownFields.userName.minLength = Number(value);
         break;
       case 'wellKnownFields.userName.maxLength':
-        rules.wellKnownFields.userName.maxLength = Number(value) || rules.wellKnownFields.userName.maxLength;
+        rules.wellKnownFields.userName.maxLength = Number(value);
         break;
       case 'wellKnownFields.userName.latinOnly':
         rules.wellKnownFields.userName.latinOnly = Boolean(value);
