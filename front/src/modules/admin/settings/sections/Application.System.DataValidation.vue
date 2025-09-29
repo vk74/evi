@@ -21,6 +21,7 @@ import { fetchSettings } from '@/modules/admin/settings/service.fetch.settings';
 import { updateSettingFromComponent } from '@/modules/admin/settings/service.update.settings';
 import { useUiStore } from '@/core/state/uistate';
 import DataLoading from '@/core/ui/loaders/DataLoading.vue';
+import { validateRegexString, validateRegexStringDetailed } from '@/core/helpers/validate.regex';
 
 // Section path identifier
 const section_path = 'Application.System.DataValidation';
@@ -42,6 +43,12 @@ const isFirstLoad = ref(true);
 const settingLoadingStates = ref<Record<string, boolean>>({});
 const settingErrorStates = ref<Record<string, boolean>>({});
 const settingRetryAttempts = ref<Record<string, number>>({});
+
+// State for tracking regex values - initial (from DB) and current (user input)
+const initialEmailRegex = ref<string | null>(null);
+const currentEmailRegex = ref<string | null>(null);
+const initialTelephoneRegex = ref<string | null>(null);
+const currentTelephoneRegex = ref<string | null>(null);
 
 // Define all settings that need to be loaded
 const allSettings = [
@@ -178,6 +185,63 @@ const isSettingDisabled = (settingName: string) => {
 };
 
 /**
+ * Validate regex string for correctness using unified validation logic
+ */
+function validateRegex(regexString: string): boolean {
+  console.log('🔍 validateRegex called with:', regexString);
+  const validation = validateRegexString(regexString);
+  
+  if (validation.isValid) {
+    console.log('✅ Regex validation passed');
+    return true;
+  } else {
+    console.log('❌ Regex validation failed:', validation.error);
+    return false;
+  }
+}
+
+/**
+ * Validate regex string with detailed checks and warnings
+ */
+function validateRegexDetailed(regexString: string): { isValid: boolean; error?: string; warnings?: string[] } {
+  console.log('🔍 validateRegexDetailed called with:', regexString);
+  const validation = validateRegexStringDetailed(regexString);
+  
+  if (validation.isValid) {
+    console.log('✅ Regex validation passed');
+    if (validation.warnings && validation.warnings.length > 0) {
+      console.log('⚠️ Regex warnings:', validation.warnings);
+    }
+  } else {
+    console.log('❌ Regex validation failed:', validation.error);
+  }
+  
+  return validation;
+}
+
+/**
+ * Escape regex string for JSON serialization
+ */
+function escapeRegexForJson(regexString: string | null): string {
+  console.log('🔧 escapeRegexForJson called with:', regexString);
+  if (!regexString) {
+    console.log('⚠️ Empty regex string, returning empty string');
+    return '';
+  }
+  
+  // For JSON serialization, we need to escape backslashes and quotes properly
+  // The key is to escape backslashes first, then quotes
+  const escaped = regexString
+    .replace(/\\/g, '\\\\')  // Escape backslashes: \ becomes \\
+    .replace(/"/g, '\\"')    // Escape double quotes: " becomes \"
+    .replace(/'/g, "\\'");   // Escape single quotes: ' becomes \'
+  
+  console.log('🔧 Escaped regex:', escaped);
+  console.log('🔧 JSON.stringify test:', JSON.stringify(escaped));
+  return escaped;
+}
+
+/**
  * Update setting in store when local state changes
  */
 function updateSetting(settingName: string, value: any) {
@@ -302,7 +366,13 @@ function updateLocalSetting(settingName: string, value: any) {
       wellKnownFields.value[1].latinOnly = safeBoolean(value);
       break;
     case 'wellKnownFields.email.regex':
-      wellKnownFields.value[2].regex = safeString(value);
+      const emailValue = safeString(value);
+      console.log('📧 Email regex initialization:', emailValue);
+      wellKnownFields.value[2].regex = emailValue;
+      // Устанавливаем исходное и текущее значения равными значению из БД
+      initialEmailRegex.value = emailValue;
+      currentEmailRegex.value = emailValue;
+      console.log('📧 Initial values set - initialEmailRegex:', initialEmailRegex.value, 'currentEmailRegex:', currentEmailRegex.value);
       break;
     case 'wellKnownFields.telephoneNumber.maxLength':
       wellKnownFields.value[3].maxLength = safeNumber(value);
@@ -311,7 +381,13 @@ function updateLocalSetting(settingName: string, value: any) {
       wellKnownFields.value[3].mask = safeString(value);
       break;
     case 'wellKnownFields.telephoneNumber.regex':
-      wellKnownFields.value[3].regex = safeString(value);
+      const telephoneValue = safeString(value);
+      console.log('📞 Telephone regex initialization:', telephoneValue);
+      wellKnownFields.value[3].regex = telephoneValue;
+      // Устанавливаем исходное и текущее значения равными значению из БД
+      initialTelephoneRegex.value = telephoneValue;
+      currentTelephoneRegex.value = telephoneValue;
+      console.log('📞 Initial values set - initialTelephoneRegex:', initialTelephoneRegex.value, 'currentTelephoneRegex:', currentTelephoneRegex.value);
       break;
   }
 }
@@ -548,36 +624,128 @@ watch(
   }
 );
 
-// Watch for e-mail field changes
+// Watch for e-mail field changes - individual field watchers
 watch(
-  () => wellKnownFields.value[2],
-  (newField, oldField) => {
-    if (!isFirstLoad.value && newField && oldField) {
-      if (newField.regex !== null && newField.regex !== oldField.regex) {
-        updateSettingFromComponent(section_path, 'wellKnownFields.email.regex', newField.regex);
+  () => currentEmailRegex.value,
+  (newValue, oldValue) => {
+    console.log('👀 Email regex watcher triggered:', { newValue, oldValue, isFirstLoad: isFirstLoad.value });
+    
+    if (!isFirstLoad.value && newValue !== undefined && newValue !== oldValue) {
+      console.log('📧 Processing email regex change...');
+      
+      // Validate regex with detailed checks before sending to backend
+      if (newValue) {
+        const validation = validateRegexDetailed(newValue);
+        
+        if (!validation.isValid) {
+          console.log('❌ Email regex validation failed, restoring to initial value');
+          console.log('📧 Before restore - currentEmailRegex:', currentEmailRegex.value, 'initialEmailRegex:', initialEmailRegex.value);
+          
+          // Восстанавливаем к исходному значению из БД
+          currentEmailRegex.value = initialEmailRegex.value;
+          
+          console.log('📧 After restore - currentEmailRegex:', currentEmailRegex.value);
+          
+          // Show error message with specific error details
+          uiStore.showErrorSnackbar(`Некорректное регулярное выражение: ${validation.error}`);
+          console.log('📧 Error message shown, returning without API call');
+          return; // НЕ отправляем запрос
+        }
+        
+        // Show warnings if any
+        if (validation.warnings && validation.warnings.length > 0) {
+          console.log('⚠️ Email regex warnings:', validation.warnings);
+          // Можно показать предупреждения пользователю, но не блокировать отправку
+        }
+        
+        console.log('✅ Email regex validation passed, sending to server');
+        console.log('📧 Before update - initialEmailRegex:', initialEmailRegex.value);
+        
+        // Wrap regex in JSON string for PostgreSQL JSON field
+        const jsonValue = JSON.stringify(newValue); // Convert to JSON string
+        console.log('📧 Sending regex to server:', newValue);
+        console.log('📧 JSON wrapped for PostgreSQL:', jsonValue);
+        updateSettingFromComponent(section_path, 'wellKnownFields.email.regex', jsonValue);
+        
+        // Обновляем исходное значение
+        initialEmailRegex.value = newValue;
+        console.log('📧 After update - initialEmailRegex:', initialEmailRegex.value);
       }
+    } else {
+      console.log('📧 Email regex watcher skipped:', { isFirstLoad: isFirstLoad.value, newValue, oldValue });
     }
-  },
-  { deep: true, flush: 'post' }
+  }
 );
 
-// Watch for telephone-number field changes
+// Watch for telephone-number field changes - individual field watchers
 watch(
-  () => wellKnownFields.value[3],
-  (newField, oldField) => {
-    if (!isFirstLoad.value && newField && oldField) {
-      if (newField.maxLength !== null && newField.maxLength !== oldField.maxLength) {
-        updateSettingFromComponent(section_path, 'wellKnownFields.telephoneNumber.maxLength', newField.maxLength);
-      }
-      if (newField.mask !== null && newField.mask !== oldField.mask) {
-        updateSettingFromComponent(section_path, 'wellKnownFields.telephoneNumber.mask', newField.mask);
-      }
-      if (newField.regex !== null && newField.regex !== oldField.regex) {
-        updateSettingFromComponent(section_path, 'wellKnownFields.telephoneNumber.regex', newField.regex);
-      }
+  () => wellKnownFields.value[3]?.maxLength,
+  (newValue, oldValue) => {
+    if (!isFirstLoad.value && newValue !== undefined && newValue !== oldValue) {
+      updateSettingFromComponent(section_path, 'wellKnownFields.telephoneNumber.maxLength', newValue);
     }
-  },
-  { deep: true, flush: 'post' }
+  }
+);
+
+watch(
+  () => wellKnownFields.value[3]?.mask,
+  (newValue, oldValue) => {
+    if (!isFirstLoad.value && newValue !== undefined && newValue !== oldValue) {
+      updateSettingFromComponent(section_path, 'wellKnownFields.telephoneNumber.mask', newValue);
+    }
+  }
+);
+
+watch(
+  () => currentTelephoneRegex.value,
+  (newValue, oldValue) => {
+    console.log('👀 Telephone regex watcher triggered:', { newValue, oldValue, isFirstLoad: isFirstLoad.value });
+    
+    if (!isFirstLoad.value && newValue !== undefined && newValue !== oldValue) {
+      console.log('📞 Processing telephone regex change...');
+      
+      // Validate regex with detailed checks before sending to backend
+      if (newValue) {
+        const validation = validateRegexDetailed(newValue);
+        
+        if (!validation.isValid) {
+          console.log('❌ Telephone regex validation failed, restoring to initial value');
+          console.log('📞 Before restore - currentTelephoneRegex:', currentTelephoneRegex.value, 'initialTelephoneRegex:', initialTelephoneRegex.value);
+          
+          // Восстанавливаем к исходному значению из БД
+          currentTelephoneRegex.value = initialTelephoneRegex.value;
+          
+          console.log('📞 After restore - currentTelephoneRegex:', currentTelephoneRegex.value);
+          
+          // Show error message with specific error details
+          uiStore.showErrorSnackbar(`Некорректное регулярное выражение: ${validation.error}`);
+          console.log('📞 Error message shown, returning without API call');
+          return; // НЕ отправляем запрос
+        }
+        
+        // Show warnings if any
+        if (validation.warnings && validation.warnings.length > 0) {
+          console.log('⚠️ Telephone regex warnings:', validation.warnings);
+          // Можно показать предупреждения пользователю, но не блокировать отправку
+        }
+        
+        console.log('✅ Telephone regex validation passed, sending to server');
+        console.log('📞 Before update - initialTelephoneRegex:', initialTelephoneRegex.value);
+        
+        // Wrap regex in JSON string for PostgreSQL JSON field
+        const jsonValue = JSON.stringify(newValue); // Convert to JSON string
+        console.log('📞 Sending regex to server:', newValue);
+        console.log('📞 JSON wrapped for PostgreSQL:', jsonValue);
+        updateSettingFromComponent(section_path, 'wellKnownFields.telephoneNumber.regex', jsonValue);
+        
+        // Обновляем исходное значение
+        initialTelephoneRegex.value = newValue;
+        console.log('📞 After update - initialTelephoneRegex:', initialTelephoneRegex.value);
+      }
+    } else {
+      console.log('📞 Telephone regex watcher skipped:', { isFirstLoad: isFirstLoad.value, newValue, oldValue });
+    }
+  }
 );
 
 // Watch for changes in loading state from the store
@@ -741,7 +909,7 @@ onMounted(() => {
                     <!-- Special handling for e-mail field -->
                     <v-text-field
                       v-if="field.id === 'e-mail'"
-                      v-model="field.regex"
+                      v-model="currentEmailRegex"
                       :label="t('admin.settings.datavalidation.wellKnownFields.emailRegex')"
                       variant="outlined"
                       density="compact"
@@ -750,6 +918,10 @@ onMounted(() => {
                       class="mb-2"
                       :disabled="isSettingDisabled('wellKnownFields.email.regex')"
                       :loading="settingLoadingStates['wellKnownFields.email.regex']"
+                      :error="currentEmailRegex ? !validateRegexString(currentEmailRegex).isValid : false"
+                      :error-messages="currentEmailRegex && !validateRegexString(currentEmailRegex).isValid ? validateRegexString(currentEmailRegex).error : ''"
+                      hint="Введите корректное регулярное выражение"
+                      persistent-hint
                     />
                     <v-tooltip
                       v-if="field.id === 'e-mail' && settingErrorStates['wellKnownFields.email.regex']"
@@ -796,7 +968,7 @@ onMounted(() => {
                         }"
                       />
                       <v-text-field
-                        v-model="field.regex"
+                        v-model="currentTelephoneRegex"
                         :label="t('admin.settings.datavalidation.wellKnownFields.phoneRegex')"
                         variant="outlined"
                         density="compact"
@@ -805,6 +977,10 @@ onMounted(() => {
                         class="mb-2"
                         :disabled="isSettingDisabled('wellKnownFields.telephoneNumber.regex')"
                         :loading="settingLoadingStates['wellKnownFields.telephoneNumber.regex']"
+                        :error="currentTelephoneRegex ? !validateRegexString(currentTelephoneRegex).isValid : false"
+                        :error-messages="currentTelephoneRegex && !validateRegexString(currentTelephoneRegex).isValid ? validateRegexString(currentTelephoneRegex).error : ''"
+                        hint="Введите корректное регулярное выражение"
+                        persistent-hint
                       />
                       <v-tooltip
                         v-if="settingErrorStates['wellKnownFields.telephoneNumber.mask'] || settingErrorStates['wellKnownFields.telephoneNumber.regex']"

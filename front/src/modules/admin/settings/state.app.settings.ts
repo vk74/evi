@@ -440,6 +440,6 @@ export const useAppSettingsStore = defineStore('appSettings', {
     }
   },
   
-  // Enable persistence to keep state between sessions
-  persist: true
+  // Persistence disabled - settings will be loaded fresh on each page reload
+  // Note: This ensures fresh data is loaded on each page reload
 });

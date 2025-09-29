@@ -159,6 +159,10 @@ export async function updateSetting(request: UpdateSettingRequest, req: Request)
     await client.query('BEGIN');
 
     // Update database
+    console.log('🔥 Updating database with values:', { sectionPath, settingName, value, valueType: typeof value });
+    console.log('🔥 SQL query:', queries.updateSettingValue.text);
+    console.log('🔥 SQL parameters:', [sectionPath, settingName, value]);
+    
     const updateResult = await client.query(
       queries.updateSettingValue.text,
       [sectionPath, settingName, value]

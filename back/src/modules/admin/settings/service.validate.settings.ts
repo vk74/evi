@@ -7,6 +7,7 @@ import { AppSetting, SettingsError } from './types.settings';
 import Ajv, { ErrorObject } from 'ajv';
 import { createAndPublishEvent } from '../../../core/eventBus/fabric.events';
 import { SETTINGS_VALIDATION_EVENTS } from './events.settings';
+import { validateRegexString } from '../../../core/helpers/validate.regex';
 
 // Initialize JSON schema validator
 const ajv = new Ajv({
@@ -35,6 +36,11 @@ export async function validateSettingValue(setting: AppSetting, value: any, req?
         }
       });
       return { isValid: true };
+    }
+
+    // Special handling for regex fields - use custom validation instead of AJV
+    if (isRegexField(setting)) {
+      return await validateRegexField(setting, value, req);
     }
 
     await createAndPublishEvent({
@@ -136,4 +142,71 @@ export async function validateOrThrow(setting: AppSetting, value: any, req?: any
     const errorMessage = `Validation failed for ${setting.section_path}/${setting.setting_name}: ${result.errors?.join('; ')}`;
     throw createValidationError(errorMessage, result.errors);
   }
+}
+
+/**
+ * Checks if a setting is a regex field that needs special validation
+ * 
+ * @param setting - The setting to check
+ * @returns True if this is a regex field
+ */
+function isRegexField(setting: AppSetting): boolean {
+  // Check by setting name (covers email.regex, telephoneNumber.regex, etc.)
+  return setting.setting_name.includes('regex') || 
+         // Check by validation schema format
+         (setting.validation_schema && 
+          typeof setting.validation_schema === 'object' && 
+          'format' in setting.validation_schema && 
+          setting.validation_schema.format === 'regex');
+}
+
+/**
+ * Validates a regex field using custom validation instead of AJV
+ * 
+ * @param setting - The setting containing the regex field
+ * @param value - The regex string to validate
+ * @param req - Express request object for event context
+ * @returns Result object with validation status and potential errors
+ */
+async function validateRegexField(setting: AppSetting, value: any, req?: any): Promise<{ isValid: boolean; errors?: string[] }> {
+  await createAndPublishEvent({
+    req,
+    eventName: SETTINGS_VALIDATION_EVENTS.START.eventName,
+    payload: {
+      sectionPath: setting.section_path,
+      settingName: setting.setting_name,
+      schema: 'custom-regex-validation'
+    }
+  });
+
+  // Validate using custom regex helper
+  const validation = validateRegexString(String(value));
+  
+  if (!validation.isValid) {
+    await createAndPublishEvent({
+      req,
+      eventName: SETTINGS_VALIDATION_EVENTS.ERROR.eventName,
+      payload: {
+        sectionPath: setting.section_path,
+        settingName: setting.setting_name,
+        errors: [validation.error || 'Invalid regex']
+      }
+    });
+
+    return { 
+      isValid: false, 
+      errors: [validation.error || 'Invalid regex'] 
+    };
+  }
+
+  await createAndPublishEvent({
+    req,
+    eventName: SETTINGS_VALIDATION_EVENTS.SUCCESS.eventName,
+    payload: {
+      sectionPath: setting.section_path,
+      settingName: setting.setting_name
+    }
+  });
+
+  return { isValid: true };
 }

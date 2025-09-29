@@ -25,6 +25,9 @@ async function updateSettingsLogic(req: Request, res: Response): Promise<UpdateS
   // Validate required fields in request
   const { sectionPath, settingName, value } = req.body;
 
+  console.log('🔥 Backend received request:', { sectionPath, settingName, value, valueType: typeof value });
+  console.log('🔥 Raw request body:', JSON.stringify(req.body));
+
   if (!sectionPath || !settingName || value === undefined) {
     throw new Error('Invalid request. sectionPath, settingName, and value are required.');
   }

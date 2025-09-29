@@ -24,6 +24,7 @@ export async function updateSetting(
   settingName: string, 
   value: any
 ): Promise<AppSetting | null> {
+  console.log('🔥 updateSetting called:', { sectionPath, settingName, value });
   const store = useAppSettingsStore();
   const uiStore = useUiStore();
   
@@ -95,12 +96,15 @@ export function updateSettingFromComponent(
   settingName: string,
   value: any
 ): void {
+  console.log('🚀 updateSettingFromComponent called:', { sectionPath, settingName, value });
   const store = useAppSettingsStore();
   
   // Update local store immediately for responsive UI
+  console.log('💾 Updating local store...');
   store.setSetting(sectionPath, settingName, value);
   
   // Debounce the actual API update
+  console.log('⏰ Scheduling debounced API update...');
   debouncedUpdateSetting(sectionPath, settingName, value);
 }
 
