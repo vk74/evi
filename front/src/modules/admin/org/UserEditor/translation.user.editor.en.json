@@ -73,7 +73,7 @@
             "label": "organization employee"
           },
           "mobilePhone": {
-            "label": "mobile phone",
+            "label": "telephone",
             "placeholder": "+7 xxx xxx xxxx"
           },
           "address": {
@@ -86,21 +86,37 @@
             "label": "position (field being developed)"
           }
         },
-        "messages": {
-          "validation": {
-            "requiredFields": "fill in required fields marked with an asterisk (*)",
-            "formErrors": "please check the form fields for correctness"
-          },
-          "success": {
-            "created": "user account created",
-            "updated": "user data updated"
-          },
-          "error": {
-            "create": "error creating account",
-            "update": "error updating user data"
-          }
-        },
         "validation": {
+          "password": {
+            "required": "password is required",
+            "minLength": "password must be at least {length} characters",
+            "maxLength": "password must not exceed {length} characters",
+            "lowercase": "password must contain lowercase letters",
+            "uppercase": "password must contain uppercase letters",
+            "numbers": "password must contain numbers",
+            "specialChars": "password must contain special characters",
+            "invalidChars": "password contains invalid characters",
+            "policiesNotLoaded": "password policies not loaded"
+          },
+          "username": {
+            "required": "username is required",
+            "minLength": "username must be at least {length} characters",
+            "maxLength": "username must not exceed {length} characters",
+            "latinOnly": "username must contain only Latin characters",
+            "noNumbers": "username must not contain numbers",
+            "noSpecialChars": "username must not contain special characters",
+            "rulesNotLoaded": "username validation rules not loaded"
+          },
+          "email": {
+            "required": "email is required",
+            "format": "invalid email format",
+            "rulesNotLoaded": "email validation rules not loaded"
+          },
+          "phone": {
+            "format": "invalid phone number format",
+            "rulesNotLoaded": "phone validation rules not loaded",
+            "invalidRegex": "phone validation rules are invalid"
+          },
           "fields": {
             "address": {
               "length": "address cannot be longer than 5000 characters",
@@ -117,6 +133,20 @@
             "password": {
               "mismatch": "passwords do not match"
             }
+          }
+        },
+        "messages": {
+          "validation": {
+            "requiredFields": "fill in required fields marked with an asterisk (*)",
+            "formErrors": "please check the form fields for correctness"
+          },
+          "success": {
+            "created": "user account created",
+            "updated": "user data updated"
+          },
+          "error": {
+            "create": "error creating account",
+            "update": "error updating user data"
           }
         }
       }

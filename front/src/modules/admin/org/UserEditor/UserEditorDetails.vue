@@ -17,10 +17,14 @@ import { createUserService } from './service.create.new.user'
 import { updateUserService } from './service.update.user'
 import PasswordPoliciesPanel from '@/core/ui/panels/panel.current.password.policies.vue'
 import { PhCaretUpDown, PhCheckSquare, PhSquare, PhEye, PhEyeSlash } from '@phosphor-icons/vue'
+import { fetchPublicValidationRules } from '@/core/services/service.fetch.public.validation.rules'
+import { fetchPublicPasswordPolicies } from '@/core/services/service.fetch.public.password.policies'
+import { usePublicSettingsStore, type PasswordPolicies, type ValidationRules } from '@/core/state/state.public.settings'
 
 const userEditorStore = useUserEditorStore()
 const uiStore = useUiStore()
 const usersSectionStore = useOrgAdminStore()
+const publicStore = usePublicSettingsStore()
 const { t } = useI18n()
 const { usernameRules, emailRules, mobilePhoneRules, firstNameRules, middleNameRules, lastNameRules } = useValidationRules()
 
@@ -33,6 +37,12 @@ const hasInteracted = ref(false)
 const showRequiredFieldsWarning = ref(false)
 const showPasswordDialog = ref(false)
 const showPasswordPoliciesPanel = ref(false)
+
+// Public settings state
+const currentPasswordPolicies = ref<PasswordPolicies | null>(null)
+const currentValidationRules = ref<ValidationRules | null>(null)
+const isLoadingPasswordPolicies = ref(false)
+const isLoadingValidationRules = ref(false)
 
 const profileGender = computed({ get: () => userEditorStore.profile.gender, set: (value) => userEditorStore.updateProfile({ gender: value }) })
 const profileMobilePhone = computed({ get: () => userEditorStore.profile.mobile_phone_number, set: (value) => userEditorStore.updateProfile({ mobile_phone_number: value }) })
@@ -61,9 +71,162 @@ const requiredFields = computed(() => ({
 
 const requiredFieldsFilled = computed(() => Object.values(requiredFields.value).every(field => !!field))
 
-const dynamicPasswordRules = computed(() => [
-  (v: string) => !!v || 'пароль обязателен'
-])
+// Check if password policies are ready
+const passwordPoliciesReady = computed(() => {
+  return !isLoadingPasswordPolicies.value && 
+         !publicStore.passwordPoliciesError && 
+         currentPasswordPolicies.value !== null
+})
+
+// Check if validation rules are ready
+const validationRulesReady = computed(() => {
+  return !isLoadingValidationRules.value && 
+         !publicStore.validationRulesError && 
+         currentValidationRules.value !== null
+})
+
+/**
+ * Dynamic password validation rules based on loaded password policies
+ */
+const dynamicPasswordRules = computed(() => {
+  // Password policies must be loaded and valid
+  if (isLoadingPasswordPolicies.value || publicStore.passwordPoliciesError || !currentPasswordPolicies.value) {
+    return [
+      () => !publicStore.passwordPoliciesError || t('admin.org.editor.validation.password.policiesNotLoaded')
+    ]
+  }
+
+  const policies = currentPasswordPolicies.value
+  const rules: Array<(v: string) => string | boolean> = []
+  
+  // Required field rule
+  rules.push((v: string) => !!v || t('admin.org.editor.validation.password.required'))
+  
+  // Length rules
+  rules.push((v: string) => (v && v.length >= policies.minLength) || t('admin.org.editor.validation.password.minLength', { length: policies.minLength }))
+  rules.push((v: string) => (v && v.length <= policies.maxLength) || t('admin.org.editor.validation.password.maxLength', { length: policies.maxLength }))
+  
+  // Character requirements
+  if (policies.requireLowercase) {
+    rules.push((v: string) => /[a-z]/.test(v) || t('admin.org.editor.validation.password.lowercase'))
+  }
+  
+  if (policies.requireUppercase) {
+    rules.push((v: string) => /[A-Z]/.test(v) || t('admin.org.editor.validation.password.uppercase'))
+  }
+  
+  if (policies.requireNumbers) {
+    rules.push((v: string) => /[0-9]/.test(v) || t('admin.org.editor.validation.password.numbers'))
+  }
+  
+  if (policies.requireSpecialChars && policies.allowedSpecialChars) {
+    const escapedSpecialChars = policies.allowedSpecialChars.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+    const specialCharsRegex = new RegExp(`[${escapedSpecialChars}]`)
+    rules.push((v: string) => specialCharsRegex.test(v) || t('admin.org.editor.validation.password.specialChars'))
+  }
+  
+  // Allowed characters rule - only allowed chars
+  if (policies.allowedSpecialChars) {
+    const escapedSpecialChars = policies.allowedSpecialChars.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+    const allowedCharsRegex = new RegExp(`^[A-Za-z0-9${escapedSpecialChars}]+$`)
+    rules.push((v: string) => allowedCharsRegex.test(v) || t('admin.org.editor.validation.password.invalidChars'))
+  }
+  
+  return rules
+})
+
+/**
+ * Dynamic username validation rules based on loaded validation rules
+ */
+const dynamicUsernameRules = computed(() => {
+  if (!validationRulesReady.value || !currentValidationRules.value) {
+    return [
+      () => !publicStore.validationRulesError || t('admin.org.editor.validation.username.rulesNotLoaded')
+    ]
+  }
+
+  const rules = currentValidationRules.value.wellKnownFields.userName
+  const validationRules: Array<(v: string) => string | boolean> = []
+  
+  // Required field rule
+  validationRules.push((v: string) => !!v || t('admin.org.editor.validation.username.required'))
+  
+  // Length rules
+  validationRules.push((v: string) => (v && v.length >= rules.minLength) || t('admin.org.editor.validation.username.minLength', { length: rules.minLength }))
+  validationRules.push((v: string) => (v && v.length <= rules.maxLength) || t('admin.org.editor.validation.username.maxLength', { length: rules.maxLength }))
+  
+  // Character requirements
+  if (rules.latinOnly) {
+    validationRules.push((v: string) => /^[a-zA-Z0-9._-]+$/.test(v) || t('admin.org.editor.validation.username.latinOnly'))
+  }
+  
+  if (!rules.allowNumbers) {
+    validationRules.push((v: string) => !/[0-9]/.test(v) || t('admin.org.editor.validation.username.noNumbers'))
+  }
+  
+  if (!rules.allowUsernameChars) {
+    validationRules.push((v: string) => !/[._-]/.test(v) || t('admin.org.editor.validation.username.noSpecialChars'))
+  }
+  
+  return validationRules
+})
+
+/**
+ * Dynamic email validation rules based on loaded validation rules
+ */
+const dynamicEmailRules = computed(() => {
+  if (!validationRulesReady.value || !currentValidationRules.value) {
+    return [
+      () => !publicStore.validationRulesError || t('admin.org.editor.validation.email.rulesNotLoaded')
+    ]
+  }
+
+  const rules = currentValidationRules.value.wellKnownFields.email
+  const validationRules: Array<(v: string) => string | boolean> = []
+  
+  // Required field rule
+  validationRules.push((v: string) => !!v || t('admin.org.editor.validation.email.required'))
+  
+  // Regex validation
+  try {
+    const emailRegex = new RegExp(rules.regex)
+    validationRules.push((v: string) => emailRegex.test(v) || t('admin.org.editor.validation.email.format'))
+  } catch (error) {
+    console.error('Invalid email regex:', rules.regex, error)
+    // Fallback to basic email validation
+    validationRules.push((v: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v) || t('admin.org.editor.validation.email.format'))
+  }
+  
+  return validationRules
+})
+
+/**
+ * Dynamic phone validation rules based on loaded validation rules
+ */
+const dynamicPhoneRules = computed(() => {
+  if (!validationRulesReady.value || !currentValidationRules.value) {
+    return [
+      () => !publicStore.validationRulesError || t('admin.org.editor.validation.phone.rulesNotLoaded')
+    ]
+  }
+
+  const rules = currentValidationRules.value.wellKnownFields.telephoneNumber
+  const validationRules: Array<(v: string) => string | boolean> = []
+  
+  // Optional field, but if provided, must match regex from public policies
+  if (rules.regex) {
+    try {
+      const phoneRegex = new RegExp(rules.regex)
+      validationRules.push((v: string) => !v || phoneRegex.test(v) || t('admin.org.editor.validation.phone.format'))
+    } catch (error) {
+      console.error('Invalid phone regex from public policies:', rules.regex, error)
+      // No fallback - if regex is invalid, form will be disabled
+      validationRules.push(() => t('admin.org.editor.validation.phone.invalidRegex'))
+    }
+  }
+  
+  return validationRules
+})
 
 watch(hasInteracted, (newValue) => {
   if (newValue && !requiredFieldsFilled.value) {
@@ -138,7 +301,80 @@ const closePasswordDialog = () => { showPasswordDialog.value = false }
 const onPasswordFocus = () => { showPasswordPoliciesPanel.value = true }
 const onPasswordBlur = () => { showPasswordPoliciesPanel.value = false }
 
-onMounted(() => {
+/**
+ * Load password policy settings from public API
+ */
+const loadPasswordPolicies = async () => {
+  try {
+    isLoadingPasswordPolicies.value = true
+    const policies = await fetchPublicPasswordPolicies()
+    currentPasswordPolicies.value = policies
+  } catch (error) {
+    console.error('Failed to load password policies:', error)
+    // Error handling is done in the service layer
+  } finally {
+    isLoadingPasswordPolicies.value = false
+  }
+}
+
+/**
+ * Load validation rules from public API
+ */
+const loadValidationRules = async () => {
+  try {
+    isLoadingValidationRules.value = true
+    const rules = await fetchPublicValidationRules()
+    currentValidationRules.value = rules
+  } catch (error) {
+    console.error('Failed to load validation rules:', error)
+    // Error handling is done in the service layer
+  } finally {
+    isLoadingValidationRules.value = false
+  }
+}
+
+/**
+ * Apply phone mask in real-time
+ */
+const applyPhoneMask = (value: string) => {
+  if (!currentValidationRules.value?.wellKnownFields?.telephoneNumber?.mask) {
+    return value
+  }
+  
+  const mask = currentValidationRules.value.wellKnownFields.telephoneNumber.mask
+  const digits = value.replace(/\D/g, '') // Remove all non-digits
+  
+  let maskedValue = ''
+  let digitIndex = 0
+  
+  for (let i = 0; i < mask.length && digitIndex < digits.length; i++) {
+    if (mask[i] === '#') {
+      maskedValue += digits[digitIndex]
+      digitIndex++
+    } else {
+      maskedValue += mask[i]
+    }
+  }
+  
+  return maskedValue
+}
+
+/**
+ * Handle phone input with real-time masking
+ */
+const handlePhoneInput = (event: Event) => {
+  const target = event.target as HTMLInputElement
+  const maskedValue = applyPhoneMask(target.value)
+  userEditorStore.updateProfile({ mobile_phone_number: maskedValue })
+}
+
+onMounted(async () => {
+  // Load public settings
+  await Promise.all([
+    loadPasswordPolicies(),
+    loadValidationRules()
+  ])
+  
   if (userEditorStore.mode.mode === 'create') {
     setTimeout(() => { usernameField.value?.focus() }, 100)
   }
@@ -167,10 +403,31 @@ onBeforeUnmount(() => {
                     <v-text-field v-model="userEditorStore.account.user_id" :label="t('admin.org.editor.fields.uuid.label')" variant="outlined" density="comfortable" readonly disabled />
                   </v-col>
                   <v-col cols="12" md="6">
-                    <v-text-field ref="usernameField" v-model="accountUsername" :label="t('admin.org.editor.fields.username.label')" :rules="usernameRules" variant="outlined" density="comfortable" counter="25" required />
+                    <v-text-field 
+                      ref="usernameField" 
+                      v-model="accountUsername" 
+                      :label="t('admin.org.editor.fields.username.label')" 
+                      :rules="dynamicUsernameRules" 
+                      :loading="isLoadingValidationRules"
+                      :disabled="!validationRulesReady"
+                      variant="outlined" 
+                      density="comfortable" 
+                      :counter="currentValidationRules?.wellKnownFields?.userName?.maxLength" 
+                      required 
+                    />
                   </v-col>
                   <v-col cols="12" md="6">
-                    <v-text-field v-model="accountEmail" :label="t('admin.org.editor.fields.email.label')" :rules="emailRules" variant="outlined" density="comfortable" type="email" required />
+                    <v-text-field 
+                      v-model="accountEmail" 
+                      :label="t('admin.org.editor.fields.email.label')" 
+                      :rules="dynamicEmailRules" 
+                      :loading="isLoadingValidationRules"
+                      :disabled="!validationRulesReady"
+                      variant="outlined" 
+                      density="comfortable" 
+                      type="email" 
+                      required 
+                    />
                   </v-col>
                   <v-col cols="12" md="4">
                     <v-text-field v-model="accountFirstName" :label="t('admin.org.editor.fields.firstName.label')" :rules="firstNameRules" variant="outlined" density="comfortable" counter="50" required />
@@ -203,10 +460,34 @@ onBeforeUnmount(() => {
                 <v-row class="pt-3">
                   <template v-if="userEditorStore.mode.mode === 'create'">
                     <v-col cols="12" md="5">
-                      <v-text-field v-model="accountPassword" :label="t('admin.org.editor.fields.password.label')" variant="outlined" density="comfortable" :type="showPassword ? 'text' : 'password'" :counter="40" @focus="onPasswordFocus" @blur="onPasswordBlur" />
+                      <v-text-field 
+                        v-model="accountPassword" 
+                        :label="t('admin.org.editor.fields.password.label')" 
+                        :rules="dynamicPasswordRules"
+                        :loading="isLoadingPasswordPolicies"
+                        :disabled="!passwordPoliciesReady"
+                        variant="outlined" 
+                        density="comfortable" 
+                        :type="showPassword ? 'text' : 'password'" 
+                        :counter="currentPasswordPolicies?.maxLength" 
+                        @focus="onPasswordFocus" 
+                        @blur="onPasswordBlur" 
+                      />
                     </v-col>
                     <v-col cols="12" md="5">
-                      <v-text-field v-model="accountPasswordConfirm" :label="t('admin.org.editor.fields.password.confirm')" :rules="[(v) => v === accountPassword || t('admin.org.editor.validation.fields.password.mismatch')]" variant="outlined" density="comfortable" :type="showPassword ? 'text' : 'password'" :counter="40" @focus="onPasswordFocus" @blur="onPasswordBlur" />
+                      <v-text-field 
+                        v-model="accountPasswordConfirm" 
+                        :label="t('admin.org.editor.fields.password.confirm')" 
+                        :rules="[(v) => v === accountPassword || t('admin.org.editor.validation.fields.password.mismatch')]"
+                        :loading="isLoadingPasswordPolicies"
+                        :disabled="!passwordPoliciesReady"
+                        variant="outlined" 
+                        density="comfortable" 
+                        :type="showPassword ? 'text' : 'password'" 
+                        :counter="currentPasswordPolicies?.maxLength" 
+                        @focus="onPasswordFocus" 
+                        @blur="onPasswordBlur" 
+                      />
                     </v-col>
                     <v-col cols="12" md="2" class="d-flex align-center">
                       <v-btn icon variant="text" color="teal" @click="showPassword = !showPassword" class="password-toggle-btn">
@@ -257,7 +538,17 @@ onBeforeUnmount(() => {
                 </div>
                 <v-row class="pt-3">
                   <v-col cols="12" md="6">
-                    <v-text-field v-model="profileMobilePhone" :label="t('admin.org.editor.fields.mobilePhone.label')" :placeholder="t('admin.org.editor.fields.mobilePhone.placeholder')" :rules="mobilePhoneRules" variant="outlined" density="comfortable" />
+                    <v-text-field 
+                      v-model="profileMobilePhone" 
+                      :label="t('admin.org.editor.fields.mobilePhone.label')" 
+                      :placeholder="currentValidationRules?.wellKnownFields?.telephoneNumber?.mask || t('admin.org.editor.fields.mobilePhone.placeholder')" 
+                      :rules="dynamicPhoneRules"
+                      :loading="isLoadingValidationRules"
+                      :disabled="!validationRulesReady"
+                      variant="outlined" 
+                      density="comfortable"
+                      @input="handlePhoneInput"
+                    />
                   </v-col>
                   <v-col cols="12">
                     <v-textarea v-model="profileAddress" :label="t('admin.org.editor.fields.address.label')" :rules="[]" variant="outlined" rows="3" counter="5000" no-resize />

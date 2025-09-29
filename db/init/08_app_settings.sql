@@ -91,9 +91,7 @@ INSERT INTO app.app_settings (
 ('Application.System.DataValidation', 'wellKnownFields.groupName.allowUsernameChars', 'all', 'true', '{"type":"boolean"}', 'true', 'Allow username characters in group name fields', true),
 ('Application.System.DataValidation', 'wellKnownFields.groupName.latinOnly', 'all', 'true', '{"type":"boolean"}', 'true', 'Allow only Latin characters in group name fields', true),
 ('Application.System.DataValidation', 'wellKnownFields.email.regex', 'all', '"^[a-zA-Z0-9.!#$%&''*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$"', '{"type":"string","format":"regex"}', '"^[a-zA-Z0-9.!#$%&''*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$"', 'Regular expression for email validation', true),
-('Application.System.DataValidation', 'wellKnownFields.telephoneNumber.maxLength', 'all', '15', '{"type":"integer","minimum":5,"maximum":20}', '15', 'Maximum length for telephone number fields', true),
-('Application.System.DataValidation', 'wellKnownFields.telephoneNumber.mask', 'all', '"+# (###) ###-####"', '{"type":"string","minLength":1,"maxLength":50}', '"+# (###) ###-####"', 'Input mask for telephone number fields', true),
-('Application.System.DataValidation', 'wellKnownFields.telephoneNumber.regex', 'all', '"^\\\\+?[1-9]\\\\d{1,14}$"', '{"type":"string","format":"regex"}', '"^\\\\+?[1-9]\\\\d{1,14}$"', 'Regular expression for telephone number validation', true)
+('Application.System.DataValidation', 'wellKnownFields.telephoneNumber.mask', 'all', '"+# (###) ###-####"', '{"type":"string","minLength":1,"maxLength":50}', '"+# (###) ###-####"', 'Input mask for telephone number fields', true)
 ON CONFLICT (section_path, setting_name, environment) DO UPDATE SET
     value = EXCLUDED.value,
     validation_schema = EXCLUDED.validation_schema,
