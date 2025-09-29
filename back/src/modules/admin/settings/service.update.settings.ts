@@ -203,13 +203,15 @@ export async function updateSetting(request: UpdateSettingRequest, req: Request)
     // Update cache
     updateCachedSetting(updatedSetting);
     
-    // Publish success event
+    // Publish success event with old and new values
     fabricEvents.createAndPublishEvent({
       eventName: SETTINGS_UPDATE_EVENTS.SUCCESS.eventName,
       req,
       payload: {
         sectionPath,
         settingName,
+        oldValue: setting.value,
+        newValue: value,
         updatedAt: updatedSetting.updated_at,
         requestorUuid
       }

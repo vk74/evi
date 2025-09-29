@@ -456,79 +456,128 @@ watch(
   { deep: true, flush: 'post' } // Ensure this runs after DOM updates
 );
 
-// Watch for well-known fields changes
+// Watch for user-name field changes - individual field watchers
 watch(
-  () => wellKnownFields.value,
-  (newFields, oldFields) => {
-    if (!isFirstLoad.value) {
-      newFields.forEach((field, index) => {
-        const oldField = oldFields?.[index];
-        
-        if (field.id === 'user-name') {
-          if (field.minLength !== null && field.minLength !== oldField?.minLength) {
-            console.log('Watch triggered: wellKnownFields.userName.minLength', { value: field.minLength, oldValue: oldField?.minLength, isFirstLoad: isFirstLoad.value });
-            updateSetting('wellKnownFields.userName.minLength', field.minLength);
-          }
-          if (field.maxLength !== null && field.maxLength !== oldField?.maxLength) {
-            console.log('Watch triggered: wellKnownFields.userName.maxLength', { value: field.maxLength, oldValue: oldField?.maxLength, isFirstLoad: isFirstLoad.value });
-            updateSetting('wellKnownFields.userName.maxLength', field.maxLength);
-          }
-          if (field.allowNumbers !== null && field.allowNumbers !== oldField?.allowNumbers) {
-            console.log('Watch triggered: wellKnownFields.userName.allowNumbers', { value: field.allowNumbers, oldValue: oldField?.allowNumbers, isFirstLoad: isFirstLoad.value });
-            updateSetting('wellKnownFields.userName.allowNumbers', field.allowNumbers);
-          }
-          if (field.allowUsernameChars !== null && field.allowUsernameChars !== oldField?.allowUsernameChars) {
-            console.log('Watch triggered: wellKnownFields.userName.allowUsernameChars', { value: field.allowUsernameChars, oldValue: oldField?.allowUsernameChars, isFirstLoad: isFirstLoad.value });
-            updateSetting('wellKnownFields.userName.allowUsernameChars', field.allowUsernameChars);
-          }
-          if (field.latinOnly !== null && field.latinOnly !== oldField?.latinOnly) {
-            console.log('Watch triggered: wellKnownFields.userName.latinOnly', { value: field.latinOnly, oldValue: oldField?.latinOnly, isFirstLoad: isFirstLoad.value });
-            updateSetting('wellKnownFields.userName.latinOnly', field.latinOnly);
-          }
-        } else if (field.id === 'group-name') {
-          if (field.minLength !== null && field.minLength !== oldField?.minLength) {
-            console.log('Watch triggered: wellKnownFields.groupName.minLength', { value: field.minLength, oldValue: oldField?.minLength, isFirstLoad: isFirstLoad.value });
-            updateSetting('wellKnownFields.groupName.minLength', field.minLength);
-          }
-          if (field.maxLength !== null && field.maxLength !== oldField?.maxLength) {
-            console.log('Watch triggered: wellKnownFields.groupName.maxLength', { value: field.maxLength, oldValue: oldField?.maxLength, isFirstLoad: isFirstLoad.value });
-            updateSetting('wellKnownFields.groupName.maxLength', field.maxLength);
-          }
-          if (field.allowNumbers !== null && field.allowNumbers !== oldField?.allowNumbers) {
-            console.log('Watch triggered: wellKnownFields.groupName.allowNumbers', { value: field.allowNumbers, oldValue: oldField?.allowNumbers, isFirstLoad: isFirstLoad.value });
-            updateSetting('wellKnownFields.groupName.allowNumbers', field.allowNumbers);
-          }
-          if (field.allowUsernameChars !== null && field.allowUsernameChars !== oldField?.allowUsernameChars) {
-            console.log('Watch triggered: wellKnownFields.groupName.allowUsernameChars', { value: field.allowUsernameChars, oldValue: oldField?.allowUsernameChars, isFirstLoad: isFirstLoad.value });
-            updateSetting('wellKnownFields.groupName.allowUsernameChars', field.allowUsernameChars);
-          }
-          if (field.latinOnly !== null && field.latinOnly !== oldField?.latinOnly) {
-            console.log('Watch triggered: wellKnownFields.groupName.latinOnly', { value: field.latinOnly, oldValue: oldField?.latinOnly, isFirstLoad: isFirstLoad.value });
-            updateSetting('wellKnownFields.groupName.latinOnly', field.latinOnly);
-          }
-        } else if (field.id === 'e-mail') {
-          if (field.regex !== null && field.regex !== oldField?.regex) {
-            console.log('Watch triggered: wellKnownFields.email.regex', { value: field.regex, oldValue: oldField?.regex, isFirstLoad: isFirstLoad.value });
-            updateSetting('wellKnownFields.email.regex', field.regex);
-          }
-        } else if (field.id === 'telephone-number') {
-          if (field.maxLength !== null && field.maxLength !== oldField?.maxLength) {
-            console.log('Watch triggered: wellKnownFields.telephoneNumber.maxLength', { value: field.maxLength, oldValue: oldField?.maxLength, isFirstLoad: isFirstLoad.value });
-            updateSetting('wellKnownFields.telephoneNumber.maxLength', field.maxLength);
-          }
-          if (field.mask !== null && field.mask !== oldField?.mask) {
-            console.log('Watch triggered: wellKnownFields.telephoneNumber.mask', { value: field.mask, oldValue: oldField?.mask, isFirstLoad: isFirstLoad.value });
-            updateSetting('wellKnownFields.telephoneNumber.mask', field.mask);
-          }
-          if (field.regex !== null && field.regex !== oldField?.regex) {
-            console.log('Watch triggered: wellKnownFields.telephoneNumber.regex', { value: field.regex, oldValue: oldField?.regex, isFirstLoad: isFirstLoad.value });
-            updateSetting('wellKnownFields.telephoneNumber.regex', field.regex);
-          }
-        }
-      });
+  () => wellKnownFields.value[0]?.minLength,
+  (newValue, oldValue) => {
+    if (!isFirstLoad.value && newValue !== undefined && newValue !== oldValue) {
+      updateSettingFromComponent(section_path, 'wellKnownFields.userName.minLength', newValue);
+    }
+  }
+);
+
+watch(
+  () => wellKnownFields.value[0]?.maxLength,
+  (newValue, oldValue) => {
+    if (!isFirstLoad.value && newValue !== undefined && newValue !== oldValue) {
+      updateSettingFromComponent(section_path, 'wellKnownFields.userName.maxLength', newValue);
+    }
+  }
+);
+
+watch(
+  () => wellKnownFields.value[0]?.allowNumbers,
+  (newValue, oldValue) => {
+    if (!isFirstLoad.value && newValue !== undefined && newValue !== oldValue) {
+      updateSettingFromComponent(section_path, 'wellKnownFields.userName.allowNumbers', newValue);
+    }
+  }
+);
+
+watch(
+  () => wellKnownFields.value[0]?.allowUsernameChars,
+  (newValue, oldValue) => {
+    if (!isFirstLoad.value && newValue !== undefined && newValue !== oldValue) {
+      updateSettingFromComponent(section_path, 'wellKnownFields.userName.allowUsernameChars', newValue);
+    }
+  }
+);
+
+watch(
+  () => wellKnownFields.value[0]?.latinOnly,
+  (newValue, oldValue) => {
+    if (!isFirstLoad.value && newValue !== undefined && newValue !== oldValue) {
+      updateSettingFromComponent(section_path, 'wellKnownFields.userName.latinOnly', newValue);
+    }
+  }
+);
+
+// Watch for group-name field changes - individual field watchers
+watch(
+  () => wellKnownFields.value[1]?.minLength,
+  (newValue, oldValue) => {
+    if (!isFirstLoad.value && newValue !== undefined && newValue !== oldValue) {
+      updateSettingFromComponent(section_path, 'wellKnownFields.groupName.minLength', newValue);
+    }
+  }
+);
+
+watch(
+  () => wellKnownFields.value[1]?.maxLength,
+  (newValue, oldValue) => {
+    if (!isFirstLoad.value && newValue !== undefined && newValue !== oldValue) {
+      updateSettingFromComponent(section_path, 'wellKnownFields.groupName.maxLength', newValue);
+    }
+  }
+);
+
+watch(
+  () => wellKnownFields.value[1]?.allowNumbers,
+  (newValue, oldValue) => {
+    if (!isFirstLoad.value && newValue !== undefined && newValue !== oldValue) {
+      updateSettingFromComponent(section_path, 'wellKnownFields.groupName.allowNumbers', newValue);
+    }
+  }
+);
+
+watch(
+  () => wellKnownFields.value[1]?.allowUsernameChars,
+  (newValue, oldValue) => {
+    if (!isFirstLoad.value && newValue !== undefined && newValue !== oldValue) {
+      updateSettingFromComponent(section_path, 'wellKnownFields.groupName.allowUsernameChars', newValue);
+    }
+  }
+);
+
+watch(
+  () => wellKnownFields.value[1]?.latinOnly,
+  (newValue, oldValue) => {
+    if (!isFirstLoad.value && newValue !== undefined && newValue !== oldValue) {
+      updateSettingFromComponent(section_path, 'wellKnownFields.groupName.latinOnly', newValue);
+    }
+  }
+);
+
+// Watch for e-mail field changes
+watch(
+  () => wellKnownFields.value[2],
+  (newField, oldField) => {
+    if (!isFirstLoad.value && newField && oldField) {
+      if (newField.regex !== null && newField.regex !== oldField.regex) {
+        updateSettingFromComponent(section_path, 'wellKnownFields.email.regex', newField.regex);
+      }
     }
   },
-  { deep: true, flush: 'post' } // Ensure this runs after DOM updates
+  { deep: true, flush: 'post' }
+);
+
+// Watch for telephone-number field changes
+watch(
+  () => wellKnownFields.value[3],
+  (newField, oldField) => {
+    if (!isFirstLoad.value && newField && oldField) {
+      if (newField.maxLength !== null && newField.maxLength !== oldField.maxLength) {
+        updateSettingFromComponent(section_path, 'wellKnownFields.telephoneNumber.maxLength', newField.maxLength);
+      }
+      if (newField.mask !== null && newField.mask !== oldField.mask) {
+        updateSettingFromComponent(section_path, 'wellKnownFields.telephoneNumber.mask', newField.mask);
+      }
+      if (newField.regex !== null && newField.regex !== oldField.regex) {
+        updateSettingFromComponent(section_path, 'wellKnownFields.telephoneNumber.regex', newField.regex);
+      }
+    }
+  },
+  { deep: true, flush: 'post' }
 );
 
 // Watch for changes in loading state from the store

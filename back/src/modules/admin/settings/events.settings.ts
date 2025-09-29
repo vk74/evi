@@ -235,7 +235,7 @@ export const SETTINGS_UPDATE_EVENTS = {
     eventType: 'app' as const,
     severity: 'info' as const,
     eventMessage: 'Setting updated successfully',
-    payload: null, // Will be of type { sectionPath: string, settingName: string }
+    payload: null, // Will be of type { sectionPath: string, settingName: string, oldValue: any, newValue: any, updatedAt: Date, requestorUuid: string }
     version: '1.0.0'
   },
   
