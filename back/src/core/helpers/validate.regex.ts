@@ -8,8 +8,9 @@
 
 /**
  * Validates if a string is a valid regular expression with semantic checks
+ * Automatically detects and handles both JSON-wrapped and plain regex strings
  * 
- * @param regexString - The string to validate as regex
+ * @param regexString - The string to validate as regex (can be JSON-wrapped or plain)
  * @returns Object with validation result and error message if invalid
  */
 export function validateRegexString(regexString: string): { isValid: boolean; error?: string } {
@@ -22,11 +23,14 @@ export function validateRegexString(regexString: string): { isValid: boolean; er
       };
     }
 
+    // Detect and unwrap JSON-wrapped regex if needed
+    const unwrappedRegex = unwrapJsonRegex(regexString);
+    
     // Try to create RegExp object
-    const regex = new RegExp(regexString);
+    const regex = new RegExp(unwrappedRegex);
     
     // Additional semantic validation
-    const semanticValidation = validateRegexSemantics(regexString, regex);
+    const semanticValidation = validateRegexSemantics(unwrappedRegex, regex);
     if (!semanticValidation.isValid) {
       return semanticValidation;
     }
@@ -43,6 +47,32 @@ export function validateRegexString(regexString: string): { isValid: boolean; er
       error: `Invalid regular expression: ${errorMessage}`
     };
   }
+}
+
+/**
+ * Detects and unwraps JSON-wrapped regex strings
+ * 
+ * @param input - The input string that might be JSON-wrapped or plain regex
+ * @returns The unwrapped regex string
+ */
+function unwrapJsonRegex(input: string): string {
+  // If input looks like a JSON string (starts and ends with quotes), try to parse it
+  if (input.startsWith('"') && input.endsWith('"')) {
+    try {
+      const parsed = JSON.parse(input);
+      if (typeof parsed === 'string') {
+        console.log('🔍 Detected JSON-wrapped regex, unwrapping:', input, '->', parsed);
+        return parsed;
+      }
+    } catch (error) {
+      // If JSON parsing fails, treat as plain regex
+      console.log('🔍 JSON parsing failed, treating as plain regex:', input);
+    }
+  }
+  
+  // If input doesn't look like JSON or parsing failed, treat as plain regex
+  console.log('🔍 Treating as plain regex:', input);
+  return input;
 }
 
 /**
@@ -194,8 +224,9 @@ function validateMatchability(regex: RegExp, regexString: string): { isValid: bo
 
 /**
  * Validates regex string with additional checks for common issues
+ * Automatically detects and handles both JSON-wrapped and plain regex strings
  * 
- * @param regexString - The string to validate as regex
+ * @param regexString - The string to validate as regex (can be JSON-wrapped or plain)
  * @returns Object with validation result and detailed error message if invalid
  */
 export function validateRegexStringDetailed(regexString: string): { isValid: boolean; error?: string; warnings?: string[] } {
@@ -205,23 +236,25 @@ export function validateRegexStringDetailed(regexString: string): { isValid: boo
     return basicValidation;
   }
 
+  // Get unwrapped regex for warning checks
+  const unwrappedRegex = unwrapJsonRegex(regexString);
   const warnings: string[] = [];
   
   // Check for common regex issues
-  if (regexString.includes('**')) {
+  if (unwrappedRegex.includes('**')) {
     warnings.push('Double asterisk (**) may cause performance issues');
   }
   
-  if (regexString.includes('++')) {
+  if (unwrappedRegex.includes('++')) {
     warnings.push('Double plus (++) may cause performance issues');
   }
   
-  if (regexString.includes('??')) {
+  if (unwrappedRegex.includes('??')) {
     warnings.push('Double question mark (??) may cause performance issues');
   }
   
   // Check for potentially dangerous patterns
-  if (regexString.includes('.*.*')) {
+  if (unwrappedRegex.includes('.*.*')) {
     warnings.push('Multiple .* patterns may cause performance issues');
   }
   
@@ -233,8 +266,9 @@ export function validateRegexStringDetailed(regexString: string): { isValid: boo
 
 /**
  * Tests if a regex string matches a test string
+ * Automatically detects and handles both JSON-wrapped and plain regex strings
  * 
- * @param regexString - The regex string to test
+ * @param regexString - The regex string to test (can be JSON-wrapped or plain)
  * @param testString - The string to test against
  * @returns Object with match result and error if regex is invalid
  */
@@ -249,7 +283,9 @@ export function testRegexMatch(regexString: string, testString: string): { match
   }
   
   try {
-    const regex = new RegExp(regexString);
+    // Get unwrapped regex for testing
+    const unwrappedRegex = unwrapJsonRegex(regexString);
+    const regex = new RegExp(unwrappedRegex);
     return {
       matches: regex.test(testString)
     };
