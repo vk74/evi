@@ -115,7 +115,7 @@
               },
               "refresh": {
                 "settings": {
-                  "title": "refresh token settings"
+                  "title": "refresh token (cookie) settings"
                 },
                 "token": {
                   "lifetime": {
@@ -364,33 +364,33 @@
         "settings": "settings"
       },
       "datavalidation": {
-        "description": "Configure data validation rules and patterns for application data integrity",
+        "description": "configure data validation rules and patterns for application data integrity",
         "categories": {
-          "text": "Text Fields",
-          "identifier": "Identifiers",
-          "personal": "Personal Data",
-          "contact": "Contact Information",
-          "security": "Security",
-          "special": "Special Fields"
+          "text": "text Fields",
+          "identifier": "identifiers",
+          "personal": "personal Data",
+          "contact": "contact Information",
+          "security": "security",
+          "special": "special Fields"
         },
         "actions": {
-          "save": "Save Settings",
-          "reset": "Reset to Defaults"
+          "save": "save Settings",
+          "reset": "reset to Defaults"
         },
         "fieldTypes": "field types",
         "settings": {
-          "required": "Required field",
-          "minLength": "Minimum length",
-          "maxLength": "Maximum length",
-          "allowSpecialChars": "Allow special characters",
-          "allowNumbers": "Allow numbers",
-          "allowSpaces": "Allow spaces",
-          "uniqueCheck": "Check uniqueness",
-          "caseSensitive": "Case sensitive"
+          "required": "required field",
+          "minLength": "minimum length",
+          "maxLength": "maximum length",
+          "allowSpecialChars": "allow special characters",
+          "allowNumbers": "allow numbers",
+          "allowSpaces": "allow spaces",
+          "uniqueCheck": "check uniqueness",
+          "caseSensitive": "case sensitive"
         },
         "security": {
-          "title": "Security Settings",
-          "description": "Security validation is automatically enabled for all fields. These settings cannot be modified as they protect against common security threats.",
+          "title": "security sttings",
+          "description": "security validation is automatically enabled for all fields. shese settings cannot be modified as they protect against common security threats.",
           "sqlInjection": "SQL Injection Protection",
           "xssProtection": "XSS Protection",
           "commandInjection": "Command Injection Protection",
@@ -425,8 +425,8 @@
           "phoneRegex": "regex for phone validation",
           "emailRegex": "regex for validation",
           "emailRegexLabel": "email validation regex",
-          "emailRegexHint": "Enter a correct regular expression",
-          "phoneMaskHint": "Enter a correct phone mask (allowed: digits, +, spaces, parentheses, commas, hyphens, #)"
+          "emailRegexHint": "enter a correct regular expression",
+          "phoneMaskHint": "enter a correct phone mask (allowed: digits, +, spaces, parentheses, commas, hyphens, #)"
         }
       },
       "groups": {
