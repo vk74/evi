@@ -1,5 +1,5 @@
 /**
- * service.register.user.ts - version 1.0.04
+ * service.register.user.ts - version 1.0.05
  * BACKEND service for user registration
  * 
  * Processes user registration requests:
@@ -56,6 +56,9 @@ const registerUser = async (req: EnhancedRequest, res: Response): Promise<void> 
             email,
             phone
         } = req.body;
+
+        // Normalize phone for DB storage and uniqueness checks (E.164 digits only)
+        const normalizedPhone = phone ? String(phone).replace(/\D/g, '') : undefined;
 
         // Проверка наличия обязательных полей
         const requiredFields = ['username', 'password', 'surname', 'name', 'email'];
@@ -165,6 +168,7 @@ const registerUser = async (req: EnhancedRequest, res: Response): Promise<void> 
                             payload: {
                                 username,
                                 email,
+                                phone,
                                 reason: 'invalid_phone_format',
                                 timestamp: new Date().toISOString()
                             }
@@ -177,7 +181,7 @@ const registerUser = async (req: EnhancedRequest, res: Response): Promise<void> 
                 // Не прерываем регистрацию при ошибке получения правила; продолжаем с уникальностью
             }
 
-            const phoneResult: QueryResult = await pool.query(userRegistrationQueries.checkPhone.text, [phone]);
+            const phoneResult: QueryResult = await pool.query(userRegistrationQueries.checkPhone.text, [normalizedPhone]);
             if (phoneResult.rows.length > 0) {
                 await fabricEvents.createAndPublishEvent({
                     eventName: ACCOUNT_REGISTRATION_EVENTS.REGISTRATION_FAILED.eventName,
@@ -186,6 +190,7 @@ const registerUser = async (req: EnhancedRequest, res: Response): Promise<void> 
                         username,
                         email,
                         phone,
+                        normalizedPhone,
                         reason: 'duplicate_phone',
                         timestamp: new Date().toISOString()
                     }
@@ -193,7 +198,7 @@ const registerUser = async (req: EnhancedRequest, res: Response): Promise<void> 
                 await createAndPublishEvent({
                     eventName: ACCOUNT_SERVICE_EVENTS.REGISTER_USER_ERROR.eventName,
                     payload: {
-                        registrationData: { username, email, phone },
+                        registrationData: { username, email, phone: normalizedPhone },
                         error: 'this phone number is already registered by another user',
                         reason: 'duplicate_phone'
                     }
@@ -235,7 +240,7 @@ const registerUser = async (req: EnhancedRequest, res: Response): Promise<void> 
                 [
                     userId,          // $1
                     null,            // $2 (gender)
-                    phone || null,   // $3
+                    normalizedPhone || null,   // $3
                 ]
             );
 
@@ -270,6 +275,8 @@ const registerUser = async (req: EnhancedRequest, res: Response): Promise<void> 
                 else if (constraint && /email/i.test(constraint)) reason = 'duplicate_email';
                 else if (constraint && /(phone|mobile)/i.test(constraint)) reason = 'duplicate_phone';
                 else reason = 'duplicate';
+            } else if (pgCode === '22001') {
+                reason = 'phone_too_long';
             }
             await fabricEvents.createAndPublishEvent({
                 eventName: ACCOUNT_REGISTRATION_EVENTS.REGISTRATION_FAILED.eventName,
@@ -284,11 +291,27 @@ const registerUser = async (req: EnhancedRequest, res: Response): Promise<void> 
                     timestamp: new Date().toISOString()
                 }
             });
-            // Attach structured info for connection handler
             (error as any).code = (error as any)?.code || (pgCode === '23505' ? 'VALIDATION_ERROR' : 'INTERNAL_SERVER_ERROR');
             (error as any).reason = reason;
             (error as any).constraint = constraint;
             (error as any).pgCode = pgCode;
+            // Map known DB errors to 400 with clear messages; otherwise rethrow
+            if (reason === 'duplicate_username') {
+                res.status(400).json({ message: 'this username is already registered by another user' });
+                return;
+            }
+            if (reason === 'duplicate_email') {
+                res.status(400).json({ message: 'this e-mail is already registered by another user' });
+                return;
+            }
+            if (reason === 'duplicate_phone') {
+                res.status(400).json({ message: 'this phone number is already registered by another user' });
+                return;
+            }
+            if (reason === 'phone_too_long') {
+                res.status(400).json({ message: 'phone number is too long' });
+                return;
+            }
             throw error;
         }
 
