@@ -1,5 +1,5 @@
 /**
- * version: 1.0.07
+ * version: 1.0.08
  * Backend router file for admin functionality.
  * Defines routes for administrative functions focused on organization management.
  * All routes are protected by JWT validation and user status check middleware.
@@ -9,6 +9,7 @@
 import express, { Router } from 'express';
 import validateJWT from '../../core/guards/guard.validate.jwt';
 import checkIsUserStatusActive from '../../core/guards/guard.check.is.user.status.active';
+import checkRequestSecurityHard from '../../core/guards/guard.check.request.security.hard';
 
 // Import controllers
 import { fetchUsers, deleteSelectedUsers } from './org/usersList/routes.users.list';
@@ -49,54 +50,54 @@ import fetchUserGroupsController from './org/userEditor/controller.fetch.user.gr
 const router: Router = express.Router();
 
 // Routes for Users
-router.post('/api/admin/users/create-new-user', validateJWT, checkIsUserStatusActive, createUserController);
-router.get('/api/admin/users/fetch-users', validateJWT, checkIsUserStatusActive, fetchUsers);
-router.get('/users/list', validateJWT, checkIsUserStatusActive, fetchUsers);
-router.post('/users/delete', validateJWT, checkIsUserStatusActive, deleteSelectedUsers);
-router.get('/api/admin/users/fetch-user-by-userid/:userId', validateJWT, checkIsUserStatusActive, loadUserById);
-router.post('/api/admin/users/update-user-by-userid/:userId', validateJWT, checkIsUserStatusActive, updateUserById);
-router.post('/api/admin/users/delete-selected-users', validateJWT, checkIsUserStatusActive, deleteSelectedUsers);
-router.get('/api/admin/users/:userId/groups', validateJWT, checkIsUserStatusActive, fetchUserGroupsController);
+router.post('/api/admin/users/create-new-user', checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, createUserController);
+router.get('/api/admin/users/fetch-users', checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, fetchUsers);
+router.get('/users/list', checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, fetchUsers);
+router.post('/users/delete', checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, deleteSelectedUsers);
+router.get('/api/admin/users/fetch-user-by-userid/:userId', checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, loadUserById);
+router.post('/api/admin/users/update-user-by-userid/:userId', checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, updateUserById);
+router.post('/api/admin/users/delete-selected-users', checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, deleteSelectedUsers);
+router.get('/api/admin/users/:userId/groups', checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, fetchUserGroupsController);
 
 // Routes for Groups
-router.post('/api/admin/groups/create-new-group', validateJWT, checkIsUserStatusActive, createGroupController);
-router.get('/api/admin/groups/fetch-groups', validateJWT, checkIsUserStatusActive, fetchGroups);
-router.post('/api/admin/groups/delete-selected-groups', validateJWT, checkIsUserStatusActive, deleteSelectedGroupsController);
-router.get('/api/admin/groups/fetch-group-by-groupid/:groupId', validateJWT, checkIsUserStatusActive, fetchGroupById);
-router.post('/api/admin/groups/update-group-by-groupid', validateJWT, checkIsUserStatusActive, updateGroupById);
-router.get('/api/admin/groups/:groupId/members', validateJWT, checkIsUserStatusActive, fetchGroupMembers);
-router.post('/api/admin/groups/:groupId/members/remove', validateJWT, checkIsUserStatusActive, removeGroupMembers);
+router.post('/api/admin/groups/create-new-group', checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, createGroupController);
+router.get('/api/admin/groups/fetch-groups', checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, fetchGroups);
+router.post('/api/admin/groups/delete-selected-groups', checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, deleteSelectedGroupsController);
+router.get('/api/admin/groups/fetch-group-by-groupid/:groupId', checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, fetchGroupById);
+router.post('/api/admin/groups/update-group-by-groupid', checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, updateGroupById);
+router.get('/api/admin/groups/:groupId/members', checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, fetchGroupMembers);
+router.post('/api/admin/groups/:groupId/members/remove', checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, removeGroupMembers);
 
 // Routes for Catalog Admin
-router.get('/api/admin/catalog/fetch-sections', validateJWT, checkIsUserStatusActive, fetchCatalogSections);
-router.post('/api/admin/catalog/create-section', validateJWT, checkIsUserStatusActive, createCatalogSection);
-router.post('/api/admin/catalog/update-section', validateJWT, checkIsUserStatusActive, updateCatalogSection);
-router.post('/api/admin/catalog/delete-section', validateJWT, checkIsUserStatusActive, deleteCatalogSection);
-router.get('/api/admin/catalog/fetchpublishingservices', validateJWT, checkIsUserStatusActive, fetchPublishingServicesController);
-router.post('/api/admin/catalog/update-services-publish', validateJWT, checkIsUserStatusActive, updateSectionServicesPublishController);
+router.get('/api/admin/catalog/fetch-sections', checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, fetchCatalogSections);
+router.post('/api/admin/catalog/create-section', checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, createCatalogSection);
+router.post('/api/admin/catalog/update-section', checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, updateCatalogSection);
+router.post('/api/admin/catalog/delete-section', checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, deleteCatalogSection);
+router.get('/api/admin/catalog/fetchpublishingservices', checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, fetchPublishingServicesController);
+router.post('/api/admin/catalog/update-services-publish', checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, updateSectionServicesPublishController);
 // Ordering disabled: route removed
 
 // Routes for Services Admin
-router.post('/api/admin/services/create', validateJWT, checkIsUserStatusActive, createServiceController);
-router.post('/api/admin/services/update', validateJWT, checkIsUserStatusActive, updateServiceController);
-router.post('/api/admin/services/update-sections-publish', validateJWT, checkIsUserStatusActive, updateSectionsPublishController);
-router.get('/api/admin/services/fetchallservices', validateJWT, checkIsUserStatusActive, fetchAllServicesController);
-router.get('/api/admin/services/fetchpublishingsections', validateJWT, checkIsUserStatusActive, fetchPublishingSectionsController);
-router.get('/api/admin/services/fetchsingleservice', validateJWT, checkIsUserStatusActive, fetchSingleServiceController);
-router.post('/api/admin/services/deleteservices', validateJWT, checkIsUserStatusActive, deleteServicesController);
+router.post('/api/admin/services/create', checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, createServiceController);
+router.post('/api/admin/services/update', checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, updateServiceController);
+router.post('/api/admin/services/update-sections-publish', checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, updateSectionsPublishController);
+router.get('/api/admin/services/fetchallservices', checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, fetchAllServicesController);
+router.get('/api/admin/services/fetchpublishingsections', checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, fetchPublishingSectionsController);
+router.get('/api/admin/services/fetchsingleservice', checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, fetchSingleServiceController);
+router.post('/api/admin/services/deleteservices', checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, deleteServicesController);
 
 // Routes for Products Admin
-router.get('/api/admin/products/fetch-all-products', validateJWT, checkIsUserStatusActive, fetchAllProductsController);
-router.get('/api/admin/products/fetch-options', validateJWT, checkIsUserStatusActive, fetchOptionsController);
-router.get('/api/admin/products/fetchpublishingsections', validateJWT, checkIsUserStatusActive, fetchPublishingSectionsProductsController);
-router.post('/api/admin/products/update-sections-publish', validateJWT, checkIsUserStatusActive, updateProductSectionsPublishController);
-router.post('/api/admin/products/create', validateJWT, checkIsUserStatusActive, createProductController);
-router.get('/api/admin/products/fetch', validateJWT, checkIsUserStatusActive, fetchProductController);
-router.post('/api/admin/products/update', validateJWT, checkIsUserStatusActive, updateProductController);
-router.post('/api/admin/products/delete', validateJWT, checkIsUserStatusActive, deleteProductsController);
+router.get('/api/admin/products/fetch-all-products', checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, fetchAllProductsController);
+router.get('/api/admin/products/fetch-options', checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, fetchOptionsController);
+router.get('/api/admin/products/fetchpublishingsections', checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, fetchPublishingSectionsProductsController);
+router.post('/api/admin/products/update-sections-publish', checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, updateProductSectionsPublishController);
+router.post('/api/admin/products/create', checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, createProductController);
+router.get('/api/admin/products/fetch', checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, fetchProductController);
+router.post('/api/admin/products/update', checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, updateProductController);
+router.post('/api/admin/products/delete', checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, deleteProductsController);
 
 // Routes for Account Management
-router.post('/api/admin/users/register', registerUserController);
+router.post('/api/admin/users/register', checkRequestSecurityHard, registerUserController);
 
 // Export using ES modules syntax
 export default router;

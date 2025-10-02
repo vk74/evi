@@ -1,5 +1,5 @@
 /**
- * version: 1.0.0
+ * version: 1.0.1
  * Public routes for backend services.
  * 
  * Functionality:
@@ -10,6 +10,7 @@
  */
 
 import express, { Router } from 'express';
+import checkRequestSecurityHard from '../guards/guard.check.request.security.hard';
 
 // Import public controllers
 import fetchPublicPasswordPoliciesController from '../public/controller.fetch.public.password.policies';
@@ -19,9 +20,9 @@ import fetchPublicValidationRulesController from '../public/controller.fetch.pub
 const router: Router = express.Router();
 
 // Public routes (no authentication required)
-router.get('/api/public/password-policies', fetchPublicPasswordPoliciesController);
-router.get('/api/public/registration-status', getRegistrationStatusController);
-router.get('/api/public/validation-rules', fetchPublicValidationRulesController);
+router.get('/api/public/password-policies', checkRequestSecurityHard, fetchPublicPasswordPoliciesController);
+router.get('/api/public/registration-status', checkRequestSecurityHard, getRegistrationStatusController);
+router.get('/api/public/validation-rules', checkRequestSecurityHard, fetchPublicValidationRulesController);
 
 // Export using ES modules syntax
 export default router;
