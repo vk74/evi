@@ -1,5 +1,5 @@
 /**
- * version: 1.0.04
+ * version: 1.0.05
  * Main server file
  * 
  * This is the entry point for the backend server.
@@ -12,7 +12,6 @@
 import 'module-alias/register';
 import express, { Express, Request, Response, NextFunction } from 'express';
 import cors from 'cors';
-import bodyParser from 'body-parser';
 import cookieParser from 'cookie-parser';
 import fs from 'fs';
 
@@ -265,9 +264,10 @@ async function initializeServer(): Promise<void> {
       exposedHeaders: ['Set-Cookie'] // Expose Set-Cookie header
     }));
     
-    app.use(express.json());
+    // Explicitly set body size limits and avoid duplicate parsers
+    app.use(express.json({ limit: '256kb' }));
+    app.use(express.urlencoded({ extended: true, limit: '256kb' }));
     app.use(cookieParser()); // Add cookie parser middleware
-    app.use(bodyParser.json());
 
     console.log('Middleware configuration completed');
 
