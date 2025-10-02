@@ -1,5 +1,5 @@
 /**
- * version: 1.0.0
+ * version: 1.1.0
  * Types and interfaces for validation service
  * 
  * This file defines all types and interfaces used by the validation service.
@@ -8,19 +8,11 @@
 
 // Field types supported by the validator
 export type FieldType = 
-  // Well-known fields (from database settings)
+  // Well-known fields only
   | 'userName'           // wellKnownFields.userName
   | 'groupName'          // wellKnownFields.groupName  
   | 'email'              // wellKnownFields.email
-  | 'telephoneNumber'    // wellKnownFields.telephoneNumber
-  
-  // Standard fields (from database settings)
-  | 'text-micro'         // standardFields.textMicro
-  | 'text-mini'          // standardFields.textMini
-  | 'text-short'         // standardFields.textShort
-  | 'text-medium'        // standardFields.textMedium
-  | 'text-long'          // standardFields.textLong
-  | 'text-extralong';    // standardFields.textExtraLong
+  | 'telephoneNumber';   // wellKnownFields.telephoneNumber
 
 // Note: Password validation is handled separately by password policies system
 // and is not part of the main validator

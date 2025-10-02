@@ -48,11 +48,11 @@ const pool = pgPool as Pool;
 async function validateCreateProductData(data: CreateProductRequest, req: Request): Promise<void> {
     const errors: string[] = [];
 
-    // Validate product code
+    // Validate product code (security-only)
     if (data.productCode) {
-        const productCodeResult = await validateField({
+        const productCodeResult = await validateFieldSecurity({
             value: data.productCode,
-            fieldType: 'text-medium'
+            fieldType: 'userName'
         }, req);
         if (!productCodeResult.isValid && productCodeResult.error) {
             errors.push(`Product code: ${productCodeResult.error}`);
@@ -79,11 +79,11 @@ async function validateCreateProductData(data: CreateProductRequest, req: Reques
         errors.push('Product code is required');
     }
 
-    // Validate translation key
+    // Validate translation key (security-only)
     if (data.translationKey) {
-        const translationKeyResult = await validateField({
+        const translationKeyResult = await validateFieldSecurity({
             value: data.translationKey,
-            fieldType: 'text-medium'
+            fieldType: 'userName'
         }, req);
         if (!translationKeyResult.isValid && translationKeyResult.error) {
             errors.push(`Translation key: ${translationKeyResult.error}`);

@@ -1,6 +1,6 @@
 /**
  * service.load.validation.settings.ts - backend file
- * version: 1.0.0
+ * version: 1.1.0
  * Service for loading validation settings from database and converting them to ValidationRule objects
  * Uses the settings management system to fetch configuration from PostgreSQL
  */
@@ -27,15 +27,7 @@ let validationCache: ValidationSettingsCache | null = null;
  * @param allowSpecialChars Whether to allow special characters
  * @returns Regular expression for standard text fields
  */
-function buildStandardFieldRegex(allowSpecialChars: boolean): RegExp {
-  if (allowSpecialChars) {
-    // Allow letters, numbers, spaces, and common special characters
-    return /^[a-zA-Zа-яА-ЯёЁ0-9\s\-_.,!?()@#$%&'*+=/<>[\]{}"`~;:|]+$/;
-  } else {
-    // Only letters, numbers, spaces, hyphens, and underscores
-    return /^[a-zA-Zа-яА-ЯёЁ0-9\s\-_]+$/;
-  }
-}
+// Standard fields logic removed: we no longer build regex for standard text buckets
 
 /**
  * Get setting value from settings array by name
@@ -178,20 +170,7 @@ function buildTelephoneNumberRule(settings: AppSetting[]): ValidationRule {
  * @param standardRegex Regex pattern for standard fields
  * @returns ValidationRule for standard field
  */
-function buildStandardFieldRule(settings: AppSetting[], fieldType: FieldType, standardRegex: RegExp): ValidationRule {
-  const maxLength = getSettingValue(settings, `standardFields.${fieldType}.maxLength`) || 100;
-
-  return {
-    fieldType,
-    regex: standardRegex,
-    maxLength,
-    required: false,
-    messages: {
-      maxLength: `${fieldType} cannot exceed ${maxLength} characters`,
-      invalidChars: `${fieldType} contains invalid characters`
-    }
-  };
-}
+// Standard field rule builder removed
 
 /**
  * Load validation settings from database and convert to ValidationRule objects
@@ -222,16 +201,7 @@ export async function loadValidationSettings(req: Request): Promise<Map<string, 
     rules.set('email', buildEmailRule(settings));
     rules.set('telephoneNumber', buildTelephoneNumberRule(settings));
 
-    // Build standard field rules
-    const allowSpecialChars = getSettingValue(settings, 'standardFields.allowSpecialChars') || true;
-    const standardRegex = buildStandardFieldRegex(allowSpecialChars);
-
-    rules.set('text-micro', buildStandardFieldRule(settings, 'text-micro', standardRegex));
-    rules.set('text-mini', buildStandardFieldRule(settings, 'text-mini', standardRegex));
-    rules.set('text-short', buildStandardFieldRule(settings, 'text-short', standardRegex));
-    rules.set('text-medium', buildStandardFieldRule(settings, 'text-medium', standardRegex));
-    rules.set('text-long', buildStandardFieldRule(settings, 'text-long', standardRegex));
-    rules.set('text-extralong', buildStandardFieldRule(settings, 'text-extralong', standardRegex));
+    // Standard field rules removed: rely on DB constraints and guards
 
     console.log(`Built ${rules.size} validation rules from settings`);
     return rules;

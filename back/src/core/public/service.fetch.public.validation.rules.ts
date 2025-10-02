@@ -1,6 +1,6 @@
 /**
  * service.fetch.public.validation.rules.ts - backend file
- * version: 1.0.0
+ * version: 1.1.0
  * Service for fetching public validation rules settings.
  * Uses centralized settings service for data access.
  * Provides structured response for public consumption.
@@ -17,13 +17,7 @@ import { getClientIp } from '../helpers/get.client.ip.from.req';
 const VALIDATION_RULES_SECTION_PATH = 'Application.System.DataValidation';
 
 const ALLOWED_VALIDATION_RULES_SETTINGS = [
-  'standardFields.allowSpecialChars',
-  'standardFields.textMicro.maxLength',
-  'standardFields.textMini.maxLength',
-  'standardFields.textShort.maxLength',
-  'standardFields.textMedium.maxLength',
-  'standardFields.textLong.maxLength',
-  'standardFields.textExtraLong.maxLength',
+  // Standard fields removed from public rules
   'wellKnownFields.email.regex',
   'wellKnownFields.groupName.allowNumbers',
   'wellKnownFields.groupName.allowUsernameChars',
@@ -45,15 +39,6 @@ const ALLOWED_VALIDATION_RULES_SETTINGS = [
 export interface PublicValidationRulesResponse {
   success: boolean;
   validationRules?: {
-    standardFields: {
-      textMicro: { maxLength: number };
-      textMini: { maxLength: number };
-      textShort: { maxLength: number };
-      textMedium: { maxLength: number };
-      textLong: { maxLength: number };
-      textExtraLong: { maxLength: number };
-      allowSpecialChars: boolean;
-    };
     wellKnownFields: {
       email: {};
       groupName: { 
@@ -98,15 +83,6 @@ interface ValidationRuleSetting {
  */
 function transformToValidationRules(settings: ValidationRuleSetting[]): PublicValidationRulesResponse['validationRules'] {
   const rules = {
-    standardFields: {
-      textMicro: { maxLength: 0 },
-      textMini: { maxLength: 0 },
-      textShort: { maxLength: 0 },
-      textMedium: { maxLength: 0 },
-      textLong: { maxLength: 0 },
-      textExtraLong: { maxLength: 0 },
-      allowSpecialChars: false
-    },
     wellKnownFields: {
       email: {
         regex: ''
@@ -137,29 +113,6 @@ function transformToValidationRules(settings: ValidationRuleSetting[]): PublicVa
     const value = setting.value !== null ? setting.value : setting.default_value;
     
     switch (setting.setting_name) {
-      // Standard fields
-      case 'standardFields.allowSpecialChars':
-        rules.standardFields.allowSpecialChars = Boolean(value);
-        break;
-      case 'standardFields.textMicro.maxLength':
-        rules.standardFields.textMicro.maxLength = Number(value);
-        break;
-      case 'standardFields.textMini.maxLength':
-        rules.standardFields.textMini.maxLength = Number(value);
-        break;
-      case 'standardFields.textShort.maxLength':
-        rules.standardFields.textShort.maxLength = Number(value);
-        break;
-      case 'standardFields.textMedium.maxLength':
-        rules.standardFields.textMedium.maxLength = Number(value);
-        break;
-      case 'standardFields.textLong.maxLength':
-        rules.standardFields.textLong.maxLength = Number(value);
-        break;
-      case 'standardFields.textExtraLong.maxLength':
-        rules.standardFields.textExtraLong.maxLength = Number(value);
-        break;
-      
       // Well-known fields - Group Name
       case 'wellKnownFields.groupName.minLength':
         rules.wellKnownFields.groupName.minLength = Number(value);
@@ -211,7 +164,7 @@ function transformToValidationRules(settings: ValidationRuleSetting[]): PublicVa
       case 'wellKnownFields.userName.allowUsernameChars':
         rules.wellKnownFields.userName.allowUsernameChars = Boolean(value);
         break;
-      // Note: email regex is excluded for security reasons
+      // Note: email regex is provided here for client-side UX, server enforces its own
     }
   });
 

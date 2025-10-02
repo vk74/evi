@@ -134,7 +134,7 @@ async function validateEmailUpdate(email: string, userId: string, req: Request):
 
 async function validateNameUpdate(name: string, field: 'first_name' | 'middle_name' | 'last_name', req: Request): Promise<void> {
   try {
-    await validateFieldAndThrow({ value: name, fieldType: 'text-mini' }, req);
+    // Names are validated by DB constraints and guards; removing standard text validation
   } catch (error) {
     throw {
       code: 'VALIDATION_ERROR',

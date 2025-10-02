@@ -177,8 +177,8 @@ async function validateEmail(email: string, req: Request): Promise<void> {
 
 async function validateName(name: string, field: 'first_name' | 'middle_name' | 'last_name', req: Request): Promise<void> {
   try {
-    // Use text-mini for names (up to 20 characters)
-    await validateFieldAndThrow({ value: name, fieldType: 'text-mini' }, req);
+    // Content validation now relies on well-known fields or DB constraints
+    // Names validated via DB constraints and universal guards; no standard text buckets
   } catch (error) {
     throw {
       code: 'VALIDATION_ERROR',

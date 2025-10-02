@@ -1,5 +1,5 @@
 /**
- * service.register.user.ts - version 1.0.02
+ * service.register.user.ts - version 1.0.04
  * BACKEND service for user registration
  * 
  * Processes user registration requests:
@@ -17,6 +17,7 @@ import { Pool, QueryResult } from 'pg';
 import { pool as pgPool } from '../../core/db/maindb';
 import { userRegistrationQueries } from './queries.account';
 import fabricEvents from '../../core/eventBus/fabric.events';
+import { getValidationRule } from '@/core/validation/service.load.validation.settings';
 import { ACCOUNT_REGISTRATION_EVENTS } from './events.account';
 import { createAndPublishEvent } from '@/core/eventBus/fabric.events';
 import { ACCOUNT_SERVICE_EVENTS } from './events.account';
@@ -61,6 +62,28 @@ const registerUser = async (req: EnhancedRequest, res: Response): Promise<void> 
         const missingFields = requiredFields.filter(field => !req.body[field]);
 
         if (missingFields.length > 0) {
+            // Emit failure events with clear reason
+            await fabricEvents.createAndPublishEvent({
+                eventName: ACCOUNT_REGISTRATION_EVENTS.REGISTRATION_FAILED.eventName,
+                req,
+                payload: {
+                    username,
+                    email,
+                    phone: phone || null,
+                    reason: 'missing_required_fields',
+                    missing: missingFields,
+                    timestamp: new Date().toISOString()
+                }
+            });
+            await createAndPublishEvent({
+                eventName: ACCOUNT_SERVICE_EVENTS.REGISTER_USER_ERROR.eventName,
+                payload: {
+                    registrationData: { username, email, phone },
+                    error: 'missing required fields',
+                    reason: 'missing_required_fields',
+                    missing: missingFields
+                }
+            });
             res.status(400).json({
                 message: 'missing required fields: ' + missingFields.join(', ')
             });
@@ -70,6 +93,25 @@ const registerUser = async (req: EnhancedRequest, res: Response): Promise<void> 
         // Проверка уникальности username
         const usernameResult: QueryResult = await pool.query(userRegistrationQueries.checkUsername.text, [username]);
         if (usernameResult.rows.length > 0) {
+            await fabricEvents.createAndPublishEvent({
+                eventName: ACCOUNT_REGISTRATION_EVENTS.REGISTRATION_FAILED.eventName,
+                req,
+                payload: {
+                    username,
+                    email,
+                    phone: phone || null,
+                    reason: 'duplicate_username',
+                    timestamp: new Date().toISOString()
+                }
+            });
+            await createAndPublishEvent({
+                eventName: ACCOUNT_SERVICE_EVENTS.REGISTER_USER_ERROR.eventName,
+                payload: {
+                    registrationData: { username, email, phone },
+                    error: 'this username is already registered by another user',
+                    reason: 'duplicate_username'
+                }
+            });
             res.status(400).json({
                 message: 'this username is already registered by another user'
             });
@@ -79,6 +121,25 @@ const registerUser = async (req: EnhancedRequest, res: Response): Promise<void> 
         // Проверка уникальности email
         const emailResult: QueryResult = await pool.query(userRegistrationQueries.checkEmail.text, [email]);
         if (emailResult.rows.length > 0) {
+            await fabricEvents.createAndPublishEvent({
+                eventName: ACCOUNT_REGISTRATION_EVENTS.REGISTRATION_FAILED.eventName,
+                req,
+                payload: {
+                    username,
+                    email,
+                    phone: phone || null,
+                    reason: 'duplicate_email',
+                    timestamp: new Date().toISOString()
+                }
+            });
+            await createAndPublishEvent({
+                eventName: ACCOUNT_SERVICE_EVENTS.REGISTER_USER_ERROR.eventName,
+                payload: {
+                    registrationData: { username, email, phone },
+                    error: 'this e-mail is already registered by another user',
+                    reason: 'duplicate_email'
+                }
+            });
             res.status(400).json({
                 message: 'this e-mail is already registered by another user'
             });
@@ -87,8 +148,56 @@ const registerUser = async (req: EnhancedRequest, res: Response): Promise<void> 
 
         // Проверка уникальности телефона (только если он предоставлен)
         if (phone) {
+            // Дополнительная проверка телефона по маске на бэкенде
+            try {
+                const rule = await getValidationRule('telephoneNumber', req);
+                let pattern: RegExp | null = null;
+                if (rule && (rule as any).regex) {
+                    const rx = (rule as any).regex;
+                    pattern = rx instanceof RegExp ? rx : new RegExp(String(rx));
+                }
+                if (pattern) {
+                    const matches = pattern.test(phone);
+                    if (!matches) {
+                        await fabricEvents.createAndPublishEvent({
+                            eventName: ACCOUNT_REGISTRATION_EVENTS.REGISTRATION_FAILED.eventName,
+                            req,
+                            payload: {
+                                username,
+                                email,
+                                reason: 'invalid_phone_format',
+                                timestamp: new Date().toISOString()
+                            }
+                        });
+                        res.status(400).json({ message: 'invalid phone number format' });
+                        return;
+                    }
+                }
+            } catch (e) {
+                // Не прерываем регистрацию при ошибке получения правила; продолжаем с уникальностью
+            }
+
             const phoneResult: QueryResult = await pool.query(userRegistrationQueries.checkPhone.text, [phone]);
             if (phoneResult.rows.length > 0) {
+                await fabricEvents.createAndPublishEvent({
+                    eventName: ACCOUNT_REGISTRATION_EVENTS.REGISTRATION_FAILED.eventName,
+                    req,
+                    payload: {
+                        username,
+                        email,
+                        phone,
+                        reason: 'duplicate_phone',
+                        timestamp: new Date().toISOString()
+                    }
+                });
+                await createAndPublishEvent({
+                    eventName: ACCOUNT_SERVICE_EVENTS.REGISTER_USER_ERROR.eventName,
+                    payload: {
+                        registrationData: { username, email, phone },
+                        error: 'this phone number is already registered by another user',
+                        reason: 'duplicate_phone'
+                    }
+                });
                 res.status(400).json({
                     message: 'this phone number is already registered by another user'
                 });
@@ -152,10 +261,90 @@ const registerUser = async (req: EnhancedRequest, res: Response): Promise<void> 
 
         } catch (error) {
             await pool.query('ROLLBACK');
+            // Emit detailed failure reason if available (e.g., unique violations)
+            const pgCode = (error as any)?.code;
+            const constraint = (error as any)?.constraint as string | undefined;
+            let reason = 'db_error';
+            if (pgCode === '23505') {
+                if (constraint && /username/i.test(constraint)) reason = 'duplicate_username';
+                else if (constraint && /email/i.test(constraint)) reason = 'duplicate_email';
+                else if (constraint && /(phone|mobile)/i.test(constraint)) reason = 'duplicate_phone';
+                else reason = 'duplicate';
+            }
+            await fabricEvents.createAndPublishEvent({
+                eventName: ACCOUNT_REGISTRATION_EVENTS.REGISTRATION_FAILED.eventName,
+                req,
+                payload: {
+                    username,
+                    email,
+                    phone: phone || null,
+                    reason,
+                    constraint: constraint || null,
+                    pgCode: pgCode || null,
+                    timestamp: new Date().toISOString()
+                }
+            });
+            // Attach structured info for connection handler
+            (error as any).code = (error as any)?.code || (pgCode === '23505' ? 'VALIDATION_ERROR' : 'INTERNAL_SERVER_ERROR');
+            (error as any).reason = reason;
+            (error as any).constraint = constraint;
+            (error as any).pgCode = pgCode;
             throw error;
         }
 
     } catch (error) {
+        // Map unique constraint violations to clear reasons and 400 responses
+        const pgCode = (error as any)?.code;
+        const constraint = (error as any)?.constraint as string | undefined;
+
+        if (pgCode === '23505') {
+            let reason = 'duplicate';
+            let message = 'duplicate value';
+            if (constraint) {
+                if (/username/i.test(constraint)) {
+                    reason = 'duplicate_username';
+                    message = 'this username is already registered by another user';
+                } else if (/email/i.test(constraint)) {
+                    reason = 'duplicate_email';
+                    message = 'this e-mail is already registered by another user';
+                } else if (/phone|mobile/i.test(constraint)) {
+                    reason = 'duplicate_phone';
+                    message = 'this phone number is already registered by another user';
+                }
+            }
+
+            await fabricEvents.createAndPublishEvent({
+                eventName: ACCOUNT_REGISTRATION_EVENTS.REGISTRATION_FAILED.eventName,
+                req,
+                payload: {
+                    username: req.body.username,
+                    email: req.body.email,
+                    phone: req.body.phone || null,
+                    reason,
+                    constraint: constraint || null,
+                    timestamp: new Date().toISOString()
+                }
+            });
+
+            await createAndPublishEvent({
+                eventName: ACCOUNT_SERVICE_EVENTS.REGISTER_USER_ERROR.eventName,
+                payload: {
+                    registrationData: {
+                        username: req.body.username,
+                        email: req.body.email,
+                        phone: req.body.phone
+                    },
+                    error: message,
+                    reason,
+                    constraint: constraint || null
+                },
+                errorData: error instanceof Error ? error.message : undefined
+            });
+
+            res.status(400).json({ message });
+            return;
+        }
+
         await createAndPublishEvent({
           eventName: ACCOUNT_SERVICE_EVENTS.REGISTER_USER_ERROR.eventName,
           payload: {
@@ -176,6 +365,7 @@ const registerUser = async (req: EnhancedRequest, res: Response): Promise<void> 
             payload: {
                 username: req.body.username,
                 email: req.body.email,
+                phone: req.body.phone || null,
                 error: error instanceof Error ? error.message : String(error),
                 timestamp: new Date().toISOString()
             },

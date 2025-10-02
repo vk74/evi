@@ -5,7 +5,7 @@
   Version: 1.4.0
   
   Features:
-  - Standard fields validation settings (text-micro, text-mini, etc.)
+  - Standard fields validation settings (REMOVED)
   - Well-known fields validation settings (user-name, group-name, email, telephone)
   - Backend integration with settings API
   - Real-time synchronization with database
@@ -64,15 +64,8 @@ const isRestoringPhoneMask = ref(false);
 const emailRegexKey = ref(0);
 const phoneMaskKey = ref(0);
 
-// Define all settings that need to be loaded
+// Define all settings that need to be loaded (standardFields removed)
 const allSettings = [
-  'standardFields.allowSpecialChars',
-  'standardFields.textMicro.maxLength',
-  'standardFields.textMini.maxLength',
-  'standardFields.textShort.maxLength',
-  'standardFields.textMedium.maxLength',
-  'standardFields.textLong.maxLength',
-  'standardFields.textExtraLong.maxLength',
   'wellKnownFields.userName.minLength',
   'wellKnownFields.userName.maxLength',
   'wellKnownFields.userName.allowNumbers',
@@ -94,49 +87,7 @@ allSettings.forEach(settingName => {
   settingRetryAttempts.value[settingName] = 0;
 });
 
-// Local UI state for immediate interaction - initialize with null (not set)
-const standardFieldsSettings = ref({
-  allowSpecialChars: null as boolean | null
-});
-
-const standardFields = ref([
-  {
-    id: 'text-micro',
-    name: 'micro',
-    maxLength: null as number | null,
-    maxLengthOptions: Array.from({ length: 9 }, (_, i) => i + 2)
-  },
-  {
-    id: 'text-mini',
-    name: 'mini',
-    maxLength: null as number | null,
-    maxLengthOptions: Array.from({ length: 49 }, (_, i) => i + 2)
-  },
-  {
-    id: 'text-short',
-    name: 'short',
-    maxLength: null as number | null,
-    maxLengthOptions: Array.from({ length: 20 }, (_, i) => 10 + (i * 10))
-  },
-  {
-    id: 'text-medium',
-    name: 'medium',
-    maxLength: null as number | null,
-    maxLengthOptions: Array.from({ length: 25 }, (_, i) => 20 + (i * 20))
-  },
-  {
-    id: 'text-long',
-    name: 'long',
-    maxLength: null as number | null,
-    maxLengthOptions: Array.from({ length: 100 }, (_, i) => 50 + (i * 50))
-  },
-  {
-    id: 'text-extralong',
-    name: 'extra long',
-    maxLength: null as number | null,
-    maxLengthOptions: Array.from({ length: 100 }, (_, i) => 100 + (i * 100))
-  }
-]);
+// Standard fields UI removed
 
 const wellKnownFields = ref([
   {
@@ -342,27 +293,6 @@ function updateLocalSetting(settingName: string, value: any) {
   const safeString = (val: any) => val === null ? null : String(val);
 
   switch (settingName) {
-    case 'standardFields.allowSpecialChars':
-      standardFieldsSettings.value.allowSpecialChars = safeBoolean(value);
-      break;
-    case 'standardFields.textMicro.maxLength':
-      standardFields.value[0].maxLength = safeNumber(value);
-      break;
-    case 'standardFields.textMini.maxLength':
-      standardFields.value[1].maxLength = safeNumber(value);
-      break;
-    case 'standardFields.textShort.maxLength':
-      standardFields.value[2].maxLength = safeNumber(value);
-      break;
-    case 'standardFields.textMedium.maxLength':
-      standardFields.value[3].maxLength = safeNumber(value);
-      break;
-    case 'standardFields.textLong.maxLength':
-      standardFields.value[4].maxLength = safeNumber(value);
-      break;
-    case 'standardFields.textExtraLong.maxLength':
-      standardFields.value[5].maxLength = safeNumber(value);
-      break;
     case 'wellKnownFields.userName.minLength':
       wellKnownFields.value[0].minLength = safeNumber(value);
       break;
@@ -439,10 +369,6 @@ async function loadSettings() {
           updateLocalSetting(settingName, setting.value);
           settingLoadingStates.value[settingName] = false;
           settingErrorStates.value[settingName] = false;
-        } else {
-          console.warn(`Setting ${settingName} not found in loaded settings`);
-          settingLoadingStates.value[settingName] = false;
-          settingErrorStates.value[settingName] = true;
         }
       });
       
@@ -493,14 +419,6 @@ async function retrySetting(settingName: string) {
   await loadSetting(settingName);
 }
 
-// Update standard field max length
-const updateStandardFieldMaxLength = (fieldId: string, maxLength: number) => {
-  const field = standardFields.value.find(f => f.id === fieldId);
-  if (field) {
-    field.maxLength = maxLength;
-  }
-};
-
 // Update well-known field setting
 const updateWellKnownFieldSetting = (fieldId: string, setting: string, value: any) => {
   const field = wellKnownFields.value.find(f => f.id === fieldId);
@@ -509,50 +427,9 @@ const updateWellKnownFieldSetting = (fieldId: string, setting: string, value: an
   }
 };
 
-// Update standard fields global setting
-const updateStandardFieldsGlobalSetting = (setting: string, value: any) => {
-  (standardFieldsSettings.value as any)[setting] = value;
-};
+// Standard fields global setting removed
 
-// Watch for changes in local state - only after first load is complete
-watch(
-  () => standardFieldsSettings.value.allowSpecialChars,
-  (newValue, oldValue) => {
-    // Only update if: not first load, value is not null, and value actually changed
-    if (!isFirstLoad.value && newValue !== null && newValue !== oldValue) {
-      console.log('Watch triggered: standardFields.allowSpecialChars', { newValue, oldValue, isFirstLoad: isFirstLoad.value });
-      updateSetting('standardFields.allowSpecialChars', newValue);
-    }
-  },
-  { flush: 'post' } // Ensure this runs after DOM updates
-);
-
-// Watch for standard fields max length changes
-watch(
-  () => standardFields.value.map(f => f.maxLength),
-  (newValues, oldValues) => {
-    if (!isFirstLoad.value) {
-      newValues.forEach((value, index) => {
-        // Only update if value is not null and actually changed
-        if (value !== null && value !== oldValues?.[index]) {
-          // Map field IDs to correct setting names
-          const fieldIdToSettingName = {
-            'text-micro': 'textMicro',
-            'text-mini': 'textMini', 
-            'text-short': 'textShort',
-            'text-medium': 'textMedium',
-            'text-long': 'textLong',
-            'text-extralong': 'textExtraLong'
-          };
-          const settingName = `standardFields.${fieldIdToSettingName[standardFields.value[index].id]}.maxLength`;
-          console.log('Watch triggered: standardFields maxLength', { settingName, value, oldValue: oldValues?.[index], isFirstLoad: isFirstLoad.value });
-          updateSetting(settingName, value);
-        }
-      });
-    }
-  },
-  { deep: true, flush: 'post' } // Ensure this runs after DOM updates
-);
+// Standard fields watchers removed
 
 // Watch for user-name field changes - individual field watchers
 watch(
@@ -828,115 +705,7 @@ onMounted(() => {
       <!-- Settings content -->
       <div class="settings-section">
         <div class="section-content">
-        <!-- ==================== STANDARD FIELDS SECTION ==================== -->
-        <div class="settings-group mb-4">
-          <h3 class="text-subtitle-1 mb-2 font-weight-medium">
-            {{ t('admin.settings.datavalidation.standardFields.title') }}
-          </h3>
-          
-          <!-- Global settings for standard fields -->
-          <div class="settings-subgroup mb-4">
-            
-            <div class="d-flex align-center mb-3">
-              <v-switch
-                v-model="standardFieldsSettings.allowSpecialChars"
-                color="teal-darken-2"
-                :label="t('admin.settings.datavalidation.settings.allowSpecialChars')"
-                hide-details
-                :disabled="isSettingDisabled('standardFields.allowSpecialChars')"
-                :loading="settingLoadingStates['standardFields.allowSpecialChars']"
-              />
-              <v-tooltip
-                v-if="settingErrorStates['standardFields.allowSpecialChars']"
-                location="top"
-                max-width="300"
-              >
-                <template #activator="{ props }">
-                  <v-icon 
-                    icon="mdi-alert-circle" 
-                    size="small" 
-                    class="ms-2" 
-                    color="error"
-                    v-bind="props"
-                    style="cursor: pointer;"
-                    @click="retrySetting('standardFields.allowSpecialChars')"
-                  />
-                </template>
-                <div class="pa-2">
-                  <p class="text-subtitle-2 mb-2">
-                    {{ t('admin.settings.usersmanagement.groupsmanagement.messages.error.tooltip.title') }}
-                  </p>
-                  <p class="text-caption">
-                    {{ t('admin.settings.usersmanagement.groupsmanagement.messages.error.tooltip.retry') }}
-                  </p>
-                </div>
-              </v-tooltip>
-            </div>
-            
-          </div>
-          
-          <!-- Standard fields list -->
-          <div class="settings-subgroup">
-            <h4 class="text-subtitle-2 mb-3 font-weight-medium">
-              {{ t('admin.settings.datavalidation.standardFields.maxLengthPerFieldType') }}
-            </h4>
-            
-            <div class="standard-fields-grid">
-              <div v-for="(field, index) in standardFields" :key="field.id" class="field-row">
-                <div class="d-flex align-center">
-                  <v-select
-                    v-model="field.maxLength"
-                    :items="field.maxLengthOptions"
-                    :label="t(`admin.settings.datavalidation.standardFields.${field.id.replace('text-', '')}`)"
-                    variant="outlined"
-                    density="comfortable"
-                    color="teal-darken-2"
-                    class="dropdown-select"
-                    :disabled="isSettingDisabled(`standardFields.${field.id.replace('text-', 'text')}.maxLength`)"
-                    :loading="settingLoadingStates[`standardFields.${field.id.replace('text-', 'text')}.maxLength`]"
-                  >
-                    <template #append-inner>
-                      <PhCaretUpDown class="dropdown-icon" />
-                    </template>
-                  </v-select>
-                  <span class="text-caption text-grey-darken-1 ml-2">
-                    {{ field.id === 'text-micro' ? '2-10' : 
-                       field.id === 'text-mini' ? '2-50' : 
-                       field.id === 'text-short' ? '10-200' : 
-                       field.id === 'text-medium' ? '20-500' : 
-                       field.id === 'text-long' ? '50-5000' : 
-                       '100-10000' }}
-                  </span>
-                  <v-tooltip
-                    v-if="settingErrorStates[`standardFields.${field.id.replace('text-', 'text')}.maxLength`]"
-                    location="top"
-                    max-width="300"
-                  >
-                    <template #activator="{ props }">
-                      <v-icon 
-                        icon="mdi-alert-circle" 
-                        size="small" 
-                        class="ms-2" 
-                        color="error"
-                        v-bind="props"
-                        style="cursor: pointer;"
-                        @click="retrySetting(`standardFields.${field.id.replace('text-', 'text')}.maxLength`)"
-                      />
-                    </template>
-                    <div class="pa-2">
-                      <p class="text-subtitle-2 mb-2">
-                        {{ t('admin.settings.usersmanagement.groupsmanagement.messages.error.tooltip.title') }}
-                      </p>
-                      <p class="text-caption">
-                        {{ t('admin.settings.usersmanagement.groupsmanagement.messages.error.tooltip.retry') }}
-                      </p>
-                    </div>
-                  </v-tooltip>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
+        <!-- STANDARD FIELDS SECTION REMOVED -->
         
         <!-- ==================== WELL-KNOWN FIELDS SECTION ==================== -->
         <div class="settings-group mb-6">
