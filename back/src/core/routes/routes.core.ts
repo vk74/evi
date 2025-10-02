@@ -1,5 +1,5 @@
 /**
- * version: 1.0.02
+ * version: 1.0.03
  * Core routes for global backend services.
  * 
  * Functionality:
@@ -12,6 +12,7 @@
 import express, { Router } from 'express';
 import validateJWT from '../guards/guard.validate.jwt';
 import checkIsUserStatusActive from '../guards/guard.check.is.user.status.active';
+import checkRequestSecurityHard from '../guards/guard.check.request.security.hard';
 
 // Импорт контроллеров
 import getUsernameByUuidController from '../controllers/controller.get.username.by.uuid';
@@ -41,8 +42,8 @@ router.post('/api/core/users/self-change-password', validateJWT, checkIsUserStat
 router.post('/api/core/users/admin-change-password', validateJWT, checkIsUserStatusActive, adminResetPasswordController);
 
 // settings services
-router.post('/api/core/settings/fetch-settings', validateJWT, checkIsUserStatusActive, fetchSettingsController);
-router.post('/api/core/settings/update-settings', validateJWT, checkIsUserStatusActive, updateSettingsController);
+router.post('/api/core/settings/fetch-settings', checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, fetchSettingsController);
+router.post('/api/core/settings/update-settings', checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, updateSettingsController);
 
 // Export using ES modules syntax
 export default router;

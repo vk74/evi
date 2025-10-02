@@ -107,3 +107,32 @@ export const JWT_VALIDATION_EVENTS = {
     version: '1.0.0'
   }
 };
+
+/**
+ * Request Security Guard Events
+ * Events for tracking hard-pattern request security checks
+ */
+export const REQUEST_SECURITY_GUARD_EVENTS = {
+  // Request blocked by hard security rule
+  BLOCKED: {
+    eventName: 'guards.request.security.hard.blocked',
+    source: 'request security hard guard',
+    eventType: 'security' as const,
+    severity: 'error' as const,
+    eventMessage: 'Request blocked by hard security rule',
+    payload: null, // { rule, location, method, url, contentType }
+    version: '1.0.0'
+  },
+
+  // Internal error inside guard
+  ERROR: {
+    eventName: 'guards.request.security.hard.error',
+    source: 'request security hard guard',
+    eventType: 'security' as const,
+    severity: 'error' as const,
+    eventMessage: 'Error occurred in request security guard',
+    payload: null, // { method, url }
+    errorData: null, // Error details
+    version: '1.0.0'
+  }
+};
