@@ -353,9 +353,25 @@ const handleUnpublish = async () => {
   try {
     isUnpublishing.value = true
     
-    // Get all sections where product should be published after unpublish operation
-    // This includes: newly selected sections + initially published sections that remain selected
-    const allSectionsToKeep = Array.from(selectedSections.value)
+    // Get sections where product should remain published after unpublish operation
+    // This includes: newly selected sections + initially published sections that are NOT selected for unpublishing
+    const sectionsToKeep = new Set<string>()
+    
+    // Add newly selected sections (not initially published)
+    for (const sectionId of selectedSections.value) {
+      if (!initialSelectedSections.value.has(sectionId)) {
+        sectionsToKeep.add(sectionId)
+      }
+    }
+    
+    // Add initially published sections that are NOT selected for unpublishing
+    for (const sectionId of initialSelectedSections.value) {
+      if (!selectedSections.value.has(sectionId)) {
+        sectionsToKeep.add(sectionId)
+      }
+    }
+    
+    const allSectionsToKeep = Array.from(sectionsToKeep)
     
     const resp = await updateProductSectionsPublish(productId, allSectionsToKeep)
     
