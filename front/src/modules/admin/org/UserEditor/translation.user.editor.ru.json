@@ -16,7 +16,15 @@
         "groups": {
           "placeholder": {
             "disabled": "доступно в режиме редактирования"
-          }
+          },
+          "userName": "имя пользователя",
+          "actions": "действия",
+          "refresh": "обновить",
+        "addToGroups": "добавить в группы",
+        "itemSelector": {
+          "title": "добавить пользователя в группы",
+          "addToGroups": "добавить в группы"
+        }
         },
         "sidebar": {
           "actions": "действия",

@@ -16,6 +16,7 @@ import { PhMagnifyingGlass, PhX, PhPlus, PhMinus } from '@phosphor-icons/vue'
 import searchUsers from '@/core/ui/modals/item-selector/service.search.users'
 import searchGroups from '@/core/ui/modals/item-selector/service.search.groups'
 import addUsersToGroup from '@/core/ui/modals/item-selector/service.add.users.to.group'
+import addUserToGroups from '@/core/ui/modals/item-selector/service.add.user.to.groups'
 import changeGroupOwner from './service.change.group.owner'
 import returnSelectedUsername from './service.return.selected.username'
 import returnSelectedGroup from './service.return.selected.group'
@@ -32,6 +33,7 @@ const searchServiceMap = {
 
 const actionServiceMap = {
   addUsersToGroup: addUsersToGroup,
+  addUserToGroups: addUserToGroups,
   changeGroupOwner: changeGroupOwner,
   returnSelectedUsername: returnSelectedUsername,
   returnSelectedGroup: returnSelectedGroup,

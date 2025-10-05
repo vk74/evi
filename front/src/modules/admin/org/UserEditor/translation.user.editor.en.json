@@ -16,7 +16,15 @@
         "groups": {
           "placeholder": {
             "disabled": "available in edit mode"
-          }
+          },
+          "userName": "user name",
+          "actions": "actions",
+          "refresh": "refresh",
+        "addToGroups": "add to groups",
+        "itemSelector": {
+          "title": "add user to groups",
+          "addToGroups": "add to groups"
+        }
         },
         "sidebar": {
           "actions": "actions",

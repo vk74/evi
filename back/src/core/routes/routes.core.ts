@@ -19,6 +19,7 @@ import getUsernameByUuidController from '../controllers/controller.get.username.
 import searchUsers from '../services/item-selector/controller.search.users';
 import searchGroups from '../services/item-selector/controller.search.groups';
 import addUsersToGroup from '../services/item-selector/controller.add.users.to.group';
+import addUserToGroups from '../services/item-selector/controller.add.user.to.groups';
 import changeGroupOwner from '../services/item-selector/controller.change.group.owner';
 
 import selfChangePasswordController from '../services/change-password/controller.self.change.password';
@@ -35,6 +36,7 @@ router.get('/api/core/users/fetch-username-by-uuid/:userId', validateJWT, checkI
 router.get('/api/core/item-selector/search-users', validateJWT, checkIsUserStatusActive, searchUsers); 
 router.get('/api/core/item-selector/search-groups', validateJWT, checkIsUserStatusActive, searchGroups);
 router.post('/api/core/item-selector/add-users-to-group', validateJWT, checkIsUserStatusActive, addUsersToGroup);
+router.post('/api/core/item-selector/add-user-to-groups', validateJWT, checkIsUserStatusActive, addUserToGroups);
 router.post('/api/core/item-selector/change-group-owner', validateJWT, checkIsUserStatusActive, changeGroupOwner);
 
 // change password universal component

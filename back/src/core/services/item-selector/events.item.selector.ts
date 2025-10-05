@@ -511,3 +511,208 @@ export const SEARCH_GROUPS_EVENTS = {
     version: '1.0.0'
   }
 };
+
+/**
+ * Add User To Groups Events
+ * Events related to adding a user to multiple groups operations
+ */
+export const ADD_USER_TO_GROUPS_EVENTS = {
+  // Request received for adding user to groups
+  REQUEST_RECEIVED: {
+    eventName: 'itemSelector.addUserToGroups.request.received',
+    source: 'item-selector service',
+    eventType: 'app' as const,
+    severity: 'debug' as const,
+    eventMessage: 'Request received to add user to groups',
+    payload: null, // { userId: string, groupCount: number, requestedBy: string }
+    version: '1.0.0'
+  },
+  
+  // Validation error for adding user to groups
+  VALIDATION_ERROR: {
+    eventName: 'itemSelector.addUserToGroups.validation.error',
+    source: 'item-selector service',
+    eventType: 'app' as const,
+    severity: 'warning' as const,
+    eventMessage: 'Validation error in add user to groups request',
+    payload: null, // { userId: string, groupIds: string[] }
+    errorData: null, // Validation error details
+    version: '1.0.0'
+  },
+  
+  // Success response for adding user to groups
+  RESPONSE_SUCCESS: {
+    eventName: 'itemSelector.addUserToGroups.response.success',
+    source: 'item-selector service',
+    eventType: 'app' as const,
+    severity: 'debug' as const,
+    eventMessage: 'Successfully added user to groups',
+    payload: null, // { userId: string, addedCount: number }
+    version: '1.0.0'
+  },
+  
+  // Validation error response
+  RESPONSE_VALIDATION_ERROR: {
+    eventName: 'itemSelector.addUserToGroups.response.validationError',
+    source: 'item-selector service',
+    eventType: 'app' as const,
+    severity: 'warning' as const,
+    eventMessage: 'Validation error occurred while adding user to groups',
+    payload: null, // { userId: string, error: ServiceError }
+    errorData: null, // Error details
+    version: '1.0.0'
+  },
+  
+  // Not found error response
+  RESPONSE_NOT_FOUND_ERROR: {
+    eventName: 'itemSelector.addUserToGroups.response.notFoundError',
+    source: 'item-selector service',
+    eventType: 'app' as const,
+    severity: 'warning' as const,
+    eventMessage: 'User or groups not found while adding user to groups',
+    payload: null, // { userId: string, error: ServiceError }
+    errorData: null, // Error details
+    version: '1.0.0'
+  },
+  
+  // Permission error response
+  RESPONSE_PERMISSION_ERROR: {
+    eventName: 'itemSelector.addUserToGroups.response.permissionError',
+    source: 'item-selector service',
+    eventType: 'app' as const,
+    severity: 'warning' as const,
+    eventMessage: 'Permission denied while adding user to groups',
+    payload: null, // { userId: string, error: ServiceError }
+    errorData: null, // Error details
+    version: '1.0.0'
+  },
+  
+  // General error response
+  RESPONSE_ERROR: {
+    eventName: 'itemSelector.addUserToGroups.response.error',
+    source: 'item-selector service',
+    eventType: 'app' as const,
+    severity: 'error' as const,
+    eventMessage: 'Error occurred while adding user to groups',
+    payload: null, // { userId: string, error: ServiceError }
+    errorData: null, // Error details
+    version: '1.0.0'
+  }
+};
+
+/**
+ * Add User To Groups Service Events
+ * Events related to service operations for adding user to groups
+ */
+export const ADD_USER_TO_GROUPS_SERVICE_EVENTS = {
+  // Service initiated
+  SERVICE_INITIATED: {
+    eventName: 'itemSelector.addUserToGroups.service.initiated',
+    source: 'item-selector service',
+    eventType: 'app' as const,
+    severity: 'debug' as const,
+    eventMessage: 'Service initiated for adding user to groups',
+    payload: null, // { userId: string, groupsCount: number, addedBy: string }
+    version: '1.0.0'
+  },
+  
+  // User validation
+  VALIDATION_USER: {
+    eventName: 'itemSelector.addUserToGroups.validation.user',
+    source: 'item-selector service',
+    eventType: 'app' as const,
+    severity: 'debug' as const,
+    eventMessage: 'Validating user existence',
+    payload: null, // { userId: string }
+    version: '1.0.0'
+  },
+  
+  // Groups validation
+  VALIDATION_GROUPS: {
+    eventName: 'itemSelector.addUserToGroups.validation.groups',
+    source: 'item-selector service',
+    eventType: 'app' as const,
+    severity: 'debug' as const,
+    eventMessage: 'Validating groups existence',
+    payload: null, // { groupCount: number }
+    version: '1.0.0'
+  },
+  
+  // Account status validation
+  VALIDATION_ACCOUNT_STATUS: {
+    eventName: 'itemSelector.addUserToGroups.validation.accountStatus',
+    source: 'item-selector service',
+    eventType: 'app' as const,
+    severity: 'debug' as const,
+    eventMessage: 'Validating user account status',
+    payload: null, // { userId: string }
+    version: '1.0.0'
+  },
+  
+  // Database transaction start
+  DATABASE_TRANSACTION_START: {
+    eventName: 'itemSelector.addUserToGroups.database.transactionStart',
+    source: 'item-selector service',
+    eventType: 'app' as const,
+    severity: 'debug' as const,
+    eventMessage: 'Database transaction started for adding user to groups',
+    payload: null, // { userId: string }
+    version: '1.0.0'
+  },
+  
+  // Database update
+  DATABASE_UPDATE: {
+    eventName: 'itemSelector.addUserToGroups.database.update',
+    source: 'item-selector service',
+    eventType: 'app' as const,
+    severity: 'debug' as const,
+    eventMessage: 'Adding user to groups',
+    payload: null, // { userId: string, groupCount: number }
+    version: '1.0.0'
+  },
+  
+  // Database success
+  DATABASE_SUCCESS: {
+    eventName: 'itemSelector.addUserToGroups.database.success',
+    source: 'item-selector service',
+    eventType: 'app' as const,
+    severity: 'info' as const,
+    eventMessage: 'Database operation completed successfully',
+    payload: null, // { userId: string, addedCount: number, skippedCount: number }
+    version: '1.0.0'
+  },
+  
+  // Service response success
+  SERVICE_RESPONSE_SUCCESS: {
+    eventName: 'itemSelector.addUserToGroups.response.serviceSuccess',
+    source: 'item-selector service',
+    eventType: 'app' as const,
+    severity: 'info' as const,
+    eventMessage: 'User successfully added to groups',
+    payload: null, // { userId: string, addedCount: number, skippedCount: number }
+    version: '1.0.0'
+  },
+  
+  // Service response no change
+  SERVICE_RESPONSE_NO_CHANGE: {
+    eventName: 'itemSelector.addUserToGroups.response.noChange',
+    source: 'item-selector service',
+    eventType: 'app' as const,
+    severity: 'info' as const,
+    eventMessage: 'No new groups to add, user is already a member of all selected groups',
+    payload: null, // { userId: string }
+    version: '1.0.0'
+  },
+  
+  // Service response error
+  SERVICE_RESPONSE_ERROR: {
+    eventName: 'itemSelector.addUserToGroups.response.serviceError',
+    source: 'item-selector service',
+    eventType: 'app' as const,
+    severity: 'error' as const,
+    eventMessage: 'Failed to add user to groups',
+    payload: null, // { userId: string, errorCode: string }
+    errorData: null, // Error details
+    version: '1.0.0'
+  }
+};

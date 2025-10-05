@@ -68,3 +68,16 @@ export interface ChangeGroupOwnerResponse {
   message: string;      // Descriptive message about the operation result
   oldOwnerId?: string;  // UUID of the previous owner (useful for UI updates)
 }
+
+// New interfaces for adding user to groups feature
+export interface AddUserToGroupsRequest {
+  userId: string;       // UUID of the user to add to groups
+  groupIds: string[];   // Array of group UUIDs to add the user to
+  addedBy?: string;     // UUID of the user performing the action (optional, can be taken from JWT)
+}
+
+export interface AddUserToGroupsResponse {
+  success: boolean;     // Indicates if the operation was successful
+  message: string;      // Descriptive message about the operation result
+  count: number;        // Number of groups the user was successfully added to
+}

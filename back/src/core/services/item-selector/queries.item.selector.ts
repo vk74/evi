@@ -31,6 +31,8 @@ interface ItemSelectorQueries {
   checkUserExists: SQLQuery;          // New query for checking if user exists
   updateGroupOwner: SQLQuery;         // New query for updating group owner
   updateGroupDetails: SQLQuery;       // New query for updating group details
+  checkGroupsExist: SQLQuery;         // New query for checking if groups exist
+  checkExistingMemberships: SQLQuery; // New query for checking existing memberships
 }
 
 export const queries: ItemSelectorQueries = {
@@ -151,6 +153,26 @@ export const queries: ItemSelectorQueries = {
           group_modified_by = $2
       WHERE group_id = $1
       RETURNING group_id
+    `
+  },
+
+  // Check which groups exist from a list of UUIDs
+  checkGroupsExist: {
+    text: `
+      SELECT group_id
+      FROM app.groups
+      WHERE group_id = ANY($1)
+    `
+  },
+
+  // Check which groups the user is already a member of
+  checkExistingMemberships: {
+    text: `
+      SELECT group_id
+      FROM app.group_members
+      WHERE user_id = $1
+        AND group_id = ANY($2)
+        AND is_active = true
     `
   }
 };
