@@ -53,8 +53,6 @@ const router: Router = express.Router();
 // Routes for Users
 router.post('/api/admin/users/create-new-user', checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, createUserController);
 router.get('/api/admin/users/fetch-users', checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, fetchUsers);
-router.get('/users/list', checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, fetchUsers);
-router.post('/users/delete', checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, deleteSelectedUsers);
 router.get('/api/admin/users/fetch-user-by-userid/:userId', checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, loadUserById);
 router.post('/api/admin/users/update-user-by-userid/:userId', checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, updateUserById);
 router.post('/api/admin/users/delete-selected-users', checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, deleteSelectedUsers);
