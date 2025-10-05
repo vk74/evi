@@ -191,6 +191,9 @@ export interface GroupMember {
   user_id: string; // UUID of the user
   username: string;
   name: string; // User's display name
+  first_name: string; // User's first name
+  middle_name: string; // User's middle name
+  last_name: string; // User's last name
   email?: string; // Optional email address
   role?: string; // Optional role in the group
 }

@@ -526,12 +526,6 @@ onMounted(() => {
             <v-row>
               <!-- Information section -->
               <v-col cols="12">
-                <div class="card-header">
-                  <v-card-title class="text-subtitle-1">
-                    {{ t('admin.services.editor.information.title').toLowerCase() }}
-                  </v-card-title>
-                  <v-divider class="section-divider" />
-                </div>
 
                 <!-- Service UUID display (only in edit mode) -->
                 <v-row v-if="isEditMode && editingServiceId">

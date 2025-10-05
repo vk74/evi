@@ -83,7 +83,10 @@ export async function fetchGroupMembers(request: FetchGroupMembersRequest, req: 
     const members: GroupMember[] = result.rows.map(row => ({
       user_id: row.user_id,
       username: row.username,
-      name: `${row.first_name} ${row.last_name}`.trim(),
+      name: `${row.first_name || ''} ${row.last_name || ''}`.trim(),
+      first_name: row.first_name || '',
+      middle_name: row.middle_name || '',
+      last_name: row.last_name || '',
       email: row.email,
       role: row.is_staff ? 'Administrator' : 'User',
       // Add status field, which is required by frontend

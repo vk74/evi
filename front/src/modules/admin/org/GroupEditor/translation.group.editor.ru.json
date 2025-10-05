@@ -10,13 +10,17 @@
           "details": "данные группы",
           "members": "участники группы"
         },
+        "labels": {
+          "groupName": "название группы"
+        },
         "buttons": {
           "create": "создать группу",
           "reset": "сбросить",
           "update": "обновить данные группы",
           "addMember": "добавить участника",
           "removeMember": "удалить участника",
-          "changeOwner": "сменить владельца"
+          "changeOwner": "сменить владельца",
+          "refresh": "обновить"
         },
         "sidebar": {
           "actions": "действия",

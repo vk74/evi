@@ -10,7 +10,7 @@ import { useGroupEditorStore } from './state.group.editor'
 import type { TableHeader } from './types.group.editor'
 import { defineAsyncComponent } from 'vue'
 import Paginator from '@/core/ui/paginator/Paginator.vue'
-import { PhMagnifyingGlass, PhX, PhCheckCircle, PhMinusCircle, PhArrowsClockwise } from '@phosphor-icons/vue'
+import { PhMagnifyingGlass, PhX, PhCheckCircle, PhMinusCircle, PhArrowsClockwise, PhCheckSquare, PhSquare } from '@phosphor-icons/vue'
 
 const ItemSelector = defineAsyncComponent(() => import(/* webpackChunkName: "ui-item-selector" */ '../../../../core/ui/modals/item-selector/ItemSelector.vue'))
 
@@ -104,6 +104,16 @@ const refreshMembers = async () => {
   <div class="d-flex">
     <div class="flex-grow-1">
       <v-container class="pa-4">
+        <!-- Group Title - styled as readonly field -->
+        <div class="group-title-container mb-4">
+          <div class="group-title-label">
+            {{ t('admin.groups.editor.labels.groupName') }}:
+          </div>
+          <div class="group-title-value">
+            {{ groupEditorStore.group.group_name || t('common.unnamed') }}
+          </div>
+        </div>
+        
         <v-text-field
           v-model="searchQuery"
           :label="t('admin.groups.editor.search')"
@@ -122,22 +132,6 @@ const refreshMembers = async () => {
             <PhX />
           </template>
         </v-text-field>
-        <div class="d-flex align-center mb-4">
-          <div class="text-subtitle-1">
-            {{ t('admin.groups.editor.sections.members') }}: {{ groupEditorStore.group.group_name || t('common.unnamed') }}
-          </div>
-          <v-btn
-            variant="text"
-            :icon="undefined"
-            :disabled="refreshing"
-            class="ml-5"
-            @click="refreshMembers"
-          >
-            <template #default>
-              <PhArrowsClockwise :size="25" color="teal" :class="{ 'rotating': refreshing }" />
-            </template>
-          </v-btn>
-        </div>
       </v-container>
       <v-data-table
         v-model:page="page"
@@ -148,12 +142,16 @@ const refreshMembers = async () => {
         :search="searchQuery"
       >
         <template #item.selection="{ item }">
-          <v-checkbox
-            :model-value="isSelected(item.user_id)"
-            density="compact"
-            hide-details
-            @update:model-value="(val: boolean | null) => onSelectMember(item.user_id, Boolean(val))"
-          />
+          <v-btn
+            icon
+            variant="text"
+            density="comfortable"
+            :aria-pressed="isSelected(item.user_id)"
+            @click="onSelectMember(item.user_id, !isSelected(item.user_id))"
+          >
+            <PhCheckSquare v-if="isSelected(item.user_id)" :size="18" color="teal" />
+            <PhSquare v-else :size="18" color="grey" />
+          </v-btn>
         </template>
         <template #item.status="{ item }">
           <v-chip :color="getStatusColor(getMemberStatus(item))" size="x-small">
@@ -163,6 +161,15 @@ const refreshMembers = async () => {
         <template #item.is_staff="{ item }">
           <PhCheckCircle v-if="item.is_staff" />
           <PhMinusCircle v-else />
+        </template>
+        <template #item.first_name="{ item }">
+          {{ item.first_name || '-' }}
+        </template>
+        <template #item.last_name="{ item }">
+          {{ item.last_name || '-' }}
+        </template>
+        <template #item.middle_name="{ item }">
+          {{ item.middle_name || '-' }}
         </template>
         <template #bottom>
           <div class="px-4 py-2">
@@ -203,6 +210,17 @@ const refreshMembers = async () => {
         >
           {{ t('admin.groups.editor.buttons.removeMember') }}
         </v-btn>
+        <v-btn
+          block
+          color="grey"
+          variant="outlined"
+          :disabled="refreshing"
+          class="mb-3"
+          @click="refreshMembers"
+        >
+          <PhArrowsClockwise :size="16" color="teal" :class="{ 'rotating': refreshing }" class="mr-2" />
+          {{ t('admin.groups.editor.buttons.refresh') }}
+        </v-btn>
       </div>
     </div>
 
@@ -226,6 +244,31 @@ const refreshMembers = async () => {
 .side-bar-section { padding: 16px; }
 .rotating { animation: spin 0.8s linear infinite; }
 @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+
+/* Group title styles - similar to ServiceEditorData.vue uuid display */
+.group-title-container {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 0;
+}
+
+.group-title-label {
+  font-size: 0.875rem;
+  color: rgba(0, 0, 0, 0.75);
+  font-weight: 500;
+}
+
+.group-title-value {
+  font-family: 'Roboto Mono', monospace;
+  font-size: 0.875rem;
+  color: rgba(0, 0, 0, 0.75);
+  background-color: rgba(0, 0, 0, 0.05);
+  padding: 4px 8px;
+  border-radius: 4px;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  display: inline-block;
+}
 </style>
 
 

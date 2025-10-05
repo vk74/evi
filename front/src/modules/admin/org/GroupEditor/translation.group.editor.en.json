@@ -10,13 +10,17 @@
           "details": "group details",
           "members": "group members"
         },
+        "labels": {
+          "groupName": "group name"
+        },
         "buttons": {
           "create": "create group",
           "reset": "reset",
           "update": "update group data",
           "addMember": "add member",
-          "removeMember": "remove member from group",
-          "changeOwner": "change owner"
+          "removeMember": "remove member",
+          "changeOwner": "change owner",
+          "refresh": "refresh"
         },
         "sidebar": {
           "actions": "actions",
