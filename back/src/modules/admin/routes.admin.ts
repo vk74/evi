@@ -45,7 +45,8 @@ import deleteProductsController from './products/controller.admin.delete.product
 import fetchPublishingSectionsProductsController from './products/sections/controller.admin.fetch.publishingsections';
 import updateProductSectionsPublishController from './products/sections/controller.admin.update.sections.publish';
 import registerUserController from '../account/controller.register.user';
-import fetchUserGroupsController from './org/userEditor/controller.fetch.user.groups'
+import fetchUserGroupsController from './org/userEditor/controller.fetch.user.groups';
+import removeUserFromGroupsController from './org/userEditor/controller.remove.user.from.groups';
 
 const router: Router = express.Router();
 
@@ -58,6 +59,7 @@ router.get('/api/admin/users/fetch-user-by-userid/:userId', checkRequestSecurity
 router.post('/api/admin/users/update-user-by-userid/:userId', checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, updateUserById);
 router.post('/api/admin/users/delete-selected-users', checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, deleteSelectedUsers);
 router.get('/api/admin/users/:userId/groups', checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, fetchUserGroupsController);
+router.post('/api/admin/users/remove-from-groups', checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, removeUserFromGroupsController);
 
 // Routes for Groups
 router.post('/api/admin/groups/create-new-group', checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, createGroupController);

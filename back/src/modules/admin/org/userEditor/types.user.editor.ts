@@ -159,3 +159,18 @@ export interface RequiredFieldError extends ValidationError {
     code: 'REQUIRED_FIELD_ERROR'
     field: string
 }
+
+/**
+ * Remove user from groups interfaces
+ */
+export interface RemoveUserFromGroupsRequest {
+    userId: string
+    groupIds: string[]
+}
+
+export interface RemoveUserFromGroupsResponse extends ApiResponse {
+    data: {
+        removedCount: number
+        removedGroupIds: string[]
+    }
+}

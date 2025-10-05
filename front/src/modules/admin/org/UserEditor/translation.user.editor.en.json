@@ -20,11 +20,16 @@
           "userName": "user name",
           "actions": "actions",
           "refresh": "refresh",
-        "addToGroups": "add to groups",
-        "itemSelector": {
-          "title": "add user to groups",
-          "addToGroups": "add to groups"
-        }
+          "addToGroups": "add to groups",
+          "removeFromGroups": "REMOVE FROM GROUPS",
+          "itemSelector": {
+            "title": "add user to groups",
+            "addToGroups": "add to groups"
+          },
+          "messages": {
+            "confirmRemove": "confirm removal of user from selected groups?",
+            "removeSuccess": "user successfully removed from groups"
+          }
         },
         "sidebar": {
           "actions": "actions",

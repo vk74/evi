@@ -30,6 +30,9 @@ interface SQLQuery {
 
     // User groups (membership) helpers
     userGroupsWhereClause: string;
+    
+    // Remove user from groups
+    removeUserFromGroups: SQLQuery;
   }
   
   // Query definitions
@@ -152,5 +155,16 @@ interface SQLQuery {
       JOIN app.groups g ON g.group_id = gm.group_id
       WHERE gm.user_id = $1
         AND ($2::text IS NULL OR g.group_name ILIKE ('%' || $2 || '%'))
-    `
+    `,
+
+    // Remove user from groups
+    removeUserFromGroups: {
+      name: 'remove-user-from-groups',
+      text: `
+        DELETE FROM app.group_members
+        WHERE user_id = $1::uuid
+          AND group_id = ANY($2::uuid[])
+        RETURNING group_id
+      `
+    }
   };

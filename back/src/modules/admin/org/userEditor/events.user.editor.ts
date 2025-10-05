@@ -202,3 +202,77 @@ export const USER_LOAD_EVENTS = {
     version: '1.0.0'
   }
 };
+
+/**
+ * User Groups Removal Events
+ * Events related to removing user from groups
+ */
+export const USER_GROUPS_REMOVE_EVENTS = {
+  // When a request to remove user from groups is received
+  REQUEST_RECEIVED: {
+    eventName: 'userEditor.groups.remove.request.received',
+    source: 'user editor admin submodule',
+    eventType: 'app' as const,
+    severity: 'debug' as const,
+    eventMessage: 'User groups removal request received',
+    payload: null, // Will be of type { userId: string, groupIdsCount: number, requestorUuid: string }
+    version: '1.0.0'
+  },
+  
+  // When validation of removal data is successful
+  VALIDATION_PASSED: {
+    eventName: 'userEditor.groups.remove.validation.passed',
+    source: 'user editor admin submodule',
+    eventType: 'app' as const,
+    severity: 'debug' as const,
+    eventMessage: 'User groups removal validation passed',
+    payload: null, // Will be of type { userId: string, groupIdsCount: number }
+    version: '1.0.0'
+  },
+  
+  // When validation of removal data fails
+  VALIDATION_FAILED: {
+    eventName: 'userEditor.groups.remove.validation.failed',
+    source: 'user editor admin submodule',
+    eventType: 'app' as const,
+    severity: 'warning' as const,
+    eventMessage: 'User groups removal validation failed',
+    payload: null, // Will be of type { userId: string, field: string, message: string }
+    errorData: null, // Will be filled with validation error details
+    version: '1.0.0'
+  },
+  
+  // When database transaction starts
+  TRANSACTION_START: {
+    eventName: 'userEditor.groups.remove.transaction.start',
+    source: 'user editor admin submodule',
+    eventType: 'app' as const,
+    severity: 'debug' as const,
+    eventMessage: 'Starting database transaction for user groups removal',
+    payload: null, // Will be of type { userId: string, requestorUuid: string }
+    version: '1.0.0'
+  },
+  
+  // When user groups removal is successfully completed
+  COMPLETE: {
+    eventName: 'userEditor.groups.remove.complete',
+    source: 'user editor admin submodule',
+    eventType: 'app' as const,
+    severity: 'info' as const,
+    eventMessage: 'User successfully removed from groups',
+    payload: null, // Will be of type { userId: string, removedCount: number, removedGroupIds: string[], requestorUuid: string }
+    version: '1.0.0'
+  },
+  
+  // When user groups removal process fails
+  FAILED: {
+    eventName: 'userEditor.groups.remove.failed',
+    source: 'user editor admin submodule',
+    eventType: 'app' as const,
+    severity: 'error' as const,
+    eventMessage: 'User groups removal failed',
+    payload: null, // Will be of type { userId: string, error: ServiceError }
+    errorData: null, // Will be filled with error details
+    version: '1.0.0'
+  }
+};

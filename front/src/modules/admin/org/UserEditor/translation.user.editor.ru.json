@@ -20,11 +20,16 @@
           "userName": "имя пользователя",
           "actions": "действия",
           "refresh": "обновить",
-        "addToGroups": "добавить в группы",
-        "itemSelector": {
-          "title": "добавить пользователя в группы",
-          "addToGroups": "добавить в группы"
-        }
+          "addToGroups": "добавить в группы",
+          "removeFromGroups": "УДАЛИТЬ ИЗ ГРУПП",
+          "itemSelector": {
+            "title": "добавить пользователя в группы",
+            "addToGroups": "добавить в группы"
+          },
+          "messages": {
+            "confirmRemove": "подтвердить удаление пользователя из выбранных групп?",
+            "removeSuccess": "пользователь успешно удален из групп"
+          }
         },
         "sidebar": {
           "actions": "действия",

@@ -11,6 +11,7 @@ import type { IUserGroupMembership } from './types.user.editor'
 import Paginator from '@/core/ui/paginator/Paginator.vue'
 import { PhMagnifyingGlass, PhX, PhCheckCircle, PhMinusCircle, PhArrowsClockwise, PhCheckSquare, PhSquare } from '@phosphor-icons/vue'
 import { userGroupsService } from './service.fetch.user.groups'
+import { removeUserFromGroups } from './service.remove.user.from.groups'
 import { defineAsyncComponent } from 'vue'
 
 const ItemSelector = defineAsyncComponent(() => import(/* webpackChunkName: "ui-item-selector" */ '../../../../core/ui/modals/item-selector/ItemSelector.vue'))
@@ -20,6 +21,8 @@ const store = useUserEditorStore()
 
 const isEditMode = computed(() => store.mode.mode === 'edit')
 const hasSelectedGroups = computed(() => store.hasSelectedGroups)
+const selectedCount = computed(() => store.groups.selectedGroups.length)
+const hasSelected = computed(() => store.groups.selectedGroups.length > 0)
 
 // Computed property for user display name
 const userDisplayName = computed(() => {
@@ -40,6 +43,7 @@ const totalItems = ref(0)
 const rows = ref<IUserGroupMembership[]>([])
 const refreshing = ref(false)
 const isItemSelectorModalOpen = ref(false)
+const showDeleteDialog = ref(false)
 
 const isSearchEnabled = computed(() => searchQuery.value.length >= 2 || searchQuery.value.length === 0)
 
@@ -121,6 +125,36 @@ const handleAddUserToGroups = async (result: any) => {
         await fetchRows()
       } catch {}
     }
+  }
+}
+
+const handleRemoveUserFromGroups = async () => {
+  if (!hasSelected.value) return
+  if (!isEditMode.value) return
+  
+  showDeleteDialog.value = true
+}
+
+const cancelDelete = () => {
+  showDeleteDialog.value = false
+}
+
+const confirmDelete = async () => {
+  if (!hasSelected.value || !isEditMode.value) return
+  
+  const userId = (store.mode as any).userId
+  const groupIds = store.groups.selectedGroups
+  
+  try {
+    const removedCount = await removeUserFromGroups(userId, groupIds)
+    if (removedCount > 0) {
+      await fetchRows()
+      store.clearGroupsSelection()
+    }
+  } catch (error) {
+    console.error('Error removing user from groups:', error)
+  } finally {
+    showDeleteDialog.value = false
   }
 }
 
@@ -255,6 +289,28 @@ watch(isEditMode, (v) => { if (v) { page.value = 1; fetchRows() } })
           {{ t('admin.org.editor.groups.refresh') }}
         </v-btn>
       </div>
+      
+      <!-- Divider between sections -->
+      <div class="sidebar-divider" />
+      
+      <!-- Bottom part of sidebar - buttons for operations over selected elements -->
+      <div class="side-bar-section">
+        <h3 class="text-subtitle-2 px-2 py-2">
+          {{ t('admin.org.editor.sidebar.selectedItem') }}
+        </h3>
+        
+        <v-btn
+          block
+          color="error"
+          variant="outlined"
+          class="mb-3"
+          :disabled="!hasSelected"
+          @click="handleRemoveUserFromGroups"
+        >
+          {{ t('admin.org.editor.groups.removeFromGroups') }}
+          <span class="ml-2">({{ selectedCount }})</span>
+        </v-btn>
+      </div>
     </div>
 
     <!-- Item Selector Modal -->
@@ -269,6 +325,37 @@ watch(isEditMode, (v) => { if (v) { page.value = 1; fetchRows() } })
         @close="isItemSelectorModalOpen = false" 
         @actionPerformed="handleAddUserToGroups"
       />
+    </v-dialog>
+    
+    <!-- Delete confirmation dialog -->
+    <v-dialog
+      v-model="showDeleteDialog"
+      max-width="400"
+    >
+      <v-card>
+        <v-card-title class="text-subtitle-1 text-wrap">
+          {{ t('admin.org.editor.groups.messages.confirmRemove') }}
+        </v-card-title>
+        <v-card-actions>
+          <v-spacer />
+          <v-btn
+            color="grey"
+            variant="text"
+            class="text-none"
+            @click="cancelDelete"
+          >
+            {{ t('common.cancel') }}
+          </v-btn>
+          <v-btn
+            color="error"
+            variant="text"
+            class="text-none"
+            @click="confirmDelete"
+          >
+            {{ t('common.delete') }}
+          </v-btn>
+        </v-card-actions>
+      </v-card>
     </v-dialog>
   </div>
 </template>
@@ -287,6 +374,21 @@ watch(isEditMode, (v) => { if (v) { page.value = 1; fetchRows() } })
   flex-direction: column; 
 }
 .side-bar-section { padding: 16px; }
+
+.sidebar-divider {
+  height: 20px;
+  position: relative;
+  margin: 0 16px;
+}
+
+.sidebar-divider::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 0;
+  right: 0;
+  border-top: thin solid rgba(var(--v-border-color), var(--v-border-opacity));
+}
 
 /* User name styles - similar to GroupEditorMembers.vue group title */
 .user-name-container {
