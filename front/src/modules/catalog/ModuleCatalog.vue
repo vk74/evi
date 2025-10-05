@@ -480,20 +480,7 @@ onMounted(async () => {
           <div v-else-if="!isCatalogLoading() && sections.length > 0">
             <!-- Results Info -->
             <div class="d-flex justify-space-between align-center mb-4">
-              <div class="text-subtitle-1">
-                <span v-if="filterType === 'all'">
-                  {{ t('catalog.common.resultsFoundServices', { count: filteredServices.length + filteredProducts.length }) }}
-                </span>
-                <span v-else-if="filterType === 'services'">
-                  {{ t('catalog.common.resultsFoundServices', { count: filteredServices.length }) }}
-                </span>
-                <span v-else-if="filterType === 'products'">
-                  Найдено продуктов: {{ filteredProducts.length }}
-                </span>
-              </div>
-              <div class="text-caption text-grey">
-                {{ sections.find(s => s.id === selectedSectionId)?.name }}
-              </div>
+              <!-- Removed services found count and section name duplication -->
             </div>
 
             <!-- Services Grid (show when filter is 'all' or 'services') -->
