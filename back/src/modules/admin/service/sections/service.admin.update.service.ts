@@ -1,5 +1,5 @@
 /**
- * service.admin.update.service.ts - version 1.0.0
+ * service.admin.update.service.ts - version 1.1.0
  * Service for updating services operations.
  * 
  * Functionality:
@@ -33,7 +33,7 @@ import { ServicePriority, ServiceStatus, ServiceUserRole, ServiceGroupRole } fro
 import { getRequestorUuidFromReq } from '@/core/helpers/get.requestor.uuid.from.req';
 import { getUuidByUsername } from '@/core/helpers/get.uuid.by.username';
 import { getUuidByGroupName } from '@/core/helpers/get.uuid.by.group.name';
-import { validateFieldLegacy, validateFieldSecurityLegacy, validateMultipleUsernames, validateMultipleGroupNames } from '@/core/validation/legacy.validation';
+import { validateFieldLegacy, validateMultipleUsernames, validateMultipleGroupNames } from '@/core/validation/legacy.validation';
 import fabricEvents from '@/core/eventBus/fabric.events';
 import { EVENTS_ADMIN_SERVICES } from '../events.admin.services';
 
@@ -102,27 +102,9 @@ async function validateUpdateServiceData(data: UpdateService, serviceId: string)
         }
     }
 
-    // Validate priority (USER-DEFINED type - security only)
-    if (data.priority) {
-        const priorityResult = validateFieldSecurityLegacy({
-            value: data.priority,
-            fieldType: 'service_name'
-        });
-        if (!priorityResult.isValid && priorityResult.error) {
-            errors.push(priorityResult.error);
-        }
-    }
+    // Priority: rely on DB constraints
 
-    // Validate status (USER-DEFINED type - security only)
-    if (data.status) {
-        const statusResult = validateFieldSecurityLegacy({
-            value: data.status,
-            fieldType: 'service_name'
-        });
-        if (!statusResult.isValid && statusResult.error) {
-            errors.push(statusResult.error);
-        }
-    }
+    // Status: rely on DB constraints
 
     // Validate icon_name (character varying - full validation)
     if (data.icon_name) {

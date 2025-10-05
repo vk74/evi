@@ -1,5 +1,5 @@
 /**
- * service.admin.update.product.ts - version 1.0.0
+ * service.admin.update.product.ts - version 1.1.0
  * Service for updating products operations.
  * 
  * Functionality:
@@ -38,7 +38,7 @@ import { getUuidByUsername } from '@/core/helpers/get.uuid.by.username';
 import { getUuidByGroupName } from '@/core/helpers/get.uuid.by.group.name';
 import { fetchUsernameByUuid } from '@/core/helpers/get.username.by.uuid';
 import { fetchGroupnameByUuid } from '@/core/helpers/get.groupname.by.uuid';
-import { validateFieldLegacy, validateFieldSecurityLegacy } from '@/core/validation/legacy.validation';
+import { validateFieldLegacy } from '@/core/validation/legacy.validation';
 import { createAndPublishEvent } from '@/core/eventBus/fabric.events';
 import { PRODUCT_UPDATE_EVENTS } from './events.admin.products';
 
@@ -56,28 +56,17 @@ async function validateUpdateProductData(data: UpdateProductRequest): Promise<vo
     // Validate product ID
     if (!data.productId) {
         errors.push('Product ID is required');
-    } else {
-        // UUID validation - use security validation since it's a technical identifier
-        const productIdValidation = validateFieldSecurityLegacy({ value: data.productId, fieldType: 'service_name' });
-        if (!productIdValidation.isValid) {
-            errors.push(`Invalid product ID: ${productIdValidation.error}`);
-        }
     }
 
     // Validate product code if provided
+    // productCode formatting is enforced by DB constraints; no extra validation here
     if (data.productCode !== undefined) {
-        const productCodeValidation = validateFieldSecurityLegacy({ value: data.productCode, fieldType: 'service_name' });
-        if (!productCodeValidation.isValid) {
-            errors.push(`Invalid product code: ${productCodeValidation.error}`);
-        }
+        // no-op: DB enforces constraints
     }
 
     // Validate translation key if provided
     if (data.translationKey !== undefined) {
-        const translationKeyValidation = validateFieldSecurityLegacy({ value: data.translationKey, fieldType: 'service_name' });
-        if (!translationKeyValidation.isValid) {
-            errors.push(`Invalid translation key: ${translationKeyValidation.error}`);
-        }
+        // no-op: DB enforces constraints
     }
 
     // Validate owner if provided (only check if not empty, since usernames can contain various characters)

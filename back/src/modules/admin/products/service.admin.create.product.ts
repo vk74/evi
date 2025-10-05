@@ -1,5 +1,5 @@
 /**
- * service.admin.create.product.ts - version 1.0.0
+ * service.admin.create.product.ts - version 1.1.0
  * Service for creating products operations.
  * 
  * Functionality:
@@ -33,7 +33,7 @@ import type {
 import { getRequestorUuidFromReq } from '@/core/helpers/get.requestor.uuid.from.req';
 import { getUuidByUsername } from '@/core/helpers/get.uuid.by.username';
 import { getUuidByGroupName } from '@/core/helpers/get.uuid.by.group.name';
-import { validateField, validateFieldSecurity } from '@/core/validation/service.validation';
+import { validateField } from '@/core/validation/service.validation';
 import { createAndPublishEvent } from '@/core/eventBus/fabric.events';
 import { PRODUCT_CREATE_EVENTS } from './events.admin.products';
 
@@ -48,63 +48,45 @@ const pool = pgPool as Pool;
 async function validateCreateProductData(data: CreateProductRequest, req: Request): Promise<void> {
     const errors: string[] = [];
 
-    // Validate product code (security-only)
+    // Validate product code presence and uniqueness (format validation handled by DB)
     if (data.productCode) {
-        const productCodeResult = await validateFieldSecurity({
-            value: data.productCode,
-            fieldType: 'userName'
-        }, req);
-        if (!productCodeResult.isValid && productCodeResult.error) {
-            errors.push(`Product code: ${productCodeResult.error}`);
-        } else {
-            // Check if product code already exists
-            try {
-                const result = await pool.query(queries.checkProductCodeExists, [data.productCode.trim()]);
-                if (result.rows.length > 0) {
-                    errors.push('Product with this code already exists');
-                }
-            } catch (error) {
-                createAndPublishEvent({
-                    eventName: PRODUCT_CREATE_EVENTS.CODE_CHECK_ERROR.eventName,
-                    payload: {
-                        productCode: data.productCode,
-                        error: error instanceof Error ? error.message : String(error)
-                    },
-                    errorData: error instanceof Error ? error.message : String(error)
-                });
-                errors.push('Error checking product code existence');
+        try {
+            const result = await pool.query(queries.checkProductCodeExists, [data.productCode.trim()]);
+            if (result.rows.length > 0) {
+                errors.push('Product with this code already exists');
             }
+        } catch (error) {
+            createAndPublishEvent({
+                eventName: PRODUCT_CREATE_EVENTS.CODE_CHECK_ERROR.eventName,
+                payload: {
+                    productCode: data.productCode,
+                    error: error instanceof Error ? error.message : String(error)
+                },
+                errorData: error instanceof Error ? error.message : String(error)
+            });
+            errors.push('Error checking product code existence');
         }
     } else {
         errors.push('Product code is required');
     }
 
-    // Validate translation key (security-only)
+    // Validate translation key presence and uniqueness (format validation handled by DB)
     if (data.translationKey) {
-        const translationKeyResult = await validateFieldSecurity({
-            value: data.translationKey,
-            fieldType: 'userName'
-        }, req);
-        if (!translationKeyResult.isValid && translationKeyResult.error) {
-            errors.push(`Translation key: ${translationKeyResult.error}`);
-        } else {
-            // Check if translation key already exists
-            try {
-                const result = await pool.query(queries.checkTranslationKeyExists, [data.translationKey.trim()]);
-                if (result.rows.length > 0) {
-                    errors.push('Product with this translation key already exists');
-                }
-            } catch (error) {
-                createAndPublishEvent({
-                    eventName: PRODUCT_CREATE_EVENTS.TRANSLATION_KEY_CHECK_ERROR.eventName,
-                    payload: {
-                        translationKey: data.translationKey,
-                        error: error instanceof Error ? error.message : String(error)
-                    },
-                    errorData: error instanceof Error ? error.message : String(error)
-                });
-                errors.push('Error checking translation key existence');
+        try {
+            const result = await pool.query(queries.checkTranslationKeyExists, [data.translationKey.trim()]);
+            if (result.rows.length > 0) {
+                errors.push('Product with this translation key already exists');
             }
+        } catch (error) {
+            createAndPublishEvent({
+                eventName: PRODUCT_CREATE_EVENTS.TRANSLATION_KEY_CHECK_ERROR.eventName,
+                payload: {
+                    translationKey: data.translationKey,
+                    error: error instanceof Error ? error.message : String(error)
+                },
+                errorData: error instanceof Error ? error.message : String(error)
+            });
+            errors.push('Error checking translation key existence');
         }
     } else {
         errors.push('Translation key is required');

@@ -1,5 +1,5 @@
 /**
- * version: 1.0.1
+ * version: 1.1.0
  * Validation service initialization
  * 
  * This file handles initialization of validation caches during server startup.
@@ -8,7 +8,6 @@
  */
 
 import { initializeValidationCache } from './cache.validation';
-import { initializeSecurityCache } from './cache.security.validation';
 import { Request } from 'express';
 
 /**
@@ -19,9 +18,6 @@ import { Request } from 'express';
 export async function initializeValidationService(req: Request): Promise<void> {
   try {
     console.log('Initializing validation service...');
-    
-    // Initialize security cache first (hardcoded security patterns)
-    initializeSecurityCache();
     
     // Initialize validation cache from database
     await initializeValidationCache(req);

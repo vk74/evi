@@ -1,5 +1,5 @@
 /**
- * service.admin.delete.products.ts - version 1.0.0
+ * service.admin.delete.products.ts - version 1.1.0
  * Service for deleting products operations.
  * 
  * Functionality:
@@ -25,7 +25,7 @@ import type {
     ProductError
 } from './types.admin.products';
 import { getRequestorUuidFromReq } from '@/core/helpers/get.requestor.uuid.from.req';
-import { validateFieldLegacy, validateFieldSecurityLegacy } from '@/core/validation/legacy.validation';
+import { validateFieldLegacy } from '@/core/validation/legacy.validation';
 import { createAndPublishEvent } from '@/core/eventBus/fabric.events';
 import { PRODUCT_DELETE_EVENTS } from './events.admin.products';
 
@@ -49,11 +49,6 @@ function validateProductIds(productIds: string[]): void {
         for (const id of productIds) {
             if (!id || typeof id !== 'string') {
                 errors.push('Product ID must be a non-empty string');
-            } else {
-                const validation = validateFieldSecurityLegacy({ value: id, fieldType: 'service_name' });
-                if (!validation.isValid) {
-                    errors.push(`Invalid product ID: ${validation.error}`);
-                }
             }
         }
     }

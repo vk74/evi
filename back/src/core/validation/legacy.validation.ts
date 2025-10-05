@@ -1,8 +1,8 @@
 /**
  * legacy.validation.ts - backend file
- * version: 1.0.0
+ * version: 1.1.0
  * Temporary legacy validation functions for backward compatibility
- * These functions will be removed after full migration to new validation system
+ * Security-only legacy API removed; functions return valid by design.
  */
 
 import { ValidationResponse } from './types.validation';
@@ -22,11 +22,9 @@ export function validateFieldLegacy(...args: any[]): ValidationResponse {
  * Legacy validateFieldSecurity function for backward compatibility
  * @deprecated Use validateFieldSecurity with Request parameter instead
  */
+// Security-only legacy API removed; kept as no-op if still imported elsewhere
 export function validateFieldSecurityLegacy(...args: any[]): ValidationResponse {
-  console.warn('Using deprecated validateFieldSecurityLegacy function. Please update to new validation API.');
-  return {
-    isValid: true
-  };
+  return { isValid: true };
 }
 
 /**

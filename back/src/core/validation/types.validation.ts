@@ -1,5 +1,5 @@
 /**
- * version: 1.1.0
+ * version: 1.2.0
  * Types and interfaces for validation service
  * 
  * This file defines all types and interfaces used by the validation service.
@@ -21,7 +21,6 @@ export type FieldType =
 export interface ValidationRequest {
   value: string | number;
   fieldType: FieldType;
-  securityOnly?: boolean;  // If true, perform only security validation, skip regular validation rules
 }
 
 // Validation response interface
@@ -38,22 +37,7 @@ export interface ValidationError {
   value: string | number;
 }
 
-// Security error interface
-export interface SecurityError {
-  type: 'security';
-  message: string;
-  threatLevel: 'low' | 'medium' | 'high' | 'critical';
-  pattern: string;
-  value: string | number;
-}
-
-// Security threat pattern interface
-export interface SecurityPattern {
-  name: string;
-  pattern: RegExp;
-  threatLevel: 'low' | 'medium' | 'high' | 'critical';
-  description: string;
-}
+// Security interfaces removed: security validation is handled by request guard
 
 // Validation rule interface
 export interface ValidationRule {
