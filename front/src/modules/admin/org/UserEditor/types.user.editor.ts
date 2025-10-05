@@ -127,6 +127,7 @@ export interface IUserGroupMembership {
   group_name: string
   group_status: 'active' | 'disabled' | 'archived'
   is_system: boolean
+  owner_username?: string
 }
 
 // Response for fetching groups of a user with pagination
@@ -183,6 +184,9 @@ export interface UserEditorState {
     profile: IUserProfile;
   };
   ui: IEditorUIState;
+  groups: {
+    selectedGroups: string[];
+  };
 }
 
 // In types.user.editor.ts add:

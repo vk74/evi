@@ -69,7 +69,10 @@ export const useUserEditorStore = defineStore('userEditor', {
     mode: {
       mode: 'create'
     },
-    originalData: undefined
+    originalData: undefined,
+    groups: {
+      selectedGroups: []
+    }
   }),
 
 // getters
@@ -136,6 +139,10 @@ getters: {
     const changes = this.getChangedFields
     // Check if there are changes
     return Object.keys(changes).length > 0
+  },
+
+  hasSelectedGroups(): boolean {
+    return this.groups.selectedGroups.length > 0
   }
 },
 
@@ -233,6 +240,26 @@ getters: {
     console.log('Preparing data for update:', changes)
 
     return changes
+  },
+
+  /**
+   * Toggle group selection
+   */
+  toggleGroupSelection(groupId: string, selected: boolean) {
+    if (selected) {
+      if (!this.groups.selectedGroups.includes(groupId)) {
+        this.groups.selectedGroups.push(groupId)
+      }
+    } else {
+      this.groups.selectedGroups = this.groups.selectedGroups.filter(id => id !== groupId)
+    }
+  },
+
+  /**
+   * Clear all selected groups
+   */
+  clearGroupsSelection() {
+    this.groups.selectedGroups = []
   }
  }
 })

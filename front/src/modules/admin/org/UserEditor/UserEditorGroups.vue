@@ -9,7 +9,7 @@ import { useI18n } from 'vue-i18n'
 import { useUserEditorStore } from './state.user.editor'
 import type { IUserGroupMembership } from './types.user.editor'
 import Paginator from '@/core/ui/paginator/Paginator.vue'
-import { PhMagnifyingGlass, PhX, PhCheckCircle, PhMinusCircle, PhArrowsClockwise } from '@phosphor-icons/vue'
+import { PhMagnifyingGlass, PhX, PhCheckCircle, PhMinusCircle, PhArrowsClockwise, PhCheckSquare, PhSquare } from '@phosphor-icons/vue'
 import { userGroupsService } from './service.fetch.user.groups'
 import { defineAsyncComponent } from 'vue'
 
@@ -19,6 +19,7 @@ const { t } = useI18n()
 const store = useUserEditorStore()
 
 const isEditMode = computed(() => store.mode.mode === 'edit')
+const hasSelectedGroups = computed(() => store.hasSelectedGroups)
 
 // Computed property for user display name
 const userDisplayName = computed(() => {
@@ -49,6 +50,11 @@ const getStatusColor = (status: string) => {
     case 'archived': return 'grey'
     default: return 'blue'
   }
+}
+
+const isSelected = (groupId: string) => store.groups.selectedGroups.includes(groupId)
+const onSelectGroup = (groupId: string, selected: boolean) => {
+  store.toggleGroupSelection(groupId, selected)
 }
 
 async function fetchRows() {
@@ -175,21 +181,38 @@ watch(isEditMode, (v) => { if (v) { page.value = 1; fetchRows() } })
         :items-per-page="itemsPerPage"
         :sort-by="sortBy ? [{ key: sortBy, order: sortDesc ? 'desc' : 'asc' }] : []"
         :headers="[
+          { title: t('admin.groups.editor.table.headers.select'), key: 'selection', width: '40px' },
           { title: t('admin.groups.list.table.headers.id'), key: 'group_id', width: '200px' },
           { title: t('admin.groups.list.table.headers.name'), key: 'group_name', width: '300px' },
           { title: t('admin.groups.list.table.headers.status'), key: 'group_status', width: '120px' },
-          { title: t('admin.groups.list.table.headers.system'), key: 'is_system', width: '80px' }
+          { title: t('admin.groups.list.table.headers.system'), key: 'is_system', width: '80px' },
+          { title: t('admin.groups.list.table.headers.owner'), key: 'owner_username', width: '150px' }
         ]"
         :items-per-page-options="[10,25,50,100]"
         hide-default-footer
         @update:options="onTableOptionsUpdate"
       >
+        <template #item.selection="{ item }">
+          <v-btn
+            icon
+            variant="text"
+            density="comfortable"
+            :aria-pressed="isSelected(item.group_id)"
+            @click="onSelectGroup(item.group_id, !isSelected(item.group_id))"
+          >
+            <PhCheckSquare v-if="isSelected(item.group_id)" :size="18" color="teal" />
+            <PhSquare v-else :size="18" color="grey" />
+          </v-btn>
+        </template>
         <template #item.group_status="{ item }">
           <v-chip :color="getStatusColor(item.group_status)" size="x-small">{{ item.group_status }}</v-chip>
         </template>
         <template #item.is_system="{ item }">
           <PhCheckCircle v-if="item.is_system" size="16" color="teal" />
           <PhMinusCircle v-else size="16" color="red-darken-4" />
+        </template>
+        <template #item.owner_username="{ item }">
+          {{ item.owner_username || '-' }}
         </template>
         <template #bottom>
           <Paginator

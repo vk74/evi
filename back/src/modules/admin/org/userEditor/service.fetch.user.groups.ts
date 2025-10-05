@@ -38,8 +38,12 @@ export async function fetchUserGroups(params: FetchUserGroupsParams, req: Reques
 
   const countSql = `SELECT COUNT(*) AS total ${userQueries.userGroupsWhereClause}`
   const rowsSql = `
-    SELECT g.group_id, g.group_name, g.group_status, g.is_system
-    ${userQueries.userGroupsWhereClause}
+    SELECT g.group_id, g.group_name, g.group_status, g.is_system, u.username AS owner_username
+    FROM app.group_members gm
+    JOIN app.groups g ON g.group_id = gm.group_id
+    LEFT JOIN app.users u ON u.user_id = g.group_owner
+    WHERE gm.user_id = $1
+      AND ($2::text IS NULL OR g.group_name ILIKE ('%' || $2 || '%'))
     ORDER BY ${orderExpr} ${orderDir}
     LIMIT $3 OFFSET $4
   `
