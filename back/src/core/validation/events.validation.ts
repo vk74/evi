@@ -1,8 +1,8 @@
 /**
  * events.validation.ts - backend file
- * version: 1.0.0
- * Event definitions for validation service operations.
- * Contains event types for validation processes, security checks, and validation errors.
+ * version: 1.1.0
+ * Event definitions for validation service operations (business/format validation only).
+ * Security validation is handled exclusively by request guard and not part of this service.
  * 
  * Payload Guidelines:
  * - severity 'info'/'warning'/'error': Only basic validation info
@@ -122,69 +122,6 @@ export const VALIDATION_PROCESS_EVENTS = {
 };
 
 /**
- * Security Validation Events
- * Events related to security validation operations
- */
-export const VALIDATION_SECURITY_EVENTS = {
-  
-  /**
-   * Security validation started event
-   * Triggered when security validation begins
-   * severity: debug - includes security check details
-   */
-  SECURITY_VALIDATION_STARTED: {
-    eventName: 'validation.security.started',
-    eventMessage: 'Security validation started',
-    eventType: 'security' as const,
-    source: 'core.validation.security',
-    severity: 'debug' as const,
-    version: '1.0.0'
-  },
-
-  /**
-   * Security validation success event
-   * Triggered when security validation passes
-   * severity: info - includes validation result
-   */
-  SECURITY_VALIDATION_SUCCESS: {
-    eventName: 'validation.security.success',
-    eventMessage: 'Security validation successful',
-    eventType: 'security' as const,
-    source: 'core.validation.security',
-    severity: 'info' as const,
-    version: '1.0.0'
-  },
-
-  /**
-   * Security validation failed event
-   * Triggered when security validation fails
-   * severity: warning - includes security issues
-   */
-  SECURITY_VALIDATION_FAILED: {
-    eventName: 'validation.security.failed',
-    eventMessage: 'Security validation failed',
-    eventType: 'security' as const,
-    source: 'core.validation.security',
-    severity: 'warning' as const,
-    version: '1.0.0'
-  },
-
-  /**
-   * Security threat detected event
-   * Triggered when potential security threat is detected during validation
-   * severity: error - includes threat details
-   */
-  SECURITY_THREAT_DETECTED: {
-    eventName: 'validation.security.threat.detected',
-    eventMessage: 'Security threat detected during validation',
-    eventType: 'security' as const,
-    source: 'core.validation.security',
-    severity: 'error' as const,
-    version: '1.0.0'
-  }
-};
-
-/**
  * Validation Cache Events
  * Events related to validation cache operations
  */
@@ -261,12 +198,6 @@ export const VALIDATION_EVENT_NAMES = {
   VALIDATION_SUCCESS: VALIDATION_PROCESS_EVENTS.VALIDATION_SUCCESS.eventName,
   VALIDATION_FAILED: VALIDATION_PROCESS_EVENTS.VALIDATION_FAILED.eventName,
   VALIDATION_ERROR: VALIDATION_PROCESS_EVENTS.VALIDATION_ERROR.eventName,
-  
-  // Security events
-  SECURITY_VALIDATION_STARTED: VALIDATION_SECURITY_EVENTS.SECURITY_VALIDATION_STARTED.eventName,
-  SECURITY_VALIDATION_SUCCESS: VALIDATION_SECURITY_EVENTS.SECURITY_VALIDATION_SUCCESS.eventName,
-  SECURITY_VALIDATION_FAILED: VALIDATION_SECURITY_EVENTS.SECURITY_VALIDATION_FAILED.eventName,
-  SECURITY_THREAT_DETECTED: VALIDATION_SECURITY_EVENTS.SECURITY_THREAT_DETECTED.eventName,
   
   // Cache events
   CACHE_INIT: VALIDATION_CACHE_EVENTS.CACHE_INIT.eventName,
