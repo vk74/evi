@@ -69,17 +69,19 @@ async function validateUpdateProductData(data: UpdateProductRequest, req: Reques
         // no-op: DB enforces constraints
     }
 
-    // Validate owner if provided (only check if not empty, since usernames can contain various characters)
+    // Validate owner if provided (well-known)
     if (data.owner !== undefined && data.owner !== '') {
-        if (typeof data.owner !== 'string' || data.owner.trim() === '') {
-            errors.push('Invalid owner: Owner must be a non-empty string');
+        const ownerResult = await validateField({ value: data.owner, fieldType: 'userName' }, req);
+        if (!ownerResult.isValid && ownerResult.error) {
+            errors.push(`Owner: ${ownerResult.error}`);
         }
     }
 
     // Validate backup owner if provided (only check if not empty, since usernames can contain various characters)
     if (data.backupOwner !== undefined && data.backupOwner !== '') {
-        if (typeof data.backupOwner !== 'string' || data.backupOwner.trim() === '') {
-            errors.push('Invalid backup owner: Backup owner must be a non-empty string');
+        const backupOwnerResult = await validateField({ value: data.backupOwner, fieldType: 'userName' }, req);
+        if (!backupOwnerResult.isValid && backupOwnerResult.error) {
+            errors.push(`Backup owner: ${backupOwnerResult.error}`);
         }
     }
 

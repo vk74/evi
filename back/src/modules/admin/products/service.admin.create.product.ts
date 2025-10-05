@@ -92,12 +92,9 @@ async function validateCreateProductData(data: CreateProductRequest, req: Reques
         errors.push('Translation key is required');
     }
 
-    // Validate owner username
+    // Validate owner username (well-known)
     if (data.owner) {
-        const ownerResult = await validateField({
-            value: data.owner,
-            fieldType: 'userName'
-        }, req);
+        const ownerResult = await validateField({ value: data.owner, fieldType: 'userName' }, req);
         if (!ownerResult.isValid && ownerResult.error) {
             errors.push(`Owner: ${ownerResult.error}`);
         } else {
@@ -219,7 +216,7 @@ async function createProductTranslations(client: any, productId: string, transla
  * @param data - Product data containing owner and specialistsGroups
  * @param requestorUuid - UUID of the user creating the product
  */
-async function createProductRelationships(client: any, productId: string, data: CreateProductRequest, requestorUuid: string): Promise<void> {
+async function createProductRelationships(client: any, productId: string, data: CreateProductRequest, requestorUuid: string, req: Request): Promise<void> {
     try {
         // Create owner relationship
         if (data.owner && data.owner.trim()) {
@@ -276,6 +273,10 @@ async function createProductRelationships(client: any, productId: string, data: 
         // Create specialists groups relationships
         if (data.specialistsGroups && data.specialistsGroups.length > 0) {
             for (const groupName of data.specialistsGroups) {
+                const groupResult = await validateField({ value: groupName, fieldType: 'groupName' }, req);
+                if (!groupResult.isValid && groupResult.error) {
+                    throw new Error(`Specialists group "${groupName}": ${groupResult.error}`);
+                }
                 if (groupName && groupName.trim()) {
                     const groupUuid = await getUuidByGroupName(groupName.trim());
                     if (groupUuid) {
@@ -320,7 +321,7 @@ async function createProductRelationships(client: any, productId: string, data: 
  * @param requestorUuid - UUID of the user creating the product
  * @returns Promise<CreateProductResponse>
  */
-async function createProductInDatabase(data: CreateProductRequest, requestorUuid: string): Promise<CreateProductResponse> {
+async function createProductInDatabase(data: CreateProductRequest, requestorUuid: string, req: Request): Promise<CreateProductResponse> {
     const client = await pool.connect();
     
     try {
@@ -373,7 +374,7 @@ async function createProductInDatabase(data: CreateProductRequest, requestorUuid
         await createProductTranslations(client, productId, data.translations, requestorUuid);
 
         // Create product-user and product-group relationships
-        await createProductRelationships(client, productId, data, requestorUuid);
+        await createProductRelationships(client, productId, data, requestorUuid, req);
 
         await client.query('COMMIT');
 
@@ -449,7 +450,7 @@ export async function createProduct(req: Request): Promise<CreateProductResponse
         await validateCreateProductData(productData, req);
 
         // Create product in database with all translations
-        const result = await createProductInDatabase(productData, requestorUuid);
+        const result = await createProductInDatabase(productData, requestorUuid, req);
 
         return result;
 

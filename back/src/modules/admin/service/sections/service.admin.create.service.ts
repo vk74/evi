@@ -33,7 +33,7 @@ import { ServicePriority, ServiceStatus, ServiceUserRole, ServiceGroupRole } fro
 import { getRequestorUuidFromReq } from '@/core/helpers/get.requestor.uuid.from.req';
 import { getUuidByUsername } from '@/core/helpers/get.uuid.by.username';
 import { getUuidByGroupName } from '@/core/helpers/get.uuid.by.group.name';
-// No format validation; DB and existence checks are sufficient per policy
+import { validateField } from '@/core/validation/service.validation';
 import { createAndPublishEvent } from '@/core/eventBus/fabric.events';
 import { EVENTS_ADMIN_SERVICES } from '../events.admin.services';
 
@@ -47,7 +47,7 @@ const pool = pgPool as Pool;
  * @param data - Service data to validate
  * @throws {ServiceError} When validation fails
  */
-async function validateCreateServiceData(data: CreateServiceRequest): Promise<void> {
+async function validateCreateServiceData(data: CreateServiceRequest, req: Request): Promise<void> {
     const errors: string[] = [];
 
     // Validate service name
@@ -91,6 +91,10 @@ async function validateCreateServiceData(data: CreateServiceRequest): Promise<vo
 
     // Validate owner usernames
     if (data.owner) {
+        const ownerResult = await validateField({ value: data.owner, fieldType: 'userName' }, req);
+        if (!ownerResult.isValid && ownerResult.error) {
+            errors.push(`Owner: ${ownerResult.error}`);
+        } else {
             try {
                 const ownerUuid = await getUuidByUsername(data.owner);
                 if (!ownerUuid) {
@@ -99,9 +103,14 @@ async function validateCreateServiceData(data: CreateServiceRequest): Promise<vo
             } catch (error) {
                 errors.push('Invalid owner username');
             }
+        }
     }
 
     if (data.backup_owner) {
+        const backupOwnerResult = await validateField({ value: data.backup_owner, fieldType: 'userName' }, req);
+        if (!backupOwnerResult.isValid && backupOwnerResult.error) {
+            errors.push(`Backup owner: ${backupOwnerResult.error}`);
+        } else {
             try {
                 const backupOwnerUuid = await getUuidByUsername(data.backup_owner);
                 if (!backupOwnerUuid) {
@@ -110,9 +119,14 @@ async function validateCreateServiceData(data: CreateServiceRequest): Promise<vo
             } catch (error) {
                 errors.push('Invalid backup owner username');
             }
+        }
     }
 
     if (data.technical_owner) {
+        const technicalOwnerResult = await validateField({ value: data.technical_owner, fieldType: 'userName' }, req);
+        if (!technicalOwnerResult.isValid && technicalOwnerResult.error) {
+            errors.push(`Technical owner: ${technicalOwnerResult.error}`);
+        } else {
             try {
                 const technicalOwnerUuid = await getUuidByUsername(data.technical_owner);
                 if (!technicalOwnerUuid) {
@@ -121,9 +135,14 @@ async function validateCreateServiceData(data: CreateServiceRequest): Promise<vo
             } catch (error) {
                 errors.push('Invalid technical owner username');
             }
+        }
     }
 
     if (data.backup_technical_owner) {
+        const backupTechnicalOwnerResult = await validateField({ value: data.backup_technical_owner, fieldType: 'userName' }, req);
+        if (!backupTechnicalOwnerResult.isValid && backupTechnicalOwnerResult.error) {
+            errors.push(`Backup technical owner: ${backupTechnicalOwnerResult.error}`);
+        } else {
             try {
                 const backupTechnicalOwnerUuid = await getUuidByUsername(data.backup_technical_owner);
                 if (!backupTechnicalOwnerUuid) {
@@ -132,9 +151,14 @@ async function validateCreateServiceData(data: CreateServiceRequest): Promise<vo
             } catch (error) {
                 errors.push('Invalid backup technical owner username');
             }
+        }
     }
 
     if (data.dispatcher) {
+        const dispatcherResult = await validateField({ value: data.dispatcher, fieldType: 'userName' }, req);
+        if (!dispatcherResult.isValid && dispatcherResult.error) {
+            errors.push(`Dispatcher: ${dispatcherResult.error}`);
+        } else {
             try {
                 const dispatcherUuid = await getUuidByUsername(data.dispatcher);
                 if (!dispatcherUuid) {
@@ -143,10 +167,15 @@ async function validateCreateServiceData(data: CreateServiceRequest): Promise<vo
             } catch (error) {
                 errors.push('Invalid dispatcher username');
             }
+        }
     }
 
     // Validate support tier groups
     if (data.support_tier1) {
+        const supportTier1Result = await validateField({ value: data.support_tier1, fieldType: 'groupName' }, req);
+        if (!supportTier1Result.isValid && supportTier1Result.error) {
+            errors.push(`Support tier 1: ${supportTier1Result.error}`);
+        } else {
             try {
                 const supportTier1Uuid = await getUuidByGroupName(data.support_tier1);
                 if (!supportTier1Uuid) {
@@ -155,9 +184,14 @@ async function validateCreateServiceData(data: CreateServiceRequest): Promise<vo
             } catch (error) {
                 errors.push('Invalid support tier 1 group name');
             }
+        }
     }
 
     if (data.support_tier2) {
+        const supportTier2Result = await validateField({ value: data.support_tier2, fieldType: 'groupName' }, req);
+        if (!supportTier2Result.isValid && supportTier2Result.error) {
+            errors.push(`Support tier 2: ${supportTier2Result.error}`);
+        } else {
             try {
                 const supportTier2Uuid = await getUuidByGroupName(data.support_tier2);
                 if (!supportTier2Uuid) {
@@ -166,9 +200,14 @@ async function validateCreateServiceData(data: CreateServiceRequest): Promise<vo
             } catch (error) {
                 errors.push('Invalid support tier 2 group name');
             }
+        }
     }
 
     if (data.support_tier3) {
+        const supportTier3Result = await validateField({ value: data.support_tier3, fieldType: 'groupName' }, req);
+        if (!supportTier3Result.isValid && supportTier3Result.error) {
+            errors.push(`Support tier 3: ${supportTier3Result.error}`);
+        } else {
             try {
                 const supportTier3Uuid = await getUuidByGroupName(data.support_tier3);
                 if (!supportTier3Uuid) {
@@ -177,6 +216,7 @@ async function validateCreateServiceData(data: CreateServiceRequest): Promise<vo
             } catch (error) {
                 errors.push('Invalid support tier 3 group name');
             }
+        }
     }
 
     // Access lists: format validation removed; existence is checked during role creation
@@ -530,7 +570,7 @@ export async function createService(req: Request): Promise<CreateServiceResponse
         });
 
         // Validate service data
-        await validateCreateServiceData(serviceData);
+        await validateCreateServiceData(serviceData, req);
 
         // Create service in database with all roles
         const result = await createServiceInDatabase(serviceData, requestorUuid);
