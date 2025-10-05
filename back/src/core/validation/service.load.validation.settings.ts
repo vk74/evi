@@ -1,6 +1,6 @@
 /**
  * service.load.validation.settings.ts - backend file
- * version: 1.1.0
+ * version: 1.2.0
  * Service for loading validation settings from database and converting them to ValidationRule objects
  * Uses the settings management system to fetch configuration from PostgreSQL
  */
@@ -41,24 +41,52 @@ function getSettingValue(settings: AppSetting[], settingName: string): any {
 }
 
 /**
+ * Safely coalesce value with default, respecting explicit false/0
+ */
+function coalesce<T>(val: T | null | undefined, fallback: T): T {
+  return (val === null || val === undefined) ? fallback : val;
+}
+
+/**
+ * Unwrap string values that might be JSON-stringified
+ */
+function unwrapString(raw: any): string {
+  if (raw === null || raw === undefined) return '';
+  const str = String(raw);
+  // Attempt JSON.parse when value looks like a JSON string
+  if ((str.startsWith('"') && str.endsWith('"')) || (str.startsWith("'") && str.endsWith("'"))) {
+    try {
+      const parsed = JSON.parse(str as unknown as string);
+      return typeof parsed === 'string' ? parsed : str;
+    } catch {
+      return str;
+    }
+  }
+  return str;
+}
+
+/**
  * Build ValidationRule for well-known userName field
  * @param settings Array of app settings
  * @returns ValidationRule for userName
  */
 function buildUserNameRule(settings: AppSetting[]): ValidationRule {
-  const minLength = getSettingValue(settings, 'wellKnownFields.userName.minLength') || 1;
-  const maxLength = getSettingValue(settings, 'wellKnownFields.userName.maxLength') || 50;
-  const allowNumbers = getSettingValue(settings, 'wellKnownFields.userName.allowNumbers') || true;
-  const allowUsernameChars = getSettingValue(settings, 'wellKnownFields.userName.allowUsernameChars') || true;
-  const latinOnly = getSettingValue(settings, 'wellKnownFields.userName.latinOnly') || false;
+  const minLength = Number(coalesce(getSettingValue(settings, 'wellKnownFields.userName.minLength'), 1));
+  const maxLength = Number(coalesce(getSettingValue(settings, 'wellKnownFields.userName.maxLength'), 50));
+  const allowNumbers = Boolean(coalesce(getSettingValue(settings, 'wellKnownFields.userName.allowNumbers'), true));
+  const allowUsernameChars = Boolean(coalesce(getSettingValue(settings, 'wellKnownFields.userName.allowUsernameChars'), true));
+  const latinOnly = Boolean(coalesce(getSettingValue(settings, 'wellKnownFields.userName.latinOnly'), false));
 
   // Build regex based on settings
-  let regexPattern = '^[a-zA-Z';
-  if (allowNumbers) regexPattern += '0-9';
-  if (allowUsernameChars) regexPattern += '_';
-  regexPattern += ']+$';
+  // latinOnly=true -> ASCII letters only; latinOnly=false -> any Unicode letters
+  const letterClass = latinOnly ? 'A-Za-z' : '\\p{L}';
+  let cls = `[${letterClass}`;
+  if (allowNumbers) cls += '0-9';
+  if (allowUsernameChars) cls += '._-';
+  cls += ']';
+  const regexPattern = `^${cls}+$`;
 
-  const regex = new RegExp(regexPattern);
+  const regex = new RegExp(regexPattern, latinOnly ? undefined : 'u');
 
   return {
     fieldType: 'userName',
@@ -82,19 +110,21 @@ function buildUserNameRule(settings: AppSetting[]): ValidationRule {
  * @returns ValidationRule for groupName
  */
 function buildGroupNameRule(settings: AppSetting[]): ValidationRule {
-  const minLength = getSettingValue(settings, 'wellKnownFields.groupName.minLength') || 1;
-  const maxLength = getSettingValue(settings, 'wellKnownFields.groupName.maxLength') || 50;
-  const allowNumbers = getSettingValue(settings, 'wellKnownFields.groupName.allowNumbers') || true;
-  const allowUsernameChars = getSettingValue(settings, 'wellKnownFields.groupName.allowUsernameChars') || true;
-  const latinOnly = getSettingValue(settings, 'wellKnownFields.groupName.latinOnly') || false;
+  const minLength = Number(coalesce(getSettingValue(settings, 'wellKnownFields.groupName.minLength'), 1));
+  const maxLength = Number(coalesce(getSettingValue(settings, 'wellKnownFields.groupName.maxLength'), 50));
+  const allowNumbers = Boolean(coalesce(getSettingValue(settings, 'wellKnownFields.groupName.allowNumbers'), true));
+  const allowUsernameChars = Boolean(coalesce(getSettingValue(settings, 'wellKnownFields.groupName.allowUsernameChars'), true));
+  const latinOnly = Boolean(coalesce(getSettingValue(settings, 'wellKnownFields.groupName.latinOnly'), false));
 
   // Build regex based on settings
-  let regexPattern = '^[a-zA-Z';
-  if (allowNumbers) regexPattern += '0-9';
-  if (allowUsernameChars) regexPattern += '_-';
-  regexPattern += ']+$';
+  const letterClass = latinOnly ? 'A-Za-z' : '\\p{L}';
+  let cls = `[${letterClass}`;
+  if (allowNumbers) cls += '0-9';
+  if (allowUsernameChars) cls += '_-';
+  cls += ']';
+  const regexPattern = `^${cls}+$`;
 
-  const regex = new RegExp(regexPattern);
+  const regex = new RegExp(regexPattern, latinOnly ? undefined : 'u');
 
   return {
     fieldType: 'groupName',
@@ -117,10 +147,14 @@ function buildGroupNameRule(settings: AppSetting[]): ValidationRule {
  * @returns ValidationRule for email
  */
 function buildEmailRule(settings: AppSetting[]): ValidationRule {
-  const regexPattern = getSettingValue(settings, 'wellKnownFields.email.regex') || 
-    '^[a-zA-Z0-9.!#$%&\'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$';
-  
-  const regex = new RegExp(regexPattern);
+  const raw = getSettingValue(settings, 'wellKnownFields.email.regex');
+  const patternStr = unwrapString(raw) || '^[^\s@]+@[^\s@]+\.[^\s@]+$';
+  let regex: RegExp;
+  try {
+    regex = new RegExp(patternStr);
+  } catch {
+    regex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  }
 
   return {
     fieldType: 'email',
@@ -141,14 +175,14 @@ function buildEmailRule(settings: AppSetting[]): ValidationRule {
  * @returns ValidationRule for telephoneNumber
  */
 function buildTelephoneNumberRule(settings: AppSetting[]): ValidationRule {
-  const mask = getSettingValue(settings, 'wellKnownFields.telephoneNumber.mask') || '+# ### ###-####';
+  const maskRaw = getSettingValue(settings, 'wellKnownFields.telephoneNumber.mask');
+  const mask = unwrapString(maskRaw) || '+# ### ###-####';
   
   // Generate regex from mask
   let regexPattern = mask
-    .replace(/[.*+?^${}()|[\]\\]/g, '\\$&') // Escape special regex chars
-    .replace(/#/g, '\\d'); // Replace # with digit pattern
+    .replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+    .replace(/#/g, '\\d');
   
-  // Add anchors
   regexPattern = '^' + regexPattern + '$';
   
   const regex = new RegExp(regexPattern);
