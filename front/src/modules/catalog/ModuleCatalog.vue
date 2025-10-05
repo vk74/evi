@@ -10,6 +10,8 @@ import { useI18n } from 'vue-i18n'
 import DataLoading from '@/core/ui/loaders/DataLoading.vue';
 import CatalogServiceCard from './services/CatalogServiceCard.vue';
 import ServiceDetails from './services/ServiceDetails.vue'
+import CatalogProductCard from './products/CatalogProductCard.vue';
+import ProductDetails from './products/ProductDetails.vue'
 import { PhMagnifyingGlass, PhX, PhCaretUpDown, PhCaretDown, PhCaretRight, PhWarningCircle, PhFolderOpen, PhPackage, PhFolder } from '@phosphor-icons/vue'
 import { 
   fetchCatalogSections, 
@@ -19,6 +21,8 @@ import {
 import type { CatalogSection } from './types.catalog';
 import { fetchActiveServices } from './service.fetch.active.services';
 import type { CatalogService } from './services/types.services';
+import { fetchActiveProducts } from './products/service.fetch.active.products';
+import type { CatalogProduct } from './products/types.products';
 import {
   searchQuery,
   sortBy,
@@ -102,6 +106,10 @@ const filterType = ref<'all' | 'services' | 'products'>('all');
 // ==================== SERVICES DATA ====================
 const services = ref<CatalogService[]>([]);
 
+// ==================== PRODUCTS DATA ====================
+const products = ref<CatalogProduct[]>([]);
+const selectedProductId = ref<string | null>(null);
+
 // ==================== COMPUTED PROPERTIES ====================
 const filteredServices = computed(() => {
   const q = (searchQuery.value || '').trim().toLowerCase();
@@ -111,6 +119,21 @@ const filteredServices = computed(() => {
       s.name.toLowerCase().includes(q) ||
       (s.description || '').toLowerCase().includes(q) ||
       (s.owner || '').toLowerCase().includes(q)
+    );
+  }
+  // Simple sort by name for MVP
+  const sorted = [...list].sort((a, b) => a.name.localeCompare(b.name));
+  return sorted;
+});
+
+const filteredProducts = computed(() => {
+  const q = (searchQuery.value || '').trim().toLowerCase();
+  let list = products.value;
+  if (q) {
+    list = list.filter(p =>
+      p.name.toLowerCase().includes(q) ||
+      (p.description || '').toLowerCase().includes(q) ||
+      (p.product_code || '').toLowerCase().includes(q)
     );
   }
   // Simple sort by name for MVP
@@ -129,6 +152,10 @@ const sortOptionsI18n = computed(() => [
 // Future helpers can be added here
 const onSelectService = (serviceId: string) => {
   setSelectedServiceId(serviceId)
+}
+
+const onSelectProduct = (productId: string) => {
+  selectedProductId.value = productId
 }
 
 // ==================== CATALOG SECTIONS FUNCTIONS ====================
@@ -157,46 +184,60 @@ async function loadActiveServices() {
   }
 }
 
+async function loadActiveProducts() {
+  try {
+    const fetched = await fetchActiveProducts({ sectionId: selectedSectionId.value || undefined });
+    products.value = fetched;
+  } catch (error) {
+  }
+}
+
 // ==================== EVENT HANDLERS ====================
 function selectSection(sectionId: string) {
   selectedSectionId.value = sectionId;
-  // reload services for this section
+  // reload services and products for this section
   loadActiveServices();
+  loadActiveProducts();
 }
 
 // ==================== CARD COLLAPSE HANDLERS ====================
 function handleWorkspaceClick(event: Event) {
-  // Only handle clicks when a service card is expanded
-  if (!selectedServiceId.value) return;
+  // Only handle clicks when a service or product card is expanded
+  if (!selectedServiceId.value && !selectedProductId.value) return;
   
-  // Check if click target is within the service details component
+  // Check if click target is within the details component
   const target = event.target as HTMLElement;
   const serviceDetailsElement = document.querySelector('.service-details');
+  const productDetailsElement = document.querySelector('.product-details');
   
-  // Check if click is on a service card - if so, don't collapse
-  if (target.closest('.service-card')) {
+  // Check if click is on a service or product card - if so, don't collapse
+  if (target.closest('.service-card') || target.closest('.product-card')) {
     return;
   }
   
-  // Check if click is on the workspace container itself (empty space) or outside service details
+  // Check if click is on the workspace container itself (empty space) or outside details
   if (target.classList.contains('workspace-container') || 
-      (serviceDetailsElement && !serviceDetailsElement.contains(target))) {
-    // Click is on empty space or outside service details - collapse the card
+      (serviceDetailsElement && !serviceDetailsElement.contains(target)) ||
+      (productDetailsElement && !productDetailsElement.contains(target))) {
+    // Click is on empty space or outside details - collapse the card
     resetCatalogView();
+    selectedProductId.value = null;
   }
 }
 
 function handleSectionHeaderClick() {
-  // Collapse service card when clicking on section headers
-  if (selectedServiceId.value) {
+  // Collapse service or product card when clicking on section headers
+  if (selectedServiceId.value || selectedProductId.value) {
     resetCatalogView();
+    selectedProductId.value = null;
   }
 }
 
 function handleOptionsBarClick() {
-  // Collapse service card when clicking on options bar
-  if (selectedServiceId.value) {
+  // Collapse service or product card when clicking on options bar
+  if (selectedServiceId.value || selectedProductId.value) {
     resetCatalogView();
+    selectedProductId.value = null;
   }
 }
 
@@ -211,9 +252,10 @@ const onTriggerAreaLeave = () => {
 
 // ==================== LIFECYCLE ====================
 onMounted(async () => {
-  // Ensure sections (and default selectedSectionId) are loaded before fetching services
+  // Ensure sections (and default selectedSectionId) are loaded before fetching services and products
   await loadCatalogSections();
   await loadActiveServices();
+  await loadActiveProducts();
   // Load Phosphor icons (non-blocking for data correctness)
   loadPhosphorIcons();
 });
@@ -379,6 +421,10 @@ onMounted(async () => {
         <div v-if="selectedServiceId">
           <ServiceDetails :service-id="selectedServiceId" />
         </div>
+        <!-- Product details view -->
+        <div v-else-if="selectedProductId">
+          <ProductDetails :product-id="selectedProductId" />
+        </div>
         <div v-else>
           <!-- Loading State -->
           <DataLoading
@@ -435,16 +481,24 @@ onMounted(async () => {
             <!-- Results Info -->
             <div class="d-flex justify-space-between align-center mb-4">
               <div class="text-subtitle-1">
-                {{ t('catalog.common.resultsFoundServices', { count: filteredServices.length }) }}
+                <span v-if="filterType === 'all'">
+                  {{ t('catalog.common.resultsFoundServices', { count: filteredServices.length + filteredProducts.length }) }}
+                </span>
+                <span v-else-if="filterType === 'services'">
+                  {{ t('catalog.common.resultsFoundServices', { count: filteredServices.length }) }}
+                </span>
+                <span v-else-if="filterType === 'products'">
+                  Найдено продуктов: {{ filteredProducts.length }}
+                </span>
               </div>
               <div class="text-caption text-grey">
                 {{ sections.find(s => s.id === selectedSectionId)?.name }}
               </div>
             </div>
 
-            <!-- Services Grid -->
+            <!-- Services Grid (show when filter is 'all' or 'services') -->
             <v-row
-              v-if="filteredServices.length > 0"
+              v-if="(filterType === 'all' || filterType === 'services') && filteredServices.length > 0"
               dense
             >
               <v-col
@@ -462,17 +516,41 @@ onMounted(async () => {
               </v-col>
             </v-row>
 
-            <!-- Empty State (no services loaded) -->
+            <!-- Products Grid (show when filter is 'all' or 'products') -->
+            <v-row
+              v-if="(filterType === 'all' || filterType === 'products') && filteredProducts.length > 0"
+              dense
+            >
+              <v-col
+                v-for="product in filteredProducts"
+                :key="product.id"
+                cols="12"
+                md="6"
+                lg="4"
+                xl="3"
+              >
+                <CatalogProductCard
+                  :product="product"
+                  @select="onSelectProduct"
+                />
+              </v-col>
+            </v-row>
+
+            <!-- Empty State (no services or products loaded) -->
             <div
-              v-else
+              v-if="filteredServices.length === 0 && filteredProducts.length === 0"
               class="text-center py-12"
             >
               <PhPackage :size="64" color="rgb(189, 189, 189)" class="mb-4" />
               <div class="text-h6 text-grey mb-2">
-                {{ t('catalog.empty.servicesTitle') }}
+                {{ filterType === 'services' ? t('catalog.empty.servicesTitle') : 
+                   filterType === 'products' ? t('catalog.empty.productsTitle') : 
+                   t('catalog.empty.servicesTitle') }}
               </div>
               <div class="text-body-2 text-grey">
-                {{ t('catalog.empty.servicesSubtitle') }}
+                {{ filterType === 'services' ? t('catalog.empty.servicesSubtitle') : 
+                   filterType === 'products' ? t('catalog.empty.productsSubtitle') : 
+                   t('catalog.empty.servicesSubtitle') }}
               </div>
             </div>
           </div>

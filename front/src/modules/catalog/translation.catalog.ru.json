@@ -28,7 +28,9 @@
       "sectionsSubtitle": "в каталоге пока нет активных секций",
       "refresh": "обновить",
       "servicesTitle": "активные сервисы не найдены",
-      "servicesSubtitle": "в каталоге пока нет сервисов в эксплуатации"
+      "servicesSubtitle": "в каталоге пока нет сервисов в эксплуатации",
+      "productsTitle": "активные продукты не найдены",
+      "productsSubtitle": "в каталоге пока нет опубликованных продуктов"
     },
     "serviceDetails": {
       "title": "детали сервиса",
@@ -52,6 +54,24 @@
       "offerings": "сервисные предложения",
       "offeringsEmpty": "сервисные предложения не найдены",
       "inProduction": "в эксплуатации"
+    },
+    "productDetails": {
+      "title": "детали продукта",
+      "main": "основные",
+      "description": "описание",
+      "shortDescription": "краткое описание",
+      "longDescription": "полное описание",
+      "productCode": "код продукта",
+      "status": "статус",
+      "createdAt": "дата создания",
+      "techSpecs": "технические характеристики",
+      "areaSpecifics": "специфики по областям",
+      "industrySpecifics": "отраслевые специфики",
+      "keyFeatures": "ключевые особенности",
+      "productOverview": "обзор продукта",
+      "productOptions": "опции продукта",
+      "productOptionsEmpty": "опции продукта не найдены",
+      "published": "опубликован"
     }
   }
 }

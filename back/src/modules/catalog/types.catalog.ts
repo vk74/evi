@@ -204,3 +204,96 @@ export interface CatalogServiceDetailsDTO {
 export interface FetchServiceDetailsResponse extends ApiResponse {
     data: CatalogServiceDetailsDTO | null;
 }
+
+/**
+ * Product enums (match DB enum labels)
+ */
+export enum ProductStatus {
+    PUBLISHED = 'published',
+    DRAFT = 'draft',
+    ARCHIVED = 'archived',
+}
+
+/**
+ * Database interface for products (join with translations)
+ */
+export interface DbProduct {
+    product_id: string;
+    product_code: string | null;
+    translation_key: string;
+    is_published: boolean;
+    name: string;
+    short_desc: string | null;
+    long_desc: string | null;
+    tech_specs: Record<string, any> | null;
+    area_specifics: Record<string, any> | null;
+    industry_specifics: Record<string, any> | null;
+    key_features: Record<string, any> | null;
+    product_overview: Record<string, any> | null;
+    created_at: string;
+    created_by: string;
+}
+
+/**
+ * Frontend-compatible DTO for catalog products (backend side)
+ */
+export interface CatalogProductDTO {
+    id: string;
+    name: string;
+    description: string | null;
+    product_code: string | null;
+    status: ProductStatus;
+    created_at: string;
+    created_by: string;
+}
+
+/**
+ * Database interface for single product details
+ */
+export interface DbProductDetails {
+    product_id: string;
+    product_code: string | null;
+    translation_key: string;
+    is_published: boolean;
+    name: string;
+    short_desc: string | null;
+    long_desc: string | null;
+    tech_specs: Record<string, any> | null;
+    area_specifics: Record<string, any> | null;
+    industry_specifics: Record<string, any> | null;
+    key_features: Record<string, any> | null;
+    product_overview: Record<string, any> | null;
+    created_at: string;
+    created_by: string;
+    updated_at: string | null;
+    updated_by: string | null;
+}
+
+/**
+ * Frontend-compatible DTO for single product details (backend side)
+ */
+export interface CatalogProductDetailsDTO {
+    id: string;
+    name: string;
+    product_code: string | null;
+    status: ProductStatus;
+    short_description: string | null;
+    long_description: string | null;
+    tech_specs: Record<string, any> | null;
+    area_specifics: Record<string, any> | null;
+    industry_specifics: Record<string, any> | null;
+    key_features: Record<string, any> | null;
+    product_overview: Record<string, any> | null;
+    created_at: string;
+    created_by: string;
+    updated_at: string | null;
+    updated_by: string | null;
+}
+
+export interface FetchProductsResponse extends ApiResponse {
+    data: CatalogProductDTO[];
+}
+
+export interface FetchProductDetailsResponse extends ApiResponse {
+    data: CatalogProductDetailsDTO | null;
+}

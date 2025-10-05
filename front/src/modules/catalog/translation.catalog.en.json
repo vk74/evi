@@ -28,7 +28,9 @@
       "sectionsSubtitle": "there are no active sections in the catalog yet",
       "refresh": "refresh",
       "servicesTitle": "no active services found",
-      "servicesSubtitle": "there are currently no services in production"
+      "servicesSubtitle": "there are currently no services in production",
+      "productsTitle": "no active products found",
+      "productsSubtitle": "there are currently no published products in the catalog"
     },
     "serviceDetails": {
       "title": "service details",
@@ -52,6 +54,24 @@
       "offerings": "service offerings",
       "offeringsEmpty": "no service offerings found",
       "inProduction": "in production"
+    },
+    "productDetails": {
+      "title": "product details",
+      "main": "main",
+      "description": "description",
+      "shortDescription": "short description",
+      "longDescription": "full description",
+      "productCode": "product code",
+      "status": "status",
+      "createdAt": "created at",
+      "techSpecs": "technical specifications",
+      "areaSpecifics": "area-specific features",
+      "industrySpecifics": "industry-specific features",
+      "keyFeatures": "key features",
+      "productOverview": "product overview",
+      "productOptions": "product options",
+      "productOptionsEmpty": "no product options found",
+      "published": "published"
     }
   }
 }
