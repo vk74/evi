@@ -25,7 +25,7 @@ import type {
     ProductError
 } from './types.admin.products';
 import { getRequestorUuidFromReq } from '@/core/helpers/get.requestor.uuid.from.req';
-import { validateFieldLegacy } from '@/core/validation/legacy.validation';
+// Legacy validation removed; rely on basic type checks and DB
 import { createAndPublishEvent } from '@/core/eventBus/fabric.events';
 import { PRODUCT_DELETE_EVENTS } from './events.admin.products';
 

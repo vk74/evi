@@ -38,7 +38,7 @@ import { getUuidByUsername } from '@/core/helpers/get.uuid.by.username';
 import { getUuidByGroupName } from '@/core/helpers/get.uuid.by.group.name';
 import { fetchUsernameByUuid } from '@/core/helpers/get.username.by.uuid';
 import { fetchGroupnameByUuid } from '@/core/helpers/get.groupname.by.uuid';
-import { validateFieldLegacy } from '@/core/validation/legacy.validation';
+import { validateField } from '@/core/validation/service.validation';
 import { createAndPublishEvent } from '@/core/eventBus/fabric.events';
 import { PRODUCT_UPDATE_EVENTS } from './events.admin.products';
 
@@ -50,7 +50,7 @@ const pool = pgPool as Pool;
  * @param data - Product data to validate
  * @throws {ProductError} When validation fails
  */
-async function validateUpdateProductData(data: UpdateProductRequest): Promise<void> {
+async function validateUpdateProductData(data: UpdateProductRequest, req: Request): Promise<void> {
     const errors: string[] = [];
 
     // Validate product ID
@@ -89,9 +89,9 @@ async function validateUpdateProductData(data: UpdateProductRequest): Promise<vo
             errors.push('Specialist groups must be an array');
         } else {
             for (const group of data.specialistsGroups) {
-                const groupValidation = validateFieldLegacy({ value: group, fieldType: 'group_name' });
-                if (!groupValidation.isValid) {
-                    errors.push(`Invalid specialist group: ${groupValidation.error}`);
+                const result = await validateField({ value: group, fieldType: 'groupName' }, req);
+                if (!result.isValid && result.error) {
+                    errors.push(`Invalid specialist group: ${result.error}`);
                 }
             }
         }
@@ -435,7 +435,7 @@ export async function updateProduct(data: UpdateProductRequest, req: Request): P
             payload: { productId: data.productId }
         });
 
-        await validateUpdateProductData(data);
+        await validateUpdateProductData(data, req);
 
         // Check if product exists
         const existingProduct = await checkProductExists(data.productId);
