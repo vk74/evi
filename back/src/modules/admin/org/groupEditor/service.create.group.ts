@@ -20,6 +20,7 @@ import { groupsRepository } from '../groupsList/repository.groups.list';
 import { getRequestorUuidFromReq } from '../../../../core/helpers/get.requestor.uuid.from.req';
 import fabricEvents from '../../../../core/eventBus/fabric.events';
 import { GROUP_CREATION_EVENTS } from './events.group.editor';
+import { validateField } from '../../../../core/validation/service.validation';
 import type { 
   CreateGroupRequest, 
   CreateGroupResponse,
@@ -84,64 +85,21 @@ async function validateRequiredFields(data: CreateGroupRequest, req: Request): P
 }
 
 async function validateGroupName(name: string, req: Request): Promise<void> {
-  if (name.length < 2) {
-    // Create event for validation error
+  const result = await validateField({ value: name, fieldType: 'groupName' }, req);
+  if (!result.isValid) {
+    const message = result.error || 'Invalid group name';
     await fabricEvents.createAndPublishEvent({
       req,
       eventName: GROUP_CREATION_EVENTS.VALIDATION_FAILED.eventName,
       payload: {
         field: 'group_name',
-        message: 'Minimum group name length is 2 characters',
-        length: name.length,
-        minLength: 2
+        message
       },
-      errorData: 'Group name too short'
+      errorData: message
     });
-
     throw {
       code: 'VALIDATION_ERROR',
-      message: 'Minimum group name length is 2 characters',
-      field: 'group_name'
-    } as ValidationError;
-  }
-
-  if (name.length > 100) {
-    // Create event for validation error
-    await fabricEvents.createAndPublishEvent({
-      req,
-      eventName: GROUP_CREATION_EVENTS.VALIDATION_FAILED.eventName,
-      payload: {
-        field: 'group_name',
-        message: 'Maximum group name length is 100 characters',
-        length: name.length,
-        maxLength: 100
-      },
-      errorData: 'Group name too long'
-    });
-
-    throw {
-      code: 'VALIDATION_ERROR',
-      message: 'Maximum group name length is 100 characters',
-      field: 'group_name'
-    } as ValidationError;
-  }
-
-  if (!/^[a-zA-Z0-9-]+$/.test(name)) {
-    // Create event for validation error
-    await fabricEvents.createAndPublishEvent({
-      req,
-      eventName: GROUP_CREATION_EVENTS.VALIDATION_FAILED.eventName,
-      payload: {
-        field: 'group_name',
-        message: 'Group name can only contain latin letters, numbers and hyphens',
-        pattern: '^[a-zA-Z0-9-]+$'
-      },
-      errorData: 'Group name contains invalid characters'
-    });
-
-    throw {
-      code: 'VALIDATION_ERROR',
-      message: 'Group name can only contain latin letters, numbers and hyphens',
+      message,
       field: 'group_name'
     } as ValidationError;
   }
@@ -149,26 +107,21 @@ async function validateGroupName(name: string, req: Request): Promise<void> {
 
 async function validateEmail(email: string | undefined, req: Request): Promise<void> {
   if (!email) return;
-
-  const emailRegex = /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)+$/;
-  
-  if (!emailRegex.test(email) || email.length > 254) {
-    // Create event for validation error
+  const result = await validateField({ value: email, fieldType: 'email' }, req);
+  if (!result.isValid) {
+    const message = result.error || 'Invalid email format';
     await fabricEvents.createAndPublishEvent({
       req,
       eventName: GROUP_CREATION_EVENTS.VALIDATION_FAILED.eventName,
       payload: {
         field: 'group_email',
-        message: 'Invalid email format',
-        length: email.length,
-        maxLength: 254
+        message
       },
-      errorData: 'Invalid email format'
+      errorData: message
     });
-
     throw {
       code: 'VALIDATION_ERROR',
-      message: 'Invalid email format',
+      message,
       field: 'group_email'
     } as ValidationError;
   }

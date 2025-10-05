@@ -13,6 +13,7 @@ import { pool as pgPool } from '../../core/db/maindb';
 import { userProfileQueries } from './queries.account';
 import { createAndPublishEvent } from '@/core/eventBus/fabric.events';
 import { ACCOUNT_SERVICE_EVENTS } from './events.account';
+import { validateFieldAndThrow } from '@/core/validation/service.validation';
 
 // Type assertion for pool
 const pool = pgPool as Pool;
@@ -117,7 +118,15 @@ const updateUserProfile = async (req: EnhancedRequest, res: Response): Promise<v
      }
    });
 
-   try {
+  try {
+      // Optional format validation for well-known fields if provided
+      if (email) {
+        await validateFieldAndThrow({ value: email, fieldType: 'email' }, req);
+      }
+      if (phone_number) {
+        await validateFieldAndThrow({ value: phone_number, fieldType: 'telephoneNumber' }, req);
+      }
+
        const values = [
            first_name,
            last_name,

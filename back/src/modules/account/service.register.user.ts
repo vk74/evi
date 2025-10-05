@@ -17,7 +17,7 @@ import { Pool, QueryResult } from 'pg';
 import { pool as pgPool } from '../../core/db/maindb';
 import { userRegistrationQueries } from './queries.account';
 import fabricEvents from '../../core/eventBus/fabric.events';
-import { getValidationRule } from '@/core/validation/service.load.validation.settings';
+import { validateFieldAndThrow } from '@/core/validation/service.validation';
 import { ACCOUNT_REGISTRATION_EVENTS } from './events.account';
 import { createAndPublishEvent } from '@/core/eventBus/fabric.events';
 import { ACCOUNT_SERVICE_EVENTS } from './events.account';
@@ -93,6 +93,39 @@ const registerUser = async (req: EnhancedRequest, res: Response): Promise<void> 
             return;
         }
 
+        // Форматная проверка well-known полей (до проверок уникальности)
+        try {
+            await validateFieldAndThrow({ value: username, fieldType: 'userName' }, req);
+            await validateFieldAndThrow({ value: email, fieldType: 'email' }, req);
+            if (phone) {
+                await validateFieldAndThrow({ value: phone, fieldType: 'telephoneNumber' }, req);
+            }
+        } catch (err) {
+            const message = err instanceof Error ? err.message : 'validation failed';
+            await fabricEvents.createAndPublishEvent({
+                eventName: ACCOUNT_REGISTRATION_EVENTS.REGISTRATION_FAILED.eventName,
+                req,
+                payload: {
+                    username,
+                    email,
+                    phone: phone || null,
+                    reason: 'format_validation_failed',
+                    message,
+                    timestamp: new Date().toISOString()
+                }
+            });
+            await createAndPublishEvent({
+                eventName: ACCOUNT_SERVICE_EVENTS.REGISTER_USER_ERROR.eventName,
+                payload: {
+                    registrationData: { username, email, phone },
+                    error: message,
+                    reason: 'format_validation_failed'
+                }
+            });
+            res.status(400).json({ message });
+            return;
+        }
+
         // Проверка уникальности username
         const usernameResult: QueryResult = await pool.query(userRegistrationQueries.checkUsername.text, [username]);
         if (usernameResult.rows.length > 0) {
@@ -151,36 +184,6 @@ const registerUser = async (req: EnhancedRequest, res: Response): Promise<void> 
 
         // Проверка уникальности телефона (только если он предоставлен)
         if (phone) {
-            // Дополнительная проверка телефона по маске на бэкенде
-            try {
-                const rule = await getValidationRule('telephoneNumber', req);
-                let pattern: RegExp | null = null;
-                if (rule && (rule as any).regex) {
-                    const rx = (rule as any).regex;
-                    pattern = rx instanceof RegExp ? rx : new RegExp(String(rx));
-                }
-                if (pattern) {
-                    const matches = pattern.test(phone);
-                    if (!matches) {
-                        await fabricEvents.createAndPublishEvent({
-                            eventName: ACCOUNT_REGISTRATION_EVENTS.REGISTRATION_FAILED.eventName,
-                            req,
-                            payload: {
-                                username,
-                                email,
-                                phone,
-                                reason: 'invalid_phone_format',
-                                timestamp: new Date().toISOString()
-                            }
-                        });
-                        res.status(400).json({ message: 'invalid phone number format' });
-                        return;
-                    }
-                }
-            } catch (e) {
-                // Не прерываем регистрацию при ошибке получения правила; продолжаем с уникальностью
-            }
-
             const phoneResult: QueryResult = await pool.query(userRegistrationQueries.checkPhone.text, [normalizedPhone]);
             if (phoneResult.rows.length > 0) {
                 await fabricEvents.createAndPublishEvent({
