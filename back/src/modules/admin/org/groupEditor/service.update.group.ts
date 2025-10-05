@@ -10,7 +10,7 @@ import { Pool } from 'pg';
 import { pool as pgPool } from '../../../../core/db/maindb';
 import { queries } from './queries.group.editor';
 import type { UpdateGroupRequest, UpdateGroupResponse, ServiceError, ValidationError, NotFoundError } from './types.group.editor';
-import { REGEX, VALIDATION } from '../../../../core/validation/rules.common.fields';
+import { validateField } from '../../../../core/validation/service.validation';
 import { groupsRepository } from '../groupsList/repository.groups.list';
 import { getRequestorUuidFromReq } from '../../../../core/helpers/get.requestor.uuid.from.req';
 import fabricEvents from '../../../../core/eventBus/fabric.events';
@@ -33,87 +33,26 @@ export async function updateGroupById(updateData: UpdateGroupRequest, req: Reque
     }
   });
 
-  // Validate group_name if provided, using common rules
-  if (updateData.group_name !== undefined) { // Check that field is provided (including null/empty)
-    if (!updateData.group_name) {
-      // Create event for validation error
+  // Validate group_name if provided using centralized validation
+  if (updateData.group_name !== undefined) {
+    const result = await validateField({ value: updateData.group_name, fieldType: 'groupName' }, req);
+    if (!result.isValid) {
+      const message = result.error || 'Invalid group name';
       await fabricEvents.createAndPublishEvent({
         req,
         eventName: GROUP_UPDATE_EVENTS.VALIDATION_FAILED.eventName,
         payload: {
           field: 'group_name',
-          message: VALIDATION.GROUP_NAME.MESSAGES.REQUIRED
+          message
         },
-        errorData: 'Group name is empty'
+        errorData: message
       });
 
       throw {
         code: 'VALIDATION_ERROR',
-        message: VALIDATION.GROUP_NAME.MESSAGES.REQUIRED,
+        message,
         field: 'group_name',
-        details: 'Group name is empty',
-      } as ValidationError;
-    }
-    if (updateData.group_name.length < VALIDATION.GROUP_NAME.MIN_LENGTH) {
-      // Create event for validation error
-      await fabricEvents.createAndPublishEvent({
-        req,
-        eventName: GROUP_UPDATE_EVENTS.VALIDATION_FAILED.eventName,
-        payload: {
-          field: 'group_name',
-          message: VALIDATION.GROUP_NAME.MESSAGES.MIN_LENGTH,
-          length: updateData.group_name.length,
-          minLength: VALIDATION.GROUP_NAME.MIN_LENGTH
-        },
-        errorData: `Group name must be at least ${VALIDATION.GROUP_NAME.MIN_LENGTH} characters long`
-      });
-
-      throw {
-        code: 'VALIDATION_ERROR',
-        message: VALIDATION.GROUP_NAME.MESSAGES.MIN_LENGTH,
-        field: 'group_name',
-        details: `Group name must be at least ${VALIDATION.GROUP_NAME.MIN_LENGTH} characters long`,
-      } as ValidationError;
-    }
-    if (updateData.group_name.length > VALIDATION.GROUP_NAME.MAX_LENGTH) {
-      // Create event for validation error
-      await fabricEvents.createAndPublishEvent({
-        req,
-        eventName: GROUP_UPDATE_EVENTS.VALIDATION_FAILED.eventName,
-        payload: {
-          field: 'group_name',
-          message: VALIDATION.GROUP_NAME.MESSAGES.MAX_LENGTH,
-          length: updateData.group_name.length,
-          maxLength: VALIDATION.GROUP_NAME.MAX_LENGTH
-        },
-        errorData: `Group name cannot exceed ${VALIDATION.GROUP_NAME.MAX_LENGTH} characters`
-      });
-
-      throw {
-        code: 'VALIDATION_ERROR',
-        message: VALIDATION.GROUP_NAME.MESSAGES.MAX_LENGTH,
-        field: 'group_name',
-        details: `Group name cannot exceed ${VALIDATION.GROUP_NAME.MAX_LENGTH} characters`,
-      } as ValidationError;
-    }
-    if (!REGEX.GROUP_NAME.test(updateData.group_name)) {
-      // Create event for validation error
-      await fabricEvents.createAndPublishEvent({
-        req,
-        eventName: GROUP_UPDATE_EVENTS.VALIDATION_FAILED.eventName,
-        payload: {
-          field: 'group_name',
-          message: VALIDATION.GROUP_NAME.MESSAGES.INVALID_CHARS,
-          pattern: REGEX.GROUP_NAME.toString()
-        },
-        errorData: 'Group name can only contain Latin letters, numbers, and hyphens'
-      });
-
-      throw {
-        code: 'VALIDATION_ERROR',
-        message: VALIDATION.GROUP_NAME.MESSAGES.INVALID_CHARS,
-        field: 'group_name',
-        details: 'Group name can only contain Latin letters, numbers, and hyphens',
+        details: message,
       } as ValidationError;
     }
   }
