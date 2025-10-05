@@ -495,5 +495,20 @@ export const queries = {
         INSERT INTO app.section_products (section_id, product_id)
         VALUES ($1, $2)
         ON CONFLICT (section_id, product_id) DO NOTHING
+    `,
+
+    /**
+     * Updates product is_published status based on section_products relationships
+     * Parameters: [product_id]
+     */
+    updateProductIsPublished: `
+        UPDATE app.products 
+        SET is_published = (
+            SELECT COUNT(*) > 0 
+            FROM app.section_products 
+            WHERE product_id = $1
+        ), 
+        updated_at = NOW()
+        WHERE product_id = $1
     `
 };

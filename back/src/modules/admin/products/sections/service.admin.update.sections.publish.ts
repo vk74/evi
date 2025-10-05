@@ -125,6 +125,9 @@ export async function updateSectionsPublish(req: Request): Promise<UpdateProduct
         });
       }
 
+      // Update product is_published status based on section_products relationships
+      await client.query(queries.updateProductIsPublished, [productId])
+
       await client.query('COMMIT')
 
       await createAndPublishEvent({
