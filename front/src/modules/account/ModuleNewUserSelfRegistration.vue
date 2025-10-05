@@ -455,19 +455,27 @@ const submitForm = async () => {
       }
       form.value?.reset()
     } else {
-      const errorData = response.data
-      if (errorData.message === 'this username is already registered by another user') {
-        uiStore.showErrorSnackbar(t('account.selfRegistration.errors.duplicateUsername'))
-      } else if (errorData.message === 'this e-mail is already registered by another user') {
-        uiStore.showErrorSnackbar(t('account.selfRegistration.errors.duplicateEmail'))
-      } else if (errorData.message === 'this phone number is already registered by another user') {
-        uiStore.showErrorSnackbar(t('account.selfRegistration.errors.duplicatePhone'))
+      const errorData = response.data || {}
+      const serverMessage = (errorData && errorData.message) ? String(errorData.message) : ''
+      // Prefer server-provided reason, fallback to known localized messages
+      if (serverMessage) {
+        uiStore.showErrorSnackbar(serverMessage)
       } else {
         uiStore.showErrorSnackbar(t('account.selfRegistration.errors.serverError'))
       }
     }
   } catch (error) {
-    
+    const err: any = error
+    const status = err?.response?.status
+    const serverMessage: string | undefined = err?.response?.data?.message
+    if (serverMessage) {
+      uiStore.showErrorSnackbar(String(serverMessage))
+      return
+    }
+    if (status === 403) {
+      uiStore.showErrorSnackbar(t('account.selfRegistration.errors.registrationDisabled'))
+      return
+    }
     uiStore.showErrorSnackbar(t('account.selfRegistration.errors.networkError'))
   } finally {
     isSubmitting.value = false
