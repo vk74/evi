@@ -195,40 +195,45 @@ async function checkUniqueConstraints(
 }
 
 /**
- * Updates main product data
+ * Updates product preferences with event publishing for each changed field
  * @param client - Database client
  * @param productId - Product ID
- * @param data - Update data
- * @param updatedBy - User ID who is updating
+ * @param data - Update data with visibility preferences
+ * @param requestorUuid - UUID of the user updating the product
+ * @param req - Express request object
+ * @param productCode - Product code for events
  */
-async function updateMainProductData(
+async function updateProductPreferences(
     client: any,
     productId: string,
     data: UpdateProductRequest,
-    updatedBy: string
+    requestorUuid: string,
+    req: Request,
+    productCode: string
 ): Promise<void> {
-    const updateFields: string[] = [];
-    const updateValues: any[] = [];
-    let paramIndex = 1;
+    // Only update if any preference fields are provided
+    if (data.visibility && (
+        data.visibility.isVisibleOwner !== undefined ||
+        data.visibility.isVisibleGroups !== undefined ||
+        data.visibility.isVisibleTechSpecs !== undefined ||
+        data.visibility.isVisibleAreaSpecs !== undefined ||
+        data.visibility.isVisibleIndustrySpecs !== undefined ||
+        data.visibility.isVisibleKeyFeatures !== undefined ||
+        data.visibility.isVisibleOverview !== undefined ||
+        data.visibility.isVisibleLongDescription !== undefined
+    )) {
+        // Get current preferences for comparison
+        const currentPrefsResult = await client.query(
+            'SELECT is_visible_owner, is_visible_groups, is_visible_tech_specs, is_visible_area_specs, is_visible_industry_specs, is_visible_key_features, is_visible_overview, is_visible_long_description FROM app.products WHERE product_id = $1',
+            [productId]
+        );
+        const currentPrefs = currentPrefsResult.rows[0];
 
-    // Build dynamic update query
-    if (data.productCode !== undefined) {
-        updateFields.push(`product_code = $${paramIndex++}`);
-        updateValues.push(data.productCode);
-    }
-    if (data.translationKey !== undefined) {
-        updateFields.push(`translation_key = $${paramIndex++}`);
-        updateValues.push(data.translationKey);
-    }
-    if (data.canBeOption !== undefined) {
-        updateFields.push(`can_be_option = $${paramIndex++}`);
-        updateValues.push(data.canBeOption);
-    }
-    if (data.optionOnly !== undefined) {
-        updateFields.push(`option_only = $${paramIndex++}`);
-        updateValues.push(data.optionOnly);
-    }
-    if (data.visibility) {
+        // Update preferences in database
+        const updateFields: string[] = [];
+        const updateValues: any[] = [];
+        let paramIndex = 1;
+
         if (data.visibility.isVisibleOwner !== undefined) {
             updateFields.push(`is_visible_owner = $${paramIndex++}`);
             updateValues.push(data.visibility.isVisibleOwner);
@@ -261,7 +266,90 @@ async function updateMainProductData(
             updateFields.push(`is_visible_long_description = $${paramIndex++}`);
             updateValues.push(data.visibility.isVisibleLongDescription);
         }
+
+        // Always update updated_by and updated_at
+        updateFields.push(`updated_by = $${paramIndex++}`);
+        updateValues.push(requestorUuid);
+        updateFields.push(`updated_at = CURRENT_TIMESTAMP`);
+
+        if (updateFields.length > 2) { // More than just updated_by and updated_at
+            const query = `
+                UPDATE app.products 
+                SET ${updateFields.join(', ')}
+                WHERE product_id = $${paramIndex}
+            `;
+            updateValues.push(productId);
+            await client.query(query, updateValues);
+        }
+
+        // Publish event for each changed field
+        const fieldMappings = [
+            { field: 'isVisibleOwner', oldValue: currentPrefs.is_visible_owner, newValue: data.visibility.isVisibleOwner },
+            { field: 'isVisibleGroups', oldValue: currentPrefs.is_visible_groups, newValue: data.visibility.isVisibleGroups },
+            { field: 'isVisibleTechSpecs', oldValue: currentPrefs.is_visible_tech_specs, newValue: data.visibility.isVisibleTechSpecs },
+            { field: 'isVisibleAreaSpecs', oldValue: currentPrefs.is_visible_area_specs, newValue: data.visibility.isVisibleAreaSpecs },
+            { field: 'isVisibleIndustrySpecs', oldValue: currentPrefs.is_visible_industry_specs, newValue: data.visibility.isVisibleIndustrySpecs },
+            { field: 'isVisibleKeyFeatures', oldValue: currentPrefs.is_visible_key_features, newValue: data.visibility.isVisibleKeyFeatures },
+            { field: 'isVisibleOverview', oldValue: currentPrefs.is_visible_overview, newValue: data.visibility.isVisibleOverview },
+            { field: 'isVisibleLongDescription', oldValue: currentPrefs.is_visible_long_description, newValue: data.visibility.isVisibleLongDescription }
+        ];
+
+        for (const { field, oldValue, newValue } of fieldMappings) {
+            if (oldValue !== newValue && newValue !== undefined) {
+                await createAndPublishEvent({
+                    req,
+                    eventName: PRODUCT_UPDATE_EVENTS.PREFERENCES_FIELD_CHANGED.eventName,
+                    payload: {
+                        productId,
+                        requestorUuid,
+                        field,
+                        oldValue,
+                        newValue,
+                        productCode: data.productCode || productCode
+                    }
+                });
+            }
+        }
     }
+}
+
+/**
+ * Updates main product data
+ * @param client - Database client
+ * @param productId - Product ID
+ * @param data - Update data
+ * @param updatedBy - User ID who is updating
+ * @param req - Express request object
+ */
+async function updateMainProductData(
+    client: any,
+    productId: string,
+    data: UpdateProductRequest,
+    updatedBy: string,
+    req: Request
+): Promise<void> {
+    const updateFields: string[] = [];
+    const updateValues: any[] = [];
+    let paramIndex = 1;
+
+    // Build dynamic update query
+    if (data.productCode !== undefined) {
+        updateFields.push(`product_code = $${paramIndex++}`);
+        updateValues.push(data.productCode);
+    }
+    if (data.translationKey !== undefined) {
+        updateFields.push(`translation_key = $${paramIndex++}`);
+        updateValues.push(data.translationKey);
+    }
+    if (data.canBeOption !== undefined) {
+        updateFields.push(`can_be_option = $${paramIndex++}`);
+        updateValues.push(data.canBeOption);
+    }
+    if (data.optionOnly !== undefined) {
+        updateFields.push(`option_only = $${paramIndex++}`);
+        updateValues.push(data.optionOnly);
+    }
+    // Note: visibility fields are now handled by updateProductPreferences function
 
     // Always update updated_by and updated_at
     updateFields.push(`updated_by = $${paramIndex++}`);
@@ -419,8 +507,6 @@ export async function updateProduct(data: UpdateProductRequest, req: Request): P
     const client = await pool.connect();
     
     try {
-        // Log incoming data for debugging
-        console.log('[UpdateProduct] Incoming data:', JSON.stringify(data, null, 2));
         
         await createAndPublishEvent({
             eventName: PRODUCT_UPDATE_EVENTS.STARTED.eventName,
@@ -454,6 +540,9 @@ export async function updateProduct(data: UpdateProductRequest, req: Request): P
             };
         }
 
+        // Get product code for events
+        const productCode = data.productCode || existingProduct.product_code;
+
         // Check unique constraints if relevant fields are being updated
         await checkUniqueConstraints(data.productCode, data.translationKey, data.productId);
 
@@ -470,12 +559,28 @@ export async function updateProduct(data: UpdateProductRequest, req: Request): P
         // Start transaction
         await client.query('BEGIN');
 
-        // Update main product data
-        await updateMainProductData(client, data.productId, data, requestorUuid);
-        await createAndPublishEvent({
-            eventName: PRODUCT_UPDATE_EVENTS.MAIN_DATA_UPDATED.eventName,
-            payload: { productId: data.productId }
-        });
+        // Check if this is a preferences-only update
+        const isPreferencesOnly = data.visibility && 
+            !data.productCode && 
+            !data.translationKey && 
+            !data.canBeOption && 
+            !data.optionOnly && 
+            !data.owner && 
+            !data.backupOwner && 
+            !data.specialistsGroups && 
+            !data.translations;
+
+        if (!isPreferencesOnly) {
+            // Update main product data
+            await updateMainProductData(client, data.productId, data, requestorUuid, req);
+            await createAndPublishEvent({
+                eventName: PRODUCT_UPDATE_EVENTS.MAIN_DATA_UPDATED.eventName,
+                payload: { productId: data.productId }
+            });
+        }
+
+        // Update preferences if provided
+        await updateProductPreferences(client, data.productId, data, requestorUuid, req, productCode);
 
         // Update translations if provided and not empty
         if (data.translations && Object.keys(data.translations).length > 0) {
@@ -513,6 +618,7 @@ export async function updateProduct(data: UpdateProductRequest, req: Request): P
             throw new Error('Failed to fetch updated product data');
         }
 
+
         // Fetch translations
         const translationsResult = await client.query(
             'SELECT * FROM app.product_translations WHERE product_id = $1 ORDER BY language_code',
@@ -549,13 +655,16 @@ export async function updateProduct(data: UpdateProductRequest, req: Request): P
         // Process specialist groups
         const specialistsGroups = groupsResult.rows.map((row: any) => row.group_name);
 
-        await createAndPublishEvent({
-            eventName: PRODUCT_UPDATE_EVENTS.SUCCESS.eventName,
-            payload: { 
-                productId: data.productId,
-                productCode: updatedProduct.product_code
-            }
-        });
+        // Only publish SUCCESS event if this is not a preferences-only update
+        if (!isPreferencesOnly) {
+            await createAndPublishEvent({
+                eventName: PRODUCT_UPDATE_EVENTS.SUCCESS.eventName,
+                payload: { 
+                    productId: data.productId,
+                    productCode: updatedProduct.product_code
+                }
+            });
+        }
 
         return {
             success: true,

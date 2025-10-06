@@ -245,6 +245,17 @@ export const PRODUCT_UPDATE_EVENTS = {
         version: '1.0.0'
     },
 
+    // Product update preferences field changed
+    PREFERENCES_FIELD_CHANGED: {
+        eventName: 'products.update.preferences.field_changed',
+        source: 'admin-products',
+        eventType: 'system',
+        severity: 'info',
+        eventMessage: 'Product preferences updated successfully',
+        payload: null,
+        version: '1.0.0'
+    },
+
     SUCCESS: {
         eventName: 'products.update.success',
         source: 'admin-products',

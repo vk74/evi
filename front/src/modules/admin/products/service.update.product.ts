@@ -53,7 +53,6 @@ export const serviceUpdateProduct = {
     })
 
     try {
-      console.log('[ProductUpdateService] Sending to API:', JSON.stringify(productData, null, 2))
       const response = await api.post<UpdateProductResponse>('/api/admin/products/update', productData)
 
       if (!response.data || !response.data.success || !response.data.data) {
