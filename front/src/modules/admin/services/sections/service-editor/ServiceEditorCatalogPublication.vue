@@ -21,7 +21,7 @@ import {
   PhX,
   PhCheckSquare,
   PhSquare,
-  PhUploadSimple
+  PhArrowClockwise
 } from '@phosphor-icons/vue'
 import Paginator from '@/core/ui/paginator/Paginator.vue'
 
@@ -72,10 +72,13 @@ const sortDesc = ref<boolean>(false)
 
 // Selected sections data
 const selectedSections = ref<Set<string>>(new Set())
+const initialSelectedSections = ref<Set<string>>(new Set())
 
 // Loading state
 const isLoading = ref(false)
 const isPublishing = ref(false)
+const isRefreshing = ref(false)
+const isUnpublishing = ref(false)
 
 // Get sections from store
 const sections = computed(() => servicesStore.getPublishingSections)
@@ -87,6 +90,38 @@ const editingServiceId = computed(() => servicesStore.getEditingServiceId)
 // Computed properties
 const selectedCount = computed(() => selectedSections.value.size)
 const hasSelected = computed(() => selectedSections.value.size > 0)
+
+// Check if there are newly selected sections (not in initial state)
+const hasNewSelections = computed(() => {
+  for (const sectionId of selectedSections.value) {
+    if (!initialSelectedSections.value.has(sectionId)) {
+      return true
+    }
+  }
+  return false
+})
+
+// Check if there are sections to unpublish (selected sections that were initially published)
+const hasSelectionsToUnpublish = computed(() => {
+  for (const sectionId of selectedSections.value) {
+    if (initialSelectedSections.value.has(sectionId)) {
+      return true
+    }
+  }
+  return false
+})
+
+// Count sections that will be unpublished (selected sections that were initially published)
+const sectionsToUnpublishCount = computed(() => {
+  let count = 0
+  for (const sectionId of selectedSections.value) {
+    if (initialSelectedSections.value.has(sectionId)) {
+      count++
+    }
+  }
+  return count
+})
+
 const isSearchEnabled = computed(() => 
   searchQuery.value.length >= 2 || searchQuery.value.length === 0
 )
@@ -117,9 +152,11 @@ const loadPublishingSections = async () => {
     servicesStore.setPublishingSections(sectionsData)
     // Preselect sections if API provided selected flags
     selectedSections.value.clear()
+    initialSelectedSections.value.clear()
     sectionsData.forEach(s => {
       if ((s as any).selected) {
         selectedSections.value.add(s.id)
+        initialSelectedSections.value.add(s.id)
       }
     })
     
@@ -282,22 +319,111 @@ onMounted(async () => {
 })
 
 
-// Publish handler (full replace; empty selection = unpublish)
+// Refresh handler - reloads sections from API
+const handleRefresh = async () => {
+  try {
+    isRefreshing.value = true
+    
+    // Clear current selections
+    selectedSections.value.clear()
+    
+    // Reload sections from API
+    await loadPublishingSections()
+    
+    uiStore.showSuccessSnackbar(
+      t('admin.services.editor.catalogPublication.messages.refreshSuccess')
+    )
+  } catch (error: any) {
+    uiStore.showErrorSnackbar(error?.message || t('admin.services.editor.catalogPublication.messages.refreshError'))
+  } finally {
+    isRefreshing.value = false
+  }
+}
+
+// Publish handler - publishes only newly selected sections
 const handlePublish = async () => {
-  if (!editingServiceId?.value) {
-    uiStore.showErrorSnackbar('Не удалось определить сервис для публикации')
+  if (!hasNewSelections.value) {
+    uiStore.showErrorSnackbar(t('admin.services.editor.catalogPublication.messages.noNewSectionsSelected'))
     return
   }
+
+  if (!editingServiceId?.value) {
+    uiStore.showErrorSnackbar(t('admin.services.editor.catalogPublication.messages.noServiceId'))
+    return
+  }
+
   try {
     isPublishing.value = true
-    const sectionIds = Array.from(selectedSections.value)
-    const resp = await updateServiceSectionsPublish(editingServiceId.value, sectionIds)
-    uiStore.showSuccessSnackbar(`Публикация обновлена: +${resp.addedCount} / -${resp.removedCount}`)
+    
+    // Get all sections where service should be published (current + new)
+    const allSections = Array.from(selectedSections.value)
+    
+    const resp = await updateServiceSectionsPublish(editingServiceId.value, allSections)
+    
+    // Create message manually to ensure proper interpolation
+    const baseMessage = t('admin.services.editor.catalogPublication.messages.publishSuccess')
+    const successMessage = baseMessage.replace('{{count}}', resp.addedCount.toString())
+    
+    uiStore.showSuccessSnackbar(successMessage)
+    
+    // Reload sections from API
     await loadPublishingSections()
   } catch (error: any) {
-    uiStore.showErrorSnackbar(error?.message || 'Не удалось обновить публикацию')
+    uiStore.showErrorSnackbar(error?.message || t('admin.services.editor.catalogPublication.messages.publishError'))
   } finally {
     isPublishing.value = false
+  }
+}
+
+// Unpublish handler - unpublishes only selected sections that were initially published
+const handleUnpublish = async () => {
+  if (!hasSelectionsToUnpublish.value) {
+    uiStore.showErrorSnackbar(t('admin.services.editor.catalogPublication.messages.noSectionsToUnpublish'))
+    return
+  }
+
+  if (!editingServiceId?.value) {
+    uiStore.showErrorSnackbar(t('admin.services.editor.catalogPublication.messages.noServiceId'))
+    return
+  }
+
+  try {
+    isUnpublishing.value = true
+    
+    // Get sections where service should remain published after unpublish operation
+    // This includes: newly selected sections + initially published sections that are NOT selected for unpublishing
+    const sectionsToKeep = new Set<string>()
+    
+    // Add newly selected sections (not initially published)
+    for (const sectionId of selectedSections.value) {
+      if (!initialSelectedSections.value.has(sectionId)) {
+        sectionsToKeep.add(sectionId)
+      }
+    }
+    
+    // Add initially published sections that are NOT selected for unpublishing
+    for (const sectionId of initialSelectedSections.value) {
+      if (!selectedSections.value.has(sectionId)) {
+        sectionsToKeep.add(sectionId)
+      }
+    }
+    
+    const allSectionsToKeep = Array.from(sectionsToKeep)
+    
+    const resp = await updateServiceSectionsPublish(editingServiceId.value, allSectionsToKeep)
+    
+    // Create message manually to ensure proper interpolation
+    const baseMessage = t('admin.services.editor.catalogPublication.messages.unpublishSuccess')
+    const successMessage = baseMessage.replace('{{count}}', resp.removedCount.toString())
+    
+    uiStore.showSuccessSnackbar(successMessage)
+    
+    // Reload sections from API
+    await loadPublishingSections()
+  } catch (error: any) {
+    uiStore.showErrorSnackbar(error?.message || t('admin.services.editor.catalogPublication.messages.unpublishError'))
+  } finally {
+    isUnpublishing.value = false
   }
 }
 </script>
@@ -436,34 +562,73 @@ const handlePublish = async () => {
           :total-items="totalItems"
           :items-per-page-options="[25, 50, 100]"
           @update:page="(newPage) => { page = newPage; performSearch() }"
-          @update:items-per-page="(newItemsPerPage) => { itemsPerPage = newItemsPerPage; page = 1; performSearch() }"
+          @update:items-per-page="(newItemsPerPage) => { itemsPerPage = newItemsPerPage as ItemsPerPageOption; page = 1; performSearch() }"
         />
       </div>
       
       <!-- Sidebar (right part) -->
       <div class="side-bar-container">
-        <!-- Save button section -->
+        <!-- Top part of sidebar - buttons for component operations -->
         <div class="side-bar-section">
           <h3 class="text-subtitle-2 px-2 py-2">
-            {{ t('admin.services.editor.mapping.actions.title') }}
+            {{ t('admin.services.editor.catalogPublication.actions.title').toLowerCase() }}
+          </h3>
+          
+          <v-btn
+            block
+            color="teal"
+            variant="outlined"
+            class="mb-3"
+            :disabled="isRefreshing || isPublishing"
+            :loading="isRefreshing"
+            @click="handleRefresh"
+          >
+            <PhArrowClockwise class="mr-2" />
+            {{ t('admin.services.editor.catalogPublication.actions.refresh').toUpperCase() }}
+          </v-btn>
+        </div>
+        
+        <!-- Divider between sections -->
+        <div class="sidebar-divider" />
+        
+        <!-- Bottom part of sidebar - buttons for operations over selected elements -->
+        <div class="side-bar-section">
+          <h3 class="text-subtitle-2 px-2 py-2">
+            {{ t('admin.services.editor.catalogPublication.selectedElements.title').toLowerCase() }}
           </h3>
           
           <v-btn
             v-tooltip="{
-              text: t('admin.services.editor.mapping.tooltips.publish'),
+              text: t('admin.services.editor.catalogPublication.tooltips.publish'),
               location: 'left',
-              disabled: !editingServiceId || isPublishing
+              disabled: !hasNewSelections || isPublishing || isUnpublishing || isRefreshing
             }"
             block
             color="teal"
             variant="outlined"
             class="mb-3"
-            :disabled="!editingServiceId || isPublishing"
+            :disabled="!hasNewSelections || isPublishing || isUnpublishing || isRefreshing"
             :loading="isPublishing"
             @click="handlePublish"
           >
-            <PhUploadSimple class="mr-2" />
-            {{ t('admin.services.editor.mapping.actions.publish') }}
+            {{ t('admin.services.editor.catalogPublication.selectedElements.publish').toUpperCase() }}
+          </v-btn>
+
+          <v-btn
+            v-tooltip="{
+              text: t('admin.services.editor.catalogPublication.tooltips.unpublish'),
+              location: 'left',
+              disabled: !hasSelectionsToUnpublish || isPublishing || isUnpublishing || isRefreshing
+            }"
+            block
+            color="red"
+            variant="outlined"
+            class="mb-3"
+            :disabled="!hasSelectionsToUnpublish || isPublishing || isUnpublishing || isRefreshing"
+            :loading="isUnpublishing"
+            @click="handleUnpublish"
+          >
+            {{ t('admin.services.editor.catalogPublication.selectedElements.unpublish').toUpperCase() }} ({{ sectionsToUnpublishCount }})
           </v-btn>
         </div>
       </div>

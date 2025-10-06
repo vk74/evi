@@ -128,6 +128,49 @@
             "publish": "publish service to selected catalog sections"
           }
         },
+        "catalogPublication": {
+          "search": {
+            "placeholder": "search catalog sections...",
+            "minChars": "enter at least 2 characters to search"
+          },
+          "table": {
+            "headers": {
+              "selection": "",
+              "section": "catalog section",
+              "owner": "owner",
+              "status": "status",
+              "public": "public"
+            },
+            "status": {
+              "yes": "yes",
+              "no": "no"
+            }
+          },
+          "actions": {
+            "title": "actions",
+            "refresh": "refresh"
+          },
+          "selectedElements": {
+            "title": "selected elements",
+            "publish": "publish",
+            "unpublish": "unpublish"
+          },
+          "tooltips": {
+            "publish": "publish service to selected catalog sections",
+            "unpublish": "unpublish service from selected catalog sections"
+          },
+          "messages": {
+            "refreshSuccess": "catalog sections list successfully updated",
+            "refreshError": "failed to update catalog sections list",
+            "noNewSectionsSelected": "no new sections selected for publishing",
+            "noSectionsToUnpublish": "no sections to unpublish",
+            "noServiceId": "unable to determine service",
+            "publishSuccess": "service successfully published in {{count}} sections",
+            "unpublishSuccess": "publication removed from {{count}} sections",
+            "publishError": "failed to publish service",
+            "unpublishError": "failed to unpublish service"
+          }
+        },
         "information": {
           "title": "basic information",
           "uuid": {
