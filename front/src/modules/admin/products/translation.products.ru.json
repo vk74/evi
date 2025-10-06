@@ -132,7 +132,8 @@
           "cancel": "отмена",
           "create": "создать",
           "update": "обновить",
-          "save": "сохранить"
+          "save": "сохранить",
+          "refresh": "обновить"
         },
         "validation": {
           "productCode": {

@@ -132,7 +132,8 @@
           "cancel": "cancel",
           "create": "create",
           "update": "update",
-          "save": "save"
+          "save": "save",
+          "refresh": "refresh"
         },
         "validation": {
           "productCode": {
