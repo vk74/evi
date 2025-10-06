@@ -189,6 +189,46 @@ export const queries = {
     `,
 
     /**
+     * Updates service visibility preferences only
+     * Parameters: [id, show_owner, show_backup_owner, show_technical_owner, 
+     * show_backup_technical_owner, show_dispatcher, show_support_tier1, 
+     * show_support_tier2, show_support_tier3, modified_by]
+     */
+    updateServiceVisibilityPreferences: `
+        UPDATE app.services SET
+            show_owner = $2,
+            show_backup_owner = $3,
+            show_technical_owner = $4,
+            show_backup_technical_owner = $5,
+            show_dispatcher = $6,
+            show_support_tier1 = $7,
+            show_support_tier2 = $8,
+            show_support_tier3 = $9,
+            modified_by = $10,
+            modified_at = CURRENT_TIMESTAMP
+        WHERE id = $1
+        RETURNING id, name, modified_at
+    `,
+
+    /**
+     * Fetches current visibility preferences for a service
+     * Parameters: [service_id]
+     */
+    fetchServiceVisibilityPreferences: `
+        SELECT 
+            show_owner,
+            show_backup_owner,
+            show_technical_owner,
+            show_backup_technical_owner,
+            show_dispatcher,
+            show_support_tier1,
+            show_support_tier2,
+            show_support_tier3
+        FROM app.services 
+        WHERE id = $1
+    `,
+
+    /**
      * Deletes all user roles for a service
      * Parameters: [service_id]
      */
@@ -350,27 +390,5 @@ export const queries = {
         SET service_order = o.new_order
         FROM ordered o
         WHERE ss.section_id = $1 AND ss.service_id = o.service_id
-    `,
-
-    /**
-     * Updates visibility preferences for a service
-     * Parameters: [service_id, show_owner, show_backup_owner, show_technical_owner, 
-     * show_backup_technical_owner, show_dispatcher, show_support_tier1, 
-     * show_support_tier2, show_support_tier3, modified_by]
-     */
-    updateServiceVisibilityPreferences: `
-        UPDATE app.services SET
-            show_owner = $2,
-            show_backup_owner = $3,
-            show_technical_owner = $4,
-            show_backup_technical_owner = $5,
-            show_dispatcher = $6,
-            show_support_tier1 = $7,
-            show_support_tier2 = $8,
-            show_support_tier3 = $9,
-            modified_by = $10,
-            modified_at = CURRENT_TIMESTAMP
-        WHERE id = $1
-        RETURNING id, name, modified_at
     `
 }; 

@@ -297,6 +297,7 @@
         },
         "actions": {
           "title": "actions",
+          "refresh": "refresh",
           "create": "create service",
           "save": "save changes",
           "cancel": "cancel"
