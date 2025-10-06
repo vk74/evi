@@ -87,6 +87,7 @@ module.exports = {
   productionSourceMap: false,
   lintOnSave: false,
   devServer: {
+    port: 8080,
     hot: true,
     liveReload: false
   }

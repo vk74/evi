@@ -642,12 +642,6 @@ export async function updateService(req: Request): Promise<UpdateServiceResponse
  * @param requestorUuid - UUID of the user updating the service
  */
 async function updateServicePreferences(client: any, serviceId: string, data: UpdateService, requestorUuid: string, req: Request): Promise<void> {
-    console.log('[updateServicePreferences] Function called');
-    console.log('[updateServicePreferences] Checking if event exists:', {
-        eventExists: 'service.update.preferences.field_changed' in EVENTS_ADMIN_SERVICES,
-        eventObject: EVENTS_ADMIN_SERVICES['service.update.preferences.field_changed']
-    });
-    
     // Only update if any preference fields are provided
     if (data.show_owner !== undefined || 
         data.show_backup_owner !== undefined || 
@@ -657,8 +651,6 @@ async function updateServicePreferences(client: any, serviceId: string, data: Up
         data.show_support_tier1 !== undefined || 
         data.show_support_tier2 !== undefined || 
         data.show_support_tier3 !== undefined) {
-        
-        console.log('[updateServicePreferences] Preference fields detected, proceeding...');
         
         // Get current preferences for comparison
         const currentPrefsResult = await client.query(queries.fetchServiceVisibilityPreferences, [serviceId]);
@@ -693,10 +685,9 @@ async function updateServicePreferences(client: any, serviceId: string, data: Up
             // Publish event for each changed field
             for (const { field, oldValue, newValue } of fieldMappings) {
                 if (oldValue !== newValue) {
-                    console.log('[updateServicePreferences] About to publish event:', {
+                    await fabricEvents.createAndPublishEvent({
+                        req,
                         eventName: EVENTS_ADMIN_SERVICES['service.update.preferences.field_changed'].eventName,
-                        eventObject: EVENTS_ADMIN_SERVICES['service.update.preferences.field_changed'],
-                        req: req ? 'Request object present' : 'No request object',
                         payload: {
                             serviceId,
                             requestorUuid,
@@ -705,23 +696,6 @@ async function updateServicePreferences(client: any, serviceId: string, data: Up
                             newValue
                         }
                     });
-                    
-                    try {
-                        await fabricEvents.createAndPublishEvent({
-                            req,
-                            eventName: EVENTS_ADMIN_SERVICES['service.update.preferences.field_changed'].eventName,
-                            payload: {
-                                serviceId,
-                                requestorUuid,
-                                field,
-                                oldValue,
-                                newValue
-                            }
-                        });
-                        console.log('[updateServicePreferences] Event published successfully for field:', field);
-                    } catch (eventError) {
-                        console.error('[updateServicePreferences] Error publishing event:', eventError);
-                    }
                 }
             }
             
