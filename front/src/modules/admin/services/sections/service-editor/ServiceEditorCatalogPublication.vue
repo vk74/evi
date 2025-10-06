@@ -1,11 +1,12 @@
 <!--
-  File: ServiceEditorMapping.vue
-  Version: 1.0.0
-  Description: Component for service mapping/binding functionality
-  Purpose: Provides interface for service mapping and binding operations
-  Frontend file - ServiceEditorMapping.vue
+  File: ServiceEditorCatalogPublication.vue
+  Version: 1.1.0
+  Description: Component for service catalog publication management
+  Purpose: Provides interface for managing service catalog publication
+  Frontend file - ServiceEditorCatalogPublication.vue
   Created: 2025-08-03
-  Last Updated: 2025-08-03
+  Last Updated: 2025-01-27
+  Changes: Renamed from ServiceEditorMapping.vue, removed mock data, added service info fields
 -->
 
 <script setup lang="ts">
@@ -43,9 +44,19 @@ interface CatalogSection {
 type ItemsPerPageOption = 25 | 50 | 100
 
 // Initialize stores and i18n
-const { t } = useI18n()
+const { t, locale } = useI18n()
 const uiStore = useUiStore()
 const servicesStore = useServicesAdminStore()
+
+// Form data - using store
+const formData = computed(() => servicesStore.getFormData)
+
+// Service info for display
+const serviceCode = computed(() => editingServiceId?.value || 'N/A')
+const serviceName = computed(() => {
+  const currentLanguage = locale.value || 'en'
+  return formData.value.name || 'N/A'
+})
 
 
 
@@ -72,16 +83,6 @@ const isSectionsLoading = computed(() => servicesStore.getIsPublishingSectionsLo
 const sectionsError = computed(() => servicesStore.getPublishingSectionsError)
 const editingServiceId = computed(() => servicesStore.getEditingServiceId)
 
-// Mock data for catalog sections (fallback)
-const mockSections = ref<CatalogSection[]>([
-  { id: '1', name: 'Основные сервисы', owner: 'Иван Петров', status: 'Активна', public: true },
-  { id: '2', name: 'Вспомогательные сервисы', owner: 'Мария Сидорова', status: 'Активна', public: false },
-  { id: '3', name: 'Инфраструктурные сервисы', owner: 'Алексей Козлов', status: 'Активна', public: true },
-  { id: '4', name: 'Бизнес-сервисы', owner: 'Елена Волкова', status: 'Неактивна', public: false },
-  { id: '5', name: 'Технические сервисы', owner: 'Дмитрий Соколов', status: 'Активна', public: true },
-  { id: '6', name: 'Административные сервисы', owner: 'Ольга Морозова', status: 'Активна', public: false },
-  { id: '7', name: 'Пользовательские сервисы', owner: 'Сергей Лебедев', status: 'Неактивна', public: true }
-])
 
 // Computed properties
 const selectedCount = computed(() => selectedSections.value.size)
@@ -145,7 +146,7 @@ const isSelected = (sectionId: string) => selectedSections.value.has(sectionId)
 
 
 const selectAll = () => {
-  mockSections.value.forEach(section => {
+  sections.value.forEach(section => {
     selectedSections.value.add(section.id)
   })
 }
@@ -230,16 +231,14 @@ const updateOptionsAndFetch = async (options: { page?: number, itemsPerPage?: nu
 
 // Computed properties for table
 const filteredSections = computed(() => {
-  // Use real sections from store, fallback to mock data if empty
-  let result = sections.value.length > 0 
-    ? sections.value.map(section => ({
-        id: section.id,
-        name: section.name,
-        owner: section.owner || 'Не указан',
-        status: section.status || 'Не указан',
-        public: section.is_public
-      }))
-    : mockSections.value
+  // Use real sections from store
+  let result = sections.value.map(section => ({
+    id: section.id,
+    name: section.name,
+    owner: section.owner || 'Не указан',
+    status: section.status || 'Не указан',
+    public: section.is_public
+  }))
 
   // Apply search filter
   if (searchQuery.value.length >= 2) {
@@ -320,6 +319,31 @@ const handlePublish = async () => {
     <div class="d-flex">
       <!-- Main content (left part) -->
       <div class="flex-grow-1 main-content-area">
+        <!-- Service Info Section -->
+        <div class="service-info-section px-4 pt-4">
+          <div class="info-row-inline">
+            <!-- Service UUID -->
+            <div class="info-item">
+              <div class="info-label">
+                {{ t('admin.services.editor.information.uuid.label') }}:
+              </div>
+              <div class="info-value service-code">
+                {{ serviceCode }}
+              </div>
+            </div>
+
+            <!-- Service Name -->
+            <div class="info-item">
+              <div class="info-label">
+                {{ t('admin.services.editor.information.name.label') }}:
+              </div>
+              <div class="info-value service-name">
+                {{ serviceName }}
+              </div>
+            </div>
+          </div>
+        </div>
+
         <!-- Search row -->
         <div class="px-4 pt-4">
           <v-text-field
@@ -451,6 +475,50 @@ const handlePublish = async () => {
 /* Main content area */
 .main-content-area {
   min-width: 0;
+}
+
+/* Service info section styles */
+.service-info-section {
+  padding: 16px;
+}
+
+.info-row-inline {
+  display: flex;
+  gap: 40px;
+  align-items: center;
+}
+
+.info-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.info-label {
+  font-size: 0.875rem;
+  color: rgba(0, 0, 0, 0.75);
+  font-weight: 500;
+}
+
+.info-value {
+  font-family: 'Roboto Mono', monospace;
+  font-size: 0.875rem;
+  color: rgba(0, 0, 0, 0.75);
+  background-color: rgba(0, 0, 0, 0.05);
+  padding: 4px 8px;
+  border-radius: 4px;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  display: inline-block;
+  word-break: break-word;
+  flex-grow: 1;
+}
+
+.service-code {
+  /* Inherits from .info-value */
+}
+
+.service-name {
+  /* Inherits from .info-value */
 }
 
 /* Table styles */

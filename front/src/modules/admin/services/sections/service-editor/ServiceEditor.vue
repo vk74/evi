@@ -16,7 +16,7 @@ import { useServicesAdminStore } from '../../state.services.admin'
 import { defineAsyncComponent } from 'vue'
 const ServiceEditorData = defineAsyncComponent(() => import(/* webpackChunkName: "admin-service-editor-data" */ './ServiceEditorData.vue'))
 const ServiceEditorPreferences = defineAsyncComponent(() => import(/* webpackChunkName: "admin-service-editor-preferences" */ './ServiceEditorPreferences.vue'))
-const ServiceEditorMapping = defineAsyncComponent(() => import(/* webpackChunkName: "admin-service-editor-mapping" */ './ServiceEditorMapping.vue'))
+const ServiceEditorCatalogPublication = defineAsyncComponent(() => import(/* webpackChunkName: "admin-service-editor-catalog-publication" */ './ServiceEditorCatalogPublication.vue'))
 
 // Initialize stores and i18n
 const { t } = useI18n()
@@ -91,7 +91,7 @@ const switchSection = (section: 'details' | 'preferences' | 'catalog publication
         <ServiceEditorPreferences 
           v-else-if="servicesStore.getActiveSection === 'preferences'"
         />
-        <ServiceEditorMapping 
+        <ServiceEditorCatalogPublication 
           v-else-if="servicesStore.getActiveSection === 'catalog publication'"
         />
       </v-container>
