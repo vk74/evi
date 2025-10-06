@@ -1,23 +1,49 @@
 <!--
   File: ServiceEditorPreferences.vue
-  Version: 1.0.0
+  Version: 1.3.0
   Description: Component for editing service preferences
   Purpose: Provides interface for configuring service preferences and settings
   Frontend file - ServiceEditorPreferences.vue
   Created: 2024-12-19
   Last Updated: 2024-12-19
-  Changes: Initial creation
+  Changes: 
+  - v1.1: Added service info display and removed header
+  - v1.2: Removed container around switches, removed buttons, added auto-save with debounce and error handling
+  - v1.3: Removed divider, restored sidebar, added refresh button
 -->
 
 <template>
   <div class="service-editor-preferences">
-    <div class="content-container">
-      <v-container class="pa-6">
-        <v-card>
-          <v-card-title class="text-h6">
-            Service Preferences
-          </v-card-title>
-          <v-card-text>
+    <div class="d-flex">
+      <!-- Main content (left part) -->
+      <div class="flex-grow-1 main-content-area">
+        <v-container class="pa-6">
+          <!-- Service Info Section -->
+          <div class="service-info-section mb-2">
+            <div class="info-row-inline">
+              <!-- Service UUID -->
+              <div class="info-item">
+                <div class="info-label">
+                  {{ t('admin.services.editor.information.uuid.label') }}:
+                </div>
+                <div class="info-value service-code">
+                  {{ serviceCode }}
+                </div>
+              </div>
+
+              <!-- Service Name -->
+              <div class="info-item">
+                <div class="info-label">
+                  {{ t('admin.services.editor.information.name.label') }}:
+                </div>
+                <div class="info-value service-name">
+                  {{ serviceName }}
+                </div>
+              </div>
+            </div>
+          </div>
+          <!-- Preferences Management Section -->
+          <div class="preferences-management-section">
             <!-- Block for component card visibility switches -->
             <div class="preferences-block">
               <h3 class="block-title mb-4">
@@ -98,43 +124,30 @@
                 </div>
               </div>
             </div>
-          </v-card-text>
-        </v-card>
-      </v-container>
-    </div>
-    
-    <!-- Sidebar (right part) -->
-    <div class="side-bar-container">
-      <!-- Actions section -->
-      <div class="side-bar-section">
-        <h3 class="text-subtitle-2 px-2 py-2">
-          {{ t('admin.services.editor.actions.title').toLowerCase() }}
-        </h3>
-        
-
-
-        <!-- Update button (visible only in edit mode) -->
-        <v-btn
-          v-if="isEditMode"
-          block
-          color="teal"
-          variant="outlined"
-          class="mb-3"
-          @click="updateService"
-        >
-          {{ t('admin.services.editor.actions.save').toUpperCase() }}
-        </v-btn>
-
-        <!-- Cancel button (visible always) -->
-        <v-btn
-          block
-          color="grey"
-          variant="outlined"
-          class="mb-3"
-          @click="cancelEdit"
-        >
-          {{ t('admin.services.editor.actions.cancel').toUpperCase() }}
-        </v-btn>
+          </div>
+        </v-container>
+      </div>
+      
+      <!-- Sidebar (right part) -->
+      <div class="side-bar-container">
+        <!-- Actions section -->
+        <div class="side-bar-section">
+          <h3 class="text-subtitle-2 px-2 py-2">
+            {{ t('admin.services.editor.actions.title').toLowerCase() }}
+          </h3>
+          
+          <!-- Refresh button -->
+          <v-btn
+            block
+            color="teal"
+            variant="outlined"
+            class="mb-3"
+            @click="handleRefresh"
+            :loading="isRefreshing"
+          >
+            {{ t('admin.services.editor.actions.refresh').toUpperCase() }}
+          </v-btn>
+        </div>
       </div>
     </div>
   </div>
@@ -145,9 +158,20 @@ import { ref, computed, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useServicesAdminStore } from '../../state.services.admin'
 import { useUiStore } from '@/core/state/uistate'
-const { t } = useI18n()
+import debounce from 'lodash/debounce'
+const { t, locale } = useI18n()
 const servicesStore = useServicesAdminStore()
 const uiStore = useUiStore()
+
+// Form data - using store
+const formData = computed(() => servicesStore.getFormData)
+
+// Service info for display
+const serviceCode = computed(() => editingServiceId?.value || 'N/A')
+const serviceName = computed(() => {
+  const currentLanguage = locale.value || 'en'
+  return formData.value.name || 'N/A'
+})
 
 // Local state for visibility switches with fallback to false
 const showOwner = ref(false)
@@ -159,12 +183,41 @@ const showSupportTier1 = ref(false)
 const showSupportTier2 = ref(false)
 const showSupportTier3 = ref(false)
 
+// Previous values for rollback on error
+const previousValues = ref({
+  showOwner: false,
+  showBackupOwner: false,
+  showTechnicalOwner: false,
+  showBackupTechnicalOwner: false,
+  showDispatcher: false,
+  showSupportTier1: false,
+  showSupportTier2: false,
+  showSupportTier3: false
+})
+
+// Loading state for refresh
+const isRefreshing = ref(false)
+
 // Computed properties
 const isEditMode = computed(() => servicesStore.getEditorMode === 'edit')
 const editingServiceId = computed(() => servicesStore.getEditingServiceId)
 
 // Computed property to get current service data
 const currentService = computed(() => servicesStore.getEditingServiceData)
+
+// Methods
+const updatePreviousValues = () => {
+  previousValues.value = {
+    showOwner: showOwner.value,
+    showBackupOwner: showBackupOwner.value,
+    showTechnicalOwner: showTechnicalOwner.value,
+    showBackupTechnicalOwner: showBackupTechnicalOwner.value,
+    showDispatcher: showDispatcher.value,
+    showSupportTier1: showSupportTier1.value,
+    showSupportTier2: showSupportTier2.value,
+    showSupportTier3: showSupportTier3.value
+  }
+}
 
 // Watch for changes in current service and update local state
 watch(currentService, (service) => {
@@ -178,53 +231,32 @@ watch(currentService, (service) => {
     showSupportTier1.value = service.show_support_tier1 ?? false
     showSupportTier2.value = service.show_support_tier2 ?? false
     showSupportTier3.value = service.show_support_tier3 ?? false
+    
+    // Update previous values
+    updatePreviousValues()
   }
 }, { immediate: true })
 
-// Methods
-const updateService = async () => {
-  try {
-    // Log the current preferences values
-    console.log('Current preferences values:', {
-      showOwner: showOwner.value,
-      showBackupOwner: showBackupOwner.value,
-      showTechnicalOwner: showTechnicalOwner.value,
-      showBackupTechnicalOwner: showBackupTechnicalOwner.value,
-      showDispatcher: showDispatcher.value,
-      showSupportTier1: showSupportTier1.value,
-      showSupportTier2: showSupportTier2.value,
-      showSupportTier3: showSupportTier3.value
-    })
+const rollbackToPreviousValues = () => {
+  showOwner.value = previousValues.value.showOwner
+  showBackupOwner.value = previousValues.value.showBackupOwner
+  showTechnicalOwner.value = previousValues.value.showTechnicalOwner
+  showBackupTechnicalOwner.value = previousValues.value.showBackupTechnicalOwner
+  showDispatcher.value = previousValues.value.showDispatcher
+  showSupportTier1.value = previousValues.value.showSupportTier1
+  showSupportTier2.value = previousValues.value.showSupportTier2
+  showSupportTier3.value = previousValues.value.showSupportTier3
+}
 
-    // Get current form data from store
-    const currentFormData = servicesStore.getFormData
-    
-    // Log the current form data to see what we have
-    console.log('Current form data from store:', currentFormData)
-    
-    // Prepare data for API - convert to snake_case for backend
+const savePreferences = async () => {
+  if (!editingServiceId.value) {
+    uiStore.showErrorSnackbar('Unable to determine service ID')
+    return
+  }
+
+  try {
+    // Prepare data for API - only preferences fields
     const serviceData = {
-      name: currentFormData.name.trim(),
-      icon_name: currentFormData.iconName || undefined,
-      support_tier1: currentFormData.supportTier1 || undefined,
-      support_tier2: currentFormData.supportTier2 || undefined,
-      support_tier3: currentFormData.supportTier3 || undefined,
-      owner: currentFormData.owner || undefined,
-      backup_owner: currentFormData.backupOwner || undefined,
-      technical_owner: currentFormData.technicalOwner || undefined,
-      backup_technical_owner: currentFormData.backupTechnicalOwner || undefined,
-      dispatcher: currentFormData.dispatcher || undefined,
-      priority: currentFormData.priority,
-      status: currentFormData.status,
-      description_short: currentFormData.descriptionShort?.trim() || undefined,
-      description_long: currentFormData.descriptionLong?.trim() || undefined,
-      purpose: currentFormData.purpose?.trim() || undefined,
-      comments: currentFormData.comments?.trim() || undefined,
-      is_public: currentFormData.isPublic,
-      access_allowed_groups: currentFormData.accessAllowedGroups.length > 0 ? currentFormData.accessAllowedGroups.join(',') : undefined,
-      access_denied_groups: currentFormData.accessDeniedGroups.length > 0 ? currentFormData.accessDeniedGroups.join(',') : undefined,
-      access_denied_users: currentFormData.accessDeniedUsers.length > 0 ? currentFormData.accessDeniedUsers.join(',') : undefined,
-      // Visibility preferences - use local variables directly
       show_owner: showOwner.value,
       show_backup_owner: showBackupOwner.value,
       show_technical_owner: showTechnicalOwner.value,
@@ -235,46 +267,149 @@ const updateService = async () => {
       show_support_tier3: showSupportTier3.value
     }
 
-    // Log the service data being sent to API
-    console.log('Service data being sent to API:', JSON.stringify(serviceData, null, 2))
-
     // Import and use the update service
     const { serviceUpdateService } = await import('../../service.update.service')
     const response = await serviceUpdateService.updateService(editingServiceId.value as string, serviceData)
     
     if (response.success) {
-      // Show success message
+      // Update previous values after successful save
+      updatePreviousValues()
       uiStore.showSuccessSnackbar('Preferences updated successfully')
-      // Close editor after successful update
-      servicesStore.closeServiceEditor()
+    } else {
+      throw new Error(response.message || 'Failed to update preferences')
     }
     
   } catch (error: any) {
-    // Show error message
+    // Rollback to previous values on error
+    rollbackToPreviousValues()
     const errorMessage = error.message || 'Failed to update service preferences'
     uiStore.showErrorSnackbar(errorMessage)
     console.error('Error updating service preferences:', error)
   }
 }
 
-const cancelEdit = () => {
-  servicesStore.closeServiceEditor()
+// Debounced save function
+const debouncedSavePreferences = debounce(savePreferences, 500)
+
+// Handle refresh button click
+const handleRefresh = async () => {
+  if (!editingServiceId.value) {
+    uiStore.showErrorSnackbar('Unable to determine service ID')
+    return
+  }
+
+  isRefreshing.value = true
+  
+  try {
+    // Import and use the fetch single service
+    const { serviceAdminFetchSingleService } = await import('./service.admin.fetchsingleservice')
+    const response = await serviceAdminFetchSingleService.fetchSingleService(editingServiceId.value)
+    
+    if (response && !('success' in response)) {
+      // Update store with fresh data
+      servicesStore.editingServiceData = response as any
+      uiStore.showSuccessSnackbar('Service preferences refreshed successfully')
+    } else {
+      throw new Error((response as any)?.message || 'Failed to fetch service data')
+    }
+  } catch (error: any) {
+    const errorMessage = error.message || 'Failed to refresh service preferences'
+    uiStore.showErrorSnackbar(errorMessage)
+    console.error('Error refreshing service preferences:', error)
+  } finally {
+    isRefreshing.value = false
+  }
 }
+
+// Watch for changes in preferences and auto-save
+watch([showOwner, showBackupOwner, showTechnicalOwner, showBackupTechnicalOwner, showDispatcher, showSupportTier1, showSupportTier2, showSupportTier3], () => {
+  // Only save if we're in edit mode and have a service ID
+  if (isEditMode.value && editingServiceId.value) {
+    debouncedSavePreferences()
+  }
+})
 </script>
 
 <style scoped>
 .service-editor-preferences {
   height: 100%;
-  display: flex;
 }
 
-.content-container {
-  flex: 1;
-  padding: 16px;
+/* Main content area */
+.main-content-area {
+  min-width: 0;
+}
+
+/* Service info section styles */
+.service-info-section {
+  padding: 16px 0;
+  margin-bottom: 16px;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.12);
+}
+
+.info-row-inline {
+  display: flex;
+  gap: 40px;
+  align-items: center;
+}
+
+.info-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.info-label {
+  font-size: 0.875rem;
+  color: rgba(0, 0, 0, 0.75);
+  font-weight: 500;
+}
+
+.info-value {
+  font-family: 'Roboto Mono', monospace;
+  font-size: 0.875rem;
+  color: rgba(0, 0, 0, 0.75);
+  background-color: rgba(0, 0, 0, 0.05);
+  padding: 4px 8px;
+  border-radius: 4px;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  display: inline-block;
+  word-break: break-word;
+  flex-grow: 1;
+}
+
+.service-code {
+  /* Inherits from .info-value */
+}
+
+.service-name {
+  /* Inherits from .info-value */
+}
+
+.preferences-management-section {
+  margin-top: 8px;
 }
 
 .preferences-block {
   margin-top: 16px;
+}
+
+/* Sidebar styles */
+.side-bar-container {
+  width: 18%;
+  min-width: 240px;
+  border-left: thin solid rgba(var(--v-border-color), var(--v-border-opacity));
+  display: flex;
+  flex-direction: column;
+}
+
+.side-bar-section {
+  padding: 16px;
+}
+
+/* Sidebar button styles */
+.side-bar-section .v-btn {
+  min-width: 240px;
 }
 
 .block-title {
@@ -300,23 +435,6 @@ const cancelEdit = () => {
   margin-bottom: 0;
 }
 
-/* Sidebar styles */
-.side-bar-container {
-  width: 18%;
-  min-width: 240px;
-  border-left: thin solid rgba(var(--v-border-color), var(--v-border-opacity));
-  display: flex;
-  flex-direction: column;
-}
-
-.side-bar-section {
-  padding: 16px;
-}
-
-/* Sidebar button styles */
-.side-bar-section .v-btn {
-  min-width: 240px;
-}
 
 /* Responsive adjustments */
 @media (max-width: 960px) {
