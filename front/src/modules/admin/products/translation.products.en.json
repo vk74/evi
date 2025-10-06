@@ -2,7 +2,7 @@
   "admin": {
     "products": {
       "sections": {
-        "productsList": "products management",
+        "productsList": "products list",
         "productEditor": "product editor",
         "settings": "settings"
       },
