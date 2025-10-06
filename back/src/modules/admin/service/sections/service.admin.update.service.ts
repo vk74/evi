@@ -457,7 +457,7 @@ async function updateServiceAccessRoles(client: any, serviceId: string, data: Up
  * @param requestorUuid - UUID of the user updating the service
  * @returns Promise<UpdateServiceResponse>
  */
-async function updateServiceInDatabase(serviceId: string, data: UpdateService, requestorUuid: string): Promise<UpdateServiceResponse> {
+async function updateServiceInDatabase(serviceId: string, data: UpdateService, requestorUuid: string, req: Request): Promise<UpdateServiceResponse> {
     const client = await pool.connect();
     
     try {
@@ -487,10 +487,12 @@ async function updateServiceInDatabase(serviceId: string, data: UpdateService, r
             data.icon_name !== undefined;
 
 
+
+
         // If we only have visibility preferences, update only those
         if (hasVisibilityPreferences && !hasMainFields) {
-            // Use the dedicated function for visibility preferences with events
-            await updateServiceVisibilityPreferences(client, serviceId, data, requestorUuid);
+            // Use the dedicated function for preferences with events
+            await updateServicePreferences(client, serviceId, data, requestorUuid, req);
             
             // Get the updated service info for response
             const updatedServiceResult = await client.query(queries.fetchServiceWithRoles, [serviceId]);
@@ -520,9 +522,9 @@ async function updateServiceInDatabase(serviceId: string, data: UpdateService, r
             // Update access control roles
             await updateServiceAccessRoles(client, serviceId, data, requestorUuid);
 
-            // Update visibility preferences if provided
+            // Update preferences if provided
             if (hasVisibilityPreferences) {
-                await updateServiceVisibilityPreferences(client, serviceId, data, requestorUuid);
+                await updateServicePreferences(client, serviceId, data, requestorUuid, req);
             }
         }
 
@@ -595,7 +597,7 @@ export async function updateService(req: Request): Promise<UpdateServiceResponse
         await validateUpdateServiceData(serviceData, id, req);
 
         // Update service in database with all roles
-        const result = await updateServiceInDatabase(id, serviceData, requestorUuid);
+        const result = await updateServiceInDatabase(id, serviceData, requestorUuid, req);
 
         // Publish success event
         await fabricEvents.createAndPublishEvent({
@@ -633,14 +635,20 @@ export async function updateService(req: Request): Promise<UpdateServiceResponse
 }
 
 /**
- * Updates visibility preferences for a service (helper function for mixed updates)
+ * Updates service preferences (handles single field updates)
  * @param client - Database client for transaction
  * @param serviceId - Service ID
- * @param data - Service data with visibility preferences
+ * @param data - Service data with preferences
  * @param requestorUuid - UUID of the user updating the service
  */
-async function updateServiceVisibilityPreferences(client: any, serviceId: string, data: UpdateService, requestorUuid: string): Promise<void> {
-    // Only update if any visibility preference fields are provided
+async function updateServicePreferences(client: any, serviceId: string, data: UpdateService, requestorUuid: string, req: Request): Promise<void> {
+    console.log('[updateServicePreferences] Function called');
+    console.log('[updateServicePreferences] Checking if event exists:', {
+        eventExists: 'service.update.preferences.field_changed' in EVENTS_ADMIN_SERVICES,
+        eventObject: EVENTS_ADMIN_SERVICES['service.update.preferences.field_changed']
+    });
+    
+    // Only update if any preference fields are provided
     if (data.show_owner !== undefined || 
         data.show_backup_owner !== undefined || 
         data.show_technical_owner !== undefined || 
@@ -650,7 +658,9 @@ async function updateServiceVisibilityPreferences(client: any, serviceId: string
         data.show_support_tier2 !== undefined || 
         data.show_support_tier3 !== undefined) {
         
-        // Get current visibility preferences for comparison
+        console.log('[updateServicePreferences] Preference fields detected, proceeding...');
+        
+        // Get current preferences for comparison
         const currentPrefsResult = await client.query(queries.fetchServiceVisibilityPreferences, [serviceId]);
         const currentPrefs = currentPrefsResult.rows[0];
         
@@ -668,13 +678,7 @@ async function updateServiceVisibilityPreferences(client: any, serviceId: string
                 requestorUuid
             ]);
             
-            // Find changed preferences and create detailed payload
-            const changes: Array<{
-                field: string;
-                oldValue: boolean;
-                newValue: boolean;
-            }> = [];
-            
+            // Find changed preferences and publish events for each change
             const fieldMappings = [
                 { field: 'show_owner', oldValue: currentPrefs.show_owner, newValue: data.show_owner ?? false },
                 { field: 'show_backup_owner', oldValue: currentPrefs.show_backup_owner, newValue: data.show_backup_owner ?? false },
@@ -686,11 +690,40 @@ async function updateServiceVisibilityPreferences(client: any, serviceId: string
                 { field: 'show_support_tier3', oldValue: currentPrefs.show_support_tier3, newValue: data.show_support_tier3 ?? false }
             ];
             
-            fieldMappings.forEach(({ field, oldValue, newValue }) => {
+            // Publish event for each changed field
+            for (const { field, oldValue, newValue } of fieldMappings) {
                 if (oldValue !== newValue) {
-                    changes.push({ field, oldValue, newValue });
+                    console.log('[updateServicePreferences] About to publish event:', {
+                        eventName: EVENTS_ADMIN_SERVICES['service.update.preferences.field_changed'].eventName,
+                        eventObject: EVENTS_ADMIN_SERVICES['service.update.preferences.field_changed'],
+                        req: req ? 'Request object present' : 'No request object',
+                        payload: {
+                            serviceId,
+                            requestorUuid,
+                            field,
+                            oldValue,
+                            newValue
+                        }
+                    });
+                    
+                    try {
+                        await fabricEvents.createAndPublishEvent({
+                            req,
+                            eventName: EVENTS_ADMIN_SERVICES['service.update.preferences.field_changed'].eventName,
+                            payload: {
+                                serviceId,
+                                requestorUuid,
+                                field,
+                                oldValue,
+                                newValue
+                            }
+                        });
+                        console.log('[updateServicePreferences] Event published successfully for field:', field);
+                    } catch (eventError) {
+                        console.error('[updateServicePreferences] Error publishing event:', eventError);
+                    }
                 }
-            });
+            }
             
         } catch (error: any) {
             throw error;

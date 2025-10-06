@@ -445,6 +445,16 @@ export const EVENTS_ADMIN_SERVICES: EventCollection = {
     version: '1.0.0'
   },
 
+  // Service update preferences field changed
+  'service.update.preferences.field_changed': {
+    eventName: 'adminServices.service.update.preferences.field_changed',
+    source: 'admin-service',
+    eventType: 'system',
+    severity: 'info',
+    eventMessage: 'Service preferences field changed',
+    version: '1.0.0'
+  },
+
   // Sections publish mapping update events
   'service.sections.publish.update.validation.error': {
     eventName: 'adminServices.service.sections.publish.update.validation.error',
