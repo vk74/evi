@@ -1,12 +1,9 @@
 <!--
   File: ProductEditorPreferences.vue
-  Version: 1.1.0
+  Version: 1.2.0
   Description: Component for product preferences management
   Purpose: Provides interface for managing product preferences and visibility settings
   Frontend file - ProductEditorPreferences.vue
-  Created: 2024-12-20
-  Last Updated: 2024-12-20
-  Changes: Added visibility settings with switches
 -->
 
 <script setup lang="ts">
@@ -191,32 +188,32 @@ watch([isVisibleOwner, isVisibleGroups, isVisibleTechSpecs, isVisibleAreaSpecs, 
     <div class="d-flex">
       <!-- Main content (left part) -->
       <div class="flex-grow-1 main-content-area">
-        <v-container class="pa-6">
-          <!-- Product Info Section -->
-          <div class="product-info-section mb-6">
-            <div class="info-row-inline">
-              <!-- Product Code -->
-              <div class="info-item">
-                <div class="info-label">
-                  {{ t('admin.products.editor.productInfo.productCode') }}:
-                </div>
-                <div class="info-value product-code">
-                  {{ productCode }}
-                </div>
+        <!-- Product Info Section -->
+        <div class="product-info-section px-4 pt-4">
+          <div class="info-row-inline">
+            <!-- Product Code -->
+            <div class="info-item">
+              <div class="info-label">
+                {{ t('admin.products.editor.productInfo.productCode') }}:
               </div>
+              <div class="info-value product-code">
+                {{ productCode }}
+              </div>
+            </div>
 
-              <!-- Product Name -->
-              <div class="info-item">
-                <div class="info-label">
-                  {{ t('admin.products.editor.productInfo.productName') }}:
-                </div>
-                <div class="info-value product-name">
-                  {{ productName }}
-                </div>
+            <!-- Product Name -->
+            <div class="info-item">
+              <div class="info-label">
+                {{ t('admin.products.editor.productInfo.productName') }}:
+              </div>
+              <div class="info-value product-name">
+                {{ productName }}
               </div>
             </div>
           </div>
+        </div>
 
+        <v-container class="pa-6">
           <!-- Preferences Management Section -->
           <div class="preferences-management-section">
             <!-- Block for visibility switches -->
@@ -339,10 +336,6 @@ watch([isVisibleOwner, isVisibleGroups, isVisibleTechSpecs, isVisibleAreaSpecs, 
 }
 
 /* Product info section styles */
-.product-info-section {
-  padding: 16px;
-}
-
 .info-row-inline {
   display: flex;
   gap: 40px;

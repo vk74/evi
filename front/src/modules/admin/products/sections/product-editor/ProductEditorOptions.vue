@@ -1,10 +1,9 @@
 <!--
   File: ProductEditorOptions.vue
-  Version: 1.4.0
+  Version: 1.5.0
   Description: Component for product options management
   Purpose: Provides interface for managing product options pairing
   Frontend file - ProductEditorOptions.vue
-  Changes: Renamed PAIR SELECTED to PAIR SELECTOR, added UNPAIR button with count display in sidebar
 -->
 
 <script setup lang="ts">
@@ -264,32 +263,32 @@ onMounted(async () => {
     <div class="d-flex">
       <!-- Main content (left part) -->
       <div class="flex-grow-1 main-content-area">
-        <v-container class="pa-6">
-          <!-- Product Info Section -->
-          <div class="product-info-section mb-6">
-            <div class="info-row-inline">
-              <!-- Product Code -->
-              <div class="info-item">
-                <div class="info-label">
-                  {{ t('admin.products.editor.productInfo.productCode') }}:
-                </div>
-                <div class="info-value product-code">
-                  {{ productCode }}
-                </div>
+        <!-- Product Info Section -->
+        <div class="product-info-section px-4 pt-4">
+          <div class="info-row-inline">
+            <!-- Product Code -->
+            <div class="info-item">
+              <div class="info-label">
+                {{ t('admin.products.editor.productInfo.productCode') }}:
               </div>
+              <div class="info-value product-code">
+                {{ productCode }}
+              </div>
+            </div>
 
-              <!-- Product Name -->
-              <div class="info-item">
-                <div class="info-label">
-                  {{ t('admin.products.editor.productInfo.productName') }}:
-                </div>
-                <div class="info-value product-name">
-                  {{ productName }}
-                </div>
+            <!-- Product Name -->
+            <div class="info-item">
+              <div class="info-label">
+                {{ t('admin.products.editor.productInfo.productName') }}:
+              </div>
+              <div class="info-value product-name">
+                {{ productName }}
               </div>
             </div>
           </div>
+        </div>
 
+        <v-container class="pa-6">
           <!-- Options Management Section -->
           <div v-if="isOptionsTabActive" class="options-management-section">
             <!-- Search row -->
@@ -491,10 +490,6 @@ onMounted(async () => {
 }
 
 /* Product info section styles */
-.product-info-section {
-  padding: 16px;
-}
-
 .info-row-inline {
   display: flex;
   gap: 40px;
@@ -524,14 +519,6 @@ onMounted(async () => {
   display: inline-block;
   word-break: break-word;
   flex-grow: 1;
-}
-
-.product-code {
-  /* Inherits from .info-value */
-}
-
-.product-name {
-  /* Inherits from .info-value */
 }
 
 /* Table styles */
