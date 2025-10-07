@@ -68,5 +68,18 @@
       "selected": "иконка успешно выбрана",
       "cleared": "иконка успешно очищена"
     }
+  },
+  "pairEditor": {
+    "title": "создание пар для продукта",
+    "selectedOptionsCount": "выбрано опций: {count}",
+    "buttons": {
+      "pair": "связать",
+      "cancel": "отмена"
+    },
+    "messages": {
+      "success": "пары успешно созданы",
+      "error": "ошибка создания пар",
+      "noOptionsSelected": "не выбрано опций"
+    }
   }
 }

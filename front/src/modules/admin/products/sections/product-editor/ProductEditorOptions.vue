@@ -1,13 +1,13 @@
 <!--
   File: ProductEditorOptions.vue
-  Version: 1.5.0
+  Version: 1.6.0
   Description: Component for product options management
   Purpose: Provides interface for managing product options pairing
   Frontend file - ProductEditorOptions.vue
 -->
 
 <script setup lang="ts">
-import { computed, ref, onMounted, watch } from 'vue'
+import { computed, ref, onMounted, watch, defineAsyncComponent } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useProductsAdminStore } from '../../state.products.admin'
 import { useUiStore } from '@/core/state/uistate'
@@ -22,6 +22,8 @@ import {
   PhCheckSquare,
   PhSquare
 } from '@phosphor-icons/vue'
+
+const ProductPairEditor = defineAsyncComponent(() => import(/* webpackChunkName: "ui-product-pair-editor" */ '@/core/ui/modals/product-pair-editor/ProductPairEditor.vue'))
 
 // Types
 type OptionItem = ProductListItem
@@ -75,6 +77,9 @@ const totalPagesCount = ref<number>(0)
 
 // Selected options
 const selectedOptions = ref<Set<string>>(new Set())
+
+// Pair editor modal state
+const showPairEditor = ref(false)
 
 // Helper function to get product type display text
 const getProductTypeText = (canBeOption: boolean, optionOnly: boolean) => {
@@ -222,17 +227,32 @@ const handleItemsPerPageChange = async (newItemsPerPage: ItemsPerPageOption) => 
   await performSearch()
 }
 
-// Pair options handler
+// Get selected options data for pair editor
+const getSelectedOptionsData = computed(() => {
+  return options.value.filter(option => selectedOptions.value.has(option.product_id))
+})
+
+// Pair options handler - opens pair editor modal
 const pairOptions = () => {
   if (hasSelected.value) {
-    uiStore.showSnackbar({
-      message: `Pairing ${selectedCount.value} option(s) with product...`,
-      type: 'info',
-      timeout: 3000,
-      closable: true,
-      position: 'bottom'
-    })
-    // TODO: Implement actual pairing logic
+    showPairEditor.value = true
+  }
+}
+
+// Handle pair editor close
+const handlePairEditorClose = () => {
+  showPairEditor.value = false
+}
+
+// Handle pairing completed
+const handlePairingCompleted = (result: any) => {
+  showPairEditor.value = false
+  
+  if (result.success) {
+    uiStore.showSuccessSnackbar('Options paired successfully')
+    // TODO: Refresh data or update UI
+  } else {
+    uiStore.showErrorSnackbar(result.message || 'Failed to pair options')
   }
 }
 
@@ -476,6 +496,20 @@ onMounted(async () => {
         </div>
       </div>
     </div>
+    
+    <!-- Pair Editor Modal -->
+    <v-dialog
+      v-model="showPairEditor"
+      max-width="800"
+      persistent
+    >
+      <ProductPairEditor
+        :selected-options="getSelectedOptionsData"
+        :product-name="productName"
+        @close="handlePairEditorClose"
+        @paired="handlePairingCompleted"
+      />
+    </v-dialog>
   </div>
 </template>
 

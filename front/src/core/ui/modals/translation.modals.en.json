@@ -68,5 +68,18 @@
       "selected": "icon selected successfully",
       "cleared": "icon cleared successfully"
     }
+  },
+  "pairEditor": {
+    "title": "creating pairs for product",
+    "selectedOptionsCount": "selected options: {count}",
+    "buttons": {
+      "pair": "pair",
+      "cancel": "cancel"
+    },
+    "messages": {
+      "success": "pairs created successfully",
+      "error": "error creating pairs",
+      "noOptionsSelected": "no options selected"
+    }
   }
 }
