@@ -62,13 +62,13 @@
           },
           "specialists": {
             "label": "specialists",
-            "select": "select specialists"
+            "select": "select groups with specialists"
           },
           "addGroups": "add groups",
           "addMore": "add more"
         },
-        "translations": {
-          "title": "translations",
+        "description": {
+          "title": "details",
           "language": {
             "label": "language"
           },

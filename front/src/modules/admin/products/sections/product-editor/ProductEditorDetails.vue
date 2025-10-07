@@ -1,12 +1,9 @@
 <!--
   File: ProductEditorDetails.vue
-  Version: 1.0.0
+  Version: 1.1.0
   Description: Component for product details form and actions
   Purpose: Provides interface for creating and editing product details
   Frontend file - ProductEditorDetails.vue
-  Created: 2024-12-20
-  Last Updated: 2024-12-20
-  Changes: Initial implementation based on ServiceEditorData structure
 -->
 
 <script setup lang="ts">
@@ -657,7 +654,7 @@ onMounted(() => {
                       <template #prepend>
                         <PhPlus />
                       </template>
-                      {{ t('admin.products.editor.contacts.addMore') }}
+                      {{ t('admin.products.editor.contacts.addGroups') }}
                     </v-btn>
                   </div>
                 </div>
@@ -666,12 +663,12 @@ onMounted(() => {
           </v-col>
         </v-row>
 
-        <!-- Translations Section -->
+        <!-- Description Section -->
         <v-row>
           <v-col cols="12">
             <div class="card-header mt-6">
               <v-card-title class="text-subtitle-1">
-                {{ t('admin.products.editor.translations.title').toLowerCase() }}
+                {{ t('admin.products.editor.description.title').toLowerCase() }}
               </v-card-title>
               <v-divider class="section-divider" />
             </div>
@@ -684,7 +681,7 @@ onMounted(() => {
                 <v-select
                   v-model="selectedLanguage"
                   :items="languageOptions"
-                  :label="t('admin.products.editor.translations.language.label')"
+                  :label="t('admin.products.editor.description.language.label')"
                   variant="outlined"
                   color="teal"
                 >
@@ -700,7 +697,7 @@ onMounted(() => {
                 <v-text-field
                   :model-value="formData.translations[selectedLanguage]?.name || ''"
                   @update:model-value="(value) => updateTranslationField('name', value)"
-                  :label="t('admin.products.editor.translations.name.label')"
+                  :label="t('admin.products.editor.description.name.label')"
                   :rules="nameRules"
                   variant="outlined"
                   color="teal"
@@ -714,7 +711,7 @@ onMounted(() => {
                 <v-textarea
                   :model-value="formData.translations[selectedLanguage]?.shortDesc || ''"
                   @update:model-value="(value) => updateTranslationField('shortDesc', value)"
-                  :label="t('admin.products.editor.translations.shortDesc.label')"
+                  :label="t('admin.products.editor.description.shortDesc.label')"
                   :rules="shortDescRules"
                   variant="outlined"
                   rows="3"
@@ -731,7 +728,7 @@ onMounted(() => {
                 <v-textarea
                   :model-value="formData.translations[selectedLanguage]?.longDesc || ''"
                   @update:model-value="(value) => updateTranslationField('longDesc', value)"
-                  :label="t('admin.products.editor.translations.longDesc.label')"
+                  :label="t('admin.products.editor.description.longDesc.label')"
                   variant="outlined"
                   rows="5"
                   counter="10000"

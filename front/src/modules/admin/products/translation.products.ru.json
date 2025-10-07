@@ -62,13 +62,13 @@
           },
           "specialists": {
             "label": "специалисты",
-            "select": "выбрать специалистов"
+            "select": "выбрать группы со специалистами"
           },
           "addGroups": "добавить группы",
           "addMore": "добавить еще"
         },
-        "translations": {
-          "title": "переводы",
+        "description": {
+          "title": "детали",
           "language": {
             "label": "язык"
           },
