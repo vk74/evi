@@ -72,6 +72,16 @@
   "pairEditor": {
     "title": "создание парных опций для продукта:",
     "selectedOptionsCount": "выбрано опций: {count}",
+    "headers": {
+      "optionName": "название опции",
+      "productCode": "код продукта",
+      "isRequired": "обязательно",
+      "unitsCount": "количество",
+      "unitPrice": "цена за единицу"
+    },
+    "search": {
+      "placeholder": "фильтр опций..."
+    },
     "buttons": {
       "pair": "связать",
       "cancel": "отмена"

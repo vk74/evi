@@ -72,6 +72,16 @@
   "pairEditor": {
     "title": "creating paired options for product:",
     "selectedOptionsCount": "selected options: {count}",
+    "headers": {
+      "optionName": "option name",
+      "productCode": "product code",
+      "isRequired": "required",
+      "unitsCount": "units",
+      "unitPrice": "unit price"
+    },
+    "search": {
+      "placeholder": "filter options..."
+    },
     "buttons": {
       "pair": "pair",
       "cancel": "cancel"

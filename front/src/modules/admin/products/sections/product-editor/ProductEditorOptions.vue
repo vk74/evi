@@ -505,6 +505,7 @@ onMounted(async () => {
       <ProductPairEditor
         :selected-options="getSelectedOptionsData"
         :product-name="productName"
+        :main-product-id="productsStore.editingProductId as string"
         @close="handlePairEditorClose"
         @paired="handlePairingCompleted"
       />
