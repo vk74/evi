@@ -70,7 +70,7 @@
     }
   },
   "pairEditor": {
-    "title": "создание пар для продукта:",
+    "title": "создание парных опций для продукта:",
     "selectedOptionsCount": "выбрано опций: {count}",
     "buttons": {
       "pair": "связать",

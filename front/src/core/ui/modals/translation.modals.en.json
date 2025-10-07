@@ -70,7 +70,7 @@
     }
   },
   "pairEditor": {
-    "title": "creating pairs for product:",
+    "title": "creating paired options for product:",
     "selectedOptionsCount": "selected options: {count}",
     "buttons": {
       "pair": "pair",
