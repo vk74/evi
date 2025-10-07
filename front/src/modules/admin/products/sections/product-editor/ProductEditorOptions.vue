@@ -240,6 +240,11 @@ const handleItemsPerPageChange = async (newItemsPerPage: ItemsPerPageOption) => 
   await performSearch()
 }
 
+// Refresh options and active count
+async function refreshOptions() {
+  await Promise.all([performSearch(), loadActiveOptionsCount()])
+}
+
 // Get selected options data for pair editor
 const getSelectedOptionsData = computed(() => {
   return options.value.filter(option => selectedOptions.value.has(option.product_id))
@@ -258,12 +263,12 @@ const handlePairEditorClose = () => {
 }
 
 // Handle pairing completed
-const handlePairingCompleted = (result: any) => {
+const handlePairingCompleted = async (result: any) => {
   showPairEditor.value = false
   
   if (result.success) {
     uiStore.showSuccessSnackbar('Options paired successfully')
-    // TODO: Refresh data or update UI
+    await Promise.all([performSearch(), loadActiveOptionsCount()])
   } else {
     uiStore.showErrorSnackbar(result.message || 'Failed to pair options')
   }
@@ -335,9 +340,6 @@ onMounted(async () => {
         <v-container class="pa-6">
           <!-- Options Management Section -->
           <div v-if="isOptionsTabActive" class="options-management-section">
-            <div class="d-flex align-center justify-space-between mb-2">
-              <div class="text-body-2">number of active options: {{ activeOptionsCount }}</div>
-            </div>
             <!-- Search row -->
             <div class="mb-4">
               <v-text-field
@@ -365,6 +367,11 @@ onMounted(async () => {
                   </div>
                 </template>
               </v-text-field>
+            </div>
+
+            <!-- Active options counter -->
+            <div class="d-flex align-center justify-space-between mb-2">
+              <div class="text-body-2">number of active options: {{ activeOptionsCount }}</div>
             </div>
 
             <!-- Loading State -->
@@ -493,6 +500,20 @@ onMounted(async () => {
               <PhX />
             </template>
             CLEAR SELECTIONS
+          </v-btn>
+
+          <!-- Refresh button -->
+          <v-btn
+            block
+            color="teal"
+            variant="outlined"
+            class="mb-3"
+            @click="refreshOptions"
+          >
+            <template #prepend>
+              <PhMagnifyingGlass />
+            </template>
+            REFRESH
           </v-btn>
         </div>
         
