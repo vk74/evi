@@ -1,12 +1,10 @@
 <!--
   File: ProductEditorOptions.vue
-  Version: 1.3.0
+  Version: 1.4.0
   Description: Component for product options management
   Purpose: Provides interface for managing product options pairing
   Frontend file - ProductEditorOptions.vue
-  Created: 2024-12-20
-  Last Updated: 2024-12-20
-  Changes: Added options pairing interface with table and search functionality, excluded current product from options list
+  Changes: Renamed PAIR SELECTED to PAIR SELECTOR, added UNPAIR button with count display in sidebar
 -->
 
 <script setup lang="ts">
@@ -239,6 +237,20 @@ const pairOptions = () => {
   }
 }
 
+// Unpair options handler
+const unpairOptions = () => {
+  if (hasSelected.value) {
+    uiStore.showSnackbar({
+      message: `Unpairing ${selectedCount.value} option(s) from product...`,
+      type: 'info',
+      timeout: 3000,
+      closable: true,
+      position: 'bottom'
+    })
+    // TODO: Implement actual unpairing logic
+  }
+}
+
 // Initialize on mount
 onMounted(async () => {
   if (isOptionsTabActive.value) {
@@ -433,18 +445,33 @@ onMounted(async () => {
             {{ t('admin.products.actions.selectedItems').toLowerCase() }}
           </h3>
 
-          <!-- Pair Options button -->
+          <!-- Pair Selector button -->
           <v-btn
             block
             color="teal"
             variant="outlined"
             :disabled="!hasSelected"
+            class="mb-3"
             @click="pairOptions"
           >
             <template #prepend>
               <PhCheckSquare />
             </template>
-            {{ t('admin.products.actions.pairSelected').toUpperCase() }}
+            {{ t('admin.products.actions.pairSelector').toUpperCase() }}
+          </v-btn>
+
+          <!-- Unpair button -->
+          <v-btn
+            block
+            color="red"
+            variant="outlined"
+            :disabled="!hasSelected"
+            @click="unpairOptions"
+          >
+            <template #prepend>
+              <PhSquare />
+            </template>
+            {{ t('admin.products.actions.unpair').toUpperCase() }}
             <span v-if="hasSelected" class="ml-2">({{ selectedCount }})</span>
           </v-btn>
         </div>

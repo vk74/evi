@@ -283,6 +283,8 @@
         "assignOwner": "назначить владельца",
         "delete": "удалить",
         "pairSelected": "связать выбранные",
+        "pairSelector": "редактор связей",
+        "unpair": "разорвать связь",
         "unpairAll": "разорвать все связи"
       },
       "messages": {

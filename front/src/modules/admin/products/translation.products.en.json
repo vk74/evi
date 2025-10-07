@@ -283,6 +283,8 @@
         "assignOwner": "assign owner",
         "delete": "delete",
         "pairSelected": "pair selected",
+        "pairSelector": "pair editor",
+        "unpair": "unpair",
         "unpairAll": "unpair all"
       },
       "messages": {
