@@ -15,6 +15,7 @@ import DataLoading from '@/core/ui/loaders/DataLoading.vue'
 import Paginator from '@/core/ui/paginator/Paginator.vue'
 import debounce from 'lodash/debounce'
 import { serviceFetchOptions } from '../../service.fetch.options'
+import deleteProductOptionPairs, { type DeletePairsRequest, type DeletePairsResponse } from './service.admin.delete.product.option.pairs'
 import type { ProductListItem, FetchAllProductsResult } from '../../types.products.admin'
 import {
   PhMagnifyingGlass,
@@ -193,16 +194,16 @@ const onSelectOption = (optionId: string, selected: boolean) => {
 
 const isSelected = (optionId: string) => selectedOptions.value.has(optionId)
 
-const unpairAll = () => {
-  selectedOptions.value.clear()
-  uiStore.showSnackbar({
-    message: 'Unpairing all options...',
-    type: 'info',
-    timeout: 3000,
-    closable: true,
-    position: 'bottom'
-  })
-  // TODO: Implement actual unpairing logic
+const unpairAll = async () => {
+  try {
+    const request: DeletePairsRequest = { mainProductId: productsStore.editingProductId as string, all: true }
+    const res: DeletePairsResponse = await deleteProductOptionPairs(request)
+    uiStore.showSuccessSnackbar(`Deleted all pairs: ${res.totalDeleted}`)
+    selectedOptions.value.clear()
+    await performSearch()
+  } catch (e) {
+    uiStore.showErrorSnackbar('Failed to unpair all options')
+  }
 }
 
 const selectAll = () => {
@@ -257,16 +258,21 @@ const handlePairingCompleted = (result: any) => {
 }
 
 // Unpair options handler
-const unpairOptions = () => {
-  if (hasSelected.value) {
-    uiStore.showSnackbar({
-      message: `Unpairing ${selectedCount.value} option(s) from product...`,
-      type: 'info',
-      timeout: 3000,
-      closable: true,
-      position: 'bottom'
-    })
-    // TODO: Implement actual unpairing logic
+const unpairOptions = async () => {
+  if (!hasSelected.value) return
+  try {
+    const optionIds = Array.from(selectedOptions.value)
+    const request: DeletePairsRequest = { mainProductId: productsStore.editingProductId as string, all: false, selectedOptionIds: optionIds }
+    const res: DeletePairsResponse = await deleteProductOptionPairs(request)
+    if (res.missingOptionIds && res.missingOptionIds.length > 0) {
+      uiStore.showSnackbar({ message: `Deleted ${res.totalDeleted} of ${res.totalRequested}. Missing: ${res.missingOptionIds.length}`, type: 'warning', timeout: 4000, closable: true, position: 'bottom' })
+    } else {
+      uiStore.showSuccessSnackbar(`Deleted ${res.totalDeleted} pair(s)`) 
+    }
+    selectedOptions.value.clear()
+    await performSearch()
+  } catch (e) {
+    uiStore.showErrorSnackbar('Failed to unpair selected options')
   }
 }
 
@@ -442,9 +448,9 @@ onMounted(async () => {
           <!-- Unpair All button -->
           <v-btn
             block
-            color="grey"
+            color="red"
             variant="outlined"
-            :disabled="!hasSelected"
+            :disabled="false"
             class="mb-3"
             @click="unpairAll"
           >
@@ -490,7 +496,7 @@ onMounted(async () => {
             <template #prepend>
               <PhSquare />
             </template>
-            {{ t('admin.products.actions.unpair').toUpperCase() }}
+            {{ t('admin.products.actions.unpairSelected').toUpperCase() }}
             <span v-if="hasSelected" class="ml-2">({{ selectedCount }})</span>
           </v-btn>
         </div>

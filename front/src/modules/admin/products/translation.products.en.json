@@ -284,8 +284,9 @@
         "delete": "delete",
         "pairSelected": "pair selected",
         "pairSelector": "pair editor",
-        "unpair": "unpair",
-        "unpairAll": "unpair all"
+          "unpair": "unpair",
+          "unpairSelected": "unpair selected",
+          "unpairAll": "unpair all"
       },
       "messages": {
         "deleteConfirm": {

@@ -35,6 +35,12 @@ export async function createProductOptionPairs(body: CreatePairsRequestBody, req
     }
 
     // Validate semantics
+    // 1) no self-pairing
+    const selfPairing = pairs.filter(p => p.optionProductId === mainProductId).map(p => p.optionProductId)
+    if (selfPairing.length > 0) {
+      throw new Error(`Self-pairing not allowed for option ids: ${selfPairing.join(',')}`)
+    }
+    // 2) field constraints
     for (const p of pairs) {
       if (!p.optionProductId) throw new Error('optionProductId is required')
       if (p.isRequired && (p.unitsCount == null || p.unitsCount < 1 || p.unitsCount > 100)) {

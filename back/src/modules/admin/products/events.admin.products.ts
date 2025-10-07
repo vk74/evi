@@ -569,6 +569,37 @@ export const PRODUCT_OPTION_PAIRS_EVENTS = {
     }
 };
 
+export const PRODUCT_OPTION_PAIRS_DELETE_EVENTS = {
+    SUCCESS: {
+        eventName: 'products.pairs.delete.success',
+        source: 'admin-products',
+        eventType: 'app' as const,
+        severity: 'info' as const,
+        eventMessage: 'Pairs deleted successfully',
+        payload: null,
+        version: '1.0.0'
+    },
+    PARTIAL_SUCCESS: {
+        eventName: 'products.pairs.delete.partial_success',
+        source: 'admin-products',
+        eventType: 'app' as const,
+        severity: 'warning' as const,
+        eventMessage: 'Pairs delete partial success',
+        payload: null,
+        version: '1.0.0'
+    },
+    ERROR: {
+        eventName: 'products.pairs.delete.error',
+        source: 'admin-products',
+        eventType: 'app' as const,
+        severity: 'error' as const,
+        eventMessage: 'Pairs delete error',
+        payload: null,
+        errorData: null,
+        version: '1.0.0'
+    }
+}
+
 // Product catalog publication fetch events
 export const PRODUCT_CATALOG_PUBLICATION_FETCH_EVENTS = {
     STARTED: {

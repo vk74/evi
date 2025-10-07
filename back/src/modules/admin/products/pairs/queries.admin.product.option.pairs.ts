@@ -40,6 +40,20 @@ export const pairsQueries = {
     WHERE po.main_product_id = $1
       AND po.option_product_id = s.option_id
   `
+  ,
+  // Delete selected pairs
+  deleteSelectedPairs: `
+    DELETE FROM app.product_options
+    WHERE main_product_id = $1
+      AND option_product_id = ANY($2::uuid[])
+    RETURNING option_product_id
+  `,
+  // Delete all pairs for product
+  deleteAllPairs: `
+    DELETE FROM app.product_options
+    WHERE main_product_id = $1
+    RETURNING option_product_id
+  `
 }
 
 
