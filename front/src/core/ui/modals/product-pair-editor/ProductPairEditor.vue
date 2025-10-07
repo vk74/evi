@@ -64,6 +64,9 @@ const optionMetaById = ref<Record<string, { name?: string; productCode: string }
 // Pair state by id
 const pairStateById = ref<Record<string, { isRequired: boolean; unitsCount: number | null; unitPrice: number | null }>>({})
 
+// Track which pairs already exist in DB to avoid create conflicts
+const existingOptionIds = ref<Set<string>>(new Set())
+
 // Units selectable items 1..100
 const unitItems = computed(() => Array.from({ length: 100 }, (_, i) => i + 1))
 
@@ -144,6 +147,7 @@ async function initializeState() {
     const optionIds = limitedOptions.value.map(o => o.product_id)
     const records: PairRecord[] = await readProductOptionPairs({ mainProductId: props.mainProductId, optionProductIds: optionIds })
     if (records && records.length > 0) {
+      const existSet = new Set<string>()
       for (const r of records) {
         if (pairStateById.value[r.optionProductId]) {
           pairStateById.value[r.optionProductId] = {
@@ -152,7 +156,9 @@ async function initializeState() {
             unitPrice: r.unitPrice ?? null,
           }
         }
+        existSet.add(r.optionProductId)
       }
+      existingOptionIds.value = existSet
     }
   }
 }
@@ -178,8 +184,14 @@ const handlePair = async () => {
       return { optionProductId: optionId, isRequired: !!st.isRequired, unitsCount: st.isRequired ? (st.unitsCount ?? 1) : null }
     })
 
-    const createReq: CreatePairsRequest = { mainProductId: props.mainProductId, pairs: pairsPayload }
-    await createProductOptionPairs(createReq)
+    // Create only missing pairs to avoid conflict errors
+    const toCreate = pairsPayload.filter(p => !existingOptionIds.value.has(p.optionProductId))
+    if (toCreate.length > 0) {
+      const createReq: CreatePairsRequest = { mainProductId: props.mainProductId, pairs: toCreate }
+      await createProductOptionPairs(createReq)
+      // Newly created now exist
+      toCreate.forEach(p => existingOptionIds.value.add(p.optionProductId))
+    }
 
     const updateReq: UpdatePairsRequest = { mainProductId: props.mainProductId, pairs: pairsPayload }
     await updateProductOptionPairs(updateReq)
