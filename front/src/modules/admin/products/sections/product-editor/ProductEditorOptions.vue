@@ -501,7 +501,6 @@ onMounted(async () => {
     <v-dialog
       v-model="showPairEditor"
       max-width="800"
-      persistent
     >
       <ProductPairEditor
         :selected-options="getSelectedOptionsData"

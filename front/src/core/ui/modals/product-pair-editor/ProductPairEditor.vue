@@ -33,7 +33,7 @@ const isProcessing = ref(false)
 
 // Computed
 const modalTitle = computed(() => {
-  return `${t('modals.pairEditor.title')} ${props.productName}`
+  return `${t('pairEditor.title')} ${props.productName}`
 })
 
 // Methods
@@ -75,7 +75,7 @@ const handlePair = async () => {
       <div class="pair-editor-content">
         <!-- TODO: Add checkboxes and dropdowns for each selected option -->
         <div class="placeholder-text">
-          <p>{{ t('modals.pairEditor.selectedOptionsCount', { count: selectedOptions.length }) }}</p>
+          <p>{{ t('pairEditor.selectedOptionsCount', { count: selectedOptions.length }) }}</p>
         </div>
       </div>
     </v-card-text>
@@ -92,7 +92,7 @@ const handlePair = async () => {
         @click="handleCancel"
         :disabled="isProcessing"
       >
-        {{ t('modals.pairEditor.buttons.cancel').toUpperCase() }}
+        {{ t('pairEditor.buttons.cancel').toUpperCase() }}
       </v-btn>
       
       <v-btn
@@ -102,7 +102,7 @@ const handlePair = async () => {
         :disabled="isProcessing"
         :loading="isProcessing"
       >
-        {{ t('modals.pairEditor.buttons.pair').toUpperCase() }}
+        {{ t('pairEditor.buttons.pair').toUpperCase() }}
       </v-btn>
     </v-card-actions>
   </v-card>
