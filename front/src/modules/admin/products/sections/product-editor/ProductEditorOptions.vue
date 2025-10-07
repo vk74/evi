@@ -16,6 +16,7 @@ import Paginator from '@/core/ui/paginator/Paginator.vue'
 import debounce from 'lodash/debounce'
 import { serviceFetchOptions } from '../../service.fetch.options'
 import deleteProductOptionPairs, { type DeletePairsRequest, type DeletePairsResponse } from './service.admin.delete.product.option.pairs'
+import countProductOptionPairs from './service.admin.count.product.option.pairs'
 import type { ProductListItem, FetchAllProductsResult } from '../../types.products.admin'
 import {
   PhMagnifyingGlass,
@@ -75,6 +76,7 @@ const isLoading = ref(false)
 const options = ref<OptionItem[]>([])
 const totalItemsCount = ref<number>(0)
 const totalPagesCount = ref<number>(0)
+const activeOptionsCount = ref<number>(0)
 
 // Selected options
 const selectedOptions = ref<Set<string>>(new Set())
@@ -166,6 +168,16 @@ const performSearch = async () => {
   }
 }
 
+// Load active options count
+const loadActiveOptionsCount = async () => {
+  try {
+    if (!productsStore.editingProductId) return
+    activeOptionsCount.value = await countProductOptionPairs({ mainProductId: productsStore.editingProductId as string })
+  } catch (e) {
+    // silent fail, keep previous value
+  }
+}
+
 const handleClearSearch = () => {
   searchQuery.value = ''
 }
@@ -200,7 +212,7 @@ const unpairAll = async () => {
     const res: DeletePairsResponse = await deleteProductOptionPairs(request)
     uiStore.showSuccessSnackbar(`Deleted all pairs: ${res.totalDeleted}`)
     selectedOptions.value.clear()
-    await performSearch()
+    await Promise.all([performSearch(), loadActiveOptionsCount()])
   } catch (e) {
     uiStore.showErrorSnackbar('Failed to unpair all options')
   }
@@ -270,16 +282,22 @@ const unpairOptions = async () => {
       uiStore.showSuccessSnackbar(`Deleted ${res.totalDeleted} pair(s)`) 
     }
     selectedOptions.value.clear()
-    await performSearch()
+    await Promise.all([performSearch(), loadActiveOptionsCount()])
   } catch (e) {
     uiStore.showErrorSnackbar('Failed to unpair selected options')
   }
 }
 
+// Clear selections handler
+function clearSelections() {
+  selectedOptions.value.clear()
+  uiStore.showSuccessSnackbar(t('admin.products.messages.selectionCleared'))
+}
+
 // Initialize on mount
 onMounted(async () => {
   if (isOptionsTabActive.value) {
-    await performSearch()
+    await Promise.all([performSearch(), loadActiveOptionsCount()])
   }
 })
 </script>
@@ -317,6 +335,9 @@ onMounted(async () => {
         <v-container class="pa-6">
           <!-- Options Management Section -->
           <div v-if="isOptionsTabActive" class="options-management-section">
+            <div class="d-flex align-center justify-space-between mb-2">
+              <div class="text-body-2">number of active options: {{ activeOptionsCount }}</div>
+            </div>
             <!-- Search row -->
             <div class="mb-4">
               <v-text-field
@@ -458,6 +479,20 @@ onMounted(async () => {
               <PhSquare />
             </template>
             {{ t('admin.products.actions.unpairAll').toUpperCase() }}
+          </v-btn>
+
+          <!-- Clear selections button -->
+          <v-btn
+            block
+            color="grey"
+            variant="outlined"
+            class="mb-3"
+            @click="clearSelections"
+          >
+            <template #prepend>
+              <PhX />
+            </template>
+            CLEAR SELECTIONS
           </v-btn>
         </div>
         

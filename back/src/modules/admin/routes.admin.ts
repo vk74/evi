@@ -48,6 +48,7 @@ import readProductOptionPairsController from './products/pairs/controller.admin.
 import createProductOptionPairsController from './products/pairs/controller.admin.create.product.option.pairs';
 import updateProductOptionPairsController from './products/pairs/controller.admin.update.product.option.pairs';
 import deleteProductOptionPairsController from './products/pairs/controller.admin.delete.product.option.pairs';
+import countProductOptionPairsController from './products/pairs/controller.admin.count.product.option.pairs';
 import registerUserController from '../account/controller.register.user';
 import fetchUserGroupsController from './org/userEditor/controller.fetch.user.groups';
 import removeUserFromGroupsController from './org/userEditor/controller.remove.user.from.groups';
@@ -105,6 +106,7 @@ router.post('/api/admin/products/read-product-option-pairs', checkRequestSecurit
 router.post('/api/admin/products/create-product-option-pairs', checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, createProductOptionPairsController);
 router.post('/api/admin/products/update-product-option-pairs', checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, updateProductOptionPairsController);
 router.post('/api/admin/products/delete-product-option-pairs', checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, deleteProductOptionPairsController);
+router.post('/api/admin/products/count-product-option-pairs', checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, countProductOptionPairsController);
 
 // Routes for Account Management
 router.post('/api/admin/users/register', checkRequestSecurityHard, registerUserController);

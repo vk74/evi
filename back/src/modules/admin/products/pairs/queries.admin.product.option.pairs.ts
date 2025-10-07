@@ -54,6 +54,12 @@ export const pairsQueries = {
     WHERE main_product_id = $1
     RETURNING option_product_id
   `
+  ,
+  countPairsByMain: `
+    SELECT COUNT(*)::int AS cnt
+    FROM app.product_options
+    WHERE main_product_id = $1
+  `
 }
 
 
