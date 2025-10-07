@@ -44,6 +44,9 @@ import fetchOptionsController from './products/controller.admin.fetch.options';
 import deleteProductsController from './products/controller.admin.delete.products';
 import fetchPublishingSectionsProductsController from './products/sections/controller.admin.fetch.publishingsections';
 import updateProductSectionsPublishController from './products/sections/controller.admin.update.sections.publish';
+import readProductOptionPairsController from './products/pairs/controller.admin.read.product.option.pairs';
+import createProductOptionPairsController from './products/pairs/controller.admin.create.product.option.pairs';
+import updateProductOptionPairsController from './products/pairs/controller.admin.update.product.option.pairs';
 import registerUserController from '../account/controller.register.user';
 import fetchUserGroupsController from './org/userEditor/controller.fetch.user.groups';
 import removeUserFromGroupsController from './org/userEditor/controller.remove.user.from.groups';
@@ -95,6 +98,11 @@ router.post('/api/admin/products/create', checkRequestSecurityHard, validateJWT,
 router.get('/api/admin/products/fetch', checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, fetchProductController);
 router.post('/api/admin/products/update', checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, updateProductController);
 router.post('/api/admin/products/delete', checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, deleteProductsController);
+
+// Product option pairs endpoints
+router.post('/api/admin/products/read-product-option-pairs', checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, readProductOptionPairsController);
+router.post('/api/admin/products/create-product-option-pairs', checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, createProductOptionPairsController);
+router.post('/api/admin/products/update-product-option-pairs', checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, updateProductOptionPairsController);
 
 // Routes for Account Management
 router.post('/api/admin/users/register', checkRequestSecurityHard, registerUserController);

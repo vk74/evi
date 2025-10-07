@@ -11,9 +11,11 @@ import { ref, computed, watch, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useUiStore } from '@/core/state/uistate'
 import Paginator from '@/core/ui/paginator/Paginator.vue'
-import type { SelectedOption, OptionPairConfig, PairEditorResult, PairRecord } from './types.pair.editor'
+import type { SelectedOption, OptionPairConfig, PairEditorResult, PairRecord, CreatePairsRequest, UpdatePairsRequest } from './types.pair.editor'
 import readProductOptionPairs from './service.read.product.option.pairs'
 import { PhCheckSquare, PhSquare, PhCaretUpDown } from '@phosphor-icons/vue'
+import createProductOptionPairs from './service.create.product.option.pairs'
+import updateProductOptionPairs from './service.update.product.option.pairs'
 
 // Props
 interface Props {
@@ -169,16 +171,24 @@ const handlePair = async () => {
   isProcessing.value = true
   
   try {
-    // TODO: Implement pairing logic
-    const result: PairEditorResult = {
-      success: true,
-      pairConfigs: [],
-      message: 'Pairing completed successfully'
-    }
-    
-    emit('paired', result)
+    const optionIds = limitedOptions.value.map(o => o.product_id)
+    // Build payloads
+    const pairsPayload = optionIds.map(optionId => {
+      const st = pairStateById.value[optionId] || { isRequired: false, unitsCount: null, unitPrice: null }
+      return { optionProductId: optionId, isRequired: !!st.isRequired, unitsCount: st.isRequired ? (st.unitsCount ?? 1) : null }
+    })
+
+    const createReq: CreatePairsRequest = { mainProductId: props.mainProductId, pairs: pairsPayload }
+    await createProductOptionPairs(createReq)
+
+    const updateReq: UpdatePairsRequest = { mainProductId: props.mainProductId, pairs: pairsPayload }
+    await updateProductOptionPairs(updateReq)
+
+    emit('paired', { success: true, pairConfigs: [], message: 'Pairing completed successfully' })
+    uiStore.showSuccessSnackbar(t('pairEditor.messages.success'))
   } catch (error) {
     console.error('Error during pairing:', error)
+    uiStore.showErrorSnackbar(t('pairEditor.messages.error'))
   } finally {
     isProcessing.value = false
   }

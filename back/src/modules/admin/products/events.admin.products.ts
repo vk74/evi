@@ -481,6 +481,94 @@ export const OPTIONS_FETCH_EVENTS = {
     }
 };
 
+// Product option pairs events
+export const PRODUCT_OPTION_PAIRS_EVENTS = {
+    READ_STARTED: {
+        eventName: 'products.pairs.read.started',
+        source: 'admin-products',
+        eventType: 'app' as const,
+        severity: 'debug' as const,
+        eventMessage: 'Pairs read started',
+        payload: null,
+        version: '1.0.0'
+    },
+    READ_SUCCESS: {
+        eventName: 'products.pairs.read.success',
+        source: 'admin-products',
+        eventType: 'app' as const,
+        severity: 'debug' as const,
+        eventMessage: 'Pairs read success',
+        payload: null,
+        version: '1.0.0'
+    },
+    READ_ERROR: {
+        eventName: 'products.pairs.read.error',
+        source: 'admin-products',
+        eventType: 'app' as const,
+        severity: 'error' as const,
+        eventMessage: 'Pairs read error',
+        payload: null,
+        errorData: null,
+        version: '1.0.0'
+    },
+    CREATE_CONFLICT: {
+        eventName: 'products.pairs.create.conflict',
+        source: 'admin-products',
+        eventType: 'app' as const,
+        severity: 'error' as const,
+        eventMessage: 'Pairs create conflict',
+        payload: null,
+        version: '1.0.0'
+    },
+    CREATE_SUCCESS: {
+        eventName: 'products.pairs.create.success',
+        source: 'admin-products',
+        eventType: 'app' as const,
+        severity: 'info' as const,
+        eventMessage: 'Pairs created successfully',
+        payload: null,
+        version: '1.0.0'
+    },
+    CREATE_ERROR: {
+        eventName: 'products.pairs.create.error',
+        source: 'admin-products',
+        eventType: 'app' as const,
+        severity: 'error' as const,
+        eventMessage: 'Pairs create error',
+        payload: null,
+        errorData: null,
+        version: '1.0.0'
+    },
+    UPDATE_NOT_FOUND: {
+        eventName: 'products.pairs.update.not_found',
+        source: 'admin-products',
+        eventType: 'app' as const,
+        severity: 'error' as const,
+        eventMessage: 'Pairs update missing some records',
+        payload: null,
+        version: '1.0.0'
+    },
+    UPDATE_SUCCESS: {
+        eventName: 'products.pairs.update.success',
+        source: 'admin-products',
+        eventType: 'app' as const,
+        severity: 'info' as const,
+        eventMessage: 'Pairs updated successfully',
+        payload: null,
+        version: '1.0.0'
+    },
+    UPDATE_ERROR: {
+        eventName: 'products.pairs.update.error',
+        source: 'admin-products',
+        eventType: 'app' as const,
+        severity: 'error' as const,
+        eventMessage: 'Pairs update error',
+        payload: null,
+        errorData: null,
+        version: '1.0.0'
+    }
+};
+
 // Product catalog publication fetch events
 export const PRODUCT_CATALOG_PUBLICATION_FETCH_EVENTS = {
     STARTED: {

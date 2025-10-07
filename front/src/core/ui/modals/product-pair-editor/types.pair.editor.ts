@@ -1,6 +1,6 @@
 /**
  * @file types.pair.editor.ts
- * Version: 1.1.0
+ * Version: 1.2.0
  * Type definitions for ProductPairEditor component and services
  * Frontend file - types.pair.editor.ts
  */
@@ -70,5 +70,31 @@ export interface ReadPairsResponse {
   success: boolean
   message?: string
   pairs: PairRecord[]
+}
+
+// CREATE service
+export interface CreatePairsRequest {
+  mainProductId: string
+  pairs: Array<{ optionProductId: string; isRequired: boolean; unitsCount: number | null }>
+}
+
+export interface CreatePairsResponse {
+  success: boolean
+  createdCount: number
+  created: string[]
+  message?: string
+}
+
+// UPDATE service
+export interface UpdatePairsRequest {
+  mainProductId: string
+  pairs: Array<{ optionProductId: string; isRequired: boolean; unitsCount: number | null }>
+}
+
+export interface UpdatePairsResponse {
+  success: boolean
+  updatedCount: number
+  updated: string[]
+  message?: string
 }
 
