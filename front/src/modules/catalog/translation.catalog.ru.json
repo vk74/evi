@@ -71,7 +71,18 @@
       "productOverview": "обзор продукта",
       "productOptions": "опции продукта",
       "productOptionsEmpty": "опции продукта не найдены",
-      "published": "опубликован"
+      "published": "опубликован",
+      "options": {
+        "counter": "найдено опций: {count}",
+        "search": { "placeholder": "поиск опций..." },
+        "headers": {
+          "optionName": "название опции",
+          "productCode": "код продукта",
+          "select": "выбор",
+          "unitsCount": "кол-во единиц",
+          "unitPrice": "цена за единицу"
+        }
+      }
     }
   }
 }

@@ -71,7 +71,18 @@
       "productOverview": "product overview",
       "productOptions": "product options",
       "productOptionsEmpty": "no product options found",
-      "published": "published"
+      "published": "published",
+      "options": {
+        "counter": "options found: {count}",
+        "search": { "placeholder": "search options..." },
+        "headers": {
+          "optionName": "option name",
+          "productCode": "product code",
+          "select": "select",
+          "unitsCount": "units count",
+          "unitPrice": "unit price"
+        }
+      }
     }
   }
 }

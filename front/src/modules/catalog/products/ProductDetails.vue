@@ -10,6 +10,7 @@ import { useI18n } from 'vue-i18n'
 import type { CatalogProductDetails } from './types.products'
 import { fetchProductDetails } from './service.fetch.product.details'
 import { PhCamera } from '@phosphor-icons/vue'
+import ProductOptionsTable from './ProductOptionsTable.vue'
 
 // Props (MVP): accept productId from parent context/navigation state
 interface Props { productId: string }
@@ -170,9 +171,7 @@ watch(() => props.productId, () => { loadDetails() })
       <div class="text-subtitle-1 mb-2">
         {{ t('catalog.productDetails.productOptions') }}
       </div>
-      <div class="text-body-2 text-grey">
-        {{ t('catalog.productDetails.productOptionsEmpty') }}
-      </div>
+      <ProductOptionsTable :items="[]" />
     </div>
   </div>
 </template>
