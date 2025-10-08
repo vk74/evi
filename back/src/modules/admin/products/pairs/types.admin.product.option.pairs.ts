@@ -1,6 +1,6 @@
 /**
  * File: types.admin.product.option.pairs.ts
- * Version: 1.0.0
+ * Version: 1.1.0
  * Description: Backend types and interfaces for product-option pairs endpoints.
  * Purpose: Defines contracts for controllers and services of pairs read/create/update.
  * Backend file - types.admin.product.option.pairs.ts
@@ -8,9 +8,12 @@
 
 import { Request } from 'express'
 
+export type ReadPairsMode = 'records' | 'ids' | 'exists'
+
 export interface ReadPairsRequestBody {
   mainProductId: string
-  optionProductIds: string[]
+  optionProductIds?: string[]
+  mode?: ReadPairsMode
 }
 
 export interface PairDbRecord {
@@ -21,12 +24,14 @@ export interface PairDbRecord {
 
 export interface ReadPairsResult {
   success: boolean
-  pairs: Array<{
+  pairs?: Array<{
     optionProductId: string
     isRequired: boolean
     unitsCount: number | null
     unitPrice?: number | null
   }>
+  optionProductIds?: string[]
+  existsMap?: Record<string, boolean>
   message?: string
 }
 

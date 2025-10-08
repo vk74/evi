@@ -133,7 +133,8 @@
           "create": "create",
           "update": "update",
           "save": "save",
-          "refresh": "refresh"
+          "refresh": "refresh",
+          "activeOptionsCount": "number of paired options: {count}"
         },
         "validation": {
           "productCode": {
@@ -253,6 +254,7 @@
           "optionCode": "product code",
           "optionName": "product name",
           "type": "type",
+          "paired": "paired",
           "published": "published",
           "owner": "owner",
           "specialistsGroup": "specialists group"

@@ -36,6 +36,22 @@ export async function readProductOptionPairs(params: ReadPairsRequest): Promise<
   }
 }
 
+export async function fetchPairedOptionIds(mainProductId: string): Promise<string[]> {
+  const response = await api.post<ReadPairsResponse>('/api/admin/products/read-product-option-pairs', { mainProductId, mode: 'ids' })
+  if (response.data && response.data.success && Array.isArray(response.data.optionProductIds)) {
+    return response.data.optionProductIds
+  }
+  return []
+}
+
+export async function fetchExistsMap(mainProductId: string, optionProductIds: string[]): Promise<Record<string, boolean>> {
+  const response = await api.post<ReadPairsResponse>('/api/admin/products/read-product-option-pairs', { mainProductId, optionProductIds, mode: 'exists' })
+  if (response.data && response.data.success && response.data.existsMap) {
+    return response.data.existsMap
+  }
+  return {}
+}
+
 export default readProductOptionPairs
 
 

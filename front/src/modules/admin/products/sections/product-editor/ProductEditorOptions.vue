@@ -17,6 +17,7 @@ import debounce from 'lodash/debounce'
 import { serviceFetchOptions } from '../../service.fetch.options'
 import deleteProductOptionPairs, { type DeletePairsRequest, type DeletePairsResponse } from './service.admin.delete.product.option.pairs'
 import countProductOptionPairs from './service.admin.count.product.option.pairs'
+import { fetchPairedOptionIds, fetchExistsMap } from '@/core/ui/modals/product-pair-editor/service.read.product.option.pairs'
 import type { ProductListItem, FetchAllProductsResult } from '../../types.products.admin'
 import {
   PhMagnifyingGlass,
@@ -77,6 +78,8 @@ const options = ref<OptionItem[]>([])
 const totalItemsCount = ref<number>(0)
 const totalPagesCount = ref<number>(0)
 const activeOptionsCount = ref<number>(0)
+const pairedOptionIds = ref<Set<string>>(new Set())
+const pairedExistsMap = ref<Record<string, boolean>>({})
 
 // Selected options
 const selectedOptions = ref<Set<string>>(new Set())
@@ -108,6 +111,7 @@ const headers = computed<TableHeader[]>(() => [
   { title: t('admin.products.table.headers.optionCode'), key: 'option_code', width: '165px', sortable: true },
   { title: t('admin.products.table.headers.optionName'), key: 'name', width: '250px', sortable: true },
   { title: t('admin.products.table.headers.type'), key: 'type', width: '120px', sortable: true },
+  { title: t('admin.products.table.headers.paired') || 'paired', key: 'paired', width: '100px', sortable: false },
   { title: t('admin.products.table.headers.published'), key: 'published', width: '100px', sortable: false },
   { title: t('admin.products.table.headers.owner'), key: 'owner', width: '165px', sortable: false }
 ])
@@ -154,6 +158,8 @@ const performSearch = async () => {
       options.value = []
       totalItemsCount.value = 0
       totalPagesCount.value = 0
+      // After table data refresh, update paired flags for the current page
+      await refreshPairedForCurrentPage()
     }
     
   } catch (error) {
@@ -178,6 +184,29 @@ const loadActiveOptionsCount = async () => {
   }
 }
 
+const loadPairedOptionIds = async () => {
+  try {
+    if (!productsStore.editingProductId) return
+    const ids = await fetchPairedOptionIds(productsStore.editingProductId as string)
+    pairedOptionIds.value = new Set(ids)
+  } catch (e) {
+    pairedOptionIds.value = new Set()
+  }
+}
+
+// Refresh paired flags for the currently loaded table items
+const refreshPairedForCurrentPage = async () => {
+  try {
+    if (!productsStore.editingProductId) return
+    const ids = options.value.map(o => o.product_id)
+    if (ids.length === 0) { pairedExistsMap.value = {}; return }
+    const map = await fetchExistsMap(productsStore.editingProductId as string, ids)
+    pairedExistsMap.value = map
+  } catch (e) {
+    pairedExistsMap.value = {}
+  }
+}
+
 const handleClearSearch = () => {
   searchQuery.value = ''
 }
@@ -186,6 +215,11 @@ const debouncedSearch = debounce(performSearch, 500)
 
 watch(searchQuery, () => {
   debouncedSearch()
+})
+
+// Keep paired flags in sync when table data or pagination changes
+watch([options, page, itemsPerPage], async () => {
+  await refreshPairedForCurrentPage()
 })
 
 const handleSearchKeydown = (event: KeyboardEvent) => {
@@ -212,7 +246,7 @@ const unpairAll = async () => {
     const res: DeletePairsResponse = await deleteProductOptionPairs(request)
     uiStore.showSuccessSnackbar(`Deleted all pairs: ${res.totalDeleted}`)
     selectedOptions.value.clear()
-    await Promise.all([performSearch(), loadActiveOptionsCount()])
+    await Promise.all([performSearch(), loadActiveOptionsCount(), loadPairedOptionIds(), refreshPairedForCurrentPage()])
   } catch (e) {
     uiStore.showErrorSnackbar('Failed to unpair all options')
   }
@@ -242,7 +276,7 @@ const handleItemsPerPageChange = async (newItemsPerPage: ItemsPerPageOption) => 
 
 // Refresh options and active count
 async function refreshOptions() {
-  await Promise.all([performSearch(), loadActiveOptionsCount()])
+  await Promise.all([performSearch(), loadActiveOptionsCount(), loadPairedOptionIds()])
 }
 
 // Get selected options data for pair editor
@@ -268,7 +302,7 @@ const handlePairingCompleted = async (result: any) => {
   
   if (result.success) {
     uiStore.showSuccessSnackbar('Options paired successfully')
-    await Promise.all([performSearch(), loadActiveOptionsCount()])
+    await Promise.all([performSearch(), loadActiveOptionsCount(), loadPairedOptionIds()])
   } else {
     uiStore.showErrorSnackbar(result.message || 'Failed to pair options')
   }
@@ -287,7 +321,7 @@ const unpairOptions = async () => {
       uiStore.showSuccessSnackbar(`Deleted ${res.totalDeleted} pair(s)`) 
     }
     selectedOptions.value.clear()
-    await Promise.all([performSearch(), loadActiveOptionsCount()])
+    await Promise.all([performSearch(), loadActiveOptionsCount(), loadPairedOptionIds()])
   } catch (e) {
     uiStore.showErrorSnackbar('Failed to unpair selected options')
   }
@@ -302,7 +336,8 @@ function clearSelections() {
 // Initialize on mount
 onMounted(async () => {
   if (isOptionsTabActive.value) {
-    await Promise.all([performSearch(), loadActiveOptionsCount()])
+    await Promise.all([performSearch(), loadActiveOptionsCount(), loadPairedOptionIds()])
+    await refreshPairedForCurrentPage()
   }
 })
 </script>
@@ -371,7 +406,7 @@ onMounted(async () => {
 
             <!-- Active options counter -->
             <div class="d-flex align-center justify-space-between mb-2">
-              <div class="text-body-2">number of active options: {{ activeOptionsCount }}</div>
+              <div class="text-body-2">{{ t('admin.products.editor.actions.activeOptionsCount', { count: activeOptionsCount }) }}</div>
             </div>
 
             <!-- Loading State -->
@@ -392,6 +427,11 @@ onMounted(async () => {
               class="options-table"
               hide-default-footer
             >
+              <template #[`item.paired`]="{ item }">
+                <v-chip :color="(pairedExistsMap[item.product_id] ?? pairedOptionIds.has(item.product_id)) ? 'teal' : 'grey'" size="small">
+                  {{ (pairedExistsMap[item.product_id] ?? pairedOptionIds.has(item.product_id)) ? t('admin.products.table.status.yes') : t('admin.products.table.status.no') }}
+                </v-chip>
+              </template>
               <!-- Template for checkbox column -->
               <template #[`item.selection`]="{ item }">
                 <v-btn
@@ -482,9 +522,6 @@ onMounted(async () => {
             class="mb-3"
             @click="unpairAll"
           >
-            <template #prepend>
-              <PhSquare />
-            </template>
             {{ t('admin.products.actions.unpairAll').toUpperCase() }}
           </v-btn>
 
@@ -497,9 +534,9 @@ onMounted(async () => {
             @click="clearSelections"
           >
             <template #prepend>
-              <PhX />
+              <PhSquare />
             </template>
-            CLEAR SELECTIONS
+            {{ t('admin.products.actions.clearSelection').toUpperCase() }}
           </v-btn>
 
           <!-- Refresh button -->
@@ -510,10 +547,7 @@ onMounted(async () => {
             class="mb-3"
             @click="refreshOptions"
           >
-            <template #prepend>
-              <PhMagnifyingGlass />
-            </template>
-            REFRESH
+            {{ t('admin.products.actions.refresh').toUpperCase() }}
           </v-btn>
         </div>
         
@@ -535,9 +569,6 @@ onMounted(async () => {
             class="mb-3"
             @click="pairOptions"
           >
-            <template #prepend>
-              <PhCheckSquare />
-            </template>
             {{ t('admin.products.actions.pairSelector').toUpperCase() }}
           </v-btn>
 
@@ -549,9 +580,6 @@ onMounted(async () => {
             :disabled="!hasSelected"
             @click="unpairOptions"
           >
-            <template #prepend>
-              <PhSquare />
-            </template>
             {{ t('admin.products.actions.unpairSelected').toUpperCase() }}
             <span v-if="hasSelected" class="ml-2">({{ selectedCount }})</span>
           </v-btn>

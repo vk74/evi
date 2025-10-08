@@ -133,7 +133,8 @@
           "create": "создать",
           "update": "обновить",
           "save": "сохранить",
-          "refresh": "обновить"
+          "refresh": "обновить",
+          "activeOptionsCount": "количество связанных опций: {count}"
         },
         "validation": {
           "productCode": {
@@ -253,6 +254,7 @@
           "optionCode": "код продукта",
           "optionName": "название продукта",
           "type": "тип",
+          "paired": "связка",
           "published": "опубликован",
           "owner": "владелец",
           "specialistsGroup": "группа специалистов"
@@ -285,6 +287,7 @@
         "pairSelected": "связать выбранные",
         "pairSelector": "редактор связей",
         "unpair": "разорвать связь",
+        "unpairSelected": "разорвать выбранные",
         "unpairAll": "разорвать все связи"
       },
       "messages": {
