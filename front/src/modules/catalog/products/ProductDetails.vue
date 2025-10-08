@@ -10,6 +10,8 @@ import { useI18n } from 'vue-i18n'
 import type { CatalogProductDetails } from './types.products'
 import { fetchProductDetails } from './service.fetch.product.details'
 import { PhCamera } from '@phosphor-icons/vue'
+import { fetchProductOptions } from './service.fetch.product.options'
+import type { CatalogProductOption } from './types.products'
 import ProductOptionsTable from './ProductOptionsTable.vue'
 
 // Props (MVP): accept productId from parent context/navigation state
@@ -20,6 +22,7 @@ const props = defineProps<Props>()
 const details = ref<CatalogProductDetails | null>(null)
 const loading = ref(false)
 const error = ref<string | null>(null)
+const options = ref<CatalogProductOption[]>([])
 
 // i18n
 const { t } = useI18n()
@@ -75,7 +78,18 @@ async function loadDetails() {
 }
 
 onMounted(() => { loadPhosphorIcons(); loadDetails() })
-watch(() => props.productId, () => { loadDetails() })
+watch(() => props.productId, () => { loadDetails(); loadOptions() })
+
+async function loadOptions() {
+  try {
+    options.value = await fetchProductOptions(props.productId)
+  } catch (e) {
+    // errors are handled in service
+    options.value = []
+  }
+}
+
+onMounted(() => { loadOptions() })
 </script>
 
 <template>
@@ -171,7 +185,7 @@ watch(() => props.productId, () => { loadDetails() })
       <div class="text-subtitle-1 mb-2">
         {{ t('catalog.productDetails.productOptions') }}
       </div>
-      <ProductOptionsTable :items="[]" />
+      <ProductOptionsTable :items="options" />
     </div>
   </div>
 </template>

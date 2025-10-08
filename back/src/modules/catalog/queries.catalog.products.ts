@@ -99,6 +99,30 @@ export const queries = {
       AND pt.language_code = $2
     WHERE p.product_id = $1 AND p.is_published = true
   `,
+
+  /**
+   * Select product options for a product card
+   * - Only options where the option product is published
+   * - Join translations by provided language code
+   */
+  getProductOptionsByProductId: `
+    SELECT 
+      po.option_product_id,
+      pt.name AS option_name,
+      p_option.product_code,
+      p_option.is_published,
+      po.is_required,
+      po.units_count,
+      NULL::numeric AS unit_price
+    FROM app.product_options po
+    JOIN app.products p_option ON p_option.product_id = po.option_product_id
+    JOIN app.product_translations pt 
+      ON pt.product_id = po.option_product_id
+      AND pt.language_code = $2
+    WHERE po.main_product_id = $1
+      AND p_option.is_published = true
+    ORDER BY pt.name ASC
+  `,
 };
 
 export default queries;

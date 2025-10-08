@@ -297,3 +297,25 @@ export interface FetchProductsResponse extends ApiResponse {
 export interface FetchProductDetailsResponse extends ApiResponse {
     data: CatalogProductDetailsDTO | null;
 }
+
+/**
+ * Product options DTOs for catalog product card
+ */
+export interface CatalogProductOptionDTO {
+    option_product_id: string;
+    option_name: string;
+    product_code: string | null;
+    is_published: boolean;
+    is_required: boolean;
+    units_count: number | null;
+    unit_price?: number | null;
+}
+
+export interface ReadProductOptionsRequestDTO {
+    productId: string;
+    locale: string; // must be provided by frontend
+}
+
+export interface ReadProductOptionsResponseDTO extends ApiResponse {
+    data: CatalogProductOptionDTO[];
+}

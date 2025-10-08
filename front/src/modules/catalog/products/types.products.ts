@@ -55,3 +55,28 @@ export interface FetchProductDetailsResponse {
 export interface FetchProductDetailsOptions {
   forceRefresh?: boolean;
 } 
+
+// UI type for product options in product card
+export interface CatalogProductOption {
+  product_id: string;
+  option_name: string;
+  product_code: string | null;
+  is_published: boolean;
+  is_required: boolean;
+  units_count: number | null;
+  unit_price?: number | null;
+}
+
+export interface FetchProductOptionsResponse {
+  success: boolean;
+  message: string;
+  data: Array<{
+    option_product_id: string;
+    option_name: string;
+    product_code: string | null;
+    is_published: boolean;
+    is_required: boolean;
+    units_count: number | null;
+    unit_price?: number | null;
+  }>;
+}

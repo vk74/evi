@@ -10,20 +10,11 @@ import { useI18n } from 'vue-i18n'
 import Paginator from '@/core/ui/paginator/Paginator.vue'
 import { PhCheckSquare, PhSquare, PhCaretUpDown } from '@phosphor-icons/vue'
 
-// Local UI type for option rows shown in the table
-// Fields align with future backend data but component currently works with empty items (no fetching here)
-interface ProductOptionRow {
-  product_id: string
-  option_name: string
-  product_code: string
-  is_published: boolean
-  is_required: boolean
-  units_count: number | null
-  unit_price?: number | null
-}
+// Use shared UI type
+import type { CatalogProductOption } from './types.products'
 
 interface Props {
-  items?: ProductOptionRow[]
+  items?: CatalogProductOption[]
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -48,7 +39,7 @@ const unitItems = computed(() => Array.from({ length: 1000 }, (_, i) => i + 1))
  * Initialize UI state based on incoming items
  * Obligatory options are locked as selected with provided units; optional start unselected with null units
  */
-function initializeUiState(list: ProductOptionRow[]) {
+function initializeUiState(list: CatalogProductOption[]) {
   const selected: Record<string, boolean> = {}
   const units: Record<string, number | null> = {}
   for (const it of list) {
