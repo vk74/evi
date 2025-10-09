@@ -1,6 +1,7 @@
--- Version: 1.1.1
+-- Version: 1.2.0
 -- Description: Create enum types for the application.
 -- Backend file: 03_enums.sql
+-- Added: Regional settings enum types (timezones, app_countries, app_languages)
 
 -- Create enum types
 DO $$ BEGIN
@@ -95,6 +96,30 @@ END $$;
 
 DO $$ BEGIN
     CREATE TYPE app.product_group_role AS ENUM ('product_specialists');
+EXCEPTION
+    WHEN duplicate_object THEN null;
+END $$;
+
+DO $$ BEGIN
+    CREATE TYPE app.timezones AS ENUM (
+        'GMT-12', 'GMT-11', 'GMT-10', 'GMT-9', 'GMT-8', 'GMT-7',
+        'GMT-6', 'GMT-5', 'GMT-4', 'GMT-3', 'GMT-2', 'GMT-1', 'GMT',
+        'GMT+1', 'GMT+2', 'GMT+3', 'GMT+4', 'GMT+5', 'GMT+6',
+        'GMT+7', 'GMT+8', 'GMT+9', 'GMT+10', 'GMT+11', 'GMT+12',
+        'GMT+13', 'GMT+14'
+    );
+EXCEPTION
+    WHEN duplicate_object THEN null;
+END $$;
+
+DO $$ BEGIN
+    CREATE TYPE app.app_countries AS ENUM ('russia', 'kazakhstan');
+EXCEPTION
+    WHEN duplicate_object THEN null;
+END $$;
+
+DO $$ BEGIN
+    CREATE TYPE app.app_languages AS ENUM ('english', 'russian');
 EXCEPTION
     WHEN duplicate_object THEN null;
 END $$;

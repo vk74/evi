@@ -80,7 +80,7 @@ export const queries: SettingsQueries = {
     text: `
       UPDATE app.app_settings
       SET 
-        value = $3,
+        value = $3::jsonb,
         updated_at = NOW()
       WHERE section_path = $1
       AND setting_name = $2

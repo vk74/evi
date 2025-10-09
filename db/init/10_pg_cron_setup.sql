@@ -1,6 +1,6 @@
 -- Version: 1.1
 -- Description: Sets up pg_cron extension and configures periodic token cleanup.
--- Backend file: 09_pg_cron_setup.sql
+-- Backend file: 10_pg_cron_setup.sql
 
 -- This script enables the pg_cron extension and creates a scheduled job
 -- to clean up expired tokens from the app.tokens table. The cleanup runs

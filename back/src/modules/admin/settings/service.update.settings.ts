@@ -158,14 +158,17 @@ export async function updateSetting(request: UpdateSettingRequest, req: Request)
     client = await pool.connect();
     await client.query('BEGIN');
 
+    // Convert value to JSON string for JSONB column
+    const jsonValue = JSON.stringify(value);
+
     // Update database
-    console.log('🔥 Updating database with values:', { sectionPath, settingName, value, valueType: typeof value });
+    console.log('🔥 Updating database with values:', { sectionPath, settingName, value, valueType: typeof value, jsonValue });
     console.log('🔥 SQL query:', queries.updateSettingValue.text);
-    console.log('🔥 SQL parameters:', [sectionPath, settingName, value]);
+    console.log('🔥 SQL parameters:', [sectionPath, settingName, jsonValue]);
     
     const updateResult = await client.query(
       queries.updateSettingValue.text,
-      [sectionPath, settingName, value]
+      [sectionPath, settingName, jsonValue]
     );
 
     if (!updateResult.rows || updateResult.rows.length === 0) {

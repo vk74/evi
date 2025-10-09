@@ -1,6 +1,7 @@
--- Version: 1.0
+-- Version: 1.1.0
 -- Description: Seeds the database with default application settings.
--- Backend file: 08_app_settings.sql
+-- Backend file: 09_app_settings.sql
+-- Added: Regional settings (timezone, country, language)
 
 -- This script inserts a comprehensive set of default settings for the application,
 -- covering areas like security, session management, and feature toggles.
@@ -84,7 +85,12 @@ INSERT INTO app.app_settings (
 ('Application.System.DataValidation', 'wellKnownFields.groupName.allowUsernameChars', 'all', 'true', '{"type":"boolean"}', 'true', 'Allow username characters in group name fields', true),
 ('Application.System.DataValidation', 'wellKnownFields.groupName.latinOnly', 'all', 'true', '{"type":"boolean"}', 'true', 'Allow only Latin characters in group name fields', true),
 ('Application.System.DataValidation', 'wellKnownFields.email.regex', 'all', '"^[a-zA-Z0-9.!#$%&''*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$"', '{"type":"string","format":"regex"}', '"^[a-zA-Z0-9.!#$%&''*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$"', 'Regular expression for email validation', true),
-('Application.System.DataValidation', 'wellKnownFields.telephoneNumber.mask', 'all', '"+# (###) ###-####"', '{"type":"string","minLength":1,"maxLength":50}', '"+# (###) ###-####"', 'Input mask for telephone number fields', true)
+('Application.System.DataValidation', 'wellKnownFields.telephoneNumber.mask', 'all', '"+# (###) ###-####"', '{"type":"string","minLength":1,"maxLength":50}', '"+# (###) ###-####"', 'Input mask for telephone number fields', true),
+
+-- Regional Settings
+('Application.RegionalSettings', 'default.timezone', 'all', '"GMT+3"', '{"type":"string","enum":["GMT-12","GMT-11","GMT-10","GMT-9","GMT-8","GMT-7","GMT-6","GMT-5","GMT-4","GMT-3","GMT-2","GMT-1","GMT","GMT+1","GMT+2","GMT+3","GMT+4","GMT+5","GMT+6","GMT+7","GMT+8","GMT+9","GMT+10","GMT+11","GMT+12","GMT+13","GMT+14"]}', '"GMT+3"', 'Default application timezone', false),
+('Application.RegionalSettings', 'default.country', 'all', '"russia"', '{"type":"string","enum":["russia","kazakhstan"]}', '"russia"', 'Default application country', false),
+('Application.RegionalSettings', 'default.language', 'all', '"russian"', '{"type":"string","enum":["english","russian"]}', '"russian"', 'Default application language', false)
 ON CONFLICT (section_path, setting_name, environment) DO UPDATE SET
     value = EXCLUDED.value,
     validation_schema = EXCLUDED.validation_schema,
