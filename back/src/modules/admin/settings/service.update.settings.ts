@@ -1,6 +1,6 @@
 /**
  * service.update.settings.ts - backend file
- * version: 1.0.02
+ * version: 1.0.03
  * Service for updating application settings.
  * Validates new setting values against schemas and updates both database and cache.
  * Now uses event system instead of logging.
@@ -161,10 +161,21 @@ export async function updateSetting(request: UpdateSettingRequest, req: Request)
     // Convert value to JSON string for JSONB column
     const jsonValue = JSON.stringify(value);
 
-    // Update database
-    console.log('🔥 Updating database with values:', { sectionPath, settingName, value, valueType: typeof value, jsonValue });
-    console.log('🔥 SQL query:', queries.updateSettingValue.text);
-    console.log('🔥 SQL parameters:', [sectionPath, settingName, jsonValue]);
+    // Publish database update started event
+    fabricEvents.createAndPublishEvent({
+      eventName: SETTINGS_UPDATE_EVENTS.DATABASE_UPDATE_STARTED.eventName,
+      req,
+      payload: {
+        sectionPath,
+        settingName,
+        valueType: typeof value,
+        value,
+        jsonValue,
+        sqlQuery: queries.updateSettingValue.text,
+        sqlParams: [sectionPath, settingName, jsonValue],
+        requestorUuid
+      }
+    });
     
     const updateResult = await client.query(
       queries.updateSettingValue.text,

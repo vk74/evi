@@ -1,6 +1,6 @@
 /**
  * events.settings.ts - backend file
- * version: 1.0.0
+ * version: 1.0.1
  * 
  * This file contains event definitions for the settings management module.
  * It serves as a reference for creating and publishing settings-related events to the event bus.
@@ -213,6 +213,17 @@ export const SETTINGS_UPDATE_EVENTS = {
     severity: 'debug' as const,
     eventMessage: 'Settings update validation passed',
     payload: null, // Will be of type { sectionPath: string, settingName: string }
+    version: '1.0.0'
+  },
+  
+  // When database update operation is started
+  DATABASE_UPDATE_STARTED: {
+    eventName: 'settings.update.database.started',
+    source: 'settings service module',
+    eventType: 'app' as const,
+    severity: 'debug' as const,
+    eventMessage: 'Database update operation started',
+    payload: null, // Will be of type { sectionPath: string, settingName: string, valueType: string, value: any, jsonValue: string, sqlQuery?: string, sqlParams?: any[], requestorUuid: string }
     version: '1.0.0'
   },
   
