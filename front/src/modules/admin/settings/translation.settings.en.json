@@ -206,6 +206,26 @@
             "label": "display knowledge base module"
           }
         },
+        "regionalsettings": {
+          "title": "regional settings",
+          "timezone": {
+            "label": "time zone"
+          },
+          "country": {
+            "label": "country"
+          },
+          "language": {
+            "label": "default language"
+          },
+          "countries": {
+            "russia": "Russia",
+            "kazakhstan": "Kazakhstan"
+          },
+          "languages": {
+            "english": "English",
+            "russian": "Русский"
+          }
+        },
         "system": {
           "eventbus": {
             "title": "event bus",
@@ -348,6 +368,7 @@
         "work": "work module",
         "reports": "reports module",
         "knowledgebase": "knowledge base module",
+        "regionalsettings": "regional settings",
         "security": "security",
         "sessionmanagement": "session management",
         "passwordpolicies": "password policies",

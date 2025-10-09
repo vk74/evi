@@ -10,18 +10,19 @@
  import { ref, computed, onMounted, markRaw, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useAppSettingsStore } from './state.app.settings';
-import { PhList, PhCaretDown, PhCaretRight, PhGear, PhBriefcase, PhChartLineUp, PhBooks, PhUserGear, PhShield, PhClockUser, PhPassword, PhShieldCheck, PhDesktopTower, PhShareNetwork, PhTextT, PhCheckCircle, PhUsersThree, PhUsers, PhPackage, PhWrench, PhFadersHorizontal } from '@phosphor-icons/vue';
+import { PhList, PhCaretDown, PhCaretRight, PhGear, PhBriefcase, PhChartLineUp, PhBooks, PhUserGear, PhShield, PhClockUser, PhPassword, PhShieldCheck, PhDesktopTower, PhShareNetwork, PhTextT, PhCheckCircle, PhUsersThree, PhUsers, PhPackage, PhWrench, PhFadersHorizontal, PhMapPin } from '@phosphor-icons/vue';
 import { useUiStore } from '@/core/state/uistate';
  
- // Import components from sections directory with hierarchical naming
- import Work from './sections/Application.Work.vue';
- import Reports from './sections/Application.Reports.vue';
- import KnowledgeBase from './sections/Application.KnowledgeBase.vue';
+// Import components from sections directory with hierarchical naming
+import Work from './sections/Application.Work.vue';
+import Reports from './sections/Application.Reports.vue';
+import KnowledgeBase from './sections/Application.KnowledgeBase.vue';
+import RegionalSettings from './sections/Application.RegionalSettings.vue';
 import SystemEventBus from './sections/Application.System.EventBus.vue';
 import SystemLogging from './sections/Application.System.Logging.vue';
 import SystemDataValidation from './sections/Application.System.DataValidation.vue';
- import SessionManagement from './sections/Application.Security.SessionManagement.vue';
- import PasswordPolicies from './sections/Application.Security.PasswordPolicies.vue';
+import SessionManagement from './sections/Application.Security.SessionManagement.vue';
+import PasswordPolicies from './sections/Application.Security.PasswordPolicies.vue';
 import AuthenticationSettings from './sections/Application.Security.AuthenticationSettings.vue';
 import GroupsManagement from './sections/UsersManagement.GroupsManagement.vue';
 import UsersManagement from './sections/UsersManagement.UsersManagement.vue';
@@ -91,6 +92,11 @@ const sections = computed<Section[]>(() => [
         icon: 'mdi-book-open-outline',
       },
       {
+        id: 'Application.RegionalSettings',
+        name: t('admin.settings.sections.regionalsettings'),
+        icon: 'PhMapPin',
+      },
+      {
         id: 'Application.Security',
         name: t('admin.settings.sections.security'),
         icon: 'mdi-shield-outline',
@@ -155,23 +161,24 @@ const sections = computed<Section[]>(() => [
   }
 ]);
  
- // Map section IDs to components
- const sectionComponents = {
-   'Application.Work': markRaw(Work),
-   'Application.Reports': markRaw(Reports),
-   'Application.KnowledgeBase': markRaw(KnowledgeBase),
-   'Application.System.EventBus': markRaw(SystemEventBus),
-   'Application.System.Logging': markRaw(SystemLogging),
-   'Application.System.DataValidation': markRaw(SystemDataValidation),
-   'Application.Security.SessionManagement': markRaw(SessionManagement),
-   'Application.Security.PasswordPolicies': markRaw(PasswordPolicies),
-   'Application.Security.AuthenticationSettings': markRaw(AuthenticationSettings),
-   'Products.Settings': markRaw(ProductsSettings),
-   'Services.Settings': markRaw(ServicesSettings),
-   'UsersManagement.GroupsManagement': markRaw(GroupsManagement),
-   'UsersManagement.UsersManagement': markRaw(UsersManagement),
-   // Узлы-контейнеры не имеют компонента
- };
+// Map section IDs to components
+const sectionComponents = {
+  'Application.Work': markRaw(Work),
+  'Application.Reports': markRaw(Reports),
+  'Application.KnowledgeBase': markRaw(KnowledgeBase),
+  'Application.RegionalSettings': markRaw(RegionalSettings),
+  'Application.System.EventBus': markRaw(SystemEventBus),
+  'Application.System.Logging': markRaw(SystemLogging),
+  'Application.System.DataValidation': markRaw(SystemDataValidation),
+  'Application.Security.SessionManagement': markRaw(SessionManagement),
+  'Application.Security.PasswordPolicies': markRaw(PasswordPolicies),
+  'Application.Security.AuthenticationSettings': markRaw(AuthenticationSettings),
+  'Products.Settings': markRaw(ProductsSettings),
+  'Services.Settings': markRaw(ServicesSettings),
+  'UsersManagement.GroupsManagement': markRaw(GroupsManagement),
+  'UsersManagement.UsersManagement': markRaw(UsersManagement),
+  // Узлы-контейнеры не имеют компонента
+};
  
  // Mobile menu state
  const isMobileMenuOpen = ref(false);
@@ -197,7 +204,8 @@ const resolveSectionIcon = (iconName: string) => {
     'mdi-chart-timeline-variant': PhChartLineUp,
     'mdi-package-variant': PhPackage,
     'mdi-wrench-outline': PhWrench,
-    'PhFadersHorizontal': PhFadersHorizontal
+    'PhFadersHorizontal': PhFadersHorizontal,
+    'PhMapPin': PhMapPin
   }
   return map[iconName] || PhGear
 }

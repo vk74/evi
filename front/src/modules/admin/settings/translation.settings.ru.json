@@ -206,6 +206,26 @@
             "label": "отображать модуль база знаний"
           }
         },
+        "regionalsettings": {
+          "title": "региональные настройки",
+          "timezone": {
+            "label": "часовой пояс"
+          },
+          "country": {
+            "label": "страна"
+          },
+          "language": {
+            "label": "язык по умолчанию"
+          },
+          "countries": {
+            "russia": "Россия",
+            "kazakhstan": "Казахстан"
+          },
+          "languages": {
+            "english": "English",
+            "russian": "Русский"
+          }
+        },
         "system": {
           "eventbus": {
             "title": "шина событий",
@@ -348,6 +368,7 @@
         "work": "модуль работа",
         "reports": "модуль отчетность",
         "knowledgebase": "модуль база знаний",
+        "regionalsettings": "региональные настройки",
         "security": "безопасность",
         "sessionmanagement": "управление сессиями",
         "passwordpolicies": "политика паролей",
