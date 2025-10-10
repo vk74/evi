@@ -73,6 +73,9 @@ INSERT INTO app.app_settings (
 -- Products Options Settings
 ('products.options', 'max.options.per.product', 'all', to_jsonb(100), '{"type":"integer","minimum":1,"maximum":1000}', to_jsonb(100), 'Maximum number of direct options per product', false),
 
+-- Catalog Settings
+('Catalog.Products', 'display.optionsOnlyProducts', 'all', 'false', '{"type":"boolean"}', 'false', 'Sets catalog to display or hide products which are marked as "option only"', true),
+
 -- Data Validation Settings (Standard fields removed)
 ('Application.System.DataValidation', 'wellKnownFields.userName.minLength', 'all', '1', '{"type":"integer","minimum":1,"maximum":5}', '1', 'Minimum length for user name fields', true),
 ('Application.System.DataValidation', 'wellKnownFields.userName.maxLength', 'all', '20', '{"type":"integer","minimum":5,"maximum":50}', '20', 'Maximum length for user name fields', true),
