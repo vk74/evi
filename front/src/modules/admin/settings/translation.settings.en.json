@@ -188,6 +188,9 @@
             "in.development": "feature is under development"
           }
         },
+        "appearance": {
+          "title": "appearance settings"
+        },
         "work": {
           "title": "work module",
           "enabled": {
@@ -396,6 +399,7 @@
       },
       "sections": {
         "application": "application settings",
+        "appearance": "appearance",
         "work": "work module",
         "reports": "reports module",
         "knowledgebase": "knowledge base module",

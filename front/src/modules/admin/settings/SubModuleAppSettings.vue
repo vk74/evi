@@ -5,16 +5,17 @@
  *          and displays the corresponding settings components in the workspace area
  * 
  * Uses a Pinia store to persist the selected category and expanded state between sessions
- * Version: 1.1.1
+ * Version: 1.2.0
  -->
  <script setup lang="ts">
 import { ref, computed, onMounted, markRaw, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useAppSettingsStore } from './state.app.settings';
-import { PhList, PhCaretDown, PhCaretRight, PhGear, PhBriefcase, PhChartLineUp, PhBooks, PhUserGear, PhShield, PhClockUser, PhPassword, PhShieldCheck, PhDesktopTower, PhShareNetwork, PhTextT, PhCheckCircle, PhUsersThree, PhUsers, PhPackage, PhWrench, PhFadersHorizontal, PhMapPin, PhShoppingCart } from '@phosphor-icons/vue';
+import { PhList, PhCaretDown, PhCaretRight, PhGear, PhBriefcase, PhChartLineUp, PhBooks, PhUserGear, PhShield, PhClockUser, PhPassword, PhShieldCheck, PhDesktopTower, PhShareNetwork, PhTextT, PhCheckCircle, PhUsersThree, PhUsers, PhPackage, PhWrench, PhFadersHorizontal, PhMapPin, PhShoppingCart, PhPalette } from '@phosphor-icons/vue';
 import { useUiStore } from '@/core/state/uistate';
  
 // Import components from sections directory with hierarchical naming
+import Appearance from './sections/Application.Appearance.vue';
 import Work from './sections/Application.Work.vue';
 import Reports from './sections/Application.Reports.vue';
 import KnowledgeBase from './sections/Application.KnowledgeBase.vue';
@@ -103,6 +104,11 @@ const sections = computed<Section[]>(() => [
     icon: 'mdi-cog-outline',
     children: [
       {
+        id: 'Application.Appearance',
+        name: t('admin.settings.sections.appearance'),
+        icon: 'PhPalette',
+      },
+      {
         id: 'Application.Work',
         name: t('admin.settings.sections.work'),
         icon: 'mdi-briefcase-outline',
@@ -189,6 +195,7 @@ const sections = computed<Section[]>(() => [
  
 // Map section IDs to components
 const sectionComponents = {
+  'Application.Appearance': markRaw(Appearance),
   'Application.Work': markRaw(Work),
   'Application.Reports': markRaw(Reports),
   'Application.KnowledgeBase': markRaw(KnowledgeBase),
@@ -235,7 +242,8 @@ const resolveSectionIcon = (iconName: string) => {
     'mdi-wrench-outline': PhWrench,
     'mdi-cart-outline': PhShoppingCart,
     'PhFadersHorizontal': PhFadersHorizontal,
-    'PhMapPin': PhMapPin
+    'PhMapPin': PhMapPin,
+    'PhPalette': PhPalette
   }
   return map[iconName] || PhGear
 }
