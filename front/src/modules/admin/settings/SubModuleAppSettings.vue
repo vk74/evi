@@ -5,12 +5,13 @@
  *          and displays the corresponding settings components in the workspace area
  * 
  * Uses a Pinia store to persist the selected category and expanded state between sessions
+ * Version: 1.1.0
  -->
  <script setup lang="ts">
- import { ref, computed, onMounted, markRaw, watch } from 'vue';
+import { ref, computed, onMounted, markRaw, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useAppSettingsStore } from './state.app.settings';
-import { PhList, PhCaretDown, PhCaretRight, PhGear, PhBriefcase, PhChartLineUp, PhBooks, PhUserGear, PhShield, PhClockUser, PhPassword, PhShieldCheck, PhDesktopTower, PhShareNetwork, PhTextT, PhCheckCircle, PhUsersThree, PhUsers, PhPackage, PhWrench, PhFadersHorizontal, PhMapPin } from '@phosphor-icons/vue';
+import { PhList, PhCaretDown, PhCaretRight, PhGear, PhBriefcase, PhChartLineUp, PhBooks, PhUserGear, PhShield, PhClockUser, PhPassword, PhShieldCheck, PhDesktopTower, PhShareNetwork, PhTextT, PhCheckCircle, PhUsersThree, PhUsers, PhPackage, PhWrench, PhFadersHorizontal, PhMapPin, PhShoppingCart } from '@phosphor-icons/vue';
 import { useUiStore } from '@/core/state/uistate';
  
 // Import components from sections directory with hierarchical naming
@@ -26,6 +27,7 @@ import PasswordPolicies from './sections/Application.Security.PasswordPolicies.v
 import AuthenticationSettings from './sections/Application.Security.AuthenticationSettings.vue';
 import GroupsManagement from './sections/UsersManagement.GroupsManagement.vue';
 import UsersManagement from './sections/UsersManagement.UsersManagement.vue';
+import CatalogSettings from './sections/Catalog.Settings.vue';
 import ProductsSettings from './sections/Products.Settings.vue';
 import ServicesSettings from './sections/Services.Settings.vue';
  
@@ -48,12 +50,12 @@ const { t } = useI18n();
 // Hierarchical sections structure - using computed to support reactive translations
 const sections = computed<Section[]>(() => [
   {
-    id: 'Products',
-    name: t('admin.settings.sections.products'),
-    icon: 'mdi-package-variant',
+    id: 'Catalog',
+    name: t('admin.settings.sections.catalog'),
+    icon: 'mdi-cart-outline',
     children: [
       {
-        id: 'Products.Settings',
+        id: 'Catalog.Settings',
         name: t('admin.settings.sections.settings'),
         icon: 'PhFadersHorizontal',
       }
@@ -66,6 +68,18 @@ const sections = computed<Section[]>(() => [
     children: [
       {
         id: 'Services.Settings',
+        name: t('admin.settings.sections.settings'),
+        icon: 'PhFadersHorizontal',
+      }
+    ]
+  },
+  {
+    id: 'Products',
+    name: t('admin.settings.sections.products'),
+    icon: 'mdi-package-variant',
+    children: [
+      {
+        id: 'Products.Settings',
         name: t('admin.settings.sections.settings'),
         icon: 'PhFadersHorizontal',
       }
@@ -173,6 +187,7 @@ const sectionComponents = {
   'Application.Security.SessionManagement': markRaw(SessionManagement),
   'Application.Security.PasswordPolicies': markRaw(PasswordPolicies),
   'Application.Security.AuthenticationSettings': markRaw(AuthenticationSettings),
+  'Catalog.Settings': markRaw(CatalogSettings),
   'Products.Settings': markRaw(ProductsSettings),
   'Services.Settings': markRaw(ServicesSettings),
   'UsersManagement.GroupsManagement': markRaw(GroupsManagement),
@@ -204,6 +219,7 @@ const resolveSectionIcon = (iconName: string) => {
     'mdi-chart-timeline-variant': PhChartLineUp,
     'mdi-package-variant': PhPackage,
     'mdi-wrench-outline': PhWrench,
+    'mdi-cart-outline': PhShoppingCart,
     'PhFadersHorizontal': PhFadersHorizontal,
     'PhMapPin': PhMapPin
   }
