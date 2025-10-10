@@ -1,4 +1,4 @@
--- Version: 1.1.0
+-- Version: 1.2.0
 -- Description: Seeds the database with default application settings.
 -- Backend file: 09_app_settings.sql
 -- Added: Regional settings (timezone, country, language)
@@ -75,6 +75,8 @@ INSERT INTO app.app_settings (
 
 -- Catalog Settings
 ('Catalog.Products', 'display.optionsOnlyProducts', 'all', 'false', '{"type":"boolean"}', 'false', 'Sets catalog to display or hide products which are marked as "option only"', true),
+('Catalog.Products', 'card.color', 'all', '"#E8F4F8"', '{"type":"string","pattern":"^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$"}', '"#E8F4F8"', 'Background color for product cards in catalog (hex format)', true),
+('Catalog.Services', 'card.color', 'all', '"#F5F5F5"', '{"type":"string","pattern":"^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$"}', '"#F5F5F5"', 'Background color for service cards in catalog (hex format)', true),
 
 -- Data Validation Settings (Standard fields removed)
 ('Application.System.DataValidation', 'wellKnownFields.userName.minLength', 'all', '1', '{"type":"integer","minimum":1,"maximum":5}', '1', 'Minimum length for user name fields', true),
