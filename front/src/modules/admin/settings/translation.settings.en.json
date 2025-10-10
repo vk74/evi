@@ -189,7 +189,17 @@
           }
         },
         "appearance": {
-          "title": "appearance settings"
+          "title": "appearance settings",
+          "navbarColor": {
+            "label": "navigation bar color",
+            "picker": {
+              "title": "navigation bar color",
+              "basicColors": "basic colors",
+              "customColor": "custom color",
+              "hexCode": "hex code",
+              "validHex": "must be valid hex color (e.g., #FFFFFF)"
+            }
+          }
         },
         "work": {
           "title": "work module",
