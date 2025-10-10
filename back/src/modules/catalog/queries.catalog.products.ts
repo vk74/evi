@@ -1,9 +1,10 @@
 /**
  * queries.catalog.products.ts - backend file
- * version: 1.0.0
+ * version: 1.1.0
  * 
  * Purpose: SQL queries for catalog products (public consumption layer)
  * Logic: Provides parameterized queries to fetch active products for the catalog and product details
+ *        Filters products with option_only=true based on display settings
  * File type: Backend TypeScript (queries.catalog.products.ts)
  */
 
@@ -11,8 +12,10 @@ export const queries = {
   /**
    * Select active products for catalog consumption
    * - Only products with is_published = true
+   * - Filters option_only products based on $2 parameter
    * - Minimal set of fields required for product cards
-   * - Uses specified language parameter
+   * - Uses specified language parameter ($1)
+   * - Parameters: [language, showOptionsOnly]
    */
   getActiveProducts: `
     SELECT 
@@ -35,14 +38,17 @@ export const queries = {
       ON p.product_id = pt.product_id 
       AND pt.language_code = $1
     WHERE p.is_published = true
+      AND ($2 = true OR p.option_only = false)
     ORDER BY p.product_code ASC, pt.name ASC
   `,
 
   /**
    * Select active products by section for catalog consumption
    * - Only products with is_published = true
+   * - Filters option_only products based on $3 parameter
    * - Joined with app.section_products for filtering
-   * - Uses specified language parameter
+   * - Uses specified language parameter ($2)
+   * - Parameters: [sectionId, language, showOptionsOnly]
    */
   getActiveProductsBySection: `
     SELECT 
@@ -65,7 +71,9 @@ export const queries = {
     JOIN app.product_translations pt 
       ON p.product_id = pt.product_id 
       AND pt.language_code = $2
-    WHERE p.is_published = true AND sp.section_id = $1
+    WHERE p.is_published = true 
+      AND sp.section_id = $1
+      AND ($3 = true OR p.option_only = false)
     ORDER BY p.product_code ASC, pt.name ASC
   `,
 

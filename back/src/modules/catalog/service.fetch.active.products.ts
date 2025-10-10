@@ -1,9 +1,9 @@
 /**
  * service.fetch.active.products.ts - backend file
- * version: 1.0.0
+ * version: 1.1.0
  * 
  * Purpose: Service that fetches active products for catalog consumption
- * Logic: Queries DB for products with is_published = true, transforms into DTO for frontend
+ * Logic: Queries DB for products with is_published = true, filters by option_only based on settings
  * File type: Backend TypeScript (service.fetch.active.products.ts)
  */
 
@@ -13,6 +13,7 @@ import { pool as pgPool } from '../../core/db/maindb';
 import queries from './queries.catalog.products';
 import type { DbProduct, CatalogProductDTO, FetchProductsResponse, ServiceError } from './types.catalog';
 import { ProductStatus } from './types.catalog';
+import { getSettingValue } from '../../core/helpers/get.setting.value';
 
 const pool = pgPool as Pool;
 
@@ -34,14 +35,19 @@ export async function fetchActiveProducts(req: Request): Promise<FetchProductsRe
     
     if (!language) {
       const error = new Error('Language parameter is required');
-      console.error('Missing language parameter in request');
       throw error;
     }
     
+    const showOptionsOnly = await getSettingValue<boolean>(
+      'Catalog.Products',
+      'display.optionsOnlyProducts',
+      false
+    );
+    
     const sectionId = req.query.sectionId as string | undefined;
     const result = sectionId
-      ? await pool.query<DbProduct>(queries.getActiveProductsBySection, [sectionId, language])
-      : await pool.query<DbProduct>(queries.getActiveProducts, [language]);
+      ? await pool.query<DbProduct>(queries.getActiveProductsBySection, [sectionId, language, showOptionsOnly])
+      : await pool.query<DbProduct>(queries.getActiveProducts, [language, showOptionsOnly]);
     const products = result.rows.map(transformRow);
 
     return {
