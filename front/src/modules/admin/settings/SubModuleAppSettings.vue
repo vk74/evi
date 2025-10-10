@@ -5,7 +5,7 @@
  *          and displays the corresponding settings components in the workspace area
  * 
  * Uses a Pinia store to persist the selected category and expanded state between sessions
- * Version: 1.1.0
+ * Version: 1.1.1
  -->
  <script setup lang="ts">
 import { ref, computed, onMounted, markRaw, watch } from 'vue';
@@ -27,6 +27,8 @@ import PasswordPolicies from './sections/Application.Security.PasswordPolicies.v
 import AuthenticationSettings from './sections/Application.Security.AuthenticationSettings.vue';
 import GroupsManagement from './sections/UsersManagement.GroupsManagement.vue';
 import UsersManagement from './sections/UsersManagement.UsersManagement.vue';
+import CatalogProducts from './sections/Catalog.Products.vue';
+import CatalogServices from './sections/Catalog.Services.vue';
 import CatalogSettings from './sections/Catalog.Settings.vue';
 import ProductsSettings from './sections/Products.Settings.vue';
 import ServicesSettings from './sections/Services.Settings.vue';
@@ -54,6 +56,16 @@ const sections = computed<Section[]>(() => [
     name: t('admin.settings.sections.catalog'),
     icon: 'mdi-cart-outline',
     children: [
+      {
+        id: 'Catalog.Products',
+        name: t('admin.settings.sections.products'),
+        icon: 'mdi-package-variant',
+      },
+      {
+        id: 'Catalog.Services',
+        name: t('admin.settings.sections.services'),
+        icon: 'mdi-wrench-outline',
+      },
       {
         id: 'Catalog.Settings',
         name: t('admin.settings.sections.settings'),
@@ -187,6 +199,8 @@ const sectionComponents = {
   'Application.Security.SessionManagement': markRaw(SessionManagement),
   'Application.Security.PasswordPolicies': markRaw(PasswordPolicies),
   'Application.Security.AuthenticationSettings': markRaw(AuthenticationSettings),
+  'Catalog.Products': markRaw(CatalogProducts),
+  'Catalog.Services': markRaw(CatalogServices),
   'Catalog.Settings': markRaw(CatalogSettings),
   'Products.Settings': markRaw(ProductsSettings),
   'Services.Settings': markRaw(ServicesSettings),

@@ -363,6 +363,14 @@
           }
         }
       },
+      "catalog": {
+        "products": {
+          "title": "product cards settings in catalog",
+          "displayOptionsOnly": {
+            "label": "show products of type \"option\""
+          }
+        }
+      },
       "sections": {
         "application": "application settings",
         "work": "work module",
