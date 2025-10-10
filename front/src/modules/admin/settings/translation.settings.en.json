@@ -368,6 +368,29 @@
           "title": "product cards settings in catalog",
           "displayOptionsOnly": {
             "label": "show products of type \"option\""
+          },
+          "cardColor": {
+            "label": "product card color",
+            "picker": {
+              "title": "product card color",
+              "basicColors": "basic colors",
+              "customColor": "custom color",
+              "hexCode": "hex code",
+              "validHex": "must be valid hex color (e.g., #FFFFFF)"
+            }
+          }
+        },
+        "services": {
+          "title": "service cards settings in catalog",
+          "cardColor": {
+            "label": "service card color",
+            "picker": {
+              "title": "service card color",
+              "basicColors": "basic colors",
+              "customColor": "custom color",
+              "hexCode": "hex code",
+              "validHex": "must be valid hex color (e.g., #FFFFFF)"
+            }
           }
         }
       },

@@ -2,10 +2,11 @@
   File: Catalog.Products.vue - frontend file
   Description: Catalog products settings administration module
   Purpose: Configure catalog products-related settings and parameters
-  Version: 1.1.0
+  Version: 1.2.0
   
   Features:
   - Display options only products toggle
+  - Product card color picker with preset colors
   - Settings cache integration
   - Loading states and error handling
   - Retry functionality for failed settings
@@ -19,6 +20,8 @@ import { fetchSettings } from '@/modules/admin/settings/service.fetch.settings';
 import { updateSettingFromComponent } from '@/modules/admin/settings/service.update.settings';
 import { useUiStore } from '@/core/state/uistate';
 import DataLoading from '@/core/ui/loaders/DataLoading.vue';
+import { PhPaintBrush } from '@phosphor-icons/vue';
+import { getRgbFromHex } from '@/core/helpers/color.helpers';
 
 // Section path identifier
 const section_path = 'Catalog.Products';
@@ -43,10 +46,28 @@ const settingRetryAttempts = ref<Record<string, number>>({});
 
 // Local UI state for immediate interaction - initialize with null (not set)
 const displayOptionsOnlyProducts = ref<boolean | null>(null);
+const productCardColor = ref<string | null>(null);
+
+// Color picker state
+const showColorPicker = ref(false);
+const selectedColor = ref('#E8F4F8');
+
+// Preset colors palette
+const presetColors = [
+  '#F8F0F0', '#F5F0F0', '#F2E8E8', '#EFE0E0', '#ECD8D8', '#E9D0D0', '#E6C8C8',
+  '#F8F2F0', '#F5F2F0', '#F2ECE8', '#EFE6E0', '#ECE0D8', '#E9DAD0', '#E6D4C8',
+  '#F8F8F0', '#F5F5F0', '#F2F2E8', '#EFEFE0', '#ECECD8', '#E9E9D0', '#E6E6C8',
+  '#F0F8F8', '#E8F5F0', '#E0F2E8', '#D8EFE0', '#D0ECD8', '#C8E9D0', '#C0E6C8',
+  '#F0F8F8', '#E8F5F5', '#E0F2F2', '#D8EFEF', '#D0ECEC', '#C8E9E9', '#C0E6E6',
+  '#F0F0F8', '#E8E8F5', '#E0E0F2', '#D8D8EF', '#D0D0EC', '#C8C8E9', '#C0C0E6',
+  '#F5F0F8', '#F2E8F5', '#EFE0F2', '#ECD8EF', '#E9D0EC', '#E6C8E9', '#E3C0E6',
+  '#FFFFFF', '#F8F8F8', '#F0F0F0', '#E8E8E8', '#E0E0E0', '#D8D8D8', '#D0D0D0'
+];
 
 // Define all settings that need to be loaded
 const allSettings = [
-  'display.optionsOnlyProducts'
+  'display.optionsOnlyProducts',
+  'card.color'
 ];
 
 // Initialize loading states for all settings
@@ -151,7 +172,27 @@ function updateLocalSetting(settingName: string, value: any) {
     case 'display.optionsOnlyProducts':
       displayOptionsOnlyProducts.value = safeBoolean(value);
       break;
+    case 'card.color':
+      productCardColor.value = value || '#E8F4F8';
+      selectedColor.value = value || '#E8F4F8';
+      break;
   }
+}
+
+/**
+ * Open color picker dialog
+ */
+const openColorPicker = () => {
+  selectedColor.value = productCardColor.value || '#E8F4F8';
+  showColorPicker.value = true;
+}
+
+/**
+ * Apply selected color and close dialog
+ */
+const applyColor = () => {
+  productCardColor.value = selectedColor.value;
+  showColorPicker.value = false;
 }
 
 /**
@@ -243,6 +284,15 @@ watch(
   }
 );
 
+watch(
+  productCardColor,
+  (newValue) => {
+    if (!isFirstLoad.value) {
+      updateSetting('card.color', newValue);
+    }
+  }
+);
+
 // Watch for changes in loading state from the store
 watch(
   () => appSettingsStore.isLoading,
@@ -310,6 +360,137 @@ onMounted(() => {
               </div>
             </v-tooltip>
           </div>
+
+          <!-- ==================== PRODUCT CARD COLOR SECTION ==================== -->
+          <div class="color-picker-container mt-6">
+            <v-text-field
+              v-model="productCardColor"
+              :label="t('admin.settings.catalog.products.cardColor.label')"
+              variant="outlined"
+              density="comfortable"
+              placeholder="#E8F4F8"
+              :rules="[v => /^#[0-9A-Fa-f]{6}$/.test(v) || t('admin.settings.catalog.products.cardColor.picker.validHex')]"
+              color="teal"
+              :disabled="isSettingDisabled('card.color')"
+              :loading="settingLoadingStates['card.color']"
+            >
+              <template #prepend-inner>
+                <div
+                  class="color-preview"
+                  :style="{ backgroundColor: productCardColor || '#E8F4F8' }"
+                  @click="openColorPicker"
+                />
+              </template>
+              <template #append-inner>
+                <v-btn icon variant="text" size="small" @click="openColorPicker">
+                  <PhPaintBrush />
+                </v-btn>
+              </template>
+            </v-text-field>
+
+            <!-- Color Picker Dialog -->
+            <v-dialog
+              v-model="showColorPicker"
+              max-width="400"
+              persistent
+            >
+              <v-card>
+                <v-card-title class="text-subtitle-1">
+                  {{ t('admin.settings.catalog.products.cardColor.picker.title') }}
+                </v-card-title>
+                <v-card-text>
+                  <div class="color-picker-content">
+                    <div class="color-preview-large mb-4">
+                      <div
+                        class="preview-box"
+                        :style="{ backgroundColor: selectedColor }"
+                      />
+                      <div class="color-info">
+                        <div class="hex-code">
+                          {{ selectedColor }}
+                        </div>
+                        <div class="rgb-code">
+                          {{ getRgbFromHex(selectedColor) }}
+                        </div>
+                      </div>
+                    </div>
+                    <div class="preset-colors mb-4">
+                      <div class="preset-title mb-2">
+                        {{ t('admin.settings.catalog.products.cardColor.picker.basicColors') }}
+                      </div>
+                      <div class="color-grid">
+                        <div
+                          v-for="color in presetColors"
+                          :key="color"
+                          class="color-swatch"
+                          :style="{ backgroundColor: color }"
+                          @click.stop="selectedColor = color"
+                        />
+                      </div>
+                    </div>
+                    <div class="custom-color-input">
+                      <div class="input-title mb-2">
+                        {{ t('admin.settings.catalog.products.cardColor.picker.customColor') }}
+                      </div>
+                      <v-text-field
+                        v-model="selectedColor"
+                        :label="t('admin.settings.catalog.products.cardColor.picker.hexCode')"
+                        variant="outlined"
+                        density="compact"
+                        placeholder="#000000"
+                        :rules="[v => /^#[0-9A-Fa-f]{6}$/.test(v) || t('admin.settings.catalog.products.cardColor.picker.validHex')]"
+                        color="teal"
+                      />
+                    </div>
+                  </div>
+                </v-card-text>
+                <v-card-actions>
+                  <v-spacer />
+                  <v-btn
+                    color="grey"
+                    variant="text"
+                    @click="showColorPicker = false"
+                  >
+                    {{ t('admin.catalog.editor.actions.cancel') }}
+                  </v-btn>
+                  <v-btn
+                    color="teal"
+                    variant="text"
+                    @click="applyColor"
+                  >
+                    {{ t('admin.catalog.editor.actions.save') }}
+                  </v-btn>
+                </v-card-actions>
+              </v-card>
+            </v-dialog>
+          </div>
+
+          <!-- Error tooltip for card.color -->
+          <v-tooltip
+            v-if="settingErrorStates['card.color']"
+            location="top"
+            max-width="300"
+          >
+            <template #activator="{ props }">
+              <v-icon 
+                icon="mdi-alert-circle" 
+                size="small" 
+                class="ms-2" 
+                color="error"
+                v-bind="props"
+                style="cursor: pointer;"
+                @click="retrySetting('card.color')"
+              />
+            </template>
+            <div class="pa-2">
+              <p class="text-subtitle-2 mb-2">
+                {{ t('admin.settings.usersmanagement.groupsmanagement.messages.error.tooltip.title') }}
+              </p>
+              <p class="text-caption">
+                {{ t('admin.settings.usersmanagement.groupsmanagement.messages.error.tooltip.retry') }}
+              </p>
+            </div>
+          </v-tooltip>
         </div>
       </div>
     </template>
@@ -333,6 +514,85 @@ onMounted(() => {
 
 .section-title {
   font-weight: 500;
+}
+
+/* Color picker styles */
+.color-picker-container {
+  position: relative;
+}
+
+.color-preview {
+  width: 24px;
+  height: 24px;
+  border-radius: 4px;
+  border: 2px solid rgba(var(--v-border-color), var(--v-border-opacity));
+  cursor: pointer;
+  transition: transform 0.2s ease;
+}
+
+.color-preview:hover {
+  transform: scale(1.1);
+}
+
+.color-preview-large {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.preview-box {
+  width: 60px;
+  height: 60px;
+  border-radius: 8px;
+  border: 2px solid rgba(var(--v-border-color), var(--v-border-opacity));
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.color-info {
+  flex-grow: 1;
+}
+
+.hex-code {
+  font-family: 'Roboto Mono', monospace;
+  font-size: 1.1rem;
+  font-weight: 500;
+  color: rgba(0, 0, 0, 0.87);
+}
+
+.rgb-code {
+  font-size: 0.875rem;
+  color: rgba(0, 0, 0, 0.6);
+  margin-top: 4px;
+}
+
+.preset-title,
+.input-title {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: rgba(0, 0, 0, 0.87);
+}
+
+.color-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 8px;
+}
+
+.color-swatch {
+  width: 32px;
+  height: 32px;
+  border-radius: 4px;
+  border: 2px solid rgba(var(--v-border-color), var(--v-border-opacity));
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  position: relative;
+  z-index: 10;
+  pointer-events: auto;
+}
+
+.color-swatch:hover {
+  transform: scale(1.1);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
 }
 </style>
 
