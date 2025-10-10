@@ -1,5 +1,6 @@
 /**
  * types.catalog.ts - backend file
+ * version: 1.1.0
  * Type definitions for catalog functionality on BACKEND.
  *
  * This module defines TypeScript types and interfaces for:
@@ -54,6 +55,15 @@ export interface CatalogSection {
     icon_name: string | null
     color: string | null
     order: number | null
+}
+
+/**
+ * Catalog metadata for UI configuration
+ * Contains dynamic settings like card colors
+ */
+export interface CatalogMetadata {
+    serviceCardColor: string;
+    productCardColor: string;
 }
 
 /**
@@ -139,6 +149,7 @@ export interface CatalogServiceDTO {
 
 export interface FetchServicesResponse extends ApiResponse {
     data: CatalogServiceDTO[];
+    metadata?: CatalogMetadata;
 }
 
 /**
@@ -292,6 +303,7 @@ export interface CatalogProductDetailsDTO {
 
 export interface FetchProductsResponse extends ApiResponse {
     data: CatalogProductDTO[];
+    metadata?: CatalogMetadata;
 }
 
 export interface FetchProductDetailsResponse extends ApiResponse {

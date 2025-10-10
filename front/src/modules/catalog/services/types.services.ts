@@ -1,5 +1,5 @@
 /*
-version: 1.2.0
+version: 1.3.0
 Frontend file for service types in catalog module.
 TypeScript interfaces for catalog services and service details.
 File: types.services.ts
@@ -7,6 +7,11 @@ File: types.services.ts
 
 export type ServicePriority = 'critical' | 'high' | 'medium' | 'low'
 export type ServiceStatus = 'in_production'
+
+export interface CatalogMetadata {
+  serviceCardColor: string;
+  productCardColor: string;
+}
 
 export interface CatalogService {
   id: string;
@@ -22,6 +27,7 @@ export interface FetchActiveServicesResponse {
   success: boolean;
   message: string;
   data: CatalogService[];
+  metadata?: CatalogMetadata;
 }
 
 export interface FetchActiveServicesOptions {

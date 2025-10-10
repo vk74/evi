@@ -1,6 +1,6 @@
 /**
  * @file service.fetch.active.services.ts
- * Version: 1.0.0
+ * Version: 1.1.0
  * Service for fetching active catalog services from the backend.
  * Frontend file that provides unified interface for getting active services with caching.
  *
@@ -12,7 +12,7 @@
 
 import { api } from '@/core/api/service.axios';
 import { useUiStore } from '@/core/state/uistate';
-import type { CatalogService, FetchActiveServicesResponse, FetchActiveServicesOptions } from './services/types.services';
+import type { CatalogService, FetchActiveServicesResponse, FetchActiveServicesOptions, CatalogMetadata } from './services/types.services';
 
 // Cache TTL in milliseconds (5 minutes)
 const SERVICES_CACHE_TTL = 5 * 60 * 1000;
@@ -25,6 +25,7 @@ interface ActiveServicesState {
   loading: boolean;
   error: string | null;
   lastFetched: number | null;
+  metadata: CatalogMetadata | null;
 }
 
 // Local state for caching
@@ -33,6 +34,7 @@ const servicesState: ActiveServicesState = {
   loading: false,
   error: null,
   lastFetched: null,
+  metadata: null,
 };
 
 function isCacheValid(): boolean {
@@ -61,6 +63,7 @@ export async function fetchActiveServices(options: FetchServicesOptions & { sect
       servicesState.services = response.data.data;
       servicesState.lastFetched = Date.now();
       servicesState.error = null;
+      servicesState.metadata = response.data.metadata || null;
       return servicesState.services;
     } else {
       const errorMessage = response.data.message || 'Unknown error fetching active services';
@@ -84,6 +87,10 @@ export function getCachedActiveServices(): CatalogService[] {
 
 export function isActiveServicesCacheExpired(): boolean {
   return !isCacheValid();
+}
+
+export function getServicesMetadata(): CatalogMetadata | null {
+  return servicesState.metadata;
 }
 
 export function getActiveServicesCacheTimeRemaining(): number {

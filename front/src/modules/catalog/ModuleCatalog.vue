@@ -1,5 +1,5 @@
 <!--
-version: 1.0.1
+version: 1.1.0
 Frontend file for catalog module.
 Catalog interface with sections, filters, and service/product cards.
 File: ModuleCatalog.vue
@@ -19,9 +19,9 @@ import {
   getCatalogError
 } from './service.fetch.catalog.sections';
 import type { CatalogSection } from './types.catalog';
-import { fetchActiveServices } from './service.fetch.active.services';
+import { fetchActiveServices, getServicesMetadata } from './service.fetch.active.services';
 import type { CatalogService } from './services/types.services';
-import { fetchActiveProducts } from './products/service.fetch.active.products';
+import { fetchActiveProducts, getProductsMetadata } from './products/service.fetch.active.products';
 import type { CatalogProduct } from './products/types.products';
 import {
   searchQuery,
@@ -99,6 +99,12 @@ function sectionBtnStyle(section: CatalogSection): Record<string, string> {
 // ==================== SECTIONS DATA ====================
 const sections = ref<CatalogSection[]>([]);
 const selectedSectionId = ref<string | null>(null);
+
+// ==================== CARD COLORS ====================
+const cardColors = ref<{ service: string; product: string }>({
+  service: '#F5F5F5',
+  product: '#E8F4F8'
+});
 
 // ==================== FILTER STATE ====================
 const filterType = ref<'all' | 'services' | 'products'>('all');
@@ -180,6 +186,13 @@ async function loadActiveServices() {
   try {
     const fetched = await fetchActiveServices({ sectionId: selectedSectionId.value || undefined });
     services.value = fetched;
+    
+    // Update card colors from metadata
+    const metadata = getServicesMetadata();
+    if (metadata) {
+      cardColors.value.service = metadata.serviceCardColor;
+      cardColors.value.product = metadata.productCardColor;
+    }
   } catch (error) {
   }
 }
@@ -188,6 +201,13 @@ async function loadActiveProducts() {
   try {
     const fetched = await fetchActiveProducts({ sectionId: selectedSectionId.value || undefined });
     products.value = fetched;
+    
+    // Update card colors from metadata
+    const metadata = getProductsMetadata();
+    if (metadata) {
+      cardColors.value.service = metadata.serviceCardColor;
+      cardColors.value.product = metadata.productCardColor;
+    }
   } catch (error) {
   }
 }
@@ -498,6 +518,7 @@ onMounted(async () => {
               >
                 <CatalogServiceCard
                   :service="svc"
+                  :card-color="cardColors.service"
                   @select="onSelectService"
                 />
               </v-col>
@@ -518,6 +539,7 @@ onMounted(async () => {
               >
                 <CatalogProductCard
                   :product="product"
+                  :card-color="cardColors.product"
                   @select="onSelectProduct"
                 />
               </v-col>

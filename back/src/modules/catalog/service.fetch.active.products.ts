@@ -1,6 +1,6 @@
 /**
  * service.fetch.active.products.ts - backend file
- * version: 1.1.0
+ * version: 1.2.0
  * 
  * Purpose: Service that fetches active products for catalog consumption
  * Logic: Queries DB for products with is_published = true, filters by option_only based on settings
@@ -50,10 +50,26 @@ export async function fetchActiveProducts(req: Request): Promise<FetchProductsRe
       : await pool.query<DbProduct>(queries.getActiveProducts, [language, showOptionsOnly]);
     const products = result.rows.map(transformRow);
 
+    // Get card colors from settings cache
+    const serviceCardColor = await getSettingValue<string>(
+      'Catalog.Services',
+      'card.color',
+      '#F5F5F5'
+    );
+    const productCardColor = await getSettingValue<string>(
+      'Catalog.Products',
+      'card.color',
+      '#E8F4F8'
+    );
+
     return {
       success: true,
       message: 'Active products loaded successfully',
       data: products,
+      metadata: {
+        serviceCardColor,
+        productCardColor
+      }
     };
   } catch (error) {
     const serviceError: ServiceError = {

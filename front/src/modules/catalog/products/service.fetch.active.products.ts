@@ -1,6 +1,6 @@
 /**
  * @file service.fetch.active.products.ts
- * Version: 1.0.0
+ * Version: 1.1.0
  * Service for fetching active catalog products from the backend with caching.
  * Frontend file that provides unified interface for getting active products.
  */
@@ -8,7 +8,7 @@
 import { api } from '@/core/api/service.axios'
 import { useUiStore } from '@/core/state/uistate'
 import { useUserAuthStore } from '@/core/auth/state.user.auth'
-import type { CatalogProduct, FetchActiveProductsResponse, FetchActiveProductsOptions } from './types.products'
+import type { CatalogProduct, FetchActiveProductsResponse, FetchActiveProductsOptions, CatalogMetadata } from './types.products'
 
 const PRODUCTS_CACHE_TTL = 5 * 60 * 1000
 
@@ -19,9 +19,10 @@ interface ProductsState {
   loading: boolean
   error: string | null
   lastFetched: number | null
+  metadata: CatalogMetadata | null
 }
 
-let state: ProductsState = { products: [], loading: false, error: null, lastFetched: null }
+let state: ProductsState = { products: [], loading: false, error: null, lastFetched: null, metadata: null }
 
 function isFresh(): boolean {
   if (!state.lastFetched) return false
@@ -55,6 +56,7 @@ export async function fetchActiveProducts(options: FetchActiveProductsOptions = 
       state.products = response.data.data
       state.lastFetched = Date.now()
       state.error = null
+      state.metadata = response.data.metadata || null
       return state.products
     } else {
       const msg = response.data.message || 'Unknown error'
@@ -85,10 +87,14 @@ export function getActiveProductsError(): string | null {
 }
 
 export function clearActiveProductsCache(): void { 
-  state = { products: [], loading: false, error: null, lastFetched: null } 
+  state = { products: [], loading: false, error: null, lastFetched: null, metadata: null } 
 }
 
 export async function forceRefreshActiveProducts(): Promise<CatalogProduct[]> {
   clearActiveProductsCache()
   return fetchActiveProducts({ forceRefresh: true })
+}
+
+export function getProductsMetadata(): CatalogMetadata | null {
+  return state.metadata
 }

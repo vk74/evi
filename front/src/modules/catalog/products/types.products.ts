@@ -1,11 +1,16 @@
 /*
-version: 1.1.0
+version: 1.2.0
 Frontend file for product types in catalog module.
 TypeScript interfaces for catalog products based on database structure.
 File: types.products.ts
 */
 
 export type ProductStatus = 'published' | 'draft' | 'archived'
+
+export interface CatalogMetadata {
+  serviceCardColor: string;
+  productCardColor: string;
+}
 
 export interface CatalogProduct {
   id: string;
@@ -21,6 +26,7 @@ export interface FetchActiveProductsResponse {
   success: boolean;
   message: string;
   data: CatalogProduct[];
+  metadata?: CatalogMetadata;
 }
 
 export interface FetchActiveProductsOptions {
