@@ -2,7 +2,7 @@
   File: Catalog.Services.vue - frontend file
   Description: Catalog services settings administration module
   Purpose: Configure catalog services-related settings and parameters
-  Version: 1.1.0
+  Version: 1.2.0
   
   Features:
   - Service card color picker with preset colors
@@ -336,8 +336,9 @@ onMounted(() => {
             <!-- Color Picker Dialog -->
             <v-dialog
               v-model="showColorPicker"
+              class="color-dialog"
               max-width="400"
-              persistent
+              :scrim="true"
             >
               <v-card>
                 <v-card-title class="text-subtitle-1">
@@ -464,6 +465,7 @@ onMounted(() => {
 /* Color picker styles */
 .color-picker-container {
   position: relative;
+  max-width: 420px;
 }
 
 .color-preview {
@@ -538,6 +540,12 @@ onMounted(() => {
 .color-swatch:hover {
   transform: scale(1.1);
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+/* Force dialog width to 400px within scoped styles to match Products */
+::v-deep(.color-dialog .v-overlay__content) {
+  width: 400px !important;
+  max-width: 400px !important;
 }
 </style>
 

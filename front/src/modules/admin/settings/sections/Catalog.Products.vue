@@ -2,7 +2,7 @@
   File: Catalog.Products.vue - frontend file
   Description: Catalog products settings administration module
   Purpose: Configure catalog products-related settings and parameters
-  Version: 1.2.0
+  Version: 1.2.3
   
   Features:
   - Display options only products toggle
@@ -391,8 +391,9 @@ onMounted(() => {
             <!-- Color Picker Dialog -->
             <v-dialog
               v-model="showColorPicker"
+              class="color-dialog"
               max-width="400"
-              persistent
+              :scrim="true"
             >
               <v-card>
                 <v-card-title class="text-subtitle-1">
@@ -519,6 +520,7 @@ onMounted(() => {
 /* Color picker styles */
 .color-picker-container {
   position: relative;
+  max-width: 420px;
 }
 
 .color-preview {
@@ -593,6 +595,12 @@ onMounted(() => {
 .color-swatch:hover {
   transform: scale(1.1);
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+/* Force dialog width to 400px within scoped styles */
+::v-deep(.color-dialog .v-overlay__content) {
+  width: 400px !important;
+  max-width: 400px !important;
 }
 </style>
 
