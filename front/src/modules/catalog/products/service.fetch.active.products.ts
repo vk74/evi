@@ -1,6 +1,6 @@
 /**
  * @file service.fetch.active.products.ts
- * Version: 1.1.0
+ * Version: 1.2.0
  * Service for fetching active catalog products from the backend with caching.
  * Frontend file that provides unified interface for getting active products.
  */
@@ -34,7 +34,8 @@ export async function fetchActiveProducts(options: FetchActiveProductsOptions = 
   const userStore = useUserAuthStore()
   
   try {
-    if (!options.forceRefresh && isFresh()) {
+    // Reuse cache only when not filtering by section to avoid cross-section leakage
+    if (!options.forceRefresh && !options.sectionId && isFresh()) {
       return state.products
     }
     
