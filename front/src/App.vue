@@ -10,6 +10,8 @@ Contains:
 - Consistent button styling throughout the navigation drawer
 - Fixed active state tracking for bottom navigation items
 - Improved handling of ResizeObserver errors with a more robust implementation
+- Dynamic navbar background color from application settings
+Version: 1.1.0
 -->
 <script setup lang="ts">
 import { ref, computed, onMounted, watch, defineAsyncComponent, nextTick } from 'vue';
@@ -116,6 +118,18 @@ const isRailMode = computed(() => appStore.drawerMode === 'closed');
 
 // Unified icon color (teal)
 const iconColor = '#026c6c';
+
+// Get navbar background color from settings
+const navbarColor = computed(() => {
+  try {
+    const appearanceSettings = appSettingsStore.getCachedSettings('Application.Appearance');
+    const navbarColorSetting = appearanceSettings?.find(setting => setting.setting_name === 'navbar.backgroundcolor');
+    return navbarColorSetting?.value || '#26A69A';
+  } catch (error) {
+    console.warn('Failed to get navbar color from settings:', error);
+    return '#26A69A';
+  }
+});
 
 // Get the current active admin sub-module from the store
 const activeAdminSubModule = computed(() => appStore.getActiveAdminSubModule);
@@ -1025,7 +1039,7 @@ onMounted(async () => {
 
 /* Simple navigation drawer styles */
 .custom-drawer {
-  background-color: rgb(210, 210, 210) !important;
+  background-color: v-bind(navbarColor) !important;
 }
 
 /* Active menu item styles */
