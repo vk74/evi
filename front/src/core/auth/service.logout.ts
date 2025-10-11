@@ -137,6 +137,21 @@ export async function logoutService(): Promise<boolean> {
     // Reset products admin store
     resetProductsStore()
     
+    // Clear UI settings cache
+    const { useAppSettingsStore } = await import('../../modules/admin/settings/state.app.settings')
+    const appSettingsStore = useAppSettingsStore()
+    appSettingsStore.clearUiSettingsCache()
+    console.log('[Logout Service] UI settings cache cleared')
+    
+    // Reload public UI settings for anonymous user
+    try {
+      await appSettingsStore.loadUiSettings()
+      console.log('[Logout Service] Public UI settings reloaded')
+    } catch (error) {
+      console.warn('[Logout Service] Failed to reload public UI settings:', error)
+      // Continue with logout even if settings reload fails
+    }
+    
     // Set active module to login
     const appStore = useAppStore()
     appStore.setActiveModule('Login')
@@ -157,6 +172,16 @@ export async function logoutService(): Promise<boolean> {
     resetUserStore()
     resetProductsStore()
     clearRefreshTimer()
+    
+    // Clear UI settings cache and reload public settings
+    try {
+      const { useAppSettingsStore } = await import('../../modules/admin/settings/state.app.settings')
+      const appSettingsStore = useAppSettingsStore()
+      appSettingsStore.clearUiSettingsCache()
+      await appSettingsStore.loadUiSettings()
+    } catch (settingsError) {
+      console.warn('[Logout Service] Failed to clear/reload settings:', settingsError)
+    }
     
     // Still redirect to login even on error
     const appStore = useAppStore()

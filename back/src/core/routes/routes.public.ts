@@ -16,6 +16,7 @@ import checkRequestSecurityHard from '../guards/guard.check.request.security.har
 import fetchPublicPasswordPoliciesController from '../public/controller.fetch.public.password.policies';
 import getRegistrationStatusController from '../public/controller.public.registration.status';
 import fetchPublicValidationRulesController from '../public/controller.fetch.public.validation.rules';
+import fetchPublicUiSettingsController from '../public/controller.fetch.public.ui.settings';
 
 const router: Router = express.Router();
 
@@ -23,6 +24,7 @@ const router: Router = express.Router();
 router.get('/api/public/password-policies', checkRequestSecurityHard, fetchPublicPasswordPoliciesController);
 router.get('/api/public/registration-status', checkRequestSecurityHard, getRegistrationStatusController);
 router.get('/api/public/validation-rules', checkRequestSecurityHard, fetchPublicValidationRulesController);
+router.get('/api/public/ui-settings', checkRequestSecurityHard, fetchPublicUiSettingsController);
 
 // Export using ES modules syntax
 export default router;

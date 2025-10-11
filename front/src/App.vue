@@ -53,6 +53,7 @@ import { PasswordChangeMode } from './core/ui/modals/change-password/types.chang
 import LoginDialog from './core/auth/ModuleLogin.vue';
 import ModuleNewUserSelfRegistration from './modules/account/ModuleNewUserSelfRegistration.vue';
 import AppSnackbar from './core/ui/snackbars/AppSnackbar.vue';
+import CriticalSettingsErrorModal from './core/ui/modals/CriticalSettingsErrorModal.vue';
 
 // Store and i18n initialization
 const userStore = useUserAuthStore();
@@ -70,6 +71,12 @@ const isProfileMenuOpen = ref<boolean>(false); // Track profile menu state
 const isLanguageMenuOpen = ref<boolean>(false); // Track language menu state
 const isAboutMenuOpen = ref<boolean>(false); // Track about menu state
 const menuLocked = ref<boolean>(false); // Prevent menu interactions during animations
+
+// UI Settings loading state
+const isLoadingUiSettings = ref<boolean>(false);
+const uiSettingsError = ref<string | null>(null);
+const uiSettingsRetryCount = ref<number>(0);
+const showCriticalErrorModal = ref<boolean>(false);
 
 // Computed properties
 const isLoggedIn = computed((): boolean => userStore.isAuthenticated);
@@ -119,15 +126,35 @@ const isRailMode = computed(() => appStore.drawerMode === 'closed');
 // Unified icon color (teal)
 const iconColor = '#026c6c';
 
-// Get navbar background color from settings
+// Get navbar background color from UI settings cache
 const navbarColor = computed(() => {
   try {
+    // Check uiSettingsCache first (works for both authenticated and anonymous users)
+    const uiCacheEntry = appSettingsStore.uiSettingsCache['Application.Appearance'];
+    if (uiCacheEntry) {
+      const navbarColorSetting = uiCacheEntry.data.find(
+        setting => setting.setting_name === 'navbar.backgroundcolor'
+      );
+      if (navbarColorSetting) {
+        return navbarColorSetting.value;
+      }
+    }
+    
+    // Fallback: check regular settings cache
     const appearanceSettings = appSettingsStore.getCachedSettings('Application.Appearance');
-    const navbarColorSetting = appearanceSettings?.find(setting => setting.setting_name === 'navbar.backgroundcolor');
-    return navbarColorSetting?.value || '#26A69A';
+    const navbarColorSetting = appearanceSettings?.find(
+      setting => setting.setting_name === 'navbar.backgroundcolor'
+    );
+    if (navbarColorSetting) {
+      return navbarColorSetting.value;
+    }
+    
+    // If no settings found, return null - this will trigger error state
+    console.warn('[App] navbar.backgroundcolor setting not found in cache');
+    return null;
   } catch (error) {
-    console.warn('Failed to get navbar color from settings:', error);
-    return '#26A69A';
+    console.error('[App] Failed to get navbar color from settings:', error);
+    return null;
   }
 });
 
@@ -346,67 +373,104 @@ watch(
   { deep: true }
 );
 
-// Watch for login state changes to load UI settings
+// Watch for login state changes to reload UI settings with full authenticated access
 watch(
   isLoggedIn,
   async (newLoginState) => {
     if (newLoginState) {
-      console.log('User logged in. Loading UI settings...');
+      console.log('[App] User logged in. Reloading UI settings with authenticated access...');
+      
+      // Clear existing UI settings cache
+      appSettingsStore.clearUiSettingsCache();
+      
+      // Reload UI settings (will use authenticated API now)
       try {
         await appSettingsStore.loadUiSettings();
-        console.log('UI settings loaded successfully');
+        console.log('[App] Full UI settings loaded successfully after login');
       } catch (error) {
-        console.warn('Failed to load UI settings:', error);
-        // Continue with default values
+        console.warn('[App] Failed to reload UI settings after login:', error);
+        // Continue - user can work with public settings
       }
       
-      console.log('Loading additional settings...');
+      console.log('[App] Loading additional settings...');
       
       // Load Work module settings if not already cached
       if (!appSettingsStore.hasValidCache('Application.Work')) {
         try {
-          // Import the service to fetch settings
           const { fetchSettings } = await import('./modules/admin/settings/service.fetch.settings');
           const settings = await fetchSettings('Application.Work');
           if (settings) {
             appSettingsStore.cacheSettings('Application.Work', settings);
           }
         } catch (error) {
-          console.warn('Failed to load Work module settings:', error);
+          console.warn('[App] Failed to load Work module settings:', error);
         }
       }
       
       // Load Reports module settings if not already cached
       if (!appSettingsStore.hasValidCache('Application.Reports')) {
         try {
-          // Import the service to fetch settings
           const { fetchSettings } = await import('./modules/admin/settings/service.fetch.settings');
           const settings = await fetchSettings('Application.Reports');
           if (settings) {
             appSettingsStore.cacheSettings('Application.Reports', settings);
           }
         } catch (error) {
-          console.warn('Failed to load Reports module settings:', error);
+          console.warn('[App] Failed to load Reports module settings:', error);
         }
       }
       
       // Load KnowledgeBase module settings if not already cached
       if (!appSettingsStore.hasValidCache('Application.KnowledgeBase')) {
         try {
-          // Import the service to fetch settings
           const { fetchSettings } = await import('./modules/admin/settings/service.fetch.settings');
           const settings = await fetchSettings('Application.KnowledgeBase');
           if (settings) {
             appSettingsStore.cacheSettings('Application.KnowledgeBase', settings);
           }
         } catch (error) {
-          console.warn('Failed to load KnowledgeBase module settings:', error);
+          console.warn('[App] Failed to load KnowledgeBase module settings:', error);
         }
       }
     }
   },
   { immediate: false }
 );
+
+/**
+ * Load UI settings on app initialization
+ * Critical function - must succeed for app to function properly
+ */
+const loadInitialUiSettings = async (): Promise<void> => {
+  isLoadingUiSettings.value = true;
+  uiSettingsError.value = null;
+  
+  try {
+    console.log('[App] Loading initial UI settings...');
+    await appSettingsStore.loadUiSettings();
+    console.log('[App] UI settings loaded successfully');
+    isLoadingUiSettings.value = false;
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    console.error('[App] Critical error loading UI settings:', errorMessage);
+    
+    uiSettingsError.value = errorMessage;
+    uiSettingsRetryCount.value++;
+    isLoadingUiSettings.value = false;
+    
+    // Show critical error modal
+    showCriticalErrorModal.value = true;
+  }
+};
+
+/**
+ * Retry loading UI settings after error
+ */
+const retryLoadUiSettings = async (): Promise<void> => {
+  console.log('[App] Retrying UI settings load...');
+  showCriticalErrorModal.value = false;
+  await loadInitialUiSettings();
+};
 
 // Prevent ResizeObserver errors - more robust implementation
 const preventResizeErrors = (): void => {
@@ -443,21 +507,12 @@ const preventResizeErrors = (): void => {
 
 // Lifecycle hooks
 onMounted(async () => {
+  // CRITICAL: Load UI settings first (works for both authenticated and anonymous users)
+  await loadInitialUiSettings();
+  
   // If Admin is the active module on initial load, expand the admin section
   if (appStore.activeModule === 'Admin') {
     isAdminExpanded.value = true;
-  }
-  
-  // If user is already logged in, load UI settings
-  if (isLoggedIn.value) {
-    console.log('User already logged in. Loading UI settings...');
-    try {
-      await appSettingsStore.loadUiSettings();
-      console.log('UI settings loaded successfully');
-    } catch (error) {
-      console.warn('Failed to load UI settings:', error);
-      // Continue with default values
-    }
   }
   
   // Set up ResizeObserver error prevention
@@ -501,6 +556,14 @@ onMounted(async () => {
 
 <template>
   <v-app>
+    <!-- Critical Settings Error Modal -->
+    <CriticalSettingsErrorModal
+      v-if="showCriticalErrorModal"
+      :error="uiSettingsError || 'Unknown error'"
+      :retry-count="uiSettingsRetryCount"
+      @retry="retryLoadUiSettings"
+    />
+
     <!-- Floating menu button - always visible regardless of drawer state -->
     <div 
       class="floating-menu-btn"

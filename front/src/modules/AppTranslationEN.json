@@ -61,5 +61,18 @@
       "backend": "backend",
       "database": "database"
     }
+  },
+  "errors": {
+    "criticalSettingsError": {
+      "title": "Critical Error: Failed to Load Application Settings",
+      "message": "The application cannot load required settings from the server. This may be due to a network issue or server unavailability.",
+      "technicalDetails": "Technical details",
+      "retryAttempts": "Retry attempts: {count}",
+      "instructions": "Please try again or reload the page. If the problem persists, contact your system administrator.",
+      "actions": {
+        "retry": "Retry",
+        "reload": "Reload Page"
+      }
+    }
   }
 }

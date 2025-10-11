@@ -385,35 +385,31 @@ export const useAppSettingsStore = defineStore('appSettings', {
     /**
      * Load UI settings from backend
      * @returns Promise that resolves when UI settings are loaded
+     * @throws Error if settings cannot be loaded
      */
     async loadUiSettings(): Promise<void> {
-      try {
-        // Import the service to fetch UI settings
-        const { fetchUiSettings } = await import('./service.fetch.settings');
-        const uiSettings = await fetchUiSettings();
-        
-        // Group UI settings by section
-        const settingsBySection: Record<string, AppSetting[]> = {};
-        uiSettings.forEach(setting => {
-          if (!settingsBySection[setting.section_path]) {
-            settingsBySection[setting.section_path] = [];
-          }
-          settingsBySection[setting.section_path].push(setting);
-        });
-        
-        // Cache UI settings by section
-        Object.entries(settingsBySection).forEach(([sectionPath, settings]) => {
-          this.uiSettingsCache[sectionPath] = {
-            timestamp: Date.now(),
-            data: settings
-          };
-        });
-        
-        console.log(`Loaded ${uiSettings.length} UI settings for ${Object.keys(settingsBySection).length} sections`);
-      } catch (error) {
-        console.warn('Failed to load UI settings:', error);
-        // Don't throw error - continue with default values
-      }
+      // Import the service to fetch UI settings
+      const { fetchUiSettings } = await import('./service.fetch.settings');
+      const uiSettings = await fetchUiSettings();
+      
+      // Group UI settings by section
+      const settingsBySection: Record<string, AppSetting[]> = {};
+      uiSettings.forEach(setting => {
+        if (!settingsBySection[setting.section_path]) {
+          settingsBySection[setting.section_path] = [];
+        }
+        settingsBySection[setting.section_path].push(setting);
+      });
+      
+      // Cache UI settings by section
+      Object.entries(settingsBySection).forEach(([sectionPath, settings]) => {
+        this.uiSettingsCache[sectionPath] = {
+          timestamp: Date.now(),
+          data: settings
+        };
+      });
+      
+      console.log(`Loaded ${uiSettings.length} UI settings for ${Object.keys(settingsBySection).length} sections`);
     },
 
     /**
@@ -437,6 +433,15 @@ export const useAppSettingsStore = defineStore('appSettings', {
       return Object.values(this.uiSettingsCache).some(cacheEntry => 
         (now - cacheEntry.timestamp) < UI_SETTINGS_CACHE_TTL
       );
+    },
+
+    /**
+     * Clear UI settings cache
+     * Used when user logs out to invalidate cached settings
+     */
+    clearUiSettingsCache(): void {
+      console.log('[App Settings Store] Clearing UI settings cache');
+      this.uiSettingsCache = {};
     }
   },
   

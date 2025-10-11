@@ -186,54 +186,81 @@ export function isSettingsCacheExpired(section_path: string): boolean {
 
 /**
  * Fetches UI settings from the backend
+ * Uses public API for anonymous users, authenticated API for logged-in users
  * 
  * @returns Promise that resolves to an array of UI settings
  */
 export async function fetchUiSettings(): Promise<AppSetting[]> {
   const uiStore = useUiStore();
   
-  console.log('Fetching UI settings from backend');
+  // Check if user is authenticated
+  const { useUserAuthStore } = await import('@/core/auth/state.user.auth');
+  const userAuthStore = useUserAuthStore();
+  const isAuthenticated = userAuthStore.isAuthenticated;
+  
+  console.log(`[Fetch UI Settings] Fetching UI settings (authenticated: ${isAuthenticated})`);
   
   try {
-    // Prepare request parameters for all UI settings
-    const requestData: FetchAllSettingsRequest = {
-      type: 'all',
-      environment: 'all',
-      includeConfidential: false,
-      isUiOnly: true // Only fetch UI settings
-    };
-    
-    // Make API request using the centralized api client
-    const response = await api.post<FetchSettingsResponse>(
-      '/api/core/settings/fetch-settings',
-      requestData
-    );
-    
-    // Handle response
-    if (response.data.success && response.data.settings) {
-      console.log(`Fetched ${response.data.settings.length} UI settings`);
-      return response.data.settings;
+    if (!isAuthenticated) {
+      // User is not authenticated - use public API
+      console.log('[Fetch UI Settings] Using public API for anonymous user');
+      const { fetchPublicUiSettings } = await import('@/core/services/service.fetch.public.ui.settings');
+      const publicResponse = await fetchPublicUiSettings();
+      
+      if (publicResponse.success && publicResponse.settings) {
+        // Convert PublicUiSetting to AppSetting format
+        const appSettings: AppSetting[] = publicResponse.settings.map(setting => ({
+          section_path: setting.section_path,
+          setting_name: setting.setting_name,
+          environment: 'all',
+          value: setting.value,
+          confidentiality: false,
+          is_ui: setting.is_ui
+        }));
+        
+        console.log(`[Fetch UI Settings] Fetched ${appSettings.length} public UI settings`);
+        return appSettings;
+      } else {
+        throw new Error(publicResponse.error || 'Failed to fetch public UI settings');
+      }
     } else {
-      // Handle error case
-      const errorMessage = response.data.error || 'Unknown error fetching UI settings';
-      console.warn('Error fetching UI settings:', errorMessage);
+      // User is authenticated - use full settings API
+      console.log('[Fetch UI Settings] Using authenticated API');
       
-      // Show error message to user
-      uiStore.showErrorSnackbar(`Error loading UI settings: ${errorMessage}`);
+      // Prepare request parameters for all UI settings
+      const requestData: FetchAllSettingsRequest = {
+        type: 'all',
+        environment: 'all',
+        includeConfidential: false,
+        isUiOnly: true // Only fetch UI settings
+      };
       
-      // Return empty settings array
-      return [];
+      // Make API request using the centralized api client
+      const response = await api.post<FetchSettingsResponse>(
+        '/api/core/settings/fetch-settings',
+        requestData
+      );
+      
+      // Handle response
+      if (response.data.success && response.data.settings) {
+        console.log(`[Fetch UI Settings] Fetched ${response.data.settings.length} authenticated UI settings`);
+        return response.data.settings;
+      } else {
+        // Handle error case
+        const errorMessage = response.data.error || 'Unknown error fetching UI settings';
+        throw new Error(errorMessage);
+      }
     }
   } catch (error) {
     // Handle exception
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-    console.error('Error fetching UI settings:', error);
+    console.error('[Fetch UI Settings] Error:', errorMessage);
     
     // Show error message to user
     uiStore.showErrorSnackbar(`Error loading UI settings: ${errorMessage}`);
     
-    // Return empty settings array
-    return [];
+    // Re-throw error so caller can handle it
+    throw error;
   }
 }
 

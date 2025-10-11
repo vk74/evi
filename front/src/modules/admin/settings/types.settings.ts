@@ -45,6 +45,26 @@ export interface AppSetting {
 }
 
 /**
+ * Interface for public UI settings (available without authentication)
+ * Subset of AppSetting with only public UI-related fields
+ */
+export interface PublicUiSetting {
+  section_path: string;       // Path to settings section
+  setting_name: string;       // Unique setting identifier
+  value: any;                 // Setting value
+  is_ui: boolean;             // Always true for public UI settings
+}
+
+/**
+ * Response interface for public UI settings API
+ */
+export interface PublicUiSettingsResponse {
+  success: boolean;
+  settings: PublicUiSetting[];
+  error?: string;
+}
+
+/**
  * Settings cache entry with timestamp for TTL management
  */
 export interface SettingsCacheEntry {
