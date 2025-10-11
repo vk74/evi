@@ -1,5 +1,5 @@
 <!--
-version: 1.0.0
+version: 1.1.0
 Frontend file for service details view component.
 Displays extended info and placeholders for service offerings.
 File: ServiceDetails.vue
@@ -12,8 +12,13 @@ import { fetchServiceDetails } from './service.fetch.service.details'
 import { PhCube } from '@phosphor-icons/vue'
 
 // Props (MVP): accept serviceId from parent context/navigation state
-interface Props { serviceId: string }
-const props = defineProps<Props>()
+interface Props { 
+  serviceId: string
+  cardColor?: string
+}
+const props = withDefaults(defineProps<Props>(), {
+  cardColor: '#F5F5F5'
+})
 
 // Local state
 const details = ref<CatalogServiceDetails | null>(null)
@@ -39,6 +44,11 @@ const hasVisibleSupportGroups = computed(() => {
          details.value.show_support_tier3 || 
          details.value.show_dispatcher
 })
+
+// Computed property for details card styling
+const detailsStyle = computed(() => ({
+  '--details-bg': props.cardColor
+}))
 
 // Phosphor icons support
 const phosphorIcons = ref<Record<string, any>>({})
@@ -69,7 +79,7 @@ watch(() => props.serviceId, () => { loadDetails() })
 </script>
 
 <template>
-  <div class="service-details">
+  <div class="service-details" :style="detailsStyle">
     <!-- Header -->
     <div class="header d-flex align-center mb-4">
       <component
@@ -151,7 +161,7 @@ watch(() => props.serviceId, () => { loadDetails() })
 <style scoped>
 .service-details {
   padding: 16px;
-  background-color: rgb(242, 242, 242);
+  background-color: var(--details-bg, #F5F5F5);
   border: 1px solid rgba(0, 0, 0, 0.12);
   border-radius: 8px;
 }

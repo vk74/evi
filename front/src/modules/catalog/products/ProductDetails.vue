@@ -1,5 +1,5 @@
 <!--
-version: 1.0.0
+version: 1.1.0
 Frontend file for product details view component.
 Displays extended info and placeholders for product options.
 File: ProductDetails.vue
@@ -15,8 +15,13 @@ import type { CatalogProductOption } from './types.products'
 import ProductOptionsTable from './ProductOptionsTable.vue'
 
 // Props (MVP): accept productId from parent context/navigation state
-interface Props { productId: string }
-const props = defineProps<Props>()
+interface Props { 
+  productId: string
+  cardColor?: string
+}
+const props = withDefaults(defineProps<Props>(), {
+  cardColor: '#E8F4F8'
+})
 
 // Local state
 const details = ref<CatalogProductDetails | null>(null)
@@ -52,6 +57,11 @@ const hasProductOverview = computed(() => {
   if (!details.value) return false
   return details.value.product_overview && Object.keys(details.value.product_overview).length > 0
 })
+
+// Computed property for details card styling
+const detailsStyle = computed(() => ({
+  '--details-bg': props.cardColor
+}))
 
 // Phosphor icons support
 const phosphorIcons = ref<Record<string, any>>({})
@@ -93,7 +103,7 @@ onMounted(() => { loadOptions() })
 </script>
 
 <template>
-  <div class="product-details">
+  <div class="product-details" :style="detailsStyle">
     <!-- Header -->
     <div class="header d-flex align-center mb-4">
       <PhCamera
@@ -193,7 +203,7 @@ onMounted(() => { loadOptions() })
 <style scoped>
 .product-details {
   padding: 16px;
-  background-color: rgb(240, 248, 255); /* Light blue background */
+  background-color: var(--details-bg, #E8F4F8);
   border: 1px solid rgba(59, 130, 246, 0.2);
   border-radius: 8px;
 }

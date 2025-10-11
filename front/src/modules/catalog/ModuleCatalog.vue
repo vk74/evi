@@ -1,5 +1,5 @@
 <!--
-version: 1.1.0
+version: 1.2.0
 Frontend file for catalog module.
 Catalog interface with sections, filters, and service/product cards.
 File: ModuleCatalog.vue
@@ -439,11 +439,17 @@ onMounted(async () => {
       <v-container class="py-6">
         <!-- Service details view -->
         <div v-if="selectedServiceId">
-          <ServiceDetails :service-id="selectedServiceId" />
+          <ServiceDetails 
+            :service-id="selectedServiceId"
+            :card-color="cardColors.service"
+          />
         </div>
         <!-- Product details view -->
         <div v-else-if="selectedProductId">
-          <ProductDetails :product-id="selectedProductId" />
+          <ProductDetails 
+            :product-id="selectedProductId"
+            :card-color="cardColors.product"
+          />
         </div>
         <div v-else>
           <!-- Loading State -->
