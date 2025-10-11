@@ -98,7 +98,7 @@ INSERT INTO app.app_settings (
 ('Application.RegionalSettings', 'default.language', 'all', '"russian"', '{"type":"string","enum":["english","russian"]}', '"russian"', 'Default application language', false),
 
 -- Appearance Settings
-('Application.Appearance', 'navbar.color', 'all', '"#26A69A"', '{"type":"string","pattern":"^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$"}', '"#26A69A"', 'Navigation bar background color (hex format)', true)
+('Application.Appearance', 'navbar.backgroundcolor', 'all', '"#26A69A"', '{"type":"string","pattern":"^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$"}', '"#26A69A"', 'Navigation bar background color (hex format)', true)
 ON CONFLICT (section_path, setting_name, environment) DO UPDATE SET
     value = EXCLUDED.value,
     validation_schema = EXCLUDED.validation_schema,

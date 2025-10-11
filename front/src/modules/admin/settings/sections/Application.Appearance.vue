@@ -2,7 +2,7 @@
   File: Application.Appearance.vue - frontend file
   Description: Application appearance settings
   Purpose: Configure visual appearance settings for the application
-  Version: 1.1.0
+  Version: 1.1.1
   
   Features:
   - Navbar color picker with preset colors
@@ -64,7 +64,7 @@ const presetColors = [
 
 // Define all settings that need to be loaded
 const allSettings = [
-  'navbar.color'
+  'navbar.backgroundcolor'
 ];
 
 // Initialize loading states for all settings
@@ -163,7 +163,7 @@ async function loadSetting(settingName: string): Promise<boolean> {
  */
 function updateLocalSetting(settingName: string, value: any) {
   switch (settingName) {
-    case 'navbar.color':
+    case 'navbar.backgroundcolor':
       navbarColor.value = value || '#26A69A';
       selectedColor.value = value || '#26A69A';
       break;
@@ -270,7 +270,7 @@ watch(
   navbarColor,
   (newValue) => {
     if (!isFirstLoad.value) {
-      updateSetting('navbar.color', newValue);
+      updateSetting('navbar.backgroundcolor', newValue);
     }
   }
 );
@@ -316,8 +316,8 @@ onMounted(() => {
               placeholder="#26A69A"
               :rules="[v => /^#[0-9A-Fa-f]{6}$/.test(v) || t('admin.settings.application.appearance.navbarColor.picker.validHex')]"
               color="teal"
-              :disabled="isSettingDisabled('navbar.color')"
-              :loading="settingLoadingStates['navbar.color']"
+              :disabled="isSettingDisabled('navbar.backgroundcolor')"
+              :loading="settingLoadingStates['navbar.backgroundcolor']"
             >
               <template #prepend-inner>
                 <div
@@ -411,9 +411,9 @@ onMounted(() => {
             </v-dialog>
           </div>
 
-          <!-- Error tooltip for navbar.color -->
+          <!-- Error tooltip for navbar.backgroundcolor -->
           <v-tooltip
-            v-if="settingErrorStates['navbar.color']"
+            v-if="settingErrorStates['navbar.backgroundcolor']"
             location="top"
             max-width="300"
           >
@@ -425,7 +425,7 @@ onMounted(() => {
                 color="error"
                 v-bind="props"
                 style="cursor: pointer;"
-                @click="retrySetting('navbar.color')"
+                @click="retrySetting('navbar.backgroundcolor')"
               />
             </template>
             <div class="pa-2">
