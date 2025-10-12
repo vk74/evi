@@ -1,5 +1,5 @@
 <!--
-version: 1.0.1
+version: 1.0.2
 Frontend file ProductOptionsTable.vue.
 Purpose: Displays product option rows with search, counter, and pagination; mirrors PairEditor table UX.
 Filename: ProductOptionsTable.vue
@@ -107,6 +107,22 @@ function setUnitsCount(productId: string, v: number | null) {
 onMounted(() => {
   // reserved for focus/UX hooks
 })
+
+/** Clear all optional selections and reset their units */
+function clearSelections() {
+  const selected = { ...isSelectedById.value }
+  const units = { ...unitsById.value }
+  for (const pid of Object.keys(selected)) {
+    if (selected[pid] === true) {
+      selected[pid] = false
+      units[pid] = null
+    }
+  }
+  isSelectedById.value = selected
+  unitsById.value = units
+}
+
+defineExpose({ clearSelections })
 </script>
 
 <template>

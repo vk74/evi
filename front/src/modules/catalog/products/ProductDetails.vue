@@ -1,5 +1,5 @@
 <!--
-version: 1.4.7
+version: 1.4.9
 Frontend file for product details view component.
 Displays extended info and placeholders for product options.
 File: ProductDetails.vue
@@ -28,6 +28,7 @@ const details = ref<CatalogProductDetails | null>(null)
 const loading = ref(false)
 const error = ref<string | null>(null)
 const options = ref<CatalogProductOption[]>([])
+const optionsTableRef = ref<any>(null)
 
 // i18n
 const { t } = useI18n()
@@ -232,7 +233,7 @@ onMounted(() => { loadOptions() })
         <!-- Product options area -->
         <div class="product-options mt-6">
           <div class="text-subtitle-1 mb-2">{{ t('catalog.productDetails.productOptions') }}</div>
-          <ProductOptionsTable :items="options" />
+          <ProductOptionsTable ref="optionsTableRef" :items="options" />
         </div>
       </div>
 
@@ -258,7 +259,7 @@ onMounted(() => { loadOptions() })
 
           <!-- Bottom: actions -->
           <div class="pd-sidebar-actions">
-            <v-btn block variant="outlined" color="grey" class="mb-3" :prepend-icon="undefined">
+            <v-btn block variant="outlined" color="grey" class="mb-3" :prepend-icon="undefined" @click="optionsTableRef?.clearSelections && optionsTableRef.clearSelections()">
               <template #prepend>
                 <PhSquare :size="16" color="grey" />
               </template>
