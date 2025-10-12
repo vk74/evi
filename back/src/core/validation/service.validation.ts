@@ -1,18 +1,60 @@
 /**
- * version: 1.1.0
+ * version: 1.2.0
  * Main validation service
  * 
  * This is the main validation service that other services use to validate fields.
  * Performs only business/format validation using rules loaded from database settings.
  * Backend file: service.validation.ts
+ * 
+ * Changes in v1.2.0:
+ * - Removed dependency on legacy rules.validation.ts
+ * - Validation logic now implemented directly using rules from database
+ * - No hardcoded legacy checks, fully dynamic validation
  */
 
-import { ValidationRequest, ValidationResponse, FieldType } from './types.validation';
+import { ValidationRequest, ValidationResponse, FieldType, ValidationRule } from './types.validation';
 import { getRule } from './cache.validation';
-import { validateByRule } from './rules.validation';
 import { getUuidByUsername } from '../helpers/get.uuid.by.username';
 import { getUuidByGroupName } from '../helpers/get.uuid.by.group.name';
 import { Request } from 'express';
+
+/**
+ * Validate value by rule (internal function, replaces legacy validateByRule)
+ * @param value - Value to validate
+ * @param rule - Validation rule to apply
+ * @returns Validation result with error message if invalid
+ */
+function applyValidationRule(value: string | number, rule: ValidationRule): { isValid: boolean; error?: string } {
+  const stringValue = String(value);
+
+  // Check if required
+  if (rule.required && (!stringValue || stringValue.trim() === '')) {
+    return { isValid: false, error: rule.messages.required };
+  }
+
+  // Skip validation for empty optional fields
+  if (!rule.required && (!stringValue || stringValue.trim() === '')) {
+    return { isValid: true };
+  }
+
+  // Check minimum length
+  if (rule.minLength && stringValue.length < rule.minLength) {
+    return { isValid: false, error: rule.messages.minLength };
+  }
+
+  // Check maximum length
+  if (rule.maxLength && stringValue.length > rule.maxLength) {
+    return { isValid: false, error: rule.messages.maxLength };
+  }
+
+  // Check regex pattern - this is the ONLY format check, fully dynamic from database
+  if (rule.regex && !rule.regex.test(stringValue)) {
+    return { isValid: false, error: rule.messages.invalidChars || rule.messages.invalid };
+  }
+
+  // All validation checks passed
+  return { isValid: true };
+}
 
 /**
  * Validate a single field
@@ -35,7 +77,7 @@ export async function validateField(request: ValidationRequest, req: Request): P
     }
     
     // Step 3: Apply validation rule
-    const validationResult = validateByRule(value, rule);
+    const validationResult = applyValidationRule(value, rule);
     
     // Step 4: Log validation errors
     if (!validationResult.isValid) {
