@@ -1,9 +1,16 @@
 <!--
   File: ProductEditorDetails.vue
-  Version: 1.1.0
+  Version: 1.2.0
   Description: Component for product details form and actions
-  Purpose: Provides interface for creating and editing product details
+  Purpose: Provides interface for creating and editing product details with dynamic validation
   Frontend file - ProductEditorDetails.vue
+  
+  Changes in v1.2.0:
+  - Added dynamic validation for owner, backupOwner, and specialistsGroups fields
+  - Validation rules loaded from public API (/api/public/validation-rules)
+  - In CREATE mode: all fields validated according to loaded rules
+  - In EDIT mode: only changed fields are validated
+  - Buttons disabled if validation rules not loaded or fields invalid
 -->
 
 <script setup lang="ts">
@@ -15,6 +22,8 @@ import { defineAsyncComponent } from 'vue'
 import { serviceCreateProduct } from '../../service.create.product'
 import { serviceFetchSingleProduct } from '../../service.fetch.single.product'
 import { serviceUpdateProduct } from '../../service.update.product'
+import { fetchPublicValidationRules } from '@/core/services/service.fetch.public.validation.rules'
+import { usePublicSettingsStore, type ValidationRules } from '@/core/state/state.public.settings'
 
 const ItemSelector = defineAsyncComponent(() => import(/* webpackChunkName: "ui-item-selector" */ '@/core/ui/modals/item-selector/ItemSelector.vue'))
 const DataLoading = defineAsyncComponent(() => import(/* webpackChunkName: "ui-data-loading" */ '@/core/ui/loaders/DataLoading.vue'))
@@ -25,6 +34,7 @@ import { PhMagnifyingGlass, PhX, PhPlus, PhCaretUpDown, PhImage } from '@phospho
 const { t, locale } = useI18n()
 const productsStore = useProductsAdminStore()
 const uiStore = useUiStore()
+const publicStore = usePublicSettingsStore()
 
 // Form reference and validation state
 const form = ref<any>(null)
@@ -33,6 +43,14 @@ const isFormValid = ref(false)
 // UI state variables
 const isSubmitting = ref(false)
 const isLoadingProduct = ref(false)
+
+// Validation rules state
+const currentValidationRules = ref<ValidationRules | null>(null)
+
+// Initial values for tracking changes in edit mode
+const initialOwner = ref<string>('')
+const initialBackupOwner = ref<string>('')
+const initialSpecialistsGroups = ref<string[]>([])
 
 // ItemSelector state
 const showOwnerSelector = ref(false)
@@ -97,7 +115,197 @@ const selectedPictureComponent = computed(() => {
   return null
 })
 
-// Validation rules
+// Validation rules ready check
+const validationRulesReady = computed(() => {
+  return !publicStore.isLoadingValidationRules && 
+         !publicStore.validationRulesError && 
+         currentValidationRules.value !== null
+})
+
+// Check if fields changed (for edit mode)
+const isOwnerChanged = computed(() => {
+  return formData.value.owner !== initialOwner.value
+})
+
+const isBackupOwnerChanged = computed(() => {
+  return formData.value.backupOwner !== initialBackupOwner.value
+})
+
+const areSpecialistsGroupsChanged = computed(() => {
+  const current = formData.value.specialistsGroups
+  const initial = initialSpecialistsGroups.value
+  
+  if (current.length !== initial.length) return true
+  
+  // Check if arrays have same elements (order doesn't matter)
+  const currentSorted = [...current].sort()
+  const initialSorted = [...initial].sort()
+  
+  return !currentSorted.every((val, idx) => val === initialSorted[idx])
+})
+
+// Helper function to validate a single username
+const validateSingleUsername = (username: string): { isValid: boolean; error?: string } => {
+  if (!validationRulesReady.value || !currentValidationRules.value) {
+    return { isValid: false, error: t('admin.products.editor.validation.rulesNotLoaded') }
+  }
+
+  if (!username || username.trim().length === 0) {
+    return { isValid: false, error: t('admin.products.editor.validation.owner.required') }
+  }
+
+  const rules = currentValidationRules.value.wellKnownFields.userName
+
+  // Check length
+  if (username.length < rules.minLength) {
+    return { isValid: false, error: t('admin.products.editor.validation.owner.minLength', { length: rules.minLength }) }
+  }
+  if (username.length > rules.maxLength) {
+    return { isValid: false, error: t('admin.products.editor.validation.owner.maxLength', { length: rules.maxLength }) }
+  }
+
+  // Check latinOnly
+  if (rules.latinOnly) {
+    const basePattern = rules.allowNumbers 
+      ? (rules.allowUsernameChars ? '[a-zA-Z0-9._-]' : '[a-zA-Z0-9]')
+      : (rules.allowUsernameChars ? '[a-zA-Z._-]' : '[a-zA-Z]')
+    const latinRegex = new RegExp(`^${basePattern}+$`)
+    if (!latinRegex.test(username)) {
+      return { isValid: false, error: t('admin.products.editor.validation.owner.latinOnly') }
+    }
+  }
+
+  // Check allowNumbers
+  if (!rules.allowNumbers && /[0-9]/.test(username)) {
+    return { isValid: false, error: t('admin.products.editor.validation.owner.noNumbers') }
+  }
+
+  // Check allowUsernameChars
+  if (!rules.allowUsernameChars && /[._-]/.test(username)) {
+    return { isValid: false, error: t('admin.products.editor.validation.owner.noSpecialChars') }
+  }
+
+  return { isValid: true }
+}
+
+// Helper function to validate a single group name
+const validateSingleGroupName = (groupName: string): { isValid: boolean; error?: string } => {
+  if (!validationRulesReady.value || !currentValidationRules.value) {
+    return { isValid: false, error: t('admin.products.editor.validation.rulesNotLoaded') }
+  }
+
+  if (!groupName || groupName.trim().length === 0) {
+    return { isValid: false, error: t('admin.products.editor.validation.specialistsGroups.required') }
+  }
+
+  const rules = currentValidationRules.value.wellKnownFields.groupName
+
+  // Check length
+  if (groupName.length < rules.minLength) {
+    return { isValid: false, error: t('admin.products.editor.validation.specialistsGroups.minLength', { length: rules.minLength }) }
+  }
+  if (groupName.length > rules.maxLength) {
+    return { isValid: false, error: t('admin.products.editor.validation.specialistsGroups.maxLength', { length: rules.maxLength }) }
+  }
+
+  // Check latinOnly
+  if (rules.latinOnly) {
+    const basePattern = rules.allowNumbers 
+      ? (rules.allowUsernameChars ? '[a-zA-Z0-9._-]' : '[a-zA-Z0-9]')
+      : (rules.allowUsernameChars ? '[a-zA-Z._-]' : '[a-zA-Z]')
+    const latinRegex = new RegExp(`^${basePattern}+$`)
+    if (!latinRegex.test(groupName)) {
+      return { isValid: false, error: t('admin.products.editor.validation.specialistsGroups.latinOnly') }
+    }
+  }
+
+  // Check allowNumbers
+  if (!rules.allowNumbers && /[0-9]/.test(groupName)) {
+    return { isValid: false, error: t('admin.products.editor.validation.specialistsGroups.noNumbers') }
+  }
+
+  // Check allowUsernameChars
+  if (!rules.allowUsernameChars && /[._-]/.test(groupName)) {
+    return { isValid: false, error: t('admin.products.editor.validation.specialistsGroups.noSpecialChars') }
+  }
+
+  return { isValid: true }
+}
+
+// Dynamic validation rules for owner
+const dynamicOwnerRules = computed(() => {
+  if (!validationRulesReady.value || !currentValidationRules.value) {
+    return [
+      () => !publicStore.validationRulesError || t('admin.products.editor.validation.rulesNotLoaded')
+    ]
+  }
+
+  const rules = currentValidationRules.value.wellKnownFields.userName
+  const validationRules: Array<(v: string) => string | boolean> = []
+
+  // Required field
+  validationRules.push((v: string) => !!v || t('admin.products.editor.validation.owner.required'))
+
+  // Length rules
+  validationRules.push((v: string) => (v && v.length >= rules.minLength) || t('admin.products.editor.validation.owner.minLength', { length: rules.minLength }))
+  validationRules.push((v: string) => (v && v.length <= rules.maxLength) || t('admin.products.editor.validation.owner.maxLength', { length: rules.maxLength }))
+
+  // Character requirements
+  if (rules.latinOnly) {
+    const basePattern = rules.allowNumbers 
+      ? (rules.allowUsernameChars ? '[a-zA-Z0-9._-]' : '[a-zA-Z0-9]')
+      : (rules.allowUsernameChars ? '[a-zA-Z._-]' : '[a-zA-Z]')
+    const latinRegex = new RegExp(`^${basePattern}+$`)
+    validationRules.push((v: string) => latinRegex.test(v) || t('admin.products.editor.validation.owner.latinOnly'))
+  }
+
+  if (!rules.allowNumbers) {
+    validationRules.push((v: string) => !/[0-9]/.test(v) || t('admin.products.editor.validation.owner.noNumbers'))
+  }
+
+  if (!rules.allowUsernameChars) {
+    validationRules.push((v: string) => !/[._-]/.test(v) || t('admin.products.editor.validation.owner.noSpecialChars'))
+  }
+
+  return validationRules
+})
+
+// Dynamic validation rules for backup owner (optional field)
+const dynamicBackupOwnerRules = computed(() => {
+  if (!validationRulesReady.value || !currentValidationRules.value) {
+    return [
+      () => !publicStore.validationRulesError || t('admin.products.editor.validation.rulesNotLoaded')
+    ]
+  }
+
+  const rules = currentValidationRules.value.wellKnownFields.userName
+  const validationRules: Array<(v: string) => string | boolean> = []
+
+  // Optional field - only validate if not empty
+  validationRules.push((v: string) => !v || (v.length >= rules.minLength) || t('admin.products.editor.validation.backupOwner.minLength', { length: rules.minLength }))
+  validationRules.push((v: string) => !v || (v.length <= rules.maxLength) || t('admin.products.editor.validation.backupOwner.maxLength', { length: rules.maxLength }))
+
+  // Character requirements
+  if (rules.latinOnly) {
+    const basePattern = rules.allowNumbers 
+      ? (rules.allowUsernameChars ? '[a-zA-Z0-9._-]' : '[a-zA-Z0-9]')
+      : (rules.allowUsernameChars ? '[a-zA-Z._-]' : '[a-zA-Z]')
+    const latinRegex = new RegExp(`^${basePattern}+$`)
+    validationRules.push((v: string) => !v || latinRegex.test(v) || t('admin.products.editor.validation.backupOwner.latinOnly'))
+  }
+
+  if (!rules.allowNumbers) {
+    validationRules.push((v: string) => !v || !/[0-9]/.test(v) || t('admin.products.editor.validation.backupOwner.noNumbers'))
+  }
+
+  if (!rules.allowUsernameChars) {
+    validationRules.push((v: string) => !v || !/[._-]/.test(v) || t('admin.products.editor.validation.backupOwner.noSpecialChars'))
+  }
+
+  return validationRules
+})
+
+// Validation rules (keeping existing non-owner rules)
 const productCodeRules = computed(() => [
   (v: string) => !!v || t('admin.products.editor.validation.productCode.required'),
   (v: string) => (v && v.length >= 3) || t('admin.products.editor.validation.productCode.minLength')
@@ -105,10 +313,6 @@ const productCodeRules = computed(() => [
 
 const productTypeRules = computed(() => [
   (v: string) => !!v || t('admin.products.editor.validation.productType.required')
-])
-
-const ownerRules = computed(() => [
-  (v: string) => !!v || t('admin.products.editor.validation.owner.required')
 ])
 
 const nameRules = computed(() => [
@@ -121,6 +325,84 @@ const shortDescRules = computed(() => [
   (v: string) => (v && v.length >= 10) || t('admin.products.editor.validation.shortDesc.minLength')
 ])
 
+// Computed properties for field validity with mode awareness
+const isOwnerValid = computed(() => {
+  // In CREATE mode, always validate
+  if (isCreationMode.value) {
+    const result = validateSingleUsername(formData.value.owner)
+    return result.isValid
+  }
+  
+  // In EDIT mode, only validate if changed
+  if (isEditMode.value) {
+    if (!isOwnerChanged.value) {
+      return true // Not changed, consider valid
+    }
+    const result = validateSingleUsername(formData.value.owner)
+    return result.isValid
+  }
+  
+  return false
+})
+
+const isBackupOwnerValid = computed(() => {
+  // In CREATE mode, validate if not empty
+  if (isCreationMode.value) {
+    if (!formData.value.backupOwner || formData.value.backupOwner.trim().length === 0) {
+      return true // Empty is valid for optional field
+    }
+    const result = validateSingleUsername(formData.value.backupOwner)
+    return result.isValid
+  }
+  
+  // In EDIT mode, only validate if changed
+  if (isEditMode.value) {
+    if (!isBackupOwnerChanged.value) {
+      return true // Not changed, consider valid
+    }
+    if (!formData.value.backupOwner || formData.value.backupOwner.trim().length === 0) {
+      return true // Empty is valid for optional field
+    }
+    const result = validateSingleUsername(formData.value.backupOwner)
+    return result.isValid
+  }
+  
+  return false
+})
+
+const areSpecialistsGroupsValid = computed(() => {
+  // In CREATE mode, always validate
+  if (isCreationMode.value) {
+    // Array must not be empty
+    if (!formData.value.specialistsGroups || formData.value.specialistsGroups.length === 0) {
+      return false
+    }
+    // Every group name must be valid
+    return formData.value.specialistsGroups.every(groupName => {
+      const result = validateSingleGroupName(groupName)
+      return result.isValid
+    })
+  }
+  
+  // In EDIT mode, only validate if changed
+  if (isEditMode.value) {
+    if (!areSpecialistsGroupsChanged.value) {
+      return true // Not changed, consider valid
+    }
+    // Array must not be empty
+    if (!formData.value.specialistsGroups || formData.value.specialistsGroups.length === 0) {
+      return false
+    }
+    // Every group name must be valid
+    return formData.value.specialistsGroups.every(groupName => {
+      const result = validateSingleGroupName(groupName)
+      return result.isValid
+    })
+  }
+  
+  return false
+})
+
 // Helper function to generate UUID
 const generateUUID = (): string => {
   return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
@@ -130,8 +412,27 @@ const generateUUID = (): string => {
   })
 }
 
+// Load validation rules from public API
+const loadValidationRules = async () => {
+  try {
+    console.log('[ProductEditorDetails] Loading validation rules...')
+    const rules = await fetchPublicValidationRules()
+    currentValidationRules.value = rules
+    console.log('[ProductEditorDetails] Validation rules loaded successfully:', rules)
+  } catch (error) {
+    console.error('[ProductEditorDetails] Failed to load validation rules:', error)
+    uiStore.showErrorSnackbar(t('admin.products.editor.messages.validation.rulesLoadError'))
+  }
+}
+
 // Methods
 const createProduct = async () => {
+  // Check if validation rules are loaded
+  if (!validationRulesReady.value) {
+    uiStore.showErrorSnackbar(t('admin.products.editor.messages.validation.rulesNotLoaded'))
+    return
+  }
+
   if (!form.value?.validate()) {
     uiStore.showErrorSnackbar(t('admin.products.editor.messages.validation.fillRequired'))
     return
@@ -206,6 +507,12 @@ const createProduct = async () => {
 }
 
 const updateProduct = async () => {
+  // Check if validation rules are loaded
+  if (!validationRulesReady.value) {
+    uiStore.showErrorSnackbar(t('admin.products.editor.messages.validation.rulesNotLoaded'))
+    return
+  }
+
   if (!form.value?.validate()) {
     uiStore.showErrorSnackbar(t('admin.products.editor.messages.validation.fillRequired'))
     return
@@ -377,6 +684,12 @@ const loadProductData = async () => {
       if (productData) {
         // Update store with fetched data
         productsStore.setEditingProductData(productData)
+        
+        // Save initial values for tracking changes
+        initialOwner.value = formData.value.owner || ''
+        initialBackupOwner.value = formData.value.backupOwner || ''
+        initialSpecialistsGroups.value = [...(formData.value.specialistsGroups || [])]
+        
         uiStore.showSuccessSnackbar(t('admin.products.editor.messages.data.loaded'))
       } else {
         uiStore.showErrorSnackbar(t('admin.products.editor.messages.data.loadError'))
@@ -415,15 +728,28 @@ watch(isEditMode, (newMode) => {
 }, { immediate: false })
 
 // Initialize form data on mount
-onMounted(() => {
+onMounted(async () => {
+  // Load validation rules first
+  await loadValidationRules()
+  
   if (isCreationMode.value) {
     // Set default product type
     productType.value = 'product'
+    
+    // Initialize empty initial values for creation mode
+    initialOwner.value = ''
+    initialBackupOwner.value = ''
+    initialSpecialistsGroups.value = []
   } else if (isEditMode.value && editingProductId.value) {
     // Check if we need to load data
     if (productsStore.needsProductDataLoad(editingProductId.value)) {
       // Load product data for editing
-      loadProductData()
+      await loadProductData()
+    } else {
+      // Data already loaded, just save initial values
+      initialOwner.value = formData.value.owner || ''
+      initialBackupOwner.value = formData.value.backupOwner || ''
+      initialSpecialistsGroups.value = [...(formData.value.specialistsGroups || [])]
     }
   }
 })
@@ -565,7 +891,7 @@ onMounted(() => {
                   <v-text-field
                     v-model="formData.owner"
                     :label="t('admin.products.editor.contacts.owner.label')"
-                    :rules="ownerRules"
+                    :rules="dynamicOwnerRules"
                     readonly
                     variant="outlined"
                     color="teal"
@@ -587,6 +913,7 @@ onMounted(() => {
                   <v-text-field
                     v-model="formData.backupOwner"
                     :label="t('admin.products.editor.contacts.backupOwner.label')"
+                    :rules="dynamicBackupOwnerRules"
                     readonly
                     variant="outlined"
                     color="teal"
@@ -858,7 +1185,7 @@ onMounted(() => {
           block
           color="teal"
           variant="outlined"
-          :disabled="!isFormValid || isSubmitting"
+          :disabled="!isFormValid || isSubmitting || !validationRulesReady || !isOwnerValid || !isBackupOwnerValid || !areSpecialistsGroupsValid"
           class="mb-3"
           @click="createProduct"
         >
@@ -871,7 +1198,7 @@ onMounted(() => {
           block
           color="teal"
           variant="outlined"
-          :disabled="!isFormValid || isSubmitting"
+          :disabled="!isFormValid || isSubmitting || !validationRulesReady || !isOwnerValid || !isBackupOwnerValid || !areSpecialistsGroupsValid"
           class="mb-3"
           @click="updateProduct"
         >

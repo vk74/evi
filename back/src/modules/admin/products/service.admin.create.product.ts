@@ -1,5 +1,5 @@
 /**
- * service.admin.create.product.ts - version 1.1.0
+ * service.admin.create.product.ts - version 1.2.0
  * Service for creating products operations.
  * 
  * Functionality:
@@ -18,6 +18,11 @@
  * 5. Create product in database with transaction
  * 6. Add translations for all languages
  * 7. Return formatted response
+ * 
+ * Changes in v1.2.0:
+ * - Added validation for backup owner username using validation service
+ * - Backup owner now validated through validateField with userName type
+ * - Format and existence checks aligned with owner validation
  */
 
 import { Request } from 'express';
@@ -109,6 +114,23 @@ async function validateCreateProductData(data: CreateProductRequest, req: Reques
         }
     } else {
         errors.push('Owner is required');
+    }
+
+    // Validate backup owner username (well-known, optional)
+    if (data.backupOwner !== undefined && data.backupOwner !== '') {
+        const backupOwnerResult = await validateField({ value: data.backupOwner, fieldType: 'userName' }, req);
+        if (!backupOwnerResult.isValid && backupOwnerResult.error) {
+            errors.push(`Backup owner: ${backupOwnerResult.error}`);
+        } else {
+            try {
+                const backupOwnerUuid = await getUuidByUsername(data.backupOwner);
+                if (!backupOwnerUuid) {
+                    errors.push('Backup owner user does not exist');
+                }
+            } catch (error) {
+                errors.push('Invalid backup owner username');
+            }
+        }
     }
 
     // Validate translations - at least one language must be provided and complete

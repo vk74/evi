@@ -137,6 +137,8 @@
           "activeOptionsCount": "number of paired options: {count}"
         },
         "validation": {
+          "rulesNotLoaded": "validation rules not loaded",
+          "rulesLoadError": "failed to load validation rules",
           "productCode": {
             "required": "product code is required",
             "minLength": "product code must be at least 3 characters"
@@ -145,10 +147,27 @@
             "required": "product type is required"
           },
           "owner": {
-            "required": "owner is required"
+            "required": "owner is required",
+            "minLength": "owner name must be at least {length} characters",
+            "maxLength": "owner name must not exceed {length} characters",
+            "latinOnly": "owner name must contain only latin characters",
+            "noNumbers": "owner name cannot contain numbers",
+            "noSpecialChars": "owner name cannot contain special characters (. _ -)"
+          },
+          "backupOwner": {
+            "minLength": "backup owner name must be at least {length} characters",
+            "maxLength": "backup owner name must not exceed {length} characters",
+            "latinOnly": "backup owner name must contain only latin characters",
+            "noNumbers": "backup owner name cannot contain numbers",
+            "noSpecialChars": "backup owner name cannot contain special characters (. _ -)"
           },
           "specialistsGroups": {
-            "required": "at least one specialists group is required"
+            "required": "at least one specialists group is required",
+            "minLength": "group name must be at least {length} characters",
+            "maxLength": "group name must not exceed {length} characters",
+            "latinOnly": "group name must contain only latin characters",
+            "noNumbers": "group name cannot contain numbers",
+            "noSpecialChars": "group name cannot contain special characters (. _ -)"
           },
           "name": {
             "required": "name is required",
