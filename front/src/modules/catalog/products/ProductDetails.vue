@@ -77,9 +77,6 @@ async function loadDetails() {
   }
 }
 
-onMounted(() => { loadDetails() })
-watch(() => props.productId, () => { loadDetails(); loadOptions() })
-
 async function loadOptions() {
   try {
     options.value = await fetchProductOptions(props.productId)
@@ -89,7 +86,14 @@ async function loadOptions() {
   }
 }
 
-onMounted(() => { loadOptions() })
+onMounted(() => { 
+  loadDetails()
+  loadOptions() 
+})
+watch(() => props.productId, () => { 
+  loadDetails()
+  loadOptions() 
+})
 </script>
 
 <template>
@@ -108,7 +112,7 @@ onMounted(() => { loadOptions() })
         <!-- 4:3 photo placeholder -->
         <div class="photo-placeholder">
           <div class="photo-box">
-            <span class="photo-text">Фото продукта</span>
+            <span class="photo-text">{{ t('catalog.productDetails.productPhoto') }}</span>
           </div>
         </div>
  
@@ -119,8 +123,8 @@ onMounted(() => { loadOptions() })
               {{ t('catalog.productDetails.main') }}
             </div>
             <div class="block-body">
-              <div>{{ t('catalog.productDetails.productCode') }}: {{ details?.product_code || 'Не указан' }}</div>
-              <div>{{ t('catalog.productDetails.status') }}: {{ details?.status === 'published' ? t('catalog.productDetails.published') : 'Черновик' }}</div>
+              <div>{{ t('catalog.productDetails.productCode') }}: {{ details?.product_code || t('catalog.productDetails.notSpecified') }}</div>
+              <div>{{ t('catalog.productDetails.status') }}: {{ details?.status === 'published' ? t('catalog.productDetails.published') : t('catalog.productDetails.draft') }}</div>
               <div>{{ t('catalog.productDetails.createdAt') }}: {{ details?.created_at }}</div>
             </div>
           </div>
@@ -239,7 +243,6 @@ onMounted(() => { loadOptions() })
 
       <!-- Right Sidebar -->
       <div class="pd-sidebar">
-        <div class="pd-sidebar-divider" />
         <div class="pd-sidebar-content">
           <!-- Top: totals -->
           <div class="pd-sidebar-top">
@@ -267,7 +270,7 @@ onMounted(() => { loadOptions() })
             </v-btn>
             <v-btn block variant="outlined" color="teal" :prepend-icon="undefined">
               <template #prepend>
-                <PhMicrosoftExcelLogo v-if="true" :size="16" color="teal" />
+                <PhMicrosoftExcelLogo :size="16" color="teal" />
               </template>
               {{ t('catalog.productDetails.create') }}
             </v-btn>
@@ -288,7 +291,6 @@ onMounted(() => { loadOptions() })
 }
 .main-with-sidebar { display: grid; grid-template-columns: 1fr 20%; gap: 16px; }
 .pd-sidebar { display: flex; }
-.pd-sidebar-divider { width: 1px; margin-right: 16px; background-color: rgba(var(--v-border-color), var(--v-border-opacity)); }
 .pd-sidebar-content { flex: 1; display: flex; flex-direction: column; }
 .pd-sidebar-top { display: flex; flex-direction: column; gap: 12px; }
 .pd-sidebar-actions { margin-top: auto; display: flex; flex-direction: column; }
@@ -309,7 +311,6 @@ onMounted(() => { loadOptions() })
 .block-title { font-weight: 600; margin-bottom: 8px; color: rgb(59, 130, 246); }
 .product-options { background: #fff; border: 1px solid rgba(59, 130, 246, 0.1); border-radius: 8px; padding: 12px; }
  
- .price-row { gap: 12px; }
 .inline-row {
   display: grid;
   grid-template-columns: 1fr 1fr;

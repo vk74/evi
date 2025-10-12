@@ -77,6 +77,9 @@
       "vat": "VAT",
       "clearSelections": "CLEAR SELECTIONS",
       "create": "CREATE",
+      "productPhoto": "product photo",
+      "notSpecified": "not specified",
+      "draft": "Draft",
       "options": {
         "counter": "options found: {count}",
         "search": { "placeholder": "search options..." },
