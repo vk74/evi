@@ -99,9 +99,12 @@ watch(() => props.productId, () => {
 <template>
   <div class="product-details" :style="detailsStyle">
     <!-- Header -->
-    <div class="header d-flex align-center mb-4">
+    <div class="header d-flex align-center mb-2">
       <div class="text-h6">{{ details?.name }}</div>
     </div>
+
+    <!-- Header divider -->
+    <v-divider class="header-divider mb-4" />
  
     <!-- Main + Sidebar layout -->
     <div class="main-with-sidebar">
