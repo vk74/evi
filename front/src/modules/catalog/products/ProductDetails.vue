@@ -260,6 +260,9 @@ watch(() => props.productId, () => {
             </div>
           </div>
 
+          <!-- Divider -->
+          <v-divider class="sidebar-divider" />
+
           <!-- Bottom: actions -->
           <div class="pd-sidebar-actions">
             <v-btn block variant="outlined" color="grey" class="mb-3" :prepend-icon="undefined" @click="optionsTableRef?.clearSelections && optionsTableRef.clearSelections()">
@@ -270,7 +273,7 @@ watch(() => props.productId, () => {
             </v-btn>
             <v-btn block variant="outlined" color="teal" :prepend-icon="undefined">
               <template #prepend>
-                <PhMicrosoftExcelLogo :size="16" color="teal" />
+                <PhMicrosoftExcelLogo :size="20" color="teal" />
               </template>
               {{ t('catalog.productDetails.create') }}
             </v-btn>
@@ -293,7 +296,8 @@ watch(() => props.productId, () => {
 .pd-sidebar { display: flex; border-left: thin solid rgba(var(--v-border-color), var(--v-border-opacity)); padding-left: 16px; }
 .pd-sidebar-content { flex: 1; display: flex; flex-direction: column; }
 .pd-sidebar-top { display: flex; flex-direction: column; gap: 12px; }
-.pd-sidebar-actions { margin-top: 24px; display: flex; flex-direction: column; }
+.sidebar-divider { margin-top: 16px; }
+.pd-sidebar-actions { margin-top: 16px; display: flex; flex-direction: column; }
 .top-grid { display: grid; grid-template-columns: minmax(260px, 360px) 1fr; gap: 16px; }
 .photo-placeholder { width: 100%; }
 .photo-box { 
