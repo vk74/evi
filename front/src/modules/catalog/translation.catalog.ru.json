@@ -72,6 +72,11 @@
       "productOptions": "опции продукта",
       "productOptionsEmpty": "опции продукта не найдены",
       "published": "опубликован",
+      "priceLabel": "цена продукта",
+      "total": "итого",
+      "vat": "НДС",
+      "clearSelections": "СБРОСИТЬ ВЫБОР",
+      "create": "СОЗДАТЬ",
       "options": {
         "counter": "найдено опций: {count}",
         "search": { "placeholder": "поиск опций..." },

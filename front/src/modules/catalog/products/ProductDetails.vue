@@ -1,5 +1,5 @@
 <!--
-version: 1.4.6
+version: 1.4.7
 Frontend file for product details view component.
 Displays extended info and placeholders for product options.
 File: ProductDetails.vue
@@ -12,7 +12,7 @@ import { fetchProductDetails } from './service.fetch.product.details'
 import { fetchProductOptions } from './service.fetch.product.options'
 import type { CatalogProductOption } from './types.products'
 import ProductOptionsTable from './ProductOptionsTable.vue'
-import { PhCaretUpDown } from '@phosphor-icons/vue'
+import { PhCaretUpDown, PhSquare, PhMicrosoftExcelLogo } from '@phosphor-icons/vue'
 
 // Props (MVP): accept productId from parent context/navigation state
 interface Props { 
@@ -97,139 +97,184 @@ onMounted(() => { loadOptions() })
     <div class="header d-flex align-center mb-4">
       <div class="text-h6">{{ details?.name }}</div>
     </div>
+ 
+    <!-- Main + Sidebar layout -->
+    <div class="main-with-sidebar">
+      <!-- Left main content -->
+      <div>
+        <!-- Photo + primary info layout -->
+        <div class="top-grid">
+        <!-- 4:3 photo placeholder -->
+        <div class="photo-placeholder">
+          <div class="photo-box">
+            <span class="photo-text">Фото продукта</span>
+          </div>
+        </div>
+ 
+        <!-- Right column: main + description stacked -->
+        <div class="right-column">
+          <div class="detail-block">
+            <div class="block-title">
+              {{ t('catalog.productDetails.main') }}
+            </div>
+            <div class="block-body">
+              <div>{{ t('catalog.productDetails.productCode') }}: {{ details?.product_code || 'Не указан' }}</div>
+              <div>{{ t('catalog.productDetails.status') }}: {{ details?.status === 'published' ? t('catalog.productDetails.published') : 'Черновик' }}</div>
+              <div>{{ t('catalog.productDetails.createdAt') }}: {{ details?.created_at }}</div>
+            </div>
+          </div>
+ 
+          <div class="detail-block">
+            <div class="block-title">
+              {{ t('catalog.productDetails.description') }}
+            </div>
+            <div class="block-body">
+              <div v-if="details?.short_description" class="mb-2">
+                {{ t('catalog.productDetails.shortDescription') }}: {{ details.short_description }}
+              </div>
+              <div v-if="details?.long_description">
+                {{ t('catalog.productDetails.longDescription') }}: {{ details.long_description }}
+              </div>
+            </div>
+          </div>
+          
+          <div class="inline-row">
+            <div class="detail-block control-col">
+              <div class="block-body">
+                <div class="d-flex align-center" style="gap: 8px;">
+                  <span class="me-2">{{ t('catalog.productDetails.options.headers.unitsCount') }}</span>
+                  <v-select
+                    :items="Array.from({ length: 1000 }, (_, i) => i + 1)"
+                    :model-value="1"
+                    density="compact"
+                    variant="outlined"
+                    hide-details
+                    class="units-vselect"
+                    style="max-width: 120px"
+                  >
+                    <template #append-inner>
+                      <PhCaretUpDown class="dropdown-icon" />
+                    </template>
+                  </v-select>
+                </div>
+              </div>
+            </div>
+ 
+            <div class="detail-block control-col">
+              <div class="block-body">
+                <div class="d-flex align-center" style="gap: 8px;">
+                  <span class="me-2">{{ t('catalog.productDetails.priceLabel') }}</span>
+                  <v-text-field
+                    model-value="1 000 €"
+                    density="compact"
+                    variant="outlined"
+                    readonly
+                    hide-details
+                    class="price-field"
+                    style="max-width: 120px"
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+ 
+        </div>
 
-    <!-- Photo + primary info layout -->
-    <div class="top-grid">
-      <!-- 4:3 photo placeholder -->
-      <div class="photo-placeholder">
-        <div class="photo-box">
-          <span class="photo-text">Фото продукта</span>
+        <!-- Other details blocks -->
+        <div class="details-grid">
+          <div v-if="hasTechSpecs" class="detail-block">
+            <div class="block-title">
+              {{ t('catalog.productDetails.techSpecs') }}
+            </div>
+            <div class="block-body">
+              <pre>{{ JSON.stringify(details?.tech_specs, null, 2) }}</pre>
+            </div>
+          </div>
+
+          <div v-if="hasAreaSpecifics" class="detail-block">
+            <div class="block-title">
+              {{ t('catalog.productDetails.areaSpecifics') }}
+            </div>
+            <div class="block-body">
+              <pre>{{ JSON.stringify(details?.area_specifics, null, 2) }}</pre>
+            </div>
+          </div>
+
+          <div v-if="hasIndustrySpecifics" class="detail-block">
+            <div class="block-title">
+              {{ t('catalog.productDetails.industrySpecifics') }}
+            </div>
+            <div class="block-body">
+              <pre>{{ JSON.stringify(details?.industry_specifics, null, 2) }}</pre>
+            </div>
+          </div>
+
+          <div v-if="hasKeyFeatures" class="detail-block">
+            <div class="block-title">
+              {{ t('catalog.productDetails.keyFeatures') }}
+            </div>
+            <div class="block-body">
+              <pre>{{ JSON.stringify(details?.key_features, null, 2) }}</pre>
+            </div>
+          </div>
+
+          <div v-if="hasProductOverview" class="detail-block">
+            <div class="block-title">
+              {{ t('catalog.productDetails.productOverview') }}
+            </div>
+            <div class="block-body">
+              <pre>{{ JSON.stringify(details?.product_overview, null, 2) }}</pre>
+            </div>
+          </div>
+        </div>
+
+        <!-- Product options area -->
+        <div class="product-options mt-6">
+          <div class="text-subtitle-1 mb-2">{{ t('catalog.productDetails.productOptions') }}</div>
+          <ProductOptionsTable :items="options" />
         </div>
       </div>
 
-      <!-- Right column: main + description stacked -->
-      <div class="right-column">
-        <div class="detail-block">
-          <div class="block-title">
-            {{ t('catalog.productDetails.main') }}
-          </div>
-          <div class="block-body">
-            <div>{{ t('catalog.productDetails.productCode') }}: {{ details?.product_code || 'Не указан' }}</div>
-            <div>{{ t('catalog.productDetails.status') }}: {{ details?.status === 'published' ? t('catalog.productDetails.published') : 'Черновик' }}</div>
-            <div>{{ t('catalog.productDetails.createdAt') }}: {{ details?.created_at }}</div>
-          </div>
-        </div>
-
-        <div class="detail-block">
-          <div class="block-title">
-            {{ t('catalog.productDetails.description') }}
-          </div>
-          <div class="block-body">
-            <div v-if="details?.short_description" class="mb-2">
-              {{ t('catalog.productDetails.shortDescription') }}: {{ details.short_description }}
+      <!-- Right Sidebar -->
+      <div class="pd-sidebar">
+        <div class="pd-sidebar-divider" />
+        <div class="pd-sidebar-content">
+          <!-- Top: totals -->
+          <div class="pd-sidebar-top">
+            <div class="detail-block">
+              <div class="block-body d-flex align-center" style="gap: 8px;">
+                <span class="me-2">{{ t('catalog.productDetails.total') }}</span>
+                <v-text-field model-value="1 000 €" density="compact" variant="outlined" readonly hide-details style="max-width: 120px" />
+              </div>
             </div>
-            <div v-if="details?.long_description">
-              {{ t('catalog.productDetails.longDescription') }}: {{ details.long_description }}
-            </div>
-          </div>
-        </div>
-        
-        <div class="inline-row">
-          <div class="detail-block control-col">
-            <div class="block-body">
-              <div class="d-flex align-center" style="gap: 8px;">
-                <span class="me-2">units count</span>
-                <v-select
-                  :items="Array.from({ length: 1000 }, (_, i) => i + 1)"
-                  :model-value="1"
-                  density="compact"
-                  variant="outlined"
-                  hide-details
-                  class="units-vselect"
-                  style="max-width: 120px"
-                >
-                  <template #append-inner>
-                    <PhCaretUpDown class="dropdown-icon" />
-                  </template>
-                </v-select>
+            <div class="detail-block">
+              <div class="block-body d-flex align-center" style="gap: 8px;">
+                <span class="me-2">{{ t('catalog.productDetails.vat') }}</span>
+                <v-text-field model-value="0 €" density="compact" variant="outlined" readonly hide-details style="max-width: 120px" />
               </div>
             </div>
           </div>
 
-          <div class="detail-block control-col">
-            <div class="block-body">
-              <div class="d-flex align-center" style="gap: 8px;">
-                <span class="me-2">product price</span>
-                <v-text-field
-                  model-value="1 000 €"
-                  density="compact"
-                  variant="outlined"
-                  readonly
-                  hide-details
-                  class="price-field"
-                  style="max-width: 120px"
-                />
-              </div>
-            </div>
+          <!-- Bottom: actions -->
+          <div class="pd-sidebar-actions">
+            <v-btn block variant="outlined" color="grey" class="mb-3" :prepend-icon="undefined">
+              <template #prepend>
+                <PhSquare :size="16" color="grey" />
+              </template>
+              {{ t('catalog.productDetails.clearSelections') }}
+            </v-btn>
+            <v-btn block variant="outlined" color="teal" :prepend-icon="undefined">
+              <template #prepend>
+                <PhMicrosoftExcelLogo v-if="true" :size="16" color="teal" />
+              </template>
+              {{ t('catalog.productDetails.create') }}
+            </v-btn>
           </div>
         </div>
       </div>
-
     </div>
-
-    <!-- Other details blocks -->
-    <div class="details-grid">
-      <div v-if="hasTechSpecs" class="detail-block">
-        <div class="block-title">
-          {{ t('catalog.productDetails.techSpecs') }}
-        </div>
-        <div class="block-body">
-          <pre>{{ JSON.stringify(details?.tech_specs, null, 2) }}</pre>
-        </div>
-      </div>
-
-      <div v-if="hasAreaSpecifics" class="detail-block">
-        <div class="block-title">
-          {{ t('catalog.productDetails.areaSpecifics') }}
-        </div>
-        <div class="block-body">
-          <pre>{{ JSON.stringify(details?.area_specifics, null, 2) }}</pre>
-        </div>
-      </div>
-
-      <div v-if="hasIndustrySpecifics" class="detail-block">
-        <div class="block-title">
-          {{ t('catalog.productDetails.industrySpecifics') }}
-        </div>
-        <div class="block-body">
-          <pre>{{ JSON.stringify(details?.industry_specifics, null, 2) }}</pre>
-        </div>
-      </div>
-
-      <div v-if="hasKeyFeatures" class="detail-block">
-        <div class="block-title">
-          {{ t('catalog.productDetails.keyFeatures') }}
-        </div>
-        <div class="block-body">
-          <pre>{{ JSON.stringify(details?.key_features, null, 2) }}</pre>
-        </div>
-      </div>
-
-      <div v-if="hasProductOverview" class="detail-block">
-        <div class="block-title">
-          {{ t('catalog.productDetails.productOverview') }}
-        </div>
-        <div class="block-body">
-          <pre>{{ JSON.stringify(details?.product_overview, null, 2) }}</pre>
-        </div>
-      </div>
-    </div>
-
-    <!-- Product options area -->
-    <div class="product-options mt-6">
-      <div class="text-subtitle-1 mb-2">{{ t('catalog.productDetails.productOptions') }}</div>
-      <ProductOptionsTable :items="options" />
-    </div>
+ 
   </div>
 </template>
 
@@ -240,6 +285,12 @@ onMounted(() => { loadOptions() })
   border: 1px solid rgba(59, 130, 246, 0.2);
   border-radius: 8px;
 }
+.main-with-sidebar { display: grid; grid-template-columns: 1fr 20%; gap: 16px; }
+.pd-sidebar { display: flex; }
+.pd-sidebar-divider { width: 1px; margin-right: 16px; background-color: rgba(var(--v-border-color), var(--v-border-opacity)); }
+.pd-sidebar-content { flex: 1; display: flex; flex-direction: column; }
+.pd-sidebar-top { display: flex; flex-direction: column; gap: 12px; }
+.pd-sidebar-actions { margin-top: auto; display: flex; flex-direction: column; }
 .top-grid { display: grid; grid-template-columns: minmax(260px, 360px) 1fr; gap: 16px; }
 .photo-placeholder { width: 100%; }
 .photo-box { 
@@ -276,6 +327,8 @@ onMounted(() => { loadOptions() })
    
  @media (max-width: 720px) {
    .top-grid { grid-template-columns: 1fr; }
+   .main-with-sidebar { grid-template-columns: 1fr; }
+   .pd-sidebar { display: none; }
    .inline-row { grid-template-columns: 1fr; }
  }
 </style>

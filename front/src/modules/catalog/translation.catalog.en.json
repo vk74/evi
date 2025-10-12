@@ -72,6 +72,11 @@
       "productOptions": "product options",
       "productOptionsEmpty": "no product options found",
       "published": "published",
+      "priceLabel": "product price",
+      "total": "total",
+      "vat": "VAT",
+      "clearSelections": "CLEAR SELECTIONS",
+      "create": "CREATE",
       "options": {
         "counter": "options found: {count}",
         "search": { "placeholder": "search options..." },
