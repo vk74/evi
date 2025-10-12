@@ -111,7 +111,8 @@ export const queries = {
   /**
    * Select product options for a product card
    * - Only options where the option product is published
-   * - Join translations by provided language code
+   * - LEFT JOIN translations to include options even without translations
+   * - If no translation exists, option_name will be NULL
    */
   getProductOptionsByProductId: `
     SELECT 
@@ -124,12 +125,12 @@ export const queries = {
       NULL::numeric AS unit_price
     FROM app.product_options po
     JOIN app.products p_option ON p_option.product_id = po.option_product_id
-    JOIN app.product_translations pt 
+    LEFT JOIN app.product_translations pt 
       ON pt.product_id = po.option_product_id
       AND pt.language_code = $2
     WHERE po.main_product_id = $1
       AND p_option.is_published = true
-    ORDER BY pt.name ASC
+    ORDER BY COALESCE(pt.name, p_option.product_code) ASC
   `,
 };
 

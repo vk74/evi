@@ -148,7 +148,7 @@ defineExpose({ clearSelections })
       hide-default-footer
     >
       <template #[`item.option_name`]="{ item }">
-        <span>{{ item.option_name || '-' }}</span>
+        <span>{{ item.option_name || '' }}</span>
       </template>
 
       <template #[`item.product_code`]="{ item }">
