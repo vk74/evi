@@ -1,5 +1,5 @@
 <!--
-version: 1.0.0
+version: 1.0.1
 Frontend file ProductOptionsTable.vue.
 Purpose: Displays product option rows with search, counter, and pagination; mirrors PairEditor table UX.
 Filename: ProductOptionsTable.vue
@@ -156,7 +156,7 @@ onMounted(() => {
           variant="text"
           density="comfortable"
           :aria-pressed="isSelectedById[item.product_id] === true"
-          @click="toggleSelect(item.product_id)"
+          @click.stop="toggleSelect(item.product_id)"
         >
           <PhCheckSquare v-if="isSelectedById[item.product_id]" :size="18" color="teal" />
           <PhSquare v-else :size="18" color="grey" />
@@ -173,6 +173,8 @@ onMounted(() => {
           :disabled="item.is_required ? true : !(isSelectedById[item.product_id])"
           class="units-select"
           style="max-width: 120px"
+          @mousedown.stop
+          @click.stop
           @update:model-value="setUnitsCount(item.product_id, $event as number)"
         >
           <template #append-inner>
