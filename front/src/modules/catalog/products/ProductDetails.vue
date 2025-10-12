@@ -290,10 +290,10 @@ watch(() => props.productId, () => {
   border-radius: 8px;
 }
 .main-with-sidebar { display: grid; grid-template-columns: 1fr 20%; gap: 16px; }
-.pd-sidebar { display: flex; }
+.pd-sidebar { display: flex; border-left: thin solid rgba(var(--v-border-color), var(--v-border-opacity)); padding-left: 16px; }
 .pd-sidebar-content { flex: 1; display: flex; flex-direction: column; }
 .pd-sidebar-top { display: flex; flex-direction: column; gap: 12px; }
-.pd-sidebar-actions { margin-top: auto; display: flex; flex-direction: column; }
+.pd-sidebar-actions { margin-top: 24px; display: flex; flex-direction: column; }
 .top-grid { display: grid; grid-template-columns: minmax(260px, 360px) 1fr; gap: 16px; }
 .photo-placeholder { width: 100%; }
 .photo-box { 
