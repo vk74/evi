@@ -1,5 +1,5 @@
 <!--
-version: 1.3.0
+version: 1.4.6
 Frontend file for product details view component.
 Displays extended info and placeholders for product options.
 File: ProductDetails.vue
@@ -12,6 +12,7 @@ import { fetchProductDetails } from './service.fetch.product.details'
 import { fetchProductOptions } from './service.fetch.product.options'
 import type { CatalogProductOption } from './types.products'
 import ProductOptionsTable from './ProductOptionsTable.vue'
+import { PhCaretUpDown } from '@phosphor-icons/vue'
 
 // Props (MVP): accept productId from parent context/navigation state
 interface Props { 
@@ -132,10 +133,44 @@ onMounted(() => { loadOptions() })
             </div>
           </div>
         </div>
+        
+        <div class="inline-row">
+          <div class="detail-block control-col">
+            <div class="block-body">
+              <div class="d-flex align-center" style="gap: 8px;">
+                <span class="me-2">units count</span>
+                <v-select
+                  :items="Array.from({ length: 1000 }, (_, i) => i + 1)"
+                  :model-value="1"
+                  density="compact"
+                  variant="outlined"
+                  hide-details
+                  class="units-vselect"
+                  style="max-width: 120px"
+                >
+                  <template #append-inner>
+                    <PhCaretUpDown class="dropdown-icon" />
+                  </template>
+                </v-select>
+              </div>
+            </div>
+          </div>
 
-        <div class="detail-block">
-          <div class="block-body">
-            <em>product price</em>
+          <div class="detail-block control-col">
+            <div class="block-body">
+              <div class="d-flex align-center" style="gap: 8px;">
+                <span class="me-2">product price</span>
+                <v-text-field
+                  model-value="1 000 €"
+                  density="compact"
+                  variant="outlined"
+                  readonly
+                  hide-details
+                  class="price-field"
+                  style="max-width: 120px"
+                />
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -221,8 +256,26 @@ onMounted(() => { loadOptions() })
 .detail-block { background: #fff; border: 1px solid rgba(59, 130, 246, 0.1); border-radius: 8px; padding: 12px; }
 .block-title { font-weight: 600; margin-bottom: 8px; color: rgb(59, 130, 246); }
 .product-options { background: #fff; border: 1px solid rgba(59, 130, 246, 0.1); border-radius: 8px; padding: 12px; }
-
-@media (max-width: 720px) {
-  .top-grid { grid-template-columns: 1fr; }
+ 
+ .price-row { gap: 12px; }
+.inline-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
 }
+.units-vselect :deep(.v-field) { border-radius: 6px; }
+.units-vselect { position: relative; }
+.dropdown-icon {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  pointer-events: none;
+}
+.price-field :deep(.v-field) { border-radius: 6px; }
+   
+ @media (max-width: 720px) {
+   .top-grid { grid-template-columns: 1fr; }
+   .inline-row { grid-template-columns: 1fr; }
+ }
 </style>

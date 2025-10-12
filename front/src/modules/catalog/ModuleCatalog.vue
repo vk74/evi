@@ -222,27 +222,28 @@ function selectSection(sectionId: string) {
 
 // ==================== CARD COLLAPSE HANDLERS ====================
 function handleWorkspaceClick(event: Event) {
-  // Only handle clicks when a service or product card is expanded
-  if (!selectedServiceId.value && !selectedProductId.value) return;
-  
-  // Check if click target is within the details component
-  const target = event.target as HTMLElement;
-  const serviceDetailsElement = document.querySelector('.service-details');
-  const productDetailsElement = document.querySelector('.product-details');
-  
-  // Check if click is on a service or product card - if so, don't collapse
+   // Only handle clicks when a service or product card is expanded
+   if (!selectedServiceId.value && !selectedProductId.value) return;
+   
+   // Check if click target is within the details component
+   const target = event.target as HTMLElement;
+   const serviceDetailsElement = document.querySelector('.service-details');
+   const productDetailsElement = document.querySelector('.product-details');
+
+  // If click is inside details containers, do nothing
+  if ((serviceDetailsElement && serviceDetailsElement.contains(target)) ||
+      (productDetailsElement && productDetailsElement.contains(target))) {
+    return;
+  }
+
+  // If click is on cards (not expanded details), also ignore
   if (target.closest('.service-card') || target.closest('.product-card')) {
     return;
   }
-  
-  // Check if click is on the workspace container itself (empty space) or outside details
-  if (target.classList.contains('workspace-container') || 
-      (serviceDetailsElement && !serviceDetailsElement.contains(target)) ||
-      (productDetailsElement && !productDetailsElement.contains(target))) {
-    // Click is on empty space or outside details - collapse the card
-    resetCatalogView();
-    selectedProductId.value = null;
-  }
+
+  // Otherwise (empty space or outside), collapse
+  resetCatalogView();
+  selectedProductId.value = null;
 }
 
 function handleSectionHeaderClick() {
