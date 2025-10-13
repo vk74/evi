@@ -5,13 +5,13 @@
  *          and displays the corresponding settings components in the workspace area
  * 
  * Uses a Pinia store to persist the selected category and expanded state between sessions
- * Version: 1.4.0
+ * Version: 1.4.2
  -->
  <script setup lang="ts">
-import { ref, computed, onMounted, markRaw, watch } from 'vue';
+import { ref, computed, onMounted, markRaw, watch, type Component } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useAppSettingsStore } from './state.app.settings';
-import { PhList, PhCaretDown, PhCaretRight, PhGear, PhBriefcase, PhChartLineUp, PhBooks, PhUserGear, PhShield, PhClockUser, PhPassword, PhShieldCheck, PhDesktopTower, PhShareNetwork, PhTextT, PhCheckCircle, PhUsersThree, PhUsers, PhPackage, PhWrench, PhFadersHorizontal, PhMapPin, PhShoppingCart, PhPalette, PhBuildings } from '@phosphor-icons/vue';
+import { PhList, PhCaretDown, PhCaretRight, PhGear, PhBriefcase, PhChartLineUp, PhBooks, PhUserGear, PhShield, PhClockUser, PhPassword, PhShieldCheck, PhDesktopTower, PhShareNetwork, PhTextT, PhCheckCircle, PhUsers, PhPackage, PhWrench, PhFadersHorizontal, PhMapPin, PhShoppingCart, PhPalette, PhBuildings } from '@phosphor-icons/vue';
 import { useUiStore } from '@/core/state/uistate';
  
 // Import components from sections directory with hierarchical naming
@@ -38,7 +38,7 @@ import ServicesSettings from './sections/Services.Settings.vue';
  interface Section {
    id: string;
    name: string;
-   icon: string;
+   icon: Component; // Vue component (Phosphor icon)
    children?: Section[];
  }
  
@@ -55,137 +55,137 @@ const sections = computed<Section[]>(() => [
   {
     id: 'Catalog',
     name: t('admin.settings.sections.catalog'),
-    icon: 'mdi-cart-outline',
+    icon: PhShoppingCart,
     children: [
       {
         id: 'Catalog.Products',
         name: t('admin.settings.sections.products'),
-        icon: 'mdi-package-variant',
+        icon: PhPackage,
       },
       {
         id: 'Catalog.Services',
         name: t('admin.settings.sections.services'),
-        icon: 'mdi-wrench-outline',
+        icon: PhWrench,
       },
       {
         id: 'Catalog.Settings',
         name: t('admin.settings.sections.settings'),
-        icon: 'PhFadersHorizontal',
+        icon: PhFadersHorizontal,
       }
     ]
   },
   {
     id: 'Services',
     name: t('admin.settings.sections.services'),
-    icon: 'mdi-wrench-outline',
+    icon: PhWrench,
     children: [
       {
         id: 'Services.Settings',
         name: t('admin.settings.sections.settings'),
-        icon: 'PhFadersHorizontal',
+        icon: PhFadersHorizontal,
       }
     ]
   },
   {
     id: 'Products',
     name: t('admin.settings.sections.products'),
-    icon: 'mdi-package-variant',
+    icon: PhPackage,
     children: [
       {
         id: 'Products.Settings',
         name: t('admin.settings.sections.settings'),
-        icon: 'PhFadersHorizontal',
+        icon: PhFadersHorizontal,
       }
     ]
   },
   {
     id: 'OrganizationManagement',
     name: t('admin.settings.sections.organizationmanagement'),
-    icon: 'PhBuildings',
+    icon: PhBuildings,
     children: [
       {
         id: 'OrganizationManagement.GroupsManagement',
         name: t('admin.settings.sections.groupsmanagement'),
-        icon: 'mdi-account-multiple-outline',
+        icon: PhUsers,
       },
       {
         id: 'OrganizationManagement.UsersManagement',
         name: t('admin.settings.sections.usersmanagement'),
-        icon: 'mdi-account-cog-outline',
+        icon: PhUserGear,
       }
     ]
   },
   {
     id: 'Application',
     name: t('admin.settings.sections.application'),
-    icon: 'mdi-cog-outline',
+    icon: PhGear,
     children: [
       {
         id: 'Application.Appearance',
         name: t('admin.settings.sections.appearance'),
-        icon: 'PhPalette',
+        icon: PhPalette,
       },
       {
         id: 'Application.Work',
         name: t('admin.settings.sections.work'),
-        icon: 'mdi-briefcase-outline',
+        icon: PhBriefcase,
       },
       {
         id: 'Application.Reports',
         name: t('admin.settings.sections.reports'),
-        icon: 'mdi-chart-box-outline',
+        icon: PhChartLineUp,
       },
       {
         id: 'Application.KnowledgeBase',
         name: t('admin.settings.sections.knowledgebase'),
-        icon: 'mdi-book-open-outline',
+        icon: PhBooks,
       },
       {
         id: 'Application.RegionalSettings',
         name: t('admin.settings.sections.regionalsettings'),
-        icon: 'PhMapPin',
+        icon: PhMapPin,
       },
       {
         id: 'Application.Security',
         name: t('admin.settings.sections.security'),
-        icon: 'mdi-shield-outline',
+        icon: PhShield,
         children: [
           {
             id: 'Application.Security.SessionManagement',
             name: t('admin.settings.sections.sessionmanagement'),
-            icon: 'mdi-account-clock-outline',
+            icon: PhClockUser,
           },
           {
             id: 'Application.Security.PasswordPolicies',
             name: t('admin.settings.sections.passwordpolicies'),
-            icon: 'mdi-form-textbox-password',
+            icon: PhPassword,
           },
           {
             id: 'Application.Security.AuthenticationSettings',
             name: t('admin.settings.sections.authenticationpolicies'),
-            icon: 'mdi-shield-key-outline',
+            icon: PhShieldCheck,
           }
         ]
       },
       {
         id: 'Application.System',
         name: t('admin.settings.sections.system'),
-        icon: 'mdi-server',
+        icon: PhDesktopTower,
         children: [
           {
             id: 'Application.System.EventBus',
             name: t('admin.settings.sections.eventbus'),
-            icon: 'mdi-transit-connection-variant',
+            icon: PhShareNetwork,
           },
           {
             id: 'Application.System.Logging',
             name: t('admin.settings.sections.logging'),
-            icon: 'mdi-text-box-outline',
+            icon: PhTextT,
           },
           {
             id: 'Application.System.DataValidation',
             name: t('admin.settings.sections.datavalidation'),
-            icon: 'mdi-check-circle-outline',
+            icon: PhCheckCircle,
           }
         ]
       }
@@ -218,36 +218,6 @@ const sectionComponents = {
  
  // Mobile menu state
  const isMobileMenuOpen = ref(false);
-// Resolve section icon string (mdi-*) to a Phosphor component
-const resolveSectionIcon = (iconName: string) => {
-  const map: Record<string, any> = {
-    'mdi-cog-outline': PhGear,
-    'mdi-cog': PhGear,
-    'mdi-briefcase-outline': PhBriefcase,
-    'mdi-chart-box-outline': PhChartLineUp,
-    'mdi-book-open-outline': PhBooks,
-    'mdi-account-cog-outline': PhUserGear,
-    'mdi-shield-outline': PhShield,
-    'mdi-account-clock-outline': PhClockUser,
-    'mdi-form-textbox-password': PhPassword,
-    'mdi-shield-key-outline': PhShieldCheck,
-    'mdi-server': PhDesktopTower,
-    'mdi-transit-connection-variant': PhShareNetwork,
-    'mdi-text-box-outline': PhTextT,
-    'mdi-check-circle-outline': PhCheckCircle,
-    'mdi-account-group-outline': PhUsersThree,
-    'mdi-account-multiple-outline': PhUsers,
-    'mdi-chart-timeline-variant': PhChartLineUp,
-    'mdi-package-variant': PhPackage,
-    'mdi-wrench-outline': PhWrench,
-    'mdi-cart-outline': PhShoppingCart,
-    'PhFadersHorizontal': PhFadersHorizontal,
-    'PhMapPin': PhMapPin,
-    'PhPalette': PhPalette,
-    'PhBuildings': PhBuildings
-  }
-  return map[iconName] || PhGear
-}
  
  // Get selected section path from store
  const selectedSectionPath = computed(() => {
@@ -275,7 +245,7 @@ const resolveSectionIcon = (iconName: string) => {
    const result: Array<{
      id: string;
      name: string;
-     icon: string;
+     icon: Component; // Vue component (Phosphor icon)
      level: number;
      hasChildren: boolean;
      isLastInLevel: boolean;
@@ -384,7 +354,7 @@ const resolveSectionIcon = (iconName: string) => {
  const selectedSection = computed(() => {
    const section = findSectionById(selectedSectionPath.value, sections.value);
    // Provide default values to avoid "Cannot read properties of undefined" error
-   return section || { id: '', name: 'Settings', icon: 'mdi-cog-outline' };
+   return section || { id: '', name: 'Settings', icon: PhGear };
  });
  
  /**
@@ -519,7 +489,7 @@ watch(selectedSectionPath, (newSectionPath, oldSectionPath) => {
           >
             <template #prepend>
               <component :is="expandedSections.includes(section.id) ? PhCaretDown : PhCaretRight" v-if="section.hasChildren" :size="20" class="mr-2" />
-              <component :is="resolveSectionIcon(section.icon)" :size="20" class="mr-2" />
+              <component :is="section.icon" :size="20" class="mr-2" />
             </template>
             {{ section.name }}
           </v-list-item>
@@ -553,7 +523,7 @@ watch(selectedSectionPath, (newSectionPath, oldSectionPath) => {
               <div class="section-indicator">
                 <component :is="expandedSections.includes(section.id) ? PhCaretDown : PhCaretRight" v-if="section.hasChildren" :size="20" class="chevron-icon" />
               </div>
-              <component :is="resolveSectionIcon(section.icon)" :size="20" class="section-icon" />
+              <component :is="section.icon" :size="20" class="section-icon" />
             </template>
             <v-list-item-title>{{ section.name }}</v-list-item-title>
           </v-list-item>
