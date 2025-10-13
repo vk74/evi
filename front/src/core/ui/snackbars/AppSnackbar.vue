@@ -1,6 +1,8 @@
 /* 
 * AppSnackbar.vue 
+* Version: 1.1.0
 * Кор компонент, обертка над v-snackbar из Vuetify
+* Uses Phosphor icons directly instead of MDI
 */
 
 <template>
@@ -12,10 +14,10 @@
   >
     <!-- Иконка и текст -->
     <div class="d-flex align-center">
-      <v-icon
-        :icon="currentIcon"
+      <component 
+        :is="currentIcon"
+        :size="20"
         class="mr-2"
-        size="small"
       />
       {{ message }}
     </div>
@@ -26,17 +28,20 @@
       #actions
     >
       <v-btn
-        icon="mdi-close"
+        :icon="undefined"
         variant="text"
         size="small"
         @click="close"
-      />
+      >
+        <PhX :size="18" />
+      </v-btn>
     </template>
   </v-snackbar>
 </template>
   
   <script setup lang="ts">
-  import { ref, computed } from 'vue'
+  import { ref, computed, type Component } from 'vue'
+  import { PhCheckCircle, PhWarningCircle, PhWarning, PhInfo, PhX } from '@phosphor-icons/vue'
   import { SnackbarTypeValue } from './types'
   import { SNACKBAR_DEFAULTS } from './constants'
   
@@ -68,9 +73,17 @@
   // Состояние
   const isVisible = ref<boolean>(true)
   
+  // Icon mapping - returns Phosphor component based on type
+  const iconMap: Record<SnackbarTypeValue, Component> = {
+    success: PhCheckCircle,
+    error: PhWarningCircle,
+    warning: PhWarning,
+    info: PhInfo
+  }
+  
   // Вычисляемые свойства
   const snackbarColor = computed(() => SNACKBAR_DEFAULTS.COLORS[props.type])
-  const currentIcon = computed(() => SNACKBAR_DEFAULTS.ICONS[props.type])
+  const currentIcon = computed<Component>(() => iconMap[props.type])
   const currentTimeout = computed(() => props.timeout)
   const currentPosition = computed(() => props.position as any)
   

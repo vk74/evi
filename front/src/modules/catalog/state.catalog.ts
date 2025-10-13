@@ -1,4 +1,5 @@
-import { ref, computed } from 'vue';
+import { ref, computed, type Component } from 'vue';
+import { PhCaretDown, PhCaretRight } from '@phosphor-icons/vue';
 
 // ==================== OPTIONS BAR STATE ====================
 export const searchQuery = ref('');
@@ -54,15 +55,15 @@ export const toggleOptionsBarMode = () => {
   localStorage.setItem('catalogOptionsBarMode', optionsBarMode.value);
 };
 
-// Computed property for chevron icon based on mode
-export const optionsBarChevronIcon = computed(() => {
+// Computed property for chevron icon based on mode (returns Phosphor component)
+export const optionsBarChevronIcon = computed<Component>(() => {
   switch(optionsBarMode.value) {
     case 'opened':
-      return 'mdi-chevron-down'; // Панель открыта
+      return PhCaretDown; // Панель открыта
     case 'auto':
-      return 'mdi-chevron-right'; // Автоматический режим
+      return PhCaretRight; // Автоматический режим
     default:
-      return 'mdi-chevron-down';
+      return PhCaretDown;
   }
 });
 

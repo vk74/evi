@@ -1,4 +1,5 @@
 // Содержит дефолтные значения snackbar
+// Version: 1.1.0 - Removed MDI icons, using Phosphor icons directly in component
 
 export const SNACKBAR_DEFAULTS = {
     TIMEOUT: 3000,
@@ -9,11 +10,5 @@ export const SNACKBAR_DEFAULTS = {
       error: '#FF5252', 
       warning: '#FFC107',
       info: '#2196F3'
-    },
-    ICONS: {
-      success: 'mdi-check-circle',
-      error: 'mdi-alert-circle',
-      warning: 'mdi-alert',
-      info: 'mdi-information'
     }
   }

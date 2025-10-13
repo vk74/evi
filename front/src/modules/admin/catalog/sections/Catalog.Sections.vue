@@ -1,6 +1,6 @@
 <!--
   File: Catalog.Sections.vue
-  Version: 1.0.0
+  Version: 1.1.0
   Description: Component for managing catalog sections
   Purpose: Provides interface for adding, removing, and editing catalog sections
   Features:
@@ -137,16 +137,6 @@ const headers = computed<TableHeader[]>(() => [
   { title: t('admin.catalog.sections.table.headers.color'), key: 'color', width: '100px', sortable: false },
   { title: t('admin.catalog.sections.table.headers.isPublic'), key: 'is_public', width: '100px', sortable: true }
 ])
-
-// Available icons for selection
-const availableIcons = [
-  'mdi-home', 'mdi-star', 'mdi-heart', 'mdi-folder', 'mdi-file', 'mdi-image',
-  'mdi-video', 'mdi-music', 'mdi-book', 'mdi-account', 'mdi-cog', 'mdi-tools',
-  'mdi-chart-line', 'mdi-chart-bar', 'mdi-chart-pie', 'mdi-calendar',
-  'mdi-clock', 'mdi-bell', 'mdi-email', 'mdi-phone', 'mdi-map-marker',
-  'mdi-car', 'mdi-airplane', 'mdi-train', 'mdi-bus', 'mdi-bike',
-  'mdi-food', 'mdi-cup', 'mdi-gift', 'mdi-shopping', 'mdi-cart'
-]
 
 // Helper function for error handling
 const handleError = (error: unknown, context: string) => {

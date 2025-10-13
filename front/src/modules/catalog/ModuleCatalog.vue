@@ -1,5 +1,5 @@
 <!--
-version: 1.2.0
+version: 1.3.0
 Frontend file for catalog module.
 Catalog interface with sections, filters, and service/product cards.
 File: ModuleCatalog.vue
@@ -41,7 +41,6 @@ import {
 
 
 const { t } = useI18n()
-const optionsChevron = computed(() => (optionsBarChevronIcon.value === 'mdi-chevron-down' ? PhCaretDown : PhCaretRight))
 
 // ==================== PHOSPHOR ICONS SUPPORT ====================
 const phosphorIcons = ref<Record<string, any>>({})
@@ -428,7 +427,7 @@ onMounted(async () => {
               class="options-bar-toggle-btn"
               color="grey-darken-1"
             >
-              <component :is="optionsChevron" />
+              <component :is="optionsBarChevronIcon" />
             </v-btn>
           </div>
         </div>
