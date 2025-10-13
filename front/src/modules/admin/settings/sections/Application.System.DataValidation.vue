@@ -2,7 +2,7 @@
   File: Application.System.DataValidation.vue - frontend file
   Description: Data validation system settings for application data integrity
   Purpose: Configure data validation rules, patterns, and validation policies
-  Version: 1.4.0
+  Version: 1.4.1
   
   Features:
   - Standard fields validation settings (REMOVED)
@@ -583,12 +583,8 @@ watch(
         
         console.log('✅ Email regex validation passed, sending to server');
         console.log('📧 Before update - initialEmailRegex:', initialEmailRegex.value);
-        
-        // Wrap regex in JSON string for PostgreSQL JSON field
-        const jsonValue = JSON.stringify(newValue); // Convert to JSON string
         console.log('📧 Sending regex to server:', newValue);
-        console.log('📧 JSON wrapped for PostgreSQL:', jsonValue);
-        updateSettingFromComponent(section_path, 'wellKnownFields.email.regex', jsonValue);
+        updateSettingFromComponent(section_path, 'wellKnownFields.email.regex', newValue);
         
         // Обновляем исходное значение
         initialEmailRegex.value = newValue;
@@ -655,12 +651,8 @@ watch(
         
         console.log('✅ Phone mask validation passed, sending to server');
         console.log('📞 Before update - initialPhoneMask:', initialPhoneMask.value);
-        
-        // Wrap phone mask in JSON string for PostgreSQL JSON field
-        const jsonValue = JSON.stringify(newValue); // Convert to JSON string
         console.log('📞 Sending phone mask to server:', newValue);
-        console.log('📞 JSON wrapped for PostgreSQL:', jsonValue);
-        updateSettingFromComponent(section_path, 'wellKnownFields.telephoneNumber.mask', jsonValue);
+        updateSettingFromComponent(section_path, 'wellKnownFields.telephoneNumber.mask', newValue);
         
         // Обновляем исходное значение
         initialPhoneMask.value = newValue;
