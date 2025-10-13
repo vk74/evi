@@ -11,7 +11,7 @@ Contains:
 - Fixed active state tracking for bottom navigation items
 - Improved handling of ResizeObserver errors with a more robust implementation
 - Dynamic navbar background color from application settings
-Version: 1.1.0
+Version: 1.2.0
 -->
 <script setup lang="ts">
 import { ref, computed, onMounted, watch, defineAsyncComponent, nextTick } from 'vue';
@@ -748,7 +748,7 @@ onMounted(async () => {
                 @click="setActiveAdminSection('catalogAdmin')"
               >
                 <template #prepend>
-                  <component :is="icons.PhPlusSquare" size="24" :color="iconColor" class="mr-2" />
+                  <component :is="icons.PhShoppingCart" size="24" :color="iconColor" class="mr-2" />
                 </template>
               </v-list-item>
               
@@ -768,7 +768,7 @@ onMounted(async () => {
                 @click="setActiveAdminSection('serviceAdmin')"
               >
                 <template #prepend>
-                  <component :is="icons.PhCubeFocus" size="24" :color="iconColor" class="mr-2" />
+                  <component :is="icons.PhWrench" size="24" :color="iconColor" class="mr-2" />
                 </template>
               </v-list-item>
               
