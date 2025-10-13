@@ -27,10 +27,7 @@
       "sectionsTitle": "no catalog sections found",
       "sectionsSubtitle": "there are no active sections in the catalog yet",
       "refresh": "refresh",
-      "servicesTitle": "no active services found",
-      "servicesSubtitle": "there are currently no services in production",
-      "productsTitle": "no active products found",
-      "productsSubtitle": "there are currently no published products in the catalog"
+      "noItemsTitle": "no active services and products found"
     },
     "serviceDetails": {
       "title": "service details",

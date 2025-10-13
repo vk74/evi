@@ -12,7 +12,7 @@ import CatalogServiceCard from './services/CatalogServiceCard.vue';
 import ServiceDetails from './services/ServiceDetails.vue'
 import CatalogProductCard from './products/CatalogProductCard.vue';
 import ProductDetails from './products/ProductDetails.vue'
-import { PhMagnifyingGlass, PhX, PhCaretUpDown, PhCaretDown, PhCaretRight, PhWarningCircle, PhFolderOpen, PhPackage, PhFolder } from '@phosphor-icons/vue'
+import { PhMagnifyingGlass, PhEmpty, PhX, PhCaretUpDown, PhCaretDown, PhCaretRight, PhWarningCircle, PhFolderOpen, PhFolder } from '@phosphor-icons/vue'
 import { 
   fetchCatalogSections, 
   isCatalogLoading, 
@@ -557,16 +557,9 @@ onMounted(async () => {
               v-if="filteredServices.length === 0 && filteredProducts.length === 0"
               class="text-center py-12"
             >
-              <PhPackage :size="64" color="rgb(189, 189, 189)" class="mb-4" />
-              <div class="text-h6 text-grey mb-2">
-                {{ filterType === 'services' ? t('catalog.empty.servicesTitle') : 
-                   filterType === 'products' ? t('catalog.empty.productsTitle') : 
-                   t('catalog.empty.servicesTitle') }}
-              </div>
-              <div class="text-body-2 text-grey">
-                {{ filterType === 'services' ? t('catalog.empty.servicesSubtitle') : 
-                   filterType === 'products' ? t('catalog.empty.productsSubtitle') : 
-                   t('catalog.empty.servicesSubtitle') }}
+              <PhEmpty :size="64" color="rgb(189, 189, 189)" class="mb-4" />
+              <div class="text-h6 text-grey">
+                {{ t('catalog.empty.noItemsTitle') }}
               </div>
             </div>
           </div>
