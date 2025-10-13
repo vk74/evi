@@ -29,7 +29,7 @@ async function getRegistrationStatusLogic(req: Request, res: Response): Promise<
   try {
     // Fetch registration setting from cache using existing service
     const setting = await fetchSettingByName({
-      sectionPath: 'UsersManagement.RegistrationPage',
+      sectionPath: 'OrganizationManagement.RegistrationPage',
       settingName: 'registration.page.enabled',
       environment: Environment.ALL,
       includeConfidential: false

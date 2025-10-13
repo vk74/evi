@@ -1,7 +1,8 @@
--- Version: 1.3.0
+-- Version: 1.4.0
 -- Description: Seeds the database with default application settings.
 -- Backend file: 09_app_settings.sql
 -- Added: Appearance settings (navbar color)
+-- Updated: Renamed UsersManagement to OrganizationManagement
 
 -- This script inserts a comprehensive set of default settings for the application,
 -- covering areas like security, session management, and feature toggles.
@@ -66,9 +67,9 @@ INSERT INTO app.app_settings (
 ('Application.System.EventBus', 'generate.events.in.domain.validation', 'all', 'true', '{"type":"boolean"}', 'true', 'Enable event generation in validation domain', false),
 ('Application.System.EventBus', 'generate.events.in.domain.adminCatalog', 'all', 'true', '{"type":"boolean"}', 'true', 'Enable event generation in admin catalog domain', false),
 
--- Users Management Settings
-('UsersManagement.GroupsManagement', 'add.only.active.users.to.groups', 'all', 'false', '{"type":"boolean"}', 'true', 'Allow adding to groups only those users with status ACTIVE', false),
-('UsersManagement.RegistrationPage', 'registration.page.enabled', 'all', 'false', '{"type": "boolean"}', 'false', 'Users self-registration page', true),
+-- Organization Management Settings
+('OrganizationManagement.GroupsManagement', 'add.only.active.users.to.groups', 'all', 'false', '{"type":"boolean"}', 'true', 'Allow adding to groups only those users with status ACTIVE', false),
+('OrganizationManagement.RegistrationPage', 'registration.page.enabled', 'all', 'false', '{"type": "boolean"}', 'false', 'Users self-registration page', true),
 
 -- Products Options Settings
 ('products.options', 'max.options.per.product', 'all', to_jsonb(100), '{"type":"integer","minimum":1,"maximum":1000}', to_jsonb(100), 'Maximum number of direct options per product', false),

@@ -36,7 +36,7 @@ interface EnhancedRequest extends Request {
  */
 const isRegistrationEnabled = async (): Promise<boolean> => {
   try {
-    const registrationSetting = getSetting('UsersManagement.RegistrationPage', 'registration.page.enabled');
+    const registrationSetting = getSetting('OrganizationManagement.RegistrationPage', 'registration.page.enabled');
     
     if (!registrationSetting) {
       console.warn('Registration setting not found in cache, defaulting to disabled');
@@ -116,7 +116,7 @@ const logSettingsCheck = async (req: EnhancedRequest, settingFound: boolean): Pr
         req,
         payload: {
           settingName: 'registration.page.enabled',
-          sectionPath: 'UsersManagement.RegistrationPage',
+          sectionPath: 'OrganizationManagement.RegistrationPage',
           settingFound: true,
           timestamp: new Date().toISOString()
         }
@@ -127,7 +127,7 @@ const logSettingsCheck = async (req: EnhancedRequest, settingFound: boolean): Pr
         req,
         payload: {
           settingName: 'registration.page.enabled',
-          sectionPath: 'UsersManagement.RegistrationPage',
+          sectionPath: 'OrganizationManagement.RegistrationPage',
           settingFound: false,
           timestamp: new Date().toISOString()
         }
@@ -153,7 +153,7 @@ const logSettingsCheck = async (req: EnhancedRequest, settingFound: boolean): Pr
 const registerUserControllerLogic = async (req: EnhancedRequest, res: Response): Promise<void> => {
   try {
     // Log settings check
-    const registrationSetting = getSetting('UsersManagement.RegistrationPage', 'registration.page.enabled');
+    const registrationSetting = getSetting('OrganizationManagement.RegistrationPage', 'registration.page.enabled');
     await logSettingsCheck(req, !!registrationSetting);
     
     // Check if registration is enabled

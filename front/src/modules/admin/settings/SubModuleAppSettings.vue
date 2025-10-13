@@ -5,13 +5,13 @@
  *          and displays the corresponding settings components in the workspace area
  * 
  * Uses a Pinia store to persist the selected category and expanded state between sessions
- * Version: 1.2.0
+ * Version: 1.4.0
  -->
  <script setup lang="ts">
 import { ref, computed, onMounted, markRaw, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useAppSettingsStore } from './state.app.settings';
-import { PhList, PhCaretDown, PhCaretRight, PhGear, PhBriefcase, PhChartLineUp, PhBooks, PhUserGear, PhShield, PhClockUser, PhPassword, PhShieldCheck, PhDesktopTower, PhShareNetwork, PhTextT, PhCheckCircle, PhUsersThree, PhUsers, PhPackage, PhWrench, PhFadersHorizontal, PhMapPin, PhShoppingCart, PhPalette } from '@phosphor-icons/vue';
+import { PhList, PhCaretDown, PhCaretRight, PhGear, PhBriefcase, PhChartLineUp, PhBooks, PhUserGear, PhShield, PhClockUser, PhPassword, PhShieldCheck, PhDesktopTower, PhShareNetwork, PhTextT, PhCheckCircle, PhUsersThree, PhUsers, PhPackage, PhWrench, PhFadersHorizontal, PhMapPin, PhShoppingCart, PhPalette, PhBuildings } from '@phosphor-icons/vue';
 import { useUiStore } from '@/core/state/uistate';
  
 // Import components from sections directory with hierarchical naming
@@ -26,8 +26,8 @@ import SystemDataValidation from './sections/Application.System.DataValidation.v
 import SessionManagement from './sections/Application.Security.SessionManagement.vue';
 import PasswordPolicies from './sections/Application.Security.PasswordPolicies.vue';
 import AuthenticationSettings from './sections/Application.Security.AuthenticationSettings.vue';
-import GroupsManagement from './sections/UsersManagement.GroupsManagement.vue';
-import UsersManagement from './sections/UsersManagement.UsersManagement.vue';
+import GroupsManagement from './sections/OrganizationManagement.GroupsManagement.vue';
+import UsersManagement from './sections/OrganizationManagement.UsersManagement.vue';
 import CatalogProducts from './sections/Catalog.Products.vue';
 import CatalogServices from './sections/Catalog.Services.vue';
 import CatalogSettings from './sections/Catalog.Settings.vue';
@@ -95,6 +95,23 @@ const sections = computed<Section[]>(() => [
         id: 'Products.Settings',
         name: t('admin.settings.sections.settings'),
         icon: 'PhFadersHorizontal',
+      }
+    ]
+  },
+  {
+    id: 'OrganizationManagement',
+    name: t('admin.settings.sections.organizationmanagement'),
+    icon: 'PhBuildings',
+    children: [
+      {
+        id: 'OrganizationManagement.GroupsManagement',
+        name: t('admin.settings.sections.groupsmanagement'),
+        icon: 'mdi-account-multiple-outline',
+      },
+      {
+        id: 'OrganizationManagement.UsersManagement',
+        name: t('admin.settings.sections.usersmanagement'),
+        icon: 'mdi-account-cog-outline',
       }
     ]
   },
@@ -173,23 +190,6 @@ const sections = computed<Section[]>(() => [
         ]
       }
     ]
-  },
-  {
-    id: 'UsersManagement',
-    name: t('admin.settings.sections.usersmanagement'),
-    icon: 'mdi-account-group-outline',
-    children: [
-      {
-        id: 'UsersManagement.GroupsManagement',
-        name: t('admin.settings.sections.groupsmanagement'),
-        icon: 'mdi-account-multiple-outline',
-      },
-              {
-          id: 'UsersManagement.UsersManagement',
-          name: t('admin.settings.sections.usersmanagement'),
-          icon: 'mdi-account-cog-outline',
-        }
-    ]
   }
 ]);
  
@@ -211,8 +211,8 @@ const sectionComponents = {
   'Catalog.Settings': markRaw(CatalogSettings),
   'Products.Settings': markRaw(ProductsSettings),
   'Services.Settings': markRaw(ServicesSettings),
-  'UsersManagement.GroupsManagement': markRaw(GroupsManagement),
-  'UsersManagement.UsersManagement': markRaw(UsersManagement),
+  'OrganizationManagement.GroupsManagement': markRaw(GroupsManagement),
+  'OrganizationManagement.UsersManagement': markRaw(UsersManagement),
   // Узлы-контейнеры не имеют компонента
 };
  
@@ -243,7 +243,8 @@ const resolveSectionIcon = (iconName: string) => {
     'mdi-cart-outline': PhShoppingCart,
     'PhFadersHorizontal': PhFadersHorizontal,
     'PhMapPin': PhMapPin,
-    'PhPalette': PhPalette
+    'PhPalette': PhPalette,
+    'PhBuildings': PhBuildings
   }
   return map[iconName] || PhGear
 }

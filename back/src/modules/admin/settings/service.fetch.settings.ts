@@ -1,6 +1,6 @@
 /**
  * service.fetch.settings.ts - backend file
- * version: 1.0.02
+ * version: 1.0.03
  * Service for fetching settings from cache with filtering.
  */
 
@@ -79,7 +79,7 @@ function normalizeSectionPath(path: string): string[] {
   // Original path
   const variants = [path];
   
-  // Convert PascalCase to snake_case: "UsersManagement.GroupsManagement" -> "users_management.groups_management"
+  // Convert PascalCase to snake_case: "OrganizationManagement.GroupsManagement" -> "organization_management.groups_management"
   const snakeCasePath = path.replace(/\.?([A-Z])/g, (x, y) => '_' + y.toLowerCase())
     .replace(/^_/, '')  // Remove leading underscore if any
     .replace(/\._/g, '.'); // Fix dots followed by underscores

@@ -332,7 +332,7 @@
           }
         }
       },
-      "usersmanagement": {
+      "organizationmanagement": {
         "groupsmanagement": {
           "title": "управление группами",
           "only": {
@@ -422,8 +422,9 @@
         "eventbus": "шина событий",
         "logging": "журналирование",
         "datavalidation": "валидация данных",
-        "usersmanagement": "управление пользователями",
+        "organizationmanagement": "управление организацией",
         "groupsmanagement": "управление группами",
+        "usersmanagement": "управление пользователями",
         "catalog": "каталог",
         "services": "сервисы",
         "products": "продукты",
@@ -497,7 +498,7 @@
       },
       "groups": {
         "security": "безопасность",
-        "usersmanagement": "управление пользователями",
+        "organizationmanagement": "управление организацией",
         "system": "система",
         "coreServices": "основные сервисы",
         "businessServices": "бизнес-сервисы"

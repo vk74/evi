@@ -1,6 +1,6 @@
 <!--
-  File: UsersManagement.UsersManagement.vue
-  Version: 1.1.0
+  File: OrganizationManagement.UsersManagement.vue
+  Version: 1.2.0
   Description: Users management settings component
   Purpose: Configure user management settings including registration
 -->
@@ -15,7 +15,7 @@ import { useUiStore } from '@/core/state/uistate';
 import DataLoading from '@/core/ui/loaders/DataLoading.vue';
 
 // Section path identifier - using component name for better consistency
-const section_path = 'UsersManagement.RegistrationPage';
+const section_path = 'OrganizationManagement.RegistrationPage';
 
 // Store references
 const appSettingsStore = useAppSettingsStore();
@@ -127,7 +127,7 @@ async function loadSetting(settingName: string): Promise<boolean> {
       setTimeout(() => loadSetting(settingName), 5000);
     } else {
       // Show error toast only on final failure
-      uiStore.showErrorSnackbar(`${t('admin.settings.usersmanagement.usersmanagement.messages.error.loading')}: ${settingName}`);
+      uiStore.showErrorSnackbar(`${t('admin.settings.organizationmanagement.usersmanagement.messages.error.loading')}: ${settingName}`);
     }
     
     return false;
@@ -186,7 +186,7 @@ async function loadSettings() {
       isFirstLoad.value = false;
       
       // Show success toast for initial load
-      uiStore.showSuccessSnackbar(t('admin.settings.usersmanagement.usersmanagement.messages.settings.loaded'));
+      uiStore.showSuccessSnackbar(t('admin.settings.organizationmanagement.usersmanagement.messages.settings.loaded'));
     } else {
       console.log('No settings loaded - using defaults');
       
@@ -247,7 +247,7 @@ watch(
 
 // Initialize component
 onMounted(() => {
-  console.log('UsersManagement.UsersManagement component initialized');
+  console.log('OrganizationManagement.UsersManagement component initialized');
   loadSettings();
 });
 </script>
@@ -255,7 +255,7 @@ onMounted(() => {
 <template>
   <div class="users-management-container">
     <h2 class="text-h6 mb-4">
-      {{ t('admin.settings.usersmanagement.usersmanagement.title') }}
+      {{ t('admin.settings.organizationmanagement.usersmanagement.title') }}
     </h2>
     
     <!-- Loading indicator -->
@@ -274,7 +274,7 @@ onMounted(() => {
           <v-switch
             v-model="registrationPageEnabled"
             color="teal-darken-2"
-            :label="t('admin.settings.usersmanagement.usersmanagement.page.enabled.label')"
+            :label="t('admin.settings.organizationmanagement.usersmanagement.page.enabled.label')"
             hide-details
             :disabled="isSettingDisabled('registration.page.enabled')"
             :loading="settingLoadingStates['registration.page.enabled']"
@@ -297,10 +297,10 @@ onMounted(() => {
             </template>
             <div class="pa-2">
               <p class="text-subtitle-2 mb-2">
-                {{ t('admin.settings.usersmanagement.usersmanagement.messages.error.tooltip.title') }}
+                {{ t('admin.settings.organizationmanagement.usersmanagement.messages.error.tooltip.title') }}
               </p>
               <p class="text-caption">
-                {{ t('admin.settings.usersmanagement.usersmanagement.messages.error.tooltip.retry') }}
+                {{ t('admin.settings.organizationmanagement.usersmanagement.messages.error.tooltip.retry') }}
               </p>
             </div>
           </v-tooltip>

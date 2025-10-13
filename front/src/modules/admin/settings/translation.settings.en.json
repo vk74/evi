@@ -332,7 +332,7 @@
           }
         }
       },
-      "usersmanagement": {
+      "organizationmanagement": {
         "groupsmanagement": {
           "title": "groups management",
           "only": {
@@ -422,8 +422,9 @@
         "eventbus": "event bus",
         "logging": "logging",
         "datavalidation": "data validation",
-        "usersmanagement": "users management",
+        "organizationmanagement": "organization management",
         "groupsmanagement": "groups management",
+        "usersmanagement": "users management",
         "catalog": "catalog",
         "services": "services",
         "products": "products",
@@ -497,7 +498,7 @@
       },
       "groups": {
         "security": "security",
-        "usersmanagement": "user management",
+        "organizationmanagement": "organization management",
         "system": "system",
         "coreServices": "core services",
         "businessServices": "business services"
