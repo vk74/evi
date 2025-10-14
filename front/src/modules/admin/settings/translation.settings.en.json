@@ -230,6 +230,9 @@
           "language": {
             "label": "default language"
           },
+          "time12h": {
+            "label": "use 12H AM/PM time format"
+          },
           "countries": {
             "russia": "Russia",
             "kazakhstan": "Kazakhstan"

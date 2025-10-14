@@ -1,10 +1,10 @@
 <!--
-  Version: 1.4.0
+  Version: 1.4.1
   File: Application.RegionalSettings.vue - frontend file
-  Description: Regional settings configuration including timezone, country, and default language
+  Description: Regional settings configuration including timezone, country, default language, and time format
   Purpose: Configure regional application settings with full backend integration and settings store
   Frontend file that manages regional settings UI and integrates with settings store
-  Updated: Changed language values from full names to ISO 639-1 codes ('en', 'ru')
+  Updated: Added 12-hour AM/PM time format toggle setting
 -->
 
 <script setup lang="ts">
@@ -42,6 +42,7 @@ const settingRetryAttempts = ref<Record<string, number>>({});
 const selectedTimezone = ref<string | null>(null);
 const selectedCountry = ref<string | null>(null);
 const selectedLanguage = ref<string | null>(null);
+const use12HourFormat = ref<boolean | null>(null);
 
 // Generate timezone options from GMT-12 to GMT+14
 const timezoneOptions = ref([
@@ -91,7 +92,8 @@ const languageOptions = computed(() => [
 const allSettings = [
   'current.timezone',
   'current.country',
-  'default.language'
+  'default.language',
+  'time.format.12h'
 ];
 
 // Initialize loading states for all settings
@@ -191,6 +193,7 @@ async function loadSetting(settingName: string): Promise<boolean> {
 function updateLocalSetting(settingName: string, value: any) {
   // Helper function to safely convert values without changing null
   const safeString = (val: any) => val === null ? null : String(val);
+  const safeBoolean = (val: any) => val === null ? null : Boolean(val);
 
   switch (settingName) {
     case 'current.timezone':
@@ -201,6 +204,9 @@ function updateLocalSetting(settingName: string, value: any) {
       break;
     case 'default.language':
       selectedLanguage.value = safeString(value);
+      break;
+    case 'time.format.12h':
+      use12HourFormat.value = safeBoolean(value);
       break;
   }
 }
@@ -217,8 +223,8 @@ async function loadSettings() {
     // Disable watch effects during initial load
     isFirstLoad.value = true;
     
-    // Load all settings for the section in one request
-    const settings = await fetchSettings(section_path);
+    // Load all settings for the section in one request (force refresh to get new settings)
+    const settings = await fetchSettings(section_path, true);
     
     if (settings && settings.length > 0) {
       console.log(`Successfully loaded ${settings.length} settings for section: ${section_path}`);
@@ -227,11 +233,13 @@ async function loadSettings() {
       allSettings.forEach(settingName => {
         const setting = settings.find(s => s.setting_name === settingName);
         if (setting) {
+          console.log(`Found setting ${settingName}:`, setting.value);
           updateLocalSetting(settingName, setting.value);
           settingLoadingStates.value[settingName] = false;
           settingErrorStates.value[settingName] = false;
         } else {
           console.warn(`Setting ${settingName} not found in loaded settings`);
+          console.log('Available settings:', settings.map(s => s.setting_name));
           settingLoadingStates.value[settingName] = false;
           settingErrorStates.value[settingName] = true;
         }
@@ -303,6 +311,12 @@ watch(selectedLanguage, (newValue) => {
   }
 });
 
+watch(use12HourFormat, (newValue) => {
+  if (!isFirstLoad.value && newValue !== null) {
+    updateSetting('time.format.12h', newValue);
+  }
+});
+
 // Watch for changes in loading state from the store
 watch(
   () => appSettingsStore.isLoading,
@@ -314,6 +328,11 @@ watch(
 // Initialize component
 onMounted(() => {
   console.log('Application.RegionalSettings component initialized');
+  
+  // Clear cache to ensure we get fresh data including new settings
+  appSettingsStore.clearSectionCache(section_path);
+  console.log('Cleared cache for Regional Settings section to ensure fresh data load');
+  
   loadSettings();
 });
 </script>
@@ -336,45 +355,80 @@ onMounted(() => {
       class="settings-section"
     >
       <div class="section-content">
-        <!-- Timezone Selection -->
+        <!-- Timezone Selection and 12H Format Toggle Row -->
         <div class="mb-6">
-          <div class="d-flex align-center">
-            <v-select
-              v-model="selectedTimezone"
-              :items="timezoneOptions"
-              :label="t('admin.settings.application.regionalsettings.timezone.label')"
-              variant="outlined"
-              color="teal-darken-2"
-              density="comfortable"
-              item-title="title"
-              item-value="value"
-              class="regional-select"
-              :disabled="isSettingDisabled('current.timezone')"
-              :loading="settingLoadingStates['current.timezone']"
-            >
-              <template #append-inner>
-                <PhCaretUpDown class="dropdown-icon" />
-              </template>
-            </v-select>
-            <v-tooltip
-              v-if="settingErrorStates['current.timezone']"
-              location="top"
-              max-width="300"
-            >
-              <template #activator="{ props }">
-                <span v-bind="props" style="cursor: pointer;" @click="retrySetting('current.timezone')">
-                  <PhWarningCircle :size="16" class="ms-2" />
-                </span>
-              </template>
-              <div class="pa-2">
-                <p class="text-subtitle-2 mb-2">
-                  Ошибка загрузки настройки
-                </p>
-                <p class="text-caption">
-                  Нажмите для повторной попытки
-                </p>
-              </div>
-            </v-tooltip>
+          <div class="timezone-row">
+            <!-- Timezone Selection -->
+            <div class="timezone-select-container">
+              <v-select
+                v-model="selectedTimezone"
+                :items="timezoneOptions"
+                :label="t('admin.settings.application.regionalsettings.timezone.label')"
+                variant="outlined"
+                color="teal-darken-2"
+                density="comfortable"
+                item-title="title"
+                item-value="value"
+                class="regional-select"
+                :disabled="isSettingDisabled('current.timezone')"
+                :loading="settingLoadingStates['current.timezone']"
+              >
+                <template #append-inner>
+                  <PhCaretUpDown class="dropdown-icon" />
+                </template>
+              </v-select>
+              <v-tooltip
+                v-if="settingErrorStates['current.timezone']"
+                location="top"
+                max-width="300"
+              >
+                <template #activator="{ props }">
+                  <span v-bind="props" style="cursor: pointer;" @click="retrySetting('current.timezone')">
+                    <PhWarningCircle :size="16" class="ms-2" />
+                  </span>
+                </template>
+                <div class="pa-2">
+                  <p class="text-subtitle-2 mb-2">
+                    Ошибка загрузки настройки
+                  </p>
+                  <p class="text-caption">
+                    Нажмите для повторной попытки
+                  </p>
+                </div>
+              </v-tooltip>
+            </div>
+
+            <!-- 12-Hour Format Toggle -->
+            <div class="time-format-toggle-container">
+              <v-switch
+                v-model="use12HourFormat"
+                color="teal-darken-2"
+                :label="t('admin.settings.application.regionalsettings.time12h.label')"
+                hide-details
+                :disabled="isSettingDisabled('time.format.12h')"
+                :loading="settingLoadingStates['time.format.12h']"
+                density="compact"
+              />
+              <v-tooltip
+                v-if="settingErrorStates['time.format.12h']"
+                location="top"
+                max-width="300"
+              >
+                <template #activator="{ props }">
+                  <span v-bind="props" style="cursor: pointer;" @click="retrySetting('time.format.12h')">
+                    <PhWarningCircle :size="16" class="ms-2" />
+                  </span>
+                </template>
+                <div class="pa-2">
+                  <p class="text-subtitle-2 mb-2">
+                    Ошибка загрузки настройки
+                  </p>
+                  <p class="text-caption">
+                    Нажмите для повторной попытки
+                  </p>
+                </div>
+              </v-tooltip>
+            </div>
           </div>
         </div>
 
@@ -490,6 +544,42 @@ onMounted(() => {
 
 .regional-select {
   max-width: 200px;
+}
+
+/* Timezone row layout */
+.timezone-row {
+  display: flex;
+  align-items: top;
+  gap: 40px;
+  flex-wrap: nowrap;
+}
+
+.timezone-select-container {
+  display: flex;
+  align-items: center;
+  min-width: 200px;
+}
+
+.time-format-toggle-container {
+  display: flex;
+  align-items: center;
+  min-width: 250px;
+  flex-shrink: 0;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .timezone-row {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 16px;
+  }
+  
+  .timezone-select-container,
+  .time-format-toggle-container {
+    min-width: auto;
+    width: 100%;
+  }
 }
 </style>
 

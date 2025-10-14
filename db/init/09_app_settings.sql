@@ -1,7 +1,7 @@
--- Version: 1.5.0
+-- Version: 1.5.1
 -- Description: Seeds the database with default application settings.
 -- Backend file: 09_app_settings.sql
--- Added: Appearance settings (navbar color)
+-- Added: Appearance settings (navbar color), 12-hour time format setting
 -- Updated: Changed default.language to use ISO 639-1 language codes ('en', 'ru') instead of full names
 
 -- This script inserts a comprehensive set of default settings for the application,
@@ -97,6 +97,7 @@ INSERT INTO app.app_settings (
 ('Application.RegionalSettings', 'current.timezone', 'all', '"GMT+3"', '{"type":"string","enum":["GMT-12","GMT-11","GMT-10","GMT-9","GMT-8","GMT-7","GMT-6","GMT-5","GMT-4","GMT-3","GMT-2","GMT-1","GMT","GMT+1","GMT+2","GMT+3","GMT+4","GMT+5","GMT+6","GMT+7","GMT+8","GMT+9","GMT+10","GMT+11","GMT+12","GMT+13","GMT+14"]}', '"GMT+3"', 'Current application timezone', false),
 ('Application.RegionalSettings', 'current.country', 'all', '"russia"', '{"type":"string","enum":["russia","kazakhstan"]}', '"russia"', 'Current application country', false),
 ('Application.RegionalSettings', 'default.language', 'all', '"ru"', '{"type":"string","enum":["en","ru"]}', '"ru"', 'Default application language (ISO 639-1 code)', false),
+('Application.RegionalSettings', 'time.format.12h', 'all', 'false', '{"type":"boolean"}', 'false', 'Use 12-hour AM/PM time format instead of 24-hour format', false),
 
 -- Appearance Settings
 ('Application.Appearance', 'navbar.backgroundcolor', 'all', '"#26A69A"', '{"type":"string","pattern":"^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$"}', '"#26A69A"', 'Navigation bar background color (hex format)', true)
