@@ -7,6 +7,27 @@
         "serviceeditor": "service editor",
         "settings": "service settings"
       },
+      "settings": {
+        "title": "service cards settings in catalog",
+        "cardColor": {
+          "label": "service card color",
+          "picker": {
+            "title": "service card color",
+            "basicColors": "basic colors",
+            "customColor": "custom color",
+            "hexCode": "hex code",
+            "validHex": "must be valid hex color (e.g., #FFFFFF)"
+          }
+        },
+        "messages": {
+          "error": {
+            "tooltip": {
+              "title": "error loading setting",
+              "retry": "click to retry"
+            }
+          }
+        }
+      },
       "search": {
         "placeholder": "search services by name, owner, or technical owner...",
         "minChars": "enter at least 2 characters to search"

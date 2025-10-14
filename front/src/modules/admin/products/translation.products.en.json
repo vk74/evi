@@ -6,6 +6,30 @@
         "productEditor": "product editor",
         "settings": "settings"
       },
+      "settings": {
+        "title": "product cards settings in catalog",
+        "displayOptionsOnly": {
+          "label": "show products of type \"option\""
+        },
+        "cardColor": {
+          "label": "product card color",
+          "picker": {
+            "title": "product card color",
+            "basicColors": "basic colors",
+            "customColor": "custom color",
+            "hexCode": "hex code",
+            "validHex": "must be valid hex color (e.g., #FFFFFF)"
+          }
+        },
+        "messages": {
+          "error": {
+            "tooltip": {
+              "title": "error loading setting",
+              "retry": "click to retry"
+            }
+          }
+        }
+      },
       "moduleTitle": "products management",
       "editor": {
         "creation": {

@@ -11,7 +11,7 @@
 import { ref, computed, onMounted, markRaw, watch, type Component } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useAppSettingsStore } from './state.app.settings';
-import { PhList, PhCaretDown, PhCaretRight, PhGear, PhBriefcase, PhChartLineUp, PhBooks, PhUserGear, PhShield, PhClockUser, PhPassword, PhShieldCheck, PhDesktopTower, PhShareNetwork, PhTextT, PhCheckCircle, PhUsers, PhPackage, PhWrench, PhFadersHorizontal, PhMapPin, PhCardsThree, PhPalette, PhBuildings } from '@phosphor-icons/vue';
+import { PhList, PhCaretDown, PhCaretRight, PhGear, PhBriefcase, PhChartLineUp, PhBooks, PhUserGear, PhShield, PhClockUser, PhPassword, PhShieldCheck, PhDesktopTower, PhShareNetwork, PhTextT, PhCheckCircle, PhUsers, PhFadersHorizontal, PhMapPin, PhPalette, PhBuildings } from '@phosphor-icons/vue';
 import { useUiStore } from '@/core/state/uistate';
  
 // Import components from sections directory with hierarchical naming
@@ -28,8 +28,6 @@ import PasswordPolicies from './sections/Application.Security.PasswordPolicies.v
 import AuthenticationSettings from './sections/Application.Security.AuthenticationSettings.vue';
 import GroupsManagement from './sections/OrganizationManagement.GroupsManagement.vue';
 import UsersManagement from './sections/OrganizationManagement.UsersManagement.vue';
-import CatalogProducts from './sections/Catalog.Products.vue';
-import CatalogServices from './sections/Catalog.Services.vue';
  
  // Define section interface
  interface Section {
@@ -49,23 +47,6 @@ const { t } = useI18n();
  
 // Hierarchical sections structure - using computed to support reactive translations
 const sections = computed<Section[]>(() => [
-  {
-    id: 'Catalog',
-    name: t('admin.settings.sections.catalog'),
-    icon: PhCardsThree,
-    children: [
-      {
-        id: 'Catalog.Products',
-        name: t('admin.settings.sections.products'),
-        icon: PhPackage,
-      },
-      {
-        id: 'Catalog.Services',
-        name: t('admin.settings.sections.services'),
-        icon: PhWrench,
-      }
-    ]
-  },
   {
     id: 'OrganizationManagement',
     name: t('admin.settings.sections.organizationmanagement'),
@@ -174,8 +155,6 @@ const sectionComponents = {
   'Application.Security.SessionManagement': markRaw(SessionManagement),
   'Application.Security.PasswordPolicies': markRaw(PasswordPolicies),
   'Application.Security.AuthenticationSettings': markRaw(AuthenticationSettings),
-  'Catalog.Products': markRaw(CatalogProducts),
-  'Catalog.Services': markRaw(CatalogServices),
   'OrganizationManagement.GroupsManagement': markRaw(GroupsManagement),
   'OrganizationManagement.UsersManagement': markRaw(UsersManagement),
   // Узлы-контейнеры не имеют компонента

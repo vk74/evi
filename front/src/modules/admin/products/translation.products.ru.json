@@ -6,6 +6,30 @@
         "productEditor": "редактор продукта",
         "settings": "настройки"
       },
+      "settings": {
+        "title": "настройки карточек продукта в каталоге",
+        "displayOptionsOnly": {
+          "label": "показывать продукты с типом \"опция\""
+        },
+        "cardColor": {
+          "label": "цвет карточки продукта",
+          "picker": {
+            "title": "цвет карточки продукта",
+            "basicColors": "базовые цвета",
+            "customColor": "произвольный цвет",
+            "hexCode": "hex код",
+            "validHex": "должен быть корректный hex цвет (например, #FFFFFF)"
+          }
+        },
+        "messages": {
+          "error": {
+            "tooltip": {
+              "title": "ошибка загрузки настройки",
+              "retry": "нажмите для повторной попытки"
+            }
+          }
+        }
+      },
       "moduleTitle": "управление продуктами",
       "editor": {
         "creation": {
