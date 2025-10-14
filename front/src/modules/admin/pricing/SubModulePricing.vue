@@ -18,7 +18,7 @@ import {
 } from '@phosphor-icons/vue'
 
 // Async components for lazy loading
-const PriceLists = defineAsyncComponent(() => import('./sections/PriceLists.vue'))
+const PriceLists = defineAsyncComponent(() => import('./PriceLists/PriceLists.vue'))
 const PricingZones = defineAsyncComponent(() => import('./sections/PricingZones.vue'))
 const PricingSettings = defineAsyncComponent(() => import('./sections/PricingSettings.vue'))
 

@@ -5,6 +5,51 @@
         "priceLists": "price lists",
         "pricingZones": "pricing zones",
         "settings": "settings"
+      },
+      "priceLists": {
+        "table": {
+          "headers": {
+            "selection": "select",
+            "code": "code",
+            "name": "name",
+            "currency": "currency",
+            "status": "status",
+            "validFrom": "valid from",
+            "validTo": "valid to",
+            "itemsCount": "items"
+          }
+        },
+        "filters": {
+          "all": "all",
+          "status": "status",
+          "currency": "currency",
+          "active": "active",
+          "inactive": "inactive",
+          "draft": "draft",
+          "clear": "clear filters"
+        },
+        "search": {
+          "placeholder": "search price lists...",
+          "minChars": "enter at least 2 characters"
+        },
+        "actions": {
+          "title": "actions",
+          "addPriceList": "add price list",
+          "refresh": "refresh",
+          "clearSelection": "clear selection",
+          "selectedElements": "selected elements",
+          "edit": "edit",
+          "duplicate": "duplicate",
+          "delete": "delete"
+        },
+        "messages": {
+          "deleteConfirm": {
+            "title": "delete price lists",
+            "message": "are you sure you want to delete selected price lists?",
+            "cancel": "cancel",
+            "confirm": "delete"
+          }
+        }
       }
     }
   }

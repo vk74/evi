@@ -5,6 +5,51 @@
         "priceLists": "прайс-листы",
         "pricingZones": "зоны ценообразования",
         "settings": "настройки"
+      },
+      "priceLists": {
+        "table": {
+          "headers": {
+            "selection": "выбор",
+            "code": "код",
+            "name": "название",
+            "currency": "валюта",
+            "status": "статус",
+            "validFrom": "действителен с",
+            "validTo": "действителен до",
+            "itemsCount": "позиций"
+          }
+        },
+        "filters": {
+          "all": "все",
+          "status": "статус",
+          "currency": "валюта",
+          "active": "активен",
+          "inactive": "неактивен",
+          "draft": "черновик",
+          "clear": "очистить фильтры"
+        },
+        "search": {
+          "placeholder": "поиск прайс-листов...",
+          "minChars": "введите минимум 2 символа"
+        },
+        "actions": {
+          "title": "действия",
+          "addPriceList": "добавить прайс-лист",
+          "refresh": "обновить",
+          "clearSelection": "очистить выбор",
+          "selectedElements": "выбранные элементы",
+          "edit": "редактировать",
+          "duplicate": "дублировать",
+          "delete": "удалить"
+        },
+        "messages": {
+          "deleteConfirm": {
+            "title": "удалить прайс-листы",
+            "message": "вы уверены, что хотите удалить выбранные прайс-листы?",
+            "cancel": "отмена",
+            "confirm": "удалить"
+          }
+        }
       }
     }
   }
