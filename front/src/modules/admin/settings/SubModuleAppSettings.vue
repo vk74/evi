@@ -5,7 +5,7 @@
  *          and displays the corresponding settings components in the workspace area
  * 
  * Uses a Pinia store to persist the selected category and expanded state between sessions
- * Version: 1.6.0
+ * Version: 1.6.1
  -->
  <script setup lang="ts">
 import { ref, computed, onMounted, markRaw, watch, type Component } from 'vue';
@@ -46,78 +46,71 @@ const { t } = useI18n();
 // Hierarchical sections structure - using computed to support reactive translations
 const sections = computed<Section[]>(() => [
   {
-    id: 'Application',
-    name: t('admin.settings.sections.application'),
-    icon: PhGear,
+    id: 'Application.Appearance',
+    name: t('admin.settings.sections.appearance'),
+    icon: PhPalette,
+  },
+  {
+    id: 'Application.Work',
+    name: t('admin.settings.sections.work'),
+    icon: PhBriefcase,
+  },
+  {
+    id: 'Application.Reports',
+    name: t('admin.settings.sections.reports'),
+    icon: PhChartLineUp,
+  },
+  {
+    id: 'Application.KnowledgeBase',
+    name: t('admin.settings.sections.knowledgebase'),
+    icon: PhBooks,
+  },
+  {
+    id: 'Application.RegionalSettings',
+    name: t('admin.settings.sections.regionalsettings'),
+    icon: PhMapPin,
+  },
+  {
+    id: 'Application.Security',
+    name: t('admin.settings.sections.security'),
+    icon: PhShield,
     children: [
       {
-        id: 'Application.Appearance',
-        name: t('admin.settings.sections.appearance'),
-        icon: PhPalette,
+        id: 'Application.Security.SessionManagement',
+        name: t('admin.settings.sections.sessionmanagement'),
+        icon: PhClockUser,
       },
       {
-        id: 'Application.Work',
-        name: t('admin.settings.sections.work'),
-        icon: PhBriefcase,
+        id: 'Application.Security.PasswordPolicies',
+        name: t('admin.settings.sections.passwordpolicies'),
+        icon: PhPassword,
       },
       {
-        id: 'Application.Reports',
-        name: t('admin.settings.sections.reports'),
-        icon: PhChartLineUp,
+        id: 'Application.Security.AuthenticationSettings',
+        name: t('admin.settings.sections.authenticationpolicies'),
+        icon: PhShieldCheck,
+      }
+    ]
+  },
+  {
+    id: 'Application.System',
+    name: t('admin.settings.sections.system'),
+    icon: PhDesktopTower,
+    children: [
+      {
+        id: 'Application.System.EventBus',
+        name: t('admin.settings.sections.eventbus'),
+        icon: PhShareNetwork,
       },
       {
-        id: 'Application.KnowledgeBase',
-        name: t('admin.settings.sections.knowledgebase'),
-        icon: PhBooks,
+        id: 'Application.System.Logging',
+        name: t('admin.settings.sections.logging'),
+        icon: PhTextT,
       },
       {
-        id: 'Application.RegionalSettings',
-        name: t('admin.settings.sections.regionalsettings'),
-        icon: PhMapPin,
-      },
-      {
-        id: 'Application.Security',
-        name: t('admin.settings.sections.security'),
-        icon: PhShield,
-        children: [
-          {
-            id: 'Application.Security.SessionManagement',
-            name: t('admin.settings.sections.sessionmanagement'),
-            icon: PhClockUser,
-          },
-          {
-            id: 'Application.Security.PasswordPolicies',
-            name: t('admin.settings.sections.passwordpolicies'),
-            icon: PhPassword,
-          },
-          {
-            id: 'Application.Security.AuthenticationSettings',
-            name: t('admin.settings.sections.authenticationpolicies'),
-            icon: PhShieldCheck,
-          }
-        ]
-      },
-      {
-        id: 'Application.System',
-        name: t('admin.settings.sections.system'),
-        icon: PhDesktopTower,
-        children: [
-          {
-            id: 'Application.System.EventBus',
-            name: t('admin.settings.sections.eventbus'),
-            icon: PhShareNetwork,
-          },
-          {
-            id: 'Application.System.Logging',
-            name: t('admin.settings.sections.logging'),
-            icon: PhTextT,
-          },
-          {
-            id: 'Application.System.DataValidation',
-            name: t('admin.settings.sections.datavalidation'),
-            icon: PhCheckCircle,
-          }
-        ]
+        id: 'Application.System.DataValidation',
+        name: t('admin.settings.sections.datavalidation'),
+        icon: PhCheckCircle,
       }
     ]
   }
