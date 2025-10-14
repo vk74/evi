@@ -1,0 +1,12 @@
+{
+  "admin": {
+    "pricing": {
+      "sections": {
+        "priceLists": "прайс-листы",
+        "pricingZones": "зоны ценообразования",
+        "settings": "настройки"
+      }
+    }
+  }
+}
+

@@ -1,0 +1,12 @@
+{
+  "admin": {
+    "pricing": {
+      "sections": {
+        "priceLists": "price lists",
+        "pricingZones": "pricing zones",
+        "settings": "settings"
+      }
+    }
+  }
+}
+

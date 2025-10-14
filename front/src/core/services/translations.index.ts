@@ -52,6 +52,10 @@ import servicesAdminEn from '@/modules/admin/services/translation.services.en.js
 import productsAdminRu from '@/modules/admin/products/translation.products.ru.json'
 import productsAdminEn from '@/modules/admin/products/translation.products.en.json'
 
+// pricing admin module
+import pricingAdminRu from '@/modules/admin/pricing/translation.admin.pricing.ru.json'
+import pricingAdminEn from '@/modules/admin/pricing/translation.admin.pricing.en.json'
+
 // work module
 import workRu from '@/modules/work/translation.work.ru.json'
 import workEn from '@/modules/work/translation.work.en.json'
@@ -91,6 +95,7 @@ export default {
       catalogAdminRu,
       servicesAdminRu,
       productsAdminRu,
+      pricingAdminRu,
       workRu,
       arRu,
       kbRu,
@@ -113,6 +118,7 @@ export default {
       catalogAdminEn,
       servicesAdminEn,
       productsAdminEn,
+      pricingAdminEn,
       workEn,
       arEn,
       kbEn,

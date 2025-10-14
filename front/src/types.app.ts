@@ -1,6 +1,6 @@
 /**
  * @file types.app.ts
- * Version: 1.0.0
+ * Version: 1.1.0
  * Type definitions for the application
  */
 
@@ -30,7 +30,8 @@ export type AdminSubModule =
   | 'serviceAdmin'
   | 'orgAdmin'
   | 'appAdmin'
-  | 'productsAdmin';
+  | 'productsAdmin'
+  | 'pricingAdmin';
 
 // Work module visibility setting interface
 export interface WorkModuleVisibility {

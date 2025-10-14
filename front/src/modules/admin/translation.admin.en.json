@@ -13,6 +13,9 @@
           "deactivated": "deactivated"
         }
       },
+      "pricing": {
+        "main": "pricing"
+      },
       "org": {
         "main": "organization management"
       },

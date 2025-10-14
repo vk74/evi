@@ -11,7 +11,8 @@ Contains:
 - Fixed active state tracking for bottom navigation items
 - Improved handling of ResizeObserver errors with a more robust implementation
 - Dynamic navbar background color from application settings
-Version: 1.2.0
+- Pricing admin submodule integration
+Version: 1.3.0
 -->
 <script setup lang="ts">
 import { ref, computed, onMounted, watch, defineAsyncComponent, nextTick } from 'vue';
@@ -45,6 +46,7 @@ const SubModuleServiceAdmin = defineAsyncComponent(() => import(/* webpackChunkN
 const SubModuleOrgAdmin = defineAsyncComponent(() => import(/* webpackChunkName: "admin-org" */ './modules/admin/org/SubModuleOrgAdmin.vue'));
 const SubModuleAppSettings = defineAsyncComponent(() => import(/* webpackChunkName: "admin-settings" */ './modules/admin/settings/SubModuleAppSettings.vue'));
 const SubModuleProducts = defineAsyncComponent(() => import(/* webpackChunkName: "admin-products" */ './modules/admin/products/SubModuleProducts.vue'));
+const SubModulePricing = defineAsyncComponent(() => import(/* webpackChunkName: "admin-pricing" */ './modules/admin/pricing/SubModulePricing.vue'));
 
 // Regular component imports
 import ModuleLogin from './core/auth/ModuleLogin.vue';
@@ -174,6 +176,8 @@ const currentAdminSubmodule = computed(() => {
       return SubModuleAppSettings;
     case 'productsAdmin':
       return SubModuleProducts;
+    case 'pricingAdmin':
+      return SubModulePricing;
     default:
       return SubModuleAppSettings; // Default to app settings
   }
@@ -544,6 +548,9 @@ onMounted(async () => {
           case 'productsAdmin':
             import(/* webpackChunkName: "admin-products" */ './modules/admin/products/SubModuleProducts.vue');
             break;
+          case 'pricingAdmin':
+            import(/* webpackChunkName: "admin-pricing" */ './modules/admin/pricing/SubModulePricing.vue');
+            break;
           case 'appAdmin':
           default:
             import(/* webpackChunkName: "admin-settings" */ './modules/admin/settings/SubModuleAppSettings.vue');
@@ -789,6 +796,26 @@ onMounted(async () => {
               >
                 <template #prepend>
                   <component :is="icons.PhPackage" size="24" :color="iconColor" class="mr-2" />
+                </template>
+              </v-list-item>
+              
+              <!-- Pricing Admin -->
+              <v-list-item
+                v-tooltip="{
+                  text: $t('admin.nav.pricing.main'),
+                  location: 'right',
+                  disabled: appStore.drawerMode !== 'closed'
+                }"
+                class="admin-sub-item"
+                :class="{ 'admin-sub-active': activeAdminSubModule === 'pricingAdmin' }"
+                :title="$t('admin.nav.pricing.main')"
+                value="pricingAdmin"
+                density="compact"
+                :active="appStore.isModuleActive('Admin') && activeAdminSubModule === 'pricingAdmin'"
+                @click="setActiveAdminSection('pricingAdmin')"
+              >
+                <template #prepend>
+                  <component :is="icons.PhTag" size="24" :color="iconColor" class="mr-2" />
                 </template>
               </v-list-item>
               
