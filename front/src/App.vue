@@ -748,7 +748,7 @@ onMounted(async () => {
                 @click="setActiveAdminSection('catalogAdmin')"
               >
                 <template #prepend>
-                  <component :is="icons.PhShoppingCart" size="24" :color="iconColor" class="mr-2" />
+                  <component :is="icons.PhCardsThree" size="24" :color="iconColor" class="mr-2" />
                 </template>
               </v-list-item>
               

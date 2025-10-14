@@ -11,7 +11,7 @@
 import { ref, computed, onMounted, markRaw, watch, type Component } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useAppSettingsStore } from './state.app.settings';
-import { PhList, PhCaretDown, PhCaretRight, PhGear, PhBriefcase, PhChartLineUp, PhBooks, PhUserGear, PhShield, PhClockUser, PhPassword, PhShieldCheck, PhDesktopTower, PhShareNetwork, PhTextT, PhCheckCircle, PhUsers, PhPackage, PhWrench, PhFadersHorizontal, PhMapPin, PhShoppingCart, PhPalette, PhBuildings } from '@phosphor-icons/vue';
+import { PhList, PhCaretDown, PhCaretRight, PhGear, PhBriefcase, PhChartLineUp, PhBooks, PhUserGear, PhShield, PhClockUser, PhPassword, PhShieldCheck, PhDesktopTower, PhShareNetwork, PhTextT, PhCheckCircle, PhUsers, PhPackage, PhWrench, PhFadersHorizontal, PhMapPin, PhCardsThree, PhPalette, PhBuildings } from '@phosphor-icons/vue';
 import { useUiStore } from '@/core/state/uistate';
  
 // Import components from sections directory with hierarchical naming
@@ -55,7 +55,7 @@ const sections = computed<Section[]>(() => [
   {
     id: 'Catalog',
     name: t('admin.settings.sections.catalog'),
-    icon: PhShoppingCart,
+    icon: PhCardsThree,
     children: [
       {
         id: 'Catalog.Products',

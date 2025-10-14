@@ -16,7 +16,7 @@ import CatalogSectionEditor from './CatalogSectionEditor.vue'
 
 // Импортируем Phosphor иконки
 import { 
-  PhList, 
+  PhTabs,
   PhGear, 
   PhPencilSimple
 } from '@phosphor-icons/vue'
@@ -34,7 +34,7 @@ const sections = computed<Section[]>(() => {
     {
       id: 'Catalog.Sections',
       name: t('admin.catalog.navigation.sections'),
-      icon: 'PhList'
+      icon: 'PhTabs'
     },
     {
       id: 'Catalog.SectionEditor',
@@ -174,14 +174,14 @@ const handleSectionClick = (section: { id: string }) => {
 const selectedSection = computed(() => {
   const section = findSectionById(catalogStore.getSelectedSectionPath, sections.value)
   // Provide default values to avoid "Cannot read properties of undefined" error
-  return section || { id: '', name: 'Sections', icon: 'PhList' }
+  return section || { id: '', name: 'Sections', icon: 'PhTabs' }
 })
 
 // Функция для получения компонента иконки
 const getIconComponent = (iconName: string) => {
   switch (iconName) {
-    case 'PhList':
-      return PhList
+    case 'PhTabs':
+      return PhTabs
     case 'PhGear':
       return PhGear
     case 'PhPencilSimple':
@@ -230,7 +230,7 @@ onMounted(() => {
         class="mobile-menu-button"
         @click="toggleMobileMenu"
       >
-        <PhList
+        <PhTabs
           :size="25"
           weight="regular"
           class="me-2"
