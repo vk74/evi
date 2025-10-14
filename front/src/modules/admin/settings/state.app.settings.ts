@@ -1,6 +1,6 @@
 /**
  * @file state.app.settings.ts
- * Version: 1.0.0
+ * Version: 1.1.0
  * State management for the application settings module using Pinia.
  * Frontend file that tracks selected section ID, expanded sections, and caches settings data.
  *
@@ -8,6 +8,7 @@
  * - Tracks the selected section ID, expanded sections, and caches settings data
  * - Manages settings cache with TTL of 5 minutes
  * - Provides methods for updating, sorting, selecting, and clearing the cache
+ * - Persists UI state (selectedSectionPath, expandedSections, expandedBlocks) to localStorage
  */
 
 import { defineStore } from 'pinia';
@@ -445,6 +446,16 @@ export const useAppSettingsStore = defineStore('appSettings', {
     }
   },
   
-  // Persistence disabled - settings will be loaded fresh on each page reload
-  // Note: This ensures fresh data is loaded on each page reload
+  // Persistence configuration
+  // Only persist UI state (selected section, expanded sections/blocks)
+  // Do NOT persist cache data - it will be loaded fresh on each page reload
+  persist: {
+    key: 'ev2-app-settings',
+    storage: localStorage,
+    pick: [
+      'selectedSectionPath',
+      'expandedSections',
+      'expandedBlocks'
+    ]
+  }
 });

@@ -5,7 +5,7 @@
  *          and displays the corresponding settings components in the workspace area
  * 
  * Uses a Pinia store to persist the selected category and expanded state between sessions
- * Version: 1.4.2
+ * Version: 1.5.1
  -->
  <script setup lang="ts">
 import { ref, computed, onMounted, markRaw, watch, type Component } from 'vue';
@@ -30,9 +30,6 @@ import GroupsManagement from './sections/OrganizationManagement.GroupsManagement
 import UsersManagement from './sections/OrganizationManagement.UsersManagement.vue';
 import CatalogProducts from './sections/Catalog.Products.vue';
 import CatalogServices from './sections/Catalog.Services.vue';
-import CatalogSettings from './sections/Catalog.Settings.vue';
-import ProductsSettings from './sections/Products.Settings.vue';
-import ServicesSettings from './sections/Services.Settings.vue';
  
  // Define section interface
  interface Section {
@@ -66,35 +63,6 @@ const sections = computed<Section[]>(() => [
         id: 'Catalog.Services',
         name: t('admin.settings.sections.services'),
         icon: PhWrench,
-      },
-      {
-        id: 'Catalog.Settings',
-        name: t('admin.settings.sections.settings'),
-        icon: PhFadersHorizontal,
-      }
-    ]
-  },
-  {
-    id: 'Services',
-    name: t('admin.settings.sections.services'),
-    icon: PhWrench,
-    children: [
-      {
-        id: 'Services.Settings',
-        name: t('admin.settings.sections.settings'),
-        icon: PhFadersHorizontal,
-      }
-    ]
-  },
-  {
-    id: 'Products',
-    name: t('admin.settings.sections.products'),
-    icon: PhPackage,
-    children: [
-      {
-        id: 'Products.Settings',
-        name: t('admin.settings.sections.settings'),
-        icon: PhFadersHorizontal,
       }
     ]
   },
@@ -208,9 +176,6 @@ const sectionComponents = {
   'Application.Security.AuthenticationSettings': markRaw(AuthenticationSettings),
   'Catalog.Products': markRaw(CatalogProducts),
   'Catalog.Services': markRaw(CatalogServices),
-  'Catalog.Settings': markRaw(CatalogSettings),
-  'Products.Settings': markRaw(ProductsSettings),
-  'Services.Settings': markRaw(ServicesSettings),
   'OrganizationManagement.GroupsManagement': markRaw(GroupsManagement),
   'OrganizationManagement.UsersManagement': markRaw(UsersManagement),
   // Узлы-контейнеры не имеют компонента
@@ -325,12 +290,23 @@ const sectionComponents = {
    return findFirstLeafSection(sectionList[0]);
  };
  
- /**
-  * Helper function to validate if a section exists in the tree
-  */
- const isValidSection = (id: string): boolean => {
-   return findSectionById(id, sections.value) !== null;
- };
+/**
+ * Helper function to validate if a section exists in the tree
+ */
+const isValidSection = (id: string): boolean => {
+  return findSectionById(id, sections.value) !== null;
+};
+
+/**
+ * Helper function to check if a section is a leaf (has a component, not a container)
+ */
+const isLeafSection = (id: string): boolean => {
+  const section = findSectionById(id, sections.value);
+  if (!section) return false;
+  
+  // A section is a leaf if it has no children or if it has a component mapped to it
+  return !section.children || section.children.length === 0;
+};
  
  /**
   * Helper function to get all parent sections of a given section
@@ -432,8 +408,10 @@ watch(selectedSectionPath, (newSectionPath, oldSectionPath) => {
    // Validate the saved section path
    let validSectionPath = appSettingsStore.getSelectedSectionPath;
    
-   if (!validSectionPath || !isValidSection(validSectionPath)) {
-     // If no section is selected or the section doesn't exist, select the first leaf section
+   // Check if saved path exists, is valid, and is a leaf (not a container node)
+   if (!validSectionPath || !isValidSection(validSectionPath) || !isLeafSection(validSectionPath)) {
+     // If no section is selected, section doesn't exist, or it's a container node,
+     // select the first available leaf section
      validSectionPath = findFirstLeafSectionInTree(sections.value);
      if (validSectionPath) {
        appSettingsStore.setSelectedSection(validSectionPath);
