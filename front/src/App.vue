@@ -1239,6 +1239,11 @@ onMounted(async () => {
   padding-left: 0 !important;
 }
 
+/* Shift admin sub-module icons 5px right in rail mode */
+.v-navigation-drawer--rail .admin-sub-item .v-list-item__prepend {
+  margin-left: 5px !important;
+}
+
 /* Floating menu button */
 .floating-menu-btn {
   position: fixed;
