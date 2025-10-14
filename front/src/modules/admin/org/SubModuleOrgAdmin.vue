@@ -21,7 +21,8 @@ import {
   PhUserPlus, 
   PhUsersThree, 
   PhUsersFour,
-  PhUserFocus
+  PhUserFocus,
+  PhFadersHorizontal
 } from '@phosphor-icons/vue'
 
 // Async components for lazy loading
@@ -29,6 +30,7 @@ const UsersListProto = defineAsyncComponent(() => import('./UsersList/UsersList.
 const GroupsList = defineAsyncComponent(() => import('./GroupsList/GroupsList.vue'))
 const UserEditor = defineAsyncComponent(() => import('./UserEditor/UserEditor.vue'))
 const GroupEditor = defineAsyncComponent(() => import('./GroupEditor/GroupEditor.vue'))
+const OrgManagementSettings = defineAsyncComponent(() => import('./Settings/OrgManagementSettings.vue'))
 
 // Initialize i18n and store
 const { t } = useI18n()
@@ -51,11 +53,16 @@ const sections = computed((): Section[] => [
     title: t('admin.org.sections.groupsList'),
     icon: 'PhUsersThree'
   },
-      {
-      id: 'group-editor',
-      title: t('admin.org.sections.groupEditor'),
-      icon: 'PhUsersFour'
-    }
+  {
+    id: 'group-editor',
+    title: t('admin.org.sections.groupEditor'),
+    icon: 'PhUsersFour'
+  },
+  {
+    id: 'settings',
+    title: t('admin.org.sections.settings'),
+    icon: 'PhFadersHorizontal'
+  }
 ])
 
 // Computed properties and methods for section management
@@ -77,6 +84,8 @@ const getIconComponent = (iconName: string) => {
       return PhUsersThree
     case 'PhUsersFour':
       return PhUsersFour
+    case 'PhFadersHorizontal':
+      return PhFadersHorizontal
     default:
       return null
   }
@@ -127,6 +136,7 @@ const getIconComponent = (iconName: string) => {
         v-if="activeSection === 'group-editor'"
         mode="create"
       />
+      <OrgManagementSettings v-if="activeSection === 'settings'" />
     </div>
   </div>
 </template>

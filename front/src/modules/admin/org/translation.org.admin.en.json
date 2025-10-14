@@ -1,0 +1,49 @@
+{
+  "admin": {
+    "org": {
+      "sections": {
+        "usersList": "users list",
+        "userEditor": "user editor",
+        "groupsList": "groups list",
+        "groupEditor": "group editor",
+        "settings": "settings"
+      },
+      "settings": {
+        "title": "organization management settings",
+        "groups": {
+          "title": "groups management"
+        },
+        "users": {
+          "title": "users management"
+        },
+        "only": {
+          "active": {
+            "members": {
+              "label": "add only active users to groups"
+            }
+          }
+        },
+        "registration": {
+          "page": {
+            "enabled": {
+              "label": "enable user registration page"
+            }
+          }
+        },
+        "messages": {
+          "settings": {
+            "loaded": "organization settings loaded successfully"
+          },
+          "error": {
+            "loading": "failed to load setting",
+            "tooltip": {
+              "title": "failed to load setting",
+              "retry": "click to retry loading this setting"
+            }
+          }
+        }
+      }
+    }
+  }
+}
+

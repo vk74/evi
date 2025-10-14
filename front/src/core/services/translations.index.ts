@@ -35,6 +35,9 @@ import groupsListEn from '@/modules/admin/org/GroupsList/translation.groups.list
 import groupsEditorEn from '@/modules/admin/org/GroupEditor/translation.group.editor.en.json'
 import groupsEditorRu from '@/modules/admin/org/GroupEditor/translation.group.editor.ru.json'
 
+import orgAdminRu from '@/modules/admin/org/translation.org.admin.ru.json'
+import orgAdminEn from '@/modules/admin/org/translation.org.admin.en.json'
+
 import settingsRu from '@/modules/admin/settings/translation.settings.ru.json'
 import settingsEn from '@/modules/admin/settings/translation.settings.en.json'
 
@@ -83,6 +86,7 @@ export default {
       validationCommonFieldsRulesRu,
       groupsListRu,
       groupsEditorRu,
+      orgAdminRu,
       settingsRu,
       catalogAdminRu,
       servicesAdminRu,
@@ -104,6 +108,7 @@ export default {
       validationCommonFieldsRulesEn,
       groupsListEn,
       groupsEditorEn,
+      orgAdminEn,
       settingsEn,
       catalogAdminEn,
       servicesAdminEn,

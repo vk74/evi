@@ -1,11 +1,11 @@
 /**
  * @file types.org.admin.ts
- * Version: 1.0.0
+ * Version: 1.1.0
  * Type definitions for organization administration module.
  * Frontend file that defines TypeScript types and interfaces for organization admin functionality.
  */
 
-export type UserSectionId = 'users-proto' | 'groups' | 'user-editor' | 'group-editor'
+export type UserSectionId = 'users-proto' | 'groups' | 'user-editor' | 'group-editor' | 'settings'
 
 export interface OrgAdminState {
   activeSection: UserSectionId

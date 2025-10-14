@@ -1,8 +1,8 @@
 <!--
-  File: OrganizationManagement.UsersManagement.vue
-  Version: 1.2.0
-  Description: Users management settings component
-  Purpose: Configure user management settings including registration
+  File: OrgManagementSettings.vue
+  Version: 1.1.0
+  Description: Organization management settings component
+  Purpose: Configure organization related settings including group membership rules and user registration from org admin module
 -->
 
 <script setup lang="ts">
@@ -14,8 +14,9 @@ import { updateSettingFromComponent } from '@/modules/admin/settings/service.upd
 import { useUiStore } from '@/core/state/uistate';
 import DataLoading from '@/core/ui/loaders/DataLoading.vue';
 
-// Section path identifier - using component name for better consistency
-const section_path = 'OrganizationManagement.RegistrationPage';
+// Section path identifiers - same as in respective components
+const groupsManagementPath = 'OrganizationManagement.GroupsManagement';
+const usersManagementPath = 'OrganizationManagement.RegistrationPage';
 
 // Store references
 const appSettingsStore = useAppSettingsStore();
@@ -36,18 +37,20 @@ const settingErrorStates = ref<Record<string, boolean>>({});
 const settingRetryAttempts = ref<Record<string, number>>({});
 
 // Local UI state for immediate interaction - initialize with null (not set)
+const onlyAddActiveMembers = ref<boolean | null>(null);
 const registrationPageEnabled = ref<boolean | null>(null);
 
-// Define all settings that need to be loaded
+// Define all settings that need to be loaded with their section paths
 const allSettings = [
-  'registration.page.enabled'
+  { name: 'add.only.active.users.to.groups', path: groupsManagementPath },
+  { name: 'registration.page.enabled', path: usersManagementPath }
 ];
 
 // Initialize loading states for all settings
-allSettings.forEach(settingName => {
-  settingLoadingStates.value[settingName] = true;
-  settingErrorStates.value[settingName] = false;
-  settingRetryAttempts.value[settingName] = 0;
+allSettings.forEach(setting => {
+  settingLoadingStates.value[setting.name] = true;
+  settingErrorStates.value[setting.name] = false;
+  settingRetryAttempts.value[setting.name] = 0;
 });
 
 /**
@@ -74,26 +77,26 @@ const isSettingDisabled = (settingName: string) => {
 /**
  * Update setting in store when local state changes
  */
-function updateSetting(settingName: string, value: any) {
+function updateSetting(settingName: string, sectionPath: string, value: any) {
   // Only update if setting is not disabled
   if (!isSettingDisabled(settingName)) {
     console.log(`Updating setting ${settingName} to:`, value);
-    updateSettingFromComponent(section_path, settingName, value);
+    updateSettingFromComponent(sectionPath, settingName, value);
   }
 }
 
 /**
  * Load a single setting by name
  */
-async function loadSetting(settingName: string): Promise<boolean> {
+async function loadSetting(settingName: string, sectionPath: string): Promise<boolean> {
   settingLoadingStates.value[settingName] = true;
   settingErrorStates.value[settingName] = false;
   
   try {
-    console.log(`Loading setting: ${settingName}`);
+    console.log(`Loading setting: ${settingName} from ${sectionPath}`);
     
     // Try to get setting from cache first
-    const cachedSettings = appSettingsStore.getCachedSettings(section_path);
+    const cachedSettings = appSettingsStore.getCachedSettings(sectionPath);
     const cachedSetting = cachedSettings?.find(s => s.setting_name === settingName);
     
     if (cachedSetting) {
@@ -104,7 +107,7 @@ async function loadSetting(settingName: string): Promise<boolean> {
     }
     
     // If not in cache, fetch from backend
-    const settings = await fetchSettings(section_path);
+    const settings = await fetchSettings(sectionPath);
     const setting = settings?.find(s => s.setting_name === settingName);
     
     if (setting) {
@@ -124,10 +127,10 @@ async function loadSetting(settingName: string): Promise<boolean> {
     if (settingRetryAttempts.value[settingName] < 1) {
       settingRetryAttempts.value[settingName]++;
       console.log(`Retrying setting ${settingName} in 5 seconds...`);
-      setTimeout(() => loadSetting(settingName), 5000);
+      setTimeout(() => loadSetting(settingName, sectionPath), 5000);
     } else {
       // Show error toast only on final failure
-      uiStore.showErrorSnackbar(`${t('admin.settings.organizationmanagement.usersmanagement.messages.error.loading')}: ${settingName}`);
+      uiStore.showErrorSnackbar(`${t('admin.org.settings.messages.error.loading')}: ${settingName}`);
     }
     
     return false;
@@ -142,6 +145,9 @@ function updateLocalSetting(settingName: string, value: any) {
   const safeBoolean = (val: any) => val === null ? null : Boolean(val);
 
   switch (settingName) {
+    case 'add.only.active.users.to.groups':
+      onlyAddActiveMembers.value = safeBoolean(value);
+      break;
     case 'registration.page.enabled':
       registrationPageEnabled.value = safeBoolean(value);
       break;
@@ -155,59 +161,71 @@ async function loadSettings() {
   isLoadingSettings.value = true;
   
   try {
-    console.log('Loading settings for Users Registration');
+    console.log('Loading settings for Organization Management');
     
     // Disable watch effects during initial load
     isFirstLoad.value = true;
     
-    // Load all settings for the section in one request
-    const settings = await fetchSettings(section_path);
+    // Group settings by their section paths
+    const settingsByPath = new Map<string, typeof allSettings>();
+    allSettings.forEach(setting => {
+      if (!settingsByPath.has(setting.path)) {
+        settingsByPath.set(setting.path, []);
+      }
+      settingsByPath.get(setting.path)!.push(setting);
+    });
     
-    if (settings && settings.length > 0) {
-      console.log(`Successfully loaded ${settings.length} settings for section: ${section_path}`);
-      
-      // Update local state for each setting
-      allSettings.forEach(settingName => {
-        const setting = settings.find(s => s.setting_name === settingName);
-        if (setting) {
-          updateLocalSetting(settingName, setting.value);
-          settingLoadingStates.value[settingName] = false;
-          settingErrorStates.value[settingName] = false;
+    // Load settings for each section path
+    const loadPromises = Array.from(settingsByPath.entries()).map(async ([sectionPath, settings]) => {
+      try {
+        const loadedSettings = await fetchSettings(sectionPath);
+        
+        if (loadedSettings && loadedSettings.length > 0) {
+          console.log(`Successfully loaded ${loadedSettings.length} settings for section: ${sectionPath}`);
+          
+          settings.forEach(setting => {
+            const loadedSetting = loadedSettings.find(s => s.setting_name === setting.name);
+            if (loadedSetting) {
+              updateLocalSetting(setting.name, loadedSetting.value);
+              settingLoadingStates.value[setting.name] = false;
+              settingErrorStates.value[setting.name] = false;
+            } else {
+              console.warn(`Setting ${setting.name} not found in loaded settings`);
+              settingLoadingStates.value[setting.name] = false;
+              settingErrorStates.value[setting.name] = true;
+            }
+          });
         } else {
-          console.warn(`Setting ${settingName} not found in loaded settings`);
-          settingLoadingStates.value[settingName] = false;
-          settingErrorStates.value[settingName] = true;
+          settings.forEach(setting => {
+            settingLoadingStates.value[setting.name] = false;
+            settingErrorStates.value[setting.name] = true;
+          });
         }
-      });
-      
-      // Enable user changes after all settings are loaded and local state is updated
-      // Use nextTick to ensure all synchronous updates complete before enabling watchers
-      await nextTick();
-      isFirstLoad.value = false;
-      
-      // Show success toast for initial load
-      uiStore.showSuccessSnackbar(t('admin.settings.organizationmanagement.usersmanagement.messages.settings.loaded'));
-    } else {
-      console.log('No settings loaded - using defaults');
-      
-      // Mark all settings as failed to load
-      allSettings.forEach(settingName => {
-        settingLoadingStates.value[settingName] = false;
-        settingErrorStates.value[settingName] = true;
-      });
-      
-      // Enable user changes even if no settings loaded
-      await nextTick();
-      isFirstLoad.value = false;
-    }
+      } catch (error) {
+        console.error(`Failed to load settings for section ${sectionPath}:`, error);
+        settings.forEach(setting => {
+          settingLoadingStates.value[setting.name] = false;
+          settingErrorStates.value[setting.name] = true;
+        });
+      }
+    });
+    
+    await Promise.all(loadPromises);
+    
+    // Enable user changes after all settings are loaded and local state is updated
+    await nextTick();
+    isFirstLoad.value = false;
+    
+    // Show success toast for initial load
+    uiStore.showSuccessSnackbar(t('admin.org.settings.messages.settings.loaded'));
     
   } catch (error) {
-    console.error('Failed to load users management settings:', error);
+    console.error('Failed to load organization management settings:', error);
     
     // Mark all settings as failed to load
-    allSettings.forEach(settingName => {
-      settingLoadingStates.value[settingName] = false;
-      settingErrorStates.value[settingName] = true;
+    allSettings.forEach(setting => {
+      settingLoadingStates.value[setting.name] = false;
+      settingErrorStates.value[setting.name] = true;
     });
     
     // Enable user changes even on error
@@ -222,17 +240,29 @@ async function loadSettings() {
  * Retry loading a specific setting
  */
 async function retrySetting(settingName: string) {
-  settingRetryAttempts.value[settingName] = 0;
-  settingErrorStates.value[settingName] = false;
-  await loadSetting(settingName);
+  const setting = allSettings.find(s => s.name === settingName);
+  if (setting) {
+    settingRetryAttempts.value[settingName] = 0;
+    settingErrorStates.value[settingName] = false;
+    await loadSetting(settingName, setting.path);
+  }
 }
 
 // Watch for changes in local state - only after first load is complete
 watch(
+  onlyAddActiveMembers, 
+  (newValue) => {
+    if (!isFirstLoad.value) {
+      updateSetting('add.only.active.users.to.groups', groupsManagementPath, newValue);
+    }
+  }
+);
+
+watch(
   registrationPageEnabled, 
   (newValue) => {
     if (!isFirstLoad.value) {
-      updateSetting('registration.page.enabled', newValue);
+      updateSetting('registration.page.enabled', usersManagementPath, newValue);
     }
   }
 );
@@ -247,15 +277,15 @@ watch(
 
 // Initialize component
 onMounted(() => {
-  console.log('OrganizationManagement.UsersManagement component initialized');
+  console.log('OrgManagementSettings component initialized');
   loadSettings();
 });
 </script>
 
 <template>
-  <div class="users-management-container">
+  <div class="org-management-settings-container">
     <h2 class="text-h6 mb-4">
-      {{ t('admin.settings.organizationmanagement.usersmanagement.title') }}
+      {{ t('admin.org.settings.title') }}
     </h2>
     
     <!-- Loading indicator -->
@@ -270,11 +300,47 @@ onMounted(() => {
       class="settings-section"
     >
       <div class="section-content">
+        <div class="d-flex align-center mb-4">
+          <v-switch
+            v-model="onlyAddActiveMembers"
+            color="teal-darken-2"
+            :label="t('admin.org.settings.only.active.members.label')"
+            hide-details
+            :disabled="isSettingDisabled('add.only.active.users.to.groups')"
+            :loading="settingLoadingStates['add.only.active.users.to.groups']"
+          />
+          <v-tooltip
+            v-if="settingErrorStates['add.only.active.users.to.groups']"
+            location="top"
+            max-width="300"
+          >
+            <template #activator="{ props }">
+              <v-icon 
+                icon="mdi-alert-circle" 
+                size="small" 
+                class="ms-2" 
+                color="error"
+                v-bind="props"
+                style="cursor: pointer;"
+                @click="retrySetting('add.only.active.users.to.groups')"
+              />
+            </template>
+            <div class="pa-2">
+              <p class="text-subtitle-2 mb-2">
+                {{ t('admin.org.settings.messages.error.tooltip.title') }}
+              </p>
+              <p class="text-caption">
+                {{ t('admin.org.settings.messages.error.tooltip.retry') }}
+              </p>
+            </div>
+          </v-tooltip>
+        </div>
+
         <div class="d-flex align-center mb-2">
           <v-switch
             v-model="registrationPageEnabled"
             color="teal-darken-2"
-            :label="t('admin.settings.organizationmanagement.usersmanagement.page.enabled.label')"
+            :label="t('admin.org.settings.registration.page.enabled.label')"
             hide-details
             :disabled="isSettingDisabled('registration.page.enabled')"
             :loading="settingLoadingStates['registration.page.enabled']"
@@ -297,10 +363,10 @@ onMounted(() => {
             </template>
             <div class="pa-2">
               <p class="text-subtitle-2 mb-2">
-                {{ t('admin.settings.organizationmanagement.usersmanagement.messages.error.tooltip.title') }}
+                {{ t('admin.org.settings.messages.error.tooltip.title') }}
               </p>
               <p class="text-caption">
-                {{ t('admin.settings.organizationmanagement.usersmanagement.messages.error.tooltip.retry') }}
+                {{ t('admin.org.settings.messages.error.tooltip.retry') }}
               </p>
             </div>
           </v-tooltip>
@@ -311,9 +377,10 @@ onMounted(() => {
 </template>
 
 <style scoped>
-.users-management-container {
+.org-management-settings-container {
   /* Base container styling */
   position: relative;
+  padding: 24px;
 }
 
 .settings-section {
@@ -335,3 +402,4 @@ onMounted(() => {
   opacity: 1;
 }
 </style>
+

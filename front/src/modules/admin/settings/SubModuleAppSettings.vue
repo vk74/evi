@@ -5,13 +5,13 @@
  *          and displays the corresponding settings components in the workspace area
  * 
  * Uses a Pinia store to persist the selected category and expanded state between sessions
- * Version: 1.5.1
+ * Version: 1.6.0
  -->
  <script setup lang="ts">
 import { ref, computed, onMounted, markRaw, watch, type Component } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useAppSettingsStore } from './state.app.settings';
-import { PhList, PhCaretDown, PhCaretRight, PhGear, PhBriefcase, PhChartLineUp, PhBooks, PhUserGear, PhShield, PhClockUser, PhPassword, PhShieldCheck, PhDesktopTower, PhShareNetwork, PhTextT, PhCheckCircle, PhUsers, PhFadersHorizontal, PhMapPin, PhPalette, PhBuildings } from '@phosphor-icons/vue';
+import { PhList, PhCaretDown, PhCaretRight, PhGear, PhBriefcase, PhChartLineUp, PhBooks, PhShield, PhClockUser, PhPassword, PhShieldCheck, PhDesktopTower, PhShareNetwork, PhTextT, PhCheckCircle, PhMapPin, PhPalette } from '@phosphor-icons/vue';
 import { useUiStore } from '@/core/state/uistate';
  
 // Import components from sections directory with hierarchical naming
@@ -26,8 +26,6 @@ import SystemDataValidation from './sections/Application.System.DataValidation.v
 import SessionManagement from './sections/Application.Security.SessionManagement.vue';
 import PasswordPolicies from './sections/Application.Security.PasswordPolicies.vue';
 import AuthenticationSettings from './sections/Application.Security.AuthenticationSettings.vue';
-import GroupsManagement from './sections/OrganizationManagement.GroupsManagement.vue';
-import UsersManagement from './sections/OrganizationManagement.UsersManagement.vue';
  
  // Define section interface
  interface Section {
@@ -47,23 +45,6 @@ const { t } = useI18n();
  
 // Hierarchical sections structure - using computed to support reactive translations
 const sections = computed<Section[]>(() => [
-  {
-    id: 'OrganizationManagement',
-    name: t('admin.settings.sections.organizationmanagement'),
-    icon: PhBuildings,
-    children: [
-      {
-        id: 'OrganizationManagement.GroupsManagement',
-        name: t('admin.settings.sections.groupsmanagement'),
-        icon: PhUsers,
-      },
-      {
-        id: 'OrganizationManagement.UsersManagement',
-        name: t('admin.settings.sections.usersmanagement'),
-        icon: PhUserGear,
-      }
-    ]
-  },
   {
     id: 'Application',
     name: t('admin.settings.sections.application'),
@@ -155,8 +136,6 @@ const sectionComponents = {
   'Application.Security.SessionManagement': markRaw(SessionManagement),
   'Application.Security.PasswordPolicies': markRaw(PasswordPolicies),
   'Application.Security.AuthenticationSettings': markRaw(AuthenticationSettings),
-  'OrganizationManagement.GroupsManagement': markRaw(GroupsManagement),
-  'OrganizationManagement.UsersManagement': markRaw(UsersManagement),
   // Узлы-контейнеры не имеют компонента
 };
  
