@@ -1,6 +1,6 @@
 /**
  * fabric.events.ts - backend file
- * version: 1.0.04
+ * version: 1.1.0
  * 
  * Event Factory for creating standardized event instances
  * that conform to BaseEvent interface.
@@ -12,6 +12,8 @@
  * 
  * The factory creates events in a modular way with separate functions
  * for each step of event creation and enrichment.
+ * 
+ * Updated: Uses local timezone from application settings for timestamp generation
  */
 
 import { v4 as uuidv4 } from 'uuid';
@@ -23,6 +25,7 @@ import { EVENT_TEMPLATE_NOT_FOUND } from './reference/errors.reference.events';
 import getRequestorUuidFromReq from '../helpers/get.requestor.uuid.from.req';
 import os from 'os';
 import * as eventBusService from './service.eventBus.settings';
+import { getCurrentLocalTimestamp } from './timezone.eventBus';
 
 // Public routes that don't require user authentication
 // These routes should not attempt to extract user UUID from request
@@ -134,7 +137,7 @@ export const createEvent = async (params: CreateEventParams): Promise<BaseEvent>
         payload: {
           attemptedEventName: params.eventName,
           errorType: 'TEMPLATE_NOT_FOUND',
-          timestamp: new Date().toISOString()
+          timestamp: getCurrentLocalTimestamp()
         },
         errorData: `Event template '${params.eventName}' not found in cache. Events must be registered in the event registry.`,
         severity: 'error'
@@ -184,7 +187,7 @@ export const createSystemErrorEvent = async (params: CreateSystemErrorEventParam
       // Create a minimal valid event as fallback
       return {
         eventId: `event-${uuidv4()}`,
-        timestamp: new Date().toISOString(),
+        timestamp: getCurrentLocalTimestamp(),
         eventName: params.eventName,
         source: 'event system',
         eventType: 'system',
@@ -225,7 +228,7 @@ export const createSystemErrorEvent = async (params: CreateSystemErrorEventParam
     // Create a minimal valid event as fallback
     return {
       eventId: `event-${uuidv4()}`,
-      timestamp: new Date().toISOString(),
+      timestamp: getCurrentLocalTimestamp(),
       eventName: params.eventName,
       source: 'event system',
       eventType: 'system',
@@ -243,6 +246,7 @@ export const createSystemErrorEvent = async (params: CreateSystemErrorEventParam
 
 /**
  * Creates the base event structure with core properties
+ * Uses local timezone from application settings for timestamp
  */
 export const createBaseEvent = (template: Partial<BaseEvent>, eventName: string): BaseEvent => {
   // Basic host information
@@ -252,9 +256,10 @@ export const createBaseEvent = (template: Partial<BaseEvent>, eventName: string)
   };
   
   // Create the event with required fields
+  // timestamp uses local timezone from application settings
   const event: BaseEvent = {
     eventId: `event-${uuidv4()}`,
-    timestamp: new Date().toISOString(),
+    timestamp: getCurrentLocalTimestamp(),
     eventName: template.eventName || eventName,
     source: template.source || 'unknown',
     eventType: template.eventType || 'app',

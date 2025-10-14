@@ -15,7 +15,7 @@ CREATE OR REPLACE FUNCTION app.validate_regional_settings()
 RETURNS TRIGGER AS $$
 BEGIN
   -- Validate timezone setting
-  IF NEW.setting_name = 'default.timezone' THEN
+  IF NEW.setting_name = 'current.timezone' THEN
     -- Check if value (removing quotes) is a valid timezone enum value
     IF NOT (NEW.value #>> '{}')::app.timezones IS NOT NULL THEN
       RAISE EXCEPTION 'Invalid timezone value: %. Must be one of the app.timezones enum values', NEW.value;
@@ -23,7 +23,7 @@ BEGIN
   END IF;
 
   -- Validate country setting
-  IF NEW.setting_name = 'default.country' THEN
+  IF NEW.setting_name = 'current.country' THEN
     -- Check if value (removing quotes) is a valid country enum value
     IF NOT (NEW.value #>> '{}')::app.app_countries IS NOT NULL THEN
       RAISE EXCEPTION 'Invalid country value: %. Must be one of the app.app_countries enum values', NEW.value;
@@ -48,7 +48,7 @@ CREATE TRIGGER validate_regional_settings_trigger
   FOR EACH ROW
   WHEN (
     NEW.section_path = 'Application.RegionalSettings' AND
-    NEW.setting_name IN ('default.timezone', 'default.country', 'default.language')
+    NEW.setting_name IN ('current.timezone', 'current.country', 'default.language')
   )
   EXECUTE FUNCTION app.validate_regional_settings();
 

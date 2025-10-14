@@ -94,8 +94,8 @@ INSERT INTO app.app_settings (
 ('Application.System.DataValidation', 'wellKnownFields.telephoneNumber.mask', 'all', '"+# (###) ###-####"', '{"type":"string","minLength":1,"maxLength":50}', '"+# (###) ###-####"', 'Input mask for telephone number fields', true),
 
 -- Regional Settings
-('Application.RegionalSettings', 'default.timezone', 'all', '"GMT+3"', '{"type":"string","enum":["GMT-12","GMT-11","GMT-10","GMT-9","GMT-8","GMT-7","GMT-6","GMT-5","GMT-4","GMT-3","GMT-2","GMT-1","GMT","GMT+1","GMT+2","GMT+3","GMT+4","GMT+5","GMT+6","GMT+7","GMT+8","GMT+9","GMT+10","GMT+11","GMT+12","GMT+13","GMT+14"]}', '"GMT+3"', 'Default application timezone', false),
-('Application.RegionalSettings', 'default.country', 'all', '"russia"', '{"type":"string","enum":["russia","kazakhstan"]}', '"russia"', 'Default application country', false),
+('Application.RegionalSettings', 'current.timezone', 'all', '"GMT+3"', '{"type":"string","enum":["GMT-12","GMT-11","GMT-10","GMT-9","GMT-8","GMT-7","GMT-6","GMT-5","GMT-4","GMT-3","GMT-2","GMT-1","GMT","GMT+1","GMT+2","GMT+3","GMT+4","GMT+5","GMT+6","GMT+7","GMT+8","GMT+9","GMT+10","GMT+11","GMT+12","GMT+13","GMT+14"]}', '"GMT+3"', 'Current application timezone', false),
+('Application.RegionalSettings', 'current.country', 'all', '"russia"', '{"type":"string","enum":["russia","kazakhstan"]}', '"russia"', 'Current application country', false),
 ('Application.RegionalSettings', 'default.language', 'all', '"russian"', '{"type":"string","enum":["english","russian"]}', '"russian"', 'Default application language', false),
 
 -- Appearance Settings

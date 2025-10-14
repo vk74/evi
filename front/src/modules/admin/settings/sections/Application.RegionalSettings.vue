@@ -1,9 +1,10 @@
 <!--
-  Version: 1.1.0
+  Version: 1.3.1
   File: Application.RegionalSettings.vue - frontend file
   Description: Regional settings configuration including timezone, country, and default language
   Purpose: Configure regional application settings with full backend integration and settings store
   Frontend file that manages regional settings UI and integrates with settings store
+  Updated: Changed default.timezone to current.timezone, default.country to current.country
 -->
 
 <script setup lang="ts">
@@ -87,8 +88,8 @@ const languageOptions = computed(() => [
 
 // Define all settings that need to be loaded
 const allSettings = [
-  'default.timezone',
-  'default.country',
+  'current.timezone',
+  'current.country',
   'default.language'
 ];
 
@@ -191,10 +192,10 @@ function updateLocalSetting(settingName: string, value: any) {
   const safeString = (val: any) => val === null ? null : String(val);
 
   switch (settingName) {
-    case 'default.timezone':
+    case 'current.timezone':
       selectedTimezone.value = safeString(value);
       break;
-    case 'default.country':
+    case 'current.country':
       selectedCountry.value = safeString(value);
       break;
     case 'default.language':
@@ -285,13 +286,13 @@ async function retrySetting(settingName: string) {
 // Watch for changes in local state - only after first load is complete
 watch(selectedTimezone, (newValue) => {
   if (!isFirstLoad.value && newValue !== null) {
-    updateSetting('default.timezone', newValue);
+    updateSetting('current.timezone', newValue);
   }
 });
 
 watch(selectedCountry, (newValue) => {
   if (!isFirstLoad.value && newValue !== null) {
-    updateSetting('default.country', newValue);
+    updateSetting('current.country', newValue);
   }
 });
 
@@ -347,20 +348,20 @@ onMounted(() => {
               item-title="title"
               item-value="value"
               class="regional-select"
-              :disabled="isSettingDisabled('default.timezone')"
-              :loading="settingLoadingStates['default.timezone']"
+              :disabled="isSettingDisabled('current.timezone')"
+              :loading="settingLoadingStates['current.timezone']"
             >
               <template #append-inner>
                 <PhCaretUpDown class="dropdown-icon" />
               </template>
             </v-select>
             <v-tooltip
-              v-if="settingErrorStates['default.timezone']"
+              v-if="settingErrorStates['current.timezone']"
               location="top"
               max-width="300"
             >
               <template #activator="{ props }">
-                <span v-bind="props" style="cursor: pointer;" @click="retrySetting('default.timezone')">
+                <span v-bind="props" style="cursor: pointer;" @click="retrySetting('current.timezone')">
                   <PhWarningCircle :size="16" class="ms-2" />
                 </span>
               </template>
@@ -389,20 +390,20 @@ onMounted(() => {
               item-title="title"
               item-value="value"
               class="regional-select"
-              :disabled="isSettingDisabled('default.country')"
-              :loading="settingLoadingStates['default.country']"
+              :disabled="isSettingDisabled('current.country')"
+              :loading="settingLoadingStates['current.country']"
             >
               <template #append-inner>
                 <PhCaretUpDown class="dropdown-icon" />
               </template>
             </v-select>
             <v-tooltip
-              v-if="settingErrorStates['default.country']"
+              v-if="settingErrorStates['current.country']"
               location="top"
               max-width="300"
             >
               <template #activator="{ props }">
-                <span v-bind="props" style="cursor: pointer;" @click="retrySetting('default.country')">
+                <span v-bind="props" style="cursor: pointer;" @click="retrySetting('current.country')">
                   <PhWarningCircle :size="16" class="ms-2" />
                 </span>
               </template>

@@ -1,9 +1,10 @@
 /**
  * service.eventBus.ts - backend file
- * version: 1.0.0
+ * version: 1.1.0
  * Event Bus service implementation that handles domain-based event generation settings.
  * Provides methods for domain settings management and conditional event generation.
  * Supports dynamic enable/disable of event generation for specific domains.
+ * Updated: Added timezone initialization from application settings
  */
 
 import { BaseEvent } from './types.events';
@@ -13,6 +14,7 @@ import {
   EVENTBUS_SETTINGS_EVENTS,
   EVENTBUS_ERROR_EVENTS
 } from './events.eventBus';
+import { initializeTimezone } from './timezone.eventBus';
 
 // Track current event bus settings
 let currentSettings = {
@@ -57,8 +59,12 @@ const isEventGenerationEnabledForDomain = (domain: string): boolean => {
 
 /**
  * Initialize the event bus service
+ * Loads timezone from settings and initializes domain settings
  */
-export const initialize = (): void => {
+export const initialize = async (): Promise<void> => {
+  // Initialize timezone first
+  await initializeTimezone();
+  
   fabricEvents.createAndPublishEvent({
     eventName: EVENTBUS_INITIALIZATION_EVENTS.SERVICE_INIT_STARTED.eventName,
     payload: {

@@ -248,10 +248,10 @@ async function initializeServer(): Promise<void> {
     console.log('Logger system initialized with current settings');
 
     // 8. Initialize event bus service AFTER settings are loaded
-    // This ensures event bus can apply correct settings from cache
-    eventBusService.initialize();
+    // This ensures event bus can apply correct settings from cache and timezone
+    await eventBusService.initialize();
     eventBusSubscriptions.initializeSubscriptions();
-    console.log('Event Bus system initialized with current settings');
+    console.log('Event Bus system initialized with current settings and timezone');
     // No duplicate logging here, as loadSettings already logs success message
 
     // 9. Setting up middleware
@@ -264,7 +264,7 @@ async function initializeServer(): Promise<void> {
       exposedHeaders: ['Set-Cookie'] // Expose Set-Cookie header
     }));
     
-    // Explicitly set body size limits and avoid duplicate parsers
+    // Set body size limits and avoid duplicate parsers
     app.use(express.json({ limit: '256kb' }));
     app.use(express.urlencoded({ extended: true, limit: '256kb' }));
     app.use(cookieParser()); // Add cookie parser middleware
