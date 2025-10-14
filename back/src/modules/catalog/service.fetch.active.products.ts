@@ -1,9 +1,10 @@
 /**
  * service.fetch.active.products.ts - backend file
- * version: 1.2.0
+ * version: 1.2.1
  * 
  * Purpose: Service that fetches active products for catalog consumption
  * Logic: Queries DB for products with is_published = true, filters by option_only based on settings
+ *        Uses fallback language from app settings to always show products even without requested translation
  * File type: Backend TypeScript (service.fetch.active.products.ts)
  */
 
@@ -31,12 +32,22 @@ function transformRow(row: DbProduct): CatalogProductDTO {
 
 export async function fetchActiveProducts(req: Request): Promise<FetchProductsResponse> {
   try {
-    const language = req.query.language as string;
+    const requestedLanguage = req.query.language as string;
     
-    if (!language) {
+    if (!requestedLanguage) {
       const error = new Error('Language parameter is required');
       throw error;
     }
+    
+    // Get fallback language from app settings
+    const fallbackLanguageSetting = await getSettingValue<string>(
+      'Application.RegionalSettings',
+      'default.language',
+      'en'
+    );
+    
+    // The setting now stores language code directly (e.g., 'en', 'ru')
+    const fallbackLanguage = fallbackLanguageSetting;
     
     const showOptionsOnly = await getSettingValue<boolean>(
       'Catalog.Products',
@@ -46,8 +57,8 @@ export async function fetchActiveProducts(req: Request): Promise<FetchProductsRe
     
     const sectionId = req.query.sectionId as string | undefined;
     const result = sectionId
-      ? await pool.query<DbProduct>(queries.getActiveProductsBySection, [sectionId, language, showOptionsOnly])
-      : await pool.query<DbProduct>(queries.getActiveProducts, [language, showOptionsOnly]);
+      ? await pool.query<DbProduct>(queries.getActiveProductsBySection, [sectionId, requestedLanguage, fallbackLanguage, showOptionsOnly])
+      : await pool.query<DbProduct>(queries.getActiveProducts, [requestedLanguage, fallbackLanguage, showOptionsOnly]);
     const products = result.rows.map(transformRow);
 
     // Get card colors from settings cache

@@ -1,7 +1,8 @@
--- Version: 1.2.0
+-- Version: 1.3.0
 -- Description: Create enum types for the application.
 -- Backend file: 03_enums.sql
--- Added: Regional settings enum types (timezones, app_countries, app_languages)
+-- Added: Regional settings enum types (timezones, app_countries, system_language_code)
+-- Removed: app_languages enum (replaced by system_language_code)
 
 -- Create enum types
 DO $$ BEGIN
@@ -118,8 +119,5 @@ EXCEPTION
     WHEN duplicate_object THEN null;
 END $$;
 
-DO $$ BEGIN
-    CREATE TYPE app.app_languages AS ENUM ('english', 'russian');
-EXCEPTION
-    WHEN duplicate_object THEN null;
-END $$;
+-- Note: app_languages enum has been deprecated and removed
+-- Use app.system_language_code instead for language settings

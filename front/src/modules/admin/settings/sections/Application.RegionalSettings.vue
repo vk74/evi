@@ -1,10 +1,10 @@
 <!--
-  Version: 1.3.1
+  Version: 1.4.0
   File: Application.RegionalSettings.vue - frontend file
   Description: Regional settings configuration including timezone, country, and default language
   Purpose: Configure regional application settings with full backend integration and settings store
   Frontend file that manages regional settings UI and integrates with settings store
-  Updated: Changed default.timezone to current.timezone, default.country to current.country
+  Updated: Changed language values from full names to ISO 639-1 codes ('en', 'ru')
 -->
 
 <script setup lang="ts">
@@ -81,9 +81,10 @@ const countryOptions = computed(() => [
 ]);
 
 // Language options - computed to support reactive translations
+// Values are ISO 639-1 language codes
 const languageOptions = computed(() => [
-  { value: 'english', title: t('admin.settings.application.regionalsettings.languages.english') },
-  { value: 'russian', title: t('admin.settings.application.regionalsettings.languages.russian') }
+  { value: 'en', title: t('admin.settings.application.regionalsettings.languages.english') },
+  { value: 'ru', title: t('admin.settings.application.regionalsettings.languages.russian') }
 ]);
 
 // Define all settings that need to be loaded

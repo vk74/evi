@@ -1,9 +1,10 @@
 /**
  * service.fetch.product.details.ts - backend file
- * version: 1.0.0
+ * version: 1.1.1
  * 
  * Purpose: Service that fetches single product details for catalog consumption
  * Logic: Queries DB for product details with is_published = true, transforms into DTO for frontend
+ *        Uses fallback language from app settings to always show product details even without requested translation
  * File type: Backend TypeScript (service.fetch.product.details.ts)
  */
 
@@ -13,6 +14,7 @@ import { pool as pgPool } from '../../core/db/maindb';
 import queries from './queries.catalog.products';
 import type { DbProductDetails, CatalogProductDetailsDTO, FetchProductDetailsResponse, ServiceError } from './types.catalog';
 import { ProductStatus } from './types.catalog';
+import { getSettingValue } from '../../core/helpers/get.setting.value';
 
 const pool = pgPool as Pool;
 
@@ -39,7 +41,7 @@ function transformRow(row: DbProductDetails): CatalogProductDetailsDTO {
 export async function fetchProductDetails(req: Request): Promise<FetchProductDetailsResponse> {
   try {
     const productId = req.query.productId as string;
-    const language = req.query.language as string;
+    const requestedLanguage = req.query.language as string;
     
     if (!productId) {
       return {
@@ -49,13 +51,23 @@ export async function fetchProductDetails(req: Request): Promise<FetchProductDet
       };
     }
     
-    if (!language) {
+    if (!requestedLanguage) {
       const error = new Error('Language parameter is required');
       console.error('Missing language parameter in request');
       throw error;
     }
 
-    const result = await pool.query<DbProductDetails>(queries.getProductDetails, [productId, language]);
+    // Get fallback language from app settings
+    const fallbackLanguageSetting = await getSettingValue<string>(
+      'Application.RegionalSettings',
+      'default.language',
+      'en'
+    );
+    
+    // The setting now stores language code directly (e.g., 'en', 'ru')
+    const fallbackLanguage = fallbackLanguageSetting;
+
+    const result = await pool.query<DbProductDetails>(queries.getProductDetails, [productId, requestedLanguage, fallbackLanguage]);
     
     if (result.rows.length === 0) {
       return {
