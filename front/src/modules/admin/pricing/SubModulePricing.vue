@@ -1,5 +1,5 @@
 <!--
-Version: 1.1.0
+Version: 1.2.0
 Pricing administration submodule component.
 Frontend file that provides pricing management interface for admin users.
 Filename: SubModulePricing.vue
@@ -19,7 +19,6 @@ import {
 
 // Async components for lazy loading
 const PriceLists = defineAsyncComponent(() => import('./PriceLists/PriceLists.vue'))
-const PricingZones = defineAsyncComponent(() => import('./sections/PricingZones.vue'))
 const PricingSettings = defineAsyncComponent(() => import('./sections/PricingSettings.vue'))
 
 // Initialize i18n and store
@@ -32,11 +31,6 @@ const sections = computed((): Section[] => [
     id: 'price-lists',
     title: t('admin.pricing.sections.priceLists'),
     icon: 'PhListChecks'
-  },
-  {
-    id: 'pricing-zones',
-    title: t('admin.pricing.sections.pricingZones'),
-    icon: 'PhGlobeHemisphereWest'
   },
   {
     id: 'settings',
@@ -101,7 +95,6 @@ const getIconComponent = (iconName: string) => {
     <!-- Content Panel -->
     <div class="content-panel pa-0">
       <PriceLists v-if="activeSection === 'price-lists'" />
-      <PricingZones v-if="activeSection === 'pricing-zones'" />
       <PricingSettings v-if="activeSection === 'settings'" />
     </div>
   </div>

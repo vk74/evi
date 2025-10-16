@@ -14,7 +14,7 @@ export interface Section {
 }
 
 // Pricing admin sections
-export type PricingSectionId = 'price-lists' | 'pricing-zones' | 'settings'
+export type PricingSectionId = 'price-lists' | 'settings'
 
 // Pricing admin state interface
 export interface PricingAdminState {

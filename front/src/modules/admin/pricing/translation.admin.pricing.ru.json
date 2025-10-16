@@ -50,6 +50,25 @@
             "confirm": "удалить"
           }
         }
+        ,
+        "editor": {
+          "back": "назад",
+          "export": "экспорт",
+          "import": "импорт",
+          "save": "сохранить",
+          "untitled": "безымянный прайс-лист",
+          "itemsTitle": "позиции",
+          "addRow": "добавить строку",
+          "deleteSelected": "удалить выбранные",
+          "headers": {
+            "type": "тип",
+            "code": "код",
+            "name": "название",
+            "price": "листовая цена"
+          },
+          "typeProduct": "продукт",
+          "typeService": "сервис"
+        }
       }
     }
   }

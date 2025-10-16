@@ -1,11 +1,12 @@
 <!--
-Version: 1.1.0
+Version: 1.1.1
 Price Lists management section.
 Frontend file for managing price lists in the pricing admin module.
 Filename: PriceLists.vue
 -->
 <script setup lang="ts">
 import { ref, computed } from 'vue'
+import PriceListEditor from './PriceListEditor.vue'
 import { useI18n } from 'vue-i18n'
 import { useUiStore } from '@/core/state/uistate'
 import DataLoading from '@/core/ui/loaders/DataLoading.vue'
@@ -50,6 +51,8 @@ const sortDesc = ref<boolean>(false)
 
 // Dialog state
 const showDeleteDialog = ref(false)
+const editorVisible = ref(false)
+const editorPriceList = ref<any>(null)
 
 // Selected price lists
 const selectedPriceLists = ref<Set<string>>(new Set())
@@ -117,7 +120,10 @@ const addPriceList = () => {
 }
 
 const editPriceList = () => {
-  uiStore.showInfoSnackbar('Edit Price List - Not implemented yet')
+  const id = Array.from(selectedPriceLists.value)[0]
+  const pl = priceLists.value.find(p => p.id === id)
+  editorPriceList.value = pl || null
+  editorVisible.value = !!pl
 }
 
 const duplicatePriceList = () => {
@@ -202,6 +208,7 @@ const totalItems = computed(() => totalItemsCount.value)
 
 <template>
   <v-card flat>
+    <template v-if="!editorVisible">
     <div class="d-flex">
       <!-- Main content (left part) -->
       <div class="flex-grow-1 main-content-area">
@@ -523,6 +530,11 @@ const totalItems = computed(() => totalItemsCount.value)
         </v-card-actions>
       </v-card>
     </v-dialog>
+    </template>
+    <!-- Editor overlay -->
+    <template v-else>
+      <PriceListEditor :price-list="editorPriceList" @close="editorVisible = false" />
+    </template>
   </v-card>
 </template>
 

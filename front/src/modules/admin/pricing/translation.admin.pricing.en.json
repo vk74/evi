@@ -50,6 +50,25 @@
             "confirm": "delete"
           }
         }
+        ,
+        "editor": {
+          "back": "back",
+          "export": "export",
+          "import": "import",
+          "save": "save",
+          "untitled": "untitled price list",
+          "itemsTitle": "lines",
+          "addRow": "add row",
+          "deleteSelected": "delete selected",
+          "headers": {
+            "type": "type",
+            "code": "code",
+            "name": "name",
+            "price": "list price"
+          },
+          "typeProduct": "product",
+          "typeService": "service"
+        }
       }
     }
   }
