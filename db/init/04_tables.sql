@@ -206,6 +206,97 @@ CREATE TRIGGER tgr_products_set_updated_at
 BEFORE UPDATE ON app.products
 FOR EACH ROW EXECUTE FUNCTION app.tgr_set_updated_at();
 
+-- ===========================================
+-- Pricing core tables
+-- ===========================================
+
+-- Currencies dictionary (PK = ISO code)
+CREATE TABLE IF NOT EXISTS app.currencies (
+  code           CHAR(3) PRIMARY KEY,
+  name           TEXT NOT NULL,
+  symbol         TEXT,
+  minor_units    SMALLINT NOT NULL DEFAULT 2 CHECK (minor_units BETWEEN 0 AND 6),
+  rounding_mode  TEXT NOT NULL DEFAULT 'half_up' CHECK (rounding_mode IN ('half_up','half_even','cash_0_05','cash_0_1')),
+  active         BOOLEAN NOT NULL DEFAULT TRUE,
+  created_at     TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at     TIMESTAMPTZ
+);
+
+-- Seed base currencies (idempotent)
+INSERT INTO app.currencies (code, name, symbol, minor_units, rounding_mode, active)
+VALUES
+  ('RUB', 'Российский рубль',      '₽', 2, 'half_up', true),
+  ('BYN', 'Белорусский рубль',     'Br', 2, 'half_up', true),
+  ('KZT', 'Казахстанский тенге',   '₸', 2, 'half_up', true),
+  ('CNY', 'Китайский юань',        '¥',  2, 'half_up', true),
+  ('USD', 'Доллар США',            '$',  2, 'half_up', true),
+  ('EUR', 'Евро',                  '€',  2, 'half_up', true)
+ON CONFLICT (code) DO UPDATE SET
+  name = EXCLUDED.name,
+  symbol = EXCLUDED.symbol,
+  minor_units = EXCLUDED.minor_units,
+  rounding_mode = EXCLUDED.rounding_mode,
+  active = EXCLUDED.active,
+  updated_at = now();
+
+-- Price lists header
+CREATE TABLE IF NOT EXISTS app.price_lists_info (
+  price_list_id  SERIAL PRIMARY KEY,
+  name           TEXT NOT NULL UNIQUE,
+  currency_code  CHAR(3) NOT NULL REFERENCES app.currencies(code),
+  status         app.price_list_status NOT NULL DEFAULT 'draft',
+  valid_from     TIMESTAMPTZ,
+  valid_to       TIMESTAMPTZ,
+  created_by     UUID REFERENCES app.users(user_id),
+  updated_by     UUID REFERENCES app.users(user_id),
+  created_at     TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at     TIMESTAMPTZ,
+  CHECK (valid_to IS NULL OR valid_from IS NULL OR valid_from <= valid_to)
+);
+
+-- Ensure product_code is suitable for FK (not null + unique)
+ALTER TABLE app.products
+  ALTER COLUMN product_code SET NOT NULL;
+
+-- Price list lines (partitioned by price_list_id)
+CREATE TABLE IF NOT EXISTS app.price_list (
+  item_id        BIGSERIAL NOT NULL,
+  price_list_id  INTEGER NOT NULL REFERENCES app.price_lists_info(price_list_id) ON DELETE CASCADE,
+  item_type      app.price_item_type NOT NULL, -- 'product' | 'service'
+  product_code   VARCHAR(64) NOT NULL,
+  item_name      VARCHAR(2000),
+  list_price     NUMERIC(18,4) NOT NULL CHECK (list_price >= 0),
+  created_by     UUID REFERENCES app.users(user_id),
+  updated_by     UUID REFERENCES app.users(user_id),
+  created_at     TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at     TIMESTAMPTZ,
+  PRIMARY KEY (price_list_id, item_type, item_id),
+  UNIQUE (price_list_id, item_type, product_code)
+) PARTITION BY LIST (price_list_id);
+
+-- Import staging for bulk uploads
+CREATE TABLE IF NOT EXISTS app.price_list_import_staging (
+  staging_id         BIGSERIAL PRIMARY KEY,
+  batch_id           UUID NOT NULL,
+  price_list_id      INTEGER NOT NULL REFERENCES app.price_lists_info(price_list_id) ON DELETE CASCADE,
+  row_num            INTEGER,
+  raw_item_type      TEXT,
+  raw_item_code      TEXT,
+  raw_item_name      TEXT,
+  raw_list_price     TEXT,
+  parsed_item_type   app.price_item_type,
+  parsed_item_code   VARCHAR(64),
+  parsed_item_name   VARCHAR(2000),
+  parsed_list_price  NUMERIC(18,4) CHECK (parsed_list_price IS NULL OR parsed_list_price >= 0),
+  error_code         TEXT,
+  error_message      TEXT,
+  applied            BOOLEAN NOT NULL DEFAULT FALSE,
+  applied_at         TIMESTAMPTZ,
+  created_by         UUID REFERENCES app.users(user_id),
+  created_at         TIMESTAMPTZ NOT NULL DEFAULT now(),
+  UNIQUE (batch_id, row_num)
+);
+
 -- Create section_services table
 CREATE TABLE IF NOT EXISTS app.section_services (
     section_id UUID NOT NULL REFERENCES app.catalog_sections(id) ON DELETE CASCADE,

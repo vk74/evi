@@ -25,6 +25,14 @@ CREATE INDEX IF NOT EXISTS idx_products_published ON app.products USING btree (i
 CREATE INDEX IF NOT EXISTS idx_products_code ON app.products USING btree (product_code);
 CREATE INDEX IF NOT EXISTS idx_products_translation_key ON app.products USING btree (translation_key);
 
+-- Pricing: price_lists_info
+CREATE INDEX IF NOT EXISTS idx_price_lists_info_status ON app.price_lists_info USING btree (status);
+CREATE INDEX IF NOT EXISTS idx_price_lists_info_currency ON app.price_lists_info USING btree (currency_code);
+
+-- Pricing: import staging
+CREATE INDEX IF NOT EXISTS price_list_import_staging_batch_idx ON app.price_list_import_staging (batch_id);
+CREATE INDEX IF NOT EXISTS price_list_import_staging_pl_applied_idx ON app.price_list_import_staging (price_list_id, applied);
+
 -- Create indexes for section_products
 CREATE INDEX IF NOT EXISTS idx_section_products_product ON app.section_products USING btree (product_id);
 CREATE INDEX IF NOT EXISTS idx_section_products_section ON app.section_products USING btree (section_id);
