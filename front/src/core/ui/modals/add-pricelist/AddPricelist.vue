@@ -1,5 +1,5 @@
 <!--
-Version: 1.1.0
+Version: 1.2.0
 Modal component for creating a new price list.
 Frontend file for adding a new price list in the pricing admin module.
 Filename: AddPricelist.vue
@@ -76,8 +76,7 @@ const handleCancel = () => {
 <template>
   <v-dialog
     v-model="dialogModel"
-    max-width="500"
-    persistent
+    max-width="650"
     @keydown.esc="handleCancel"
   >
     <v-card>
@@ -98,57 +97,57 @@ const handleCancel = () => {
           />
         </div>
 
-        <!-- Currency selector -->
-        <div class="mb-4">
-          <v-select
-            v-model="selectedCurrency"
-            :items="currencyOptions"
-            label="currency"
-            variant="outlined"
-            density="comfortable"
-            color="teal"
-            hide-details
-          >
-            <template #append-inner>
-              <PhCaretUpDown class="dropdown-icon" />
-            </template>
-          </v-select>
-        </div>
-
-        <!-- Price list type selector -->
-        <div class="mb-2">
-          <div class="text-caption text-grey-darken-1 mb-2">
-            type
+        <!-- Currency and Type selector row -->
+        <div class="d-flex align-start mb-2" style="gap: 16px;">
+          <!-- Currency selector -->
+          <div style="width: 140px;">
+            <v-select
+              v-model="selectedCurrency"
+              :items="currencyOptions"
+              label="currency"
+              variant="outlined"
+              density="comfortable"
+              color="teal"
+              hide-details
+            >
+              <template #append-inner>
+                <PhCaretUpDown class="dropdown-icon" />
+              </template>
+            </v-select>
           </div>
-          <v-btn-toggle
-            v-model="priceListType"
-            mandatory
-            color="teal"
-            class="type-toggle-group"
-            density="comfortable"
-          >
-            <v-btn
-              value="products"
-              variant="outlined"
-              size="small"
+
+          <!-- Price list type selector -->
+          <div class="flex-grow-1">
+            <v-btn-toggle
+              v-model="priceListType"
+              mandatory
+              color="teal"
+              class="type-toggle-group"
+              density="comfortable"
             >
-              products
-            </v-btn>
-            <v-btn
-              value="services"
-              variant="outlined"
-              size="small"
-            >
-              services
-            </v-btn>
-            <v-btn
-              value="universal"
-              variant="outlined"
-              size="small"
-            >
-              universal
-            </v-btn>
-          </v-btn-toggle>
+              <v-btn
+                value="products"
+                variant="outlined"
+                size="small"
+              >
+                products
+              </v-btn>
+              <v-btn
+                value="services"
+                variant="outlined"
+                size="small"
+              >
+                services
+              </v-btn>
+              <v-btn
+                value="universal"
+                variant="outlined"
+                size="small"
+              >
+                universal
+              </v-btn>
+            </v-btn-toggle>
+          </div>
         </div>
       </v-card-text>
 
@@ -188,11 +187,13 @@ const handleCancel = () => {
 /* Type toggle group styling */
 .type-toggle-group {
   width: 100%;
+  display: flex;
 }
 
 .type-toggle-group :deep(.v-btn) {
   flex: 1;
   text-transform: lowercase;
+  min-width: 0;
 }
 </style>
 
