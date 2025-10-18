@@ -1,5 +1,5 @@
 <!--
-Version: 1.2.0
+Version: 1.3.0
 Price Lists management section.
 Frontend file for managing price lists in the pricing admin module.
 Filename: PriceLists.vue
@@ -20,6 +20,7 @@ import {
   PhPlus
 } from '@phosphor-icons/vue'
 import Paginator from '@/core/ui/paginator/Paginator.vue'
+import AddPricelist from '@/core/ui/modals/add-pricelist/AddPricelist.vue'
 
 // Types
 interface TableHeader {
@@ -52,6 +53,7 @@ const sortDesc = ref<boolean>(false)
 
 // Dialog state
 const showDeleteDialog = ref(false)
+const showAddPricelistDialog = ref(false)
 
 // Selected price lists
 const selectedPriceLists = ref<Set<string>>(new Set())
@@ -115,10 +117,14 @@ const headers = computed<TableHeader[]>(() => [
 
 // Action handlers
 const addPriceList = () => {
-  // Clear selections and open editor in creation mode
+  // Clear selections and open add pricelist modal
   clearSelections()
-  pricingStore.openPriceListEditorForCreation()
-  uiStore.showSuccessSnackbar(t('admin.pricing.priceLists.messages.createMode') || 'Create mode activated')
+  showAddPricelistDialog.value = true
+}
+
+const handleCreatePricelist = (data: { name: string; currency: string; type: string }) => {
+  // TODO: Implement backend integration
+  uiStore.showSuccessSnackbar(`Price list "${data.name}" created (UI only)`)
 }
 
 const editPriceList = () => {
@@ -564,6 +570,12 @@ const totalItems = computed(() => totalItemsCount.value)
         </v-card-actions>
       </v-card>
     </v-dialog>
+
+    <!-- Add pricelist dialog -->
+    <AddPricelist
+      v-model="showAddPricelistDialog"
+      @create="handleCreatePricelist"
+    />
   </v-card>
 </template>
 
