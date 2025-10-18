@@ -1,11 +1,12 @@
 <!--
-Version: 1.0.0
-Mock editor UI for a single price list with items table and actions.
+Version: 2.0.0
+Price list editor component with create and edit modes.
 Frontend file: PriceListEditor.vue
 -->
 <script setup lang="ts">
-import { computed, reactive, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { usePricingAdminStore } from '../state.pricing.admin'
 import {
   PhArrowLeft,
   PhDownloadSimple,
@@ -15,20 +16,8 @@ import {
   PhFloppyDisk
 } from '@phosphor-icons/vue'
 
-interface PriceListHeaderProps {
-  id: string
-  code: string
-  name: string
-  currency: string
-  status: 'draft' | 'active' | 'archived' | string
-  validFrom?: string
-  validTo?: string | null
-}
-
-const props = defineProps<{ priceList: PriceListHeaderProps | null }>()
-const emit = defineEmits<{ (e: 'close'): void }>()
-
 const { t } = useI18n()
+const pricingStore = usePricingAdminStore()
 
 // Local mock of lines; in real integration, these would be loaded via API
 type ItemType = 'product' | 'service'
@@ -41,24 +30,118 @@ type EditorLine = {
   selected?: boolean
 }
 
-const lines = ref<EditorLine[]>([
-  { id: 'l1', itemType: 'product', productCode: 'P-001', itemName: 'Sample product', listPrice: 199.99 },
-  { id: 'l2', itemType: 'service', productCode: 'S-HOUR', itemName: 'Consulting hour', listPrice: 50.0 }
-])
+// Form data
+const formData = ref({
+  code: '',
+  name: '',
+  currency: 'USD',
+  status: 'draft' as 'draft' | 'active' | 'archived',
+  validFrom: '',
+  validTo: ''
+})
+
+const lines = ref<EditorLine[]>([])
 
 const isSaving = ref(false)
 const isImporting = ref(false)
 
-// Derived view data
-const titleComputed = computed(() => props.priceList?.name ?? t('admin.pricing.priceLists.editor.untitled'))
-const currencyChip = computed(() => props.priceList?.currency ?? '—')
+// Computed properties for mode detection
+const isCreationMode = computed(() => pricingStore.isCreationMode)
+const isEditMode = computed(() => pricingStore.isEditMode)
+
+// Page title based on mode
+const pageTitle = computed(() => {
+  return isCreationMode.value 
+    ? t('admin.pricing.priceLists.editor.newPriceList')
+    : t('admin.pricing.priceLists.editor.editPriceList')
+})
+
+// Form computed values
+const titleComputed = computed(() => {
+  if (isEditMode.value && pricingStore.editingPriceListData) {
+    return pricingStore.editingPriceListData.name
+  }
+  return formData.value.name || t('admin.pricing.priceLists.editor.untitled')
+})
+
+const currencyChip = computed(() => {
+  if (isEditMode.value && pricingStore.editingPriceListData) {
+    return pricingStore.editingPriceListData.currency
+  }
+  return formData.value.currency || '—'
+})
+
 const statusColor = computed(() => {
-  const s = (props.priceList?.status ?? '').toLowerCase()
+  const status = isEditMode.value && pricingStore.editingPriceListData
+    ? pricingStore.editingPriceListData.status
+    : formData.value.status
+  
+  const s = (status ?? '').toLowerCase()
   if (s === 'active') return 'teal'
   if (s === 'archived') return 'grey'
   return 'orange'
 })
 
+const displayCode = computed(() => {
+  if (isEditMode.value && pricingStore.editingPriceListData) {
+    return pricingStore.editingPriceListData.code
+  }
+  return formData.value.code || '—'
+})
+
+const displayStatus = computed(() => {
+  if (isEditMode.value && pricingStore.editingPriceListData) {
+    return pricingStore.editingPriceListData.status
+  }
+  return formData.value.status
+})
+
+const displayValidFrom = computed(() => {
+  if (isEditMode.value && pricingStore.editingPriceListData) {
+    return pricingStore.editingPriceListData.validFrom || '—'
+  }
+  return formData.value.validFrom || '—'
+})
+
+const displayValidTo = computed(() => {
+  if (isEditMode.value && pricingStore.editingPriceListData) {
+    return pricingStore.editingPriceListData.validTo || '—'
+  }
+  return formData.value.validTo || '—'
+})
+
+// Initialize form data when entering edit mode
+watch(() => pricingStore.editingPriceListData, (data) => {
+  if (data && isEditMode.value) {
+    formData.value = {
+      code: data.code,
+      name: data.name,
+      currency: data.currency,
+      status: data.status as 'draft' | 'active' | 'archived',
+      validFrom: data.validFrom || '',
+      validTo: data.validTo || ''
+    }
+    
+    // Load mock lines for edit mode
+    lines.value = [
+      { id: 'l1', itemType: 'product', productCode: 'P-001', itemName: 'Sample product', listPrice: 199.99 },
+      { id: 'l2', itemType: 'service', productCode: 'S-HOUR', itemName: 'Consulting hour', listPrice: 50.0 }
+    ]
+  } else if (isCreationMode.value) {
+    // Reset form for creation mode
+    formData.value = {
+      code: '',
+      name: '',
+      currency: 'USD',
+      status: 'draft',
+      validFrom: '',
+      validTo: ''
+    }
+    lines.value = []
+  }
+}, { immediate: true })
+
+// Action handlers
 function addRow(): void {
   lines.value.push({
     id: `tmp_${Date.now()}`,
@@ -71,10 +154,6 @@ function addRow(): void {
 
 function deleteSelected(): void {
   lines.value = lines.value.filter(l => !l.selected)
-}
-
-function toggleSelect(line: EditorLine): void {
-  line.selected = !line.selected
 }
 
 function saveDraft(): void {
@@ -96,7 +175,7 @@ function exportCsv(): void {
 }
 
 function goBack(): void {
-  emit('close')
+  pricingStore.closePriceListEditor()
 }
 </script>
 
@@ -114,13 +193,13 @@ function goBack(): void {
         <div class="ml-2">
           <div class="text-subtitle-1">{{ titleComputed }}</div>
           <div class="text-caption text-medium-emphasis">
-            <span class="mr-2">{{ props.priceList?.code ?? '—' }}</span>
+            <span class="mr-2">{{ displayCode }}</span>
             <v-chip class="mr-2" size="x-small" color="blue">{{ currencyChip }}</v-chip>
-            <v-chip class="mr-2" size="x-small" :color="statusColor">{{ props.priceList?.status ?? 'draft' }}</v-chip>
+            <v-chip class="mr-2" size="x-small" :color="statusColor">{{ displayStatus }}</v-chip>
             <span>
-              {{ props.priceList?.validFrom ?? '—' }}
+              {{ displayValidFrom }}
               <span class="mx-1">→</span>
-              {{ props.priceList?.validTo ?? '—' }}
+              {{ displayValidTo }}
             </span>
           </div>
         </div>
@@ -199,7 +278,6 @@ function goBack(): void {
       </v-table>
     </div>
   </v-card>
-  
 </template>
 
 <style scoped>
@@ -213,5 +291,3 @@ function goBack(): void {
   border-bottom: thin solid rgba(var(--v-border-color), var(--v-border-opacity));
 }
 </style>
-
-

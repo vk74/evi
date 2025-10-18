@@ -1,5 +1,5 @@
 <!--
-Version: 1.2.0
+Version: 1.3.0
 Pricing administration submodule component.
 Frontend file that provides pricing management interface for admin users.
 Filename: SubModulePricing.vue
@@ -14,11 +14,13 @@ import type { PricingSectionId, Section } from './types.pricing.admin'
 import { 
   PhListChecks, 
   PhGlobeHemisphereWest, 
-  PhFadersHorizontal
+  PhFadersHorizontal,
+  PhNotePencil
 } from '@phosphor-icons/vue'
 
 // Async components for lazy loading
 const PriceLists = defineAsyncComponent(() => import('./PriceLists/PriceLists.vue'))
+const PriceListEditor = defineAsyncComponent(() => import('./PriceListEditor/PriceListEditor.vue'))
 const PricingSettings = defineAsyncComponent(() => import('./sections/PricingSettings.vue'))
 
 // Initialize i18n and store
@@ -33,6 +35,11 @@ const sections = computed((): Section[] => [
     icon: 'PhListChecks'
   },
   {
+    id: 'price-list-editor',
+    title: t('admin.pricing.sections.priceListEditor'),
+    icon: 'PhNotePencil'
+  },
+  {
     id: 'settings',
     title: t('admin.pricing.sections.settings'),
     icon: 'PhFadersHorizontal'
@@ -42,7 +49,12 @@ const sections = computed((): Section[] => [
 // Computed properties and methods for section management
 const activeSection = computed((): PricingSectionId => pricingStore.getCurrentSection)
 const switchSection = (sectionId: PricingSectionId): void => {
-  pricingStore.setActiveSection(sectionId)
+  if (sectionId === 'price-list-editor') {
+    // Open editor in creation mode when accessing via menu
+    pricingStore.openPriceListEditorForCreation()
+  } else {
+    pricingStore.setActiveSection(sectionId)
+  }
 }
 
 // Function to get icon component
@@ -54,6 +66,8 @@ const getIconComponent = (iconName: string) => {
       return PhGlobeHemisphereWest
     case 'PhFadersHorizontal':
       return PhFadersHorizontal
+    case 'PhNotePencil':
+      return PhNotePencil
     default:
       return null
   }
@@ -95,6 +109,7 @@ const getIconComponent = (iconName: string) => {
     <!-- Content Panel -->
     <div class="content-panel pa-0">
       <PriceLists v-if="activeSection === 'price-lists'" />
+      <PriceListEditor v-if="activeSection === 'price-list-editor'" />
       <PricingSettings v-if="activeSection === 'settings'" />
     </div>
   </div>

@@ -3,7 +3,7 @@
     "pricing": {
       "sections": {
         "priceLists": "price lists",
-        "pricingZones": "pricing zones",
+        "priceListEditor": "price list editor",
         "settings": "settings"
       },
       "priceLists": {
@@ -57,6 +57,8 @@
           "import": "import",
           "save": "save",
           "untitled": "untitled price list",
+          "newPriceList": "new price list",
+          "editPriceList": "edit price list",
           "itemsTitle": "lines",
           "addRow": "add row",
           "deleteSelected": "delete selected",

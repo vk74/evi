@@ -1,14 +1,14 @@
 <!--
-Version: 1.1.1
+Version: 1.2.0
 Price Lists management section.
 Frontend file for managing price lists in the pricing admin module.
 Filename: PriceLists.vue
 -->
 <script setup lang="ts">
 import { ref, computed } from 'vue'
-import PriceListEditor from './PriceListEditor.vue'
 import { useI18n } from 'vue-i18n'
 import { useUiStore } from '@/core/state/uistate'
+import { usePricingAdminStore } from '../state.pricing.admin'
 import DataLoading from '@/core/ui/loaders/DataLoading.vue'
 import {
   PhMagnifyingGlass,
@@ -34,6 +34,7 @@ type ItemsPerPageOption = 25 | 50 | 100
 // Initialize stores and i18n
 const { t } = useI18n()
 const uiStore = useUiStore()
+const pricingStore = usePricingAdminStore()
 
 // Table and search parameters
 const page = ref<number>(1)
@@ -51,8 +52,6 @@ const sortDesc = ref<boolean>(false)
 
 // Dialog state
 const showDeleteDialog = ref(false)
-const editorVisible = ref(false)
-const editorPriceList = ref<any>(null)
 
 // Selected price lists
 const selectedPriceLists = ref<Set<string>>(new Set())
@@ -116,14 +115,22 @@ const headers = computed<TableHeader[]>(() => [
 
 // Action handlers
 const addPriceList = () => {
-  uiStore.showInfoSnackbar('Add Price List - Not implemented yet')
+  // Clear selections and open editor in creation mode
+  clearSelections()
+  pricingStore.openPriceListEditorForCreation()
+  uiStore.showSuccessSnackbar(t('admin.pricing.priceLists.messages.createMode') || 'Create mode activated')
 }
 
 const editPriceList = () => {
   const id = Array.from(selectedPriceLists.value)[0]
   const pl = priceLists.value.find(p => p.id === id)
-  editorPriceList.value = pl || null
-  editorVisible.value = !!pl
+  
+  if (pl) {
+    // Open editor in edit mode with selected price list data
+    pricingStore.openPriceListEditorForEdit(pl.id, pl)
+    clearSelections()
+    uiStore.showSuccessSnackbar(t('admin.pricing.priceLists.messages.editMode') || 'Edit mode activated')
+  }
 }
 
 const duplicatePriceList = () => {
@@ -208,7 +215,6 @@ const totalItems = computed(() => totalItemsCount.value)
 
 <template>
   <v-card flat>
-    <template v-if="!editorVisible">
     <div class="d-flex">
       <!-- Main content (left part) -->
       <div class="flex-grow-1 main-content-area">
@@ -530,11 +536,6 @@ const totalItems = computed(() => totalItemsCount.value)
         </v-card-actions>
       </v-card>
     </v-dialog>
-    </template>
-    <!-- Editor overlay -->
-    <template v-else>
-      <PriceListEditor :price-list="editorPriceList" @close="editorVisible = false" />
-    </template>
   </v-card>
 </template>
 

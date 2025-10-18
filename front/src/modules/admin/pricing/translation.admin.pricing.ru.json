@@ -3,7 +3,7 @@
     "pricing": {
       "sections": {
         "priceLists": "прайс-листы",
-        "pricingZones": "зоны ценообразования",
+        "priceListEditor": "редактор прайс-листа",
         "settings": "настройки"
       },
       "priceLists": {
@@ -57,6 +57,8 @@
           "import": "импорт",
           "save": "сохранить",
           "untitled": "безымянный прайс-лист",
+          "newPriceList": "новый прайс-лист",
+          "editPriceList": "редактирование прайс-листа",
           "itemsTitle": "позиции",
           "addRow": "добавить строку",
           "deleteSelected": "удалить выбранные",
