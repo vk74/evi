@@ -69,7 +69,8 @@
           },
           "info": {
             "priceListName": "price list name",
-            "currency": "currency"
+            "currency": "currency",
+            "type": "type"
           },
           "types": {
             "products": "products",

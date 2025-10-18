@@ -69,7 +69,8 @@
           },
           "info": {
             "priceListName": "название прайс-листа",
-            "currency": "валюта"
+            "currency": "валюта",
+            "type": "тип"
           },
           "types": {
             "products": "продукты",

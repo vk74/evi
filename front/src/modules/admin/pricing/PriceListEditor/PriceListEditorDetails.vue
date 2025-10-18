@@ -1,5 +1,5 @@
 <!--
-Version: 1.4.0
+Version: 1.5.0
 Price list editor details section with items table and action buttons.
 Frontend file: PriceListEditorDetails.vue
 -->
@@ -51,7 +51,6 @@ const totalItemsCount = ref<number>(2) // Mock total count
 const totalPagesCount = ref<number>(1)
 
 // Form selectors
-const priceListType = ref<'products' | 'services'>('products')
 const priceListStatus = ref<'draft' | 'active' | 'archived'>('draft')
 
 // Computed properties for mode detection
@@ -92,12 +91,19 @@ const priceListCurrency = computed(() => {
   return 'USD'
 })
 
+// Read-only type display
+const priceListTypeText = computed(() => {
+  const data = pricingStore.editingPriceListData as any
+  if (data && data.type) {
+    return String(data.type)
+  }
+  return 'universal'
+})
+
 // Initialize data when mode changes
 watch(() => pricingStore.editingPriceListData, (data) => {
   if (data && isEditMode.value) {
     // Load data from store for edit mode
-    // @ts-ignore - type field might not exist yet in interface
-    priceListType.value = (data.type as 'products' | 'services') || 'products'
     priceListStatus.value = (data.status as 'draft' | 'active' | 'archived') || 'draft'
     
     // Load mock lines for edit mode
@@ -107,7 +113,6 @@ watch(() => pricingStore.editingPriceListData, (data) => {
     ]
   } else if (isCreationMode.value) {
     // Reset to defaults for creation mode
-    priceListType.value = 'products'
     priceListStatus.value = 'draft'
     
     // Load mock lines for creation mode
@@ -217,56 +222,41 @@ const totalItems = computed(() => totalItemsCount.value)
               {{ priceListCurrency }}
             </div>
           </div>
+
+          <!-- Type (read-only) -->
+          <div class="info-item">
+            <div class="info-label">
+              {{ t('admin.pricing.priceLists.editor.info.type') || 'Type' }}:
+            </div>
+            <div class="info-value">
+              {{ priceListTypeText }}
+            </div>
+          </div>
         </div>
       </div>
 
       <!-- Selectors Row -->
       <div class="selectors-section px-4 pt-3">
         <div class="d-flex align-center">
-          <!-- Type Toggle -->
-          <v-btn-toggle
-            v-model="priceListType"
-            mandatory
-            color="teal"
-            class="filter-toggle-group"
-            density="compact"
-          >
-            <v-btn
-              value="products"
+          <!-- Status Select (wrapped to constrain width) -->
+          <div class="status-select-wrapper">
+            <v-select
+              v-model="priceListStatus"
+              :label="t('admin.pricing.priceLists.filters.status')"
+              density="comfortable"
               variant="outlined"
-              size="small"
+              :items="[
+                { title: t('admin.pricing.priceLists.filters.draft'), value: 'draft' },
+                { title: t('admin.pricing.priceLists.filters.active'), value: 'active' },
+                { title: t('admin.pricing.priceLists.filters.inactive'), value: 'archived' }
+              ]"
+              hide-details
             >
-              {{ t('admin.pricing.priceLists.editor.types.products') }}
-            </v-btn>
-            <v-btn
-              value="services"
-              variant="outlined"
-              size="small"
-            >
-              {{ t('admin.pricing.priceLists.editor.types.services') }}
-            </v-btn>
-          </v-btn-toggle>
-
-          <v-spacer />
-
-          <!-- Status Select -->
-          <v-select
-            v-model="priceListStatus"
-            :label="t('admin.pricing.priceLists.filters.status')"
-            density="comfortable"
-            variant="outlined"
-            :items="[
-              { title: t('admin.pricing.priceLists.filters.draft'), value: 'draft' },
-              { title: t('admin.pricing.priceLists.filters.active'), value: 'active' },
-              { title: t('admin.pricing.priceLists.filters.inactive'), value: 'archived' }
-            ]"
-            hide-details
-            style="min-width: 150px; margin-right: 48px;"
-          >
-            <template #append-inner>
-              <PhCaretUpDown class="dropdown-icon" />
-            </template>
-          </v-select>
+              <template #append-inner>
+                <PhCaretUpDown class="dropdown-icon" />
+              </template>
+            </v-select>
+          </div>
         </div>
       </div>
 
@@ -597,6 +587,19 @@ const totalItems = computed(() => totalItemsCount.value)
   top: 50%;
   transform: translateY(-50%);
   pointer-events: none;
+}
+
+/* Constrain the width of the status v-select reliably */
+.status-select-wrapper {
+  width: 200px;
+  min-width: 200px;
+  margin-right: 48px;
+}
+.status-select-wrapper :deep(.v-field),
+.status-select-wrapper :deep(.v-input__control),
+.status-select-wrapper :deep(.v-select),
+.status-select-wrapper :deep(.v-input) {
+  max-width: 200px;
 }
 </style>
 
