@@ -1,5 +1,5 @@
 <!--
-Version: 1.0.0
+Version: 1.4.0
 Price list editor details section with items table and action buttons.
 Frontend file: PriceListEditorDetails.vue
 -->
@@ -7,12 +7,17 @@ Frontend file: PriceListEditorDetails.vue
 import { computed, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { usePricingAdminStore } from '../state.pricing.admin'
+import Paginator from '@/core/ui/paginator/Paginator.vue'
 import {
-  PhDownloadSimple,
-  PhUploadSimple,
+  PhArrowClockwise,
   PhPlus,
   PhTrash,
-  PhFloppyDisk
+  PhFloppyDisk,
+  PhMagnifyingGlass,
+  PhX,
+  PhCheckSquare,
+  PhSquare,
+  PhCaretUpDown
 } from '@phosphor-icons/vue'
 
 const { t } = useI18n()
@@ -26,31 +31,85 @@ type EditorLine = {
   productCode: string
   itemName: string
   listPrice: number
-  selected?: boolean
 }
 
+type ItemsPerPageOption = 25 | 50 | 100
+
 const lines = ref<EditorLine[]>([])
+const selectedLines = ref<Set<string>>(new Set())
 
 const isSaving = ref(false)
-const isImporting = ref(false)
+
+// Search state
+const searchQuery = ref<string>('')
+const isSearching = ref<boolean>(false)
+
+// Pagination state
+const page = ref<number>(1)
+const itemsPerPage = ref<ItemsPerPageOption>(25)
+const totalItemsCount = ref<number>(2) // Mock total count
+const totalPagesCount = ref<number>(1)
+
+// Form selectors
+const priceListType = ref<'products' | 'services'>('products')
+const priceListStatus = ref<'draft' | 'active' | 'archived'>('draft')
 
 // Computed properties for mode detection
 const isCreationMode = computed(() => pricingStore.isCreationMode)
 const isEditMode = computed(() => pricingStore.isEditMode)
 
+// Table headers
+interface TableHeader {
+  title: string
+  key: string
+  width?: string
+  sortable?: boolean
+}
+
+const headers = computed<TableHeader[]>(() => [
+  { title: t('admin.pricing.priceLists.editor.headers.selection'), key: 'selection', width: '40px', sortable: false },
+  { title: t('admin.pricing.priceLists.editor.headers.productCode'), key: 'productCode', width: '200px', sortable: true },
+  { title: t('admin.pricing.priceLists.editor.headers.productName'), key: 'itemName', sortable: true },
+  { title: t('admin.pricing.priceLists.editor.headers.price'), key: 'listPrice', width: '160px', sortable: true }
+])
+
 // Computed properties for selection
-const selectedCount = computed(() => lines.value.filter(l => l.selected).length)
-const hasSelected = computed(() => selectedCount.value > 0)
+const selectedCount = computed(() => selectedLines.value.size)
+const hasSelected = computed(() => selectedLines.value.size > 0)
+
+// Price list info for display
+const priceListName = computed(() => {
+  if (isEditMode.value && pricingStore.editingPriceListData) {
+    return pricingStore.editingPriceListData.name
+  }
+  return t('admin.pricing.priceLists.editor.untitled')
+})
+
+const priceListCurrency = computed(() => {
+  if (isEditMode.value && pricingStore.editingPriceListData) {
+    return pricingStore.editingPriceListData.currency
+  }
+  return 'USD'
+})
 
 // Initialize data when mode changes
 watch(() => pricingStore.editingPriceListData, (data) => {
   if (data && isEditMode.value) {
+    // Load data from store for edit mode
+    // @ts-ignore - type field might not exist yet in interface
+    priceListType.value = (data.type as 'products' | 'services') || 'products'
+    priceListStatus.value = (data.status as 'draft' | 'active' | 'archived') || 'draft'
+    
     // Load mock lines for edit mode
     lines.value = [
       { id: 'l1', itemType: 'product', productCode: 'P-001', itemName: 'Sample product', listPrice: 199.99 },
       { id: 'l2', itemType: 'service', productCode: 'S-HOUR', itemName: 'Consulting hour', listPrice: 50.0 }
     ]
   } else if (isCreationMode.value) {
+    // Reset to defaults for creation mode
+    priceListType.value = 'products'
+    priceListStatus.value = 'draft'
+    
     // Load mock lines for creation mode
     lines.value = [
       { id: 'l1', itemType: 'product', productCode: 'P-001', itemName: 'Sample product', listPrice: 199.99 },
@@ -71,7 +130,35 @@ function addRow(): void {
 }
 
 function deleteSelected(): void {
-  lines.value = lines.value.filter(l => !l.selected)
+  lines.value = lines.value.filter(l => !selectedLines.value.has(l.id))
+  selectedLines.value.clear()
+}
+
+// Selection handlers
+const onSelectLine = (lineId: string, selected: boolean) => {
+  if (selected) {
+    selectedLines.value.add(lineId)
+  } else {
+    selectedLines.value.delete(lineId)
+  }
+}
+
+const isSelected = (lineId: string) => selectedLines.value.has(lineId)
+
+const clearSelections = () => {
+  selectedLines.value.clear()
+}
+
+// Search handlers
+const handleClearSearch = () => {
+  searchQuery.value = ''
+}
+
+const handleSearchKeydown = (event: KeyboardEvent) => {
+  if (event.key === 'Enter') {
+    // Perform search
+    console.log('Search:', searchQuery.value)
+  }
 }
 
 function saveDraft(): void {
@@ -81,63 +168,208 @@ function saveDraft(): void {
   }, 600)
 }
 
-function startImport(): void {
-  isImporting.value = true
-  setTimeout(() => {
-    isImporting.value = false
-  }, 600)
+function refreshData(): void {
+  // Placeholder for refresh functionality
+  console.log('Refreshing price list data...')
 }
 
-function exportCsv(): void {
-  // Placeholder
+// Pagination handlers
+const goToPage = (newPage: number) => {
+  if (newPage < 1 || newPage > totalPagesCount.value || newPage === page.value) {
+    return
+  }
+  page.value = newPage
+  // TODO: Load data for new page
 }
+
+const handleItemsPerPageChange = (newItemsPerPage: ItemsPerPageOption) => {
+  itemsPerPage.value = newItemsPerPage
+  page.value = 1
+  // TODO: Reload data with new page size
+}
+
+const totalItems = computed(() => totalItemsCount.value)
 </script>
 
 <template>
   <div class="d-flex">
     <!-- Main content (left part) -->
     <div class="flex-grow-1 main-content-area">
+      <!-- Price List Info Section -->
+      <div class="product-info-section px-4 pt-4">
+        <div class="info-row-inline">
+          <!-- Price List Name -->
+          <div class="info-item">
+            <div class="info-label">
+              {{ t('admin.pricing.priceLists.editor.info.priceListName') }}:
+            </div>
+            <div class="info-value product-name">
+              {{ priceListName }}
+            </div>
+          </div>
+
+          <!-- Currency -->
+          <div class="info-item">
+            <div class="info-label">
+              {{ t('admin.pricing.priceLists.editor.info.currency') }}:
+            </div>
+            <div class="info-value product-code">
+              {{ priceListCurrency }}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Selectors Row -->
+      <div class="selectors-section px-4 pt-3">
+        <div class="d-flex align-center">
+          <!-- Type Toggle -->
+          <v-btn-toggle
+            v-model="priceListType"
+            mandatory
+            color="teal"
+            class="filter-toggle-group"
+            density="compact"
+          >
+            <v-btn
+              value="products"
+              variant="outlined"
+              size="small"
+            >
+              {{ t('admin.pricing.priceLists.editor.types.products') }}
+            </v-btn>
+            <v-btn
+              value="services"
+              variant="outlined"
+              size="small"
+            >
+              {{ t('admin.pricing.priceLists.editor.types.services') }}
+            </v-btn>
+          </v-btn-toggle>
+
+          <v-spacer />
+
+          <!-- Status Select -->
+          <v-select
+            v-model="priceListStatus"
+            :label="t('admin.pricing.priceLists.filters.status')"
+            density="compact"
+            variant="outlined"
+            :items="[
+              { title: t('admin.pricing.priceLists.filters.draft'), value: 'draft' },
+              { title: t('admin.pricing.priceLists.filters.active'), value: 'active' },
+              { title: t('admin.pricing.priceLists.filters.inactive'), value: 'archived' }
+            ]"
+            hide-details
+            style="width: 150px;"
+          >
+            <template #append-inner>
+              <PhCaretUpDown class="dropdown-icon" />
+            </template>
+          </v-select>
+        </div>
+      </div>
+
+      <!-- Search row -->
+      <div class="px-4 pt-4">
+        <v-text-field
+          v-model="searchQuery"
+          density="compact"
+          variant="outlined"
+          :prepend-inner-icon="undefined"
+          color="teal"
+          :label="t('admin.pricing.priceLists.editor.search.placeholder')"
+          :loading="isSearching"
+          :hint="searchQuery.length === 1 ? t('admin.pricing.priceLists.editor.search.minChars') : ''"
+          persistent-hint
+          @keydown="handleSearchKeydown"
+        >
+          <template #prepend-inner>
+            <PhMagnifyingGlass />
+          </template>
+          <template #append-inner>
+            <div
+              v-if="(searchQuery || '').length > 0"
+              class="d-flex align-center"
+              style="cursor: pointer"
+              @click="handleClearSearch"
+            >
+              <PhX />
+            </div>
+          </template>
+        </v-text-field>
+      </div>
+
       <!-- Items table -->
-      <div class="px-4 pb-4 pt-4">
-        <v-table class="pl-items-table" density="compact">
-          <thead>
-            <tr>
-              <th style="width:42px"></th>
-              <th style="width:140px">{{ t('admin.pricing.priceLists.editor.headers.type') }}</th>
-              <th style="width:200px">{{ t('admin.pricing.priceLists.editor.headers.code') }}</th>
-              <th>{{ t('admin.pricing.priceLists.editor.headers.name') }}</th>
-              <th style="width:160px">{{ t('admin.pricing.priceLists.editor.headers.price') }}</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr v-for="line in lines" :key="line.id">
-              <td>
-                <v-checkbox v-model="line.selected" hide-details density="compact" />
-              </td>
-              <td>
-                <v-select
-                  v-model="line.itemType"
-                  :items="[
-                    { title: t('admin.pricing.priceLists.editor.typeProduct'), value: 'product' },
-                    { title: t('admin.pricing.priceLists.editor.typeService'), value: 'service' }
-                  ]"
-                  density="compact"
-                  variant="outlined"
-                  hide-details
-                />
-              </td>
-              <td>
-                <v-text-field v-model="line.productCode" density="compact" variant="outlined" hide-details />
-              </td>
-              <td>
-                <v-text-field v-model="line.itemName" density="compact" variant="outlined" hide-details />
-              </td>
-              <td>
-                <v-text-field v-model.number="line.listPrice" type="number" step="0.01" min="0" density="compact" variant="outlined" hide-details />
-              </td>
-            </tr>
-          </tbody>
-        </v-table>
+      <v-data-table
+        :page="page"
+        :items-per-page="itemsPerPage"
+        :headers="headers"
+        :items="lines"
+        :items-length="totalItems"
+        :items-per-page-options="[25, 50, 100]"
+        class="price-list-items-table"
+        hide-default-footer
+      >
+        <!-- Template for checkbox column -->
+        <template #[`item.selection`]="{ item }">
+          <v-btn
+            icon
+            variant="text"
+            density="comfortable"
+            :aria-pressed="isSelected(item.id)"
+            @click="onSelectLine(item.id, !isSelected(item.id))"
+          >
+            <PhCheckSquare v-if="isSelected(item.id)" :size="18" color="teal" />
+            <PhSquare v-else :size="18" color="grey" />
+          </v-btn>
+        </template>
+
+        <!-- Product Code - editable -->
+        <template #[`item.productCode`]="{ item }">
+          <v-text-field 
+            v-model="item.productCode" 
+            density="compact" 
+            variant="plain" 
+            hide-details 
+          />
+        </template>
+
+        <!-- Product Name - editable -->
+        <template #[`item.itemName`]="{ item }">
+          <v-text-field 
+            v-model="item.itemName" 
+            density="compact" 
+            variant="plain" 
+            hide-details 
+          />
+        </template>
+
+        <!-- Price - editable -->
+        <template #[`item.listPrice`]="{ item }">
+          <v-text-field 
+            v-model.number="item.listPrice" 
+            type="number" 
+            step="0.01" 
+            min="0" 
+            density="compact" 
+            variant="plain" 
+            hide-details 
+          />
+        </template>
+      </v-data-table>
+
+      <!-- Pagination -->
+      <div class="custom-pagination-container">
+        <Paginator
+          :page="page"
+          :items-per-page="itemsPerPage"
+          :total-items="totalItems"
+          :items-per-page-options="[25, 50, 100]"
+          :show-records-info="true"
+          @update:page="goToPage($event)"
+          @update:items-per-page="handleItemsPerPageChange($event as any)"
+        />
       </div>
     </div>
 
@@ -168,26 +400,12 @@ function exportCsv(): void {
           color="teal"
           variant="outlined"
           class="mb-3"
-          @click="exportCsv"
+          @click="refreshData"
         >
           <template #prepend>
-            <PhDownloadSimple />
+            <PhArrowClockwise />
           </template>
-          {{ t('admin.pricing.priceLists.editor.export').toUpperCase() }}
-        </v-btn>
-        
-        <v-btn
-          block
-          color="teal"
-          variant="outlined"
-          class="mb-3"
-          :loading="isImporting"
-          @click="startImport"
-        >
-          <template #prepend>
-            <PhUploadSimple />
-          </template>
-          {{ t('admin.pricing.priceLists.editor.import').toUpperCase() }}
+          {{ t('admin.pricing.priceLists.actions.refresh').toUpperCase() }}
         </v-btn>
         
         <v-btn
@@ -201,6 +419,20 @@ function exportCsv(): void {
             <PhPlus />
           </template>
           {{ t('admin.pricing.priceLists.editor.addRow').toUpperCase() }}
+        </v-btn>
+        
+        <v-btn
+          block
+          color="grey"
+          variant="outlined"
+          class="mb-3"
+          :disabled="!hasSelected"
+          @click="clearSelections"
+        >
+          <template #prepend>
+            <PhSquare />
+          </template>
+          {{ t('admin.pricing.priceLists.actions.clearSelection').toUpperCase() }}
         </v-btn>
       </div>
       
@@ -238,9 +470,84 @@ function exportCsv(): void {
   min-width: 0;
 }
 
-.pl-items-table :deep(th),
-.pl-items-table :deep(td) {
-  border-bottom: thin solid rgba(var(--v-border-color), var(--v-border-opacity));
+/* Product info section styles */
+.product-info-section {
+  margin-bottom: 0;
+}
+
+.info-row-inline {
+  display: flex;
+  gap: 40px;
+  align-items: center;
+}
+
+.info-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.info-label {
+  font-size: 0.875rem;
+  color: rgba(0, 0, 0, 0.75);
+  font-weight: 500;
+}
+
+.info-value {
+  font-family: 'Roboto Mono', monospace;
+  font-size: 0.875rem;
+  color: rgba(0, 0, 0, 0.75);
+  background-color: rgba(0, 0, 0, 0.05);
+  padding: 4px 8px;
+  border-radius: 4px;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  display: inline-block;
+  word-break: break-word;
+  flex-grow: 1;
+}
+
+/* Table styles - matching ProductsList.vue */
+.price-list-items-table :deep(.v-data-table-footer) {
+  border-top: thin solid rgba(var(--v-border-color), var(--v-border-opacity));
+}
+
+.price-list-items-table :deep(.v-data-table__tr) {
+  position: relative;
+}
+
+.price-list-items-table :deep(.v-data-table__tr::after) {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 7px;
+  right: 17px;
+  height: 1px;
+  background-color: rgba(var(--v-border-color), var(--v-border-opacity));
+}
+
+/* Hide the separator on the last row */
+.price-list-items-table :deep(tbody > tr:last-child::after) {
+  display: none;
+}
+
+.price-list-items-table :deep(.v-data-table__td),
+.price-list-items-table :deep(.v-data-table__th) {
+  border-bottom: none !important;
+}
+
+/* Header bottom separator */
+.price-list-items-table :deep(thead) {
+  position: relative;
+}
+
+.price-list-items-table :deep(thead::after) {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 7px;
+  right: 17px;
+  height: 1px;
+  background-color: rgba(var(--v-border-color), var(--v-border-opacity));
 }
 
 /* Sidebar styles */
@@ -271,6 +578,25 @@ function exportCsv(): void {
   left: 0;
   right: 0;
   border-top: thin solid rgba(var(--v-border-color), var(--v-border-opacity));
+}
+
+/* Pagination styles */
+.custom-pagination-container {
+  background-color: rgba(var(--v-theme-surface), 1);
+}
+
+/* Selectors section styles */
+.selectors-section {
+  margin-bottom: 8px;
+}
+
+/* Dropdown icon positioning */
+.dropdown-icon {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  pointer-events: none;
 }
 </style>
 

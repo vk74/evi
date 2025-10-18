@@ -21,7 +21,7 @@
         },
         "filters": {
           "all": "all",
-          "status": "status",
+          "status": "pricelist status",
           "currency": "currency",
           "active": "active",
           "inactive": "inactive",
@@ -36,6 +36,8 @@
           "title": "actions",
           "addPriceList": "add price list",
           "refresh": "refresh",
+          "export": "export",
+          "import": "import",
           "clearSelection": "clear selection",
           "selectedElements": "selected elements",
           "edit": "edit",
@@ -65,10 +67,25 @@
           "sections": {
             "details": "price list details"
           },
+          "info": {
+            "priceListName": "price list name",
+            "currency": "currency"
+          },
+          "types": {
+            "products": "products",
+            "services": "services"
+          },
+          "search": {
+            "placeholder": "search items...",
+            "minChars": "enter at least 2 characters"
+          },
           "headers": {
+            "selection": "select",
             "type": "type",
             "code": "code",
+            "productCode": "product code",
             "name": "name",
+            "productName": "product name",
             "price": "list price"
           },
           "typeProduct": "product",

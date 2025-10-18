@@ -21,7 +21,7 @@
         },
         "filters": {
           "all": "все",
-          "status": "статус",
+          "status": "статус прайс-листа",
           "currency": "валюта",
           "active": "активен",
           "inactive": "неактивен",
@@ -36,6 +36,8 @@
           "title": "действия",
           "addPriceList": "добавить прайс-лист",
           "refresh": "обновить",
+          "export": "экспорт",
+          "import": "импорт",
           "clearSelection": "очистить выбор",
           "selectedElements": "выбранные элементы",
           "edit": "редактировать",
@@ -65,10 +67,25 @@
           "sections": {
             "details": "детали прайс-листа"
           },
+          "info": {
+            "priceListName": "название прайс-листа",
+            "currency": "валюта"
+          },
+          "types": {
+            "products": "продукты",
+            "services": "сервисы"
+          },
+          "search": {
+            "placeholder": "поиск позиций...",
+            "minChars": "введите минимум 2 символа"
+          },
           "headers": {
+            "selection": "выбор",
             "type": "тип",
             "code": "код",
+            "productCode": "код продукта",
             "name": "название",
+            "productName": "название продукта",
             "price": "листовая цена"
           },
           "typeProduct": "продукт",

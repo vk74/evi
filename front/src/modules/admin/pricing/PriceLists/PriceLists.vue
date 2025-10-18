@@ -209,6 +209,14 @@ const clearFilters = () => {
   uiStore.showInfoSnackbar('Filters cleared')
 }
 
+const exportPriceLists = () => {
+  uiStore.showInfoSnackbar('Export - Not implemented yet')
+}
+
+const importPriceLists = () => {
+  uiStore.showInfoSnackbar('Import - Not implemented yet')
+}
+
 const filteredPriceLists = computed(() => priceLists.value)
 const totalItems = computed(() => totalItemsCount.value)
 </script>
@@ -440,6 +448,26 @@ const totalItems = computed(() => totalItemsCount.value)
               <PhArrowClockwise />
             </template>
             {{ t('admin.pricing.priceLists.actions.refresh').toUpperCase() }}
+          </v-btn>
+          
+          <v-btn
+            block
+            color="teal"
+            variant="outlined"
+            class="mb-3"
+            @click="exportPriceLists"
+          >
+            {{ t('admin.pricing.priceLists.actions.export').toUpperCase() }}
+          </v-btn>
+          
+          <v-btn
+            block
+            color="teal"
+            variant="outlined"
+            class="mb-3"
+            @click="importPriceLists"
+          >
+            {{ t('admin.pricing.priceLists.actions.import').toUpperCase() }}
           </v-btn>
           
           <v-btn
