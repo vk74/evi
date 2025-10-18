@@ -253,7 +253,7 @@ const totalItems = computed(() => totalItemsCount.value)
           <v-select
             v-model="priceListStatus"
             :label="t('admin.pricing.priceLists.filters.status')"
-            density="compact"
+            density="comfortable"
             variant="outlined"
             :items="[
               { title: t('admin.pricing.priceLists.filters.draft'), value: 'draft' },
@@ -261,7 +261,7 @@ const totalItems = computed(() => totalItemsCount.value)
               { title: t('admin.pricing.priceLists.filters.inactive'), value: 'archived' }
             ]"
             hide-details
-            style="width: 150px;"
+            style="min-width: 150px; margin-right: 48px;"
           >
             <template #append-inner>
               <PhCaretUpDown class="dropdown-icon" />
