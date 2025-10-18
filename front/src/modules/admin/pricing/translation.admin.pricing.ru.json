@@ -62,6 +62,9 @@
           "itemsTitle": "позиции",
           "addRow": "добавить строку",
           "deleteSelected": "удалить выбранные",
+          "sections": {
+            "details": "детали прайс-листа"
+          },
           "headers": {
             "type": "тип",
             "code": "код",

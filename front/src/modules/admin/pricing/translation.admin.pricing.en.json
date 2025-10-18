@@ -62,6 +62,9 @@
           "itemsTitle": "lines",
           "addRow": "add row",
           "deleteSelected": "delete selected",
+          "sections": {
+            "details": "price list details"
+          },
           "headers": {
             "type": "type",
             "code": "code",
