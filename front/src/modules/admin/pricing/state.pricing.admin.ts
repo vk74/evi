@@ -1,18 +1,23 @@
 /**
  * @file state.pricing.admin.ts
- * Version: 1.1.0
+ * Version: 1.2.0
  * Pinia store for managing pricing admin module state.
  * Frontend file that handles active section management for pricing administration.
+ * File: state.pricing.admin.ts (frontend)
  */
 import { defineStore } from 'pinia'
-import type { PricingAdminState, PricingSectionId, PriceListEditorMode, PriceListData } from './types.pricing.admin'
+import type { PricingAdminState, PricingSectionId, PriceListEditorMode, PriceListData, Currency } from './types.pricing.admin'
+import { fetchCurrenciesService } from './currencies/service.fetch.currencies'
 
 export const usePricingAdminStore = defineStore('pricingAdmin', {
   state: (): PricingAdminState => ({
     activeSection: 'price-lists',
     editorMode: 'creation',
     editingPriceListId: null,
-    editingPriceListData: null
+    editingPriceListData: null,
+    currencies: [],
+    isCurrenciesLoading: false,
+    currenciesError: null
   }),
 
   getters: {
@@ -55,6 +60,19 @@ export const usePricingAdminStore = defineStore('pricingAdmin', {
       this.editorMode = 'creation'
       this.editingPriceListId = null
       this.editingPriceListData = null
+    }
+    ,
+    async loadCurrencies(): Promise<void> {
+      try {
+        this.isCurrenciesLoading = true
+        this.currenciesError = null
+        const data = await fetchCurrenciesService()
+        this.currencies = data
+      } catch (e) {
+        this.currenciesError = e instanceof Error ? e.message : String(e)
+      } finally {
+        this.isCurrenciesLoading = false
+      }
     }
   },
 

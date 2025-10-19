@@ -1,8 +1,9 @@
 /**
  * @file types.pricing.admin.ts
- * Version: 1.1.1
+ * Version: 1.1.2
  * Type definitions for pricing administration module.
  * Frontend types for pricing admin functionality.
+ * File: types.pricing.admin.ts (frontend)
  */
 
 // Pricing section interface for menu navigation
@@ -37,5 +38,19 @@ export interface PricingAdminState {
   editorMode: PriceListEditorMode
   editingPriceListId: string | null
   editingPriceListData: PriceListData | null
+  // Currencies state
+  currencies: Currency[]
+  isCurrenciesLoading: boolean
+  currenciesError: string | null
+}
+
+// Currency type aligned with backend CurrencyDto
+export interface Currency {
+  code: string
+  name: string
+  symbol: string | null
+  minorUnits: number
+  roundingMode: 'up' | 'down' | 'half-up' | 'half-even'
+  active: boolean
 }
 

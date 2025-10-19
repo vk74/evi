@@ -1,11 +1,11 @@
 <!--
-Version: 1.1.2
+Version: 1.1.3
 Currencies list management section.
-Frontend file for managing currencies in the pricing admin module.
+Frontend file for managing currencies in the pricing admin module. Loads live data from backend.
 Filename: Currencies.vue
 -->
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, ref, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import Paginator from '@/core/ui/paginator/Paginator.vue'
 import {
@@ -19,76 +19,64 @@ import {
   PhCaretUpDown,
   PhCaretDown
 } from '@phosphor-icons/vue'
+import { usePricingAdminStore } from '@/modules/admin/pricing/state.pricing.admin'
+import type { Currency } from '@/modules/admin/pricing/types.pricing.admin'
 
 const { t } = useI18n()
 
-// Currency interface
-interface Currency {
-  id: string
-  code: string
-  name: string
-  symbol: string
-  minorUnits: number
-  roundingMode: 'up' | 'down' | 'half-up' | 'half-even'
-  status: 'active' | 'draft' | 'archived'
-}
-
 type ItemsPerPageOption = 25 | 50 | 100
 
-// State
-const currencies = ref<Currency[]>([
-  { id: '1', code: 'USD', name: 'US Dollar', symbol: '$', minorUnits: 2, roundingMode: 'half-up', status: 'active' },
-  { id: '2', code: 'EUR', name: 'Euro', symbol: '€', minorUnits: 2, roundingMode: 'half-up', status: 'active' },
-  { id: '3', code: 'GBP', name: 'British Pound', symbol: '£', minorUnits: 2, roundingMode: 'half-even', status: 'draft' }
-])
+// Store
+const store = usePricingAdminStore()
+const currencies = computed<Currency[]>(() => store.currencies)
 
 const selectedCurrencies = ref<Set<string>>(new Set())
-const currencyStatus = ref<'all' | 'active' | 'draft' | 'archived'>('all')
+const currencyStatus = ref<'all' | 'active' | 'inactive'>('all')
 const searchQuery = ref<string>('')
-const isSearching = ref<boolean>(false)
+const isSearching = computed<boolean>(() => store.isCurrenciesLoading)
 const isSaving = ref<boolean>(false)
 
 // Pagination
 const page = ref<number>(1)
 const itemsPerPage = ref<ItemsPerPageOption>(25)
-const totalItemsCount = ref<number>(3)
 
 // Computed properties
 const selectedCount = computed(() => selectedCurrencies.value.size)
 const hasSelected = computed(() => selectedCurrencies.value.size > 0)
-const totalItems = computed(() => totalItemsCount.value)
-
 const filteredCurrencies = computed(() => {
   let result = currencies.value
-  
   // Apply status filter
   if (currencyStatus.value !== 'all') {
-    result = result.filter(c => c.status === currencyStatus.value)
+    const wantActive = currencyStatus.value === 'active'
+    result = result.filter(c => c.active === wantActive)
   }
-  
   // Apply search filter
   if (searchQuery.value) {
     const query = searchQuery.value.toLowerCase()
-    result = result.filter(c => 
+    result = result.filter(c =>
       c.code.toLowerCase().includes(query) ||
       c.name.toLowerCase().includes(query) ||
-      c.symbol.toLowerCase().includes(query)
+      (c.symbol || '').toLowerCase().includes(query)
     )
   }
-  
   return result
 })
+const pagedCurrencies = computed(() => {
+  const start = (page.value - 1) * itemsPerPage.value
+  return filteredCurrencies.value.slice(start, start + itemsPerPage.value)
+})
+const totalItems = computed(() => filteredCurrencies.value.length)
 
 // Selection handlers
-const onSelectCurrency = (currencyId: string, selected: boolean) => {
+const onSelectCurrency = (currencyCode: string, selected: boolean) => {
   if (selected) {
-    selectedCurrencies.value.add(currencyId)
+    selectedCurrencies.value.add(currencyCode)
   } else {
-    selectedCurrencies.value.delete(currencyId)
+    selectedCurrencies.value.delete(currencyCode)
   }
 }
 
-const isSelected = (currencyId: string) => selectedCurrencies.value.has(currencyId)
+const isSelected = (currencyCode: string) => selectedCurrencies.value.has(currencyCode)
 
 const clearSelections = () => {
   selectedCurrencies.value.clear()
@@ -116,28 +104,18 @@ const saveCurrencies = () => {
 
 const addCurrency = () => {
   const newCurrency: Currency = {
-    id: `tmp_${Date.now()}`,
-    code: '',
+    code: `TMP_${Date.now()}`,
     name: '',
     symbol: '',
     minorUnits: 2,
     roundingMode: 'half-up',
-    status: 'draft'
+    active: false
   }
-  currencies.value.push(newCurrency)
+  // Temporary local addition for UX; not persisted yet
+  store.currencies = [...store.currencies, newCurrency]
 }
 
-// Status change handler
-const changeStatus = (currency: Currency, newStatus: 'active' | 'draft' | 'archived') => {
-  currency.status = newStatus
-}
-
-// Status options
-const statusOptions = [
-  { value: 'active', color: 'teal', label: 'active' },
-  { value: 'draft', color: 'orange', label: 'draft' },
-  { value: 'archived', color: 'grey', label: 'archived' }
-]
+// No status change menu for now; we show active/inactive only
 
 // Rounding mode options
 const roundingModeOptions = [
@@ -148,7 +126,7 @@ const roundingModeOptions = [
 ]
 
 const deleteSelected = () => {
-  currencies.value = currencies.value.filter(c => !selectedCurrencies.value.has(c.id))
+  store.currencies = store.currencies.filter(c => !selectedCurrencies.value.has(c.code))
   selectedCurrencies.value.clear()
 }
 
@@ -161,6 +139,12 @@ const handleItemsPerPageChange = (newItemsPerPage: ItemsPerPageOption) => {
   itemsPerPage.value = newItemsPerPage
   page.value = 1
 }
+
+onMounted(() => {
+  if (!store.currencies.length) {
+    store.loadCurrencies()
+  }
+})
 </script>
 
 <template>
@@ -181,8 +165,7 @@ const handleItemsPerPageChange = (newItemsPerPage: ItemsPerPageOption) => {
                 :items="[
                   { title: t('admin.pricing.priceLists.filters.all'), value: 'all' },
                   { title: t('admin.pricing.priceLists.filters.active'), value: 'active' },
-                  { title: t('admin.pricing.priceLists.filters.draft'), value: 'draft' },
-                  { title: t('admin.pricing.priceLists.filters.inactive'), value: 'archived' }
+                  { title: t('admin.pricing.priceLists.filters.inactive'), value: 'inactive' }
                 ]"
                 hide-details
               >
@@ -248,18 +231,18 @@ const handleItemsPerPageChange = (newItemsPerPage: ItemsPerPageOption) => {
             </thead>
             <tbody>
               <tr
-                v-for="currency in filteredCurrencies"
-                :key="currency.id"
+                v-for="currency in pagedCurrencies"
+                :key="currency.code"
               >
                 <td>
                   <v-btn
                     icon
                     variant="text"
                     density="comfortable"
-                    :aria-pressed="isSelected(currency.id)"
-                    @click="onSelectCurrency(currency.id, !isSelected(currency.id))"
+                    :aria-pressed="isSelected(currency.code)"
+                    @click="onSelectCurrency(currency.code, !isSelected(currency.code))"
                   >
-                    <PhCheckSquare v-if="isSelected(currency.id)" :size="18" color="teal" />
+                    <PhCheckSquare v-if="isSelected(currency.code)" :size="18" color="teal" />
                     <PhSquare v-else :size="18" color="grey" />
                   </v-btn>
                 </td>
@@ -310,34 +293,14 @@ const handleItemsPerPageChange = (newItemsPerPage: ItemsPerPageOption) => {
                   />
                 </td>
                 <td>
-                  <v-menu>
-                    <template #activator="{ props }">
-                      <v-chip 
-                        v-bind="props"
-                        :color="currency.status === 'active' ? 'teal' : currency.status === 'archived' ? 'grey' : 'orange'" 
-                        size="small"
-                        class="status-chip-clickable"
-                      >
-                        {{ currency.status }}
-                        <PhCaretDown :size="14" class="ml-1" />
-                      </v-chip>
-                    </template>
-                    <v-list density="compact">
-                      <v-list-item
-                        v-for="option in statusOptions"
-                        :key="option.value"
-                        @click="changeStatus(currency, option.value as any)"
-                      >
-                        <v-chip 
-                          :color="option.color" 
-                          size="small"
-                          class="status-menu-chip"
-                        >
-                          {{ option.label }}
-                        </v-chip>
-                      </v-list-item>
-                    </v-list>
-                  </v-menu>
+                  <v-chip 
+                    :color="currency.active ? 'teal' : 'grey'"
+                    size="small"
+                    class="status-chip-clickable"
+                  >
+                    {{ currency.active ? 'active' : 'inactive' }}
+                    <PhCaretDown :size="14" class="ml-1" />
+                  </v-chip>
                 </td>
               </tr>
             </tbody>

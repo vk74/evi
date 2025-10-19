@@ -1,5 +1,5 @@
 /**
- * version: 1.0.08
+ * version: 1.0.09
  * Backend router file for admin functionality.
  * Defines routes for administrative functions focused on organization management.
  * All routes are protected by JWT validation and user status check middleware.
@@ -49,6 +49,7 @@ import createProductOptionPairsController from './products/pairs/controller.admi
 import updateProductOptionPairsController from './products/pairs/controller.admin.update.product.option.pairs';
 import deleteProductOptionPairsController from './products/pairs/controller.admin.delete.product.option.pairs';
 import countProductOptionPairsController from './products/pairs/controller.admin.count.product.option.pairs';
+import fetchCurrenciesController from './pricing/controller.admin.pricing.currencies';
 import registerUserController from '../account/controller.register.user';
 import fetchUserGroupsController from './org/userEditor/controller.fetch.user.groups';
 import removeUserFromGroupsController from './org/userEditor/controller.remove.user.from.groups';
@@ -110,6 +111,9 @@ router.post('/api/admin/products/count-product-option-pairs', checkRequestSecuri
 
 // Routes for Account Management
 router.post('/api/admin/users/register', checkRequestSecurityHard, registerUserController);
+
+// Routes for Pricing Admin
+router.get('/api/admin/pricing/fetch-currencies', checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, fetchCurrenciesController);
 
 // Export using ES modules syntax
 export default router;
