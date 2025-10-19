@@ -93,6 +93,50 @@
           "typeProduct": "продукт",
           "typeService": "сервис"
         }
+      },
+      "currencies": {
+        "table": {
+          "headers": {
+            "selection": "выбор",
+            "code": "код",
+            "name": "название",
+            "symbol": "символ",
+            "minorUnits": "дробные единицы",
+            "roundingMode": "режим округления",
+            "status": "статус"
+          }
+        },
+        "status": {
+          "active": "активна",
+          "disabled": "отключена"
+        },
+        "roundingModes": {
+          "half_up": "до половины вверх",
+          "half_even": "до половины четная",
+          "cash_0_05": "наличные 0.05",
+          "cash_0_1": "наличные 0.1"
+        },
+        "actions": {
+          "addCurrency": "добавить валюту",
+          "save": "сохранить",
+          "clearSelection": "очистить выбор"
+        },
+        "validation": {
+          "codeRequired": "код обязателен",
+          "codeLength": "код должен состоять из 3 символов",
+          "codeUppercase": "код должен содержать заглавные буквы",
+          "nameRequired": "название обязательно",
+          "nameMaxLength": "название не должно превышать 50 символов",
+          "symbolRequired": "символ обязателен",
+          "symbolMaxLength": "символ не должен превышать 3 символа",
+          "minorUnitsRange": "дробные единицы должны быть от 0 до 4"
+        },
+        "messages": {
+          "loadSuccess": "валюты успешно загружены",
+          "loadError": "ошибка загрузки валют",
+          "saveSuccess": "валюты успешно сохранены",
+          "saveError": "ошибка сохранения валют"
+        }
       }
     }
   }

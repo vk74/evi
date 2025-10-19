@@ -93,6 +93,50 @@
           "typeProduct": "product",
           "typeService": "service"
         }
+      },
+      "currencies": {
+        "table": {
+          "headers": {
+            "selection": "select",
+            "code": "code",
+            "name": "name",
+            "symbol": "symbol",
+            "minorUnits": "minor units",
+            "roundingMode": "rounding mode",
+            "status": "status"
+          }
+        },
+        "status": {
+          "active": "active",
+          "disabled": "disabled"
+        },
+        "roundingModes": {
+          "half_up": "half up",
+          "half_even": "half even",
+          "cash_0_05": "cash 0.05",
+          "cash_0_1": "cash 0.1"
+        },
+        "actions": {
+          "addCurrency": "add currency",
+          "save": "save",
+          "clearSelection": "clear selection"
+        },
+        "validation": {
+          "codeRequired": "code is required",
+          "codeLength": "code must be exactly 3 characters",
+          "codeUppercase": "code must be uppercase letters",
+          "nameRequired": "name is required",
+          "nameMaxLength": "name must not exceed 50 characters",
+          "symbolRequired": "symbol is required",
+          "symbolMaxLength": "symbol must not exceed 3 characters",
+          "minorUnitsRange": "minor units must be between 0 and 4"
+        },
+        "messages": {
+          "loadSuccess": "currencies loaded successfully",
+          "loadError": "failed to load currencies",
+          "saveSuccess": "currencies saved successfully",
+          "saveError": "failed to save currencies"
+        }
       }
     }
   }

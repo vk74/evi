@@ -1,5 +1,5 @@
 <!--
-Version: 1.1.3
+Version: 1.2.1
 Currencies list management section.
 Frontend file for managing currencies in the pricing admin module. Loads live data from backend.
 Filename: Currencies.vue
@@ -21,20 +21,121 @@ import {
 } from '@phosphor-icons/vue'
 import { usePricingAdminStore } from '@/modules/admin/pricing/state.pricing.admin'
 import type { Currency } from '@/modules/admin/pricing/types.pricing.admin'
+import { useUiStore } from '@/core/state/uistate'
 
 const { t } = useI18n()
 
 type ItemsPerPageOption = 25 | 50 | 100
 
-// Store
+// Stores
 const store = usePricingAdminStore()
+const uiStore = useUiStore()
 const currencies = computed<Currency[]>(() => store.currencies)
+
+// Track original codes for change tracking (needed when code changes are attempted)
+const currencyOriginalCodes = ref<Map<string, string>>(new Map())
 
 const selectedCurrencies = ref<Set<string>>(new Set())
 const currencyStatus = ref<'all' | 'active' | 'inactive'>('all')
 const searchQuery = ref<string>('')
 const isSearching = computed<boolean>(() => store.isCurrenciesLoading)
 const isSaving = ref<boolean>(false)
+
+// Validation state tracking
+const validationErrors = ref<Map<string, Record<string, string>>>(new Map())
+
+// Validation rules
+const validateCode = (code: string, currencyCode: string): string[] => {
+  const errors: string[] = []
+  if (!code || code.trim() === '') {
+    errors.push(t('admin.pricing.currencies.validation.codeRequired'))
+  } else if (code.length !== 3) {
+    errors.push(t('admin.pricing.currencies.validation.codeLength'))
+  } else if (!/^[A-Z]{3}$/.test(code)) {
+    errors.push(t('admin.pricing.currencies.validation.codeUppercase'))
+  }
+  return errors
+}
+
+const validateName = (name: string): string[] => {
+  const errors: string[] = []
+  if (!name || name.trim() === '') {
+    errors.push(t('admin.pricing.currencies.validation.nameRequired'))
+  } else if (name.length > 50) {
+    errors.push(t('admin.pricing.currencies.validation.nameMaxLength'))
+  }
+  return errors
+}
+
+const validateSymbol = (symbol: string): string[] => {
+  const errors: string[] = []
+  if (!symbol || symbol.trim() === '') {
+    errors.push(t('admin.pricing.currencies.validation.symbolRequired'))
+  } else if (symbol.length > 3) {
+    errors.push(t('admin.pricing.currencies.validation.symbolMaxLength'))
+  }
+  return errors
+}
+
+const validateMinorUnits = (minorUnits: number): string[] => {
+  const errors: string[] = []
+  if (minorUnits < 0 || minorUnits > 4) {
+    errors.push(t('admin.pricing.currencies.validation.minorUnitsRange'))
+  }
+  return errors
+}
+
+// Check if currency is newly created (not from backend)
+const isNewCurrency = (code: string): boolean => {
+  return store.currenciesCreated.some(c => c.code === code)
+}
+
+// Check if currency was modified
+const isModifiedCurrency = (code: string): boolean => {
+  return !!store.currenciesUpdated[code]
+}
+
+// Validate a single currency and update errors map
+const validateCurrency = (currency: Currency): boolean => {
+  const errors: Record<string, string> = {}
+  
+  const codeErrors = validateCode(currency.code, currency.code)
+  if (codeErrors.length > 0) errors.code = codeErrors[0]
+  
+  const nameErrors = validateName(currency.name)
+  if (nameErrors.length > 0) errors.name = nameErrors[0]
+  
+  const symbolErrors = validateSymbol(currency.symbol || '')
+  if (symbolErrors.length > 0) errors.symbol = symbolErrors[0]
+  
+  const minorUnitsErrors = validateMinorUnits(currency.minorUnits)
+  if (minorUnitsErrors.length > 0) errors.minorUnits = minorUnitsErrors[0]
+  
+  if (Object.keys(errors).length > 0) {
+    validationErrors.value.set(currency.code, errors)
+    return false
+  } else {
+    validationErrors.value.delete(currency.code)
+    return true
+  }
+}
+
+// Get validation error for specific field
+const getFieldError = (currencyCode: string, field: string): string | undefined => {
+  return validationErrors.value.get(currencyCode)?.[field]
+}
+
+// Check if there are any validation errors for new/modified currencies
+const hasValidationErrors = computed(() => {
+  for (const currency of currencies.value) {
+    if (isNewCurrency(currency.code) || isModifiedCurrency(currency.code)) {
+      if (!validateCurrency(currency)) {
+        return true
+      }
+    }
+  }
+  return false
+})
 
 // Pagination
 const page = ref<number>(1)
@@ -94,13 +195,39 @@ const handleSearchKeydown = (event: KeyboardEvent) => {
   }
 }
 
+// Generate random 3-letter currency code that doesn't exist
+const generateUniqueCurrencyCode = (): string => {
+  const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
+  const existingCodes = new Set(currencies.value.map(c => c.code))
+  
+  let code = ''
+  let attempts = 0
+  const maxAttempts = 1000
+  
+  do {
+    code = ''
+    for (let i = 0; i < 3; i++) {
+      code += letters.charAt(Math.floor(Math.random() * letters.length))
+    }
+    attempts++
+  } while (existingCodes.has(code) && attempts < maxAttempts)
+  
+  return code
+}
+
 // Action handlers
 const hasPendingChanges = computed(() => store.getHasPendingChanges())
+const canSave = computed(() => hasPendingChanges.value && !hasValidationErrors.value)
+
 const saveCurrencies = async () => {
-  if (!hasPendingChanges.value) return
+  if (!canSave.value) return
   isSaving.value = true
   try {
     await store.saveCurrenciesChanges()
+    uiStore.showSuccessSnackbar(t('admin.pricing.currencies.messages.saveSuccess'))
+  } catch (error) {
+    console.error('Failed to save currencies:', error)
+    uiStore.showErrorSnackbar(t('admin.pricing.currencies.messages.saveError'))
   } finally {
     isSaving.value = false
   }
@@ -108,7 +235,7 @@ const saveCurrencies = async () => {
 
 const addCurrency = () => {
   const newCurrency: Currency = {
-    code: `TMP_${Date.now()}`,
+    code: generateUniqueCurrencyCode(),
     name: '',
     symbol: '',
     minorUnits: 2,
@@ -117,21 +244,23 @@ const addCurrency = () => {
   }
   // Temporary local addition for UX; not persisted yet
   store.addTempCurrency(newCurrency)
+  // Mark it for validation
+  validateCurrency(newCurrency)
 }
 
 // Status options for menu
-const statusOptions = [
-  { value: true, color: 'teal', label: 'active' },
-  { value: false, color: 'grey', label: 'disable' }
-]
+const statusOptions = computed(() => [
+  { value: true, color: 'teal', label: t('admin.pricing.currencies.status.active') },
+  { value: false, color: 'grey', label: t('admin.pricing.currencies.status.disabled') }
+])
 
 // Rounding mode options (match DB values)
-const roundingModeOptions = [
-  { value: 'half_up', label: 'half_up' },
-  { value: 'half_even', label: 'half_even' },
-  { value: 'cash_0_05', label: 'cash_0_05' },
-  { value: 'cash_0_1', label: 'cash_0_1' }
-]
+const roundingModeOptions = computed(() => [
+  { value: 'half_up', label: t('admin.pricing.currencies.roundingModes.half_up') },
+  { value: 'half_even', label: t('admin.pricing.currencies.roundingModes.half_even') },
+  { value: 'cash_0_05', label: t('admin.pricing.currencies.roundingModes.cash_0_05') },
+  { value: 'cash_0_1', label: t('admin.pricing.currencies.roundingModes.cash_0_1') }
+])
 
 const deleteSelected = () => {
   store.currencies = store.currencies.filter(c => !selectedCurrencies.value.has(c.code))
@@ -148,9 +277,15 @@ const handleItemsPerPageChange = (newItemsPerPage: ItemsPerPageOption) => {
   page.value = 1
 }
 
-onMounted(() => {
+onMounted(async () => {
   if (!store.currencies.length) {
-    store.loadCurrencies()
+    try {
+      await store.loadCurrencies()
+      uiStore.showSuccessSnackbar(t('admin.pricing.currencies.messages.loadSuccess'))
+    } catch (error) {
+      console.error('Failed to load currencies:', error)
+      uiStore.showErrorSnackbar(t('admin.pricing.currencies.messages.loadError'))
+    }
   }
   window.addEventListener('beforeunload', handleBeforeUnload)
 })
@@ -185,6 +320,7 @@ function handleBeforeUnload(e: BeforeUnloadEvent) {
                 :label="t('admin.pricing.priceLists.filters.status')"
                 density="comfortable"
                 variant="outlined"
+                color="teal"
                 :items="[
                   { title: t('admin.pricing.priceLists.filters.all'), value: 'all' },
                   { title: t('admin.pricing.priceLists.filters.active'), value: 'active' },
@@ -236,19 +372,19 @@ function handleBeforeUnload(e: BeforeUnloadEvent) {
             <thead>
               <tr>
                 <th style="width: 40px;">
-                  select
+                  {{ t('admin.pricing.currencies.table.headers.selection') }}
                 </th>
                 <th style="width: 120px;">
-                  code
+                  {{ t('admin.pricing.currencies.table.headers.code') }}
                 </th>
                 <th>
-                  name
+                  {{ t('admin.pricing.currencies.table.headers.name') }}
                 </th>
-                <th style="width: 80px;">symbol</th>
-                <th style="width: 110px;">minor units</th>
-                <th style="width: 130px;">rounding mode</th>
+                <th style="width: 80px;">{{ t('admin.pricing.currencies.table.headers.symbol') }}</th>
+                <th style="width: 110px;">{{ t('admin.pricing.currencies.table.headers.minorUnits') }}</th>
+                <th style="width: 130px;">{{ t('admin.pricing.currencies.table.headers.roundingMode') }}</th>
                 <th style="width: 140px;">
-                  status
+                  {{ t('admin.pricing.currencies.table.headers.status') }}
                 </th>
               </tr>
             </thead>
@@ -274,10 +410,10 @@ function handleBeforeUnload(e: BeforeUnloadEvent) {
                     v-model="currency.code" 
                     density="compact" 
                     variant="plain" 
-                    hide-details 
-                    @update:model-value="store.markCurrencyChanged(currency.code, 'code', currency.code)"
+                    :readonly="!isNewCurrency(currency.code)"
+                    :error-messages="getFieldError(currency.code, 'code')"
+                    @update:model-value="validateCurrency(currency); store.markCurrencyChanged(currency.code, 'code', currency.code)"
                     maxlength="3"
-                    counter
                   />
                 </td>
                 <td>
@@ -285,10 +421,9 @@ function handleBeforeUnload(e: BeforeUnloadEvent) {
                     v-model="currency.name" 
                     density="compact" 
                     variant="plain" 
-                    hide-details 
-                    @update:model-value="store.markCurrencyChanged(currency.code, 'name', currency.name)"
+                    :error-messages="getFieldError(currency.code, 'name')"
+                    @update:model-value="validateCurrency(currency); store.markCurrencyChanged(currency.code, 'name', currency.name)"
                     maxlength="50"
-                    counter
                   />
                 </td>
                 <td>
@@ -296,10 +431,9 @@ function handleBeforeUnload(e: BeforeUnloadEvent) {
                     v-model="currency.symbol" 
                     density="compact" 
                     variant="plain" 
-                    hide-details 
-                    @update:model-value="store.markCurrencyChanged(currency.code, 'symbol', currency.symbol)"
+                    :error-messages="getFieldError(currency.code, 'symbol')"
+                    @update:model-value="validateCurrency(currency); store.markCurrencyChanged(currency.code, 'symbol', currency.symbol)"
                     maxlength="3"
-                    counter
                   />
                 </td>
                 <td>
@@ -310,8 +444,8 @@ function handleBeforeUnload(e: BeforeUnloadEvent) {
                     max="4"
                     density="compact" 
                     variant="plain" 
-                    hide-details 
-                    @update:model-value="store.markCurrencyChanged(currency.code, 'minorUnits', currency.minorUnits)"
+                    :error-messages="getFieldError(currency.code, 'minorUnits')"
+                    @update:model-value="validateCurrency(currency); store.markCurrencyChanged(currency.code, 'minorUnits', currency.minorUnits)"
                   />
                 </td>
                 <td>
@@ -335,7 +469,7 @@ function handleBeforeUnload(e: BeforeUnloadEvent) {
                         size="small"
                         class="status-chip-clickable"
                       >
-                        {{ currency.active ? 'active' : 'disable' }}
+                        {{ currency.active ? t('admin.pricing.currencies.status.active') : t('admin.pricing.currencies.status.disabled') }}
                         <PhCaretDown :size="14" class="ml-1" />
                       </v-chip>
                     </template>
@@ -389,13 +523,13 @@ function handleBeforeUnload(e: BeforeUnloadEvent) {
             variant="outlined"
             class="mb-3"
             :loading="isSaving"
-            :disabled="!hasPendingChanges"
+            :disabled="!canSave"
             @click="saveCurrencies"
           >
             <template #prepend>
               <PhFloppyDisk />
             </template>
-            {{ t('admin.pricing.priceLists.editor.save').toUpperCase() }}
+            {{ t('admin.pricing.currencies.actions.save').toUpperCase() }}
           </v-btn>
           
           <v-btn
@@ -408,7 +542,7 @@ function handleBeforeUnload(e: BeforeUnloadEvent) {
             <template #prepend>
               <PhPlus />
             </template>
-            ADD CURRENCY
+            {{ t('admin.pricing.currencies.actions.addCurrency').toUpperCase() }}
           </v-btn>
           
           <v-btn
@@ -422,7 +556,7 @@ function handleBeforeUnload(e: BeforeUnloadEvent) {
             <template #prepend>
               <PhSquare />
             </template>
-            {{ t('admin.pricing.priceLists.actions.clearSelection').toUpperCase() }}
+            {{ t('admin.pricing.currencies.actions.clearSelection').toUpperCase() }}
           </v-btn>
         </div>
         
