@@ -1,6 +1,6 @@
 /**
  * @file state.pricing.admin.ts
- * Version: 1.2.0
+ * Version: 1.2.1
  * Pinia store for managing pricing admin module state.
  * Frontend file that handles active section management for pricing administration.
  * File: state.pricing.admin.ts (frontend)
@@ -8,6 +8,7 @@
 import { defineStore } from 'pinia'
 import type { PricingAdminState, PricingSectionId, PriceListEditorMode, PriceListData, Currency } from './types.pricing.admin'
 import { fetchCurrenciesService } from './currencies/service.fetch.currencies'
+import { updateCurrenciesService, type UpdateCurrenciesPayload } from './currencies/service.update.currencies'
 
 export const usePricingAdminStore = defineStore('pricingAdmin', {
   state: (): PricingAdminState => ({
@@ -17,7 +18,12 @@ export const usePricingAdminStore = defineStore('pricingAdmin', {
     editingPriceListData: null,
     currencies: [],
     isCurrenciesLoading: false,
-    currenciesError: null
+    currenciesError: null,
+    // change tracking
+    currenciesOriginal: [],
+    currenciesCreated: [],
+    currenciesUpdated: {},
+    currenciesDeleted: []
   }),
 
   getters: {
@@ -68,14 +74,77 @@ export const usePricingAdminStore = defineStore('pricingAdmin', {
         this.currenciesError = null
         const data = await fetchCurrenciesService()
         this.currencies = data
+        // snapshot for change tracking
+        this.currenciesOriginal = JSON.parse(JSON.stringify(data))
+        this.currenciesCreated = []
+        this.currenciesUpdated = {}
+        this.currenciesDeleted = []
       } catch (e) {
         this.currenciesError = e instanceof Error ? e.message : String(e)
       } finally {
         this.isCurrenciesLoading = false
       }
     }
+    ,
+    markCurrencyChanged(code: string, field: keyof Currency, value: any): void {
+      if (this.currenciesDeleted.includes(code)) return
+      if (!this.currenciesUpdated[code]) this.currenciesUpdated[code] = {}
+      ;(this.currenciesUpdated[code] as any)[field] = value
+    }
+    ,
+    addTempCurrency(currency: Currency): void {
+      this.currencies.push(currency)
+      this.currenciesCreated.push(currency)
+    }
+    ,
+    markCurrencyDeleted(code: string): void {
+      // remove from created if was new
+      const createdIndex = this.currenciesCreated.findIndex(c => c.code === code)
+      if (createdIndex >= 0) {
+        this.currenciesCreated.splice(createdIndex, 1)
+      } else {
+        if (!this.currenciesDeleted.includes(code)) this.currenciesDeleted.push(code)
+      }
+      this.currencies = this.currencies.filter(c => c.code !== code)
+      delete this.currenciesUpdated[code]
+    }
+    ,
+    getHasPendingChanges(): boolean {
+      return this.currenciesCreated.length > 0 || this.currenciesDeleted.length > 0 || Object.keys(this.currenciesUpdated).length > 0
+    }
+    ,
+    async saveCurrenciesChanges(): Promise<{ created: number, updated: number, deleted: number }> {
+      // basic validation before sending
+      const isValidCode = (c: string) => /^[A-Z]{3}$/.test(c)
+      const allowedModes = new Set(['up','down','half-up','half-even'])
+      for (const c of this.currenciesCreated) {
+        if (!isValidCode(c.code)) throw new Error('currency code must be 3 uppercase letters')
+        if (!c.name || !c.name.trim()) throw new Error('currency name is required')
+        if (!allowedModes.has(c.roundingMode)) throw new Error('roundingMode invalid')
+        if (!Number.isInteger(c.minorUnits) || c.minorUnits < 0 || c.minorUnits > 4) throw new Error('minorUnits must be integer 0..4')
+      }
+      if (this.currenciesUpdated['code' as any]) {
+        throw new Error('code change is not supported')
+      }
+      const payload: UpdateCurrenciesPayload = {
+        created: this.currenciesCreated.length ? this.currenciesCreated : undefined,
+        updated: Object.keys(this.currenciesUpdated).length ? Object.entries(this.currenciesUpdated).map(([code, diff]) => ({ code, ...(diff as any) })) : undefined,
+        deleted: this.currenciesDeleted.length ? this.currenciesDeleted : undefined
+      }
+      const result = await updateCurrenciesService(payload)
+      // refresh list and clear tracking
+      await this.loadCurrencies()
+      return result
+    }
+    ,
+    discardCurrenciesChanges(): void {
+      this.currencies = JSON.parse(JSON.stringify(this.currenciesOriginal))
+      this.currenciesCreated = []
+      this.currenciesUpdated = {}
+      this.currenciesDeleted = []
+    }
   },
 
-  persist: true
+  persist: false
 })
 

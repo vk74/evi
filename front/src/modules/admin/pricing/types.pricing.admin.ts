@@ -1,6 +1,6 @@
 /**
  * @file types.pricing.admin.ts
- * Version: 1.1.2
+ * Version: 1.1.3
  * Type definitions for pricing administration module.
  * Frontend types for pricing admin functionality.
  * File: types.pricing.admin.ts (frontend)
@@ -42,6 +42,11 @@ export interface PricingAdminState {
   currencies: Currency[]
   isCurrenciesLoading: boolean
   currenciesError: string | null
+  // Change tracking for currencies
+  currenciesOriginal: Currency[]
+  currenciesCreated: Currency[]
+  currenciesUpdated: Record<string, Partial<Currency>>
+  currenciesDeleted: string[]
 }
 
 // Currency type aligned with backend CurrencyDto
@@ -50,7 +55,7 @@ export interface Currency {
   name: string
   symbol: string | null
   minorUnits: number
-  roundingMode: 'up' | 'down' | 'half-up' | 'half-even'
+  roundingMode: 'half_up' | 'half_even' | 'cash_0_05' | 'cash_0_1'
   active: boolean
 }
 

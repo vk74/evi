@@ -5,7 +5,7 @@ Frontend file for managing currencies in the pricing admin module. Loads live da
 Filename: Currencies.vue
 -->
 <script setup lang="ts">
-import { computed, ref, onMounted } from 'vue'
+import { computed, ref, onMounted, onBeforeUnmount } from 'vue'
 import { useI18n } from 'vue-i18n'
 import Paginator from '@/core/ui/paginator/Paginator.vue'
 import {
@@ -95,11 +95,15 @@ const handleSearchKeydown = (event: KeyboardEvent) => {
 }
 
 // Action handlers
-const saveCurrencies = () => {
+const hasPendingChanges = computed(() => store.getHasPendingChanges())
+const saveCurrencies = async () => {
+  if (!hasPendingChanges.value) return
   isSaving.value = true
-  setTimeout(() => {
+  try {
+    await store.saveCurrenciesChanges()
+  } finally {
     isSaving.value = false
-  }, 600)
+  }
 }
 
 const addCurrency = () => {
@@ -108,21 +112,25 @@ const addCurrency = () => {
     name: '',
     symbol: '',
     minorUnits: 2,
-    roundingMode: 'half-up',
+    roundingMode: 'half_up',
     active: false
   }
   // Temporary local addition for UX; not persisted yet
-  store.currencies = [...store.currencies, newCurrency]
+  store.addTempCurrency(newCurrency)
 }
 
-// No status change menu for now; we show active/inactive only
+// Status options for menu
+const statusOptions = [
+  { value: true, color: 'teal', label: 'active' },
+  { value: false, color: 'grey', label: 'disable' }
+]
 
-// Rounding mode options
+// Rounding mode options (match DB values)
 const roundingModeOptions = [
-  { value: 'up', label: 'up' },
-  { value: 'down', label: 'down' },
-  { value: 'half-up', label: 'half-up' },
-  { value: 'half-even', label: 'half-even' }
+  { value: 'half_up', label: 'half_up' },
+  { value: 'half_even', label: 'half_even' },
+  { value: 'cash_0_05', label: 'cash_0_05' },
+  { value: 'cash_0_1', label: 'cash_0_1' }
 ]
 
 const deleteSelected = () => {
@@ -144,7 +152,22 @@ onMounted(() => {
   if (!store.currencies.length) {
     store.loadCurrencies()
   }
+  window.addEventListener('beforeunload', handleBeforeUnload)
 })
+
+onBeforeUnmount(() => {
+  window.removeEventListener('beforeunload', handleBeforeUnload)
+  // Reset currencies state when leaving component
+  store.discardCurrenciesChanges()
+  store.currencies = []
+})
+
+function handleBeforeUnload(e: BeforeUnloadEvent) {
+  if (hasPendingChanges.value) {
+    e.preventDefault()
+    e.returnValue = ''
+  }
+}
 </script>
 
 <template>
@@ -252,6 +275,9 @@ onMounted(() => {
                     density="compact" 
                     variant="plain" 
                     hide-details 
+                    @update:model-value="store.markCurrencyChanged(currency.code, 'code', currency.code)"
+                    maxlength="3"
+                    counter
                   />
                 </td>
                 <td>
@@ -260,6 +286,9 @@ onMounted(() => {
                     density="compact" 
                     variant="plain" 
                     hide-details 
+                    @update:model-value="store.markCurrencyChanged(currency.code, 'name', currency.name)"
+                    maxlength="50"
+                    counter
                   />
                 </td>
                 <td>
@@ -268,6 +297,9 @@ onMounted(() => {
                     density="compact" 
                     variant="plain" 
                     hide-details 
+                    @update:model-value="store.markCurrencyChanged(currency.code, 'symbol', currency.symbol)"
+                    maxlength="3"
+                    counter
                   />
                 </td>
                 <td>
@@ -279,6 +311,7 @@ onMounted(() => {
                     density="compact" 
                     variant="plain" 
                     hide-details 
+                    @update:model-value="store.markCurrencyChanged(currency.code, 'minorUnits', currency.minorUnits)"
                   />
                 </td>
                 <td>
@@ -290,17 +323,38 @@ onMounted(() => {
                     density="compact"
                     variant="plain"
                     hide-details
+                    @update:model-value="store.markCurrencyChanged(currency.code, 'roundingMode', currency.roundingMode)"
                   />
                 </td>
                 <td>
-                  <v-chip 
-                    :color="currency.active ? 'teal' : 'grey'"
-                    size="small"
-                    class="status-chip-clickable"
-                  >
-                    {{ currency.active ? 'active' : 'inactive' }}
-                    <PhCaretDown :size="14" class="ml-1" />
-                  </v-chip>
+                  <v-menu>
+                    <template #activator="{ props }">
+                      <v-chip 
+                        v-bind="props"
+                        :color="currency.active ? 'teal' : 'grey'"
+                        size="small"
+                        class="status-chip-clickable"
+                      >
+                        {{ currency.active ? 'active' : 'disable' }}
+                        <PhCaretDown :size="14" class="ml-1" />
+                      </v-chip>
+                    </template>
+                    <v-list density="compact">
+                      <v-list-item
+                        v-for="option in statusOptions"
+                        :key="String(option.value)"
+                        @click="currency.active = option.value; store.markCurrencyChanged(currency.code, 'active', option.value)"
+                      >
+                        <v-chip 
+                          :color="option.color" 
+                          size="small"
+                          class="status-menu-chip"
+                        >
+                          {{ option.label }}
+                        </v-chip>
+                      </v-list-item>
+                    </v-list>
+                  </v-menu>
                 </td>
               </tr>
             </tbody>
@@ -335,6 +389,7 @@ onMounted(() => {
             variant="outlined"
             class="mb-3"
             :loading="isSaving"
+            :disabled="!hasPendingChanges"
             @click="saveCurrencies"
           >
             <template #prepend>
