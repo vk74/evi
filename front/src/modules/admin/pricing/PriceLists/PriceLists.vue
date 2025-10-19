@@ -1,5 +1,5 @@
 <!--
-Version: 1.3.0
+Version: 1.3.2
 Price Lists management section.
 Frontend file for managing price lists in the pricing admin module.
 Filename: PriceLists.vue

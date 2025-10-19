@@ -1,6 +1,6 @@
 /**
  * @file types.pricing.admin.ts
- * Version: 1.1.0
+ * Version: 1.1.1
  * Type definitions for pricing administration module.
  * Frontend types for pricing admin functionality.
  */
@@ -14,7 +14,7 @@ export interface Section {
 }
 
 // Pricing admin sections
-export type PricingSectionId = 'price-lists' | 'price-list-editor' | 'settings'
+export type PricingSectionId = 'price-lists' | 'price-list-editor' | 'currencies' | 'settings'
 
 // Editor modes
 export type PriceListEditorMode = 'creation' | 'edit'

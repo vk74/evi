@@ -4,6 +4,7 @@
       "sections": {
         "priceLists": "price lists",
         "priceListEditor": "price list editor",
+        "currencies": "currencies list",
         "settings": "settings"
       },
       "priceLists": {

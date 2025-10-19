@@ -4,6 +4,7 @@
       "sections": {
         "priceLists": "прайс-листы",
         "priceListEditor": "редактор прайс-листа",
+        "currencies": "список валют",
         "settings": "настройки"
       },
       "priceLists": {

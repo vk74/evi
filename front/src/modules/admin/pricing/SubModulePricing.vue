@@ -1,5 +1,5 @@
 <!--
-Version: 1.3.0
+Version: 1.3.1
 Pricing administration submodule component.
 Frontend file that provides pricing management interface for admin users.
 Filename: SubModulePricing.vue
@@ -15,12 +15,14 @@ import {
   PhListChecks, 
   PhGlobeHemisphereWest, 
   PhFadersHorizontal,
-  PhNotePencil
+  PhNotePencil,
+  PhCoins
 } from '@phosphor-icons/vue'
 
 // Async components for lazy loading
 const PriceLists = defineAsyncComponent(() => import('./PriceLists/PriceLists.vue'))
 const PriceListEditor = defineAsyncComponent(() => import('./PriceListEditor/PriceListEditor.vue'))
+const Currencies = defineAsyncComponent(() => import('./currencies/Currencies.vue'))
 const PricingSettings = defineAsyncComponent(() => import('./sections/PricingSettings.vue'))
 
 // Initialize i18n and store
@@ -38,6 +40,11 @@ const sections = computed((): Section[] => [
     id: 'price-list-editor',
     title: t('admin.pricing.sections.priceListEditor'),
     icon: 'PhNotePencil'
+  },
+  {
+    id: 'currencies',
+    title: t('admin.pricing.sections.currencies'),
+    icon: 'PhCoins'
   },
   {
     id: 'settings',
@@ -68,6 +75,8 @@ const getIconComponent = (iconName: string) => {
       return PhFadersHorizontal
     case 'PhNotePencil':
       return PhNotePencil
+    case 'PhCoins':
+      return PhCoins
     default:
       return null
   }
@@ -110,6 +119,7 @@ const getIconComponent = (iconName: string) => {
     <div class="content-panel pa-0">
       <PriceLists v-if="activeSection === 'price-lists'" />
       <PriceListEditor v-if="activeSection === 'price-list-editor'" />
+      <Currencies v-if="activeSection === 'currencies'" />
       <PricingSettings v-if="activeSection === 'settings'" />
     </div>
   </div>
