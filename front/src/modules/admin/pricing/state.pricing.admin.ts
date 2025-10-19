@@ -1,6 +1,6 @@
 /**
  * @file state.pricing.admin.ts
- * Version: 1.2.2
+ * Version: 1.2.3
  * Pinia store for managing pricing admin module state.
  * Frontend file that handles active section management for pricing administration.
  * File: state.pricing.admin.ts (frontend)
@@ -88,6 +88,9 @@ export const usePricingAdminStore = defineStore('pricingAdmin', {
     ,
     markCurrencyChanged(code: string, field: keyof Currency, value: any): void {
       if (this.currenciesDeleted.includes(code)) return
+      // Don't track changes for newly created currencies - they are already in currenciesCreated
+      const isNewCurrency = this.currenciesCreated.some(c => c.code === code)
+      if (isNewCurrency) return
       if (!this.currenciesUpdated[code]) this.currenciesUpdated[code] = {}
       ;(this.currenciesUpdated[code] as any)[field] = value
     }

@@ -1,5 +1,5 @@
 <!--
-Version: 1.2.1
+Version: 1.2.3
 Currencies list management section.
 Frontend file for managing currencies in the pricing admin module. Loads live data from backend.
 Filename: Currencies.vue
@@ -223,8 +223,13 @@ const saveCurrencies = async () => {
   if (!canSave.value) return
   isSaving.value = true
   try {
-    await store.saveCurrenciesChanges()
-    uiStore.showSuccessSnackbar(t('admin.pricing.currencies.messages.saveSuccess'))
+    const result = await store.saveCurrenciesChanges()
+    const message = t('admin.pricing.currencies.messages.saveSuccess', {
+      updated: result.updated,
+      created: result.created,
+      deleted: result.deleted
+    })
+    uiStore.showSuccessSnackbar(message)
   } catch (error) {
     console.error('Failed to save currencies:', error)
     uiStore.showErrorSnackbar(t('admin.pricing.currencies.messages.saveError'))
@@ -262,9 +267,36 @@ const roundingModeOptions = computed(() => [
   { value: 'cash_0_1', label: t('admin.pricing.currencies.roundingModes.cash_0_1') }
 ])
 
-const deleteSelected = () => {
-  store.currencies = store.currencies.filter(c => !selectedCurrencies.value.has(c.code))
+const deleteSelected = async () => {
+  if (!hasSelected.value) return
+  
+  const deletedCount = selectedCurrencies.value.size
+  
+  // Mark each selected currency as deleted using store method
+  selectedCurrencies.value.forEach(code => {
+    store.markCurrencyDeleted(code)
+  })
+  
   selectedCurrencies.value.clear()
+  
+  // If there are pending changes, save immediately
+  if (store.getHasPendingChanges()) {
+    isSaving.value = true
+    try {
+      const result = await store.saveCurrenciesChanges()
+      const message = t('admin.pricing.currencies.messages.saveSuccess', {
+        updated: result.updated,
+        created: result.created,
+        deleted: result.deleted
+      })
+      uiStore.showSuccessSnackbar(message)
+    } catch (error) {
+      console.error('Failed to delete currencies:', error)
+      uiStore.showErrorSnackbar(t('admin.pricing.currencies.messages.saveError'))
+    } finally {
+      isSaving.value = false
+    }
+  }
 }
 
 // Pagination handlers

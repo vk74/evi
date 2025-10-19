@@ -134,7 +134,7 @@
         "messages": {
           "loadSuccess": "currencies loaded successfully",
           "loadError": "failed to load currencies",
-          "saveSuccess": "currencies saved successfully",
+          "saveSuccess": "updated currencies list: updated ({updated}), new ({created}), deleted ({deleted})",
           "saveError": "failed to save currencies"
         }
       }
