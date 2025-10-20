@@ -1,10 +1,10 @@
 /**
  * service.eventBus.ts - backend file
- * version: 1.1.0
+ * version: 1.2.0
  * Event Bus service implementation that handles domain-based event generation settings.
  * Provides methods for domain settings management and conditional event generation.
  * Supports dynamic enable/disable of event generation for specific domains.
- * Updated: Added timezone initialization from application settings
+ * Updated: Added 7 new domains (adminProducts, adminPricing, adminOrganizations, work, reports, knowledgeBase, guards)
  */
 
 import { BaseEvent } from './types.events';
@@ -17,25 +17,42 @@ import {
 import { initializeTimezone } from './timezone.eventBus';
 
 // Track current event bus settings
+// Domains are organized in the same order and grouping as in the frontend component
 let currentSettings = {
-  helpers: true,
-  connectionHandler: true,
-  userEditor: true,
+  // Administration
+  adminCatalog: true,
+  adminServices: true,
+  adminProducts: true,
+  adminPricing: true,
+  // - Organization management (subgroup)
   groupEditor: true,
-  usersList: true,
   groupsList: true,
-  settings: true,
-  logger: true,
-  system: true,
-  auth: true,
-  publicPasswordPolicies: true,
+  userEditor: true,
+  usersList: true,
+  adminOrganizations: true,
+  
+  // Modules (Business services)
+  work: true,
+  reports: true,
+  knowledgeBase: true,
+  account: true,
+  // - Catalog (subgroup)
   catalog: true,
   services: true,
   products: true,
-  adminServices: true,
-  adminCatalog: true,
-  account: true,
-  validation: true
+  
+  // System
+  system: true,
+  settings: true,
+  logger: true,
+  helpers: true,
+  
+  // Security
+  auth: true,
+  publicPasswordPolicies: true,
+  validation: true,
+  connectionHandler: true,
+  guards: true
 };
 
 /**
