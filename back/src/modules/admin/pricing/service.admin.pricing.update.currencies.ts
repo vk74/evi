@@ -1,7 +1,8 @@
 /**
- * version: 1.1.0
+ * version: 1.1.1
  * Service to update currencies for pricing admin module (backend).
  * Executes created/updated/deleted diffs in a single transaction.
+ * Includes integrity check: prevents deletion of currencies used in price lists.
  * File: service.admin.pricing.update.currencies.ts (backend)
  */
 
@@ -98,6 +99,13 @@ export async function updateCurrenciesService(pool: Pool, req: Request, payload:
       const idCode = validateCode(code)
       const exists = await client.query(queries.existsCurrency, [idCode])
       if (exists.rowCount === 0) throw new Error(`currency not found: ${code}`)
+      
+      // Check if currency is used in price lists
+      const isUsed = await client.query(queries.isCurrencyUsedInPriceLists, [idCode])
+      if (isUsed.rowCount && isUsed.rowCount > 0) {
+        throw new Error(`cannot delete currency ${code}: it is used in price lists`)
+      }
+      
       await client.query(queries.deleteCurrency, [idCode])
       deleted++
     }

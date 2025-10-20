@@ -1,7 +1,8 @@
 <!--
-Version: 1.2.3
+Version: 1.3.0
 Currencies list management section.
 Frontend file for managing currencies in the pricing admin module. Loads live data from backend.
+Includes error handling for deletion of currencies used in price lists.
 Filename: Currencies.vue
 -->
 <script setup lang="ts">
@@ -32,57 +33,51 @@ const store = usePricingAdminStore()
 const uiStore = useUiStore()
 const currencies = computed<Currency[]>(() => store.currencies)
 
-// Track original codes for change tracking (needed when code changes are attempted)
-const currencyOriginalCodes = ref<Map<string, string>>(new Map())
-
 const selectedCurrencies = ref<Set<string>>(new Set())
 const currencyStatus = ref<'all' | 'active' | 'inactive'>('all')
 const searchQuery = ref<string>('')
 const isSearching = computed<boolean>(() => store.isCurrenciesLoading)
 const isSaving = ref<boolean>(false)
 
-// Validation state tracking
-const validationErrors = ref<Map<string, Record<string, string>>>(new Map())
-
-// Validation rules
-const validateCode = (code: string, currencyCode: string): string[] => {
-  const errors: string[] = []
+// Validation rules - return error message or undefined
+const validateCode = (code: string): string | undefined => {
   if (!code || code.trim() === '') {
-    errors.push(t('admin.pricing.currencies.validation.codeRequired'))
-  } else if (code.length !== 3) {
-    errors.push(t('admin.pricing.currencies.validation.codeLength'))
-  } else if (!/^[A-Z]{3}$/.test(code)) {
-    errors.push(t('admin.pricing.currencies.validation.codeUppercase'))
+    return t('admin.pricing.currencies.validation.codeRequired')
   }
-  return errors
+  if (code.length !== 3) {
+    return t('admin.pricing.currencies.validation.codeLength')
+  }
+  if (!/^[A-Z]{3}$/.test(code)) {
+    return t('admin.pricing.currencies.validation.codeUppercase')
+  }
+  return undefined
 }
 
-const validateName = (name: string): string[] => {
-  const errors: string[] = []
+const validateName = (name: string): string | undefined => {
   if (!name || name.trim() === '') {
-    errors.push(t('admin.pricing.currencies.validation.nameRequired'))
-  } else if (name.length > 50) {
-    errors.push(t('admin.pricing.currencies.validation.nameMaxLength'))
+    return t('admin.pricing.currencies.validation.nameRequired')
   }
-  return errors
+  if (name.length > 50) {
+    return t('admin.pricing.currencies.validation.nameMaxLength')
+  }
+  return undefined
 }
 
-const validateSymbol = (symbol: string): string[] => {
-  const errors: string[] = []
+const validateSymbol = (symbol: string): string | undefined => {
   if (!symbol || symbol.trim() === '') {
-    errors.push(t('admin.pricing.currencies.validation.symbolRequired'))
-  } else if (symbol.length > 3) {
-    errors.push(t('admin.pricing.currencies.validation.symbolMaxLength'))
+    return t('admin.pricing.currencies.validation.symbolRequired')
   }
-  return errors
+  if (symbol.length > 3) {
+    return t('admin.pricing.currencies.validation.symbolMaxLength')
+  }
+  return undefined
 }
 
-const validateMinorUnits = (minorUnits: number): string[] => {
-  const errors: string[] = []
+const validateMinorUnits = (minorUnits: number): string | undefined => {
   if (minorUnits < 0 || minorUnits > 4) {
-    errors.push(t('admin.pricing.currencies.validation.minorUnitsRange'))
+    return t('admin.pricing.currencies.validation.minorUnitsRange')
   }
-  return errors
+  return undefined
 }
 
 // Check if currency is newly created (not from backend)
@@ -95,41 +90,21 @@ const isModifiedCurrency = (code: string): boolean => {
   return !!store.currenciesUpdated[code]
 }
 
-// Validate a single currency and update errors map
-const validateCurrency = (currency: Currency): boolean => {
-  const errors: Record<string, string> = {}
-  
-  const codeErrors = validateCode(currency.code, currency.code)
-  if (codeErrors.length > 0) errors.code = codeErrors[0]
-  
-  const nameErrors = validateName(currency.name)
-  if (nameErrors.length > 0) errors.name = nameErrors[0]
-  
-  const symbolErrors = validateSymbol(currency.symbol || '')
-  if (symbolErrors.length > 0) errors.symbol = symbolErrors[0]
-  
-  const minorUnitsErrors = validateMinorUnits(currency.minorUnits)
-  if (minorUnitsErrors.length > 0) errors.minorUnits = minorUnitsErrors[0]
-  
-  if (Object.keys(errors).length > 0) {
-    validationErrors.value.set(currency.code, errors)
-    return false
-  } else {
-    validationErrors.value.delete(currency.code)
-    return true
-  }
-}
-
-// Get validation error for specific field
-const getFieldError = (currencyCode: string, field: string): string | undefined => {
-  return validationErrors.value.get(currencyCode)?.[field]
+// Check if currency has any validation errors
+const hasValidationError = (currency: Currency): boolean => {
+  return !!(
+    validateCode(currency.code) ||
+    validateName(currency.name) ||
+    validateSymbol(currency.symbol || '') ||
+    validateMinorUnits(currency.minorUnits)
+  )
 }
 
 // Check if there are any validation errors for new/modified currencies
 const hasValidationErrors = computed(() => {
   for (const currency of currencies.value) {
     if (isNewCurrency(currency.code) || isModifiedCurrency(currency.code)) {
-      if (!validateCurrency(currency)) {
+      if (hasValidationError(currency)) {
         return true
       }
     }
@@ -232,7 +207,13 @@ const saveCurrencies = async () => {
     uiStore.showSuccessSnackbar(message)
   } catch (error) {
     console.error('Failed to save currencies:', error)
-    uiStore.showErrorSnackbar(t('admin.pricing.currencies.messages.saveError'))
+    // Check if error is about deleting used currency
+    const errorMsg = error instanceof Error ? error.message : String(error)
+    if (errorMsg.includes('used in price lists')) {
+      uiStore.showErrorSnackbar(t('admin.pricing.currencies.messages.deleteUsedCurrency'))
+    } else {
+      uiStore.showErrorSnackbar(t('admin.pricing.currencies.messages.saveError'))
+    }
   } finally {
     isSaving.value = false
   }
@@ -249,8 +230,6 @@ const addCurrency = () => {
   }
   // Temporary local addition for UX; not persisted yet
   store.addTempCurrency(newCurrency)
-  // Mark it for validation
-  validateCurrency(newCurrency)
 }
 
 // Status options for menu
@@ -269,8 +248,6 @@ const roundingModeOptions = computed(() => [
 
 const deleteSelected = async () => {
   if (!hasSelected.value) return
-  
-  const deletedCount = selectedCurrencies.value.size
   
   // Mark each selected currency as deleted using store method
   selectedCurrencies.value.forEach(code => {
@@ -292,7 +269,13 @@ const deleteSelected = async () => {
       uiStore.showSuccessSnackbar(message)
     } catch (error) {
       console.error('Failed to delete currencies:', error)
-      uiStore.showErrorSnackbar(t('admin.pricing.currencies.messages.saveError'))
+      // Check if error is about deleting used currency
+      const errorMsg = error instanceof Error ? error.message : String(error)
+      if (errorMsg.includes('used in price lists')) {
+        uiStore.showErrorSnackbar(t('admin.pricing.currencies.messages.deleteUsedCurrency'))
+      } else {
+        uiStore.showErrorSnackbar(t('admin.pricing.currencies.messages.saveError'))
+      }
     } finally {
       isSaving.value = false
     }
@@ -422,8 +405,8 @@ function handleBeforeUnload(e: BeforeUnloadEvent) {
             </thead>
             <tbody>
               <tr
-                v-for="currency in pagedCurrencies"
-                :key="currency.code"
+                v-for="(currency, index) in pagedCurrencies"
+                :key="index"
               >
                 <td>
                   <v-btn
@@ -443,8 +426,7 @@ function handleBeforeUnload(e: BeforeUnloadEvent) {
                     density="compact" 
                     variant="plain" 
                     :readonly="!isNewCurrency(currency.code)"
-                    :error-messages="getFieldError(currency.code, 'code')"
-                    @update:model-value="validateCurrency(currency); store.markCurrencyChanged(currency.code, 'code', currency.code)"
+                    :error-messages="validateCode(currency.code)"
                     maxlength="3"
                   />
                 </td>
@@ -453,8 +435,8 @@ function handleBeforeUnload(e: BeforeUnloadEvent) {
                     v-model="currency.name" 
                     density="compact" 
                     variant="plain" 
-                    :error-messages="getFieldError(currency.code, 'name')"
-                    @update:model-value="validateCurrency(currency); store.markCurrencyChanged(currency.code, 'name', currency.name)"
+                    :error-messages="validateName(currency.name)"
+                    @update:model-value="store.markCurrencyChanged(currency.code, 'name', currency.name)"
                     maxlength="50"
                   />
                 </td>
@@ -463,8 +445,8 @@ function handleBeforeUnload(e: BeforeUnloadEvent) {
                     v-model="currency.symbol" 
                     density="compact" 
                     variant="plain" 
-                    :error-messages="getFieldError(currency.code, 'symbol')"
-                    @update:model-value="validateCurrency(currency); store.markCurrencyChanged(currency.code, 'symbol', currency.symbol)"
+                    :error-messages="validateSymbol(currency.symbol || '')"
+                    @update:model-value="store.markCurrencyChanged(currency.code, 'symbol', currency.symbol)"
                     maxlength="3"
                   />
                 </td>
@@ -476,8 +458,8 @@ function handleBeforeUnload(e: BeforeUnloadEvent) {
                     max="4"
                     density="compact" 
                     variant="plain" 
-                    :error-messages="getFieldError(currency.code, 'minorUnits')"
-                    @update:model-value="validateCurrency(currency); store.markCurrencyChanged(currency.code, 'minorUnits', currency.minorUnits)"
+                    :error-messages="validateMinorUnits(currency.minorUnits)"
+                    @update:model-value="store.markCurrencyChanged(currency.code, 'minorUnits', currency.minorUnits)"
                   />
                 </td>
                 <td>

@@ -1,7 +1,8 @@
 /**
- * version: 1.1.0
+ * version: 1.1.1
  * SQL queries for pricing administration module.
  * Contains parameterized queries related to pricing (currencies and future pricing entities).
+ * Includes integrity check query for currency deletion.
  * File: queries.admin.pricing.ts (backend)
  */
 
@@ -47,6 +48,11 @@ export const queries = {
     /** Check existence by code */
     existsCurrency: `
         SELECT 1 FROM app.currencies WHERE code = $1
+    `,
+
+    /** Check if currency is used in price lists */
+    isCurrencyUsedInPriceLists: `
+        SELECT 1 FROM app.price_lists_info WHERE currency_code = $1 LIMIT 1
     `
 };
 

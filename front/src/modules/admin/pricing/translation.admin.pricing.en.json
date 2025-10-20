@@ -123,7 +123,7 @@
         },
         "validation": {
           "codeRequired": "code is required",
-          "codeLength": "code must be exactly 3 characters",
+          "codeLength": "3 symbols currency code according to ISO 4217",
           "codeUppercase": "code must be uppercase letters",
           "nameRequired": "name is required",
           "nameMaxLength": "name must not exceed 50 characters",
@@ -135,7 +135,8 @@
           "loadSuccess": "currencies loaded successfully",
           "loadError": "failed to load currencies",
           "saveSuccess": "updated currencies list: updated ({updated}), new ({created}), deleted ({deleted})",
-          "saveError": "failed to save currencies"
+          "saveError": "failed to save currencies",
+          "deleteUsedCurrency": "cannot delete currency: it is used in price lists"
         }
       }
     }
