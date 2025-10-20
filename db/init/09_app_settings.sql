@@ -1,8 +1,8 @@
--- Version: 1.5.1
+-- Version: 1.5.2
 -- Description: Seeds the database with default application settings.
 -- Backend file: 09_app_settings.sql
--- Added: Appearance settings (navbar color), 12-hour time format setting
--- Updated: Changed default.language to use ISO 639-1 language codes ('en', 'ru') instead of full names
+-- Added: 7 new EventBus domains (adminProducts, adminPricing, adminOrganizations, work, reports, knowledgeBase, guards)
+-- Previous: Appearance settings (navbar color), 12-hour time format setting, ISO 639-1 language codes
 
 -- This script inserts a comprehensive set of default settings for the application,
 -- covering areas like security, session management, and feature toggles.
@@ -66,6 +66,13 @@ INSERT INTO app.app_settings (
 ('Application.System.EventBus', 'generate.events.in.domain.account', 'all', 'true', '{"type":"boolean"}', 'true', 'Enable event generation in account domain', false),
 ('Application.System.EventBus', 'generate.events.in.domain.validation', 'all', 'true', '{"type":"boolean"}', 'true', 'Enable event generation in validation domain', false),
 ('Application.System.EventBus', 'generate.events.in.domain.adminCatalog', 'all', 'true', '{"type":"boolean"}', 'true', 'Enable event generation in admin catalog domain', false),
+('Application.System.EventBus', 'generate.events.in.domain.adminProducts', 'all', 'true', '{"type":"boolean"}', 'true', 'Enable event generation in admin products domain', false),
+('Application.System.EventBus', 'generate.events.in.domain.adminPricing', 'all', 'true', '{"type":"boolean"}', 'true', 'Enable event generation in admin pricing domain', false),
+('Application.System.EventBus', 'generate.events.in.domain.adminOrganizations', 'all', 'true', '{"type":"boolean"}', 'true', 'Enable event generation in admin organizations domain', false),
+('Application.System.EventBus', 'generate.events.in.domain.work', 'all', 'true', '{"type":"boolean"}', 'true', 'Enable event generation in work module domain', false),
+('Application.System.EventBus', 'generate.events.in.domain.reports', 'all', 'true', '{"type":"boolean"}', 'true', 'Enable event generation in reports module domain', false),
+('Application.System.EventBus', 'generate.events.in.domain.knowledgeBase', 'all', 'true', '{"type":"boolean"}', 'true', 'Enable event generation in knowledge base module domain', false),
+('Application.System.EventBus', 'generate.events.in.domain.guards', 'all', 'true', '{"type":"boolean"}', 'true', 'Enable event generation in guards security domain', false),
 
 -- Organization Management Settings
 ('OrganizationManagement.GroupsManagement', 'add.only.active.users.to.groups', 'all', 'false', '{"type":"boolean"}', 'true', 'Allow adding to groups only those users with status ACTIVE', false),
