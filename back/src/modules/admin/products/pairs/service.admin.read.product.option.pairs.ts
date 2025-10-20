@@ -1,8 +1,11 @@
 /**
  * File: service.admin.read.product.option.pairs.ts
- * Version: 1.0.0
+ * Version: 1.1.0
  * Description: Service for reading existing product-option pairs for a main product.
  * Purpose: Returns pairs for provided option ids, without fallbacks.
+ * 
+ * Updated: Changed event names from 'products.pairs.*' to 'adminProducts.pairs.*' to match domain registry
+ * 
  * Backend file - service.admin.read.product.option.pairs.ts
  */
 
@@ -27,7 +30,7 @@ export async function readProductOptionPairs(body: ReadPairsRequestBody, req: Re
     const optionProductIds: string[] | undefined = body?.optionProductIds
 
     await createAndPublishEvent({
-      eventName: 'products.pairs.read.started',
+      eventName: 'adminProducts.pairs.read.started',
       payload: {
         mainProductId,
         optionIdsCount: Array.isArray(optionProductIds) ? optionProductIds.length : 0,
@@ -50,7 +53,7 @@ export async function readProductOptionPairs(body: ReadPairsRequestBody, req: Re
         unitPrice: null
       }))
       await createAndPublishEvent({
-        eventName: 'products.pairs.read.success',
+        eventName: 'adminProducts.pairs.read.success',
         payload: {
           mainProductId,
           foundCount: pairs.length,
@@ -70,7 +73,7 @@ export async function readProductOptionPairs(body: ReadPairsRequestBody, req: Re
       const resIds = await client.query('SELECT option_product_id FROM app.product_options WHERE main_product_id = $1', [mainProductId])
       const ids: string[] = resIds.rows.map(r => r.option_product_id as string)
       await createAndPublishEvent({
-        eventName: 'products.pairs.read.success',
+        eventName: 'adminProducts.pairs.read.success',
         payload: { mainProductId, foundCount: ids.length, requestedCount: 0, optionIdsFound: ids, optionIdsRequested: [], requestorId: requestorUuid }
       })
       return { success: true, optionProductIds: ids }
@@ -84,7 +87,7 @@ export async function readProductOptionPairs(body: ReadPairsRequestBody, req: Re
       const existsMap: Record<string, boolean> = {}
       for (const id of optionProductIds) existsMap[id] = found.has(id)
       await createAndPublishEvent({
-        eventName: 'products.pairs.read.success',
+        eventName: 'adminProducts.pairs.read.success',
         payload: { mainProductId, foundCount: res.rows.length, requestedCount: optionProductIds.length, optionIdsFound: Array.from(found), optionIdsRequested: optionProductIds, requestorId: requestorUuid }
       })
       return { success: true, existsMap }
@@ -93,7 +96,7 @@ export async function readProductOptionPairs(body: ReadPairsRequestBody, req: Re
     throw new Error('Unsupported mode')
   } catch (error) {
     await createAndPublishEvent({
-      eventName: 'products.pairs.read.error',
+      eventName: 'adminProducts.pairs.read.error',
       payload: {
         mainProductId: body?.mainProductId,
         requestedCount: Array.isArray(body?.optionProductIds) ? body.optionProductIds.length : 0,

@@ -1,7 +1,10 @@
 /**
  * File: service.admin.delete.product.option.pairs.ts
- * Version: 1.0.0
+ * Version: 1.1.0
  * Description: Service for deleting product-option pairs (selected or all).
+ * 
+ * Updated: Changed event names from 'products.pairs.*' to 'adminProducts.pairs.*' to match domain registry
+ * 
  * Backend file - service.admin.delete.product.option.pairs.ts
  */
 
@@ -50,7 +53,7 @@ export async function deleteProductOptionPairs(body: DeletePairsRequestBody, req
       await client.query('COMMIT')
 
       await createAndPublishEvent({
-        eventName: 'products.pairs.delete.success',
+        eventName: 'adminProducts.pairs.delete.success',
         payload: { mainProductId, mode: 'all', totalRequested: deleted.length, totalDeleted: deleted.length, deletedOptionIds: deleted, requestorId: requestorUuid }
       })
 
@@ -65,12 +68,12 @@ export async function deleteProductOptionPairs(body: DeletePairsRequestBody, req
 
       if (missing.length > 0) {
         await createAndPublishEvent({
-          eventName: 'products.pairs.delete.partial_success',
+          eventName: 'adminProducts.pairs.delete.partial_success',
           payload: { mainProductId, mode: 'selected', totalRequested: selectedOptionIds!.length, totalDeleted: deleted.length, deletedOptionIds: deleted, missingOptionIds: missing, requestorId: requestorUuid }
         })
       } else {
         await createAndPublishEvent({
-          eventName: 'products.pairs.delete.success',
+          eventName: 'adminProducts.pairs.delete.success',
           payload: { mainProductId, mode: 'selected', totalRequested: selectedOptionIds!.length, totalDeleted: deleted.length, deletedOptionIds: deleted, requestorId: requestorUuid }
         })
       }
@@ -80,7 +83,7 @@ export async function deleteProductOptionPairs(body: DeletePairsRequestBody, req
   } catch (error) {
     try { await client.query('ROLLBACK') } catch {}
     await createAndPublishEvent({
-      eventName: 'products.pairs.delete.error',
+          eventName: 'adminProducts.pairs.delete.error',
       payload: { mainProductId: body?.mainProductId, mode: body?.all ? 'all' : 'selected', error: error instanceof Error ? error.message : String(error), requestorId: getRequestorUuidFromReq(req) },
       errorData: error instanceof Error ? error.message : String(error)
     })

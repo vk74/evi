@@ -1,8 +1,11 @@
 /**
  * File: service.admin.create.product.option.pairs.ts
- * Version: 1.0.1
+ * Version: 1.1.0
  * Description: Service for creating product-option pairs with transactional integrity.
  * Purpose: Inserts only new pairs; on conflict (existing), throws error with detailed payload.
+ * 
+ * Updated: Changed event names from 'products.pairs.*' to 'adminProducts.pairs.*' to match domain registry
+ * 
  * Backend file - service.admin.create.product.option.pairs.ts
  */
 
@@ -61,7 +64,7 @@ export async function createProductOptionPairs(body: CreatePairsRequestBody, req
     if (conflicting.length > 0) {
       const errorMessage = 'Conflict: pairs already exist for some option ids'
       await createAndPublishEvent({
-        eventName: 'products.pairs.create.conflict',
+        eventName: 'adminProducts.pairs.create.conflict',
         payload: {
           mainProductId,
           conflictingOptionIds: conflicting,
@@ -90,7 +93,7 @@ export async function createProductOptionPairs(body: CreatePairsRequestBody, req
 
     const createdIds = optionIds
     await createAndPublishEvent({
-      eventName: 'products.pairs.create.success',
+      eventName: 'adminProducts.pairs.create.success',
       payload: {
         mainProductId,
         createdCount: createdIds.length,
@@ -103,7 +106,7 @@ export async function createProductOptionPairs(body: CreatePairsRequestBody, req
   } catch (error) {
     try { await client.query('ROLLBACK') } catch {}
     await createAndPublishEvent({
-      eventName: 'products.pairs.create.error',
+      eventName: 'adminProducts.pairs.create.error',
       payload: {
         mainProductId: body?.mainProductId,
         requestedCount: Array.isArray(body?.pairs) ? body.pairs.length : 0,

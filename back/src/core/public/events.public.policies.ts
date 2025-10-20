@@ -1,9 +1,12 @@
 /**
  * events.public.policies.ts - backend file
- * version: 1.1.0
+ * version: 1.2.0
  * Event definitions for public API operations (password policies, validation rules, UI settings).
  * Contains event types for logging requests, responses, and errors.
- * Domain: public
+ * 
+ * Updated: Changed event prefix from 'public.*' to 'publicPolicies.*' to match domain registry
+ * 
+ * Domain: publicPolicies
  */
 
 /**
@@ -17,7 +20,7 @@ export const PUBLIC_PASSWORD_POLICIES_EVENTS = {
    * Triggered when a public password policies request is received
    */
   REQUEST_RECEIVED: {
-    eventName: 'public.password.request.received',
+    eventName: 'publicPolicies.password.request.received',
     eventMessage: 'Public password policies request received',
     eventType: 'app' as const,
     source: 'core.public.policies',
@@ -26,7 +29,7 @@ export const PUBLIC_PASSWORD_POLICIES_EVENTS = {
   },
 
   RESPONSE_SENT: {
-    eventName: 'public.password.response.sent',
+    eventName: 'publicPolicies.password.response.sent',
     eventMessage: 'Public password policies response sent successfully',
     eventType: 'app' as const,
     source: 'core.public.policies',
@@ -35,7 +38,7 @@ export const PUBLIC_PASSWORD_POLICIES_EVENTS = {
   },
 
   CACHE_HIT: {
-    eventName: 'public.password.cache.hit',
+    eventName: 'publicPolicies.password.cache.hit',
     eventMessage: 'Password policies retrieved from settings service',
     eventType: 'performance' as const,
     source: 'core.public.policies',
@@ -44,7 +47,7 @@ export const PUBLIC_PASSWORD_POLICIES_EVENTS = {
   },
 
   RATE_LIMIT_EXCEEDED: {
-    eventName: 'public.password.rate.limit.exceeded',
+    eventName: 'publicPolicies.password.rate.limit.exceeded',
     eventMessage: 'Rate limit exceeded for public password policies requests',
     eventType: 'security' as const,
     source: 'core.public.policies',
@@ -53,7 +56,7 @@ export const PUBLIC_PASSWORD_POLICIES_EVENTS = {
   },
 
   VALIDATION_ERROR: {
-    eventName: 'public.password.validation.error',
+    eventName: 'publicPolicies.password.validation.error',
     eventMessage: 'Request validation error for public password policies',
     eventType: 'app' as const,
     source: 'core.public.policies',
@@ -62,7 +65,7 @@ export const PUBLIC_PASSWORD_POLICIES_EVENTS = {
   },
 
   SERVICE_ERROR: {
-    eventName: 'public.password.service.error',
+    eventName: 'publicPolicies.password.service.error',
     eventMessage: 'Service error in public password policies',
     eventType: 'system' as const,
     source: 'core.public.policies',
@@ -71,7 +74,7 @@ export const PUBLIC_PASSWORD_POLICIES_EVENTS = {
   },
 
   HTTP_ERROR: {
-    eventName: 'public.password.http.error',
+    eventName: 'publicPolicies.password.http.error',
     eventMessage: 'HTTP error in public password policies endpoint',
     eventType: 'system' as const,
     source: 'core.public.policies',
@@ -91,7 +94,7 @@ export const PUBLIC_VALIDATION_RULES_EVENTS = {
    * Triggered when a public validation rules request is received
    */
   REQUEST_RECEIVED: {
-    eventName: 'public.validation.request.received',
+    eventName: 'publicPolicies.validation.request.received',
     eventMessage: 'Public validation rules request received',
     eventType: 'app' as const,
     source: 'core.public.policies',
@@ -100,7 +103,7 @@ export const PUBLIC_VALIDATION_RULES_EVENTS = {
   },
 
   RESPONSE_SENT: {
-    eventName: 'public.validation.response.sent',
+    eventName: 'publicPolicies.validation.response.sent',
     eventMessage: 'Public validation rules response sent successfully',
     eventType: 'app' as const,
     source: 'core.public.policies',
@@ -109,7 +112,7 @@ export const PUBLIC_VALIDATION_RULES_EVENTS = {
   },
 
   CACHE_HIT: {
-    eventName: 'public.validation.cache.hit',
+    eventName: 'publicPolicies.validation.cache.hit',
     eventMessage: 'Validation rules retrieved from settings service',
     eventType: 'performance' as const,
     source: 'core.public.policies',
@@ -118,7 +121,7 @@ export const PUBLIC_VALIDATION_RULES_EVENTS = {
   },
 
   RATE_LIMIT_EXCEEDED: {
-    eventName: 'public.validation.rate.limit.exceeded',
+    eventName: 'publicPolicies.validation.rate.limit.exceeded',
     eventMessage: 'Rate limit exceeded for public validation rules requests',
     eventType: 'security' as const,
     source: 'core.public.policies',
@@ -127,7 +130,7 @@ export const PUBLIC_VALIDATION_RULES_EVENTS = {
   },
 
   VALIDATION_ERROR: {
-    eventName: 'public.validation.validation.error',
+    eventName: 'publicPolicies.validation.validation.error',
     eventMessage: 'Request validation error for public validation rules',
     eventType: 'app' as const,
     source: 'core.public.policies',
@@ -136,7 +139,7 @@ export const PUBLIC_VALIDATION_RULES_EVENTS = {
   },
 
   SERVICE_ERROR: {
-    eventName: 'public.validation.service.error',
+    eventName: 'publicPolicies.validation.service.error',
     eventMessage: 'Service error in public validation rules',
     eventType: 'system' as const,
     source: 'core.public.policies',
@@ -145,7 +148,7 @@ export const PUBLIC_VALIDATION_RULES_EVENTS = {
   },
 
   HTTP_ERROR: {
-    eventName: 'public.validation.http.error',
+    eventName: 'publicPolicies.validation.http.error',
     eventMessage: 'HTTP error in public validation rules endpoint',
     eventType: 'system' as const,
     source: 'core.public.policies',
@@ -191,7 +194,7 @@ export const PUBLIC_UI_SETTINGS_EVENTS = {
    * Triggered when a public UI settings request is received
    */
   REQUEST_RECEIVED: {
-    eventName: 'public.uiSettings.request.received',
+    eventName: 'publicPolicies.uiSettings.request.received',
     eventMessage: 'Public UI settings request received',
     eventType: 'app' as const,
     source: 'core.public.ui.settings',
@@ -200,7 +203,7 @@ export const PUBLIC_UI_SETTINGS_EVENTS = {
   },
 
   RESPONSE_SENT: {
-    eventName: 'public.uiSettings.response.sent',
+    eventName: 'publicPolicies.uiSettings.response.sent',
     eventMessage: 'Public UI settings response sent successfully',
     eventType: 'app' as const,
     source: 'core.public.ui.settings',
@@ -209,7 +212,7 @@ export const PUBLIC_UI_SETTINGS_EVENTS = {
   },
 
   SETTINGS_RETRIEVED: {
-    eventName: 'public.uiSettings.settings.retrieved',
+    eventName: 'publicPolicies.uiSettings.settings.retrieved',
     eventMessage: 'UI settings retrieved from cache',
     eventType: 'performance' as const,
     source: 'core.public.ui.settings',
@@ -218,7 +221,7 @@ export const PUBLIC_UI_SETTINGS_EVENTS = {
   },
 
   RATE_LIMIT_EXCEEDED: {
-    eventName: 'public.uiSettings.rate.limit.exceeded',
+    eventName: 'publicPolicies.uiSettings.rate.limit.exceeded',
     eventMessage: 'Rate limit exceeded for public UI settings requests',
     eventType: 'security' as const,
     source: 'core.public.ui.settings',
@@ -227,7 +230,7 @@ export const PUBLIC_UI_SETTINGS_EVENTS = {
   },
 
   VALIDATION_ERROR: {
-    eventName: 'public.uiSettings.validation.error',
+    eventName: 'publicPolicies.uiSettings.validation.error',
     eventMessage: 'Request validation error for public UI settings',
     eventType: 'app' as const,
     source: 'core.public.ui.settings',
@@ -236,7 +239,7 @@ export const PUBLIC_UI_SETTINGS_EVENTS = {
   },
 
   SERVICE_ERROR: {
-    eventName: 'public.uiSettings.service.error',
+    eventName: 'publicPolicies.uiSettings.service.error',
     eventMessage: 'Service error in public UI settings',
     eventType: 'system' as const,
     source: 'core.public.ui.settings',
@@ -245,7 +248,7 @@ export const PUBLIC_UI_SETTINGS_EVENTS = {
   },
 
   HTTP_ERROR: {
-    eventName: 'public.uiSettings.http.error',
+    eventName: 'publicPolicies.uiSettings.http.error',
     eventMessage: 'HTTP error in public UI settings endpoint',
     eventType: 'system' as const,
     source: 'core.public.ui.settings',

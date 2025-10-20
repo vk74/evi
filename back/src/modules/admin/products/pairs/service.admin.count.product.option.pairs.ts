@@ -1,7 +1,10 @@
 /**
  * File: service.admin.count.product.option.pairs.ts
- * Version: 1.0.0
+ * Version: 1.1.0
  * Description: Service to count product-option pairs for a main product.
+ * 
+ * Updated: Changed event names from 'products.pairs.*' to 'adminProducts.pairs.*' to match domain registry
+ * 
  * Backend file - service.admin.count.product.option.pairs.ts
  */
 
@@ -28,14 +31,14 @@ export async function countProductOptionPairs(body: CountPairsRequestBody, req: 
     const count = (q.rows[0]?.cnt as number) || 0
 
     await createAndPublishEvent({
-      eventName: 'products.pairs.read.success',
+      eventName: 'adminProducts.pairs.read.success',
       payload: { mainProductId, foundCount: count, requestedCount: 0, optionIdsFound: [], optionIdsRequested: [], requestorId: requestorUuid }
     })
 
     return { success: true, count }
   } catch (error) {
     await createAndPublishEvent({
-      eventName: 'products.pairs.read.error',
+      eventName: 'adminProducts.pairs.read.error',
       payload: { mainProductId: body?.mainProductId, requestedCount: 0, error: error instanceof Error ? error.message : String(error), requestorId: getRequestorUuidFromReq(req) },
       errorData: error instanceof Error ? error.message : String(error)
     })

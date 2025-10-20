@@ -1,9 +1,10 @@
 /**
  * subscriptions.eventBus.ts - backend file
- * version: 1.0.0
+ * version: 1.1.0
  * Event Bus subscriptions service that handles subscribing to settings change events.
  * Routes settings change events to event bus service and processes domain settings updates.
  * Delegates event bus reconfiguration to the event bus service for proper separation of concerns.
+ * Updated: Implemented single source of truth - settings list is now generated dynamically from event reference registry
  */
 
 import { BaseEvent } from './types.events';
@@ -16,6 +17,7 @@ import {
   EVENTBUS_SETTINGS_EVENTS,
   EVENTBUS_ERROR_EVENTS
 } from './events.eventBus';
+import { getAllDomains } from './reference/index.reference.events';
 
 // Track active subscriptions for cleanup
 const activeSubscriptions: Array<string> = [];
@@ -127,26 +129,11 @@ const handleEventBusSettingsChange = (event: BaseEvent): void => {
  * Reads current settings values and applies them to event bus service
  */
 const loadInitialSettings = (): void => {
-  const settingsToLoad = [
-    'generate.events.in.domain.helpers',
-    'generate.events.in.domain.connectionHandler',
-    'generate.events.in.domain.userEditor',
-    'generate.events.in.domain.groupEditor',
-    'generate.events.in.domain.usersList',
-    'generate.events.in.domain.groupsList',
-    'generate.events.in.domain.settings',
-    'generate.events.in.domain.logger',
-    'generate.events.in.domain.system',
-    'generate.events.in.domain.auth',
-    'generate.events.in.domain.publicPolicies',
-    'generate.events.in.domain.catalog',
-    'generate.events.in.domain.services',
-    'generate.events.in.domain.adminServices',
-    'generate.events.in.domain.adminCatalog',
-    'generate.events.in.domain.products',
-    'generate.events.in.domain.account',
-    'generate.events.in.domain.validation'
-  ];
+  // Get all domains from the event reference registry
+  const allDomains = getAllDomains();
+  
+  // Generate settings list dynamically from domains
+  const settingsToLoad = allDomains.map(domain => `generate.events.in.domain.${domain}`);
   
   fabricEvents.createAndPublishEvent({
     eventName: EVENTBUS_SETTINGS_EVENTS.INITIAL_LOAD_STARTED.eventName,

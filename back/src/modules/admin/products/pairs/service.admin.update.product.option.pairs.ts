@@ -1,8 +1,11 @@
 /**
  * File: service.admin.update.product.option.pairs.ts
- * Version: 1.0.1
+ * Version: 1.1.0
  * Description: Service for updating existing product-option pairs with transactional integrity.
  * Purpose: Updates only existing pairs; if any is missing, throws error with missing ids.
+ * 
+ * Updated: Changed event names from 'products.pairs.*' to 'adminProducts.pairs.*' to match domain registry
+ * 
  * Backend file - service.admin.update.product.option.pairs.ts
  */
 
@@ -60,7 +63,7 @@ export async function updateProductOptionPairs(body: UpdatePairsRequestBody, req
     if (missing.length > 0) {
       const reason = 'Not found: some option ids do not have existing pairs'
       await createAndPublishEvent({
-        eventName: 'products.pairs.update.not_found',
+        eventName: 'adminProducts.pairs.update.not_found',
         payload: {
           mainProductId,
           missingOptionIds: missing,
@@ -87,7 +90,7 @@ export async function updateProductOptionPairs(body: UpdatePairsRequestBody, req
 
     const updatedIds = optionIds
     await createAndPublishEvent({
-      eventName: 'products.pairs.update.success',
+      eventName: 'adminProducts.pairs.update.success',
       payload: {
         mainProductId,
         updatedCount: updatedIds.length,
@@ -101,7 +104,7 @@ export async function updateProductOptionPairs(body: UpdatePairsRequestBody, req
   } catch (error) {
     try { await client.query('ROLLBACK') } catch {}
     await createAndPublishEvent({
-      eventName: 'products.pairs.update.error',
+      eventName: 'adminProducts.pairs.update.error',
       payload: {
         mainProductId: body?.mainProductId,
         requestedCount: Array.isArray(body?.pairs) ? body.pairs.length : 0,

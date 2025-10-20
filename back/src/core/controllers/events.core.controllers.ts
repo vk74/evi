@@ -1,10 +1,12 @@
 /**
- * events.core.controllers.ts - version 1.0.0
+ * events.core.controllers.ts - version 1.1.0
  * BACKEND file - Events for core controllers
  * 
  * This file contains event definitions for core controllers domain.
  * It serves as a reference for creating and publishing controller-related events to the event bus.
  * Each event includes standard properties like eventName, eventType, severity, etc.
+ * 
+ * Updated: Changed event prefix from 'core.controllers.*' to 'system.controllers.*' to match domain registry
  * 
  * These events are used to track and react to controller operations
  * such as request handling, validation, and responses.
@@ -17,7 +19,7 @@
 export const USERNAME_BY_UUID_CONTROLLER_EVENTS = {
   // Request received for username by UUID
   REQUEST_RECEIVED: {
-    eventName: 'core.controllers.usernameByUuid.request.received',
+    eventName: 'system.controllers.usernameByUuid.request.received',
     source: 'core controller',
     eventType: 'app' as const,
     severity: 'debug' as const,
@@ -28,7 +30,7 @@ export const USERNAME_BY_UUID_CONTROLLER_EVENTS = {
   
   // Validation error for username by UUID request
   VALIDATION_ERROR: {
-    eventName: 'core.controllers.usernameByUuid.validation.error',
+    eventName: 'system.controllers.usernameByUuid.validation.error',
     source: 'core controller',
     eventType: 'app' as const,
     severity: 'warning' as const,
@@ -40,7 +42,7 @@ export const USERNAME_BY_UUID_CONTROLLER_EVENTS = {
   
   // Success response for username by UUID
   RESPONSE_SUCCESS: {
-    eventName: 'core.controllers.usernameByUuid.response.success',
+    eventName: 'system.controllers.usernameByUuid.response.success',
     source: 'core controller',
     eventType: 'app' as const,
     severity: 'debug' as const,
@@ -51,7 +53,7 @@ export const USERNAME_BY_UUID_CONTROLLER_EVENTS = {
   
   // Not found response for username by UUID
   RESPONSE_NOT_FOUND: {
-    eventName: 'core.controllers.usernameByUuid.response.notFound',
+    eventName: 'system.controllers.usernameByUuid.response.notFound',
     source: 'core controller',
     eventType: 'app' as const,
     severity: 'warning' as const,
@@ -63,7 +65,7 @@ export const USERNAME_BY_UUID_CONTROLLER_EVENTS = {
   
   // Error response for username by UUID
   RESPONSE_ERROR: {
-    eventName: 'core.controllers.usernameByUuid.response.error',
+    eventName: 'system.controllers.usernameByUuid.response.error',
     source: 'core controller',
     eventType: 'app' as const,
     severity: 'error' as const,

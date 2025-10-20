@@ -1,6 +1,8 @@
-// version: 1.0.10
+// version: 1.1.0
 // Central registry for all event domain catalogs in the application
 // This file serves as a registry for all event references across different modules
+// 
+// Updated: Removed duplicate 'products' domain entry, kept only 'adminProducts'
 
 import path from 'path';
 import { EventSchema, EventObject, EventCollection } from '../types.events';
@@ -50,8 +52,8 @@ export const eventReferenceFiles: Record<string, string[]> = {
     path.resolve(__dirname, '../../../modules/admin/settings/events.settings.ts')
   ],
   
-  // Products module events
-  products: [
+  // Admin products events - events for admin products operations
+  adminProducts: [
     path.resolve(__dirname, '../../../modules/admin/products/events.admin.products.ts')
   ],
   
@@ -70,8 +72,8 @@ export const eventReferenceFiles: Record<string, string[]> = {
     path.resolve(__dirname, '../../logger/events.logger.ts')
   ],
   
-  // Public events - events for public API operations (password policies, validation rules, UI settings)
-  public: [
+  // Public policies events - events for public API operations (password policies, validation rules, UI settings)
+  publicPolicies: [
     path.resolve(__dirname, '../../public/events.public.policies.ts')
   ],
   
@@ -135,6 +137,31 @@ export const eventReferenceFiles: Record<string, string[]> = {
   // Admin pricing events - events for admin pricing operations (currencies)
   adminPricing: [
     path.resolve(__dirname, '../../../modules/admin/pricing/events.admin.pricing.ts')
+  ],
+  
+  // Admin organizations events - events for admin organizations operations
+  adminOrganizations: [
+    path.resolve(__dirname, '../../../modules/admin/org/events.admin.organizations.ts')
+  ],
+  
+  // Work module events - events for work management operations
+  work: [
+    path.resolve(__dirname, '../../../modules/work/events.work.ts')
+  ],
+  
+  // Reports module events - events for reporting operations
+  reports: [
+    path.resolve(__dirname, '../../../modules/reports/events.reports.ts')
+  ],
+  
+  // Knowledge base events - events for knowledge base operations
+  knowledgeBase: [
+    path.resolve(__dirname, '../../../modules/KB/events.knowledge.base.ts')
+  ],
+  
+  // Services module events - events for services management operations
+  services: [
+    path.resolve(__dirname, '../../../modules/services/events.services.ts')
   ],
   
   // Add other domains here as they are created
@@ -383,6 +410,16 @@ export const getEventNamesForDomain = async (domain: string): Promise<string[]> 
  */
 export const getAllEventDomains = async (): Promise<string[]> => {
   return Object.keys(await getEventReferences());
+};
+
+/**
+ * Gets all domains from the registry (synchronous version)
+ * Used by event bus settings to get domain list without async overhead
+ * 
+ * @returns Array of domain names
+ */
+export const getAllDomains = (): string[] => {
+  return Object.keys(eventReferenceFiles);
 };
 
 /**

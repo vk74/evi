@@ -1,10 +1,10 @@
 /**
  * service.eventBus.ts - backend file
- * version: 1.2.0
+ * version: 1.2.1
  * Event Bus service implementation that handles domain-based event generation settings.
  * Provides methods for domain settings management and conditional event generation.
  * Supports dynamic enable/disable of event generation for specific domains.
- * Updated: Added 7 new domains (adminProducts, adminPricing, adminOrganizations, work, reports, knowledgeBase, guards)
+ * Updated: Implemented single source of truth - domains are now loaded from event reference registry
  */
 
 import { BaseEvent } from './types.events';
@@ -15,44 +15,24 @@ import {
   EVENTBUS_ERROR_EVENTS
 } from './events.eventBus';
 import { initializeTimezone } from './timezone.eventBus';
+import { getAllDomains } from './reference/index.reference.events';
 
 // Track current event bus settings
-// Domains are organized in the same order and grouping as in the frontend component
-let currentSettings = {
-  // Administration
-  adminCatalog: true,
-  adminServices: true,
-  adminProducts: true,
-  adminPricing: true,
-  // - Organization management (subgroup)
-  groupEditor: true,
-  groupsList: true,
-  userEditor: true,
-  usersList: true,
-  adminOrganizations: true,
+// Domains are dynamically loaded from the event reference registry
+let currentSettings: Record<string, boolean> = {};
+
+/**
+ * Initialize current settings with all domains from the registry
+ * All domains are enabled by default
+ */
+const initializeCurrentSettings = (): void => {
+  const allDomains = getAllDomains();
+  currentSettings = {};
   
-  // Modules (Business services)
-  work: true,
-  reports: true,
-  knowledgeBase: true,
-  account: true,
-  // - Catalog (subgroup)
-  catalog: true,
-  services: true,
-  products: true,
-  
-  // System
-  system: true,
-  settings: true,
-  logger: true,
-  helpers: true,
-  
-  // Security
-  auth: true,
-  publicPolicies: true,
-  validation: true,
-  connectionHandler: true,
-  guards: true
+  // Initialize all domains as enabled by default
+  for (const domain of allDomains) {
+    currentSettings[domain] = true;
+  }
 };
 
 /**
@@ -71,7 +51,7 @@ const extractDomainFromEventName = (eventName: string): string | null => {
  * Check if event generation is enabled for the given domain
  */
 const isEventGenerationEnabledForDomain = (domain: string): boolean => {
-  return currentSettings[domain as keyof typeof currentSettings] ?? true;
+  return currentSettings[domain] ?? true;
 };
 
 /**
@@ -81,6 +61,9 @@ const isEventGenerationEnabledForDomain = (domain: string): boolean => {
 export const initialize = async (): Promise<void> => {
   // Initialize timezone first
   await initializeTimezone();
+  
+  // Initialize current settings with all domains from registry
+  initializeCurrentSettings();
   
   fabricEvents.createAndPublishEvent({
     eventName: EVENTBUS_INITIALIZATION_EVENTS.SERVICE_INIT_STARTED.eventName,
@@ -128,8 +111,8 @@ export const shouldGenerateEvent = (eventName: string): boolean => {
  */
 export const applyDomainSetting = (domain: string, enabled: boolean): void => {
   if (domain in currentSettings) {
-    const oldValue = currentSettings[domain as keyof typeof currentSettings];
-    currentSettings[domain as keyof typeof currentSettings] = enabled;
+    const oldValue = currentSettings[domain];
+    currentSettings[domain] = enabled;
     
     fabricEvents.createAndPublishEvent({
       eventName: EVENTBUS_SETTINGS_EVENTS.DOMAIN_SETTING_CHANGED.eventName,
@@ -179,7 +162,7 @@ export const getDisabledDomains = (): string[] => {
  * Check if domain is enabled
  */
 export const isDomainEnabled = (domain: string): boolean => {
-  return currentSettings[domain as keyof typeof currentSettings] ?? true;
+  return currentSettings[domain] ?? true;
 };
 
 /**

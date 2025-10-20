@@ -1,9 +1,11 @@
 /**
- * events.admin.products.ts - version 1.0.3
+ * events.admin.products.ts - version 1.1.0
  * Event definitions for products administration module.
  * 
  * Contains event templates for products admin functionality.
  * Used by event bus factory for generating and publishing events.
+ * 
+ * Updated: Changed event prefix from 'products.*' to 'adminProducts.*' to match domain registry
  * 
  * File: events.admin.products.ts
  */
@@ -17,7 +19,7 @@ import { EventCollection } from '../../../core/eventBus/types.events'
 // Product creation events
 export const PRODUCT_CREATE_EVENTS = {
     STARTED: {
-        eventName: 'products.create.started',
+        eventName: 'adminProducts.create.started',
         source: 'admin-products',
         eventType: 'system',
         severity: 'debug',
@@ -27,7 +29,7 @@ export const PRODUCT_CREATE_EVENTS = {
     },
 
     VALIDATION_STARTED: {
-        eventName: 'products.create.validation_started',
+        eventName: 'adminProducts.create.validation_started',
         source: 'admin-products',
         eventType: 'system',
         severity: 'debug',
@@ -37,7 +39,7 @@ export const PRODUCT_CREATE_EVENTS = {
     },
 
     CODE_CHECK_STARTED: {
-        eventName: 'products.create.code_check_started',
+        eventName: 'adminProducts.create.code_check_started',
         source: 'admin-products',
         eventType: 'system',
         severity: 'debug',
@@ -47,7 +49,7 @@ export const PRODUCT_CREATE_EVENTS = {
     },
 
     CODE_CHECK_SUCCESS: {
-        eventName: 'products.create.code_check_success',
+        eventName: 'adminProducts.create.code_check_success',
         source: 'admin-products',
         eventType: 'system',
         severity: 'debug',
@@ -57,7 +59,7 @@ export const PRODUCT_CREATE_EVENTS = {
     },
 
     CODE_CHECK_ERROR: {
-        eventName: 'products.create.code_check_error',
+        eventName: 'adminProducts.create.code_check_error',
         source: 'admin-products',
         eventType: 'system',
         severity: 'error',
@@ -68,7 +70,7 @@ export const PRODUCT_CREATE_EVENTS = {
     },
 
     TRANSLATION_KEY_CHECK_STARTED: {
-        eventName: 'products.create.translation_key_check_started',
+        eventName: 'adminProducts.create.translation_key_check_started',
         source: 'admin-products',
         eventType: 'system',
         severity: 'debug',
@@ -78,7 +80,7 @@ export const PRODUCT_CREATE_EVENTS = {
     },
 
     TRANSLATION_KEY_CHECK_SUCCESS: {
-        eventName: 'products.create.translation_key_check_success',
+        eventName: 'adminProducts.create.translation_key_check_success',
         source: 'admin-products',
         eventType: 'system',
         severity: 'debug',
@@ -88,7 +90,7 @@ export const PRODUCT_CREATE_EVENTS = {
     },
 
     TRANSLATION_KEY_CHECK_ERROR: {
-        eventName: 'products.create.translation_key_check_error',
+        eventName: 'adminProducts.create.translation_key_check_error',
         source: 'admin-products',
         eventType: 'system',
         severity: 'error',
@@ -99,7 +101,7 @@ export const PRODUCT_CREATE_EVENTS = {
     },
 
     INSERTING_DATA: {
-        eventName: 'products.create.inserting_data',
+        eventName: 'adminProducts.create.inserting_data',
         source: 'admin-products',
         eventType: 'system',
         severity: 'debug',
@@ -109,7 +111,7 @@ export const PRODUCT_CREATE_EVENTS = {
     },
 
     SUCCESS: {
-        eventName: 'products.create.success',
+        eventName: 'adminProducts.create.success',
         source: 'admin-products',
         eventType: 'system',
         severity: 'info',
@@ -119,7 +121,7 @@ export const PRODUCT_CREATE_EVENTS = {
     },
 
     TRANSLATION_CREATED: {
-        eventName: 'products.create.translation_created',
+        eventName: 'adminProducts.create.translation_created',
         source: 'admin-products',
         eventType: 'system',
         severity: 'debug',
@@ -129,7 +131,7 @@ export const PRODUCT_CREATE_EVENTS = {
     },
 
     TRANSLATION_ERROR: {
-        eventName: 'products.create.translation_error',
+        eventName: 'adminProducts.create.translation_error',
         source: 'admin-products',
         eventType: 'system',
         severity: 'error',
@@ -140,7 +142,7 @@ export const PRODUCT_CREATE_EVENTS = {
     },
 
     DATABASE_ERROR: {
-        eventName: 'products.create.database_error',
+        eventName: 'adminProducts.create.database_error',
         source: 'admin-products',
         eventType: 'system',
         severity: 'error',
@@ -151,7 +153,7 @@ export const PRODUCT_CREATE_EVENTS = {
     },
 
     TRANSACTION_ROLLBACK: {
-        eventName: 'products.create.transaction_rollback',
+        eventName: 'adminProducts.create.transaction_rollback',
         source: 'admin-products',
         eventType: 'system',
         severity: 'error',
@@ -162,7 +164,7 @@ export const PRODUCT_CREATE_EVENTS = {
     },
 
     ERROR: {
-        eventName: 'products.create.error',
+        eventName: 'adminProducts.create.error',
         source: 'admin-products',
         eventType: 'system',
         severity: 'error',
@@ -176,7 +178,7 @@ export const PRODUCT_CREATE_EVENTS = {
 // Product update events
 export const PRODUCT_UPDATE_EVENTS = {
     STARTED: {
-        eventName: 'products.update.started',
+        eventName: 'adminProducts.update.started',
         source: 'admin-products',
         eventType: 'system',
         severity: 'debug',
@@ -186,7 +188,7 @@ export const PRODUCT_UPDATE_EVENTS = {
     },
 
     VALIDATION_STARTED: {
-        eventName: 'products.update.validation_started',
+        eventName: 'adminProducts.update.validation_started',
         source: 'admin-products',
         eventType: 'system',
         severity: 'debug',
@@ -196,7 +198,7 @@ export const PRODUCT_UPDATE_EVENTS = {
     },
 
     NOT_FOUND: {
-        eventName: 'products.update.not_found',
+        eventName: 'adminProducts.update.not_found',
         source: 'admin-products',
         eventType: 'system',
         severity: 'warning',
@@ -206,7 +208,7 @@ export const PRODUCT_UPDATE_EVENTS = {
     },
 
     MAIN_DATA_UPDATED: {
-        eventName: 'products.update.main_data_updated',
+        eventName: 'adminProducts.update.main_data_updated',
         source: 'admin-products',
         eventType: 'system',
         severity: 'info',
@@ -216,7 +218,7 @@ export const PRODUCT_UPDATE_EVENTS = {
     },
 
     TRANSLATIONS_UPDATED: {
-        eventName: 'products.update.translations_updated',
+        eventName: 'adminProducts.update.translations_updated',
         source: 'admin-products',
         eventType: 'system',
         severity: 'info',
@@ -226,7 +228,7 @@ export const PRODUCT_UPDATE_EVENTS = {
     },
 
     OWNERS_UPDATED: {
-        eventName: 'products.update.owners_updated',
+        eventName: 'adminProducts.update.owners_updated',
         source: 'admin-products',
         eventType: 'system',
         severity: 'info',
@@ -236,7 +238,7 @@ export const PRODUCT_UPDATE_EVENTS = {
     },
 
     GROUPS_UPDATED: {
-        eventName: 'products.update.groups_updated',
+        eventName: 'adminProducts.update.groups_updated',
         source: 'admin-products',
         eventType: 'system',
         severity: 'info',
@@ -247,7 +249,7 @@ export const PRODUCT_UPDATE_EVENTS = {
 
     // Product update preferences field changed
     PREFERENCES_FIELD_CHANGED: {
-        eventName: 'products.update.preferences.field_changed',
+        eventName: 'adminProducts.update.preferences.field_changed',
         source: 'admin-products',
         eventType: 'system',
         severity: 'info',
@@ -257,7 +259,7 @@ export const PRODUCT_UPDATE_EVENTS = {
     },
 
     SUCCESS: {
-        eventName: 'products.update.success',
+        eventName: 'adminProducts.update.success',
         source: 'admin-products',
         eventType: 'system',
         severity: 'info',
@@ -267,7 +269,7 @@ export const PRODUCT_UPDATE_EVENTS = {
     },
 
     ERROR: {
-        eventName: 'products.update.error',
+        eventName: 'adminProducts.update.error',
         source: 'admin-products',
         eventType: 'system',
         severity: 'error',
@@ -281,7 +283,7 @@ export const PRODUCT_UPDATE_EVENTS = {
 // Product fetch events
 export const PRODUCT_FETCH_EVENTS = {
     STARTED: {
-        eventName: 'products.fetch.started',
+        eventName: 'adminProducts.fetch.started',
         source: 'admin-products',
         eventType: 'system',
         severity: 'debug',
@@ -291,7 +293,7 @@ export const PRODUCT_FETCH_EVENTS = {
     },
 
     VALIDATION_STARTED: {
-        eventName: 'products.fetch.validation_started',
+        eventName: 'adminProducts.fetch.validation_started',
         source: 'admin-products',
         eventType: 'system',
         severity: 'debug',
@@ -301,7 +303,7 @@ export const PRODUCT_FETCH_EVENTS = {
     },
 
     NOT_FOUND: {
-        eventName: 'products.fetch.not_found',
+        eventName: 'adminProducts.fetch.not_found',
         source: 'admin-products',
         eventType: 'system',
         severity: 'warning',
@@ -311,7 +313,7 @@ export const PRODUCT_FETCH_EVENTS = {
     },
 
     TRANSLATIONS_FETCHED: {
-        eventName: 'products.fetch.translations_fetched',
+        eventName: 'adminProducts.fetch.translations_fetched',
         source: 'admin-products',
         eventType: 'system',
         severity: 'debug',
@@ -321,7 +323,7 @@ export const PRODUCT_FETCH_EVENTS = {
     },
 
     OWNERS_FETCHED: {
-        eventName: 'products.fetch.owners_fetched',
+        eventName: 'adminProducts.fetch.owners_fetched',
         source: 'admin-products',
         eventType: 'system',
         severity: 'debug',
@@ -331,7 +333,7 @@ export const PRODUCT_FETCH_EVENTS = {
     },
 
     GROUPS_FETCHED: {
-        eventName: 'products.fetch.groups_fetched',
+        eventName: 'adminProducts.fetch.groups_fetched',
         source: 'admin-products',
         eventType: 'system',
         severity: 'debug',
@@ -341,7 +343,7 @@ export const PRODUCT_FETCH_EVENTS = {
     },
 
     COUNT_COMPLETED: {
-        eventName: 'products.fetch.count_completed',
+        eventName: 'adminProducts.fetch.count_completed',
         source: 'admin-products',
         eventType: 'system',
         severity: 'debug',
@@ -351,7 +353,7 @@ export const PRODUCT_FETCH_EVENTS = {
     },
 
     SUCCESS: {
-        eventName: 'products.fetch.success',
+        eventName: 'adminProducts.fetch.success',
         source: 'admin-products',
         eventType: 'system',
         severity: 'debug',
@@ -361,7 +363,7 @@ export const PRODUCT_FETCH_EVENTS = {
     },
 
     ERROR: {
-        eventName: 'products.fetch.error',
+        eventName: 'adminProducts.fetch.error',
         source: 'admin-products',
         eventType: 'system',
         severity: 'error',
@@ -375,7 +377,7 @@ export const PRODUCT_FETCH_EVENTS = {
 // Product delete events
 export const PRODUCT_DELETE_EVENTS = {
     STARTED: {
-        eventName: 'products.delete.started',
+        eventName: 'adminProducts.delete.started',
         source: 'admin-products',
         eventType: 'system',
         severity: 'debug',
@@ -385,7 +387,7 @@ export const PRODUCT_DELETE_EVENTS = {
     },
 
     VALIDATION_SUCCESS: {
-        eventName: 'products.delete.validation.success',
+        eventName: 'adminProducts.delete.validation.success',
         source: 'admin-products',
         eventType: 'system',
         severity: 'debug',
@@ -395,7 +397,7 @@ export const PRODUCT_DELETE_EVENTS = {
     },
 
     VALIDATION_ERROR: {
-        eventName: 'products.delete.validation.error',
+        eventName: 'adminProducts.delete.validation.error',
         source: 'admin-products',
         eventType: 'system',
         severity: 'error',
@@ -406,7 +408,7 @@ export const PRODUCT_DELETE_EVENTS = {
     },
 
     SUCCESS: {
-        eventName: 'products.delete.success',
+        eventName: 'adminProducts.delete.success',
         source: 'admin-products',
         eventType: 'system',
         severity: 'info',
@@ -416,7 +418,7 @@ export const PRODUCT_DELETE_EVENTS = {
     },
 
     DATABASE_ERROR: {
-        eventName: 'products.delete.database_error',
+        eventName: 'adminProducts.delete.database_error',
         source: 'admin-products',
         eventType: 'system',
         severity: 'error',
@@ -427,7 +429,7 @@ export const PRODUCT_DELETE_EVENTS = {
     },
 
     PARTIAL_SUCCESS: {
-        eventName: 'products.delete.partial_success',
+        eventName: 'adminProducts.delete.partial_success',
         source: 'admin-products',
         eventType: 'system',
         severity: 'warning',
@@ -440,7 +442,7 @@ export const PRODUCT_DELETE_EVENTS = {
 // Options fetch events
 export const OPTIONS_FETCH_EVENTS = {
     STARTED: {
-        eventName: 'products.options.fetch.started',
+        eventName: 'adminProducts.options.fetch.started',
         source: 'admin-products',
         eventType: 'app' as const,
         severity: 'debug' as const,
@@ -450,7 +452,7 @@ export const OPTIONS_FETCH_EVENTS = {
     },
 
     COUNT_COMPLETED: {
-        eventName: 'products.options.fetch.count_completed',
+        eventName: 'adminProducts.options.fetch.count_completed',
         source: 'admin-products',
         eventType: 'app' as const,
         severity: 'info' as const,
@@ -460,7 +462,7 @@ export const OPTIONS_FETCH_EVENTS = {
     },
 
     SUCCESS: {
-        eventName: 'products.options.fetch.success',
+        eventName: 'adminProducts.options.fetch.success',
         source: 'admin-products',
         eventType: 'app' as const,
         severity: 'info' as const,
@@ -470,7 +472,7 @@ export const OPTIONS_FETCH_EVENTS = {
     },
 
     ERROR: {
-        eventName: 'products.options.fetch.error',
+        eventName: 'adminProducts.options.fetch.error',
         source: 'admin-products',
         eventType: 'app' as const,
         severity: 'error' as const,
@@ -484,7 +486,7 @@ export const OPTIONS_FETCH_EVENTS = {
 // Product option pairs events
 export const PRODUCT_OPTION_PAIRS_EVENTS = {
     READ_STARTED: {
-        eventName: 'products.pairs.read.started',
+        eventName: 'adminProducts.pairs.read.started',
         source: 'admin-products',
         eventType: 'app' as const,
         severity: 'debug' as const,
@@ -493,7 +495,7 @@ export const PRODUCT_OPTION_PAIRS_EVENTS = {
         version: '1.0.0'
     },
     READ_SUCCESS: {
-        eventName: 'products.pairs.read.success',
+        eventName: 'adminProducts.pairs.read.success',
         source: 'admin-products',
         eventType: 'app' as const,
         severity: 'debug' as const,
@@ -502,7 +504,7 @@ export const PRODUCT_OPTION_PAIRS_EVENTS = {
         version: '1.0.0'
     },
     READ_ERROR: {
-        eventName: 'products.pairs.read.error',
+        eventName: 'adminProducts.pairs.read.error',
         source: 'admin-products',
         eventType: 'app' as const,
         severity: 'error' as const,
@@ -512,7 +514,7 @@ export const PRODUCT_OPTION_PAIRS_EVENTS = {
         version: '1.0.0'
     },
     CREATE_CONFLICT: {
-        eventName: 'products.pairs.create.conflict',
+        eventName: 'adminProducts.pairs.create.conflict',
         source: 'admin-products',
         eventType: 'app' as const,
         severity: 'error' as const,
@@ -521,7 +523,7 @@ export const PRODUCT_OPTION_PAIRS_EVENTS = {
         version: '1.0.0'
     },
     CREATE_SUCCESS: {
-        eventName: 'products.pairs.create.success',
+        eventName: 'adminProducts.pairs.create.success',
         source: 'admin-products',
         eventType: 'app' as const,
         severity: 'info' as const,
@@ -530,7 +532,7 @@ export const PRODUCT_OPTION_PAIRS_EVENTS = {
         version: '1.0.0'
     },
     CREATE_ERROR: {
-        eventName: 'products.pairs.create.error',
+        eventName: 'adminProducts.pairs.create.error',
         source: 'admin-products',
         eventType: 'app' as const,
         severity: 'error' as const,
@@ -540,7 +542,7 @@ export const PRODUCT_OPTION_PAIRS_EVENTS = {
         version: '1.0.0'
     },
     UPDATE_NOT_FOUND: {
-        eventName: 'products.pairs.update.not_found',
+        eventName: 'adminProducts.pairs.update.not_found',
         source: 'admin-products',
         eventType: 'app' as const,
         severity: 'error' as const,
@@ -549,7 +551,7 @@ export const PRODUCT_OPTION_PAIRS_EVENTS = {
         version: '1.0.0'
     },
     UPDATE_SUCCESS: {
-        eventName: 'products.pairs.update.success',
+        eventName: 'adminProducts.pairs.update.success',
         source: 'admin-products',
         eventType: 'app' as const,
         severity: 'info' as const,
@@ -558,7 +560,7 @@ export const PRODUCT_OPTION_PAIRS_EVENTS = {
         version: '1.0.0'
     },
     UPDATE_ERROR: {
-        eventName: 'products.pairs.update.error',
+        eventName: 'adminProducts.pairs.update.error',
         source: 'admin-products',
         eventType: 'app' as const,
         severity: 'error' as const,
@@ -571,7 +573,7 @@ export const PRODUCT_OPTION_PAIRS_EVENTS = {
 
 export const PRODUCT_OPTION_PAIRS_DELETE_EVENTS = {
     SUCCESS: {
-        eventName: 'products.pairs.delete.success',
+        eventName: 'adminProducts.pairs.delete.success',
         source: 'admin-products',
         eventType: 'app' as const,
         severity: 'info' as const,
@@ -580,7 +582,7 @@ export const PRODUCT_OPTION_PAIRS_DELETE_EVENTS = {
         version: '1.0.0'
     },
     PARTIAL_SUCCESS: {
-        eventName: 'products.pairs.delete.partial_success',
+        eventName: 'adminProducts.pairs.delete.partial_success',
         source: 'admin-products',
         eventType: 'app' as const,
         severity: 'warning' as const,
@@ -589,7 +591,7 @@ export const PRODUCT_OPTION_PAIRS_DELETE_EVENTS = {
         version: '1.0.0'
     },
     ERROR: {
-        eventName: 'products.pairs.delete.error',
+        eventName: 'adminProducts.pairs.delete.error',
         source: 'admin-products',
         eventType: 'app' as const,
         severity: 'error' as const,
@@ -603,7 +605,7 @@ export const PRODUCT_OPTION_PAIRS_DELETE_EVENTS = {
 // Product catalog publication fetch events
 export const PRODUCT_CATALOG_PUBLICATION_FETCH_EVENTS = {
     STARTED: {
-        eventName: 'products.catalog_publication.fetch.started',
+        eventName: 'adminProducts.catalog_publication.fetch.started',
         source: 'admin-products',
         eventType: 'system',
         severity: 'debug',
@@ -613,7 +615,7 @@ export const PRODUCT_CATALOG_PUBLICATION_FETCH_EVENTS = {
     },
 
     VALIDATION_STARTED: {
-        eventName: 'products.catalog_publication.fetch.validation_started',
+        eventName: 'adminProducts.catalog_publication.fetch.validation_started',
         source: 'admin-products',
         eventType: 'system',
         severity: 'debug',
@@ -623,7 +625,7 @@ export const PRODUCT_CATALOG_PUBLICATION_FETCH_EVENTS = {
     },
 
     SUCCESS: {
-        eventName: 'products.catalog_publication.fetch.success',
+        eventName: 'adminProducts.catalog_publication.fetch.success',
         source: 'admin-products',
         eventType: 'system',
         severity: 'info',
@@ -633,7 +635,7 @@ export const PRODUCT_CATALOG_PUBLICATION_FETCH_EVENTS = {
     },
 
     ERROR: {
-        eventName: 'products.catalog_publication.fetch.error',
+        eventName: 'adminProducts.catalog_publication.fetch.error',
         source: 'admin-products',
         eventType: 'system',
         severity: 'error',
@@ -647,7 +649,7 @@ export const PRODUCT_CATALOG_PUBLICATION_FETCH_EVENTS = {
 // Product catalog publication update events
 export const PRODUCT_CATALOG_PUBLICATION_UPDATE_EVENTS = {
     STARTED: {
-        eventName: 'products.catalog_publication.update.started',
+        eventName: 'adminProducts.catalog_publication.update.started',
         source: 'admin-products',
         eventType: 'system',
         severity: 'debug',
@@ -657,7 +659,7 @@ export const PRODUCT_CATALOG_PUBLICATION_UPDATE_EVENTS = {
     },
 
     VALIDATION_STARTED: {
-        eventName: 'products.catalog_publication.update.validation_started',
+        eventName: 'adminProducts.catalog_publication.update.validation_started',
         source: 'admin-products',
         eventType: 'system',
         severity: 'debug',
@@ -667,7 +669,7 @@ export const PRODUCT_CATALOG_PUBLICATION_UPDATE_EVENTS = {
     },
 
     DATABASE_UPDATE_STARTED: {
-        eventName: 'products.catalog_publication.update.database_started',
+        eventName: 'adminProducts.catalog_publication.update.database_started',
         source: 'admin-products',
         eventType: 'system',
         severity: 'debug',
@@ -677,7 +679,7 @@ export const PRODUCT_CATALOG_PUBLICATION_UPDATE_EVENTS = {
     },
 
     PUBLISHED_TO_CATALOG: {
-        eventName: 'products.catalog_publication.update.published_to_catalog',
+        eventName: 'adminProducts.catalog_publication.update.published_to_catalog',
         source: 'admin-products',
         eventType: 'system',
         severity: 'info',
@@ -687,7 +689,7 @@ export const PRODUCT_CATALOG_PUBLICATION_UPDATE_EVENTS = {
     },
 
     UNPUBLISHED_FROM_CATALOG: {
-        eventName: 'products.catalog_publication.update.unpublished_from_catalog',
+        eventName: 'adminProducts.catalog_publication.update.unpublished_from_catalog',
         source: 'admin-products',
         eventType: 'system',
         severity: 'info',
@@ -697,7 +699,7 @@ export const PRODUCT_CATALOG_PUBLICATION_UPDATE_EVENTS = {
     },
 
     SUCCESS: {
-        eventName: 'products.catalog_publication.update.success',
+        eventName: 'adminProducts.catalog_publication.update.success',
         source: 'admin-products',
         eventType: 'system',
         severity: 'info',
@@ -707,7 +709,7 @@ export const PRODUCT_CATALOG_PUBLICATION_UPDATE_EVENTS = {
     },
 
     ERROR: {
-        eventName: 'products.catalog_publication.update.error',
+        eventName: 'adminProducts.catalog_publication.update.error',
         source: 'admin-products',
         eventType: 'system',
         severity: 'error',
