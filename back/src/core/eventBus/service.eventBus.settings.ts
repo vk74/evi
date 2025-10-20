@@ -49,7 +49,7 @@ let currentSettings = {
   
   // Security
   auth: true,
-  publicPasswordPolicies: true,
+  publicPolicies: true,
   validation: true,
   connectionHandler: true,
   guards: true

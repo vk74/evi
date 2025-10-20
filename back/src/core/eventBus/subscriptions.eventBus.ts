@@ -138,14 +138,14 @@ const loadInitialSettings = (): void => {
     'generate.events.in.domain.logger',
     'generate.events.in.domain.system',
     'generate.events.in.domain.auth',
-    'generate.events.in.domain.PublicPasswordPolicies',
+    'generate.events.in.domain.publicPolicies',
     'generate.events.in.domain.catalog',
     'generate.events.in.domain.services',
-      'generate.events.in.domain.adminServices',
-  'generate.events.in.domain.adminCatalog',
-  'generate.events.in.domain.products',
-  'generate.events.in.domain.account',
-  'generate.events.in.domain.validation'
+    'generate.events.in.domain.adminServices',
+    'generate.events.in.domain.adminCatalog',
+    'generate.events.in.domain.products',
+    'generate.events.in.domain.account',
+    'generate.events.in.domain.validation'
   ];
   
   fabricEvents.createAndPublishEvent({

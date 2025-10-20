@@ -57,7 +57,7 @@ INSERT INTO app.app_settings (
 ('Application.System.EventBus', 'generate.events.in.domain.helpers', 'all', 'true', '{"type":"boolean"}', 'true', 'Enable event generation in domain helpers', false),
 ('Application.System.EventBus', 'generate.events.in.domain.logger', 'all', 'true', '{"type":"boolean"}', 'true', 'Enable event generation in domain logger', false),
 ('Application.System.EventBus', 'generate.events.in.domain.products', 'all', 'true', '{"type":"boolean"}', 'true', 'Enable event generation in products domain', false),
-('Application.System.EventBus', 'generate.events.in.domain.PublicPasswordPolicies', 'all', 'true', '{"type":"boolean"}', 'true', 'Enable event generation in domain public password policies', false),
+('Application.System.EventBus', 'generate.events.in.domain.publicPolicies', 'all', 'true', '{"type":"boolean"}', 'true', 'Enable event generation in public policies domain', false),
 ('Application.System.EventBus', 'generate.events.in.domain.services', 'all', 'true', '{"type":"boolean"}', 'true', 'Enable event generation in services domain', false),
 ('Application.System.EventBus', 'generate.events.in.domain.settings', 'all', 'true', '{"type":"boolean"}', 'true', 'Enable event generation in domain settings', false),
 ('Application.System.EventBus', 'generate.events.in.domain.system', 'all', 'true', '{"type":"boolean"}', 'true', 'Enable event generation in domain system', false),
