@@ -2,16 +2,16 @@
   File: Application.System.EventBus.vue - frontend file
   Description: Event bus system settings with domain-specific event generation controls
   Purpose: Enable/disable event generation in different application domains
-  Version: 2.2.0
+  Version: 2.2.1
   
   Features:
   - Main event bus enable/disable switch
-  - Domain-specific event generation switches
+  - Domain-specific event generation switches (25 domains)
   - Hierarchical settings logic - domain switches depend on main event bus being enabled
   - Error handling and retry functionality for each setting
   - Settings grouped in columns for better UX
   - Cache integration for settings management
-  - Stub placeholders for future functionality (visible but disabled)
+  - Full integration with backend settings
 -->
 
 <script setup lang="ts">
@@ -46,7 +46,6 @@ const settingErrorStates = ref<Record<string, boolean>>({});
 const settingRetryAttempts = ref<Record<string, number>>({});
 
 // Local UI state for immediate interaction - initialize with null (not set)
-// Note: Some settings are stubs (visible but disabled) for future functionality
 const domainSettings = ref<Record<string, boolean | null>>({
   // System
   'generate.events.in.domain.system': null,
@@ -59,60 +58,60 @@ const domainSettings = ref<Record<string, boolean | null>>({
   'generate.events.in.domain.publicPolicies': null,
   'generate.events.in.domain.validation': null,
   'generate.events.in.domain.connectionHandler': null,
-  'generate.events.in.domain.guards': null, // stub
+  'generate.events.in.domain.guards': null,
   
   // Administration
   'generate.events.in.domain.adminCatalog': null,
   'generate.events.in.domain.adminServices': null,
-  'generate.events.in.domain.adminProducts': null, // stub
-  'generate.events.in.domain.adminPricing': null, // stub
+  'generate.events.in.domain.adminProducts': null,
+  'generate.events.in.domain.adminPricing': null,
   'generate.events.in.domain.account': null,
   'generate.events.in.domain.userEditor': null,
   'generate.events.in.domain.groupEditor': null,
   'generate.events.in.domain.usersList': null,
   'generate.events.in.domain.groupsList': null,
-  'generate.events.in.domain.adminOrganizations': null, // stub
+  'generate.events.in.domain.adminOrganizations': null,
   
   // Modules (Business services)
   'generate.events.in.domain.catalog': null,
   'generate.events.in.domain.services': null,
   'generate.events.in.domain.products': null,
-  'generate.events.in.domain.work': null, // stub
-  'generate.events.in.domain.reports': null, // stub
-  'generate.events.in.domain.knowledgeBase': null // stub
+  'generate.events.in.domain.work': null,
+  'generate.events.in.domain.reports': null,
+  'generate.events.in.domain.knowledgeBase': null
 });
 
-// Define all settings that need to be loaded from backend (excluding stubs)
+// Define all settings that need to be loaded from backend
 const allSettings = [
+  // System
   'generate.events.in.domain.system',
   'generate.events.in.domain.settings',
   'generate.events.in.domain.logger',
   'generate.events.in.domain.helpers',
+  // Security
   'generate.events.in.domain.auth',
   'generate.events.in.domain.publicPolicies',
   'generate.events.in.domain.validation',
   'generate.events.in.domain.connectionHandler',
+  'generate.events.in.domain.guards',
+  // Administration
   'generate.events.in.domain.adminCatalog',
   'generate.events.in.domain.adminServices',
+  'generate.events.in.domain.adminProducts',
+  'generate.events.in.domain.adminPricing',
+  'generate.events.in.domain.adminOrganizations',
   'generate.events.in.domain.account',
   'generate.events.in.domain.userEditor',
   'generate.events.in.domain.groupEditor',
   'generate.events.in.domain.usersList',
   'generate.events.in.domain.groupsList',
+  // Modules (Business services)
   'generate.events.in.domain.catalog',
   'generate.events.in.domain.services',
-  'generate.events.in.domain.products'
-];
-
-// Stub settings - visible but disabled (not loaded from backend)
-const stubSettings = [
-  'generate.events.in.domain.adminProducts',
-  'generate.events.in.domain.adminPricing',
-  'generate.events.in.domain.adminOrganizations',
+  'generate.events.in.domain.products',
   'generate.events.in.domain.work',
   'generate.events.in.domain.reports',
-  'generate.events.in.domain.knowledgeBase',
-  'generate.events.in.domain.guards'
+  'generate.events.in.domain.knowledgeBase'
 ];
 
 // Initialize loading states for all settings
@@ -144,13 +143,9 @@ const isSettingDisabled = (settingName: string) => {
 };
 
 /**
- * Check if domain settings should be disabled based on loading/error state or stub status
+ * Check if domain settings should be disabled based on loading/error state
  */
 const isDomainSettingDisabled = (settingName: string) => {
-  // Stub settings are always disabled
-  if (stubSettings.includes(settingName)) {
-    return true;
-  }
   return isSettingDisabled(settingName);
 };
 
