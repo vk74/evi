@@ -287,19 +287,40 @@
                 "label": "services"
               },
               "adminServices": {
-                "label": "services admin"
+                "label": "services administration"
               },
               "adminCatalog": {
-                "label": "catalog admin"
+                "label": "catalog administration"
+              },
+              "adminProducts": {
+                "label": "products administration"
+              },
+              "adminPricing": {
+                "label": "pricing administration"
+              },
+              "adminOrganizations": {
+                "label": "organizations administration"
               },
               "products": {
                 "label": "products"
               },
               "account": {
-                "label": "account"
+                "label": "personal account"
               },
               "validation": {
-                "label": "validation"
+                "label": "data validation"
+              },
+              "work": {
+                "label": "work"
+              },
+              "reports": {
+                "label": "reports"
+              },
+              "knowledgeBase": {
+                "label": "knowledge base"
+              },
+              "guards": {
+                "label": "guards"
               }
             }
           },
@@ -502,9 +523,13 @@
       "groups": {
         "security": "security",
         "organizationmanagement": "organization management",
+        "organizationManagement": "organization management",
         "system": "system",
         "coreServices": "core services",
-        "businessServices": "business services"
+        "businessServices": "business services",
+        "administration": "administration",
+        "modules": "modules",
+        "catalog": "catalog"
       },
       "common": {
         "loading": "loading settings...",

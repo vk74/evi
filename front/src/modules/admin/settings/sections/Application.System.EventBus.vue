@@ -2,15 +2,16 @@
   File: Application.System.EventBus.vue - frontend file
   Description: Event bus system settings with domain-specific event generation controls
   Purpose: Enable/disable event generation in different application domains
-  Version: 2.1.0
+  Version: 2.2.0
   
   Features:
   - Main event bus enable/disable switch
-  - 11 domain-specific event generation switches
+  - Domain-specific event generation switches
   - Hierarchical settings logic - domain switches depend on main event bus being enabled
   - Error handling and retry functionality for each setting
   - Settings grouped in columns for better UX
   - Cache integration for settings management
+  - Stub placeholders for future functionality (visible but disabled)
 -->
 
 <script setup lang="ts">
@@ -45,47 +46,73 @@ const settingErrorStates = ref<Record<string, boolean>>({});
 const settingRetryAttempts = ref<Record<string, number>>({});
 
 // Local UI state for immediate interaction - initialize with null (not set)
+// Note: Some settings are stubs (visible but disabled) for future functionality
 const domainSettings = ref<Record<string, boolean | null>>({
+  // System
+  'generate.events.in.domain.system': null,
+  'generate.events.in.domain.settings': null,
+  'generate.events.in.domain.logger': null,
   'generate.events.in.domain.helpers': null,
+  
+  // Security
+  'generate.events.in.domain.auth': null,
+  'generate.events.in.domain.publicPolicies': null,
+  'generate.events.in.domain.validation': null,
   'generate.events.in.domain.connectionHandler': null,
+  'generate.events.in.domain.guards': null, // stub
+  
+  // Administration
+  'generate.events.in.domain.adminCatalog': null,
+  'generate.events.in.domain.adminServices': null,
+  'generate.events.in.domain.adminProducts': null, // stub
+  'generate.events.in.domain.adminPricing': null, // stub
+  'generate.events.in.domain.account': null,
   'generate.events.in.domain.userEditor': null,
   'generate.events.in.domain.groupEditor': null,
   'generate.events.in.domain.usersList': null,
   'generate.events.in.domain.groupsList': null,
-  'generate.events.in.domain.settings': null,
-  'generate.events.in.domain.logger': null,
-  'generate.events.in.domain.system': null,
-  'generate.events.in.domain.auth': null,
-  'generate.events.in.domain.publicPolicies': null,
+  'generate.events.in.domain.adminOrganizations': null, // stub
+  
+  // Modules (Business services)
   'generate.events.in.domain.catalog': null,
   'generate.events.in.domain.services': null,
-  'generate.events.in.domain.adminServices': null,
   'generate.events.in.domain.products': null,
-  'generate.events.in.domain.account': null,
-  'generate.events.in.domain.validation': null,
-  'generate.events.in.domain.adminCatalog': null
+  'generate.events.in.domain.work': null, // stub
+  'generate.events.in.domain.reports': null, // stub
+  'generate.events.in.domain.knowledgeBase': null // stub
 });
 
-// Define all settings that need to be loaded
+// Define all settings that need to be loaded from backend (excluding stubs)
 const allSettings = [
+  'generate.events.in.domain.system',
+  'generate.events.in.domain.settings',
+  'generate.events.in.domain.logger',
   'generate.events.in.domain.helpers',
+  'generate.events.in.domain.auth',
+  'generate.events.in.domain.publicPolicies',
+  'generate.events.in.domain.validation',
   'generate.events.in.domain.connectionHandler',
+  'generate.events.in.domain.adminCatalog',
+  'generate.events.in.domain.adminServices',
+  'generate.events.in.domain.account',
   'generate.events.in.domain.userEditor',
   'generate.events.in.domain.groupEditor',
   'generate.events.in.domain.usersList',
   'generate.events.in.domain.groupsList',
-  'generate.events.in.domain.settings',
-  'generate.events.in.domain.logger',
-  'generate.events.in.domain.system',
-  'generate.events.in.domain.auth',
-  'generate.events.in.domain.publicPolicies',
   'generate.events.in.domain.catalog',
   'generate.events.in.domain.services',
-  'generate.events.in.domain.adminServices',
-  'generate.events.in.domain.products',
-  'generate.events.in.domain.account',
-  'generate.events.in.domain.validation',
-  'generate.events.in.domain.adminCatalog'
+  'generate.events.in.domain.products'
+];
+
+// Stub settings - visible but disabled (not loaded from backend)
+const stubSettings = [
+  'generate.events.in.domain.adminProducts',
+  'generate.events.in.domain.adminPricing',
+  'generate.events.in.domain.adminOrganizations',
+  'generate.events.in.domain.work',
+  'generate.events.in.domain.reports',
+  'generate.events.in.domain.knowledgeBase',
+  'generate.events.in.domain.guards'
 ];
 
 // Initialize loading states for all settings
@@ -117,9 +144,13 @@ const isSettingDisabled = (settingName: string) => {
 };
 
 /**
- * Check if domain settings should be disabled based on loading/error state
+ * Check if domain settings should be disabled based on loading/error state or stub status
  */
 const isDomainSettingDisabled = (settingName: string) => {
+  // Stub settings are always disabled
+  if (stubSettings.includes(settingName)) {
+    return true;
+  }
   return isSettingDisabled(settingName);
 };
 
@@ -128,6 +159,115 @@ const isDomainSettingDisabled = (settingName: string) => {
  */
 const domainGroups = computed(() => {
   return [
+    {
+      title: t('admin.settings.groups.administration'),
+      settings: [
+        {
+          name: 'generate.events.in.domain.adminCatalog',
+          translationKey: 'adminCatalog'
+        },
+        {
+          name: 'generate.events.in.domain.adminServices',
+          translationKey: 'adminServices'
+        },
+        {
+          name: 'generate.events.in.domain.adminProducts',
+          translationKey: 'adminProducts'
+        },
+        {
+          name: 'generate.events.in.domain.adminPricing',
+          translationKey: 'adminPricing'
+        }
+      ],
+      subgroups: [
+        {
+          title: t('admin.settings.groups.organizationManagement'),
+          settings: [
+            {
+              name: 'generate.events.in.domain.groupEditor',
+              translationKey: 'groupEditor'
+            },
+            {
+              name: 'generate.events.in.domain.groupsList',
+              translationKey: 'groupsList'
+            },
+            {
+              name: 'generate.events.in.domain.userEditor',
+              translationKey: 'userEditor'
+            },
+            {
+              name: 'generate.events.in.domain.usersList',
+              translationKey: 'usersList'
+            },
+            {
+              name: 'generate.events.in.domain.adminOrganizations',
+              translationKey: 'adminOrganizations'
+            }
+          ]
+        }
+      ]
+    },
+    {
+      title: t('admin.settings.groups.modules'),
+      settings: [
+        {
+          name: 'generate.events.in.domain.work',
+          translationKey: 'work'
+        },
+        {
+          name: 'generate.events.in.domain.reports',
+          translationKey: 'reports'
+        },
+        {
+          name: 'generate.events.in.domain.knowledgeBase',
+          translationKey: 'knowledgeBase'
+        },
+        {
+          name: 'generate.events.in.domain.account',
+          translationKey: 'account'
+        }
+      ],
+      subgroups: [
+        {
+          title: t('admin.settings.groups.catalog'),
+          settings: [
+            {
+              name: 'generate.events.in.domain.catalog',
+              translationKey: 'catalog'
+            },
+            {
+              name: 'generate.events.in.domain.services',
+              translationKey: 'services'
+            },
+            {
+              name: 'generate.events.in.domain.products',
+              translationKey: 'products'
+            }
+          ]
+        }
+      ]
+    },
+    {
+      title: t('admin.settings.groups.system'),
+      settings: [
+        {
+          name: 'generate.events.in.domain.system',
+          translationKey: 'system'
+        },
+        {
+          name: 'generate.events.in.domain.settings',
+          translationKey: 'settings'
+        },
+        {
+          name: 'generate.events.in.domain.logger',
+          translationKey: 'logger'
+        },
+        {
+          name: 'generate.events.in.domain.helpers',
+          translationKey: 'helpers'
+        }
+      ]
+    },
     {
       title: t('admin.settings.groups.security'),
       settings: [
@@ -142,86 +282,14 @@ const domainGroups = computed(() => {
         {
           name: 'generate.events.in.domain.validation',
           translationKey: 'validation'
-        }
-      ]
-    },
-    {
-      title: t('admin.settings.groups.usersmanagement'),
-      settings: [
-        {
-          name: 'generate.events.in.domain.userEditor',
-          translationKey: 'userEditor'
-        },
-        {
-          name: 'generate.events.in.domain.groupEditor',
-          translationKey: 'groupEditor'
-        },
-        {
-          name: 'generate.events.in.domain.usersList',
-          translationKey: 'usersList'
-        },
-        {
-          name: 'generate.events.in.domain.groupsList',
-          translationKey: 'groupsList'
-        },
-        {
-          name: 'generate.events.in.domain.account',
-          translationKey: 'account'
-        }
-      ]
-    },
-    {
-      title: t('admin.settings.groups.system'),
-      settings: [
-        {
-          name: 'generate.events.in.domain.settings',
-          translationKey: 'settings'
-        },
-        {
-          name: 'generate.events.in.domain.logger',
-          translationKey: 'logger'
-        },
-        {
-          name: 'generate.events.in.domain.system',
-          translationKey: 'system'
-        },
-        {
-          name: 'generate.events.in.domain.adminServices',
-          translationKey: 'adminServices'
-        },
-        {
-          name: 'generate.events.in.domain.adminCatalog',
-          translationKey: 'adminCatalog'
-        }
-      ]
-    },
-    {
-      title: t('admin.settings.groups.coreServices'),
-      settings: [
-        {
-          name: 'generate.events.in.domain.helpers',
-          translationKey: 'helpers'
         },
         {
           name: 'generate.events.in.domain.connectionHandler',
           translationKey: 'connectionHandler'
-        }
-      ]
-    },
-    {
-      title: t('admin.settings.groups.businessServices'),
-      settings: [
-        {
-          name: 'generate.events.in.domain.catalog',
-          translationKey: 'catalog'
         },
         {
-          name: 'generate.events.in.domain.services',
-          translationKey: 'services'
-        },
-        {
-          name: 'generate.events.in.domain.products',
-          translationKey: 'products'
+          name: 'generate.events.in.domain.guards',
+          translationKey: 'guards'
         }
       ]
     }
@@ -484,6 +552,56 @@ onMounted(() => {
               </div>
             </div>
           </div>
+
+          <!-- Subgroups -->
+          <template v-if="group.subgroups">
+            <div 
+              v-for="subgroup in group.subgroups" 
+              :key="subgroup.title"
+              class="settings-subgroup-nested"
+            >
+              <v-divider class="my-3"></v-divider>
+              <h4 class="text-subtitle-2 mb-2 font-weight-regular">
+                {{ subgroup.title }}
+              </h4>
+              <div 
+                v-for="setting in subgroup.settings" 
+                :key="setting.name"
+                class="setting-item"
+              >
+                <div class="d-flex align-center">
+                  <v-switch
+                    v-model="domainSettings[setting.name]"
+                    color="teal-darken-2"
+                    :label="t(`admin.settings.application.system.eventbus.domains.${setting.translationKey}.label`)"
+                    hide-details
+                    :disabled="isDomainSettingDisabled(setting.name)"
+                    :loading="settingLoadingStates[setting.name]"
+                    density="compact"
+                  />
+                  <v-tooltip
+                    v-if="settingErrorStates[setting.name]"
+                    location="top"
+                    max-width="300"
+                  >
+                    <template #activator="{ props }">
+                      <span v-bind="props" style="cursor: pointer;" @click="retrySetting(setting.name)">
+                        <PhWarningCircle :size="16" class="ms-2" />
+                      </span>
+                    </template>
+                    <div class="pa-2">
+                      <p class="text-subtitle-2 mb-2">
+                        {{ t('admin.settings.usersmanagement.groupsmanagement.messages.error.tooltip.title') }}
+                      </p>
+                      <p class="text-caption">
+                        {{ t('admin.settings.usersmanagement.groupsmanagement.messages.error.tooltip.retry') }}
+                      </p>
+                    </div>
+                  </v-tooltip>
+                </div>
+              </div>
+            </div>
+          </template>
         </div>
       </div>
     </template>
@@ -517,6 +635,10 @@ onMounted(() => {
 
 .settings-subgroup:last-child {
   margin-bottom: 0;
+}
+
+.settings-subgroup-nested {
+  margin-top: 8px;
 }
 
 .setting-item {

@@ -248,10 +248,10 @@
             "domains": {
               "title": "генерировать события в следующих доменах:",
               "helpers": {
-                "label": "helpers"
+                "label": "хэлперы"
               },
               "connectionHandler": {
-                "label": "connection handler"
+                "label": "обработчик подключений"
               },
               "userEditor": {
                 "label": "редактор пользователей"
@@ -287,19 +287,40 @@
                 "label": "сервисы"
               },
               "adminServices": {
-                "label": "сервисы админ"
+                "label": "администрирование сервисов"
               },
               "adminCatalog": {
-                "label": "каталог админ"
+                "label": "администрирование каталога"
+              },
+              "adminProducts": {
+                "label": "администрирование продуктов"
+              },
+              "adminPricing": {
+                "label": "администрирование цен"
+              },
+              "adminOrganizations": {
+                "label": "администрирование организаций"
               },
               "products": {
                 "label": "продукты"
               },
               "account": {
-                "label": "аккаунт"
+                "label": "личный кабинет"
               },
               "validation": {
-                "label": "валидация"
+                "label": "валидация данных"
+              },
+              "work": {
+                "label": "работа"
+              },
+              "reports": {
+                "label": "отчетность"
+              },
+              "knowledgeBase": {
+                "label": "база знаний"
+              },
+              "guards": {
+                "label": "гарды"
               }
             }
           },
@@ -502,9 +523,13 @@
       "groups": {
         "security": "безопасность",
         "organizationmanagement": "управление организацией",
+        "organizationManagement": "управление организацией",
         "system": "система",
         "coreServices": "основные сервисы",
-        "businessServices": "бизнес-сервисы"
+        "businessServices": "бизнес-сервисы",
+        "administration": "администрирование",
+        "modules": "модули",
+        "catalog": "каталог"
       },
       "common": {
         "loading": "загрузка настроек...",
