@@ -49,7 +49,7 @@ import createProductOptionPairsController from './products/pairs/controller.admi
 import updateProductOptionPairsController from './products/pairs/controller.admin.update.product.option.pairs';
 import deleteProductOptionPairsController from './products/pairs/controller.admin.delete.product.option.pairs';
 import countProductOptionPairsController from './products/pairs/controller.admin.count.product.option.pairs';
-import fetchCurrenciesController from './pricing/controller.admin.pricing.currencies';
+import fetchCurrenciesController from './pricing/controller.admin.pricing.fetch.currencies';
 import updateCurrenciesController from './pricing/controller.admin.pricing.update.currencies';
 import registerUserController from '../account/controller.register.user';
 import fetchUserGroupsController from './org/userEditor/controller.fetch.user.groups';

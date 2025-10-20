@@ -132,6 +132,11 @@ export const eventReferenceFiles: Record<string, string[]> = {
     path.resolve(__dirname, '../../validation/events.validation.ts')
   ],
   
+  // Admin pricing events - events for admin pricing operations (currencies)
+  adminPricing: [
+    path.resolve(__dirname, '../../../modules/admin/pricing/events.admin.pricing.ts')
+  ],
+  
   // Add other domains here as they are created
 };
 

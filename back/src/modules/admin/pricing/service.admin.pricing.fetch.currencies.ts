@@ -1,8 +1,8 @@
 /**
- * version: 1.1.1
+ * version: 1.1.2
  * Service to fetch currencies for pricing admin module (backend).
  * Connects to DB, executes query, maps fields (events temporarily disabled).
- * File: service.admin.pricing.currencies.ts (backend)
+ * File: service.admin.pricing.fetch.currencies.ts (backend)
  */
 
 import { Pool } from 'pg'
