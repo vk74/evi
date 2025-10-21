@@ -1,6 +1,6 @@
 /**
  * @file state.pricing.admin.ts
- * Version: 1.2.3
+ * Version: 1.2.4
  * Pinia store for managing pricing admin module state.
  * Frontend file that handles active section management for pricing administration.
  * File: state.pricing.admin.ts (frontend)
@@ -119,13 +119,10 @@ export const usePricingAdminStore = defineStore('pricingAdmin', {
     async saveCurrenciesChanges(): Promise<{ created: number, updated: number, deleted: number }> {
       // basic validation before sending
       const isValidCode = (c: string) => /^[A-Z]{3}$/.test(c)
-      const allowedModes = new Set(['half_up', 'half_even', 'cash_0_05', 'cash_0_1'])
       for (const c of this.currenciesCreated) {
         if (!isValidCode(c.code)) throw new Error('currency code must be 3 uppercase letters')
         if (!c.name || !c.name.trim()) throw new Error('currency name is required')
         if (!c.symbol || !c.symbol.trim()) throw new Error('currency symbol is required')
-        if (!allowedModes.has(c.roundingMode)) throw new Error('roundingMode invalid')
-        if (!Number.isInteger(c.minorUnits) || c.minorUnits < 0 || c.minorUnits > 4) throw new Error('minorUnits must be integer 0..4')
       }
       if (this.currenciesUpdated['code' as any]) {
         throw new Error('code change is not supported')

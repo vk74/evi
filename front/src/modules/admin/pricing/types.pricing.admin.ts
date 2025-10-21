@@ -1,6 +1,6 @@
 /**
  * @file types.pricing.admin.ts
- * Version: 1.1.3
+ * Version: 1.1.4
  * Type definitions for pricing administration module.
  * Frontend types for pricing admin functionality.
  * File: types.pricing.admin.ts (frontend)
@@ -54,8 +54,6 @@ export interface Currency {
   code: string
   name: string
   symbol: string | null
-  minorUnits: number
-  roundingMode: 'half_up' | 'half_even' | 'cash_0_05' | 'cash_0_1'
   active: boolean
 }
 

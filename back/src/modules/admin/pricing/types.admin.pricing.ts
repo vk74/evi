@@ -1,5 +1,5 @@
 /**
- * version: 1.2.0
+ * version: 1.2.1
  * Backend types for pricing administration module.
  * Defines DTOs for currencies and other pricing-related entities.
  * File: types.admin.pricing.ts (backend)
@@ -10,8 +10,6 @@ export interface CurrencyDto {
     code: string
     name: string
     symbol: string | null
-    minorUnits: number
-    roundingMode: 'half_up' | 'half_even' | 'cash_0_05' | 'cash_0_1'
     active: boolean
 }
 

@@ -1,5 +1,5 @@
 <!--
-Version: 1.3.0
+Version: 1.3.1
 Currencies list management section.
 Frontend file for managing currencies in the pricing admin module. Loads live data from backend.
 Includes error handling for deletion of currencies used in price lists.
@@ -73,13 +73,6 @@ const validateSymbol = (symbol: string): string | undefined => {
   return undefined
 }
 
-const validateMinorUnits = (minorUnits: number): string | undefined => {
-  if (minorUnits < 0 || minorUnits > 4) {
-    return t('admin.pricing.currencies.validation.minorUnitsRange')
-  }
-  return undefined
-}
-
 // Check if currency is newly created (not from backend)
 const isNewCurrency = (code: string): boolean => {
   return store.currenciesCreated.some(c => c.code === code)
@@ -95,8 +88,7 @@ const hasValidationError = (currency: Currency): boolean => {
   return !!(
     validateCode(currency.code) ||
     validateName(currency.name) ||
-    validateSymbol(currency.symbol || '') ||
-    validateMinorUnits(currency.minorUnits)
+    validateSymbol(currency.symbol || '')
   )
 }
 
@@ -224,8 +216,6 @@ const addCurrency = () => {
     code: generateUniqueCurrencyCode(),
     name: '',
     symbol: '',
-    minorUnits: 2,
-    roundingMode: 'half_up',
     active: false
   }
   // Temporary local addition for UX; not persisted yet
@@ -236,14 +226,6 @@ const addCurrency = () => {
 const statusOptions = computed(() => [
   { value: true, color: 'teal', label: t('admin.pricing.currencies.status.active') },
   { value: false, color: 'grey', label: t('admin.pricing.currencies.status.disabled') }
-])
-
-// Rounding mode options (match DB values)
-const roundingModeOptions = computed(() => [
-  { value: 'half_up', label: t('admin.pricing.currencies.roundingModes.half_up') },
-  { value: 'half_even', label: t('admin.pricing.currencies.roundingModes.half_even') },
-  { value: 'cash_0_05', label: t('admin.pricing.currencies.roundingModes.cash_0_05') },
-  { value: 'cash_0_1', label: t('admin.pricing.currencies.roundingModes.cash_0_1') }
 ])
 
 const deleteSelected = async () => {
@@ -395,9 +377,7 @@ function handleBeforeUnload(e: BeforeUnloadEvent) {
                 <th>
                   {{ t('admin.pricing.currencies.table.headers.name') }}
                 </th>
-                <th style="width: 80px;">{{ t('admin.pricing.currencies.table.headers.symbol') }}</th>
-                <th style="width: 110px;">{{ t('admin.pricing.currencies.table.headers.minorUnits') }}</th>
-                <th style="width: 130px;">{{ t('admin.pricing.currencies.table.headers.roundingMode') }}</th>
+                <th style="width: 120px;">{{ t('admin.pricing.currencies.table.headers.symbol') }}</th>
                 <th style="width: 140px;">
                   {{ t('admin.pricing.currencies.table.headers.status') }}
                 </th>
@@ -448,30 +428,6 @@ function handleBeforeUnload(e: BeforeUnloadEvent) {
                     :error-messages="validateSymbol(currency.symbol || '')"
                     @update:model-value="store.markCurrencyChanged(currency.code, 'symbol', currency.symbol)"
                     maxlength="3"
-                  />
-                </td>
-                <td>
-                  <v-text-field 
-                    v-model.number="currency.minorUnits" 
-                    type="number"
-                    min="0"
-                    max="4"
-                    density="compact" 
-                    variant="plain" 
-                    :error-messages="validateMinorUnits(currency.minorUnits)"
-                    @update:model-value="store.markCurrencyChanged(currency.code, 'minorUnits', currency.minorUnits)"
-                  />
-                </td>
-                <td>
-                  <v-select
-                    v-model="currency.roundingMode"
-                    :items="roundingModeOptions"
-                    item-title="label"
-                    item-value="value"
-                    density="compact"
-                    variant="plain"
-                    hide-details
-                    @update:model-value="store.markCurrencyChanged(currency.code, 'roundingMode', currency.roundingMode)"
                   />
                 </td>
                 <td>

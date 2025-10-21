@@ -1,5 +1,5 @@
 /**
- * version: 1.1.2
+ * version: 1.1.3
  * SQL queries for pricing administration module.
  * Contains parameterized queries related to pricing (currencies and future pricing entities).
  * Includes integrity check query for currency deletion.
@@ -15,8 +15,6 @@ export const queries = {
             code,
             name,
             symbol,
-            minor_units,
-            rounding_mode,
             active
         FROM app.currencies
         ORDER BY code ASC
@@ -30,8 +28,6 @@ export const queries = {
             code,
             name,
             symbol,
-            minor_units,
-            rounding_mode,
             active
         FROM app.currencies
         WHERE active = true
@@ -40,8 +36,8 @@ export const queries = {
 
     /** Insert currency */
     insertCurrency: `
-        INSERT INTO app.currencies (code, name, symbol, minor_units, rounding_mode, active)
-        VALUES ($1, $2, $3, $4, $5, $6)
+        INSERT INTO app.currencies (code, name, symbol, active)
+        VALUES ($1, $2, $3, $4)
     `,
 
     /** Update currency (partial) */
@@ -49,9 +45,7 @@ export const queries = {
         UPDATE app.currencies SET
             name = COALESCE($2, name),
             symbol = COALESCE($3, symbol),
-            minor_units = COALESCE($4, minor_units),
-            rounding_mode = COALESCE($5, rounding_mode),
-            active = COALESCE($6, active),
+            active = COALESCE($4, active),
             updated_at = NOW()
         WHERE code = $1
     `,
