@@ -1,5 +1,5 @@
 /**
- * version: 1.1.1
+ * version: 1.1.2
  * SQL queries for pricing administration module.
  * Contains parameterized queries related to pricing (currencies and future pricing entities).
  * Includes integrity check query for currency deletion.
@@ -19,6 +19,22 @@ export const queries = {
             rounding_mode,
             active
         FROM app.currencies
+        ORDER BY code ASC
+    `,
+
+    /**
+     * Fetch only active currencies
+     */
+    fetchCurrenciesActiveOnly: `
+        SELECT 
+            code,
+            name,
+            symbol,
+            minor_units,
+            rounding_mode,
+            active
+        FROM app.currencies
+        WHERE active = true
         ORDER BY code ASC
     `,
 

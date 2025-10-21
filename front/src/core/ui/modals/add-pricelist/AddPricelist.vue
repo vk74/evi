@@ -1,12 +1,15 @@
 <!--
-Version: 1.2.0
+Version: 1.2.1
 Modal component for creating a new price list.
 Frontend file for adding a new price list in the pricing admin module.
+Fetches active currencies dynamically from backend.
 Filename: AddPricelist.vue
 -->
 <script setup lang="ts">
-import { ref, watch } from 'vue'
+import { ref, watch, onMounted } from 'vue'
 import { PhCaretUpDown } from '@phosphor-icons/vue'
+import { fetchCurrenciesService } from '@/modules/admin/pricing/currencies/service.fetch.currencies'
+import type { Currency } from '@/modules/admin/pricing/types.pricing.admin'
 
 // Props
 interface Props {
@@ -26,12 +29,9 @@ const priceListName = ref<string>('')
 const selectedCurrency = ref<string>('USD')
 const priceListType = ref<'products' | 'services' | 'universal'>('universal')
 
-// Currency options
-const currencyOptions = [
-  { title: 'USD', value: 'USD' },
-  { title: 'EUR', value: 'EUR' },
-  { title: 'GBP', value: 'GBP' }
-]
+// Currency options - loaded dynamically from backend
+const currencyOptions = ref<Array<{ title: string; value: string }>>([])
+const isLoadingCurrencies = ref(false)
 
 // Local dialog state
 const dialogModel = ref(props.modelValue)
@@ -71,6 +71,32 @@ const handleCreate = () => {
 const handleCancel = () => {
   dialogModel.value = false
 }
+
+// Fetch active currencies on component mount
+onMounted(async () => {
+  try {
+    isLoadingCurrencies.value = true
+    const currencies = await fetchCurrenciesService(true) // activeOnly = true
+    currencyOptions.value = currencies.map((c: Currency) => ({
+      title: `${c.code}${c.symbol ? ' (' + c.symbol + ')' : ''}`,
+      value: c.code
+    }))
+    // Set first currency as default if available
+    if (currencyOptions.value.length > 0) {
+      selectedCurrency.value = currencyOptions.value[0].value
+    }
+  } catch (error) {
+    console.error('Failed to load currencies:', error)
+    // Fallback to hardcoded options on error
+    currencyOptions.value = [
+      { title: 'USD', value: 'USD' },
+      { title: 'EUR', value: 'EUR' },
+      { title: 'GBP', value: 'GBP' }
+    ]
+  } finally {
+    isLoadingCurrencies.value = false
+  }
+})
 </script>
 
 <template>
@@ -104,6 +130,7 @@ const handleCancel = () => {
             <v-select
               v-model="selectedCurrency"
               :items="currencyOptions"
+              :loading="isLoadingCurrencies"
               label="currency"
               variant="outlined"
               density="comfortable"
