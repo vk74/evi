@@ -321,6 +321,12 @@
               },
               "guards": {
                 "label": "гарды"
+              },
+              "middleware": {
+                "label": "middleware - обработка запросов"
+              },
+              "itemSelector": {
+                "label": "item selector - селектор элементов"
               }
             }
           },
@@ -529,7 +535,8 @@
         "businessServices": "бизнес-сервисы",
         "administration": "администрирование",
         "modules": "модули",
-        "catalog": "каталог"
+        "catalog": "каталог",
+        "common": "общие"
       },
       "common": {
         "loading": "загрузка настроек...",

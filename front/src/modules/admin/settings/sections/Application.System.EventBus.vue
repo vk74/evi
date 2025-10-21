@@ -2,11 +2,11 @@
   File: Application.System.EventBus.vue - frontend file
   Description: Event bus system settings with domain-specific event generation controls
   Purpose: Enable/disable event generation in different application domains
-  Version: 2.2.1
+  Version: 2.2.2
   
   Features:
   - Main event bus enable/disable switch
-  - Domain-specific event generation switches (25 domains)
+  - Domain-specific event generation switches (27 domains)
   - Hierarchical settings logic - domain switches depend on main event bus being enabled
   - Error handling and retry functionality for each setting
   - Settings grouped in columns for better UX
@@ -52,6 +52,7 @@ const domainSettings = ref<Record<string, boolean | null>>({
   'generate.events.in.domain.settings': null,
   'generate.events.in.domain.logger': null,
   'generate.events.in.domain.helpers': null,
+  'generate.events.in.domain.middleware': null,
   
   // Security
   'generate.events.in.domain.auth': null,
@@ -71,6 +72,7 @@ const domainSettings = ref<Record<string, boolean | null>>({
   'generate.events.in.domain.usersList': null,
   'generate.events.in.domain.groupsList': null,
   'generate.events.in.domain.adminOrganizations': null,
+  'generate.events.in.domain.itemSelector': null,
   
   // Modules (Business services)
   'generate.events.in.domain.catalog': null,
@@ -88,6 +90,7 @@ const allSettings = [
   'generate.events.in.domain.settings',
   'generate.events.in.domain.logger',
   'generate.events.in.domain.helpers',
+  'generate.events.in.domain.middleware',
   // Security
   'generate.events.in.domain.auth',
   'generate.events.in.domain.publicPolicies',
@@ -105,6 +108,7 @@ const allSettings = [
   'generate.events.in.domain.groupEditor',
   'generate.events.in.domain.usersList',
   'generate.events.in.domain.groupsList',
+  'generate.events.in.domain.itemSelector',
   // Modules (Business services)
   'generate.events.in.domain.catalog',
   'generate.events.in.domain.services',
@@ -199,6 +203,15 @@ const domainGroups = computed(() => {
               translationKey: 'adminOrganizations'
             }
           ]
+        },
+        {
+          title: t('admin.settings.groups.common'),
+          settings: [
+            {
+              name: 'generate.events.in.domain.itemSelector',
+              translationKey: 'itemSelector'
+            }
+          ]
         }
       ]
     },
@@ -260,6 +273,10 @@ const domainGroups = computed(() => {
         {
           name: 'generate.events.in.domain.helpers',
           translationKey: 'helpers'
+        },
+        {
+          name: 'generate.events.in.domain.middleware',
+          translationKey: 'middleware'
         }
       ]
     },

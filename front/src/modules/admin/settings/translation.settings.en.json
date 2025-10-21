@@ -321,6 +321,12 @@
               },
               "guards": {
                 "label": "guards"
+              },
+              "middleware": {
+                "label": "middleware"
+              },
+              "itemSelector": {
+                "label": "item selector"
               }
             }
           },
@@ -529,7 +535,8 @@
         "businessServices": "business services",
         "administration": "administration",
         "modules": "modules",
-        "catalog": "catalog"
+        "catalog": "catalog",
+        "common": "common"
       },
       "common": {
         "loading": "loading settings...",
