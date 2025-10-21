@@ -121,17 +121,3 @@ END $$;
 
 -- Note: app_languages enum has been deprecated and removed
 -- Use app.system_language_code instead for language settings
-
--- Pricing: price list lifecycle statuses
-DO $$ BEGIN
-    CREATE TYPE app.price_list_status AS ENUM ('draft', 'active', 'archived');
-EXCEPTION
-    WHEN duplicate_object THEN null;
-END $$;
-
--- Pricing: item type in price lists
-DO $$ BEGIN
-    CREATE TYPE app.price_item_type AS ENUM ('product', 'service');
-EXCEPTION
-    WHEN duplicate_object THEN null;
-END $$;

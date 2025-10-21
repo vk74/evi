@@ -25,14 +25,6 @@ CREATE INDEX IF NOT EXISTS idx_products_published ON app.products USING btree (i
 CREATE INDEX IF NOT EXISTS idx_products_code ON app.products USING btree (product_code);
 CREATE INDEX IF NOT EXISTS idx_products_translation_key ON app.products USING btree (translation_key);
 
--- Pricing: price_lists_info
-CREATE INDEX IF NOT EXISTS idx_price_lists_info_status ON app.price_lists_info USING btree (status);
-CREATE INDEX IF NOT EXISTS idx_price_lists_info_currency ON app.price_lists_info USING btree (currency_code);
-
--- Pricing: import staging
-CREATE INDEX IF NOT EXISTS price_list_import_staging_batch_idx ON app.price_list_import_staging (batch_id);
-CREATE INDEX IF NOT EXISTS price_list_import_staging_pl_applied_idx ON app.price_list_import_staging (price_list_id, applied);
-
 -- Create indexes for section_products
 CREATE INDEX IF NOT EXISTS idx_section_products_product ON app.section_products USING btree (product_id);
 CREATE INDEX IF NOT EXISTS idx_section_products_section ON app.section_products USING btree (section_id);
@@ -111,3 +103,25 @@ CREATE INDEX IF NOT EXISTS idx_product_options_required
 -- Index for audit queries
 CREATE INDEX IF NOT EXISTS idx_product_options_created_at 
     ON app.product_options USING btree (created_at);
+
+-- ============================================
+-- Pricing: Price Lists Indexes
+-- ============================================
+
+-- Indexes on price_lists_info
+CREATE INDEX IF NOT EXISTS idx_pli_currency_active 
+    ON app.price_lists_info(currency_code, is_active);
+
+CREATE INDEX IF NOT EXISTS idx_pli_validity 
+    ON app.price_lists_info(valid_from, valid_to) 
+    WHERE is_active = TRUE;
+
+CREATE INDEX IF NOT EXISTS idx_pli_is_active 
+    ON app.price_lists_info(is_active);
+
+-- Indexes on price_lists (partitioned table - will be inherited by partitions)
+CREATE INDEX IF NOT EXISTS idx_pl_item_lookup 
+    ON app.price_lists(price_list_id, item_type, item_code);
+
+CREATE INDEX IF NOT EXISTS idx_pl_item_type 
+    ON app.price_lists(item_type);

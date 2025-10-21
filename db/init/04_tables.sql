@@ -213,89 +213,35 @@ FOR EACH ROW EXECUTE FUNCTION app.tgr_set_updated_at();
 -- Currencies dictionary (PK = ISO code)
 CREATE TABLE IF NOT EXISTS app.currencies (
   code           CHAR(3) PRIMARY KEY,
-  name           TEXT NOT NULL,
-  symbol         TEXT,
-  minor_units    SMALLINT NOT NULL DEFAULT 2 CHECK (minor_units BETWEEN 0 AND 6),
-  rounding_mode  TEXT NOT NULL DEFAULT 'half_up' CHECK (rounding_mode IN ('half_up','half_even','cash_0_05','cash_0_1')),
+  name           VARCHAR(50) NOT NULL,
+  symbol         VARCHAR(3) NOT NULL,
   active         BOOLEAN NOT NULL DEFAULT TRUE,
   created_at     TIMESTAMPTZ NOT NULL DEFAULT now(),
   updated_at     TIMESTAMPTZ
 );
 
+COMMENT ON TABLE app.currencies IS 'Currency dictionary - rounding logic handled by backend based on currency code';
+COMMENT ON COLUMN app.currencies.code IS 'ISO 4217 currency code (3 letters)';
+COMMENT ON COLUMN app.currencies.symbol IS 'Currency symbol for UI display (max 3 characters, required)';
+
 -- Seed base currencies (idempotent)
-INSERT INTO app.currencies (code, name, symbol, minor_units, rounding_mode, active)
+INSERT INTO app.currencies (code, name, symbol, active)
 VALUES
-  ('RUB', 'Российский рубль',      '₽', 2, 'half_up', true),
-  ('BYN', 'Белорусский рубль',     'Br', 2, 'half_up', true),
-  ('KZT', 'Казахстанский тенге',   '₸', 2, 'half_up', true),
-  ('CNY', 'Китайский юань',        '¥',  2, 'half_up', true),
-  ('USD', 'Доллар США',            '$',  2, 'half_up', true),
-  ('EUR', 'Евро',                  '€',  2, 'half_up', true)
+  ('RUB', 'Российский рубль',      '₽', true),
+  ('BYN', 'Белорусский рубль',     'Br', true),
+  ('KZT', 'Казахстанский тенге',   '₸', true),
+  ('CNY', 'Китайский юань',        '¥', true),
+  ('USD', 'Доллар США',            '$', true),
+  ('EUR', 'Евро',                  '€', true)
 ON CONFLICT (code) DO UPDATE SET
   name = EXCLUDED.name,
   symbol = EXCLUDED.symbol,
-  minor_units = EXCLUDED.minor_units,
-  rounding_mode = EXCLUDED.rounding_mode,
   active = EXCLUDED.active,
   updated_at = now();
-
--- Price lists header
-CREATE TABLE IF NOT EXISTS app.price_lists_info (
-  price_list_id  SERIAL PRIMARY KEY,
-  name           TEXT NOT NULL UNIQUE,
-  currency_code  CHAR(3) NOT NULL REFERENCES app.currencies(code),
-  status         app.price_list_status NOT NULL DEFAULT 'draft',
-  valid_from     TIMESTAMPTZ,
-  valid_to       TIMESTAMPTZ,
-  created_by     UUID REFERENCES app.users(user_id),
-  updated_by     UUID REFERENCES app.users(user_id),
-  created_at     TIMESTAMPTZ NOT NULL DEFAULT now(),
-  updated_at     TIMESTAMPTZ,
-  CHECK (valid_to IS NULL OR valid_from IS NULL OR valid_from <= valid_to)
-);
 
 -- Ensure product_code is suitable for FK (not null + unique)
 ALTER TABLE app.products
   ALTER COLUMN product_code SET NOT NULL;
-
--- Price list lines (partitioned by price_list_id)
-CREATE TABLE IF NOT EXISTS app.price_list (
-  item_id        BIGSERIAL NOT NULL,
-  price_list_id  INTEGER NOT NULL REFERENCES app.price_lists_info(price_list_id) ON DELETE CASCADE,
-  item_type      app.price_item_type NOT NULL, -- 'product' | 'service'
-  product_code   VARCHAR(64) NOT NULL,
-  item_name      VARCHAR(2000),
-  list_price     NUMERIC(18,4) NOT NULL CHECK (list_price >= 0),
-  created_by     UUID REFERENCES app.users(user_id),
-  updated_by     UUID REFERENCES app.users(user_id),
-  created_at     TIMESTAMPTZ NOT NULL DEFAULT now(),
-  updated_at     TIMESTAMPTZ,
-  PRIMARY KEY (price_list_id, item_type, item_id),
-  UNIQUE (price_list_id, item_type, product_code)
-) PARTITION BY LIST (price_list_id);
-
--- Import staging for bulk uploads
-CREATE TABLE IF NOT EXISTS app.price_list_import_staging (
-  staging_id         BIGSERIAL PRIMARY KEY,
-  batch_id           UUID NOT NULL,
-  price_list_id      INTEGER NOT NULL REFERENCES app.price_lists_info(price_list_id) ON DELETE CASCADE,
-  row_num            INTEGER,
-  raw_item_type      TEXT,
-  raw_item_code      TEXT,
-  raw_item_name      TEXT,
-  raw_list_price     TEXT,
-  parsed_item_type   app.price_item_type,
-  parsed_item_code   VARCHAR(64),
-  parsed_item_name   VARCHAR(2000),
-  parsed_list_price  NUMERIC(18,4) CHECK (parsed_list_price IS NULL OR parsed_list_price >= 0),
-  error_code         TEXT,
-  error_message      TEXT,
-  applied            BOOLEAN NOT NULL DEFAULT FALSE,
-  applied_at         TIMESTAMPTZ,
-  created_by         UUID REFERENCES app.users(user_id),
-  created_at         TIMESTAMPTZ NOT NULL DEFAULT now(),
-  UNIQUE (batch_id, row_num)
-);
 
 -- Create section_services table
 CREATE TABLE IF NOT EXISTS app.section_services (
@@ -565,3 +511,144 @@ COMMENT ON TYPE app.product_user_role IS 'User roles for products: owner, backup
 COMMENT ON TYPE app.product_group_role IS 'Group roles for products: product_specialists';
 COMMENT ON COLUMN app.product_users.role_type IS 'Role type for the user in this product';
 COMMENT ON COLUMN app.product_groups.role_type IS 'Role type for the group in this product';
+
+-- ============================================
+-- Pricing: Price Lists Structure
+-- ============================================
+
+-- Reference table for price item types (customizable by users)
+CREATE TABLE IF NOT EXISTS app.price_item_types (
+    type_code VARCHAR(50) PRIMARY KEY,
+    type_name VARCHAR(200) NOT NULL,
+    description TEXT,
+    is_active BOOLEAN DEFAULT TRUE NOT NULL,
+    created_at TIMESTAMPTZ DEFAULT NOW() NOT NULL,
+    updated_at TIMESTAMPTZ DEFAULT NOW() NOT NULL
+);
+
+COMMENT ON TABLE app.price_item_types IS 'Reference table for price list item types - customizable by users';
+COMMENT ON COLUMN app.price_item_types.type_code IS 'Unique code for item type (e.g., product, work_hour)';
+COMMENT ON COLUMN app.price_item_types.type_name IS 'Display name for the item type';
+COMMENT ON COLUMN app.price_item_types.description IS 'Detailed description of the item type';
+COMMENT ON COLUMN app.price_item_types.is_active IS 'Whether this item type is currently active';
+
+-- Insert initial price item types
+INSERT INTO app.price_item_types (type_code, type_name, description) VALUES
+('product', 'Product', 'Physical or digital product'),
+('work_hour', 'Work Hour', 'Hourly rate for professional services'),
+('standard_activity', 'Standard Activity', 'Predefined standardized activity with fixed scope'),
+('service_subscription', 'Service Subscription', 'Recurring subscription fee for service access')
+ON CONFLICT (type_code) DO NOTHING;
+
+-- Price list metadata/headers
+CREATE TABLE IF NOT EXISTS app.price_lists_info (
+    price_list_id SERIAL PRIMARY KEY,
+    name VARCHAR(255) UNIQUE NOT NULL,
+    description VARCHAR(2000),
+    currency_code CHAR(3) NOT NULL,
+    is_active BOOLEAN DEFAULT FALSE NOT NULL,
+    valid_from TIMESTAMPTZ NOT NULL,
+    valid_to TIMESTAMPTZ NOT NULL,
+    auto_deactivate BOOLEAN DEFAULT TRUE NOT NULL,
+    owner_id UUID,
+    created_by UUID,
+    updated_by UUID,
+    created_at TIMESTAMPTZ DEFAULT NOW() NOT NULL,
+    updated_at TIMESTAMPTZ DEFAULT NOW() NOT NULL,
+    
+    -- Foreign keys
+    CONSTRAINT fk_price_lists_currency_code 
+        FOREIGN KEY (currency_code) 
+        REFERENCES app.currencies(code) 
+        ON DELETE RESTRICT,
+    
+    CONSTRAINT fk_price_lists_owner_id 
+        FOREIGN KEY (owner_id) 
+        REFERENCES app.users(user_id) 
+        ON DELETE SET NULL,
+    
+    CONSTRAINT fk_price_lists_created_by 
+        FOREIGN KEY (created_by) 
+        REFERENCES app.users(user_id) 
+        ON DELETE SET NULL,
+    
+    CONSTRAINT fk_price_lists_updated_by 
+        FOREIGN KEY (updated_by) 
+        REFERENCES app.users(user_id) 
+        ON DELETE SET NULL,
+    
+    -- Constraints
+    CONSTRAINT chk_valid_dates 
+        CHECK (valid_from < valid_to)
+);
+
+COMMENT ON TABLE app.price_lists_info IS 'Metadata for price lists - headers/info about each price list';
+COMMENT ON COLUMN app.price_lists_info.price_list_id IS 'Unique identifier for the price list';
+COMMENT ON COLUMN app.price_lists_info.name IS 'Unique name of the price list';
+COMMENT ON COLUMN app.price_lists_info.description IS 'User description/notes about the price list';
+COMMENT ON COLUMN app.price_lists_info.currency_code IS 'Currency for all prices in this price list';
+COMMENT ON COLUMN app.price_lists_info.is_active IS 'Whether this price list is currently active';
+COMMENT ON COLUMN app.price_lists_info.valid_from IS 'Start date/time when price list becomes valid';
+COMMENT ON COLUMN app.price_lists_info.valid_to IS 'End date/time when price list expires';
+COMMENT ON COLUMN app.price_lists_info.auto_deactivate IS 'Whether to automatically deactivate after valid_to';
+COMMENT ON COLUMN app.price_lists_info.owner_id IS 'Price list owner (optional, can be different from created_by)';
+
+-- Price list items (partitioned by price_list_id)
+CREATE TABLE IF NOT EXISTS app.price_lists (
+    item_id BIGSERIAL NOT NULL,
+    price_list_id INTEGER NOT NULL,
+    item_type VARCHAR(50) NOT NULL,
+    item_code VARCHAR(64) NOT NULL,
+    item_name VARCHAR(200),
+    list_price NUMERIC(20,8) NOT NULL,
+    wholesale_price NUMERIC(20,8),
+    created_by UUID,
+    updated_by UUID,
+    created_at TIMESTAMPTZ DEFAULT NOW() NOT NULL,
+    updated_at TIMESTAMPTZ DEFAULT NOW() NOT NULL,
+    
+    -- Primary key includes partition key
+    PRIMARY KEY (price_list_id, item_id),
+    
+    -- Unique constraint: one item per price list
+    CONSTRAINT uq_price_list_item 
+        UNIQUE (price_list_id, item_type, item_code),
+    
+    -- Foreign keys
+    CONSTRAINT fk_price_lists_price_list_id 
+        FOREIGN KEY (price_list_id) 
+        REFERENCES app.price_lists_info(price_list_id) 
+        ON DELETE CASCADE,
+    
+    CONSTRAINT fk_price_lists_item_type 
+        FOREIGN KEY (item_type) 
+        REFERENCES app.price_item_types(type_code) 
+        ON DELETE RESTRICT,
+    
+    CONSTRAINT fk_price_lists_created_by 
+        FOREIGN KEY (created_by) 
+        REFERENCES app.users(user_id) 
+        ON DELETE SET NULL,
+    
+    CONSTRAINT fk_price_lists_updated_by 
+        FOREIGN KEY (updated_by) 
+        REFERENCES app.users(user_id) 
+        ON DELETE SET NULL,
+    
+    -- Check constraints
+    CONSTRAINT chk_list_price_positive 
+        CHECK (list_price >= 0),
+    
+    CONSTRAINT chk_wholesale_price_positive 
+        CHECK (wholesale_price IS NULL OR wholesale_price >= 0)
+        
+) PARTITION BY LIST (price_list_id);
+
+COMMENT ON TABLE app.price_lists IS 'Price list items - partitioned by price_list_id for isolation and performance';
+COMMENT ON COLUMN app.price_lists.item_id IS 'Auto-incrementing unique identifier (sequential across all partitions)';
+COMMENT ON COLUMN app.price_lists.price_list_id IS 'Reference to price list metadata (partition key)';
+COMMENT ON COLUMN app.price_lists.item_type IS 'Type of item (product, service, work_hour, etc.)';
+COMMENT ON COLUMN app.price_lists.item_code IS 'Code to match against product_code, service_code, or activity_code';
+COMMENT ON COLUMN app.price_lists.item_name IS 'Optional display name for the item';
+COMMENT ON COLUMN app.price_lists.list_price IS 'Standard list price (NUMERIC(20,8) supports all currencies including Bitcoin)';
+COMMENT ON COLUMN app.price_lists.wholesale_price IS 'Wholesale/bulk price (for future use)';
