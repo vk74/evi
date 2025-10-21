@@ -1,8 +1,9 @@
-// version: 1.1.0
+// version: 1.1.2
 // Central registry for all event domain catalogs in the application
 // This file serves as a registry for all event references across different modules
 // 
-// Updated: Removed duplicate 'products' domain entry, kept only 'adminProducts'
+// Updated: Separated catalog events into multiple files (catalog, services, products)
+// Following principle: 1 file = 1 subdomain of events
 
 import path from 'path';
 import { EventSchema, EventObject, EventCollection } from '../types.events';
@@ -106,7 +107,13 @@ export const eventReferenceFiles: Record<string, string[]> = {
   
   // Catalog events - events for catalog module operations
   catalog: [
-    path.resolve(__dirname, '../../../modules/catalog/events.catalog.ts')
+    path.resolve(__dirname, '../../../modules/catalog/events.catalog.ts'),
+    path.resolve(__dirname, '../../../modules/catalog/events.catalog.services.ts')
+  ],
+  
+  // Catalog products events - events for catalog products operations (not yet implemented)
+  products: [
+    path.resolve(__dirname, '../../../modules/catalog/events.catalog.products.ts')
   ],
   
   // Middleware events - events for middleware operations

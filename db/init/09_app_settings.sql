@@ -1,8 +1,8 @@
--- Version: 1.5.2
+-- Version: 1.5.3
 -- Description: Seeds the database with default application settings.
 -- Backend file: 09_app_settings.sql
--- Added: 7 new EventBus domains (adminProducts, adminPricing, adminOrganizations, work, reports, knowledgeBase, guards)
--- Previous: Appearance settings (navbar color), 12-hour time format setting, ISO 639-1 language codes
+-- Added: 2 new EventBus domains (middleware, itemSelector)
+-- Previous: 7 new EventBus domains (adminProducts, adminPricing, adminOrganizations, work, reports, knowledgeBase, guards)
 
 -- This script inserts a comprehensive set of default settings for the application,
 -- covering areas like security, session management, and feature toggles.
@@ -56,6 +56,8 @@ INSERT INTO app.app_settings (
 ('Application.System.EventBus', 'generate.events.in.domain.groupsList', 'all', 'true', '{"type":"boolean"}', 'true', 'Enable event generation in domain groups list', false),
 ('Application.System.EventBus', 'generate.events.in.domain.helpers', 'all', 'true', '{"type":"boolean"}', 'true', 'Enable event generation in domain helpers', false),
 ('Application.System.EventBus', 'generate.events.in.domain.logger', 'all', 'true', '{"type":"boolean"}', 'true', 'Enable event generation in domain logger', false),
+('Application.System.EventBus', 'generate.events.in.domain.middleware', 'all', 'true', '{"type":"boolean"}', 'true', 'Enable event generation in middleware domain', false),
+('Application.System.EventBus', 'generate.events.in.domain.itemSelector', 'all', 'true', '{"type":"boolean"}', 'true', 'Enable event generation in item selector domain', false),
 ('Application.System.EventBus', 'generate.events.in.domain.products', 'all', 'true', '{"type":"boolean"}', 'true', 'Enable event generation in products domain', false),
 ('Application.System.EventBus', 'generate.events.in.domain.publicPolicies', 'all', 'true', '{"type":"boolean"}', 'true', 'Enable event generation in public policies domain', false),
 ('Application.System.EventBus', 'generate.events.in.domain.services', 'all', 'true', '{"type":"boolean"}', 'true', 'Enable event generation in services domain', false),
