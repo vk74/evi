@@ -1,5 +1,5 @@
 /**
- * version: 1.0.0
+ * version: 1.0.1
  * Service for creating price lists.
  * Backend file that handles business logic for creating new price lists.
  * 
@@ -7,6 +7,7 @@
  * - Validates price list data
  * - Checks currency existence
  * - Checks name uniqueness
+ * - Validates dates (not in past, valid_to > valid_from) with timezone awareness
  * - Validates owner (optional)
  * - Creates price list in database
  * - Sets owner_id from created_by if not specified
@@ -28,6 +29,7 @@ import { getUuidByUsername } from '@/core/helpers/get.uuid.by.username';
 import { validateField } from '@/core/validation/service.validation';
 import { createAndPublishEvent } from '@/core/eventBus/fabric.events';
 import { EVENTS_ADMIN_PRICING } from './events.admin.pricing';
+import { validatePriceListDatesForCreate } from './helper.date.validation';
 
 // Type assertion for pool
 const pool = pgPool as Pool;
@@ -89,21 +91,22 @@ async function validateCreatePriceListData(
         }
     }
 
-    // Validate dates (required, valid_from must be before valid_to)
-    if (!data.valid_from) {
-        errors.push('Valid from date is required');
-    }
-    if (!data.valid_to) {
-        errors.push('Valid to date is required');
-    }
+    // Validate dates (required, not in past, valid_from must be before valid_to)
     if (data.valid_from && data.valid_to) {
-        const fromDate = new Date(data.valid_from);
-        const toDate = new Date(data.valid_to);
+        const dateValidation = await validatePriceListDatesForCreate(
+            data.valid_from,
+            data.valid_to
+        );
         
-        if (isNaN(fromDate.getTime()) || isNaN(toDate.getTime())) {
-            errors.push('Invalid date format');
-        } else if (fromDate >= toDate) {
-            errors.push('Valid from date must be before valid to date');
+        if (!dateValidation.isValid) {
+            errors.push(dateValidation.error || 'Invalid dates');
+        }
+    } else {
+        if (!data.valid_from) {
+            errors.push('Valid from date is required');
+        }
+        if (!data.valid_to) {
+            errors.push('Valid to date is required');
         }
     }
 

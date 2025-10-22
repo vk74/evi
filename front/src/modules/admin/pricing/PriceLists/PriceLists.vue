@@ -1,9 +1,10 @@
 <!--
-Version: 1.4.1
+Version: 1.4.2
 Price Lists management section.
 Frontend file for managing price lists in the pricing admin module.
 Features editable name column and date fields (valid_from, valid_to) with calendar picker.
 Supports localized date picker based on user's selected language.
+Includes timezone-aware date validation to prevent setting dates in the past.
 Filename: PriceLists.vue
 -->
 <script setup lang="ts">
@@ -30,6 +31,7 @@ import { serviceUpdatePriceList } from './service.update.pricelist'
 import { serviceDeletePriceLists } from './service.delete.pricelists'
 import { fetchCurrenciesService } from '../currencies/service.fetch.currencies'
 import type { PriceListItem, Currency } from '../types.pricing.admin'
+import { validatePriceListDatesForUpdate } from '../helpers/date.validation.helper'
 import debounce from 'lodash/debounce'
 
 // Types
@@ -459,23 +461,20 @@ const handleDateUpdate = async (priceListId: number, field: 'valid_from' | 'vali
     // Convert to ISO format
     const isoDate = dateOnlyToISO(newDate)
     
-    // Get current date at midnight for comparison
-    const today = new Date()
-    today.setHours(0, 0, 0, 0)
-    const selectedDate = new Date(isoDate)
+    // Determine which dates to validate
+    const validFrom = field === 'valid_from' ? isoDate : undefined
+    const validTo = field === 'valid_to' ? isoDate : undefined
     
-    // Validate that valid_from is not in the past
-    if (field === 'valid_from' && selectedDate < today) {
-      uiStore.showErrorSnackbar(t('admin.pricing.priceLists.messages.pastDateValidation'))
-      return
-    }
+    // Validate dates using helper (with current values for cross-validation)
+    const dateValidation = validatePriceListDatesForUpdate(
+      validFrom,
+      validTo,
+      priceList.valid_from,
+      priceList.valid_to
+    )
     
-    // Validate dates if both are being set
-    const validFrom = field === 'valid_from' ? isoDate : priceList.valid_from
-    const validTo = field === 'valid_to' ? isoDate : priceList.valid_to
-    
-    if (new Date(validFrom) >= new Date(validTo)) {
-      uiStore.showErrorSnackbar(t('admin.pricing.priceLists.messages.dateValidation'))
+    if (!dateValidation.isValid) {
+      uiStore.showErrorSnackbar(dateValidation.error || t('admin.pricing.priceLists.messages.dateValidation'))
       return
     }
     
