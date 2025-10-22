@@ -1,7 +1,7 @@
 /**
- * version: 2.0.0
+ * version: 2.0.2
  * Event reference catalog for admin pricing operations (backend).
- * Defines events for pricing management operations (currencies).
+ * Defines events for pricing management operations (currencies and price lists).
  * File: events.admin.pricing.ts (backend)
  */
 
@@ -219,6 +219,259 @@ export const EVENTS_ADMIN_PRICING: EventCollection = {
     eventType: 'system',
     severity: 'error',
     eventMessage: 'Database error deleting currency',
+    version: '1.0.0'
+  },
+
+  // ========== Price Lists - Fetch All Events ==========
+  
+  'pricelists.fetchall.success': {
+    eventName: 'adminPricing.pricelists.fetchall.success',
+    source: 'admin-pricing',
+    eventType: 'system',
+    severity: 'debug',
+    eventMessage: 'Price lists fetched successfully',
+    version: '1.0.0'
+  },
+
+  'pricelists.fetchall.database_error': {
+    eventName: 'adminPricing.pricelists.fetchall.database_error',
+    source: 'admin-pricing',
+    eventType: 'system',
+    severity: 'error',
+    eventMessage: 'Database error during price lists fetch',
+    version: '1.0.0'
+  },
+
+  'pricelists.fetchall.error': {
+    eventName: 'adminPricing.pricelists.fetchall.error',
+    source: 'admin-pricing',
+    eventType: 'system',
+    severity: 'error',
+    eventMessage: 'Error during price lists fetch operation',
+    version: '1.0.0'
+  },
+
+  // ========== Price Lists - Fetch Single Events ==========
+  
+  'pricelists.fetch.success': {
+    eventName: 'adminPricing.pricelists.fetch.success',
+    source: 'admin-pricing',
+    eventType: 'system',
+    severity: 'debug',
+    eventMessage: 'Price list fetched successfully',
+    version: '1.0.0'
+  },
+
+  'pricelists.fetch.not_found': {
+    eventName: 'adminPricing.pricelists.fetch.not_found',
+    source: 'admin-pricing',
+    eventType: 'system',
+    severity: 'error',
+    eventMessage: 'Price list not found',
+    version: '1.0.0'
+  },
+
+  'pricelists.fetch.database_error': {
+    eventName: 'adminPricing.pricelists.fetch.database_error',
+    source: 'admin-pricing',
+    eventType: 'system',
+    severity: 'error',
+    eventMessage: 'Database error during price list fetch',
+    version: '1.0.0'
+  },
+
+  'pricelists.fetch.error': {
+    eventName: 'adminPricing.pricelists.fetch.error',
+    source: 'admin-pricing',
+    eventType: 'system',
+    severity: 'error',
+    eventMessage: 'Error during price list fetch operation',
+    version: '1.0.0'
+  },
+
+  // ========== Price Lists - Create Events ==========
+  
+  'pricelists.create.validation.error': {
+    eventName: 'adminPricing.pricelists.create.validation.error',
+    source: 'admin-pricing',
+    eventType: 'system',
+    severity: 'error',
+    eventMessage: 'Validation error creating price list',
+    version: '1.0.0'
+  },
+
+  'pricelists.create.owner.validation_error': {
+    eventName: 'adminPricing.pricelists.create.owner.validation_error',
+    source: 'admin-pricing',
+    eventType: 'system',
+    severity: 'error',
+    eventMessage: 'Owner validation error creating price list',
+    version: '1.0.0'
+  },
+
+  'pricelists.create.currency.not_found': {
+    eventName: 'adminPricing.pricelists.create.currency.not_found',
+    source: 'admin-pricing',
+    eventType: 'system',
+    severity: 'error',
+    eventMessage: 'Currency not found for price list creation',
+    version: '1.0.0'
+  },
+
+  'pricelists.create.name.duplicate': {
+    eventName: 'adminPricing.pricelists.create.name.duplicate',
+    source: 'admin-pricing',
+    eventType: 'system',
+    severity: 'error',
+    eventMessage: 'Price list name already exists',
+    version: '1.0.0'
+  },
+
+  'pricelists.create.success': {
+    eventName: 'adminPricing.pricelists.create.success',
+    source: 'admin-pricing',
+    eventType: 'system',
+    severity: 'info',
+    eventMessage: 'Price list created successfully',
+    version: '1.0.0'
+  },
+
+  'pricelists.create.database_error': {
+    eventName: 'adminPricing.pricelists.create.database_error',
+    source: 'admin-pricing',
+    eventType: 'system',
+    severity: 'error',
+    eventMessage: 'Database error creating price list',
+    version: '1.0.0'
+  },
+
+  'pricelists.create.error': {
+    eventName: 'adminPricing.pricelists.create.error',
+    source: 'admin-pricing',
+    eventType: 'system',
+    severity: 'error',
+    eventMessage: 'Error during price list creation operation',
+    version: '1.0.0'
+  },
+
+  // ========== Price Lists - Update Events ==========
+  
+  'pricelists.update.not_found': {
+    eventName: 'adminPricing.pricelists.update.not_found',
+    source: 'admin-pricing',
+    eventType: 'system',
+    severity: 'error',
+    eventMessage: 'Price list not found for update',
+    version: '1.0.0'
+  },
+
+  'pricelists.update.validation.error': {
+    eventName: 'adminPricing.pricelists.update.validation.error',
+    source: 'admin-pricing',
+    eventType: 'system',
+    severity: 'error',
+    eventMessage: 'Validation error updating price list',
+    version: '1.0.0'
+  },
+
+  'pricelists.update.owner.validation_error': {
+    eventName: 'adminPricing.pricelists.update.owner.validation_error',
+    source: 'admin-pricing',
+    eventType: 'system',
+    severity: 'error',
+    eventMessage: 'Owner validation error updating price list',
+    version: '1.0.0'
+  },
+
+  'pricelists.update.currency.not_found': {
+    eventName: 'adminPricing.pricelists.update.currency.not_found',
+    source: 'admin-pricing',
+    eventType: 'system',
+    severity: 'error',
+    eventMessage: 'Currency not found for price list update',
+    version: '1.0.0'
+  },
+
+  'pricelists.update.name.duplicate': {
+    eventName: 'adminPricing.pricelists.update.name.duplicate',
+    source: 'admin-pricing',
+    eventType: 'system',
+    severity: 'error',
+    eventMessage: 'Price list name already exists',
+    version: '1.0.0'
+  },
+
+  'pricelists.update.success': {
+    eventName: 'adminPricing.pricelists.update.success',
+    source: 'admin-pricing',
+    eventType: 'system',
+    severity: 'info',
+    eventMessage: 'Price list updated successfully',
+    version: '1.0.0'
+  },
+
+  'pricelists.update.database_error': {
+    eventName: 'adminPricing.pricelists.update.database_error',
+    source: 'admin-pricing',
+    eventType: 'system',
+    severity: 'error',
+    eventMessage: 'Database error updating price list',
+    version: '1.0.0'
+  },
+
+  'pricelists.update.error': {
+    eventName: 'adminPricing.pricelists.update.error',
+    source: 'admin-pricing',
+    eventType: 'system',
+    severity: 'error',
+    eventMessage: 'Error during price list update operation',
+    version: '1.0.0'
+  },
+
+  // ========== Price Lists - Delete Events ==========
+  
+  'pricelists.delete.validation.error': {
+    eventName: 'adminPricing.pricelists.delete.validation.error',
+    source: 'admin-pricing',
+    eventType: 'system',
+    severity: 'error',
+    eventMessage: 'Validation error deleting price lists',
+    version: '1.0.0'
+  },
+
+  'pricelists.delete.not_found': {
+    eventName: 'adminPricing.pricelists.delete.not_found',
+    source: 'admin-pricing',
+    eventType: 'system',
+    severity: 'warning',
+    eventMessage: 'Price list not found for deletion',
+    version: '1.0.0'
+  },
+
+  'pricelists.delete.success': {
+    eventName: 'adminPricing.pricelists.delete.success',
+    source: 'admin-pricing',
+    eventType: 'system',
+    severity: 'info',
+    eventMessage: 'Price list deleted successfully',
+    version: '1.0.0'
+  },
+
+  'pricelists.delete.database_error': {
+    eventName: 'adminPricing.pricelists.delete.database_error',
+    source: 'admin-pricing',
+    eventType: 'system',
+    severity: 'error',
+    eventMessage: 'Database error deleting price list',
+    version: '1.0.0'
+  },
+
+  'pricelists.delete.error': {
+    eventName: 'adminPricing.pricelists.delete.error',
+    source: 'admin-pricing',
+    eventType: 'system',
+    severity: 'error',
+    eventMessage: 'Error during price list deletion operation',
     version: '1.0.0'
   }
 }

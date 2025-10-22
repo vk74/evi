@@ -1,5 +1,5 @@
 /**
- * version: 1.0.10
+ * version: 1.0.11
  * Backend router file for admin functionality.
  * Defines routes for administrative functions focused on organization management.
  * All routes are protected by JWT validation and user status check middleware.
@@ -51,6 +51,11 @@ import deleteProductOptionPairsController from './products/pairs/controller.admi
 import countProductOptionPairsController from './products/pairs/controller.admin.count.product.option.pairs';
 import fetchCurrenciesController from './pricing/controller.admin.pricing.fetch.currencies';
 import updateCurrenciesController from './pricing/controller.admin.pricing.update.currencies';
+import fetchAllPriceListsController from './pricing/controller.admin.pricing.fetch.pricelists';
+import fetchPriceListController from './pricing/controller.admin.pricing.fetch.pricelist';
+import createPriceListController from './pricing/controller.admin.pricing.create.pricelist';
+import updatePriceListController from './pricing/controller.admin.pricing.update.pricelist';
+import deletePriceListsController from './pricing/controller.admin.pricing.delete.pricelists';
 import registerUserController from '../account/controller.register.user';
 import fetchUserGroupsController from './org/userEditor/controller.fetch.user.groups';
 import removeUserFromGroupsController from './org/userEditor/controller.remove.user.from.groups';
@@ -113,9 +118,16 @@ router.post('/api/admin/products/count-product-option-pairs', checkRequestSecuri
 // Routes for Account Management
 router.post('/api/admin/users/register', checkRequestSecurityHard, registerUserController);
 
-// Routes for Pricing Admin
+// Routes for Pricing Admin - Currencies
 router.get('/api/admin/pricing/fetch-currencies', checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, fetchCurrenciesController);
 router.post('/api/admin/pricing/update-currencies', checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, updateCurrenciesController);
+
+// Routes for Pricing Admin - Price Lists
+router.get('/api/admin/pricing/pricelists/fetchall', checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, fetchAllPriceListsController);
+router.get('/api/admin/pricing/pricelists/fetch', checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, fetchPriceListController);
+router.post('/api/admin/pricing/pricelists/create', checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, createPriceListController);
+router.post('/api/admin/pricing/pricelists/update', checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, updatePriceListController);
+router.post('/api/admin/pricing/pricelists/delete', checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, deletePriceListsController);
 
 // Export using ES modules syntax
 export default router;

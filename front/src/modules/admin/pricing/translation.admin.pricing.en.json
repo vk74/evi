@@ -11,13 +11,17 @@
         "table": {
           "headers": {
             "selection": "select",
-            "code": "code",
+            "id": "ID",
             "name": "name",
             "currency": "currency",
             "status": "status",
             "validFrom": "valid from",
             "validTo": "valid to",
-            "itemsCount": "items"
+            "owner": "owner"
+          },
+          "status": {
+            "active": "active",
+            "inactive": "inactive"
           }
         },
         "filters": {
@@ -32,6 +36,9 @@
         "search": {
           "placeholder": "search price lists...",
           "minChars": "enter at least 2 characters"
+        },
+        "datePicker": {
+          "selectDate": "select date"
         },
         "actions": {
           "title": "actions",
@@ -51,7 +58,24 @@
             "message": "are you sure you want to delete selected price lists?",
             "cancel": "cancel",
             "confirm": "delete"
-          }
+          },
+          "createSuccess": "price list created successfully",
+          "createError": "failed to create price list",
+          "updateSuccess": "price list updated successfully",
+          "updateError": "failed to update price list",
+          "nameValidation": "price list name must be at least 2 characters",
+          "dateValidation": "valid from date must be before valid to date",
+          "pastDateValidation": "valid from date cannot be in the past",
+          "fetchError": "failed to fetch price lists",
+          "deleteSuccess": "successfully deleted {count} price list(s)",
+          "deletePartialSuccess": "{deleted} of {total} price list(s) deleted",
+          "deleteError": "failed to delete price lists",
+          "noItemsSelected": "no price lists selected",
+          "selectionCleared": "selection cleared",
+          "editorNotImplemented": "price list editor is not implemented yet",
+          "duplicateNotImplemented": "duplicate function is in development",
+          "exportNotImplemented": "export function is not implemented yet",
+          "importNotImplemented": "import function is not implemented yet"
         }
         ,
         "editor": {

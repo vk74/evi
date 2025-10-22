@@ -1,12 +1,15 @@
 <!--
-Version: 1.3.2
+Version: 1.4.1
 Price Lists management section.
 Frontend file for managing price lists in the pricing admin module.
+Features editable name column and date fields (valid_from, valid_to) with calendar picker.
+Supports localized date picker based on user's selected language.
 Filename: PriceLists.vue
 -->
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { useLocale } from 'vuetify'
 import { useUiStore } from '@/core/state/uistate'
 import { usePricingAdminStore } from '../state.pricing.admin'
 import DataLoading from '@/core/ui/loaders/DataLoading.vue'
@@ -21,6 +24,13 @@ import {
 } from '@phosphor-icons/vue'
 import Paginator from '@/core/ui/paginator/Paginator.vue'
 import AddPricelist from '@/core/ui/modals/add-pricelist/AddPricelist.vue'
+import { serviceFetchAllPriceLists } from './service.fetch.pricelists'
+import { serviceCreatePriceList } from './service.create.pricelist'
+import { serviceUpdatePriceList } from './service.update.pricelist'
+import { serviceDeletePriceLists } from './service.delete.pricelists'
+import { fetchCurrenciesService } from '../currencies/service.fetch.currencies'
+import type { PriceListItem, Currency } from '../types.pricing.admin'
+import debounce from 'lodash/debounce'
 
 // Types
 interface TableHeader {
@@ -32,10 +42,16 @@ interface TableHeader {
 
 type ItemsPerPageOption = 25 | 50 | 100
 
-// Initialize stores and i18n
-const { t } = useI18n()
+// Initialize stores, i18n and vuetify locale
+const { t, locale } = useI18n()
+const { current: vuetifyLocale } = useLocale()
 const uiStore = useUiStore()
 const pricingStore = usePricingAdminStore()
+
+// Watch for locale changes to sync Vuetify locale (for VDatePicker localization)
+watch(locale, (newLocale) => {
+  vuetifyLocale.value = newLocale
+})
 
 // Table and search parameters
 const page = ref<number>(1)
@@ -47,6 +63,10 @@ const isSearching = ref<boolean>(false)
 const statusFilter = ref<string>('all')
 const currencyFilter = ref<string>('all')
 
+// Currencies list for filter
+const currencies = ref<Currency[]>([])
+const isLoadingCurrencies = ref(false)
+
 // Sort tracking
 const sortBy = ref<string | null>(null)
 const sortDesc = ref<boolean>(false)
@@ -56,47 +76,20 @@ const showDeleteDialog = ref(false)
 const showAddPricelistDialog = ref(false)
 
 // Selected price lists
-const selectedPriceLists = ref<Set<string>>(new Set())
+const selectedPriceLists = ref<Set<number>>(new Set())
 
 // Loading state
 const isLoading = ref(false)
+const isUpdatingName = ref<number | null>(null) // Track which price list is being updated
+const isUpdatingDate = ref<number | null>(null) // Track which price list date is being updated
 
-// Mock data for demonstration
-const priceLists = ref([
-  {
-    id: '1',
-    code: 'PL-2024-001',
-    name: 'Standard Price List 2024',
-    currency: 'USD',
-    status: 'active',
-    validFrom: '2024-01-01',
-    validTo: '2024-12-31',
-    itemsCount: 125
-  },
-  {
-    id: '2',
-    code: 'PL-2024-002',
-    name: 'Premium Price List',
-    currency: 'EUR',
-    status: 'active',
-    validFrom: '2024-01-01',
-    validTo: '2024-12-31',
-    itemsCount: 98
-  },
-  {
-    id: '3',
-    code: 'PL-2023-001',
-    name: 'Archive Price List 2023',
-    currency: 'USD',
-    status: 'inactive',
-    validFrom: '2023-01-01',
-    validTo: '2023-12-31',
-    itemsCount: 150
-  }
-])
+// Date picker state - track which menu is open
+const datePickerMenus = ref<Record<string, boolean>>({})
 
-const totalItemsCount = ref<number>(3)
-const totalPagesCount = ref<number>(1)
+// Price lists data
+const priceLists = ref<PriceListItem[]>([])
+const totalItemsCount = ref<number>(0)
+const totalPagesCount = ref<number>(0)
 
 // Computed properties
 const selectedCount = computed(() => selectedPriceLists.value.size)
@@ -106,13 +99,13 @@ const hasOneSelected = computed(() => selectedPriceLists.value.size === 1)
 // Table headers
 const headers = computed<TableHeader[]>(() => [
   { title: t('admin.pricing.priceLists.table.headers.selection'), key: 'selection', width: '40px', sortable: false },
-  { title: t('admin.pricing.priceLists.table.headers.code'), key: 'code', width: '150px', sortable: true },
+  { title: t('admin.pricing.priceLists.table.headers.id'), key: 'price_list_id', width: '100px', sortable: true },
   { title: t('admin.pricing.priceLists.table.headers.name'), key: 'name', width: '250px', sortable: true },
-  { title: t('admin.pricing.priceLists.table.headers.currency'), key: 'currency', width: '100px', sortable: true },
-  { title: t('admin.pricing.priceLists.table.headers.status'), key: 'status', width: '120px', sortable: true },
-  { title: t('admin.pricing.priceLists.table.headers.validFrom'), key: 'validFrom', width: '130px', sortable: true },
-  { title: t('admin.pricing.priceLists.table.headers.validTo'), key: 'validTo', width: '130px', sortable: true },
-  { title: t('admin.pricing.priceLists.table.headers.itemsCount'), key: 'itemsCount', width: '100px', sortable: true }
+  { title: t('admin.pricing.priceLists.table.headers.currency'), key: 'currency_code', width: '100px', sortable: true },
+  { title: t('admin.pricing.priceLists.table.headers.status'), key: 'is_active', width: '120px', sortable: true },
+  { title: t('admin.pricing.priceLists.table.headers.validFrom'), key: 'valid_from', width: '130px', sortable: true },
+  { title: t('admin.pricing.priceLists.table.headers.validTo'), key: 'valid_to', width: '130px', sortable: true },
+  { title: t('admin.pricing.priceLists.table.headers.owner'), key: 'owner_username', width: '150px', sortable: false }
 ])
 
 // Action handlers
@@ -122,42 +115,122 @@ const addPriceList = () => {
   showAddPricelistDialog.value = true
 }
 
-const handleCreatePricelist = (data: { name: string; currency: string; type: string }) => {
-  // TODO: Implement backend integration
-  uiStore.showSuccessSnackbar(`Price list "${data.name}" created (UI only)`)
+const handleCreatePricelist = async (data: { name: string; currency: string; isActive: boolean }) => {
+  try {
+    isLoading.value = true
+    
+    // Get current date for valid_from and one year ahead for valid_to
+    const now = new Date()
+    const oneYearLater = new Date(now)
+    oneYearLater.setFullYear(oneYearLater.getFullYear() + 1)
+    
+    const result = await serviceCreatePriceList.createPriceList({
+      name: data.name,
+      currency_code: data.currency,
+      is_active: data.isActive,
+      valid_from: now.toISOString(),
+      valid_to: oneYearLater.toISOString(),
+      auto_deactivate: true
+    })
+    
+    if (result.success) {
+      uiStore.showSuccessSnackbar(result.message || t('admin.pricing.priceLists.messages.createSuccess'))
+      showAddPricelistDialog.value = false
+      await performSearch()
+    } else {
+      uiStore.showErrorSnackbar(result.message || t('admin.pricing.priceLists.messages.createError'))
+    }
+  } catch (error) {
+    console.error('Error creating price list:', error)
+    uiStore.showErrorSnackbar(t('admin.pricing.priceLists.messages.createError'))
+  } finally {
+    isLoading.value = false
+  }
 }
 
 const editPriceList = () => {
   const id = Array.from(selectedPriceLists.value)[0]
-  const pl = priceLists.value.find(p => p.id === id)
+  const pl = priceLists.value.find(p => p.price_list_id === id)
   
   if (pl) {
-    // Open editor in edit mode with selected price list data
-    pricingStore.openPriceListEditorForEdit(pl.id, pl)
+    // Open editor in edit mode with selected price list data (to be implemented in editor)
+    uiStore.showInfoSnackbar(t('admin.pricing.priceLists.messages.editorNotImplemented'))
     clearSelections()
-    uiStore.showSuccessSnackbar(t('admin.pricing.priceLists.messages.editMode') || 'Edit mode activated')
   }
 }
 
 const duplicatePriceList = () => {
-  uiStore.showInfoSnackbar('Duplicate Price List - Not implemented yet')
+  uiStore.showInfoSnackbar(t('admin.pricing.priceLists.messages.duplicateNotImplemented'))
 }
 
 const deletePriceList = () => {
   showDeleteDialog.value = true
 }
 
-const confirmDelete = () => {
-  showDeleteDialog.value = false
-  uiStore.showSuccessSnackbar('Price Lists deleted successfully')
-  clearSelections()
+const confirmDelete = async () => {
+  try {
+    const priceListsToDelete = Array.from(selectedPriceLists.value)
+    
+    if (priceListsToDelete.length === 0) {
+      uiStore.showErrorSnackbar(t('admin.pricing.priceLists.messages.noItemsSelected'))
+      showDeleteDialog.value = false
+      return
+    }
+
+    isLoading.value = true
+    
+    const result = await serviceDeletePriceLists.deletePriceLists(priceListsToDelete)
+    
+    if (result.success && result.data) {
+      const { totalDeleted, totalErrors } = result.data
+      
+      selectedPriceLists.value.clear()
+      showDeleteDialog.value = false
+      
+      if (totalErrors === 0) {
+        uiStore.showSnackbar({
+          message: t('admin.pricing.priceLists.messages.deleteSuccess', { count: totalDeleted }),
+          type: 'success',
+          timeout: 5000,
+          closable: true,
+          position: 'bottom'
+        })
+      } else if (totalDeleted > 0) {
+        uiStore.showSnackbar({
+          message: t('admin.pricing.priceLists.messages.deletePartialSuccess', { 
+            deleted: totalDeleted, 
+            total: priceListsToDelete.length 
+          }),
+          type: 'warning',
+          timeout: 5000,
+          closable: true,
+          position: 'bottom'
+        })
+      } else {
+        uiStore.showErrorSnackbar(t('admin.pricing.priceLists.messages.deleteError'))
+      }
+      
+      await performSearch()
+      
+    } else {
+      uiStore.showErrorSnackbar(result.message || t('admin.pricing.priceLists.messages.deleteError'))
+      showDeleteDialog.value = false
+    }
+    
+  } catch (error) {
+    console.error('Error deleting price lists:', error)
+    uiStore.showErrorSnackbar(t('admin.pricing.priceLists.messages.deleteError'))
+    showDeleteDialog.value = false
+  } finally {
+    isLoading.value = false
+  }
 }
 
 const cancelDelete = () => {
   showDeleteDialog.value = false
 }
 
-const onSelectPriceList = (id: string, selected: boolean) => {
+const onSelectPriceList = (id: number, selected: boolean) => {
   if (selected) {
     selectedPriceLists.value.add(id)
   } else {
@@ -165,66 +238,299 @@ const onSelectPriceList = (id: string, selected: boolean) => {
   }
 }
 
-const isSelected = (id: string) => selectedPriceLists.value.has(id)
+const isSelected = (id: number) => selectedPriceLists.value.has(id)
 
 const clearSelections = () => {
   selectedPriceLists.value.clear()
-  uiStore.showInfoSnackbar('Selection cleared')
+  uiStore.showInfoSnackbar(t('admin.pricing.priceLists.messages.selectionCleared'))
 }
 
-const performSearch = () => {
-  uiStore.showInfoSnackbar('Search - Not implemented yet')
+const performSearch = async () => {
+  if (searchQuery.value.length === 1) {
+    return
+  }
+  
+  isSearching.value = true
+  isLoading.value = true
+  
+  try {
+    const params = {
+      page: page.value,
+      itemsPerPage: itemsPerPage.value,
+      searchQuery: searchQuery.value && searchQuery.value.length >= 2 ? searchQuery.value : undefined,
+      sortBy: sortBy.value || 'price_list_id',
+      sortDesc: sortDesc.value || false,
+      statusFilter: statusFilter.value as 'all' | 'active' | 'inactive',
+      currencyFilter: currencyFilter.value !== 'all' ? currencyFilter.value : undefined
+    }
+    
+    const result = await serviceFetchAllPriceLists.fetchAllPriceLists(params)
+    
+    if (result.success && result.data) {
+      priceLists.value = result.data.priceLists
+      totalItemsCount.value = result.data.pagination.totalItems
+      totalPagesCount.value = result.data.pagination.totalPages
+      
+      if (page.value > result.data.pagination.totalPages && result.data.pagination.totalPages > 0) {
+        page.value = result.data.pagination.totalPages
+      }
+    } else {
+      uiStore.showErrorSnackbar(result.message || t('admin.pricing.priceLists.messages.fetchError'))
+      priceLists.value = []
+      totalItemsCount.value = 0
+      totalPagesCount.value = 0
+    }
+    
+  } catch (error) {
+    console.error('Error fetching price lists:', error)
+    uiStore.showErrorSnackbar(t('admin.pricing.priceLists.messages.fetchError'))
+  } finally {
+    isSearching.value = false
+    isLoading.value = false
+  }
 }
 
 const handleClearSearch = () => {
   searchQuery.value = ''
 }
 
+const debouncedSearch = debounce(performSearch, 500)
+
+watch(searchQuery, () => {
+  debouncedSearch()
+})
+
 const handleSearchKeydown = (event: KeyboardEvent) => {
   if (event.key === 'Enter') {
+    debouncedSearch.cancel()
     performSearch()
   }
 }
 
-const goToPage = (newPage: number) => {
+const goToPage = async (newPage: number) => {
+  if (newPage < 1 || newPage > totalPagesCount.value || newPage === page.value) {
+    return
+  }
+  
   page.value = newPage
-  uiStore.showInfoSnackbar(`Navigate to page ${newPage} - Not implemented yet`)
+  await performSearch()
 }
 
-const handleItemsPerPageChange = (newItemsPerPage: ItemsPerPageOption) => {
+const handleItemsPerPageChange = async (newItemsPerPage: ItemsPerPageOption) => {
   itemsPerPage.value = newItemsPerPage
   page.value = 1
-  uiStore.showInfoSnackbar('Items per page changed - Not implemented yet')
+  await performSearch()
 }
 
 // Filter handlers
-const handleStatusFilterChange = () => {
+const handleStatusFilterChange = async () => {
   page.value = 1
-  uiStore.showInfoSnackbar('Status filter changed - Not implemented yet')
+  await performSearch()
 }
 
-const handleCurrencyFilterChange = () => {
+const handleCurrencyFilterChange = async () => {
   page.value = 1
-  uiStore.showInfoSnackbar('Currency filter changed - Not implemented yet')
+  await performSearch()
 }
 
-const clearFilters = () => {
+const clearFilters = async () => {
   statusFilter.value = 'all'
   currencyFilter.value = 'all'
   page.value = 1
-  uiStore.showInfoSnackbar('Filters cleared')
+  await performSearch()
 }
 
 const exportPriceLists = () => {
-  uiStore.showInfoSnackbar('Export - Not implemented yet')
+  uiStore.showInfoSnackbar(t('admin.pricing.priceLists.messages.exportNotImplemented'))
 }
 
 const importPriceLists = () => {
-  uiStore.showInfoSnackbar('Import - Not implemented yet')
+  uiStore.showInfoSnackbar(t('admin.pricing.priceLists.messages.importNotImplemented'))
 }
 
 const filteredPriceLists = computed(() => priceLists.value)
 const totalItems = computed(() => totalItemsCount.value)
+
+// Currency options for filter dropdown
+const currencyOptions = computed(() => {
+  const allOption = { title: t('admin.pricing.priceLists.filters.all'), value: 'all' }
+  const currencyItems = currencies.value.map(c => ({
+    title: `${c.code}${c.symbol ? ' (' + c.symbol + ')' : ''}`,
+    value: c.code
+  }))
+  return [allOption, ...currencyItems]
+})
+
+// Check if filters are active (for highlighting)
+const isStatusFilterActive = computed(() => statusFilter.value !== 'all')
+const isCurrencyFilterActive = computed(() => currencyFilter.value !== 'all')
+
+// Handle name update
+const handleNameUpdate = async (priceListId: number, newName: string) => {
+  if (!newName || newName.trim().length < 2) {
+    uiStore.showErrorSnackbar(t('admin.pricing.priceLists.messages.nameValidation'))
+    return
+  }
+
+  try {
+    isUpdatingName.value = priceListId
+    
+    const result = await serviceUpdatePriceList.updatePriceList({
+      price_list_id: priceListId,
+      name: newName.trim()
+    })
+    
+    if (result.success) {
+      uiStore.showSuccessSnackbar(result.message || t('admin.pricing.priceLists.messages.updateSuccess'))
+      // Update local state
+      const priceList = priceLists.value.find(pl => pl.price_list_id === priceListId)
+      if (priceList && result.data?.priceList) {
+        priceList.name = result.data.priceList.name
+      }
+    } else {
+      uiStore.showErrorSnackbar(result.message || t('admin.pricing.priceLists.messages.updateError'))
+      // Revert to original name by refreshing
+      await performSearch()
+    }
+  } catch (error) {
+    console.error('Error updating price list name:', error)
+    uiStore.showErrorSnackbar(t('admin.pricing.priceLists.messages.updateError'))
+    // Revert to original name by refreshing
+    await performSearch()
+  } finally {
+    isUpdatingName.value = null
+  }
+}
+
+// Debounced version for name updates
+const debouncedNameUpdate = debounce(handleNameUpdate, 800)
+
+// Helper function to format dates for display
+const formatDate = (dateString: string) => {
+  try {
+    return new Date(dateString).toLocaleDateString()
+  } catch {
+    return dateString
+  }
+}
+
+// Get today's date in YYYY-MM-DD format for min date restriction
+const getTodayDateString = (): string => {
+  const today = new Date()
+  const year = today.getFullYear()
+  const month = String(today.getMonth() + 1).padStart(2, '0')
+  const day = String(today.getDate()).padStart(2, '0')
+  return `${year}-${month}-${day}`
+}
+
+// Convert ISO datetime string to date-only format (YYYY-MM-DD) for v-date-picker
+const isoToDateOnly = (isoString: string): string => {
+  try {
+    return isoString.split('T')[0]
+  } catch {
+    return isoString
+  }
+}
+
+// Convert date-only format to ISO datetime string
+const dateOnlyToISO = (dateString: string): string => {
+  try {
+    // Create date at noon UTC to avoid timezone issues
+    const date = new Date(dateString + 'T12:00:00.000Z')
+    return date.toISOString()
+  } catch {
+    return dateString
+  }
+}
+
+// Get menu key for date picker
+const getDateMenuKey = (priceListId: number, field: 'valid_from' | 'valid_to'): string => {
+  return `${priceListId}_${field}`
+}
+
+// Handle date update
+const handleDateUpdate = async (priceListId: number, field: 'valid_from' | 'valid_to', newDate: string) => {
+  const priceList = priceLists.value.find(pl => pl.price_list_id === priceListId)
+  if (!priceList) return
+
+  try {
+    isUpdatingDate.value = priceListId
+    
+    // Convert to ISO format
+    const isoDate = dateOnlyToISO(newDate)
+    
+    // Get current date at midnight for comparison
+    const today = new Date()
+    today.setHours(0, 0, 0, 0)
+    const selectedDate = new Date(isoDate)
+    
+    // Validate that valid_from is not in the past
+    if (field === 'valid_from' && selectedDate < today) {
+      uiStore.showErrorSnackbar(t('admin.pricing.priceLists.messages.pastDateValidation'))
+      return
+    }
+    
+    // Validate dates if both are being set
+    const validFrom = field === 'valid_from' ? isoDate : priceList.valid_from
+    const validTo = field === 'valid_to' ? isoDate : priceList.valid_to
+    
+    if (new Date(validFrom) >= new Date(validTo)) {
+      uiStore.showErrorSnackbar(t('admin.pricing.priceLists.messages.dateValidation'))
+      return
+    }
+    
+    const updateData: any = {
+      price_list_id: priceListId
+    }
+    updateData[field] = isoDate
+    
+    const result = await serviceUpdatePriceList.updatePriceList(updateData)
+    
+    if (result.success) {
+      uiStore.showSuccessSnackbar(result.message || t('admin.pricing.priceLists.messages.updateSuccess'))
+      // Update local state
+      if (result.data?.priceList) {
+        priceList.valid_from = result.data.priceList.valid_from
+        priceList.valid_to = result.data.priceList.valid_to
+      }
+      // Close menu
+      datePickerMenus.value[getDateMenuKey(priceListId, field)] = false
+    } else {
+      uiStore.showErrorSnackbar(result.message || t('admin.pricing.priceLists.messages.updateError'))
+      // Revert by refreshing
+      await performSearch()
+    }
+  } catch (error) {
+    console.error('Error updating price list date:', error)
+    uiStore.showErrorSnackbar(t('admin.pricing.priceLists.messages.updateError'))
+    await performSearch()
+  } finally {
+    isUpdatingDate.value = null
+  }
+}
+
+// Load currencies for filter
+const loadCurrencies = async () => {
+  try {
+    isLoadingCurrencies.value = true
+    const loadedCurrencies = await fetchCurrenciesService(false) // Load all currencies (active and inactive)
+    currencies.value = loadedCurrencies
+  } catch (error) {
+    console.error('Failed to load currencies for filter:', error)
+    // Fallback to empty list on error
+    currencies.value = []
+  } finally {
+    isLoadingCurrencies.value = false
+  }
+}
+
+// Initialize on mount
+onMounted(async () => {
+  await Promise.all([
+    performSearch(),
+    loadCurrencies()
+  ])
+})
 </script>
 
 <template>
@@ -253,12 +559,12 @@ const totalItems = computed(() => totalItemsCount.value)
                   :items="[
                     { title: t('admin.pricing.priceLists.filters.all'), value: 'all' },
                     { title: t('admin.pricing.priceLists.filters.active'), value: 'active' },
-                    { title: t('admin.pricing.priceLists.filters.inactive'), value: 'inactive' },
-                    { title: t('admin.pricing.priceLists.filters.draft'), value: 'draft' }
+                    { title: t('admin.pricing.priceLists.filters.inactive'), value: 'inactive' }
                   ]"
+                  color="teal"
+                  :base-color="isStatusFilterActive ? 'teal' : undefined"
                   hide-details
                   style="min-width: 150px;"
-                  class="filter-select"
                   @update:model-value="handleStatusFilterChange"
                 >
                   <template #append-inner>
@@ -274,15 +580,12 @@ const totalItems = computed(() => totalItemsCount.value)
                   density="compact"
                   variant="outlined"
                   :label="t('admin.pricing.priceLists.filters.currency')"
-                  :items="[
-                    { title: t('admin.pricing.priceLists.filters.all'), value: 'all' },
-                    { title: 'USD', value: 'USD' },
-                    { title: 'EUR', value: 'EUR' },
-                    { title: 'GBP', value: 'GBP' }
-                  ]"
+                  :items="currencyOptions"
+                  :loading="isLoadingCurrencies"
+                  color="teal"
+                  :base-color="isCurrencyFilterActive ? 'teal' : undefined"
                   hide-details
                   style="min-width: 120px;"
-                  class="filter-select"
                   @update:model-value="handleCurrencyFilterChange"
                 >
                   <template #append-inner>
@@ -359,50 +662,108 @@ const totalItems = computed(() => totalItemsCount.value)
               icon
               variant="text"
               density="comfortable"
-              :aria-pressed="isSelected(item.id)"
-              @click="onSelectPriceList(item.id, !isSelected(item.id))"
+              :aria-pressed="isSelected(item.price_list_id)"
+              @click="onSelectPriceList(item.price_list_id, !isSelected(item.price_list_id))"
             >
-              <PhCheckSquare v-if="isSelected(item.id)" :size="18" color="teal" />
+              <PhCheckSquare v-if="isSelected(item.price_list_id)" :size="18" color="teal" />
               <PhSquare v-else :size="18" color="grey" />
             </v-btn>
           </template>
 
-          <template #[`item.code`]="{ item }">
-            <span>{{ item.code }}</span>
+          <template #[`item.price_list_id`]="{ item }">
+            <span>{{ item.price_list_id }}</span>
           </template>
 
           <template #[`item.name`]="{ item }">
-            <span>{{ item.name }}</span>
+            <v-text-field
+              :model-value="item.name"
+              density="compact"
+              variant="plain"
+              :loading="isUpdatingName === item.price_list_id"
+              :disabled="isUpdatingName === item.price_list_id"
+              hide-details
+              @update:model-value="debouncedNameUpdate(item.price_list_id, $event)"
+            />
           </template>
 
-          <template #[`item.currency`]="{ item }">
+          <template #[`item.currency_code`]="{ item }">
             <v-chip 
               color="blue" 
               size="small"
             >
-              {{ item.currency }}
+              {{ item.currency_code }}
             </v-chip>
           </template>
 
-          <template #[`item.status`]="{ item }">
+          <template #[`item.is_active`]="{ item }">
             <v-chip 
-              :color="item.status === 'active' ? 'teal' : item.status === 'inactive' ? 'grey' : 'orange'" 
+              :color="item.is_active ? 'teal' : 'grey'" 
               size="small"
             >
-              {{ item.status }}
+              {{ item.is_active ? t('admin.pricing.priceLists.table.status.active') : t('admin.pricing.priceLists.table.status.inactive') }}
             </v-chip>
           </template>
 
-          <template #[`item.validFrom`]="{ item }">
-            <span>{{ item.validFrom }}</span>
+          <template #[`item.valid_from`]="{ item }">
+            <v-menu
+              v-model="datePickerMenus[getDateMenuKey(item.price_list_id, 'valid_from')]"
+              :close-on-content-click="false"
+              location="bottom"
+            >
+              <template #activator="{ props }">
+                <v-text-field
+                  :model-value="formatDate(item.valid_from)"
+                  density="compact"
+                  variant="plain"
+                  readonly
+                  hide-details
+                  :loading="isUpdatingDate === item.price_list_id"
+                  :disabled="isUpdatingDate === item.price_list_id"
+                  v-bind="props"
+                  style="cursor: pointer;"
+                />
+              </template>
+              <v-date-picker
+                :model-value="isoToDateOnly(item.valid_from)"
+                :min="getTodayDateString()"
+                :title="t('admin.pricing.priceLists.datePicker.selectDate')"
+                color="teal"
+                @update:model-value="handleDateUpdate(item.price_list_id, 'valid_from', $event)"
+              />
+            </v-menu>
           </template>
 
-          <template #[`item.validTo`]="{ item }">
-            <span>{{ item.validTo }}</span>
+          <template #[`item.valid_to`]="{ item }">
+            <v-menu
+              v-model="datePickerMenus[getDateMenuKey(item.price_list_id, 'valid_to')]"
+              :close-on-content-click="false"
+              location="bottom"
+            >
+              <template #activator="{ props }">
+                <v-text-field
+                  :model-value="formatDate(item.valid_to)"
+                  density="compact"
+                  variant="plain"
+                  readonly
+                  hide-details
+                  :loading="isUpdatingDate === item.price_list_id"
+                  :disabled="isUpdatingDate === item.price_list_id"
+                  v-bind="props"
+                  style="cursor: pointer;"
+                />
+              </template>
+              <v-date-picker
+                :model-value="isoToDateOnly(item.valid_to)"
+                :min="isoToDateOnly(item.valid_from)"
+                :title="t('admin.pricing.priceLists.datePicker.selectDate')"
+                color="teal"
+                @update:model-value="handleDateUpdate(item.price_list_id, 'valid_to', $event)"
+              />
+            </v-menu>
           </template>
 
-          <template #[`item.itemsCount`]="{ item }">
-            <span>{{ item.itemsCount }}</span>
+          <template #[`item.owner_username`]="{ item }">
+            <span>{{ item.owner_username || '-' }}</span>
           </template>
         </v-data-table>
 
@@ -592,11 +953,6 @@ const totalItems = computed(() => totalItemsCount.value)
   flex-shrink: 0;
 }
 
-/* Filter select styling */
-.filter-select {
-  position: relative;
-}
-
 .dropdown-icon {
   position: absolute;
   right: 12px;
@@ -683,5 +1039,34 @@ const totalItems = computed(() => totalItemsCount.value)
 .custom-pagination-container {
   background-color: rgba(var(--v-theme-surface), 1);
 }
-</style>
 
+/* Date picker navigation buttons - proper Vuetify approach */
+/* Make navigation buttons and their content visible */
+:deep(.v-date-picker-header__append .v-btn),
+:deep(.v-date-picker-header__prepend .v-btn) {
+  opacity: 1;
+}
+
+/* Style icons inside navigation buttons */
+:deep(.v-date-picker-header__append .v-btn .v-icon),
+:deep(.v-date-picker-header__prepend .v-btn .v-icon) {
+  opacity: 1;
+  color: rgba(0, 0, 0, 0.6);
+}
+
+/* Style month/year selector button */
+:deep(.v-date-picker-header__content button) {
+  opacity: 1;
+  color: rgba(0, 0, 0, 0.87);
+}
+
+/* Hover states for better UX */
+:deep(.v-date-picker-header__append .v-btn:hover .v-icon),
+:deep(.v-date-picker-header__prepend .v-btn:hover .v-icon) {
+  color: rgba(0, 0, 0, 0.87);
+}
+
+:deep(.v-date-picker-header__content button:hover) {
+  background-color: rgba(0, 0, 0, 0.04);
+}
+</style>

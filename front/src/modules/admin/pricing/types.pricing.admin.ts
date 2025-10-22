@@ -1,6 +1,6 @@
 /**
  * @file types.pricing.admin.ts
- * Version: 1.1.4
+ * Version: 1.1.5
  * Type definitions for pricing administration module.
  * Frontend types for pricing admin functionality.
  * File: types.pricing.admin.ts (frontend)
@@ -20,16 +20,17 @@ export type PricingSectionId = 'price-lists' | 'price-list-editor' | 'currencies
 // Editor modes
 export type PriceListEditorMode = 'creation' | 'edit'
 
-// Price list data interface
+// Price list data interface (for UI/state)
 export interface PriceListData {
-  id: string
-  code: string
+  id: number
   name: string
+  description: string | null
   currency: string
-  status: 'draft' | 'active' | 'archived' | string
-  validFrom?: string
-  validTo?: string | null
-  itemsCount?: number
+  isActive: boolean
+  validFrom: string
+  validTo: string
+  autoDeactivate: boolean
+  owner: string | null
 }
 
 // Pricing admin state interface
@@ -55,5 +56,135 @@ export interface Currency {
   name: string
   symbol: string | null
   active: boolean
+}
+
+// ============================================
+// Price List Types for API
+// ============================================
+
+// Price list item from API (list view)
+export interface PriceListItem {
+  price_list_id: number
+  name: string
+  description: string | null
+  currency_code: string
+  is_active: boolean
+  valid_from: string
+  valid_to: string
+  auto_deactivate: boolean
+  owner_id: string | null
+  owner_username: string | null
+  created_at: string
+  updated_at: string
+}
+
+// Full price list from API (single fetch)
+export interface PriceListFull {
+  price_list_id: number
+  name: string
+  description: string | null
+  currency_code: string
+  is_active: boolean
+  valid_from: string
+  valid_to: string
+  auto_deactivate: boolean
+  owner_id: string | null
+  created_by: string | null
+  updated_by: string | null
+  created_at: string
+  updated_at: string
+}
+
+// Fetch all price lists params
+export interface FetchAllPriceListsParams {
+  page: number
+  itemsPerPage: number
+  searchQuery?: string
+  sortBy?: string
+  sortDesc?: boolean
+  statusFilter?: 'all' | 'active' | 'inactive'
+  currencyFilter?: string
+}
+
+// Fetch all price lists result
+export interface FetchAllPriceListsResult {
+  success: boolean
+  message?: string
+  data?: {
+    priceLists: PriceListItem[]
+    pagination: {
+      currentPage: number
+      itemsPerPage: number
+      totalItems: number
+      totalPages: number
+    }
+  }
+}
+
+// Fetch single price list result
+export interface FetchPriceListResult {
+  success: boolean
+  message?: string
+  data?: {
+    priceList: PriceListFull
+  }
+}
+
+// Create price list request
+export interface CreatePriceListRequest {
+  name: string
+  description?: string
+  currency_code: string
+  is_active?: boolean
+  valid_from: string
+  valid_to: string
+  auto_deactivate?: boolean
+  owner?: string
+}
+
+// Create price list result
+export interface CreatePriceListResult {
+  success: boolean
+  message: string
+  data?: {
+    priceList: PriceListFull
+  }
+}
+
+// Update price list request
+export interface UpdatePriceListRequest {
+  price_list_id: number
+  name?: string
+  description?: string
+  currency_code?: string
+  is_active?: boolean
+  valid_from?: string
+  valid_to?: string
+  auto_deactivate?: boolean
+  owner?: string
+}
+
+// Update price list result
+export interface UpdatePriceListResult {
+  success: boolean
+  message: string
+  data?: {
+    priceList: PriceListFull
+  }
+}
+
+// Delete price lists request
+export interface DeletePriceListsRequest {
+  priceListIds: number[]
+}
+
+// Delete price lists result
+export interface DeletePriceListsResult {
+  success: boolean
+  message: string
+  data?: {
+    totalDeleted: number
+    totalErrors: number
+  }
 }
 

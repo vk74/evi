@@ -1,0 +1,98 @@
+/**
+ * version: 1.0.0
+ * Service for fetching a single price list by ID.
+ * Backend file that handles business logic for retrieving single price list data.
+ * 
+ * Functionality:
+ * - Fetches single price list from database by ID
+ * - Returns full price list data
+ * - Handles not found cases
+ * 
+ * File: service.admin.pricing.fetch.pricelist.ts (backend)
+ */
+
+import { Request } from 'express';
+import { Pool } from 'pg';
+import { pool as pgPool } from '@/core/db/maindb';
+import { queries } from './queries.admin.pricing';
+import type { 
+    FetchPriceListResponse,
+    PriceListFullDto
+} from './types.admin.pricing';
+import { createAndPublishEvent } from '@/core/eventBus/fabric.events';
+import { EVENTS_ADMIN_PRICING } from './events.admin.pricing';
+
+// Type assertion for pool
+const pool = pgPool as Pool;
+
+/**
+ * Fetches a single price list by ID
+ * @param priceListId - Price list ID
+ * @param req - Express request object
+ * @returns Promise with fetch result
+ */
+export async function fetchPriceList(
+    priceListId: number,
+    req: Request
+): Promise<FetchPriceListResponse> {
+    try {
+        // Validate price list ID
+        if (!priceListId || isNaN(priceListId) || priceListId < 1) {
+            return {
+                success: false,
+                message: 'Invalid price list ID'
+            };
+        }
+
+        // Fetch price list
+        const result = await pool.query(queries.fetchPriceListById, [priceListId]);
+
+        if (result.rows.length === 0) {
+            // Publish not found event
+            createAndPublishEvent({
+                eventName: EVENTS_ADMIN_PRICING['pricelists.fetch.not_found'].eventName,
+                payload: { priceListId }
+            });
+
+            return {
+                success: false,
+                message: 'Price list not found'
+            };
+        }
+
+        const priceList: PriceListFullDto = result.rows[0];
+
+        // Publish success event
+        createAndPublishEvent({
+            eventName: EVENTS_ADMIN_PRICING['pricelists.fetch.success'].eventName,
+            payload: {
+                priceListId,
+                name: priceList.name
+            }
+        });
+
+        return {
+            success: true,
+            data: {
+                priceList
+            }
+        };
+
+    } catch (error) {
+        // Publish error event
+        createAndPublishEvent({
+            eventName: EVENTS_ADMIN_PRICING['pricelists.fetch.database_error'].eventName,
+            payload: {
+                priceListId,
+                error: error instanceof Error ? error.message : String(error)
+            },
+            errorData: error instanceof Error ? error.message : String(error)
+        });
+
+        return {
+            success: false,
+            message: 'Failed to fetch price list'
+        };
+    }
+}
+

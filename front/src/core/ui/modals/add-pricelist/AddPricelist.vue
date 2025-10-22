@@ -1,8 +1,9 @@
 <!--
-Version: 1.2.1
+Version: 1.3.0
 Modal component for creating a new price list.
 Frontend file for adding a new price list in the pricing admin module.
 Fetches active currencies dynamically from backend.
+Includes active/inactive status toggle (v-switch) positioned next to currency selector.
 Filename: AddPricelist.vue
 -->
 <script setup lang="ts">
@@ -21,13 +22,13 @@ const props = defineProps<Props>()
 // Emits
 const emit = defineEmits<{
   'update:modelValue': [value: boolean]
-  'create': [data: { name: string; currency: string; type: string }]
+  'create': [data: { name: string; currency: string; isActive: boolean }]
 }>()
 
 // Form state
 const priceListName = ref<string>('')
 const selectedCurrency = ref<string>('USD')
-const priceListType = ref<'products' | 'services' | 'universal'>('universal')
+const isActive = ref<boolean>(false)
 
 // Currency options - loaded dynamically from backend
 const currencyOptions = ref<Array<{ title: string; value: string }>>([])
@@ -54,7 +55,7 @@ watch(dialogModel, (newVal) => {
 const resetForm = () => {
   priceListName.value = ''
   selectedCurrency.value = 'USD'
-  priceListType.value = 'universal'
+  isActive.value = false
 }
 
 // Handle create action
@@ -62,7 +63,7 @@ const handleCreate = () => {
   emit('create', {
     name: priceListName.value,
     currency: selectedCurrency.value,
-    type: priceListType.value
+    isActive: isActive.value
   })
   dialogModel.value = false
 }
@@ -123,8 +124,8 @@ onMounted(async () => {
           />
         </div>
 
-        <!-- Currency and Type selector row -->
-        <div class="d-flex align-start mb-2" style="gap: 16px;">
+        <!-- Currency and Status row -->
+        <div class="d-flex align-center mb-2" style="gap: 24px;">
           <!-- Currency selector -->
           <div style="width: 140px;">
             <v-select
@@ -143,37 +144,14 @@ onMounted(async () => {
             </v-select>
           </div>
 
-          <!-- Price list type selector -->
-          <div class="flex-grow-1">
-            <v-btn-toggle
-              v-model="priceListType"
-              mandatory
-              color="teal"
-              class="type-toggle-group"
-              density="comfortable"
-            >
-              <v-btn
-                value="products"
-                variant="outlined"
-                size="small"
-              >
-                products
-              </v-btn>
-              <v-btn
-                value="services"
-                variant="outlined"
-                size="small"
-              >
-                services
-              </v-btn>
-              <v-btn
-                value="universal"
-                variant="outlined"
-                size="small"
-              >
-                universal
-              </v-btn>
-            </v-btn-toggle>
+          <!-- Status toggle -->
+          <div>
+            <v-switch
+              v-model="isActive"
+              color="teal-darken-2"
+              label="active"
+              hide-details
+            />
           </div>
         </div>
       </v-card-text>
@@ -211,16 +189,5 @@ onMounted(async () => {
   pointer-events: none;
 }
 
-/* Type toggle group styling */
-.type-toggle-group {
-  width: 100%;
-  display: flex;
-}
-
-.type-toggle-group :deep(.v-btn) {
-  flex: 1;
-  text-transform: lowercase;
-  min-width: 0;
-}
 </style>
 
