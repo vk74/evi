@@ -1,8 +1,8 @@
 <!--
-Version: 1.4.2
+Version: 1.4.3
 Price Lists management section.
 Frontend file for managing price lists in the pricing admin module.
-Features editable name column and date fields (valid_from, valid_to) with calendar picker.
+Features editable name, status and date fields (valid_from, valid_to) with calendar picker.
 Supports localized date picker based on user's selected language.
 Includes timezone-aware date validation to prevent setting dates in the past.
 Filename: PriceLists.vue
@@ -21,7 +21,8 @@ import {
   PhSquare,
   PhArrowClockwise,
   PhCaretUpDown,
-  PhPlus
+  PhPlus,
+  PhCaretDown
 } from '@phosphor-icons/vue'
 import Paginator from '@/core/ui/paginator/Paginator.vue'
 import AddPricelist from '@/core/ui/modals/add-pricelist/AddPricelist.vue'
@@ -84,6 +85,7 @@ const selectedPriceLists = ref<Set<number>>(new Set())
 const isLoading = ref(false)
 const isUpdatingName = ref<number | null>(null) // Track which price list is being updated
 const isUpdatingDate = ref<number | null>(null) // Track which price list date is being updated
+const isUpdatingStatus = ref<number | null>(null) // Track which price list status is being updated
 
 // Date picker state - track which menu is open
 const datePickerMenus = ref<Record<string, boolean>>({})
@@ -407,6 +409,44 @@ const handleNameUpdate = async (priceListId: number, newName: string) => {
 // Debounced version for name updates
 const debouncedNameUpdate = debounce(handleNameUpdate, 800)
 
+// Handle status update
+const handleStatusUpdate = async (priceListId: number, newStatus: boolean) => {
+  try {
+    isUpdatingStatus.value = priceListId
+    
+    const result = await serviceUpdatePriceList.updatePriceList({
+      price_list_id: priceListId,
+      is_active: newStatus
+    })
+    
+    if (result.success) {
+      uiStore.showSuccessSnackbar(result.message || t('admin.pricing.priceLists.messages.updateSuccess'))
+      // Update local state
+      const priceList = priceLists.value.find(pl => pl.price_list_id === priceListId)
+      if (priceList && result.data?.priceList) {
+        priceList.is_active = result.data.priceList.is_active
+      }
+    } else {
+      uiStore.showErrorSnackbar(result.message || t('admin.pricing.priceLists.messages.updateError'))
+      // Revert to original status by refreshing
+      await performSearch()
+    }
+  } catch (error) {
+    console.error('Error updating price list status:', error)
+    uiStore.showErrorSnackbar(t('admin.pricing.priceLists.messages.updateError'))
+    // Revert to original status by refreshing
+    await performSearch()
+  } finally {
+    isUpdatingStatus.value = null
+  }
+}
+
+// Status options for menu
+const statusOptions = computed(() => [
+  { value: true, color: 'teal', label: t('admin.pricing.priceLists.table.status.active') },
+  { value: false, color: 'grey', label: t('admin.pricing.priceLists.table.status.inactive') }
+])
+
 // Helper function to format dates for display
 const formatDate = (dateString: string) => {
   try {
@@ -695,12 +735,36 @@ onMounted(async () => {
           </template>
 
           <template #[`item.is_active`]="{ item }">
-            <v-chip 
-              :color="item.is_active ? 'teal' : 'grey'" 
-              size="small"
-            >
-              {{ item.is_active ? t('admin.pricing.priceLists.table.status.active') : t('admin.pricing.priceLists.table.status.inactive') }}
-            </v-chip>
+            <v-menu>
+              <template #activator="{ props }">
+                <v-chip 
+                  v-bind="props"
+                  :color="item.is_active ? 'teal' : 'grey'" 
+                  size="small"
+                  class="status-chip-clickable"
+                  :disabled="isUpdatingStatus === item.price_list_id"
+                  :loading="isUpdatingStatus === item.price_list_id"
+                >
+                  {{ item.is_active ? t('admin.pricing.priceLists.table.status.active') : t('admin.pricing.priceLists.table.status.inactive') }}
+                  <PhCaretDown :size="14" class="ml-1" />
+                </v-chip>
+              </template>
+              <v-list density="compact">
+                <v-list-item
+                  v-for="option in statusOptions"
+                  :key="String(option.value)"
+                  @click="handleStatusUpdate(item.price_list_id, option.value)"
+                >
+                  <v-chip 
+                    :color="option.color" 
+                    size="small"
+                    class="status-menu-chip"
+                  >
+                    {{ option.label }}
+                  </v-chip>
+                </v-list-item>
+              </v-list>
+            </v-menu>
           </template>
 
           <template #[`item.valid_from`]="{ item }">
@@ -1067,5 +1131,20 @@ onMounted(async () => {
 
 :deep(.v-date-picker-header__content button:hover) {
   background-color: rgba(0, 0, 0, 0.04);
+}
+
+/* Status chip styles */
+.status-chip-clickable {
+  cursor: pointer;
+  user-select: none;
+}
+
+.status-chip-clickable:hover {
+  opacity: 0.85;
+}
+
+.status-menu-chip {
+  width: 100%;
+  justify-content: center;
 }
 </style>
