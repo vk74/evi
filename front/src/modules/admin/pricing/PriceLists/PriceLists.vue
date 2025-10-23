@@ -1,5 +1,5 @@
 <!--
-Version: 1.4.4
+Version: 1.4.5
 Price Lists management section.
 Frontend file for managing price lists in the pricing admin module.
 Features editable name, status and date fields (valid_from, valid_to) with calendar picker.
@@ -790,6 +790,7 @@ onMounted(async () => {
                 :min="getTodayDateString()"
                 :title="t('admin.pricing.priceLists.datePicker.selectDate')"
                 color="teal"
+                show-adjacent-months
                 @update:model-value="handleDateUpdate(item.price_list_id, 'valid_from', $event)"
               />
             </v-menu>
@@ -819,6 +820,7 @@ onMounted(async () => {
                 :min="isoToDateOnly(item.valid_from)"
                 :title="t('admin.pricing.priceLists.datePicker.selectDate')"
                 color="teal"
+                show-adjacent-months
                 @update:model-value="handleDateUpdate(item.price_list_id, 'valid_to', $event)"
               />
             </v-menu>
@@ -1102,34 +1104,53 @@ onMounted(async () => {
   background-color: rgba(var(--v-theme-surface), 1);
 }
 
-/* Date picker navigation buttons - proper Vuetify approach */
-/* Make navigation buttons and their content visible */
-:deep(.v-date-picker-header__append .v-btn),
-:deep(.v-date-picker-header__prepend .v-btn) {
-  opacity: 1;
+/* Date picker header - make navigation visible WITHOUT affecting day buttons */
+:deep(.v-date-picker-header),
+:deep(.v-date-picker-controls) {
+  background-color: #e0f2f1 !important;
+  padding: 12px !important;
+  display: flex !important;
+  justify-content: space-between !important;
+  align-items: center !important;
 }
 
-/* Style icons inside navigation buttons */
-:deep(.v-date-picker-header__append .v-btn .v-icon),
-:deep(.v-date-picker-header__prepend .v-btn .v-icon) {
-  opacity: 1;
-  color: rgba(0, 0, 0, 0.6);
+/* Force header elements to be visible */
+:deep(.v-date-picker-header *) {
+  opacity: 1 !important;
+  visibility: visible !important;
 }
 
-/* Style month/year selector button */
-:deep(.v-date-picker-header__content button) {
-  opacity: 1;
-  color: rgba(0, 0, 0, 0.87);
+/* Month/year text */
+:deep(.v-date-picker-header__content) {
+  color: #009688 !important;
+  font-weight: 700 !important;
+  font-size: 16px !important;
+  flex-grow: 1 !important;
+  text-align: center !important;
 }
 
-/* Hover states for better UX */
-:deep(.v-date-picker-header__append .v-btn:hover .v-icon),
-:deep(.v-date-picker-header__prepend .v-btn:hover .v-icon) {
-  color: rgba(0, 0, 0, 0.87);
+/* Navigation buttons ONLY in header (not in month grid) */
+:deep(.v-date-picker-header .v-btn--icon),
+:deep(.v-date-picker-header [aria-label*="prev"]),
+:deep(.v-date-picker-header [aria-label*="next"]),
+:deep(.v-date-picker-header [aria-label*="предыдущ"]),
+:deep(.v-date-picker-header [aria-label*="следующ"]) {
+  opacity: 1 !important;
+  visibility: visible !important;
+  display: inline-flex !important;
+  background-color: #009688 !important;
+  color: white !important;
+  width: 40px !important;
+  height: 40px !important;
+  border-radius: 50% !important;
+  justify-content: center !important;
+  align-items: center !important;
 }
 
-:deep(.v-date-picker-header__content button:hover) {
-  background-color: rgba(0, 0, 0, 0.04);
+/* Icons inside navigation buttons */
+:deep(.v-date-picker-header .v-btn--icon .v-icon) {
+  color: white !important;
+  font-size: 20px !important;
 }
 
 /* Status chip styles */
