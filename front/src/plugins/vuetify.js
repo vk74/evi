@@ -13,6 +13,7 @@ const customRussianTranslations = {
   $vuetify: {
     ...ru.$vuetify,
     datePicker: {
+      ...(ru.$vuetify?.datePicker || {}),
       title: 'Выберите дату',
       headerTitle: 'Выбор даты',
       prev: 'Предыдущий месяц',
@@ -21,8 +22,10 @@ const customRussianTranslations = {
       year: 'Год', 
       month: 'Месяц', 
       week: 'Неделя', 
-      day: 'День', 
-      // добавить другие переводы по необходимости
+      day: 'День',
+      ariaLabel: {
+        selectDate: 'Выберите дату'
+      }
     }
   }
 };
@@ -32,7 +35,12 @@ const customEnglishTranslations = {
   ...en,
   $vuetify: {
     ...en.$vuetify,
-    // здесь будут еще переводы для английской локализации
+    datePicker: {
+      ...(en.$vuetify?.datePicker || {}),
+      ariaLabel: {
+        selectDate: 'Select date'
+      }
+    }
   }
 };
 

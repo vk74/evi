@@ -1,5 +1,5 @@
 <!--
-Version: 1.4.3
+Version: 1.4.4
 Price Lists management section.
 Frontend file for managing price lists in the pricing admin module.
 Features editable name, status and date fields (valid_from, valid_to) with calendar picker.
@@ -54,7 +54,7 @@ const pricingStore = usePricingAdminStore()
 // Watch for locale changes to sync Vuetify locale (for VDatePicker localization)
 watch(locale, (newLocale) => {
   vuetifyLocale.value = newLocale
-})
+}, { immediate: true })
 
 // Table and search parameters
 const page = ref<number>(1)
