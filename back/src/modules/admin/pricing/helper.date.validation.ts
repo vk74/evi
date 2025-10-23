@@ -7,6 +7,7 @@
  * - Parses GMT±X timezone format from app settings cache
  * - Gets current time with timezone offset applied
  * - Validates price list dates (not in past, valid_to > valid_from)
+ * - Includes 60-second margin for clock differences
  * 
  * File: helper.date.validation.ts (backend)
  */
@@ -66,13 +67,17 @@ export async function getCurrentDateTimeInAppTimezone(): Promise<Date> {
 /**
  * Check if date is in the past relative to application timezone
  * @param date - Date to check (as Date object or ISO string)
- * @returns True if date is in the past
+ * @param marginSeconds - Margin in seconds to allow for clock differences (default: 60)
+ * @returns True if date is in the past (considering margin)
  */
-export async function isDateInPast(date: Date | string): Promise<boolean> {
+export async function isDateInPast(date: Date | string, marginSeconds: number = 60): Promise<boolean> {
   const dateToCheck = typeof date === 'string' ? new Date(date) : date;
   const now = await getCurrentDateTimeInAppTimezone();
   
-  return dateToCheck < now;
+  // Subtract margin from current time to allow for clock differences
+  const nowWithMargin = new Date(now.getTime() - (marginSeconds * 1000));
+  
+  return dateToCheck < nowWithMargin;
 }
 
 /**

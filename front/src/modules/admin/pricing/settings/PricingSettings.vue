@@ -267,40 +267,45 @@ onMounted(() => {
       <div class="settings-section">
         <div class="section-content">
           <!-- ==================== AUTO DEACTIVATION SETTING ==================== -->
-          <div class="d-flex align-center mb-2">
-            <v-switch
-              v-model="autoDeactivationEnabled"
-              color="teal-darken-2"
-              :label="t('admin.pricing.settings.autoDeactivation.label')"
-              hide-details
-              :disabled="isSettingDisabled('pricelists.auto.deactivation.enabled')"
-              :loading="settingLoadingStates['pricelists.auto.deactivation.enabled']"
-            />
-            <v-tooltip
-              v-if="settingErrorStates['pricelists.auto.deactivation.enabled']"
-              location="top"
-              max-width="300"
-            >
-              <template #activator="{ props }">
-                <v-icon 
-                  icon="mdi-alert-circle" 
-                  size="small" 
-                  class="ms-2" 
-                  color="error"
-                  v-bind="props"
-                  style="cursor: pointer;"
-                  @click="retrySetting('pricelists.auto.deactivation.enabled')"
-                />
-              </template>
-              <div class="pa-2">
-                <p class="text-subtitle-2 mb-2">
-                  {{ t('admin.pricing.settings.messages.error.tooltip.title') }}
-                </p>
-                <p class="text-caption">
-                  {{ t('admin.pricing.settings.messages.error.tooltip.retry') }}
-                </p>
-              </div>
-            </v-tooltip>
+          <div class="setting-row">
+            <div class="setting-info">
+              <v-switch
+                v-model="autoDeactivationEnabled"
+                color="teal-darken-2"
+                :label="t('admin.pricing.settings.autoDeactivation.label')"
+                hide-details
+                :disabled="isSettingDisabled('pricelists.auto.deactivation.enabled')"
+                :loading="settingLoadingStates['pricelists.auto.deactivation.enabled']"
+              />
+              <v-tooltip
+                v-if="settingErrorStates['pricelists.auto.deactivation.enabled']"
+                location="top"
+                max-width="300"
+              >
+                <template #activator="{ props }">
+                  <v-icon 
+                    icon="mdi-alert-circle" 
+                    size="small" 
+                    class="ms-2" 
+                    color="error"
+                    v-bind="props"
+                    style="cursor: pointer;"
+                    @click="retrySetting('pricelists.auto.deactivation.enabled')"
+                  />
+                </template>
+                <div class="pa-2">
+                  <p class="text-subtitle-2 mb-2">
+                    {{ t('admin.pricing.settings.messages.error.tooltip.title') }}
+                  </p>
+                  <p class="text-caption">
+                    {{ t('admin.pricing.settings.messages.error.tooltip.retry') }}
+                  </p>
+                </div>
+              </v-tooltip>
+            </div>
+            <div class="setting-description text-caption text-medium-emphasis mt-1 ml-12">
+              {{ t('admin.pricing.settings.autoDeactivation.description') }}
+            </div>
           </div>
         </div>
       </div>
@@ -325,5 +330,21 @@ onMounted(() => {
 
 .section-title {
   font-weight: 500;
+}
+
+.setting-row {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 16px;
+}
+
+.setting-info {
+  display: flex;
+  align-items: center;
+}
+
+.setting-description {
+  max-width: 600px;
+  line-height: 1.4;
 }
 </style>
