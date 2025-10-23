@@ -94,12 +94,7 @@
           },
           "info": {
             "priceListName": "price list name",
-            "currency": "currency",
-            "type": "type"
-          },
-          "types": {
-            "products": "products",
-            "services": "services"
+            "currency": "currency"
           },
           "search": {
             "placeholder": "search items...",

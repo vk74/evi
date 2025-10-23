@@ -1,5 +1,5 @@
 <!--
-Version: 1.5.0
+Version: 1.5.1
 Price list editor details section with items table and action buttons.
 Frontend file: PriceListEditorDetails.vue
 -->
@@ -12,18 +12,15 @@ import {
   PhArrowClockwise,
   PhPlus,
   PhTrash,
-  PhFloppyDisk,
   PhMagnifyingGlass,
   PhX,
   PhCheckSquare,
-  PhSquare,
-  PhCaretUpDown
+  PhSquare
 } from '@phosphor-icons/vue'
 
 const { t } = useI18n()
 const pricingStore = usePricingAdminStore()
 
-// Local mock of lines; in real integration, these would be loaded via API
 type ItemType = 'product' | 'service'
 type EditorLine = {
   id: string
@@ -38,8 +35,6 @@ type ItemsPerPageOption = 25 | 50 | 100
 const lines = ref<EditorLine[]>([])
 const selectedLines = ref<Set<string>>(new Set())
 
-const isSaving = ref(false)
-
 // Search state
 const searchQuery = ref<string>('')
 const isSearching = ref<boolean>(false)
@@ -47,11 +42,8 @@ const isSearching = ref<boolean>(false)
 // Pagination state
 const page = ref<number>(1)
 const itemsPerPage = ref<ItemsPerPageOption>(25)
-const totalItemsCount = ref<number>(2) // Mock total count
+const totalItemsCount = ref<number>(0)
 const totalPagesCount = ref<number>(1)
-
-// Form selectors
-const priceListStatus = ref<'draft' | 'active' | 'archived'>('draft')
 
 // Computed properties for mode detection
 const isCreationMode = computed(() => pricingStore.isCreationMode)
@@ -67,7 +59,9 @@ interface TableHeader {
 
 const headers = computed<TableHeader[]>(() => [
   { title: t('admin.pricing.priceLists.editor.headers.selection'), key: 'selection', width: '40px', sortable: false },
+  { title: '№', key: 'rowNumber', width: '60px', sortable: false },
   { title: t('admin.pricing.priceLists.editor.headers.productCode'), key: 'productCode', width: '200px', sortable: true },
+  { title: t('admin.pricing.priceLists.editor.headers.type'), key: 'itemType', width: '150px', sortable: true },
   { title: t('admin.pricing.priceLists.editor.headers.productName'), key: 'itemName', sortable: true },
   { title: t('admin.pricing.priceLists.editor.headers.price'), key: 'listPrice', width: '160px', sortable: true }
 ])
@@ -90,38 +84,6 @@ const priceListCurrency = computed(() => {
   }
   return 'USD'
 })
-
-// Read-only type display
-const priceListTypeText = computed(() => {
-  const data = pricingStore.editingPriceListData as any
-  if (data && data.type) {
-    return String(data.type)
-  }
-  return 'universal'
-})
-
-// Initialize data when mode changes
-watch(() => pricingStore.editingPriceListData, (data) => {
-  if (data && isEditMode.value) {
-    // Load data from store for edit mode
-    priceListStatus.value = (data.status as 'draft' | 'active' | 'archived') || 'draft'
-    
-    // Load mock lines for edit mode
-    lines.value = [
-      { id: 'l1', itemType: 'product', productCode: 'P-001', itemName: 'Sample product', listPrice: 199.99 },
-      { id: 'l2', itemType: 'service', productCode: 'S-HOUR', itemName: 'Consulting hour', listPrice: 50.0 }
-    ]
-  } else if (isCreationMode.value) {
-    // Reset to defaults for creation mode
-    priceListStatus.value = 'draft'
-    
-    // Load mock lines for creation mode
-    lines.value = [
-      { id: 'l1', itemType: 'product', productCode: 'P-001', itemName: 'Sample product', listPrice: 199.99 },
-      { id: 'l2', itemType: 'service', productCode: 'S-HOUR', itemName: 'Consulting hour', listPrice: 50.0 }
-    ]
-  }
-}, { immediate: true })
 
 // Action handlers
 function addRow(): void {
@@ -164,13 +126,6 @@ const handleSearchKeydown = (event: KeyboardEvent) => {
     // Perform search
     console.log('Search:', searchQuery.value)
   }
-}
-
-function saveDraft(): void {
-  isSaving.value = true
-  setTimeout(() => {
-    isSaving.value = false
-  }, 600)
 }
 
 function refreshData(): void {
@@ -221,41 +176,6 @@ const totalItems = computed(() => totalItemsCount.value)
             <div class="info-value product-code">
               {{ priceListCurrency }}
             </div>
-          </div>
-
-          <!-- Type (read-only) -->
-          <div class="info-item">
-            <div class="info-label">
-              {{ t('admin.pricing.priceLists.editor.info.type') || 'Type' }}:
-            </div>
-            <div class="info-value">
-              {{ priceListTypeText }}
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Selectors Row -->
-      <div class="selectors-section px-4 pt-3">
-        <div class="d-flex align-center">
-          <!-- Status Select (wrapped to constrain width) -->
-          <div class="status-select-wrapper">
-            <v-select
-              v-model="priceListStatus"
-              :label="t('admin.pricing.priceLists.filters.status')"
-              density="comfortable"
-              variant="outlined"
-              :items="[
-                { title: t('admin.pricing.priceLists.filters.draft'), value: 'draft' },
-                { title: t('admin.pricing.priceLists.filters.active'), value: 'active' },
-                { title: t('admin.pricing.priceLists.filters.inactive'), value: 'archived' }
-              ]"
-              hide-details
-            >
-              <template #append-inner>
-                <PhCaretUpDown class="dropdown-icon" />
-              </template>
-            </v-select>
           </div>
         </div>
       </div>
@@ -315,6 +235,11 @@ const totalItems = computed(() => totalItemsCount.value)
           </v-btn>
         </template>
 
+        <!-- Row Number -->
+        <template #[`item.rowNumber`]="{ index }">
+          <span class="row-number">{{ (page - 1) * itemsPerPage + index + 1 }}</span>
+        </template>
+
         <!-- Product Code - editable -->
         <template #[`item.productCode`]="{ item }">
           <v-text-field 
@@ -322,6 +247,20 @@ const totalItems = computed(() => totalItemsCount.value)
             density="compact" 
             variant="plain" 
             hide-details 
+          />
+        </template>
+
+        <!-- Item Type - editable select -->
+        <template #[`item.itemType`]="{ item }">
+          <v-select
+            v-model="item.itemType"
+            :items="[
+              { title: 'Product', value: 'product' },
+              { title: 'Service', value: 'service' }
+            ]"
+            density="compact"
+            variant="plain"
+            hide-details
           />
         </template>
 
@@ -370,20 +309,6 @@ const totalItems = computed(() => totalItemsCount.value)
         <h3 class="text-subtitle-2 px-2 py-2">
           {{ t('admin.pricing.priceLists.actions.title').toLowerCase() }}
         </h3>
-        
-        <v-btn
-          block
-          color="teal"
-          variant="outlined"
-          class="mb-3"
-          :loading="isSaving"
-          @click="saveDraft"
-        >
-          <template #prepend>
-            <PhFloppyDisk />
-          </template>
-          {{ t('admin.pricing.priceLists.editor.save').toUpperCase() }}
-        </v-btn>
         
         <v-btn
           block
@@ -575,31 +500,10 @@ const totalItems = computed(() => totalItemsCount.value)
   background-color: rgba(var(--v-theme-surface), 1);
 }
 
-/* Selectors section styles */
-.selectors-section {
-  margin-bottom: 8px;
-}
-
-/* Dropdown icon positioning */
-.dropdown-icon {
-  position: absolute;
-  right: 12px;
-  top: 50%;
-  transform: translateY(-50%);
-  pointer-events: none;
-}
-
-/* Constrain the width of the status v-select reliably */
-.status-select-wrapper {
-  width: 200px;
-  min-width: 200px;
-  margin-right: 48px;
-}
-.status-select-wrapper :deep(.v-field),
-.status-select-wrapper :deep(.v-input__control),
-.status-select-wrapper :deep(.v-select),
-.status-select-wrapper :deep(.v-input) {
-  max-width: 200px;
+/* Row number styles */
+.row-number {
+  font-family: 'Roboto Mono', monospace;
+  color: rgba(0, 0, 0, 0.6);
 }
 </style>
 
