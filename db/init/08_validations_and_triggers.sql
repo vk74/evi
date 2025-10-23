@@ -145,15 +145,28 @@ SECURITY DEFINER
 AS $$
 DECLARE
     deactivated_count INTEGER;
+    auto_deactivation_enabled BOOLEAN;
 BEGIN
+    -- Get global setting for auto-deactivation
+    SELECT (value)::boolean INTO auto_deactivation_enabled
+    FROM app.app_settings
+    WHERE section_path = 'Pricing.Settings'
+      AND setting_name = 'pricelists.auto.deactivation.enabled'
+      AND environment = 'all';
+    
+    -- If setting not found or disabled, exit
+    IF auto_deactivation_enabled IS NULL OR auto_deactivation_enabled = FALSE THEN
+        RAISE NOTICE 'Price lists auto-deactivation is disabled in settings';
+        RETURN;
+    END IF;
+    
     -- Deactivate price lists that have expired
     UPDATE app.price_lists_info 
     SET 
         is_active = FALSE,
         updated_at = NOW()
     WHERE is_active = TRUE
-        AND valid_to < NOW()
-        AND auto_deactivate = TRUE;
+        AND valid_to < NOW();
     
     GET DIAGNOSTICS deactivated_count = ROW_COUNT;
     
@@ -164,5 +177,5 @@ END;
 $$;
 
 COMMENT ON FUNCTION app.deactivate_expired_price_lists() IS 
-    'Deactivates expired price lists where auto_deactivate is TRUE - called by pg_cron daily';
+    'Deactivates expired price lists based on global setting pricelists.auto.deactivation.enabled - called by pg_cron daily';
 

@@ -198,7 +198,6 @@ export async function createPriceList(
             data.is_active !== undefined ? data.is_active : false,
             data.valid_from,
             data.valid_to,
-            data.auto_deactivate !== undefined ? data.auto_deactivate : true,
             ownerUuid,
             requestorUuid
         ]);

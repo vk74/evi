@@ -118,6 +118,23 @@
           "typeService": "service"
         }
       },
+      "settings": {
+        "title": "pricing settings",
+        "autoDeactivation": {
+          "label": "pricelists auto deactivation based on validity date",
+          "description": "automatically deactivate price lists when their validity period expires"
+        },
+        "messages": {
+          "loaded": "settings loaded successfully",
+          "error": {
+            "loading": "error loading setting",
+            "tooltip": {
+              "title": "error loading setting",
+              "retry": "click to retry"
+            }
+          }
+        }
+      },
       "currencies": {
         "table": {
           "headers": {

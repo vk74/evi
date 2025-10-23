@@ -549,7 +549,6 @@ CREATE TABLE IF NOT EXISTS app.price_lists_info (
     is_active BOOLEAN DEFAULT FALSE NOT NULL,
     valid_from TIMESTAMPTZ NOT NULL,
     valid_to TIMESTAMPTZ NOT NULL,
-    auto_deactivate BOOLEAN DEFAULT TRUE NOT NULL,
     owner_id UUID,
     created_by UUID,
     updated_by UUID,
@@ -590,7 +589,6 @@ COMMENT ON COLUMN app.price_lists_info.currency_code IS 'Currency for all prices
 COMMENT ON COLUMN app.price_lists_info.is_active IS 'Whether this price list is currently active';
 COMMENT ON COLUMN app.price_lists_info.valid_from IS 'Start date/time when price list becomes valid';
 COMMENT ON COLUMN app.price_lists_info.valid_to IS 'End date/time when price list expires';
-COMMENT ON COLUMN app.price_lists_info.auto_deactivate IS 'Whether to automatically deactivate after valid_to';
 COMMENT ON COLUMN app.price_lists_info.owner_id IS 'Price list owner (optional, can be different from created_by)';
 
 -- Price list items (partitioned by price_list_id)

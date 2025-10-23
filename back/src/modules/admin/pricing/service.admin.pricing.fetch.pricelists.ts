@@ -83,7 +83,6 @@ function buildFetchQuery(params: FetchAllPriceListsParams): { query: string; que
             pli.is_active,
             pli.valid_from,
             pli.valid_to,
-            pli.auto_deactivate,
             pli.owner_id,
             u.username as owner_username,
             pli.created_at,

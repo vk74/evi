@@ -232,7 +232,6 @@ export async function updatePriceList(
             data.is_active,
             data.valid_from,
             data.valid_to,
-            data.auto_deactivate,
             ownerUuid,
             requestorUuid
         ]);

@@ -1,5 +1,5 @@
 <!--
-Version: 1.3.1
+Version: 1.4.0
 Pricing administration submodule component.
 Frontend file that provides pricing management interface for admin users.
 Filename: SubModulePricing.vue
@@ -23,7 +23,7 @@ import {
 const PriceLists = defineAsyncComponent(() => import('./PriceLists/PriceLists.vue'))
 const PriceListEditor = defineAsyncComponent(() => import('./PriceListEditor/PriceListEditor.vue'))
 const Currencies = defineAsyncComponent(() => import('./currencies/Currencies.vue'))
-const PricingSettings = defineAsyncComponent(() => import('./sections/PricingSettings.vue'))
+const PricingSettings = defineAsyncComponent(() => import('./settings/PricingSettings.vue'))
 
 // Initialize i18n and store
 const { t } = useI18n()

@@ -133,8 +133,7 @@ const handleCreatePricelist = async (data: { name: string; currency: string; isA
       currency_code: data.currency,
       is_active: data.isActive,
       valid_from: now.toISOString(),
-      valid_to: oneYearLater.toISOString(),
-      auto_deactivate: true
+      valid_to: oneYearLater.toISOString()
     })
     
     if (result.success) {
