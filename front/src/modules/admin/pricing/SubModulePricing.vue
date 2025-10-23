@@ -1,5 +1,5 @@
 <!--
-Version: 1.4.0
+Version: 1.4.1
 Pricing administration submodule component.
 Frontend file that provides pricing management interface for admin users.
 Filename: SubModulePricing.vue
@@ -116,11 +116,11 @@ const getIconComponent = (iconName: string) => {
     </div>
 
     <!-- Content Panel -->
-    <div class="content-panel pa-0">
-      <PriceLists v-if="activeSection === 'price-lists'" />
-      <PriceListEditor v-if="activeSection === 'price-list-editor'" />
-      <Currencies v-if="activeSection === 'currencies'" />
-      <PricingSettings v-if="activeSection === 'settings'" />
+    <div class="content-panel">
+      <PriceLists v-if="activeSection === 'price-lists'" class="pa-0" />
+      <PriceListEditor v-if="activeSection === 'price-list-editor'" class="pa-0" />
+      <Currencies v-if="activeSection === 'currencies'" class="pa-0" />
+      <PricingSettings v-if="activeSection === 'settings'" class="pa-4" />
     </div>
   </div>
 </template>
