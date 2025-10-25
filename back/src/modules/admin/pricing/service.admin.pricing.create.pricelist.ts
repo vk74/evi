@@ -1,5 +1,5 @@
 /**
- * version: 1.0.1
+ * version: 1.1.0
  * Service for creating price lists.
  * Backend file that handles business logic for creating new price lists.
  * 
@@ -7,7 +7,6 @@
  * - Validates price list data
  * - Checks currency existence
  * - Checks name uniqueness
- * - Validates dates (not in past, valid_to > valid_from) with timezone awareness
  * - Validates owner (optional)
  * - Creates price list in database
  * - Sets owner_id from created_by if not specified
@@ -29,7 +28,6 @@ import { getUuidByUsername } from '@/core/helpers/get.uuid.by.username';
 import { validateField } from '@/core/validation/service.validation';
 import { createAndPublishEvent } from '@/core/eventBus/fabric.events';
 import { EVENTS_ADMIN_PRICING } from './events.admin.pricing';
-import { validatePriceListDatesForCreate } from './helper.date.validation';
 
 // Type assertion for pool
 const pool = pgPool as Pool;
@@ -88,25 +86,6 @@ async function validateCreatePriceListData(
             }
         } catch (error) {
             errors.push('Error checking currency existence');
-        }
-    }
-
-    // Validate dates (required, not in past, valid_from must be before valid_to)
-    if (data.valid_from && data.valid_to) {
-        const dateValidation = await validatePriceListDatesForCreate(
-            data.valid_from,
-            data.valid_to
-        );
-        
-        if (!dateValidation.isValid) {
-            errors.push(dateValidation.error || 'Invalid dates');
-        }
-    } else {
-        if (!data.valid_from) {
-            errors.push('Valid from date is required');
-        }
-        if (!data.valid_to) {
-            errors.push('Valid to date is required');
         }
     }
 
@@ -196,8 +175,6 @@ export async function createPriceList(
             data.description?.trim() || null,
             data.currency_code.trim(),
             data.is_active !== undefined ? data.is_active : false,
-            data.valid_from,
-            data.valid_to,
             ownerUuid,
             requestorUuid
         ]);

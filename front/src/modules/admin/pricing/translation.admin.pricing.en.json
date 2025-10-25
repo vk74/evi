@@ -15,8 +15,6 @@
             "name": "name",
             "currency": "currency",
             "status": "status",
-            "validFrom": "valid from",
-            "validTo": "valid to",
             "owner": "owner"
           },
           "status": {
@@ -36,9 +34,6 @@
         "search": {
           "placeholder": "search price lists...",
           "minChars": "enter at least 2 characters"
-        },
-        "datePicker": {
-          "selectDate": "select date"
         },
         "actions": {
           "title": "actions",
@@ -64,8 +59,6 @@
           "updateSuccess": "price list updated successfully",
           "updateError": "failed to update price list",
           "nameValidation": "price list name must be at least 2 characters",
-          "dateValidation": "valid from date must be before valid to date",
-          "pastDateValidation": "valid from date cannot be in the past",
           "fetchError": "failed to fetch price lists",
           "deleteSuccess": "successfully deleted {count} price list(s)",
           "deletePartialSuccess": "{deleted} of {total} price list(s) deleted",
@@ -115,18 +108,9 @@
       },
       "settings": {
         "title": "pricing settings",
-        "autoDeactivation": {
-          "label": "pricelists auto deactivation based on validity date"
-        },
+        "noSettings": "no pricing settings available",
         "messages": {
-          "loaded": "settings loaded successfully",
-          "error": {
-            "loading": "error loading setting",
-            "tooltip": {
-              "title": "error loading setting",
-              "retry": "click to retry"
-            }
-          }
+          "loaded": "settings loaded successfully"
         }
       },
       "currencies": {

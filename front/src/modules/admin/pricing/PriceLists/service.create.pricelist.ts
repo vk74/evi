@@ -1,10 +1,9 @@
 /**
- * version: 1.0.1
+ * version: 1.1.0
  * Frontend service for creating price lists.
  * 
  * This is a frontend file. The file provides API client for price list creation.
  * Logic: Handles HTTP requests to backend API with proper error handling and response processing.
- * Includes date validation to prevent creating price lists with dates in the past.
  * 
  * File: service.create.pricelist.ts
  */
@@ -14,7 +13,6 @@ import type {
     CreatePriceListRequest, 
     CreatePriceListResult
 } from '../types.pricing.admin'
-import { validatePriceListDatesForCreate } from '../helpers/date.validation.helper'
 
 /**
  * Frontend service for creating price lists
@@ -39,19 +37,6 @@ export const serviceCreatePriceList = {
                 return {
                     success: false,
                     message: 'Currency code is required and must be 3 characters'
-                }
-            }
-
-            // Validate dates (required, not in past, valid_to > valid_from)
-            const dateValidation = validatePriceListDatesForCreate(
-                data.valid_from || '',
-                data.valid_to || ''
-            )
-            
-            if (!dateValidation.isValid) {
-                return {
-                    success: false,
-                    message: dateValidation.error || 'Invalid dates'
                 }
             }
 

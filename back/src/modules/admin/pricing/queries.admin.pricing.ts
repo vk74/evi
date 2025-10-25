@@ -1,5 +1,5 @@
 /**
- * version: 1.2.0
+ * version: 1.3.0
  * SQL queries for pricing administration module.
  * Contains parameterized queries related to pricing (currencies and price lists).
  * Includes integrity check queries.
@@ -84,8 +84,6 @@ export const queries = {
             pli.description,
             pli.currency_code,
             pli.is_active,
-            pli.valid_from,
-            pli.valid_to,
             pli.owner_id,
             u.username as owner_username,
             pli.created_at,
@@ -107,8 +105,6 @@ export const queries = {
             pli.description,
             pli.currency_code,
             pli.is_active,
-            pli.valid_from,
-            pli.valid_to,
             pli.owner_id,
             u.username as owner_username,
             pli.created_at,
@@ -153,8 +149,6 @@ export const queries = {
             description,
             currency_code,
             is_active,
-            valid_from,
-            valid_to,
             owner_id,
             created_by,
             updated_by,
@@ -184,7 +178,7 @@ export const queries = {
 
     /**
      * Insert new price list
-     * Parameters: name, description, currency_code, is_active, valid_from, valid_to, 
+     * Parameters: name, description, currency_code, is_active, 
      *             owner_id, created_by
      */
     insertPriceList: `
@@ -193,19 +187,17 @@ export const queries = {
             description,
             currency_code,
             is_active,
-            valid_from,
-            valid_to,
             owner_id,
             created_by,
             updated_by
-        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $8)
+        ) VALUES ($1, $2, $3, $4, $5, $6, $6)
         RETURNING price_list_id
     `,
 
     /**
      * Update price list
      * Parameters: price_list_id, name, description, currency_code, is_active, 
-     *             valid_from, valid_to, owner_id, updated_by
+     *             owner_id, updated_by
      */
     updatePriceList: `
         UPDATE app.price_lists_info SET
@@ -213,10 +205,8 @@ export const queries = {
             description = COALESCE($3, description),
             currency_code = COALESCE($4, currency_code),
             is_active = COALESCE($5, is_active),
-            valid_from = COALESCE($6, valid_from),
-            valid_to = COALESCE($7, valid_to),
-            owner_id = COALESCE($8, owner_id),
-            updated_by = $9,
+            owner_id = COALESCE($6, owner_id),
+            updated_by = $7,
             updated_at = NOW()
         WHERE price_list_id = $1
         RETURNING price_list_id

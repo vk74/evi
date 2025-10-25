@@ -67,29 +67,5 @@ SELECT cron.schedule(
 -- Grant execute permission on the cleanup function
 GRANT EXECUTE ON FUNCTION app.cleanup_expired_tokens() TO postgres;
 
--- ============================================
--- Pricing: Schedule auto-deactivation of expired price lists
--- ============================================
-
--- Schedule price list auto-deactivation to run daily at 2:00 AM
-DO $$ 
-BEGIN
-    IF NOT EXISTS (
-        SELECT 1 FROM cron.job WHERE jobname = 'deactivate-expired-price-lists'
-    ) THEN
-        PERFORM cron.schedule(
-            'deactivate-expired-price-lists',
-            '0 2 * * *',  -- Daily at 2:00 AM
-            'SELECT app.deactivate_expired_price_lists();'
-        );
-        RAISE NOTICE 'Scheduled price list auto-deactivation job (daily at 2:00 AM)';
-    ELSE
-        RAISE NOTICE 'Price list auto-deactivation job already exists, skipping';
-    END IF;
-END $$;
-
--- Grant execute permission on the deactivation function
-GRANT EXECUTE ON FUNCTION app.deactivate_expired_price_lists() TO postgres;
-
 -- Log successful setup
-SELECT 'pg_cron extension configured successfully - token cleanup scheduled every hour, price list deactivation scheduled daily' AS setup_status;
+SELECT 'pg_cron extension configured successfully - token cleanup scheduled every hour' AS setup_status;

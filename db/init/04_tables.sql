@@ -547,8 +547,6 @@ CREATE TABLE IF NOT EXISTS app.price_lists_info (
     description VARCHAR(2000),
     currency_code CHAR(3) NOT NULL,
     is_active BOOLEAN DEFAULT FALSE NOT NULL,
-    valid_from TIMESTAMPTZ NOT NULL,
-    valid_to TIMESTAMPTZ NOT NULL,
     owner_id UUID,
     created_by UUID,
     updated_by UUID,
@@ -574,11 +572,7 @@ CREATE TABLE IF NOT EXISTS app.price_lists_info (
     CONSTRAINT fk_price_lists_updated_by 
         FOREIGN KEY (updated_by) 
         REFERENCES app.users(user_id) 
-        ON DELETE SET NULL,
-    
-    -- Constraints
-    CONSTRAINT chk_valid_dates 
-        CHECK (valid_from < valid_to)
+        ON DELETE SET NULL
 );
 
 COMMENT ON TABLE app.price_lists_info IS 'Metadata for price lists - headers/info about each price list';
@@ -587,8 +581,6 @@ COMMENT ON COLUMN app.price_lists_info.name IS 'Unique name of the price list';
 COMMENT ON COLUMN app.price_lists_info.description IS 'User description/notes about the price list';
 COMMENT ON COLUMN app.price_lists_info.currency_code IS 'Currency for all prices in this price list';
 COMMENT ON COLUMN app.price_lists_info.is_active IS 'Whether this price list is currently active';
-COMMENT ON COLUMN app.price_lists_info.valid_from IS 'Start date/time when price list becomes valid';
-COMMENT ON COLUMN app.price_lists_info.valid_to IS 'End date/time when price list expires';
 COMMENT ON COLUMN app.price_lists_info.owner_id IS 'Price list owner (optional, can be different from created_by)';
 
 -- Price list items (partitioned by price_list_id)

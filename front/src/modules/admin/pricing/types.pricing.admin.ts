@@ -1,6 +1,6 @@
 /**
  * @file types.pricing.admin.ts
- * Version: 1.2.0
+ * Version: 1.3.0
  * Type definitions for pricing administration module.
  * Frontend types for pricing admin functionality.
  * File: types.pricing.admin.ts (frontend)
@@ -27,8 +27,6 @@ export interface PriceListData {
   description: string | null
   currency: string
   isActive: boolean
-  validFrom: string
-  validTo: string
   owner: string | null
 }
 
@@ -68,8 +66,6 @@ export interface PriceListItem {
   description: string | null
   currency_code: string
   is_active: boolean
-  valid_from: string
-  valid_to: string
   owner_id: string | null
   owner_username: string | null
   created_at: string
@@ -83,8 +79,6 @@ export interface PriceListFull {
   description: string | null
   currency_code: string
   is_active: boolean
-  valid_from: string
-  valid_to: string
   owner_id: string | null
   created_by: string | null
   updated_by: string | null
@@ -133,8 +127,6 @@ export interface CreatePriceListRequest {
   description?: string
   currency_code: string
   is_active?: boolean
-  valid_from: string
-  valid_to: string
   owner?: string
 }
 
@@ -154,8 +146,6 @@ export interface UpdatePriceListRequest {
   description?: string
   currency_code?: string
   is_active?: boolean
-  valid_from?: string
-  valid_to?: string
   owner?: string
 }
 

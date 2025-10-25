@@ -1,5 +1,5 @@
 /**
- * version: 1.1.0
+ * version: 1.2.0
  * Service for fetching all price lists with pagination, search, sorting and filtering.
  * Backend file that handles business logic for retrieving price lists list.
  * 
@@ -81,8 +81,6 @@ function buildFetchQuery(params: FetchAllPriceListsParams): { query: string; que
             pli.description,
             pli.currency_code,
             pli.is_active,
-            pli.valid_from,
-            pli.valid_to,
             pli.owner_id,
             u.username as owner_username,
             pli.created_at,
@@ -129,8 +127,6 @@ function buildFetchQuery(params: FetchAllPriceListsParams): { query: string; que
         'name',
         'currency_code',
         'is_active',
-        'valid_from',
-        'valid_to',
         'created_at',
         'updated_at'
     ];

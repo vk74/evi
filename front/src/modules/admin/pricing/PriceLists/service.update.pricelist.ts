@@ -1,10 +1,9 @@
 /**
- * version: 1.0.1
+ * version: 1.1.0
  * Frontend service for updating price lists.
  * 
  * This is a frontend file. The file provides API client for price list update.
  * Logic: Handles HTTP requests to backend API with proper error handling and response processing.
- * Includes conditional date validation - only validates dates if they are being updated.
  * 
  * File: service.update.pricelist.ts
  */
@@ -46,12 +45,6 @@ export const serviceUpdatePriceList = {
                     success: false,
                     message: 'Currency code must be 3 characters'
                 }
-            }
-
-            // Note: Date validation is already performed in handleDateUpdate with current values
-            // Backend will handle final validation and cross-validation
-            if (data.valid_from !== undefined || data.valid_to !== undefined) {
-                // Dates are being updated, validation already performed in component
             }
 
             // Make API request

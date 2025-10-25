@@ -1,5 +1,5 @@
 /**
- * version: 1.3.0
+ * version: 1.4.0
  * Backend types for pricing administration module.
  * Defines DTOs for currencies, price lists and other pricing-related entities.
  * File: types.admin.pricing.ts (backend)
@@ -41,8 +41,6 @@ export interface PriceListItemDto {
     description: string | null
     currency_code: string
     is_active: boolean
-    valid_from: string // ISO timestamp
-    valid_to: string // ISO timestamp
     owner_id: string | null // UUID
     owner_username: string | null
     created_at: string // ISO timestamp
@@ -56,8 +54,6 @@ export interface PriceListFullDto {
     description: string | null
     currency_code: string
     is_active: boolean
-    valid_from: string // ISO timestamp
-    valid_to: string // ISO timestamp
     owner_id: string | null
     created_by: string | null
     updated_by: string | null
@@ -97,8 +93,6 @@ export interface CreatePriceListRequest {
     description?: string
     currency_code: string
     is_active?: boolean
-    valid_from: string // ISO timestamp
-    valid_to: string // ISO timestamp
     owner?: string // username (optional)
 }
 
@@ -118,8 +112,6 @@ export interface UpdatePriceListRequest {
     description?: string
     currency_code?: string
     is_active?: boolean
-    valid_from?: string
-    valid_to?: string
     owner?: string // username (optional)
 }
 

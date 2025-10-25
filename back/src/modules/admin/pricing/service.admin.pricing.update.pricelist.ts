@@ -1,5 +1,5 @@
 /**
- * version: 1.0.1
+ * version: 1.1.0
  * Service for updating price lists.
  * Backend file that handles business logic for updating existing price lists.
  * 
@@ -8,7 +8,6 @@
  * - Checks price list existence
  * - Checks currency existence (if being updated)
  * - Checks name uniqueness (if being updated)
- * - Validates dates (not in past, valid_to > valid_from) only if dates are being updated
  * - Validates owner (if being updated)
  * - Updates price list in database
  * 
@@ -29,7 +28,6 @@ import { getUuidByUsername } from '@/core/helpers/get.uuid.by.username';
 import { validateField } from '@/core/validation/service.validation';
 import { createAndPublishEvent } from '@/core/eventBus/fabric.events';
 import { EVENTS_ADMIN_PRICING } from './events.admin.pricing';
-import { validatePriceListDatesForUpdate } from './helper.date.validation';
 
 // Type assertion for pool
 const pool = pgPool as Pool;
@@ -125,24 +123,6 @@ async function validateUpdatePriceListData(
         }
     }
 
-    // Validate dates (only if being updated)
-    if (data.valid_from !== undefined || data.valid_to !== undefined) {
-        // Need to get current values for cross-validation
-        const currentResult = await pool.query(queries.fetchPriceListById, [data.price_list_id]);
-        const currentData = currentResult.rows[0];
-        
-        const dateValidation = await validatePriceListDatesForUpdate(
-            data.valid_from,
-            data.valid_to,
-            currentData.valid_from,
-            currentData.valid_to
-        );
-        
-        if (!dateValidation.isValid) {
-            errors.push(dateValidation.error || 'Invalid dates');
-        }
-    }
-
     // Validate owner (if provided)
     if (data.owner !== undefined && data.owner !== '' && data.owner !== null) {
         const ownerResult = await validateField({ 
@@ -220,8 +200,6 @@ export async function updatePriceList(
             data.description !== undefined ? (data.description?.trim() || null) : null, // $3
             data.currency_code?.trim() || null, // $4
             data.is_active !== undefined ? data.is_active : null, // $5
-            data.valid_from || null, // $6
-            data.valid_to || null, // $7
         ];
 
         // Add owner_id parameter only if owner is being updated
@@ -230,12 +208,12 @@ export async function updatePriceList(
             if (data.owner !== '' && data.owner !== null) {
                 ownerUuid = await getUuidByUsername(data.owner);
             }
-            updateParams.push(ownerUuid); // $8
+            updateParams.push(ownerUuid); // $6
         } else {
-            updateParams.push(null); // $8 - null means don't update this field
+            updateParams.push(null); // $6 - null means don't update this field
         }
 
-        updateParams.push(requestorUuid); // $9
+        updateParams.push(requestorUuid); // $7
 
         // Execute update
         await pool.query(queries.updatePriceList, updateParams);

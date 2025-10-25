@@ -109,10 +109,7 @@ INSERT INTO app.app_settings (
 ('Application.RegionalSettings', 'time.format.12h', 'all', 'false', '{"type":"boolean"}', 'false', 'Use 12-hour AM/PM time format instead of 24-hour format', false),
 
 -- Appearance Settings
-('Application.Appearance', 'navbar.backgroundcolor', 'all', '"#26A69A"', '{"type":"string","pattern":"^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$"}', '"#26A69A"', 'Navigation bar background color (hex format)', true),
-
--- Pricing Settings
-('Pricing.Settings', 'pricelists.auto.deactivation.enabled', 'all', 'true', '{"type":"boolean"}', 'true', 'Enable automatic deactivation of price lists based on validity date (global setting)', false)
+('Application.Appearance', 'navbar.backgroundcolor', 'all', '"#26A69A"', '{"type":"string","pattern":"^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$"}', '"#26A69A"', 'Navigation bar background color (hex format)', true)
 ON CONFLICT (section_path, setting_name, environment) DO UPDATE SET
     value = EXCLUDED.value,
     validation_schema = EXCLUDED.validation_schema,

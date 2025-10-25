@@ -1,16 +1,13 @@
 <!--
-Version: 1.4.5
+Version: 1.5.0
 Price Lists management section.
 Frontend file for managing price lists in the pricing admin module.
-Features editable name, status and date fields (valid_from, valid_to) with calendar picker.
-Supports localized date picker based on user's selected language.
-Includes timezone-aware date validation to prevent setting dates in the past.
+Features editable name and status fields with manual is_active control.
 Filename: PriceLists.vue
 -->
 <script setup lang="ts">
 import { ref, computed, onMounted, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { useLocale } from 'vuetify'
 import { useUiStore } from '@/core/state/uistate'
 import { usePricingAdminStore } from '../state.pricing.admin'
 import DataLoading from '@/core/ui/loaders/DataLoading.vue'
@@ -32,7 +29,6 @@ import { serviceUpdatePriceList } from './service.update.pricelist'
 import { serviceDeletePriceLists } from './service.delete.pricelists'
 import { fetchCurrenciesService } from '../currencies/service.fetch.currencies'
 import type { PriceListItem, Currency } from '../types.pricing.admin'
-import { validatePriceListDatesForUpdate } from '../helpers/date.validation.helper'
 import debounce from 'lodash/debounce'
 
 // Types
@@ -45,16 +41,10 @@ interface TableHeader {
 
 type ItemsPerPageOption = 25 | 50 | 100
 
-// Initialize stores, i18n and vuetify locale
-const { t, locale } = useI18n()
-const { current: vuetifyLocale } = useLocale()
+// Initialize stores and i18n
+const { t } = useI18n()
 const uiStore = useUiStore()
 const pricingStore = usePricingAdminStore()
-
-// Watch for locale changes to sync Vuetify locale (for VDatePicker localization)
-watch(locale, (newLocale) => {
-  vuetifyLocale.value = newLocale
-}, { immediate: true })
 
 // Table and search parameters
 const page = ref<number>(1)
@@ -84,11 +74,7 @@ const selectedPriceLists = ref<Set<number>>(new Set())
 // Loading state
 const isLoading = ref(false)
 const isUpdatingName = ref<number | null>(null) // Track which price list is being updated
-const isUpdatingDate = ref<number | null>(null) // Track which price list date is being updated
 const isUpdatingStatus = ref<number | null>(null) // Track which price list status is being updated
-
-// Date picker state - track which menu is open
-const datePickerMenus = ref<Record<string, boolean>>({})
 
 // Price lists data
 const priceLists = ref<PriceListItem[]>([])
@@ -107,8 +93,6 @@ const headers = computed<TableHeader[]>(() => [
   { title: t('admin.pricing.priceLists.table.headers.name'), key: 'name', width: '250px', sortable: true },
   { title: t('admin.pricing.priceLists.table.headers.currency'), key: 'currency_code', width: '100px', sortable: true },
   { title: t('admin.pricing.priceLists.table.headers.status'), key: 'is_active', width: '120px', sortable: true },
-  { title: t('admin.pricing.priceLists.table.headers.validFrom'), key: 'valid_from', width: '130px', sortable: true },
-  { title: t('admin.pricing.priceLists.table.headers.validTo'), key: 'valid_to', width: '130px', sortable: true },
   { title: t('admin.pricing.priceLists.table.headers.owner'), key: 'owner_username', width: '150px', sortable: false }
 ])
 
@@ -123,17 +107,10 @@ const handleCreatePricelist = async (data: { name: string; currency: string; isA
   try {
     isLoading.value = true
     
-    // Get current date for valid_from and one year ahead for valid_to
-    const now = new Date()
-    const oneYearLater = new Date(now)
-    oneYearLater.setFullYear(oneYearLater.getFullYear() + 1)
-    
     const result = await serviceCreatePriceList.createPriceList({
       name: data.name,
       currency_code: data.currency,
-      is_active: data.isActive,
-      valid_from: now.toISOString(),
-      valid_to: oneYearLater.toISOString()
+      is_active: data.isActive
     })
     
     if (result.success) {
@@ -446,115 +423,6 @@ const statusOptions = computed(() => [
   { value: false, color: 'grey', label: t('admin.pricing.priceLists.table.status.inactive') }
 ])
 
-// Helper function to format dates for display
-const formatDate = (dateString: string) => {
-  try {
-    return new Date(dateString).toLocaleDateString()
-  } catch {
-    return dateString
-  }
-}
-
-// Get today's date in YYYY-MM-DD format for min date restriction
-const getTodayDateString = (): string => {
-  const today = new Date()
-  const year = today.getFullYear()
-  const month = String(today.getMonth() + 1).padStart(2, '0')
-  const day = String(today.getDate()).padStart(2, '0')
-  return `${year}-${month}-${day}`
-}
-
-// Convert ISO datetime string to date-only format (YYYY-MM-DD) for v-date-picker
-const isoToDateOnly = (isoString: string): string => {
-  try {
-    return isoString.split('T')[0]
-  } catch {
-    return isoString
-  }
-}
-
-// Convert date-only format to ISO datetime string
-const dateOnlyToISO = (dateInput: string | Date): string => {
-  try {
-    let date: Date
-    
-    if (dateInput instanceof Date) {
-      // If input is already a Date object, use it directly
-      date = dateInput
-    } else {
-      // If input is a string, create date at noon UTC to avoid timezone issues
-      date = new Date(dateInput + 'T12:00:00.000Z')
-    }
-    
-    return date.toISOString()
-  } catch {
-    return typeof dateInput === 'string' ? dateInput : dateInput.toString()
-  }
-}
-
-// Get menu key for date picker
-const getDateMenuKey = (priceListId: number, field: 'valid_from' | 'valid_to'): string => {
-  return `${priceListId}_${field}`
-}
-
-// Handle date update
-const handleDateUpdate = async (priceListId: number, field: 'valid_from' | 'valid_to', newDate: string) => {
-  const priceList = priceLists.value.find(pl => pl.price_list_id === priceListId)
-  if (!priceList) return
-
-  try {
-    isUpdatingDate.value = priceListId
-    
-    // Convert to ISO format
-    const isoDate = dateOnlyToISO(newDate)
-    
-    // Determine which dates to validate
-    const validFrom = field === 'valid_from' ? isoDate : undefined
-    const validTo = field === 'valid_to' ? isoDate : undefined
-    
-    // Validate dates using helper (with current values for cross-validation)
-    const dateValidation = validatePriceListDatesForUpdate(
-      validFrom,
-      validTo,
-      priceList.valid_from,
-      priceList.valid_to
-    )
-    
-    if (!dateValidation.isValid) {
-      uiStore.showErrorSnackbar(dateValidation.error || t('admin.pricing.priceLists.messages.dateValidation'))
-      return
-    }
-    
-    const updateData: any = {
-      price_list_id: priceListId
-    }
-    updateData[field] = isoDate
-    
-    const result = await serviceUpdatePriceList.updatePriceList(updateData)
-    
-    if (result.success) {
-      uiStore.showSuccessSnackbar(result.message || t('admin.pricing.priceLists.messages.updateSuccess'))
-      // Update local state
-      if (result.data?.priceList) {
-        priceList.valid_from = result.data.priceList.valid_from
-        priceList.valid_to = result.data.priceList.valid_to
-      }
-      // Close menu
-      datePickerMenus.value[getDateMenuKey(priceListId, field)] = false
-    } else {
-      uiStore.showErrorSnackbar(result.message || t('admin.pricing.priceLists.messages.updateError'))
-      // Revert by refreshing
-      await performSearch()
-    }
-  } catch (error) {
-    console.error('Error updating price list date:', error)
-    uiStore.showErrorSnackbar(t('admin.pricing.priceLists.messages.updateError'))
-    await performSearch()
-  } finally {
-    isUpdatingDate.value = null
-  }
-}
-
 // Load currencies for filter
 const loadCurrencies = async () => {
   try {
@@ -771,66 +639,6 @@ onMounted(async () => {
                   </v-chip>
                 </v-list-item>
               </v-list>
-            </v-menu>
-          </template>
-
-          <template #[`item.valid_from`]="{ item }">
-            <v-menu
-              v-model="datePickerMenus[getDateMenuKey(item.price_list_id, 'valid_from')]"
-              :close-on-content-click="false"
-              location="bottom"
-            >
-              <template #activator="{ props }">
-                <v-text-field
-                  :model-value="formatDate(item.valid_from)"
-                  density="compact"
-                  variant="plain"
-                  readonly
-                  hide-details
-                  :loading="isUpdatingDate === item.price_list_id"
-                  :disabled="isUpdatingDate === item.price_list_id"
-                  v-bind="props"
-                  style="cursor: pointer;"
-                />
-              </template>
-              <v-date-picker
-                :model-value="isoToDateOnly(item.valid_from)"
-                :min="getTodayDateString()"
-                :title="t('admin.pricing.priceLists.datePicker.selectDate')"
-                color="teal"
-                show-adjacent-months
-                @update:model-value="handleDateUpdate(item.price_list_id, 'valid_from', $event)"
-              />
-            </v-menu>
-          </template>
-
-          <template #[`item.valid_to`]="{ item }">
-            <v-menu
-              v-model="datePickerMenus[getDateMenuKey(item.price_list_id, 'valid_to')]"
-              :close-on-content-click="false"
-              location="bottom"
-            >
-              <template #activator="{ props }">
-                <v-text-field
-                  :model-value="formatDate(item.valid_to)"
-                  density="compact"
-                  variant="plain"
-                  readonly
-                  hide-details
-                  :loading="isUpdatingDate === item.price_list_id"
-                  :disabled="isUpdatingDate === item.price_list_id"
-                  v-bind="props"
-                  style="cursor: pointer;"
-                />
-              </template>
-              <v-date-picker
-                :model-value="isoToDateOnly(item.valid_to)"
-                :min="isoToDateOnly(item.valid_from)"
-                :title="t('admin.pricing.priceLists.datePicker.selectDate')"
-                color="teal"
-                show-adjacent-months
-                @update:model-value="handleDateUpdate(item.price_list_id, 'valid_to', $event)"
-              />
             </v-menu>
           </template>
 
@@ -1110,55 +918,6 @@ onMounted(async () => {
 /* Pagination styles */
 .custom-pagination-container {
   background-color: rgba(var(--v-theme-surface), 1);
-}
-
-/* Date picker header - make navigation visible WITHOUT affecting day buttons */
-:deep(.v-date-picker-header),
-:deep(.v-date-picker-controls) {
-  background-color: #e0f2f1 !important;
-  padding: 12px !important;
-  display: flex !important;
-  justify-content: space-between !important;
-  align-items: center !important;
-}
-
-/* Force header elements to be visible */
-:deep(.v-date-picker-header *) {
-  opacity: 1 !important;
-  visibility: visible !important;
-}
-
-/* Month/year text */
-:deep(.v-date-picker-header__content) {
-  color: #009688 !important;
-  font-weight: 700 !important;
-  font-size: 16px !important;
-  flex-grow: 1 !important;
-  text-align: center !important;
-}
-
-/* Navigation buttons ONLY in header (not in month grid) */
-:deep(.v-date-picker-header .v-btn--icon),
-:deep(.v-date-picker-header [aria-label*="prev"]),
-:deep(.v-date-picker-header [aria-label*="next"]),
-:deep(.v-date-picker-header [aria-label*="предыдущ"]),
-:deep(.v-date-picker-header [aria-label*="следующ"]) {
-  opacity: 1 !important;
-  visibility: visible !important;
-  display: inline-flex !important;
-  background-color: #009688 !important;
-  color: white !important;
-  width: 40px !important;
-  height: 40px !important;
-  border-radius: 50% !important;
-  justify-content: center !important;
-  align-items: center !important;
-}
-
-/* Icons inside navigation buttons */
-:deep(.v-date-picker-header .v-btn--icon .v-icon) {
-  color: white !important;
-  font-size: 20px !important;
 }
 
 /* Status chip styles */
