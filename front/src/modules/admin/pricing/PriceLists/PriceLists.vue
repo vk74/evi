@@ -90,7 +90,7 @@ const hasOneSelected = computed(() => selectedPriceLists.value.size === 1)
 const headers = computed<TableHeader[]>(() => [
   { title: t('admin.pricing.priceLists.table.headers.selection'), key: 'selection', width: '40px', sortable: false },
   { title: t('admin.pricing.priceLists.table.headers.id'), key: 'price_list_id', width: '100px', sortable: true },
-  { title: t('admin.pricing.priceLists.table.headers.name'), key: 'name', width: '250px', sortable: true },
+  { title: t('admin.pricing.priceLists.table.headers.name'), key: 'name', width: '500px', sortable: true },
   { title: t('admin.pricing.priceLists.table.headers.currency'), key: 'currency_code', width: '100px', sortable: true },
   { title: t('admin.pricing.priceLists.table.headers.status'), key: 'is_active', width: '120px', sortable: true },
   { title: t('admin.pricing.priceLists.table.headers.owner'), key: 'owner_username', width: '150px', sortable: false }
@@ -320,12 +320,8 @@ const clearFilters = async () => {
   await performSearch()
 }
 
-const exportPriceLists = () => {
-  uiStore.showInfoSnackbar(t('admin.pricing.priceLists.messages.exportNotImplemented'))
-}
-
-const importPriceLists = () => {
-  uiStore.showInfoSnackbar(t('admin.pricing.priceLists.messages.importNotImplemented'))
+const setOwner = () => {
+  uiStore.showInfoSnackbar(t('admin.pricing.priceLists.messages.setOwnerNotImplemented'))
 }
 
 const filteredPriceLists = computed(() => priceLists.value)
@@ -697,25 +693,6 @@ onMounted(async () => {
             {{ t('admin.pricing.priceLists.actions.refresh').toUpperCase() }}
           </v-btn>
           
-          <v-btn
-            block
-            color="teal"
-            variant="outlined"
-            class="mb-3"
-            @click="exportPriceLists"
-          >
-            {{ t('admin.pricing.priceLists.actions.export').toUpperCase() }}
-          </v-btn>
-          
-          <v-btn
-            block
-            color="teal"
-            variant="outlined"
-            class="mb-3"
-            @click="importPriceLists"
-          >
-            {{ t('admin.pricing.priceLists.actions.import').toUpperCase() }}
-          </v-btn>
           
           <v-btn
             block
@@ -761,6 +738,17 @@ onMounted(async () => {
             @click="duplicatePriceList"
           >
             {{ t('admin.pricing.priceLists.actions.duplicate').toUpperCase() }}
+          </v-btn>
+          
+          <v-btn
+            block
+            color="blue"
+            variant="outlined"
+            class="mb-3"
+            :disabled="!hasOneSelected"
+            @click="setOwner"
+          >
+            {{ t('admin.pricing.priceLists.actions.setOwner').toUpperCase() }}
           </v-btn>
           
           <v-btn

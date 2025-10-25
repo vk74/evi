@@ -45,6 +45,7 @@
           "selectedElements": "выбранные элементы",
           "edit": "редактировать",
           "duplicate": "дублировать",
+          "setOwner": "назначить владельца",
           "delete": "удалить"
         },
         "messages": {
@@ -67,10 +68,10 @@
           "selectionCleared": "выбор очищен",
           "editorNotImplemented": "редактор прайс-листов ещё не реализован",
           "duplicateNotImplemented": "функция дублирования в разработке",
+          "setOwnerNotImplemented": "функция назначения владельца ещё не реализована",
           "exportNotImplemented": "функция экспорта ещё не реализована",
           "importNotImplemented": "функция импорта ещё не реализована"
-        }
-        ,
+        },
         "editor": {
           "back": "назад",
           "export": "экспорт",

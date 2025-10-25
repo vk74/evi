@@ -45,6 +45,7 @@
           "selectedElements": "selected elements",
           "edit": "edit",
           "duplicate": "duplicate",
+          "setOwner": "set owner",
           "delete": "delete"
         },
         "messages": {
@@ -67,10 +68,10 @@
           "selectionCleared": "selection cleared",
           "editorNotImplemented": "price list editor is not implemented yet",
           "duplicateNotImplemented": "duplicate function is in development",
+          "setOwnerNotImplemented": "set owner function is not implemented yet",
           "exportNotImplemented": "export function is not implemented yet",
           "importNotImplemented": "import function is not implemented yet"
-        }
-        ,
+        },
         "editor": {
           "back": "back",
           "export": "export",
