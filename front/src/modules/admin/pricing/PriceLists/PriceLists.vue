@@ -474,13 +474,21 @@ const isoToDateOnly = (isoString: string): string => {
 }
 
 // Convert date-only format to ISO datetime string
-const dateOnlyToISO = (dateString: string): string => {
+const dateOnlyToISO = (dateInput: string | Date): string => {
   try {
-    // Create date at noon UTC to avoid timezone issues
-    const date = new Date(dateString + 'T12:00:00.000Z')
+    let date: Date
+    
+    if (dateInput instanceof Date) {
+      // If input is already a Date object, use it directly
+      date = dateInput
+    } else {
+      // If input is a string, create date at noon UTC to avoid timezone issues
+      date = new Date(dateInput + 'T12:00:00.000Z')
+    }
+    
     return date.toISOString()
   } catch {
-    return dateString
+    return typeof dateInput === 'string' ? dateInput : dateInput.toString()
   }
 }
 
@@ -497,14 +505,31 @@ const handleDateUpdate = async (priceListId: number, field: 'valid_from' | 'vali
   try {
     isUpdatingDate.value = priceListId
     
+    // Log input parameters
+    console.log('=== handleDateUpdate DEBUG ===')
+    console.log('priceListId:', priceListId)
+    console.log('field:', field)
+    console.log('newDate (input):', newDate, 'type:', typeof newDate)
+    console.log('priceList.valid_from (current):', priceList.valid_from, 'type:', typeof priceList.valid_from)
+    console.log('priceList.valid_to (current):', priceList.valid_to, 'type:', typeof priceList.valid_to)
+    
     // Convert to ISO format
     const isoDate = dateOnlyToISO(newDate)
+    console.log('isoDate (converted):', isoDate, 'type:', typeof isoDate)
     
     // Determine which dates to validate
     const validFrom = field === 'valid_from' ? isoDate : undefined
     const validTo = field === 'valid_to' ? isoDate : undefined
+    console.log('validFrom (for validation):', validFrom, 'type:', typeof validFrom)
+    console.log('validTo (for validation):', validTo, 'type:', typeof validTo)
     
     // Validate dates using helper (with current values for cross-validation)
+    console.log('Calling validatePriceListDatesForUpdate with:')
+    console.log('- validFrom:', validFrom)
+    console.log('- validTo:', validTo)
+    console.log('- currentValidFrom:', priceList.valid_from)
+    console.log('- currentValidTo:', priceList.valid_to)
+    
     const dateValidation = validatePriceListDatesForUpdate(
       validFrom,
       validTo,
@@ -512,7 +537,10 @@ const handleDateUpdate = async (priceListId: number, field: 'valid_from' | 'vali
       priceList.valid_to
     )
     
+    console.log('Validation result:', dateValidation)
+    
     if (!dateValidation.isValid) {
+      console.log('Validation failed:', dateValidation.error)
       uiStore.showErrorSnackbar(dateValidation.error || t('admin.pricing.priceLists.messages.dateValidation'))
       return
     }
@@ -521,6 +549,9 @@ const handleDateUpdate = async (priceListId: number, field: 'valid_from' | 'vali
       price_list_id: priceListId
     }
     updateData[field] = isoDate
+    
+    console.log('Update data for service:', updateData)
+    console.log('=== END handleDateUpdate DEBUG ===')
     
     const result = await serviceUpdatePriceList.updatePriceList(updateData)
     

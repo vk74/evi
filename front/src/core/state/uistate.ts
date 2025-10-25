@@ -41,6 +41,9 @@ export const useUiStore = defineStore('ui', {
 
   actions: {
     showSnackbar(options: SnackbarOptions): void {
+      // Логируем toast сообщение в консоль браузера
+      console.log(`[Toast ${options.type.toUpperCase()}]: ${options.message}`);
+      
       // Сначала скрываем snackbar
       this.snackbar.show = false;
       
