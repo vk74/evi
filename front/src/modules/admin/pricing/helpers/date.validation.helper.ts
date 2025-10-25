@@ -166,16 +166,8 @@ export function validatePriceListDatesForUpdate(
   currentValidFrom?: string,
   currentValidTo?: string
 ): DateValidationResult {
-  console.log('=== validatePriceListDatesForUpdate DEBUG ===')
-  console.log('Input parameters:')
-  console.log('- validFrom:', validFrom, 'type:', typeof validFrom)
-  console.log('- validTo:', validTo, 'type:', typeof validTo)
-  console.log('- currentValidFrom:', currentValidFrom, 'type:', typeof currentValidFrom)
-  console.log('- currentValidTo:', currentValidTo, 'type:', typeof currentValidTo)
-  
   // If neither date is being updated, validation passes
   if (validFrom === undefined && validTo === undefined) {
-    console.log('No dates being updated, validation passes')
     return { isValid: true }
   }
   
@@ -183,34 +175,20 @@ export function validatePriceListDatesForUpdate(
   const effectiveValidFrom = validFrom || currentValidFrom
   const effectiveValidTo = validTo || currentValidTo
   
-  console.log('Effective dates:')
-  console.log('- effectiveValidFrom:', effectiveValidFrom, 'type:', typeof effectiveValidFrom)
-  console.log('- effectiveValidTo:', effectiveValidTo, 'type:', typeof effectiveValidTo)
-  
   if (!effectiveValidFrom || !effectiveValidTo || 
       typeof effectiveValidFrom !== 'string' || typeof effectiveValidTo !== 'string' ||
       effectiveValidFrom.trim() === '' || effectiveValidTo.trim() === '') {
-    console.log('Validation failed: missing or invalid date values')
-    console.log('- effectiveValidFrom check:', !effectiveValidFrom, typeof effectiveValidFrom, effectiveValidFrom)
-    console.log('- effectiveValidTo check:', !effectiveValidTo, typeof effectiveValidTo, effectiveValidTo)
     return {
       isValid: false,
       error: 'Cannot validate dates: missing current or new date values'
     }
   }
   
-  console.log('Date values are valid, proceeding with date parsing')
-  
   const fromDate = new Date(effectiveValidFrom)
   const toDate = new Date(effectiveValidTo)
   
-  console.log('Parsed dates:')
-  console.log('- fromDate:', fromDate, 'isValid:', !isNaN(fromDate.getTime()))
-  console.log('- toDate:', toDate, 'isValid:', !isNaN(toDate.getTime()))
-  
   // Check date format validity
   if (isNaN(fromDate.getTime()) || isNaN(toDate.getTime())) {
-    console.log('Validation failed: invalid date format')
     return {
       isValid: false,
       error: 'Invalid date format'
@@ -235,18 +213,12 @@ export function validatePriceListDatesForUpdate(
   
   // Check that valid_to is after valid_from (regardless of which is being updated)
   if (toDate <= fromDate) {
-    console.log('Validation failed: valid_to must be after valid_from')
-    console.log('- fromDate:', fromDate)
-    console.log('- toDate:', toDate)
-    console.log('- toDate <= fromDate:', toDate <= fromDate)
     return {
       isValid: false,
       error: 'Valid to date must be after valid from date'
     }
   }
   
-  console.log('Validation passed successfully')
-  console.log('=== END validatePriceListDatesForUpdate DEBUG ===')
   return { isValid: true }
 }
 

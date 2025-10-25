@@ -25,20 +25,9 @@ export const serviceUpdatePriceList = {
      * @returns Promise with update result or error
      */
     async updatePriceList(data: UpdatePriceListRequest): Promise<UpdatePriceListResult> {
-        console.log('=== serviceUpdatePriceList.updatePriceList DEBUG ===')
-        console.log('Input data:', data)
-        console.log('Data types:', {
-            price_list_id: typeof data.price_list_id,
-            name: typeof data.name,
-            currency_code: typeof data.currency_code,
-            valid_from: typeof data.valid_from,
-            valid_to: typeof data.valid_to
-        })
-        
         try {
             // Validate input
             if (!data.price_list_id || data.price_list_id < 1) {
-                console.log('Validation failed: invalid price_list_id')
                 return {
                     success: false,
                     message: 'Price list ID is required and must be greater than 0'
@@ -62,32 +51,23 @@ export const serviceUpdatePriceList = {
             // Note: Date validation is already performed in handleDateUpdate with current values
             // Backend will handle final validation and cross-validation
             if (data.valid_from !== undefined || data.valid_to !== undefined) {
-                console.log('Dates are being updated, validation already performed in component')
+                // Dates are being updated, validation already performed in component
             }
 
-            console.log('Making API request to /api/admin/pricing/pricelists/update')
-            console.log('Request payload:', data)
-            
             // Make API request
             const response = await api.post<UpdatePriceListResult>(
                 '/api/admin/pricing/pricelists/update',
                 data
             )
-            
-            console.log('API response:', response.data)
 
             // Check if request was successful
             if (response.data.success) {
-                console.log('API request successful')
-                console.log('=== END serviceUpdatePriceList.updatePriceList DEBUG ===')
                 return {
                     success: true,
                     message: response.data.message,
                     data: response.data.data
                 }
             } else {
-                console.log('API request failed:', response.data.message)
-                console.log('=== END serviceUpdatePriceList.updatePriceList DEBUG ===')
                 return {
                     success: false,
                     message: response.data.message || 'Failed to update price list'

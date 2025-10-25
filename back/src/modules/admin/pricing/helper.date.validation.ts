@@ -13,6 +13,7 @@
  */
 
 import { getSettingValue } from '@/core/helpers/get.setting.value';
+import { isValidDate } from '@/core/validation/date.validator';
 
 /**
  * Parse timezone offset from GMT format (e.g., "GMT+3" -> 3, "GMT-5" -> -5)
@@ -174,16 +175,23 @@ export async function validatePriceListDatesForUpdate(
     };
   }
   
-  const fromDate = new Date(effectiveValidFrom);
-  const toDate = new Date(effectiveValidTo);
-  
-  // Check date format validity
-  if (isNaN(fromDate.getTime()) || isNaN(toDate.getTime())) {
+  // Use universal date validator to check if values are valid dates
+  if (!isValidDate(effectiveValidFrom)) {
     return {
       isValid: false,
-      error: 'Invalid date format'
+      error: 'Invalid valid_from date format'
     };
   }
+  
+  if (!isValidDate(effectiveValidTo)) {
+    return {
+      isValid: false,
+      error: 'Invalid valid_to date format'
+    };
+  }
+  
+  const fromDate = new Date(effectiveValidFrom);
+  const toDate = new Date(effectiveValidTo);
   
   // If valid_from is being updated, check it's not in the past
   if (validFrom !== undefined && await isDateInPast(fromDate)) {
