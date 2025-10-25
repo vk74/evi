@@ -213,28 +213,32 @@ export async function updatePriceList(
             };
         }
 
-        // Determine owner_id (if being updated)
-        let ownerUuid: string | null | undefined = undefined;
+        // Update price list - build parameters array conditionally
+        const updateParams: any[] = [
+            data.price_list_id, // $1
+            data.name?.trim() || null, // $2
+            data.description !== undefined ? (data.description?.trim() || null) : null, // $3
+            data.currency_code?.trim() || null, // $4
+            data.is_active !== undefined ? data.is_active : null, // $5
+            data.valid_from || null, // $6
+            data.valid_to || null, // $7
+        ];
+
+        // Add owner_id parameter only if owner is being updated
         if (data.owner !== undefined) {
-            if (data.owner === '' || data.owner === null) {
-                ownerUuid = null;
-            } else {
+            let ownerUuid: string | null = null;
+            if (data.owner !== '' && data.owner !== null) {
                 ownerUuid = await getUuidByUsername(data.owner);
             }
+            updateParams.push(ownerUuid); // $8
+        } else {
+            updateParams.push(null); // $8 - null means don't update this field
         }
 
-        // Update price list
-        await pool.query(queries.updatePriceList, [
-            data.price_list_id,
-            data.name?.trim(),
-            data.description !== undefined ? (data.description?.trim() || null) : undefined,
-            data.currency_code?.trim(),
-            data.is_active,
-            data.valid_from,
-            data.valid_to,
-            ownerUuid,
-            requestorUuid
-        ]);
+        updateParams.push(requestorUuid); // $9
+
+        // Execute update
+        await pool.query(queries.updatePriceList, updateParams);
 
         // Fetch updated price list
         const fetchResult = await pool.query(queries.fetchPriceListById, [data.price_list_id]);

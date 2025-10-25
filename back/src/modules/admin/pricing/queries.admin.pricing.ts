@@ -210,12 +210,12 @@ export const queries = {
     updatePriceList: `
         UPDATE app.price_lists_info SET
             name = COALESCE($2, name),
-            description = $3,
+            description = COALESCE($3, description),
             currency_code = COALESCE($4, currency_code),
             is_active = COALESCE($5, is_active),
             valid_from = COALESCE($6, valid_from),
             valid_to = COALESCE($7, valid_to),
-            owner_id = $8,
+            owner_id = COALESCE($8, owner_id),
             updated_by = $9,
             updated_at = NOW()
         WHERE price_list_id = $1
