@@ -28,6 +28,7 @@ import { serviceCreatePriceList } from './service.create.pricelist'
 import { serviceUpdatePriceList } from './service.update.pricelist'
 import { serviceDeletePriceLists } from './service.delete.pricelists'
 import { fetchCurrenciesService } from '../currencies/service.fetch.currencies'
+import { fetchPriceListService } from '../PriceListEditor/service.admin.fetch.pricelist'
 import type { PriceListItem, Currency } from '../types.pricing.admin'
 import debounce from 'lodash/debounce'
 
@@ -129,14 +130,43 @@ const handleCreatePricelist = async (data: { name: string; currency: string; isA
   }
 }
 
-const editPriceList = () => {
-  const id = Array.from(selectedPriceLists.value)[0]
-  const pl = priceLists.value.find(p => p.price_list_id === id)
+const editPriceList = async () => {
+  if (!hasOneSelected.value) {
+    uiStore.showErrorSnackbar(t('admin.pricing.priceLists.messages.noItemsSelected'))
+    return
+  }
+
+  const priceListId = Array.from(selectedPriceLists.value)[0]
   
-  if (pl) {
-    // Open editor in edit mode with selected price list data (to be implemented in editor)
-    uiStore.showInfoSnackbar(t('admin.pricing.priceLists.messages.editorNotImplemented'))
-    clearSelections()
+  try {
+    isLoading.value = true
+    
+    // Fetch price list data from backend
+    const result = await fetchPriceListService.fetchPriceListById(priceListId)
+    
+    if (result.success && result.data?.priceList) {
+      // Open editor in edit mode with loaded data
+      pricingStore.openPriceListEditorForEdit(
+        priceListId.toString(), 
+        {
+          id: result.data.priceList.price_list_id,
+          name: result.data.priceList.name,
+          description: result.data.priceList.description || '',
+          currency_code: result.data.priceList.currency_code,
+          isActive: result.data.priceList.is_active,
+          owner: result.data.priceList.owner_id
+        }
+      )
+      clearSelections()
+      uiStore.showSuccessSnackbar(t('admin.pricing.priceLists.messages.loadSuccess'))
+    } else {
+      uiStore.showErrorSnackbar(result.message || t('admin.pricing.priceLists.messages.loadError'))
+    }
+  } catch (error) {
+    console.error('Error loading price list for editing:', error)
+    uiStore.showErrorSnackbar(t('admin.pricing.priceLists.messages.loadError'))
+  } finally {
+    isLoading.value = false
   }
 }
 

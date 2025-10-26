@@ -59,6 +59,8 @@
           "createError": "failed to create price list",
           "updateSuccess": "price list updated successfully",
           "updateError": "failed to update price list",
+          "loadSuccess": "price list loaded successfully",
+          "loadError": "failed to load price list",
           "nameValidation": "price list name must be at least 2 characters",
           "fetchError": "failed to fetch price lists",
           "deleteSuccess": "successfully deleted {count} price list(s)",

@@ -80,7 +80,7 @@ const priceListName = computed(() => {
 
 const priceListCurrency = computed(() => {
   if (isEditMode.value && pricingStore.editingPriceListData) {
-    return pricingStore.editingPriceListData.currency
+    return pricingStore.editingPriceListData.currency_code
   }
   return 'USD'
 })

@@ -25,7 +25,7 @@ export interface PriceListData {
   id: number
   name: string
   description: string | null
-  currency: string
+  currency_code: string
   isActive: boolean
   owner: string | null
 }
