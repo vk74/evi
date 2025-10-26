@@ -1,6 +1,6 @@
 /**
  * @file state.pricing.admin.ts
- * Version: 1.2.4
+ * Version: 1.2.5
  * Pinia store for managing pricing admin module state.
  * Frontend file that handles active section management for pricing administration.
  * File: state.pricing.admin.ts (frontend)
@@ -66,6 +66,13 @@ export const usePricingAdminStore = defineStore('pricingAdmin', {
       this.editorMode = 'creation'
       this.editingPriceListId = null
       this.editingPriceListData = null
+    },
+
+    // Clear editing price list data (useful for logout or manual cleanup)
+    clearEditingPriceList(): void {
+      this.editingPriceListId = null
+      this.editingPriceListData = null
+      this.editorMode = 'creation'
     }
     ,
     async loadCurrencies(): Promise<void> {
@@ -146,6 +153,6 @@ export const usePricingAdminStore = defineStore('pricingAdmin', {
     }
   },
 
-  persist: false
+  persist: true
 })
 
