@@ -28,10 +28,10 @@ import {
  * 
  * @param section_path - The section path to fetch settings for
  * @param forceRefresh - Whether to force a refresh from the server (bypass cache)
- * @param isUiOnly - Whether to fetch only UI settings
+ * @param isPublicOnly - Whether to fetch only public settings
  * @returns Promise that resolves to an array of settings
  */
-export async function fetchSettings(section_path: string, forceRefresh = false, isUiOnly = false): Promise<AppSetting[]> {
+export async function fetchSettings(section_path: string, forceRefresh = false, isPublicOnly = false): Promise<AppSetting[]> {
   const store = useAppSettingsStore();
   const uiStore = useUiStore();
   
@@ -55,7 +55,7 @@ export async function fetchSettings(section_path: string, forceRefresh = false, 
       sectionPath: section_path,
       environment: 'all', // Get settings for all environments
       includeConfidential: false, // Don't include confidential settings
-      isUiOnly: isUiOnly || undefined // Only apply filter if explicitly requested
+      isPublicOnly: isPublicOnly || undefined // Only apply filter if explicitly requested
     };
     
     // Make API request using the centralized api client
@@ -215,7 +215,7 @@ export async function fetchUiSettings(): Promise<AppSetting[]> {
           environment: 'all',
           value: setting.value,
           confidentiality: false,
-          is_ui: setting.is_ui
+          is_public: setting.is_public
         }));
         
         console.log(`[Fetch UI Settings] Fetched ${appSettings.length} public UI settings`);
@@ -232,7 +232,7 @@ export async function fetchUiSettings(): Promise<AppSetting[]> {
         type: 'all',
         environment: 'all',
         includeConfidential: false,
-        isUiOnly: true // Only fetch UI settings
+        isPublicOnly: true // Only fetch public settings
       };
       
       // Make API request using the centralized api client

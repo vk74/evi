@@ -32,8 +32,8 @@ export const SETTINGS_FETCH_EVENTS = {
     source: 'settings service module',
     eventType: 'app' as const,
     severity: 'debug' as const,
-    eventMessage: 'UI filter applied to settings fetch',
-    payload: null, // Will be of type { isUiOnly: boolean }
+    eventMessage: 'Public filter applied to settings fetch',
+    payload: null, // Will be of type { isPublicOnly: boolean }
     version: '1.0.0'
   },
 
@@ -43,8 +43,8 @@ export const SETTINGS_FETCH_EVENTS = {
     source: 'settings service module',
     eventType: 'app' as const,
     severity: 'debug' as const,
-    eventMessage: 'UI settings successfully fetched',
-    payload: null, // Will be of type { settingsCount: number, isUiOnly: boolean }
+    eventMessage: 'Public settings successfully fetched',
+    payload: null, // Will be of type { settingsCount: number, isPublicOnly: boolean }
     version: '1.0.0'
   },
   

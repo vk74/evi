@@ -6,7 +6,7 @@
 CREATE INDEX IF NOT EXISTS idx_app_sections_path ON app.app_settings USING btree (section_path);
 CREATE INDEX IF NOT EXISTS idx_app_settings_environment ON app.app_settings USING btree (environment);
 CREATE INDEX IF NOT EXISTS idx_app_settings_value ON app.app_settings USING gin (value);
-CREATE INDEX IF NOT EXISTS idx_app_settings_is_ui ON app.app_settings USING btree (is_ui);
+CREATE INDEX IF NOT EXISTS idx_app_settings_is_public ON app.app_settings USING btree (is_public);
 
 -- Create indexes for catalog_sections
 CREATE INDEX IF NOT EXISTS idx_catalog_sections_order ON app.catalog_sections USING btree ("order");

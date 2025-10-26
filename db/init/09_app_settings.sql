@@ -10,9 +10,9 @@
 -- update existing settings rather than causing errors.
 
 INSERT INTO app.app_settings (
-    section_path, setting_name, environment, value, validation_schema, default_value, description, is_ui
+    section_path, setting_name, environment, value, validation_schema, default_value, description, is_public
 ) VALUES
--- UI Settings for module visibility
+-- Public Settings for module visibility (available without authentication)
 ('Application.Work', 'work.module.is.visible', 'all', 'true', '{"type":"boolean"}', 'true', 'Enable Work module display in application', true),
 ('Application.Reports', 'reports.module.is.visible', 'all', 'false', NULL, NULL, 'Enable Reports module display in application', true),
 ('Application.KnowledgeBase', 'knowledgebase.module.is.visible', 'all', 'false', NULL, NULL, 'Enable Knowledge Base module display in application', true),
@@ -115,5 +115,5 @@ ON CONFLICT (section_path, setting_name, environment) DO UPDATE SET
     validation_schema = EXCLUDED.validation_schema,
     default_value = EXCLUDED.default_value,
     description = EXCLUDED.description,
-    is_ui = EXCLUDED.is_ui,
+    is_public = EXCLUDED.is_public,
     updated_at = CURRENT_TIMESTAMP;

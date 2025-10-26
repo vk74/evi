@@ -112,7 +112,7 @@ CREATE TABLE IF NOT EXISTS app.app_settings (
     default_value JSONB,
     confidentiality BOOLEAN NOT NULL DEFAULT false,
     description TEXT,
-    is_ui BOOLEAN DEFAULT FALSE,
+    is_public BOOLEAN DEFAULT FALSE,
     updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
     PRIMARY KEY (section_path, setting_name, environment)
 );

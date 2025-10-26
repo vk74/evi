@@ -25,7 +25,7 @@ export interface AppSetting {
   default_value?: any;         // Optional default value
   confidentiality: boolean;    // Whether this setting contains sensitive data
   description?: string;        // Optional setting description
-  is_ui: boolean;              // Whether this setting affects UI visibility
+  is_public: boolean;          // Whether this setting is public and available without authentication
   updated_at: Date;           // Last update timestamp
 }
 
@@ -72,10 +72,10 @@ export interface FetchSettingsBaseRequest {
    */
   includeConfidential?: boolean;
   /**
-   * Whether to filter by UI settings only
+   * Whether to filter by public settings only
    * Default: undefined (no filtering)
    */
-  isUiOnly?: boolean;
+  isPublicOnly?: boolean;
 }
 
 /**

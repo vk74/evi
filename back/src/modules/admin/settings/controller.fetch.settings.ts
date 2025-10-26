@@ -59,7 +59,7 @@ async function fetchSettingsLogic(req: AuthenticatedRequest, res: Response): Pro
   // Set defaults
   // Only administrators can access confidential settings
   const includeConfidential = isAdmin && params.includeConfidential === true;
-  const isUiOnly = params.isUiOnly;
+  const isPublicOnly = params.isPublicOnly;
   
   if (params.includeConfidential && !isAdmin) {
     throw new Error('User attempted to access confidential settings without administrator privileges');
@@ -109,7 +109,7 @@ async function fetchSettingsLogic(req: AuthenticatedRequest, res: Response): Pro
         sectionPath: params.sectionPath,
         environment,
         includeConfidential,
-        isUiOnly
+        isPublicOnly
       };
 
       // Передаём объект запроса в сервис
@@ -126,7 +126,7 @@ async function fetchSettingsLogic(req: AuthenticatedRequest, res: Response): Pro
       const request: FetchAllSettingsRequest = {
         environment,
         includeConfidential,
-        isUiOnly
+        isPublicOnly
       };
 
       // Передаём объект запроса в сервис

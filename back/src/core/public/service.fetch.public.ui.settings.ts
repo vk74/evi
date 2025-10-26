@@ -1,9 +1,9 @@
 /**
  * service.fetch.public.ui.settings.ts - backend file
  * version: 1.0.0
- * Service for fetching public UI settings that are accessible without authentication.
+ * Service for fetching public settings that are accessible without authentication.
  * 
- * Public UI settings include:
+ * Public settings include:
  * - Application.Appearance → navbar.backgroundcolor
  * - Catalog.Products → card.color
  * - Catalog.Services → card.color
@@ -18,17 +18,17 @@ import { v4 as uuidv4 } from 'uuid';
 import { getClientIp } from '../helpers/get.client.ip.from.req';
 
 /**
- * Interface for public UI setting
+ * Interface for public setting
  */
 export interface PublicUiSetting {
   section_path: string;
   setting_name: string;
   value: any;
-  is_ui: boolean;
+  is_public: boolean;
 }
 
 /**
- * Response interface for public UI settings
+ * Response interface for public settings
  */
 export interface PublicUiSettingsResponse {
   success: boolean;
@@ -37,11 +37,11 @@ export interface PublicUiSettingsResponse {
 }
 
 /**
- * Fetch public UI settings from the settings cache
+ * Fetch public settings from the settings cache
  * These settings are available without authentication
  * 
  * @param req - Express request object (for logging/tracking purposes)
- * @returns Promise resolving to public UI settings response
+ * @returns Promise resolving to public settings response
  */
 export async function fetchPublicUiSettings(req: Request): Promise<PublicUiSettingsResponse> {
   const requestId = uuidv4();
@@ -59,7 +59,7 @@ export async function fetchPublicUiSettings(req: Request): Promise<PublicUiSetti
       }
     });
 
-    // Define public UI settings to fetch
+    // Define public settings to fetch
     const publicSettings: PublicUiSetting[] = [];
 
     // 1. Navigation bar background color
@@ -72,7 +72,7 @@ export async function fetchPublicUiSettings(req: Request): Promise<PublicUiSetti
       section_path: 'Application.Appearance',
       setting_name: 'navbar.backgroundcolor',
       value: navbarColor,
-      is_ui: true
+      is_public: true
     });
 
     // 2. Product card color
@@ -85,7 +85,7 @@ export async function fetchPublicUiSettings(req: Request): Promise<PublicUiSetti
       section_path: 'Catalog.Products',
       setting_name: 'card.color',
       value: productCardColor,
-      is_ui: true
+      is_public: true
     });
 
     // 3. Service card color
@@ -98,7 +98,7 @@ export async function fetchPublicUiSettings(req: Request): Promise<PublicUiSetti
       section_path: 'Catalog.Services',
       setting_name: 'card.color',
       value: serviceCardColor,
-      is_ui: true
+      is_public: true
     });
 
     // 4. Display options-only products setting
@@ -111,7 +111,7 @@ export async function fetchPublicUiSettings(req: Request): Promise<PublicUiSetti
       section_path: 'Catalog.Products',
       setting_name: 'display.optionsOnlyProducts',
       value: displayOptionsOnlyProducts,
-      is_ui: true
+      is_public: true
     });
 
     // Log settings retrieved successfully
@@ -154,7 +154,7 @@ export async function fetchPublicUiSettings(req: Request): Promise<PublicUiSetti
     return {
       success: false,
       settings: [],
-      error: error instanceof Error ? error.message : 'Failed to fetch public UI settings'
+      error: error instanceof Error ? error.message : 'Failed to fetch public settings'
     };
   }
 }
