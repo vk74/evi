@@ -2,7 +2,6 @@
  * service.load.settings.ts - backend file
  * version: 1.0.04
  * Service for loading and caching application settings.
- * Uses event bus for logging operations.
  */
 
 import { Pool, QueryResult } from 'pg';
