@@ -332,4 +332,16 @@ export async function createSection(req: Request): Promise<CreateSectionResponse
     }
 }
 
+/**
+ * Handle create section request with business logic
+ * Contains only business logic without controller events
+ * @param req Express request object
+ * @returns Promise resolving to create section response
+ */
+export async function handleCreateSectionRequest(req: Request): Promise<CreateSectionResponse> {
+    // Create catalog section
+    const result = await createSection(req);
+    return result;
+}
+
 export default createSection; 

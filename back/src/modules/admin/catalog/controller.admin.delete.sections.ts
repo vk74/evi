@@ -25,9 +25,6 @@ import { EVENTS_ADMIN_CATALOG } from './events.admin.catalog';
  */
 async function deleteSectionLogic(req: Request, res: Response): Promise<any> {
     try {
-        // JWT validation is already performed by route guards
-        // If request reaches controller, JWT is valid
-
         // Delete catalog section
         const result = await deleteSectionService(req);
 

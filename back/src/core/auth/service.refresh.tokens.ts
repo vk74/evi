@@ -14,7 +14,7 @@ import { findTokenByHash, revokeTokenByHash } from './queries.auth';
 import { issueTokenPair } from './service.issue.tokens';
 import { validateFingerprint, logDeviceFingerprint } from './utils.device.fingerprint';
 import { getSetting, parseSettingValue } from '../../modules/admin/settings/cache.settings';
-import fabricEvents from '@/core/eventBus/fabric.events';
+import fabricEvents, { createAndPublishEvent } from '@/core/eventBus/fabric.events';
 import { AUTH_TOKEN_EVENTS, AUTH_SECURITY_EVENTS } from './events.auth';
 
 // Cookie configuration
@@ -315,4 +315,16 @@ export async function refreshTokensService(
     accessToken: tokenPair.accessToken
     // refreshToken removed from response body - now sent as httpOnly cookie
   };
+}
+
+/**
+ * Handle refresh tokens request with business logic
+ * Delegates to service which already contains all necessary events
+ * @param req Express request object
+ * @param res Express response object
+ * @returns Promise resolving to refresh token response
+ */
+export async function handleRefreshTokensRequest(req: Request, res: Response): Promise<RefreshTokenResponse> {
+  // Call refresh service - it already contains all necessary events
+  return await refreshTokensService(req, res);
 } 
