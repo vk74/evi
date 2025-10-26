@@ -1,6 +1,6 @@
 /**
- * service.fetch.public.ui.settings.ts - backend file
- * version: 1.0.0
+ * service.fetch.public.settings.ts - backend file
+ * version: 1.0.1
  * Service for fetching public settings that are accessible without authentication.
  * 
  * Public settings include:
@@ -44,6 +44,11 @@ export interface PublicUiSettingsResponse {
  * @returns Promise resolving to public settings response
  */
 export async function fetchPublicUiSettings(req: Request): Promise<PublicUiSettingsResponse> {
+  // Validate request method
+  if (req.method !== 'GET') {
+    throw new Error('Only GET method is allowed');
+  }
+
   const requestId = uuidv4();
   const clientIp = getClientIp(req);
   
@@ -158,4 +163,3 @@ export async function fetchPublicUiSettings(req: Request): Promise<PublicUiSetti
     };
   }
 }
-

@@ -204,7 +204,7 @@ export async function fetchUiSettings(): Promise<AppSetting[]> {
     if (!isAuthenticated) {
       // User is not authenticated - use public API
       console.log('[Fetch UI Settings] Using public API for anonymous user');
-      const { fetchPublicUiSettings } = await import('@/core/services/service.fetch.public.ui.settings');
+      const { fetchPublicUiSettings } = await import('@/core/services/service.fetch.public.settings');
       const publicResponse = await fetchPublicUiSettings();
       
       if (publicResponse.success && publicResponse.settings) {
