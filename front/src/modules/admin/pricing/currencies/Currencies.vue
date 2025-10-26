@@ -18,7 +18,8 @@ import {
   PhCheckSquare,
   PhSquare,
   PhCaretUpDown,
-  PhCaretDown
+  PhCaretDown,
+  PhFunnel
 } from '@phosphor-icons/vue'
 import { usePricingAdminStore } from '@/modules/admin/pricing/state.pricing.admin'
 import type { Currency } from '@/modules/admin/pricing/types.pricing.admin'
@@ -326,7 +327,7 @@ function handleBeforeUnload(e: BeforeUnloadEvent) {
                 hide-details
               >
                 <template #append-inner>
-                  <PhCaretUpDown class="dropdown-icon" />
+                  <PhFunnel class="dropdown-icon" />
                 </template>
               </v-select>
             </div>
