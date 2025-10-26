@@ -19,7 +19,8 @@ import {
   PhArrowClockwise,
   PhCaretUpDown,
   PhPlus,
-  PhCaretDown
+  PhCaretDown,
+  PhFunnel
 } from '@phosphor-icons/vue'
 import Paginator from '@/core/ui/paginator/Paginator.vue'
 import AddPricelist from '@/core/ui/modals/add-pricelist/AddPricelist.vue'
@@ -513,7 +514,7 @@ onMounted(async () => {
                   @update:model-value="handleStatusFilterChange"
                 >
                   <template #append-inner>
-                    <PhCaretUpDown class="dropdown-icon" />
+                    <PhFunnel class="dropdown-icon" />
                   </template>
                 </v-select>
               </div>
@@ -534,7 +535,7 @@ onMounted(async () => {
                   @update:model-value="handleCurrencyFilterChange"
                 >
                   <template #append-inner>
-                    <PhCaretUpDown class="dropdown-icon" />
+                    <PhFunnel class="dropdown-icon" />
                   </template>
                 </v-select>
               </div>
