@@ -226,4 +226,26 @@ export const usersFetchService = {
   }
 };
 
+/**
+ * Handle fetch users request with business logic
+ * Contains all parameter processing and request handling logic
+ * @param req Express request object
+ * @returns Promise resolving to users response
+ */
+export async function handleFetchUsersRequest(req: Request): Promise<IUsersResponse> {
+  // Extract parameters from query
+  const params = {
+    search: req.query.search as string || '',
+    page: parseInt(req.query.page as string) || 1,
+    itemsPerPage: parseInt(req.query.itemsPerPage as string) || 25,
+    sortBy: req.query.sortBy as string || '',
+    sortDesc: req.query.sortDesc === 'true'
+  };
+
+  // Get data from service
+  const result = await usersFetchService.fetchUsers(params, req);
+
+  return result;
+}
+
 export default usersFetchService;
