@@ -56,6 +56,8 @@ import fetchPriceListController from './pricing/controller.admin.pricing.fetch.p
 import createPriceListController from './pricing/controller.admin.pricing.create.pricelist';
 import updatePriceListController from './pricing/controller.admin.pricing.update.pricelist';
 import deletePriceListsController from './pricing/controller.admin.pricing.delete.pricelists';
+import createPriceListItemController from './pricing/controller.admin.create.pricelist.item';
+import fetchPriceItemTypesController from './pricing/controller.admin.fetch.price.item.types';
 import registerUserController from '../account/controller.register.user';
 import fetchUserGroupsController from './org/userEditor/controller.fetch.user.groups';
 import removeUserFromGroupsController from './org/userEditor/controller.remove.user.from.groups';
@@ -128,6 +130,12 @@ router.get('/api/admin/pricing/pricelists/fetch', checkRequestSecurityHard, vali
 router.post('/api/admin/pricing/pricelists/create', checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, createPriceListController);
 router.post('/api/admin/pricing/pricelists/update', checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, updatePriceListController);
 router.post('/api/admin/pricing/pricelists/delete', checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, deletePriceListsController);
+
+// Routes for Pricing Admin - Price List Items
+router.post('/api/admin/pricing/pricelists/:priceListId/createItem', checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, createPriceListItemController);
+
+// Routes for Pricing Admin - Price Item Types
+router.get('/api/admin/pricing/item-types', checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, fetchPriceItemTypesController);
 
 // Export using ES modules syntax
 export default router;

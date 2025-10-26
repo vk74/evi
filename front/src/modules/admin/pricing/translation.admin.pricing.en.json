@@ -61,6 +61,11 @@
           "updateError": "failed to update price list",
           "loadSuccess": "price list loaded successfully",
           "loadError": "failed to load price list",
+          "createItemSuccess": "price list item created successfully",
+          "createItemError": "failed to create price list item",
+          "itemCodeDuplicate": "item code already exists in this price list",
+          "itemTypeInvalid": "invalid item type",
+          "itemValidationError": "invalid item data",
           "nameValidation": "price list name must be at least 2 characters",
           "fetchError": "failed to fetch price lists",
           "deleteSuccess": "successfully deleted {count} price list(s)",
@@ -83,8 +88,26 @@
           "newPriceList": "new price list",
           "editPriceList": "edit price list",
           "itemsTitle": "lines",
-          "addRow": "add row",
-          "deleteSelected": "delete selected",
+    "addRow": "add row",
+    "saveItems": "save items",
+    "deleteSelected": "delete selected",
+    "saveSuccess": {
+      "single": "Item saved successfully",
+      "multiple": "items saved successfully"
+    },
+    "saveWarning": {
+      "successPart": "items saved",
+      "failedPart": "failed"
+    },
+    "saveError": {
+      "noPriceListId": "No price list ID available for saving",
+      "itemFailed": "Failed to save item",
+      "multiple": "items failed to save",
+      "general": "Error occurred while saving items"
+    },
+    "saveInfo": {
+      "noItems": "No new items to save"
+    },
           "sections": {
             "details": "price list details"
           },

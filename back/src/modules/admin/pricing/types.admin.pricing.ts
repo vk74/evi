@@ -35,7 +35,7 @@ export interface UpdateCurrenciesResult {
 // ============================================
 
 // Price list item for list view (with owner info)
-export interface PriceListItemDto {
+export interface PriceListSummaryDto {
     price_list_id: number
     name: string
     description: string | null
@@ -77,7 +77,7 @@ export interface FetchAllPriceListsResult {
     success: boolean
     message?: string
     data?: {
-        priceLists: PriceListItemDto[]
+        priceLists: PriceListSummaryDto[]
         pagination: {
             currentPage: number
             itemsPerPage: number
@@ -145,6 +145,63 @@ export interface FetchPriceListResponse {
     message?: string
     data?: {
         priceList: PriceListFullDto
+        items: PriceListItemDto[]
+    }
+}
+
+// ============================================
+// Price List Item Types
+// ============================================
+
+// Price item type DTO
+export interface PriceItemTypeDto {
+    type_code: string
+    type_name: string
+    description: string | null
+    is_active: boolean
+    created_at: string
+    updated_at: string
+}
+
+// Price list item DTO
+export interface PriceListItemDto {
+    item_id: number
+    price_list_id: number
+    item_type: string
+    item_code: string
+    item_name: string
+    list_price: number
+    wholesale_price: number | null
+    created_by: string | null
+    updated_by: string | null
+    created_at: string
+    updated_at: string
+}
+
+// Request for creating a price list item
+export interface CreatePriceListItemRequest {
+    item_type: string
+    item_code: string
+    item_name: string
+    list_price: number
+    wholesale_price?: number | null
+}
+
+// Response for create price list item
+export interface CreatePriceListItemResponse {
+    success: boolean
+    message: string
+    data?: {
+        item: PriceListItemDto
+    }
+}
+
+// Response for fetch price item types
+export interface FetchPriceItemTypesResponse {
+    success: boolean
+    message?: string
+    data?: {
+        types: PriceItemTypeDto[]
     }
 }
 

@@ -28,6 +28,7 @@ export interface PriceListData {
   currency_code: string
   isActive: boolean
   owner: string | null
+  items?: PriceListItem[] // Optional items array
 }
 
 // Pricing admin state interface
@@ -60,7 +61,7 @@ export interface Currency {
 // ============================================
 
 // Price list item from API (list view)
-export interface PriceListItem {
+export interface PriceListSummary {
   price_list_id: number
   name: string
   description: string | null
@@ -118,6 +119,7 @@ export interface FetchPriceListResult {
   message?: string
   data?: {
     priceList: PriceListFull
+    items: PriceListItem[]
   }
 }
 
@@ -170,6 +172,70 @@ export interface DeletePriceListsResult {
   data?: {
     totalDeleted: number
     totalErrors: number
+  }
+}
+
+// ============================================
+// Price List Item Types
+// ============================================
+
+// Price item type from API
+export interface PriceItemType {
+  type_code: string
+  type_name: string
+  description: string | null
+  is_active: boolean
+  created_at: string
+  updated_at: string
+}
+
+// Price list item from API
+export interface PriceListItem {
+  item_id: number
+  price_list_id: number
+  item_type: string
+  item_code: string
+  item_name: string
+  list_price: number
+  wholesale_price: number | null
+  created_by: string | null
+  updated_by: string | null
+  created_at: string
+  updated_at: string
+}
+
+// Create price list item request
+export interface CreatePriceListItemRequest {
+  item_type: string
+  item_code: string
+  item_name: string
+  list_price: number
+  wholesale_price?: number | null
+}
+
+// Create price list item result
+export interface CreatePriceListItemResult {
+  success: boolean
+  message: string
+  data?: {
+    item: PriceListItem
+  }
+}
+
+// Fetch price item types result
+export interface FetchPriceItemTypesResult {
+  success: boolean
+  message?: string
+  data?: {
+    types: PriceItemType[]
+  }
+}
+
+export interface FetchPriceListItemsResult {
+  success: boolean
+  message?: string
+  data?: {
+    items: PriceListItem[]
   }
 }
 

@@ -21,7 +21,7 @@ import { queries } from './queries.admin.pricing';
 import type { 
     FetchAllPriceListsParams,
     FetchAllPriceListsResult,
-    PriceListItemDto
+    PriceListSummaryDto
 } from './types.admin.pricing';
 import { createAndPublishEvent } from '@/core/eventBus/fabric.events';
 import { EVENTS_ADMIN_PRICING } from './events.admin.pricing';
@@ -209,7 +209,7 @@ export async function fetchAllPriceLists(
             pool.query(countQuery, countParams)
         ]);
 
-        const priceLists: PriceListItemDto[] = fetchResult.rows;
+        const priceLists: PriceListSummaryDto[] = fetchResult.rows;
         const totalItems = parseInt(countResult.rows[0].total, 10);
         const totalPages = Math.ceil(totalItems / params.itemsPerPage);
 

@@ -473,6 +473,100 @@ export const EVENTS_ADMIN_PRICING: EventCollection = {
     severity: 'error',
     eventMessage: 'Error during price list deletion operation',
     version: '1.0.0'
+  },
+
+  // ========== Price List Items - Create Events ==========
+  
+  'pricelist.items.create.success': {
+    eventName: 'adminPricing.pricelist.items.create.success',
+    source: 'admin-pricing',
+    eventType: 'system',
+    severity: 'info',
+    eventMessage: 'Price list item created successfully',
+    version: '1.0.0'
+  },
+
+  'pricelist.items.create.validation.error': {
+    eventName: 'adminPricing.pricelist.items.create.validation.error',
+    source: 'admin-pricing',
+    eventType: 'system',
+    severity: 'error',
+    eventMessage: 'Validation error creating price list item',
+    version: '1.0.0'
+  },
+
+  'pricelist.items.create.not_found': {
+    eventName: 'adminPricing.pricelist.items.create.not_found',
+    source: 'admin-pricing',
+    eventType: 'system',
+    severity: 'error',
+    eventMessage: 'Price list not found for item creation',
+    version: '1.0.0'
+  },
+
+  'pricelist.items.create.code.duplicate': {
+    eventName: 'adminPricing.pricelist.items.create.code.duplicate',
+    source: 'admin-pricing',
+    eventType: 'system',
+    severity: 'error',
+    eventMessage: 'Item code already exists in this price list',
+    version: '1.0.0'
+  },
+
+  'pricelist.items.create.type.not_found': {
+    eventName: 'adminPricing.pricelist.items.create.type.not_found',
+    source: 'admin-pricing',
+    eventType: 'system',
+    severity: 'error',
+    eventMessage: 'Price item type not found or inactive',
+    version: '1.0.0'
+  },
+
+  'pricelist.items.create.database_error': {
+    eventName: 'adminPricing.pricelist.items.create.database_error',
+    source: 'admin-pricing',
+    eventType: 'system',
+    severity: 'error',
+    eventMessage: 'Database error creating price list item',
+    version: '1.0.0'
+  },
+
+  'pricelist.items.create.error': {
+    eventName: 'adminPricing.pricelist.items.create.error',
+    source: 'admin-pricing',
+    eventType: 'system',
+    severity: 'error',
+    eventMessage: 'Error during price list item creation operation',
+    version: '1.0.0'
+  },
+
+  // ========== Price Item Types - Fetch Events ==========
+  
+  'pricelist.item.types.fetch.success': {
+    eventName: 'adminPricing.pricelist.item.types.fetch.success',
+    source: 'admin-pricing',
+    eventType: 'system',
+    severity: 'debug',
+    eventMessage: 'Price item types fetched successfully',
+    version: '1.0.0'
+  },
+
+  'pricelist.item.types.fetch.database_error': {
+    eventName: 'adminPricing.pricelist.item.types.fetch.database_error',
+    source: 'admin-pricing',
+    eventType: 'system',
+    severity: 'error',
+    eventMessage: 'Database error fetching price item types',
+    version: '1.0.0'
+  },
+
+  'pricelist.item.types.fetch.error': {
+    eventName: 'adminPricing.pricelist.item.types.fetch.error',
+    source: 'admin-pricing',
+    eventType: 'system',
+    severity: 'error',
+    eventMessage: 'Error during price item types fetch operation',
+    version: '1.0.0'
   }
 }
 

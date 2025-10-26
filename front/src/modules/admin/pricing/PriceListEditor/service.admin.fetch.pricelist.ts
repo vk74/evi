@@ -15,7 +15,8 @@
 import { api } from '@/core/api/service.axios';
 import type { 
   PriceListFull, 
-  FetchPriceListResult 
+  FetchPriceListResult,
+  PriceListItem
 } from '../types.pricing.admin';
 
 // Logger for tracking operations
@@ -90,16 +91,33 @@ export const fetchPriceListService = {
         updated_at: priceListData.updated_at
       };
 
+      // Map price list items
+      const mappedItems: PriceListItem[] = (response.data.data.items || []).map((item: any) => ({
+        item_id: item.item_id,
+        price_list_id: item.price_list_id,
+        item_type: item.item_type,
+        item_code: item.item_code,
+        item_name: item.item_name,
+        list_price: item.list_price,
+        wholesale_price: item.wholesale_price,
+        created_by: item.created_by,
+        updated_by: item.updated_by,
+        created_at: item.created_at,
+        updated_at: item.updated_at
+      }));
+
       logger.info('Successfully received price list data', {
         priceListId,
         name: mappedPriceList.name,
-        currency: mappedPriceList.currency_code
+        currency: mappedPriceList.currency_code,
+        itemsCount: mappedItems.length
       });
 
       return {
         success: true,
         data: {
-          priceList: mappedPriceList
+          priceList: mappedPriceList,
+          items: mappedItems
         }
       };
 

@@ -4,10 +4,14 @@ Price list editor details section with items table and action buttons.
 Frontend file: PriceListEditorDetails.vue
 -->
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue'
+import { computed, ref, watch, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { usePricingAdminStore } from '../state.pricing.admin'
+import { useUiStore } from '@/core/state/uistate'
 import Paginator from '@/core/ui/paginator/Paginator.vue'
+import { fetchPriceItemTypesService } from './service.admin.fetch.price.item.types'
+import { createPriceListItemService } from './service.admin.create.pricelist.item'
+import { PriceItemType, CreatePriceListItemRequest } from '../types.pricing.admin'
 import {
   PhArrowClockwise,
   PhPlus,
@@ -15,16 +19,17 @@ import {
   PhMagnifyingGlass,
   PhX,
   PhCheckSquare,
-  PhSquare
+  PhSquare,
+  PhFloppyDisk
 } from '@phosphor-icons/vue'
 
 const { t } = useI18n()
 const pricingStore = usePricingAdminStore()
+const uiStore = useUiStore()
 
-type ItemType = 'product' | 'service'
 type EditorLine = {
   id: string
-  itemType: ItemType
+  itemType: string
   productCode: string
   itemName: string
   listPrice: number
@@ -34,6 +39,13 @@ type ItemsPerPageOption = 25 | 50 | 100
 
 const lines = ref<EditorLine[]>([])
 const selectedLines = ref<Set<string>>(new Set())
+
+// Price item types state
+const priceItemTypes = ref<PriceItemType[]>([])
+const isLoadingTypes = ref<boolean>(false)
+
+// Save state
+const isSaving = ref<boolean>(false)
 
 // Search state
 const searchQuery = ref<string>('')
@@ -87,9 +99,12 @@ const priceListCurrency = computed(() => {
 
 // Action handlers
 function addRow(): void {
+  // Use first available type as default, or empty string if no types loaded yet
+  const defaultType = priceItemTypes.value.length > 0 ? priceItemTypes.value[0].type_code : ''
+  
   lines.value.push({
     id: `tmp_${Date.now()}`,
-    itemType: 'product',
+    itemType: defaultType,
     productCode: '',
     itemName: '',
     listPrice: 0
@@ -149,6 +164,124 @@ const handleItemsPerPageChange = (newItemsPerPage: ItemsPerPageOption) => {
 }
 
 const totalItems = computed(() => totalItemsCount.value)
+
+// Computed property for item type options
+const itemTypeOptions = computed(() => {
+  return priceItemTypes.value.map(type => ({
+    title: type.type_name.toLowerCase(), // Названия с маленькой буквы
+    value: type.type_code
+  }))
+})
+
+// Load price item types and existing items on component mount
+onMounted(async () => {
+  await loadPriceItemTypes()
+  loadExistingItems()
+})
+
+// Function to load price item types
+const loadPriceItemTypes = async () => {
+  try {
+    isLoadingTypes.value = true
+    const result = await fetchPriceItemTypesService.fetchPriceItemTypes()
+
+    if (result.success && result.data?.types) {
+      priceItemTypes.value = result.data.types
+    } else {
+      console.error('Failed to load price item types:', result.message)
+    }
+  } catch (error) {
+    console.error('Error loading price item types:', error)
+  } finally {
+    isLoadingTypes.value = false
+  }
+}
+
+// Function to load existing price list items
+const loadExistingItems = () => {
+  if (pricingStore.editingPriceListData && pricingStore.editingPriceListData.items) {
+    // Convert existing items to EditorLine format
+    const existingLines: EditorLine[] = pricingStore.editingPriceListData.items.map(item => ({
+      id: item.item_id.toString(),
+      itemType: item.item_type,
+      productCode: item.item_code,
+      itemName: item.item_name,
+      listPrice: item.list_price
+    }))
+    
+    lines.value = existingLines
+    console.log('Loaded existing items:', existingLines.length)
+  }
+}
+
+// Function to save all new items
+const saveAllItems = async () => {
+  if (!pricingStore.editingPriceListId) {
+    console.error('No price list ID available for saving')
+    uiStore.showErrorSnackbar(t('admin.pricing.priceLists.editor.saveError.noPriceListId'))
+    return
+  }
+
+  const newItems = lines.value.filter(line => line.id.startsWith('tmp_'))
+  
+  if (newItems.length === 0) {
+    console.log('No new items to save')
+    uiStore.showInfoSnackbar(t('admin.pricing.priceLists.editor.saveInfo.noItems'))
+    return
+  }
+
+  try {
+    isSaving.value = true
+    let successCount = 0
+    let errorCount = 0
+    
+    for (const item of newItems) {
+      const request: CreatePriceListItemRequest = {
+        item_type: item.itemType,
+        item_code: item.productCode,
+        item_name: item.itemName,
+        list_price: item.listPrice,
+        wholesale_price: null
+      }
+
+      const result = await createPriceListItemService.createPriceListItem(parseInt(pricingStore.editingPriceListId), request)
+      
+      if (result.success && result.data?.item) {
+        // Update the temporary ID with the real item ID
+        item.id = result.data.item.item_id.toString()
+        successCount++
+        console.log('Item saved successfully:', result.data.item)
+      } else {
+        errorCount++
+        console.error('Failed to save item:', result.message)
+        uiStore.showErrorSnackbar(`${t('admin.pricing.priceLists.editor.saveError.itemFailed')}: ${item.itemName} - ${result.message}`)
+      }
+    }
+    
+    // Show summary message
+    if (successCount > 0 && errorCount === 0) {
+      const message = successCount === 1 
+        ? t('admin.pricing.priceLists.editor.saveSuccess.single')
+        : `${successCount} ${t('admin.pricing.priceLists.editor.saveSuccess.multiple')}`
+      uiStore.showSuccessSnackbar(message)
+    } else if (successCount > 0 && errorCount > 0) {
+      const message = `${successCount} ${t('admin.pricing.priceLists.editor.saveWarning.successPart')}, ${errorCount} ${t('admin.pricing.priceLists.editor.saveWarning.failedPart')}`
+      uiStore.showWarningSnackbar(message)
+    } else if (errorCount > 0) {
+      const message = `${errorCount} ${t('admin.pricing.priceLists.editor.saveError.multiple')}`
+      uiStore.showErrorSnackbar(message)
+    }
+    
+    // Clear selections after saving
+    clearSelections()
+    
+  } catch (error) {
+    console.error('Error saving items:', error)
+    uiStore.showErrorSnackbar(t('admin.pricing.priceLists.editor.saveError.general'))
+  } finally {
+    isSaving.value = false
+  }
+}
 </script>
 
 <template>
@@ -254,10 +387,8 @@ const totalItems = computed(() => totalItemsCount.value)
         <template #[`item.itemType`]="{ item }">
           <v-select
             v-model="item.itemType"
-            :items="[
-              { title: 'Product', value: 'product' },
-              { title: 'Service', value: 'service' }
-            ]"
+            :items="itemTypeOptions"
+            :loading="isLoadingTypes"
             density="compact"
             variant="plain"
             hide-details
@@ -315,12 +446,14 @@ const totalItems = computed(() => totalItemsCount.value)
           color="teal"
           variant="outlined"
           class="mb-3"
-          @click="refreshData"
+          :loading="isSaving"
+          :disabled="lines.filter(l => l.id.startsWith('tmp_')).length === 0"
+          @click="saveAllItems"
         >
           <template #prepend>
-            <PhArrowClockwise />
+            <PhFloppyDisk />
           </template>
-          {{ t('admin.pricing.priceLists.actions.refresh').toUpperCase() }}
+          {{ t('admin.pricing.priceLists.editor.saveItems').toUpperCase() }}
         </v-btn>
         
         <v-btn
@@ -334,6 +467,19 @@ const totalItems = computed(() => totalItemsCount.value)
             <PhPlus />
           </template>
           {{ t('admin.pricing.priceLists.editor.addRow').toUpperCase() }}
+        </v-btn>
+        
+        <v-btn
+          block
+          color="grey"
+          variant="outlined"
+          class="mb-3"
+          @click="refreshData"
+        >
+          <template #prepend>
+            <PhArrowClockwise />
+          </template>
+          {{ t('admin.pricing.priceLists.actions.refresh').toUpperCase() }}
         </v-btn>
         
         <v-btn

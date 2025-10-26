@@ -159,6 +159,27 @@ export const queries = {
     `,
 
     /**
+     * Fetch price list items by price list ID
+     */
+    fetchPriceListItems: `
+        SELECT 
+            item_id,
+            price_list_id,
+            item_type,
+            item_code,
+            item_name,
+            list_price,
+            wholesale_price,
+            created_by,
+            updated_by,
+            created_at,
+            updated_at
+        FROM app.price_lists
+        WHERE price_list_id = $1
+        ORDER BY item_id ASC
+    `,
+
+    /**
      * Check if price list name exists (for uniqueness validation)
      * Parameters: name
      */
@@ -219,6 +240,71 @@ export const queries = {
     deletePriceList: `
         DELETE FROM app.price_lists_info
         WHERE price_list_id = $1
+    `,
+
+    // ============================================
+    // Price List Item Queries
+    // ============================================
+
+    /**
+     * Fetch active price item types
+     */
+    fetchPriceItemTypes: `
+        SELECT 
+            type_code,
+            type_name,
+            description,
+            is_active,
+            created_at,
+            updated_at
+        FROM app.price_item_types
+        WHERE is_active = true
+        ORDER BY type_name ASC
+    `,
+
+    /**
+     * Insert price list item
+     * Parameters: price_list_id, item_type, item_code, item_name, list_price, wholesale_price, created_by
+     */
+    insertPriceListItem: `
+        INSERT INTO app.price_lists (
+            price_list_id,
+            item_type,
+            item_code,
+            item_name,
+            list_price,
+            wholesale_price,
+            created_by,
+            updated_by
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $7)
+        RETURNING item_id
+    `,
+
+    /**
+     * Check if price list item code exists in specific price list
+     * Parameters: price_list_id, item_code
+     */
+    checkPriceListItemCodeExists: `
+        SELECT 1 FROM app.price_lists
+        WHERE price_list_id = $1 AND item_code = $2
+    `,
+
+    /**
+     * Check if price list exists
+     * Parameters: price_list_id
+     */
+    existsPriceList: `
+        SELECT 1 FROM app.price_lists_info
+        WHERE price_list_id = $1
+    `,
+
+    /**
+     * Check if price item type exists and is active
+     * Parameters: type_code
+     */
+    existsPriceItemType: `
+        SELECT 1 FROM app.price_item_types
+        WHERE type_code = $1 AND is_active = true
     `
 };
 

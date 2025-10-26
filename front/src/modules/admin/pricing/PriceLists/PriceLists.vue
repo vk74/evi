@@ -30,7 +30,7 @@ import { serviceUpdatePriceList } from './service.update.pricelist'
 import { serviceDeletePriceLists } from './service.delete.pricelists'
 import { fetchCurrenciesService } from '../currencies/service.fetch.currencies'
 import { fetchPriceListService } from '../PriceListEditor/service.admin.fetch.pricelist'
-import type { PriceListItem, Currency } from '../types.pricing.admin'
+import type { PriceListSummary, Currency } from '../types.pricing.admin'
 import debounce from 'lodash/debounce'
 
 // Types
@@ -80,7 +80,7 @@ const isUpdatingName = ref<number | null>(null) // Track which price list is bei
 const isUpdatingStatus = ref<number | null>(null) // Track which price list status is being updated
 
 // Price lists data
-const priceLists = ref<PriceListItem[]>([])
+const priceLists = ref<PriceListSummary[]>([])
 const totalItemsCount = ref<number>(0)
 const totalPagesCount = ref<number>(0)
 
@@ -155,7 +155,8 @@ const editPriceList = async () => {
           description: result.data.priceList.description || '',
           currency_code: result.data.priceList.currency_code,
           isActive: result.data.priceList.is_active,
-          owner: result.data.priceList.owner_id
+          owner: result.data.priceList.owner_id,
+          items: result.data.items || []
         }
       )
       clearSelections()

@@ -17,7 +17,8 @@ import { pool as pgPool } from '@/core/db/maindb';
 import { queries } from './queries.admin.pricing';
 import type { 
     FetchPriceListResponse,
-    PriceListFullDto
+    PriceListFullDto,
+    PriceListItemDto
 } from './types.admin.pricing';
 import { createAndPublishEvent } from '@/core/eventBus/fabric.events';
 import { EVENTS_ADMIN_PRICING } from './events.admin.pricing';
@@ -62,19 +63,25 @@ export async function fetchPriceList(
 
         const priceList: PriceListFullDto = result.rows[0];
 
+        // Fetch price list items
+        const itemsResult = await pool.query(queries.fetchPriceListItems, [priceListId]);
+        const items: PriceListItemDto[] = itemsResult.rows;
+
         // Publish success event
         createAndPublishEvent({
             eventName: EVENTS_ADMIN_PRICING['pricelists.fetch.success'].eventName,
             payload: {
                 priceListId,
-                name: priceList.name
+                name: priceList.name,
+                itemsCount: items.length
             }
         });
 
         return {
             success: true,
             data: {
-                priceList
+                priceList,
+                items
             }
         };
 
