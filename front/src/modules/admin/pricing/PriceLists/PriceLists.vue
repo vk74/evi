@@ -67,6 +67,7 @@ const sortDesc = ref<boolean>(false)
 // Dialog state
 const showDeleteDialog = ref(false)
 const showAddPricelistDialog = ref(false)
+const showSetOwnerDialog = ref(false)
 
 // Selected price lists
 const selectedPriceLists = ref<Set<number>>(new Set())
@@ -321,7 +322,11 @@ const clearFilters = async () => {
 }
 
 const setOwner = () => {
-  uiStore.showInfoSnackbar(t('admin.pricing.priceLists.messages.setOwnerNotImplemented'))
+  showSetOwnerDialog.value = true
+}
+
+const cancelSetOwner = () => {
+  showSetOwnerDialog.value = false
 }
 
 const filteredPriceLists = computed(() => priceLists.value)
@@ -805,6 +810,32 @@ onMounted(async () => {
       v-model="showAddPricelistDialog"
       @create="handleCreatePricelist"
     />
+
+    <!-- Set owner dialog -->
+    <v-dialog
+      v-model="showSetOwnerDialog"
+      max-width="400"
+    >
+      <v-card>
+        <v-card-title class="text-subtitle-1 text-wrap">
+          {{ t('admin.pricing.priceLists.messages.setOwnerNotImplemented') }}
+        </v-card-title>
+        <v-card-text>
+          Функция в разработке
+        </v-card-text>
+        <v-card-actions>
+          <v-spacer />
+          <v-btn
+            color="grey"
+            variant="text"
+            class="text-none"
+            @click="cancelSetOwner"
+          >
+            {{ t('common.close') }}
+          </v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
   </v-card>
 </template>
 
