@@ -299,3 +299,34 @@ export async function updateSetting(request: UpdateSettingRequest, req: Request)
     }
   }
 }
+
+/**
+ * Handle update settings request with business logic
+ * Contains all validation, logging, and request processing logic
+ * @param req Express request object
+ * @returns Promise resolving to update settings response
+ */
+export async function handleUpdateSettingsRequest(req: Request): Promise<UpdateSettingResponse> {
+  // Получаем UUID пользователя, делающего запрос
+  const requestorUuid = getRequestorUuidFromReq(req);
+
+  // Validate required fields in request
+  const { sectionPath, settingName, value } = req.body;
+
+  if (!sectionPath || !settingName || value === undefined) {
+    throw new Error('Invalid request. sectionPath, settingName, and value are required.');
+  }
+
+  // Prepare request for service
+  const updateRequest: UpdateSettingRequest = {
+    sectionPath,
+    settingName,
+    value,
+    environment: req.body.environment
+  };
+
+  // Call service to process update
+  const result = await updateSetting(updateRequest, req);
+
+  return result;
+}
