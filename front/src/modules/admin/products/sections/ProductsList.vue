@@ -20,7 +20,8 @@ import {
   PhCheckSquare,
   PhSquare,
   PhArrowClockwise,
-  PhCaretUpDown
+  PhCaretUpDown,
+  PhFunnel
 } from '@phosphor-icons/vue'
 import Paginator from '@/core/ui/paginator/Paginator.vue'
 import debounce from 'lodash/debounce'
@@ -463,7 +464,7 @@ const clearFilters = async () => {
                   @update:model-value="handleTypeFilterChange"
                 >
                   <template #append-inner>
-                    <PhCaretUpDown class="dropdown-icon" />
+                    <PhFunnel class="dropdown-icon" />
                   </template>
                 </v-select>
               </div>
@@ -486,7 +487,7 @@ const clearFilters = async () => {
                   @update:model-value="handlePublishedFilterChange"
                 >
                   <template #append-inner>
-                    <PhCaretUpDown class="dropdown-icon" />
+                    <PhFunnel class="dropdown-icon" />
                   </template>
                 </v-select>
               </div>
