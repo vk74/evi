@@ -1,5 +1,5 @@
 <!--
-Version: 1.5.1
+Version: 1.5.2
 Price list editor details section with items table and action buttons.
 Frontend file: PriceListEditorDetails.vue
 -->
@@ -12,8 +12,9 @@ import Paginator from '@/core/ui/paginator/Paginator.vue'
 import { fetchPriceItemTypesService } from './service.admin.fetch.price.item.types'
 import { createPriceListItemService } from './service.admin.create.pricelist.item'
 import { deletePriceListItemsService } from './service.admin.delete.pricelist.items'
+import { updatePriceListItemsService } from './service.admin.update.pricelist.items'
 import { fetchPriceListService } from './service.admin.fetch.pricelist'
-import { PriceItemType, CreatePriceListItemRequest, DeletePriceListItemsRequest } from '../types.pricing.admin'
+import { PriceItemType, CreatePriceListItemRequest, DeletePriceListItemsRequest, UpdatePriceListItemsRequest } from '../types.pricing.admin'
 import {
   PhArrowClockwise,
   PhPlus,
@@ -22,7 +23,8 @@ import {
   PhX,
   PhCheckSquare,
   PhSquare,
-  PhFloppyDisk
+  PhFloppyDisk,
+  PhPencilSimple
 } from '@phosphor-icons/vue'
 
 const { t } = useI18n()
@@ -35,6 +37,11 @@ type EditorLine = {
   itemCode: string
   itemName: string
   listPrice: number
+  // Original values for change tracking
+  originalItemType?: string
+  originalItemCode?: string
+  originalItemName?: string
+  originalListPrice?: number
 }
 
 type ItemsPerPageOption = 25 | 50 | 100
@@ -48,6 +55,9 @@ const isLoadingTypes = ref<boolean>(false)
 
 // Save state
 const isSaving = ref<boolean>(false)
+
+// Update state
+const isUpdating = ref<boolean>(false)
 
 // Delete state
 const isDeleting = ref<boolean>(false)
@@ -87,6 +97,35 @@ const headers = computed<TableHeader[]>(() => [
 // Computed properties for selection
 const selectedCount = computed(() => selectedLines.value.size)
 const hasSelected = computed(() => selectedLines.value.size > 0)
+
+// Computed properties for change tracking
+const hasChanges = computed(() => {
+  return lines.value.some(line => isLineChanged(line))
+})
+
+const changedLinesCount = computed(() => {
+  return lines.value.filter(line => isLineChanged(line)).length
+})
+
+// Function to check if a line has changes
+const isLineChanged = (line: EditorLine): boolean => {
+  if (!line.id || line.id.startsWith('tmp_')) return false // New items are not considered changed
+  
+  return (
+    line.originalItemType !== undefined && line.itemType !== line.originalItemType ||
+    line.originalItemCode !== undefined && line.itemCode !== line.originalItemCode ||
+    line.originalItemName !== undefined && line.itemName !== line.originalItemName ||
+    line.originalListPrice !== undefined && line.listPrice !== line.originalListPrice
+  )
+}
+
+// Function to get row props for highlighting changed rows
+const getRowProps = (item: EditorLine) => {
+  if (!item) return { class: '' }
+  return {
+    class: isLineChanged(item) ? 'changed-row' : ''
+  }
+}
 
 // Price list info for display
 const priceListName = computed(() => {
@@ -261,13 +300,18 @@ const refreshDataFromServer = async (): Promise<void> => {
     const result = await fetchPriceListService.fetchPriceListById(parseInt(pricingStore.editingPriceListId))
     
     if (result.success && result.data?.items) {
-      // Convert existing items to EditorLine format
+      // Convert existing items to EditorLine format with original values
       const existingLines: EditorLine[] = result.data.items.map(item => ({
         id: item.item_id.toString(),
         itemType: item.item_type,
         itemCode: item.item_code,
         itemName: item.item_name,
-        listPrice: item.list_price
+        listPrice: item.list_price,
+        // Store original values for change tracking
+        originalItemType: item.item_type,
+        originalItemCode: item.item_code,
+        originalItemName: item.item_name,
+        originalListPrice: item.list_price
       }))
       
       lines.value = existingLines
@@ -363,13 +407,18 @@ const loadPriceItemTypes = async () => {
 // Function to load existing price list items
 const loadExistingItems = () => {
   if (pricingStore.editingPriceListData && pricingStore.editingPriceListData.items) {
-    // Convert existing items to EditorLine format
+    // Convert existing items to EditorLine format with original values
     const existingLines: EditorLine[] = pricingStore.editingPriceListData.items.map(item => ({
       id: item.item_id.toString(),
       itemType: item.item_type,
       itemCode: item.item_code,
       itemName: item.item_name,
-      listPrice: item.list_price
+      listPrice: item.list_price,
+      // Store original values for change tracking
+      originalItemType: item.item_type,
+      originalItemCode: item.item_code,
+      originalItemName: item.item_name,
+      originalListPrice: item.list_price
     }))
     
     lines.value = existingLines
@@ -445,6 +494,99 @@ const saveAllItems = async () => {
     isSaving.value = false
   }
 }
+
+// Function to update all changed items
+const updateAllItems = async () => {
+  if (!pricingStore.editingPriceListId) {
+    console.error('No price list ID available for updating')
+    uiStore.showErrorSnackbar(t('admin.pricing.priceLists.editor.updateError.noPriceListId'))
+    return
+  }
+
+  const changedItems = lines.value.filter(line => isLineChanged(line))
+  
+  if (changedItems.length === 0) {
+    console.log('No changed items to update')
+    uiStore.showInfoSnackbar(t('admin.pricing.priceLists.editor.updateWarning.noChanges'))
+    return
+  }
+
+  try {
+    isUpdating.value = true
+    
+    // Prepare update request
+    const updates = changedItems.map(item => {
+      const changes: any = {}
+      
+      if (item.originalItemType !== undefined && item.itemType !== item.originalItemType) {
+        changes.itemType = item.itemType
+      }
+      if (item.originalItemCode !== undefined && item.itemCode !== item.originalItemCode) {
+        changes.itemCode = item.itemCode
+      }
+      if (item.originalItemName !== undefined && item.itemName !== item.originalItemName) {
+        changes.itemName = item.itemName
+      }
+      if (item.originalListPrice !== undefined && item.listPrice !== item.originalListPrice) {
+        changes.listPrice = item.listPrice
+      }
+      
+      return {
+        itemCode: item.originalItemCode || item.itemCode,
+        changes
+      }
+    })
+
+    const request: UpdatePriceListItemsRequest = { updates }
+
+    const result = await updatePriceListItemsService.updatePriceListItems(
+      parseInt(pricingStore.editingPriceListId), 
+      request
+    )
+    
+    if (result.success && result.data) {
+      const { totalUpdated, totalErrors, updatedItems, errorItems } = result.data
+      
+      // Update original values for successfully updated items
+      updatedItems.forEach(itemCode => {
+        const line = lines.value.find(l => l.itemCode === itemCode)
+        if (line) {
+          line.originalItemType = line.itemType
+          line.originalItemCode = line.itemCode
+          line.originalItemName = line.itemName
+          line.originalListPrice = line.listPrice
+        }
+      })
+      
+      // Show summary messages
+      if (totalUpdated > 0 && totalErrors === 0) {
+        const message = totalUpdated === 1 
+          ? t('admin.pricing.priceLists.editor.updateSuccess.single')
+          : `${totalUpdated} ${t('admin.pricing.priceLists.editor.updateSuccess.multiple')}`
+        uiStore.showSuccessSnackbar(message)
+      } else if (totalUpdated > 0 && totalErrors > 0) {
+        const message = `${totalUpdated} ${t('admin.pricing.priceLists.editor.updateWarning.successPart')}, ${totalErrors} ${t('admin.pricing.priceLists.editor.updateWarning.failedPart')}`
+        uiStore.showWarningSnackbar(message)
+      } else if (totalErrors > 0) {
+        const message = `${totalErrors} ${t('admin.pricing.priceLists.editor.updateError.multiple')}`
+        uiStore.showErrorSnackbar(message)
+      }
+      
+      // Clear selections after updating
+      clearSelections()
+      
+    } else {
+      uiStore.showErrorSnackbar(`${t('admin.pricing.priceLists.editor.updateError.apiFailed')}: ${result.message}`)
+      console.error('[Update Items] API Error:', result.message)
+    }
+    
+  } catch (error) {
+    console.error('Error updating items:', error)
+    uiStore.showErrorSnackbar(t('admin.pricing.priceLists.editor.updateError.general'))
+  } finally {
+    isUpdating.value = false
+  }
+}
 </script>
 
 <template>
@@ -514,6 +656,7 @@ const saveAllItems = async () => {
         :items="lines"
         :items-length="totalItems"
         :items-per-page-options="[25, 50, 100]"
+        :row-props="getRowProps"
         class="price-list-items-table"
         hide-default-footer
       >
@@ -621,6 +764,22 @@ const saveAllItems = async () => {
         
         <v-btn
           block
+          color="teal"
+          variant="outlined"
+          class="mb-3"
+          :loading="isUpdating"
+          :disabled="!hasChanges"
+          @click="updateAllItems"
+        >
+          <template #prepend>
+            <PhPencilSimple />
+          </template>
+          {{ t('admin.pricing.priceLists.editor.updateItems').toUpperCase() }}
+          <span v-if="changedLinesCount > 0" class="ml-2">({{ changedLinesCount }})</span>
+        </v-btn>
+        
+        <v-btn
+          block
           color="blue"
           variant="outlined"
           class="mb-3"
@@ -634,7 +793,7 @@ const saveAllItems = async () => {
         
         <v-btn
           block
-          color="grey"
+          color="teal"
           variant="outlined"
           class="mb-3"
           @click="refreshData"
@@ -850,6 +1009,15 @@ const saveAllItems = async () => {
 .row-number {
   font-family: 'Roboto Mono', monospace;
   color: rgba(0, 0, 0, 0.6);
+}
+
+/* Changed row highlighting */
+.changed-row {
+  background-color: rgba(0, 128, 128, 0.1) !important; /* Light teal background */
+}
+
+.changed-row:hover {
+  background-color: rgba(0, 128, 128, 0.15) !important; /* Slightly darker teal on hover */
 }
 </style>
 

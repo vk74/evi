@@ -1,5 +1,5 @@
 /**
- * version: 2.0.2
+ * version: 1.2.2
  * Event reference catalog for admin pricing operations (backend).
  * Defines events for pricing management operations (currencies and price lists).
  * File: events.admin.pricing.ts (backend)
@@ -613,6 +613,71 @@ export const EVENTS_ADMIN_PRICING: EventCollection = {
     eventType: 'system',
     severity: 'error',
     eventMessage: 'Error during price list items deletion operation',
+    version: '1.0.0'
+  },
+
+  // ========== Price List Items - Update Events ==========
+  
+  'pricelist.items.update.success': {
+    eventName: 'adminPricing.pricelist.items.update.success',
+    source: 'admin-pricing',
+    eventType: 'system',
+    severity: 'info',
+    eventMessage: 'Price list items updated successfully',
+    version: '1.0.0'
+  },
+
+  'pricelist.items.update.validation.error': {
+    eventName: 'adminPricing.pricelist.items.update.validation.error',
+    source: 'admin-pricing',
+    eventType: 'system',
+    severity: 'error',
+    eventMessage: 'Validation error updating price list items',
+    version: '1.0.0'
+  },
+
+  'pricelist.items.update.not_found': {
+    eventName: 'adminPricing.pricelist.items.update.not_found',
+    source: 'admin-pricing',
+    eventType: 'system',
+    severity: 'warning',
+    eventMessage: 'Some price list items not found for update',
+    version: '1.0.0'
+  },
+
+  'pricelist.items.update.code.duplicate': {
+    eventName: 'adminPricing.pricelist.items.update.code.duplicate',
+    source: 'admin-pricing',
+    eventType: 'system',
+    severity: 'error',
+    eventMessage: 'Item code already exists in this price list',
+    version: '1.0.0'
+  },
+
+  'pricelist.items.update.type.not_found': {
+    eventName: 'adminPricing.pricelist.items.update.type.not_found',
+    source: 'admin-pricing',
+    eventType: 'system',
+    severity: 'error',
+    eventMessage: 'Price item type not found or inactive',
+    version: '1.0.0'
+  },
+
+  'pricelist.items.update.database_error': {
+    eventName: 'adminPricing.pricelist.items.update.database_error',
+    source: 'admin-pricing',
+    eventType: 'system',
+    severity: 'error',
+    eventMessage: 'Database error updating price list items',
+    version: '1.0.0'
+  },
+
+  'pricelist.items.update.error': {
+    eventName: 'adminPricing.pricelist.items.update.error',
+    source: 'admin-pricing',
+    eventType: 'system',
+    severity: 'error',
+    eventMessage: 'Error during price list items update operation',
     version: '1.0.0'
   }
 }

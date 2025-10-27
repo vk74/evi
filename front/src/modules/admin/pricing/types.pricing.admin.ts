@@ -1,6 +1,6 @@
 /**
  * @file types.pricing.admin.ts
- * Version: 1.3.0
+ * Version: 1.3.1
  * Type definitions for pricing administration module.
  * Frontend types for pricing admin functionality.
  * File: types.pricing.admin.ts (frontend)
@@ -256,6 +256,35 @@ export interface DeletePriceListItemsResult {
     totalDeleted: number
     totalErrors: number
     deletedItems: string[]
+    errorItems: string[]
+  }
+}
+
+// ============================================
+// Price List Items - Update Types
+// ============================================
+
+// Update price list items request
+export interface UpdatePriceListItemsRequest {
+  updates: Array<{
+    itemCode: string
+    changes: {
+      itemType?: string
+      itemName?: string
+      listPrice?: number
+      wholesalePrice?: number | null
+    }
+  }>
+}
+
+// Update price list items result
+export interface UpdatePriceListItemsResult {
+  success: boolean
+  message: string
+  data?: {
+    totalUpdated: number
+    totalErrors: number
+    updatedItems: string[]
     errorItems: string[]
   }
 }

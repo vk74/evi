@@ -1,5 +1,5 @@
 /**
- * version: 1.3.0
+ * version: 1.3.1
  * SQL queries for pricing administration module.
  * Contains parameterized queries related to pricing (currencies and price lists).
  * Includes integrity check queries.
@@ -324,6 +324,39 @@ export const queries = {
     checkPriceListItemsExist: `
         SELECT item_code FROM app.price_lists
         WHERE item_code = ANY($1)
+    `,
+
+    /**
+     * Update price list item by item code
+     * Parameters: item_code, item_type, item_name, list_price, wholesale_price, updated_by
+     */
+    updatePriceListItem: `
+        UPDATE app.price_lists SET
+            item_type = COALESCE($2, item_type),
+            item_name = COALESCE($3, item_name),
+            list_price = COALESCE($4, list_price),
+            wholesale_price = COALESCE($5, wholesale_price),
+            updated_by = $6,
+            updated_at = NOW()
+        WHERE item_code = $1
+        RETURNING item_code
+    `,
+
+    /**
+     * Check if price list item exists by item code
+     * Parameters: item_code
+     */
+    existsPriceListItemByCode: `
+        SELECT 1 FROM app.price_lists WHERE item_code = $1
+    `,
+
+    /**
+     * Check if price list item code exists in specific price list (excluding current item)
+     * Parameters: price_list_id, item_code, exclude_item_code
+     */
+    checkPriceListItemCodeExistsExcluding: `
+        SELECT 1 FROM app.price_lists
+        WHERE price_list_id = $1 AND item_code = $2 AND item_code != $3
     `
 };
 

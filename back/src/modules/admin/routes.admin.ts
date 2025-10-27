@@ -1,5 +1,5 @@
 /**
- * version: 1.0.11
+ * version: 1.0.12
  * Backend router file for admin functionality.
  * Defines routes for administrative functions focused on organization management.
  * All routes are protected by JWT validation and user status check middleware.
@@ -58,6 +58,7 @@ import updatePriceListController from './pricing/controller.admin.pricing.update
 import deletePriceListsController from './pricing/controller.admin.pricing.delete.pricelists';
 import createPriceListItemController from './pricing/controller.admin.create.pricelist.item';
 import deletePriceListItemsController from './pricing/controller.admin.delete.pricelist.items';
+import updatePriceListItemsController from './pricing/controller.admin.update.pricelist.items';
 import fetchPriceItemTypesController from './pricing/controller.admin.fetch.price.item.types';
 import registerUserController from '../account/controller.register.user';
 import fetchUserGroupsController from './org/userEditor/controller.fetch.user.groups';
@@ -135,6 +136,7 @@ router.post('/api/admin/pricing/pricelists/delete', checkRequestSecurityHard, va
 // Routes for Pricing Admin - Price List Items
 router.post('/api/admin/pricing/pricelists/:priceListId/createItem', checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, createPriceListItemController);
 router.post('/api/admin/pricing/pricelists/:priceListId/deleteItems', checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, deletePriceListItemsController);
+router.post('/api/admin/pricing/pricelists/:priceListId/updateItems', checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, updatePriceListItemsController);
 
 // Routes for Pricing Admin - Price Item Types
 router.get('/api/admin/pricing/item-types', checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, fetchPriceItemTypesController);

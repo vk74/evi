@@ -90,6 +90,7 @@
           "itemsTitle": "lines",
     "addRow": "add row",
     "saveItems": "save items",
+    "updateItems": "update items",
     "deleteSelected": "delete selected",
     "saveSuccess": {
       "single": "Item saved successfully",
@@ -131,6 +132,23 @@
       "apiFailed": "Failed to delete items from database",
       "multiple": "items failed to delete",
       "general": "Error occurred while deleting items"
+    },
+    "updateSuccess": {
+      "single": "Item updated successfully",
+      "multiple": "items updated successfully",
+      "apiItems": "items updated in database"
+    },
+    "updateWarning": {
+      "noChanges": "No changes to update",
+      "successPart": "items updated",
+      "failedPart": "items failed",
+      "apiErrors": "items failed to update in database"
+    },
+    "updateError": {
+      "noPriceListId": "No price list ID available for update",
+      "apiFailed": "Failed to update items in database",
+      "multiple": "items failed to update",
+      "general": "Error occurred while updating items"
     },
           "sections": {
             "details": "price list details"
