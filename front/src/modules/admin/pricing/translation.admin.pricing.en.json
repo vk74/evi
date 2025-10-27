@@ -123,7 +123,7 @@
             "selection": "select",
             "type": "type",
             "code": "code",
-            "productCode": "product code",
+            "itemCode": "item code",
             "name": "name",
             "productName": "product name",
             "price": "list price"

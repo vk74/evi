@@ -30,7 +30,7 @@ const uiStore = useUiStore()
 type EditorLine = {
   id: string
   itemType: string
-  productCode: string
+  itemCode: string
   itemName: string
   listPrice: number
 }
@@ -72,7 +72,7 @@ interface TableHeader {
 const headers = computed<TableHeader[]>(() => [
   { title: t('admin.pricing.priceLists.editor.headers.selection'), key: 'selection', width: '40px', sortable: false },
   { title: '№', key: 'rowNumber', width: '60px', sortable: false },
-  { title: t('admin.pricing.priceLists.editor.headers.productCode'), key: 'productCode', width: '200px', sortable: true },
+  { title: t('admin.pricing.priceLists.editor.headers.itemCode'), key: 'itemCode', width: '200px', sortable: true },
   { title: t('admin.pricing.priceLists.editor.headers.type'), key: 'itemType', width: '150px', sortable: true },
   { title: t('admin.pricing.priceLists.editor.headers.productName'), key: 'itemName', sortable: true },
   { title: t('admin.pricing.priceLists.editor.headers.price'), key: 'listPrice', width: '160px', sortable: true }
@@ -105,7 +105,7 @@ function addRow(): void {
   lines.value.push({
     id: `tmp_${Date.now()}`,
     itemType: defaultType,
-    productCode: '',
+    itemCode: '',
     itemName: '',
     listPrice: 0
   })
@@ -204,7 +204,7 @@ const loadExistingItems = () => {
     const existingLines: EditorLine[] = pricingStore.editingPriceListData.items.map(item => ({
       id: item.item_id.toString(),
       itemType: item.item_type,
-      productCode: item.item_code,
+      itemCode: item.item_code,
       itemName: item.item_name,
       listPrice: item.list_price
     }))
@@ -238,7 +238,7 @@ const saveAllItems = async () => {
     for (const item of newItems) {
       const request: CreatePriceListItemRequest = {
         item_type: item.itemType,
-        item_code: item.productCode,
+        item_code: item.itemCode,
         item_name: item.itemName,
         list_price: item.listPrice,
         wholesale_price: null
@@ -373,10 +373,10 @@ const saveAllItems = async () => {
           <span class="row-number">{{ (page - 1) * itemsPerPage + index + 1 }}</span>
         </template>
 
-        <!-- Product Code - editable -->
-        <template #[`item.productCode`]="{ item }">
+        <!-- Item Code - editable -->
+        <template #[`item.itemCode`]="{ item }">
           <v-text-field 
-            v-model="item.productCode" 
+            v-model="item.itemCode" 
             density="compact" 
             variant="plain" 
             hide-details 
