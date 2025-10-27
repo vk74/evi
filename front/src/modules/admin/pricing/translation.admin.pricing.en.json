@@ -108,6 +108,30 @@
     "saveInfo": {
       "noItems": "No new items to save"
     },
+    "deleteConfirmation": {
+      "title": "Delete Selected Items",
+      "message": "Are you sure you want to delete {count} selected item(s)?",
+      "warning": "This action cannot be undone.",
+      "cancel": "Cancel",
+      "confirm": "Delete"
+    },
+    "deleteSuccess": {
+      "single": "Item deleted successfully",
+      "multiple": "items deleted successfully",
+      "apiItems": "items deleted from database"
+    },
+    "deleteWarning": {
+      "noSelection": "No items selected for deletion",
+      "successPart": "items deleted",
+      "failedPart": "items failed",
+      "apiErrors": "items failed to delete from database"
+    },
+    "deleteError": {
+      "noPriceListId": "No price list ID available for deletion",
+      "apiFailed": "Failed to delete items from database",
+      "multiple": "items failed to delete",
+      "general": "Error occurred while deleting items"
+    },
           "sections": {
             "details": "price list details"
           },

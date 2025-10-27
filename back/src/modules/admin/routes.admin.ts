@@ -57,6 +57,7 @@ import createPriceListController from './pricing/controller.admin.pricing.create
 import updatePriceListController from './pricing/controller.admin.pricing.update.pricelist';
 import deletePriceListsController from './pricing/controller.admin.pricing.delete.pricelists';
 import createPriceListItemController from './pricing/controller.admin.create.pricelist.item';
+import deletePriceListItemsController from './pricing/controller.admin.delete.pricelist.items';
 import fetchPriceItemTypesController from './pricing/controller.admin.fetch.price.item.types';
 import registerUserController from '../account/controller.register.user';
 import fetchUserGroupsController from './org/userEditor/controller.fetch.user.groups';
@@ -133,6 +134,7 @@ router.post('/api/admin/pricing/pricelists/delete', checkRequestSecurityHard, va
 
 // Routes for Pricing Admin - Price List Items
 router.post('/api/admin/pricing/pricelists/:priceListId/createItem', checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, createPriceListItemController);
+router.post('/api/admin/pricing/pricelists/:priceListId/deleteItems', checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, deletePriceListItemsController);
 
 // Routes for Pricing Admin - Price Item Types
 router.get('/api/admin/pricing/item-types', checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, fetchPriceItemTypesController);

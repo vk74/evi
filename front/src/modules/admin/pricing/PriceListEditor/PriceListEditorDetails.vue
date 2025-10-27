@@ -11,7 +11,9 @@ import { useUiStore } from '@/core/state/uistate'
 import Paginator from '@/core/ui/paginator/Paginator.vue'
 import { fetchPriceItemTypesService } from './service.admin.fetch.price.item.types'
 import { createPriceListItemService } from './service.admin.create.pricelist.item'
-import { PriceItemType, CreatePriceListItemRequest } from '../types.pricing.admin'
+import { deletePriceListItemsService } from './service.admin.delete.pricelist.items'
+import { fetchPriceListService } from './service.admin.fetch.pricelist'
+import { PriceItemType, CreatePriceListItemRequest, DeletePriceListItemsRequest } from '../types.pricing.admin'
 import {
   PhArrowClockwise,
   PhPlus,
@@ -46,6 +48,10 @@ const isLoadingTypes = ref<boolean>(false)
 
 // Save state
 const isSaving = ref<boolean>(false)
+
+// Delete state
+const isDeleting = ref<boolean>(false)
+const showDeleteConfirmation = ref<boolean>(false)
 
 // Search state
 const searchQuery = ref<string>('')
@@ -112,8 +118,166 @@ function addRow(): void {
 }
 
 function deleteSelected(): void {
-  lines.value = lines.value.filter(l => !selectedLines.value.has(l.id))
-  selectedLines.value.clear()
+  if (selectedLines.value.size === 0) {
+    uiStore.showWarningSnackbar(t('admin.pricing.priceLists.editor.deleteWarning.noSelection'))
+    return
+  }
+  
+  showDeleteConfirmation.value = true
+}
+
+// Confirm deletion function
+const confirmDeleteSelected = async (): Promise<void> => {
+  if (!pricingStore.editingPriceListId) {
+    console.error('No price list ID available for deletion')
+    uiStore.showErrorSnackbar(t('admin.pricing.priceLists.editor.deleteError.noPriceListId'))
+    return
+  }
+
+  const selectedItems = Array.from(selectedLines.value)
+  
+  // Separate unsaved items (with tmp_ prefix) from saved items
+  const unsavedItemIds = selectedItems.filter(id => id.startsWith('tmp_'))
+  const savedItemCodes = selectedItems
+    .filter(id => !id.startsWith('tmp_'))
+    .map(id => {
+      const line = lines.value.find(l => l.id === id)
+      return line?.itemCode || ''
+    })
+    .filter(code => code.trim() !== '')
+
+  try {
+    isDeleting.value = true
+    let apiDeleted = 0
+    let apiErrors = 0
+    let localDeleted = 0
+
+    // 1. Remove unsaved items from local state (no API call needed)
+    if (unsavedItemIds.length > 0) {
+      lines.value = lines.value.filter(l => !unsavedItemIds.includes(l.id))
+      localDeleted = unsavedItemIds.length
+      console.log(`[Delete Items] Removed ${localDeleted} unsaved items from local state`)
+    }
+
+    // 2. Delete saved items from database
+    if (savedItemCodes.length > 0) {
+      const deleteRequest: DeletePriceListItemsRequest = {
+        itemCodes: savedItemCodes
+      }
+
+      const result = await deletePriceListItemsService.deletePriceListItems(
+        parseInt(pricingStore.editingPriceListId), 
+        deleteRequest
+      )
+      
+      if (result.success && result.data) {
+        apiDeleted = result.data.totalDeleted
+        apiErrors = result.data.totalErrors
+        
+        // Log toast messages to browser console
+        console.log(`[Delete Items] API Result: ${result.message}`)
+        console.log(`[Delete Items] Deleted: ${apiDeleted}, Errors: ${apiErrors}`)
+        console.log(`[Delete Items] Deleted Item Codes: ${result.data.deletedItems.join(', ')}`)
+        if (result.data.errorItems.length > 0) {
+          console.log(`[Delete Items] Error Item Codes: ${result.data.errorItems.join(', ')}`)
+        }
+        
+        // Remove successfully deleted items from local state
+        if (result.data.deletedItems.length > 0) {
+          lines.value = lines.value.filter(line => !result.data!.deletedItems.includes(line.itemCode))
+          console.log(`[Delete Items] Removed ${result.data.deletedItems.length} successfully deleted items from local state`)
+        }
+        
+        if (apiDeleted > 0) {
+          uiStore.showSuccessSnackbar(`${apiDeleted} ${t('admin.pricing.priceLists.editor.deleteSuccess.apiItems')}`)
+        }
+        
+        if (apiErrors > 0) {
+          uiStore.showWarningSnackbar(`${apiErrors} ${t('admin.pricing.priceLists.editor.deleteWarning.apiErrors')}`)
+        }
+      } else {
+        apiErrors = savedItemCodes.length
+        uiStore.showErrorSnackbar(`${t('admin.pricing.priceLists.editor.deleteError.apiFailed')}: ${result.message}`)
+        console.error('[Delete Items] API Error:', result.message)
+      }
+    }
+
+    // Clear selections
+    selectedLines.value.clear()
+    
+    // Calculate totals
+    const totalDeleted = apiDeleted + localDeleted
+    const totalErrors = apiErrors
+    
+    // Show final summary
+    if (totalDeleted > 0 && totalErrors === 0) {
+      const message = totalDeleted === 1 
+        ? t('admin.pricing.priceLists.editor.deleteSuccess.single')
+        : `${totalDeleted} ${t('admin.pricing.priceLists.editor.deleteSuccess.multiple')}`
+      uiStore.showSuccessSnackbar(message)
+      console.log(`[Delete Items] Final Success: ${message}`)
+    } else if (totalDeleted > 0 && totalErrors > 0) {
+      const message = `${totalDeleted} ${t('admin.pricing.priceLists.editor.deleteWarning.successPart')}, ${totalErrors} ${t('admin.pricing.priceLists.editor.deleteWarning.failedPart')}`
+      uiStore.showWarningSnackbar(message)
+      console.log(`[Delete Items] Final Warning: ${message}`)
+    } else if (totalErrors > 0) {
+      const message = `${totalErrors} ${t('admin.pricing.priceLists.editor.deleteError.multiple')}`
+      uiStore.showErrorSnackbar(message)
+      console.log(`[Delete Items] Final Error: ${message}`)
+    }
+
+    // Refresh data from server only if there were errors
+    if (apiErrors > 0) {
+      await refreshDataFromServer()
+    }
+    
+  } catch (error) {
+    console.error('Error deleting items:', error)
+    uiStore.showErrorSnackbar(t('admin.pricing.priceLists.editor.deleteError.general'))
+    console.error('[Delete Items] General Error:', error)
+  } finally {
+    isDeleting.value = false
+    showDeleteConfirmation.value = false
+  }
+}
+
+// Cancel deletion function
+const cancelDeleteSelected = (): void => {
+  showDeleteConfirmation.value = false
+}
+
+// Refresh data from server function
+const refreshDataFromServer = async (): Promise<void> => {
+  if (!pricingStore.editingPriceListId) {
+    console.error('No price list ID available for refresh')
+    return
+  }
+
+  try {
+    // Clear current data first
+    lines.value = []
+    selectedLines.value.clear()
+    
+    const result = await fetchPriceListService.fetchPriceListById(parseInt(pricingStore.editingPriceListId))
+    
+    if (result.success && result.data?.items) {
+      // Convert existing items to EditorLine format
+      const existingLines: EditorLine[] = result.data.items.map(item => ({
+        id: item.item_id.toString(),
+        itemType: item.item_type,
+        itemCode: item.item_code,
+        itemName: item.item_name,
+        listPrice: item.list_price
+      }))
+      
+      lines.value = existingLines
+      console.log(`[Refresh Data] Loaded ${existingLines.length} items from server`)
+    } else {
+      console.error('Failed to refresh data:', result.message)
+    }
+  } catch (error) {
+    console.error('Error refreshing data:', error)
+  }
 }
 
 // Selection handlers
@@ -144,8 +308,7 @@ const handleSearchKeydown = (event: KeyboardEvent) => {
 }
 
 function refreshData(): void {
-  // Placeholder for refresh functionality
-  console.log('Refreshing price list data...')
+  refreshDataFromServer()
 }
 
 // Pagination handlers
@@ -512,6 +675,7 @@ const saveAllItems = async () => {
           variant="outlined"
           class="mb-3"
           :disabled="!hasSelected"
+          :loading="isDeleting"
           @click="deleteSelected"
         >
           <template #prepend>
@@ -523,6 +687,42 @@ const saveAllItems = async () => {
       </div>
     </div>
   </div>
+
+  <!-- Delete Confirmation Dialog -->
+  <v-dialog v-model="showDeleteConfirmation" max-width="500px" @click:outside="cancelDeleteSelected">
+    <v-card>
+      <v-card-title class="text-h5">
+        {{ t('admin.pricing.priceLists.editor.deleteConfirmation.title') }}
+      </v-card-title>
+      
+      <v-card-text>
+        <p>{{ t('admin.pricing.priceLists.editor.deleteConfirmation.message', { count: selectedCount }) }}</p>
+        <p class="text-caption text-medium-emphasis mt-2">
+          {{ t('admin.pricing.priceLists.editor.deleteConfirmation.warning') }}
+        </p>
+      </v-card-text>
+      
+      <v-card-actions>
+        <v-spacer></v-spacer>
+        <v-btn
+          color="grey"
+          variant="text"
+          :disabled="isDeleting"
+          @click="cancelDeleteSelected"
+        >
+          {{ t('admin.pricing.priceLists.editor.deleteConfirmation.cancel') }}
+        </v-btn>
+        <v-btn
+          color="error"
+          variant="flat"
+          :loading="isDeleting"
+          @click="confirmDeleteSelected"
+        >
+          {{ t('admin.pricing.priceLists.editor.deleteConfirmation.confirm') }}
+        </v-btn>
+      </v-card-actions>
+    </v-card>
+  </v-dialog>
 </template>
 
 <style scoped>

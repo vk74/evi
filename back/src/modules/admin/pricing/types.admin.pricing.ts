@@ -205,4 +205,25 @@ export interface FetchPriceItemTypesResponse {
     }
 }
 
+// ============================================
+// Price List Items - Delete Types
+// ============================================
+
+// Request for deleting price list items
+export interface DeletePriceListItemsRequest {
+    itemCodes: string[]
+}
+
+// Response for delete price list items
+export interface DeletePriceListItemsResponse {
+    success: boolean
+    message: string
+    data?: {
+        totalDeleted: number
+        totalErrors: number
+        deletedItems: string[]
+        errorItems: string[]
+    }
+}
+
 

@@ -305,6 +305,25 @@ export const queries = {
     existsPriceItemType: `
         SELECT 1 FROM app.price_item_types
         WHERE type_code = $1 AND is_active = true
+    `,
+
+    /**
+     * Delete price list items by item codes
+     * Parameters: item_codes array
+     */
+    deletePriceListItems: `
+        DELETE FROM app.price_lists
+        WHERE item_code = ANY($1)
+        RETURNING item_code
+    `,
+
+    /**
+     * Check if price list items exist by item codes
+     * Parameters: item_codes array
+     */
+    checkPriceListItemsExist: `
+        SELECT item_code FROM app.price_lists
+        WHERE item_code = ANY($1)
     `
 };
 

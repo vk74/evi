@@ -239,3 +239,24 @@ export interface FetchPriceListItemsResult {
   }
 }
 
+// ============================================
+// Price List Items - Delete Types
+// ============================================
+
+// Delete price list items request
+export interface DeletePriceListItemsRequest {
+  itemCodes: string[]
+}
+
+// Delete price list items result
+export interface DeletePriceListItemsResult {
+  success: boolean
+  message: string
+  data?: {
+    totalDeleted: number
+    totalErrors: number
+    deletedItems: string[]
+    errorItems: string[]
+  }
+}
+

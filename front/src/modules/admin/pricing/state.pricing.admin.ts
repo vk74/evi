@@ -153,6 +153,6 @@ export const usePricingAdminStore = defineStore('pricingAdmin', {
     }
   },
 
-  persist: true
+  // No persistence - always reload from server
 })
 

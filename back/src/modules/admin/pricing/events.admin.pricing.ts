@@ -567,6 +567,53 @@ export const EVENTS_ADMIN_PRICING: EventCollection = {
     severity: 'error',
     eventMessage: 'Error during price item types fetch operation',
     version: '1.0.0'
+  },
+
+  // ========== Price List Items - Delete Events ==========
+  
+  'pricelist.items.delete.success': {
+    eventName: 'adminPricing.pricelist.items.delete.success',
+    source: 'admin-pricing',
+    eventType: 'system',
+    severity: 'info',
+    eventMessage: 'Price list items deleted successfully',
+    version: '1.0.0'
+  },
+
+  'pricelist.items.delete.validation.error': {
+    eventName: 'adminPricing.pricelist.items.delete.validation.error',
+    source: 'admin-pricing',
+    eventType: 'system',
+    severity: 'error',
+    eventMessage: 'Validation error deleting price list items',
+    version: '1.0.0'
+  },
+
+  'pricelist.items.delete.not_found': {
+    eventName: 'adminPricing.pricelist.items.delete.not_found',
+    source: 'admin-pricing',
+    eventType: 'system',
+    severity: 'warning',
+    eventMessage: 'Some price list items not found for deletion',
+    version: '1.0.0'
+  },
+
+  'pricelist.items.delete.database_error': {
+    eventName: 'adminPricing.pricelist.items.delete.database_error',
+    source: 'admin-pricing',
+    eventType: 'system',
+    severity: 'error',
+    eventMessage: 'Database error deleting price list items',
+    version: '1.0.0'
+  },
+
+  'pricelist.items.delete.error': {
+    eventName: 'adminPricing.pricelist.items.delete.error',
+    source: 'admin-pricing',
+    eventType: 'system',
+    severity: 'error',
+    eventMessage: 'Error during price list items deletion operation',
+    version: '1.0.0'
   }
 }
 
