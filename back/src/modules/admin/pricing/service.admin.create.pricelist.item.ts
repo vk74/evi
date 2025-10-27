@@ -39,7 +39,8 @@ const pool = pgPool as Pool;
 export async function createPriceListItem(
     priceListId: number,
     data: CreatePriceListItemRequest,
-    req: Request
+    req: Request,
+    userUuid: string | null
 ): Promise<CreatePriceListItemResponse> {
     const client = await pool.connect();
     
@@ -50,7 +51,12 @@ export async function createPriceListItem(
         if (!priceListId || isNaN(priceListId) || priceListId < 1) {
             createAndPublishEvent({
                 eventName: EVENTS_ADMIN_PRICING['pricelist.items.create.validation.error'].eventName,
-                payload: { priceListId, error: 'Invalid price list ID' }
+                req: req,
+                payload: { 
+                    priceListId, 
+                    userUuid,
+                    error: 'Invalid price list ID' 
+                }
             });
             return {
                 success: false,
@@ -62,7 +68,12 @@ export async function createPriceListItem(
         if (!data.item_type || !data.item_code || !data.item_name || data.list_price === undefined) {
             createAndPublishEvent({
                 eventName: EVENTS_ADMIN_PRICING['pricelist.items.create.validation.error'].eventName,
-                payload: { priceListId, error: 'Missing required fields' }
+                req: req,
+                payload: { 
+                    priceListId, 
+                    userUuid,
+                    error: 'Missing required fields' 
+                }
             });
             return {
                 success: false,
@@ -74,7 +85,12 @@ export async function createPriceListItem(
         if (typeof data.item_type !== 'string' || data.item_type.trim() === '') {
             createAndPublishEvent({
                 eventName: EVENTS_ADMIN_PRICING['pricelist.items.create.validation.error'].eventName,
-                payload: { priceListId, error: 'Invalid item_type format' }
+                req: req,
+                payload: { 
+                    priceListId, 
+                    userUuid,
+                    error: 'Invalid item_type format' 
+                }
             });
             return {
                 success: false,
@@ -85,7 +101,12 @@ export async function createPriceListItem(
         if (typeof data.item_code !== 'string' || data.item_code.trim() === '') {
             createAndPublishEvent({
                 eventName: EVENTS_ADMIN_PRICING['pricelist.items.create.validation.error'].eventName,
-                payload: { priceListId, error: 'Invalid item_code format' }
+                req: req,
+                payload: { 
+                    priceListId, 
+                    userUuid,
+                    error: 'Invalid item_code format' 
+                }
             });
             return {
                 success: false,
@@ -96,7 +117,12 @@ export async function createPriceListItem(
         if (typeof data.item_name !== 'string' || data.item_name.trim() === '') {
             createAndPublishEvent({
                 eventName: EVENTS_ADMIN_PRICING['pricelist.items.create.validation.error'].eventName,
-                payload: { priceListId, error: 'Invalid item_name format' }
+                req: req,
+                payload: { 
+                    priceListId, 
+                    userUuid,
+                    error: 'Invalid item_name format' 
+                }
             });
             return {
                 success: false,
@@ -107,7 +133,12 @@ export async function createPriceListItem(
         if (typeof data.list_price !== 'number' || isNaN(data.list_price)) {
             createAndPublishEvent({
                 eventName: EVENTS_ADMIN_PRICING['pricelist.items.create.validation.error'].eventName,
-                payload: { priceListId, error: 'Invalid list_price format' }
+                req: req,
+                payload: { 
+                    priceListId, 
+                    userUuid,
+                    error: 'Invalid list_price format' 
+                }
             });
             return {
                 success: false,
@@ -119,7 +150,12 @@ export async function createPriceListItem(
             (typeof data.wholesale_price !== 'number' || isNaN(data.wholesale_price))) {
             createAndPublishEvent({
                 eventName: EVENTS_ADMIN_PRICING['pricelist.items.create.validation.error'].eventName,
-                payload: { priceListId, error: 'Invalid wholesale_price format' }
+                req: req,
+                payload: { 
+                    priceListId, 
+                    userUuid,
+                    error: 'Invalid wholesale_price format' 
+                }
             });
             return {
                 success: false,
@@ -131,7 +167,12 @@ export async function createPriceListItem(
         if (data.list_price < 0 || (data.wholesale_price !== null && data.wholesale_price !== undefined && data.wholesale_price < 0)) {
             createAndPublishEvent({
                 eventName: EVENTS_ADMIN_PRICING['pricelist.items.create.validation.error'].eventName,
-                payload: { priceListId, error: 'Invalid price values' }
+                req: req,
+                payload: { 
+                    priceListId, 
+                    userUuid,
+                    error: 'Invalid price values' 
+                }
             });
             return {
                 success: false,
@@ -144,7 +185,11 @@ export async function createPriceListItem(
         if (priceListExists.rowCount === 0) {
             createAndPublishEvent({
                 eventName: EVENTS_ADMIN_PRICING['pricelist.items.create.not_found'].eventName,
-                payload: { priceListId }
+                req: req,
+                payload: { 
+                    priceListId,
+                    userUuid,
+                }
             });
             return {
                 success: false,
@@ -157,7 +202,12 @@ export async function createPriceListItem(
         if (itemTypeExists.rowCount === 0) {
             createAndPublishEvent({
                 eventName: EVENTS_ADMIN_PRICING['pricelist.items.create.type.not_found'].eventName,
-                payload: { priceListId, itemType: data.item_type }
+                req: req,
+                payload: { 
+                    priceListId, 
+                    userUuid,
+                    itemType: data.item_type 
+                }
             });
             return {
                 success: false,
@@ -170,7 +220,12 @@ export async function createPriceListItem(
         if (codeExists.rowCount && codeExists.rowCount > 0) {
             createAndPublishEvent({
                 eventName: EVENTS_ADMIN_PRICING['pricelist.items.create.code.duplicate'].eventName,
-                payload: { priceListId, itemCode: data.item_code }
+                req: req,
+                payload: { 
+                    priceListId, 
+                    userUuid,
+                    itemCode: data.item_code 
+                }
             });
             return {
                 success: false,
@@ -227,8 +282,10 @@ export async function createPriceListItem(
         // Publish success event
         createAndPublishEvent({
             eventName: EVENTS_ADMIN_PRICING['pricelist.items.create.success'].eventName,
+            req: req,
             payload: {
                 priceListId,
+                userUuid,
                 itemId,
                 itemCode: data.item_code,
                 itemName: data.item_name
@@ -249,8 +306,10 @@ export async function createPriceListItem(
         // Publish error event
         createAndPublishEvent({
             eventName: EVENTS_ADMIN_PRICING['pricelist.items.create.database_error'].eventName,
+            req: req,
             payload: {
                 priceListId,
+                userUuid,
                 error: error instanceof Error ? error.message : String(error)
             },
             errorData: error instanceof Error ? error.message : String(error)

@@ -13,6 +13,7 @@
 import { Request, Response } from 'express';
 import { createPriceListItem } from './service.admin.create.pricelist.item';
 import { connectionHandler } from '@/core/helpers/connection.handler';
+import { getRequestorUuidFromReq } from '@/core/helpers/get.requestor.uuid.from.req';
 import type { CreatePriceListItemRequest } from './types.admin.pricing';
 
 /**
@@ -29,6 +30,7 @@ async function createPriceListItemLogic(req: Request, res: Response): Promise<an
 
     // Extract request body
     const body = req.body as CreatePriceListItemRequest;
+    const userUuid = getRequestorUuidFromReq(req);
 
     // Basic HTTP request validation only
     if (!body || typeof body !== 'object') {
@@ -39,7 +41,7 @@ async function createPriceListItemLogic(req: Request, res: Response): Promise<an
     }
 
     // Create price list item
-    const result = await createPriceListItem(priceListId, body, req);
+    const result = await createPriceListItem(priceListId, body, req, userUuid);
 
     return result;
 }

@@ -27,23 +27,28 @@ import type { DeletePriceListItemsRequest, DeletePriceListItemsResponse } from '
  * @param req - Express request object
  * @param priceListId - ID of the price list
  * @param request - Delete request data
+ * @param userUuid - UUID of the user making the request
  * @returns Promise<DeletePriceListItemsResponse> - Deletion result
  */
 export async function deletePriceListItemsService(
   pool: Pool,
   req: Request,
   priceListId: number,
-  request: DeletePriceListItemsRequest
+  request: DeletePriceListItemsRequest,
+  userUuid: string | null
 ): Promise<DeletePriceListItemsResponse> {
   const client: PoolClient = await pool.connect()
   
   try {
+
     // Validate price list ID
     if (!priceListId || isNaN(priceListId) || priceListId < 1) {
       await fabricEvents.createAndPublishEvent({
         eventName: EVENTS_ADMIN_PRICING['pricelist.items.delete.validation.error'].eventName,
+        req: req,
         payload: {
           priceListId,
+          userUuid,
           itemCodes: request.itemCodes,
           error: 'Invalid price list ID'
         }
@@ -65,8 +70,10 @@ export async function deletePriceListItemsService(
     if (!request.itemCodes || !Array.isArray(request.itemCodes) || request.itemCodes.length === 0) {
       await fabricEvents.createAndPublishEvent({
         eventName: EVENTS_ADMIN_PRICING['pricelist.items.delete.validation.error'].eventName,
+        req: req,
         payload: {
           priceListId,
+          userUuid,
           itemCodes: request.itemCodes,
           error: 'No item codes provided'
         }
@@ -89,8 +96,10 @@ export async function deletePriceListItemsService(
     if (invalidCodes.length > 0) {
       await fabricEvents.createAndPublishEvent({
         eventName: EVENTS_ADMIN_PRICING['pricelist.items.delete.validation.error'].eventName,
+        req: req,
         payload: {
           priceListId,
+          userUuid,
           itemCodes: request.itemCodes,
           invalidCodes,
           error: 'Invalid item codes found'
@@ -129,8 +138,10 @@ export async function deletePriceListItemsService(
       // Generate success event
       await fabricEvents.createAndPublishEvent({
         eventName: EVENTS_ADMIN_PRICING['pricelist.items.delete.success'].eventName,
+        req: req,
         payload: {
           priceListId,
+          userUuid,
           totalRequested: request.itemCodes.length,
           totalDeleted: deletedItemCodes.length,
           totalNotFound: notFoundItemCodes.length,
@@ -168,8 +179,10 @@ export async function deletePriceListItemsService(
       
       await fabricEvents.createAndPublishEvent({
         eventName: EVENTS_ADMIN_PRICING['pricelist.items.delete.database_error'].eventName,
+        req: req,
         payload: {
           priceListId,
+          userUuid,
           itemCodes: request.itemCodes,
           error: error instanceof Error ? error.message : 'Unknown database error'
         }
@@ -190,8 +203,10 @@ export async function deletePriceListItemsService(
   } catch (error) {
     await fabricEvents.createAndPublishEvent({
       eventName: EVENTS_ADMIN_PRICING['pricelist.items.delete.error'].eventName,
+      req: req,
       payload: {
         priceListId,
+        userUuid,
         itemCodes: request.itemCodes,
         error: error instanceof Error ? error.message : 'Unknown error'
       }
