@@ -1,5 +1,5 @@
 /**
- * version: 1.2.2
+ * version: 1.2.3
  * Event reference catalog for admin pricing operations (backend).
  * Defines events for pricing management operations (currencies and price lists).
  * File: events.admin.pricing.ts (backend)
@@ -472,6 +472,35 @@ export const EVENTS_ADMIN_PRICING: EventCollection = {
     eventType: 'system',
     severity: 'error',
     eventMessage: 'Error during price list deletion operation',
+    version: '1.0.0'
+  },
+
+  // ========== Price Lists - Partition Deletion Events ==========
+  
+  'pricelists.delete.partition.success': {
+    eventName: 'adminPricing.pricelists.delete.partition.success',
+    source: 'admin-pricing',
+    eventType: 'system',
+    severity: 'info',
+    eventMessage: 'Price list partition deleted successfully',
+    version: '1.0.0'
+  },
+
+  'pricelists.delete.partition.error': {
+    eventName: 'adminPricing.pricelists.delete.partition.error',
+    source: 'admin-pricing',
+    eventType: 'system',
+    severity: 'error',
+    eventMessage: 'Error deleting price list partition',
+    version: '1.0.0'
+  },
+
+  'pricelists.delete.partition.not_found': {
+    eventName: 'adminPricing.pricelists.delete.partition.not_found',
+    source: 'admin-pricing',
+    eventType: 'system',
+    severity: 'debug',
+    eventMessage: 'Price list partition not found (already deleted)',
     version: '1.0.0'
   },
 

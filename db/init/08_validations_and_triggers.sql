@@ -1,4 +1,4 @@
--- Version: 1.0.0
+-- Version: 1.1.0
 -- Description: Database validation functions and triggers for business logic enforcement.
 -- Backend file: 08_validations_and_triggers.sql
 -- 
@@ -132,6 +132,41 @@ DO $$ BEGIN
       AFTER INSERT ON app.price_lists_info
       FOR EACH ROW
       EXECUTE FUNCTION app.create_price_list_partition();
+EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+
+-- ============================================
+-- Pricing: Automatic partition deletion
+-- ============================================
+
+CREATE OR REPLACE FUNCTION app.drop_price_list_partition()
+RETURNS TRIGGER
+LANGUAGE plpgsql
+SECURITY DEFINER
+AS $$
+BEGIN
+    -- Drop partition for the deleted price list
+    -- Use IF EXISTS to avoid errors if partition doesn't exist
+    EXECUTE format(
+        'DROP TABLE IF EXISTS app.price_lists_%s',
+        OLD.price_list_id
+    );
+    
+    RAISE NOTICE 'Dropped partition app.price_lists_% for price list % (ID: %)', 
+        OLD.price_list_id, OLD.name, OLD.price_list_id;
+    
+    RETURN OLD;
+END;
+$$;
+
+COMMENT ON FUNCTION app.drop_price_list_partition() IS 
+    'Automatically drops a partition when a price list is deleted from price_lists_info';
+
+-- Trigger to drop partition before deleting from price_lists_info
+DO $$ BEGIN
+  CREATE TRIGGER trg_drop_price_list_partition
+      BEFORE DELETE ON app.price_lists_info
+      FOR EACH ROW
+      EXECUTE FUNCTION app.drop_price_list_partition();
 EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
 

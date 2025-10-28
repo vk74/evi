@@ -1,13 +1,15 @@
 /**
- * version: 1.0.0
+ * version: 1.1.0
  * Service for deleting price lists.
  * Backend file that handles business logic for deleting price lists.
  * 
  * Functionality:
  * - Validates price list IDs
  * - Deletes price lists from database
+ * - Automatically deletes associated partitions via trigger
  * - Handles partial failures (some deleted, some failed)
  * - Returns deletion statistics
+ * - Publishes events for partition deletion tracking
  * 
  * File: service.admin.pricing.delete.pricelists.ts (backend)
  */
@@ -93,18 +95,28 @@ export async function deletePriceLists(
                     continue;
                 }
 
-                // Delete price list
+                // Delete price list (this will trigger partition deletion via database trigger)
                 const deleteResult = await pool.query(queries.deletePriceList, [priceListId]);
                 
                 if (deleteResult.rowCount && deleteResult.rowCount > 0) {
                     totalDeleted++;
                     
-                    // Publish success event
+                    // Publish success event for price list deletion
                     createAndPublishEvent({
                         eventName: EVENTS_ADMIN_PRICING['pricelists.delete.success'].eventName,
                         payload: {
                             priceListId,
                             name: checkResult.rows[0].name,
+                            requestor: requestorUuid
+                        }
+                    });
+
+                    // Publish success event for partition deletion (triggered automatically)
+                    createAndPublishEvent({
+                        eventName: EVENTS_ADMIN_PRICING['pricelists.delete.partition.success'].eventName,
+                        payload: {
+                            priceListId,
+                            partitionName: `price_lists_${priceListId}`,
                             requestor: requestorUuid
                         }
                     });
@@ -114,11 +126,23 @@ export async function deletePriceLists(
                 }
 
             } catch (error) {
-                // Publish error event
+                // Publish error event for price list deletion
                 createAndPublishEvent({
                     eventName: EVENTS_ADMIN_PRICING['pricelists.delete.database_error'].eventName,
                     payload: {
                         priceListId,
+                        error: error instanceof Error ? error.message : String(error),
+                        requestor: requestorUuid
+                    },
+                    errorData: error instanceof Error ? error.message : String(error)
+                });
+
+                // Publish error event for partition deletion
+                createAndPublishEvent({
+                    eventName: EVENTS_ADMIN_PRICING['pricelists.delete.partition.error'].eventName,
+                    payload: {
+                        priceListId,
+                        partitionName: `price_lists_${priceListId}`,
                         error: error instanceof Error ? error.message : String(error),
                         requestor: requestorUuid
                     },
