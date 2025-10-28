@@ -53,6 +53,7 @@ export async function deletePriceLists(
         if (!data.priceListIds || !Array.isArray(data.priceListIds) || data.priceListIds.length === 0) {
             createAndPublishEvent({
                 eventName: EVENTS_ADMIN_PRICING['pricelists.delete.validation.error'].eventName,
+                req: req,
                 payload: {
                     error: 'Price list IDs array is required and must not be empty',
                     requestor: requestorUuid
@@ -84,6 +85,7 @@ export async function deletePriceLists(
                 if (checkResult.rows.length === 0) {
                     createAndPublishEvent({
                         eventName: EVENTS_ADMIN_PRICING['pricelists.delete.not_found'].eventName,
+                        req: req,
                         payload: { 
                             priceListId,
                             requestor: requestorUuid
@@ -104,6 +106,7 @@ export async function deletePriceLists(
                     // Publish success event for price list deletion
                     createAndPublishEvent({
                         eventName: EVENTS_ADMIN_PRICING['pricelists.delete.success'].eventName,
+                        req: req,
                         payload: {
                             priceListId,
                             name: checkResult.rows[0].name,
@@ -114,6 +117,7 @@ export async function deletePriceLists(
                     // Publish success event for partition deletion (triggered automatically)
                     createAndPublishEvent({
                         eventName: EVENTS_ADMIN_PRICING['pricelists.delete.partition.success'].eventName,
+                        req: req,
                         payload: {
                             priceListId,
                             partitionName: `price_lists_${priceListId}`,
@@ -129,6 +133,7 @@ export async function deletePriceLists(
                 // Publish error event for price list deletion
                 createAndPublishEvent({
                     eventName: EVENTS_ADMIN_PRICING['pricelists.delete.database_error'].eventName,
+                    req: req,
                     payload: {
                         priceListId,
                         error: error instanceof Error ? error.message : String(error),
@@ -140,6 +145,7 @@ export async function deletePriceLists(
                 // Publish error event for partition deletion
                 createAndPublishEvent({
                     eventName: EVENTS_ADMIN_PRICING['pricelists.delete.partition.error'].eventName,
+                    req: req,
                     payload: {
                         priceListId,
                         partitionName: `price_lists_${priceListId}`,
@@ -177,6 +183,7 @@ export async function deletePriceLists(
         // Publish general error event
         createAndPublishEvent({
             eventName: EVENTS_ADMIN_PRICING['pricelists.delete.error'].eventName,
+            req: req,
             payload: {
                 error: error instanceof Error ? error.message : String(error)
             },

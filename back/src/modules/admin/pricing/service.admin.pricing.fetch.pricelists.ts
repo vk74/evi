@@ -216,6 +216,7 @@ export async function fetchAllPriceLists(
         // Publish success event
         createAndPublishEvent({
             eventName: EVENTS_ADMIN_PRICING['pricelists.fetchall.success'].eventName,
+            req: req,
             payload: {
                 totalItems,
                 page: params.page,
@@ -243,6 +244,7 @@ export async function fetchAllPriceLists(
         // Publish error event
         createAndPublishEvent({
             eventName: EVENTS_ADMIN_PRICING['pricelists.fetchall.database_error'].eventName,
+            req: req,
             payload: {
                 params,
                 error: error instanceof Error ? error.message : String(error)

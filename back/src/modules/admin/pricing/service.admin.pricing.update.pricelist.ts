@@ -58,6 +58,7 @@ async function validateUpdatePriceListData(
             
             createAndPublishEvent({
                 eventName: EVENTS_ADMIN_PRICING['pricelists.update.not_found'].eventName,
+                req: req,
                 payload: { priceListId: data.price_list_id }
             });
             
@@ -84,9 +85,10 @@ async function validateUpdatePriceListData(
                     
                     createAndPublishEvent({
                         eventName: EVENTS_ADMIN_PRICING['pricelists.update.name.duplicate'].eventName,
+                        req: req,
                         payload: { 
                             priceListId: data.price_list_id,
-                            name: data.name 
+                            name: data.name
                         }
                     });
                 }
@@ -114,6 +116,7 @@ async function validateUpdatePriceListData(
                     
                     createAndPublishEvent({
                         eventName: EVENTS_ADMIN_PRICING['pricelists.update.currency.not_found'].eventName,
+                        req: req,
                         payload: { currency_code: data.currency_code }
                     });
                 }
@@ -135,6 +138,7 @@ async function validateUpdatePriceListData(
             
             createAndPublishEvent({
                 eventName: EVENTS_ADMIN_PRICING['pricelists.update.owner.validation_error'].eventName,
+                req: req,
                 payload: { 
                     owner: data.owner,
                     error: ownerResult.error
@@ -181,6 +185,7 @@ export async function updatePriceList(
         if (validationErrors.length > 0) {
             createAndPublishEvent({
                 eventName: EVENTS_ADMIN_PRICING['pricelists.update.validation.error'].eventName,
+                req: req,
                 payload: {
                     errors: validationErrors,
                     priceListId: data.price_list_id
@@ -225,6 +230,7 @@ export async function updatePriceList(
         // Publish success event
         createAndPublishEvent({
             eventName: EVENTS_ADMIN_PRICING['pricelists.update.success'].eventName,
+            req: req,
             payload: {
                 priceListId: data.price_list_id,
                 name: priceList.name,
@@ -244,6 +250,7 @@ export async function updatePriceList(
         // Publish error event
         createAndPublishEvent({
             eventName: EVENTS_ADMIN_PRICING['pricelists.update.database_error'].eventName,
+            req: req,
             payload: {
                 priceListId: data.price_list_id,
                 error: error instanceof Error ? error.message : String(error)

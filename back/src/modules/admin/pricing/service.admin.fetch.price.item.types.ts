@@ -42,6 +42,7 @@ export async function fetchPriceItemTypes(
         // Publish success event
         createAndPublishEvent({
             eventName: EVENTS_ADMIN_PRICING['pricelist.item.types.fetch.success'].eventName,
+            req: req,
             payload: {
                 count: types.length
             }
@@ -58,6 +59,7 @@ export async function fetchPriceItemTypes(
         // Publish error event
         createAndPublishEvent({
             eventName: EVENTS_ADMIN_PRICING['pricelist.item.types.fetch.database_error'].eventName,
+            req: req,
             payload: {
                 error: error instanceof Error ? error.message : String(error)
             },

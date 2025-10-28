@@ -52,6 +52,7 @@ export async function fetchPriceList(
             // Publish not found event
             createAndPublishEvent({
                 eventName: EVENTS_ADMIN_PRICING['pricelists.fetch.not_found'].eventName,
+                req: req,
                 payload: { priceListId }
             });
 
@@ -70,6 +71,7 @@ export async function fetchPriceList(
         // Publish success event
         createAndPublishEvent({
             eventName: EVENTS_ADMIN_PRICING['pricelists.fetch.success'].eventName,
+            req: req,
             payload: {
                 priceListId,
                 name: priceList.name,
@@ -89,6 +91,7 @@ export async function fetchPriceList(
         // Publish error event
         createAndPublishEvent({
             eventName: EVENTS_ADMIN_PRICING['pricelists.fetch.database_error'].eventName,
+            req: req,
             payload: {
                 priceListId,
                 error: error instanceof Error ? error.message : String(error)

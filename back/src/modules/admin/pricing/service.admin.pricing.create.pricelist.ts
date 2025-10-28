@@ -56,6 +56,7 @@ async function validateCreatePriceListData(
                 
                 createAndPublishEvent({
                     eventName: EVENTS_ADMIN_PRICING['pricelists.create.name.duplicate'].eventName,
+                    req: req,
                     payload: { name: data.name }
                 });
             }
@@ -81,6 +82,7 @@ async function validateCreatePriceListData(
                 
                 createAndPublishEvent({
                     eventName: EVENTS_ADMIN_PRICING['pricelists.create.currency.not_found'].eventName,
+                    req: req,
                     payload: { currency_code: data.currency_code }
                 });
             }
@@ -101,6 +103,7 @@ async function validateCreatePriceListData(
             
             createAndPublishEvent({
                 eventName: EVENTS_ADMIN_PRICING['pricelists.create.owner.validation_error'].eventName,
+                req: req,
                 payload: { 
                     owner: data.owner,
                     error: ownerResult.error
@@ -147,6 +150,7 @@ export async function createPriceList(
         if (validationErrors.length > 0) {
             createAndPublishEvent({
                 eventName: EVENTS_ADMIN_PRICING['pricelists.create.validation.error'].eventName,
+                req: req,
                 payload: {
                     errors: validationErrors,
                     name: data.name
@@ -188,6 +192,7 @@ export async function createPriceList(
         // Publish success event
         createAndPublishEvent({
             eventName: EVENTS_ADMIN_PRICING['pricelists.create.success'].eventName,
+            req: req,
             payload: {
                 priceListId: newPriceListId,
                 name: priceList.name,
@@ -208,6 +213,7 @@ export async function createPriceList(
         // Publish error event
         createAndPublishEvent({
             eventName: EVENTS_ADMIN_PRICING['pricelists.create.database_error'].eventName,
+            req: req,
             payload: {
                 name: data.name,
                 error: error instanceof Error ? error.message : String(error)
