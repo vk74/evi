@@ -220,7 +220,7 @@ const registerUser = async (req: EnhancedRequest, res: Response): Promise<void> 
         await pool.query('BEGIN');
 
         try {
-            // Вставка основных данных пользователя в app.users
+            // Вставка всех данных пользователя в app.users (объединенная таблица)
             const userResult: QueryResult = await pool.query(
                 userRegistrationQueries.insertUserWithNames.text,
                 [
@@ -231,21 +231,13 @@ const registerUser = async (req: EnhancedRequest, res: Response): Promise<void> 
                     surname,         // $5 (last_name)
                     null,            // $6 (middle_name)
                     false,           // $7 (is_staff)
-                    'active'         // $8 (account_status)
+                    'active',        // $8 (account_status)
+                    null,            // $9 (gender)
+                    normalizedPhone || null   // $10 (mobile_phone_number)
                 ]
             );
 
             const userId = userResult.rows[0].user_id;
-
-            // Вставка дополнительных данных в app.user_profiles
-            await pool.query(
-                userRegistrationQueries.insertAdminUserProfileWithoutNames.text,
-                [
-                    userId,          // $1
-                    null,            // $2 (gender)
-                    normalizedPhone || null,   // $3
-                ]
-            );
 
             await pool.query('COMMIT');
 

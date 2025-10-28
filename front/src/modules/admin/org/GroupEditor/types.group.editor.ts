@@ -148,7 +148,6 @@ export interface IGroupMember {
   middle_name: string          // Middle name
   last_name: string            // Last name
 
-  // Optional data from app.user_profiles
   mobile_phone_number?: string // Mobile phone
 }
 

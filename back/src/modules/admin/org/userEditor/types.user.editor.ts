@@ -39,14 +39,11 @@ export interface DbUser {
     middle_name: string | null // character varying(50)
     last_name: string        // character varying(50)
     created_at: Date         // timestamp with timezone
-}
-
-export interface DbUserProfile {
-    profile_id: string       // uuid PRIMARY KEY
-    user_id: string         // uuid FOREIGN KEY
+    is_active: boolean       // boolean
     mobile_phone_number: string | null  // character varying(15)
     gender: 'm' | 'f' | 'n' | null    // app.gender
 }
+
 
 /**
  * Update user account interface
@@ -62,7 +59,6 @@ export interface UpdateUserRequest {
     middle_name?: string
     last_name?: string
     
-    // Поля таблицы app.user_profiles
     mobile_phone_number?: string
     gender?: Gender
 }
@@ -79,7 +75,7 @@ export interface ApiResponse {
 export interface LoadUserResponse extends ApiResponse {
     data: {
         user: DbUser
-        profile: DbUserProfile
+        // profile field removed - all data is now in user
     }
 }
 
@@ -121,7 +117,7 @@ export interface ServiceError {
  * Create user interfaces
  */
 export interface CreateUserRequest {
-    // User table fields
+    // Basic user fields
     username: string
     password: string
     email: string
@@ -131,7 +127,7 @@ export interface CreateUserRequest {
     is_staff?: boolean
     account_status?: AccountStatus
   
-    // Profile table fields
+    // Profile fields (now part of users table)
     gender?: 'm' | 'f' | 'n'
     mobile_phone_number?: string
 }

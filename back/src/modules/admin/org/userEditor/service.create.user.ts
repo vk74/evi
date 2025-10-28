@@ -302,7 +302,7 @@ export async function createUser(userData: CreateUserRequest, req: Request): Pro
     // Start transaction
     await client.query('BEGIN');
 
-    // Create user
+    // Create user (now includes profile data)
     const userResult = await client.query(
         queries.insertUser.text,
       [
@@ -313,21 +313,13 @@ export async function createUser(userData: CreateUserRequest, req: Request): Pro
         trimmedData.last_name,
         trimmedData.middle_name ? trimmedData.middle_name : null,
         typeof trimmedData.is_staff === 'boolean' ? trimmedData.is_staff : false,
-        trimmedData.account_status || 'active'
-      ]
-    );
-    
-    const userId = userResult.rows[0].user_id;
-
-    // Create user profile
-    await client.query(
-        queries.insertUserProfile.text,
-      [
-        userId,
+        trimmedData.account_status || 'active',
         trimmedData.gender ? trimmedData.gender : 'n',
         trimmedData.mobile_phone_number ? trimmedData.mobile_phone_number : null
       ]
     );
+    
+    const userId = userResult.rows[0].user_id;
 
     await client.query('COMMIT');
 

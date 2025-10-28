@@ -63,14 +63,6 @@ export const loadUserService = {
         throw new Error(errorMessage)
       }
 
-      // Check if user profile exists
-      if (!response.data.data?.profile) {
-        const errorMessage = 'User profile not found'
-        logger.error(errorMessage)
-        store.resetForm()
-        throw new Error(errorMessage)
-      }
-
       logger.info('Successfully received user data', {
         userId,
         username: response.data.data.user.username
@@ -78,8 +70,7 @@ export const loadUserService = {
 
       // Initialize edit mode
       store.initEditMode({
-        user: response.data.data.user,
-        profile: response.data.data.profile
+        user: response.data.data.user
       })
 
       logger.info('User data saved to store', { userId })

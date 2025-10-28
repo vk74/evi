@@ -42,7 +42,7 @@ export type EditMode = {
 export type EditorMode = CreateMode | EditMode
 
 /**
- * Interface for basic user information (app.users table)
+ * Interface for user information (app.users table)
  */
 export interface IUserAccount {
   user_id?: string                 // uuid, optional as it's generated during creation
@@ -56,17 +56,11 @@ export interface IUserAccount {
   middle_name: string              // character varying(50)
   last_name: string                // character varying(50)
   created_at?: Date                // timestamp with timezone
+  is_active?: boolean              // boolean
+  mobile_phone_number?: string     // character varying(15)
+  gender?: 'm' | 'f' | 'n'         // app.gender
 }
 
-/**
- * Interface for user profile (app.user_profiles table)
- */
-export interface IUserProfile {
-  profile_id?: string             // uuid
-  user_id?: string                // uuid link to app.users
-  mobile_phone_number: string     // character varying(15)
-  gender: 'm' | 'f' | 'n'        // app.gender
-}
 
 /**
  * Interface for UI state
@@ -161,7 +155,6 @@ export interface IApiResponse {
 export interface ILoadUserResponse extends IApiResponse {
   data: {
     user: IUserAccount;
-    profile: IUserProfile;
   };
 }
 
@@ -178,10 +171,8 @@ export interface IApiError {
 export interface UserEditorState {
   mode: EditorMode;
   account: IUserAccount;
-  profile: IUserProfile;
   originalData?: {
     account: IUserAccount;
-    profile: IUserProfile;
   };
   ui: IEditorUIState;
   groups: {

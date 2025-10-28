@@ -20,7 +20,7 @@ import { Request } from 'express';
 import { Pool } from 'pg';
 import { pool as pgPool } from '../../../../core/db/maindb';
 import { queries } from './queries.user.editor';
-import type { DbUser, DbUserProfile, LoadUserResponse, ServiceError } from './types.user.editor';
+import type { DbUser, LoadUserResponse, ServiceError } from './types.user.editor';
 import { getRequestorUuidFromReq } from '../../../../core/helpers/get.requestor.uuid.from.req';
 import fabricEvents from '../../../../core/eventBus/fabric.events';
 import { USER_LOAD_EVENTS } from './events.user.editor';
@@ -40,7 +40,7 @@ export async function loadUserById(userId: string, req: Request): Promise<LoadUs
         // Get the UUID of the user making the request
         const requestorUuid = getRequestorUuidFromReq(req);
         
-        // Get user account data
+        // Get user data (now includes all profile data)
         const userResult = await pool.query<DbUser>(queries.getUserById, [userId]);
         
         if (userResult.rows.length === 0) {
@@ -60,37 +60,12 @@ export async function loadUserById(userId: string, req: Request): Promise<LoadUs
             };
         }
 
-        // Get user profile data
-        const profileResult = await pool.query<DbUserProfile>(
-            queries.getUserProfileById, 
-            [userId]
-        );
-
-        if (profileResult.rows.length === 0) {
-            // Create and publish profile not found event
-            await fabricEvents.createAndPublishEvent({
-                req,
-                eventName: USER_LOAD_EVENTS.NOT_FOUND.eventName,
-                payload: {
-                    userId,
-                    requestorUuid,
-                    detail: 'User profile not found'
-                }
-            });
-            
-            throw {
-                code: 'NOT_FOUND',
-                message: 'User profile not found'
-            };
-        }
-
         // Combine data into response format
         const response: LoadUserResponse = {
             success: true,
             message: 'User data loaded successfully',
             data: {
-                user: userResult.rows[0],
-                profile: profileResult.rows[0]
+                user: userResult.rows[0] // All data is now in the user object
             }
         };
 

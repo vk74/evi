@@ -26,7 +26,6 @@ interface SQLQuery {
     
     // Create user operations
     insertUser: SQLQuery;
-    insertUserProfile: SQLQuery;
 
     // User groups (membership) helpers
     userGroupsWhereClause: string;
@@ -48,18 +47,20 @@ interface SQLQuery {
         first_name,
         middle_name,
         last_name,
-        created_at
+        created_at,
+        is_active,
+        mobile_phone_number,
+        gender
       FROM app.users
       WHERE user_id = $1::uuid
     `,
     
     getUserProfileById: `
       SELECT
-        profile_id,
         user_id,
         mobile_phone_number,
         gender
-      FROM app.user_profiles
+      FROM app.users
       WHERE user_id = $1::uuid
     `,
   
@@ -79,12 +80,12 @@ interface SQLQuery {
     `,
   
     updateUserProfileById: `
-      UPDATE app.user_profiles
+      UPDATE app.users
       SET
         mobile_phone_number = COALESCE($2, mobile_phone_number),
         gender = COALESCE($3, gender)
       WHERE user_id = $1::uuid
-      RETURNING *
+      RETURNING user_id, mobile_phone_number, gender
     `,
   
     // Validation queries
@@ -110,9 +111,9 @@ interface SQLQuery {
       name: 'check-phone',
       text: `
         SELECT user_id 
-        FROM app.user_profiles 
+        FROM app.users 
         WHERE mobile_phone_number = $1
-      `
+`
     },
   
     // Insert queries
@@ -128,26 +129,17 @@ interface SQLQuery {
           middle_name,
           is_staff,
           account_status,
-          created_at
+          created_at,
+          gender,
+          mobile_phone_number
         )
         VALUES (
-          $1, $2, $3, $4, $5, $6, $7, $8, CURRENT_TIMESTAMP
+          $1, $2, $3, $4, $5, $6, $7, $8, CURRENT_TIMESTAMP, $9, $10
         )
         RETURNING user_id
       `
     },
   
-    insertUserProfile: {
-      name: 'insert-user-profile',
-      text: `
-        INSERT INTO app.user_profiles (
-          user_id,
-          gender,
-          mobile_phone_number
-        )
-        VALUES ($1, $2, $3)
-      `
-    },
 
     // Common WHERE clause for fetching user group memberships with optional search
     userGroupsWhereClause: `

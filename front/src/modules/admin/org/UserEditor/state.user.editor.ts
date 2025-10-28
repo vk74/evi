@@ -15,7 +15,6 @@ import { defineStore } from 'pinia'
 import { Gender } from './types.user.editor'
 import type { 
   IUserAccount,
-  IUserProfile,
   IEditorUIState,
   ICreateUserRequest,
   IUpdateUserRequest, 
@@ -25,9 +24,9 @@ import type {
 } from './types.user.editor'
 
 /**
- * Initial values for account form
+ * Initial values for user
  */
-const initialAccountState: IUserAccount = {
+const initialUserState: IUserAccount = {
  username: '',
  email: '',
  password: '',
@@ -37,12 +36,7 @@ const initialAccountState: IUserAccount = {
  first_name: '',
  middle_name: '', //null,
  last_name: '',
-}
 
-/**
- * Initial values for profile form
- */
-const initialProfileState: IUserProfile = {
  mobile_phone_number: '', //null,
  gender: 'n' //null,
 }
@@ -63,8 +57,7 @@ const initialUIState: IEditorUIState = {
  */
 export const useUserEditorStore = defineStore('userEditor', {
   state: (): UserEditorState => ({
-    account: { ...initialAccountState },
-    profile: { ...initialProfileState },
+    account: { ...initialUserState },
     ui: { ...initialUIState },
     mode: {
       mode: 'create'
@@ -88,15 +81,9 @@ getters: {
 
     const changes: IUpdateUserRequestData = {}
 
-    const currentData = {
-      ...this.account,
-      ...this.profile
-    }
+    const currentData = this.account
 
-    const originalData = {
-      ...this.originalData.account,
-      ...this.originalData.profile
-    }
+    const originalData = this.originalData.account
 
     // Check each field and add only changed ones
     if (currentData.username !== originalData.username) {
@@ -148,24 +135,16 @@ getters: {
 
  actions: {
    /**
-    * Update account data
+    * Update user data
     */
-   updateAccount(data: Partial<IUserAccount>) {
-     console.log('Updating account data:', data)
+   updateUser(data: Partial<IUserAccount>) {
+     console.log('Updating user data:', data)
      this.account = { ...this.account, ...data }
-   },
-
-   /**
-    * Update profile data
-    */
-   updateProfile(data: Partial<IUserProfile>) {
-     console.log('Updating profile data:', data)
-     this.profile = { ...this.profile, ...data }
    },
 
 
   // Add new action
-  initEditMode(data: { user: IUserAccount; profile: IUserProfile }) {
+  initEditMode(data: { user: IUserAccount }) {
     console.log('Initializing edit mode with user data')
     
     // Set edit mode
@@ -176,13 +155,11 @@ getters: {
     
     // Save original data
     this.originalData = {
-      account: { ...data.user },
-      profile: { ...data.profile }
+      account: { ...data.user }
     }
     
-    // Update current data through existing actions
-    this.updateAccount(data.user)
-    this.updateProfile(data.profile)
+    // Update current data
+    this.account = { ...data.user }
   },
    
    /**
@@ -190,8 +167,7 @@ getters: {
     */
    resetForm() {
      console.log('Resetting form to initial state')
-     this.account = { ...initialAccountState }
-     this.profile = { ...initialProfileState }
+     this.account = { ...initialUserState }
      this.ui = { ...initialUIState }
    },
 
@@ -216,7 +192,7 @@ getters: {
     */
    prepareRequestData(): ICreateUserRequest {
      console.log('Preparing data for API request')
-     const { account, profile } = this
+     const { account } = this
      
      return {
        username: account.username,
@@ -227,8 +203,8 @@ getters: {
        first_name: account.first_name,
        last_name: account.last_name,
        middle_name: account.middle_name || '',
-      gender: profile.gender || 'n',
-      mobile_phone_number: profile.mobile_phone_number || ''
+       gender: account.gender || 'n',
+       mobile_phone_number: account.mobile_phone_number || ''
      }
    },
 

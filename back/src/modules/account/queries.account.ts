@@ -43,9 +43,9 @@ export const userRegistrationQueries = {
    */
   checkPhone: {
     text: `
-      SELECT up.user_id 
-      FROM app.user_profiles up
-      WHERE up.mobile_phone_number = $1
+      SELECT u.user_id 
+      FROM app.users u
+      WHERE u.mobile_phone_number = $1
     `,
     values: ['mobile_phone_number']
   },
@@ -63,9 +63,11 @@ export const userRegistrationQueries = {
         last_name, 
         middle_name, 
         is_staff, 
-        account_status
+        account_status,
+        gender,
+        mobile_phone_number
       ) 
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8) 
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) 
       RETURNING user_id
     `,
     values: [
@@ -76,29 +78,12 @@ export const userRegistrationQueries = {
       'last_name',     // $5
       'middle_name',   // $6
       'is_staff',      // $7
-      'account_status' // $8
+      'account_status', // $8
+      'gender',        // $9
+      'mobile_phone_number' // $10
     ]
   },
 
-  /**
-   * Insert user profile without names
-   * Creates a user profile record with additional information
-   */
-  insertAdminUserProfileWithoutNames: {
-    text: `
-      INSERT INTO app.user_profiles (
-        user_id, 
-        gender, 
-        mobile_phone_number
-      ) 
-      VALUES ($1, $2, $3)
-    `,
-    values: [
-      'user_id',      // $1
-      'gender',       // $2
-      'mobile_phone_number' // $3
-    ]
-  }
 };
 
 /**
@@ -113,18 +98,17 @@ export const userProfileQueries = {
   getUserProfile: {
     text: `
       SELECT 
-        u.user_id,
-        u.username,
-        u.email,
-        u.first_name,
-        u.last_name,
-        u.middle_name,
-        u.account_status,
-        up.gender,
-        up.mobile_phone_number
-      FROM app.users u
-      LEFT JOIN app.user_profiles up ON u.user_id = up.user_id
-      WHERE u.user_id = $1
+        user_id,
+        username,
+        email,
+        first_name,
+        last_name,
+        middle_name,
+        account_status,
+        gender,
+        mobile_phone_number
+      FROM app.users
+      WHERE user_id = $1
     `,
     values: ['user_id']
   },
@@ -158,7 +142,7 @@ export const userProfileQueries = {
    */
   updateUserProfile: {
     text: `
-      UPDATE app.user_profiles 
+      UPDATE app.users 
       SET 
         gender = $2,
         mobile_phone_number = $3
@@ -171,26 +155,6 @@ export const userProfileQueries = {
     ]
   },
 
-  /**
-   * Insert user profile if not exists
-   * Creates user profile record if it doesn't exist
-   */
-  insertUserProfileIfNotExists: {
-    text: `
-      INSERT INTO app.user_profiles (
-        user_id, 
-        gender, 
-        mobile_phone_number
-      ) 
-      VALUES ($1, $2, $3)
-      ON CONFLICT (user_id) DO NOTHING
-    `,
-    values: [
-      'user_id',      // $1
-      'gender',       // $2
-      'mobile_phone_number' // $3
-    ]
-  },
 
   /**
    * Get user profile by username
@@ -199,15 +163,14 @@ export const userProfileQueries = {
   getProfile: {
     text: `
       SELECT
-        u.email,
-        u.first_name,
-        u.last_name,
-        u.middle_name,
-        up.mobile_phone_number,
-        up.gender
-        FROM app.users u
-        LEFT JOIN app.user_profiles up ON u.user_id = up.user_id
-        WHERE u.username = $1
+        email,
+        first_name,
+        last_name,
+        middle_name,
+        mobile_phone_number,
+        gender
+      FROM app.users
+      WHERE username = $1
     `,
     values: ['username']
   },
@@ -218,25 +181,19 @@ export const userProfileQueries = {
    */
   updateProfile: {
     text: `
-      WITH user_update AS (
-        UPDATE app.users
-        SET first_name = $1,
-            last_name = $2,
-            middle_name = $3
-        WHERE username = $5
-        RETURNING user_id
-      )
-      UPDATE app.user_profiles up
-      SET gender = $4,
+      UPDATE app.users
+      SET first_name = $1,
+          last_name = $2,
+          middle_name = $3,
+          gender = $4,
           mobile_phone_number = $5
-      FROM user_update
-      WHERE up.user_id = user_update.user_id
-      RETURNING up.user_id, 
-                $1 as first_name, 
-                $2 as last_name, 
-                $3 as middle_name, 
-                up.gender, 
-                up.mobile_phone_number
+      WHERE username = $6
+      RETURNING user_id, 
+                first_name, 
+                last_name, 
+                middle_name, 
+                gender, 
+                mobile_phone_number
     `,
     values: [
       'first_name',   // $1

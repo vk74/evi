@@ -32,21 +32,14 @@ CREATE TABLE IF NOT EXISTS app.users (
     middle_name VARCHAR(50),
     last_name VARCHAR(50),
     created_at TIMESTAMP WITH TIME ZONE,
-    CONSTRAINT unique_user_name UNIQUE (username),
-    CONSTRAINT unique_email UNIQUE (email)
-);
-
--- Create user_profiles table
-CREATE TABLE IF NOT EXISTS app.user_profiles (
-    profile_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    user_id UUID REFERENCES app.users(user_id) ON DELETE CASCADE,
-    reserve1 VARCHAR(50),
-    reserve2 VARCHAR(50),
-    reserve3 VARCHAR(50),
+    --
     mobile_phone_number VARCHAR(15),
     gender app.gender,
-    CONSTRAINT unique_mobile_number UNIQUE (mobile_phone_number)
+    CONSTRAINT unique_user_name UNIQUE (username),
+    CONSTRAINT unique_email UNIQUE (email),
+    CONSTRAINT unique_mobile_phone_number UNIQUE (mobile_phone_number)
 );
+
 
 -- Create groups table
 CREATE TABLE IF NOT EXISTS app.groups (
