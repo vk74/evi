@@ -38,6 +38,7 @@ async function fetchSingleServiceLogic(req: AuthenticatedRequest, res: Response)
   } catch (error) {
     createAndPublishEvent({
       eventName: EVENTS_ADMIN_SERVICES['service.fetch.controller.unexpected_error'].eventName,
+      req: req,
       payload: {
         error: error instanceof Error ? error.message : String(error)
       },

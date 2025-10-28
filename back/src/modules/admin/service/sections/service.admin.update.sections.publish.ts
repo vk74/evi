@@ -32,7 +32,7 @@ export async function updateSectionsPublish(req: Request): Promise<UpdateSection
     const serviceExists = await pgPool.query(queries.checkServiceExists, [serviceId])
     if (serviceExists.rowCount === 0) {
       await createAndPublishEvent({
-        req,
+        req: req,
         eventName: EVENTS_ADMIN_SERVICES['service.sections.publish.update.not_found'].eventName,
         payload: { serviceId }
       })
@@ -47,7 +47,7 @@ export async function updateSectionsPublish(req: Request): Promise<UpdateSection
       const invalid = targetSectionIds.filter(id => !existingSet.has(id))
       if (invalid.length > 0) {
         await createAndPublishEvent({
-          req,
+          req: req,
           eventName: EVENTS_ADMIN_SERVICES['service.sections.publish.update.validation.error'].eventName,
           payload: { serviceId, invalidSectionIds: invalid }
         })
@@ -73,12 +73,12 @@ export async function updateSectionsPublish(req: Request): Promise<UpdateSection
         await client.query(queries.deleteServiceFromSection, [serviceId, sectionId])
         await client.query(queries.resequenceSectionServices, [sectionId])
         await createAndPublishEvent({
-          req,
+          req: req,
           eventName: EVENTS_ADMIN_SERVICES['service.sections.publish.update.changed'].eventName,
           payload: { serviceId, removedFromSectionId: sectionId }
         })
         await createAndPublishEvent({
-          req,
+          req: req,
           eventName: EVENTS_ADMIN_SERVICES['service.sections.publish.update.resequenced'].eventName,
           payload: { sectionId }
         })
@@ -90,7 +90,7 @@ export async function updateSectionsPublish(req: Request): Promise<UpdateSection
         const nextOrder = Number(nextOrderRes.rows[0]?.next_order ?? 0)
         await client.query(queries.insertSectionService, [sectionId, serviceId, nextOrder])
         await createAndPublishEvent({
-          req,
+          req: req,
           eventName: EVENTS_ADMIN_SERVICES['service.sections.publish.update.changed'].eventName,
           payload: { serviceId, addedToSectionId: sectionId, order: nextOrder }
         })
@@ -109,7 +109,7 @@ export async function updateSectionsPublish(req: Request): Promise<UpdateSection
     } catch (e: any) {
       await client.query('ROLLBACK')
       await createAndPublishEvent({
-        req,
+        req: req,
         eventName: EVENTS_ADMIN_SERVICES['service.sections.publish.update.database_error'].eventName,
         payload: { serviceId },
         errorData: e?.message || String(e)

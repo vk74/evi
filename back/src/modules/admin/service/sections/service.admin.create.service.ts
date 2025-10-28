@@ -61,6 +61,7 @@ async function validateCreateServiceData(data: CreateServiceRequest, req: Reques
         } catch (error) {
             createAndPublishEvent({
                 eventName: EVENTS_ADMIN_SERVICES['service.create.name_check_error'].eventName,
+                req: req,
                 payload: {
                     serviceName: data.name,
                     error: error instanceof Error ? error.message : String(error)
@@ -238,7 +239,7 @@ async function validateCreateServiceData(data: CreateServiceRequest, req: Reques
  * @param data - Service data with user roles
  * @param requestorUuid - UUID of the user creating the service
  */
-async function createServiceUserRoles(client: any, serviceId: string, data: CreateServiceRequest, requestorUuid: string): Promise<void> {
+async function createServiceUserRoles(client: any, serviceId: string, data: CreateServiceRequest, requestorUuid: string, req: Request): Promise<void> {
     const userRoles = [
         { username: data.owner, roleType: ServiceUserRole.OWNER },
         { username: data.backup_owner, roleType: ServiceUserRole.BACKUP_OWNER },
@@ -257,6 +258,7 @@ async function createServiceUserRoles(client: any, serviceId: string, data: Crea
                     ]);
                     createAndPublishEvent({
                         eventName: EVENTS_ADMIN_SERVICES['service.create.user_role_created'].eventName,
+                        req: req,
                         payload: {
                             serviceId,
                             roleType: userRole.roleType,
@@ -267,6 +269,7 @@ async function createServiceUserRoles(client: any, serviceId: string, data: Crea
             } catch (error) {
                 createAndPublishEvent({
                     eventName: EVENTS_ADMIN_SERVICES['service.create.user_role_error'].eventName,
+                    req: req,
                     payload: {
                         serviceId,
                         roleType: userRole.roleType,
@@ -288,7 +291,7 @@ async function createServiceUserRoles(client: any, serviceId: string, data: Crea
  * @param data - Service data with group roles
  * @param requestorUuid - UUID of the user creating the service
  */
-async function createServiceGroupRoles(client: any, serviceId: string, data: CreateServiceRequest, requestorUuid: string): Promise<void> {
+async function createServiceGroupRoles(client: any, serviceId: string, data: CreateServiceRequest, requestorUuid: string, req: Request): Promise<void> {
     const groupRoles = [
         { groupName: data.support_tier1, roleType: ServiceGroupRole.SUPPORT_TIER1 },
         { groupName: data.support_tier2, roleType: ServiceGroupRole.SUPPORT_TIER2 },
@@ -305,6 +308,7 @@ async function createServiceGroupRoles(client: any, serviceId: string, data: Cre
                     ]);
                     createAndPublishEvent({
                         eventName: EVENTS_ADMIN_SERVICES['service.create.group_role_created'].eventName,
+                        req: req,
                         payload: {
                             serviceId,
                             roleType: groupRole.roleType,
@@ -315,6 +319,7 @@ async function createServiceGroupRoles(client: any, serviceId: string, data: Cre
             } catch (error) {
                 createAndPublishEvent({
                     eventName: EVENTS_ADMIN_SERVICES['service.create.group_role_error'].eventName,
+                    req: req,
                     payload: {
                         serviceId,
                         roleType: groupRole.roleType,
@@ -336,7 +341,7 @@ async function createServiceGroupRoles(client: any, serviceId: string, data: Cre
  * @param data - Service data with access control
  * @param requestorUuid - UUID of the user creating the service
  */
-async function createServiceAccessRoles(client: any, serviceId: string, data: CreateServiceRequest, requestorUuid: string): Promise<void> {
+async function createServiceAccessRoles(client: any, serviceId: string, data: CreateServiceRequest, requestorUuid: string, req: Request): Promise<void> {
     // Handle access allowed groups (multiple groups)
     if (data.access_allowed_groups) {
         const allowedGroups = data.access_allowed_groups.split(',').map((g: string) => g.trim()).filter((g: string) => g);
@@ -349,6 +354,7 @@ async function createServiceAccessRoles(client: any, serviceId: string, data: Cr
                     ]);
                     createAndPublishEvent({
                         eventName: EVENTS_ADMIN_SERVICES['service.create.access_allowed_group_created'].eventName,
+                        req: req,
                         payload: {
                             serviceId,
                             groupName
@@ -360,6 +366,7 @@ async function createServiceAccessRoles(client: any, serviceId: string, data: Cr
             } catch (error) {
                 createAndPublishEvent({
                     eventName: EVENTS_ADMIN_SERVICES['service.create.access_allowed_group_error'].eventName,
+                    req: req,
                     payload: {
                         serviceId,
                         groupName,
@@ -384,6 +391,7 @@ async function createServiceAccessRoles(client: any, serviceId: string, data: Cr
                     ]);
                     createAndPublishEvent({
                         eventName: EVENTS_ADMIN_SERVICES['service.create.access_denied_group_created'].eventName,
+                        req: req,
                         payload: {
                             serviceId,
                             groupName
@@ -395,6 +403,7 @@ async function createServiceAccessRoles(client: any, serviceId: string, data: Cr
             } catch (error) {
                 createAndPublishEvent({
                     eventName: EVENTS_ADMIN_SERVICES['service.create.access_denied_group_error'].eventName,
+                    req: req,
                     payload: {
                         serviceId,
                         groupName,
@@ -419,6 +428,7 @@ async function createServiceAccessRoles(client: any, serviceId: string, data: Cr
                     ]);
                     createAndPublishEvent({
                         eventName: EVENTS_ADMIN_SERVICES['service.create.access_denied_user_created'].eventName,
+                        req: req,
                         payload: {
                             serviceId,
                             username
@@ -430,6 +440,7 @@ async function createServiceAccessRoles(client: any, serviceId: string, data: Cr
             } catch (error) {
                 createAndPublishEvent({
                     eventName: EVENTS_ADMIN_SERVICES['service.create.access_denied_user_error'].eventName,
+                    req: req,
                     payload: {
                         serviceId,
                         username,
@@ -449,7 +460,7 @@ async function createServiceAccessRoles(client: any, serviceId: string, data: Cr
  * @param requestorUuid - UUID of the user creating the service
  * @returns Promise<CreateServiceResponse>
  */
-async function createServiceInDatabase(data: CreateServiceRequest, requestorUuid: string): Promise<CreateServiceResponse> {
+async function createServiceInDatabase(data: CreateServiceRequest, requestorUuid: string, req: Request): Promise<CreateServiceResponse> {
     const client = await pool.connect();
     
     try {
@@ -458,6 +469,7 @@ async function createServiceInDatabase(data: CreateServiceRequest, requestorUuid
         // Create service in main table
         createAndPublishEvent({
             eventName: EVENTS_ADMIN_SERVICES['service.create.inserting_data'].eventName,
+            req: req,
             payload: {
                 name: data.name.trim(),
                 priority: data.priority || ServicePriority.LOW,
@@ -489,6 +501,7 @@ async function createServiceInDatabase(data: CreateServiceRequest, requestorUuid
 
         createAndPublishEvent({
             eventName: EVENTS_ADMIN_SERVICES['service.create.success'].eventName,
+            req: req,
             payload: {
                 serviceId,
                 serviceName: createdService.name,
@@ -497,13 +510,13 @@ async function createServiceInDatabase(data: CreateServiceRequest, requestorUuid
         });
 
         // Create user roles
-        await createServiceUserRoles(client, serviceId, data, requestorUuid);
+        await createServiceUserRoles(client, serviceId, data, requestorUuid, req);
 
         // Create group roles
-        await createServiceGroupRoles(client, serviceId, data, requestorUuid);
+        await createServiceGroupRoles(client, serviceId, data, requestorUuid, req);
 
         // Create access control roles
-        await createServiceAccessRoles(client, serviceId, data, requestorUuid);
+        await createServiceAccessRoles(client, serviceId, data, requestorUuid, req);
 
         await client.query('COMMIT');
 
@@ -520,6 +533,7 @@ async function createServiceInDatabase(data: CreateServiceRequest, requestorUuid
         await client.query('ROLLBACK');
         createAndPublishEvent({
             eventName: EVENTS_ADMIN_SERVICES['service.create.database_error'].eventName,
+            req: req,
             payload: {
                 error: error instanceof Error ? error.message : String(error)
             },
@@ -557,6 +571,7 @@ export async function createService(req: Request): Promise<CreateServiceResponse
 
         createAndPublishEvent({
             eventName: EVENTS_ADMIN_SERVICES['service.create.started'].eventName,
+            req: req,
             payload: {
                 name: serviceData.name,
                 owner: serviceData.owner,
@@ -573,13 +588,14 @@ export async function createService(req: Request): Promise<CreateServiceResponse
         await validateCreateServiceData(serviceData, req);
 
         // Create service in database with all roles
-        const result = await createServiceInDatabase(serviceData, requestorUuid);
+        const result = await createServiceInDatabase(serviceData, requestorUuid, req);
 
         return result;
 
     } catch (error: any) {
         createAndPublishEvent({
             eventName: EVENTS_ADMIN_SERVICES['service.create.error'].eventName,
+            req: req,
             payload: {
                 error: error instanceof Error ? error.message : String(error)
             },

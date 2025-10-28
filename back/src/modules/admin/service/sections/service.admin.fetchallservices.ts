@@ -20,7 +20,8 @@ import type { Service, FetchServicesParams, FetchServicesResult } from '../types
  */
 export const fetchAllServices = async (
   pool: Pool,
-  params: FetchServicesParams
+  params: FetchServicesParams,
+  req: any
 ): Promise<FetchServicesResult> => {
   const client = await pool.connect()
   try {
@@ -30,6 +31,7 @@ export const fetchAllServices = async (
     if (page < 1) {
       await createAndPublishEvent({
         eventName: EVENTS_ADMIN_SERVICES['service.fetch.validation.error'].eventName,
+        req: req,
         payload: {
           error: 'Page must be greater than 0',
           params,
@@ -42,6 +44,7 @@ export const fetchAllServices = async (
     if (itemsPerPage < 1 || itemsPerPage > 100) {
       await createAndPublishEvent({
         eventName: EVENTS_ADMIN_SERVICES['service.fetch.validation.error'].eventName,
+        req: req,
         payload: {
           error: 'Items per page must be between 1 and 100',
           params,
@@ -107,6 +110,7 @@ export const fetchAllServices = async (
     // Log success
     await createAndPublishEvent({
       eventName: EVENTS_ADMIN_SERVICES['service.fetch.success'].eventName,
+      req: req,
       payload: {
         totalServices: services.length,
         totalItems,
@@ -130,6 +134,7 @@ export const fetchAllServices = async (
   } catch (error) {
     await createAndPublishEvent({
       eventName: EVENTS_ADMIN_SERVICES['service.fetch.data_error'].eventName,
+      req: req,
       payload: {
         error: error instanceof Error ? error.message : 'Unknown database error',
         params,

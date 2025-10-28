@@ -35,7 +35,7 @@ const fetchAllServicesController = async (req: Request, res: Response): Promise<
     searchQuery,
     sortBy,
     sortDesc
-  })
+  }, req)
   
   // Return result for connectionHandler to process
   return {

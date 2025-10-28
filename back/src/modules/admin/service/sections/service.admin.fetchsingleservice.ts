@@ -40,7 +40,7 @@ export class ServiceAdminFetchSingleService {
       // Validate service ID format (basic UUID check)
       if (!serviceId || typeof serviceId !== 'string' || serviceId.trim().length === 0) {
         await createAndPublishEvent({
-          req,
+          req: req,
           eventName: 'adminServices.service.fetch.validation.error',
           payload: { serviceId },
           errorData: 'Invalid service ID provided'
@@ -56,7 +56,7 @@ export class ServiceAdminFetchSingleService {
       
       if (serviceExistsResult.rows.length === 0) {
         await createAndPublishEvent({
-          req,
+          req: req,
           eventName: 'adminServices.service.fetch.not_found',
           payload: { serviceId }
         })
@@ -74,7 +74,7 @@ export class ServiceAdminFetchSingleService {
       
       if (serviceResult.rows.length === 0) {
         await createAndPublishEvent({
-          req,
+          req: req,
           eventName: 'adminServices.service.fetch.data_error',
           payload: { serviceId },
           errorData: 'Service data not found after existence check'
@@ -174,7 +174,7 @@ export class ServiceAdminFetchSingleService {
 
 
       await createAndPublishEvent({
-        req,
+        req: req,
         eventName: 'adminServices.service.fetch.success',
         payload: { 
           serviceId, 
@@ -193,6 +193,7 @@ export class ServiceAdminFetchSingleService {
     } catch (error) {
       createAndPublishEvent({
         eventName: EVENTS_ADMIN_SERVICES['service.fetch.error'].eventName,
+        req: req,
         payload: { 
           serviceId,
           error: error instanceof Error ? error.message : String(error)

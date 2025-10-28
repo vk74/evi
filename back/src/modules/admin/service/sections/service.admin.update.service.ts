@@ -59,7 +59,7 @@ async function validateUpdateServiceData(data: UpdateService, serviceId: string,
     } catch (error) {
         // Publish error event instead of console.error
         await fabricEvents.createAndPublishEvent({
-            req: null,
+            req: req,
             eventName: EVENTS_ADMIN_SERVICES['service.update.validation.error'].eventName,
             payload: {
                 serviceId,
@@ -81,7 +81,7 @@ async function validateUpdateServiceData(data: UpdateService, serviceId: string,
         } catch (error) {
             // Publish error event instead of console.error
             await fabricEvents.createAndPublishEvent({
-                req: null,
+                req: req,
                 eventName: EVENTS_ADMIN_SERVICES['service.update.validation.error'].eventName,
                 payload: {
                     serviceId,
@@ -259,7 +259,7 @@ async function validateUpdateServiceData(data: UpdateService, serviceId: string,
  * @param data - Service data with user roles
  * @param requestorUuid - UUID of the user updating the service
  */
-async function updateServiceUserRoles(client: any, serviceId: string, data: UpdateService, requestorUuid: string): Promise<void> {
+async function updateServiceUserRoles(client: any, serviceId: string, data: UpdateService, requestorUuid: string, req: Request): Promise<void> {
     // First, delete all existing user roles for this service
     await client.query(queries.deleteServiceUsers, [serviceId]);
 
@@ -284,7 +284,7 @@ async function updateServiceUserRoles(client: any, serviceId: string, data: Upda
             } catch (error) {
                 // Publish error event instead of console.error
                 await fabricEvents.createAndPublishEvent({
-                    req: null,
+                    req: req,
                     eventName: EVENTS_ADMIN_SERVICES['service.update.user_role_error'].eventName,
                     payload: {
                         serviceId,
@@ -308,7 +308,7 @@ async function updateServiceUserRoles(client: any, serviceId: string, data: Upda
  * @param data - Service data with group roles
  * @param requestorUuid - UUID of the user updating the service
  */
-async function updateServiceGroupRoles(client: any, serviceId: string, data: UpdateService, requestorUuid: string): Promise<void> {
+async function updateServiceGroupRoles(client: any, serviceId: string, data: UpdateService, requestorUuid: string, req: Request): Promise<void> {
     // First, delete all existing group roles for this service
     await client.query(queries.deleteServiceGroups, [serviceId]);
 
@@ -331,7 +331,7 @@ async function updateServiceGroupRoles(client: any, serviceId: string, data: Upd
             } catch (error) {
                 // Publish error event instead of console.error
                 await fabricEvents.createAndPublishEvent({
-                    req: null,
+                    req: req,
                     eventName: EVENTS_ADMIN_SERVICES['service.update.group_role_error'].eventName,
                     payload: {
                         serviceId,
@@ -355,7 +355,7 @@ async function updateServiceGroupRoles(client: any, serviceId: string, data: Upd
  * @param data - Service data with access control
  * @param requestorUuid - UUID of the user updating the service
  */
-async function updateServiceAccessRoles(client: any, serviceId: string, data: UpdateService, requestorUuid: string): Promise<void> {
+async function updateServiceAccessRoles(client: any, serviceId: string, data: UpdateService, requestorUuid: string, req: Request): Promise<void> {
     // Handle access allowed groups (multiple groups)
     if (data.access_allowed_groups) {
         const allowedGroups = data.access_allowed_groups.split(',').map((g: string) => g.trim()).filter((g: string) => g);
@@ -372,7 +372,7 @@ async function updateServiceAccessRoles(client: any, serviceId: string, data: Up
             } catch (error) {
                 // Publish error event instead of console.error
                 await fabricEvents.createAndPublishEvent({
-                    req: null,
+                    req: req,
                     eventName: EVENTS_ADMIN_SERVICES['service.update.access_allowed_group_error'].eventName,
                     payload: {
                         serviceId,
@@ -403,7 +403,7 @@ async function updateServiceAccessRoles(client: any, serviceId: string, data: Up
             } catch (error) {
                 // Publish error event instead of console.error
                 await fabricEvents.createAndPublishEvent({
-                    req: null,
+                    req: req,
                     eventName: EVENTS_ADMIN_SERVICES['service.update.access_denied_group_error'].eventName,
                     payload: {
                         serviceId,
@@ -434,7 +434,7 @@ async function updateServiceAccessRoles(client: any, serviceId: string, data: Up
             } catch (error) {
                 // Publish error event instead of console.error
                 await fabricEvents.createAndPublishEvent({
-                    req: null,
+                    req: req,
                     eventName: EVENTS_ADMIN_SERVICES['service.update.access_denied_user_error'].eventName,
                     payload: {
                         serviceId,
@@ -514,13 +514,13 @@ async function updateServiceInDatabase(serviceId: string, data: UpdateService, r
             ]);
 
             // Update user roles
-            await updateServiceUserRoles(client, serviceId, data, requestorUuid);
+            await updateServiceUserRoles(client, serviceId, data, requestorUuid, req);
 
             // Update group roles
-            await updateServiceGroupRoles(client, serviceId, data, requestorUuid);
+            await updateServiceGroupRoles(client, serviceId, data, requestorUuid, req);
 
             // Update access control roles
-            await updateServiceAccessRoles(client, serviceId, data, requestorUuid);
+            await updateServiceAccessRoles(client, serviceId, data, requestorUuid, req);
 
             // Update preferences if provided
             if (hasVisibilityPreferences) {
@@ -545,7 +545,7 @@ async function updateServiceInDatabase(serviceId: string, data: UpdateService, r
         await client.query('ROLLBACK');
         // Publish database error event instead of console.error
         await fabricEvents.createAndPublishEvent({
-            req: null,
+            req: req,
             eventName: EVENTS_ADMIN_SERVICES['service.update.database_error'].eventName,
             payload: {
                 serviceId,
@@ -601,7 +601,7 @@ export async function updateService(req: Request): Promise<UpdateServiceResponse
 
         // Publish success event
         await fabricEvents.createAndPublishEvent({
-            req,
+            req: req,
             eventName: EVENTS_ADMIN_SERVICES['service.update.success'].eventName,
             payload: {
                 serviceId: id,
@@ -615,7 +615,7 @@ export async function updateService(req: Request): Promise<UpdateServiceResponse
     } catch (error: any) {
         // Publish error event instead of console.error
         await fabricEvents.createAndPublishEvent({
-            req,
+            req: req,
             eventName: EVENTS_ADMIN_SERVICES['service.update.validation.error'].eventName,
             payload: {
                 serviceId: req.body?.id,
@@ -686,7 +686,7 @@ async function updateServicePreferences(client: any, serviceId: string, data: Up
             for (const { field, oldValue, newValue } of fieldMappings) {
                 if (oldValue !== newValue) {
                     await fabricEvents.createAndPublishEvent({
-                        req,
+                        req: req,
                         eventName: EVENTS_ADMIN_SERVICES['service.update.preferences.field_changed'].eventName,
                         payload: {
                             serviceId,

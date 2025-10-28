@@ -50,7 +50,7 @@ const validateServiceIds = (serviceIds: string[]): { isValid: boolean, errors: s
 /**
  * Checks which services exist in the database
  */
-const checkServicesExist = async (client: any, serviceIds: string[]): Promise<{existing: string[], notFound: string[]}> => {
+const checkServicesExist = async (client: any, serviceIds: string[], req: any): Promise<{existing: string[], notFound: string[]}> => {
   const existing: string[] = []
   const notFound: string[] = []
   
@@ -61,6 +61,7 @@ const checkServicesExist = async (client: any, serviceIds: string[]): Promise<{e
         existing.push(id)
         await createAndPublishEvent({
           eventName: EVENTS_ADMIN_SERVICES['service.delete.exists'].eventName,
+          req: req,
           payload: {
             serviceId: id,
             timestamp: new Date().toISOString()
@@ -70,6 +71,7 @@ const checkServicesExist = async (client: any, serviceIds: string[]): Promise<{e
         notFound.push(id)
         await createAndPublishEvent({
           eventName: EVENTS_ADMIN_SERVICES['service.delete.not_found'].eventName,
+          req: req,
           payload: {
             serviceId: id,
             timestamp: new Date().toISOString()
@@ -79,6 +81,7 @@ const checkServicesExist = async (client: any, serviceIds: string[]): Promise<{e
     } catch (error) {
       await createAndPublishEvent({
         eventName: EVENTS_ADMIN_SERVICES['service.delete.check_error'].eventName,
+        req: req,
         payload: {
           serviceId: id,
           error: error instanceof Error ? error.message : 'Unknown error',
@@ -97,7 +100,8 @@ const checkServicesExist = async (client: any, serviceIds: string[]): Promise<{e
  */
 export const deleteServices = async (
   pool: Pool,
-  params: DeleteServicesParams
+  params: DeleteServicesParams,
+  req: any
 ): Promise<DeleteServicesResult> => {
   const client = await pool.connect()
   
@@ -127,7 +131,7 @@ export const deleteServices = async (
     })
     
     // Check which services exist
-    const { existing, notFound } = await checkServicesExist(client, serviceIds)
+    const { existing, notFound } = await checkServicesExist(client, serviceIds, req)
     
     if (existing.length === 0) {
       return {

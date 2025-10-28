@@ -22,7 +22,7 @@ const deleteServicesController = async (req: Request, res: Response): Promise<an
   const { serviceIds } = req.body as DeleteServicesParams
   
   // Call service
-  const result = await deleteServices(pool, { serviceIds })
+  const result = await deleteServices(pool, { serviceIds }, req)
   
   // Return result for connectionHandler to process
   return {
