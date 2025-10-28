@@ -35,24 +35,21 @@ export type EditMode = {
 export type EditorMode = CreateMode | EditMode
 
 /**
- * Interface for basic group information (app.groups table)
+ * Interface for unified group data (app.groups table)
  */
 export interface IGroupData {
-group_id?: string                  // uuid, optional as it's generated during creation
-group_name: string                 // character varying(100)
-group_status: GroupStatus          // app.group_status
-group_owner: string                // username of group owner (UUID)
-is_system?: boolean                // boolean, optional for frontend
-ownerUsername?: string             // Username of the group owner, optional
-}
-
-/**
- * Interface for additional group information (app.group_details table)
- */
-export interface IGroupDetails {
-  group_id?: string                  // uuid link to app.groups
-  group_description: string          // text
-  group_email: string                // character varying(255)
+  group_id?: string                  // uuid, optional as it's generated during creation
+  group_name: string                 // character varying(100)
+  group_status: GroupStatus          // app.group_status
+  group_owner: string                // username of group owner (UUID)
+  is_system?: boolean                // boolean, optional for frontend
+  group_description?: string         // text
+  group_email?: string               // character varying(255)
+  group_created_at?: string          // timestamp
+  group_created_by?: string          // uuid
+  group_modified_at?: string         // timestamp
+  group_modified_by?: string         // uuid
+  ownerUsername?: string             // Username of the group owner, optional
 }
 
 /**
@@ -102,10 +99,7 @@ export interface ICreateGroupResponse extends IApiResponse {
 }
 
 export interface ILoadGroupResponse extends IApiResponse {
-  data: {
-    group: IGroupData
-    details: IGroupDetails
-  }
+  data: IGroupData
 }
 
 /**
@@ -167,11 +161,7 @@ export interface IGroupMembersState {
 export interface GroupEditorState {
   mode: EditorMode
   group: IGroupData
-  details: IGroupDetails
-  originalData?: {
-    group: IGroupData
-    details: IGroupDetails
-  }
+  originalData?: IGroupData
   ui: IEditorUIState
   members: IGroupMembersState  // Add group members state
   // Cache to preserve fetched members per group across navigation between sections
@@ -192,7 +182,6 @@ export interface GroupEditorStoreGetters {
 export interface GroupEditorStoreActions {
 createNewGroup: () => Promise<ICreateGroupResponse>
 updateGroup: (data: Partial<IGroupData>) => void
-updateDetails: (data: Partial<IGroupDetails>) => void
 setActiveSection: (section: 'details' | 'members') => void
 setSubmitting: (isSubmitting: boolean) => void
 resetForm: () => void

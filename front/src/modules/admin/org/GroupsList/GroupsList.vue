@@ -96,11 +96,8 @@ const editGroup = async () => {
   if (hasOneSelected.value) {
     const selectedGroupId = groupsStore.selectedGroups[0];
     try {
-      const { group, details } = await fetchGroupService.fetchGroupById(selectedGroupId);
-      groupEditorStore.initEditMode({
-        group: group,
-        details: details
-      });
+      const groupData = await fetchGroupService.fetchGroupById(selectedGroupId);
+      groupEditorStore.initEditMode(groupData);
       orgAdminStore.setActiveSection('group-editor');
     } catch (error) {
       uiStore.showErrorSnackbar('Не удалось загрузить данные группы для редактирования');

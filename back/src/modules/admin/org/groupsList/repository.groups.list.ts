@@ -1,5 +1,5 @@
 /**
- * @file repository.groups.list.ts
+ * @file repository.groups.list.ts - version 1.0.1
  * Repository for caching groups list data.
  *
  * Functionality:

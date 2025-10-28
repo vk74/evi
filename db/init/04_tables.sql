@@ -1,4 +1,4 @@
--- Version: 1.1.1
+-- Version: 1.2.0
 -- Description: Create all application tables, functions, and triggers.
 -- Backend file: 04_tables.sql
 
@@ -45,25 +45,16 @@ CREATE TABLE IF NOT EXISTS app.users (
 CREATE TABLE IF NOT EXISTS app.groups (
     group_id UUID PRIMARY KEY,
     group_name VARCHAR(100) NOT NULL,
-    reserve_1 VARCHAR(100),
     group_status app.group_status NOT NULL DEFAULT 'active'::app.group_status,
     group_owner UUID NOT NULL REFERENCES app.users(user_id),
     is_system BOOLEAN NOT NULL DEFAULT false,
-    CONSTRAINT unique_group_name UNIQUE (group_name)
-);
-
--- Create group_details table
-CREATE TABLE IF NOT EXISTS app.group_details (
-    group_id UUID PRIMARY KEY REFERENCES app.groups(group_id) ON DELETE CASCADE,
     group_description TEXT,
     group_email VARCHAR(255),
-    reserve_field_1 VARCHAR(100),
-    reserve_field_2 VARCHAR(100),
-    reserve_field_3 SMALLINT,
     group_created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
     group_created_by UUID NOT NULL REFERENCES app.users(user_id),
     group_modified_at TIMESTAMP WITH TIME ZONE,
     group_modified_by UUID REFERENCES app.users(user_id),
+    CONSTRAINT unique_group_name UNIQUE (group_name),
     CONSTRAINT unique_group_email UNIQUE (group_email)
 );
 

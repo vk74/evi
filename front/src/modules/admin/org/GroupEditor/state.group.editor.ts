@@ -14,7 +14,6 @@ import { defineStore } from 'pinia'
 import { GroupStatus } from './types.group.editor'
 import type { 
   IGroupData,
-  IGroupDetails,
   IEditorUIState,
   ICreateGroupRequest,
   IUpdateGroupRequest,
@@ -34,15 +33,9 @@ const initialGroupState: IGroupData = {
   group_name: '',
   group_status: GroupStatus.ACTIVE,
   group_owner: '',
-  //is_system: false
-}
-
-/**
- * Initial values for additional information
- */
-const initialDetailsState: IGroupDetails = {
   group_description: '',
   group_email: ''
+  //is_system: false
 }
 
 /**
@@ -77,7 +70,6 @@ export const useGroupEditorStore = defineStore('groupEditor', {
         ...initialGroupState,
         group_owner: userStore.username || ''
       },
-      details: { ...initialDetailsState },
       ui: { ...initialUIState },
       mode: {
         mode: 'create'
@@ -117,12 +109,10 @@ export const useGroupEditorStore = defineStore('groupEditor', {
 
       const currentData = {
         ...this.group,
-        ...this.details
       }
 
       const originalData = {
-        ...this.originalData.group,
-        ...this.originalData.details
+        ...this.originalData,
       }
 
       // Check each field and add only changed ones
@@ -182,32 +172,28 @@ export const useGroupEditorStore = defineStore('groupEditor', {
     /**
      * Update additional information
      */
-    updateDetails(data: Partial<IGroupDetails>) {
+    updateDetails(data: Partial<IGroupData>) {
       console.log('Updating group details:', data)
-      this.details = { ...this.details, ...data }
+      this.group = { ...this.group, ...data }
     },
 
     /**
      * Initialize edit mode
      */
-    initEditMode(data: { group: IGroupData; details: IGroupDetails }) {
+    initEditMode(data: IGroupData) {
       console.log('Initializing edit mode with group data')
       
       // Set edit mode
       this.mode = {
         mode: 'edit',
-        groupId: data.group.group_id as string
+        groupId: data.group_id as string
       }
       
       // Save original data
-      this.originalData = {
-        group: { ...data.group },
-        details: { ...data.details }
-      }
+      this.originalData = { ...data }
       
       // Update current data through existing actions
-      this.updateGroup(data.group)
-      this.updateDetails(data.details)
+      this.updateGroup(data)
     },
 
     /**
@@ -233,7 +219,6 @@ export const useGroupEditorStore = defineStore('groupEditor', {
         group_owner: useUserAuthStore().username || ''
       })
       
-      Object.assign(this.details, initialDetailsState)
       Object.assign(this.ui, initialUIState)
       
       // Reset group members state
@@ -253,15 +238,15 @@ export const useGroupEditorStore = defineStore('groupEditor', {
      */
     prepareRequestData(): ICreateGroupRequest {
       console.log('Preparing data for API request')
-      const { group, details } = this
+      const { group } = this
       
       return {
         group_name: group.group_name,
         group_status: group.group_status,
         group_owner: group.group_owner,
         //is_system: group.is_system,
-        group_description: details.group_description,
-        group_email: details.group_email
+        group_description: group.group_description || '',
+        group_email: group.group_email || ''
       }
     },
 

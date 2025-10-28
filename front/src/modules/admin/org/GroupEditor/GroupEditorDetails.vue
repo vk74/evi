@@ -35,7 +35,7 @@ const isOwnerSelectorModalOpen = ref(false)
 
 // Track changes in store to enable Update button
 watch(
-  () => [groupEditorStore.group, groupEditorStore.details],
+  () => [groupEditorStore.group],
   () => { isFormDirty.value = true },
   { deep: true }
 )
@@ -74,8 +74,8 @@ async function handleCreateGroup() {
     const response = await groupEditorStore.createNewGroup()
     if (response?.success) {
       groupEditorStore.initEditMode({
-        group: { ...groupEditorStore.group, group_id: response.groupId },
-        details: { ...groupEditorStore.details }
+        ...groupEditorStore.group, 
+        group_id: response.groupId
       })
       isFormDirty.value = false
       uiStore.showSuccessSnackbar(t('admin.groups.editor.messages.createSuccess'))
@@ -125,8 +125,8 @@ const handleOwnerChanged = async (result: any) => {
   if (result && result.success) {
     const groupId = (groupEditorStore.mode as EditMode).groupId
     try {
-      const { group, details } = await fetchGroupService.fetchGroupById(groupId)
-      groupEditorStore.initEditMode({ group, details })
+      const groupData = await fetchGroupService.fetchGroupById(groupId)
+      groupEditorStore.initEditMode(groupData)
       uiStore.showSuccessSnackbar(t('admin.groups.editor.messages.ownerChangeSuccess'))
     } catch (error) {
       uiStore.showErrorSnackbar(error instanceof Error ? error.message : t('admin.groups.editor.messages.ownerChangeError'))
@@ -189,7 +189,7 @@ const handleOwnerChanged = async (result: any) => {
 
               <v-col cols="12">
                 <v-textarea
-                  v-model="groupEditorStore.details.group_description"
+                  v-model="groupEditorStore.group.group_description"
                   :label="t('admin.groups.editor.form.description')"
                   :rules="generalDescriptionRules"
                   variant="outlined"
@@ -200,7 +200,7 @@ const handleOwnerChanged = async (result: any) => {
 
               <v-col cols="12" md="6">
                 <v-text-field
-                  v-model="groupEditorStore.details.group_email"
+                  v-model="groupEditorStore.group.group_email"
                   :label="t('admin.groups.editor.form.email')"
                   :rules="optionalEmailRules"
                   variant="outlined"

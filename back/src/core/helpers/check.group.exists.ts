@@ -1,5 +1,5 @@
 /**
- * check.group.exists.ts - version 1.0.0
+ * check.group.exists.ts - version 1.0.1
  * Helper function to check if a group exists in the database.
  * 
  * Functionality:
@@ -7,6 +7,7 @@
  * - Returns boolean indicating group existence
  * - Handles database errors gracefully
  * - Used for validation in various services
+ * Updated to work with unified app.groups table
  * 
  * @param uuid - UUID to check for existence
  * @returns Promise<boolean> - true if group exists, false otherwise
@@ -34,9 +35,9 @@ export async function checkGroupExists(uuid: string): Promise<boolean> {
         });
 
         const query = `
-            SELECT id 
+            SELECT group_id 
             FROM app.groups 
-            WHERE id = $1
+            WHERE group_id = $1
         `;
         
         const result = await pool.query(query, [uuid]);

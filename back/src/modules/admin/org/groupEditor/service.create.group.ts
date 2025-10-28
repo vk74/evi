@@ -296,29 +296,21 @@ export async function createGroup(
     
     const ownerUuid = ownerResult.rows[0].user_id;
     
-    // Create group with obtained UUID
+    // Create group with all data in unified table
     const groupResult = await client.query(
       queries.insertGroup.text,
       [
         trimmedData.group_name,    
         trimmedData.group_status,  
         ownerUuid,               
-        false                   
-      ]
-    );
-    
-    const groupId = groupResult.rows[0].group_id;
-
-    // Create group details
-    await client.query(
-      queries.insertGroupDetails.text,
-      [
-        groupId,
+        false,                   // is_system
         trimmedData.group_description || null,
         trimmedData.group_email || null,
         requestorUuid // Use UUID of the user making the request
       ]
     );
+    
+    const groupId = groupResult.rows[0].group_id;
 
     await client.query('COMMIT');
     

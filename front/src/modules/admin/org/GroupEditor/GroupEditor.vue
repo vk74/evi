@@ -112,13 +112,8 @@ const handleCreateGroup = async () => {
     const response = await groupEditorStore.createNewGroup()
     if (response?.success) {
       groupEditorStore.initEditMode({
-        group: {
-          ...groupEditorStore.group,
-          group_id: response.groupId
-        },
-        details: {
-          ...groupEditorStore.details
-        }
+        ...groupEditorStore.group,
+        group_id: response.groupId
       })
       isFormDirty.value = false
       uiStore.showSuccessSnackbar(t('admin.groups.editor.messages.createSuccess'))
@@ -287,7 +282,7 @@ const ownerDisplay = computed(() => {
 
 // ==================== WATCH FORM CHANGES ====================
 watch(
-  () => [groupEditorStore.group, groupEditorStore.details],
+  () => [groupEditorStore.group],
   () => {
     if (!isInitialLoad.value) {
       isFormDirty.value = true

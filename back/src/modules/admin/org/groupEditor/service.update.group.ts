@@ -1,7 +1,7 @@
 /**
- * service.update.group.ts - version 1.0.02
+ * service.update.group.ts - version 1.1.0
  * Service for handling group update business logic and database operations.
- * Performs validation using common backend rules, updates group data in app.groups and app.group_details, and manages transactions.
+ * Performs validation using common backend rules, updates group data in app.groups table, and manages transactions.
  * Uses event bus for tracking operations and enhancing observability.
  */
 
@@ -79,9 +79,12 @@ export async function updateGroupById(updateData: UpdateGroupRequest, req: Reque
       updateData.group_name || null, // $2: group_name (can be null)
       updateData.group_status || null, // $3: group_status (can be null, COALESCE will preserve current value)
       updateData.group_owner || null, // $4: group_owner (can be null, COALESCE will preserve current value)
+      updateData.group_description || null, // $5: group_description (can be null)
+      updateData.group_email || null, // $6: group_email (can be null)
+      requestorUuid || updateData.modified_by // $7: group_modified_by (UUID of the modifier)
     ];
 
-    // Update group data in app.groups
+    // Update group data in unified app.groups table
     const groupResult = await client.query(
       queries.updateGroupById,
       groupParams
@@ -106,42 +109,6 @@ export async function updateGroupById(updateData: UpdateGroupRequest, req: Reque
         code: 'NOT_FOUND',
         message: 'Group not found',
         details: 'No group found with the provided group_id',
-      } as NotFoundError;
-    }
-
-    // Prepare parameters for updating app.group_details
-    const detailsParams = [
-      updateData.group_id,
-      updateData.group_description || null,
-      updateData.group_email || null,
-      requestorUuid || updateData.modified_by // Use UUID from request or passed modified_by
-    ];
-
-    // Update group data in app.group_details
-    const detailsResult = await client.query(
-      queries.updateGroupDetailsById,
-      detailsParams
-    );
-
-    if (detailsResult.rowCount === 0) {
-      // Create event for "group details not found" error
-      await fabricEvents.createAndPublishEvent({
-        req,
-        eventName: GROUP_UPDATE_EVENTS.FAILED.eventName,
-        payload: {
-          groupId: updateData.group_id,
-          error: {
-            code: 'NOT_FOUND',
-            message: 'Group details not found'
-          }
-        },
-        errorData: 'No group details found for the provided group_id'
-      });
-
-      throw {
-        code: 'NOT_FOUND',
-        message: 'Group details not found',
-        details: 'No group details found for the provided group_id',
       } as NotFoundError;
     }
 

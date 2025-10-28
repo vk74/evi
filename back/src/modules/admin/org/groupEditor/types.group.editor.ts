@@ -1,5 +1,5 @@
 /**
- * types.group.editor.ts
+ * types.group.editor.ts - version 1.0.1
  * Backend type definitions for group management endpoints.
  * 
  * This module contains TypeScript interfaces and types for:
@@ -71,40 +71,20 @@ export interface FetchGroupRequest {
 }
 
 /**
- * Interface representing core data from app.groups
+ * Interface representing group data from app.groups
  */
-export interface GroupBaseData {
+export interface GroupData {
   group_id: string; // UUID
   group_name: string;
-  reserve_1: string | null;
   group_status: GroupStatus;
   group_owner: string; // UUID of the owner
   is_system: boolean;
-}
-
-/**
- * Interface representing detailed data from app.group_details
- */
-export interface GroupDetailsData {
-  group_id: string; // UUID (link to app.groups)
   group_description: string | null;
   group_email: string | null;
   group_created_at: Date;
-  group_created_by: string | null; // UUID of the creator
+  group_created_by: string; // UUID of the creator
   group_modified_at: Date | null;
   group_modified_by: string | null; // UUID of the modifier
-  reserve_field_1: string | null;
-  reserve_field_2: string | null;
-  reserve_field_3: number | null;
-}
-
-/**
- * Interface representing the full group data structure
- * Combines data from app.groups and app.group_details
- */
-export interface GroupData {
-  group: GroupBaseData;
-  details: GroupDetailsData | null; // Details can be null if not found in app.group_details
 }
 
 /**

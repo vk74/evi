@@ -1,5 +1,5 @@
 /**
- * @file queries.groups.list.ts
+ * @file queries.groups.list.ts - version 1.0.1
  * SQL queries for fetching and managing groups data.
  */
 import type { SQLQueries } from './types.groups.list';
@@ -14,6 +14,10 @@ export const queries: SQLQueries = {
       g.group_name,
       g.group_status,
       g.is_system,
+      g.group_description,
+      g.group_email,
+      g.group_created_at,
+      g.group_modified_at,
       u.username AS owner_username
     FROM app.groups g
     LEFT JOIN app.users u ON u.user_id = g.group_owner

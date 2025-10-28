@@ -17,8 +17,7 @@ import { queries } from './queries.group.editor';
 import { 
   FetchGroupRequest, 
   FetchGroupResponse, 
-  GroupBaseData, 
-  GroupDetailsData, 
+  GroupData, 
   NotFoundError,
   ServiceError
 } from './types.group.editor';
@@ -54,7 +53,7 @@ export async function fetchGroupData(request: FetchGroupRequest, req: Request): 
     });
 
     // Fetch group base data
-    const groupResult = await pool.query<GroupBaseData>(
+    const groupResult = await pool.query<GroupData>(
       queries.getGroupById.text,
       [groupId]
     );
@@ -67,17 +66,6 @@ export async function fetchGroupData(request: FetchGroupRequest, req: Request): 
     }
     
     const groupData = groupResult.rows[0];
-    
-    // Fetch group details data
-    const detailsResult = await pool.query<GroupDetailsData>(
-      queries.getGroupDetailsById.text,
-      [groupId]
-    );
-    
-    // Group details might not exist if they haven't been created yet
-    const detailsData = detailsResult.rows.length > 0 
-      ? detailsResult.rows[0] 
-      : null;
     
     // Создаем событие для успешного получения данных группы
     await fabricEvents.createAndPublishEvent({
@@ -94,10 +82,7 @@ export async function fetchGroupData(request: FetchGroupRequest, req: Request): 
     return {
       success: true,
       message: 'Group data retrieved successfully',
-      data: {
-        group: groupData,
-        details: detailsData
-      }
+      data: groupData
     };
     
   } catch (error) {

@@ -1,13 +1,11 @@
 /**
- * queries.group.editor.ts
+ * queries.group.editor.ts - version 1.1.0
  * SQL queries for group management operations.
  * 
  * Contains parameterized queries for:
  * - Checking constraints (uniqueness, existence)
  * - Creating new groups
- * - Adding group details
- * - Fetching group data by group ID (separate queries for app.groups and app.group_details)
- * - Updating group data by group ID (separate queries for app.groups and app.group_details)
+ * - Fetching group data by group ID
  */
 
 interface SQLQuery {
@@ -20,11 +18,8 @@ interface GroupEditorQueries {
   checkUserExists: SQLQuery;
   checkGroupExists: SQLQuery;
   insertGroup: SQLQuery;
-  insertGroupDetails: SQLQuery;
   getGroupById: SQLQuery;
-  getGroupDetailsById: SQLQuery;
   updateGroupById: SQLQuery;
-  updateGroupDetailsById: SQLQuery;
   getGroupMembers: SQLQuery;
   removeGroupMembers: SQLQuery;
   deleteGroup: SQLQuery;
@@ -79,33 +74,17 @@ export const queries: GroupEditorQueries = {
         group_name,
         group_status,
         group_owner,
-        is_system
-      )
-      VALUES (
-        gen_random_uuid(),
-        $1, $2, $3, $4
-      )
-      RETURNING group_id
-    `
-  },
-  
-  // Insert group details into app.group_details
-  insertGroupDetails: {
-    text: `
-      INSERT INTO app.group_details (
-        group_id,
+        is_system,
         group_description,
         group_email,
         group_created_by,
         group_created_at
       )
       VALUES (
-        $1,
-        $2,
-        $3,
-        $4,  -- UUID создателя группы
-        now()
+        gen_random_uuid(),
+        $1, $2, $3, $4, $5, $6, $7, now()
       )
+      RETURNING group_id
     `
   },
 
@@ -115,58 +94,33 @@ export const queries: GroupEditorQueries = {
       SELECT 
         group_id,
         group_name,
-        reserve_1,
         group_status,
         group_owner,
-        is_system
+        is_system,
+        group_description,
+        group_email,
+        group_created_at,
+        group_created_by,
+        group_modified_at,
+        group_modified_by
       FROM app.groups
       WHERE group_id = $1::uuid
       LIMIT 1
     `
   },
 
-  // Fetch group details from app.group_details by group_id
-  getGroupDetailsById: {
-    text: `
-      SELECT 
-        group_id,
-        group_description,
-        group_email,
-        group_created_at,
-        group_created_by,
-        group_modified_at,
-        group_modified_by,
-        reserve_field_1,
-        reserve_field_2,
-        reserve_field_3
-      FROM app.group_details
-      WHERE group_id = $1::uuid
-      LIMIT 1
-    `
-  },
-
-  // Update group data in app.groups by group_id, updating only changed fields
+  // Update group data in app.groups by group_id
   updateGroupById: {
     text: `
       UPDATE app.groups
       SET
         group_name = COALESCE($2, group_name),
         group_status = COALESCE($3, group_status),
-        group_owner = COALESCE($4, group_owner)
-      WHERE group_id = $1::uuid
-      RETURNING group_id
-    `
-  },
-
-  // Update group details in app.group_details by group_id
-  updateGroupDetailsById: {
-    text: `
-      UPDATE app.group_details
-      SET
-        group_description = COALESCE($2, group_description),
-        group_email = COALESCE($3, group_email),
+        group_owner = COALESCE($4, group_owner),
+        group_description = COALESCE($5, group_description),
+        group_email = COALESCE($6, group_email),
         group_modified_at = now(),
-        group_modified_by = $4
+        group_modified_by = $7
       WHERE group_id = $1::uuid
       RETURNING group_id
     `

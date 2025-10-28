@@ -1,5 +1,5 @@
 /**
- * @file get.groupname.by.uuid.ts
+ * @file get.groupname.by.uuid.ts - version 1.0.1
  * BACKEND Helper for retrieving group name by group UUID
  * 
  * Functionality:

@@ -49,37 +49,25 @@ export async function loadGroup(groupId: string, username: string, req?: any): P
 
     const groupData = groupResult.rows[0];
 
-    // Load group details
-    const detailsResult = await pool.query(queries.getGroupDetailsById, [groupId]);
-    const detailsData = detailsResult.rows.length > 0 ? detailsResult.rows[0] : null;
-
+    // Group data is already complete from unified table
     const result: GroupData = {
-      group: {
-        group_id: groupData.group_id,
-        group_name: groupData.group_name,
-        reserve_1: groupData.reserve_1,
-        group_status: groupData.group_status,
-        group_owner: groupData.group_owner,
-        is_system: groupData.is_system
-      },
-      details: detailsData ? {
-        group_id: detailsData.group_id,
-        group_description: detailsData.group_description,
-        group_email: detailsData.group_email,
-        group_created_at: detailsData.group_created_at,
-        group_created_by: detailsData.group_created_by,
-        group_modified_at: detailsData.group_modified_at,
-        group_modified_by: detailsData.group_modified_by,
-        reserve_field_1: detailsData.reserve_field_1,
-        reserve_field_2: detailsData.reserve_field_2,
-        reserve_field_3: detailsData.reserve_field_3
-      } : null
+      group_id: groupData.group_id,
+      group_name: groupData.group_name,
+      group_status: groupData.group_status,
+      group_owner: groupData.group_owner,
+      is_system: groupData.is_system,
+      group_description: groupData.group_description,
+      group_email: groupData.group_email,
+      group_created_at: groupData.group_created_at,
+      group_created_by: groupData.group_created_by,
+      group_modified_at: groupData.group_modified_at,
+      group_modified_by: groupData.group_modified_by
     };
 
     await createAndPublishEvent({
       req,
       eventName: GROUP_LOAD_EVENTS.SUCCESS.eventName,
-      payload: { groupId, username, hasDetails: !!detailsData }
+      payload: { groupId, username, hasDetails: !!result.group_description }
     });
 
     return result;

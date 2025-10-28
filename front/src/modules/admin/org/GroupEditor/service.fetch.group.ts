@@ -15,7 +15,7 @@ import { api } from '@/core/api/service.axios';
 import { useGroupEditorStore } from './state.group.editor';
 import { useUserAuthStore } from '@/core/auth/state.user.auth';
 import { fetchUsernameByUuid } from '@/core/services/service.fetch.username.by.uuid';
-import type { IGroupData, IGroupDetails, IApiError, ILoadGroupResponse } from './types.group.editor';
+import type { IGroupData, IApiError, ILoadGroupResponse } from './types.group.editor';
 
 // Logger for tracking operations
 const logger = {
@@ -31,10 +31,10 @@ export const fetchGroupService = {
   /**
    * Fetches group data by ID and includes owner's username
    * @param groupId - ID of the group
-   * @returns Promise<{ group: IGroupData, details: IGroupDetails }> - Group data and details with owner's username
+   * @returns Promise<IGroupData> - Group data with owner's username
    * @throws {Error} If fetching fails or data is missing
    */
-  async fetchGroupById(groupId: string): Promise<{ group: IGroupData, details: IGroupDetails }> {
+  async fetchGroupById(groupId: string): Promise<IGroupData> {
     const store = useGroupEditorStore();
     const userStore = useUserAuthStore();
 
@@ -61,22 +61,13 @@ export const fetchGroupService = {
       }
 
       // Check if group data exists
-      if (!response.data.data?.group) {
+      if (!response.data.data) {
         const errorMessage = 'Group data not found';
         logger.error(errorMessage);
         throw new Error(errorMessage);
       }
 
-      // Check if group details exist (optional, can be empty if not provided)
-      if (!response.data.data?.details) {
-        logger.warn('Group details not found, using default values');
-      }
-
-      const groupData = response.data.data.group;
-      const detailsData = response.data.data.details || {
-        group_description: '',
-        group_email: ''
-      }; // Default values if details are missing
+      const groupData = response.data.data;
 
       // Fetch owner's username asynchronously if group_owner exists
       let ownerUsername = groupData.group_owner; // Default to UUID if username fetch fails
@@ -102,7 +93,7 @@ export const fetchGroupService = {
         ownerUsername
       });
 
-      return { group: updatedGroupData, details: detailsData };
+      return updatedGroupData;
 
     } catch (error) {
       const apiError = error as IApiError;
