@@ -510,6 +510,7 @@ export async function updateProduct(data: UpdateProductRequest, req: Request): P
         
         await createAndPublishEvent({
             eventName: PRODUCT_UPDATE_EVENTS.STARTED.eventName,
+            req: req,
             payload: { 
                 productId: data.productId,
                 hasTranslations: !!data.translations,
@@ -520,6 +521,7 @@ export async function updateProduct(data: UpdateProductRequest, req: Request): P
         // Validate input data
         await createAndPublishEvent({
             eventName: PRODUCT_UPDATE_EVENTS.VALIDATION_STARTED.eventName,
+            req: req,
             payload: { productId: data.productId }
         });
 
@@ -530,6 +532,7 @@ export async function updateProduct(data: UpdateProductRequest, req: Request): P
         if (!existingProduct) {
             await createAndPublishEvent({
                 eventName: PRODUCT_UPDATE_EVENTS.NOT_FOUND.eventName,
+                req: req,
                 payload: { productId: data.productId }
             });
 
@@ -575,6 +578,7 @@ export async function updateProduct(data: UpdateProductRequest, req: Request): P
             await updateMainProductData(client, data.productId, data, requestorUuid, req);
             await createAndPublishEvent({
                 eventName: PRODUCT_UPDATE_EVENTS.MAIN_DATA_UPDATED.eventName,
+                req: req,
                 payload: { productId: data.productId }
             });
         }
@@ -587,6 +591,7 @@ export async function updateProduct(data: UpdateProductRequest, req: Request): P
             await updateProductTranslations(client, data.productId, data.translations, requestorUuid);
             await createAndPublishEvent({
                 eventName: PRODUCT_UPDATE_EVENTS.TRANSLATIONS_UPDATED.eventName,
+                req: req,
                 payload: { productId: data.productId }
             });
         }
@@ -596,6 +601,7 @@ export async function updateProduct(data: UpdateProductRequest, req: Request): P
             await updateProductOwners(client, data.productId, data.owner, data.backupOwner, requestorUuid);
             await createAndPublishEvent({
                 eventName: PRODUCT_UPDATE_EVENTS.OWNERS_UPDATED.eventName,
+                req: req,
                 payload: { productId: data.productId }
             });
         }
@@ -605,6 +611,7 @@ export async function updateProduct(data: UpdateProductRequest, req: Request): P
             await updateProductGroups(client, data.productId, data.specialistsGroups, requestorUuid);
             await createAndPublishEvent({
                 eventName: PRODUCT_UPDATE_EVENTS.GROUPS_UPDATED.eventName,
+                req: req,
                 payload: { productId: data.productId }
             });
         }
@@ -659,6 +666,7 @@ export async function updateProduct(data: UpdateProductRequest, req: Request): P
         if (!isPreferencesOnly) {
             await createAndPublishEvent({
                 eventName: PRODUCT_UPDATE_EVENTS.SUCCESS.eventName,
+                req: req,
                 payload: { 
                     productId: data.productId,
                     productCode: updatedProduct.product_code
@@ -686,6 +694,7 @@ export async function updateProduct(data: UpdateProductRequest, req: Request): P
         
         await createAndPublishEvent({
             eventName: PRODUCT_UPDATE_EVENTS.ERROR.eventName,
+            req: req,
             payload: { 
                 productId: data.productId,
                 error: errorMessage,

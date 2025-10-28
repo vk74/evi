@@ -54,6 +54,7 @@ export async function deleteProductOptionPairs(body: DeletePairsRequestBody, req
 
       await createAndPublishEvent({
         eventName: 'adminProducts.pairs.delete.success',
+        req: req,
         payload: { mainProductId, mode: 'all', totalRequested: deleted.length, totalDeleted: deleted.length, deletedOptionIds: deleted, requestorId: requestorUuid }
       })
 
@@ -69,11 +70,13 @@ export async function deleteProductOptionPairs(body: DeletePairsRequestBody, req
       if (missing.length > 0) {
         await createAndPublishEvent({
           eventName: 'adminProducts.pairs.delete.partial_success',
+          req: req,
           payload: { mainProductId, mode: 'selected', totalRequested: selectedOptionIds!.length, totalDeleted: deleted.length, deletedOptionIds: deleted, missingOptionIds: missing, requestorId: requestorUuid }
         })
       } else {
         await createAndPublishEvent({
           eventName: 'adminProducts.pairs.delete.success',
+          req: req,
           payload: { mainProductId, mode: 'selected', totalRequested: selectedOptionIds!.length, totalDeleted: deleted.length, deletedOptionIds: deleted, requestorId: requestorUuid }
         })
       }
@@ -84,6 +87,7 @@ export async function deleteProductOptionPairs(body: DeletePairsRequestBody, req
     try { await client.query('ROLLBACK') } catch {}
     await createAndPublishEvent({
           eventName: 'adminProducts.pairs.delete.error',
+          req: req,
       payload: { mainProductId: body?.mainProductId, mode: body?.all ? 'all' : 'selected', error: error instanceof Error ? error.message : String(error), requestorId: getRequestorUuidFromReq(req) },
       errorData: error instanceof Error ? error.message : String(error)
     })

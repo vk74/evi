@@ -81,6 +81,7 @@ export async function deleteProducts(
         
         await createAndPublishEvent({
             eventName: PRODUCT_DELETE_EVENTS.STARTED.eventName,
+            req: req,
             payload: { 
                 productIds: params.productIds,
                 count: params.productIds.length
@@ -104,6 +105,7 @@ export async function deleteProducts(
 
         await createAndPublishEvent({
             eventName: PRODUCT_DELETE_EVENTS.VALIDATION_SUCCESS.eventName,
+            req: req,
             payload: { productIds: params.productIds }
         });
 
@@ -137,6 +139,7 @@ export async function deleteProducts(
         if (totalErrors === 0) {
             await createAndPublishEvent({
                 eventName: PRODUCT_DELETE_EVENTS.SUCCESS.eventName,
+                req: req,
                 payload: { 
                     productIds: params.productIds,
                     totalDeleted,
@@ -146,6 +149,7 @@ export async function deleteProducts(
         } else if (totalDeleted > 0) {
             await createAndPublishEvent({
                 eventName: PRODUCT_DELETE_EVENTS.PARTIAL_SUCCESS.eventName,
+                req: req,
                 payload: { 
                     productIds: params.productIds,
                     totalDeleted,
@@ -169,6 +173,7 @@ export async function deleteProducts(
         
         await createAndPublishEvent({
             eventName: PRODUCT_DELETE_EVENTS.DATABASE_ERROR.eventName,
+            req: req,
             payload: { 
                 productIds: params.productIds,
                 error: errorMessage,

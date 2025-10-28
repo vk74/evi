@@ -32,6 +32,7 @@ export async function countProductOptionPairs(body: CountPairsRequestBody, req: 
 
     await createAndPublishEvent({
       eventName: 'adminProducts.pairs.read.success',
+      req: req,
       payload: { mainProductId, foundCount: count, requestedCount: 0, optionIdsFound: [], optionIdsRequested: [], requestorId: requestorUuid }
     })
 
@@ -39,6 +40,7 @@ export async function countProductOptionPairs(body: CountPairsRequestBody, req: 
   } catch (error) {
     await createAndPublishEvent({
       eventName: 'adminProducts.pairs.read.error',
+      req: req,
       payload: { mainProductId: body?.mainProductId, requestedCount: 0, error: error instanceof Error ? error.message : String(error), requestorId: getRequestorUuidFromReq(req) },
       errorData: error instanceof Error ? error.message : String(error)
     })

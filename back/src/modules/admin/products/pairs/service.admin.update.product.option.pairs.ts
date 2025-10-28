@@ -64,6 +64,7 @@ export async function updateProductOptionPairs(body: UpdatePairsRequestBody, req
       const reason = 'Not found: some option ids do not have existing pairs'
       await createAndPublishEvent({
         eventName: 'adminProducts.pairs.update.not_found',
+        req: req,
         payload: {
           mainProductId,
           missingOptionIds: missing,
@@ -91,6 +92,7 @@ export async function updateProductOptionPairs(body: UpdatePairsRequestBody, req
     const updatedIds = optionIds
     await createAndPublishEvent({
       eventName: 'adminProducts.pairs.update.success',
+      req: req,
       payload: {
         mainProductId,
         updatedCount: updatedIds.length,
@@ -105,6 +107,7 @@ export async function updateProductOptionPairs(body: UpdatePairsRequestBody, req
     try { await client.query('ROLLBACK') } catch {}
     await createAndPublishEvent({
       eventName: 'adminProducts.pairs.update.error',
+      req: req,
       payload: {
         mainProductId: body?.mainProductId,
         requestedCount: Array.isArray(body?.pairs) ? body.pairs.length : 0,

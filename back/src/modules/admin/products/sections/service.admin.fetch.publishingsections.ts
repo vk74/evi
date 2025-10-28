@@ -74,6 +74,7 @@ export async function fetchPublishingSections(req: Request): Promise<FetchPublis
 
         await createAndPublishEvent({
             eventName: PRODUCT_CATALOG_PUBLICATION_FETCH_EVENTS.STARTED.eventName,
+            req: req,
             payload: { 
                 productId: productId || null,
                 hasProductId: !!productId
@@ -82,6 +83,7 @@ export async function fetchPublishingSections(req: Request): Promise<FetchPublis
 
         await createAndPublishEvent({
             eventName: PRODUCT_CATALOG_PUBLICATION_FETCH_EVENTS.VALIDATION_STARTED.eventName,
+            req: req,
             payload: { productId: productId || null }
         });
 
@@ -132,6 +134,7 @@ export async function fetchPublishingSections(req: Request): Promise<FetchPublis
 
         await createAndPublishEvent({
             eventName: PRODUCT_CATALOG_PUBLICATION_FETCH_EVENTS.SUCCESS.eventName,
+            req: req,
             payload: { 
                 productId: productId || null,
                 sectionsCount: resolvedSections.length,
@@ -147,6 +150,7 @@ export async function fetchPublishingSections(req: Request): Promise<FetchPublis
 
         await createAndPublishEvent({
             eventName: PRODUCT_CATALOG_PUBLICATION_FETCH_EVENTS.ERROR.eventName,
+            req: req,
             payload: { 
                 productId: (req.query.productId as string) || null,
                 error: errorMessage

@@ -31,6 +31,7 @@ export async function readProductOptionPairs(body: ReadPairsRequestBody, req: Re
 
     await createAndPublishEvent({
       eventName: 'adminProducts.pairs.read.started',
+      req: req,
       payload: {
         mainProductId,
         optionIdsCount: Array.isArray(optionProductIds) ? optionProductIds.length : 0,
@@ -54,6 +55,7 @@ export async function readProductOptionPairs(body: ReadPairsRequestBody, req: Re
       }))
       await createAndPublishEvent({
         eventName: 'adminProducts.pairs.read.success',
+        req: req,
         payload: {
           mainProductId,
           foundCount: pairs.length,
@@ -74,6 +76,7 @@ export async function readProductOptionPairs(body: ReadPairsRequestBody, req: Re
       const ids: string[] = resIds.rows.map(r => r.option_product_id as string)
       await createAndPublishEvent({
         eventName: 'adminProducts.pairs.read.success',
+        req: req,
         payload: { mainProductId, foundCount: ids.length, requestedCount: 0, optionIdsFound: ids, optionIdsRequested: [], requestorId: requestorUuid }
       })
       return { success: true, optionProductIds: ids }
@@ -88,6 +91,7 @@ export async function readProductOptionPairs(body: ReadPairsRequestBody, req: Re
       for (const id of optionProductIds) existsMap[id] = found.has(id)
       await createAndPublishEvent({
         eventName: 'adminProducts.pairs.read.success',
+        req: req,
         payload: { mainProductId, foundCount: res.rows.length, requestedCount: optionProductIds.length, optionIdsFound: Array.from(found), optionIdsRequested: optionProductIds, requestorId: requestorUuid }
       })
       return { success: true, existsMap }
@@ -97,6 +101,7 @@ export async function readProductOptionPairs(body: ReadPairsRequestBody, req: Re
   } catch (error) {
     await createAndPublishEvent({
       eventName: 'adminProducts.pairs.read.error',
+      req: req,
       payload: {
         mainProductId: body?.mainProductId,
         requestedCount: Array.isArray(body?.optionProductIds) ? body.optionProductIds.length : 0,

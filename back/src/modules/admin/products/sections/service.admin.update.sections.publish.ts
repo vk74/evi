@@ -31,6 +31,7 @@ export async function updateSectionsPublish(req: Request): Promise<UpdateProduct
   try {
     await createAndPublishEvent({
       eventName: PRODUCT_CATALOG_PUBLICATION_UPDATE_EVENTS.STARTED.eventName,
+      req: req,
       payload: { 
         productId: productId || null,
         targetSectionIdsCount: targetSectionIds.length,
@@ -40,6 +41,7 @@ export async function updateSectionsPublish(req: Request): Promise<UpdateProduct
 
     await createAndPublishEvent({
       eventName: PRODUCT_CATALOG_PUBLICATION_UPDATE_EVENTS.VALIDATION_STARTED.eventName,
+      req: req,
       payload: { productId: productId || null }
     });
 
@@ -80,6 +82,7 @@ export async function updateSectionsPublish(req: Request): Promise<UpdateProduct
 
     await createAndPublishEvent({
       eventName: PRODUCT_CATALOG_PUBLICATION_UPDATE_EVENTS.DATABASE_UPDATE_STARTED.eventName,
+      req: req,
       payload: { productId }
     });
 
@@ -102,6 +105,7 @@ export async function updateSectionsPublish(req: Request): Promise<UpdateProduct
         }
         await createAndPublishEvent({
           eventName: PRODUCT_CATALOG_PUBLICATION_UPDATE_EVENTS.UNPUBLISHED_FROM_CATALOG.eventName,
+          req: req,
           payload: { 
             productId, 
             removedSectionsCount: toRemove.length,
@@ -117,6 +121,7 @@ export async function updateSectionsPublish(req: Request): Promise<UpdateProduct
         }
         await createAndPublishEvent({
           eventName: PRODUCT_CATALOG_PUBLICATION_UPDATE_EVENTS.PUBLISHED_TO_CATALOG.eventName,
+          req: req,
           payload: { 
             productId, 
             addedSectionsCount: toAdd.length,
@@ -132,6 +137,7 @@ export async function updateSectionsPublish(req: Request): Promise<UpdateProduct
 
       await createAndPublishEvent({
         eventName: PRODUCT_CATALOG_PUBLICATION_UPDATE_EVENTS.SUCCESS.eventName,
+        req: req,
         payload: { 
           productId, 
           updatedCount: toAdd.length + toRemove.length,
@@ -154,6 +160,7 @@ export async function updateSectionsPublish(req: Request): Promise<UpdateProduct
       
       await createAndPublishEvent({
         eventName: PRODUCT_CATALOG_PUBLICATION_UPDATE_EVENTS.ERROR.eventName,
+        req: req,
         payload: { 
           productId: productId || null,
           error: errorMessage
@@ -175,6 +182,7 @@ export async function updateSectionsPublish(req: Request): Promise<UpdateProduct
     
     await createAndPublishEvent({
       eventName: PRODUCT_CATALOG_PUBLICATION_UPDATE_EVENTS.ERROR.eventName,
+      req: req,
       payload: { 
         productId: productId || null,
         error: errorMessage

@@ -65,6 +65,7 @@ export async function createProductOptionPairs(body: CreatePairsRequestBody, req
       const errorMessage = 'Conflict: pairs already exist for some option ids'
       await createAndPublishEvent({
         eventName: 'adminProducts.pairs.create.conflict',
+        req: req,
         payload: {
           mainProductId,
           conflictingOptionIds: conflicting,
@@ -94,6 +95,7 @@ export async function createProductOptionPairs(body: CreatePairsRequestBody, req
     const createdIds = optionIds
     await createAndPublishEvent({
       eventName: 'adminProducts.pairs.create.success',
+      req: req,
       payload: {
         mainProductId,
         createdCount: createdIds.length,
@@ -107,6 +109,7 @@ export async function createProductOptionPairs(body: CreatePairsRequestBody, req
     try { await client.query('ROLLBACK') } catch {}
     await createAndPublishEvent({
       eventName: 'adminProducts.pairs.create.error',
+      req: req,
       payload: {
         mainProductId: body?.mainProductId,
         requestedCount: Array.isArray(body?.pairs) ? body.pairs.length : 0,
