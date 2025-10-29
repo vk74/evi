@@ -281,22 +281,3 @@ export async function getValidationRules(req: Request): Promise<Map<string, Vali
   console.log('Validation rules cache updated');
   return rules;
 }
-
-/**
- * Clear validation cache (for testing or manual refresh)
- */
-export function clearValidationCache(): void {
-  validationCache = null;
-  console.log('Validation cache cleared');
-}
-
-/**
- * Get validation rule for specific field type
- * @param fieldType Type of field to get rule for
- * @param req Express request object for context
- * @returns ValidationRule or null if not found
- */
-export async function getValidationRule(fieldType: string, req: Request): Promise<ValidationRule | null> {
-  const rules = await getValidationRules(req);
-  return rules.get(fieldType) || null;
-}

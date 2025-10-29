@@ -136,11 +136,6 @@ export const eventReferenceFiles: Record<string, string[]> = {
     path.resolve(__dirname, '../../../modules/account/events.account.ts')
   ],
   
-  // Validation events - events for validation service operations
-  validation: [
-    path.resolve(__dirname, '../../validation/events.validation.ts')
-  ],
-  
   // Admin pricing events - events for admin pricing operations (currencies)
   adminPricing: [
     path.resolve(__dirname, '../../../modules/admin/pricing/events.admin.pricing.ts')

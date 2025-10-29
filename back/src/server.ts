@@ -52,7 +52,6 @@ import { initCache as initHelpersCache } from '@/core/helpers/cache.helpers';
 import { getSetting, parseSettingValue } from '@/modules/admin/settings/cache.settings';
 
 // Import validation service
-import { initializeValidationService } from '@/core/validation/init.validation';
 
 /**
  * Validate that connection handler can access rate limiting settings from cache
@@ -225,14 +224,7 @@ async function initializeServer(): Promise<void> {
     settingsLoaded = true;
     console.log('[Server] System settings loaded and ready');
 
-    // 5. Initialize validation service AFTER settings are loaded
-    console.log('Initializing validation service...');
-    // Create a mock request object for initialization (validation service needs req context)
-    const mockReq = {} as Request;
-    await initializeValidationService(mockReq);
-    console.log('Validation service initialized successfully');
-
-    // 6. Validate connection handler readiness
+    // 5. Validate connection handler readiness
     console.log('Validating connection handler readiness...');
     const connectionHandlerValid = await validateConnectionHandlerReadiness();
     if (!connectionHandlerValid) {
@@ -241,20 +233,20 @@ async function initializeServer(): Promise<void> {
     connectionHandlerReady = true;
     console.log('[Server] Connection handler validated and ready');
 
-    // 7. Initialize logger service AFTER settings are loaded
+    // 6. Initialize logger service AFTER settings are loaded
     // This ensures logger can apply correct settings from cache
     loggerService.initialize();
     loggerSubscriptions.initializeSubscriptions();
     console.log('Logger system initialized with current settings');
 
-    // 8. Initialize event bus service AFTER settings are loaded
+    // 7. Initialize event bus service AFTER settings are loaded
     // This ensures event bus can apply correct settings from cache and timezone
     await eventBusService.initialize();
     eventBusSubscriptions.initializeSubscriptions();
     console.log('Event Bus system initialized with current settings and timezone');
     // No duplicate logging here, as loadSettings already logs success message
 
-    // 9. Setting up middleware
+    // 8. Setting up middleware
     // Configure CORS for frontend only
     app.use(cors({
       origin: ['http://localhost:8080', 'http://localhost:3000', 'http://127.0.0.1:8080'], // Allow access from multiple localhost variants
