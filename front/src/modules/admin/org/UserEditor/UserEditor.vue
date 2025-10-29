@@ -37,7 +37,7 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <v-container class="pa-0">
+  <div class="module-root">
     <div class="internal-app-bar d-flex align-center">
       <div class="nav-section">
         <v-btn :class="['section-btn', { 'section-active': userEditorStore.ui.activeSection === 'details' }]" variant="text" @click="setSection('details')">
@@ -48,7 +48,7 @@ onBeforeUnmount(() => {
         </v-btn>
       </div>
       <v-spacer />
-      <div class="title-text">
+      <div class="module-title">
         {{ userEditorStore.mode.mode === 'create' ? t('admin.org.editor.title.create') : t('admin.org.editor.title.edit') }}
       </div>
     </div>
@@ -57,13 +57,50 @@ onBeforeUnmount(() => {
       <UserEditorDetails v-if="userEditorStore.ui.activeSection === 'details'" />
       <UserEditorGroups v-else />
     </div>
-  </v-container>
+  </div>
 </template>
 
 <style scoped>
-.title-text { margin-right: 15px; text-align: right; font-family: 'Roboto', sans-serif; font-size: 1.1rem; font-weight: 300; letter-spacing: 0.5px; color: rgba(0, 0, 0, 0.6); }
-.internal-app-bar { padding: 6px 8px; border-bottom: 1px solid rgba(0, 0, 0, 0.06); }
-.nav-section { display: flex; align-items: center; margin-left: 15px; }
-.section-btn { text-transform: none; font-weight: 400; height: 64px; border-radius: 0; color: rgba(0, 0, 0, 0.6) !important; }
-.section-active { border-bottom: 2px solid #009688; font-weight: 500; color: rgba(0, 0, 0, 0.87) !important; }
+.nav-section {
+  display: flex;
+  align-items: center;
+  margin-left: 15px;
+}
+
+.section-btn {
+  text-transform: none;
+  font-weight: 400;
+  height: 64px;
+  border-radius: 0;
+  color: rgba(0, 0, 0, 0.6) !important;
+}
+
+.section-active {
+  border-bottom: 2px solid #009688;
+  font-weight: 500;
+  color: rgba(0, 0, 0, 0.87) !important;
+}
+
+.module-title {
+  margin-right: 15px;
+  color: rgba(0, 0, 0, 0.87);
+  font-size: 16px;
+}
+
+/* Internal app bar styling so it sits inside the working area */
+.internal-app-bar {
+  padding: 6px 8px;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+.module-root {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.working-area {
+  flex-grow: 1;
+  overflow: auto;
+}
 </style>

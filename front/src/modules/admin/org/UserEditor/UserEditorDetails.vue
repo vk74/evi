@@ -362,7 +362,7 @@ const applyPhoneMask = (value: string) => {
 const handlePhoneInput = (event: Event) => {
   const target = event.target as HTMLInputElement
   const maskedValue = applyPhoneMask(target.value)
-  userEditorStore.updateProfile({ mobile_phone_number: maskedValue })
+  userEditorStore.updateUser({ mobile_phone_number: maskedValue })
 }
 
 onMounted(async () => {
@@ -385,11 +385,10 @@ onBeforeUnmount(() => {
 
 <template>
   <div class="d-flex">
-    <div class="flex-grow-1">
-      <v-container class="content-container pa-0">
-        <v-card flat>
-          <v-form ref="form" v-model="isFormValid">
-            <v-row class="pa-4">
+    <div class="flex-grow-1 main-content-area">
+      <v-card flat>
+        <v-form ref="form" v-model="isFormValid">
+          <v-row class="pa-4">
               <v-col cols="12">
                 <div class="card-header">
                   <v-card-title class="text-subtitle-1">{{ t('admin.org.editor.sections.basicInfo') }}</v-card-title>
@@ -552,7 +551,6 @@ onBeforeUnmount(() => {
             </v-row>
           </v-form>
         </v-card>
-      </v-container>
     </div>
 
     <div class="side-bar-container">
@@ -587,10 +585,40 @@ onBeforeUnmount(() => {
   pointer-events: none;
 }
 
-.side-bar-container { width: 18%; min-width: 220px; border-left: thin solid rgba(var(--v-border-color), var(--v-border-opacity)); display: flex; flex-direction: column; }
-.side-bar-section { padding: 16px; }
-.sidebar-divider { height: 20px; position: relative; margin: 0 16px; }
-.sidebar-divider::after { content: ''; position: absolute; top: 50%; left: 0; right: 0; border-top: thin solid rgba(var(--v-border-color), var(--v-border-opacity)); }
+/* Main content area */
+.main-content-area {
+  min-width: 0;
+}
+
+/* Sidebar styles */
+.side-bar-container {
+  width: 280px;
+  min-width: 280px;
+  border-left: thin solid rgba(var(--v-border-color), var(--v-border-opacity));
+  display: flex;
+  flex-direction: column;
+  background-color: rgba(var(--v-theme-surface), 1);
+  overflow-y: auto;
+}
+
+.side-bar-section {
+  padding: 16px;
+}
+
+.sidebar-divider {
+  height: 20px;
+  position: relative;
+  margin: 0 16px;
+}
+
+.sidebar-divider::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 0;
+  right: 0;
+  border-top: thin solid rgba(var(--v-border-color), var(--v-border-opacity));
+}
 .wide-btn { min-width: 240px; }
 
 /* Password toggle button visibility */

@@ -171,8 +171,8 @@ watch(isEditMode, (v) => { if (v) { page.value = 1; fetchRows() } })
 
 <template>
   <div class="d-flex">
-    <div class="flex-grow-1">
-      <v-container class="pa-4">
+    <div class="flex-grow-1 main-content-area">
+      <div class="pa-4">
         <template v-if="!isEditMode">
           <v-card flat class="pa-6 d-flex flex-column align-center justify-center placeholder-disabled">
             <div class="text-body-2">{{ t('admin.org.editor.groups.placeholder.disabled') }}</div>
@@ -261,7 +261,7 @@ watch(isEditMode, (v) => { if (v) { page.value = 1; fetchRows() } })
         </template>
       </v-data-table>
         </template>
-      </v-container>
+      </div>
     </div>
 
     <!-- Right sidebar -->
@@ -365,15 +365,25 @@ watch(isEditMode, (v) => { if (v) { page.value = 1; fetchRows() } })
 .rotating { animation: spin 0.8s linear infinite; }
 @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
 
-/* Sidebar styles - copied from GroupEditorMembers.vue */
-.side-bar-container { 
-  width: 18%; 
-  min-width: 220px; 
-  border-left: thin solid rgba(var(--v-border-color), var(--v-border-opacity)); 
-  display: flex; 
-  flex-direction: column; 
+/* Main content area */
+.main-content-area {
+  min-width: 0;
 }
-.side-bar-section { padding: 16px; }
+
+/* Sidebar styles */
+.side-bar-container {
+  width: 280px;
+  min-width: 280px;
+  border-left: thin solid rgba(var(--v-border-color), var(--v-border-opacity));
+  display: flex;
+  flex-direction: column;
+  background-color: rgba(var(--v-theme-surface), 1);
+  overflow-y: auto;
+}
+
+.side-bar-section {
+  padding: 16px;
+}
 
 .sidebar-divider {
   height: 20px;

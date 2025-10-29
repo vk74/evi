@@ -130,6 +130,7 @@ const getIconComponent = (iconName: string) => {
       <UserEditor
         v-if="activeSection === 'user-editor'"
         mode="create"
+        class="pa-0"
       />
       <GroupsList v-if="activeSection === 'groups'" />
       <GroupEditor
