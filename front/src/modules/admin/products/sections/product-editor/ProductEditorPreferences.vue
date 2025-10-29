@@ -213,7 +213,7 @@ watch([isVisibleOwner, isVisibleGroups, isVisibleTechSpecs, isVisibleAreaSpecs, 
           </div>
         </div>
 
-        <v-container class="pa-6">
+        <div class="pa-6">
           <!-- Preferences Management Section -->
           <div class="preferences-management-section">
             <!-- Block for visibility switches -->
@@ -297,7 +297,7 @@ watch([isVisibleOwner, isVisibleGroups, isVisibleTechSpecs, isVisibleAreaSpecs, 
               </div>
             </div>
           </div>
-        </v-container>
+        </div>
       </div>
       
       <!-- Sidebar (right part) -->
@@ -425,11 +425,13 @@ watch([isVisibleOwner, isVisibleGroups, isVisibleTechSpecs, isVisibleAreaSpecs, 
 
 /* Sidebar styles */
 .side-bar-container {
-  width: 18%;
-  min-width: 240px;
+  width: 280px;
+  min-width: 280px;
   border-left: thin solid rgba(var(--v-border-color), var(--v-border-opacity));
   display: flex;
   flex-direction: column;
+  background-color: rgba(var(--v-theme-surface), 1);
+  overflow-y: auto;
 }
 
 .side-bar-section {

@@ -45,9 +45,8 @@ const switchSection = (section: 'details' | 'options' | 'preferences' | 'catalog
 </script>
 
 <template>
-  <div class="product-editor-container">
-    <!-- Navigation tabs -->
-    <div class="editor-navigation">
+  <div class="module-root">
+    <div class="internal-app-bar d-flex align-center">
       <div class="nav-section">
         <v-btn
           :class="['section-btn', { 'section-active': productsStore.activeEditorSection === 'details' }]"
@@ -90,47 +89,29 @@ const switchSection = (section: 'details' | 'options' | 'preferences' | 'catalog
     </div>
 
     <!-- Content area -->
-    <div class="editor-content">
-      <v-container class="pa-0">
-        <!-- Render appropriate component based on active section -->
-        <ProductEditorDetails 
-          v-if="productsStore.activeEditorSection === 'details'"
-        />
-        <ProductEditorOptions 
-          v-else-if="productsStore.activeEditorSection === 'options'"
-        />
-        <ProductEditorPreferences 
-          v-else-if="productsStore.activeEditorSection === 'preferences'"
-        />
-        <ProductEditorCatalogPublication 
-          v-else-if="productsStore.activeEditorSection === 'catalog publication'"
-        />
-      </v-container>
+    <div class="working-area">
+      <!-- Render appropriate component based on active section -->
+      <ProductEditorDetails 
+        v-if="productsStore.activeEditorSection === 'details'"
+      />
+      <ProductEditorOptions 
+        v-else-if="productsStore.activeEditorSection === 'options'"
+      />
+      <ProductEditorPreferences 
+        v-else-if="productsStore.activeEditorSection === 'preferences'"
+      />
+      <ProductEditorCatalogPublication 
+        v-else-if="productsStore.activeEditorSection === 'catalog publication'"
+      />
     </div>
   </div>
 </template>
 
 <style scoped>
-/* Product editor container */
-.product-editor-container {
-  height: 100%;
-  display: flex;
-  flex-direction: column;
-}
-
-/* Navigation styles */
-.editor-navigation {
-  display: flex;
-  align-items: center;
-  padding: 0 16px;
-  height: 64px;
-  border-bottom: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
-  background-color: rgba(var(--v-theme-surface), 1);
-}
-
 .nav-section {
   display: flex;
   align-items: center;
+  margin-left: 15px;
 }
 
 .section-btn {
@@ -158,10 +139,20 @@ const switchSection = (section: 'details' | 'options' | 'preferences' | 'catalog
   font-size: 16px;
 }
 
-/* Content area */
-.editor-content {
-  flex: 1;
-  overflow-y: auto;
-  height: calc(100vh - 64px);
+/* Internal app bar styling so it sits inside the working area */
+.internal-app-bar {
+  padding: 6px 8px;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+.module-root {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.working-area {
+  flex-grow: 1;
+  overflow: auto;
 }
 </style>

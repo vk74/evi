@@ -372,7 +372,7 @@ onMounted(async () => {
           </div>
         </div>
 
-        <v-container class="pa-6">
+        <div class="pa-6">
           <!-- Options Management Section -->
           <div v-if="isOptionsTabActive" class="options-management-section">
             <!-- Search row -->
@@ -502,7 +502,7 @@ onMounted(async () => {
               </v-card-text>
             </v-card>
           </div>
-        </v-container>
+        </div>
       </div>
 
       <!-- Sidebar (right part) -->

@@ -761,8 +761,8 @@ onMounted(async () => {
     <DataLoading v-if="isLoadingProduct" :loading="true" />
     
     <!-- Main content (left part) -->
-    <div v-else class="flex-grow-1">
-      <v-container class="content-container">
+    <div v-else class="flex-grow-1 main-content-area">
+      <div class="px-4 pt-4">
         <v-form
           ref="form"
           v-model="isFormValid"
@@ -1152,7 +1152,7 @@ onMounted(async () => {
 
 
         </v-form>
-      </v-container>
+      </div>
     </div>
     
     <!-- Sidebar (right part) -->
@@ -1346,21 +1346,23 @@ onMounted(async () => {
   align-items: center;
 }
 
+/* Main content area */
+.main-content-area {
+  min-width: 0;
+}
+
 /* Sidebar styles */
 .side-bar-container {
-  width: 18%;
-  min-width: 240px;
+  width: 280px;
+  min-width: 280px;
   border-left: thin solid rgba(var(--v-border-color), var(--v-border-opacity));
   display: flex;
   flex-direction: column;
+  background-color: rgba(var(--v-theme-surface), 1);
+  overflow-y: auto;
 }
 
 .side-bar-section {
-  padding: 16px;
-}
-
-/* Content container */
-.content-container {
   padding: 16px;
 }
 

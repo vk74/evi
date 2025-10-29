@@ -104,6 +104,7 @@ const getIconComponent = (iconName: string) => {
       <ProductEditor
         v-if="activeSection === 'product-editor'"
         mode="create"
+        class="pa-0"
       />
       <ProductsSettings v-if="activeSection === 'settings'" />
     </div>
