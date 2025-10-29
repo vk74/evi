@@ -62,7 +62,14 @@ export const updateUserService = {
         throw new Error(errorMessage)
       }
 
-    } catch (error) {
+    } catch (error: any) {
+      // Handle 403 Forbidden Operation error
+      if (error.response?.status === 403 && error.response?.data?.code === 'FORBIDDEN_OPERATION') {
+        const errorMessage = error.response.data.message || 'Operation not allowed for system user account'
+        logger.error('Forbidden operation attempted', { message: errorMessage })
+        throw new Error(errorMessage)
+      }
+      
       if (error instanceof Error) {
         logger.error('Failed to update user', error)
         throw error

@@ -59,6 +59,7 @@ export interface IUserAccount {
   is_active?: boolean              // boolean
   mobile_phone_number?: string     // character varying(15)
   gender?: 'm' | 'f' | 'n'         // app.gender
+  is_system?: boolean              // boolean - system user flag
 }
 
 

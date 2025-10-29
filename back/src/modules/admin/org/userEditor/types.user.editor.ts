@@ -42,6 +42,7 @@ export interface DbUser {
     is_active: boolean       // boolean
     mobile_phone_number: string | null  // character varying(15)
     gender: 'm' | 'f' | 'n' | null    // app.gender
+    is_system: boolean       // boolean - system user flag
 }
 
 

@@ -57,6 +57,10 @@ const accountPasswordConfirm = computed({ get: () => userEditorStore.account.pas
 const accountStatus = computed({ get: () => userEditorStore.account.account_status, set: (value) => userEditorStore.updateUser({ account_status: value }) })
 const accountIsStaff = computed({ get: () => userEditorStore.account.is_staff, set: (value) => userEditorStore.updateUser({ is_staff: value }) })
 
+// System user computed properties
+const isSystemUser = computed(() => userEditorStore.account.is_system === true)
+const userUuid = computed(() => userEditorStore.account.user_id || '')
+
 const requiredFields = computed(() => ({
   username: userEditorStore.account.username,
   email: userEditorStore.account.email,
@@ -389,15 +393,29 @@ onBeforeUnmount(() => {
       <v-card flat>
         <v-form ref="form" v-model="isFormValid">
           <v-row class="pa-4">
+              <!-- User UUID and System User Info (only in edit mode) -->
+              <v-col v-if="userEditorStore.mode.mode === 'edit'" cols="12">
+                <div class="user-info-container mb-4">
+                  <div class="user-info-item">
+                    <div class="user-info-label">
+                      {{ t('admin.org.editor.details.userUuid') }}:
+                    </div>
+                    <div class="user-info-value">
+                      {{ userUuid }}
+                    </div>
+                    <div v-if="isSystemUser" class="user-info-value system-user">
+                      {{ t('admin.org.editor.details.systemUser') }}
+                    </div>
+                  </div>
+                </div>
+              </v-col>
+              
               <v-col cols="12">
                 <div class="card-header">
                   <v-card-title class="text-subtitle-1">{{ t('admin.org.editor.sections.basicInfo') }}</v-card-title>
                   <v-divider class="section-divider" />
                 </div>
                 <v-row class="pt-3">
-                  <v-col v-if="userEditorStore.mode.mode === 'edit'" cols="12" md="12">
-                    <v-text-field v-model="userEditorStore.account.user_id" :label="t('admin.org.editor.fields.uuid.label')" variant="outlined" density="comfortable" readonly disabled />
-                  </v-col>
                   <v-col cols="12" md="6">
                     <v-text-field 
                       ref="usernameField" 
@@ -405,7 +423,7 @@ onBeforeUnmount(() => {
                       :label="t('admin.org.editor.fields.username.label')" 
                       :rules="dynamicUsernameRules" 
                       :loading="isLoadingValidationRules"
-                      :disabled="!validationRulesReady"
+                      :disabled="!validationRulesReady || isSystemUser"
                       variant="outlined" 
                       density="comfortable" 
                       :counter="currentValidationRules?.wellKnownFields?.userName?.maxLength" 
@@ -499,11 +517,20 @@ onBeforeUnmount(() => {
                   </v-col>
                   
                   <v-col cols="12" md="6">
-                    <v-select v-model="accountStatus" :label="t('admin.org.editor.fields.accountStatus.label')" variant="outlined" density="comfortable" :items="[
-                      { title: t('admin.org.editor.fields.accountStatus.options.active'), value: AccountStatus.ACTIVE },
-                      { title: t('admin.org.editor.fields.accountStatus.options.disabled'), value: AccountStatus.DISABLED },
-                      { title: t('admin.org.editor.fields.accountStatus.options.requiresAction'), value: AccountStatus.REQUIRES_USER_ACTION }
-                    ]" item-title="title" item-value="value">
+                    <v-select 
+                      v-model="accountStatus" 
+                      :label="t('admin.org.editor.fields.accountStatus.label')" 
+                      variant="outlined" 
+                      density="comfortable" 
+                      :disabled="isSystemUser"
+                      :items="[
+                        { title: t('admin.org.editor.fields.accountStatus.options.active'), value: AccountStatus.ACTIVE },
+                        { title: t('admin.org.editor.fields.accountStatus.options.disabled'), value: AccountStatus.DISABLED },
+                        { title: t('admin.org.editor.fields.accountStatus.options.requiresAction'), value: AccountStatus.REQUIRES_USER_ACTION }
+                      ]" 
+                      item-title="title" 
+                      item-value="value"
+                    >
                     <template #append-inner>
                       <PhCaretUpDown class="dropdown-icon" />
                     </template>
@@ -632,6 +659,44 @@ onBeforeUnmount(() => {
   color: #14b8a6 !important;
   opacity: 1 !important;
   visibility: visible !important;
+}
+
+/* User info styles - similar to GroupEditorMembers.vue group title */
+.user-info-container {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 8px 0;
+}
+
+.user-info-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.user-info-label {
+  font-size: 0.875rem;
+  color: rgba(0, 0, 0, 0.75);
+  font-weight: 500;
+}
+
+.user-info-value {
+  font-family: 'Roboto Mono', monospace;
+  font-size: 0.875rem;
+  color: rgba(0, 0, 0, 0.75);
+  background-color: rgba(0, 0, 0, 0.05);
+  padding: 4px 8px;
+  border-radius: 4px;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  display: inline-block;
+}
+
+.user-info-value.system-user {
+  background-color: rgba(255, 193, 7, 0.1);
+  border-color: rgba(255, 193, 7, 0.3);
+  color: rgba(255, 152, 0, 0.9);
+  font-weight: 500;
 }
 
 </style>

@@ -50,7 +50,8 @@ interface SQLQuery {
         created_at,
         is_active,
         mobile_phone_number,
-        gender
+        gender,
+        is_system
       FROM app.users
       WHERE user_id = $1::uuid
     `,

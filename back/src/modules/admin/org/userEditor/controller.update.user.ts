@@ -29,10 +29,24 @@ async function updateUserLogic(req: Request, res: Response): Promise<any> {
     const userId = req.params.userId;
     const userData = { ...req.body, user_id: userId };
 
-    // Update user data
-    const result = await updateUser(userData, req);
-
-    return result;
+    try {
+        // Update user data
+        const result = await updateUser(userData, req);
+        return result;
+    } catch (error: any) {
+        // Handle FORBIDDEN_OPERATION with 403 status
+        if (error.code === 'FORBIDDEN_OPERATION') {
+            res.status(403).json({
+                success: false,
+                message: error.message,
+                code: error.code
+            });
+            return;
+        }
+        
+        // Re-throw other errors to be handled by connection handler
+        throw error;
+    }
 }
 
 // Export controller using universal connection handler

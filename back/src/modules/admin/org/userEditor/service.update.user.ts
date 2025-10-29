@@ -49,6 +49,47 @@ async function getCurrentUserData(userId: string): Promise<{
   };
 }
 
+// Check if user is system user and validate forbidden field changes
+async function validateSystemUserFields(data: UpdateUserRequest, req: Request): Promise<void> {
+  const currentData = await getCurrentUserData(data.user_id);
+  
+  // Check if user is system user
+  if (currentData.user.is_system) {
+    const forbiddenFields: string[] = [];
+    
+    // Check for forbidden field changes
+    if (data.username !== undefined && data.username !== currentData.user.username) {
+      forbiddenFields.push('username');
+    }
+    
+    if (data.account_status !== undefined && data.account_status !== currentData.user.account_status) {
+      forbiddenFields.push('account_status');
+    }
+    
+    // If any forbidden fields are being changed, block the entire operation
+    if (forbiddenFields.length > 0) {
+      const requestorUuid = getRequestorUuidFromReq(req);
+      
+      // Create and publish forbidden operation event
+      await fabricEvents.createAndPublishEvent({
+        req,
+        eventName: USER_UPDATE_EVENTS.FORBIDDEN_OPERATION.eventName,
+        payload: {
+          userId: data.user_id,
+          attemptedFields: forbiddenFields,
+          requestorUuid
+        }
+      });
+      
+      throw {
+        code: 'FORBIDDEN_OPERATION',
+        message: `System user account fields cannot be changed: ${forbiddenFields.join(', ')}`,
+        field: forbiddenFields.join(', ')
+      } as ServiceError;
+    }
+  }
+}
+
 // Compare old and new data to find actual changes
 function findChanges(oldData: any, newData: UpdateUserRequest): {
   changedFields: string[];
@@ -340,6 +381,9 @@ export async function updateUserById(updateData: UpdateUserRequest, req: Request
         };
       }
       
+      // System user validation (must be before other validations)
+      await validateSystemUserFields(trimmedData, req);
+      
       // Validation
       await validateUpdateData(trimmedData, req);
       
@@ -443,8 +487,8 @@ export async function updateUserById(updateData: UpdateUserRequest, req: Request
       // Приводим error к типу ServiceError
       const error = err as ServiceError;
       
-      // If this is not a NOT_FOUND error that we already published, publish a FAILED event
-      if (error.code !== 'NOT_FOUND') {
+      // If this is not a NOT_FOUND or FORBIDDEN_OPERATION error that we already published, publish a FAILED event
+      if (error.code !== 'NOT_FOUND' && error.code !== 'FORBIDDEN_OPERATION') {
         await fabricEvents.createAndPublishEvent({
           req,
           eventName: USER_UPDATE_EVENTS.FAILED.eventName,

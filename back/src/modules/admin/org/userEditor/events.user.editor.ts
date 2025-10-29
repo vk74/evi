@@ -159,6 +159,18 @@ export const USER_UPDATE_EVENTS = {
     payload: null, // { userId: string, error: ServiceError }
     errorData: null, // Error details
     version: '1.0.0'
+  },
+  
+  // Forbidden operation attempted on system user
+  FORBIDDEN_OPERATION: {
+    eventName: 'userEditor.update.forbidden.operation',
+    source: 'user editor admin submodule',
+    eventType: 'app' as const,
+    severity: 'warning' as const,
+    eventMessage: 'Forbidden operation attempted on system user account',
+    payload: null, // { userId: string, attemptedFields: string[], requestorUuid: string }
+    errorData: null, // Error details
+    version: '1.0.0'
   }
 };
 

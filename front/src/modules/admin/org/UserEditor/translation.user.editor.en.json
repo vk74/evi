@@ -13,6 +13,10 @@
           "details": "user details",
           "groups": "member of groups"
         },
+        "details": {
+          "userUuid": "user uuid",
+          "systemUser": "system user account"
+        },
         "groups": {
           "placeholder": {
             "disabled": "available in edit mode"
