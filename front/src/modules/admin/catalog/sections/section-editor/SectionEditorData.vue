@@ -246,8 +246,8 @@ const handleBackupOwnerSelected = (result: any) => {
 
 <template>
   <div class="d-flex">
-    <div class="flex-grow-1">
-      <v-container class="content-container">
+    <div class="flex-grow-1 main-content-area">
+      <div class="px-4 pt-4">
         <DataLoading
           v-if="isLoadingSection"
           :loading="isLoadingSection"
@@ -558,7 +558,7 @@ const handleBackupOwnerSelected = (result: any) => {
             </v-row>
           </v-form>
         </v-card>
-      </v-container>
+      </div>
     </div>
 
     <div class="side-bar-container">
@@ -667,8 +667,25 @@ const handleBackupOwnerSelected = (result: any) => {
   pointer-events: none;
 }
 
-.side-bar-container { width: 18%; min-width: 220px; border-left: thin solid rgba(var(--v-border-color), var(--v-border-opacity)); display: flex; flex-direction: column; }
-.side-bar-section { padding: 16px; }
+/* Main content area */
+.main-content-area {
+  min-width: 0;
+}
+
+/* Sidebar styles */
+.side-bar-container {
+  width: 280px;
+  min-width: 280px;
+  border-left: thin solid rgba(var(--v-border-color), var(--v-border-opacity));
+  display: flex;
+  flex-direction: column;
+  background-color: rgba(var(--v-theme-surface), 1);
+  overflow-y: auto;
+}
+
+.side-bar-section {
+  padding: 16px;
+}
 .card-header { margin-bottom: 16px; }
 .section-divider { margin-top: 8px; }
 .content-container { padding: 16px; }

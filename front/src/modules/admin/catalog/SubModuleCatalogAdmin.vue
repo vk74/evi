@@ -297,11 +297,12 @@ onMounted(() => {
       </div>
 
       <!-- Content Panel -->
-      <div class="content-panel pa-4">
+      <div class="content-panel pa-0">
         <!-- Dynamic component rendering based on selected section -->
         <component
           :is="currentComponent"
           v-if="currentComponent"
+          :class="{ 'pa-0': activeComponent === 'Catalog.Sections' || activeComponent === 'Catalog.SectionEditor' }"
         />
         <h2 v-else>
           Selected section: {{ catalogStore.getSelectedSectionPath }}
