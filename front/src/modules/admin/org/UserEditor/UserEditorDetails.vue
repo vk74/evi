@@ -584,7 +584,17 @@ onBeforeUnmount(() => {
       <div class="side-bar-section">
         <h3 class="text-subtitle-2 px-2 py-2">{{ t('admin.org.editor.sidebar.actions') }}</h3>
         <v-btn v-if="userEditorStore.mode.mode === 'create'" block color="teal" variant="outlined" :disabled="!isFormValid || isSubmitting" class="mb-3" @click="saveUser">{{ t('admin.org.editor.buttons.create') }}</v-btn>
-        <v-btn v-if="userEditorStore.mode.mode === 'edit'" block color="teal" variant="outlined" :disabled="!isFormValid || isSubmitting || !userEditorStore.hasChanges" class="mb-3" @click="updateUser">{{ t('admin.org.editor.buttons.update') }}</v-btn>
+        <v-btn 
+          v-if="userEditorStore.mode.mode === 'edit'" 
+          block 
+          color="teal" 
+          variant="outlined" 
+          :disabled="!isFormValid || isSubmitting || !userEditorStore.hasChanges" 
+          :class="['mb-3', { 'update-btn-glow': userEditorStore.hasChanges && isFormValid && !isSubmitting }]"
+          @click="updateUser"
+        >
+          {{ t('admin.org.editor.buttons.update') }}
+        </v-btn>
         <v-btn v-if="userEditorStore.mode.mode === 'edit'" block color="teal" variant="outlined" class="mb-3" @click="() => showPasswordDialog = true">{{ t('admin.org.editor.buttons.resetPassword') }}</v-btn>
       </div>
 
@@ -697,6 +707,23 @@ onBeforeUnmount(() => {
   border-color: rgba(255, 193, 7, 0.3);
   color: rgba(255, 152, 0, 0.9);
   font-weight: 500;
+}
+
+/* Update button glow animation for unsaved changes */
+.update-btn-glow {
+  animation: soft-glow 2s ease-in-out infinite;
+  box-shadow: 0 0 8px rgba(20, 184, 166, 0.3);
+}
+
+@keyframes soft-glow {
+  0%, 100% {
+    box-shadow: 0 0 8px rgba(20, 184, 166, 0.3);
+    transform: scale(1);
+  }
+  50% {
+    box-shadow: 0 0 16px rgba(20, 184, 166, 0.5);
+    transform: scale(1.01);
+  }
 }
 
 </style>
