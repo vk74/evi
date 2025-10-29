@@ -17,7 +17,7 @@
     <div class="d-flex">
       <!-- Main content (left part) -->
       <div class="flex-grow-1 main-content-area">
-        <v-container class="pa-6">
+        <div class="pa-6">
           <!-- Service Info Section -->
           <div class="service-info-section mb-2">
             <div class="info-row-inline">
@@ -125,7 +125,7 @@
               </div>
             </div>
           </div>
-        </v-container>
+        </div>
       </div>
       
       <!-- Sidebar (right part) -->
@@ -393,13 +393,20 @@ watch([showOwner, showBackupOwner, showTechnicalOwner, showBackupTechnicalOwner,
   margin-top: 16px;
 }
 
+/* Main content area */
+.main-content-area {
+  min-width: 0;
+}
+
 /* Sidebar styles */
 .side-bar-container {
-  width: 18%;
-  min-width: 240px;
+  width: 280px;
+  min-width: 280px;
   border-left: thin solid rgba(var(--v-border-color), var(--v-border-opacity));
   display: flex;
   flex-direction: column;
+  background-color: rgba(var(--v-theme-surface), 1);
+  overflow-y: auto;
 }
 
 .side-bar-section {

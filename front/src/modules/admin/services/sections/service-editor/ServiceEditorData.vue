@@ -506,8 +506,8 @@ onMounted(() => {
 <template>
   <div class="d-flex">
     <!-- Main content (left part) -->
-    <div class="flex-grow-1">
-      <v-container class="content-container">
+    <div class="flex-grow-1 main-content-area">
+      <div class="px-4 pt-4">
         <!-- Loading state for service data -->
         <DataLoading 
           v-if="isLoadingService" 
@@ -1094,7 +1094,7 @@ onMounted(() => {
             </v-row>
           </v-form>
         </v-card>
-      </v-container>
+      </div>
     </div>
     
     <!-- Sidebar (right part) -->
@@ -1351,13 +1351,20 @@ onMounted(() => {
 </template>
 
 <style scoped>
+/* Main content area */
+.main-content-area {
+  min-width: 0;
+}
+
 /* Sidebar styles */
 .side-bar-container {
-  width: 18%;
-  min-width: 240px;
+  width: 280px;
+  min-width: 280px;
   border-left: thin solid rgba(var(--v-border-color), var(--v-border-opacity));
   display: flex;
   flex-direction: column;
+  background-color: rgba(var(--v-theme-surface), 1);
+  overflow-y: auto;
 }
 
 .side-bar-section {

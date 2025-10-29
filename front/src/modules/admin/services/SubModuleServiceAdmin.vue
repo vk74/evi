@@ -146,6 +146,7 @@ onMounted(() => {
       <component
         :is="currentComponent"
         v-if="currentComponent"
+        :class="{ 'pa-0': activeComponent === 'services.serviceeditor' }"
       />
       <h2 v-else>
         Selected section: {{ activeComponent }}
