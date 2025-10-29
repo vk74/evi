@@ -1,7 +1,8 @@
 <!--
-version: 1.0.0
+version: 1.0.1
 Frontend file UserEditorDetails.vue.
-Purpose: Contains the user details form and right sidebar actions for create/edit modes. Frontend file.
+Purpose: User details form with dynamic validation using public policies and form state management.
+Features: Dynamic validation for username/email/phone, static validation for FIO fields, form submission handling.
 -->
 <script setup lang="ts">
 import { ref, computed, onMounted, watch, onBeforeUnmount } from 'vue'
@@ -26,7 +27,7 @@ const uiStore = useUiStore()
 const usersSectionStore = useOrgAdminStore()
 const publicStore = usePublicSettingsStore()
 const { t } = useI18n()
-const { usernameRules, emailRules, mobilePhoneRules, firstNameRules, middleNameRules, lastNameRules } = useValidationRules()
+const { firstNameRules, middleNameRules, lastNameRules } = useValidationRules()
 
 const form = ref<any>(null)
 const isFormValid = ref(false)
@@ -45,7 +46,7 @@ const isLoadingPasswordPolicies = ref(false)
 const isLoadingValidationRules = ref(false)
 
 const profileGender = computed({ get: () => userEditorStore.account.gender, set: (value) => userEditorStore.updateUser({ gender: value }) })
-const profileMobilePhone = computed({ get: () => userEditorStore.account.mobile_phone_number, set: (value) => userEditorStore.updateUser({ mobile_phone_number: value }) })
+const profileMobilePhone = computed({ get: () => userEditorStore.account.mobile_phone, set: (value) => userEditorStore.updateUser({ mobile_phone: value }) })
 
 const accountUsername = computed({ get: () => userEditorStore.account.username, set: (value) => userEditorStore.updateUser({ username: value }) })
 const accountEmail = computed({ get: () => userEditorStore.account.email, set: (value) => userEditorStore.updateUser({ email: value }) })
@@ -287,6 +288,8 @@ const updateUser = async () => {
     const userId = (userEditorStore.mode as EditMode).userId
     const success = await updateUserService.updateUser(userId, requestData)
     if (success) {
+      // Update original data to reset hasChanges state
+      userEditorStore.updateOriginalData()
       uiStore.showSuccessSnackbar(t('admin.org.editor.messages.success.updated'))
     }
   } catch (error) {
@@ -366,7 +369,7 @@ const applyPhoneMask = (value: string) => {
 const handlePhoneInput = (event: Event) => {
   const target = event.target as HTMLInputElement
   const maskedValue = applyPhoneMask(target.value)
-  userEditorStore.updateUser({ mobile_phone_number: maskedValue })
+  userEditorStore.updateUser({ mobile_phone: maskedValue })
 }
 
 onMounted(async () => {

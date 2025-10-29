@@ -1,4 +1,6 @@
 {
+  "_version": "1.0.1",
+  "_description": "User editor translations with updated field names (telephone -> mobile phone)",
   "admin": {
     "org": {
       "editor": {
@@ -90,7 +92,7 @@
             "label": "organization employee"
           },
           "mobilePhone": {
-            "label": "telephone",
+            "label": "mobile phone",
             "placeholder": "+7 xxx xxx xxxx"
           }
         },

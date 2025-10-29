@@ -1,6 +1,7 @@
--- Version: 1.1.1
+-- Version: 1.1.2
 -- Description: Create all indexes for the application tables.
 -- Backend file: 05_indexes.sql
+-- Updated: mobile_phone_number -> mobile_phone field name
 
 -- Create indexes for app_settings
 CREATE INDEX IF NOT EXISTS idx_app_sections_path ON app.app_settings USING btree (section_path);
@@ -54,7 +55,7 @@ CREATE INDEX IF NOT EXISTS idx_users_username_trgm ON app.users USING gin (usern
 CREATE INDEX IF NOT EXISTS idx_users_uuid_trgm ON app.users USING gin ((user_id::text) gin_trgm_ops);
 
 -- Create indexes for user profile fields
-CREATE INDEX IF NOT EXISTS idx_users_mobile_phone ON app.users USING btree (mobile_phone_number);
+CREATE INDEX IF NOT EXISTS idx_users_mobile_phone ON app.users USING btree (mobile_phone);
 CREATE INDEX IF NOT EXISTS idx_users_gender ON app.users USING btree (gender);
 
 -- Create optimized index for guard middleware queries

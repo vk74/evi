@@ -1,13 +1,15 @@
 /**
  * @file state.user.editor.ts
- * Version: 1.0.0
- * Pinia store for managing user editor state.
+ * Version: 1.0.1
+ * Pinia store for managing user editor state and form data synchronization.
  * Frontend file that handles form data storage, UI state management, and API data preparation.
  *
  * Functionality:
- * - Store form data in new user creation mode
- * - Manage UI state
+ * - Store form data in create and edit modes
+ * - Manage UI state and form validation
+ * - Track changes for update operations
  * - Prepare data for API submission
+ * - Handle original data synchronization after successful updates
  */
 
 import { defineStore } from 'pinia'
@@ -37,7 +39,7 @@ const initialUserState: IUserAccount = {
  middle_name: '', //null,
  last_name: '',
 
- mobile_phone_number: '', //null,
+ mobile_phone: '', //null,
  gender: 'n' //null,
 }
 
@@ -110,8 +112,8 @@ getters: {
     if (currentData.gender !== originalData.gender) {
       changes.gender = currentData.gender as 'm' | 'f' | 'n'
     }
-    if (currentData.mobile_phone_number !== originalData.mobile_phone_number) {
-      changes.mobile_phone_number = currentData.mobile_phone_number
+    if (currentData.mobile_phone !== originalData.mobile_phone) {
+      changes.mobile_phone = currentData.mobile_phone
     }
 
     return changes
@@ -204,7 +206,7 @@ getters: {
        last_name: account.last_name,
        middle_name: account.middle_name || '',
        gender: account.gender || 'n',
-       mobile_phone_number: account.mobile_phone_number || ''
+       mobile_phone: account.mobile_phone || ''
      }
    },
 
@@ -236,6 +238,17 @@ getters: {
    */
   clearGroupsSelection() {
     this.groups.selectedGroups = []
+  },
+
+  /**
+   * Update original data after successful update
+   * This resets the hasChanges state by syncing originalData with current data
+   */
+  updateOriginalData() {
+    console.log('Updating original data after successful update')
+    this.originalData = {
+      account: { ...this.account }
+    }
   }
  }
 })

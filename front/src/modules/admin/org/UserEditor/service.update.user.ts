@@ -1,13 +1,14 @@
 /**
  * @file service.update.user.ts
- * Version: 1.0.0
- * Service for updating user data.
+ * Version: 1.0.1
+ * Service for updating user data via API.
  * Frontend file that handles user data updates, error handling, and operation logging.
  *
  * Functionality:
- * - Update user data via API
- * - Handle request errors
- * - Log operations
+ * - Update user data via API with proper field mapping
+ * - Handle request errors and validation
+ * - Log operations and provide user feedback
+ * - Support for system user restrictions
  */
 import { api } from '@/core/api/service.axios'
 import type { IUpdateUserRequestData, IApiResponse } from './types.user.editor'

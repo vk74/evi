@@ -1,7 +1,12 @@
 /**
  * rules.common.fields.ts - frontend validation rules
+ * Version: 1.0.1
  * Common validation rules for frequently used form fields.
- * Used across multiple components to ensure consistent validation behavior.
+ * Frontend file that provides static validation rules for FIO fields.
+ * 
+ * Note: username, email, mobilePhone, and password validation rules have been removed
+ * as they now use dynamic validation from public policies.
+ * Only FIO (firstName, middleName, lastName) rules remain here.
  */
 import { useI18n } from 'vue-i18n'
 
@@ -19,46 +24,9 @@ export function useValidationRules() {
     const { t } = useI18n()
     
     return {
-      usernameRules: [
-        v => !!v || t('validation.username.required'),
-        v => (v && v.length >= 2) || t('validation.username.minLength'),
-        v => (v && v.length <= 25) || t('validation.username.maxLength'),
-        v => /^[a-zA-Z0-9]+$/.test(v) || t('validation.username.format'),
-        v => /[a-zA-Z]/.test(v) || t('validation.username.requireLetter')
-      ],
+      // Removed usernameRules, emailRules, mobilePhoneRules - now using dynamic validation from public policies
+      // Removed passwordRules - now using dynamic validation from public policies
       
-      passwordRules: [
-        v => !!v || t('validation.password.required'),
-        v => (v && v.length >= 8) || t('validation.password.minLength'),
-        v => (v && v.length <= 40) || t('validation.password.maxLength'),
-        v => /^[A-Za-z0-9!"#$%&'()*+,.-/:;<=>?@[\]^_`{|}~]+$/.test(v) || t('validation.password.format'),
-        v => /[A-Za-z]/.test(v) || t('validation.password.requireLetter'),
-        v => /[0-9]/.test(v) || t('validation.password.requireNumber')
-       ],
-      
-       emailRules: [
-        v => !!v || t('validation.email.required'),
-        v => {
-          const emailRegex = /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)+$/;
-          return (emailRegex.test(v) && v.length <= 254) || t('validation.email.format')
-        }
-      ],
-
-      optionalEmailRules: [
-        v => {
-          const emailRegex = /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)+$/;
-          return !v || (emailRegex.test(v) && v.length <= 254) || t('validation.email.format')
-        }
-      ],
-
-       mobilePhoneRules: [
-        v => {
-          if (!v || v === '' || v === '+') return true
-          const phoneRegex = /^\+?[\d\s.()-]{10,15}$/
-          return phoneRegex.test(v.trim()) || t('validation.mobilePhone.format')
-        }
-       ],
-
        firstNameRules: [
         v => !!v || t('validation.firstName.required'),
         v => (v && v.length >= 2) || t('validation.firstName.minLength'),
@@ -79,7 +47,7 @@ export function useValidationRules() {
        ],
 
        generalDescriptionRules: [
-         v => !v || v.length <= 5000 || t('validation.generalDescription.maxLength'),
+         v => !v || v.length <= 2000 || t('validation.generalDescription.maxLength'),
          v => !v || /^[a-zA-Zа-яА-ЯёЁ0-9\s\-_.,!?()@#$%&'*+=/<>[\]{}"`~;:|]+$/.test(v) || t('validation.generalDescription.format'),
        ]
     }

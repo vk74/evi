@@ -1,14 +1,15 @@
 /**
  * @file types.user.editor.ts
- * Version: 1.0.0
+ * Version: 1.0.1
  * Type definitions for the user editor component.
  * Frontend file that defines TypeScript types and interfaces for user editor functionality.
  *
  * This module defines TypeScript types and interfaces for:
  * - Component modes and states
- * - User account and profile data structures
+ * - User account and profile data structures (updated field names)
  * - Form validation
  * - API interfaces
+ * - Store state management
  */
 
 /**
@@ -57,7 +58,7 @@ export interface IUserAccount {
   last_name: string                // character varying(50)
   created_at?: Date                // timestamp with timezone
   is_active?: boolean              // boolean
-  mobile_phone_number?: string     // character varying(15)
+  mobile_phone?: string            // character varying(15)
   gender?: 'm' | 'f' | 'n'         // app.gender
   is_system?: boolean              // boolean - system user flag
 }
@@ -87,7 +88,7 @@ export interface ICreateUserRequest {
   last_name: string
   middle_name: string 
   gender: 'm' | 'f' | 'n' // null
-  mobile_phone_number: string 
+  mobile_phone: string 
 }
 
 export interface IUpdateUserRequest {
@@ -100,7 +101,7 @@ export interface IUpdateUserRequest {
   last_name?: string
   middle_name?: string
   gender?: 'm' | 'f' | 'n'
-  mobile_phone_number?: string
+  mobile_phone?: string
 }
 
 // Type for update data without user_id (for API requests)
@@ -113,7 +114,7 @@ export interface IUpdateUserRequestData {
   last_name?: string
   middle_name?: string
   gender?: 'm' | 'f' | 'n'
-  mobile_phone_number?: string
+  mobile_phone?: string
 }
 
 // Interface for a single group membership item in user editor

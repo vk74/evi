@@ -1,7 +1,9 @@
 /**
  * queries.user.editor.ts
+ * Version: 1.0.1
  * SQL queries for user editor functionality in admin panel.
- * Includes queries for CRUD operations and validation checks.
+ * Backend file that includes queries for CRUD operations and validation checks.
+ * Updated field names: mobile_phone_number -> mobile_phone
  */
 
 // Query type definitions
@@ -49,7 +51,7 @@ interface SQLQuery {
         last_name,
         created_at,
         is_active,
-        mobile_phone_number,
+        mobile_phone,
         gender,
         is_system
       FROM app.users
@@ -59,7 +61,7 @@ interface SQLQuery {
     getUserProfileById: `
       SELECT
         user_id,
-        mobile_phone_number,
+        mobile_phone,
         gender
       FROM app.users
       WHERE user_id = $1::uuid
@@ -83,10 +85,10 @@ interface SQLQuery {
     updateUserProfileById: `
       UPDATE app.users
       SET
-        mobile_phone_number = COALESCE($2, mobile_phone_number),
+        mobile_phone = COALESCE($2, mobile_phone),
         gender = COALESCE($3, gender)
       WHERE user_id = $1::uuid
-      RETURNING user_id, mobile_phone_number, gender
+      RETURNING user_id, mobile_phone, gender
     `,
   
     // Validation queries
@@ -113,7 +115,7 @@ interface SQLQuery {
       text: `
         SELECT user_id 
         FROM app.users 
-        WHERE mobile_phone_number = $1
+        WHERE mobile_phone = $1
 `
     },
   
@@ -132,7 +134,7 @@ interface SQLQuery {
           account_status,
           created_at,
           gender,
-          mobile_phone_number
+          mobile_phone
         )
         VALUES (
           $1, $2, $3, $4, $5, $6, $7, $8, CURRENT_TIMESTAMP, $9, $10

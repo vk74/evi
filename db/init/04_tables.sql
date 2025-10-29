@@ -1,6 +1,7 @@
--- Version: 1.2.0
+-- Version: 1.2.1
 -- Description: Create all application tables, functions, and triggers.
 -- Backend file: 04_tables.sql
+-- Updated: mobile_phone_number -> mobile_phone field name
 
 -- ===========================================
 -- Helper Functions
@@ -32,12 +33,12 @@ CREATE TABLE IF NOT EXISTS app.users (
     middle_name VARCHAR(50),
     last_name VARCHAR(50),
     created_at TIMESTAMP WITH TIME ZONE,
-    mobile_phone_number VARCHAR(15),
+    mobile_phone VARCHAR(15),
     gender app.gender,
     is_system BOOLEAN NOT NULL DEFAULT false,
     CONSTRAINT unique_user_name UNIQUE (username),
     CONSTRAINT unique_email UNIQUE (email),
-    CONSTRAINT unique_mobile_phone_number UNIQUE (mobile_phone_number)
+    CONSTRAINT unique_mobile_phone UNIQUE (mobile_phone)
 );
 
 

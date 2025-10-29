@@ -1,7 +1,7 @@
-// service.update.user.ts - version 1.0.05
-// Service for updating user accounts, now uses event bus for operation tracking
-// Now includes comprehensive validation using the validation service
-// Now tracks actual field changes and shows old vs new values in events
+// service.update.user.ts - version 1.0.6
+// Service for updating user accounts with simplified validation approach
+// Backend file that handles user data updates with event bus integration
+// Features: Dynamic validation for username/email/phone, DB constraints for FIO, change tracking
 
 import { Request } from 'express';
 import { Pool } from 'pg';
@@ -28,7 +28,7 @@ function trimUpdateData(data: UpdateUserRequest): UpdateUserRequest {
     ...data,
     username: data.username?.trim(),
     email: data.email?.trim(),
-    mobile_phone_number: data.mobile_phone_number?.trim(),
+    mobile_phone: data.mobile_phone?.trim(),
     first_name: data.first_name?.trim(),
     last_name: data.last_name?.trim(),
     middle_name: data.middle_name?.trim(),
@@ -117,7 +117,7 @@ function findChanges(oldData: any, newData: UpdateUserRequest): {
   });
   
   // Check profile table fields
-  const profileFields = ['mobile_phone_number', 'gender'];
+  const profileFields = ['mobile_phone', 'gender'];
   profileFields.forEach(field => {
     if (newData[field as keyof UpdateUserRequest] !== undefined) {
       const oldValue = oldData.profile?.[field];
@@ -173,17 +173,7 @@ async function validateEmailUpdate(email: string, userId: string, req: Request):
   }
 }
 
-async function validateNameUpdate(name: string, field: 'first_name' | 'middle_name' | 'last_name', req: Request): Promise<void> {
-  try {
-    // Names are validated by DB constraints and guards; removing standard text validation
-  } catch (error) {
-    throw {
-      code: 'VALIDATION_ERROR',
-      message: error instanceof Error ? error.message : `${field} validation failed`,
-      field
-    } as ValidationError;
-  }
-}
+// validateNameUpdate function removed - FIO fields now use DB constraints only
 
 async function validatePhoneUpdate(phone: string, userId: string, req: Request): Promise<void> {
   try {
@@ -311,21 +301,22 @@ async function validateUpdateData(data: UpdateUserRequest, req: Request): Promis
       await validateEmailUniqueness(data.email, data.user_id);
     }
     
-    if (data.first_name) {
-      await validateNameUpdate(data.first_name, 'first_name', req);
-    }
+    // FIO fields validation removed - using DB constraints only
+    // if (data.first_name) {
+    //   await validateNameUpdate(data.first_name, 'first_name', req);
+    // }
     
-    if (data.last_name) {
-      await validateNameUpdate(data.last_name, 'last_name', req);
-    }
+    // if (data.last_name) {
+    //   await validateNameUpdate(data.last_name, 'last_name', req);
+    // }
     
-    if (data.middle_name) {
-      await validateNameUpdate(data.middle_name, 'middle_name', req);
-    }
+    // if (data.middle_name) {
+    //   await validateNameUpdate(data.middle_name, 'middle_name', req);
+    // }
     
-    if (data.mobile_phone_number) {
-      await validatePhoneUpdate(data.mobile_phone_number, data.user_id, req);
-      await validatePhoneUniqueness(data.mobile_phone_number, data.user_id);
+    if (data.mobile_phone) {
+      await validatePhoneUpdate(data.mobile_phone, data.user_id, req);
+      await validatePhoneUniqueness(data.mobile_phone, data.user_id);
     }
     
     
@@ -431,7 +422,7 @@ export async function updateUserById(updateData: UpdateUserRequest, req: Request
       // Подготовка параметров для обновления профиля
       const profileParams = [
         trimmedData.user_id,
-        trimmedData.mobile_phone_number,
+        trimmedData.mobile_phone,
         trimmedData.gender
       ];
   

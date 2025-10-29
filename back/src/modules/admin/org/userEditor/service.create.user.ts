@@ -1,9 +1,8 @@
 /**
- * BACKEND service.create.user.ts - version 1.0.05
+ * BACKEND service.create.user.ts - version 1.0.06
  * Service layer for handling user creation from admin panel.
- * Handles validation, password hashing, and database operations.
- * Now includes event bus integration for logging and tracking user creation events.
- * Password validation now uses dynamic settings from cache.
+ * Backend file that handles validation, password hashing, and database operations.
+ * Features: Dynamic validation for username/email/phone, event bus integration, field name updates.
  */
 
 import { Request } from 'express';
@@ -35,7 +34,7 @@ function trimData(data: CreateUserRequest): CreateUserRequest {
     ...data,
     username: data.username?.trim(),
     email: data.email?.trim(),
-    mobile_phone_number: data.mobile_phone_number?.trim(),
+    mobile_phone: data.mobile_phone?.trim(),
   };
 }
 
@@ -195,7 +194,7 @@ async function validateMobilePhone(phone: string, req: Request): Promise<void> {
     throw {
       code: 'VALIDATION_ERROR',
       message: error instanceof Error ? error.message : 'Mobile phone validation failed',
-      field: 'mobile_phone_number'
+      field: 'mobile_phone'
     } as ValidationError;
   }
 }
@@ -213,8 +212,8 @@ async function validateData(data: CreateUserRequest, req: Request): Promise<void
       await validateName(data.middle_name, 'middle_name', req);
     }
     
-    if (data.mobile_phone_number) {
-      await validateMobilePhone(data.mobile_phone_number, req);
+    if (data.mobile_phone) {
+      await validateMobilePhone(data.mobile_phone, req);
     }
     
     // Create event for validation start
@@ -260,11 +259,11 @@ async function checkUniqueness(data: CreateUserRequest): Promise<void> {
       }
     ];
   
-    if (data.mobile_phone_number) {
+    if (data.mobile_phone) {
       uniqueChecks.push({
         query: queries.checkPhone.text,
-        params: [data.mobile_phone_number],
-        field: 'mobile_phone_number',
+        params: [data.mobile_phone],
+        field: 'mobile_phone',
         message: 'Phone number is already registered'
       });
     }
@@ -315,7 +314,7 @@ export async function createUser(userData: CreateUserRequest, req: Request): Pro
         typeof trimmedData.is_staff === 'boolean' ? trimmedData.is_staff : false,
         trimmedData.account_status || 'active',
         trimmedData.gender ? trimmedData.gender : 'n',
-        trimmedData.mobile_phone_number ? trimmedData.mobile_phone_number : null
+        trimmedData.mobile_phone ? trimmedData.mobile_phone : null
       ]
     );
     

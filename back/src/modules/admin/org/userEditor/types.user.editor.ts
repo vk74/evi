@@ -1,12 +1,14 @@
 /**
  * types.user.editor.ts - backend file
+ * Version: 1.0.1
  * Type definitions for user management functionality on BACKEND.
  *
  * This module defines TypeScript types and interfaces for:
- * - Database models and operations
+ * - Database models and operations (updated field names)
  * - API request/response interfaces
  * - Shared enums and types
  * - Validation and error handling
+ * - Service layer data structures
  */
 
 /**
@@ -40,7 +42,7 @@ export interface DbUser {
     last_name: string        // character varying(50)
     created_at: Date         // timestamp with timezone
     is_active: boolean       // boolean
-    mobile_phone_number: string | null  // character varying(15)
+    mobile_phone: string | null  // character varying(15)
     gender: 'm' | 'f' | 'n' | null    // app.gender
     is_system: boolean       // boolean - system user flag
 }
@@ -60,7 +62,7 @@ export interface UpdateUserRequest {
     middle_name?: string
     last_name?: string
     
-    mobile_phone_number?: string
+    mobile_phone?: string
     gender?: Gender
 }
 
@@ -130,7 +132,7 @@ export interface CreateUserRequest {
   
     // Profile fields (now part of users table)
     gender?: 'm' | 'f' | 'n'
-    mobile_phone_number?: string
+    mobile_phone?: string
 }
 
 export interface CreateUserResponse extends ApiResponse {

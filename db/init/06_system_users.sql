@@ -1,4 +1,4 @@
--- Version: 1.2.0
+-- Version: 1.2.1
 -- Description: Seeds the database with essential system users only.
 -- Backend file: 06_system_users.sql
 
@@ -9,7 +9,7 @@
 -- The script is idempotent, using ON CONFLICT to prevent errors on subsequent runs.
 
 -- Insert essential system users
-INSERT INTO app.users (user_id, username, hashed_password, email, is_staff, account_status, first_name, last_name, created_at, mobile_phone_number, gender, is_system) VALUES
+INSERT INTO app.users (user_id, username, hashed_password, email, is_staff, account_status, first_name, last_name, created_at, mobile_phone, gender, is_system) VALUES
 -- Deleted user (system) -friendly placeholder to be inserted in place of deleted user accounts 
 ('00000000-0000-0000-0000-00000000dead', NULL, NULL, NULL, false, 'disabled', 'Deleted', 'User', NOW(), NULL, NULL, true),
 -- System administrator (active) - marked as system user
@@ -21,6 +21,6 @@ ON CONFLICT (user_id) DO UPDATE SET
     account_status = EXCLUDED.account_status,
     first_name = EXCLUDED.first_name,
     last_name = EXCLUDED.last_name,
-    mobile_phone_number = EXCLUDED.mobile_phone_number,
+    mobile_phone = EXCLUDED.mobile_phone,
     gender = EXCLUDED.gender,
     is_system = EXCLUDED.is_system;
