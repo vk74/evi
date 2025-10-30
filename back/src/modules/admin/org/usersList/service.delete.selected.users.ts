@@ -1,6 +1,6 @@
 /**
  * @file protoService.delete.users.ts
- * Version: 1.0.1
+ * Version: 1.1.0
  * BACKEND service for prototype user deletion operations with server-side processing.
  * 
  * Functionality:
@@ -30,92 +30,113 @@ export const usersDeleteService = {
    * Deletes selected users by their UUIDs
    * @param userIds Array of user UUIDs to delete
    * @param req Express request object for context
-   * @returns Promise with the count of deleted users
+   * @returns Structured response compatible with frontend
    */
-  async deleteSelectedUsers(userIds: string[], req: Request): Promise<number> {
-    
-    // Prevent deletion of empty array
-    if (!userIds.length) {
-      return 0;
-    }
-    
-    // Pre-check: fetch selected users and block system accounts deletion
-    const precheck = await pool.query(queries.fetchUsersByIdsForDeletion, [userIds]);
-    const systemUsers = precheck.rows.filter((r: any) => r.is_system === true);
-    if (systemUsers.length > 0) {
-      const systemUsernames: string[] = systemUsers.map((r: any) => r.username);
-      // Publish event about prohibited deletion attempt
-      await fabricEvents.createAndPublishEvent({
-        req,
-        eventName: USERS_DELETE_EVENTS.FAILED.eventName,
-        payload: {
-          userIds,
-          error: {
-            code: 'SYSTEM_USERS_SELECTED',
-            message: 'Attempt to delete system accounts is prohibited',
-            systemUsernames
-          }
-        }
-      });
-      // Throw structured error
-      throw {
-        code: 'SYSTEM_USERS_SELECTED',
-        message: 'System accounts cannot be deleted',
-        systemUsernames
-      };
-    }
-    
+  async deleteSelectedUsers(
+    userIds: string[],
+    req: Request
+  ): Promise<{
+    success: boolean;
+    message: string;
+    deleted: { ids: string[]; names: string[]; count: number };
+    forbidden?: { ids: string[]; names: string[]; count: number };
+  }> {
     try {
-      // Execute deletion query
-      const result = await pool.query(queries.deleteSelectedUsers, [userIds]);
-      
-      // Get delete count
-      const deletedCount = result.rows.length;
-      
-      // Invalidate cache after successful deletion
-      if (deletedCount > 0) {
-        usersCache.invalidate('delete');
-        
-        // Create event for cache invalidation
+      // NOOP on empty input
+      if (!userIds || !Array.isArray(userIds) || userIds.length === 0) {
         await fabricEvents.createAndPublishEvent({
           req,
-          eventName: USERS_DELETE_EVENTS.CACHE_INVALIDATED.eventName,
-          payload: { deletedCount }
+          eventName: USERS_DELETE_EVENTS.NOOP.eventName,
+          payload: { reason: 'NOTHING_TO_DELETE', userIds: [] }
         });
+        return { success: false, message: 'Nothing to delete', deleted: { ids: [], names: [], count: 0 } };
       }
-      
-      // Create event for successful completion
+
+      // Precheck: load users to detect system ones and collect usernames
+      const precheck = await pool.query(queries.fetchUsersByIdsForDeletion, [userIds]);
+      const rows: Array<{ user_id: string; username: string; is_system: boolean }> = precheck.rows || [];
+
+      const blocked = rows.filter(r => r.is_system === true);
+      if (blocked.length > 0) {
+        await fabricEvents.createAndPublishEvent({
+          req,
+          eventName: USERS_DELETE_EVENTS.FORBIDDEN.eventName,
+          payload: {
+            blockedUserIds: blocked.map(b => b.user_id),
+            blockedUsernames: blocked.map(b => b.username),
+            reason: 'SYSTEM_USERS_NOT_DELETABLE'
+          }
+        });
+        // Entire operation is blocked (policy b)
+        return {
+          success: false,
+          message: 'Deletion is forbidden for system users',
+          deleted: { ids: [], names: [], count: 0 },
+          forbidden: {
+            ids: blocked.map(b => b.user_id),
+            names: blocked.map(b => b.username),
+            count: blocked.length
+          }
+        };
+      }
+
+      // Execute deletion
+      const result = await pool.query(queries.deleteSelectedUsers, [userIds]);
+
+      // Collect deleted ids and names
+      const deletedIds: string[] = (result.rows || []).map(r => r.user_id);
+      const nameMap = new Map(rows.map(r => [r.user_id, r.username] as const));
+      const deletedNames: string[] = deletedIds.map(id => nameMap.get(id)).filter(Boolean) as string[];
+      const deletedCount = deletedIds.length;
+
+      // Emit completion event
       await fabricEvents.createAndPublishEvent({
         req,
         eventName: USERS_DELETE_EVENTS.COMPLETE.eventName,
         payload: {
-          requested: userIds.length,
-          deleted: deletedCount
+          deletedCount,
+          deletedUserIds: deletedIds,
+          deletedUsernames: deletedNames
         }
       });
-      
-      return deletedCount;
-      
+
+      // Invalidate cache
+      usersCache.invalidate('delete');
+
+      // Emit cache events
+      const cacheInvalidated = true; // usersCache has no validity check API; assume success
+      if (cacheInvalidated) {
+        await fabricEvents.createAndPublishEvent({
+          req,
+          eventName: USERS_DELETE_EVENTS.CACHE_INVALIDATED.eventName,
+          payload: {}
+        });
+      } else {
+        await fabricEvents.createAndPublishEvent({
+          req,
+          eventName: USERS_DELETE_EVENTS.CACHE_INVALIDATION_FAILED.eventName,
+          payload: {}
+        });
+      }
+
+      return {
+        success: true,
+        message: `Successfully deleted ${deletedCount} user${deletedCount === 1 ? '' : 's'}`,
+        deleted: { ids: deletedIds, names: deletedNames, count: deletedCount }
+      };
     } catch (error) {
-      // Create event for deletion failure
+      // Emit failure event
       await fabricEvents.createAndPublishEvent({
         req,
         eventName: USERS_DELETE_EVENTS.FAILED.eventName,
         payload: {
-          userIds: userIds.length,
-          error: {
-            code: 'DATABASE_ERROR',
-            message: 'Error occurred while deleting users'
-          }
+          error: 'Error during users deletion',
+          userIds
         },
         errorData: error instanceof Error ? error.message : String(error)
       });
-      
-      throw {
-        code: 'DATABASE_ERROR',
-        message: 'Error deleting users',
-        details: process.env.NODE_ENV === 'development' ? error : undefined
-      };
+
+      throw new Error('Failed to delete selected users');
     }
   }
 };

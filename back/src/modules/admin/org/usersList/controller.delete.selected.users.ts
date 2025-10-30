@@ -1,6 +1,6 @@
 /**
  * controller.delete.selected.users.ts - backend file
- * version: 1.0.02
+ * version: 1.0.03
  * 
  * Controller for deleting users.
  * 
@@ -28,9 +28,8 @@ async function deleteSelectedUsersLogic(req: Request, res: Response): Promise<an
     // Get user IDs from request body
     const { userIds } = req.body;
 
-    // Process user deletion
+    // Process user deletion and return structured result
     const result = await usersDeleteService.deleteSelectedUsers(userIds, req);
-
     return result;
 }
 

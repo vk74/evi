@@ -1,6 +1,6 @@
 /**
  * events.users.list.ts - backend file
- * version: 1.0.0
+ * version: 1.0.1
  * 
  * This file contains event definitions for the users list management domain with server-side processing.
  * It serves as a reference for creating and publishing users list-related events to the event bus.
@@ -68,6 +68,16 @@ export const USERS_FETCH_EVENTS = {
  * Events related to deleting users
  */
 export const USERS_DELETE_EVENTS = {
+  // When deletion is forbidden due to system users in request
+  FORBIDDEN: {
+    eventName: 'usersList.delete.forbidden',
+    source: 'users list admin submodule',
+    eventType: 'app' as const,
+    severity: 'warning' as const,
+    eventMessage: 'Deletion is forbidden for system users',
+    payload: null, // Will be of type { blockedUserIds: string[], blockedUsernames: string[], reason: 'SYSTEM_USERS_NOT_DELETABLE' }
+    version: '1.0.0'
+  },
   // When users deletion is completed successfully
   COMPLETE: {
     eventName: 'usersList.delete.complete',
@@ -75,7 +85,18 @@ export const USERS_DELETE_EVENTS = {
     eventType: 'app' as const,
     severity: 'info' as const,
     eventMessage: 'Users deleted successfully',
-    payload: null, // Will be of type { requested: number, deleted: number }
+    payload: null, // Will be of type { deletedCount: number, deletedUserIds: string[], deletedUsernames: string[] }
+    version: '1.0.0'
+  },
+  
+  // When there is nothing to delete
+  NOOP: {
+    eventName: 'usersList.delete.noop',
+    source: 'users list admin submodule',
+    eventType: 'app' as const,
+    severity: 'info' as const,
+    eventMessage: 'Nothing to delete',
+    payload: null, // Will be of type { reason: 'NOTHING_TO_DELETE', userIds: string[] }
     version: '1.0.0'
   },
   
@@ -86,7 +107,7 @@ export const USERS_DELETE_EVENTS = {
     eventType: 'app' as const,
     severity: 'error' as const,
     eventMessage: 'Failed to delete users',
-    payload: null, // Will be of type { userIds: string[], error: ServiceError }
+    payload: null, // Will be of type { userIds: string[], error: string }
     errorData: null, // Will be filled with error details
     version: '1.0.0'
   },
@@ -98,7 +119,18 @@ export const USERS_DELETE_EVENTS = {
     eventType: 'app' as const,
     severity: 'debug' as const,
     eventMessage: 'Cache invalidated after user deletion',
-    payload: null, // Will be of type { deletedCount: number }
+    payload: null, // Will be of type {}
+    version: '1.0.0'
+  },
+
+  // When cache fails to be cleared
+  CACHE_INVALIDATION_FAILED: {
+    eventName: 'usersList.delete.cache.invalidation.failed',
+    source: 'users list admin submodule',
+    eventType: 'app' as const,
+    severity: 'warning' as const,
+    eventMessage: 'Cache was not cleared successfully',
+    payload: null, // Will be of type {}
     version: '1.0.0'
   }
 };

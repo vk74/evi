@@ -54,8 +54,7 @@ const sortDesc = ref<boolean>(usersStore.sortDesc);
 // Dialog state
 const showDeleteDialog = ref(false)
 const showPasswordDialog = ref(false)
-const showSystemUsersDialog = ref(false)
-const systemUsernames = ref<string[]>([])
+// Removed system users dialog in favor of backend-driven toasts
 
 // Selected user data for password reset
 const selectedUserData = ref({
@@ -132,17 +131,19 @@ const cancelDelete = () => {
 
 const confirmDelete = async () => {
   try {
-    const deletedCount = await deleteSelectedUsersService.deleteSelectedUsers(usersStore.selectedUsers)
-    uiStore.showSuccessSnackbar(t('list.messages.deleteUsersSuccess', { count: deletedCount }))
+    const result = await deleteSelectedUsersService.deleteSelectedUsers(usersStore.selectedUsers)
+    // Show toasts based on backend message
+    if (result.success) {
+      uiStore.showSuccessSnackbar(result.message)
+    } else if (result.forbidden && result.forbidden.count > 0) {
+      uiStore.showErrorSnackbar(result.message)
+    } else {
+      uiStore.showInfoSnackbar(result.message)
+    }
     await fetchUsers()
     usersStore.clearSelection()
-  } catch (error: any) {
-    if (error && error.code === 'SYSTEM_USERS_SELECTED' && Array.isArray(error.usernames)) {
-      systemUsernames.value = error.usernames
-      showSystemUsersDialog.value = true
-    } else {
-      handleError(error, 'deleting users')
-    }
+  } catch (error) {
+    handleError(error, 'deleting users')
   } finally {
     showDeleteDialog.value = false
   }
@@ -585,33 +586,7 @@ const handleItemsPerPageChange = async (newItemsPerPage: ItemsPerPageOption) => 
       />
     </v-dialog>
 
-    <!-- System users deletion error dialog -->
-    <v-dialog
-      v-model="showSystemUsersDialog"
-      max-width="520"
-    >
-      <v-card>
-        <v-card-title class="text-subtitle-1 text-wrap">
-          {{ t('admin.org.usersList.systemUsersDeletion.title') }}
-        </v-card-title>
-        <v-card-text>
-          <div>
-            {{ systemUsernames.join(', ') }}
-          </div>
-        </v-card-text>
-        <v-card-actions>
-          <v-spacer />
-          <v-btn
-            color="teal"
-            variant="outlined"
-            class="text-none"
-            @click="showSystemUsersDialog = false"
-          >
-            {{ t('admin.org.usersList.systemUsersDeletion.ok') }}
-          </v-btn>
-        </v-card-actions>
-      </v-card>
-    </v-dialog>
+    <!-- System users dialog removed; backend toasts are used instead -->
   </v-card>
 </template>
 

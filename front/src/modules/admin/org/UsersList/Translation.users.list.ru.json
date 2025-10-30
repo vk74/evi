@@ -34,6 +34,8 @@
     "messages": {
       "confirmDelete": "вы уверены, что хотите удалить выбранных пользователей ({count})?",
       "deleteUsersSuccess": "успешно удалено пользователей: {count}.",
+      "deleteUsersForbidden": "удаление системных учетных записей запрещено",
+      "deleteUsersNothing": "нет записей для удаления",
       "refreshSuccess": "список пользователей успешно обновлен.",
       "clearSelectionsSuccess": "весь выбор очищен"
     }

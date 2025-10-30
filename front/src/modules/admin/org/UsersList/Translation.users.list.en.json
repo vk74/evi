@@ -34,6 +34,8 @@
     "messages": {
       "confirmDelete": "are you sure you want to delete {count} selected users?",
       "deleteUsersSuccess": "successfully deleted {count} users.",
+      "deleteUsersForbidden": "deletion is forbidden for system users",
+      "deleteUsersNothing": "nothing to delete",
       "refreshSuccess": "users list refreshed successfully.",
       "clearSelectionsSuccess": "all selections cleared"
     }
