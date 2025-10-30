@@ -1,6 +1,6 @@
 <!--
   File: ModuleNewUserSelfRegistration.vue
-  Version: 1.0.0
+  Version: 1.0.3
   Description: User self-registration component for frontend
   Purpose: Provides interface for new users to register themselves with dynamic password validation
   Frontend file that manages self-registration form, integrates with password policy settings, and handles validation
@@ -61,6 +61,14 @@ const user = ref({
   email: '',
   phone: ''
 })
+// Computed phone value with masking in setter to avoid duplicate updates
+const phoneValue = computed({
+  get: () => user.value.phone,
+  set: (value: string) => {
+    user.value.phone = applyPhoneMask(value ?? '')
+  }
+})
+
 
 /**
  * UI state variables
@@ -253,8 +261,8 @@ const dynamicEmailRules = computed(() => {
     validationRules.push((v: string) => emailRegex.test(v) || t('account.selfRegistration.validation.email.format'))
   } catch (error) {
     console.error('Invalid email regex:', rules.regex, error)
-    // Fallback to basic email validation
-    validationRules.push((v: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v) || t('account.selfRegistration.validation.email.format'))
+    // No fallback - if regex is invalid, form will be disabled
+    validationRules.push(() => t('account.selfRegistration.validation.email.invalidRegex'))
   }
   
   return validationRules
@@ -329,13 +337,37 @@ const loadValidationRules = async () => {
 /**
  * Apply phone mask in real-time
  */
-const applyPhoneMask = (value: string) => {
+const applyPhoneMask = (value: string | null | undefined) => {
+  if (value == null) {
+    return ''
+  }
   if (!currentValidationRules.value?.wellKnownFields?.telephoneNumber?.mask) {
     return value
   }
   
   const mask = currentValidationRules.value.wellKnownFields.telephoneNumber.mask
-  const digits = value.replace(/\D/g, '') // Remove all non-digits
+  let digits = value.replace(/\D/g, '') // Remove all non-digits
+
+  // Skip fixed numeric prefix from mask (e.g., country code) if user also typed it,
+  // to avoid duplication when filling first '#' positions
+  let maskIndex = 0
+  let digitIndexForSkip = 0
+  while (maskIndex < mask.length && digitIndexForSkip < digits.length) {
+    const maskChar = mask[maskIndex]
+    const inputDigit = digits[digitIndexForSkip]
+    if (maskChar === '#') {
+      break
+    }
+    if (/\d/.test(maskChar)) {
+      if (maskChar === inputDigit) {
+        digitIndexForSkip++
+      }
+    }
+    maskIndex++
+  }
+  if (digitIndexForSkip > 0) {
+    digits = digits.slice(digitIndexForSkip)
+  }
   
   let maskedValue = ''
   let digitIndex = 0
@@ -355,11 +387,7 @@ const applyPhoneMask = (value: string) => {
 /**
  * Handle phone input with real-time masking
  */
-const handlePhoneInput = (event: Event) => {
-  const target = event.target as HTMLInputElement
-  const maskedValue = applyPhoneMask(target.value)
-  user.value.phone = maskedValue
-}
+// Phone input handled by computed setter above
 
 /**
  * Load registration page settings from backend
@@ -438,7 +466,16 @@ const submitForm = async () => {
   isSubmitting.value = true
 
   try {
-    const response = await api.post('/api/admin/users/register', user.value)
+    // Build payload and normalize phone to E.164-like (optional '+' + digits)
+    const hasPlus = /^\s*\+/.test(user.value.phone)
+    const normalizedPhone = user.value.phone ? (hasPlus ? `+${user.value.phone.replace(/\D/g, '')}` : user.value.phone.replace(/\D/g, '')) : ''
+
+    const payload = {
+      ...user.value,
+      phone: normalizedPhone
+    }
+
+    const response = await api.post('/api/admin/users/register', payload)
 
     if (response.status === 200 || response.status === 201) {
       uiStore.showSuccessSnackbar(t('account.selfRegistration.success.dataSent'))
@@ -643,13 +680,12 @@ onMounted(async () => {
 
           <!-- Phone field -->
           <v-text-field
-            v-model="user.phone"
+            v-model="phoneValue"
             :label="t('account.selfRegistration.fields.phone.label')"
             :placeholder="currentValidationRules?.wellKnownFields?.telephoneNumber?.mask || t('account.selfRegistration.fields.phone.placeholder')"
             :rules="dynamicPhoneRules"
             :disabled="isFormDisabled"
             :loading="publicStore.isLoadingValidationRules"
-            @input="handlePhoneInput"
             variant="outlined"
             density="comfortable"
             color="teal"

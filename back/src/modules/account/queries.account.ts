@@ -1,6 +1,6 @@
 /**
  * queries.account.ts - backend file
- * version: 1.0.0
+ * version: 1.0.1
  * SQL queries for account module operations.
  * Contains all SQL queries used by account module for user registration and profile management.
  * All queries use parameterized statements to prevent SQL injection.
@@ -45,9 +45,9 @@ export const userRegistrationQueries = {
     text: `
       SELECT u.user_id 
       FROM app.users u
-      WHERE u.mobile_phone_number = $1
+      WHERE u.mobile_phone = $1
     `,
-    values: ['mobile_phone_number']
+    values: ['mobile_phone']
   },
 
   /**
@@ -65,7 +65,7 @@ export const userRegistrationQueries = {
         is_staff, 
         account_status,
         gender,
-        mobile_phone_number
+        mobile_phone
       ) 
       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) 
       RETURNING user_id
@@ -80,7 +80,7 @@ export const userRegistrationQueries = {
       'is_staff',      // $7
       'account_status', // $8
       'gender',        // $9
-      'mobile_phone_number' // $10
+      'mobile_phone' // $10
     ]
   },
 

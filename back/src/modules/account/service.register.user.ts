@@ -1,5 +1,5 @@
 /**
- * service.register.user.ts - version 1.0.05
+ * service.register.user.ts - version 1.0.06
  * BACKEND service for user registration
  * 
  * Processes user registration requests:
@@ -57,8 +57,12 @@ const registerUser = async (req: EnhancedRequest, res: Response): Promise<void> 
             phone
         } = req.body;
 
-        // Normalize phone for DB storage and uniqueness checks (E.164 digits only)
-        const normalizedPhone = phone ? String(phone).replace(/\D/g, '') : undefined;
+        // Normalize phone for DB storage and uniqueness checks (E.164-like: optional '+' + digits)
+        const normalizedPhone = phone
+          ? (/^\s*\+/.test(String(phone))
+              ? `+${String(phone).replace(/\D/g, '')}`
+              : String(phone).replace(/\D/g, ''))
+          : undefined;
 
         // Проверка наличия обязательных полей
         const requiredFields = ['username', 'password', 'surname', 'name', 'email'];
@@ -233,7 +237,7 @@ const registerUser = async (req: EnhancedRequest, res: Response): Promise<void> 
                     false,           // $7 (is_staff)
                     'active',        // $8 (account_status)
                     null,            // $9 (gender)
-                    normalizedPhone || null   // $10 (mobile_phone_number)
+                    normalizedPhone || null   // $10 (mobile_phone)
                 ]
             );
 
