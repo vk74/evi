@@ -1,6 +1,6 @@
 /**
  * @file service.delete.selected.groups.ts
- * Version: 1.0.0
+ * Version: 1.0.1
  * Frontend service for deleting selected groups.
  * Frontend file that handles group deletion requests, cache management, and error handling.
  *
@@ -15,6 +15,13 @@ import { useStoreGroupsList } from './state.groups.list'; // Groups store
 import { useUiStore } from '@/core/state/uistate'; // UI store
 import { useUserAuthStore } from '@/core/auth/state.user.auth'; // User store
 import type { GroupError } from './types.groups.list'; // Types
+
+type DeleteGroupsResponse = {
+    success: boolean;
+    message: string;
+    deleted: { ids: string[]; names: string[]; count: number };
+    forbidden?: { ids: string[]; names: string[]; count: number };
+};
 
 // Logger for main operations
 const logger = {
@@ -32,7 +39,7 @@ export const deleteSelectedGroupsService = {
      * @returns Promise<number> - Number of deleted groups
      * @throws {GroupError} - If an error occurs
      */
-    async deleteSelectedGroups(groupIds: string[]): Promise<number> {
+    async deleteSelectedGroups(groupIds: string[]): Promise<DeleteGroupsResponse> {
         const store = useStoreGroupsList();
         const userStore = useUserAuthStore();
         const uiStore = useUiStore();
@@ -49,27 +56,32 @@ export const deleteSelectedGroupsService = {
 
         try {
             // Send delete request for groups
-            const response = await api.post<{ deletedCount: number }>(
+            const { data } = await api.post<DeleteGroupsResponse>(
                 '/api/admin/groups/delete-selected-groups',
                 { groupIds }
             );
 
-            // Check response
-            if (!response.data || typeof response.data.deletedCount !== 'number') {
+            // Validate minimal shape
+            if (!data || typeof data.success !== 'boolean' || typeof data.message !== 'string') {
                 const errorMessage = 'Invalid API response format';
                 logger.error(errorMessage);
                 throw new Error(errorMessage);
             }
 
-            // Log successful deletion
-            logger.info('Successfully deleted groups', { deletedCount: response.data.deletedCount });
-
             // Clear cache in store
             store.clearCache();
             logger.info('Cache cleared in the frontend store');
 
-            // Return number of deleted groups
-            return response.data.deletedCount;
+            // Toast based on backend message
+            if (data.success) {
+                uiStore.showSuccessSnackbar(data.message);
+            } else if (data.forbidden && data.forbidden.count > 0) {
+                uiStore.showErrorSnackbar(`${data.message}`);
+            } else {
+                uiStore.showInfoSnackbar(data.message);
+            }
+
+            return data;
 
         } catch (error: unknown) {
             // Log the error

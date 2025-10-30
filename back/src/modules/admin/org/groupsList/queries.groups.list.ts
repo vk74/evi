@@ -1,5 +1,5 @@
 /**
- * @file queries.groups.list.ts - version 1.0.1
+ * @file queries.groups.list.ts - version 1.0.2
  * SQL queries for fetching and managing groups data.
  */
 import type { SQLQueries } from './types.groups.list';
@@ -28,5 +28,13 @@ export const queries: SQLQueries = {
     DELETE FROM app.groups
     WHERE group_id = ANY($1::uuid[])
     RETURNING group_id;
+  `,
+  getGroupsByIds: `
+    SELECT 
+      g.group_id AS id,
+      g.group_name AS name,
+      g.is_system
+    FROM app.groups g
+    WHERE g.group_id = ANY($1::uuid[]);
   `,
 };

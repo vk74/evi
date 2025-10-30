@@ -52,4 +52,5 @@ export type GroupError = {
 export interface SQLQueries {
   getAllGroups: string;    // Query to fetch all groups
   deleteSelectedGroups: string; // Query to delete selected groups
+  getGroupsByIds: string;  // Query to fetch {id,name,is_system} by ids
 }

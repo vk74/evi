@@ -1,5 +1,5 @@
 /**
- * @file service.delete.selected.groups.ts - version 1.0.02
+ * @file service.delete.selected.groups.ts - version 1.0.03
  * Backend service for deleting selected groups.
  *
  * Functionality:
@@ -14,7 +14,6 @@ import { Pool } from 'pg';
 import { pool as pgPool } from '../../../../core/db/maindb';
 import { queries } from './queries.groups.list';
 import { groupsRepository } from './repository.groups.list';
-import { getRequestorUuidFromReq } from '../../../../core/helpers/get.requestor.uuid.from.req';
 import fabricEvents from '../../../../core/eventBus/fabric.events';
 import { GROUPS_DELETE_EVENTS } from './events.groups.list';
 
@@ -29,23 +28,48 @@ export const deleteSelectedGroupsService = {
      * Deletes selected groups by their IDs
      * @param groupIds - Array of group UUIDs to delete
      * @param req - Express request object for context
-     * @returns Promise<number> - Number of deleted groups
+     * @returns Promise<{ success: boolean; message: string; deleted: { ids: string[]; names: string[]; count: number }; forbidden?: { ids: string[]; names: string[]; count: number } }>
      * @throws {Error} - If an error occurs
      */
-    async deleteSelectedGroups(groupIds: string[], req: Request): Promise<number> {
+    async deleteSelectedGroups(groupIds: string[], req: Request): Promise<{ success: boolean; message: string; deleted: { ids: string[]; names: string[]; count: number }; forbidden?: { ids: string[]; names: string[]; count: number } }> {
         try {
-            // Get UUID of the user making the request
-            const requestorUuid = getRequestorUuidFromReq(req);
-            
-            // Create event for deletion operation start
-            await fabricEvents.createAndPublishEvent({
-                req,
-                eventName: GROUPS_DELETE_EVENTS.COMPLETE.eventName,
-                payload: {
-                    groupIds,
-                    requestorUuid
-                }
-            });
+            // Basic validation / noop
+            if (!groupIds || !Array.isArray(groupIds) || groupIds.length === 0) {
+                await fabricEvents.createAndPublishEvent({
+                    req,
+                    eventName: GROUPS_DELETE_EVENTS.NOOP.eventName,
+                    payload: { reason: 'NOTHING_TO_DELETE', groupIds: [] }
+                });
+                return { success: false, message: 'Nothing to delete', deleted: { ids: [], names: [], count: 0 } };
+            }
+
+            // Precheck: load groups by ids to detect system groups and collect names
+            const precheckResult = await pool.query(queries.getGroupsByIds, [groupIds]);
+            const precheckRows: Array<{ id: string; name: string; is_system: boolean }> = precheckResult.rows || [];
+
+            const blocked = precheckRows.filter(r => r.is_system === true);
+            if (blocked.length > 0) {
+                await fabricEvents.createAndPublishEvent({
+                    req,
+                    eventName: GROUPS_DELETE_EVENTS.FORBIDDEN.eventName,
+                    payload: {
+                        blockedGroupIds: blocked.map(b => b.id),
+                        blockedGroupNames: blocked.map(b => b.name),
+                        reason: 'SYSTEM_GROUPS_NOT_DELETABLE'
+                    }
+                });
+                // Entire operation is blocked (policy b)
+                return {
+                    success: false,
+                    message: 'Deletion is forbidden for system groups',
+                    deleted: { ids: [], names: [], count: 0 },
+                    forbidden: {
+                        ids: blocked.map(b => b.id),
+                        names: blocked.map(b => b.name),
+                        count: blocked.length
+                    }
+                };
+            }
 
             // Execute SQL query to delete groups
             const result = await pool.query(queries.deleteSelectedGroups, [groupIds]);
@@ -67,16 +91,22 @@ export const deleteSelectedGroupsService = {
                 throw new Error(errorMessage);
             }
 
-            // Get number of deleted groups
-            const deletedCount = result.rows.length;
-            
+            // Get number of deleted groups and ids
+            const deletedIds: string[] = (result.rows || []).map(r => r.group_id);
+            const deletedCount = deletedIds.length;
+
+            // Try to resolve names from precheck (same set, as no system groups)
+            const nameMap = new Map(precheckRows.map(r => [r.id, r.name] as const));
+            const deletedNames = deletedIds.map(id => nameMap.get(id)).filter(Boolean) as string[];
+
             // Create event for successful deletion
             await fabricEvents.createAndPublishEvent({
                 req,
                 eventName: GROUPS_DELETE_EVENTS.COMPLETE.eventName,
                 payload: {
                     deletedCount,
-                    requestorUuid
+                    deletedGroupIds: deletedIds,
+                    deletedGroupNames: deletedNames
                 }
             });
 
@@ -90,19 +120,23 @@ export const deleteSelectedGroupsService = {
                 await fabricEvents.createAndPublishEvent({
                     req,
                     eventName: GROUPS_DELETE_EVENTS.CACHE_INVALIDATED.eventName,
-                    payload: { requestorUuid }
+                    payload: {}
                 });
             } else {
                 // Create event for failed cache clearing
                 await fabricEvents.createAndPublishEvent({
                     req,
                     eventName: GROUPS_DELETE_EVENTS.CACHE_INVALIDATION_FAILED.eventName,
-                    payload: { requestorUuid }
+                    payload: {}
                 });
             }
 
-            // Return number of deleted groups
-            return deletedCount;
+            // Return structured result
+            return {
+                success: true,
+                message: `Successfully deleted ${deletedCount} group${deletedCount === 1 ? '' : 's'}`,
+                deleted: { ids: deletedIds, names: deletedNames, count: deletedCount }
+            };
 
         } catch (error) {
             // Create event for deletion error
@@ -110,17 +144,14 @@ export const deleteSelectedGroupsService = {
                 req,
                 eventName: GROUPS_DELETE_EVENTS.FAILED.eventName,
                 payload: {
-                    error: 'Error during groups deletion'
+                    error: 'Error during groups deletion',
+                    groupIds
                 },
                 errorData: error instanceof Error ? error.message : String(error)
             });
 
-            // Re-throw error
-            throw new Error(
-                process.env.NODE_ENV === 'development' ?
-                    (error instanceof Error ? error.message : String(error)) :
-                    'Failed to delete selected groups'
-            );
+            // Re-throw error with consistent message
+            throw new Error('Failed to delete selected groups');
         }
     }
 };

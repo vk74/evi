@@ -1,6 +1,6 @@
 /**
  * events.groups.list.ts - backend file
- * version: 1.0.0
+ * version: 1.0.1
  * 
  * This file contains event definitions for the groups list management domain.
  * It serves as a reference for creating and publishing groups list-related events to the event bus.
@@ -117,6 +117,16 @@ export const GROUPS_FETCH_EVENTS = {
  * Events related to deleting groups
  */
 export const GROUPS_DELETE_EVENTS = {
+  // When deletion is forbidden due to system groups in request
+  FORBIDDEN: {
+    eventName: 'groupsList.delete.forbidden',
+    source: 'groups list admin submodule',
+    eventType: 'app' as const,
+    severity: 'warning' as const,
+    eventMessage: 'Deletion is forbidden for system groups',
+    payload: null, // Will be of type { blockedGroupIds: string[], blockedGroupNames: string[], reason: 'SYSTEM_GROUPS_NOT_DELETABLE' }
+    version: '1.0.0'
+  },
   // When groups deletion is completed successfully
   COMPLETE: {
     eventName: 'groupsList.delete.complete',
@@ -124,7 +134,18 @@ export const GROUPS_DELETE_EVENTS = {
     eventType: 'app' as const,
     severity: 'info' as const,
     eventMessage: 'Groups deleted successfully',
-    payload: null, // Will be of type { deletedCount: number, requestorUuid: string }
+    payload: null, // Will be of type { deletedCount: number, deletedGroupIds: string[], deletedGroupNames: string[] }
+    version: '1.0.0'
+  },
+  
+  // When there is nothing to delete
+  NOOP: {
+    eventName: 'groupsList.delete.noop',
+    source: 'groups list admin submodule',
+    eventType: 'app' as const,
+    severity: 'info' as const,
+    eventMessage: 'Nothing to delete',
+    payload: null, // Will be of type { reason: 'NOTHING_TO_DELETE', groupIds: string[] }
     version: '1.0.0'
   },
   
@@ -135,7 +156,7 @@ export const GROUPS_DELETE_EVENTS = {
     eventType: 'app' as const,
     severity: 'error' as const,
     eventMessage: 'Failed to delete groups',
-    payload: null, // Will be of type { error: string }
+    payload: null, // Will be of type { error: string, groupIds: string[] }
     errorData: null, // Will be filled with error details
     version: '1.0.0'
   },
@@ -147,7 +168,7 @@ export const GROUPS_DELETE_EVENTS = {
     eventType: 'app' as const,
     severity: 'debug' as const,
     eventMessage: 'Cache invalidated after group deletion',
-    payload: null, // Will be of type { requestorUuid: string }
+    payload: null, // Will be of type {}
     version: '1.0.0'
   },
   
@@ -158,7 +179,7 @@ export const GROUPS_DELETE_EVENTS = {
     eventType: 'app' as const,
     severity: 'warning' as const,
     eventMessage: 'Cache was not cleared successfully',
-    payload: null, // Will be of type { requestorUuid: string }
+    payload: null, // Will be of type {}
     version: '1.0.0'
   }
 };

@@ -1,7 +1,8 @@
 <!--
 /**
  * @file GroupsList.vue
- * Component for displaying and managing the list of groups in the administration module.
+ * @version 1.0.1
+ * Frontend component for displaying and managing the list of groups in the administration module.
  */
 -->
 
@@ -118,11 +119,10 @@ const onSortUpdate = (sortParams: { key: string; order: 'asc' | 'desc' | null })
 
 const onDeleteSelected = async () => {
   try {
-    const deletedCount = await deleteSelectedGroupsService.deleteSelectedGroups(groupsStore.selectedGroups);
-    uiStore.showSuccessSnackbar(t('admin.groups.list.messages.deleteSuccess', { count: deletedCount }));
+    await deleteSelectedGroupsService.deleteSelectedGroups(groupsStore.selectedGroups);
     await groupsService.fetchGroups();
   } catch (error) {
-    uiStore.showErrorSnackbar(error instanceof Error ? error.message : 'Error deleting groups');
+    // Errors are already surfaced by the service via toasts
   } finally {
     showDeleteDialog.value = false;
     groupsStore.clearSelection();

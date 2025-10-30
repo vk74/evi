@@ -29,12 +29,10 @@ async function deleteSelectedGroupsLogic(req: Request, res: Response): Promise<a
     const { groupIds } = req.body;
 
     // Process group deletion
-    const deletedCount = await deleteSelectedGroupsService.deleteSelectedGroups(groupIds, req);
+    const result = await deleteSelectedGroupsService.deleteSelectedGroups(groupIds, req);
 
-    // Return result in format expected by frontend
-    return {
-        deletedCount
-    };
+    // Return structured result
+    return result;
 }
 
 // Export controller using universal connection handler
