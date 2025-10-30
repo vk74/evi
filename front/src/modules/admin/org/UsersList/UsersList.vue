@@ -30,7 +30,8 @@ import {
   PhSquare,
   PhCheckCircle,
   PhMinusCircle,
-  PhArrowClockwise
+  PhArrowClockwise,
+  PhFunnel
 } from '@phosphor-icons/vue'
 import Paginator from '@/core/ui/paginator/Paginator.vue'
 
@@ -46,6 +47,14 @@ const page = ref<number>(usersStore.page);
 const itemsPerPage = ref<ItemsPerPageOption>(usersStore.itemsPerPage as ItemsPerPageOption);
 const searchQuery = ref<string>(usersStore.search || '');
 const isSearching = ref<boolean>(false);
+
+// Filter parameters
+const statusFilter = ref<string>('all');
+const staffFilter = ref<string>('all');
+
+// Filter active indicators
+const isStatusFilterActive = computed(() => statusFilter.value !== 'all');
+const isStaffFilterActive = computed(() => staffFilter.value !== 'all');
 
 // Sort tracking
 const sortBy = ref<string | null>(usersStore.sortBy || null);
@@ -69,6 +78,25 @@ const hasSelected = computed(() => usersStore.hasSelected)
 const hasOneSelected = computed(() => usersStore.hasOneSelected)
 const loading = computed(() => usersStore.loading)
 const users = computed(() => usersStore.currentUsers)
+const filteredUsers = computed(() => {
+  const list = users.value || [];
+  let filtered = list;
+
+  // Filter by status
+  if (statusFilter.value !== 'all') {
+    const status = String(statusFilter.value).toLowerCase();
+    filtered = filtered.filter(u => String(u.account_status).toLowerCase() === status);
+  }
+
+  // Filter by staff
+  if (staffFilter.value !== 'all') {
+    const isStaff = staffFilter.value === 'yes';
+    filtered = filtered.filter(u => u.is_staff === isStaff);
+  }
+
+  return filtered;
+});
+const filteredTotal = computed(() => filteredUsers.value.length);
 const totalItems = computed(() => usersStore.totalItems)
 const isSearchEnabled = computed(() => 
   searchQuery.value.length >= 2 || searchQuery.value.length === 0
@@ -360,6 +388,64 @@ const handleItemsPerPageChange = async (newItemsPerPage: ItemsPerPageOption) => 
     <div class="d-flex">
       <!-- Main content (left part) -->
       <div class="flex-grow-1 main-content-area">
+        <!-- Filters App Bar -->
+        <div class="filters-container">
+          <div class="d-flex align-center justify-space-between w-100 px-4 py-3">
+            <div class="d-flex align-center">
+              <!-- Status filter -->
+              <div class="d-flex align-center mr-4">
+                <v-select
+                  v-model="statusFilter"
+                  density="compact"
+                  variant="outlined"
+                  :label="t('list.filters.status')"
+                  :items="[
+                    { title: t('list.filters.all'), value: 'all' },
+                    { title: t('list.filters.active'), value: 'active' },
+                    { title: t('list.filters.disabled'), value: 'disabled' },
+                    { title: t('list.filters.archived'), value: 'archived' },
+                    { title: t('list.filters.requiresAction'), value: 'requires_user_action' }
+                  ]"
+                  color="teal"
+                  :base-color="isStatusFilterActive ? 'teal' : undefined"
+                  hide-details
+                  style="min-width: 180px;"
+                >
+                  <template #append-inner>
+                    <PhFunnel class="dropdown-icon" />
+                  </template>
+                </v-select>
+              </div>
+
+              <!-- Staff filter -->
+              <div class="d-flex align-center mr-4">
+                <v-select
+                  v-model="staffFilter"
+                  density="compact"
+                  variant="outlined"
+                  :label="t('list.filters.staff')"
+                  :items="[
+                    { title: t('list.filters.all'), value: 'all' },
+                    { title: t('list.filters.yes'), value: 'yes' },
+                    { title: t('list.filters.no'), value: 'no' }
+                  ]"
+                  color="teal"
+                  :base-color="isStaffFilterActive ? 'teal' : undefined"
+                  hide-details
+                  style="min-width: 150px;"
+                >
+                  <template #append-inner>
+                    <PhFunnel class="dropdown-icon" />
+                  </template>
+                </v-select>
+              </div>
+            </div>
+            <div class="d-flex align-center">
+              <v-spacer />
+            </div>
+          </div>
+        </div>
+
         <!-- Search row -->
         <div class="px-4 pt-4">
           <v-text-field
@@ -388,9 +474,9 @@ const handleItemsPerPageChange = async (newItemsPerPage: ItemsPerPageOption) => 
           :page="page"
           :items-per-page="itemsPerPage"
           :headers="headers"
-          :items="users"
+          :items="filteredUsers"
           :loading="loading"
-          :items-length="totalItems"
+          :items-length="filteredTotal"
           :items-per-page-options="[25, 50, 100]"
           class="users-table"
           multi-sort
@@ -436,7 +522,7 @@ const handleItemsPerPageChange = async (newItemsPerPage: ItemsPerPageOption) => 
           <Paginator
             :page="page"
             :items-per-page="itemsPerPage"
-            :total-items="totalItems"
+            :total-items="filteredTotal"
             :items-per-page-options="[25, 50, 100]"
             :show-records-info="true"
             @update:page="goToPage($event)"
@@ -594,6 +680,21 @@ const handleItemsPerPageChange = async (newItemsPerPage: ItemsPerPageOption) => 
 /* Main content area */
 .main-content-area {
   min-width: 0;
+}
+
+/* Filters container styling */
+.filters-container {
+  background-color: white;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+  flex-shrink: 0;
+}
+
+.dropdown-icon {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  pointer-events: none;
 }
 
 /* Table styles */

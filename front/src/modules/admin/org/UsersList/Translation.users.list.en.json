@@ -18,6 +18,17 @@
       "placeholder": "search users...",
       "minChars": "enter at least 2 characters"
     },
+    "filters": {
+      "status": "status",
+      "staff": "staff",
+      "all": "all",
+      "active": "active",
+      "disabled": "disabled",
+      "archived": "archived",
+      "requiresAction": "requires action",
+      "yes": "yes",
+      "no": "no"
+    },
     "table": {
       "headers": {
         "select": "select",
