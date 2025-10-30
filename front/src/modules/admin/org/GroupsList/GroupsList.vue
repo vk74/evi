@@ -1,7 +1,7 @@
 <!--
 /**
  * @file GroupsList.vue
- * @version 1.0.1
+ * @version 1.0.2
  * Frontend component for displaying and managing the list of groups in the administration module.
  */
 -->
@@ -25,7 +25,8 @@ import {
   PhCheckSquare,
   PhSquare,
   PhCheckCircle,
-  PhMinusCircle
+  PhMinusCircle,
+  PhFunnel
 } from '@phosphor-icons/vue'
 // Initialize stores and i18n
 const { t } = useI18n();
@@ -43,8 +44,21 @@ const page = ref<number>(groupsStore.page);
 const itemsPerPage = ref<ItemsPerPageOption>(groupsStore.itemsPerPage as ItemsPerPageOption);
 const searchQuery = ref<string>('');
 
+// Filter parameters
+const statusFilter = ref<string>('all');
+
+// Status filter active indicator
+const isStatusFilterActive = computed(() => statusFilter.value !== 'all');
+
 // Computed properties
 const groups = computed(() => groupsStore.getGroups);
+const filteredGroups = computed(() => {
+  const list = groups.value || [];
+  if (statusFilter.value === 'all') return list;
+  const status = String(statusFilter.value).toLowerCase();
+  return list.filter(g => String(g.group_status).toLowerCase() === status);
+});
+const filteredTotal = computed(() => filteredGroups.value.length);
 const loading = computed(() => groupsStore.loading);
 const totalNumOfGroups = computed(() => groupsStore.totalNumberOfGroups);
 
@@ -152,6 +166,40 @@ watch([page, itemsPerPage], ([newPage, newItemsPerPage]) => {
     <div class="d-flex">
       <!-- Main content (left part) -->
       <div class="flex-grow-1 main-content-area">
+        <!-- Filters App Bar -->
+        <div class="filters-container">
+          <div class="d-flex align-center justify-space-between w-100 px-4 py-3">
+            <div class="d-flex align-center">
+              <!-- Status filter -->
+              <div class="d-flex align-center mr-4">
+                <v-select
+                  v-model="statusFilter"
+                  density="compact"
+                  variant="outlined"
+                  :label="t('admin.groups.list.filters.status')"
+                  :items="[
+                    { title: t('admin.groups.list.filters.all'), value: 'all' },
+                    { title: t('admin.groups.list.filters.active'), value: 'active' },
+                    { title: t('admin.groups.list.filters.disabled'), value: 'disabled' },
+                    { title: t('admin.groups.list.filters.archived'), value: 'archived' }
+                  ]"
+                  color="teal"
+                  :base-color="isStatusFilterActive ? 'teal' : undefined"
+                  hide-details
+                  style="min-width: 180px;"
+                >
+                  <template #append-inner>
+                    <PhFunnel class="dropdown-icon" />
+                  </template>
+                </v-select>
+              </div>
+            </div>
+            <div class="d-flex align-center">
+              <v-spacer />
+            </div>
+          </div>
+        </div>
+
         <div class="px-4 pt-4">
           <v-text-field
             v-model="searchQuery"
@@ -175,9 +223,9 @@ watch([page, itemsPerPage], ([newPage, newItemsPerPage]) => {
           v-model:items-per-page="itemsPerPage"
           :search="searchQuery"
           :headers="headers"
-          :items="groups"
+          :items="filteredGroups"
           :loading="loading"
-          :items-length="totalNumOfGroups"
+          :items-length="filteredTotal"
           :items-per-page-options="[10, 25, 50, 100]"
           class="groups-table"
           hide-default-footer
@@ -214,7 +262,7 @@ watch([page, itemsPerPage], ([newPage, newItemsPerPage]) => {
           <Paginator
             :page="page"
             :items-per-page="itemsPerPage"
-            :total-items="totalNumOfGroups"
+            :total-items="filteredTotal"
             :items-per-page-options="[10, 25, 50, 100]"
             :show-records-info="true"
             @update:page="(p: number) => page = p"
@@ -329,6 +377,21 @@ watch([page, itemsPerPage], ([newPage, newItemsPerPage]) => {
 /* Main content area */
 .main-content-area {
   min-width: 0;
+}
+
+/* Filters container styling */
+.filters-container {
+  background-color: white;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+  flex-shrink: 0;
+}
+
+.dropdown-icon {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  pointer-events: none;
 }
 
 /* Sidebar styles */

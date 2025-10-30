@@ -4,6 +4,13 @@
       "list": {
         "title": "список групп",
         "search": "поиск в списке групп",
+        "filters": {
+          "status": "статус",
+          "all": "все",
+          "active": "активные",
+          "disabled": "отключенные",
+          "archived": "архивные"
+        },
         "sidebar": {
           "actions": "действия",
           "selectedItem": "выбранный элемент"

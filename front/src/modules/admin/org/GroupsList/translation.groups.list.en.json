@@ -4,6 +4,13 @@
       "list": {
         "title": "groups list",
         "search": "search in groups",
+        "filters": {
+          "status": "status",
+          "all": "all",
+          "active": "active",
+          "disabled": "disabled",
+          "archived": "archived"
+        },
         "sidebar": {
           "actions": "actions",
           "selectedItem": "selected item"
