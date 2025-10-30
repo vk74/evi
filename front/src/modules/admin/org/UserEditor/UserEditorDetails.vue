@@ -1,5 +1,5 @@
 <!--
-version: 1.0.2
+version: 1.0.3
 Frontend file UserEditorDetails.vue.
 Purpose: User details form with dynamic validation using public policies and form state management.
 Features: Dynamic validation for username/email/phone, static validation for FIO fields, form submission handling.
@@ -403,6 +403,12 @@ onMounted(async () => {
     loadValidationRules()
   ])
   
+  // If editing existing user and phone is present, format it using mask from public policies
+  if (userEditorStore.mode.mode === 'edit' && userEditorStore.account.mobile_phone) {
+    const maskedPhone = applyPhoneMask(String(userEditorStore.account.mobile_phone))
+    userEditorStore.updateUser({ mobile_phone: maskedPhone })
+  }
+
   if (userEditorStore.mode.mode === 'create') {
     setTimeout(() => { usernameField.value?.focus() }, 100)
   }
