@@ -1,5 +1,5 @@
 <!--
-version: 1.0.1
+version: 1.0.2
 Frontend file UserEditorDetails.vue.
 Purpose: User details form with dynamic validation using public policies and form state management.
 Features: Dynamic validation for username/email/phone, static validation for FIO fields, form submission handling.
@@ -46,7 +46,13 @@ const isLoadingPasswordPolicies = ref(false)
 const isLoadingValidationRules = ref(false)
 
 const profileGender = computed({ get: () => userEditorStore.account.gender, set: (value) => userEditorStore.updateUser({ gender: value }) })
-const profileMobilePhone = computed({ get: () => userEditorStore.account.mobile_phone, set: (value) => userEditorStore.updateUser({ mobile_phone: value }) })
+const profileMobilePhone = computed({
+  get: () => userEditorStore.account.mobile_phone,
+  set: (value: string) => {
+    const masked = applyPhoneMask(value)
+    userEditorStore.updateUser({ mobile_phone: masked })
+  }
+})
 
 const accountUsername = computed({ get: () => userEditorStore.account.username, set: (value) => userEditorStore.updateUser({ username: value }) })
 const accountEmail = computed({ get: () => userEditorStore.account.email, set: (value) => userEditorStore.updateUser({ email: value }) })
@@ -195,8 +201,8 @@ const dynamicEmailRules = computed(() => {
     validationRules.push((v: string) => emailRegex.test(v) || t('admin.org.editor.validation.email.format'))
   } catch (error) {
     console.error('Invalid email regex:', rules.regex, error)
-    // Fallback to basic email validation
-    validationRules.push((v: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v) || t('admin.org.editor.validation.email.format'))
+    // No fallback - if regex is invalid, form will be disabled by failing validation
+    validationRules.push(() => t('admin.org.editor.validation.email.invalidRegex'))
   }
   
   return validationRules
@@ -346,7 +352,30 @@ const applyPhoneMask = (value: string) => {
   }
   
   const mask = currentValidationRules.value.wellKnownFields.telephoneNumber.mask
-  const digits = value.replace(/\D/g, '') // Remove all non-digits
+  let digits = value.replace(/\D/g, '') // Remove all non-digits
+
+  // If the mask contains fixed numeric characters (e.g. country code like '+1'),
+  // and the user also typed them, skip those leading digits from the input to avoid duplication.
+  // Example: mask '+1 (###) ###-####' and user input '1' -> do not treat that '1' as a digit for '#'.
+  let maskIndex = 0
+  let digitIndexForSkip = 0
+  while (maskIndex < mask.length && digitIndexForSkip < digits.length) {
+    const maskChar = mask[maskIndex]
+    const inputDigit = digits[digitIndexForSkip]
+    if (maskChar === '#') {
+      break
+    }
+    // If mask has a fixed digit and user typed the same digit at the beginning, skip it from input
+    if (/\d/.test(maskChar)) {
+      if (maskChar === inputDigit) {
+        digitIndexForSkip++
+      }
+    }
+    maskIndex++
+  }
+  if (digitIndexForSkip > 0) {
+    digits = digits.slice(digitIndexForSkip)
+  }
   
   let maskedValue = ''
   let digitIndex = 0
@@ -364,13 +393,8 @@ const applyPhoneMask = (value: string) => {
 }
 
 /**
- * Handle phone input with real-time masking
+ * Phone input masking is applied in computed setter
  */
-const handlePhoneInput = (event: Event) => {
-  const target = event.target as HTMLInputElement
-  const maskedValue = applyPhoneMask(target.value)
-  userEditorStore.updateUser({ mobile_phone: maskedValue })
-}
 
 onMounted(async () => {
   // Load public settings
@@ -573,7 +597,6 @@ onBeforeUnmount(() => {
                       :disabled="!validationRulesReady"
                       variant="outlined" 
                       density="comfortable"
-                      @input="handlePhoneInput"
                     />
                   </v-col>
                 </v-row>

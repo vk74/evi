@@ -1,6 +1,6 @@
 /**
  * @file state.user.editor.ts
- * Version: 1.0.1
+ * Version: 1.0.2
  * Pinia store for managing user editor state and form data synchronization.
  * Frontend file that handles form data storage, UI state management, and API data preparation.
  *
@@ -136,6 +136,15 @@ getters: {
 },
 
  actions: {
+  /**
+   * Normalize phone value for API submission (digits only)
+   */
+  normalizePhoneForApi(value?: string): string {
+    if (!value) return ''
+    const hasPlus = /^\s*\+/.test(value)
+    const digits = value.replace(/\D/g, '')
+    return hasPlus ? `+${digits}` : digits
+  },
    /**
     * Update user data
     */
@@ -206,7 +215,7 @@ getters: {
        last_name: account.last_name,
        middle_name: account.middle_name || '',
        gender: account.gender || 'n',
-       mobile_phone: account.mobile_phone || ''
+      mobile_phone: this.normalizePhoneForApi(account.mobile_phone)
      }
    },
 
@@ -216,6 +225,11 @@ getters: {
 
     // Log for debugging
     console.log('Preparing data for update:', changes)
+
+    // Normalize fields for API
+    if (typeof changes.mobile_phone === 'string') {
+      changes.mobile_phone = this.normalizePhoneForApi(changes.mobile_phone)
+    }
 
     return changes
   },

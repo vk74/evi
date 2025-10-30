@@ -179,13 +179,19 @@ function buildTelephoneNumberRule(settings: AppSetting[]): ValidationRule {
   const mask = unwrapString(maskRaw) || '+# ### ###-####';
   
   // Generate regex from mask
-  let regexPattern = mask
+  let maskRegexPattern = mask
     .replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
     .replace(/#/g, '\\d');
-  
-  regexPattern = '^' + regexPattern + '$';
-  
-  const regex = new RegExp(regexPattern);
+
+  maskRegexPattern = '^' + maskRegexPattern + '$';
+
+  // E.164-like compact pattern: optional '+', 7 to 15 digits
+  const e164Pattern = '^\\+?\\d{7,15}$';
+
+  // Combined pattern: accept either exact mask or E.164-like
+  const combinedPattern = `(?:${maskRegexPattern})|(?:${e164Pattern})`;
+
+  const regex = new RegExp(combinedPattern);
 
   return {
     fieldType: 'telephoneNumber',
