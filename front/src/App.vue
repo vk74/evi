@@ -12,7 +12,7 @@ Contains:
 - Improved handling of ResizeObserver errors with a more robust implementation
 - Dynamic navbar background color from application settings
 - Pricing admin submodule integration
-Version: 1.3.0
+Version: 1.3.1
 -->
 <script setup lang="ts">
 import { ref, computed, onMounted, watch, defineAsyncComponent, nextTick } from 'vue';
@@ -882,11 +882,11 @@ onMounted(async () => {
           >
             <v-list-item
               v-tooltip="{
-                text: $t('navigation.tooltips.profile'),
+              text: $t('navigation.drawer.account'),
                 location: 'right',
                 disabled: appStore.drawerMode !== 'closed'
               }"
-              :title="$t('navigation.drawer.profile')"
+              :title="$t('navigation.drawer.account')"
               value="profile"
               class="bottom-list-item"
               :active="isProfileMenuOpen || appStore.isModuleActive('Account') || appStore.isModuleActive('Settings')"
@@ -913,7 +913,7 @@ onMounted(async () => {
               </template>
               <v-list>
                 <v-list-item @click="setActiveModule('Account')">
-                  <v-list-item-title>{{ $t('navigation.drawer.account') }}</v-list-item-title>
+                  <v-list-item-title>my profile</v-list-item-title>
                 </v-list-item>
                 <v-list-item @click="setActiveModule('Settings')">
                   <v-list-item-title>{{ $t('navigation.drawer.appPreferences') }}</v-list-item-title>
