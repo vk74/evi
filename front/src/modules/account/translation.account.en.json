@@ -186,6 +186,7 @@
       "actions": {
         "title": "actions",
         "save": "save",
+        "update": "update",
         "changePassword": "change password"
       },
       "messages": {

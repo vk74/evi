@@ -1,5 +1,5 @@
 /**
- * service.update.profile.ts - version 1.0.02
+ * service.update.profile.ts - version 1.0.03
  * BACKEND service for updating user profile data
  * 
  * Updates user profile information in the database
@@ -35,7 +35,7 @@ interface ProfileUpdateRequest {
   last_name?: string;
   middle_name?: string | null;
   gender?: string | null;
-  phone_number?: string | null;
+  mobile_phone?: string | null;
   email?: string | null;
   [key: string]: any;
 }
@@ -47,7 +47,7 @@ interface UserProfileData {
   last_name?: string;
   middle_name?: string | null;
   gender?: string | null;
-  mobile_phone_number?: string | null;
+  mobile_phone?: string | null;
   [key: string]: any;
 }
 
@@ -94,14 +94,14 @@ const updateUserProfile = async (req: EnhancedRequest, res: Response): Promise<v
        return;
    }
 
-   const {
-       first_name,
-       last_name,
-       middle_name,
-       gender,
-       phone_number,
-       email
-   } = req.body as ProfileUpdateRequest;
+  const {
+      first_name,
+      last_name,
+      middle_name,
+      gender,
+      mobile_phone,
+      email
+  } = req.body as ProfileUpdateRequest;
 
    await createAndPublishEvent({
      eventName: ACCOUNT_SERVICE_EVENTS.UPDATE_PROFILE_DATA_RECEIVED.eventName,
@@ -112,7 +112,7 @@ const updateUserProfile = async (req: EnhancedRequest, res: Response): Promise<v
          last_name,
          middle_name,
          gender,
-         phone_number,
+        mobile_phone,
          email
        }
      }
@@ -120,34 +120,50 @@ const updateUserProfile = async (req: EnhancedRequest, res: Response): Promise<v
 
   try {
       // Optional format validation for well-known fields if provided
-      if (email) {
-        await validateFieldAndThrow({ value: email, fieldType: 'email' }, req);
+      if (email !== undefined) {
+        await validateFieldAndThrow({ value: email as string, fieldType: 'email' }, req);
       }
-      if (phone_number) {
-        await validateFieldAndThrow({ value: phone_number, fieldType: 'telephoneNumber' }, req);
+      if (mobile_phone !== undefined && mobile_phone !== null && mobile_phone !== '') {
+        await validateFieldAndThrow({ value: mobile_phone as string, fieldType: 'telephoneNumber' }, req);
       }
 
-       const values = [
-           first_name,
-           last_name,
-           middle_name,
-           gender,
-           phone_number,
-           username
-       ];
+      // Build dynamic UPDATE based on provided fields only
+      const updates: string[] = []
+      const params: any[] = []
+      let idx = 1
 
-       await createAndPublishEvent({
-         eventName: ACCOUNT_SERVICE_EVENTS.UPDATE_PROFILE_EXECUTING.eventName,
-         payload: {
-           username,
-           values
-         }
-       });
-       
-       const result: QueryResult<UserProfileData> = await pool.query(
-           userProfileQueries.updateProfile.text,
-           values
-       );
+      const pushUpdate = (column: string, value: any) => {
+        updates.push(`${column} = $${idx}`)
+        params.push(value)
+        idx++
+      }
+
+      if (first_name !== undefined) pushUpdate('first_name', first_name)
+      if (last_name !== undefined) pushUpdate('last_name', last_name)
+      if (middle_name !== undefined) pushUpdate('middle_name', middle_name)
+      if (gender !== undefined) pushUpdate('gender', gender)
+      if (mobile_phone !== undefined) pushUpdate('mobile_phone', mobile_phone)
+      if (email !== undefined) pushUpdate('email', email)
+
+      if (updates.length === 0) {
+        // Nothing to update; return current data
+        res.json({ updated: false })
+        return
+      }
+
+      const updateSql = `UPDATE app.users SET ${updates.join(', ')} WHERE username = $${idx} RETURNING user_id, first_name, last_name, middle_name, gender, mobile_phone, email`
+      params.push(username)
+
+      await createAndPublishEvent({
+        eventName: ACCOUNT_SERVICE_EVENTS.UPDATE_PROFILE_EXECUTING.eventName,
+        payload: {
+          username,
+          updates,
+          paramsCount: params.length
+        }
+      });
+
+      const result: QueryResult<UserProfileData> = await pool.query(updateSql, params)
 
        if (result.rows.length > 0) {
            await createAndPublishEvent({

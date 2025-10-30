@@ -186,6 +186,7 @@
       "actions": {
         "title": "действия",
         "save": "сохранить",
+        "update": "обновить",
         "changePassword": "изменить пароль"
       },
       "messages": {

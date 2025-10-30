@@ -1,6 +1,6 @@
 <!--
   File: ModuleAccount.vue
-  Version: 1.0.1
+  Version: 1.0.2
   Description: Frontend component for user account profile management
   Purpose: Provides interface for users to view and edit their profile information
   Features:
@@ -17,30 +17,44 @@ import { useUserAuthStore } from '@/core/auth/state.user.auth'
 import { useUserAccountStore } from '@/modules/account/state.user.account'
 import { useI18n } from 'vue-i18n'
 import { useUiStore } from '@/core/state/uistate'
-import { api } from '@/core/api/service.axios'
+import { fetchUserProfile } from '@/modules/account/service.fetch.profile'
+import { updateUserProfile as updateUserProfileService } from '@/modules/account/servie.update.profile'
 import ChangePassword from '@/core/ui/modals/change-password/ChangePassword.vue'
 import { PasswordChangeMode } from '@/core/ui/modals/change-password/types.change.password'
 import { UserProfile, Gender, GenderOption } from '@/modules/account/types.user.account'
 import { PhCaretUpDown } from '@phosphor-icons/vue'
+import { usePublicSettingsStore, type ValidationRules } from '@/core/state/state.public.settings'
+import { fetchPublicValidationRules } from '@/core/services/service.fetch.public.validation.rules'
 
 // ==================== STORES ====================
 const userStore = useUserAuthStore()
 const userAccountStore = useUserAccountStore()
 const uiStore = useUiStore()
 const { t } = useI18n()
+const publicStore = usePublicSettingsStore()
 
 // ==================== REFS & STATE ====================
 const form = ref<any>(null)
 const isFormValid = ref(false)
 const isSubmitting = ref(false)
+const originalProfile = ref<UserProfile | null>(null)
+const currentValidationRules = ref<ValidationRules | null>(null)
 
 const profile = ref<UserProfile>({
   last_name: '',
   first_name: '',
   middle_name: '',
   gender: '',
-  phone_number: '',
+  mobile_phone: '',
   email: ''
+})
+
+// Phone computed with masking in setter
+const phoneValue = computed({
+  get: () => profile.value.mobile_phone,
+  set: (value: string) => {
+    profile.value.mobile_phone = applyPhoneMask(value ?? '')
+  }
 })
 
 const isChangePasswordModalVisible = ref(false)
@@ -55,6 +69,19 @@ const genderOptions: GenderOption[] = [
 
 // ==================== COMPUTED ====================
 const username = computed(() => userStore.username)
+const hasChanges = computed(() => {
+  if (!originalProfile.value) return false
+  const a = profile.value
+  const b = originalProfile.value
+  return (
+    a.first_name !== b.first_name ||
+    a.last_name !== b.last_name ||
+    a.middle_name !== b.middle_name ||
+    a.gender !== b.gender ||
+    a.email !== b.email ||
+    a.mobile_phone !== b.mobile_phone
+  )
+})
 
 // ==================== VALIDATION RULES ====================
 const lastNameRules = [
@@ -77,15 +104,45 @@ const genderRules = [
   (v: string) => !v || v.length <= 20 || t('account.profile.fields.gender.validation.maxLength')
 ]
 
-const phoneRules = [
-  (v: string) => !v || /^[\+]?[0-9\s\-\(\)]+$/.test(v) || t('account.profile.fields.phoneNumber.validation.format'),
-  (v: string) => !v || v.length <= 20 || t('account.profile.fields.phoneNumber.validation.maxLength')
-]
+// Dynamic rules based on public policies
+const validationRulesReady = computed(() => {
+  return !publicStore.validationRulesError && currentValidationRules.value !== null
+})
 
-const emailRules = [
-  (v: string) => !v || /.+@.+\..+/.test(v) || t('account.profile.fields.email.validation.format'),
-  (v: string) => !v || v.length <= 100 || t('account.profile.fields.email.validation.maxLength')
-]
+const dynamicEmailRules = computed(() => {
+  if (!validationRulesReady.value || !currentValidationRules.value) {
+    return [() => !publicStore.validationRulesError || t('account.selfRegistration.validation.email.rulesNotLoaded')]
+  }
+  const rules = currentValidationRules.value.wellKnownFields.email
+  const list: Array<(v: string) => string | boolean> = []
+  list.push((v: string) => !!v || t('account.profile.fields.email.validation.required'))
+  try {
+    const emailRegex = new RegExp(rules.regex)
+    list.push((v: string) => emailRegex.test(v) || t('account.profile.fields.email.validation.format'))
+  } catch (error) {
+    console.error('Invalid email regex:', (rules as any).regex, error)
+    list.push(() => t('account.selfRegistration.validation.email.invalidRegex'))
+  }
+  return list
+})
+
+const dynamicPhoneRules = computed(() => {
+  if (!validationRulesReady.value || !currentValidationRules.value) {
+    return [() => !publicStore.validationRulesError || t('account.selfRegistration.validation.phone.rulesNotLoaded')]
+  }
+  const rules = currentValidationRules.value.wellKnownFields.telephoneNumber
+  const list: Array<(v: string) => string | boolean> = []
+  if (rules.regex) {
+    try {
+      const phoneRegex = new RegExp(rules.regex)
+      list.push((v: string) => !v || phoneRegex.test(v) || t('account.selfRegistration.validation.phone.format'))
+    } catch (error) {
+      console.error('Invalid phone regex from public policies:', rules.regex, error)
+      list.push(() => t('account.selfRegistration.validation.phone.invalidRegex'))
+    }
+  }
+  return list
+})
 
 
 // ==================== METHODS ====================
@@ -107,12 +164,42 @@ const saveProfile = async () => {
     isSubmitting.value = true
     
     try {
-      console.log('sending request to update user profile data:', profile.value)
-      const response = await api.post('/api/auth/profile', profile.value)
-      console.log('Profile updated successfully:', response.data)
+      // Build payload with only changed fields
+      const changed: Partial<UserProfile> = {}
+      const current = profile.value
+      const original = originalProfile.value
+      if (original) {
+        if (current.first_name !== original.first_name) changed.first_name = current.first_name
+        if (current.last_name !== original.last_name) changed.last_name = current.last_name
+        if (current.middle_name !== original.middle_name) changed.middle_name = current.middle_name
+        if (current.gender !== original.gender) changed.gender = current.gender
+        if (current.email !== original.email) changed.email = current.email
+        if (current.mobile_phone !== original.mobile_phone) changed.mobile_phone = current.mobile_phone
+      } else {
+        Object.assign(changed, current)
+      }
+
+      // Normalize phone for API if present in changed
+      if (typeof changed.mobile_phone === 'string') {
+        const trimmed = changed.mobile_phone.trim()
+        if (trimmed === '') {
+          // send null to clear the phone and satisfy DB check constraint
+          changed.mobile_phone = null as unknown as any
+        } else {
+          const hasPlus = /^\s*\+/.test(trimmed)
+          const normalized = hasPlus ? `+${trimmed.replace(/\D/g, '')}` : trimmed.replace(/\D/g, '')
+          changed.mobile_phone = normalized as unknown as any
+        }
+      }
+
+      console.log('sending request to update user profile data (changed only):', changed)
+      await updateUserProfileService(changed as any)
+      console.log('Profile updated successfully')
       uiStore.showSuccessSnackbar(t('account.profile.messages.saveSuccess'))
       // Update profile in account store
-      userAccountStore.updateProfile(profile.value)
+      userAccountStore.updateProfile(current)
+      // Sync original after successful save
+      originalProfile.value = { ...current }
     } catch (error) {
       console.error('Error on save of user profile data:', error)
       uiStore.showErrorSnackbar(t('account.profile.messages.saveError'))
@@ -127,10 +214,16 @@ const saveProfile = async () => {
 const loadProfileData = async () => {
   if (userStore.isAuthenticated) {
     try {
-      const response = await api.get('/api/auth/profile')
-      profile.value = response.data
+      const data = await fetchUserProfile()
+      profile.value = data
+      // Apply phone mask if public policies are available
+      if (validationRulesReady.value && profile.value.mobile_phone) {
+        profile.value.mobile_phone = applyPhoneMask(String(profile.value.mobile_phone))
+      }
       // Update profile in account store
       userAccountStore.updateProfile(profile.value)
+      // Store original snapshot
+      originalProfile.value = { ...profile.value }
     } catch (error) {
       console.error('Error on load of user profile data:', error)
       uiStore.showErrorSnackbar(t('account.profile.messages.loadError'))
@@ -139,7 +232,47 @@ const loadProfileData = async () => {
 }
 
 // ==================== LIFECYCLE ====================
+// Helpers for phone mask
+const applyPhoneMask = (value: string | null | undefined) => {
+  if (value == null) return ''
+  if (!currentValidationRules.value?.wellKnownFields?.telephoneNumber?.mask) return value
+  const mask = currentValidationRules.value.wellKnownFields.telephoneNumber.mask
+  let digits = value.replace(/\D/g, '')
+  let maskIndex = 0
+  let digitIndexForSkip = 0
+  while (maskIndex < mask.length && digitIndexForSkip < digits.length) {
+    const maskChar = mask[maskIndex]
+    const inputDigit = digits[digitIndexForSkip]
+    if (maskChar === '#') break
+    if (/\d/.test(maskChar)) {
+      if (maskChar === inputDigit) {
+        digitIndexForSkip++
+      }
+    }
+    maskIndex++
+  }
+  if (digitIndexForSkip > 0) digits = digits.slice(digitIndexForSkip)
+  let maskedValue = ''
+  let digitIndex = 0
+  for (let i = 0; i < mask.length && digitIndex < digits.length; i++) {
+    if (mask[i] === '#') {
+      maskedValue += digits[digitIndex]
+      digitIndex++
+    } else {
+      maskedValue += mask[i]
+    }
+  }
+  return maskedValue
+}
+
 onMounted(async () => {
+  // load public validation rules first so that mask is available
+  try {
+    const rules = await fetchPublicValidationRules()
+    currentValidationRules.value = rules
+  } catch (e) {
+    console.error('Failed to load public validation rules in ModuleAccount.vue', e)
+  }
   await loadProfileData()
 })
 </script>
@@ -260,9 +393,9 @@ onMounted(async () => {
                       md="6"
                     >
                       <v-text-field
-                        v-model="profile.phone_number"
-                        :label="t('account.profile.fields.phoneNumber.label')"
-                        :rules="phoneRules"
+                        v-model="phoneValue"
+                        :placeholder="currentValidationRules?.wellKnownFields?.telephoneNumber?.mask || t('account.selfRegistration.fields.phone.placeholder')"
+                        :rules="dynamicPhoneRules"
                         variant="outlined"
                         density="comfortable"
                         color="teal"
@@ -275,7 +408,7 @@ onMounted(async () => {
                       <v-text-field
                         v-model="profile.email"
                         :label="t('account.profile.fields.email.label')"
-                        :rules="emailRules"
+                        :rules="dynamicEmailRules"
                         variant="outlined"
                         density="comfortable"
                         color="teal"
@@ -298,16 +431,16 @@ onMounted(async () => {
             {{ t('account.profile.actions.title') }}
           </h3>
           
-          <!-- Save button -->
+          <!-- Update button -->
           <v-btn
             block
             color="teal"
             variant="outlined"
-            :disabled="!isFormValid || isSubmitting"
+            :disabled="!isFormValid || isSubmitting || !hasChanges"
             class="mb-3"
             @click="saveProfile"
           >
-            {{ t('account.profile.actions.save') }}
+            {{ t('account.profile.actions.update') }}
           </v-btn>
 
           <!-- Change password button -->

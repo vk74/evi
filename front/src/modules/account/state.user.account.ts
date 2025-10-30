@@ -1,3 +1,10 @@
+/**
+ * version: 1.0.0
+ * Frontend file state.user.account.ts
+ * Purpose: Pinia store managing user account profile, settings, and session state.
+ * File type: frontend state store (state.user.account.ts)
+ */
+
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import type { UserProfile, UserSettings, SessionData } from './types.user.account'
@@ -9,7 +16,7 @@ export const useUserAccountStore = defineStore('userAccount', () => {
     first_name: '',
     middle_name: '',
     gender: '',
-    phone_number: '',
+    mobile_phone: '',
     email: ''
   })
 
@@ -53,7 +60,7 @@ export const useUserAccountStore = defineStore('userAccount', () => {
       first_name: '',
       middle_name: '',
       gender: '',
-      phone_number: '',
+      mobile_phone: '',
       email: ''
     }
   }

@@ -1,3 +1,10 @@
+/**
+ * version: 1.0.0
+ * Frontend file types.user.account.ts
+ * Purpose: Shared TypeScript types for user account module (profile, settings, session data).
+ * File type: frontend types definition (types.user.account.ts)
+ */
+
 // Types for user account module
 
 /**
@@ -22,7 +29,7 @@ export interface UserProfile {
   first_name: string
   middle_name: string
   gender: Gender | ''
-  phone_number: string
+  mobile_phone: string
   email: string
 }
 

@@ -1,5 +1,5 @@
 /**
- * version: 1.0.05
+ * version: 1.0.06
  * Backend router file for authentication related routes.
  * Handles user authentication, registration, profile management and routes to appropriate middleware.
  * Protected routes include user status check middleware.
@@ -13,8 +13,8 @@ import checkRequestSecurityHard from '../guards/guard.check.request.security.har
 // Removed: checkAccountPassword, checkAccountStatus - not used in routes
 // import issueToken from '../../middleware/auth.issue.token';
 // Registration service moved to controller
-import getUserProfile from '../../modules/account/service.get.profile';
-import updateUserProfile from '../../modules/account/service.update.profile';
+import fetchUserProfileController from '../../modules/account/controller.fetch.profile';
+import updateUserProfileController from '../../modules/account/controller.update.profile';
 
 // Import new controllers
 import { loginController } from './controller.login';
@@ -37,8 +37,8 @@ router.post('/api/auth/change-password', checkRequestSecurityHard, (req, res) =>
     // TODO: Replace with serviceChangePassword when created
     res.status(501).json({ error: 'Change password service not implemented yet' });
 });
-router.get('/api/auth/profile', checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, getUserProfile);
-router.post('/api/auth/profile', checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, updateUserProfile);
+router.get('/api/auth/profile', checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, fetchUserProfileController);
+router.post('/api/auth/profile', checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, updateUserProfileController);
 
 
 
