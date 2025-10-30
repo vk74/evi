@@ -1,8 +1,9 @@
 /**
  * @file UsersList.vue
- * Version: 1.0.07
+ * Version: 1.0.09
  * Component for displaying and managing the system users list with server-side processing.
  * Features: pagination, search, sorting, user management operations (create, edit, delete, reset password).
+ * FRONTEND file: UsersList.vue
  */
 <script setup lang="ts">
 import usersFetchService from './Service.fetch.users'
@@ -53,6 +54,8 @@ const sortDesc = ref<boolean>(usersStore.sortDesc);
 // Dialog state
 const showDeleteDialog = ref(false)
 const showPasswordDialog = ref(false)
+const showSystemUsersDialog = ref(false)
+const systemUsernames = ref<string[]>([])
 
 // Selected user data for password reset
 const selectedUserData = ref({
@@ -132,11 +135,16 @@ const confirmDelete = async () => {
     const deletedCount = await deleteSelectedUsersService.deleteSelectedUsers(usersStore.selectedUsers)
     uiStore.showSuccessSnackbar(t('list.messages.deleteUsersSuccess', { count: deletedCount }))
     await fetchUsers()
-  } catch (error) {
-    handleError(error, 'deleting users')
+    usersStore.clearSelection()
+  } catch (error: any) {
+    if (error && error.code === 'SYSTEM_USERS_SELECTED' && Array.isArray(error.usernames)) {
+      systemUsernames.value = error.usernames
+      showSystemUsersDialog.value = true
+    } else {
+      handleError(error, 'deleting users')
+    }
   } finally {
     showDeleteDialog.value = false
-    usersStore.clearSelection()
   }
 }
 
@@ -545,7 +553,7 @@ const handleItemsPerPageChange = async (newItemsPerPage: ItemsPerPageOption) => 
           <v-spacer />
           <v-btn
             color="grey"
-            variant="text"
+            variant="outlined"
             class="text-none"
             @click="cancelDelete"
           >
@@ -553,7 +561,7 @@ const handleItemsPerPageChange = async (newItemsPerPage: ItemsPerPageOption) => 
           </v-btn>
           <v-btn
             color="error"
-            variant="text"
+            variant="outlined"
             class="text-none"
             @click="confirmDelete"
           >
@@ -575,6 +583,34 @@ const handleItemsPerPageChange = async (newItemsPerPage: ItemsPerPageOption) => 
         :mode="PasswordChangeMode.ADMIN"
         :on-close="() => showPasswordDialog = false"
       />
+    </v-dialog>
+
+    <!-- System users deletion error dialog -->
+    <v-dialog
+      v-model="showSystemUsersDialog"
+      max-width="520"
+    >
+      <v-card>
+        <v-card-title class="text-subtitle-1 text-wrap">
+          {{ t('admin.org.usersList.systemUsersDeletion.title') }}
+        </v-card-title>
+        <v-card-text>
+          <div>
+            {{ systemUsernames.join(', ') }}
+          </div>
+        </v-card-text>
+        <v-card-actions>
+          <v-spacer />
+          <v-btn
+            color="teal"
+            variant="outlined"
+            class="text-none"
+            @click="showSystemUsersDialog = false"
+          >
+            {{ t('admin.org.usersList.systemUsersDeletion.ok') }}
+          </v-btn>
+        </v-card-actions>
+      </v-card>
     </v-dialog>
   </v-card>
 </template>

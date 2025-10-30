@@ -1,9 +1,10 @@
 /**
  * @file Service.delete.selected.users.ts
- * Version: 1.0.0
+ * Version: 1.0.1
  * FRONTEND service for deleting selected users.
  *
  * Functionality:
+ * - Validates selected accounts are not system accounts (is_system=true)
  * - Sends delete request to API
  * - Invalidates cache after deletion
  * - Returns count of deleted users
@@ -12,6 +13,7 @@ import { api } from '@/core/api/service.axios'
 import { useStoreUsersList } from './State.users.list'
 import { useUserAuthStore } from '@/core/auth/state.user.auth';
 import usersFetchService from './Service.fetch.users'
+import type { ILoadUserResponse } from '../UserEditor/types.user.editor'
 
 // Logger for main operations
 const logger = {
@@ -43,6 +45,28 @@ export const deleteSelectedUsersService = {
     if (!userIds.length) {
       logger.info('No users selected for deletion')
       return 0
+    }
+
+    // Pre-check: fetch each user and collect system accounts
+    logger.info('Validating selected users before deletion', { count: userIds.length })
+
+    const fetchUserPromises = userIds.map(async (id) => {
+      const resp = await api.get<ILoadUserResponse>(`/api/admin/users/fetch-user-by-userid/${id}`)
+      // If API indicates failure or missing data, we still proceed to let backend handle delete errors
+      return resp.data?.data?.user
+    })
+
+    const users = await Promise.all(fetchUserPromises)
+    const systemUsernames = users
+      .filter(u => !!u && u.is_system === true)
+      .map(u => u!.username)
+
+    if (systemUsernames.length > 0) {
+      const err = new Error(`системные учетные запись нельзя удалять: ${systemUsernames.join(', ')}`) as Error & { code?: string, usernames?: string[] }
+      err.code = 'SYSTEM_USERS_SELECTED'
+      err.usernames = systemUsernames
+      logger.error('Deletion blocked due to system accounts', { systemUsernames })
+      throw err
     }
 
     logger.info('Deleting selected users', { count: userIds.length })

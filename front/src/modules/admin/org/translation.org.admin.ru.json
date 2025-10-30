@@ -1,6 +1,12 @@
 {
   "admin": {
     "org": {
+      "usersList": {
+        "systemUsersDeletion": {
+          "title": "системные учетные записи нельзя удалять",
+          "ok": "ОК"
+        }
+      },
       "sections": {
         "usersList": "список пользователей",
         "userEditor": "редактор пользователя",

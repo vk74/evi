@@ -1,6 +1,12 @@
 {
   "admin": {
     "org": {
+      "usersList": {
+        "systemUsersDeletion": {
+          "title": "System accounts cannot be deleted",
+          "ok": "OK"
+        }
+      },
       "sections": {
         "usersList": "users list",
         "userEditor": "user editor",
