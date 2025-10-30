@@ -1,6 +1,6 @@
 /**
  * @file state.user.editor.ts
- * Version: 1.0.2
+ * Version: 1.0.3
  * Pinia store for managing user editor state and form data synchronization.
  * Frontend file that handles form data storage, UI state management, and API data preparation.
  *
@@ -33,7 +33,7 @@ const initialUserState: IUserAccount = {
  email: '',
  password: '',
  passwordConfirm: '',
- is_staff: true,
+ is_staff: false,
  account_status: 'active',
  first_name: '',
  middle_name: '', //null,

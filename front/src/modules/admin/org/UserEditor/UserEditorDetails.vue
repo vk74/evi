@@ -1,5 +1,5 @@
 <!--
-version: 1.0.4
+version: 1.0.5
 Frontend file UserEditorDetails.vue.
 Purpose: User details form with dynamic validation using public policies and form state management.
 Features: Dynamic validation for username/email/phone, static validation for FIO fields, form submission handling.
@@ -461,7 +461,99 @@ onBeforeUnmount(() => {
                       density="comfortable" 
                       :counter="currentValidationRules?.wellKnownFields?.userName?.maxLength" 
                       color="teal"
+                      class="username-field"
                       required 
+                    />
+                  </v-col>
+                </v-row>
+                <v-row>
+                  <v-col cols="12" md="4">
+                    <v-text-field v-model="accountFirstName" :label="t('admin.org.editor.fields.firstName.label')" :rules="firstNameRules" variant="outlined" density="comfortable" counter="50" color="teal" required />
+                  </v-col>
+                  <v-col cols="12" md="4">
+                    <v-text-field v-model="accountMiddleName" :label="t('admin.org.editor.fields.middleName.label')" :rules="middleNameRules" variant="outlined" density="comfortable" counter="50" color="teal" />
+                  </v-col>
+                  <v-col cols="12" md="4">
+                    <v-text-field v-model="accountLastName" :label="t('admin.org.editor.fields.lastName.label')" :rules="lastNameRules" variant="outlined" density="comfortable" counter="50" color="teal" required />
+                  </v-col>
+                  <v-col cols="12" md="4">
+                    <v-select v-model="profileGender" :label="t('admin.org.editor.fields.gender.label')" variant="outlined" density="comfortable" color="teal" class="fixed-300" :items="[
+                      { title: t('admin.org.editor.fields.gender.options.male'), value: Gender.MALE },
+                      { title: t('admin.org.editor.fields.gender.options.female'), value: Gender.FEMALE },
+                      { title: t('admin.org.editor.fields.gender.options.notDefined'), value: Gender.NOT_DEFINED }
+                    ]" item-title="title" item-value="value">
+                    <template #append-inner>
+                      <PhCaretUpDown class="dropdown-icon" />
+                    </template>
+                  </v-select>
+                  </v-col>
+                </v-row>
+              </v-col>
+
+              <!-- Status section -->
+              <v-col cols="12">
+                <div class="card-header mt-6">
+                  <v-card-title class="text-subtitle-1">{{ t('admin.org.editor.sections.status') }}</v-card-title>
+                  <v-divider class="section-divider" />
+                </div>
+                <v-row class="pt-3">
+                  <v-col cols="12" md="6">
+                    <v-select 
+                      v-model="accountStatus" 
+                      :label="t('admin.org.editor.fields.accountStatus.label')" 
+                      variant="outlined" 
+                      density="comfortable" 
+                      color="teal"
+                      class="fixed-300"
+                      :disabled="isSystemUser"
+                      :items="[
+                        { title: t('admin.org.editor.fields.accountStatus.options.active'), value: AccountStatus.ACTIVE },
+                        { title: t('admin.org.editor.fields.accountStatus.options.disabled'), value: AccountStatus.DISABLED },
+                        { title: t('admin.org.editor.fields.accountStatus.options.requiresAction'), value: AccountStatus.REQUIRES_USER_ACTION }
+                      ]" 
+                      item-title="title" 
+                      item-value="value"
+                    >
+                    <template #append-inner>
+                      <PhCaretUpDown class="dropdown-icon" />
+                    </template>
+                  </v-select>
+                  </v-col>
+                  <v-col cols="12" md="6">
+                    <div class="d-flex align-center">
+                      <v-btn
+                        icon
+                        variant="text"
+                        density="comfortable"
+                        :aria-pressed="accountIsStaff"
+                        @click="accountIsStaff = !accountIsStaff"
+                      >
+                        <PhCheckSquare v-if="accountIsStaff" :size="18" color="teal" />
+                        <PhSquare v-else :size="18" color="grey" />
+                      </v-btn>
+                      <span style="margin-left: 8px;">{{ t('admin.org.editor.fields.isStaff.label') }}</span>
+                    </div>
+                  </v-col>
+                </v-row>
+              </v-col>
+
+              <v-col cols="12">
+                <div class="card-header mt-6">
+                  <v-card-title class="text-subtitle-1">{{ t('account.profile.sections.contactInfo') }}</v-card-title>
+                  <v-divider class="section-divider" />
+                </div>
+                <v-row class="pt-3">
+                  <v-col cols="12" md="6">
+                    <v-text-field 
+                      v-model="profileMobilePhone" 
+                      :label="t('admin.org.editor.fields.mobilePhone.label')" 
+                      :placeholder="currentValidationRules?.wellKnownFields?.telephoneNumber?.mask || t('admin.org.editor.fields.mobilePhone.placeholder')" 
+                      :rules="dynamicPhoneRules"
+                      :loading="isLoadingValidationRules"
+                      :disabled="!validationRulesReady"
+                      variant="outlined" 
+                      density="comfortable"
+                      color="teal"
                     />
                   </v-col>
                   <v-col cols="12" md="6">
@@ -478,36 +570,16 @@ onBeforeUnmount(() => {
                       required 
                     />
                   </v-col>
-                  <v-col cols="12" md="4">
-                    <v-text-field v-model="accountFirstName" :label="t('admin.org.editor.fields.firstName.label')" :rules="firstNameRules" variant="outlined" density="comfortable" counter="50" color="teal" required />
-                  </v-col>
-                  <v-col cols="12" md="4">
-                    <v-text-field v-model="accountMiddleName" :label="t('admin.org.editor.fields.middleName.label')" :rules="middleNameRules" variant="outlined" density="comfortable" counter="50" color="teal" />
-                  </v-col>
-                  <v-col cols="12" md="4">
-                    <v-text-field v-model="accountLastName" :label="t('admin.org.editor.fields.lastName.label')" :rules="lastNameRules" variant="outlined" density="comfortable" counter="50" color="teal" required />
-                  </v-col>
-                  <v-col cols="12" md="4">
-                    <v-select v-model="profileGender" :label="t('admin.org.editor.fields.gender.label')" variant="outlined" density="comfortable" color="teal" :items="[
-                      { title: t('admin.org.editor.fields.gender.options.male'), value: Gender.MALE },
-                      { title: t('admin.org.editor.fields.gender.options.female'), value: Gender.FEMALE },
-                      { title: t('admin.org.editor.fields.gender.options.notDefined'), value: Gender.NOT_DEFINED }
-                    ]" item-title="title" item-value="value">
-                    <template #append-inner>
-                      <PhCaretUpDown class="dropdown-icon" />
-                    </template>
-                  </v-select>
-                  </v-col>
                 </v-row>
               </v-col>
 
+              <!-- Security section moved to the bottom of the form -->
               <v-col cols="12">
                 <div class="card-header mt-6">
                   <v-card-title class="text-subtitle-1">{{ t('admin.org.editor.sections.security') }}</v-card-title>
                   <v-divider class="section-divider" />
                 </div>
-                
-                <!-- First row: Password fields (only in create mode) -->
+                <!-- Password fields (only in create mode) -->
                 <v-row v-if="userEditorStore.mode.mode === 'create'" class="pt-3">
                   <v-col cols="12" md="5">
                     <v-text-field 
@@ -547,80 +619,14 @@ onBeforeUnmount(() => {
                       <PhEyeSlash v-else :size="18" color="teal" />
                     </v-btn>
                   </v-col>
-                  <!-- Password policies panel -->
-                  <v-col v-if="showPasswordPoliciesPanel" cols="12" class="mb-3">
-                    <PasswordPoliciesPanel />
-                  </v-col>
-                </v-row>
-                
-                <!-- Status section -->
-                <div class="card-header mt-6">
-                  <v-card-title class="text-subtitle-1">{{ t('admin.org.editor.sections.status') }}</v-card-title>
-                  <v-divider class="section-divider" />
-                </div>
-                <v-row class="pt-3">
-                  <v-col cols="12" md="6">
-                    <v-select 
-                      v-model="accountStatus" 
-                      :label="t('admin.org.editor.fields.accountStatus.label')" 
-                      variant="outlined" 
-                      density="comfortable" 
-                      color="teal"
-                      :disabled="isSystemUser"
-                      :items="[
-                        { title: t('admin.org.editor.fields.accountStatus.options.active'), value: AccountStatus.ACTIVE },
-                        { title: t('admin.org.editor.fields.accountStatus.options.disabled'), value: AccountStatus.DISABLED },
-                        { title: t('admin.org.editor.fields.accountStatus.options.requiresAction'), value: AccountStatus.REQUIRES_USER_ACTION }
-                      ]" 
-                      item-title="title" 
-                      item-value="value"
-                    >
-                    <template #append-inner>
-                      <PhCaretUpDown class="dropdown-icon" />
-                    </template>
-                  </v-select>
-                  </v-col>
-                  <v-col cols="12" md="6">
-                    <div class="d-flex align-center">
-                      <v-btn
-                        icon
-                        variant="text"
-                        density="comfortable"
-                        :aria-pressed="accountIsStaff"
-                        @click="accountIsStaff = !accountIsStaff"
-                      >
-                        <PhCheckSquare v-if="accountIsStaff" :size="18" color="teal" />
-                        <PhSquare v-else :size="18" color="grey" />
-                      </v-btn>
-                      <span style="margin-left: 8px;">{{ t('admin.org.editor.fields.isStaff.label') }}</span>
-                    </div>
-                  </v-col>
-                </v-row>
-              </v-col>
-
-              <v-col cols="12">
-                <div class="card-header mt-6">
-                  <v-card-title class="text-subtitle-1">{{ t('admin.org.editor.sections.additionalInfo') }}</v-card-title>
-                  <v-divider class="section-divider" />
-                </div>
-                <v-row class="pt-3">
-                  <v-col cols="12" md="6">
-                    <v-text-field 
-                      v-model="profileMobilePhone" 
-                      :label="t('admin.org.editor.fields.mobilePhone.label')" 
-                      :placeholder="currentValidationRules?.wellKnownFields?.telephoneNumber?.mask || t('admin.org.editor.fields.mobilePhone.placeholder')" 
-                      :rules="dynamicPhoneRules"
-                      :loading="isLoadingValidationRules"
-                      :disabled="!validationRulesReady"
-                      variant="outlined" 
-                      density="comfortable"
-                      color="teal"
-                    />
-                  </v-col>
                 </v-row>
               </v-col>
             </v-row>
           </v-form>
+          <!-- Password policies panel moved outside the form -->
+          <div v-if="showPasswordPoliciesPanel" class="pa-4">
+            <PasswordPoliciesPanel />
+          </div>
         </v-card>
     </div>
 
@@ -707,6 +713,16 @@ onBeforeUnmount(() => {
   color: #14b8a6 !important;
   opacity: 1 !important;
   visibility: visible !important;
+}
+
+/* Fixed width for username input */
+.username-field {
+  width: 300px;
+}
+
+/* Fixed width utility for selects */
+.fixed-300 {
+  width: 300px;
 }
 
 .password-toggle-btn :deep(.v-btn__content) {
