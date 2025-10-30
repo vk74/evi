@@ -73,11 +73,21 @@ export const deleteSelectedUsersQuery = `
 `;
 
 /**
+ * Query to fetch usernames and is_system flags by IDs
+ */
+export const fetchUsersByIdsForDeletionQuery = `
+  SELECT user_id, username, is_system
+  FROM app.users
+  WHERE user_id = ANY($1::uuid[])
+`;
+
+/**
  * SQL queries object
  */
 export const queries = {
   fetchUsers: fetchUsersQuery,
-  deleteSelectedUsers: deleteSelectedUsersQuery
+  deleteSelectedUsers: deleteSelectedUsersQuery,
+  fetchUsersByIdsForDeletion: fetchUsersByIdsForDeletionQuery
 };
 
 export default queries;

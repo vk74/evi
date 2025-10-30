@@ -1,9 +1,10 @@
 /**
  * @file protoService.delete.users.ts
- * Version: 1.0.0
+ * Version: 1.0.1
  * BACKEND service for prototype user deletion operations with server-side processing.
  * 
  * Functionality:
+ * - Prevents deletion of system accounts (is_system=true) and reports attempted usernames
  * - Handles deletion of users by UUID
  * - Supports batch deletion with transaction
  * - Invalidates cache after operations
@@ -15,7 +16,6 @@ import { Pool } from 'pg';
 import { pool as pgPool } from '../../../../core/db/maindb';
 import { queries } from './queries.users.list';
 import { usersCache } from './cache.users.list';
-import { getRequestorUuidFromReq } from '../../../../core/helpers/get.requestor.uuid.from.req';
 import fabricEvents from '../../../../core/eventBus/fabric.events';
 import { USERS_DELETE_EVENTS } from './events.users.list';
 
@@ -33,22 +33,36 @@ export const usersDeleteService = {
    * @returns Promise with the count of deleted users
    */
   async deleteSelectedUsers(userIds: string[], req: Request): Promise<number> {
-    // Get the UUID of the user making the request
-    const requestorUuid = getRequestorUuidFromReq(req);
-    
-    // Create event for deletion operation start
-    await fabricEvents.createAndPublishEvent({
-      req,
-      eventName: USERS_DELETE_EVENTS.COMPLETE.eventName,
-      payload: {
-        groupIds: userIds,
-        requestorUuid
-      }
-    });
     
     // Prevent deletion of empty array
     if (!userIds.length) {
       return 0;
+    }
+    
+    // Pre-check: fetch selected users and block system accounts deletion
+    const precheck = await pool.query(queries.fetchUsersByIdsForDeletion, [userIds]);
+    const systemUsers = precheck.rows.filter((r: any) => r.is_system === true);
+    if (systemUsers.length > 0) {
+      const systemUsernames: string[] = systemUsers.map((r: any) => r.username);
+      // Publish event about prohibited deletion attempt
+      await fabricEvents.createAndPublishEvent({
+        req,
+        eventName: USERS_DELETE_EVENTS.FAILED.eventName,
+        payload: {
+          userIds,
+          error: {
+            code: 'SYSTEM_USERS_SELECTED',
+            message: 'Attempt to delete system accounts is prohibited',
+            systemUsernames
+          }
+        }
+      });
+      // Throw structured error
+      throw {
+        code: 'SYSTEM_USERS_SELECTED',
+        message: 'System accounts cannot be deleted',
+        systemUsernames
+      };
     }
     
     try {
@@ -66,7 +80,7 @@ export const usersDeleteService = {
         await fabricEvents.createAndPublishEvent({
           req,
           eventName: USERS_DELETE_EVENTS.CACHE_INVALIDATED.eventName,
-          payload: { deletedCount, requestorUuid }
+          payload: { deletedCount }
         });
       }
       
@@ -76,8 +90,7 @@ export const usersDeleteService = {
         eventName: USERS_DELETE_EVENTS.COMPLETE.eventName,
         payload: {
           requested: userIds.length,
-          deleted: deletedCount,
-          requestorUuid
+          deleted: deletedCount
         }
       });
       
