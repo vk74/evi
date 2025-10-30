@@ -1,6 +1,6 @@
 <!--
   File: ModuleAccount.vue
-  Version: 1.0.2
+  Version: 1.0.3
   Description: Frontend component for user account profile management
   Purpose: Provides interface for users to view and edit their profile information
   Features:
@@ -437,7 +437,7 @@ onMounted(async () => {
             color="teal"
             variant="outlined"
             :disabled="!isFormValid || isSubmitting || !hasChanges"
-            class="mb-3"
+            :class="['mb-3', { 'update-btn-glow': hasChanges && isFormValid && !isSubmitting }]"
             @click="saveProfile"
           >
             {{ t('account.profile.actions.update') }}
@@ -508,5 +508,22 @@ onMounted(async () => {
   top: 50%;
   transform: translateY(-50%);
   pointer-events: none;
+}
+
+/* Update button glow animation for unsaved changes */
+.update-btn-glow {
+  animation: soft-glow 2s ease-in-out infinite;
+  box-shadow: 0 0 8px rgba(20, 184, 166, 0.3);
+}
+
+@keyframes soft-glow {
+  0%, 100% {
+    box-shadow: 0 0 8px rgba(20, 184, 166, 0.3);
+    transform: scale(1);
+  }
+  50% {
+    box-shadow: 0 0 16px rgba(20, 184, 166, 0.5);
+    transform: scale(1.01);
+  }
 }
 </style>
