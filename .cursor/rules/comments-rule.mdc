@@ -8,3 +8,5 @@ Every file should start with a header comment including:
 3. mention it's a frontend or backend file and include filename (without path)
 The rest part of the file should have a comment for each major function
 Don't add date when the file was created
+
+не нужно при каждом редактировании повышать версию файла! редактирований может быть много. промежуточные версии будут теряться. повышаем только 1 раз при первом редактировании файла и эта версия потом уходит в commit.

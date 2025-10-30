@@ -1,5 +1,5 @@
 <!--
-version: 1.0.3
+version: 1.0.4
 Frontend file UserEditorDetails.vue.
 Purpose: User details form with dynamic validation using public policies and form state management.
 Features: Dynamic validation for username/email/phone, static validation for FIO fields, form submission handling.
@@ -460,6 +460,7 @@ onBeforeUnmount(() => {
                       variant="outlined" 
                       density="comfortable" 
                       :counter="currentValidationRules?.wellKnownFields?.userName?.maxLength" 
+                      color="teal"
                       required 
                     />
                   </v-col>
@@ -473,20 +474,21 @@ onBeforeUnmount(() => {
                       variant="outlined" 
                       density="comfortable" 
                       type="email" 
+                      color="teal"
                       required 
                     />
                   </v-col>
                   <v-col cols="12" md="4">
-                    <v-text-field v-model="accountFirstName" :label="t('admin.org.editor.fields.firstName.label')" :rules="firstNameRules" variant="outlined" density="comfortable" counter="50" required />
+                    <v-text-field v-model="accountFirstName" :label="t('admin.org.editor.fields.firstName.label')" :rules="firstNameRules" variant="outlined" density="comfortable" counter="50" color="teal" required />
                   </v-col>
                   <v-col cols="12" md="4">
-                    <v-text-field v-model="accountMiddleName" :label="t('admin.org.editor.fields.middleName.label')" :rules="middleNameRules" variant="outlined" density="comfortable" counter="50" />
+                    <v-text-field v-model="accountMiddleName" :label="t('admin.org.editor.fields.middleName.label')" :rules="middleNameRules" variant="outlined" density="comfortable" counter="50" color="teal" />
                   </v-col>
                   <v-col cols="12" md="4">
-                    <v-text-field v-model="accountLastName" :label="t('admin.org.editor.fields.lastName.label')" :rules="lastNameRules" variant="outlined" density="comfortable" counter="50" required />
+                    <v-text-field v-model="accountLastName" :label="t('admin.org.editor.fields.lastName.label')" :rules="lastNameRules" variant="outlined" density="comfortable" counter="50" color="teal" required />
                   </v-col>
                   <v-col cols="12" md="4">
-                    <v-select v-model="profileGender" :label="t('admin.org.editor.fields.gender.label')" variant="outlined" density="comfortable" :items="[
+                    <v-select v-model="profileGender" :label="t('admin.org.editor.fields.gender.label')" variant="outlined" density="comfortable" color="teal" :items="[
                       { title: t('admin.org.editor.fields.gender.options.male'), value: Gender.MALE },
                       { title: t('admin.org.editor.fields.gender.options.female'), value: Gender.FEMALE },
                       { title: t('admin.org.editor.fields.gender.options.notDefined'), value: Gender.NOT_DEFINED }
@@ -504,57 +506,66 @@ onBeforeUnmount(() => {
                   <v-card-title class="text-subtitle-1">{{ t('admin.org.editor.sections.security') }}</v-card-title>
                   <v-divider class="section-divider" />
                 </div>
-                <v-row class="pt-3">
-                  <template v-if="userEditorStore.mode.mode === 'create'">
-                    <v-col cols="12" md="5">
-                      <v-text-field 
-                        v-model="accountPassword" 
-                        :label="t('admin.org.editor.fields.password.label')" 
-                        :rules="dynamicPasswordRules"
-                        :loading="isLoadingPasswordPolicies"
-                        :disabled="!passwordPoliciesReady"
-                        variant="outlined" 
-                        density="comfortable" 
-                        :type="showPassword ? 'text' : 'password'" 
-                        :counter="currentPasswordPolicies?.maxLength" 
-                        @focus="onPasswordFocus" 
-                        @blur="onPasswordBlur" 
-                      />
-                    </v-col>
-                    <v-col cols="12" md="5">
-                      <v-text-field 
-                        v-model="accountPasswordConfirm" 
-                        :label="t('admin.org.editor.fields.password.confirm')" 
-                        :rules="[(v) => v === accountPassword || t('admin.org.editor.validation.fields.password.mismatch')]"
-                        :loading="isLoadingPasswordPolicies"
-                        :disabled="!passwordPoliciesReady"
-                        variant="outlined" 
-                        density="comfortable" 
-                        :type="showPassword ? 'text' : 'password'" 
-                        :counter="currentPasswordPolicies?.maxLength" 
-                        @focus="onPasswordFocus" 
-                        @blur="onPasswordBlur" 
-                      />
-                    </v-col>
-                    <v-col cols="12" md="2" class="d-flex align-center">
-                      <v-btn icon variant="text" color="teal" @click="showPassword = !showPassword" class="password-toggle-btn">
-                        <PhEye v-if="!showPassword" :size="18" color="teal" />
-                        <PhEyeSlash v-else :size="18" color="teal" />
-                      </v-btn>
-                    </v-col>
-                  </template>
-                  
+                
+                <!-- First row: Password fields (only in create mode) -->
+                <v-row v-if="userEditorStore.mode.mode === 'create'" class="pt-3">
+                  <v-col cols="12" md="5">
+                    <v-text-field 
+                      v-model="accountPassword" 
+                      :label="t('admin.org.editor.fields.password.label')" 
+                      :rules="dynamicPasswordRules"
+                      :loading="isLoadingPasswordPolicies"
+                      :disabled="!passwordPoliciesReady"
+                      variant="outlined" 
+                      density="comfortable" 
+                      :type="showPassword ? 'text' : 'password'" 
+                      :counter="currentPasswordPolicies?.maxLength" 
+                      color="teal"
+                      @focus="onPasswordFocus" 
+                      @blur="onPasswordBlur" 
+                    />
+                  </v-col>
+                  <v-col cols="12" md="5">
+                    <v-text-field 
+                      v-model="accountPasswordConfirm" 
+                      :label="t('admin.org.editor.fields.password.confirm')" 
+                      :rules="[(v) => v === accountPassword || t('admin.org.editor.validation.fields.password.mismatch')]"
+                      :loading="isLoadingPasswordPolicies"
+                      :disabled="!passwordPoliciesReady"
+                      variant="outlined" 
+                      density="comfortable" 
+                      :type="showPassword ? 'text' : 'password'" 
+                      :counter="currentPasswordPolicies?.maxLength" 
+                      color="teal"
+                      @focus="onPasswordFocus" 
+                      @blur="onPasswordBlur" 
+                    />
+                  </v-col>
+                  <v-col cols="12" md="2" class="d-flex align-center">
+                    <v-btn icon variant="text" color="teal" @click="showPassword = !showPassword" class="password-toggle-btn">
+                      <PhEye v-if="!showPassword" :size="18" color="teal" />
+                      <PhEyeSlash v-else :size="18" color="teal" />
+                    </v-btn>
+                  </v-col>
                   <!-- Password policies panel -->
                   <v-col v-if="showPasswordPoliciesPanel" cols="12" class="mb-3">
                     <PasswordPoliciesPanel />
                   </v-col>
-                  
+                </v-row>
+                
+                <!-- Status section -->
+                <div class="card-header mt-6">
+                  <v-card-title class="text-subtitle-1">{{ t('admin.org.editor.sections.status') }}</v-card-title>
+                  <v-divider class="section-divider" />
+                </div>
+                <v-row class="pt-3">
                   <v-col cols="12" md="6">
                     <v-select 
                       v-model="accountStatus" 
                       :label="t('admin.org.editor.fields.accountStatus.label')" 
                       variant="outlined" 
                       density="comfortable" 
+                      color="teal"
                       :disabled="isSystemUser"
                       :items="[
                         { title: t('admin.org.editor.fields.accountStatus.options.active'), value: AccountStatus.ACTIVE },
@@ -603,6 +614,7 @@ onBeforeUnmount(() => {
                       :disabled="!validationRulesReady"
                       variant="outlined" 
                       density="comfortable"
+                      color="teal"
                     />
                   </v-col>
                 </v-row>
