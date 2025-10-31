@@ -1,5 +1,5 @@
 <!--
-Version: 1.5.3
+Version: 1.5.4
 Price list editor details section with items table and action buttons.
 Frontend file: PriceListEditorDetails.vue
 -->
@@ -90,7 +90,7 @@ const headers = computed<TableHeader[]>(() => [
   { title: '№', key: 'rowNumber', width: '60px', sortable: false },
   { title: t('admin.pricing.priceLists.editor.headers.itemCode'), key: 'itemCode', width: '200px', sortable: true },
   { title: t('admin.pricing.priceLists.editor.headers.type'), key: 'itemType', width: '150px', sortable: true },
-  { title: t('admin.pricing.priceLists.editor.headers.productName'), key: 'itemName', sortable: true },
+  { title: t('admin.pricing.priceLists.editor.headers.itemName'), key: 'itemName', sortable: true },
   { title: t('admin.pricing.priceLists.editor.headers.price'), key: 'listPrice', width: '160px', sortable: true }
 ])
 
@@ -105,6 +105,20 @@ const hasChanges = computed(() => {
 
 const changedLinesCount = computed(() => {
   return lines.value.filter(line => isLineChanged(line)).length
+})
+
+// Computed property for unsaved items tracking
+const unsavedItemsCount = computed(() => {
+  return lines.value.filter(line => line.id.startsWith('tmp_')).length
+})
+
+// Computed property to check if there are valid items ready to save
+const hasValidItemsToSave = computed(() => {
+  return lines.value.some(line => 
+    line.id.startsWith('tmp_') && 
+    line.itemCode.trim() !== '' && 
+    line.itemName.trim() !== ''
+  )
 })
 
 // Function to check if a line has changes
@@ -752,14 +766,16 @@ const updateAllItems = async () => {
           color="teal"
           variant="outlined"
           class="mb-3"
+          :class="{ 'update-btn-glow': hasValidItemsToSave && !isSaving }"
           :loading="isSaving"
-          :disabled="lines.filter(l => l.id.startsWith('tmp_')).length === 0"
+          :disabled="!hasValidItemsToSave"
           @click="saveAllItems"
         >
           <template #prepend>
             <PhFloppyDisk />
           </template>
           {{ t('admin.pricing.priceLists.editor.saveItems').toUpperCase() }}
+          <span v-if="unsavedItemsCount > 0" class="ml-2">({{ unsavedItemsCount }})</span>
         </v-btn>
         
         <v-btn
