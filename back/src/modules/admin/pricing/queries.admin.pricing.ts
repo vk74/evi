@@ -1,8 +1,8 @@
 /**
- * version: 1.3.2
+ * version: 1.3.3
  * SQL queries for pricing administration module.
  * Contains parameterized queries related to pricing (currencies and price lists).
- * Includes integrity check queries.
+ * Includes integrity check queries and queries for event payload data.
  * File: queries.admin.pricing.ts (backend)
  */
 
@@ -358,6 +358,53 @@ export const queries = {
     checkPriceListItemCodeExistsExcluding: `
         SELECT 1 FROM app.price_lists
         WHERE price_list_id = $1 AND item_code = $2 AND item_code != $3
+    `,
+
+    /**
+     * Fetch price list basic info for event payload (id, name, currency_code)
+     * Parameters: price_list_id
+     */
+    fetchPriceListBasicInfo: `
+        SELECT 
+            price_list_id,
+            name,
+            currency_code
+        FROM app.price_lists_info
+        WHERE price_list_id = $1
+    `,
+
+    /**
+     * Fetch currency by code for event payload
+     * Parameters: code
+     */
+    fetchCurrencyByCode: `
+        SELECT code, name, symbol, active
+        FROM app.currencies
+        WHERE code = $1
+    `,
+
+    /**
+     * Fetch price list items by codes for event payload
+     * Parameters: item_codes array, price_list_id
+     */
+    fetchPriceListItemsByCodes: `
+        SELECT 
+            item_id, price_list_id, item_type, item_code, item_name,
+            list_price, wholesale_price
+        FROM app.price_lists
+        WHERE item_code = ANY($1) AND price_list_id = $2
+    `,
+
+    /**
+     * Fetch price list item by code for event payload (full item data)
+     * Parameters: item_code, price_list_id
+     */
+    fetchPriceListItemByCode: `
+        SELECT 
+            item_id, price_list_id, item_type, item_code, item_name,
+            list_price, wholesale_price, created_by, updated_by, created_at, updated_at
+        FROM app.price_lists
+        WHERE item_code = $1 AND price_list_id = $2
     `
 };
 

@@ -189,15 +189,19 @@ export async function createPriceList(
         const fetchResult = await pool.query(queries.fetchPriceListById, [newPriceListId]);
         const priceList: PriceListFullDto = fetchResult.rows[0];
 
-        // Publish success event
+        // Publish success event with informative payload
         createAndPublishEvent({
             eventName: EVENTS_ADMIN_PRICING['pricelists.create.success'].eventName,
             req: req,
             payload: {
-                priceListId: newPriceListId,
-                name: priceList.name,
-                currency_code: priceList.currency_code,
-                created_by: requestorUuid
+                priceList: {
+                    priceListId: priceList.price_list_id,
+                    name: priceList.name,
+                    description: priceList.description,
+                    currencyCode: priceList.currency_code,
+                    isActive: priceList.is_active,
+                    ownerId: priceList.owner_id
+                }
             }
         });
 
@@ -215,7 +219,11 @@ export async function createPriceList(
             eventName: EVENTS_ADMIN_PRICING['pricelists.create.database_error'].eventName,
             req: req,
             payload: {
-                name: data.name,
+                priceListData: {
+                    name: data.name,
+                    currencyCode: data.currency_code,
+                    description: data.description
+                },
                 error: error instanceof Error ? error.message : String(error)
             },
             errorData: error instanceof Error ? error.message : String(error)

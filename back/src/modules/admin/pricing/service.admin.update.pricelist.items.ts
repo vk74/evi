@@ -48,7 +48,6 @@ export async function updatePriceListItemsService(
         req: req,
         payload: {
           priceListId,
-          userUuid,
           updates: request.updates,
           error: 'Invalid price list ID'
         }
@@ -73,7 +72,6 @@ export async function updatePriceListItemsService(
         req: req,
         payload: {
           priceListId,
-          userUuid,
           updates: request.updates,
           error: 'No updates provided'
         }
@@ -116,7 +114,6 @@ export async function updatePriceListItemsService(
         req: req,
         payload: {
           priceListId,
-          userUuid,
           updates: request.updates,
           invalidUpdates,
           error: 'Invalid updates found'
@@ -135,18 +132,38 @@ export async function updatePriceListItemsService(
       }
     }
 
-    await client.query('BEGIN')
+      await client.query('BEGIN')
 
     try {
       const updatedItemCodes: string[] = []
       const errorItemCodes: string[] = []
+      const updatedItemsDetails: Array<{
+        itemCode: string
+        oldItem: any
+        newItem: any
+        changes: Record<string, { old: any, new: any }>
+      }> = []
+
+      // Fetch price list info for event payload
+      const priceListResult = await client.query(queries.fetchPriceListBasicInfo, [priceListId])
+      const priceListInfo = priceListResult.rows.length > 0 ? {
+        priceListId: priceListResult.rows[0].price_list_id,
+        name: priceListResult.rows[0].name,
+        currencyCode: priceListResult.rows[0].currency_code
+      } : null
+
+      // Fetch full item data before update
+      const fetchItemByCode = async (itemCode: string) => {
+        const result = await client.query(queries.fetchPriceListItemByCode, [itemCode, priceListId])
+        return result.rows.length > 0 ? result.rows[0] : null
+      }
 
       // Process each update
       for (const update of request.updates) {
         try {
-          // Check if item exists
-          const existsResult = await client.query(queries.existsPriceListItemByCode, [update.itemCode])
-          if (existsResult.rowCount === 0) {
+          // Fetch old item data
+          const oldItem = await fetchItemByCode(update.itemCode)
+          if (!oldItem) {
             errorItemCodes.push(update.itemCode)
             continue
           }
@@ -160,10 +177,9 @@ export async function updatePriceListItemsService(
                 req: req,
                 payload: {
                   priceListId,
-                  userUuid,
                   itemCode: update.itemCode,
                   itemType: update.changes.itemType,
-                  error: 'Price item type not found or inactive'
+                  priceList: priceListInfo
                 }
               })
               errorItemCodes.push(update.itemCode)
@@ -205,6 +221,50 @@ export async function updatePriceListItemsService(
             // Track the new item code if it was changed, otherwise track original
             const resultItemCode = update.changes.itemCode || update.itemCode
             updatedItemCodes.push(resultItemCode)
+
+            // Fetch updated item to get new values
+            const newItem = await fetchItemByCode(resultItemCode)
+            if (newItem) {
+              // Build changes map
+              const changes: Record<string, { old: any, new: any }> = {}
+              
+              if (update.changes.itemType !== undefined && update.changes.itemType !== oldItem.item_type) {
+                changes.itemType = { old: oldItem.item_type, new: newItem.item_type }
+              }
+              if (update.changes.itemCode !== undefined && update.changes.itemCode !== oldItem.item_code) {
+                changes.itemCode = { old: oldItem.item_code, new: newItem.item_code }
+              }
+              if (update.changes.itemName !== undefined && update.changes.itemName !== oldItem.item_name) {
+                changes.itemName = { old: oldItem.item_name, new: newItem.item_name }
+              }
+              if (update.changes.listPrice !== undefined && update.changes.listPrice !== oldItem.list_price) {
+                changes.listPrice = { old: oldItem.list_price, new: newItem.list_price }
+              }
+              if (update.changes.wholesalePrice !== undefined && update.changes.wholesalePrice !== oldItem.wholesale_price) {
+                changes.wholesalePrice = { old: oldItem.wholesale_price, new: newItem.wholesale_price }
+              }
+
+              updatedItemsDetails.push({
+                itemCode: resultItemCode,
+                oldItem: {
+                  itemId: oldItem.item_id,
+                  itemType: oldItem.item_type,
+                  itemCode: oldItem.item_code,
+                  itemName: oldItem.item_name,
+                  listPrice: oldItem.list_price,
+                  wholesalePrice: oldItem.wholesale_price
+                },
+                newItem: {
+                  itemId: newItem.item_id,
+                  itemType: newItem.item_type,
+                  itemCode: newItem.item_code,
+                  itemName: newItem.item_name,
+                  listPrice: newItem.list_price,
+                  wholesalePrice: newItem.wholesale_price
+                },
+                changes
+              })
+            }
           } else {
             errorItemCodes.push(update.itemCode)
           }
@@ -217,10 +277,9 @@ export async function updatePriceListItemsService(
               req: req,
               payload: {
                 priceListId,
-                userUuid,
                 originalItemCode: update.itemCode,
                 newItemCode: update.changes.itemCode,
-                error: 'Item code already exists'
+                priceList: priceListInfo
               }
             })
           }
@@ -231,17 +290,19 @@ export async function updatePriceListItemsService(
 
       await client.query('COMMIT')
 
-      // Generate success event
+      // Generate success event with informative payload
       await fabricEvents.createAndPublishEvent({
         eventName: EVENTS_ADMIN_PRICING['pricelist.items.update.success'].eventName,
         req: req,
         payload: {
-          priceListId,
-          userUuid,
+          priceList: priceListInfo,
           totalRequested: request.updates.length,
           totalUpdated: updatedItemCodes.length,
           totalErrors: errorItemCodes.length,
-          updatedItems: updatedItemCodes,
+          updatedItems: updatedItemsDetails.map(detail => ({
+            itemCode: detail.itemCode,
+            changes: detail.changes
+          })),
           errorItems: errorItemCodes
         }
       })
@@ -278,7 +339,6 @@ export async function updatePriceListItemsService(
         req: req,
         payload: {
           priceListId,
-          userUuid,
           updates: request.updates,
           error: error instanceof Error ? error.message : 'Unknown database error'
         }
@@ -302,7 +362,6 @@ export async function updatePriceListItemsService(
       req: req,
       payload: {
         priceListId,
-        userUuid,
         updates: request.updates,
         error: error instanceof Error ? error.message : 'Unknown error'
       }

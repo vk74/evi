@@ -1,5 +1,5 @@
 /**
- * version: 1.2.4
+ * version: 1.2.5
  * Event reference catalog for admin pricing operations (backend).
  * Defines events for pricing management operations (currencies and price lists).
  * File: events.admin.pricing.ts (backend)
@@ -27,7 +27,7 @@ export const EVENTS_ADMIN_PRICING: EventCollection = {
     eventName: 'adminPricing.currencies.fetch.database_error',
     source: 'admin-pricing',
     eventType: 'system',
-    severity: 'error',
+    severity: 'warning',
     eventMessage: 'Database error during currencies fetch',
     version: '1.0.0'
   },
@@ -36,7 +36,7 @@ export const EVENTS_ADMIN_PRICING: EventCollection = {
     eventName: 'adminPricing.currencies.fetch.error',
     source: 'admin-pricing',
     eventType: 'system',
-    severity: 'error',
+    severity: 'warning',
     eventMessage: 'Error during currencies fetch operation',
     version: '1.0.0'
   },
@@ -85,7 +85,7 @@ export const EVENTS_ADMIN_PRICING: EventCollection = {
     eventName: 'adminPricing.currencies.update.database_error',
     source: 'admin-pricing',
     eventType: 'system',
-    severity: 'error',
+    severity: 'warning',
     eventMessage: 'Database error during currencies update',
     version: '1.0.0'
   },
@@ -94,7 +94,7 @@ export const EVENTS_ADMIN_PRICING: EventCollection = {
     eventName: 'adminPricing.currencies.update.error',
     source: 'admin-pricing',
     eventType: 'system',
-    severity: 'error',
+    severity: 'warning',
     eventMessage: 'Error during currencies update operation',
     version: '1.0.0'
   },
@@ -237,7 +237,7 @@ export const EVENTS_ADMIN_PRICING: EventCollection = {
     eventName: 'adminPricing.pricelists.fetchall.database_error',
     source: 'admin-pricing',
     eventType: 'system',
-    severity: 'error',
+    severity: 'warning',
     eventMessage: 'Database error during price lists fetch',
     version: '1.0.0'
   },
@@ -246,7 +246,7 @@ export const EVENTS_ADMIN_PRICING: EventCollection = {
     eventName: 'adminPricing.pricelists.fetchall.error',
     source: 'admin-pricing',
     eventType: 'system',
-    severity: 'error',
+    severity: 'warning',
     eventMessage: 'Error during price lists fetch operation',
     version: '1.0.0'
   },
@@ -275,7 +275,7 @@ export const EVENTS_ADMIN_PRICING: EventCollection = {
     eventName: 'adminPricing.pricelists.fetch.database_error',
     source: 'admin-pricing',
     eventType: 'system',
-    severity: 'error',
+    severity: 'warning',
     eventMessage: 'Database error during price list fetch',
     version: '1.0.0'
   },
@@ -284,7 +284,7 @@ export const EVENTS_ADMIN_PRICING: EventCollection = {
     eventName: 'adminPricing.pricelists.fetch.error',
     source: 'admin-pricing',
     eventType: 'system',
-    severity: 'error',
+    severity: 'warning',
     eventMessage: 'Error during price list fetch operation',
     version: '1.0.0'
   },
@@ -340,7 +340,7 @@ export const EVENTS_ADMIN_PRICING: EventCollection = {
     eventName: 'adminPricing.pricelists.create.database_error',
     source: 'admin-pricing',
     eventType: 'system',
-    severity: 'error',
+    severity: 'warning',
     eventMessage: 'Database error creating price list',
     version: '1.0.0'
   },
@@ -349,7 +349,7 @@ export const EVENTS_ADMIN_PRICING: EventCollection = {
     eventName: 'adminPricing.pricelists.create.error',
     source: 'admin-pricing',
     eventType: 'system',
-    severity: 'error',
+    severity: 'warning',
     eventMessage: 'Error during price list creation operation',
     version: '1.0.0'
   },
@@ -414,7 +414,7 @@ export const EVENTS_ADMIN_PRICING: EventCollection = {
     eventName: 'adminPricing.pricelists.update.database_error',
     source: 'admin-pricing',
     eventType: 'system',
-    severity: 'error',
+    severity: 'warning',
     eventMessage: 'Database error updating price list',
     version: '1.0.0'
   },
@@ -423,7 +423,7 @@ export const EVENTS_ADMIN_PRICING: EventCollection = {
     eventName: 'adminPricing.pricelists.update.error',
     source: 'admin-pricing',
     eventType: 'system',
-    severity: 'error',
+    severity: 'warning',
     eventMessage: 'Error during price list update operation',
     version: '1.0.0'
   },
@@ -461,7 +461,7 @@ export const EVENTS_ADMIN_PRICING: EventCollection = {
     eventName: 'adminPricing.pricelists.delete.database_error',
     source: 'admin-pricing',
     eventType: 'system',
-    severity: 'error',
+    severity: 'warning',
     eventMessage: 'Database error deleting price list',
     version: '1.0.0'
   },
@@ -470,7 +470,7 @@ export const EVENTS_ADMIN_PRICING: EventCollection = {
     eventName: 'adminPricing.pricelists.delete.error',
     source: 'admin-pricing',
     eventType: 'system',
-    severity: 'error',
+    severity: 'warning',
     eventMessage: 'Error during price list deletion operation',
     version: '1.0.0'
   },
@@ -490,7 +490,7 @@ export const EVENTS_ADMIN_PRICING: EventCollection = {
     eventName: 'adminPricing.pricelists.delete.partition.error',
     source: 'admin-pricing',
     eventType: 'system',
-    severity: 'error',
+    severity: 'warning',
     eventMessage: 'Error deleting price list partition',
     version: '1.0.0'
   },
@@ -555,7 +555,7 @@ export const EVENTS_ADMIN_PRICING: EventCollection = {
     eventName: 'adminPricing.pricelist.items.create.database_error',
     source: 'admin-pricing',
     eventType: 'system',
-    severity: 'error',
+    severity: 'warning',
     eventMessage: 'Database error creating price list item',
     version: '1.0.0'
   },
@@ -564,7 +564,7 @@ export const EVENTS_ADMIN_PRICING: EventCollection = {
     eventName: 'adminPricing.pricelist.items.create.error',
     source: 'admin-pricing',
     eventType: 'system',
-    severity: 'error',
+    severity: 'warning',
     eventMessage: 'Error during price list item creation operation',
     version: '1.0.0'
   },
@@ -584,7 +584,7 @@ export const EVENTS_ADMIN_PRICING: EventCollection = {
     eventName: 'adminPricing.pricelist.item.types.fetch.database_error',
     source: 'admin-pricing',
     eventType: 'system',
-    severity: 'error',
+    severity: 'warning',
     eventMessage: 'Database error fetching price item types',
     version: '1.0.0'
   },
@@ -593,7 +593,7 @@ export const EVENTS_ADMIN_PRICING: EventCollection = {
     eventName: 'adminPricing.pricelist.item.types.fetch.error',
     source: 'admin-pricing',
     eventType: 'system',
-    severity: 'error',
+    severity: 'warning',
     eventMessage: 'Error during price item types fetch operation',
     version: '1.0.0'
   },
@@ -631,7 +631,7 @@ export const EVENTS_ADMIN_PRICING: EventCollection = {
     eventName: 'adminPricing.pricelist.items.delete.database_error',
     source: 'admin-pricing',
     eventType: 'system',
-    severity: 'error',
+    severity: 'warning',
     eventMessage: 'Database error deleting price list items',
     version: '1.0.0'
   },
@@ -640,7 +640,7 @@ export const EVENTS_ADMIN_PRICING: EventCollection = {
     eventName: 'adminPricing.pricelist.items.delete.error',
     source: 'admin-pricing',
     eventType: 'system',
-    severity: 'error',
+    severity: 'warning',
     eventMessage: 'Error during price list items deletion operation',
     version: '1.0.0'
   },
@@ -696,7 +696,7 @@ export const EVENTS_ADMIN_PRICING: EventCollection = {
     eventName: 'adminPricing.pricelist.items.update.database_error',
     source: 'admin-pricing',
     eventType: 'system',
-    severity: 'error',
+    severity: 'warning',
     eventMessage: 'Database error updating price list items',
     version: '1.0.0'
   },
@@ -705,7 +705,7 @@ export const EVENTS_ADMIN_PRICING: EventCollection = {
     eventName: 'adminPricing.pricelist.items.update.error',
     source: 'admin-pricing',
     eventType: 'system',
-    severity: 'error',
+    severity: 'warning',
     eventMessage: 'Error during price list items update operation',
     version: '1.0.0'
   }

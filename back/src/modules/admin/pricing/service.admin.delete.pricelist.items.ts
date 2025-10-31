@@ -48,7 +48,6 @@ export async function deletePriceListItemsService(
         req: req,
         payload: {
           priceListId,
-          userUuid,
           itemCodes: request.itemCodes,
           error: 'Invalid price list ID'
         }
@@ -73,7 +72,6 @@ export async function deletePriceListItemsService(
         req: req,
         payload: {
           priceListId,
-          userUuid,
           itemCodes: request.itemCodes,
           error: 'No item codes provided'
         }
@@ -99,7 +97,6 @@ export async function deletePriceListItemsService(
         req: req,
         payload: {
           priceListId,
-          userUuid,
           itemCodes: request.itemCodes,
           invalidCodes,
           error: 'Invalid item codes found'
@@ -121,31 +118,47 @@ export async function deletePriceListItemsService(
     await client.query('BEGIN')
 
     try {
-      // Check which items exist
-      const existingItemsResult = await client.query(queries.checkPriceListItemsExist, [request.itemCodes])
-      const existingItemCodes = existingItemsResult.rows.map(row => row.item_code)
+      // Fetch price list info for event payload
+      const priceListResult = await client.query(queries.fetchPriceListBasicInfo, [priceListId])
+      const priceListInfo = priceListResult.rows.length > 0 ? {
+        priceListId: priceListResult.rows[0].price_list_id,
+        name: priceListResult.rows[0].name,
+        currencyCode: priceListResult.rows[0].currency_code
+      } : null
+
+      // Fetch full item data before deletion
+      const deletedItemsData = await client.query(queries.fetchPriceListItemsByCodes, [request.itemCodes, priceListId])
+
+      const deletedItems = deletedItemsData.rows.map(row => ({
+        itemId: row.item_id,
+        itemType: row.item_type,
+        itemCode: row.item_code,
+        itemName: row.item_name,
+        listPrice: row.list_price,
+        wholesalePrice: row.wholesale_price
+      }))
+
+      const deletedItemCodes = deletedItems.map(item => item.itemCode)
+      const existingItemCodes = deletedItemCodes
       const notFoundItemCodes = request.itemCodes.filter(code => !existingItemCodes.includes(code))
 
       // Delete existing items
-      let deletedItemCodes: string[] = []
       if (existingItemCodes.length > 0) {
-        const deleteResult = await client.query(queries.deletePriceListItems, [existingItemCodes])
-        deletedItemCodes = deleteResult.rows.map(row => row.item_code)
+        await client.query(queries.deletePriceListItems, [existingItemCodes])
       }
 
       await client.query('COMMIT')
 
-      // Generate success event
+      // Generate success event with informative payload
       await fabricEvents.createAndPublishEvent({
         eventName: EVENTS_ADMIN_PRICING['pricelist.items.delete.success'].eventName,
         req: req,
         payload: {
-          priceListId,
-          userUuid,
+          priceList: priceListInfo,
           totalRequested: request.itemCodes.length,
-          totalDeleted: deletedItemCodes.length,
+          totalDeleted: deletedItems.length,
           totalNotFound: notFoundItemCodes.length,
-          deletedItems: deletedItemCodes,
+          deletedItems: deletedItems,
           notFoundItems: notFoundItemCodes
         }
       })
@@ -182,7 +195,6 @@ export async function deletePriceListItemsService(
         req: req,
         payload: {
           priceListId,
-          userUuid,
           itemCodes: request.itemCodes,
           error: error instanceof Error ? error.message : 'Unknown database error'
         }
@@ -206,7 +218,6 @@ export async function deletePriceListItemsService(
       req: req,
       payload: {
         priceListId,
-        userUuid,
         itemCodes: request.itemCodes,
         error: error instanceof Error ? error.message : 'Unknown error'
       }

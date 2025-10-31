@@ -54,7 +54,6 @@ export async function createPriceListItem(
                 req: req,
                 payload: { 
                     priceListId, 
-                    userUuid,
                     error: 'Invalid price list ID' 
                 }
             });
@@ -71,7 +70,6 @@ export async function createPriceListItem(
                 req: req,
                 payload: { 
                     priceListId, 
-                    userUuid,
                     error: 'Missing required fields' 
                 }
             });
@@ -88,7 +86,6 @@ export async function createPriceListItem(
                 req: req,
                 payload: { 
                     priceListId, 
-                    userUuid,
                     error: 'Invalid item_type format' 
                 }
             });
@@ -104,7 +101,6 @@ export async function createPriceListItem(
                 req: req,
                 payload: { 
                     priceListId, 
-                    userUuid,
                     error: 'Invalid item_code format' 
                 }
             });
@@ -120,7 +116,6 @@ export async function createPriceListItem(
                 req: req,
                 payload: { 
                     priceListId, 
-                    userUuid,
                     error: 'Invalid item_name format' 
                 }
             });
@@ -136,7 +131,6 @@ export async function createPriceListItem(
                 req: req,
                 payload: { 
                     priceListId, 
-                    userUuid,
                     error: 'Invalid list_price format' 
                 }
             });
@@ -153,7 +147,6 @@ export async function createPriceListItem(
                 req: req,
                 payload: { 
                     priceListId, 
-                    userUuid,
                     error: 'Invalid wholesale_price format' 
                 }
             });
@@ -170,7 +163,6 @@ export async function createPriceListItem(
                 req: req,
                 payload: { 
                     priceListId, 
-                    userUuid,
                     error: 'Invalid price values' 
                 }
             });
@@ -187,8 +179,7 @@ export async function createPriceListItem(
                 eventName: EVENTS_ADMIN_PRICING['pricelist.items.create.not_found'].eventName,
                 req: req,
                 payload: { 
-                    priceListId,
-                    userUuid,
+                    priceListId
                 }
             });
             return {
@@ -205,7 +196,6 @@ export async function createPriceListItem(
                 req: req,
                 payload: { 
                     priceListId, 
-                    userUuid,
                     itemType: data.item_type 
                 }
             });
@@ -223,7 +213,6 @@ export async function createPriceListItem(
                 req: req,
                 payload: { 
                     priceListId, 
-                    userUuid,
                     itemCode: data.item_code 
                 }
             });
@@ -277,18 +266,31 @@ export async function createPriceListItem(
 
         const createdItem: PriceListItemDto = fetchResult.rows[0];
 
+        // Fetch price list info for event payload
+        const priceListResult = await client.query(queries.fetchPriceListBasicInfo, [priceListId]);
+
+        const priceListInfo = priceListResult.rows.length > 0 ? {
+            priceListId: priceListResult.rows[0].price_list_id,
+            name: priceListResult.rows[0].name,
+            currencyCode: priceListResult.rows[0].currency_code
+        } : null;
+
         await client.query('COMMIT');
 
-        // Publish success event
+        // Publish success event with informative payload
         createAndPublishEvent({
             eventName: EVENTS_ADMIN_PRICING['pricelist.items.create.success'].eventName,
             req: req,
             payload: {
-                priceListId,
-                userUuid,
-                itemId,
-                itemCode: data.item_code,
-                itemName: data.item_name
+                item: {
+                    itemId: createdItem.item_id,
+                    itemType: createdItem.item_type,
+                    itemCode: createdItem.item_code,
+                    itemName: createdItem.item_name,
+                    listPrice: createdItem.list_price,
+                    wholesalePrice: createdItem.wholesale_price
+                },
+                priceList: priceListInfo
             }
         });
 
@@ -309,7 +311,6 @@ export async function createPriceListItem(
             req: req,
             payload: {
                 priceListId,
-                userUuid,
                 error: error instanceof Error ? error.message : String(error)
             },
             errorData: error instanceof Error ? error.message : String(error)

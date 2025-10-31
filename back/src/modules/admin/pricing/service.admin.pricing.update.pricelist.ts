@@ -40,7 +40,8 @@ const pool = pgPool as Pool;
  */
 async function validateUpdatePriceListData(
     data: UpdatePriceListRequest,
-    req: Request
+    req: Request,
+    oldPriceListRef: { value: PriceListFullDto | null }
 ): Promise<string[]> {
     const errors: string[] = [];
 
@@ -51,6 +52,7 @@ async function validateUpdatePriceListData(
     }
 
     // Check if price list exists
+    let oldPriceList: PriceListFullDto | null = null
     try {
         const checkResult = await pool.query(queries.fetchPriceListById, [data.price_list_id]);
         if (checkResult.rows.length === 0) {
@@ -64,6 +66,8 @@ async function validateUpdatePriceListData(
             
             return errors;
         }
+        oldPriceList = checkResult.rows[0]
+        oldPriceListRef.value = oldPriceList
     } catch (error) {
         errors.push('Error checking price list existence');
         return errors;
@@ -180,8 +184,11 @@ export async function updatePriceList(
             };
         }
 
-        // Validate data
-        const validationErrors = await validateUpdatePriceListData(data, req);
+        // Get old price list data for comparison
+        const oldPriceListRef = { value: null as PriceListFullDto | null }
+        
+        // Validate data (will also fetch old price list)
+        const validationErrors = await validateUpdatePriceListData(data, req, oldPriceListRef);
         if (validationErrors.length > 0) {
             createAndPublishEvent({
                 eventName: EVENTS_ADMIN_PRICING['pricelists.update.validation.error'].eventName,
@@ -227,14 +234,44 @@ export async function updatePriceList(
         const fetchResult = await pool.query(queries.fetchPriceListById, [data.price_list_id]);
         const priceList: PriceListFullDto = fetchResult.rows[0];
 
-        // Publish success event
+        // Build changes map with old and new values
+        const changes: Record<string, { old: any, new: any }> = {}
+        const oldPriceList = oldPriceListRef.value
+        if (oldPriceList) {
+          if (data.name !== undefined && data.name !== oldPriceList.name) {
+            changes.name = { old: oldPriceList.name, new: priceList.name }
+          }
+          if (data.description !== undefined && data.description !== oldPriceList.description) {
+            changes.description = { old: oldPriceList.description, new: priceList.description }
+          }
+          if (data.currency_code !== undefined && data.currency_code !== oldPriceList.currency_code) {
+            changes.currencyCode = { old: oldPriceList.currency_code, new: priceList.currency_code }
+          }
+          if (data.is_active !== undefined && data.is_active !== oldPriceList.is_active) {
+            changes.isActive = { old: oldPriceList.is_active, new: priceList.is_active }
+          }
+          if (data.owner !== undefined) {
+            const newOwnerId = data.owner ? (await getUuidByUsername(data.owner)) : null
+            if (newOwnerId !== oldPriceList.owner_id) {
+              changes.ownerId = { old: oldPriceList.owner_id, new: newOwnerId }
+            }
+          }
+        }
+
+        // Publish success event with informative payload
         createAndPublishEvent({
             eventName: EVENTS_ADMIN_PRICING['pricelists.update.success'].eventName,
             req: req,
             payload: {
-                priceListId: data.price_list_id,
-                name: priceList.name,
-                updated_by: requestorUuid
+                priceList: {
+                    priceListId: priceList.price_list_id,
+                    name: priceList.name,
+                    description: priceList.description,
+                    currencyCode: priceList.currency_code,
+                    isActive: priceList.is_active,
+                    ownerId: priceList.owner_id
+                },
+                changes: Object.keys(changes).length > 0 ? changes : undefined
             }
         });
 

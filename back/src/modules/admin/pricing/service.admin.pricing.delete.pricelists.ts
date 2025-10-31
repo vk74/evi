@@ -55,8 +55,7 @@ export async function deletePriceLists(
                 eventName: EVENTS_ADMIN_PRICING['pricelists.delete.validation.error'].eventName,
                 req: req,
                 payload: {
-                    error: 'Price list IDs array is required and must not be empty',
-                    requestor: requestorUuid
+                    error: 'Price list IDs array is required and must not be empty'
                 }
             });
 
@@ -80,15 +79,14 @@ export async function deletePriceLists(
                     continue;
                 }
 
-                // Check if price list exists
+                // Check if price list exists and fetch full data
                 const checkResult = await pool.query(queries.fetchPriceListById, [priceListId]);
                 if (checkResult.rows.length === 0) {
                     createAndPublishEvent({
                         eventName: EVENTS_ADMIN_PRICING['pricelists.delete.not_found'].eventName,
                         req: req,
                         payload: { 
-                            priceListId,
-                            requestor: requestorUuid
+                            priceListId
                         }
                     });
                     
@@ -97,20 +95,27 @@ export async function deletePriceLists(
                     continue;
                 }
 
+                const priceList = checkResult.rows[0];
+
                 // Delete price list (this will trigger partition deletion via database trigger)
                 const deleteResult = await pool.query(queries.deletePriceList, [priceListId]);
                 
                 if (deleteResult.rowCount && deleteResult.rowCount > 0) {
                     totalDeleted++;
                     
-                    // Publish success event for price list deletion
+                    // Publish success event for price list deletion with informative payload
                     createAndPublishEvent({
                         eventName: EVENTS_ADMIN_PRICING['pricelists.delete.success'].eventName,
                         req: req,
                         payload: {
-                            priceListId,
-                            name: checkResult.rows[0].name,
-                            requestor: requestorUuid
+                            priceList: {
+                                priceListId: priceList.price_list_id,
+                                name: priceList.name,
+                                description: priceList.description,
+                                currencyCode: priceList.currency_code,
+                                isActive: priceList.is_active,
+                                ownerId: priceList.owner_id
+                            }
                         }
                     });
 
@@ -120,8 +125,7 @@ export async function deletePriceLists(
                         req: req,
                         payload: {
                             priceListId,
-                            partitionName: `price_lists_${priceListId}`,
-                            requestor: requestorUuid
+                            partitionName: `price_lists_${priceListId}`
                         }
                     });
                 } else {
@@ -136,8 +140,7 @@ export async function deletePriceLists(
                     req: req,
                     payload: {
                         priceListId,
-                        error: error instanceof Error ? error.message : String(error),
-                        requestor: requestorUuid
+                        error: error instanceof Error ? error.message : String(error)
                     },
                     errorData: error instanceof Error ? error.message : String(error)
                 });
@@ -149,8 +152,7 @@ export async function deletePriceLists(
                     payload: {
                         priceListId,
                         partitionName: `price_lists_${priceListId}`,
-                        error: error instanceof Error ? error.message : String(error),
-                        requestor: requestorUuid
+                        error: error instanceof Error ? error.message : String(error)
                     },
                     errorData: error instanceof Error ? error.message : String(error)
                 });
