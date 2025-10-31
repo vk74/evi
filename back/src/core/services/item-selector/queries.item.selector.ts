@@ -1,6 +1,7 @@
 /**
- * queries.item.selector.ts
- * SQL queries for item selector operations (e.g., searching users, adding users to groups, changing group owner).
+ * @version 1.0.1
+ * @file queries.item.selector.ts
+ * BACKEND file containing SQL queries for item selector operations (e.g., searching users, adding users to groups, changing group owner).
  * 
  * Contains parameterized queries for:
  * - Searching users by query string (username or UUID) with a limit
@@ -145,10 +146,9 @@ export const queries: ItemSelectorQueries = {
     `
   },
 
-  // Update modified information in group_details table
   updateGroupDetails: {
     text: `
-      UPDATE app.group_details
+      UPDATE app.groups
       SET group_modified_at = CURRENT_TIMESTAMP,
           group_modified_by = $2
       WHERE group_id = $1
