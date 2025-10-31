@@ -1,5 +1,5 @@
 /**
- * version: 1.2.5
+ * version: 1.2.6
  * Event reference catalog for admin pricing operations (backend).
  * Defines events for pricing management operations (currencies and price lists).
  * File: events.admin.pricing.ts (backend)
@@ -114,7 +114,7 @@ export const EVENTS_ADMIN_PRICING: EventCollection = {
     eventName: 'adminPricing.currencies.create.success',
     source: 'admin-pricing',
     eventType: 'system',
-    severity: 'debug',
+    severity: 'info',
     eventMessage: 'Currency created successfully',
     version: '1.0.0'
   },
@@ -161,7 +161,7 @@ export const EVENTS_ADMIN_PRICING: EventCollection = {
     eventName: 'adminPricing.currencies.update.currency.success',
     source: 'admin-pricing',
     eventType: 'system',
-    severity: 'debug',
+    severity: 'info',
     eventMessage: 'Currency updated successfully',
     version: '1.0.0'
   },
@@ -208,7 +208,7 @@ export const EVENTS_ADMIN_PRICING: EventCollection = {
     eventName: 'adminPricing.currencies.delete.success',
     source: 'admin-pricing',
     eventType: 'system',
-    severity: 'debug',
+    severity: 'info',
     eventMessage: 'Currency deleted successfully',
     version: '1.0.0'
   },

@@ -90,8 +90,6 @@ export const createAndPublishEvent = async (params: CreateEventParams): Promise<
     
     // Send to validator for validation and publishing
     await validateAndPublishEvent(event);
-    
-    // console.log(`Event '${params.eventName}' created and sent to validator`);
   } catch (error) {
     console.error(`Failed to create and publish event '${params.eventName}':`, error);
     throw error;

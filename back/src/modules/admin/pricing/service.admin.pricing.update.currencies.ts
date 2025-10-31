@@ -11,7 +11,7 @@ import { Pool } from 'pg'
 import { Request } from 'express'
 import { queries } from './queries.admin.pricing'
 import type { CurrencyDto } from './types.admin.pricing'
-import { createAndPublishEvent } from '@/core/eventBus/fabric.events'
+import fabricEvents from '@/core/eventBus/fabric.events'
 import { EVENTS_ADMIN_PRICING } from './events.admin.pricing'
 
 function validateCode(code?: string): string {
@@ -143,40 +143,53 @@ export async function updateCurrenciesService(pool: Pool, req: Request, payload:
     await client.query('COMMIT')
 
     // Publish events with informative payload
+    // Each event is wrapped in try-catch to ensure errors in one don't block others
     if (createdCurrencies.length > 0) {
-      await createAndPublishEvent({
-        eventName: EVENTS_ADMIN_PRICING['currencies.create.success'].eventName,
-        req: req,
-        payload: {
-          currencies: createdCurrencies,
-          totalCreated: createdCurrencies.length
-        }
-      })
+      try {
+        await fabricEvents.createAndPublishEvent({
+          eventName: EVENTS_ADMIN_PRICING['currencies.create.success'].eventName,
+          req: req,
+          payload: {
+            currencies: createdCurrencies,
+            totalCreated: createdCurrencies.length
+          }
+        })
+      } catch (eventError) {
+        // Don't throw - transaction is already committed, errors are handled by event bus
+      }
     }
 
     for (const update of updatedCurrencies) {
-      await createAndPublishEvent({
-        eventName: EVENTS_ADMIN_PRICING['currencies.update.currency.success'].eventName,
-        req: req,
-        payload: {
-          currency: update.currency,
-          changes: {
-            oldValues: update.oldValues,
-            newValues: update.newValues
+      try {
+        await fabricEvents.createAndPublishEvent({
+          eventName: EVENTS_ADMIN_PRICING['currencies.update.currency.success'].eventName,
+          req: req,
+          payload: {
+            currency: update.currency,
+            changes: {
+              oldValues: update.oldValues,
+              newValues: update.newValues
+            }
           }
-        }
-      })
+        })
+      } catch (eventError) {
+        // Don't throw - transaction is already committed, errors are handled by event bus
+      }
     }
 
     if (deletedCurrencies.length > 0) {
-      await createAndPublishEvent({
-        eventName: EVENTS_ADMIN_PRICING['currencies.delete.success'].eventName,
-        req: req,
-        payload: {
-          currencies: deletedCurrencies,
-          totalDeleted: deletedCurrencies.length
-        }
-      })
+      try {
+        await fabricEvents.createAndPublishEvent({
+          eventName: EVENTS_ADMIN_PRICING['currencies.delete.success'].eventName,
+          req: req,
+          payload: {
+            currencies: deletedCurrencies,
+            totalDeleted: deletedCurrencies.length
+          }
+        })
+      } catch (eventError) {
+        // Don't throw - transaction is already committed, errors are handled by event bus
+      }
     }
 
     return { created, updated, deleted }
