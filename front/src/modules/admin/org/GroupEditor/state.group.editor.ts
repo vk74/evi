@@ -388,6 +388,14 @@ export const useGroupEditorStore = defineStore('groupEditor', {
       // Reset view state only; keep cached members so navigation back is instant
       Object.assign(this.members, initialMembersState)
       console.log('[GroupEditorStore] Members state reset')
+    },
+
+    /**
+     * Update original data after successful update
+     */
+    updateOriginalData() {
+      console.log('Updating original data after successful update')
+      this.originalData = { ...this.group }
     }
   }
 })

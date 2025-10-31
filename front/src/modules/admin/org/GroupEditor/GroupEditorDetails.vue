@@ -1,5 +1,5 @@
 <!--
-version: 1.0.0
+version: 1.0.1
 Frontend file GroupEditorDetails.vue.
 Purpose: Renders the group details form (create/edit) and its right-side actions.
 -->
@@ -21,24 +21,14 @@ const groupEditorStore = useGroupEditorStore()
 const uiStore = useUiStore()
 
 const {
-  optionalEmailRules,
-  generalDescriptionRules,
-  usernameRules
+  generalDescriptionRules
 } = useValidationRules()
 
 // Local state
 const formRef = ref<any>(null)
 const isFormValid = ref(false)
-const isFormDirty = ref(false)
 const isSubmitting = ref(false)
 const isOwnerSelectorModalOpen = ref(false)
-
-// Track changes in store to enable Update button
-watch(
-  () => [groupEditorStore.group],
-  () => { isFormDirty.value = true },
-  { deep: true }
-)
 
 const ownerDisplay = computed(() => {
   return groupEditorStore.group.ownerUsername || groupEditorStore.group.group_owner || ''
@@ -56,6 +46,14 @@ const groupNameRules = [
 const groupStatusRules = [
   (v: GroupStatus) => !!v || t('admin.groups.editor.messages.requiredFields'),
   (v: GroupStatus) => Object.values(GroupStatus).includes(v) || t('admin.groups.editor.validation.invalidStatus')
+]
+
+const optionalEmailRules = [
+  (v: string) => !v || /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$/.test(v) || t('admin.groups.editor.validation.invalidEmail')
+]
+
+const usernameRules = [
+  // Owner is readonly, so validation is minimal
 ]
 
 async function validate() {
@@ -77,7 +75,6 @@ async function handleCreateGroup() {
         ...groupEditorStore.group, 
         group_id: response.groupId
       })
-      isFormDirty.value = false
       uiStore.showSuccessSnackbar(t('admin.groups.editor.messages.createSuccess'))
     }
   } catch (error) {
@@ -101,8 +98,9 @@ async function handleUpdateGroup() {
     const requestData = groupEditorStore.prepareUpdateData()
     const success = await (await import('./service.update.group')).updateGroupService.updateGroup(requestData)
     if (success) {
+      // Update original data to reset hasChanges state
+      groupEditorStore.updateOriginalData()
       uiStore.showSuccessSnackbar(t('admin.groups.editor.messages.updateSuccess'))
-      isFormDirty.value = false
     }
   } catch (error) {
     uiStore.showErrorSnackbar(error instanceof Error ? error.message : t('admin.groups.editor.messages.updateError'))
@@ -114,7 +112,6 @@ async function handleUpdateGroup() {
 function resetForm() {
   groupEditorStore.resetForm()
   formRef.value?.reset()
-  isFormDirty.value = false
 }
 
 const handleChangeOwner = () => {
@@ -143,19 +140,19 @@ const handleOwnerChanged = async (result: any) => {
     <div class="flex-grow-1">
       <v-container class="content-container pa-0">
         <v-card flat>
+          <!-- Group UUID Display -->
+          <div v-if="groupEditorStore.isEditMode" class="group-uuid-container pa-4 pb-0">
+            <div class="group-uuid-label">
+              {{ t('admin.groups.editor.form.groupId') }}:
+            </div>
+            <div class="group-uuid-value">
+              {{ groupEditorStore.group.group_id || '-' }}
+            </div>
+          </div>
+
           <v-form ref="formRef" v-model="isFormValid" @submit.prevent>
             <v-row class="pa-4">
-              <v-col v-if="groupEditorStore.isEditMode" cols="12" md="6">
-                <v-text-field
-                  :model-value="groupEditorStore.mode.mode === 'edit' ? groupEditorStore.mode.groupId : ''"
-                  :label="t('admin.groups.editor.form.groupId')"
-                  variant="outlined"
-                  density="comfortable"
-                  readonly
-                />
-              </v-col>
-
-              <v-col cols="12" :md="groupEditorStore.isEditMode ? 6 : 12">
+              <v-col cols="12" md="9">
                 <v-text-field
                   v-model="groupEditorStore.group.group_name"
                   :label="t('admin.groups.editor.form.name')"
@@ -166,7 +163,7 @@ const handleOwnerChanged = async (result: any) => {
                 />
               </v-col>
 
-              <v-col cols="12" md="6">
+              <v-col cols="12" md="3">
                 <v-select
                   v-model="groupEditorStore.group.group_status"
                   :label="t('admin.groups.editor.form.status')"
@@ -198,7 +195,7 @@ const handleOwnerChanged = async (result: any) => {
                 />
               </v-col>
 
-              <v-col cols="12" md="6">
+              <v-col cols="12" md="8">
                 <v-text-field
                   v-model="groupEditorStore.group.group_email"
                   :label="t('admin.groups.editor.form.email')"
@@ -208,7 +205,7 @@ const handleOwnerChanged = async (result: any) => {
                 />
               </v-col>
 
-              <v-col cols="12" md="6">
+              <v-col cols="12" md="4">
                 <v-text-field
                   v-model="ownerDisplay"
                   :label="t('admin.groups.editor.form.owner')"
@@ -244,8 +241,8 @@ const handleOwnerChanged = async (result: any) => {
           block
           color="teal"
           variant="outlined"
-          :disabled="!isFormValid || !isFormDirty || isSubmitting"
-          class="mb-3"
+          :disabled="!isFormValid || !groupEditorStore.hasChanges || isSubmitting"
+          :class="['mb-3', { 'update-btn-glow': groupEditorStore.hasChanges && isFormValid && !isSubmitting }]"
           @click="handleUpdateGroup"
         >
           {{ t('admin.groups.editor.buttons.update') }}
@@ -304,10 +301,52 @@ const handleOwnerChanged = async (result: any) => {
   pointer-events: none;
 }
 
+/* Group UUID display styles - similar to GroupEditorMembers.vue */
+.group-uuid-container {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+}
+
+.group-uuid-label {
+  font-size: 0.875rem;
+  color: rgba(0, 0, 0, 0.75);
+  font-weight: 500;
+}
+
+.group-uuid-value {
+  font-family: 'Roboto Mono', monospace;
+  font-size: 0.875rem;
+  color: rgba(0, 0, 0, 0.75);
+  background-color: rgba(0, 0, 0, 0.05);
+  padding: 4px 8px;
+  border-radius: 4px;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  display: inline-block;
+}
+
 .side-bar-container { width: 18%; min-width: 220px; border-left: thin solid rgba(var(--v-border-color), var(--v-border-opacity)); display: flex; flex-direction: column; }
 .side-bar-section { padding: 16px; }
 .sidebar-divider { height: 20px; position: relative; margin: 0 16px; }
 .sidebar-divider::after { content: ''; position: absolute; top: 50%; left: 0; right: 0; border-top: thin solid rgba(var(--v-border-color), var(--v-border-opacity)); }
+
+/* Update button glow animation for unsaved changes */
+.update-btn-glow {
+  animation: soft-glow 2s ease-in-out infinite;
+  box-shadow: 0 0 8px rgba(20, 184, 166, 0.3);
+}
+
+@keyframes soft-glow {
+  0%, 100% {
+    box-shadow: 0 0 8px rgba(20, 184, 166, 0.3);
+    transform: scale(1);
+  }
+  50% {
+    box-shadow: 0 0 16px rgba(20, 184, 166, 0.5);
+    transform: scale(1.01);
+  }
+}
 </style>
 
 
