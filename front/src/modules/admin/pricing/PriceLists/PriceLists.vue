@@ -637,6 +637,7 @@ onMounted(async () => {
             <v-chip 
               color="blue" 
               size="small"
+              class="status-chip"
             >
               {{ item.currency_code }}
             </v-chip>
@@ -649,7 +650,7 @@ onMounted(async () => {
                   v-bind="props"
                   :color="item.is_active ? 'teal' : 'grey'" 
                   size="small"
-                  class="status-chip-clickable"
+                  class="status-chip status-chip-clickable"
                   :disabled="isUpdatingStatus === item.price_list_id"
                   :loading="isUpdatingStatus === item.price_list_id"
                 >
@@ -666,7 +667,7 @@ onMounted(async () => {
                   <v-chip 
                     :color="option.color" 
                     size="small"
-                    class="status-menu-chip"
+                    class="status-chip status-menu-chip"
                   >
                     {{ option.label }}
                   </v-chip>
@@ -984,5 +985,13 @@ onMounted(async () => {
 .status-menu-chip {
   width: 100%;
   justify-content: center;
+}
+
+/* Status chip styling */
+.status-chip {
+  font-size: 0.9em !important;
+  padding: 0 9px !important;
+  min-height: 22px !important;
+  height: 22px !important;
 }
 </style>

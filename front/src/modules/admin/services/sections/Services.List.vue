@@ -515,6 +515,7 @@ const handleItemsPerPageChange = async (newItemsPerPage: ItemsPerPageOption) => 
             <v-chip 
               :color="item.is_public ? 'teal' : 'grey'" 
               size="x-small"
+              class="status-chip"
             >
               {{ item.is_public ? t('admin.services.table.status.yes') : t('admin.services.table.status.no') }}
             </v-chip>
@@ -524,6 +525,7 @@ const handleItemsPerPageChange = async (newItemsPerPage: ItemsPerPageOption) => 
             <v-chip 
               :color="getPriorityColor(item.priority)" 
               size="x-small"
+              class="status-chip"
             >
               {{ getPriorityText(item.priority) }}
             </v-chip>
@@ -533,6 +535,7 @@ const handleItemsPerPageChange = async (newItemsPerPage: ItemsPerPageOption) => 
             <v-chip 
               :color="getStatusColor(item.status)" 
               size="x-small"
+              class="status-chip"
             >
               {{ getStatusText(item.status) }}
             </v-chip>
@@ -785,5 +788,13 @@ const handleItemsPerPageChange = async (newItemsPerPage: ItemsPerPageOption) => 
   min-width: 32px;
   height: 32px;
   font-size: 0.875rem;
+}
+
+/* Status chip styling */
+.status-chip {
+  font-size: 0.9em !important;
+  padding: 0 9px !important;
+  min-height: 22px !important;
+  height: 22px !important;
 }
 </style> 

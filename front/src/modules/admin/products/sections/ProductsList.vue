@@ -581,6 +581,7 @@ const clearFilters = async () => {
             <v-chip 
               :color="item.option_only ? 'violet' : item.can_be_option ? 'blue' : 'teal'" 
               size="small"
+              class="status-chip"
             >
               {{ getProductTypeText(item.can_be_option, item.option_only) }}
             </v-chip>
@@ -590,6 +591,7 @@ const clearFilters = async () => {
             <v-chip 
               :color="item.is_published ? 'teal' : 'grey'" 
               size="small"
+              class="status-chip"
             >
               {{ item.is_published ? t('admin.products.table.status.yes') : t('admin.products.table.status.no') }}
             </v-chip>
@@ -862,5 +864,13 @@ const clearFilters = async () => {
   min-width: 32px;
   height: 32px;
   font-size: 0.875rem;
+}
+
+/* Status chip styling */
+.status-chip {
+  font-size: 0.9em !important;
+  padding: 0 9px !important;
+  min-height: 22px !important;
+  height: 22px !important;
 }
 </style>

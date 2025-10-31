@@ -249,6 +249,7 @@ watch([page, itemsPerPage], ([newPage, newItemsPerPage]) => {
             <v-chip
               :color="getStatusColor(item.group_status)"
               size="x-small"
+              class="status-chip"
             >
               {{ item.group_status }}
             </v-chip>
@@ -422,5 +423,12 @@ watch([page, itemsPerPage], ([newPage, newItemsPerPage]) => {
   left: 0;
   right: 0;
   border-top: thin solid rgba(var(--v-border-color), var(--v-border-opacity));
+}
+
+.status-chip {
+  font-size: 0.9em !important;
+  padding: 0 9px !important;
+  min-height: 22px !important;
+  height: 22px !important;
 }
 </style>
