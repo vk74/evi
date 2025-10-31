@@ -68,7 +68,7 @@ export interface FetchAllPriceListsParams {
     searchQuery?: string
     sortBy?: string
     sortDesc?: boolean
-    statusFilter?: 'all' | 'active' | 'inactive'
+    statusFilter?: 'all' | 'active' | 'disabled'
     currencyFilter?: string // currency code or 'all'
 }
 

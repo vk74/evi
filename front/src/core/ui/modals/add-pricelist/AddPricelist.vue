@@ -3,7 +3,7 @@ Version: 1.3.0
 Modal component for creating a new price list.
 Frontend file for adding a new price list in the pricing admin module.
 Fetches active currencies dynamically from backend.
-Includes active/inactive status toggle (v-switch) positioned next to currency selector.
+Includes active/disabled status toggle (v-switch) positioned next to currency selector.
 Filename: AddPricelist.vue
 -->
 <script setup lang="ts">

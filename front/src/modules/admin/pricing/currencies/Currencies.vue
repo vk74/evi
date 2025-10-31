@@ -35,7 +35,7 @@ const uiStore = useUiStore()
 const currencies = computed<Currency[]>(() => store.currencies)
 
 const selectedCurrencies = ref<Set<string>>(new Set())
-const currencyStatus = ref<'all' | 'active' | 'inactive'>('all')
+const currencyStatus = ref<'all' | 'active' | 'disabled'>('all')
 const searchQuery = ref<string>('')
 const isSearching = computed<boolean>(() => store.isCurrenciesLoading)
 const isSaving = ref<boolean>(false)
@@ -322,7 +322,7 @@ function handleBeforeUnload(e: BeforeUnloadEvent) {
                 :items="[
                   { title: t('admin.pricing.priceLists.filters.all'), value: 'all' },
                   { title: t('admin.pricing.priceLists.filters.active'), value: 'active' },
-                  { title: t('admin.pricing.priceLists.filters.inactive'), value: 'inactive' }
+                  { title: t('admin.pricing.priceLists.filters.disabled'), value: 'disabled' }
                 ]"
                 hide-details
               >

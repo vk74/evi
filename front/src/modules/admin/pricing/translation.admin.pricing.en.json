@@ -19,7 +19,7 @@
           },
           "status": {
             "active": "active",
-            "inactive": "inactive"
+            "disabled": "disabled"
           }
         },
         "filters": {
@@ -27,7 +27,7 @@
           "status": "pricelist status",
           "currency": "currency",
           "active": "active",
-          "inactive": "inactive",
+          "disabled": "disabled",
           "draft": "draft",
           "clear": "clear filters"
         },

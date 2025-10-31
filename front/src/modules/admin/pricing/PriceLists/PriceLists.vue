@@ -273,7 +273,7 @@ const performSearch = async () => {
       searchQuery: searchQuery.value && searchQuery.value.length >= 2 ? searchQuery.value : undefined,
       sortBy: sortBy.value || 'price_list_id',
       sortDesc: sortDesc.value || false,
-      statusFilter: statusFilter.value as 'all' | 'active' | 'inactive',
+      statusFilter: statusFilter.value as 'all' | 'active' | 'disabled',
       currencyFilter: currencyFilter.value !== 'all' ? currencyFilter.value : undefined
     }
     
@@ -453,14 +453,14 @@ const handleStatusUpdate = async (priceListId: number, newStatus: boolean) => {
 // Status options for menu
 const statusOptions = computed(() => [
   { value: true, color: 'teal', label: t('admin.pricing.priceLists.table.status.active') },
-  { value: false, color: 'grey', label: t('admin.pricing.priceLists.table.status.inactive') }
+  { value: false, color: 'grey', label: t('admin.pricing.priceLists.table.status.disabled') }
 ])
 
 // Load currencies for filter
 const loadCurrencies = async () => {
   try {
     isLoadingCurrencies.value = true
-    const loadedCurrencies = await fetchCurrenciesService(false) // Load all currencies (active and inactive)
+    const loadedCurrencies = await fetchCurrenciesService(false) // Load all currencies (active and disabled)
     currencies.value = loadedCurrencies
   } catch (error) {
     console.error('Failed to load currencies for filter:', error)
@@ -506,7 +506,7 @@ onMounted(async () => {
                   :items="[
                     { title: t('admin.pricing.priceLists.filters.all'), value: 'all' },
                     { title: t('admin.pricing.priceLists.filters.active'), value: 'active' },
-                    { title: t('admin.pricing.priceLists.filters.inactive'), value: 'inactive' }
+                    { title: t('admin.pricing.priceLists.filters.disabled'), value: 'disabled' }
                   ]"
                   color="teal"
                   :base-color="isStatusFilterActive ? 'teal' : undefined"
@@ -654,7 +654,7 @@ onMounted(async () => {
                   :disabled="isUpdatingStatus === item.price_list_id"
                   :loading="isUpdatingStatus === item.price_list_id"
                 >
-                  {{ item.is_active ? t('admin.pricing.priceLists.table.status.active') : t('admin.pricing.priceLists.table.status.inactive') }}
+                  {{ item.is_active ? t('admin.pricing.priceLists.table.status.active') : t('admin.pricing.priceLists.table.status.disabled') }}
                   <PhCaretDown :size="14" class="ml-1" />
                 </v-chip>
               </template>

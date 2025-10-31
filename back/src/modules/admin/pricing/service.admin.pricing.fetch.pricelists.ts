@@ -7,7 +7,7 @@
  * - Extracts and validates query parameters from request
  * - Fetches price lists from database with pagination
  * - Supports search by name and price_list_id
- * - Supports filtering by status (active/inactive) and currency
+ * - Supports filtering by status (active/disabled) and currency
  * - Supports sorting by various fields
  * - Returns formatted data with pagination info
  * 
@@ -40,7 +40,7 @@ function extractQueryParams(req: Request): FetchAllPriceListsParams {
     const searchQuery = req.query.searchQuery as string | undefined;
     const sortBy = req.query.sortBy as string | undefined;
     const sortDesc = req.query.sortDesc === 'true';
-    const statusFilter = req.query.statusFilter as 'all' | 'active' | 'inactive' | undefined;
+    const statusFilter = req.query.statusFilter as 'all' | 'active' | 'disabled' | undefined;
     const currencyFilter = req.query.currencyFilter as string | undefined;
 
     return {
