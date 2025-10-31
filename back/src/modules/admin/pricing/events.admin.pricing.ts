@@ -1,5 +1,5 @@
 /**
- * version: 1.2.3
+ * version: 1.2.4
  * Event reference catalog for admin pricing operations (backend).
  * Defines events for pricing management operations (currencies and price lists).
  * File: events.admin.pricing.ts (backend)

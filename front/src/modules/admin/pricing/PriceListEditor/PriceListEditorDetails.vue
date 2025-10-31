@@ -1,5 +1,5 @@
 <!--
-Version: 1.5.2
+Version: 1.5.3
 Price list editor details section with items table and action buttons.
 Frontend file: PriceListEditorDetails.vue
 -->
@@ -112,10 +112,10 @@ const isLineChanged = (line: EditorLine): boolean => {
   if (!line.id || line.id.startsWith('tmp_')) return false // New items are not considered changed
   
   return (
-    line.originalItemType !== undefined && line.itemType !== line.originalItemType ||
-    line.originalItemCode !== undefined && line.itemCode !== line.originalItemCode ||
-    line.originalItemName !== undefined && line.itemName !== line.originalItemName ||
-    line.originalListPrice !== undefined && line.listPrice !== line.originalListPrice
+    (line.originalItemType !== undefined && line.itemType !== line.originalItemType) ||
+    (line.originalItemCode !== undefined && line.itemCode !== line.originalItemCode) ||
+    (line.originalItemName !== undefined && line.itemName !== line.originalItemName) ||
+    (line.originalListPrice !== undefined && line.listPrice !== line.originalListPrice)
   )
 }
 
@@ -549,7 +549,7 @@ const updateAllItems = async () => {
       
       // Update original values for successfully updated items
       updatedItems.forEach(itemCode => {
-        const line = lines.value.find(l => l.itemCode === itemCode)
+        const line = lines.value.find(l => l.originalItemCode === itemCode || l.itemCode === itemCode)
         if (line) {
           line.originalItemType = line.itemType
           line.originalItemCode = line.itemCode
@@ -767,6 +767,7 @@ const updateAllItems = async () => {
           color="teal"
           variant="outlined"
           class="mb-3"
+          :class="{ 'update-btn-glow': hasChanges && !isUpdating }"
           :loading="isUpdating"
           :disabled="!hasChanges"
           @click="updateAllItems"
@@ -1018,6 +1019,23 @@ const updateAllItems = async () => {
 
 .changed-row:hover {
   background-color: rgba(0, 128, 128, 0.15) !important; /* Slightly darker teal on hover */
+}
+
+/* Update button glow animation for unsaved changes */
+.update-btn-glow {
+  animation: soft-glow 2s ease-in-out infinite;
+  box-shadow: 0 0 8px rgba(20, 184, 166, 0.3);
+}
+
+@keyframes soft-glow {
+  0%, 100% {
+    box-shadow: 0 0 8px rgba(20, 184, 166, 0.3);
+    transform: scale(1);
+  }
+  50% {
+    box-shadow: 0 0 16px rgba(20, 184, 166, 0.5);
+    transform: scale(1.01);
+  }
 }
 </style>
 

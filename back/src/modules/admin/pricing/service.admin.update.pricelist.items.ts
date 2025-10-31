@@ -1,6 +1,6 @@
 /**
  * @file service.admin.update.pricelist.items.ts
- * Version: 1.0.0
+ * Version: 1.0.1
  * Service for updating price list items in the database.
  * Backend file that handles price list items updates with validation and event generation.
  * 
@@ -192,21 +192,38 @@ export async function updatePriceListItemsService(
 
           // Perform update
           const updateResult = await client.query(queries.updatePriceListItem, [
-            update.itemCode,
-            update.changes.itemType || null,
-            update.changes.itemName || null,
-            update.changes.listPrice || null,
-            update.changes.wholesalePrice !== undefined ? update.changes.wholesalePrice : null,
-            userUuid
+            update.itemCode,                    // $1 - WHERE item_code (original)
+            update.changes.itemType || null,    // $2
+            update.changes.itemCode || null,    // $3 - NEW item_code (or null to keep same)
+            update.changes.itemName || null,    // $4
+            update.changes.listPrice || null,   // $5
+            update.changes.wholesalePrice !== undefined ? update.changes.wholesalePrice : null,  // $6
+            userUuid                            // $7
           ])
 
           if (updateResult.rowCount && updateResult.rowCount > 0) {
-            updatedItemCodes.push(update.itemCode)
+            // Track the new item code if it was changed, otherwise track original
+            const resultItemCode = update.changes.itemCode || update.itemCode
+            updatedItemCodes.push(resultItemCode)
           } else {
             errorItemCodes.push(update.itemCode)
           }
 
-        } catch (error) {
+        } catch (error: any) {
+          // Handle unique constraint violation (duplicate item_code)
+          if (error.code === '23505') {
+            await fabricEvents.createAndPublishEvent({
+              eventName: EVENTS_ADMIN_PRICING['pricelist.items.update.code.duplicate'].eventName,
+              req: req,
+              payload: {
+                priceListId,
+                userUuid,
+                originalItemCode: update.itemCode,
+                newItemCode: update.changes.itemCode,
+                error: 'Item code already exists'
+              }
+            })
+          }
           console.error(`Error updating item ${update.itemCode}:`, error)
           errorItemCodes.push(update.itemCode)
         }

@@ -1,5 +1,5 @@
 /**
- * version: 1.4.1
+ * version: 1.4.2
  * Backend types for pricing administration module.
  * Defines DTOs for currencies, price lists and other pricing-related entities.
  * File: types.admin.pricing.ts (backend)
@@ -236,6 +236,7 @@ export interface UpdatePriceListItemsRequest {
         itemCode: string
         changes: {
             itemType?: string
+            itemCode?: string
             itemName?: string
             listPrice?: number
             wholesalePrice?: number | null

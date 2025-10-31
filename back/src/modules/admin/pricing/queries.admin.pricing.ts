@@ -1,5 +1,5 @@
 /**
- * version: 1.3.1
+ * version: 1.3.2
  * SQL queries for pricing administration module.
  * Contains parameterized queries related to pricing (currencies and price lists).
  * Includes integrity check queries.
@@ -328,15 +328,16 @@ export const queries = {
 
     /**
      * Update price list item by item code
-     * Parameters: item_code, item_type, item_name, list_price, wholesale_price, updated_by
+     * Parameters: item_code, item_type, item_code, item_name, list_price, wholesale_price, updated_by
      */
     updatePriceListItem: `
         UPDATE app.price_lists SET
             item_type = COALESCE($2, item_type),
-            item_name = COALESCE($3, item_name),
-            list_price = COALESCE($4, list_price),
-            wholesale_price = COALESCE($5, wholesale_price),
-            updated_by = $6,
+            item_code = COALESCE($3, item_code),
+            item_name = COALESCE($4, item_name),
+            list_price = COALESCE($5, list_price),
+            wholesale_price = COALESCE($6, wholesale_price),
+            updated_by = $7,
             updated_at = NOW()
         WHERE item_code = $1
         RETURNING item_code

@@ -1,6 +1,6 @@
 /**
  * @file types.pricing.admin.ts
- * Version: 1.3.1
+ * Version: 1.3.2
  * Type definitions for pricing administration module.
  * Frontend types for pricing admin functionality.
  * File: types.pricing.admin.ts (frontend)
@@ -270,6 +270,7 @@ export interface UpdatePriceListItemsRequest {
     itemCode: string
     changes: {
       itemType?: string
+      itemCode?: string
       itemName?: string
       listPrice?: number
       wholesalePrice?: number | null
