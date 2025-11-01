@@ -1,5 +1,5 @@
 /**
- * service.admin.update.product.ts - version 1.1.0
+ * service.admin.update.product.ts - version 1.2.0
  * Service for updating products operations.
  * 
  * Functionality:
@@ -507,24 +507,7 @@ export async function updateProduct(data: UpdateProductRequest, req: Request): P
     const client = await pool.connect();
     
     try {
-        
-        await createAndPublishEvent({
-            eventName: PRODUCT_UPDATE_EVENTS.STARTED.eventName,
-            req: req,
-            payload: { 
-                productId: data.productId,
-                hasTranslations: !!data.translations,
-                translationsKeys: data.translations ? Object.keys(data.translations) : []
-            }
-        });
-
         // Validate input data
-        await createAndPublishEvent({
-            eventName: PRODUCT_UPDATE_EVENTS.VALIDATION_STARTED.eventName,
-            req: req,
-            payload: { productId: data.productId }
-        });
-
         await validateUpdateProductData(data, req);
 
         // Check if product exists
@@ -661,18 +644,6 @@ export async function updateProduct(data: UpdateProductRequest, req: Request): P
 
         // Process specialist groups
         const specialistsGroups = groupsResult.rows.map((row: any) => row.group_name);
-
-        // Only publish SUCCESS event if this is not a preferences-only update
-        if (!isPreferencesOnly) {
-            await createAndPublishEvent({
-                eventName: PRODUCT_UPDATE_EVENTS.SUCCESS.eventName,
-                req: req,
-                payload: { 
-                    productId: data.productId,
-                    productCode: updatedProduct.product_code
-                }
-            });
-        }
 
         return {
             success: true,

@@ -1,5 +1,5 @@
 /**
- * service.admin.delete.products.ts - version 1.1.0
+ * service.admin.delete.products.ts - version 1.2.0
  * Service for deleting products operations.
  * 
  * Functionality:
@@ -76,38 +76,8 @@ export async function deleteProducts(
     const client = await pool.connect();
     
     try {
-        // Log incoming data for debugging
-        console.log('[DeleteProducts] Incoming data:', JSON.stringify(params, null, 2));
-        
-        await createAndPublishEvent({
-            eventName: PRODUCT_DELETE_EVENTS.STARTED.eventName,
-            req: req,
-            payload: { 
-                productIds: params.productIds,
-                count: params.productIds.length
-            }
-        });
-
-        // Get requestor UUID for logging
-        const requestorUuid = getRequestorUuidFromReq(req);
-        if (!requestorUuid) {
-            return {
-                deletedProducts: [],
-                errors: [{ id: 'system', error: 'Unable to identify requesting user' }],
-                totalRequested: params.productIds.length,
-                totalDeleted: 0,
-                totalErrors: 1
-            };
-        }
-
         // Validate input data
         validateProductIds(params.productIds);
-
-        await createAndPublishEvent({
-            eventName: PRODUCT_DELETE_EVENTS.VALIDATION_SUCCESS.eventName,
-            req: req,
-            payload: { productIds: params.productIds }
-        });
 
         // Delete products from database
         // PostgreSQL CASCADE will automatically delete related records:
@@ -136,25 +106,32 @@ export async function deleteProducts(
         }
 
         // Log success or partial success
+        const productCodes = deletedProducts.map(p => p.product_code);
+        
         if (totalErrors === 0) {
             await createAndPublishEvent({
                 eventName: PRODUCT_DELETE_EVENTS.SUCCESS.eventName,
                 req: req,
                 payload: { 
                     productIds: params.productIds,
-                    totalDeleted,
-                    requestorUuid
+                    productCodes,
+                    totalDeleted
                 }
             });
         } else if (totalDeleted > 0) {
+            const deletedIds = deletedProducts.map(p => p.id);
+            const notFoundIds = params.productIds.filter(id => !deletedIds.includes(id));
+            
             await createAndPublishEvent({
                 eventName: PRODUCT_DELETE_EVENTS.PARTIAL_SUCCESS.eventName,
                 req: req,
                 payload: { 
                     productIds: params.productIds,
+                    productCodes,
                     totalDeleted,
                     totalErrors,
-                    requestorUuid
+                    deletedIds,
+                    notFoundIds
                 }
             });
         }

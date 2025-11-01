@@ -1,10 +1,7 @@
 /**
- * File: service.admin.update.product.option.pairs.ts
- * Version: 1.1.0
- * Description: Service for updating existing product-option pairs with transactional integrity.
- * Purpose: Updates only existing pairs; if any is missing, throws error with missing ids.
- * 
- * Updated: Changed event names from 'products.pairs.*' to 'adminProducts.pairs.*' to match domain registry
+ * service.admin.update.product.option.pairs.ts - version 1.2.0
+ * Service for updating existing product-option pairs with transactional integrity.
+ * Updates only existing pairs; if any is missing, throws error with missing ids.
  * 
  * Backend file - service.admin.update.product.option.pairs.ts
  */
@@ -55,6 +52,10 @@ export async function updateProductOptionPairs(body: UpdatePairsRequestBody, req
 
     await client.query('BEGIN')
 
+    // Get main product code
+    const mainProductResult = await client.query('SELECT product_code FROM app.products WHERE product_id = $1', [mainProductId])
+    const mainProductCode = mainProductResult.rows[0]?.product_code || null
+
     // Ensure all pairs exist; otherwise, rollback with detailed error
     const optionIds = pairs.map(p => p.optionProductId)
     const existing = await client.query(pairsQueries.checkExistingPairs, [mainProductId, optionIds])
@@ -62,18 +63,25 @@ export async function updateProductOptionPairs(body: UpdatePairsRequestBody, req
     const missing = optionIds.filter(id => !existingSet.has(id))
     if (missing.length > 0) {
       const reason = 'Not found: some option ids do not have existing pairs'
+      // Get missing option codes
+      const missingProducts = await client.query('SELECT product_id, product_code FROM app.products WHERE product_id = ANY($1)', [missing])
+      const missingOptionCodes = missingProducts.rows.map(r => r.product_code)
+
       await createAndPublishEvent({
         eventName: 'adminProducts.pairs.update.not_found',
         req: req,
         payload: {
           mainProductId,
+          mainProductCode,
           missingOptionIds: missing,
-          missingCount: missing.length,
-          requestorId: requestorUuid
+          missingOptionCodes
         }
       })
       throw new Error(`${reason}: ${missing.join(',')}`)
     }
+
+    // Get old values before update
+    const oldPairsMap = new Map(existing.rows.map(r => [r.option_product_id, { is_required: r.is_required, units_count: r.units_count }]))
 
     // Build arrays for UNNEST update
     const optionIdsArr = pairs.map(p => p.optionProductId)
@@ -89,20 +97,39 @@ export async function updateProductOptionPairs(body: UpdatePairsRequestBody, req
 
     await client.query('COMMIT')
 
-    const updatedIds = optionIds
+    // Get option codes and build changes array
+    const updatedProducts = await client.query('SELECT product_id, product_code FROM app.products WHERE product_id = ANY($1)', [optionIds])
+    const updatedOptionCodes = updatedProducts.rows.map(r => r.product_code)
+    
+    const changes = pairs.map(p => {
+      const old = oldPairsMap.get(p.optionProductId)
+      const productCode = updatedProducts.rows.find(r => r.product_id === p.optionProductId)?.product_code
+      const change: any = { optionProductId: p.optionProductId, optionProductCode: productCode }
+      
+      if (old && old.is_required !== p.isRequired) {
+        change.isRequired = { old: old.is_required, new: p.isRequired }
+      }
+      if (old && old.units_count !== p.unitsCount) {
+        change.unitsCount = { old: old.units_count, new: p.unitsCount }
+      }
+      
+      return change
+    })
+
     await createAndPublishEvent({
       eventName: 'adminProducts.pairs.update.success',
       req: req,
       payload: {
         mainProductId,
-        updatedCount: updatedIds.length,
-        updatedOptionIds: updatedIds,
-        fieldsChanged: ['is_required', 'units_count'],
-        requestorId: requestorUuid
+        mainProductCode,
+        updatedCount: optionIds.length,
+        updatedOptionIds: optionIds,
+        updatedOptionCodes,
+        changes
       }
     })
 
-    return { success: true, updatedCount: updatedIds.length, updated: updatedIds }
+    return { success: true, updatedCount: optionIds.length, updated: optionIds }
   } catch (error) {
     try { await client.query('ROLLBACK') } catch {}
     await createAndPublishEvent({
@@ -111,8 +138,7 @@ export async function updateProductOptionPairs(body: UpdatePairsRequestBody, req
       payload: {
         mainProductId: body?.mainProductId,
         requestedCount: Array.isArray(body?.pairs) ? body.pairs.length : 0,
-        error: error instanceof Error ? error.message : String(error),
-        requestorId: getRequestorUuidFromReq(req)
+        error: error instanceof Error ? error.message : String(error)
       },
       errorData: error instanceof Error ? error.message : String(error)
     })

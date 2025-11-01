@@ -1,7 +1,7 @@
 /**
  * @file service.update.product.ts
  * Service for updating products via API.
- * Version: 1.0.0
+ * Version: 1.1.0
  * FRONTEND service for updating products through API.
  *
  * Functionality:
@@ -11,6 +11,10 @@
  * - Integrates with UI store for toast notifications
  * - Follows established patterns from other services
  * - Supports partial updates of product data
+ *
+ * Changes in v1.1.0:
+ * - Modified updateProductFromForm to send only changed fields
+ * - Updates originalProductData after successful update to reset change tracking
  */
 
 import { api } from '@/core/api/service.axios'
@@ -86,6 +90,8 @@ export const serviceUpdateProduct = {
 
       // Update store with new data
       store.setEditingProductData(updatedProductData)
+      // Update original data to reset change tracking
+      store.updateOriginalProductData()
 
       logger.info('Successfully updated product', { 
         productId: product.product_id, 
@@ -117,6 +123,7 @@ export const serviceUpdateProduct = {
 
   /**
    * Updates product with current form data from store
+   * Only sends changed fields to the API
    * @returns Promise<UpdateProductResponse>
    */
   async updateProductFromForm(): Promise<UpdateProductResponse> {
@@ -127,19 +134,19 @@ export const serviceUpdateProduct = {
       return { success: false, message: 'No product ID available for update', data: undefined }
     }
 
-    // Prepare update data from current form state
+    // Get only changed fields from store (without productId)
+    const changedFields = store.getChangedFields
+    
+    // Add productId to the update request
     const updateData: UpdateProductRequest = {
-      productId: store.editingProductId,
-      productCode: store.formData.productCode,
-      translationKey: store.formData.translationKey,
-      canBeOption: store.formData.canBeOption,
-      optionOnly: store.formData.optionOnly,
-      owner: store.formData.owner,
-      backupOwner: store.formData.backupOwner,
-      specialistsGroups: store.formData.specialistsGroups,
-      translations: store.formData.translations,
-      visibility: store.formData.visibility
+      productId: store.editingProductId!,
+      ...changedFields
     }
+
+    logger.info('Updating product with changed fields only', {
+      productId: updateData.productId,
+      changedFields: Object.keys(changedFields)
+    })
 
     return await this.updateProduct(updateData)
   }

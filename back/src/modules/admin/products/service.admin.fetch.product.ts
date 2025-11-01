@@ -31,25 +31,19 @@ export class ServiceAdminFetchProduct {
     const client = await pool.connect()
     
     try {
-      // Validate product ID format (basic UUID check)
-      if (!productId || typeof productId !== 'string' || productId.trim().length === 0) {
-        await createAndPublishEvent({
-          req,
-          eventName: PRODUCT_FETCH_EVENTS.VALIDATION_STARTED.eventName,
-          payload: { productId },
-          errorData: 'Invalid product ID provided'
-        })
-        return {
-          success: false,
-          message: 'Invalid product ID format'
-        }
-      }
-
       await createAndPublishEvent({
         req,
         eventName: PRODUCT_FETCH_EVENTS.STARTED.eventName,
         payload: { productId }
       })
+
+      // Validate product ID format (basic UUID check)
+      if (!productId || typeof productId !== 'string' || productId.trim().length === 0) {
+        return {
+          success: false,
+          message: 'Invalid product ID format'
+        }
+      }
 
       // Fetch product basic data
       const productResult = await client.query(queries.fetchSingleProduct, [productId])

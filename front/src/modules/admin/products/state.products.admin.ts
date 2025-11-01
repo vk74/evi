@@ -1,8 +1,14 @@
 /**
  * @file state.products.admin.ts
- * Version: 1.1.0
+ * Version: 1.2.0
  * Pinia store for managing products admin module state.
  * Frontend file that handles active section management for products administration.
+ *
+ * Changes in v1.2.0:
+ * - Added originalProductData to track initial product state for change detection
+ * - Added getChangedFields getter to return only changed fields
+ * - Added hasChanges getter to determine if form has unsaved changes
+ * - Added setOriginalProductData and updateOriginalProductData actions
  */
 import { defineStore } from 'pinia'
 import type {
@@ -12,16 +18,18 @@ import type {
   ProductEditorMode,
   ProductFormData,
   Product,
-  ProductWithFullData
+  ProductWithFullData,
+  UpdateProductRequest
 } from './types.products.admin'
 
 export const useProductsAdminStore = defineStore('productsAdmin', {
-  state: (): ProductsAdminState => ({
+  state: (): ProductsAdminState & { originalProductData: ProductWithFullData | null } => ({
     activeSection: 'products-list',
     activeEditorSection: 'details',
     editorMode: 'creation',
     editingProductId: null,
     editingProductData: null,
+    originalProductData: null,
     formData: {
       productCode: '',
       translationKey: '',
@@ -65,7 +73,86 @@ export const useProductsAdminStore = defineStore('productsAdmin', {
   }),
 
   getters: {
-    getCurrentSection: (state): ProductSectionId => state.activeSection
+    getCurrentSection: (state): ProductSectionId => state.activeSection,
+
+    /**
+     * Gets changed fields by comparing formData with originalProductData
+     * Returns only fields that have actually changed (without productId)
+     */
+    getChangedFields(): Omit<UpdateProductRequest, 'productId'> {
+      if (!this.originalProductData || this.editorMode !== 'edit') {
+        return {}
+      }
+
+      const changes: Omit<UpdateProductRequest, 'productId'> = {}
+      const current = this.formData
+      const original = this.originalProductData
+
+      // Compare basic fields
+      if (current.productCode !== original.product_code) {
+        changes.productCode = current.productCode
+      }
+      if (current.translationKey !== original.translation_key) {
+        changes.translationKey = current.translationKey
+      }
+      if (current.canBeOption !== original.can_be_option) {
+        changes.canBeOption = current.canBeOption
+      }
+      if (current.optionOnly !== original.option_only) {
+        changes.optionOnly = current.optionOnly
+      }
+      if (current.owner !== (original.owner || '')) {
+        changes.owner = current.owner
+      }
+      if (current.backupOwner !== (original.backupOwner || '')) {
+        changes.backupOwner = current.backupOwner
+      }
+
+      // Compare specialistsGroups arrays
+      const currentGroups = current.specialistsGroups || []
+      const originalGroups = original.specialistsGroups || []
+      if (JSON.stringify(currentGroups.sort()) !== JSON.stringify(originalGroups.sort())) {
+        changes.specialistsGroups = currentGroups
+      }
+
+      // Compare translations (deep comparison)
+      const currentTranslations = current.translations || {}
+      const originalTranslations = original.translations || {}
+      if (JSON.stringify(currentTranslations) !== JSON.stringify(originalTranslations)) {
+        changes.translations = currentTranslations
+      }
+
+      // Compare visibility object
+      const currentVisibility = current.visibility
+      const originalVisibility = {
+        isVisibleOwner: original.is_visible_owner,
+        isVisibleGroups: original.is_visible_groups,
+        isVisibleTechSpecs: original.is_visible_tech_specs,
+        isVisibleAreaSpecs: original.is_visible_area_specs,
+        isVisibleIndustrySpecs: original.is_visible_industry_specs,
+        isVisibleKeyFeatures: original.is_visible_key_features,
+        isVisibleOverview: original.is_visible_overview,
+        isVisibleLongDescription: original.is_visible_long_description
+      }
+
+      if (JSON.stringify(currentVisibility) !== JSON.stringify(originalVisibility)) {
+        changes.visibility = currentVisibility
+      }
+
+      return changes
+    },
+
+    /**
+     * Checks if there are any unsaved changes
+     */
+    hasChanges(): boolean {
+      if (!this.originalProductData || this.editorMode !== 'edit') {
+        return false
+      }
+      
+      const changes = this.getChangedFields
+      return Object.keys(changes).length > 0
+    }
   },
 
   actions: {
@@ -84,8 +171,10 @@ export const useProductsAdminStore = defineStore('productsAdmin', {
       
       if (mode === 'creation') {
         this.resetFormData()
+        this.originalProductData = null
       } else if (productData) {
         this.populateFormWithFullProductData(productData)
+        this.setOriginalProductData(productData)
       }
     },
 
@@ -93,6 +182,7 @@ export const useProductsAdminStore = defineStore('productsAdmin', {
       this.editorMode = 'creation'
       this.editingProductId = null
       this.editingProductData = null
+      this.originalProductData = null
       this.activeEditorSection = 'details'
       this.resetFormData()
     },
@@ -207,11 +297,32 @@ export const useProductsAdminStore = defineStore('productsAdmin', {
     },
 
     /**
+     * Sets original product data for change tracking
+     */
+    setOriginalProductData(productData: ProductWithFullData): void {
+      this.originalProductData = { ...productData }
+    },
+
+    /**
+     * Updates original product data after successful update
+     * This resets the hasChanges state by syncing originalProductData with current data
+     */
+    updateOriginalProductData(): void {
+      if (this.editingProductData) {
+        this.originalProductData = { ...this.editingProductData }
+      }
+    },
+
+    /**
      * Sets editing product data
      */
     setEditingProductData(productData: ProductWithFullData): void {
       this.editingProductData = productData
       this.populateFormWithFullProductData(productData)
+      // Set original data for change tracking when in edit mode
+      if (this.editorMode === 'edit') {
+        this.setOriginalProductData(productData)
+      }
     },
 
     /**
@@ -258,6 +369,7 @@ export const useProductsAdminStore = defineStore('productsAdmin', {
       this.editorMode = 'creation'
       this.editingProductId = null
       this.editingProductData = null
+      this.originalProductData = null
       this.resetFormData()
     },
 

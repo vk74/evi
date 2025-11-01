@@ -19,7 +19,7 @@ export const EVENTS_ADMIN_CATALOG: EventCollection = {
   'section.create.validation.error': {
     eventName: 'adminCatalog.section.create.validation.error',
     source: 'admin-catalog',
-    eventType: 'system',
+    eventType: 'app',
     severity: 'error',
     eventMessage: 'Section create validation error occurred',
     version: '1.0.0'
@@ -29,7 +29,7 @@ export const EVENTS_ADMIN_CATALOG: EventCollection = {
   'section.create.database_error': {
     eventName: 'adminCatalog.section.create.database_error',
     source: 'admin-catalog',
-    eventType: 'system',
+    eventType: 'app',
     severity: 'error',
     eventMessage: 'Database error occurred during section creation',
     version: '1.0.0'
@@ -39,7 +39,7 @@ export const EVENTS_ADMIN_CATALOG: EventCollection = {
   'section.update.validation.error': {
     eventName: 'adminCatalog.section.update.validation.error',
     source: 'admin-catalog',
-    eventType: 'system',
+    eventType: 'app',
     severity: 'error',
     eventMessage: 'Section update validation error occurred',
     version: '1.0.0'
@@ -49,7 +49,7 @@ export const EVENTS_ADMIN_CATALOG: EventCollection = {
   'section.update.database_error': {
     eventName: 'adminCatalog.section.update.database_error',
     source: 'admin-catalog',
-    eventType: 'system',
+    eventType: 'app',
     severity: 'error',
     eventMessage: 'Database error occurred during section update',
     version: '1.0.0'
@@ -59,7 +59,7 @@ export const EVENTS_ADMIN_CATALOG: EventCollection = {
   'section.delete.validation.error': {
     eventName: 'adminCatalog.section.delete.validation.error',
     source: 'admin-catalog',
-    eventType: 'system',
+    eventType: 'app',
     severity: 'error',
     eventMessage: 'Section delete validation error occurred',
     version: '1.0.0'
@@ -69,7 +69,7 @@ export const EVENTS_ADMIN_CATALOG: EventCollection = {
   'section.delete.database_error': {
     eventName: 'adminCatalog.section.delete.database_error',
     source: 'admin-catalog',
-    eventType: 'system',
+    eventType: 'app',
     severity: 'error',
     eventMessage: 'Database error occurred during section deletion',
     version: '1.0.0'
@@ -79,7 +79,7 @@ export const EVENTS_ADMIN_CATALOG: EventCollection = {
   'section.delete.started': {
     eventName: 'adminCatalog.section.delete.started',
     source: 'admin-catalog',
-    eventType: 'system',
+    eventType: 'app',
     severity: 'debug',
     eventMessage: 'Section deletion started',
     version: '1.0.0'
@@ -89,7 +89,7 @@ export const EVENTS_ADMIN_CATALOG: EventCollection = {
   'section.delete.success': {
     eventName: 'adminCatalog.section.delete.success',
     source: 'admin-catalog',
-    eventType: 'system',
+    eventType: 'app',
     severity: 'debug',
     eventMessage: 'Sections deleted successfully',
     version: '1.0.0'
@@ -99,7 +99,7 @@ export const EVENTS_ADMIN_CATALOG: EventCollection = {
   'section.fetch.started': {
     eventName: 'adminCatalog.section.fetch.started',
     source: 'admin-catalog',
-    eventType: 'system',
+    eventType: 'app',
     severity: 'debug',
     eventMessage: 'Section fetch started',
     version: '1.0.0'
@@ -109,7 +109,7 @@ export const EVENTS_ADMIN_CATALOG: EventCollection = {
   'section.fetch.success': {
     eventName: 'adminCatalog.section.fetch.success',
     source: 'admin-catalog',
-    eventType: 'system',
+    eventType: 'app',
     severity: 'debug',
     eventMessage: 'Sections fetched successfully',
     version: '1.0.0'
@@ -119,7 +119,7 @@ export const EVENTS_ADMIN_CATALOG: EventCollection = {
   'section.fetch.not_found': {
     eventName: 'adminCatalog.section.fetch.not_found',
     source: 'admin-catalog',
-    eventType: 'system',
+    eventType: 'app',
     severity: 'debug',
     eventMessage: 'Section not found during fetch',
     version: '1.0.0'
@@ -129,7 +129,7 @@ export const EVENTS_ADMIN_CATALOG: EventCollection = {
   'section.fetch.error': {
     eventName: 'adminCatalog.section.fetch.error',
     source: 'admin-catalog',
-    eventType: 'system',
+    eventType: 'app',
     severity: 'error',
     eventMessage: 'Error occurred during section fetch',
     version: '1.0.0'
@@ -139,7 +139,7 @@ export const EVENTS_ADMIN_CATALOG: EventCollection = {
   'section.create.started': {
     eventName: 'adminCatalog.section.create.started',
     source: 'admin-catalog',
-    eventType: 'system',
+    eventType: 'app',
     severity: 'debug',
     eventMessage: 'Section creation started',
     version: '1.0.0'
@@ -149,7 +149,7 @@ export const EVENTS_ADMIN_CATALOG: EventCollection = {
   'section.create.success': {
     eventName: 'adminCatalog.section.create.success',
     source: 'admin-catalog',
-    eventType: 'system',
+    eventType: 'app',
     severity: 'info',
     eventMessage: 'Section created successfully',
     version: '1.0.0'
@@ -159,7 +159,7 @@ export const EVENTS_ADMIN_CATALOG: EventCollection = {
   'section.update.started': {
     eventName: 'adminCatalog.section.update.started',
     source: 'admin-catalog',
-    eventType: 'system',
+    eventType: 'app',
     severity: 'debug',
     eventMessage: 'Section update started',
     version: '1.0.0'
@@ -169,7 +169,7 @@ export const EVENTS_ADMIN_CATALOG: EventCollection = {
   'section.update.success': {
     eventName: 'adminCatalog.section.update.success',
     source: 'admin-catalog',
-    eventType: 'system',
+    eventType: 'app',
     severity: 'info',
     eventMessage: 'Section updated successfully',
     version: '1.0.0'
@@ -179,7 +179,7 @@ export const EVENTS_ADMIN_CATALOG: EventCollection = {
   'services.publish.fetch.started': {
     eventName: 'adminCatalog.services.publish.fetch.started',
     source: 'admin-catalog',
-    eventType: 'system',
+    eventType: 'app',
     severity: 'debug',
     eventMessage: 'Services publish fetch started',
     version: '1.0.0'
@@ -189,7 +189,7 @@ export const EVENTS_ADMIN_CATALOG: EventCollection = {
   'services.publish.fetch.success': {
     eventName: 'adminCatalog.services.publish.fetch.success',
     source: 'admin-catalog',
-    eventType: 'system',
+    eventType: 'app',
     severity: 'debug',
     eventMessage: 'Services publish fetch completed successfully',
     version: '1.0.0'
@@ -199,7 +199,7 @@ export const EVENTS_ADMIN_CATALOG: EventCollection = {
   'services.publish.fetch.validation_error': {
     eventName: 'adminCatalog.services.publish.fetch.validation_error',
     source: 'admin-catalog',
-    eventType: 'system',
+    eventType: 'app',
     severity: 'error',
     eventMessage: 'Services publish fetch validation error',
     version: '1.0.0'
@@ -209,7 +209,7 @@ export const EVENTS_ADMIN_CATALOG: EventCollection = {
   'services.publish.update.started': {
     eventName: 'adminCatalog.services.publish.update.started',
     source: 'admin-catalog',
-    eventType: 'system',
+    eventType: 'app',
     severity: 'debug',
     eventMessage: 'Services publish update started',
     version: '1.0.0'
@@ -219,7 +219,7 @@ export const EVENTS_ADMIN_CATALOG: EventCollection = {
   'services.publish.update.success': {
     eventName: 'adminCatalog.services.publish.update.success',
     source: 'admin-catalog',
-    eventType: 'system',
+    eventType: 'app',
     severity: 'info',
     eventMessage: 'Services publish updated successfully',
     version: '1.0.0'
@@ -229,7 +229,7 @@ export const EVENTS_ADMIN_CATALOG: EventCollection = {
   'services.publish.update.database_error': {
     eventName: 'adminCatalog.services.publish.update.database_error',
     source: 'admin-catalog',
-    eventType: 'system',
+    eventType: 'app',
     severity: 'error',
     eventMessage: 'Database error during services publish update',
     version: '1.0.0'
@@ -239,7 +239,7 @@ export const EVENTS_ADMIN_CATALOG: EventCollection = {
   'controller.unexpected_error': {
     eventName: 'adminCatalog.controller.unexpected_error',
     source: 'admin-catalog',
-    eventType: 'system',
+    eventType: 'app',
     severity: 'error',
     eventMessage: 'Unexpected error in controller',
     version: '1.0.0'

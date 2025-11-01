@@ -1,6 +1,6 @@
 <!--
   File: ProductEditorDetails.vue
-  Version: 1.2.0
+  Version: 1.3.0
   Description: Component for product details form and actions
   Purpose: Provides interface for creating and editing product details with dynamic validation
   Frontend file - ProductEditorDetails.vue
@@ -11,6 +11,12 @@
   - In CREATE mode: all fields validated according to loaded rules
   - In EDIT mode: only changed fields are validated
   - Buttons disabled if validation rules not loaded or fields invalid
+  
+  Changes in v1.3.0:
+  - Added hasChanges tracking for UPDATE button state
+  - UPDATE button disabled when no changes detected
+  - Added glow effect for active UPDATE button
+  - Update service now sends only changed fields
 -->
 
 <script setup lang="ts">
@@ -67,6 +73,16 @@ const formData = computed(() => productsStore.formData)
 const isCreationMode = computed(() => productsStore.editorMode === 'creation')
 const isEditMode = computed(() => productsStore.editorMode === 'edit')
 const editingProductId = computed(() => productsStore.editingProductId)
+const hasChanges = computed(() => productsStore.hasChanges)
+const isUpdateButtonEnabled = computed(() => {
+  return isFormValid.value && 
+         !isSubmitting.value && 
+         validationRulesReady.value && 
+         hasChanges.value &&
+         isOwnerValid.value && 
+         isBackupOwnerValid.value && 
+         areSpecialistsGroupsValid.value
+})
 
 // Language options from system_language_code
 const languageOptions = computed(() => [
@@ -523,53 +539,20 @@ const updateProduct = async () => {
     return
   }
 
+  if (!hasChanges.value) {
+    uiStore.showErrorSnackbar(t('admin.products.editor.messages.update.noChanges'))
+    return
+  }
+
   isSubmitting.value = true
   
   try {
-    // Prepare data for API - only send filled languages
-    const translations: any = {}
+    // Use service method that sends only changed fields
+    const result = await serviceUpdateProduct.updateProductFromForm()
     
-    // Check if English is filled
-    if (formData.value.translations.en && 
-        formData.value.translations.en.name && 
-        formData.value.translations.en.name.trim().length > 0 &&
-        formData.value.translations.en.shortDesc && 
-        formData.value.translations.en.shortDesc.trim().length > 0) {
-      translations.en = formData.value.translations.en
-    }
-    
-    // Check if Russian is filled
-    if (formData.value.translations.ru && 
-        formData.value.translations.ru.name && 
-        formData.value.translations.ru.name.trim().length > 0 &&
-        formData.value.translations.ru.shortDesc && 
-        formData.value.translations.ru.shortDesc.trim().length > 0) {
-      translations.ru = formData.value.translations.ru
-    }
-
-    const updateData = {
-      productId: editingProductId.value,
-      productCode: formData.value.productCode,
-      translationKey: formData.value.translationKey,
-      canBeOption: formData.value.canBeOption,
-      optionOnly: formData.value.optionOnly,
-      owner: formData.value.owner,
-      backupOwner: formData.value.backupOwner,
-      specialistsGroups: formData.value.specialistsGroups,
-      translations: translations,
-      visibility: formData.value.visibility
-    }
-
-    // Debug: Log prepared update data
-    console.log('[ProductEditorDetails] Prepared updateData:', JSON.stringify(updateData, null, 2))
-    console.log('[ProductEditorDetails] Translations object:', translations)
-    console.log('[ProductEditorDetails] Form translations:', formData.value.translations)
-
-    // Call service to update product
-    const result = await serviceUpdateProduct.updateProduct(updateData)
-    
-    if (result) {
+    if (result.success) {
       // Product was updated successfully, data is already updated in store
+      // Original data is also updated in store to reset change tracking
       console.log('Product updated successfully:', result)
     }
     
@@ -1198,8 +1181,8 @@ onMounted(async () => {
           block
           color="teal"
           variant="outlined"
-          :disabled="!isFormValid || isSubmitting || !validationRulesReady || !isOwnerValid || !isBackupOwnerValid || !areSpecialistsGroupsValid"
-          class="mb-3"
+          :disabled="!isUpdateButtonEnabled"
+          :class="['mb-3', { 'btn-glow-active': isUpdateButtonEnabled && !isSubmitting }]"
           @click="updateProduct"
         >
           {{ t('admin.products.editor.actions.update').toUpperCase() }}
@@ -1430,5 +1413,15 @@ onMounted(async () => {
   font-size: 0.875rem;
   color: rgba(0, 0, 0, 0.6);
   text-align: center;
+}
+
+/* Glow effect for active UPDATE button */
+.btn-glow-active {
+  box-shadow: 0 0 10px rgba(0, 128, 128, 0.5), 0 0 20px rgba(0, 128, 128, 0.3) !important;
+  transition: box-shadow 0.3s ease;
+}
+
+.btn-glow-active:hover {
+  box-shadow: 0 0 15px rgba(0, 128, 128, 0.7), 0 0 25px rgba(0, 128, 128, 0.5) !important;
 }
 </style>

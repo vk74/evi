@@ -81,12 +81,6 @@ export async function fetchPublishingSections(req: Request): Promise<FetchPublis
             }
         });
 
-        await createAndPublishEvent({
-            eventName: PRODUCT_CATALOG_PUBLICATION_FETCH_EVENTS.VALIDATION_STARTED.eventName,
-            req: req,
-            payload: { productId: productId || null }
-        });
-
         // Fetch publishing sections from database
         const result = await pool.query<DbPublishingSection>(queries.fetchPublishingSections);
         

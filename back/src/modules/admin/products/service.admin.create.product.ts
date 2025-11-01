@@ -1,5 +1,5 @@
 /**
- * service.admin.create.product.ts - version 1.2.0
+ * service.admin.create.product.ts - version 1.3.0
  * Service for creating products operations.
  * 
  * Functionality:
@@ -19,10 +19,6 @@
  * 6. Add translations for all languages
  * 7. Return formatted response
  * 
- * Changes in v1.2.0:
- * - Added validation for backup owner username using validation service
- * - Backup owner now validated through validateField with userName type
- * - Format and existence checks aligned with owner validation
  */
 
 import { Request } from 'express';
@@ -180,10 +176,11 @@ async function validateCreateProductData(data: CreateProductRequest, req: Reques
  * Creates product translations for provided languages only
  * @param client - Database client for transaction
  * @param productId - Product ID
+ * @param productCode - Product code
  * @param translations - Product translations data
  * @param requestorUuid - UUID of the user creating the product
  */
-async function createProductTranslations(client: any, productId: string, translations: CreateProductRequest['translations'], requestorUuid: string, req: Request): Promise<void> {
+async function createProductTranslations(client: any, productId: string, productCode: string, translations: CreateProductRequest['translations'], requestorUuid: string, req: Request): Promise<void> {
     // Create translations only for provided languages
     const languages: { code: LanguageCode; data: any }[] = [];
     
@@ -215,8 +212,9 @@ async function createProductTranslations(client: any, productId: string, transla
                 req: req,
                 payload: {
                     productId,
+                    productCode,
                     languageCode: language.code,
-                    translationId: 'generated'
+                    translationName: language.data.name.trim()
                 }
             });
         } catch (error) {
@@ -225,6 +223,7 @@ async function createProductTranslations(client: any, productId: string, transla
                 req: req,
                 payload: {
                     productId,
+                    productCode,
                     languageCode: language.code,
                     error: error instanceof Error ? error.message : String(error)
                 },
@@ -254,18 +253,6 @@ async function createProductRelationships(client: any, productId: string, data: 
                     'owner', // role_type
                     requestorUuid
                 ]);
-
-                await createAndPublishEvent({
-                    eventName: PRODUCT_CREATE_EVENTS.SUCCESS.eventName,
-                    req: req,
-                    payload: {
-                        productId,
-                        owner: data.owner,
-                        ownerUuid,
-                        relationship: 'product_user',
-                        roleType: 'owner'
-                    }
-                });
             } else {
                 throw new Error(`Owner user '${data.owner}' not found`);
             }
@@ -281,18 +268,6 @@ async function createProductRelationships(client: any, productId: string, data: 
                     'backup_owner', // role_type
                     requestorUuid
                 ]);
-
-                await createAndPublishEvent({
-                    eventName: PRODUCT_CREATE_EVENTS.SUCCESS.eventName,
-                    req: req,
-                    payload: {
-                        productId,
-                        backupOwner: data.backupOwner,
-                        backupOwnerUuid,
-                        relationship: 'product_user',
-                        roleType: 'backup_owner'
-                    }
-                });
             } else {
                 throw new Error(`Backup owner user '${data.backupOwner}' not found`);
             }
@@ -314,17 +289,6 @@ async function createProductRelationships(client: any, productId: string, data: 
                             'product_specialists', // role_type
                             requestorUuid
                         ]);
-
-                        await createAndPublishEvent({
-                            eventName: PRODUCT_CREATE_EVENTS.SUCCESS.eventName,
-                            req: req,
-                            payload: {
-                                productId,
-                                groupName: groupName,
-                                groupUuid,
-                                relationship: 'product_group'
-                            }
-                        });
                     } else {
                         throw new Error(`Specialists group '${groupName}' not found`);
                     }
@@ -357,20 +321,6 @@ async function createProductInDatabase(data: CreateProductRequest, requestorUuid
     try {
         await client.query('BEGIN');
 
-        // Create product in main table
-        createAndPublishEvent({
-            eventName: PRODUCT_CREATE_EVENTS.INSERTING_DATA.eventName,
-            req: req,
-            payload: {
-                productCode: data.productCode.trim(),
-                translationKey: data.translationKey.trim(),
-                canBeOption: data.canBeOption,
-                optionOnly: data.optionOnly,
-                isPublished: false, // Always false for new products
-                owner: data.owner
-            }
-        });
-
         const productResult = await client.query(queries.createProduct, [
             data.productCode.trim(),
             data.translationKey.trim(),
@@ -397,13 +347,12 @@ async function createProductInDatabase(data: CreateProductRequest, requestorUuid
             payload: {
                 productId,
                 productCode: createdProduct.product_code,
-                translationKey: createdProduct.translation_key,
-                createdBy: requestorUuid
+                translationKey: createdProduct.translation_key
             }
         });
 
         // Create translations for provided languages only
-        await createProductTranslations(client, productId, data.translations, requestorUuid, req);
+        await createProductTranslations(client, productId, createdProduct.product_code, data.translations, requestorUuid, req);
 
         // Create product-user and product-group relationships
         await createProductRelationships(client, productId, data, requestorUuid, req);
@@ -430,6 +379,7 @@ async function createProductInDatabase(data: CreateProductRequest, requestorUuid
             req: req,
             payload: {
                 productId: 'unknown',
+                productCode: data.productCode?.trim(),
                 error: errorMessage
             },
             errorData: errorMessage
@@ -438,6 +388,8 @@ async function createProductInDatabase(data: CreateProductRequest, requestorUuid
             eventName: PRODUCT_CREATE_EVENTS.DATABASE_ERROR.eventName,
             req: req,
             payload: {
+                productCode: data.productCode?.trim(),
+                translationKey: data.translationKey?.trim(),
                 error: errorMessage
             },
             errorData: errorMessage
@@ -469,17 +421,6 @@ export async function createProduct(req: Request): Promise<CreateProductResponse
 
         // Extract product data from request body
         const productData: CreateProductRequest = req.body;
-
-        createAndPublishEvent({
-            eventName: PRODUCT_CREATE_EVENTS.STARTED.eventName,
-            req: req,
-            payload: {
-                productCode: productData.productCode,
-                translationKey: productData.translationKey,
-                owner: productData.owner,
-                requestorUuid
-            }
-        });
 
         // Validate product data
         await validateCreateProductData(productData, req);

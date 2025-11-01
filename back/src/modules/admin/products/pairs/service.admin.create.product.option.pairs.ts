@@ -1,10 +1,7 @@
 /**
- * File: service.admin.create.product.option.pairs.ts
- * Version: 1.1.0
- * Description: Service for creating product-option pairs with transactional integrity.
- * Purpose: Inserts only new pairs; on conflict (existing), throws error with detailed payload.
- * 
- * Updated: Changed event names from 'products.pairs.*' to 'adminProducts.pairs.*' to match domain registry
+ * service.admin.create.product.option.pairs.ts - version 1.2.0
+ * Service for creating product-option pairs with transactional integrity.
+ * Inserts only new pairs; on conflict (existing), throws error with detailed payload.
  * 
  * Backend file - service.admin.create.product.option.pairs.ts
  */
@@ -56,6 +53,10 @@ export async function createProductOptionPairs(body: CreatePairsRequestBody, req
 
     await client.query('BEGIN')
 
+    // Get main product code
+    const mainProductResult = await client.query('SELECT product_code FROM app.products WHERE product_id = $1', [mainProductId])
+    const mainProductCode = mainProductResult.rows[0]?.product_code || null
+
     // Detect existing pairs to prevent conflicts
     const optionIds = pairs.map(p => p.optionProductId)
     const existing = await client.query(pairsQueries.checkExistingPairs, [mainProductId, optionIds])
@@ -63,14 +64,18 @@ export async function createProductOptionPairs(body: CreatePairsRequestBody, req
     const conflicting = optionIds.filter(id => existingSet.has(id))
     if (conflicting.length > 0) {
       const errorMessage = 'Conflict: pairs already exist for some option ids'
+      // Get option product codes
+      const conflictingProducts = await client.query('SELECT product_id, product_code FROM app.products WHERE product_id = ANY($1)', [conflicting])
+      const conflictingOptionCodes = conflictingProducts.rows.map(r => r.product_code)
+      
       await createAndPublishEvent({
         eventName: 'adminProducts.pairs.create.conflict',
         req: req,
         payload: {
           mainProductId,
+          mainProductCode,
           conflictingOptionIds: conflicting,
-          conflictCount: conflicting.length,
-          requestorId: requestorUuid
+          conflictingOptionCodes
         }
       })
       throw new Error(`${errorMessage}: ${conflicting.join(',')}`)
@@ -93,14 +98,19 @@ export async function createProductOptionPairs(body: CreatePairsRequestBody, req
     await client.query('COMMIT')
 
     const createdIds = optionIds
+    // Get created option codes
+    const createdProducts = await client.query('SELECT product_id, product_code FROM app.products WHERE product_id = ANY($1)', [createdIds])
+    const createdOptionCodes = createdProducts.rows.map(r => r.product_code)
+    
     await createAndPublishEvent({
       eventName: 'adminProducts.pairs.create.success',
       req: req,
       payload: {
         mainProductId,
+        mainProductCode,
         createdCount: createdIds.length,
         createdOptionIds: createdIds,
-        requestorId: requestorUuid
+        createdOptionCodes
       }
     })
 
@@ -113,8 +123,7 @@ export async function createProductOptionPairs(body: CreatePairsRequestBody, req
       payload: {
         mainProductId: body?.mainProductId,
         requestedCount: Array.isArray(body?.pairs) ? body.pairs.length : 0,
-        error: error instanceof Error ? error.message : String(error),
-        requestorId: getRequestorUuidFromReq(req)
+        error: error instanceof Error ? error.message : String(error)
       },
       errorData: error instanceof Error ? error.message : String(error)
     })

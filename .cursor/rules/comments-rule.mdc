@@ -3,10 +3,23 @@ alwaysApply: true
 ---
 All comments must be in English!
 Every file should start with a header comment including: 
-1. version number. if you update existing file, don't forget to increment file version number. Whenever possible try to increment micro part of the version unless this is really big update. Don't increment major version beyond one as it will be used in MVP version of product. We spare major version 2 for the second version which will come after MVP. 
+1. version number. if you update existing file, don't forget to increment file version number. Whenever possible try to increment micro part of the version unless this is really big update. Don't increment major version beyond 1 as it will be used in MVP version of product. We spare major version 2 for the second version which will come after MVP. 
 2. short explanation of the file purpose and logic
 3. mention it's a frontend or backend file and include filename (without path)
-The rest part of the file should have a comment for each major function
-Don't add date when the file was created
+4. don't bump file version on each edit during one chat. this will sometimes cause too many intermidiate versions nobody cares about. increase file version at first edit and it will be committed after all edits are done.  
+5. The rest part of the file should have a comment for each major function
+6. Don't add date when the file was created
+7. add changes in the header comment like in example below:
 
-не нужно при каждом редактировании повышать версию файла! редактирований может быть много. промежуточные версии будут теряться. повышаем только 1 раз при первом редактировании файла и эта версия потом уходит в commit.
+  Changes in v1.2.0:
+  - Added dynamic validation for owner, backupOwner, and specialistsGroups fields
+  - Validation rules loaded from public API (/api/public/validation-rules)
+  - In CREATE mode: all fields validated according to loaded rules
+  - In EDIT mode: only changed fields are validated
+  - Buttons disabled if validation rules not loaded or fields invalid
+  
+  Changes in v1.3.0:
+  - Added hasChanges tracking for UPDATE button state
+  - UPDATE button disabled when no changes detected
+  - Added glow effect for active UPDATE button
+  - Update service now sends only changed fields

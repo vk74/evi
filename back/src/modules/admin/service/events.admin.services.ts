@@ -19,7 +19,7 @@ export const EVENTS_ADMIN_SERVICES: EventCollection = {
   'service.fetch.validation.error': {
     eventName: 'adminServices.service.fetch.validation.error',
     source: 'admin-service',
-    eventType: 'system',
+    eventType: 'app',
     severity: 'error',
     eventMessage: 'Service fetch validation error occurred',
     version: '1.0.0'
@@ -29,7 +29,7 @@ export const EVENTS_ADMIN_SERVICES: EventCollection = {
   'service.fetch.not_found': {
     eventName: 'adminServices.service.fetch.not_found',
     source: 'admin-service',
-    eventType: 'system',
+    eventType: 'app',
     severity: 'debug',
     eventMessage: 'Service not found during fetch operation',
     version: '1.0.0'
@@ -39,7 +39,7 @@ export const EVENTS_ADMIN_SERVICES: EventCollection = {
   'service.fetch.data_error': {
     eventName: 'adminServices.service.fetch.data_error',
     source: 'admin-service',
-    eventType: 'system',
+    eventType: 'app',
     severity: 'error',
     eventMessage: 'Service data error occurred during fetch operation',
     version: '1.0.0'
@@ -49,7 +49,7 @@ export const EVENTS_ADMIN_SERVICES: EventCollection = {
   'service.fetch.success': {
     eventName: 'adminServices.service.fetch.success',
     source: 'admin-service',
-    eventType: 'system',
+    eventType: 'app',
     severity: 'debug',
     eventMessage: 'Service data fetched successfully',
     version: '1.0.0'
@@ -59,7 +59,7 @@ export const EVENTS_ADMIN_SERVICES: EventCollection = {
   'service.fetch.error': {
     eventName: 'adminServices.service.fetch.error',
     source: 'admin-service',
-    eventType: 'system',
+    eventType: 'app',
     severity: 'error',
     eventMessage: 'General error occurred during service fetch operation',
     version: '1.0.0'
@@ -69,7 +69,7 @@ export const EVENTS_ADMIN_SERVICES: EventCollection = {
   'service.fetch.controller.validation.error': {
     eventName: 'adminServices.service.fetch.controller.validation.error',
     source: 'admin-service',
-    eventType: 'system',
+    eventType: 'app',
     severity: 'error',
     eventMessage: 'Controller validation error for service fetch request',
     version: '1.0.0'
@@ -79,7 +79,7 @@ export const EVENTS_ADMIN_SERVICES: EventCollection = {
   'service.fetch.controller.fetch_error': {
     eventName: 'adminServices.service.fetch.controller.fetch_error',
     source: 'admin-service',
-    eventType: 'system',
+    eventType: 'app',
     severity: 'error',
     eventMessage: 'Controller fetch error for service data',
     version: '1.0.0'
@@ -89,7 +89,7 @@ export const EVENTS_ADMIN_SERVICES: EventCollection = {
   'service.fetch.controller.success': {
     eventName: 'adminServices.service.fetch.controller.success',
     source: 'admin-service',
-    eventType: 'system',
+    eventType: 'app',
     severity: 'debug',
     eventMessage: 'Controller successfully fetched service data',
     version: '1.0.0'
@@ -99,7 +99,7 @@ export const EVENTS_ADMIN_SERVICES: EventCollection = {
   'service.fetch.controller.unexpected_error': {
     eventName: 'adminServices.service.fetch.controller.unexpected_error',
     source: 'admin-service',
-    eventType: 'system',
+    eventType: 'app',
     severity: 'error',
     eventMessage: 'Unexpected error in service fetch controller',
     version: '1.0.0'
@@ -109,7 +109,7 @@ export const EVENTS_ADMIN_SERVICES: EventCollection = {
   'service.update.validation.error': {
     eventName: 'adminServices.service.update.validation.error',
     source: 'admin-service',
-    eventType: 'system',
+    eventType: 'app',
     severity: 'error',
     eventMessage: 'Service update validation error occurred',
     version: '1.0.0'
@@ -119,7 +119,7 @@ export const EVENTS_ADMIN_SERVICES: EventCollection = {
   'service.update.not_found': {
     eventName: 'adminServices.service.update.not_found',
     source: 'admin-service',
-    eventType: 'system',
+    eventType: 'app',
     severity: 'debug',
     eventMessage: 'Service not found during update operation',
     version: '1.0.0'
@@ -129,7 +129,7 @@ export const EVENTS_ADMIN_SERVICES: EventCollection = {
   'service.update.success': {
     eventName: 'adminServices.service.update.success',
     source: 'admin-service',
-    eventType: 'system',
+    eventType: 'app',
     severity: 'debug',
     eventMessage: 'Service updated successfully',
     version: '1.0.0'
@@ -139,7 +139,7 @@ export const EVENTS_ADMIN_SERVICES: EventCollection = {
   'service.update.database_error': {
     eventName: 'adminServices.service.update.database_error',
     source: 'admin-service',
-    eventType: 'system',
+    eventType: 'app',
     severity: 'error',
     eventMessage: 'Database error occurred during service update',
     version: '1.0.0'
@@ -149,7 +149,7 @@ export const EVENTS_ADMIN_SERVICES: EventCollection = {
   'service.delete.validation.error': {
     eventName: 'adminServices.service.delete.validation.error',
     source: 'admin-service',
-    eventType: 'system',
+    eventType: 'app',
     severity: 'error',
     eventMessage: 'Service delete validation error occurred',
     version: '1.0.0'
@@ -159,7 +159,7 @@ export const EVENTS_ADMIN_SERVICES: EventCollection = {
   'service.delete.validation.success': {
     eventName: 'adminServices.service.delete.validation.success',
     source: 'admin-service',
-    eventType: 'system',
+    eventType: 'app',
     severity: 'debug',
     eventMessage: 'Service delete validation successful',
     version: '1.0.0'
@@ -169,7 +169,7 @@ export const EVENTS_ADMIN_SERVICES: EventCollection = {
   'service.delete.not_found': {
     eventName: 'adminServices.service.delete.not_found',
     source: 'admin-service',
-    eventType: 'system',
+    eventType: 'app',
     severity: 'debug',
     eventMessage: 'Service not found during delete operation',
     version: '1.0.0'
@@ -179,7 +179,7 @@ export const EVENTS_ADMIN_SERVICES: EventCollection = {
   'service.delete.exists': {
     eventName: 'adminServices.service.delete.exists',
     source: 'admin-service',
-    eventType: 'system',
+    eventType: 'app',
     severity: 'debug',
     eventMessage: 'Service found during delete operation',
     version: '1.0.0'
@@ -189,7 +189,7 @@ export const EVENTS_ADMIN_SERVICES: EventCollection = {
   'service.delete.check_error': {
     eventName: 'adminServices.service.delete.check_error',
     source: 'admin-service',
-    eventType: 'system',
+    eventType: 'app',
     severity: 'error',
     eventMessage: 'Error occurred while checking service existence',
     version: '1.0.0'
@@ -199,7 +199,7 @@ export const EVENTS_ADMIN_SERVICES: EventCollection = {
   'service.delete.database_error': {
     eventName: 'adminServices.service.delete.database_error',
     source: 'admin-service',
-    eventType: 'system',
+    eventType: 'app',
     severity: 'error',
     eventMessage: 'Database error occurred during service delete',
     version: '1.0.0'
@@ -209,7 +209,7 @@ export const EVENTS_ADMIN_SERVICES: EventCollection = {
   'service.delete.success': {
     eventName: 'adminServices.service.delete.success',
     source: 'admin-service',
-    eventType: 'system',
+    eventType: 'app',
     severity: 'debug',
     eventMessage: 'Service deleted successfully',
     version: '1.0.0'
@@ -219,7 +219,7 @@ export const EVENTS_ADMIN_SERVICES: EventCollection = {
   'service.delete.partial_success': {
     eventName: 'adminServices.service.delete.partial_success',
     source: 'admin-service',
-    eventType: 'system',
+    eventType: 'app',
     severity: 'warning',
     eventMessage: 'Partial success during service delete operation',
     version: '1.0.0'
@@ -229,7 +229,7 @@ export const EVENTS_ADMIN_SERVICES: EventCollection = {
   'service.create.validation.error': {
     eventName: 'adminServices.service.create.validation.error',
     source: 'admin-service',
-    eventType: 'system',
+    eventType: 'app',
     severity: 'error',
     eventMessage: 'Service create validation error occurred',
     version: '1.0.0'
@@ -239,7 +239,7 @@ export const EVENTS_ADMIN_SERVICES: EventCollection = {
   'service.create.name_check_error': {
     eventName: 'adminServices.service.create.name_check_error',
     source: 'admin-service',
-    eventType: 'system',
+    eventType: 'app',
     severity: 'error',
     eventMessage: 'Error checking service name existence',
     version: '1.0.0'
@@ -249,7 +249,7 @@ export const EVENTS_ADMIN_SERVICES: EventCollection = {
   'service.create.user_role_created': {
     eventName: 'adminServices.service.create.user_role_created',
     source: 'admin-service',
-    eventType: 'system',
+    eventType: 'app',
     severity: 'debug',
     eventMessage: 'User role created for service',
     version: '1.0.0'
@@ -259,7 +259,7 @@ export const EVENTS_ADMIN_SERVICES: EventCollection = {
   'service.create.user_role_error': {
     eventName: 'adminServices.service.create.user_role_error',
     source: 'admin-service',
-    eventType: 'system',
+    eventType: 'app',
     severity: 'error',
     eventMessage: 'Error creating user role for service',
     version: '1.0.0'
@@ -269,7 +269,7 @@ export const EVENTS_ADMIN_SERVICES: EventCollection = {
   'service.create.group_role_created': {
     eventName: 'adminServices.service.create.group_role_created',
     source: 'admin-service',
-    eventType: 'system',
+    eventType: 'app',
     severity: 'debug',
     eventMessage: 'Group role created for service',
     version: '1.0.0'
@@ -279,7 +279,7 @@ export const EVENTS_ADMIN_SERVICES: EventCollection = {
   'service.create.group_role_error': {
     eventName: 'adminServices.service.create.group_role_error',
     source: 'admin-service',
-    eventType: 'system',
+    eventType: 'app',
     severity: 'error',
     eventMessage: 'Error creating group role for service',
     version: '1.0.0'
@@ -289,7 +289,7 @@ export const EVENTS_ADMIN_SERVICES: EventCollection = {
   'service.create.access_allowed_group_created': {
     eventName: 'adminServices.service.create.access_allowed_group_created',
     source: 'admin-service',
-    eventType: 'system',
+    eventType: 'app',
     severity: 'debug',
     eventMessage: 'Access allowed group created for service',
     version: '1.0.0'
@@ -299,7 +299,7 @@ export const EVENTS_ADMIN_SERVICES: EventCollection = {
   'service.create.access_allowed_group_error': {
     eventName: 'adminServices.service.create.access_allowed_group_error',
     source: 'admin-service',
-    eventType: 'system',
+    eventType: 'app',
     severity: 'error',
     eventMessage: 'Error creating access allowed group for service',
     version: '1.0.0'
@@ -309,7 +309,7 @@ export const EVENTS_ADMIN_SERVICES: EventCollection = {
   'service.create.access_denied_group_created': {
     eventName: 'adminServices.service.create.access_denied_group_created',
     source: 'admin-service',
-    eventType: 'system',
+    eventType: 'app',
     severity: 'debug',
     eventMessage: 'Access denied group created for service',
     version: '1.0.0'
@@ -319,7 +319,7 @@ export const EVENTS_ADMIN_SERVICES: EventCollection = {
   'service.create.access_denied_group_error': {
     eventName: 'adminServices.service.create.access_denied_group_error',
     source: 'admin-service',
-    eventType: 'system',
+    eventType: 'app',
     severity: 'error',
     eventMessage: 'Error creating access denied group for service',
     version: '1.0.0'
@@ -329,7 +329,7 @@ export const EVENTS_ADMIN_SERVICES: EventCollection = {
   'service.create.access_denied_user_created': {
     eventName: 'adminServices.service.create.access_denied_user_created',
     source: 'admin-service',
-    eventType: 'system',
+    eventType: 'app',
     severity: 'debug',
     eventMessage: 'Access denied user created for service',
     version: '1.0.0'
@@ -339,7 +339,7 @@ export const EVENTS_ADMIN_SERVICES: EventCollection = {
   'service.create.access_denied_user_error': {
     eventName: 'adminServices.service.create.access_denied_user_error',
     source: 'admin-service',
-    eventType: 'system',
+    eventType: 'app',
     severity: 'error',
     eventMessage: 'Error creating access denied user for service',
     version: '1.0.0'
@@ -349,7 +349,7 @@ export const EVENTS_ADMIN_SERVICES: EventCollection = {
   'service.create.inserting_data': {
     eventName: 'adminServices.service.create.inserting_data',
     source: 'admin-service',
-    eventType: 'system',
+    eventType: 'app',
     severity: 'debug',
     eventMessage: 'Inserting service with data',
     version: '1.0.0'
@@ -359,7 +359,7 @@ export const EVENTS_ADMIN_SERVICES: EventCollection = {
   'service.create.database_error': {
     eventName: 'adminServices.service.create.database_error',
     source: 'admin-service',
-    eventType: 'system',
+    eventType: 'app',
     severity: 'error',
     eventMessage: 'Database error creating service',
     version: '1.0.0'
@@ -369,7 +369,7 @@ export const EVENTS_ADMIN_SERVICES: EventCollection = {
   'service.create.success': {
     eventName: 'adminServices.service.create.success',
     source: 'admin-service',
-    eventType: 'system',
+    eventType: 'app',
     severity: 'info',
     eventMessage: 'Service created successfully',
     version: '1.0.0'
@@ -379,7 +379,7 @@ export const EVENTS_ADMIN_SERVICES: EventCollection = {
   'service.create.error': {
     eventName: 'adminServices.service.create.error',
     source: 'admin-service',
-    eventType: 'system',
+    eventType: 'app',
     severity: 'error',
     eventMessage: 'Error creating service',
     version: '1.0.0'
@@ -389,7 +389,7 @@ export const EVENTS_ADMIN_SERVICES: EventCollection = {
   'service.create.started': {
     eventName: 'adminServices.service.create.started',
     source: 'admin-service',
-    eventType: 'system',
+    eventType: 'app',
     severity: 'debug',
     eventMessage: 'Creating service',
     version: '1.0.0'
@@ -399,7 +399,7 @@ export const EVENTS_ADMIN_SERVICES: EventCollection = {
   'service.update.user_role_error': {
     eventName: 'adminServices.service.update.user_role_error',
     source: 'admin-service',
-    eventType: 'system',
+    eventType: 'app',
     severity: 'error',
     eventMessage: 'Error occurred while updating user role for service',
     version: '1.0.0'
@@ -409,7 +409,7 @@ export const EVENTS_ADMIN_SERVICES: EventCollection = {
   'service.update.group_role_error': {
     eventName: 'adminServices.service.update.group_role_error',
     source: 'admin-service',
-    eventType: 'system',
+    eventType: 'app',
     severity: 'error',
     eventMessage: 'Error occurred while updating group role for service',
     version: '1.0.0'
@@ -419,7 +419,7 @@ export const EVENTS_ADMIN_SERVICES: EventCollection = {
   'service.update.access_allowed_group_error': {
     eventName: 'adminServices.service.update.access_allowed_group_error',
     source: 'admin-service',
-    eventType: 'system',
+    eventType: 'app',
     severity: 'error',
     eventMessage: 'Error occurred while updating access allowed group for service',
     version: '1.0.0'
@@ -429,7 +429,7 @@ export const EVENTS_ADMIN_SERVICES: EventCollection = {
   'service.update.access_denied_group_error': {
     eventName: 'adminServices.service.update.access_denied_group_error',
     source: 'admin-service',
-    eventType: 'system',
+    eventType: 'app',
     severity: 'error',
     eventMessage: 'Error occurred while updating access denied group for service',
     version: '1.0.0'
@@ -439,7 +439,7 @@ export const EVENTS_ADMIN_SERVICES: EventCollection = {
   'service.update.access_denied_user_error': {
     eventName: 'adminServices.service.update.access_denied_user_error',
     source: 'admin-service',
-    eventType: 'system',
+    eventType: 'app',
     severity: 'error',
     eventMessage: 'Error occurred while updating access denied user for service',
     version: '1.0.0'
@@ -449,7 +449,7 @@ export const EVENTS_ADMIN_SERVICES: EventCollection = {
   'service.update.preferences.field_changed': {
     eventName: 'adminServices.service.update.preferences.field_changed',
     source: 'admin-service',
-    eventType: 'system',
+    eventType: 'app',
     severity: 'info',
     eventMessage: 'Service preferences field changed',
     version: '1.0.0'
@@ -459,7 +459,7 @@ export const EVENTS_ADMIN_SERVICES: EventCollection = {
   'service.sections.publish.update.validation.error': {
     eventName: 'adminServices.service.sections.publish.update.validation.error',
     source: 'admin-service',
-    eventType: 'system',
+    eventType: 'app',
     severity: 'error',
     eventMessage: 'Validation error during service sections publish update',
     version: '1.0.0'
@@ -467,7 +467,7 @@ export const EVENTS_ADMIN_SERVICES: EventCollection = {
   'service.sections.publish.update.not_found': {
     eventName: 'adminServices.service.sections.publish.update.not_found',
     source: 'admin-service',
-    eventType: 'system',
+    eventType: 'app',
     severity: 'debug',
     eventMessage: 'Service not found during sections publish update',
     version: '1.0.0'
@@ -475,7 +475,7 @@ export const EVENTS_ADMIN_SERVICES: EventCollection = {
   'service.sections.publish.update.database_error': {
     eventName: 'adminServices.service.sections.publish.update.database_error',
     source: 'admin-service',
-    eventType: 'system',
+    eventType: 'app',
     severity: 'error',
     eventMessage: 'Database error during sections publish update',
     version: '1.0.0'
@@ -483,7 +483,7 @@ export const EVENTS_ADMIN_SERVICES: EventCollection = {
   'service.sections.publish.update.changed': {
     eventName: 'adminServices.service.sections.publish.update.changed',
     source: 'admin-service',
-    eventType: 'system',
+    eventType: 'app',
     severity: 'debug',
     eventMessage: 'Sections publish mapping updated for service',
     version: '1.0.0'
@@ -491,7 +491,7 @@ export const EVENTS_ADMIN_SERVICES: EventCollection = {
   'service.sections.publish.update.resequenced': {
     eventName: 'adminServices.service.sections.publish.update.resequenced',
     source: 'admin-service',
-    eventType: 'system',
+    eventType: 'app',
     severity: 'debug',
     eventMessage: 'Resequenced service order in affected section',
     version: '1.0.0'

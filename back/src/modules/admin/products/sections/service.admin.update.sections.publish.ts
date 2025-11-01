@@ -1,7 +1,6 @@
 /**
- * service.admin.update.sections.publish.ts - version 1.0.3
+ * service.admin.update.sections.publish.ts - version 1.1.0
  * Service for updating (replacing) catalog sections publish bindings for a product in one transaction.
- * 
  * Applies full replacement of app.section_products mappings for given product_id;
  * supports unpublish (empty list). Handles database transactions and error management.
  * 
@@ -29,22 +28,6 @@ export async function updateSectionsPublish(req: Request): Promise<UpdateProduct
   const targetSectionIds = Array.isArray(body?.sectionIds) ? body.sectionIds : []
 
   try {
-    await createAndPublishEvent({
-      eventName: PRODUCT_CATALOG_PUBLICATION_UPDATE_EVENTS.STARTED.eventName,
-      req: req,
-      payload: { 
-        productId: productId || null,
-        targetSectionIdsCount: targetSectionIds.length,
-        targetSectionIds: targetSectionIds
-      }
-    });
-
-    await createAndPublishEvent({
-      eventName: PRODUCT_CATALOG_PUBLICATION_UPDATE_EVENTS.VALIDATION_STARTED.eventName,
-      req: req,
-      payload: { productId: productId || null }
-    });
-
     // Basic validation
     if (!productId || typeof productId !== 'string') {
       const err: ProductError = { code: 'INVALID_REQUEST', message: 'productId is required' }
@@ -58,16 +41,18 @@ export async function updateSectionsPublish(req: Request): Promise<UpdateProduct
       throw err
     }
 
-    // Check product exists
-    const productExists = await pgPool.query(queries.checkProductExists, [productId])
+    // Check product exists and get product code
+    const productExists = await pgPool.query('SELECT product_code FROM app.products WHERE product_id = $1', [productId])
     if (productExists.rowCount === 0) {
       const err: ProductError = { code: 'NOT_FOUND', message: 'Product not found' }
       throw err
     }
+    const productCode = productExists.rows[0].product_code
 
-    // Validate sections (if provided)
+    // Validate sections (if provided) and get section names
+    let allSectionsMap: Map<string, string> = new Map()
     if (targetSectionIds.length > 0) {
-      const sectionsRes = await pgPool.query(queries.checkSectionsExist, [targetSectionIds])
+      const sectionsRes = await pgPool.query('SELECT id, name FROM app.catalog_sections WHERE id = ANY($1)', [targetSectionIds])
       const existingSet = new Set<string>(sectionsRes.rows.map((r: any) => r.id))
       const invalid = targetSectionIds.filter(id => !existingSet.has(id))
       if (invalid.length > 0) {
@@ -78,13 +63,9 @@ export async function updateSectionsPublish(req: Request): Promise<UpdateProduct
         }
         throw err
       }
+      // Build map of section ids to names
+      allSectionsMap = new Map(sectionsRes.rows.map((r: any) => [r.id, r.name]))
     }
-
-    await createAndPublishEvent({
-      eventName: PRODUCT_CATALOG_PUBLICATION_UPDATE_EVENTS.DATABASE_UPDATE_STARTED.eventName,
-      req: req,
-      payload: { productId }
-    });
 
     const client = await pgPool.connect()
     try {
@@ -100,6 +81,10 @@ export async function updateSectionsPublish(req: Request): Promise<UpdateProduct
 
       // Remove mappings
       if (toRemove.length > 0) {
+        // Get section names for removed
+        const removedSectionsRes = await client.query('SELECT id, name FROM app.catalog_sections WHERE id = ANY($1)', [toRemove])
+        const removedSectionNames = removedSectionsRes.rows.map(r => r.name)
+
         for (const sectionId of toRemove) {
           await client.query(queries.deleteProductFromSection, [productId, sectionId])
         }
@@ -107,15 +92,19 @@ export async function updateSectionsPublish(req: Request): Promise<UpdateProduct
           eventName: PRODUCT_CATALOG_PUBLICATION_UPDATE_EVENTS.UNPUBLISHED_FROM_CATALOG.eventName,
           req: req,
           payload: { 
-            productId, 
+            productId,
+            productCode, 
             removedSectionsCount: toRemove.length,
-            removedSectionIds: toRemove
+            removedSectionIds: toRemove,
+            removedSectionNames
           }
         });
       }
 
       // Add mappings
       if (toAdd.length > 0) {
+        const addedSectionNames = toAdd.map(id => allSectionsMap.get(id) || '')
+
         for (const sectionId of toAdd) {
           await client.query(queries.insertSectionProduct, [sectionId, productId])
         }
@@ -123,9 +112,11 @@ export async function updateSectionsPublish(req: Request): Promise<UpdateProduct
           eventName: PRODUCT_CATALOG_PUBLICATION_UPDATE_EVENTS.PUBLISHED_TO_CATALOG.eventName,
           req: req,
           payload: { 
-            productId, 
+            productId,
+            productCode, 
             addedSectionsCount: toAdd.length,
-            addedSectionIds: toAdd
+            addedSectionIds: toAdd,
+            addedSectionNames
           }
         });
       }
@@ -135,14 +126,19 @@ export async function updateSectionsPublish(req: Request): Promise<UpdateProduct
 
       await client.query('COMMIT')
 
+      // Get final section count
+      const finalRes = await client.query('SELECT COUNT(*) as count FROM app.section_products WHERE product_id = $1', [productId])
+      const totalSectionsCount = parseInt(finalRes.rows[0].count)
+
       await createAndPublishEvent({
         eventName: PRODUCT_CATALOG_PUBLICATION_UPDATE_EVENTS.SUCCESS.eventName,
         req: req,
         payload: { 
-          productId, 
-          updatedCount: toAdd.length + toRemove.length,
+          productId,
+          productCode, 
           addedCount: toAdd.length,
-          removedCount: toRemove.length
+          removedCount: toRemove.length,
+          totalSectionsCount
         }
       });
 
@@ -158,11 +154,14 @@ export async function updateSectionsPublish(req: Request): Promise<UpdateProduct
       await client.query('ROLLBACK')
       const errorMessage = e instanceof Error ? e.message : 'Failed to update product sections publish';
       
+      const productCode = productId ? (await pgPool.query('SELECT product_code FROM app.products WHERE product_id = $1', [productId]).then(r => r.rows[0]?.product_code || null).catch(() => null)) : null
+
       await createAndPublishEvent({
         eventName: PRODUCT_CATALOG_PUBLICATION_UPDATE_EVENTS.ERROR.eventName,
         req: req,
         payload: { 
           productId: productId || null,
+          productCode,
           error: errorMessage
         },
         errorData: errorMessage
@@ -180,11 +179,14 @@ export async function updateSectionsPublish(req: Request): Promise<UpdateProduct
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : 'Unexpected error';
     
+    const productCode = productId ? (await pgPool.query('SELECT product_code FROM app.products WHERE product_id = $1', [productId]).then(r => r.rows[0]?.product_code || null).catch(() => null)) : null
+    
     await createAndPublishEvent({
       eventName: PRODUCT_CATALOG_PUBLICATION_UPDATE_EVENTS.ERROR.eventName,
       req: req,
       payload: { 
         productId: productId || null,
+        productCode,
         error: errorMessage
       },
       errorData: errorMessage
