@@ -1,5 +1,5 @@
 /**
- * service.admin.fetch.publishingsections.ts - version 1.0.2
+ * service.admin.fetch.publishingsections.ts - version 1.0.3
  * Service for fetching publishing sections from catalog for products.
  * 
  * Retrieves publishing sections data from app.catalog_sections table,
@@ -7,6 +7,9 @@
  * as selected if product is published in them.
  * 
  * Backend file - service.admin.fetch.publishingsections.ts
+  
+  Changes in v1.0.3:
+  - Removed is_public field from DbPublishingSection interface
  */
 
 import { Request } from 'express';
@@ -30,7 +33,6 @@ interface DbPublishingSection {
     name: string
     owner: string | null
     status: string | null
-    is_public: boolean
 }
 
 /**
@@ -54,8 +56,7 @@ async function resolveUuidsToNames(sections: DbPublishingSection[]): Promise<Cat
             id: section.id,
             name: section.name,
             owner: ownerName || 'Не указан',
-            status: section.status || 'Не указан',
-            is_public: section.is_public
+            status: section.status || 'Не указан'
         });
     }
 

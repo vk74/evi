@@ -1,12 +1,16 @@
 <!--
   File: ProductEditorCatalogPublication.vue
-  Version: 1.0.7
+  Version: 1.0.8
   Description: Component for product catalog publication management
   Purpose: Provides interface for managing product catalog publication
   Frontend file - ProductEditorCatalogPublication.vue
   Created: 2024-12-20
   Last Updated: 2024-12-20
-  Changes: Initial implementation based on ServiceEditorMapping.vue
+  
+  Changes in v1.0.8:
+  - Removed 'public' column from table
+  - Reordered columns: placed 'owner' after 'status'
+  - Renamed buttons: "publish" -> "publish to selected", "unpublish" -> "unpublish from selected"
 -->
 
 <script setup lang="ts">
@@ -117,9 +121,8 @@ const isSearchEnabled = computed(() =>
 const headers = computed<TableHeader[]>(() => [
   { title: t('admin.products.editor.catalogPublication.table.headers.selection'), key: 'selection', width: '40px', sortable: false },
   { title: t('admin.products.editor.catalogPublication.table.headers.section'), key: 'section', width: 'auto', sortable: true },
-  { title: t('admin.products.editor.catalogPublication.table.headers.owner'), key: 'owner', width: '150px', sortable: true },
-  { title: t('admin.products.editor.catalogPublication.table.headers.status'), key: 'status', width: '120px', sortable: true },
-  { title: t('admin.products.editor.catalogPublication.table.headers.public'), key: 'public', width: '100px', sortable: true }
+  { title: t('admin.products.editor.catalogPublication.table.headers.status'), key: 'status', width: '150px', sortable: true },
+  { title: t('admin.products.editor.catalogPublication.table.headers.owner'), key: 'owner', width: '150px', sortable: true }
 ])
 
 // Helper function for error handling
@@ -538,15 +541,6 @@ const handleRefresh = async () => {
               {{ item.status }}
             </v-chip>
           </template>
-
-          <template #[`item.public`]="{ item }">
-            <v-chip 
-              :color="item.is_public ? 'teal' : 'grey'" 
-              size="x-small"
-            >
-              {{ item.is_public ? t('admin.products.editor.catalogPublication.table.status.yes') : t('admin.products.editor.catalogPublication.table.status.no') }}
-            </v-chip>
-          </template>
         </v-data-table>
 
         <!-- Paginator component -->
@@ -593,7 +587,7 @@ const handleRefresh = async () => {
           
           <v-btn
             v-tooltip="{
-              text: t('admin.products.editor.catalogPublication.tooltips.publish'),
+              text: t('admin.products.editor.catalogPublication.tooltips.publishToSelected'),
               location: 'left',
               disabled: !hasNewSelections || isPublishing || isUnpublishing || isCancellingAll
             }"
@@ -605,12 +599,12 @@ const handleRefresh = async () => {
             :loading="isPublishing"
             @click="handlePublish"
           >
-            {{ t('admin.products.editor.catalogPublication.selectedElements.publish').toUpperCase() }}
+            {{ t('admin.products.editor.catalogPublication.selectedElements.publishToSelected').toUpperCase() }}
           </v-btn>
 
           <v-btn
             v-tooltip="{
-              text: t('admin.products.editor.catalogPublication.tooltips.unpublish'),
+              text: t('admin.products.editor.catalogPublication.tooltips.unpublishFromSelected'),
               location: 'left',
               disabled: !hasSelectionsToUnpublish || isPublishing || isUnpublishing || isCancellingAll
             }"
@@ -622,7 +616,7 @@ const handleRefresh = async () => {
             :loading="isUnpublishing"
             @click="handleUnpublish"
           >
-            {{ t('admin.products.editor.catalogPublication.selectedElements.unpublish').toUpperCase() }} ({{ sectionsToUnpublishCount }})
+            {{ t('admin.products.editor.catalogPublication.selectedElements.unpublishFromSelected').toUpperCase() }} ({{ sectionsToUnpublishCount }})
           </v-btn>
         </div>
       </div>
@@ -670,14 +664,6 @@ const handleRefresh = async () => {
   display: inline-block;
   word-break: break-word;
   flex-grow: 1;
-}
-
-.product-code {
-  /* Inherits from .info-value */
-}
-
-.product-name {
-  /* Inherits from .info-value */
 }
 
 /* Table styles */

@@ -1,11 +1,14 @@
 /**
- * queries.admin.products.ts - version 1.0.2
+ * queries.admin.products.ts - version 1.0.3
  * SQL queries for products administration operations.
  * 
  * Contains all SQL queries used by products admin module.
  * Queries are parameterized to prevent SQL injection.
  * 
  * Backend file - queries.admin.products.ts
+  
+  Changes in v1.0.3:
+  - Removed is_public field from fetchPublishingSections query
  */
 
 export const queries = {
@@ -443,8 +446,7 @@ export const queries = {
             cs.id,
             cs.name,
             cs.owner,
-            cs.status,
-            cs.is_public
+            cs.status
         FROM app.catalog_sections cs
         ORDER BY cs.name ASC
     `,

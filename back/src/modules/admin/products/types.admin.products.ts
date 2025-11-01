@@ -1,10 +1,13 @@
 /**
- * types.admin.products.ts - version 1.0.2
+ * types.admin.products.ts - version 1.0.3
  * Type definitions for products administration module.
  * 
  * Contains TypeScript interfaces and types for products admin functionality.
  * 
  * Backend file - types.admin.products.ts
+  
+  Changes in v1.0.3:
+  - Removed is_public field from CatalogSection interface
  */
 
 // Product type enum
@@ -279,7 +282,6 @@ export interface CatalogSection {
     name: string
     owner: string
     status: string
-    is_public: boolean
     selected?: boolean // For API responses indicating current selection
 }
 

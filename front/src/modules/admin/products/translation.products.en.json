@@ -212,13 +212,8 @@
             "headers": {
               "selection": "selection",
               "section": "section",
-              "owner": "owner",
-              "status": "status",
-              "public": "public"
-            },
-            "status": {
-              "yes": "yes",
-              "no": "no"
+              "status": "section status",
+              "owner": "section owner"
             }
           },
         "actions": {
@@ -228,12 +223,12 @@
         },
           "selectedElements": {
             "title": "selected elements",
-            "publish": "publish",
-            "unpublish": "unpublish"
+            "publishToSelected": "publish to selected",
+            "unpublishFromSelected": "unpublish selected"
           },
           "tooltips": {
-            "publish": "publish product in selected catalog sections",
-            "unpublish": "unpublish product from selected catalog sections"
+            "publishToSelected": "publish product to selected catalog sections",
+            "unpublishFromSelected": "unpublish product from selected catalog sections"
           },
         "messages": {
           "publishSuccess": "product published successfully in {{count}} section(s)",

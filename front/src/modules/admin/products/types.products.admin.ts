@@ -1,8 +1,11 @@
 /**
  * @file types.products.admin.ts
  * Type definitions for products administration module.
- * Version: 1.0.1
+ * Version: 1.0.2
  * Frontend types for products admin functionality.
+  
+  Changes in v1.0.2:
+  - Removed is_public field from CatalogSection interface
  */
 
 // Product translation data interface
@@ -315,7 +318,6 @@ export interface CatalogSection {
   name: string
   owner: string
   status: string
-  is_public: boolean
   selected?: boolean // For API responses indicating current selection
 }
 
