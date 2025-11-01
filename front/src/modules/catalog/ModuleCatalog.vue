@@ -1,8 +1,12 @@
 <!--
-version: 1.3.0
+version: 1.4.0
 Frontend file for catalog module.
 Catalog interface with sections, filters, and service/product cards.
 File: ModuleCatalog.vue
+
+Changes in v1.4.0:
+- Changed sort filter icon from PhCaretUpDown to PhFunnel (matching PriceLists.vue style)
+- Added active filter highlighting with base-color when sortBy !== 'name'
 -->
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue';
@@ -12,7 +16,7 @@ import CatalogServiceCard from './services/CatalogServiceCard.vue';
 import ServiceDetails from './services/ServiceDetails.vue'
 import CatalogProductCard from './products/CatalogProductCard.vue';
 import ProductDetails from './products/ProductDetails.vue'
-import { PhMagnifyingGlass, PhEmpty, PhX, PhCaretUpDown, PhCaretDown, PhCaretRight, PhWarningCircle, PhFolderOpen, PhFolder } from '@phosphor-icons/vue'
+import { PhMagnifyingGlass, PhEmpty, PhX, PhFunnel, PhCaretDown, PhCaretRight, PhWarningCircle, PhFolderOpen, PhFolder } from '@phosphor-icons/vue'
 import { 
   fetchCatalogSections, 
   isCatalogLoading, 
@@ -147,6 +151,9 @@ const sortOptionsI18n = computed(() => [
   { title: t('catalog.options.sortByStatus'), value: 'status' },
   { title: t('catalog.options.sortByOwner'), value: 'owner' }
 ])
+
+// Check if sort filter is active (for highlighting)
+const isSortFilterActive = computed(() => sortBy.value !== 'name')
 
 // ==================== HELPER FUNCTIONS ====================
 // Future helpers can be added here
@@ -383,10 +390,12 @@ onMounted(async () => {
             variant="outlined"
             density="comfortable"
             hide-details
+            color="teal"
+            :base-color="isSortFilterActive ? 'teal' : undefined"
             style="min-width: 150px;"
           >
             <template #append-inner>
-              <PhCaretUpDown class="dropdown-icon" />
+              <PhFunnel class="dropdown-icon" />
             </template>
           </v-select>
         </div>
