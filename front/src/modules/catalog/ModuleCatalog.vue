@@ -535,25 +535,13 @@ onMounted(async () => {
   position: relative;
 }
 
-.sections-app-bar {
-  flex-shrink: 0;
-}
-
-.options-bar {
-  flex-shrink: 0;
-}
-
 .workspace-container {
-  flex-grow: 1;
-  background-color: #fafafa;
-  overflow-y: auto;
+  background-color: white;
 }
-
-
 
 /* Sections app bar styling */
 .sections-app-bar {
-  background-color: rgb(242, 242, 242) !important;
+  background-color: rgb(243, 243, 243) !important;
 }
 
 .nav-section {
@@ -623,22 +611,5 @@ onMounted(async () => {
   transform: translateY(-50%);
   pointer-events: none;
 }
-
-/* Workspace styling */
-.workspace-container {
-  background-color: white;
-}
-
-/* Filter radio group styling */
-.filter-radio-group :deep(.v-radio) {
-  margin-right: 16px;
-}
-
-.filter-radio-group :deep(.v-radio:last-child) {
-  margin-right: 0;
-}
-
-
-
 
 </style>
