@@ -1,5 +1,5 @@
 <!--
-version: 1.5.0
+version: 1.6.0
 Frontend file for product details view component.
 Displays extended info and placeholders for product options.
 File: ProductDetails.vue
@@ -8,6 +8,13 @@ Changes in v1.5.0:
 - Moved product name from header to "main" block
 - Removed separate header section with product name and divider
 - Replaced "Main" block title with product name (black, bold, larger font size)
+
+Changes in v1.6.0:
+- Added sections (description and main options) with tab-like navigation
+- Moved long_description from description block to "description" section
+- Moved product options table to "main options" section
+- Removed "Product options" header
+- Removed long_description from description block (short_description remains)
 -->
 <script setup lang="ts">
 import { ref, onMounted, watch, computed } from 'vue'
@@ -34,6 +41,7 @@ const loading = ref(false)
 const error = ref<string | null>(null)
 const options = ref<CatalogProductOption[]>([])
 const optionsTableRef = ref<any>(null)
+const selectedSection = ref<'description' | 'main-options'>('description')
 
 // i18n
 const { t } = useI18n()
@@ -130,15 +138,9 @@ watch(() => props.productId, () => {
           </div>
  
           <div class="detail-block">
-            <div class="block-title">
-              {{ t('catalog.productDetails.description') }}
-            </div>
             <div class="block-body">
-              <div v-if="details?.short_description" class="mb-2">
-                {{ t('catalog.productDetails.shortDescription') }}: {{ details.short_description }}
-              </div>
-              <div v-if="details?.long_description">
-                {{ t('catalog.productDetails.longDescription') }}: {{ details.long_description }}
+              <div v-if="details?.short_description">
+                {{ details.short_description }}
               </div>
             </div>
           </div>
@@ -168,7 +170,7 @@ watch(() => props.productId, () => {
             <div class="detail-block control-col">
               <div class="block-body">
                 <div class="d-flex align-center" style="gap: 8px;">
-                  <span class="me-2">{{ t('catalog.productDetails.priceLabel') }}</span>
+                  <span class="me-2">{{ t('catalog.productDetails.unitPrice') }}</span>
                   <v-text-field
                     model-value="1 000 €"
                     density="compact"
@@ -234,10 +236,47 @@ watch(() => props.productId, () => {
           </div>
         </div>
 
-        <!-- Product options area -->
-        <div class="product-options mt-6">
-          <div class="text-subtitle-1 mb-2">{{ t('catalog.productDetails.productOptions') }}</div>
-          <ProductOptionsTable ref="optionsTableRef" :items="options" />
+        <!-- Sections area -->
+        <div class="product-sections mt-6">
+          <div class="sections-nav">
+            <v-btn
+              :class="[
+                'section-btn',
+                { 'section-active': selectedSection === 'description' }
+              ]"
+              variant="text"
+              @click="selectedSection = 'description'"
+            >
+              {{ t('catalog.productDetails.description') }}
+            </v-btn>
+            <v-btn
+              :class="[
+                'section-btn',
+                { 'section-active': selectedSection === 'main-options' }
+              ]"
+              variant="text"
+              @click="selectedSection = 'main-options'"
+            >
+              {{ t('catalog.productDetails.mainOptions') }}
+            </v-btn>
+          </div>
+          
+          <div class="section-content">
+            <!-- Description section -->
+            <div v-if="selectedSection === 'description'">
+              <div v-if="details?.long_description">
+                {{ details.long_description }}
+              </div>
+              <div v-else class="text-grey">
+                {{ t('catalog.productDetails.noLongDescription') }}
+              </div>
+            </div>
+            
+            <!-- Main options section -->
+            <div v-if="selectedSection === 'main-options'">
+              <ProductOptionsTable ref="optionsTableRef" :items="options" />
+            </div>
+          </div>
         </div>
       </div>
 
@@ -248,14 +287,26 @@ watch(() => props.productId, () => {
           <div class="pd-sidebar-top">
             <div class="detail-block">
               <div class="block-body d-flex align-center" style="gap: 8px;">
-                <span class="me-2">{{ t('catalog.productDetails.total') }}</span>
-                <v-text-field model-value="1 000 €" density="compact" variant="outlined" readonly hide-details style="max-width: 120px" />
+                <span class="me-2">{{ t('catalog.productDetails.products') }}</span>
+                <v-text-field model-value="1 000 €" density="compact" variant="outlined" readonly hide-details class="sidebar-price-field" />
+              </div>
+            </div>
+            <div class="detail-block">
+              <div class="block-body d-flex align-center" style="gap: 8px;">
+                <span class="me-2">{{ t('catalog.productDetails.optionsTotal') }}</span>
+                <v-text-field model-value="0 €" density="compact" variant="outlined" readonly hide-details class="sidebar-price-field" />
               </div>
             </div>
             <div class="detail-block">
               <div class="block-body d-flex align-center" style="gap: 8px;">
                 <span class="me-2">{{ t('catalog.productDetails.vat') }}</span>
-                <v-text-field model-value="0 €" density="compact" variant="outlined" readonly hide-details style="max-width: 120px" />
+                <v-text-field model-value="0 €" density="compact" variant="outlined" readonly hide-details class="sidebar-price-field" />
+              </div>
+            </div>
+            <div class="detail-block">
+              <div class="block-body d-flex align-center" style="gap: 8px;">
+                <span class="me-2">{{ t('catalog.productDetails.total') }}</span>
+                <v-text-field model-value="1 000 000 000 $" density="compact" variant="outlined" readonly hide-details class="sidebar-price-field" />
               </div>
             </div>
           </div>
@@ -269,13 +320,13 @@ watch(() => props.productId, () => {
               <template #prepend>
                 <PhSquare :size="16" color="grey" />
               </template>
-              {{ t('catalog.productDetails.clearSelections') }}
+              {{ t('catalog.productDetails.clearOptions') }}
             </v-btn>
             <v-btn block variant="outlined" color="teal" :prepend-icon="undefined">
               <template #prepend>
                 <PhMicrosoftExcelLogo :size="20" color="teal" />
               </template>
-              {{ t('catalog.productDetails.create') }}
+              {{ t('catalog.productDetails.createEstimation') }}
             </v-btn>
           </div>
         </div>
@@ -292,20 +343,21 @@ watch(() => props.productId, () => {
   border: 1px solid rgba(59, 130, 246, 0.2);
   border-radius: 8px;
 }
-.main-with-sidebar { display: grid; grid-template-columns: 1fr 20%; gap: 16px; }
-.pd-sidebar { display: flex; border-left: thin solid rgba(var(--v-border-color), var(--v-border-opacity)); padding-left: 16px; }
-.pd-sidebar-content { flex: 1; display: flex; flex-direction: column; }
+.main-with-sidebar { display: grid; grid-template-columns: 1fr calc(20% + 20px); gap: 16px; }
+.pd-sidebar { display: flex; border-left: thin solid rgba(var(--v-border-color), var(--v-border-opacity)); padding-left: 16px; padding-right: 16px; }
+.pd-sidebar-content { flex: 1; display: flex; flex-direction: column; justify-content: space-between; min-height: 100%; }
 .pd-sidebar-top { display: flex; flex-direction: column; gap: 12px; }
 .sidebar-divider { margin-top: 16px; }
-.pd-sidebar-actions { margin-top: 16px; display: flex; flex-direction: column; }
+.pd-sidebar-actions { display: flex; flex-direction: column; margin-top: auto; }
+.sidebar-price-field { width: 125px; flex-shrink: 0; }
 .top-grid { display: grid; grid-template-columns: minmax(260px, 360px) 1fr; gap: 16px; }
 .photo-placeholder { width: 100%; }
 .photo-box { 
   background: #fff; 
-  border: 2px dashed rgba(59, 130, 246, 0.4);
+  border: 2px dashed rgba(0, 150, 136, 0.4);
   border-radius: 8px;
   display: flex; align-items: center; justify-content: center;
-  color: rgba(59, 130, 246, 0.8);
+  color: #009688;
   aspect-ratio: 4 / 3;
 }
 .photo-text { font-weight: 500; }
@@ -313,8 +365,38 @@ watch(() => props.productId, () => {
 .details-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; }
 .detail-block { background: #fff; border: 1px solid rgba(59, 130, 246, 0.1); border-radius: 8px; padding: 12px; }
 .block-title { font-weight: 600; margin-bottom: 8px; color: rgb(59, 130, 246); }
-.product-name-title { font-weight: 700; margin-bottom: 8px; color: #000; font-size: 1.1rem; }
-.product-options { background: #fff; border: 1px solid rgba(59, 130, 246, 0.1); border-radius: 8px; padding: 12px; }
+.product-name-title { font-weight: 700; margin-bottom: 8px; color: #009688; font-size: 1.43rem; }
+.product-sections { background: #fff; border: 1px solid rgba(59, 130, 246, 0.1); border-radius: 8px; padding: 12px; }
+.sections-nav {
+  display: flex;
+  align-items: flex-start;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+  margin-bottom: 16px;
+}
+.section-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 40px;
+  text-transform: none;
+  font-weight: 400;
+  border-radius: 0;
+  color: rgba(0, 0, 0, 0.6) !important;
+  background-color: transparent !important;
+  transition: background-color 0.15s ease;
+  padding: 0 16px;
+}
+.section-active {
+  border-bottom: 2px solid #009688;
+  font-weight: 500;
+  color: rgba(0, 0, 0, 0.87) !important;
+}
+.section-btn:hover {
+  background-color: rgba(0, 0, 0, 0.04) !important;
+}
+.section-content {
+  min-height: 200px;
+}
  
 .inline-row {
   display: grid;
