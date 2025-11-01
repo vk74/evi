@@ -1,10 +1,12 @@
 /**
  * File: service.admin.read.product.option.pairs.ts
- * Version: 1.1.0
+ * Version: 1.1.1
  * Description: Service for reading existing product-option pairs for a main product.
  * Purpose: Returns pairs for provided option ids, without fallbacks.
  * 
- * Updated: Changed event names from 'products.pairs.*' to 'adminProducts.pairs.*' to match domain registry
+ * Updated v1.1.1: Removed unused adminProducts.pairs.read.started event call
+ * 
+ * Updated v1.1.0: Changed event names from 'products.pairs.*' to 'adminProducts.pairs.*' to match domain registry
  * 
  * Backend file - service.admin.read.product.option.pairs.ts
  */
@@ -28,16 +30,6 @@ export async function readProductOptionPairs(body: ReadPairsRequestBody, req: Re
     const { mainProductId } = body || ({} as ReadPairsRequestBody)
     const mode: ReadPairsMode = body?.mode || 'records'
     const optionProductIds: string[] | undefined = body?.optionProductIds
-
-    await createAndPublishEvent({
-      eventName: 'adminProducts.pairs.read.started',
-      req: req,
-      payload: {
-        mainProductId,
-        optionIdsCount: Array.isArray(optionProductIds) ? optionProductIds.length : 0,
-        requestorId: requestorUuid
-      }
-    })
 
     if (!mainProductId) {
       throw new Error('Invalid request body')

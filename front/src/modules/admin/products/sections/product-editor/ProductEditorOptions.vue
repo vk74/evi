@@ -1,9 +1,15 @@
 <!--
   File: ProductEditorOptions.vue
-  Version: 1.6.0
+  Version: 1.7.0
   Description: Component for product options management
   Purpose: Provides interface for managing product options pairing
   Frontend file - ProductEditorOptions.vue
+  
+  Changes in v1.7.0:
+  - Renamed button from PAIR EDITOR to PAIR SELECTED
+  - Made option_code, name, type, published, and owner columns sortable with backend sorting
+  - Added frontend filters for type, paired, and published status
+  - Filters displayed in row above table with PhFunnel icons
 -->
 
 <script setup lang="ts">
@@ -23,7 +29,8 @@ import {
   PhMagnifyingGlass,
   PhX,
   PhCheckSquare,
-  PhSquare
+  PhSquare,
+  PhFunnel
 } from '@phosphor-icons/vue'
 
 const ProductPairEditor = defineAsyncComponent(() => import(/* webpackChunkName: "ui-product-pair-editor" */ '@/core/ui/modals/product-pair-editor/ProductPairEditor.vue'))
@@ -66,6 +73,11 @@ const itemsPerPage = ref<ItemsPerPageOption>(25)
 const searchQuery = ref<string>('')
 const isSearching = ref<boolean>(false)
 
+// Filter parameters
+const typeFilter = ref<string>('all')
+const pairedFilter = ref<string>('all')
+const publishedFilter = ref<string>('all')
+
 // Sort tracking
 const sortBy = ref<string | null>(null)
 const sortDesc = ref<boolean>(false)
@@ -105,6 +117,44 @@ const isSearchEnabled = computed(() =>
   searchQuery.value.length >= 2 || searchQuery.value.length === 0
 )
 
+// Filter active indicators
+const isTypeFilterActive = computed(() => typeFilter.value !== 'all')
+const isPairedFilterActive = computed(() => pairedFilter.value !== 'all')
+const isPublishedFilterActive = computed(() => publishedFilter.value !== 'all')
+
+// Filtered options
+const filteredOptions = computed(() => {
+  let filtered = options.value || []
+
+  // Filter by type
+  if (typeFilter.value !== 'all') {
+    if (typeFilter.value === 'product') {
+      filtered = filtered.filter(item => !item.can_be_option && !item.option_only)
+    } else if (typeFilter.value === 'productAndOption') {
+      filtered = filtered.filter(item => item.can_be_option && !item.option_only)
+    } else if (typeFilter.value === 'option') {
+      filtered = filtered.filter(item => item.option_only)
+    }
+  }
+
+  // Filter by paired
+  if (pairedFilter.value !== 'all') {
+    const isPaired = pairedFilter.value === 'yes'
+    filtered = filtered.filter(item => {
+      const paired = pairedExistsMap.value[item.product_id] ?? pairedOptionIds.value.has(item.product_id)
+      return isPaired ? paired : !paired
+    })
+  }
+
+  // Filter by published
+  if (publishedFilter.value !== 'all') {
+    const isPublished = publishedFilter.value === 'yes'
+    filtered = filtered.filter(item => item.is_published === isPublished)
+  }
+
+  return filtered
+})
+
 // Table headers
 const headers = computed<TableHeader[]>(() => [
   { title: t('admin.products.table.headers.selection'), key: 'selection', width: '40px', sortable: false },
@@ -112,8 +162,8 @@ const headers = computed<TableHeader[]>(() => [
   { title: t('admin.products.table.headers.optionName'), key: 'name', width: '250px', sortable: true },
   { title: t('admin.products.table.headers.type'), key: 'type', width: '120px', sortable: true },
   { title: t('admin.products.table.headers.paired') || 'paired', key: 'paired', width: '100px', sortable: false },
-  { title: t('admin.products.table.headers.published'), key: 'published', width: '100px', sortable: false },
-  { title: t('admin.products.table.headers.owner'), key: 'owner', width: '165px', sortable: false }
+  { title: t('admin.products.table.headers.published'), key: 'published', width: '100px', sortable: true },
+  { title: t('admin.products.table.headers.owner'), key: 'owner', width: '165px', sortable: true }
 ])
 
 // Search functionality
@@ -171,6 +221,49 @@ const performSearch = async () => {
   } finally {
     isSearching.value = false
     isLoading.value = false
+  }
+}
+
+// Type for v-data-table sort options
+type VDataTableSortByItem = { key: string; order: 'asc' | 'desc' }
+
+// Handler for v-data-table options changes
+const updateOptionsAndFetch = async (options: { page?: number, itemsPerPage?: number, sortBy?: Readonly<VDataTableSortByItem[]> }) => {
+  let needsFetch = false
+
+  // Handle page changes
+  if (options.page !== undefined && page.value !== options.page) {
+    page.value = options.page
+    needsFetch = true
+  }
+
+  // Handle items per page changes
+  if (options.itemsPerPage !== undefined && itemsPerPage.value !== options.itemsPerPage) {
+    itemsPerPage.value = options.itemsPerPage as ItemsPerPageOption
+    page.value = 1
+    needsFetch = true
+  }
+
+  // Handle sorting changes
+  if (options.sortBy) {
+    if (options.sortBy.length > 0) {
+      const sortItem = options.sortBy[0]
+      if (sortBy.value !== sortItem.key || sortDesc.value !== (sortItem.order === 'desc')) {
+        sortBy.value = sortItem.key
+        sortDesc.value = sortItem.order === 'desc'
+        page.value = 1
+        needsFetch = true
+      }
+    } else if (sortBy.value !== null) {
+      sortBy.value = null
+      sortDesc.value = false
+      page.value = 1
+      needsFetch = true
+    }
+  }
+
+  if (needsFetch) {
+    await performSearch()
   }
 }
 
@@ -404,8 +497,79 @@ onMounted(async () => {
               </v-text-field>
             </div>
 
-            <!-- Active options counter -->
+            <!-- Filters row -->
             <div class="d-flex align-center justify-space-between mb-2">
+              <div class="d-flex align-center">
+                <!-- Type filter -->
+                <div class="d-flex align-center mr-4">
+                  <v-select
+                    v-model="typeFilter"
+                    density="compact"
+                    variant="outlined"
+                    label="Type"
+                    :items="[
+                      { title: t('admin.products.filters.all'), value: 'all' },
+                      { title: t('admin.products.editor.basic.type.product'), value: 'product' },
+                      { title: t('admin.products.editor.basic.type.productAndOption'), value: 'productAndOption' },
+                      { title: t('admin.products.editor.basic.type.option'), value: 'option' }
+                    ]"
+                    color="teal"
+                    :base-color="isTypeFilterActive ? 'teal' : undefined"
+                    hide-details
+                    style="min-width: 180px;"
+                  >
+                    <template #append-inner>
+                      <PhFunnel class="dropdown-icon" />
+                    </template>
+                  </v-select>
+                </div>
+
+                <!-- Paired filter -->
+                <div class="d-flex align-center mr-4">
+                  <v-select
+                    v-model="pairedFilter"
+                    density="compact"
+                    variant="outlined"
+                    label="Paired"
+                    :items="[
+                      { title: t('admin.products.filters.all'), value: 'all' },
+                      { title: t('admin.products.table.status.yes'), value: 'yes' },
+                      { title: t('admin.products.table.status.no'), value: 'no' }
+                    ]"
+                    color="teal"
+                    :base-color="isPairedFilterActive ? 'teal' : undefined"
+                    hide-details
+                    style="min-width: 150px;"
+                  >
+                    <template #append-inner>
+                      <PhFunnel class="dropdown-icon" />
+                    </template>
+                  </v-select>
+                </div>
+
+                <!-- Published filter -->
+                <div class="d-flex align-center mr-4">
+                  <v-select
+                    v-model="publishedFilter"
+                    density="compact"
+                    variant="outlined"
+                    label="Published"
+                    :items="[
+                      { title: t('admin.products.filters.all'), value: 'all' },
+                      { title: t('admin.products.table.status.yes'), value: 'yes' },
+                      { title: t('admin.products.table.status.no'), value: 'no' }
+                    ]"
+                    color="teal"
+                    :base-color="isPublishedFilterActive ? 'teal' : undefined"
+                    hide-details
+                    style="min-width: 150px;"
+                  >
+                    <template #append-inner>
+                      <PhFunnel class="dropdown-icon" />
+                    </template>
+                  </v-select>
+                </div>
+              </div>
               <div class="text-body-2">{{ t('admin.products.editor.actions.activeOptionsCount', { count: activeOptionsCount }) }}</div>
             </div>
 
@@ -420,12 +584,15 @@ onMounted(async () => {
               :page="page"
               :items-per-page="itemsPerPage"
               :headers="headers"
-              :items="options"
+              :items="filteredOptions"
               :loading="isLoading"
-              :items-length="totalItemsCount"
+              :items-length="filteredOptions.length"
               :items-per-page-options="[25, 50, 100]"
               class="options-table"
+              multi-sort
+              :sort-by="sortBy ? [{ key: sortBy, order: sortDesc ? 'desc' : 'asc' }] : []"
               hide-default-footer
+              @update:options="updateOptionsAndFetch"
             >
               <template #[`item.paired`]="{ item }">
                 <v-chip :color="(pairedExistsMap[item.product_id] ?? pairedOptionIds.has(item.product_id)) ? 'teal' : 'grey'" size="small">
@@ -482,7 +649,7 @@ onMounted(async () => {
               <Paginator
                 :page="page"
                 :items-per-page="itemsPerPage"
-                :total-items="totalItemsCount"
+                :total-items="filteredOptions.length"
                 :items-per-page-options="[25, 50, 100]"
                 :show-records-info="true"
                 @update:page="goToPage($event)"
@@ -560,7 +727,7 @@ onMounted(async () => {
             {{ t('admin.products.actions.selectedItems').toLowerCase() }}
           </h3>
 
-          <!-- Pair Selector button -->
+          <!-- Pair Selected button -->
           <v-btn
             block
             color="teal"
@@ -569,7 +736,7 @@ onMounted(async () => {
             class="mb-3"
             @click="pairOptions"
           >
-            {{ t('admin.products.actions.pairSelector').toUpperCase() }}
+            {{ t('admin.products.actions.pairSelected').toUpperCase() }}
           </v-btn>
 
           <!-- Unpair button -->
@@ -643,6 +810,15 @@ onMounted(async () => {
   display: inline-block;
   word-break: break-word;
   flex-grow: 1;
+}
+
+/* Dropdown icon styling */
+.dropdown-icon {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  pointer-events: none;
 }
 
 /* Table styles */
