@@ -555,7 +555,7 @@ onMounted(async () => {
   width: 100%;
   background-color: white;
   border-bottom: 1px solid rgba(0, 0, 0, 0.06);
-  margin-top: -10px;
+  margin-top: -20px;
 }
 
 /* Sections app bar styling */
