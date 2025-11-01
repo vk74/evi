@@ -1,5 +1,5 @@
 <!--
-version: 1.4.0
+version: 1.5.2
 Frontend file for catalog module.
 Catalog interface with sections, filters, and service/product cards.
 File: ModuleCatalog.vue
@@ -7,6 +7,23 @@ File: ModuleCatalog.vue
 Changes in v1.4.0:
 - Changed sort filter icon from PhCaretUpDown to PhFunnel (matching PriceLists.vue style)
 - Added active filter highlighting with base-color when sortBy !== 'name'
+
+Changes in v1.4.1:
+- Fixed section buttons alignment to top edge (height: 48px)
+- Added explicit height and alignment styles for section buttons
+
+Changes in v1.5.0:
+- Removed options bar
+- Moved search, filters, and sort controls to main workspace area
+- Removed handleOptionsBarClick handler and related styles
+
+Changes in v1.5.1:
+- Moved catalog-controls outside v-container to utilize full width
+- Added border-bottom to catalog-controls for visual separation
+
+Changes in v1.5.2:
+- Reduced vertical padding in catalog-controls from py-4 to py-2
+- Added margin-top: -10px to catalog-controls to reduce spacing from sections bar
 -->
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue';
@@ -255,14 +272,6 @@ function handleSectionHeaderClick() {
   }
 }
 
-function handleOptionsBarClick() {
-  // Collapse service or product card when clicking on options bar
-  if (selectedServiceId.value || selectedProductId.value) {
-    resetCatalogView();
-    selectedProductId.value = null;
-  }
-}
-
 // ==================== LIFECYCLE ====================
 onMounted(async () => {
   // Ensure sections (and default selectedSectionId) are loaded before fetching services and products
@@ -314,96 +323,94 @@ onMounted(async () => {
       </div>
     </v-app-bar>
 
-    <!-- ==================== OPTIONS BAR ==================== -->
-    <v-app-bar
-      color="white"
-      elevation="0"
-      class="options-bar"
-      @click="handleOptionsBarClick"
-    >
-      <div class="d-flex align-center justify-space-between w-100 px-4">
-        <!-- Левая часть: поиск и фильтры -->
-        <div class="d-flex align-center">
-          <!-- Search -->
-          <v-text-field
-            v-model="searchQuery"
-            :label="t('catalog.options.searchPlaceholder')"
-            :prepend-inner-icon="undefined"
-            variant="outlined"
-            density="comfortable"
-            hide-details
-            style="min-width: 300px;"
-            color="teal"
-          >
-            <template #prepend-inner>
-              <PhMagnifyingGlass />
-            </template>
-            <template #append-inner>
-              <div
-                v-if="(searchQuery || '').length > 0"
-                class="d-flex align-center"
-                style="cursor: pointer"
-                @click="clearSearch"
-              >
-                <PhX />
-              </div>
-            </template>
-          </v-text-field>
-          
-          <!-- Filter Radio Buttons -->
-          <v-btn-toggle
-            v-model="filterType"
-            mandatory
-            color="teal"
-            class="filter-toggle-group ml-4"
-            density="compact"
-          >
-            <v-btn
-              value="all"
-              variant="outlined"
-              size="small"
-            >
-              {{ t('catalog.options.filterAll') }}
-            </v-btn>
-            <v-btn
-              value="services"
-              variant="outlined"
-              size="small"
-            >
-              {{ t('catalog.options.filterServices') }}
-            </v-btn>
-            <v-btn
-              value="products"
-              variant="outlined"
-              size="small"
-            >
-              {{ t('catalog.options.filterProducts') }}
-            </v-btn>
-          </v-btn-toggle>
-        </div>
-
-        <!-- Правая часть: Sort Controls и кнопка переключения -->
-        <div class="d-flex align-center">
-          <v-select
-            v-model="sortBy"
-            :items="sortOptionsI18n"
-            variant="outlined"
-            density="comfortable"
-            hide-details
-            color="teal"
-            :base-color="isSortFilterActive ? 'teal' : undefined"
-            style="min-width: 150px;"
-          >
-            <template #append-inner>
-              <PhFunnel class="dropdown-icon" />
-            </template>
-          </v-select>
-        </div>
-      </div>
-    </v-app-bar>
-
     <!-- ==================== WORKSPACE AREA ==================== -->
     <div class="workspace-container" @click="handleWorkspaceClick">
+      <!-- Search and Filter Controls -->
+      <div 
+        v-if="!selectedServiceId && !selectedProductId && !isCatalogLoading() && sections.length > 0"
+        class="catalog-controls"
+      >
+        <div class="d-flex align-center justify-space-between px-4 py-2">
+          <!-- Левая часть: поиск и фильтры -->
+          <div class="d-flex align-center">
+            <!-- Search -->
+            <v-text-field
+              v-model="searchQuery"
+              :label="t('catalog.options.searchPlaceholder')"
+              :prepend-inner-icon="undefined"
+              variant="outlined"
+              density="comfortable"
+              hide-details
+              style="min-width: 300px;"
+              color="teal"
+            >
+              <template #prepend-inner>
+                <PhMagnifyingGlass />
+              </template>
+              <template #append-inner>
+                <div
+                  v-if="(searchQuery || '').length > 0"
+                  class="d-flex align-center"
+                  style="cursor: pointer"
+                  @click="clearSearch"
+                >
+                  <PhX />
+                </div>
+              </template>
+            </v-text-field>
+            
+            <!-- Filter Radio Buttons -->
+            <v-btn-toggle
+              v-model="filterType"
+              mandatory
+              color="teal"
+              class="filter-toggle-group ml-4"
+              density="compact"
+            >
+              <v-btn
+                value="all"
+                variant="outlined"
+                size="small"
+              >
+                {{ t('catalog.options.filterAll') }}
+              </v-btn>
+              <v-btn
+                value="services"
+                variant="outlined"
+                size="small"
+              >
+                {{ t('catalog.options.filterServices') }}
+              </v-btn>
+              <v-btn
+                value="products"
+                variant="outlined"
+                size="small"
+              >
+                {{ t('catalog.options.filterProducts') }}
+              </v-btn>
+            </v-btn-toggle>
+          </div>
+
+          <!-- Правая часть: Sort Controls -->
+          <div class="d-flex align-center">
+            <v-select
+              v-model="sortBy"
+              :items="sortOptionsI18n"
+              variant="outlined"
+              density="comfortable"
+              hide-details
+              color="teal"
+              :base-color="isSortFilterActive ? 'teal' : undefined"
+              style="min-width: 150px;"
+            >
+              <template #append-inner>
+                <PhFunnel class="dropdown-icon" />
+              </template>
+            </v-select>
+          </div>
+        </div>
+      </div>
+
       <v-container class="py-6">
         <!-- Service details view -->
         <div v-if="selectedServiceId">
@@ -472,11 +479,6 @@ onMounted(async () => {
 
           <!-- Content when sections are loaded -->
           <div v-else-if="!isCatalogLoading() && sections.length > 0">
-            <!-- Results Info -->
-            <div class="d-flex justify-space-between align-center mb-4">
-              <!-- Removed services found count and section name duplication -->
-            </div>
-
             <!-- Services Grid (show when filter is 'all' or 'services') -->
             <v-row
               v-if="(filterType === 'all' || filterType === 'services') && filteredServices.length > 0"
@@ -548,21 +550,39 @@ onMounted(async () => {
   background-color: white;
 }
 
+/* Catalog controls - full width search and filters */
+.catalog-controls {
+  width: 100%;
+  background-color: white;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+  margin-top: -10px;
+}
+
 /* Sections app bar styling */
 .sections-app-bar {
   background-color: rgb(243, 243, 243) !important;
+  height: 40px;
+}
+
+/* Override Vuetify v-app-bar flex alignment to align content to top */
+:deep(.sections-app-bar .v-toolbar__content) {
+  align-items: flex-start !important;
 }
 
 .nav-section {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   margin-left: 15px;
 }
 
 .section-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 40px;
   text-transform: none;
   font-weight: 400;
-  height: 64px;
+
   border-radius: 0;
   color: rgba(0, 0, 0, 0.6) !important;
   background-color: var(--section-bg, transparent) !important;
@@ -588,28 +608,6 @@ onMounted(async () => {
 /* Override Vuetify default colors for app bar */
 :deep(.sections-app-bar .v-btn) {
   color: rgba(0, 0, 0, 0.6) !important;
-}
-
-:deep(.sections-app-bar .v-btn:hover) {
-  color: rgba(0, 0, 0, 0.87) !important;
-}
-
-:deep(.sections-app-bar .section-active) {
-  color: rgba(0, 0, 0, 0.87) !important;
-  border-bottom: 2px solid #009688 !important;
-}
-
-/* Ensure proper styling for active section */
-:deep(.sections-app-bar .v-btn.section-active) {
-  color: rgba(0, 0, 0, 0.87) !important;
-  border-bottom: 2px solid #009688 !important;
-  font-weight: 500 !important;
-}
-
-/* Options bar styling */
-.options-bar {
-  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
-  position: relative;
 }
 
 /* Dropdown icon positioning */
