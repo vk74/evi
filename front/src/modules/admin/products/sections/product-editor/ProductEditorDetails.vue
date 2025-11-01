@@ -1,6 +1,6 @@
 <!--
   File: ProductEditorDetails.vue
-  Version: 1.3.0
+  Version: 1.3.1
   Description: Component for product details form and actions
   Purpose: Provides interface for creating and editing product details with dynamic validation
   Frontend file - ProductEditorDetails.vue
@@ -17,6 +17,10 @@
   - UPDATE button disabled when no changes detected
   - Added glow effect for active UPDATE button
   - Update service now sends only changed fields
+  
+  Changes in v1.3.1:
+  - Replaced static glow effect with dynamic animation for UPDATE button
+  - Animation matches the style used in UserEditorDetails component
 -->
 
 <script setup lang="ts">
@@ -1415,13 +1419,20 @@ onMounted(async () => {
   text-align: center;
 }
 
-/* Glow effect for active UPDATE button */
+/* Update button glow animation for unsaved changes */
 .btn-glow-active {
-  box-shadow: 0 0 10px rgba(0, 128, 128, 0.5), 0 0 20px rgba(0, 128, 128, 0.3) !important;
-  transition: box-shadow 0.3s ease;
+  animation: soft-glow 2s ease-in-out infinite;
+  box-shadow: 0 0 8px rgba(20, 184, 166, 0.3);
 }
 
-.btn-glow-active:hover {
-  box-shadow: 0 0 15px rgba(0, 128, 128, 0.7), 0 0 25px rgba(0, 128, 128, 0.5) !important;
+@keyframes soft-glow {
+  0%, 100% {
+    box-shadow: 0 0 8px rgba(20, 184, 166, 0.3);
+    transform: scale(1);
+  }
+  50% {
+    box-shadow: 0 0 16px rgba(20, 184, 166, 0.5);
+    transform: scale(1.01);
+  }
 }
 </style>
