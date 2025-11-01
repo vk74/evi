@@ -27,13 +27,8 @@ import {
   searchQuery,
   sortBy,
   sortDirection,
-  optionsBarMode,
-  isOptionsBarVisible,
   sortDirections,
-  toggleOptionsBarMode,
-  optionsBarChevronIcon,
   clearSearch,
-  setHoveringTriggerArea,
   selectedServiceId,
   setSelectedServiceId,
   resetCatalogView
@@ -261,15 +256,6 @@ function handleOptionsBarClick() {
   }
 }
 
-// ==================== HOVER TRIGGER AREA ====================
-const onTriggerAreaEnter = () => {
-  setHoveringTriggerArea(true);
-};
-
-const onTriggerAreaLeave = () => {
-  setHoveringTriggerArea(false);
-};
-
 // ==================== LIFECYCLE ====================
 onMounted(async () => {
   // Ensure sections (and default selectedSectionId) are loaded before fetching services and products
@@ -321,22 +307,11 @@ onMounted(async () => {
       </div>
     </v-app-bar>
 
-    <!-- ==================== TRIGGER AREA FOR AUTO MODE ==================== -->
-    <div
-      v-if="optionsBarMode === 'auto'"
-      class="options-bar-trigger-area"
-      @mouseenter="onTriggerAreaEnter"
-      @mouseleave="onTriggerAreaLeave"
-    />
-
     <!-- ==================== OPTIONS BAR ==================== -->
     <v-app-bar
-      v-if="isOptionsBarVisible"
       color="white"
       elevation="0"
       class="options-bar"
-      @mouseenter="onTriggerAreaEnter"
-      @mouseleave="onTriggerAreaLeave"
       @click="handleOptionsBarClick"
     >
       <div class="d-flex align-center justify-space-between w-100 px-4">
@@ -408,28 +383,12 @@ onMounted(async () => {
             variant="outlined"
             density="comfortable"
             hide-details
-            style="min-width: 150px; margin-right: 48px;"
+            style="min-width: 150px;"
           >
             <template #append-inner>
               <PhCaretUpDown class="dropdown-icon" />
             </template>
           </v-select>
-          
-          <!-- Options bar toggle control area -->
-          <div
-            class="options-bar-control-area"
-            @click="toggleOptionsBarMode"
-          >
-            <v-btn
-              variant="text"
-              :icon="undefined"
-              size="small"
-              class="options-bar-toggle-btn"
-              color="grey-darken-1"
-            >
-              <component :is="optionsBarChevronIcon" />
-            </v-btn>
-          </div>
         </div>
       </div>
     </v-app-bar>
@@ -656,18 +615,6 @@ onMounted(async () => {
   position: relative;
 }
 
-/* Trigger area for auto mode */
-.options-bar-trigger-area {
-  position: absolute;
-  top: 64px; /* After sections app bar */
-  left: 0;
-  right: 0;
-  height: 8px;
-  z-index: 1000;
-  background: transparent;
-}
-
-/* Options bar control area styles - аналогично drawer control area в App.vue */
 /* Dropdown icon positioning */
 .dropdown-icon {
   position: absolute;
@@ -675,68 +622,6 @@ onMounted(async () => {
   top: 50%;
   transform: translateY(-50%);
   pointer-events: none;
-}
-
-.options-bar-control-area {
-  position: relative;
-  height: 48px;
-  cursor: pointer;
-  transition: background-color 0.2s ease;
-}
-
-.options-bar-control-area:hover {
-  background-color: rgba(38, 166, 154, 0.08) !important;
-}
-
-/* Options bar toggle button - позиционирование справа */
-.options-bar-toggle-btn {
-  position: absolute;
-  right: -7px; /* Позиционирование справа */
-  bottom: 2px;
-  opacity: 0.6;
-  transition: opacity 0.2s ease;
-  background: transparent !important;
-  box-shadow: none !important;
-  border: none !important;
-}
-
-.options-bar-toggle-btn:hover {
-  opacity: 1;
-  background: transparent !important;
-  box-shadow: none !important;
-  border: none !important;
-}
-
-.options-bar-toggle-btn:active,
-.options-bar-toggle-btn:focus {
-  background: transparent !important;
-  box-shadow: none !important;
-  border: none !important;
-}
-
-.options-bar-toggle-btn :deep(.v-btn__content) {
-  background: transparent !important;
-}
-
-.options-bar-toggle-btn :deep(.v-btn__overlay) {
-  display: none !important;
-}
-
-.options-bar-toggle-btn :deep(.v-btn__prepend),
-.options-bar-toggle-btn :deep(.v-btn__append) {
-  background: transparent !important;
-}
-
-.options-bar-toggle-btn :deep(.v-btn__loader) {
-  background: transparent !important;
-}
-
-.options-bar-toggle-btn :deep(.v-btn__underlay) {
-  display: none !important;
-}
-
-.options-bar-toggle-btn :deep(.v-ripple__container) {
-  display: none !important;
 }
 
 /* Workspace styling */
