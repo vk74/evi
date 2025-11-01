@@ -1,6 +1,6 @@
 <!--
   File: ProductEditorCatalogPublication.vue
-  Version: 1.0.9
+  Version: 1.1.0
   Description: Component for product catalog publication management
   Purpose: Provides interface for managing product catalog publication
   Frontend file - ProductEditorCatalogPublication.vue
@@ -16,6 +16,10 @@
   - Added 'published' column after 'status' column
   - Published column displays yes/no chips (teal/gray) showing actual publication status from DB
   - Published field represents DB state at load time, separate from selected checkbox state
+  
+  Changes in v1.1.0:
+  - Added filters for section status and published below search field
+  - Filters use PhFunnel icon and active state highlighting
 -->
 
 <script setup lang="ts">
@@ -28,7 +32,8 @@ import {
   PhX,
   PhCheckSquare,
   PhSquare,
-  PhArrowClockwise
+  PhArrowClockwise,
+  PhFunnel
 } from '@phosphor-icons/vue'
 import Paginator from '@/core/ui/paginator/Paginator.vue'
 import type { CatalogSection } from '../../types.products.admin'
@@ -65,6 +70,10 @@ const page = ref<number>(1)
 const itemsPerPage = ref<ItemsPerPageOption>(25)
 const searchQuery = ref<string>('')
 const isSearching = ref<boolean>(false)
+
+// Filter parameters
+const statusFilter = ref<string>('all')
+const publishedFilter = ref<string>('all')
 
 // Sort tracking
 const sortBy = ref<string | null>(null)
@@ -121,6 +130,21 @@ const sectionsToUnpublishCount = computed(() => {
 const isSearchEnabled = computed(() => 
   searchQuery.value.length >= 2 || searchQuery.value.length === 0
 )
+
+// Filter active indicators
+const isStatusFilterActive = computed(() => statusFilter.value !== 'all')
+const isPublishedFilterActive = computed(() => publishedFilter.value !== 'all')
+
+// Get unique statuses from sections for filter dropdown
+const availableStatuses = computed(() => {
+  const statuses = new Set<string>()
+  sections.value.forEach(section => {
+    if (section.status) {
+      statuses.add(section.status)
+    }
+  })
+  return Array.from(statuses).sort()
+})
 
 // Table headers
 const headers = computed<TableHeader[]>(() => [
@@ -272,6 +296,27 @@ const filteredSections = computed(() => {
     result = result.filter(section =>
       section.name.toLowerCase().includes(searchQuery.value.toLowerCase())
     )
+  }
+
+  // Apply status filter
+  if (statusFilter.value !== 'all') {
+    const statusLower = statusFilter.value.toLowerCase()
+    result = result.filter(section => {
+      const sectionStatus = section.status?.toLowerCase() || ''
+      return sectionStatus === statusLower
+    })
+  }
+
+  // Apply published filter
+  if (publishedFilter.value !== 'all') {
+    const isPublished = publishedFilter.value === 'yes'
+    result = result.filter(section => {
+      if (isPublished) {
+        return section.published === true
+      } else {
+        return section.published !== true
+      }
+    })
   }
 
   // Apply sorting
@@ -503,6 +548,57 @@ const handleRefresh = async () => {
           </v-text-field>
         </div>
 
+        <!-- Filters row -->
+        <div class="d-flex align-center justify-space-between mb-2 px-4">
+          <div class="d-flex align-center">
+            <!-- Section status filter -->
+            <div class="d-flex align-center mr-4">
+              <v-select
+                v-model="statusFilter"
+                density="compact"
+                variant="outlined"
+                :label="t('admin.products.editor.catalogPublication.filters.status')"
+                :items="[
+                  { title: t('admin.products.editor.catalogPublication.filters.all'), value: 'all' },
+                  ...availableStatuses.map(status => ({ title: status, value: status }))
+                ]"
+                color="teal"
+                :base-color="isStatusFilterActive ? 'teal' : undefined"
+                hide-details
+                style="min-width: 180px;"
+              >
+                <template #append-inner>
+                  <PhFunnel class="dropdown-icon" />
+                </template>
+              </v-select>
+            </div>
+
+            <!-- Published filter -->
+            <div class="d-flex align-center mr-4">
+              <v-select
+                v-model="publishedFilter"
+                density="compact"
+                variant="outlined"
+                :label="t('admin.products.editor.catalogPublication.filters.published')"
+                :items="[
+                  { title: t('admin.products.editor.catalogPublication.filters.all'), value: 'all' },
+                  { title: t('admin.products.editor.catalogPublication.table.status.yes'), value: 'yes' },
+                  { title: t('admin.products.editor.catalogPublication.table.status.no'), value: 'no' }
+                ]"
+                color="teal"
+                :base-color="isPublishedFilterActive ? 'teal' : undefined"
+                hide-details
+                style="min-width: 150px;"
+              >
+                <template #append-inner>
+                  <PhFunnel class="dropdown-icon" />
+                </template>
+              </v-select>
+            </div>
+          </div>
+          <div class="text-body-2"></div>
+        </div>
+
         <v-data-table
           :page="page"
           :items-per-page="itemsPerPage"
@@ -650,6 +746,15 @@ const handleRefresh = async () => {
 /* Product info section styles */
 .product-info-section {
   padding: 16px;
+}
+
+/* Dropdown icon styling */
+.dropdown-icon {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  pointer-events: none;
 }
 
 .info-row-inline {

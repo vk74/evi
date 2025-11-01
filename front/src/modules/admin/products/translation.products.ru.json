@@ -208,6 +208,11 @@
             "placeholder": "поиск секций каталога...",
             "minChars": "введите минимум 2 символа"
           },
+          "filters": {
+            "status": "статус секции",
+            "published": "опубликовано",
+            "all": "все"
+          },
           "table": {
             "headers": {
               "selection": "выбор",

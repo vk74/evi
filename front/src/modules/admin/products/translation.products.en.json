@@ -208,6 +208,11 @@
             "placeholder": "search catalog sections...",
             "minChars": "enter at least 2 characters"
           },
+          "filters": {
+            "status": "section status",
+            "published": "published",
+            "all": "all"
+          },
           "table": {
             "headers": {
               "selection": "selection",
