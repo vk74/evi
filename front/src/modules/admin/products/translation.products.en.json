@@ -213,7 +213,12 @@
               "selection": "selection",
               "section": "section",
               "status": "section status",
+              "published": "published",
               "owner": "section owner"
+            },
+            "status": {
+              "yes": "yes",
+              "no": "no"
             }
           },
         "actions": {

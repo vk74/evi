@@ -1,6 +1,6 @@
 <!--
   File: ProductEditorCatalogPublication.vue
-  Version: 1.0.8
+  Version: 1.0.9
   Description: Component for product catalog publication management
   Purpose: Provides interface for managing product catalog publication
   Frontend file - ProductEditorCatalogPublication.vue
@@ -11,6 +11,11 @@
   - Removed 'public' column from table
   - Reordered columns: placed 'owner' after 'status'
   - Renamed buttons: "publish" -> "publish to selected", "unpublish" -> "unpublish from selected"
+  
+  Changes in v1.0.9:
+  - Added 'published' column after 'status' column
+  - Published column displays yes/no chips (teal/gray) showing actual publication status from DB
+  - Published field represents DB state at load time, separate from selected checkbox state
 -->
 
 <script setup lang="ts">
@@ -122,7 +127,8 @@ const headers = computed<TableHeader[]>(() => [
   { title: t('admin.products.editor.catalogPublication.table.headers.selection'), key: 'selection', width: '40px', sortable: false },
   { title: t('admin.products.editor.catalogPublication.table.headers.section'), key: 'section', width: 'auto', sortable: true },
   { title: t('admin.products.editor.catalogPublication.table.headers.status'), key: 'status', width: '150px', sortable: true },
-  { title: t('admin.products.editor.catalogPublication.table.headers.owner'), key: 'owner', width: '150px', sortable: true }
+  { title: t('admin.products.editor.catalogPublication.table.headers.owner'), key: 'owner', width: '150px', sortable: true },
+  { title: t('admin.products.editor.catalogPublication.table.headers.published'), key: 'published', width: '120px', sortable: true }
 ])
 
 // Helper function for error handling
@@ -529,16 +535,27 @@ const handleRefresh = async () => {
             <span>{{ item.name }}</span>
           </template>
 
-          <template #[`item.owner`]="{ item }">
-            <span>{{ item.owner }}</span>
-          </template>
-
           <template #[`item.status`]="{ item }">
             <v-chip 
               :color="isSectionStatusActive(item.status) ? 'teal' : 'grey'" 
               size="x-small"
+              class="status-chip"
             >
               {{ item.status }}
+            </v-chip>
+          </template>
+
+          <template #[`item.owner`]="{ item }">
+            <span>{{ item.owner }}</span>
+          </template>
+
+          <template #[`item.published`]="{ item }">
+            <v-chip 
+              :color="item.published ? 'teal' : 'grey'" 
+              size="x-small"
+              class="status-chip"
+            >
+              {{ item.published ? t('admin.products.editor.catalogPublication.table.status.yes') : t('admin.products.editor.catalogPublication.table.status.no') }}
             </v-chip>
           </template>
         </v-data-table>
@@ -733,5 +750,13 @@ const handleRefresh = async () => {
   left: 0;
   right: 0;
   border-top: thin solid rgba(var(--v-border-color), var(--v-border-opacity));
+}
+
+/* Status chip styling */
+.status-chip {
+  font-size: 0.9em !important;
+  padding: 0 9px !important;
+  min-height: 22px !important;
+  height: 22px !important;
 }
 </style>

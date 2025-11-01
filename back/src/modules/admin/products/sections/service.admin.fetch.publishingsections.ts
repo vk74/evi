@@ -1,5 +1,5 @@
 /**
- * service.admin.fetch.publishingsections.ts - version 1.0.3
+ * service.admin.fetch.publishingsections.ts - version 1.0.4
  * Service for fetching publishing sections from catalog for products.
  * 
  * Retrieves publishing sections data from app.catalog_sections table,
@@ -10,6 +10,10 @@
   
   Changes in v1.0.3:
   - Removed is_public field from DbPublishingSection interface
+  
+  Changes in v1.0.4:
+  - Added published field to sections based on app.section_products table
+  - published represents actual DB state at load time, separate from selected field
  */
 
 import { Request } from 'express';
@@ -88,7 +92,7 @@ export async function fetchPublishingSections(req: Request): Promise<FetchPublis
         // Resolve UUIDs to usernames/groupnames
         let resolvedSections = await resolveUuidsToNames(result.rows);
 
-        // If productId is provided, mark selected sections
+        // If productId is provided, mark selected sections and set published status
         if (productId) {
             // Validate product exists
             const exists = await pool.query(queries.checkProductExists, [productId]);
@@ -101,14 +105,16 @@ export async function fetchPublishingSections(req: Request): Promise<FetchPublis
                 throw productError;
             }
 
-            // Fetch current mappings for the product
+            // Fetch current mappings for the product from app.section_products
             const currentRes = await pool.query(queries.fetchProductSectionIds, [productId]);
-            const selectedSet = new Set<string>(currentRes.rows.map((r: any) => r.section_id));
+            const publishedSet = new Set<string>(currentRes.rows.map((r: any) => r.section_id));
 
-            // Add selected flag
+            // Add selected and published flags
+            // published represents actual DB state, selected represents user's selection (initially same)
             resolvedSections = resolvedSections.map((s) => ({
                 ...s,
-                selected: selectedSet.has(s.id)
+                published: publishedSet.has(s.id),
+                selected: publishedSet.has(s.id)
             }));
         }
 
