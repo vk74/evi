@@ -1,5 +1,5 @@
 /**
- * service.admin.update.product.ts - version 1.2.0
+ * service.admin.update.product.ts - version 1.3.0
  * Service for updating products operations.
  * 
  * Functionality:
@@ -9,6 +9,7 @@
  * - Updates product in database with translations
  * - Handles data transformation and business logic
  * - Manages database interactions and error handling
+ * - Tracks changes for informative event payloads
  * 
  * Data flow:
  * 1. Receive request object with product data
@@ -19,6 +20,15 @@
  * 6. Update translations for all languages
  * 7. Update relationships (owners, groups)
  * 8. Return formatted response
+ * 
+ * Changes in v1.3.0:
+ * - Enhanced event payloads with detailed change information
+ * - updateMainProductData now returns changes with old/new values
+ * - updateProductTranslations now returns changed languages and fields
+ * - updateProductOwners now returns owner changes with old/new values
+ * - updateProductGroups now returns added/removed/all arrays
+ * - Events published only when actual changes are detected
+ * - Payload includes productCode and detailed change information for audit
  */
 
 import { Request } from 'express';
@@ -320,6 +330,7 @@ async function updateProductPreferences(
  * @param data - Update data
  * @param updatedBy - User ID who is updating
  * @param req - Express request object
+ * @returns Object with changes or null if no changes
  */
 async function updateMainProductData(
     client: any,
@@ -327,12 +338,56 @@ async function updateMainProductData(
     data: UpdateProductRequest,
     updatedBy: string,
     req: Request
-): Promise<void> {
+): Promise<{ changes: Record<string, { old: any, new: any }> } | null> {
+    // Get current values from database
+    const currentResult = await client.query(
+        'SELECT product_code, translation_key, can_be_option, option_only FROM app.products WHERE product_id = $1',
+        [productId]
+    );
+    
+    if (currentResult.rows.length === 0) {
+        return null;
+    }
+    
+    const current = currentResult.rows[0];
+    const changes: Record<string, { old: any, new: any }> = {};
+    
+    // Compare and collect changes
+    if (data.productCode !== undefined && data.productCode !== current.product_code) {
+        changes.productCode = {
+            old: current.product_code,
+            new: data.productCode
+        };
+    }
+    if (data.translationKey !== undefined && data.translationKey !== current.translation_key) {
+        changes.translationKey = {
+            old: current.translation_key,
+            new: data.translationKey
+        };
+    }
+    if (data.canBeOption !== undefined && data.canBeOption !== current.can_be_option) {
+        changes.canBeOption = {
+            old: current.can_be_option,
+            new: data.canBeOption
+        };
+    }
+    if (data.optionOnly !== undefined && data.optionOnly !== current.option_only) {
+        changes.optionOnly = {
+            old: current.option_only,
+            new: data.optionOnly
+        };
+    }
+    
+    // If no changes, return null
+    if (Object.keys(changes).length === 0) {
+        return null;
+    }
+    
+    // Build dynamic update query
     const updateFields: string[] = [];
     const updateValues: any[] = [];
     let paramIndex = 1;
 
-    // Build dynamic update query
     if (data.productCode !== undefined) {
         updateFields.push(`product_code = $${paramIndex++}`);
         updateValues.push(data.productCode);
@@ -356,15 +411,15 @@ async function updateMainProductData(
     updateValues.push(updatedBy);
     updateFields.push(`updated_at = CURRENT_TIMESTAMP`);
 
-    if (updateFields.length > 2) { // More than just updated_by and updated_at
-        const query = `
-            UPDATE app.products 
-            SET ${updateFields.join(', ')}
-            WHERE product_id = $${paramIndex}
-        `;
-        updateValues.push(productId);
-        await client.query(query, updateValues);
-    }
+    const query = `
+        UPDATE app.products 
+        SET ${updateFields.join(', ')}
+        WHERE product_id = $${paramIndex}
+    `;
+    updateValues.push(productId);
+    await client.query(query, updateValues);
+    
+    return { changes };
 }
 
 /**
@@ -373,15 +428,98 @@ async function updateMainProductData(
  * @param productId - Product ID
  * @param translations - Translation data
  * @param updatedBy - User ID who is updating
+ * @returns Object with languageCodes and fieldsChanged or null if no changes
  */
 async function updateProductTranslations(
     client: any,
     productId: string,
     translations: any,
     updatedBy: string
-): Promise<void> {
+): Promise<{ languageCodes: string[], fieldsChanged: string[] } | null> {
+    // Get current translations from database
+    const currentTranslationsResult = await client.query(
+        'SELECT language_code, name, short_desc, long_desc, tech_specs, area_specifics, industry_specifics, key_features, product_overview FROM app.product_translations WHERE product_id = $1',
+        [productId]
+    );
+    
+    const currentTranslations: Record<string, any> = {};
+    currentTranslationsResult.rows.forEach((row: any) => {
+        // Helper function to safely parse JSON fields
+        const parseJsonField = (value: any): any => {
+            if (value === null || value === undefined) {
+                return null;
+            }
+            // If already an object, return as is (PostgreSQL JSONB fields are already parsed)
+            if (typeof value === 'object') {
+                return value;
+            }
+            // If string, try to parse
+            if (typeof value === 'string') {
+                try {
+                    return JSON.parse(value);
+                } catch (e) {
+                    return null;
+                }
+            }
+            return value;
+        };
+        
+        currentTranslations[row.language_code] = {
+            name: row.name,
+            shortDesc: row.short_desc,
+            longDesc: row.long_desc,
+            techSpecs: parseJsonField(row.tech_specs),
+            areaSpecifics: parseJsonField(row.area_specifics),
+            industrySpecifics: parseJsonField(row.industry_specifics),
+            keyFeatures: parseJsonField(row.key_features),
+            productOverview: parseJsonField(row.product_overview)
+        };
+    });
+    
+    const changedLanguageCodes = new Set<string>();
+    const changedFields = new Set<string>();
+    
+    // Field mapping from frontend to database
+    const fieldMapping: Record<string, string> = {
+        name: 'name',
+        shortDesc: 'shortDesc',
+        longDesc: 'longDesc',
+        techSpecs: 'techSpecs',
+        areaSpecifics: 'areaSpecifics',
+        industrySpecifics: 'industrySpecifics',
+        keyFeatures: 'keyFeatures',
+        productOverview: 'productOverview'
+    };
+    
     for (const [langCode, translationData] of Object.entries(translations)) {
         if (translationData && typeof translationData === 'object') {
+            const current = currentTranslations[langCode];
+            let hasChanges = false;
+            
+            // Compare each field
+            for (const [fieldName, dbFieldName] of Object.entries(fieldMapping)) {
+                const newValue = (translationData as any)[fieldName];
+                const currentValue = current?.[fieldName];
+                
+                // Normalize values for comparison (handle JSON objects)
+                const normalizedNew = typeof newValue === 'object' && newValue !== null 
+                    ? JSON.stringify(newValue) 
+                    : newValue;
+                const normalizedCurrent = typeof currentValue === 'object' && currentValue !== null 
+                    ? JSON.stringify(currentValue) 
+                    : currentValue;
+                
+                if (normalizedNew !== normalizedCurrent) {
+                    hasChanges = true;
+                    changedFields.add(dbFieldName);
+                }
+            }
+            
+            if (hasChanges || !current) {
+                // New translation or changed translation
+                changedLanguageCodes.add(langCode);
+            }
+            
             // Use UPSERT (INSERT ... ON CONFLICT) to handle both new and existing translations
             const query = `
                 INSERT INTO app.product_translations (
@@ -421,6 +559,15 @@ async function updateProductTranslations(
             ]);
         }
     }
+    
+    if (changedLanguageCodes.size === 0 && changedFields.size === 0) {
+        return null;
+    }
+    
+    return {
+        languageCodes: Array.from(changedLanguageCodes),
+        fieldsChanged: Array.from(changedFields)
+    };
 }
 
 /**
@@ -430,6 +577,7 @@ async function updateProductTranslations(
  * @param owner - Owner username
  * @param backupOwner - Backup owner username
  * @param updatedBy - User ID who is updating
+ * @returns Object with changes or null if no changes
  */
 async function updateProductOwners(
     client: any,
@@ -437,7 +585,53 @@ async function updateProductOwners(
     owner: string | undefined,
     backupOwner: string | undefined,
     updatedBy: string
-): Promise<void> {
+): Promise<{ changes: Record<string, { old: string | null, new: string | null }> } | null> {
+    // Get current owners from database
+    const currentOwnersResult = await client.query(`
+        SELECT u.username, pu.role_type 
+        FROM app.product_users pu
+        JOIN app.users u ON pu.user_id = u.user_id
+        WHERE pu.product_id = $1
+    `, [productId]);
+    
+    let currentOwner: string | null = null;
+    let currentBackupOwner: string | null = null;
+    
+    currentOwnersResult.rows.forEach((row: any) => {
+        if (row.role_type === 'owner') {
+            currentOwner = row.username;
+        } else if (row.role_type === 'backup_owner') {
+            currentBackupOwner = row.username;
+        }
+    });
+    
+    // Normalize undefined to null for comparison
+    const newOwner = owner || null;
+    const newBackupOwner = backupOwner || null;
+    
+    const changes: Record<string, { old: string | null, new: string | null }> = {};
+    
+    // Compare owner
+    if (newOwner !== currentOwner) {
+        changes.owner = {
+            old: currentOwner,
+            new: newOwner
+        };
+    }
+    
+    // Compare backup owner
+    if (newBackupOwner !== currentBackupOwner) {
+        changes.backupOwner = {
+            old: currentBackupOwner,
+            new: newBackupOwner
+        };
+    }
+    
+    // If no changes, return null
+    if (Object.keys(changes).length === 0) {
+        return null;
+    }
+    
     // Clear existing owners
     await client.query('DELETE FROM app.product_users WHERE product_id = $1', [productId]);
 
@@ -462,6 +656,8 @@ async function updateProductOwners(
             );
         }
     }
+    
+    return { changes };
 }
 
 /**
@@ -470,13 +666,41 @@ async function updateProductOwners(
  * @param productId - Product ID
  * @param specialistsGroups - Array of group names
  * @param updatedBy - User ID who is updating
+ * @returns Object with added, removed, and all arrays or null if no changes
  */
 async function updateProductGroups(
     client: any,
     productId: string,
     specialistsGroups: string[] | undefined,
     updatedBy: string
-): Promise<void> {
+): Promise<{ added: string[], removed: string[], all: string[] } | null> {
+    // Get current specialist groups from database
+    const currentGroupsResult = await client.query(`
+        SELECT g.group_name 
+        FROM app.product_groups pg
+        JOIN app.groups g ON pg.group_id = g.group_id
+        WHERE pg.product_id = $1 AND pg.role_type = 'product_specialists'
+    `, [productId]);
+    
+    const currentGroups = currentGroupsResult.rows.map((row: any) => row.group_name);
+    const newGroups = specialistsGroups || [];
+    
+    // Normalize arrays: sort and remove duplicates for comparison
+    const currentGroupsSorted = [...new Set(currentGroups)].sort();
+    const newGroupsSorted = [...new Set(newGroups)].sort();
+    
+    // Check if there are changes
+    const hasChanges = JSON.stringify(currentGroupsSorted) !== JSON.stringify(newGroupsSorted);
+    
+    if (!hasChanges) {
+        return null;
+    }
+    
+    // Calculate added and removed groups
+    const added = newGroups.filter((group: string) => !currentGroups.includes(group));
+    const removed = currentGroups.filter((group: string) => !newGroups.includes(group));
+    const all = newGroups;
+    
     // Clear existing specialist groups
     await client.query(
         'DELETE FROM app.product_groups WHERE product_id = $1 AND role_type = $2',
@@ -495,6 +719,8 @@ async function updateProductGroups(
             }
         }
     }
+    
+    return { added, removed, all };
 }
 
 /**
@@ -545,25 +771,26 @@ export async function updateProduct(data: UpdateProductRequest, req: Request): P
         // Start transaction
         await client.query('BEGIN');
 
-        // Check if this is a preferences-only update
-        const isPreferencesOnly = data.visibility && 
-            !data.productCode && 
-            !data.translationKey && 
-            !data.canBeOption && 
-            !data.optionOnly && 
-            !data.owner && 
-            !data.backupOwner && 
-            !data.specialistsGroups && 
-            !data.translations;
-
-        if (!isPreferencesOnly) {
-            // Update main product data
-            await updateMainProductData(client, data.productId, data, requestorUuid, req);
-            await createAndPublishEvent({
-                eventName: PRODUCT_UPDATE_EVENTS.MAIN_DATA_UPDATED.eventName,
-                req: req,
-                payload: { productId: data.productId }
-            });
+        // Update main product data and collect changes
+        let mainDataChanges = null;
+        if (data.productCode !== undefined || data.translationKey !== undefined || 
+            data.canBeOption !== undefined || data.optionOnly !== undefined) {
+            mainDataChanges = await updateMainProductData(client, data.productId, data, requestorUuid, req);
+            
+            // Publish event only if there are actual changes
+            if (mainDataChanges && Object.keys(mainDataChanges.changes).length > 0) {
+                // Get final product code (new or existing)
+                const finalProductCode = data.productCode || existingProduct.product_code;
+                await createAndPublishEvent({
+                    eventName: PRODUCT_UPDATE_EVENTS.MAIN_DATA_UPDATED.eventName,
+                    req: req,
+                    payload: {
+                        productId: data.productId,
+                        productCode: finalProductCode,
+                        changes: mainDataChanges.changes
+                    }
+                });
+            }
         }
 
         // Update preferences if provided
@@ -571,32 +798,59 @@ export async function updateProduct(data: UpdateProductRequest, req: Request): P
 
         // Update translations if provided and not empty
         if (data.translations && Object.keys(data.translations).length > 0) {
-            await updateProductTranslations(client, data.productId, data.translations, requestorUuid);
-            await createAndPublishEvent({
-                eventName: PRODUCT_UPDATE_EVENTS.TRANSLATIONS_UPDATED.eventName,
-                req: req,
-                payload: { productId: data.productId }
-            });
+            const translationsChanges = await updateProductTranslations(client, data.productId, data.translations, requestorUuid);
+            
+            // Publish event only if there are actual changes
+            if (translationsChanges && (translationsChanges.languageCodes.length > 0 || translationsChanges.fieldsChanged.length > 0)) {
+                await createAndPublishEvent({
+                    eventName: PRODUCT_UPDATE_EVENTS.TRANSLATIONS_UPDATED.eventName,
+                    req: req,
+                    payload: {
+                        productId: data.productId,
+                        productCode: productCode,
+                        languageCodes: translationsChanges.languageCodes,
+                        fieldsChanged: translationsChanges.fieldsChanged
+                    }
+                });
+            }
         }
 
         // Update owners if provided
         if (data.owner !== undefined || data.backupOwner !== undefined) {
-            await updateProductOwners(client, data.productId, data.owner, data.backupOwner, requestorUuid);
-            await createAndPublishEvent({
-                eventName: PRODUCT_UPDATE_EVENTS.OWNERS_UPDATED.eventName,
-                req: req,
-                payload: { productId: data.productId }
-            });
+            const ownersChanges = await updateProductOwners(client, data.productId, data.owner, data.backupOwner, requestorUuid);
+            
+            // Publish event only if there are actual changes
+            if (ownersChanges && Object.keys(ownersChanges.changes).length > 0) {
+                await createAndPublishEvent({
+                    eventName: PRODUCT_UPDATE_EVENTS.OWNERS_UPDATED.eventName,
+                    req: req,
+                    payload: {
+                        productId: data.productId,
+                        productCode: productCode,
+                        changes: ownersChanges.changes
+                    }
+                });
+            }
         }
 
         // Update specialist groups if provided
         if (data.specialistsGroups !== undefined) {
-            await updateProductGroups(client, data.productId, data.specialistsGroups, requestorUuid);
-            await createAndPublishEvent({
-                eventName: PRODUCT_UPDATE_EVENTS.GROUPS_UPDATED.eventName,
-                req: req,
-                payload: { productId: data.productId }
-            });
+            const groupsChanges = await updateProductGroups(client, data.productId, data.specialistsGroups, requestorUuid);
+            
+            // Publish event only if there are actual changes
+            if (groupsChanges) {
+                await createAndPublishEvent({
+                    eventName: PRODUCT_UPDATE_EVENTS.GROUPS_UPDATED.eventName,
+                    req: req,
+                    payload: {
+                        productId: data.productId,
+                        productCode: productCode,
+                        added: groupsChanges.added,
+                        removed: groupsChanges.removed,
+                        all: groupsChanges.all
+                    }
+                });
+            }
         }
 
         // Commit transaction
