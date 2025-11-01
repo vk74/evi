@@ -1,8 +1,13 @@
 <!--
-version: 1.4.9
+version: 1.5.0
 Frontend file for product details view component.
 Displays extended info and placeholders for product options.
 File: ProductDetails.vue
+
+Changes in v1.5.0:
+- Moved product name from header to "main" block
+- Removed separate header section with product name and divider
+- Replaced "Main" block title with product name (black, bold, larger font size)
 -->
 <script setup lang="ts">
 import { ref, onMounted, watch, computed } from 'vue'
@@ -98,14 +103,6 @@ watch(() => props.productId, () => {
 
 <template>
   <div class="product-details" :style="detailsStyle">
-    <!-- Header -->
-    <div class="header d-flex align-center mb-2">
-      <div class="text-h6">{{ details?.name }}</div>
-    </div>
-
-    <!-- Header divider -->
-    <v-divider class="header-divider mb-4" />
- 
     <!-- Main + Sidebar layout -->
     <div class="main-with-sidebar">
       <!-- Left main content -->
@@ -122,8 +119,8 @@ watch(() => props.productId, () => {
         <!-- Right column: main + description stacked -->
         <div class="right-column">
           <div class="detail-block">
-            <div class="block-title">
-              {{ t('catalog.productDetails.main') }}
+            <div class="product-name-title">
+              {{ details?.name }}
             </div>
             <div class="block-body">
               <div>{{ t('catalog.productDetails.productCode') }}: {{ details?.product_code || t('catalog.productDetails.notSpecified') }}</div>
@@ -316,6 +313,7 @@ watch(() => props.productId, () => {
 .details-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; }
 .detail-block { background: #fff; border: 1px solid rgba(59, 130, 246, 0.1); border-radius: 8px; padding: 12px; }
 .block-title { font-weight: 600; margin-bottom: 8px; color: rgb(59, 130, 246); }
+.product-name-title { font-weight: 700; margin-bottom: 8px; color: #000; font-size: 1.1rem; }
 .product-options { background: #fff; border: 1px solid rgba(59, 130, 246, 0.1); border-radius: 8px; padding: 12px; }
  
 .inline-row {
