@@ -555,13 +555,13 @@ onMounted(async () => {
   width: 100%;
   background-color: white;
   border-bottom: 1px solid rgba(0, 0, 0, 0.06);
-  margin-top: -20px;
+  margin-top: -10px;
 }
 
 /* Sections app bar styling */
 .sections-app-bar {
   background-color: rgb(243, 243, 243) !important;
-  height: 40px;
+  height: 48px;
 }
 
 /* Override Vuetify v-app-bar flex alignment to align content to top */
@@ -569,17 +569,11 @@ onMounted(async () => {
   align-items: flex-start !important;
 }
 
-.nav-section {
-  display: flex;
-  align-items: flex-start;
-  margin-left: 15px;
-}
-
 .section-btn {
   display: flex;
   align-items: center;
   justify-content: center;
-  height: 40px;
+  height: 48px;
   text-transform: none;
   font-weight: 400;
 
@@ -587,6 +581,12 @@ onMounted(async () => {
   color: rgba(0, 0, 0, 0.6) !important;
   background-color: var(--section-bg, transparent) !important;
   transition: background-color 0.15s ease;
+}
+
+.nav-section {
+  display: flex;
+  align-items: flex-start;
+  margin-left: 15px;
 }
 
 .section-active {
