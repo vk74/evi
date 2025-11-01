@@ -1,7 +1,8 @@
--- Version: 1.2.1
+-- Version: 1.2.2
 -- Description: Create all application tables, functions, and triggers.
 -- Backend file: 04_tables.sql
 -- Updated: mobile_phone_number -> mobile_phone field name
+-- Added: published_by and published_at columns to section_products table
 
 -- ===========================================
 -- Helper Functions
@@ -241,6 +242,8 @@ CREATE TABLE IF NOT EXISTS app.section_services (
 CREATE TABLE IF NOT EXISTS app.section_products (
     section_id UUID NOT NULL REFERENCES app.catalog_sections(id) ON DELETE CASCADE,
     product_id UUID NOT NULL REFERENCES app.products(product_id) ON DELETE CASCADE,
+    published_by UUID NOT NULL REFERENCES app.users(user_id) ON DELETE RESTRICT,
+    published_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     PRIMARY KEY (section_id, product_id)
 );
 
@@ -248,6 +251,8 @@ CREATE TABLE IF NOT EXISTS app.section_products (
 COMMENT ON TABLE app.section_products IS 'Relationships between catalog sections and products (product publication in sections)';
 COMMENT ON COLUMN app.section_products.section_id IS 'Reference to catalog section';
 COMMENT ON COLUMN app.section_products.product_id IS 'Reference to product';
+COMMENT ON COLUMN app.section_products.published_by IS 'User who published the product to this section';
+COMMENT ON COLUMN app.section_products.published_at IS 'Timestamp when product was published to this section';
 
 -- Create service_users table
 CREATE TABLE IF NOT EXISTS app.service_users (

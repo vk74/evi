@@ -1,6 +1,6 @@
 <!--
   File: ProductEditorCatalogPublication.vue
-  Version: 1.1.0
+  Version: 1.2.0
   Description: Component for product catalog publication management
   Purpose: Provides interface for managing product catalog publication
   Frontend file - ProductEditorCatalogPublication.vue
@@ -20,6 +20,11 @@
   Changes in v1.1.0:
   - Added filters for section status and published below search field
   - Filters use PhFunnel icon and active state highlighting
+  
+  Changes in v1.2.0:
+  - Changed to send only delta changes to backend API
+  - handlePublish now calculates and sends only newly selected sections
+  - handleUnpublish now calculates and sends only sections to remove
 -->
 
 <script setup lang="ts">
@@ -371,10 +376,15 @@ const handlePublish = async () => {
   try {
     isPublishing.value = true
     
-    // Get all sections where product should be published (current + new)
-    const allSections = Array.from(selectedSections.value)
+    // Calculate only newly selected sections (not in initial selection)
+    const sectionsToAdd: string[] = []
+    for (const sectionId of selectedSections.value) {
+      if (!initialSelectedSections.value.has(sectionId)) {
+        sectionsToAdd.push(sectionId)
+      }
+    }
     
-    const resp = await updateProductSectionsPublish(productId, allSections)
+    const resp = await updateProductSectionsPublish(productId, sectionsToAdd, [])
     
     // Create message manually to ensure proper interpolation
     const baseMessage = t('admin.products.editor.catalogPublication.messages.publishSuccess')
@@ -407,27 +417,15 @@ const handleUnpublish = async () => {
   try {
     isUnpublishing.value = true
     
-    // Get sections where product should remain published after unpublish operation
-    // This includes: newly selected sections + initially published sections that are NOT selected for unpublishing
-    const sectionsToKeep = new Set<string>()
-    
-    // Add newly selected sections (not initially published)
+    // Calculate only sections to remove (selected AND in initial selection)
+    const sectionsToRemove: string[] = []
     for (const sectionId of selectedSections.value) {
-      if (!initialSelectedSections.value.has(sectionId)) {
-        sectionsToKeep.add(sectionId)
+      if (initialSelectedSections.value.has(sectionId)) {
+        sectionsToRemove.push(sectionId)
       }
     }
     
-    // Add initially published sections that are NOT selected for unpublishing
-    for (const sectionId of initialSelectedSections.value) {
-      if (!selectedSections.value.has(sectionId)) {
-        sectionsToKeep.add(sectionId)
-      }
-    }
-    
-    const allSectionsToKeep = Array.from(sectionsToKeep)
-    
-    const resp = await updateProductSectionsPublish(productId, allSectionsToKeep)
+    const resp = await updateProductSectionsPublish(productId, [], sectionsToRemove)
     
     // Create message manually to ensure proper interpolation
     const baseMessage = t('admin.products.editor.catalogPublication.messages.unpublishSuccess')

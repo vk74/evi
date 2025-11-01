@@ -1,7 +1,7 @@
 /**
  * @file types.products.admin.ts
  * Type definitions for products administration module.
- * Version: 1.0.3
+ * Version: 1.0.4
  * Frontend types for products admin functionality.
   
   Changes in v1.0.2:
@@ -9,6 +9,9 @@
   
   Changes in v1.0.3:
   - Added published field to CatalogSection interface to represent actual publication status from DB
+  
+  Changes in v1.0.4:
+  - Updated UpdateProductSectionsPublishRequest to use sectionsToAdd and sectionsToRemove arrays instead of sectionIds
  */
 
 // Product translation data interface
@@ -353,7 +356,8 @@ export interface FetchPublishingSectionsResponse {
 // Update product sections publish request interface
 export interface UpdateProductSectionsPublishRequest {
   productId: string
-  sectionIds: string[]
+  sectionsToAdd: string[]
+  sectionsToRemove: string[]
 }
 
 // Update product sections publish response interface

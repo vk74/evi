@@ -304,7 +304,9 @@
           "type": "type",
           "paired": "paired",
           "published": "published",
+          "productPublished": "product published",
           "owner": "owner",
+          "productOwner": "product owner",
           "specialistsGroup": "specialists group"
         },
         "status": {

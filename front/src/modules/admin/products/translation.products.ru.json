@@ -233,8 +233,8 @@
         },
           "selectedElements": {
             "title": "выбранные элементы",
-            "publishToSelected": "опубликовать в выбранных",
-            "unpublishFromSelected": "отменить публикацию выбранных"
+            "publishToSelected": "опубликовать",
+            "unpublishFromSelected": "отменить публикацию"
           },
           "tooltips": {
             "publishToSelected": "опубликовать продукт в выбранных секциях каталога",
@@ -304,7 +304,9 @@
           "type": "тип",
           "paired": "связка",
           "published": "опубликован",
+          "productPublished": "продукт опубликован",
           "owner": "владелец",
+          "productOwner": "владелец продукта",
           "specialistsGroup": "группа специалистов"
         },
         "status": {

@@ -1,6 +1,6 @@
 <!--
   File: ProductEditorOptions.vue
-  Version: 1.7.0
+  Version: 1.8.0
   Description: Component for product options management
   Purpose: Provides interface for managing product options pairing
   Frontend file - ProductEditorOptions.vue
@@ -10,6 +10,13 @@
   - Made option_code, name, type, published, and owner columns sortable with backend sorting
   - Added frontend filters for type, paired, and published status
   - Filters displayed in row above table with PhFunnel icons
+  
+  Changes in v1.8.0:
+  - Moved paired column to last position in table
+  - Renamed published column to product published and increased width to 170px
+  - Renamed owner column to product owner and increased width to 170px
+  - Swapped paired and published filters positions
+  - Changed filter labels to lowercase
 -->
 
 <script setup lang="ts">
@@ -161,9 +168,9 @@ const headers = computed<TableHeader[]>(() => [
   { title: t('admin.products.table.headers.optionCode'), key: 'option_code', width: '165px', sortable: true },
   { title: t('admin.products.table.headers.optionName'), key: 'name', width: '250px', sortable: true },
   { title: t('admin.products.table.headers.type'), key: 'type', width: '120px', sortable: true },
-  { title: t('admin.products.table.headers.paired') || 'paired', key: 'paired', width: '100px', sortable: false },
-  { title: t('admin.products.table.headers.published'), key: 'published', width: '100px', sortable: true },
-  { title: t('admin.products.table.headers.owner'), key: 'owner', width: '165px', sortable: true }
+  { title: t('admin.products.table.headers.productPublished'), key: 'published', width: '170px', sortable: true },
+  { title: t('admin.products.table.headers.productOwner'), key: 'owner', width: '170px', sortable: true },
+  { title: t('admin.products.table.headers.paired') || 'paired', key: 'paired', width: '100px', sortable: false }
 ])
 
 // Search functionality
@@ -506,7 +513,7 @@ onMounted(async () => {
                     v-model="typeFilter"
                     density="compact"
                     variant="outlined"
-                    label="Type"
+                    label="type"
                     :items="[
                       { title: t('admin.products.filters.all'), value: 'all' },
                       { title: t('admin.products.editor.basic.type.product'), value: 'product' },
@@ -524,20 +531,20 @@ onMounted(async () => {
                   </v-select>
                 </div>
 
-                <!-- Paired filter -->
+                <!-- Published filter -->
                 <div class="d-flex align-center mr-4">
                   <v-select
-                    v-model="pairedFilter"
+                    v-model="publishedFilter"
                     density="compact"
                     variant="outlined"
-                    label="Paired"
+                    label="published"
                     :items="[
                       { title: t('admin.products.filters.all'), value: 'all' },
                       { title: t('admin.products.table.status.yes'), value: 'yes' },
                       { title: t('admin.products.table.status.no'), value: 'no' }
                     ]"
                     color="teal"
-                    :base-color="isPairedFilterActive ? 'teal' : undefined"
+                    :base-color="isPublishedFilterActive ? 'teal' : undefined"
                     hide-details
                     style="min-width: 150px;"
                   >
@@ -547,20 +554,20 @@ onMounted(async () => {
                   </v-select>
                 </div>
 
-                <!-- Published filter -->
+                <!-- Paired filter -->
                 <div class="d-flex align-center mr-4">
                   <v-select
-                    v-model="publishedFilter"
+                    v-model="pairedFilter"
                     density="compact"
                     variant="outlined"
-                    label="Published"
+                    label="paired"
                     :items="[
                       { title: t('admin.products.filters.all'), value: 'all' },
                       { title: t('admin.products.table.status.yes'), value: 'yes' },
                       { title: t('admin.products.table.status.no'), value: 'no' }
                     ]"
                     color="teal"
-                    :base-color="isPublishedFilterActive ? 'teal' : undefined"
+                    :base-color="isPairedFilterActive ? 'teal' : undefined"
                     hide-details
                     style="min-width: 150px;"
                   >

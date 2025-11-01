@@ -1,10 +1,17 @@
 /**
- * service.admin.update.sections.publish.ts - version 1.1.0
- * Service for updating (replacing) catalog sections publish bindings for a product in one transaction.
- * Applies full replacement of app.section_products mappings for given product_id;
- * supports unpublish (empty list). Handles database transactions and error management.
+ * service.admin.update.sections.publish.ts - version 1.2.0
+ * Service for updating catalog sections publish bindings for a product using delta changes.
+ * Processes only sectionsToAdd and sectionsToRemove arrays sent from frontend.
+ * Tracks publisher via published_by column and timestamp via published_at column.
+ * Handles database transactions and error management.
  * 
  * Backend file - service.admin.update.sections.publish.ts
+ * 
+ * Changes in v1.2.0:
+ * - Changed from full replacement to delta-based updates
+ * - Added published_by tracking using getRequestorUuidFromReq helper
+ * - Frontend now sends only sectionsToAdd and sectionsToRemove arrays
+ * - Removed logic that reads current bindings and calculates deltas
  */
 
 import { Request } from 'express'
@@ -14,18 +21,20 @@ import { queries } from '../queries.admin.products'
 import type { UpdateProductSectionsPublishRequest, UpdateProductSectionsPublishResponse, ProductError } from '../types.admin.products'
 import { createAndPublishEvent } from '@/core/eventBus/fabric.events'
 import { PRODUCT_CATALOG_PUBLICATION_UPDATE_EVENTS } from '../events.admin.products'
+import { getRequestorUuidFromReq } from '@/core/helpers/get.requestor.uuid.from.req'
 
 const pgPool: Pool = (defaultPool as unknown as Pool)
 
 /**
- * Updates product sections publish bindings
- * @param req - Express Request object containing productId and sectionIds
+ * Updates product sections publish bindings using delta arrays
+ * @param req - Express Request object containing productId, sectionsToAdd, and sectionsToRemove
  * @returns Promise with update result
  */
 export async function updateSectionsPublish(req: Request): Promise<UpdateProductSectionsPublishResponse> {
   const body = req.body as UpdateProductSectionsPublishRequest
   const productId = body?.productId
-  const targetSectionIds = Array.isArray(body?.sectionIds) ? body.sectionIds : []
+  const sectionsToAdd = Array.isArray(body?.sectionsToAdd) ? body.sectionsToAdd : []
+  const sectionsToRemove = Array.isArray(body?.sectionsToRemove) ? body.sectionsToRemove : []
 
   try {
     // Basic validation
@@ -41,6 +50,13 @@ export async function updateSectionsPublish(req: Request): Promise<UpdateProduct
       throw err
     }
 
+    // Extract user UUID from request
+    const publisherId = getRequestorUuidFromReq(req)
+    if (!publisherId) {
+      const err: ProductError = { code: 'UNAUTHORIZED', message: 'User authentication required for publication' }
+      throw err
+    }
+
     // Check product exists and get product code
     const productExists = await pgPool.query('SELECT product_code FROM app.products WHERE product_id = $1', [productId])
     if (productExists.rowCount === 0) {
@@ -49,73 +65,73 @@ export async function updateSectionsPublish(req: Request): Promise<UpdateProduct
     }
     const productCode = productExists.rows[0].product_code
 
-    // Validate sections (if provided) and get section names
-    let allSectionsMap: Map<string, string> = new Map()
-    if (targetSectionIds.length > 0) {
-      const sectionsRes = await pgPool.query('SELECT id, name FROM app.catalog_sections WHERE id = ANY($1)', [targetSectionIds])
-      const existingSet = new Set<string>(sectionsRes.rows.map((r: any) => r.id))
-      const invalid = targetSectionIds.filter(id => !existingSet.has(id))
-      if (invalid.length > 0) {
-        const err: ProductError = { 
-          code: 'VALIDATION_ERROR', 
-          message: 'Some sectionIds do not exist', 
-          details: { invalidSectionIds: invalid } 
-        }
-        throw err
-      }
-      // Build map of section ids to names
-      allSectionsMap = new Map(sectionsRes.rows.map((r: any) => [r.id, r.name]))
-    }
-
     const client = await pgPool.connect()
     try {
       await client.query('BEGIN')
 
-      // Read current bindings
-      const currentRes = await client.query(queries.fetchProductSectionIds, [productId])
-      const current = new Set<string>(currentRes.rows.map((r: any) => r.section_id))
-      const target = new Set<string>(targetSectionIds)
+      // Validate and process sections to remove
+      if (sectionsToRemove.length > 0) {
+        const removedSectionsRes = await client.query('SELECT id, name FROM app.catalog_sections WHERE id = ANY($1)', [sectionsToRemove])
+        const existingRemovedSet = new Set<string>(removedSectionsRes.rows.map((r: any) => r.id))
+        const invalidRemoved = sectionsToRemove.filter(id => !existingRemovedSet.has(id))
+        
+        if (invalidRemoved.length > 0) {
+          const err: ProductError = { 
+            code: 'VALIDATION_ERROR', 
+            message: 'Some sectionsToRemove do not exist', 
+            details: { invalidSectionIds: invalidRemoved } 
+          }
+          throw err
+        }
 
-      const toRemove = [...current].filter(id => !target.has(id))
-      const toAdd = [...target].filter(id => !current.has(id))
+        const removedSectionNames = removedSectionsRes.rows.map((r: any) => r.name)
 
-      // Remove mappings
-      if (toRemove.length > 0) {
-        // Get section names for removed
-        const removedSectionsRes = await client.query('SELECT id, name FROM app.catalog_sections WHERE id = ANY($1)', [toRemove])
-        const removedSectionNames = removedSectionsRes.rows.map(r => r.name)
-
-        for (const sectionId of toRemove) {
+        for (const sectionId of sectionsToRemove) {
           await client.query(queries.deleteProductFromSection, [productId, sectionId])
         }
+
         await createAndPublishEvent({
           eventName: PRODUCT_CATALOG_PUBLICATION_UPDATE_EVENTS.UNPUBLISHED_FROM_CATALOG.eventName,
           req: req,
           payload: { 
             productId,
             productCode, 
-            removedSectionsCount: toRemove.length,
-            removedSectionIds: toRemove,
+            removedSectionsCount: sectionsToRemove.length,
+            removedSectionIds: sectionsToRemove,
             removedSectionNames
           }
         });
       }
 
-      // Add mappings
-      if (toAdd.length > 0) {
-        const addedSectionNames = toAdd.map(id => allSectionsMap.get(id) || '')
-
-        for (const sectionId of toAdd) {
-          await client.query(queries.insertSectionProduct, [sectionId, productId])
+      // Validate and process sections to add
+      if (sectionsToAdd.length > 0) {
+        const addedSectionsRes = await client.query('SELECT id, name FROM app.catalog_sections WHERE id = ANY($1)', [sectionsToAdd])
+        const existingAddedSet = new Set<string>(addedSectionsRes.rows.map((r: any) => r.id))
+        const invalidAdded = sectionsToAdd.filter(id => !existingAddedSet.has(id))
+        
+        if (invalidAdded.length > 0) {
+          const err: ProductError = { 
+            code: 'VALIDATION_ERROR', 
+            message: 'Some sectionsToAdd do not exist', 
+            details: { invalidSectionIds: invalidAdded } 
+          }
+          throw err
         }
+
+        const addedSectionNames = addedSectionsRes.rows.map((r: any) => r.name)
+
+        for (const sectionId of sectionsToAdd) {
+          await client.query(queries.insertSectionProduct, [sectionId, productId, publisherId])
+        }
+
         await createAndPublishEvent({
           eventName: PRODUCT_CATALOG_PUBLICATION_UPDATE_EVENTS.PUBLISHED_TO_CATALOG.eventName,
           req: req,
           payload: { 
             productId,
             productCode, 
-            addedSectionsCount: toAdd.length,
-            addedSectionIds: toAdd,
+            addedSectionsCount: sectionsToAdd.length,
+            addedSectionIds: sectionsToAdd,
             addedSectionNames
           }
         });
@@ -136,8 +152,8 @@ export async function updateSectionsPublish(req: Request): Promise<UpdateProduct
         payload: { 
           productId,
           productCode, 
-          addedCount: toAdd.length,
-          removedCount: toRemove.length,
+          addedCount: sectionsToAdd.length,
+          removedCount: sectionsToRemove.length,
           totalSectionsCount
         }
       });
@@ -145,9 +161,9 @@ export async function updateSectionsPublish(req: Request): Promise<UpdateProduct
       const response: UpdateProductSectionsPublishResponse = {
         success: true,
         message: 'Product sections publish mappings updated',
-        updatedCount: toAdd.length + toRemove.length,
-        addedCount: toAdd.length,
-        removedCount: toRemove.length
+        updatedCount: sectionsToAdd.length + sectionsToRemove.length,
+        addedCount: sectionsToAdd.length,
+        removedCount: sectionsToRemove.length
       }
       return response
     } catch (e: any) {

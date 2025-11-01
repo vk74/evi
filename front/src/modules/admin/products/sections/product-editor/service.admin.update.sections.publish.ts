@@ -1,5 +1,5 @@
 /**
- * service.admin.update.sections.publish.ts - version 1.0.0
+ * service.admin.update.sections.publish.ts - version 1.1.0
  * Frontend service for updating product sections publish bindings.
  * 
  * Makes API call to /api/admin/products/update-sections-publish endpoint,
@@ -7,6 +7,10 @@
  * ProductEditorCatalogPublication component.
  * 
  * Frontend file - service.admin.update.sections.publish.ts
+ * 
+ * Changes in v.1.1.0:
+ * - Changed to accept delta arrays: sectionsToAdd and sectionsToRemove
+ * - Frontend now calculates and sends only changed sections
  */
 
 import { api } from '@/core/api/service.axios'
@@ -15,18 +19,21 @@ import type { UpdateProductSectionsPublishRequest, UpdateProductSectionsPublishR
 /**
  * Updates product sections publish bindings
  * @param productId - Product ID to update
- * @param sectionIds - Array of section IDs to publish product in
+ * @param sectionsToAdd - Array of section IDs to add/publish product to
+ * @param sectionsToRemove - Array of section IDs to remove/unpublish product from
  * @returns Promise with update result
  * @throws Error if API call fails
  */
 export const updateProductSectionsPublish = async (
   productId: string, 
-  sectionIds: string[]
+  sectionsToAdd: string[],
+  sectionsToRemove: string[]
 ): Promise<UpdateProductSectionsPublishResponse> => {
   try {
     const requestData: UpdateProductSectionsPublishRequest = {
       productId,
-      sectionIds
+      sectionsToAdd,
+      sectionsToRemove
     }
 
     const response = await api.post<UpdateProductSectionsPublishResponse>(

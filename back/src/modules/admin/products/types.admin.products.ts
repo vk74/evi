@@ -1,5 +1,5 @@
 /**
- * types.admin.products.ts - version 1.0.3
+ * types.admin.products.ts - version 1.0.4
  * Type definitions for products administration module.
  * 
  * Contains TypeScript interfaces and types for products admin functionality.
@@ -8,6 +8,9 @@
   
   Changes in v1.0.3:
   - Removed is_public field from CatalogSection interface
+  
+  Changes in v1.0.4:
+  - Updated UpdateProductSectionsPublishRequest to use sectionsToAdd and sectionsToRemove arrays instead of sectionIds
  */
 
 // Product type enum
@@ -303,7 +306,8 @@ export interface FetchPublishingSectionsResponse {
 // Update product sections publish request interface
 export interface UpdateProductSectionsPublishRequest {
     productId: string
-    sectionIds: string[]
+    sectionsToAdd: string[]
+    sectionsToRemove: string[]
 }
 
 // Update product sections publish response interface

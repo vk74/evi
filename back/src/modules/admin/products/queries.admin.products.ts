@@ -1,5 +1,5 @@
 /**
- * queries.admin.products.ts - version 1.0.3
+ * queries.admin.products.ts - version 1.0.4
  * SQL queries for products administration operations.
  * 
  * Contains all SQL queries used by products admin module.
@@ -9,6 +9,9 @@
   
   Changes in v1.0.3:
   - Removed is_public field from fetchPublishingSections query
+  
+  Changes in v1.0.4:
+  - Added published_by parameter to insertSectionProduct query
  */
 
 export const queries = {
@@ -491,11 +494,11 @@ export const queries = {
 
     /**
      * Inserts product into section
-     * Parameters: [section_id, product_id]
+     * Parameters: [section_id, product_id, published_by]
      */
     insertSectionProduct: `
-        INSERT INTO app.section_products (section_id, product_id)
-        VALUES ($1, $2)
+        INSERT INTO app.section_products (section_id, product_id, published_by)
+        VALUES ($1, $2, $3)
         ON CONFLICT (section_id, product_id) DO NOTHING
     `,
 
