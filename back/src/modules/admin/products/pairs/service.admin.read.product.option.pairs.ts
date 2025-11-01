@@ -16,9 +16,6 @@ import { Pool } from 'pg'
 import { pool as pgPool } from '@/core/db/maindb'
 import { pairsQueries } from './queries.admin.product.option.pairs'
 import type { ReadPairsRequestBody, ReadPairsResult, ReadPairsMode } from './types.admin.product.option.pairs'
-import { getRequestorUuidFromReq } from '@/core/helpers/get.requestor.uuid.from.req'
-import { createAndPublishEvent } from '@/core/eventBus/fabric.events'
-import { OPTIONS_FETCH_EVENTS, PRODUCT_FETCH_EVENTS } from '../events.admin.products'
 
 const pool = pgPool as Pool
 
@@ -26,7 +23,6 @@ export async function readProductOptionPairs(body: ReadPairsRequestBody, req: Re
   const client = await pool.connect()
 
   try {
-    const requestorUuid = getRequestorUuidFromReq(req)
     const { mainProductId } = body || ({} as ReadPairsRequestBody)
     const mode: ReadPairsMode = body?.mode || 'records'
     const optionProductIds: string[] | undefined = body?.optionProductIds
@@ -45,18 +41,6 @@ export async function readProductOptionPairs(body: ReadPairsRequestBody, req: Re
         unitsCount: r.units_count as number | null,
         unitPrice: null
       }))
-      await createAndPublishEvent({
-        eventName: 'adminProducts.pairs.read.success',
-        req: req,
-        payload: {
-          mainProductId,
-          foundCount: pairs.length,
-          requestedCount: optionProductIds.length,
-          optionIdsFound: pairs.map(p => p.optionProductId),
-          optionIdsRequested: optionProductIds,
-          requestorId: requestorUuid
-        }
-      })
       return { success: true, pairs }
     }
 
@@ -66,11 +50,6 @@ export async function readProductOptionPairs(body: ReadPairsRequestBody, req: Re
       // The above hack is brittle; instead, do a direct select:
       const resIds = await client.query('SELECT option_product_id FROM app.product_options WHERE main_product_id = $1', [mainProductId])
       const ids: string[] = resIds.rows.map(r => r.option_product_id as string)
-      await createAndPublishEvent({
-        eventName: 'adminProducts.pairs.read.success',
-        req: req,
-        payload: { mainProductId, foundCount: ids.length, requestedCount: 0, optionIdsFound: ids, optionIdsRequested: [], requestorId: requestorUuid }
-      })
       return { success: true, optionProductIds: ids }
     }
 
@@ -81,27 +60,11 @@ export async function readProductOptionPairs(body: ReadPairsRequestBody, req: Re
       const found = new Set<string>(res.rows.map(r => r.option_product_id as string))
       const existsMap: Record<string, boolean> = {}
       for (const id of optionProductIds) existsMap[id] = found.has(id)
-      await createAndPublishEvent({
-        eventName: 'adminProducts.pairs.read.success',
-        req: req,
-        payload: { mainProductId, foundCount: res.rows.length, requestedCount: optionProductIds.length, optionIdsFound: Array.from(found), optionIdsRequested: optionProductIds, requestorId: requestorUuid }
-      })
       return { success: true, existsMap }
     }
 
     throw new Error('Unsupported mode')
   } catch (error) {
-    await createAndPublishEvent({
-      eventName: 'adminProducts.pairs.read.error',
-      req: req,
-      payload: {
-        mainProductId: body?.mainProductId,
-        requestedCount: Array.isArray(body?.optionProductIds) ? body.optionProductIds.length : 0,
-        error: error instanceof Error ? error.message : String(error),
-        requestorId: getRequestorUuidFromReq(req)
-      },
-      errorData: error instanceof Error ? error.message : String(error)
-    })
     return { success: false, pairs: [], message: error instanceof Error ? error.message : 'Unknown error' }
   } finally {
     client.release()
