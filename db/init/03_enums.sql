@@ -1,8 +1,10 @@
--- Version: 1.3.0
+-- Version: 1.4.0
 -- Description: Create enum types for the application.
 -- Backend file: 03_enums.sql
 -- Added: Regional settings enum types (timezones, app_countries, system_language_code)
 -- Removed: app_languages enum (replaced by system_language_code)
+-- Removed: product_status enum (replaced by product_statuses reference table)
+-- Removed: weight_unit enum (unused, was used in old products schema)
 
 -- Create enum types
 DO $$ BEGIN
@@ -42,12 +44,6 @@ EXCEPTION
 END $$;
 
 DO $$ BEGIN
-    CREATE TYPE app.product_status AS ENUM ('planned', 'active', 'discontinued', 'out_of_stock');
-EXCEPTION
-    WHEN duplicate_object THEN null;
-END $$;
-
-DO $$ BEGIN
     CREATE TYPE app.section_status AS ENUM ('draft', 'active', 'archived', 'disabled', 'suspended');
 EXCEPTION
     WHEN duplicate_object THEN null;
@@ -78,12 +74,6 @@ EXCEPTION
 END $$;
 
 DO $$ BEGIN
-    CREATE TYPE app.weight_unit AS ENUM ('kg', 'g', 'lb', 'oz');
-EXCEPTION
-    WHEN duplicate_object THEN null;
-END $$;
-
-DO $$ BEGIN
     CREATE TYPE app.system_language_code AS ENUM ('en', 'ru');
 EXCEPTION
     WHEN duplicate_object THEN null;
@@ -100,6 +90,8 @@ DO $$ BEGIN
 EXCEPTION
     WHEN duplicate_object THEN null;
 END $$;
+
+-- Note: product_status enum replaced by product_statuses reference table for flexibility
 
 DO $$ BEGIN
     CREATE TYPE app.timezones AS ENUM (

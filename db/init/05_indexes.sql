@@ -1,7 +1,8 @@
--- Version: 1.1.2
+-- Version: 1.1.3
 -- Description: Create all indexes for the application tables.
 -- Backend file: 05_indexes.sql
 -- Updated: mobile_phone_number -> mobile_phone field name
+-- Added: index on products.status_code
 
 -- Create indexes for app_settings
 CREATE INDEX IF NOT EXISTS idx_app_sections_path ON app.app_settings USING btree (section_path);
@@ -25,6 +26,7 @@ CREATE INDEX IF NOT EXISTS idx_products_created_at ON app.products USING btree (
 CREATE INDEX IF NOT EXISTS idx_products_published ON app.products USING btree (is_published);
 CREATE INDEX IF NOT EXISTS idx_products_code ON app.products USING btree (product_code);
 CREATE INDEX IF NOT EXISTS idx_products_translation_key ON app.products USING btree (translation_key);
+CREATE INDEX IF NOT EXISTS idx_products_status ON app.products USING btree (status_code);
 
 -- Create indexes for section_products
 CREATE INDEX IF NOT EXISTS idx_section_products_product ON app.section_products USING btree (product_id);
