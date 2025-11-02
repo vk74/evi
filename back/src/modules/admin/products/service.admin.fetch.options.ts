@@ -162,6 +162,7 @@ export const fetchOptions = async (
             product_id: row.product_id,
             product_code: row.product_code,
             translation_key: row.translation_key,
+            status_code: row.status_code,
             can_be_option: row.can_be_option,
             option_only: row.option_only,
             is_published: row.is_published,

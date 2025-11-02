@@ -1,5 +1,5 @@
 /**
- * controller.admin.fetch.all.products.ts - version 1.0.0
+ * controller.admin.fetch.all.products.ts - version 1.0.1
  * Controller for fetching all products with pagination, search, sorting and filtering.
  * 
  * Handles HTTP requests for products list and delegates to service layer.
@@ -7,6 +7,10 @@
  * File: controller.admin.fetch.all.products.ts
  * Created: 2024-12-20
  * Last updated: 2024-12-20
+ * 
+ * Changes in v1.0.1:
+ * - Added statusFilter parameter extraction from query
+ * - Pass statusFilter to service in params
  */
 
 import { Request, Response } from 'express'
@@ -26,6 +30,7 @@ interface FetchAllProductsQuery {
   sortDesc?: string
   typeFilter?: string
   publishedFilter?: string
+  statusFilter?: string
   language?: string
 }
 
@@ -43,6 +48,7 @@ const fetchAllProductsController = async (req: Request, res: Response): Promise<
   const sortDesc = query.sortDesc === 'true'
   const typeFilter = query.typeFilter || undefined
   const publishedFilter = query.publishedFilter || undefined
+  const statusFilter = query.statusFilter || undefined
   
   // Get language code from query parameter first, then from headers, then default to 'en'
   const queryLanguage = query.language
@@ -61,7 +67,8 @@ const fetchAllProductsController = async (req: Request, res: Response): Promise<
     sortBy,
     sortDesc,
     typeFilter,
-    publishedFilter
+    publishedFilter,
+    statusFilter
   }, req, validatedLanguageCode)
   
   // Return result for connectionHandler to process

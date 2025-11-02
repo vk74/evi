@@ -40,6 +40,7 @@ import createProductController from './products/controller.admin.create.product'
 import fetchProductController from './products/controller.admin.fetch.product';
 import updateProductController from './products/controller.admin.update.product';
 import fetchAllProductsController from './products/controller.admin.fetch.all.products';
+import fetchStatusesController from './products/controller.admin.fetch.statuses';
 import fetchOptionsController from './products/controller.admin.fetch.options';
 import deleteProductsController from './products/controller.admin.delete.products';
 import fetchPublishingSectionsProductsController from './products/sections/controller.admin.fetch.publishingsections';
@@ -104,6 +105,7 @@ router.post('/api/admin/services/deleteservices', checkRequestSecurityHard, vali
 
 // Routes for Products Admin
 router.get('/api/admin/products/fetch-all-products', checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, fetchAllProductsController);
+router.get('/api/admin/products/fetch-statuses', checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, fetchStatusesController);
 router.get('/api/admin/products/fetch-options', checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, fetchOptionsController);
 router.get('/api/admin/products/fetchpublishingsections', checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, fetchPublishingSectionsProductsController);
 router.post('/api/admin/products/update-sections-publish', checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, updateProductSectionsPublishController);

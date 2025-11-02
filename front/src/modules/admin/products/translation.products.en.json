@@ -308,6 +308,7 @@
           "optionCode": "product code",
           "optionName": "product name",
           "type": "type",
+          "status": "status",
           "paired": "paired",
           "published": "published",
           "productPublished": "product published",
@@ -326,6 +327,7 @@
       },
       "filters": {
         "type": "type",
+        "status": "status",
         "published": "published",
         "all": "all",
         "clear": "clear filters"

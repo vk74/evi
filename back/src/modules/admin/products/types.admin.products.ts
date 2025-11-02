@@ -1,5 +1,5 @@
 /**
- * types.admin.products.ts - version 1.0.5
+ * types.admin.products.ts - version 1.0.6
  * Type definitions for products administration module.
  * 
  * Contains TypeScript interfaces and types for products admin functionality.
@@ -17,6 +17,10 @@
   - Added statusCode field to CreateProductRequest and UpdateProductRequest
   - Added ProductStatus interface for status reference data
   - Updated FetchProductResponse to include statuses array
+  
+  Changes in v1.0.6:
+  - Added statusFilter field to FetchAllProductsParams interface
+  - Added status_code field to ProductListItem interface
  */
 
 // Product type enum
@@ -223,6 +227,7 @@ export interface FetchAllProductsParams {
     sortDesc?: boolean
     typeFilter?: string
     publishedFilter?: string
+    statusFilter?: string
 }
 
 // Product list item interface (for list view)
@@ -230,6 +235,7 @@ export interface ProductListItem {
     product_id: string
     product_code: string
     translation_key: string
+    status_code: string
     can_be_option: boolean
     option_only: boolean
     is_published: boolean

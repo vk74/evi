@@ -1,5 +1,5 @@
 /**
- * service.fetch.all.products.ts - version 1.0.0
+ * service.fetch.all.products.ts - version 1.1.0
  * Frontend service for fetching all products with pagination, search, sorting and filtering.
  * 
  * This is a frontend file. The file provides API client for products list operations.
@@ -8,6 +8,10 @@
  * File: service.fetch.all.products.ts
  * Created: 2024-12-20
  * Last Updated: 2024-12-20
+ * 
+ * Changes in v1.1.0:
+ * - Added statusFilter parameter to FetchAllProductsRequest interface
+ * - Added statusFilter to query parameters in fetchAllProducts method
  */
 
 import { api } from '@/core/api/service.axios'
@@ -28,6 +32,7 @@ export interface FetchAllProductsRequest {
     sortDesc?: boolean
     typeFilter?: string
     publishedFilter?: string
+    statusFilter?: string
     language?: string
 }
 
@@ -83,6 +88,9 @@ export class ServiceFetchAllProducts {
             }
             if (params.publishedFilter) {
                 queryParams.append('publishedFilter', params.publishedFilter)
+            }
+            if (params.statusFilter && params.statusFilter !== 'all') {
+                queryParams.append('statusFilter', params.statusFilter)
             }
             
             // Add language parameter (use provided language or default to 'en')

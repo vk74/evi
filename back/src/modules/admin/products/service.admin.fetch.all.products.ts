@@ -1,5 +1,5 @@
 /**
- * service.admin.fetch.all.products.ts - version 1.0.0
+ * service.admin.fetch.all.products.ts - version 1.1.1
  * Service for fetching all products with pagination, search, sorting and filtering.
  * 
  * Handles database queries for products list with user roles and translations.
@@ -7,6 +7,15 @@
  * File: service.admin.fetch.all.products.ts
  * Created: 2024-12-20
  * Last updated: 2024-12-20
+ * 
+ * Changes in v1.1.0:
+ * - Added statusFilter parameter extraction and validation
+ * - Added status_code field to ProductListItem mapping
+ * - Updated fetchAllProducts and countAllProducts queries to include statusFilter
+ * 
+ * Changes in v1.1.1:
+ * - Added sorting support for status_code, published, and owner fields
+ * - Updated validSortFields array to include new sortable fields
  */
 
 import { Pool } from 'pg'
@@ -41,7 +50,7 @@ export const fetchAllProducts = async (
     const client = await pool.connect()
     
     try {
-        const { page, itemsPerPage, searchQuery, sortBy, sortDesc, typeFilter, publishedFilter } = params
+        const { page, itemsPerPage, searchQuery, sortBy, sortDesc, typeFilter, publishedFilter, statusFilter } = params
         
         // Validate parameters
         if (page < 1) {
@@ -74,7 +83,7 @@ export const fetchAllProducts = async (
         const searchPattern = searchQuery ? `%${searchQuery}%` : ''
         
         // Validate sortBy parameter
-        const validSortFields = ['product_code', 'name', 'type']
+        const validSortFields = ['product_code', 'name', 'type', 'status_code', 'published', 'owner']
         const validatedSortBy = sortBy && validSortFields.includes(sortBy) ? sortBy : 'product_code'
         
         // Validate filters - use empty string instead of null for optional parameters
@@ -83,12 +92,16 @@ export const fetchAllProducts = async (
         
         const validPublishedFilters = ['published', 'unpublished']
         const validatedPublishedFilter = publishedFilter && validPublishedFilters.includes(publishedFilter) ? publishedFilter : ''
+        
+        // Validate status filter - allow any string value (status codes are validated by foreign key)
+        const validatedStatusFilter = statusFilter && statusFilter.trim() !== '' ? statusFilter.trim() : ''
 
         // Execute count query first to get total items
         const countResult = await client.query(queries.countAllProducts, [
             searchPattern,
             validatedTypeFilter,
-            validatedPublishedFilter
+            validatedPublishedFilter,
+            validatedStatusFilter
         ])
         
         const totalItems = parseInt(countResult.rows[0].total)
@@ -98,7 +111,7 @@ export const fetchAllProducts = async (
             eventName: PRODUCT_FETCH_EVENTS.COUNT_COMPLETED.eventName,
             payload: { 
                 totalItems,
-                filters: { searchQuery, typeFilter, publishedFilter }
+                filters: { searchQuery, typeFilter, publishedFilter, statusFilter }
             }
         })
 
@@ -111,7 +124,8 @@ export const fetchAllProducts = async (
             sortDesc || false,
             validatedTypeFilter,
             validatedPublishedFilter,
-            languageCode
+            languageCode,
+            validatedStatusFilter
         ])
         
         // Process results into ProductListItem format
@@ -122,6 +136,7 @@ export const fetchAllProducts = async (
             can_be_option: row.can_be_option,
             option_only: row.option_only,
             is_published: row.is_published,
+            status_code: row.status_code,
             is_visible_owner: row.is_visible_owner,
             is_visible_groups: row.is_visible_groups,
             is_visible_tech_specs: row.is_visible_tech_specs,
@@ -152,7 +167,7 @@ export const fetchAllProducts = async (
                 totalPages,
                 currentPage: page,
                 itemsPerPage,
-                filters: { searchQuery, typeFilter, publishedFilter, sortBy, sortDesc }
+                filters: { searchQuery, typeFilter, publishedFilter, statusFilter, sortBy, sortDesc }
             }
         })
         

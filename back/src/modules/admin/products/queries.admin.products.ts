@@ -1,5 +1,5 @@
 /**
- * queries.admin.products.ts - version 1.0.5
+ * queries.admin.products.ts - version 1.0.7
  * SQL queries for products administration operations.
  * 
  * Contains all SQL queries used by products admin module.
@@ -17,6 +17,19 @@
   - Added status_code field to fetchSingleProduct query
   - Added status_code parameter to createProduct query
   - Added fetchProductStatuses query to retrieve active product statuses
+  
+  Changes in v1.0.6:
+  - Added status_code field to fetchAllProducts SELECT clause
+  - Added status_code to fetchAllProducts GROUP BY clause
+  - Added status filter condition to fetchAllProducts WHERE clause
+  - Updated fetchAllProducts parameters from 8 to 9 (added statusFilter)
+  - Added status filter condition to countAllProducts WHERE clause
+  - Updated countAllProducts parameters from 3 to 4 (added statusFilter)
+  - Added status_code field to fetchAllOptions SELECT clause
+  - Added status_code to fetchAllOptions GROUP BY clause
+  
+  Changes in v1.0.7:
+  - Added sorting support for status_code, published, and owner fields in fetchAllProducts ORDER BY clause
  */
 
 export const queries = {
@@ -268,7 +281,7 @@ export const queries = {
 
     /**
      * Fetches all products with pagination, search, sorting and filtering
-     * Parameters: [offset, limit, searchQuery, sortBy, sortDesc, typeFilter, publishedFilter, languageCode]
+     * Parameters: [offset, limit, searchQuery, sortBy, sortDesc, typeFilter, publishedFilter, languageCode, statusFilter]
      */
     fetchAllProducts: `
         SELECT 
@@ -286,6 +299,7 @@ export const queries = {
             p.is_visible_key_features,
             p.is_visible_overview,
             p.is_visible_long_description,
+            p.status_code,
             p.created_by,
             p.created_at,
             p.updated_by,
@@ -319,10 +333,11 @@ export const queries = {
             ($7::text = 'published' AND p.is_published = true) OR
             ($7::text = 'unpublished' AND p.is_published = false)
         )
+        AND ($9::text IS NULL OR $9::text = '' OR p.status_code = $9::text)
         GROUP BY p.product_id, p.product_code, p.translation_key, p.can_be_option, p.option_only,
                  p.is_published, p.is_visible_owner, p.is_visible_groups, p.is_visible_tech_specs,
                  p.is_visible_area_specs, p.is_visible_industry_specs, p.is_visible_key_features,
-                 p.is_visible_overview, p.is_visible_long_description, p.created_by, p.created_at,
+                 p.is_visible_overview, p.is_visible_long_description, p.status_code, p.created_by, p.created_at,
                  p.updated_by, p.updated_at, pt.name, pt.language_code, owner_user.username
         ORDER BY 
             CASE WHEN $4 = 'product_code' AND $5 = false THEN p.product_code END ASC,
@@ -343,13 +358,19 @@ export const queries = {
                     ELSE 1
                 END
             END DESC,
+            CASE WHEN $4 = 'status_code' AND $5 = false THEN p.status_code END ASC,
+            CASE WHEN $4 = 'status_code' AND $5 = true THEN p.status_code END DESC,
+            CASE WHEN $4 = 'published' AND $5 = false THEN p.is_published END ASC,
+            CASE WHEN $4 = 'published' AND $5 = true THEN p.is_published END DESC,
+            CASE WHEN $4 = 'owner' AND $5 = false THEN owner_user.username END ASC NULLS LAST,
+            CASE WHEN $4 = 'owner' AND $5 = true THEN owner_user.username END DESC NULLS LAST,
             p.product_code ASC
         LIMIT $2 OFFSET $1
     `,
 
     /**
      * Counts total products with same filters as fetchAllProducts
-     * Parameters: [searchQuery, typeFilter, publishedFilter]
+     * Parameters: [searchQuery, typeFilter, publishedFilter, statusFilter]
      */
     countAllProducts: `
         SELECT COUNT(DISTINCT p.product_id) as total
@@ -366,6 +387,7 @@ export const queries = {
             ($3::text = 'published' AND p.is_published = true) OR
             ($3::text = 'unpublished' AND p.is_published = false)
         )
+        AND ($4::text IS NULL OR $4::text = '' OR p.status_code = $4::text)
     `,
 
     // Delete products query - deletes products and cascades to related tables
@@ -395,6 +417,7 @@ export const queries = {
             p.is_visible_key_features,
             p.is_visible_overview,
             p.is_visible_long_description,
+            p.status_code,
             p.created_by,
             p.created_at,
             p.updated_by,
@@ -424,7 +447,7 @@ export const queries = {
         GROUP BY p.product_id, p.product_code, p.translation_key, p.can_be_option, p.option_only,
                  p.is_published, p.is_visible_owner, p.is_visible_groups, p.is_visible_tech_specs,
                  p.is_visible_area_specs, p.is_visible_industry_specs, p.is_visible_key_features,
-                 p.is_visible_overview, p.is_visible_long_description, p.created_by, p.created_at,
+                 p.is_visible_overview, p.is_visible_long_description, p.status_code, p.created_by, p.created_at,
                  p.updated_by, p.updated_at, pt.name, pt.language_code, owner_user.username
         ORDER BY 
             CASE WHEN $4 = 'product_code' AND $5 = false THEN p.product_code END ASC,

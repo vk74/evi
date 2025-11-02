@@ -1,8 +1,20 @@
 /**
  * @file ProductsList.vue
- * Version: 1.0.0
+ * Version: 1.2.0
  * Products list section component.
  * Frontend file that displays list of products for admin users.
+ * 
+ * Changes in v1.1.0:
+ * - Added status_code column to table (between type and published)
+ * - Added status filter dropdown (between type and published filters)
+ * - Added status loading on mount
+ * - Integrated status filtering with search functionality
+ * 
+ * Changes in v1.2.0:
+ * - Made status_code, published, and owner columns sortable
+ * - Added filter active indicators with teal color highlighting
+ * - Updated filter labels to lowercase
+ * - Adjusted filter widths to match ProductEditorOptions style
  */
 <script setup lang="ts">
 import { ref, computed, onMounted, watch } from 'vue'
@@ -14,6 +26,7 @@ import type { Product, ProductWithTranslations, ProductWithFullData, ProductList
 import { serviceFetchAllProducts } from '../service.fetch.all.products'
 import { serviceFetchSingleProduct } from '../service.fetch.single.product'
 import { serviceDeleteProducts } from '../service.delete.products'
+import { serviceFetchStatuses } from '../service.fetch.statuses'
 import {
   PhMagnifyingGlass,
   PhX,
@@ -49,6 +62,7 @@ const isSearching = ref<boolean>(false)
 
 // Filter parameters
 const typeFilter = ref<string>('all')
+const statusFilter = ref<string>('all')
 const publishedFilter = ref<string>('all')
 
 // Sort tracking
@@ -93,14 +107,20 @@ const isSearchEnabled = computed(() =>
   searchQuery.value.length >= 2 || searchQuery.value.length === 0
 )
 
+// Filter active indicators
+const isTypeFilterActive = computed(() => typeFilter.value !== 'all')
+const isStatusFilterActive = computed(() => statusFilter.value !== 'all')
+const isPublishedFilterActive = computed(() => publishedFilter.value !== 'all')
+
 // Table headers
 const headers = computed<TableHeader[]>(() => [
   { title: t('admin.products.table.headers.selection'), key: 'selection', width: '40px', sortable: false },
   { title: t('admin.products.table.headers.productCode'), key: 'product_code', width: '150px', sortable: true },
   { title: t('admin.products.table.headers.productName'), key: 'name', width: '250px', sortable: true },
   { title: t('admin.products.table.headers.type'), key: 'type', width: '120px', sortable: true },
-  { title: t('admin.products.table.headers.published'), key: 'published', width: '100px', sortable: false },
-  { title: t('admin.products.table.headers.owner'), key: 'owner', width: '180px', sortable: false },
+  { title: t('admin.products.table.headers.status'), key: 'status_code', width: '120px', sortable: true },
+  { title: t('admin.products.table.headers.published'), key: 'published', width: '100px', sortable: true },
+  { title: t('admin.products.table.headers.owner'), key: 'owner', width: '180px', sortable: true },
   { title: t('admin.products.table.headers.specialistsGroup'), key: 'specialists_group', width: '180px', sortable: false }
 ])
 
@@ -291,6 +311,7 @@ const performSearch = async () => {
       sortBy: sortBy.value || 'product_code',
       sortDesc: sortDesc.value || false,
       typeFilter: typeFilter.value !== 'all' ? typeFilter.value : undefined,
+      statusFilter: statusFilter.value !== 'all' ? statusFilter.value : undefined,
       publishedFilter: publishedFilter.value !== 'all' ? publishedFilter.value : undefined,
       language: currentLanguage
     }
@@ -392,6 +413,9 @@ const totalItems = computed(() => totalItemsCount.value)
 
 // Initialize on mount
 onMounted(async () => {
+  // Load product statuses for filter dropdown
+  await serviceFetchStatuses.fetchProductStatuses()
+  // Load products list
   await performSearch()
 })
 
@@ -416,6 +440,11 @@ const handleTypeFilterChange = async () => {
   await performSearch()
 }
 
+const handleStatusFilterChange = async () => {
+  page.value = 1
+  await performSearch()
+}
+
 const handlePublishedFilterChange = async () => {
   page.value = 1
   await performSearch()
@@ -423,6 +452,7 @@ const handlePublishedFilterChange = async () => {
 
 const clearFilters = async () => {
   typeFilter.value = 'all'
+  statusFilter.value = 'all'
   publishedFilter.value = 'all'
   page.value = 1
   await performSearch()
@@ -451,17 +481,46 @@ const clearFilters = async () => {
                   v-model="typeFilter"
                   density="compact"
                   variant="outlined"
-                  :label="t('admin.products.filters.type')"
+                  :label="t('admin.products.filters.type').toLowerCase()"
                   :items="[
                     { title: t('admin.products.filters.all'), value: 'all' },
                     { title: t('admin.products.editor.basic.type.product'), value: 'product' },
                     { title: t('admin.products.editor.basic.type.productAndOption'), value: 'productAndOption' },
                     { title: t('admin.products.editor.basic.type.option'), value: 'option' }
                   ]"
+                  color="teal"
+                  :base-color="isTypeFilterActive ? 'teal' : undefined"
+                  hide-details
+                  style="min-width: 180px;"
+                  class="filter-select"
+                  @update:model-value="handleTypeFilterChange"
+                >
+                  <template #append-inner>
+                    <PhFunnel class="dropdown-icon" />
+                  </template>
+                </v-select>
+              </div>
+
+              <!-- Status filter -->
+              <div class="d-flex align-center mr-4">
+                <v-select
+                  v-model="statusFilter"
+                  density="compact"
+                  variant="outlined"
+                  :label="t('admin.products.filters.status').toLowerCase()"
+                  :items="[
+                    { title: t('admin.products.filters.all'), value: 'all' },
+                    ...(productsStore.statuses || []).map(status => ({
+                      title: status.status_code,
+                      value: status.status_code
+                    }))
+                  ]"
+                  color="teal"
+                  :base-color="isStatusFilterActive ? 'teal' : undefined"
                   hide-details
                   style="min-width: 150px;"
                   class="filter-select"
-                  @update:model-value="handleTypeFilterChange"
+                  @update:model-value="handleStatusFilterChange"
                 >
                   <template #append-inner>
                     <PhFunnel class="dropdown-icon" />
@@ -475,14 +534,16 @@ const clearFilters = async () => {
                   v-model="publishedFilter"
                   density="compact"
                   variant="outlined"
-                  :label="t('admin.products.filters.published')"
+                  :label="t('admin.products.filters.published').toLowerCase()"
                   :items="[
                     { title: t('admin.products.filters.all'), value: 'all' },
                     { title: t('admin.products.table.status.yes'), value: 'published' },
                     { title: t('admin.products.table.status.no'), value: 'unpublished' }
                   ]"
+                  color="teal"
+                  :base-color="isPublishedFilterActive ? 'teal' : undefined"
                   hide-details
-                  style="min-width: 120px;"
+                  style="min-width: 150px;"
                   class="filter-select"
                   @update:model-value="handlePublishedFilterChange"
                 >
@@ -494,7 +555,7 @@ const clearFilters = async () => {
 
               <!-- Clear filters button -->
               <v-btn
-                v-if="typeFilter !== 'all' || publishedFilter !== 'all'"
+                v-if="typeFilter !== 'all' || statusFilter !== 'all' || publishedFilter !== 'all'"
                 size="small"
                 variant="text"
                 color="grey"
@@ -585,6 +646,10 @@ const clearFilters = async () => {
             >
               {{ getProductTypeText(item.can_be_option, item.option_only) }}
             </v-chip>
+          </template>
+
+          <template #[`item.status_code`]="{ item }">
+            <span>{{ item.status_code }}</span>
           </template>
 
           <template #[`item.published`]="{ item }">
