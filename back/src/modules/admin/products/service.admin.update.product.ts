@@ -1,5 +1,5 @@
 /**
- * service.admin.update.product.ts - version 1.3.1
+ * service.admin.update.product.ts - version 1.3.2
  * Service for updating products operations.
  * 
  * Functionality:
@@ -33,6 +33,10 @@
  * Changes in v1.3.1:
  * - Added statusCode field support in product updates
  * - status_code changes are tracked and included in event payloads
+ * 
+ * Changes in v1.3.2:
+ * - Fixed bug where statusCode changes were not processed when statusCode was the only changed field
+ * - Added statusCode check to condition that calls updateMainProductData
  */
 
 import { Request } from 'express';
@@ -788,7 +792,7 @@ export async function updateProduct(data: UpdateProductRequest, req: Request): P
         // Update main product data and collect changes
         let mainDataChanges = null;
         if (data.productCode !== undefined || data.translationKey !== undefined || 
-            data.canBeOption !== undefined || data.optionOnly !== undefined) {
+            data.statusCode !== undefined || data.canBeOption !== undefined || data.optionOnly !== undefined) {
             mainDataChanges = await updateMainProductData(client, data.productId, data, requestorUuid, req);
             
             // Publish event only if there are actual changes
