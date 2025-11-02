@@ -69,7 +69,6 @@ export const fetchOptions = async (
     pool: Pool,
     req: Request
 ): Promise<FetchOptionsResult> => {
-    console.log('[ServiceFetchOptions] Starting fetchOptions with request:', req.query)
     const client = await pool.connect()
     
     try {
@@ -127,13 +126,11 @@ export const fetchOptions = async (
         const validatedSortBy = sortBy && validSortFields.includes(sortBy) ? sortBy : 'product_code'
 
         // Execute count query first to get total items
-        console.log('[ServiceFetchOptions] Executing count query with searchPattern:', searchPattern, 'excludeProductId:', excludeProductId, 'statusFilter:', statusFilter)
         const countResult = await client.query(queries.countAllOptions, [
             searchPattern,
             excludeProductId,
             statusFilter
         ])
-        console.log('[ServiceFetchOptions] Count result:', countResult.rows[0])
         
         const totalItems = parseInt(countResult.rows[0].total)
         
@@ -147,16 +144,6 @@ export const fetchOptions = async (
         })
 
         // Execute main query to get options
-        console.log('[ServiceFetchOptions] Executing main query with params:', {
-            offset,
-            itemsPerPage,
-            searchPattern,
-            validatedSortBy,
-            sortDesc: sortDesc || false,
-            validatedLanguageCode,
-            excludeProductId,
-            statusFilter
-        })
         const optionsResult = await client.query(queries.fetchAllOptions, [
             offset,
             itemsPerPage,
@@ -167,7 +154,6 @@ export const fetchOptions = async (
             excludeProductId,
             statusFilter
         ])
-        console.log('[ServiceFetchOptions] Options result rows count:', optionsResult.rows.length)
         
         // Process results into ProductListItem format
         const options: ProductListItem[] = optionsResult.rows.map(row => ({
