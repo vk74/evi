@@ -1,6 +1,6 @@
 /**
  * @file state.products.admin.ts
- * Version: 1.4.0
+ * Version: 1.5.0
  * Pinia store for managing products admin module state.
  * Frontend file that handles active section management for products administration.
  *
@@ -22,6 +22,14 @@
  * - Added areStatusesFresh() getter to check cache validity
  * - Updated setProductStatuses to set timestamp
  * - Added clearStatuses() action to invalidate cache
+ * 
+ * Changes in v1.5.0:
+ * - Removed caching logic for product statuses
+ * - Removed STATUS_CACHE_DURATION constant
+ * - Removed statusesLastFetched from state
+ * - Removed areStatusesFresh() getter
+ * - Updated setProductStatuses to not set timestamp
+ * - Simplified clearStatuses() to only clear statuses array
  */
 import { defineStore } from 'pinia'
 import type {
@@ -36,14 +44,10 @@ import type {
   ProductStatus
 } from './types.products.admin'
 
-// Cache duration for product statuses: 10 minutes
-const STATUS_CACHE_DURATION = 10 * 60 * 1000
-
 export const useProductsAdminStore = defineStore('productsAdmin', {
   state: (): ProductsAdminState & { 
     originalProductData: ProductWithFullData | null
     statuses: ProductStatus[] | null
-    statusesLastFetched: number | null
   } => ({
     activeSection: 'products-list',
     activeEditorSection: 'details',
@@ -52,7 +56,6 @@ export const useProductsAdminStore = defineStore('productsAdmin', {
     editingProductData: null,
     originalProductData: null,
     statuses: null,
-    statusesLastFetched: null,
     formData: {
       productCode: '',
       translationKey: '',
@@ -179,18 +182,6 @@ export const useProductsAdminStore = defineStore('productsAdmin', {
       
       const changes = this.getChangedFields
       return Object.keys(changes).length > 0
-    },
-
-    /**
-     * Checks if cached statuses are still fresh (within cache duration)
-     */
-    areStatusesFresh(): boolean {
-      if (!this.statuses || !this.statusesLastFetched) {
-        return false
-      }
-      const now = Date.now()
-      const cacheAge = now - this.statusesLastFetched
-      return cacheAge < STATUS_CACHE_DURATION
     }
   },
 
@@ -406,19 +397,17 @@ export const useProductsAdminStore = defineStore('productsAdmin', {
     },
 
     /**
-     * Sets product statuses array from API response and updates timestamp
+     * Sets product statuses array from API response
      */
     setProductStatuses(statuses: ProductStatus[]): void {
       this.statuses = statuses
-      this.statusesLastFetched = Date.now()
     },
 
     /**
-     * Clears statuses cache (invalidates cache)
+     * Clears product statuses array
      */
     clearStatuses(): void {
       this.statuses = null
-      this.statusesLastFetched = null
     },
 
     resetState(): void {
@@ -429,7 +418,6 @@ export const useProductsAdminStore = defineStore('productsAdmin', {
       this.editingProductData = null
       this.originalProductData = null
       this.statuses = null
-      this.statusesLastFetched = null
       this.resetFormData()
     },
 

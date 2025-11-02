@@ -1,6 +1,6 @@
 <!--
   File: ProductEditorOptions.vue
-  Version: 1.8.0
+  Version: 1.9.0
   Description: Component for product options management
   Purpose: Provides interface for managing product options pairing
   Frontend file - ProductEditorOptions.vue
@@ -17,6 +17,15 @@
   - Renamed owner column to product owner and increased width to 170px
   - Swapped paired and published filters positions
   - Changed filter labels to lowercase
+  
+  Changes in v1.9.0:
+  - Replaced "product published" column with "product status" column
+  - Replaced "published" filter with "product status" filter
+  - Status codes displayed as plain text (status_code value) instead of chips
+  - Added status loading using serviceFetchStatuses (always fetches fresh data from database)
+  - Filter uses statuses from pinia store with status_code as value and description as title
+  - Backend filtering by status_code when statusFilter is not 'all'
+  - Status column displays status_code directly (not description)
 -->
 
 <script setup lang="ts">
@@ -28,6 +37,7 @@ import DataLoading from '@/core/ui/loaders/DataLoading.vue'
 import Paginator from '@/core/ui/paginator/Paginator.vue'
 import debounce from 'lodash/debounce'
 import { serviceFetchOptions } from '../../service.fetch.options'
+import { serviceFetchStatuses } from '../../service.fetch.statuses'
 import deleteProductOptionPairs, { type DeletePairsRequest, type DeletePairsResponse } from './service.admin.delete.product.option.pairs'
 import countProductOptionPairs from './service.admin.count.product.option.pairs'
 import { fetchPairedOptionIds, fetchExistsMap } from '@/core/ui/modals/product-pair-editor/service.read.product.option.pairs'
@@ -83,7 +93,7 @@ const isSearching = ref<boolean>(false)
 // Filter parameters
 const typeFilter = ref<string>('all')
 const pairedFilter = ref<string>('all')
-const publishedFilter = ref<string>('all')
+const statusFilter = ref<string>('all')
 
 // Sort tracking
 const sortBy = ref<string | null>(null)
@@ -127,7 +137,7 @@ const isSearchEnabled = computed(() =>
 // Filter active indicators
 const isTypeFilterActive = computed(() => typeFilter.value !== 'all')
 const isPairedFilterActive = computed(() => pairedFilter.value !== 'all')
-const isPublishedFilterActive = computed(() => publishedFilter.value !== 'all')
+const isStatusFilterActive = computed(() => statusFilter.value !== 'all')
 
 // Filtered options
 const filteredOptions = computed(() => {
@@ -153,14 +163,28 @@ const filteredOptions = computed(() => {
     })
   }
 
-  // Filter by published
-  if (publishedFilter.value !== 'all') {
-    const isPublished = publishedFilter.value === 'yes'
-    filtered = filtered.filter(item => item.is_published === isPublished)
-  }
+  // Note: Status filtering is done on backend via statusFilter parameter in performSearch
+  // Frontend filtering by status is not needed as backend already filters the data
 
   return filtered
 })
+
+// Status filter items computed from store
+const statusFilterItems = computed(() => {
+  const store = useProductsAdminStore()
+  const items = [{ title: t('admin.products.filters.all'), value: 'all' }]
+  if (store.statuses) {
+    store.statuses.forEach(status => {
+      items.push({ title: status.description, value: status.status_code })
+    })
+  }
+  return items
+})
+
+// Helper function to get status code (returns status_code directly)
+const getStatusCode = (statusCode: string): string => {
+  return statusCode || '-'
+}
 
 // Table headers
 const headers = computed<TableHeader[]>(() => [
@@ -168,7 +192,7 @@ const headers = computed<TableHeader[]>(() => [
   { title: t('admin.products.table.headers.optionCode'), key: 'option_code', width: '165px', sortable: true },
   { title: t('admin.products.table.headers.optionName'), key: 'name', width: '250px', sortable: true },
   { title: t('admin.products.table.headers.type'), key: 'type', width: '120px', sortable: true },
-  { title: t('admin.products.table.headers.productPublished'), key: 'published', width: '170px', sortable: true },
+  { title: t('admin.products.table.headers.productStatus'), key: 'status', width: '170px', sortable: true },
   { title: t('admin.products.table.headers.productOwner'), key: 'owner', width: '170px', sortable: true },
   { title: t('admin.products.table.headers.paired') || 'paired', key: 'paired', width: '100px', sortable: false }
 ])
@@ -194,7 +218,8 @@ const performSearch = async () => {
       sortBy: sortBy.value || 'product_code',
       sortDesc: sortDesc.value || false,
       language: currentLanguage,
-      excludeProductId: productsStore.editingProductId || undefined
+      excludeProductId: productsStore.editingProductId || undefined,
+      statusFilter: statusFilter.value !== 'all' ? statusFilter.value : undefined
     }
     
     // Call API service
@@ -317,6 +342,12 @@ watch(searchQuery, () => {
   debouncedSearch()
 })
 
+// Watch statusFilter and reload data when it changes
+watch(statusFilter, () => {
+  page.value = 1 // Reset to first page when filter changes
+  debouncedSearch()
+})
+
 // Keep paired flags in sync when table data or pagination changes
 watch([options, page, itemsPerPage], async () => {
   await refreshPairedForCurrentPage()
@@ -433,11 +464,33 @@ function clearSelections() {
   uiStore.showSuccessSnackbar(t('admin.products.messages.selectionCleared'))
 }
 
+// Load statuses (always fetches fresh data from database)
+const loadStatuses = async () => {
+  try {
+    await serviceFetchStatuses.fetchProductStatuses()
+  } catch (e) {
+    console.error('Failed to load product statuses:', e)
+  }
+}
+
 // Initialize on mount
 onMounted(async () => {
   if (isOptionsTabActive.value) {
-    await Promise.all([performSearch(), loadActiveOptionsCount(), loadPairedOptionIds()])
+    // Load statuses and options data in parallel
+    await Promise.all([
+      loadStatuses(),
+      performSearch(), 
+      loadActiveOptionsCount(), 
+      loadPairedOptionIds()
+    ])
     await refreshPairedForCurrentPage()
+  }
+})
+
+// Reload statuses when component becomes active (always fetch fresh data from database)
+watch(isOptionsTabActive, async (isActive) => {
+  if (isActive) {
+    await loadStatuses()
   }
 })
 </script>
@@ -531,22 +584,18 @@ onMounted(async () => {
                   </v-select>
                 </div>
 
-                <!-- Published filter -->
+                <!-- Status filter -->
                 <div class="d-flex align-center mr-4">
                   <v-select
-                    v-model="publishedFilter"
+                    v-model="statusFilter"
                     density="compact"
                     variant="outlined"
-                    label="published"
-                    :items="[
-                      { title: t('admin.products.filters.all'), value: 'all' },
-                      { title: t('admin.products.table.status.yes'), value: 'yes' },
-                      { title: t('admin.products.table.status.no'), value: 'no' }
-                    ]"
+                    :label="t('admin.products.filters.status') || 'product status'"
+                    :items="statusFilterItems"
                     color="teal"
-                    :base-color="isPublishedFilterActive ? 'teal' : undefined"
+                    :base-color="isStatusFilterActive ? 'teal' : undefined"
                     hide-details
-                    style="min-width: 150px;"
+                    style="min-width: 180px;"
                   >
                     <template #append-inner>
                       <PhFunnel class="dropdown-icon" />
@@ -637,13 +686,8 @@ onMounted(async () => {
                 </v-chip>
               </template>
 
-              <template #[`item.published`]="{ item }">
-                <v-chip 
-                  :color="item.is_published ? 'teal' : 'grey'" 
-                  size="small"
-                >
-                  {{ item.is_published ? t('admin.products.table.status.yes') : t('admin.products.table.status.no') }}
-                </v-chip>
+              <template #[`item.status`]="{ item }">
+                <span>{{ getStatusCode(item.status_code) }}</span>
               </template>
 
               <template #[`item.owner`]="{ item }">

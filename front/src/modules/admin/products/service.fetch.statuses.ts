@@ -1,8 +1,14 @@
 /**
  * @file service.fetch.statuses.ts
- * Version: 1.0.0
- * Frontend service for fetching product statuses with caching.
- * Frontend file that handles product statuses fetching from API with cache management.
+ * Version: 1.2.0
+ * Frontend service for fetching product statuses from API.
+ * Frontend file that handles product statuses fetching from API.
+ * Always fetches fresh data from database - no caching.
+ * 
+ * Changes in v1.2.0:
+ * - Removed all caching logic
+ * - Always makes API request to fetch fresh data from database
+ * - Statuses stored in pinia store only for filter dropdown (no cache validation)
  */
 
 import { api } from '@/core/api/service.axios'
@@ -21,56 +27,37 @@ interface FetchProductStatusesResponse {
 }
 
 /**
- * Frontend service for fetching product statuses with caching
+ * Frontend service for fetching product statuses from API
  */
 export class ServiceFetchStatuses {
   /**
-   * Fetches product statuses from backend API with caching
-   * Checks if statuses are fresh in store, returns cached if fresh, otherwise fetches from API
+   * Fetches product statuses from backend API.
+   * Always fetches fresh data from database - no caching.
    * @returns Promise with statuses array or empty array on error
    */
   async fetchProductStatuses(): Promise<ProductStatus[]> {
     const store = useProductsAdminStore()
-
-    // Check if statuses are fresh in store
-    if (store.areStatusesFresh && store.statuses) {
-      return store.statuses
-    }
+    const { useUiStore } = await import('@/core/state/uistate')
+    const uiStore = useUiStore()
 
     try {
-      // Make API request to fetch statuses
+      // Always make API request to fetch fresh data from database
       const response = await api.get<FetchProductStatusesResponse>(
         '/api/admin/products/fetch-statuses'
       )
 
       // Check if request was successful
       if (response.data.success && response.data.data?.statuses) {
-        // Update store with new statuses and timestamp
+        // Update store with fresh statuses (for filter dropdown only)
         store.setProductStatuses(response.data.data.statuses)
         return response.data.data.statuses
       } else {
-        console.error('Failed to fetch product statuses:', response.data.message)
+        uiStore.showErrorSnackbar(response.data.message || 'Failed to fetch product statuses')
         return []
       }
     } catch (error: any) {
       console.error('Error fetching product statuses:', error)
-
-      // Handle different error types
-      if (error.response?.status === 401) {
-        console.error('Authentication required. Please log in again.')
-      } else if (error.response?.status === 403) {
-        console.error('Access denied. You do not have permission to view product statuses.')
-      } else if (error.response?.status >= 500) {
-        console.error('Server error. Please try again later.')
-      } else if (error.response?.data?.message) {
-        console.error(error.response.data.message)
-      } else if (error.message) {
-        console.error(error.message)
-      } else {
-        console.error('An unexpected error occurred while fetching product statuses.')
-      }
-
-      // Return empty array on error
+      uiStore.showErrorSnackbar(error.response?.data?.message || error.message || 'An unexpected error occurred while fetching product statuses.')
       return []
     }
   }

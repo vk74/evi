@@ -1,5 +1,5 @@
 /**
- * service.admin.fetch.options.ts - version 1.0.0
+ * service.admin.fetch.options.ts - version 1.1.0
  * Service for fetching options (products with can_be_option = true OR option_only = true).
  * 
  * Handles database queries for options list with user roles and translations.
@@ -7,6 +7,12 @@
  * File: service.admin.fetch.options.ts
  * Created: 2024-12-20
  * Last updated: 2024-12-20
+ * 
+ * Changes in v1.1.0:
+ * - Added statusFilter parameter support for filtering options by status_code
+ * - Added statusFilter parsing from request query
+ * - Pass statusFilter to countAllOptions and fetchAllOptions queries
+ * - status_code field already mapped in ProductListItem (line 165)
  */
 
 import { Pool } from 'pg'
@@ -52,6 +58,7 @@ interface FetchOptionsQuery {
   sortDesc?: string
   language?: string
   excludeProductId?: string
+  statusFilter?: string
 }
 
 /**
@@ -75,6 +82,7 @@ export const fetchOptions = async (
         const sortBy = query.sortBy || 'product_code'
         const sortDesc = query.sortDesc === 'true'
         const excludeProductId = query.excludeProductId || undefined
+        const statusFilter = query.statusFilter && query.statusFilter !== 'all' ? query.statusFilter : undefined
         
         // Get language code from query parameter first, then from headers, then default to 'en'
         const queryLanguage = query.language
@@ -103,7 +111,8 @@ export const fetchOptions = async (
                 searchQuery, 
                 sortBy, 
                 sortDesc,
-                languageCode: validatedLanguageCode
+                languageCode: validatedLanguageCode,
+                statusFilter
             }
         })
 
@@ -118,10 +127,11 @@ export const fetchOptions = async (
         const validatedSortBy = sortBy && validSortFields.includes(sortBy) ? sortBy : 'product_code'
 
         // Execute count query first to get total items
-        console.log('[ServiceFetchOptions] Executing count query with searchPattern:', searchPattern, 'excludeProductId:', excludeProductId)
+        console.log('[ServiceFetchOptions] Executing count query with searchPattern:', searchPattern, 'excludeProductId:', excludeProductId, 'statusFilter:', statusFilter)
         const countResult = await client.query(queries.countAllOptions, [
             searchPattern,
-            excludeProductId
+            excludeProductId,
+            statusFilter
         ])
         console.log('[ServiceFetchOptions] Count result:', countResult.rows[0])
         
@@ -144,7 +154,8 @@ export const fetchOptions = async (
             validatedSortBy,
             sortDesc: sortDesc || false,
             validatedLanguageCode,
-            excludeProductId
+            excludeProductId,
+            statusFilter
         })
         const optionsResult = await client.query(queries.fetchAllOptions, [
             offset,
@@ -153,7 +164,8 @@ export const fetchOptions = async (
             validatedSortBy,
             sortDesc || false,
             validatedLanguageCode,
-            excludeProductId
+            excludeProductId,
+            statusFilter
         ])
         console.log('[ServiceFetchOptions] Options result rows count:', optionsResult.rows.length)
         

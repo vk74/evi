@@ -1,5 +1,5 @@
 /**
- * queries.admin.products.ts - version 1.0.7
+ * queries.admin.products.ts - version 1.0.8
  * SQL queries for products administration operations.
  * 
  * Contains all SQL queries used by products admin module.
@@ -27,6 +27,11 @@
   - Updated countAllProducts parameters from 3 to 4 (added statusFilter)
   - Added status_code field to fetchAllOptions SELECT clause
   - Added status_code to fetchAllOptions GROUP BY clause
+  
+  Changes in v1.0.8:
+  - Added statusFilter parameter support to fetchAllOptions query
+  - Added statusFilter parameter support to countAllOptions query
+  - status_code already present in fetchAllOptions SELECT and GROUP BY
   
   Changes in v1.0.7:
   - Added sorting support for status_code, published, and owner fields in fetchAllProducts ORDER BY clause
@@ -399,7 +404,7 @@ export const queries = {
 
     /**
      * Fetches all options (products with can_be_option = true OR option_only = true)
-     * Parameters: [offset, itemsPerPage, searchQuery, sortBy, sortDesc, languageCode, excludeProductId]
+     * Parameters: [offset, itemsPerPage, searchQuery, sortBy, sortDesc, languageCode, excludeProductId, statusFilter]
      */
     fetchAllOptions: `
         SELECT 
@@ -444,6 +449,7 @@ export const queries = {
         AND (p.can_be_option = true OR p.option_only = true)
         AND ($3::text IS NULL OR $3::text = '' OR LOWER(p.product_code) LIKE LOWER($3::text) OR LOWER(pt.name) LIKE LOWER($3::text) OR LOWER(p.translation_key) LIKE LOWER($3::text))
         AND ($7::uuid IS NULL OR p.product_id != $7)
+        AND ($8::text IS NULL OR $8::text = '' OR p.status_code = $8::text)
         GROUP BY p.product_id, p.product_code, p.translation_key, p.can_be_option, p.option_only,
                  p.is_published, p.is_visible_owner, p.is_visible_groups, p.is_visible_tech_specs,
                  p.is_visible_area_specs, p.is_visible_industry_specs, p.is_visible_key_features,
@@ -474,7 +480,7 @@ export const queries = {
 
     /**
      * Counts total options with same filters as fetchAllOptions
-     * Parameters: [searchQuery, excludeProductId]
+     * Parameters: [searchQuery, excludeProductId, statusFilter]
      */
     countAllOptions: `
         SELECT COUNT(DISTINCT p.product_id) as total
@@ -484,6 +490,7 @@ export const queries = {
         AND (p.can_be_option = true OR p.option_only = true)
         AND ($1::text IS NULL OR $1::text = '' OR LOWER(p.product_code) LIKE LOWER($1::text) OR LOWER(pt.name) LIKE LOWER($1::text) OR LOWER(p.translation_key) LIKE LOWER($1::text))
         AND ($2::uuid IS NULL OR p.product_id != $2)
+        AND ($3::text IS NULL OR $3::text = '' OR p.status_code = $3::text)
     `,
 
     /**

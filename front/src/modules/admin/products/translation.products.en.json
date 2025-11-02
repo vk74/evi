@@ -312,6 +312,7 @@
           "paired": "paired",
           "published": "published",
           "productPublished": "product published",
+          "productStatus": "product status",
           "owner": "owner",
           "productOwner": "product owner",
           "specialistsGroup": "specialists group"
@@ -327,7 +328,7 @@
       },
       "filters": {
         "type": "type",
-        "status": "status",
+        "status": "product status",
         "published": "published",
         "all": "all",
         "clear": "clear filters"
