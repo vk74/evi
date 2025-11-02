@@ -1,6 +1,6 @@
 <!--
   File: ProductEditorDetails.vue
-  Version: 1.4.0
+  Version: 1.4.1
   Description: Component for product details form and actions
   Purpose: Provides interface for creating and editing product details with dynamic validation
   Frontend file - ProductEditorDetails.vue
@@ -27,6 +27,11 @@
   - Statuses loaded from API response and stored in store
   - Added statusCode validation (required field)
   - StatusCode included in create and update operations
+  
+  Changes in v1.4.1:
+  - Added translations for status dropdown options
+  - Status options now display translated labels based on current language
+  - Added locale reactivity to statusOptions computed property
 -->
 
 <script setup lang="ts">
@@ -101,13 +106,14 @@ const languageOptions = computed(() => [
   { title: t('admin.products.editor.languages.russian'), value: 'ru' }
 ])
 
-// Product status options from store
+// Product status options from store with translations
 const statusOptions = computed(() => {
+  locale.value // Ensure reactivity to language changes
   if (!productsStore.statuses || productsStore.statuses.length === 0) {
     return []
   }
   return productsStore.statuses.map((status: ProductStatus) => ({
-    title: status.status_code,
+    title: t(`admin.products.editor.basic.status.options.${status.status_code}`),
     value: status.status_code
   }))
 })

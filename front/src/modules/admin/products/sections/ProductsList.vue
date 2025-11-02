@@ -1,6 +1,6 @@
 /**
  * @file ProductsList.vue
- * Version: 1.2.0
+ * Version: 1.2.1
  * Products list section component.
  * Frontend file that displays list of products for admin users.
  * 
@@ -15,6 +15,12 @@
  * - Added filter active indicators with teal color highlighting
  * - Updated filter labels to lowercase
  * - Adjusted filter widths to match ProductEditorOptions style
+ * 
+ * Changes in v1.2.1:
+ * - Added translations for status filter dropdown options
+ * - Added translations for status column display
+ * - Status options and column values now display translated labels based on current language
+ * - Added locale reactivity to statusFilterItems computed property and getStatusCode function
  */
 <script setup lang="ts">
 import { ref, computed, onMounted, watch } from 'vue'
@@ -111,6 +117,27 @@ const isSearchEnabled = computed(() =>
 const isTypeFilterActive = computed(() => typeFilter.value !== 'all')
 const isStatusFilterActive = computed(() => statusFilter.value !== 'all')
 const isPublishedFilterActive = computed(() => publishedFilter.value !== 'all')
+
+// Status filter items computed from store with translations
+const statusFilterItems = computed(() => {
+  locale.value // Ensure reactivity to language changes
+  const items = [{ title: t('admin.products.filters.all'), value: 'all' }]
+  if (productsStore.statuses) {
+    productsStore.statuses.forEach(status => {
+      items.push({
+        title: t(`admin.products.editor.basic.status.options.${status.status_code}`),
+        value: status.status_code
+      })
+    })
+  }
+  return items
+})
+
+// Helper function to get translated status code
+const getStatusCode = (statusCode: string): string => {
+  if (!statusCode) return '-'
+  return t(`admin.products.editor.basic.status.options.${statusCode}`)
+}
 
 // Table headers
 const headers = computed<TableHeader[]>(() => [
@@ -508,13 +535,7 @@ const clearFilters = async () => {
                   density="compact"
                   variant="outlined"
                   :label="t('admin.products.filters.status').toLowerCase()"
-                  :items="[
-                    { title: t('admin.products.filters.all'), value: 'all' },
-                    ...(productsStore.statuses || []).map(status => ({
-                      title: status.status_code,
-                      value: status.status_code
-                    }))
-                  ]"
+                  :items="statusFilterItems"
                   color="teal"
                   :base-color="isStatusFilterActive ? 'teal' : undefined"
                   hide-details
@@ -649,7 +670,7 @@ const clearFilters = async () => {
           </template>
 
           <template #[`item.status_code`]="{ item }">
-            <span>{{ item.status_code }}</span>
+            <span>{{ getStatusCode(item.status_code) }}</span>
           </template>
 
           <template #[`item.published`]="{ item }">

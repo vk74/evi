@@ -67,7 +67,12 @@
             "option": "option"
           },
           "status": {
-            "label": "status"
+            "label": "status",
+            "options": {
+              "draft": "draft",
+              "active": "active",
+              "discontinued": "discontinued"
+            }
           },
           "isPublished": {
             "label": "published"

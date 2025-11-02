@@ -67,7 +67,12 @@
             "option": "опция"
           },
           "status": {
-            "label": "статус"
+            "label": "статус",
+            "options": {
+              "draft": "черновик",
+              "active": "активен",
+              "discontinued": "снят с производства"
+            }
           },
           "isPublished": {
             "label": "опубликован"

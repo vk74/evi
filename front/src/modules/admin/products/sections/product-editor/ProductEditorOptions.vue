@@ -1,6 +1,6 @@
 <!--
   File: ProductEditorOptions.vue
-  Version: 1.9.1
+  Version: 1.9.2
   Description: Component for product options management
   Purpose: Provides interface for managing product options pairing
   Frontend file - ProductEditorOptions.vue
@@ -31,6 +31,12 @@
   - Removed description field usage from status filter
   - Filter dropdown now uses status_code as both title and value
   - Statuses now fetched from app.product_status UDT enum instead of product_statuses table
+  
+  Changes in v1.9.2:
+  - Added translations for status filter dropdown options
+  - Added translations for status column display
+  - Status options and column values now display translated labels based on current language
+  - Added locale reactivity to statusFilterItems computed property and getStatusCode function
 -->
 
 <script setup lang="ts">
@@ -174,21 +180,26 @@ const filteredOptions = computed(() => {
   return filtered
 })
 
-// Status filter items computed from store
+// Status filter items computed from store with translations
 const statusFilterItems = computed(() => {
+  locale.value // Ensure reactivity to language changes
   const store = useProductsAdminStore()
   const items = [{ title: t('admin.products.filters.all'), value: 'all' }]
   if (store.statuses) {
     store.statuses.forEach(status => {
-      items.push({ title: status.status_code, value: status.status_code })
+      items.push({ 
+        title: t(`admin.products.editor.basic.status.options.${status.status_code}`), 
+        value: status.status_code 
+      })
     })
   }
   return items
 })
 
-// Helper function to get status code (returns status_code directly)
+// Helper function to get translated status code
 const getStatusCode = (statusCode: string): string => {
-  return statusCode || '-'
+  if (!statusCode) return '-'
+  return t(`admin.products.editor.basic.status.options.${statusCode}`)
 }
 
 // Table headers
