@@ -1,7 +1,7 @@
 /**
  * @file service.fetch.single.product.ts
  * Service for fetching single product data via API.
- * Version: 1.0.0
+ * Version: 1.0.1
  * FRONTEND service for fetching single product data through API.
  *
  * Functionality:
@@ -11,6 +11,10 @@
  * - Integrates with UI store for toast notifications
  * - Follows established patterns from other services
  * - Supports product data with translations and relationships
+ * 
+ * Changes in v1.0.1:
+ * - Added status_code field processing from API response
+ * - Added product statuses array processing for UI dropdown
  */
 
 import { api } from '@/core/api/service.axios'
@@ -65,7 +69,7 @@ export const serviceFetchSingleProduct = {
         throw new Error('No product data received')
       }
 
-      const { product, translations, owner, backupOwner, specialistsGroups } = response.data.data
+      const { product, translations, owner, backupOwner, specialistsGroups, statuses } = response.data.data
 
       // Transform translations from API format to frontend format
       const frontendTranslations: ProductTranslations = {}
@@ -91,6 +95,11 @@ export const serviceFetchSingleProduct = {
         owner,
         backupOwner,
         specialistsGroups: specialistsGroups || []
+      }
+
+      // Store statuses in store for use in component
+      if (statuses && statuses.length > 0) {
+        store.setProductStatuses(statuses)
       }
 
       logger.info('Successfully fetched product data', {

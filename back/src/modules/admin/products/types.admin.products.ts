@@ -1,5 +1,5 @@
 /**
- * types.admin.products.ts - version 1.0.4
+ * types.admin.products.ts - version 1.0.5
  * Type definitions for products administration module.
  * 
  * Contains TypeScript interfaces and types for products admin functionality.
@@ -11,6 +11,12 @@
   
   Changes in v1.0.4:
   - Updated UpdateProductSectionsPublishRequest to use sectionsToAdd and sectionsToRemove arrays instead of sectionIds
+  
+  Changes in v1.0.5:
+  - Added status_code field to Product interface
+  - Added statusCode field to CreateProductRequest and UpdateProductRequest
+  - Added ProductStatus interface for status reference data
+  - Updated FetchProductResponse to include statuses array
  */
 
 // Product type enum
@@ -24,6 +30,14 @@ export enum ProductType {
 export enum LanguageCode {
     ENGLISH = 'en',
     RUSSIAN = 'ru'
+}
+
+// Product status interface for reference data
+export interface ProductStatus {
+    status_code: string
+    description: string
+    is_active: boolean
+    display_order: number
 }
 
 // Product translation data interface
@@ -54,6 +68,7 @@ export interface CreateProductRequest {
     backupOwner?: string
     specialistsGroups: string[]
     translations: ProductTranslations
+    statusCode?: string
 }
 
 // Create product response interface
@@ -86,6 +101,7 @@ export interface Product {
     product_id: string
     product_code: string
     translation_key: string
+    status_code: string
     can_be_option: boolean
     option_only: boolean
     is_published: boolean
@@ -151,6 +167,7 @@ export interface FetchProductResponse extends ApiResponse {
         owner?: string
         backupOwner?: string
         specialistsGroups: string[]
+        statuses?: ProductStatus[]
     }
 }
 
@@ -173,6 +190,7 @@ export interface UpdateProductRequest {
     backupOwner?: string
     specialistsGroups?: string[]
     translations?: ProductTranslations
+    statusCode?: string
     visibility?: {
         isVisibleOwner?: boolean
         isVisibleGroups?: boolean

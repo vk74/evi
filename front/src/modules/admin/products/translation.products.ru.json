@@ -66,6 +66,9 @@
             "productAndOption": "продукт или опция",
             "option": "опция"
           },
+          "status": {
+            "label": "статус"
+          },
           "isPublished": {
             "label": "опубликован"
           },
@@ -169,6 +172,9 @@
           },
           "productType": {
             "required": "тип продукта обязателен"
+          },
+          "status": {
+            "required": "статус обязателен"
           },
           "owner": {
             "required": "владелец обязателен",

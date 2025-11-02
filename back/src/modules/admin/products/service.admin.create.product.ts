@@ -1,5 +1,5 @@
 /**
- * service.admin.create.product.ts - version 1.3.0
+ * service.admin.create.product.ts - version 1.3.1
  * Service for creating products operations.
  * 
  * Functionality:
@@ -19,6 +19,9 @@
  * 6. Add translations for all languages
  * 7. Return formatted response
  * 
+ * Changes in v1.3.1:
+ * - Added status_code field support in product creation
+ * - Uses default 'draft' status if statusCode not provided
  */
 
 import { Request } from 'express';
@@ -324,6 +327,7 @@ async function createProductInDatabase(data: CreateProductRequest, requestorUuid
         const productResult = await client.query(queries.createProduct, [
             data.productCode.trim(),
             data.translationKey.trim(),
+            data.statusCode || 'draft', // status_code - use provided or default to 'draft'
             data.canBeOption,
             data.optionOnly,
             false, // isPublished - always false for new products

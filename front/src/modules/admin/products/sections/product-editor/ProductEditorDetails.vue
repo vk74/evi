@@ -1,6 +1,6 @@
 <!--
   File: ProductEditorDetails.vue
-  Version: 1.3.1
+  Version: 1.4.0
   Description: Component for product details form and actions
   Purpose: Provides interface for creating and editing product details with dynamic validation
   Frontend file - ProductEditorDetails.vue
@@ -21,6 +21,12 @@
   Changes in v1.3.1:
   - Replaced static glow effect with dynamic animation for UPDATE button
   - Animation matches the style used in UserEditorDetails component
+  
+  Changes in v1.4.0:
+  - Added status_code dropdown field after productCode
+  - Statuses loaded from API response and stored in store
+  - Added statusCode validation (required field)
+  - StatusCode included in create and update operations
 -->
 
 <script setup lang="ts">
@@ -34,6 +40,7 @@ import { serviceFetchSingleProduct } from '../../service.fetch.single.product'
 import { serviceUpdateProduct } from '../../service.update.product'
 import { fetchPublicValidationRules } from '@/core/services/service.fetch.public.validation.rules'
 import { usePublicSettingsStore, type ValidationRules } from '@/core/state/state.public.settings'
+import type { ProductStatus } from '../../types.products.admin'
 
 const ItemSelector = defineAsyncComponent(() => import(/* webpackChunkName: "ui-item-selector" */ '@/core/ui/modals/item-selector/ItemSelector.vue'))
 const DataLoading = defineAsyncComponent(() => import(/* webpackChunkName: "ui-data-loading" */ '@/core/ui/loaders/DataLoading.vue'))
@@ -93,6 +100,17 @@ const languageOptions = computed(() => [
   { title: t('admin.products.editor.languages.english'), value: 'en' },
   { title: t('admin.products.editor.languages.russian'), value: 'ru' }
 ])
+
+// Product status options from store
+const statusOptions = computed(() => {
+  if (!productsStore.statuses || productsStore.statuses.length === 0) {
+    return []
+  }
+  return productsStore.statuses.map((status: ProductStatus) => ({
+    title: status.status_code,
+    value: status.status_code
+  }))
+})
 
 // Product type options
 const productTypeOptions = computed(() => [
@@ -335,6 +353,10 @@ const productTypeRules = computed(() => [
   (v: string) => !!v || t('admin.products.editor.validation.productType.required')
 ])
 
+const statusRules = computed(() => [
+  (v: string) => !!v || t('admin.products.editor.validation.status.required')
+])
+
 const nameRules = computed(() => [
   (v: string) => !!v || t('admin.products.editor.validation.name.required'),
   (v: string) => (v && v.length >= 2) || t('admin.products.editor.validation.name.minLength')
@@ -496,6 +518,7 @@ const createProduct = async () => {
     const productData = {
       productCode: formData.value.productCode,
       translationKey: translationKey,
+      statusCode: formData.value.statusCode || 'draft',
       canBeOption: formData.value.canBeOption,
       optionOnly: formData.value.optionOnly,
       owner: formData.value.owner,
@@ -723,6 +746,13 @@ onMounted(async () => {
     // Set default product type
     productType.value = 'product'
     
+    // Set default status if not set
+    if (!formData.value.statusCode && statusOptions.value.length > 0) {
+      // Use 'draft' if available, otherwise first status
+      const draftStatus = statusOptions.value.find((s: any) => s.value === 'draft')
+      formData.value.statusCode = draftStatus ? draftStatus.value : statusOptions.value[0].value
+    }
+    
     // Initialize empty initial values for creation mode
     initialOwner.value = ''
     initialBackupOwner.value = ''
@@ -821,6 +851,24 @@ onMounted(async () => {
                   color="teal"
                   required
                 />
+              </v-col>
+              <v-col
+                cols="12"
+                md="3"
+              >
+                <v-select
+                  v-model="formData.statusCode"
+                  :items="statusOptions"
+                  :label="t('admin.products.editor.basic.status.label')"
+                  :rules="statusRules"
+                  variant="outlined"
+                  color="teal"
+                  required
+                >
+                  <template #append-inner>
+                    <PhCaretUpDown class="dropdown-icon" />
+                  </template>
+                </v-select>
               </v-col>
             </v-row>
 

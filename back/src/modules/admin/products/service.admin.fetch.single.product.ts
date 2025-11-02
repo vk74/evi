@@ -1,16 +1,21 @@
 /**
- * service.admin.fetch.product.ts - version 1.0.0
+ * service.admin.fetch.single.product.ts - version 1.1.0
  * Service for fetching single product data by ID
  * Purpose: Provides business logic for fetching detailed product information
- * Backend file - service.admin.fetch.product.ts
+ * Backend file - service.admin.fetch.single.product.ts
  * Created: 2024-12-20
  * Last Updated: 2024-12-20
+ * 
+ * Changes in v1.1.0:
+ * - Added status_code field to product object
+ * - Added fetch of product statuses from reference table
+ * - Included statuses array in response data
  */
 
 import { queries } from './queries.admin.products'
 import { createAndPublishEvent } from '@/core/eventBus/fabric.events'
 import { PRODUCT_FETCH_EVENTS } from './events.admin.products'
-import type { Product, ProductTranslation, FetchProductResponse, ProductWithFullData } from './types.admin.products'
+import type { Product, ProductTranslation, FetchProductResponse, ProductWithFullData, ProductStatus } from './types.admin.products'
 import { pool } from '@/core/db/maindb'
 import { fetchGroupnameByUuid } from '@/core/helpers/get.groupname.by.uuid'
 import { fetchUsernameByUuid } from '@/core/helpers/get.username.by.uuid'
@@ -150,11 +155,21 @@ export class ServiceAdminFetchProduct {
         }
       })
 
+      // Fetch product statuses from reference table
+      const statusesResult = await client.query(queries.fetchProductStatuses)
+      const statuses: ProductStatus[] = statusesResult.rows.map((row: any) => ({
+        status_code: row.status_code,
+        description: row.description,
+        is_active: row.is_active,
+        display_order: row.display_order
+      }))
+
       // Build product object
       const product: Product = {
         product_id: productRow.product_id,
         product_code: productRow.product_code,
         translation_key: productRow.translation_key,
+        status_code: productRow.status_code,
         can_be_option: productRow.can_be_option,
         option_only: productRow.option_only,
         is_published: productRow.is_published,
@@ -178,7 +193,8 @@ export class ServiceAdminFetchProduct {
         translations: translationsResult.rows,
         owner,
         backupOwner,
-        specialistsGroups
+        specialistsGroups,
+        statuses
       }
 
       await createAndPublishEvent({
@@ -222,3 +238,4 @@ export class ServiceAdminFetchProduct {
 
 // Export singleton instance
 export const serviceAdminFetchProduct = new ServiceAdminFetchProduct()
+

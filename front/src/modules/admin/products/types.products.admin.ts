@@ -1,7 +1,7 @@
 /**
  * @file types.products.admin.ts
  * Type definitions for products administration module.
- * Version: 1.0.4
+ * Version: 1.0.5
  * Frontend types for products admin functionality.
   
   Changes in v1.0.2:
@@ -12,6 +12,12 @@
   
   Changes in v1.0.4:
   - Updated UpdateProductSectionsPublishRequest to use sectionsToAdd and sectionsToRemove arrays instead of sectionIds
+  
+  Changes in v1.0.5:
+  - Added status_code field to Product interface
+  - Added statusCode field to ProductFormData, CreateProductRequest, and UpdateProductRequest
+  - Added ProductStatus interface for status reference data
+  - Updated FetchProductResponse and ProductWithFullData to include status_code
  */
 
 // Product translation data interface
@@ -55,6 +61,7 @@ export interface ProductFormData {
   specialistsGroups: string[]
   translations: ProductTranslations
   visibility: ProductVisibility
+  statusCode?: string
 }
 
 // Create product request interface
@@ -67,6 +74,7 @@ export interface CreateProductRequest {
   backupOwner?: string
   specialistsGroups: string[]
   translations: ProductTranslations
+  statusCode?: string
 }
 
 // Create product response interface
@@ -81,11 +89,20 @@ export interface CreateProductResponse {
 }
 
 
+// Product status interface for reference data
+export interface ProductStatus {
+  status_code: string
+  description: string
+  is_active: boolean
+  display_order: number
+}
+
 // Product interface for list view
 export interface Product {
   product_id: string
   product_code: string
   translation_key: string
+  status_code: string
   can_be_option: boolean
   option_only: boolean
   is_published: boolean
@@ -168,6 +185,7 @@ export interface FetchProductResponse {
     owner?: string
     backupOwner?: string
     specialistsGroups: string[]
+    statuses?: ProductStatus[]
   }
 }
 
@@ -209,6 +227,7 @@ export interface UpdateProductRequest {
   backupOwner?: string
   specialistsGroups?: string[]
   translations?: ProductTranslations
+  statusCode?: string
   visibility?: {
     isVisibleOwner?: boolean
     isVisibleGroups?: boolean

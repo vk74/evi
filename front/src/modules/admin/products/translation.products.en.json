@@ -66,6 +66,9 @@
             "productAndOption": "product or option",
             "option": "option"
           },
+          "status": {
+            "label": "status"
+          },
           "isPublished": {
             "label": "published"
           },
@@ -169,6 +172,9 @@
           },
           "productType": {
             "required": "product type is required"
+          },
+          "status": {
+            "required": "status is required"
           },
           "owner": {
             "required": "owner is required",

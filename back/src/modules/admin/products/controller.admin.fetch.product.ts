@@ -1,6 +1,6 @@
 /**
  * controller.admin.fetch.product.ts - backend file
- * version: 1.0.0
+ * version: 1.0.1
  * 
  * Controller for fetching single product data.
  * 
@@ -12,7 +12,7 @@
  */
 
 import { Request, Response } from 'express';
-import { serviceAdminFetchProduct } from './service.admin.fetch.product';
+import { serviceAdminFetchProduct } from './service.admin.fetch.single.product';
 import { connectionHandler } from '@/core/helpers/connection.handler';
 
 /**

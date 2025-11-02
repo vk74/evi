@@ -1,5 +1,5 @@
 /**
- * queries.admin.products.ts - version 1.0.4
+ * queries.admin.products.ts - version 1.0.5
  * SQL queries for products administration operations.
  * 
  * Contains all SQL queries used by products admin module.
@@ -12,12 +12,17 @@
   
   Changes in v1.0.4:
   - Added published_by parameter to insertSectionProduct query
+  
+  Changes in v1.0.5:
+  - Added status_code field to fetchSingleProduct query
+  - Added status_code parameter to createProduct query
+  - Added fetchProductStatuses query to retrieve active product statuses
  */
 
 export const queries = {
     /**
      * Creates a new product (only basic fields)
-     * Parameters: [product_code, translation_key, can_be_option, option_only, 
+     * Parameters: [product_code, translation_key, status_code, can_be_option, option_only, 
      * is_published, is_visible_owner, is_visible_groups, is_visible_tech_specs,
      * is_visible_area_specs, is_visible_industry_specs, is_visible_key_features,
      * is_visible_overview, is_visible_long_description, created_by]
@@ -25,11 +30,11 @@ export const queries = {
      */
     createProduct: `
         INSERT INTO app.products (
-            product_code, translation_key, can_be_option, option_only, 
+            product_code, translation_key, status_code, can_be_option, option_only, 
             is_published, is_visible_owner, is_visible_groups, is_visible_tech_specs,
             is_visible_area_specs, is_visible_industry_specs, is_visible_key_features,
             is_visible_overview, is_visible_long_description, created_by
-        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
         RETURNING product_id, product_code, translation_key, created_at
     `,
 
@@ -109,6 +114,7 @@ export const queries = {
             p.product_id,
             p.product_code,
             p.translation_key,
+            p.status_code,
             p.can_be_option,
             p.option_only,
             p.is_published,
@@ -126,6 +132,22 @@ export const queries = {
             p.updated_by
         FROM app.products p
         WHERE p.product_id = $1
+    `,
+
+    /**
+     * Fetches all active product statuses from reference table
+     * Parameters: []
+     * Returns statuses sorted by display_order
+     */
+    fetchProductStatuses: `
+        SELECT 
+            status_code,
+            description,
+            is_active,
+            display_order
+        FROM app.product_statuses
+        WHERE is_active = true
+        ORDER BY display_order ASC
     `,
 
     /**
@@ -156,7 +178,7 @@ export const queries = {
 
     /**
      * Updates a product
-     * Parameters: [product_code, translation_key, can_be_option, option_only,
+     * Parameters: [product_code, translation_key, status_code, can_be_option, option_only,
      * is_published, is_visible_owner, is_visible_groups, is_visible_tech_specs,
      * is_visible_area_specs, is_visible_industry_specs, is_visible_key_features,
      * is_visible_overview, is_visible_long_description, updated_by, product_id]
@@ -165,20 +187,21 @@ export const queries = {
         UPDATE app.products SET
             product_code = $1,
             translation_key = $2,
-            can_be_option = $3,
-            option_only = $4,
-            is_published = $5,
-            is_visible_owner = $6,
-            is_visible_groups = $7,
-            is_visible_tech_specs = $8,
-            is_visible_area_specs = $9,
-            is_visible_industry_specs = $10,
-            is_visible_key_features = $11,
-            is_visible_overview = $12,
-            is_visible_long_description = $13,
-            updated_by = $14,
+            status_code = $3,
+            can_be_option = $4,
+            option_only = $5,
+            is_published = $6,
+            is_visible_owner = $7,
+            is_visible_groups = $8,
+            is_visible_tech_specs = $9,
+            is_visible_area_specs = $10,
+            is_visible_industry_specs = $11,
+            is_visible_key_features = $12,
+            is_visible_overview = $13,
+            is_visible_long_description = $14,
+            updated_by = $15,
             updated_at = now()
-        WHERE product_id = $15
+        WHERE product_id = $16
         RETURNING product_id, product_code, translation_key, updated_at
     `,
 

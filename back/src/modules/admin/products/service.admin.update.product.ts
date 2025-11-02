@@ -1,5 +1,5 @@
 /**
- * service.admin.update.product.ts - version 1.3.0
+ * service.admin.update.product.ts - version 1.3.1
  * Service for updating products operations.
  * 
  * Functionality:
@@ -29,6 +29,10 @@
  * - updateProductGroups now returns added/removed/all arrays
  * - Events published only when actual changes are detected
  * - Payload includes productCode and detailed change information for audit
+ * 
+ * Changes in v1.3.1:
+ * - Added statusCode field support in product updates
+ * - status_code changes are tracked and included in event payloads
  */
 
 import { Request } from 'express';
@@ -341,7 +345,7 @@ async function updateMainProductData(
 ): Promise<{ changes: Record<string, { old: any, new: any }> } | null> {
     // Get current values from database
     const currentResult = await client.query(
-        'SELECT product_code, translation_key, can_be_option, option_only FROM app.products WHERE product_id = $1',
+        'SELECT product_code, translation_key, status_code, can_be_option, option_only FROM app.products WHERE product_id = $1',
         [productId]
     );
     
@@ -363,6 +367,12 @@ async function updateMainProductData(
         changes.translationKey = {
             old: current.translation_key,
             new: data.translationKey
+        };
+    }
+    if (data.statusCode !== undefined && data.statusCode !== current.status_code) {
+        changes.statusCode = {
+            old: current.status_code,
+            new: data.statusCode
         };
     }
     if (data.canBeOption !== undefined && data.canBeOption !== current.can_be_option) {
@@ -395,6 +405,10 @@ async function updateMainProductData(
     if (data.translationKey !== undefined) {
         updateFields.push(`translation_key = $${paramIndex++}`);
         updateValues.push(data.translationKey);
+    }
+    if (data.statusCode !== undefined) {
+        updateFields.push(`status_code = $${paramIndex++}`);
+        updateValues.push(data.statusCode);
     }
     if (data.canBeOption !== undefined) {
         updateFields.push(`can_be_option = $${paramIndex++}`);

@@ -1,6 +1,6 @@
 /**
  * @file state.products.admin.ts
- * Version: 1.2.0
+ * Version: 1.3.0
  * Pinia store for managing products admin module state.
  * Frontend file that handles active section management for products administration.
  *
@@ -9,6 +9,12 @@
  * - Added getChangedFields getter to return only changed fields
  * - Added hasChanges getter to determine if form has unsaved changes
  * - Added setOriginalProductData and updateOriginalProductData actions
+ * 
+ * Changes in v1.3.0:
+ * - Added statusCode field to formData
+ * - Added statuses array to store product statuses from API
+ * - Added setProductStatuses action to update statuses
+ * - Updated getChangedFields to track statusCode changes
  */
 import { defineStore } from 'pinia'
 import type {
@@ -19,20 +25,23 @@ import type {
   ProductFormData,
   Product,
   ProductWithFullData,
-  UpdateProductRequest
+  UpdateProductRequest,
+  ProductStatus
 } from './types.products.admin'
 
 export const useProductsAdminStore = defineStore('productsAdmin', {
-  state: (): ProductsAdminState & { originalProductData: ProductWithFullData | null } => ({
+  state: (): ProductsAdminState & { originalProductData: ProductWithFullData | null; statuses: ProductStatus[] | null } => ({
     activeSection: 'products-list',
     activeEditorSection: 'details',
     editorMode: 'creation',
     editingProductId: null,
     editingProductData: null,
     originalProductData: null,
+    statuses: null,
     formData: {
       productCode: '',
       translationKey: '',
+      statusCode: '',
       canBeOption: false,
       optionOnly: false,
       owner: '',
@@ -94,6 +103,9 @@ export const useProductsAdminStore = defineStore('productsAdmin', {
       }
       if (current.translationKey !== original.translation_key) {
         changes.translationKey = current.translationKey
+      }
+      if (current.statusCode !== (original.status_code || '')) {
+        changes.statusCode = current.statusCode
       }
       if (current.canBeOption !== original.can_be_option) {
         changes.canBeOption = current.canBeOption
@@ -191,6 +203,7 @@ export const useProductsAdminStore = defineStore('productsAdmin', {
       this.formData = {
         productCode: '',
         translationKey: '',
+        statusCode: '',
         canBeOption: false,
         optionOnly: false,
         owner: '',
@@ -234,6 +247,7 @@ export const useProductsAdminStore = defineStore('productsAdmin', {
       this.formData = {
         productCode: product.product_code,
         translationKey: product.translation_key,
+        statusCode: product.status_code || '',
         canBeOption: product.can_be_option,
         optionOnly: product.option_only,
         owner: product.owner || '',
@@ -277,6 +291,7 @@ export const useProductsAdminStore = defineStore('productsAdmin', {
       this.formData = {
         productCode: productData.product_code,
         translationKey: productData.translation_key,
+        statusCode: productData.status_code || '',
         canBeOption: productData.can_be_option,
         optionOnly: productData.option_only,
         owner: productData.owner || '',
@@ -363,6 +378,13 @@ export const useProductsAdminStore = defineStore('productsAdmin', {
       this.clearProductData()
     },
 
+    /**
+     * Sets product statuses array from API response
+     */
+    setProductStatuses(statuses: ProductStatus[]): void {
+      this.statuses = statuses
+    },
+
     resetState(): void {
       this.activeSection = 'products-list'
       this.activeEditorSection = 'details'
@@ -370,6 +392,7 @@ export const useProductsAdminStore = defineStore('productsAdmin', {
       this.editingProductId = null
       this.editingProductData = null
       this.originalProductData = null
+      this.statuses = null
       this.resetFormData()
     },
 
@@ -406,6 +429,7 @@ export const useProductsAdminStore = defineStore('productsAdmin', {
       return (
         current.productCode !== stored.product_code ||
         current.translationKey !== stored.translation_key ||
+        current.statusCode !== (stored.status_code || '') ||
         current.canBeOption !== stored.can_be_option ||
         current.optionOnly !== stored.option_only ||
         current.owner !== (stored.owner || '') ||
