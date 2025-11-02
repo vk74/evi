@@ -1,9 +1,9 @@
--- Version: 1.3.0
+-- Version: 1.3.1
 -- Description: Create all application tables, functions, and triggers.
 -- Backend file: 04_tables.sql
 -- Updated: mobile_phone_number -> mobile_phone field name
 -- Added: published_by and published_at columns to section_products table
--- Added: product_statuses reference table and status_code column in products table
+-- Updated: status_code column uses app.product_status UDT enum instead of VARCHAR with FK
 
 -- ===========================================
 -- Helper Functions
@@ -153,31 +153,7 @@ CREATE TABLE IF NOT EXISTS app.services (
     show_support_tier3 BOOLEAN NOT NULL DEFAULT false
 );
 
--- Create product_statuses reference table (before products for FK reference)
-CREATE TABLE IF NOT EXISTS app.product_statuses (
-    status_id SMALLSERIAL PRIMARY KEY,
-    status_code VARCHAR(50) NOT NULL UNIQUE,
-    description TEXT,
-    is_active BOOLEAN NOT NULL DEFAULT true,
-    display_order INTEGER NOT NULL DEFAULT 0,
-    created_at TIMESTAMPTZ DEFAULT NOW(),
-    updated_at TIMESTAMPTZ DEFAULT NOW()
-);
-
-COMMENT ON TABLE app.product_statuses IS 'Reference table for product status codes - customizable by users';
-COMMENT ON COLUMN app.product_statuses.status_code IS 'Unique status code (e.g., draft, active, discontinued)';
-COMMENT ON COLUMN app.product_statuses.description IS 'Human-readable description of the status';
-COMMENT ON COLUMN app.product_statuses.is_active IS 'Whether this status is currently active';
-COMMENT ON COLUMN app.product_statuses.display_order IS 'Order for displaying statuses in UI';
-
--- Insert initial product status values
-INSERT INTO app.product_statuses (status_code, description, display_order) VALUES
-('draft', 'Product is being developed or created', 1),
-('active', 'Product is active and available for orders', 2),
-('discontinued', 'Product is no longer available', 3)
-ON CONFLICT (status_code) DO NOTHING;
-
--- Create products table (moved here to be available for foreign key references)
+-- Create products table
 CREATE TABLE IF NOT EXISTS app.products (
   product_id       UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   product_code     VARCHAR(150) UNIQUE,
@@ -199,7 +175,7 @@ CREATE TABLE IF NOT EXISTS app.products (
   is_visible_long_description   BOOLEAN NOT NULL DEFAULT false,
 
   -- Product status
-  status_code                   VARCHAR(50) NOT NULL DEFAULT 'draft',
+  status_code                   app.product_status NOT NULL DEFAULT 'draft'::app.product_status,
 
   -- Audit
   created_by      UUID NOT NULL DEFAULT '00000000-0000-0000-0000-00000000dead',
@@ -213,8 +189,7 @@ CREATE TABLE IF NOT EXISTS app.products (
 
   -- Relations
   FOREIGN KEY (created_by) REFERENCES app.users(user_id) ON DELETE SET DEFAULT,
-  FOREIGN KEY (updated_by) REFERENCES app.users(user_id) ON DELETE SET NULL,
-  FOREIGN KEY (status_code) REFERENCES app.product_statuses(status_code)
+  FOREIGN KEY (updated_by) REFERENCES app.users(user_id) ON DELETE SET NULL
 );
 
 CREATE TRIGGER tgr_products_set_updated_at

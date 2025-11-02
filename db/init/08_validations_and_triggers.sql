@@ -97,13 +97,6 @@ DO $$ BEGIN
       EXECUTE FUNCTION app.update_updated_at_column();
 EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
--- Apply trigger to product_statuses
-DO $$ BEGIN
-  CREATE TRIGGER update_product_statuses_updated_at
-      BEFORE UPDATE ON app.product_statuses
-      FOR EACH ROW
-      EXECUTE FUNCTION app.update_updated_at_column();
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
 -- ============================================
 -- Pricing: Automatic partition creation

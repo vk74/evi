@@ -308,9 +308,11 @@
           "optionCode": "код продукта",
           "optionName": "название продукта",
           "type": "тип",
+          "status": "статус",
           "paired": "связка",
           "published": "опубликован",
           "productPublished": "продукт опубликован",
+          "productStatus": "статус продукта",
           "owner": "владелец",
           "productOwner": "владелец продукта",
           "specialistsGroup": "группа специалистов"
@@ -326,6 +328,7 @@
       },
       "filters": {
         "type": "тип",
+        "status": "статус продукта",
         "published": "опубликован",
         "all": "все",
         "clear": "очистить фильтры"

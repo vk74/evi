@@ -1,5 +1,5 @@
 /**
- * service.admin.fetch.single.product.ts - version 1.1.0
+ * service.admin.fetch.single.product.ts - version 1.1.2
  * Service for fetching single product data by ID
  * Purpose: Provides business logic for fetching detailed product information
  * Backend file - service.admin.fetch.single.product.ts
@@ -10,6 +10,10 @@
  * - Added status_code field to product object
  * - Added fetch of product statuses from reference table
  * - Included statuses array in response data
+ * 
+ * Changes in v1.1.2:
+ * - Updated to fetch statuses from app.product_status UDT enum instead of product_statuses table
+ * - Removed description, is_active, and display_order fields from status mapping
  */
 
 import { queries } from './queries.admin.products'
@@ -155,13 +159,10 @@ export class ServiceAdminFetchProduct {
         }
       })
 
-      // Fetch product statuses from reference table
+      // Fetch product statuses from app.product_status enum
       const statusesResult = await client.query(queries.fetchProductStatuses)
       const statuses: ProductStatus[] = statusesResult.rows.map((row: any) => ({
-        status_code: row.status_code,
-        description: row.description,
-        is_active: row.is_active,
-        display_order: row.display_order
+        status_code: row.status_code
       }))
 
       // Build product object

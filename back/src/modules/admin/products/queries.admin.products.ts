@@ -1,5 +1,5 @@
 /**
- * queries.admin.products.ts - version 1.0.8
+ * queries.admin.products.ts - version 1.0.9
  * SQL queries for products administration operations.
  * 
  * Contains all SQL queries used by products admin module.
@@ -35,6 +35,14 @@
   
   Changes in v1.0.7:
   - Added sorting support for status_code, published, and owner fields in fetchAllProducts ORDER BY clause
+  
+  Changes in v1.0.9:
+  - Updated fetchProductStatuses query to get enum values from app.product_status UDT instead of product_statuses table
+  - Removed description, is_active, and display_order fields from query result
+  
+  Changes in v1.0.10:
+  - Fixed status_code comparison in WHERE clauses: added explicit cast to text (p.status_code::text = $X::text)
+  - Required because status_code column is now app.product_status enum type
  */
 
 export const queries = {
@@ -153,19 +161,15 @@ export const queries = {
     `,
 
     /**
-     * Fetches all active product statuses from reference table
+     * Fetches all product statuses from app.product_status enum
      * Parameters: []
-     * Returns statuses sorted by display_order
+     * Returns status codes sorted by enum order
      */
     fetchProductStatuses: `
-        SELECT 
-            status_code,
-            description,
-            is_active,
-            display_order
-        FROM app.product_statuses
-        WHERE is_active = true
-        ORDER BY display_order ASC
+        SELECT enumlabel::text as status_code
+        FROM pg_enum 
+        WHERE enumtypid = 'app.product_status'::regtype
+        ORDER BY enumsortorder ASC
     `,
 
     /**
@@ -338,7 +342,7 @@ export const queries = {
             ($7::text = 'published' AND p.is_published = true) OR
             ($7::text = 'unpublished' AND p.is_published = false)
         )
-        AND ($9::text IS NULL OR $9::text = '' OR p.status_code = $9::text)
+        AND ($9::text IS NULL OR $9::text = '' OR p.status_code::text = $9::text)
         GROUP BY p.product_id, p.product_code, p.translation_key, p.can_be_option, p.option_only,
                  p.is_published, p.is_visible_owner, p.is_visible_groups, p.is_visible_tech_specs,
                  p.is_visible_area_specs, p.is_visible_industry_specs, p.is_visible_key_features,
@@ -392,7 +396,7 @@ export const queries = {
             ($3::text = 'published' AND p.is_published = true) OR
             ($3::text = 'unpublished' AND p.is_published = false)
         )
-        AND ($4::text IS NULL OR $4::text = '' OR p.status_code = $4::text)
+        AND ($4::text IS NULL OR $4::text = '' OR p.status_code::text = $4::text)
     `,
 
     // Delete products query - deletes products and cascades to related tables
@@ -449,7 +453,7 @@ export const queries = {
         AND (p.can_be_option = true OR p.option_only = true)
         AND ($3::text IS NULL OR $3::text = '' OR LOWER(p.product_code) LIKE LOWER($3::text) OR LOWER(pt.name) LIKE LOWER($3::text) OR LOWER(p.translation_key) LIKE LOWER($3::text))
         AND ($7::uuid IS NULL OR p.product_id != $7)
-        AND ($8::text IS NULL OR $8::text = '' OR p.status_code = $8::text)
+        AND ($8::text IS NULL OR $8::text = '' OR p.status_code::text = $8::text)
         GROUP BY p.product_id, p.product_code, p.translation_key, p.can_be_option, p.option_only,
                  p.is_published, p.is_visible_owner, p.is_visible_groups, p.is_visible_tech_specs,
                  p.is_visible_area_specs, p.is_visible_industry_specs, p.is_visible_key_features,
@@ -490,7 +494,7 @@ export const queries = {
         AND (p.can_be_option = true OR p.option_only = true)
         AND ($1::text IS NULL OR $1::text = '' OR LOWER(p.product_code) LIKE LOWER($1::text) OR LOWER(pt.name) LIKE LOWER($1::text) OR LOWER(p.translation_key) LIKE LOWER($1::text))
         AND ($2::uuid IS NULL OR p.product_id != $2)
-        AND ($3::text IS NULL OR $3::text = '' OR p.status_code = $3::text)
+        AND ($3::text IS NULL OR $3::text = '' OR p.status_code::text = $3::text)
     `,
 
     /**

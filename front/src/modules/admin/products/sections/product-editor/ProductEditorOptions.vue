@@ -1,6 +1,6 @@
 <!--
   File: ProductEditorOptions.vue
-  Version: 1.9.0
+  Version: 1.9.1
   Description: Component for product options management
   Purpose: Provides interface for managing product options pairing
   Frontend file - ProductEditorOptions.vue
@@ -26,6 +26,11 @@
   - Filter uses statuses from pinia store with status_code as value and description as title
   - Backend filtering by status_code when statusFilter is not 'all'
   - Status column displays status_code directly (not description)
+  
+  Changes in v1.9.1:
+  - Removed description field usage from status filter
+  - Filter dropdown now uses status_code as both title and value
+  - Statuses now fetched from app.product_status UDT enum instead of product_statuses table
 -->
 
 <script setup lang="ts">
@@ -175,7 +180,7 @@ const statusFilterItems = computed(() => {
   const items = [{ title: t('admin.products.filters.all'), value: 'all' }]
   if (store.statuses) {
     store.statuses.forEach(status => {
-      items.push({ title: status.description, value: status.status_code })
+      items.push({ title: status.status_code, value: status.status_code })
     })
   }
   return items
