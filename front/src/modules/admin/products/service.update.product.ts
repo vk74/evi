@@ -51,8 +51,6 @@ export const serviceUpdateProduct = {
       productId: productData.productId,
       productCode: productData.productCode,
       translationKey: productData.translationKey,
-      canBeOption: productData.canBeOption,
-      optionOnly: productData.optionOnly,
       owner: productData.owner
     })
 

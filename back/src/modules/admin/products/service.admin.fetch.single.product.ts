@@ -171,8 +171,6 @@ export class ServiceAdminFetchProduct {
         product_code: productRow.product_code,
         translation_key: productRow.translation_key,
         status_code: productRow.status_code,
-        can_be_option: productRow.can_be_option,
-        option_only: productRow.option_only,
         is_published: productRow.is_published,
         is_visible_owner: productRow.is_visible_owner,
         is_visible_groups: productRow.is_visible_groups,

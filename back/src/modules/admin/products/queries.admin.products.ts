@@ -1,5 +1,5 @@
 /**
- * queries.admin.products.ts - version 1.0.9
+ * queries.admin.products.ts - version 1.1.0
  * SQL queries for products administration operations.
  * 
  * Contains all SQL queries used by products admin module.
@@ -43,12 +43,28 @@
   Changes in v1.0.10:
   - Fixed status_code comparison in WHERE clauses: added explicit cast to text (p.status_code::text = $X::text)
   - Required because status_code column is now app.product_status enum type
+  
+  Changes in v1.1.0:
+  - Removed can_be_option and option_only from createProduct INSERT and VALUES
+  - Removed can_be_option and option_only from fetchProducts SELECT
+  - Removed can_be_option and option_only from fetchSingleProduct SELECT
+  - Removed can_be_option and option_only from updateProduct UPDATE
+  - Removed can_be_option and option_only from fetchAllProducts SELECT and GROUP BY
+  - Removed type filtering logic from fetchAllProducts WHERE clause (removed typeFilter parameter)
+  - Removed type sorting logic from fetchAllProducts ORDER BY clause
+  - Removed type filtering logic from countAllProducts WHERE clause (removed typeFilter parameter)
+  - Removed can_be_option and option_only from fetchAllOptions SELECT and GROUP BY
+  - Removed (p.can_be_option = true OR p.option_only = true) condition from fetchAllOptions WHERE clause
+  - Removed type sorting logic from fetchAllOptions ORDER BY clause
+  - Removed (p.can_be_option = true OR p.option_only = true) condition from countAllOptions WHERE clause
+  - Updated parameter numbers in queries to reflect removed parameters
+  - fetchAllOptions now returns all products except the main product (no type filtering)
  */
 
 export const queries = {
     /**
      * Creates a new product (only basic fields)
-     * Parameters: [product_code, translation_key, status_code, can_be_option, option_only, 
+     * Parameters: [product_code, translation_key, status_code, 
      * is_published, is_visible_owner, is_visible_groups, is_visible_tech_specs,
      * is_visible_area_specs, is_visible_industry_specs, is_visible_key_features,
      * is_visible_overview, is_visible_long_description, created_by]
@@ -56,11 +72,11 @@ export const queries = {
      */
     createProduct: `
         INSERT INTO app.products (
-            product_code, translation_key, status_code, can_be_option, option_only, 
+            product_code, translation_key, status_code, 
             is_published, is_visible_owner, is_visible_groups, is_visible_tech_specs,
             is_visible_area_specs, is_visible_industry_specs, is_visible_key_features,
             is_visible_overview, is_visible_long_description, created_by
-        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
         RETURNING product_id, product_code, translation_key, created_at
     `,
 
@@ -104,8 +120,6 @@ export const queries = {
             p.product_id,
             p.product_code,
             p.translation_key,
-            p.can_be_option,
-            p.option_only,
             p.is_published,
             p.created_at,
             p.created_by,
@@ -141,8 +155,6 @@ export const queries = {
             p.product_code,
             p.translation_key,
             p.status_code,
-            p.can_be_option,
-            p.option_only,
             p.is_published,
             p.is_visible_owner,
             p.is_visible_groups,
@@ -200,7 +212,7 @@ export const queries = {
 
     /**
      * Updates a product
-     * Parameters: [product_code, translation_key, status_code, can_be_option, option_only,
+     * Parameters: [product_code, translation_key, status_code,
      * is_published, is_visible_owner, is_visible_groups, is_visible_tech_specs,
      * is_visible_area_specs, is_visible_industry_specs, is_visible_key_features,
      * is_visible_overview, is_visible_long_description, updated_by, product_id]
@@ -210,20 +222,18 @@ export const queries = {
             product_code = $1,
             translation_key = $2,
             status_code = $3,
-            can_be_option = $4,
-            option_only = $5,
-            is_published = $6,
-            is_visible_owner = $7,
-            is_visible_groups = $8,
-            is_visible_tech_specs = $9,
-            is_visible_area_specs = $10,
-            is_visible_industry_specs = $11,
-            is_visible_key_features = $12,
-            is_visible_overview = $13,
-            is_visible_long_description = $14,
-            updated_by = $15,
+            is_published = $4,
+            is_visible_owner = $5,
+            is_visible_groups = $6,
+            is_visible_tech_specs = $7,
+            is_visible_area_specs = $8,
+            is_visible_industry_specs = $9,
+            is_visible_key_features = $10,
+            is_visible_overview = $11,
+            is_visible_long_description = $12,
+            updated_by = $13,
             updated_at = now()
-        WHERE product_id = $16
+        WHERE product_id = $14
         RETURNING product_id, product_code, translation_key, updated_at
     `,
 
@@ -290,15 +300,13 @@ export const queries = {
 
     /**
      * Fetches all products with pagination, search, sorting and filtering
-     * Parameters: [offset, limit, searchQuery, sortBy, sortDesc, typeFilter, publishedFilter, languageCode, statusFilter]
+     * Parameters: [offset, limit, searchQuery, sortBy, sortDesc, publishedFilter, languageCode, statusFilter]
      */
     fetchAllProducts: `
         SELECT 
             p.product_id,
             p.product_code,
             p.translation_key,
-            p.can_be_option,
-            p.option_only,
             p.is_published,
             p.is_visible_owner,
             p.is_visible_groups,
@@ -318,7 +326,7 @@ export const queries = {
             owner_user.username as owner_name,
             array_agg(DISTINCT specialist_group.group_name) FILTER (WHERE specialist_group.group_name IS NOT NULL) as specialists_groups
         FROM app.products p
-        LEFT JOIN app.product_translations pt ON p.product_id = pt.product_id AND pt.language_code = $8
+        LEFT JOIN app.product_translations pt ON p.product_id = pt.product_id AND pt.language_code = $7
         LEFT JOIN (
             SELECT pu.product_id, u.username
             FROM app.product_users pu
@@ -334,16 +342,11 @@ export const queries = {
         WHERE 1=1
         AND ($3::text IS NULL OR $3::text = '' OR LOWER(p.product_code) LIKE LOWER($3::text) OR LOWER(pt.name) LIKE LOWER($3::text) OR LOWER(p.translation_key) LIKE LOWER($3::text))
         AND ($6::text IS NULL OR $6::text = '' OR 
-            ($6::text = 'product' AND p.can_be_option = false AND p.option_only = false) OR
-            ($6::text = 'productAndOption' AND p.can_be_option = true AND p.option_only = false) OR
-            ($6::text = 'option' AND p.option_only = true)
+            ($6::text = 'published' AND p.is_published = true) OR
+            ($6::text = 'unpublished' AND p.is_published = false)
         )
-        AND ($7::text IS NULL OR $7::text = '' OR 
-            ($7::text = 'published' AND p.is_published = true) OR
-            ($7::text = 'unpublished' AND p.is_published = false)
-        )
-        AND ($9::text IS NULL OR $9::text = '' OR p.status_code::text = $9::text)
-        GROUP BY p.product_id, p.product_code, p.translation_key, p.can_be_option, p.option_only,
+        AND ($8::text IS NULL OR $8::text = '' OR p.status_code::text = $8::text)
+        GROUP BY p.product_id, p.product_code, p.translation_key,
                  p.is_published, p.is_visible_owner, p.is_visible_groups, p.is_visible_tech_specs,
                  p.is_visible_area_specs, p.is_visible_industry_specs, p.is_visible_key_features,
                  p.is_visible_overview, p.is_visible_long_description, p.status_code, p.created_by, p.created_at,
@@ -353,20 +356,6 @@ export const queries = {
             CASE WHEN $4 = 'product_code' AND $5 = true THEN p.product_code END DESC,
             CASE WHEN $4 = 'name' AND $5 = false THEN pt.name END ASC,
             CASE WHEN $4 = 'name' AND $5 = true THEN pt.name END DESC,
-            CASE WHEN $4 = 'type' AND $5 = false THEN 
-                CASE 
-                    WHEN p.option_only = true THEN 3
-                    WHEN p.can_be_option = true THEN 2
-                    ELSE 1
-                END
-            END ASC,
-            CASE WHEN $4 = 'type' AND $5 = true THEN 
-                CASE 
-                    WHEN p.option_only = true THEN 3
-                    WHEN p.can_be_option = true THEN 2
-                    ELSE 1
-                END
-            END DESC,
             CASE WHEN $4 = 'status_code' AND $5 = false THEN p.status_code END ASC,
             CASE WHEN $4 = 'status_code' AND $5 = true THEN p.status_code END DESC,
             CASE WHEN $4 = 'published' AND $5 = false THEN p.is_published END ASC,
@@ -379,7 +368,7 @@ export const queries = {
 
     /**
      * Counts total products with same filters as fetchAllProducts
-     * Parameters: [searchQuery, typeFilter, publishedFilter, statusFilter]
+     * Parameters: [searchQuery, publishedFilter, statusFilter]
      */
     countAllProducts: `
         SELECT COUNT(DISTINCT p.product_id) as total
@@ -388,15 +377,10 @@ export const queries = {
         WHERE 1=1
         AND ($1::text IS NULL OR $1::text = '' OR LOWER(p.product_code) LIKE LOWER($1::text) OR LOWER(pt.name) LIKE LOWER($1::text) OR LOWER(p.translation_key) LIKE LOWER($1::text))
         AND ($2::text IS NULL OR $2::text = '' OR 
-            ($2::text = 'product' AND p.can_be_option = false AND p.option_only = false) OR
-            ($2::text = 'productAndOption' AND p.can_be_option = true AND p.option_only = false) OR
-            ($2::text = 'option' AND p.option_only = true)
+            ($2::text = 'published' AND p.is_published = true) OR
+            ($2::text = 'unpublished' AND p.is_published = false)
         )
-        AND ($3::text IS NULL OR $3::text = '' OR 
-            ($3::text = 'published' AND p.is_published = true) OR
-            ($3::text = 'unpublished' AND p.is_published = false)
-        )
-        AND ($4::text IS NULL OR $4::text = '' OR p.status_code::text = $4::text)
+        AND ($3::text IS NULL OR $3::text = '' OR p.status_code::text = $3::text)
     `,
 
     // Delete products query - deletes products and cascades to related tables
@@ -407,7 +391,7 @@ export const queries = {
     `,
 
     /**
-     * Fetches all options (products with can_be_option = true OR option_only = true)
+     * Fetches all options (all products except the main product)
      * Parameters: [offset, itemsPerPage, searchQuery, sortBy, sortDesc, languageCode, excludeProductId, statusFilter]
      */
     fetchAllOptions: `
@@ -415,8 +399,6 @@ export const queries = {
             p.product_id,
             p.product_code,
             p.translation_key,
-            p.can_be_option,
-            p.option_only,
             p.is_published,
             p.is_visible_owner,
             p.is_visible_groups,
@@ -450,11 +432,10 @@ export const queries = {
             WHERE pg.role_type = 'product_specialists'
         ) specialist_group ON p.product_id = specialist_group.product_id
         WHERE 1=1
-        AND (p.can_be_option = true OR p.option_only = true)
         AND ($3::text IS NULL OR $3::text = '' OR LOWER(p.product_code) LIKE LOWER($3::text) OR LOWER(pt.name) LIKE LOWER($3::text) OR LOWER(p.translation_key) LIKE LOWER($3::text))
         AND ($7::uuid IS NULL OR p.product_id != $7)
         AND ($8::text IS NULL OR $8::text = '' OR p.status_code::text = $8::text)
-        GROUP BY p.product_id, p.product_code, p.translation_key, p.can_be_option, p.option_only,
+        GROUP BY p.product_id, p.product_code, p.translation_key,
                  p.is_published, p.is_visible_owner, p.is_visible_groups, p.is_visible_tech_specs,
                  p.is_visible_area_specs, p.is_visible_industry_specs, p.is_visible_key_features,
                  p.is_visible_overview, p.is_visible_long_description, p.status_code, p.created_by, p.created_at,
@@ -464,20 +445,6 @@ export const queries = {
             CASE WHEN $4 = 'product_code' AND $5 = true THEN p.product_code END DESC,
             CASE WHEN $4 = 'name' AND $5 = false THEN pt.name END ASC,
             CASE WHEN $4 = 'name' AND $5 = true THEN pt.name END DESC,
-            CASE WHEN $4 = 'type' AND $5 = false THEN 
-                CASE 
-                    WHEN p.option_only = true THEN 3
-                    WHEN p.can_be_option = true THEN 2
-                    ELSE 1
-                END
-            END ASC,
-            CASE WHEN $4 = 'type' AND $5 = true THEN 
-                CASE 
-                    WHEN p.option_only = true THEN 3
-                    WHEN p.can_be_option = true THEN 2
-                    ELSE 1
-                END
-            END DESC,
             p.product_code ASC
         LIMIT $2 OFFSET $1
     `,
@@ -491,7 +458,6 @@ export const queries = {
         FROM app.products p
         LEFT JOIN app.product_translations pt ON p.product_id = pt.product_id
         WHERE 1=1
-        AND (p.can_be_option = true OR p.option_only = true)
         AND ($1::text IS NULL OR $1::text = '' OR LOWER(p.product_code) LIKE LOWER($1::text) OR LOWER(pt.name) LIKE LOWER($1::text) OR LOWER(p.translation_key) LIKE LOWER($1::text))
         AND ($2::uuid IS NULL OR p.product_id != $2)
         AND ($3::text IS NULL OR $3::text = '' OR p.status_code::text = $3::text)

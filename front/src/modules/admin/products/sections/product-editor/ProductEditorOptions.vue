@@ -1,6 +1,6 @@
 <!--
   File: ProductEditorOptions.vue
-  Version: 1.9.3
+  Version: 1.10.0
   Description: Component for product options management
   Purpose: Provides interface for managing product options pairing
   Frontend file - ProductEditorOptions.vue
@@ -42,6 +42,14 @@
   - Added normalizeStatusCodeForTranslation helper function
   - Status codes with spaces (e.g., "on hold") are normalized to underscores (e.g., "on_hold") for translation keys
   - Fixed issue where status codes with spaces were not displaying translations correctly
+  
+  Changes in v1.10.0:
+  - Removed type column from table
+  - Removed type filter from filters section
+  - Removed getProductTypeText function
+  - Removed typeFilter ref and related logic
+  - Updated isOptionsTabActive to always return true (all products can now be paired)
+  - All products are now equal, no type distinction
 -->
 
 <script setup lang="ts">
@@ -88,9 +96,9 @@ const uiStore = useUiStore()
 // Form data - using store
 const formData = computed(() => productsStore.formData)
 
-// Check if options tab should be active (only for product and productAndOption types)
+// Check if options tab should be active - always true as all products can now be paired
 const isOptionsTabActive = computed(() => {
-  return !formData.value.optionOnly && (formData.value.canBeOption || true)
+  return true
 })
 
 // Product info for display
@@ -107,7 +115,6 @@ const searchQuery = ref<string>('')
 const isSearching = ref<boolean>(false)
 
 // Filter parameters
-const typeFilter = ref<string>('all')
 const pairedFilter = ref<string>('all')
 const statusFilter = ref<string>('all')
 
@@ -132,17 +139,6 @@ const selectedOptions = ref<Set<string>>(new Set())
 // Pair editor modal state
 const showPairEditor = ref(false)
 
-// Helper function to get product type display text
-const getProductTypeText = (canBeOption: boolean, optionOnly: boolean) => {
-  if (optionOnly) {
-    return t('admin.products.editor.basic.type.option')
-  } else if (canBeOption) {
-    return t('admin.products.editor.basic.type.productAndOption')
-  } else {
-    return t('admin.products.editor.basic.type.product')
-  }
-}
-
 // Computed properties
 const selectedCount = computed(() => selectedOptions.value.size)
 const hasSelected = computed(() => selectedOptions.value.size > 0)
@@ -151,24 +147,12 @@ const isSearchEnabled = computed(() =>
 )
 
 // Filter active indicators
-const isTypeFilterActive = computed(() => typeFilter.value !== 'all')
 const isPairedFilterActive = computed(() => pairedFilter.value !== 'all')
 const isStatusFilterActive = computed(() => statusFilter.value !== 'all')
 
 // Filtered options
 const filteredOptions = computed(() => {
   let filtered = options.value || []
-
-  // Filter by type
-  if (typeFilter.value !== 'all') {
-    if (typeFilter.value === 'product') {
-      filtered = filtered.filter(item => !item.can_be_option && !item.option_only)
-    } else if (typeFilter.value === 'productAndOption') {
-      filtered = filtered.filter(item => item.can_be_option && !item.option_only)
-    } else if (typeFilter.value === 'option') {
-      filtered = filtered.filter(item => item.option_only)
-    }
-  }
 
   // Filter by paired
   if (pairedFilter.value !== 'all') {
@@ -220,7 +204,6 @@ const headers = computed<TableHeader[]>(() => [
   { title: t('admin.products.table.headers.selection'), key: 'selection', width: '40px', sortable: false },
   { title: t('admin.products.table.headers.optionCode'), key: 'option_code', width: '165px', sortable: true },
   { title: t('admin.products.table.headers.optionName'), key: 'name', width: '250px', sortable: true },
-  { title: t('admin.products.table.headers.type'), key: 'type', width: '120px', sortable: true },
   { title: t('admin.products.table.headers.productStatus'), key: 'status', width: '170px', sortable: true },
   { title: t('admin.products.table.headers.productOwner'), key: 'owner', width: '170px', sortable: true },
   { title: t('admin.products.table.headers.paired') || 'paired', key: 'paired', width: '100px', sortable: false }
@@ -589,30 +572,6 @@ watch(isOptionsTabActive, async (isActive) => {
             <!-- Filters row -->
             <div class="d-flex align-center justify-space-between mb-2">
               <div class="d-flex align-center">
-                <!-- Type filter -->
-                <div class="d-flex align-center mr-4">
-                  <v-select
-                    v-model="typeFilter"
-                    density="compact"
-                    variant="outlined"
-                    label="type"
-                    :items="[
-                      { title: t('admin.products.filters.all'), value: 'all' },
-                      { title: t('admin.products.editor.basic.type.product'), value: 'product' },
-                      { title: t('admin.products.editor.basic.type.productAndOption'), value: 'productAndOption' },
-                      { title: t('admin.products.editor.basic.type.option'), value: 'option' }
-                    ]"
-                    color="teal"
-                    :base-color="isTypeFilterActive ? 'teal' : undefined"
-                    hide-details
-                    style="min-width: 180px;"
-                  >
-                    <template #append-inner>
-                      <PhFunnel class="dropdown-icon" />
-                    </template>
-                  </v-select>
-                </div>
-
                 <!-- Status filter -->
                 <div class="d-flex align-center mr-4">
                   <v-select
@@ -706,15 +665,6 @@ watch(isOptionsTabActive, async (isActive) => {
                 <span>{{ item.name || item.translation_key || '-' }}</span>
               </template>
 
-              <template #[`item.type`]="{ item }">
-                <v-chip 
-                  :color="item.option_only ? 'violet' : item.can_be_option ? 'blue' : 'teal'" 
-                  size="small"
-                >
-                  {{ getProductTypeText(item.can_be_option, item.option_only) }}
-                </v-chip>
-              </template>
-
               <template #[`item.status`]="{ item }">
                 <span>{{ getStatusCode(item.status_code) }}</span>
               </template>
@@ -736,18 +686,6 @@ watch(isOptionsTabActive, async (isActive) => {
                 @update:items-per-page="handleItemsPerPageChange($event as any)"
               />
             </div>
-          </div>
-
-          <!-- Inactive state for option-only products -->
-          <div v-else class="inactive-section">
-            <v-card>
-              <v-card-title>
-                {{ t('admin.products.editor.sections.options') }}
-              </v-card-title>
-              <v-card-text>
-                <p>Options pairing is not available for option-only products.</p>
-              </v-card-text>
-            </v-card>
           </div>
         </div>
       </div>

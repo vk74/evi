@@ -45,8 +45,6 @@ export const serviceCreateProduct = {
     logger.info('Creating product', {
       productCode: productData.productCode,
       translationKey: productData.translationKey,
-      canBeOption: productData.canBeOption,
-      optionOnly: productData.optionOnly,
       owner: productData.owner
     })
 

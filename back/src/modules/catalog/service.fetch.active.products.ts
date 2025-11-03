@@ -1,11 +1,16 @@
 /**
  * service.fetch.active.products.ts - backend file
- * version: 1.2.1
+ * version: 1.2.2
  * 
  * Purpose: Service that fetches active products for catalog consumption
- * Logic: Queries DB for products with is_published = true, filters by option_only based on settings
+ * Logic: Queries DB for products with is_published = true
  *        Uses fallback language from app settings to always show products even without requested translation
  * File type: Backend TypeScript (service.fetch.active.products.ts)
+ * 
+ * Changes in v1.2.2:
+ * - Removed showOptionsOnly setting retrieval
+ * - Removed showOptionsOnly parameter from query calls
+ * - All published products are now shown in catalog (no type distinction)
  */
 
 import { Request } from 'express';
@@ -49,16 +54,10 @@ export async function fetchActiveProducts(req: Request): Promise<FetchProductsRe
     // The setting now stores language code directly (e.g., 'en', 'ru')
     const fallbackLanguage = fallbackLanguageSetting;
     
-    const showOptionsOnly = await getSettingValue<boolean>(
-      'Catalog.Products',
-      'display.optionsOnlyProducts',
-      false
-    );
-    
     const sectionId = req.query.sectionId as string | undefined;
     const result = sectionId
-      ? await pool.query<DbProduct>(queries.getActiveProductsBySection, [sectionId, requestedLanguage, fallbackLanguage, showOptionsOnly])
-      : await pool.query<DbProduct>(queries.getActiveProducts, [requestedLanguage, fallbackLanguage, showOptionsOnly]);
+      ? await pool.query<DbProduct>(queries.getActiveProductsBySection, [sectionId, requestedLanguage, fallbackLanguage])
+      : await pool.query<DbProduct>(queries.getActiveProducts, [requestedLanguage, fallbackLanguage]);
     const products = result.rows.map(transformRow);
 
     // Get card colors from settings cache

@@ -1,6 +1,6 @@
 /**
  * @file state.products.admin.ts
- * Version: 1.5.0
+ * Version: 1.6.0
  * Pinia store for managing products admin module state.
  * Frontend file that handles active section management for products administration.
  *
@@ -30,6 +30,15 @@
  * - Removed areStatusesFresh() getter
  * - Updated setProductStatuses to not set timestamp
  * - Simplified clearStatuses() to only clear statuses array
+ * 
+ * Changes in v1.6.0:
+ * - Removed canBeOption and optionOnly from formData initial state
+ * - Removed canBeOption and optionOnly from change tracking logic
+ * - Removed canBeOption and optionOnly from resetFormData
+ * - Removed canBeOption and optionOnly from populateFormWithProduct
+ * - Removed canBeOption and optionOnly from populateFormWithFullProductData
+ * - Removed canBeOption and optionOnly from hasUnsavedChanges
+ * - All products are now equal, no type distinction
  */
 import { defineStore } from 'pinia'
 import type {
@@ -60,8 +69,6 @@ export const useProductsAdminStore = defineStore('productsAdmin', {
       productCode: '',
       translationKey: '',
       statusCode: '',
-      canBeOption: false,
-      optionOnly: false,
       owner: '',
       specialistsGroups: [],
       translations: {
@@ -124,12 +131,6 @@ export const useProductsAdminStore = defineStore('productsAdmin', {
       }
       if (current.statusCode !== (original.status_code || '')) {
         changes.statusCode = current.statusCode
-      }
-      if (current.canBeOption !== original.can_be_option) {
-        changes.canBeOption = current.canBeOption
-      }
-      if (current.optionOnly !== original.option_only) {
-        changes.optionOnly = current.optionOnly
       }
       if (current.owner !== (original.owner || '')) {
         changes.owner = current.owner
@@ -222,8 +223,6 @@ export const useProductsAdminStore = defineStore('productsAdmin', {
         productCode: '',
         translationKey: '',
         statusCode: '',
-        canBeOption: false,
-        optionOnly: false,
         owner: '',
         specialistsGroups: [],
         translations: {
@@ -266,8 +265,6 @@ export const useProductsAdminStore = defineStore('productsAdmin', {
         productCode: product.product_code,
         translationKey: product.translation_key,
         statusCode: product.status_code || '',
-        canBeOption: product.can_be_option,
-        optionOnly: product.option_only,
         owner: product.owner || '',
         backupOwner: product.backupOwner || '',
         specialistsGroups: product.specialistsGroups || [],
@@ -310,8 +307,6 @@ export const useProductsAdminStore = defineStore('productsAdmin', {
         productCode: productData.product_code,
         translationKey: productData.translation_key,
         statusCode: productData.status_code || '',
-        canBeOption: productData.can_be_option,
-        optionOnly: productData.option_only,
         owner: productData.owner || '',
         backupOwner: productData.backupOwner || '',
         specialistsGroups: productData.specialistsGroups || [],
@@ -455,8 +450,6 @@ export const useProductsAdminStore = defineStore('productsAdmin', {
         current.productCode !== stored.product_code ||
         current.translationKey !== stored.translation_key ||
         current.statusCode !== (stored.status_code || '') ||
-        current.canBeOption !== stored.can_be_option ||
-        current.optionOnly !== stored.option_only ||
         current.owner !== (stored.owner || '') ||
         current.backupOwner !== (stored.backupOwner || '') ||
         JSON.stringify(current.specialistsGroups) !== JSON.stringify(stored.specialistsGroups || []) ||

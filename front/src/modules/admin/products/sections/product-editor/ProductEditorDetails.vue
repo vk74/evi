@@ -37,6 +37,12 @@
   - Added normalizeStatusCodeForTranslation helper function
   - Status codes with spaces (e.g., "on hold") are normalized to underscores (e.g., "on_hold") for translation keys
   - Fixed issue where status codes with spaces were not displaying translations correctly
+  
+  Changes in v1.5.0:
+  - Removed product type toggle (product/productAndOption/option selector)
+  - Removed productTypeOptions and productType computed properties
+  - Removed canBeOption and optionOnly from createProduct payload
+  - All products are now equal, no type distinction
 -->
 
 <script setup lang="ts">
@@ -130,38 +136,6 @@ const statusOptions = computed(() => {
       value: status.status_code
     }
   })
-})
-
-// Product type options
-const productTypeOptions = computed(() => [
-  { title: t('admin.products.editor.basic.type.product'), value: 'product' },
-  { title: t('admin.products.editor.basic.type.productAndOption'), value: 'product_and_option' },
-  { title: t('admin.products.editor.basic.type.option'), value: 'option' }
-])
-
-// Computed property for product type with two-way binding
-const productType = computed({
-  get: () => {
-    if (formData.value.optionOnly) return 'option'
-    if (formData.value.canBeOption) return 'product_and_option'
-    return 'product'
-  },
-  set: (value: string) => {
-    switch (value) {
-      case 'product':
-        formData.value.canBeOption = false
-        formData.value.optionOnly = false
-        break
-      case 'product_and_option':
-        formData.value.canBeOption = true
-        formData.value.optionOnly = false
-        break
-      case 'option':
-        formData.value.canBeOption = true
-        formData.value.optionOnly = true
-        break
-    }
-  }
 })
 
 // Selected language for translations
@@ -539,8 +513,6 @@ const createProduct = async () => {
       productCode: formData.value.productCode,
       translationKey: translationKey,
       statusCode: formData.value.statusCode || 'draft',
-      canBeOption: formData.value.canBeOption,
-      optionOnly: formData.value.optionOnly,
       owner: formData.value.owner,
       backupOwner: formData.value.backupOwner,
       specialistsGroups: formData.value.specialistsGroups,
@@ -763,9 +735,6 @@ onMounted(async () => {
   await loadValidationRules()
   
   if (isCreationMode.value) {
-    // Set default product type
-    productType.value = 'product'
-    
     // Set default status if not set
     if (!formData.value.statusCode && statusOptions.value.length > 0) {
       // Use 'draft' if available, otherwise first status
@@ -814,48 +783,6 @@ onMounted(async () => {
               </v-card-title>
               <v-divider class="section-divider" />
             </div>
-
-            <!-- Product Type Selector and Published Switch -->
-            <v-row class="pt-3">
-              <v-col
-                cols="12"
-                md="6"
-              >
-                <v-btn-toggle
-                  v-model="productType"
-                  mandatory
-                  color="teal"
-                  class="product-type-toggle-group"
-                  density="compact"
-                  variant="outlined"
-                >
-                  <v-btn
-                    value="product"
-                    size="small"
-                  >
-                    {{ t('admin.products.editor.basic.type.product') }}
-                  </v-btn>
-                  <v-btn
-                    value="product_and_option"
-                    size="small"
-                  >
-                    {{ t('admin.products.editor.basic.type.productAndOption') }}
-                  </v-btn>
-                  <v-btn
-                    value="option"
-                    size="small"
-                  >
-                    {{ t('admin.products.editor.basic.type.option') }}
-                  </v-btn>
-                </v-btn-toggle>
-              </v-col>
-              <v-col
-                cols="12"
-                md="6"
-              >
-                <!-- Published switch removed - will be moved to ProductEditorCatalogPublication.vue -->
-              </v-col>
-            </v-row>
 
             <!-- Product Code -->
             <v-row>

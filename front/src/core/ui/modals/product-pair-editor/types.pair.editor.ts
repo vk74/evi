@@ -1,6 +1,6 @@
 /**
  * @file types.pair.editor.ts
- * Version: 1.3.0
+ * Version: 1.3.1
  * Type definitions for ProductPairEditor component and services
  * Frontend file - types.pair.editor.ts
  */
@@ -12,8 +12,6 @@ export interface SelectedOption {
   product_id: string
   product_code: string
   name?: string
-  can_be_option: boolean
-  option_only: boolean
   owner?: string
 }
 

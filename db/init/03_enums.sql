@@ -14,12 +14,6 @@ EXCEPTION
 END $$;
 
 DO $$ BEGIN
-    CREATE TYPE app.dimension_unit AS ENUM ('cm', 'mm', 'm', 'in', 'ft');
-EXCEPTION
-    WHEN duplicate_object THEN null;
-END $$;
-
-DO $$ BEGIN
     CREATE TYPE app.environment_type AS ENUM ('production', 'dev', 'test', 'all');
 EXCEPTION
     WHEN duplicate_object THEN null;
@@ -92,7 +86,7 @@ EXCEPTION
 END $$;
 
 DO $$ BEGIN
-    CREATE TYPE app.product_status AS ENUM ('draft', 'active', 'discontinued');
+    CREATE TYPE app.product_status AS ENUM ('draft', 'active', 'on hold', 'discontinued');
 EXCEPTION
     WHEN duplicate_object THEN null;
 END $$;

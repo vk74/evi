@@ -130,7 +130,7 @@ export const PRODUCT_UPDATE_EVENTS = {
         eventType: 'app',
         severity: 'info',
         eventMessage: 'Product main data updated successfully',
-        payload: null, // Will be { productId: string, productCode: string, changes: { productCode?: {old, new}, translationKey?: {old, new}, canBeOption?: {old, new}, optionOnly?: {old, new} } }
+        payload: null, // Will be { productId: string, productCode: string, changes: { productCode?: {old, new}, translationKey?: {old, new} } }
         version: '1.0.0'
     },
 

@@ -159,9 +159,7 @@ CREATE TABLE IF NOT EXISTS app.products (
   product_code     VARCHAR(150) UNIQUE,
   translation_key  VARCHAR(150) NOT NULL UNIQUE,
 
-  -- Option flags (A/B/C) and publication
-  can_be_option    BOOLEAN NOT NULL DEFAULT false,
-  option_only      BOOLEAN NOT NULL DEFAULT false,
+  -- Publication flag
   is_published     BOOLEAN NOT NULL DEFAULT false,
 
   -- Visibility flags
@@ -182,10 +180,6 @@ CREATE TABLE IF NOT EXISTS app.products (
   created_at      TIMESTAMPTZ NOT NULL DEFAULT now(),
   updated_by      UUID,
   updated_at      TIMESTAMPTZ NOT NULL DEFAULT now(),
-
-  -- Business rule: option_only => can_be_option
-  CONSTRAINT products_option_only_impl_can_be_option
-    CHECK (option_only = false OR can_be_option = true),
 
   -- Relations
   FOREIGN KEY (created_by) REFERENCES app.users(user_id) ON DELETE SET DEFAULT,

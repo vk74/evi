@@ -1,12 +1,11 @@
 /**
- * service.admin.fetch.all.products.ts - version 1.1.1
+ * service.admin.fetch.all.products.ts - version 1.2.0
  * Service for fetching all products with pagination, search, sorting and filtering.
  * 
  * Handles database queries for products list with user roles and translations.
+ * Contains all business logic for parsing, validating and processing request parameters.
  * 
- * File: service.admin.fetch.all.products.ts
- * Created: 2024-12-20
- * Last updated: 2024-12-20
+ * Backend file - service.admin.fetch.all.products.ts
  * 
  * Changes in v1.1.0:
  * - Added statusFilter parameter extraction and validation
@@ -16,41 +15,76 @@
  * Changes in v1.1.1:
  * - Added sorting support for status_code, published, and owner fields
  * - Updated validSortFields array to include new sortable fields
+ * 
+ * Changes in v1.2.0:
+ * - Moved all business logic from controller to service
+ * - Service now accepts Request object instead of parsed parameters
+ * - Added query parameter parsing and validation in service
+ * - Added language code extraction from query parameter, headers, and default
+ * - Service now returns full response structure with success and message
  */
 
+import { Request } from 'express'
 import { Pool } from 'pg'
+import { pool as pgPool } from '@/core/db/maindb'
 import { queries } from './queries.admin.products'
 import { PRODUCT_FETCH_EVENTS } from './events.admin.products'
 import { createAndPublishEvent } from '@/core/eventBus/fabric.events'
 import type { 
-    FetchAllProductsParams, 
-    ProductListItem 
+    ProductListItem,
+    FetchAllProductsResult
 } from './types.admin.products'
 
 /**
- * Result interface for fetchAllProducts function
+ * Interface for API request query parameters
  */
-export interface FetchAllProductsResult {
-    products: ProductListItem[]
-    totalItems: number
-    totalPages: number
-    currentPage: number
-    itemsPerPage: number
+interface FetchAllProductsQuery {
+    page?: string
+    itemsPerPage?: string
+    searchQuery?: string
+    sortBy?: string
+    sortDesc?: string
+    publishedFilter?: string
+    statusFilter?: string
+    language?: string
 }
 
 /**
+ * Pool type assertion
+ */
+const pool = pgPool as Pool
+
+/**
  * Fetches all products with pagination, search, sorting and filtering
+ * 
+ * @param req - Express Request object containing query parameters and headers
+ * @returns Promise with full response structure including success, message and data
  */
 export const fetchAllProducts = async (
-    pool: Pool,
-    params: FetchAllProductsParams,
-    req?: any,
-    languageCode: string = 'en'
+    req: Request
 ): Promise<FetchAllProductsResult> => {
     const client = await pool.connect()
     
     try {
-        const { page, itemsPerPage, searchQuery, sortBy, sortDesc, typeFilter, publishedFilter, statusFilter } = params
+        const query = req.query as FetchAllProductsQuery
+        
+        // Parse and validate query parameters
+        const page = parseInt(query.page || '1')
+        const itemsPerPage = parseInt(query.itemsPerPage || '25')
+        const searchQuery = query.searchQuery || undefined
+        const sortBy = query.sortBy || 'product_code'
+        const sortDesc = query.sortDesc === 'true'
+        const publishedFilter = query.publishedFilter || undefined
+        const statusFilter = query.statusFilter || undefined
+        
+        // Get language code from query parameter first, then from headers, then default to 'en'
+        const queryLanguage = query.language
+        const headerLanguage = req.headers['accept-language']?.toString().split(',')[0]?.split('-')[0]
+        const languageCode = queryLanguage || headerLanguage || 'en'
+        
+        // Validate language code
+        const validLanguages = ['en', 'ru']
+        const validatedLanguageCode = validLanguages.includes(languageCode) ? languageCode : 'en'
         
         // Validate parameters
         if (page < 1) {
@@ -70,9 +104,9 @@ export const fetchAllProducts = async (
                 searchQuery, 
                 sortBy, 
                 sortDesc, 
-                typeFilter, 
                 publishedFilter,
-                languageCode
+                statusFilter,
+                languageCode: validatedLanguageCode
             }
         })
 
@@ -83,13 +117,10 @@ export const fetchAllProducts = async (
         const searchPattern = searchQuery ? `%${searchQuery}%` : ''
         
         // Validate sortBy parameter
-        const validSortFields = ['product_code', 'name', 'type', 'status_code', 'published', 'owner']
+        const validSortFields = ['product_code', 'name', 'status_code', 'published', 'owner']
         const validatedSortBy = sortBy && validSortFields.includes(sortBy) ? sortBy : 'product_code'
         
         // Validate filters - use empty string instead of null for optional parameters
-        const validTypeFilters = ['product', 'productAndOption', 'option']
-        const validatedTypeFilter = typeFilter && validTypeFilters.includes(typeFilter) ? typeFilter : ''
-        
         const validPublishedFilters = ['published', 'unpublished']
         const validatedPublishedFilter = publishedFilter && validPublishedFilters.includes(publishedFilter) ? publishedFilter : ''
         
@@ -99,7 +130,6 @@ export const fetchAllProducts = async (
         // Execute count query first to get total items
         const countResult = await client.query(queries.countAllProducts, [
             searchPattern,
-            validatedTypeFilter,
             validatedPublishedFilter,
             validatedStatusFilter
         ])
@@ -111,7 +141,7 @@ export const fetchAllProducts = async (
             eventName: PRODUCT_FETCH_EVENTS.COUNT_COMPLETED.eventName,
             payload: { 
                 totalItems,
-                filters: { searchQuery, typeFilter, publishedFilter, statusFilter }
+                filters: { searchQuery, publishedFilter, statusFilter }
             }
         })
 
@@ -122,7 +152,6 @@ export const fetchAllProducts = async (
             searchPattern,
             validatedSortBy,
             sortDesc || false,
-            validatedTypeFilter,
             validatedPublishedFilter,
             languageCode,
             validatedStatusFilter
@@ -133,8 +162,6 @@ export const fetchAllProducts = async (
             product_id: row.product_id,
             product_code: row.product_code,
             translation_key: row.translation_key,
-            can_be_option: row.can_be_option,
-            option_only: row.option_only,
             is_published: row.is_published,
             status_code: row.status_code,
             is_visible_owner: row.is_visible_owner,
@@ -167,16 +194,22 @@ export const fetchAllProducts = async (
                 totalPages,
                 currentPage: page,
                 itemsPerPage,
-                filters: { searchQuery, typeFilter, publishedFilter, statusFilter, sortBy, sortDesc }
+                filters: { searchQuery, publishedFilter, statusFilter, sortBy, sortDesc }
             }
         })
         
         return {
-            products,
-            totalItems,
-            totalPages,
-            currentPage: page,
-            itemsPerPage
+            success: true,
+            message: 'Products fetched successfully',
+            data: {
+                products,
+                pagination: {
+                    totalItems,
+                    totalPages,
+                    currentPage: page,
+                    itemsPerPage
+                }
+            }
         }
 
     } catch (error) {
@@ -184,7 +217,7 @@ export const fetchAllProducts = async (
             req,
             eventName: PRODUCT_FETCH_EVENTS.ERROR.eventName,
             payload: { 
-                params,
+                query: req.query,
                 error: error instanceof Error ? error.message : String(error)
             },
             errorData: error instanceof Error ? error.message : String(error)

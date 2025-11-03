@@ -1,7 +1,7 @@
 /**
  * @file types.products.admin.ts
  * Type definitions for products administration module.
- * Version: 1.0.7
+ * Version: 1.1.0
  * Frontend types for products admin functionality.
   
   Changes in v1.0.2:
@@ -26,6 +26,12 @@
   Changes in v1.0.7:
   - Updated ProductStatus interface to contain only status_code field (removed description, is_active, display_order)
   - Statuses now fetched from app.product_status UDT enum instead of product_statuses table
+  
+  Changes in v1.1.0:
+  - Removed canBeOption and optionOnly from ProductFormData, CreateProductRequest, UpdateProductRequest interfaces
+  - Removed can_be_option and option_only from Product and ProductListItem interfaces
+  - Removed typeFilter from FetchAllProductsParams interface
+  - All products are now equal, no type distinction
  */
 
 // Product translation data interface
@@ -62,8 +68,6 @@ export interface ProductVisibility {
 export interface ProductFormData {
   productCode: string
   translationKey: string
-  canBeOption: boolean
-  optionOnly: boolean
   owner: string
   backupOwner?: string
   specialistsGroups: string[]
@@ -76,8 +80,6 @@ export interface ProductFormData {
 export interface CreateProductRequest {
   productCode: string
   translationKey: string
-  canBeOption: boolean
-  optionOnly: boolean
   owner: string
   backupOwner?: string
   specialistsGroups: string[]
@@ -108,8 +110,6 @@ export interface Product {
   product_code: string
   translation_key: string
   status_code: string
-  can_be_option: boolean
-  option_only: boolean
   is_published: boolean
   is_visible_owner: boolean
   is_visible_groups: boolean
@@ -226,8 +226,6 @@ export interface UpdateProductRequest {
   productId: string
   productCode?: string
   translationKey?: string
-  canBeOption?: boolean
-  optionOnly?: boolean
   owner?: string
   backupOwner?: string
   specialistsGroups?: string[]
@@ -265,7 +263,6 @@ export interface FetchAllProductsParams {
   searchQuery?: string
   sortBy?: string
   sortDesc?: boolean
-  typeFilter?: string
   publishedFilter?: string
   statusFilter?: string
 }
@@ -276,8 +273,6 @@ export interface ProductListItem {
   product_code: string
   translation_key: string
   status_code: string
-  can_be_option: boolean
-  option_only: boolean
   is_published: boolean
   is_visible_owner: boolean
   is_visible_groups: boolean

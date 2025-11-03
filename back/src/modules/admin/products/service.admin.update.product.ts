@@ -349,7 +349,7 @@ async function updateMainProductData(
 ): Promise<{ changes: Record<string, { old: any, new: any }> } | null> {
     // Get current values from database
     const currentResult = await client.query(
-        'SELECT product_code, translation_key, status_code, can_be_option, option_only FROM app.products WHERE product_id = $1',
+        'SELECT product_code, translation_key, status_code FROM app.products WHERE product_id = $1',
         [productId]
     );
     
@@ -379,18 +379,6 @@ async function updateMainProductData(
             new: data.statusCode
         };
     }
-    if (data.canBeOption !== undefined && data.canBeOption !== current.can_be_option) {
-        changes.canBeOption = {
-            old: current.can_be_option,
-            new: data.canBeOption
-        };
-    }
-    if (data.optionOnly !== undefined && data.optionOnly !== current.option_only) {
-        changes.optionOnly = {
-            old: current.option_only,
-            new: data.optionOnly
-        };
-    }
     
     // If no changes, return null
     if (Object.keys(changes).length === 0) {
@@ -413,14 +401,6 @@ async function updateMainProductData(
     if (data.statusCode !== undefined) {
         updateFields.push(`status_code = $${paramIndex++}`);
         updateValues.push(data.statusCode);
-    }
-    if (data.canBeOption !== undefined) {
-        updateFields.push(`can_be_option = $${paramIndex++}`);
-        updateValues.push(data.canBeOption);
-    }
-    if (data.optionOnly !== undefined) {
-        updateFields.push(`option_only = $${paramIndex++}`);
-        updateValues.push(data.optionOnly);
     }
     // Note: visibility fields are now handled by updateProductPreferences function
 
@@ -792,7 +772,7 @@ export async function updateProduct(data: UpdateProductRequest, req: Request): P
         // Update main product data and collect changes
         let mainDataChanges = null;
         if (data.productCode !== undefined || data.translationKey !== undefined || 
-            data.statusCode !== undefined || data.canBeOption !== undefined || data.optionOnly !== undefined) {
+            data.statusCode !== undefined) {
             mainDataChanges = await updateMainProductData(client, data.productId, data, requestorUuid, req);
             
             // Publish event only if there are actual changes

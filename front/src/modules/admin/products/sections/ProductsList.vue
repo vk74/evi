@@ -1,6 +1,6 @@
 /**
  * @file ProductsList.vue
- * Version: 1.2.2
+ * Version: 1.3.0
  * Products list section component.
  * Frontend file that displays list of products for admin users.
  * 
@@ -26,6 +26,13 @@
  * - Added normalizeStatusCodeForTranslation helper function
  * - Status codes with spaces (e.g., "on hold") are normalized to underscores (e.g., "on_hold") for translation keys
  * - Fixed issue where status codes with spaces were not displaying translations correctly
+ * 
+ * Changes in v1.3.0:
+ * - Removed type column from table
+ * - Removed type filter from filters section
+ * - Removed getProductTypeText function
+ * - Removed typeFilter ref and related handlers
+ * - All products are now equal, no type distinction
  */
 <script setup lang="ts">
 import { ref, computed, onMounted, watch } from 'vue'
@@ -72,7 +79,6 @@ const searchQuery = ref<string>('')
 const isSearching = ref<boolean>(false)
 
 // Filter parameters
-const typeFilter = ref<string>('all')
 const statusFilter = ref<string>('all')
 const publishedFilter = ref<string>('all')
 
@@ -94,17 +100,6 @@ const products = ref<ProductListItem[]>([])
 const totalItemsCount = ref<number>(0)
 const totalPagesCount = ref<number>(0)
 
-// Helper function to get product type display text
-const getProductTypeText = (canBeOption: boolean, optionOnly: boolean) => {
-  if (optionOnly) {
-    return t('admin.products.editor.basic.type.option')
-  } else if (canBeOption) {
-    return t('admin.products.editor.basic.type.productAndOption')
-  } else {
-    return t('admin.products.editor.basic.type.product')
-  }
-}
-
 // Helper function to get product name in current language
 const getProductName = (product: ProductListItem) => {
   return product.name || product.translation_key || '-'
@@ -119,7 +114,6 @@ const isSearchEnabled = computed(() =>
 )
 
 // Filter active indicators
-const isTypeFilterActive = computed(() => typeFilter.value !== 'all')
 const isStatusFilterActive = computed(() => statusFilter.value !== 'all')
 const isPublishedFilterActive = computed(() => publishedFilter.value !== 'all')
 
@@ -157,7 +151,6 @@ const headers = computed<TableHeader[]>(() => [
   { title: t('admin.products.table.headers.selection'), key: 'selection', width: '40px', sortable: false },
   { title: t('admin.products.table.headers.productCode'), key: 'product_code', width: '150px', sortable: true },
   { title: t('admin.products.table.headers.productName'), key: 'name', width: '250px', sortable: true },
-  { title: t('admin.products.table.headers.type'), key: 'type', width: '120px', sortable: true },
   { title: t('admin.products.table.headers.status'), key: 'status_code', width: '120px', sortable: true },
   { title: t('admin.products.table.headers.published'), key: 'published', width: '100px', sortable: true },
   { title: t('admin.products.table.headers.owner'), key: 'owner', width: '180px', sortable: true },
@@ -350,7 +343,6 @@ const performSearch = async () => {
       searchQuery: searchQuery.value && searchQuery.value.length >= 2 ? searchQuery.value : undefined,
       sortBy: sortBy.value || 'product_code',
       sortDesc: sortDesc.value || false,
-      typeFilter: typeFilter.value !== 'all' ? typeFilter.value : undefined,
       statusFilter: statusFilter.value !== 'all' ? statusFilter.value : undefined,
       publishedFilter: publishedFilter.value !== 'all' ? publishedFilter.value : undefined,
       language: currentLanguage
@@ -475,11 +467,6 @@ const handleItemsPerPageChange = async (newItemsPerPage: ItemsPerPageOption) => 
 }
 
 // Filter handlers
-const handleTypeFilterChange = async () => {
-  page.value = 1
-  await performSearch()
-}
-
 const handleStatusFilterChange = async () => {
   page.value = 1
   await performSearch()
@@ -491,7 +478,6 @@ const handlePublishedFilterChange = async () => {
 }
 
 const clearFilters = async () => {
-  typeFilter.value = 'all'
   statusFilter.value = 'all'
   publishedFilter.value = 'all'
   page.value = 1
@@ -515,32 +501,6 @@ const clearFilters = async () => {
           <div class="d-flex align-center justify-space-between w-100 px-4 py-3">
             <!-- Left part: filters -->
             <div class="d-flex align-center">
-              <!-- Type filter -->
-              <div class="d-flex align-center mr-4">
-                <v-select
-                  v-model="typeFilter"
-                  density="compact"
-                  variant="outlined"
-                  :label="t('admin.products.filters.type').toLowerCase()"
-                  :items="[
-                    { title: t('admin.products.filters.all'), value: 'all' },
-                    { title: t('admin.products.editor.basic.type.product'), value: 'product' },
-                    { title: t('admin.products.editor.basic.type.productAndOption'), value: 'productAndOption' },
-                    { title: t('admin.products.editor.basic.type.option'), value: 'option' }
-                  ]"
-                  color="teal"
-                  :base-color="isTypeFilterActive ? 'teal' : undefined"
-                  hide-details
-                  style="min-width: 180px;"
-                  class="filter-select"
-                  @update:model-value="handleTypeFilterChange"
-                >
-                  <template #append-inner>
-                    <PhFunnel class="dropdown-icon" />
-                  </template>
-                </v-select>
-              </div>
-
               <!-- Status filter -->
               <div class="d-flex align-center mr-4">
                 <v-select
@@ -589,7 +549,7 @@ const clearFilters = async () => {
 
               <!-- Clear filters button -->
               <v-btn
-                v-if="typeFilter !== 'all' || statusFilter !== 'all' || publishedFilter !== 'all'"
+                v-if="statusFilter !== 'all' || publishedFilter !== 'all'"
                 size="small"
                 variant="text"
                 color="grey"
@@ -670,16 +630,6 @@ const clearFilters = async () => {
 
           <template #[`item.name`]="{ item }">
             <span>{{ getProductName(item) }}</span>
-          </template>
-
-          <template #[`item.type`]="{ item }">
-            <v-chip 
-              :color="item.option_only ? 'violet' : item.can_be_option ? 'blue' : 'teal'" 
-              size="small"
-              class="status-chip"
-            >
-              {{ getProductTypeText(item.can_be_option, item.option_only) }}
-            </v-chip>
           </template>
 
           <template #[`item.status_code`]="{ item }">

@@ -1,22 +1,26 @@
 /**
  * queries.catalog.products.ts - backend file
- * version: 1.1.1
+ * version: 1.2.0
  * 
  * Purpose: SQL queries for catalog products (public consumption layer)
  * Logic: Provides parameterized queries to fetch active products for the catalog and product details
- *        Filters products with option_only=true based on display settings
  *        Uses LEFT JOIN with fallback language to ensure products are always visible
  * File type: Backend TypeScript (queries.catalog.products.ts)
+ * 
+ * Changes in v1.2.0:
+ * - Removed option_only filtering from getActiveProducts query
+ * - Removed option_only filtering from getActiveProductsBySection query
+ * - Removed showOptionsOnly parameter from queries
+ * - All published products are now shown in catalog (no type distinction)
  */
 
 export const queries = {
   /**
    * Select active products for catalog consumption
    * - Only products with is_published = true
-   * - Filters option_only products based on $3 parameter
    * - Minimal set of fields required for product cards
    * - Uses LEFT JOIN with fallback to always show products even without translation
-   * - Parameters: [requestedLanguage, fallbackLanguage, showOptionsOnly]
+   * - Parameters: [requestedLanguage, fallbackLanguage]
    */
   getActiveProducts: `
     SELECT 
@@ -42,7 +46,6 @@ export const queries = {
       ON p.product_id = pt_fallback.product_id
       AND pt_fallback.language_code = $2
     WHERE p.is_published = true
-      AND ($3 = true OR p.option_only = false)
       AND (pt_requested.product_id IS NOT NULL OR pt_fallback.product_id IS NOT NULL)
     ORDER BY p.product_code ASC, COALESCE(pt_requested.name, pt_fallback.name) ASC
   `,
@@ -50,10 +53,9 @@ export const queries = {
   /**
    * Select active products by section for catalog consumption
    * - Only products with is_published = true
-   * - Filters option_only products based on $4 parameter
    * - Joined with app.section_products for filtering
    * - Uses LEFT JOIN with fallback to always show products even without translation
-   * - Parameters: [sectionId, requestedLanguage, fallbackLanguage, showOptionsOnly]
+   * - Parameters: [sectionId, requestedLanguage, fallbackLanguage]
    */
   getActiveProductsBySection: `
     SELECT 
@@ -81,7 +83,6 @@ export const queries = {
       AND pt_fallback.language_code = $3
     WHERE p.is_published = true 
       AND sp.section_id = $1
-      AND ($4 = true OR p.option_only = false)
       AND (pt_requested.product_id IS NOT NULL OR pt_fallback.product_id IS NOT NULL)
     ORDER BY p.product_code ASC, COALESCE(pt_requested.name, pt_fallback.name) ASC
   `,

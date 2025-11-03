@@ -1,18 +1,15 @@
 /**
- * service.admin.fetch.options.ts - version 1.1.0
- * Service for fetching options (products with can_be_option = true OR option_only = true).
+ * service.admin.fetch.options.ts - version 1.1.1
+ * Service for fetching options (all products except the main product).
  * 
  * Handles database queries for options list with user roles and translations.
  * 
  * File: service.admin.fetch.options.ts
- * Created: 2024-12-20
- * Last updated: 2024-12-20
  * 
- * Changes in v1.1.0:
- * - Added statusFilter parameter support for filtering options by status_code
- * - Added statusFilter parsing from request query
- * - Pass statusFilter to countAllOptions and fetchAllOptions queries
- * - status_code field already mapped in ProductListItem (line 165)
+ * Changes in v1.1.1:
+ * - Removed can_be_option and option_only filtering from queries
+ * - fetchAllOptions now returns all products except the main product (no type filtering)
+ * - All products can now be paired with each other
  */
 
 import { Pool } from 'pg'
@@ -161,8 +158,6 @@ export const fetchOptions = async (
             product_code: row.product_code,
             translation_key: row.translation_key,
             status_code: row.status_code,
-            can_be_option: row.can_be_option,
-            option_only: row.option_only,
             is_published: row.is_published,
             is_visible_owner: row.is_visible_owner,
             is_visible_groups: row.is_visible_groups,

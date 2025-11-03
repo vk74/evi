@@ -328,8 +328,6 @@ async function createProductInDatabase(data: CreateProductRequest, requestorUuid
             data.productCode.trim(),
             data.translationKey.trim(),
             data.statusCode || 'draft', // status_code - use provided or default to 'draft'
-            data.canBeOption,
-            data.optionOnly,
             false, // isPublished - always false for new products
             false, // is_visible_owner - default false
             false, // is_visible_groups - default false
