@@ -1,5 +1,5 @@
 /**
- * version: 1.4.3
+ * version: 1.4.4
  * Backend types for pricing administration module.
  * Defines DTOs for currencies, price lists and other pricing-related entities.
  * File: types.admin.pricing.ts (backend)
@@ -8,6 +8,9 @@
  * - Added country: string to CreatePriceListRequest (required)
  * - Added country: string to PriceListFullDto
  * - Added country?: string to UpdatePriceListRequest (optional)
+ * 
+ * Changes in v1.4.4:
+ * - Added country: string to PriceListSummaryDto
  */
 
 // ============================================
@@ -45,6 +48,7 @@ export interface PriceListSummaryDto {
     name: string
     description: string | null
     currency_code: string
+    country: string
     is_active: boolean
     owner_id: string | null // UUID
     owner_username: string | null

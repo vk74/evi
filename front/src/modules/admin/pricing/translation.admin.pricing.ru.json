@@ -13,6 +13,7 @@
             "selection": "выбор",
             "id": "ID",
             "name": "название",
+            "country": "страна",
             "currency": "валюта",
             "status": "статус",
             "owner": "владелец"
@@ -20,11 +21,13 @@
           "status": {
             "active": "активен",
             "disabled": "отключен"
-          }
+          },
+          "selectCountry": "выберите страну"
         },
         "filters": {
           "all": "все",
           "status": "статус прайс-листа",
+          "country": "страна",
           "currency": "валюта",
           "active": "активен",
           "disabled": "отключен",

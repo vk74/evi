@@ -1,11 +1,14 @@
 /**
- * version: 1.1.0
+ * version: 1.2.0
  * Frontend service for updating price lists.
  * 
  * This is a frontend file. The file provides API client for price list update.
  * Logic: Handles HTTP requests to backend API with proper error handling and response processing.
  * 
  * File: service.update.pricelist.ts
+ * 
+ * Changes in v1.2.0:
+ * - Added country validation (if provided, must not be empty and not equal to 'select country')
  */
 
 import { api } from '@/core/api/service.axios'
@@ -44,6 +47,13 @@ export const serviceUpdatePriceList = {
                 return {
                     success: false,
                     message: 'Currency code must be 3 characters'
+                }
+            }
+
+            if (data.country !== undefined && data.country !== null && data.country.trim() === 'select country') {
+                return {
+                    success: false,
+                    message: 'Country must be selected'
                 }
             }
 

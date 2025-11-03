@@ -1,10 +1,14 @@
-/**
- * version: 1.3.3
- * SQL queries for pricing administration module.
- * Contains parameterized queries related to pricing (currencies and price lists).
- * Includes integrity check queries and queries for event payload data.
- * File: queries.admin.pricing.ts (backend)
- */
+    /**
+     * version: 1.3.4
+     * SQL queries for pricing administration module.
+     * Contains parameterized queries related to pricing (currencies and price lists).
+     * Includes integrity check queries and queries for event payload data.
+     * File: queries.admin.pricing.ts (backend)
+     * 
+     * Changes in v1.3.4:
+     * - Added country field to fetchAllPriceLists query
+     * - Added country field to fetchPriceListsWithSearch query
+     */
 
 export const queries = {
     // ============================================
@@ -83,6 +87,7 @@ export const queries = {
             pli.name,
             pli.description,
             pli.currency_code,
+            pli.country,
             pli.is_active,
             pli.owner_id,
             u.username as owner_username,
@@ -104,6 +109,7 @@ export const queries = {
             pli.name,
             pli.description,
             pli.currency_code,
+            pli.country,
             pli.is_active,
             pli.owner_id,
             u.username as owner_username,

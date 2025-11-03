@@ -19,7 +19,7 @@ import { updateSettingFromComponent } from '@/modules/admin/settings/service.upd
 import { useUiStore } from '@/core/state/uistate';
 import DataLoading from '@/core/ui/loaders/DataLoading.vue';
 import { PhCaretUpDown, PhWarningCircle } from '@phosphor-icons/vue';
-import { fetchCountriesService } from '@/modules/admin/pricing/countries/service.fetch.countries';
+import { fetchCountriesService } from '@/modules/admin/pricing/service.fetch.countries';
 
 // Section path identifier
 const section_path = 'Application.RegionalSettings';

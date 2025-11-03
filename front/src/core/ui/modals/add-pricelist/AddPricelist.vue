@@ -21,7 +21,7 @@ import { ref, watch, onMounted, computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { PhCaretUpDown } from '@phosphor-icons/vue'
 import { fetchCurrenciesService } from '@/modules/admin/pricing/currencies/service.fetch.currencies'
-import { fetchCountriesService } from '@/modules/admin/pricing/countries/service.fetch.countries'
+import { fetchCountriesService } from '@/modules/admin/pricing/service.fetch.countries'
 import type { Currency } from '@/modules/admin/pricing/types.pricing.admin'
 
 // Props

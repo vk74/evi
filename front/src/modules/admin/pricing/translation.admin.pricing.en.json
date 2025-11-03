@@ -13,6 +13,7 @@
             "selection": "select",
             "id": "ID",
             "name": "name",
+            "country": "country",
             "currency": "currency",
             "status": "status",
             "owner": "owner"
@@ -20,11 +21,13 @@
           "status": {
             "active": "active",
             "disabled": "disabled"
-          }
+          },
+          "selectCountry": "select country"
         },
         "filters": {
           "all": "all",
           "status": "pricelist status",
+          "country": "country",
           "currency": "currency",
           "active": "active",
           "disabled": "disabled",

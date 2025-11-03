@@ -1,9 +1,16 @@
 <!--
-Version: 1.5.0
+Version: 1.6.0
 Price Lists management section.
 Frontend file for managing price lists in the pricing admin module.
 Features editable name and status fields with manual is_active control.
 Filename: PriceLists.vue
+
+Changes in v1.6.0:
+- Added country column between name and currency
+- Added country filter in filters section
+- Added country editing functionality with dropdown menu
+- Added countries loading from backend
+- Added formatCountryName helper function
 -->
 <script setup lang="ts">
 import { ref, computed, onMounted, watch } from 'vue'
@@ -30,6 +37,7 @@ import { serviceUpdatePriceList } from './service.update.pricelist'
 import { serviceDeletePriceLists } from './service.delete.pricelists'
 import { fetchCurrenciesService } from '../currencies/service.fetch.currencies'
 import { fetchPriceListService } from '../PriceListEditor/service.admin.fetch.pricelist'
+import { fetchCountriesService } from '../service.fetch.countries'
 import type { PriceListSummary, Currency } from '../types.pricing.admin'
 import debounce from 'lodash/debounce'
 
@@ -56,11 +64,16 @@ const isSearching = ref<boolean>(false)
 
 // Filter parameters
 const statusFilter = ref<string>('all')
+const countryFilter = ref<string>('all')
 const currencyFilter = ref<string>('all')
 
 // Currencies list for filter
 const currencies = ref<Currency[]>([])
 const isLoadingCurrencies = ref(false)
+
+// Countries list for filter
+const countries = ref<string[]>([])
+const isLoadingCountries = ref(false)
 
 // Sort tracking
 const sortBy = ref<string | null>(null)
@@ -78,6 +91,7 @@ const selectedPriceLists = ref<Set<number>>(new Set())
 const isLoading = ref(false)
 const isUpdatingName = ref<number | null>(null) // Track which price list is being updated
 const isUpdatingStatus = ref<number | null>(null) // Track which price list status is being updated
+const isUpdatingCountry = ref<number | null>(null) // Track which price list country is being updated
 
 // Price lists data
 const priceLists = ref<PriceListSummary[]>([])
@@ -94,6 +108,7 @@ const headers = computed<TableHeader[]>(() => [
   { title: t('admin.pricing.priceLists.table.headers.selection'), key: 'selection', width: '40px', sortable: false },
   { title: t('admin.pricing.priceLists.table.headers.id'), key: 'price_list_id', width: '100px', sortable: true },
   { title: t('admin.pricing.priceLists.table.headers.name'), key: 'name', width: '500px', sortable: true },
+  { title: t('admin.pricing.priceLists.table.headers.country'), key: 'country', width: '150px', sortable: true },
   { title: t('admin.pricing.priceLists.table.headers.currency'), key: 'currency_code', width: '100px', sortable: true },
   { title: t('admin.pricing.priceLists.table.headers.status'), key: 'is_active', width: '120px', sortable: true },
   { title: t('admin.pricing.priceLists.table.headers.owner'), key: 'owner_username', width: '150px', sortable: false }
@@ -155,6 +170,7 @@ const editPriceList = async () => {
           name: result.data.priceList.name,
           description: result.data.priceList.description || '',
           currency_code: result.data.priceList.currency_code,
+          country: result.data.priceList.country,
           isActive: result.data.priceList.is_active,
           owner: result.data.priceList.owner_id,
           items: result.data.items || []
@@ -347,8 +363,14 @@ const handleCurrencyFilterChange = async () => {
   await performSearch()
 }
 
+const handleCountryFilterChange = async () => {
+  page.value = 1
+  await performSearch()
+}
+
 const clearFilters = async () => {
   statusFilter.value = 'all'
+  countryFilter.value = 'all'
   currencyFilter.value = 'all'
   page.value = 1
   await performSearch()
@@ -375,8 +397,19 @@ const currencyOptions = computed(() => {
   return [allOption, ...currencyItems]
 })
 
+// Country options for filter dropdown
+const countryFilterOptions = computed(() => {
+  const allOption = { title: t('admin.pricing.priceLists.filters.all'), value: 'all' }
+  const countryItems = countries.value.map(code => ({
+    title: formatCountryName(code),
+    value: code
+  }))
+  return [allOption, ...countryItems]
+})
+
 // Check if filters are active (for highlighting)
 const isStatusFilterActive = computed(() => statusFilter.value !== 'all')
+const isCountryFilterActive = computed(() => countryFilter.value !== 'all')
 const isCurrencyFilterActive = computed(() => currencyFilter.value !== 'all')
 
 // Handle name update
@@ -457,6 +490,51 @@ const statusOptions = computed(() => [
   { value: false, color: 'grey', label: t('admin.pricing.priceLists.table.status.disabled') }
 ])
 
+// Helper to format country name
+const formatCountryName = (countryCode: string) => {
+  return t(`admin.settings.application.regionalsettings.countries.${countryCode}`)
+}
+
+// Country options for menu
+const countryOptions = computed(() => {
+  return countries.value.map(code => ({
+    value: code,
+    label: formatCountryName(code)
+  }))
+})
+
+// Handle country update
+const handleCountryUpdate = async (priceListId: number, newCountry: string) => {
+  try {
+    isUpdatingCountry.value = priceListId
+    
+    const result = await serviceUpdatePriceList.updatePriceList({
+      price_list_id: priceListId,
+      country: newCountry
+    })
+    
+    if (result.success) {
+      uiStore.showSuccessSnackbar(result.message || t('admin.pricing.priceLists.messages.updateSuccess'))
+      // Update local state
+      const priceList = priceLists.value.find(pl => pl.price_list_id === priceListId)
+      if (priceList && result.data?.priceList) {
+        priceList.country = result.data.priceList.country
+      }
+    } else {
+      uiStore.showErrorSnackbar(result.message || t('admin.pricing.priceLists.messages.updateError'))
+      // Revert to original country by refreshing
+      await performSearch()
+    }
+  } catch (error) {
+    console.error('Error updating price list country:', error)
+    uiStore.showErrorSnackbar(t('admin.pricing.priceLists.messages.updateError'))
+    // Revert to original country by refreshing
+    await performSearch()
+  } finally {
+    isUpdatingCountry.value = null
+  }
+}
+
 // Load currencies for filter
 const loadCurrencies = async () => {
   try {
@@ -472,11 +550,27 @@ const loadCurrencies = async () => {
   }
 }
 
+// Load countries for filter and editing
+const loadCountries = async () => {
+  try {
+    isLoadingCountries.value = true
+    const loadedCountries = await fetchCountriesService()
+    countries.value = loadedCountries
+  } catch (error) {
+    console.error('Failed to load countries:', error)
+    // Fallback to empty list on error
+    countries.value = []
+  } finally {
+    isLoadingCountries.value = false
+  }
+}
+
 // Initialize on mount
 onMounted(async () => {
   await Promise.all([
     performSearch(),
-    loadCurrencies()
+    loadCurrencies(),
+    loadCountries()
   ])
 })
 </script>
@@ -497,23 +591,20 @@ onMounted(async () => {
           <div class="d-flex align-center justify-space-between w-100 px-4 py-3">
             <!-- Left part: filters -->
             <div class="d-flex align-center">
-              <!-- Status filter -->
+              <!-- Country filter -->
               <div class="d-flex align-center mr-4">
                 <v-select
-                  v-model="statusFilter"
+                  v-model="countryFilter"
                   density="compact"
                   variant="outlined"
-                  :label="t('admin.pricing.priceLists.filters.status')"
-                  :items="[
-                    { title: t('admin.pricing.priceLists.filters.all'), value: 'all' },
-                    { title: t('admin.pricing.priceLists.filters.active'), value: 'active' },
-                    { title: t('admin.pricing.priceLists.filters.disabled'), value: 'disabled' }
-                  ]"
+                  :label="t('admin.pricing.priceLists.filters.country')"
+                  :items="countryFilterOptions"
+                  :loading="isLoadingCountries"
                   color="teal"
-                  :base-color="isStatusFilterActive ? 'teal' : undefined"
+                  :base-color="isCountryFilterActive ? 'teal' : undefined"
                   hide-details
                   style="min-width: 150px;"
-                  @update:model-value="handleStatusFilterChange"
+                  @update:model-value="handleCountryFilterChange"
                 >
                   <template #append-inner>
                     <PhFunnel class="dropdown-icon" />
@@ -542,9 +633,33 @@ onMounted(async () => {
                 </v-select>
               </div>
 
+              <!-- Status filter -->
+              <div class="d-flex align-center mr-4">
+                <v-select
+                  v-model="statusFilter"
+                  density="compact"
+                  variant="outlined"
+                  :label="t('admin.pricing.priceLists.filters.status')"
+                  :items="[
+                    { title: t('admin.pricing.priceLists.filters.all'), value: 'all' },
+                    { title: t('admin.pricing.priceLists.filters.active'), value: 'active' },
+                    { title: t('admin.pricing.priceLists.filters.disabled'), value: 'disabled' }
+                  ]"
+                  color="teal"
+                  :base-color="isStatusFilterActive ? 'teal' : undefined"
+                  hide-details
+                  style="min-width: 150px;"
+                  @update:model-value="handleStatusFilterChange"
+                >
+                  <template #append-inner>
+                    <PhFunnel class="dropdown-icon" />
+                  </template>
+                </v-select>
+              </div>
+
               <!-- Clear filters button -->
               <v-btn
-                v-if="statusFilter !== 'all' || currencyFilter !== 'all'"
+                v-if="statusFilter !== 'all' || countryFilter !== 'all' || currencyFilter !== 'all'"
                 size="small"
                 variant="text"
                 color="grey"
@@ -632,6 +747,30 @@ onMounted(async () => {
               hide-details
               @update:model-value="debouncedNameUpdate(item.price_list_id, $event)"
             />
+          </template>
+
+          <template #[`item.country`]="{ item }">
+            <v-menu>
+              <template #activator="{ props }">
+                <span
+                  v-bind="props"
+                  class="country-text country-text-clickable"
+                  :class="{ 'country-loading': isUpdatingCountry === item.price_list_id }"
+                >
+                  {{ formatCountryName(item.country) }}
+                  <PhCaretDown :size="14" class="ml-1" />
+                </span>
+              </template>
+              <v-list density="compact">
+                <v-list-item
+                  v-for="option in countryOptions"
+                  :key="option.value"
+                  @click="handleCountryUpdate(item.price_list_id, option.value)"
+                >
+                  <span class="country-menu-item">{{ option.label }}</span>
+                </v-list-item>
+              </v-list>
+            </v-menu>
           </template>
 
           <template #[`item.currency_code`]="{ item }">
@@ -994,5 +1133,32 @@ onMounted(async () => {
   padding: 0 9px !important;
   min-height: 22px !important;
   height: 22px !important;
+}
+
+/* Country text styles */
+.country-text {
+  font-size: 0.9em;
+}
+
+.country-text-clickable {
+  cursor: pointer;
+  user-select: none;
+  display: inline-flex;
+  align-items: center;
+}
+
+.country-text-clickable:hover {
+  opacity: 0.7;
+  color: rgb(var(--v-theme-primary));
+}
+
+.country-loading {
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+.country-menu-item {
+  width: 100%;
+  text-align: left;
 }
 </style>

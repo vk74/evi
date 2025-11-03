@@ -1,5 +1,5 @@
 /**
- * version: 1.1.0
+ * version: 1.2.0
  * Service for updating price lists.
  * Backend file that handles business logic for updating existing price lists.
  * 
@@ -9,9 +9,16 @@
  * - Checks currency existence (if being updated)
  * - Checks name uniqueness (if being updated)
  * - Validates owner (if being updated)
+ * - Validates country (if being updated)
  * - Updates price list in database
  * 
  * File: service.admin.pricing.update.pricelist.ts (backend)
+ * 
+ * Changes in v1.2.0:
+ * - Added country validation in validateUpdatePriceListData function
+ * - Added country parameter to update query call (position $5)
+ * - Adjusted parameter positions: country becomes $5, is_active becomes $6, owner_id becomes $7, updated_by becomes $8
+ * - Added country change tracking in the changes object for event logging
  */
 
 import { Request } from 'express';
@@ -28,6 +35,7 @@ import { getUuidByUsername } from '@/core/helpers/get.uuid.by.username';
 import { validateField } from '@/core/validation/service.validation';
 import { createAndPublishEvent } from '@/core/eventBus/fabric.events';
 import { EVENTS_ADMIN_PRICING } from './events.admin.pricing';
+import { getAppCountriesList } from '@/core/helpers/get.app.countries.list';
 
 // Type assertion for pool
 const pool = pgPool as Pool;
@@ -130,6 +138,22 @@ async function validateUpdatePriceListData(
         }
     }
 
+    // Validate country (if provided)
+    if (data.country !== undefined) {
+        if (data.country.trim() === 'select country') {
+            errors.push('Country must be selected');
+        } else {
+            try {
+                const availableCountries = await getAppCountriesList();
+                if (!availableCountries.includes(data.country.trim())) {
+                    errors.push('Invalid country value');
+                }
+            } catch (error) {
+                errors.push('Error checking country validity');
+            }
+        }
+    }
+
     // Validate owner (if provided)
     if (data.owner !== undefined && data.owner !== '' && data.owner !== null) {
         const ownerResult = await validateField({ 
@@ -211,8 +235,15 @@ export async function updatePriceList(
             data.name?.trim() || null, // $2
             data.description !== undefined ? (data.description?.trim() || null) : null, // $3
             data.currency_code?.trim() || null, // $4
-            data.is_active !== undefined ? data.is_active : null, // $5
+            data.country?.trim() || null, // $5
         ];
+
+        // Add is_active parameter only if is_active is being updated
+        if (data.is_active !== undefined) {
+            updateParams.push(data.is_active); // $6
+        } else {
+            updateParams.push(null); // $6 - null means don't update this field
+        }
 
         // Add owner_id parameter only if owner is being updated
         if (data.owner !== undefined) {
@@ -220,12 +251,12 @@ export async function updatePriceList(
             if (data.owner !== '' && data.owner !== null) {
                 ownerUuid = await getUuidByUsername(data.owner);
             }
-            updateParams.push(ownerUuid); // $6
+            updateParams.push(ownerUuid); // $7
         } else {
-            updateParams.push(null); // $6 - null means don't update this field
+            updateParams.push(null); // $7 - null means don't update this field
         }
 
-        updateParams.push(requestorUuid); // $7
+        updateParams.push(requestorUuid); // $8
 
         // Execute update
         await pool.query(queries.updatePriceList, updateParams);
@@ -246,6 +277,9 @@ export async function updatePriceList(
           }
           if (data.currency_code !== undefined && data.currency_code !== oldPriceList.currency_code) {
             changes.currencyCode = { old: oldPriceList.currency_code, new: priceList.currency_code }
+          }
+          if (data.country !== undefined && data.country !== oldPriceList.country) {
+            changes.country = { old: oldPriceList.country, new: priceList.country }
           }
           if (data.is_active !== undefined && data.is_active !== oldPriceList.is_active) {
             changes.isActive = { old: oldPriceList.is_active, new: priceList.is_active }
