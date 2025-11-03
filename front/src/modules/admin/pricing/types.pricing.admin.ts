@@ -115,7 +115,7 @@ export interface FetchAllPriceListsResult {
   success: boolean
   message?: string
   data?: {
-    priceLists: PriceListItem[]
+    priceLists: PriceListSummary[]
     pagination: {
       currentPage: number
       itemsPerPage: number

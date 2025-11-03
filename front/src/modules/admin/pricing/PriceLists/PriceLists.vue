@@ -774,13 +774,7 @@ onMounted(async () => {
           </template>
 
           <template #[`item.currency_code`]="{ item }">
-            <v-chip 
-              color="blue" 
-              size="small"
-              class="status-chip"
-            >
-              {{ item.currency_code }}
-            </v-chip>
+            <span>{{ item.currency_code }}</span>
           </template>
 
           <template #[`item.is_active`]="{ item }">
