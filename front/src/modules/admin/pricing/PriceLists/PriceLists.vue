@@ -589,7 +589,12 @@ onMounted(async () => {
         <!-- Filters App Bar -->
         <div class="filters-container">
           <div class="d-flex align-center justify-space-between w-100 px-4 py-3">
-            <!-- Left part: filters -->
+            <!-- Left part: spacer for future controls -->
+            <div class="d-flex align-center">
+              <v-spacer />
+            </div>
+
+            <!-- Right part: filters -->
             <div class="d-flex align-center">
               <!-- Country filter -->
               <div class="d-flex align-center mr-4">
@@ -667,11 +672,6 @@ onMounted(async () => {
               >
                 {{ t('admin.pricing.priceLists.filters.clear') }}
               </v-btn>
-            </div>
-
-            <!-- Right part: spacer for future controls -->
-            <div class="d-flex align-center">
-              <v-spacer />
             </div>
           </div>
         </div>
