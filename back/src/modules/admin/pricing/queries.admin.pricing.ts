@@ -148,6 +148,7 @@ export const queries = {
             name,
             description,
             currency_code,
+            country,
             is_active,
             owner_id,
             created_by,
@@ -199,7 +200,7 @@ export const queries = {
 
     /**
      * Insert new price list
-     * Parameters: name, description, currency_code, is_active, 
+     * Parameters: name, description, currency_code, country, is_active, 
      *             owner_id, created_by
      */
     insertPriceList: `
@@ -207,17 +208,18 @@ export const queries = {
             name,
             description,
             currency_code,
+            country,
             is_active,
             owner_id,
             created_by,
             updated_by
-        ) VALUES ($1, $2, $3, $4, $5, $6, $6)
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $7)
         RETURNING price_list_id
     `,
 
     /**
      * Update price list
-     * Parameters: price_list_id, name, description, currency_code, is_active, 
+     * Parameters: price_list_id, name, description, currency_code, country, is_active, 
      *             owner_id, updated_by
      */
     updatePriceList: `
@@ -225,9 +227,10 @@ export const queries = {
             name = COALESCE($2, name),
             description = COALESCE($3, description),
             currency_code = COALESCE($4, currency_code),
-            is_active = COALESCE($5, is_active),
-            owner_id = COALESCE($6, owner_id),
-            updated_by = $7,
+            country = COALESCE($5, country),
+            is_active = COALESCE($6, is_active),
+            owner_id = COALESCE($7, owner_id),
+            updated_by = $8,
             updated_at = NOW()
         WHERE price_list_id = $1
         RETURNING price_list_id

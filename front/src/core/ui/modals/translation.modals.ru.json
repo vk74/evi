@@ -91,5 +91,8 @@
       "error": "ошибка создания пар",
       "noOptionsSelected": "не выбрано опций"
     }
+  },
+  "addPricelist": {
+    "selectCountry": "выберите страну"
   }
 }

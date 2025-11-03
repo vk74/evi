@@ -318,6 +318,15 @@ export const EVENTS_ADMIN_PRICING: EventCollection = {
     version: '1.0.0'
   },
 
+  'pricelists.create.country.invalid': {
+    eventName: 'adminPricing.pricelists.create.country.invalid',
+    source: 'admin-pricing',
+    eventType: 'app',
+    severity: 'error',
+    eventMessage: 'Invalid country value for price list creation',
+    version: '1.0.0'
+  },
+
   'pricelists.create.name.duplicate': {
     eventName: 'adminPricing.pricelists.create.name.duplicate',
     source: 'admin-pricing',

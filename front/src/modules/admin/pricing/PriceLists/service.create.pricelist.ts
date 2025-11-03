@@ -1,11 +1,17 @@
 /**
- * version: 1.1.0
+ * version: 1.1.3
  * Frontend service for creating price lists.
  * 
  * This is a frontend file. The file provides API client for price list creation.
  * Logic: Handles HTTP requests to backend API with proper error handling and response processing.
  * 
  * File: service.create.pricelist.ts
+ * 
+ * Changes in v1.3.0:
+ * - Removed hardcoded countries list validation (now validated on backend using dynamic list)
+ * 
+ * Changes in v1.2.0:
+ * - Added country validation (required, not 'select country')
  */
 
 import { api } from '@/core/api/service.axios'
@@ -37,6 +43,22 @@ export const serviceCreatePriceList = {
                 return {
                     success: false,
                     message: 'Currency code is required and must be 3 characters'
+                }
+            }
+
+            // Validate country (required, not 'select country')
+            // Full validation including country existence check is done on backend
+            if (!data.country || data.country.trim() === '') {
+                return {
+                    success: false,
+                    message: 'Country is required'
+                }
+            }
+
+            if (data.country.trim() === 'select country') {
+                return {
+                    success: false,
+                    message: 'Country must be selected'
                 }
             }
 

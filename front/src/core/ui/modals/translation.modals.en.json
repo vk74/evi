@@ -91,5 +91,8 @@
       "error": "error creating pairs",
       "noOptionsSelected": "no options selected"
     }
+  },
+  "addPricelist": {
+    "selectCountry": "select country"
   }
 }

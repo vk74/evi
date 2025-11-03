@@ -52,6 +52,7 @@ import deleteProductOptionPairsController from './products/pairs/controller.admi
 import countProductOptionPairsController from './products/pairs/controller.admin.count.product.option.pairs';
 import fetchCurrenciesController from './pricing/controller.admin.pricing.fetch.currencies';
 import updateCurrenciesController from './pricing/controller.admin.pricing.update.currencies';
+import fetchCountriesController from './pricing/controller.admin.pricing.fetch.countries';
 import fetchAllPriceListsController from './pricing/controller.admin.pricing.fetch.pricelists';
 import fetchPriceListController from './pricing/controller.admin.pricing.fetch.pricelist';
 import createPriceListController from './pricing/controller.admin.pricing.create.pricelist';
@@ -127,6 +128,9 @@ router.post('/api/admin/users/register', checkRequestSecurityHard, registerUserC
 // Routes for Pricing Admin - Currencies
 router.get('/api/admin/pricing/fetch-currencies', checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, fetchCurrenciesController);
 router.post('/api/admin/pricing/update-currencies', checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, updateCurrenciesController);
+
+// Routes for Pricing Admin - Countries
+router.get('/api/admin/pricing/countries', checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, fetchCountriesController);
 
 // Routes for Pricing Admin - Price Lists
 router.get('/api/admin/pricing/pricelists/fetchall', checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, fetchAllPriceListsController);

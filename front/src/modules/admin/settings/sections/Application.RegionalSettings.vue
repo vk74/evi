@@ -1,10 +1,13 @@
 <!--
-  Version: 1.4.1
+  Version: 1.5.0
   File: Application.RegionalSettings.vue - frontend file
   Description: Regional settings configuration including timezone, country, default language, and time format
   Purpose: Configure regional application settings with full backend integration and settings store
   Frontend file that manages regional settings UI and integrates with settings store
   Updated: Added 12-hour AM/PM time format toggle setting
+  
+  Changes in v1.5.0:
+  - Countries list now loaded dynamically from backend API instead of hardcoded values
 -->
 
 <script setup lang="ts">
@@ -16,6 +19,7 @@ import { updateSettingFromComponent } from '@/modules/admin/settings/service.upd
 import { useUiStore } from '@/core/state/uistate';
 import DataLoading from '@/core/ui/loaders/DataLoading.vue';
 import { PhCaretUpDown, PhWarningCircle } from '@phosphor-icons/vue';
+import { fetchCountriesService } from '@/modules/admin/pricing/countries/service.fetch.countries';
 
 // Section path identifier
 const section_path = 'Application.RegionalSettings';
@@ -37,6 +41,10 @@ const isFirstLoad = ref(true);
 const settingLoadingStates = ref<Record<string, boolean>>({});
 const settingErrorStates = ref<Record<string, boolean>>({});
 const settingRetryAttempts = ref<Record<string, number>>({});
+
+// Countries list - loaded dynamically from backend
+const countriesList = ref<string[]>([]);
+const isLoadingCountries = ref(false);
 
 // Local UI state for immediate interaction - initialize with null (not set)
 const selectedTimezone = ref<string | null>(null);
@@ -75,11 +83,13 @@ const timezoneOptions = ref([
   { value: 'GMT+14', title: 'GMT+14' }
 ]);
 
-// Country options - computed to support reactive translations
-const countryOptions = computed(() => [
-  { value: 'russia', title: t('admin.settings.application.regionalsettings.countries.russia') },
-  { value: 'kazakhstan', title: t('admin.settings.application.regionalsettings.countries.kazakhstan') }
-]);
+// Country options - computed to support reactive translations with dynamically loaded countries
+const countryOptions = computed(() => {
+  return countriesList.value.map(countryCode => ({
+    value: countryCode,
+    title: t(`admin.settings.application.regionalsettings.countries.${countryCode}`)
+  }));
+});
 
 // Language options - computed to support reactive translations
 // Values are ISO 639-1 language codes
@@ -325,9 +335,27 @@ watch(
   }
 );
 
+// Load countries list from backend
+async function loadCountries(): Promise<void> {
+  try {
+    isLoadingCountries.value = true;
+    const countries = await fetchCountriesService();
+    countriesList.value = countries;
+  } catch (error) {
+    console.error('Failed to load countries:', error);
+    // Fallback to hardcoded list on error
+    countriesList.value = ['russia', 'kazakhstan'];
+  } finally {
+    isLoadingCountries.value = false;
+  }
+}
+
 // Initialize component
-onMounted(() => {
+onMounted(async () => {
   console.log('Application.RegionalSettings component initialized');
+  
+  // Load countries list first
+  await loadCountries();
   
   // Clear cache to ensure we get fresh data including new settings
   appSettingsStore.clearSectionCache(section_path);
@@ -445,8 +473,8 @@ onMounted(() => {
               item-title="title"
               item-value="value"
               class="regional-select"
-              :disabled="isSettingDisabled('current.country')"
-              :loading="settingLoadingStates['current.country']"
+              :disabled="isSettingDisabled('current.country') || isLoadingCountries"
+              :loading="settingLoadingStates['current.country'] || isLoadingCountries"
             >
               <template #append-inner>
                 <PhCaretUpDown class="dropdown-icon" />

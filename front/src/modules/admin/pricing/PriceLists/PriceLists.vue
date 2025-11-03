@@ -106,13 +106,14 @@ const addPriceList = () => {
   showAddPricelistDialog.value = true
 }
 
-const handleCreatePricelist = async (data: { name: string; currency: string; isActive: boolean }) => {
+const handleCreatePricelist = async (data: { name: string; currency: string; country: string; isActive: boolean }) => {
   try {
     isLoading.value = true
     
     const result = await serviceCreatePriceList.createPriceList({
       name: data.name,
       currency_code: data.currency,
+      country: data.country,
       is_active: data.isActive
     })
     
