@@ -1,5 +1,5 @@
 <!--
-version: 1.1.0
+version: 1.2.0
 Frontend file ProductOptionsTable.vue.
 Purpose: Displays product option rows with search, counter, and pagination; mirrors PairEditor table UX.
 Filename: ProductOptionsTable.vue
@@ -7,6 +7,13 @@ Filename: ProductOptionsTable.vue
 Changes in v1.1.0:
 - Removed frontend filtering by is_published
 - Now displays all items received from backend (which already filters by status_code = 'active')
+
+Changes in v1.2.0:
+- Enabled editing units_count for required options with dynamic range starting from minimum value
+- Added new "Min. Units" read-only column displaying units_count from database
+- Adjusted column widths to accommodate new column: option name 40%->35%, select 15%->10%
+- Dynamic units range for required options: from units_count to 1000
+- Optional options remain with 1-1000 range
 -->
 <script setup lang="ts">
 import { ref, computed, watch, onMounted } from 'vue'
@@ -36,8 +43,16 @@ const itemsPerPage = ref(25)
 const isSelectedById = ref<Record<string, boolean>>({})
 const unitsById = ref<Record<string, number | null>>({})
 
-// Build units range 1..1000
-const unitItems = computed(() => Array.from({ length: 1000 }, (_, i) => i + 1))
+/**
+ * Generate dynamic units range based on item type
+ * Required options: range from min_units (units_count from DB) to 1000
+ * Optional options: range from 1 to 1000
+ */
+function getUnitItems(item: CatalogProductOption): number[] {
+  const minValue = item.is_required ? (item.units_count ?? 1) : 1
+  const rangeLength = 1001 - minValue
+  return Array.from({ length: rangeLength }, (_, i) => minValue + i)
+}
 
 /**
  * Initialize UI state based on incoming items
@@ -66,10 +81,11 @@ watch(() => props.items, (list) => {
 
 // Headers mirroring PairEditor style
 const headers = computed(() => [
-  { title: t('catalog.productDetails.options.headers.optionName'), key: 'option_name', width: '40%' },
+  { title: t('catalog.productDetails.options.headers.optionName'), key: 'option_name', width: '35%' },
   { title: t('catalog.productDetails.options.headers.productCode'), key: 'product_code', width: '20%' },
-  { title: t('catalog.productDetails.options.headers.select'), key: 'select', width: '15%' },
+  { title: t('catalog.productDetails.options.headers.select'), key: 'select', width: '10%' },
   { title: t('catalog.productDetails.options.headers.unitsCount'), key: 'units_count', width: '15%' },
+  { title: t('catalog.productDetails.options.headers.minUnits'), key: 'min_units', width: '10%' },
   { title: t('catalog.productDetails.options.headers.unitPrice'), key: 'unit_price', width: '10%' },
 ])
 
@@ -101,7 +117,7 @@ function toggleSelect(productId: string) {
   }
 }
 
-/** Units change handler for optional options */
+/** Units change handler for both required and optional options */
 function setUnitsCount(productId: string, v: number | null) {
   unitsById.value[productId] = v
 }
@@ -183,12 +199,12 @@ defineExpose({ clearSelections })
 
       <template #[`item.units_count`]="{ item }">
         <v-select
-          :model-value="item.is_required ? (item.units_count ?? 1) : (isSelectedById[item.product_id] ? (unitsById[item.product_id] ?? 1) : null)"
-          :items="unitItems"
+          :model-value="item.is_required ? (unitsById[item.product_id] ?? item.units_count ?? 1) : (isSelectedById[item.product_id] ? (unitsById[item.product_id] ?? 1) : null)"
+          :items="getUnitItems(item)"
           density="compact"
           variant="outlined"
           hide-details
-          :disabled="item.is_required ? true : !(isSelectedById[item.product_id])"
+          :disabled="!item.is_required && !isSelectedById[item.product_id]"
           class="units-select"
           style="max-width: 120px"
           @mousedown.stop
@@ -199,6 +215,10 @@ defineExpose({ clearSelections })
             <PhCaretUpDown class="dropdown-icon" />
           </template>
         </v-select>
+      </template>
+
+      <template #[`item.min_units`]="{ item }">
+        <span>{{ item.units_count ?? '-' }}</span>
       </template>
 
       <template #[`item.unit_price`]="{ item }">

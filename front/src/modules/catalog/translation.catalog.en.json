@@ -91,6 +91,7 @@
           "optionName": "option name",
           "productCode": "product code",
           "select": "select",
+          "minUnits": "min. units",
           "unitsCount": "units count",
           "unitPrice": "unit price"
         }

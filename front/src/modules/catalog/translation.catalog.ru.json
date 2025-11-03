@@ -91,6 +91,7 @@
           "optionName": "название опции",
           "productCode": "код продукта",
           "select": "выбор",
+          "minUnits": "мин. единиц",
           "unitsCount": "кол-во единиц",
           "unitPrice": "цена за единицу"
         }
