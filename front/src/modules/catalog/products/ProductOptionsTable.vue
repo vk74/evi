@@ -1,5 +1,5 @@
 <!--
-version: 1.2.0
+version: 1.3.0
 Frontend file ProductOptionsTable.vue.
 Purpose: Displays product option rows with search, counter, and pagination; mirrors PairEditor table UX.
 Filename: ProductOptionsTable.vue
@@ -14,6 +14,13 @@ Changes in v1.2.0:
 - Adjusted column widths to accommodate new column: option name 40%->35%, select 15%->10%
 - Dynamic units range for required options: from units_count to 1000
 - Optional options remain with 1-1000 range
+
+Changes in v1.3.0:
+- Added mainProductUnitsCount prop to link with main product units counter
+- Required options minimum value now calculated as: units_count * mainProductUnitsCount
+- When mainProductUnitsCount changes, required options automatically reset to new minimum
+- "Min. Units" column now displays calculated minimum (units_count * mainProductUnitsCount)
+- Range for required options dynamically updates based on calculated minimum
 -->
 <script setup lang="ts">
 import { ref, computed, watch, onMounted } from 'vue'
@@ -26,10 +33,12 @@ import type { CatalogProductOption } from './types.products'
 
 interface Props {
   items?: CatalogProductOption[]
+  mainProductUnitsCount?: number
 }
 
 const props = withDefaults(defineProps<Props>(), {
-  items: () => []
+  items: () => [],
+  mainProductUnitsCount: 1
 })
 
 const { t } = useI18n()
@@ -45,18 +54,20 @@ const unitsById = ref<Record<string, number | null>>({})
 
 /**
  * Generate dynamic units range based on item type
- * Required options: range from min_units (units_count from DB) to 1000
+ * Required options: range from calculated minimum (units_count * mainProductUnitsCount) to 1000
  * Optional options: range from 1 to 1000
  */
 function getUnitItems(item: CatalogProductOption): number[] {
-  const minValue = item.is_required ? (item.units_count ?? 1) : 1
+  const minValue = item.is_required 
+    ? ((item.units_count ?? 1) * props.mainProductUnitsCount)
+    : 1
   const rangeLength = 1001 - minValue
   return Array.from({ length: rangeLength }, (_, i) => minValue + i)
 }
 
 /**
  * Initialize UI state based on incoming items
- * Obligatory options are locked as selected with provided units; optional start unselected with null units
+ * Obligatory options are locked as selected with calculated minimum units; optional start unselected with null units
  */
 function initializeUiState(list: CatalogProductOption[]) {
   const selected: Record<string, boolean> = {}
@@ -64,7 +75,7 @@ function initializeUiState(list: CatalogProductOption[]) {
   for (const it of list) {
     if (it.is_required) {
       selected[it.product_id] = true
-      units[it.product_id] = it.units_count ?? 1
+      units[it.product_id] = (it.units_count ?? 1) * props.mainProductUnitsCount
     } else {
       selected[it.product_id] = false
       units[it.product_id] = null
@@ -78,6 +89,21 @@ watch(() => props.items, (list) => {
   page.value = 1
   initializeUiState(list || [])
 }, { immediate: true, deep: true })
+
+/**
+ * Watch for mainProductUnitsCount changes and update required options values
+ * Automatically resets all required options to their new minimum value
+ */
+watch(() => props.mainProductUnitsCount, () => {
+  const updatedUnits = { ...unitsById.value }
+  for (const item of props.items || []) {
+    if (item.is_required) {
+      const newMinValue = (item.units_count ?? 1) * props.mainProductUnitsCount
+      updatedUnits[item.product_id] = newMinValue
+    }
+  }
+  unitsById.value = updatedUnits
+})
 
 // Headers mirroring PairEditor style
 const headers = computed(() => [
@@ -199,7 +225,7 @@ defineExpose({ clearSelections })
 
       <template #[`item.units_count`]="{ item }">
         <v-select
-          :model-value="item.is_required ? (unitsById[item.product_id] ?? item.units_count ?? 1) : (isSelectedById[item.product_id] ? (unitsById[item.product_id] ?? 1) : null)"
+          :model-value="item.is_required ? (unitsById[item.product_id] ?? ((item.units_count ?? 1) * props.mainProductUnitsCount)) : (isSelectedById[item.product_id] ? (unitsById[item.product_id] ?? 1) : null)"
           :items="getUnitItems(item)"
           density="compact"
           variant="outlined"
@@ -218,7 +244,7 @@ defineExpose({ clearSelections })
       </template>
 
       <template #[`item.min_units`]="{ item }">
-        <span>{{ item.units_count ?? '-' }}</span>
+        <span>{{ item.is_required ? ((item.units_count ?? 1) * props.mainProductUnitsCount) : (item.units_count ?? '-') }}</span>
       </template>
 
       <template #[`item.unit_price`]="{ item }">

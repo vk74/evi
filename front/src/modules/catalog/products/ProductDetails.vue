@@ -1,5 +1,5 @@
 <!--
-version: 1.6.1
+version: 1.7.0
 Frontend file for product details view component.
 Displays extended info and placeholders for product options.
 File: ProductDetails.vue
@@ -19,6 +19,11 @@ Changes in v1.6.0:
 Changes in v1.6.1:
 - Changed default section from 'description' to 'main-options'
 - Product card now opens with options table section by default
+
+Changes in v1.7.0:
+- Added mainProductUnitsCount reactive ref initialized to 1
+- Added @update:model-value handler to units count v-select
+- Pass mainProductUnitsCount prop to ProductOptionsTable component
 -->
 <script setup lang="ts">
 import { ref, onMounted, watch, computed } from 'vue'
@@ -46,6 +51,7 @@ const error = ref<string | null>(null)
 const options = ref<CatalogProductOption[]>([])
 const optionsTableRef = ref<any>(null)
 const selectedSection = ref<'description' | 'main-options'>('main-options')
+const mainProductUnitsCount = ref(1)
 
 // i18n
 const { t } = useI18n()
@@ -156,12 +162,13 @@ watch(() => props.productId, () => {
                   <span class="me-2">{{ t('catalog.productDetails.options.headers.unitsCount') }}</span>
                   <v-select
                     :items="Array.from({ length: 1000 }, (_, i) => i + 1)"
-                    :model-value="1"
+                    :model-value="mainProductUnitsCount"
                     density="compact"
                     variant="outlined"
                     hide-details
                     class="units-vselect"
                     style="max-width: 120px"
+                    @update:model-value="mainProductUnitsCount = $event as number"
                   >
                     <template #append-inner>
                       <PhCaretUpDown class="dropdown-icon" />
@@ -278,7 +285,7 @@ watch(() => props.productId, () => {
             
             <!-- Main options section -->
             <div v-if="selectedSection === 'main-options'">
-              <ProductOptionsTable ref="optionsTableRef" :items="options" />
+              <ProductOptionsTable ref="optionsTableRef" :items="options" :main-product-units-count="mainProductUnitsCount" />
             </div>
           </div>
         </div>
