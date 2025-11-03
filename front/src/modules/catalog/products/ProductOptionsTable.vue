@@ -1,8 +1,12 @@
 <!--
-version: 1.0.2
+version: 1.1.0
 Frontend file ProductOptionsTable.vue.
 Purpose: Displays product option rows with search, counter, and pagination; mirrors PairEditor table UX.
 Filename: ProductOptionsTable.vue
+
+Changes in v1.1.0:
+- Removed frontend filtering by is_published
+- Now displays all items received from backend (which already filters by status_code = 'active')
 -->
 <script setup lang="ts">
 import { ref, computed, watch, onMounted } from 'vue'
@@ -69,13 +73,11 @@ const headers = computed(() => [
   { title: t('catalog.productDetails.options.headers.unitPrice'), key: 'unit_price', width: '10%' },
 ])
 
-// Filter only published, then apply search
-const publishedItems = computed(() => (props.items || []).filter(it => it.is_published))
-
+// Apply search filter (backend already filters by status_code = 'active')
 const filteredItems = computed(() => {
   const q = (search.value || '').trim().toLowerCase()
-  if (!q) return publishedItems.value
-  return publishedItems.value.filter(it =>
+  if (!q) return props.items || []
+  return (props.items || []).filter(it =>
     (it.option_name || '').toLowerCase().includes(q) ||
     (it.product_code || '').toLowerCase().includes(q)
   )

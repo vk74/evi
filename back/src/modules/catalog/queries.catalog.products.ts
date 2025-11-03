@@ -1,6 +1,6 @@
 /**
  * queries.catalog.products.ts - backend file
- * version: 1.2.0
+ * version: 1.3.0
  * 
  * Purpose: SQL queries for catalog products (public consumption layer)
  * Logic: Provides parameterized queries to fetch active products for the catalog and product details
@@ -12,6 +12,10 @@
  * - Removed option_only filtering from getActiveProductsBySection query
  * - Removed showOptionsOnly parameter from queries
  * - All published products are now shown in catalog (no type distinction)
+ * 
+ * Changes in v1.3.0:
+ * - Changed getProductOptionsByProductId filter from is_published = true to status_code = 'active'
+ * - Product options now filtered by active status instead of published flag
  */
 
 export const queries = {
@@ -126,7 +130,7 @@ export const queries = {
 
   /**
    * Select product options for a product card
-   * - Only options where the option product is published
+   * - Only options where the option product has status_code = 'active'
    * - Uses LEFT JOIN with fallback to always show options even without translation
    * - Parameters: [mainProductId, requestedLanguage, fallbackLanguage]
    */
@@ -148,7 +152,7 @@ export const queries = {
       ON pt_fallback.product_id = po.option_product_id
       AND pt_fallback.language_code = $3
     WHERE po.main_product_id = $1
-      AND p_option.is_published = true
+      AND p_option.status_code = 'active'
     ORDER BY COALESCE(pt_requested.name, pt_fallback.name, p_option.product_code) ASC
   `,
 };
