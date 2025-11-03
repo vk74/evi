@@ -1,5 +1,5 @@
 <!--
-version: 1.6.0
+version: 1.6.1
 Frontend file for product details view component.
 Displays extended info and placeholders for product options.
 File: ProductDetails.vue
@@ -15,6 +15,10 @@ Changes in v1.6.0:
 - Moved product options table to "main options" section
 - Removed "Product options" header
 - Removed long_description from description block (short_description remains)
+
+Changes in v1.6.1:
+- Changed default section from 'description' to 'main-options'
+- Product card now opens with options table section by default
 -->
 <script setup lang="ts">
 import { ref, onMounted, watch, computed } from 'vue'
@@ -41,7 +45,7 @@ const loading = ref(false)
 const error = ref<string | null>(null)
 const options = ref<CatalogProductOption[]>([])
 const optionsTableRef = ref<any>(null)
-const selectedSection = ref<'description' | 'main-options'>('description')
+const selectedSection = ref<'description' | 'main-options'>('main-options')
 
 // i18n
 const { t } = useI18n()
