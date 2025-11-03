@@ -1,6 +1,6 @@
 <!--
   File: ProductEditorDetails.vue
-  Version: 1.4.1
+  Version: 1.4.2
   Description: Component for product details form and actions
   Purpose: Provides interface for creating and editing product details with dynamic validation
   Frontend file - ProductEditorDetails.vue
@@ -32,6 +32,11 @@
   - Added translations for status dropdown options
   - Status options now display translated labels based on current language
   - Added locale reactivity to statusOptions computed property
+  
+  Changes in v1.4.2:
+  - Added normalizeStatusCodeForTranslation helper function
+  - Status codes with spaces (e.g., "on hold") are normalized to underscores (e.g., "on_hold") for translation keys
+  - Fixed issue where status codes with spaces were not displaying translations correctly
 -->
 
 <script setup lang="ts">
@@ -106,16 +111,25 @@ const languageOptions = computed(() => [
   { title: t('admin.products.editor.languages.russian'), value: 'ru' }
 ])
 
+// Helper function to normalize status code for translation key
+const normalizeStatusCodeForTranslation = (statusCode: string): string => {
+  // Replace spaces with underscores for translation keys
+  return statusCode.replace(/\s+/g, '_')
+}
+
 // Product status options from store with translations
 const statusOptions = computed(() => {
   locale.value // Ensure reactivity to language changes
   if (!productsStore.statuses || productsStore.statuses.length === 0) {
     return []
   }
-  return productsStore.statuses.map((status: ProductStatus) => ({
-    title: t(`admin.products.editor.basic.status.options.${status.status_code}`),
-    value: status.status_code
-  }))
+  return productsStore.statuses.map((status: ProductStatus) => {
+    const normalizedKey = normalizeStatusCodeForTranslation(status.status_code)
+    return {
+      title: t(`admin.products.editor.basic.status.options.${normalizedKey}`),
+      value: status.status_code
+    }
+  })
 })
 
 // Product type options

@@ -71,7 +71,8 @@
             "options": {
               "draft": "черновик",
               "active": "активен",
-              "discontinued": "снят с производства"
+              "discontinued": "снят с производства",
+              "on_hold": "приостановлен"
             }
           },
           "isPublished": {

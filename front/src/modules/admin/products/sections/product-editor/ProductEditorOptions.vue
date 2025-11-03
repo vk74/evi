@@ -1,6 +1,6 @@
 <!--
   File: ProductEditorOptions.vue
-  Version: 1.9.2
+  Version: 1.9.3
   Description: Component for product options management
   Purpose: Provides interface for managing product options pairing
   Frontend file - ProductEditorOptions.vue
@@ -37,6 +37,11 @@
   - Added translations for status column display
   - Status options and column values now display translated labels based on current language
   - Added locale reactivity to statusFilterItems computed property and getStatusCode function
+  
+  Changes in v1.9.3:
+  - Added normalizeStatusCodeForTranslation helper function
+  - Status codes with spaces (e.g., "on hold") are normalized to underscores (e.g., "on_hold") for translation keys
+  - Fixed issue where status codes with spaces were not displaying translations correctly
 -->
 
 <script setup lang="ts">
@@ -180,6 +185,12 @@ const filteredOptions = computed(() => {
   return filtered
 })
 
+// Helper function to normalize status code for translation key
+const normalizeStatusCodeForTranslation = (statusCode: string): string => {
+  // Replace spaces with underscores for translation keys
+  return statusCode.replace(/\s+/g, '_')
+}
+
 // Status filter items computed from store with translations
 const statusFilterItems = computed(() => {
   locale.value // Ensure reactivity to language changes
@@ -187,8 +198,9 @@ const statusFilterItems = computed(() => {
   const items = [{ title: t('admin.products.filters.all'), value: 'all' }]
   if (store.statuses) {
     store.statuses.forEach(status => {
+      const normalizedKey = normalizeStatusCodeForTranslation(status.status_code)
       items.push({ 
-        title: t(`admin.products.editor.basic.status.options.${status.status_code}`), 
+        title: t(`admin.products.editor.basic.status.options.${normalizedKey}`), 
         value: status.status_code 
       })
     })
@@ -199,7 +211,8 @@ const statusFilterItems = computed(() => {
 // Helper function to get translated status code
 const getStatusCode = (statusCode: string): string => {
   if (!statusCode) return '-'
-  return t(`admin.products.editor.basic.status.options.${statusCode}`)
+  const normalizedKey = normalizeStatusCodeForTranslation(statusCode)
+  return t(`admin.products.editor.basic.status.options.${normalizedKey}`)
 }
 
 // Table headers

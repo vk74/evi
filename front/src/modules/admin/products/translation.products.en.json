@@ -71,7 +71,8 @@
             "options": {
               "draft": "draft",
               "active": "active",
-              "discontinued": "discontinued"
+              "discontinued": "discontinued",
+              "on_hold": "on hold"
             }
           },
           "isPublished": {
