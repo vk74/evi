@@ -9,9 +9,9 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { useCatalogAdminStore } from './state.catalog.admin'
-import SectionEditorData from './sections/section-editor/SectionEditorData.vue'
-import SectionEditorMapping from './sections/section-editor/SectionEditorMapping.vue'
+import { useCatalogAdminStore } from '../state.catalog.admin'
+import SectionEditorData from './SectionEditorData.vue'
+import SectionEditorMapping from './SectionEditorMapping.vue'
 
 const { t } = useI18n()
 const catalogStore = useCatalogAdminStore()

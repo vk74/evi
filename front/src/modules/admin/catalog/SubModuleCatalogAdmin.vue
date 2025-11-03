@@ -11,8 +11,8 @@ import type { Section } from './types.catalog.admin'
 
 // Импорты компонентов секций
 import CatalogSections from './sections/Catalog.Sections.vue'
-import CatalogSettings from './sections/Catalog.Settings.vue'
-import CatalogSectionEditor from './CatalogSectionEditor.vue'
+import CatalogSettings from './Catalog.Settings.vue'
+import CatalogSectionEditor from './section-editor/CatalogSectionEditor.vue'
 
 // Импортируем Phosphor иконки
 import { 
@@ -302,7 +302,7 @@ onMounted(() => {
         <component
           :is="currentComponent"
           v-if="currentComponent"
-          :class="{ 'pa-0': activeComponent === 'Catalog.Sections' || activeComponent === 'Catalog.SectionEditor' }"
+          :class="{ 'pa-0': activeComponent === 'Catalog.Sections' || activeComponent === 'CatalogSectionEditor' }"
         />
         <h2 v-else>
           Selected section: {{ catalogStore.getSelectedSectionPath }}
