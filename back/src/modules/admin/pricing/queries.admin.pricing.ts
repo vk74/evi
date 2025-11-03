@@ -1,9 +1,12 @@
     /**
-     * version: 1.3.4
+     * version: 1.3.5
      * SQL queries for pricing administration module.
      * Contains parameterized queries related to pricing (currencies and price lists).
      * Includes integrity check queries and queries for event payload data.
      * File: queries.admin.pricing.ts (backend)
+     * 
+     * Changes in v1.3.5:
+     * - Added existsActiveCurrency query to check currency existence and active status
      * 
      * Changes in v1.3.4:
      * - Added country field to fetchAllPriceLists query
@@ -66,6 +69,11 @@ export const queries = {
     /** Check existence by code */
     existsCurrency: `
         SELECT 1 FROM app.currencies WHERE code = $1
+    `,
+
+    /** Check existence and active status by code */
+    existsActiveCurrency: `
+        SELECT 1 FROM app.currencies WHERE code = $1 AND active = true
     `,
 
     /** Check if currency is used in price lists */

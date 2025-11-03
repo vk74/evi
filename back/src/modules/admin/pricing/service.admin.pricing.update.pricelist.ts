@@ -1,18 +1,25 @@
 /**
- * version: 1.2.0
+ * version: 1.2.2
  * Service for updating price lists.
  * Backend file that handles business logic for updating existing price lists.
  * 
  * Functionality:
  * - Validates price list update data
  * - Checks price list existence
- * - Checks currency existence (if being updated)
+ * - Checks currency existence and active status (if being updated)
  * - Checks name uniqueness (if being updated)
  * - Validates owner (if being updated)
  * - Validates country (if being updated)
  * - Updates price list in database
  * 
  * File: service.admin.pricing.update.pricelist.ts (backend)
+ * 
+ * Changes in v1.2.2:
+ * - Removed event publishing for inactive currency attempts
+ * 
+ * Changes in v1.2.1:
+ * - Updated currency validation to check active status (uses existsActiveCurrency query)
+ * - Added event for inactive currency attempts (pricelists.update.currency.not_active)
  * 
  * Changes in v1.2.0:
  * - Added country validation in validateUpdatePriceListData function
@@ -115,22 +122,28 @@ async function validateUpdatePriceListData(
         errors.push('Description must not exceed 2000 characters');
     }
 
-    // Validate currency code (if provided)
+    // Validate currency code (if provided, must exist and be active)
     if (data.currency_code !== undefined) {
         if (data.currency_code.trim().length !== 3) {
             errors.push('Currency code must be 3 characters');
         } else {
-            // Check currency existence
+            // Check currency existence and active status
             try {
-                const result = await pool.query(queries.existsCurrency, [data.currency_code]);
+                const result = await pool.query(queries.existsActiveCurrency, [data.currency_code]);
                 if (result.rows.length === 0) {
-                    errors.push('Currency does not exist');
-                    
-                    createAndPublishEvent({
-                        eventName: EVENTS_ADMIN_PRICING['pricelists.update.currency.not_found'].eventName,
-                        req: req,
-                        payload: { currency_code: data.currency_code }
-                    });
+                    // Check if currency exists but is not active
+                    const existsResult = await pool.query(queries.existsCurrency, [data.currency_code]);
+                    if (existsResult.rows.length > 0) {
+                        errors.push('Currency is not active');
+                    } else {
+                        errors.push('Currency does not exist');
+                        
+                        createAndPublishEvent({
+                            eventName: EVENTS_ADMIN_PRICING['pricelists.update.currency.not_found'].eventName,
+                            req: req,
+                            payload: { currency_code: data.currency_code }
+                        });
+                    }
                 }
             } catch (error) {
                 errors.push('Error checking currency existence');

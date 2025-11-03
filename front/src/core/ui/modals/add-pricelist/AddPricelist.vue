@@ -1,11 +1,15 @@
 <!--
-Version: 1.5.0
+Version: 1.5.1
 Modal component for creating a new price list.
 Frontend file for adding a new price list in the pricing admin module.
 Fetches active currencies dynamically from backend.
 Includes active/disabled status toggle (v-switch) positioned next to currency selector.
 Includes country selector (required field) positioned to the left of currency selector.
 Filename: AddPricelist.vue
+
+Changes in v1.5.1:
+- Added validation to ensure selected currency is in the list of active currencies
+- Protection against race conditions where currency was disabled after loading
 
 Changes in v1.5.0:
 - Countries list now loaded dynamically from backend API instead of hardcoded values
@@ -108,6 +112,14 @@ const handleCreate = () => {
   // Validate that selected country is in the list of real countries
   if (!realCountries.includes(selectedCountry.value)) {
     // Validation error - invalid country
+    return
+  }
+
+  // Validate that selected currency is in the list of active currencies
+  const activeCurrencyCodes = currencyOptions.value.map(item => item.value)
+  if (!activeCurrencyCodes.includes(selectedCurrency.value)) {
+    // Validation error - invalid or inactive currency
+    // This protects against race conditions where currency was disabled after loading
     return
   }
 
