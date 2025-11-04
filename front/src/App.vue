@@ -1212,11 +1212,18 @@ onMounted(async () => {
 
 .bottom-list-item {
   min-height: 40px !important;
+  margin: 0 !important;
 }
 
 /* Menu positioning and stability */
 .menu-wrapper {
   position: relative;
+  margin: 0 !important;
+}
+
+/* Ensure uniform spacing between menu-wrapper items (language, location, about) */
+.menu-wrapper + .menu-wrapper {
+  margin-top: 0 !important;
 }
 
 .hidden-activator {
