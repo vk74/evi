@@ -139,10 +139,13 @@
       },
       "settings": {
         "title": "настройки каталога",
+        "mappingBlock": {
+          "title": "привязка стран каталога к прайслистам"
+        },
         "table": {
           "headers": {
             "country": "страна",
-            "pricelistId": "ID прайслиста",
+            "pricelistId": "id прайслиста",
             "actions": "действия"
           }
         },

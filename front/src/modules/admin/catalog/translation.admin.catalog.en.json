@@ -139,10 +139,13 @@
       },
       "settings": {
         "title": "catalog settings",
+        "mappingBlock": {
+          "title": "catalog countries to pricelists mapping"
+        },
         "table": {
           "headers": {
             "country": "country",
-            "pricelistId": "pricelist ID",
+            "pricelistId": "pricelist id",
             "actions": "actions"
           }
         },

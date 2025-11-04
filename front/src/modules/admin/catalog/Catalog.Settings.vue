@@ -14,7 +14,11 @@ Filename: Catalog.Settings.vue
             {{ t('admin.catalog.settings.title') }}
           </h2>
           
-          <div class="mapping-table-wrapper">
+          <div class="settings-group">
+            <h3 class="text-subtitle-1 mb-2 font-weight-medium">
+              {{ t('admin.catalog.settings.mappingBlock.title') }}
+            </h3>
+            <div class="mapping-table-wrapper">
             <v-data-table
               :headers="tableHeaders"
               :items="mappings"
@@ -73,9 +77,9 @@ Filename: Catalog.Settings.vue
               </v-btn>
               </template>
             </v-data-table>
-          </div>
+            </div>
 
-          <div class="table-actions mt-4">
+            <div class="table-actions mt-4">
             <v-btn
               color="teal"
               variant="outlined"
@@ -86,6 +90,7 @@ Filename: Catalog.Settings.vue
               </template>
               {{ t('admin.catalog.settings.actions.addMapping') }}
             </v-btn>
+            </div>
           </div>
         </div>
       </div>
@@ -143,7 +148,7 @@ const nextId = ref(1)
 // Table headers
 const tableHeaders = computed<TableHeader[]>(() => [
   { title: t('admin.catalog.settings.table.headers.country'), key: 'country', width: '200px' },
-  { title: t('admin.catalog.settings.table.headers.pricelistId'), key: 'pricelistId', width: '140px' },
+  { title: t('admin.catalog.settings.table.headers.pricelistId'), key: 'pricelistId', width: '160px' },
   { title: t('admin.catalog.settings.table.headers.actions'), key: 'actions', width: '60px', sortable: false }
 ])
 
@@ -258,6 +263,17 @@ onMounted(async () => {
 /* Main content area */
 .main-content-area {
   min-width: 0;
+}
+
+/* Settings group - matching Application.System.EventBus.vue, but fixed width to match table */
+.settings-group {
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  border-radius: 8px;
+  padding: 16px;
+  background-color: rgba(0, 0, 0, 0.02);
+  width: 440px;
+  max-width: 440px;
+  display: inline-block;
 }
 
 /* Table wrapper - fixed width */
