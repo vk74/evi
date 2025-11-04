@@ -25,7 +25,7 @@ import { ref, watch, onMounted, computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { PhCaretUpDown } from '@phosphor-icons/vue'
 import { fetchCurrenciesService } from '@/modules/admin/pricing/currencies/service.fetch.currencies'
-import { fetchCountries } from '@/core/helpers/fetch.countries'
+import { getCountries } from '@/core/helpers/get.countries'
 import type { Currency } from '@/modules/admin/pricing/types.pricing.admin'
 
 // Props
@@ -166,7 +166,7 @@ onMounted(async () => {
   // Fetch countries
   try {
     isLoadingCountries.value = true
-    const countries = await fetchCountries()
+    const countries = await getCountries()
     countryOptions.value = countries.map((countryCode: string) => ({
       value: countryCode,
       title: countryCode // Will be translated via computed

@@ -1,5 +1,5 @@
 /**
- * version: 1.0.04
+ * version: 1.0.05
  * Core routes for global backend services.
  * 
  * Functionality:
@@ -10,6 +10,9 @@
  * 
  * Changes in v1.0.04:
  * - Added countries list endpoint /api/core/countries/list
+ * 
+ * Changes in v1.0.05:
+ * - Added active price list IDs endpoint /api/core/pricelists/active/ids
  */
 
 import express, { Router } from 'express';
@@ -20,6 +23,7 @@ import checkRequestSecurityHard from '../guards/guard.check.request.security.har
 // Импорт контроллеров
 import getUsernameByUuidController from '../controllers/controller.get.username.by.uuid';
 import getAppCountriesListController from '../controllers/controller.get.app.countries.list';
+import getActivePriceListIdsController from '../controllers/controller.get.active.pricelist.ids';
 import searchUsers from '../services/item-selector/controller.search.users';
 import searchGroups from '../services/item-selector/controller.search.groups';
 import addUsersToGroup from '../services/item-selector/controller.add.users.to.group';
@@ -36,6 +40,7 @@ const router: Router = express.Router();
 // utility services
 router.get('/api/core/users/fetch-username-by-uuid/:userId', validateJWT, checkIsUserStatusActive, getUsernameByUuidController);
 router.get('/api/core/countries/list', validateJWT, checkIsUserStatusActive, getAppCountriesListController);
+router.get('/api/core/pricelists/active/ids', validateJWT, checkIsUserStatusActive, getActivePriceListIdsController);
 
 // item selector universal component services
 router.get('/api/core/item-selector/search-users', validateJWT, checkIsUserStatusActive, searchUsers); 

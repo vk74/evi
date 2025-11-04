@@ -37,7 +37,7 @@ import { serviceUpdatePriceList } from './service.update.pricelist'
 import { serviceDeletePriceLists } from './service.delete.pricelists'
 import { fetchCurrenciesService } from '../currencies/service.fetch.currencies'
 import { fetchPriceListService } from '../PriceListEditor/service.admin.fetch.pricelist'
-import { fetchCountries } from '@/core/helpers/fetch.countries'
+import { getCountries } from '@/core/helpers/get.countries'
 import type { PriceListSummary, Currency } from '../types.pricing.admin'
 import debounce from 'lodash/debounce'
 
@@ -554,7 +554,7 @@ const loadCurrencies = async () => {
 const loadCountries = async () => {
   try {
     isLoadingCountries.value = true
-    const loadedCountries = await fetchCountries()
+    const loadedCountries = await getCountries()
     countries.value = loadedCountries
   } catch (error) {
     console.error('Failed to load countries:', error)
