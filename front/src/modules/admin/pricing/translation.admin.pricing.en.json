@@ -153,6 +153,9 @@
       "multiple": "items failed to update",
       "general": "Error occurred while updating items"
     },
+    "loadError": {
+      "items": "Failed to load price list items"
+    },
           "sections": {
             "details": "price list details"
           },

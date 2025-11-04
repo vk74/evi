@@ -1,7 +1,15 @@
 <!--
-Version: 1.5.4
+Version: 1.6.0
 Price list editor details section with items table and action buttons.
 Frontend file: PriceListEditorDetails.vue
+
+Changes in v1.6.0:
+- Removed dependency on store cache for price list items
+- Always load items from API instead of using editingPriceListData.items
+- Added automatic refresh after successful save/update operations
+- Added protection against parallel data loading requests
+- Added store synchronization after data loading (for consistency)
+- Added watch on editingPriceListId for automatic reload when ID changes
 -->
 <script setup lang="ts">
 import { computed, ref, watch, onMounted } from 'vue'
@@ -62,6 +70,9 @@ const isUpdating = ref<boolean>(false)
 // Delete state
 const isDeleting = ref<boolean>(false)
 const showDeleteConfirmation = ref<boolean>(false)
+
+// Loading state for items data
+const isLoadingItems = ref<boolean>(false)
 
 // Search state
 const searchQuery = ref<string>('')
@@ -302,16 +313,26 @@ const cancelDeleteSelected = (): void => {
 // Refresh data from server function
 const refreshDataFromServer = async (): Promise<void> => {
   if (!pricingStore.editingPriceListId) {
-    console.error('No price list ID available for refresh')
+    console.error('[Refresh Data] No price list ID available for refresh')
+    return
+  }
+
+  // Prevent parallel requests
+  if (isLoadingItems.value) {
+    console.log('[Refresh Data] Request already in progress, skipping...')
     return
   }
 
   try {
+    isLoadingItems.value = true
+    
     // Clear current data first
     lines.value = []
     selectedLines.value.clear()
     
-    const result = await fetchPriceListService.fetchPriceListById(parseInt(pricingStore.editingPriceListId))
+    const result = await fetchPriceListService.fetchPriceListById(
+      parseInt(pricingStore.editingPriceListId)
+    )
     
     if (result.success && result.data?.items) {
       // Convert existing items to EditorLine format with original values
@@ -330,11 +351,22 @@ const refreshDataFromServer = async (): Promise<void> => {
       
       lines.value = existingLines
       console.log(`[Refresh Data] Loaded ${existingLines.length} items from server`)
+      
+      // Sync store with fresh data (for consistency, not as data source)
+      if (pricingStore.editingPriceListData) {
+        pricingStore.editingPriceListData.items = result.data.items
+      }
     } else {
-      console.error('Failed to refresh data:', result.message)
+      console.error('[Refresh Data] Failed to refresh data:', result.message)
+      uiStore.showErrorSnackbar(
+        result.message || t('admin.pricing.priceLists.editor.loadError.items')
+      )
     }
   } catch (error) {
-    console.error('Error refreshing data:', error)
+    console.error('[Refresh Data] Error refreshing data:', error)
+    uiStore.showErrorSnackbar(t('admin.pricing.priceLists.editor.loadError.items'))
+  } finally {
+    isLoadingItems.value = false
   }
 }
 
@@ -394,10 +426,21 @@ const itemTypeOptions = computed(() => {
   }))
 })
 
+// Watch for price list ID changes to reload data
+watch(
+  () => pricingStore.editingPriceListId,
+  async (newId, oldId) => {
+    // Only reload if ID actually changed and we're in edit mode
+    if (newId !== oldId && isEditMode.value && newId) {
+      await loadExistingItems()
+    }
+  }
+)
+
 // Load price item types and existing items on component mount
 onMounted(async () => {
   await loadPriceItemTypes()
-  loadExistingItems()
+  await loadExistingItems()
 })
 
 // Function to load price item types
@@ -418,25 +461,59 @@ const loadPriceItemTypes = async () => {
   }
 }
 
-// Function to load existing price list items
-const loadExistingItems = () => {
-  if (pricingStore.editingPriceListData && pricingStore.editingPriceListData.items) {
-    // Convert existing items to EditorLine format with original values
-    const existingLines: EditorLine[] = pricingStore.editingPriceListData.items.map(item => ({
-      id: item.item_id.toString(),
-      itemType: item.item_type,
-      itemCode: item.item_code,
-      itemName: item.item_name,
-      listPrice: item.list_price,
-      // Store original values for change tracking
-      originalItemType: item.item_type,
-      originalItemCode: item.item_code,
-      originalItemName: item.item_name,
-      originalListPrice: item.list_price
-    }))
+// Function to load existing price list items from API (not from store cache)
+const loadExistingItems = async (): Promise<void> => {
+  // Only load items in edit mode
+  if (!isEditMode.value || !pricingStore.editingPriceListId) {
+    return
+  }
+
+  // Prevent parallel requests
+  if (isLoadingItems.value) {
+    console.log('[Load Items] Request already in progress, skipping...')
+    return
+  }
+
+  try {
+    isLoadingItems.value = true
     
-    lines.value = existingLines
-    console.log('Loaded existing items:', existingLines.length)
+    const result = await fetchPriceListService.fetchPriceListById(
+      parseInt(pricingStore.editingPriceListId)
+    )
+    
+    if (result.success && result.data?.items) {
+      // Convert existing items to EditorLine format with original values
+      const existingLines: EditorLine[] = result.data.items.map(item => ({
+        id: item.item_id.toString(),
+        itemType: item.item_type,
+        itemCode: item.item_code,
+        itemName: item.item_name,
+        listPrice: item.list_price,
+        // Store original values for change tracking
+        originalItemType: item.item_type,
+        originalItemCode: item.item_code,
+        originalItemName: item.item_name,
+        originalListPrice: item.list_price
+      }))
+      
+      lines.value = existingLines
+      console.log(`[Load Items] Loaded ${existingLines.length} items from API`)
+      
+      // Sync store with fresh data (for consistency, not as data source)
+      if (pricingStore.editingPriceListData) {
+        pricingStore.editingPriceListData.items = result.data.items
+      }
+    } else {
+      console.error('[Load Items] Failed to load items:', result.message)
+      uiStore.showErrorSnackbar(
+        result.message || t('admin.pricing.priceLists.editor.loadError.items')
+      )
+    }
+  } catch (error) {
+    console.error('[Load Items] Error loading items:', error)
+    uiStore.showErrorSnackbar(t('admin.pricing.priceLists.editor.loadError.items'))
+  } finally {
+    isLoadingItems.value = false
   }
 }
 
@@ -490,9 +567,15 @@ const saveAllItems = async () => {
         ? t('admin.pricing.priceLists.editor.saveSuccess.single')
         : `${successCount} ${t('admin.pricing.priceLists.editor.saveSuccess.multiple')}`
       uiStore.showSuccessSnackbar(message)
+      
+      // Refresh data from server after successful save
+      await refreshDataFromServer()
     } else if (successCount > 0 && errorCount > 0) {
       const message = `${successCount} ${t('admin.pricing.priceLists.editor.saveWarning.successPart')}, ${errorCount} ${t('admin.pricing.priceLists.editor.saveWarning.failedPart')}`
       uiStore.showWarningSnackbar(message)
+      
+      // Refresh data from server even if there were partial errors
+      await refreshDataFromServer()
     } else if (errorCount > 0) {
       const message = `${errorCount} ${t('admin.pricing.priceLists.editor.saveError.multiple')}`
       uiStore.showErrorSnackbar(message)
@@ -578,9 +661,15 @@ const updateAllItems = async () => {
           ? t('admin.pricing.priceLists.editor.updateSuccess.single')
           : `${totalUpdated} ${t('admin.pricing.priceLists.editor.updateSuccess.multiple')}`
         uiStore.showSuccessSnackbar(message)
+        
+        // Refresh data from server after successful update
+        await refreshDataFromServer()
       } else if (totalUpdated > 0 && totalErrors > 0) {
         const message = `${totalUpdated} ${t('admin.pricing.priceLists.editor.updateWarning.successPart')}, ${totalErrors} ${t('admin.pricing.priceLists.editor.updateWarning.failedPart')}`
         uiStore.showWarningSnackbar(message)
+        
+        // Refresh data from server even if there were partial errors
+        await refreshDataFromServer()
       } else if (totalErrors > 0) {
         const message = `${totalErrors} ${t('admin.pricing.priceLists.editor.updateError.multiple')}`
         uiStore.showErrorSnackbar(message)
