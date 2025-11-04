@@ -1,5 +1,5 @@
 <!--
-version: 1.3.0
+version: 1.5.0
 Frontend file for catalog product card component.
 Displays product information in a card format with light blue theme and camera icon.
 File: CatalogProductCard.vue
@@ -15,6 +15,11 @@ Changes in v1.4.0:
 - Moved "Published: date" to left column below photo placeholder
 - Changed price text to black color and increased font size by 2 points
 - Removed blue camera icon from header
+
+Changes in v1.5.0:
+- Reduced photo placeholder width from 40% to 33% to give more space for description
+- Added word wrapping styles for description to prevent text overflow
+- Added overflow handling for product info column
 -->
 <script setup lang="ts">
 import { ref, computed } from 'vue';
@@ -119,7 +124,7 @@ const cardStyle = computed(() => {
           </div>
 
           <!-- Description -->
-          <p class="text-body-2 mb-3">
+          <p class="description-text text-body-2 mb-3">
             {{ product.description || 'Описание отсутствует' }}
           </p>
         </v-card-text>
@@ -155,9 +160,9 @@ const cardStyle = computed(() => {
 
 /* Photo placeholder - left column */
 .photo-placeholder {
-  flex: 0 0 40%;
-  max-width: 50%;
-  min-width: 33%;
+  flex: 0 0 33%;
+  max-width: 40%;
+  min-width: 30%;
   display: flex;
   flex-direction: column;
   gap: 8px;
@@ -188,15 +193,30 @@ const cardStyle = computed(() => {
   flex: 1;
   display: flex;
   flex-direction: column;
+  min-width: 0;
+  overflow: hidden;
 }
 
 .product-info-column .v-card-title {
   padding-bottom: 0;
+  min-width: 0;
 }
 
 .product-info-column .v-card-text {
   flex-grow: 1;
   padding-top: 0;
+  min-width: 0;
+  overflow: hidden;
+}
+
+/* Description text wrapping */
+.description-text {
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  word-break: break-word;
+  hyphens: auto;
+  overflow: hidden;
+  line-height: 1.5;
 }
 
 /* Price placeholder */
