@@ -1,5 +1,5 @@
 <!--
-version: 1.5.2
+version: 1.6.0
 Frontend file for catalog module.
 Catalog interface with sections, filters, and service/product cards.
 File: ModuleCatalog.vue
@@ -24,16 +24,25 @@ Changes in v1.5.1:
 Changes in v1.5.2:
 - Reduced vertical padding in catalog-controls from py-4 to py-2
 - Added margin-top: -10px to catalog-controls to reduce spacing from sections bar
+
+Changes in v1.6.0:
+- Added product price loading functionality
+- Integrated with LocationSelectionModal when user country is not set
+- Added price display in product cards
+- Added caching for product prices (TTL 5 minutes)
+- Added watch for user country changes to reload prices
 -->
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed, onMounted, watch } from 'vue';
 import { useI18n } from 'vue-i18n'
+import { useAppStore } from '@/core/state/appstate';
+import { useUiStore } from '@/core/state/uistate';
 import DataLoading from '@/core/ui/loaders/DataLoading.vue';
 import CatalogServiceCard from './services/CatalogServiceCard.vue';
 import ServiceDetails from './services/ServiceDetails.vue'
 import CatalogProductCard from './products/CatalogProductCard.vue';
 import ProductDetails from './products/ProductDetails.vue'
-import { PhMagnifyingGlass, PhEmpty, PhX, PhFunnel, PhCaretDown, PhCaretRight, PhWarningCircle, PhFolderOpen, PhFolder } from '@phosphor-icons/vue'
+import { PhMagnifyingGlass, PhEmpty, PhX, PhFunnel, PhCaretDown, PhCaretRight, PhWarningCircle, PhFolderOpen, PhFolder, PhCaretUpDown } from '@phosphor-icons/vue'
 import { 
   fetchCatalogSections, 
   isCatalogLoading, 
@@ -43,7 +52,7 @@ import type { CatalogSection } from './types.catalog';
 import { fetchActiveServices, getServicesMetadata } from './service.fetch.active.services';
 import type { CatalogService } from './services/types.services';
 import { fetchActiveProducts, getProductsMetadata } from './products/service.fetch.active.products';
-import type { CatalogProduct } from './products/types.products';
+import type { CatalogProduct, ProductPriceInfo } from './products/types.products';
 import {
   searchQuery,
   sortBy,
@@ -52,11 +61,18 @@ import {
   clearSearch,
   selectedServiceId,
   setSelectedServiceId,
-  resetCatalogView
+  resetCatalogView,
+  getCachedPrice,
+  cachePrice,
+  isPriceCacheValid
 } from './state.catalog';
+import { getSettingValueHelper } from '@/core/helpers/get.setting.value';
+import { fetchPricesByCodes } from './service.catalog.fetch.prices.by.codes';
 
 
 const { t } = useI18n()
+const appStore = useAppStore()
+const uiStore = useUiStore()
 
 // ==================== PHOSPHOR ICONS SUPPORT ====================
 const phosphorIcons = ref<Record<string, any>>({})
@@ -130,6 +146,10 @@ const services = ref<CatalogService[]>([]);
 // ==================== PRODUCTS DATA ====================
 const products = ref<CatalogProduct[]>([]);
 const selectedProductId = ref<string | null>(null);
+
+// ==================== PRICES DATA ====================
+const productPrices = ref<Map<string, ProductPriceInfo>>(new Map());
+const isLoadingPrices = ref(false);
 
 // ==================== COMPUTED PROPERTIES ====================
 const filteredServices = computed(() => {
@@ -232,9 +252,125 @@ async function loadActiveProducts() {
       cardColors.value.service = metadata.serviceCardColor;
       cardColors.value.product = metadata.productCardColor;
     }
+    
+    // Load prices for products
+    await loadProductPrices();
   } catch (error) {
   }
 }
+
+// ==================== PRICE LOADING FUNCTIONS ====================
+async function loadProductPrices() {
+  try {
+    // Get user country
+    const userCountry = appStore.getUserCountry;
+    
+    if (!userCountry) {
+      // No country - show toast and emit event to open LocationSelectionModal
+      uiStore.showErrorSnackbar(t('catalog.errors.selectCountryLocation'));
+      // Emit event to open location modal (will be handled in App.vue)
+      window.dispatchEvent(new CustomEvent('openLocationSelectionModal'));
+      // Don't block UI, just show dashes
+      productPrices.value.clear();
+      return;
+    }
+    
+    // Get pricelist ID from settings
+    const mappingSetting = await getSettingValueHelper<Record<string, number>>(
+      'Admin.Catalog.CountryProductPricelistID',
+      'country.product.price.list.mapping'
+    );
+    
+    if (!mappingSetting || typeof mappingSetting !== 'object') {
+      // No mapping found - show dashes
+      productPrices.value.clear();
+      return;
+    }
+    
+    const pricelistId = mappingSetting[userCountry];
+    
+    if (!pricelistId || typeof pricelistId !== 'number') {
+      // No pricelist for this country - show dashes
+      productPrices.value.clear();
+      return;
+    }
+    
+    // Collect all product codes from filtered products
+    const productCodes = filteredProducts.value
+      .map(p => p.product_code)
+      .filter((code): code is string => code !== null && code !== undefined && code !== '');
+    
+    if (productCodes.length === 0) {
+      // No product codes - nothing to load
+      productPrices.value.clear();
+      return;
+    }
+    
+    // Check cache first - only load codes that are not cached or expired
+    const codesToLoad: string[] = [];
+    const cachedPrices = new Map<string, ProductPriceInfo>();
+    
+    productCodes.forEach(code => {
+      if (isPriceCacheValid(code)) {
+        const cached = getCachedPrice(code);
+        if (cached) {
+          cachedPrices.set(code, cached);
+        }
+      } else {
+        codesToLoad.push(code);
+      }
+    });
+    
+    // If all codes are cached, use cache
+    if (codesToLoad.length === 0) {
+      productPrices.value = cachedPrices;
+      return;
+    }
+    
+    // Load prices for uncached codes
+    isLoadingPrices.value = true;
+    
+    try {
+      const priceMap = await fetchPricesByCodes(pricelistId, codesToLoad);
+      
+      // Cache loaded prices
+      priceMap.forEach((priceInfo, code) => {
+        cachePrice(code, priceInfo.price, priceInfo.currencySymbol);
+      });
+      
+      // Merge cached and loaded prices
+      const mergedPrices = new Map<string, ProductPriceInfo>();
+      cachedPrices.forEach((price, code) => mergedPrices.set(code, price));
+      priceMap.forEach((price, code) => mergedPrices.set(code, price));
+      
+      productPrices.value = mergedPrices;
+    } catch (error) {
+      console.error('[ModuleCatalog] Error loading prices:', error);
+      // On error, use cached prices if available
+      productPrices.value = cachedPrices;
+    } finally {
+      isLoadingPrices.value = false;
+    }
+  } catch (error) {
+    console.error('[ModuleCatalog] Error in loadProductPrices:', error);
+    // On error, clear prices (show dashes)
+    productPrices.value.clear();
+  }
+}
+
+// Watch for changes in filtered products to reload prices
+watch(filteredProducts, () => {
+  if (filteredProducts.value.length > 0) {
+    loadProductPrices();
+  }
+}, { deep: true });
+
+// Watch for user country changes
+watch(() => appStore.getUserCountry, () => {
+  if (filteredProducts.value.length > 0) {
+    loadProductPrices();
+  }
+});
 
 // ==================== EVENT HANDLERS ====================
 function selectSection(sectionId: string) {
@@ -522,6 +658,8 @@ onMounted(async () => {
                 <CatalogProductCard
                   :product="product"
                   :card-color="cardColors.product"
+                  :price="product.product_code ? productPrices.get(product.product_code)?.price ?? null : null"
+                  :currency-symbol="product.product_code ? productPrices.get(product.product_code)?.currencySymbol ?? null : null"
                   @select="onSelectProduct"
                 />
               </v-col>

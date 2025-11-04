@@ -1,5 +1,6 @@
 import { ref, computed, type Component } from 'vue';
 import { PhCaretDown, PhCaretRight } from '@phosphor-icons/vue';
+import type { ProductPriceInfo } from './products/types.products';
 
 // ==================== OPTIONS BAR STATE ====================
 export const searchQuery = ref('');
@@ -88,3 +89,93 @@ export const setSelectedServiceId = (serviceId: string | null) => {
 export const resetCatalogView = () => {
   selectedServiceId.value = null;
 };
+
+// ==================== PRICE CACHE ====================
+// Cache for product prices (TTL 5 minutes)
+interface CachedPriceInfo extends ProductPriceInfo {
+  timestamp: number;
+}
+
+const priceCache = ref<Map<string, CachedPriceInfo>>(new Map());
+const PRICE_CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+
+/**
+ * Get cached price for a product code
+ * @param productCode - Product code
+ * @returns Cached price info or null if not found or expired
+ */
+export function getCachedPrice(productCode: string): ProductPriceInfo | null {
+  if (!productCode) {
+    return null;
+  }
+  
+  const cached = priceCache.value.get(productCode);
+  
+  if (!cached) {
+    return null;
+  }
+  
+  // Check if cache is still valid
+  const now = Date.now();
+  if (now - cached.timestamp > PRICE_CACHE_TTL) {
+    // Cache expired, remove it
+    priceCache.value.delete(productCode);
+    return null;
+  }
+  
+  return {
+    price: cached.price,
+    currencySymbol: cached.currencySymbol
+  };
+}
+
+/**
+ * Cache price for a product code
+ * @param productCode - Product code
+ * @param price - Price value
+ * @param currencySymbol - Currency symbol
+ */
+export function cachePrice(productCode: string, price: number, currencySymbol: string): void {
+  if (!productCode) {
+    return;
+  }
+  
+  priceCache.value.set(productCode, {
+    price,
+    currencySymbol,
+    timestamp: Date.now()
+  });
+}
+
+/**
+ * Check if price cache is valid for a product code
+ * @param productCode - Product code
+ * @returns True if cache exists and is still valid
+ */
+export function isPriceCacheValid(productCode: string): boolean {
+  if (!productCode) {
+    return false;
+  }
+  
+  const cached = priceCache.value.get(productCode);
+  
+  if (!cached) {
+    return false;
+  }
+  
+  const now = Date.now();
+  if (now - cached.timestamp > PRICE_CACHE_TTL) {
+    // Cache expired, remove it
+    priceCache.value.delete(productCode);
+    return false;
+  }
+  
+  return true;
+}
+
+/**
+ * Clear price cache
+ */
+export function clearPriceCache(): void {
+  priceCache.value.clear();
+}

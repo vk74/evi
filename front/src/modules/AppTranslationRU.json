@@ -87,5 +87,34 @@
       "saveFailed": "не удалось сохранить страну",
       "unexpectedError": "произошла непредвиденная ошибка"
     }
+  },
+  "catalog": {
+    "common": {
+      "moduleTitle": "каталог"
+    },
+    "options": {
+      "searchPlaceholder": "поиск",
+      "filterAll": "все",
+      "filterServices": "услуги",
+      "filterProducts": "продукты",
+      "sortByName": "по названию",
+      "sortByPriority": "по приоритету",
+      "sortByStatus": "по статусу",
+      "sortByOwner": "по владельцу"
+    },
+    "loading": {
+      "sections": "загрузка разделов каталога..."
+    },
+    "errors": {
+      "sectionsTitle": "не удалось загрузить разделы каталога",
+      "tryAgain": "попробовать снова",
+      "selectCountryLocation": "пожалуйста, выберите страну в настройках локации"
+    },
+    "empty": {
+      "sectionsTitle": "разделы каталога не найдены",
+      "sectionsSubtitle": "разделы каталога недоступны",
+      "refresh": "обновить",
+      "noItemsTitle": "элементы не найдены"
+    }
   }
 }

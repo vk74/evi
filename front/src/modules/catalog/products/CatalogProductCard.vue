@@ -1,5 +1,5 @@
 <!--
-version: 1.5.0
+version: 1.6.0
 Frontend file for catalog product card component.
 Displays product information in a card format with light blue theme and camera icon.
 File: CatalogProductCard.vue
@@ -20,6 +20,11 @@ Changes in v1.5.0:
 - Reduced photo placeholder width from 40% to 33% to give more space for description
 - Added word wrapping styles for description to prevent text overflow
 - Added overflow handling for product info column
+
+Changes in v1.6.0:
+- Added price and currencySymbol props
+- Display actual price with currency symbol instead of placeholder dash
+- Format: "price currencySymbol" or "—" if price is not available
 -->
 <script setup lang="ts">
 import { ref, computed } from 'vue';
@@ -30,10 +35,14 @@ import { PhCamera } from '@phosphor-icons/vue'
 interface Props {
   product: CatalogProduct;
   cardColor?: string;
+  price?: number | null;
+  currencySymbol?: string | null;
 }
 
 const props = withDefaults(defineProps<Props>(), {
-  cardColor: '#E8F4F8'
+  cardColor: '#E8F4F8',
+  price: null,
+  currencySymbol: null
 });
 const emit = defineEmits<{ (e: 'select', productId: string): void }>()
 
@@ -120,7 +129,9 @@ const cardStyle = computed(() => {
         <v-card-text class="pa-0">
           <!-- Price placeholder -->
           <div class="price-placeholder mb-3">
-            <span class="price-text">—</span>
+            <span class="price-text">
+              {{ props.price !== null && props.price !== undefined && props.currencySymbol ? `${props.price} ${props.currencySymbol}` : '—' }}
+            </span>
           </div>
 
           <!-- Description -->

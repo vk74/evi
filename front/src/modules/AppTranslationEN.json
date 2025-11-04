@@ -92,5 +92,34 @@
       "saveFailed": "failed to save country",
       "unexpectedError": "an unexpected error occurred"
     }
+  },
+  "catalog": {
+    "common": {
+      "moduleTitle": "catalog"
+    },
+    "options": {
+      "searchPlaceholder": "search",
+      "filterAll": "all",
+      "filterServices": "services",
+      "filterProducts": "products",
+      "sortByName": "by name",
+      "sortByPriority": "by priority",
+      "sortByStatus": "by status",
+      "sortByOwner": "by owner"
+    },
+    "loading": {
+      "sections": "loading catalog sections..."
+    },
+    "errors": {
+      "sectionsTitle": "failed to load catalog sections",
+      "tryAgain": "try again",
+      "selectCountryLocation": "please select your country in location settings"
+    },
+    "empty": {
+      "sectionsTitle": "no catalog sections found",
+      "sectionsSubtitle": "catalog sections are not available",
+      "refresh": "refresh",
+      "noItemsTitle": "no items found"
+    }
   }
 }

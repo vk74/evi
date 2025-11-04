@@ -565,6 +565,11 @@ const preventResizeErrors = (): void => {
   };
 };
 
+// Listen for location selection modal open event
+window.addEventListener('openLocationSelectionModal', () => {
+  isLocationModalOpen.value = true;
+});
+
 // Lifecycle hooks
 onMounted(async () => {
   // CRITICAL: Load UI settings first (works for both authenticated and anonymous users)

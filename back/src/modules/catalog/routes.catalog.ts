@@ -12,6 +12,7 @@ import fetchServiceDetailsController from './controller.catalog.service.details'
 import fetchProductsController from './controller.catalog.products';
 import fetchProductDetailsController from './controller.catalog.product.details';
 import readProductOptionsController from './controller.catalog.read.product.options';
+import fetchPricelistItemsByCodesController from './controller.catalog.fetch.pricelist.items.by.codes';
 import validateJwt from '../../core/guards/guard.validate.jwt';
 import checkIsUserStatusActive from '../../core/guards/guard.check.is.user.status.active';
 import checkRequestSecurityHard from '../../core/guards/guard.check.request.security.hard';
@@ -29,6 +30,9 @@ router.get('/fetch-service-details', checkRequestSecurityHard, validateJwt, chec
 router.get('/fetch-products', checkRequestSecurityHard, validateJwt, checkIsUserStatusActive, fetchProductsController);
 router.get('/fetch-product-details', checkRequestSecurityHard, validateJwt, checkIsUserStatusActive, fetchProductDetailsController);
 router.post('/products/options', checkRequestSecurityHard, validateJwt, checkIsUserStatusActive, readProductOptionsController);
+
+// Catalog pricelist routes
+router.post('/pricelists/:pricelistId/items-by-codes', checkRequestSecurityHard, validateJwt, checkIsUserStatusActive, fetchPricelistItemsByCodesController);
 
 // Export using ES modules syntax
 export default router;

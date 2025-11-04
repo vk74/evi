@@ -90,3 +90,9 @@ export interface FetchProductOptionsResponse {
     unit_price?: number | null;
   }>;
 }
+
+// Price information for products
+export interface ProductPriceInfo {
+  price: number;
+  currencySymbol: string;
+}
