@@ -1,8 +1,8 @@
--- Version: 1.5.3
+-- Version: 1.5.4
 -- Description: Seeds the database with default application settings.
 -- Backend file: 09_app_settings.sql
--- Added: 2 new EventBus domains (middleware, itemSelector)
--- Previous: 7 new EventBus domains (adminProducts, adminPricing, adminOrganizations, work, reports, knowledgeBase, guards)
+-- Added: Country price list mapping setting (Admin.Catalog.CountryPricelistID)
+-- Previous: 2 new EventBus domains (middleware, itemSelector)
 
 -- This script inserts a comprehensive set of default settings for the application,
 -- covering areas like security, session management, and feature toggles.
@@ -87,6 +87,9 @@ INSERT INTO app.app_settings (
 ('Catalog.Products', 'display.optionsOnlyProducts', 'all', 'false', '{"type":"boolean"}', 'false', 'Sets catalog to display or hide products which are marked as "option only"', true),
 ('Catalog.Products', 'card.color', 'all', '"#E8F4F8"', '{"type":"string","pattern":"^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$"}', '"#E8F4F8"', 'Background color for product cards in catalog (hex format)', true),
 ('Catalog.Services', 'card.color', 'all', '"#F5F5F5"', '{"type":"string","pattern":"^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$"}', '"#F5F5F5"', 'Background color for service cards in catalog (hex format)', true),
+
+-- Admin Catalog Settings
+('Admin.Catalog.CountryProductPricelistID', 'country.product.price.list.mapping', 'all', '{}'::jsonb, '{"type":"object","additionalProperties":{"type":"integer","minimum":1}}'::jsonb, '{}'::jsonb, 'Mapping of country codes to product price list IDs (format: {"country_code": product_price_list_id, ...})', false),
 
 -- Data Validation Settings (Standard fields removed)
 ('Application.System.DataValidation', 'wellKnownFields.userName.minLength', 'all', '1', '{"type":"integer","minimum":1,"maximum":5}', '1', 'Minimum length for user name fields', true),

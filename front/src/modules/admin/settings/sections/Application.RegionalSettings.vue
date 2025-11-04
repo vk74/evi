@@ -19,7 +19,7 @@ import { updateSettingFromComponent } from '@/modules/admin/settings/service.upd
 import { useUiStore } from '@/core/state/uistate';
 import DataLoading from '@/core/ui/loaders/DataLoading.vue';
 import { PhCaretUpDown, PhWarningCircle } from '@phosphor-icons/vue';
-import { fetchCountriesService } from '@/modules/admin/pricing/service.fetch.countries';
+import { fetchCountries } from '@/core/helpers/fetch.countries';
 
 // Section path identifier
 const section_path = 'Application.RegionalSettings';
@@ -339,7 +339,7 @@ watch(
 async function loadCountries(): Promise<void> {
   try {
     isLoadingCountries.value = true;
-    const countries = await fetchCountriesService();
+    const countries = await fetchCountries();
     countriesList.value = countries;
   } catch (error) {
     console.error('Failed to load countries:', error);

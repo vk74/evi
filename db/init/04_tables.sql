@@ -540,6 +540,7 @@ CREATE TABLE IF NOT EXISTS app.price_lists_info (
     updated_by UUID,
     created_at TIMESTAMPTZ DEFAULT NOW() NOT NULL,
     updated_at TIMESTAMPTZ DEFAULT NOW() NOT NULL,
+    country app.app_countries NOT NULL DEFAULT 'russia'::app.app_countries,
     
     -- Foreign keys
     CONSTRAINT fk_price_lists_currency_code 

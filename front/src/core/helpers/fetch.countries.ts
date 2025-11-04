@@ -1,8 +1,9 @@
 /**
  * Version: 1.0.0
- * Service for fetching countries list for pricing admin module.
- * Frontend file that calls backend endpoint and returns string[] array of country codes.
- * Filename: service.fetch.countries.ts (frontend)
+ * Helper for fetching countries list from backend.
+ * Frontend file that provides universal function to get array of country codes.
+ * Can be used across different modules that need countries list.
+ * Filename: fetch.countries.ts (frontend)
  */
 
 import { api } from '@/core/api/service.axios'
@@ -18,7 +19,7 @@ interface FetchCountriesResponse {
  * Fetch countries list from backend
  * @returns Promise with array of country codes (e.g., ['russia', 'kazakhstan'])
  */
-export async function fetchCountriesService(): Promise<string[]> {
+export async function fetchCountries(): Promise<string[]> {
   const response = await api.get<FetchCountriesResponse>(
     '/api/admin/pricing/countries'
   )
