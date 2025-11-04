@@ -137,6 +137,23 @@
           }
         }
       },
+      "settings": {
+        "title": "catalog settings",
+        "table": {
+          "headers": {
+            "country": "country",
+            "pricelistId": "pricelist ID",
+            "actions": "actions"
+          }
+        },
+        "actions": {
+          "addMapping": "add mapping"
+        },
+        "messages": {
+          "loadCountriesError": "failed to load countries",
+          "loadPricelistsError": "failed to load pricelist IDs"
+        }
+      },
       "sections": {
         "table": {
           "headers": {

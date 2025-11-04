@@ -137,6 +137,23 @@
           }
         }
       },
+      "settings": {
+        "title": "настройки каталога",
+        "table": {
+          "headers": {
+            "country": "страна",
+            "pricelistId": "ID прайслиста",
+            "actions": "действия"
+          }
+        },
+        "actions": {
+          "addMapping": "добавить привязку"
+        },
+        "messages": {
+          "loadCountriesError": "не удалось загрузить список стран",
+          "loadPricelistsError": "не удалось загрузить ID прайслистов"
+        }
+      },
       "sections": {
         "table": {
           "headers": {
