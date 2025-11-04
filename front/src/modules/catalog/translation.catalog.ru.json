@@ -61,6 +61,7 @@
       "productCode": "код продукта",
       "status": "статус",
       "createdAt": "дата создания",
+      "publishedAt": "дата публикации",
       "techSpecs": "технические характеристики",
       "areaSpecifics": "специфики по областям",
       "industrySpecifics": "отраслевые специфики",
@@ -93,7 +94,8 @@
           "select": "выбор",
           "minUnits": "мин. единиц",
           "unitsCount": "кол-во единиц",
-          "unitPrice": "цена за единицу"
+          "unitPrice": "цена за единицу",
+          "sum": "сумма"
         }
       }
     }

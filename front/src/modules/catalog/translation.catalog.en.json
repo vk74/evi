@@ -61,6 +61,7 @@
       "productCode": "product code",
       "status": "status",
       "createdAt": "created at",
+      "publishedAt": "published at",
       "techSpecs": "technical specifications",
       "areaSpecifics": "area-specific features",
       "industrySpecifics": "industry-specific features",
@@ -93,7 +94,8 @@
           "select": "select",
           "minUnits": "min. units",
           "unitsCount": "units count",
-          "unitPrice": "unit price"
+          "unitPrice": "unit price",
+          "sum": "sum"
         }
       }
     }

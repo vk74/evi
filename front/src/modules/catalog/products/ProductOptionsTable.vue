@@ -1,5 +1,5 @@
 <!--
-version: 1.3.0
+version: 1.4.0
 Frontend file ProductOptionsTable.vue.
 Purpose: Displays product option rows with search, counter, and pagination; mirrors PairEditor table UX.
 Filename: ProductOptionsTable.vue
@@ -21,15 +21,29 @@ Changes in v1.3.0:
 - When mainProductUnitsCount changes, required options automatically reset to new minimum
 - "Min. Units" column now displays calculated minimum (units_count * mainProductUnitsCount)
 - Range for required options dynamically updates based on calculated minimum
+
+Changes in v1.4.0:
+- Added option price loading functionality
+- Unit price column now displays actual prices from pricelist
+- Added sum column (last column) showing unit price * units count
+- Sum column shows "-" if units count is not selected
+- Option name column width reduced from 35% to 30% to accommodate sum column
+- Price loading follows ModuleCatalog.vue pattern with caching
+- Watch for items and user country changes to reload prices
 -->
 <script setup lang="ts">
 import { ref, computed, watch, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { useAppStore } from '@/core/state/appstate'
+import { useUiStore } from '@/core/state/uistate'
 import Paginator from '@/core/ui/paginator/Paginator.vue'
 import { PhCheckSquare, PhSquare, PhCaretUpDown } from '@phosphor-icons/vue'
+import { fetchPricesByCodes } from '../service.catalog.fetch.prices.by.codes'
+import { getSettingValueHelper } from '@/core/helpers/get.setting.value'
+import { getCachedPrice, cachePrice, isPriceCacheValid } from '../state.catalog'
 
 // Use shared UI type
-import type { CatalogProductOption } from './types.products'
+import type { CatalogProductOption, ProductPriceInfo } from './types.products'
 
 interface Props {
   items?: CatalogProductOption[]
@@ -43,6 +57,10 @@ const props = withDefaults(defineProps<Props>(), {
 
 const { t } = useI18n()
 
+// Stores
+const appStore = useAppStore()
+const uiStore = useUiStore()
+
 // Search, paging
 const search = ref('')
 const page = ref(1)
@@ -51,6 +69,10 @@ const itemsPerPage = ref(25)
 // UI state for non-required options
 const isSelectedById = ref<Record<string, boolean>>({})
 const unitsById = ref<Record<string, number | null>>({})
+
+// Price loading state
+const optionPrices = ref<Map<string, ProductPriceInfo>>(new Map())
+const isLoadingPrices = ref(false)
 
 /**
  * Generate dynamic units range based on item type
@@ -107,12 +129,13 @@ watch(() => props.mainProductUnitsCount, () => {
 
 // Headers mirroring PairEditor style
 const headers = computed(() => [
-  { title: t('catalog.productDetails.options.headers.optionName'), key: 'option_name', width: '35%' },
+  { title: t('catalog.productDetails.options.headers.optionName'), key: 'option_name', width: '30%' },
   { title: t('catalog.productDetails.options.headers.productCode'), key: 'product_code', width: '20%' },
   { title: t('catalog.productDetails.options.headers.select'), key: 'select', width: '10%' },
   { title: t('catalog.productDetails.options.headers.unitsCount'), key: 'units_count', width: '15%' },
   { title: t('catalog.productDetails.options.headers.minUnits'), key: 'min_units', width: '10%' },
   { title: t('catalog.productDetails.options.headers.unitPrice'), key: 'unit_price', width: '10%' },
+  { title: t('catalog.productDetails.options.headers.sum'), key: 'sum', width: '10%' },
 ])
 
 // Apply search filter (backend already filters by status_code = 'active')
@@ -148,8 +171,123 @@ function setUnitsCount(productId: string, v: number | null) {
   unitsById.value[productId] = v
 }
 
+// ==================== PRICE LOADING FUNCTIONS ====================
+async function loadOptionPrices() {
+  try {
+    // Get user country
+    const userCountry = appStore.getUserCountry
+    
+    if (!userCountry) {
+      // No country - show toast and emit event to open LocationSelectionModal
+      uiStore.showErrorSnackbar(t('catalog.errors.selectCountryLocation'))
+      // Emit event to open location modal (will be handled in App.vue)
+      window.dispatchEvent(new CustomEvent('openLocationSelectionModal'))
+      // Don't block UI, just show dashes
+      optionPrices.value.clear()
+      return
+    }
+    
+    // Get pricelist ID from settings
+    const mappingSetting = await getSettingValueHelper<Record<string, number>>(
+      'Admin.Catalog.CountryProductPricelistID',
+      'country.product.price.list.mapping'
+    )
+    
+    if (!mappingSetting || typeof mappingSetting !== 'object') {
+      // No mapping found - show dashes
+      optionPrices.value.clear()
+      return
+    }
+    
+    const pricelistId = mappingSetting[userCountry]
+    
+    if (!pricelistId || typeof pricelistId !== 'number') {
+      // No pricelist for this country - show dashes
+      optionPrices.value.clear()
+      return
+    }
+    
+    // Collect all product codes from items where product_code is not null/empty
+    const productCodes = (props.items || [])
+      .map(item => item.product_code)
+      .filter((code): code is string => code !== null && code !== undefined && code !== '')
+    
+    if (productCodes.length === 0) {
+      // No product codes - nothing to load
+      optionPrices.value.clear()
+      return
+    }
+    
+    // Check cache first - only load codes that are not cached or expired
+    const codesToLoad: string[] = []
+    const cachedPrices = new Map<string, ProductPriceInfo>()
+    
+    productCodes.forEach(code => {
+      if (isPriceCacheValid(code)) {
+        const cached = getCachedPrice(code)
+        if (cached) {
+          cachedPrices.set(code, cached)
+        }
+      } else {
+        codesToLoad.push(code)
+      }
+    })
+    
+    // If all codes are cached, use cache
+    if (codesToLoad.length === 0) {
+      optionPrices.value = cachedPrices
+      return
+    }
+    
+    // Load prices for uncached codes
+    isLoadingPrices.value = true
+    
+    try {
+      const priceMap = await fetchPricesByCodes(pricelistId, codesToLoad)
+      
+      // Cache loaded prices
+      priceMap.forEach((priceInfo, code) => {
+        cachePrice(code, priceInfo.price, priceInfo.currencySymbol)
+      })
+      
+      // Merge cached and loaded prices
+      const mergedPrices = new Map<string, ProductPriceInfo>()
+      cachedPrices.forEach((price, code) => mergedPrices.set(code, price))
+      priceMap.forEach((price, code) => mergedPrices.set(code, price))
+      
+      optionPrices.value = mergedPrices
+    } catch (error) {
+      console.error('[ProductOptionsTable] Error loading prices:', error)
+      // On error, use cached prices if available
+      optionPrices.value = cachedPrices
+    } finally {
+      isLoadingPrices.value = false
+    }
+  } catch (error) {
+    console.error('[ProductOptionsTable] Error in loadOptionPrices:', error)
+    // On error, clear prices (show dashes)
+    optionPrices.value.clear()
+  }
+}
+
 onMounted(() => {
-  // reserved for focus/UX hooks
+  // Load prices when component is mounted
+  if ((props.items || []).length > 0) {
+    loadOptionPrices()
+  }
+})
+
+// Watch for changes in items and user country to reload prices
+watch(() => props.items, () => {
+  if ((props.items || []).length > 0) {
+    loadOptionPrices()
+  }
+}, { deep: true })
+
+watch(() => appStore.getUserCountry, () => {
+  if ((props.items || []).length > 0) {
+    loadOptionPrices()
+  }
 })
 
 /** Clear all optional selections and reset their units */
@@ -248,7 +386,17 @@ defineExpose({ clearSelections })
       </template>
 
       <template #[`item.unit_price`]="{ item }">
-        <span>-</span>
+        <span v-if="item.product_code && optionPrices.has(item.product_code)">
+          {{ optionPrices.get(item.product_code)?.price }} {{ optionPrices.get(item.product_code)?.currencySymbol }}
+        </span>
+        <span v-else>-</span>
+      </template>
+
+      <template #[`item.sum`]="{ item }">
+        <span v-if="item.product_code && optionPrices.has(item.product_code) && unitsById[item.product_id] !== null && unitsById[item.product_id] !== undefined">
+          {{ (optionPrices.get(item.product_code)!.price * (unitsById[item.product_id] || 0)).toLocaleString() }} {{ optionPrices.get(item.product_code)?.currencySymbol }}
+        </span>
+        <span v-else>-</span>
       </template>
     </v-data-table>
 

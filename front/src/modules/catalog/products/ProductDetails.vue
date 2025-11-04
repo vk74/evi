@@ -1,5 +1,5 @@
 <!--
-version: 1.7.0
+version: 1.8.0
 Frontend file for product details view component.
 Displays extended info and placeholders for product options.
 File: ProductDetails.vue
@@ -24,16 +24,29 @@ Changes in v1.7.0:
 - Added mainProductUnitsCount reactive ref initialized to 1
 - Added @update:model-value handler to units count v-select
 - Pass mainProductUnitsCount prop to ProductOptionsTable component
+
+Changes in v1.8.0:
+- Removed status line from product name block
+- Replaced "created_at" with "published_at" in product name block
+- Added product price loading functionality
+- Unit price field now displays actual price from pricelist
+- Price loading follows ModuleCatalog.vue pattern with caching
+- Watch for product code and user country changes to reload price
 -->
 <script setup lang="ts">
 import { ref, onMounted, watch, computed } from 'vue'
 import { useI18n } from 'vue-i18n'
-import type { CatalogProductDetails } from './types.products'
+import { useAppStore } from '@/core/state/appstate'
+import { useUiStore } from '@/core/state/uistate'
+import type { CatalogProductDetails, ProductPriceInfo } from './types.products'
 import { fetchProductDetails } from './service.fetch.product.details'
 import { fetchProductOptions } from './service.fetch.product.options'
 import type { CatalogProductOption } from './types.products'
 import ProductOptionsTable from './ProductOptionsTable.vue'
 import { PhCaretUpDown, PhSquare, PhMicrosoftExcelLogo } from '@phosphor-icons/vue'
+import { fetchPricesByCodes } from '../service.catalog.fetch.prices.by.codes'
+import { getSettingValueHelper } from '@/core/helpers/get.setting.value'
+import { getCachedPrice, cachePrice, isPriceCacheValid } from '../state.catalog'
 
 // Props (MVP): accept productId from parent context/navigation state
 interface Props { 
@@ -52,9 +65,15 @@ const options = ref<CatalogProductOption[]>([])
 const optionsTableRef = ref<any>(null)
 const selectedSection = ref<'description' | 'main-options'>('main-options')
 const mainProductUnitsCount = ref(1)
+const productPrice = ref<ProductPriceInfo | null>(null)
+const isLoadingPrice = ref(false)
+
+// Stores
+const appStore = useAppStore()
+const uiStore = useUiStore()
 
 // i18n
-const { t } = useI18n()
+const { t, locale } = useI18n()
 
 // Computed properties for visibility
 const hasTechSpecs = computed(() => {
@@ -87,6 +106,13 @@ const detailsStyle = computed(() => ({
   '--details-bg': props.cardColor
 }))
 
+// Computed property for formatted published date
+const formattedPublishedAt = computed(() => {
+  if (!details.value?.published_at) return '—'
+  const dateLocale = locale.value === 'ru' ? 'ru-RU' : 'en-US'
+  return new Date(details.value.published_at).toLocaleDateString(dateLocale)
+})
+
 async function loadDetails() {
   try {
     loading.value = true
@@ -109,6 +135,87 @@ async function loadOptions() {
   }
 }
 
+// ==================== PRICE LOADING FUNCTIONS ====================
+async function loadProductPrice() {
+  try {
+    if (!details.value?.product_code) {
+      productPrice.value = null
+      return
+    }
+
+    // Get user country
+    const userCountry = appStore.getUserCountry
+    
+    if (!userCountry) {
+      // No country - show toast and emit event to open LocationSelectionModal
+      uiStore.showErrorSnackbar(t('catalog.errors.selectCountryLocation'))
+      // Emit event to open location modal (will be handled in App.vue)
+      window.dispatchEvent(new CustomEvent('openLocationSelectionModal'))
+      // Don't block UI, just show dash
+      productPrice.value = null
+      return
+    }
+    
+    // Get pricelist ID from settings
+    const mappingSetting = await getSettingValueHelper<Record<string, number>>(
+      'Admin.Catalog.CountryProductPricelistID',
+      'country.product.price.list.mapping'
+    )
+    
+    if (!mappingSetting || typeof mappingSetting !== 'object') {
+      // No mapping found - show dash
+      productPrice.value = null
+      return
+    }
+    
+    const pricelistId = mappingSetting[userCountry]
+    
+    if (!pricelistId || typeof pricelistId !== 'number') {
+      // No pricelist for this country - show dash
+      productPrice.value = null
+      return
+    }
+    
+    const productCode = details.value.product_code
+    
+    // Check cache first
+    if (isPriceCacheValid(productCode)) {
+      const cached = getCachedPrice(productCode)
+      if (cached) {
+        productPrice.value = cached
+        return
+      }
+    }
+    
+    // Load price for product code
+    isLoadingPrice.value = true
+    
+    try {
+      const priceMap = await fetchPricesByCodes(pricelistId, [productCode])
+      
+      // Cache loaded price
+      const priceInfo = priceMap.get(productCode)
+      if (priceInfo) {
+        cachePrice(productCode, priceInfo.price, priceInfo.currencySymbol)
+        productPrice.value = priceInfo
+      } else {
+        productPrice.value = null
+      }
+    } catch (error) {
+      console.error('[ProductDetails] Error loading price:', error)
+      // On error, use cached price if available
+      const cached = getCachedPrice(productCode)
+      productPrice.value = cached
+    } finally {
+      isLoadingPrice.value = false
+    }
+  } catch (error) {
+    console.error('[ProductDetails] Error in loadProductPrice:', error)
+    // On error, clear price (show dash)
+    productPrice.value = null
+  }
+}
+
 onMounted(() => { 
   loadDetails()
   loadOptions() 
@@ -116,6 +223,19 @@ onMounted(() => {
 watch(() => props.productId, () => { 
   loadDetails()
   loadOptions() 
+})
+
+// Watch for changes in product code and user country to reload price
+watch(() => details.value?.product_code, () => {
+  if (details.value?.product_code) {
+    loadProductPrice()
+  }
+}, { immediate: true })
+
+watch(() => appStore.getUserCountry, () => {
+  if (details.value?.product_code) {
+    loadProductPrice()
+  }
 })
 </script>
 
@@ -142,8 +262,7 @@ watch(() => props.productId, () => {
             </div>
             <div class="block-body">
               <div>{{ t('catalog.productDetails.productCode') }}: {{ details?.product_code || t('catalog.productDetails.notSpecified') }}</div>
-              <div>{{ t('catalog.productDetails.status') }}: {{ details?.status === 'published' ? t('catalog.productDetails.published') : t('catalog.productDetails.draft') }}</div>
-              <div>{{ t('catalog.productDetails.createdAt') }}: {{ details?.created_at }}</div>
+              <div>{{ t('catalog.productDetails.publishedAt') }}: {{ formattedPublishedAt }}</div>
             </div>
           </div>
  
@@ -183,7 +302,7 @@ watch(() => props.productId, () => {
                 <div class="d-flex align-center" style="gap: 8px;">
                   <span class="me-2">{{ t('catalog.productDetails.unitPrice') }}</span>
                   <v-text-field
-                    model-value="1 000 €"
+                    :model-value="productPrice ? `${productPrice.price} ${productPrice.currencySymbol}` : '—'"
                     density="compact"
                     variant="outlined"
                     readonly
