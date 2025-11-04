@@ -127,6 +127,20 @@ const initializeUserState = async (): Promise<void> => {
     console.log('[startup] initializeUserState: locale updated to', i18n.global.locale.value);
   }
   console.log('[startup] initializeUserState: done');
+  
+  // Load user country if user is authenticated
+  if (userStore.isAuthenticated) {
+    console.log('[startup] User authenticated, loading user country...');
+    const { useAppStore } = await import('@/core/state/appstate');
+    const appStore = useAppStore();
+    try {
+      await appStore.loadUserCountry();
+      console.log('[startup] User country loaded');
+    } catch (error) {
+      console.warn('[startup] Failed to load user country:', error);
+      // Don't block app initialization if country load fails
+    }
+  }
 };
 
 // Mount the application and initialize user state

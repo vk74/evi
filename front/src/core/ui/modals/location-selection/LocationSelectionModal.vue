@@ -1,6 +1,6 @@
 /**
  * LocationSelectionModal.vue
- * Version: 1.2.0
+ * Version: 1.2.1
  * Modal dialog for user country selection.
  * Frontend file that allows users to select and save their country location.
  * Modal cannot be closed if user has no saved country in DB.
@@ -20,6 +20,9 @@
  * Changes in v1.2.0:
  * - Reduced modal width by 30% (from 500px to 350px)
  * - Added caret icon to country dropdown
+ * 
+ * Changes in v1.2.1:
+ * - Added appStore integration to update user country in global state after successful save
  */
 
 <script setup lang="ts">
@@ -27,6 +30,7 @@ import { ref, computed, onMounted, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useUiStore } from '@/core/state/uistate';
 import { useUserAuthStore } from '@/core/auth/state.user.auth';
+import { useAppStore } from '@/core/state/appstate';
 import { getCountries } from '@/core/helpers/get.countries';
 import { getUserCountry } from '@/core/services/service.get.user.country';
 import { api } from '@/core/api/service.axios';
@@ -36,6 +40,7 @@ import { PhCaretUpDown } from '@phosphor-icons/vue';
 const { t } = useI18n();
 const uiStore = useUiStore();
 const userStore = useUserAuthStore();
+const appStore = useAppStore();
 
 // Component props
 interface Props {
@@ -146,6 +151,11 @@ const saveCountry = async (): Promise<void> => {
       // Update original country to saved value
       originalCountry.value = selectedCountry.value;
       countrySaved.value = true;
+      
+      // Update appStore with new country value from response
+      // Use country from response.data if available, otherwise use selectedCountry
+      const savedCountry = response.data.country || selectedCountry.value;
+      appStore.setUserCountry(savedCountry);
       
       uiStore.showSuccessSnackbar(t('locationSelection.success.saved'));
       // Close modal after successful save

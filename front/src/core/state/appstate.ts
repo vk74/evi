@@ -1,11 +1,20 @@
 /**
- * appstate.ts
+ * appstate.ts - version 1.1.0
  * State store for the main navigation menu of the application.
  * Manages navigation between main modules, drawer display modes,
  * and preserves states between user sessions.
+ * 
+ * Changes in v1.1.0:
+ * - Added userCountry state to store user's country location
+ * - Added getUserCountry getter to retrieve user country
+ * - Added loadUserCountry action to load country from API
+ * - Added setUserCountry action to update country value
+ * - Added clearUserCountry action to clear country on logout
+ * - Added isLoadingCountry flag to prevent duplicate requests
  */
 import { defineStore } from 'pinia';
 import { ModuleName, AdminSubModule, DrawerMode } from '../../types.app';
+import { getUserCountry as getUserCountryAPI } from '@/core/services/service.get.user.country';
 
 // Interface for the store state
 interface AppState {
@@ -14,6 +23,8 @@ interface AppState {
   drawerMode: DrawerMode;
   availableModules: ModuleName[];
   activeAdminSubModule: AdminSubModule;
+  userCountry: string | null;
+  isLoadingCountry: boolean;
 }
 
 // Guaranteed initialization of the list of all available modules
@@ -42,7 +53,11 @@ export const useAppStore = defineStore('app', {
     // List of all available modules for validation
     availableModules: DEFAULT_MODULES,
     // Default admin sub-module is app settings
-    activeAdminSubModule: 'appAdmin'
+    activeAdminSubModule: 'appAdmin',
+    // User country location
+    userCountry: null,
+    // Loading flag to prevent duplicate requests
+    isLoadingCountry: false
   }),
 
   getters: {
@@ -65,7 +80,13 @@ export const useAppStore = defineStore('app', {
      * Get the current active admin sub-module
      * @returns The name of the active admin sub-module
      */
-    getActiveAdminSubModule: (state): AdminSubModule => state.activeAdminSubModule
+    getActiveAdminSubModule: (state): AdminSubModule => state.activeAdminSubModule,
+
+    /**
+     * Get user country location
+     * @returns User country value or null
+     */
+    getUserCountry: (state): string | null => state.userCountry
   },
 
   actions: {
@@ -120,6 +141,58 @@ export const useAppStore = defineStore('app', {
       this.drawerMode = 'closed'; 
       this.availableModules = DEFAULT_MODULES; 
       this.activeAdminSubModule = 'appAdmin';
+      this.userCountry = null;
+      this.isLoadingCountry = false;
+    },
+
+    /**
+     * Load user country from API
+     * Loads user country from backend and updates state
+     * Does not load if already loading or if country is already loaded
+     */
+    async loadUserCountry(): Promise<void> {
+      // Prevent duplicate requests
+      if (this.isLoadingCountry) {
+        return;
+      }
+
+      // Skip if country is already loaded (optional optimization)
+      // We allow reloading to ensure fresh data
+      
+      this.isLoadingCountry = true;
+      
+      try {
+        const country = await getUserCountryAPI();
+        this.userCountry = country;
+        console.log('[AppStore] User country loaded:', country);
+      } catch (error) {
+        console.error('[AppStore] Failed to load user country:', error);
+        // Don't block app functionality if country load fails
+        // Set to null to indicate no country loaded
+        this.userCountry = null;
+      } finally {
+        this.isLoadingCountry = false;
+      }
+    },
+
+    /**
+     * Set user country value directly
+     * Used after successful country update via API
+     * @param country - Country value to set (string or null)
+     */
+    setUserCountry(country: string | null): void {
+      this.userCountry = country;
+      console.log('[AppStore] User country updated:', country);
+    },
+
+    /**
+     * Clear user country
+     * Called on logout to reset state
+     */
+    clearUserCountry(): void {
+      this.userCountry = null;
+      this.isLoadingCountry = false;
+      console.log('[AppStore] User country cleared');
     }
   },
 

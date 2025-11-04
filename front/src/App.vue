@@ -1,6 +1,6 @@
 <!--
 App.vue 
-Version: 1.3.2
+Version: 1.3.3
 Root component of the application that defines the main interface structure.
 Contains:
 - App Bar with primary controls (language switching, account management)
@@ -475,6 +475,23 @@ watch(
           console.warn('[App] Failed to load KnowledgeBase module settings:', error);
         }
       }
+      
+      // Load user country if not already loaded
+      // Check if country is already loaded to avoid duplicate requests
+      if (!appStore.userCountry && !appStore.isLoadingCountry) {
+        console.log('[App] Loading user country after login...');
+        try {
+          await appStore.loadUserCountry();
+          console.log('[App] User country loaded after login');
+        } catch (error) {
+          console.warn('[App] Failed to load user country after login:', error);
+          // Don't block app functionality if country load fails
+        }
+      }
+    } else {
+      // User logged out - clear user country
+      console.log('[App] User logged out, clearing user country...');
+      appStore.clearUserCountry();
     }
   },
   { immediate: false }
