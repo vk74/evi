@@ -1,5 +1,5 @@
 <!--
-version: 1.4.0
+version: 1.5.0
 Frontend file ProductOptionsTable.vue.
 Purpose: Displays product option rows with search, counter, and pagination; mirrors PairEditor table UX.
 Filename: ProductOptionsTable.vue
@@ -30,6 +30,16 @@ Changes in v1.4.0:
 - Option name column width reduced from 35% to 30% to accommodate sum column
 - Price loading follows ModuleCatalog.vue pattern with caching
 - Watch for items and user country changes to reload prices
+
+Changes in v1.5.0:
+- Removed select checkbox column from table
+- Required options always active with minimum units enforced
+- Optional options always active with 0 as default value
+- Units count range for optional options now starts from 0
+- Removed selection state management (isSelectedById, toggleSelect)
+- Updated clearSelections to reset all options: required to minimum, optional to 0
+- Changed units count display to plain number with caret icon (no border)
+- Added options total sum calculation and emit events on changes
 -->
 <script setup lang="ts">
 import { ref, computed, watch, onMounted } from 'vue'
@@ -37,7 +47,7 @@ import { useI18n } from 'vue-i18n'
 import { useAppStore } from '@/core/state/appstate'
 import { useUiStore } from '@/core/state/uistate'
 import Paginator from '@/core/ui/paginator/Paginator.vue'
-import { PhCheckSquare, PhSquare, PhCaretUpDown } from '@phosphor-icons/vue'
+import { PhCaretUpDown } from '@phosphor-icons/vue'
 import { fetchPricesByCodes } from '../service.catalog.fetch.prices.by.codes'
 import { getSettingValueHelper } from '@/core/helpers/get.setting.value'
 import { getCachedPrice, cachePrice, isPriceCacheValid } from '../state.catalog'
@@ -55,6 +65,10 @@ const props = withDefaults(defineProps<Props>(), {
   mainProductUnitsCount: 1
 })
 
+const emit = defineEmits<{
+  'options-sum-changed': [sum: number]
+}>()
+
 const { t } = useI18n()
 
 // Stores
@@ -66,9 +80,8 @@ const search = ref('')
 const page = ref(1)
 const itemsPerPage = ref(25)
 
-// UI state for non-required options
-const isSelectedById = ref<Record<string, boolean>>({})
-const unitsById = ref<Record<string, number | null>>({})
+// UI state for units count
+const unitsById = ref<Record<string, number>>({})
 
 // Price loading state
 const optionPrices = ref<Map<string, ProductPriceInfo>>(new Map())
@@ -77,39 +90,40 @@ const isLoadingPrices = ref(false)
 /**
  * Generate dynamic units range based on item type
  * Required options: range from calculated minimum (units_count * mainProductUnitsCount) to 1000
- * Optional options: range from 1 to 1000
+ * Optional options: range from 0 to 1000
  */
 function getUnitItems(item: CatalogProductOption): number[] {
   const minValue = item.is_required 
     ? ((item.units_count ?? 1) * props.mainProductUnitsCount)
-    : 1
+    : 0
   const rangeLength = 1001 - minValue
   return Array.from({ length: rangeLength }, (_, i) => minValue + i)
 }
 
 /**
  * Initialize UI state based on incoming items
- * Obligatory options are locked as selected with calculated minimum units; optional start unselected with null units
+ * Required options: set to calculated minimum units (units_count * mainProductUnitsCount)
+ * Optional options: set to 0 as default value
  */
 function initializeUiState(list: CatalogProductOption[]) {
-  const selected: Record<string, boolean> = {}
-  const units: Record<string, number | null> = {}
+  const units: Record<string, number> = {}
   for (const it of list) {
     if (it.is_required) {
-      selected[it.product_id] = true
       units[it.product_id] = (it.units_count ?? 1) * props.mainProductUnitsCount
     } else {
-      selected[it.product_id] = false
-      units[it.product_id] = null
+      units[it.product_id] = 0
     }
   }
-  isSelectedById.value = selected
   unitsById.value = units
 }
 
 watch(() => props.items, (list) => {
   page.value = 1
   initializeUiState(list || [])
+  // Emit initial sum after state initialization
+  if ((list || []).length === 0) {
+    emit('options-sum-changed', 0)
+  }
 }, { immediate: true, deep: true })
 
 /**
@@ -125,13 +139,14 @@ watch(() => props.mainProductUnitsCount, () => {
     }
   }
   unitsById.value = updatedUnits
+  // Emit event with updated total sum
+  emit('options-sum-changed', optionsTotalSum.value)
 })
 
 // Headers mirroring PairEditor style
 const headers = computed(() => [
-  { title: t('catalog.productDetails.options.headers.optionName'), key: 'option_name', width: '30%' },
+  { title: t('catalog.productDetails.options.headers.optionName'), key: 'option_name', width: '35%' },
   { title: t('catalog.productDetails.options.headers.productCode'), key: 'product_code', width: '20%' },
-  { title: t('catalog.productDetails.options.headers.select'), key: 'select', width: '10%' },
   { title: t('catalog.productDetails.options.headers.unitsCount'), key: 'units_count', width: '15%' },
   { title: t('catalog.productDetails.options.headers.minUnits'), key: 'min_units', width: '10%' },
   { title: t('catalog.productDetails.options.headers.unitPrice'), key: 'unit_price', width: '10%' },
@@ -154,21 +169,26 @@ const pagedItems = computed(() => {
   return filteredItems.value.slice(start, start + itemsPerPage.value)
 })
 
-/** Toggle selection for optional options; set default units to 1 when selected */
-function toggleSelect(productId: string) {
-  const current = !!isSelectedById.value[productId]
-  const next = !current
-  isSelectedById.value[productId] = next
-  if (next) {
-    unitsById.value[productId] = unitsById.value[productId] ?? 1
-  } else {
-    unitsById.value[productId] = null
+/**
+ * Calculate total sum of all options (units count * unit price for options where units count > 0)
+ */
+const optionsTotalSum = computed(() => {
+  let total = 0
+  for (const item of props.items || []) {
+    const unitsCount = unitsById.value[item.product_id]
+    if (unitsCount !== undefined && unitsCount > 0 && item.product_code && optionPrices.value.has(item.product_code)) {
+      const priceInfo = optionPrices.value.get(item.product_code)!
+      total += priceInfo.price * unitsCount
+    }
   }
-}
+  return total
+})
 
 /** Units change handler for both required and optional options */
 function setUnitsCount(productId: string, v: number | null) {
-  unitsById.value[productId] = v
+  unitsById.value[productId] = v ?? 0
+  // Emit event with updated total sum
+  emit('options-sum-changed', optionsTotalSum.value)
 }
 
 // ==================== PRICE LOADING FUNCTIONS ====================
@@ -256,10 +276,13 @@ async function loadOptionPrices() {
       priceMap.forEach((price, code) => mergedPrices.set(code, price))
       
       optionPrices.value = mergedPrices
+      // Emit event with updated total sum after prices are loaded
+      emit('options-sum-changed', optionsTotalSum.value)
     } catch (error) {
       console.error('[ProductOptionsTable] Error loading prices:', error)
       // On error, use cached prices if available
       optionPrices.value = cachedPrices
+      emit('options-sum-changed', optionsTotalSum.value)
     } finally {
       isLoadingPrices.value = false
     }
@@ -267,6 +290,7 @@ async function loadOptionPrices() {
     console.error('[ProductOptionsTable] Error in loadOptionPrices:', error)
     // On error, clear prices (show dashes)
     optionPrices.value.clear()
+    emit('options-sum-changed', 0)
   }
 }
 
@@ -274,6 +298,9 @@ onMounted(() => {
   // Load prices when component is mounted
   if ((props.items || []).length > 0) {
     loadOptionPrices()
+  } else {
+    // Emit initial sum even if no items
+    emit('options-sum-changed', 0)
   }
 })
 
@@ -290,18 +317,21 @@ watch(() => appStore.getUserCountry, () => {
   }
 })
 
-/** Clear all optional selections and reset their units */
+/** Reset all options to default values: required options to minimum, optional options to 0 */
 function clearSelections() {
-  const selected = { ...isSelectedById.value }
   const units = { ...unitsById.value }
-  for (const pid of Object.keys(selected)) {
-    if (selected[pid] === true) {
-      selected[pid] = false
-      units[pid] = null
+  for (const item of props.items || []) {
+    if (item.is_required) {
+      // Reset required options to minimum value (units_count * mainProductUnitsCount)
+      units[item.product_id] = (item.units_count ?? 1) * props.mainProductUnitsCount
+    } else {
+      // Reset optional options to 0
+      units[item.product_id] = 0
     }
   }
-  isSelectedById.value = selected
   unitsById.value = units
+  // Emit event with updated total sum
+  emit('options-sum-changed', optionsTotalSum.value)
 }
 
 defineExpose({ clearSelections })
@@ -337,48 +367,25 @@ defineExpose({ clearSelections })
         <span>{{ item.product_code || '-' }}</span>
       </template>
 
-      <template #[`item.select`]="{ item }">
-        <v-btn
-          icon
-          variant="text"
-          density="comfortable"
-          :aria-pressed="true"
-          v-if="item.is_required"
-          :disabled="true"
-        >
-          <PhCheckSquare :size="18" color="teal" />
-        </v-btn>
-        <v-btn
-          v-else
-          icon
-          variant="text"
-          density="comfortable"
-          :aria-pressed="isSelectedById[item.product_id] === true"
-          @click.stop="toggleSelect(item.product_id)"
-        >
-          <PhCheckSquare v-if="isSelectedById[item.product_id]" :size="18" color="teal" />
-          <PhSquare v-else :size="18" color="grey" />
-        </v-btn>
-      </template>
-
       <template #[`item.units_count`]="{ item }">
-        <v-select
-          :model-value="item.is_required ? (unitsById[item.product_id] ?? ((item.units_count ?? 1) * props.mainProductUnitsCount)) : (isSelectedById[item.product_id] ? (unitsById[item.product_id] ?? 1) : null)"
-          :items="getUnitItems(item)"
-          density="compact"
-          variant="outlined"
-          hide-details
-          :disabled="!item.is_required && !isSelectedById[item.product_id]"
-          class="units-select"
-          style="max-width: 120px"
-          @mousedown.stop
-          @click.stop
-          @update:model-value="setUnitsCount(item.product_id, $event as number)"
-        >
-          <template #append-inner>
-            <PhCaretUpDown class="dropdown-icon" />
+        <v-menu location="bottom">
+          <template #activator="{ props: menuProps }">
+            <div class="units-display" v-bind="menuProps">
+              <span class="units-value">{{ unitsById[item.product_id] ?? (item.is_required ? ((item.units_count ?? 1) * props.mainProductUnitsCount) : 0) }}</span>
+              <PhCaretUpDown class="units-caret" :size="16" />
+            </div>
           </template>
-        </v-select>
+          <v-list>
+            <v-list-item
+              v-for="(value, index) in getUnitItems(item)"
+              :key="index"
+              :value="value"
+              @click="setUnitsCount(item.product_id, value)"
+            >
+              <v-list-item-title>{{ value }}</v-list-item-title>
+            </v-list-item>
+          </v-list>
+        </v-menu>
       </template>
 
       <template #[`item.min_units`]="{ item }">
@@ -393,7 +400,7 @@ defineExpose({ clearSelections })
       </template>
 
       <template #[`item.sum`]="{ item }">
-        <span v-if="item.product_code && optionPrices.has(item.product_code) && unitsById[item.product_id] !== null && unitsById[item.product_id] !== undefined">
+        <span v-if="item.product_code && optionPrices.has(item.product_code) && unitsById[item.product_id] !== undefined && unitsById[item.product_id] > 0">
           {{ (optionPrices.get(item.product_code)!.price * (unitsById[item.product_id] || 0)).toLocaleString() }} {{ optionPrices.get(item.product_code)?.currencySymbol }}
         </span>
         <span v-else>-</span>
@@ -415,13 +422,25 @@ defineExpose({ clearSelections })
 </template>
 
 <style scoped>
-.units-select { position: relative; }
-.dropdown-icon {
-  position: absolute;
-  right: 12px;
-  top: 50%;
-  transform: translateY(-50%);
-  pointer-events: none;
+.units-display {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  cursor: pointer;
+  user-select: none;
+  padding: 4px 8px;
+  border-radius: 4px;
+  transition: background-color 0.2s;
+}
+.units-display:hover {
+  background-color: rgba(0, 0, 0, 0.04);
+}
+.units-value {
+  font-size: 14px;
+}
+.units-caret {
+  color: rgba(0, 0, 0, 0.54);
+  flex-shrink: 0;
 }
 </style>
 

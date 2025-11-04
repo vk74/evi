@@ -32,6 +32,13 @@ Changes in v1.8.0:
 - Unit price field now displays actual price from pricelist
 - Price loading follows ModuleCatalog.vue pattern with caching
 - Watch for product code and user country changes to reload price
+
+Changes in v1.9.0:
+- Added products sum calculation (mainProductUnitsCount * productPrice.price) in sidebar
+- Added options total sum calculation from ProductOptionsTable events
+- Added total sum calculation (products + options) in sidebar
+- VAT field shows static "-" value
+- All sums use currency symbol from main product price
 -->
 <script setup lang="ts">
 import { ref, onMounted, watch, computed } from 'vue'
@@ -67,6 +74,7 @@ const selectedSection = ref<'description' | 'main-options'>('main-options')
 const mainProductUnitsCount = ref(1)
 const productPrice = ref<ProductPriceInfo | null>(null)
 const isLoadingPrice = ref(false)
+const optionsTotalSum = ref(0)
 
 // Stores
 const appStore = useAppStore()
@@ -112,6 +120,33 @@ const formattedPublishedAt = computed(() => {
   const dateLocale = locale.value === 'ru' ? 'ru-RU' : 'en-US'
   return new Date(details.value.published_at).toLocaleDateString(dateLocale)
 })
+
+// Computed property for products sum (mainProductUnitsCount * productPrice.price)
+const productsSum = computed(() => {
+  if (!productPrice.value) return 0
+  return mainProductUnitsCount.value * productPrice.value.price
+})
+
+// Computed property for total sum (products + options)
+const totalSum = computed(() => {
+  return productsSum.value + optionsTotalSum.value
+})
+
+// Computed property for currency symbol from product price
+const currencySymbol = computed(() => {
+  return productPrice.value?.currencySymbol || ''
+})
+
+// Format number with currency symbol
+function formatSum(value: number): string {
+  if (value === 0) return `0 ${currencySymbol.value}`
+  return `${value.toLocaleString()} ${currencySymbol.value}`
+}
+
+// Handler for options sum changed event
+function handleOptionsSumChanged(sum: number) {
+  optionsTotalSum.value = sum
+}
 
 async function loadDetails() {
   try {
@@ -404,7 +439,12 @@ watch(() => appStore.getUserCountry, () => {
             
             <!-- Main options section -->
             <div v-if="selectedSection === 'main-options'">
-              <ProductOptionsTable ref="optionsTableRef" :items="options" :main-product-units-count="mainProductUnitsCount" />
+              <ProductOptionsTable 
+                ref="optionsTableRef" 
+                :items="options" 
+                :main-product-units-count="mainProductUnitsCount"
+                @options-sum-changed="handleOptionsSumChanged"
+              />
             </div>
           </div>
         </div>
@@ -418,25 +458,25 @@ watch(() => appStore.getUserCountry, () => {
             <div class="detail-block">
               <div class="block-body d-flex align-center" style="gap: 8px;">
                 <span class="me-2">{{ t('catalog.productDetails.products') }}</span>
-                <v-text-field model-value="1 000 €" density="compact" variant="outlined" readonly hide-details class="sidebar-price-field" />
+                <v-text-field :model-value="formatSum(productsSum)" density="compact" variant="outlined" readonly hide-details class="sidebar-price-field" />
               </div>
             </div>
             <div class="detail-block">
               <div class="block-body d-flex align-center" style="gap: 8px;">
                 <span class="me-2">{{ t('catalog.productDetails.optionsTotal') }}</span>
-                <v-text-field model-value="0 €" density="compact" variant="outlined" readonly hide-details class="sidebar-price-field" />
+                <v-text-field :model-value="formatSum(optionsTotalSum)" density="compact" variant="outlined" readonly hide-details class="sidebar-price-field" />
               </div>
             </div>
             <div class="detail-block">
               <div class="block-body d-flex align-center" style="gap: 8px;">
                 <span class="me-2">{{ t('catalog.productDetails.vat') }}</span>
-                <v-text-field model-value="0 €" density="compact" variant="outlined" readonly hide-details class="sidebar-price-field" />
+                <v-text-field model-value="—" density="compact" variant="outlined" readonly hide-details class="sidebar-price-field" />
               </div>
             </div>
             <div class="detail-block">
               <div class="block-body d-flex align-center" style="gap: 8px;">
                 <span class="me-2">{{ t('catalog.productDetails.total') }}</span>
-                <v-text-field model-value="1 000 000 000 $" density="compact" variant="outlined" readonly hide-details class="sidebar-price-field" />
+                <v-text-field :model-value="formatSum(totalSum)" density="compact" variant="outlined" readonly hide-details class="sidebar-price-field" />
               </div>
             </div>
           </div>
