@@ -1,5 +1,5 @@
 <!--
-Version: 1.1.0
+Version: 1.2.0
 Catalog settings component with country-pricelist mapping table.
 Frontend file that provides UI for managing country to price list ID mappings.
 Filename: Catalog.Settings.vue
@@ -10,6 +10,16 @@ Changes in v1.1.0:
 - Automatically saves changes to database with debouncing
 - Added loading states and error handling
 - Single empty row created if no mappings exist
+
+Changes in v1.2.0:
+- Fixed bug where settings were saved automatically on component mount
+- Replaced setTimeout with nextTick for proper synchronization with reactive updates
+- Added toast message for successful settings load
+- Improved save guard to prevent saving during initialization or while settings are loading
+- Added comparison with initial loaded mapping object to prevent saving when nothing changed
+- Store initial mapping object when loading from database
+- Compare current mapping object with initial before saving
+- Update initial mapping object after successful save
 -->
 <template>
   <v-card flat>
@@ -114,7 +124,7 @@ Changes in v1.1.0:
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, nextTick } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { watchDebounced } from '@vueuse/core'
 import { useUiStore } from '@/core/state/uistate'
@@ -177,6 +187,8 @@ const isLoadingPricelists = ref(false)
 const isLoadingSettings = ref(true)
 const isFirstLoad = ref(true)
 const nextId = ref(1)
+// Store initial loaded mapping object to compare against when saving
+const initialMappingObject = ref<Record<string, number> | null>(null)
 
 // Table headers
 const tableHeaders = computed<TableHeader[]>(() => [
@@ -271,6 +283,9 @@ const loadMappingsFromSettings = async (): Promise<void> => {
       // Parse the JSONB object value
       const mappingObject = mappingSetting.value as Record<string, number>
       
+      // Store initial mapping object for comparison
+      initialMappingObject.value = { ...mappingObject }
+      
       // Convert object to array format
       const loadedMappings: CountryPricelistMapping[] = Object.entries(mappingObject).map(
         ([country, pricelistId], index) => ({
@@ -289,6 +304,7 @@ const loadMappingsFromSettings = async (): Promise<void> => {
       console.log('Loaded mappings from database:', loadedMappings)
     } else {
       // No mappings found, create single empty row
+      initialMappingObject.value = {}
       mappings.value = [{
         id: nextId.value++,
         country: null,
@@ -300,6 +316,7 @@ const loadMappingsFromSettings = async (): Promise<void> => {
     console.error('Failed to load mappings from settings:', error)
     uiStore.showErrorSnackbar('ошибка загрузки маппинга')
     // On error, create single empty row
+    initialMappingObject.value = {}
     mappings.value = [{
       id: nextId.value++,
       country: null,
@@ -309,17 +326,30 @@ const loadMappingsFromSettings = async (): Promise<void> => {
 }
 
 /**
+ * Compare two mapping objects for equality
+ */
+const areMappingObjectsEqual = (obj1: Record<string, number>, obj2: Record<string, number>): boolean => {
+  const keys1 = Object.keys(obj1).sort()
+  const keys2 = Object.keys(obj2).sort()
+  
+  if (keys1.length !== keys2.length) {
+    return false
+  }
+  
+  return keys1.every(key => obj1[key] === obj2[key])
+}
+
+/**
  * Save mappings to database settings
  */
 const saveMappingsToSettings = (): void => {
-  if (isFirstLoad.value) {
-    console.log('Skipping save - first load in progress')
+  // Prevent saving during initial load or if settings are still loading
+  if (isFirstLoad.value || isLoadingSettings.value) {
+    console.log('Skipping save - first load in progress or settings loading')
     return
   }
   
   try {
-    console.log('Saving mappings to settings...')
-    
     // Convert array to object format, filtering out empty rows
     const mappingObject: Record<string, number> = {}
     
@@ -329,10 +359,20 @@ const saveMappingsToSettings = (): void => {
       }
     })
     
+    // Compare with initial loaded value - don't save if nothing changed
+    if (initialMappingObject.value !== null && areMappingObjectsEqual(mappingObject, initialMappingObject.value)) {
+      console.log('Skipping save - mappings unchanged from initial load')
+      return
+    }
+    
+    console.log('Saving mappings to settings...')
     console.log('Saving mapping object:', mappingObject)
     
     // Save to database via settings system
     updateSettingFromComponent(section_path, setting_name, mappingObject)
+    
+    // Update initial mapping object after successful save
+    initialMappingObject.value = { ...mappingObject }
   } catch (error) {
     console.error('Failed to save mappings to settings:', error)
     uiStore.showErrorSnackbar('ошибка сохранения маппинга')
@@ -388,11 +428,15 @@ onMounted(async () => {
       loadPricelistIds(),
       loadMappingsFromSettings()
     ])
+    
+    // Show success toast after successful load
+    uiStore.showSuccessSnackbar('настройки успешно загружены')
   } catch (error) {
     console.error('Error during component initialization:', error)
   } finally {
     // Enable watchers after initial load
-    await new Promise(resolve => setTimeout(resolve, 100))
+    // Use nextTick to ensure all reactive updates complete before enabling watchers
+    await nextTick()
     isFirstLoad.value = false
     isLoadingSettings.value = false
   }

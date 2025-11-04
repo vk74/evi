@@ -99,9 +99,9 @@ interface TableHeader {
 const headers = computed<TableHeader[]>(() => [
   { title: t('admin.pricing.priceLists.editor.headers.selection'), key: 'selection', width: '40px', sortable: false },
   { title: '№', key: 'rowNumber', width: '60px', sortable: false },
-  { title: t('admin.pricing.priceLists.editor.headers.itemCode'), key: 'itemCode', width: '200px', sortable: true },
+  { title: t('admin.pricing.priceLists.editor.headers.itemCode'), key: 'itemCode', width: '230px', sortable: true },
   { title: t('admin.pricing.priceLists.editor.headers.type'), key: 'itemType', width: '150px', sortable: true },
-  { title: t('admin.pricing.priceLists.editor.headers.itemName'), key: 'itemName', sortable: true },
+  { title: t('admin.pricing.priceLists.editor.headers.itemName'), key: 'itemName', width: 'calc(100% - 670px)', sortable: true },
   { title: t('admin.pricing.priceLists.editor.headers.price'), key: 'listPrice', width: '160px', sortable: true }
 ])
 
