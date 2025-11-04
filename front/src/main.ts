@@ -1,9 +1,13 @@
 /*
-  Version: v0.1.0
+  Version: v0.2.0
   Purpose: Frontend bootstrap file (main.ts). Creates the Vue application, initializes
   internationalization (i18n), state management (Pinia with persistence), registers
   UI framework (Vuetify), mounts the app, and initializes authenticated user state.
   This is a frontend file: main.ts
+  
+  Changes in v0.2.0:
+  - Moved initializeUserState() execution before app.mount() to ensure user country
+    is loaded before components mount, preventing race condition in ModuleCatalog
 */
 // src/main.ts
 import { createApp } from 'vue';
@@ -144,7 +148,11 @@ const initializeUserState = async (): Promise<void> => {
 };
 
 // Mount the application and initialize user state
-console.log('[startup] Mounting app to #app');
-app.mount('#app');
-console.log('[startup] App mounted; initializing user state');
-initializeUserState(); 
+// Initialize user state (including country) before mounting to ensure data is ready
+(async () => {
+  console.log('[startup] Initializing user state before mount');
+  await initializeUserState();
+  console.log('[startup] User state initialized; mounting app');
+  app.mount('#app');
+  console.log('[startup] App mounted');
+})(); 

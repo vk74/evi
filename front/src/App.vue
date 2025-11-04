@@ -1,6 +1,6 @@
 <!--
 App.vue 
-Version: 1.3.3
+Version: 1.3.4
 Root component of the application that defines the main interface structure.
 Contains:
 - App Bar with primary controls (language switching, account management)
@@ -14,6 +14,10 @@ Contains:
 - Dynamic navbar background color from application settings
 - Pricing admin submodule integration
 - Location menu item added (placeholder, no actions yet)
+
+Changes in v1.3.4:
+- Removed duplicate user country loading from isLoggedIn watcher
+- User country is now loaded in main.ts before app mount to prevent race conditions
 -->
 <script setup lang="ts">
 import { ref, computed, onMounted, watch, defineAsyncComponent, nextTick } from 'vue';
@@ -476,18 +480,8 @@ watch(
         }
       }
       
-      // Load user country if not already loaded
-      // Check if country is already loaded to avoid duplicate requests
-      if (!appStore.userCountry && !appStore.isLoadingCountry) {
-        console.log('[App] Loading user country after login...');
-        try {
-          await appStore.loadUserCountry();
-          console.log('[App] User country loaded after login');
-        } catch (error) {
-          console.warn('[App] Failed to load user country after login:', error);
-          // Don't block app functionality if country load fails
-        }
-      }
+      // User country is now loaded in main.ts before app mount
+      // No need to load it here to avoid race conditions
     } else {
       // User logged out - clear user country
       console.log('[App] User logged out, clearing user country...');
