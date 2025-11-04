@@ -1,7 +1,11 @@
 /**
  * types.catalog.ts - backend file
- * version: 1.1.0
+ * version: 1.1.1
  * Type definitions for catalog functionality on BACKEND.
+ * 
+ * Changes in v1.1.1:
+ * - Added published_at field to DbProductDetails interface
+ * - Added published_at field to CatalogProductDetailsDTO interface
  *
  * This module defines TypeScript types and interfaces for:
  * - Database models and operations
@@ -280,6 +284,7 @@ export interface DbProductDetails {
     created_by: string;
     updated_at: string | null;
     updated_by: string | null;
+    published_at: string | null;
 }
 
 /**
@@ -301,6 +306,7 @@ export interface CatalogProductDetailsDTO {
     created_by: string;
     updated_at: string | null;
     updated_by: string | null;
+    published_at: string | null;
 }
 
 export interface FetchProductsResponse extends ApiResponse {

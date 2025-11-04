@@ -1,6 +1,6 @@
 /**
  * queries.catalog.products.ts - backend file
- * version: 1.3.1
+ * version: 1.3.2
  * 
  * Purpose: SQL queries for catalog products (public consumption layer)
  * Logic: Provides parameterized queries to fetch active products for the catalog and product details
@@ -19,6 +19,9 @@
  * 
  * Changes in v1.3.1:
  * - Added sp.published_at to getActiveProductsBySection query for product publication date
+ * 
+ * Changes in v1.3.2:
+ * - Added published_at subquery to getProductDetails query to fetch latest publication date from section_products
  */
 
 export const queries = {
@@ -119,7 +122,10 @@ export const queries = {
       p.created_at,
       p.created_by,
       p.updated_at,
-      p.updated_by
+      p.updated_by,
+      (SELECT MAX(sp.published_at) 
+       FROM app.section_products sp 
+       WHERE sp.product_id = p.product_id) as published_at
     FROM app.products p
     LEFT JOIN app.product_translations pt_requested 
       ON p.product_id = pt_requested.product_id 

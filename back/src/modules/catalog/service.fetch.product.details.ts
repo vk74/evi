@@ -1,11 +1,14 @@
 /**
  * service.fetch.product.details.ts - backend file
- * version: 1.1.1
+ * version: 1.1.2
  * 
  * Purpose: Service that fetches single product details for catalog consumption
  * Logic: Queries DB for product details with is_published = true, transforms into DTO for frontend
  *        Uses fallback language from app settings to always show product details even without requested translation
  * File type: Backend TypeScript (service.fetch.product.details.ts)
+ * 
+ * Changes in v1.1.2:
+ * - Added published_at field mapping in transformRow function to include publication date from section_products
  */
 
 import { Request } from 'express';
@@ -35,6 +38,7 @@ function transformRow(row: DbProductDetails): CatalogProductDetailsDTO {
     created_by: row.created_by,
     updated_at: row.updated_at ?? null,
     updated_by: row.updated_by ?? null,
+    published_at: row.published_at ?? null,
   };
 }
 
