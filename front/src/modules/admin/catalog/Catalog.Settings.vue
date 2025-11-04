@@ -1,8 +1,15 @@
 <!--
-Version: 1.0.0
+Version: 1.1.0
 Catalog settings component with country-pricelist mapping table.
 Frontend file that provides UI for managing country to price list ID mappings.
 Filename: Catalog.Settings.vue
+
+Changes in v1.1.0:
+- Integrated with application settings system
+- Loads mappings from database on component mount
+- Automatically saves changes to database with debouncing
+- Added loading states and error handling
+- Single empty row created if no mappings exist
 -->
 <template>
   <v-card flat>
@@ -14,84 +21,92 @@ Filename: Catalog.Settings.vue
             {{ t('admin.catalog.settings.title') }}
           </h2>
           
-          <div class="settings-group">
-            <h3 class="text-subtitle-1 mb-2 font-weight-medium">
-              {{ t('admin.catalog.settings.mappingBlock.title') }}
-            </h3>
-            <div class="mapping-table-wrapper">
-            <v-data-table
-              :headers="tableHeaders"
-              :items="mappings"
-              :items-per-page="-1"
-              hide-default-footer
-              class="mapping-table"
-            >
-              <template #[`item.country`]="{ item }">
-              <v-select
-                v-model="item.country"
-                :items="availableCountryOptions(item.id)"
-                item-title="title"
-                item-value="value"
-                variant="plain"
-                density="compact"
-                :disabled="isLoadingCountries"
-                clearable
-                hide-details
-                class="country-select"
-              >
-                <template #append-inner>
-                  <PhCaretUpDown class="dropdown-icon" />
-                </template>
-              </v-select>
-              </template>
+          <!-- Loading indicator -->
+          <DataLoading
+            v-if="isLoadingSettings"
+            :loading="isLoadingSettings"
+            size="medium"
+          />
+          
+          <template v-else>
+            <div class="settings-group">
+              <h3 class="text-subtitle-1 mb-2 font-weight-medium">
+                {{ t('admin.catalog.settings.mappingBlock.title') }}
+              </h3>
+              <div class="mapping-table-wrapper">
+                <v-data-table
+                  :headers="tableHeaders"
+                  :items="mappings"
+                  :items-per-page="-1"
+                  hide-default-footer
+                  class="mapping-table"
+                >
+                  <template #[`item.country`]="{ item }">
+                    <v-select
+                      v-model="item.country"
+                      :items="availableCountryOptions(item.id)"
+                      item-title="title"
+                      item-value="value"
+                      variant="plain"
+                      density="compact"
+                      :disabled="isLoadingCountries"
+                      clearable
+                      hide-details
+                      class="country-select"
+                    >
+                      <template #append-inner>
+                        <PhCaretUpDown class="dropdown-icon" />
+                      </template>
+                    </v-select>
+                  </template>
 
-              <template #[`item.pricelistId`]="{ item }">
-              <v-select
-                v-model="item.pricelistId"
-                :items="pricelistOptions"
-                item-title="title"
-                item-value="value"
-                variant="plain"
-                density="compact"
-                :disabled="isLoadingPricelists"
-                clearable
-                hide-details
-                class="pricelist-select"
-              >
-                <template #append-inner>
-                  <PhCaretUpDown class="dropdown-icon" />
-                </template>
-              </v-select>
-              </template>
+                  <template #[`item.pricelistId`]="{ item }">
+                    <v-select
+                      v-model="item.pricelistId"
+                      :items="pricelistOptions"
+                      item-title="title"
+                      item-value="value"
+                      variant="plain"
+                      density="compact"
+                      :disabled="isLoadingPricelists"
+                      clearable
+                      hide-details
+                      class="pricelist-select"
+                    >
+                      <template #append-inner>
+                        <PhCaretUpDown class="dropdown-icon" />
+                      </template>
+                    </v-select>
+                  </template>
 
-              <template #[`item.actions`]="{ item }">
-              <v-btn
-                v-if="mappings.length > 1"
-                icon
-                size="small"
-                color="error"
-                variant="text"
-                @click="removeMapping(item.id)"
-              >
-                <PhTrash :size="18" />
-              </v-btn>
-              </template>
-            </v-data-table>
+                  <template #[`item.actions`]="{ item }">
+                    <v-btn
+                      icon
+                      size="small"
+                      color="error"
+                      variant="text"
+                      @click="removeMapping(item.id)"
+                    >
+                      <PhTrash :size="18" />
+                    </v-btn>
+                  </template>
+                </v-data-table>
+              </div>
+
+              <div class="table-actions mt-4">
+                <v-btn
+                  color="teal"
+                  variant="outlined"
+                  @click="addMapping"
+                >
+                  <template #prepend>
+                    <PhPlus />
+                  </template>
+                  {{ t('admin.catalog.settings.actions.addMapping') }}
+                </v-btn>
+              </div>
             </div>
-
-            <div class="table-actions mt-4">
-            <v-btn
-              color="teal"
-              variant="outlined"
-              @click="addMapping"
-            >
-              <template #prepend>
-                <PhPlus />
-              </template>
-              {{ t('admin.catalog.settings.actions.addMapping') }}
-            </v-btn>
-            </div>
-          </div>
+          </template>
         </div>
       </div>
     </div>
@@ -101,10 +116,25 @@ Filename: Catalog.Settings.vue
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { watchDebounced } from '@vueuse/core'
 import { useUiStore } from '@/core/state/uistate'
 import { getCountries } from '@/core/helpers/get.countries'
 import { getActivePriceListIds } from '@/core/helpers/get.active.pricelist.ids'
 import { PhPlus, PhTrash, PhCaretUpDown } from '@phosphor-icons/vue'
+import { useAppSettingsStore } from '@/modules/admin/settings/state.app.settings'
+import { fetchSettings } from '@/modules/admin/settings/service.fetch.settings'
+import { updateSettingFromComponent } from '@/modules/admin/settings/service.update.settings'
+import DataLoading from '@/core/ui/loaders/DataLoading.vue'
+
+/**
+ * Section path identifier for settings system
+ */
+const section_path = 'Admin.Catalog.CountryProductPricelistID'
+
+/**
+ * Setting name for country-pricelist mapping
+ */
+const setting_name = 'country.product.price.list.mapping'
 
 /**
  * Interface for country-pricelist mapping
@@ -136,6 +166,7 @@ interface TableHeader {
 // Initialize stores and i18n
 const { t } = useI18n()
 const uiStore = useUiStore()
+const appSettingsStore = useAppSettingsStore()
 
 // Reactive state
 const mappings = ref<CountryPricelistMapping[]>([])
@@ -143,11 +174,13 @@ const countries = ref<string[]>([])
 const pricelistIds = ref<number[]>([])
 const isLoadingCountries = ref(false)
 const isLoadingPricelists = ref(false)
+const isLoadingSettings = ref(true)
+const isFirstLoad = ref(true)
 const nextId = ref(1)
 
 // Table headers
 const tableHeaders = computed<TableHeader[]>(() => [
-  { title: t('admin.catalog.settings.table.headers.country'), key: 'country', width: '200px' },
+  { title: t('admin.catalog.settings.table.headers.country'), key: 'country', width: '240px' },
   { title: t('admin.catalog.settings.table.headers.pricelistId'), key: 'pricelistId', width: '160px' },
   { title: t('admin.catalog.settings.table.headers.actions'), key: 'actions', width: '60px', sortable: false }
 ])
@@ -222,6 +255,91 @@ const loadPricelistIds = async (): Promise<void> => {
 }
 
 /**
+ * Load mappings from database settings
+ */
+const loadMappingsFromSettings = async (): Promise<void> => {
+  try {
+    console.log('Loading mappings from settings...')
+    
+    // Fetch settings from backend
+    const settings = await fetchSettings(section_path)
+    
+    // Find the mapping setting
+    const mappingSetting = settings?.find(s => s.setting_name === setting_name)
+    
+    if (mappingSetting && mappingSetting.value) {
+      // Parse the JSONB object value
+      const mappingObject = mappingSetting.value as Record<string, number>
+      
+      // Convert object to array format
+      const loadedMappings: CountryPricelistMapping[] = Object.entries(mappingObject).map(
+        ([country, pricelistId], index) => ({
+          id: nextId.value++,
+          country,
+          pricelistId
+        })
+      )
+      
+      // Update nextId to avoid conflicts
+      if (loadedMappings.length > 0) {
+        nextId.value = Math.max(...loadedMappings.map(m => m.id)) + 1
+      }
+      
+      mappings.value = loadedMappings
+      console.log('Loaded mappings from database:', loadedMappings)
+    } else {
+      // No mappings found, create single empty row
+      mappings.value = [{
+        id: nextId.value++,
+        country: null,
+        pricelistId: null
+      }]
+      console.log('No mappings found, created empty row')
+    }
+  } catch (error) {
+    console.error('Failed to load mappings from settings:', error)
+    uiStore.showErrorSnackbar('ошибка загрузки маппинга')
+    // On error, create single empty row
+    mappings.value = [{
+      id: nextId.value++,
+      country: null,
+      pricelistId: null
+    }]
+  }
+}
+
+/**
+ * Save mappings to database settings
+ */
+const saveMappingsToSettings = (): void => {
+  if (isFirstLoad.value) {
+    console.log('Skipping save - first load in progress')
+    return
+  }
+  
+  try {
+    console.log('Saving mappings to settings...')
+    
+    // Convert array to object format, filtering out empty rows
+    const mappingObject: Record<string, number> = {}
+    
+    mappings.value.forEach(mapping => {
+      if (mapping.country !== null && mapping.pricelistId !== null) {
+        mappingObject[mapping.country] = mapping.pricelistId
+      }
+    })
+    
+    console.log('Saving mapping object:', mappingObject)
+    
+    // Save to database via settings system
+    updateSettingFromComponent(section_path, setting_name, mappingObject)
+  } catch (error) {
+    console.error('Failed to save mappings to settings:', error)
+    uiStore.showErrorSnackbar('ошибка сохранения маппинга')
+  }
+}
+
+/**
  * Add new mapping row
  */
 const addMapping = (): void => {
@@ -243,18 +361,40 @@ const removeMapping = (id: number): void => {
 }
 
 /**
+ * Watch for changes in mappings and save to database (debounced)
+ */
+watchDebounced(
+  mappings,
+  () => {
+    saveMappingsToSettings()
+  },
+  {
+    debounce: 1000,
+    deep: true
+  }
+)
+
+/**
  * Initialize component - load data and create initial empty rows
  */
 onMounted(async () => {
-  // Load data in parallel
-  await Promise.all([
-    loadCountries(),
-    loadPricelistIds()
-  ])
+  isLoadingSettings.value = true
+  isFirstLoad.value = true
   
-  // Initialize with 2-3 empty rows
-  for (let i = 0; i < 3; i++) {
-    addMapping()
+  try {
+    // Load data in parallel
+    await Promise.all([
+      loadCountries(),
+      loadPricelistIds(),
+      loadMappingsFromSettings()
+    ])
+  } catch (error) {
+    console.error('Error during component initialization:', error)
+  } finally {
+    // Enable watchers after initial load
+    await new Promise(resolve => setTimeout(resolve, 100))
+    isFirstLoad.value = false
+    isLoadingSettings.value = false
   }
 })
 </script>
@@ -271,20 +411,20 @@ onMounted(async () => {
   border-radius: 8px;
   padding: 16px;
   background-color: rgba(0, 0, 0, 0.02);
-  width: 440px;
-  max-width: 440px;
+  width: 480px;
+  max-width: 480px;
   display: inline-block;
 }
 
 /* Table wrapper - fixed width */
 .mapping-table-wrapper {
-  width: 400px;
-  max-width: 400px;
+  width: 440px;
+  max-width: 440px;
 }
 
 /* Table styles - matching Catalog.Sections.vue */
 .mapping-table {
-  width: 400px;
+  width: 440px;
 }
 
 .mapping-table :deep(.v-data-table-footer) {
