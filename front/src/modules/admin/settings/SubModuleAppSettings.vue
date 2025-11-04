@@ -484,8 +484,8 @@ watch(selectedSectionPath, (newSectionPath, oldSectionPath) => {
  }
  
  .menu-panel {
-   width: 255px; /* Increased from original 220px for better fit of multilevel items */
-   min-width: 255px;
+   width: 210px; /* Reduced from 255px by 30px */
+   min-width: 210px;
    border-right: 1px solid rgba(0, 0, 0, 0.12);
    background-color: white;
    flex-shrink: 0;
@@ -527,7 +527,7 @@ watch(selectedSectionPath, (newSectionPath, oldSectionPath) => {
    overflow-wrap: break-word !important;
    line-height: 1.3 !important;
    padding-right: 8px !important;
-   max-width: calc(255px - 50px - 16px) !important; /* Width minus icons and paddings */
+   max-width: calc(225px - 50px - 16px) !important; /* Width minus icons and paddings */
  }
  
  /* Apply indentation based on level */
@@ -632,7 +632,7 @@ watch(selectedSectionPath, (newSectionPath, oldSectionPath) => {
    }
  
    .section-item :deep(.v-list-item-title) {
-     max-width: calc(230px - 50px - 16px) !important;
+     max-width: calc(200px - 50px - 16px) !important;
    }
  }
  </style>

@@ -9,6 +9,7 @@
       "account": "account",
       "appPreferences": "preferences",
       "language": "language",
+      "location": "location",
       "profile": "profile",
       "login": "login",
       "register": "register"
@@ -17,6 +18,7 @@
       "login": "login for registered users",
       "register": "account registration",
       "language": "change language",
+      "location": "change location",
       "profile": "your account"
     },
     "systemMenu": {

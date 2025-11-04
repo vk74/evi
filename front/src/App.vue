@@ -1,5 +1,6 @@
 <!--
-App.vue
+App.vue 
+Version: 1.3.2
 Root component of the application that defines the main interface structure.
 Contains:
 - App Bar with primary controls (language switching, account management)
@@ -12,7 +13,7 @@ Contains:
 - Improved handling of ResizeObserver errors with a more robust implementation
 - Dynamic navbar background color from application settings
 - Pricing admin submodule integration
-Version: 1.3.1
+- Location menu item added (placeholder, no actions yet)
 -->
 <script setup lang="ts">
 import { ref, computed, onMounted, watch, defineAsyncComponent, nextTick } from 'vue';
@@ -71,6 +72,7 @@ const isLoginDialogVisible = ref<boolean>(false);
 const isAdminExpanded = ref<boolean>(false); // Track admin section expansion
 const isProfileMenuOpen = ref<boolean>(false); // Track profile menu state
 const isLanguageMenuOpen = ref<boolean>(false); // Track language menu state
+const isLocationMenuOpen = ref<boolean>(false); // Track location menu state
 const isAboutMenuOpen = ref<boolean>(false); // Track about menu state
 const menuLocked = ref<boolean>(false); // Prevent menu interactions during animations
 
@@ -190,6 +192,7 @@ const safeCloseMenus = (): void => {
   menuLocked.value = true;
   isProfileMenuOpen.value = false;
   isLanguageMenuOpen.value = false;
+  isLocationMenuOpen.value = false;
   isAboutMenuOpen.value = false;
   
   // Unlock after animation completes
@@ -295,6 +298,9 @@ const toggleProfileMenu = (): void => {
   if (isLanguageMenuOpen.value) {
     isLanguageMenuOpen.value = false;
   }
+  if (isLocationMenuOpen.value) {
+    isLocationMenuOpen.value = false;
+  }
   if (isAboutMenuOpen.value) {
     isAboutMenuOpen.value = false;
   }
@@ -312,6 +318,9 @@ const toggleLanguageMenu = (): void => {
   if (isProfileMenuOpen.value) {
     isProfileMenuOpen.value = false;
   }
+  if (isLocationMenuOpen.value) {
+    isLocationMenuOpen.value = false;
+  }
   if (isAboutMenuOpen.value) {
     isAboutMenuOpen.value = false;
   }
@@ -319,6 +328,26 @@ const toggleLanguageMenu = (): void => {
   // Wait for animation to complete before opening language menu
   setTimeout(() => {
     isLanguageMenuOpen.value = !isLanguageMenuOpen.value;
+  }, 100);
+};
+
+const toggleLocationMenu = (): void => {
+  if (menuLocked.value) return;
+  
+  // Close other menus if open
+  if (isProfileMenuOpen.value) {
+    isProfileMenuOpen.value = false;
+  }
+  if (isLanguageMenuOpen.value) {
+    isLanguageMenuOpen.value = false;
+  }
+  if (isAboutMenuOpen.value) {
+    isAboutMenuOpen.value = false;
+  }
+  
+  // Wait for animation to complete before opening location menu
+  setTimeout(() => {
+    isLocationMenuOpen.value = !isLocationMenuOpen.value;
   }, 100);
 };
 
@@ -331,6 +360,9 @@ const toggleAboutMenu = (): void => {
   }
   if (isLanguageMenuOpen.value) {
     isLanguageMenuOpen.value = false;
+  }
+  if (isLocationMenuOpen.value) {
+    isLocationMenuOpen.value = false;
   }
   
   // Wait for animation to complete before opening about menu
@@ -574,7 +606,7 @@ onMounted(async () => {
     <!-- Floating menu button - always visible regardless of drawer state -->
     <div 
       class="floating-menu-btn"
-      :style="{ width: drawer && appStore.drawerMode === 'opened' ? '256px' : '64px' }"
+      :style="{ width: drawer && appStore.drawerMode === 'opened' ? '226px' : '64px' }"
     >
       <v-btn
         icon
@@ -1019,6 +1051,26 @@ onMounted(async () => {
             </v-menu>
           </div>
           
+          <!-- Location selection - using click trigger -->
+          <div class="menu-wrapper">
+            <v-list-item
+              v-tooltip="{
+                text: $t('navigation.tooltips.location'),
+                location: 'right',
+                disabled: appStore.drawerMode !== 'closed'
+              }"
+              :title="$t('navigation.drawer.location')"
+              value="location"
+              class="bottom-list-item"
+              :active="isLocationMenuOpen"
+              @click="toggleLocationMenu"
+            >
+              <template #prepend>
+                <component :is="icons.PhMapPin" size="26" :color="iconColor" class="mr-2" />
+              </template>
+            </v-list-item>
+          </div>
+          
           <!-- About menu - using click trigger -->
           <div class="menu-wrapper">
             <v-list-item
@@ -1130,6 +1182,15 @@ onMounted(async () => {
 /* Simple navigation drawer styles */
 .custom-drawer {
   background-color: v-bind(navbarColor) !important;
+  width: 226px !important; /* Reduced from 256px by 30px */
+}
+
+.v-navigation-drawer {
+  width: 226px !important; /* Reduced from default 256px by 30px */
+}
+
+.v-navigation-drawer--rail {
+  width: 64px !important;
 }
 
 /* Active menu item styles */
@@ -1151,11 +1212,19 @@ onMounted(async () => {
 
 .bottom-list-item {
   min-height: 40px !important;
+  margin: 0 !important;
+  padding: 0 !important;
 }
 
 /* Menu positioning and stability */
 .menu-wrapper {
   position: relative;
+  margin: 0 !important;
+}
+
+/* Ensure consistent spacing between language, location, and about menu items */
+.menu-wrapper + .menu-wrapper {
+  margin-top: 0 !important;
 }
 
 .hidden-activator {
