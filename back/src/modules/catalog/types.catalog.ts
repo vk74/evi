@@ -243,6 +243,7 @@ export interface DbProduct {
     product_overview: Record<string, any> | null;
     created_at: string;
     created_by: string;
+    published_at: string | null;
 }
 
 /**
@@ -256,6 +257,7 @@ export interface CatalogProductDTO {
     status: ProductStatus;
     created_at: string;
     created_by: string;
+    published_at: string | null;
 }
 
 /**

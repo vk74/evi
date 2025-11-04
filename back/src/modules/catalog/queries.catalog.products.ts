@@ -1,6 +1,6 @@
 /**
  * queries.catalog.products.ts - backend file
- * version: 1.3.0
+ * version: 1.3.1
  * 
  * Purpose: SQL queries for catalog products (public consumption layer)
  * Logic: Provides parameterized queries to fetch active products for the catalog and product details
@@ -16,6 +16,9 @@
  * Changes in v1.3.0:
  * - Changed getProductOptionsByProductId filter from is_published = true to status_code = 'active'
  * - Product options now filtered by active status instead of published flag
+ * 
+ * Changes in v1.3.1:
+ * - Added sp.published_at to getActiveProductsBySection query for product publication date
  */
 
 export const queries = {
@@ -76,7 +79,8 @@ export const queries = {
       COALESCE(pt_requested.key_features, pt_fallback.key_features) as key_features,
       COALESCE(pt_requested.product_overview, pt_fallback.product_overview) as product_overview,
       p.created_at,
-      p.created_by
+      p.created_by,
+      sp.published_at
     FROM app.section_products sp
     JOIN app.products p ON sp.product_id = p.product_id
     LEFT JOIN app.product_translations pt_requested 

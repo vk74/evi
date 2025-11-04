@@ -1,8 +1,20 @@
 <!--
-version: 1.2.0
+version: 1.3.0
 Frontend file for catalog product card component.
 Displays product information in a card format with light blue theme and camera icon.
 File: CatalogProductCard.vue
+
+Changes in v1.3.0:
+- Removed status display (products in catalog are already published)
+- Replaced "Created: date" with "Published: date" using published_at field
+- Added two-column layout: photo placeholder on left, product info on right
+- Added price placeholder between header and description
+- Photo placeholder with 3:4 aspect ratio and camera icon
+
+Changes in v1.4.0:
+- Moved "Published: date" to left column below photo placeholder
+- Changed price text to black color and increased font size by 2 points
+- Removed blue camera icon from header
 -->
 <script setup lang="ts">
 import { ref, computed } from 'vue';
@@ -71,38 +83,48 @@ const cardStyle = computed(() => {
     hover
     @click="emit('select', props.product.id)"
   >
-    <v-card-title class="d-flex align-center">
-      <PhCamera
-        size="24"
-        weight="regular"
-        color="rgb(59, 130, 246)"
-        class="me-3"
-      />
-      <div class="flex-grow-1">
-        <div class="text-h6">
-          {{ product.name }}
+    <div class="product-card-content">
+      <!-- Left column: Photo placeholder -->
+      <div class="photo-placeholder">
+        <div class="photo-box">
+          <PhCamera
+            size="32"
+            weight="regular"
+            color="#009688"
+          />
         </div>
-        <div class="text-caption text-grey">
-          {{ product.product_code || 'Без кода' }}
-        </div>
-      </div>
-    </v-card-title>
-
-    <v-card-text>
-      <p class="text-body-2 mb-3">
-        {{ product.description || 'Описание отсутствует' }}
-      </p>
-
-      <!-- Product-specific info -->
-      <div class="mt-3">
-        <div class="text-caption text-grey">
-          Статус: {{ product.status === 'published' ? 'Опубликован' : 'Черновик' }}
-        </div>
-        <div class="text-caption text-grey">
-          Создан: {{ new Date(product.created_at).toLocaleDateString('ru-RU') }}
+        <!-- Published date below photo -->
+        <div class="published-date">
+          опубликовано: {{ product.published_at ? new Date(product.published_at).toLocaleDateString('ru-RU') : '—' }}
         </div>
       </div>
-    </v-card-text>
+
+      <!-- Right column: Product info -->
+      <div class="product-info-column">
+        <v-card-title class="d-flex align-center pa-0 pb-2">
+          <div class="flex-grow-1">
+            <div class="text-h6">
+              {{ product.name }}
+            </div>
+            <div class="text-caption text-grey">
+              {{ product.product_code || 'Без кода' }}
+            </div>
+          </div>
+        </v-card-title>
+
+        <v-card-text class="pa-0">
+          <!-- Price placeholder -->
+          <div class="price-placeholder mb-3">
+            <span class="price-text">—</span>
+          </div>
+
+          <!-- Description -->
+          <p class="text-body-2 mb-3">
+            {{ product.description || 'Описание отсутствует' }}
+          </p>
+        </v-card-text>
+      </div>
+    </div>
   </v-card>
 </template>
 
@@ -124,12 +146,84 @@ const cardStyle = computed(() => {
   background-color: var(--card-bg-hover, #DAE9F3) !important;
 }
 
-.product-card .v-card-title {
-  padding-bottom: 8px;
+/* Two-column layout */
+.product-card-content {
+  display: flex;
+  gap: 16px;
+  padding: 16px;
 }
 
-.product-card .v-card-text {
+/* Photo placeholder - left column */
+.photo-placeholder {
+  flex: 0 0 40%;
+  max-width: 50%;
+  min-width: 33%;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.photo-box {
+  background: #fff;
+  border: 2px dashed rgba(0, 150, 136, 0.4);
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #009688;
+  aspect-ratio: 3 / 4;
+  width: 100%;
+}
+
+/* Published date below photo */
+.published-date {
+  font-size: 12px;
+  color: rgba(0, 0, 0, 0.6);
+  text-align: center;
+  white-space: nowrap;
+}
+
+/* Product info - right column */
+.product-info-column {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.product-info-column .v-card-title {
+  padding-bottom: 0;
+}
+
+.product-info-column .v-card-text {
   flex-grow: 1;
   padding-top: 0;
+}
+
+/* Price placeholder */
+.price-placeholder {
+  display: flex;
+  align-items: center;
+}
+
+.price-text {
+  font-size: 16px;
+  color: rgba(0, 0, 0, 0.87);
+}
+
+/* Responsive: stack columns on mobile */
+@media (max-width: 600px) {
+  .product-card-content {
+    flex-direction: column;
+  }
+
+  .photo-placeholder {
+    flex: 0 0 auto;
+    max-width: 100%;
+    width: 100%;
+  }
+
+  .photo-box {
+    aspect-ratio: 4 / 3;
+  }
 }
 </style> 

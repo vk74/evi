@@ -1,6 +1,6 @@
 /**
  * service.fetch.active.products.ts - backend file
- * version: 1.2.2
+ * version: 1.2.3
  * 
  * Purpose: Service that fetches active products for catalog consumption
  * Logic: Queries DB for products with is_published = true
@@ -11,6 +11,9 @@
  * - Removed showOptionsOnly setting retrieval
  * - Removed showOptionsOnly parameter from query calls
  * - All published products are now shown in catalog (no type distinction)
+ * 
+ * Changes in v1.2.3:
+ * - Added published_at field mapping in transformRow function
  */
 
 import { Request } from 'express';
@@ -32,6 +35,7 @@ function transformRow(row: DbProduct): CatalogProductDTO {
     status: row.is_published ? ProductStatus.PUBLISHED : ProductStatus.DRAFT,
     created_at: row.created_at,
     created_by: row.created_by,
+    published_at: row.published_at ?? null,
   };
 }
 

@@ -217,7 +217,13 @@ async function loadActiveServices() {
 
 async function loadActiveProducts() {
   try {
-    const fetched = await fetchActiveProducts({ sectionId: selectedSectionId.value || undefined });
+    // Only load products if a section is selected
+    if (!selectedSectionId.value) {
+      products.value = [];
+      return;
+    }
+    
+    const fetched = await fetchActiveProducts({ sectionId: selectedSectionId.value });
     products.value = fetched;
     
     // Update card colors from metadata

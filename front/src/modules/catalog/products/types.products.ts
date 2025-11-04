@@ -1,8 +1,11 @@
 /*
-version: 1.2.0
+version: 1.2.3
 Frontend file for product types in catalog module.
 TypeScript interfaces for catalog products based on database structure.
 File: types.products.ts
+
+Changes in v1.2.3:
+- Added published_at field to CatalogProduct interface
 */
 
 export type ProductStatus = 'published' | 'draft' | 'archived'
@@ -20,6 +23,7 @@ export interface CatalogProduct {
   status: ProductStatus;
   created_at: string;
   created_by: string;
+  published_at: string | null;
 }
 
 export interface FetchActiveProductsResponse {
