@@ -76,5 +76,21 @@
         "reload": "Reload Page"
       }
     }
+  },
+  "locationSelection": {
+    "title": "my location",
+    "label": "my location",
+    "selectCountry": "select country",
+    "save": "Save",
+    "close": "Close",
+    "success": {
+      "saved": "country saved successfully"
+    },
+    "error": {
+      "loadingCountries": "failed to load countries list",
+      "loadingUserCountry": "failed to load user country",
+      "saveFailed": "failed to save country",
+      "unexpectedError": "an unexpected error occurred"
+    }
   }
 }

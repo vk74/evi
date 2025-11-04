@@ -330,6 +330,80 @@ export const ACCOUNT_SERVICE_EVENTS = {
     version: '1.0.0'
   },
   
+  // Get user country service events
+  GET_USER_COUNTRY_MISSING_USERNAME: {
+    eventName: 'account.service.get.user.country.missing_username',
+    source: 'account get user country service',
+    eventType: 'security' as const,
+    severity: 'warning' as const,
+    eventMessage: 'Get user country failed: Username is missing',
+    payload: null, // { requestInfo }
+    version: '1.0.0'
+  },
+  
+  GET_USER_COUNTRY_RETRIEVING: {
+    eventName: 'account.service.get.user.country.retrieving',
+    source: 'account get user country service',
+    eventType: 'security' as const,
+    severity: 'debug' as const,
+    eventMessage: 'Retrieving country data for user',
+    payload: null, // { username }
+    version: '1.0.0'
+  },
+  
+  GET_USER_COUNTRY_FOUND: {
+    eventName: 'account.service.get.user.country.found',
+    source: 'account get user country service',
+    eventType: 'security' as const,
+    severity: 'debug' as const,
+    eventMessage: 'Country data found for user',
+    payload: null, // { username, country }
+    version: '1.0.0'
+  },
+  
+  GET_USER_COUNTRY_NOT_FOUND: {
+    eventName: 'account.service.get.user.country.not_found',
+    source: 'account get user country service',
+    eventType: 'security' as const,
+    severity: 'warning' as const,
+    eventMessage: 'User not found for country retrieval',
+    payload: null, // { username }
+    version: '1.0.0'
+  },
+  
+  GET_USER_COUNTRY_ERROR: {
+    eventName: 'account.service.get.user.country.error',
+    source: 'account get user country service',
+    eventType: 'security' as const,
+    severity: 'error' as const,
+    eventMessage: 'Error in getUserCountry',
+    payload: null, // { username, error }
+    errorData: null, // Error details
+    version: '1.0.0'
+  },
+  
+  // Update user country service events
+  UPDATE_USER_COUNTRY_SUCCESS: {
+    eventName: 'account.service.update.user.country.success',
+    source: 'account update user country service',
+    eventType: 'security' as const,
+    severity: 'info' as const,
+    eventMessage: 'Country successfully updated for user',
+    payload: null, // { username, country }
+    version: '1.0.0'
+  },
+  
+  UPDATE_USER_COUNTRY_ERROR: {
+    eventName: 'account.service.update.user.country.error',
+    source: 'account update user country service',
+    eventType: 'security' as const,
+    severity: 'error' as const,
+    eventMessage: 'Error updating user country',
+    payload: null, // { username, country, error }
+    errorData: null, // Error details
+    version: '1.0.0'
+  },
+  
   // Register user service events
   REGISTER_USER_ERROR: {
     eventName: 'account.service.register.user.error',

@@ -64,6 +64,8 @@ import fetchPriceItemTypesController from './pricing/controller.admin.fetch.pric
 import registerUserController from '../account/controller.register.user';
 import fetchUserGroupsController from './org/userEditor/controller.fetch.user.groups';
 import removeUserFromGroupsController from './org/userEditor/controller.remove.user.from.groups';
+import updateUserCountryController from '../account/controller.update.user.country';
+import getUserCountryController from '../account/controller.get.user.country';
 
 const router: Router = express.Router();
 
@@ -123,6 +125,8 @@ router.post('/api/admin/products/count-product-option-pairs', checkRequestSecuri
 
 // Routes for Account Management
 router.post('/api/admin/users/register', checkRequestSecurityHard, registerUserController);
+router.get('/api/admin/users/country', checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, getUserCountryController);
+router.post('/api/admin/users/update-country', checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, updateUserCountryController);
 
 // Routes for Pricing Admin - Currencies
 router.get('/api/admin/pricing/fetch-currencies', checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, fetchCurrenciesController);

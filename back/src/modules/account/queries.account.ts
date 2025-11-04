@@ -203,6 +203,38 @@ export const userProfileQueries = {
       'mobile_phone', // $5
       'username'      // $6
     ]
+  },
+
+  /**
+   * Get user country by username
+   * Retrieves user's country location using username
+   */
+  getUserCountry: {
+    text: `
+      SELECT country
+      FROM app.users
+      WHERE username = $1
+    `,
+    values: ['username']
+  },
+
+  /**
+   * Update user country by username
+   * Updates user's country location using username
+   */
+  updateUserCountry: {
+    text: `
+      UPDATE app.users
+      SET country = $1
+      WHERE username = $2
+      RETURNING user_id, 
+                username,
+                country
+    `,
+    values: [
+      'country',   // $1
+      'username'  // $2
+    ]
   }
 };
 

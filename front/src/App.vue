@@ -57,6 +57,7 @@ import LoginDialog from './core/auth/ModuleLogin.vue';
 import ModuleNewUserSelfRegistration from './modules/account/ModuleNewUserSelfRegistration.vue';
 import AppSnackbar from './core/ui/snackbars/AppSnackbar.vue';
 import CriticalSettingsErrorModal from './core/ui/modals/CriticalSettingsErrorModal.vue';
+import LocationSelectionModal from './core/ui/modals/location-selection/LocationSelectionModal.vue';
 
 // Store and i18n initialization
 const userStore = useUserAuthStore();
@@ -73,6 +74,7 @@ const isAdminExpanded = ref<boolean>(false); // Track admin section expansion
 const isProfileMenuOpen = ref<boolean>(false); // Track profile menu state
 const isLanguageMenuOpen = ref<boolean>(false); // Track language menu state
 const isLocationMenuOpen = ref<boolean>(false); // Track location menu state
+const isLocationModalOpen = ref<boolean>(false); // Track location modal state
 const isAboutMenuOpen = ref<boolean>(false); // Track about menu state
 const menuLocked = ref<boolean>(false); // Prevent menu interactions during animations
 
@@ -290,6 +292,11 @@ const toggleDrawerMode = (): void => {
   }, 50);
 };
 
+// Close location modal
+const closeLocationModal = (): void => {
+  isLocationModalOpen.value = false;
+};
+
 // Controlled menu toggle functions
 const toggleProfileMenu = (): void => {
   if (menuLocked.value) return;
@@ -345,9 +352,9 @@ const toggleLocationMenu = (): void => {
     isAboutMenuOpen.value = false;
   }
   
-  // Wait for animation to complete before opening location menu
+  // Open location modal instead of menu
   setTimeout(() => {
-    isLocationMenuOpen.value = !isLocationMenuOpen.value;
+    isLocationModalOpen.value = true;
   }, 100);
 };
 
@@ -1170,6 +1177,11 @@ onMounted(async () => {
       :closable="uiStore.snackbar.closable"
       :position="uiStore.snackbar.position"
       @close="uiStore.hideSnackbar"
+    />
+
+    <!-- Location Selection Modal -->
+    <LocationSelectionModal
+      v-model="isLocationModalOpen"
     />
   </v-app>
 </template>
