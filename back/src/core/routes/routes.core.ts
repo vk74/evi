@@ -1,5 +1,5 @@
 /**
- * version: 1.0.03
+ * version: 1.0.04
  * Core routes for global backend services.
  * 
  * Functionality:
@@ -7,6 +7,9 @@
  * - Includes authentication middleware (validateJWT) and user status check middleware
  * - Routes requests to appropriate controllers for user management, group operations, password changes, and settings management
  * File: routes.core.ts
+ * 
+ * Changes in v1.0.04:
+ * - Added countries list endpoint /api/core/countries/list
  */
 
 import express, { Router } from 'express';
@@ -16,6 +19,7 @@ import checkRequestSecurityHard from '../guards/guard.check.request.security.har
 
 // Импорт контроллеров
 import getUsernameByUuidController from '../controllers/controller.get.username.by.uuid';
+import getAppCountriesListController from '../controllers/controller.get.app.countries.list';
 import searchUsers from '../services/item-selector/controller.search.users';
 import searchGroups from '../services/item-selector/controller.search.groups';
 import addUsersToGroup from '../services/item-selector/controller.add.users.to.group';
@@ -31,6 +35,7 @@ const router: Router = express.Router();
 
 // utility services
 router.get('/api/core/users/fetch-username-by-uuid/:userId', validateJWT, checkIsUserStatusActive, getUsernameByUuidController);
+router.get('/api/core/countries/list', validateJWT, checkIsUserStatusActive, getAppCountriesListController);
 
 // item selector universal component services
 router.get('/api/core/item-selector/search-users', validateJWT, checkIsUserStatusActive, searchUsers); 
