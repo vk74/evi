@@ -5,14 +5,6 @@
  * Frontend types for pricing admin functionality.
  * File: types.pricing.admin.ts (frontend)
  * 
- * Changes in v1.3.3:
- * - Added country: string to CreatePriceListRequest (required)
- * - Added country?: string to PriceListData
- * - Added country?: string to PriceListFull
- * 
- * Changes in v1.3.4:
- * - Added country: string to PriceListSummary
- * - Added country?: string to UpdatePriceListRequest
  */
 
 // Pricing section interface for menu navigation
@@ -35,7 +27,6 @@ export interface PriceListData {
   name: string
   description: string | null
   currency_code: string
-  country?: string
   isActive: boolean
   owner: string | null
   items?: PriceListItem[] // Optional items array
@@ -76,7 +67,6 @@ export interface PriceListSummary {
   name: string
   description: string | null
   currency_code: string
-  country: string
   is_active: boolean
   owner_id: string | null
   owner_username: string | null
@@ -90,7 +80,6 @@ export interface PriceListFull {
   name: string
   description: string | null
   currency_code: string
-  country: string
   is_active: boolean
   owner_id: string | null
   created_by: string | null
@@ -140,7 +129,6 @@ export interface CreatePriceListRequest {
   name: string
   description?: string
   currency_code: string
-  country: string
   is_active?: boolean
   owner?: string
 }
@@ -160,7 +148,6 @@ export interface UpdatePriceListRequest {
   name?: string
   description?: string
   currency_code?: string
-  country?: string
   is_active?: boolean
   owner?: string
 }

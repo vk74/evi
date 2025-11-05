@@ -5,12 +5,9 @@
      * Includes integrity check queries and queries for event payload data.
      * File: queries.admin.pricing.ts (backend)
      * 
+     * 
      * Changes in v1.3.5:
      * - Added existsActiveCurrency query to check currency existence and active status
-     * 
-     * Changes in v1.3.4:
-     * - Added country field to fetchAllPriceLists query
-     * - Added country field to fetchPriceListsWithSearch query
      */
 
 export const queries = {
@@ -95,7 +92,6 @@ export const queries = {
             pli.name,
             pli.description,
             pli.currency_code,
-            pli.country,
             pli.is_active,
             pli.owner_id,
             u.username as owner_username,
@@ -117,7 +113,6 @@ export const queries = {
             pli.name,
             pli.description,
             pli.currency_code,
-            pli.country,
             pli.is_active,
             pli.owner_id,
             u.username as owner_username,
@@ -162,7 +157,6 @@ export const queries = {
             name,
             description,
             currency_code,
-            country,
             is_active,
             owner_id,
             created_by,
@@ -214,7 +208,7 @@ export const queries = {
 
     /**
      * Insert new price list
-     * Parameters: name, description, currency_code, country, is_active, 
+     * Parameters: name, description, currency_code, is_active, 
      *             owner_id, created_by
      */
     insertPriceList: `
@@ -222,18 +216,17 @@ export const queries = {
             name,
             description,
             currency_code,
-            country,
             is_active,
             owner_id,
             created_by,
             updated_by
-        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $7)
+        ) VALUES ($1, $2, $3, $4, $5, $6, $6)
         RETURNING price_list_id
     `,
 
     /**
      * Update price list
-     * Parameters: price_list_id, name, description, currency_code, country, is_active, 
+     * Parameters: price_list_id, name, description, currency_code, is_active, 
      *             owner_id, updated_by
      */
     updatePriceList: `
@@ -241,10 +234,9 @@ export const queries = {
             name = COALESCE($2, name),
             description = COALESCE($3, description),
             currency_code = COALESCE($4, currency_code),
-            country = COALESCE($5, country),
-            is_active = COALESCE($6, is_active),
-            owner_id = COALESCE($7, owner_id),
-            updated_by = $8,
+            is_active = COALESCE($5, is_active),
+            owner_id = COALESCE($6, owner_id),
+            updated_by = $7,
             updated_at = NOW()
         WHERE price_list_id = $1
         RETURNING price_list_id

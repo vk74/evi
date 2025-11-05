@@ -7,7 +7,6 @@
  * - Validates price list data
  * - Checks currency existence and active status
  * - Checks name uniqueness
- * - Validates country (required, must be from app.app_countries ENUM)
  * - Validates owner (optional)
  * - Creates price list in database
  * - Sets owner_id from created_by if not specified
@@ -16,14 +15,6 @@
  * 
  * Changes in v1.2.2:
  * - Removed event publishing for inactive currency attempts
- * 
- * Changes in v1.2.1:
- * - Updated currency validation to check active status (uses existsActiveCurrency query)
- * - Added event for inactive currency attempts (pricelists.create.currency.not_active)
- * 
- * Changes in v1.2.0:
- * - Added country validation (required, not 'select country', must be in app.app_countries ENUM)
- * - Added country to INSERT parameters
  */
 
 import { Request } from 'express';
@@ -40,7 +31,6 @@ import { getUuidByUsername } from '@/core/helpers/get.uuid.by.username';
 import { validateField } from '@/core/validation/service.validation';
 import { createAndPublishEvent } from '@/core/eventBus/fabric.events';
 import { EVENTS_ADMIN_PRICING } from './events.admin.pricing';
-import { getAppCountriesList } from '@/core/helpers/get.app.countries.list';
 
 // Type assertion for pool
 const pool = pgPool as Pool;
@@ -107,31 +97,6 @@ async function validateCreatePriceListData(
             }
         } catch (error) {
             errors.push('Error checking currency existence');
-        }
-    }
-
-    // Validate country (required, must be from app.app_countries ENUM)
-    if (!data.country || data.country.trim() === '') {
-        errors.push('Country is required');
-    } else if (data.country.trim() === 'select country') {
-        errors.push('Country must be selected');
-    } else {
-        try {
-            const availableCountries = await getAppCountriesList();
-            if (!availableCountries.includes(data.country.trim())) {
-                errors.push('Invalid country value');
-                
-                createAndPublishEvent({
-                    eventName: EVENTS_ADMIN_PRICING['pricelists.create.country.invalid'].eventName,
-                    req: req,
-                    payload: { 
-                        country: data.country,
-                        availableCountries
-                    }
-                });
-            }
-        } catch (error) {
-            errors.push('Error checking country validity');
         }
     }
 
@@ -222,7 +187,6 @@ export async function createPriceList(
             data.name.trim(),
             data.description?.trim() || null,
             data.currency_code.trim(),
-            data.country.trim(),
             data.is_active !== undefined ? data.is_active : false,
             ownerUuid,
             requestorUuid

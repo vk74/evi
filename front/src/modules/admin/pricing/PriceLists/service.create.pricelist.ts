@@ -7,11 +7,7 @@
  * 
  * File: service.create.pricelist.ts
  * 
- * Changes in v1.3.0:
- * - Removed hardcoded countries list validation (now validated on backend using dynamic list)
- * 
  * Changes in v1.2.0:
- * - Added country validation (required, not 'select country')
  */
 
 import { api } from '@/core/api/service.axios'
@@ -43,22 +39,6 @@ export const serviceCreatePriceList = {
                 return {
                     success: false,
                     message: 'Currency code is required and must be 3 characters'
-                }
-            }
-
-            // Validate country (required, not 'select country')
-            // Full validation including country existence check is done on backend
-            if (!data.country || data.country.trim() === '') {
-                return {
-                    success: false,
-                    message: 'Country is required'
-                }
-            }
-
-            if (data.country.trim() === 'select country') {
-                return {
-                    success: false,
-                    message: 'Country must be selected'
                 }
             }
 

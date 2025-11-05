@@ -12,8 +12,6 @@
  * 
  * File: service.admin.fetch.pricelist.ts (frontend)
  * 
- * Changes in v1.1.0:
- * - Added country field to mappedPriceList
  */
 import { api } from '@/core/api/service.axios';
 import type { 
@@ -86,7 +84,6 @@ export const fetchPriceListService = {
         name: priceListData.name,
         description: priceListData.description,
         currency_code: priceListData.currency_code,
-        country: priceListData.country,
         is_active: priceListData.is_active,
         owner_id: priceListData.owner_id,
         created_by: priceListData.created_by,

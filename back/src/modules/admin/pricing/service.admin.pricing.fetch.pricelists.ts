@@ -13,9 +13,6 @@
  * 
  * File: service.admin.pricing.fetch.pricelists.ts (backend)
  * 
- * Changes in v1.3.0:
- * - Added country field to SELECT statement in buildFetchQuery
- * - Added country to valid sort fields
  */
 
 import { Request } from 'express';
@@ -84,7 +81,6 @@ function buildFetchQuery(params: FetchAllPriceListsParams): { query: string; que
             pli.name,
             pli.description,
             pli.currency_code,
-            pli.country,
             pli.is_active,
             pli.owner_id,
             u.username as owner_username,
@@ -130,7 +126,6 @@ function buildFetchQuery(params: FetchAllPriceListsParams): { query: string; que
     const validSortFields = [
         'price_list_id',
         'name',
-        'country',
         'currency_code',
         'is_active',
         'created_at',

@@ -7,8 +7,6 @@
  * 
  * File: service.update.pricelist.ts
  * 
- * Changes in v1.2.0:
- * - Added country validation (if provided, must not be empty and not equal to 'select country')
  */
 
 import { api } from '@/core/api/service.axios'
@@ -47,13 +45,6 @@ export const serviceUpdatePriceList = {
                 return {
                     success: false,
                     message: 'Currency code must be 3 characters'
-                }
-            }
-
-            if (data.country !== undefined && data.country !== null && data.country.trim() === 'select country') {
-                return {
-                    success: false,
-                    message: 'Country must be selected'
                 }
             }
 
