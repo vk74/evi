@@ -204,6 +204,7 @@ CREATE TABLE IF NOT EXISTS app.currencies (
   code           CHAR(3) PRIMARY KEY,
   name           VARCHAR(50) NOT NULL,
   symbol         VARCHAR(3) NOT NULL,
+  rounding_precision SMALLINT NOT NULL DEFAULT 2,
   active         BOOLEAN NOT NULL DEFAULT TRUE,
   created_at     TIMESTAMPTZ NOT NULL DEFAULT now(),
   updated_at     TIMESTAMPTZ
@@ -214,17 +215,18 @@ COMMENT ON COLUMN app.currencies.code IS 'ISO 4217 currency code (3 letters)';
 COMMENT ON COLUMN app.currencies.symbol IS 'Currency symbol for UI display (max 3 characters, required)';
 
 -- Seed base currencies (idempotent)
-INSERT INTO app.currencies (code, name, symbol, active)
+INSERT INTO app.currencies (code, name, symbol, rounding_precision, active)
 VALUES
-  ('RUB', 'Российский рубль',      '₽', true),
-  ('BYN', 'Белорусский рубль',     'Br', true),
-  ('KZT', 'Казахстанский тенге',   '₸', true),
-  ('CNY', 'Китайский юань',        '¥', true),
-  ('USD', 'Доллар США',            '$', true),
-  ('EUR', 'Евро',                  '€', true)
+  ('RUB', 'Российский рубль',      '₽', 2, true),
+  ('BYN', 'Белорусский рубль',     'Br', 2, true),
+  ('KZT', 'Казахстанский тенге',   '₸', 2, true),
+  ('CNY', 'Китайский юань',        '¥', 2, true),
+  ('USD', 'Доллар США',            '$', 2, true),
+  ('EUR', 'Евро',                  '€', 2, true)
 ON CONFLICT (code) DO UPDATE SET
   name = EXCLUDED.name,
   symbol = EXCLUDED.symbol,
+  rounding_precision = EXCLUDED.rounding_precision,
   active = EXCLUDED.active,
   updated_at = now();
 

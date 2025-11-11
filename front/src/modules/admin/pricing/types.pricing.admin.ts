@@ -1,10 +1,12 @@
 /**
  * @file types.pricing.admin.ts
- * Version: 1.3.4
+ * Version: 1.3.5
  * Type definitions for pricing administration module.
  * Frontend types for pricing admin functionality.
  * File: types.pricing.admin.ts (frontend)
  * 
+ * Changes in v1.3.5:
+ * - Added roundingPrecision to Currency type for UI display and persistence
  */
 
 // Pricing section interface for menu navigation
@@ -55,6 +57,7 @@ export interface Currency {
   name: string
   symbol: string | null
   active: boolean
+  roundingPrecision: number
 }
 
 // ============================================

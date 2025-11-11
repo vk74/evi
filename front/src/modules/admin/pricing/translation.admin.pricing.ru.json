@@ -195,6 +195,7 @@
             "code": "код",
             "name": "название",
             "symbol": "символ",
+            "roundingPrecision": "точность округления",
             "minorUnits": "дробные единицы",
             "roundingMode": "режим округления",
             "status": "статус"

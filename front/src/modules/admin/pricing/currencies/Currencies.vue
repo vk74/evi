@@ -217,7 +217,8 @@ const addCurrency = () => {
     code: generateUniqueCurrencyCode(),
     name: '',
     symbol: '',
-    active: false
+    active: false,
+    roundingPrecision: 2
   }
   // Temporary local addition for UX; not persisted yet
   store.addTempCurrency(newCurrency)
@@ -379,6 +380,9 @@ function handleBeforeUnload(e: BeforeUnloadEvent) {
                   {{ t('admin.pricing.currencies.table.headers.name') }}
                 </th>
                 <th style="width: 120px;">{{ t('admin.pricing.currencies.table.headers.symbol') }}</th>
+                <th style="width: 160px;">
+                  {{ t('admin.pricing.currencies.table.headers.roundingPrecision') }}
+                </th>
                 <th style="width: 140px;">
                   {{ t('admin.pricing.currencies.table.headers.status') }}
                 </th>
@@ -429,6 +433,15 @@ function handleBeforeUnload(e: BeforeUnloadEvent) {
                     :error-messages="validateSymbol(currency.symbol || '')"
                     @update:model-value="store.markCurrencyChanged(currency.code, 'symbol', currency.symbol)"
                     maxlength="3"
+                  />
+                </td>
+                <td>
+                  <v-text-field
+                    :model-value="currency.roundingPrecision"
+                    density="compact"
+                    variant="plain"
+                    readonly
+                    type="number"
                   />
                 </td>
                 <td>

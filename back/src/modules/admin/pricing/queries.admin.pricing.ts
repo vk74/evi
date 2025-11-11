@@ -1,10 +1,13 @@
     /**
-     * version: 1.3.5
+     * version: 1.3.6
      * SQL queries for pricing administration module.
      * Contains parameterized queries related to pricing (currencies and price lists).
      * Includes integrity check queries and queries for event payload data.
      * File: queries.admin.pricing.ts (backend)
      * 
+     * 
+     * Changes in v1.3.6:
+     * - Included rounding_precision column across currency-related queries
      * 
      * Changes in v1.3.5:
      * - Added existsActiveCurrency query to check currency existence and active status
@@ -23,7 +26,8 @@ export const queries = {
             code,
             name,
             symbol,
-            active
+            active,
+            rounding_precision
         FROM app.currencies
         ORDER BY code ASC
     `,
@@ -36,7 +40,8 @@ export const queries = {
             code,
             name,
             symbol,
-            active
+            active,
+            rounding_precision
         FROM app.currencies
         WHERE active = true
         ORDER BY code ASC
@@ -44,8 +49,8 @@ export const queries = {
 
     /** Insert currency */
     insertCurrency: `
-        INSERT INTO app.currencies (code, name, symbol, active)
-        VALUES ($1, $2, $3, $4)
+        INSERT INTO app.currencies (code, name, symbol, active, rounding_precision)
+        VALUES ($1, $2, $3, $4, $5)
     `,
 
     /** Update currency (partial) */
@@ -54,6 +59,7 @@ export const queries = {
             name = COALESCE($2, name),
             symbol = COALESCE($3, symbol),
             active = COALESCE($4, active),
+            rounding_precision = COALESCE($5, rounding_precision),
             updated_at = NOW()
         WHERE code = $1
     `,
@@ -387,7 +393,7 @@ export const queries = {
      * Parameters: code
      */
     fetchCurrencyByCode: `
-        SELECT code, name, symbol, active
+        SELECT code, name, symbol, active, rounding_precision
         FROM app.currencies
         WHERE code = $1
     `,

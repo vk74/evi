@@ -1,10 +1,14 @@
 /**
- * version: 1.1.3
+ * version: 1.1.4
  * Service to update currencies for pricing admin module (backend).
  * Executes created/updated/deleted diffs in a single transaction.
  * Includes integrity check: prevents deletion of currencies used in price lists.
  * Publishes events with informative payload for audit purposes.
  * File: service.admin.pricing.update.currencies.ts (backend)
+ * 
+ * Changes in v1.1.4:
+ * - Added support for rounding_precision field across create/update flows
+ * - Validates rounding precision range and stores it in events payload
  */
 
 import { Pool } from 'pg'
@@ -26,6 +30,13 @@ function validateSymbol(symbol?: string | null): string {
   const trimmed = symbol.trim()
   if (trimmed.length > 3) throw new Error('validation: symbol must not exceed 3 characters')
   return trimmed
+}
+
+function validateRoundingPrecision(precision?: number | null): number {
+  const value = precision === undefined || precision === null ? 2 : Number(precision)
+  if (!Number.isFinite(value) || !Number.isInteger(value)) throw new Error('validation: rounding precision must be an integer')
+  if (value < 0 || value > 4) throw new Error('validation: rounding precision must be between 0 and 4')
+  return value
 }
 
 export async function updateCurrenciesService(pool: Pool, req: Request, payload: {
@@ -54,7 +65,8 @@ export async function updateCurrenciesService(pool: Pool, req: Request, payload:
         code: row.code,
         name: row.name,
         symbol: row.symbol ?? null,
-        active: Boolean(row.active)
+        active: Boolean(row.active),
+        rounding_precision: Number(row.rounding_precision)
       }
     }
 
@@ -62,18 +74,21 @@ export async function updateCurrenciesService(pool: Pool, req: Request, payload:
       const code = validateCode(c.code)
       if (c.name == null || String(c.name).trim() === '') throw new Error('validation: name is required')
       const symbol = validateSymbol(c.symbol)
+      const roundingPrecision = validateRoundingPrecision(c.rounding_precision)
       await client.query(queries.insertCurrency, [
         code,
         c.name.trim(),
         symbol,
-        Boolean(c.active)
+        Boolean(c.active),
+        roundingPrecision
       ])
       created++
       createdCurrencies.push({
         code,
         name: c.name.trim(),
         symbol,
-        active: Boolean(c.active)
+        active: Boolean(c.active),
+        rounding_precision: roundingPrecision
       })
     }
 
@@ -99,6 +114,13 @@ export async function updateCurrenciesService(pool: Pool, req: Request, payload:
         oldValues.active = oldCurrency.active
         newValues.active = Boolean(u.active)
       }
+      let roundingPrecisionValue: number | null = null
+      if (u.rounding_precision !== undefined) {
+        oldValues.rounding_precision = oldCurrency.rounding_precision
+        const newPrecision = validateRoundingPrecision(u.rounding_precision)
+        newValues.rounding_precision = newPrecision
+        roundingPrecisionValue = newPrecision
+      }
 
       // Validate symbol if provided
       let symbolValue = null
@@ -109,7 +131,8 @@ export async function updateCurrenciesService(pool: Pool, req: Request, payload:
         idCode,
         u.name ? u.name.trim() : null,
         symbolValue,
-        (u.active === undefined ? null : u.active)
+        (u.active === undefined ? null : u.active),
+        roundingPrecisionValue
       ])
       
       // Fetch updated currency to get full data

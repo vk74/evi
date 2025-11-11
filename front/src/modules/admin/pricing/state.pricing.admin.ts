@@ -1,9 +1,13 @@
 /**
  * @file state.pricing.admin.ts
- * Version: 1.2.5
+ * Version: 1.2.6
  * Pinia store for managing pricing admin module state.
  * Frontend file that handles active section management for pricing administration.
  * File: state.pricing.admin.ts (frontend)
+ * 
+ * Changes in v1.2.6:
+ * - Introduced roundingPrecision default for newly created currencies
+ * - Ensured currency change tracking retains roundingPrecision field
  */
 import { defineStore } from 'pinia'
 import type { PricingAdminState, PricingSectionId, PriceListEditorMode, PriceListData, Currency } from './types.pricing.admin'
@@ -103,8 +107,12 @@ export const usePricingAdminStore = defineStore('pricingAdmin', {
     }
     ,
     addTempCurrency(currency: Currency): void {
-      this.currencies.push(currency)
-      this.currenciesCreated.push(currency)
+      const preparedCurrency: Currency = {
+        ...currency,
+        roundingPrecision: currency.roundingPrecision ?? 2
+      }
+      this.currencies.push(preparedCurrency)
+      this.currenciesCreated.push(preparedCurrency)
     }
     ,
     markCurrencyDeleted(code: string): void {

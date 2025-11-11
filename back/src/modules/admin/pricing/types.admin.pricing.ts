@@ -1,9 +1,11 @@
 /**
- * version: 1.4.4
+ * version: 1.4.5
  * Backend types for pricing administration module.
  * Defines DTOs for currencies, price lists and other pricing-related entities.
  * File: types.admin.pricing.ts (backend)
  * 
+ * Changes in v1.4.5:
+ * - Added rounding_precision field to CurrencyDto and related payloads
  */
 
 // ============================================
@@ -16,6 +18,7 @@ export interface CurrencyDto {
     name: string
     symbol: string | null
     active: boolean
+    rounding_precision: number
 }
 
 // Update payload types

@@ -1,9 +1,12 @@
 /**
- * version: 1.1.4
+ * version: 1.1.5
  * Service to fetch currencies for pricing admin module (backend).
  * Connects to DB, executes query, maps fields (events temporarily disabled).
  * Supports optional filtering of active currencies via query parameter.
  * File: service.admin.pricing.fetch.currencies.ts (backend)
+ * 
+ * Changes in v1.1.5:
+ * - Added rounding_precision field mapping from database to DTO
  */
 
 import { Pool } from 'pg'
@@ -28,7 +31,8 @@ export async function fetchCurrenciesService(pool: Pool, req: Request): Promise<
             code: row.code,
             name: row.name,
             symbol: row.symbol ?? null,
-            active: Boolean(row.active)
+            active: Boolean(row.active),
+            rounding_precision: Number(row.rounding_precision)
         }))
 
         return currencies

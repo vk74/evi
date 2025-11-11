@@ -195,6 +195,7 @@
             "code": "code",
             "name": "name",
             "symbol": "symbol",
+            "roundingPrecision": "rounding precision",
             "minorUnits": "minor units",
             "roundingMode": "rounding mode",
             "status": "status"
