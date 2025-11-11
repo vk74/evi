@@ -83,7 +83,7 @@
       "mainOptions": "основные опции",
       "noLongDescription": "полное описание недоступно",
       "products": "продукты",
-      "unitPrice": "цена за единицу",
+      "unitPrice": "цена за ед.",
       "optionsTotal": "опции",
       "options": {
         "counter": "найдено опций: {count}",
@@ -94,7 +94,7 @@
           "select": "выбор",
           "minUnits": "мин. единиц",
           "unitsCount": "кол-во единиц",
-          "unitPrice": "цена за единицу",
+          "unitPrice": "цена за ед.",
           "sum": "сумма"
         }
       }

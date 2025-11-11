@@ -1,10 +1,13 @@
 /**
  * service.catalog.fetch.pricelist.items.by.codes.ts - backend file
- * version: 1.0.0
+ * version: 1.1.0
  * 
  * Purpose: Service that fetches price list items by codes for catalog
- * Logic: Validates pricelist is active, fetches items by codes, returns only public data
+ * Logic: Validates pricelist is active, fetches items by codes, returns only public data with currency metadata
  * File type: Backend TypeScript (service.catalog.fetch.pricelist.items.by.codes.ts)
+ * 
+ * Changes in v1.1.0:
+ * - Added currency symbol and rounding precision to response payload
  */
 
 import { Request } from 'express';
@@ -28,6 +31,8 @@ export interface FetchPricelistItemsByCodesResponse {
   message?: string;
   data?: {
     currency_code: string;
+    currency_symbol: string | null;
+    rounding_precision: number | null;
     items: PricelistItemPublicDto[];
   };
 }
@@ -89,6 +94,10 @@ export async function fetchPricelistItemsByCodes(
       success: true,
       data: {
         currency_code: pricelistInfo.currency_code,
+        currency_symbol: pricelistInfo.currency_symbol ?? null,
+        rounding_precision: typeof pricelistInfo.rounding_precision === 'number'
+          ? pricelistInfo.rounding_precision
+          : null,
         items
       }
     };

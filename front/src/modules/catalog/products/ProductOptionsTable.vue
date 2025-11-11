@@ -1,5 +1,5 @@
 <!--
-version: 1.5.0
+version: 1.6.0
 Frontend file ProductOptionsTable.vue.
 Purpose: Displays product option rows with search, counter, and pagination; mirrors PairEditor table UX.
 Filename: ProductOptionsTable.vue
@@ -40,6 +40,10 @@ Changes in v1.5.0:
 - Updated clearSelections to reset all options: required to minimum, optional to 0
 - Changed units count display to plain number with caret icon (no border)
 - Added options total sum calculation and emit events on changes
+
+Changes in v1.6.0:
+- Added rounding precision-aware formatting for unit and sum price columns
+- Reused shared helper for consistent locale-aware price rendering
 -->
 <script setup lang="ts">
 import { ref, computed, watch, onMounted } from 'vue'
@@ -51,6 +55,7 @@ import { PhCaretUpDown } from '@phosphor-icons/vue'
 import { fetchPricesByCodes } from '../service.catalog.fetch.prices.by.codes'
 import { getSettingValueHelper } from '@/core/helpers/get.setting.value'
 import { getCachedPrice, cachePrice, isPriceCacheValid } from '../state.catalog'
+import { formatPriceWithPrecision } from '@/core/helpers/helper.format.price'
 
 // Use shared UI type
 import type { CatalogProductOption, ProductPriceInfo } from './types.products'
@@ -69,7 +74,7 @@ const emit = defineEmits<{
   'options-sum-changed': [sum: number]
 }>()
 
-const { t } = useI18n()
+const { t, locale } = useI18n()
 
 // Stores
 const appStore = useAppStore()
@@ -184,6 +189,30 @@ const optionsTotalSum = computed(() => {
   return total
 })
 
+function formatOptionPrice(productCode: string | null | undefined): string | null {
+  if (!productCode) return null
+  const priceInfo = optionPrices.value.get(productCode)
+  if (!priceInfo) return null
+  return formatPriceWithPrecision({
+    price: priceInfo.price,
+    currencySymbol: priceInfo.currencySymbol,
+    roundingPrecision: priceInfo.roundingPrecision,
+    locale: locale.value
+  })
+}
+
+function formatOptionSum(productCode: string | null | undefined, units: number): string | null {
+  if (!productCode || units <= 0) return null
+  const priceInfo = optionPrices.value.get(productCode)
+  if (!priceInfo) return null
+  return formatPriceWithPrecision({
+    price: priceInfo.price * units,
+    currencySymbol: priceInfo.currencySymbol,
+    roundingPrecision: priceInfo.roundingPrecision,
+    locale: locale.value
+  })
+}
+
 /** Units change handler for both required and optional options */
 function setUnitsCount(productId: string, v: number | null) {
   unitsById.value[productId] = v ?? 0
@@ -267,7 +296,7 @@ async function loadOptionPrices() {
       
       // Cache loaded prices
       priceMap.forEach((priceInfo, code) => {
-        cachePrice(code, priceInfo.price, priceInfo.currencySymbol)
+        cachePrice(code, priceInfo.price, priceInfo.currencySymbol, priceInfo.roundingPrecision)
       })
       
       // Merge cached and loaded prices
@@ -393,17 +422,18 @@ defineExpose({ clearSelections })
       </template>
 
       <template #[`item.unit_price`]="{ item }">
-        <span v-if="item.product_code && optionPrices.has(item.product_code)">
-          {{ optionPrices.get(item.product_code)?.price }} {{ optionPrices.get(item.product_code)?.currencySymbol }}
-        </span>
-        <span v-else>-</span>
+        <span>{{ formatOptionPrice(item.product_code) ?? '-' }}</span>
       </template>
 
       <template #[`item.sum`]="{ item }">
-        <span v-if="item.product_code && optionPrices.has(item.product_code) && unitsById[item.product_id] !== undefined && unitsById[item.product_id] > 0">
-          {{ (optionPrices.get(item.product_code)!.price * (unitsById[item.product_id] || 0)).toLocaleString() }} {{ optionPrices.get(item.product_code)?.currencySymbol }}
+        <span>
+          {{
+            formatOptionSum(
+              item.product_code,
+              unitsById[item.product_id] || 0
+            ) ?? '-'
+          }}
         </span>
-        <span v-else>-</span>
       </template>
     </v-data-table>
 

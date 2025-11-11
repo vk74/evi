@@ -1,7 +1,10 @@
 /**
- * queries.catalog.ts
+ * version: 1.1.0
  * SQL queries for catalog functionality.
- * Includes queries for fetching catalog sections data.
+ * Backend file queries.catalog.ts describes reusable SQL fragments for catalog module.
+ *
+ * Changes in v1.1.0:
+ * - Added currency symbol and rounding precision join for price list info query
  */
 
 // Query type definitions
@@ -54,12 +57,16 @@ export const queries: CatalogQueries = {
     // Parameters: price_list_id
     fetchPriceListInfo: `
         SELECT 
-            price_list_id,
-            name,
-            currency_code,
-            is_active
-        FROM app.price_lists_info
-        WHERE price_list_id = $1
+            pli.price_list_id,
+            pli.name,
+            pli.currency_code,
+            pli.is_active,
+            cur.symbol AS currency_symbol,
+            cur.rounding_precision
+        FROM app.price_lists_info AS pli
+        LEFT JOIN app.currencies AS cur
+            ON cur.code = pli.currency_code
+        WHERE pli.price_list_id = $1
     `,
 
     // Fetch price list items by price list ID and item codes

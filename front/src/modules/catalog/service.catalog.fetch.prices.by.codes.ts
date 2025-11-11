@@ -1,13 +1,16 @@
 /**
- * Version: 1.0.0
+ * Version: 1.1.0
  * Service for fetching product prices by product codes from pricelist.
  * Frontend file that calls catalog batch API to get prices for multiple products at once.
  * Returns Map of product_code to price info.
  * Filename: service.catalog.fetch.prices.by.codes.ts (frontend)
+ *
+ * Changes in v1.1.0:
+ * - Added rounding precision and currency symbol passthrough from backend response
+ * - Removed redundant currency symbol helper lookup
  */
 
 import { api } from '@/core/api/service.axios';
-import { getCurrencySymbolByCode } from '@/core/helpers/get.currency.symbol.by.code';
 import type { ProductPriceInfo } from './products/types.products';
 
 interface FetchPricelistItemsByCodesRequest {
@@ -24,6 +27,8 @@ interface FetchPricelistItemsByCodesResponse {
   message?: string;
   data?: {
     currency_code: string;
+    currency_symbol: string | null;
+    rounding_precision: number | null;
     items: PricelistItemPublicDto[];
   };
 }
@@ -75,20 +80,16 @@ export async function fetchPricesByCodes(
       return priceMap;
     }
 
-    const { currency_code, items } = response.data.data;
-
-    // Get currency symbol
-    const currencySymbol = await getCurrencySymbolByCode(currency_code);
-
-    if (!currencySymbol) {
-      console.warn(`[fetchPricesByCodes] Currency symbol not found for code: ${currency_code}`);
-    }
+    const { currency_symbol, rounding_precision, items } = response.data.data;
+    const currencySymbol = currency_symbol ?? '';
+    const roundingPrecision = typeof rounding_precision === 'number' ? rounding_precision : null;
 
     // Build price map
     items.forEach(item => {
       priceMap.set(item.item_code, {
         price: item.list_price,
-        currencySymbol: currencySymbol || ''
+        currencySymbol,
+        roundingPrecision
       });
     });
 

@@ -1,5 +1,5 @@
 /*
-version: 1.2.4
+version: 1.3.0
 Frontend file for product types in catalog module.
 TypeScript interfaces for catalog products based on database structure.
 File: types.products.ts
@@ -9,6 +9,9 @@ Changes in v1.2.3:
 
 Changes in v1.2.4:
 - Added published_at field to CatalogProductDetails interface
+
+Changes in v1.3.0:
+- Extended ProductPriceInfo with roundingPrecision metadata
 */
 
 export type ProductStatus = 'published' | 'draft' | 'archived'
@@ -99,4 +102,5 @@ export interface FetchProductOptionsResponse {
 export interface ProductPriceInfo {
   price: number;
   currencySymbol: string;
+  roundingPrecision: number | null;
 }

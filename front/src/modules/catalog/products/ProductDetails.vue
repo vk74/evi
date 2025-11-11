@@ -1,5 +1,5 @@
 <!--
-version: 1.8.0
+version: 1.10.0
 Frontend file for product details view component.
 Displays extended info and placeholders for product options.
 File: ProductDetails.vue
@@ -39,6 +39,10 @@ Changes in v1.9.0:
 - Added total sum calculation (products + options) in sidebar
 - VAT field shows static "-" value
 - All sums use currency symbol from main product price
+
+Changes in v1.10.0:
+- Added rounding precision-aware price formatting with shared helper
+- Unit, total, and options sums now respect currency rounding precision and locale
 -->
 <script setup lang="ts">
 import { ref, onMounted, watch, computed } from 'vue'
@@ -54,6 +58,7 @@ import { PhCaretUpDown, PhSquare, PhMicrosoftExcelLogo } from '@phosphor-icons/v
 import { fetchPricesByCodes } from '../service.catalog.fetch.prices.by.codes'
 import { getSettingValueHelper } from '@/core/helpers/get.setting.value'
 import { getCachedPrice, cachePrice, isPriceCacheValid } from '../state.catalog'
+import { formatPriceWithPrecision } from '@/core/helpers/helper.format.price'
 
 // Props (MVP): accept productId from parent context/navigation state
 interface Props { 
@@ -137,10 +142,28 @@ const currencySymbol = computed(() => {
   return productPrice.value?.currencySymbol || ''
 })
 
+const formattedUnitPrice = computed(() => {
+  if (!productPrice.value) return '—'
+  return (
+    formatPriceWithPrecision({
+      price: productPrice.value.price,
+      currencySymbol: productPrice.value.currencySymbol,
+      roundingPrecision: productPrice.value.roundingPrecision,
+      locale: locale.value
+    }) ?? '—'
+  )
+})
+
 // Format number with currency symbol
 function formatSum(value: number): string {
-  if (value === 0) return `0 ${currencySymbol.value}`
-  return `${value.toLocaleString()} ${currencySymbol.value}`
+  if (!productPrice.value) return '—'
+  const formatted = formatPriceWithPrecision({
+    price: value,
+    currencySymbol: productPrice.value.currencySymbol,
+    roundingPrecision: productPrice.value.roundingPrecision,
+    locale: locale.value
+  })
+  return formatted ?? '—'
 }
 
 // Handler for options sum changed event
@@ -231,7 +254,12 @@ async function loadProductPrice() {
       // Cache loaded price
       const priceInfo = priceMap.get(productCode)
       if (priceInfo) {
-        cachePrice(productCode, priceInfo.price, priceInfo.currencySymbol)
+        cachePrice(
+          productCode,
+          priceInfo.price,
+          priceInfo.currencySymbol,
+          priceInfo.roundingPrecision
+        )
         productPrice.value = priceInfo
       } else {
         productPrice.value = null
@@ -337,7 +365,7 @@ watch(() => appStore.getUserCountry, () => {
                 <div class="d-flex align-center" style="gap: 8px;">
                   <span class="me-2">{{ t('catalog.productDetails.unitPrice') }}</span>
                   <v-text-field
-                    :model-value="productPrice ? `${productPrice.price} ${productPrice.currencySymbol}` : '—'"
+                    :model-value="formattedUnitPrice"
                     density="compact"
                     variant="outlined"
                     readonly

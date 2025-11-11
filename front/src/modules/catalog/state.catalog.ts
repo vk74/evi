@@ -1,3 +1,13 @@
+/**
+ * version: 1.1.0
+ * Frontend state management utilities for catalog module.
+ * Provides shared reactive state, caching helpers, and view controls for ModuleCatalog.
+ * File: state.catalog.ts (frontend)
+ *
+ * Changes in v1.1.0:
+ * - Added rounding precision support to cached product prices
+ */
+
 import { ref, computed, type Component } from 'vue';
 import { PhCaretDown, PhCaretRight } from '@phosphor-icons/vue';
 import type { ProductPriceInfo } from './products/types.products';
@@ -125,7 +135,8 @@ export function getCachedPrice(productCode: string): ProductPriceInfo | null {
   
   return {
     price: cached.price,
-    currencySymbol: cached.currencySymbol
+    currencySymbol: cached.currencySymbol,
+    roundingPrecision: cached.roundingPrecision
   };
 }
 
@@ -135,7 +146,12 @@ export function getCachedPrice(productCode: string): ProductPriceInfo | null {
  * @param price - Price value
  * @param currencySymbol - Currency symbol
  */
-export function cachePrice(productCode: string, price: number, currencySymbol: string): void {
+export function cachePrice(
+  productCode: string,
+  price: number,
+  currencySymbol: string,
+  roundingPrecision: number | null
+): void {
   if (!productCode) {
     return;
   }
@@ -143,6 +159,7 @@ export function cachePrice(productCode: string, price: number, currencySymbol: s
   priceCache.value.set(productCode, {
     price,
     currencySymbol,
+    roundingPrecision,
     timestamp: Date.now()
   });
 }

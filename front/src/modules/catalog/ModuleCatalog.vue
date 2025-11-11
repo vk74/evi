@@ -1,5 +1,5 @@
 <!--
-version: 1.6.0
+version: 1.7.0
 Frontend file for catalog module.
 Catalog interface with sections, filters, and service/product cards.
 File: ModuleCatalog.vue
@@ -31,6 +31,10 @@ Changes in v1.6.0:
 - Added price display in product cards
 - Added caching for product prices (TTL 5 minutes)
 - Added watch for user country changes to reload prices
+
+Changes in v1.7.0:
+- Passed rounding precision metadata to product cards
+- Cache now stores rounding precision for correct price formatting
 -->
 <script setup lang="ts">
 import { ref, computed, onMounted, watch } from 'vue';
@@ -335,7 +339,7 @@ async function loadProductPrices() {
       
       // Cache loaded prices
       priceMap.forEach((priceInfo, code) => {
-        cachePrice(code, priceInfo.price, priceInfo.currencySymbol);
+        cachePrice(code, priceInfo.price, priceInfo.currencySymbol, priceInfo.roundingPrecision);
       });
       
       // Merge cached and loaded prices
@@ -660,6 +664,7 @@ onMounted(async () => {
                   :card-color="cardColors.product"
                   :price="product.product_code ? productPrices.get(product.product_code)?.price ?? null : null"
                   :currency-symbol="product.product_code ? productPrices.get(product.product_code)?.currencySymbol ?? null : null"
+                  :rounding-precision="product.product_code ? productPrices.get(product.product_code)?.roundingPrecision ?? null : null"
                   @select="onSelectProduct"
                 />
               </v-col>

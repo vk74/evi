@@ -1,5 +1,5 @@
 <!--
-version: 1.6.0
+version: 1.7.0
 Frontend file for catalog product card component.
 Displays product information in a card format with light blue theme and camera icon.
 File: CatalogProductCard.vue
@@ -25,11 +25,17 @@ Changes in v1.6.0:
 - Added price and currencySymbol props
 - Display actual price with currency symbol instead of placeholder dash
 - Format: "price currencySymbol" or "—" if price is not available
+
+Changes in v1.7.0:
+- Added roundingPrecision prop
+- Format price with rounding precision via shared helper and locale
 -->
 <script setup lang="ts">
 import { ref, computed } from 'vue';
+import { useI18n } from 'vue-i18n';
 import type { CatalogProduct } from './types.products';
 import { PhCamera } from '@phosphor-icons/vue'
+import { formatPriceWithPrecision } from '@/core/helpers/helper.format.price';
 
 // ==================== PROPS ====================
 interface Props {
@@ -37,14 +43,18 @@ interface Props {
   cardColor?: string;
   price?: number | null;
   currencySymbol?: string | null;
+  roundingPrecision?: number | null;
 }
 
 const props = withDefaults(defineProps<Props>(), {
   cardColor: '#E8F4F8',
   price: null,
-  currencySymbol: null
+  currencySymbol: null,
+  roundingPrecision: null
 });
 const emit = defineEmits<{ (e: 'select', productId: string): void }>()
+
+const { locale } = useI18n();
 
 // ==================== PHOSPHOR ICONS SUPPORT ====================
 const phosphorIcons = ref<Record<string, any>>({})
@@ -87,6 +97,16 @@ const cardStyle = computed(() => {
     '--card-bg-hover': hoverColor
   };
 })
+
+const formattedPrice = computed(() => {
+  const formatted = formatPriceWithPrecision({
+    price: props.price,
+    currencySymbol: props.currencySymbol,
+    roundingPrecision: props.roundingPrecision,
+    locale: locale.value
+  });
+  return formatted;
+});
 </script>
 
 <template>
@@ -130,7 +150,7 @@ const cardStyle = computed(() => {
           <!-- Price placeholder -->
           <div class="price-placeholder mb-3">
             <span class="price-text">
-              {{ props.price !== null && props.price !== undefined && props.currencySymbol ? `${props.price} ${props.currencySymbol}` : '—' }}
+              {{ formattedPrice ?? '—' }}
             </span>
           </div>
 
