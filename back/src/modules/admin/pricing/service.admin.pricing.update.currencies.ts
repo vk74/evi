@@ -1,11 +1,13 @@
 /**
- * version: 1.1.4
+ * version: 1.1.5
  * Service to update currencies for pricing admin module (backend).
  * Executes created/updated/deleted diffs in a single transaction.
  * Includes integrity check: prevents deletion of currencies used in price lists.
  * Publishes events with informative payload for audit purposes.
  * File: service.admin.pricing.update.currencies.ts (backend)
  * 
+ * Changes in v1.1.5:
+ * - Expanded rounding precision validation range to 0..8 to match DB constraint
  * Changes in v1.1.4:
  * - Added support for rounding_precision field across create/update flows
  * - Validates rounding precision range and stores it in events payload
@@ -35,7 +37,7 @@ function validateSymbol(symbol?: string | null): string {
 function validateRoundingPrecision(precision?: number | null): number {
   const value = precision === undefined || precision === null ? 2 : Number(precision)
   if (!Number.isFinite(value) || !Number.isInteger(value)) throw new Error('validation: rounding precision must be an integer')
-  if (value < 0 || value > 4) throw new Error('validation: rounding precision must be between 0 and 4')
+  if (value < 0 || value > 8) throw new Error('validation: rounding precision must be between 0 and 8')
   return value
 }
 

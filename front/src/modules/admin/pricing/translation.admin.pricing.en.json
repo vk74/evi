@@ -224,7 +224,9 @@
           "nameMaxLength": "name must not exceed 50 characters",
           "symbolRequired": "symbol is required",
           "symbolMaxLength": "symbol must not exceed 3 characters",
-          "minorUnitsRange": "minor units must be between 0 and 4"
+          "minorUnitsRange": "minor units must be between 0 and 4",
+          "roundingPrecisionRequired": "rounding precision is required",
+          "roundingPrecisionRange": "rounding precision must be an integer between 0 and 8"
         },
         "messages": {
           "loadSuccess": "currencies loaded successfully",

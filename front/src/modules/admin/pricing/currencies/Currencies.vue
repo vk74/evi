@@ -1,9 +1,12 @@
 <!--
-Version: 1.3.1
+Version: 1.3.2
 Currencies list management section.
 Frontend file for managing currencies in the pricing admin module. Loads live data from backend.
 Includes error handling for deletion of currencies used in price lists.
 Filename: Currencies.vue
+
+Changes in v1.3.2:
+- Made rounding precision editable with validation (0..8) and improved alignment/styling
 -->
 <script setup lang="ts">
 import { computed, ref, onMounted, onBeforeUnmount } from 'vue'
@@ -74,6 +77,20 @@ const validateSymbol = (symbol: string): string | undefined => {
   return undefined
 }
 
+const validateRoundingPrecision = (precision: number | string): string | undefined => {
+  if (precision === null || precision === undefined || precision === '') {
+    return t('admin.pricing.currencies.validation.roundingPrecisionRequired')
+  }
+  const numericValue = typeof precision === 'string' ? Number(precision) : precision
+  if (!Number.isFinite(numericValue) || !Number.isInteger(numericValue)) {
+    return t('admin.pricing.currencies.validation.roundingPrecisionRange')
+  }
+  if (numericValue < 0 || numericValue > 8) {
+    return t('admin.pricing.currencies.validation.roundingPrecisionRange')
+  }
+  return undefined
+}
+
 // Check if currency is newly created (not from backend)
 const isNewCurrency = (code: string): boolean => {
   return store.currenciesCreated.some(c => c.code === code)
@@ -89,7 +106,8 @@ const hasValidationError = (currency: Currency): boolean => {
   return !!(
     validateCode(currency.code) ||
     validateName(currency.name) ||
-    validateSymbol(currency.symbol || '')
+    validateSymbol(currency.symbol || '') ||
+    validateRoundingPrecision(currency.roundingPrecision)
   )
 }
 
@@ -437,11 +455,16 @@ function handleBeforeUnload(e: BeforeUnloadEvent) {
                 </td>
                 <td>
                   <v-text-field
-                    :model-value="currency.roundingPrecision"
+                    v-model.number="currency.roundingPrecision"
                     density="compact"
                     variant="plain"
-                    readonly
                     type="number"
+                    min="0"
+                    max="8"
+                    step="1"
+                    class="rounding-precision-field"
+                    :error-messages="validateRoundingPrecision(currency.roundingPrecision)"
+                    @update:model-value="value => store.markCurrencyChanged(currency.code, 'roundingPrecision', Number(value))"
                   />
                 </td>
                 <td>
@@ -716,6 +739,16 @@ function handleBeforeUnload(e: BeforeUnloadEvent) {
 
 .status-menu-chip :deep(.v-chip__content) {
   font-size: inherit;
+}
+
+.rounding-precision-field :deep(input) {
+  text-align: center;
+}
+
+.rounding-precision-field :deep(.v-field__append-inner),
+.rounding-precision-field :deep(.v-field__prepend-inner) {
+  margin-inline-start: 4px;
+  margin-inline-end: 4px;
 }
 </style>
 

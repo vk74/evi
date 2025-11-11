@@ -207,7 +207,8 @@ CREATE TABLE IF NOT EXISTS app.currencies (
   rounding_precision SMALLINT NOT NULL DEFAULT 2,
   active         BOOLEAN NOT NULL DEFAULT TRUE,
   created_at     TIMESTAMPTZ NOT NULL DEFAULT now(),
-  updated_at     TIMESTAMPTZ
+  updated_at     TIMESTAMPTZ,
+  CONSTRAINT chk_currencies_rounding_precision CHECK (rounding_precision BETWEEN 0 AND 8)
 );
 
 COMMENT ON TABLE app.currencies IS 'Currency dictionary - rounding logic handled by backend based on currency code';

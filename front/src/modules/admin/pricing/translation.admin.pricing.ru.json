@@ -224,7 +224,9 @@
           "nameMaxLength": "название не должно превышать 50 символов",
           "symbolRequired": "символ обязателен",
           "symbolMaxLength": "символ не должен превышать 3 символа",
-          "minorUnitsRange": "дробные единицы должны быть от 0 до 4"
+          "minorUnitsRange": "дробные единицы должны быть от 0 до 4",
+          "roundingPrecisionRequired": "точность округления обязательна",
+          "roundingPrecisionRange": "точность округления должна быть целым числом от 0 до 8"
         },
         "messages": {
           "loadSuccess": "валюты успешно загружены",
