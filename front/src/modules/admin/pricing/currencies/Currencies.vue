@@ -1,12 +1,13 @@
 <!--
-Version: 1.3.2
+Version: 1.3.3
 Currencies list management section.
 Frontend file for managing currencies in the pricing admin module. Loads live data from backend.
 Includes error handling for deletion of currencies used in price lists.
 Filename: Currencies.vue
 
-Changes in v1.3.2:
-- Made rounding precision editable with validation (0..8) and improved alignment/styling
+Changes in v1.3.3:
+- Added glow effect to save button when changes are ready and not saving
+- Adjusted rounding precision field controls to align closely with centered values
 -->
 <script setup lang="ts">
 import { computed, ref, onMounted, onBeforeUnmount } from 'vue'
@@ -529,6 +530,7 @@ function handleBeforeUnload(e: BeforeUnloadEvent) {
             color="teal"
             variant="outlined"
             class="mb-3"
+            :class="{ 'save-btn-glow': canSave && !isSaving }"
             :loading="isSaving"
             :disabled="!canSave"
             @click="saveCurrencies"
@@ -747,8 +749,28 @@ function handleBeforeUnload(e: BeforeUnloadEvent) {
 
 .rounding-precision-field :deep(.v-field__append-inner),
 .rounding-precision-field :deep(.v-field__prepend-inner) {
-  margin-inline-start: 4px;
-  margin-inline-end: 4px;
+  margin-inline-start: 2px;
+  margin-inline-end: 2px;
+}
+
+.save-btn-glow {
+  animation: soft-glow 2s ease-in-out infinite;
+  box-shadow: 0 0 8px rgba(20, 184, 166, 0.3);
+}
+
+.save-btn-glow:hover {
+  box-shadow: 0 0 10px rgba(20, 184, 166, 0.45);
+}
+
+@keyframes soft-glow {
+  0%, 100% {
+    box-shadow: 0 0 8px rgba(20, 184, 166, 0.3);
+    transform: scale(1);
+  }
+  50% {
+    box-shadow: 0 0 16px rgba(20, 184, 166, 0.5);
+    transform: scale(1.01);
+  }
 }
 </style>
 

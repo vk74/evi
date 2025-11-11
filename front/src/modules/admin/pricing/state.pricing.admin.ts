@@ -1,9 +1,13 @@
 /**
  * @file state.pricing.admin.ts
- * Version: 1.2.6
+ * Version: 1.2.7
  * Pinia store for managing pricing admin module state.
  * Frontend file that handles active section management for pricing administration.
  * File: state.pricing.admin.ts (frontend)
+ * 
+ * Changes in v1.2.7:
+ * - Added currency change tracking reset when values revert to original state
+ * - Unifies roundingPrecision handling defaults for newly created currencies
  * 
  * Changes in v1.2.6:
  * - Introduced roundingPrecision default for newly created currencies
@@ -102,6 +106,31 @@ export const usePricingAdminStore = defineStore('pricingAdmin', {
       // Don't track changes for newly created currencies - they are already in currenciesCreated
       const isNewCurrency = this.currenciesCreated.some(c => c.code === code)
       if (isNewCurrency) return
+      const normalizeValue = (key: keyof Currency, val: any) => {
+        switch (key) {
+          case 'name':
+          case 'symbol':
+            return (val ?? '').toString().trim()
+          case 'roundingPrecision':
+            return Number(val)
+          default:
+            return val
+        }
+      }
+      const originalCurrency = this.currenciesOriginal.find(c => c.code === code)
+      if (originalCurrency) {
+        const originalValue = normalizeValue(field, (originalCurrency as any)[field])
+        const currentValue = normalizeValue(field, value)
+        if (originalValue === currentValue) {
+          if (this.currenciesUpdated[code]) {
+            delete (this.currenciesUpdated[code] as any)[field]
+            if (Object.keys(this.currenciesUpdated[code]).length === 0) {
+              delete this.currenciesUpdated[code]
+            }
+          }
+          return
+        }
+      }
       if (!this.currenciesUpdated[code]) this.currenciesUpdated[code] = {}
       ;(this.currenciesUpdated[code] as any)[field] = value
     }
