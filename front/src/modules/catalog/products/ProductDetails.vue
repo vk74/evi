@@ -1,5 +1,5 @@
 <!--
-version: 1.10.0
+version: 1.11.0
 Frontend file for product details view component.
 Displays extended info and placeholders for product options.
 File: ProductDetails.vue
@@ -43,6 +43,12 @@ Changes in v1.9.0:
 Changes in v1.10.0:
 - Added rounding precision-aware price formatting with shared helper
 - Unit, total, and options sums now respect currency rounding precision and locale
+
+Changes in v1.11.0:
+- Adjusted inline-row grid layout: units count block 45%, unit price block 55%
+- Unit price field now takes full available width in its block
+- Changed sidebar blocks layout from horizontal to vertical (labels above fields)
+- Sidebar price fields now take full width of their containers
 -->
 <script setup lang="ts">
 import { ref, onMounted, watch, computed } from 'vue'
@@ -371,7 +377,7 @@ watch(() => appStore.getUserCountry, () => {
                     readonly
                     hide-details
                     class="price-field"
-                    style="max-width: 120px"
+                    style="flex: 1"
                   />
                 </div>
               </div>
@@ -484,26 +490,26 @@ watch(() => appStore.getUserCountry, () => {
           <!-- Top: totals -->
           <div class="pd-sidebar-top">
             <div class="detail-block">
-              <div class="block-body d-flex align-center" style="gap: 8px;">
-                <span class="me-2">{{ t('catalog.productDetails.products') }}</span>
+              <div class="block-body d-flex flex-column" style="gap: 8px;">
+                <span>{{ t('catalog.productDetails.products') }}</span>
                 <v-text-field :model-value="formatSum(productsSum)" density="compact" variant="outlined" readonly hide-details class="sidebar-price-field" />
               </div>
             </div>
             <div class="detail-block">
-              <div class="block-body d-flex align-center" style="gap: 8px;">
-                <span class="me-2">{{ t('catalog.productDetails.optionsTotal') }}</span>
+              <div class="block-body d-flex flex-column" style="gap: 8px;">
+                <span>{{ t('catalog.productDetails.optionsTotal') }}</span>
                 <v-text-field :model-value="formatSum(optionsTotalSum)" density="compact" variant="outlined" readonly hide-details class="sidebar-price-field" />
               </div>
             </div>
             <div class="detail-block">
-              <div class="block-body d-flex align-center" style="gap: 8px;">
-                <span class="me-2">{{ t('catalog.productDetails.vat') }}</span>
+              <div class="block-body d-flex flex-column" style="gap: 8px;">
+                <span>{{ t('catalog.productDetails.vat') }}</span>
                 <v-text-field model-value="—" density="compact" variant="outlined" readonly hide-details class="sidebar-price-field" />
               </div>
             </div>
             <div class="detail-block">
-              <div class="block-body d-flex align-center" style="gap: 8px;">
-                <span class="me-2">{{ t('catalog.productDetails.total') }}</span>
+              <div class="block-body d-flex flex-column" style="gap: 8px;">
+                <span>{{ t('catalog.productDetails.total') }}</span>
                 <v-text-field :model-value="formatSum(totalSum)" density="compact" variant="outlined" readonly hide-details class="sidebar-price-field" />
               </div>
             </div>
@@ -547,7 +553,7 @@ watch(() => appStore.getUserCountry, () => {
 .pd-sidebar-top { display: flex; flex-direction: column; gap: 12px; }
 .sidebar-divider { margin-top: 16px; }
 .pd-sidebar-actions { display: flex; flex-direction: column; margin-top: auto; }
-.sidebar-price-field { width: 125px; flex-shrink: 0; }
+.sidebar-price-field { width: 100%; }
 .top-grid { display: grid; grid-template-columns: minmax(260px, 360px) 1fr; gap: 16px; }
 .photo-placeholder { width: 100%; }
 .photo-box { 
@@ -598,7 +604,7 @@ watch(() => appStore.getUserCountry, () => {
  
 .inline-row {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: 45fr 55fr;
   gap: 16px;
 }
 .units-vselect :deep(.v-field) { border-radius: 6px; }
