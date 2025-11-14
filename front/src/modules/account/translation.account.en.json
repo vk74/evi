@@ -21,7 +21,7 @@
         "tooManyAttempts": "too many login attempts, try again in 15 minutes"
       },
       "registration": {
-        "text": "if you don't have an ev2 account,",
+        "text": "if you don't have an evi account,",
         "link": "register"
       }
     },

@@ -23,6 +23,6 @@ Don't use classes in the files, use functions and methods instead.
 
 Do not use centralized lgr function for logging. Instead we are using an event bus - all modules are expected to generate events using own events dictionaries and send it to events factory for events generation. Logger function is subscribed to all events, so logging will be done automatically. For temporary or debugging reasons we should use console.log command. 
 
-For tasks related to Postgres database you can use MCP server and #query to connect to 'maindb' database. All ev2 application data is in app. schema.
+For tasks related to Postgres database you can use MCP server and #query to connect to 'maindb' database. All evi application data is in app. schema.
 
 Переписку в чатах ведем на русском, но все комментарии и код пишем на английском.

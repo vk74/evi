@@ -450,7 +450,7 @@ export const useAppSettingsStore = defineStore('appSettings', {
   // Only persist UI state (selected section, expanded sections/blocks)
   // Do NOT persist cache data - it will be loaded fresh on each page reload
   persist: {
-    key: 'ev2-app-settings',
+    key: 'evi-app-settings',
     storage: localStorage,
     pick: [
       'selectedSectionPath',

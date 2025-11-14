@@ -2,7 +2,7 @@
   File: ModuleComponents.vue
   Version: 1.0.0
   Description: Component for displaying system components information
-  Purpose: Shows information about technologies used in EV2 software
+  Purpose: Shows information about technologies used in EVI software
   Features:
   - Displays frontend, backend, and database technologies
   - Lists all major libraries and frameworks

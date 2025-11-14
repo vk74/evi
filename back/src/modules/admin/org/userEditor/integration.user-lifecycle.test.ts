@@ -28,7 +28,7 @@ const TEST_CONFIG = {
   testUser: {
     username: 'testjest_lifecycle',
     password: 'P@ssw0rd1!',
-    email: `testjest_lifecycle+${Date.now()}@ev2.dev`,
+    email: `testjest_lifecycle+${Date.now()}@evi.dev`,
     account_status: 'active',
     is_staff: false,
     first_name: 'test',
@@ -53,7 +53,7 @@ function generateUniqueData(prefix: string) {
   
   return {
     username: `${cleanPrefix}${unique}`.slice(0, 20), // Limit username length, only letters and numbers
-    email: `${cleanPrefix}${unique}@ev2.dev`,
+    email: `${cleanPrefix}${unique}@evi.dev`,
     phone: `+1${timestamp.toString().slice(-9)}` // Last 9 digits to ensure +1XXXXXXXXX format
   };
 }

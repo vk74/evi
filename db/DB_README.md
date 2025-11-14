@@ -2,7 +2,7 @@
 
 ## Overview
 
-This directory contains the database schema, migrations, and seed data for the EV2 application. The structure follows a versioned migration approach to ensure consistent database evolution across environments.
+This directory contains the database schema, migrations, and seed data for the EVI application. The structure follows a versioned migration approach to ensure consistent database evolution across environments.
 
 ## Directory Structure
 

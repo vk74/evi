@@ -10,7 +10,7 @@ export interface BaseEvent {
 
   // 🏷 Application name or identifier 
   // Generated for SIEM or alike applications to identify which application sent the log entry
-  // Example: "ev2"
+  // Example: "evi"
   applicationName?: string;
 
   // 🕒 ISO timestamp when the event was created

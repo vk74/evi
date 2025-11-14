@@ -1,7 +1,7 @@
 {
-  "name": "ev2",
+  "name": "evi",
   "version": "0.5.0",
-  "description": "EV2 Application - Backend, Frontend, and Database",
+  "description": "EVI Application - Backend, Frontend, and Database",
   "private": true,
   "scripts": {
     "version:sync": "node deployment/sync-version.js",
@@ -28,7 +28,7 @@
     "build:github:clean": "node deployment/github/build.js --clean"
   },
   "keywords": [
-    "ev2",
+    "evi",
     "backend",
     "frontend",
     "database",
@@ -37,7 +37,7 @@
     "express",
     "typescript"
   ],
-  "author": "EV2 Team",
+  "author": "evi team",
   "license": "ISC",
   "devDependencies": {
     "rimraf": "^6.0.1"

@@ -185,9 +185,9 @@ function generateTokenPair(username: string, userUuid: string): TokenGenerationR
   // Generate access token with configurable lifetime
   const accessTokenExpires = new Date(Date.now() + jwtSettings.accessTokenLifetimeMinutes * 60 * 1000);
   const accessTokenPayload: JwtPayload = {
-    iss: 'ev2 app',
+    iss: 'evi app',
     sub: username,
-    aud: 'ev2 app registered users',
+    aud: 'evi app registered users',
     jti: uuidv4(),
     uid: userUuid,
     iat: Math.floor(Date.now() / 1000),

@@ -24,7 +24,7 @@ import { jwtDecode } from 'jwt-decode';
 // Import all localization dictionaries
 import translations from '@/core/services/translations.index'
 
-console.log('[startup] EV2 frontend boot: begin');
+console.log('[startup] EVI frontend boot: begin');
 
 interface JwtPayload {
   sub: string;

@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-// ev2 File Utilities
+// evi File Utilities
 // Version: 1.0
 // Description: Common file operations for deployment scripts
 // Backend file: file-utils.js

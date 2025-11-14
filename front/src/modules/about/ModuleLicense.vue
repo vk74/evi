@@ -2,7 +2,7 @@
   File: ModuleLicense.vue
   Version: 1.0.0
   Description: Component for displaying software license information
-  Purpose: Shows license information for EV2 software
+  Purpose: Shows license information for EVI software
   Features:
   - Displays license information
   - Static content with placeholder message

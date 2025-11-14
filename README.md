@@ -1,13 +1,13 @@
-# EV2 Project
+# EVI Project
 
 **Version:** [See VERSION file]
 
-EV2 is a full-stack application with backend (Express.js + TypeScript), frontend (Vue.js + Vuetify), and PostgreSQL database.
+EVI is a full-stack application with backend (Express.js + TypeScript), frontend (Vue.js + Vuetify), and PostgreSQL database.
 
 ## Project Structure
 
 ```
-ev2/
+evi/
 ├── back/           # Backend (Express.js + TypeScript)
 ├── front/          # Frontend (Vue.js + Vuetify)
 ├── db/             # Database schema and migrations

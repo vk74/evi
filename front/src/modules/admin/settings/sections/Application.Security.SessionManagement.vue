@@ -69,8 +69,8 @@ const refreshTokenMaxCountOptions = Array.from({ length: 10 }, (_, i) => i + 1);
 
 // Token Security Settings
 const tokenAlgorithm = ref('RS256');
-const tokenIssuer = ref('ev2 app');
-const tokenAudience = ref('ev2 app registered users');
+const tokenIssuer = ref('evi app');
+const tokenAudience = ref('evi app registered users');
 
 // Development Settings (removed)
 

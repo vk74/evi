@@ -1,6 +1,6 @@
-# ev2 Production Deployment
+# evi Production Deployment
 
-This directory contains all the necessary files and scripts to deploy the ev2 application in a production environment.
+This directory contains all the necessary files and scripts to deploy the evi application in a production environment.
 
 ## Quick Start
 
@@ -67,9 +67,9 @@ The initialization script generates self-signed certificates for testing. For pr
 ## Docker Images
 
 The application uses the following Docker images:
-- `ghcr.io/your-org/ev2-database:latest` - PostgreSQL database
-- `ghcr.io/your-org/ev2-backend:latest` - Node.js backend API
-- `ghcr.io/your-org/ev2-frontend:latest` - Vue.js frontend
+- `ghcr.io/your-org/evi-database:latest` - PostgreSQL database
+- `ghcr.io/your-org/evi-backend:latest` - Node.js backend API
+- `ghcr.io/your-org/evi-frontend:latest` - Vue.js frontend
 
 ## Management Commands
 
@@ -89,7 +89,7 @@ docker-compose -f docker-compose.production.yml --env-file .env down
 docker-compose -f docker-compose.production.yml --env-file .env logs -f
 
 # Specific service
-docker-compose -f docker-compose.production.yml --env-file .env logs -f ev2-backend
+docker-compose -f docker-compose.production.yml --env-file .env logs -f evi-backend
 ```
 
 ### Update Application
@@ -106,10 +106,10 @@ docker-compose -f docker-compose.production.yml --env-file .env up -d
 ### Database Backup
 ```bash
 # Create backup
-docker-compose -f docker-compose.production.yml --env-file .env exec ev2-database pg_dump -U app_service maindb > backup_$(date +%Y%m%d_%H%M%S).sql
+docker-compose -f docker-compose.production.yml --env-file .env exec evi-database pg_dump -U app_service maindb > backup_$(date +%Y%m%d_%H%M%S).sql
 
 # Restore backup
-docker-compose -f docker-compose.production.yml --env-file .env exec -T ev2-database psql -U app_service maindb < backup_file.sql
+docker-compose -f docker-compose.production.yml --env-file .env exec -T evi-database psql -U app_service maindb < backup_file.sql
 ```
 
 ### Full Application Backup
@@ -118,7 +118,7 @@ docker-compose -f docker-compose.production.yml --env-file .env exec -T ev2-data
 mkdir -p backups/$(date +%Y%m%d_%H%M%S)
 
 # Backup database
-docker-compose -f docker-compose.production.yml --env-file .env exec ev2-database pg_dump -U app_service maindb > backups/$(date +%Y%m%d_%H%M%S)/database.sql
+docker-compose -f docker-compose.production.yml --env-file .env exec evi-database pg_dump -U app_service maindb > backups/$(date +%Y%m%d_%H%M%S)/database.sql
 
 # Backup configuration
 cp -r config backups/$(date +%Y%m%d_%H%M%S)/
@@ -164,7 +164,7 @@ free -h
 
 2. **Database connection issues:**
    - Verify database container is healthy: `docker-compose ps`
-   - Check database logs: `docker-compose logs ev2-database`
+   - Check database logs: `docker-compose logs evi-database`
    - Verify environment variables in `.env`
 
 3. **SSL certificate issues:**

@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-// ev2 GitHub Build & Deployment Preparation Script
+// evi GitHub Build & Deployment Preparation Script
 // Version: 1.0
 // Description: Prepares Docker containers and deployment artifacts for GitHub CI/CD
 // Backend file: build.js
@@ -33,7 +33,7 @@ function getPackageVersion() {
 
 // Generate Docker image tags
 function generateImageTags(version) {
-  const baseTag = `ghcr.io/your-org/ev2`;
+  const baseTag = `ghcr.io/your-org/evi`;
   return {
     database: `${baseTag}-database:${version}`,
     backend: `${baseTag}-backend:${version}`,
@@ -112,31 +112,31 @@ function tagImages(version) {
   try {
     // Tag database image
     timings['Tag Database Image'] = dockerUtils.tagImage(
-      'local-ev2-database',
+      'local-evi-database',
       imageTags.database
     );
     timings['Tag Database Latest'] = dockerUtils.tagImage(
-      'local-ev2-database',
+      'local-evi-database',
       imageTags.databaseLatest
     );
     
     // Tag backend image
     timings['Tag Backend Image'] = dockerUtils.tagImage(
-      'local-ev2-backend',
+      'local-evi-backend',
       imageTags.backend
     );
     timings['Tag Backend Latest'] = dockerUtils.tagImage(
-      'local-ev2-backend',
+      'local-evi-backend',
       imageTags.backendLatest
     );
     
     // Tag frontend image
     timings['Tag Frontend Image'] = dockerUtils.tagImage(
-      'local-ev2-frontend',
+      'local-evi-frontend',
       imageTags.frontend
     );
     timings['Tag Frontend Latest'] = dockerUtils.tagImage(
-      'local-ev2-frontend',
+      'local-evi-frontend',
       imageTags.frontendLatest
     );
     
@@ -226,13 +226,13 @@ function generateDeploymentPackage(version) {
   
   try {
     // Create deployment package directory
-    const packageDir = path.join(CONFIG.artifactsDir, `ev2-deployment-${version}`);
+    const packageDir = path.join(CONFIG.artifactsDir, `evi-deployment-${version}`);
     fileUtils.ensureDir(packageDir);
     
     // Copy all artifacts to package directory
     const artifacts = fileUtils.listFiles(CONFIG.artifactsDir);
     for (const artifact of artifacts) {
-      if (artifact !== `ev2-deployment-${version}`) {
+      if (artifact !== `evi-deployment-${version}`) {
         const srcPath = path.join(CONFIG.artifactsDir, artifact);
         const destPath = path.join(packageDir, artifact);
         fileUtils.copyFile(srcPath, destPath);
@@ -241,10 +241,10 @@ function generateDeploymentPackage(version) {
     
     // Create package info file
     const packageInfo = {
-      name: 'ev2-deployment',
+      name: 'evi-deployment',
       version: version,
       generated: new Date().toISOString(),
-      description: 'ev2 Production Deployment Package',
+      description: 'evi Production Deployment Package',
       files: fileUtils.listFiles(packageDir)
     };
     
@@ -271,7 +271,7 @@ function displaySummary(version, timings) {
   
   logger.info(`Version: ${version}`);
   logger.info(`Artifacts Directory: ${CONFIG.artifactsDir}`);
-  logger.info(`Deployment Package: ev2-deployment-${version}`);
+  logger.info(`Deployment Package: evi-deployment-${version}`);
   
   logger.separator('Generated Docker Images');
   logger.info(`Database: ${imageTags.database}`);
@@ -280,9 +280,9 @@ function displaySummary(version, timings) {
   
   logger.separator('Next Steps');
   logger.info('1. Push images to GitHub Container Registry:');
-  logger.info('   docker push ghcr.io/your-org/ev2-database:latest');
-  logger.info('   docker push ghcr.io/your-org/ev2-backend:latest');
-  logger.info('   docker push ghcr.io/your-org/ev2-frontend:latest');
+  logger.info('   docker push ghcr.io/your-org/evi-database:latest');
+  logger.info('   docker push ghcr.io/your-org/evi-backend:latest');
+  logger.info('   docker push ghcr.io/your-org/evi-frontend:latest');
   
   logger.info('2. Create GitHub release with deployment package');
   logger.info('3. Update image tags in production templates');
@@ -346,10 +346,10 @@ function createGitHubRelease(version) {
       return { 'GitHub CLI Check': 0 };
     }
     
-    const packageDir = path.join(CONFIG.artifactsDir, `ev2-deployment-${version}`);
+    const packageDir = path.join(CONFIG.artifactsDir, `evi-deployment-${version}`);
     
     // Create release with deployment package
-    const command = `gh release create v${version} "${packageDir}" --title "ev2 v${version}" --notes "ev2 Application Release v${version}"`;
+    const command = `gh release create v${version} "${packageDir}" --title "evi v${version}" --notes "evi Application Release v${version}"`;
     timings['Create GitHub Release'] = dockerUtils.runCommand(command, 'Create GitHub Release');
     
     logger.success('GitHub release created successfully');
@@ -375,9 +375,9 @@ function updateImageTags(version) {
     
     // Replace version tags with latest
     const updatedCompose = composeContent
-      .replace(/ghcr\.io\/your-org\/ev2-database:{{APP_VERSION}}/g, imageTags.databaseLatest)
-      .replace(/ghcr\.io\/your-org\/ev2-backend:{{APP_VERSION}}/g, imageTags.backendLatest)
-      .replace(/ghcr\.io\/your-org\/ev2-frontend:{{APP_VERSION}}/g, imageTags.frontendLatest);
+      .replace(/ghcr\.io\/your-org\/evi-database:{{APP_VERSION}}/g, imageTags.databaseLatest)
+      .replace(/ghcr\.io\/your-org\/evi-backend:{{APP_VERSION}}/g, imageTags.backendLatest)
+      .replace(/ghcr\.io\/your-org\/evi-frontend:{{APP_VERSION}}/g, imageTags.frontendLatest);
     
     fileUtils.writeFile(composeTemplate, updatedCompose);
     timings['Update Docker Compose Template'] = 0.1;
@@ -404,7 +404,7 @@ async function mainMenu() {
 
   const menu = `
 ${logger.colors.cyan}=========================================${logger.colors.reset}
-${logger.colors.cyan}  ev2 GitHub Build & Deployment Manager${logger.colors.reset}
+${logger.colors.cyan}  evi GitHub Build & Deployment Manager${logger.colors.reset}
 ${logger.colors.cyan}=========================================${logger.colors.reset}
 ${logger.colors.yellow}[1]${logger.colors.reset} Build all containers from cache
 ${logger.colors.yellow}[2]${logger.colors.reset} Rebuild all containers without cache
@@ -470,7 +470,7 @@ async function main() {
   let timings = {};
   
   try {
-    logger.separator('ev2 GitHub Build & Deployment Preparation');
+    logger.separator('evi GitHub Build & Deployment Preparation');
     
     // Get version
     const version = getPackageVersion();

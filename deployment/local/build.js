@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 
-// ev2 Local Docker Build & Management Script
+// evi Local Docker Build & Management Script
 // Version: 1.0
-// Description: A streamlined Node.js script to build, run, and clean the local Docker environment for ev2.
+// Description: A streamlined Node.js script to build, run, and clean the local Docker environment for evi.
 // Replaces the previous dev-docker.js and cleanup-docker.sh scripts.
 
 const { execSync } = require('child_process');
@@ -113,10 +113,10 @@ function cleanDocker() {
           'Stop & Remove Containers'
         );
         
-        // Remove all ev2 images specifically
-        timings['Remove ev2 Images'] = runCommand(
-          'docker images --filter "reference=local-ev2-*" -q | xargs -r docker rmi -f',
-          'Remove ev2 Images'
+        // Remove all evi images specifically
+        timings['Remove evi Images'] = runCommand(
+          'docker images --filter "reference=local-evi-*" -q | xargs -r docker rmi -f',
+          'Remove evi Images'
         );
         
         // Remove all unused containers, networks, images, and build cache
@@ -163,7 +163,7 @@ function buildAndUpAll() {
 
 /**
  * Builds and starts a specific service.
- * @param {string} serviceName - The name of the service to build (e.g., 'ev2-backend').
+ * @param {string} serviceName - The name of the service to build (e.g., 'evi-backend').
  */
 function buildAndUpSingle(serviceName) {
   const timings = {};
@@ -259,7 +259,7 @@ async function mainMenu() {
 
   const menu = `
 ${colors.cyan}=========================================${colors.reset}
-${colors.cyan}  ev2 Local Docker Environment Manager${colors.reset}
+${colors.cyan}  evi Local Docker Environment Manager${colors.reset}
 ${colors.cyan}=========================================${colors.reset}
 ${colors.yellow}[1]${colors.reset} Build from cache & start all containers
 ${colors.yellow}[2]${colors.reset} Rebuild & start all containers

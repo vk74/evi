@@ -2,7 +2,7 @@
   File: ModuleDeveloperInfo.vue
   Version: 1.0.0
   Description: Component for displaying developer information
-  Purpose: Shows developer information for EV2 software
+  Purpose: Shows developer information for EVI software
   Features:
   - Displays developer information
   - Static content with placeholder message

@@ -1,11 +1,11 @@
 services:
-  # ev2 Database
-  ev2-database:
+  # evi Database
+  evi-database:
     # Build the image from the local Dockerfile in the 'db' directory
     build:
       context: ../../db
       dockerfile: Dockerfile
-    container_name: ev2-database-local
+    container_name: evi-database-local
     restart: unless-stopped
     
     # Environment variables passed to the container
@@ -23,7 +23,7 @@ services:
     
     # Volume for persistent data. This ensures that database data survives container restarts.
     volumes:
-      - ev2_database_data:/var/lib/postgresql/data
+      - evi_database_data:/var/lib/postgresql/data
     
     # Health check to ensure the database is ready before other services start
     healthcheck:
@@ -35,22 +35,22 @@ services:
     
     # Network configuration
     networks:
-      - ev2-network
+      - evi-network
 
-  # ev2 Backend API
-  ev2-backend:
+  # evi Backend API
+  evi-backend:
     # Build the image from the local Dockerfile in the 'back' directory
     build:
       context: ../../back
       dockerfile: Dockerfile
-    container_name: ev2-backend-local
+    container_name: evi-backend-local
     restart: unless-stopped
     
     # Environment variables
     environment:
       # Database connection string for the backend application.
       # It now uses the hardcoded user/password for local development simplicity.
-      PGHOST: ev2-database
+      PGHOST: evi-database
       PGPORT: 5432
       PGDATABASE: ${POSTGRES_DB:-maindb}
       PGUSER: app_service
@@ -64,20 +64,20 @@ services:
     
     # Ensures that the backend container starts only after the database is healthy
     depends_on:
-      ev2-database:
+      evi-database:
         condition: service_healthy
     
     # Network configuration
     networks:
-      - ev2-network
+      - evi-network
 
-  # ev2 Frontend
-  ev2-frontend:
+  # evi Frontend
+  evi-frontend:
     # Build the image from the local Dockerfile in the 'front' directory
     build:
       context: ../../front
       dockerfile: Dockerfile
-    container_name: ev2-frontend-local
+    container_name: evi-frontend-local
     restart: unless-stopped
     
     # Environment variables
@@ -91,18 +91,18 @@ services:
     
     # Ensures that the frontend container starts only after the backend is available
     depends_on:
-      - ev2-backend
+      - evi-backend
     
     # Network configuration
     networks:
-      - ev2-network
+      - evi-network
 
 # Volumes configuration
 volumes:
-  ev2_database_data:
+  evi_database_data:
     driver: local
 
 # Networks configuration
 networks:
-  ev2-network:
+  evi-network:
     driver: bridge

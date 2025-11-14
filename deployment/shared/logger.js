@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-// ev2 Shared Logger Utility
+// evi Shared Logger Utility
 // Version: 1.0
 // Description: Common logging utility for deployment scripts
 // Backend file: logger.js

@@ -1,5 +1,5 @@
 # Version: 1.2
-# Description: Multi-stage Dockerfile for the ev2 backend.
+# Description: Multi-stage Dockerfile for the evi backend.
 # Creates a build stage to compile TypeScript and a lean runtime stage.
 # Backend file: Dockerfile
 

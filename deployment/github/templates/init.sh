@@ -1,8 +1,8 @@
 #!/bin/bash
 
-# ev2 Production Deployment Initialization Script
+# evi Production Deployment Initialization Script
 # Version: 1.0
-# Description: Initializes production environment for ev2 application
+# Description: Initializes production environment for evi application
 # Frontend file: init.sh
 
 set -e
@@ -32,7 +32,7 @@ log_error() {
 }
 
 # Configuration
-PROJECT_NAME="ev2"
+PROJECT_NAME="evi"
 DOCKER_COMPOSE_FILE="docker-compose.production.yml"
 ENV_FILE=".env"
 TEMPLATE_FILE="env.template"
@@ -128,9 +128,9 @@ create_env_file() {
         sed -i.bak "s/{{SSL_KEY_PATH}}/$SSL_KEY_PATH/g" "$ENV_FILE"
         
         # Set Docker image tags (you'll need to update these with actual image names)
-        sed -i.bak "s/{{DATABASE_IMAGE}}/ghcr.io\/your-org\/ev2-database:latest/g" "$ENV_FILE"
-        sed -i.bak "s/{{BACKEND_IMAGE}}/ghcr.io\/your-org\/ev2-backend:latest/g" "$ENV_FILE"
-        sed -i.bak "s/{{FRONTEND_IMAGE}}/ghcr.io\/your-org\/ev2-frontend:latest/g" "$ENV_FILE"
+        sed -i.bak "s/{{DATABASE_IMAGE}}/ghcr.io\/your-org\/evi-database:latest/g" "$ENV_FILE"
+        sed -i.bak "s/{{BACKEND_IMAGE}}/ghcr.io\/your-org\/evi-backend:latest/g" "$ENV_FILE"
+        sed -i.bak "s/{{FRONTEND_IMAGE}}/ghcr.io\/your-org\/evi-frontend:latest/g" "$ENV_FILE"
         
         # Clean up backup file
         rm -f "$ENV_FILE.bak"
@@ -230,7 +230,7 @@ check_health() {
 
 # Main execution
 main() {
-    log_info "Starting ev2 production deployment initialization..."
+    log_info "Starting evi production deployment initialization..."
     
     check_docker
     check_docker_compose
@@ -241,7 +241,7 @@ main() {
     start_services
     check_health
     
-    log_success "ev2 production deployment initialized successfully!"
+    log_success "evi production deployment initialized successfully!"
     log_info "You can now access your application at: https://localhost"
     log_info "Admin credentials are stored in the $ENV_FILE file"
     log_warning "Remember to replace self-signed certificates with production certificates"

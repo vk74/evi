@@ -1,13 +1,13 @@
-# ev2 Production Docker Compose Configuration
+# evi Production Docker Compose Configuration
 # Version: 1.0
-# Description: Production-ready docker-compose configuration for ev2 application
+# Description: Production-ready docker-compose configuration for evi application
 # Generated automatically by build:github command
 
 services:
-  # ev2 Database
-  ev2-database:
+  # evi Database
+  evi-database:
     image: {{DATABASE_IMAGE}}
-    container_name: ev2-database
+    container_name: evi-database
     restart: unless-stopped
     
     environment:
@@ -19,7 +19,7 @@ services:
       - "{{POSTGRES_PORT}}:5432"
     
     volumes:
-      - ev2_database_data:/var/lib/postgresql/data
+      - evi_database_data:/var/lib/postgresql/data
       - ./config/init:/docker-entrypoint-initdb.d
     
     healthcheck:
@@ -30,16 +30,16 @@ services:
       start_period: 30s
     
     networks:
-      - ev2-network
+      - evi-network
 
-  # ev2 Backend API
-  ev2-backend:
+  # evi Backend API
+  evi-backend:
     image: {{BACKEND_IMAGE}}
-    container_name: ev2-backend
+    container_name: evi-backend
     restart: unless-stopped
     
     environment:
-      PGHOST: ev2-database
+      PGHOST: evi-database
       PGPORT: 5432
       PGDATABASE: {{POSTGRES_DB}}
       PGUSER: {{POSTGRES_USER}}
@@ -54,7 +54,7 @@ services:
       - "{{API_PORT}}:3000"
     
     depends_on:
-      ev2-database:
+      evi-database:
         condition: service_healthy
     
     volumes:
@@ -62,12 +62,12 @@ services:
       - ./logs/backend:/app/logs
     
     networks:
-      - ev2-network
+      - evi-network
 
-  # ev2 Frontend
-  ev2-frontend:
+  # evi Frontend
+  evi-frontend:
     image: {{FRONTEND_IMAGE}}
-    container_name: ev2-frontend
+    container_name: evi-frontend
     restart: unless-stopped
     
     environment:
@@ -78,15 +78,15 @@ services:
       - "{{FRONTEND_PORT}}:80"
     
     depends_on:
-      - ev2-backend
+      - evi-backend
     
     networks:
-      - ev2-network
+      - evi-network
 
   # Nginx Reverse Proxy (Optional)
   nginx:
     image: nginx:alpine
-    container_name: ev2-nginx
+    container_name: evi-nginx
     restart: unless-stopped
     
     ports:
@@ -99,18 +99,18 @@ services:
       - ./logs/nginx:/var/log/nginx
     
     depends_on:
-      - ev2-frontend
-      - ev2-backend
+      - evi-frontend
+      - evi-backend
     
     networks:
-      - ev2-network
+      - evi-network
 
 # Volumes
 volumes:
-  ev2_database_data:
+  evi_database_data:
     driver: local
 
 # Networks
 networks:
-  ev2-network:
+  evi-network:
     driver: bridge

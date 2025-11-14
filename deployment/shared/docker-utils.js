@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-// ev2 Docker Utilities
+// evi Docker Utilities
 // Version: 1.0
 // Description: Common Docker operations for deployment scripts
 // Backend file: docker-utils.js

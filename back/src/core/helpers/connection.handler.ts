@@ -1,7 +1,7 @@
 /**
  * @file connection.handler.ts
  * @version 1.0.04
- * @description Backend file. Provides a universal handler for Express controllers in the ev2 backend application.
+ * @description Backend file. Provides a universal handler for Express controllers in the evi backend application.
  * The handler standardizes HTTP connection and error handling for all controllers. It accepts a business logic function (async),
  * executes it, and sends a standard response or error. The business logic itself remains in the controller or service files.
  * This file includes comprehensive event logging for monitoring and debugging purposes.

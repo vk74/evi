@@ -1,9 +1,9 @@
 -- Version: v0.5.0
--- Description: Complete database snapshot for EV2 application
+-- Description: Complete database snapshot for EVI application
 -- Backend file: v0.5.0_snapshot
 -- Created: 2024-12-01
 
--- This file contains the complete database schema and data for EV2 v0.5.0
+-- This file contains the complete database schema and data for EVI v0.5.0
 -- Use this for quick deployment of new instances
 
 -- Create app schema
