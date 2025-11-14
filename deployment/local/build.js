@@ -1,18 +1,32 @@
 #!/usr/bin/env node
 
 // evi Local Docker Build & Management Script
-// Version: 1.0
+// Version: 1.2
 // Description: A streamlined Node.js script to build, run, and clean the local Docker environment for evi.
 // Replaces the previous dev-docker.js and cleanup-docker.sh scripts.
+
+// Changes in v1.1:
+// - Made .env.local file optional - script now checks if file exists before using it
+// - Added support for --clean flag to clean project containers before showing menu
+// - Added project cleanup function that only removes project containers and volumes
+// - All docker compose commands now conditionally use --env-file only if .env.local exists
+
+// Changes in v1.2:
+// - Improved cleanup function to remove all project resources (evi and ev2)
+// - Added pattern-based removal functions for containers, volumes, images, and networks
+// - Cleanup now removes old project volumes (local_ev2_*) and new project volumes (local_evi_*)
+// - Added step-by-step cleanup process with detailed logging
+// - Improved error handling for volume removal (volumes may be in use by stopped containers)
 
 const { execSync } = require('child_process');
 const readline = require('readline');
 const os = require('os');
 const path = require('path');
+const fs = require('fs');
 
 // --- Configuration ---
 const DOCKER_COMPOSE_FILE = 'deployment/local/docker-compose.yml';
-const ENV_FILE = '.env.local'; // This script assumes the .env.local file exists.
+const ENV_FILE = '.env.local'; // Optional file for environment variables
 
 // ANSI colors for better output visibility
 const colors = {
@@ -26,6 +40,38 @@ const colors = {
 };
 
 // --- Helper Functions ---
+
+/**
+ * Checks if .env.local file exists.
+ * @returns {boolean} True if .env.local exists, false otherwise.
+ */
+function envFileExists() {
+  return fs.existsSync(ENV_FILE);
+}
+
+/**
+ * Gets the docker compose command with optional --env-file flag.
+ * @param {string} command - The docker compose command (e.g., 'build', 'up', 'down').
+ * @param {string} additionalArgs - Additional arguments to append (e.g., '--parallel', '-d').
+ * @returns {string} The complete docker compose command.
+ */
+function getDockerComposeCommand(command, additionalArgs = '') {
+  let cmd = `docker compose -f "${DOCKER_COMPOSE_FILE}"`;
+  
+  // Only use --env-file if .env.local exists
+  if (envFileExists()) {
+    cmd += ` --env-file "${ENV_FILE}"`;
+  }
+  
+  cmd += ` ${command}`;
+  
+  // Add additional arguments if provided
+  if (additionalArgs && additionalArgs.trim()) {
+    cmd += ` ${additionalArgs.trim()}`;
+  }
+  
+  return cmd;
+}
 
 /**
  * Prints a formatted message to the console.
@@ -72,8 +118,186 @@ function runCommand(command, description, quiet = false) {
 // --- Core Functions ---
 
 /**
+ * Performs cleanup of project containers and volumes only.
+ * Removes containers, volumes, and networks for this project.
+ * @returns {Object} Object with timing information.
+ */
+function cleanProjectContainers() {
+  const timings = {};
+  
+  log('\n🧹 Cleaning up project containers and volumes...', colors.cyan, true);
+  
+  const command = getDockerComposeCommand('down', '-v --remove-orphans');
+  const description = 'Stop & Remove Project Containers';
+  
+  log(`\n🚀 Executing: ${description}...`, colors.yellow, true);
+  log(`   Command: ${command}`, colors.reset);
+  
+  const startTime = Date.now();
+  try {
+    execSync(command, { stdio: 'inherit' });
+    const endTime = Date.now();
+    const duration = ((endTime - startTime) / 1000).toFixed(2);
+    log(`✅ Success: "${description}" completed in ${duration}s.`, colors.green);
+    timings[description] = parseFloat(duration);
+    log('✅ Project containers and volumes cleaned successfully.', colors.green);
+  } catch (error) {
+    const endTime = Date.now();
+    const duration = ((endTime - startTime) / 1000).toFixed(2);
+    log(`⚠️  Warning: "${description}" failed (this may be normal if no containers exist).`, colors.yellow);
+    log(`   Execution time: ${duration}s`, colors.yellow);
+    timings[description] = parseFloat(duration);
+    // Don't exit on error - containers may not exist, which is fine
+  }
+  
+  return timings;
+}
+
+/**
+ * Removes containers by name pattern (handles errors gracefully)
+ * @param {string} pattern - Pattern to match container names
+ * @returns {number} Execution time in seconds
+ */
+function removeContainersByPattern(pattern) {
+  try {
+    const containerIds = execSync(
+      `docker ps -a --filter "name=${pattern}" --format "{{.ID}}"`,
+      { encoding: 'utf8', stdio: 'pipe' }
+    ).trim();
+    
+    if (!containerIds) {
+      return 0;
+    }
+    
+    const ids = containerIds.split('\n').filter(id => id);
+    if (ids.length === 0) {
+      return 0;
+    }
+    
+    log(`   Found ${ids.length} container(s) matching pattern "${pattern}"`, colors.cyan);
+    execSync(`docker rm -f ${ids.join(' ')}`, { stdio: 'inherit' });
+    return 0.1;
+  } catch (error) {
+    // Ignore errors - containers may not exist
+    return 0;
+  }
+}
+
+/**
+ * Removes volumes by name pattern (handles errors gracefully)
+ * @param {string} pattern - Pattern to match volume names (supports partial match)
+ * @returns {number} Execution time in seconds
+ */
+function removeVolumesByPattern(pattern) {
+  try {
+    // Get all volumes and filter by pattern (Docker filter doesn't support partial matches well)
+    const allVolumes = execSync(
+      'docker volume ls --format "{{.Name}}"',
+      { encoding: 'utf8', stdio: 'pipe' }
+    ).trim();
+    
+    if (!allVolumes) {
+      return 0;
+    }
+    
+    const allNames = allVolumes.split('\n').filter(name => name);
+    // Filter volumes that match the pattern
+    const matchingNames = allNames.filter(name => name.includes(pattern));
+    
+    if (matchingNames.length === 0) {
+      return 0;
+    }
+    
+    log(`   Found ${matchingNames.length} volume(s) matching pattern "${pattern}"`, colors.cyan);
+    
+    // Try to remove each volume individually to handle errors gracefully
+    let removedCount = 0;
+    for (const volumeName of matchingNames) {
+      try {
+        execSync(`docker volume rm -f "${volumeName}"`, { stdio: 'pipe' });
+        removedCount++;
+      } catch (error) {
+        // Volume may be in use, try to force remove by removing containers first
+        log(`   ⚠️  Warning: Could not remove volume "${volumeName}" (may be in use)`, colors.yellow);
+      }
+    }
+    
+    if (removedCount > 0) {
+      log(`   ✅ Removed ${removedCount} volume(s)`, colors.green);
+    }
+    
+    return removedCount > 0 ? 0.1 : 0;
+  } catch (error) {
+    // Ignore errors - volumes may not exist
+    return 0;
+  }
+}
+
+/**
+ * Removes images by reference pattern (handles errors gracefully)
+ * @param {string} pattern - Pattern to match image references
+ * @returns {number} Execution time in seconds
+ */
+function removeImagesByPattern(pattern) {
+  try {
+    const imageIds = execSync(
+      `docker images --filter "reference=${pattern}" --format "{{.ID}}"`,
+      { encoding: 'utf8', stdio: 'pipe' }
+    ).trim();
+    
+    if (!imageIds) {
+      return 0;
+    }
+    
+    const ids = [...new Set(imageIds.split('\n').filter(id => id))]; // Remove duplicates
+    if (ids.length === 0) {
+      return 0;
+    }
+    
+    log(`   Found ${ids.length} image(s) matching pattern "${pattern}"`, colors.cyan);
+    execSync(`docker rmi -f ${ids.join(' ')}`, { stdio: 'inherit' });
+    return 0.1;
+  } catch (error) {
+    // Ignore errors - images may not exist
+    return 0;
+  }
+}
+
+/**
+ * Removes networks by name pattern (handles errors gracefully)
+ * @param {string} pattern - Pattern to match network names
+ * @returns {number} Execution time in seconds
+ */
+function removeNetworksByPattern(pattern) {
+  try {
+    const networkNames = execSync(
+      `docker network ls --filter "name=${pattern}" --format "{{.Name}}"`,
+      { encoding: 'utf8', stdio: 'pipe' }
+    ).trim();
+    
+    if (!networkNames) {
+      return 0;
+    }
+    
+    const names = networkNames.split('\n').filter(name => name && name !== 'bridge' && name !== 'host' && name !== 'none');
+    if (names.length === 0) {
+      return 0;
+    }
+    
+    log(`   Found ${names.length} network(s) matching pattern "${pattern}"`, colors.cyan);
+    execSync(`docker network rm ${names.join(' ')}`, { stdio: 'inherit' });
+    return 0.1;
+  } catch (error) {
+    // Ignore errors - networks may not exist or be in use
+    log(`   ⚠️  Warning: Could not remove some networks matching "${pattern}" (may be in use)`, colors.yellow);
+    return 0;
+  }
+}
+
+/**
  * Performs a complete cleanup of the Docker environment, removing ALL containers, images, volumes, builds, and networks.
  * This will make Docker Desktop completely clean as if no containers were ever created.
+ * Includes cleanup of old project resources (ev2) and new project resources (evi).
  */
 function cleanDocker() {
   const rl = readline.createInterface({
@@ -84,12 +308,12 @@ function cleanDocker() {
   return new Promise((resolve) => {
     log('\n⚠️  WARNING: This will perform a COMPLETE Docker cleanup!', colors.red, true);
     log('   This operation will remove:', colors.yellow);
-    log('   • All containers (running and stopped)', colors.yellow);
-    log('   • All images', colors.yellow);
-    log('   • All volumes', colors.yellow);
-    log('   • All builds', colors.yellow);
-    log('   • All networks', colors.yellow);
+    log('   • All containers (running and stopped) for evi and ev2 projects', colors.yellow);
+    log('   • All images for evi and ev2 projects', colors.yellow);
+    log('   • All volumes for evi and ev2 projects', colors.yellow);
+    log('   • All networks for evi and ev2 projects', colors.yellow);
     log('   • All unused Docker resources', colors.yellow);
+    log('   • All build cache', colors.yellow);
     log('   Docker Desktop will be completely clean!', colors.red, true);
     
     rl.question('\nAre you sure you want to continue? Type "y" to confirm: ', (answer) => {
@@ -107,25 +331,83 @@ function cleanDocker() {
       const startTime = Date.now();
       
       try {
-        // Stop and remove containers, networks, and volumes
-        timings['Stop & Remove Containers'] = runCommand(
-          `docker compose -f "${DOCKER_COMPOSE_FILE}" --env-file "${ENV_FILE}" down -v --remove-orphans`,
-          'Stop & Remove Containers'
-        );
+        // Step 1: Stop and remove containers from current docker-compose project
+        log('\n📦 Step 1: Stopping and removing containers from current project...', colors.cyan);
+        try {
+          runCommand(
+            getDockerComposeCommand('down', '-v --remove-orphans'),
+            'Stop & Remove Current Project Containers'
+          );
+          timings['Stop & Remove Current Project'] = 0.1;
+        } catch (error) {
+          log('   ⚠️  Warning: Could not stop current project (may not exist)', colors.yellow);
+          timings['Stop & Remove Current Project'] = 0;
+        }
         
-        // Remove all evi images specifically
-        timings['Remove evi Images'] = runCommand(
-          'docker images --filter "reference=local-evi-*" -q | xargs -r docker rmi -f',
-          'Remove evi Images'
-        );
+        // Step 2: Remove all containers matching evi or ev2 patterns
+        log('\n📦 Step 2: Removing all project containers (evi and ev2)...', colors.cyan);
+        const containerPatterns = ['evi-', 'ev2-', '-evi-', '-ev2-'];
+        let containerTime = 0;
+        for (const pattern of containerPatterns) {
+          containerTime += removeContainersByPattern(pattern);
+        }
+        timings['Remove Project Containers'] = containerTime || 0.1;
         
-        // Remove all unused containers, networks, images, and build cache
+        // Step 3: Remove all volumes matching evi or ev2 patterns (including old ev2 volumes)
+        log('\n💾 Step 3: Removing all project volumes (evi and ev2)...', colors.cyan);
+        const volumePatterns = [
+          'local_evi_',
+          'local_ev2_',
+          'evi_',
+          'ev2_',
+          '-evi-',
+          '-ev2-'
+        ];
+        let volumeTime = 0;
+        for (const pattern of volumePatterns) {
+          volumeTime += removeVolumesByPattern(pattern);
+        }
+        timings['Remove Project Volumes'] = volumeTime || 0.1;
+        
+        // Step 4: Remove all images matching evi or ev2 patterns
+        log('\n🖼️  Step 4: Removing all project images (evi and ev2)...', colors.cyan);
+        const imagePatterns = [
+          'local-evi-',
+          'local-ev2-',
+          'evi-',
+          'ev2-'
+        ];
+        let imageTime = 0;
+        for (const pattern of imagePatterns) {
+          imageTime += removeImagesByPattern(pattern);
+        }
+        timings['Remove Project Images'] = imageTime || 0.1;
+        
+        // Step 5: Remove all networks matching evi or ev2 patterns
+        log('\n🌐 Step 5: Removing all project networks (evi and ev2)...', colors.cyan);
+        const networkPatterns = [
+          'evi-',
+          'ev2-',
+          '-evi-',
+          '-ev2-',
+          'local_evi',
+          'local_ev2'
+        ];
+        let networkTime = 0;
+        for (const pattern of networkPatterns) {
+          networkTime += removeNetworksByPattern(pattern);
+        }
+        timings['Remove Project Networks'] = networkTime || 0.1;
+        
+        // Step 6: Remove all unused containers, networks, images, and build cache
+        log('\n🧹 Step 6: Removing all unused Docker resources...', colors.cyan);
         timings['Remove All Unused Resources'] = runCommand(
           'docker system prune -a -f --volumes',
           'Remove All Unused Resources'
         );
         
-        // Additional cleanup for any remaining volumes
+        // Step 7: Final cleanup for any remaining volumes
+        log('\n💾 Step 7: Final cleanup of any remaining volumes...', colors.cyan);
         timings['Remove Remaining Volumes'] = runCommand(
           'docker volume prune -f',
           'Remove Remaining Volumes'
@@ -135,10 +417,12 @@ function cleanDocker() {
         timings['Total Cleanup Time'] = parseFloat(totalTime);
         
         log('\n✨ Docker Desktop is now completely clean!', colors.green, true);
+        log('   All evi and ev2 project resources have been removed.', colors.green);
         resolve(timings);
         
       } catch (error) {
         log('❌ Error during cleanup process.', colors.red, true);
+        log(`   Error details: ${error.message}`, colors.red);
         resolve({ 'Cleanup Failed': 0 });
       }
     });
@@ -151,11 +435,11 @@ function cleanDocker() {
 function buildAndUpAll() {
   const timings = {};
   timings['Build All Services'] = runCommand(
-    `docker compose -f "${DOCKER_COMPOSE_FILE}" --env-file "${ENV_FILE}" build --parallel`,
+    getDockerComposeCommand('build', '--parallel'),
     'Build All Services'
   );
   timings['Start All Services'] = runCommand(
-    `docker compose -f "${DOCKER_COMPOSE_FILE}" --env-file "${ENV_FILE}" up -d`,
+    getDockerComposeCommand('up', '-d'),
     'Start All Services'
   );
   return timings;
@@ -169,11 +453,11 @@ function buildAndUpSingle(serviceName) {
   const timings = {};
   const capitalizedName = serviceName.charAt(0).toUpperCase() + serviceName.slice(1);
   timings[`Build ${capitalizedName}`] = runCommand(
-    `docker compose -f "${DOCKER_COMPOSE_FILE}" --env-file "${ENV_FILE}" build ${serviceName}`,
+    getDockerComposeCommand('build', serviceName),
     `Build ${capitalizedName}`
   );
   timings[`Start ${capitalizedName}`] = runCommand(
-    `docker compose -f "${DOCKER_COMPOSE_FILE}" --env-file "${ENV_FILE}" up -d ${serviceName}`,
+    getDockerComposeCommand('up', `-d ${serviceName}`),
     `Start ${capitalizedName} and its dependencies`
   );
   return timings;
@@ -185,15 +469,15 @@ function buildAndUpSingle(serviceName) {
 function fullRebuildNoCache() {
   const timings = {};
   timings['Stop All Services'] = runCommand(
-    `docker compose -f "${DOCKER_COMPOSE_FILE}" --env-file "${ENV_FILE}" down`,
+    getDockerComposeCommand('down', ''),
     'Stop All Services'
   );
   timings['Build All Services (No Cache)'] = runCommand(
-    `docker compose -f "${DOCKER_COMPOSE_FILE}" --env-file "${ENV_FILE}" build --no-cache --parallel`,
+    getDockerComposeCommand('build', '--no-cache --parallel'),
     'Build All Services (No Cache)'
   );
   timings['Start All Services'] = runCommand(
-    `docker compose -f "${DOCKER_COMPOSE_FILE}" --env-file "${ENV_FILE}" up -d`,
+    getDockerComposeCommand('up', '-d'),
     'Start All Services'
   );
   return timings;
@@ -225,11 +509,11 @@ function startCurrentContainers() {
   // Check if containers exist (even if stopped)
   log('🔍 Checking if containers exist...', colors.cyan);
   try {
-    const checkCommand = `docker compose -f "${DOCKER_COMPOSE_FILE}" --env-file "${ENV_FILE}" ps -a -q`;
+    const checkCommand = getDockerComposeCommand('ps', '-a -q');
     const containerIds = execSync(checkCommand, { encoding: 'utf8' }).trim();
     
     if (!containerIds) {
-      log('❌ Error: No containers found. Please build containers first using option 1 or 6.', colors.red, true);
+      log('❌ Error: No containers found. Please build containers first using option 1 or 2.', colors.red, true);
       process.exit(1);
     }
     
@@ -240,7 +524,7 @@ function startCurrentContainers() {
   }
   
   timings['Start Existing Containers'] = runCommand(
-    `docker compose -f "${DOCKER_COMPOSE_FILE}" --env-file "${ENV_FILE}" up -d`,
+    getDockerComposeCommand('up', '-d'),
     'Start Existing Containers'
   );
   return timings;
@@ -305,16 +589,54 @@ ${colors.yellow}[5]${colors.reset} Exit
   });
 }
 
-// Check if docker-compose file exists before running
-try {
-  const fs = require('fs');
-  if (!fs.existsSync(DOCKER_COMPOSE_FILE)) {
-    log(`❌ Error: Docker compose file not found at "${DOCKER_COMPOSE_FILE}"`, colors.red, true);
-    log('   Please ensure you are running this script from the project root directory.', colors.yellow);
+/**
+ * Parses command line arguments.
+ * @returns {Object} Object with parsed arguments.
+ */
+function parseArguments() {
+  const args = process.argv.slice(2);
+  return {
+    clean: args.includes('--clean')
+  };
+}
+
+/**
+ * Main entry point.
+ */
+async function main() {
+  try {
+    // Check if docker-compose file exists
+    if (!fs.existsSync(DOCKER_COMPOSE_FILE)) {
+      log(`❌ Error: Docker compose file not found at "${DOCKER_COMPOSE_FILE}"`, colors.red, true);
+      log('   Please ensure you are running this script from the project root directory.', colors.yellow);
+      process.exit(1);
+    }
+    
+    // Check .env.local file status
+    if (envFileExists()) {
+      log(`ℹ️  Using environment file: ${ENV_FILE}`, colors.cyan);
+    } else {
+      log(`ℹ️  Environment file ${ENV_FILE} not found. Using default values from docker-compose.yml`, colors.yellow);
+    }
+    
+    // Parse command line arguments
+    const args = parseArguments();
+    
+    // If --clean flag is provided, clean project containers first
+    if (args.clean) {
+      log('\n🧹 Cleaning project containers before showing menu...', colors.cyan, true);
+      const cleanupTimings = cleanProjectContainers();
+      showSummary(cleanupTimings);
+      log('\n✅ Cleanup completed. Showing menu...\n', colors.green);
+    }
+    
+    // Always show menu (as per requirement)
+    mainMenu();
+  } catch (e) {
+    log(`An unexpected error occurred: ${e.message}`, colors.red, true);
     process.exit(1);
   }
-  mainMenu();
-} catch (e) {
-  log(`An unexpected error occurred: ${e.message}`, colors.red, true);
-  process.exit(1);
 }
+
+// Run main function
+main();

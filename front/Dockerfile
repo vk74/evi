@@ -25,6 +25,10 @@ RUN --mount=type=cache,target=/root/.npm \
 # Copy source code
 COPY ./ .
 
+# Accept build argument for API URL (defaults to localhost for local dev)
+ARG VUE_APP_API_URL=http://localhost:3000
+ENV VUE_APP_API_URL=${VUE_APP_API_URL}
+
 # Build production assets (cache webpack/babel caches)
 RUN --mount=type=cache,target=/app/node_modules/.cache \
     npm run build

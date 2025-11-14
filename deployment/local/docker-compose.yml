@@ -77,13 +77,14 @@ services:
     build:
       context: ../../front
       dockerfile: Dockerfile
+      args:
+        VUE_APP_API_URL: ${FRONTEND_API_URL:-http://localhost:3000}
     container_name: evi-frontend-local
     restart: unless-stopped
     
     # Environment variables
     environment:
       NODE_ENV: production
-      VITE_API_URL: ${FRONTEND_API_URL:-http://localhost:3000}
     
     # Port mapping
     ports:
