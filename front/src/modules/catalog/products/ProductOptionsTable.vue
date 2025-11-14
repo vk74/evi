@@ -150,12 +150,12 @@ watch(() => props.mainProductUnitsCount, () => {
 
 // Headers mirroring PairEditor style
 const headers = computed(() => [
-  { title: t('catalog.productDetails.options.headers.optionName'), key: 'option_name', width: '35%' },
+  { title: t('catalog.productDetails.options.headers.optionName'), key: 'option_name', width: '28%' },
   { title: t('catalog.productDetails.options.headers.productCode'), key: 'product_code', width: '20%' },
-  { title: t('catalog.productDetails.options.headers.unitsCount'), key: 'units_count', width: '15%' },
-  { title: t('catalog.productDetails.options.headers.minUnits'), key: 'min_units', width: '10%' },
-  { title: t('catalog.productDetails.options.headers.unitPrice'), key: 'unit_price', width: '10%' },
-  { title: t('catalog.productDetails.options.headers.sum'), key: 'sum', width: '10%' },
+  { title: t('catalog.productDetails.options.headers.unitsCount'), key: 'units_count', width: '8%' },
+  { title: t('catalog.productDetails.options.headers.minUnits'), key: 'min_units', width: '8%' },
+  { title: t('catalog.productDetails.options.headers.unitPrice'), key: 'unit_price', width: '18%' },
+  { title: t('catalog.productDetails.options.headers.sum'), key: 'sum', width: '18%' },
 ])
 
 // Apply search filter (backend already filters by status_code = 'active')
