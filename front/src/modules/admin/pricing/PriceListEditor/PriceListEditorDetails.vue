@@ -1,5 +1,5 @@
 <!--
-Version: 1.7.0
+Version: 1.7.1
 Price list editor details section with items table and action buttons.
 Frontend file: PriceListEditorDetails.vue
 
@@ -16,6 +16,11 @@ Changes in v1.7.0:
 - Added automatic price rounding on display, input, save, and update
 - Added automatic price correction when user inputs non-compliant values
 - Prices are rounded according to currency rounding_precision in all cases
+
+Changes in v1.7.1:
+- Fixed price formatting to be reactive to locale changes
+- Changed formatPriceDisplay from regular function to computed property
+- Price formatting now correctly adapts to Russian and English locales
 -->
 <script setup lang="ts">
 import { computed, ref, watch, onMounted } from 'vue'
@@ -42,7 +47,7 @@ import {
   PhPencilSimple
 } from '@phosphor-icons/vue'
 
-const { t } = useI18n()
+const { t, locale } = useI18n()
 const pricingStore = usePricingAdminStore()
 const uiStore = useUiStore()
 
@@ -189,19 +194,21 @@ const getCurrencySymbol = (currencyCode: string): string | null => {
   return currency?.symbol || null
 }
 
-// Function to format price for display (same as ProductOptionsTable)
-const formatPriceDisplay = (price: number): string | null => {
-  if (price === null || price === undefined || isNaN(price)) {
-    return null
+// Computed function to format price for display (reactive to locale changes)
+const formatPriceDisplay = computed(() => {
+  return (price: number): string | null => {
+    if (price === null || price === undefined || isNaN(price)) {
+      return null
+    }
+    const symbol = currencySymbol.value || getCurrencySymbol(priceListCurrency.value)
+    return formatPriceWithPrecision({
+      price,
+      currencySymbol: symbol,
+      roundingPrecision: roundingPrecision.value,
+      locale: locale.value
+    })
   }
-  const symbol = currencySymbol.value || getCurrencySymbol(priceListCurrency.value)
-  return formatPriceWithPrecision({
-    price,
-    currencySymbol: symbol,
-    roundingPrecision: roundingPrecision.value,
-    locale: undefined
-  })
-}
+})
 
 // Function to round price based on rounding precision
 const roundPrice = (price: number): number => {
