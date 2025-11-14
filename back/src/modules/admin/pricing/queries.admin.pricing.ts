@@ -1,5 +1,5 @@
     /**
-     * version: 1.3.6
+     * version: 1.3.7
      * SQL queries for pricing administration module.
      * Contains parameterized queries related to pricing (currencies and price lists).
      * Includes integrity check queries and queries for event payload data.
@@ -8,6 +8,9 @@
      * 
      * Changes in v1.3.6:
      * - Included rounding_precision column across currency-related queries
+     * 
+     * Changes in v1.3.7:
+     * - Updated fetchPriceListById query to JOIN with currencies table and include rounding_precision
      * 
      * Changes in v1.3.5:
      * - Added existsActiveCurrency query to check currency existence and active status
@@ -159,18 +162,20 @@ export const queries = {
      */
     fetchPriceListById: `
         SELECT 
-            price_list_id,
-            name,
-            description,
-            currency_code,
-            is_active,
-            owner_id,
-            created_by,
-            updated_by,
-            created_at,
-            updated_at
-        FROM app.price_lists_info
-        WHERE price_list_id = $1
+            pli.price_list_id,
+            pli.name,
+            pli.description,
+            pli.currency_code,
+            pli.is_active,
+            pli.owner_id,
+            pli.created_by,
+            pli.updated_by,
+            pli.created_at,
+            pli.updated_at,
+            c.rounding_precision
+        FROM app.price_lists_info pli
+        LEFT JOIN app.currencies c ON pli.currency_code = c.code
+        WHERE pli.price_list_id = $1
     `,
 
     /**

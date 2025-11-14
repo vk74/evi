@@ -1,5 +1,5 @@
 <!--
-Version: 1.6.0
+Version: 1.7.0
 Price list editor details section with items table and action buttons.
 Frontend file: PriceListEditorDetails.vue
 
@@ -10,6 +10,12 @@ Changes in v1.6.0:
 - Added protection against parallel data loading requests
 - Added store synchronization after data loading (for consistency)
 - Added watch on editingPriceListId for automatic reload when ID changes
+
+Changes in v1.7.0:
+- Added rounding precision support from currency settings
+- Added automatic price rounding on display, input, save, and update
+- Added automatic price correction when user inputs non-compliant values
+- Prices are rounded according to currency rounding_precision in all cases
 -->
 <script setup lang="ts">
 import { computed, ref, watch, onMounted } from 'vue'
@@ -23,6 +29,7 @@ import { deletePriceListItemsService } from './service.admin.delete.pricelist.it
 import { updatePriceListItemsService } from './service.admin.update.pricelist.items'
 import { fetchPriceListService } from './service.admin.fetch.pricelist'
 import { PriceItemType, CreatePriceListItemRequest, DeletePriceListItemsRequest, UpdatePriceListItemsRequest } from '../types.pricing.admin'
+import { formatPriceWithPrecision } from '@/core/helpers/helper.format.price'
 import {
   PhArrowClockwise,
   PhPlus,
@@ -73,6 +80,15 @@ const showDeleteConfirmation = ref<boolean>(false)
 
 // Loading state for items data
 const isLoadingItems = ref<boolean>(false)
+
+// Rounding precision state
+const roundingPrecision = ref<number | null>(null)
+
+// Currency symbol state
+const currencySymbol = ref<string | null>(null)
+
+// Track which price field is being edited
+const editingPriceId = ref<string | null>(null)
 
 // Search state
 const searchQuery = ref<string>('')
@@ -167,17 +183,82 @@ const priceListCurrency = computed(() => {
   return 'USD'
 })
 
+// Function to get currency symbol from store
+const getCurrencySymbol = (currencyCode: string): string | null => {
+  const currency = pricingStore.currencies.find(c => c.code === currencyCode)
+  return currency?.symbol || null
+}
+
+// Function to format price for display (same as ProductOptionsTable)
+const formatPriceDisplay = (price: number): string | null => {
+  if (price === null || price === undefined || isNaN(price)) {
+    return null
+  }
+  const symbol = currencySymbol.value || getCurrencySymbol(priceListCurrency.value)
+  return formatPriceWithPrecision({
+    price,
+    currencySymbol: symbol,
+    roundingPrecision: roundingPrecision.value,
+    locale: undefined
+  })
+}
+
+// Function to round price based on rounding precision
+const roundPrice = (price: number): number => {
+  if (roundingPrecision.value === null || roundingPrecision.value === undefined) {
+    return price
+  }
+  const precision = roundingPrecision.value
+  if (precision < 0 || precision > 8) {
+    return price
+  }
+  // Use Math.round for proper rounding
+  return Math.round(price * Math.pow(10, precision)) / Math.pow(10, precision)
+}
+
+// Function to handle price input with automatic rounding correction
+const handlePriceInput = (item: EditorLine, newValue: number | string) => {
+  const numValue = typeof newValue === 'string' ? parseFloat(newValue) : newValue
+  if (isNaN(numValue)) {
+    return
+  }
+  const roundedValue = roundPrice(numValue)
+  item.listPrice = roundedValue
+}
+
+// Function to handle price field focus
+const handlePriceFocus = (item: EditorLine) => {
+  editingPriceId.value = item.id
+}
+
+// Function to handle price field blur
+const handlePriceBlur = (item: EditorLine) => {
+  editingPriceId.value = null
+  handlePriceInput(item, item.listPrice)
+}
+
+// Function to handle price input change
+const handlePriceChange = (item: EditorLine, value: string) => {
+  const numValue = parseFloat(value)
+  if (!isNaN(numValue)) {
+    item.listPrice = numValue
+  }
+}
+
 // Action handlers
 function addRow(): void {
   // Use first available type as default, or empty string if no types loaded yet
   const defaultType = priceItemTypes.value.length > 0 ? priceItemTypes.value[0].type_code : ''
+  
+  // Round initial price (0) according to rounding precision
+  const initialPrice = roundPrice(0)
   
   lines.value.push({
     id: `tmp_${Date.now()}`,
     itemType: defaultType,
     itemCode: '',
     itemName: '',
-    listPrice: 0
+    listPrice: initialPrice
   })
 }
 
@@ -335,19 +416,35 @@ const refreshDataFromServer = async (): Promise<void> => {
     )
     
     if (result.success && result.data?.items) {
+      // Store rounding precision from API response
+      if (result.data.roundingPrecision !== null && result.data.roundingPrecision !== undefined) {
+        roundingPrecision.value = Number(result.data.roundingPrecision)
+      } else {
+        roundingPrecision.value = null
+      }
+      
+      // Store currency symbol from store
+      if (result.data.priceList) {
+        currencySymbol.value = getCurrencySymbol(result.data.priceList.currency_code)
+      }
+      
       // Convert existing items to EditorLine format with original values
-      const existingLines: EditorLine[] = result.data.items.map(item => ({
-        id: item.item_id.toString(),
-        itemType: item.item_type,
-        itemCode: item.item_code,
-        itemName: item.item_name,
-        listPrice: item.list_price,
-        // Store original values for change tracking
-        originalItemType: item.item_type,
-        originalItemCode: item.item_code,
-        originalItemName: item.item_name,
-        originalListPrice: item.list_price
-      }))
+      // Apply rounding to list_price when loading
+      const existingLines: EditorLine[] = result.data.items.map(item => {
+        const roundedPrice = roundPrice(item.list_price)
+        return {
+          id: item.item_id.toString(),
+          itemType: item.item_type,
+          itemCode: item.item_code,
+          itemName: item.item_name,
+          listPrice: roundedPrice,
+          // Store original values for change tracking (use rounded price for original too)
+          originalItemType: item.item_type,
+          originalItemCode: item.item_code,
+          originalItemName: item.item_name,
+          originalListPrice: roundedPrice
+        }
+      })
       
       lines.value = existingLines
       console.log(`[Refresh Data] Loaded ${existingLines.length} items from server`)
@@ -439,6 +536,10 @@ watch(
 
 // Load price item types and existing items on component mount
 onMounted(async () => {
+  // Load currencies if not already loaded (needed for currency symbol)
+  if (pricingStore.currencies.length === 0) {
+    await pricingStore.loadCurrencies()
+  }
   await loadPriceItemTypes()
   await loadExistingItems()
 })
@@ -482,19 +583,35 @@ const loadExistingItems = async (): Promise<void> => {
     )
     
     if (result.success && result.data?.items) {
+      // Store rounding precision from API response
+      if (result.data.roundingPrecision !== null && result.data.roundingPrecision !== undefined) {
+        roundingPrecision.value = Number(result.data.roundingPrecision)
+      } else {
+        roundingPrecision.value = null
+      }
+      
+      // Store currency symbol from store
+      if (result.data.priceList) {
+        currencySymbol.value = getCurrencySymbol(result.data.priceList.currency_code)
+      }
+      
       // Convert existing items to EditorLine format with original values
-      const existingLines: EditorLine[] = result.data.items.map(item => ({
-        id: item.item_id.toString(),
-        itemType: item.item_type,
-        itemCode: item.item_code,
-        itemName: item.item_name,
-        listPrice: item.list_price,
-        // Store original values for change tracking
-        originalItemType: item.item_type,
-        originalItemCode: item.item_code,
-        originalItemName: item.item_name,
-        originalListPrice: item.list_price
-      }))
+      // Apply rounding to list_price when loading
+      const existingLines: EditorLine[] = result.data.items.map(item => {
+        const roundedPrice = roundPrice(item.list_price)
+        return {
+          id: item.item_id.toString(),
+          itemType: item.item_type,
+          itemCode: item.item_code,
+          itemName: item.item_name,
+          listPrice: roundedPrice,
+          // Store original values for change tracking (use rounded price for original too)
+          originalItemType: item.item_type,
+          originalItemCode: item.item_code,
+          originalItemName: item.item_name,
+          originalListPrice: roundedPrice
+        }
+      })
       
       lines.value = existingLines
       console.log(`[Load Items] Loaded ${existingLines.length} items from API`)
@@ -539,11 +656,13 @@ const saveAllItems = async () => {
     let errorCount = 0
     
     for (const item of newItems) {
+      // Round price before sending to server
+      const roundedPrice = roundPrice(item.listPrice)
       const request: CreatePriceListItemRequest = {
         item_type: item.itemType,
         item_code: item.itemCode,
         item_name: item.itemName,
-        list_price: item.listPrice,
+        list_price: roundedPrice,
         wholesale_price: null
       }
 
@@ -625,7 +744,8 @@ const updateAllItems = async () => {
         changes.itemName = item.itemName
       }
       if (item.originalListPrice !== undefined && item.listPrice !== item.originalListPrice) {
-        changes.listPrice = item.listPrice
+        // Round price before sending to server
+        changes.listPrice = roundPrice(item.listPrice)
       }
       
       return {
@@ -817,14 +937,26 @@ const updateAllItems = async () => {
         <!-- Price - editable -->
         <template #[`item.listPrice`]="{ item }">
           <v-text-field 
-            v-model.number="item.listPrice" 
+            v-if="editingPriceId === item.id"
+            :model-value="item.listPrice.toString()"
             type="number" 
-            step="0.01" 
+            :step="roundingPrecision !== null && roundingPrecision !== undefined ? Math.pow(10, -roundingPrecision) : 0.01"
             min="0" 
             density="compact" 
             variant="plain" 
-            hide-details 
+            hide-details
+            :suffix="currencySymbol || ''"
+            @update:model-value="(val) => handlePriceChange(item, val as string)"
+            @blur="handlePriceBlur(item)"
+            autofocus
           />
+          <span 
+            v-else
+            style="cursor: pointer; padding: 4px 8px; display: inline-block; min-width: 60px;"
+            @click="handlePriceFocus(item)"
+          >
+            {{ formatPriceDisplay(item.listPrice) ?? '-' }}
+          </span>
         </template>
       </v-data-table>
 

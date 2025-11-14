@@ -1,17 +1,19 @@
 /**
  * @file service.admin.fetch.pricelist.ts
- * Version: 1.1.0
+ * Version: 1.2.0
  * Service for fetching single price list data from the API by price list ID.
  * Frontend file that handles price list data retrieval for editor.
  * 
  * Functionality:
  * - Retrieves price list data by ID from backend API
  * - Validates the received data
- * - Maps backend DTO to frontend types
+ * - Maps backend DTO to frontend types including roundingPrecision
  * - Handles errors during fetching
  * 
  * File: service.admin.fetch.pricelist.ts (frontend)
  * 
+ * Changes in v1.2.0:
+ * - Added roundingPrecision mapping from API response
  */
 import { api } from '@/core/api/service.axios';
 import type { 
@@ -114,11 +116,19 @@ export const fetchPriceListService = {
         itemsCount: mappedItems.length
       });
 
+      // Map rounding_precision from backend (snake_case) to roundingPrecision (camelCase)
+      const roundingPrecisionValue = (response.data.data as any).rounding_precision !== null && (response.data.data as any).rounding_precision !== undefined
+        ? Number((response.data.data as any).rounding_precision)
+        : (response.data.data.roundingPrecision !== null && response.data.data.roundingPrecision !== undefined
+          ? Number(response.data.data.roundingPrecision)
+          : null)
+
       return {
         success: true,
         data: {
           priceList: mappedPriceList,
-          items: mappedItems
+          items: mappedItems,
+          roundingPrecision: roundingPrecisionValue
         }
       };
 

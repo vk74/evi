@@ -1,14 +1,17 @@
 /**
- * version: 1.0.0
+ * version: 1.1.0
  * Service for fetching a single price list by ID.
  * Backend file that handles business logic for retrieving single price list data.
  * 
  * Functionality:
  * - Fetches single price list from database by ID
- * - Returns full price list data
+ * - Returns full price list data with rounding_precision from currency
  * - Handles not found cases
  * 
  * File: service.admin.pricing.fetch.pricelist.ts (backend)
+ * 
+ * Changes in v1.1.0:
+ * - Added rounding_precision to response data from currency table
  */
 
 import { Request } from 'express';
@@ -62,7 +65,22 @@ export async function fetchPriceList(
             };
         }
 
-        const priceList: PriceListFullDto = result.rows[0];
+        const row = result.rows[0];
+        const priceList: PriceListFullDto = {
+            price_list_id: row.price_list_id,
+            name: row.name,
+            description: row.description,
+            currency_code: row.currency_code,
+            is_active: row.is_active,
+            owner_id: row.owner_id,
+            created_by: row.created_by,
+            updated_by: row.updated_by,
+            created_at: row.created_at,
+            updated_at: row.updated_at
+        };
+        const roundingPrecision = row.rounding_precision !== null && row.rounding_precision !== undefined 
+            ? Number(row.rounding_precision) 
+            : null;
 
         // Fetch price list items
         const itemsResult = await pool.query(queries.fetchPriceListItems, [priceListId]);
@@ -83,7 +101,8 @@ export async function fetchPriceList(
             success: true,
             data: {
                 priceList,
-                items
+                items,
+                rounding_precision: roundingPrecision
             }
         };
 

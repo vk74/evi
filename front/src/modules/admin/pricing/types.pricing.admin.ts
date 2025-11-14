@@ -1,12 +1,15 @@
 /**
  * @file types.pricing.admin.ts
- * Version: 1.3.5
+ * Version: 1.3.6
  * Type definitions for pricing administration module.
  * Frontend types for pricing admin functionality.
  * File: types.pricing.admin.ts (frontend)
  * 
  * Changes in v1.3.5:
  * - Added roundingPrecision to Currency type for UI display and persistence
+ * 
+ * Changes in v1.3.6:
+ * - Added roundingPrecision to FetchPriceListResult data
  */
 
 // Pricing section interface for menu navigation
@@ -124,6 +127,7 @@ export interface FetchPriceListResult {
   data?: {
     priceList: PriceListFull
     items: PriceListItem[]
+    roundingPrecision?: number | null
   }
 }
 

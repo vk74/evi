@@ -1,11 +1,14 @@
 /**
- * version: 1.4.5
+ * version: 1.4.6
  * Backend types for pricing administration module.
  * Defines DTOs for currencies, price lists and other pricing-related entities.
  * File: types.admin.pricing.ts (backend)
  * 
  * Changes in v1.4.5:
  * - Added rounding_precision field to CurrencyDto and related payloads
+ * 
+ * Changes in v1.4.6:
+ * - Added rounding_precision field to FetchPriceListResponse data
  */
 
 // ============================================
@@ -150,6 +153,7 @@ export interface FetchPriceListResponse {
     data?: {
         priceList: PriceListFullDto
         items: PriceListItemDto[]
+        rounding_precision?: number | null
     }
 }
 
