@@ -1,9 +1,10 @@
--- Version: 1.3.1
+-- Version: 1.3.2
 -- Description: Create all application tables, functions, and triggers.
 -- Backend file: 04_tables.sql
 -- Updated: mobile_phone_number -> mobile_phone field name
 -- Added: published_by and published_at columns to section_products table
 -- Updated: status_code column uses app.product_status UDT enum instead of VARCHAR with FK
+-- Updated: is_public column moved after updated_at to match dev database order
 
 -- ===========================================
 -- Helper Functions
@@ -104,8 +105,8 @@ CREATE TABLE IF NOT EXISTS app.app_settings (
     default_value JSONB,
     confidentiality BOOLEAN NOT NULL DEFAULT false,
     description TEXT,
-    is_public BOOLEAN DEFAULT FALSE,
     updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    is_public BOOLEAN DEFAULT FALSE,
     PRIMARY KEY (section_path, setting_name, environment)
 );
 

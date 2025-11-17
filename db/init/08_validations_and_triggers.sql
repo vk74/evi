@@ -1,4 +1,4 @@
--- Version: 1.2.0
+-- Version: 1.2.1
 -- Description: Database validation functions and triggers for business logic enforcement.
 -- Backend file: 08_validations_and_triggers.sql
 -- 
@@ -10,6 +10,9 @@
 -- - Added validation for country-pricelist mapping setting
 -- - Validates country names against app.app_countries enum
 -- - Validates pricelist IDs are integers >= 1
+--
+-- Changes in v1.2.1:
+-- - Fixed language validation to use app.system_language_code (app.app_languages was removed)
 
 -- ============================================
 -- Regional Settings Validation
@@ -38,8 +41,8 @@ BEGIN
   -- Validate language setting
   IF NEW.setting_name = 'default.language' THEN
     -- Check if value (removing quotes) is a valid language enum value
-    IF NOT (NEW.value #>> '{}')::app.app_languages IS NOT NULL THEN
-      RAISE EXCEPTION 'Invalid language value: %. Must be one of the app.app_languages enum values', NEW.value;
+    IF NOT (NEW.value #>> '{}')::app.system_language_code IS NOT NULL THEN
+      RAISE EXCEPTION 'Invalid language value: %. Must be one of the app.system_language_code enum values', NEW.value;
     END IF;
   END IF;
 
