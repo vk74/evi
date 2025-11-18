@@ -1,5 +1,5 @@
 <!--
-version: 1.7.0
+version: 1.7.1
 Frontend file for catalog module.
 Catalog interface with sections, filters, and service/product cards.
 File: ModuleCatalog.vue
@@ -35,6 +35,12 @@ Changes in v1.6.0:
 Changes in v1.7.0:
 - Passed rounding precision metadata to product cards
 - Cache now stores rounding precision for correct price formatting
+
+Changes in v1.7.1:
+- Fixed location modal showing on every catalog initialization
+- Added check for isLoadingCountry before showing location modal
+- Added automatic country loading attempt before showing modal
+- Modal now shows only when country is actually not set after loading attempt
 -->
 <script setup lang="ts">
 import { ref, computed, onMounted, watch } from 'vue';
@@ -266,9 +272,22 @@ async function loadActiveProducts() {
 // ==================== PRICE LOADING FUNCTIONS ====================
 async function loadProductPrices() {
   try {
-    // Get user country
-    const userCountry = appStore.getUserCountry;
+    // Check if country is currently loading
+    if (appStore.isLoadingCountry) {
+      // Country is loading - wait for it to complete, don't show modal yet
+      return;
+    }
     
+    // Get user country
+    let userCountry = appStore.getUserCountry;
+    
+    // If country is not loaded, try to load it first
+    if (!userCountry) {
+      await appStore.loadUserCountry();
+      userCountry = appStore.getUserCountry;
+    }
+    
+    // Only show modal if country is still null after loading attempt
     if (!userCountry) {
       // No country - show toast and emit event to open LocationSelectionModal
       uiStore.showErrorSnackbar(t('catalog.errors.selectCountryLocation'));

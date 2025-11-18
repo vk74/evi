@@ -1,5 +1,5 @@
 <!--
-version: 1.11.0
+version: 1.11.1
 Frontend file for product details view component.
 Displays extended info and placeholders for product options.
 File: ProductDetails.vue
@@ -49,6 +49,12 @@ Changes in v1.11.0:
 - Unit price field now takes full available width in its block
 - Changed sidebar blocks layout from horizontal to vertical (labels above fields)
 - Sidebar price fields now take full width of their containers
+
+Changes in v1.11.1:
+- Fixed location modal showing on every product details initialization
+- Added check for isLoadingCountry before showing location modal
+- Added automatic country loading attempt before showing modal
+- Modal now shows only when country is actually not set after loading attempt
 -->
 <script setup lang="ts">
 import { ref, onMounted, watch, computed } from 'vue'
@@ -207,9 +213,22 @@ async function loadProductPrice() {
       return
     }
 
-    // Get user country
-    const userCountry = appStore.getUserCountry
+    // Check if country is currently loading
+    if (appStore.isLoadingCountry) {
+      // Country is loading - wait for it to complete, don't show modal yet
+      return
+    }
     
+    // Get user country
+    let userCountry = appStore.getUserCountry
+    
+    // If country is not loaded, try to load it first
+    if (!userCountry) {
+      await appStore.loadUserCountry()
+      userCountry = appStore.getUserCountry
+    }
+    
+    // Only show modal if country is still null after loading attempt
     if (!userCountry) {
       // No country - show toast and emit event to open LocationSelectionModal
       uiStore.showErrorSnackbar(t('catalog.errors.selectCountryLocation'))
