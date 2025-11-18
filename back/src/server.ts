@@ -1,11 +1,16 @@
 /**
- * version: 1.0.05
+ * version: 1.1.0
  * Main server file
  * 
  * This is the entry point for the backend server.
  * It handles server initialization, middleware setup, and route registration.
  * File: server.ts
  * Updated to support httpOnly cookies for refresh tokens.
+ * 
+ * Changes in v1.1.0:
+ * - Added rate limit guard validation during server initialization
+ * - Rate limiting now enforced at guard level before JWT validation
+ * - Renamed connectionHandlerReady to rateLimitGuardReady flag
  */
 
 // Import module-alias for path aliases
@@ -54,12 +59,12 @@ import { getSetting, parseSettingValue } from '@/modules/admin/settings/cache.se
 // Import validation service
 
 /**
- * Validate that connection handler can access rate limiting settings from cache
- * @returns Promise<boolean> indicating if connection handler is ready
+ * Validate that rate limit guard can access rate limiting settings from cache
+ * @returns Promise<boolean> indicating if rate limit guard is ready
  */
-async function validateConnectionHandlerReadiness(): Promise<boolean> {
+async function validateRateLimitGuardReadiness(): Promise<boolean> {
   try {
-    console.log('Validating connection handler readiness...');
+    console.log('Validating rate limit guard readiness...');
     
     // Check if all required rate limiting settings are available in cache
     const requiredSettings = [
@@ -92,12 +97,12 @@ async function validateConnectionHandlerReadiness(): Promise<boolean> {
     }
     
     if (missingSettings.length > 0) {
-      console.error('Connection handler validation failed - missing or invalid settings:', missingSettings);
+      console.error('Rate limit guard validation failed - missing or invalid settings:', missingSettings);
       return false;
     }
     
     // Log successful validation
-    console.log('Connection handler validation successful - rate limiting settings loaded:', {
+    console.log('Rate limit guard validation successful - rate limiting settings loaded:', {
       enabled: loadedSettings['rate.limiting.enabled'],
       maxRequestsPerMinute: loadedSettings['rate.limiting.max.requests.per.minute'],
       maxRequestsPerHour: loadedSettings['rate.limiting.max.requests.per.hour'],
@@ -106,7 +111,7 @@ async function validateConnectionHandlerReadiness(): Promise<boolean> {
     
     return true;
   } catch (error) {
-    console.error('Connection handler validation failed with error:', error);
+    console.error('Rate limit guard validation failed with error:', error);
     return false;
   }
 }
@@ -128,8 +133,8 @@ let settingsLoaded: boolean = false;
 // Event system ready flag
 let eventSystemInitialized: boolean = false;
 
-// Connection handler ready flag
-let connectionHandlerReady: boolean = false;
+// Rate limit guard ready flag
+let rateLimitGuardReady: boolean = false;
 
 
 
@@ -145,8 +150,8 @@ const checkServerReady = (req: Request, res: Response, next: NextFunction): void
     notReadyComponents.push('Event System');
   }
   
-  if (!connectionHandlerReady) {
-    notReadyComponents.push('Connection Handler');
+  if (!rateLimitGuardReady) {
+    notReadyComponents.push('Rate Limit Guard');
   }
   
   if (notReadyComponents.length > 0) {
@@ -224,14 +229,14 @@ async function initializeServer(): Promise<void> {
     settingsLoaded = true;
     console.log('[Server] System settings loaded and ready');
 
-    // 5. Validate connection handler readiness
-    console.log('Validating connection handler readiness...');
-    const connectionHandlerValid = await validateConnectionHandlerReadiness();
-    if (!connectionHandlerValid) {
-      throw new Error('Connection handler validation failed - rate limiting settings not available');
+    // 5. Validate rate limit guard readiness
+    console.log('Validating rate limit guard readiness...');
+    const rateLimitValid = await validateRateLimitGuardReadiness();
+    if (!rateLimitValid) {
+      throw new Error('Rate limit guard validation failed - rate limiting settings not available');
     }
-    connectionHandlerReady = true;
-    console.log('[Server] Connection handler validated and ready');
+    rateLimitGuardReady = true;
+    console.log('[Server] Rate limit guard validated and ready');
 
     // 6. Initialize logger service AFTER settings are loaded
     // This ensures logger can apply correct settings from cache

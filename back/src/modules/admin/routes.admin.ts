@@ -1,12 +1,16 @@
 /**
- * version: 1.0.12
+ * version: 1.1.0
  * Backend router file for admin functionality.
  * Defines routes for administrative functions focused on organization management.
- * All routes are protected by JWT validation and user status check middleware.
+ * All routes are protected by rate limiting, JWT validation and user status check middleware.
  * File: routes.admin.ts
+ * 
+ * Changes in v1.1.0:
+ * - Added rate limit guard as first guard in all routes for DDoS protection
  */
 
 import express, { Router } from 'express';
+import checkRateLimit from '../../core/guards/guard.rate.limit';
 import validateJWT from '../../core/guards/guard.validate.jwt';
 import checkIsUserStatusActive from '../../core/guards/guard.check.is.user.status.active';
 import checkRequestSecurityHard from '../../core/guards/guard.check.request.security.hard';
@@ -70,82 +74,82 @@ import getUserCountryController from '../account/controller.get.user.country';
 const router: Router = express.Router();
 
 // Routes for Users
-router.post('/api/admin/users/create-new-user', checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, createUserController);
-router.get('/api/admin/users/fetch-users', checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, fetchUsers);
-router.get('/api/admin/users/fetch-user-by-userid/:userId', checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, loadUserById);
-router.post('/api/admin/users/update-user-by-userid/:userId', checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, updateUserById);
-router.post('/api/admin/users/delete-selected-users', checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, deleteSelectedUsers);
-router.get('/api/admin/users/:userId/groups', checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, fetchUserGroupsController);
-router.post('/api/admin/users/remove-from-groups', checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, removeUserFromGroupsController);
+router.post('/api/admin/users/create-new-user', checkRateLimit, checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, createUserController);
+router.get('/api/admin/users/fetch-users', checkRateLimit, checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, fetchUsers);
+router.get('/api/admin/users/fetch-user-by-userid/:userId', checkRateLimit, checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, loadUserById);
+router.post('/api/admin/users/update-user-by-userid/:userId', checkRateLimit, checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, updateUserById);
+router.post('/api/admin/users/delete-selected-users', checkRateLimit, checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, deleteSelectedUsers);
+router.get('/api/admin/users/:userId/groups', checkRateLimit, checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, fetchUserGroupsController);
+router.post('/api/admin/users/remove-from-groups', checkRateLimit, checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, removeUserFromGroupsController);
 
 // Routes for Groups
-router.post('/api/admin/groups/create-new-group', checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, createGroupController);
-router.get('/api/admin/groups/fetch-groups', checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, fetchGroups);
-router.post('/api/admin/groups/delete-selected-groups', checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, deleteSelectedGroupsController);
-router.get('/api/admin/groups/fetch-group-by-groupid/:groupId', checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, fetchGroupById);
-router.post('/api/admin/groups/update-group-by-groupid', checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, updateGroupById);
-router.get('/api/admin/groups/:groupId/members', checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, fetchGroupMembers);
-router.post('/api/admin/groups/:groupId/members/remove', checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, removeGroupMembers);
+router.post('/api/admin/groups/create-new-group', checkRateLimit, checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, createGroupController);
+router.get('/api/admin/groups/fetch-groups', checkRateLimit, checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, fetchGroups);
+router.post('/api/admin/groups/delete-selected-groups', checkRateLimit, checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, deleteSelectedGroupsController);
+router.get('/api/admin/groups/fetch-group-by-groupid/:groupId', checkRateLimit, checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, fetchGroupById);
+router.post('/api/admin/groups/update-group-by-groupid', checkRateLimit, checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, updateGroupById);
+router.get('/api/admin/groups/:groupId/members', checkRateLimit, checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, fetchGroupMembers);
+router.post('/api/admin/groups/:groupId/members/remove', checkRateLimit, checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, removeGroupMembers);
 
 // Routes for Catalog Admin
-router.get('/api/admin/catalog/fetch-sections', checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, fetchCatalogSections);
-router.post('/api/admin/catalog/create-section', checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, createCatalogSection);
-router.post('/api/admin/catalog/update-section', checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, updateCatalogSection);
-router.post('/api/admin/catalog/delete-section', checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, deleteCatalogSection);
-router.get('/api/admin/catalog/fetchpublishingservices', checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, fetchPublishingServicesController);
-router.post('/api/admin/catalog/update-services-publish', checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, updateSectionServicesPublishController);
+router.get('/api/admin/catalog/fetch-sections', checkRateLimit, checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, fetchCatalogSections);
+router.post('/api/admin/catalog/create-section', checkRateLimit, checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, createCatalogSection);
+router.post('/api/admin/catalog/update-section', checkRateLimit, checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, updateCatalogSection);
+router.post('/api/admin/catalog/delete-section', checkRateLimit, checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, deleteCatalogSection);
+router.get('/api/admin/catalog/fetchpublishingservices', checkRateLimit, checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, fetchPublishingServicesController);
+router.post('/api/admin/catalog/update-services-publish', checkRateLimit, checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, updateSectionServicesPublishController);
 // Ordering disabled: route removed
 
 // Routes for Services Admin
-router.post('/api/admin/services/create', checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, createServiceController);
-router.post('/api/admin/services/update', checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, updateServiceController);
-router.post('/api/admin/services/update-sections-publish', checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, updateSectionsPublishController);
-router.get('/api/admin/services/fetchallservices', checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, fetchAllServicesController);
-router.get('/api/admin/services/fetchpublishingsections', checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, fetchPublishingSectionsController);
-router.get('/api/admin/services/fetchsingleservice', checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, fetchSingleServiceController);
-router.post('/api/admin/services/deleteservices', checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, deleteServicesController);
+router.post('/api/admin/services/create', checkRateLimit, checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, createServiceController);
+router.post('/api/admin/services/update', checkRateLimit, checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, updateServiceController);
+router.post('/api/admin/services/update-sections-publish', checkRateLimit, checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, updateSectionsPublishController);
+router.get('/api/admin/services/fetchallservices', checkRateLimit, checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, fetchAllServicesController);
+router.get('/api/admin/services/fetchpublishingsections', checkRateLimit, checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, fetchPublishingSectionsController);
+router.get('/api/admin/services/fetchsingleservice', checkRateLimit, checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, fetchSingleServiceController);
+router.post('/api/admin/services/deleteservices', checkRateLimit, checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, deleteServicesController);
 
 // Routes for Products Admin
-router.get('/api/admin/products/fetch-all-products', checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, fetchAllProductsController);
-router.get('/api/admin/products/fetch-statuses', checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, fetchStatusesController);
-router.get('/api/admin/products/fetch-options', checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, fetchOptionsController);
-router.get('/api/admin/products/fetchpublishingsections', checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, fetchPublishingSectionsProductsController);
-router.post('/api/admin/products/update-sections-publish', checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, updateProductSectionsPublishController);
-router.post('/api/admin/products/create', checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, createProductController);
-router.get('/api/admin/products/fetch', checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, fetchProductController);
-router.post('/api/admin/products/update', checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, updateProductController);
-router.post('/api/admin/products/delete', checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, deleteProductsController);
+router.get('/api/admin/products/fetch-all-products', checkRateLimit, checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, fetchAllProductsController);
+router.get('/api/admin/products/fetch-statuses', checkRateLimit, checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, fetchStatusesController);
+router.get('/api/admin/products/fetch-options', checkRateLimit, checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, fetchOptionsController);
+router.get('/api/admin/products/fetchpublishingsections', checkRateLimit, checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, fetchPublishingSectionsProductsController);
+router.post('/api/admin/products/update-sections-publish', checkRateLimit, checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, updateProductSectionsPublishController);
+router.post('/api/admin/products/create', checkRateLimit, checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, createProductController);
+router.get('/api/admin/products/fetch', checkRateLimit, checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, fetchProductController);
+router.post('/api/admin/products/update', checkRateLimit, checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, updateProductController);
+router.post('/api/admin/products/delete', checkRateLimit, checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, deleteProductsController);
 
 // Product option pairs endpoints
-router.post('/api/admin/products/read-product-option-pairs', checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, readProductOptionPairsController);
-router.post('/api/admin/products/create-product-option-pairs', checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, createProductOptionPairsController);
-router.post('/api/admin/products/update-product-option-pairs', checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, updateProductOptionPairsController);
-router.post('/api/admin/products/delete-product-option-pairs', checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, deleteProductOptionPairsController);
-router.post('/api/admin/products/count-product-option-pairs', checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, countProductOptionPairsController);
+router.post('/api/admin/products/read-product-option-pairs', checkRateLimit, checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, readProductOptionPairsController);
+router.post('/api/admin/products/create-product-option-pairs', checkRateLimit, checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, createProductOptionPairsController);
+router.post('/api/admin/products/update-product-option-pairs', checkRateLimit, checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, updateProductOptionPairsController);
+router.post('/api/admin/products/delete-product-option-pairs', checkRateLimit, checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, deleteProductOptionPairsController);
+router.post('/api/admin/products/count-product-option-pairs', checkRateLimit, checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, countProductOptionPairsController);
 
 // Routes for Account Management
-router.post('/api/admin/users/register', checkRequestSecurityHard, registerUserController);
-router.get('/api/admin/users/country', checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, getUserCountryController);
-router.post('/api/admin/users/update-country', checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, updateUserCountryController);
+router.post('/api/admin/users/register', checkRateLimit, checkRequestSecurityHard, registerUserController);
+router.get('/api/admin/users/country', checkRateLimit, checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, getUserCountryController);
+router.post('/api/admin/users/update-country', checkRateLimit, checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, updateUserCountryController);
 
 // Routes for Pricing Admin - Currencies
-router.get('/api/admin/pricing/fetch-currencies', checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, fetchCurrenciesController);
-router.post('/api/admin/pricing/update-currencies', checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, updateCurrenciesController);
+router.get('/api/admin/pricing/fetch-currencies', checkRateLimit, checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, fetchCurrenciesController);
+router.post('/api/admin/pricing/update-currencies', checkRateLimit, checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, updateCurrenciesController);
 
 // Routes for Pricing Admin - Price Lists
-router.get('/api/admin/pricing/pricelists/fetchall', checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, fetchAllPriceListsController);
-router.get('/api/admin/pricing/pricelists/fetch', checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, fetchPriceListController);
-router.post('/api/admin/pricing/pricelists/create', checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, createPriceListController);
-router.post('/api/admin/pricing/pricelists/update', checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, updatePriceListController);
-router.post('/api/admin/pricing/pricelists/delete', checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, deletePriceListsController);
+router.get('/api/admin/pricing/pricelists/fetchall', checkRateLimit, checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, fetchAllPriceListsController);
+router.get('/api/admin/pricing/pricelists/fetch', checkRateLimit, checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, fetchPriceListController);
+router.post('/api/admin/pricing/pricelists/create', checkRateLimit, checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, createPriceListController);
+router.post('/api/admin/pricing/pricelists/update', checkRateLimit, checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, updatePriceListController);
+router.post('/api/admin/pricing/pricelists/delete', checkRateLimit, checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, deletePriceListsController);
 
 // Routes for Pricing Admin - Price List Items
-router.post('/api/admin/pricing/pricelists/:priceListId/createItem', checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, createPriceListItemController);
-router.post('/api/admin/pricing/pricelists/:priceListId/deleteItems', checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, deletePriceListItemsController);
-router.post('/api/admin/pricing/pricelists/:priceListId/updateItems', checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, updatePriceListItemsController);
+router.post('/api/admin/pricing/pricelists/:priceListId/createItem', checkRateLimit, checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, createPriceListItemController);
+router.post('/api/admin/pricing/pricelists/:priceListId/deleteItems', checkRateLimit, checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, deletePriceListItemsController);
+router.post('/api/admin/pricing/pricelists/:priceListId/updateItems', checkRateLimit, checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, updatePriceListItemsController);
 
 // Routes for Pricing Admin - Price Item Types
-router.get('/api/admin/pricing/item-types', checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, fetchPriceItemTypesController);
+router.get('/api/admin/pricing/item-types', checkRateLimit, checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, fetchPriceItemTypesController);
 
 // Export using ES modules syntax
 export default router;

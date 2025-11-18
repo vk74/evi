@@ -1,12 +1,16 @@
 /**
- * version: 1.0.06
+ * version: 1.1.0
  * Backend router file for authentication related routes.
  * Handles user authentication, registration, profile management and routes to appropriate middleware.
- * Protected routes include user status check middleware.
+ * Protected routes include rate limiting, JWT validation and user status check middleware.
  * File: routes.auth.ts
+ * 
+ * Changes in v1.1.0:
+ * - Added rate limit guard as first guard in all routes for DDoS protection
  */
 
 import express, { Router } from 'express';
+import checkRateLimit from '../guards/guard.rate.limit';
 import validateJWT from '../guards/guard.validate.jwt';
 import checkIsUserStatusActive from '../guards/guard.check.is.user.status.active';
 import checkRequestSecurityHard from '../guards/guard.check.request.security.hard';
@@ -26,19 +30,19 @@ const router: Router = express.Router();
 
 
 // New authentication routes
-router.post('/api/auth/login', checkRequestSecurityHard, loginController);
+router.post('/api/auth/login', checkRateLimit, checkRequestSecurityHard, loginController);
 
-router.post('/api/auth/refresh', checkRequestSecurityHard, refreshTokensController);
+router.post('/api/auth/refresh', checkRateLimit, checkRequestSecurityHard, refreshTokensController);
 
-router.post('/api/auth/logout', checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, logoutController);
+router.post('/api/auth/logout', checkRateLimit, checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, logoutController);
 
 // Existing routes (updated imports)
-router.post('/api/auth/change-password', checkRequestSecurityHard, (req, res) => {
+router.post('/api/auth/change-password', checkRateLimit, checkRequestSecurityHard, (req, res) => {
     // TODO: Replace with serviceChangePassword when created
     res.status(501).json({ error: 'Change password service not implemented yet' });
 });
-router.get('/api/auth/profile', checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, fetchUserProfileController);
-router.post('/api/auth/profile', checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, updateUserProfileController);
+router.get('/api/auth/profile', checkRateLimit, checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, fetchUserProfileController);
+router.post('/api/auth/profile', checkRateLimit, checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, updateUserProfileController);
 
 
 

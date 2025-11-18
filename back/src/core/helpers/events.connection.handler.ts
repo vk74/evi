@@ -1,9 +1,12 @@
 /**
  * @file events.connection.handler.ts
- * @version 1.0.0
+ * @version 1.1.0
  * @description Backend file. Contains event definitions for the connection handler domain.
  * These events track HTTP connection handling operations including request processing,
  * business logic execution, response generation, and error handling.
+ * 
+ * Changes in v1.1.0:
+ * - Removed rate limiting events (moved to guards/events.guards.ts)
  */
 
 /**
@@ -238,77 +241,6 @@ export const CONNECTION_HANDLER_EVENTS = {
     severity: 'debug' as const,
     eventMessage: 'Suspicious request detected',
     payload: null, // Will contain: { controllerName, requestId, suspiciousPattern, ipAddress }
-    version: '1.0.0'
-  },
-
-  RATE_LIMIT_EXCEEDED: {
-    eventName: 'connectionHandler.rate.limit.exceeded',
-    source: 'connection handler',
-    eventType: 'security' as const,
-    severity: 'warning' as const,
-    eventMessage: 'Rate limit exceeded',
-    payload: null, // Will contain: { controllerName, requestId, ipAddress, limit, window, reason }
-    version: '1.0.0'
-  },
-
-  RATE_LIMIT_CHECK: {
-    eventName: 'connectionHandler.rate.limit.check',
-    source: 'connection handler',
-    eventType: 'security' as const,
-    severity: 'debug' as const,
-    eventMessage: 'Rate limit check performed',
-    payload: null, // Will contain: { controllerName, requestId, ipAddress, allowed, remainingRequests }
-    version: '1.0.0'
-  },
-
-  RATE_LIMIT_TEMPORARY_BLOCK: {
-    eventName: 'connectionHandler.rate.limit.temporary.block',
-    source: 'connection handler',
-    eventType: 'security' as const,
-    severity: 'warning' as const,
-    eventMessage: 'Client temporarily blocked due to rate limit violations',
-    payload: null, // Will contain: { controllerName, requestId, ipAddress, blockDuration, reason }
-    version: '1.0.0'
-  },
-
-  RATE_LIMIT_CONFIG_LOADED: {
-    eventName: 'connectionHandler.rate.limit.config.loaded',
-    source: 'connection handler',
-    eventType: 'security' as const,
-    severity: 'debug' as const,
-    eventMessage: 'Rate limiting configuration loaded from cache',
-    payload: null, // Will contain: { source, enabled, maxRequestsPerMinute, maxRequestsPerHour, blockDurationMinutes }
-    version: '1.0.0'
-  },
-
-  RATE_LIMIT_CONFIG_REFRESHED: {
-    eventName: 'connectionHandler.rate.limit.config.refreshed',
-    source: 'connection handler',
-    eventType: 'security' as const,
-    severity: 'debug' as const,
-    eventMessage: 'Rate limiting configuration refreshed from cache',
-    payload: null, // Will contain: { source, enabled, maxRequestsPerMinute, maxRequestsPerHour, blockDurationMinutes, refreshTime }
-    version: '1.0.0'
-  },
-
-  RATE_LIMIT_CONFIG_REFRESH_ERROR: {
-    eventName: 'connectionHandler.rate.limit.config.refresh.error',
-    source: 'connection handler',
-    eventType: 'security' as const,
-    severity: 'error' as const,
-    eventMessage: 'Failed to refresh rate limiting configuration from cache',
-    payload: null, // Will contain: { error, operation }
-    errorData: null, // Will contain error details
-    version: '1.0.0'
-  },
-
-  RATE_LIMIT_STORE_CLEANUP: {
-    eventName: 'connectionHandler.rate.limit.store.cleanup',
-    source: 'connection handler',
-    eventType: 'system' as const,
-    severity: 'debug' as const,
-    eventMessage: 'Rate limiting store cleanup completed',
-    payload: null, // Will contain: { deletedEntries, remainingEntries }
     version: '1.0.0'
   },
 

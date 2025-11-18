@@ -1,9 +1,12 @@
 /**
  * events.guards.ts - backend file
- * version: 1.0.0
+ * version: 1.1.0
  * 
  * This file contains event definitions for the guards domain.
- * Events for JWT validation and user status checking guards.
+ * Events for JWT validation, user status checking, request security, and rate limiting guards.
+ * 
+ * Changes in v1.1.0:
+ * - Added rate limit guard events (CONFIG_INITIALIZATION_FAILED, LIMIT_EXCEEDED)
  */
 
 /**
@@ -132,6 +135,27 @@ export const REQUEST_SECURITY_GUARD_EVENTS = {
     severity: 'error' as const,
     eventMessage: 'Error occurred in request security guard',
     payload: null, // { method, url }
+    errorData: null, // Error details
+    version: '1.0.0'
+  }
+};
+
+/**
+ * Rate Limit Guard Events
+ * Events for tracking rate limiting operations
+ * 
+ * Note: LIMIT_EXCEEDED event removed to prevent performance degradation during DDoS attacks.
+ * Only critical configuration errors are logged via event bus.
+ */
+export const RATE_LIMIT_GUARD_EVENTS = {
+  // Config initialization failed - critical error
+  CONFIG_INITIALIZATION_FAILED: {
+    eventName: 'guards.rate.limit.config_initialization_failed',
+    source: 'rate limit guard',
+    eventType: 'security' as const,
+    severity: 'error' as const,
+    eventMessage: 'Failed to initialize rate limit configuration from application settings',
+    payload: null, // { missingSettings: string[], error: string }
     errorData: null, // Error details
     version: '1.0.0'
   }

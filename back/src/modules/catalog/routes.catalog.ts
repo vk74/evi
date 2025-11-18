@@ -1,8 +1,11 @@
 /**
- * version: 1.0.2
+ * version: 1.1.0
  * Backend router file for catalog module.
- * Catalog routes implementation with user status check middleware.
+ * Catalog routes implementation with rate limiting, JWT validation and user status check middleware.
  * File: routes.catalog.ts
+ * 
+ * Changes in v1.1.0:
+ * - Added rate limit guard as first guard in all routes for DDoS protection
  */
 
 import express, { Router } from 'express';
@@ -13,6 +16,7 @@ import fetchProductsController from './controller.catalog.products';
 import fetchProductDetailsController from './controller.catalog.product.details';
 import readProductOptionsController from './controller.catalog.read.product.options';
 import fetchPricelistItemsByCodesController from './controller.catalog.fetch.pricelist.items.by.codes';
+import checkRateLimit from '../../core/guards/guard.rate.limit';
 import validateJwt from '../../core/guards/guard.validate.jwt';
 import checkIsUserStatusActive from '../../core/guards/guard.check.is.user.status.active';
 import checkRequestSecurityHard from '../../core/guards/guard.check.request.security.hard';
@@ -20,19 +24,19 @@ import checkRequestSecurityHard from '../../core/guards/guard.check.request.secu
 const router: Router = express.Router();
 
 // Catalog sections routes
-router.get('/fetch-sections', checkRequestSecurityHard, validateJwt, checkIsUserStatusActive, fetchSectionsController);
+router.get('/fetch-sections', checkRateLimit, checkRequestSecurityHard, validateJwt, checkIsUserStatusActive, fetchSectionsController);
 
 // Catalog services routes
-router.get('/fetch-services', checkRequestSecurityHard, validateJwt, checkIsUserStatusActive, fetchServicesController);
-router.get('/fetch-service-details', checkRequestSecurityHard, validateJwt, checkIsUserStatusActive, fetchServiceDetailsController);
+router.get('/fetch-services', checkRateLimit, checkRequestSecurityHard, validateJwt, checkIsUserStatusActive, fetchServicesController);
+router.get('/fetch-service-details', checkRateLimit, checkRequestSecurityHard, validateJwt, checkIsUserStatusActive, fetchServiceDetailsController);
 
 // Catalog products routes
-router.get('/fetch-products', checkRequestSecurityHard, validateJwt, checkIsUserStatusActive, fetchProductsController);
-router.get('/fetch-product-details', checkRequestSecurityHard, validateJwt, checkIsUserStatusActive, fetchProductDetailsController);
-router.post('/products/options', checkRequestSecurityHard, validateJwt, checkIsUserStatusActive, readProductOptionsController);
+router.get('/fetch-products', checkRateLimit, checkRequestSecurityHard, validateJwt, checkIsUserStatusActive, fetchProductsController);
+router.get('/fetch-product-details', checkRateLimit, checkRequestSecurityHard, validateJwt, checkIsUserStatusActive, fetchProductDetailsController);
+router.post('/products/options', checkRateLimit, checkRequestSecurityHard, validateJwt, checkIsUserStatusActive, readProductOptionsController);
 
 // Catalog pricelist routes
-router.post('/pricelists/:pricelistId/items-by-codes', checkRequestSecurityHard, validateJwt, checkIsUserStatusActive, fetchPricelistItemsByCodesController);
+router.post('/pricelists/:pricelistId/items-by-codes', checkRateLimit, checkRequestSecurityHard, validateJwt, checkIsUserStatusActive, fetchPricelistItemsByCodesController);
 
 // Export using ES modules syntax
 export default router;
