@@ -127,3 +127,22 @@ export interface DeleteSectionResponse extends ApiResponse {
         totalFailed: number
     }
 }
+
+// Services Publisher interfaces
+export interface ServiceSectionRow {
+  id: string // unique ID for this service-section combination
+  serviceId: string
+  serviceName: string
+  serviceStatus: string // always 'active' for published services
+  sectionId: string
+  sectionName: string
+  sectionStatus: string
+  published: boolean // always true in main table
+  selected?: boolean // for selection state
+}
+
+export interface UnpublishedService {
+  id: string
+  name: string
+  status: string // always 'active'
+}

@@ -1,12 +1,12 @@
 import { defineStore } from 'pinia'
-import type { CatalogSection, FetchSectionsResponse, ApiError } from './types.catalog.admin'
+import type { CatalogSection, FetchSectionsResponse, ApiError, ServiceSectionRow, UnpublishedService } from './types.catalog.admin'
 
 export const useCatalogAdminStore = defineStore('catalogAdmin', {
   state: () => ({
     selectedSectionPath: 'Catalog.Sections' as string,
     expandedSections: ['Catalog'] as string[],
     isLoading: false,
-    activeComponent: 'Catalog.Sections' as 'Catalog.Sections' | 'CatalogSectionEditor',
+    activeComponent: 'Catalog.Sections' as 'Catalog.Sections' | 'CatalogSectionEditor' | 'Catalog.ServicesPublisher',
     editorMode: 'creation' as 'creation' | 'edit',
     // Active tab inside section editor: 'information' | 'service mappings'
     activeEditorSection: 'information' as 'information' | 'service mappings',
@@ -14,7 +14,12 @@ export const useCatalogAdminStore = defineStore('catalogAdmin', {
     
     // Catalog sections data
     sections: [] as CatalogSection[],
-    error: null as string | null
+    error: null as string | null,
+    
+    // Services Publisher data
+    publishedServiceSections: [] as ServiceSectionRow[],
+    unpublishedServices: [] as UnpublishedService[],
+    availableSections: [] as CatalogSection[]
   }),
 
   getters: {
@@ -85,7 +90,7 @@ export const useCatalogAdminStore = defineStore('catalogAdmin', {
     },
 
     setActiveComponent(componentId: string) {
-      this.activeComponent = componentId as 'Catalog.Sections' | 'CatalogSectionEditor'
+      this.activeComponent = componentId as 'Catalog.Sections' | 'CatalogSectionEditor' | 'Catalog.ServicesPublisher'
     },
 
     setActiveEditorSection(section: 'information' | 'service mappings') {
@@ -117,6 +122,25 @@ export const useCatalogAdminStore = defineStore('catalogAdmin', {
       } catch (error) {
         console.error('Error refreshing sections:', error)
       }
+    },
+    
+    // Services Publisher actions
+    setPublishedServiceSections(sections: ServiceSectionRow[]) {
+      this.publishedServiceSections = sections
+    },
+    
+    setUnpublishedServices(services: UnpublishedService[]) {
+      this.unpublishedServices = services
+    },
+    
+    setAvailableSections(sections: CatalogSection[]) {
+      this.availableSections = sections
+    },
+    
+    clearServicesPublisherData() {
+      this.publishedServiceSections = []
+      this.unpublishedServices = []
+      this.availableSections = []
     }
   }
 })

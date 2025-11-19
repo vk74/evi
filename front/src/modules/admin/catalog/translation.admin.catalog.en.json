@@ -5,6 +5,7 @@
         "catalog": "catalog",
         "sections": "sections list",
         "sectioneditor": "section editor",
+        "servicesPublisher": "services publisher",
         "settings": "settings"
       },
       "editor": {
@@ -222,6 +223,66 @@
             "networkError": "network error occurred",
             "validationError": "validation error occurred"
           }
+        }
+      },
+      "servicesPublisher": {
+        "table": {
+          "headers": {
+            "selection": "selection",
+            "serviceName": "service name",
+            "serviceStatus": "service status",
+            "sectionName": "section name",
+            "sectionStatus": "section status",
+            "published": "published"
+          },
+          "status": {
+            "yes": "yes",
+            "no": "no"
+          }
+        },
+        "search": {
+          "placeholder": "search services and sections...",
+          "minChars": "minimum 2 characters"
+        },
+        "filters": {
+          "sectionStatus": "section status",
+          "all": "all"
+        },
+        "publishedCount": "number of published services: {count}",
+        "actions": {
+          "title": "actions",
+          "refresh": "refresh",
+          "publishService": "publish service"
+        },
+        "selectedElements": {
+          "title": "selected elements",
+          "unpublishSelected": "unpublish selected"
+        },
+        "modal": {
+          "title": "publish services",
+          "search": {
+            "placeholder": "search services..."
+          },
+          "sectionSelect": {
+            "label": "select sections",
+            "placeholder": "select sections"
+          },
+          "buttons": {
+            "cancel": "cancel",
+            "publishSelected": "publish selected"
+          },
+          "messages": {
+            "noServicesSelected": "no services selected",
+            "noSectionSelected": "no sections selected"
+          }
+        },
+        "messages": {
+          "refreshSuccess": "data refreshed successfully",
+          "refreshError": "error refreshing data",
+          "publishSuccess": "services published successfully",
+          "publishError": "error publishing services",
+          "unpublishSuccess": "services unpublished successfully",
+          "unpublishError": "error unpublishing services"
         }
       }
     }

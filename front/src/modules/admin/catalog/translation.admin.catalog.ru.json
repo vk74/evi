@@ -5,6 +5,7 @@
         "catalog": "каталог",
         "sections": "список секций",
         "sectioneditor": "редактор секций",
+        "servicesPublisher": "публикация сервисов",
         "settings": "настройки"
       },
       "editor": {
@@ -222,6 +223,66 @@
             "networkError": "произошла ошибка сети",
             "validationError": "произошла ошибка валидации"
           }
+        }
+      },
+      "servicesPublisher": {
+        "table": {
+          "headers": {
+            "selection": "выбор",
+            "serviceName": "название сервиса",
+            "serviceStatus": "статус сервиса",
+            "sectionName": "название секции",
+            "sectionStatus": "статус секции",
+            "published": "опубликовано"
+          },
+          "status": {
+            "yes": "да",
+            "no": "нет"
+          }
+        },
+        "search": {
+          "placeholder": "поиск сервисов и секций...",
+          "minChars": "минимум 2 символа"
+        },
+        "filters": {
+          "sectionStatus": "статус секции",
+          "all": "все"
+        },
+        "publishedCount": "количество опубликованных сервисов: {count}",
+        "actions": {
+          "title": "действия",
+          "refresh": "обновить",
+          "publishService": "опубликовать сервис"
+        },
+        "selectedElements": {
+          "title": "выбранные элементы",
+          "unpublishSelected": "снять публикацию выбранных"
+        },
+        "modal": {
+          "title": "публикация сервисов",
+          "search": {
+            "placeholder": "поиск сервисов..."
+          },
+          "sectionSelect": {
+            "label": "выбрать секции",
+            "placeholder": "выбрать секции"
+          },
+          "buttons": {
+            "cancel": "отменить",
+            "publishSelected": "опубликовать выбранные"
+          },
+          "messages": {
+            "noServicesSelected": "не выбрано сервисов",
+            "noSectionSelected": "не выбрано секций"
+          }
+        },
+        "messages": {
+          "refreshSuccess": "данные успешно обновлены",
+          "refreshError": "ошибка при обновлении данных",
+          "publishSuccess": "сервисы успешно опубликованы",
+          "publishError": "ошибка при публикации сервисов",
+          "unpublishSuccess": "публикация сервисов успешно снята",
+          "unpublishError": "ошибка при снятии публикации сервисов"
         }
       }
     }

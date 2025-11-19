@@ -13,12 +13,14 @@ import type { Section } from './types.catalog.admin'
 import CatalogSections from './sections/Catalog.Sections.vue'
 import CatalogSettings from './Catalog.Settings.vue'
 import CatalogSectionEditor from './section-editor/CatalogSectionEditor.vue'
+import ServicesPublisher from './services-publisher/ServicesPublisher.vue'
 
 // Импортируем Phosphor иконки
 import { 
   PhTabs,
   PhGear, 
-  PhPencilSimple
+  PhPencilSimple,
+  PhBroadcast
 } from '@phosphor-icons/vue'
 
 // Инициализация store и i18n
@@ -42,6 +44,11 @@ const sections = computed<Section[]>(() => {
       icon: 'PhPencilSimple'
     },
     {
+      id: 'Catalog.ServicesPublisher',
+      name: t('admin.catalog.navigation.servicesPublisher'),
+      icon: 'PhBroadcast'
+    },
+    {
       id: 'Catalog.Settings',
       name: t('admin.catalog.navigation.settings'),
       icon: 'PhGear'
@@ -54,7 +61,8 @@ const sectionComponents = {
   'Catalog.Sections': markRaw(CatalogSections),
   'Catalog.Settings': markRaw(CatalogSettings),
   'Catalog.SectionEditor': markRaw(CatalogSectionEditor),
-  'CatalogSectionEditor': markRaw(CatalogSectionEditor)
+  'CatalogSectionEditor': markRaw(CatalogSectionEditor),
+  'Catalog.ServicesPublisher': markRaw(ServicesPublisher)
 }
 
 // Mobile menu state
@@ -186,6 +194,8 @@ const getIconComponent = (iconName: string) => {
       return PhGear
     case 'PhPencilSimple':
       return PhPencilSimple
+    case 'PhBroadcast':
+      return PhBroadcast
     default:
       return null
   }
