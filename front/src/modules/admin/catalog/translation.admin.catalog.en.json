@@ -6,6 +6,7 @@
         "sections": "sections list",
         "sectioneditor": "section editor",
         "servicesPublisher": "services publisher",
+        "productsPublisher": "products publisher",
         "settings": "settings"
       },
       "editor": {
@@ -297,6 +298,60 @@
           "unpublishSuccess": "services unpublished successfully",
           "unpublishError": "error unpublishing services",
           "noServicesSelected": "no services selected"
+        }
+      },
+      "productsPublisher": {
+        "table": {
+          "headers": {
+            "selection": "selection",
+            "productName": "product name",
+            "sectionName": "catalog sections",
+            "sectionStatus": "section status",
+            "published": "published"
+          }
+        },
+        "search": {
+          "placeholder": "search products and sections...",
+          "minChars": "minimum 2 characters"
+        },
+        "filters": {
+          "allProducts": "all products",
+          "published": "published",
+          "unpublished": "unpublished"
+        },
+        "published": "published",
+        "unpublished": "unpublished",
+        "publishedCount": "number of published products: {count}",
+        "actions": {
+          "title": "actions",
+          "refresh": "refresh",
+          "publishSelected": "publish selected",
+          "clearSelection": "clear selection"
+        },
+        "selectedElements": {
+          "title": "selected elements",
+          "unpublishSelected": "unpublish selected"
+        },
+        "modal": {
+          "titlePublish": "publish products to sections selected below",
+          "titleUnpublish": "unpublish products from sections selected below",
+          "buttons": {
+            "cancel": "cancel",
+            "publish": "publish",
+            "unpublish": "unpublish"
+          },
+          "messages": {
+            "noSectionSelected": "no sections selected"
+          }
+        },
+        "messages": {
+          "refreshSuccess": "data refreshed successfully",
+          "refreshError": "error refreshing data",
+          "publishSuccess": "products published successfully: {added} added, {updated} updated",
+          "publishError": "error publishing products",
+          "unpublishSuccess": "{count} product-section combinations unpublished successfully",
+          "unpublishError": "error unpublishing products",
+          "noProductsSelected": "no products selected"
         }
       }
     }

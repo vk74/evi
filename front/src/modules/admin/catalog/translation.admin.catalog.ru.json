@@ -6,6 +6,7 @@
         "sections": "список секций",
         "sectioneditor": "редактор секций",
         "servicesPublisher": "публикация сервисов",
+        "productsPublisher": "публикация продуктов",
         "settings": "настройки"
       },
       "editor": {
@@ -297,6 +298,60 @@
           "unpublishSuccess": "публикация сервисов успешно снята",
           "unpublishError": "ошибка при снятии публикации сервисов",
           "noServicesSelected": "не выбрано сервисов"
+        }
+      },
+      "productsPublisher": {
+        "table": {
+          "headers": {
+            "selection": "выбор",
+            "productName": "название продукта",
+            "sectionName": "секции каталога",
+            "sectionStatus": "статус секции",
+            "published": "опубликовано"
+          }
+        },
+        "search": {
+          "placeholder": "поиск продуктов и секций...",
+          "minChars": "минимум 2 символа"
+        },
+        "filters": {
+          "allProducts": "все продукты",
+          "published": "опубликовано",
+          "unpublished": "не опубликовано"
+        },
+        "published": "опубликовано",
+        "unpublished": "не опубликовано",
+        "publishedCount": "количество опубликованных продуктов: {count}",
+        "actions": {
+          "title": "действия",
+          "refresh": "обновить",
+          "publishSelected": "опубликовать выбранные",
+          "clearSelection": "очистить выбор"
+        },
+        "selectedElements": {
+          "title": "выбранные элементы",
+          "unpublishSelected": "снять с публикации"
+        },
+        "modal": {
+          "titlePublish": "опубликовать продукты в секциях, выбранных ниже",
+          "titleUnpublish": "снять публикацию продуктов из секций, выбранных ниже",
+          "buttons": {
+            "cancel": "отменить",
+            "publish": "опубликовать",
+            "unpublish": "снять публикацию"
+          },
+          "messages": {
+            "noSectionSelected": "не выбрано секций"
+          }
+        },
+        "messages": {
+          "refreshSuccess": "данные успешно обновлены",
+          "refreshError": "ошибка при обновлении данных",
+          "publishSuccess": "продукты успешно опубликованы: {added} добавлено, {updated} обновлено",
+          "publishError": "ошибка при публикации продуктов",
+          "unpublishSuccess": "{count} комбинаций продукт-секция успешно снято с публикации",
+          "unpublishError": "ошибка при снятии публикации продуктов",
+          "noProductsSelected": "не выбрано продуктов"
         }
       }
     }
