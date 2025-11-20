@@ -1,5 +1,5 @@
 /**
- * @file service.update.catalog.section.ts
+ * @file service.admin.update.catalog.section.ts
  * Service for updating catalog sections via API.
  * Version: 1.0.0
  * FRONTEND service for updating catalog sections through API.
@@ -13,13 +13,13 @@
  */
 
 import { api } from '@/core/api/service.axios'
-import { useCatalogAdminStore } from './state.catalog.admin'
+import { useCatalogAdminStore } from '../state.catalog.admin'
 import { useUiStore } from '@/core/state/uistate'
 import type { 
   UpdateSectionRequest,
   UpdateSectionResponse,
   ApiError
-} from './types.catalog.admin'
+} from '../types.catalog.admin'
 
 // Logger for main operations
 const logger = {
@@ -143,4 +143,5 @@ export const catalogSectionUpdateService = {
   }
 }
 
-export default catalogSectionUpdateService 
+export default catalogSectionUpdateService
+

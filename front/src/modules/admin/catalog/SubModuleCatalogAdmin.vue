@@ -12,7 +12,7 @@ import type { Section } from './types.catalog.admin'
 // Импорты компонентов секций
 import CatalogSections from './sections/Catalog.Sections.vue'
 import CatalogSettings from './Catalog.Settings.vue'
-import CatalogSectionEditor from './section-editor/CatalogSectionEditor.vue'
+import SectionEditor from './section-editor/SectionEditor.vue'
 import ServicesPublisher from './services-publisher/ServicesPublisher.vue'
 
 // Импортируем Phosphor иконки
@@ -60,8 +60,8 @@ const sections = computed<Section[]>(() => {
 const sectionComponents = {
   'Catalog.Sections': markRaw(CatalogSections),
   'Catalog.Settings': markRaw(CatalogSettings),
-  'Catalog.SectionEditor': markRaw(CatalogSectionEditor),
-  'CatalogSectionEditor': markRaw(CatalogSectionEditor),
+  'Catalog.SectionEditor': markRaw(SectionEditor),
+  'CatalogSectionEditor': markRaw(SectionEditor),
   'Catalog.ServicesPublisher': markRaw(ServicesPublisher)
 }
 
