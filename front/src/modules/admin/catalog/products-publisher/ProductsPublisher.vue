@@ -1,16 +1,9 @@
 <!--
   File: ProductsPublisher.vue
-  Version: 1.0.0
+  Version: 1.1.0
   Description: Component for products catalog publication management
   Purpose: Provides interface for managing product catalog publication
   Frontend file - ProductsPublisher.vue
-  
-  Changes in v1.0.0:
-  - Initial implementation with UI only
-  - Table shows only published product-section combinations
-  - Publication via modal dialog with multi-select for products and sections
-  - Unpublish from table with selected rows
-  - Uses mock data (no API integration)
 -->
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
@@ -27,6 +20,10 @@ import {
 import Paginator from '@/core/ui/paginator/Paginator.vue'
 import type { CatalogSection } from '../types.catalog.admin'
 import { SectionStatus } from '../types.catalog.admin'
+import { fetchProductsSections } from './service.admin.catalog.fetch-products-sections'
+import { publishProducts } from './service.admin.catalog.publish-products'
+import { unpublishProducts } from './service.admin.catalog.unpublish-products'
+import type { ProductWithSections } from './service.admin.catalog.fetch-products-sections'
 
 // Types
 interface TableHeader {
@@ -38,23 +35,6 @@ interface TableHeader {
 
 type ItemsPerPageOption = 25 | 50 | 100
 
-// Product section interface
-interface ProductSection {
-  id: string
-  name: string
-  status: string
-}
-
-// Product with sections interface
-interface ProductWithSections {
-  id: string
-  productId: string
-  productName: string
-  productStatus: string
-  sections: ProductSection[]
-  published: boolean
-  allSectionStatuses: string[]
-}
 
 // Initialize stores and i18n
 const { t } = useI18n()
@@ -82,7 +62,7 @@ const isLoading = ref(false)
 const isRefreshing = ref(false)
 const isUnpublishing = ref(false)
 
-// Products data (mock data)
+// Products data from API
 const productsData = ref<ProductWithSections[]>([])
 const availableSections = ref<CatalogSection[]>([])
 
@@ -135,185 +115,29 @@ const clearSelection = () => {
   selectedRows.value.clear()
 }
 
-// Mock data generation
-const generateMockData = () => {
-  // Mock sections
-  const mockSections: CatalogSection[] = [
-    {
-      id: 'section-1',
-      name: 'Cloud Services',
-      owner: 'owner-1',
-      backup_owner: null,
-      description: null,
-      comments: null,
-      status: SectionStatus.ACTIVE,
-      is_public: true,
-      order: 1,
-      parent_id: null,
-      icon_name: null,
-      color: null,
-      created_at: new Date(),
-      created_by: 'system',
-      modified_at: null,
-      modified_by: null
-    },
-    {
-      id: 'section-2',
-      name: 'Security Solutions',
-      owner: 'owner-2',
-      backup_owner: null,
-      description: null,
-      comments: null,
-      status: SectionStatus.ACTIVE,
-      is_public: true,
-      order: 2,
-      parent_id: null,
-      icon_name: null,
-      color: null,
-      created_at: new Date(),
-      created_by: 'system',
-      modified_at: null,
-      modified_by: null
-    },
-    {
-      id: 'section-3',
-      name: 'Data Analytics',
-      owner: 'owner-1',
-      backup_owner: null,
-      description: null,
-      comments: null,
-      status: SectionStatus.ACTIVE,
-      is_public: true,
-      order: 3,
-      parent_id: null,
-      icon_name: null,
-      color: null,
-      created_at: new Date(),
-      created_by: 'system',
-      modified_at: null,
-      modified_by: null
-    },
-    {
-      id: 'section-4',
-      name: 'Infrastructure',
-      owner: 'owner-3',
-      backup_owner: null,
-      description: null,
-      comments: null,
-      status: SectionStatus.DRAFT,
-      is_public: false,
-      order: 4,
-      parent_id: null,
-      icon_name: null,
-      color: null,
-      created_at: new Date(),
-      created_by: 'system',
-      modified_at: null,
-      modified_by: null
-    },
-    {
-      id: 'section-5',
-      name: 'Development Tools',
-      owner: 'owner-2',
-      backup_owner: null,
-      description: null,
-      comments: null,
-      status: SectionStatus.ACTIVE,
-      is_public: true,
-      order: 5,
-      parent_id: null,
-      icon_name: null,
-      color: null,
-      created_at: new Date(),
-      created_by: 'system',
-      modified_at: null,
-      modified_by: null
-    }
-  ]
-
-  // Mock products with sections
-  const mockProducts: ProductWithSections[] = [
-    {
-      id: 'product-1',
-      productId: 'product-1',
-      productName: 'Enterprise Cloud Platform',
-      productStatus: 'active',
-      sections: [
-        { id: 'section-1', name: 'Cloud Services', status: 'active' },
-        { id: 'section-3', name: 'Data Analytics', status: 'active' }
-      ],
-      published: true,
-      allSectionStatuses: ['active']
-    },
-    {
-      id: 'product-2',
-      productId: 'product-2',
-      productName: 'Security Suite Pro',
-      productStatus: 'active',
-      sections: [
-        { id: 'section-2', name: 'Security Solutions', status: 'active' }
-      ],
-      published: true,
-      allSectionStatuses: ['active']
-    },
-    {
-      id: 'product-3',
-      productId: 'product-3',
-      productName: 'Analytics Dashboard',
-      productStatus: 'active',
-      sections: [
-        { id: 'section-3', name: 'Data Analytics', status: 'active' },
-        { id: 'section-5', name: 'Development Tools', status: 'active' }
-      ],
-      published: true,
-      allSectionStatuses: ['active']
-    },
-    {
-      id: 'product-4',
-      productId: 'product-4',
-      productName: 'Infrastructure Manager',
-      productStatus: 'draft',
-      sections: [],
-      published: false,
-      allSectionStatuses: []
-    },
-    {
-      id: 'product-5',
-      productId: 'product-5',
-      productName: 'DevOps Toolkit',
-      productStatus: 'active',
-      sections: [
-        { id: 'section-5', name: 'Development Tools', status: 'active' }
-      ],
-      published: true,
-      allSectionStatuses: ['active']
-    },
-    {
-      id: 'product-6',
-      productId: 'product-6',
-      productName: 'Network Monitor',
-      productStatus: 'active',
-      sections: [],
-      published: false,
-      allSectionStatuses: []
-    }
-  ]
-
-  return {
-    products: mockProducts,
-    sections: mockSections
-  }
-}
-
-// Load data from mock
+// Load data from API
 const loadData = async () => {
   try {
-    // Simulate API delay
-    await new Promise(resolve => setTimeout(resolve, 300))
-    
-    const mockData = generateMockData()
-    productsData.value = mockData.products
-    availableSections.value = mockData.sections
+    const data = await fetchProductsSections()
+    productsData.value = data.products
+    availableSections.value = data.sections.map(section => ({
+      id: section.id,
+      name: section.name,
+      owner: section.owner,
+      backup_owner: section.backup_owner,
+      description: section.description,
+      comments: section.comments,
+      status: section.status ? (section.status as SectionStatus) : null,
+      is_public: section.is_public,
+      order: section.order,
+      parent_id: section.parent_id,
+      icon_name: section.icon_name,
+      color: section.color,
+      created_at: new Date(section.created_at),
+      created_by: section.created_by,
+      modified_at: section.modified_at ? new Date(section.modified_at) : null,
+      modified_by: section.modified_by
+    }))
   } catch (error) {
     handleError(error, 'loading data')
     throw error
@@ -412,7 +236,7 @@ interface GroupedProductRow {
 
 // Computed properties for table
 const groupedRows = computed(() => {
-  // Mock data already returns products in grouped format
+  // API already returns products in grouped format
   return productsData.value.map(product => ({
     id: product.productId,
     productId: product.productId,
@@ -501,7 +325,7 @@ const handleRefresh = async () => {
   }
 }
 
-// Unpublish handler (mock implementation)
+// Unpublish handler
 const handleUnpublish = async () => {
   if (selectedSections.value.size === 0) {
     uiStore.showErrorSnackbar(t('admin.catalog.productsPublisher.modal.messages.noSectionSelected'))
@@ -520,30 +344,16 @@ const handleUnpublish = async () => {
     const selectedProductIds = Array.from(selectedRows.value)
     const selectedSectionIds = Array.from(selectedSections.value)
 
-    // Simulate API delay
-    await new Promise(resolve => setTimeout(resolve, 500))
+    const response = await unpublishProducts(selectedProductIds, selectedSectionIds)
     
-    // Mock: Update products data to reflect unpublishing
-    productsData.value = productsData.value.map(product => {
-      if (selectedProductIds.includes(product.productId)) {
-        const updatedSections = product.sections.filter(
-          section => !selectedSectionIds.includes(section.id)
-        )
-        return {
-          ...product,
-          sections: updatedSections,
-          published: updatedSections.length > 0,
-          allSectionStatuses: [...new Set(updatedSections.map(s => s.status))]
-        }
-      }
-      return product
-    })
+    // Reload data to reflect changes
+    await loadData()
     
     clearSelection()
     closePublishModal()
     
     uiStore.showSuccessSnackbar(
-      t('admin.catalog.productsPublisher.messages.unpublishSuccess', { count: selectedSectionIds.length })
+      t('admin.catalog.productsPublisher.messages.unpublishSuccess', { count: response.removedCount })
     )
   } catch (error: any) {
     uiStore.showErrorSnackbar(error?.message || t('admin.catalog.productsPublisher.messages.unpublishError'))
@@ -581,7 +391,7 @@ const onSelectSection = (sectionId: string, selected: boolean) => {
 
 const isSectionSelected = (sectionId: string) => selectedSections.value.has(sectionId)
 
-// Publish handler (mock implementation)
+// Publish handler
 const handlePublish = async () => {
   if (selectedSections.value.size === 0) {
     uiStore.showErrorSnackbar(t('admin.catalog.productsPublisher.modal.messages.noSectionSelected'))
@@ -598,51 +408,16 @@ const handlePublish = async () => {
     const selectedProductIds = Array.from(selectedRows.value)
     const selectedSectionIds = Array.from(selectedSections.value)
 
-    // Simulate API delay
-    await new Promise(resolve => setTimeout(resolve, 500))
+    const response = await publishProducts(selectedProductIds, selectedSectionIds)
     
-    // Mock: Update products data to reflect publishing
-    let addedCount = 0
-    let updatedCount = 0
-    
-    productsData.value = productsData.value.map(product => {
-      if (selectedProductIds.includes(product.productId)) {
-        const existingSectionIds = product.sections.map(s => s.id)
-        const newSections = selectedSectionIds
-          .filter(sectionId => !existingSectionIds.includes(sectionId))
-          .map(sectionId => {
-            const section = availableSections.value.find(s => s.id === sectionId)
-            if (section) {
-              addedCount++
-              return {
-                id: section.id,
-                name: section.name,
-                status: section.status?.toString() || 'active'
-              }
-            }
-            return null
-          })
-          .filter((s): s is ProductSection => s !== null)
-        
-        if (newSections.length > 0) {
-          updatedCount++
-          const allSections = [...product.sections, ...newSections]
-          return {
-            ...product,
-            sections: allSections,
-            published: true,
-            allSectionStatuses: [...new Set(allSections.map(s => s.status))]
-          }
-        }
-      }
-      return product
-    })
+    // Reload data to reflect changes
+    await loadData()
     
     clearSelection()
     closePublishModal()
     
     uiStore.showSuccessSnackbar(
-      t('admin.catalog.productsPublisher.messages.publishSuccess', { added: addedCount, updated: updatedCount })
+      t('admin.catalog.productsPublisher.messages.publishSuccess', { added: response.addedCount, updated: response.updatedCount })
     )
   } catch (error: any) {
     uiStore.showErrorSnackbar(error?.message || t('admin.catalog.productsPublisher.messages.publishError'))
@@ -1079,4 +854,3 @@ const handlePublish = async () => {
   margin: 2px;
 }
 </style>
-

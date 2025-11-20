@@ -1,8 +1,8 @@
 /**
  * events.admin.catalog.ts
- * Version: 1.1.0
+ * Version: 1.2.0
  * Description: Event reference catalog for admin catalog operations
- * Purpose: Defines events for admin catalog management operations (sections, services)
+ * Purpose: Defines events for admin catalog management operations (sections, services, products)
  * Backend file - events.admin.catalog.ts
  * 
  * Changes in v1.1.0:
@@ -10,6 +10,15 @@
  *   section.update.started, services.publish.fetch.started, services.publish.update.started, 
  *   services.publish.started, services.unpublish.started, services.sections.fetch.started)
  * - Enhanced payloads for remaining events with more detailed information
+ * 
+ * Changes in v1.2.0:
+ * - Added events for products publisher functionality
+ * - products.publish.success: products published successfully
+ * - products.publish.database_error: database error during products publish
+ * - products.unpublish.success: products unpublished successfully
+ * - products.unpublish.database_error: database error during products unpublish
+ * - products.sections.fetch.success: products sections fetch completed successfully
+ * - products.publish.fetch.validation_error: products publish fetch validation error
  */
 
 import { EventCollection } from '../../../core/eventBus/types.events'
@@ -196,6 +205,66 @@ export const EVENTS_ADMIN_CATALOG: EventCollection = {
     eventType: 'app',
     severity: 'error',
     eventMessage: 'Unexpected error in controller',
+    version: '1.0.0'
+  },
+
+  // Products publish success
+  'products.publish.success': {
+    eventName: 'adminCatalog.products.publish.success',
+    source: 'admin-catalog',
+    eventType: 'app',
+    severity: 'info',
+    eventMessage: 'Products published successfully',
+    version: '1.0.0'
+  },
+
+  // Products publish database error
+  'products.publish.database_error': {
+    eventName: 'adminCatalog.products.publish.database_error',
+    source: 'admin-catalog',
+    eventType: 'app',
+    severity: 'error',
+    eventMessage: 'Database error during products publish',
+    version: '1.0.0'
+  },
+
+  // Products unpublish success
+  'products.unpublish.success': {
+    eventName: 'adminCatalog.products.unpublish.success',
+    source: 'admin-catalog',
+    eventType: 'app',
+    severity: 'info',
+    eventMessage: 'Products unpublished successfully',
+    version: '1.0.0'
+  },
+
+  // Products unpublish database error
+  'products.unpublish.database_error': {
+    eventName: 'adminCatalog.products.unpublish.database_error',
+    source: 'admin-catalog',
+    eventType: 'app',
+    severity: 'error',
+    eventMessage: 'Database error during products unpublish',
+    version: '1.0.0'
+  },
+
+  // Products sections fetch success
+  'products.sections.fetch.success': {
+    eventName: 'adminCatalog.products.sections.fetch.success',
+    source: 'admin-catalog',
+    eventType: 'app',
+    severity: 'debug',
+    eventMessage: 'Products sections fetch completed successfully',
+    version: '1.0.0'
+  },
+
+  // Products publish fetch validation error
+  'products.publish.fetch.validation_error': {
+    eventName: 'adminCatalog.products.publish.fetch.validation_error',
+    source: 'admin-catalog',
+    eventType: 'app',
+    severity: 'error',
+    eventMessage: 'Products publish fetch validation error',
     version: '1.0.0'
   }
 }

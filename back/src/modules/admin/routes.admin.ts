@@ -34,6 +34,9 @@ import deleteCatalogSection from './catalog/controller.admin.delete.sections';
 import fetchPublishingServicesController from './catalog/controller.admin.fetch.publishingservices';
 import servicePublishController from './catalog/controller.admin.service.publish';
 import serviceUnpublishController from './catalog/controller.admin.service.unpublish';
+import fetchPublishingProductsController from './catalog/controller.admin.fetch.publishingproducts';
+import productPublishController from './catalog/controller.admin.product.publish';
+import productUnpublishController from './catalog/controller.admin.product.unpublish';
 import createServiceController from './service/sections/controller.admin.create.service';
 import updateServiceController from './service/sections/controller.admin.update.service';
 import fetchPublishingSectionsController from './service/sections/controller.admin.fetch.publishingsections';
@@ -100,6 +103,9 @@ router.post('/api/admin/catalog/delete-section', checkRateLimit, checkRequestSec
 router.get('/api/admin/catalog/fetchpublishingservices', checkRateLimit, checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, fetchPublishingServicesController);
 router.post('/api/admin/catalog/service-publish', checkRateLimit, checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, servicePublishController);
 router.post('/api/admin/catalog/service-unpublish', checkRateLimit, checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, serviceUnpublishController);
+router.get('/api/admin/catalog/fetchpublishingproducts', checkRateLimit, checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, fetchPublishingProductsController);
+router.post('/api/admin/catalog/product-publish', checkRateLimit, checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, productPublishController);
+router.post('/api/admin/catalog/product-unpublish', checkRateLimit, checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, productUnpublishController);
 // Ordering disabled: route removed
 
 // Routes for Services Admin

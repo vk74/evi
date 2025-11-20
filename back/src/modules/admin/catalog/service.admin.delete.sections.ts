@@ -26,7 +26,7 @@
 import { Request } from 'express';
 import { Pool } from 'pg';
 import { pool as pgPool } from '../../../core/db/maindb';
-import { queries } from './queries.admin.catalog.sections';
+import { queries } from './queries.admin.catalog';
 import type { 
     DeleteSectionRequest, 
     DeleteSectionResponse, 
