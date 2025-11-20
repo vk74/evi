@@ -1,17 +1,12 @@
 /**
  * @file types.products.admin.ts
  * Type definitions for products administration module.
- * Version: 1.1.0
+ * Version: 1.2.0
  * Frontend types for products admin functionality.
   
-  Changes in v1.0.2:
-  - Removed is_public field from CatalogSection interface
-  
-  Changes in v1.0.3:
-  - Added published field to CatalogSection interface to represent actual publication status from DB
-  
-  Changes in v1.0.4:
-  - Updated UpdateProductSectionsPublishRequest to use sectionsToAdd and sectionsToRemove arrays instead of sectionIds
+  Changes in v1.2.0:
+  - Removed catalog publication related interfaces: CatalogSection, FetchPublishingSectionsResponse, UpdateProductSectionsPublishRequest, UpdateProductSectionsPublishResponse, ProductCatalogPublicationState
+  - Removed 'catalog publication' from ProductEditorSectionId type
   
   Changes in v1.0.5:
   - Added status_code field to Product interface
@@ -141,7 +136,7 @@ export interface ApiError {
 export type ProductEditorMode = 'creation' | 'edit'
 
 // Product editor sections
-export type ProductEditorSectionId = 'details' | 'options' | 'preferences' | 'catalog publication'
+export type ProductEditorSectionId = 'details' | 'options' | 'preferences'
 
 // Product admin sections
 export type ProductSectionId = 'products-list' | 'product-editor'
@@ -337,66 +332,4 @@ export interface DeleteProductsResult {
     totalDeleted: number
     totalErrors: number
   }
-}
-
-// Catalog section interface for product publication
-export interface CatalogSection {
-  id: string
-  name: string
-  owner: string
-  status: string
-  selected?: boolean // For API responses indicating current selection
-  published?: boolean // Actual publication status from app.section_products table at load time
-}
-
-// Fetch publishing sections request interface
-export interface FetchPublishingSectionsRequest {
-  productId?: string
-  searchQuery?: string
-  page?: number
-  itemsPerPage?: number
-  sortBy?: string
-  sortDesc?: boolean
-}
-
-// Fetch publishing sections response interface
-export interface FetchPublishingSectionsResponse {
-  success: boolean
-  message: string
-  data?: {
-    sections: CatalogSection[]
-    pagination: {
-      totalItems: number
-      totalPages: number
-      currentPage: number
-      itemsPerPage: number
-    }
-  }
-}
-
-// Update product sections publish request interface
-export interface UpdateProductSectionsPublishRequest {
-  productId: string
-  sectionsToAdd: string[]
-  sectionsToRemove: string[]
-}
-
-// Update product sections publish response interface
-export interface UpdateProductSectionsPublishResponse {
-  success: boolean
-  message: string
-  updatedCount: number
-  addedCount: number
-  removedCount: number
-}
-
-
-// Product catalog publication state interface
-export interface ProductCatalogPublicationState {
-  publishingSections: CatalogSection[]
-  isPublishingSectionsLoading: boolean
-  publishingSectionsError: string | null
-  selectedSections: Set<string>
-  isPublishing: boolean
-  isUnpublishing: boolean
 }

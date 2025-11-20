@@ -1,16 +1,13 @@
 /**
- * types.admin.products.ts - version 1.1.0
+ * types.admin.products.ts - version 1.2.0
  * Type definitions for products administration module.
  * 
  * Contains TypeScript interfaces and types for products admin functionality.
  * 
  * Backend file - types.admin.products.ts
   
-  Changes in v1.0.3:
-  - Removed is_public field from CatalogSection interface
-  
-  Changes in v1.0.4:
-  - Updated UpdateProductSectionsPublishRequest to use sectionsToAdd and sectionsToRemove arrays instead of sectionIds
+  Changes in v1.2.0:
+  - Removed catalog publication related interfaces: CatalogSection, FetchPublishingSectionsResponse, UpdateProductSectionsPublishRequest, UpdateProductSectionsPublishResponse
   
   Changes in v1.0.5:
   - Added status_code field to Product interface
@@ -297,42 +294,3 @@ export interface DeleteProductsResult {
     totalErrors: number
 }
 
-// Catalog section interface for product publication
-export interface CatalogSection {
-    id: string
-    name: string
-    owner: string
-    status: string
-    selected?: boolean // For API responses indicating current selection
-}
-
-// Fetch publishing sections response interface
-export interface FetchPublishingSectionsResponse {
-    success: boolean
-    message: string
-    data?: {
-        sections: CatalogSection[]
-        pagination: {
-            totalItems: number
-            totalPages: number
-            currentPage: number
-            itemsPerPage: number
-        }
-    }
-}
-
-// Update product sections publish request interface
-export interface UpdateProductSectionsPublishRequest {
-    productId: string
-    sectionsToAdd: string[]
-    sectionsToRemove: string[]
-}
-
-// Update product sections publish response interface
-export interface UpdateProductSectionsPublishResponse {
-    success: boolean
-    message: string
-    updatedCount: number
-    addedCount: number
-    removedCount: number
-}

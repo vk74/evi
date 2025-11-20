@@ -1,9 +1,12 @@
 /**
- * events.admin.products.ts - version 1.3.0
+ * events.admin.products.ts - version 1.4.0
  * Event definitions for products administration module.
  * 
  * Contains event templates for products admin functionality.
  * Used by event bus factory for generating and publishing events.
+ * 
+ * Changes in v1.4.0:
+ * - Removed PRODUCT_CATALOG_PUBLICATION_FETCH_EVENTS and PRODUCT_CATALOG_PUBLICATION_UPDATE_EVENTS (catalog publication functionality moved to separate module)
  * 
  * Updated v1.3.0: Changed eventType to 'app' for application lifecycle events
  * 
@@ -528,80 +531,3 @@ export const PRODUCT_OPTION_PAIRS_DELETE_EVENTS = {
     }
 };
 
-// Product catalog publication fetch events
-export const PRODUCT_CATALOG_PUBLICATION_FETCH_EVENTS = {
-    STARTED: {
-        eventName: 'adminProducts.catalog_publication.fetch.started',
-        source: 'admin-products',
-        eventType: 'app',
-        severity: 'debug',
-        eventMessage: 'Product catalog publication sections fetch started',
-        payload: null,
-        version: '1.0.0'
-    },
-
-    SUCCESS: {
-        eventName: 'adminProducts.catalog_publication.fetch.success',
-        source: 'admin-products',
-        eventType: 'app',
-        severity: 'debug',
-        eventMessage: 'Product catalog publication sections fetched successfully',
-        payload: null,
-        version: '1.0.0'
-    },
-
-    ERROR: {
-        eventName: 'adminProducts.catalog_publication.fetch.error',
-        source: 'admin-products',
-        eventType: 'app',
-        severity: 'error',
-        eventMessage: 'Product catalog publication sections fetch failed',
-        payload: null,
-        errorData: null,
-        version: '1.0.0'
-    }
-};
-
-// Product catalog publication update events
-export const PRODUCT_CATALOG_PUBLICATION_UPDATE_EVENTS = {
-    PUBLISHED_TO_CATALOG: {
-        eventName: 'adminProducts.catalog_publication.update.published_to_catalog',
-        source: 'admin-products',
-        eventType: 'app',
-        severity: 'info',
-        eventMessage: 'Product published to catalog sections',
-        payload: null, // Will be { productId: string, productCode: string, addedSectionsCount: number, addedSectionIds: string[], addedSectionNames: string[] }
-        version: '1.0.0'
-    },
-
-    UNPUBLISHED_FROM_CATALOG: {
-        eventName: 'adminProducts.catalog_publication.update.unpublished_from_catalog',
-        source: 'admin-products',
-        eventType: 'app',
-        severity: 'info',
-        eventMessage: 'Product unpublished from catalog sections',
-        payload: null, // Will be { productId: string, productCode: string, removedSectionsCount: number, removedSectionIds: string[], removedSectionNames: string[] }
-        version: '1.0.0'
-    },
-
-    SUCCESS: {
-        eventName: 'adminProducts.catalog_publication.update.success',
-        source: 'admin-products',
-        eventType: 'app',
-        severity: 'info',
-        eventMessage: 'Product catalog publication updated successfully',
-        payload: null, // Will be { productId: string, productCode: string, addedCount: number, removedCount: number, totalSectionsCount: number }
-        version: '1.0.0'
-    },
-
-    ERROR: {
-        eventName: 'adminProducts.catalog_publication.update.error',
-        source: 'admin-products',
-        eventType: 'app',
-        severity: 'error',
-        eventMessage: 'Product catalog publication update failed',
-        payload: null, // Will be { productId: string | null, error: string }
-        errorData: null,
-        version: '1.0.0'
-    }
-};

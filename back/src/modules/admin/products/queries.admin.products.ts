@@ -1,5 +1,5 @@
 /**
- * queries.admin.products.ts - version 1.1.0
+ * queries.admin.products.ts - version 1.2.0
  * SQL queries for products administration operations.
  * 
  * Contains all SQL queries used by products admin module.
@@ -7,8 +7,8 @@
  * 
  * Backend file - queries.admin.products.ts
   
-  Changes in v1.0.3:
-  - Removed is_public field from fetchPublishingSections query
+  Changes in v1.2.0:
+  - Removed fetchPublishingSections and fetchProductSectionIds queries (catalog publication functionality moved to separate module)
   
   Changes in v1.0.4:
   - Added published_by parameter to insertSectionProduct query
@@ -464,35 +464,11 @@ export const queries = {
     `,
 
     /**
-     * Fetches all catalog sections for product publication
-     * Returns sections with basic info for publication management
-     */
-    fetchPublishingSections: `
-        SELECT 
-            cs.id,
-            cs.name,
-            cs.owner,
-            cs.status
-        FROM app.catalog_sections cs
-        ORDER BY cs.name ASC
-    `,
-
-    /**
      * Checks if product exists
      * Parameters: [product_id]
      */
     checkProductExists: `
         SELECT product_id FROM app.products 
-        WHERE product_id = $1
-    `,
-
-    /**
-     * Fetches section IDs where product is currently published
-     * Parameters: [product_id]
-     */
-    fetchProductSectionIds: `
-        SELECT section_id 
-        FROM app.section_products 
         WHERE product_id = $1
     `,
 

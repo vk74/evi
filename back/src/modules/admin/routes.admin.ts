@@ -51,8 +51,6 @@ import fetchAllProductsController from './products/controller.admin.fetch.all.pr
 import fetchStatusesController from './products/controller.admin.fetch.statuses';
 import fetchOptionsController from './products/controller.admin.fetch.options';
 import deleteProductsController from './products/controller.admin.delete.products';
-import fetchPublishingSectionsProductsController from './products/sections/controller.admin.fetch.publishingsections';
-import updateProductSectionsPublishController from './products/sections/controller.admin.update.sections.publish';
 import readProductOptionPairsController from './products/pairs/controller.admin.read.product.option.pairs';
 import createProductOptionPairsController from './products/pairs/controller.admin.create.product.option.pairs';
 import updateProductOptionPairsController from './products/pairs/controller.admin.update.product.option.pairs';
@@ -121,8 +119,6 @@ router.post('/api/admin/services/deleteservices', checkRateLimit, checkRequestSe
 router.get('/api/admin/products/fetch-all-products', checkRateLimit, checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, fetchAllProductsController);
 router.get('/api/admin/products/fetch-statuses', checkRateLimit, checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, fetchStatusesController);
 router.get('/api/admin/products/fetch-options', checkRateLimit, checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, fetchOptionsController);
-router.get('/api/admin/products/fetchpublishingsections', checkRateLimit, checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, fetchPublishingSectionsProductsController);
-router.post('/api/admin/products/update-sections-publish', checkRateLimit, checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, updateProductSectionsPublishController);
 router.post('/api/admin/products/create', checkRateLimit, checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, createProductController);
 router.get('/api/admin/products/fetch', checkRateLimit, checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, fetchProductController);
 router.post('/api/admin/products/update', checkRateLimit, checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, updateProductController);

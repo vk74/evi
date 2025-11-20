@@ -1,12 +1,15 @@
 <!--
   File: ProductEditor.vue
-  Version: 1.0.0
+  Version: 1.1.0
   Description: Component for creating and editing products
   Purpose: Provides interface for creating new products and editing existing ones
   Frontend file - ProductEditor.vue
   Created: 2024-12-20
   Last Updated: 2024-12-20
-  Changes: Initial implementation based on ServiceEditor structure
+  
+  Changes in v1.1.0:
+  - Removed catalog publication section and ProductEditorCatalogPublication component
+  - Removed 'catalog publication' from ProductEditorSectionId type
 -->
 
 <script setup lang="ts">
@@ -18,7 +21,6 @@ import { defineAsyncComponent } from 'vue'
 const ProductEditorDetails = defineAsyncComponent(() => import(/* webpackChunkName: "admin-product-editor-details" */ './ProductEditorDetails.vue'))
 const ProductEditorOptions = defineAsyncComponent(() => import(/* webpackChunkName: "admin-product-editor-options" */ './ProductEditorOptions.vue'))
 const ProductEditorPreferences = defineAsyncComponent(() => import(/* webpackChunkName: "admin-product-editor-preferences" */ './ProductEditorPreferences.vue'))
-const ProductEditorCatalogPublication = defineAsyncComponent(() => import(/* webpackChunkName: "admin-product-editor-catalog-publication" */ './ProductEditorCatalogPublication.vue'))
 
 // Initialize stores and i18n
 const { t } = useI18n()
@@ -35,7 +37,7 @@ const pageTitle = computed(() => {
 })
 
 // Section management
-const switchSection = (section: 'details' | 'options' | 'preferences' | 'catalog publication') => {
+const switchSection = (section: 'details' | 'options' | 'preferences') => {
   // Prevent switching to other sections in creation mode
   if (section !== 'details' && isCreationMode.value) {
     return
@@ -71,14 +73,6 @@ const switchSection = (section: 'details' | 'options' | 'preferences' | 'catalog
         >
           {{ t('admin.products.editor.sections.preferences') }}
         </v-btn>
-        <v-btn
-          :class="['section-btn', { 'section-active': productsStore.activeEditorSection === 'catalog publication' }]"
-          variant="text"
-          :disabled="isCreationMode"
-          @click="switchSection('catalog publication')"
-        >
-          {{ t('admin.products.editor.sections.catalog publication') }}
-        </v-btn>
       </div>
 
       <v-spacer />
@@ -99,9 +93,6 @@ const switchSection = (section: 'details' | 'options' | 'preferences' | 'catalog
       />
       <ProductEditorPreferences 
         v-else-if="productsStore.activeEditorSection === 'preferences'"
-      />
-      <ProductEditorCatalogPublication 
-        v-else-if="productsStore.activeEditorSection === 'catalog publication'"
       />
     </div>
   </div>

@@ -41,8 +41,7 @@
         "sections": {
           "details": "детали",
           "options": "опции",
-          "preferences": "предпочтения",
-          "catalog publication": "публикация в каталоге"
+          "preferences": "предпочтения"
         },
         "languages": {
           "english": "английский",
@@ -214,59 +213,6 @@
             "minLength": "краткое описание должно содержать минимум 10 символов"
           },
           "fillRequired": "заполните все обязательные поля"
-        },
-        "catalogPublication": {
-          "search": {
-            "placeholder": "поиск секций каталога...",
-            "minChars": "введите минимум 2 символа"
-          },
-          "filters": {
-            "status": "статус секции",
-            "published": "опубликовано",
-            "all": "все"
-          },
-          "table": {
-            "headers": {
-              "selection": "выбор",
-              "section": "секция",
-              "status": "статус секции",
-              "published": "опубликовано",
-              "owner": "владелец секции"
-            },
-            "status": {
-              "yes": "да",
-              "no": "нет"
-            }
-          },
-        "actions": {
-          "title": "действия",
-          "cancelAllPublications": "отменить все публикации",
-          "refresh": "обновить"
-        },
-          "selectedElements": {
-            "title": "выбранные элементы",
-            "publishToSelected": "опубликовать",
-            "unpublishFromSelected": "отменить публикацию"
-          },
-          "tooltips": {
-            "publishToSelected": "опубликовать продукт в выбранных секциях каталога",
-            "unpublishFromSelected": "отменить публикацию продукта из выбранных секций каталога"
-          },
-        "messages": {
-          "publishSuccess": "продукт успешно опубликован в {{count}} секции(ях)",
-          "unpublishSuccess": "публикация продукта успешно отменена в {{count}} секции(ях)",
-          "cancelAllPublicationsSuccess": "все публикации успешно отменены",
-          "publishError": "не удалось опубликовать продукт",
-          "unpublishError": "не удалось отменить публикацию продукта",
-          "cancelAllPublicationsError": "не удалось отменить все публикации",
-          "noProductId": "не удалось определить ID продукта для публикации",
-          "noSectionsSelected": "не выбрано секций для публикации",
-          "noNewSectionsSelected": "не выбрано новых секций для публикации",
-          "noSectionsToUnpublish": "не выбрано секций для отмены публикации",
-          "creationMode": "публикация в каталоге доступна только в режиме редактирования. сначала создайте продукт, затем настройте его публикацию в секциях каталога.",
-          "refreshSuccess": "секции успешно обновлены",
-          "refreshError": "не удалось обновить секции"
-        }
         },
         "messages": {
           "created": "продукт успешно создан",
