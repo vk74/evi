@@ -1,6 +1,6 @@
 <!--
   File: ServicesPublisher.vue
-  Version: 1.4.0
+  Version: 1.5.0
   Description: Component for services catalog publication management
   Purpose: Provides interface for managing service catalog publication
   Frontend file - ServicesPublisher.vue
@@ -38,6 +38,10 @@
   - Integrated publishServices API for publishing
   - Integrated unpublishServices API for unpublishing
   - Updated data structure to work with API response format
+  
+  Changes in v1.5.0:
+  - Removed section status filter
+  - Made table headers sticky in publish/unpublish modal
 -->
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
@@ -49,8 +53,7 @@ import {
   PhX,
   PhCheckSquare,
   PhSquare,
-  PhArrowClockwise,
-  PhFunnel
+  PhArrowClockwise
 } from '@phosphor-icons/vue'
 import Paginator from '@/core/ui/paginator/Paginator.vue'
 import type { CatalogSection } from '../types.catalog.admin'
@@ -82,7 +85,6 @@ const searchQuery = ref<string>('')
 const isSearching = ref<boolean>(false)
 
 // Filter parameters
-const sectionStatusFilter = ref<string>('all')
 const serviceFilter = ref<'all' | 'published' | 'unpublished'>('all')
 
 // Sort tracking
@@ -114,19 +116,6 @@ const isSearchEnabled = computed(() =>
   searchQuery.value.length >= 2 || searchQuery.value.length === 0
 )
 
-// Filter active indicator
-const isSectionStatusFilterActive = computed(() => sectionStatusFilter.value !== 'all')
-
-// Get unique section statuses from rows for filter dropdown
-const availableSectionStatuses = computed(() => {
-  const statuses = new Set<string>()
-  groupedRows.value.forEach(row => {
-    row.allSectionStatuses.forEach(status => {
-      statuses.add(status)
-    })
-  })
-  return Array.from(statuses).sort()
-})
 
 // Table headers
 const headers = computed<TableHeader[]>(() => [
@@ -306,16 +295,6 @@ const filteredRows = computed(() => {
       row.serviceName.toLowerCase().includes(query) ||
       row.sections.some(s => s.name.toLowerCase().includes(query))
     )
-  }
-
-  // Apply section status filter
-  if (sectionStatusFilter.value !== 'all') {
-    const statusLower = sectionStatusFilter.value.toLowerCase()
-    result = result.filter(row => {
-      return row.allSectionStatuses.some(status => 
-        status.toLowerCase() === statusLower
-      )
-    })
   }
 
   // Apply service filter (published/unpublished)
@@ -521,28 +500,6 @@ const handlePublish = async () => {
         <!-- Filters row -->
         <div class="d-flex align-center justify-space-between mb-2 px-4">
           <div class="d-flex align-center">
-            <!-- Section status filter -->
-            <div class="d-flex align-center mr-4">
-              <v-select
-                v-model="sectionStatusFilter"
-                density="compact"
-                variant="outlined"
-                :label="t('admin.catalog.servicesPublisher.filters.sectionStatus')"
-                :items="[
-                  { title: t('admin.catalog.servicesPublisher.filters.all'), value: 'all' },
-                  ...availableSectionStatuses.map(status => ({ title: status, value: status }))
-                ]"
-                color="teal"
-                :base-color="isSectionStatusFilterActive ? 'teal' : undefined"
-                hide-details
-                style="min-width: 180px;"
-              >
-                <template #append-inner>
-                  <PhFunnel class="dropdown-icon" />
-                </template>
-              </v-select>
-            </div>
-            
             <!-- Service filter -->
             <v-btn-toggle
               v-model="serviceFilter"
@@ -815,15 +772,6 @@ const handlePublish = async () => {
   min-width: 0;
 }
 
-/* Dropdown icon styling */
-.dropdown-icon {
-  position: absolute;
-  right: 12px;
-  top: 50%;
-  transform: translateY(-50%);
-  pointer-events: none;
-}
-
 /* Table styles */
 .sections-table :deep(.v-data-table-footer) {
   border-top: thin solid rgba(var(--v-border-color), var(--v-border-opacity));
@@ -905,6 +853,23 @@ const handlePublish = async () => {
 .modal-table {
   max-height: 400px;
   overflow-y: auto;
+}
+
+.modal-table :deep(thead) {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background-color: rgba(var(--v-theme-surface), 1);
+}
+
+.modal-table :deep(thead::after) {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background-color: rgba(var(--v-border-color), var(--v-border-opacity));
 }
 
 /* Published count text styling - 20% larger */
