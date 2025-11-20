@@ -231,7 +231,7 @@
             "selection": "selection",
             "serviceName": "service name",
             "serviceStatus": "service status",
-            "sectionName": "section name",
+            "sectionName": "catalog sections",
             "sectionStatus": "section status",
             "published": "published"
           },
@@ -246,13 +246,20 @@
         },
         "filters": {
           "sectionStatus": "section status",
-          "all": "all"
+          "all": "all",
+          "allServices": "all services",
+          "published": "published",
+          "unpublished": "unpublished"
         },
+        "published": "published",
+        "unpublished": "unpublished",
         "publishedCount": "number of published services: {count}",
         "actions": {
           "title": "actions",
           "refresh": "refresh",
-          "publishService": "publish service"
+          "publishService": "publish service",
+          "publishSelected": "publish selected",
+          "clearSelection": "clear selection"
         },
         "selectedElements": {
           "title": "selected elements",
@@ -260,6 +267,8 @@
         },
         "modal": {
           "title": "publish services",
+          "titlePublish": "publish services to sections selected below",
+          "titleUnpublish": "unpublish services from sections selected below",
           "search": {
             "placeholder": "search services..."
           },
@@ -269,7 +278,11 @@
           },
           "buttons": {
             "cancel": "cancel",
-            "publishSelected": "publish selected"
+            "publishSelected": "publish selected",
+            "publishInSections": "publish",
+            "publish": "publish",
+            "unpublishFromSelected": "unpublish",
+            "unpublish": "unpublish"
           },
           "messages": {
             "noServicesSelected": "no services selected",
@@ -282,7 +295,8 @@
           "publishSuccess": "services published successfully",
           "publishError": "error publishing services",
           "unpublishSuccess": "services unpublished successfully",
-          "unpublishError": "error unpublishing services"
+          "unpublishError": "error unpublishing services",
+          "noServicesSelected": "no services selected"
         }
       }
     }

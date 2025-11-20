@@ -1,6 +1,6 @@
 <!--
   File: ServicesPublisher.vue
-  Version: 1.0.0
+  Version: 1.3.0
   Description: Component for services catalog publication management
   Purpose: Provides interface for managing service catalog publication
   Frontend file - ServicesPublisher.vue
@@ -10,6 +10,27 @@
   - Table shows only published service-section combinations
   - Publication via modal dialog with multi-select for services and sections
   - Unpublish from table with selected rows
+  
+  Changes in v1.1.0:
+  - Added published column to table
+  - Added service filter selector (all/published/unpublished)
+  - Moved PUBLISH button to selected elements section, renamed to PUBLISH SELECTED
+  - Added CLEAR SELECTIONS button
+  - Redesigned publish modal: removed search and section select, replaced services list with sections list, added section status column, removed persistent prop
+  
+  Changes in v1.2.0:
+  - Renamed publish button in modal to "PUBLISH IN SECTIONS"
+  - Changed modal title to "publish services to sections selected below"
+  - Changed UNPUBLISH SELECTED button to open modal instead of direct unpublish
+  - Modal now supports both publish and unpublish modes
+  - Added unpublish mode with title "unpublish services from sections selected below" and button "UNPUBLISH FROM SELECTED"
+  
+  Changes in v1.3.0:
+  - Changed table structure: rows are now grouped by service
+  - Catalog sections column now displays all sections where service is published (as chips)
+  - Section status column now displays all unique statuses for the service
+  - Updated mock data to show services with multiple sections
+  - Updated publish/unpublish logic to work with grouped structure
 -->
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
@@ -49,8 +70,9 @@ const itemsPerPage = ref<ItemsPerPageOption>(25)
 const searchQuery = ref<string>('')
 const isSearching = ref<boolean>(false)
 
-// Filter parameters (only section status, service status filter removed)
+// Filter parameters
 const sectionStatusFilter = ref<string>('all')
+const serviceFilter = ref<'all' | 'published' | 'unpublished'>('all')
 
 // Sort tracking
 const sortBy = ref<string | null>(null)
@@ -69,9 +91,8 @@ const publishedRows = ref<ServiceSectionRow[]>([])
 
 // Modal state
 const showPublishModal = ref(false)
-const modalSearchQuery = ref<string>('')
-const selectedServices = ref<Set<string>>(new Set())
-const selectedSections = ref<string[]>([])
+const modalMode = ref<'publish' | 'unpublish'>('publish')
+const selectedSections = ref<Set<string>>(new Set())
 
 // Unpublished services and available sections for modal
 const unpublishedServices = ref<UnpublishedService[]>([])
@@ -91,10 +112,10 @@ const isSectionStatusFilterActive = computed(() => sectionStatusFilter.value !==
 // Get unique section statuses from rows for filter dropdown
 const availableSectionStatuses = computed(() => {
   const statuses = new Set<string>()
-  publishedRows.value.forEach(row => {
-    if (row.sectionStatus) {
-      statuses.add(row.sectionStatus)
-    }
+  groupedRows.value.forEach(row => {
+    row.allSectionStatuses.forEach(status => {
+      statuses.add(status)
+    })
   })
   return Array.from(statuses).sort()
 })
@@ -104,13 +125,12 @@ const headers = computed<TableHeader[]>(() => [
   { title: t('admin.catalog.servicesPublisher.table.headers.selection'), key: 'selection', width: '40px', sortable: false },
   { title: t('admin.catalog.servicesPublisher.table.headers.serviceName'), key: 'serviceName', width: 'auto', sortable: true },
   { title: t('admin.catalog.servicesPublisher.table.headers.sectionName'), key: 'sectionName', width: 'auto', sortable: true },
-  { title: t('admin.catalog.servicesPublisher.table.headers.sectionStatus'), key: 'sectionStatus', width: '150px', sortable: true }
+  { title: t('admin.catalog.servicesPublisher.table.headers.published'), key: 'published', width: '120px', sortable: true }
 ])
 
 // Count unique published services
 const publishedServicesCount = computed(() => {
-  const uniqueServiceIds = new Set(publishedRows.value.map(row => row.serviceId))
-  return uniqueServiceIds.size
+  return filteredRows.value.filter(row => row.published).length
 })
 
 // Helper function for error handling
@@ -137,29 +157,56 @@ const clearSelection = () => {
 
 // Load mock data
 const loadMockData = () => {
-  // Mock published service-section combinations (15-25 rows)
+  // Mock service-section combinations (mix of published and unpublished)
+  // Services with multiple sections to demonstrate grouping
   publishedRows.value = [
+    // Service s1 - published in 3 sections
     { id: '1', serviceId: 's1', serviceName: 'Cloud Infrastructure Service', serviceStatus: 'active', sectionId: 'sec1', sectionName: 'IT Services', sectionStatus: 'active', published: true },
     { id: '2', serviceId: 's1', serviceName: 'Cloud Infrastructure Service', serviceStatus: 'active', sectionId: 'sec2', sectionName: 'Business Solutions', sectionStatus: 'active', published: true },
-    { id: '3', serviceId: 's2', serviceName: 'Database Management Service', serviceStatus: 'active', sectionId: 'sec1', sectionName: 'IT Services', sectionStatus: 'active', published: true },
-    { id: '4', serviceId: 's3', serviceName: 'Network Security Service', serviceStatus: 'active', sectionId: 'sec4', sectionName: 'Security Services', sectionStatus: 'active', published: true },
-    { id: '5', serviceId: 's4', serviceName: 'Backup and Recovery Service', serviceStatus: 'active', sectionId: 'sec3', sectionName: 'Support Services', sectionStatus: 'active', published: true },
-    { id: '6', serviceId: 's5', serviceName: 'Application Development Service', serviceStatus: 'active', sectionId: 'sec2', sectionName: 'Business Solutions', sectionStatus: 'active', published: true },
-    { id: '7', serviceId: 's6', serviceName: 'Monitoring and Alerting Service', serviceStatus: 'active', sectionId: 'sec1', sectionName: 'IT Services', sectionStatus: 'active', published: true },
-    { id: '8', serviceId: 's7', serviceName: 'Identity Management Service', serviceStatus: 'active', sectionId: 'sec4', sectionName: 'Security Services', sectionStatus: 'active', published: true },
-    { id: '9', serviceId: 's8', serviceName: 'Content Delivery Service', serviceStatus: 'active', sectionId: 'sec5', sectionName: 'Cloud Solutions', sectionStatus: 'active', published: true },
-    { id: '10', serviceId: 's9', serviceName: 'API Gateway Service', serviceStatus: 'active', sectionId: 'sec2', sectionName: 'Business Solutions', sectionStatus: 'active', published: true },
-    { id: '11', serviceId: 's10', serviceName: 'Load Balancing Service', serviceStatus: 'active', sectionId: 'sec1', sectionName: 'IT Services', sectionStatus: 'active', published: true },
-    { id: '12', serviceId: 's11', serviceName: 'Email Service', serviceStatus: 'active', sectionId: 'sec3', sectionName: 'Support Services', sectionStatus: 'active', published: true },
-    { id: '13', serviceId: 's12', serviceName: 'File Storage Service', serviceStatus: 'active', sectionId: 'sec5', sectionName: 'Cloud Solutions', sectionStatus: 'active', published: true },
-    { id: '14', serviceId: 's13', serviceName: 'VPN Service', serviceStatus: 'active', sectionId: 'sec4', sectionName: 'Security Services', sectionStatus: 'active', published: true },
-    { id: '15', serviceId: 's14', serviceName: 'Container Orchestration Service', serviceStatus: 'active', sectionId: 'sec1', sectionName: 'IT Services', sectionStatus: 'active', published: true },
-    { id: '16', serviceId: 's15', serviceName: 'Data Analytics Service', serviceStatus: 'active', sectionId: 'sec2', sectionName: 'Business Solutions', sectionStatus: 'active', published: true },
-    { id: '17', serviceId: 's16', serviceName: 'Document Management Service', serviceStatus: 'active', sectionId: 'sec3', sectionName: 'Support Services', sectionStatus: 'active', published: true },
-    { id: '18', serviceId: 's17', serviceName: 'Compliance Service', serviceStatus: 'active', sectionId: 'sec4', sectionName: 'Security Services', sectionStatus: 'active', published: true },
-    { id: '19', serviceId: 's18', serviceName: 'Disaster Recovery Service', serviceStatus: 'active', sectionId: 'sec5', sectionName: 'Cloud Solutions', sectionStatus: 'active', published: true },
-    { id: '20', serviceId: 's19', serviceName: 'Configuration Management Service', serviceStatus: 'active', sectionId: 'sec1', sectionName: 'IT Services', sectionStatus: 'draft', published: true },
-    { id: '21', serviceId: 's20', serviceName: 'Log Aggregation Service', serviceStatus: 'active', sectionId: 'sec2', sectionName: 'Business Solutions', sectionStatus: 'active', published: true }
+    { id: '3', serviceId: 's1', serviceName: 'Cloud Infrastructure Service', serviceStatus: 'active', sectionId: 'sec5', sectionName: 'Cloud Solutions', sectionStatus: 'active', published: true },
+    
+    // Service s2 - published in 2 sections
+    { id: '4', serviceId: 's2', serviceName: 'Database Management Service', serviceStatus: 'active', sectionId: 'sec1', sectionName: 'IT Services', sectionStatus: 'active', published: true },
+    { id: '5', serviceId: 's2', serviceName: 'Database Management Service', serviceStatus: 'active', sectionId: 'sec7', sectionName: 'Data Services', sectionStatus: 'active', published: true },
+    
+    // Service s3 - published in 1 section
+    { id: '6', serviceId: 's3', serviceName: 'Network Security Service', serviceStatus: 'active', sectionId: 'sec4', sectionName: 'Security Services', sectionStatus: 'active', published: true },
+    
+    // Service s4 - published in 2 sections
+    { id: '7', serviceId: 's4', serviceName: 'Backup and Recovery Service', serviceStatus: 'active', sectionId: 'sec3', sectionName: 'Support Services', sectionStatus: 'active', published: true },
+    { id: '8', serviceId: 's4', serviceName: 'Backup and Recovery Service', serviceStatus: 'active', sectionId: 'sec1', sectionName: 'IT Services', sectionStatus: 'active', published: true },
+    
+    // Service s5 - published in 4 sections
+    { id: '9', serviceId: 's5', serviceName: 'Application Development Service', serviceStatus: 'active', sectionId: 'sec2', sectionName: 'Business Solutions', sectionStatus: 'active', published: true },
+    { id: '10', serviceId: 's5', serviceName: 'Application Development Service', serviceStatus: 'active', sectionId: 'sec6', sectionName: 'Development Tools', sectionStatus: 'active', published: true },
+    { id: '11', serviceId: 's5', serviceName: 'Application Development Service', serviceStatus: 'active', sectionId: 'sec1', sectionName: 'IT Services', sectionStatus: 'active', published: true },
+    { id: '12', serviceId: 's5', serviceName: 'Application Development Service', serviceStatus: 'active', sectionId: 'sec8', sectionName: 'Communication Services', sectionStatus: 'active', published: true },
+    
+    // Service s6 - published in 1 section
+    { id: '13', serviceId: 's6', serviceName: 'Monitoring and Alerting Service', serviceStatus: 'active', sectionId: 'sec1', sectionName: 'IT Services', sectionStatus: 'active', published: true },
+    
+    // Service s7 - published in 2 sections (one with draft status)
+    { id: '14', serviceId: 's7', serviceName: 'Identity Management Service', serviceStatus: 'active', sectionId: 'sec4', sectionName: 'Security Services', sectionStatus: 'active', published: true },
+    { id: '15', serviceId: 's7', serviceName: 'Identity Management Service', serviceStatus: 'active', sectionId: 'sec1', sectionName: 'IT Services', sectionStatus: 'draft', published: true },
+    
+    // Service s8 - published in 3 sections
+    { id: '16', serviceId: 's8', serviceName: 'Content Delivery Service', serviceStatus: 'active', sectionId: 'sec5', sectionName: 'Cloud Solutions', sectionStatus: 'active', published: true },
+    { id: '17', serviceId: 's8', serviceName: 'Content Delivery Service', serviceStatus: 'active', sectionId: 'sec1', sectionName: 'IT Services', sectionStatus: 'active', published: true },
+    { id: '18', serviceId: 's8', serviceName: 'Content Delivery Service', serviceStatus: 'active', sectionId: 'sec8', sectionName: 'Communication Services', sectionStatus: 'active', published: true },
+    
+    // Service s9 - published in 2 sections
+    { id: '19', serviceId: 's9', serviceName: 'API Gateway Service', serviceStatus: 'active', sectionId: 'sec2', sectionName: 'Business Solutions', sectionStatus: 'active', published: true },
+    { id: '20', serviceId: 's9', serviceName: 'API Gateway Service', serviceStatus: 'active', sectionId: 'sec6', sectionName: 'Development Tools', sectionStatus: 'active', published: true },
+    
+    // Service s10 - published in 1 section
+    { id: '21', serviceId: 's10', serviceName: 'Load Balancing Service', serviceStatus: 'active', sectionId: 'sec1', sectionName: 'IT Services', sectionStatus: 'active', published: true },
+    
+    // Service s11 - unpublished (1 section)
+    { id: '22', serviceId: 's11', serviceName: 'Email Service', serviceStatus: 'active', sectionId: 'sec3', sectionName: 'Support Services', sectionStatus: 'active', published: false },
+    
+    // Service s12 - unpublished (2 sections)
+    { id: '23', serviceId: 's12', serviceName: 'File Storage Service', serviceStatus: 'active', sectionId: 'sec5', sectionName: 'Cloud Solutions', sectionStatus: 'active', published: false },
+    { id: '24', serviceId: 's12', serviceName: 'File Storage Service', serviceStatus: 'active', sectionId: 'sec7', sectionName: 'Data Services', sectionStatus: 'active', published: false }
   ]
   
   // Mock unpublished active services (30-40 services)
@@ -295,16 +342,59 @@ const updateOptionsAndFetch = async (options: { page?: number, itemsPerPage?: nu
   }
 }
 
+// Group rows by service and aggregate sections
+interface GroupedServiceRow {
+  id: string
+  serviceId: string
+  serviceName: string
+  serviceStatus: string
+  sections: Array<{ id: string; name: string; status: string }>
+  published: boolean
+  allSectionStatuses: string[]
+}
+
 // Computed properties for table
+const groupedRows = computed(() => {
+  // Group by serviceId
+  const grouped = new Map<string, GroupedServiceRow>()
+  
+  publishedRows.value.forEach(row => {
+    if (!grouped.has(row.serviceId)) {
+      grouped.set(row.serviceId, {
+        id: row.serviceId, // Use serviceId as unique ID for grouped row
+        serviceId: row.serviceId,
+        serviceName: row.serviceName,
+        serviceStatus: row.serviceStatus,
+        sections: [],
+        published: row.published,
+        allSectionStatuses: []
+      })
+    }
+    
+    const group = grouped.get(row.serviceId)!
+    group.sections.push({
+      id: row.sectionId,
+      name: row.sectionName,
+      status: row.sectionStatus
+    })
+    
+    if (row.sectionStatus && !group.allSectionStatuses.includes(row.sectionStatus)) {
+      group.allSectionStatuses.push(row.sectionStatus)
+    }
+  })
+  
+  return Array.from(grouped.values())
+})
+
 const filteredRows = computed(() => {
-  let result = publishedRows.value
+  let result = groupedRows.value
 
   // Apply search filter
   if (searchQuery.value.length >= 2) {
     const query = searchQuery.value.toLowerCase()
     result = result.filter(row =>
       row.serviceName.toLowerCase().includes(query) ||
-      row.sectionName.toLowerCase().includes(query)
+      row.sections.some(s => s.name.toLowerCase().includes(query))
     )
   }
 
@@ -312,16 +402,33 @@ const filteredRows = computed(() => {
   if (sectionStatusFilter.value !== 'all') {
     const statusLower = sectionStatusFilter.value.toLowerCase()
     result = result.filter(row => {
-      const rowStatus = row.sectionStatus?.toLowerCase() || ''
-      return rowStatus === statusLower
+      return row.allSectionStatuses.some(status => 
+        status.toLowerCase() === statusLower
+      )
     })
+  }
+
+  // Apply service filter (published/unpublished)
+  if (serviceFilter.value === 'published') {
+    result = result.filter(row => row.published === true)
+  } else if (serviceFilter.value === 'unpublished') {
+    result = result.filter(row => row.published === false)
   }
 
   // Apply sorting
   if (sortBy.value) {
     result = [...result].sort((a, b) => {
-      const aValue = a[sortBy.value as keyof ServiceSectionRow]
-      const bValue = b[sortBy.value as keyof ServiceSectionRow]
+      let aValue: any
+      let bValue: any
+      
+      if (sortBy.value === 'sectionName') {
+        // Sort by first section name
+        aValue = a.sections.length > 0 ? a.sections[0].name : ''
+        bValue = b.sections.length > 0 ? b.sections[0].name : ''
+      } else {
+        aValue = a[sortBy.value as keyof GroupedServiceRow]
+        bValue = b[sortBy.value as keyof GroupedServiceRow]
+      }
       
       if (typeof aValue === 'string' && typeof bValue === 'string') {
         return sortDesc.value 
@@ -368,19 +475,34 @@ const handleRefresh = async () => {
 
 // Unpublish handler
 const handleUnpublish = async () => {
-  if (!hasSelected.value) {
-    uiStore.showErrorSnackbar(t('admin.catalog.servicesPublisher.messages.unpublishError'))
+  if (selectedSections.value.size === 0) {
+    uiStore.showErrorSnackbar(t('admin.catalog.servicesPublisher.modal.messages.noSectionSelected'))
+    return
+  }
+
+  if (selectedRows.value.size === 0) {
+    uiStore.showErrorSnackbar(t('admin.catalog.servicesPublisher.messages.noServicesSelected'))
     return
   }
 
   try {
     isUnpublishing.value = true
     
-    // Remove selected rows from published rows
-    const rowsToRemove = Array.from(selectedRows.value)
+    // Get selected service IDs (rowId is now serviceId in grouped view)
+    const selectedServiceIds = Array.from(selectedRows.value)
+
+    // Remove rows that match selected services and selected sections
+    const rowsToRemove: string[] = []
+    publishedRows.value.forEach(row => {
+      if (selectedServiceIds.includes(row.serviceId) && selectedSections.value.has(row.sectionId)) {
+        rowsToRemove.push(row.id)
+      }
+    })
+
     publishedRows.value = publishedRows.value.filter(row => !rowsToRemove.includes(row.id))
     
     clearSelection()
+    closePublishModal()
     
     uiStore.showSuccessSnackbar(
       t('admin.catalog.servicesPublisher.messages.unpublishSuccess')
@@ -394,87 +516,88 @@ const handleUnpublish = async () => {
 
 // Modal handlers
 const openPublishModal = () => {
+  modalMode.value = 'publish'
   showPublishModal.value = true
-  modalSearchQuery.value = ''
-  selectedServices.value.clear()
-  selectedSections.value = []
+  selectedSections.value.clear()
+}
+
+const openUnpublishModal = () => {
+  modalMode.value = 'unpublish'
+  showPublishModal.value = true
+  selectedSections.value.clear()
 }
 
 const closePublishModal = () => {
   showPublishModal.value = false
-  modalSearchQuery.value = ''
-  selectedServices.value.clear()
-  selectedSections.value = []
+  selectedSections.value.clear()
 }
 
-// Filtered unpublished services for modal
-const filteredUnpublishedServices = computed(() => {
-  let result = unpublishedServices.value
-
-  if (modalSearchQuery.value.length >= 2) {
-    const query = modalSearchQuery.value.toLowerCase()
-    result = result.filter(service =>
-      service.name.toLowerCase().includes(query)
-    )
-  }
-
-  return result
-})
-
-// Service selection in modal
-const onSelectService = (serviceId: string, selected: boolean) => {
+// Section selection in modal
+const onSelectSection = (sectionId: string, selected: boolean) => {
   if (selected) {
-    selectedServices.value.add(serviceId)
+    selectedSections.value.add(sectionId)
   } else {
-    selectedServices.value.delete(serviceId)
+    selectedSections.value.delete(sectionId)
   }
 }
 
-const isServiceSelected = (serviceId: string) => selectedServices.value.has(serviceId)
-
-// Section selection toggle
-const toggleSectionSelection = (sectionId: string) => {
-  const index = selectedSections.value.indexOf(sectionId)
-  if (index > -1) {
-    selectedSections.value.splice(index, 1)
-  } else {
-    selectedSections.value.push(sectionId)
-  }
-}
+const isSectionSelected = (sectionId: string) => selectedSections.value.has(sectionId)
 
 // Publish handler
 const handlePublish = async () => {
-  if (selectedServices.value.size === 0) {
-    uiStore.showErrorSnackbar(t('admin.catalog.servicesPublisher.modal.messages.noServicesSelected'))
-    return
-  }
-
-  if (selectedSections.value.length === 0) {
+  if (selectedSections.value.size === 0) {
     uiStore.showErrorSnackbar(t('admin.catalog.servicesPublisher.modal.messages.noSectionSelected'))
     return
   }
 
+  if (selectedRows.value.size === 0) {
+    uiStore.showErrorSnackbar(t('admin.catalog.servicesPublisher.messages.noServicesSelected'))
+    return
+  }
+
   try {
+    // Get selected service IDs (rowId is now serviceId in grouped view)
+    const selectedServiceIds = Array.from(selectedRows.value)
+    const serviceMap = new Map<string, { serviceName: string; serviceStatus: string }>()
+    
+    selectedServiceIds.forEach(serviceId => {
+      const groupedRow = groupedRows.value.find(r => r.serviceId === serviceId)
+      if (groupedRow) {
+        serviceMap.set(serviceId, {
+          serviceName: groupedRow.serviceName,
+          serviceStatus: groupedRow.serviceStatus
+        })
+      }
+    })
+
     // Create new published rows for each service-section combination
     const newRows: ServiceSectionRow[] = []
-    let rowIdCounter = publishedRows.value.length + 1
+    let rowIdCounter = publishedRows.value.length > 0 
+      ? Math.max(...publishedRows.value.map(r => parseInt(r.id) || 0)) + 1
+      : 1
 
-    selectedServices.value.forEach(serviceId => {
-      const service = unpublishedServices.value.find(s => s.id === serviceId)
-      if (!service) return
+    selectedServiceIds.forEach(serviceId => {
+      const serviceInfo = serviceMap.get(serviceId)
+      if (!serviceInfo) return
 
       selectedSections.value.forEach(sectionId => {
         const section = availableSections.value.find(s => s.id === sectionId)
         if (!section) return
 
+        // Check if this combination already exists
+        const exists = publishedRows.value.some(r => 
+          r.serviceId === serviceId && r.sectionId === sectionId
+        )
+        if (exists) return
+
         newRows.push({
           id: String(rowIdCounter++),
           serviceId: serviceId,
-          serviceName: service.name,
-          serviceStatus: 'active',
+          serviceName: serviceInfo.serviceName,
+          serviceStatus: serviceInfo.serviceStatus,
           sectionId: sectionId,
           sectionName: section.name,
-          sectionStatus: section.status || 'active',
+          sectionStatus: section.status?.toString() || 'active',
           published: true
         })
       })
@@ -483,11 +606,7 @@ const handlePublish = async () => {
     // Add new rows to published rows
     publishedRows.value.push(...newRows)
 
-    // Remove published services from unpublished list
-    selectedServices.value.forEach(serviceId => {
-      unpublishedServices.value = unpublishedServices.value.filter(s => s.id !== serviceId)
-    })
-
+    clearSelection()
     closePublishModal()
     
     uiStore.showSuccessSnackbar(
@@ -558,6 +677,37 @@ const handlePublish = async () => {
                 </template>
               </v-select>
             </div>
+            
+            <!-- Service filter -->
+            <v-btn-toggle
+              v-model="serviceFilter"
+              mandatory
+              color="teal"
+              class="filter-toggle-group"
+              density="compact"
+            >
+              <v-btn
+                value="all"
+                variant="outlined"
+                size="small"
+              >
+                {{ t('admin.catalog.servicesPublisher.filters.allServices') }}
+              </v-btn>
+              <v-btn
+                value="published"
+                variant="outlined"
+                size="small"
+              >
+                {{ t('admin.catalog.servicesPublisher.filters.published') }}
+              </v-btn>
+              <v-btn
+                value="unpublished"
+                variant="outlined"
+                size="small"
+              >
+                {{ t('admin.catalog.servicesPublisher.filters.unpublished') }}
+              </v-btn>
+            </v-btn-toggle>
           </div>
           <div class="text-body-2 text-right published-count-text">
             {{ t('admin.catalog.servicesPublisher.publishedCount', { count: publishedServicesCount }) }}
@@ -597,16 +747,27 @@ const handlePublish = async () => {
           </template>
 
           <template #[`item.sectionName`]="{ item }">
-            <span>{{ item.sectionName }}</span>
+            <div class="d-flex flex-wrap gap-1">
+              <v-chip
+                v-for="section in item.sections"
+                :key="section.id"
+                size="x-small"
+                color="teal"
+                variant="outlined"
+                class="section-chip"
+              >
+                {{ section.name }}
+              </v-chip>
+            </div>
           </template>
 
-          <template #[`item.sectionStatus`]="{ item }">
+          <template #[`item.published`]="{ item }">
             <v-chip 
-              :color="isSectionStatusActive(item.sectionStatus) ? 'teal' : 'grey'" 
+              :color="item.published ? 'teal' : 'grey'" 
               size="x-small"
               class="status-chip"
             >
-              {{ item.sectionStatus }}
+              {{ item.published ? t('admin.catalog.servicesPublisher.published') : t('admin.catalog.servicesPublisher.unpublished') }}
             </v-chip>
           </template>
         </v-data-table>
@@ -645,13 +806,16 @@ const handlePublish = async () => {
 
           <v-btn
             block
-            color="teal"
+            color="grey"
             variant="outlined"
             class="mb-3"
-            :disabled="isRefreshing || isUnpublishing"
-            @click="openPublishModal"
+            :disabled="!hasSelected || isRefreshing || isUnpublishing"
+            @click="clearSelection"
           >
-            {{ t('admin.catalog.servicesPublisher.actions.publishService').toUpperCase() }}
+            <template #prepend>
+              <PhSquare />
+            </template>
+            {{ t('admin.catalog.servicesPublisher.actions.clearSelection').toUpperCase() }}
           </v-btn>
         </div>
         
@@ -666,12 +830,23 @@ const handlePublish = async () => {
           
           <v-btn
             block
+            color="teal"
+            variant="outlined"
+            class="mb-3"
+            :disabled="!hasSelected || isRefreshing || isUnpublishing"
+            @click="openPublishModal"
+          >
+            {{ t('admin.catalog.servicesPublisher.actions.publishSelected').toUpperCase() }}
+          </v-btn>
+          
+          <v-btn
+            block
             color="red"
             variant="outlined"
             class="mb-3"
             :disabled="!hasSelected || isRefreshing || isUnpublishing"
             :loading="isUnpublishing"
-            @click="handleUnpublish"
+            @click="openUnpublishModal"
           >
             {{ t('admin.catalog.servicesPublisher.selectedElements.unpublishSelected').toUpperCase() }}
           </v-btn>
@@ -679,41 +854,29 @@ const handlePublish = async () => {
       </div>
     </div>
 
-    <!-- Publish Service Modal -->
+    <!-- Publish/Unpublish Service Modal -->
     <v-dialog
       v-model="showPublishModal"
       max-width="800px"
-      persistent
     >
       <v-card>
         <v-card-title class="text-h6 pa-4">
-          {{ t('admin.catalog.servicesPublisher.modal.title').toLowerCase() }}
+          {{ modalMode === 'publish' 
+            ? t('admin.catalog.servicesPublisher.modal.titlePublish').toLowerCase()
+            : t('admin.catalog.servicesPublisher.modal.titleUnpublish').toLowerCase()
+          }}
         </v-card-title>
 
         <v-card-text>
-          <!-- Search in modal -->
-          <div class="mb-4">
-            <v-text-field
-              v-model="modalSearchQuery"
-              density="compact"
-              variant="outlined"
-              color="teal"
-              :label="t('admin.catalog.servicesPublisher.modal.search.placeholder')"
-            >
-              <template #prepend-inner>
-                <PhMagnifyingGlass />
-              </template>
-            </v-text-field>
-          </div>
-
-          <!-- Services table -->
+          <!-- Sections table -->
           <div class="mb-4">
             <v-data-table
               :headers="[
                 { title: t('admin.catalog.servicesPublisher.table.headers.selection'), key: 'selection', width: '40px', sortable: false },
-                { title: t('admin.catalog.servicesPublisher.table.headers.serviceName'), key: 'name', sortable: true }
+                { title: t('admin.catalog.servicesPublisher.table.headers.sectionName'), key: 'name', sortable: true },
+                { title: t('admin.catalog.servicesPublisher.table.headers.sectionStatus'), key: 'status', width: '150px', sortable: true }
               ]"
-              :items="filteredUnpublishedServices"
+              :items="availableSections"
               hide-default-footer
               class="modal-table"
             >
@@ -722,10 +885,10 @@ const handlePublish = async () => {
                   icon
                   variant="text"
                   density="comfortable"
-                  :aria-pressed="isServiceSelected(item.id)"
-                  @click="onSelectService(item.id, !isServiceSelected(item.id))"
+                  :aria-pressed="isSectionSelected(item.id)"
+                  @click="onSelectSection(item.id, !isSectionSelected(item.id))"
                 >
-                  <PhCheckSquare v-if="isServiceSelected(item.id)" :size="18" color="teal" />
+                  <PhCheckSquare v-if="isSectionSelected(item.id)" :size="18" color="teal" />
                   <PhSquare v-else :size="18" color="grey" />
                 </v-btn>
               </template>
@@ -733,48 +896,17 @@ const handlePublish = async () => {
               <template #[`item.name`]="{ item }">
                 <span>{{ item.name }}</span>
               </template>
-            </v-data-table>
-          </div>
 
-          <!-- Section multi-select -->
-          <div class="mb-4">
-            <v-select
-              v-model="selectedSections"
-              density="compact"
-              variant="outlined"
-              :label="t('admin.catalog.servicesPublisher.modal.sectionSelect.label')"
-              :items="availableSections.map(s => ({ title: s.name, value: s.id }))"
-              item-title="title"
-              item-value="value"
-              multiple
-              color="teal"
-              hide-details
-            >
-              <template #item="{ item, props }">
-                <v-list-item
-                  :value="item.value"
-                  :title="item.title"
-                  @click="toggleSectionSelection(item.value)"
+              <template #[`item.status`]="{ item }">
+                <v-chip 
+                  :color="isSectionStatusActive(item.status?.toString() || '') ? 'teal' : 'grey'" 
+                  size="x-small"
+                  class="status-chip"
                 >
-                  <template #prepend>
-                    <v-btn
-                      icon
-                      variant="text"
-                      density="comfortable"
-                      :aria-pressed="selectedSections.includes(item.value)"
-                      @click.stop="toggleSectionSelection(item.value)"
-                    >
-                      <PhCheckSquare v-if="selectedSections.includes(item.value)" :size="18" color="teal" />
-                      <PhSquare v-else :size="18" color="grey" />
-                    </v-btn>
-                  </template>
-                  <v-list-item-title>{{ item.title }}</v-list-item-title>
-                </v-list-item>
+                  {{ item.status || '' }}
+                </v-chip>
               </template>
-              <template #append-inner>
-                <PhFunnel class="dropdown-icon" />
-              </template>
-            </v-select>
+            </v-data-table>
           </div>
         </v-card-text>
 
@@ -788,12 +920,23 @@ const handlePublish = async () => {
             {{ t('admin.catalog.servicesPublisher.modal.buttons.cancel').toUpperCase() }}
           </v-btn>
           <v-btn
+            v-if="modalMode === 'publish'"
             color="teal"
             variant="outlined"
-            :disabled="selectedServices.size === 0 || selectedSections.length === 0"
+            :disabled="selectedSections.size === 0"
             @click="handlePublish"
           >
-            {{ t('admin.catalog.servicesPublisher.modal.buttons.publishSelected').toUpperCase() }}
+            {{ t('admin.catalog.servicesPublisher.modal.buttons.publish').toUpperCase() }}
+          </v-btn>
+          <v-btn
+            v-else
+            color="red"
+            variant="outlined"
+            :disabled="selectedSections.size === 0"
+            :loading="isUnpublishing"
+            @click="handleUnpublish"
+          >
+            {{ t('admin.catalog.servicesPublisher.modal.buttons.unpublish').toUpperCase() }}
           </v-btn>
         </v-card-actions>
       </v-card>
@@ -902,5 +1045,19 @@ const handlePublish = async () => {
 /* Published count text styling - 20% larger */
 .published-count-text {
   font-size: 1.03em !important;
+}
+
+/* Filter toggle group styling */
+.filter-toggle-group {
+  margin-left: 16px;
+}
+
+/* Section chips styling */
+.section-chip {
+  font-size: 0.85em !important;
+  padding: 0 8px !important;
+  min-height: 20px !important;
+  height: 20px !important;
+  margin: 2px;
 }
 </style>
