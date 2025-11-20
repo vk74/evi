@@ -235,6 +235,86 @@ export const EVENTS_ADMIN_CATALOG: EventCollection = {
     version: '1.0.0'
   },
 
+  // Services publish started
+  'services.publish.started': {
+    eventName: 'adminCatalog.services.publish.started',
+    source: 'admin-catalog',
+    eventType: 'app',
+    severity: 'debug',
+    eventMessage: 'Services publish started',
+    version: '1.0.0'
+  },
+
+  // Services publish success
+  'services.publish.success': {
+    eventName: 'adminCatalog.services.publish.success',
+    source: 'admin-catalog',
+    eventType: 'app',
+    severity: 'info',
+    eventMessage: 'Services published successfully',
+    version: '1.0.0'
+  },
+
+  // Services publish database error
+  'services.publish.database_error': {
+    eventName: 'adminCatalog.services.publish.database_error',
+    source: 'admin-catalog',
+    eventType: 'app',
+    severity: 'error',
+    eventMessage: 'Database error during services publish',
+    version: '1.0.0'
+  },
+
+  // Services unpublish started
+  'services.unpublish.started': {
+    eventName: 'adminCatalog.services.unpublish.started',
+    source: 'admin-catalog',
+    eventType: 'app',
+    severity: 'debug',
+    eventMessage: 'Services unpublish started',
+    version: '1.0.0'
+  },
+
+  // Services unpublish success
+  'services.unpublish.success': {
+    eventName: 'adminCatalog.services.unpublish.success',
+    source: 'admin-catalog',
+    eventType: 'app',
+    severity: 'info',
+    eventMessage: 'Services unpublished successfully',
+    version: '1.0.0'
+  },
+
+  // Services unpublish database error
+  'services.unpublish.database_error': {
+    eventName: 'adminCatalog.services.unpublish.database_error',
+    source: 'admin-catalog',
+    eventType: 'app',
+    severity: 'error',
+    eventMessage: 'Database error during services unpublish',
+    version: '1.0.0'
+  },
+
+  // Services sections fetch started
+  'services.sections.fetch.started': {
+    eventName: 'adminCatalog.services.sections.fetch.started',
+    source: 'admin-catalog',
+    eventType: 'app',
+    severity: 'debug',
+    eventMessage: 'Services sections fetch started',
+    version: '1.0.0'
+  },
+
+  // Services sections fetch success
+  'services.sections.fetch.success': {
+    eventName: 'adminCatalog.services.sections.fetch.success',
+    source: 'admin-catalog',
+    eventType: 'app',
+    severity: 'debug',
+    eventMessage: 'Services sections fetch completed successfully',
+    version: '1.0.0'
+  },
+
   // Controller unexpected error
   'controller.unexpected_error': {
     eventName: 'adminCatalog.controller.unexpected_error',

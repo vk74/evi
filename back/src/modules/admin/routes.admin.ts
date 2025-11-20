@@ -32,7 +32,8 @@ import createCatalogSection from './catalog/controller.admin.create.section';
 import updateCatalogSection from './catalog/controller.admin.update.section';
 import deleteCatalogSection from './catalog/controller.admin.delete.sections';
 import fetchPublishingServicesController from './catalog/controller.admin.fetch.publishingservices';
-import updateSectionServicesPublishController from './catalog/controller.admin.update.services.publish';
+import servicePublishController from './catalog/controller.admin.service.publish';
+import serviceUnpublishController from './catalog/controller.admin.service.unpublish';
 import createServiceController from './service/sections/controller.admin.create.service';
 import updateServiceController from './service/sections/controller.admin.update.service';
 import fetchPublishingSectionsController from './service/sections/controller.admin.fetch.publishingsections';
@@ -97,7 +98,8 @@ router.post('/api/admin/catalog/create-section', checkRateLimit, checkRequestSec
 router.post('/api/admin/catalog/update-section', checkRateLimit, checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, updateCatalogSection);
 router.post('/api/admin/catalog/delete-section', checkRateLimit, checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, deleteCatalogSection);
 router.get('/api/admin/catalog/fetchpublishingservices', checkRateLimit, checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, fetchPublishingServicesController);
-router.post('/api/admin/catalog/update-services-publish', checkRateLimit, checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, updateSectionServicesPublishController);
+router.post('/api/admin/catalog/service-publish', checkRateLimit, checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, servicePublishController);
+router.post('/api/admin/catalog/service-unpublish', checkRateLimit, checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, serviceUnpublishController);
 // Ordering disabled: route removed
 
 // Routes for Services Admin

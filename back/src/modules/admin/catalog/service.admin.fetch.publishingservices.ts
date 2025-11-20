@@ -1,9 +1,16 @@
 /**
  * service.admin.fetch.publishingservices.ts
- * Version: 1.0.0
- * Description: Service for fetching services list with selection flag and order for a catalog section
- * Purpose: Implements GET /api/admin/catalog/fetchpublishingservices with pagination/search/sort
+ * Version: 1.1.0
+ * Description: Service for fetching active services with their publication status across all catalog sections
+ * Purpose: Implements GET /api/admin/catalog/fetchpublishingservices - returns all active services with sections where published
  * Backend file - service.admin.fetch.publishingservices.ts
+ * 
+ * Changes in v1.1.0:
+ * - Removed sectionId parameter requirement
+ * - Returns all active services (status = 'in_production') with their publication status
+ * - For each service, returns array of sections where it's published
+ * - Returns all catalog sections in separate field
+ * - Structured for ServicesPublisher.vue component
  */
 
 import { Request } from 'express'
@@ -15,117 +22,121 @@ import { EVENTS_ADMIN_CATALOG } from './events.admin.catalog'
 const pgPool: Pool = (defaultPool as unknown as Pool)
 
 export async function fetchPublishingServices(req: Request) {
-  const sectionId = (req.query.sectionId || req.query.section_id) as string
-  const page = Number(req.query.page ?? 1)
-  const perPage = Number(req.query.perPage ?? 25)
-  const search = (req.query.search as string) || ''
-  const sortBy = (req.query.sortBy as string) || 'name'
-  const sortOrder = ((req.query.sortOrder as string) || 'asc').toLowerCase() === 'desc' ? 'DESC' : 'ASC'
-
   createAndPublishEvent({
-    eventName: EVENTS_ADMIN_CATALOG['services.publish.fetch.started'].eventName,
-    payload: {
-      sectionId,
-      page,
-      perPage,
-      search,
-      sortBy,
-      sortOrder
-    }
-  });
+    eventName: EVENTS_ADMIN_CATALOG['services.sections.fetch.started'].eventName,
+    payload: {}
+  })
 
-  if (!sectionId) {
+  try {
+    // Fetch all active services (status = 'in_production')
+    const servicesSql = `
+      WITH owners AS (
+        SELECT su.service_id, u.username AS owner
+        FROM app.service_users su
+        JOIN app.users u ON su.user_id = u.user_id
+        WHERE su.role_type = 'owner'
+      )
+      SELECT s.id, s.name, s.status, o.owner
+      FROM app.services s
+      LEFT JOIN owners o ON o.service_id = s.id
+      WHERE s.status = 'in_production'
+      ORDER BY s.name ASC
+    `
+    const servicesRes = await pgPool.query(servicesSql)
+
+    // Fetch all section-service mappings
+    const mappingsSql = `
+      SELECT ss.service_id, ss.section_id, cs.name AS section_name, cs.status AS section_status
+      FROM app.section_services ss
+      JOIN app.catalog_sections cs ON ss.section_id = cs.id
+    `
+    const mappingsRes = await pgPool.query(mappingsSql)
+
+    // Build map of service_id -> sections where published
+    const serviceSectionsMap = new Map<string, Array<{ id: string; name: string; status: string }>>()
+    mappingsRes.rows.forEach((r: any) => {
+      if (!serviceSectionsMap.has(r.service_id)) {
+        serviceSectionsMap.set(r.service_id, [])
+      }
+      serviceSectionsMap.get(r.service_id)!.push({
+        id: r.section_id,
+        name: r.section_name,
+        status: r.section_status
+      })
+    })
+
+    // Fetch all catalog sections
+    const sectionsSql = `
+      SELECT id, name, owner, backup_owner, description, comments, status, is_public, "order", parent_id, icon_name, color, created_at, created_by, modified_at, modified_by
+      FROM app.catalog_sections
+      ORDER BY name ASC
+    `
+    const sectionsRes = await pgPool.query(sectionsSql)
+
+    // Build services array with publication info
+    const services = servicesRes.rows.map((r: any) => {
+      const sections = serviceSectionsMap.get(r.id) || []
+      const allSectionStatuses = [...new Set(sections.map((s: any) => s.status))].filter(Boolean)
+      
+      return {
+        id: r.id,
+        serviceId: r.id,
+        serviceName: r.name,
+        serviceStatus: r.status,
+        sections: sections,
+        published: sections.length > 0,
+        allSectionStatuses: allSectionStatuses
+      }
+    })
+
+    // Format sections for response
+    const sections = sectionsRes.rows.map((r: any) => ({
+      id: r.id,
+      name: r.name,
+      owner: r.owner,
+      backup_owner: r.backup_owner,
+      description: r.description,
+      comments: r.comments,
+      status: r.status,
+      is_public: r.is_public,
+      order: r.order,
+      parent_id: r.parent_id,
+      icon_name: r.icon_name,
+      color: r.color,
+      created_at: r.created_at,
+      created_by: r.created_by,
+      modified_at: r.modified_at,
+      modified_by: r.modified_by
+    }))
+
+    const result = {
+      success: true,
+      message: 'ok',
+      data: {
+        services,
+        sections
+      }
+    }
+
+    createAndPublishEvent({
+      eventName: EVENTS_ADMIN_CATALOG['services.sections.fetch.success'].eventName,
+      payload: {
+        servicesCount: services.length,
+        sectionsCount: sections.length
+      }
+    })
+
+    return result
+  } catch (e: any) {
     createAndPublishEvent({
       eventName: EVENTS_ADMIN_CATALOG['services.publish.fetch.validation_error'].eventName,
       payload: {
-        error: 'sectionId is required'
+        error: e?.message || 'Failed to fetch services and sections'
       },
-      errorData: 'sectionId is required'
-    });
-    return { success: false, message: 'sectionId is required' }
+      errorData: e?.message || 'Failed to fetch services and sections'
+    })
+    throw { success: false, message: e?.message || 'Failed to fetch services and sections' }
   }
-
-  const offset = (page - 1) * perPage
-
-  // Basic safe sort columns
-  const sortColumn = ['name', 'owner', 'status', 'is_public'].includes(sortBy) ? sortBy : 'name'
-
-  // Query selected services for section with order
-  const selectedSql = `
-    SELECT ss.service_id, ss.service_order
-    FROM app.section_services ss
-    WHERE ss.section_id = $1
-  `
-  const selectedRes = await pgPool.query(selectedSql, [sectionId])
-  const selectedOrder = new Map<string, number>(selectedRes.rows.map((r: any) => [r.service_id, Number(r.service_order)]))
-  const selectedSet = new Set<string>(selectedRes.rows.map((r: any) => r.service_id))
-
-  // Main services list with optional search by name/owner
-  const listSql = `
-    WITH owners AS (
-      SELECT su.service_id, u.username AS owner
-      FROM app.service_users su
-      JOIN app.users u ON su.user_id = u.user_id
-      WHERE su.role_type = 'owner'
-    )
-    SELECT s.id, s.name, s.is_public, s.status, o.owner
-    FROM app.services s
-    LEFT JOIN owners o ON o.service_id = s.id
-    WHERE ($1::text IS NULL OR $1 = '' OR LOWER(s.name) LIKE LOWER('%' || $1 || '%') OR LOWER(COALESCE(o.owner,'')) LIKE LOWER('%' || $1 || '%'))
-    ORDER BY ${sortColumn} ${sortOrder}
-    LIMIT $2 OFFSET $3
-  `
-  const countSql = `
-    WITH owners AS (
-      SELECT su.service_id, u.username AS owner
-      FROM app.service_users su
-      JOIN app.users u ON su.user_id = u.user_id
-      WHERE su.role_type = 'owner'
-    )
-    SELECT COUNT(*) AS total
-    FROM app.services s
-    LEFT JOIN owners o ON o.service_id = s.id
-    WHERE ($1::text IS NULL OR $1 = '' OR LOWER(s.name) LIKE LOWER('%' || $1 || '%') OR LOWER(COALESCE(o.owner,'')) LIKE LOWER('%' || $1 || '%'))
-  `
-
-  const [listRes, countRes] = await Promise.all([
-    pgPool.query(listSql, [search, perPage, offset]),
-    pgPool.query(countSql, [search])
-  ])
-
-  const items = listRes.rows.map((r: any) => ({
-    id: r.id,
-    name: r.name,
-    owner: r.owner ?? null,
-    status: r.status ?? null,
-    is_public: !!r.is_public,
-    selected: selectedSet.has(r.id),
-    order: selectedOrder.get(r.id) ?? null
-  }))
-
-  const result = {
-    success: true,
-    message: 'ok',
-    data: {
-      items,
-      page,
-      perPage,
-      total: Number(countRes.rows[0]?.total ?? 0)
-    }
-  };
-
-  createAndPublishEvent({
-    eventName: EVENTS_ADMIN_CATALOG['services.publish.fetch.success'].eventName,
-    payload: {
-      sectionId,
-      itemsCount: items.length,
-      total: Number(countRes.rows[0]?.total ?? 0),
-      page,
-      perPage
-    }
-  });
-
-  return result;
 }
 
 export default fetchPublishingServices

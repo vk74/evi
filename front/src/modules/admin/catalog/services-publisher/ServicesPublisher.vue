@@ -1,6 +1,6 @@
 <!--
   File: ServicesPublisher.vue
-  Version: 1.3.0
+  Version: 1.4.0
   Description: Component for services catalog publication management
   Purpose: Provides interface for managing service catalog publication
   Frontend file - ServicesPublisher.vue
@@ -31,6 +31,13 @@
   - Section status column now displays all unique statuses for the service
   - Updated mock data to show services with multiple sections
   - Updated publish/unpublish logic to work with grouped structure
+  
+  Changes in v1.4.0:
+  - Removed mock data, connected to real APIs
+  - Integrated fetchServicesSections API for loading data
+  - Integrated publishServices API for publishing
+  - Integrated unpublishServices API for unpublishing
+  - Updated data structure to work with API response format
 -->
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
@@ -46,8 +53,12 @@ import {
   PhFunnel
 } from '@phosphor-icons/vue'
 import Paginator from '@/core/ui/paginator/Paginator.vue'
-import type { ServiceSectionRow, UnpublishedService, CatalogSection } from '../types.catalog.admin'
+import type { CatalogSection } from '../types.catalog.admin'
 import { SectionStatus } from '../types.catalog.admin'
+import { fetchServicesSections } from './service.admin.catalog.fetch-services-sections'
+import { publishServices } from './service.admin.catalog.publish-services'
+import { unpublishServices } from './service.admin.catalog.unpublish-services'
+import type { ServiceWithSections } from './service.admin.catalog.fetch-services-sections'
 
 // Types
 interface TableHeader {
@@ -60,7 +71,7 @@ interface TableHeader {
 type ItemsPerPageOption = 25 | 50 | 100
 
 // Initialize stores and i18n
-const { t, locale } = useI18n()
+const { t } = useI18n()
 const uiStore = useUiStore()
 const catalogStore = useCatalogAdminStore()
 
@@ -86,17 +97,14 @@ const isLoading = ref(false)
 const isRefreshing = ref(false)
 const isUnpublishing = ref(false)
 
-// Published service-section combinations
-const publishedRows = ref<ServiceSectionRow[]>([])
+// Services data from API
+const servicesData = ref<ServiceWithSections[]>([])
+const availableSections = ref<CatalogSection[]>([])
 
 // Modal state
 const showPublishModal = ref(false)
 const modalMode = ref<'publish' | 'unpublish'>('publish')
 const selectedSections = ref<Set<string>>(new Set())
-
-// Unpublished services and available sections for modal
-const unpublishedServices = ref<UnpublishedService[]>([])
-const availableSections = ref<CatalogSection[]>([])
 
 // Computed properties
 const selectedCount = computed(() => selectedRows.value.size)
@@ -155,112 +163,33 @@ const clearSelection = () => {
   selectedRows.value.clear()
 }
 
-// Load mock data
-const loadMockData = () => {
-  // Mock service-section combinations (mix of published and unpublished)
-  // Services with multiple sections to demonstrate grouping
-  publishedRows.value = [
-    // Service s1 - published in 3 sections
-    { id: '1', serviceId: 's1', serviceName: 'Cloud Infrastructure Service', serviceStatus: 'active', sectionId: 'sec1', sectionName: 'IT Services', sectionStatus: 'active', published: true },
-    { id: '2', serviceId: 's1', serviceName: 'Cloud Infrastructure Service', serviceStatus: 'active', sectionId: 'sec2', sectionName: 'Business Solutions', sectionStatus: 'active', published: true },
-    { id: '3', serviceId: 's1', serviceName: 'Cloud Infrastructure Service', serviceStatus: 'active', sectionId: 'sec5', sectionName: 'Cloud Solutions', sectionStatus: 'active', published: true },
-    
-    // Service s2 - published in 2 sections
-    { id: '4', serviceId: 's2', serviceName: 'Database Management Service', serviceStatus: 'active', sectionId: 'sec1', sectionName: 'IT Services', sectionStatus: 'active', published: true },
-    { id: '5', serviceId: 's2', serviceName: 'Database Management Service', serviceStatus: 'active', sectionId: 'sec7', sectionName: 'Data Services', sectionStatus: 'active', published: true },
-    
-    // Service s3 - published in 1 section
-    { id: '6', serviceId: 's3', serviceName: 'Network Security Service', serviceStatus: 'active', sectionId: 'sec4', sectionName: 'Security Services', sectionStatus: 'active', published: true },
-    
-    // Service s4 - published in 2 sections
-    { id: '7', serviceId: 's4', serviceName: 'Backup and Recovery Service', serviceStatus: 'active', sectionId: 'sec3', sectionName: 'Support Services', sectionStatus: 'active', published: true },
-    { id: '8', serviceId: 's4', serviceName: 'Backup and Recovery Service', serviceStatus: 'active', sectionId: 'sec1', sectionName: 'IT Services', sectionStatus: 'active', published: true },
-    
-    // Service s5 - published in 4 sections
-    { id: '9', serviceId: 's5', serviceName: 'Application Development Service', serviceStatus: 'active', sectionId: 'sec2', sectionName: 'Business Solutions', sectionStatus: 'active', published: true },
-    { id: '10', serviceId: 's5', serviceName: 'Application Development Service', serviceStatus: 'active', sectionId: 'sec6', sectionName: 'Development Tools', sectionStatus: 'active', published: true },
-    { id: '11', serviceId: 's5', serviceName: 'Application Development Service', serviceStatus: 'active', sectionId: 'sec1', sectionName: 'IT Services', sectionStatus: 'active', published: true },
-    { id: '12', serviceId: 's5', serviceName: 'Application Development Service', serviceStatus: 'active', sectionId: 'sec8', sectionName: 'Communication Services', sectionStatus: 'active', published: true },
-    
-    // Service s6 - published in 1 section
-    { id: '13', serviceId: 's6', serviceName: 'Monitoring and Alerting Service', serviceStatus: 'active', sectionId: 'sec1', sectionName: 'IT Services', sectionStatus: 'active', published: true },
-    
-    // Service s7 - published in 2 sections (one with draft status)
-    { id: '14', serviceId: 's7', serviceName: 'Identity Management Service', serviceStatus: 'active', sectionId: 'sec4', sectionName: 'Security Services', sectionStatus: 'active', published: true },
-    { id: '15', serviceId: 's7', serviceName: 'Identity Management Service', serviceStatus: 'active', sectionId: 'sec1', sectionName: 'IT Services', sectionStatus: 'draft', published: true },
-    
-    // Service s8 - published in 3 sections
-    { id: '16', serviceId: 's8', serviceName: 'Content Delivery Service', serviceStatus: 'active', sectionId: 'sec5', sectionName: 'Cloud Solutions', sectionStatus: 'active', published: true },
-    { id: '17', serviceId: 's8', serviceName: 'Content Delivery Service', serviceStatus: 'active', sectionId: 'sec1', sectionName: 'IT Services', sectionStatus: 'active', published: true },
-    { id: '18', serviceId: 's8', serviceName: 'Content Delivery Service', serviceStatus: 'active', sectionId: 'sec8', sectionName: 'Communication Services', sectionStatus: 'active', published: true },
-    
-    // Service s9 - published in 2 sections
-    { id: '19', serviceId: 's9', serviceName: 'API Gateway Service', serviceStatus: 'active', sectionId: 'sec2', sectionName: 'Business Solutions', sectionStatus: 'active', published: true },
-    { id: '20', serviceId: 's9', serviceName: 'API Gateway Service', serviceStatus: 'active', sectionId: 'sec6', sectionName: 'Development Tools', sectionStatus: 'active', published: true },
-    
-    // Service s10 - published in 1 section
-    { id: '21', serviceId: 's10', serviceName: 'Load Balancing Service', serviceStatus: 'active', sectionId: 'sec1', sectionName: 'IT Services', sectionStatus: 'active', published: true },
-    
-    // Service s11 - unpublished (1 section)
-    { id: '22', serviceId: 's11', serviceName: 'Email Service', serviceStatus: 'active', sectionId: 'sec3', sectionName: 'Support Services', sectionStatus: 'active', published: false },
-    
-    // Service s12 - unpublished (2 sections)
-    { id: '23', serviceId: 's12', serviceName: 'File Storage Service', serviceStatus: 'active', sectionId: 'sec5', sectionName: 'Cloud Solutions', sectionStatus: 'active', published: false },
-    { id: '24', serviceId: 's12', serviceName: 'File Storage Service', serviceStatus: 'active', sectionId: 'sec7', sectionName: 'Data Services', sectionStatus: 'active', published: false }
-  ]
-  
-  // Mock unpublished active services (30-40 services)
-  unpublishedServices.value = [
-    { id: 'us1', name: 'Service Management Platform', status: 'active' },
-    { id: 'us2', name: 'Customer Support Portal', status: 'active' },
-    { id: 'us3', name: 'Billing and Invoicing Service', status: 'active' },
-    { id: 'us4', name: 'Reporting Dashboard Service', status: 'active' },
-    { id: 'us5', name: 'Workflow Automation Service', status: 'active' },
-    { id: 'us6', name: 'Integration Hub Service', status: 'active' },
-    { id: 'us7', name: 'Notification Service', status: 'active' },
-    { id: 'us8', name: 'Audit Logging Service', status: 'active' },
-    { id: 'us9', name: 'Performance Testing Service', status: 'active' },
-    { id: 'us10', name: 'Code Repository Service', status: 'active' },
-    { id: 'us11', name: 'Continuous Integration Service', status: 'active' },
-    { id: 'us12', name: 'Deployment Automation Service', status: 'active' },
-    { id: 'us13', name: 'Quality Assurance Service', status: 'active' },
-    { id: 'us14', name: 'Project Management Service', status: 'active' },
-    { id: 'us15', name: 'Time Tracking Service', status: 'active' },
-    { id: 'us16', name: 'Resource Planning Service', status: 'active' },
-    { id: 'us17', name: 'Budget Management Service', status: 'active' },
-    { id: 'us18', name: 'Vendor Management Service', status: 'active' },
-    { id: 'us19', name: 'Contract Management Service', status: 'active' },
-    { id: 'us20', name: 'Asset Tracking Service', status: 'active' },
-    { id: 'us21', name: 'Inventory Management Service', status: 'active' },
-    { id: 'us22', name: 'Order Processing Service', status: 'active' },
-    { id: 'us23', name: 'Payment Processing Service', status: 'active' },
-    { id: 'us24', name: 'Shipping Management Service', status: 'active' },
-    { id: 'us25', name: 'Customer Relationship Service', status: 'active' },
-    { id: 'us26', name: 'Marketing Automation Service', status: 'active' },
-    { id: 'us27', name: 'Sales Pipeline Service', status: 'active' },
-    { id: 'us28', name: 'Lead Management Service', status: 'active' },
-    { id: 'us29', name: 'Event Management Service', status: 'active' },
-    { id: 'us30', name: 'Calendar Scheduling Service', status: 'active' },
-    { id: 'us31', name: 'Communication Hub Service', status: 'active' },
-    { id: 'us32', name: 'Knowledge Base Service', status: 'active' },
-    { id: 'us33', name: 'Training Platform Service', status: 'active' },
-    { id: 'us34', name: 'Survey and Feedback Service', status: 'active' },
-    { id: 'us35', name: 'Analytics Dashboard Service', status: 'active' }
-  ]
-  
-  // Mock available active sections (10-15 sections)
-  availableSections.value = [
-    { id: 'sec1', name: 'IT Services', owner: null, backup_owner: null, description: null, comments: null, status: SectionStatus.ACTIVE, is_public: true, order: 1, parent_id: null, icon_name: null, color: null, created_at: new Date(), created_by: '', modified_at: null, modified_by: null },
-    { id: 'sec2', name: 'Business Solutions', owner: null, backup_owner: null, description: null, comments: null, status: SectionStatus.ACTIVE, is_public: true, order: 2, parent_id: null, icon_name: null, color: null, created_at: new Date(), created_by: '', modified_at: null, modified_by: null },
-    { id: 'sec3', name: 'Support Services', owner: null, backup_owner: null, description: null, comments: null, status: SectionStatus.ACTIVE, is_public: true, order: 3, parent_id: null, icon_name: null, color: null, created_at: new Date(), created_by: '', modified_at: null, modified_by: null },
-    { id: 'sec4', name: 'Security Services', owner: null, backup_owner: null, description: null, comments: null, status: SectionStatus.ACTIVE, is_public: true, order: 4, parent_id: null, icon_name: null, color: null, created_at: new Date(), created_by: '', modified_at: null, modified_by: null },
-    { id: 'sec5', name: 'Cloud Solutions', owner: null, backup_owner: null, description: null, comments: null, status: SectionStatus.ACTIVE, is_public: true, order: 5, parent_id: null, icon_name: null, color: null, created_at: new Date(), created_by: '', modified_at: null, modified_by: null },
-    { id: 'sec6', name: 'Development Tools', owner: null, backup_owner: null, description: null, comments: null, status: SectionStatus.ACTIVE, is_public: true, order: 6, parent_id: null, icon_name: null, color: null, created_at: new Date(), created_by: '', modified_at: null, modified_by: null },
-    { id: 'sec7', name: 'Data Services', owner: null, backup_owner: null, description: null, comments: null, status: SectionStatus.ACTIVE, is_public: true, order: 7, parent_id: null, icon_name: null, color: null, created_at: new Date(), created_by: '', modified_at: null, modified_by: null },
-    { id: 'sec8', name: 'Communication Services', owner: null, backup_owner: null, description: null, comments: null, status: SectionStatus.ACTIVE, is_public: true, order: 8, parent_id: null, icon_name: null, color: null, created_at: new Date(), created_by: '', modified_at: null, modified_by: null },
-    { id: 'sec9', name: 'Management Tools', owner: null, backup_owner: null, description: null, comments: null, status: SectionStatus.ACTIVE, is_public: true, order: 9, parent_id: null, icon_name: null, color: null, created_at: new Date(), created_by: '', modified_at: null, modified_by: null },
-    { id: 'sec10', name: 'Analytics Services', owner: null, backup_owner: null, description: null, comments: null, status: SectionStatus.ACTIVE, is_public: true, order: 10, parent_id: null, icon_name: null, color: null, created_at: new Date(), created_by: '', modified_at: null, modified_by: null }
-  ]
+// Load data from API
+const loadData = async () => {
+  try {
+    const data = await fetchServicesSections()
+    servicesData.value = data.services
+    availableSections.value = data.sections.map(section => ({
+      id: section.id,
+      name: section.name,
+      owner: section.owner,
+      backup_owner: section.backup_owner,
+      description: section.description,
+      comments: section.comments,
+      status: section.status ? (section.status as SectionStatus) : null,
+      is_public: section.is_public,
+      order: section.order,
+      parent_id: section.parent_id,
+      icon_name: section.icon_name,
+      color: section.color,
+      created_at: new Date(section.created_at),
+      created_by: section.created_by,
+      modified_at: section.modified_at ? new Date(section.modified_at) : null,
+      modified_by: section.modified_by
+    }))
+  } catch (error) {
+    handleError(error, 'loading data')
+    throw error
+  }
 }
 
 // Search functionality
@@ -355,35 +284,16 @@ interface GroupedServiceRow {
 
 // Computed properties for table
 const groupedRows = computed(() => {
-  // Group by serviceId
-  const grouped = new Map<string, GroupedServiceRow>()
-  
-  publishedRows.value.forEach(row => {
-    if (!grouped.has(row.serviceId)) {
-      grouped.set(row.serviceId, {
-        id: row.serviceId, // Use serviceId as unique ID for grouped row
-        serviceId: row.serviceId,
-        serviceName: row.serviceName,
-        serviceStatus: row.serviceStatus,
-        sections: [],
-        published: row.published,
-        allSectionStatuses: []
-      })
-    }
-    
-    const group = grouped.get(row.serviceId)!
-    group.sections.push({
-      id: row.sectionId,
-      name: row.sectionName,
-      status: row.sectionStatus
-    })
-    
-    if (row.sectionStatus && !group.allSectionStatuses.includes(row.sectionStatus)) {
-      group.allSectionStatuses.push(row.sectionStatus)
-    }
-  })
-  
-  return Array.from(grouped.values())
+  // API already returns services in grouped format
+  return servicesData.value.map(service => ({
+    id: service.serviceId,
+    serviceId: service.serviceId,
+    serviceName: service.serviceName,
+    serviceStatus: service.serviceStatus,
+    sections: service.sections,
+    published: service.published,
+    allSectionStatuses: service.allSectionStatuses
+  }))
 })
 
 const filteredRows = computed(() => {
@@ -449,7 +359,7 @@ const totalItems = computed(() => filteredRows.value.length)
 onMounted(async () => {
   isLoading.value = true
   try {
-    loadMockData()
+    await loadData()
   } catch (error) {
     handleError(error, 'loading data')
   } finally {
@@ -462,7 +372,7 @@ const handleRefresh = async () => {
   try {
     isRefreshing.value = true
     clearSelection()
-    loadMockData()
+    await loadData()
     uiStore.showSuccessSnackbar(
       t('admin.catalog.servicesPublisher.messages.refreshSuccess')
     )
@@ -490,22 +400,18 @@ const handleUnpublish = async () => {
     
     // Get selected service IDs (rowId is now serviceId in grouped view)
     const selectedServiceIds = Array.from(selectedRows.value)
+    const selectedSectionIds = Array.from(selectedSections.value)
 
-    // Remove rows that match selected services and selected sections
-    const rowsToRemove: string[] = []
-    publishedRows.value.forEach(row => {
-      if (selectedServiceIds.includes(row.serviceId) && selectedSections.value.has(row.sectionId)) {
-        rowsToRemove.push(row.id)
-      }
-    })
-
-    publishedRows.value = publishedRows.value.filter(row => !rowsToRemove.includes(row.id))
+    const response = await unpublishServices(selectedServiceIds, selectedSectionIds)
+    
+    // Reload data to reflect changes
+    await loadData()
     
     clearSelection()
     closePublishModal()
     
     uiStore.showSuccessSnackbar(
-      t('admin.catalog.servicesPublisher.messages.unpublishSuccess')
+      t('admin.catalog.servicesPublisher.messages.unpublishSuccess', { count: response.removedCount })
     )
   } catch (error: any) {
     uiStore.showErrorSnackbar(error?.message || t('admin.catalog.servicesPublisher.messages.unpublishError'))
@@ -558,59 +464,18 @@ const handlePublish = async () => {
   try {
     // Get selected service IDs (rowId is now serviceId in grouped view)
     const selectedServiceIds = Array.from(selectedRows.value)
-    const serviceMap = new Map<string, { serviceName: string; serviceStatus: string }>()
+    const selectedSectionIds = Array.from(selectedSections.value)
+
+    const response = await publishServices(selectedServiceIds, selectedSectionIds)
     
-    selectedServiceIds.forEach(serviceId => {
-      const groupedRow = groupedRows.value.find(r => r.serviceId === serviceId)
-      if (groupedRow) {
-        serviceMap.set(serviceId, {
-          serviceName: groupedRow.serviceName,
-          serviceStatus: groupedRow.serviceStatus
-        })
-      }
-    })
-
-    // Create new published rows for each service-section combination
-    const newRows: ServiceSectionRow[] = []
-    let rowIdCounter = publishedRows.value.length > 0 
-      ? Math.max(...publishedRows.value.map(r => parseInt(r.id) || 0)) + 1
-      : 1
-
-    selectedServiceIds.forEach(serviceId => {
-      const serviceInfo = serviceMap.get(serviceId)
-      if (!serviceInfo) return
-
-      selectedSections.value.forEach(sectionId => {
-        const section = availableSections.value.find(s => s.id === sectionId)
-        if (!section) return
-
-        // Check if this combination already exists
-        const exists = publishedRows.value.some(r => 
-          r.serviceId === serviceId && r.sectionId === sectionId
-        )
-        if (exists) return
-
-        newRows.push({
-          id: String(rowIdCounter++),
-          serviceId: serviceId,
-          serviceName: serviceInfo.serviceName,
-          serviceStatus: serviceInfo.serviceStatus,
-          sectionId: sectionId,
-          sectionName: section.name,
-          sectionStatus: section.status?.toString() || 'active',
-          published: true
-        })
-      })
-    })
-
-    // Add new rows to published rows
-    publishedRows.value.push(...newRows)
-
+    // Reload data to reflect changes
+    await loadData()
+    
     clearSelection()
     closePublishModal()
     
     uiStore.showSuccessSnackbar(
-      t('admin.catalog.servicesPublisher.messages.publishSuccess')
+      t('admin.catalog.servicesPublisher.messages.publishSuccess', { added: response.addedCount, updated: response.updatedCount })
     )
   } catch (error: any) {
     uiStore.showErrorSnackbar(error?.message || t('admin.catalog.servicesPublisher.messages.publishError'))
