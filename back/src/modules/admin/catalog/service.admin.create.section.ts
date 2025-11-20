@@ -1,6 +1,10 @@
 /**
- * service.create.section.ts - version 1.0.0
+ * service.create.section.ts - version 1.1.0
  * Service for creating catalog sections operations.
+ * 
+ * Changes in v1.1.0:
+ * - Removed "started" event
+ * - Enhanced payload for section.create.success with owner, status, is_public, backup_owner, parent_id
  * 
  * Functionality:
  * - Validates input data for creating catalog sections
@@ -236,14 +240,6 @@ export async function createSection(req: Request): Promise<CreateSectionResponse
     try {
         // Get request data and convert types
         const rawData = req.body;
-        
-        createAndPublishEvent({
-            eventName: EVENTS_ADMIN_CATALOG['section.create.started'].eventName,
-            payload: {
-                sectionName: rawData.name,
-                sectionOrder: rawData.order
-            }
-        });
         const requestData: CreateSectionRequest = {
             ...rawData,
             order: typeof rawData.order === 'string' ? parseInt(rawData.order, 10) : rawData.order
@@ -294,6 +290,9 @@ export async function createSection(req: Request): Promise<CreateSectionResponse
         
         const createdSection = result.rows[0];
         
+        // Get owner name for payload
+        const ownerName = requestData.owner;
+        
         // Return success response
         const response: CreateSectionResponse = {
             success: true,
@@ -309,7 +308,12 @@ export async function createSection(req: Request): Promise<CreateSectionResponse
             payload: {
                 sectionId: createdSection.id,
                 sectionName: createdSection.name,
-                sectionOrder: requestData.order
+                sectionOrder: requestData.order,
+                owner: ownerName,
+                status: SectionStatus.DRAFT,
+                is_public: requestData.is_public ?? false,
+                backup_owner: requestData.backup_owner || null,
+                parent_id: requestData.parent_id || null
             }
         });
         

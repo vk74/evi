@@ -1,9 +1,14 @@
 /**
  * service.admin.service.unpublish.ts
- * Version: 1.0.0
+ * Version: 1.1.0
  * Description: Service to unpublish services from catalog sections
  * Purpose: Removes service-section mappings from app.section_services for given service_ids and section_ids
  * Backend file - service.admin.service.unpublish.ts
+ * 
+ * Changes in v1.1.0:
+ * - Removed "started" event
+ * - Enhanced payload for services.unpublish.success with detailed service/section names and mappings
+ * - Enhanced payload for services.unpublish.database_error with serviceIds and sectionIds arrays
  */
 
 import { Request } from 'express'
@@ -29,14 +34,6 @@ export interface ServiceUnpublishResponse {
 export async function serviceUnpublish(req: Request): Promise<ServiceUnpublishResponse> {
   const serviceIds: string[] = Array.isArray(req.body?.service_ids) ? req.body.service_ids : []
   const sectionIds: string[] = Array.isArray(req.body?.section_ids) ? req.body.section_ids : []
-
-  createAndPublishEvent({
-    eventName: EVENTS_ADMIN_CATALOG['services.unpublish.started'].eventName,
-    payload: {
-      serviceIdsCount: serviceIds.length,
-      sectionIdsCount: sectionIds.length
-    }
-  })
 
   if (!serviceIds || serviceIds.length === 0) {
     return { success: false, message: 'service_ids is required and must not be empty', removedCount: 0 }
@@ -75,6 +72,7 @@ export async function serviceUnpublish(req: Request): Promise<ServiceUnpublishRe
 
     let removedCount = 0
     const affectedSections = new Set<string>()
+    const unpublishedMappings: Array<{ serviceId: string; sectionId: string }> = []
 
     // Delete mappings
     for (const serviceId of serviceIds) {
@@ -83,6 +81,7 @@ export async function serviceUnpublish(req: Request): Promise<ServiceUnpublishRe
         if (deleteRes.rowCount && deleteRes.rowCount > 0) {
           removedCount++
           affectedSections.add(sectionId)
+          unpublishedMappings.push({ serviceId, sectionId })
         }
       }
     }
@@ -94,12 +93,42 @@ export async function serviceUnpublish(req: Request): Promise<ServiceUnpublishRe
 
     await client.query('COMMIT')
 
+    // Fetch service and section names for detailed payload
+    const servicesRes = await client.query(
+      'SELECT id, name FROM app.services WHERE id = ANY($1)',
+      [serviceIds]
+    )
+    const sectionsRes = await client.query(
+      'SELECT id, name FROM app.catalog_sections WHERE id = ANY($1)',
+      [sectionIds]
+    )
+
+    const servicesMap = new Map<string, string>()
+    servicesRes.rows.forEach((r: any) => {
+      servicesMap.set(r.id, r.name)
+    })
+
+    const sectionsMap = new Map<string, string>()
+    sectionsRes.rows.forEach((r: any) => {
+      sectionsMap.set(r.id, r.name)
+    })
+
+    const unpublishedMappingsDetailed = unpublishedMappings.map(m => ({
+      serviceId: m.serviceId,
+      serviceName: servicesMap.get(m.serviceId) || 'Unknown',
+      sectionId: m.sectionId,
+      sectionName: sectionsMap.get(m.sectionId) || 'Unknown'
+    }))
+
     createAndPublishEvent({
       eventName: EVENTS_ADMIN_CATALOG['services.unpublish.success'].eventName,
       payload: {
         serviceIdsCount: serviceIds.length,
         sectionIdsCount: sectionIds.length,
-        removedCount
+        removedCount,
+        services: Array.from(servicesMap.entries()).map(([id, name]) => ({ id, name })),
+        sections: Array.from(sectionsMap.entries()).map(([id, name]) => ({ id, name })),
+        unpublishedMappings: unpublishedMappingsDetailed
       }
     })
 
@@ -112,6 +141,8 @@ export async function serviceUnpublish(req: Request): Promise<ServiceUnpublishRe
       payload: {
         serviceIdsCount: serviceIds.length,
         sectionIdsCount: sectionIds.length,
+        serviceIds,
+        sectionIds,
         error: e?.message || 'Failed to unpublish services'
       },
       errorData: e?.message || 'Failed to unpublish services'

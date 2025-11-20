@@ -1,6 +1,6 @@
 /**
  * service.admin.fetch.publishingservices.ts
- * Version: 1.1.0
+ * Version: 1.2.0
  * Description: Service for fetching active services with their publication status across all catalog sections
  * Purpose: Implements GET /api/admin/catalog/fetchpublishingservices - returns all active services with sections where published
  * Backend file - service.admin.fetch.publishingservices.ts
@@ -11,6 +11,10 @@
  * - For each service, returns array of sections where it's published
  * - Returns all catalog sections in separate field
  * - Structured for ServicesPublisher.vue component
+ * 
+ * Changes in v1.2.0:
+ * - Removed "started" event
+ * - Enhanced payload for services.sections.fetch.success with serviceIds and sectionIds arrays
  */
 
 import { Request } from 'express'
@@ -22,11 +26,6 @@ import { EVENTS_ADMIN_CATALOG } from './events.admin.catalog'
 const pgPool: Pool = (defaultPool as unknown as Pool)
 
 export async function fetchPublishingServices(req: Request) {
-  createAndPublishEvent({
-    eventName: EVENTS_ADMIN_CATALOG['services.sections.fetch.started'].eventName,
-    payload: {}
-  })
-
   try {
     // Fetch all active services (status = 'in_production')
     const servicesSql = `
@@ -122,7 +121,9 @@ export async function fetchPublishingServices(req: Request) {
       eventName: EVENTS_ADMIN_CATALOG['services.sections.fetch.success'].eventName,
       payload: {
         servicesCount: services.length,
-        sectionsCount: sections.length
+        sectionsCount: sections.length,
+        serviceIds: services.map(s => s.id),
+        sectionIds: sections.map(s => s.id)
       }
     })
 

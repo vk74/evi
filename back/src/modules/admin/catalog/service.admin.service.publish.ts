@@ -1,9 +1,14 @@
 /**
  * service.admin.service.publish.ts
- * Version: 1.0.0
+ * Version: 1.1.0
  * Description: Service to publish services to catalog sections
  * Purpose: Adds service-section mappings to app.section_services for given service_ids and section_ids
  * Backend file - service.admin.service.publish.ts
+ * 
+ * Changes in v1.1.0:
+ * - Removed "started" event
+ * - Enhanced payload for services.publish.success with detailed service/section names and mappings
+ * - Enhanced payload for services.publish.database_error with serviceIds and sectionIds arrays
  */
 
 import { Request } from 'express'
@@ -30,14 +35,6 @@ export interface ServicePublishResponse {
 export async function servicePublish(req: Request): Promise<ServicePublishResponse> {
   const serviceIds: string[] = Array.isArray(req.body?.service_ids) ? req.body.service_ids : []
   const sectionIds: string[] = Array.isArray(req.body?.section_ids) ? req.body.section_ids : []
-
-  createAndPublishEvent({
-    eventName: EVENTS_ADMIN_CATALOG['services.publish.started'].eventName,
-    payload: {
-      serviceIdsCount: serviceIds.length,
-      sectionIdsCount: sectionIds.length
-    }
-  })
 
   if (!serviceIds || serviceIds.length === 0) {
     return { success: false, message: 'service_ids is required and must not be empty', addedCount: 0, updatedCount: 0 }
@@ -94,6 +91,8 @@ export async function servicePublish(req: Request): Promise<ServicePublishRespon
 
     let addedCount = 0
     let updatedCount = 0
+    const addedMappings: Array<{ serviceId: string; sectionId: string }> = []
+    const updatedMappings: Array<{ serviceId: string; sectionId: string }> = []
 
     // Insert new mappings
     for (const serviceId of serviceIds) {
@@ -106,13 +105,52 @@ export async function servicePublish(req: Request): Promise<ServicePublishRespon
           
           await client.query(queries.insertSectionService, [sectionId, serviceId, nextOrder])
           addedCount++
+          addedMappings.push({ serviceId, sectionId })
         } else {
           updatedCount++
+          updatedMappings.push({ serviceId, sectionId })
         }
       }
     }
 
     await client.query('COMMIT')
+
+    // Fetch service and section names for detailed payload
+    const servicesRes = await client.query(
+      'SELECT id, name FROM app.services WHERE id = ANY($1)',
+      [serviceIds]
+    )
+    const sectionsRes = await client.query(
+      'SELECT id, name FROM app.catalog_sections WHERE id = ANY($1)',
+      [sectionIds]
+    )
+
+    const servicesMap = new Map<string, string>()
+    servicesRes.rows.forEach((r: any) => {
+      servicesMap.set(r.id, r.name)
+    })
+
+    const sectionsMap = new Map<string, string>()
+    sectionsRes.rows.forEach((r: any) => {
+      sectionsMap.set(r.id, r.name)
+    })
+
+    const publishedMappings = [
+      ...addedMappings.map(m => ({
+        serviceId: m.serviceId,
+        serviceName: servicesMap.get(m.serviceId) || 'Unknown',
+        sectionId: m.sectionId,
+        sectionName: sectionsMap.get(m.sectionId) || 'Unknown',
+        action: 'added' as const
+      })),
+      ...updatedMappings.map(m => ({
+        serviceId: m.serviceId,
+        serviceName: servicesMap.get(m.serviceId) || 'Unknown',
+        sectionId: m.sectionId,
+        sectionName: sectionsMap.get(m.sectionId) || 'Unknown',
+        action: 'updated' as const
+      }))
+    ]
 
     createAndPublishEvent({
       eventName: EVENTS_ADMIN_CATALOG['services.publish.success'].eventName,
@@ -120,7 +158,10 @@ export async function servicePublish(req: Request): Promise<ServicePublishRespon
         serviceIdsCount: serviceIds.length,
         sectionIdsCount: sectionIds.length,
         addedCount,
-        updatedCount
+        updatedCount,
+        services: Array.from(servicesMap.entries()).map(([id, name]) => ({ id, name })),
+        sections: Array.from(sectionsMap.entries()).map(([id, name]) => ({ id, name })),
+        publishedMappings
       }
     })
 
@@ -133,6 +174,8 @@ export async function servicePublish(req: Request): Promise<ServicePublishRespon
       payload: {
         serviceIdsCount: serviceIds.length,
         sectionIdsCount: sectionIds.length,
+        serviceIds,
+        sectionIds,
         error: e?.message || 'Failed to publish services'
       },
       errorData: e?.message || 'Failed to publish services'

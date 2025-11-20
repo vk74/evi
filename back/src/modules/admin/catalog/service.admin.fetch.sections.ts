@@ -1,6 +1,11 @@
 /**
- * service.fetch.sections.ts - version 1.0.01
+ * service.fetch.sections.ts - version 1.1.0
  * Service for fetching catalog sections operations.
+ * 
+ * Changes in v1.1.0:
+ * - Removed "started" event
+ * - Enhanced payload for section.fetch.success with sectionName and sectionNames
+ * - Enhanced payload for section.fetch.not_found with message
  * 
  * Functionality:
  * - Retrieves catalog sections data from database
@@ -95,14 +100,6 @@ export async function fetchSections(req: Request): Promise<FetchSectionsResponse
         // Check if sectionId parameter is provided
         const sectionId = req.query.sectionId as string;
         
-        createAndPublishEvent({
-            eventName: EVENTS_ADMIN_CATALOG['section.fetch.started'].eventName,
-            payload: {
-                sectionId: sectionId || null,
-                hasSectionId: !!sectionId
-            }
-        });
-        
         let result;
         
         if (sectionId) {
@@ -114,7 +111,8 @@ export async function fetchSections(req: Request): Promise<FetchSectionsResponse
                 createAndPublishEvent({
                     eventName: EVENTS_ADMIN_CATALOG['section.fetch.not_found'].eventName,
                     payload: {
-                        sectionId
+                        sectionId,
+                        message: `Section with ID ${sectionId} not found`
                     }
                 });
                 
@@ -145,7 +143,9 @@ export async function fetchSections(req: Request): Promise<FetchSectionsResponse
             payload: {
                 sectionId: sectionId || null,
                 sectionsCount: resolvedSections.length,
-                hasSectionId: !!sectionId
+                hasSectionId: !!sectionId,
+                sectionName: sectionId && resolvedSections.length > 0 ? resolvedSections[0].name : null,
+                sectionNames: !sectionId ? resolvedSections.map(s => s.name) : null
             }
         });
         

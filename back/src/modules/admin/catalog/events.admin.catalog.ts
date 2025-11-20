@@ -1,11 +1,15 @@
 /**
  * events.admin.catalog.ts
- * Version: 1.0.0
+ * Version: 1.1.0
  * Description: Event reference catalog for admin catalog operations
  * Purpose: Defines events for admin catalog management operations (sections, services)
  * Backend file - events.admin.catalog.ts
- * Created: 2024-12-19
- * Last Updated: 2024-12-19
+ * 
+ * Changes in v1.1.0:
+ * - Removed all "started" events (section.delete.started, section.fetch.started, section.create.started, 
+ *   section.update.started, services.publish.fetch.started, services.publish.update.started, 
+ *   services.publish.started, services.unpublish.started, services.sections.fetch.started)
+ * - Enhanced payloads for remaining events with more detailed information
  */
 
 import { EventCollection } from '../../../core/eventBus/types.events'
@@ -22,16 +26,6 @@ export const EVENTS_ADMIN_CATALOG: EventCollection = {
     eventType: 'app',
     severity: 'error',
     eventMessage: 'Section create validation error occurred',
-    version: '1.0.0'
-  },
-
-  // Section create database error
-  'section.create.database_error': {
-    eventName: 'adminCatalog.section.create.database_error',
-    source: 'admin-catalog',
-    eventType: 'app',
-    severity: 'error',
-    eventMessage: 'Database error occurred during section creation',
     version: '1.0.0'
   },
 
@@ -75,16 +69,6 @@ export const EVENTS_ADMIN_CATALOG: EventCollection = {
     version: '1.0.0'
   },
 
-  // Section delete started
-  'section.delete.started': {
-    eventName: 'adminCatalog.section.delete.started',
-    source: 'admin-catalog',
-    eventType: 'app',
-    severity: 'debug',
-    eventMessage: 'Section deletion started',
-    version: '1.0.0'
-  },
-
   // Section delete success
   'section.delete.success': {
     eventName: 'adminCatalog.section.delete.success',
@@ -92,16 +76,6 @@ export const EVENTS_ADMIN_CATALOG: EventCollection = {
     eventType: 'app',
     severity: 'debug',
     eventMessage: 'Sections deleted successfully',
-    version: '1.0.0'
-  },
-
-  // Section fetch started
-  'section.fetch.started': {
-    eventName: 'adminCatalog.section.fetch.started',
-    source: 'admin-catalog',
-    eventType: 'app',
-    severity: 'debug',
-    eventMessage: 'Section fetch started',
     version: '1.0.0'
   },
 
@@ -135,16 +109,6 @@ export const EVENTS_ADMIN_CATALOG: EventCollection = {
     version: '1.0.0'
   },
 
-  // Section create started
-  'section.create.started': {
-    eventName: 'adminCatalog.section.create.started',
-    source: 'admin-catalog',
-    eventType: 'app',
-    severity: 'debug',
-    eventMessage: 'Section creation started',
-    version: '1.0.0'
-  },
-
   // Section create success
   'section.create.success': {
     eventName: 'adminCatalog.section.create.success',
@@ -152,16 +116,6 @@ export const EVENTS_ADMIN_CATALOG: EventCollection = {
     eventType: 'app',
     severity: 'info',
     eventMessage: 'Section created successfully',
-    version: '1.0.0'
-  },
-
-  // Section update started
-  'section.update.started': {
-    eventName: 'adminCatalog.section.update.started',
-    source: 'admin-catalog',
-    eventType: 'app',
-    severity: 'debug',
-    eventMessage: 'Section update started',
     version: '1.0.0'
   },
 
@@ -175,26 +129,6 @@ export const EVENTS_ADMIN_CATALOG: EventCollection = {
     version: '1.0.0'
   },
 
-  // Services publish fetch started
-  'services.publish.fetch.started': {
-    eventName: 'adminCatalog.services.publish.fetch.started',
-    source: 'admin-catalog',
-    eventType: 'app',
-    severity: 'debug',
-    eventMessage: 'Services publish fetch started',
-    version: '1.0.0'
-  },
-
-  // Services publish fetch success
-  'services.publish.fetch.success': {
-    eventName: 'adminCatalog.services.publish.fetch.success',
-    source: 'admin-catalog',
-    eventType: 'app',
-    severity: 'debug',
-    eventMessage: 'Services publish fetch completed successfully',
-    version: '1.0.0'
-  },
-
   // Services publish fetch validation error
   'services.publish.fetch.validation_error': {
     eventName: 'adminCatalog.services.publish.fetch.validation_error',
@@ -202,46 +136,6 @@ export const EVENTS_ADMIN_CATALOG: EventCollection = {
     eventType: 'app',
     severity: 'error',
     eventMessage: 'Services publish fetch validation error',
-    version: '1.0.0'
-  },
-
-  // Services publish update started
-  'services.publish.update.started': {
-    eventName: 'adminCatalog.services.publish.update.started',
-    source: 'admin-catalog',
-    eventType: 'app',
-    severity: 'debug',
-    eventMessage: 'Services publish update started',
-    version: '1.0.0'
-  },
-
-  // Services publish update success
-  'services.publish.update.success': {
-    eventName: 'adminCatalog.services.publish.update.success',
-    source: 'admin-catalog',
-    eventType: 'app',
-    severity: 'info',
-    eventMessage: 'Services publish updated successfully',
-    version: '1.0.0'
-  },
-
-  // Services publish update database error
-  'services.publish.update.database_error': {
-    eventName: 'adminCatalog.services.publish.update.database_error',
-    source: 'admin-catalog',
-    eventType: 'app',
-    severity: 'error',
-    eventMessage: 'Database error during services publish update',
-    version: '1.0.0'
-  },
-
-  // Services publish started
-  'services.publish.started': {
-    eventName: 'adminCatalog.services.publish.started',
-    source: 'admin-catalog',
-    eventType: 'app',
-    severity: 'debug',
-    eventMessage: 'Services publish started',
     version: '1.0.0'
   },
 
@@ -265,16 +159,6 @@ export const EVENTS_ADMIN_CATALOG: EventCollection = {
     version: '1.0.0'
   },
 
-  // Services unpublish started
-  'services.unpublish.started': {
-    eventName: 'adminCatalog.services.unpublish.started',
-    source: 'admin-catalog',
-    eventType: 'app',
-    severity: 'debug',
-    eventMessage: 'Services unpublish started',
-    version: '1.0.0'
-  },
-
   // Services unpublish success
   'services.unpublish.success': {
     eventName: 'adminCatalog.services.unpublish.success',
@@ -292,16 +176,6 @@ export const EVENTS_ADMIN_CATALOG: EventCollection = {
     eventType: 'app',
     severity: 'error',
     eventMessage: 'Database error during services unpublish',
-    version: '1.0.0'
-  },
-
-  // Services sections fetch started
-  'services.sections.fetch.started': {
-    eventName: 'adminCatalog.services.sections.fetch.started',
-    source: 'admin-catalog',
-    eventType: 'app',
-    severity: 'debug',
-    eventMessage: 'Services sections fetch started',
     version: '1.0.0'
   },
 

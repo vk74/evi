@@ -1,6 +1,10 @@
 /**
- * service.delete.section.ts - version 2.0.0
+ * service.delete.section.ts - version 1.1.0
  * Service for deleting catalog sections operations.
+ * 
+ * Changes in v1.1.0:
+ * - Removed "started" event
+ * - Enhanced payload for section.delete.success with orders array
  * 
  * Functionality:
  * - Validates sections exist before deletion
@@ -155,16 +159,6 @@ export async function deleteSection(req: Request): Promise<DeleteSectionResponse
         const validSections = validationResults.filter(r => r.canDelete);
         const invalidSections = validationResults.filter(r => !r.canDelete);
         
-        // Log deletion attempt
-        createAndPublishEvent({
-            eventName: EVENTS_ADMIN_CATALOG['section.delete.started'].eventName,
-            payload: {
-                requestorUuid,
-                sectionCount: validSections.length,
-                sectionNames: validSections.map(s => s.name)
-            }
-        });
-        
         let deletedSections: Array<{ id: string, name: string, order: number }> = [];
         
         // Delete valid sections if any exist
@@ -187,7 +181,8 @@ export async function deleteSection(req: Request): Promise<DeleteSectionResponse
                 payload: {
                     requestorUuid,
                     deletedCount: deletedSections.length,
-                    deletedSections: deletedSections.map(s => ({ id: s.id, name: s.name }))
+                    deletedSections: deletedSections.map(s => ({ id: s.id, name: s.name, order: s.order })),
+                    orders: deletedSections.map(s => s.order)
                 }
             });
         }

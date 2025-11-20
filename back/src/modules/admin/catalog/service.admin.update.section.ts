@@ -1,6 +1,10 @@
 /**
- * service.update.section.ts - version 1.0.0
+ * service.update.section.ts - version 1.1.0
  * Service for updating catalog sections operations.
+ * 
+ * Changes in v1.1.0:
+ * - Removed "started" event
+ * - Enhanced payload for section.update.success with updatedValues and previousValues
  * 
  * Functionality:
  * - Validates input data for updating catalog sections
@@ -276,14 +280,6 @@ export async function updateSection(req: Request): Promise<UpdateSectionResponse
         // Get section ID from request body
         const { id, ...updateData }: UpdateSectionRequest & { id: string } = req.body;
         
-        createAndPublishEvent({
-            eventName: EVENTS_ADMIN_CATALOG['section.update.started'].eventName,
-            payload: {
-                sectionId: id,
-                updateFields: Object.keys(updateData)
-            }
-        });
-        
         if (!id) {
             const error: ServiceError = {
                 code: 'REQUIRED_FIELD_ERROR',
@@ -299,11 +295,18 @@ export async function updateSection(req: Request): Promise<UpdateSectionResponse
         // Validate input data
         await validateUpdateSectionData(updateData, id);
         
-        // Get current section data for order comparison
+        // Get current section data for order comparison and previous values
         const currentSection = await checkSectionExists(id);
         if (!currentSection) {
             throw new Error('Section not found during update');
         }
+        
+        // Get full current section data for previous values
+        const currentSectionFull = await pool.query(
+            'SELECT id, name, owner, backup_owner, description, comments, status, is_public, "order", parent_id, icon_name, color FROM app.catalog_sections WHERE id = $1',
+            [id]
+        );
+        const previousSection = currentSectionFull.rows[0];
         
         // Handle order recalculation if order is changing
         if (updateData.order !== undefined && updateData.order !== currentSection.order) {
@@ -335,6 +338,18 @@ export async function updateSection(req: Request): Promise<UpdateSectionResponse
         
         const updatedSection = result.rows[0];
         
+        // Build updated values object (only fields that were actually updated)
+        const updatedValues: Record<string, any> = {};
+        const previousValues: Record<string, any> = {};
+        const updateFields = Object.keys(updateData);
+        
+        updateFields.forEach(field => {
+            if (updateData[field as keyof UpdateSectionRequest] !== undefined) {
+                updatedValues[field] = updateData[field as keyof UpdateSectionRequest];
+                previousValues[field] = previousSection?.[field] ?? null;
+            }
+        });
+        
         // Return success response
         const response: UpdateSectionResponse = {
             success: true,
@@ -350,7 +365,9 @@ export async function updateSection(req: Request): Promise<UpdateSectionResponse
             payload: {
                 sectionId: updatedSection.id,
                 sectionName: updatedSection.name,
-                updateFields: Object.keys(updateData)
+                updateFields,
+                updatedValues,
+                previousValues
             }
         });
         
