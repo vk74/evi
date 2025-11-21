@@ -1,12 +1,16 @@
 /**
  * controller.fetch.public.settings.ts - backend file
- * version: 1.0.1
+ * version: 1.1.0
  * Controller for handling public settings API requests.
  * Uses universal connection handler with built-in rate limiting.
+ * 
+ * Changes in v1.1.0:
+ * - Updated to use fetchPublicSettings service instead of fetchPublicUiSettings
+ * - Aligned naming with PublicSettings terminology
  */
 
 import { Request, Response } from 'express';
-import { fetchPublicUiSettings } from './service.fetch.public.settings';
+import { fetchPublicSettings } from './service.fetch.public.settings';
 import { connectionHandler } from '../helpers/connection.handler';
 
 /**
@@ -17,7 +21,7 @@ import { connectionHandler } from '../helpers/connection.handler';
  */
 async function fetchPublicSettingsLogic(req: Request, res: Response): Promise<any> {
   // Call service to fetch public settings
-  const result = await fetchPublicUiSettings(req);
+  const result = await fetchPublicSettings(req);
 
   return result;
 }

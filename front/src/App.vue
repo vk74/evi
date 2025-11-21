@@ -82,10 +82,10 @@ const isLocationModalOpen = ref<boolean>(false); // Track location modal state
 const isAboutMenuOpen = ref<boolean>(false); // Track about menu state
 const menuLocked = ref<boolean>(false); // Prevent menu interactions during animations
 
-// UI Settings loading state
-const isLoadingUiSettings = ref<boolean>(false);
-const uiSettingsError = ref<string | null>(null);
-const uiSettingsRetryCount = ref<number>(0);
+// Public settings loading state
+const isLoadingPublicSettings = ref<boolean>(false);
+const publicSettingsError = ref<string | null>(null);
+const publicSettingsRetryCount = ref<number>(0);
 const showCriticalErrorModal = ref<boolean>(false);
 
 // Computed properties
@@ -136,13 +136,13 @@ const isRailMode = computed(() => appStore.drawerMode === 'closed');
 // Unified icon color (teal)
 const iconColor = '#026c6c';
 
-// Get navbar background color from UI settings cache
+// Get navbar background color from public settings cache
 const navbarColor = computed(() => {
   try {
-    // Check uiSettingsCache first (works for both authenticated and anonymous users)
-    const uiCacheEntry = appSettingsStore.uiSettingsCache['Application.Appearance'];
-    if (uiCacheEntry) {
-      const navbarColorSetting = uiCacheEntry.data.find(
+    // Check publicSettingsCache first (works for both authenticated and anonymous users)
+    const publicCacheEntry = appSettingsStore.publicSettingsCache['Application.Appearance'];
+    if (publicCacheEntry) {
+      const navbarColorSetting = publicCacheEntry.data.find(
         setting => setting.setting_name === 'navbar.backgroundcolor'
       );
       if (navbarColorSetting) {
@@ -420,23 +420,23 @@ watch(
   { deep: true }
 );
 
-// Watch for login state changes to reload UI settings with full authenticated access
+// Watch for login state changes to reload public settings with full authenticated access
 watch(
   isLoggedIn,
   async (newLoginState) => {
     if (newLoginState) {
-      console.log('[App] User logged in. Reloading UI settings with authenticated access...');
+      console.log('[App] User logged in. Reloading public settings with authenticated access...');
       
-      // Clear existing UI settings cache
-      appSettingsStore.clearUiSettingsCache();
+      // Clear existing public settings cache
+      appSettingsStore.clearPublicSettingsCache();
       
-      // Reload UI settings (will use authenticated API now)
+      // Reload public settings (will use authenticated API now)
       try {
-        await appSettingsStore.loadUiSettings();
-        console.log('[App] Full UI settings loaded successfully after login');
+        await appSettingsStore.loadPublicSettings();
+        console.log('[App] Public settings loaded successfully after login');
       } catch (error) {
-        console.warn('[App] Failed to reload UI settings after login:', error);
-        // Continue - user can work with public settings
+        console.warn('[App] Failed to reload public settings after login:', error);
+        // Continue - user can work with fallback settings
       }
       
       console.log('[App] Loading additional settings...');
@@ -492,25 +492,25 @@ watch(
 );
 
 /**
- * Load UI settings on app initialization
+ * Load public settings on app initialization
  * Critical function - must succeed for app to function properly
  */
-const loadInitialUiSettings = async (): Promise<void> => {
-  isLoadingUiSettings.value = true;
-  uiSettingsError.value = null;
+const loadInitialPublicSettings = async (): Promise<void> => {
+  isLoadingPublicSettings.value = true;
+  publicSettingsError.value = null;
   
   try {
-    console.log('[App] Loading initial UI settings...');
-    await appSettingsStore.loadUiSettings();
-    console.log('[App] UI settings loaded successfully');
-    isLoadingUiSettings.value = false;
+    console.log('[App] Loading initial public settings...');
+    await appSettingsStore.loadPublicSettings();
+    console.log('[App] Public settings loaded successfully');
+    isLoadingPublicSettings.value = false;
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-    console.error('[App] Critical error loading UI settings:', errorMessage);
+    console.error('[App] Critical error loading public settings:', errorMessage);
     
-    uiSettingsError.value = errorMessage;
-    uiSettingsRetryCount.value++;
-    isLoadingUiSettings.value = false;
+    publicSettingsError.value = errorMessage;
+    publicSettingsRetryCount.value++;
+    isLoadingPublicSettings.value = false;
     
     // Show critical error modal
     showCriticalErrorModal.value = true;
@@ -518,12 +518,12 @@ const loadInitialUiSettings = async (): Promise<void> => {
 };
 
 /**
- * Retry loading UI settings after error
+ * Retry loading public settings after error
  */
-const retryLoadUiSettings = async (): Promise<void> => {
-  console.log('[App] Retrying UI settings load...');
+const retryLoadPublicSettings = async (): Promise<void> => {
+  console.log('[App] Retrying public settings load...');
   showCriticalErrorModal.value = false;
-  await loadInitialUiSettings();
+  await loadInitialPublicSettings();
 };
 
 // Prevent ResizeObserver errors - more robust implementation
@@ -566,8 +566,8 @@ window.addEventListener('openLocationSelectionModal', () => {
 
 // Lifecycle hooks
 onMounted(async () => {
-  // CRITICAL: Load UI settings first (works for both authenticated and anonymous users)
-  await loadInitialUiSettings();
+  // CRITICAL: Load public settings first (works for both authenticated and anonymous users)
+  await loadInitialPublicSettings();
   
   // If Admin is the active module on initial load, expand the admin section
   if (appStore.activeModule === 'Admin') {
@@ -621,9 +621,9 @@ onMounted(async () => {
     <!-- Critical Settings Error Modal -->
     <CriticalSettingsErrorModal
       v-if="showCriticalErrorModal"
-      :error="uiSettingsError || 'Unknown error'"
-      :retry-count="uiSettingsRetryCount"
-      @retry="retryLoadUiSettings"
+      :error="publicSettingsError || 'Unknown error'"
+      :retry-count="publicSettingsRetryCount"
+      @retry="retryLoadPublicSettings"
     />
 
     <!-- Floating menu button - always visible regardless of drawer state -->

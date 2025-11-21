@@ -1,5 +1,5 @@
 /**
- * version: 1.1.0
+ * version: 1.2.0
  * Public routes for backend services.
  * 
  * Functionality:
@@ -11,6 +11,10 @@
  * 
  * Changes in v1.1.0:
  * - Added rate limit guard as first guard in all routes for DDoS protection
+ * 
+ * Changes in v1.2.0:
+ * - Renamed /api/public/ui-settings endpoint to /api/public/settings
+ * - Aligned route naming with public settings terminology
  */
 
 import express, { Router } from 'express';
@@ -29,7 +33,7 @@ const router: Router = express.Router();
 router.get('/api/public/password-policies', checkRateLimit, checkRequestSecurityHard, fetchPublicPasswordPoliciesController);
 router.get('/api/public/registration-status', checkRateLimit, checkRequestSecurityHard, getRegistrationStatusController);
 router.get('/api/public/validation-rules', checkRateLimit, checkRequestSecurityHard, fetchPublicValidationRulesController);
-router.get('/api/public/ui-settings', checkRateLimit, checkRequestSecurityHard, fetchPublicSettingsController);
+router.get('/api/public/settings', checkRateLimit, checkRequestSecurityHard, fetchPublicSettingsController);
 
 // Export using ES modules syntax
 export default router;

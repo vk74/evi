@@ -1,12 +1,17 @@
 /**
  * @file service.fetch.settings.ts
- * Version: 1.0.0
+ * Version: 1.1.0
  * Service for fetching application settings from the backend.
- * Frontend file that provides unified interface for getting and caching settings with 5-minute TTL.
+ * Frontend file that provides unified interface for getting and caching settings with TTL.
  *
  * Functionality:
  * - Provides a unified interface for getting and caching settings
  * - Uses the Pinia store for caching with a TTL of 5 minutes
+ *
+ * Changes in v1.1.0:
+ * - Renamed UI settings terminology to public settings across the file
+ * - Renamed fetchUiSettings to fetchPublicSettings
+ * - Updated imports to use fetchPublicSettings service and PublicSettings types
  */
 
 import { api } from '@/core/api/service.axios'
@@ -185,12 +190,12 @@ export function isSettingsCacheExpired(section_path: string): boolean {
 }
 
 /**
- * Fetches UI settings from the backend
+ * Fetches public settings from the backend
  * Uses public API for anonymous users, authenticated API for logged-in users
  * 
- * @returns Promise that resolves to an array of UI settings
+ * @returns Promise that resolves to an array of public settings
  */
-export async function fetchUiSettings(): Promise<AppSetting[]> {
+export async function fetchPublicSettings(): Promise<AppSetting[]> {
   const uiStore = useUiStore();
   
   // Check if user is authenticated
@@ -198,17 +203,17 @@ export async function fetchUiSettings(): Promise<AppSetting[]> {
   const userAuthStore = useUserAuthStore();
   const isAuthenticated = userAuthStore.isAuthenticated;
   
-  console.log(`[Fetch UI Settings] Fetching UI settings (authenticated: ${isAuthenticated})`);
+  console.log(`[Fetch Public Settings] Fetching public settings (authenticated: ${isAuthenticated})`);
   
   try {
     if (!isAuthenticated) {
       // User is not authenticated - use public API
-      console.log('[Fetch UI Settings] Using public API for anonymous user');
-      const { fetchPublicUiSettings } = await import('@/core/services/service.fetch.public.settings');
-      const publicResponse = await fetchPublicUiSettings();
+      console.log('[Fetch Public Settings] Using public API for anonymous user');
+      const { fetchPublicSettings: fetchPublicSettingsFromPublicApi } = await import('@/core/services/service.fetch.public.settings');
+      const publicResponse = await fetchPublicSettingsFromPublicApi();
       
       if (publicResponse.success && publicResponse.settings) {
-        // Convert PublicUiSetting to AppSetting format
+        // Convert PublicSetting to AppSetting format
         const appSettings: AppSetting[] = publicResponse.settings.map(setting => ({
           section_path: setting.section_path,
           setting_name: setting.setting_name,
@@ -218,16 +223,16 @@ export async function fetchUiSettings(): Promise<AppSetting[]> {
           is_public: setting.is_public
         }));
         
-        console.log(`[Fetch UI Settings] Fetched ${appSettings.length} public UI settings`);
+        console.log(`[Fetch Public Settings] Fetched ${appSettings.length} public settings for anonymous user`);
         return appSettings;
       } else {
-        throw new Error(publicResponse.error || 'Failed to fetch public UI settings');
+        throw new Error(publicResponse.error || 'Failed to fetch public settings');
       }
     } else {
       // User is authenticated - use full settings API
-      console.log('[Fetch UI Settings] Using authenticated API');
+      console.log('[Fetch Public Settings] Using authenticated API for public settings');
       
-      // Prepare request parameters for all UI settings
+      // Prepare request parameters for all public settings
       const requestData: FetchAllSettingsRequest = {
         type: 'all',
         environment: 'all',
@@ -243,7 +248,7 @@ export async function fetchUiSettings(): Promise<AppSetting[]> {
       
       // Handle response
       if (response.data.success && response.data.settings) {
-        console.log(`[Fetch UI Settings] Fetched ${response.data.settings.length} authenticated UI settings`);
+        console.log(`[Fetch Public Settings] Fetched ${response.data.settings.length} authenticated public settings`);
         return response.data.settings;
       } else {
         // Handle error case
@@ -254,10 +259,10 @@ export async function fetchUiSettings(): Promise<AppSetting[]> {
   } catch (error) {
     // Handle exception
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-    console.error('[Fetch UI Settings] Error:', errorMessage);
+    console.error('[Fetch Public Settings] Error:', errorMessage);
     
     // Show error message to user
-    uiStore.showErrorSnackbar(`Error loading UI settings: ${errorMessage}`);
+    uiStore.showErrorSnackbar(`Error loading public settings: ${errorMessage}`);
     
     // Re-throw error so caller can handle it
     throw error;

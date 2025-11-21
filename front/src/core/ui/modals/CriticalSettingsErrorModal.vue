@@ -1,7 +1,7 @@
 <!--
   File: CriticalSettingsErrorModal.vue - frontend file
-  Version: 1.0.0
-  Description: Critical error modal for failed UI settings loading
+  Version: 1.1.0
+  Description: Critical error modal for failed public settings loading
   Purpose: Display blocking error message when application settings cannot be loaded
   
   Features:
@@ -9,6 +9,9 @@
   - Retry functionality
   - Page reload option
   - Error message display
+
+  Changes in v1.1.0:
+  - Updated description to refer to public settings instead of UI settings
 -->
 
 <script setup lang="ts">

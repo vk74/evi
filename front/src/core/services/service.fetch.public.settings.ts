@@ -1,18 +1,23 @@
 /**
  * @file service.fetch.public.settings.ts
- * Version: 1.0.1
+ * Version: 1.1.0
  * Service for fetching public settings from the backend (no authentication required).
  * Frontend file that provides interface for loading public settings accessible to anonymous users.
  *
  * Functionality:
- * - Fetches public settings from /api/public/ui-settings endpoint
+ * - Fetches public settings from /api/public/settings endpoint
  * - No authentication required
  * - Returns minimal set of public settings for anonymous users
  * - Public settings include: navbar color, catalog card colors, visibility settings
+ *
+ * Changes in v1.1.0:
+ * - Renamed PublicUiSettingsResponse to PublicSettingsResponse
+ * - Renamed fetchPublicUiSettings to fetchPublicSettings
+ * - Updated endpoint from /api/public/ui-settings to /api/public/settings
  */
 
 import { api } from '@/core/api/service.axios';
-import { PublicUiSettingsResponse } from '@/modules/admin/settings/types.settings';
+import { PublicSettingsResponse } from '@/modules/admin/settings/types.settings';
 
 /**
  * Fetches public settings from the backend
@@ -21,13 +26,13 @@ import { PublicUiSettingsResponse } from '@/modules/admin/settings/types.setting
  * @returns Promise that resolves to public settings response
  * @throws Error if the request fails
  */
-export async function fetchPublicUiSettings(): Promise<PublicUiSettingsResponse> {
+export async function fetchPublicSettings(): Promise<PublicSettingsResponse> {
   try {
     console.log('[Public Settings] Fetching public settings');
     
     // Make GET request to public endpoint (no auth required)
-    const response = await api.get<PublicUiSettingsResponse>(
-      '/api/public/ui-settings'
+    const response = await api.get<PublicSettingsResponse>(
+      '/api/public/settings'
     );
     
     if (response.data.success) {

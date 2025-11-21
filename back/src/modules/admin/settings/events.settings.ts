@@ -1,6 +1,6 @@
 /**
  * events.settings.ts - backend file
- * version: 1.0.1
+ * version: 1.1.0
  * 
  * This file contains event definitions for the settings management module.
  * It serves as a reference for creating and publishing settings-related events to the event bus.
@@ -8,6 +8,10 @@
  * 
  * These events are used to track and react to settings operations
  * such as fetching, updating, and caching settings.
+ * 
+ * Changes in v1.1.0:
+ * - Renamed UI-specific fetch events to public settings events
+ * - Updated event names to use public settings terminology
  */
 
 /**
@@ -26,9 +30,9 @@ export const SETTINGS_FETCH_EVENTS = {
     version: '1.0.0'
   },
 
-  // When UI filter is applied to settings fetch
-  UI_FILTER_APPLIED: {
-    eventName: 'settings.fetch.ui.filter.applied',
+  // When public filter is applied to settings fetch
+  PUBLIC_FILTER_APPLIED: {
+    eventName: 'settings.fetch.public.filter.applied',
     source: 'settings service module',
     eventType: 'app' as const,
     severity: 'debug' as const,
@@ -37,9 +41,9 @@ export const SETTINGS_FETCH_EVENTS = {
     version: '1.0.0'
   },
 
-  // When UI settings are successfully fetched
-  UI_SETTINGS_FETCHED: {
-    eventName: 'settings.fetch.ui.settings.fetched',
+  // When public settings are successfully fetched
+  PUBLIC_SETTINGS_FETCHED: {
+    eventName: 'settings.fetch.public.settings.fetched',
     source: 'settings service module',
     eventType: 'app' as const,
     severity: 'debug' as const,

@@ -73,7 +73,7 @@ export const eventReferenceFiles: Record<string, string[]> = {
     path.resolve(__dirname, '../../logger/events.logger.ts')
   ],
   
-  // Public policies events - events for public API operations (password policies, validation rules, UI settings)
+  // Public policies events - events for public API operations (password policies, validation rules, public settings)
   publicPolicies: [
     path.resolve(__dirname, '../../public/events.public.policies.ts')
   ],

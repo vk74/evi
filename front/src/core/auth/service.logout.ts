@@ -1,9 +1,13 @@
 /**
  * @file service.logout.ts
- * Version: 1.3.0
+ * Version: 1.4.0
  * Service for user logout and session cleanup.
  * Frontend file that handles logout requests, clears tokens, and resets user session.
  * Updated to support device fingerprinting for enhanced security.
+ *
+ * Changes in v1.4.0:
+ * - Renamed UI settings cache operations to public settings cache operations
+ * - Updated logs and imports to use public settings terminology
  */
 
 import { api } from '@/core/api/service.axios'
@@ -137,18 +141,18 @@ export async function logoutService(): Promise<boolean> {
     // Reset products admin store
     resetProductsStore()
     
-    // Clear UI settings cache
+    // Clear public settings cache
     const { useAppSettingsStore } = await import('../../modules/admin/settings/state.app.settings')
     const appSettingsStore = useAppSettingsStore()
-    appSettingsStore.clearUiSettingsCache()
-    console.log('[Logout Service] UI settings cache cleared')
+    appSettingsStore.clearPublicSettingsCache()
+    console.log('[Logout Service] Public settings cache cleared')
     
-    // Reload public UI settings for anonymous user
+    // Reload public settings for anonymous user
     try {
-      await appSettingsStore.loadUiSettings()
-      console.log('[Logout Service] Public UI settings reloaded')
+      await appSettingsStore.loadPublicSettings()
+      console.log('[Logout Service] Public settings reloaded')
     } catch (error) {
-      console.warn('[Logout Service] Failed to reload public UI settings:', error)
+      console.warn('[Logout Service] Failed to reload public settings:', error)
       // Continue with logout even if settings reload fails
     }
     
@@ -173,12 +177,12 @@ export async function logoutService(): Promise<boolean> {
     resetProductsStore()
     clearRefreshTimer()
     
-    // Clear UI settings cache and reload public settings
+    // Clear public settings cache and reload public settings
     try {
       const { useAppSettingsStore } = await import('../../modules/admin/settings/state.app.settings')
       const appSettingsStore = useAppSettingsStore()
-      appSettingsStore.clearUiSettingsCache()
-      await appSettingsStore.loadUiSettings()
+      appSettingsStore.clearPublicSettingsCache()
+      await appSettingsStore.loadPublicSettings()
     } catch (settingsError) {
       console.warn('[Logout Service] Failed to clear/reload settings:', settingsError)
     }

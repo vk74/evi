@@ -1,12 +1,16 @@
 /**
  * events.public.policies.ts - backend file
- * version: 1.2.0
- * Event definitions for public API operations (password policies, validation rules, UI settings).
+ * version: 1.3.0
+ * Event definitions for public API operations (password policies, validation rules, public settings).
  * Contains event types for logging requests, responses, and errors.
  * 
  * Updated: Changed event prefix from 'public.*' to 'publicPolicies.*' to match domain registry
  * 
  * Domain: publicPolicies
+ * 
+ * Changes in v1.3.0:
+ * - Renamed Public UI settings events to Public settings events
+ * - Updated event names and sources to use public settings terminology
  */
 
 /**
@@ -184,88 +188,88 @@ export const PUBLIC_VALIDATION_RULES_EVENT_NAMES = {
 } as const;
 
 /**
- * Public UI Settings Events
- * Events related to public UI settings API operations
+ * Public Settings Events
+ * Events related to public settings API operations
  */
-export const PUBLIC_UI_SETTINGS_EVENTS = {
+export const PUBLIC_SETTINGS_EVENTS = {
   
   /**
    * Request received event
-   * Triggered when a public UI settings request is received
+   * Triggered when a public settings request is received
    */
   REQUEST_RECEIVED: {
-    eventName: 'publicPolicies.uiSettings.request.received',
-    eventMessage: 'Public UI settings request received',
+    eventName: 'publicPolicies.settings.request.received',
+    eventMessage: 'Public settings request received',
     eventType: 'app' as const,
-    source: 'core.public.ui.settings',
+    source: 'core.public.settings',
     severity: 'debug' as const,
     version: '1.0.0'
   },
 
   RESPONSE_SENT: {
-    eventName: 'publicPolicies.uiSettings.response.sent',
-    eventMessage: 'Public UI settings response sent successfully',
+    eventName: 'publicPolicies.settings.response.sent',
+    eventMessage: 'Public settings response sent successfully',
     eventType: 'app' as const,
-    source: 'core.public.ui.settings',
+    source: 'core.public.settings',
     severity: 'info' as const,
     version: '1.0.0'
   },
 
   SETTINGS_RETRIEVED: {
-    eventName: 'publicPolicies.uiSettings.settings.retrieved',
-    eventMessage: 'UI settings retrieved from cache',
+    eventName: 'publicPolicies.settings.settings.retrieved',
+    eventMessage: 'Public settings retrieved from cache',
     eventType: 'performance' as const,
-    source: 'core.public.ui.settings',
+    source: 'core.public.settings',
     severity: 'debug' as const,
     version: '1.0.0'
   },
 
   RATE_LIMIT_EXCEEDED: {
-    eventName: 'publicPolicies.uiSettings.rate.limit.exceeded',
-    eventMessage: 'Rate limit exceeded for public UI settings requests',
+    eventName: 'publicPolicies.settings.rate.limit.exceeded',
+    eventMessage: 'Rate limit exceeded for public settings requests',
     eventType: 'security' as const,
-    source: 'core.public.ui.settings',
+    source: 'core.public.settings',
     severity: 'warning' as const,
     version: '1.0.0'
   },
 
   VALIDATION_ERROR: {
-    eventName: 'publicPolicies.uiSettings.validation.error',
-    eventMessage: 'Request validation error for public UI settings',
+    eventName: 'publicPolicies.settings.validation.error',
+    eventMessage: 'Request validation error for public settings',
     eventType: 'app' as const,
-    source: 'core.public.ui.settings',
+    source: 'core.public.settings',
     severity: 'warning' as const,
     version: '1.0.0'
   },
 
   SERVICE_ERROR: {
-    eventName: 'publicPolicies.uiSettings.service.error',
-    eventMessage: 'Service error in public UI settings',
+    eventName: 'publicPolicies.settings.service.error',
+    eventMessage: 'Service error in public settings',
     eventType: 'system' as const,
-    source: 'core.public.ui.settings',
+    source: 'core.public.settings',
     severity: 'error' as const,
     version: '1.0.0'
   },
 
   HTTP_ERROR: {
-    eventName: 'publicPolicies.uiSettings.http.error',
-    eventMessage: 'HTTP error in public UI settings endpoint',
+    eventName: 'publicPolicies.settings.http.error',
+    eventMessage: 'HTTP error in public settings endpoint',
     eventType: 'system' as const,
-    source: 'core.public.ui.settings',
+    source: 'core.public.settings',
     severity: 'error' as const,
     version: '1.0.0'
   }
 };
 
 /**
- * Quick access to event names for public UI settings
+ * Quick access to event names for public settings
  */
-export const PUBLIC_UI_SETTINGS_EVENT_NAMES = {
-  REQUEST_RECEIVED: PUBLIC_UI_SETTINGS_EVENTS.REQUEST_RECEIVED.eventName,
-  RESPONSE_SENT: PUBLIC_UI_SETTINGS_EVENTS.RESPONSE_SENT.eventName,
-  SETTINGS_RETRIEVED: PUBLIC_UI_SETTINGS_EVENTS.SETTINGS_RETRIEVED.eventName,
-  RATE_LIMIT_EXCEEDED: PUBLIC_UI_SETTINGS_EVENTS.RATE_LIMIT_EXCEEDED.eventName,
-  VALIDATION_ERROR: PUBLIC_UI_SETTINGS_EVENTS.VALIDATION_ERROR.eventName,
-  SERVICE_ERROR: PUBLIC_UI_SETTINGS_EVENTS.SERVICE_ERROR.eventName,
-  HTTP_ERROR: PUBLIC_UI_SETTINGS_EVENTS.HTTP_ERROR.eventName
+export const PUBLIC_SETTINGS_EVENT_NAMES = {
+  REQUEST_RECEIVED: PUBLIC_SETTINGS_EVENTS.REQUEST_RECEIVED.eventName,
+  RESPONSE_SENT: PUBLIC_SETTINGS_EVENTS.RESPONSE_SENT.eventName,
+  SETTINGS_RETRIEVED: PUBLIC_SETTINGS_EVENTS.SETTINGS_RETRIEVED.eventName,
+  RATE_LIMIT_EXCEEDED: PUBLIC_SETTINGS_EVENTS.RATE_LIMIT_EXCEEDED.eventName,
+  VALIDATION_ERROR: PUBLIC_SETTINGS_EVENTS.VALIDATION_ERROR.eventName,
+  SERVICE_ERROR: PUBLIC_SETTINGS_EVENTS.SERVICE_ERROR.eventName,
+  HTTP_ERROR: PUBLIC_SETTINGS_EVENTS.HTTP_ERROR.eventName
 } as const;

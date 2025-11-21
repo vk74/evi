@@ -1,6 +1,6 @@
 /**
  * @file state.app.settings.ts
- * Version: 1.1.0
+ * Version: 1.2.0
  * State management for the application settings module using Pinia.
  * Frontend file that tracks selected section ID, expanded sections, and caches settings data.
  *
@@ -9,13 +9,18 @@
  * - Manages settings cache with TTL of 5 minutes
  * - Provides methods for updating, sorting, selecting, and clearing the cache
  * - Persists UI state (selectedSectionPath, expandedSections, expandedBlocks) to localStorage
+ *
+ * Changes in v1.2.0:
+ * - Renamed UI settings cache and helpers to public settings cache and helpers
+ * - Updated to use fetchPublicSettings service instead of fetchUiSettings
+ * - Removed legacy UI settings terminology from store state and logs
  */
 
 import { defineStore } from 'pinia';
 import { 
   AppSetting, 
   SettingsCacheEntry,
-  UI_SETTINGS_CACHE_TTL
+  PUBLIC_SETTINGS_CACHE_TTL
 } from './types.settings';
 
 // Define the interface for the store state
@@ -27,7 +32,7 @@ interface AppSettingsState {
   
   // Settings Data State
   settingsCache: Record<string, SettingsCacheEntry>; // Cache of settings by section
-  uiSettingsCache: Record<string, SettingsCacheEntry>; // Cache of UI settings
+  publicSettingsCache: Record<string, SettingsCacheEntry>; // Cache of public settings
   isLoading: boolean;             // Whether settings are currently being loaded
   lastError: string | null;       // Last error encountered when loading settings
 }
@@ -50,7 +55,7 @@ export const useAppSettingsStore = defineStore('appSettings', {
       'Application.System.Logging.FileLoggingBlock'
     ],
     settingsCache: {}, // Empty cache to start
-    uiSettingsCache: {}, // Empty UI settings cache to start
+    publicSettingsCache: {}, // Empty public settings cache to start
     isLoading: false,
     lastError: null
   }),
@@ -127,12 +132,12 @@ export const useAppSettingsStore = defineStore('appSettings', {
     
     // Check if Work module is visible based on settings
     isWorkModuleVisible: (state) => (): boolean => {
-      // First check UI settings cache
-      const uiCacheEntry = state.uiSettingsCache['Application.Work'];
-      if (uiCacheEntry) {
+      // First check public settings cache
+      const publicCacheEntry = state.publicSettingsCache['Application.Work'];
+      if (publicCacheEntry) {
         const now = Date.now();
-        if ((now - uiCacheEntry.timestamp) < UI_SETTINGS_CACHE_TTL) {
-          const visibilitySetting = uiCacheEntry.data.find(
+        if ((now - publicCacheEntry.timestamp) < PUBLIC_SETTINGS_CACHE_TTL) {
+          const visibilitySetting = publicCacheEntry.data.find(
             setting => setting.setting_name === 'work.module.is.visible'
           );
           return visibilitySetting ? visibilitySetting.value === true : false; // Default to false
@@ -159,12 +164,12 @@ export const useAppSettingsStore = defineStore('appSettings', {
     
     // Check if Reports module is visible based on settings
     isReportsModuleVisible: (state) => (): boolean => {
-      // First check UI settings cache
-      const uiCacheEntry = state.uiSettingsCache['Application.Reports'];
-      if (uiCacheEntry) {
+      // First check public settings cache
+      const publicCacheEntry = state.publicSettingsCache['Application.Reports'];
+      if (publicCacheEntry) {
         const now = Date.now();
-        if ((now - uiCacheEntry.timestamp) < UI_SETTINGS_CACHE_TTL) {
-          const visibilitySetting = uiCacheEntry.data.find(
+        if ((now - publicCacheEntry.timestamp) < PUBLIC_SETTINGS_CACHE_TTL) {
+          const visibilitySetting = publicCacheEntry.data.find(
             setting => setting.setting_name === 'reports.module.is.visible'
           );
           return visibilitySetting ? visibilitySetting.value === true : false; // Default to false
@@ -191,12 +196,12 @@ export const useAppSettingsStore = defineStore('appSettings', {
     
     // Check if KnowledgeBase module is visible based on settings
     isKnowledgeBaseModuleVisible: (state) => (): boolean => {
-      // First check UI settings cache
-      const uiCacheEntry = state.uiSettingsCache['Application.KnowledgeBase'];
-      if (uiCacheEntry) {
+      // First check public settings cache
+      const publicCacheEntry = state.publicSettingsCache['Application.KnowledgeBase'];
+      if (publicCacheEntry) {
         const now = Date.now();
-        if ((now - uiCacheEntry.timestamp) < UI_SETTINGS_CACHE_TTL) {
-          const visibilitySetting = uiCacheEntry.data.find(
+        if ((now - publicCacheEntry.timestamp) < PUBLIC_SETTINGS_CACHE_TTL) {
+          const visibilitySetting = publicCacheEntry.data.find(
             setting => setting.setting_name === 'knowledgebase.module.is.visible'
           );
           return visibilitySetting ? visibilitySetting.value === true : false; // Default to false
@@ -307,7 +312,7 @@ export const useAppSettingsStore = defineStore('appSettings', {
     // Clear all cache
     clearAllCache() {
       this.settingsCache = {};
-      this.uiSettingsCache = {};
+      this.publicSettingsCache = {};
       console.log('Cleared all settings cache');
     },
     
@@ -384,65 +389,65 @@ export const useAppSettingsStore = defineStore('appSettings', {
     },
 
     /**
-     * Load UI settings from backend
-     * @returns Promise that resolves when UI settings are loaded
+     * Load public settings from backend
+     * @returns Promise that resolves when public settings are loaded
      * @throws Error if settings cannot be loaded
      */
-    async loadUiSettings(): Promise<void> {
-      // Import the service to fetch UI settings
-      const { fetchUiSettings } = await import('./service.fetch.settings');
-      const uiSettings = await fetchUiSettings();
+    async loadPublicSettings(): Promise<void> {
+      // Import the service to fetch public settings
+      const { fetchPublicSettings } = await import('./service.fetch.settings');
+      const publicSettings = await fetchPublicSettings();
       
-      // Group UI settings by section
+      // Group public settings by section
       const settingsBySection: Record<string, AppSetting[]> = {};
-      uiSettings.forEach(setting => {
+      publicSettings.forEach(setting => {
         if (!settingsBySection[setting.section_path]) {
           settingsBySection[setting.section_path] = [];
         }
         settingsBySection[setting.section_path].push(setting);
       });
       
-      // Cache UI settings by section
+      // Cache public settings by section
       Object.entries(settingsBySection).forEach(([sectionPath, settings]) => {
-        this.uiSettingsCache[sectionPath] = {
+        this.publicSettingsCache[sectionPath] = {
           timestamp: Date.now(),
           data: settings
         };
       });
       
-      console.log(`Loaded ${uiSettings.length} UI settings for ${Object.keys(settingsBySection).length} sections`);
+      console.log(`Loaded ${publicSettings.length} public settings for ${Object.keys(settingsBySection).length} sections`);
     },
 
     /**
-     * Get all UI settings from cache
-     * @returns Array of all UI settings
+     * Get all public settings from cache
+     * @returns Array of all public settings
      */
-    getUiSettings(): AppSetting[] {
+    getPublicSettings(): AppSetting[] {
       const allSettings: AppSetting[] = [];
-      Object.values(this.uiSettingsCache).forEach(cacheEntry => {
+      Object.values(this.publicSettingsCache).forEach(cacheEntry => {
         allSettings.push(...cacheEntry.data);
       });
       return allSettings;
     },
 
     /**
-     * Check if UI settings cache is valid
-     * @returns boolean indicating if UI settings cache is valid
+     * Check if public settings cache is valid
+     * @returns boolean indicating if public settings cache is valid
      */
-    hasValidUiSettingsCache(): boolean {
+    hasValidPublicSettingsCache(): boolean {
       const now = Date.now();
-      return Object.values(this.uiSettingsCache).some(cacheEntry => 
-        (now - cacheEntry.timestamp) < UI_SETTINGS_CACHE_TTL
+      return Object.values(this.publicSettingsCache).some(cacheEntry => 
+        (now - cacheEntry.timestamp) < PUBLIC_SETTINGS_CACHE_TTL
       );
     },
 
     /**
-     * Clear UI settings cache
+     * Clear public settings cache
      * Used when user logs out to invalidate cached settings
      */
-    clearUiSettingsCache(): void {
-      console.log('[App Settings Store] Clearing UI settings cache');
-      this.uiSettingsCache = {};
+    clearPublicSettingsCache(): void {
+      console.log('[App Settings Store] Clearing public settings cache');
+      this.publicSettingsCache = {};
     }
   },
   

@@ -1,6 +1,6 @@
 /**
  * service.fetch.public.settings.ts - backend file
- * version: 1.0.1
+ * version: 1.2.0
  * Service for fetching public settings that are accessible without authentication.
  * 
  * Public settings include:
@@ -8,19 +8,28 @@
  * - Catalog.Products → card.color
  * - Catalog.Services → card.color
  * - Catalog.Products → display.optionsOnlyProducts
+ * 
+ * Changes in v1.1.0:
+ * - Renamed PublicUiSetting/PublicUiSettingsResponse to PublicSetting/PublicSettingsResponse
+ * - Renamed fetchPublicUiSettings to fetchPublicSettings
+ * - Kept endpoint focused on public settings terminology across backend
+ * 
+ * Changes in v1.2.0:
+ * - Updated event bus integration to use PUBLIC_SETTINGS_EVENT_NAMES
+ * - Removed legacy UI settings terminology from event names
  */
 
 import { Request } from 'express';
 import { getSettingValue } from '../helpers/get.setting.value';
 import fabricEvents from '../eventBus/fabric.events';
-import { PUBLIC_UI_SETTINGS_EVENT_NAMES } from './events.public.policies';
+import { PUBLIC_SETTINGS_EVENT_NAMES } from './events.public.policies';
 import { v4 as uuidv4 } from 'uuid';
 import { getClientIp } from '../helpers/get.client.ip.from.req';
 
 /**
  * Interface for public setting
  */
-export interface PublicUiSetting {
+export interface PublicSetting {
   section_path: string;
   setting_name: string;
   value: any;
@@ -30,9 +39,9 @@ export interface PublicUiSetting {
 /**
  * Response interface for public settings
  */
-export interface PublicUiSettingsResponse {
+export interface PublicSettingsResponse {
   success: boolean;
-  settings: PublicUiSetting[];
+  settings: PublicSetting[];
   error?: string;
 }
 
@@ -43,7 +52,7 @@ export interface PublicUiSettingsResponse {
  * @param req - Express request object (for logging/tracking purposes)
  * @returns Promise resolving to public settings response
  */
-export async function fetchPublicUiSettings(req: Request): Promise<PublicUiSettingsResponse> {
+export async function fetchPublicSettings(req: Request): Promise<PublicSettingsResponse> {
   // Validate request method
   if (req.method !== 'GET') {
     throw new Error('Only GET method is allowed');
@@ -55,7 +64,7 @@ export async function fetchPublicUiSettings(req: Request): Promise<PublicUiSetti
   try {
     // Log request received
     fabricEvents.createAndPublishEvent({
-      eventName: PUBLIC_UI_SETTINGS_EVENT_NAMES.REQUEST_RECEIVED,
+      eventName: PUBLIC_SETTINGS_EVENT_NAMES.REQUEST_RECEIVED,
       req,
       payload: {
         requestId,
@@ -65,7 +74,7 @@ export async function fetchPublicUiSettings(req: Request): Promise<PublicUiSetti
     });
 
     // Define public settings to fetch
-    const publicSettings: PublicUiSetting[] = [];
+    const publicSettings: PublicSetting[] = [];
 
     // 1. Navigation bar background color
     const navbarColor = await getSettingValue<string>(
@@ -121,7 +130,7 @@ export async function fetchPublicUiSettings(req: Request): Promise<PublicUiSetti
 
     // Log settings retrieved successfully
     fabricEvents.createAndPublishEvent({
-      eventName: PUBLIC_UI_SETTINGS_EVENT_NAMES.SETTINGS_RETRIEVED,
+      eventName: PUBLIC_SETTINGS_EVENT_NAMES.SETTINGS_RETRIEVED,
       req,
       payload: {
         requestId,
@@ -131,7 +140,7 @@ export async function fetchPublicUiSettings(req: Request): Promise<PublicUiSetti
 
     // Log response sent
     fabricEvents.createAndPublishEvent({
-      eventName: PUBLIC_UI_SETTINGS_EVENT_NAMES.RESPONSE_SENT,
+      eventName: PUBLIC_SETTINGS_EVENT_NAMES.RESPONSE_SENT,
       req,
       payload: {
         requestId,
@@ -147,7 +156,7 @@ export async function fetchPublicUiSettings(req: Request): Promise<PublicUiSetti
   } catch (error) {
     // Log service error
     fabricEvents.createAndPublishEvent({
-      eventName: PUBLIC_UI_SETTINGS_EVENT_NAMES.SERVICE_ERROR,
+      eventName: PUBLIC_SETTINGS_EVENT_NAMES.SERVICE_ERROR,
       req,
       payload: {
         requestId,

@@ -1,12 +1,17 @@
 /**
  * @file types.settings.ts
- * Version: 1.0.0
+ * Version: 1.1.0
  * Type definitions for application settings.
  * Frontend file that provides centralized location for all settings interfaces, types and enums.
  *
  * Functionality:
  * - Centralized location for all settings interfaces, types and enums
  * - Ensures consistent typing across all settings components and services
+ *
+ * Changes in v1.1.0:
+ * - Renamed PublicUiSetting/PublicUiSettingsResponse to PublicSetting/PublicSettingsResponse
+ * - Renamed UI_SETTINGS_CACHE_TTL to PUBLIC_SETTINGS_CACHE_TTL
+ * - Updated types to use public settings terminology instead of UI settings
  */
 
 /**
@@ -15,9 +20,9 @@
 export const SETTINGS_CACHE_TTL = 5 * 60 * 1000;
 
 /**
- * UI Settings Cache TTL in milliseconds (5 minutes)
+ * Public Settings Cache TTL in milliseconds (10 minutes)
  */
-export const UI_SETTINGS_CACHE_TTL = 10 * 60 * 1000; // 10 minutes
+export const PUBLIC_SETTINGS_CACHE_TTL = 10 * 60 * 1000; // 10 minutes
 
 /**
  * Environment type enum for settings
@@ -45,10 +50,10 @@ export interface AppSetting {
 }
 
 /**
- * Interface for public UI settings (available without authentication)
+ * Interface for public settings (available without authentication)
  * Subset of AppSetting with only public settings related fields
  */
-export interface PublicUiSetting {
+export interface PublicSetting {
   section_path: string;       // Path to settings section
   setting_name: string;       // Unique setting identifier
   value: any;                 // Setting value
@@ -56,11 +61,11 @@ export interface PublicUiSetting {
 }
 
 /**
- * Response interface for public UI settings API
+ * Response interface for public settings API
  */
-export interface PublicUiSettingsResponse {
+export interface PublicSettingsResponse {
   success: boolean;
-  settings: PublicUiSetting[];
+  settings: PublicSetting[];
   error?: string;
 }
 
