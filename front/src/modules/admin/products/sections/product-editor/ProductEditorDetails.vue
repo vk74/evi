@@ -1,6 +1,6 @@
 <!--
   File: ProductEditorDetails.vue
-  Version: 1.6.0
+  Version: 1.7.0
   Description: Component for product details form and actions
   Purpose: Provides interface for creating and editing product details with dynamic validation
   Frontend file - ProductEditorDetails.vue
@@ -49,6 +49,16 @@
   - Removed JSONB fields: areaSpecifics, industrySpecifics, keyFeatures, productOverview
   - Removed updateJsonbField method (kept only for techSpecs)
   - Updated photo placeholder border color to teal
+  
+  Changes in v1.7.0:
+  - Removed ItemSelector for owner (owner is now read-only and set automatically on creation)
+  - Removed Contacts section (title and divider)
+  - Moved specialists field out of Contacts section, renamed label to "product specialists"
+  - Added owner to product info section (read-only, same style as product name)
+  - Removed all owner validation logic (isOwnerValid, dynamicOwnerRules, validateSingleUsername, isOwnerChanged, initialOwner)
+  - Removed owner from isUpdateButtonEnabled check
+  - Removed owner from createProduct payload (set automatically on backend)
+  - Removed owner from change tracking
 -->
 
 <script setup lang="ts">
@@ -64,10 +74,9 @@ import { fetchPublicValidationRules } from '@/core/services/service.fetch.public
 import { usePublicSettingsStore, type ValidationRules } from '@/core/state/state.public.settings'
 import type { ProductStatus } from '../../types.products.admin'
 
-const ItemSelector = defineAsyncComponent(() => import(/* webpackChunkName: "ui-item-selector" */ '@/core/ui/modals/item-selector/ItemSelector.vue'))
 const DataLoading = defineAsyncComponent(() => import(/* webpackChunkName: "ui-data-loading" */ '@/core/ui/loaders/DataLoading.vue'))
 
-import { PhMagnifyingGlass, PhX, PhPlus, PhCaretUpDown, PhImage } from '@phosphor-icons/vue'
+import { PhX, PhPlus, PhCaretUpDown, PhImage } from '@phosphor-icons/vue'
 
 // Initialize stores and i18n
 const { t, locale } = useI18n()
@@ -87,11 +96,9 @@ const isLoadingProduct = ref(false)
 const currentValidationRules = ref<ValidationRules | null>(null)
 
 // Initial values for tracking changes in edit mode
-const initialOwner = ref<string>('')
 const initialSpecialistsGroups = ref<string[]>([])
 
 // ItemSelector state
-const showOwnerSelector = ref(false)
 const showSpecialistsGroupsSelector = ref(false)
 
 // Picture picker state
@@ -110,7 +117,6 @@ const isUpdateButtonEnabled = computed(() => {
          !isSubmitting.value && 
          validationRulesReady.value && 
          hasChanges.value &&
-         isOwnerValid.value && 
          areSpecialistsGroupsValid.value
 })
 
@@ -158,10 +164,6 @@ const validationRulesReady = computed(() => {
 })
 
 // Check if fields changed (for edit mode)
-const isOwnerChanged = computed(() => {
-  return formData.value.owner !== initialOwner.value
-})
-
 const areSpecialistsGroupsChanged = computed(() => {
   const current = formData.value.specialistsGroups
   const initial = initialSpecialistsGroups.value
@@ -174,50 +176,6 @@ const areSpecialistsGroupsChanged = computed(() => {
   
   return !currentSorted.every((val, idx) => val === initialSorted[idx])
 })
-
-// Helper function to validate a single username
-const validateSingleUsername = (username: string): { isValid: boolean; error?: string } => {
-  if (!validationRulesReady.value || !currentValidationRules.value) {
-    return { isValid: false, error: t('admin.products.editor.validation.rulesNotLoaded') }
-  }
-
-  if (!username || username.trim().length === 0) {
-    return { isValid: false, error: t('admin.products.editor.validation.owner.required') }
-  }
-
-  const rules = currentValidationRules.value.wellKnownFields.userName
-
-  // Check length
-  if (username.length < rules.minLength) {
-    return { isValid: false, error: t('admin.products.editor.validation.owner.minLength', { length: rules.minLength }) }
-  }
-  if (username.length > rules.maxLength) {
-    return { isValid: false, error: t('admin.products.editor.validation.owner.maxLength', { length: rules.maxLength }) }
-  }
-
-  // Check latinOnly
-  if (rules.latinOnly) {
-    const basePattern = rules.allowNumbers 
-      ? (rules.allowUsernameChars ? '[a-zA-Z0-9._-]' : '[a-zA-Z0-9]')
-      : (rules.allowUsernameChars ? '[a-zA-Z._-]' : '[a-zA-Z]')
-    const latinRegex = new RegExp(`^${basePattern}+$`)
-    if (!latinRegex.test(username)) {
-      return { isValid: false, error: t('admin.products.editor.validation.owner.latinOnly') }
-    }
-  }
-
-  // Check allowNumbers
-  if (!rules.allowNumbers && /[0-9]/.test(username)) {
-    return { isValid: false, error: t('admin.products.editor.validation.owner.noNumbers') }
-  }
-
-  // Check allowUsernameChars
-  if (!rules.allowUsernameChars && /[._-]/.test(username)) {
-    return { isValid: false, error: t('admin.products.editor.validation.owner.noSpecialChars') }
-  }
-
-  return { isValid: true }
-}
 
 // Helper function to validate a single group name
 const validateSingleGroupName = (groupName: string): { isValid: boolean; error?: string } => {
@@ -263,45 +221,7 @@ const validateSingleGroupName = (groupName: string): { isValid: boolean; error?:
   return { isValid: true }
 }
 
-// Dynamic validation rules for owner
-const dynamicOwnerRules = computed(() => {
-  if (!validationRulesReady.value || !currentValidationRules.value) {
-    return [
-      () => !publicStore.validationRulesError || t('admin.products.editor.validation.rulesNotLoaded')
-    ]
-  }
-
-  const rules = currentValidationRules.value.wellKnownFields.userName
-  const validationRules: Array<(v: string) => string | boolean> = []
-
-  // Required field
-  validationRules.push((v: string) => !!v || t('admin.products.editor.validation.owner.required'))
-
-  // Length rules
-  validationRules.push((v: string) => (v && v.length >= rules.minLength) || t('admin.products.editor.validation.owner.minLength', { length: rules.minLength }))
-  validationRules.push((v: string) => (v && v.length <= rules.maxLength) || t('admin.products.editor.validation.owner.maxLength', { length: rules.maxLength }))
-
-  // Character requirements
-  if (rules.latinOnly) {
-    const basePattern = rules.allowNumbers 
-      ? (rules.allowUsernameChars ? '[a-zA-Z0-9._-]' : '[a-zA-Z0-9]')
-      : (rules.allowUsernameChars ? '[a-zA-Z._-]' : '[a-zA-Z]')
-    const latinRegex = new RegExp(`^${basePattern}+$`)
-    validationRules.push((v: string) => latinRegex.test(v) || t('admin.products.editor.validation.owner.latinOnly'))
-  }
-
-  if (!rules.allowNumbers) {
-    validationRules.push((v: string) => !/[0-9]/.test(v) || t('admin.products.editor.validation.owner.noNumbers'))
-  }
-
-  if (!rules.allowUsernameChars) {
-    validationRules.push((v: string) => !/[._-]/.test(v) || t('admin.products.editor.validation.owner.noSpecialChars'))
-  }
-
-  return validationRules
-})
-
-// Validation rules (keeping existing non-owner rules)
+// Validation rules
 const productCodeRules = computed(() => [
   (v: string) => !!v || t('admin.products.editor.validation.productCode.required'),
   (v: string) => (v && v.length >= 3) || t('admin.products.editor.validation.productCode.minLength')
@@ -326,25 +246,6 @@ const shortDescRules = computed(() => [
 ])
 
 // Computed properties for field validity with mode awareness
-const isOwnerValid = computed(() => {
-  // In CREATE mode, always validate
-  if (isCreationMode.value) {
-    const result = validateSingleUsername(formData.value.owner)
-    return result.isValid
-  }
-  
-  // In EDIT mode, only validate if changed
-  if (isEditMode.value) {
-    if (!isOwnerChanged.value) {
-      return true // Not changed, consider valid
-    }
-    const result = validateSingleUsername(formData.value.owner)
-    return result.isValid
-  }
-  
-  return false
-})
-
 const areSpecialistsGroupsValid = computed(() => {
   // In CREATE mode, always validate
   if (isCreationMode.value) {
@@ -378,6 +279,37 @@ const areSpecialistsGroupsValid = computed(() => {
   return false
 })
 
+// Check if minimum required fields are filled and valid for product creation
+const isCreateButtonEnabled = computed(() => {
+  // Product code must be filled and valid (min 3 characters)
+  if (!formData.value.productCode || formData.value.productCode.trim().length < 3) {
+    return false
+  }
+  
+  // At least one language must have both name and shortDesc filled and valid
+  const enTranslation = formData.value.translations?.en
+  const ruTranslation = formData.value.translations?.ru
+  
+  // Check English translation
+  const enValid = enTranslation?.name && 
+                  enTranslation.name.trim().length >= 2 && 
+                  enTranslation?.shortDesc && 
+                  enTranslation.shortDesc.trim().length >= 10
+  
+  // Check Russian translation
+  const ruValid = ruTranslation?.name && 
+                  ruTranslation.name.trim().length >= 2 && 
+                  ruTranslation?.shortDesc && 
+                  ruTranslation.shortDesc.trim().length >= 10
+  
+  // At least one language must be valid
+  if (!enValid && !ruValid) {
+    return false
+  }
+  
+  return true
+})
+
 // Helper function to generate UUID
 const generateUUID = (): string => {
   return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
@@ -402,13 +334,21 @@ const loadValidationRules = async () => {
 
 // Methods
 const createProduct = async () => {
-  // Check if validation rules are loaded
-  if (!validationRulesReady.value) {
-    uiStore.showErrorSnackbar(t('admin.products.editor.messages.validation.rulesNotLoaded'))
+  // Check minimum required fields: product code, name, and short description
+  if (!formData.value.productCode || formData.value.productCode.trim().length === 0) {
+    uiStore.showErrorSnackbar(t('admin.products.editor.validation.productCode.required'))
     return
   }
-
-  if (!form.value?.validate()) {
+  
+  // Check if at least one language has both name and shortDesc
+  const enTranslation = formData.value.translations?.en
+  const ruTranslation = formData.value.translations?.ru
+  const hasEnglish = enTranslation?.name && enTranslation.name.trim().length > 0 && 
+                     enTranslation?.shortDesc && enTranslation.shortDesc.trim().length > 0
+  const hasRussian = ruTranslation?.name && ruTranslation.name.trim().length > 0 && 
+                     ruTranslation?.shortDesc && ruTranslation.shortDesc.trim().length > 0
+  
+  if (!hasEnglish && !hasRussian) {
     uiStore.showErrorSnackbar(t('admin.products.editor.messages.validation.fillRequired'))
     return
   }
@@ -452,7 +392,6 @@ const createProduct = async () => {
       productCode: formData.value.productCode,
       translationKey: translationKey,
       statusCode: formData.value.statusCode || 'draft',
-      owner: formData.value.owner,
       specialistsGroups: formData.value.specialistsGroups,
       translations: translations
     }
@@ -550,16 +489,6 @@ const updateJsonbField = (fieldName: string, event: Event) => {
 }
 
 // ItemSelector handlers
-const handleOwnerSelected = async (result: any) => {
-  if (result && result.success && result.selectedUser && result.selectedUser.name) {
-    formData.value.owner = result.selectedUser.name
-    uiStore.showSuccessSnackbar(t('admin.products.editor.messages.owner.selected'))
-  } else {
-    uiStore.showErrorSnackbar(result?.message || t('admin.products.editor.messages.owner.error'))
-  }
-  showOwnerSelector.value = false
-}
-
 const handleSpecialistsGroupsSelected = async (result: any) => {
   if (result && result.success && result.selectedItems) {
     // Handle multiple selected groups - add to existing ones
@@ -616,7 +545,6 @@ const loadProductData = async () => {
         productsStore.setEditingProductData(productData)
         
         // Save initial values for tracking changes
-        initialOwner.value = formData.value.owner || ''
         initialSpecialistsGroups.value = [...(formData.value.specialistsGroups || [])]
         
         uiStore.showSuccessSnackbar(t('admin.products.editor.messages.data.loaded'))
@@ -670,7 +598,6 @@ onMounted(async () => {
     }
     
     // Initialize empty initial values for creation mode
-    initialOwner.value = ''
     initialSpecialistsGroups.value = []
   } else if (isEditMode.value && editingProductId.value) {
     // Check if we need to load data
@@ -679,7 +606,6 @@ onMounted(async () => {
       await loadProductData()
     } else {
       // Data already loaded, just save initial values
-      initialOwner.value = formData.value.owner || ''
       initialSpecialistsGroups.value = [...(formData.value.specialistsGroups || [])]
     }
   }
@@ -693,6 +619,21 @@ onMounted(async () => {
     
     <!-- Main content (left part) -->
     <div v-else class="flex-grow-1 main-content-area">
+      <!-- Product Info Section -->
+      <div class="product-info-section px-4 pt-4">
+        <div class="info-row-inline">
+          <!-- Owner -->
+          <div class="info-item">
+            <div class="info-label">
+              {{ t('admin.products.editor.productInfo.owner') }}:
+            </div>
+            <div class="info-value product-name">
+              {{ formData.owner || 'N/A' }}
+            </div>
+          </div>
+        </div>
+      </div>
+
       <div class="px-4 pt-4">
         <v-form
           ref="form"
@@ -778,44 +719,11 @@ onMounted(async () => {
           </v-col>
         </v-row>
 
-        <!-- Contacts Section -->
+        <!-- Specialists Groups Section -->
         <v-row>
           <v-col cols="12">
-            <div class="card-header mt-6">
-              <v-card-title class="text-subtitle-1">
-                {{ t('admin.products.editor.contacts.title').toLowerCase() }}
-              </v-card-title>
-              <v-divider class="section-divider" />
-            </div>
-
-            <!-- Owner -->
-            <v-row class="pt-3">
-              <v-col
-                cols="12"
-                md="6"
-              >
-                <div class="d-flex align-center">
-                  <v-text-field
-                    v-model="formData.owner"
-                    :label="t('admin.products.editor.contacts.owner.label')"
-                    :rules="dynamicOwnerRules"
-                    readonly
-                    variant="outlined"
-                    color="teal"
-                    required
-                  >
-                    <template #append-inner>
-                      <div style="cursor: pointer" @click="showOwnerSelector = true">
-                        <PhMagnifyingGlass />
-                      </div>
-                    </template>
-                  </v-text-field>
-                </div>
-              </v-col>
-            </v-row>
-
             <!-- Specialists Groups -->
-            <v-row>
+            <v-row class="pt-3">
               <v-col
                 cols="12"
               >
@@ -1016,8 +924,8 @@ onMounted(async () => {
           block
           color="teal"
           variant="outlined"
-          :disabled="!isFormValid || isSubmitting || !validationRulesReady || !isOwnerValid || !areSpecialistsGroupsValid"
-          class="mb-3"
+          :disabled="!isCreateButtonEnabled || isSubmitting"
+          :class="['mb-3', { 'btn-glow-active': isCreateButtonEnabled && !isSubmitting }]"
           @click="createProduct"
         >
           {{ t('admin.products.editor.actions.create').toUpperCase() }}
@@ -1051,22 +959,6 @@ onMounted(async () => {
   </div>
 
   <!-- ItemSelector Modals -->
-  <v-dialog
-    v-model="showOwnerSelector"
-    max-width="700"
-  >
-    <ItemSelector 
-      :title="t('admin.products.editor.contacts.owner.select')"
-      search-service="searchUsers"
-      action-service="returnSelectedUsername"
-      :max-results="20"
-      :max-items="1"
-      :action-button-text="t('admin.products.editor.actions.save')"
-      @close="showOwnerSelector = false" 
-      @action-performed="handleOwnerSelected"
-    />
-  </v-dialog>
-
   <v-dialog
     v-model="showSpecialistsGroupsSelector"
     max-width="700"
@@ -1166,6 +1058,59 @@ onMounted(async () => {
   min-width: 0;
 }
 
+/* Product info section styles */
+.product-info-section {
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+  padding-bottom: 16px;
+}
+
+.info-row-inline {
+  display: flex;
+  gap: 40px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.info-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.info-label {
+  font-size: 0.875rem;
+  color: rgba(0, 0, 0, 0.75);
+  font-weight: 500;
+}
+
+.info-value {
+  font-size: 0.875rem;
+  color: rgba(0, 0, 0, 0.87);
+  word-break: break-word;
+}
+
+.product-code {
+  font-family: 'Roboto Mono', monospace;
+  font-size: 0.875rem;
+  color: rgba(0, 0, 0, 0.75);
+  background-color: rgba(0, 0, 0, 0.05);
+  padding: 4px 8px;
+  border-radius: 4px;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  display: inline-block;
+}
+
+.product-name {
+  font-family: 'Roboto Mono', monospace;
+  font-size: 0.875rem;
+  color: rgba(0, 0, 0, 0.75);
+  background-color: rgba(0, 0, 0, 0.05);
+  padding: 4px 8px;
+  border-radius: 4px;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  display: inline-block;
+}
+
 /* Sidebar styles */
 .side-bar-container {
   width: 280px;
@@ -1247,7 +1192,7 @@ onMounted(async () => {
   text-align: center;
 }
 
-/* Update button glow animation for unsaved changes */
+/* Create and Update button glow animation when active */
 .btn-glow-active {
   animation: soft-glow 2s ease-in-out infinite;
   box-shadow: 0 0 8px rgba(20, 184, 166, 0.3);

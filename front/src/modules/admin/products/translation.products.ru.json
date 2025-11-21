@@ -2,7 +2,7 @@
   "admin": {
     "products": {
       "sections": {
-        "productsList": "управление продуктами",
+        "productsList": "список продуктов",
         "productEditor": "редактор продукта",
         "settings": "настройки"
       },
@@ -41,6 +41,7 @@
         "sections": {
           "details": "детали",
           "options": "опции",
+          "relatedOptions": "связанные опции",
           "preferences": "предпочтения"
         },
         "languages": {
@@ -50,7 +51,8 @@
         "productInfo": {
           "title": "информация о продукте",
           "productCode": "код продукта",
-          "productName": "название продукта"
+          "productName": "название продукта",
+          "owner": "владелец"
         },
         "basic": {
           "title": "основная информация",
@@ -89,7 +91,7 @@
             "select": "выбрать владельца"
           },
           "specialists": {
-            "label": "специалисты",
+            "label": "специалисты продукта",
             "select": "выбрать группы со специалистами"
           },
           "addGroups": "добавить группы",

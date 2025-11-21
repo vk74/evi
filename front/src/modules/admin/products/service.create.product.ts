@@ -44,8 +44,7 @@ export const serviceCreateProduct = {
 
     logger.info('Creating product', {
       productCode: productData.productCode,
-      translationKey: productData.translationKey,
-      owner: productData.owner
+      translationKey: productData.translationKey
     })
 
     // Debug: Log full productData received by service

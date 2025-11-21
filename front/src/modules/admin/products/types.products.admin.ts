@@ -71,7 +71,6 @@ export interface ProductFormData {
 export interface CreateProductRequest {
   productCode: string
   translationKey: string
-  owner: string
   specialistsGroups: string[]
   translations: ProductTranslations
   statusCode?: string

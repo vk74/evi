@@ -93,14 +93,6 @@ async function validateUpdateProductData(data: UpdateProductRequest, req: Reques
         // no-op: DB enforces constraints
     }
 
-    // Validate owner if provided (well-known)
-    if (data.owner !== undefined && data.owner !== '') {
-        const ownerResult = await validateField({ value: data.owner, fieldType: 'userName' }, req);
-        if (!ownerResult.isValid && ownerResult.error) {
-            errors.push(`Owner: ${ownerResult.error}`);
-        }
-    }
-
     // Validate specialist groups if provided
     if (data.specialistsGroups !== undefined) {
         if (!Array.isArray(data.specialistsGroups)) {
@@ -527,71 +519,6 @@ async function updateProductTranslations(
 }
 
 /**
- * Updates product owners
- * @param client - Database client
- * @param productId - Product ID
- * @param owner - Owner username
- * @param updatedBy - User ID who is updating
- * @returns Object with changes or null if no changes
- */
-async function updateProductOwners(
-    client: any,
-    productId: string,
-    owner: string | undefined,
-    updatedBy: string
-): Promise<{ changes: Record<string, { old: string | null, new: string | null }> } | null> {
-    // Get current owners from database
-    const currentOwnersResult = await client.query(`
-        SELECT u.username, pu.role_type 
-        FROM app.product_users pu
-        JOIN app.users u ON pu.user_id = u.user_id
-        WHERE pu.product_id = $1 AND pu.role_type = 'owner'
-    `, [productId]);
-    
-    let currentOwner: string | null = null;
-    
-    currentOwnersResult.rows.forEach((row: any) => {
-        if (row.role_type === 'owner') {
-            currentOwner = row.username;
-        }
-    });
-    
-    // Normalize undefined to null for comparison
-    const newOwner = owner || null;
-    
-    const changes: Record<string, { old: string | null, new: string | null }> = {};
-    
-    // Compare owner
-    if (newOwner !== currentOwner) {
-        changes.owner = {
-            old: currentOwner,
-            new: newOwner
-        };
-    }
-    
-    // If no changes, return null
-    if (Object.keys(changes).length === 0) {
-        return null;
-    }
-    
-    // Clear existing owner
-    await client.query("DELETE FROM app.product_users WHERE product_id = $1 AND role_type = 'owner'", [productId]);
-
-    // Add new owner if provided
-    if (owner) {
-        const ownerUuid = await getUuidByUsername(owner);
-        if (ownerUuid) {
-            await client.query(
-                'INSERT INTO app.product_users (product_id, user_id, role_type, created_by) VALUES ($1, $2, $3, $4)',
-                [productId, ownerUuid, 'owner', updatedBy]
-            );
-        }
-    }
-    
-    return { changes };
-}
-
-/**
  * Updates product specialist groups
  * @param client - Database client
  * @param productId - Product ID
@@ -741,24 +668,6 @@ export async function updateProduct(data: UpdateProductRequest, req: Request): P
                         productCode: productCode,
                         languageCodes: translationsChanges.languageCodes,
                         fieldsChanged: translationsChanges.fieldsChanged
-                    }
-                });
-            }
-        }
-
-        // Update owners if provided
-        if (data.owner !== undefined) {
-            const ownersChanges = await updateProductOwners(client, data.productId, data.owner, requestorUuid);
-            
-            // Publish event only if there are actual changes
-            if (ownersChanges && Object.keys(ownersChanges.changes).length > 0) {
-                await createAndPublishEvent({
-                    eventName: PRODUCT_UPDATE_EVENTS.OWNERS_UPDATED.eventName,
-                    req: req,
-                    payload: {
-                        productId: data.productId,
-                        productCode: productCode,
-                        changes: ownersChanges.changes
                     }
                 });
             }

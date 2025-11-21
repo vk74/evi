@@ -189,6 +189,16 @@ watch([isVisibleOwner, isVisibleGroups, isVisibleTechSpecs, isVisibleLongDescrip
                 {{ productName }}
               </div>
             </div>
+
+            <!-- Owner -->
+            <div class="info-item">
+              <div class="info-label">
+                {{ t('admin.products.editor.productInfo.owner') }}:
+              </div>
+              <div class="info-value product-name">
+                {{ formData.owner || 'N/A' }}
+              </div>
+            </div>
           </div>
         </div>
 

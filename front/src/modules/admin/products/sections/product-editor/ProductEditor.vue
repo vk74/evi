@@ -1,15 +1,16 @@
 <!--
   File: ProductEditor.vue
-  Version: 1.1.0
+  Version: 1.2.0
   Description: Component for creating and editing products
   Purpose: Provides interface for creating new products and editing existing ones
   Frontend file - ProductEditor.vue
-  Created: 2024-12-20
-  Last Updated: 2024-12-20
   
   Changes in v1.1.0:
   - Removed catalog publication section and ProductEditorCatalogPublication component
   - Removed 'catalog publication' from ProductEditorSectionId type
+  
+  Changes in v1.2.0:
+  - Renamed section "options" to "related options" in navigation button and translations
 -->
 
 <script setup lang="ts">
@@ -63,7 +64,7 @@ const switchSection = (section: 'details' | 'options' | 'preferences') => {
           :disabled="isCreationMode"
           @click="switchSection('options')"
         >
-          {{ t('admin.products.editor.sections.options') }}
+          {{ t('admin.products.editor.sections.relatedOptions') }}
         </v-btn>
         <v-btn
           :class="['section-btn', { 'section-active': productsStore.activeEditorSection === 'preferences' }]"

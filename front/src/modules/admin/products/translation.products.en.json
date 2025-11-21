@@ -2,7 +2,7 @@
   "admin": {
     "products": {
       "sections": {
-        "productsList": "products management",
+        "productsList": "products list",
         "productEditor": "product editor",
         "settings": "settings"
       },
@@ -41,6 +41,7 @@
         "sections": {
           "details": "details",
           "options": "options",
+          "relatedOptions": "related options",
           "preferences": "preferences"
         },
         "languages": {
@@ -50,7 +51,8 @@
         "productInfo": {
           "title": "product information",
           "productCode": "product code",
-          "productName": "product name"
+          "productName": "product name",
+          "owner": "owner"
         },
         "basic": {
           "title": "basic information",
@@ -89,7 +91,7 @@
             "select": "select owner"
           },
           "specialists": {
-            "label": "specialists",
+            "label": "product specialists",
             "select": "select groups with specialists"
           },
           "addGroups": "add groups",

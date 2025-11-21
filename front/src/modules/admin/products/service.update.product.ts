@@ -54,8 +54,7 @@ export const serviceUpdateProduct = {
     logger.info('Updating product', {
       productId: productData.productId,
       productCode: productData.productCode,
-      translationKey: productData.translationKey,
-      owner: productData.owner
+      translationKey: productData.translationKey
     })
 
     try {

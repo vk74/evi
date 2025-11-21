@@ -103,24 +103,7 @@ async function validateCreateProductData(data: CreateProductRequest, req: Reques
         errors.push('Translation key is required');
     }
 
-    // Validate owner username (well-known)
-    if (data.owner) {
-        const ownerResult = await validateField({ value: data.owner, fieldType: 'userName' }, req);
-        if (!ownerResult.isValid && ownerResult.error) {
-            errors.push(`Owner: ${ownerResult.error}`);
-        } else {
-            try {
-                const ownerUuid = await getUuidByUsername(data.owner);
-                if (!ownerUuid) {
-                    errors.push('Owner user does not exist');
-                }
-            } catch (error) {
-                errors.push('Invalid owner username');
-            }
-        }
-    } else {
-        errors.push('Owner is required');
-    }
+    // Owner is set automatically from requestorUuid, no validation needed
 
     // Validate translations - at least one language must be provided and complete
     if (data.translations && Object.keys(data.translations).length > 0) {
@@ -230,20 +213,13 @@ async function createProductTranslations(client: any, productId: string, product
  */
 async function createProductRelationships(client: any, productId: string, data: CreateProductRequest, requestorUuid: string, req: Request): Promise<void> {
     try {
-        // Create owner relationship
-        if (data.owner && data.owner.trim()) {
-            const ownerUuid = await getUuidByUsername(data.owner.trim());
-            if (ownerUuid) {
-                await client.query(queries.createProductUser, [
-                    productId,
-                    ownerUuid,
-                    'owner', // role_type
-                    requestorUuid
-                ]);
-            } else {
-                throw new Error(`Owner user '${data.owner}' not found`);
-            }
-        }
+        // Create owner relationship - owner is automatically set to the user creating the product
+        await client.query(queries.createProductUser, [
+            productId,
+            requestorUuid,
+            'owner', // role_type
+            requestorUuid
+        ]);
 
         // Create specialists groups relationships
         if (data.specialistsGroups && data.specialistsGroups.length > 0) {

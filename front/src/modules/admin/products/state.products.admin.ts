@@ -128,9 +128,6 @@ export const useProductsAdminStore = defineStore('productsAdmin', {
       if (current.statusCode !== (original.status_code || '')) {
         changes.statusCode = current.statusCode
       }
-      if (current.owner !== (original.owner || '')) {
-        changes.owner = current.owner
-      }
 
       // Compare specialistsGroups arrays
       const currentGroups = current.specialistsGroups || []
@@ -417,7 +414,6 @@ export const useProductsAdminStore = defineStore('productsAdmin', {
         current.productCode !== stored.product_code ||
         current.translationKey !== stored.translation_key ||
         current.statusCode !== (stored.status_code || '') ||
-        current.owner !== (stored.owner || '') ||
         JSON.stringify(current.specialistsGroups) !== JSON.stringify(stored.specialistsGroups || []) ||
         JSON.stringify(current.translations) !== JSON.stringify(stored.translations || {}) ||
         JSON.stringify(current.visibility) !== JSON.stringify({
