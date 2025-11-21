@@ -1,5 +1,5 @@
 /**
- * events.admin.products.ts - version 1.4.0
+ * events.admin.products.ts - version 1.4.1
  * Event definitions for products administration module.
  * 
  * Contains event templates for products admin functionality.
@@ -16,6 +16,9 @@
  * - Improved payload with oldValue/newValue for UPDATE operations
  * - Lowered severity for technical events (fetch operations)
  * - Better payload structure for detailed auditing
+ * 
+ * Changes in v1.4.1:
+ * - Removed PRODUCT_TYPE_CHANGED event (legacy event for removed product type system)
  * 
  * Backend file - events.admin.products.ts
  */
@@ -195,16 +198,6 @@ export const PRODUCT_UPDATE_EVENTS = {
         severity: 'info',
         eventMessage: 'Product translation key changed',
         payload: null, // Will be { productId: string, productCode: string, oldTranslationKey: string, newTranslationKey: string }
-        version: '1.0.0'
-    },
-
-    PRODUCT_TYPE_CHANGED: {
-        eventName: 'adminProducts.update.product_type_changed',
-        source: 'admin-products',
-        eventType: 'app',
-        severity: 'info',
-        eventMessage: 'Product type changed',
-        payload: null, // Will be { productId: string, productCode: string, oldCanBeOption: boolean, newCanBeOption: boolean, oldOptionOnly: boolean, newOptionOnly: boolean }
         version: '1.0.0'
     },
 

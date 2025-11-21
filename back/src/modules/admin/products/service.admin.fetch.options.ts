@@ -1,5 +1,5 @@
 /**
- * service.admin.fetch.options.ts - version 1.1.1
+ * service.admin.fetch.options.ts - version 1.1.2
  * Service for fetching options (all products except the main product).
  * 
  * Handles database queries for options list with user roles and translations.
@@ -10,6 +10,9 @@
  * - Removed can_be_option and option_only filtering from queries
  * - fetchAllOptions now returns all products except the main product (no type filtering)
  * - All products can now be paired with each other
+ * 
+ * Changes in v1.1.2:
+ * - Removed 'type' from validSortFields array (legacy field no longer exists)
  */
 
 import { Pool } from 'pg'
@@ -119,7 +122,7 @@ export const fetchOptions = async (
         const searchPattern = searchQuery ? `%${searchQuery}%` : ''
         
         // Validate sortBy parameter
-        const validSortFields = ['product_code', 'name', 'type']
+        const validSortFields = ['product_code', 'name']
         const validatedSortBy = sortBy && validSortFields.includes(sortBy) ? sortBy : 'product_code'
 
         // Execute count query first to get total items

@@ -1,6 +1,6 @@
 /**
- * service.fetch.options.ts - version 1.2.0
- * Frontend service for fetching options (products with type 'option' or 'productAndOption').
+ * service.fetch.options.ts - version 1.2.1
+ * Frontend service for fetching options (all products except the main product).
  * 
  * This is a frontend file. The file provides API client for options list operations.
  * Logic: Handles HTTP requests to backend API with proper error handling and response processing.
@@ -11,6 +11,9 @@
  * 
  * Changes in v1.2.0:
  * - Added statusFilter parameter support for filtering options by status_code
+ * 
+ * Changes in v1.2.1:
+ * - Removed legacy comment about product types (all products are now equal, no type distinction)
  */
 
 import { api } from '@/core/api/service.axios'
@@ -56,7 +59,7 @@ export interface FetchOptionsResponse {
  */
 export const serviceFetchOptions = {
     /**
-     * Fetches options (products with type 'option' or 'productAndOption')
+     * Fetches options (all products except the main product)
      * @param params - Request parameters
      * @returns Promise<FetchAllProductsResult>
      */
