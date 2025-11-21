@@ -1,6 +1,6 @@
 <!--
   File: ProductEditorDetails.vue
-  Version: 1.7.0
+  Version: 1.7.1
   Description: Component for product details form and actions
   Purpose: Provides interface for creating and editing product details with dynamic validation
   Frontend file - ProductEditorDetails.vue
@@ -59,6 +59,10 @@
   - Removed owner from isUpdateButtonEnabled check
   - Removed owner from createProduct payload (set automatically on backend)
   - Removed owner from change tracking
+  
+  Changes in v1.7.1:
+  - Restored ItemSelector import for specialists groups selection
+  - Fixed event handler name from @action-performed to @actionPerformed
 -->
 
 <script setup lang="ts">
@@ -75,6 +79,7 @@ import { usePublicSettingsStore, type ValidationRules } from '@/core/state/state
 import type { ProductStatus } from '../../types.products.admin'
 
 const DataLoading = defineAsyncComponent(() => import(/* webpackChunkName: "ui-data-loading" */ '@/core/ui/loaders/DataLoading.vue'))
+const ItemSelector = defineAsyncComponent(() => import(/* webpackChunkName: "ui-item-selector" */ '@/core/ui/modals/item-selector/ItemSelector.vue'))
 
 import { PhX, PhPlus, PhCaretUpDown, PhImage } from '@phosphor-icons/vue'
 
@@ -971,7 +976,7 @@ onMounted(async () => {
       :max-items="10"
       :action-button-text="t('admin.products.editor.actions.save')"
       @close="showSpecialistsGroupsSelector = false" 
-      @action-performed="handleSpecialistsGroupsSelected"
+      @actionPerformed="handleSpecialistsGroupsSelected"
     />
   </v-dialog>
 </template>
