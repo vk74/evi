@@ -1,5 +1,5 @@
 /**
- * events.admin.products.ts - version 1.4.1
+ * events.admin.products.ts - version 1.4.2
  * Event definitions for products administration module.
  * 
  * Contains event templates for products admin functionality.
@@ -19,6 +19,9 @@
  * 
  * Changes in v1.4.1:
  * - Removed PRODUCT_TYPE_CHANGED event (legacy event for removed product type system)
+ * 
+ * Changes in v1.4.2:
+ * - Added PRODUCT_ASSIGN_OWNER_EVENTS collection for product owner assignment operations
  * 
  * Backend file - events.admin.products.ts
  */
@@ -510,6 +513,72 @@ export const PRODUCT_OPTION_PAIRS_DELETE_EVENTS = {
         severity: 'error' as const,
         eventMessage: 'Pairs delete error',
         payload: null, // Will be { mainProductId: string, mode: 'all' | 'selected', error: string }
+        errorData: null,
+        version: '1.0.0'
+    }
+};
+
+// Product assign owner events
+export const PRODUCT_ASSIGN_OWNER_EVENTS = {
+    VALIDATION_ERROR: {
+        eventName: 'adminProducts.assignOwner.validation.error',
+        source: 'admin-products',
+        eventType: 'app',
+        severity: 'error',
+        eventMessage: 'Product owner assignment validation failed',
+        payload: null, // Will be { error: string, productIds?: string[] }
+        errorData: null,
+        version: '1.0.0'
+    },
+
+    PRODUCTS_NOT_FOUND: {
+        eventName: 'adminProducts.assignOwner.products_not_found',
+        source: 'admin-products',
+        eventType: 'app',
+        severity: 'warning',
+        eventMessage: 'Some products not found for owner assignment',
+        payload: null, // Will be { productIds: string[], notFoundIds: string[] }
+        version: '1.0.0'
+    },
+
+    OWNER_NOT_FOUND: {
+        eventName: 'adminProducts.assignOwner.owner_not_found',
+        source: 'admin-products',
+        eventType: 'app',
+        severity: 'error',
+        eventMessage: 'New owner user not found',
+        payload: null, // Will be { newOwnerUsername: string }
+        errorData: null,
+        version: '1.0.0'
+    },
+
+    SUCCESS: {
+        eventName: 'adminProducts.assignOwner.success',
+        source: 'admin-products',
+        eventType: 'app',
+        severity: 'info',
+        eventMessage: 'Owner assigned successfully to all products',
+        payload: null, // Will be { productIds: string[], productCodes: string[], newOwnerUsername: string, totalUpdated: number }
+        version: '1.0.0'
+    },
+
+    PARTIAL_SUCCESS: {
+        eventName: 'adminProducts.assignOwner.partial_success',
+        source: 'admin-products',
+        eventType: 'app',
+        severity: 'warning',
+        eventMessage: 'Owner assigned to some products only',
+        payload: null, // Will be { productIds: string[], productCodes: string[], updatedIds: string[], notFoundIds: string[], newOwnerUsername: string, totalUpdated: number, totalErrors: number }
+        version: '1.0.0'
+    },
+
+    ERROR: {
+        eventName: 'adminProducts.assignOwner.error',
+        source: 'admin-products',
+        eventType: 'app',
+        severity: 'error',
+        eventMessage: 'Product owner assignment failed',
+        payload: null, // Will be { productIds: string[], newOwnerUsername: string, error: string }
         errorData: null,
         version: '1.0.0'
     }

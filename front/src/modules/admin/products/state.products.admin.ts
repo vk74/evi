@@ -1,6 +1,6 @@
 /**
  * @file state.products.admin.ts
- * Version: 1.7.0
+ * Version: 1.7.1
  * Pinia store for managing products admin module state.
  * Frontend file that handles active section management for products administration.
  *
@@ -47,6 +47,10 @@
  * - Removed backupOwner from change tracking in getChangedFields
  * - Removed backupOwner from hasUnsavedChanges
  * - Updated populateFormWithProduct and populateFormWithFullProductData
+ * 
+ * Changes in v1.7.1:
+ * - Added assignOwnerProductIds state field for temporary storage of selected product IDs
+ * - Added setAssignOwnerProductIds and clearAssignOwnerProductIds actions
  */
 import { defineStore } from 'pinia'
 import type {
@@ -65,6 +69,7 @@ export const useProductsAdminStore = defineStore('productsAdmin', {
   state: (): ProductsAdminState & { 
     originalProductData: ProductWithFullData | null
     statuses: ProductStatus[] | null
+    assignOwnerProductIds: string[] | null
   } => ({
     activeSection: 'products-list',
     activeEditorSection: 'details',
@@ -73,6 +78,7 @@ export const useProductsAdminStore = defineStore('productsAdmin', {
     editingProductData: null,
     originalProductData: null,
     statuses: null,
+    assignOwnerProductIds: null,
     formData: {
       productCode: '',
       translationKey: '',
@@ -432,6 +438,20 @@ export const useProductsAdminStore = defineStore('productsAdmin', {
       if (this.editingProductData) {
         this.populateFormWithFullProductData(this.editingProductData)
       }
+    },
+
+    /**
+     * Sets selected product IDs for assign owner operation
+     */
+    setAssignOwnerProductIds(productIds: string[]): void {
+      this.assignOwnerProductIds = productIds
+    },
+
+    /**
+     * Clears selected product IDs for assign owner operation
+     */
+    clearAssignOwnerProductIds(): void {
+      this.assignOwnerProductIds = null
     }
   },
 

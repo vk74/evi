@@ -212,7 +212,13 @@
           },
           "deleteSuccess": "{{count}} продукт(ов) успешно удален(о)",
           "selectionCleared": "выбор очищен",
-          "assignOwnerNotImplemented": "назначение владельца пока не реализовано"
+          "assignOwner": {
+            "success": "Владелец успешно назначен для {count} продукт(ов)",
+            "error": "Не удалось назначить владельца",
+            "noProductsSelected": "Не выбрано продуктов",
+            "noOwnerSelected": "Не выбран владелец",
+            "partialSuccess": "Владелец назначен для {success} из {total} продуктов"
+          }
         }
       },
       "table": {

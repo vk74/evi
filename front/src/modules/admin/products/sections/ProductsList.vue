@@ -1,4 +1,4 @@
-/**
+<!--
  * @file ProductsList.vue
  * Version: 1.3.0
  * Products list section component.
@@ -33,9 +33,9 @@
  * - Removed getProductTypeText function
  * - Removed typeFilter ref and related handlers
  * - All products are now equal, no type distinction
- */
+-->
 <script setup lang="ts">
-import { ref, computed, onMounted, watch } from 'vue'
+import { ref, computed, onMounted, watch, defineAsyncComponent } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useUiStore } from '@/core/state/uistate'
 import { useProductsAdminStore } from '../state.products.admin'
@@ -56,6 +56,7 @@ import {
 } from '@phosphor-icons/vue'
 import Paginator from '@/core/ui/paginator/Paginator.vue'
 import debounce from 'lodash/debounce'
+const ItemSelector = defineAsyncComponent(() => import(/* webpackChunkName: "ui-item-selector" */ '@/core/ui/modals/item-selector/ItemSelector.vue'))
 
 // Types
 interface TableHeader {
@@ -88,6 +89,7 @@ const sortDesc = ref<boolean>(false)
 
 // Dialog state
 const showDeleteDialog = ref(false)
+const showAssignOwnerSelector = ref(false)
 
 // Selected product data
 const selectedProducts = ref<Set<string>>(new Set())
@@ -212,16 +214,16 @@ const editProduct = async () => {
 
 const assignOwner = () => {
   const selectedIds = Array.from(selectedProducts.value)
-  if (selectedIds.length > 0) {
-    // TODO: Implement owner assignment
-    uiStore.showSnackbar({
-      message: t('admin.products.messages.assignOwnerNotImplemented'),
-      type: 'info',
-      timeout: 3000,
-      closable: true,
-      position: 'bottom'
-    })
+  if (selectedIds.length === 0) {
+    uiStore.showErrorSnackbar(t('admin.products.messages.assignOwner.noProductsSelected'))
+    return
   }
+  
+  // Save selected product IDs to store
+  productsStore.setAssignOwnerProductIds(selectedIds)
+  
+  // Open ItemSelector modal
+  showAssignOwnerSelector.value = true
 }
 
 const deleteProduct = () => {
@@ -314,6 +316,10 @@ const clearSelections = () => {
     closable: true,
     position: 'bottom'
   })
+}
+
+const clearSelectionsSilently = () => {
+  selectedProducts.value.clear()
 }
 
 const selectAll = () => {
@@ -482,6 +488,29 @@ const clearFilters = async () => {
   publishedFilter.value = 'all'
   page.value = 1
   await performSearch()
+}
+
+// Assign owner handlers
+const handleAssignOwnerPerformed = async () => {
+  // Clear selections silently (without toast message) to avoid overlapping with assign owner result message
+  clearSelectionsSilently()
+  
+  // Clear store
+  productsStore.clearAssignOwnerProductIds()
+  
+  // Close modal
+  showAssignOwnerSelector.value = false
+  
+  // Refresh the list after a small delay to ensure toast message from assign owner service is shown first
+  setTimeout(async () => {
+    await performSearch()
+  }, 100)
+}
+
+const handleAssignOwnerClose = () => {
+  // Clear store when modal is closed
+  productsStore.clearAssignOwnerProductIds()
+  showAssignOwnerSelector.value = false
 }
 </script>
 
@@ -796,6 +825,23 @@ const clearFilters = async () => {
           </v-btn>
         </v-card-actions>
       </v-card>
+    </v-dialog>
+
+    <!-- Assign Owner ItemSelector dialog -->
+    <v-dialog
+      v-model="showAssignOwnerSelector"
+      max-width="700"
+    >
+      <ItemSelector 
+        :title="t('admin.products.actions.assignOwner')"
+        search-service="searchUsers"
+        action-service="assignProductOwner"
+        :max-results="20"
+        :max-items="1"
+        :action-button-text="t('admin.products.editor.actions.save')"
+        @close="handleAssignOwnerClose" 
+        @actionPerformed="handleAssignOwnerPerformed"
+      />
     </v-dialog>
   </v-card>
 </template>

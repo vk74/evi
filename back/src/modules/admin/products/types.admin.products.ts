@@ -1,5 +1,5 @@
 /**
- * types.admin.products.ts - version 1.3.0
+ * types.admin.products.ts - version 1.3.1
  * Type definitions for products administration module.
  * 
  * Contains TypeScript interfaces and types for products admin functionality.
@@ -36,6 +36,9 @@
   - Removed backupOwner from CreateProductRequest, UpdateProductRequest, ProductWithFullData, UpdateProductResponse
   - Removed JSONB fields (areaSpecifics, industrySpecifics, keyFeatures, productOverview) from ProductTranslationData and ProductTranslation
   - Removed visibility flags (is_visible_area_specs, is_visible_industry_specs, is_visible_key_features, is_visible_overview) from Product, ProductListItem, UpdateProductRequest
+  
+  Changes in v1.3.1:
+  - Added AssignProductOwnerRequest and AssignProductOwnerResponse interfaces
  */
 
 // Language code enum
@@ -272,5 +275,22 @@ export interface DeleteProductsResult {
     totalRequested: number
     totalDeleted: number
     totalErrors: number
+}
+
+// Assign product owner request interface
+export interface AssignProductOwnerRequest {
+    productIds: string[]
+    newOwnerUsername: string
+}
+
+// Assign product owner response interface
+export interface AssignProductOwnerResponse extends ApiResponse {
+    data?: {
+        updatedProducts: Array<{id: string, product_code: string}>
+        errors: Array<{id: string, error: string}>
+        totalRequested: number
+        totalUpdated: number
+        totalErrors: number
+    }
 }
 

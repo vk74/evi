@@ -211,8 +211,14 @@
             "noProductId": "unable to determine product ID for update"
           },
           "deleteSuccess": "{{count}} product(s) deleted successfully",
-          "selectionCleared": "selection of options for pairing is cleared",
-          "assignOwnerNotImplemented": "owner assignment not implemented yet"
+          "selectionCleared": "selection cleared",
+          "assignOwner": {
+            "success": "Owner assigned successfully to {count} product(s)",
+            "error": "Failed to assign owner",
+            "noProductsSelected": "No products selected",
+            "noOwnerSelected": "No owner selected",
+            "partialSuccess": "Owner assigned to {success} of {total} products"
+          }
         }
       },
       "table": {

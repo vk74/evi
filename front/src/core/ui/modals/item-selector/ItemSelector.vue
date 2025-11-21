@@ -22,6 +22,7 @@ import returnSelectedUsername from './service.return.selected.username'
 import returnSelectedGroup from './service.return.selected.group'
 import returnMultipleGroups from './service.return.multiple.groups'
 import returnMultipleUsernames from './service.return.multiple.usernames'
+import assignProductOwner from './service.assign.product.owner'
 // При добавлении новых сервисов, импортируйте их здесь
 
 // Маппинг имен сервисов в функции
@@ -39,6 +40,7 @@ const actionServiceMap = {
   returnSelectedGroup: returnSelectedGroup,
   returnMultipleGroups: returnMultipleGroups,
   returnMultipleUsernames: returnMultipleUsernames,
+  assignProductOwner: assignProductOwner,
   // Добавьте новые сервисы действий здесь
 }
 

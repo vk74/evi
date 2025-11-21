@@ -50,6 +50,7 @@ import updateProductController from './products/controller.admin.update.product'
 import fetchAllProductsController from './products/controller.admin.fetch.all.products';
 import fetchStatusesController from './products/controller.admin.fetch.statuses';
 import fetchOptionsController from './products/controller.admin.fetch.options';
+import assignProductOwnerController from './products/controller.admin.assign.product.owner';
 import deleteProductsController from './products/controller.admin.delete.products';
 import readProductOptionPairsController from './products/pairs/controller.admin.read.product.option.pairs';
 import createProductOptionPairsController from './products/pairs/controller.admin.create.product.option.pairs';
@@ -123,6 +124,7 @@ router.post('/api/admin/products/create', checkRateLimit, checkRequestSecurityHa
 router.get('/api/admin/products/fetch', checkRateLimit, checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, fetchProductController);
 router.post('/api/admin/products/update', checkRateLimit, checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, updateProductController);
 router.post('/api/admin/products/delete', checkRateLimit, checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, deleteProductsController);
+router.post('/api/admin/products/assign-owner', checkRateLimit, checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, assignProductOwnerController);
 
 // Product option pairs endpoints
 router.post('/api/admin/products/read-product-option-pairs', checkRateLimit, checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, readProductOptionPairsController);
