@@ -1,5 +1,5 @@
 /**
- * service.admin.create.product.ts - version 1.3.1
+ * service.admin.create.product.ts - version 1.3.2
  * Service for creating products operations.
  * 
  * Functionality:
@@ -22,6 +22,11 @@
  * Changes in v1.3.1:
  * - Added status_code field support in product creation
  * - Uses default 'draft' status if statusCode not provided
+ * 
+ * Changes in v1.3.2:
+ * - Removed backupOwner validation and handling
+ * - Removed JSONB fields (areaSpecifics, industrySpecifics, keyFeatures, productOverview) from createProductTranslations
+ * - Removed visibility flags (is_visible_area_specs, is_visible_industry_specs, is_visible_key_features, is_visible_overview) from createProductInDatabase
  */
 
 import { Request } from 'express';
@@ -117,23 +122,6 @@ async function validateCreateProductData(data: CreateProductRequest, req: Reques
         errors.push('Owner is required');
     }
 
-    // Validate backup owner username (well-known, optional)
-    if (data.backupOwner !== undefined && data.backupOwner !== '') {
-        const backupOwnerResult = await validateField({ value: data.backupOwner, fieldType: 'userName' }, req);
-        if (!backupOwnerResult.isValid && backupOwnerResult.error) {
-            errors.push(`Backup owner: ${backupOwnerResult.error}`);
-        } else {
-            try {
-                const backupOwnerUuid = await getUuidByUsername(data.backupOwner);
-                if (!backupOwnerUuid) {
-                    errors.push('Backup owner user does not exist');
-                }
-            } catch (error) {
-                errors.push('Invalid backup owner username');
-            }
-        }
-    }
-
     // Validate translations - at least one language must be provided and complete
     if (data.translations && Object.keys(data.translations).length > 0) {
         let hasValidTranslation = false;
@@ -203,10 +191,6 @@ async function createProductTranslations(client: any, productId: string, product
                 language.data.shortDesc.trim(),
                 language.data.longDesc?.trim() || null,
                 language.data.techSpecs ? JSON.stringify(language.data.techSpecs) : null,
-                language.data.areaSpecifics ? JSON.stringify(language.data.areaSpecifics) : null,
-                language.data.industrySpecifics ? JSON.stringify(language.data.industrySpecifics) : null,
-                language.data.keyFeatures ? JSON.stringify(language.data.keyFeatures) : null,
-                language.data.productOverview ? JSON.stringify(language.data.productOverview) : null,
                 requestorUuid
             ]);
 
@@ -258,21 +242,6 @@ async function createProductRelationships(client: any, productId: string, data: 
                 ]);
             } else {
                 throw new Error(`Owner user '${data.owner}' not found`);
-            }
-        }
-
-        // Create backup owner relationship
-        if (data.backupOwner && data.backupOwner.trim()) {
-            const backupOwnerUuid = await getUuidByUsername(data.backupOwner.trim());
-            if (backupOwnerUuid) {
-                await client.query(queries.createProductUser, [
-                    productId,
-                    backupOwnerUuid,
-                    'backup_owner', // role_type
-                    requestorUuid
-                ]);
-            } else {
-                throw new Error(`Backup owner user '${data.backupOwner}' not found`);
             }
         }
 
@@ -332,10 +301,6 @@ async function createProductInDatabase(data: CreateProductRequest, requestorUuid
             false, // is_visible_owner - default false
             false, // is_visible_groups - default false
             false, // is_visible_tech_specs - default false
-            false, // is_visible_area_specs - default false
-            false, // is_visible_industry_specs - default false
-            false, // is_visible_key_features - default false
-            false, // is_visible_overview - default false
             false, // is_visible_long_description - default false
             requestorUuid
         ]);

@@ -1,10 +1,13 @@
--- Version: 1.3.2
+-- Version: 1.4.0
 -- Description: Create all application tables, functions, and triggers.
 -- Backend file: 04_tables.sql
 -- Updated: mobile_phone_number -> mobile_phone field name
 -- Added: published_by and published_at columns to section_products table
 -- Updated: status_code column uses app.product_status UDT enum instead of VARCHAR with FK
 -- Updated: is_public column moved after updated_at to match dev database order
+-- Changes in v1.4.0:
+-- - Removed visibility flags: is_visible_area_specs, is_visible_industry_specs, is_visible_key_features, is_visible_overview from app.products
+-- - Removed JSONB fields: area_specifics, industry_specifics, key_features, product_overview from app.product_translations
 
 -- ===========================================
 -- Helper Functions
@@ -172,10 +175,6 @@ CREATE TABLE IF NOT EXISTS app.products (
   is_visible_owner              BOOLEAN NOT NULL DEFAULT false,
   is_visible_groups             BOOLEAN NOT NULL DEFAULT false,
   is_visible_tech_specs         BOOLEAN NOT NULL DEFAULT false,
-  is_visible_area_specs         BOOLEAN NOT NULL DEFAULT false,
-  is_visible_industry_specs     BOOLEAN NOT NULL DEFAULT false,
-  is_visible_key_features       BOOLEAN NOT NULL DEFAULT false,
-  is_visible_overview           BOOLEAN NOT NULL DEFAULT false,
   is_visible_long_description   BOOLEAN NOT NULL DEFAULT false,
 
   -- Product status
@@ -357,10 +356,6 @@ CREATE TABLE app.product_translations (
   long_desc        TEXT,
 
   tech_specs         JSONB,
-  area_specifics     JSONB,
-  industry_specifics JSONB,
-  key_features       JSONB,
-  product_overview   JSONB,
 
   -- Audit
   created_by      UUID NOT NULL DEFAULT '00000000-0000-0000-0000-00000000dead',
@@ -504,7 +499,7 @@ CREATE TRIGGER trg_check_max_options_per_product
 -- ============================================
 
 -- Add comments for product role types
-COMMENT ON TYPE app.product_user_role IS 'User roles for products: owner, backup_owner';
+COMMENT ON TYPE app.product_user_role IS 'User roles for products: owner';
 COMMENT ON TYPE app.product_group_role IS 'Group roles for products: product_specialists';
 COMMENT ON COLUMN app.product_users.role_type IS 'Role type for the user in this product';
 COMMENT ON COLUMN app.product_groups.role_type IS 'Role type for the group in this product';

@@ -88,10 +88,6 @@
             "label": "owner",
             "select": "select owner"
           },
-          "backupOwner": {
-            "label": "backup owner",
-            "select": "select backup owner"
-          },
           "specialists": {
             "label": "specialists",
             "select": "select groups with specialists"
@@ -118,18 +114,6 @@
           "title": "additional information",
           "techSpecs": {
             "label": "technical specifications"
-          },
-          "areaSpecifics": {
-            "label": "area specifics"
-          },
-          "industrySpecifics": {
-            "label": "industry specifics"
-          },
-          "keyFeatures": {
-            "label": "key features"
-          },
-          "productOverview": {
-            "label": "product overview"
           }
         },
         "visibility": {
@@ -142,18 +126,6 @@
           },
           "isVisibleTechSpecs": {
             "label": "visible tech specs"
-          },
-          "isVisibleAreaSpecs": {
-            "label": "visible area specs"
-          },
-          "isVisibleIndustrySpecs": {
-            "label": "visible industry specs"
-          },
-          "isVisibleKeyFeatures": {
-            "label": "visible key features"
-          },
-          "isVisibleOverview": {
-            "label": "visible overview"
           },
           "isVisibleLongDescription": {
             "label": "visible long description"
@@ -189,13 +161,6 @@
             "noNumbers": "owner name cannot contain numbers",
             "noSpecialChars": "owner name cannot contain special characters (. _ -)"
           },
-          "backupOwner": {
-            "minLength": "backup owner name must be at least {length} characters",
-            "maxLength": "backup owner name must not exceed {length} characters",
-            "latinOnly": "backup owner name must contain only latin characters",
-            "noNumbers": "backup owner name cannot contain numbers",
-            "noSpecialChars": "backup owner name cannot contain special characters (. _ -)"
-          },
           "specialistsGroups": {
             "required": "at least one specialists group is required",
             "minLength": "group name must be at least {length} characters",
@@ -220,10 +185,6 @@
           "owner": {
             "selected": "owner selected successfully",
             "error": "failed to select owner"
-          },
-          "backupOwner": {
-            "selected": "backup owner selected successfully",
-            "error": "failed to select backup owner"
           },
           "specialistsGroups": {
             "selected": "specialists groups selected successfully",

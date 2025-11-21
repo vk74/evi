@@ -153,7 +153,7 @@ export const PRODUCT_UPDATE_EVENTS = {
         eventType: 'app',
         severity: 'info',
         eventMessage: 'Product owners updated successfully',
-        payload: null, // Will be { productId: string, productCode: string, changes: { owner?: {old, new}, backupOwner?: {old, new} } }
+        payload: null, // Will be { productId: string, productCode: string, changes: { owner?: {old, new} } }
         version: '1.0.0'
     },
 
@@ -218,15 +218,6 @@ export const PRODUCT_UPDATE_EVENTS = {
         version: '1.0.0'
     },
 
-    BACKUP_OWNER_CHANGED: {
-        eventName: 'adminProducts.update.backup_owner_changed',
-        source: 'admin-products',
-        eventType: 'app',
-        severity: 'info',
-        eventMessage: 'Product backup owner changed',
-        payload: null, // Will be { productId: string, productCode: string, oldBackupOwner: string | undefined, newBackupOwner: string | undefined }
-        version: '1.0.0'
-    },
 
     SPECIALIST_GROUPS_CHANGED: {
         eventName: 'adminProducts.update.specialist_groups_changed',

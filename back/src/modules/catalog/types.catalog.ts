@@ -241,10 +241,6 @@ export interface DbProduct {
     short_desc: string | null;
     long_desc: string | null;
     tech_specs: Record<string, any> | null;
-    area_specifics: Record<string, any> | null;
-    industry_specifics: Record<string, any> | null;
-    key_features: Record<string, any> | null;
-    product_overview: Record<string, any> | null;
     created_at: string;
     created_by: string;
     published_at: string | null;
@@ -276,10 +272,6 @@ export interface DbProductDetails {
     short_desc: string | null;
     long_desc: string | null;
     tech_specs: Record<string, any> | null;
-    area_specifics: Record<string, any> | null;
-    industry_specifics: Record<string, any> | null;
-    key_features: Record<string, any> | null;
-    product_overview: Record<string, any> | null;
     created_at: string;
     created_by: string;
     updated_at: string | null;
@@ -298,10 +290,6 @@ export interface CatalogProductDetailsDTO {
     short_description: string | null;
     long_description: string | null;
     tech_specs: Record<string, any> | null;
-    area_specifics: Record<string, any> | null;
-    industry_specifics: Record<string, any> | null;
-    key_features: Record<string, any> | null;
-    product_overview: Record<string, any> | null;
     created_at: string;
     created_by: string;
     updated_at: string | null;

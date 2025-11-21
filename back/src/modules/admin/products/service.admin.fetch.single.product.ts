@@ -91,11 +91,7 @@ export class ServiceAdminFetchProduct {
           name: translationRow.name,
           shortDesc: translationRow.short_desc,
           longDesc: translationRow.long_desc,
-          techSpecs: translationRow.tech_specs,
-          areaSpecifics: translationRow.area_specifics,
-          industrySpecifics: translationRow.industry_specifics,
-          keyFeatures: translationRow.key_features,
-          productOverview: translationRow.product_overview
+          techSpecs: translationRow.tech_specs
         }
       }
 
@@ -103,21 +99,18 @@ export class ServiceAdminFetchProduct {
       const usersResult = await client.query(`
         SELECT user_id, role_type 
         FROM app.product_users 
-        WHERE product_id = $1 AND role_type IN ('owner', 'backup_owner')
-        ORDER BY role_type, user_id
+        WHERE product_id = $1 AND role_type = 'owner'
+        ORDER BY user_id
       `, [productId])
 
       // Process owners using helpers
       let owner: string | undefined
-      let backupOwner: string | undefined
 
       for (const row of usersResult.rows) {
         const username = await fetchUsernameByUuid(row.user_id)
         if (username) {
           if (row.role_type === 'owner') {
             owner = username
-          } else if (row.role_type === 'backup_owner') {
-            backupOwner = username
           }
         }
       }
@@ -127,8 +120,7 @@ export class ServiceAdminFetchProduct {
         eventName: PRODUCT_FETCH_EVENTS.OWNERS_FETCHED.eventName,
         payload: { 
           productId, 
-          owner, 
-          backupOwner 
+          owner
         }
       })
 
@@ -175,10 +167,6 @@ export class ServiceAdminFetchProduct {
         is_visible_owner: productRow.is_visible_owner,
         is_visible_groups: productRow.is_visible_groups,
         is_visible_tech_specs: productRow.is_visible_tech_specs,
-        is_visible_area_specs: productRow.is_visible_area_specs,
-        is_visible_industry_specs: productRow.is_visible_industry_specs,
-        is_visible_key_features: productRow.is_visible_key_features,
-        is_visible_overview: productRow.is_visible_overview,
         is_visible_long_description: productRow.is_visible_long_description,
         created_by: productRow.created_by,
         created_at: productRow.created_at,
@@ -191,7 +179,6 @@ export class ServiceAdminFetchProduct {
         product,
         translations: translationsResult.rows,
         owner,
-        backupOwner,
         specialistsGroups,
         statuses
       }

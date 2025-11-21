@@ -1,6 +1,6 @@
 <!--
   File: ProductEditorDetails.vue
-  Version: 1.4.2
+  Version: 1.6.0
   Description: Component for product details form and actions
   Purpose: Provides interface for creating and editing product details with dynamic validation
   Frontend file - ProductEditorDetails.vue
@@ -43,6 +43,12 @@
   - Removed productTypeOptions and productType computed properties
   - Removed canBeOption and optionOnly from createProduct payload
   - All products are now equal, no type distinction
+  
+  Changes in v1.6.0:
+  - Removed backupOwner field and all related functionality
+  - Removed JSONB fields: areaSpecifics, industrySpecifics, keyFeatures, productOverview
+  - Removed updateJsonbField method (kept only for techSpecs)
+  - Updated photo placeholder border color to teal
 -->
 
 <script setup lang="ts">
@@ -82,12 +88,10 @@ const currentValidationRules = ref<ValidationRules | null>(null)
 
 // Initial values for tracking changes in edit mode
 const initialOwner = ref<string>('')
-const initialBackupOwner = ref<string>('')
 const initialSpecialistsGroups = ref<string[]>([])
 
 // ItemSelector state
 const showOwnerSelector = ref(false)
-const showBackupOwnerSelector = ref(false)
 const showSpecialistsGroupsSelector = ref(false)
 
 // Picture picker state
@@ -107,7 +111,6 @@ const isUpdateButtonEnabled = computed(() => {
          validationRulesReady.value && 
          hasChanges.value &&
          isOwnerValid.value && 
-         isBackupOwnerValid.value && 
          areSpecialistsGroupsValid.value
 })
 
@@ -157,10 +160,6 @@ const validationRulesReady = computed(() => {
 // Check if fields changed (for edit mode)
 const isOwnerChanged = computed(() => {
   return formData.value.owner !== initialOwner.value
-})
-
-const isBackupOwnerChanged = computed(() => {
-  return formData.value.backupOwner !== initialBackupOwner.value
 })
 
 const areSpecialistsGroupsChanged = computed(() => {
@@ -302,41 +301,6 @@ const dynamicOwnerRules = computed(() => {
   return validationRules
 })
 
-// Dynamic validation rules for backup owner (optional field)
-const dynamicBackupOwnerRules = computed(() => {
-  if (!validationRulesReady.value || !currentValidationRules.value) {
-    return [
-      () => !publicStore.validationRulesError || t('admin.products.editor.validation.rulesNotLoaded')
-    ]
-  }
-
-  const rules = currentValidationRules.value.wellKnownFields.userName
-  const validationRules: Array<(v: string) => string | boolean> = []
-
-  // Optional field - only validate if not empty
-  validationRules.push((v: string) => !v || (v.length >= rules.minLength) || t('admin.products.editor.validation.backupOwner.minLength', { length: rules.minLength }))
-  validationRules.push((v: string) => !v || (v.length <= rules.maxLength) || t('admin.products.editor.validation.backupOwner.maxLength', { length: rules.maxLength }))
-
-  // Character requirements
-  if (rules.latinOnly) {
-    const basePattern = rules.allowNumbers 
-      ? (rules.allowUsernameChars ? '[a-zA-Z0-9._-]' : '[a-zA-Z0-9]')
-      : (rules.allowUsernameChars ? '[a-zA-Z._-]' : '[a-zA-Z]')
-    const latinRegex = new RegExp(`^${basePattern}+$`)
-    validationRules.push((v: string) => !v || latinRegex.test(v) || t('admin.products.editor.validation.backupOwner.latinOnly'))
-  }
-
-  if (!rules.allowNumbers) {
-    validationRules.push((v: string) => !v || !/[0-9]/.test(v) || t('admin.products.editor.validation.backupOwner.noNumbers'))
-  }
-
-  if (!rules.allowUsernameChars) {
-    validationRules.push((v: string) => !v || !/[._-]/.test(v) || t('admin.products.editor.validation.backupOwner.noSpecialChars'))
-  }
-
-  return validationRules
-})
-
 // Validation rules (keeping existing non-owner rules)
 const productCodeRules = computed(() => [
   (v: string) => !!v || t('admin.products.editor.validation.productCode.required'),
@@ -375,31 +339,6 @@ const isOwnerValid = computed(() => {
       return true // Not changed, consider valid
     }
     const result = validateSingleUsername(formData.value.owner)
-    return result.isValid
-  }
-  
-  return false
-})
-
-const isBackupOwnerValid = computed(() => {
-  // In CREATE mode, validate if not empty
-  if (isCreationMode.value) {
-    if (!formData.value.backupOwner || formData.value.backupOwner.trim().length === 0) {
-      return true // Empty is valid for optional field
-    }
-    const result = validateSingleUsername(formData.value.backupOwner)
-    return result.isValid
-  }
-  
-  // In EDIT mode, only validate if changed
-  if (isEditMode.value) {
-    if (!isBackupOwnerChanged.value) {
-      return true // Not changed, consider valid
-    }
-    if (!formData.value.backupOwner || formData.value.backupOwner.trim().length === 0) {
-      return true // Empty is valid for optional field
-    }
-    const result = validateSingleUsername(formData.value.backupOwner)
     return result.isValid
   }
   
@@ -514,7 +453,6 @@ const createProduct = async () => {
       translationKey: translationKey,
       statusCode: formData.value.statusCode || 'draft',
       owner: formData.value.owner,
-      backupOwner: formData.value.backupOwner,
       specialistsGroups: formData.value.specialistsGroups,
       translations: translations
     }
@@ -591,13 +529,13 @@ const cancelEdit = () => {
 const updateTranslationField = (fieldName: string, value: any) => {
   if (!formData.value.translations[selectedLanguage.value]) {
     formData.value.translations[selectedLanguage.value] = {
-      name: '', shortDesc: '', longDesc: '', techSpecs: {}, areaSpecifics: {}, industrySpecifics: {}, keyFeatures: {}, productOverview: {}
+      name: '', shortDesc: '', longDesc: '', techSpecs: {}
     }
   }
   formData.value.translations[selectedLanguage.value][fieldName] = value
 }
 
-// Helper method for updating JSONB fields
+// Helper method for updating JSONB fields (only for techSpecs)
 const updateJsonbField = (fieldName: string, event: Event) => {
   const target = event.target as HTMLTextAreaElement
   try {
@@ -620,16 +558,6 @@ const handleOwnerSelected = async (result: any) => {
     uiStore.showErrorSnackbar(result?.message || t('admin.products.editor.messages.owner.error'))
   }
   showOwnerSelector.value = false
-}
-
-const handleBackupOwnerSelected = async (result: any) => {
-  if (result && result.success && result.selectedUser && result.selectedUser.name) {
-    formData.value.backupOwner = result.selectedUser.name
-    uiStore.showSuccessSnackbar(t('admin.products.editor.messages.backupOwner.selected'))
-  } else {
-    uiStore.showErrorSnackbar(result?.message || t('admin.products.editor.messages.backupOwner.error'))
-  }
-  showBackupOwnerSelector.value = false
 }
 
 const handleSpecialistsGroupsSelected = async (result: any) => {
@@ -689,7 +617,6 @@ const loadProductData = async () => {
         
         // Save initial values for tracking changes
         initialOwner.value = formData.value.owner || ''
-        initialBackupOwner.value = formData.value.backupOwner || ''
         initialSpecialistsGroups.value = [...(formData.value.specialistsGroups || [])]
         
         uiStore.showSuccessSnackbar(t('admin.products.editor.messages.data.loaded'))
@@ -744,7 +671,6 @@ onMounted(async () => {
     
     // Initialize empty initial values for creation mode
     initialOwner.value = ''
-    initialBackupOwner.value = ''
     initialSpecialistsGroups.value = []
   } else if (isEditMode.value && editingProductId.value) {
     // Check if we need to load data
@@ -754,7 +680,6 @@ onMounted(async () => {
     } else {
       // Data already loaded, just save initial values
       initialOwner.value = formData.value.owner || ''
-      initialBackupOwner.value = formData.value.backupOwner || ''
       initialSpecialistsGroups.value = [...(formData.value.specialistsGroups || [])]
     }
   }
@@ -863,7 +788,7 @@ onMounted(async () => {
               <v-divider class="section-divider" />
             </div>
 
-            <!-- Owner and Backup Owner -->
+            <!-- Owner -->
             <v-row class="pt-3">
               <v-col
                 cols="12"
@@ -881,27 +806,6 @@ onMounted(async () => {
                   >
                     <template #append-inner>
                       <div style="cursor: pointer" @click="showOwnerSelector = true">
-                        <PhMagnifyingGlass />
-                      </div>
-                    </template>
-                  </v-text-field>
-                </div>
-              </v-col>
-              <v-col
-                cols="12"
-                md="6"
-              >
-                <div class="d-flex align-center">
-                  <v-text-field
-                    v-model="formData.backupOwner"
-                    :label="t('admin.products.editor.contacts.backupOwner.label')"
-                    :rules="dynamicBackupOwnerRules"
-                    readonly
-                    variant="outlined"
-                    color="teal"
-                  >
-                    <template #append-inner>
-                      <div style="cursor: pointer" @click="showBackupOwnerSelector = true">
                         <PhMagnifyingGlass />
                       </div>
                     </template>
@@ -1073,61 +977,6 @@ onMounted(async () => {
                   @input="updateJsonbField('techSpecs', $event)"
                 />
               </v-col>
-              <v-col
-                cols="12"
-                md="6"
-              >
-                <v-textarea
-                  :model-value="JSON.stringify(formData.translations[selectedLanguage]?.areaSpecifics, null, 2)"
-                  :label="t('admin.products.editor.jsonb.areaSpecifics.label')"
-                  variant="outlined"
-                  rows="4"
-                  color="teal"
-                  @input="updateJsonbField('areaSpecifics', $event)"
-                />
-              </v-col>
-            </v-row>
-
-            <v-row>
-              <v-col
-                cols="12"
-                md="6"
-              >
-                <v-textarea
-                  :model-value="JSON.stringify(formData.translations[selectedLanguage]?.industrySpecifics, null, 2)"
-                  :label="t('admin.products.editor.jsonb.industrySpecifics.label')"
-                  variant="outlined"
-                  rows="4"
-                  color="teal"
-                  @input="updateJsonbField('industrySpecifics', $event)"
-                />
-              </v-col>
-              <v-col
-                cols="12"
-                md="6"
-              >
-                <v-textarea
-                  :model-value="JSON.stringify(formData.translations[selectedLanguage]?.keyFeatures, null, 2)"
-                  :label="t('admin.products.editor.jsonb.keyFeatures.label')"
-                  variant="outlined"
-                  rows="4"
-                  color="teal"
-                  @input="updateJsonbField('keyFeatures', $event)"
-                />
-              </v-col>
-            </v-row>
-
-            <v-row>
-              <v-col cols="12">
-                <v-textarea
-                  :model-value="JSON.stringify(formData.translations[selectedLanguage]?.productOverview, null, 2)"
-                  :label="t('admin.products.editor.jsonb.productOverview.label')"
-                  variant="outlined"
-                  rows="4"
-                  color="teal"
-                  @input="updateJsonbField('productOverview', $event)"
-                />
-              </v-col>
             </v-row>
           </v-col>
         </v-row>
@@ -1167,7 +1016,7 @@ onMounted(async () => {
           block
           color="teal"
           variant="outlined"
-          :disabled="!isFormValid || isSubmitting || !validationRulesReady || !isOwnerValid || !isBackupOwnerValid || !areSpecialistsGroupsValid"
+          :disabled="!isFormValid || isSubmitting || !validationRulesReady || !isOwnerValid || !areSpecialistsGroupsValid"
           class="mb-3"
           @click="createProduct"
         >
@@ -1215,22 +1064,6 @@ onMounted(async () => {
       :action-button-text="t('admin.products.editor.actions.save')"
       @close="showOwnerSelector = false" 
       @action-performed="handleOwnerSelected"
-    />
-  </v-dialog>
-
-  <v-dialog
-    v-model="showBackupOwnerSelector"
-    max-width="700"
-  >
-    <ItemSelector 
-      :title="t('admin.products.editor.contacts.backupOwner.select')"
-      search-service="searchUsers"
-      action-service="returnSelectedUsername"
-      :max-results="20"
-      :max-items="1"
-      :action-button-text="t('admin.products.editor.actions.save')"
-      @close="showBackupOwnerSelector = false" 
-      @action-performed="handleBackupOwnerSelected"
     />
   </v-dialog>
 
@@ -1384,14 +1217,14 @@ onMounted(async () => {
   align-items: center;
   justify-content: center;
   height: 200px;
-  border: 2px dashed rgba(var(--v-border-color), var(--v-border-opacity));
+  border: 2px dashed rgb(20, 184, 166);
   border-radius: 8px;
   background-color: rgba(var(--v-theme-surface), 1);
   transition: border-color 0.2s ease;
 }
 
 .picture-placeholder-content:hover {
-  border-color: rgba(var(--v-theme-primary), 0.5);
+  border-color: rgba(20, 184, 166, 0.7);
 }
 
 .placeholder-picture {

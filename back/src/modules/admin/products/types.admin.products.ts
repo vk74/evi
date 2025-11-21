@@ -1,5 +1,5 @@
 /**
- * types.admin.products.ts - version 1.2.0
+ * types.admin.products.ts - version 1.3.0
  * Type definitions for products administration module.
  * 
  * Contains TypeScript interfaces and types for products admin functionality.
@@ -31,6 +31,11 @@
   - Removed can_be_option and option_only from ProductListItem interface
   - Removed typeFilter from FetchAllProductsParams interface
   - All products are now equal, no type distinction
+  
+  Changes in v1.3.0:
+  - Removed backupOwner from CreateProductRequest, UpdateProductRequest, ProductWithFullData, UpdateProductResponse
+  - Removed JSONB fields (areaSpecifics, industrySpecifics, keyFeatures, productOverview) from ProductTranslationData and ProductTranslation
+  - Removed visibility flags (is_visible_area_specs, is_visible_industry_specs, is_visible_key_features, is_visible_overview) from Product, ProductListItem, UpdateProductRequest
  */
 
 // Language code enum
@@ -50,10 +55,6 @@ export interface ProductTranslationData {
     shortDesc: string
     longDesc?: string
     techSpecs?: Record<string, any>
-    areaSpecifics?: Record<string, any>
-    industrySpecifics?: Record<string, any>
-    keyFeatures?: Record<string, any>
-    productOverview?: Record<string, any>
 }
 
 // Product translations interface
@@ -67,7 +68,6 @@ export interface CreateProductRequest {
     productCode: string
     translationKey: string
     owner: string
-    backupOwner?: string
     specialistsGroups: string[]
     translations: ProductTranslations
     statusCode?: string
@@ -108,10 +108,6 @@ export interface Product {
     is_visible_owner: boolean
     is_visible_groups: boolean
     is_visible_tech_specs: boolean
-    is_visible_area_specs: boolean
-    is_visible_industry_specs: boolean
-    is_visible_key_features: boolean
-    is_visible_overview: boolean
     is_visible_long_description: boolean
     created_by: string
     created_at: Date
@@ -128,10 +124,6 @@ export interface ProductTranslation {
     short_desc: string
     long_desc?: string
     tech_specs?: Record<string, any>
-    area_specifics?: Record<string, any>
-    industry_specifics?: Record<string, any>
-    key_features?: Record<string, any>
-    product_overview?: Record<string, any>
     created_by: string
     created_at: Date
     updated_by?: string
@@ -165,7 +157,6 @@ export interface FetchProductResponse extends ApiResponse {
         product: Product
         translations: ProductTranslation[]
         owner?: string
-        backupOwner?: string
         specialistsGroups: string[]
         statuses?: ProductStatus[]
     }
@@ -175,7 +166,6 @@ export interface FetchProductResponse extends ApiResponse {
 export interface ProductWithFullData extends Product {
     translations: ProductTranslations
     owner?: string
-    backupOwner?: string
     specialistsGroups: string[]
 }
 
@@ -185,7 +175,6 @@ export interface UpdateProductRequest {
     productCode?: string
     translationKey?: string
     owner?: string
-    backupOwner?: string
     specialistsGroups?: string[]
     translations?: ProductTranslations
     statusCode?: string
@@ -193,10 +182,6 @@ export interface UpdateProductRequest {
         isVisibleOwner?: boolean
         isVisibleGroups?: boolean
         isVisibleTechSpecs?: boolean
-        isVisibleAreaSpecs?: boolean
-        isVisibleIndustrySpecs?: boolean
-        isVisibleKeyFeatures?: boolean
-        isVisibleOverview?: boolean
         isVisibleLongDescription?: boolean
     }
 }
@@ -207,7 +192,6 @@ export interface UpdateProductResponse extends ApiResponse {
         product: Product
         translations: ProductTranslation[]
         owner?: string
-        backupOwner?: string
         specialistsGroups: string[]
     }
 }
@@ -233,10 +217,6 @@ export interface ProductListItem {
     is_visible_owner: boolean
     is_visible_groups: boolean
     is_visible_tech_specs: boolean
-    is_visible_area_specs: boolean
-    is_visible_industry_specs: boolean
-    is_visible_key_features: boolean
-    is_visible_overview: boolean
     is_visible_long_description: boolean
     created_at: Date
     created_by: string

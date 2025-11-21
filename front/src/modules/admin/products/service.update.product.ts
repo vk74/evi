@@ -1,7 +1,7 @@
 /**
  * @file service.update.product.ts
  * Service for updating products via API.
- * Version: 1.1.0
+ * Version: 1.2.0
  * FRONTEND service for updating products through API.
  *
  * Functionality:
@@ -15,6 +15,10 @@
  * Changes in v1.1.0:
  * - Modified updateProductFromForm to send only changed fields
  * - Updates originalProductData after successful update to reset change tracking
+ * 
+ * Changes in v1.2.0:
+ * - Removed backupOwner from response handling
+ * - Removed JSONB fields (areaSpecifics, industrySpecifics, keyFeatures, productOverview) from translations formatting
  */
 
 import { api } from '@/core/api/service.axios'
@@ -61,7 +65,7 @@ export const serviceUpdateProduct = {
         throw new Error(response.data?.message || 'Invalid API response format')
       }
 
-      const { product, translations, owner, backupOwner, specialistsGroups } = response.data.data!
+      const { product, translations, owner, specialistsGroups } = response.data.data!
 
       // Format translations for frontend
       const formattedTranslations: any = {}
@@ -70,11 +74,7 @@ export const serviceUpdateProduct = {
           name: t.name,
           shortDesc: t.short_desc,
           longDesc: t.long_desc,
-          techSpecs: t.tech_specs,
-          areaSpecifics: t.area_specifics,
-          industrySpecifics: t.industry_specifics,
-          keyFeatures: t.key_features,
-          productOverview: t.product_overview
+          techSpecs: t.tech_specs
         }
       })
 
@@ -82,7 +82,6 @@ export const serviceUpdateProduct = {
         ...product,
         translations: formattedTranslations,
         owner,
-        backupOwner,
         specialistsGroups
       }
 

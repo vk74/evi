@@ -1,5 +1,5 @@
 /**
- * queries.admin.products.ts - version 1.2.0
+ * queries.admin.products.ts - version 1.3.0
  * SQL queries for products administration operations.
  * 
  * Contains all SQL queries used by products admin module.
@@ -59,6 +59,11 @@
   - Removed (p.can_be_option = true OR p.option_only = true) condition from countAllOptions WHERE clause
   - Updated parameter numbers in queries to reflect removed parameters
   - fetchAllOptions now returns all products except the main product (no type filtering)
+  
+  Changes in v1.3.0:
+  - Removed JSONB fields (area_specifics, industry_specifics, key_features, product_overview) from createProductTranslation, fetchProductTranslations, updateProductTranslation
+  - Removed visibility flags (is_visible_area_specs, is_visible_industry_specs, is_visible_key_features, is_visible_overview) from createProduct, fetchSingleProduct, updateProduct, fetchAllProducts, fetchAllOptions
+  - Updated parameter numbers in queries to reflect removed parameters
  */
 
 export const queries = {
@@ -66,30 +71,28 @@ export const queries = {
      * Creates a new product (only basic fields)
      * Parameters: [product_code, translation_key, status_code, 
      * is_published, is_visible_owner, is_visible_groups, is_visible_tech_specs,
-     * is_visible_area_specs, is_visible_industry_specs, is_visible_key_features,
-     * is_visible_overview, is_visible_long_description, created_by]
+     * is_visible_long_description, created_by]
      * Note: product_id is generated automatically by database default value
      */
     createProduct: `
         INSERT INTO app.products (
             product_code, translation_key, status_code, 
             is_published, is_visible_owner, is_visible_groups, is_visible_tech_specs,
-            is_visible_area_specs, is_visible_industry_specs, is_visible_key_features,
-            is_visible_overview, is_visible_long_description, created_by
-        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
+            is_visible_long_description, created_by
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
         RETURNING product_id, product_code, translation_key, created_at
     `,
 
     /**
      * Creates a product translation
      * Parameters: [product_id, language_code, name, short_desc, long_desc,
-     * tech_specs, area_specifics, industry_specifics, key_features, product_overview, created_by]
+     * tech_specs, created_by]
      */
     createProductTranslation: `
         INSERT INTO app.product_translations (
             product_id, language_code, name, short_desc, long_desc,
-            tech_specs, area_specifics, industry_specifics, key_features, product_overview, created_by
-        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+            tech_specs, created_by
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7)
         RETURNING translation_id, product_id, language_code, name, created_at
     `,
 
@@ -159,10 +162,6 @@ export const queries = {
             p.is_visible_owner,
             p.is_visible_groups,
             p.is_visible_tech_specs,
-            p.is_visible_area_specs,
-            p.is_visible_industry_specs,
-            p.is_visible_key_features,
-            p.is_visible_overview,
             p.is_visible_long_description,
             p.created_at,
             p.created_by,
@@ -197,10 +196,6 @@ export const queries = {
             pt.short_desc,
             pt.long_desc,
             pt.tech_specs,
-            pt.area_specifics,
-            pt.industry_specifics,
-            pt.key_features,
-            pt.product_overview,
             pt.created_at,
             pt.created_by,
             pt.updated_at,
@@ -214,8 +209,7 @@ export const queries = {
      * Updates a product
      * Parameters: [product_code, translation_key, status_code,
      * is_published, is_visible_owner, is_visible_groups, is_visible_tech_specs,
-     * is_visible_area_specs, is_visible_industry_specs, is_visible_key_features,
-     * is_visible_overview, is_visible_long_description, updated_by, product_id]
+     * is_visible_long_description, updated_by, product_id]
      */
     updateProduct: `
         UPDATE app.products SET
@@ -226,21 +220,16 @@ export const queries = {
             is_visible_owner = $5,
             is_visible_groups = $6,
             is_visible_tech_specs = $7,
-            is_visible_area_specs = $8,
-            is_visible_industry_specs = $9,
-            is_visible_key_features = $10,
-            is_visible_overview = $11,
-            is_visible_long_description = $12,
-            updated_by = $13,
+            is_visible_long_description = $8,
+            updated_by = $9,
             updated_at = now()
-        WHERE product_id = $14
+        WHERE product_id = $10
         RETURNING product_id, product_code, translation_key, updated_at
     `,
 
     /**
      * Updates a product translation
-     * Parameters: [name, short_desc, long_desc, tech_specs, area_specifics,
-     * industry_specifics, key_features, product_overview, updated_by, translation_id]
+     * Parameters: [name, short_desc, long_desc, tech_specs, updated_by, translation_id]
      */
     updateProductTranslation: `
         UPDATE app.product_translations SET
@@ -248,13 +237,9 @@ export const queries = {
             short_desc = $2,
             long_desc = $3,
             tech_specs = $4,
-            area_specifics = $5,
-            industry_specifics = $6,
-            key_features = $7,
-            product_overview = $8,
-            updated_by = $9,
+            updated_by = $5,
             updated_at = now()
-        WHERE translation_id = $10
+        WHERE translation_id = $6
         RETURNING translation_id, product_id, language_code, name, updated_at
     `,
 
@@ -311,10 +296,6 @@ export const queries = {
             p.is_visible_owner,
             p.is_visible_groups,
             p.is_visible_tech_specs,
-            p.is_visible_area_specs,
-            p.is_visible_industry_specs,
-            p.is_visible_key_features,
-            p.is_visible_overview,
             p.is_visible_long_description,
             p.status_code,
             p.created_by,
@@ -348,8 +329,7 @@ export const queries = {
         AND ($8::text IS NULL OR $8::text = '' OR p.status_code::text = $8::text)
         GROUP BY p.product_id, p.product_code, p.translation_key,
                  p.is_published, p.is_visible_owner, p.is_visible_groups, p.is_visible_tech_specs,
-                 p.is_visible_area_specs, p.is_visible_industry_specs, p.is_visible_key_features,
-                 p.is_visible_overview, p.is_visible_long_description, p.status_code, p.created_by, p.created_at,
+                 p.is_visible_long_description, p.status_code, p.created_by, p.created_at,
                  p.updated_by, p.updated_at, pt.name, pt.language_code, owner_user.username
         ORDER BY 
             CASE WHEN $4 = 'product_code' AND $5 = false THEN p.product_code END ASC,
@@ -403,10 +383,6 @@ export const queries = {
             p.is_visible_owner,
             p.is_visible_groups,
             p.is_visible_tech_specs,
-            p.is_visible_area_specs,
-            p.is_visible_industry_specs,
-            p.is_visible_key_features,
-            p.is_visible_overview,
             p.is_visible_long_description,
             p.status_code,
             p.created_by,
@@ -437,8 +413,7 @@ export const queries = {
         AND ($8::text IS NULL OR $8::text = '' OR p.status_code::text = $8::text)
         GROUP BY p.product_id, p.product_code, p.translation_key,
                  p.is_published, p.is_visible_owner, p.is_visible_groups, p.is_visible_tech_specs,
-                 p.is_visible_area_specs, p.is_visible_industry_specs, p.is_visible_key_features,
-                 p.is_visible_overview, p.is_visible_long_description, p.status_code, p.created_by, p.created_at,
+                 p.is_visible_long_description, p.status_code, p.created_by, p.created_at,
                  p.updated_by, p.updated_at, pt.name, pt.language_code, owner_user.username
         ORDER BY 
             CASE WHEN $4 = 'product_code' AND $5 = false THEN p.product_code END ASC,

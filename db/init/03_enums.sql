@@ -1,10 +1,12 @@
--- Version: 1.5.0
+-- Version: 1.6.0
 -- Description: Create enum types for the application.
 -- Backend file: 03_enums.sql
 -- Added: Regional settings enum types (timezones, app_countries, system_language_code)
 -- Removed: app_languages enum (replaced by system_language_code)
 -- Added: product_status enum (used for products.status_code column)
 -- Removed: weight_unit enum (unused, was used in old products schema)
+-- Changes in v1.6.0:
+-- - Removed 'backup_owner' from app.product_user_role enum
 
 -- Create enum types
 DO $$ BEGIN
@@ -74,7 +76,7 @@ EXCEPTION
 END $$;
 
 DO $$ BEGIN
-    CREATE TYPE app.product_user_role AS ENUM ('owner', 'backup_owner');
+    CREATE TYPE app.product_user_role AS ENUM ('owner');
 EXCEPTION
     WHEN duplicate_object THEN null;
 END $$;

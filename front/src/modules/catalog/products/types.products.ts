@@ -1,5 +1,5 @@
 /*
-version: 1.3.0
+version: 1.4.0
 Frontend file for product types in catalog module.
 TypeScript interfaces for catalog products based on database structure.
 File: types.products.ts
@@ -12,6 +12,9 @@ Changes in v1.2.4:
 
 Changes in v1.3.0:
 - Extended ProductPriceInfo with roundingPrecision metadata
+
+Changes in v1.4.0:
+- Removed JSONB fields (area_specifics, industry_specifics, key_features, product_overview) from CatalogProductDetails interface
 */
 
 export type ProductStatus = 'published' | 'draft' | 'archived'
@@ -52,10 +55,6 @@ export interface CatalogProductDetails {
   short_description: string | null;
   long_description: string | null;
   tech_specs: Record<string, any> | null;
-  area_specifics: Record<string, any> | null;
-  industry_specifics: Record<string, any> | null;
-  key_features: Record<string, any> | null;
-  product_overview: Record<string, any> | null;
   created_at: string;
   created_by: string;
   updated_at: string | null;

@@ -1,6 +1,6 @@
 /**
  * queries.catalog.products.ts - backend file
- * version: 1.3.2
+ * version: 1.4.0
  * 
  * Purpose: SQL queries for catalog products (public consumption layer)
  * Logic: Provides parameterized queries to fetch active products for the catalog and product details
@@ -22,6 +22,9 @@
  * 
  * Changes in v1.3.2:
  * - Added published_at subquery to getProductDetails query to fetch latest publication date from section_products
+ * 
+ * Changes in v1.4.0:
+ * - Removed JSONB fields (area_specifics, industry_specifics, key_features, product_overview) from all SELECT queries
  */
 
 export const queries = {
@@ -42,10 +45,6 @@ export const queries = {
       COALESCE(pt_requested.short_desc, pt_fallback.short_desc) as short_desc,
       COALESCE(pt_requested.long_desc, pt_fallback.long_desc) as long_desc,
       COALESCE(pt_requested.tech_specs, pt_fallback.tech_specs) as tech_specs,
-      COALESCE(pt_requested.area_specifics, pt_fallback.area_specifics) as area_specifics,
-      COALESCE(pt_requested.industry_specifics, pt_fallback.industry_specifics) as industry_specifics,
-      COALESCE(pt_requested.key_features, pt_fallback.key_features) as key_features,
-      COALESCE(pt_requested.product_overview, pt_fallback.product_overview) as product_overview,
       p.created_at,
       p.created_by
     FROM app.products p
@@ -77,10 +76,6 @@ export const queries = {
       COALESCE(pt_requested.short_desc, pt_fallback.short_desc) as short_desc,
       COALESCE(pt_requested.long_desc, pt_fallback.long_desc) as long_desc,
       COALESCE(pt_requested.tech_specs, pt_fallback.tech_specs) as tech_specs,
-      COALESCE(pt_requested.area_specifics, pt_fallback.area_specifics) as area_specifics,
-      COALESCE(pt_requested.industry_specifics, pt_fallback.industry_specifics) as industry_specifics,
-      COALESCE(pt_requested.key_features, pt_fallback.key_features) as key_features,
-      COALESCE(pt_requested.product_overview, pt_fallback.product_overview) as product_overview,
       p.created_at,
       p.created_by,
       sp.published_at
@@ -115,10 +110,6 @@ export const queries = {
       COALESCE(pt_requested.short_desc, pt_fallback.short_desc) as short_desc,
       COALESCE(pt_requested.long_desc, pt_fallback.long_desc) as long_desc,
       COALESCE(pt_requested.tech_specs, pt_fallback.tech_specs) as tech_specs,
-      COALESCE(pt_requested.area_specifics, pt_fallback.area_specifics) as area_specifics,
-      COALESCE(pt_requested.industry_specifics, pt_fallback.industry_specifics) as industry_specifics,
-      COALESCE(pt_requested.key_features, pt_fallback.key_features) as key_features,
-      COALESCE(pt_requested.product_overview, pt_fallback.product_overview) as product_overview,
       p.created_at,
       p.created_by,
       p.updated_at,

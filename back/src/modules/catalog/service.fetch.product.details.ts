@@ -1,6 +1,6 @@
 /**
  * service.fetch.product.details.ts - backend file
- * version: 1.1.2
+ * version: 1.2.0
  * 
  * Purpose: Service that fetches single product details for catalog consumption
  * Logic: Queries DB for product details with is_published = true, transforms into DTO for frontend
@@ -9,6 +9,9 @@
  * 
  * Changes in v1.1.2:
  * - Added published_at field mapping in transformRow function to include publication date from section_products
+ * 
+ * Changes in v1.2.0:
+ * - Removed JSONB fields (area_specifics, industry_specifics, key_features, product_overview) from transformRow function
  */
 
 import { Request } from 'express';
@@ -30,10 +33,6 @@ function transformRow(row: DbProductDetails): CatalogProductDetailsDTO {
     short_description: row.short_desc ?? null,
     long_description: row.long_desc ?? null,
     tech_specs: row.tech_specs ?? null,
-    area_specifics: row.area_specifics ?? null,
-    industry_specifics: row.industry_specifics ?? null,
-    key_features: row.key_features ?? null,
-    product_overview: row.product_overview ?? null,
     created_at: row.created_at,
     created_by: row.created_by,
     updated_at: row.updated_at ?? null,

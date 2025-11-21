@@ -1,6 +1,6 @@
 /**
  * @file state.products.admin.ts
- * Version: 1.6.0
+ * Version: 1.7.0
  * Pinia store for managing products admin module state.
  * Frontend file that handles active section management for products administration.
  *
@@ -39,6 +39,14 @@
  * - Removed canBeOption and optionOnly from populateFormWithFullProductData
  * - Removed canBeOption and optionOnly from hasUnsavedChanges
  * - All products are now equal, no type distinction
+ * 
+ * Changes in v1.7.0:
+ * - Removed backupOwner from formData initial state
+ * - Removed JSONB fields (areaSpecifics, industrySpecifics, keyFeatures, productOverview) from translations default structure
+ * - Removed visibility flags (isVisibleAreaSpecs, isVisibleIndustrySpecs, isVisibleKeyFeatures, isVisibleOverview) from visibility object
+ * - Removed backupOwner from change tracking in getChangedFields
+ * - Removed backupOwner from hasUnsavedChanges
+ * - Updated populateFormWithProduct and populateFormWithFullProductData
  */
 import { defineStore } from 'pinia'
 import type {
@@ -76,31 +84,19 @@ export const useProductsAdminStore = defineStore('productsAdmin', {
           name: '',
           shortDesc: '',
           longDesc: '',
-          techSpecs: {},
-          areaSpecifics: {},
-          industrySpecifics: {},
-          keyFeatures: {},
-          productOverview: {}
+          techSpecs: {}
         },
         ru: {
           name: '',
           shortDesc: '',
           longDesc: '',
-          techSpecs: {},
-          areaSpecifics: {},
-          industrySpecifics: {},
-          keyFeatures: {},
-          productOverview: {}
+          techSpecs: {}
         }
       },
       visibility: {
         isVisibleOwner: false,
         isVisibleGroups: false,
         isVisibleTechSpecs: false,
-        isVisibleAreaSpecs: false,
-        isVisibleIndustrySpecs: false,
-        isVisibleKeyFeatures: false,
-        isVisibleOverview: false,
         isVisibleLongDescription: false
       }
     }
@@ -135,9 +131,6 @@ export const useProductsAdminStore = defineStore('productsAdmin', {
       if (current.owner !== (original.owner || '')) {
         changes.owner = current.owner
       }
-      if (current.backupOwner !== (original.backupOwner || '')) {
-        changes.backupOwner = current.backupOwner
-      }
 
       // Compare specialistsGroups arrays
       const currentGroups = current.specialistsGroups || []
@@ -159,10 +152,6 @@ export const useProductsAdminStore = defineStore('productsAdmin', {
         isVisibleOwner: original.is_visible_owner,
         isVisibleGroups: original.is_visible_groups,
         isVisibleTechSpecs: original.is_visible_tech_specs,
-        isVisibleAreaSpecs: original.is_visible_area_specs,
-        isVisibleIndustrySpecs: original.is_visible_industry_specs,
-        isVisibleKeyFeatures: original.is_visible_key_features,
-        isVisibleOverview: original.is_visible_overview,
         isVisibleLongDescription: original.is_visible_long_description
       }
 
@@ -230,31 +219,19 @@ export const useProductsAdminStore = defineStore('productsAdmin', {
             name: '',
             shortDesc: '',
             longDesc: '',
-            techSpecs: {},
-            areaSpecifics: {},
-            industrySpecifics: {},
-            keyFeatures: {},
-            productOverview: {}
+            techSpecs: {}
           },
           ru: {
             name: '',
             shortDesc: '',
             longDesc: '',
-            techSpecs: {},
-            areaSpecifics: {},
-            industrySpecifics: {},
-            keyFeatures: {},
-            productOverview: {}
+            techSpecs: {}
           }
         },
         visibility: {
           isVisibleOwner: false,
           isVisibleGroups: false,
           isVisibleTechSpecs: false,
-          isVisibleAreaSpecs: false,
-          isVisibleIndustrySpecs: false,
-          isVisibleKeyFeatures: false,
-          isVisibleOverview: false,
           isVisibleLongDescription: false
         }
       }
@@ -266,20 +243,15 @@ export const useProductsAdminStore = defineStore('productsAdmin', {
         translationKey: product.translation_key,
         statusCode: product.status_code || '',
         owner: product.owner || '',
-        backupOwner: product.backupOwner || '',
         specialistsGroups: product.specialistsGroups || [],
         translations: product.translations || {
-          en: { name: '', shortDesc: '', longDesc: '', techSpecs: {}, areaSpecifics: {}, industrySpecifics: {}, keyFeatures: {}, productOverview: {} },
-          ru: { name: '', shortDesc: '', longDesc: '', techSpecs: {}, areaSpecifics: {}, industrySpecifics: {}, keyFeatures: {}, productOverview: {} }
+        en: { name: '', shortDesc: '', longDesc: '', techSpecs: {} },
+        ru: { name: '', shortDesc: '', longDesc: '', techSpecs: {} }
         },
         visibility: {
           isVisibleOwner: product.is_visible_owner,
           isVisibleGroups: product.is_visible_groups,
           isVisibleTechSpecs: product.is_visible_tech_specs,
-          isVisibleAreaSpecs: product.is_visible_area_specs,
-          isVisibleIndustrySpecs: product.is_visible_industry_specs,
-          isVisibleKeyFeatures: product.is_visible_key_features,
-          isVisibleOverview: product.is_visible_overview,
           isVisibleLongDescription: product.is_visible_long_description
         }
       }
@@ -291,8 +263,8 @@ export const useProductsAdminStore = defineStore('productsAdmin', {
     populateFormWithFullProductData(productData: ProductWithFullData): void {
       // Ensure translations have proper structure
       const defaultTranslations = {
-        en: { name: '', shortDesc: '', longDesc: '', techSpecs: {}, areaSpecifics: {}, industrySpecifics: {}, keyFeatures: {}, productOverview: {} },
-        ru: { name: '', shortDesc: '', longDesc: '', techSpecs: {}, areaSpecifics: {}, industrySpecifics: {}, keyFeatures: {}, productOverview: {} }
+        en: { name: '', shortDesc: '', longDesc: '', techSpecs: {} },
+        ru: { name: '', shortDesc: '', longDesc: '', techSpecs: {} }
       }
       
       const translations = productData.translations || defaultTranslations
@@ -308,17 +280,12 @@ export const useProductsAdminStore = defineStore('productsAdmin', {
         translationKey: productData.translation_key,
         statusCode: productData.status_code || '',
         owner: productData.owner || '',
-        backupOwner: productData.backupOwner || '',
         specialistsGroups: productData.specialistsGroups || [],
         translations: safeTranslations,
         visibility: {
           isVisibleOwner: productData.is_visible_owner,
           isVisibleGroups: productData.is_visible_groups,
           isVisibleTechSpecs: productData.is_visible_tech_specs,
-          isVisibleAreaSpecs: productData.is_visible_area_specs,
-          isVisibleIndustrySpecs: productData.is_visible_industry_specs,
-          isVisibleKeyFeatures: productData.is_visible_key_features,
-          isVisibleOverview: productData.is_visible_overview,
           isVisibleLongDescription: productData.is_visible_long_description
         }
       }
@@ -451,17 +418,12 @@ export const useProductsAdminStore = defineStore('productsAdmin', {
         current.translationKey !== stored.translation_key ||
         current.statusCode !== (stored.status_code || '') ||
         current.owner !== (stored.owner || '') ||
-        current.backupOwner !== (stored.backupOwner || '') ||
         JSON.stringify(current.specialistsGroups) !== JSON.stringify(stored.specialistsGroups || []) ||
         JSON.stringify(current.translations) !== JSON.stringify(stored.translations || {}) ||
         JSON.stringify(current.visibility) !== JSON.stringify({
           isVisibleOwner: stored.is_visible_owner,
           isVisibleGroups: stored.is_visible_groups,
           isVisibleTechSpecs: stored.is_visible_tech_specs,
-          isVisibleAreaSpecs: stored.is_visible_area_specs,
-          isVisibleIndustrySpecs: stored.is_visible_industry_specs,
-          isVisibleKeyFeatures: stored.is_visible_key_features,
-          isVisibleOverview: stored.is_visible_overview,
           isVisibleLongDescription: stored.is_visible_long_description
         })
       )

@@ -1,9 +1,12 @@
 <!--
   File: ProductEditorPreferences.vue
-  Version: 1.2.0
+  Version: 1.3.0
   Description: Component for product preferences management
   Purpose: Provides interface for managing product preferences and visibility settings
   Frontend file - ProductEditorPreferences.vue
+  
+  Changes in v1.3.0:
+  - Removed visibility switches for deleted fields: isVisibleAreaSpecs, isVisibleIndustrySpecs, isVisibleKeyFeatures, isVisibleOverview
 -->
 
 <script setup lang="ts">
@@ -25,10 +28,6 @@ const formData = computed(() => productsStore.formData)
 const isVisibleOwner = ref(false)
 const isVisibleGroups = ref(false)
 const isVisibleTechSpecs = ref(false)
-const isVisibleAreaSpecs = ref(false)
-const isVisibleIndustrySpecs = ref(false)
-const isVisibleKeyFeatures = ref(false)
-const isVisibleOverview = ref(false)
 const isVisibleLongDescription = ref(false)
 
 // Previous values for rollback on error
@@ -36,10 +35,6 @@ const previousValues = ref({
   isVisibleOwner: false,
   isVisibleGroups: false,
   isVisibleTechSpecs: false,
-  isVisibleAreaSpecs: false,
-  isVisibleIndustrySpecs: false,
-  isVisibleKeyFeatures: false,
-  isVisibleOverview: false,
   isVisibleLongDescription: false
 })
 
@@ -63,10 +58,6 @@ const updatePreviousValues = () => {
     isVisibleOwner: isVisibleOwner.value,
     isVisibleGroups: isVisibleGroups.value,
     isVisibleTechSpecs: isVisibleTechSpecs.value,
-    isVisibleAreaSpecs: isVisibleAreaSpecs.value,
-    isVisibleIndustrySpecs: isVisibleIndustrySpecs.value,
-    isVisibleKeyFeatures: isVisibleKeyFeatures.value,
-    isVisibleOverview: isVisibleOverview.value,
     isVisibleLongDescription: isVisibleLongDescription.value
   }
 }
@@ -75,10 +66,6 @@ const rollbackToPreviousValues = () => {
   isVisibleOwner.value = previousValues.value.isVisibleOwner
   isVisibleGroups.value = previousValues.value.isVisibleGroups
   isVisibleTechSpecs.value = previousValues.value.isVisibleTechSpecs
-  isVisibleAreaSpecs.value = previousValues.value.isVisibleAreaSpecs
-  isVisibleIndustrySpecs.value = previousValues.value.isVisibleIndustrySpecs
-  isVisibleKeyFeatures.value = previousValues.value.isVisibleKeyFeatures
-  isVisibleOverview.value = previousValues.value.isVisibleOverview
   isVisibleLongDescription.value = previousValues.value.isVisibleLongDescription
 }
 
@@ -96,10 +83,6 @@ const savePreferences = async () => {
         isVisibleOwner: isVisibleOwner.value,
         isVisibleGroups: isVisibleGroups.value,
         isVisibleTechSpecs: isVisibleTechSpecs.value,
-        isVisibleAreaSpecs: isVisibleAreaSpecs.value,
-        isVisibleIndustrySpecs: isVisibleIndustrySpecs.value,
-        isVisibleKeyFeatures: isVisibleKeyFeatures.value,
-        isVisibleOverview: isVisibleOverview.value,
         isVisibleLongDescription: isVisibleLongDescription.value
       }
     }
@@ -163,10 +146,6 @@ watch(formData, (data) => {
     isVisibleOwner.value = data.visibility.isVisibleOwner ?? false
     isVisibleGroups.value = data.visibility.isVisibleGroups ?? false
     isVisibleTechSpecs.value = data.visibility.isVisibleTechSpecs ?? false
-    isVisibleAreaSpecs.value = data.visibility.isVisibleAreaSpecs ?? false
-    isVisibleIndustrySpecs.value = data.visibility.isVisibleIndustrySpecs ?? false
-    isVisibleKeyFeatures.value = data.visibility.isVisibleKeyFeatures ?? false
-    isVisibleOverview.value = data.visibility.isVisibleOverview ?? false
     isVisibleLongDescription.value = data.visibility.isVisibleLongDescription ?? false
     
     // Update previous values
@@ -175,7 +154,7 @@ watch(formData, (data) => {
 }, { immediate: true })
 
 // Watch for changes in preferences and auto-save
-watch([isVisibleOwner, isVisibleGroups, isVisibleTechSpecs, isVisibleAreaSpecs, isVisibleIndustrySpecs, isVisibleKeyFeatures, isVisibleOverview, isVisibleLongDescription], () => {
+watch([isVisibleOwner, isVisibleGroups, isVisibleTechSpecs, isVisibleLongDescription], () => {
   // Only save if we have a product ID
   if (editingProductId.value) {
     debouncedSavePreferences()
@@ -245,42 +224,6 @@ watch([isVisibleOwner, isVisibleGroups, isVisibleTechSpecs, isVisibleAreaSpecs, 
                     v-model="isVisibleTechSpecs"
                     color="teal-darken-2"
                     :label="t('admin.products.editor.visibility.isVisibleTechSpecs.label')"
-                    hide-details
-                    density="compact"
-                  />
-                </div>
-                <div class="switch-item">
-                  <v-switch
-                    v-model="isVisibleAreaSpecs"
-                    color="teal-darken-2"
-                    :label="t('admin.products.editor.visibility.isVisibleAreaSpecs.label')"
-                    hide-details
-                    density="compact"
-                  />
-                </div>
-                <div class="switch-item">
-                  <v-switch
-                    v-model="isVisibleIndustrySpecs"
-                    color="teal-darken-2"
-                    :label="t('admin.products.editor.visibility.isVisibleIndustrySpecs.label')"
-                    hide-details
-                    density="compact"
-                  />
-                </div>
-                <div class="switch-item">
-                  <v-switch
-                    v-model="isVisibleKeyFeatures"
-                    color="teal-darken-2"
-                    :label="t('admin.products.editor.visibility.isVisibleKeyFeatures.label')"
-                    hide-details
-                    density="compact"
-                  />
-                </div>
-                <div class="switch-item">
-                  <v-switch
-                    v-model="isVisibleOverview"
-                    color="teal-darken-2"
-                    :label="t('admin.products.editor.visibility.isVisibleOverview.label')"
                     hide-details
                     density="compact"
                   />

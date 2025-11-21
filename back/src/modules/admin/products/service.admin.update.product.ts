@@ -1,5 +1,5 @@
 /**
- * service.admin.update.product.ts - version 1.3.2
+ * service.admin.update.product.ts - version 1.4.0
  * Service for updating products operations.
  * 
  * Functionality:
@@ -37,6 +37,12 @@
  * Changes in v1.3.2:
  * - Fixed bug where statusCode changes were not processed when statusCode was the only changed field
  * - Added statusCode check to condition that calls updateMainProductData
+ * 
+ * Changes in v1.4.0:
+ * - Removed backupOwner validation and handling
+ * - Removed backupOwner parameter from updateProductOwners function
+ * - Removed JSONB fields (areaSpecifics, industrySpecifics, keyFeatures, productOverview) from updateProductTranslations
+ * - Removed visibility flags (isVisibleAreaSpecs, isVisibleIndustrySpecs, isVisibleKeyFeatures, isVisibleOverview) from visibility update logic
  */
 
 import { Request } from 'express';
@@ -92,14 +98,6 @@ async function validateUpdateProductData(data: UpdateProductRequest, req: Reques
         const ownerResult = await validateField({ value: data.owner, fieldType: 'userName' }, req);
         if (!ownerResult.isValid && ownerResult.error) {
             errors.push(`Owner: ${ownerResult.error}`);
-        }
-    }
-
-    // Validate backup owner if provided (only check if not empty, since usernames can contain various characters)
-    if (data.backupOwner !== undefined && data.backupOwner !== '') {
-        const backupOwnerResult = await validateField({ value: data.backupOwner, fieldType: 'userName' }, req);
-        if (!backupOwnerResult.isValid && backupOwnerResult.error) {
-            errors.push(`Backup owner: ${backupOwnerResult.error}`);
         }
     }
 
@@ -234,15 +232,11 @@ async function updateProductPreferences(
         data.visibility.isVisibleOwner !== undefined ||
         data.visibility.isVisibleGroups !== undefined ||
         data.visibility.isVisibleTechSpecs !== undefined ||
-        data.visibility.isVisibleAreaSpecs !== undefined ||
-        data.visibility.isVisibleIndustrySpecs !== undefined ||
-        data.visibility.isVisibleKeyFeatures !== undefined ||
-        data.visibility.isVisibleOverview !== undefined ||
         data.visibility.isVisibleLongDescription !== undefined
     )) {
         // Get current preferences for comparison
         const currentPrefsResult = await client.query(
-            'SELECT is_visible_owner, is_visible_groups, is_visible_tech_specs, is_visible_area_specs, is_visible_industry_specs, is_visible_key_features, is_visible_overview, is_visible_long_description FROM app.products WHERE product_id = $1',
+            'SELECT is_visible_owner, is_visible_groups, is_visible_tech_specs, is_visible_long_description FROM app.products WHERE product_id = $1',
             [productId]
         );
         const currentPrefs = currentPrefsResult.rows[0];
@@ -263,22 +257,6 @@ async function updateProductPreferences(
         if (data.visibility.isVisibleTechSpecs !== undefined) {
             updateFields.push(`is_visible_tech_specs = $${paramIndex++}`);
             updateValues.push(data.visibility.isVisibleTechSpecs);
-        }
-        if (data.visibility.isVisibleAreaSpecs !== undefined) {
-            updateFields.push(`is_visible_area_specs = $${paramIndex++}`);
-            updateValues.push(data.visibility.isVisibleAreaSpecs);
-        }
-        if (data.visibility.isVisibleIndustrySpecs !== undefined) {
-            updateFields.push(`is_visible_industry_specs = $${paramIndex++}`);
-            updateValues.push(data.visibility.isVisibleIndustrySpecs);
-        }
-        if (data.visibility.isVisibleKeyFeatures !== undefined) {
-            updateFields.push(`is_visible_key_features = $${paramIndex++}`);
-            updateValues.push(data.visibility.isVisibleKeyFeatures);
-        }
-        if (data.visibility.isVisibleOverview !== undefined) {
-            updateFields.push(`is_visible_overview = $${paramIndex++}`);
-            updateValues.push(data.visibility.isVisibleOverview);
         }
         if (data.visibility.isVisibleLongDescription !== undefined) {
             updateFields.push(`is_visible_long_description = $${paramIndex++}`);
@@ -305,10 +283,6 @@ async function updateProductPreferences(
             { field: 'isVisibleOwner', oldValue: currentPrefs.is_visible_owner, newValue: data.visibility.isVisibleOwner },
             { field: 'isVisibleGroups', oldValue: currentPrefs.is_visible_groups, newValue: data.visibility.isVisibleGroups },
             { field: 'isVisibleTechSpecs', oldValue: currentPrefs.is_visible_tech_specs, newValue: data.visibility.isVisibleTechSpecs },
-            { field: 'isVisibleAreaSpecs', oldValue: currentPrefs.is_visible_area_specs, newValue: data.visibility.isVisibleAreaSpecs },
-            { field: 'isVisibleIndustrySpecs', oldValue: currentPrefs.is_visible_industry_specs, newValue: data.visibility.isVisibleIndustrySpecs },
-            { field: 'isVisibleKeyFeatures', oldValue: currentPrefs.is_visible_key_features, newValue: data.visibility.isVisibleKeyFeatures },
-            { field: 'isVisibleOverview', oldValue: currentPrefs.is_visible_overview, newValue: data.visibility.isVisibleOverview },
             { field: 'isVisibleLongDescription', oldValue: currentPrefs.is_visible_long_description, newValue: data.visibility.isVisibleLongDescription }
         ];
 
@@ -436,7 +410,7 @@ async function updateProductTranslations(
 ): Promise<{ languageCodes: string[], fieldsChanged: string[] } | null> {
     // Get current translations from database
     const currentTranslationsResult = await client.query(
-        'SELECT language_code, name, short_desc, long_desc, tech_specs, area_specifics, industry_specifics, key_features, product_overview FROM app.product_translations WHERE product_id = $1',
+        'SELECT language_code, name, short_desc, long_desc, tech_specs FROM app.product_translations WHERE product_id = $1',
         [productId]
     );
     
@@ -466,11 +440,7 @@ async function updateProductTranslations(
             name: row.name,
             shortDesc: row.short_desc,
             longDesc: row.long_desc,
-            techSpecs: parseJsonField(row.tech_specs),
-            areaSpecifics: parseJsonField(row.area_specifics),
-            industrySpecifics: parseJsonField(row.industry_specifics),
-            keyFeatures: parseJsonField(row.key_features),
-            productOverview: parseJsonField(row.product_overview)
+            techSpecs: parseJsonField(row.tech_specs)
         };
     });
     
@@ -482,11 +452,7 @@ async function updateProductTranslations(
         name: 'name',
         shortDesc: 'shortDesc',
         longDesc: 'longDesc',
-        techSpecs: 'techSpecs',
-        areaSpecifics: 'areaSpecifics',
-        industrySpecifics: 'industrySpecifics',
-        keyFeatures: 'keyFeatures',
-        productOverview: 'productOverview'
+        techSpecs: 'techSpecs'
     };
     
     for (const [langCode, translationData] of Object.entries(translations)) {
@@ -522,10 +488,10 @@ async function updateProductTranslations(
             const query = `
                 INSERT INTO app.product_translations (
                     product_id, language_code, name, short_desc, long_desc,
-                    tech_specs, area_specifics, industry_specifics, key_features, product_overview,
+                    tech_specs,
                     created_by, updated_by, created_at, updated_at
                 ) VALUES (
-                    $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
+                    $1, $2, $3, $4, $5, $6, $7, $8, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
                 )
                 ON CONFLICT (product_id, language_code) 
                 DO UPDATE SET
@@ -533,10 +499,6 @@ async function updateProductTranslations(
                     short_desc = EXCLUDED.short_desc,
                     long_desc = EXCLUDED.long_desc,
                     tech_specs = EXCLUDED.tech_specs,
-                    area_specifics = EXCLUDED.area_specifics,
-                    industry_specifics = EXCLUDED.industry_specifics,
-                    key_features = EXCLUDED.key_features,
-                    product_overview = EXCLUDED.product_overview,
                     updated_by = EXCLUDED.updated_by,
                     updated_at = CURRENT_TIMESTAMP
             `;
@@ -548,10 +510,6 @@ async function updateProductTranslations(
                 (translationData as any).shortDesc,
                 (translationData as any).longDesc || null,
                 (translationData as any).techSpecs ? JSON.stringify((translationData as any).techSpecs) : null,
-                (translationData as any).areaSpecifics ? JSON.stringify((translationData as any).areaSpecifics) : null,
-                (translationData as any).industrySpecifics ? JSON.stringify((translationData as any).industrySpecifics) : null,
-                (translationData as any).keyFeatures ? JSON.stringify((translationData as any).keyFeatures) : null,
-                (translationData as any).productOverview ? JSON.stringify((translationData as any).productOverview) : null,
                 updatedBy,
                 updatedBy
             ]);
@@ -573,7 +531,6 @@ async function updateProductTranslations(
  * @param client - Database client
  * @param productId - Product ID
  * @param owner - Owner username
- * @param backupOwner - Backup owner username
  * @param updatedBy - User ID who is updating
  * @returns Object with changes or null if no changes
  */
@@ -581,7 +538,6 @@ async function updateProductOwners(
     client: any,
     productId: string,
     owner: string | undefined,
-    backupOwner: string | undefined,
     updatedBy: string
 ): Promise<{ changes: Record<string, { old: string | null, new: string | null }> } | null> {
     // Get current owners from database
@@ -589,23 +545,19 @@ async function updateProductOwners(
         SELECT u.username, pu.role_type 
         FROM app.product_users pu
         JOIN app.users u ON pu.user_id = u.user_id
-        WHERE pu.product_id = $1
+        WHERE pu.product_id = $1 AND pu.role_type = 'owner'
     `, [productId]);
     
     let currentOwner: string | null = null;
-    let currentBackupOwner: string | null = null;
     
     currentOwnersResult.rows.forEach((row: any) => {
         if (row.role_type === 'owner') {
             currentOwner = row.username;
-        } else if (row.role_type === 'backup_owner') {
-            currentBackupOwner = row.username;
         }
     });
     
     // Normalize undefined to null for comparison
     const newOwner = owner || null;
-    const newBackupOwner = backupOwner || null;
     
     const changes: Record<string, { old: string | null, new: string | null }> = {};
     
@@ -617,21 +569,13 @@ async function updateProductOwners(
         };
     }
     
-    // Compare backup owner
-    if (newBackupOwner !== currentBackupOwner) {
-        changes.backupOwner = {
-            old: currentBackupOwner,
-            new: newBackupOwner
-        };
-    }
-    
     // If no changes, return null
     if (Object.keys(changes).length === 0) {
         return null;
     }
     
-    // Clear existing owners
-    await client.query('DELETE FROM app.product_users WHERE product_id = $1', [productId]);
+    // Clear existing owner
+    await client.query("DELETE FROM app.product_users WHERE product_id = $1 AND role_type = 'owner'", [productId]);
 
     // Add new owner if provided
     if (owner) {
@@ -640,17 +584,6 @@ async function updateProductOwners(
             await client.query(
                 'INSERT INTO app.product_users (product_id, user_id, role_type, created_by) VALUES ($1, $2, $3, $4)',
                 [productId, ownerUuid, 'owner', updatedBy]
-            );
-        }
-    }
-
-    // Add backup owner if provided
-    if (backupOwner) {
-        const backupOwnerUuid = await getUuidByUsername(backupOwner);
-        if (backupOwnerUuid) {
-            await client.query(
-                'INSERT INTO app.product_users (product_id, user_id, role_type, created_by) VALUES ($1, $2, $3, $4)',
-                [productId, backupOwnerUuid, 'backup_owner', updatedBy]
             );
         }
     }
@@ -814,8 +747,8 @@ export async function updateProduct(data: UpdateProductRequest, req: Request): P
         }
 
         // Update owners if provided
-        if (data.owner !== undefined || data.backupOwner !== undefined) {
-            const ownersChanges = await updateProductOwners(client, data.productId, data.owner, data.backupOwner, requestorUuid);
+        if (data.owner !== undefined) {
+            const ownersChanges = await updateProductOwners(client, data.productId, data.owner, requestorUuid);
             
             // Publish event only if there are actual changes
             if (ownersChanges && Object.keys(ownersChanges.changes).length > 0) {
@@ -885,12 +818,9 @@ export async function updateProduct(data: UpdateProductRequest, req: Request): P
 
         // Process owners
         let owner: string | undefined;
-        let backupOwner: string | undefined;
         ownersResult.rows.forEach((row: any) => {
             if (row.role_type === 'owner') {
                 owner = row.username;
-            } else if (row.role_type === 'backup_owner') {
-                backupOwner = row.username;
             }
         });
 
@@ -904,7 +834,6 @@ export async function updateProduct(data: UpdateProductRequest, req: Request): P
                 product: updatedProduct,
                 translations: translationsResult.rows,
                 owner,
-                backupOwner,
                 specialistsGroups
             }
         };

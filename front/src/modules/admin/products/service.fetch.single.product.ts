@@ -1,7 +1,7 @@
 /**
  * @file service.fetch.single.product.ts
  * Service for fetching single product data via API.
- * Version: 1.0.1
+ * Version: 1.1.0
  * FRONTEND service for fetching single product data through API.
  *
  * Functionality:
@@ -15,6 +15,10 @@
  * Changes in v1.0.1:
  * - Added status_code field processing from API response
  * - Added product statuses array processing for UI dropdown
+ * 
+ * Changes in v1.1.0:
+ * - Removed backupOwner from response handling
+ * - Removed JSONB fields (areaSpecifics, industrySpecifics, keyFeatures, productOverview) from translations formatting
  */
 
 import { api } from '@/core/api/service.axios'
@@ -69,7 +73,7 @@ export const serviceFetchSingleProduct = {
         throw new Error('No product data received')
       }
 
-      const { product, translations, owner, backupOwner, specialistsGroups, statuses } = response.data.data
+      const { product, translations, owner, specialistsGroups, statuses } = response.data.data
 
       // Transform translations from API format to frontend format
       const frontendTranslations: ProductTranslations = {}
@@ -80,11 +84,7 @@ export const serviceFetchSingleProduct = {
           name: translation.name,
           shortDesc: translation.short_desc,
           longDesc: translation.long_desc,
-          techSpecs: translation.tech_specs,
-          areaSpecifics: translation.area_specifics,
-          industrySpecifics: translation.industry_specifics,
-          keyFeatures: translation.key_features,
-          productOverview: translation.product_overview
+          techSpecs: translation.tech_specs
         }
       }
 
@@ -93,7 +93,6 @@ export const serviceFetchSingleProduct = {
         ...product,
         translations: frontendTranslations,
         owner,
-        backupOwner,
         specialistsGroups: specialistsGroups || []
       }
 

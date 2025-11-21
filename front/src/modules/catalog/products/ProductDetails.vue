@@ -106,25 +106,6 @@ const hasTechSpecs = computed(() => {
   return details.value.tech_specs && Object.keys(details.value.tech_specs).length > 0
 })
 
-const hasAreaSpecifics = computed(() => {
-  if (!details.value) return false
-  return details.value.area_specifics && Object.keys(details.value.area_specifics).length > 0
-})
-
-const hasIndustrySpecifics = computed(() => {
-  if (!details.value) return false
-  return details.value.industry_specifics && Object.keys(details.value.industry_specifics).length > 0
-})
-
-const hasKeyFeatures = computed(() => {
-  if (!details.value) return false
-  return details.value.key_features && Object.keys(details.value.key_features).length > 0
-})
-
-const hasProductOverview = computed(() => {
-  if (!details.value) return false
-  return details.value.product_overview && Object.keys(details.value.product_overview).length > 0
-})
 
 // Computed property for details card styling
 const detailsStyle = computed(() => ({
@@ -417,41 +398,6 @@ watch(() => appStore.getUserCountry, () => {
             </div>
           </div>
 
-          <div v-if="hasAreaSpecifics" class="detail-block">
-            <div class="block-title">
-              {{ t('catalog.productDetails.areaSpecifics') }}
-            </div>
-            <div class="block-body">
-              <pre>{{ JSON.stringify(details?.area_specifics, null, 2) }}</pre>
-            </div>
-          </div>
-
-          <div v-if="hasIndustrySpecifics" class="detail-block">
-            <div class="block-title">
-              {{ t('catalog.productDetails.industrySpecifics') }}
-            </div>
-            <div class="block-body">
-              <pre>{{ JSON.stringify(details?.industry_specifics, null, 2) }}</pre>
-            </div>
-          </div>
-
-          <div v-if="hasKeyFeatures" class="detail-block">
-            <div class="block-title">
-              {{ t('catalog.productDetails.keyFeatures') }}
-            </div>
-            <div class="block-body">
-              <pre>{{ JSON.stringify(details?.key_features, null, 2) }}</pre>
-            </div>
-          </div>
-
-          <div v-if="hasProductOverview" class="detail-block">
-            <div class="block-title">
-              {{ t('catalog.productDetails.productOverview') }}
-            </div>
-            <div class="block-body">
-              <pre>{{ JSON.stringify(details?.product_overview, null, 2) }}</pre>
-            </div>
-          </div>
         </div>
 
         <!-- Sections area -->
