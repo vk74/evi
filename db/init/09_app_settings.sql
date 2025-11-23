@@ -1,8 +1,8 @@
--- Version: 1.5.4
+-- Version: 1.5.5
 -- Description: Seeds the database with default application settings.
 -- Backend file: 09_app_settings.sql
--- Added: Country price list mapping setting (Admin.Catalog.CountryPricelistID)
--- Previous: 2 new EventBus domains (middleware, itemSelector)
+-- Added: 5 new settings (allowed.languages, app.regions, default.module.registered.users, default.module.anonymous.users, product.card.default.section)
+-- Previous: Country price list mapping setting (Admin.Catalog.CountryPricelistID)
 
 -- This script inserts a comprehensive set of default settings for the application,
 -- covering areas like security, session management, and feature toggles.
@@ -86,6 +86,7 @@ INSERT INTO app.app_settings (
 -- Catalog Settings
 ('Catalog.Products', 'display.optionsOnlyProducts', 'all', 'false', '{"type":"boolean"}', 'false', 'Sets catalog to display or hide products which are marked as "option only"', true),
 ('Catalog.Products', 'card.color', 'all', '"#E8F4F8"', '{"type":"string","pattern":"^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$"}', '"#E8F4F8"', 'Background color for product cards in catalog (hex format)', true),
+('Catalog.Products', 'product.card.default.section', 'all', '"details"', '{"type":"string","enum":["details","options","specs"]}', '"details"', 'Default section to display in product card', false),
 ('Catalog.Services', 'card.color', 'all', '"#F5F5F5"', '{"type":"string","pattern":"^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$"}', '"#F5F5F5"', 'Background color for service cards in catalog (hex format)', true),
 
 -- Admin Catalog Settings
@@ -110,9 +111,13 @@ INSERT INTO app.app_settings (
 ('Application.RegionalSettings', 'current.country', 'all', '"russia"', '{"type":"string","enum":["russia","kazakhstan"]}', '"russia"', 'Current application country', false),
 ('Application.RegionalSettings', 'default.language', 'all', '"ru"', '{"type":"string","enum":["en","ru"]}', '"ru"', 'Default application language (ISO 639-1 code)', false),
 ('Application.RegionalSettings', 'time.format.12h', 'all', 'false', '{"type":"boolean"}', 'false', 'Use 12-hour AM/PM time format instead of 24-hour format', false),
+('Application.RegionalSettings', 'allowed.languages', 'all', '["english","russian"]'::jsonb, '{"type":"array","items":{"type":"string","enum":["english","russian"]}}'::jsonb, '["english","russian"]'::jsonb, 'List of allowed languages in the application', false),
+('Application.RegionalSettings', 'app.regions', 'all', '""', '{"type":"string","pattern":"^[\\\\p{L}\\\\s]*$"}', '""', 'Application regions - text in any language without punctuation or special characters', true),
 
 -- Appearance Settings
-('Application.Appearance', 'navbar.backgroundcolor', 'all', '"#26A69A"', '{"type":"string","pattern":"^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$"}', '"#26A69A"', 'Navigation bar background color (hex format)', true)
+('Application.Appearance', 'navbar.backgroundcolor', 'all', '"#26A69A"', '{"type":"string","pattern":"^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$"}', '"#26A69A"', 'Navigation bar background color (hex format)', true),
+('Application.Appearance', 'default.module.registered.users', 'all', '"catalog"', '{"type":"string","enum":["catalog","landing","work","kb","reports"]}', '"catalog"', 'Default module for registered users', false),
+('Application.Appearance', 'default.module.anonymous.users', 'all', '"login"', '{"type":"string","enum":["catalog","landing","login"]}', '"login"', 'Default module for anonymous users', false),
 ON CONFLICT (section_path, setting_name, environment) DO UPDATE SET
     value = EXCLUDED.value,
     validation_schema = EXCLUDED.validation_schema,
