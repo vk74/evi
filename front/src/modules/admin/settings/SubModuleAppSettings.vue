@@ -5,7 +5,11 @@
  *          and displays the corresponding settings components in the workspace area
  * 
  * Uses a Pinia store to persist the selected category and expanded state between sessions
- * Version: 1.6.1
+ * Version: 1.6.2
+ * 
+ * Changes in v1.6.2:
+ * - Increased menu panel width by 7% (from 210px to 220px)
+ * - Updated tablet responsive width accordingly (from 230px to 240px)
  -->
  <script setup lang="ts">
 import { ref, computed, onMounted, markRaw, watch, type Component } from 'vue';
@@ -483,17 +487,17 @@ watch(selectedSectionPath, (newSectionPath, oldSectionPath) => {
    overflow: hidden;
  }
  
- .menu-panel {
-   width: 210px; /* Reduced from 255px by 30px */
-   min-width: 210px;
-   border-right: 1px solid rgba(0, 0, 0, 0.12);
-   background-color: white;
-   flex-shrink: 0;
-   position: sticky;
-   top: 0;
-   height: 100vh;
-   overflow-y: auto;
- }
+.menu-panel {
+  width: 220px; 
+  min-width: 220px;
+  border-right: 1px solid rgba(0, 0, 0, 0.12);
+  background-color: white;
+  flex-shrink: 0;
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  overflow-y: auto;
+}
  
  .content-panel {
    flex-grow: 1;
@@ -624,15 +628,15 @@ watch(selectedSectionPath, (newSectionPath, oldSectionPath) => {
    opacity: 0;
  }
  
- /* Tablet responsiveness */
- @media (min-width: 600px) and (max-width: 960px) {
-   .menu-panel {
-     width: 230px;
-     min-width: 230px;
-   }
- 
-   .section-item :deep(.v-list-item-title) {
-     max-width: calc(200px - 50px - 16px) !important;
-   }
- }
+/* Tablet responsiveness */
+@media (min-width: 600px) and (max-width: 960px) {
+  .menu-panel {
+    width: 240px;
+    min-width: 240px;
+  }
+
+  .section-item :deep(.v-list-item-title) {
+    max-width: calc(240px - 50px - 16px) !important;
+  }
+}
  </style>
