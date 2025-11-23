@@ -1,8 +1,11 @@
--- Version: 1.5.5
+-- Version: 1.5.6
 -- Description: Seeds the database with default application settings.
 -- Backend file: 09_app_settings.sql
 -- Added: 5 new settings (allowed.languages, app.regions, default.module.registered.users, default.module.anonymous.users, product.card.default.section)
 -- Previous: Country price list mapping setting (Admin.Catalog.CountryPricelistID)
+--
+-- Changes in v1.5.6:
+-- - Updated app.regions setting: changed from string type to array type (empty array instead of empty string)
 
 -- This script inserts a comprehensive set of default settings for the application,
 -- covering areas like security, session management, and feature toggles.
@@ -112,7 +115,7 @@ INSERT INTO app.app_settings (
 ('Application.RegionalSettings', 'default.language', 'all', '"ru"', '{"type":"string","enum":["en","ru"]}', '"ru"', 'Default application language (ISO 639-1 code)', false),
 ('Application.RegionalSettings', 'time.format.12h', 'all', 'false', '{"type":"boolean"}', 'false', 'Use 12-hour AM/PM time format instead of 24-hour format', false),
 ('Application.RegionalSettings', 'allowed.languages', 'all', '["english","russian"]'::jsonb, '{"type":"array","items":{"type":"string","enum":["english","russian"]}}'::jsonb, '["english","russian"]'::jsonb, 'List of allowed languages in the application', false),
-('Application.RegionalSettings', 'app.regions', 'all', '""', '{"type":"string","pattern":"^[\\\\p{L}\\\\s]*$"}', '""', 'Application regions - text in any language without punctuation or special characters', true),
+('Application.RegionalSettings', 'app.regions', 'all', '[]'::jsonb, '{"type":"array","items":{"type":"string"}}'::jsonb, '[]'::jsonb, 'Application regions - array of region names', true),
 
 -- Appearance Settings
 ('Application.Appearance', 'navbar.backgroundcolor', 'all', '"#26A69A"', '{"type":"string","pattern":"^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$"}', '"#26A69A"', 'Navigation bar background color (hex format)', true),

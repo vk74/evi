@@ -1,5 +1,5 @@
 <!--
-  Version: 1.6.0
+  Version: 1.7.0
   File: Application.RegionalSettings.vue - frontend file
   Description: Regional settings configuration including timezone, country, default language, and time format
   Purpose: Configure regional application settings with full backend integration and settings store
@@ -15,6 +15,14 @@
   - Language options now display in lowercase
   - Updated styling to match Application.Security.SessionManagement.vue
   - Added table styling matching Catalog.Settings.vue
+  
+  Changes in v1.7.0:
+  - Integrated regions table with settings system (app.regions setting)
+  - Integrated allowed languages toggles with settings system (allowed.languages setting)
+  - Regions saved manually via UPDATE button
+  - Allowed languages saved automatically on toggle change
+  - Changed Region interface: country → value
+  - Added loading/error states for new settings
 -->
 
 <script setup lang="ts">
@@ -59,10 +67,10 @@ const selectedCountry = ref<string | null>(null);
 const selectedLanguage = ref<string | null>(null);
 const use12HourFormat = ref<boolean | null>(null);
 
-// Regions state - UI only for now
+// Regions state - integrated with settings
 interface Region {
   id: number;
-  country: string | null;
+  value: string | null;
 }
 
 const regions = ref<Region[]>([]);
@@ -125,7 +133,9 @@ const allSettings = [
   'current.timezone',
   'current.country',
   'default.language',
-  'time.format.12h'
+  'time.format.12h',
+  'app.regions',
+  'allowed.languages'
 ];
 
 // Initialize loading states for all settings
@@ -240,6 +250,41 @@ function updateLocalSetting(settingName: string, value: any) {
     case 'time.format.12h':
       use12HourFormat.value = safeBoolean(value);
       break;
+    case 'app.regions':
+      // Handle regions array: convert from string array to UI model with IDs
+      // Handle empty string case (legacy migration) - convert to empty array
+      let regionsArray: string[] = [];
+      if (value === null || value === undefined) {
+        regionsArray = [];
+      } else if (typeof value === 'string' && value === '') {
+        // Legacy: empty string from old migration
+        regionsArray = [];
+      } else if (Array.isArray(value)) {
+        // Normal case: array of strings
+        regionsArray = value.filter((v: any) => v !== null && v !== undefined && v !== '');
+      }
+      
+      // Convert to UI model with IDs
+      regions.value = regionsArray.map((regionValue, index) => ({
+        id: nextRegionId.value++,
+        value: regionValue
+      }));
+      
+      // Update nextRegionId to avoid conflicts
+      if (regions.value.length > 0) {
+        const maxId = Math.max(...regions.value.map(r => r.id));
+        nextRegionId.value = maxId + 1;
+      }
+      
+      // Save initial state after loading
+      saveInitialRegionsState();
+      break;
+    case 'allowed.languages':
+      // Handle allowed languages array: sync with boolean toggles
+      const languagesArray = Array.isArray(value) ? value : [];
+      russianEnabled.value = languagesArray.includes('russian');
+      englishEnabled.value = languagesArray.includes('english');
+      break;
   }
 }
 
@@ -349,6 +394,33 @@ watch(use12HourFormat, (newValue) => {
   }
 });
 
+// Watch for changes in allowed languages - automatic save
+watch(russianEnabled, (newValue) => {
+  if (!isFirstLoad.value) {
+    // Build array from enabled toggles, maintain alphabetical order
+    const languagesArray: string[] = [];
+    if (englishEnabled.value) languagesArray.push('english');
+    if (newValue) languagesArray.push('russian');
+    // Sort alphabetically: ["english", "russian"]
+    languagesArray.sort();
+    
+    updateSetting('allowed.languages', languagesArray);
+  }
+});
+
+watch(englishEnabled, (newValue) => {
+  if (!isFirstLoad.value) {
+    // Build array from enabled toggles, maintain alphabetical order
+    const languagesArray: string[] = [];
+    if (newValue) languagesArray.push('english');
+    if (russianEnabled.value) languagesArray.push('russian');
+    // Sort alphabetically: ["english", "russian"]
+    languagesArray.sort();
+    
+    updateSetting('allowed.languages', languagesArray);
+  }
+});
+
 // Watch for changes in loading state from the store
 watch(
   () => appSettingsStore.isLoading,
@@ -378,7 +450,7 @@ async function loadCountries(): Promise<void> {
 function addRegion(): void {
   regions.value.push({
     id: nextRegionId.value++,
-    country: null
+    value: null
   });
 }
 
@@ -396,17 +468,21 @@ function removeRegion(id: number): void {
  * Check if regions have changed compared to initial state
  */
 const hasRegionsChanges = computed(() => {
-  if (regions.value.length !== initialRegions.value.length) {
+  // Extract values as string arrays for comparison
+  const currentValues = regions.value.map(r => r.value || '').filter(v => v !== '');
+  const initialValues = initialRegions.value.map(r => r.value || '').filter(v => v !== '');
+  
+  if (currentValues.length !== initialValues.length) {
     return true;
   }
   
-  // Create sorted arrays for comparison (by id)
-  const currentSorted = [...regions.value].sort((a, b) => a.id - b.id);
-  const initialSorted = [...initialRegions.value].sort((a, b) => a.id - b.id);
+  // Sort arrays for comparison
+  const currentSorted = [...currentValues].sort();
+  const initialSorted = [...initialValues].sort();
   
-  // Compare each region
+  // Compare each value
   for (let i = 0; i < currentSorted.length; i++) {
-    if (currentSorted[i].country !== initialSorted[i]?.country) {
+    if (currentSorted[i] !== initialSorted[i]) {
       return true;
     }
   }
@@ -429,13 +505,21 @@ function cancelRegionsChanges(): void {
 }
 
 /**
- * Update regions (placeholder for future backend integration)
+ * Update regions - save to backend
  */
 function updateRegions(): void {
-  // TODO: Add backend integration when ready
-  console.log('Updating regions:', regions.value);
+  // Extract values from regions array and convert to plain string array
+  const regionsArray: string[] = regions.value
+    .map(r => r.value)
+    .filter((v): v is string => v !== null && v !== undefined && v !== '');
+  
+  console.log('Updating regions:', regionsArray);
+  
+  // Save to backend
+  updateSettingFromComponent(section_path, 'app.regions', regionsArray);
+  
+  // Save initial state after update
   saveInitialRegionsState();
-  uiStore.showSuccessSnackbar(t('admin.settings.application.regionalsettings.regions.messages.updateSuccess'));
 }
 
 /**
@@ -465,9 +549,7 @@ onMounted(async () => {
   console.log('Cleared cache for Regional Settings section to ensure fresh data load');
   
   loadSettings();
-  
-  // Initialize regions state
-  saveInitialRegionsState();
+  // Note: Initial regions state will be saved after settings are loaded in updateLocalSetting()
 });
 </script>
 
@@ -570,9 +652,30 @@ onMounted(async () => {
 
         <!-- ==================== REGIONS BLOCK ==================== -->
         <div class="settings-group mb-6">
-          <h3 class="text-subtitle-1 mb-4 font-weight-medium">
-            {{ t('admin.settings.application.regionalsettings.regions.title') }}
-          </h3>
+          <div class="d-flex align-center mb-4">
+            <h3 class="text-subtitle-1 font-weight-medium">
+              {{ t('admin.settings.application.regionalsettings.regions.title') }}
+            </h3>
+            <v-tooltip
+              v-if="settingErrorStates['app.regions']"
+              location="top"
+              max-width="300"
+            >
+              <template #activator="{ props }">
+                <span v-bind="props" style="cursor: pointer;" @click="retrySetting('app.regions')" class="ms-2">
+                  <PhWarningCircle :size="16" />
+                </span>
+              </template>
+              <div class="pa-2">
+                <p class="text-subtitle-2 mb-2">
+                  ошибка загрузки настройки
+                </p>
+                <p class="text-caption">
+                  нажмите для повторной попытки
+                </p>
+              </div>
+            </v-tooltip>
+          </div>
           
           <div class="regions-table-wrapper">
             <v-data-table
@@ -584,7 +687,7 @@ onMounted(async () => {
             >
               <template #[`item.region`]="{ item }">
                 <v-text-field
-                  v-model="item.country"
+                  v-model="item.value"
                   variant="plain"
                   density="compact"
                   hide-details
@@ -618,15 +721,6 @@ onMounted(async () => {
               {{ t('admin.settings.application.regionalsettings.regions.actions.add').toUpperCase() }}
             </v-btn>
             <v-btn
-              color="teal"
-              variant="outlined"
-              :disabled="!hasRegionsChanges"
-              :class="['ms-2', { 'btn-glow-active': hasRegionsChanges }]"
-              @click="updateRegions"
-            >
-              {{ t('admin.settings.application.regionalsettings.regions.actions.update').toUpperCase() }}
-            </v-btn>
-            <v-btn
               color="grey"
               variant="outlined"
               :disabled="!hasRegionsChanges"
@@ -634,6 +728,15 @@ onMounted(async () => {
               @click="cancelRegionsChanges"
             >
               {{ t('admin.settings.application.regionalsettings.regions.actions.cancel').toUpperCase() }}
+            </v-btn>
+            <v-btn
+              color="teal"
+              variant="outlined"
+              :disabled="!hasRegionsChanges"
+              :class="['ms-2', { 'btn-glow-active': hasRegionsChanges }]"
+              @click="updateRegions"
+            >
+              {{ t('admin.settings.application.regionalsettings.regions.actions.update').toUpperCase() }}
             </v-btn>
           </div>
         </div>
@@ -698,7 +801,28 @@ onMounted(async () => {
                 label="russian"
                 hide-details
                 density="compact"
+                :disabled="isSettingDisabled('allowed.languages')"
+                :loading="settingLoadingStates['allowed.languages']"
               />
+              <v-tooltip
+                v-if="settingErrorStates['allowed.languages']"
+                location="top"
+                max-width="300"
+              >
+                <template #activator="{ props }">
+                  <span v-bind="props" style="cursor: pointer;" @click="retrySetting('allowed.languages')">
+                    <PhWarningCircle :size="16" class="ms-2" />
+                  </span>
+                </template>
+                <div class="pa-2">
+                  <p class="text-subtitle-2 mb-2">
+                    ошибка загрузки настройки
+                  </p>
+                  <p class="text-caption">
+                    нажмите для повторной попытки
+                  </p>
+                </div>
+              </v-tooltip>
             </div>
 
             <!-- English Language Toggle -->
@@ -709,6 +833,8 @@ onMounted(async () => {
                 label="english"
                 hide-details
                 density="compact"
+                :disabled="isSettingDisabled('allowed.languages')"
+                :loading="settingLoadingStates['allowed.languages']"
               />
             </div>
           </div>
