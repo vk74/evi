@@ -318,10 +318,6 @@ const clearSelections = () => {
   })
 }
 
-const clearSelectionsSilently = () => {
-  selectedProducts.value.clear()
-}
-
 const selectAll = () => {
   products.value.forEach(product => {
     selectedProducts.value.add(product.product_id)
@@ -492,19 +488,14 @@ const clearFilters = async () => {
 
 // Assign owner handlers
 const handleAssignOwnerPerformed = async () => {
-  // Clear selections silently (without toast message) to avoid overlapping with assign owner result message
-  clearSelectionsSilently()
-  
   // Clear store
   productsStore.clearAssignOwnerProductIds()
   
   // Close modal
   showAssignOwnerSelector.value = false
   
-  // Refresh the list after a small delay to ensure toast message from assign owner service is shown first
-  setTimeout(async () => {
-    await performSearch()
-  }, 100)
+  // Refresh the list
+  await performSearch()
 }
 
 const handleAssignOwnerClose = () => {
