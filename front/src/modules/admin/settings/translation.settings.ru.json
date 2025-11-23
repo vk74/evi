@@ -221,6 +221,27 @@
         },
         "regionalsettings": {
           "title": "региональные настройки",
+          "time": {
+            "settings": {
+              "title": "настройки времени"
+            }
+          },
+          "regions": {
+            "title": "регионы",
+            "actions": {
+              "add": "добавить регион",
+              "update": "обновить",
+              "cancel": "отмена"
+            },
+            "messages": {
+              "updateSuccess": "регионы успешно обновлены"
+            }
+          },
+          "languages": {
+            "title": "языки",
+            "english": "english",
+            "russian": "русский"
+          },
           "timezone": {
             "label": "часовой пояс"
           },
@@ -233,13 +254,14 @@
           "time12h": {
             "label": "использовать 12-часовой формат времени AM/PM"
           },
+          "allowed": {
+            "languages": {
+              "label": "разрешенные языки"
+            }
+          },
           "countries": {
             "russia": "Россия",
             "kazakhstan": "Казахстан"
-          },
-          "languages": {
-            "english": "English",
-            "russian": "Русский"
           }
         },
         "system": {

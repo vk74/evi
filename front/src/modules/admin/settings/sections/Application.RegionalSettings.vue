@@ -1,13 +1,20 @@
 <!--
-  Version: 1.5.0
+  Version: 1.6.0
   File: Application.RegionalSettings.vue - frontend file
   Description: Regional settings configuration including timezone, country, default language, and time format
   Purpose: Configure regional application settings with full backend integration and settings store
   Frontend file that manages regional settings UI and integrates with settings store
-  Updated: Added 12-hour AM/PM time format toggle setting
   
   Changes in v1.5.0:
   - Countries list now loaded dynamically from backend API instead of hardcoded values
+  
+  Changes in v1.6.0:
+  - Reorganized UI into 3 separate blocks: Time Settings, Regions, Languages
+  - Added regions table with add/remove functionality (UI-only for now)
+  - Added Russian and English language toggles (UI-only for now)
+  - Language options now display in lowercase
+  - Updated styling to match Application.Security.SessionManagement.vue
+  - Added table styling matching Catalog.Settings.vue
 -->
 
 <script setup lang="ts">
@@ -18,7 +25,7 @@ import { fetchSettings } from '@/modules/admin/settings/service.fetch.settings';
 import { updateSettingFromComponent } from '@/modules/admin/settings/service.update.settings';
 import { useUiStore } from '@/core/state/uistate';
 import DataLoading from '@/core/ui/loaders/DataLoading.vue';
-import { PhCaretUpDown, PhWarningCircle } from '@phosphor-icons/vue';
+import { PhCaretUpDown, PhWarningCircle, PhPlus, PhTrash } from '@phosphor-icons/vue';
 import { getCountries } from '@/core/helpers/get.countries';
 
 // Section path identifier
@@ -51,6 +58,20 @@ const selectedTimezone = ref<string | null>(null);
 const selectedCountry = ref<string | null>(null);
 const selectedLanguage = ref<string | null>(null);
 const use12HourFormat = ref<boolean | null>(null);
+
+// Regions state - UI only for now
+interface Region {
+  id: number;
+  country: string | null;
+}
+
+const regions = ref<Region[]>([]);
+const nextRegionId = ref(1);
+const initialRegions = ref<Region[]>([]);
+
+// Language toggles state - UI only for now
+const russianEnabled = ref<boolean>(false);
+const englishEnabled = ref<boolean>(false);
 
 // Generate timezone options from GMT-12 to GMT+14
 const timezoneOptions = ref([
@@ -93,9 +114,10 @@ const countryOptions = computed(() => {
 
 // Language options - computed to support reactive translations
 // Values are ISO 639-1 language codes
+// Display lowercase names in UI
 const languageOptions = computed(() => [
-  { value: 'en', title: t('admin.settings.application.regionalsettings.languages.english') },
-  { value: 'ru', title: t('admin.settings.application.regionalsettings.languages.russian') }
+  { value: 'en', title: t('admin.settings.application.regionalsettings.languages.english').toLowerCase() },
+  { value: 'ru', title: t('admin.settings.application.regionalsettings.languages.russian').toLowerCase() }
 ]);
 
 // Define all settings that need to be loaded
@@ -350,6 +372,87 @@ async function loadCountries(): Promise<void> {
   }
 }
 
+/**
+ * Add new region row
+ */
+function addRegion(): void {
+  regions.value.push({
+    id: nextRegionId.value++,
+    country: null
+  });
+}
+
+/**
+ * Remove region row
+ */
+function removeRegion(id: number): void {
+  const index = regions.value.findIndex(r => r.id === id);
+  if (index > -1) {
+    regions.value.splice(index, 1);
+  }
+}
+
+/**
+ * Check if regions have changed compared to initial state
+ */
+const hasRegionsChanges = computed(() => {
+  if (regions.value.length !== initialRegions.value.length) {
+    return true;
+  }
+  
+  // Create sorted arrays for comparison (by id)
+  const currentSorted = [...regions.value].sort((a, b) => a.id - b.id);
+  const initialSorted = [...initialRegions.value].sort((a, b) => a.id - b.id);
+  
+  // Compare each region
+  for (let i = 0; i < currentSorted.length; i++) {
+    if (currentSorted[i].country !== initialSorted[i]?.country) {
+      return true;
+    }
+  }
+  
+  return false;
+});
+
+/**
+ * Save current regions state as initial
+ */
+function saveInitialRegionsState(): void {
+  initialRegions.value = JSON.parse(JSON.stringify(regions.value));
+}
+
+/**
+ * Reset regions to initial state
+ */
+function cancelRegionsChanges(): void {
+  regions.value = JSON.parse(JSON.stringify(initialRegions.value));
+}
+
+/**
+ * Update regions (placeholder for future backend integration)
+ */
+function updateRegions(): void {
+  // TODO: Add backend integration when ready
+  console.log('Updating regions:', regions.value);
+  saveInitialRegionsState();
+  uiStore.showSuccessSnackbar(t('admin.settings.application.regionalsettings.regions.messages.updateSuccess'));
+}
+
+/**
+ * Table headers for regions table
+ */
+interface TableHeader {
+  title: string;
+  key: string;
+  width?: string;
+  sortable?: boolean;
+}
+
+const regionsTableHeaders = computed<TableHeader[]>(() => [
+  { title: 'region', key: 'region', width: '240px' },
+  { title: 'actions', key: 'actions', width: '60px', sortable: false }
+]);
+
 // Initialize component
 onMounted(async () => {
   console.log('Application.RegionalSettings component initialized');
@@ -362,6 +465,9 @@ onMounted(async () => {
   console.log('Cleared cache for Regional Settings section to ensure fresh data load');
   
   loadSettings();
+  
+  // Initialize regions state
+  saveInitialRegionsState();
 });
 </script>
 
@@ -383,128 +489,163 @@ onMounted(async () => {
       class="settings-section"
     >
       <div class="section-content">
-        <!-- Timezone Selection and 12H Format Toggle Row -->
-        <div class="mb-6">
-          <div class="timezone-row">
-            <!-- Timezone Selection -->
-            <div class="timezone-select-container">
-              <v-select
-                v-model="selectedTimezone"
-                :items="timezoneOptions"
-                :label="t('admin.settings.application.regionalsettings.timezone.label')"
-                variant="outlined"
-                color="teal-darken-2"
-                density="comfortable"
-                item-title="title"
-                item-value="value"
-                class="regional-select"
-                :disabled="isSettingDisabled('current.timezone')"
-                :loading="settingLoadingStates['current.timezone']"
-              >
-                <template #append-inner>
-                  <PhCaretUpDown class="dropdown-icon" />
-                </template>
-              </v-select>
-              <v-tooltip
-                v-if="settingErrorStates['current.timezone']"
-                location="top"
-                max-width="300"
-              >
-                <template #activator="{ props }">
-                  <span v-bind="props" style="cursor: pointer;" @click="retrySetting('current.timezone')">
-                    <PhWarningCircle :size="16" class="ms-2" />
-                  </span>
-                </template>
-                <div class="pa-2">
-                  <p class="text-subtitle-2 mb-2">
-                    Ошибка загрузки настройки
-                  </p>
-                  <p class="text-caption">
-                    Нажмите для повторной попытки
-                  </p>
-                </div>
-              </v-tooltip>
-            </div>
-
-            <!-- 12-Hour Format Toggle -->
-            <div class="time-format-toggle-container">
-              <v-switch
-                v-model="use12HourFormat"
-                color="teal-darken-2"
-                :label="t('admin.settings.application.regionalsettings.time12h.label')"
-                hide-details
-                :disabled="isSettingDisabled('time.format.12h')"
-                :loading="settingLoadingStates['time.format.12h']"
-                density="compact"
-              />
-              <v-tooltip
-                v-if="settingErrorStates['time.format.12h']"
-                location="top"
-                max-width="300"
-              >
-                <template #activator="{ props }">
-                  <span v-bind="props" style="cursor: pointer;" @click="retrySetting('time.format.12h')">
-                    <PhWarningCircle :size="16" class="ms-2" />
-                  </span>
-                </template>
-                <div class="pa-2">
-                  <p class="text-subtitle-2 mb-2">
-                    Ошибка загрузки настройки
-                  </p>
-                  <p class="text-caption">
-                    Нажмите для повторной попытки
-                  </p>
-                </div>
-              </v-tooltip>
-            </div>
-          </div>
-        </div>
-
-        <!-- Country Selection -->
-        <div class="mb-6">
-          <div class="d-flex align-center">
+        <!-- ==================== TIME SETTINGS BLOCK ==================== -->
+        <div class="settings-group mb-6">
+          <h3 class="text-subtitle-1 mb-4 font-weight-medium">
+            {{ t('admin.settings.application.regionalsettings.time.settings.title') }}
+          </h3>
+          
+          <!-- Timezone Selection -->
+          <div class="d-flex align-center mb-3">
             <v-select
-              v-model="selectedCountry"
-              :items="countryOptions"
-              :label="t('admin.settings.application.regionalsettings.country.label')"
+              v-model="selectedTimezone"
+              :items="timezoneOptions"
+              :label="t('admin.settings.application.regionalsettings.timezone.label')"
               variant="outlined"
               color="teal-darken-2"
               density="comfortable"
               item-title="title"
               item-value="value"
-              class="regional-select"
-              :disabled="isSettingDisabled('current.country') || isLoadingCountries"
-              :loading="settingLoadingStates['current.country'] || isLoadingCountries"
+              style="max-width: 300px;"
+              :disabled="isSettingDisabled('current.timezone')"
+              :loading="settingLoadingStates['current.timezone']"
             >
               <template #append-inner>
                 <PhCaretUpDown class="dropdown-icon" />
               </template>
             </v-select>
             <v-tooltip
-              v-if="settingErrorStates['current.country']"
+              v-if="settingErrorStates['current.timezone']"
               location="top"
               max-width="300"
             >
               <template #activator="{ props }">
-                <span v-bind="props" style="cursor: pointer;" @click="retrySetting('current.country')">
+                <span v-bind="props" style="cursor: pointer;" @click="retrySetting('current.timezone')">
                   <PhWarningCircle :size="16" class="ms-2" />
                 </span>
               </template>
               <div class="pa-2">
                 <p class="text-subtitle-2 mb-2">
-                  Ошибка загрузки настройки
+                  ошибка загрузки настройки
                 </p>
                 <p class="text-caption">
-                  Нажмите для повторной попытки
+                  нажмите для повторной попытки
+                </p>
+              </div>
+            </v-tooltip>
+          </div>
+
+          <!-- 12-Hour Format Toggle -->
+          <div class="d-flex align-center mb-3">
+            <v-switch
+              v-model="use12HourFormat"
+              color="teal-darken-2"
+              :label="t('admin.settings.application.regionalsettings.time12h.label')"
+              hide-details
+              :disabled="isSettingDisabled('time.format.12h')"
+              :loading="settingLoadingStates['time.format.12h']"
+              density="compact"
+            />
+            <v-tooltip
+              v-if="settingErrorStates['time.format.12h']"
+              location="top"
+              max-width="300"
+            >
+              <template #activator="{ props }">
+                <span v-bind="props" style="cursor: pointer;" @click="retrySetting('time.format.12h')">
+                  <PhWarningCircle :size="16" class="ms-2" />
+                </span>
+              </template>
+              <div class="pa-2">
+                <p class="text-subtitle-2 mb-2">
+                  ошибка загрузки настройки
+                </p>
+                <p class="text-caption">
+                  нажмите для повторной попытки
                 </p>
               </div>
             </v-tooltip>
           </div>
         </div>
 
-        <!-- Default Language Selection -->
-        <div class="mb-6">
-          <div class="d-flex align-center">
+        <!-- ==================== REGIONS BLOCK ==================== -->
+        <div class="settings-group mb-6">
+          <h3 class="text-subtitle-1 mb-4 font-weight-medium">
+            {{ t('admin.settings.application.regionalsettings.regions.title') }}
+          </h3>
+          
+          <div class="regions-table-wrapper">
+            <v-data-table
+              :headers="regionsTableHeaders"
+              :items="regions"
+              :items-per-page="-1"
+              hide-default-footer
+              class="regions-table"
+            >
+              <template #[`item.region`]="{ item }">
+                <v-text-field
+                  v-model="item.country"
+                  variant="plain"
+                  density="compact"
+                  hide-details
+                  class="region-input"
+                />
+              </template>
+
+              <template #[`item.actions`]="{ item }">
+                <v-btn
+                  icon
+                  size="small"
+                  color="error"
+                  variant="text"
+                  @click="removeRegion(item.id)"
+                >
+                  <PhTrash :size="18" />
+                </v-btn>
+              </template>
+            </v-data-table>
+          </div>
+
+          <div class="table-actions mt-4">
+            <v-btn
+              color="teal"
+              variant="outlined"
+              @click="addRegion"
+            >
+              <template #prepend>
+                <PhPlus />
+              </template>
+              {{ t('admin.settings.application.regionalsettings.regions.actions.add').toUpperCase() }}
+            </v-btn>
+            <v-btn
+              color="teal"
+              variant="outlined"
+              :disabled="!hasRegionsChanges"
+              :class="['ms-2', { 'btn-glow-active': hasRegionsChanges }]"
+              @click="updateRegions"
+            >
+              {{ t('admin.settings.application.regionalsettings.regions.actions.update').toUpperCase() }}
+            </v-btn>
+            <v-btn
+              color="grey"
+              variant="outlined"
+              :disabled="!hasRegionsChanges"
+              class="ms-2"
+              @click="cancelRegionsChanges"
+            >
+              {{ t('admin.settings.application.regionalsettings.regions.actions.cancel').toUpperCase() }}
+            </v-btn>
+          </div>
+        </div>
+
+        <!-- ==================== LANGUAGES BLOCK ==================== -->
+        <div class="settings-group mb-6">
+          <h3 class="text-subtitle-1 mb-4 font-weight-medium">
+            {{ t('admin.settings.application.regionalsettings.languages.title') }}
+          </h3>
+          
+          <!-- Default Language Selection -->
+          <div class="d-flex align-center mb-3">
             <v-select
               v-model="selectedLanguage"
               :items="languageOptions"
@@ -514,7 +655,7 @@ onMounted(async () => {
               density="comfortable"
               item-title="title"
               item-value="value"
-              class="regional-select"
+              style="max-width: 300px;"
               :disabled="isSettingDisabled('default.language')"
               :loading="settingLoadingStates['default.language']"
             >
@@ -534,13 +675,42 @@ onMounted(async () => {
               </template>
               <div class="pa-2">
                 <p class="text-subtitle-2 mb-2">
-                  Ошибка загрузки настройки
+                  ошибка загрузки настройки
                 </p>
                 <p class="text-caption">
-                  Нажмите для повторной попытки
+                  нажмите для повторной попытки
                 </p>
               </div>
             </v-tooltip>
+          </div>
+
+          <!-- Allowed Languages Section -->
+          <div class="mb-3">
+            <h4 class="text-subtitle-2 mb-3 font-weight-medium">
+              {{ t('admin.settings.application.regionalsettings.allowed.languages.label') }}
+            </h4>
+            
+            <!-- Russian Language Toggle -->
+            <div class="d-flex align-center mb-3">
+              <v-switch
+                v-model="russianEnabled"
+                color="teal-darken-2"
+                label="russian"
+                hide-details
+                density="compact"
+              />
+            </div>
+
+            <!-- English Language Toggle -->
+            <div class="d-flex align-center mb-3">
+              <v-switch
+                v-model="englishEnabled"
+                color="teal-darken-2"
+                label="english"
+                hide-details
+                density="compact"
+              />
+            </div>
           </div>
         </div>
       </div>
@@ -564,49 +734,115 @@ onMounted(async () => {
 
 .settings-section {
   padding: 16px 0;
+  transition: background-color 0.2s ease;
+}
+
+.settings-section:hover {
+  background-color: rgba(0, 0, 0, 0.01);
+}
+
+.settings-group {
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  border-radius: 8px;
+  padding: 16px;
+  background-color: rgba(0, 0, 0, 0.02);
 }
 
 .section-content {
   max-width: 600px;
 }
 
-.regional-select {
-  max-width: 200px;
+/* Regions table styles - matching Catalog.Settings.vue */
+.regions-table-wrapper {
+  width: 100%;
 }
 
-/* Timezone row layout */
-.timezone-row {
-  display: flex;
-  align-items: top;
-  gap: 40px;
-  flex-wrap: nowrap;
+.regions-table {
+  width: 100%;
 }
 
-.timezone-select-container {
+.regions-table :deep(.v-data-table-footer) {
+  border-top: thin solid rgba(var(--v-border-color), var(--v-border-opacity));
+}
+
+.regions-table :deep(.v-data-table__tr) {
+  position: relative;
+}
+
+.regions-table :deep(.v-data-table__tr::after) {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 7px;
+  right: 7px;
+  height: 1px;
+  background-color: rgba(var(--v-border-color), var(--v-border-opacity));
+}
+
+.regions-table :deep(tbody > tr:last-child::after) {
+  display: none;
+}
+
+.regions-table :deep(.v-data-table__td),
+.regions-table :deep(.v-data-table__th) {
+  border-bottom: none !important;
+}
+
+/* Header bottom separator */
+.regions-table :deep(thead) {
+  position: relative;
+}
+
+.regions-table :deep(thead::after) {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 7px;
+  right: 7px;
+  height: 1px;
+  background-color: rgba(var(--v-border-color), var(--v-border-opacity));
+}
+
+/* Region input field styles - remove borders */
+.region-input {
+  max-width: 100%;
+}
+
+.region-input :deep(.v-field) {
+  border: none !important;
+  box-shadow: none !important;
+  background: transparent !important;
+  position: relative;
+}
+
+.region-input :deep(.v-field__outline) {
+  display: none !important;
+}
+
+.region-input :deep(.v-field__input) {
+  padding: 0 !important;
+}
+
+.table-actions {
   display: flex;
+  justify-content: flex-start;
   align-items: center;
-  min-width: 200px;
 }
 
-.time-format-toggle-container {
-  display: flex;
-  align-items: center;
-  min-width: 250px;
-  flex-shrink: 0;
+/* Update button glow animation when active */
+.btn-glow-active {
+  animation: soft-glow 2s ease-in-out infinite;
+  box-shadow: 0 0 8px rgba(20, 184, 166, 0.3);
 }
 
-/* Responsive adjustments */
-@media (max-width: 768px) {
-  .timezone-row {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 16px;
+@keyframes soft-glow {
+  0%, 100% {
+    box-shadow: 0 0 8px rgba(20, 184, 166, 0.3);
+    transform: scale(1);
   }
-  
-  .timezone-select-container,
-  .time-format-toggle-container {
-    min-width: auto;
-    width: 100%;
+  50% {
+    box-shadow: 0 0 16px rgba(20, 184, 166, 0.5);
+    transform: scale(1.01);
   }
 }
 </style>

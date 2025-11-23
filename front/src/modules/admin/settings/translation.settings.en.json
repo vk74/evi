@@ -221,6 +221,27 @@
         },
         "regionalsettings": {
           "title": "regional settings",
+          "time": {
+            "settings": {
+              "title": "time settings"
+            }
+          },
+          "regions": {
+            "title": "regions",
+            "actions": {
+              "add": "add region",
+              "update": "update",
+              "cancel": "cancel"
+            },
+            "messages": {
+              "updateSuccess": "regions updated successfully"
+            }
+          },
+          "languages": {
+            "title": "languages",
+            "english": "english",
+            "russian": "русский"
+          },
           "timezone": {
             "label": "time zone"
           },
@@ -233,13 +254,14 @@
           "time12h": {
             "label": "use 12H AM/PM time format"
           },
+          "allowed": {
+            "languages": {
+              "label": "allowed languages"
+            }
+          },
           "countries": {
             "russia": "Russia",
             "kazakhstan": "Kazakhstan"
-          },
-          "languages": {
-            "english": "English",
-            "russian": "Русский"
           }
         },
         "system": {
