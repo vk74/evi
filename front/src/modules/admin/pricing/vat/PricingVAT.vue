@@ -58,7 +58,7 @@ interface VATRegion {
   id: number;
   region: string;
   status: 'active' | 'disabled';
-  vatRate: number;
+  vatRate: number | null;
   [key: string]: any; // For dynamic VAT rate columns (stores priority number)
 }
 
@@ -125,7 +125,7 @@ async function loadRegions(): Promise<void> {
       id: nextRegionId.value++,
       region: regionValue,
       status: 'active' as const,
-      vatRate: 0
+      vatRate: null
     }));
     
     // Update nextRegionId to avoid conflicts
@@ -139,7 +139,7 @@ async function loadRegions(): Promise<void> {
       id: -1,
       region: '',
       status: 'active' as const,
-      vatRate: 0
+      vatRate: null
     };
     
     // Initialize empty values for dynamic columns in empty row
@@ -180,6 +180,11 @@ function parseRegionsValue(value: any): string[] {
   return [];
 }
 
+// Helper to get all relevant column keys (including 0%)
+const getAllColumnIds = () => {
+  return ['vatRate', ...vatRateColumns.value.map(c => c.id)];
+};
+
 /**
  * Toggle VAT status for a region
  */
@@ -187,6 +192,15 @@ function toggleStatus(regionId: number): void {
   const region = regions.value.find(r => r.id === regionId);
   if (region) {
     region.status = region.status === 'active' ? 'disabled' : 'active';
+    
+    // If disabled, clear all markers
+    if (region.status === 'disabled') {
+      getAllColumnIds().forEach(key => {
+        if (typeof region[key] === 'number') {
+          region[key] = null;
+        }
+      });
+    }
   }
 }
 
@@ -306,6 +320,13 @@ function deleteVATRateColumn(columnId: string): void {
  */
 function getNextPriority(region: VATRegion): number {
   let max = 0;
+  
+  // Check 0% column
+  if (typeof region.vatRate === 'number' && region.vatRate > max) {
+    max = region.vatRate;
+  }
+  
+  // Check dynamic columns
   vatRateColumns.value.forEach(col => {
     const val = region[col.id];
     if (typeof val === 'number' && val > max) {
@@ -319,6 +340,9 @@ function getNextPriority(region: VATRegion): number {
  * Add priority marker to a region
  */
 function addMarker(region: VATRegion, columnId: string): void {
+  // Prevent adding markers if region is disabled
+  if (region.status === 'disabled') return;
+  
   const nextPriority = getNextPriority(region);
   region[columnId] = nextPriority;
 }
@@ -334,6 +358,13 @@ function removeMarker(region: VATRegion, columnId: string): void {
   region[columnId] = null;
   
   // Close gaps: decrement all priorities greater than the removed one
+  
+  // Check 0% column
+  if (typeof region.vatRate === 'number' && region.vatRate > removedPriority) {
+    region.vatRate = region.vatRate - 1;
+  }
+  
+  // Check dynamic columns
   vatRateColumns.value.forEach(col => {
     const val = region[col.id];
     if (typeof val === 'number' && val > removedPriority) {
@@ -349,6 +380,9 @@ function removeMarker(region: VATRegion, columnId: string): void {
  * Open marker menu for editing
  */
 function openMarkerMenu(region: VATRegion, columnId: string, event: Event): void {
+  // Prevent opening menu if region is disabled (though chips shouldn't be there if disabled)
+  if (region.status === 'disabled') return;
+
   // Stop propagation to prevent immediate close if clicking on trigger
   event.stopPropagation();
   
@@ -375,6 +409,13 @@ function updateMarkerPriority(): void {
   
   // Get all markers for this region
   const markers: { colId: string, priority: number }[] = [];
+  
+  // Add 0% column if it has a marker
+  if (typeof region.vatRate === 'number') {
+    markers.push({ colId: 'vatRate', priority: region.vatRate });
+  }
+  
+  // Add dynamic columns markers
   vatRateColumns.value.forEach(col => {
     const val = region[col.id];
     if (typeof val === 'number') {
@@ -578,7 +619,28 @@ onMounted(async () => {
 
           <!-- Default VAT rate column (0%) -->
           <template #[`item.vatRate`]="{ item }">
-            <!-- Empty column -->
+            <div 
+              class="d-flex justify-center align-center cell-clickable fill-height"
+              :class="{ 'disabled-cell': item.status !== 'active' }"
+              style="min-height: 40px; cursor: pointer;"
+              @click="!item.vatRate && item.status === 'active' && addMarker(item, 'vatRate')"
+            >
+              <v-chip
+                v-if="item.vatRate"
+                color="primary"
+                size="small"
+                class="priority-chip font-weight-bold"
+                :id="`marker-${item.id}-vatRate`"
+                @click="openMarkerMenu(item, 'vatRate', $event)"
+              >
+                {{ item.vatRate }}
+              </v-chip>
+              
+              <!-- Hover placeholder for empty cell -->
+              <div v-else class="empty-cell-placeholder">
+                <PhPlus :size="14" class="placeholder-icon" />
+              </div>
+            </div>
           </template>
           
           <!-- Dynamic VAT rate columns headers -->
@@ -618,8 +680,9 @@ onMounted(async () => {
             <div 
               v-else 
               class="d-flex justify-center align-center cell-clickable fill-height"
+              :class="{ 'disabled-cell': item.status !== 'active' }"
               style="min-height: 40px; cursor: pointer;"
-              @click="!item[column.id] && addMarker(item, column.id)"
+              @click="!item[column.id] && item.status === 'active' && addMarker(item, column.id)"
             >
               <v-chip
                 v-if="item[column.id]"
@@ -909,5 +972,14 @@ onMounted(async () => {
   background-color: rgba(var(--v-theme-primary), 0.1) !important;
   color: rgb(var(--v-theme-primary)) !important;
   transform: scale(1.1);
+}
+
+.disabled-cell {
+  pointer-events: none;
+  opacity: 0.5;
+}
+
+.disabled-cell .empty-cell-placeholder {
+  display: none;
 }
 </style>
