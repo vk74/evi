@@ -4,6 +4,7 @@
       "sections": {
         "priceLists": "прайс-листы",
         "priceListEditor": "редактор прайс-листа",
+        "vat": "ндс",
         "currencies": "список валют",
         "settings": "настройки"
       },
@@ -180,6 +181,22 @@
           },
           "typeProduct": "продукт",
           "typeService": "сервис"
+        }
+      },
+      "vat": {
+        "table": {
+          "headers": {
+            "status": "статус",
+            "region": "регион",
+            "vatRate": "0 %"
+          }
+        },
+        "status": {
+          "active": "активен",
+          "disabled": "отключен"
+        },
+        "actions": {
+          "addColumn": "добавить колонку"
         }
       },
       "settings": {

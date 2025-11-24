@@ -4,6 +4,7 @@
       "sections": {
         "priceLists": "price lists",
         "priceListEditor": "price list editor",
+        "vat": "vat",
         "currencies": "currencies list",
         "settings": "settings"
       },
@@ -180,6 +181,22 @@
           },
           "typeProduct": "product",
           "typeService": "service"
+        }
+      },
+      "vat": {
+        "table": {
+          "headers": {
+            "status": "status",
+            "region": "region",
+            "vatRate": "0 %"
+          }
+        },
+        "status": {
+          "active": "active",
+          "disabled": "disabled"
+        },
+        "actions": {
+          "addColumn": "add column"
         }
       },
       "settings": {

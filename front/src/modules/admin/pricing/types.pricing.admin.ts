@@ -1,6 +1,6 @@
 /**
  * @file types.pricing.admin.ts
- * Version: 1.3.7
+ * Version: 1.3.8
  * Type definitions for pricing administration module.
  * Frontend types for pricing admin functionality.
  * File: types.pricing.admin.ts (frontend)
@@ -13,6 +13,9 @@
  * 
  * Changes in v1.3.7:
  * - Added region field to PriceListSummary, PriceListFull, CreatePriceListRequest, and UpdatePriceListRequest
+ * 
+ * Changes in v1.3.8:
+ * - Added 'vat' to PricingSectionId type union
  */
 
 // Pricing section interface for menu navigation
@@ -24,7 +27,7 @@ export interface Section {
 }
 
 // Pricing admin sections
-export type PricingSectionId = 'price-lists' | 'price-list-editor' | 'currencies' | 'settings'
+export type PricingSectionId = 'price-lists' | 'price-list-editor' | 'vat' | 'currencies' | 'settings'
 
 // Editor modes
 export type PriceListEditorMode = 'creation' | 'edit'

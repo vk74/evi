@@ -1,8 +1,13 @@
 <!--
-Version: 1.4.1
+Version: 1.5.0
 Pricing administration submodule component.
 Frontend file that provides pricing management interface for admin users.
 Filename: SubModulePricing.vue
+
+Changes in v1.5.0:
+- Added VAT section above currencies section
+- Imported PhPercent icon for VAT section
+- Added PricingVAT async component
 -->
 <script setup lang="ts">
 import { computed, defineAsyncComponent } from 'vue'
@@ -16,12 +21,14 @@ import {
   PhGlobeHemisphereWest, 
   PhFadersHorizontal,
   PhNotePencil,
-  PhCoins
+  PhCoins,
+  PhPercent
 } from '@phosphor-icons/vue'
 
 // Async components for lazy loading
 const PriceLists = defineAsyncComponent(() => import('./PriceLists/PriceLists.vue'))
 const PriceListEditor = defineAsyncComponent(() => import('./PriceListEditor/PriceListEditor.vue'))
+const PricingVAT = defineAsyncComponent(() => import('./vat/PricingVAT.vue'))
 const Currencies = defineAsyncComponent(() => import('./currencies/Currencies.vue'))
 const PricingSettings = defineAsyncComponent(() => import('./settings/PricingSettings.vue'))
 
@@ -40,6 +47,11 @@ const sections = computed((): Section[] => [
     id: 'price-list-editor',
     title: t('admin.pricing.sections.priceListEditor'),
     icon: 'PhNotePencil'
+  },
+  {
+    id: 'vat',
+    title: t('admin.pricing.sections.vat'),
+    icon: 'PhPercent'
   },
   {
     id: 'currencies',
@@ -77,6 +89,8 @@ const getIconComponent = (iconName: string) => {
       return PhNotePencil
     case 'PhCoins':
       return PhCoins
+    case 'PhPercent':
+      return PhPercent
     default:
       return null
   }
@@ -119,6 +133,7 @@ const getIconComponent = (iconName: string) => {
     <div class="content-panel">
       <PriceLists v-if="activeSection === 'price-lists'" class="pa-0" />
       <PriceListEditor v-if="activeSection === 'price-list-editor'" class="pa-0" />
+      <PricingVAT v-if="activeSection === 'vat'" class="pa-0" />
       <Currencies v-if="activeSection === 'currencies'" class="pa-0" />
       <PricingSettings v-if="activeSection === 'settings'" class="pa-4" />
     </div>
