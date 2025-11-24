@@ -55,6 +55,12 @@ Changes in v1.11.1:
 - Added check for isLoadingCountry before showing location modal
 - Added automatic country loading attempt before showing modal
 - Modal now shows only when country is actually not set after loading attempt
+
+Changes in v1.12.0:
+- Replaced country-pricelist mapping with region-based pricelist lookup
+- Renamed userCountry -> userLocation throughout the component
+- Removed dependency on getSettingValueHelper for pricelist mapping
+- Added getPricelistByRegion service call to get pricelist by user location
 -->
 <script setup lang="ts">
 import { ref, onMounted, watch, computed } from 'vue'
@@ -68,7 +74,7 @@ import type { CatalogProductOption } from './types.products'
 import ProductOptionsTable from './ProductOptionsTable.vue'
 import { PhCaretUpDown, PhSquare, PhMicrosoftExcelLogo } from '@phosphor-icons/vue'
 import { fetchPricesByCodes } from '../service.catalog.fetch.prices.by.codes'
-import { getSettingValueHelper } from '@/core/helpers/get.setting.value'
+import { getPricelistByRegion } from '../service.catalog.get.pricelist.by.region'
 import { getCachedPrice, cachePrice, isPriceCacheValid } from '../state.catalog'
 import { formatPriceWithPrecision } from '@/core/helpers/helper.format.price'
 
@@ -194,24 +200,24 @@ async function loadProductPrice() {
       return
     }
 
-    // Check if country is currently loading
-    if (appStore.isLoadingCountry) {
-      // Country is loading - wait for it to complete, don't show modal yet
+    // Check if location is currently loading
+    if (appStore.isLoadingLocation) {
+      // Location is loading - wait for it to complete, don't show modal yet
       return
     }
     
-    // Get user country
-    let userCountry = appStore.getUserCountry
+    // Get user location
+    let userLocation = appStore.getUserLocation
     
-    // If country is not loaded, try to load it first
-    if (!userCountry) {
-      await appStore.loadUserCountry()
-      userCountry = appStore.getUserCountry
+    // If location is not loaded, try to load it first
+    if (!userLocation) {
+      await appStore.loadUserLocation()
+      userLocation = appStore.getUserLocation
     }
     
-    // Only show modal if country is still null after loading attempt
-    if (!userCountry) {
-      // No country - show toast and emit event to open LocationSelectionModal
+    // Only show modal if location is still null after loading attempt
+    if (!userLocation) {
+      // No location - show toast and emit event to open LocationSelectionModal
       uiStore.showErrorSnackbar(t('catalog.errors.selectCountryLocation'))
       // Emit event to open location modal (will be handled in App.vue)
       window.dispatchEvent(new CustomEvent('openLocationSelectionModal'))
@@ -220,22 +226,11 @@ async function loadProductPrice() {
       return
     }
     
-    // Get pricelist ID from settings
-    const mappingSetting = await getSettingValueHelper<Record<string, number>>(
-      'Admin.Catalog.CountryProductPricelistID',
-      'country.product.price.list.mapping'
-    )
-    
-    if (!mappingSetting || typeof mappingSetting !== 'object') {
-      // No mapping found - show dash
-      productPrice.value = null
-      return
-    }
-    
-    const pricelistId = mappingSetting[userCountry]
+    // Get pricelist ID by region
+    const pricelistId = await getPricelistByRegion(userLocation)
     
     if (!pricelistId || typeof pricelistId !== 'number') {
-      // No pricelist for this country - show dash
+      // No pricelist for this region - show dash
       productPrice.value = null
       return
     }
@@ -301,7 +296,7 @@ watch(() => details.value?.product_code, () => {
   }
 }, { immediate: true })
 
-watch(() => appStore.getUserCountry, () => {
+watch(() => appStore.getUserLocation, () => {
   if (details.value?.product_code) {
     loadProductPrice()
   }

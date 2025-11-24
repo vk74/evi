@@ -1,10 +1,10 @@
 /**
- * service.get.user.country.ts - version 1.0.0
- * BACKEND service for retrieving user country location
+ * service.get.user.location.ts - version 1.0.0
+ * BACKEND service for retrieving user location
  * 
- * Retrieves user country information from the database
- * Validates user authentication and returns country data or appropriate error messages
- * File: service.get.user.country.ts
+ * Retrieves user location information from the database
+ * Validates user authentication and returns location data or appropriate error messages
+ * File: service.get.user.location.ts
  */
 
 import { Request, Response } from 'express';
@@ -28,24 +28,24 @@ interface EnhancedRequest extends Request {
   user?: UserInfo;
 }
 
-// Interface for user country data
-interface UserCountryData {
-  country: string | null;
+// Interface for user location data
+interface UserLocationData {
+  location: string | null;
   [key: string]: any;
 }
 
 /**
- * Retrieves user country location
+ * Retrieves user location
  * @param req Express request with user info
  * @param res Express response
  * @returns Promise<void>
  */
-const getUserCountry = async (req: EnhancedRequest, res: Response): Promise<void> => {
+const getUserLocation = async (req: EnhancedRequest, res: Response): Promise<void> => {
   const username = req.user?.username;
 
   if (!username) {
     await createAndPublishEvent({
-      eventName: ACCOUNT_SERVICE_EVENTS.GET_USER_COUNTRY_MISSING_USERNAME.eventName,
+      eventName: ACCOUNT_SERVICE_EVENTS.GET_USER_LOCATION_MISSING_USERNAME.eventName,
       payload: {
         requestInfo: {
           method: req.method,
@@ -62,29 +62,29 @@ const getUserCountry = async (req: EnhancedRequest, res: Response): Promise<void
 
   try {
     await createAndPublishEvent({
-      eventName: ACCOUNT_SERVICE_EVENTS.GET_USER_COUNTRY_RETRIEVING.eventName,
+      eventName: ACCOUNT_SERVICE_EVENTS.GET_USER_LOCATION_RETRIEVING.eventName,
       payload: {
         username
       }
     });
 
-    const result: QueryResult<UserCountryData> = await pool.query(
-      userProfileQueries.getUserCountry.text,
+    const result: QueryResult<UserLocationData> = await pool.query(
+      userProfileQueries.getUserLocation.text,
       [username]
     );
 
     if (result.rows.length > 0) {
       await createAndPublishEvent({
-        eventName: ACCOUNT_SERVICE_EVENTS.GET_USER_COUNTRY_FOUND.eventName,
+        eventName: ACCOUNT_SERVICE_EVENTS.GET_USER_LOCATION_FOUND.eventName,
         payload: {
           username,
-          country: result.rows[0].country
+          location: result.rows[0].location
         }
       });
       res.json(result.rows[0]);
     } else {
       await createAndPublishEvent({
-        eventName: ACCOUNT_SERVICE_EVENTS.GET_USER_COUNTRY_NOT_FOUND.eventName,
+        eventName: ACCOUNT_SERVICE_EVENTS.GET_USER_LOCATION_NOT_FOUND.eventName,
         payload: {
           username
         }
@@ -96,7 +96,7 @@ const getUserCountry = async (req: EnhancedRequest, res: Response): Promise<void
 
   } catch (error) {
     await createAndPublishEvent({
-      eventName: ACCOUNT_SERVICE_EVENTS.GET_USER_COUNTRY_ERROR.eventName,
+      eventName: ACCOUNT_SERVICE_EVENTS.GET_USER_LOCATION_ERROR.eventName,
       payload: {
         username,
         error: error instanceof Error ? error.message : 'Unknown error'
@@ -111,5 +111,5 @@ const getUserCountry = async (req: EnhancedRequest, res: Response): Promise<void
 };
 
 // Export for ES modules only
-export default getUserCountry;
+export default getUserLocation;
 

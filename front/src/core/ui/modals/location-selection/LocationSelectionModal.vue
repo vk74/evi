@@ -1,14 +1,14 @@
 /**
  * LocationSelectionModal.vue
- * Version: 1.2.1
- * Modal dialog for user country selection.
- * Frontend file that allows users to select and save their country location.
- * Modal cannot be closed if user has no saved country in DB.
+ * Version: 1.3.0
+ * Modal dialog for user location selection.
+ * Frontend file that allows users to select and save their location.
+ * Modal cannot be closed if user has no saved location in DB.
  * 
  * Features:
- * - Country dropdown populated from getCountries() helper
- * - Loads current country from DB on open
- * - Persistent modal when user has no saved country
+ * - Location dropdown populated from app.regions setting
+ * - Loads current location from DB on open
+ * - Persistent modal when user has no saved location
  * - Save functionality with API call
  * - Error handling and user feedback
  * 
@@ -23,6 +23,11 @@
  * 
  * Changes in v1.2.1:
  * - Added appStore integration to update user country in global state after successful save
+ * 
+ * Changes in v1.3.0:
+ * - Replaced getCountries() with app.regions setting from Application.RegionalSettings
+ * - Renamed country references to location for consistency
+ * - Updated to use appSettingsStore to get regions list
  */
 
 <script setup lang="ts">
@@ -31,8 +36,8 @@ import { useI18n } from 'vue-i18n';
 import { useUiStore } from '@/core/state/uistate';
 import { useUserAuthStore } from '@/core/auth/state.user.auth';
 import { useAppStore } from '@/core/state/appstate';
-import { getCountries } from '@/core/helpers/get.countries';
-import { getUserCountry } from '@/core/services/service.get.user.country';
+import { useAppSettingsStore } from '@/modules/admin/settings/state.app.settings';
+import { getUserLocation } from '@/core/services/service.get.user.location';
 import { api } from '@/core/api/service.axios';
 import { PhCaretUpDown } from '@phosphor-icons/vue';
 
@@ -41,6 +46,7 @@ const { t } = useI18n();
 const uiStore = useUiStore();
 const userStore = useUserAuthStore();
 const appStore = useAppStore();
+const appSettingsStore = useAppSettingsStore();
 
 // Component props
 interface Props {
@@ -55,87 +61,137 @@ const emit = defineEmits<{
 }>();
 
 // Form state
-const selectedCountry = ref<string>('select country');
-const originalCountry = ref<string | null>(null); // Saved country from DB
-const countries = ref<string[]>([]);
+const selectedLocation = ref<string>('select location');
+const originalLocation = ref<string | null>(null); // Saved location from DB
+const regions = ref<string[]>([]);
 const loading = ref(false);
-const loadingCountries = ref(false);
-const loadingUserCountry = ref(false);
+const loadingRegions = ref(false);
+const loadingUserLocation = ref(false);
 const error = ref<string>('');
-const defaultOption = 'select country';
-const countrySaved = ref<boolean>(false); // Flag that country was saved in this session
+const defaultOption = 'select location';
+const locationSaved = ref<boolean>(false); // Flag that location was saved in this session
 
 // Computed properties
-const isCountrySelected = computed(() => {
-  return selectedCountry.value !== '' && selectedCountry.value !== defaultOption;
+const isLocationSelected = computed(() => {
+  return selectedLocation.value !== '' && selectedLocation.value !== defaultOption;
 });
 
-// Check if user has saved country (from DB or saved in this session)
-const hasSavedCountry = computed(() => {
-  return originalCountry.value !== null || countrySaved.value;
+// Check if user has saved location (from DB or saved in this session)
+const hasSavedLocation = computed(() => {
+  return originalLocation.value !== null || locationSaved.value;
 });
 
-// Modal can be closed only if user has saved country
+// Modal can be closed only if user has saved location
 const isModalPersistent = computed(() => {
-  return !hasSavedCountry.value;
+  return !hasSavedLocation.value;
 });
 
-// Close button is disabled if no saved country
+// Close button is disabled if no saved location
 const isCloseButtonDisabled = computed(() => {
-  return !hasSavedCountry.value;
+  return !hasSavedLocation.value;
 });
 
 // Close modal handler
 const closeModal = (): void => {
-  if (hasSavedCountry.value) {
+  if (hasSavedLocation.value) {
     emit('update:modelValue', false);
   }
 };
 
-// Load countries list
-const loadCountries = async (): Promise<void> => {
-  loadingCountries.value = true;
+// Load regions list from app.regions setting
+const loadRegions = async (): Promise<void> => {
+  loadingRegions.value = true;
   error.value = '';
   
   try {
-    const countriesList = await getCountries();
-    countries.value = countriesList;
-  } catch (err) {
-    error.value = t('locationSelection.error.loadingCountries');
-    uiStore.showErrorSnackbar(t('locationSelection.error.loadingCountries'));
-  } finally {
-    loadingCountries.value = false;
-  }
-};
-
-// Load user country from DB
-const loadUserCountry = async (): Promise<void> => {
-  loadingUserCountry.value = true;
-  error.value = '';
-  
-  try {
-    const country = await getUserCountry();
-    originalCountry.value = country;
+    // Try to get from authenticated settings cache first
+    let settingsArray = appSettingsStore.getCachedSettings('Application.RegionalSettings');
     
-    // Set selected country: use DB value if exists, otherwise default option
-    if (country !== null && country !== '') {
-      selectedCountry.value = country;
+    // Fallback to public settings cache if authenticated cache not available
+    if (!settingsArray) {
+      const publicCacheEntry = appSettingsStore.publicSettingsCache['Application.RegionalSettings'];
+      if (publicCacheEntry) {
+        settingsArray = publicCacheEntry.data;
+      }
+    }
+    
+    if (settingsArray) {
+      const regionsSetting = settingsArray.find(
+        setting => setting.setting_name === 'app.regions'
+      );
+      
+      if (regionsSetting) {
+        const value = regionsSetting.value as string[] | undefined;
+        if (Array.isArray(value) && value.length > 0) {
+          regions.value = value;
+        } else {
+          // Empty array or invalid - show empty list
+          regions.value = [];
+        }
+      } else {
+        // Setting not found - show empty list
+        regions.value = [];
+      }
     } else {
-      selectedCountry.value = defaultOption;
+      // Settings not loaded - try to load them
+      const { fetchSettings } = await import('@/modules/admin/settings/service.fetch.settings');
+      const loadedSettings = await fetchSettings('Application.RegionalSettings');
+      if (loadedSettings) {
+        appSettingsStore.cacheSettings('Application.RegionalSettings', loadedSettings);
+        const regionsSetting = loadedSettings.find(
+          setting => setting.setting_name === 'app.regions'
+        );
+        if (regionsSetting) {
+          const value = regionsSetting.value as string[] | undefined;
+          if (Array.isArray(value) && value.length > 0) {
+            regions.value = value;
+          } else {
+            regions.value = [];
+          }
+        } else {
+          regions.value = [];
+        }
+      } else {
+        regions.value = [];
+      }
     }
   } catch (err) {
-    error.value = t('locationSelection.error.loadingUserCountry');
-    uiStore.showErrorSnackbar(t('locationSelection.error.loadingUserCountry'));
-    // On error, set to default option
-    selectedCountry.value = defaultOption;
+    error.value = t('locationSelection.error.loadingRegions');
+    uiStore.showErrorSnackbar(t('locationSelection.error.loadingRegions'));
+    regions.value = [];
   } finally {
-    loadingUserCountry.value = false;
+    loadingRegions.value = false;
   }
 };
 
-// Save country
-const saveCountry = async (): Promise<void> => {
-  if (!isCountrySelected.value) {
+// Load user location from DB
+const loadUserLocation = async (): Promise<void> => {
+  loadingUserLocation.value = true;
+  error.value = '';
+  
+  try {
+    const location = await getUserLocation();
+    originalLocation.value = location;
+    
+    // Set selected location: use DB value if exists, otherwise default option
+    if (location !== null && location !== '') {
+      selectedLocation.value = location;
+    } else {
+      selectedLocation.value = defaultOption;
+    }
+  } catch (err) {
+    error.value = t('locationSelection.error.loadingUserLocation');
+    uiStore.showErrorSnackbar(t('locationSelection.error.loadingUserLocation'));
+    // On error, set to default option
+    selectedLocation.value = defaultOption;
+  } finally {
+    loadingUserLocation.value = false;
+  }
+};
+
+// Save location
+const saveLocation = async (): Promise<void> => {
+  if (!isLocationSelected.value) {
     return;
   }
 
@@ -143,19 +199,19 @@ const saveCountry = async (): Promise<void> => {
   error.value = '';
 
   try {
-    const response = await api.post('/api/admin/users/update-country', {
-      country: selectedCountry.value
+    const response = await api.post('/api/admin/users/update-location', {
+      location: selectedLocation.value
     });
 
     if (response.data) {
-      // Update original country to saved value
-      originalCountry.value = selectedCountry.value;
-      countrySaved.value = true;
+      // Update original location to saved value
+      originalLocation.value = selectedLocation.value;
+      locationSaved.value = true;
       
-      // Update appStore with new country value from response
-      // Use country from response.data if available, otherwise use selectedCountry
-      const savedCountry = response.data.country || selectedCountry.value;
-      appStore.setUserCountry(savedCountry);
+      // Update appStore with new location value from response
+      // Use location from response.data if available, otherwise use selectedLocation
+      const savedLocation = response.data.location || selectedLocation.value;
+      appStore.setUserLocation(savedLocation);
       
       uiStore.showSuccessSnackbar(t('locationSelection.success.saved'));
       // Close modal after successful save
@@ -177,12 +233,12 @@ const saveCountry = async (): Promise<void> => {
 watch(() => props.modelValue, async (newValue) => {
   if (newValue) {
     error.value = '';
-    countrySaved.value = false;
+    locationSaved.value = false;
     
-    // Load countries list and user country in parallel
+    // Load regions list and user location in parallel
     await Promise.all([
-      loadCountries(),
-      loadUserCountry()
+      loadRegions(),
+      loadUserLocation()
     ]);
   }
 });
@@ -191,8 +247,8 @@ watch(() => props.modelValue, async (newValue) => {
 onMounted(async () => {
   if (props.modelValue) {
     await Promise.all([
-      loadCountries(),
-      loadUserCountry()
+      loadRegions(),
+      loadUserLocation()
     ]);
   }
 });
@@ -213,11 +269,11 @@ onMounted(async () => {
       
       <v-card-text class="pa-4">
         <v-select
-          v-model="selectedCountry"
+          v-model="selectedLocation"
           :label="t('locationSelection.label')"
-          :items="countries"
-          :loading="loadingCountries || loadingUserCountry"
-          :disabled="loadingCountries || loadingUserCountry"
+          :items="regions"
+          :loading="loadingRegions || loadingUserLocation"
+          :disabled="loadingRegions || loadingUserLocation"
           :error-messages="error ? [error] : []"
           :item-title="(item) => item"
           :item-value="(item) => item"
@@ -228,7 +284,7 @@ onMounted(async () => {
           <template #prepend-item>
             <v-list-item
               :value="defaultOption"
-              :title="t('locationSelection.selectCountry')"
+              :title="t('locationSelection.selectLocation')"
             />
           </template>
           <template #append-inner>
@@ -243,7 +299,7 @@ onMounted(async () => {
           color="grey"
           variant="outlined"
           class="mr-2"
-          :disabled="isCloseButtonDisabled || loading || loadingUserCountry"
+          :disabled="isCloseButtonDisabled || loading || loadingUserLocation"
           @click="closeModal"
         >
           {{ t('locationSelection.close') }}
@@ -252,8 +308,8 @@ onMounted(async () => {
           color="teal"
           variant="outlined"
           :loading="loading"
-          :disabled="!isCountrySelected || loadingCountries || loadingUserCountry"
-          @click="saveCountry"
+          :disabled="!isLocationSelected || loadingRegions || loadingUserLocation"
+          @click="saveLocation"
         >
           {{ t('locationSelection.save') }}
         </v-btn>

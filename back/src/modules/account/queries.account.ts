@@ -206,12 +206,12 @@ export const userProfileQueries = {
   },
 
   /**
-   * Get user country by username
-   * Retrieves user's country location using username
+   * Get user location by username
+   * Retrieves user's location using username
    */
-  getUserCountry: {
+  getUserLocation: {
     text: `
-      SELECT country
+      SELECT location
       FROM app.users
       WHERE username = $1
     `,
@@ -219,20 +219,20 @@ export const userProfileQueries = {
   },
 
   /**
-   * Update user country by username
-   * Updates user's country location using username
+   * Update user location by username
+   * Updates user's location using username
    */
-  updateUserCountry: {
+  updateUserLocation: {
     text: `
       UPDATE app.users
-      SET country = $1
+      SET location = $1
       WHERE username = $2
       RETURNING user_id, 
                 username,
-                country
+                location
     `,
     values: [
-      'country',   // $1
+      'location',   // $1
       'username'  // $2
     ]
   }

@@ -92,9 +92,6 @@ INSERT INTO app.app_settings (
 ('Catalog.Products', 'product.card.default.section', 'all', '"details"', '{"type":"string","enum":["details","options","specs"]}', '"details"', 'Default section to display in product card', false),
 ('Catalog.Services', 'card.color', 'all', '"#F5F5F5"', '{"type":"string","pattern":"^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$"}', '"#F5F5F5"', 'Background color for service cards in catalog (hex format)', true),
 
--- Admin Catalog Settings
-('Admin.Catalog.CountryProductPricelistID', 'country.product.price.list.mapping', 'all', '{}'::jsonb, '{"type":"object","additionalProperties":{"type":"integer","minimum":1}}'::jsonb, '{}'::jsonb, 'Mapping of country codes to product price list IDs (format: {"country_code": product_price_list_id, ...})', false),
-
 -- Data Validation Settings (Standard fields removed)
 ('Application.System.DataValidation', 'wellKnownFields.userName.minLength', 'all', '1', '{"type":"integer","minimum":1,"maximum":5}', '1', 'Minimum length for user name fields', true),
 ('Application.System.DataValidation', 'wellKnownFields.userName.maxLength', 'all', '20', '{"type":"integer","minimum":5,"maximum":50}', '20', 'Maximum length for user name fields', true),

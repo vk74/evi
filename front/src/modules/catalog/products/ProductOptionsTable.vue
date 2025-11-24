@@ -44,6 +44,12 @@ Changes in v1.5.0:
 Changes in v1.6.0:
 - Added rounding precision-aware formatting for unit and sum price columns
 - Reused shared helper for consistent locale-aware price rendering
+
+Changes in v1.7.0:
+- Replaced country-pricelist mapping with region-based pricelist lookup
+- Renamed userCountry -> userLocation throughout the component
+- Removed dependency on getSettingValueHelper for pricelist mapping
+- Added getPricelistByRegion service call to get pricelist by user location
 -->
 <script setup lang="ts">
 import { ref, computed, watch, onMounted } from 'vue'
@@ -53,7 +59,7 @@ import { useUiStore } from '@/core/state/uistate'
 import Paginator from '@/core/ui/paginator/Paginator.vue'
 import { PhCaretUpDown } from '@phosphor-icons/vue'
 import { fetchPricesByCodes } from '../service.catalog.fetch.prices.by.codes'
-import { getSettingValueHelper } from '@/core/helpers/get.setting.value'
+import { getPricelistByRegion } from '../service.catalog.get.pricelist.by.region'
 import { getCachedPrice, cachePrice, isPriceCacheValid } from '../state.catalog'
 import { formatPriceWithPrecision } from '@/core/helpers/helper.format.price'
 
@@ -223,11 +229,11 @@ function setUnitsCount(productId: string, v: number | null) {
 // ==================== PRICE LOADING FUNCTIONS ====================
 async function loadOptionPrices() {
   try {
-    // Get user country
-    const userCountry = appStore.getUserCountry
+    // Get user location
+    const userLocation = appStore.getUserLocation
     
-    if (!userCountry) {
-      // No country - show toast and emit event to open LocationSelectionModal
+    if (!userLocation) {
+      // No location - show toast and emit event to open LocationSelectionModal
       uiStore.showErrorSnackbar(t('catalog.errors.selectCountryLocation'))
       // Emit event to open location modal (will be handled in App.vue)
       window.dispatchEvent(new CustomEvent('openLocationSelectionModal'))
@@ -236,22 +242,11 @@ async function loadOptionPrices() {
       return
     }
     
-    // Get pricelist ID from settings
-    const mappingSetting = await getSettingValueHelper<Record<string, number>>(
-      'Admin.Catalog.CountryProductPricelistID',
-      'country.product.price.list.mapping'
-    )
-    
-    if (!mappingSetting || typeof mappingSetting !== 'object') {
-      // No mapping found - show dashes
-      optionPrices.value.clear()
-      return
-    }
-    
-    const pricelistId = mappingSetting[userCountry]
+    // Get pricelist ID by region
+    const pricelistId = await getPricelistByRegion(userLocation)
     
     if (!pricelistId || typeof pricelistId !== 'number') {
-      // No pricelist for this country - show dashes
+      // No pricelist for this region - show dashes
       optionPrices.value.clear()
       return
     }
@@ -340,7 +335,7 @@ watch(() => props.items, () => {
   }
 }, { deep: true })
 
-watch(() => appStore.getUserCountry, () => {
+watch(() => appStore.getUserLocation, () => {
   if ((props.items || []).length > 0) {
     loadOptionPrices()
   }

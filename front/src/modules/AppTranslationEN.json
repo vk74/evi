@@ -80,16 +80,19 @@
   "locationSelection": {
     "title": "my location",
     "label": "my location",
+    "selectLocation": "select location",
     "selectCountry": "select country",
     "save": "Save",
     "close": "Close",
     "success": {
-      "saved": "country saved successfully"
+      "saved": "location saved successfully"
     },
     "error": {
+      "loadingRegions": "failed to load regions list",
       "loadingCountries": "failed to load countries list",
+      "loadingUserLocation": "failed to load user location",
       "loadingUserCountry": "failed to load user country",
-      "saveFailed": "failed to save country",
+      "saveFailed": "failed to save location",
       "unexpectedError": "an unexpected error occurred"
     }
   },

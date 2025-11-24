@@ -1,5 +1,5 @@
 /**
- * appstate.ts - version 1.1.0
+ * appstate.ts - version 1.2.0
  * State store for the main navigation menu of the application.
  * Manages navigation between main modules, drawer display modes,
  * and preserves states between user sessions.
@@ -11,10 +11,18 @@
  * - Added setUserCountry action to update country value
  * - Added clearUserCountry action to clear country on logout
  * - Added isLoadingCountry flag to prevent duplicate requests
+ * 
+ * Changes in v1.2.0:
+ * - Renamed userCountry -> userLocation throughout the file
+ * - Renamed getUserCountry -> getUserLocation
+ * - Renamed loadUserCountry -> loadUserLocation
+ * - Renamed setUserCountry -> setUserLocation
+ * - Renamed clearUserCountry -> clearUserLocation
+ * - Renamed isLoadingCountry -> isLoadingLocation
  */
 import { defineStore } from 'pinia';
 import { ModuleName, AdminSubModule, DrawerMode } from '../../types.app';
-import { getUserCountry as getUserCountryAPI } from '@/core/services/service.get.user.country';
+import { getUserLocation as getUserLocationAPI } from '@/core/services/service.get.user.location';
 
 // Interface for the store state
 interface AppState {
@@ -23,8 +31,8 @@ interface AppState {
   drawerMode: DrawerMode;
   availableModules: ModuleName[];
   activeAdminSubModule: AdminSubModule;
-  userCountry: string | null;
-  isLoadingCountry: boolean;
+  userLocation: string | null;
+  isLoadingLocation: boolean;
 }
 
 // Guaranteed initialization of the list of all available modules
@@ -54,10 +62,10 @@ export const useAppStore = defineStore('app', {
     availableModules: DEFAULT_MODULES,
     // Default admin sub-module is app settings
     activeAdminSubModule: 'appAdmin',
-    // User country location
-    userCountry: null,
+    // User location (region)
+    userLocation: null,
     // Loading flag to prevent duplicate requests
-    isLoadingCountry: false
+    isLoadingLocation: false
   }),
 
   getters: {
@@ -83,10 +91,10 @@ export const useAppStore = defineStore('app', {
     getActiveAdminSubModule: (state): AdminSubModule => state.activeAdminSubModule,
 
     /**
-     * Get user country location
-     * @returns User country value or null
+     * Get user location (region)
+     * @returns User location value or null
      */
-    getUserCountry: (state): string | null => state.userCountry
+    getUserLocation: (state): string | null => state.userLocation
   },
 
   actions: {
@@ -141,58 +149,58 @@ export const useAppStore = defineStore('app', {
       this.drawerMode = 'closed'; 
       this.availableModules = DEFAULT_MODULES; 
       this.activeAdminSubModule = 'appAdmin';
-      this.userCountry = null;
-      this.isLoadingCountry = false;
+      this.userLocation = null;
+      this.isLoadingLocation = false;
     },
 
     /**
-     * Load user country from API
-     * Loads user country from backend and updates state
-     * Does not load if already loading or if country is already loaded
+     * Load user location from API
+     * Loads user location from backend and updates state
+     * Does not load if already loading or if location is already loaded
      */
-    async loadUserCountry(): Promise<void> {
+    async loadUserLocation(): Promise<void> {
       // Prevent duplicate requests
-      if (this.isLoadingCountry) {
+      if (this.isLoadingLocation) {
         return;
       }
 
-      // Skip if country is already loaded (optional optimization)
+      // Skip if location is already loaded (optional optimization)
       // We allow reloading to ensure fresh data
       
-      this.isLoadingCountry = true;
+      this.isLoadingLocation = true;
       
       try {
-        const country = await getUserCountryAPI();
-        this.userCountry = country;
-        console.log('[AppStore] User country loaded:', country);
+        const location = await getUserLocationAPI();
+        this.userLocation = location;
+        console.log('[AppStore] User location loaded:', location);
       } catch (error) {
-        console.error('[AppStore] Failed to load user country:', error);
-        // Don't block app functionality if country load fails
-        // Set to null to indicate no country loaded
-        this.userCountry = null;
+        console.error('[AppStore] Failed to load user location:', error);
+        // Don't block app functionality if location load fails
+        // Set to null to indicate no location loaded
+        this.userLocation = null;
       } finally {
-        this.isLoadingCountry = false;
+        this.isLoadingLocation = false;
       }
     },
 
     /**
-     * Set user country value directly
-     * Used after successful country update via API
-     * @param country - Country value to set (string or null)
+     * Set user location value directly
+     * Used after successful location update via API
+     * @param location - Location value to set (string or null)
      */
-    setUserCountry(country: string | null): void {
-      this.userCountry = country;
-      console.log('[AppStore] User country updated:', country);
+    setUserLocation(location: string | null): void {
+      this.userLocation = location;
+      console.log('[AppStore] User location updated:', location);
     },
 
     /**
-     * Clear user country
+     * Clear user location
      * Called on logout to reset state
      */
-    clearUserCountry(): void {
-      this.userCountry = null;
-      this.isLoadingCountry = false;
-      console.log('[AppStore] User country cleared');
+    clearUserLocation(): void {
+      this.userLocation = null;
+      this.isLoadingLocation = false;
+      console.log('[AppStore] User location cleared');
     }
   },
 

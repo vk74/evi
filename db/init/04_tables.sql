@@ -41,15 +41,11 @@ CREATE TABLE IF NOT EXISTS app.users (
     created_at TIMESTAMP WITH TIME ZONE,
     mobile_phone VARCHAR(15),
     gender app.gender,
-    country VARCHAR(50),
+    location VARCHAR(50),
     is_system BOOLEAN NOT NULL DEFAULT false,
     CONSTRAINT unique_user_name UNIQUE (username),
     CONSTRAINT unique_email UNIQUE (email),
-    CONSTRAINT unique_mobile_phone UNIQUE (mobile_phone),
-    CONSTRAINT check_country_valid CHECK (
-        country IS NULL 
-        OR (country::app.app_countries IS NOT NULL)
-    )
+    CONSTRAINT unique_mobile_phone UNIQUE (mobile_phone)
 );
 
 

@@ -1,10 +1,13 @@
 /**
- * version: 1.1.0
+ * version: 1.2.0
  * SQL queries for catalog functionality.
  * Backend file queries.catalog.ts describes reusable SQL fragments for catalog module.
  *
  * Changes in v1.1.0:
  * - Added currency symbol and rounding precision join for price list info query
+ * 
+ * Changes in v1.2.0:
+ * - Added fetchPricelistByRegion query to get pricelist by region
  */
 
 // Query type definitions
@@ -22,6 +25,8 @@ interface CatalogQueries {
     fetchPriceListInfo: string;
     // Fetch price list items by price list ID and item codes
     fetchPriceListItemsByCodes: string;
+    // Fetch price list by region
+    fetchPricelistByRegion: string;
 }
 
 // Query definitions
@@ -80,5 +85,22 @@ export const queries: CatalogQueries = {
         WHERE price_list_id = $1
           AND item_code = ANY($2::text[])
         ORDER BY item_code ASC
+    `,
+
+    // Fetch price list by region
+    // Parameters: region
+    fetchPricelistByRegion: `
+        SELECT 
+            pli.price_list_id,
+            pli.name,
+            pli.currency_code,
+            pli.is_active,
+            cur.symbol AS currency_symbol,
+            cur.rounding_precision
+        FROM app.price_lists_info AS pli
+        LEFT JOIN app.currencies AS cur
+            ON cur.code = pli.currency_code
+        WHERE pli.region = $1 AND pli.is_active = true
+        LIMIT 1
     `,
 }; 

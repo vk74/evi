@@ -330,76 +330,76 @@ export const ACCOUNT_SERVICE_EVENTS = {
     version: '1.0.0'
   },
   
-  // Get user country service events
-  GET_USER_COUNTRY_MISSING_USERNAME: {
-    eventName: 'account.service.get.user.country.missing_username',
-    source: 'account get user country service',
+  // Get user location service events
+  GET_USER_LOCATION_MISSING_USERNAME: {
+    eventName: 'account.service.get.user.location.missing_username',
+    source: 'account get user location service',
     eventType: 'security' as const,
     severity: 'warning' as const,
-    eventMessage: 'Get user country failed: Username is missing',
+    eventMessage: 'Get user location failed: Username is missing',
     payload: null, // { requestInfo }
     version: '1.0.0'
   },
   
-  GET_USER_COUNTRY_RETRIEVING: {
-    eventName: 'account.service.get.user.country.retrieving',
-    source: 'account get user country service',
+  GET_USER_LOCATION_RETRIEVING: {
+    eventName: 'account.service.get.user.location.retrieving',
+    source: 'account get user location service',
     eventType: 'security' as const,
     severity: 'debug' as const,
-    eventMessage: 'Retrieving country data for user',
+    eventMessage: 'Retrieving location data for user',
     payload: null, // { username }
     version: '1.0.0'
   },
   
-  GET_USER_COUNTRY_FOUND: {
-    eventName: 'account.service.get.user.country.found',
-    source: 'account get user country service',
+  GET_USER_LOCATION_FOUND: {
+    eventName: 'account.service.get.user.location.found',
+    source: 'account get user location service',
     eventType: 'security' as const,
     severity: 'debug' as const,
-    eventMessage: 'Country data found for user',
-    payload: null, // { username, country }
+    eventMessage: 'Location data found for user',
+    payload: null, // { username, location }
     version: '1.0.0'
   },
   
-  GET_USER_COUNTRY_NOT_FOUND: {
-    eventName: 'account.service.get.user.country.not_found',
-    source: 'account get user country service',
+  GET_USER_LOCATION_NOT_FOUND: {
+    eventName: 'account.service.get.user.location.not_found',
+    source: 'account get user location service',
     eventType: 'security' as const,
     severity: 'warning' as const,
-    eventMessage: 'User not found for country retrieval',
+    eventMessage: 'User not found for location retrieval',
     payload: null, // { username }
     version: '1.0.0'
   },
   
-  GET_USER_COUNTRY_ERROR: {
-    eventName: 'account.service.get.user.country.error',
-    source: 'account get user country service',
+  GET_USER_LOCATION_ERROR: {
+    eventName: 'account.service.get.user.location.error',
+    source: 'account get user location service',
     eventType: 'security' as const,
     severity: 'error' as const,
-    eventMessage: 'Error in getUserCountry',
+    eventMessage: 'Error in getUserLocation',
     payload: null, // { username, error }
     errorData: null, // Error details
     version: '1.0.0'
   },
   
-  // Update user country service events
-  UPDATE_USER_COUNTRY_SUCCESS: {
-    eventName: 'account.service.update.user.country.success',
-    source: 'account update user country service',
+  // Update user location service events
+  UPDATE_USER_LOCATION_SUCCESS: {
+    eventName: 'account.service.update.user.location.success',
+    source: 'account update user location service',
     eventType: 'security' as const,
     severity: 'info' as const,
-    eventMessage: 'Country successfully updated for user',
-    payload: null, // { username, country }
+    eventMessage: 'Location successfully updated for user',
+    payload: null, // { username, location }
     version: '1.0.0'
   },
   
-  UPDATE_USER_COUNTRY_ERROR: {
-    eventName: 'account.service.update.user.country.error',
-    source: 'account update user country service',
+  UPDATE_USER_LOCATION_ERROR: {
+    eventName: 'account.service.update.user.location.error',
+    source: 'account update user location service',
     eventType: 'security' as const,
     severity: 'error' as const,
-    eventMessage: 'Error updating user country',
-    payload: null, // { username, country, error }
+    eventMessage: 'Error updating user location',
+    payload: null, // { username, location, error }
     errorData: null, // Error details
     version: '1.0.0'
   },
