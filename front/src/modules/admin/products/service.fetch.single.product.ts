@@ -1,7 +1,7 @@
 /**
  * @file service.fetch.single.product.ts
  * Service for fetching single product data via API.
- * Version: 1.1.0
+ * Version: 1.2.0
  * FRONTEND service for fetching single product data through API.
  *
  * Functionality:
@@ -19,6 +19,10 @@
  * Changes in v1.1.0:
  * - Removed backupOwner from response handling
  * - Removed JSONB fields (areaSpecifics, industrySpecifics, keyFeatures, productOverview) from translations formatting
+ * 
+ * Changes in v1.2.0:
+ * - Normalized translation language codes to full names ('english', 'russian') for admin editor
+ * - Added compatibility mapping from legacy short codes ('en', 'ru') in API responses
  */
 
 import { api } from '@/core/api/service.axios'
@@ -35,6 +39,18 @@ import type {
 const logger = {
   info: (message: string, meta?: any) => console.log(`[ProductFetchSingleService] ${message}`, meta || ''),
   error: (message: string, error?: any) => console.error(`[ProductFetchSingleService] ${message}`, error || '')
+}
+
+// Helper to normalize language codes from API/DB to full-name keys
+const normalizeLanguageCode = (code: string): string => {
+  const lower = (code || '').toLowerCase()
+  if (lower === 'en' || lower === 'english') {
+    return 'english'
+  }
+  if (lower === 'ru' || lower === 'russian') {
+    return 'russian'
+  }
+  return lower
 }
 
 /**
@@ -79,8 +95,8 @@ export const serviceFetchSingleProduct = {
       const frontendTranslations: ProductTranslations = {}
       
       for (const translation of translations) {
-        const langCode = translation.language_code
-        frontendTranslations[langCode] = {
+        const langKey = normalizeLanguageCode(translation.language_code)
+        frontendTranslations[langKey] = {
           name: translation.name,
           shortDesc: translation.short_desc,
           longDesc: translation.long_desc,

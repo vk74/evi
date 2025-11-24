@@ -1,6 +1,6 @@
 <!--
   File: ProductEditorDetails.vue
-  Version: 1.7.1
+  Version: 1.8.0
   Description: Component for product details form and actions
   Purpose: Provides interface for creating and editing product details with dynamic validation
   Frontend file - ProductEditorDetails.vue
@@ -63,6 +63,11 @@
   Changes in v1.7.1:
   - Restored ItemSelector import for specialists groups selection
   - Fixed event handler name from @action-performed to @actionPerformed
+  
+  Changes in v1.8.0:
+  - Switched product translations to full language names ('english', 'russian') in admin editor
+  - Updated language options and validation to use full-name keys
+  - Fixed loading of name/short/long description fields for existing products
 -->
 
 <script setup lang="ts">
@@ -125,10 +130,10 @@ const isUpdateButtonEnabled = computed(() => {
          areSpecialistsGroupsValid.value
 })
 
-// Language options from system_language_code
+// Language options - use full language names as values
 const languageOptions = computed(() => [
-  { title: t('admin.products.editor.languages.english'), value: 'en' },
-  { title: t('admin.products.editor.languages.russian'), value: 'ru' }
+  { title: t('admin.products.editor.languages.english'), value: 'english' },
+  { title: t('admin.products.editor.languages.russian'), value: 'russian' }
 ])
 
 // Helper function to normalize status code for translation key
@@ -152,8 +157,8 @@ const statusOptions = computed(() => {
   })
 })
 
-// Selected language for translations
-const selectedLanguage = ref('en')
+// Selected language for translations (full-name key)
+const selectedLanguage = ref('english')
 
 // Get selected picture component (placeholder for now)
 const selectedPictureComponent = computed(() => {
@@ -292,20 +297,20 @@ const isCreateButtonEnabled = computed(() => {
   }
   
   // At least one language must have both name and shortDesc filled and valid
-  const enTranslation = formData.value.translations?.en
-  const ruTranslation = formData.value.translations?.ru
+  const englishTranslation = formData.value.translations?.english
+  const russianTranslation = formData.value.translations?.russian
   
   // Check English translation
-  const enValid = enTranslation?.name && 
-                  enTranslation.name.trim().length >= 2 && 
-                  enTranslation?.shortDesc && 
-                  enTranslation.shortDesc.trim().length >= 10
+  const enValid = englishTranslation?.name && 
+                  englishTranslation.name.trim().length >= 2 && 
+                  englishTranslation?.shortDesc && 
+                  englishTranslation.shortDesc.trim().length >= 10
   
   // Check Russian translation
-  const ruValid = ruTranslation?.name && 
-                  ruTranslation.name.trim().length >= 2 && 
-                  ruTranslation?.shortDesc && 
-                  ruTranslation.shortDesc.trim().length >= 10
+  const ruValid = russianTranslation?.name && 
+                  russianTranslation.name.trim().length >= 2 && 
+                  russianTranslation?.shortDesc && 
+                  russianTranslation.shortDesc.trim().length >= 10
   
   // At least one language must be valid
   if (!enValid && !ruValid) {
@@ -346,12 +351,12 @@ const createProduct = async () => {
   }
   
   // Check if at least one language has both name and shortDesc
-  const enTranslation = formData.value.translations?.en
-  const ruTranslation = formData.value.translations?.ru
-  const hasEnglish = enTranslation?.name && enTranslation.name.trim().length > 0 && 
-                     enTranslation?.shortDesc && enTranslation.shortDesc.trim().length > 0
-  const hasRussian = ruTranslation?.name && ruTranslation.name.trim().length > 0 && 
-                     ruTranslation?.shortDesc && ruTranslation.shortDesc.trim().length > 0
+  const englishTranslation = formData.value.translations?.english
+  const russianTranslation = formData.value.translations?.russian
+  const hasEnglish = englishTranslation?.name && englishTranslation.name.trim().length > 0 && 
+                     englishTranslation?.shortDesc && englishTranslation.shortDesc.trim().length > 0
+  const hasRussian = russianTranslation?.name && russianTranslation.name.trim().length > 0 && 
+                     russianTranslation?.shortDesc && russianTranslation.shortDesc.trim().length > 0
   
   if (!hasEnglish && !hasRussian) {
     uiStore.showErrorSnackbar(t('admin.products.editor.messages.validation.fillRequired'))
@@ -364,8 +369,8 @@ const createProduct = async () => {
     // Debug: Log formData before preparing API data
     console.log('[ProductEditorDetails] Full formData.value:', formData.value)
     console.log('[ProductEditorDetails] formData.value.translations:', JSON.stringify(formData.value.translations, null, 2))
-    console.log('[ProductEditorDetails] formData.value.translations.en:', JSON.stringify(formData.value.translations?.en, null, 2))
-    console.log('[ProductEditorDetails] formData.value.translations.ru:', JSON.stringify(formData.value.translations?.ru, null, 2))
+    console.log('[ProductEditorDetails] formData.value.translations.english:', JSON.stringify(formData.value.translations?.english, null, 2))
+    console.log('[ProductEditorDetails] formData.value.translations.russian:', JSON.stringify(formData.value.translations?.russian, null, 2))
     console.log('[ProductEditorDetails] formData.value.specialistsGroups:', JSON.stringify(formData.value.specialistsGroups, null, 2))
     // isPublished removed from product creation
 
@@ -373,21 +378,21 @@ const createProduct = async () => {
     const translations: any = {}
     
     // Check if English is filled
-    if (formData.value.translations.en && 
-        formData.value.translations.en.name && 
-        formData.value.translations.en.name.trim().length > 0 &&
-        formData.value.translations.en.shortDesc && 
-        formData.value.translations.en.shortDesc.trim().length > 0) {
-      translations.en = formData.value.translations.en
+    if (formData.value.translations.english && 
+        formData.value.translations.english.name && 
+        formData.value.translations.english.name.trim().length > 0 &&
+        formData.value.translations.english.shortDesc && 
+        formData.value.translations.english.shortDesc.trim().length > 0) {
+      translations.english = formData.value.translations.english
     }
     
     // Check if Russian is filled
-    if (formData.value.translations.ru && 
-        formData.value.translations.ru.name && 
-        formData.value.translations.ru.name.trim().length > 0 &&
-        formData.value.translations.ru.shortDesc && 
-        formData.value.translations.ru.shortDesc.trim().length > 0) {
-      translations.ru = formData.value.translations.ru
+    if (formData.value.translations.russian && 
+        formData.value.translations.russian.name && 
+        formData.value.translations.russian.name.trim().length > 0 &&
+        formData.value.translations.russian.shortDesc && 
+        formData.value.translations.russian.shortDesc.trim().length > 0) {
+      translations.russian = formData.value.translations.russian
     }
 
     // Generate translationKey if not provided
@@ -476,7 +481,7 @@ const updateTranslationField = (fieldName: string, value: any) => {
       name: '', shortDesc: '', longDesc: '', techSpecs: {}
     }
   }
-  formData.value.translations[selectedLanguage.value][fieldName] = value
+  formData.value.translations[selectedLanguage.value]![fieldName] = value
 }
 
 // Helper method for updating JSONB fields (only for techSpecs)
@@ -485,7 +490,7 @@ const updateJsonbField = (fieldName: string, event: Event) => {
   try {
     const parsed = JSON.parse(target.value)
     if (formData.value.translations[selectedLanguage.value]) {
-      formData.value.translations[selectedLanguage.value][fieldName] = parsed
+      formData.value.translations[selectedLanguage.value]![fieldName] = parsed
     }
   } catch (error) {
     // Invalid JSON, keep the current value

@@ -1,5 +1,5 @@
 /**
- * service.admin.fetch.all.products.ts - version 1.2.0
+ * service.admin.fetch.all.products.ts - version 1.3.0
  * Service for fetching all products with pagination, search, sorting and filtering.
  * 
  * Handles database queries for products list with user roles and translations.
@@ -34,6 +34,7 @@ import type {
     ProductListItem,
     FetchAllProductsResult
 } from './types.admin.products'
+import { normalizeLanguageValue } from '@/core/helpers/language.utils'
 
 /**
  * Interface for API request query parameters
@@ -77,14 +78,11 @@ export const fetchAllProducts = async (
         const publishedFilter = query.publishedFilter || undefined
         const statusFilter = query.statusFilter || undefined
         
-        // Get language code from query parameter first, then from headers, then default to 'en'
+        // Get language from query/header and normalize to full-name value (e.g. 'english', 'russian')
         const queryLanguage = query.language
-        const headerLanguage = req.headers['accept-language']?.toString().split(',')[0]?.split('-')[0]
-        const languageCode = queryLanguage || headerLanguage || 'en'
-        
-        // Validate language code
-        const validLanguages = ['en', 'ru']
-        const validatedLanguageCode = validLanguages.includes(languageCode) ? languageCode : 'en'
+        const headerLanguage = req.headers['accept-language']?.toString().split(',')[0]
+        const rawLanguage = queryLanguage || headerLanguage || 'english'
+        const normalizedLanguage = normalizeLanguageValue(rawLanguage) || 'english'
         
         // Validate parameters
         if (page < 1) {
@@ -106,7 +104,7 @@ export const fetchAllProducts = async (
                 sortDesc, 
                 publishedFilter,
                 statusFilter,
-                languageCode: validatedLanguageCode
+                language: normalizedLanguage
             }
         })
 
@@ -153,7 +151,7 @@ export const fetchAllProducts = async (
             validatedSortBy,
             sortDesc || false,
             validatedPublishedFilter,
-            languageCode,
+            normalizedLanguage,
             validatedStatusFilter
         ])
         

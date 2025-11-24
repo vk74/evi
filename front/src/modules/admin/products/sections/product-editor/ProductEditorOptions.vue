@@ -1,6 +1,6 @@
 <!--
   File: ProductEditorOptions.vue
-  Version: 1.10.0
+  Version: 1.11.0
   Description: Component for product options management
   Purpose: Provides interface for managing product options pairing
   Frontend file - ProductEditorOptions.vue
@@ -50,6 +50,10 @@
   - Removed typeFilter ref and related logic
   - Updated isOptionsTabActive to always return true (all products can now be paired)
   - All products are now equal, no type distinction
+  
+  Changes in v1.11.0:
+  - Updated productName resolution and search language parameter to use full-name language keys ('english', 'russian')
+  - Added mapping from i18n locale ('en'/'ru') to full-name translation keys for admin options view
 -->
 
 <script setup lang="ts">
@@ -96,6 +100,14 @@ const uiStore = useUiStore()
 // Form data - using store
 const formData = computed(() => productsStore.formData)
 
+// Helper to resolve translation language key from i18n locale
+const resolveTranslationLanguageKey = (currentLocale: string | undefined): string => {
+  const lower = (currentLocale || '').toLowerCase()
+  if (lower.startsWith('ru') || lower === 'russian') return 'russian'
+  if (lower.startsWith('en') || lower === 'english') return 'english'
+  return 'english'
+}
+
 // Check if options tab should be active - always true as all products can now be paired
 const isOptionsTabActive = computed(() => {
   return true
@@ -104,8 +116,9 @@ const isOptionsTabActive = computed(() => {
 // Product info for display
 const productCode = computed(() => formData.value.productCode || 'N/A')
 const productName = computed(() => {
-  const currentLanguage = locale.value || 'en'
-  return formData.value.translations?.[currentLanguage]?.name || 'N/A'
+  const currentLocale = locale.value
+  const langKey = resolveTranslationLanguageKey(currentLocale)
+  return formData.value.translations?.[langKey]?.name || 'N/A'
 })
 
 // Table and search parameters
@@ -219,8 +232,9 @@ const performSearch = async () => {
   isLoading.value = true
   
   try {
-    // Get current language from i18n (already available from setup)
-    const currentLanguage = locale.value || 'en'
+    // Get current language from i18n (already available from setup) and normalize to full-name key
+    const currentLocale = locale.value
+    const currentLanguage = resolveTranslationLanguageKey(currentLocale)
     
     // Prepare API request parameters
     const params = {

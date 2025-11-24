@@ -1,6 +1,6 @@
 /**
  * service.fetch.active.products.ts - backend file
- * version: 1.2.3
+ * version: 1.3.0
  * 
  * Purpose: Service that fetches active products for catalog consumption
  * Logic: Queries DB for products with is_published = true
@@ -14,6 +14,11 @@
  * 
  * Changes in v1.2.3:
  * - Added published_at field mapping in transformRow function
+ * 
+ * Changes in v1.3.0:
+ * - Switched to full-name languages ('english', 'russian', ...) for catalog queries
+ * - Now uses fallback.language and allowed.languages settings for language resolution
+ * - Added support for legacy short codes ('en', 'ru') via normalization helper
  */
 
 import { Request } from 'express';
@@ -23,6 +28,7 @@ import queries from './queries.catalog.products';
 import type { DbProduct, CatalogProductDTO, FetchProductsResponse, ServiceError } from './types.catalog';
 import { ProductStatus } from './types.catalog';
 import { getSettingValue } from '../../core/helpers/get.setting.value';
+import { resolveCatalogLanguages } from '../../core/helpers/language.utils';
 
 const pool = pgPool as Pool;
 
@@ -41,22 +47,10 @@ function transformRow(row: DbProduct): CatalogProductDTO {
 
 export async function fetchActiveProducts(req: Request): Promise<FetchProductsResponse> {
   try {
-    const requestedLanguage = req.query.language as string;
-    
-    if (!requestedLanguage) {
-      const error = new Error('Language parameter is required');
-      throw error;
-    }
-    
-    // Get fallback language from app settings
-    const fallbackLanguageSetting = await getSettingValue<string>(
-      'Application.RegionalSettings',
-      'default.language',
-      'en'
-    );
-    
-    // The setting now stores language code directly (e.g., 'en', 'ru')
-    const fallbackLanguage = fallbackLanguageSetting;
+    const requestedLanguageRaw = req.query.language as string | undefined;
+
+    // Resolve requested and fallback languages using full-name values
+    const { requestedLanguage, fallbackLanguage } = await resolveCatalogLanguages(requestedLanguageRaw);
     
     const sectionId = req.query.sectionId as string | undefined;
     const result = sectionId

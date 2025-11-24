@@ -1,6 +1,6 @@
 <!--
  * @file ProductsList.vue
- * Version: 1.3.0
+ * Version: 1.4.0
  * Products list section component.
  * Frontend file that displays list of products for admin users.
  * 
@@ -33,6 +33,10 @@
  * - Removed getProductTypeText function
  * - Removed typeFilter ref and related handlers
  * - All products are now equal, no type distinction
+ * 
+ * Changes in v1.4.0:
+ * - Updated language parameter for products search to work with full-name languages ('english', 'russian')
+ * - Now passes normalized language value compatible with backend language normalization
 -->
 <script setup lang="ts">
 import { ref, computed, onMounted, watch, defineAsyncComponent } from 'vue'

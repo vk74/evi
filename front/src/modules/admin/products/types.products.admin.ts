@@ -44,8 +44,9 @@ export interface ProductTranslationData {
 
 // Product translations interface
 export interface ProductTranslations {
-  en?: ProductTranslationData
-  ru?: ProductTranslationData
+  [language: string]: ProductTranslationData | undefined
+  english?: ProductTranslationData
+  russian?: ProductTranslationData
 }
 
 // Product visibility settings interface

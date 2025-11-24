@@ -1,6 +1,6 @@
 /**
  * @file state.products.admin.ts
- * Version: 1.7.1
+ * Version: 1.8.0
  * Pinia store for managing products admin module state.
  * Frontend file that handles active section management for products administration.
  *
@@ -51,6 +51,10 @@
  * Changes in v1.7.1:
  * - Added assignOwnerProductIds state field for temporary storage of selected product IDs
  * - Added setAssignOwnerProductIds and clearAssignOwnerProductIds actions
+ * 
+ * Changes in v1.8.0:
+ * - Switched formData.translations to use full language names ('english', 'russian') as keys
+ * - Updated populateFormWithFullProductData and helpers to work with full-name keys
  */
 import { defineStore } from 'pinia'
 import type {
@@ -86,13 +90,13 @@ export const useProductsAdminStore = defineStore('productsAdmin', {
       owner: '',
       specialistsGroups: [],
       translations: {
-        en: {
+        english: {
           name: '',
           shortDesc: '',
           longDesc: '',
           techSpecs: {}
         },
-        ru: {
+        russian: {
           name: '',
           shortDesc: '',
           longDesc: '',
@@ -218,18 +222,18 @@ export const useProductsAdminStore = defineStore('productsAdmin', {
         owner: '',
         specialistsGroups: [],
         translations: {
-          en: {
-            name: '',
-            shortDesc: '',
-            longDesc: '',
-            techSpecs: {}
-          },
-          ru: {
-            name: '',
-            shortDesc: '',
-            longDesc: '',
-            techSpecs: {}
-          }
+        english: {
+          name: '',
+          shortDesc: '',
+          longDesc: '',
+          techSpecs: {}
+        },
+        russian: {
+          name: '',
+          shortDesc: '',
+          longDesc: '',
+          techSpecs: {}
+        }
         },
         visibility: {
           isVisibleOwner: false,
@@ -248,8 +252,8 @@ export const useProductsAdminStore = defineStore('productsAdmin', {
         owner: product.owner || '',
         specialistsGroups: product.specialistsGroups || [],
         translations: product.translations || {
-        en: { name: '', shortDesc: '', longDesc: '', techSpecs: {} },
-        ru: { name: '', shortDesc: '', longDesc: '', techSpecs: {} }
+        english: { name: '', shortDesc: '', longDesc: '', techSpecs: {} },
+        russian: { name: '', shortDesc: '', longDesc: '', techSpecs: {} }
         },
         visibility: {
           isVisibleOwner: product.is_visible_owner,
@@ -266,16 +270,16 @@ export const useProductsAdminStore = defineStore('productsAdmin', {
     populateFormWithFullProductData(productData: ProductWithFullData): void {
       // Ensure translations have proper structure
       const defaultTranslations = {
-        en: { name: '', shortDesc: '', longDesc: '', techSpecs: {} },
-        ru: { name: '', shortDesc: '', longDesc: '', techSpecs: {} }
+        english: { name: '', shortDesc: '', longDesc: '', techSpecs: {} },
+        russian: { name: '', shortDesc: '', longDesc: '', techSpecs: {} }
       }
       
       const translations = productData.translations || defaultTranslations
       
       // Ensure each language has all required fields
       const safeTranslations = {
-        en: { ...defaultTranslations.en, ...translations.en },
-        ru: { ...defaultTranslations.ru, ...translations.ru }
+        english: { ...defaultTranslations.english, ...translations.english },
+        russian: { ...defaultTranslations.russian, ...translations.russian }
       }
       
       this.formData = {

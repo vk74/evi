@@ -1,12 +1,16 @@
 <!--
   File: ProductEditorPreferences.vue
-  Version: 1.3.0
+  Version: 1.4.0
   Description: Component for product preferences management
   Purpose: Provides interface for managing product preferences and visibility settings
   Frontend file - ProductEditorPreferences.vue
   
   Changes in v1.3.0:
   - Removed visibility switches for deleted fields: isVisibleAreaSpecs, isVisibleIndustrySpecs, isVisibleKeyFeatures, isVisibleOverview
+  
+  Changes in v1.4.0:
+  - Updated productName resolution to use full-name language keys ('english', 'russian') for translations
+  - Added mapping from i18n locale ('en'/'ru') to full-name translation keys
 -->
 
 <script setup lang="ts">
@@ -45,11 +49,20 @@ const isRefreshing = ref(false)
 const editingProductId = computed(() => productsStore.editingProductId)
 const isFormValid = computed(() => editingProductId.value !== null)
 
+// Helper to resolve translation language key from i18n locale
+const resolveTranslationLanguageKey = (currentLocale: string | undefined): string => {
+  const lower = (currentLocale || '').toLowerCase()
+  if (lower.startsWith('ru') || lower === 'russian') return 'russian'
+  if (lower.startsWith('en') || lower === 'english') return 'english'
+  return 'english'
+}
+
 // Product info for display
 const productCode = computed(() => formData.value.productCode || 'N/A')
 const productName = computed(() => {
-  const currentLanguage = locale.value || 'en'
-  return formData.value.translations?.[currentLanguage]?.name || 'N/A'
+  const currentLocale = locale.value
+  const langKey = resolveTranslationLanguageKey(currentLocale)
+  return formData.value.translations?.[langKey]?.name || 'N/A'
 })
 
 // Methods

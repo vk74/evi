@@ -1,6 +1,6 @@
 /**
  * service.fetch.product.details.ts - backend file
- * version: 1.2.0
+ * version: 1.3.0
  * 
  * Purpose: Service that fetches single product details for catalog consumption
  * Logic: Queries DB for product details with is_published = true, transforms into DTO for frontend
@@ -12,6 +12,11 @@
  * 
  * Changes in v1.2.0:
  * - Removed JSONB fields (area_specifics, industry_specifics, key_features, product_overview) from transformRow function
+ * 
+ * Changes in v1.3.0:
+ * - Switched to full-name languages ('english', 'russian', ...) for product details queries
+ * - Now uses fallback.language and allowed.languages settings for language resolution
+ * - Added support for legacy short codes ('en', 'ru') via normalization helper
  */
 
 import { Request } from 'express';
@@ -21,6 +26,7 @@ import queries from './queries.catalog.products';
 import type { DbProductDetails, CatalogProductDetailsDTO, FetchProductDetailsResponse, ServiceError } from './types.catalog';
 import { ProductStatus } from './types.catalog';
 import { getSettingValue } from '../../core/helpers/get.setting.value';
+import { resolveCatalogLanguages } from '../../core/helpers/language.utils';
 
 const pool = pgPool as Pool;
 
@@ -44,7 +50,7 @@ function transformRow(row: DbProductDetails): CatalogProductDetailsDTO {
 export async function fetchProductDetails(req: Request): Promise<FetchProductDetailsResponse> {
   try {
     const productId = req.query.productId as string;
-    const requestedLanguage = req.query.language as string;
+    const requestedLanguageRaw = req.query.language as string | undefined;
     
     if (!productId) {
       return {
@@ -54,21 +60,8 @@ export async function fetchProductDetails(req: Request): Promise<FetchProductDet
       };
     }
     
-    if (!requestedLanguage) {
-      const error = new Error('Language parameter is required');
-      console.error('Missing language parameter in request');
-      throw error;
-    }
-
-    // Get fallback language from app settings
-    const fallbackLanguageSetting = await getSettingValue<string>(
-      'Application.RegionalSettings',
-      'default.language',
-      'en'
-    );
-    
-    // The setting now stores language code directly (e.g., 'en', 'ru')
-    const fallbackLanguage = fallbackLanguageSetting;
+    // Resolve requested and fallback languages using full-name values
+    const { requestedLanguage, fallbackLanguage } = await resolveCatalogLanguages(requestedLanguageRaw);
 
     const result = await pool.query<DbProductDetails>(queries.getProductDetails, [productId, requestedLanguage, fallbackLanguage]);
     
