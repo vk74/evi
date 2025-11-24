@@ -89,6 +89,7 @@ module.exports = {
   devServer: {
     port: 8080,
     hot: true,
-    liveReload: false
+    liveReload: false,
+    open: false  // Отключить автоматическое открытие браузера
   }
 }
