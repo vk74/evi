@@ -1,5 +1,5 @@
 <!--
-Version: 1.4.0
+Version: 1.5.0
 VAT settings component for pricing administration module.
 Frontend file that displays regions with VAT status (active/disabled) in a table format.
 Filename: PricingVAT.vue
@@ -23,6 +23,12 @@ Changes in v1.4.0:
 - Added "%" label display in column headers (always visible)
 - Added delete button (trash icon) in empty row for each dynamic column
 - Added CANCEL and UPDATE buttons next to ADD COLUMN button
+
+Changes in v1.5.0:
+- Changed column headers to always show editable input field
+- Added real-time validation: only digits 1-99 allowed
+- Input field positioned left of "%" label
+- Removed click-to-edit mode, field is always editable
 -->
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue';
@@ -73,8 +79,6 @@ const emptyRow = ref<VATRegion | null>(null);
 
 // Dynamic VAT rate columns
 const vatRateColumns = ref<VATRateColumn[]>([]);
-const editingColumnId = ref<string | null>(null);
-const editingColumnValue = ref<string>('');
 
 /**
  * Load regions from app.regions setting
@@ -200,59 +204,63 @@ function addVATRateColumn(): void {
   if (emptyRow.value) {
     emptyRow.value[newColumnId] = null;
   }
-  
-  // Start editing the new column header
-  editingColumnId.value = newColumnId;
-  editingColumnValue.value = '';
 }
 
 /**
- * Start editing column header
+ * Get column input value
  */
-function startEditingColumn(columnId: string): void {
+function getColumnInputValue(columnId: string): string {
   const column = vatRateColumns.value.find(c => c.id === columnId);
-  if (column) {
-    editingColumnId.value = columnId;
-    editingColumnValue.value = column.value.toString();
-  }
+  return column && column.value > 0 ? column.value.toString() : '';
 }
 
 /**
- * Save column header with validation
+ * Update column value and header
  */
-function saveColumnHeader(columnId: string): void {
+function updateColumnValue(columnId: string, value: string): void {
   const column = vatRateColumns.value.find(c => c.id === columnId);
   if (!column) return;
   
-  const numValue = parseInt(editingColumnValue.value);
+  // Allow empty value for editing
+  if (value === '') {
+    column.value = 0;
+    column.header = '%';
+    return;
+  }
+  
+  // Validate: only digits
+  if (!/^\d+$/.test(value)) {
+    return; // Don't update if not digits
+  }
+  
+  const numValue = parseInt(value);
   
   // Validate: must be number between 1 and 99
   if (isNaN(numValue) || numValue < 1 || numValue > 99) {
-    uiStore.showErrorSnackbar('Введите число от 1 до 99');
-    return;
+    return; // Don't update if out of range
   }
   
   column.value = numValue;
   column.header = `${numValue}%`;
-  editingColumnId.value = null;
-  editingColumnValue.value = '';
 }
 
 /**
- * Cancel editing column header
+ * Handle input event for column header
  */
-function cancelEditingColumn(): void {
-  editingColumnId.value = null;
-  editingColumnValue.value = '';
-}
-
-/**
- * Validate column header input
- */
-function validateColumnInput(value: string): boolean {
-  if (value === '') return true; // Allow empty for editing
-  const num = parseInt(value);
-  return !isNaN(num) && num >= 1 && num <= 99;
+function handleColumnInput(columnId: string, value: string): void {
+  // Remove any non-digit characters
+  const digitsOnly = value.replace(/\D/g, '');
+  
+  // Limit to 2 digits (max 99)
+  const limitedValue = digitsOnly.slice(0, 2);
+  
+  // Update the input field value directly if it was changed
+  const inputElement = document.querySelector(`input[data-column-id="${columnId}"]`) as HTMLInputElement;
+  if (inputElement && inputElement.value !== limitedValue) {
+    inputElement.value = limitedValue;
+  }
+  
+  updateColumnValue(columnId, limitedValue);
 }
 
 /**
@@ -274,11 +282,7 @@ function deleteVATRateColumn(columnId: string): void {
       delete emptyRow.value[columnId];
     }
     
-    // If deleted column was being edited, cancel editing
-    if (editingColumnId.value === columnId) {
-      editingColumnId.value = null;
-      editingColumnValue.value = '';
-    }
+    // Column deleted, no need to clean up editing state
   }
 }
 
@@ -286,10 +290,6 @@ function deleteVATRateColumn(columnId: string): void {
  * Cancel changes - reset to initial state
  */
 function cancelChanges(): void {
-  // Cancel any ongoing column editing
-  editingColumnId.value = null;
-  editingColumnValue.value = '';
-  
   // Reload regions to reset any changes
   loadRegions();
 }
@@ -461,26 +461,20 @@ onMounted(async () => {
           
           <!-- Dynamic VAT rate columns headers -->
           <template v-for="column in vatRateColumns" :key="`head-${column.id}`" #[`head.${column.id}`]>
-            <div v-if="editingColumnId === column.id" class="d-flex align-center">
-              <v-text-field
-                v-model="editingColumnValue"
-                variant="plain"
-                density="compact"
-                hide-details
-                type="number"
-                min="1"
-                max="99"
-                class="column-header-input"
-                autofocus
-                @blur="saveColumnHeader(column.id)"
-                @keydown.enter="saveColumnHeader(column.id)"
-                @keydown.esc="cancelEditingColumn"
+            <div class="d-flex align-center column-header-editable">
+              <input
+                :value="getColumnInputValue(column.id)"
+                :data-column-id="column.id"
+                type="text"
+                inputmode="numeric"
+                pattern="[0-9]*"
+                class="column-header-input-field"
+                @input="handleColumnInput(column.id, ($event.target as HTMLInputElement).value)"
+                @blur="updateColumnValue(column.id, ($event.target as HTMLInputElement).value)"
+                @keydown="(e) => { if (e.key === 'e' || e.key === 'E' || e.key === '+' || e.key === '-' || e.key === '.') e.preventDefault(); }"
               />
               <span class="ms-1">%</span>
             </div>
-            <span v-else @click="startEditingColumn(column.id)" class="editable-header">
-              {{ column.header || '%' }}
-            </span>
           </template>
           
           <!-- Dynamic VAT rate columns data -->
@@ -642,6 +636,33 @@ onMounted(async () => {
   padding: 0 !important;
   font-size: 0.875rem;
   text-align: center;
+}
+
+.column-header-editable {
+  justify-content: center;
+  width: 100%;
+}
+
+.column-header-input-field {
+  width: 40px;
+  max-width: 40px;
+  min-width: 40px;
+  padding: 4px 6px;
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  border-radius: 4px;
+  font-size: 0.875rem;
+  text-align: center;
+  background-color: white;
+  outline: none;
+}
+
+.column-header-input-field:focus {
+  border-color: rgba(var(--v-theme-primary), 1);
+  box-shadow: 0 0 0 2px rgba(var(--v-theme-primary), 0.1);
+}
+
+.column-header-input-field:hover {
+  border-color: rgba(0, 0, 0, 0.3);
 }
 
 .region-name {
