@@ -460,7 +460,7 @@ onMounted(async () => {
           </template>
           
           <!-- Dynamic VAT rate columns headers -->
-          <template v-for="column in vatRateColumns" :key="`head-${column.id}`" #[`head.${column.id}`]>
+          <template v-for="column in vatRateColumns" :key="`head-${column.id}`" #[`header.${column.id}`]>
             <div class="d-flex align-center column-header-editable">
               <input
                 :value="getColumnInputValue(column.id)"
