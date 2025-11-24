@@ -1,6 +1,6 @@
 /**
  * @file service.admin.fetch.pricelist.ts
- * Version: 1.2.0
+ * Version: 1.2.1
  * Service for fetching single price list data from the API by price list ID.
  * Frontend file that handles price list data retrieval for editor.
  * 
@@ -14,6 +14,9 @@
  * 
  * Changes in v1.2.0:
  * - Added roundingPrecision mapping from API response
+ * 
+ * Changes in v1.2.1:
+ * - Added region field to price list mapping
  */
 import { api } from '@/core/api/service.axios';
 import type { 
@@ -88,6 +91,7 @@ export const fetchPriceListService = {
         currency_code: priceListData.currency_code,
         is_active: priceListData.is_active,
         owner_id: priceListData.owner_id,
+        region: priceListData.region,
         created_by: priceListData.created_by,
         updated_by: priceListData.updated_by,
         created_at: priceListData.created_at,

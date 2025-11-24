@@ -540,6 +540,7 @@ CREATE TABLE IF NOT EXISTS app.price_lists_info (
     currency_code CHAR(3) NOT NULL,
     is_active BOOLEAN DEFAULT FALSE NOT NULL,
     owner_id UUID,
+    region VARCHAR(255) NULL,
     created_by UUID,
     updated_by UUID,
     created_at TIMESTAMPTZ DEFAULT NOW() NOT NULL,
@@ -574,6 +575,7 @@ COMMENT ON COLUMN app.price_lists_info.description IS 'User description/notes ab
 COMMENT ON COLUMN app.price_lists_info.currency_code IS 'Currency for all prices in this price list';
 COMMENT ON COLUMN app.price_lists_info.is_active IS 'Whether this price list is currently active';
 COMMENT ON COLUMN app.price_lists_info.owner_id IS 'Price list owner (optional, can be different from created_by)';
+COMMENT ON COLUMN app.price_lists_info.region IS 'Region assigned to this price list. Each region can be assigned to only one price list. NULL values are allowed.';
 
 -- Price list items (partitioned by price_list_id)
 CREATE TABLE IF NOT EXISTS app.price_lists (

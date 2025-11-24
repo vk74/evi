@@ -84,6 +84,7 @@ function buildFetchQuery(params: FetchAllPriceListsParams): { query: string; que
             pli.is_active,
             pli.owner_id,
             u.username as owner_username,
+            pli.region,
             pli.created_at,
             pli.updated_at
         FROM app.price_lists_info pli

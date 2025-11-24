@@ -1,6 +1,6 @@
 /**
  * @file types.pricing.admin.ts
- * Version: 1.3.6
+ * Version: 1.3.7
  * Type definitions for pricing administration module.
  * Frontend types for pricing admin functionality.
  * File: types.pricing.admin.ts (frontend)
@@ -10,6 +10,9 @@
  * 
  * Changes in v1.3.6:
  * - Added roundingPrecision to FetchPriceListResult data
+ * 
+ * Changes in v1.3.7:
+ * - Added region field to PriceListSummary, PriceListFull, CreatePriceListRequest, and UpdatePriceListRequest
  */
 
 // Pricing section interface for menu navigation
@@ -34,6 +37,7 @@ export interface PriceListData {
   currency_code: string
   isActive: boolean
   owner: string | null
+  region?: string | null
   items?: PriceListItem[] // Optional items array
 }
 
@@ -76,6 +80,7 @@ export interface PriceListSummary {
   is_active: boolean
   owner_id: string | null
   owner_username: string | null
+  region: string | null
   created_at: string
   updated_at: string
 }
@@ -88,6 +93,7 @@ export interface PriceListFull {
   currency_code: string
   is_active: boolean
   owner_id: string | null
+  region: string | null
   created_by: string | null
   updated_by: string | null
   created_at: string
@@ -138,6 +144,7 @@ export interface CreatePriceListRequest {
   currency_code: string
   is_active?: boolean
   owner?: string
+  region?: string | null
 }
 
 // Create price list result
@@ -157,6 +164,7 @@ export interface UpdatePriceListRequest {
   currency_code?: string
   is_active?: boolean
   owner?: string
+  region?: string | null
 }
 
 // Update price list result

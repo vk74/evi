@@ -1,5 +1,5 @@
     /**
-     * version: 1.3.7
+     * version: 1.3.8
      * SQL queries for pricing administration module.
      * Contains parameterized queries related to pricing (currencies and price lists).
      * Includes integrity check queries and queries for event payload data.
@@ -12,8 +12,10 @@
      * Changes in v1.3.7:
      * - Updated fetchPriceListById query to JOIN with currencies table and include rounding_precision
      * 
-     * Changes in v1.3.5:
-     * - Added existsActiveCurrency query to check currency existence and active status
+     * Changes in v1.3.8:
+     * - Added region column to all price list SELECT queries
+     * - Added region parameter to insertPriceList and updatePriceList queries
+     * - Added checkPriceListRegionExistsExcluding query for region uniqueness validation
      */
 
 export const queries = {
@@ -104,6 +106,7 @@ export const queries = {
             pli.is_active,
             pli.owner_id,
             u.username as owner_username,
+            pli.region,
             pli.created_at,
             pli.updated_at
         FROM app.price_lists_info pli
@@ -125,6 +128,7 @@ export const queries = {
             pli.is_active,
             pli.owner_id,
             u.username as owner_username,
+            pli.region,
             pli.created_at,
             pli.updated_at
         FROM app.price_lists_info pli
@@ -168,6 +172,7 @@ export const queries = {
             pli.currency_code,
             pli.is_active,
             pli.owner_id,
+            pli.region,
             pli.created_by,
             pli.updated_by,
             pli.created_at,
@@ -218,9 +223,18 @@ export const queries = {
     `,
 
     /**
+     * Check if price list region exists excluding specific ID (for update validation)
+     * Parameters: region, price_list_id
+     */
+    checkPriceListRegionExistsExcluding: `
+        SELECT 1 FROM app.price_lists_info
+        WHERE region = $1 AND region IS NOT NULL AND price_list_id != $2
+    `,
+
+    /**
      * Insert new price list
      * Parameters: name, description, currency_code, is_active, 
-     *             owner_id, created_by
+     *             owner_id, region, created_by
      */
     insertPriceList: `
         INSERT INTO app.price_lists_info (
@@ -229,16 +243,17 @@ export const queries = {
             currency_code,
             is_active,
             owner_id,
+            region,
             created_by,
             updated_by
-        ) VALUES ($1, $2, $3, $4, $5, $6, $6)
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $7)
         RETURNING price_list_id
     `,
 
     /**
      * Update price list
      * Parameters: price_list_id, name, description, currency_code, is_active, 
-     *             owner_id, updated_by
+     *             owner_id, region, updated_by
      */
     updatePriceList: `
         UPDATE app.price_lists_info SET
@@ -247,7 +262,12 @@ export const queries = {
             currency_code = COALESCE($4, currency_code),
             is_active = COALESCE($5, is_active),
             owner_id = COALESCE($6, owner_id),
-            updated_by = $7,
+            region = CASE 
+                WHEN $7::VARCHAR = '__NO_UPDATE__' THEN region
+                WHEN $7::VARCHAR IS NULL THEN NULL
+                ELSE $7::VARCHAR
+            END,
+            updated_by = $8,
             updated_at = NOW()
         WHERE price_list_id = $1
         RETURNING price_list_id

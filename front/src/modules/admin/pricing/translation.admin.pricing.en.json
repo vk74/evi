@@ -13,6 +13,7 @@
             "selection": "select",
             "id": "ID",
             "name": "name",
+            "region": "region",
             "country": "country",
             "currency": "currency",
             "status": "status",

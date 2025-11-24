@@ -1,5 +1,5 @@
 /**
- * version: 1.1.0
+ * version: 1.1.1
  * Service for fetching a single price list by ID.
  * Backend file that handles business logic for retrieving single price list data.
  * 
@@ -12,6 +12,9 @@
  * 
  * Changes in v1.1.0:
  * - Added rounding_precision to response data from currency table
+ * 
+ * Changes in v1.1.1:
+ * - Added region field to price list mapping
  */
 
 import { Request } from 'express';
@@ -73,6 +76,7 @@ export async function fetchPriceList(
             currency_code: row.currency_code,
             is_active: row.is_active,
             owner_id: row.owner_id,
+            region: row.region,
             created_by: row.created_by,
             updated_by: row.updated_by,
             created_at: row.created_at,

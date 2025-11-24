@@ -124,6 +124,11 @@ CREATE INDEX IF NOT EXISTS idx_pli_currency_active
 CREATE INDEX IF NOT EXISTS idx_pli_is_active 
     ON app.price_lists_info(is_active);
 
+-- UNIQUE index on region column (allows multiple NULL values)
+CREATE UNIQUE INDEX IF NOT EXISTS idx_price_lists_info_region_unique 
+    ON app.price_lists_info(region) 
+    WHERE region IS NOT NULL;
+
 -- Indexes on price_lists (partitioned table - will be inherited by partitions)
 CREATE INDEX IF NOT EXISTS idx_pl_item_lookup 
     ON app.price_lists(price_list_id, item_type, item_code);

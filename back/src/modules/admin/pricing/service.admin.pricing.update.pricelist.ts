@@ -1,5 +1,5 @@
 /**
- * version: 1.2.2
+ * version: 1.2.3
  * Service for updating price lists.
  * Backend file that handles business logic for updating existing price lists.
  * 
@@ -9,12 +9,17 @@
  * - Checks currency existence and active status (if being updated)
  * - Checks name uniqueness (if being updated)
  * - Validates owner (if being updated)
+ * - Validates region uniqueness (if being updated)
  * - Updates price list in database
  * 
  * File: service.admin.pricing.update.pricelist.ts (backend)
  * 
  * Changes in v1.2.2:
  * - Removed event publishing for inactive currency attempts
+ * 
+ * Changes in v1.2.3:
+ * - Added region uniqueness validation
+ * - Added region parameter to UPDATE query
  */
 
 import { Request } from 'express';
@@ -170,6 +175,30 @@ async function validateUpdatePriceListData(
         }
     }
 
+    // Validate region uniqueness (if provided)
+    if (data.region !== undefined && data.region !== null && data.region !== '') {
+        try {
+            const result = await pool.query(
+                queries.checkPriceListRegionExistsExcluding,
+                [data.region.trim(), data.price_list_id]
+            );
+            if (result.rows.length > 0) {
+                errors.push('This region is already assigned to another price list');
+                
+                createAndPublishEvent({
+                    eventName: EVENTS_ADMIN_PRICING['pricelists.update.region.duplicate'].eventName,
+                    req: req,
+                    payload: { 
+                        priceListId: data.price_list_id,
+                        region: data.region
+                    }
+                });
+            }
+        } catch (error) {
+            errors.push('Error checking region uniqueness');
+        }
+    }
+
     return errors;
 }
 
@@ -240,7 +269,18 @@ export async function updatePriceList(
             updateParams.push(null); // $6 - null means don't update this field
         }
 
-        updateParams.push(requestorUuid); // $7
+        // Add region parameter only if region is being updated
+        // We need to distinguish between "set to null" and "don't update"
+        if (data.region !== undefined) {
+            // Region is being updated - pass the value (can be null to clear)
+            const regionValue = (data.region === null || data.region === '') ? null : data.region.trim();
+            updateParams.push(regionValue); // $7
+        } else {
+            // Don't update region - use a special placeholder value
+            updateParams.push('__NO_UPDATE__'); // $7 - special value means don't update
+        }
+
+        updateParams.push(requestorUuid); // $8
 
         // Execute update
         await pool.query(queries.updatePriceList, updateParams);
@@ -269,6 +309,12 @@ export async function updatePriceList(
             const newOwnerId = data.owner ? (await getUuidByUsername(data.owner)) : null
             if (newOwnerId !== oldPriceList.owner_id) {
               changes.ownerId = { old: oldPriceList.owner_id, new: newOwnerId }
+            }
+          }
+          if (data.region !== undefined) {
+            const newRegion = data.region !== null && data.region !== '' ? data.region.trim() : null
+            if (newRegion !== oldPriceList.region) {
+              changes.region = { old: oldPriceList.region, new: priceList.region }
             }
           }
         }

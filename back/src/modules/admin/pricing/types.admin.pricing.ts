@@ -1,5 +1,5 @@
 /**
- * version: 1.4.6
+ * version: 1.4.7
  * Backend types for pricing administration module.
  * Defines DTOs for currencies, price lists and other pricing-related entities.
  * File: types.admin.pricing.ts (backend)
@@ -9,6 +9,9 @@
  * 
  * Changes in v1.4.6:
  * - Added rounding_precision field to FetchPriceListResponse data
+ * 
+ * Changes in v1.4.7:
+ * - Added region field to PriceListSummaryDto, PriceListFullDto, CreatePriceListRequest, and UpdatePriceListRequest
  */
 
 // ============================================
@@ -50,6 +53,7 @@ export interface PriceListSummaryDto {
     is_active: boolean
     owner_id: string | null // UUID
     owner_username: string | null
+    region: string | null
     created_at: string // ISO timestamp
     updated_at: string // ISO timestamp
 }
@@ -62,6 +66,7 @@ export interface PriceListFullDto {
     currency_code: string
     is_active: boolean
     owner_id: string | null
+    region: string | null
     created_by: string | null
     updated_by: string | null
     created_at: string
@@ -101,6 +106,7 @@ export interface CreatePriceListRequest {
     currency_code: string
     is_active?: boolean
     owner?: string // username (optional)
+    region?: string | null
 }
 
 // Response for create price list
@@ -120,6 +126,7 @@ export interface UpdatePriceListRequest {
     currency_code?: string
     is_active?: boolean
     owner?: string // username (optional)
+    region?: string | null
 }
 
 // Response for update price list

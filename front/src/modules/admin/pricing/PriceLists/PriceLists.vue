@@ -1,10 +1,15 @@
 <!--
-Version: 1.6.0
+Version: 1.7.0
 Price Lists management section.
 Frontend file for managing price lists in the pricing admin module.
 Features editable name and status fields with manual is_active control.
 Filename: PriceLists.vue
 
+Changes in v1.7.0:
+- Added region column with dropdown selection
+- Region values loaded from app.regions setting
+- Region can be assigned to only one price list
+- Immediate update on region change
 -->
 <script setup lang="ts">
 import { ref, computed, onMounted, watch } from 'vue'
@@ -32,6 +37,7 @@ import { serviceDeletePriceLists } from './service.delete.pricelists'
 import { fetchCurrenciesService } from '../currencies/service.fetch.currencies'
 import { fetchPriceListService } from '../PriceListEditor/service.admin.fetch.pricelist'
 import type { PriceListSummary, Currency } from '../types.pricing.admin'
+import { getSettingValueHelper } from '@/core/helpers/get.setting.value'
 import debounce from 'lodash/debounce'
 
 // Types
@@ -79,6 +85,11 @@ const selectedPriceLists = ref<Set<number>>(new Set())
 const isLoading = ref(false)
 const isUpdatingName = ref<number | null>(null) // Track which price list is being updated
 const isUpdatingStatus = ref<number | null>(null) // Track which price list status is being updated
+const isUpdatingRegion = ref<number | null>(null) // Track which price list region is being updated
+
+// Regions list from app.regions setting
+const regions = ref<string[]>([])
+const isLoadingRegions = ref(false)
 
 // Price lists data
 const priceLists = ref<PriceListSummary[]>([])
@@ -95,6 +106,7 @@ const headers = computed<TableHeader[]>(() => [
   { title: t('admin.pricing.priceLists.table.headers.selection'), key: 'selection', width: '40px', sortable: false },
   { title: t('admin.pricing.priceLists.table.headers.id'), key: 'price_list_id', width: '100px', sortable: true },
   { title: t('admin.pricing.priceLists.table.headers.name'), key: 'name', width: '500px', sortable: true },
+  { title: t('admin.pricing.priceLists.table.headers.region'), key: 'region', width: '254px', sortable: false },
   { title: t('admin.pricing.priceLists.table.headers.currency'), key: 'currency_code', width: '100px', sortable: true },
   { title: t('admin.pricing.priceLists.table.headers.status'), key: 'is_active', width: '120px', sortable: true },
   { title: t('admin.pricing.priceLists.table.headers.owner'), key: 'owner_username', width: '150px', sortable: false }
@@ -157,6 +169,7 @@ const editPriceList = async () => {
           currency_code: result.data.priceList.currency_code,
           isActive: result.data.priceList.is_active,
           owner: result.data.priceList.owner_id,
+          region: result.data.priceList.region || null,
           items: result.data.items || []
         }
       )
@@ -451,6 +464,42 @@ const handleStatusUpdate = async (priceListId: number, newStatus: boolean) => {
   }
 }
 
+// Handle region update
+const handleRegionUpdate = async (priceListId: number, newRegion: string | null | undefined) => {
+  try {
+    isUpdatingRegion.value = priceListId
+    
+    // Normalize: convert empty string, null, or undefined to null (for clearing region)
+    const normalizedRegion = (!newRegion || newRegion === '' || newRegion === null || newRegion === undefined) ? null : newRegion
+    
+    const result = await serviceUpdatePriceList.updatePriceList({
+      price_list_id: priceListId,
+      region: normalizedRegion
+    })
+    
+    if (result.success) {
+      uiStore.showSuccessSnackbar(result.message || t('admin.pricing.priceLists.messages.updateSuccess'))
+      // Update local state
+      const priceList = priceLists.value.find(pl => pl.price_list_id === priceListId)
+      if (priceList && result.data?.priceList) {
+        // Explicitly set to null if region was cleared, otherwise use the value from response
+        priceList.region = normalizedRegion === null ? null : (result.data.priceList.region || null)
+      }
+    } else {
+      uiStore.showErrorSnackbar(result.message || t('admin.pricing.priceLists.messages.updateError'))
+      // Revert to original region by refreshing
+      await performSearch()
+    }
+  } catch (error) {
+    console.error('Error updating price list region:', error)
+    uiStore.showErrorSnackbar(t('admin.pricing.priceLists.messages.updateError'))
+    // Revert to original region by refreshing
+    await performSearch()
+  } finally {
+    isUpdatingRegion.value = null
+  }
+}
+
 // Status options for menu
 const statusOptions = computed(() => [
   { value: true, color: 'teal', label: t('admin.pricing.priceLists.table.status.active') },
@@ -472,11 +521,60 @@ const loadCurrencies = async () => {
   }
 }
 
+// Load regions from app.regions setting
+const loadRegions = async () => {
+  try {
+    isLoadingRegions.value = true
+    const regionsValue = await getSettingValueHelper<string[]>('Application.RegionalSettings', 'app.regions')
+    if (Array.isArray(regionsValue)) {
+      regions.value = regionsValue.filter(r => r !== null && r !== undefined && r !== '')
+    } else {
+      regions.value = []
+    }
+  } catch (error) {
+    console.error('Failed to load regions:', error)
+    regions.value = []
+  } finally {
+    isLoadingRegions.value = false
+  }
+}
+
+// Computed: available regions for dropdown (exclude already assigned regions + include current region)
+const getAvailableRegions = (currentPriceListId: number) => {
+  const currentPriceList = priceLists.value.find(pl => pl.price_list_id === currentPriceListId)
+  const currentRegion = currentPriceList?.region || null
+  
+  // Get all assigned regions (excluding current price list's region)
+  const assignedRegions = new Set(
+    priceLists.value
+      .filter(pl => pl.price_list_id !== currentPriceListId && pl.region !== null && pl.region !== '')
+      .map(pl => pl.region)
+  )
+  
+  // Filter regions: show only free regions + current region
+  return regions.value.filter(region => !assignedRegions.has(region) || region === currentRegion)
+}
+
+// Region options for dropdown
+const getRegionOptions = (currentPriceListId: number) => {
+  const availableRegions = getAvailableRegions(currentPriceListId)
+  // Empty option for clearing region - always available
+  // Use empty string as value, will be converted to null in handleRegionUpdate
+  const emptyOption = { title: '-', value: '' }
+  const regionOptions = availableRegions.map(region => ({
+    title: region,
+    value: region
+  }))
+  // Empty option always first, then available regions
+  return [emptyOption, ...regionOptions]
+}
+
 // Initialize on mount
 onMounted(async () => {
   await Promise.all([
     performSearch(),
-    loadCurrencies()
+    loadCurrencies(),
+    loadRegions()
   ])
 })
 </script>
@@ -632,6 +730,24 @@ onMounted(async () => {
               hide-details
               @update:model-value="debouncedNameUpdate(item.price_list_id, $event)"
             />
+          </template>
+
+          <template #[`item.region`]="{ item }">
+            <v-select
+              :model-value="item.region || ''"
+              density="compact"
+              variant="plain"
+              :items="getRegionOptions(item.price_list_id)"
+              :loading="isUpdatingRegion === item.price_list_id"
+              :disabled="isUpdatingRegion === item.price_list_id || isLoadingRegions"
+              hide-details
+              clearable
+              @update:model-value="handleRegionUpdate(item.price_list_id, $event)"
+            >
+              <template #append-inner>
+                <PhCaretUpDown :size="14" />
+              </template>
+            </v-select>
           </template>
 
           <template #[`item.currency_code`]="{ item }">

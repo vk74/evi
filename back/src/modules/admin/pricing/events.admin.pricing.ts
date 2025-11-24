@@ -328,6 +328,15 @@ export const EVENTS_ADMIN_PRICING: EventCollection = {
     version: '1.0.0'
   },
 
+  'pricelists.create.region.duplicate': {
+    eventName: 'adminPricing.pricelists.create.region.duplicate',
+    source: 'admin-pricing',
+    eventType: 'app',
+    severity: 'error',
+    eventMessage: 'Region already assigned to another price list',
+    version: '1.0.0'
+  },
+
   'pricelists.create.success': {
     eventName: 'adminPricing.pricelists.create.success',
     source: 'admin-pricing',
@@ -399,6 +408,15 @@ export const EVENTS_ADMIN_PRICING: EventCollection = {
     eventType: 'app',
     severity: 'error',
     eventMessage: 'Price list name already exists',
+    version: '1.0.0'
+  },
+
+  'pricelists.update.region.duplicate': {
+    eventName: 'adminPricing.pricelists.update.region.duplicate',
+    source: 'admin-pricing',
+    eventType: 'app',
+    severity: 'error',
+    eventMessage: 'Region already assigned to another price list',
     version: '1.0.0'
   },
 
