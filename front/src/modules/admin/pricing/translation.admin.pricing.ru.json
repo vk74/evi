@@ -196,7 +196,9 @@
           "disabled": "отключен"
         },
         "actions": {
-          "addColumn": "добавить колонку"
+          "addColumn": "добавить колонку",
+          "cancel": "отмена",
+          "update": "обновить"
         }
       },
       "settings": {

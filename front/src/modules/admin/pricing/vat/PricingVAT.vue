@@ -1,5 +1,5 @@
 <!--
-Version: 1.2.0
+Version: 1.4.0
 VAT settings component for pricing administration module.
 Frontend file that displays regions with VAT status (active/disabled) in a table format.
 Filename: PricingVAT.vue
@@ -13,6 +13,16 @@ Changes in v1.1.0:
 Changes in v1.2.0:
 - Adjusted column widths: status +40px, region +30px, vatRate +30px
 - Ensured settings-group block wraps table with proper padding
+
+Changes in v1.3.0:
+- Set new dynamic columns width to 70px
+- Added "%" label to dynamic column headers when not editing
+- Added empty row after all region rows
+
+Changes in v1.4.0:
+- Added "%" label display in column headers (always visible)
+- Added delete button (trash icon) in empty row for each dynamic column
+- Added CANCEL and UPDATE buttons next to ADD COLUMN button
 -->
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue';
@@ -21,7 +31,7 @@ import { useAppSettingsStore } from '@/modules/admin/settings/state.app.settings
 import { fetchSettings } from '@/modules/admin/settings/service.fetch.settings';
 import { useUiStore } from '@/core/state/uistate';
 import DataLoading from '@/core/ui/loaders/DataLoading.vue';
-import { PhWarningCircle, PhCaretDown, PhPlus } from '@phosphor-icons/vue';
+import { PhWarningCircle, PhCaretDown, PhPlus, PhTrash } from '@phosphor-icons/vue';
 
 // Section path identifier for loading regions
 const section_path = 'Application.RegionalSettings';
@@ -57,6 +67,9 @@ interface VATRateColumn {
 // Regions list loaded from settings
 const regions = ref<VATRegion[]>([]);
 const nextRegionId = ref(1);
+
+// Empty row for table footer
+const emptyRow = ref<VATRegion | null>(null);
 
 // Dynamic VAT rate columns
 const vatRateColumns = ref<VATRateColumn[]>([]);
@@ -109,6 +122,21 @@ async function loadRegions(): Promise<void> {
       nextRegionId.value = maxId + 1;
     }
     
+    // Initialize empty row
+    emptyRow.value = {
+      id: -1,
+      region: '',
+      status: 'active' as const,
+      vatRate: 0
+    };
+    
+    // Initialize empty values for dynamic columns in empty row
+    vatRateColumns.value.forEach(column => {
+      if (emptyRow.value) {
+        emptyRow.value[column.id] = null;
+      }
+    });
+    
     console.log(`Loaded ${regions.value.length} regions for VAT settings`);
   } catch (error) {
     console.error('Failed to load regions:', error);
@@ -158,15 +186,20 @@ function addVATRateColumn(): void {
   const newColumnId = `vatRate_${Date.now()}`;
   vatRateColumns.value.push({
     id: newColumnId,
-    header: '',
+    header: '%',
     value: 0,
-    width: '40px'
+    width: '70px'
   });
   
   // Initialize empty values for all regions
   regions.value.forEach(region => {
     region[newColumnId] = null;
   });
+  
+  // Initialize empty value for empty row if it exists
+  if (emptyRow.value) {
+    emptyRow.value[newColumnId] = null;
+  }
   
   // Start editing the new column header
   editingColumnId.value = newColumnId;
@@ -223,6 +256,54 @@ function validateColumnInput(value: string): boolean {
 }
 
 /**
+ * Delete VAT rate column
+ */
+function deleteVATRateColumn(columnId: string): void {
+  const columnIndex = vatRateColumns.value.findIndex(c => c.id === columnId);
+  if (columnIndex !== -1) {
+    // Remove column from array
+    vatRateColumns.value.splice(columnIndex, 1);
+    
+    // Remove column data from all regions
+    regions.value.forEach(region => {
+      delete region[columnId];
+    });
+    
+    // Remove column data from empty row
+    if (emptyRow.value) {
+      delete emptyRow.value[columnId];
+    }
+    
+    // If deleted column was being edited, cancel editing
+    if (editingColumnId.value === columnId) {
+      editingColumnId.value = null;
+      editingColumnValue.value = '';
+    }
+  }
+}
+
+/**
+ * Cancel changes - reset to initial state
+ */
+function cancelChanges(): void {
+  // Cancel any ongoing column editing
+  editingColumnId.value = null;
+  editingColumnValue.value = '';
+  
+  // Reload regions to reset any changes
+  loadRegions();
+}
+
+/**
+ * Update changes - save to backend (placeholder for future implementation)
+ */
+function updateChanges(): void {
+  // TODO: Implement backend integration
+  console.log('Update changes - to be implemented');
+  uiStore.showErrorSnackbar('Функция обновления будет реализована позже');
+}
+
+/**
  * Table headers for VAT regions table
  */
 interface TableHeader {
@@ -242,7 +323,7 @@ const vatTableHeaders = computed<TableHeader[]>(() => {
   // Add dynamic VAT rate columns
   vatRateColumns.value.forEach(column => {
     headers.push({
-      title: column.header || '',
+      title: column.header || '%',
       key: column.id,
       width: column.width,
       sortable: false
@@ -250,6 +331,17 @@ const vatTableHeaders = computed<TableHeader[]>(() => {
   });
   
   return headers;
+});
+
+/**
+ * Table items including regions and empty row
+ */
+const tableItems = computed<VATRegion[]>(() => {
+  const items = [...regions.value];
+  if (emptyRow.value) {
+    items.push(emptyRow.value);
+  }
+  return items;
 });
 
 // Initialize component
@@ -302,12 +394,13 @@ onMounted(async () => {
       v-if="!isLoadingRegions && !regionsError"
       class="settings-group mb-6"
     >
-      <!-- Add Column Button -->
-      <div class="mb-4">
+      <!-- Action Buttons -->
+      <div class="mb-4 d-flex">
         <v-btn
           color="teal"
           variant="outlined"
           size="small"
+          class="me-2"
           @click="addVATRateColumn"
         >
           <template #prepend>
@@ -315,12 +408,29 @@ onMounted(async () => {
           </template>
           {{ t('admin.pricing.vat.actions.addColumn').toUpperCase() }}
         </v-btn>
+        <v-btn
+          color="grey"
+          variant="outlined"
+          size="small"
+          class="me-2"
+          @click="cancelChanges"
+        >
+          {{ t('admin.pricing.vat.actions.cancel').toUpperCase() }}
+        </v-btn>
+        <v-btn
+          color="teal"
+          variant="outlined"
+          size="small"
+          @click="updateChanges"
+        >
+          {{ t('admin.pricing.vat.actions.update').toUpperCase() }}
+        </v-btn>
       </div>
       
       <div class="vat-table-wrapper">
         <v-data-table
           :headers="vatTableHeaders"
-          :items="regions"
+          :items="tableItems"
           :items-per-page="-1"
           hide-default-footer
           class="vat-table"
@@ -328,6 +438,7 @@ onMounted(async () => {
           <!-- Status column -->
           <template #[`item.status`]="{ item }">
             <v-chip
+              v-if="item.id !== -1"
               :color="item.status === 'active' ? 'teal' : 'grey'"
               size="small"
               class="status-chip"
@@ -340,7 +451,7 @@ onMounted(async () => {
 
           <!-- Region column -->
           <template #[`item.region`]="{ item }">
-            <span class="region-name">{{ item.region }}</span>
+            <span v-if="item.id !== -1" class="region-name">{{ item.region }}</span>
           </template>
 
           <!-- Default VAT rate column (0%) -->
@@ -368,13 +479,24 @@ onMounted(async () => {
               <span class="ms-1">%</span>
             </div>
             <span v-else @click="startEditingColumn(column.id)" class="editable-header">
-              {{ column.header || '' }}
+              {{ column.header || '%' }}
             </span>
           </template>
           
           <!-- Dynamic VAT rate columns data -->
           <template v-for="column in vatRateColumns" :key="`item-${column.id}`" #[`item.${column.id}`]="{ item }">
-            <!-- Empty cell -->
+            <!-- Delete button in empty row -->
+            <div v-if="item.id === -1" class="d-flex justify-center">
+              <v-btn
+                icon
+                size="small"
+                variant="text"
+                color="error"
+                @click="deleteVATRateColumn(column.id)"
+              >
+                <PhTrash :size="16" />
+              </v-btn>
+            </div>
           </template>
         </v-data-table>
       </div>

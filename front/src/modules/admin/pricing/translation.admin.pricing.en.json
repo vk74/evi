@@ -196,7 +196,9 @@
           "disabled": "disabled"
         },
         "actions": {
-          "addColumn": "add column"
+          "addColumn": "add column",
+          "cancel": "cancel",
+          "update": "update"
         }
       },
       "settings": {
