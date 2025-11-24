@@ -1,5 +1,5 @@
 <!--
-Version: 1.1.0
+Version: 1.2.0
 VAT settings component for pricing administration module.
 Frontend file that displays regions with VAT status (active/disabled) in a table format.
 Filename: PricingVAT.vue
@@ -9,6 +9,10 @@ Changes in v1.1.0:
 - Added editable column headers with validation (1-99)
 - Fixed chip design to match ProductsList.vue style
 - Increased "0%" column width to 40px
+
+Changes in v1.2.0:
+- Adjusted column widths: status +40px, region +30px, vatRate +30px
+- Ensured settings-group block wraps table with proper padding
 -->
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue';
@@ -230,9 +234,9 @@ interface TableHeader {
 
 const vatTableHeaders = computed<TableHeader[]>(() => {
   const headers: TableHeader[] = [
-    { title: t('admin.pricing.vat.table.headers.status'), key: 'status', width: '30%', sortable: false },
-    { title: t('admin.pricing.vat.table.headers.region'), key: 'region', width: '40%' },
-    { title: t('admin.pricing.vat.table.headers.vatRate'), key: 'vatRate', width: '40px', sortable: false }
+    { title: t('admin.pricing.vat.table.headers.status'), key: 'status', width: '100px', sortable: false },
+    { title: t('admin.pricing.vat.table.headers.region'), key: 'region', width: '140px' },
+    { title: t('admin.pricing.vat.table.headers.vatRate'), key: 'vatRate', width: '70px', sortable: false }
   ];
   
   // Add dynamic VAT rate columns
@@ -399,6 +403,8 @@ onMounted(async () => {
   border-radius: 8px;
   padding: 16px;
   background-color: rgba(0, 0, 0, 0.02);
+  width: fit-content;
+  display: inline-block;
 }
 
 /* VAT table styles - matching Application.RegionalSettings.vue regions table */
@@ -441,6 +447,25 @@ onMounted(async () => {
 .vat-table :deep(.v-data-table__td),
 .vat-table :deep(.v-data-table__th) {
   border-bottom: none !important;
+}
+
+/* Column width constraints */
+.vat-table :deep(.v-data-table__th:nth-child(1)),
+.vat-table :deep(.v-data-table__td:nth-child(1)) {
+  min-width: 80px !important;
+  width: 100px !important;
+}
+
+.vat-table :deep(.v-data-table__th:nth-child(2)),
+.vat-table :deep(.v-data-table__td:nth-child(2)) {
+  min-width: 100px !important;
+  width: 140px !important;
+}
+
+.vat-table :deep(.v-data-table__th:nth-child(3)),
+.vat-table :deep(.v-data-table__td:nth-child(3)) {
+  min-width: 40px !important;
+  width: 70px !important;
 }
 
 /* Header bottom separator */
