@@ -249,7 +249,7 @@
             "label": "country"
           },
           "language": {
-            "label": "default language"
+            "label": "fallback language"
           },
           "time12h": {
             "label": "use 12H AM/PM time format"

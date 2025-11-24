@@ -1,7 +1,7 @@
 <!--
-  Version: 1.7.0
+  Version: 1.8.0
   File: Application.RegionalSettings.vue - frontend file
-  Description: Regional settings configuration including timezone, country, default language, and time format
+  Description: Regional settings configuration including timezone, country, fallback language, and time format
   Purpose: Configure regional application settings with full backend integration and settings store
   Frontend file that manages regional settings UI and integrates with settings store
   
@@ -23,6 +23,10 @@
   - Allowed languages saved automatically on toggle change
   - Changed Region interface: country → value
   - Added loading/error states for new settings
+  
+  Changes in v1.8.0:
+  - Renamed setting from default.language to fallback.language
+  - Updated label translations: "default language" → "fallback language" (EN), "язык по умолчанию" → "резервный язык" (RU)
 -->
 
 <script setup lang="ts">
@@ -132,7 +136,7 @@ const languageOptions = computed(() => [
 const allSettings = [
   'current.timezone',
   'current.country',
-  'default.language',
+  'fallback.language',
   'time.format.12h',
   'app.regions',
   'allowed.languages'
@@ -244,7 +248,7 @@ function updateLocalSetting(settingName: string, value: any) {
     case 'current.country':
       selectedCountry.value = safeString(value);
       break;
-    case 'default.language':
+    case 'fallback.language':
       selectedLanguage.value = safeString(value);
       break;
     case 'time.format.12h':
@@ -384,7 +388,7 @@ watch(selectedCountry, (newValue) => {
 
 watch(selectedLanguage, (newValue) => {
   if (!isFirstLoad.value && newValue !== null) {
-    updateSetting('default.language', newValue);
+    updateSetting('fallback.language', newValue);
   }
 });
 
@@ -759,20 +763,20 @@ onMounted(async () => {
               item-title="title"
               item-value="value"
               style="max-width: 300px;"
-              :disabled="isSettingDisabled('default.language')"
-              :loading="settingLoadingStates['default.language']"
+              :disabled="isSettingDisabled('fallback.language')"
+              :loading="settingLoadingStates['fallback.language']"
             >
               <template #append-inner>
                 <PhCaretUpDown class="dropdown-icon" />
               </template>
             </v-select>
             <v-tooltip
-              v-if="settingErrorStates['default.language']"
+              v-if="settingErrorStates['fallback.language']"
               location="top"
               max-width="300"
             >
               <template #activator="{ props }">
-                <span v-bind="props" style="cursor: pointer;" @click="retrySetting('default.language')">
+                <span v-bind="props" style="cursor: pointer;" @click="retrySetting('fallback.language')">
                   <PhWarningCircle :size="16" class="ms-2" />
                 </span>
               </template>
