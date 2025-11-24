@@ -37,7 +37,7 @@ import { useAppSettingsStore } from '@/modules/admin/settings/state.app.settings
 import { fetchSettings } from '@/modules/admin/settings/service.fetch.settings';
 import { useUiStore } from '@/core/state/uistate';
 import DataLoading from '@/core/ui/loaders/DataLoading.vue';
-import { PhWarningCircle, PhCaretDown, PhPlus, PhTrash } from '@phosphor-icons/vue';
+import { PhWarningCircle, PhCaretDown, PhPlus, PhTrash, PhX } from '@phosphor-icons/vue';
 
 // Section path identifier for loading regions
 const section_path = 'Application.RegionalSettings';
@@ -59,7 +59,7 @@ interface VATRegion {
   region: string;
   status: 'active' | 'disabled';
   vatRate: number;
-  [key: string]: any; // For dynamic VAT rate columns
+  [key: string]: any; // For dynamic VAT rate columns (stores priority number)
 }
 
 // Dynamic VAT rate column interface
@@ -79,6 +79,14 @@ const emptyRow = ref<VATRegion | null>(null);
 
 // Dynamic VAT rate columns
 const vatRateColumns = ref<VATRateColumn[]>([]);
+
+// Menu state for marker editing
+const markerMenu = ref({
+  isOpen: false,
+  regionId: -1,
+  columnId: '',
+  priority: 1
+});
 
 /**
  * Load regions from app.regions setting
@@ -139,6 +147,13 @@ async function loadRegions(): Promise<void> {
       if (emptyRow.value) {
         emptyRow.value[column.id] = null;
       }
+      
+      // Initialize null for all regions for existing columns
+      regions.value.forEach(region => {
+        if (region[column.id] === undefined) {
+          region[column.id] = null;
+        }
+      });
     });
     
     console.log(`Loaded ${regions.value.length} regions for VAT settings`);
@@ -284,6 +299,113 @@ function deleteVATRateColumn(columnId: string): void {
     
     // Column deleted, no need to clean up editing state
   }
+}
+
+/**
+ * Get max priority for a region to assign next
+ */
+function getNextPriority(region: VATRegion): number {
+  let max = 0;
+  vatRateColumns.value.forEach(col => {
+    const val = region[col.id];
+    if (typeof val === 'number' && val > max) {
+      max = val;
+    }
+  });
+  return max + 1;
+}
+
+/**
+ * Add priority marker to a region
+ */
+function addMarker(region: VATRegion, columnId: string): void {
+  const nextPriority = getNextPriority(region);
+  region[columnId] = nextPriority;
+}
+
+/**
+ * Remove priority marker from a region and re-index
+ */
+function removeMarker(region: VATRegion, columnId: string): void {
+  const removedPriority = region[columnId];
+  if (typeof removedPriority !== 'number') return;
+  
+  // Remove the marker
+  region[columnId] = null;
+  
+  // Close gaps: decrement all priorities greater than the removed one
+  vatRateColumns.value.forEach(col => {
+    const val = region[col.id];
+    if (typeof val === 'number' && val > removedPriority) {
+      region[col.id] = val - 1;
+    }
+  });
+  
+  // Close menu
+  markerMenu.value.isOpen = false;
+}
+
+/**
+ * Open marker menu for editing
+ */
+function openMarkerMenu(region: VATRegion, columnId: string, event: Event): void {
+  // Stop propagation to prevent immediate close if clicking on trigger
+  event.stopPropagation();
+  
+  markerMenu.value = {
+    isOpen: true,
+    regionId: region.id,
+    columnId: columnId,
+    priority: region[columnId] as number
+  };
+}
+
+/**
+ * Update priority from menu input
+ * Uses insertion logic: moves current marker to new index and shifts others
+ */
+function updateMarkerPriority(): void {
+  const { regionId, columnId, priority: newPriority } = markerMenu.value;
+  const region = regions.value.find(r => r.id === regionId);
+  
+  if (!region || !columnId) return;
+  
+  const oldPriority = region[columnId] as number;
+  if (oldPriority === newPriority) return;
+  
+  // Get all markers for this region
+  const markers: { colId: string, priority: number }[] = [];
+  vatRateColumns.value.forEach(col => {
+    const val = region[col.id];
+    if (typeof val === 'number') {
+      markers.push({ colId: col.id, priority: val });
+    }
+  });
+  
+  // Sort by current priority
+  markers.sort((a, b) => a.priority - b.priority);
+  
+  // Remove current marker from list
+  const currentIndex = markers.findIndex(m => m.colId === columnId);
+  if (currentIndex === -1) return;
+  const [currentMarker] = markers.splice(currentIndex, 1);
+  
+  // Calculate new index (1-based priority to 0-based index)
+  // Clamp between 0 and length
+  let newIndex = newPriority - 1;
+  if (newIndex < 0) newIndex = 0;
+  if (newIndex > markers.length) newIndex = markers.length;
+  
+  // Insert at new position
+  markers.splice(newIndex, 0, currentMarker);
+  
+  // Re-assign priorities based on new order
+  markers.forEach((m, index) => {
+    region[m.colId] = index + 1;
+  });
+  
+  // Close menu
+  markerMenu.value.isOpen = false;
 }
 
 /**
@@ -491,10 +613,85 @@ onMounted(async () => {
                 <PhTrash :size="16" />
               </v-btn>
             </div>
+            
+            <!-- Priority marker in regular row -->
+            <div 
+              v-else 
+              class="d-flex justify-center align-center cell-clickable fill-height"
+              style="min-height: 40px; cursor: pointer;"
+              @click="!item[column.id] && addMarker(item, column.id)"
+            >
+              <v-chip
+                v-if="item[column.id]"
+                color="primary"
+                size="small"
+                class="priority-chip font-weight-bold"
+                :id="`marker-${item.id}-${column.id}`"
+                @click="openMarkerMenu(item, column.id, $event)"
+              >
+                {{ item[column.id] }}
+              </v-chip>
+              
+              <!-- Hover placeholder for empty cell -->
+              <div v-else class="empty-cell-placeholder">
+                <PhPlus :size="14" class="placeholder-icon" />
+              </div>
+            </div>
           </template>
         </v-data-table>
       </div>
     </div>
+    
+    <!-- Marker Edit Menu -->
+    <v-menu
+      v-model="markerMenu.isOpen"
+      :activator="`#marker-${markerMenu.regionId}-${markerMenu.columnId}`"
+      :close-on-content-click="false"
+      location="bottom"
+      offset="5"
+    >
+      <v-card min-width="180" class="pa-3">
+        <div class="d-flex align-center mb-2">
+          <span class="text-caption text-medium-emphasis me-2">Приоритет:</span>
+          <v-text-field
+            v-model.number="markerMenu.priority"
+            type="number"
+            density="compact"
+            variant="outlined"
+            hide-details
+            single-line
+            min="1"
+            style="max-width: 80px"
+            @keydown.enter="updateMarkerPriority"
+          />
+        </div>
+        
+        <div class="d-flex justify-space-between mt-2">
+          <v-btn
+            size="small"
+            variant="text"
+            color="error"
+            class="px-1"
+            @click="regions.find(r => r.id === markerMenu.regionId) && removeMarker(regions.find(r => r.id === markerMenu.regionId)!, markerMenu.columnId)"
+          >
+            <template #prepend>
+              <PhTrash :size="14" />
+            </template>
+            Удалить
+          </v-btn>
+          
+          <v-btn
+            size="small"
+            color="primary"
+            variant="text"
+            class="px-1"
+            @click="updateMarkerPriority"
+          >
+            Сохранить
+          </v-btn>
+        </div>
+      </v-card>
+    </v-menu>
     
     <!-- Empty state -->
     <div
@@ -685,5 +882,32 @@ onMounted(async () => {
   display: flex;
   align-items: center;
   justify-content: center;
+}
+
+.cell-clickable:hover {
+  background-color: rgba(0, 0, 0, 0.02);
+}
+
+.empty-cell-placeholder {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: all 0.2s ease;
+  background-color: rgba(0, 0, 0, 0.05);
+  color: rgba(0, 0, 0, 0.4);
+}
+
+.cell-clickable:hover .empty-cell-placeholder {
+  opacity: 1;
+}
+
+.empty-cell-placeholder:hover {
+  background-color: rgba(var(--v-theme-primary), 0.1) !important;
+  color: rgb(var(--v-theme-primary)) !important;
+  transform: scale(1.1);
 }
 </style>
