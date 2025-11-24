@@ -13,6 +13,10 @@
 --
 -- Changes in v1.2.1:
 -- - Fixed language validation to use app.system_language_code (app.app_languages was removed)
+--
+-- Changes in v1.2.2:
+-- - Removed enum validation for default.language setting
+-- - Now validates against allowed.languages setting or simple string validation for 'english'/'russian'
 
 -- ============================================
 -- Regional Settings Validation
@@ -40,10 +44,15 @@ BEGIN
 
   -- Validate language setting
   IF NEW.setting_name = 'default.language' THEN
-    -- Check if value (removing quotes) is a valid language enum value
-    IF NOT (NEW.value #>> '{}')::app.system_language_code IS NOT NULL THEN
-      RAISE EXCEPTION 'Invalid language value: %. Must be one of the app.system_language_code enum values', NEW.value;
-    END IF;
+    -- Check if value (removing quotes) is a valid language value
+    DECLARE
+      lang_value TEXT;
+    BEGIN
+      lang_value := NEW.value #>> '{}';
+      IF lang_value NOT IN ('english', 'russian') THEN
+        RAISE EXCEPTION 'Invalid language value: %. Must be one of: english, russian', lang_value;
+      END IF;
+    END;
   END IF;
 
   RETURN NEW;

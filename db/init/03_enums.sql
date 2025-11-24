@@ -1,4 +1,4 @@
--- Version: 1.6.0
+-- Version: 1.6.1
 -- Description: Create enum types for the application.
 -- Backend file: 03_enums.sql
 -- Added: Regional settings enum types (timezones, app_countries, system_language_code)
@@ -7,6 +7,9 @@
 -- Removed: weight_unit enum (unused, was used in old products schema)
 -- Changes in v1.6.0:
 -- - Removed 'backup_owner' from app.product_user_role enum
+-- Changes in v1.6.1:
+-- - Note: system_language_code enum is deprecated and will be removed in migration 002
+-- - Language codes now use full names ('english', 'russian') stored in allowed.languages setting
 
 -- Create enum types
 DO $$ BEGIN
@@ -112,4 +115,5 @@ EXCEPTION
 END $$;
 
 -- Note: app_languages enum has been deprecated and removed
--- Use app.system_language_code instead for language settings
+-- Note: system_language_code enum is deprecated and will be removed in migration 002
+-- Language codes now use full names ('english', 'russian') from allowed.languages setting
