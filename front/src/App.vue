@@ -168,6 +168,51 @@ const navbarColor = computed(() => {
   }
 });
 
+// Allowed UI languages based on Application.RegionalSettings.allowed.languages
+const allowedUiLanguages = computed(() => {
+  try {
+    // Prefer authenticated settings cache when available, fallback to public cache
+    const cachedSettings = appSettingsStore.getCachedSettings('Application.RegionalSettings');
+    const publicCacheEntry = appSettingsStore.publicSettingsCache['Application.RegionalSettings'];
+    const settingsArray = cachedSettings || publicCacheEntry?.data || [];
+
+    const allowedSetting = settingsArray.find(
+      setting => setting.setting_name === 'allowed.languages'
+    );
+
+    const value = allowedSetting?.value as string[] | undefined;
+    if (Array.isArray(value) && value.length > 0) {
+      return value;
+    }
+  } catch (error) {
+    console.warn('[App] Failed to resolve allowed UI languages, using defaults:', error);
+  }
+
+  // Fallback to both languages if setting not available
+  return ['english', 'russian'];
+});
+
+// Language menu options derived from allowed languages
+const languageMenuOptions = computed(() => {
+  const allowed = allowedUiLanguages.value;
+  const options: Array<{ code: string; label: string }> = [];
+
+  if (allowed.includes('english')) {
+    options.push({ code: 'en', label: 'English' });
+  }
+  if (allowed.includes('russian')) {
+    options.push({ code: 'ru', label: 'Русский' });
+  }
+
+  // If somehow nothing is allowed, show both for safety
+  if (options.length === 0) {
+    options.push({ code: 'en', label: 'English' });
+    options.push({ code: 'ru', label: 'Русский' });
+  }
+
+  return options;
+});
+
 // Get the current active admin sub-module from the store
 const activeAdminSubModule = computed(() => appStore.getActiveAdminSubModule);
 
@@ -1059,16 +1104,12 @@ onMounted(async () => {
               </template>
               <v-list>
                 <v-list-item
-                  :active="userStore.language === 'en'"
-                  @click="changeLanguage('en')"
+                  v-for="opt in languageMenuOptions"
+                  :key="opt.code"
+                  :active="userStore.language === opt.code"
+                  @click="changeLanguage(opt.code)"
                 >
-                  <v-list-item-title>English</v-list-item-title>
-                </v-list-item>
-                <v-list-item
-                  :active="userStore.language === 'ru'"
-                  @click="changeLanguage('ru')"
-                >
-                  <v-list-item-title>Русский</v-list-item-title>
+                  <v-list-item-title>{{ opt.label }}</v-list-item-title>
                 </v-list-item>
               </v-list>
             </v-menu>

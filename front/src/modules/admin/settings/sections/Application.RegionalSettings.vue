@@ -124,13 +124,24 @@ const countryOptions = computed(() => {
   }));
 });
 
+// Allowed languages state (full-name identifiers, e.g. 'english', 'russian')
+const allowedLanguages = ref<string[]>([]);
+
 // Language options - computed to support reactive translations
-// Values are ISO 639-1 language codes
-// Display lowercase names in UI
-const languageOptions = computed(() => [
-  { value: 'en', title: t('admin.settings.application.regionalsettings.languages.english').toLowerCase() },
-  { value: 'ru', title: t('admin.settings.application.regionalsettings.languages.russian').toLowerCase() }
-]);
+// Values are full language names, filtered by allowed.languages
+const languageOptions = computed(() => {
+  const allLanguages = [
+    { value: 'english', title: t('admin.settings.application.regionalsettings.languages.english').toLowerCase() },
+    { value: 'russian', title: t('admin.settings.application.regionalsettings.languages.russian').toLowerCase() }
+  ];
+
+  if (!allowedLanguages.value.length) {
+    return allLanguages;
+  }
+
+  const filtered = allLanguages.filter(opt => allowedLanguages.value.includes(opt.value));
+  return filtered.length > 0 ? filtered : allLanguages;
+});
 
 // Define all settings that need to be loaded
 const allSettings = [
@@ -288,6 +299,7 @@ function updateLocalSetting(settingName: string, value: any) {
       const languagesArray = Array.isArray(value) ? value : [];
       russianEnabled.value = languagesArray.includes('russian');
       englishEnabled.value = languagesArray.includes('english');
+      allowedLanguages.value = languagesArray;
       break;
   }
 }
@@ -409,6 +421,12 @@ watch(russianEnabled, (newValue) => {
     languagesArray.sort();
     
     updateSetting('allowed.languages', languagesArray);
+    allowedLanguages.value = languagesArray;
+
+    // Ensure fallback.language stays within allowed languages
+    if (selectedLanguage.value && !languagesArray.includes(selectedLanguage.value)) {
+      selectedLanguage.value = languagesArray[0] || null;
+    }
   }
 });
 
@@ -422,6 +440,12 @@ watch(englishEnabled, (newValue) => {
     languagesArray.sort();
     
     updateSetting('allowed.languages', languagesArray);
+    allowedLanguages.value = languagesArray;
+
+    // Ensure fallback.language stays within allowed languages
+    if (selectedLanguage.value && !languagesArray.includes(selectedLanguage.value)) {
+      selectedLanguage.value = languagesArray[0] || null;
+    }
   }
 });
 

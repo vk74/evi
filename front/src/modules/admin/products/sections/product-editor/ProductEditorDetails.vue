@@ -81,6 +81,7 @@ import { serviceFetchSingleProduct } from '../../service.fetch.single.product'
 import { serviceUpdateProduct } from '../../service.update.product'
 import { fetchPublicValidationRules } from '@/core/services/service.fetch.public.validation.rules'
 import { usePublicSettingsStore, type ValidationRules } from '@/core/state/state.public.settings'
+import { useAppSettingsStore } from '@/modules/admin/settings/state.app.settings'
 import type { ProductStatus } from '../../types.products.admin'
 
 const DataLoading = defineAsyncComponent(() => import(/* webpackChunkName: "ui-data-loading" */ '@/core/ui/loaders/DataLoading.vue'))
@@ -93,6 +94,7 @@ const { t, locale } = useI18n()
 const productsStore = useProductsAdminStore()
 const uiStore = useUiStore()
 const publicStore = usePublicSettingsStore()
+const appSettingsStore = useAppSettingsStore()
 
 // Form reference and validation state
 const form = ref<any>(null)
@@ -130,11 +132,41 @@ const isUpdateButtonEnabled = computed(() => {
          areSpecialistsGroupsValid.value
 })
 
-// Language options - use full language names as values
-const languageOptions = computed(() => [
-  { title: t('admin.products.editor.languages.english'), value: 'english' },
-  { title: t('admin.products.editor.languages.russian'), value: 'russian' }
-])
+// Allowed languages for admin product editor based on Application.RegionalSettings.allowed.languages
+const allowedEditorLanguages = computed(() => {
+  try {
+    // Prefer authenticated settings cache when available, fallback to public cache
+    const cachedSettings = appSettingsStore.getCachedSettings('Application.RegionalSettings')
+    const publicCacheEntry = appSettingsStore.publicSettingsCache['Application.RegionalSettings']
+    const settingsArray = cachedSettings || publicCacheEntry?.data || []
+
+    const allowedSetting = settingsArray.find(
+      setting => setting.setting_name === 'allowed.languages'
+    )
+
+    const value = allowedSetting?.value as string[] | undefined
+    if (Array.isArray(value) && value.length > 0) {
+      return value
+    }
+  } catch (error) {
+    console.warn('[ProductEditorDetails] Failed to resolve allowed editor languages, using defaults:', error)
+  }
+
+  return ['english', 'russian']
+})
+
+// Language options - use full language names as values, filtered by allowed languages
+const languageOptions = computed(() => {
+  const all = [
+    { title: t('admin.products.editor.languages.english'), value: 'english' },
+    { title: t('admin.products.editor.languages.russian'), value: 'russian' }
+  ]
+
+  const allowed = allowedEditorLanguages.value
+  const filtered = all.filter(opt => allowed.includes(opt.value))
+
+  return filtered.length > 0 ? filtered : all
+})
 
 // Helper function to normalize status code for translation key
 const normalizeStatusCodeForTranslation = (statusCode: string): string => {
@@ -159,6 +191,17 @@ const statusOptions = computed(() => {
 
 // Selected language for translations (full-name key)
 const selectedLanguage = ref('english')
+
+// Ensure selectedLanguage is always one of the allowed/visible options
+watch(
+  () => allowedEditorLanguages.value,
+  (langs) => {
+    if (!langs.includes(selectedLanguage.value) && languageOptions.value.length > 0) {
+      selectedLanguage.value = languageOptions.value[0].value
+    }
+  },
+  { immediate: true }
+)
 
 // Get selected picture component (placeholder for now)
 const selectedPictureComponent = computed(() => {
