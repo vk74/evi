@@ -31,7 +31,7 @@ Changes in v1.5.0:
 - Removed click-to-edit mode, field is always editable
 -->
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed, onMounted, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useAppSettingsStore } from '@/modules/admin/settings/state.app.settings';
 import { fetchSettings } from '@/modules/admin/settings/service.fetch.settings';
@@ -70,9 +70,20 @@ interface VATRateColumn {
   width: string;
 }
 
+// Unified VAT rate setting
+const isUnifiedVat = ref(false);
+
 // Regions list loaded from settings
 const regions = ref<VATRegion[]>([]);
 const nextRegionId = ref(1);
+
+// Unified region row
+const unifiedRegion = ref<VATRegion>({
+  id: 0,
+  region: 'All Regions',
+  status: 'active',
+  vatRate: null
+});
 
 // Empty row for table footer
 const emptyRow = ref<VATRegion | null>(null);
@@ -86,6 +97,31 @@ const markerMenu = ref({
   regionId: -1,
   columnId: '',
   priority: 1
+});
+
+/**
+ * Reset all markers for a region
+ */
+function resetRegionMarkers(region: VATRegion): void {
+  // Reset 0% column
+  region.vatRate = null;
+  
+  // Reset dynamic columns
+  vatRateColumns.value.forEach(col => {
+    region[col.id] = null;
+  });
+}
+
+/**
+ * Watch for unified setting change
+ */
+watch(isUnifiedVat, (newValue) => {
+  if (newValue) {
+    // If switched to unified, reset all individual regions
+    regions.value.forEach(region => {
+      resetRegionMarkers(region);
+    });
+  }
 });
 
 /**
@@ -148,6 +184,9 @@ async function loadRegions(): Promise<void> {
         emptyRow.value[column.id] = null;
       }
       
+      // Initialize for unified region
+      unifiedRegion.value[column.id] = null;
+      
       // Initialize null for all regions for existing columns
       regions.value.forEach(region => {
         if (region[column.id] === undefined) {
@@ -155,6 +194,9 @@ async function loadRegions(): Promise<void> {
         }
       });
     });
+    
+    // Update unified region name with translation if possible, or keep default
+    unifiedRegion.value.region = t('admin.pricing.vat.allRegions') || 'All Regions';
     
     console.log(`Loaded ${regions.value.length} regions for VAT settings`);
   } catch (error) {
@@ -228,6 +270,9 @@ function addVATRateColumn(): void {
   regions.value.forEach(region => {
     region[newColumnId] = null;
   });
+  
+  // Initialize for unified region
+  unifiedRegion.value[newColumnId] = null;
   
   // Initialize empty value for empty row if it exists
   if (emptyRow.value) {
@@ -305,6 +350,9 @@ function deleteVATRateColumn(columnId: string): void {
     regions.value.forEach(region => {
       delete region[columnId];
     });
+    
+    // Remove column data from unified region
+    delete unifiedRegion.value[columnId];
     
     // Remove column data from empty row
     if (emptyRow.value) {
@@ -400,7 +448,15 @@ function openMarkerMenu(region: VATRegion, columnId: string, event: Event): void
  */
 function updateMarkerPriority(): void {
   const { regionId, columnId, priority: newPriority } = markerMenu.value;
-  const region = regions.value.find(r => r.id === regionId);
+  
+  // Determine target region (individual or unified)
+  let region: VATRegion | undefined;
+  
+  if (regionId === 0 && isUnifiedVat.value) {
+    region = unifiedRegion.value;
+  } else {
+    region = regions.value.find(r => r.id === regionId);
+  }
   
   if (!region || !columnId) return;
   
@@ -417,7 +473,7 @@ function updateMarkerPriority(): void {
   
   // Add dynamic columns markers
   vatRateColumns.value.forEach(col => {
-    const val = region[col.id];
+    const val = region![col.id];
     if (typeof val === 'number') {
       markers.push({ colId: col.id, priority: val });
     }
@@ -442,7 +498,7 @@ function updateMarkerPriority(): void {
   
   // Re-assign priorities based on new order
   markers.forEach((m, index) => {
-    region[m.colId] = index + 1;
+    region![m.colId] = index + 1;
   });
   
   // Close menu
@@ -500,6 +556,15 @@ const vatTableHeaders = computed<TableHeader[]>(() => {
  * Table items including regions and empty row
  */
 const tableItems = computed<VATRegion[]>(() => {
+  if (isUnifiedVat.value) {
+    // In unified mode, return unified region and the empty row (for delete buttons)
+    const items = [unifiedRegion.value];
+    if (emptyRow.value) {
+      items.push(emptyRow.value);
+    }
+    return items;
+  }
+  
   const items = [...regions.value];
   if (emptyRow.value) {
     items.push(emptyRow.value);
@@ -512,6 +577,24 @@ onMounted(async () => {
   console.log('PricingVAT component initialized');
   await loadRegions();
 });
+/**
+ * Remove marker from region (handles both regular and unified)
+ */
+function handleRemoveMarker(): void {
+  const { regionId, columnId } = markerMenu.value;
+  
+  let region: VATRegion | undefined;
+  
+  if (regionId === 0 && isUnifiedVat.value) {
+    region = unifiedRegion.value;
+  } else {
+    region = regions.value.find(r => r.id === regionId);
+  }
+  
+  if (region) {
+    removeMarker(region, columnId);
+  }
+}
 </script>
 
 <template>
@@ -703,6 +786,16 @@ onMounted(async () => {
           </template>
         </v-data-table>
       </div>
+
+      <div class="mt-4">
+        <v-switch
+          v-model="isUnifiedVat"
+          color="teal"
+          :label="t('admin.pricing.vat.unifiedVat')"
+          hide-details
+          density="compact"
+        />
+      </div>
     </div>
     
     <!-- Marker Edit Menu -->
@@ -735,7 +828,7 @@ onMounted(async () => {
             variant="text"
             color="error"
             class="px-1"
-            @click="regions.find(r => r.id === markerMenu.regionId) && removeMarker(regions.find(r => r.id === markerMenu.regionId)!, markerMenu.columnId)"
+            @click="handleRemoveMarker"
           >
             <template #prepend>
               <PhTrash :size="14" />

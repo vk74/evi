@@ -191,6 +191,8 @@
             "vatRate": "0 %"
           }
         },
+        "allRegions": "все регионы",
+        "unifiedVat": "единые ставки для всех регионов",
         "status": {
           "active": "активен",
           "disabled": "отключен"

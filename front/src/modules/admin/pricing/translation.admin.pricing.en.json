@@ -191,6 +191,8 @@
             "vatRate": "0 %"
           }
         },
+        "allRegions": "all regions",
+        "unifiedVat": "unified rates for all regions",
         "status": {
           "active": "active",
           "disabled": "disabled"
