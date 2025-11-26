@@ -1,5 +1,5 @@
 <!--
-Version: 1.5.0
+Version: 1.6.0
 VAT settings component for pricing administration module.
 Frontend file that displays regions with VAT status (active/disabled) in a table format.
 Filename: PricingVAT.vue
@@ -29,6 +29,13 @@ Changes in v1.5.0:
 - Added real-time validation: only digits 1-99 allowed
 - Input field positioned left of "%" label
 - Removed click-to-edit mode, field is always editable
+
+Changes in v1.6.0:
+- Added change tracking: snapshot of initial state saved on load
+- Added hasPendingChanges computed property to detect any changes
+- Updated CANCEL button to restore state from snapshot
+- Added glow effect to UPDATE button when changes are pending
+- UPDATE button disabled when no changes detected
 -->
 <script setup lang="ts">
 import { ref, computed, onMounted, watch } from 'vue';
@@ -52,6 +59,7 @@ const { t } = useI18n();
 // Loading states
 const isLoadingRegions = ref(true);
 const regionsError = ref(false);
+const isSaving = ref(false);
 
 // VAT region data interface
 interface VATRegion {
@@ -90,6 +98,15 @@ const emptyRow = ref<VATRegion | null>(null);
 
 // Dynamic VAT rate columns
 const vatRateColumns = ref<VATRateColumn[]>([]);
+
+// Original state snapshot for change tracking
+interface VATDataSnapshot {
+  regions: VATRegion[];
+  unifiedRegion: VATRegion;
+  vatRateColumns: VATRateColumn[];
+  isUnifiedVat: boolean;
+}
+const vatDataOriginal = ref<VATDataSnapshot | null>(null);
 
 // Menu state for marker editing
 const markerMenu = ref({
@@ -198,6 +215,9 @@ async function loadRegions(): Promise<void> {
     // Update unified region name with translation if possible, or keep default
     unifiedRegion.value.region = t('admin.pricing.vat.allRegions') || 'All Regions';
     
+    // Create snapshot of initial state for change tracking
+    createVATSnapshot();
+    
     console.log(`Loaded ${regions.value.length} regions for VAT settings`);
   } catch (error) {
     console.error('Failed to load regions:', error);
@@ -220,6 +240,18 @@ function parseRegionsValue(value: any): string[] {
     return value.filter((v: any) => v !== null && v !== undefined && v !== '');
   }
   return [];
+}
+
+/**
+ * Create snapshot of current VAT data state for change tracking
+ */
+function createVATSnapshot(): void {
+  vatDataOriginal.value = {
+    regions: JSON.parse(JSON.stringify(regions.value)),
+    unifiedRegion: JSON.parse(JSON.stringify(unifiedRegion.value)),
+    vatRateColumns: JSON.parse(JSON.stringify(vatRateColumns.value)),
+    isUnifiedVat: isUnifiedVat.value
+  };
 }
 
 // Helper to get all relevant column keys (including 0%)
@@ -509,8 +541,40 @@ function updateMarkerPriority(): void {
  * Cancel changes - reset to initial state
  */
 function cancelChanges(): void {
-  // Reload regions to reset any changes
-  loadRegions();
+  if (!vatDataOriginal.value) {
+    // If no snapshot exists, reload from server
+    loadRegions();
+    return;
+  }
+  
+  const original = vatDataOriginal.value;
+  
+  // Restore regions
+  regions.value = JSON.parse(JSON.stringify(original.regions));
+  
+  // Restore unified region
+  unifiedRegion.value = JSON.parse(JSON.stringify(original.unifiedRegion));
+  
+  // Restore VAT rate columns
+  vatRateColumns.value = JSON.parse(JSON.stringify(original.vatRateColumns));
+  
+  // Restore isUnifiedVat
+  isUnifiedVat.value = original.isUnifiedVat;
+  
+  // Re-initialize empty row with current columns
+  emptyRow.value = {
+    id: -1,
+    region: '',
+    status: 'active' as const,
+    vatRate: null
+  };
+  
+  // Initialize empty values for dynamic columns in empty row
+  vatRateColumns.value.forEach(column => {
+    if (emptyRow.value) {
+      emptyRow.value[column.id] = null;
+    }
+  });
 }
 
 /**
@@ -570,6 +634,88 @@ const tableItems = computed<VATRegion[]>(() => {
     items.push(emptyRow.value);
   }
   return items;
+});
+
+/**
+ * Check if there are pending changes compared to original state
+ */
+const hasPendingChanges = computed(() => {
+  if (!vatDataOriginal.value) {
+    return false;
+  }
+  
+  const original = vatDataOriginal.value;
+  
+  // Check isUnifiedVat
+  if (original.isUnifiedVat !== isUnifiedVat.value) {
+    return true;
+  }
+  
+  // Check vatRateColumns (length and content)
+  if (original.vatRateColumns.length !== vatRateColumns.value.length) {
+    return true;
+  }
+  
+  // Check each column - all original columns must exist in current state
+  for (const orig of original.vatRateColumns) {
+    const current = vatRateColumns.value.find(c => c.id === orig.id);
+    if (!current || current.value !== orig.value || current.header !== orig.header) {
+      return true;
+    }
+  }
+  
+  // Check that all current columns exist in original (handles new columns)
+  for (const current of vatRateColumns.value) {
+    const orig = original.vatRateColumns.find(c => c.id === current.id);
+    if (!orig) {
+      return true;
+    }
+  }
+  
+  // Check regions (length and content)
+  if (original.regions.length !== regions.value.length) {
+    return true;
+  }
+  
+  // Check each region
+  for (let i = 0; i < regions.value.length; i++) {
+    const current = regions.value[i];
+    const orig = original.regions.find(r => r.id === current.id);
+    
+    if (!orig) {
+      return true;
+    }
+    
+    // Check status
+    if (orig.status !== current.status) {
+      return true;
+    }
+    
+    // Check vatRate
+    if (orig.vatRate !== current.vatRate) {
+      return true;
+    }
+    
+    // Check all dynamic columns from both original and current state
+    const originalColumnIds = new Set(['vatRate', ...original.vatRateColumns.map(c => c.id)]);
+    const currentColumnIds = new Set(['vatRate', ...vatRateColumns.value.map(c => c.id)]);
+    const allColumnIds = new Set([...originalColumnIds, ...currentColumnIds]);
+    
+    for (const colId of allColumnIds) {
+      if (orig[colId] !== current[colId]) {
+        return true;
+      }
+    }
+  }
+  
+  // Check unifiedRegion
+  const unifiedStr = JSON.stringify(original.unifiedRegion);
+  const currentUnifiedStr = JSON.stringify(unifiedRegion.value);
+  if (unifiedStr !== currentUnifiedStr) {
+    return true;
+  }
+  
+  return false;
 });
 
 // Initialize component
@@ -667,6 +813,9 @@ function handleRemoveMarker(): void {
           color="teal"
           variant="outlined"
           size="small"
+          :class="{ 'update-btn-glow': hasPendingChanges && !isSaving }"
+          :loading="isSaving"
+          :disabled="!hasPendingChanges"
           @click="updateChanges"
         >
           {{ t('admin.pricing.vat.actions.update').toUpperCase() }}
@@ -1074,5 +1223,25 @@ function handleRemoveMarker(): void {
 
 .disabled-cell .empty-cell-placeholder {
   display: none;
+}
+
+.update-btn-glow {
+  animation: soft-glow 2s ease-in-out infinite;
+  box-shadow: 0 0 8px rgba(20, 184, 166, 0.3);
+}
+
+.update-btn-glow:hover {
+  box-shadow: 0 0 10px rgba(20, 184, 166, 0.45);
+}
+
+@keyframes soft-glow {
+  0%, 100% {
+    box-shadow: 0 0 8px rgba(20, 184, 166, 0.3);
+    transform: scale(1);
+  }
+  50% {
+    box-shadow: 0 0 16px rgba(20, 184, 166, 0.5);
+    transform: scale(1.01);
+  }
 }
 </style>
