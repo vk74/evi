@@ -1,4 +1,4 @@
--- Version: 1.4.0
+-- Version: 1.5.0
 -- Description: Create all application tables, functions, and triggers.
 -- Backend file: 04_tables.sql
 -- Updated: mobile_phone_number -> mobile_phone field name
@@ -8,6 +8,8 @@
 -- Changes in v1.4.0:
 -- - Removed visibility flags: is_visible_area_specs, is_visible_industry_specs, is_visible_key_features, is_visible_overview from app.products
 -- - Removed JSONB fields: area_specifics, industry_specifics, key_features, product_overview from app.product_translations
+-- Changes in v1.5.0:
+-- - Added app.regions table for application regions management
 
 -- ===========================================
 -- Helper Functions
@@ -226,6 +228,20 @@ ON CONFLICT (code) DO UPDATE SET
   rounding_precision = EXCLUDED.rounding_precision,
   active = EXCLUDED.active,
   updated_at = now();
+
+-- Regions reference table
+CREATE TABLE IF NOT EXISTS app.regions (
+    region_id SERIAL PRIMARY KEY,
+    region_name VARCHAR(255) NOT NULL UNIQUE,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ
+);
+
+COMMENT ON TABLE app.regions IS 'Application regions reference table - stores all available regions';
+COMMENT ON COLUMN app.regions.region_id IS 'Unique identifier for the region (auto-increment)';
+COMMENT ON COLUMN app.regions.region_name IS 'Region name (unique, matches values from app.regions setting)';
+COMMENT ON COLUMN app.regions.created_at IS 'Timestamp when region was created';
+COMMENT ON COLUMN app.regions.updated_at IS 'Timestamp when region was last updated';
 
 -- Ensure product_code is suitable for FK (not null + unique)
 ALTER TABLE app.products
