@@ -1,7 +1,7 @@
 <!--
-Version: 1.6.0
+Version: 1.7.0
 VAT settings component for pricing administration module.
-Frontend file that displays regions with VAT status (active/disabled) in a table format.
+Frontend file that displays regions with VAT rates in a table format.
 Filename: PricingVAT.vue
 
 Changes in v1.1.0:
@@ -36,6 +36,12 @@ Changes in v1.6.0:
 - Updated CANCEL button to restore state from snapshot
 - Added glow effect to UPDATE button when changes are pending
 - UPDATE button disabled when no changes detected
+
+Changes in v1.7.0:
+- Removed status column and all related functionality
+- All regions are now always active
+- Removed status checks from marker operations
+- Updated table column widths after status column removal
 -->
 <script setup lang="ts">
 import { ref, computed, onMounted, watch } from 'vue';
@@ -44,7 +50,7 @@ import { useAppSettingsStore } from '@/modules/admin/settings/state.app.settings
 import { fetchSettings } from '@/modules/admin/settings/service.fetch.settings';
 import { useUiStore } from '@/core/state/uistate';
 import DataLoading from '@/core/ui/loaders/DataLoading.vue';
-import { PhWarningCircle, PhCaretDown, PhPlus, PhTrash, PhX } from '@phosphor-icons/vue';
+import { PhWarningCircle, PhPlus, PhTrash, PhX } from '@phosphor-icons/vue';
 
 // Section path identifier for loading regions
 const section_path = 'Application.RegionalSettings';
@@ -65,7 +71,6 @@ const isSaving = ref(false);
 interface VATRegion {
   id: number;
   region: string;
-  status: 'active' | 'disabled';
   vatRate: number | null;
   [key: string]: any; // For dynamic VAT rate columns (stores priority number)
 }
@@ -89,7 +94,6 @@ const nextRegionId = ref(1);
 const unifiedRegion = ref<VATRegion>({
   id: 0,
   region: 'All Regions',
-  status: 'active',
   vatRate: null
 });
 
@@ -173,11 +177,10 @@ async function loadRegions(): Promise<void> {
       }
     }
     
-    // Convert to VAT regions with default status 'active' and vatRate 0
+    // Convert to VAT regions with vatRate null
     regions.value = regionsArray.map((regionValue) => ({
       id: nextRegionId.value++,
       region: regionValue,
-      status: 'active' as const,
       vatRate: null
     }));
     
@@ -191,7 +194,6 @@ async function loadRegions(): Promise<void> {
     emptyRow.value = {
       id: -1,
       region: '',
-      status: 'active' as const,
       vatRate: null
     };
     
@@ -258,25 +260,6 @@ function createVATSnapshot(): void {
 const getAllColumnIds = () => {
   return ['vatRate', ...vatRateColumns.value.map(c => c.id)];
 };
-
-/**
- * Toggle VAT status for a region
- */
-function toggleStatus(regionId: number): void {
-  const region = regions.value.find(r => r.id === regionId);
-  if (region) {
-    region.status = region.status === 'active' ? 'disabled' : 'active';
-    
-    // If disabled, clear all markers
-    if (region.status === 'disabled') {
-      getAllColumnIds().forEach(key => {
-        if (typeof region[key] === 'number') {
-          region[key] = null;
-        }
-      });
-    }
-  }
-}
 
 /**
  * Retry loading regions
@@ -420,9 +403,6 @@ function getNextPriority(region: VATRegion): number {
  * Add priority marker to a region
  */
 function addMarker(region: VATRegion, columnId: string): void {
-  // Prevent adding markers if region is disabled
-  if (region.status === 'disabled') return;
-  
   const nextPriority = getNextPriority(region);
   region[columnId] = nextPriority;
 }
@@ -460,9 +440,6 @@ function removeMarker(region: VATRegion, columnId: string): void {
  * Open marker menu for editing
  */
 function openMarkerMenu(region: VATRegion, columnId: string, event: Event): void {
-  // Prevent opening menu if region is disabled (though chips shouldn't be there if disabled)
-  if (region.status === 'disabled') return;
-
   // Stop propagation to prevent immediate close if clicking on trigger
   event.stopPropagation();
   
@@ -565,7 +542,6 @@ function cancelChanges(): void {
   emptyRow.value = {
     id: -1,
     region: '',
-    status: 'active' as const,
     vatRate: null
   };
   
@@ -598,7 +574,6 @@ interface TableHeader {
 
 const vatTableHeaders = computed<TableHeader[]>(() => {
   const headers: TableHeader[] = [
-    { title: t('admin.pricing.vat.table.headers.status'), key: 'status', width: '100px', sortable: false },
     { title: t('admin.pricing.vat.table.headers.region'), key: 'region', width: '140px' },
     { title: t('admin.pricing.vat.table.headers.vatRate'), key: 'vatRate', width: '70px', sortable: false }
   ];
@@ -683,11 +658,6 @@ const hasPendingChanges = computed(() => {
     const orig = original.regions.find(r => r.id === current.id);
     
     if (!orig) {
-      return true;
-    }
-    
-    // Check status
-    if (orig.status !== current.status) {
       return true;
     }
     
@@ -830,20 +800,6 @@ function handleRemoveMarker(): void {
           hide-default-footer
           class="vat-table"
         >
-          <!-- Status column -->
-          <template #[`item.status`]="{ item }">
-            <v-chip
-              v-if="item.id !== -1"
-              :color="item.status === 'active' ? 'teal' : 'grey'"
-              size="small"
-              class="status-chip"
-              @click="toggleStatus(item.id)"
-            >
-              {{ item.status === 'active' ? t('admin.pricing.vat.status.active') : t('admin.pricing.vat.status.disabled') }}
-              <PhCaretDown :size="14" class="ms-1" />
-            </v-chip>
-          </template>
-
           <!-- Region column -->
           <template #[`item.region`]="{ item }">
             <span v-if="item.id !== -1" class="region-name">{{ item.region }}</span>
@@ -853,9 +809,8 @@ function handleRemoveMarker(): void {
           <template #[`item.vatRate`]="{ item }">
             <div 
               class="d-flex justify-center align-center cell-clickable fill-height"
-              :class="{ 'disabled-cell': item.status !== 'active' }"
               style="min-height: 40px; cursor: pointer;"
-              @click="!item.vatRate && item.status === 'active' && addMarker(item, 'vatRate')"
+              @click="!item.vatRate && addMarker(item, 'vatRate')"
             >
               <v-chip
                 v-if="item.vatRate"
@@ -912,9 +867,8 @@ function handleRemoveMarker(): void {
             <div 
               v-else 
               class="d-flex justify-center align-center cell-clickable fill-height"
-              :class="{ 'disabled-cell': item.status !== 'active' }"
               style="min-height: 40px; cursor: pointer;"
-              @click="!item[column.id] && item.status === 'active' && addMarker(item, column.id)"
+              @click="!item[column.id] && addMarker(item, column.id)"
             >
               <v-chip
                 v-if="item[column.id]"
@@ -1070,18 +1024,12 @@ function handleRemoveMarker(): void {
 /* Column width constraints */
 .vat-table :deep(.v-data-table__th:nth-child(1)),
 .vat-table :deep(.v-data-table__td:nth-child(1)) {
-  min-width: 80px !important;
-  width: 100px !important;
-}
-
-.vat-table :deep(.v-data-table__th:nth-child(2)),
-.vat-table :deep(.v-data-table__td:nth-child(2)) {
   min-width: 100px !important;
   width: 140px !important;
 }
 
-.vat-table :deep(.v-data-table__th:nth-child(3)),
-.vat-table :deep(.v-data-table__td:nth-child(3)) {
+.vat-table :deep(.v-data-table__th:nth-child(2)),
+.vat-table :deep(.v-data-table__td:nth-child(2)) {
   min-width: 40px !important;
   width: 70px !important;
 }
@@ -1103,17 +1051,6 @@ function handleRemoveMarker(): void {
 
 .region-name {
   font-weight: 500;
-}
-
-.status-chip {
-  cursor: pointer;
-  transition: opacity 0.2s ease;
-  display: inline-flex;
-  align-items: center;
-}
-
-.status-chip:hover {
-  opacity: 0.8;
 }
 
 .editable-header {
@@ -1214,15 +1151,6 @@ function handleRemoveMarker(): void {
   background-color: rgba(var(--v-theme-primary), 0.1) !important;
   color: rgb(var(--v-theme-primary)) !important;
   transform: scale(1.1);
-}
-
-.disabled-cell {
-  pointer-events: none;
-  opacity: 0.5;
-}
-
-.disabled-cell .empty-cell-placeholder {
-  display: none;
 }
 
 .update-btn-glow {
