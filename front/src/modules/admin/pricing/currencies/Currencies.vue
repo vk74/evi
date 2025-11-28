@@ -1,5 +1,5 @@
 <!--
-Version: 1.3.3
+Version: 1.3.4
 Currencies list management section.
 Frontend file for managing currencies in the pricing admin module. Loads live data from backend.
 Includes error handling for deletion of currencies used in price lists.
@@ -8,6 +8,12 @@ Filename: Currencies.vue
 Changes in v1.3.3:
 - Added glow effect to save button when changes are ready and not saving
 - Adjusted rounding precision field controls to align closely with centered values
+
+Changes in v1.3.4:
+- Changed status chip to toggle on click instead of opening dropdown menu
+- Removed v-menu component for status selection
+- Status now changes immediately on chip click, matching PricingVAT.vue behavior
+- Renamed SAVE button to UPDATE for consistency with PricingVAT.vue
 -->
 <script setup lang="ts">
 import { computed, ref, onMounted, onBeforeUnmount } from 'vue'
@@ -243,11 +249,13 @@ const addCurrency = () => {
   store.addTempCurrency(newCurrency)
 }
 
-// Status options for menu
-const statusOptions = computed(() => [
-  { value: true, color: 'teal', label: t('admin.pricing.currencies.status.active') },
-  { value: false, color: 'grey', label: t('admin.pricing.currencies.status.disabled') }
-])
+/**
+ * Toggle currency active status
+ */
+const toggleCurrencyStatus = (currency: Currency): void => {
+  currency.active = !currency.active
+  store.markCurrencyChanged(currency.code, 'active', currency.active)
+}
 
 const deleteSelected = async () => {
   if (!hasSelected.value) return
@@ -469,34 +477,15 @@ function handleBeforeUnload(e: BeforeUnloadEvent) {
                   />
                 </td>
                 <td>
-                  <v-menu>
-                    <template #activator="{ props }">
-                      <v-chip 
-                        v-bind="props"
-                        :color="currency.active ? 'teal' : 'grey'"
-                        size="small"
-                        class="status-chip-clickable"
-                      >
-                        {{ currency.active ? t('admin.pricing.currencies.status.active') : t('admin.pricing.currencies.status.disabled') }}
-                        <PhCaretDown :size="14" class="ml-1" />
-                      </v-chip>
-                    </template>
-                    <v-list density="compact">
-                      <v-list-item
-                        v-for="option in statusOptions"
-                        :key="String(option.value)"
-                        @click="currency.active = option.value; store.markCurrencyChanged(currency.code, 'active', option.value)"
-                      >
-                        <v-chip 
-                          :color="option.color" 
-                          size="small"
-                          class="status-menu-chip"
-                        >
-                          {{ option.label }}
-                        </v-chip>
-                      </v-list-item>
-                    </v-list>
-                  </v-menu>
+                  <v-chip
+                    :color="currency.active ? 'teal' : 'grey'"
+                    size="small"
+                    class="status-chip-clickable"
+                    @click="toggleCurrencyStatus(currency)"
+                  >
+                    {{ currency.active ? t('admin.pricing.currencies.status.active') : t('admin.pricing.currencies.status.disabled') }}
+                    <PhCaretDown :size="14" class="ml-1" />
+                  </v-chip>
                 </td>
               </tr>
             </tbody>
@@ -538,7 +527,7 @@ function handleBeforeUnload(e: BeforeUnloadEvent) {
             <template #prepend>
               <PhFloppyDisk />
             </template>
-            {{ t('admin.pricing.currencies.actions.save').toUpperCase() }}
+            {{ t('admin.pricing.currencies.actions.update').toUpperCase() }}
           </v-btn>
           
           <v-btn
@@ -729,18 +718,6 @@ function handleBeforeUnload(e: BeforeUnloadEvent) {
 
 .status-chip-clickable:hover {
   opacity: 0.85;
-}
-
-.status-menu-chip {
-  width: 100%;
-  justify-content: center;
-  font-size: 120% !important;
-  height: auto !important;
-  padding: 6px 12px !important;
-}
-
-.status-menu-chip :deep(.v-chip__content) {
-  font-size: inherit;
 }
 
 .rounding-precision-field :deep(input) {

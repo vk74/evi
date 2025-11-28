@@ -235,7 +235,7 @@
         },
         "actions": {
           "addCurrency": "добавить валюту",
-          "save": "сохранить",
+          "update": "обновить",
           "clearSelection": "очистить выбор"
         },
         "validation": {
