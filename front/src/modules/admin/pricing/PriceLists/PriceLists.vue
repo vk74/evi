@@ -1,5 +1,5 @@
 <!--
-Version: 1.7.0
+Version: 1.7.1
 Price Lists management section.
 Frontend file for managing price lists in the pricing admin module.
 Features editable name and status fields with manual is_active control.
@@ -10,6 +10,11 @@ Changes in v1.7.0:
 - Region values loaded from app.regions setting
 - Region can be assigned to only one price list
 - Immediate update on region change
+
+Changes in v1.7.1:
+- Changed status chip to toggle on click instead of opening dropdown menu
+- Removed v-menu component for status selection
+- Status now changes immediately on chip click, matching Currencies.vue and PricingVAT.vue behavior
 -->
 <script setup lang="ts">
 import { ref, computed, onMounted, watch } from 'vue'
@@ -432,6 +437,14 @@ const handleNameUpdate = async (priceListId: number, newName: string) => {
 // Debounced version for name updates
 const debouncedNameUpdate = debounce(handleNameUpdate, 800)
 
+/**
+ * Toggle price list active status
+ */
+const togglePriceListStatus = (item: PriceListSummary): void => {
+  const newStatus = !item.is_active
+  handleStatusUpdate(item.price_list_id, newStatus)
+}
+
 // Handle status update
 const handleStatusUpdate = async (priceListId: number, newStatus: boolean) => {
   try {
@@ -499,12 +512,6 @@ const handleRegionUpdate = async (priceListId: number, newRegion: string | null 
     isUpdatingRegion.value = null
   }
 }
-
-// Status options for menu
-const statusOptions = computed(() => [
-  { value: true, color: 'teal', label: t('admin.pricing.priceLists.table.status.active') },
-  { value: false, color: 'grey', label: t('admin.pricing.priceLists.table.status.disabled') }
-])
 
 // Load currencies for filter
 const loadCurrencies = async () => {
@@ -755,36 +762,17 @@ onMounted(async () => {
           </template>
 
           <template #[`item.is_active`]="{ item }">
-            <v-menu>
-              <template #activator="{ props }">
-                <v-chip 
-                  v-bind="props"
-                  :color="item.is_active ? 'teal' : 'grey'" 
-                  size="small"
-                  class="status-chip status-chip-clickable"
-                  :disabled="isUpdatingStatus === item.price_list_id"
-                  :loading="isUpdatingStatus === item.price_list_id"
-                >
-                  {{ item.is_active ? t('admin.pricing.priceLists.table.status.active') : t('admin.pricing.priceLists.table.status.disabled') }}
-                  <PhCaretDown :size="14" class="ml-1" />
-                </v-chip>
-              </template>
-              <v-list density="compact">
-                <v-list-item
-                  v-for="option in statusOptions"
-                  :key="String(option.value)"
-                  @click="handleStatusUpdate(item.price_list_id, option.value)"
-                >
-                  <v-chip 
-                    :color="option.color" 
-                    size="small"
-                    class="status-chip status-menu-chip"
-                  >
-                    {{ option.label }}
-                  </v-chip>
-                </v-list-item>
-              </v-list>
-            </v-menu>
+            <v-chip
+              :color="item.is_active ? 'teal' : 'grey'"
+              size="small"
+              class="status-chip status-chip-clickable"
+              :disabled="isUpdatingStatus === item.price_list_id"
+              :loading="isUpdatingStatus === item.price_list_id"
+              @click="togglePriceListStatus(item)"
+            >
+              {{ item.is_active ? t('admin.pricing.priceLists.table.status.active') : t('admin.pricing.priceLists.table.status.disabled') }}
+              <PhCaretDown :size="14" class="ml-1" />
+            </v-chip>
           </template>
 
           <template #[`item.owner_username`]="{ item }">
@@ -1091,11 +1079,6 @@ onMounted(async () => {
 
 .status-chip-clickable:hover {
   opacity: 0.85;
-}
-
-.status-menu-chip {
-  width: 100%;
-  justify-content: center;
 }
 
 /* Status chip styling */
