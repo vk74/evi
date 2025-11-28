@@ -1,5 +1,5 @@
 <!--
-Version: 1.7.0
+Version: 1.7.1
 VAT settings component for pricing administration module.
 Frontend file that displays regions with VAT rates in a table format.
 Filename: PricingVAT.vue
@@ -42,9 +42,13 @@ Changes in v1.7.0:
 - All regions are now always active
 - Removed status checks from marker operations
 - Updated table column widths after status column removal
+
+Changes in v1.7.1:
+- Fixed bug where marker edit menu would not open on subsequent clicks
+- Using nextTick to ensure menu activator updates before opening
 -->
 <script setup lang="ts">
-import { ref, computed, onMounted, watch } from 'vue';
+import { ref, computed, onMounted, watch, nextTick } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useAppSettingsStore } from '@/modules/admin/settings/state.app.settings';
 import { fetchSettings } from '@/modules/admin/settings/service.fetch.settings';
@@ -443,12 +447,13 @@ function openMarkerMenu(region: VATRegion, columnId: string, event: Event): void
   // Stop propagation to prevent immediate close if clicking on trigger
   event.stopPropagation();
   
-  markerMenu.value = {
-    isOpen: true,
-    regionId: region.id,
-    columnId: columnId,
-    priority: region[columnId] as number
-  };
+  markerMenu.value.regionId = region.id;
+  markerMenu.value.columnId = columnId;
+  markerMenu.value.priority = region[columnId] as number;
+  
+  nextTick(() => {
+    markerMenu.value.isOpen = true;
+  });
 }
 
 /**
