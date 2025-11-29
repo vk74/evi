@@ -1,11 +1,14 @@
 /**
- * queries.admin.regions.ts - version 1.0.0
+ * queries.admin.regions.ts - version 1.1.0
  * SQL queries for regions administration operations.
  * 
  * Contains all SQL queries used by regions admin module.
  * Queries are parameterized to prevent SQL injection.
  * 
  * File: queries.admin.regions.ts
+ * 
+ * Changes in v1.1.0:
+ * - Added countAllRegions query for getting total regions count after operations
  */
 
 export const queries = {
@@ -85,6 +88,15 @@ export const queries = {
         FROM app.regions
         WHERE LOWER(region_name) = LOWER($1)
         AND region_id != $2
+    `,
+
+    /**
+     * Counts total regions in database
+     * No parameters
+     */
+    countAllRegions: `
+        SELECT COUNT(*) as total
+        FROM app.regions
     `
 }
 

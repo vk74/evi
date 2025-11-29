@@ -1,5 +1,5 @@
 /**
- * service.admin.create.region.ts - version 1.0.0
+ * service.admin.create.region.ts - version 1.1.0
  * Service for creating regions operations.
  * 
  * Functionality:
@@ -10,6 +10,13 @@
  * - Manages database interactions and error handling
  * 
  * File: service.admin.create.region.ts
+ * 
+ * Changes in v1.1.0:
+ * - Removed region.create.started event
+ * - Removed region.create.validation.error event
+ * - Enhanced region.create.success event payload with totalRegionsCount
+ * - Enhanced region.create.database_error event payload with attemptedRegionName
+ * - Added region.create.error event with detailed payload (attemptedRegionName, errorMessage, errorCode)
  */
 
 import { Request } from 'express'
@@ -115,12 +122,17 @@ async function createRegionInDatabase(data: CreateRegionRequest, req: Request): 
             updated_at: result.rows[0].updated_at
         }
 
+        // Get total regions count after creation
+        const countResult = await client.query(queries.countAllRegions)
+        const totalRegionsCount = parseInt(countResult.rows[0].total)
+
         createAndPublishEvent({
             eventName: EVENTS_ADMIN_REGIONS['region.create.success'].eventName,
             req: req,
             payload: {
                 regionId: createdRegion.region_id,
-                regionName: createdRegion.region_name
+                regionName: createdRegion.region_name,
+                totalRegionsCount: totalRegionsCount
             }
         })
 
@@ -135,6 +147,7 @@ async function createRegionInDatabase(data: CreateRegionRequest, req: Request): 
             eventName: EVENTS_ADMIN_REGIONS['region.create.database_error'].eventName,
             req: req,
             payload: {
+                attemptedRegionName: data.region_name.trim(),
                 error: error instanceof Error ? error.message : String(error)
             },
             errorData: error instanceof Error ? error.message : String(error)
@@ -155,18 +168,10 @@ async function createRegionInDatabase(data: CreateRegionRequest, req: Request): 
  * @returns Promise<CreateRegionResponse>
  */
 export async function createRegion(req: Request): Promise<CreateRegionResponse> {
+    // Extract region data from request body (before try to access in catch)
+    const regionData: CreateRegionRequest = req.body
+    
     try {
-        // Extract region data from request body
-        const regionData: CreateRegionRequest = req.body
-
-        createAndPublishEvent({
-            eventName: EVENTS_ADMIN_REGIONS['region.create.started'].eventName,
-            req: req,
-            payload: {
-                regionName: regionData.region_name
-            }
-        })
-
         // Validate region data
         await validateCreateRegionData(regionData, req)
 
@@ -176,13 +181,16 @@ export async function createRegion(req: Request): Promise<CreateRegionResponse> 
         return result
 
     } catch (error: any) {
-        createAndPublishEvent({
-            eventName: EVENTS_ADMIN_REGIONS['region.create.validation.error'].eventName,
+        // Log error event with detailed information about failed attempt
+        await createAndPublishEvent({
+            eventName: EVENTS_ADMIN_REGIONS['region.create.error'].eventName,
             req: req,
             payload: {
-                error: error.message || 'Unknown validation error'
+                attemptedRegionName: regionData?.region_name?.trim() || 'unknown',
+                errorMessage: error.message || 'Unknown error',
+                errorCode: error.code || 'UNKNOWN_ERROR'
             },
-            errorData: error.message || 'Unknown validation error'
+            errorData: error.message || 'Unknown error'
         })
 
         // Return structured error response

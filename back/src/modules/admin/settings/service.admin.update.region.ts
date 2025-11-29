@@ -1,5 +1,5 @@
 /**
- * service.admin.update.region.ts - version 1.0.0
+ * service.admin.update.region.ts - version 1.1.0
  * Service for updating regions operations.
  * 
  * Functionality:
@@ -11,6 +11,14 @@
  * - Manages database interactions and error handling
  * 
  * File: service.admin.update.region.ts
+ * 
+ * Changes in v1.1.0:
+ * - Removed region.update.started event
+ * - Removed region.update.validation.error event
+ * - Enhanced region.update.success event payload with oldRegionName and newRegionName
+ * - Enhanced region.update.not_found event payload with attemptedRegionName
+ * - Enhanced region.update.database_error event payload with oldRegionName and attemptedRegionName
+ * - Added region.update.error event with detailed payload (regionId, attemptedRegionName, errorMessage, errorCode)
  */
 
 import { Request } from 'express'
@@ -110,7 +118,7 @@ async function updateRegionInDatabase(data: UpdateRegionRequest, req: Request): 
     const client = await pool.connect()
     
     try {
-        // Check if region exists
+        // Check if region exists and get old name
         const existsResult = await client.query(queries.checkRegionExists, [data.region_id])
         
         if (existsResult.rows.length === 0) {
@@ -118,7 +126,8 @@ async function updateRegionInDatabase(data: UpdateRegionRequest, req: Request): 
                 eventName: EVENTS_ADMIN_REGIONS['region.update.not_found'].eventName,
                 req: req,
                 payload: {
-                    regionId: data.region_id
+                    regionId: data.region_id,
+                    attemptedRegionName: data.region_name.trim()
                 }
             })
             
@@ -129,6 +138,7 @@ async function updateRegionInDatabase(data: UpdateRegionRequest, req: Request): 
             }
         }
 
+        const oldRegionName = existsResult.rows[0].region_name
         const trimmedName = data.region_name.trim()
 
         // Update region in database
@@ -140,6 +150,8 @@ async function updateRegionInDatabase(data: UpdateRegionRequest, req: Request): 
                 req: req,
                 payload: {
                     regionId: data.region_id,
+                    oldRegionName: oldRegionName,
+                    attemptedRegionName: trimmedName,
                     error: 'Update query returned no rows'
                 },
                 errorData: 'Update query returned no rows'
@@ -164,7 +176,8 @@ async function updateRegionInDatabase(data: UpdateRegionRequest, req: Request): 
             req: req,
             payload: {
                 regionId: updatedRegion.region_id,
-                regionName: updatedRegion.region_name
+                oldRegionName: oldRegionName,
+                newRegionName: updatedRegion.region_name
             }
         })
 
@@ -180,6 +193,7 @@ async function updateRegionInDatabase(data: UpdateRegionRequest, req: Request): 
             req: req,
             payload: {
                 regionId: data.region_id,
+                attemptedRegionName: data.region_name.trim(),
                 error: error instanceof Error ? error.message : String(error)
             },
             errorData: error instanceof Error ? error.message : String(error)
@@ -200,19 +214,10 @@ async function updateRegionInDatabase(data: UpdateRegionRequest, req: Request): 
  * @returns Promise<UpdateRegionResponse>
  */
 export async function updateRegion(req: Request): Promise<UpdateRegionResponse> {
+    // Extract region data from request body (before try to access in catch)
+    const regionData: UpdateRegionRequest = req.body
+    
     try {
-        // Extract region data from request body
-        const regionData: UpdateRegionRequest = req.body
-
-        createAndPublishEvent({
-            eventName: EVENTS_ADMIN_REGIONS['region.update.started'].eventName,
-            req: req,
-            payload: {
-                regionId: regionData.region_id,
-                regionName: regionData.region_name
-            }
-        })
-
         // Validate region data
         await validateUpdateRegionData(regionData, req)
 
@@ -222,13 +227,17 @@ export async function updateRegion(req: Request): Promise<UpdateRegionResponse> 
         return result
 
     } catch (error: any) {
-        createAndPublishEvent({
-            eventName: EVENTS_ADMIN_REGIONS['region.update.validation.error'].eventName,
+        // Log error event with detailed information about failed attempt
+        await createAndPublishEvent({
+            eventName: EVENTS_ADMIN_REGIONS['region.update.error'].eventName,
             req: req,
             payload: {
-                error: error.message || 'Unknown validation error'
+                regionId: regionData?.region_id || 0,
+                attemptedRegionName: regionData?.region_name?.trim() || 'unknown',
+                errorMessage: error.message || 'Unknown error',
+                errorCode: error.code || 'UNKNOWN_ERROR'
             },
-            errorData: error.message || 'Unknown validation error'
+            errorData: error.message || 'Unknown error'
         })
 
         // Return structured error response

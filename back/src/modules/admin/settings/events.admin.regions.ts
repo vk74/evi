@@ -1,9 +1,20 @@
 /**
  * events.admin.regions.ts
- * Version: 1.0.0
+ * Version: 1.1.0
  * Description: Event reference catalog for admin regions operations
  * Purpose: Defines events for admin regions management operations
  * Backend file - events.admin.regions.ts
+ * 
+ * Changes in v1.1.0:
+ * - Removed intermediate events: region.create.started, region.create.validation.error, region.update.started
+ * - Removed debug events: region.delete.exists, region.delete.not_found
+ * - Removed intermediate event: region.delete.validation.success
+ * - Enhanced payload information for audit purposes:
+ *   - region.create.success: added totalRegionsCount
+ *   - region.update.success: added oldRegionName and newRegionName
+ *   - region.delete.success: added deletedRegionNames and totalRegionsCount
+ *   - All error events now include attempted values and detailed error information
+ * - Added region.delete.error event for complete error scenarios
  */
 
 import { EventCollection } from '../../../core/eventBus/types.events'
@@ -40,26 +51,6 @@ export const EVENTS_ADMIN_REGIONS: EventCollection = {
     eventType: 'app',
     severity: 'error',
     eventMessage: 'Region data error occurred during fetch operation',
-    version: '1.0.0'
-  },
-
-  // Region create started
-  'region.create.started': {
-    eventName: 'system.region.create.started',
-    source: 'system',
-    eventType: 'app',
-    severity: 'info',
-    eventMessage: 'Region creation started',
-    version: '1.0.0'
-  },
-
-  // Region create validation error
-  'region.create.validation.error': {
-    eventName: 'system.region.create.validation.error',
-    source: 'system',
-    eventType: 'app',
-    severity: 'error',
-    eventMessage: 'Region creation validation error occurred',
     version: '1.0.0'
   },
 
@@ -100,26 +91,6 @@ export const EVENTS_ADMIN_REGIONS: EventCollection = {
     eventType: 'app',
     severity: 'error',
     eventMessage: 'Error occurred during region creation',
-    version: '1.0.0'
-  },
-
-  // Region update started
-  'region.update.started': {
-    eventName: 'system.region.update.started',
-    source: 'system',
-    eventType: 'app',
-    severity: 'info',
-    eventMessage: 'Region update started',
-    version: '1.0.0'
-  },
-
-  // Region update validation error
-  'region.update.validation.error': {
-    eventName: 'system.region.update.validation.error',
-    source: 'system',
-    eventType: 'app',
-    severity: 'error',
-    eventMessage: 'Region update validation error occurred',
     version: '1.0.0'
   },
 
@@ -173,16 +144,6 @@ export const EVENTS_ADMIN_REGIONS: EventCollection = {
     version: '1.0.0'
   },
 
-  // Region delete validation success
-  'region.delete.validation.success': {
-    eventName: 'system.region.delete.validation.success',
-    source: 'system',
-    eventType: 'app',
-    severity: 'info',
-    eventMessage: 'Region deletion validation passed',
-    version: '1.0.0'
-  },
-
   // Region delete validation error
   'region.delete.validation.error': {
     eventName: 'system.region.delete.validation.error',
@@ -193,25 +154,6 @@ export const EVENTS_ADMIN_REGIONS: EventCollection = {
     version: '1.0.0'
   },
 
-  // Region delete exists
-  'region.delete.exists': {
-    eventName: 'system.region.delete.exists',
-    source: 'system',
-    eventType: 'app',
-    severity: 'debug',
-    eventMessage: 'Region exists before deletion',
-    version: '1.0.0'
-  },
-
-  // Region delete not found
-  'region.delete.not_found': {
-    eventName: 'system.region.delete.not_found',
-    source: 'system',
-    eventType: 'app',
-    severity: 'debug',
-    eventMessage: 'Region not found during deletion operation',
-    version: '1.0.0'
-  },
 
   // Region delete success
   'region.delete.success': {
@@ -230,6 +172,16 @@ export const EVENTS_ADMIN_REGIONS: EventCollection = {
     eventType: 'app',
     severity: 'warning',
     eventMessage: 'Partial success during batch region deletion',
+    version: '1.0.0'
+  },
+
+  // Region delete error
+  'region.delete.error': {
+    eventName: 'system.region.delete.error',
+    source: 'system',
+    eventType: 'app',
+    severity: 'error',
+    eventMessage: 'Error occurred during region deletion',
     version: '1.0.0'
   },
 

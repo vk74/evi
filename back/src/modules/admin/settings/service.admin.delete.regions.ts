@@ -1,10 +1,20 @@
 /**
- * service.admin.delete.regions.ts - version 1.0.0
+ * service.admin.delete.regions.ts - version 1.1.0
  * Service for deleting regions with validation and error handling.
  * 
  * Handles database operations for region deletion with proper logging.
  * 
  * File: service.admin.delete.regions.ts
+ * 
+ * Changes in v1.1.0:
+ * - Removed region.delete.validation.success event
+ * - Removed region.delete.exists event (debug level)
+ * - Removed region.delete.not_found event (debug level)
+ * - Enhanced region.delete.success event payload with deletedRegionNames and totalRegionsCount
+ * - Enhanced region.delete.validation.error event payload with attemptedRegionIds
+ * - Enhanced region.delete.partial_success event payload with deletedRegionNames, failedRegionIds, and totalRegionsCount
+ * - Enhanced region.delete.database_error event payload with attemptedRegionNames
+ * - Added region.delete.error event for complete error scenarios
  */
 
 import { Pool } from 'pg'
@@ -51,40 +61,27 @@ const validateRegionIds = (regionIds: number[]): { isValid: boolean, errors: str
 /**
  * Checks which regions exist in the database
  */
-const checkRegionsExist = async (client: any, regionIds: number[], req: any): Promise<{existing: number[], notFound: number[]}> => {
-    const existing: number[] = []
+const checkRegionsExist = async (client: any, regionIds: number[], req: any): Promise<{existing: Array<{id: number, name: string}>, notFound: number[]}> => {
+    const existing: Array<{id: number, name: string}> = []
     const notFound: number[] = []
     
     for (const id of regionIds) {
         try {
             const result = await client.query(queries.checkRegionExists, [id])
             if (result.rows.length > 0) {
-                existing.push(id)
-                await createAndPublishEvent({
-                    eventName: EVENTS_ADMIN_REGIONS['region.delete.exists'].eventName,
-                    req: req,
-                    payload: {
-                        regionId: id,
-                        timestamp: new Date().toISOString()
-                    }
+                existing.push({
+                    id: result.rows[0].region_id,
+                    name: result.rows[0].region_name
                 })
             } else {
                 notFound.push(id)
-                await createAndPublishEvent({
-                    eventName: EVENTS_ADMIN_REGIONS['region.delete.not_found'].eventName,
-                    req: req,
-                    payload: {
-                        regionId: id,
-                        timestamp: new Date().toISOString()
-                    }
-                })
             }
         } catch (error) {
             await createAndPublishEvent({
                 eventName: EVENTS_ADMIN_REGIONS['region.delete.database_error'].eventName,
                 req: req,
                 payload: {
-                    regionId: id,
+                    attemptedRegionIds: regionIds,
                     error: error instanceof Error ? error.message : 'Unknown error',
                     timestamp: new Date().toISOString()
                 },
@@ -116,8 +113,8 @@ export const deleteRegions = async (
                 eventName: EVENTS_ADMIN_REGIONS['region.delete.validation.error'].eventName,
                 req: req,
                 payload: {
-                    errors: validation.errors,
-                    region_ids: region_ids,
+                    attemptedRegionIds: region_ids,
+                    validationErrors: validation.errors,
                     timestamp: new Date().toISOString()
                 },
                 errorData: validation.errors.join(', ')
@@ -125,19 +122,24 @@ export const deleteRegions = async (
             throw new Error(`Validation failed: ${validation.errors.join(', ')}`)
         }
         
-        await createAndPublishEvent({
-            eventName: EVENTS_ADMIN_REGIONS['region.delete.validation.success'].eventName,
-            req: req,
-            payload: {
-                region_ids: region_ids,
-                timestamp: new Date().toISOString()
-            }
-        })
-        
         // Check which regions exist
         const { existing, notFound } = await checkRegionsExist(client, region_ids, req)
         
         if (existing.length === 0) {
+            // All regions not found - log error with detailed information
+            await createAndPublishEvent({
+                eventName: EVENTS_ADMIN_REGIONS['region.delete.error'].eventName,
+                req: req,
+                payload: {
+                    attemptedRegionIds: region_ids,
+                    notFoundRegionIds: notFound,
+                    totalRequested: region_ids.length,
+                    errorMessage: 'All requested regions not found',
+                    timestamp: new Date().toISOString()
+                },
+                errorData: 'All requested regions not found'
+            })
+            
             return {
                 deletedRegions: [],
                 errors: notFound.map(id => ({ region_id: id, error: 'Region not found' })),
@@ -156,7 +158,8 @@ export const deleteRegions = async (
         
         // Delete existing regions
         try {
-            const result = await client.query(queries.deleteRegions, [existing])
+            const existingIds = existing.map(e => e.id)
+            const result = await client.query(queries.deleteRegions, [existingIds])
             
             for (const row of result.rows) {
                 deletedRegions.push({
@@ -165,13 +168,19 @@ export const deleteRegions = async (
                 })
             }
             
-            // Log success
+            // Get total regions count after deletion
+            const countResult = await client.query(queries.countAllRegions)
+            const totalRegionsCount = parseInt(countResult.rows[0].total)
+            
+            // Log success with detailed information
             await createAndPublishEvent({
                 eventName: EVENTS_ADMIN_REGIONS['region.delete.success'].eventName,
                 req: req,
                 payload: {
-                    deletedRegions: deletedRegions.map(r => r.region_id),
+                    deletedRegionIds: deletedRegions.map(r => r.region_id),
+                    deletedRegionNames: deletedRegions.map(r => r.region_name),
                     totalDeleted: deletedRegions.length,
+                    totalRegionsCount: totalRegionsCount,
                     timestamp: new Date().toISOString()
                 }
             })
@@ -181,7 +190,8 @@ export const deleteRegions = async (
                 eventName: EVENTS_ADMIN_REGIONS['region.delete.database_error'].eventName,
                 req: req,
                 payload: {
-                    regionIds: existing,
+                    attemptedRegionIds: existing.map(e => e.id),
+                    attemptedRegionNames: existing.map(e => e.name),
                     error: error instanceof Error ? error.message : 'Unknown database error',
                     timestamp: new Date().toISOString()
                 },
@@ -189,8 +199,8 @@ export const deleteRegions = async (
             })
             
             // Add all existing regions to errors
-            errors.push(...existing.map(id => ({ 
-                region_id: id, 
+            errors.push(...existing.map(e => ({ 
+                region_id: e.id, 
                 error: 'Database error during deletion' 
             })))
         }
@@ -200,14 +210,20 @@ export const deleteRegions = async (
         
         // Log partial success if some regions were deleted but others failed
         if (totalDeleted > 0 && totalErrors > 0) {
+            // Get total regions count after partial deletion
+            const countResult = await client.query(queries.countAllRegions)
+            const totalRegionsCount = parseInt(countResult.rows[0].total)
+            
             await createAndPublishEvent({
                 eventName: EVENTS_ADMIN_REGIONS['region.delete.partial_success'].eventName,
                 req: req,
                 payload: {
-                    deletedRegions: deletedRegions.map(r => r.region_id),
-                    failedRegions: errors.map(e => e.region_id),
-                    totalDeleted,
-                    totalErrors,
+                    deletedRegionIds: deletedRegions.map(r => r.region_id),
+                    deletedRegionNames: deletedRegions.map(r => r.region_name),
+                    failedRegionIds: errors.map(e => e.region_id),
+                    totalDeleted: totalDeleted,
+                    totalErrors: totalErrors,
+                    totalRegionsCount: totalRegionsCount,
                     timestamp: new Date().toISOString()
                 }
             })
