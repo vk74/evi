@@ -77,6 +77,8 @@ import fetchAllRegionsController from './settings/controller.admin.fetch.regions
 import createRegionController from './settings/controller.admin.create.region';
 import updateRegionController from './settings/controller.admin.update.region';
 import deleteRegionsController from './settings/controller.admin.delete.regions';
+import getRegionsListController from '../../core/services/user-location-selection/controller.get.regions.list';
+import updateUserLocationControllerNew from '../../core/services/user-location-selection/controller.update.user.location';
 
 const router: Router = express.Router();
 
@@ -140,7 +142,10 @@ router.post('/api/admin/products/count-product-option-pairs', checkRateLimit, ch
 // Routes for Account Management
 router.post('/api/admin/users/register', checkRateLimit, checkRequestSecurityHard, registerUserController);
 router.get('/api/admin/users/location', checkRateLimit, checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, getUserLocationController);
-router.post('/api/admin/users/update-location', checkRateLimit, checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, updateUserLocationController);
+router.post('/api/admin/users/update-location', checkRateLimit, checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, updateUserLocationControllerNew);
+
+// Routes for Location Selection
+router.get('/api/admin/location-selection/regions', checkRateLimit, checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, getRegionsListController);
 
 // Routes for Pricing Admin - Currencies
 router.get('/api/admin/pricing/fetch-currencies', checkRateLimit, checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, fetchCurrenciesController);

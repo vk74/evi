@@ -1,4 +1,4 @@
--- Version: 1.5.1
+-- Version: 1.5.2
 -- Description: Create all application tables, functions, and triggers.
 -- Backend file: 04_tables.sql
 -- Updated: mobile_phone_number -> mobile_phone field name
@@ -12,6 +12,8 @@
 -- - Added app.regions table for application regions management
 -- Changes in v1.5.1:
 -- - Added FOREIGN KEY constraint fk_price_lists_info_region on app.price_lists_info.region -> app.regions.region_name with ON DELETE SET NULL
+-- Changes in v1.5.2:
+-- - Added FOREIGN KEY constraint fk_users_location_region on app.users.location -> app.regions.region_name with ON DELETE SET NULL
 
 -- ===========================================
 -- Helper Functions
@@ -244,6 +246,18 @@ COMMENT ON COLUMN app.regions.region_id IS 'Unique identifier for the region (au
 COMMENT ON COLUMN app.regions.region_name IS 'Region name (unique, matches values from app.regions setting)';
 COMMENT ON COLUMN app.regions.created_at IS 'Timestamp when region was created';
 COMMENT ON COLUMN app.regions.updated_at IS 'Timestamp when region was last updated';
+
+-- Add foreign key constraint for app.users.location -> app.regions.region_name
+-- This constraint ensures data integrity: user locations must reference valid regions
+-- When a region is deleted, user locations referencing it are automatically set to NULL
+ALTER TABLE app.users
+ADD CONSTRAINT fk_users_location_region
+    FOREIGN KEY (location)
+    REFERENCES app.regions(region_name)
+    ON DELETE SET NULL;
+
+COMMENT ON CONSTRAINT fk_users_location_region ON app.users IS 
+    'Foreign key constraint: app.users.location references app.regions.region_name. When a region is deleted, user locations are automatically set to NULL.';
 
 -- Ensure product_code is suitable for FK (not null + unique)
 ALTER TABLE app.products

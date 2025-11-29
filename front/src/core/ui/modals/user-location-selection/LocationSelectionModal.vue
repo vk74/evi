@@ -1,12 +1,12 @@
 /**
  * LocationSelectionModal.vue
- * Version: 1.3.0
+ * Version: 1.4.0
  * Modal dialog for user location selection.
  * Frontend file that allows users to select and save their location.
  * Modal cannot be closed if user has no saved location in DB.
  * 
  * Features:
- * - Location dropdown populated from app.regions setting
+ * - Location dropdown populated from app.regions table via API
  * - Loads current location from DB on open
  * - Persistent modal when user has no saved location
  * - Save functionality with API call
@@ -28,6 +28,12 @@
  * - Replaced getCountries() with app.regions setting from Application.RegionalSettings
  * - Renamed country references to location for consistency
  * - Updated to use appSettingsStore to get regions list
+ * 
+ * Changes in v1.4.0:
+ * - Replaced settings-based regions loading with API call to app.regions table
+ * - Updated to use service.get.regions.ts for fetching regions list
+ * - Updated to use service.update.user.location.ts for saving location
+ * - Removed dependency on appSettingsStore for regions
  */
 
 <script setup lang="ts">
@@ -36,9 +42,9 @@ import { useI18n } from 'vue-i18n';
 import { useUiStore } from '@/core/state/uistate';
 import { useUserAuthStore } from '@/core/auth/state.user.auth';
 import { useAppStore } from '@/core/state/appstate';
-import { useAppSettingsStore } from '@/modules/admin/settings/state.app.settings';
 import { getUserLocation } from '@/core/services/service.get.user.location';
-import { api } from '@/core/api/service.axios';
+import { getRegions } from './service.get.regions';
+import { updateUserLocation } from './service.update.user.location';
 import { PhCaretUpDown } from '@phosphor-icons/vue';
 
 // Init i18n and stores
@@ -46,7 +52,6 @@ const { t } = useI18n();
 const uiStore = useUiStore();
 const userStore = useUserAuthStore();
 const appStore = useAppStore();
-const appSettingsStore = useAppSettingsStore();
 
 // Component props
 interface Props {
@@ -98,63 +103,14 @@ const closeModal = (): void => {
   }
 };
 
-// Load regions list from app.regions setting
+// Load regions list from app.regions table via API
 const loadRegions = async (): Promise<void> => {
   loadingRegions.value = true;
   error.value = '';
   
   try {
-    // Try to get from authenticated settings cache first
-    let settingsArray = appSettingsStore.getCachedSettings('Application.RegionalSettings');
-    
-    // Fallback to public settings cache if authenticated cache not available
-    if (!settingsArray) {
-      const publicCacheEntry = appSettingsStore.publicSettingsCache['Application.RegionalSettings'];
-      if (publicCacheEntry) {
-        settingsArray = publicCacheEntry.data;
-      }
-    }
-    
-    if (settingsArray) {
-      const regionsSetting = settingsArray.find(
-        setting => setting.setting_name === 'app.regions'
-      );
-      
-      if (regionsSetting) {
-        const value = regionsSetting.value as string[] | undefined;
-        if (Array.isArray(value) && value.length > 0) {
-          regions.value = value;
-        } else {
-          // Empty array or invalid - show empty list
-          regions.value = [];
-        }
-      } else {
-        // Setting not found - show empty list
-        regions.value = [];
-      }
-    } else {
-      // Settings not loaded - try to load them
-      const { fetchSettings } = await import('@/modules/admin/settings/service.fetch.settings');
-      const loadedSettings = await fetchSettings('Application.RegionalSettings');
-      if (loadedSettings) {
-        appSettingsStore.cacheSettings('Application.RegionalSettings', loadedSettings);
-        const regionsSetting = loadedSettings.find(
-          setting => setting.setting_name === 'app.regions'
-        );
-        if (regionsSetting) {
-          const value = regionsSetting.value as string[] | undefined;
-          if (Array.isArray(value) && value.length > 0) {
-            regions.value = value;
-          } else {
-            regions.value = [];
-          }
-        } else {
-          regions.value = [];
-        }
-      } else {
-        regions.value = [];
-      }
-    }
+    const regionsList = await getRegions();
+    regions.value = regionsList;
   } catch (err) {
     error.value = t('locationSelection.error.loadingRegions');
     uiStore.showErrorSnackbar(t('locationSelection.error.loadingRegions'));
@@ -199,18 +155,15 @@ const saveLocation = async (): Promise<void> => {
   error.value = '';
 
   try {
-    const response = await api.post('/api/admin/users/update-location', {
-      location: selectedLocation.value
-    });
+    const response = await updateUserLocation(selectedLocation.value);
 
-    if (response.data) {
+    if (response && response.location !== undefined) {
       // Update original location to saved value
-      originalLocation.value = selectedLocation.value;
+      originalLocation.value = response.location;
       locationSaved.value = true;
       
       // Update appStore with new location value from response
-      // Use location from response.data if available, otherwise use selectedLocation
-      const savedLocation = response.data.location || selectedLocation.value;
+      const savedLocation = response.location || selectedLocation.value;
       appStore.setUserLocation(savedLocation);
       
       uiStore.showSuccessSnackbar(t('locationSelection.success.saved'));
@@ -328,3 +281,4 @@ onMounted(async () => {
   pointer-events: none;
 }
 </style>
+

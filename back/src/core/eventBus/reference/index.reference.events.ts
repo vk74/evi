@@ -83,7 +83,8 @@ export const eventReferenceFiles: Record<string, string[]> = {
     path.resolve(__dirname, './errors.reference.events.ts'),
     path.resolve(__dirname, '../../controllers/events.core.controllers.ts'),
     path.resolve(__dirname, '../../services/change-password/events.change.password.ts'),
-    path.resolve(__dirname, '../../../modules/admin/settings/events.admin.regions.ts')
+    path.resolve(__dirname, '../../../modules/admin/settings/events.admin.regions.ts'),
+    path.resolve(__dirname, '../../services/user-location-selection/events.user.location.selection.ts')
   ],
   
   // Authentication events - events for authentication operations

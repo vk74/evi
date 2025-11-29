@@ -61,7 +61,7 @@ import LoginDialog from './core/auth/ModuleLogin.vue';
 import ModuleNewUserSelfRegistration from './modules/account/ModuleNewUserSelfRegistration.vue';
 import AppSnackbar from './core/ui/snackbars/AppSnackbar.vue';
 import CriticalSettingsErrorModal from './core/ui/modals/CriticalSettingsErrorModal.vue';
-import LocationSelectionModal from './core/ui/modals/location-selection/LocationSelectionModal.vue';
+import LocationSelectionModal from './core/ui/modals/user-location-selection/LocationSelectionModal.vue';
 
 // Store and i18n initialization
 const userStore = useUserAuthStore();
