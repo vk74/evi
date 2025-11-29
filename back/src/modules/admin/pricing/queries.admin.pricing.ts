@@ -1,5 +1,5 @@
     /**
-     * version: 1.3.9
+     * version: 1.4.0
      * SQL queries for pricing administration module.
      * Contains parameterized queries related to pricing (currencies and price lists).
      * Includes integrity check queries and queries for event payload data.
@@ -19,6 +19,9 @@
      * 
      * Changes in v1.3.9:
      * - Added checkRegionExistsInRegionsTable query for validating region existence in app.regions table
+     * 
+     * Changes in v1.4.0:
+     * - Added fetchRegions query for fetching all regions from app.regions table
      */
 
 export const queries = {
@@ -241,6 +244,19 @@ export const queries = {
     checkRegionExistsInRegionsTable: `
         SELECT 1 FROM app.regions
         WHERE region_name = $1
+    `,
+
+    /**
+     * Fetch all regions
+     */
+    fetchRegions: `
+        SELECT 
+            region_id,
+            region_name,
+            created_at,
+            updated_at
+        FROM app.regions
+        ORDER BY region_name ASC
     `,
 
     /**

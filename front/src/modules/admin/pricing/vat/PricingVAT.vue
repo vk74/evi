@@ -1,5 +1,5 @@
 <!--
-Version: 1.7.1
+Version: 1.8.0
 VAT settings component for pricing administration module.
 Frontend file that displays regions with VAT rates in a table format.
 Filename: PricingVAT.vue
@@ -46,21 +46,23 @@ Changes in v1.7.0:
 Changes in v1.7.1:
 - Fixed bug where marker edit menu would not open on subsequent clicks
 - Using nextTick to ensure menu activator updates before opening
+
+Changes in v1.8.0:
+- Changed regions loading from application settings to direct database query
+- Removed dependency on useAppSettingsStore and fetchSettings
+- Now uses dedicated pricing module service: service.fetch.regions.ts
+- Removed parseRegionsValue function as it's no longer needed
+- Regions are now loaded from app.regions table via /api/admin/pricing/regions/fetchall endpoint
 -->
 <script setup lang="ts">
 import { ref, computed, onMounted, watch, nextTick } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { useAppSettingsStore } from '@/modules/admin/settings/state.app.settings';
-import { fetchSettings } from '@/modules/admin/settings/service.fetch.settings';
 import { useUiStore } from '@/core/state/uistate';
 import DataLoading from '@/core/ui/loaders/DataLoading.vue';
 import { PhWarningCircle, PhPlus, PhTrash, PhX } from '@phosphor-icons/vue';
-
-// Section path identifier for loading regions
-const section_path = 'Application.RegionalSettings';
+import { fetchRegions } from '@/modules/admin/pricing/service.fetch.regions';
 
 // Store references
-const appSettingsStore = useAppSettingsStore();
 const uiStore = useUiStore();
 
 // Translations
@@ -150,41 +152,22 @@ watch(isUnifiedVat, (newValue) => {
 });
 
 /**
- * Load regions from app.regions setting
+ * Load regions from database via pricing API
  */
 async function loadRegions(): Promise<void> {
   isLoadingRegions.value = true;
   regionsError.value = false;
   
   try {
-    console.log('Loading regions for VAT settings');
+    console.log('Loading regions for VAT settings from database');
     
-    // Try to get setting from cache first
-    const cachedSettings = appSettingsStore.getCachedSettings(section_path);
-    const cachedSetting = cachedSettings?.find(s => s.setting_name === 'app.regions');
-    
-    let regionsArray: string[] = [];
-    
-    if (cachedSetting) {
-      console.log('Found cached regions setting:', cachedSetting.value);
-      regionsArray = parseRegionsValue(cachedSetting.value);
-    } else {
-      // If not in cache, fetch from backend
-      const settings = await fetchSettings(section_path);
-      const setting = settings?.find(s => s.setting_name === 'app.regions');
-      
-      if (setting) {
-        console.log('Successfully loaded regions setting:', setting.value);
-        regionsArray = parseRegionsValue(setting.value);
-      } else {
-        throw new Error('app.regions setting not found');
-      }
-    }
+    // Fetch regions from pricing API
+    const regionsArray = await fetchRegions();
     
     // Convert to VAT regions with vatRate null
-    regions.value = regionsArray.map((regionValue) => ({
+    regions.value = regionsArray.map((regionName) => ({
       id: nextRegionId.value++,
-      region: regionValue,
+      region: regionName,
       vatRate: null
     }));
     
@@ -232,20 +215,6 @@ async function loadRegions(): Promise<void> {
   } finally {
     isLoadingRegions.value = false;
   }
-}
-
-/**
- * Parse regions value from settings
- */
-function parseRegionsValue(value: any): string[] {
-  if (value === null || value === undefined) {
-    return [];
-  } else if (typeof value === 'string' && value === '') {
-    return [];
-  } else if (Array.isArray(value)) {
-    return value.filter((v: any) => v !== null && v !== undefined && v !== '');
-  }
-  return [];
 }
 
 /**

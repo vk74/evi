@@ -1,5 +1,5 @@
 /**
- * version: 1.4.7
+ * version: 1.4.8
  * Backend types for pricing administration module.
  * Defines DTOs for currencies, price lists and other pricing-related entities.
  * File: types.admin.pricing.ts (backend)
@@ -12,7 +12,31 @@
  * 
  * Changes in v1.4.7:
  * - Added region field to PriceListSummaryDto, PriceListFullDto, CreatePriceListRequest, and UpdatePriceListRequest
+ * 
+ * Changes in v1.4.8:
+ * - Added RegionDto and FetchRegionsResponse types for regions management
  */
+
+// ============================================
+// Region Types
+// ============================================
+
+// Region DTO aligned with database structure
+export interface RegionDto {
+    region_id: number
+    region_name: string
+    created_at: Date
+    updated_at: Date | null
+}
+
+// Response for fetch regions
+export interface FetchRegionsResponse {
+    success: boolean
+    message: string
+    data?: {
+        regions: RegionDto[]
+    }
+}
 
 // ============================================
 // Currency Types
