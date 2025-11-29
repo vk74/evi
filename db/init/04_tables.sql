@@ -1,4 +1,4 @@
--- Version: 1.5.0
+-- Version: 1.5.1
 -- Description: Create all application tables, functions, and triggers.
 -- Backend file: 04_tables.sql
 -- Updated: mobile_phone_number -> mobile_phone field name
@@ -10,6 +10,8 @@
 -- - Removed JSONB fields: area_specifics, industry_specifics, key_features, product_overview from app.product_translations
 -- Changes in v1.5.0:
 -- - Added app.regions table for application regions management
+-- Changes in v1.5.1:
+-- - Added FOREIGN KEY constraint fk_price_lists_info_region on app.price_lists_info.region -> app.regions.region_name with ON DELETE SET NULL
 
 -- ===========================================
 -- Helper Functions
@@ -577,6 +579,11 @@ CREATE TABLE IF NOT EXISTS app.price_lists_info (
     CONSTRAINT fk_price_lists_updated_by 
         FOREIGN KEY (updated_by) 
         REFERENCES app.users(user_id) 
+        ON DELETE SET NULL,
+    
+    CONSTRAINT fk_price_lists_info_region 
+        FOREIGN KEY (region) 
+        REFERENCES app.regions(region_name) 
         ON DELETE SET NULL
 );
 
@@ -587,7 +594,7 @@ COMMENT ON COLUMN app.price_lists_info.description IS 'User description/notes ab
 COMMENT ON COLUMN app.price_lists_info.currency_code IS 'Currency for all prices in this price list';
 COMMENT ON COLUMN app.price_lists_info.is_active IS 'Whether this price list is currently active';
 COMMENT ON COLUMN app.price_lists_info.owner_id IS 'Price list owner (optional, can be different from created_by)';
-COMMENT ON COLUMN app.price_lists_info.region IS 'Region assigned to this price list. Each region can be assigned to only one price list. NULL values are allowed.';
+COMMENT ON COLUMN app.price_lists_info.region IS 'Region assigned to this price list. References app.regions.region_name. Each region can be assigned to only one price list. NULL values are allowed. Automatically set to NULL when referenced region is deleted.';
 
 -- Price list items (partitioned by price_list_id)
 CREATE TABLE IF NOT EXISTS app.price_lists (

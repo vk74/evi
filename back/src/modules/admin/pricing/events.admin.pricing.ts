@@ -411,6 +411,15 @@ export const EVENTS_ADMIN_PRICING: EventCollection = {
     version: '1.0.0'
   },
 
+  'pricelists.update.region.not_found': {
+    eventName: 'adminPricing.pricelists.update.region.not_found',
+    source: 'admin-pricing',
+    eventType: 'app',
+    severity: 'error',
+    eventMessage: 'Region does not exist in regions table',
+    version: '1.0.0'
+  },
+
   'pricelists.update.region.duplicate': {
     eventName: 'adminPricing.pricelists.update.region.duplicate',
     source: 'admin-pricing',

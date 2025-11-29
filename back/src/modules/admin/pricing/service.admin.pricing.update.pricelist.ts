@@ -1,5 +1,5 @@
 /**
- * version: 1.2.3
+ * version: 1.2.4
  * Service for updating price lists.
  * Backend file that handles business logic for updating existing price lists.
  * 
@@ -9,6 +9,7 @@
  * - Checks currency existence and active status (if being updated)
  * - Checks name uniqueness (if being updated)
  * - Validates owner (if being updated)
+ * - Validates region existence in app.regions table (if being updated)
  * - Validates region uniqueness (if being updated)
  * - Updates price list in database
  * 
@@ -20,6 +21,9 @@
  * Changes in v1.2.3:
  * - Added region uniqueness validation
  * - Added region parameter to UPDATE query
+ * 
+ * Changes in v1.2.4:
+ * - Added validation to check if region exists in app.regions table before updating
  */
 
 import { Request } from 'express';
@@ -175,27 +179,52 @@ async function validateUpdatePriceListData(
         }
     }
 
-    // Validate region uniqueness (if provided)
+    // Validate region (if provided)
     if (data.region !== undefined && data.region !== null && data.region !== '') {
+        const trimmedRegion = data.region.trim();
+        
+        // First, check if region exists in app.regions table
         try {
-            const result = await pool.query(
-                queries.checkPriceListRegionExistsExcluding,
-                [data.region.trim(), data.price_list_id]
+            const regionExistsResult = await pool.query(
+                queries.checkRegionExistsInRegionsTable,
+                [trimmedRegion]
             );
-            if (result.rows.length > 0) {
-                errors.push('This region is already assigned to another price list');
+            if (regionExistsResult.rows.length === 0) {
+                errors.push('Region does not exist in regions table');
                 
                 createAndPublishEvent({
-                    eventName: EVENTS_ADMIN_PRICING['pricelists.update.region.duplicate'].eventName,
+                    eventName: EVENTS_ADMIN_PRICING['pricelists.update.region.not_found'].eventName,
                     req: req,
                     payload: { 
                         priceListId: data.price_list_id,
-                        region: data.region
+                        region: trimmedRegion
                     }
                 });
+            } else {
+                // Region exists, check uniqueness (one region per price list)
+                try {
+                    const result = await pool.query(
+                        queries.checkPriceListRegionExistsExcluding,
+                        [trimmedRegion, data.price_list_id]
+                    );
+                    if (result.rows.length > 0) {
+                        errors.push('This region is already assigned to another price list');
+                        
+                        createAndPublishEvent({
+                            eventName: EVENTS_ADMIN_PRICING['pricelists.update.region.duplicate'].eventName,
+                            req: req,
+                            payload: { 
+                                priceListId: data.price_list_id,
+                                region: trimmedRegion
+                            }
+                        });
+                    }
+                } catch (error) {
+                    errors.push('Error checking region uniqueness');
+                }
             }
         } catch (error) {
-            errors.push('Error checking region uniqueness');
+            errors.push('Error checking region existence');
         }
     }
 

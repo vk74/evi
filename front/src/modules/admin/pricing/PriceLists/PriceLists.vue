@@ -1,5 +1,5 @@
 <!--
-Version: 1.7.1
+Version: 1.8.0
 Price Lists management section.
 Frontend file for managing price lists in the pricing admin module.
 Features editable name and status fields with manual is_active control.
@@ -15,6 +15,11 @@ Changes in v1.7.1:
 - Changed status chip to toggle on click instead of opening dropdown menu
 - Removed v-menu component for status selection
 - Status now changes immediately on chip click, matching Currencies.vue and PricingVAT.vue behavior
+
+Changes in v1.8.0:
+- Changed region loading from app.regions setting to app.regions table via API
+- Updated regions data structure to use Region objects (region_id, region_name) instead of string array
+- Updated getAvailableRegions() and getRegionOptions() to work with new Region object format
 -->
 <script setup lang="ts">
 import { ref, computed, onMounted, watch } from 'vue'
@@ -42,7 +47,8 @@ import { serviceDeletePriceLists } from './service.delete.pricelists'
 import { fetchCurrenciesService } from '../currencies/service.fetch.currencies'
 import { fetchPriceListService } from '../PriceListEditor/service.admin.fetch.pricelist'
 import type { PriceListSummary, Currency } from '../types.pricing.admin'
-import { getSettingValueHelper } from '@/core/helpers/get.setting.value'
+import { fetchAllRegions } from '@/modules/admin/settings/service.admin.fetch.regions'
+import type { Region } from '@/modules/admin/settings/types.admin.regions'
 import debounce from 'lodash/debounce'
 
 // Types
@@ -92,8 +98,8 @@ const isUpdatingName = ref<number | null>(null) // Track which price list is bei
 const isUpdatingStatus = ref<number | null>(null) // Track which price list status is being updated
 const isUpdatingRegion = ref<number | null>(null) // Track which price list region is being updated
 
-// Regions list from app.regions setting
-const regions = ref<string[]>([])
+// Regions list from app.regions table
+const regions = ref<Region[]>([])
 const isLoadingRegions = ref(false)
 
 // Price lists data
@@ -528,13 +534,13 @@ const loadCurrencies = async () => {
   }
 }
 
-// Load regions from app.regions setting
+// Load regions from app.regions table
 const loadRegions = async () => {
   try {
     isLoadingRegions.value = true
-    const regionsValue = await getSettingValueHelper<string[]>('Application.RegionalSettings', 'app.regions')
-    if (Array.isArray(regionsValue)) {
-      regions.value = regionsValue.filter(r => r !== null && r !== undefined && r !== '')
+    const result = await fetchAllRegions()
+    if (result.success && result.data) {
+      regions.value = result.data
     } else {
       regions.value = []
     }
@@ -559,7 +565,7 @@ const getAvailableRegions = (currentPriceListId: number) => {
   )
   
   // Filter regions: show only free regions + current region
-  return regions.value.filter(region => !assignedRegions.has(region) || region === currentRegion)
+  return regions.value.filter(region => !assignedRegions.has(region.region_name) || region.region_name === currentRegion)
 }
 
 // Region options for dropdown
@@ -569,8 +575,8 @@ const getRegionOptions = (currentPriceListId: number) => {
   // Use empty string as value, will be converted to null in handleRegionUpdate
   const emptyOption = { title: '-', value: '' }
   const regionOptions = availableRegions.map(region => ({
-    title: region,
-    value: region
+    title: region.region_name,
+    value: region.region_name
   }))
   // Empty option always first, then available regions
   return [emptyOption, ...regionOptions]
