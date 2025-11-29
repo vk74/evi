@@ -1,5 +1,5 @@
 <!--
-  Version: 1.8.0
+  Version: 1.9.0
   File: Application.RegionalSettings.vue - frontend file
   Description: Regional settings configuration including timezone, country, fallback language, and time format
   Purpose: Configure regional application settings with full backend integration and settings store
@@ -27,6 +27,14 @@
   Changes in v1.8.0:
   - Renamed setting from default.language to fallback.language
   - Updated label translations: "default language" → "fallback language" (EN), "язык по умолчанию" → "резервный язык" (RU)
+  
+  Changes in v1.9.0:
+  - Migrated regions block from app.settings to standalone app.regions table
+  - Regions now use dedicated CRUD API endpoints
+  - Removed app.regions from settings loading
+  - Auto-save on blur/Enter for region name edits
+  - Removed UPDATE/CANCEL buttons for regions
+  - Regions block is now standalone and ready for extraction
 -->
 
 <script setup lang="ts">
@@ -39,6 +47,11 @@ import { useUiStore } from '@/core/state/uistate';
 import DataLoading from '@/core/ui/loaders/DataLoading.vue';
 import { PhCaretUpDown, PhWarningCircle, PhPlus, PhTrash } from '@phosphor-icons/vue';
 import { getCountries } from '@/core/helpers/get.countries';
+import type { Region } from '@/modules/admin/settings/types.admin.regions';
+import { fetchAllRegions } from '@/modules/admin/settings/service.admin.fetch.regions';
+import { createRegion } from '@/modules/admin/settings/service.admin.create.region';
+import { updateRegion } from '@/modules/admin/settings/service.admin.update.region';
+import { deleteRegions } from '@/modules/admin/settings/service.admin.delete.regions';
 
 // Section path identifier
 const section_path = 'Application.RegionalSettings';
@@ -71,15 +84,20 @@ const selectedCountry = ref<string | null>(null);
 const selectedLanguage = ref<string | null>(null);
 const use12HourFormat = ref<boolean | null>(null);
 
-// Regions state - integrated with settings
-interface Region {
-  id: number;
-  value: string | null;
-}
-
+// Regions state - standalone API-based
 const regions = ref<Region[]>([]);
-const nextRegionId = ref(1);
-const initialRegions = ref<Region[]>([]);
+const isLoadingRegions = ref(false);
+const regionsError = ref<string | null>(null);
+const isSavingRegions = ref(false);
+
+// Track new (unsaved) regions with temporary negative IDs
+let nextTempId = -1;
+
+// Original state snapshot for change tracking
+interface RegionsSnapshot {
+  regions: Region[];
+}
+const regionsOriginal = ref<RegionsSnapshot | null>(null);
 
 // Language toggles state - UI only for now
 const russianEnabled = ref<boolean>(false);
@@ -143,13 +161,12 @@ const languageOptions = computed(() => {
   return filtered.length > 0 ? filtered : allLanguages;
 });
 
-// Define all settings that need to be loaded
+// Define all settings that need to be loaded (regions are now handled separately via API)
 const allSettings = [
   'current.timezone',
   'current.country',
   'fallback.language',
   'time.format.12h',
-  'app.regions',
   'allowed.languages'
 ];
 
@@ -264,35 +281,6 @@ function updateLocalSetting(settingName: string, value: any) {
       break;
     case 'time.format.12h':
       use12HourFormat.value = safeBoolean(value);
-      break;
-    case 'app.regions':
-      // Handle regions array: convert from string array to UI model with IDs
-      // Handle empty string case (legacy migration) - convert to empty array
-      let regionsArray: string[] = [];
-      if (value === null || value === undefined) {
-        regionsArray = [];
-      } else if (typeof value === 'string' && value === '') {
-        // Legacy: empty string from old migration
-        regionsArray = [];
-      } else if (Array.isArray(value)) {
-        // Normal case: array of strings
-        regionsArray = value.filter((v: any) => v !== null && v !== undefined && v !== '');
-      }
-      
-      // Convert to UI model with IDs
-      regions.value = regionsArray.map((regionValue, index) => ({
-        id: nextRegionId.value++,
-        value: regionValue
-      }));
-      
-      // Update nextRegionId to avoid conflicts
-      if (regions.value.length > 0) {
-        const maxId = Math.max(...regions.value.map(r => r.id));
-        nextRegionId.value = maxId + 1;
-      }
-      
-      // Save initial state after loading
-      saveInitialRegionsState();
       break;
     case 'allowed.languages':
       // Handle allowed languages array: sync with boolean toggles
@@ -473,44 +461,163 @@ async function loadCountries(): Promise<void> {
 }
 
 /**
- * Add new region row
+ * Load all regions from API
+ */
+async function loadRegions(): Promise<void> {
+  isLoadingRegions.value = true;
+  regionsError.value = null;
+  
+  try {
+    const response = await fetchAllRegions();
+    
+    if (response.success && response.data) {
+      regions.value = response.data;
+      console.log('Regions loaded successfully:', regions.value.length);
+      
+      // Create snapshot of initial state for change tracking
+      createRegionsSnapshot();
+    } else {
+      throw new Error(response.message || 'Failed to load regions');
+    }
+  } catch (error) {
+    console.error('Failed to load regions:', error);
+    regionsError.value = error instanceof Error ? error.message : 'Failed to load regions';
+    uiStore.showErrorSnackbar('Ошибка загрузки регионов');
+  } finally {
+    isLoadingRegions.value = false;
+  }
+}
+
+/**
+ * Create snapshot of current regions state for change tracking
+ */
+function createRegionsSnapshot(): void {
+  regionsOriginal.value = {
+    regions: JSON.parse(JSON.stringify(regions.value))
+  };
+}
+
+/**
+ * Check if region is new (not yet saved to database)
+ */
+function isNewRegion(regionId: number): boolean {
+  return regionId < 0;
+}
+
+/**
+ * Add new region - add locally (no API call)
  */
 function addRegion(): void {
+  // Add temporary region with negative ID (not yet saved to DB)
   regions.value.push({
-    id: nextRegionId.value++,
-    value: null
+    region_id: nextTempId--,
+    region_name: '',
+    created_at: new Date(),
+    updated_at: null
   });
 }
 
 /**
- * Remove region row
+ * Validate region name format (only letters and digits, any alphabet)
  */
-function removeRegion(id: number): void {
-  const index = regions.value.findIndex(r => r.id === id);
+function validateRegionNameFormat(name: string): { isValid: boolean; error?: string } {
+  // Allow empty names (will be filtered later)
+  if (!name || name.trim().length === 0) {
+    return { isValid: true };
+  }
+  
+  // Check: only letters (any alphabet) and digits, no special characters or punctuation
+  // Using Unicode property escapes: \p{L} for letters, \p{N} for digits
+  // Allows letters from any alphabet (Latin, Cyrillic, Arabic, etc.) and digits
+  const validPattern = /^[\p{L}\p{N}]+$/u;
+  
+  if (!validPattern.test(name.trim())) {
+    return {
+      isValid: false,
+      error: 'Название региона может содержать только буквы (любой алфавит) и цифры. Спецсимволы и знаки препинания запрещены'
+    };
+  }
+  
+  return { isValid: true };
+}
+
+/**
+ * Update region name locally (no API call, just updates local state)
+ */
+function updateRegionName(region: Region, newName: string): void {
+  const trimmedName = newName.trim();
+  
+  // Validate length
+  if (trimmedName.length > 100) {
+    uiStore.showErrorSnackbar('Название региона не может превышать 100 символов');
+    return;
+  }
+  
+  // Validate format (only letters and digits)
+  const formatValidation = validateRegionNameFormat(trimmedName);
+  if (!formatValidation.isValid && formatValidation.error) {
+    uiStore.showErrorSnackbar(formatValidation.error);
+    return;
+  }
+  
+  // Update local state
+  region.region_name = trimmedName;
+}
+
+/**
+ * Remove region locally (no API call)
+ */
+function removeRegion(regionId: number): void {
+  const index = regions.value.findIndex(r => r.region_id === regionId);
   if (index > -1) {
     regions.value.splice(index, 1);
   }
 }
 
 /**
- * Check if regions have changed compared to initial state
+ * Check if there are pending changes compared to original state
  */
 const hasRegionsChanges = computed(() => {
-  // Extract values as string arrays for comparison
-  const currentValues = regions.value.map(r => r.value || '').filter(v => v !== '');
-  const initialValues = initialRegions.value.map(r => r.value || '').filter(v => v !== '');
+  if (!regionsOriginal.value) {
+    return false;
+  }
   
-  if (currentValues.length !== initialValues.length) {
+  const original = regionsOriginal.value;
+  
+  // Check length
+  if (original.regions.length !== regions.value.length) {
     return true;
   }
   
-  // Sort arrays for comparison
-  const currentSorted = [...currentValues].sort();
-  const initialSorted = [...initialValues].sort();
+  // Check each region
+  for (let i = 0; i < regions.value.length; i++) {
+    const current = regions.value[i];
+    const orig = original.regions.find(r => r.region_id === current.region_id);
+    
+    // New region (negative ID) - definitely a change
+    if (isNewRegion(current.region_id)) {
+      // Only count as change if name is not empty
+      if (current.region_name && current.region_name.trim().length > 0) {
+        return true;
+      }
+      continue;
+    }
+    
+    // Region not found in original - it was added (shouldn't happen with our logic, but check anyway)
+    if (!orig) {
+      return true;
+    }
+    
+    // Check if region name changed
+    if (orig.region_name !== current.region_name) {
+      return true;
+    }
+  }
   
-  // Compare each value
-  for (let i = 0; i < currentSorted.length; i++) {
-    if (currentSorted[i] !== initialSorted[i]) {
+  // Check for deleted regions (regions in original but not in current)
+  for (const orig of original.regions) {
+    const current = regions.value.find(r => r.region_id === orig.region_id);
+    if (!current) {
       return true;
     }
   }
@@ -519,35 +626,143 @@ const hasRegionsChanges = computed(() => {
 });
 
 /**
- * Save current regions state as initial
- */
-function saveInitialRegionsState(): void {
-  initialRegions.value = JSON.parse(JSON.stringify(regions.value));
-}
-
-/**
- * Reset regions to initial state
+ * Cancel changes - reset to initial state
  */
 function cancelRegionsChanges(): void {
-  regions.value = JSON.parse(JSON.stringify(initialRegions.value));
+  if (!regionsOriginal.value) {
+    // If no snapshot exists, reload from server
+    loadRegions();
+    return;
+  }
+  
+  const original = regionsOriginal.value;
+  
+  // Restore regions from snapshot
+  regions.value = JSON.parse(JSON.stringify(original.regions));
+  
+  // Reset temp ID counter
+  nextTempId = -1;
 }
 
 /**
- * Update regions - save to backend
+ * Update regions - save all changes via API
  */
-function updateRegions(): void {
-  // Extract values from regions array and convert to plain string array
-  const regionsArray: string[] = regions.value
-    .map(r => r.value)
-    .filter((v): v is string => v !== null && v !== undefined && v !== '');
+async function updateRegionsChanges(): Promise<void> {
+  if (!regionsOriginal.value || !hasRegionsChanges.value) {
+    return;
+  }
   
-  console.log('Updating regions:', regionsArray);
+  isSavingRegions.value = true;
   
-  // Save to backend
-  updateSettingFromComponent(section_path, 'app.regions', regionsArray);
-  
-  // Save initial state after update
-  saveInitialRegionsState();
+  try {
+    const original = regionsOriginal.value;
+    
+    // Remove new regions with empty names before processing
+    const newEmptyRegions = regions.value.filter(r => 
+      isNewRegion(r.region_id) && (!r.region_name || r.region_name.trim().length === 0)
+    );
+    newEmptyRegions.forEach(emptyRegion => {
+      const index = regions.value.findIndex(r => r.region_id === emptyRegion.region_id);
+      if (index > -1) {
+        regions.value.splice(index, 1);
+      }
+    });
+    
+    // Find regions to create (new regions with non-empty names)
+    const regionsToCreate: Region[] = regions.value.filter(r => 
+      isNewRegion(r.region_id) && r.region_name && r.region_name.trim().length > 0
+    );
+    
+    // Find regions to update (existing regions with changed names)
+    const regionsToUpdate: Region[] = regions.value.filter(current => {
+      if (isNewRegion(current.region_id)) return false;
+      
+      const orig = original.regions.find(r => r.region_id === current.region_id);
+      if (!orig) return false;
+      
+      return orig.region_name !== current.region_name && 
+             current.region_name && 
+             current.region_name.trim().length > 0;
+    });
+    
+    // Find regions to delete (regions in original but not in current)
+    const regionsToDelete: number[] = original.regions
+      .filter(orig => !regions.value.find(r => r.region_id === orig.region_id))
+      .map(r => r.region_id);
+    
+    // Validate new regions
+    for (const region of regionsToCreate) {
+      const trimmedName = region.region_name.trim();
+      if (trimmedName.length === 0) {
+        throw new Error('Название региона не может быть пустым');
+      }
+      if (trimmedName.length > 100) {
+        throw new Error('Название региона не может превышать 100 символов');
+      }
+      
+      // Validate format (only letters and digits)
+      const formatValidation = validateRegionNameFormat(trimmedName);
+      if (!formatValidation.isValid && formatValidation.error) {
+        throw new Error(formatValidation.error);
+      }
+    }
+    
+    // Validate updated regions
+    for (const region of regionsToUpdate) {
+      const trimmedName = region.region_name.trim();
+      if (trimmedName.length === 0) {
+        throw new Error('Название региона не может быть пустым');
+      }
+      if (trimmedName.length > 100) {
+        throw new Error('Название региона не может превышать 100 символов');
+      }
+      
+      // Validate format (only letters and digits)
+      const formatValidation = validateRegionNameFormat(trimmedName);
+      if (!formatValidation.isValid && formatValidation.error) {
+        throw new Error(formatValidation.error);
+      }
+    }
+    
+    // Execute all operations
+    const createPromises = regionsToCreate.map(region => 
+      createRegion({ region_name: region.region_name.trim() })
+    );
+    
+    const updatePromises = regionsToUpdate.map(region =>
+      updateRegion({
+        region_id: region.region_id,
+        region_name: region.region_name.trim()
+      })
+    );
+    
+    // Wait for all create and update operations
+    const results = await Promise.all([...createPromises, ...updatePromises]);
+    
+    // Check for errors in create/update operations
+    const errors = results.filter(r => !r.success);
+    if (errors.length > 0) {
+      throw new Error(errors.map(e => e.message).join('; '));
+    }
+    
+    // Delete regions if any
+    if (regionsToDelete.length > 0) {
+      const deleteResponse = await deleteRegions({ region_ids: regionsToDelete });
+      if (!deleteResponse.success) {
+        throw new Error(deleteResponse.message || 'Failed to delete regions');
+      }
+    }
+    
+    // Reload regions to get fresh data from server
+    await loadRegions();
+    
+    uiStore.showSuccessSnackbar('Регионы успешно обновлены');
+  } catch (error) {
+    console.error('Failed to update regions:', error);
+    uiStore.showErrorSnackbar(error instanceof Error ? error.message : 'Ошибка обновления регионов');
+  } finally {
+    isSavingRegions.value = false;
+  }
 }
 
 /**
@@ -561,8 +776,8 @@ interface TableHeader {
 }
 
 const regionsTableHeaders = computed<TableHeader[]>(() => [
-  { title: 'region', key: 'region', width: '240px' },
-  { title: 'actions', key: 'actions', width: '60px', sortable: false }
+  { title: 'region', key: 'region', width: '85%' },
+  { title: 'actions', key: 'actions', width: '15%', sortable: false }
 ]);
 
 // Initialize component
@@ -576,8 +791,11 @@ onMounted(async () => {
   appSettingsStore.clearSectionCache(section_path);
   console.log('Cleared cache for Regional Settings section to ensure fresh data load');
   
+  // Load settings (time settings and languages)
   loadSettings();
-  // Note: Initial regions state will be saved after settings are loaded in updateLocalSetting()
+  
+  // Load regions separately via API
+  loadRegions();
 });
 </script>
 
@@ -685,27 +903,40 @@ onMounted(async () => {
               {{ t('admin.settings.application.regionalsettings.regions.title') }}
             </h3>
             <v-tooltip
-              v-if="settingErrorStates['app.regions']"
+              v-if="regionsError"
               location="top"
               max-width="300"
             >
               <template #activator="{ props }">
-                <span v-bind="props" style="cursor: pointer;" @click="retrySetting('app.regions')" class="ms-2">
+                <span v-bind="props" style="cursor: pointer;" @click="loadRegions" class="ms-2">
                   <PhWarningCircle :size="16" />
                 </span>
               </template>
               <div class="pa-2">
                 <p class="text-subtitle-2 mb-2">
-                  ошибка загрузки настройки
+                  ошибка загрузки регионов
                 </p>
                 <p class="text-caption">
+                  {{ regionsError }}
+                </p>
+                <p class="text-caption mt-1">
                   нажмите для повторной попытки
                 </p>
               </div>
             </v-tooltip>
           </div>
           
-          <div class="regions-table-wrapper">
+          <!-- Loading state for regions -->
+          <DataLoading
+            v-if="isLoadingRegions"
+            :loading="isLoadingRegions"
+            size="small"
+          />
+          
+          <div
+            v-else
+            class="regions-table-wrapper"
+          >
             <v-data-table
               :headers="regionsTableHeaders"
               :items="regions"
@@ -715,11 +946,14 @@ onMounted(async () => {
             >
               <template #[`item.region`]="{ item }">
                 <v-text-field
-                  v-model="item.value"
+                  :model-value="item.region_name"
                   variant="plain"
                   density="compact"
                   hide-details
                   class="region-input"
+                  :placeholder="isNewRegion(item.region_id) ? t('admin.settings.application.regionalsettings.regions.placeholder') : ''"
+                  @update:model-value="updateRegionName(item, $event)"
+                  maxlength="100"
                 />
               </template>
 
@@ -729,7 +963,7 @@ onMounted(async () => {
                   size="small"
                   color="error"
                   variant="text"
-                  @click="removeRegion(item.id)"
+                  @click="removeRegion(item.region_id)"
                 >
                   <PhTrash :size="18" />
                 </v-btn>
@@ -741,6 +975,7 @@ onMounted(async () => {
             <v-btn
               color="teal"
               variant="outlined"
+              :disabled="isLoadingRegions"
               @click="addRegion"
             >
               <template #prepend>
@@ -751,7 +986,7 @@ onMounted(async () => {
             <v-btn
               color="grey"
               variant="outlined"
-              :disabled="!hasRegionsChanges"
+              :disabled="isLoadingRegions || !hasRegionsChanges"
               class="ms-2"
               @click="cancelRegionsChanges"
             >
@@ -760,9 +995,10 @@ onMounted(async () => {
             <v-btn
               color="teal"
               variant="outlined"
-              :disabled="!hasRegionsChanges"
-              :class="['ms-2', { 'btn-glow-active': hasRegionsChanges }]"
-              @click="updateRegions"
+              :disabled="!hasRegionsChanges || isSavingRegions"
+              :loading="isSavingRegions"
+              :class="['ms-2', { 'btn-glow-active': hasRegionsChanges && !isSavingRegions }]"
+              @click="updateRegionsChanges"
             >
               {{ t('admin.settings.application.regionalsettings.regions.actions.update').toUpperCase() }}
             </v-btn>

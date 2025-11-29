@@ -228,6 +228,7 @@
           },
           "regions": {
             "title": "regions",
+            "placeholder": "enter region name, up to 100 symbols",
             "actions": {
               "add": "add region",
               "update": "update",

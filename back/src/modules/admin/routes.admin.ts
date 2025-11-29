@@ -73,6 +73,10 @@ import fetchUserGroupsController from './org/userEditor/controller.fetch.user.gr
 import removeUserFromGroupsController from './org/userEditor/controller.remove.user.from.groups';
 import updateUserLocationController from '../account/controller.update.user.location';
 import getUserLocationController from '../account/controller.get.user.location';
+import fetchAllRegionsController from './settings/controller.admin.fetch.regions';
+import createRegionController from './settings/controller.admin.create.region';
+import updateRegionController from './settings/controller.admin.update.region';
+import deleteRegionsController from './settings/controller.admin.delete.regions';
 
 const router: Router = express.Router();
 
@@ -156,6 +160,12 @@ router.post('/api/admin/pricing/pricelists/:priceListId/updateItems', checkRateL
 
 // Routes for Pricing Admin - Price Item Types
 router.get('/api/admin/pricing/item-types', checkRateLimit, checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, fetchPriceItemTypesController);
+
+// Routes for Settings Admin - Regions
+router.get('/api/admin/settings/regions/fetchall', checkRateLimit, checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, fetchAllRegionsController);
+router.post('/api/admin/settings/regions/create', checkRateLimit, checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, createRegionController);
+router.post('/api/admin/settings/regions/update', checkRateLimit, checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, updateRegionController);
+router.post('/api/admin/settings/regions/delete', checkRateLimit, checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, deleteRegionsController);
 
 // Export using ES modules syntax
 export default router;
