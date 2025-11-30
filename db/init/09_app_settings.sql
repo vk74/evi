@@ -1,11 +1,12 @@
--- Version: 1.5.6
+-- Version: 1.5.7
 -- Description: Seeds the database with default application settings.
 -- Backend file: 09_app_settings.sql
--- Added: 5 new settings (allowed.languages, app.regions, default.module.registered.users, default.module.anonymous.users, product.card.default.section)
+-- Added: 5 new settings (allowed.languages, default.module.registered.users, default.module.anonymous.users, product.card.default.section)
 -- Previous: Country price list mapping setting (Admin.Catalog.CountryPricelistID)
 --
--- Changes in v1.5.6:
--- - Updated app.regions setting: changed from string type to array type (empty array instead of empty string)
+-- Changes in v1.5.7:
+-- - Removed app.regions setting (replaced by app.regions table)
+-- - Removed current.country setting (no longer used)
 
 -- This script inserts a comprehensive set of default settings for the application,
 -- covering areas like security, session management, and feature toggles.
@@ -108,11 +109,9 @@ INSERT INTO app.app_settings (
 
 -- Regional Settings
 ('Application.RegionalSettings', 'current.timezone', 'all', '"GMT+3"', '{"type":"string","enum":["GMT-12","GMT-11","GMT-10","GMT-9","GMT-8","GMT-7","GMT-6","GMT-5","GMT-4","GMT-3","GMT-2","GMT-1","GMT","GMT+1","GMT+2","GMT+3","GMT+4","GMT+5","GMT+6","GMT+7","GMT+8","GMT+9","GMT+10","GMT+11","GMT+12","GMT+13","GMT+14"]}', '"GMT+3"', 'Current application timezone', true),
-('Application.RegionalSettings', 'current.country', 'all', '"russia"', '{"type":"string","enum":["russia","kazakhstan"]}', '"russia"', 'Current application country', false),
 ('Application.RegionalSettings', 'fallback.language', 'all', '"english"', '{"type":"string","enum":["english","russian"]}', '"english"', 'Application language when user selected language is not applicable', true),
 ('Application.RegionalSettings', 'time.format.12h', 'all', 'false', '{"type":"boolean"}', 'false', 'Use 12-hour AM/PM time format instead of 24-hour format', false),
 ('Application.RegionalSettings', 'allowed.languages', 'all', '["english","russian"]'::jsonb, '{"type":"array","items":{"type":"string","enum":["english","russian"]}}'::jsonb, '["english","russian"]'::jsonb, 'List of allowed languages in the application', true),
-('Application.RegionalSettings', 'app.regions', 'all', '[]'::jsonb, '{"type":"array","items":{"type":"string"}}'::jsonb, '[]'::jsonb, 'Application regions - array of region names', true),
 
 -- Appearance Settings
 ('Application.Appearance', 'navbar.backgroundcolor', 'all', '"#26A69A"', '{"type":"string","pattern":"^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$"}', '"#26A69A"', 'Navigation bar background color (hex format)', true),

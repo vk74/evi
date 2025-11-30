@@ -46,7 +46,6 @@ import { updateSettingFromComponent } from '@/modules/admin/settings/service.upd
 import { useUiStore } from '@/core/state/uistate';
 import DataLoading from '@/core/ui/loaders/DataLoading.vue';
 import { PhCaretUpDown, PhWarningCircle, PhPlus, PhTrash } from '@phosphor-icons/vue';
-import { getCountries } from '@/core/helpers/get.countries';
 import type { Region } from '@/modules/admin/settings/types.admin.regions';
 import { fetchAllRegions } from '@/modules/admin/settings/service.admin.fetch.regions';
 import { createRegion } from '@/modules/admin/settings/service.admin.create.region';
@@ -74,13 +73,8 @@ const settingLoadingStates = ref<Record<string, boolean>>({});
 const settingErrorStates = ref<Record<string, boolean>>({});
 const settingRetryAttempts = ref<Record<string, number>>({});
 
-// Countries list - loaded dynamically from backend
-const countriesList = ref<string[]>([]);
-const isLoadingCountries = ref(false);
-
 // Local UI state for immediate interaction - initialize with null (not set)
 const selectedTimezone = ref<string | null>(null);
-const selectedCountry = ref<string | null>(null);
 const selectedLanguage = ref<string | null>(null);
 const use12HourFormat = ref<boolean | null>(null);
 
@@ -134,14 +128,6 @@ const timezoneOptions = ref([
   { value: 'GMT+14', title: 'GMT+14' }
 ]);
 
-// Country options - computed to support reactive translations with dynamically loaded countries
-const countryOptions = computed(() => {
-  return countriesList.value.map(countryCode => ({
-    value: countryCode,
-    title: t(`admin.settings.application.regionalsettings.countries.${countryCode}`)
-  }));
-});
-
 // Allowed languages state (full-name identifiers, e.g. 'english', 'russian')
 const allowedLanguages = ref<string[]>([]);
 
@@ -164,7 +150,6 @@ const languageOptions = computed(() => {
 // Define all settings that need to be loaded (regions are now handled separately via API)
 const allSettings = [
   'current.timezone',
-  'current.country',
   'fallback.language',
   'time.format.12h',
   'allowed.languages'
@@ -273,9 +258,6 @@ function updateLocalSetting(settingName: string, value: any) {
     case 'current.timezone':
       selectedTimezone.value = safeString(value);
       break;
-    case 'current.country':
-      selectedCountry.value = safeString(value);
-      break;
     case 'fallback.language':
       selectedLanguage.value = safeString(value);
       break;
@@ -380,12 +362,6 @@ watch(selectedTimezone, (newValue) => {
   }
 });
 
-watch(selectedCountry, (newValue) => {
-  if (!isFirstLoad.value && newValue !== null) {
-    updateSetting('current.country', newValue);
-  }
-});
-
 watch(selectedLanguage, (newValue) => {
   if (!isFirstLoad.value && newValue !== null) {
     updateSetting('fallback.language', newValue);
@@ -444,21 +420,6 @@ watch(
     isLoadingSettings.value = isLoading;
   }
 );
-
-// Load countries list from backend
-async function loadCountries(): Promise<void> {
-  try {
-    isLoadingCountries.value = true;
-    const countries = await getCountries();
-    countriesList.value = countries;
-  } catch (error) {
-    console.error('Failed to load countries:', error);
-    // Fallback to hardcoded list on error
-    countriesList.value = ['russia', 'kazakhstan'];
-  } finally {
-    isLoadingCountries.value = false;
-  }
-}
 
 /**
  * Load all regions from API
@@ -783,9 +744,6 @@ const regionsTableHeaders = computed<TableHeader[]>(() => [
 // Initialize component
 onMounted(async () => {
   console.log('Application.RegionalSettings component initialized');
-  
-  // Load countries list first
-  await loadCountries();
   
   // Clear cache to ensure we get fresh data including new settings
   appSettingsStore.clearSectionCache(section_path);

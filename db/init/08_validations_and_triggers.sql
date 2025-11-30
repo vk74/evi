@@ -1,4 +1,4 @@
--- Version: 1.4.0
+-- Version: 1.5.0
 -- Description: Database validation functions and triggers for business logic enforcement.
 -- Backend file: 08_validations_and_triggers.sql
 -- 
@@ -23,6 +23,9 @@
 --
 -- Changes in v1.4.0:
 -- - Added trigger for automatic updated_at update on app.regions_vat table
+--
+-- Changes in v1.5.0:
+-- - Removed validation for current.country setting (setting removed from app.settings)
 
 -- ============================================
 -- Regional Settings Validation
@@ -37,14 +40,6 @@ BEGIN
     -- Check if value (removing quotes) is a valid timezone enum value
     IF NOT (NEW.value #>> '{}')::app.timezones IS NOT NULL THEN
       RAISE EXCEPTION 'Invalid timezone value: %. Must be one of the app.timezones enum values', NEW.value;
-    END IF;
-  END IF;
-
-  -- Validate country setting
-  IF NEW.setting_name = 'current.country' THEN
-    -- Check if value (removing quotes) is a valid country enum value
-    IF NOT (NEW.value #>> '{}')::app.app_countries IS NOT NULL THEN
-      RAISE EXCEPTION 'Invalid country value: %. Must be one of the app.app_countries enum values', NEW.value;
     END IF;
   END IF;
 
@@ -71,7 +66,7 @@ CREATE TRIGGER validate_regional_settings_trigger
   FOR EACH ROW
   WHEN (
     NEW.section_path = 'Application.RegionalSettings' AND
-    NEW.setting_name IN ('current.timezone', 'current.country', 'default.language')
+    NEW.setting_name IN ('current.timezone', 'default.language')
   )
   EXECUTE FUNCTION app.validate_regional_settings();
 

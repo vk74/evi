@@ -73,7 +73,6 @@ import fetchPriceItemTypesController from './pricing/controller.admin.fetch.pric
 import registerUserController from '../account/controller.register.user';
 import fetchUserGroupsController from './org/userEditor/controller.fetch.user.groups';
 import removeUserFromGroupsController from './org/userEditor/controller.remove.user.from.groups';
-import updateUserLocationController from '../account/controller.update.user.location';
 import getUserLocationController from '../account/controller.get.user.location';
 import fetchAllRegionsController from './settings/controller.admin.fetch.regions';
 import createRegionController from './settings/controller.admin.create.region';
