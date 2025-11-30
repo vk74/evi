@@ -1,5 +1,5 @@
 <!--
-Version: 1.8.0
+Version: 1.9.0
 VAT settings component for pricing administration module.
 Frontend file that displays regions with VAT rates in a table format.
 Filename: PricingVAT.vue
@@ -53,9 +53,18 @@ Changes in v1.8.0:
 - Now uses dedicated pricing module service: service.fetch.regions.ts
 - Removed parseRegionsValue function as it's no longer needed
 - Regions are now loaded from app.regions table via /api/admin/pricing/regions/fetchall endpoint
+
+Changes in v1.9.0:
+- Removed unified VAT rates toggle and all related functionality
+- Removed isUnifiedVat ref and unifiedRegion ref
+- Removed resetRegionMarkers function and watch(isUnifiedVat) block
+- Removed unified region handling from all functions (loadRegions, createVATSnapshot, addVATRateColumn, deleteVATRateColumn, updateMarkerPriority, cancelChanges, tableItems, hasPendingChanges, handleRemoveMarker)
+- Removed v-switch component for unified VAT from template
+- Updated VATDataSnapshot interface to remove unifiedRegion and isUnifiedVat fields
+- Removed watch import from vue as it's no longer needed
 -->
 <script setup lang="ts">
-import { ref, computed, onMounted, watch, nextTick } from 'vue';
+import { ref, computed, onMounted, nextTick } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useUiStore } from '@/core/state/uistate';
 import DataLoading from '@/core/ui/loaders/DataLoading.vue';
@@ -89,19 +98,9 @@ interface VATRateColumn {
   width: string;
 }
 
-// Unified VAT rate setting
-const isUnifiedVat = ref(false);
-
 // Regions list loaded from settings
 const regions = ref<VATRegion[]>([]);
 const nextRegionId = ref(1);
-
-// Unified region row
-const unifiedRegion = ref<VATRegion>({
-  id: 0,
-  region: 'All Regions',
-  vatRate: null
-});
 
 // Empty row for table footer
 const emptyRow = ref<VATRegion | null>(null);
@@ -112,9 +111,7 @@ const vatRateColumns = ref<VATRateColumn[]>([]);
 // Original state snapshot for change tracking
 interface VATDataSnapshot {
   regions: VATRegion[];
-  unifiedRegion: VATRegion;
   vatRateColumns: VATRateColumn[];
-  isUnifiedVat: boolean;
 }
 const vatDataOriginal = ref<VATDataSnapshot | null>(null);
 
@@ -124,31 +121,6 @@ const markerMenu = ref({
   regionId: -1,
   columnId: '',
   priority: 1
-});
-
-/**
- * Reset all markers for a region
- */
-function resetRegionMarkers(region: VATRegion): void {
-  // Reset 0% column
-  region.vatRate = null;
-  
-  // Reset dynamic columns
-  vatRateColumns.value.forEach(col => {
-    region[col.id] = null;
-  });
-}
-
-/**
- * Watch for unified setting change
- */
-watch(isUnifiedVat, (newValue) => {
-  if (newValue) {
-    // If switched to unified, reset all individual regions
-    regions.value.forEach(region => {
-      resetRegionMarkers(region);
-    });
-  }
 });
 
 /**
@@ -190,9 +162,6 @@ async function loadRegions(): Promise<void> {
         emptyRow.value[column.id] = null;
       }
       
-      // Initialize for unified region
-      unifiedRegion.value[column.id] = null;
-      
       // Initialize null for all regions for existing columns
       regions.value.forEach(region => {
         if (region[column.id] === undefined) {
@@ -200,9 +169,6 @@ async function loadRegions(): Promise<void> {
         }
       });
     });
-    
-    // Update unified region name with translation if possible, or keep default
-    unifiedRegion.value.region = t('admin.pricing.vat.allRegions') || 'All Regions';
     
     // Create snapshot of initial state for change tracking
     createVATSnapshot();
@@ -223,9 +189,7 @@ async function loadRegions(): Promise<void> {
 function createVATSnapshot(): void {
   vatDataOriginal.value = {
     regions: JSON.parse(JSON.stringify(regions.value)),
-    unifiedRegion: JSON.parse(JSON.stringify(unifiedRegion.value)),
-    vatRateColumns: JSON.parse(JSON.stringify(vatRateColumns.value)),
-    isUnifiedVat: isUnifiedVat.value
+    vatRateColumns: JSON.parse(JSON.stringify(vatRateColumns.value))
   };
 }
 
@@ -258,9 +222,6 @@ function addVATRateColumn(): void {
   regions.value.forEach(region => {
     region[newColumnId] = null;
   });
-  
-  // Initialize for unified region
-  unifiedRegion.value[newColumnId] = null;
   
   // Initialize empty value for empty row if it exists
   if (emptyRow.value) {
@@ -338,9 +299,6 @@ function deleteVATRateColumn(columnId: string): void {
     regions.value.forEach(region => {
       delete region[columnId];
     });
-    
-    // Remove column data from unified region
-    delete unifiedRegion.value[columnId];
     
     // Remove column data from empty row
     if (emptyRow.value) {
@@ -432,14 +390,8 @@ function openMarkerMenu(region: VATRegion, columnId: string, event: Event): void
 function updateMarkerPriority(): void {
   const { regionId, columnId, priority: newPriority } = markerMenu.value;
   
-  // Determine target region (individual or unified)
-  let region: VATRegion | undefined;
-  
-  if (regionId === 0 && isUnifiedVat.value) {
-    region = unifiedRegion.value;
-  } else {
-    region = regions.value.find(r => r.id === regionId);
-  }
+  // Find target region
+  const region = regions.value.find(r => r.id === regionId);
   
   if (!region || !columnId) return;
   
@@ -503,14 +455,8 @@ function cancelChanges(): void {
   // Restore regions
   regions.value = JSON.parse(JSON.stringify(original.regions));
   
-  // Restore unified region
-  unifiedRegion.value = JSON.parse(JSON.stringify(original.unifiedRegion));
-  
   // Restore VAT rate columns
   vatRateColumns.value = JSON.parse(JSON.stringify(original.vatRateColumns));
-  
-  // Restore isUnifiedVat
-  isUnifiedVat.value = original.isUnifiedVat;
   
   // Re-initialize empty row with current columns
   emptyRow.value = {
@@ -569,15 +515,6 @@ const vatTableHeaders = computed<TableHeader[]>(() => {
  * Table items including regions and empty row
  */
 const tableItems = computed<VATRegion[]>(() => {
-  if (isUnifiedVat.value) {
-    // In unified mode, return unified region and the empty row (for delete buttons)
-    const items = [unifiedRegion.value];
-    if (emptyRow.value) {
-      items.push(emptyRow.value);
-    }
-    return items;
-  }
-  
   const items = [...regions.value];
   if (emptyRow.value) {
     items.push(emptyRow.value);
@@ -594,11 +531,6 @@ const hasPendingChanges = computed(() => {
   }
   
   const original = vatDataOriginal.value;
-  
-  // Check isUnifiedVat
-  if (original.isUnifiedVat !== isUnifiedVat.value) {
-    return true;
-  }
   
   // Check vatRateColumns (length and content)
   if (original.vatRateColumns.length !== vatRateColumns.value.length) {
@@ -652,13 +584,6 @@ const hasPendingChanges = computed(() => {
     }
   }
   
-  // Check unifiedRegion
-  const unifiedStr = JSON.stringify(original.unifiedRegion);
-  const currentUnifiedStr = JSON.stringify(unifiedRegion.value);
-  if (unifiedStr !== currentUnifiedStr) {
-    return true;
-  }
-  
   return false;
 });
 
@@ -668,18 +593,12 @@ onMounted(async () => {
   await loadRegions();
 });
 /**
- * Remove marker from region (handles both regular and unified)
+ * Remove marker from region
  */
 function handleRemoveMarker(): void {
   const { regionId, columnId } = markerMenu.value;
   
-  let region: VATRegion | undefined;
-  
-  if (regionId === 0 && isUnifiedVat.value) {
-    region = unifiedRegion.value;
-  } else {
-    region = regions.value.find(r => r.id === regionId);
-  }
+  const region = regions.value.find(r => r.id === regionId);
   
   if (region) {
     removeMarker(region, columnId);
@@ -862,16 +781,6 @@ function handleRemoveMarker(): void {
             </div>
           </template>
         </v-data-table>
-      </div>
-
-      <div class="mt-4">
-        <v-switch
-          v-model="isUnifiedVat"
-          color="teal"
-          :label="t('admin.pricing.vat.unifiedVat')"
-          hide-details
-          density="compact"
-        />
       </div>
     </div>
     
