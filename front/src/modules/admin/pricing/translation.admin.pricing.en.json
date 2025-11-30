@@ -186,16 +186,8 @@
       "vat": {
         "table": {
           "headers": {
-            "status": "status",
-            "region": "region",
-            "vatRate": "0 %"
+            "region": "region"
           }
-        },
-        "allRegions": "all regions",
-        "unifiedVat": "unified rates for all regions",
-        "status": {
-          "active": "active",
-          "disabled": "disabled"
         },
         "actions": {
           "addColumn": "add column",

@@ -186,16 +186,8 @@
       "vat": {
         "table": {
           "headers": {
-            "status": "статус",
-            "region": "регион",
-            "vatRate": "0 %"
+            "region": "регион"
           }
-        },
-        "allRegions": "все регионы",
-        "unifiedVat": "единые ставки для всех регионов",
-        "status": {
-          "active": "активен",
-          "disabled": "отключен"
         },
         "actions": {
           "addColumn": "добавить колонку",

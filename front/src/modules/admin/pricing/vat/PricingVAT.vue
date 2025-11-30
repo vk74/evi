@@ -78,8 +78,8 @@ import { useI18n } from 'vue-i18n';
 import { useUiStore } from '@/core/state/uistate';
 import DataLoading from '@/core/ui/loaders/DataLoading.vue';
 import { PhWarningCircle, PhPlus, PhTrash, PhX } from '@phosphor-icons/vue';
-import { fetchRegionsVAT } from '@/modules/admin/pricing/service.fetch.regionsVAT';
-import { updateRegionsVAT } from '@/modules/admin/pricing/service.update.regionsVAT';
+import { fetchRegionsVAT } from './service.fetch.regionsVAT';
+import { updateRegionsVAT } from './service.update.regionsVAT';
 import { fetchAllRegions } from '@/modules/admin/settings/service.admin.fetch.regions';
 
 // Store references
