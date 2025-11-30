@@ -1,5 +1,5 @@
 /**
- * version: 1.4.8
+ * version: 1.5.0
  * Backend types for pricing administration module.
  * Defines DTOs for currencies, price lists and other pricing-related entities.
  * File: types.admin.pricing.ts (backend)
@@ -15,26 +15,50 @@
  * 
  * Changes in v1.4.8:
  * - Added RegionDto and FetchRegionsResponse types for regions management
+ * 
+ * Changes in v1.5.0:
+ * - Added RegionsVATDto, FetchRegionsVATResponse, UpdateRegionsVATRequest, UpdateRegionsVATResponse types for regions_vat management
+ * - Removed RegionDto and FetchRegionsResponse types (moved to settings module)
  */
 
 // ============================================
-// Region Types
+// Regions VAT Types
 // ============================================
 
-// Region DTO aligned with database structure
-export interface RegionDto {
-    region_id: number
+// Regions VAT DTO aligned with database structure
+export interface RegionsVATDto {
+    id: number
     region_name: string
+    vat_rate: number
+    priority: number
     created_at: Date
     updated_at: Date | null
 }
 
-// Response for fetch regions
-export interface FetchRegionsResponse {
+// Response for fetch regions VAT
+export interface FetchRegionsVATResponse {
     success: boolean
     message: string
     data?: {
-        regions: RegionDto[]
+        regionsVAT: RegionsVATDto[]
+    }
+}
+
+// Request for updating regions VAT (full replacement)
+export interface UpdateRegionsVATRequest {
+    regionsVAT: Array<{
+        region_name: string
+        vat_rate: number
+        priority: number
+    }>
+}
+
+// Response for update regions VAT
+export interface UpdateRegionsVATResponse {
+    success: boolean
+    message: string
+    data?: {
+        totalRecords: number
     }
 }
 

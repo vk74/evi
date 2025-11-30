@@ -1,8 +1,11 @@
 /**
- * version: 1.2.6
+ * version: 1.3.0
  * Event reference catalog for admin pricing operations (backend).
  * Defines events for pricing management operations (currencies and price lists).
  * File: events.admin.pricing.ts (backend)
+ * 
+ * Changes in v1.3.0:
+ * - Added events for regionsVAT operations (fetch, update, transaction)
  */
 
 import { EventCollection } from '../../../core/eventBus/types.events'
@@ -735,6 +738,82 @@ export const EVENTS_ADMIN_PRICING: EventCollection = {
     eventType: 'app',
     severity: 'warning',
     eventMessage: 'Error during price list items update operation',
+    version: '1.0.0'
+  },
+
+  // ========== Regions VAT - Fetch Events ==========
+  
+  'regionsVAT.fetch.success': {
+    eventName: 'adminPricing.regionsVAT.fetch.success',
+    source: 'admin-pricing',
+    eventType: 'app',
+    severity: 'debug',
+    eventMessage: 'Regions VAT fetched successfully',
+    version: '1.0.0'
+  },
+
+  'regionsVAT.fetch.database_error': {
+    eventName: 'adminPricing.regionsVAT.fetch.database_error',
+    source: 'admin-pricing',
+    eventType: 'app',
+    severity: 'warning',
+    eventMessage: 'Database error during regions VAT fetch',
+    version: '1.0.0'
+  },
+
+  'regionsVAT.fetch.error': {
+    eventName: 'adminPricing.regionsVAT.fetch.error',
+    source: 'admin-pricing',
+    eventType: 'app',
+    severity: 'warning',
+    eventMessage: 'Error during regions VAT fetch operation',
+    version: '1.0.0'
+  },
+
+  // ========== Regions VAT - Update Events ==========
+  
+  'regionsVAT.update.transaction.rollback': {
+    eventName: 'adminPricing.regionsVAT.update.transaction.rollback',
+    source: 'admin-pricing',
+    eventType: 'app',
+    severity: 'warning',
+    eventMessage: 'Regions VAT update transaction rolled back',
+    version: '1.0.0'
+  },
+
+  'regionsVAT.update.success': {
+    eventName: 'adminPricing.regionsVAT.update.success',
+    source: 'admin-pricing',
+    eventType: 'app',
+    severity: 'info',
+    eventMessage: 'Regions VAT updated successfully',
+    version: '1.0.0'
+  },
+
+  'regionsVAT.update.validation.error': {
+    eventName: 'adminPricing.regionsVAT.update.validation.error',
+    source: 'admin-pricing',
+    eventType: 'app',
+    severity: 'error',
+    eventMessage: 'Validation error in regions VAT update payload',
+    version: '1.0.0'
+  },
+
+  'regionsVAT.update.database_error': {
+    eventName: 'adminPricing.regionsVAT.update.database_error',
+    source: 'admin-pricing',
+    eventType: 'app',
+    severity: 'warning',
+    eventMessage: 'Database error during regions VAT update',
+    version: '1.0.0'
+  },
+
+  'regionsVAT.update.error': {
+    eventName: 'adminPricing.regionsVAT.update.error',
+    source: 'admin-pricing',
+    eventType: 'app',
+    severity: 'warning',
+    eventMessage: 'Error during regions VAT update operation',
     version: '1.0.0'
   }
 }

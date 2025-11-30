@@ -1,5 +1,5 @@
     /**
-     * version: 1.4.0
+     * version: 1.5.0
      * SQL queries for pricing administration module.
      * Contains parameterized queries related to pricing (currencies and price lists).
      * Includes integrity check queries and queries for event payload data.
@@ -21,7 +21,11 @@
      * - Added checkRegionExistsInRegionsTable query for validating region existence in app.regions table
      * 
      * Changes in v1.4.0:
-     * - Added fetchRegions query for fetching all regions from app.regions table
+     * - Added fetchRegions query for fetching all regions from app.regions table (removed in v1.5.0)
+     * 
+     * Changes in v1.5.0:
+     * - Added fetchRegionsVAT, deleteAllRegionsVAT, insertRegionsVAT queries for regions_vat table management
+     * - Removed fetchRegions query (moved to settings module)
      */
 
 export const queries = {
@@ -247,19 +251,6 @@ export const queries = {
     `,
 
     /**
-     * Fetch all regions
-     */
-    fetchRegions: `
-        SELECT 
-            region_id,
-            region_name,
-            created_at,
-            updated_at
-        FROM app.regions
-        ORDER BY region_name ASC
-    `,
-
-    /**
      * Insert new price list
      * Parameters: name, description, currency_code, is_active, 
      *             owner_id, region, created_by
@@ -473,6 +464,42 @@ export const queries = {
             list_price, wholesale_price, created_by, updated_by, created_at, updated_at
         FROM app.price_lists
         WHERE item_code = $1 AND price_list_id = $2
+    `,
+
+    // ============================================
+    // Regions VAT Queries
+    // ============================================
+
+    /**
+     * Fetch all regions VAT records
+     */
+    fetchRegionsVAT: `
+        SELECT 
+            id,
+            region_name,
+            vat_rate,
+            priority,
+            created_at,
+            updated_at
+        FROM app.regions_vat
+        ORDER BY region_name ASC, vat_rate ASC, priority ASC
+    `,
+
+    /**
+     * Delete all regions VAT records (for full replacement)
+     */
+    deleteAllRegionsVAT: `
+        DELETE FROM app.regions_vat
+    `,
+
+    /**
+     * Insert regions VAT record
+     * Parameters: region_name, vat_rate, priority
+     */
+    insertRegionsVAT: `
+        INSERT INTO app.regions_vat (region_name, vat_rate, priority)
+        VALUES ($1, $2, $3)
+        RETURNING id
     `
 };
 

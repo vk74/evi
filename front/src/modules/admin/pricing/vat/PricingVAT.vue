@@ -1,5 +1,5 @@
 <!--
-Version: 1.9.0
+Version: 2.0.0
 VAT settings component for pricing administration module.
 Frontend file that displays regions with VAT rates in a table format.
 Filename: PricingVAT.vue
@@ -62,6 +62,15 @@ Changes in v1.9.0:
 - Removed v-switch component for unified VAT from template
 - Updated VATDataSnapshot interface to remove unifiedRegion and isUnifiedVat fields
 - Removed watch import from vue as it's no longer needed
+
+Changes in v2.0.0:
+- Integrated with app.regions_vat table via new backend API endpoints
+- Removed hardcoded 0% column - user can create it via ADD COLUMN if needed
+- Removed vatRate field from VATRegion interface
+- Updated loadRegions() to fetch from regions_vat and app.regions tables
+- Updated updateChanges() to save all data including 0% if column created
+- Removed all vatRate handling from functions (getNextPriority, removeMarker, updateMarkerPriority, hasPendingChanges, getAllColumnIds)
+- Removed service.fetch.regions.ts dependency, now uses service.fetch.regionsVAT.ts
 -->
 <script setup lang="ts">
 import { ref, computed, onMounted, nextTick } from 'vue';
@@ -69,7 +78,9 @@ import { useI18n } from 'vue-i18n';
 import { useUiStore } from '@/core/state/uistate';
 import DataLoading from '@/core/ui/loaders/DataLoading.vue';
 import { PhWarningCircle, PhPlus, PhTrash, PhX } from '@phosphor-icons/vue';
-import { fetchRegions } from '@/modules/admin/pricing/service.fetch.regions';
+import { fetchRegionsVAT } from '@/modules/admin/pricing/service.fetch.regionsVAT';
+import { updateRegionsVAT } from '@/modules/admin/pricing/service.update.regionsVAT';
+import { fetchAllRegions } from '@/modules/admin/settings/service.admin.fetch.regions';
 
 // Store references
 const uiStore = useUiStore();
@@ -86,7 +97,6 @@ const isSaving = ref(false);
 interface VATRegion {
   id: number;
   region: string;
-  vatRate: number | null;
   [key: string]: any; // For dynamic VAT rate columns (stores priority number)
 }
 
@@ -94,7 +104,7 @@ interface VATRegion {
 interface VATRateColumn {
   id: string;
   header: string;
-  value: number; // 1-99
+  value: number; // 0-99
   width: string;
 }
 
@@ -124,24 +134,59 @@ const markerMenu = ref({
 });
 
 /**
- * Load regions from database via pricing API
+ * Load regions and VAT data from database
  */
 async function loadRegions(): Promise<void> {
   isLoadingRegions.value = true;
   regionsError.value = false;
   
   try {
-    console.log('Loading regions for VAT settings from database');
+    console.log('Loading regions and VAT data from database');
     
-    // Fetch regions from pricing API
-    const regionsArray = await fetchRegions();
+    // Fetch all regions from app.regions table
+    const regionsResponse = await fetchAllRegions();
+    if (!regionsResponse.success || !regionsResponse.data) {
+      throw new Error('Failed to fetch regions list');
+    }
+    const allRegions = regionsResponse.data.map(r => r.region_name);
     
-    // Convert to VAT regions with vatRate null
-    regions.value = regionsArray.map((regionName) => ({
-      id: nextRegionId.value++,
-      region: regionName,
-      vatRate: null
-    }));
+    // Fetch VAT data from regions_vat table
+    const regionsVATData = await fetchRegionsVAT();
+    
+    // Group VAT data by vat_rate to create columns
+    const vatRatesMap = new Map<number, VATRateColumn>();
+    
+    // Process VAT data and create columns
+    regionsVATData.forEach(record => {
+      const vatRate = record.vat_rate;
+      if (!vatRatesMap.has(vatRate)) {
+        const columnId = `vatRate_${vatRate}`;
+        vatRatesMap.set(vatRate, {
+          id: columnId,
+          header: `${vatRate}%`,
+          value: vatRate,
+          width: '70px'
+        });
+      }
+    });
+    
+    // Convert map to array and sort by vat_rate
+    vatRateColumns.value = Array.from(vatRatesMap.values()).sort((a, b) => a.value - b.value);
+    
+    // Create regions array from all regions in app.regions
+    regions.value = allRegions.map((regionName) => {
+      const region: VATRegion = {
+        id: nextRegionId.value++,
+        region: regionName
+      };
+      
+      // Initialize all dynamic columns with null
+      vatRateColumns.value.forEach(column => {
+        region[column.id] = null;
+      });
+      
+      return region;
+    });
     
     // Update nextRegionId to avoid conflicts
     if (regions.value.length > 0) {
@@ -149,11 +194,19 @@ async function loadRegions(): Promise<void> {
       nextRegionId.value = maxId + 1;
     }
     
+    // Fill priorities from VAT data
+    regionsVATData.forEach(record => {
+      const region = regions.value.find(r => r.region === record.region_name);
+      if (region) {
+        const columnId = `vatRate_${record.vat_rate}`;
+        region[columnId] = record.priority;
+      }
+    });
+    
     // Initialize empty row
     emptyRow.value = {
       id: -1,
-      region: '',
-      vatRate: null
+      region: ''
     };
     
     // Initialize empty values for dynamic columns in empty row
@@ -161,23 +214,16 @@ async function loadRegions(): Promise<void> {
       if (emptyRow.value) {
         emptyRow.value[column.id] = null;
       }
-      
-      // Initialize null for all regions for existing columns
-      regions.value.forEach(region => {
-        if (region[column.id] === undefined) {
-          region[column.id] = null;
-        }
-      });
     });
     
     // Create snapshot of initial state for change tracking
     createVATSnapshot();
     
-    console.log(`Loaded ${regions.value.length} regions for VAT settings`);
+    console.log(`Loaded ${regions.value.length} regions and ${regionsVATData.length} VAT records`);
   } catch (error) {
-    console.error('Failed to load regions:', error);
+    console.error('Failed to load regions and VAT data:', error);
     regionsError.value = true;
-    uiStore.showErrorSnackbar('Ошибка загрузки регионов');
+    uiStore.showErrorSnackbar('Ошибка загрузки данных НДС');
   } finally {
     isLoadingRegions.value = false;
   }
@@ -193,9 +239,9 @@ function createVATSnapshot(): void {
   };
 }
 
-// Helper to get all relevant column keys (including 0%)
+// Helper to get all relevant column keys
 const getAllColumnIds = () => {
-  return ['vatRate', ...vatRateColumns.value.map(c => c.id)];
+  return vatRateColumns.value.map(c => c.id);
 };
 
 /**
@@ -234,7 +280,7 @@ function addVATRateColumn(): void {
  */
 function getColumnInputValue(columnId: string): string {
   const column = vatRateColumns.value.find(c => c.id === columnId);
-  return column && column.value > 0 ? column.value.toString() : '';
+  return column && column.value >= 0 ? column.value.toString() : '';
 }
 
 /**
@@ -258,8 +304,8 @@ function updateColumnValue(columnId: string, value: string): void {
   
   const numValue = parseInt(value);
   
-  // Validate: must be number between 1 and 99
-  if (isNaN(numValue) || numValue < 1 || numValue > 99) {
+  // Validate: must be number between 0 and 99
+  if (isNaN(numValue) || numValue < 0 || numValue > 99) {
     return; // Don't update if out of range
   }
   
@@ -274,7 +320,7 @@ function handleColumnInput(columnId: string, value: string): void {
   // Remove any non-digit characters
   const digitsOnly = value.replace(/\D/g, '');
   
-  // Limit to 2 digits (max 99)
+  // Limit to 2 digits (max 99, including 0)
   const limitedValue = digitsOnly.slice(0, 2);
   
   // Update the input field value directly if it was changed
@@ -315,12 +361,7 @@ function deleteVATRateColumn(columnId: string): void {
 function getNextPriority(region: VATRegion): number {
   let max = 0;
   
-  // Check 0% column
-  if (typeof region.vatRate === 'number' && region.vatRate > max) {
-    max = region.vatRate;
-  }
-  
-  // Check dynamic columns
+  // Check all dynamic columns
   vatRateColumns.value.forEach(col => {
     const val = region[col.id];
     if (typeof val === 'number' && val > max) {
@@ -349,13 +390,6 @@ function removeMarker(region: VATRegion, columnId: string): void {
   region[columnId] = null;
   
   // Close gaps: decrement all priorities greater than the removed one
-  
-  // Check 0% column
-  if (typeof region.vatRate === 'number' && region.vatRate > removedPriority) {
-    region.vatRate = region.vatRate - 1;
-  }
-  
-  // Check dynamic columns
   vatRateColumns.value.forEach(col => {
     const val = region[col.id];
     if (typeof val === 'number' && val > removedPriority) {
@@ -400,11 +434,6 @@ function updateMarkerPriority(): void {
   
   // Get all markers for this region
   const markers: { colId: string, priority: number }[] = [];
-  
-  // Add 0% column if it has a marker
-  if (typeof region.vatRate === 'number') {
-    markers.push({ colId: 'vatRate', priority: region.vatRate });
-  }
   
   // Add dynamic columns markers
   vatRateColumns.value.forEach(col => {
@@ -461,8 +490,7 @@ function cancelChanges(): void {
   // Re-initialize empty row with current columns
   emptyRow.value = {
     id: -1,
-    region: '',
-    vatRate: null
+    region: ''
   };
   
   // Initialize empty values for dynamic columns in empty row
@@ -474,12 +502,41 @@ function cancelChanges(): void {
 }
 
 /**
- * Update changes - save to backend (placeholder for future implementation)
+ * Update changes - save to backend
  */
-function updateChanges(): void {
-  // TODO: Implement backend integration
-  console.log('Update changes - to be implemented');
-  uiStore.showErrorSnackbar('Функция обновления будет реализована позже');
+async function updateChanges(): Promise<void> {
+  isSaving.value = true;
+  
+  try {
+    // Collect all data from table (all regions × all columns with priorities)
+    const regionsVATData: Array<{region_name: string, vat_rate: number, priority: number}> = [];
+    
+    regions.value.forEach(region => {
+      vatRateColumns.value.forEach(column => {
+        const priority = region[column.id];
+        if (typeof priority === 'number' && priority > 0) {
+          regionsVATData.push({
+            region_name: region.region,
+            vat_rate: column.value,
+            priority: priority
+          });
+        }
+      });
+    });
+    
+    // Send to backend
+    await updateRegionsVAT(regionsVATData);
+    
+    // Update snapshot after successful save
+    createVATSnapshot();
+    
+    console.log(`Saved ${regionsVATData.length} VAT records`);
+  } catch (error) {
+    console.error('Failed to save VAT data:', error);
+    // Error message already shown by service
+  } finally {
+    isSaving.value = false;
+  }
 }
 
 /**
@@ -494,8 +551,7 @@ interface TableHeader {
 
 const vatTableHeaders = computed<TableHeader[]>(() => {
   const headers: TableHeader[] = [
-    { title: t('admin.pricing.vat.table.headers.region'), key: 'region', width: '140px' },
-    { title: t('admin.pricing.vat.table.headers.vatRate'), key: 'vatRate', width: '70px', sortable: false }
+    { title: t('admin.pricing.vat.table.headers.region'), key: 'region', width: '140px' }
   ];
   
   // Add dynamic VAT rate columns
@@ -567,14 +623,9 @@ const hasPendingChanges = computed(() => {
       return true;
     }
     
-    // Check vatRate
-    if (orig.vatRate !== current.vatRate) {
-      return true;
-    }
-    
     // Check all dynamic columns from both original and current state
-    const originalColumnIds = new Set(['vatRate', ...original.vatRateColumns.map(c => c.id)]);
-    const currentColumnIds = new Set(['vatRate', ...vatRateColumns.value.map(c => c.id)]);
+    const originalColumnIds = new Set([...original.vatRateColumns.map(c => c.id)]);
+    const currentColumnIds = new Set([...vatRateColumns.value.map(c => c.id)]);
     const allColumnIds = new Set([...originalColumnIds, ...currentColumnIds]);
     
     for (const colId of allColumnIds) {
@@ -696,31 +747,6 @@ function handleRemoveMarker(): void {
           <!-- Region column -->
           <template #[`item.region`]="{ item }">
             <span v-if="item.id !== -1" class="region-name">{{ item.region }}</span>
-          </template>
-
-          <!-- Default VAT rate column (0%) -->
-          <template #[`item.vatRate`]="{ item }">
-            <div 
-              class="d-flex justify-center align-center cell-clickable fill-height"
-              style="min-height: 40px; cursor: pointer;"
-              @click="!item.vatRate && addMarker(item, 'vatRate')"
-            >
-              <v-chip
-                v-if="item.vatRate"
-                color="primary"
-                size="small"
-                class="priority-chip font-weight-bold"
-                :id="`marker-${item.id}-vatRate`"
-                @click="openMarkerMenu(item, 'vatRate', $event)"
-              >
-                {{ item.vatRate }}
-              </v-chip>
-              
-              <!-- Hover placeholder for empty cell -->
-              <div v-else class="empty-cell-placeholder">
-                <PhPlus :size="14" class="placeholder-icon" />
-              </div>
-            </div>
           </template>
           
           <!-- Dynamic VAT rate columns headers -->
@@ -911,11 +937,6 @@ function handleRemoveMarker(): void {
   width: 140px !important;
 }
 
-.vat-table :deep(.v-data-table__th:nth-child(2)),
-.vat-table :deep(.v-data-table__td:nth-child(2)) {
-  min-width: 40px !important;
-  width: 70px !important;
-}
 
 /* Header bottom separator */
 .vat-table :deep(thead) {
