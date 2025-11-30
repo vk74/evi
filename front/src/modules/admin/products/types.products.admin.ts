@@ -127,7 +127,7 @@ export interface ApiError {
 export type ProductEditorMode = 'creation' | 'edit'
 
 // Product editor sections
-export type ProductEditorSectionId = 'details' | 'options' | 'preferences'
+export type ProductEditorSectionId = 'details' | 'options' | 'preferences' | 'regions-vat'
 
 // Product admin sections
 export type ProductSectionId = 'products-list' | 'product-editor'

@@ -42,7 +42,8 @@
           "details": "details",
           "options": "options",
           "relatedOptions": "related options",
-          "preferences": "preferences"
+          "preferences": "preferences",
+          "regionsVAT": "regions & VAT"
         },
         "languages": {
           "english": "english",
@@ -141,6 +142,27 @@
           "save": "save",
           "refresh": "refresh",
           "activeOptionsCount": "number of paired options: {count}"
+        },
+        "regionsVAT": {
+          "table": {
+            "headers": {
+              "region": "region",
+              "availability": "availability",
+              "vat": "VAT"
+            }
+          },
+          "vatRates": {
+            "none": "-"
+          },
+          "actions": {
+            "cancel": "cancel",
+            "update": "update"
+          },
+          "messages": {
+            "changesCancelled": "Changes cancelled",
+            "changesSaved": "Changes saved successfully",
+            "saveError": "Failed to save changes"
+          }
         },
         "validation": {
           "rulesNotLoaded": "validation rules not loaded",

@@ -42,7 +42,8 @@
           "details": "детали",
           "options": "опции",
           "relatedOptions": "связанные опции",
-          "preferences": "предпочтения"
+          "preferences": "предпочтения",
+          "regionsVAT": "регионы и НДС"
         },
         "languages": {
           "english": "английский",
@@ -141,6 +142,27 @@
           "save": "сохранить",
           "refresh": "обновить",
           "activeOptionsCount": "количество связанных опций: {count}"
+        },
+        "regionsVAT": {
+          "table": {
+            "headers": {
+              "region": "регион",
+              "availability": "доступность",
+              "vat": "НДС"
+            }
+          },
+          "vatRates": {
+            "none": "-"
+          },
+          "actions": {
+            "cancel": "отмена",
+            "update": "обновить"
+          },
+          "messages": {
+            "changesCancelled": "Изменения отменены",
+            "changesSaved": "Изменения успешно сохранены",
+            "saveError": "Не удалось сохранить изменения"
+          }
         },
         "validation": {
           "rulesNotLoaded": "правила валидации не загружены",

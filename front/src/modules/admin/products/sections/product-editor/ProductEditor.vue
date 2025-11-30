@@ -11,6 +11,9 @@
   
   Changes in v1.2.0:
   - Renamed section "options" to "related options" in navigation button and translations
+  
+  Changes in v1.3.0:
+  - Added "regions-vat" section to navigation and component rendering
 -->
 
 <script setup lang="ts">
@@ -22,6 +25,7 @@ import { defineAsyncComponent } from 'vue'
 const ProductEditorDetails = defineAsyncComponent(() => import(/* webpackChunkName: "admin-product-editor-details" */ './ProductEditorDetails.vue'))
 const ProductEditorOptions = defineAsyncComponent(() => import(/* webpackChunkName: "admin-product-editor-options" */ './ProductEditorOptions.vue'))
 const ProductEditorPreferences = defineAsyncComponent(() => import(/* webpackChunkName: "admin-product-editor-preferences" */ './ProductEditorPreferences.vue'))
+const ProductEditorRegionsVAT = defineAsyncComponent(() => import(/* webpackChunkName: "admin-product-editor-regions-vat" */ './ProductEditorRegionsVAT.vue'))
 
 // Initialize stores and i18n
 const { t } = useI18n()
@@ -38,7 +42,7 @@ const pageTitle = computed(() => {
 })
 
 // Section management
-const switchSection = (section: 'details' | 'options' | 'preferences') => {
+const switchSection = (section: 'details' | 'options' | 'preferences' | 'regions-vat') => {
   // Prevent switching to other sections in creation mode
   if (section !== 'details' && isCreationMode.value) {
     return
@@ -74,6 +78,14 @@ const switchSection = (section: 'details' | 'options' | 'preferences') => {
         >
           {{ t('admin.products.editor.sections.preferences') }}
         </v-btn>
+        <v-btn
+          :class="['section-btn', { 'section-active': productsStore.activeEditorSection === 'regions-vat' }]"
+          variant="text"
+          :disabled="isCreationMode"
+          @click="switchSection('regions-vat')"
+        >
+          {{ t('admin.products.editor.sections.regionsVAT') }}
+        </v-btn>
       </div>
 
       <v-spacer />
@@ -94,6 +106,9 @@ const switchSection = (section: 'details' | 'options' | 'preferences') => {
       />
       <ProductEditorPreferences 
         v-else-if="productsStore.activeEditorSection === 'preferences'"
+      />
+      <ProductEditorRegionsVAT 
+        v-else-if="productsStore.activeEditorSection === 'regions-vat'"
       />
     </div>
   </div>
