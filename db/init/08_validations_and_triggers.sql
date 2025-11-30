@@ -1,4 +1,4 @@
--- Version: 1.3.0
+-- Version: 1.4.0
 -- Description: Database validation functions and triggers for business logic enforcement.
 -- Backend file: 08_validations_and_triggers.sql
 -- 
@@ -20,6 +20,9 @@
 --
 -- Changes in v1.3.0:
 -- - Added trigger for automatic updated_at update on app.regions table
+--
+-- Changes in v1.4.0:
+-- - Added trigger for automatic updated_at update on app.regions_vat table
 
 -- ============================================
 -- Regional Settings Validation
@@ -121,6 +124,14 @@ EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 DO $$ BEGIN
   CREATE TRIGGER trg_regions_updated_at
       BEFORE UPDATE ON app.regions
+      FOR EACH ROW
+      EXECUTE FUNCTION app.update_updated_at_column();
+EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+
+-- Apply trigger to regions_vat
+DO $$ BEGIN
+  CREATE TRIGGER trg_regions_vat_updated_at
+      BEFORE UPDATE ON app.regions_vat
       FOR EACH ROW
       EXECUTE FUNCTION app.update_updated_at_column();
 EXCEPTION WHEN duplicate_object THEN NULL; END $$;

@@ -1,4 +1,4 @@
--- Version: 1.5.2
+-- Version: 1.6.0
 -- Description: Create all application tables, functions, and triggers.
 -- Backend file: 04_tables.sql
 -- Updated: mobile_phone_number -> mobile_phone field name
@@ -14,6 +14,8 @@
 -- - Added FOREIGN KEY constraint fk_price_lists_info_region on app.price_lists_info.region -> app.regions.region_name with ON DELETE SET NULL
 -- Changes in v1.5.2:
 -- - Added FOREIGN KEY constraint fk_users_location_region on app.users.location -> app.regions.region_name with ON DELETE SET NULL
+-- Changes in v1.6.0:
+-- - Added app.regions_vat table for storing VAT rate bindings to regions with priorities
 
 -- ===========================================
 -- Helper Functions
@@ -258,6 +260,36 @@ ADD CONSTRAINT fk_users_location_region
 
 COMMENT ON CONSTRAINT fk_users_location_region ON app.users IS 
     'Foreign key constraint: app.users.location references app.regions.region_name. When a region is deleted, user locations are automatically set to NULL.';
+
+-- Regions VAT bindings table
+CREATE TABLE IF NOT EXISTS app.regions_vat (
+    id SERIAL PRIMARY KEY,
+    region_name VARCHAR(255) NOT NULL,
+    vat_rate SMALLINT NOT NULL,
+    priority INTEGER NOT NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ,
+    CONSTRAINT fk_regions_vat_region_name 
+        FOREIGN KEY (region_name) 
+        REFERENCES app.regions(region_name) 
+        ON DELETE CASCADE,
+    CONSTRAINT chk_vat_rate_range 
+        CHECK (vat_rate >= 0 AND vat_rate <= 99),
+    CONSTRAINT chk_priority_positive 
+        CHECK (priority >= 1),
+    CONSTRAINT unique_region_vat_rate 
+        UNIQUE (region_name, vat_rate)
+);
+
+COMMENT ON TABLE app.regions_vat IS 'VAT rate bindings to regions with priorities';
+COMMENT ON COLUMN app.regions_vat.id IS 'Unique identifier for the VAT region binding';
+COMMENT ON COLUMN app.regions_vat.region_name IS 'Region name (references app.regions.region_name)';
+COMMENT ON COLUMN app.regions_vat.vat_rate IS 'VAT rate percentage (0-99)';
+COMMENT ON COLUMN app.regions_vat.priority IS 'Priority order for applying this VAT rate (1 and higher)';
+COMMENT ON COLUMN app.regions_vat.created_at IS 'Timestamp when binding was created';
+COMMENT ON COLUMN app.regions_vat.updated_at IS 'Timestamp when binding was last updated';
+COMMENT ON CONSTRAINT fk_regions_vat_region_name ON app.regions_vat IS 
+    'Foreign key to app.regions.region_name with CASCADE delete - when region is deleted, all VAT bindings are automatically deleted';
 
 -- Ensure product_code is suitable for FK (not null + unique)
 ALTER TABLE app.products
