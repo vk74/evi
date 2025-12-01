@@ -1,4 +1,4 @@
--- Version: 1.6.0
+-- Version: 1.7.0
 -- Description: Create all application tables, functions, and triggers.
 -- Backend file: 04_tables.sql
 -- Updated: mobile_phone_number -> mobile_phone field name
@@ -16,6 +16,8 @@
 -- - Added FOREIGN KEY constraint fk_users_location_region on app.users.location -> app.regions.region_name with ON DELETE SET NULL
 -- Changes in v1.6.0:
 -- - Added app.regions_vat table for storing VAT rate bindings to regions with priorities
+-- Changes in v1.7.0:
+-- - Added app.taxable_categories table for application taxable categories management
 
 -- ===========================================
 -- Helper Functions
@@ -248,6 +250,20 @@ COMMENT ON COLUMN app.regions.region_id IS 'Unique identifier for the region (au
 COMMENT ON COLUMN app.regions.region_name IS 'Region name (unique, matches values from app.regions setting)';
 COMMENT ON COLUMN app.regions.created_at IS 'Timestamp when region was created';
 COMMENT ON COLUMN app.regions.updated_at IS 'Timestamp when region was last updated';
+
+-- Taxable categories reference table
+CREATE TABLE IF NOT EXISTS app.taxable_categories (
+    category_id SERIAL PRIMARY KEY,
+    category_name VARCHAR(255) NOT NULL UNIQUE,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ
+);
+
+COMMENT ON TABLE app.taxable_categories IS 'Application taxable categories reference table - stores all available tax categories';
+COMMENT ON COLUMN app.taxable_categories.category_id IS 'Unique identifier for the category (auto-increment)';
+COMMENT ON COLUMN app.taxable_categories.category_name IS 'Category name (unique)';
+COMMENT ON COLUMN app.taxable_categories.created_at IS 'Timestamp when category was created';
+COMMENT ON COLUMN app.taxable_categories.updated_at IS 'Timestamp when category was last updated';
 
 -- Add foreign key constraint for app.users.location -> app.regions.region_name
 -- This constraint ensures data integrity: user locations must reference valid regions
