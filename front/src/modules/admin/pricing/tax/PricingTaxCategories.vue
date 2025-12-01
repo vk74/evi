@@ -380,8 +380,8 @@ interface TaxableCategoryTableHeader {
 }
 
 const taxableCategoriesTableHeaders = computed<TaxableCategoryTableHeader[]>(() => [
-  { title: 'category', key: 'category', width: '460px' },
-  { title: 'region', key: 'region', width: '274px', sortable: false },
+  { title: 'category', key: 'category', width: '300px' },
+  { title: 'region', key: 'region', width: '190px', sortable: false },
   { title: 'actions', key: 'actions', width: '100px', sortable: false }
 ]);
 
