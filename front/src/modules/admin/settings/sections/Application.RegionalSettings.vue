@@ -1,5 +1,5 @@
 <!--
-  Version: 1.9.0
+  Version: 1.10.0
   File: Application.RegionalSettings.vue - frontend file
   Description: Regional settings configuration including timezone, country, fallback language, and time format
   Purpose: Configure regional application settings with full backend integration and settings store
@@ -35,6 +35,12 @@
   - Auto-save on blur/Enter for region name edits
   - Removed UPDATE/CANCEL buttons for regions
   - Regions block is now standalone and ready for extraction
+  
+  Changes in v1.10.0:
+  - Unified regions update service: replaced separate create/update/delete services with single batch update service
+  - Updated updateRegionsChanges() to use new unified updateRegions() service
+  - All operations (create, update, delete) now handled in one API call
+  - Follows same pattern as taxable categories in PricingTax.vue
 -->
 
 <script setup lang="ts">
@@ -48,9 +54,7 @@ import DataLoading from '@/core/ui/loaders/DataLoading.vue';
 import { PhCaretUpDown, PhWarningCircle, PhPlus, PhTrash } from '@phosphor-icons/vue';
 import type { Region } from '@/modules/admin/settings/types.admin.regions';
 import { fetchAllRegions } from '@/modules/admin/settings/service.admin.fetch.regions';
-import { createRegion } from '@/modules/admin/settings/service.admin.create.region';
-import { updateRegion } from '@/modules/admin/settings/service.admin.update.region';
-import { deleteRegions } from '@/modules/admin/settings/service.admin.delete.regions';
+import { updateRegions } from '@/modules/admin/settings/service.admin.update.regions';
 
 // Section path identifier
 const section_path = 'Application.RegionalSettings';
@@ -629,30 +633,38 @@ async function updateRegionsChanges(): Promise<void> {
       }
     });
     
-    // Find regions to create (new regions with non-empty names)
-    const regionsToCreate: Region[] = regions.value.filter(r => 
-      isNewRegion(r.region_id) && r.region_name && r.region_name.trim().length > 0
-    );
-    
-    // Find regions to update (existing regions with changed names)
-    const regionsToUpdate: Region[] = regions.value.filter(current => {
-      if (isNewRegion(current.region_id)) return false;
-      
-      const orig = original.regions.find(r => r.region_id === current.region_id);
-      if (!orig) return false;
-      
-      return orig.region_name !== current.region_name && 
-             current.region_name && 
-             current.region_name.trim().length > 0;
+    // Prepare regions array for API (full table state - all current regions)
+    const regionsForUpdate: Array<{ region_id?: number; region_name: string; _delete?: boolean }> = regions.value.map(region => {
+      // For new regions (negative ID), don't include region_id
+      if (isNewRegion(region.region_id)) {
+        return {
+          region_name: region.region_name.trim()
+        };
+      } else {
+        // For existing regions, always include region_id and region_name
+        return {
+          region_id: region.region_id,
+          region_name: region.region_name.trim()
+        };
+      }
     });
     
-    // Find regions to delete (regions in original but not in current)
-    const regionsToDelete: number[] = original.regions
-      .filter(orig => !regions.value.find(r => r.region_id === orig.region_id))
-      .map(r => r.region_id);
+    // Add deleted regions (regions in original but not in current) with _delete flag
+    const currentRegionIds = new Set(regions.value.map(r => r.region_id));
+    original.regions.forEach(origRegion => {
+      if (!currentRegionIds.has(origRegion.region_id)) {
+        regionsForUpdate.push({
+          region_id: origRegion.region_id,
+          region_name: origRegion.region_name,
+          _delete: true
+        });
+      }
+    });
     
-    // Validate new regions
-    for (const region of regionsToCreate) {
+    // Validate regions before sending
+    for (const region of regionsForUpdate) {
+      if (region._delete) continue; // Skip validation for deleted regions
+      
       const trimmedName = region.region_name.trim();
       if (trimmedName.length === 0) {
         throw new Error('Название региона не может быть пустым');
@@ -668,51 +680,8 @@ async function updateRegionsChanges(): Promise<void> {
       }
     }
     
-    // Validate updated regions
-    for (const region of regionsToUpdate) {
-      const trimmedName = region.region_name.trim();
-      if (trimmedName.length === 0) {
-        throw new Error('Название региона не может быть пустым');
-      }
-      if (trimmedName.length > 100) {
-        throw new Error('Название региона не может превышать 100 символов');
-      }
-      
-      // Validate format (only letters and digits)
-      const formatValidation = validateRegionNameFormat(trimmedName);
-      if (!formatValidation.isValid && formatValidation.error) {
-        throw new Error(formatValidation.error);
-      }
-    }
-    
-    // Execute all operations
-    const createPromises = regionsToCreate.map(region => 
-      createRegion({ region_name: region.region_name.trim() })
-    );
-    
-    const updatePromises = regionsToUpdate.map(region =>
-      updateRegion({
-        region_id: region.region_id,
-        region_name: region.region_name.trim()
-      })
-    );
-    
-    // Wait for all create and update operations
-    const results = await Promise.all([...createPromises, ...updatePromises]);
-    
-    // Check for errors in create/update operations
-    const errors = results.filter(r => !r.success);
-    if (errors.length > 0) {
-      throw new Error(errors.map(e => e.message).join('; '));
-    }
-    
-    // Delete regions if any
-    if (regionsToDelete.length > 0) {
-      const deleteResponse = await deleteRegions({ region_ids: regionsToDelete });
-      if (!deleteResponse.success) {
-        throw new Error(deleteResponse.message || 'Failed to delete regions');
-      }
-    }
+    // Send to backend
+    await updateRegions(regionsForUpdate);
     
     // Reload regions to get fresh data from server
     await loadRegions();

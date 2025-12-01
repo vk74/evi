@@ -77,9 +77,7 @@ import fetchUserGroupsController from './org/userEditor/controller.fetch.user.gr
 import removeUserFromGroupsController from './org/userEditor/controller.remove.user.from.groups';
 import getUserLocationController from '../account/controller.get.user.location';
 import fetchAllRegionsController from './settings/controller.admin.fetch.regions';
-import createRegionController from './settings/controller.admin.create.region';
-import updateRegionController from './settings/controller.admin.update.region';
-import deleteRegionsController from './settings/controller.admin.delete.regions';
+import updateRegionsController from './settings/controller.admin.update.regions';
 import getRegionsListController from '../../core/services/user-location-selection/controller.get.regions.list';
 import updateUserLocationControllerNew from '../../core/services/user-location-selection/controller.update.user.location';
 
@@ -179,9 +177,7 @@ router.get('/api/admin/pricing/item-types', checkRateLimit, checkRequestSecurity
 
 // Routes for Settings Admin - Regions
 router.get('/api/admin/settings/regions/fetchall', checkRateLimit, checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, fetchAllRegionsController);
-router.post('/api/admin/settings/regions/create', checkRateLimit, checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, createRegionController);
-router.post('/api/admin/settings/regions/update', checkRateLimit, checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, updateRegionController);
-router.post('/api/admin/settings/regions/delete', checkRateLimit, checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, deleteRegionsController);
+router.post('/api/admin/settings/regions/update', checkRateLimit, checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, updateRegionsController);
 
 // Export using ES modules syntax
 export default router;
