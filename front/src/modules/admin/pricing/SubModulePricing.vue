@@ -5,9 +5,9 @@ Frontend file that provides pricing management interface for admin users.
 Filename: SubModulePricing.vue
 
 Changes in v1.5.0:
-- Added VAT section above currencies section
-- Imported PhPercent icon for VAT section
-- Added PricingVAT async component
+- Added Tax section above currencies section
+- Imported PhPercent icon for Tax section
+- Added PricingTax async component
 -->
 <script setup lang="ts">
 import { computed, defineAsyncComponent } from 'vue'
@@ -28,7 +28,7 @@ import {
 // Async components for lazy loading
 const PriceLists = defineAsyncComponent(() => import('./PriceLists/PriceLists.vue'))
 const PriceListEditor = defineAsyncComponent(() => import('./PriceListEditor/PriceListEditor.vue'))
-const PricingVAT = defineAsyncComponent(() => import('./vat/PricingVAT.vue'))
+const PricingTax = defineAsyncComponent(() => import('./tax/PricingTax.vue'))
 const Currencies = defineAsyncComponent(() => import('./currencies/Currencies.vue'))
 const PricingSettings = defineAsyncComponent(() => import('./settings/PricingSettings.vue'))
 
@@ -49,8 +49,8 @@ const sections = computed((): Section[] => [
     icon: 'PhNotePencil'
   },
   {
-    id: 'vat',
-    title: t('admin.pricing.sections.vat'),
+    id: 'tax',
+    title: t('admin.pricing.sections.tax'),
     icon: 'PhPercent'
   },
   {
@@ -133,7 +133,7 @@ const getIconComponent = (iconName: string) => {
     <div class="content-panel">
       <PriceLists v-if="activeSection === 'price-lists'" class="pa-0" />
       <PriceListEditor v-if="activeSection === 'price-list-editor'" class="pa-0" />
-      <PricingVAT v-if="activeSection === 'vat'" class="pa-0" />
+      <PricingTax v-if="activeSection === 'tax'" class="pa-0" />
       <Currencies v-if="activeSection === 'currencies'" class="pa-0" />
       <PricingSettings v-if="activeSection === 'settings'" class="pa-4" />
     </div>

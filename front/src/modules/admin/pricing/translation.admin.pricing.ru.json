@@ -4,7 +4,7 @@
       "sections": {
         "priceLists": "прайс-листы",
         "priceListEditor": "редактор прайс-листа",
-        "vat": "ндс",
+        "tax": "налог",
         "currencies": "список валют",
         "settings": "настройки"
       },
@@ -183,7 +183,7 @@
           "typeService": "сервис"
         }
       },
-      "vat": {
+      "tax": {
         "table": {
           "headers": {
             "region": "регион"

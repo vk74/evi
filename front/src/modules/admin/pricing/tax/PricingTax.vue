@@ -1,17 +1,17 @@
 <!--
 Version: 2.0.0
-VAT settings component for pricing administration module.
-Frontend file that displays regions with VAT rates in a table format.
-Filename: PricingVAT.vue
+Tax settings component for pricing administration module.
+Frontend file that displays regions with tax rates in a table format.
+Filename: PricingTax.vue
 
 Changes in v1.1.0:
-- Added "+ ADD COLUMN" button to add new VAT rate columns
+- Added "+ ADD COLUMN" button to add new tax rate columns
 - Added editable column headers with validation (1-99)
 - Fixed chip design to match ProductsList.vue style
 - Increased "0%" column width to 40px
 
 Changes in v1.2.0:
-- Adjusted column widths: status +40px, region +30px, vatRate +30px
+- Adjusted column widths: status +40px, region +30px, taxRate +30px
 - Ensured settings-group block wraps table with proper padding
 
 Changes in v1.3.0:
@@ -55,21 +55,21 @@ Changes in v1.8.0:
 - Regions are now loaded from app.regions table via /api/admin/pricing/regions/fetchall endpoint
 
 Changes in v1.9.0:
-- Removed unified VAT rates toggle and all related functionality
-- Removed isUnifiedVat ref and unifiedRegion ref
-- Removed resetRegionMarkers function and watch(isUnifiedVat) block
-- Removed unified region handling from all functions (loadRegions, createVATSnapshot, addVATRateColumn, deleteVATRateColumn, updateMarkerPriority, cancelChanges, tableItems, hasPendingChanges, handleRemoveMarker)
-- Removed v-switch component for unified VAT from template
-- Updated VATDataSnapshot interface to remove unifiedRegion and isUnifiedVat fields
+- Removed unified tax rates toggle and all related functionality
+- Removed isUnifiedTax ref and unifiedRegion ref
+- Removed resetRegionMarkers function and watch(isUnifiedTax) block
+- Removed unified region handling from all functions (loadRegions, createTaxSnapshot, addTaxRateColumn, deleteTaxRateColumn, updateMarkerPriority, cancelChanges, tableItems, hasPendingChanges, handleRemoveMarker)
+- Removed v-switch component for unified tax from template
+- Updated TaxDataSnapshot interface to remove unifiedRegion and isUnifiedTax fields
 - Removed watch import from vue as it's no longer needed
 
 Changes in v2.0.0:
 - Integrated with app.regions_vat table via new backend API endpoints
 - Removed hardcoded 0% column - user can create it via ADD COLUMN if needed
-- Removed vatRate field from VATRegion interface
+- Removed taxRate field from TaxRegion interface
 - Updated loadRegions() to fetch from regions_vat and app.regions tables
 - Updated updateChanges() to save all data including 0% if column created
-- Removed all vatRate handling from functions (getNextPriority, removeMarker, updateMarkerPriority, hasPendingChanges, getAllColumnIds)
+- Removed all taxRate handling from functions (getNextPriority, removeMarker, updateMarkerPriority, hasPendingChanges, getAllColumnIds)
 - Removed service.fetch.regions.ts dependency, now uses service.fetch.regionsVAT.ts
 -->
 <script setup lang="ts">
@@ -551,7 +551,7 @@ interface TableHeader {
 
 const vatTableHeaders = computed<TableHeader[]>(() => {
   const headers: TableHeader[] = [
-    { title: t('admin.pricing.vat.table.headers.region'), key: 'region', width: '140px' }
+    { title: t('admin.pricing.tax.table.headers.region'), key: 'region', width: '140px' }
   ];
   
   // Add dynamic VAT rate columns
@@ -640,7 +640,7 @@ const hasPendingChanges = computed(() => {
 
 // Initialize component
 onMounted(async () => {
-  console.log('PricingVAT component initialized');
+  console.log('PricingTax component initialized');
   await loadRegions();
 });
 /**
@@ -660,7 +660,7 @@ function handleRemoveMarker(): void {
 <template>
   <div class="vat-container pa-4">
     <h2 class="text-h6 mb-4">
-      {{ t('admin.pricing.sections.vat') }}
+      {{ t('admin.pricing.sections.tax') }}
     </h2>
     
     <!-- Loading indicator -->
@@ -712,7 +712,7 @@ function handleRemoveMarker(): void {
           <template #prepend>
             <PhPlus :size="16" />
           </template>
-          {{ t('admin.pricing.vat.actions.addColumn').toUpperCase() }}
+          {{ t('admin.pricing.tax.actions.addColumn').toUpperCase() }}
         </v-btn>
         <v-btn
           color="grey"
@@ -721,7 +721,7 @@ function handleRemoveMarker(): void {
           class="me-2"
           @click="cancelChanges"
         >
-          {{ t('admin.pricing.vat.actions.cancel').toUpperCase() }}
+          {{ t('admin.pricing.tax.actions.cancel').toUpperCase() }}
         </v-btn>
         <v-btn
           color="teal"
@@ -732,7 +732,7 @@ function handleRemoveMarker(): void {
           :disabled="!hasPendingChanges"
           @click="updateChanges"
         >
-          {{ t('admin.pricing.vat.actions.update').toUpperCase() }}
+          {{ t('admin.pricing.tax.actions.update').toUpperCase() }}
         </v-btn>
       </div>
       

@@ -15,7 +15,7 @@
  * - Added region field to PriceListSummary, PriceListFull, CreatePriceListRequest, and UpdatePriceListRequest
  * 
  * Changes in v1.3.8:
- * - Added 'vat' to PricingSectionId type union
+ * - Added 'tax' to PricingSectionId type union (renamed from 'vat')
  */
 
 // Pricing section interface for menu navigation
@@ -27,7 +27,7 @@ export interface Section {
 }
 
 // Pricing admin sections
-export type PricingSectionId = 'price-lists' | 'price-list-editor' | 'vat' | 'currencies' | 'settings'
+export type PricingSectionId = 'price-lists' | 'price-list-editor' | 'tax' | 'currencies' | 'settings'
 
 // Editor modes
 export type PriceListEditorMode = 'creation' | 'edit'

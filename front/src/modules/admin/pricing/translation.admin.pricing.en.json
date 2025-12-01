@@ -4,7 +4,7 @@
       "sections": {
         "priceLists": "price lists",
         "priceListEditor": "price list editor",
-        "vat": "vat",
+        "tax": "tax",
         "currencies": "currencies list",
         "settings": "settings"
       },
@@ -183,7 +183,7 @@
           "typeService": "service"
         }
       },
-      "vat": {
+      "tax": {
         "table": {
           "headers": {
             "region": "region"
