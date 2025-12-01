@@ -1,9 +1,17 @@
 <!--
   File: ProductEditorRegionsVAT.vue
-  Version: 1.0.0
+  Version: 1.2.0
   Description: Component for managing product regional availability and VAT rates
   Purpose: Provides interface for managing product availability by region and applicable VAT rates
   Frontend file - ProductEditorRegionsVAT.vue
+
+  Changes in v1.1.0:
+  - Increased VAT column width by 25px
+  - Replaced availability checkbox with Phosphor icons (Square/CheckSquare)
+  - Updated VAT dropdown options to display "Priority - Rate %"
+
+  Changes in v1.2.0:
+  - Further increased VAT column width to 150px to prevent dropdown overflow
 -->
 
 <script setup lang="ts">
@@ -11,7 +19,7 @@ import { ref, computed, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useProductsAdminStore } from '../../state.products.admin'
 import { useUiStore } from '@/core/state/uistate'
-import { PhCaretUpDown } from '@phosphor-icons/vue'
+import { PhCaretUpDown, PhCheckSquare, PhSquare } from '@phosphor-icons/vue'
 
 // Types
 interface RegionVATRow {
@@ -57,7 +65,11 @@ const productName = computed(() => {
 })
 
 // Available VAT rates (mock data)
-const availableVATRates = [0, 10, 20]
+const availableVATRates = [
+  { priority: 1, rate: 0 },
+  { priority: 2, rate: 10 },
+  { priority: 3, rate: 20 }
+]
 
 // Mock regions data
 const mockRegions = ['Moscow', 'Saint Petersburg', 'Novosibirsk', 'Yekaterinburg', 'Kazan']
@@ -75,16 +87,16 @@ const isSaving = ref(false)
 const headers = computed<TableHeader[]>(() => [
   { title: t('admin.products.editor.regionsVAT.table.headers.region'), key: 'region', width: '250px', sortable: false },
   { title: t('admin.products.editor.regionsVAT.table.headers.availability'), key: 'availability', width: '100px', sortable: false },
-  { title: t('admin.products.editor.regionsVAT.table.headers.vat'), key: 'vat', width: '100px', sortable: false }
+  { title: t('admin.products.editor.regionsVAT.table.headers.vat'), key: 'vat', width: '150px', sortable: false }
 ])
 
 // VAT rate options for select
 const vatRateOptions = computed(() => {
   return [
     { title: t('admin.products.editor.regionsVAT.vatRates.none') || '-', value: null },
-    ...availableVATRates.map(rate => ({
-      title: `${rate}%`,
-      value: rate
+    ...availableVATRates.map(item => ({
+      title: `${item.priority} - ${item.rate}%`,
+      value: item.rate
     }))
   ]
 })
@@ -268,13 +280,15 @@ onMounted(() => {
               <!-- Availability column -->
               <template #[`item.availability`]="{ item }">
                 <div class="availability-cell">
-                  <v-checkbox
-                    v-model="item.availability"
-                    density="compact"
-                    hide-details
-                    color="teal"
-                    class="availability-checkbox"
-                  />
+                  <v-btn
+                    icon
+                    variant="text"
+                    density="comfortable"
+                    @click="item.availability = !item.availability"
+                  >
+                    <PhCheckSquare v-if="item.availability" :size="18" color="teal" />
+                    <PhSquare v-else :size="18" color="grey" />
+                  </v-btn>
                 </div>
               </template>
 
@@ -455,38 +469,6 @@ onMounted(() => {
   height: 100% !important;
   min-height: 40px !important;
   padding: 0 !important;
-}
-
-.availability-checkbox {
-  display: flex !important;
-  visibility: visible !important;
-  opacity: 1 !important;
-  width: auto !important;
-  height: auto !important;
-  margin: 0 !important;
-  padding: 0 !important;
-}
-
-.availability-checkbox :deep(.v-selection-control) {
-  min-width: 24px !important;
-  min-height: 24px !important;
-  width: auto !important;
-  height: auto !important;
-  display: flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-  margin: 0 !important;
-  padding: 0 !important;
-}
-
-.availability-checkbox :deep(.v-checkbox-btn) {
-  width: 24px !important;
-  height: 24px !important;
-  min-width: 24px !important;
-  min-height: 24px !important;
-  display: block !important;
-  visibility: visible !important;
-  opacity: 1 !important;
 }
 
 .regions-vat-table :deep(.v-data-table__td) {
