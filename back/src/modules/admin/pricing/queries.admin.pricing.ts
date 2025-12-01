@@ -1,5 +1,5 @@
     /**
-     * version: 1.5.0
+     * version: 1.6.0
      * SQL queries for pricing administration module.
      * Contains parameterized queries related to pricing (currencies and price lists).
      * Includes integrity check queries and queries for event payload data.
@@ -26,6 +26,10 @@
      * Changes in v1.5.0:
      * - Added fetchRegionsVAT, deleteAllRegionsVAT, insertRegionsVAT queries for regions_vat table management
      * - Removed fetchRegions query (moved to settings module)
+     * 
+     * Changes in v1.6.0:
+     * - Added fetchAllTaxableCategories, insertTaxableCategory, updateTaxableCategory, deleteTaxableCategories queries for taxable_categories table management
+     * - Added checkTaxableCategoryNameExists and checkTaxableCategoryNameExistsExcluding queries for validation
      */
 
 export const queries = {
@@ -500,6 +504,78 @@ export const queries = {
         INSERT INTO app.regions_vat (region_name, vat_rate, priority)
         VALUES ($1, $2, $3)
         RETURNING id
+    `,
+
+    // ============================================
+    // Taxable Categories Queries
+    // ============================================
+
+    /**
+     * Fetch all taxable categories
+     * No parameters
+     */
+    fetchAllTaxableCategories: `
+        SELECT 
+            category_id,
+            category_name,
+            created_at,
+            updated_at
+        FROM app.taxable_categories
+        ORDER BY category_name ASC
+    `,
+
+    /**
+     * Insert a new taxable category
+     * Parameters: [category_name]
+     * Note: category_id is generated automatically by database default value
+     */
+    insertTaxableCategory: `
+        INSERT INTO app.taxable_categories (category_name)
+        VALUES ($1)
+        RETURNING category_id, category_name, created_at, updated_at
+    `,
+
+    /**
+     * Update a taxable category by ID
+     * Parameters: [category_name, category_id]
+     */
+    updateTaxableCategory: `
+        UPDATE app.taxable_categories
+        SET category_name = $1,
+            updated_at = NOW()
+        WHERE category_id = $2
+        RETURNING category_id, category_name, created_at, updated_at
+    `,
+
+    /**
+     * Delete taxable categories by array of IDs
+     * Parameters: [category_ids array]
+     */
+    deleteTaxableCategories: `
+        DELETE FROM app.taxable_categories
+        WHERE category_id = ANY($1::integer[])
+        RETURNING category_id, category_name
+    `,
+
+    /**
+     * Check if taxable category name already exists
+     * Parameters: [category_name]
+     */
+    checkTaxableCategoryNameExists: `
+        SELECT category_id, category_name
+        FROM app.taxable_categories
+        WHERE LOWER(category_name) = LOWER($1)
+    `,
+
+    /**
+     * Check if taxable category name exists excluding a specific category ID
+     * Parameters: [category_name, exclude_category_id]
+     */
+    checkTaxableCategoryNameExistsExcluding: `
+        SELECT category_id, category_name
+        FROM app.taxable_categories
+        WHERE LOWER(category_name) = LOWER($1)
+        AND category_id != $2
     `
 };
 

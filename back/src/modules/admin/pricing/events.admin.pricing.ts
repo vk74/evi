@@ -1,11 +1,14 @@
 /**
- * version: 1.3.0
+ * version: 1.4.0
  * Event reference catalog for admin pricing operations (backend).
  * Defines events for pricing management operations (currencies and price lists).
  * File: events.admin.pricing.ts (backend)
  * 
  * Changes in v1.3.0:
  * - Added events for regionsVAT operations (fetch, update, transaction)
+ * 
+ * Changes in v1.4.0:
+ * - Added events for taxableCategories operations (fetch, update, transaction)
  */
 
 import { EventCollection } from '../../../core/eventBus/types.events'
@@ -814,6 +817,82 @@ export const EVENTS_ADMIN_PRICING: EventCollection = {
     eventType: 'app',
     severity: 'warning',
     eventMessage: 'Error during regions VAT update operation',
+    version: '1.0.0'
+  },
+
+  // ========== Taxable Categories - Fetch Events ==========
+  
+  'taxableCategories.fetch.success': {
+    eventName: 'adminPricing.taxableCategories.fetch.success',
+    source: 'admin-pricing',
+    eventType: 'app',
+    severity: 'debug',
+    eventMessage: 'Taxable categories fetched successfully',
+    version: '1.0.0'
+  },
+
+  'taxableCategories.fetch.database_error': {
+    eventName: 'adminPricing.taxableCategories.fetch.database_error',
+    source: 'admin-pricing',
+    eventType: 'app',
+    severity: 'warning',
+    eventMessage: 'Database error during taxable categories fetch',
+    version: '1.0.0'
+  },
+
+  'taxableCategories.fetch.error': {
+    eventName: 'adminPricing.taxableCategories.fetch.error',
+    source: 'admin-pricing',
+    eventType: 'app',
+    severity: 'warning',
+    eventMessage: 'Error during taxable categories fetch operation',
+    version: '1.0.0'
+  },
+
+  // ========== Taxable Categories - Update Events ==========
+  
+  'taxableCategories.update.transaction.rollback': {
+    eventName: 'adminPricing.taxableCategories.update.transaction.rollback',
+    source: 'admin-pricing',
+    eventType: 'app',
+    severity: 'warning',
+    eventMessage: 'Taxable categories update transaction rolled back',
+    version: '1.0.0'
+  },
+
+  'taxableCategories.update.success': {
+    eventName: 'adminPricing.taxableCategories.update.success',
+    source: 'admin-pricing',
+    eventType: 'app',
+    severity: 'info',
+    eventMessage: 'Taxable categories updated successfully',
+    version: '1.0.0'
+  },
+
+  'taxableCategories.update.validation.error': {
+    eventName: 'adminPricing.taxableCategories.update.validation.error',
+    source: 'admin-pricing',
+    eventType: 'app',
+    severity: 'error',
+    eventMessage: 'Validation error in taxable categories update payload',
+    version: '1.0.0'
+  },
+
+  'taxableCategories.update.database_error': {
+    eventName: 'adminPricing.taxableCategories.update.database_error',
+    source: 'admin-pricing',
+    eventType: 'app',
+    severity: 'warning',
+    eventMessage: 'Database error during taxable categories update',
+    version: '1.0.0'
+  },
+
+  'taxableCategories.update.error': {
+    eventName: 'adminPricing.taxableCategories.update.error',
+    source: 'admin-pricing',
+    eventType: 'app',
+    severity: 'warning',
+    eventMessage: 'Error during taxable categories update operation',
     version: '1.0.0'
   }
 }

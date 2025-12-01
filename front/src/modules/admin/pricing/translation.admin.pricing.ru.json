@@ -193,6 +193,21 @@
           "addColumn": "добавить колонку",
           "cancel": "отмена",
           "update": "обновить"
+        },
+        "taxableCategories": {
+          "title": "налогооблагаемые категории",
+          "placeholder": "введите название категории",
+          "actions": {
+            "add": "добавить",
+            "cancel": "отмена",
+            "update": "обновить"
+          },
+          "table": {
+            "headers": {
+              "category": "категория",
+              "actions": "действия"
+            }
+          }
         }
       },
       "settings": {

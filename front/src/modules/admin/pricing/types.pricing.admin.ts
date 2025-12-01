@@ -1,6 +1,6 @@
 /**
  * @file types.pricing.admin.ts
- * Version: 1.3.8
+ * Version: 1.3.9
  * Type definitions for pricing administration module.
  * Frontend types for pricing admin functionality.
  * File: types.pricing.admin.ts (frontend)
@@ -16,6 +16,9 @@
  * 
  * Changes in v1.3.8:
  * - Added 'tax' to PricingSectionId type union (renamed from 'vat')
+ * 
+ * Changes in v1.3.9:
+ * - Added TaxableCategory, FetchTaxableCategoriesResult, UpdateTaxableCategoriesRequest, UpdateTaxableCategoriesResult types for taxable_categories management
  */
 
 // Pricing section interface for menu navigation
@@ -306,6 +309,43 @@ export interface UpdatePriceListItemsResult {
     totalErrors: number
     updatedItems: string[]
     errorItems: string[]
+  }
+}
+
+// ============================================
+// Taxable Categories Types
+// ============================================
+
+// Taxable Category type aligned with backend DTO
+export interface TaxableCategory {
+  category_id: number
+  category_name: string
+  created_at: Date
+  updated_at: Date | null
+}
+
+// Fetch taxable categories result
+export interface FetchTaxableCategoriesResult {
+  success: boolean
+  message: string
+  data?: TaxableCategory[]
+}
+
+// Update taxable categories request (full table state)
+export interface UpdateTaxableCategoriesRequest {
+  categories: Array<{
+    category_id?: number // optional, negative for new categories
+    category_name: string
+    _delete?: boolean // flag for deletion
+  }>
+}
+
+// Update taxable categories result
+export interface UpdateTaxableCategoriesResult {
+  success: boolean
+  message: string
+  data?: {
+    totalRecords: number
   }
 }
 

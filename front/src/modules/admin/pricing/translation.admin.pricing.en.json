@@ -193,6 +193,21 @@
           "addColumn": "add column",
           "cancel": "cancel",
           "update": "update"
+        },
+        "taxableCategories": {
+          "title": "taxable categories",
+          "placeholder": "enter category name",
+          "actions": {
+            "add": "add",
+            "cancel": "cancel",
+            "update": "update"
+          },
+          "table": {
+            "headers": {
+              "category": "category",
+              "actions": "actions"
+            }
+          }
         }
       },
       "settings": {
