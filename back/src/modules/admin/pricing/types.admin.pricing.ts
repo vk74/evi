@@ -1,5 +1,5 @@
 /**
- * version: 1.6.0
+ * version: 1.7.0
  * Backend types for pricing administration module.
  * Defines DTOs for currencies, price lists and other pricing-related entities.
  * File: types.admin.pricing.ts (backend)
@@ -22,6 +22,9 @@
  * 
  * Changes in v1.6.0:
  * - Added TaxableCategoryDto, FetchTaxableCategoriesResponse, UpdateTaxableCategoriesRequest, UpdateTaxableCategoriesResponse types for taxable_categories management
+ * 
+ * Changes in v1.7.0:
+ * - Added region field to TaxableCategoryDto and UpdateTaxableCategoriesRequest for region bindings
  */
 
 // ============================================
@@ -73,6 +76,7 @@ export interface UpdateRegionsVATResponse {
 export interface TaxableCategoryDto {
     category_id: number
     category_name: string
+    region: string | null
     created_at: Date
     updated_at: Date | null
 }
@@ -89,6 +93,7 @@ export interface UpdateTaxableCategoriesRequest {
     categories: Array<{
         category_id?: number // optional, negative for new categories
         category_name: string
+        region?: string | null // region name for binding
         _delete?: boolean // flag for deletion
     }>
 }

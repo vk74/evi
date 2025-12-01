@@ -198,7 +198,7 @@
           "title": "taxable categories",
           "placeholder": "enter category name",
           "actions": {
-            "add": "add",
+            "add": "add category",
             "cancel": "cancel",
             "update": "update"
           },

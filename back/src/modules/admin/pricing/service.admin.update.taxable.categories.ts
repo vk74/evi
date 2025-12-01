@@ -1,10 +1,16 @@
 /**
- * version: 1.0.0
+ * version: 1.1.0
  * Service to update taxable categories for pricing admin module (backend).
  * Executes batch operations: create new, update existing, delete removed categories in a single transaction.
  * Includes validation: category_name required, max 100 chars, only letters/digits, uniqueness.
+ * Handles region bindings via app.regions_taxable_categories junction table.
  * Publishes events with informative payload for audit purposes.
  * File: service.admin.update.taxable.categories.ts (backend)
+ * 
+ * Changes in v1.1.0:
+ * - Added region binding management: create, update, delete bindings in app.regions_taxable_categories
+ * - Added region validation: checks if region exists in app.regions table
+ * - Updated event payloads to include region binding information
  */
 
 import { Pool } from 'pg'
@@ -19,7 +25,7 @@ import { pool as pgPool } from '@/core/db/maindb'
 const pool = pgPool as Pool
 
 /**
- * Validates category name format (only letters and digits, any alphabet)
+ * Validates category name format (letters of any alphabet, spaces, and hyphens)
  */
 function validateCategoryNameFormat(name: string): { isValid: boolean; error?: string } {
   if (!name || name.trim().length === 0) {
@@ -33,13 +39,14 @@ function validateCategoryNameFormat(name: string): { isValid: boolean; error?: s
     return { isValid: false, error: 'Category name cannot exceed 100 characters' }
   }
   
-  // Check format: only letters (any alphabet) and digits, no special characters or punctuation
-  // Using Unicode property escapes: \p{L} for letters, \p{N} for digits
-  const validPattern = /^[\p{L}\p{N}]+$/u
+  // Check format: only letters (any alphabet), spaces, and hyphens
+  // Using Unicode property escapes: \p{L} for letters, \s for spaces, - for hyphens
+  // Allows letters from any alphabet (Latin, Cyrillic, Arabic, etc.), spaces, and hyphens
+  const validPattern = /^[\p{L}\s-]+$/u
   if (!validPattern.test(trimmedName)) {
     return {
       isValid: false,
-      error: 'Category name can only contain letters (any alphabet) and digits. Special characters and punctuation are not allowed'
+      error: 'Category name can only contain letters (any alphabet), spaces, and hyphens'
     }
   }
   
@@ -63,17 +70,23 @@ export async function updateTaxableCategories(
       throw new Error('validation: categories must be an array')
     }
 
-    // Fetch existing categories from database
+    // Fetch existing categories from database with region bindings
     const existingResult = await client.query(queries.fetchAllTaxableCategories)
     const existingCategories = existingResult.rows.map((row: any) => ({
       category_id: row.category_id,
-      category_name: row.category_name
+      category_name: row.category_name,
+      region: row.region || null
     }))
 
     // Prepare arrays for batch operations
-    const categoriesToCreate: Array<{ category_name: string }> = []
-    const categoriesToUpdate: Array<{ category_id: number; category_name: string }> = []
+    const categoriesToCreate: Array<{ category_name: string; region?: string | null }> = []
+    const categoriesToUpdate: Array<{ category_id: number; category_name: string; region?: string | null }> = []
     const categoriesToDelete: number[] = []
+    
+    // Track region bindings operations
+    const regionBindingsCreated: Array<{ category_id: number; region: string }> = []
+    const regionBindingsUpdated: Array<{ category_id: number; oldRegion: string | null; newRegion: string | null }> = []
+    const regionBindingsDeleted: Array<{ category_id: number; region: string }> = []
 
     // Validate all categories and determine operations
     const validationErrors: Array<{ category_name: string; error: string }> = []
@@ -112,12 +125,28 @@ export async function updateTaxableCategories(
       const trimmedName = category.category_name.trim()
       const categoryId = category.category_id
 
+      // Validate region if provided
+      let regionValue: string | null = null
+      if (category.region !== undefined && category.region !== null && category.region.trim() !== '') {
+        const trimmedRegion = category.region.trim()
+        // Check if region exists in app.regions table
+        const regionCheck = await client.query(queries.checkRegionExists, [trimmedRegion])
+        if (regionCheck.rows.length === 0) {
+          validationErrors.push({
+            category_name: trimmedName,
+            error: `Region "${trimmedRegion}" does not exist in regions table`
+          })
+          continue
+        }
+        regionValue = trimmedRegion
+      }
+
       // Determine operation based on category_id
       if (!categoryId || categoryId < 0) {
         // New category (negative or missing ID)
-        categoriesToCreate.push({ category_name: trimmedName })
+        categoriesToCreate.push({ category_name: trimmedName, region: regionValue })
       } else {
-        // Existing category - check if name changed
+        // Existing category - check if name or region changed
         const existing = existingCategories.find(c => c.category_id === categoryId)
         if (!existing) {
           validationErrors.push({
@@ -127,9 +156,12 @@ export async function updateTaxableCategories(
           continue
         }
 
-        if (existing.category_name !== trimmedName) {
-          // Name changed - need to update
-          categoriesToUpdate.push({ category_id: categoryId, category_name: trimmedName })
+        const nameChanged = existing.category_name !== trimmedName
+        const regionChanged = existing.region !== regionValue
+
+        if (nameChanged || regionChanged) {
+          // Name or region changed - need to update
+          categoriesToUpdate.push({ category_id: categoryId, category_name: trimmedName, region: regionValue })
         }
       }
     }
@@ -203,19 +235,66 @@ export async function updateTaxableCategories(
     }
 
     // Execute batch operations
-    // 1. Delete categories
+    // 1. Delete categories (region bindings will be deleted automatically via CASCADE)
     if (categoriesToDelete.length > 0) {
       await client.query(queries.deleteTaxableCategories, [categoriesToDelete])
     }
 
     // 2. Create new categories
     for (const category of categoriesToCreate) {
-      await client.query(queries.insertTaxableCategory, [category.category_name])
+      const insertResult = await client.query(queries.insertTaxableCategory, [category.category_name])
+      const newCategoryId = insertResult.rows[0]?.category_id
+      
+      if (newCategoryId && category.region) {
+        // Get region_id from region_name
+        const regionResult = await client.query(queries.checkRegionExists, [category.region])
+        if (regionResult.rows.length > 0) {
+          const regionId = regionResult.rows[0].region_id
+          await client.query(queries.insertCategoryRegion, [regionId, newCategoryId])
+          regionBindingsCreated.push({ category_id: newCategoryId, region: category.region })
+        }
+      }
     }
 
     // 3. Update existing categories
     for (const category of categoriesToUpdate) {
-      await client.query(queries.updateTaxableCategory, [category.category_name, category.category_id])
+      const existing = existingCategories.find(c => c.category_id === category.category_id)
+      const oldRegion = existing?.region || null
+      const newRegion = category.region || null
+      
+      // Update category name if changed
+      if (existing && existing.category_name !== category.category_name) {
+        await client.query(queries.updateTaxableCategory, [category.category_name, category.category_id])
+      }
+      
+      // Handle region binding changes
+      if (oldRegion !== newRegion) {
+        // Delete old binding if exists
+        if (oldRegion) {
+          const oldRegionResult = await client.query(queries.checkRegionExists, [oldRegion])
+          if (oldRegionResult.rows.length > 0) {
+            const oldRegionId = oldRegionResult.rows[0].region_id
+            await client.query(queries.deleteCategoryRegion, [oldRegionId, category.category_id])
+            regionBindingsDeleted.push({ category_id: category.category_id, region: oldRegion })
+          }
+        }
+        
+        // Create new binding if region provided
+        if (newRegion) {
+          const newRegionResult = await client.query(queries.checkRegionExists, [newRegion])
+          if (newRegionResult.rows.length > 0) {
+            const newRegionId = newRegionResult.rows[0].region_id
+            await client.query(queries.insertCategoryRegion, [newRegionId, category.category_id])
+            regionBindingsCreated.push({ category_id: category.category_id, region: newRegion })
+          }
+        }
+        
+        regionBindingsUpdated.push({
+          category_id: category.category_id,
+          oldRegion,
+          newRegion
+        })
+      }
     }
 
     await client.query('COMMIT')
@@ -236,7 +315,12 @@ export async function updateTaxableCategories(
           },
           created: categoriesToCreate.length > 0 ? categoriesToCreate.map(c => c.category_name) : undefined,
           updated: categoriesToUpdate.length > 0 ? categoriesToUpdate.map(c => ({ id: c.category_id, name: c.category_name })) : undefined,
-          deleted: categoriesToDelete.length > 0 ? categoriesToDelete : undefined
+          deleted: categoriesToDelete.length > 0 ? categoriesToDelete : undefined,
+          regionsBindings: {
+            created: regionBindingsCreated.length > 0 ? regionBindingsCreated : undefined,
+            updated: regionBindingsUpdated.length > 0 ? regionBindingsUpdated : undefined,
+            deleted: regionBindingsDeleted.length > 0 ? regionBindingsDeleted : undefined
+          }
         }
       })
     } catch (eventError) {

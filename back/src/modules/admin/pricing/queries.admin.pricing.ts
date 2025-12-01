@@ -1,5 +1,5 @@
     /**
-     * version: 1.6.0
+     * version: 1.7.0
      * SQL queries for pricing administration module.
      * Contains parameterized queries related to pricing (currencies and price lists).
      * Includes integrity check queries and queries for event payload data.
@@ -30,6 +30,10 @@
      * Changes in v1.6.0:
      * - Added fetchAllTaxableCategories, insertTaxableCategory, updateTaxableCategory, deleteTaxableCategories queries for taxable_categories table management
      * - Added checkTaxableCategoryNameExists and checkTaxableCategoryNameExistsExcluding queries for validation
+     * 
+     * Changes in v1.7.0:
+     * - Updated fetchAllTaxableCategories to LEFT JOIN with app.regions_taxable_categories and app.regions to include region_name
+     * - Added queries for managing region-category bindings: fetchCategoryRegions, insertCategoryRegion, deleteCategoryRegion, deleteAllCategoryRegions, checkRegionExists
      */
 
 export const queries = {
@@ -511,17 +515,21 @@ export const queries = {
     // ============================================
 
     /**
-     * Fetch all taxable categories
+     * Fetch all taxable categories with region bindings
      * No parameters
+     * Returns region_name from app.regions via LEFT JOIN
      */
     fetchAllTaxableCategories: `
         SELECT 
-            category_id,
-            category_name,
-            created_at,
-            updated_at
-        FROM app.taxable_categories
-        ORDER BY category_name ASC
+            tc.category_id,
+            tc.category_name,
+            r.region_name as region,
+            tc.created_at,
+            tc.updated_at
+        FROM app.taxable_categories tc
+        LEFT JOIN app.regions_taxable_categories rtc ON tc.category_id = rtc.category_id
+        LEFT JOIN app.regions r ON rtc.region_id = r.region_id
+        ORDER BY tc.category_name ASC
     `,
 
     /**
@@ -576,6 +584,63 @@ export const queries = {
         FROM app.taxable_categories
         WHERE LOWER(category_name) = LOWER($1)
         AND category_id != $2
+    `,
+
+    /**
+     * Fetch all region bindings for a category
+     * Parameters: [category_id]
+     * Returns region_id and region_name
+     */
+    fetchCategoryRegions: `
+        SELECT 
+            rtc.region_id,
+            r.region_name
+        FROM app.regions_taxable_categories rtc
+        JOIN app.regions r ON rtc.region_id = r.region_id
+        WHERE rtc.category_id = $1
+    `,
+
+    /**
+     * Insert a region-category binding
+     * Parameters: [region_id, category_id]
+     * Note: created_at and updated_at are set automatically by database defaults
+     */
+    insertCategoryRegion: `
+        INSERT INTO app.regions_taxable_categories (region_id, category_id)
+        VALUES ($1, $2)
+        ON CONFLICT (region_id, category_id) DO NOTHING
+        RETURNING region_id, category_id
+    `,
+
+    /**
+     * Delete a specific region-category binding
+     * Parameters: [region_id, category_id]
+     */
+    deleteCategoryRegion: `
+        DELETE FROM app.regions_taxable_categories
+        WHERE region_id = $1 AND category_id = $2
+        RETURNING region_id, category_id
+    `,
+
+    /**
+     * Delete all region bindings for a category
+     * Parameters: [category_id]
+     */
+    deleteAllCategoryRegions: `
+        DELETE FROM app.regions_taxable_categories
+        WHERE category_id = $1
+        RETURNING region_id, category_id
+    `,
+
+    /**
+     * Check if region exists in app.regions table by region_name
+     * Parameters: [region_name]
+     * Returns region_id and region_name if exists
+     */
+    checkRegionExists: `
+        SELECT region_id, region_name
+        FROM app.regions
+        WHERE region_name = $1
     `
 };
 

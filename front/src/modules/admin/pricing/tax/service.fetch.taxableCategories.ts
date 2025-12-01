@@ -1,5 +1,5 @@
 /**
- * version: 1.0.0
+ * version: 1.1.0
  * Frontend service for fetching taxable categories list for pricing module.
  * Frontend file that handles taxable categories data fetching from pricing API endpoint.
  * 
@@ -7,6 +7,9 @@
  * - Fetches taxable categories list from the pricing API endpoint
  * - Returns array of taxable category records
  * - Handles errors and logging
+ * 
+ * Changes in v1.1.0:
+ * - Updated to include region field in category mapping
  */
 
 import { api } from '@/core/api/service.axios'
@@ -50,6 +53,7 @@ export async function fetchTaxableCategories(): Promise<TaxableCategory[]> {
         const categories: TaxableCategory[] = response.data.data.map(record => ({
             category_id: record.category_id,
             category_name: record.category_name,
+            region: record.region || null,
             created_at: record.created_at,
             updated_at: record.updated_at
         }))

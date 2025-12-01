@@ -1,18 +1,25 @@
 <!--
-Version: 1.0.0
+Version: 1.1.0
 Taxable categories management component for pricing administration module.
 Frontend file that displays and manages taxable categories in a table format.
 Filename: PricingTaxCategories.vue
+
+Changes in v1.1.0:
+- Added region column with dropdown selection
+- Region values loaded from app.regions table via API
+- Region bindings saved to app.regions_taxable_categories table
 -->
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useUiStore } from '@/core/state/uistate';
 import DataLoading from '@/core/ui/loaders/DataLoading.vue';
-import { PhWarningCircle, PhPlus, PhTrash } from '@phosphor-icons/vue';
+import { PhWarningCircle, PhPlus, PhTrash, PhCaretUpDown } from '@phosphor-icons/vue';
 import { fetchTaxableCategories } from './service.fetch.taxableCategories';
 import { updateTaxableCategories } from './service.update.taxableCategories';
+import { fetchAllRegions } from '@/modules/admin/settings/service.admin.fetch.regions';
 import type { TaxableCategory } from '@/modules/admin/pricing/types.pricing.admin';
+import type { Region } from '@/modules/admin/settings/types.admin.regions';
 
 // Store references
 const uiStore = useUiStore();
@@ -25,6 +32,10 @@ const taxableCategories = ref<TaxableCategory[]>([]);
 const isLoadingTaxableCategories = ref(false);
 const taxableCategoriesError = ref<string | null>(null);
 const isSavingTaxableCategories = ref(false);
+
+// Regions list from app.regions table
+const regions = ref<Region[]>([]);
+const isLoadingRegions = ref(false);
 
 // Track new (unsaved) categories with temporary negative IDs
 let nextTempId = -1;
@@ -87,13 +98,14 @@ function addTaxableCategory(): void {
   taxableCategories.value.push({
     category_id: nextTempId--,
     category_name: '',
+    region: null,
     created_at: new Date(),
     updated_at: null
   });
 }
 
 /**
- * Validate category name format (only letters and digits, any alphabet)
+ * Validate category name format (letters of any alphabet, spaces, and hyphens)
  */
 function validateTaxableCategoryNameFormat(name: string): { isValid: boolean; error?: string } {
   // Allow empty names (will be filtered later)
@@ -101,15 +113,25 @@ function validateTaxableCategoryNameFormat(name: string): { isValid: boolean; er
     return { isValid: true };
   }
   
-  // Check: only letters (any alphabet) and digits, no special characters or punctuation
-  // Using Unicode property escapes: \p{L} for letters, \p{N} for digits
-  // Allows letters from any alphabet (Latin, Cyrillic, Arabic, etc.) and digits
-  const validPattern = /^[\p{L}\p{N}]+$/u;
+  const trimmedName = name.trim();
   
-  if (!validPattern.test(name.trim())) {
+  // Check max length (100 characters)
+  if (trimmedName.length > 100) {
     return {
       isValid: false,
-      error: 'Название категории может содержать только буквы (любой алфавит) и цифры. Спецсимволы и знаки препинания запрещены'
+      error: 'Название категории не может превышать 100 символов'
+    };
+  }
+  
+  // Check: only letters (any alphabet), spaces, and hyphens
+  // Using Unicode property escapes: \p{L} for letters, \s for spaces, - for hyphens
+  // Allows letters from any alphabet (Latin, Cyrillic, Arabic, etc.), spaces, and hyphens
+  const validPattern = /^[\p{L}\s-]+$/u;
+  
+  if (!validPattern.test(trimmedName)) {
+    return {
+      isValid: false,
+      error: 'Название категории может содержать только буквы (любой алфавит), пробелы и знаки тире'
     };
   }
   
@@ -122,13 +144,7 @@ function validateTaxableCategoryNameFormat(name: string): { isValid: boolean; er
 function updateTaxableCategoryName(category: TaxableCategory, newName: string): void {
   const trimmedName = newName.trim();
   
-  // Validate length
-  if (trimmedName.length > 100) {
-    uiStore.showErrorSnackbar('Название категории не может превышать 100 символов');
-    return;
-  }
-  
-  // Validate format (only letters and digits)
+  // Validate format (letters, spaces, hyphens, max 100 chars)
   const formatValidation = validateTaxableCategoryNameFormat(trimmedName);
   if (!formatValidation.isValid && formatValidation.error) {
     uiStore.showErrorSnackbar(formatValidation.error);
@@ -137,6 +153,17 @@ function updateTaxableCategoryName(category: TaxableCategory, newName: string): 
   
   // Update local state
   category.category_name = trimmedName;
+}
+
+/**
+ * Update category region locally (no API call, just updates local state)
+ */
+function updateTaxableCategoryRegion(category: TaxableCategory, newRegion: string | null | undefined): void {
+  // Normalize: convert empty string, null, or undefined to null (for clearing region)
+  const normalizedRegion = (!newRegion || newRegion === '' || newRegion === null || newRegion === undefined) ? null : newRegion;
+  
+  // Update local state
+  category.region = normalizedRegion;
 }
 
 /**
@@ -185,6 +212,11 @@ const hasTaxableCategoriesChanges = computed(() => {
     
     // Check if category name changed
     if (orig.category_name !== current.category_name) {
+      return true;
+    }
+    
+    // Check if region changed
+    if (orig.region !== current.region) {
       return true;
     }
   }
@@ -244,17 +276,19 @@ async function updateTaxableCategoriesChanges(): Promise<void> {
     });
     
     // Prepare categories array for API (full table state - all current categories)
-    const categoriesForUpdate: Array<{ category_id?: number; category_name: string; _delete?: boolean }> = taxableCategories.value.map(category => {
+    const categoriesForUpdate: Array<{ category_id?: number; category_name: string; region?: string | null; _delete?: boolean }> = taxableCategories.value.map(category => {
       // For new categories (negative ID), don't include category_id
       if (isNewTaxableCategory(category.category_id)) {
         return {
-          category_name: category.category_name.trim()
+          category_name: category.category_name.trim(),
+          region: category.region || null
         };
       } else {
-        // For existing categories, always include category_id and category_name
+        // For existing categories, always include category_id, category_name, and region
         return {
           category_id: category.category_id,
-          category_name: category.category_name.trim()
+          category_name: category.category_name.trim(),
+          region: category.region || null
         };
       }
     });
@@ -302,6 +336,40 @@ async function retryLoadTaxableCategories(): Promise<void> {
 }
 
 /**
+ * Load regions from app.regions table
+ */
+async function loadRegions(): Promise<void> {
+  try {
+    isLoadingRegions.value = true;
+    const result = await fetchAllRegions();
+    if (result.success && result.data) {
+      regions.value = result.data;
+    } else {
+      regions.value = [];
+    }
+  } catch (error) {
+    console.error('Failed to load regions:', error);
+    regions.value = [];
+  } finally {
+    isLoadingRegions.value = false;
+  }
+}
+
+/**
+ * Get region options for dropdown (all available regions)
+ */
+const getRegionOptions = computed(() => {
+  // Empty option for clearing region - always available
+  const emptyOption = { title: '-', value: '' };
+  const regionOptions = regions.value.map(region => ({
+    title: region.region_name,
+    value: region.region_name
+  }));
+  // Empty option always first, then available regions
+  return [emptyOption, ...regionOptions];
+});
+
+/**
  * Table headers for taxable categories table
  */
 interface TaxableCategoryTableHeader {
@@ -312,14 +380,18 @@ interface TaxableCategoryTableHeader {
 }
 
 const taxableCategoriesTableHeaders = computed<TaxableCategoryTableHeader[]>(() => [
-  { title: 'category', key: 'category', width: '85%' },
-  { title: 'actions', key: 'actions', width: '15%', sortable: false }
+  { title: 'category', key: 'category', width: '460px' },
+  { title: 'region', key: 'region', width: '274px', sortable: false },
+  { title: 'actions', key: 'actions', width: '100px', sortable: false }
 ]);
 
 // Initialize component
 onMounted(async () => {
   console.log('PricingTaxCategories component initialized');
-  await loadTaxableCategories();
+  await Promise.all([
+    loadTaxableCategories(),
+    loadRegions()
+  ]);
 });
 </script>
 
@@ -383,6 +455,24 @@ onMounted(async () => {
             @update:model-value="updateTaxableCategoryName(item, $event)"
             maxlength="100"
           />
+        </template>
+
+        <template #[`item.region`]="{ item }">
+          <v-select
+            :model-value="item.region || ''"
+            density="compact"
+            variant="plain"
+            :items="getRegionOptions"
+            :loading="isLoadingRegions"
+            :disabled="isLoadingRegions"
+            hide-details
+            clearable
+            @update:model-value="updateTaxableCategoryRegion(item, $event)"
+          >
+            <template #append-inner>
+              <PhCaretUpDown :size="14" />
+            </template>
+          </v-select>
         </template>
 
         <template #[`item.actions`]="{ item }">

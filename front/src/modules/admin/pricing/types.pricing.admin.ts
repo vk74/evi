@@ -1,6 +1,6 @@
 /**
  * @file types.pricing.admin.ts
- * Version: 1.3.9
+ * Version: 1.4.0
  * Type definitions for pricing administration module.
  * Frontend types for pricing admin functionality.
  * File: types.pricing.admin.ts (frontend)
@@ -19,6 +19,9 @@
  * 
  * Changes in v1.3.9:
  * - Added TaxableCategory, FetchTaxableCategoriesResult, UpdateTaxableCategoriesRequest, UpdateTaxableCategoriesResult types for taxable_categories management
+ * 
+ * Changes in v1.4.0:
+ * - Added region field to TaxableCategory and UpdateTaxableCategoriesRequest for region bindings
  */
 
 // Pricing section interface for menu navigation
@@ -320,6 +323,7 @@ export interface UpdatePriceListItemsResult {
 export interface TaxableCategory {
   category_id: number
   category_name: string
+  region: string | null
   created_at: Date
   updated_at: Date | null
 }
@@ -336,6 +340,7 @@ export interface UpdateTaxableCategoriesRequest {
   categories: Array<{
     category_id?: number // optional, negative for new categories
     category_name: string
+    region?: string | null // region name for binding
     _delete?: boolean // flag for deletion
   }>
 }

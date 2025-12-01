@@ -1,8 +1,11 @@
 /**
- * version: 1.0.0
+ * version: 1.1.0
  * Service to fetch taxable categories for pricing admin module (backend).
  * Connects to DB, executes query, maps fields to DTO format.
  * File: service.admin.fetch.taxable.categories.ts (backend)
+ * 
+ * Changes in v1.1.0:
+ * - Updated to include region field from JOIN with app.regions_taxable_categories and app.regions
  */
 
 import { Pool } from 'pg'
@@ -31,6 +34,7 @@ export async function fetchTaxableCategories(req?: any): Promise<FetchTaxableCat
         const categories: TaxableCategoryDto[] = result.rows.map((row: any) => ({
             category_id: row.category_id,
             category_name: row.category_name,
+            region: row.region || null,
             created_at: row.created_at,
             updated_at: row.updated_at
         }))
