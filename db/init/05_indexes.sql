@@ -1,4 +1,4 @@
--- Version: 1.1.5
+-- Version: 1.1.6
 -- Description: Create all indexes for the application tables.
 -- Backend file: 05_indexes.sql
 -- Updated: mobile_phone_number -> mobile_phone field name
@@ -7,6 +7,8 @@
 -- - Removed invalid index on app.price_lists_info(valid_from, valid_to) (columns do not exist)
 -- Changes in v1.1.5:
 -- - Added indexes for app.regions_vat table
+-- Changes in v1.1.6:
+-- - Added indexes for app.regions_taxable_categories table
 
 -- Create indexes for app_settings
 CREATE INDEX IF NOT EXISTS idx_app_sections_path ON app.app_settings USING btree (section_path);
@@ -149,3 +151,15 @@ CREATE INDEX IF NOT EXISTS idx_regions_vat_region_name
 -- Index for faster lookups by VAT rate
 CREATE INDEX IF NOT EXISTS idx_regions_vat_vat_rate 
     ON app.regions_vat(vat_rate);
+
+-- ============================================
+-- Pricing: Regions Taxable Categories Indexes
+-- ============================================
+
+-- Index for faster lookups by region (which categories are assigned to this region)
+CREATE INDEX IF NOT EXISTS idx_regions_taxable_categories_region_id 
+    ON app.regions_taxable_categories(region_id);
+
+-- Index for faster lookups by category (which regions have this category)
+CREATE INDEX IF NOT EXISTS idx_regions_taxable_categories_category_id 
+    ON app.regions_taxable_categories(category_id);

@@ -1,4 +1,4 @@
--- Version: 1.6.0
+-- Version: 1.7.0
 -- Description: Database validation functions and triggers for business logic enforcement.
 -- Backend file: 08_validations_and_triggers.sql
 -- 
@@ -29,6 +29,9 @@
 --
 -- Changes in v1.6.0:
 -- - Added trigger for automatic updated_at update on app.taxable_categories table
+--
+-- Changes in v1.7.0:
+-- - Added trigger for automatic updated_at update on app.regions_taxable_categories table
 
 -- ============================================
 -- Regional Settings Validation
@@ -138,6 +141,14 @@ EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 DO $$ BEGIN
   CREATE TRIGGER trg_taxable_categories_updated_at
       BEFORE UPDATE ON app.taxable_categories
+      FOR EACH ROW
+      EXECUTE FUNCTION app.update_updated_at_column();
+EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+
+-- Apply trigger to regions_taxable_categories
+DO $$ BEGIN
+  CREATE TRIGGER trg_regions_taxable_categories_updated_at
+      BEFORE UPDATE ON app.regions_taxable_categories
       FOR EACH ROW
       EXECUTE FUNCTION app.update_updated_at_column();
 EXCEPTION WHEN duplicate_object THEN NULL; END $$;

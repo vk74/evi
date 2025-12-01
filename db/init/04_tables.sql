@@ -1,4 +1,4 @@
--- Version: 1.7.0
+-- Version: 1.8.0
 -- Description: Create all application tables, functions, and triggers.
 -- Backend file: 04_tables.sql
 -- Updated: mobile_phone_number -> mobile_phone field name
@@ -18,6 +18,8 @@
 -- - Added app.regions_vat table for storing VAT rate bindings to regions with priorities
 -- Changes in v1.7.0:
 -- - Added app.taxable_categories table for application taxable categories management
+-- Changes in v1.8.0:
+-- - Added app.regions_taxable_categories junction table for linking regions with taxable categories
 
 -- ===========================================
 -- Helper Functions
@@ -264,6 +266,33 @@ COMMENT ON COLUMN app.taxable_categories.category_id IS 'Unique identifier for t
 COMMENT ON COLUMN app.taxable_categories.category_name IS 'Category name (unique)';
 COMMENT ON COLUMN app.taxable_categories.created_at IS 'Timestamp when category was created';
 COMMENT ON COLUMN app.taxable_categories.updated_at IS 'Timestamp when category was last updated';
+
+-- Regions taxable categories junction table
+CREATE TABLE IF NOT EXISTS app.regions_taxable_categories (
+    region_id INTEGER NOT NULL,
+    category_id INTEGER NOT NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ,
+    PRIMARY KEY (region_id, category_id),
+    CONSTRAINT fk_regions_taxable_categories_region 
+        FOREIGN KEY (region_id) 
+        REFERENCES app.regions(region_id) 
+        ON DELETE CASCADE,
+    CONSTRAINT fk_regions_taxable_categories_category 
+        FOREIGN KEY (category_id) 
+        REFERENCES app.taxable_categories(category_id) 
+        ON DELETE CASCADE
+);
+
+COMMENT ON TABLE app.regions_taxable_categories IS 'Junction table linking regions with taxable categories - each region can have multiple taxable categories';
+COMMENT ON COLUMN app.regions_taxable_categories.region_id IS 'Reference to app.regions.region_id';
+COMMENT ON COLUMN app.regions_taxable_categories.category_id IS 'Reference to app.taxable_categories.category_id';
+COMMENT ON COLUMN app.regions_taxable_categories.created_at IS 'Timestamp when the binding was created';
+COMMENT ON COLUMN app.regions_taxable_categories.updated_at IS 'Timestamp when the binding was last updated';
+COMMENT ON CONSTRAINT fk_regions_taxable_categories_region ON app.regions_taxable_categories IS 
+    'Foreign key to app.regions.region_id with CASCADE delete - when region is deleted, all bindings are automatically deleted';
+COMMENT ON CONSTRAINT fk_regions_taxable_categories_category ON app.regions_taxable_categories IS 
+    'Foreign key to app.taxable_categories.category_id with CASCADE delete - when category is deleted, all bindings are automatically deleted';
 
 -- Add foreign key constraint for app.users.location -> app.regions.region_name
 -- This constraint ensures data integrity: user locations must reference valid regions
