@@ -259,14 +259,14 @@ COMMENT ON COLUMN app.regions.updated_at IS 'Timestamp when region was last upda
 -- Taxable categories reference table
 CREATE TABLE IF NOT EXISTS app.taxable_categories (
     category_id SERIAL PRIMARY KEY,
-    category_name VARCHAR(255) NOT NULL UNIQUE,
+    category_name VARCHAR(255) NOT NULL,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ
 );
 
 COMMENT ON TABLE app.taxable_categories IS 'Application taxable categories reference table - stores all available tax categories';
 COMMENT ON COLUMN app.taxable_categories.category_id IS 'Unique identifier for the category (auto-increment)';
-COMMENT ON COLUMN app.taxable_categories.category_name IS 'Category name (unique)';
+COMMENT ON COLUMN app.taxable_categories.category_name IS 'Category name';
 COMMENT ON COLUMN app.taxable_categories.created_at IS 'Timestamp when category was created';
 COMMENT ON COLUMN app.taxable_categories.updated_at IS 'Timestamp when category was last updated';
 
