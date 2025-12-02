@@ -1,6 +1,6 @@
 /**
  * @file types.pricing.admin.ts
- * Version: 1.4.0
+ * Version: 1.5.0
  * Type definitions for pricing administration module.
  * Frontend types for pricing admin functionality.
  * File: types.pricing.admin.ts (frontend)
@@ -22,6 +22,9 @@
  * 
  * Changes in v1.4.0:
  * - Added region field to TaxableCategory and UpdateTaxableCategoriesRequest for region bindings
+ * 
+ * Changes in v1.5.0:
+ * - Added RegionCategoryBinding, FetchTaxRegionsResult, UpdateTaxRegionsRequest, UpdateTaxRegionsResult types for tax regions bindings with VAT rates
  */
 
 // Pricing section interface for menu navigation
@@ -351,6 +354,59 @@ export interface UpdateTaxableCategoriesResult {
   message: string
   data?: {
     totalRecords: number
+  }
+}
+
+// ============================================
+// Tax Regions Bindings Types (with VAT rates)
+// ============================================
+
+// Region-Category Binding type
+export interface RegionCategoryBinding {
+  region_id: number
+  category_id: number
+  vat_rate: number | null // 0-99 or null
+}
+
+// Fetch tax regions result
+export interface FetchTaxRegionsResult {
+  success: boolean
+  message: string
+  data?: {
+    regions: Array<{
+      region_id: number
+      region_name: string
+    }>
+    categories: Array<{
+      category_id: number
+      category_name: string
+    }>
+    bindings: Array<{
+      region_id: number
+      category_id: number
+      vat_rate: number | null
+    }>
+  }
+}
+
+// Update tax regions request (for one region)
+export interface UpdateTaxRegionsRequest {
+  region_id: number
+  bindings: Array<{
+    category_id: number
+    vat_rate: number | null // null means delete binding
+  }>
+}
+
+// Update tax regions result
+export interface UpdateTaxRegionsResult {
+  success: boolean
+  message: string
+  data?: {
+    totalBindings: number
+    created: number
+    updated: number
+    deleted: number
   }
 }
 

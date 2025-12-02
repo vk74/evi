@@ -1,5 +1,5 @@
     /**
-     * version: 1.7.0
+     * version: 1.8.0
      * SQL queries for pricing administration module.
      * Contains parameterized queries related to pricing (currencies and price lists).
      * Includes integrity check queries and queries for event payload data.
@@ -33,6 +33,12 @@
      * Changes in v1.7.0:
      * - Updated fetchAllTaxableCategories to LEFT JOIN with app.regions_taxable_categories and app.regions to include region_name
      * - Added queries for managing region-category bindings: fetchCategoryRegions, insertCategoryRegion, deleteCategoryRegion, deleteAllCategoryRegions, checkRegionExists
+     * 
+     * Changes in v1.8.0:
+     * - Added queries for tax regions bindings with VAT rates: fetchAllRegionsTaxableCategoriesBindings, fetchRegionTaxableCategoriesBindings
+     * - Added upsertRegionCategoryBinding query for creating/updating bindings with VAT rates
+     * - Added deleteRegionCategoryBinding query for deleting bindings
+     * - Added checkRegionExistsById and checkTaxableCategoryExistsById queries for validation
      */
 
 export const queries = {
@@ -604,6 +610,115 @@ export const queries = {
         SELECT region_id, region_name
         FROM app.regions
         WHERE region_name = $1
+    `,
+
+    // ============================================
+    // Tax Regions Bindings Queries (with VAT rates)
+    // ============================================
+
+    /**
+     * Fetch all regions (for tax regions bindings)
+     * No parameters
+     * Returns region_id, region_name
+     */
+    fetchAllRegions: `
+        SELECT 
+            region_id,
+            region_name
+        FROM app.regions
+        ORDER BY region_name ASC
+    `,
+
+    /**
+     * Fetch all taxable categories (for tax regions bindings)
+     * No parameters
+     * Returns category_id, category_name
+     */
+    fetchAllTaxableCategoriesSimple: `
+        SELECT 
+            category_id,
+            category_name
+        FROM app.taxable_categories
+        ORDER BY category_name ASC
+    `,
+
+    /**
+     * Fetch all region-taxable category bindings with VAT rates for all regions
+     * No parameters
+     * Returns region_id, region_name, category_id, category_name, vat_rate
+     */
+    fetchAllRegionsTaxableCategoriesBindings: `
+        SELECT 
+            rtc.region_id,
+            r.region_name,
+            rtc.category_id,
+            tc.category_name,
+            rtc.vat_rate
+        FROM app.regions_taxable_categories rtc
+        JOIN app.regions r ON rtc.region_id = r.region_id
+        JOIN app.taxable_categories tc ON rtc.category_id = tc.category_id
+        ORDER BY r.region_name, tc.category_name
+    `,
+
+    /**
+     * Fetch all bindings for a specific region with VAT rates
+     * Parameters: [region_id]
+     * Returns category_id, category_name, vat_rate
+     */
+    fetchRegionTaxableCategoriesBindings: `
+        SELECT 
+            rtc.category_id,
+            tc.category_name,
+            rtc.vat_rate
+        FROM app.regions_taxable_categories rtc
+        JOIN app.taxable_categories tc ON rtc.category_id = tc.category_id
+        WHERE rtc.region_id = $1
+        ORDER BY tc.category_name
+    `,
+
+    /**
+     * Upsert (insert or update) a region-category binding with VAT rate
+     * Parameters: [region_id, category_id, vat_rate]
+     * Note: vat_rate can be NULL (0-99 or NULL)
+     */
+    upsertRegionCategoryBinding: `
+        INSERT INTO app.regions_taxable_categories (region_id, category_id, vat_rate)
+        VALUES ($1, $2, $3)
+        ON CONFLICT (region_id, category_id) 
+        DO UPDATE SET vat_rate = $3, updated_at = NOW()
+        RETURNING region_id, category_id, vat_rate
+    `,
+
+    /**
+     * Delete a specific region-category binding
+     * Parameters: [region_id, category_id]
+     */
+    deleteRegionCategoryBinding: `
+        DELETE FROM app.regions_taxable_categories
+        WHERE region_id = $1 AND category_id = $2
+        RETURNING region_id, category_id
+    `,
+
+    /**
+     * Check if region exists by region_id
+     * Parameters: [region_id]
+     * Returns region_id and region_name if exists
+     */
+    checkRegionExistsById: `
+        SELECT region_id, region_name
+        FROM app.regions
+        WHERE region_id = $1
+    `,
+
+    /**
+     * Check if taxable category exists by category_id
+     * Parameters: [category_id]
+     * Returns category_id and category_name if exists
+     */
+    checkTaxableCategoryExistsById: `
+        SELECT category_id, category_name
+        FROM app.taxable_categories
+        WHERE category_id = $1
     `
 };
 

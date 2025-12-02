@@ -1,5 +1,5 @@
 /**
- * version: 1.4.0
+ * version: 1.5.0
  * Event reference catalog for admin pricing operations (backend).
  * Defines events for pricing management operations (currencies and price lists).
  * File: events.admin.pricing.ts (backend)
@@ -8,6 +8,9 @@
  * 
  * Changes in v1.4.0:
  * - Added events for taxableCategories operations (fetch, update, transaction)
+ * 
+ * Changes in v1.5.0:
+ * - Added events for taxRegions operations (fetch, update)
  */
 
 import { EventCollection } from '../../../core/eventBus/types.events'
@@ -817,6 +820,55 @@ export const EVENTS_ADMIN_PRICING: EventCollection = {
     eventType: 'app',
     severity: 'warning',
     eventMessage: 'Error during taxable categories update operation',
+    version: '1.0.0'
+  },
+
+  // ========== Tax Regions - Fetch Events ==========
+  
+  'taxRegions.fetch.success': {
+    eventName: 'adminPricing.taxRegions.fetch.success',
+    source: 'admin-pricing',
+    eventType: 'app',
+    severity: 'debug',
+    eventMessage: 'Tax regions data fetched successfully',
+    version: '1.0.0'
+  },
+
+  'taxRegions.fetch.database_error': {
+    eventName: 'adminPricing.taxRegions.fetch.database_error',
+    source: 'admin-pricing',
+    eventType: 'app',
+    severity: 'warning',
+    eventMessage: 'Database error during tax regions fetch',
+    version: '1.0.0'
+  },
+
+  // ========== Tax Regions - Update Events ==========
+  
+  'taxRegions.update.success': {
+    eventName: 'adminPricing.taxRegions.update.success',
+    source: 'admin-pricing',
+    eventType: 'app',
+    severity: 'info',
+    eventMessage: 'Tax regions bindings updated successfully',
+    version: '1.0.0'
+  },
+
+  'taxRegions.update.validation_error': {
+    eventName: 'adminPricing.taxRegions.update.validation_error',
+    source: 'admin-pricing',
+    eventType: 'app',
+    severity: 'error',
+    eventMessage: 'Validation error in tax regions update payload',
+    version: '1.0.0'
+  },
+
+  'taxRegions.update.database_error': {
+    eventName: 'adminPricing.taxRegions.update.database_error',
+    source: 'admin-pricing',
+    eventType: 'app',
+    severity: 'warning',
+    eventMessage: 'Database error during tax regions update',
     version: '1.0.0'
   }
 }

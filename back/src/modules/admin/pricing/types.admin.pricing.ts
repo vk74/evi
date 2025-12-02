@@ -1,5 +1,5 @@
 /**
- * version: 1.7.0
+ * version: 1.8.0
  * Backend types for pricing administration module.
  * Defines DTOs for currencies, price lists and other pricing-related entities.
  * File: types.admin.pricing.ts (backend)
@@ -25,6 +25,9 @@
  * 
  * Changes in v1.7.0:
  * - Added region field to TaxableCategoryDto and UpdateTaxableCategoriesRequest for region bindings
+ * 
+ * Changes in v1.8.0:
+ * - Added RegionCategoryBindingDto, FetchTaxRegionsResponse, UpdateTaxRegionsRequest, UpdateTaxRegionsResponse types for tax regions bindings with VAT rates
  */
 
 // ============================================
@@ -63,6 +66,61 @@ export interface UpdateTaxableCategoriesResponse {
     message: string
     data?: {
         totalRecords: number
+    }
+}
+
+// ============================================
+// Tax Regions Bindings Types (with VAT rates)
+// ============================================
+
+// Region-Category Binding DTO with VAT rate
+export interface RegionCategoryBindingDto {
+    region_id: number
+    region_name: string
+    category_id: number
+    category_name: string
+    vat_rate: number | null // 0-99 or null
+}
+
+// Response for fetch tax regions bindings
+export interface FetchTaxRegionsResponse {
+    success: boolean
+    message: string
+    data?: {
+        regions: Array<{
+            region_id: number
+            region_name: string
+        }>
+        categories: Array<{
+            category_id: number
+            category_name: string
+        }>
+        bindings: Array<{
+            region_id: number
+            category_id: number
+            vat_rate: number | null
+        }>
+    }
+}
+
+// Request for updating tax regions bindings (for one region)
+export interface UpdateTaxRegionsRequest {
+    region_id: number
+    bindings: Array<{
+        category_id: number
+        vat_rate: number | null // null means delete binding
+    }>
+}
+
+// Response for update tax regions bindings
+export interface UpdateTaxRegionsResponse {
+    success: boolean
+    message: string
+    data?: {
+        totalBindings: number
+        created: number
+        updated: number
+        deleted: number
     }
 }
 

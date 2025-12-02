@@ -61,6 +61,8 @@ import fetchCurrenciesController from './pricing/controller.admin.pricing.fetch.
 import updateCurrenciesController from './pricing/controller.admin.pricing.update.currencies';
 import fetchTaxableCategoriesController from './pricing/controller.admin.fetch.taxable.categories';
 import updateTaxableCategoriesController from './pricing/controller.admin.update.taxable.categories';
+import fetchTaxRegionsController from './pricing/controller.admin.fetch.tax.regions';
+import updateTaxRegionsController from './pricing/controller.admin.update.tax.regions';
 import fetchAllPriceListsController from './pricing/controller.admin.pricing.fetch.pricelists';
 import fetchPriceListController from './pricing/controller.admin.pricing.fetch.pricelist';
 import createPriceListController from './pricing/controller.admin.pricing.create.pricelist';
@@ -155,6 +157,10 @@ router.post('/api/admin/pricing/update-currencies', checkRateLimit, checkRequest
 // Routes for Pricing Admin - Taxable Categories
 router.get('/api/admin/pricing/taxable-categories/fetchall', checkRateLimit, checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, fetchTaxableCategoriesController);
 router.post('/api/admin/pricing/taxable-categories/update', checkRateLimit, checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, updateTaxableCategoriesController);
+
+// Routes for Pricing Admin - Tax Regions
+router.get('/api/admin/pricing/tax-regions/fetchall', checkRateLimit, checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, fetchTaxRegionsController);
+router.post('/api/admin/pricing/tax-regions/update', checkRateLimit, checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, updateTaxRegionsController);
 
 // Routes for Pricing Admin - Price Lists
 router.get('/api/admin/pricing/pricelists/fetchall', checkRateLimit, checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, fetchAllPriceListsController);
