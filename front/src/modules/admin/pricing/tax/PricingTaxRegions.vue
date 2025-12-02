@@ -1,18 +1,21 @@
 <!--
-Version: 1.1.0
+Version: 1.2.0
 VAT rates assignment component for pricing administration module.
 Frontend file that displays categories with VAT rate columns containing markers.
-Each category row can have only one active marker (displayed as "1" chip).
+Each category row can have only one active marker (displayed as check mark chip).
 Filename: PricingTaxRegions.vue
 
 Changes in v1.1.0:
 - Replaced checkboxes with marker chips displaying "1"
 - Added hover placeholder with plus icon for empty cells
 - Removed "+" from "ADD % RATE" button text
+
+Changes in v1.2.0:
+- Replaced "1" marker with check mark icon
 -->
 <script setup lang="ts">
 import { ref, computed } from 'vue';
-import { PhPlus, PhTrash } from '@phosphor-icons/vue';
+import { PhPlus, PhTrash, PhCheck } from '@phosphor-icons/vue';
 
 // Category interface
 interface Category {
@@ -408,7 +411,7 @@ createVATRatesSnapshot();
                 size="small"
                 class="vat-rate-chip font-weight-bold"
               >
-                1
+                <PhCheck :size="16" />
               </v-chip>
               
               <!-- Hover placeholder for empty cell -->
@@ -599,6 +602,8 @@ createVATRatesSnapshot();
 .vat-rate-chip {
   min-width: 32px;
   justify-content: center;
+  display: flex;
+  align-items: center;
 }
 
 .update-btn-glow {
