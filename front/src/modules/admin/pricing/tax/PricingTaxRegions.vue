@@ -1,5 +1,5 @@
 <!--
-Version: 1.2.0
+Version: 1.3.0
 VAT rates assignment component for pricing administration module.
 Frontend file that displays categories with VAT rate columns containing markers.
 Each category row can have only one active marker (displayed as check mark chip).
@@ -12,10 +12,23 @@ Changes in v1.1.0:
 
 Changes in v1.2.0:
 - Replaced "1" marker with check mark icon
+
+Changes in v1.3.0:
+- Added region selector dropdown in header
+- Changed title to "regions, categories and taxes"
+- Changed "Category" column header to "categories" (lowercase)
+- Added region-specific data storage (each region has its own categories and VAT rate columns)
+- Implemented region switching functionality
 -->
 <script setup lang="ts">
-import { ref, computed } from 'vue';
-import { PhPlus, PhTrash, PhCheck } from '@phosphor-icons/vue';
+import { ref, computed, onMounted } from 'vue';
+import { PhPlus, PhTrash, PhCheck, PhCaretUpDown } from '@phosphor-icons/vue';
+
+// Region interface
+interface Region {
+  id: number;
+  name: string;
+}
 
 // Category interface
 interface Category {
@@ -32,20 +45,36 @@ interface VATRateColumn {
   width: string;
 }
 
-// Mock categories data
-const categories = ref<Category[]>([
-  { id: 1, name: 'Category 1' },
-  { id: 2, name: 'Category 2' },
-  { id: 3, name: 'Category 3' }
+// Region data interface - stores categories and VAT rate columns per region
+interface RegionData {
+  categories: Category[];
+  vatRateColumns: VATRateColumn[];
+}
+
+// Mock regions data
+const regions = ref<Region[]>([
+  { id: 1, name: 'Region 1' },
+  { id: 2, name: 'Region 2' },
+  { id: 3, name: 'Region 3' },
+  { id: 4, name: 'Region 4' }
 ]);
+
+// Currently selected region
+const selectedRegion = ref<number | null>(null);
+
+// Store region-specific data
+const regionData = ref<Record<number, RegionData>>({});
+
+// Current region's categories (active view)
+const categories = ref<Category[]>([]);
 
 // Empty row for table footer
 const emptyRow = ref<Category | null>(null);
 
-// Dynamic VAT rate columns
+// Current region's dynamic VAT rate columns (active view)
 const vatRateColumns = ref<VATRateColumn[]>([]);
 
-// Original state snapshot for change tracking
+// Original state snapshot for change tracking (per region)
 interface VATRatesSnapshot {
   categories: Category[];
   vatRateColumns: VATRateColumn[];
@@ -78,6 +107,76 @@ function createVATRatesSnapshot(): void {
     vatRateColumns: JSON.parse(JSON.stringify(vatRateColumns.value))
   };
 }
+
+/**
+ * Save current region's data to regionData storage
+ */
+function saveCurrentRegionData(): void {
+  if (selectedRegion.value === null) {
+    return;
+  }
+  
+  regionData.value[selectedRegion.value] = {
+    categories: JSON.parse(JSON.stringify(categories.value)),
+    vatRateColumns: JSON.parse(JSON.stringify(vatRateColumns.value))
+  };
+}
+
+/**
+ * Load or initialize region data
+ */
+function loadRegionData(regionId: number): void {
+  // Save current region's data before switching (if there was a previous region)
+  if (selectedRegion.value !== null && selectedRegion.value !== regionId) {
+    saveCurrentRegionData();
+  }
+  
+  // Check if region data exists, if not initialize with default data
+  if (!regionData.value[regionId]) {
+    // Initialize with default categories
+    regionData.value[regionId] = {
+      categories: [
+        { id: 1, name: 'Category 1' },
+        { id: 2, name: 'Category 2' },
+        { id: 3, name: 'Category 3' }
+      ],
+      vatRateColumns: []
+    };
+  }
+  
+  // Load region data into active view
+  const data = regionData.value[regionId];
+  categories.value = JSON.parse(JSON.stringify(data.categories));
+  vatRateColumns.value = JSON.parse(JSON.stringify(data.vatRateColumns));
+  
+  // Re-initialize empty row with current columns
+  initializeEmptyRow();
+  
+  // Create snapshot for change tracking
+  createVATRatesSnapshot();
+}
+
+/**
+ * Handle region change
+ */
+function onRegionChange(regionId: number | null): void {
+  if (regionId === null) {
+    return;
+  }
+  
+  selectedRegion.value = regionId;
+  loadRegionData(regionId);
+}
+
+/**
+ * Get region options for dropdown
+ */
+const regionOptions = computed(() => {
+  return regions.value.map(region => ({
+    title: region.name,
+    value: region.id
+  }));
+});
 
 /**
  * Add new VAT rate column
@@ -224,6 +323,11 @@ function cancelChanges(): void {
   // Restore VAT rate columns
   vatRateColumns.value = JSON.parse(JSON.stringify(original.vatRateColumns));
   
+  // Update regionData storage to match restored state
+  if (selectedRegion.value !== null) {
+    saveCurrentRegionData();
+  }
+  
   // Re-initialize empty row with current columns
   initializeEmptyRow();
 }
@@ -233,7 +337,12 @@ function cancelChanges(): void {
  */
 async function updateChanges(): Promise<void> {
   // TODO: Implement API call to save VAT rates
-  console.log('Update VAT rates:', categories.value, vatRateColumns.value);
+  console.log('Update VAT rates for region', selectedRegion.value, ':', categories.value, vatRateColumns.value);
+  
+  // Save current region's data
+  if (selectedRegion.value !== null) {
+    saveCurrentRegionData();
+  }
   
   // Update snapshot after successful save
   createVATRatesSnapshot();
@@ -251,7 +360,7 @@ interface TableHeader {
 
 const vatRatesTableHeaders = computed<TableHeader[]>(() => {
   const headers: TableHeader[] = [
-    { title: 'Category', key: 'name', width: '140px' }
+    { title: 'categories', key: 'name', width: '140px' }
   ];
   
   // Add dynamic VAT rate columns
@@ -338,19 +447,36 @@ const hasPendingChanges = computed(() => {
   return false;
 });
 
-// Initialize empty row
-initializeEmptyRow();
-
-// Create initial snapshot
-createVATRatesSnapshot();
+// Initialize component with first region
+onMounted(() => {
+  if (regions.value.length > 0) {
+    selectedRegion.value = regions.value[0].id;
+    loadRegionData(regions.value[0].id);
+  }
+});
 </script>
 
 <template>
   <div class="vat-rates-container">
     <div class="settings-group">
-      <h3 class="text-subtitle-1 font-weight-medium mb-4">
-        vat rates
-      </h3>
+      <div class="d-flex align-center justify-space-between mb-4">
+        <h3 class="text-subtitle-1 font-weight-medium">
+          regions, categories and taxes
+        </h3>
+        <v-select
+          :model-value="selectedRegion"
+          :items="regionOptions"
+          density="compact"
+          variant="outlined"
+          hide-details
+          class="region-select ms-4"
+          @update:model-value="onRegionChange"
+        >
+          <template #append-inner>
+            <PhCaretUpDown :size="14" class="dropdown-icon" />
+          </template>
+        </v-select>
+      </div>
       
       <div class="vat-rates-table-wrapper">
         <v-data-table
@@ -625,5 +751,18 @@ createVATRatesSnapshot();
     transform: scale(1.01);
   }
 }
-</style>
 
+.region-select {
+  width: 200px;
+  min-width: 200px;
+  position: relative;
+}
+
+.region-select :deep(.dropdown-icon) {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  pointer-events: none;
+}
+</style>
