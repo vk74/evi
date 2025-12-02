@@ -1,8 +1,8 @@
 /**
- * version: 1.1.0
+ * version: 1.2.0
  * Service to update taxable categories for pricing admin module (backend).
  * Executes batch operations: create new, update existing, delete removed categories in a single transaction.
- * Includes validation: category_name required, max 100 chars, only letters/digits, uniqueness.
+ * Includes validation: category_name required, max 100 chars, only letters/digits, uniqueness per region.
  * Handles region bindings via app.regions_taxable_categories junction table.
  * Publishes events with informative payload for audit purposes.
  * File: service.admin.update.taxable.categories.ts (backend)
@@ -11,6 +11,13 @@
  * - Added region binding management: create, update, delete bindings in app.regions_taxable_categories
  * - Added region validation: checks if region exists in app.regions table
  * - Updated event payloads to include region binding information
+ * 
+ * Changes in v1.2.0:
+ * - Updated uniqueness validation to check per region instead of globally
+ * - Same category names are now allowed for different regions
+ * - Duplicate names within the same region are still prohibited
+ * - Updated SQL queries to check uniqueness based on region binding
+ * - Improved error messages to indicate region-specific conflicts
  */
 
 import { Pool } from 'pg'
@@ -179,51 +186,64 @@ export async function updateTaxableCategories(
       }
     }
 
-    // Check uniqueness for all categories to create/update
-    const allNamesToCheck = new Map<string, { category_id?: number; category_name: string }>()
+    // Check uniqueness for all categories to create/update (per region)
+    // Key format: "category_name|region" where region can be null
+    const allNamesToCheck = new Map<string, { category_id?: number; category_name: string; region?: string | null }>()
     
     for (const cat of categoriesToCreate) {
       const lowerName = cat.category_name.toLowerCase()
-      if (allNamesToCheck.has(lowerName)) {
+      const regionKey = cat.region || null
+      const checkKey = `${lowerName}|${regionKey}`
+      
+      if (allNamesToCheck.has(checkKey)) {
         validationErrors.push({
           category_name: cat.category_name,
-          error: 'Duplicate category name in request'
+          error: `Duplicate category name "${cat.category_name}" for the same region in request`
         })
       } else {
-        allNamesToCheck.set(lowerName, cat)
+        allNamesToCheck.set(checkKey, cat)
       }
 
-      // Check against database
-      const nameCheck = await client.query(queries.checkTaxableCategoryNameExists, [cat.category_name])
+      // Check against database (with region)
+      const nameCheck = await client.query(queries.checkTaxableCategoryNameExists, [
+        cat.category_name,
+        cat.region ?? null
+      ])
       if (nameCheck.rows.length > 0) {
+        const regionText = cat.region ? ` for region "${cat.region}"` : ' without region'
         validationErrors.push({
           category_name: cat.category_name,
-          error: 'Category with this name already exists in database'
+          error: `Category with this name already exists${regionText}`
         })
       }
     }
 
     for (const cat of categoriesToUpdate) {
       const lowerName = cat.category_name.toLowerCase()
-      const existingWithSameName = allNamesToCheck.get(lowerName)
-      if (existingWithSameName && existingWithSameName.category_id !== cat.category_id) {
+      const regionKey = cat.region || null
+      const checkKey = `${lowerName}|${regionKey}`
+      
+      const existingWithSameNameAndRegion = allNamesToCheck.get(checkKey)
+      if (existingWithSameNameAndRegion && existingWithSameNameAndRegion.category_id !== cat.category_id) {
         validationErrors.push({
           category_name: cat.category_name,
-          error: 'Duplicate category name in request'
+          error: `Duplicate category name "${cat.category_name}" for the same region in request`
         })
       } else {
-        allNamesToCheck.set(lowerName, cat)
+        allNamesToCheck.set(checkKey, cat)
       }
 
-      // Check against database (excluding current category)
+      // Check against database (excluding current category, with region)
       const nameCheck = await client.query(queries.checkTaxableCategoryNameExistsExcluding, [
         cat.category_name,
+        cat.region ?? null,
         cat.category_id
       ])
       if (nameCheck.rows.length > 0) {
+        const regionText = cat.region ? ` for region "${cat.region}"` : ' without region'
         validationErrors.push({
           category_name: cat.category_name,
-          error: 'Category with this name already exists in database'
+          error: `Category with this name already exists${regionText}`
         })
       }
     }

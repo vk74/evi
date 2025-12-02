@@ -1,5 +1,5 @@
     /**
-     * version: 1.8.0
+     * version: 1.9.0
      * SQL queries for pricing administration module.
      * Contains parameterized queries related to pricing (currencies and price lists).
      * Includes integrity check queries and queries for event payload data.
@@ -39,6 +39,11 @@
      * - Added upsertRegionCategoryBinding query for creating/updating bindings with VAT rates
      * - Added deleteRegionCategoryBinding query for deleting bindings
      * - Added checkRegionExistsById and checkTaxableCategoryExistsById queries for validation
+     * 
+     * Changes in v1.9.0:
+     * - Updated checkTaxableCategoryNameExists to check uniqueness per region (accepts region_name parameter)
+     * - Updated checkTaxableCategoryNameExistsExcluding to check uniqueness per region (accepts region_name parameter)
+     * - Queries now check if category exists for specific region or without region binding
      */
 
 export const queries = {
@@ -535,24 +540,52 @@ export const queries = {
     `,
 
     /**
-     * Check if taxable category name already exists
-     * Parameters: [category_name]
+     * Check if taxable category name already exists for a specific region
+     * Parameters: [category_name, region_name]
+     * If region_name is NULL, checks for categories not linked to any region
+     * If region_name is provided, checks for categories linked to that specific region
      */
     checkTaxableCategoryNameExists: `
-        SELECT category_id, category_name
-        FROM app.taxable_categories
-        WHERE LOWER(category_name) = LOWER($1)
+        SELECT tc.category_id, tc.category_name
+        FROM app.taxable_categories tc
+        WHERE LOWER(tc.category_name) = LOWER($1)
+        AND (
+            ($2::VARCHAR IS NULL AND NOT EXISTS (
+                SELECT 1 FROM app.regions_taxable_categories rtc
+                WHERE rtc.category_id = tc.category_id
+            ))
+            OR ($2::VARCHAR IS NOT NULL AND EXISTS (
+                SELECT 1 FROM app.regions_taxable_categories rtc
+                INNER JOIN app.regions r ON rtc.region_id = r.region_id
+                WHERE rtc.category_id = tc.category_id
+                AND r.region_name = $2::VARCHAR
+            ))
+        )
     `,
 
     /**
-     * Check if taxable category name exists excluding a specific category ID
-     * Parameters: [category_name, exclude_category_id]
+     * Check if taxable category name exists for a specific region excluding a specific category ID
+     * Parameters: [category_name, region_name, exclude_category_id]
+     * If region_name is NULL, checks for categories not linked to any region
+     * If region_name is provided, checks for categories linked to that specific region
      */
     checkTaxableCategoryNameExistsExcluding: `
-        SELECT category_id, category_name
-        FROM app.taxable_categories
-        WHERE LOWER(category_name) = LOWER($1)
-        AND category_id != $2
+        SELECT tc.category_id, tc.category_name
+        FROM app.taxable_categories tc
+        WHERE LOWER(tc.category_name) = LOWER($1)
+        AND tc.category_id != $3
+        AND (
+            ($2::VARCHAR IS NULL AND NOT EXISTS (
+                SELECT 1 FROM app.regions_taxable_categories rtc
+                WHERE rtc.category_id = tc.category_id
+            ))
+            OR ($2::VARCHAR IS NOT NULL AND EXISTS (
+                SELECT 1 FROM app.regions_taxable_categories rtc
+                INNER JOIN app.regions r ON rtc.region_id = r.region_id
+                WHERE rtc.category_id = tc.category_id
+                AND r.region_name = $2::VARCHAR
+            ))
+        )
     `,
 
     /**
