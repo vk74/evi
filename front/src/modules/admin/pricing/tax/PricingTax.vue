@@ -93,6 +93,7 @@ import { fetchRegionsVAT } from './service.fetch.regionsVAT';
 import { updateRegionsVAT } from './service.update.regionsVAT';
 import { fetchAllRegions } from '@/modules/admin/settings/service.admin.fetch.regions';
 import PricingTaxCategories from './PricingTaxCategories.vue';
+import PricingTaxRegions from './PricingTaxRegions.vue';
 
 // Store references
 const uiStore = useUiStore();
@@ -885,6 +886,9 @@ function handleRemoveMarker(): void {
 
     <!-- Taxable Categories Component -->
     <PricingTaxCategories />
+    
+    <!-- VAT Rates Component -->
+    <PricingTaxRegions />
   </div>
 </template>
 
