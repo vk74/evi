@@ -1,4 +1,4 @@
--- Version: 1.9.0
+-- Version: 1.10.0
 -- Description: Create all application tables, functions, and triggers.
 -- Backend file: 04_tables.sql
 -- Updated: mobile_phone_number -> mobile_phone field name
@@ -23,6 +23,9 @@
 -- - Added vat_rate column to app.regions_taxable_categories table for storing VAT rate (0-99%) per regional category
 -- - Added CHECK constraint to validate vat_rate range (0-99 or NULL)
 -- - Updated table and column comments to reflect VAT rate storage functionality
+-- Changes in v1.10.0:
+-- - Added taxable_category column to app.products table for linking products with taxable categories
+-- - Added FOREIGN KEY constraint fk_products_taxable_category on app.products.taxable_category -> app.taxable_categories.category_id with ON DELETE SET NULL
 
 -- ===========================================
 -- Helper Functions
@@ -191,6 +194,9 @@ CREATE TABLE IF NOT EXISTS app.products (
   -- Product status
   status_code                   app.product_status NOT NULL DEFAULT 'draft'::app.product_status,
 
+  -- Taxable category
+  taxable_category              INTEGER,
+
   -- Audit
   created_by      UUID NOT NULL DEFAULT '00000000-0000-0000-0000-00000000dead',
   created_at      TIMESTAMPTZ NOT NULL DEFAULT now(),
@@ -199,12 +205,21 @@ CREATE TABLE IF NOT EXISTS app.products (
 
   -- Relations
   FOREIGN KEY (created_by) REFERENCES app.users(user_id) ON DELETE SET DEFAULT,
-  FOREIGN KEY (updated_by) REFERENCES app.users(user_id) ON DELETE SET NULL
+  FOREIGN KEY (updated_by) REFERENCES app.users(user_id) ON DELETE SET NULL,
+  CONSTRAINT fk_products_taxable_category 
+    FOREIGN KEY (taxable_category) REFERENCES app.taxable_categories(category_id) ON DELETE SET NULL
 );
 
 CREATE TRIGGER tgr_products_set_updated_at
 BEFORE UPDATE ON app.products
 FOR EACH ROW EXECUTE FUNCTION app.tgr_set_updated_at();
+
+-- Add comments for products table
+COMMENT ON COLUMN app.products.taxable_category IS 
+    'Reference to taxable category. Links product to app.taxable_categories.category_id. Set to NULL when category is deleted.';
+
+COMMENT ON CONSTRAINT fk_products_taxable_category ON app.products IS 
+    'Foreign key to app.taxable_categories.category_id. When a category is deleted, the reference in products is automatically set to NULL.';
 
 -- ===========================================
 -- Pricing core tables
