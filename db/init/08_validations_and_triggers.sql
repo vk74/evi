@@ -21,9 +21,6 @@
 -- Changes in v1.3.0:
 -- - Added trigger for automatic updated_at update on app.regions table
 --
--- Changes in v1.4.0:
--- - Added trigger for automatic updated_at update on app.regions_vat table
---
 -- Changes in v1.5.0:
 -- - Removed validation for current.country setting (setting removed from app.settings)
 --
@@ -129,13 +126,6 @@ DO $$ BEGIN
       EXECUTE FUNCTION app.update_updated_at_column();
 EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
--- Apply trigger to regions_vat
-DO $$ BEGIN
-  CREATE TRIGGER trg_regions_vat_updated_at
-      BEFORE UPDATE ON app.regions_vat
-      FOR EACH ROW
-      EXECUTE FUNCTION app.update_updated_at_column();
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
 -- Apply trigger to taxable_categories
 DO $$ BEGIN

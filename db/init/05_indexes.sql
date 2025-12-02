@@ -6,7 +6,6 @@
 -- Changes in v1.1.4:
 -- - Removed invalid index on app.price_lists_info(valid_from, valid_to) (columns do not exist)
 -- Changes in v1.1.5:
--- - Added indexes for app.regions_vat table
 -- Changes in v1.1.6:
 -- - Added indexes for app.regions_taxable_categories table
 
@@ -139,18 +138,6 @@ CREATE INDEX IF NOT EXISTS idx_pl_item_lookup
 
 CREATE INDEX IF NOT EXISTS idx_pl_item_type 
     ON app.price_lists(item_type);
-
--- ============================================
--- Pricing: Regions VAT Indexes
--- ============================================
-
--- Index for faster lookups by region
-CREATE INDEX IF NOT EXISTS idx_regions_vat_region_name 
-    ON app.regions_vat(region_name);
-
--- Index for faster lookups by VAT rate
-CREATE INDEX IF NOT EXISTS idx_regions_vat_vat_rate 
-    ON app.regions_vat(vat_rate);
 
 -- ============================================
 -- Pricing: Regions Taxable Categories Indexes

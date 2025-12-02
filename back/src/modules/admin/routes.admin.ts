@@ -59,8 +59,6 @@ import deleteProductOptionPairsController from './products/pairs/controller.admi
 import countProductOptionPairsController from './products/pairs/controller.admin.count.product.option.pairs';
 import fetchCurrenciesController from './pricing/controller.admin.pricing.fetch.currencies';
 import updateCurrenciesController from './pricing/controller.admin.pricing.update.currencies';
-import fetchRegionsVATController from './pricing/controller.admin.pricing.fetch.regionsVAT';
-import updateRegionsVATController from './pricing/controller.admin.pricing.update.regionsVAT';
 import fetchTaxableCategoriesController from './pricing/controller.admin.fetch.taxable.categories';
 import updateTaxableCategoriesController from './pricing/controller.admin.update.taxable.categories';
 import fetchAllPriceListsController from './pricing/controller.admin.pricing.fetch.pricelists';
@@ -153,8 +151,6 @@ router.get('/api/admin/pricing/fetch-currencies', checkRateLimit, checkRequestSe
 router.post('/api/admin/pricing/update-currencies', checkRateLimit, checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, updateCurrenciesController);
 
 // Routes for Pricing Admin - Regions VAT
-router.get('/api/admin/pricing/regions-vat/fetchall', checkRateLimit, checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, fetchRegionsVATController);
-router.post('/api/admin/pricing/regions-vat/update', checkRateLimit, checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, updateRegionsVATController);
 
 // Routes for Pricing Admin - Taxable Categories
 router.get('/api/admin/pricing/taxable-categories/fetchall', checkRateLimit, checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, fetchTaxableCategoriesController);

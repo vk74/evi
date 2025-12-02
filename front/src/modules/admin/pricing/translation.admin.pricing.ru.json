@@ -184,16 +184,6 @@
         }
       },
       "tax": {
-        "table": {
-          "headers": {
-            "region": "регион"
-          }
-        },
-        "actions": {
-          "addColumn": "добавить колонку",
-          "cancel": "отмена",
-          "update": "обновить"
-        },
         "taxableCategories": {
           "title": "налогооблагаемые категории",
           "placeholder": "введите название категории",

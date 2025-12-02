@@ -184,16 +184,6 @@
         }
       },
       "tax": {
-        "table": {
-          "headers": {
-            "region": "region"
-          }
-        },
-        "actions": {
-          "addColumn": "add column",
-          "cancel": "cancel",
-          "update": "update"
-        },
         "taxableCategories": {
           "title": "taxable categories",
           "placeholder": "enter category name",
