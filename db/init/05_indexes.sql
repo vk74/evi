@@ -1,4 +1,4 @@
--- Version: 1.1.6
+-- Version: 1.1.7
 -- Description: Create all indexes for the application tables.
 -- Backend file: 05_indexes.sql
 -- Updated: mobile_phone_number -> mobile_phone field name
@@ -8,6 +8,8 @@
 -- Changes in v1.1.5:
 -- Changes in v1.1.6:
 -- - Added indexes for app.regions_taxable_categories table
+-- Changes in v1.1.7:
+-- - Added partial index on vat_rate column in app.regions_taxable_categories table for faster lookups by VAT rate
 
 -- Create indexes for app_settings
 CREATE INDEX IF NOT EXISTS idx_app_sections_path ON app.app_settings USING btree (section_path);
@@ -150,3 +152,8 @@ CREATE INDEX IF NOT EXISTS idx_regions_taxable_categories_region_id
 -- Index for faster lookups by category (which regions have this category)
 CREATE INDEX IF NOT EXISTS idx_regions_taxable_categories_category_id 
     ON app.regions_taxable_categories(category_id);
+
+-- Index for faster lookups by VAT rate (partial index for non-null values)
+CREATE INDEX IF NOT EXISTS idx_regions_taxable_categories_vat_rate 
+    ON app.regions_taxable_categories(vat_rate) 
+    WHERE vat_rate IS NOT NULL;

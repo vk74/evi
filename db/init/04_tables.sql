@@ -1,4 +1,4 @@
--- Version: 1.8.0
+-- Version: 1.9.0
 -- Description: Create all application tables, functions, and triggers.
 -- Backend file: 04_tables.sql
 -- Updated: mobile_phone_number -> mobile_phone field name
@@ -19,6 +19,10 @@
 -- - Added app.taxable_categories table for application taxable categories management
 -- Changes in v1.8.0:
 -- - Added app.regions_taxable_categories junction table for linking regions with taxable categories
+-- Changes in v1.9.0:
+-- - Added vat_rate column to app.regions_taxable_categories table for storing VAT rate (0-99%) per regional category
+-- - Added CHECK constraint to validate vat_rate range (0-99 or NULL)
+-- - Updated table and column comments to reflect VAT rate storage functionality
 
 -- ===========================================
 -- Helper Functions
@@ -270,6 +274,7 @@ COMMENT ON COLUMN app.taxable_categories.updated_at IS 'Timestamp when category 
 CREATE TABLE IF NOT EXISTS app.regions_taxable_categories (
     region_id INTEGER NOT NULL,
     category_id INTEGER NOT NULL,
+    vat_rate SMALLINT NULL,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ,
     PRIMARY KEY (region_id, category_id),
@@ -280,12 +285,15 @@ CREATE TABLE IF NOT EXISTS app.regions_taxable_categories (
     CONSTRAINT fk_regions_taxable_categories_category 
         FOREIGN KEY (category_id) 
         REFERENCES app.taxable_categories(category_id) 
-        ON DELETE CASCADE
+        ON DELETE CASCADE,
+    CONSTRAINT chk_regions_taxable_categories_vat_rate 
+        CHECK (vat_rate IS NULL OR (vat_rate >= 0 AND vat_rate <= 99))
 );
 
-COMMENT ON TABLE app.regions_taxable_categories IS 'Junction table linking regions with taxable categories - each region can have multiple taxable categories';
+COMMENT ON TABLE app.regions_taxable_categories IS 'Junction table linking regions with taxable categories - each region can have multiple taxable categories. Stores VAT rate (0-99%) for each regional category combination.';
 COMMENT ON COLUMN app.regions_taxable_categories.region_id IS 'Reference to app.regions.region_id';
 COMMENT ON COLUMN app.regions_taxable_categories.category_id IS 'Reference to app.taxable_categories.category_id';
+COMMENT ON COLUMN app.regions_taxable_categories.vat_rate IS 'VAT rate in percent (0-99) assigned to this regional category. NULL means no rate assigned yet.';
 COMMENT ON COLUMN app.regions_taxable_categories.created_at IS 'Timestamp when the binding was created';
 COMMENT ON COLUMN app.regions_taxable_categories.updated_at IS 'Timestamp when the binding was last updated';
 COMMENT ON CONSTRAINT fk_regions_taxable_categories_region ON app.regions_taxable_categories IS 
