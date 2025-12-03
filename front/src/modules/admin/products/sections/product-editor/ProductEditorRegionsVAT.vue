@@ -1,6 +1,6 @@
 <!--
   File: ProductEditorRegionsVAT.vue
-  Version: 1.3.0
+  Version: 1.3.2
   Description: Component for managing product regional availability and taxable categories
   Purpose: Provides interface for managing product availability by region and applicable taxable categories
   Frontend file - ProductEditorRegionsVAT.vue
@@ -24,6 +24,14 @@
   - Updated loadProductRegions() to load full category lists for all regions with availability=true using Promise.all()
   - Removed logic that added only assigned category to cache - now full lists are always loaded
   - Users can now select any category from the full list, not just the previously assigned one
+
+  Changes in v1.3.1:
+  - Increased category column width from 150px to 220px (by 70px)
+  - Increased dropdown list min-width from 100px to 170px (by 70px)
+
+  Changes in v1.3.2:
+  - Increased category column width from 220px to 250px (by 30px)
+  - Increased dropdown list min-width from 170px to 200px (by 30px)
 -->
 
 <script setup lang="ts">
@@ -109,7 +117,7 @@ const productId = computed(() => productsStore.editingProductId)
 const headers = computed<TableHeader[]>(() => [
   { title: t('admin.products.editor.regionsVAT.table.headers.region'), key: 'region_name', width: '250px', sortable: false },
   { title: t('admin.products.editor.regionsVAT.table.headers.availability'), key: 'availability', width: '100px', sortable: false },
-  { title: t('admin.products.editor.regionsVAT.table.headers.category'), key: 'category', width: '150px', sortable: false }
+  { title: t('admin.products.editor.regionsVAT.table.headers.category'), key: 'category', width: '250px', sortable: false }
 ])
 
 /**
@@ -497,7 +505,7 @@ onMounted(async () => {
                   variant="outlined"
                   hide-details
                   color="teal"
-                  style="min-width: 100px;"
+                  style="min-width: 200px;"
                   @update:model-value="(value) => handleCategoryChange(item, value)"
                 >
                   <template #append-inner>
