@@ -1,5 +1,5 @@
 <!--
-Version: 1.4.0
+Version: 1.5.0
 VAT rates assignment component for pricing administration module.
 Each category row can have only one active marker (displayed as check mark chip).
 Filename: PricingTaxRegions.vue
@@ -36,9 +36,16 @@ Changes in v1.4.2:
 - Fixed category filtering logic to respect "1 category always binds to 1 region" rule
 - Categories bound to other regions are now hidden from the current region view
 - Only categories bound to the current region or unbound categories are displayed
+
+Changes in v1.5.0:
+- Replaced all hardcoded texts with i18n translations
+- Added useI18n hook for translations
+- Added translations for title, table headers, action buttons, error messages, tooltips
+- All user-facing texts now use translation keys
 -->
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { useUiStore } from '@/core/state/uistate';
 import DataLoading from '@/core/ui/loaders/DataLoading.vue';
 import { PhPlus, PhTrash, PhCheck, PhCaretUpDown, PhWarningCircle } from '@phosphor-icons/vue';
@@ -47,6 +54,9 @@ import { updateTaxRegions } from './service.update.taxRegions';
 
 // Store references
 const uiStore = useUiStore();
+
+// Translations
+const { t } = useI18n();
 
 // Region interface
 interface Region {
@@ -502,7 +512,7 @@ async function loadAllData(): Promise<void> {
     const data = await fetchTaxRegions();
     
     if (!data) {
-      throw new Error('Failed to load tax regions data');
+      throw new Error(t('admin.pricing.tax.regionsTaxes.messages.loadError'));
     }
     
     // Store raw data for dynamic conversion
@@ -534,7 +544,7 @@ async function loadAllData(): Promise<void> {
     });
   } catch (err) {
     console.error('Failed to load tax regions data:', err);
-    error.value = err instanceof Error ? err.message : 'Failed to load tax regions data';
+    error.value = err instanceof Error ? err.message : t('admin.pricing.tax.regionsTaxes.messages.loadError');
   } finally {
     isLoading.value = false;
   }
@@ -572,7 +582,7 @@ async function updateChanges(): Promise<void> {
     createVATRatesSnapshot();
   } catch (err) {
     console.error('Failed to update tax regions:', err);
-    // Error is already shown by the service
+    uiStore.showErrorSnackbar(t('admin.pricing.tax.regionsTaxes.messages.updateError'));
   } finally {
     isSaving.value = false;
   }
@@ -590,7 +600,7 @@ interface TableHeader {
 
 const vatRatesTableHeaders = computed<TableHeader[]>(() => {
   const headers: TableHeader[] = [
-    { title: 'categories', key: 'name', width: '140px' }
+    { title: t('admin.pricing.tax.regionsTaxes.table.headers.categories'), key: 'name', width: '140px' }
   ];
   
   // Add dynamic VAT rate columns
@@ -688,7 +698,7 @@ onMounted(() => {
     <div class="settings-group">
       <div class="d-flex align-center justify-space-between mb-4">
         <h3 class="text-subtitle-1 font-weight-medium">
-          regions, categories and taxes
+          {{ t('admin.pricing.tax.regionsTaxes.title') }}
         </h3>
         <div class="d-flex align-center">
           <v-tooltip
@@ -703,13 +713,13 @@ onMounted(() => {
             </template>
             <div class="pa-2">
               <p class="text-subtitle-2 mb-2">
-                ошибка загрузки данных
+                {{ t('admin.pricing.tax.regionsTaxes.tooltips.loadError') }}
               </p>
               <p class="text-caption">
                 {{ error }}
               </p>
               <p class="text-caption mt-1">
-                нажмите для повторной попытки
+                {{ t('admin.pricing.tax.regionsTaxes.tooltips.retry') }}
               </p>
             </div>
           </v-tooltip>
@@ -816,35 +826,32 @@ onMounted(() => {
         <v-btn
           color="teal"
           variant="outlined"
-          size="small"
           class="me-2"
           @click="addVATRateColumn"
         >
           <template #prepend>
             <PhPlus :size="16" />
           </template>
-          ADD % RATE
+          {{ t('admin.pricing.tax.regionsTaxes.actions.addRate').toUpperCase() }}
         </v-btn>
         <v-btn
           color="grey"
           variant="outlined"
-          size="small"
           class="me-2"
           :disabled="isLoading || !hasPendingChanges"
           @click="cancelChanges"
         >
-          CANCEL
+          {{ t('admin.pricing.tax.regionsTaxes.actions.cancel').toUpperCase() }}
         </v-btn>
         <v-btn
           color="teal"
           variant="outlined"
-          size="small"
           :class="{ 'update-btn-glow': hasPendingChanges && !isSaving }"
           :disabled="!hasPendingChanges || isSaving || isLoading"
           :loading="isSaving"
           @click="updateChanges"
         >
-          UPDATE
+          {{ t('admin.pricing.tax.regionsTaxes.actions.update').toUpperCase() }}
         </v-btn>
       </div>
     </div>

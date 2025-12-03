@@ -1,5 +1,5 @@
 <!--
-Version: 1.1.0
+Version: 1.2.0
 Taxable categories management component for pricing administration module.
 Frontend file that displays and manages taxable categories in a table format.
 Filename: PricingTaxCategories.vue
@@ -8,6 +8,11 @@ Changes in v1.1.0:
 - Added region column with dropdown selection
 - Region values loaded from app.regions table via API
 - Region bindings saved to app.regions_taxable_categories table
+
+Changes in v1.2.0:
+- Replaced all hardcoded texts with i18n translations
+- Added translations for table headers, error messages, validation messages, tooltips
+- All user-facing texts now use translation keys
 -->
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue';
@@ -67,8 +72,8 @@ async function loadTaxableCategories(): Promise<void> {
     }
   } catch (error) {
     console.error('Failed to load taxable categories:', error);
-    taxableCategoriesError.value = error instanceof Error ? error.message : 'Failed to load taxable categories';
-    uiStore.showErrorSnackbar('Ошибка загрузки налогооблагаемых категорий');
+    taxableCategoriesError.value = error instanceof Error ? error.message : t('admin.pricing.tax.taxableCategories.messages.loadError');
+    uiStore.showErrorSnackbar(t('admin.pricing.tax.taxableCategories.messages.loadError'));
   } finally {
     isLoadingTaxableCategories.value = false;
   }
@@ -119,7 +124,7 @@ function validateTaxableCategoryNameFormat(name: string): { isValid: boolean; er
   if (trimmedName.length > 100) {
     return {
       isValid: false,
-      error: 'Название категории не может превышать 100 символов'
+      error: t('admin.pricing.tax.taxableCategories.validation.maxLength')
     };
   }
   
@@ -131,7 +136,7 @@ function validateTaxableCategoryNameFormat(name: string): { isValid: boolean; er
   if (!validPattern.test(trimmedName)) {
     return {
       isValid: false,
-      error: 'Название категории может содержать только буквы (любой алфавит), пробелы и знаки тире'
+      error: t('admin.pricing.tax.taxableCategories.validation.format')
     };
   }
   
@@ -299,10 +304,10 @@ async function updateTaxableCategoriesChanges(): Promise<void> {
       
       const trimmedName = category.category_name.trim();
       if (trimmedName.length === 0) {
-        throw new Error('Название категории не может быть пустым');
+        throw new Error(t('admin.pricing.tax.taxableCategories.validation.empty'));
       }
       if (trimmedName.length > 100) {
-        throw new Error('Название категории не может превышать 100 символов');
+        throw new Error(t('admin.pricing.tax.taxableCategories.validation.maxLength'));
       }
       
       // Validate format (only letters and digits)
@@ -318,10 +323,10 @@ async function updateTaxableCategoriesChanges(): Promise<void> {
     // Reload categories to get fresh data from server
     await loadTaxableCategories();
     
-    uiStore.showSuccessSnackbar('Налогооблагаемые категории успешно обновлены');
+    uiStore.showSuccessSnackbar(t('admin.pricing.tax.taxableCategories.messages.updateSuccess'));
   } catch (error) {
     console.error('Failed to update taxable categories:', error);
-    uiStore.showErrorSnackbar(error instanceof Error ? error.message : 'Ошибка обновления налогооблагаемых категорий');
+    uiStore.showErrorSnackbar(error instanceof Error ? error.message : t('admin.pricing.tax.taxableCategories.messages.updateError'));
   } finally {
     isSavingTaxableCategories.value = false;
   }
@@ -360,7 +365,7 @@ async function loadRegions(): Promise<void> {
  */
 const getRegionOptions = computed(() => {
   // Empty option for clearing region - always available
-  const emptyOption = { title: '-', value: '' };
+  const emptyOption = { title: t('admin.pricing.tax.taxableCategories.regionEmpty'), value: '' };
   const regionOptions = regions.value.map(region => ({
     title: region.region_name,
     value: region.region_name
@@ -380,9 +385,9 @@ interface TaxableCategoryTableHeader {
 }
 
 const taxableCategoriesTableHeaders = computed<TaxableCategoryTableHeader[]>(() => [
-  { title: 'category', key: 'category', width: '300px' },
-  { title: 'region', key: 'region', width: '190px', sortable: false },
-  { title: 'actions', key: 'actions', width: '100px', sortable: false }
+  { title: t('admin.pricing.tax.taxableCategories.table.headers.category'), key: 'category', width: '300px' },
+  { title: t('admin.pricing.tax.taxableCategories.table.headers.region'), key: 'region', width: '190px', sortable: false },
+  { title: t('admin.pricing.tax.taxableCategories.table.headers.actions'), key: 'actions', width: '100px', sortable: false }
 ]);
 
 // Initialize component
@@ -414,13 +419,13 @@ onMounted(async () => {
         </template>
         <div class="pa-2">
           <p class="text-subtitle-2 mb-2">
-            ошибка загрузки категорий
+            {{ t('admin.pricing.tax.taxableCategories.tooltips.loadError') }}
           </p>
           <p class="text-caption">
             {{ taxableCategoriesError }}
           </p>
           <p class="text-caption mt-1">
-            нажмите для повторной попытки
+            {{ t('admin.pricing.tax.taxableCategories.tooltips.retry') }}
           </p>
         </div>
       </v-tooltip>
@@ -497,7 +502,7 @@ onMounted(async () => {
         @click="addTaxableCategory"
       >
         <template #prepend>
-          <PhPlus />
+          <PhPlus :size="16" />
         </template>
         {{ t('admin.pricing.tax.taxableCategories.actions.add').toUpperCase() }}
       </v-btn>

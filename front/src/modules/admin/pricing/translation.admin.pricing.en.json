@@ -184,6 +184,10 @@
         }
       },
       "tax": {
+        "sections": {
+          "categories": "categories",
+          "regionsTaxes": "regions & taxes"
+        },
         "taxableCategories": {
           "title": "taxable categories",
           "placeholder": "enter category name",
@@ -195,8 +199,45 @@
           "table": {
             "headers": {
               "category": "category",
+              "region": "region",
               "actions": "actions"
             }
+          },
+          "messages": {
+            "loadError": "failed to load taxable categories",
+            "updateSuccess": "taxable categories updated successfully",
+            "updateError": "failed to update taxable categories"
+          },
+          "validation": {
+            "maxLength": "category name cannot exceed 100 characters",
+            "format": "category name can only contain letters (any alphabet), spaces and hyphens",
+            "empty": "category name cannot be empty"
+          },
+          "tooltips": {
+            "loadError": "error loading categories",
+            "retry": "click to retry"
+          },
+          "regionEmpty": "-"
+        },
+        "regionsTaxes": {
+          "title": "regions, categories and taxes",
+          "table": {
+            "headers": {
+              "categories": "categories"
+            }
+          },
+          "actions": {
+            "addRate": "add % rate",
+            "cancel": "cancel",
+            "update": "update"
+          },
+          "messages": {
+            "loadError": "failed to load tax regions data",
+            "updateError": "failed to update tax regions"
+          },
+          "tooltips": {
+            "loadError": "error loading data",
+            "retry": "click to retry"
           }
         }
       },
