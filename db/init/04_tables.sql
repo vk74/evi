@@ -1,4 +1,4 @@
--- Version: 1.11.0
+-- Version: 1.12.0
 -- Description: Create all application tables, functions, and triggers.
 -- Backend file: 04_tables.sql
 -- Updated: mobile_phone_number -> mobile_phone field name
@@ -28,6 +28,11 @@
 -- - Added FOREIGN KEY constraint fk_products_taxable_category on app.products.taxable_category -> app.taxable_categories.category_id with ON DELETE SET NULL
 -- Changes in v1.11.0:
 -- - Added app.product_regions junction table for linking products with regions (product availability in regions)
+-- Changes in v1.12.0:
+-- - Added taxable_category_id column to app.product_regions table for linking products with taxable categories per region
+-- - Added composite FOREIGN KEY constraint fk_product_regions_region_category on (region_id, taxable_category_id) -> app.regions_taxable_categories(region_id, category_id) with ON DELETE SET NULL
+-- - Removed taxable_category column from app.products table (moved to app.product_regions for regional assignment)
+-- - Removed FOREIGN KEY constraint fk_products_taxable_category from app.products
 
 -- ===========================================
 -- Helper Functions
@@ -196,9 +201,6 @@ CREATE TABLE IF NOT EXISTS app.products (
   -- Product status
   status_code                   app.product_status NOT NULL DEFAULT 'draft'::app.product_status,
 
-  -- Taxable category
-  taxable_category              INTEGER,
-
   -- Audit
   created_by      UUID NOT NULL DEFAULT '00000000-0000-0000-0000-00000000dead',
   created_at      TIMESTAMPTZ NOT NULL DEFAULT now(),
@@ -207,26 +209,18 @@ CREATE TABLE IF NOT EXISTS app.products (
 
   -- Relations
   FOREIGN KEY (created_by) REFERENCES app.users(user_id) ON DELETE SET DEFAULT,
-  FOREIGN KEY (updated_by) REFERENCES app.users(user_id) ON DELETE SET NULL,
-  CONSTRAINT fk_products_taxable_category 
-    FOREIGN KEY (taxable_category) REFERENCES app.taxable_categories(category_id) ON DELETE SET NULL
+  FOREIGN KEY (updated_by) REFERENCES app.users(user_id) ON DELETE SET NULL
 );
 
 CREATE TRIGGER tgr_products_set_updated_at
 BEFORE UPDATE ON app.products
 FOR EACH ROW EXECUTE FUNCTION app.tgr_set_updated_at();
 
--- Add comments for products table
-COMMENT ON COLUMN app.products.taxable_category IS 
-    'Reference to taxable category. Links product to app.taxable_categories.category_id. Set to NULL when category is deleted.';
-
-COMMENT ON CONSTRAINT fk_products_taxable_category ON app.products IS 
-    'Foreign key to app.taxable_categories.category_id. When a category is deleted, the reference in products is automatically set to NULL.';
-
 -- Product-to-region link (product availability in regions)
 CREATE TABLE IF NOT EXISTS app.product_regions (
     product_id UUID NOT NULL,
     region_id INTEGER NOT NULL,
+    taxable_category_id INTEGER NULL,
     
     -- Audit
     created_by UUID NOT NULL,
@@ -246,6 +240,10 @@ CREATE TABLE IF NOT EXISTS app.product_regions (
         FOREIGN KEY (region_id) 
         REFERENCES app.regions(region_id) 
         ON DELETE CASCADE,
+    CONSTRAINT fk_product_regions_region_category 
+        FOREIGN KEY (region_id, taxable_category_id) 
+        REFERENCES app.regions_taxable_categories(region_id, category_id) 
+        ON DELETE SET NULL,
     CONSTRAINT fk_product_regions_created_by 
         FOREIGN KEY (created_by) 
         REFERENCES app.users(user_id) 
@@ -257,9 +255,10 @@ CREATE TABLE IF NOT EXISTS app.product_regions (
 );
 
 -- Add comments for product_regions table
-COMMENT ON TABLE app.product_regions IS 'Junction table linking products with regions - each product can be available in multiple regions';
+COMMENT ON TABLE app.product_regions IS 'Junction table linking products with regions - each product can be available in multiple regions. Stores taxable category assignment per region.';
 COMMENT ON COLUMN app.product_regions.product_id IS 'Reference to app.products.product_id';
 COMMENT ON COLUMN app.product_regions.region_id IS 'Reference to app.regions.region_id';
+COMMENT ON COLUMN app.product_regions.taxable_category_id IS 'Reference to app.taxable_categories.category_id for this product in this region. NULL if no category assigned. Must exist in app.regions_taxable_categories for the same region_id.';
 COMMENT ON COLUMN app.product_regions.created_by IS 'User who created the product-region association (required, no default - backend must provide valid user UUID)';
 COMMENT ON COLUMN app.product_regions.created_at IS 'Timestamp when the product-region association was created';
 COMMENT ON COLUMN app.product_regions.updated_by IS 'User who last updated the product-region association';
@@ -268,6 +267,8 @@ COMMENT ON CONSTRAINT fk_product_regions_product ON app.product_regions IS
     'Foreign key to app.products.product_id with CASCADE delete - when product is deleted, all region associations are automatically deleted';
 COMMENT ON CONSTRAINT fk_product_regions_region ON app.product_regions IS 
     'Foreign key to app.regions.region_id with CASCADE delete - when region is deleted, all product associations are automatically deleted';
+COMMENT ON CONSTRAINT fk_product_regions_region_category ON app.product_regions IS 
+    'Composite foreign key to app.regions_taxable_categories(region_id, category_id) with ON DELETE SET NULL. Ensures that the assigned category is available in the product region. When the category-region binding is deleted, taxable_category_id is automatically set to NULL.';
 COMMENT ON CONSTRAINT fk_product_regions_created_by ON app.product_regions IS 
     'Foreign key to app.users.user_id with RESTRICT delete - prevents deletion of user who created the association';
 
