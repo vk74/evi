@@ -1,4 +1,4 @@
--- Version: 1.10.0
+-- Version: 1.11.0
 -- Description: Create all application tables, functions, and triggers.
 -- Backend file: 04_tables.sql
 -- Updated: mobile_phone_number -> mobile_phone field name
@@ -26,6 +26,8 @@
 -- Changes in v1.10.0:
 -- - Added taxable_category column to app.products table for linking products with taxable categories
 -- - Added FOREIGN KEY constraint fk_products_taxable_category on app.products.taxable_category -> app.taxable_categories.category_id with ON DELETE SET NULL
+-- Changes in v1.11.0:
+-- - Added app.product_regions junction table for linking products with regions (product availability in regions)
 
 -- ===========================================
 -- Helper Functions
@@ -220,6 +222,54 @@ COMMENT ON COLUMN app.products.taxable_category IS
 
 COMMENT ON CONSTRAINT fk_products_taxable_category ON app.products IS 
     'Foreign key to app.taxable_categories.category_id. When a category is deleted, the reference in products is automatically set to NULL.';
+
+-- Product-to-region link (product availability in regions)
+CREATE TABLE IF NOT EXISTS app.product_regions (
+    product_id UUID NOT NULL,
+    region_id INTEGER NOT NULL,
+    
+    -- Audit
+    created_by UUID NOT NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    updated_by UUID,
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    
+    -- Primary key
+    PRIMARY KEY (product_id, region_id),
+    
+    -- Foreign keys
+    CONSTRAINT fk_product_regions_product 
+        FOREIGN KEY (product_id) 
+        REFERENCES app.products(product_id) 
+        ON DELETE CASCADE,
+    CONSTRAINT fk_product_regions_region 
+        FOREIGN KEY (region_id) 
+        REFERENCES app.regions(region_id) 
+        ON DELETE CASCADE,
+    CONSTRAINT fk_product_regions_created_by 
+        FOREIGN KEY (created_by) 
+        REFERENCES app.users(user_id) 
+        ON DELETE RESTRICT,
+    CONSTRAINT fk_product_regions_updated_by 
+        FOREIGN KEY (updated_by) 
+        REFERENCES app.users(user_id) 
+        ON DELETE SET NULL
+);
+
+-- Add comments for product_regions table
+COMMENT ON TABLE app.product_regions IS 'Junction table linking products with regions - each product can be available in multiple regions';
+COMMENT ON COLUMN app.product_regions.product_id IS 'Reference to app.products.product_id';
+COMMENT ON COLUMN app.product_regions.region_id IS 'Reference to app.regions.region_id';
+COMMENT ON COLUMN app.product_regions.created_by IS 'User who created the product-region association (required, no default - backend must provide valid user UUID)';
+COMMENT ON COLUMN app.product_regions.created_at IS 'Timestamp when the product-region association was created';
+COMMENT ON COLUMN app.product_regions.updated_by IS 'User who last updated the product-region association';
+COMMENT ON COLUMN app.product_regions.updated_at IS 'Timestamp when the product-region association was last updated';
+COMMENT ON CONSTRAINT fk_product_regions_product ON app.product_regions IS 
+    'Foreign key to app.products.product_id with CASCADE delete - when product is deleted, all region associations are automatically deleted';
+COMMENT ON CONSTRAINT fk_product_regions_region ON app.product_regions IS 
+    'Foreign key to app.regions.region_id with CASCADE delete - when region is deleted, all product associations are automatically deleted';
+COMMENT ON CONSTRAINT fk_product_regions_created_by ON app.product_regions IS 
+    'Foreign key to app.users.user_id with RESTRICT delete - prevents deletion of user who created the association';
 
 -- ===========================================
 -- Pricing core tables
