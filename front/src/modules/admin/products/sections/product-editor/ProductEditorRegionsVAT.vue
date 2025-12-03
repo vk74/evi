@@ -1,8 +1,8 @@
 <!--
   File: ProductEditorRegionsVAT.vue
-  Version: 1.2.0
-  Description: Component for managing product regional availability and VAT rates
-  Purpose: Provides interface for managing product availability by region and applicable VAT rates
+  Version: 1.3.0
+  Description: Component for managing product regional availability and taxable categories
+  Purpose: Provides interface for managing product availability by region and applicable taxable categories
   Frontend file - ProductEditorRegionsVAT.vue
 
   Changes in v1.1.0:
@@ -12,6 +12,18 @@
 
   Changes in v1.2.0:
   - Further increased VAT column width to 150px to prevent dropdown overflow
+
+  Changes in v1.3.0:
+  - Renamed VAT column to category
+  - Updated interface RegionVATRow to RegionCategoryRow
+  - Changed vat field to category_id and category_name
+  - Added localization for "category" column header (replaced "vat")
+  - Replaced translation key with hardcoded "-" for empty category option
+  - Fixed category display for already bound regions - categories are now added to cache when loading product data
+  - Modified loadCategoriesForRegion() to always load full category list from API (removed early return on cache hit)
+  - Updated loadProductRegions() to load full category lists for all regions with availability=true using Promise.all()
+  - Removed logic that added only assigned category to cache - now full lists are always loaded
+  - Users can now select any category from the full list, not just the previously assigned one
 -->
 
 <script setup lang="ts">
@@ -20,17 +32,24 @@ import { useI18n } from 'vue-i18n'
 import { useProductsAdminStore } from '../../state.products.admin'
 import { useUiStore } from '@/core/state/uistate'
 import { PhCaretUpDown, PhCheckSquare, PhSquare } from '@phosphor-icons/vue'
+import { fetchAllRegions } from '@/modules/admin/settings/service.admin.fetch.regions'
+import type { Region } from '@/modules/admin/settings/types.admin.regions'
+import { fetchProductRegions } from '../../service.fetch.productRegions'
+import { updateProductRegions } from '../../service.update.productRegions'
+import { api } from '@/core/api/service.axios'
+import DataLoading from '@/core/ui/loaders/DataLoading.vue'
 
 // Types
-interface RegionVATRow {
-  id: number
-  region: string
+interface RegionCategoryRow {
+  region_id: number
+  region_name: string
   availability: boolean
-  vat: number | null  // VAT rate in percent (0, 10, 20, etc.)
+  category_id: number | null
+  category_name: string | null
 }
 
-interface RegionsVATSnapshot {
-  regions: RegionVATRow[]
+interface RegionsCategorySnapshot {
+  regions: RegionCategoryRow[]
 }
 
 interface TableHeader {
@@ -64,52 +83,180 @@ const productName = computed(() => {
   return formData.value.translations?.[langKey]?.name || 'N/A'
 })
 
-// Available VAT rates (mock data)
-const availableVATRates = [
-  { priority: 1, rate: 0 },
-  { priority: 2, rate: 10 },
-  { priority: 3, rate: 20 }
-]
-
-// Mock regions data
-const mockRegions = ['Moscow', 'Saint Petersburg', 'Novosibirsk', 'Yekaterinburg', 'Kazan']
+// Categories cache per region (will be loaded dynamically)
+const categoriesCache = ref<Record<number, Array<{ category_id: number; category_name: string }>>>({})
 
 // Regions data
-const regions = ref<RegionVATRow[]>([])
+const regions = ref<RegionCategoryRow[]>([])
+
+// All available regions from app.regions
+const allRegions = ref<Region[]>([])
+const isLoadingRegions = ref(false)
 
 // Original state snapshot for change tracking
-const regionsVATOriginal = ref<RegionsVATSnapshot | null>(null)
+const regionsCategoryOriginal = ref<RegionsCategorySnapshot | null>(null)
 
 // Loading state
 const isSaving = ref(false)
+const isLoading = ref(false)
+const isLoadingCategories = ref<Record<number, boolean>>({})
+const error = ref<string | null>(null)
+
+// Get current product ID from store
+const productId = computed(() => productsStore.editingProductId)
 
 // Table headers
 const headers = computed<TableHeader[]>(() => [
-  { title: t('admin.products.editor.regionsVAT.table.headers.region'), key: 'region', width: '250px', sortable: false },
+  { title: t('admin.products.editor.regionsVAT.table.headers.region'), key: 'region_name', width: '250px', sortable: false },
   { title: t('admin.products.editor.regionsVAT.table.headers.availability'), key: 'availability', width: '100px', sortable: false },
-  { title: t('admin.products.editor.regionsVAT.table.headers.vat'), key: 'vat', width: '150px', sortable: false }
+  { title: t('admin.products.editor.regionsVAT.table.headers.category'), key: 'category', width: '150px', sortable: false }
 ])
 
-// VAT rate options for select
-const vatRateOptions = computed(() => {
+/**
+ * Get category options for a specific region
+ */
+function getCategoryOptionsForRegion(regionId: number): Array<{ title: string; value: number | null }> {
+  const categories = categoriesCache.value[regionId] || []
   return [
-    { title: t('admin.products.editor.regionsVAT.vatRates.none') || '-', value: null },
-    ...availableVATRates.map(item => ({
-      title: `${item.priority} - ${item.rate}%`,
-      value: item.rate
+    { title: '-', value: null },
+    ...categories.map(cat => ({
+      title: cat.category_name,
+      value: cat.category_id
     }))
   ]
-})
+}
 
 /**
- * Initialize regions data with mock data
+ * Load all regions from app.regions table
+ */
+async function loadAllRegions(): Promise<void> {
+  isLoadingRegions.value = true
+  try {
+    const result = await fetchAllRegions()
+    if (result.success && result.data) {
+      allRegions.value = result.data
+    } else {
+      allRegions.value = []
+    }
+  } catch (error) {
+    console.error('Failed to load regions:', error)
+    allRegions.value = []
+    uiStore.showErrorSnackbar('Failed to load regions')
+  } finally {
+    isLoadingRegions.value = false
+  }
+}
+
+/**
+ * Load categories for a specific region
+ * Always loads full list of categories from API to ensure data freshness
+ */
+async function loadCategoriesForRegion(regionId: number): Promise<void> {
+  isLoadingCategories.value[regionId] = true
+  try {
+    const response = await api.get<{
+      success: boolean
+      message: string
+      data?: Array<{ category_id: number; category_name: string }>
+    }>(`/api/admin/products/taxable-categories/by-region/${regionId}`)
+    
+    if (response.data.success && response.data.data) {
+      categoriesCache.value[regionId] = response.data.data
+    } else {
+      categoriesCache.value[regionId] = []
+    }
+  } catch (error) {
+    console.error(`Failed to load categories for region ${regionId}:`, error)
+    categoriesCache.value[regionId] = []
+  } finally {
+    isLoadingCategories.value[regionId] = false
+  }
+}
+
+/**
+ * Load product regions data from API
+ */
+async function loadProductRegions(): Promise<void> {
+  if (!productId.value) {
+    return
+  }
+  
+  isLoading.value = true
+  error.value = null
+  
+  try {
+    const productRegions = await fetchProductRegions(productId.value)
+    
+    // Merge with allRegions to ensure all regions are shown
+    const regionMap = new Map<number, RegionCategoryRow>()
+    
+    // First, add all regions from allRegions with default values
+    allRegions.value.forEach(region => {
+      regionMap.set(region.region_id, {
+        region_id: region.region_id,
+        region_name: region.region_name,
+        availability: false,
+        category_id: null,
+        category_name: null
+      })
+    })
+    
+    // Then, update with actual product data
+    productRegions.forEach(pr => {
+      const existing = regionMap.get(pr.region_id)
+      if (existing) {
+        existing.availability = pr.category_id !== null
+        existing.category_id = pr.category_id
+        existing.category_name = pr.category_name
+      }
+    })
+    
+    regions.value = Array.from(regionMap.values())
+    
+    // Load full category lists for all regions with availability=true
+    const regionsToLoadCategories = regions.value
+      .filter(region => region.availability)
+      .map(region => region.region_id)
+    
+    if (regionsToLoadCategories.length > 0) {
+      await Promise.all(
+        regionsToLoadCategories.map(regionId => loadCategoriesForRegion(regionId))
+      )
+      
+      // Update category_name from cache after loading categories
+      regions.value.forEach(region => {
+        if (region.availability && region.category_id !== null) {
+          const categories = categoriesCache.value[region.region_id] || []
+          const category = categories.find(c => c.category_id === region.category_id)
+          if (category) {
+            region.category_name = category.category_name
+          }
+        }
+      })
+    }
+    
+    // Create snapshot after loading
+    createSnapshot()
+  } catch (err) {
+    console.error('Failed to load product regions:', err)
+    error.value = err instanceof Error ? err.message : 'Failed to load product regions'
+    uiStore.showErrorSnackbar(error.value)
+  } finally {
+    isLoading.value = false
+  }
+}
+
+/**
+ * Initialize regions data from allRegions
  */
 function initializeRegions(): void {
-  regions.value = mockRegions.map((regionName, index) => ({
-    id: index + 1,
-    region: regionName,
+  // Create regions array from allRegions with default values
+  regions.value = allRegions.value.map(region => ({
+    region_id: region.region_id,
+    region_name: region.region_name,
     availability: false,
-    vat: null
+    category_id: null,
+    category_name: null
   }))
   
   // Create snapshot of initial state for change tracking
@@ -117,10 +264,10 @@ function initializeRegions(): void {
 }
 
 /**
- * Create snapshot of current regions VAT data state for change tracking
+ * Create snapshot of current regions category data state for change tracking
  */
 function createSnapshot(): void {
-  regionsVATOriginal.value = {
+  regionsCategoryOriginal.value = {
     regions: JSON.parse(JSON.stringify(regions.value))
   }
 }
@@ -129,11 +276,11 @@ function createSnapshot(): void {
  * Check if there are pending changes compared to original state
  */
 const hasPendingChanges = computed(() => {
-  if (!regionsVATOriginal.value) {
+  if (!regionsCategoryOriginal.value) {
     return false
   }
   
-  const original = regionsVATOriginal.value
+  const original = regionsCategoryOriginal.value
   
   // Check regions (length and content)
   if (original.regions.length !== regions.value.length) {
@@ -143,14 +290,15 @@ const hasPendingChanges = computed(() => {
   // Check each region
   for (let i = 0; i < regions.value.length; i++) {
     const current = regions.value[i]
-    const orig = original.regions.find(r => r.id === current.id)
+    const orig = original.regions.find(r => r.region_id === current.region_id)
     
     if (!orig) {
       return true
     }
     
-    // Check availability and VAT
-    if (orig.availability !== current.availability || orig.vat !== current.vat) {
+    // Check availability and category
+    if (orig.availability !== current.availability || 
+        orig.category_id !== current.category_id) {
       return true
     }
   }
@@ -162,13 +310,13 @@ const hasPendingChanges = computed(() => {
  * Cancel changes - reset to initial state
  */
 function cancelChanges(): void {
-  if (!regionsVATOriginal.value) {
+  if (!regionsCategoryOriginal.value) {
     // If no snapshot exists, reload from initial state
     initializeRegions()
     return
   }
   
-  const original = regionsVATOriginal.value
+  const original = regionsCategoryOriginal.value
   
   // Restore regions
   regions.value = JSON.parse(JSON.stringify(original.regions))
@@ -177,37 +325,70 @@ function cancelChanges(): void {
 }
 
 /**
- * Update changes - save to backend (mock implementation)
+ * Handle availability toggle
+ */
+async function handleAvailabilityToggle(item: RegionCategoryRow): Promise<void> {
+  item.availability = !item.availability
+  
+  if (item.availability) {
+    // Load categories for this region if not already loaded
+    await loadCategoriesForRegion(item.region_id)
+  } else {
+    // Clear category when availability is turned off
+    item.category_id = null
+    item.category_name = null
+  }
+}
+
+/**
+ * Handle category change
+ */
+function handleCategoryChange(item: RegionCategoryRow, categoryId: number | null): void {
+  item.category_id = categoryId
+  
+  // Update category_name from cache
+  if (categoryId !== null) {
+    const categories = categoriesCache.value[item.region_id] || []
+    const category = categories.find(c => c.category_id === categoryId)
+    item.category_name = category ? category.category_name : null
+  } else {
+    item.category_name = null
+  }
+}
+
+/**
+ * Update changes - save to backend
  */
 async function updateChanges(): Promise<void> {
+  if (!productId.value) {
+    uiStore.showErrorSnackbar(t('admin.products.editor.regionsVAT.messages.productIdRequired') || 'Product ID is required')
+    return
+  }
+  
   isSaving.value = true
   
   try {
-    // Collect all data from table
-    const regionsVATData: Array<{region: string, availability: boolean, vat: number | null}> = []
+    // Collect all data from table - only regions with availability = true and category_id
+    const regionsData: Array<{region_id: number, category_id: number | null}> = []
     
     regions.value.forEach(region => {
-      regionsVATData.push({
-        region: region.region,
-        availability: region.availability,
-        vat: region.vat
-      })
+      if (region.availability && region.category_id !== null) {
+        regionsData.push({
+          region_id: region.region_id,
+          category_id: region.category_id
+        })
+      }
     })
     
-    // TODO: Send to backend API endpoint
-    console.log('Saving regions VAT data:', regionsVATData)
+    // Send to backend API endpoint
+    await updateProductRegions(productId.value, regionsData)
     
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 500))
-    
-    // Update snapshot after successful save
-    createSnapshot()
+    // Reload data to get fresh state from server
+    await loadProductRegions()
     
     uiStore.showSuccessSnackbar(t('admin.products.editor.regionsVAT.messages.changesSaved') || 'Changes saved successfully')
-    
-    console.log(`Saved ${regionsVATData.length} region VAT records`)
   } catch (error) {
-    console.error('Failed to save regions VAT data:', error)
+    console.error('Failed to save regions category data:', error)
     uiStore.showErrorSnackbar(t('admin.products.editor.regionsVAT.messages.saveError') || 'Failed to save changes')
   } finally {
     isSaving.value = false
@@ -215,8 +396,14 @@ async function updateChanges(): Promise<void> {
 }
 
 // Initialize on mount
-onMounted(() => {
-  initializeRegions()
+onMounted(async () => {
+  await loadAllRegions()
+  
+  if (productId.value) {
+    await loadProductRegions()
+  } else {
+    initializeRegions()
+  }
 })
 </script>
 
@@ -263,8 +450,15 @@ onMounted(() => {
         <div class="pa-6">
           <!-- Regions VAT Management Section -->
           <div class="regions-vat-management-section">
+            <!-- Loading state -->
+            <DataLoading
+              v-if="isLoading"
+              :loading="isLoading"
+              size="small"
+            />
+            
             <!-- Regions VAT Table -->
-            <div class="regions-vat-table-wrapper">
+            <div v-else class="regions-vat-table-wrapper">
               <v-data-table
                 :headers="headers"
                 :items="regions"
@@ -273,8 +467,8 @@ onMounted(() => {
                 class="regions-vat-table"
               >
               <!-- Region column -->
-              <template #[`item.region`]="{ item }">
-                <span class="region-name">{{ item.region }}</span>
+              <template #[`item.region_name`]="{ item }">
+                <span class="region-name">{{ item.region_name }}</span>
               </template>
 
               <!-- Availability column -->
@@ -284,7 +478,7 @@ onMounted(() => {
                     icon
                     variant="text"
                     density="comfortable"
-                    @click="item.availability = !item.availability"
+                    @click="handleAvailabilityToggle(item)"
                   >
                     <PhCheckSquare v-if="item.availability" :size="18" color="teal" />
                     <PhSquare v-else :size="18" color="grey" />
@@ -292,16 +486,19 @@ onMounted(() => {
                 </div>
               </template>
 
-              <!-- VAT column -->
-              <template #[`item.vat`]="{ item }">
+              <!-- Category column -->
+              <template #[`item.category`]="{ item }">
                 <v-select
-                  v-model="item.vat"
-                  :items="vatRateOptions"
+                  v-model="item.category_id"
+                  :items="getCategoryOptionsForRegion(item.region_id)"
+                  :disabled="!item.availability"
+                  :loading="isLoadingCategories[item.region_id]"
                   density="compact"
                   variant="outlined"
                   hide-details
                   color="teal"
                   style="min-width: 100px;"
+                  @update:model-value="(value) => handleCategoryChange(item, value)"
                 >
                   <template #append-inner>
                     <PhCaretUpDown class="dropdown-icon" />
@@ -525,4 +722,3 @@ onMounted(() => {
   }
 }
 </style>
-

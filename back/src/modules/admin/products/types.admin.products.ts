@@ -294,3 +294,31 @@ export interface AssignProductOwnerResponse extends ApiResponse {
     }
 }
 
+// Product region interface (for database operations)
+export interface ProductRegion {
+    region_id: number
+    region_name: string
+    category_id: number | null
+    category_name: string | null
+}
+
+// Fetch product regions response interface
+export interface FetchProductRegionsResponse extends ApiResponse {
+    data?: ProductRegion[]
+}
+
+// Update product regions request interface
+export interface UpdateProductRegionsRequest {
+    regions: Array<{
+        region_id: number
+        category_id: number | null
+    }>
+}
+
+// Update product regions response interface
+export interface UpdateProductRegionsResponse extends ApiResponse {
+    data?: {
+        totalRecords: number
+    }
+}
+

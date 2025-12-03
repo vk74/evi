@@ -308,3 +308,36 @@ export interface DeleteProductsResult {
     totalErrors: number
   }
 }
+
+// Product region interface
+export interface ProductRegion {
+  region_id: number
+  region_name: string
+  availability: boolean
+  category_id: number | null
+  category_name: string | null
+}
+
+// Fetch product regions response interface
+export interface FetchProductRegionsResponse {
+  success: boolean
+  message: string
+  data?: ProductRegion[]
+}
+
+// Update product regions request interface
+export interface UpdateProductRegionsRequest {
+  regions: Array<{
+    region_id: number
+    category_id: number | null
+  }>
+}
+
+// Update product regions response interface
+export interface UpdateProductRegionsResponse {
+  success: boolean
+  message: string
+  data?: {
+    totalRecords: number
+  }
+}

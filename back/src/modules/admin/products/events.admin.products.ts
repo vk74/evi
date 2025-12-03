@@ -23,6 +23,11 @@
  * Changes in v1.4.2:
  * - Added PRODUCT_ASSIGN_OWNER_EVENTS collection for product owner assignment operations
  * 
+ * Changes in v1.4.3:
+ * - Removed STARTED event from PRODUCT_REGIONS_UPDATE_EVENTS (removed non-valuable debug events)
+ * - Added granular events: REGION_AVAILABILITY_ENABLED, REGION_AVAILABILITY_DISABLED, REGION_CATEGORY_CHANGED
+ * - Improved SUCCESS and ERROR events with detailed payload for better auditability
+ * 
  * Backend file - events.admin.products.ts
  */
 
@@ -579,6 +584,94 @@ export const PRODUCT_ASSIGN_OWNER_EVENTS = {
         severity: 'error',
         eventMessage: 'Product owner assignment failed',
         payload: null, // Will be { productIds: string[], newOwnerUsername: string, error: string }
+        errorData: null,
+        version: '1.0.0'
+    }
+};
+
+// Product regions fetch events
+export const PRODUCT_REGIONS_FETCH_EVENTS = {
+    STARTED: {
+        eventName: 'adminProducts.regions.fetch.started',
+        source: 'admin-products',
+        eventType: 'app',
+        severity: 'debug',
+        eventMessage: 'Product regions fetch process started',
+        payload: null, // Will be { productId: string }
+        version: '1.0.0'
+    },
+
+    SUCCESS: {
+        eventName: 'adminProducts.regions.fetch.success',
+        source: 'admin-products',
+        eventType: 'app',
+        severity: 'debug',
+        eventMessage: 'Product regions fetched successfully',
+        payload: null, // Will be { productId: string, regionsCount: number }
+        version: '1.0.0'
+    },
+
+    ERROR: {
+        eventName: 'adminProducts.regions.fetch.error',
+        source: 'admin-products',
+        eventType: 'app',
+        severity: 'error',
+        eventMessage: 'Product regions fetch failed',
+        payload: null, // Will be { productId: string, error: string }
+        errorData: null,
+        version: '1.0.0'
+    }
+};
+
+// Product regions update events
+export const PRODUCT_REGIONS_UPDATE_EVENTS = {
+    REGION_AVAILABILITY_ENABLED: {
+        eventName: 'adminProducts.regions.update.region_availability_enabled',
+        source: 'admin-products',
+        eventType: 'app',
+        severity: 'info',
+        eventMessage: 'Product region availability enabled',
+        payload: null, // Will be { productId: string, productCode: string, regionId: number, regionName: string, categoryId: number, categoryName: string }
+        version: '1.0.0'
+    },
+
+    REGION_AVAILABILITY_DISABLED: {
+        eventName: 'adminProducts.regions.update.region_availability_disabled',
+        source: 'admin-products',
+        eventType: 'app',
+        severity: 'info',
+        eventMessage: 'Product region availability disabled',
+        payload: null, // Will be { productId: string, productCode: string, regionId: number, regionName: string, oldCategoryId: number | null, oldCategoryName: string | null }
+        version: '1.0.0'
+    },
+
+    REGION_CATEGORY_CHANGED: {
+        eventName: 'adminProducts.regions.update.region_category_changed',
+        source: 'admin-products',
+        eventType: 'app',
+        severity: 'info',
+        eventMessage: 'Product region category changed',
+        payload: null, // Will be { productId: string, productCode: string, regionId: number, regionName: string, oldCategoryId: number | null, oldCategoryName: string | null, newCategoryId: number, newCategoryName: string }
+        version: '1.0.0'
+    },
+
+    SUCCESS: {
+        eventName: 'adminProducts.regions.update.success',
+        source: 'admin-products',
+        eventType: 'app',
+        severity: 'info',
+        eventMessage: 'Product regions updated successfully',
+        payload: null, // Will be { productId: string, productCode: string, totalRegions: number, addedRegions: number, removedRegions: number, changedCategories: number, changes: Array<{type, regionId, regionName, oldCategoryId?, oldCategoryName?, newCategoryId?, newCategoryName?}> }
+        version: '1.0.0'
+    },
+
+    ERROR: {
+        eventName: 'adminProducts.regions.update.error',
+        source: 'admin-products',
+        eventType: 'app',
+        severity: 'error',
+        eventMessage: 'Product regions update failed',
+        payload: null, // Will be { productId: string, productCode?: string, attemptedChanges?: {totalRegions, addedRegions, removedRegions}, error: string, errorType?: string }
         errorData: null,
         version: '1.0.0'
     }

@@ -148,7 +148,7 @@
             "headers": {
               "region": "регион",
               "availability": "доступность",
-              "vat": "НДС"
+              "category": "категория"
             }
           },
           "vatRates": {

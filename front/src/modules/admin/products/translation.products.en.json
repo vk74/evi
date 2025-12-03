@@ -148,7 +148,7 @@
             "headers": {
               "region": "region",
               "availability": "availability",
-              "vat": "VAT"
+              "category": "category"
             }
           },
           "vatRates": {

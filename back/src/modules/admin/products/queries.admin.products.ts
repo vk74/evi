@@ -64,6 +64,12 @@
   - Removed JSONB fields (area_specifics, industry_specifics, key_features, product_overview) from createProductTranslation, fetchProductTranslations, updateProductTranslation
   - Removed visibility flags (is_visible_area_specs, is_visible_industry_specs, is_visible_key_features, is_visible_overview) from createProduct, fetchSingleProduct, updateProduct, fetchAllProducts, fetchAllOptions
   - Updated parameter numbers in queries to reflect removed parameters
+  
+  Changes in v1.4.0:
+  - Added fetchProductRegions query for loading product-region bindings with categories
+  - Added deleteProductRegions query for removing all product-region bindings
+  - Added insertProductRegion query for creating product-region bindings
+  - Added fetchTaxableCategoriesByRegion query for loading categories available in a region
  */
 
 export const queries = {
@@ -489,5 +495,56 @@ export const queries = {
         ), 
         updated_at = NOW()
         WHERE product_id = $1
+    `,
+
+    /**
+     * Fetches all regions with product-region bindings and categories
+     * Returns all regions, with LEFT JOIN to product_regions and taxable_categories
+     * Parameters: [product_id]
+     */
+    fetchProductRegions: `
+        SELECT 
+            r.region_id,
+            r.region_name,
+            pr.taxable_category_id,
+            tc.category_name
+        FROM app.regions r
+        LEFT JOIN app.product_regions pr ON r.region_id = pr.region_id AND pr.product_id = $1
+        LEFT JOIN app.taxable_categories tc ON pr.taxable_category_id = tc.category_id
+        ORDER BY r.region_name ASC
+    `,
+
+    /**
+     * Deletes all product-region bindings for a product
+     * Parameters: [product_id]
+     */
+    deleteProductRegions: `
+        DELETE FROM app.product_regions 
+        WHERE product_id = $1
+    `,
+
+    /**
+     * Inserts a product-region binding
+     * Parameters: [product_id, region_id, taxable_category_id, created_by]
+     */
+    insertProductRegion: `
+        INSERT INTO app.product_regions (
+            product_id, region_id, taxable_category_id, created_by
+        ) VALUES ($1, $2, $3, $4)
+        RETURNING product_id, region_id, taxable_category_id
+    `,
+
+    /**
+     * Fetches taxable categories available for a specific region
+     * Parameters: [region_id]
+     */
+    fetchTaxableCategoriesByRegion: `
+        SELECT 
+            tc.category_id,
+            tc.category_name
+        FROM app.taxable_categories tc
+        INNER JOIN app.regions_taxable_categories rtc ON tc.category_id = rtc.category_id
+        WHERE rtc.region_id = $1
+        ORDER BY tc.category_name ASC
     `
 };

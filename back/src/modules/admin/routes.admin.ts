@@ -52,6 +52,9 @@ import fetchStatusesController from './products/controller.admin.fetch.statuses'
 import fetchOptionsController from './products/controller.admin.fetch.options';
 import assignProductOwnerController from './products/controller.admin.assign.product.owner';
 import deleteProductsController from './products/controller.admin.delete.products';
+import fetchProductRegionsController from './products/controller.admin.fetch.product.regions';
+import updateProductRegionsController from './products/controller.admin.update.product.regions';
+import fetchTaxableCategoriesByRegionController from './products/controller.admin.fetch.taxable.categories.by.region';
 import readProductOptionPairsController from './products/pairs/controller.admin.read.product.option.pairs';
 import createProductOptionPairsController from './products/pairs/controller.admin.create.product.option.pairs';
 import updateProductOptionPairsController from './products/pairs/controller.admin.update.product.option.pairs';
@@ -132,6 +135,9 @@ router.get('/api/admin/products/fetch', checkRateLimit, checkRequestSecurityHard
 router.post('/api/admin/products/update', checkRateLimit, checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, updateProductController);
 router.post('/api/admin/products/delete', checkRateLimit, checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, deleteProductsController);
 router.post('/api/admin/products/assign-owner', checkRateLimit, checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, assignProductOwnerController);
+router.get('/api/admin/products/:productId/regions', checkRateLimit, checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, fetchProductRegionsController);
+router.put('/api/admin/products/:productId/regions', checkRateLimit, checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, updateProductRegionsController);
+router.get('/api/admin/products/taxable-categories/by-region/:regionId', checkRateLimit, checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, fetchTaxableCategoriesByRegionController);
 
 // Product option pairs endpoints
 router.post('/api/admin/products/read-product-option-pairs', checkRateLimit, checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, readProductOptionPairsController);
