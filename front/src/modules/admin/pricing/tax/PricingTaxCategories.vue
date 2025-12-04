@@ -1,5 +1,5 @@
 <!--
-Version: 1.2.0
+Version: 1.3.0
 Taxable categories management component for pricing administration module.
 Frontend file that displays and manages taxable categories in a table format.
 Filename: PricingTaxCategories.vue
@@ -13,6 +13,11 @@ Changes in v1.2.0:
 - Replaced all hardcoded texts with i18n translations
 - Added translations for table headers, error messages, validation messages, tooltips
 - All user-facing texts now use translation keys
+
+Changes in v1.3.0:
+- Added sidebar panel on the right side
+- Moved action buttons (ADD, CANCEL, UPDATE) to sidebar
+- Updated layout to use flexbox with main content area and sidebar
 -->
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue';
@@ -401,136 +406,153 @@ onMounted(async () => {
 </script>
 
 <template>
-  <div class="taxable-categories-wrapper">
-    <div class="settings-group mb-6">
-    <div class="d-flex align-center mb-4">
-      <h3 class="text-subtitle-1 font-weight-medium">
-        {{ t('admin.pricing.tax.taxableCategories.title') }}
-      </h3>
-      <v-tooltip
-        v-if="taxableCategoriesError"
-        location="top"
-        max-width="300"
-      >
-        <template #activator="{ props }">
-          <span v-bind="props" style="cursor: pointer;" @click="retryLoadTaxableCategories" class="ms-2">
-            <PhWarningCircle :size="16" />
-          </span>
-        </template>
-        <div class="pa-2">
-          <p class="text-subtitle-2 mb-2">
-            {{ t('admin.pricing.tax.taxableCategories.tooltips.loadError') }}
-          </p>
-          <p class="text-caption">
-            {{ taxableCategoriesError }}
-          </p>
-          <p class="text-caption mt-1">
-            {{ t('admin.pricing.tax.taxableCategories.tooltips.retry') }}
-          </p>
-        </div>
-      </v-tooltip>
-    </div>
-    
-    <!-- Loading state for taxable categories -->
-    <DataLoading
-      v-if="isLoadingTaxableCategories"
-      :loading="isLoadingTaxableCategories"
-      size="small"
-    />
-    
-    <div
-      v-else
-      class="taxable-categories-table-wrapper"
-    >
-      <v-data-table
-        :headers="taxableCategoriesTableHeaders"
-        :items="taxableCategories"
-        :items-per-page="-1"
-        hide-default-footer
-        class="taxable-categories-table"
-      >
-        <template #[`item.category`]="{ item }">
-          <v-text-field
-            :model-value="item.category_name"
-            variant="plain"
-            density="compact"
-            hide-details
-            class="category-input"
-            :placeholder="isNewTaxableCategory(item.category_id) ? t('admin.pricing.tax.taxableCategories.placeholder') : ''"
-            @update:model-value="updateTaxableCategoryName(item, $event)"
-            maxlength="100"
-          />
-        </template>
-
-        <template #[`item.region`]="{ item }">
-          <v-select
-            :model-value="item.region || ''"
-            density="compact"
-            variant="plain"
-            :items="getRegionOptions"
-            :loading="isLoadingRegions"
-            :disabled="isLoadingRegions"
-            hide-details
-            clearable
-            @update:model-value="updateTaxableCategoryRegion(item, $event)"
-          >
-            <template #append-inner>
-              <PhCaretUpDown :size="14" />
-            </template>
-          </v-select>
-        </template>
-
-        <template #[`item.actions`]="{ item }">
-          <v-btn
-            icon
+  <div class="d-flex">
+    <!-- Main content (left part) -->
+    <div class="flex-grow-1 main-content-area">
+      <div class="taxable-categories-wrapper">
+        <div class="settings-group mb-6">
+          <div class="d-flex align-center mb-4">
+            <h3 class="text-subtitle-1 font-weight-medium">
+              {{ t('admin.pricing.tax.taxableCategories.title') }}
+            </h3>
+            <v-tooltip
+              v-if="taxableCategoriesError"
+              location="top"
+              max-width="300"
+            >
+              <template #activator="{ props }">
+                <span v-bind="props" style="cursor: pointer;" @click="retryLoadTaxableCategories" class="ms-2">
+                  <PhWarningCircle :size="16" />
+                </span>
+              </template>
+              <div class="pa-2">
+                <p class="text-subtitle-2 mb-2">
+                  {{ t('admin.pricing.tax.taxableCategories.tooltips.loadError') }}
+                </p>
+                <p class="text-caption">
+                  {{ taxableCategoriesError }}
+                </p>
+                <p class="text-caption mt-1">
+                  {{ t('admin.pricing.tax.taxableCategories.tooltips.retry') }}
+                </p>
+              </div>
+            </v-tooltip>
+          </div>
+          
+          <!-- Loading state for taxable categories -->
+          <DataLoading
+            v-if="isLoadingTaxableCategories"
+            :loading="isLoadingTaxableCategories"
             size="small"
-            color="error"
-            variant="text"
-            @click="removeTaxableCategory(item.category_id)"
+          />
+          
+          <div
+            v-else
+            class="taxable-categories-table-wrapper"
           >
-            <PhTrash :size="18" />
-          </v-btn>
-        </template>
-      </v-data-table>
+            <v-data-table
+              :headers="taxableCategoriesTableHeaders"
+              :items="taxableCategories"
+              :items-per-page="-1"
+              hide-default-footer
+              class="taxable-categories-table"
+            >
+              <template #[`item.category`]="{ item }">
+                <v-text-field
+                  :model-value="item.category_name"
+                  variant="plain"
+                  density="compact"
+                  hide-details
+                  class="category-input"
+                  :placeholder="isNewTaxableCategory(item.category_id) ? t('admin.pricing.tax.taxableCategories.placeholder') : ''"
+                  @update:model-value="updateTaxableCategoryName(item, $event)"
+                  maxlength="100"
+                />
+              </template>
+
+              <template #[`item.region`]="{ item }">
+                <v-select
+                  :model-value="item.region || ''"
+                  density="compact"
+                  variant="plain"
+                  :items="getRegionOptions"
+                  :loading="isLoadingRegions"
+                  :disabled="isLoadingRegions"
+                  hide-details
+                  clearable
+                  @update:model-value="updateTaxableCategoryRegion(item, $event)"
+                >
+                  <template #append-inner>
+                    <PhCaretUpDown :size="14" />
+                  </template>
+                </v-select>
+              </template>
+
+              <template #[`item.actions`]="{ item }">
+                <v-btn
+                  icon
+                  size="small"
+                  color="error"
+                  variant="text"
+                  @click="removeTaxableCategory(item.category_id)"
+                >
+                  <PhTrash :size="18" />
+                </v-btn>
+              </template>
+            </v-data-table>
+          </div>
+        </div>
+      </div>
     </div>
 
-    <div class="table-actions mt-4">
-      <v-btn
-        color="teal"
-        variant="outlined"
-        :disabled="isLoadingTaxableCategories"
-        @click="addTaxableCategory"
-      >
-        <template #prepend>
-          <PhPlus :size="16" />
-        </template>
-        {{ t('admin.pricing.tax.taxableCategories.actions.add').toUpperCase() }}
-      </v-btn>
-      <v-btn
-        color="grey"
-        variant="outlined"
-        :disabled="isLoadingTaxableCategories || !hasTaxableCategoriesChanges"
-        class="ms-2"
-        @click="cancelTaxableCategoriesChanges"
-      >
-        {{ t('admin.pricing.tax.taxableCategories.actions.cancel').toUpperCase() }}
-      </v-btn>
-      <v-btn
-        color="teal"
-        variant="outlined"
-        :disabled="!hasTaxableCategoriesChanges || isSavingTaxableCategories"
-        :loading="isSavingTaxableCategories"
-        :class="['ms-2', { 'btn-glow-active': hasTaxableCategoriesChanges && !isSavingTaxableCategories }]"
-        @click="updateTaxableCategoriesChanges"
-      >
-        {{ t('admin.pricing.tax.taxableCategories.actions.update').toUpperCase() }}
-      </v-btn>
+    <!-- Sidebar (right column with buttons) -->
+    <div class="side-bar-container">
+      <div class="side-bar-section">
+        <v-btn
+          block
+          color="teal"
+          variant="outlined"
+          class="mb-3"
+          :disabled="isLoadingTaxableCategories"
+          @click="addTaxableCategory"
+        >
+          <template #prepend>
+            <PhPlus :size="16" />
+          </template>
+          {{ t('admin.pricing.tax.taxableCategories.actions.add').toUpperCase() }}
+        </v-btn>
+        <v-btn
+          block
+          color="grey"
+          variant="outlined"
+          class="mb-3"
+          :disabled="isLoadingTaxableCategories || !hasTaxableCategoriesChanges"
+          @click="cancelTaxableCategoriesChanges"
+        >
+          {{ t('admin.pricing.tax.taxableCategories.actions.cancel').toUpperCase() }}
+        </v-btn>
+        <v-btn
+          block
+          color="teal"
+          variant="outlined"
+          :disabled="!hasTaxableCategoriesChanges || isSavingTaxableCategories"
+          :loading="isSavingTaxableCategories"
+          :class="{ 'btn-glow-active': hasTaxableCategoriesChanges && !isSavingTaxableCategories }"
+          @click="updateTaxableCategoriesChanges"
+        >
+          {{ t('admin.pricing.tax.taxableCategories.actions.update').toUpperCase() }}
+        </v-btn>
+      </div>
     </div>
-  </div>
   </div>
 </template>
 
 <style scoped>
+/* Main content area */
+.main-content-area {
+  min-width: 0;
+}
+
 /* Wrapper to ensure block-level positioning (vertical layout) */
 .taxable-categories-wrapper {
   display: block;
@@ -546,6 +568,21 @@ onMounted(async () => {
   background-color: rgba(0, 0, 0, 0.02);
   width: fit-content;
   display: inline-block;
+}
+
+/* Sidebar styles */
+.side-bar-container {
+  width: 280px;
+  min-width: 280px;
+  border-left: thin solid rgba(var(--v-border-color), var(--v-border-opacity));
+  display: flex;
+  flex-direction: column;
+  background-color: rgba(var(--v-theme-surface), 1);
+  overflow-y: auto;
+}
+
+.side-bar-section {
+  padding: 16px;
 }
 
 /* Taxable Categories table styles - matching regions table */

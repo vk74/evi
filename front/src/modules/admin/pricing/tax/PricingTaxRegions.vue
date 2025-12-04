@@ -1,5 +1,5 @@
 <!--
-Version: 1.5.0
+Version: 1.6.0
 VAT rates assignment component for pricing administration module.
 Each category row can have only one active marker (displayed as check mark chip).
 Filename: PricingTaxRegions.vue
@@ -42,6 +42,11 @@ Changes in v1.5.0:
 - Added useI18n hook for translations
 - Added translations for title, table headers, action buttons, error messages, tooltips
 - All user-facing texts now use translation keys
+
+Changes in v1.6.0:
+- Added sidebar panel on the right side
+- Moved action buttons (ADD RATE, CANCEL, UPDATE) to sidebar
+- Updated layout to use flexbox with main content area and sidebar
 -->
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue';
@@ -694,139 +699,147 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="vat-rates-container">
-    <div class="settings-group">
-      <div class="d-flex align-center justify-space-between mb-4">
-        <h3 class="text-subtitle-1 font-weight-medium">
-          {{ t('admin.pricing.tax.regionsTaxes.title') }}
-        </h3>
-        <div class="d-flex align-center">
-          <v-tooltip
-            v-if="error"
-            location="top"
-            max-width="300"
-          >
-            <template #activator="{ props }">
-              <span v-bind="props" style="cursor: pointer;" @click="retryLoadData" class="me-2">
-                <PhWarningCircle :size="16" />
-              </span>
-            </template>
-            <div class="pa-2">
-              <p class="text-subtitle-2 mb-2">
-                {{ t('admin.pricing.tax.regionsTaxes.tooltips.loadError') }}
-              </p>
-              <p class="text-caption">
-                {{ error }}
-              </p>
-              <p class="text-caption mt-1">
-                {{ t('admin.pricing.tax.regionsTaxes.tooltips.retry') }}
-              </p>
+  <div class="d-flex">
+    <!-- Main content (left part) -->
+    <div class="flex-grow-1 main-content-area">
+      <div class="vat-rates-container">
+        <div class="settings-group">
+          <div class="d-flex align-center justify-space-between mb-4">
+            <h3 class="text-subtitle-1 font-weight-medium">
+              {{ t('admin.pricing.tax.regionsTaxes.title') }}
+            </h3>
+            <div class="d-flex align-center">
+              <v-tooltip
+                v-if="error"
+                location="top"
+                max-width="300"
+              >
+                <template #activator="{ props }">
+                  <span v-bind="props" style="cursor: pointer;" @click="retryLoadData" class="me-2">
+                    <PhWarningCircle :size="16" />
+                  </span>
+                </template>
+                <div class="pa-2">
+                  <p class="text-subtitle-2 mb-2">
+                    {{ t('admin.pricing.tax.regionsTaxes.tooltips.loadError') }}
+                  </p>
+                  <p class="text-caption">
+                    {{ error }}
+                  </p>
+                  <p class="text-caption mt-1">
+                    {{ t('admin.pricing.tax.regionsTaxes.tooltips.retry') }}
+                  </p>
+                </div>
+              </v-tooltip>
+              <v-select
+                :model-value="selectedRegion"
+                :items="regionOptions"
+                :disabled="isLoading"
+                density="compact"
+                variant="outlined"
+                hide-details
+                class="region-select ms-4"
+                @update:model-value="onRegionChange"
+              >
+                <template #append-inner>
+                  <PhCaretUpDown :size="14" class="dropdown-icon" />
+                </template>
+              </v-select>
             </div>
-          </v-tooltip>
-          <v-select
-            :model-value="selectedRegion"
-            :items="regionOptions"
-            :disabled="isLoading"
-            density="compact"
-            variant="outlined"
-            hide-details
-            class="region-select ms-4"
-            @update:model-value="onRegionChange"
+          </div>
+          
+          <!-- Loading state -->
+          <DataLoading
+            v-if="isLoading"
+            :loading="isLoading"
+            size="small"
+          />
+          
+          <div
+            v-else
+            class="vat-rates-table-wrapper"
           >
-            <template #append-inner>
-              <PhCaretUpDown :size="14" class="dropdown-icon" />
-            </template>
-          </v-select>
+            <v-data-table
+              :headers="vatRatesTableHeaders"
+              :items="tableItems"
+              :items-per-page="-1"
+              hide-default-footer
+              class="vat-rates-table"
+            >
+              <!-- Category column -->
+              <template #[`item.name`]="{ item }">
+                <span v-if="item.id !== -1" class="category-name">{{ item.name }}</span>
+              </template>
+              
+              <!-- Dynamic VAT rate columns headers -->
+              <template v-for="column in vatRateColumns" :key="`head-${column.id}`" #[`header.${column.id}`]>
+                <div class="d-flex align-center column-header-editable">
+                  <input
+                    :value="getColumnInputValue(column.id)"
+                    :data-column-id="column.id"
+                    type="text"
+                    inputmode="numeric"
+                    pattern="[0-9]*"
+                    class="column-header-input-field"
+                    @input="handleColumnInput(column.id, ($event.target as HTMLInputElement).value)"
+                    @blur="updateColumnValue(column.id, ($event.target as HTMLInputElement).value)"
+                    @keydown="(e) => { if (e.key === 'e' || e.key === 'E' || e.key === '+' || e.key === '-' || e.key === '.') e.preventDefault(); }"
+                  />
+                  <span class="ms-1">%</span>
+                </div>
+              </template>
+              
+              <!-- Dynamic VAT rate columns data -->
+              <template v-for="column in vatRateColumns" :key="`item-${column.id}`" #[`item.${column.id}`]="{ item }">
+                <!-- Delete button in empty row -->
+                <div v-if="item.id === -1" class="d-flex justify-center">
+                  <v-btn
+                    icon
+                    size="small"
+                    variant="text"
+                    color="error"
+                    @click="deleteVATRateColumn(column.id)"
+                  >
+                    <PhTrash :size="16" />
+                  </v-btn>
+                </div>
+                
+                <!-- VAT rate marker in regular row -->
+                <div 
+                  v-else 
+                  class="d-flex justify-center align-center cell-clickable fill-height"
+                  style="min-height: 40px; cursor: pointer;"
+                  @click="toggleCategoryVATRate(item, column.id)"
+                >
+                  <v-chip
+                    v-if="item[column.id]"
+                    color="primary"
+                    size="small"
+                    class="vat-rate-chip font-weight-bold"
+                  >
+                    <PhCheck :size="16" />
+                  </v-chip>
+                  
+                  <!-- Hover placeholder for empty cell -->
+                  <div v-else class="empty-cell-placeholder">
+                    <PhPlus :size="14" class="placeholder-icon" />
+                  </div>
+                </div>
+              </template>
+            </v-data-table>
+          </div>
         </div>
       </div>
-      
-      <!-- Loading state -->
-      <DataLoading
-        v-if="isLoading"
-        :loading="isLoading"
-        size="small"
-      />
-      
-      <div
-        v-else
-        class="vat-rates-table-wrapper"
-      >
-        <v-data-table
-          :headers="vatRatesTableHeaders"
-          :items="tableItems"
-          :items-per-page="-1"
-          hide-default-footer
-          class="vat-rates-table"
-        >
-          <!-- Category column -->
-          <template #[`item.name`]="{ item }">
-            <span v-if="item.id !== -1" class="category-name">{{ item.name }}</span>
-          </template>
-          
-          <!-- Dynamic VAT rate columns headers -->
-          <template v-for="column in vatRateColumns" :key="`head-${column.id}`" #[`header.${column.id}`]>
-            <div class="d-flex align-center column-header-editable">
-              <input
-                :value="getColumnInputValue(column.id)"
-                :data-column-id="column.id"
-                type="text"
-                inputmode="numeric"
-                pattern="[0-9]*"
-                class="column-header-input-field"
-                @input="handleColumnInput(column.id, ($event.target as HTMLInputElement).value)"
-                @blur="updateColumnValue(column.id, ($event.target as HTMLInputElement).value)"
-                @keydown="(e) => { if (e.key === 'e' || e.key === 'E' || e.key === '+' || e.key === '-' || e.key === '.') e.preventDefault(); }"
-              />
-              <span class="ms-1">%</span>
-            </div>
-          </template>
-          
-          <!-- Dynamic VAT rate columns data -->
-          <template v-for="column in vatRateColumns" :key="`item-${column.id}`" #[`item.${column.id}`]="{ item }">
-            <!-- Delete button in empty row -->
-            <div v-if="item.id === -1" class="d-flex justify-center">
-              <v-btn
-                icon
-                size="small"
-                variant="text"
-                color="error"
-                @click="deleteVATRateColumn(column.id)"
-              >
-                <PhTrash :size="16" />
-              </v-btn>
-            </div>
-            
-            <!-- VAT rate marker in regular row -->
-            <div 
-              v-else 
-              class="d-flex justify-center align-center cell-clickable fill-height"
-              style="min-height: 40px; cursor: pointer;"
-              @click="toggleCategoryVATRate(item, column.id)"
-            >
-              <v-chip
-                v-if="item[column.id]"
-                color="primary"
-                size="small"
-                class="vat-rate-chip font-weight-bold"
-              >
-                <PhCheck :size="16" />
-              </v-chip>
-              
-              <!-- Hover placeholder for empty cell -->
-              <div v-else class="empty-cell-placeholder">
-                <PhPlus :size="14" class="placeholder-icon" />
-              </div>
-            </div>
-          </template>
-        </v-data-table>
-      </div>
-      
-      <!-- Action Buttons -->
-      <div class="mt-4 d-flex">
+    </div>
+
+    <!-- Sidebar (right column with buttons) -->
+    <div class="side-bar-container">
+      <div class="side-bar-section">
         <v-btn
+          block
           color="teal"
           variant="outlined"
-          class="me-2"
+          class="mb-3"
           @click="addVATRateColumn"
         >
           <template #prepend>
@@ -835,15 +848,17 @@ onMounted(() => {
           {{ t('admin.pricing.tax.regionsTaxes.actions.addRate').toUpperCase() }}
         </v-btn>
         <v-btn
+          block
           color="grey"
           variant="outlined"
-          class="me-2"
+          class="mb-3"
           :disabled="isLoading || !hasPendingChanges"
           @click="cancelChanges"
         >
           {{ t('admin.pricing.tax.regionsTaxes.actions.cancel').toUpperCase() }}
         </v-btn>
         <v-btn
+          block
           color="teal"
           variant="outlined"
           :class="{ 'update-btn-glow': hasPendingChanges && !isSaving }"
@@ -859,6 +874,11 @@ onMounted(() => {
 </template>
 
 <style scoped>
+/* Main content area */
+.main-content-area {
+  min-width: 0;
+}
+
 .vat-rates-container {
   position: relative;
   margin-top: 24px;
@@ -872,6 +892,21 @@ onMounted(() => {
   background-color: rgba(0, 0, 0, 0.02);
   width: fit-content;
   display: inline-block;
+}
+
+/* Sidebar styles */
+.side-bar-container {
+  width: 280px;
+  min-width: 280px;
+  border-left: thin solid rgba(var(--v-border-color), var(--v-border-opacity));
+  display: flex;
+  flex-direction: column;
+  background-color: rgba(var(--v-theme-surface), 1);
+  overflow-y: auto;
+}
+
+.side-bar-section {
+  padding: 16px;
 }
 
 /* VAT rates table styles - matching PricingTax.vue */
