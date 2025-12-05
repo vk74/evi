@@ -1,6 +1,6 @@
 /**
  * service.fetch.active.products.ts - backend file
- * version: 1.4.0
+ * version: 1.6.0
  * 
  * Purpose: Service that fetches active products for catalog consumption
  * Logic: Queries DB for products with is_published = true
@@ -26,6 +26,17 @@
  * - Converts region_name to region_id via query to app.regions table
  * - Passes region_id to SQL queries for filtering products by region availability
  * - Products are filtered by region when region parameter is provided
+ * 
+ * Changes in v1.5.0:
+ * - Region parameter is now REQUIRED (not optional)
+ * - Returns validation error if region is not provided or not found in database
+ * - STRICT FILTERING: Only products with records in app.product_regions are shown
+ * - Products without region assignment are NOT shown, even if published/active
+ * 
+ * Changes in v1.6.0:
+ * - Validation errors now published as events to event bus
+ * - Events contain user-friendly messages explaining what went wrong
+ * - Events: region.required, region.notFound, region.resolveError
  */
 
 import { Request } from 'express';
@@ -36,6 +47,8 @@ import type { DbProduct, CatalogProductDTO, FetchProductsResponse, ServiceError 
 import { ProductStatus } from './types.catalog';
 import { getSettingValue } from '../../core/helpers/get.setting.value';
 import { resolveCatalogLanguages } from '../../core/helpers/language.utils';
+import { createAndPublishEvent } from '../../core/eventBus/fabric.events';
+import { EVENTS_CATALOG_PRODUCTS } from './events.catalog.products';
 
 const pool = pgPool as Pool;
 
@@ -62,27 +75,92 @@ export async function fetchActiveProducts(req: Request): Promise<FetchProductsRe
   let fallbackLanguage: string | undefined;
   
   try {
+    // Region is REQUIRED - return error if not provided
+    if (!regionName) {
+      // Publish validation error event
+      await createAndPublishEvent({
+        req,
+        eventName: EVENTS_CATALOG_PRODUCTS['products.fetch.validation.region.required'].eventName,
+        payload: {
+          errorType: 'VALIDATION_ERROR',
+          userMessage: 'Region parameter is required. Please select your location to view products in the catalog.',
+          technicalMessage: 'Region parameter is required for fetching products. Products cannot be loaded without region due to strict filtering policy.',
+          region: regionName,
+          sectionId: sectionId || null
+        },
+        errorData: 'Region parameter is required. Products cannot be loaded without region.'
+      });
+      
+      const serviceError: ServiceError = {
+        code: 'VALIDATION_ERROR',
+        message: 'Region parameter is required. Products cannot be loaded without region.',
+        details: { region: regionName }
+      };
+      throw serviceError;
+    }
+    
     // Resolve requested and fallback languages using full-name values
     const languages = await resolveCatalogLanguages(requestedLanguageRaw);
     requestedLanguage = languages.requestedLanguage;
     fallbackLanguage = languages.fallbackLanguage;
     
-    // Convert region_name to region_id if region is provided
-    if (regionName) {
-      try {
-        const regionResult = await pool.query<{ region_id: number }>(
-          'SELECT region_id FROM app.regions WHERE region_name = $1',
-          [regionName]
-        );
-        if (regionResult.rows.length > 0) {
-          regionId = regionResult.rows[0].region_id;
-        } else {
-          console.warn(`[fetchActiveProducts] Region "${regionName}" not found in app.regions table`);
-        }
-      } catch (regionError) {
-        console.error(`[fetchActiveProducts] Error fetching region_id for region_name "${regionName}":`, regionError);
-        // Continue with regionId = null, products won't be filtered by region
+    // Convert region_name to region_id - REQUIRED, return error if region not found
+    try {
+      const regionResult = await pool.query<{ region_id: number }>(
+        'SELECT region_id FROM app.regions WHERE region_name = $1',
+        [regionName]
+      );
+      if (regionResult.rows.length === 0) {
+        // Publish validation error event
+        await createAndPublishEvent({
+          req,
+          eventName: EVENTS_CATALOG_PRODUCTS['products.fetch.validation.region.notFound'].eventName,
+          payload: {
+            errorType: 'VALIDATION_ERROR',
+            userMessage: `Region "${regionName}" is not available. Please select a valid region from the location selection dialog.`,
+            technicalMessage: `Region "${regionName}" not found in app.regions table. User needs to select a valid region.`,
+            region: regionName,
+            sectionId: sectionId || null
+          },
+          errorData: `Region "${regionName}" not found in database.`
+        });
+        
+        const serviceError: ServiceError = {
+          code: 'VALIDATION_ERROR',
+          message: `Region "${regionName}" not found in database.`,
+          details: { region: regionName }
+        };
+        throw serviceError;
       }
+      regionId = regionResult.rows[0].region_id;
+    } catch (regionError) {
+      // If it's already a ServiceError, re-throw it
+      if (regionError && typeof regionError === 'object' && 'code' in regionError) {
+        throw regionError;
+      }
+      console.error(`[fetchActiveProducts] Error fetching region_id for region_name "${regionName}":`, regionError);
+      
+      // Publish internal error event
+      await createAndPublishEvent({
+        req,
+        eventName: EVENTS_CATALOG_PRODUCTS['products.fetch.validation.region.resolveError'].eventName,
+        payload: {
+          errorType: 'INTERNAL_SERVER_ERROR',
+          userMessage: 'Failed to process your location. Please try selecting your location again or contact support if the problem persists.',
+          technicalMessage: `Failed to resolve region "${regionName}" to region_id. Database query error occurred.`,
+          region: regionName,
+          sectionId: sectionId || null,
+          errorDetails: regionError instanceof Error ? regionError.message : String(regionError)
+        },
+        errorData: `Failed to resolve region "${regionName}" to region_id: ${regionError instanceof Error ? regionError.message : String(regionError)}`
+      });
+      
+      const serviceError: ServiceError = {
+        code: 'INTERNAL_SERVER_ERROR',
+        message: `Failed to resolve region "${regionName}" to region_id.`,
+        details: { region: regionName, error: regionError }
+      };
+      throw serviceError;
     }
     
     // Build query parameters based on whether sectionId is provided

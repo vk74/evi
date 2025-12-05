@@ -269,14 +269,16 @@ async function loadActiveProducts() {
       return;
     }
     
-    // Get user location for region filtering
+    // Region is REQUIRED - cannot load products without user location
+    // User must select location in modal before products can be loaded
     const userLocation = appStore.getUserLocation;
     if (!userLocation) {
-      // No location - cannot filter products by region
+      // No location - strict filtering: products cannot be loaded without region
       products.value = [];
       return;
     }
     
+    // Region is required parameter - backend will return error if region is invalid
     const fetched = await fetchActiveProducts({ 
       sectionId: selectedSectionId.value,
       region: userLocation
@@ -421,6 +423,7 @@ function selectSection(sectionId: string) {
   selectedSectionId.value = sectionId;
   // reload services and products for this section
   // Note: products will be filtered by user region automatically in loadActiveProducts
+  // Region is REQUIRED - if user location is not set, products will not be loaded
   loadActiveServices();
   loadActiveProducts();
 }

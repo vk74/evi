@@ -28,9 +28,10 @@
  * 
  * Changes in v1.5.0:
  * - Added region filtering via INNER JOIN with app.product_regions table
- * - getActiveProducts now accepts optional region_id parameter
- * - getActiveProductsBySection now accepts optional region_id parameter
- * - Products are filtered by region_id when provided, showing only products available in that region
+ * - getActiveProducts now requires region_id parameter (REQUIRED, not optional)
+ * - getActiveProductsBySection now requires region_id parameter (REQUIRED, not optional)
+ * - STRICT FILTERING: Only products with records in app.product_regions for the specified region are shown
+ * - Products without region assignment are NOT shown, even if they are published/active
  */
 
 export const queries = {
@@ -39,8 +40,9 @@ export const queries = {
    * - Only products with is_published = true
    * - Minimal set of fields required for product cards
    * - Uses LEFT JOIN with fallback to always show products even without translation
-   * - Filters products by region when region_id is provided (via EXISTS subquery with product_regions)
-   * - Parameters: [requestedLanguage, fallbackLanguage, region_id (optional, can be NULL)]
+   * - STRICT FILTERING: Only shows products that have a record in app.product_regions for the specified region_id
+   * - Products without region assignment are NOT shown (strict filtering)
+   * - Parameters: [requestedLanguage, fallbackLanguage, region_id (REQUIRED, must not be NULL)]
    */
   getActiveProducts: `
     SELECT 
@@ -55,6 +57,7 @@ export const queries = {
       p.created_at,
       p.created_by
     FROM app.products p
+    INNER JOIN app.product_regions pr ON p.product_id = pr.product_id AND pr.region_id = $3::integer
     LEFT JOIN app.product_translations pt_requested 
       ON p.product_id = pt_requested.product_id 
       AND pt_requested.language_code = $1
@@ -63,12 +66,6 @@ export const queries = {
       AND pt_fallback.language_code = $2
     WHERE p.is_published = true
       AND (pt_requested.product_id IS NOT NULL OR pt_fallback.product_id IS NOT NULL)
-      AND ($3::integer IS NULL OR EXISTS (
-        SELECT 1 
-        FROM app.product_regions pr 
-        WHERE pr.product_id = p.product_id 
-          AND pr.region_id = $3::integer
-      ))
     ORDER BY p.product_code ASC, COALESCE(pt_requested.name, pt_fallback.name) ASC
   `,
 
@@ -77,8 +74,9 @@ export const queries = {
    * - Only products with is_published = true
    * - Joined with app.section_products for filtering
    * - Uses LEFT JOIN with fallback to always show products even without translation
-   * - Filters products by region when region_id is provided (via EXISTS subquery with product_regions)
-   * - Parameters: [sectionId, requestedLanguage, fallbackLanguage, region_id (optional, can be NULL)]
+   * - STRICT FILTERING: Only shows products that have a record in app.product_regions for the specified region_id
+   * - Products without region assignment are NOT shown (strict filtering)
+   * - Parameters: [sectionId, requestedLanguage, fallbackLanguage, region_id (REQUIRED, must not be NULL)]
    */
   getActiveProductsBySection: `
     SELECT 
@@ -95,6 +93,7 @@ export const queries = {
       sp.published_at
     FROM app.section_products sp
     JOIN app.products p ON sp.product_id = p.product_id
+    INNER JOIN app.product_regions pr ON p.product_id = pr.product_id AND pr.region_id = $4::integer
     LEFT JOIN app.product_translations pt_requested 
       ON p.product_id = pt_requested.product_id 
       AND pt_requested.language_code = $2
@@ -104,12 +103,6 @@ export const queries = {
     WHERE p.is_published = true 
       AND sp.section_id = $1
       AND (pt_requested.product_id IS NOT NULL OR pt_fallback.product_id IS NOT NULL)
-      AND ($4::integer IS NULL OR EXISTS (
-        SELECT 1 
-        FROM app.product_regions pr 
-        WHERE pr.product_id = p.product_id 
-          AND pr.region_id = $4::integer
-      ))
     ORDER BY p.product_code ASC, COALESCE(pt_requested.name, pt_fallback.name) ASC
   `,
 
