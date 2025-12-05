@@ -64,7 +64,7 @@ import DataLoading from '@/core/ui/loaders/DataLoading.vue';
 import CatalogServiceCard from './services/CatalogServiceCard.vue';
 import ServiceDetails from './services/ServiceDetails.vue'
 import CatalogProductCard from './products/CatalogProductCard.vue';
-import ProductDetails from './products/ProductDetails.vue'
+import ProductDetails from './products/detailedCard/ProductDetails.vue'
 import { PhMagnifyingGlass, PhEmpty, PhX, PhFunnel, PhCaretDown, PhCaretRight, PhWarningCircle, PhFolderOpen, PhFolder, PhCaretUpDown } from '@phosphor-icons/vue'
 import { 
   fetchCatalogSections, 

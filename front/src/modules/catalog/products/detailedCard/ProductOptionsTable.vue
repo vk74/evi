@@ -67,13 +67,13 @@ import { useAppStore } from '@/core/state/appstate'
 import { useUiStore } from '@/core/state/uistate'
 import Paginator from '@/core/ui/paginator/Paginator.vue'
 import { PhCaretUpDown } from '@phosphor-icons/vue'
-import { fetchPricesByCodes } from '../service.catalog.fetch.prices.by.codes'
-import { getPricelistByRegion } from '../service.catalog.get.pricelist.by.region'
-import { getCachedPrice, cachePrice, isPriceCacheValid } from '../state.catalog'
+import { fetchPricesByCodes } from '../../service.catalog.fetch.prices.by.codes'
+import { getPricelistByRegion } from '../../service.catalog.get.pricelist.by.region'
+import { getCachedPrice, cachePrice, isPriceCacheValid } from '../../state.catalog'
 import { formatPriceWithPrecision } from '@/core/helpers/helper.format.price'
 
 // Use shared UI type
-import type { CatalogProductOption, ProductPriceInfo } from './types.products'
+import type { CatalogProductOption, ProductPriceInfo } from '../types.products'
 
 interface Props {
   items?: CatalogProductOption[]
@@ -487,5 +487,3 @@ defineExpose({ clearSelections, getUnitsById, getOptionPrices })
   flex-shrink: 0;
 }
 </style>
-
-

@@ -1,7 +1,7 @@
 <!--
 version: 1.15.0
 Frontend file for product details view component.
-Displays extended info as an opened card product card format.
+Displays extended info as an opened product card format.
 File: ProductDetails.vue
 
 Changes in v1.5.0:
@@ -89,15 +89,15 @@ import { ref, onMounted, watch, computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useAppStore } from '@/core/state/appstate'
 import { useUiStore } from '@/core/state/uistate'
-import type { CatalogProductDetails, ProductPriceInfo } from './types.products'
-import { fetchProductDetails } from './service.fetch.product.details'
-import { fetchProductOptions } from './service.fetch.product.options'
-import type { CatalogProductOption } from './types.products'
+import type { CatalogProductDetails, ProductPriceInfo } from '../types.products'
+import { fetchProductDetails } from '../service.fetch.product.details'
+import { fetchProductOptions } from '../service.fetch.product.options'
+import type { CatalogProductOption } from '../types.products'
 import ProductOptionsTable from './ProductOptionsTable.vue'
 import { PhCaretUpDown, PhSquare, PhMicrosoftExcelLogo } from '@phosphor-icons/vue'
-import { fetchPricesByCodes } from '../service.catalog.fetch.prices.by.codes'
-import { getPricelistByRegion } from '../service.catalog.get.pricelist.by.region'
-import { getCachedPrice, cachePrice, isPriceCacheValid } from '../state.catalog'
+import { fetchPricesByCodes } from '../../service.catalog.fetch.prices.by.codes'
+import { getPricelistByRegion } from '../../service.catalog.get.pricelist.by.region'
+import { getCachedPrice, cachePrice, isPriceCacheValid } from '../../state.catalog'
 import { formatPriceWithPrecision } from '@/core/helpers/helper.format.price'
 import { 
   fetchProductVatByProductUuid, 
