@@ -1,5 +1,5 @@
 /**
- * service.admin.fetch.options.ts - version 1.1.2
+ * service.admin.fetch.options.ts - version 1.2.0
  * Service for fetching options (all products except the main product).
  * 
  * Handles database queries for options list with user roles and translations.
@@ -13,6 +13,15 @@
  * 
  * Changes in v1.1.2:
  * - Removed 'type' from validSortFields array (legacy field no longer exists)
+ * 
+ * Changes in v1.2.0:
+ * - Simplified language code handling to use full language names directly from query parameter
+ * - Removed validation and fallback to HTTP headers (frontend always provides language)
+ * - Language code now uses full names ('english', 'russian') matching database format
+ * 
+ * Changes in v1.2.1:
+ * - Fallback language now loaded from application settings (Application.RegionalSettings.fallback.language)
+ * - Removed hardcoded 'english' fallback value
  */
 
 import { Pool } from 'pg'
@@ -20,6 +29,7 @@ import { Request } from 'express'
 import { queries } from './queries.admin.products'
 import { OPTIONS_FETCH_EVENTS } from './events.admin.products'
 import { createAndPublishEvent } from '@/core/eventBus/fabric.events'
+import { getSettingValue } from '@/core/helpers/get.setting.value'
 import type { 
     FetchAllProductsParams, 
     ProductListItem 
@@ -83,14 +93,15 @@ export const fetchOptions = async (
         const excludeProductId = query.excludeProductId || undefined
         const statusFilter = query.statusFilter && query.statusFilter !== 'all' ? query.statusFilter : undefined
         
-        // Get language code from query parameter first, then from headers, then default to 'en'
-        const queryLanguage = query.language
-        const headerLanguage = req.headers['accept-language']?.toString().split(',')[0]?.split('-')[0]
-        const languageCode = queryLanguage || headerLanguage || 'en'
+        // Get fallback language from application settings
+        const fallbackLanguage = await getSettingValue<string>(
+            'Application.RegionalSettings',
+            'fallback.language',
+            'english'
+        )
         
-        // Validate language code
-        const validLanguages = ['en', 'ru']
-        const validatedLanguageCode = validLanguages.includes(languageCode) ? languageCode : 'en'
+        // Get language code from query parameter (frontend always provides full language name)
+        const languageCode = query.language || fallbackLanguage
         
         // Validate parameters
         if (page < 1) {
@@ -110,7 +121,7 @@ export const fetchOptions = async (
                 searchQuery, 
                 sortBy, 
                 sortDesc,
-                languageCode: validatedLanguageCode,
+                languageCode: languageCode,
                 statusFilter
             }
         })
@@ -150,7 +161,7 @@ export const fetchOptions = async (
             searchPattern,
             validatedSortBy,
             sortDesc || false,
-            validatedLanguageCode,
+            languageCode,
             excludeProductId,
             statusFilter
         ])
