@@ -1,5 +1,5 @@
 /*
-version: 1.6.0
+version: 1.7.0
 Frontend file for product types in catalog module.
 TypeScript interfaces for catalog products based on database structure.
 File: types.products.ts
@@ -21,6 +21,10 @@ Changes in v1.5.0:
 
 Changes in v1.6.0:
 - Added owner_first_name, owner_last_name, and specialist_groups fields to CatalogProductDetails interface
+
+Changes in v1.7.0:
+- Added visibility flags (is_visible_owner, is_visible_groups, is_visible_tech_specs, is_visible_long_description) to CatalogProductDetails interface
+- Visibility flags control which sections are displayed in product detail cards
 */
 
 export type ProductStatus = 'published' | 'draft' | 'archived'
@@ -70,6 +74,10 @@ export interface CatalogProductDetails {
   owner_first_name?: string | null;
   owner_last_name?: string | null;
   specialist_groups?: string[];
+  is_visible_owner?: boolean;
+  is_visible_groups?: boolean;
+  is_visible_tech_specs?: boolean;
+  is_visible_long_description?: boolean;
 }
 
 export interface FetchProductDetailsResponse {

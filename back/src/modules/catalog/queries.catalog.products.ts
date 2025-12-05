@@ -1,6 +1,6 @@
 /**
  * queries.catalog.products.ts - backend file
- * version: 1.7.0
+ * version: 1.8.0
  * 
  * Purpose: SQL queries for catalog products (public consumption layer)
  * Logic: Provides parameterized queries to fetch active products for the catalog and product details
@@ -43,6 +43,10 @@
  * - Added owner information (first_name, last_name) to getProductDetails query via LEFT JOIN with product_users and users tables
  * - Added specialist groups (array of group names) to getProductDetails query via LEFT JOIN with product_groups and groups tables
  * - Added GROUP BY clause to handle array aggregation of specialist groups
+ * 
+ * Changes in v1.8.0:
+ * - Added visibility flags (is_visible_owner, is_visible_groups, is_visible_tech_specs, is_visible_long_description) to getProductDetails query
+ * - Visibility flags control which sections are displayed in product detail cards
  */
 
 export const queries = {
@@ -123,6 +127,7 @@ export const queries = {
    * - Comprehensive product information for detailed display
    * - Uses LEFT JOIN with fallback to always show product details even without translation
    * - Includes owner information (first_name, last_name) and specialist groups
+   * - Includes visibility flags for controlling section display
    * - Parameters: [productId, requestedLanguage, fallbackLanguage]
    */
   getProductDetails: `
@@ -144,7 +149,11 @@ export const queries = {
        WHERE sp.product_id = p.product_id) as published_at,
       u_owner.first_name as owner_first_name,
       u_owner.last_name as owner_last_name,
-      COALESCE(array_agg(DISTINCT g.group_name) FILTER (WHERE g.group_name IS NOT NULL), ARRAY[]::text[]) as specialist_groups
+      COALESCE(array_agg(DISTINCT g.group_name) FILTER (WHERE g.group_name IS NOT NULL), ARRAY[]::text[]) as specialist_groups,
+      p.is_visible_owner,
+      p.is_visible_groups,
+      p.is_visible_tech_specs,
+      p.is_visible_long_description
     FROM app.products p
     LEFT JOIN app.product_translations pt_requested 
       ON p.product_id = pt_requested.product_id 

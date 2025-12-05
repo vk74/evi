@@ -1,11 +1,15 @@
 /**
  * types.catalog.ts - backend file
- * version: 1.1.1
+ * version: 1.2.0
  * Type definitions for catalog functionality on BACKEND.
  * 
  * Changes in v1.1.1:
  * - Added published_at field to DbProductDetails interface
  * - Added published_at field to CatalogProductDetailsDTO interface
+ * 
+ * Changes in v1.2.0:
+ * - Added visibility flags (is_visible_owner, is_visible_groups, is_visible_tech_specs, is_visible_long_description) to DbProductDetails interface
+ * - Added visibility flags to CatalogProductDetailsDTO interface
  *
  * This module defines TypeScript types and interfaces for:
  * - Database models and operations
@@ -280,6 +284,10 @@ export interface DbProductDetails {
     owner_first_name: string | null;
     owner_last_name: string | null;
     specialist_groups: string[];
+    is_visible_owner: boolean;
+    is_visible_groups: boolean;
+    is_visible_tech_specs: boolean;
+    is_visible_long_description: boolean;
 }
 
 /**
@@ -301,6 +309,10 @@ export interface CatalogProductDetailsDTO {
     owner_first_name: string | null;
     owner_last_name: string | null;
     specialist_groups: string[];
+    is_visible_owner: boolean;
+    is_visible_groups: boolean;
+    is_visible_tech_specs: boolean;
+    is_visible_long_description: boolean;
 }
 
 export interface FetchProductsResponse extends ApiResponse {

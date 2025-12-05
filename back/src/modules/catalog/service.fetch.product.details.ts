@@ -1,6 +1,6 @@
 /**
  * service.fetch.product.details.ts - backend file
- * version: 1.4.0
+ * version: 1.5.0
  * 
  * Purpose: Service that fetches single product details for catalog consumption
  * Logic: Queries DB for product details with is_published = true, transforms into DTO for frontend
@@ -21,6 +21,10 @@
  * Changes in v1.4.0:
  * - Added owner_first_name, owner_last_name, and specialist_groups fields to transformRow function
  * - Owner and specialist groups data now included in product details response
+ * 
+ * Changes in v1.5.0:
+ * - Added visibility flags (is_visible_owner, is_visible_groups, is_visible_tech_specs, is_visible_long_description) to transformRow function
+ * - Visibility flags control which sections are displayed in product detail cards
  */
 
 import { Request } from 'express';
@@ -51,6 +55,10 @@ function transformRow(row: DbProductDetails): CatalogProductDetailsDTO {
     owner_first_name: row.owner_first_name ?? null,
     owner_last_name: row.owner_last_name ?? null,
     specialist_groups: row.specialist_groups ?? [],
+    is_visible_owner: row.is_visible_owner,
+    is_visible_groups: row.is_visible_groups,
+    is_visible_tech_specs: row.is_visible_tech_specs,
+    is_visible_long_description: row.is_visible_long_description,
   };
 }
 

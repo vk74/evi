@@ -1,5 +1,5 @@
 <!--
-version: 1.15.0
+version: 1.17.0
 Frontend file for product details view component.
 Displays extended info as an opened product card format.
 File: ProductDetails.vue
@@ -89,6 +89,13 @@ Changes in v1.16.0:
 - Added two new sections: "tech specs" and "contacts"
 - Created ProductTechSpecs.vue component with static placeholder table
 - Created ProductContacts.vue component to display owner and specialist groups
+
+Changes in v1.17.0:
+- Added visibility flags support for conditional section rendering
+- Description section shown/hidden based on is_visible_long_description flag
+- Tech specs section button and content shown/hidden based on is_visible_tech_specs flag
+- Updated hasTechSpecs computed property to check is_visible_tech_specs flag
+- Pass is_visible_owner and is_visible_groups props to ProductContacts component
 -->
 <script setup lang="ts">
 import { ref, onMounted, watch, computed } from 'vue'
@@ -145,7 +152,15 @@ const { t, locale } = useI18n()
 // Computed properties for visibility
 const hasTechSpecs = computed(() => {
   if (!details.value) return false
+  // Check if tech_specs data exists
   return details.value.tech_specs && Object.keys(details.value.tech_specs).length > 0
+})
+
+// Computed property for tech specs visibility
+const isTechSpecsVisible = computed(() => {
+  if (!details.value) return false
+  // Check visibility flag (default to true if not set for backward compatibility)
+  return details.value.is_visible_tech_specs !== false
 })
 
 
@@ -584,7 +599,7 @@ watch(() => options.value, () => {
 
         <!-- Other details blocks -->
         <div class="details-grid">
-          <div v-if="hasTechSpecs" class="detail-block">
+          <div v-if="hasTechSpecs && isTechSpecsVisible" class="detail-block">
             <div class="block-title">
               {{ t('catalog.productDetails.techSpecs') }}
             </div>
@@ -599,6 +614,7 @@ watch(() => options.value, () => {
         <div class="product-sections mt-6">
           <div class="sections-nav">
             <v-btn
+              v-if="details?.is_visible_long_description !== false"
               :class="[
                 'section-btn',
                 { 'section-active': selectedSection === 'description' }
@@ -619,6 +635,7 @@ watch(() => options.value, () => {
               {{ t('catalog.productDetails.optionsSection') }}
             </v-btn>
             <v-btn
+              v-if="isTechSpecsVisible"
               :class="[
                 'section-btn',
                 { 'section-active': selectedSection === 'tech-specs' }
@@ -642,7 +659,7 @@ watch(() => options.value, () => {
           
           <div class="section-content">
             <!-- Description section -->
-            <div v-if="selectedSection === 'description'">
+            <div v-if="selectedSection === 'description' && details?.is_visible_long_description !== false">
               <div v-if="details?.long_description">
                 {{ details.long_description }}
               </div>
@@ -662,7 +679,7 @@ watch(() => options.value, () => {
             </div>
             
             <!-- Tech specs section -->
-            <div v-if="selectedSection === 'tech-specs'">
+            <div v-if="selectedSection === 'tech-specs' && isTechSpecsVisible">
               <ProductTechSpecs :tech-specs="details?.tech_specs" />
             </div>
             
@@ -672,6 +689,8 @@ watch(() => options.value, () => {
                 :owner-first-name="details?.owner_first_name"
                 :owner-last-name="details?.owner_last_name"
                 :specialist-groups="details?.specialist_groups"
+                :is-visible-owner="details?.is_visible_owner !== false"
+                :is-visible-groups="details?.is_visible_groups !== false"
               />
             </div>
           </div>
