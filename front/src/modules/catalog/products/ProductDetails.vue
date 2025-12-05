@@ -1,7 +1,7 @@
 <!--
 version: 1.11.1
 Frontend file for product details view component.
-Displays extended info and placeholders for product options.
+Displays extended info as an opened card product card format.
 File: ProductDetails.vue
 
 Changes in v1.5.0:

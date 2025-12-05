@@ -1,7 +1,7 @@
 <!--
 version: 1.7.0
 Frontend file for catalog product card component.
-Displays product information in a card format with light blue theme and camera icon.
+Displays product information in a (closed) card format.
 File: CatalogProductCard.vue
 
 Changes in v1.3.0:

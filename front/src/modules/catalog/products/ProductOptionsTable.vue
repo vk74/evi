@@ -1,5 +1,5 @@
 <!--
-version: 1.6.0
+version: 1.7.1
 Frontend file ProductOptionsTable.vue.
 Purpose: Displays product option rows with search, counter, and pagination; mirrors PairEditor table UX.
 Filename: ProductOptionsTable.vue
@@ -50,6 +50,10 @@ Changes in v1.7.0:
 - Renamed userCountry -> userLocation throughout the component
 - Removed dependency on getSettingValueHelper for pricelist mapping
 - Added getPricelistByRegion service call to get pricelist by user location
+
+Changes in v1.7.1:
+- Fixed options sum calculation on initialization: emit options-sum-changed event when prices are loaded from cache
+- Total sum now correctly includes options prices from the start, not only after user interactions
 -->
 <script setup lang="ts">
 import { ref, computed, watch, onMounted } from 'vue'
@@ -280,6 +284,8 @@ async function loadOptionPrices() {
     // If all codes are cached, use cache
     if (codesToLoad.length === 0) {
       optionPrices.value = cachedPrices
+      // Emit event with updated total sum after prices are set from cache
+      emit('options-sum-changed', optionsTotalSum.value)
       return
     }
     
