@@ -54,6 +54,11 @@ Changes in v1.7.0:
 Changes in v1.7.1:
 - Fixed options sum calculation on initialization: emit options-sum-changed event when prices are loaded from cache
 - Total sum now correctly includes options prices from the start, not only after user interactions
+
+Changes in v1.8.0:
+- Options are now filtered by user's region (same as products in catalog)
+- Options without region assignment are not shown (filtering happens upstream in ProductDetails.vue)
+- Component receives pre-filtered options list from parent component
 -->
 <script setup lang="ts">
 import { ref, computed, watch, onMounted } from 'vue'

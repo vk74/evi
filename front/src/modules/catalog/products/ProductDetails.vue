@@ -61,6 +61,12 @@ Changes in v1.12.0:
 - Renamed userCountry -> userLocation throughout the component
 - Removed dependency on getSettingValueHelper for pricelist mapping
 - Added getPricelistByRegion service call to get pricelist by user location
+
+Changes in v1.13.0:
+- Added region filtering for product options
+- Options are now filtered by user's region (same as products in catalog)
+- Options without region assignment are not shown
+- Added watch for userLocation changes to reload options when location changes
 -->
 <script setup lang="ts">
 import { ref, onMounted, watch, computed } from 'vue'
@@ -185,7 +191,31 @@ async function loadDetails() {
 
 async function loadOptions() {
   try {
-    options.value = await fetchProductOptions(props.productId)
+    // Check if location is currently loading
+    if (appStore.isLoadingLocation) {
+      // Location is loading - wait for it to complete, don't load options yet
+      options.value = []
+      return
+    }
+    
+    // Get user location
+    let userLocation = appStore.getUserLocation
+    
+    // If location is not loaded, try to load it first
+    if (!userLocation) {
+      await appStore.loadUserLocation()
+      userLocation = appStore.getUserLocation
+    }
+    
+    // Only load options if location is set (region is REQUIRED for options filtering)
+    if (!userLocation) {
+      // No location - options cannot be loaded without region
+      options.value = []
+      return
+    }
+    
+    // Load options with region filtering
+    options.value = await fetchProductOptions(props.productId, userLocation)
   } catch (e) {
     // errors are handled in service
     options.value = []
@@ -300,6 +330,8 @@ watch(() => appStore.getUserLocation, () => {
   if (details.value?.product_code) {
     loadProductPrice()
   }
+  // Reload options when location changes (they need to be filtered by new region)
+  loadOptions()
 })
 </script>
 

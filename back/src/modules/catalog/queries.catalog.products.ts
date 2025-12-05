@@ -32,6 +32,12 @@
  * - getActiveProductsBySection now requires region_id parameter (REQUIRED, not optional)
  * - STRICT FILTERING: Only products with records in app.product_regions for the specified region are shown
  * - Products without region assignment are NOT shown, even if they are published/active
+ * 
+ * Changes in v1.6.0:
+ * - Added region filtering to getProductOptionsByProductId query
+ * - getProductOptionsByProductId now requires region_id parameter (REQUIRED, not optional)
+ * - STRICT FILTERING: Only options with records in app.product_regions for the specified region are shown
+ * - Options without region assignment are NOT shown, even if they are active
  */
 
 export const queries = {
@@ -146,7 +152,9 @@ export const queries = {
    * Select product options for a product card
    * - Only options where the option product has status_code = 'active'
    * - Uses LEFT JOIN with fallback to always show options even without translation
-   * - Parameters: [mainProductId, requestedLanguage, fallbackLanguage]
+   * - STRICT FILTERING: Only shows options that have a record in app.product_regions for the specified region_id
+   * - Options without region assignment are NOT shown (strict filtering)
+   * - Parameters: [mainProductId, requestedLanguage, fallbackLanguage, region_id (REQUIRED, must not be NULL)]
    */
   getProductOptionsByProductId: `
     SELECT 
@@ -159,6 +167,7 @@ export const queries = {
       NULL::numeric AS unit_price
     FROM app.product_options po
     JOIN app.products p_option ON p_option.product_id = po.option_product_id
+    INNER JOIN app.product_regions pr ON p_option.product_id = pr.product_id AND pr.region_id = $4::integer
     LEFT JOIN app.product_translations pt_requested 
       ON pt_requested.product_id = po.option_product_id
       AND pt_requested.language_code = $2
