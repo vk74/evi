@@ -1,5 +1,5 @@
 <!--
-version: 1.7.1
+version: 1.8.1
 Frontend file ProductOptionsTable.vue.
 Purpose: Displays product option rows with search, counter, and pagination; mirrors PairEditor table UX.
 Filename: ProductOptionsTable.vue
@@ -369,7 +369,15 @@ function clearSelections() {
   emit('options-sum-changed', optionsTotalSum.value)
 }
 
-defineExpose({ clearSelections })
+function getUnitsById() {
+  return unitsById.value
+}
+
+function getOptionPrices() {
+  return optionPrices.value
+}
+
+defineExpose({ clearSelections, getUnitsById, getOptionPrices })
 </script>
 
 <template>

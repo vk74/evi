@@ -17,6 +17,7 @@ import fetchProductDetailsController from './controller.catalog.product.details'
 import readProductOptionsController from './controller.catalog.read.product.options';
 import fetchPricelistItemsByCodesController from './controller.catalog.fetch.pricelist.items.by.codes';
 import getPricelistByRegionController from './controller.catalog.get.pricelist.by.region';
+import { getVatRateSingle, getVatRateBatch } from './controller.catalog.get.vat.rate';
 import checkRateLimit from '../../core/guards/guard.rate.limit';
 import validateJwt from '../../core/guards/guard.validate.jwt';
 import checkIsUserStatusActive from '../../core/guards/guard.check.is.user.status.active';
@@ -39,6 +40,10 @@ router.post('/products/options', checkRateLimit, checkRequestSecurityHard, valid
 // Catalog pricelist routes
 router.post('/pricelists/:pricelistId/items-by-codes', checkRateLimit, checkRequestSecurityHard, validateJwt, checkIsUserStatusActive, fetchPricelistItemsByCodesController);
 router.get('/pricelist-by-region/:region', checkRateLimit, checkRequestSecurityHard, validateJwt, checkIsUserStatusActive, getPricelistByRegionController);
+
+// Catalog VAT rate routes
+router.get('/vat-rate', checkRateLimit, checkRequestSecurityHard, validateJwt, checkIsUserStatusActive, getVatRateSingle);
+router.post('/vat-rates', checkRateLimit, checkRequestSecurityHard, validateJwt, checkIsUserStatusActive, getVatRateBatch);
 
 // Export using ES modules syntax
 export default router;

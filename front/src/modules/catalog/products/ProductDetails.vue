@@ -1,5 +1,5 @@
 <!--
-version: 1.11.1
+version: 1.14.0
 Frontend file for product details view component.
 Displays extended info as an opened card product card format.
 File: ProductDetails.vue
@@ -67,6 +67,15 @@ Changes in v1.13.0:
 - Options are now filtered by user's region (same as products in catalog)
 - Options without region assignment are not shown
 - Added watch for userLocation changes to reload options when location changes
+
+Changes in v1.14.0:
+- Added VAT calculation and display functionality
+- VAT rate loaded for main product using fetchProductVatByProductUuid helper
+- VAT rates loaded for options using batch fetchProductsVatByProductUuids helper
+- VAT calculated for main product: productsSum * vatRate / 100
+- VAT calculated for options: sum of (optionPrice * units * vatRate / 100) for options with units_count > 0
+- VAT field now displays calculated sum instead of static "—"
+- VAT rates reload when product, location, or options change
 -->
 <script setup lang="ts">
 import { ref, onMounted, watch, computed } from 'vue'
@@ -83,6 +92,10 @@ import { fetchPricesByCodes } from '../service.catalog.fetch.prices.by.codes'
 import { getPricelistByRegion } from '../service.catalog.get.pricelist.by.region'
 import { getCachedPrice, cachePrice, isPriceCacheValid } from '../state.catalog'
 import { formatPriceWithPrecision } from '@/core/helpers/helper.format.price'
+import { 
+  fetchProductVatByProductUuid, 
+  fetchProductsVatByProductUuids 
+} from '@/core/helpers/fetch.product.vat.by.product.uuid'
 
 // Props (MVP): accept productId from parent context/navigation state
 interface Props { 
@@ -104,6 +117,8 @@ const mainProductUnitsCount = ref(1)
 const productPrice = ref<ProductPriceInfo | null>(null)
 const isLoadingPrice = ref(false)
 const optionsTotalSum = ref(0)
+const vatRate = ref<number | null>(null)
+const vatRatesForOptions = ref<Map<string, number | null>>(new Map())
 
 // Stores
 const appStore = useAppStore()
@@ -142,6 +157,35 @@ const totalSum = computed(() => {
   return productsSum.value + optionsTotalSum.value
 })
 
+// Computed property for VAT sum (main product + options)
+const vatForMainProduct = computed(() => {
+  if (!vatRate.value || vatRate.value === null) return 0
+  return (productsSum.value * vatRate.value) / 100
+})
+
+const vatForOptions = computed(() => {
+  let total = 0
+  const unitsById = optionsTableRef.value?.getUnitsById?.() ?? {}
+  const optionPricesMap = optionsTableRef.value?.getOptionPrices?.() ?? new Map()
+  
+  for (const option of options.value) {
+    const unitsCount = unitsById[option.product_id] ?? 0
+    if (unitsCount > 0 && option.product_code && optionPricesMap.has(option.product_code)) {
+      const priceInfo = optionPricesMap.get(option.product_code)!
+      const optionVatRate = vatRatesForOptions.value.get(option.product_id)
+      if (optionVatRate !== null && optionVatRate !== undefined) {
+        const optionSum = priceInfo.price * unitsCount
+        total += (optionSum * optionVatRate) / 100
+      }
+    }
+  }
+  return total
+})
+
+const vatSum = computed(() => {
+  return vatForMainProduct.value + vatForOptions.value
+})
+
 // Computed property for currency symbol from product price
 const currencySymbol = computed(() => {
   return productPrice.value?.currencySymbol || ''
@@ -174,6 +218,9 @@ function formatSum(value: number): string {
 // Handler for options sum changed event
 function handleOptionsSumChanged(sum: number) {
   optionsTotalSum.value = sum
+  // Reload VAT rates when options sum changes (units might have changed)
+  // This ensures VAT rates are loaded for options with units_count > 0
+  loadVatRatesForOptions()
 }
 
 async function loadDetails() {
@@ -219,6 +266,90 @@ async function loadOptions() {
   } catch (e) {
     // errors are handled in service
     options.value = []
+  }
+}
+
+// ==================== VAT RATE LOADING FUNCTIONS ====================
+async function loadVatRate() {
+  try {
+    if (!details.value?.id) {
+      vatRate.value = null
+      return
+    }
+
+    // Check if location is currently loading
+    if (appStore.isLoadingLocation) {
+      return
+    }
+    
+    // Get user location
+    let userLocation = appStore.getUserLocation
+    
+    // If location is not loaded, try to load it first
+    if (!userLocation) {
+      await appStore.loadUserLocation()
+      userLocation = appStore.getUserLocation
+    }
+    
+    // Only load VAT rate if location is set
+    if (!userLocation) {
+      vatRate.value = null
+      return
+    }
+    
+    // Load VAT rate for main product
+    vatRate.value = await fetchProductVatByProductUuid(details.value.id, userLocation)
+  } catch (error) {
+    console.error('[ProductDetails] Error loading VAT rate:', error)
+    vatRate.value = null
+  }
+}
+
+async function loadVatRatesForOptions() {
+  try {
+    // Check if location is currently loading
+    if (appStore.isLoadingLocation) {
+      vatRatesForOptions.value.clear()
+      return
+    }
+    
+    // Get user location
+    let userLocation = appStore.getUserLocation
+    
+    // If location is not loaded, try to load it first
+    if (!userLocation) {
+      await appStore.loadUserLocation()
+      userLocation = appStore.getUserLocation
+    }
+    
+    // Only load VAT rates if location is set
+    if (!userLocation) {
+      vatRatesForOptions.value.clear()
+      return
+    }
+    
+    // Get unitsById to filter only options with units_count > 0
+    const unitsById = optionsTableRef.value?.getUnitsById?.() ?? {}
+    
+    // Collect productIds from options where units_count > 0
+    const productIds: string[] = []
+    for (const option of options.value) {
+      const unitsCount = unitsById[option.product_id] ?? 0
+      if (unitsCount > 0) {
+        productIds.push(option.product_id)
+      }
+    }
+    
+    if (productIds.length === 0) {
+      vatRatesForOptions.value.clear()
+      return
+    }
+    
+    // Load VAT rates for all options in one batch request
+    vatRatesForOptions.value = await fetchProductsVatByProductUuids(productIds, userLocation)
+  } catch (error) {
+    console.error('[ProductDetails] Error loading VAT rates for options:', error)
+    vatRatesForOptions.value.clear()
   }
 }
 
@@ -326,13 +457,30 @@ watch(() => details.value?.product_code, () => {
   }
 }, { immediate: true })
 
+// Watch for changes in product ID to reload VAT rate
+watch(() => details.value?.id, () => {
+  if (details.value?.id) {
+    loadVatRate()
+  }
+}, { immediate: true })
+
 watch(() => appStore.getUserLocation, () => {
   if (details.value?.product_code) {
     loadProductPrice()
   }
   // Reload options when location changes (they need to be filtered by new region)
   loadOptions()
+  // Reload VAT rates when location changes
+  if (details.value?.id) {
+    loadVatRate()
+  }
+  loadVatRatesForOptions()
 })
+
+// Watch for changes in options to reload VAT rates
+watch(() => options.value, () => {
+  loadVatRatesForOptions()
+}, { deep: true })
 </script>
 
 <template>
@@ -496,7 +644,7 @@ watch(() => appStore.getUserLocation, () => {
             <div class="detail-block">
               <div class="block-body d-flex flex-column" style="gap: 8px;">
                 <span>{{ t('catalog.productDetails.vat') }}</span>
-                <v-text-field model-value="—" density="compact" variant="outlined" readonly hide-details class="sidebar-price-field" />
+                <v-text-field :model-value="formatSum(vatSum)" density="compact" variant="outlined" readonly hide-details class="sidebar-price-field" />
               </div>
             </div>
             <div class="detail-block">
