@@ -1,5 +1,5 @@
 <!--
-version: 1.14.0
+version: 1.15.0
 Frontend file for product details view component.
 Displays extended info as an opened card product card format.
 File: ProductDetails.vue
@@ -76,6 +76,13 @@ Changes in v1.14.0:
 - VAT calculated for options: sum of (optionPrice * units * vatRate / 100) for options with units_count > 0
 - VAT field now displays calculated sum instead of static "—"
 - VAT rates reload when product, location, or options change
+
+Changes in v1.15.0:
+- Updated sidebar labels: "products" -> "sum for main product", "options" -> "sum for options"
+- Added separate VAT fields: "VAT for main product" and "VAT for options"
+- Renamed "total" -> "total for product and options" (sum without VAT)
+- Added "total for product and options including VAT" field showing total with VAT
+- Added totalSumIncludingVat computed property (totalSum + vatSum)
 -->
 <script setup lang="ts">
 import { ref, onMounted, watch, computed } from 'vue'
@@ -184,6 +191,11 @@ const vatForOptions = computed(() => {
 
 const vatSum = computed(() => {
   return vatForMainProduct.value + vatForOptions.value
+})
+
+// Computed property for total sum including VAT (products + options + VAT)
+const totalSumIncludingVat = computed(() => {
+  return totalSum.value + vatSum.value
 })
 
 // Computed property for currency symbol from product price
@@ -631,26 +643,38 @@ watch(() => options.value, () => {
           <div class="pd-sidebar-top">
             <div class="detail-block">
               <div class="block-body d-flex flex-column" style="gap: 8px;">
-                <span>{{ t('catalog.productDetails.products') }}</span>
+                <span>{{ t('catalog.productDetails.sumForMainProduct') }}</span>
                 <v-text-field :model-value="formatSum(productsSum)" density="compact" variant="outlined" readonly hide-details class="sidebar-price-field" />
               </div>
             </div>
             <div class="detail-block">
               <div class="block-body d-flex flex-column" style="gap: 8px;">
-                <span>{{ t('catalog.productDetails.optionsTotal') }}</span>
+                <span>{{ t('catalog.productDetails.vatForMainProduct') }}</span>
+                <v-text-field :model-value="formatSum(vatForMainProduct)" density="compact" variant="outlined" readonly hide-details class="sidebar-price-field" />
+              </div>
+            </div>
+            <div class="detail-block">
+              <div class="block-body d-flex flex-column" style="gap: 8px;">
+                <span>{{ t('catalog.productDetails.sumForOptions') }}</span>
                 <v-text-field :model-value="formatSum(optionsTotalSum)" density="compact" variant="outlined" readonly hide-details class="sidebar-price-field" />
               </div>
             </div>
             <div class="detail-block">
               <div class="block-body d-flex flex-column" style="gap: 8px;">
-                <span>{{ t('catalog.productDetails.vat') }}</span>
-                <v-text-field :model-value="formatSum(vatSum)" density="compact" variant="outlined" readonly hide-details class="sidebar-price-field" />
+                <span>{{ t('catalog.productDetails.vatForOptions') }}</span>
+                <v-text-field :model-value="formatSum(vatForOptions)" density="compact" variant="outlined" readonly hide-details class="sidebar-price-field" />
               </div>
             </div>
             <div class="detail-block">
               <div class="block-body d-flex flex-column" style="gap: 8px;">
-                <span>{{ t('catalog.productDetails.total') }}</span>
+                <span>{{ t('catalog.productDetails.totalForProductAndOptions') }}</span>
                 <v-text-field :model-value="formatSum(totalSum)" density="compact" variant="outlined" readonly hide-details class="sidebar-price-field" />
+              </div>
+            </div>
+            <div class="detail-block">
+              <div class="block-body d-flex flex-column" style="gap: 8px;">
+                <span>{{ t('catalog.productDetails.totalForProductAndOptionsIncludingVat') }}</span>
+                <v-text-field :model-value="formatSum(totalSumIncludingVat)" density="compact" variant="outlined" readonly hide-details class="sidebar-price-field" />
               </div>
             </div>
           </div>
