@@ -47,6 +47,13 @@ Changes in v1.8.0:
 - Renamed userCountry -> userLocation throughout the component
 - Removed dependency on getSettingValueHelper for pricelist mapping
 - Added getPricelistByRegion service call to get pricelist by user location
+
+Changes in v1.9.0:
+- User location determination moved to the very first step in onMounted
+- Products are now filtered by user region using app.product_regions table
+- Location must be determined before loading any cards (products, services, sections)
+- Added region parameter to fetchActiveProducts call
+- Added placeholder comment in loadActiveServices for future region filtering
 -->
 <script setup lang="ts">
 import { ref, computed, onMounted, watch } from 'vue';
@@ -238,6 +245,9 @@ async function refreshCatalogSections() {
 
 async function loadActiveServices() {
   try {
+    // TODO: Region filtering for services will be added later
+    // Currently loading all services for the selected section
+    // When region filtering is implemented, services will be filtered by user's region
     const fetched = await fetchActiveServices({ sectionId: selectedSectionId.value || undefined });
     services.value = fetched;
     
@@ -259,7 +269,18 @@ async function loadActiveProducts() {
       return;
     }
     
-    const fetched = await fetchActiveProducts({ sectionId: selectedSectionId.value });
+    // Get user location for region filtering
+    const userLocation = appStore.getUserLocation;
+    if (!userLocation) {
+      // No location - cannot filter products by region
+      products.value = [];
+      return;
+    }
+    
+    const fetched = await fetchActiveProducts({ 
+      sectionId: selectedSectionId.value,
+      region: userLocation
+    });
     products.value = fetched;
     
     // Update card colors from metadata
@@ -384,7 +405,12 @@ watch(filteredProducts, () => {
 }, { deep: true });
 
 // Watch for user location changes
-watch(() => appStore.getUserLocation, () => {
+watch(() => appStore.getUserLocation, async (newLocation) => {
+  // Reload products when location changes (they need to be filtered by new region)
+  if (newLocation && selectedSectionId.value) {
+    await loadActiveProducts();
+  }
+  // Reload prices when location changes
   if (filteredProducts.value.length > 0) {
     loadProductPrices();
   }
@@ -394,6 +420,7 @@ watch(() => appStore.getUserLocation, () => {
 function selectSection(sectionId: string) {
   selectedSectionId.value = sectionId;
   // reload services and products for this section
+  // Note: products will be filtered by user region automatically in loadActiveProducts
   loadActiveServices();
   loadActiveProducts();
 }
@@ -434,10 +461,43 @@ function handleSectionHeaderClick() {
 
 // ==================== LIFECYCLE ====================
 onMounted(async () => {
-  // Ensure sections (and default selectedSectionId) are loaded before fetching services and products
+  // Step 1: Determine user location first (critical for region-based filtering)
+  // Location is required before loading any cards (products, services, sections)
+  // This will be used for filtering products by region and later for services and sections
+  if (appStore.isLoadingLocation) {
+    // Wait for location loading to complete
+    return;
+  }
+  
+  let userLocation = appStore.getUserLocation;
+  
+  // If location is not loaded, try to load it first
+  if (!userLocation) {
+    await appStore.loadUserLocation();
+    userLocation = appStore.getUserLocation;
+  }
+  
+  // Only show modal if location is still null after loading attempt
+  if (!userLocation) {
+    // No location - show toast and emit event to open LocationSelectionModal
+    uiStore.showErrorSnackbar(t('catalog.errors.selectCountryLocation'));
+    // Emit event to open location modal (will be handled in App.vue)
+    window.dispatchEvent(new CustomEvent('openLocationSelectionModal'));
+    // Don't load cards without location - they need region filter
+    // Load Phosphor icons (non-blocking for data correctness)
+    loadPhosphorIcons();
+    return;
+  }
+  
+  // Step 2: Load sections after location is determined
   await loadCatalogSections();
+  
+  // Step 3: Load services (placeholder - all services for now, region filtering will be added later)
   await loadActiveServices();
+  
+  // Step 4: Load products filtered by user region
   await loadActiveProducts();
+  
   // Load Phosphor icons (non-blocking for data correctness)
   loadPhosphorIcons();
 });

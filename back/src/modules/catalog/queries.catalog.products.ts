@@ -1,6 +1,6 @@
 /**
  * queries.catalog.products.ts - backend file
- * version: 1.4.0
+ * version: 1.5.0
  * 
  * Purpose: SQL queries for catalog products (public consumption layer)
  * Logic: Provides parameterized queries to fetch active products for the catalog and product details
@@ -25,6 +25,12 @@
  * 
  * Changes in v1.4.0:
  * - Removed JSONB fields (area_specifics, industry_specifics, key_features, product_overview) from all SELECT queries
+ * 
+ * Changes in v1.5.0:
+ * - Added region filtering via INNER JOIN with app.product_regions table
+ * - getActiveProducts now accepts optional region_id parameter
+ * - getActiveProductsBySection now accepts optional region_id parameter
+ * - Products are filtered by region_id when provided, showing only products available in that region
  */
 
 export const queries = {
@@ -33,7 +39,8 @@ export const queries = {
    * - Only products with is_published = true
    * - Minimal set of fields required for product cards
    * - Uses LEFT JOIN with fallback to always show products even without translation
-   * - Parameters: [requestedLanguage, fallbackLanguage]
+   * - Filters products by region when region_id is provided (via EXISTS subquery with product_regions)
+   * - Parameters: [requestedLanguage, fallbackLanguage, region_id (optional, can be NULL)]
    */
   getActiveProducts: `
     SELECT 
@@ -56,6 +63,12 @@ export const queries = {
       AND pt_fallback.language_code = $2
     WHERE p.is_published = true
       AND (pt_requested.product_id IS NOT NULL OR pt_fallback.product_id IS NOT NULL)
+      AND ($3::integer IS NULL OR EXISTS (
+        SELECT 1 
+        FROM app.product_regions pr 
+        WHERE pr.product_id = p.product_id 
+          AND pr.region_id = $3::integer
+      ))
     ORDER BY p.product_code ASC, COALESCE(pt_requested.name, pt_fallback.name) ASC
   `,
 
@@ -64,7 +77,8 @@ export const queries = {
    * - Only products with is_published = true
    * - Joined with app.section_products for filtering
    * - Uses LEFT JOIN with fallback to always show products even without translation
-   * - Parameters: [sectionId, requestedLanguage, fallbackLanguage]
+   * - Filters products by region when region_id is provided (via EXISTS subquery with product_regions)
+   * - Parameters: [sectionId, requestedLanguage, fallbackLanguage, region_id (optional, can be NULL)]
    */
   getActiveProductsBySection: `
     SELECT 
@@ -90,6 +104,12 @@ export const queries = {
     WHERE p.is_published = true 
       AND sp.section_id = $1
       AND (pt_requested.product_id IS NOT NULL OR pt_fallback.product_id IS NOT NULL)
+      AND ($4::integer IS NULL OR EXISTS (
+        SELECT 1 
+        FROM app.product_regions pr 
+        WHERE pr.product_id = p.product_id 
+          AND pr.region_id = $4::integer
+      ))
     ORDER BY p.product_code ASC, COALESCE(pt_requested.name, pt_fallback.name) ASC
   `,
 

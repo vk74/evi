@@ -15,6 +15,9 @@ Changes in v1.3.0:
 
 Changes in v1.4.0:
 - Removed JSONB fields (area_specifics, industry_specifics, key_features, product_overview) from CatalogProductDetails interface
+
+Changes in v1.5.0:
+- Added region parameter to FetchActiveProductsOptions for region-based product filtering
 */
 
 export type ProductStatus = 'published' | 'draft' | 'archived'
@@ -45,6 +48,7 @@ export interface FetchActiveProductsResponse {
 export interface FetchActiveProductsOptions {
   forceRefresh?: boolean;
   sectionId?: string;
+  region?: string;
 }
 
 export interface CatalogProductDetails {

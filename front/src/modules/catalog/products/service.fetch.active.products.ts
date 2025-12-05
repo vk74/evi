@@ -1,8 +1,12 @@
 /**
  * @file service.fetch.active.products.ts
- * Version: 1.2.0
+ * Version: 1.3.0
  * Service for fetching active catalog products from the backend with caching.
  * Frontend file that provides unified interface for getting active products.
+ * 
+ * Changes in v1.3.0:
+ * - Added region parameter support for region-based product filtering
+ * - Cache invalidation now considers region parameter
  */
 
 import { api } from '@/core/api/service.axios'
@@ -34,8 +38,8 @@ export async function fetchActiveProducts(options: FetchActiveProductsOptions = 
   const userStore = useUserAuthStore()
   
   try {
-    // Reuse cache only when not filtering by section to avoid cross-section leakage
-    if (!options.forceRefresh && !options.sectionId && isFresh()) {
+    // Reuse cache only when not filtering by section or region to avoid cross-section/region leakage
+    if (!options.forceRefresh && !options.sectionId && !options.region && isFresh()) {
       return state.products
     }
     
@@ -50,7 +54,8 @@ export async function fetchActiveProducts(options: FetchActiveProductsOptions = 
     const response = await api.get<FetchActiveProductsResponse>('/api/catalog/fetch-products', { 
       params: { 
         sectionId: options.sectionId,
-        language: userLanguage
+        language: userLanguage,
+        region: options.region
       }
     })
     if (response.data.success) {
