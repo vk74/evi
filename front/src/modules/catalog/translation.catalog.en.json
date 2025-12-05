@@ -94,6 +94,9 @@
           "sum": "sum"
         }
       }
+    },
+    "productCard": {
+      "published": "published"
     }
   }
 }

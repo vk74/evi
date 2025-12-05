@@ -1,5 +1,5 @@
 <!--
-version: 1.7.0
+version: 1.8.0
 Frontend file for catalog product card component.
 Displays product information in a (closed) card format.
 File: CatalogProductCard.vue
@@ -29,6 +29,10 @@ Changes in v1.6.0:
 Changes in v1.7.0:
 - Added roundingPrecision prop
 - Format price with rounding precision via shared helper and locale
+
+Changes in v1.8.0:
+- Localized "опубликовано" text using i18n
+- Fixed date formatting to use current locale instead of hardcoded 'ru-RU'
 -->
 <script setup lang="ts">
 import { ref, computed } from 'vue';
@@ -54,7 +58,7 @@ const props = withDefaults(defineProps<Props>(), {
 });
 const emit = defineEmits<{ (e: 'select', productId: string): void }>()
 
-const { locale } = useI18n();
+const { t, locale } = useI18n();
 
 // ==================== PHOSPHOR ICONS SUPPORT ====================
 const phosphorIcons = ref<Record<string, any>>({})
@@ -107,6 +111,12 @@ const formattedPrice = computed(() => {
   });
   return formatted;
 });
+
+const formattedPublishedDate = computed(() => {
+  if (!props.product.published_at) return '—';
+  const dateLocale = locale.value === 'ru' ? 'ru-RU' : 'en-US';
+  return new Date(props.product.published_at).toLocaleDateString(dateLocale);
+});
 </script>
 
 <template>
@@ -129,7 +139,7 @@ const formattedPrice = computed(() => {
         </div>
         <!-- Published date below photo -->
         <div class="published-date">
-          опубликовано: {{ product.published_at ? new Date(product.published_at).toLocaleDateString('ru-RU') : '—' }}
+          {{ t('catalog.productCard.published') }}: {{ formattedPublishedDate }}
         </div>
       </div>
 
