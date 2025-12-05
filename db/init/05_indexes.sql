@@ -1,4 +1,4 @@
--- Version: 1.1.9
+-- Version: 1.1.10
 -- Description: Create all indexes for the application tables.
 -- Backend file: 05_indexes.sql
 -- Updated: mobile_phone_number -> mobile_phone field name
@@ -15,6 +15,9 @@
 -- Changes in v1.1.9:
 -- - Removed index on app.products.taxable_category (column removed from app.products)
 -- - Added index on app.product_regions.taxable_category_id for better query performance
+-- Changes in v1.1.10:
+-- - Added index on app.product_regions.region_id for critical performance optimization of frequent "products by region" queries
+-- - This index is essential for JOIN operations filtering products by region_id, preventing full table scans
 
 -- Create indexes for app_settings
 CREATE INDEX IF NOT EXISTS idx_app_sections_path ON app.app_settings USING btree (section_path);
@@ -166,6 +169,10 @@ CREATE INDEX IF NOT EXISTS idx_regions_taxable_categories_vat_rate
 -- ============================================
 -- Product Regions Indexes
 -- ============================================
+
+-- Index for faster lookups by region (critical for frequent "products by region" queries)
+CREATE INDEX IF NOT EXISTS idx_product_regions_region_id 
+    ON app.product_regions(region_id);
 
 -- Index for faster lookups by taxable category
 CREATE INDEX IF NOT EXISTS idx_product_regions_taxable_category_id 
