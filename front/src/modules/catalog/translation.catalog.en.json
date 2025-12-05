@@ -77,6 +77,9 @@
       "notSpecified": "not specified",
       "draft": "Draft",
       "mainOptions": "main options",
+      "optionsSection": "options",
+      "techSpecs": "tech specs",
+      "contacts": "contacts",
       "noLongDescription": "no full description available",
       "sumForMainProduct": "sum for main product",
       "vatForMainProduct": "VAT for main product",
@@ -97,6 +100,16 @@
           "unitPrice": "unit price",
           "sum": "sum"
         }
+      },
+      "techSpecsTable": {
+        "parameter": "Parameter",
+        "value": "Value"
+      },
+      "contactInfo": {
+        "owner": "Owner",
+        "specialistGroups": "Specialist Groups",
+        "notSpecified": "Not specified",
+        "noGroups": "No specialist groups assigned"
       }
     },
     "productCard": {

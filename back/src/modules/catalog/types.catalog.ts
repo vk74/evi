@@ -277,6 +277,9 @@ export interface DbProductDetails {
     updated_at: string | null;
     updated_by: string | null;
     published_at: string | null;
+    owner_first_name: string | null;
+    owner_last_name: string | null;
+    specialist_groups: string[];
 }
 
 /**
@@ -295,6 +298,9 @@ export interface CatalogProductDetailsDTO {
     updated_at: string | null;
     updated_by: string | null;
     published_at: string | null;
+    owner_first_name: string | null;
+    owner_last_name: string | null;
+    specialist_groups: string[];
 }
 
 export interface FetchProductsResponse extends ApiResponse {

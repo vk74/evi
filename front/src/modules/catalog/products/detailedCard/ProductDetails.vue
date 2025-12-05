@@ -83,6 +83,12 @@ Changes in v1.15.0:
 - Renamed "total" -> "total for product and options" (sum without VAT)
 - Added "total for product and options including VAT" field showing total with VAT
 - Added totalSumIncludingVat computed property (totalSum + vatSum)
+
+Changes in v1.16.0:
+- Renamed "main-options" section to "options" (remains default section)
+- Added two new sections: "tech specs" and "contacts"
+- Created ProductTechSpecs.vue component with static placeholder table
+- Created ProductContacts.vue component to display owner and specialist groups
 -->
 <script setup lang="ts">
 import { ref, onMounted, watch, computed } from 'vue'
@@ -94,6 +100,8 @@ import { fetchProductDetails } from '../service.fetch.product.details'
 import { fetchProductOptions } from '../service.fetch.product.options'
 import type { CatalogProductOption } from '../types.products'
 import ProductOptionsTable from './ProductOptionsTable.vue'
+import ProductTechSpecs from './ProductTechSpecs.vue'
+import ProductContacts from './ProductContacts.vue'
 import { PhCaretUpDown, PhSquare, PhMicrosoftExcelLogo } from '@phosphor-icons/vue'
 import { fetchPricesByCodes } from '../../service.catalog.fetch.prices.by.codes'
 import { getPricelistByRegion } from '../../service.catalog.get.pricelist.by.region'
@@ -119,7 +127,7 @@ const loading = ref(false)
 const error = ref<string | null>(null)
 const options = ref<CatalogProductOption[]>([])
 const optionsTableRef = ref<any>(null)
-const selectedSection = ref<'description' | 'main-options'>('main-options')
+const selectedSection = ref<'description' | 'options' | 'tech-specs' | 'contacts'>('options')
 const mainProductUnitsCount = ref(1)
 const productPrice = ref<ProductPriceInfo | null>(null)
 const isLoadingPrice = ref(false)
@@ -603,12 +611,32 @@ watch(() => options.value, () => {
             <v-btn
               :class="[
                 'section-btn',
-                { 'section-active': selectedSection === 'main-options' }
+                { 'section-active': selectedSection === 'options' }
               ]"
               variant="text"
-              @click="selectedSection = 'main-options'"
+              @click="selectedSection = 'options'"
             >
-              {{ t('catalog.productDetails.mainOptions') }}
+              {{ t('catalog.productDetails.optionsSection') }}
+            </v-btn>
+            <v-btn
+              :class="[
+                'section-btn',
+                { 'section-active': selectedSection === 'tech-specs' }
+              ]"
+              variant="text"
+              @click="selectedSection = 'tech-specs'"
+            >
+              {{ t('catalog.productDetails.techSpecs') }}
+            </v-btn>
+            <v-btn
+              :class="[
+                'section-btn',
+                { 'section-active': selectedSection === 'contacts' }
+              ]"
+              variant="text"
+              @click="selectedSection = 'contacts'"
+            >
+              {{ t('catalog.productDetails.contacts') }}
             </v-btn>
           </div>
           
@@ -623,13 +651,27 @@ watch(() => options.value, () => {
               </div>
             </div>
             
-            <!-- Main options section -->
-            <div v-if="selectedSection === 'main-options'">
+            <!-- Options section -->
+            <div v-if="selectedSection === 'options'">
               <ProductOptionsTable 
                 ref="optionsTableRef" 
                 :items="options" 
                 :main-product-units-count="mainProductUnitsCount"
                 @options-sum-changed="handleOptionsSumChanged"
+              />
+            </div>
+            
+            <!-- Tech specs section -->
+            <div v-if="selectedSection === 'tech-specs'">
+              <ProductTechSpecs :tech-specs="details?.tech_specs" />
+            </div>
+            
+            <!-- Contacts section -->
+            <div v-if="selectedSection === 'contacts'">
+              <ProductContacts 
+                :owner-first-name="details?.owner_first_name"
+                :owner-last-name="details?.owner_last_name"
+                :specialist-groups="details?.specialist_groups"
               />
             </div>
           </div>

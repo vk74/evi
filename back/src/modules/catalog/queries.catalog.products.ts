@@ -1,6 +1,6 @@
 /**
  * queries.catalog.products.ts - backend file
- * version: 1.5.0
+ * version: 1.7.0
  * 
  * Purpose: SQL queries for catalog products (public consumption layer)
  * Logic: Provides parameterized queries to fetch active products for the catalog and product details
@@ -38,6 +38,11 @@
  * - getProductOptionsByProductId now requires region_id parameter (REQUIRED, not optional)
  * - STRICT FILTERING: Only options with records in app.product_regions for the specified region are shown
  * - Options without region assignment are NOT shown, even if they are active
+ * 
+ * Changes in v1.7.0:
+ * - Added owner information (first_name, last_name) to getProductDetails query via LEFT JOIN with product_users and users tables
+ * - Added specialist groups (array of group names) to getProductDetails query via LEFT JOIN with product_groups and groups tables
+ * - Added GROUP BY clause to handle array aggregation of specialist groups
  */
 
 export const queries = {
@@ -117,6 +122,7 @@ export const queries = {
    * - Only products with is_published = true
    * - Comprehensive product information for detailed display
    * - Uses LEFT JOIN with fallback to always show product details even without translation
+   * - Includes owner information (first_name, last_name) and specialist groups
    * - Parameters: [productId, requestedLanguage, fallbackLanguage]
    */
   getProductDetails: `
@@ -135,7 +141,10 @@ export const queries = {
       p.updated_by,
       (SELECT MAX(sp.published_at) 
        FROM app.section_products sp 
-       WHERE sp.product_id = p.product_id) as published_at
+       WHERE sp.product_id = p.product_id) as published_at,
+      u_owner.first_name as owner_first_name,
+      u_owner.last_name as owner_last_name,
+      COALESCE(array_agg(DISTINCT g.group_name) FILTER (WHERE g.group_name IS NOT NULL), ARRAY[]::text[]) as specialist_groups
     FROM app.products p
     LEFT JOIN app.product_translations pt_requested 
       ON p.product_id = pt_requested.product_id 
@@ -143,9 +152,34 @@ export const queries = {
     LEFT JOIN app.product_translations pt_fallback
       ON p.product_id = pt_fallback.product_id
       AND pt_fallback.language_code = $3
+    LEFT JOIN app.product_users pu_owner 
+      ON p.product_id = pu_owner.product_id 
+      AND pu_owner.role_type = 'owner'
+    LEFT JOIN app.users u_owner 
+      ON pu_owner.user_id = u_owner.user_id
+    LEFT JOIN app.product_groups pg 
+      ON p.product_id = pg.product_id 
+      AND pg.role_type = 'product_specialists'
+    LEFT JOIN app.groups g 
+      ON pg.group_id = g.group_id
     WHERE p.product_id = $1 
       AND p.is_published = true
       AND (pt_requested.product_id IS NOT NULL OR pt_fallback.product_id IS NOT NULL)
+    GROUP BY 
+      p.product_id,
+      p.product_code,
+      p.translation_key,
+      p.is_published,
+      COALESCE(pt_requested.name, pt_fallback.name),
+      COALESCE(pt_requested.short_desc, pt_fallback.short_desc),
+      COALESCE(pt_requested.long_desc, pt_fallback.long_desc),
+      COALESCE(pt_requested.tech_specs, pt_fallback.tech_specs),
+      p.created_at,
+      p.created_by,
+      p.updated_at,
+      p.updated_by,
+      u_owner.first_name,
+      u_owner.last_name
   `,
 
   /**

@@ -77,6 +77,9 @@
       "notSpecified": "не указан",
       "draft": "черновик",
       "mainOptions": "основные опции",
+      "optionsSection": "опции",
+      "techSpecs": "технические характеристики",
+      "contacts": "контакты",
       "noLongDescription": "полное описание недоступно",
       "sumForMainProduct": "сумма основного продукта",
       "vatForMainProduct": "НДС основного продукта",
@@ -97,6 +100,16 @@
           "unitPrice": "цена за ед.",
           "sum": "сумма"
         }
+      },
+      "techSpecsTable": {
+        "parameter": "Параметр",
+        "value": "Значение"
+      },
+      "contactInfo": {
+        "owner": "Владелец",
+        "specialistGroups": "Группы специалистов",
+        "notSpecified": "Не указан",
+        "noGroups": "Группы специалистов не назначены"
       }
     },
     "productCard": {

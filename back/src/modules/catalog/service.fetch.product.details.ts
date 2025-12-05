@@ -1,6 +1,6 @@
 /**
  * service.fetch.product.details.ts - backend file
- * version: 1.3.0
+ * version: 1.4.0
  * 
  * Purpose: Service that fetches single product details for catalog consumption
  * Logic: Queries DB for product details with is_published = true, transforms into DTO for frontend
@@ -17,6 +17,10 @@
  * - Switched to full-name languages ('english', 'russian', ...) for product details queries
  * - Now uses fallback.language and allowed.languages settings for language resolution
  * - Added support for legacy short codes ('en', 'ru') via normalization helper
+ * 
+ * Changes in v1.4.0:
+ * - Added owner_first_name, owner_last_name, and specialist_groups fields to transformRow function
+ * - Owner and specialist groups data now included in product details response
  */
 
 import { Request } from 'express';
@@ -44,6 +48,9 @@ function transformRow(row: DbProductDetails): CatalogProductDetailsDTO {
     updated_at: row.updated_at ?? null,
     updated_by: row.updated_by ?? null,
     published_at: row.published_at ?? null,
+    owner_first_name: row.owner_first_name ?? null,
+    owner_last_name: row.owner_last_name ?? null,
+    specialist_groups: row.specialist_groups ?? [],
   };
 }
 

@@ -1,5 +1,5 @@
 /*
-version: 1.4.0
+version: 1.6.0
 Frontend file for product types in catalog module.
 TypeScript interfaces for catalog products based on database structure.
 File: types.products.ts
@@ -18,6 +18,9 @@ Changes in v1.4.0:
 
 Changes in v1.5.0:
 - Added region parameter to FetchActiveProductsOptions for region-based product filtering
+
+Changes in v1.6.0:
+- Added owner_first_name, owner_last_name, and specialist_groups fields to CatalogProductDetails interface
 */
 
 export type ProductStatus = 'published' | 'draft' | 'archived'
@@ -64,6 +67,9 @@ export interface CatalogProductDetails {
   updated_at: string | null;
   updated_by: string | null;
   published_at: string | null;
+  owner_first_name?: string | null;
+  owner_last_name?: string | null;
+  specialist_groups?: string[];
 }
 
 export interface FetchProductDetailsResponse {
