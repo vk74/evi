@@ -1,6 +1,9 @@
--- Version: 1.12.0
+-- Version: 1.12.1
 -- Description: Create all application tables, functions, and triggers.
 -- Backend file: 04_tables.sql
+--
+-- Changes in v1.12.1:
+-- - Fixed table creation order: moved app.regions, app.taxable_categories, and app.regions_taxable_categories before app.product_regions to resolve foreign key dependency error
 -- Updated: mobile_phone_number -> mobile_phone field name
 -- Added: published_by and published_at columns to section_products table
 -- Updated: status_code column uses app.product_status UDT enum instead of VARCHAR with FK
@@ -216,6 +219,73 @@ CREATE TRIGGER tgr_products_set_updated_at
 BEFORE UPDATE ON app.products
 FOR EACH ROW EXECUTE FUNCTION app.tgr_set_updated_at();
 
+-- ===========================================
+-- Reference tables (must be created before tables that reference them)
+-- ===========================================
+
+-- Regions reference table
+CREATE TABLE IF NOT EXISTS app.regions (
+    region_id SERIAL PRIMARY KEY,
+    region_name VARCHAR(255) NOT NULL UNIQUE,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ
+);
+
+COMMENT ON TABLE app.regions IS 'Application regions reference table - stores all available regions';
+COMMENT ON COLUMN app.regions.region_id IS 'Unique identifier for the region (auto-increment)';
+COMMENT ON COLUMN app.regions.region_name IS 'Region name (unique, matches values from app.regions setting)';
+COMMENT ON COLUMN app.regions.created_at IS 'Timestamp when region was created';
+COMMENT ON COLUMN app.regions.updated_at IS 'Timestamp when region was last updated';
+
+-- Taxable categories reference table
+CREATE TABLE IF NOT EXISTS app.taxable_categories (
+    category_id SERIAL PRIMARY KEY,
+    category_name VARCHAR(255) NOT NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ
+);
+
+COMMENT ON TABLE app.taxable_categories IS 'Application taxable categories reference table - stores all available tax categories';
+COMMENT ON COLUMN app.taxable_categories.category_id IS 'Unique identifier for the category (auto-increment)';
+COMMENT ON COLUMN app.taxable_categories.category_name IS 'Category name';
+COMMENT ON COLUMN app.taxable_categories.created_at IS 'Timestamp when category was created';
+COMMENT ON COLUMN app.taxable_categories.updated_at IS 'Timestamp when category was last updated';
+
+-- Regions taxable categories junction table
+CREATE TABLE IF NOT EXISTS app.regions_taxable_categories (
+    region_id INTEGER NOT NULL,
+    category_id INTEGER NOT NULL,
+    vat_rate SMALLINT NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ,
+    PRIMARY KEY (region_id, category_id),
+    CONSTRAINT fk_regions_taxable_categories_region 
+        FOREIGN KEY (region_id) 
+        REFERENCES app.regions(region_id) 
+        ON DELETE CASCADE,
+    CONSTRAINT fk_regions_taxable_categories_category 
+        FOREIGN KEY (category_id) 
+        REFERENCES app.taxable_categories(category_id) 
+        ON DELETE CASCADE,
+    CONSTRAINT chk_regions_taxable_categories_vat_rate 
+        CHECK (vat_rate IS NULL OR (vat_rate >= 0 AND vat_rate <= 99))
+);
+
+COMMENT ON TABLE app.regions_taxable_categories IS 'Junction table linking regions with taxable categories - each region can have multiple taxable categories. Stores VAT rate (0-99%) for each regional category combination.';
+COMMENT ON COLUMN app.regions_taxable_categories.region_id IS 'Reference to app.regions.region_id';
+COMMENT ON COLUMN app.regions_taxable_categories.category_id IS 'Reference to app.taxable_categories.category_id';
+COMMENT ON COLUMN app.regions_taxable_categories.vat_rate IS 'VAT rate in percent (0-99) assigned to this regional category. NULL means no rate assigned yet.';
+COMMENT ON COLUMN app.regions_taxable_categories.created_at IS 'Timestamp when the binding was created';
+COMMENT ON COLUMN app.regions_taxable_categories.updated_at IS 'Timestamp when the binding was last updated';
+COMMENT ON CONSTRAINT fk_regions_taxable_categories_region ON app.regions_taxable_categories IS 
+    'Foreign key to app.regions.region_id with CASCADE delete - when region is deleted, all bindings are automatically deleted';
+COMMENT ON CONSTRAINT fk_regions_taxable_categories_category ON app.regions_taxable_categories IS 
+    'Foreign key to app.taxable_categories.category_id with CASCADE delete - when category is deleted, all bindings are automatically deleted';
+
+-- ===========================================
+-- Product-to-region link (product availability in regions)
+-- ===========================================
+
 -- Product-to-region link (product availability in regions)
 CREATE TABLE IF NOT EXISTS app.product_regions (
     product_id UUID NOT NULL,
@@ -307,65 +377,6 @@ ON CONFLICT (code) DO UPDATE SET
   rounding_precision = EXCLUDED.rounding_precision,
   active = EXCLUDED.active,
   updated_at = now();
-
--- Regions reference table
-CREATE TABLE IF NOT EXISTS app.regions (
-    region_id SERIAL PRIMARY KEY,
-    region_name VARCHAR(255) NOT NULL UNIQUE,
-    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    updated_at TIMESTAMPTZ
-);
-
-COMMENT ON TABLE app.regions IS 'Application regions reference table - stores all available regions';
-COMMENT ON COLUMN app.regions.region_id IS 'Unique identifier for the region (auto-increment)';
-COMMENT ON COLUMN app.regions.region_name IS 'Region name (unique, matches values from app.regions setting)';
-COMMENT ON COLUMN app.regions.created_at IS 'Timestamp when region was created';
-COMMENT ON COLUMN app.regions.updated_at IS 'Timestamp when region was last updated';
-
--- Taxable categories reference table
-CREATE TABLE IF NOT EXISTS app.taxable_categories (
-    category_id SERIAL PRIMARY KEY,
-    category_name VARCHAR(255) NOT NULL,
-    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    updated_at TIMESTAMPTZ
-);
-
-COMMENT ON TABLE app.taxable_categories IS 'Application taxable categories reference table - stores all available tax categories';
-COMMENT ON COLUMN app.taxable_categories.category_id IS 'Unique identifier for the category (auto-increment)';
-COMMENT ON COLUMN app.taxable_categories.category_name IS 'Category name';
-COMMENT ON COLUMN app.taxable_categories.created_at IS 'Timestamp when category was created';
-COMMENT ON COLUMN app.taxable_categories.updated_at IS 'Timestamp when category was last updated';
-
--- Regions taxable categories junction table
-CREATE TABLE IF NOT EXISTS app.regions_taxable_categories (
-    region_id INTEGER NOT NULL,
-    category_id INTEGER NOT NULL,
-    vat_rate SMALLINT NULL,
-    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    updated_at TIMESTAMPTZ,
-    PRIMARY KEY (region_id, category_id),
-    CONSTRAINT fk_regions_taxable_categories_region 
-        FOREIGN KEY (region_id) 
-        REFERENCES app.regions(region_id) 
-        ON DELETE CASCADE,
-    CONSTRAINT fk_regions_taxable_categories_category 
-        FOREIGN KEY (category_id) 
-        REFERENCES app.taxable_categories(category_id) 
-        ON DELETE CASCADE,
-    CONSTRAINT chk_regions_taxable_categories_vat_rate 
-        CHECK (vat_rate IS NULL OR (vat_rate >= 0 AND vat_rate <= 99))
-);
-
-COMMENT ON TABLE app.regions_taxable_categories IS 'Junction table linking regions with taxable categories - each region can have multiple taxable categories. Stores VAT rate (0-99%) for each regional category combination.';
-COMMENT ON COLUMN app.regions_taxable_categories.region_id IS 'Reference to app.regions.region_id';
-COMMENT ON COLUMN app.regions_taxable_categories.category_id IS 'Reference to app.taxable_categories.category_id';
-COMMENT ON COLUMN app.regions_taxable_categories.vat_rate IS 'VAT rate in percent (0-99) assigned to this regional category. NULL means no rate assigned yet.';
-COMMENT ON COLUMN app.regions_taxable_categories.created_at IS 'Timestamp when the binding was created';
-COMMENT ON COLUMN app.regions_taxable_categories.updated_at IS 'Timestamp when the binding was last updated';
-COMMENT ON CONSTRAINT fk_regions_taxable_categories_region ON app.regions_taxable_categories IS 
-    'Foreign key to app.regions.region_id with CASCADE delete - when region is deleted, all bindings are automatically deleted';
-COMMENT ON CONSTRAINT fk_regions_taxable_categories_category ON app.regions_taxable_categories IS 
-    'Foreign key to app.taxable_categories.category_id with CASCADE delete - when category is deleted, all bindings are automatically deleted';
 
 -- Add foreign key constraint for app.users.location -> app.regions.region_name
 -- This constraint ensures data integrity: user locations must reference valid regions

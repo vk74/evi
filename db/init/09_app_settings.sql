@@ -1,4 +1,4 @@
--- Version: 1.5.7
+-- Version: 1.5.8
 -- Description: Seeds the database with default application settings.
 -- Backend file: 09_app_settings.sql
 -- Added: 5 new settings (allowed.languages, default.module.registered.users, default.module.anonymous.users, product.card.default.section)
@@ -7,6 +7,9 @@
 -- Changes in v1.5.7:
 -- - Removed app.regions setting (replaced by app.regions table)
 -- - Removed current.country setting (no longer used)
+--
+-- Changes in v1.5.8:
+-- - Fixed syntax error: added missing closing parenthesis before ON CONFLICT clause
 
 -- This script inserts a comprehensive set of default settings for the application,
 -- covering areas like security, session management, and feature toggles.
@@ -116,7 +119,7 @@ INSERT INTO app.app_settings (
 -- Appearance Settings
 ('Application.Appearance', 'navbar.backgroundcolor', 'all', '"#26A69A"', '{"type":"string","pattern":"^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$"}', '"#26A69A"', 'Navigation bar background color (hex format)', true),
 ('Application.Appearance', 'default.module.registered.users', 'all', '"catalog"', '{"type":"string","enum":["catalog","landing","work","kb","reports"]}', '"catalog"', 'Default module for registered users', false),
-('Application.Appearance', 'default.module.anonymous.users', 'all', '"login"', '{"type":"string","enum":["catalog","landing","login"]}', '"login"', 'Default module for anonymous users', false),
+('Application.Appearance', 'default.module.anonymous.users', 'all', '"login"', '{"type":"string","enum":["catalog","landing","login"]}', '"login"', 'Default module for anonymous users', false)
 ON CONFLICT (section_path, setting_name, environment) DO UPDATE SET
     value = EXCLUDED.value,
     validation_schema = EXCLUDED.validation_schema,
