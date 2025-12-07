@@ -19,6 +19,18 @@ import express, { Express, Request, Response, NextFunction } from 'express';
 import cors from 'cors';
 import cookieParser from 'cookie-parser';
 import fs from 'fs';
+import path from 'path';
+
+// Removed dotenv - environment variables are now loaded via env-cmd script in package.json
+// This ensures cleaner architecture and avoids hardcoded paths in source code.
+// Initialize dotenv via env-cmd, but ensure mapping
+if (process.env.POSTGRES_PORT) {
+    process.env.PGPORT = process.env.POSTGRES_PORT;
+    console.log(`[Server] Mapped PGPORT from POSTGRES_PORT: ${process.env.PGPORT}`);
+} else {
+    console.log(`[Server] No POSTGRES_PORT found. Using PGPORT: ${process.env.PGPORT || 'default'}`);
+}
+
 
 
 // Import routes

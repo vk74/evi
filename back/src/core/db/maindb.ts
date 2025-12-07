@@ -32,10 +32,14 @@ if (connectionString) {
 		user: process.env.PGUSER || 'app_service',
 		host: process.env.PGHOST || 'localhost',
 		database: process.env.PGDATABASE || 'maindb',
-		password: process.env.PGPASSWORD || 'P@ssw0rd',
-		port: parseInt(process.env.PGPORT || '5432', 10),
+		password: process.env.PGPASSWORD, // Password must be provided via env
+		port: parseInt(process.env.PGPORT || '5432', 10), // Default fallback to standard port
 		ssl: getSslConfig()
 	};
+    console.log('[MainDB] Initializing pool with config:', { 
+        ...poolConfig, 
+        password: '***' 
+    });
 	pool = new Pool(poolConfig);
 }
 
