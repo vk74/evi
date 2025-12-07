@@ -5,7 +5,6 @@
   "private": true,
   "scripts": {
     "version:sync": "node deployment/sync-version.js",
-    "dev:docker": "node deployment/dev-docker.js",
     "install:all": "cd back && npm install && cd ../front && npm install",
     "build:all": "npm run build:backend && npm run build:frontend",
     "build:backend": "cd back && npm run build",
@@ -18,14 +17,12 @@
     "start:backend": "cd back && npm start",
     "start:frontend": "cd front && npm run serve",
     "clean": "rm -rf back/dist front/dist back/node_modules front/node_modules",
-    "docker:build": "docker-compose build",
-    "docker:up": "docker-compose up -d",
-    "docker:down": "docker-compose down",
-    "docker:logs": "docker-compose logs -f",
+    "podman:build": "podman compose -f deployment/local/podman-compose.yml build",
+    "podman:up": "podman compose -f deployment/local/podman-compose.yml up -d",
+    "podman:down": "podman compose -f deployment/local/podman-compose.yml down",
+    "podman:logs": "podman compose -f deployment/local/podman-compose.yml logs -f",
     "build:local": "node deployment/local/build.js",
-    "build:github": "node deployment/github/build.js",
-    "build:local:clean": "node deployment/local/build.js --clean",
-    "build:github:clean": "node deployment/github/build.js --clean"
+    "build:local:clean": "node deployment/local/build.js --clean"
   },
   "keywords": [
     "evi",
