@@ -362,22 +362,6 @@ COMMENT ON TABLE app.currencies IS 'Currency dictionary - rounding logic handled
 COMMENT ON COLUMN app.currencies.code IS 'ISO 4217 currency code (3 letters)';
 COMMENT ON COLUMN app.currencies.symbol IS 'Currency symbol for UI display (max 3 characters, required)';
 
--- Seed base currencies (idempotent)
-INSERT INTO app.currencies (code, name, symbol, rounding_precision, active)
-VALUES
-  ('RUB', 'Российский рубль',      '₽', 2, true),
-  ('BYN', 'Белорусский рубль',     'Br', 2, true),
-  ('KZT', 'Казахстанский тенге',   '₸', 2, true),
-  ('CNY', 'Китайский юань',        '¥', 2, true),
-  ('USD', 'Доллар США',            '$', 2, true),
-  ('EUR', 'Евро',                  '€', 2, true)
-ON CONFLICT (code) DO UPDATE SET
-  name = EXCLUDED.name,
-  symbol = EXCLUDED.symbol,
-  rounding_precision = EXCLUDED.rounding_precision,
-  active = EXCLUDED.active,
-  updated_at = now();
-
 -- Add foreign key constraint for app.users.location -> app.regions.region_name
 -- This constraint ensures data integrity: user locations must reference valid regions
 -- When a region is deleted, user locations referencing it are automatically set to NULL

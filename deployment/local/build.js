@@ -10,7 +10,7 @@ const readline = require('readline');
 const fs = require('fs');
 
 // --- Configuration ---
-const DOCKER_COMPOSE_FILE = 'deployment/local/podman-compose.yml';
+const COMPOSE_FILE = 'deployment/local/podman-compose.yml';
 const ENV_FILE = '.env.local'; // Optional file for environment variables
 
 // ANSI colors for better output visibility
@@ -35,17 +35,17 @@ function envFileExists() {
 }
 
 /**
- * Gets the podman compose command.
- * Uses 'podman-compose' which is the standard tool for Podman.
+ * Gets the Podman compose command.
+ * Uses 'podman-compose' for Podman compose operations.
  * @param {string} command - The compose command (e.g., 'build', 'up', 'down').
  * @param {string} additionalArgs - Additional arguments to append.
  * @returns {string} The complete podman-compose command.
  */
 function getComposeCommand(command, additionalArgs = '') {
-  // Use 'podman compose' (the integrated v2 command) instead of 'podman-compose' (separate python script)
-  // This delegates to whatever compose provider podman is configured to use (often docker-compose or built-in)
+  // Use 'podman-compose' for Podman compose operations
+  // This uses the standalone podman-compose tool
   
-  let cmd = `podman compose -f "${DOCKER_COMPOSE_FILE}"`;
+  let cmd = `podman-compose -f "${COMPOSE_FILE}"`;
   
   cmd += ` ${command}`;
   
@@ -83,19 +83,17 @@ function runCommand(command, description, quiet = false) {
   const startTime = Date.now();
   try {
     const stdio = quiet ? ['pipe', 'pipe', 'pipe'] : 'inherit';
-    // Use full path for podman on macOS if standard path fails
+    // Add /opt/podman/bin and Python user bin directories to PATH for the child process on macOS
     // This fixes "command not found" when running from IDEs/scripts where PATH might differ
-    
-    // Better approach: Add /opt/podman/bin to PATH for the child process
     const env = { ...process.env };
     if (process.platform === 'darwin') {
-        env.PATH = `/opt/podman/bin:${env.PATH || ''}`;
+        // Try to find podman-compose in common Python user bin locations
+        const pythonVersions = ['3.13', '3.12', '3.11', '3.10', '3.9'];
+        const pythonUserBins = pythonVersions.map(v => `${process.env.HOME}/Library/Python/${v}/bin`).join(':');
+        env.PATH = `/opt/podman/bin:${pythonUserBins}:${env.PATH || ''}`;
     }
 
-    // Replace "podman compose" with fully qualified path if needed (though env.PATH should handle "podman")
-    // But "podman compose" is a subcommand, so "podman" just needs to be found.
-    // However, if we were using "podman-compose" script, we'd need to find it. 
-    // Since we switched to "podman compose", we rely on "podman" binary being found.
+    // podman-compose needs to be found in PATH (typically in Python user bin directory)
     
     execSync(command, { stdio, env });
     const endTime = Date.now();
@@ -224,19 +222,21 @@ function cleanAll() {
 }
 
 /**
- * Builds and starts ONLY the database container.
+ * Builds and starts ONLY the database container using Podman compose.
+ * Builds the database image and starts the container in detached mode.
  */
 function buildAndStartDB() {
   const timings = {};
   log('\n🐘 Starting Database Container...', colors.cyan, true);
 
-  // 1. Build the database image (optional, but good practice if Dockerfile changed)
+  // 1. Build the database image using Podman compose
+  // This builds the image from the Dockerfile in the db directory
   timings['Build DB'] = runCommand(
     getComposeCommand('build', 'evi-database'),
     'Build Database Image'
   );
 
-  // 2. Up the database service
+  // 2. Start the database service in detached mode
   timings['Start DB'] = runCommand(
     getComposeCommand('up', '-d evi-database'),
     'Start Database Service'
@@ -332,8 +332,8 @@ ${colors.yellow}[3]${colors.reset} Exit
 async function main() {
   try {
     // 0. Check Environment
-    if (!fs.existsSync(DOCKER_COMPOSE_FILE)) {
-      log(`❌ Error: Compose file not found at "${DOCKER_COMPOSE_FILE}"`, colors.red, true);
+    if (!fs.existsSync(COMPOSE_FILE)) {
+      log(`❌ Error: Compose file not found at "${COMPOSE_FILE}"`, colors.red, true);
       process.exit(1);
     }
 
