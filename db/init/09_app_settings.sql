@@ -117,7 +117,7 @@ INSERT INTO app.app_settings (
 ('Application.RegionalSettings', 'allowed.languages', 'all', '["english","russian"]'::jsonb, '{"type":"array","items":{"type":"string","enum":["english","russian"]}}'::jsonb, '["english","russian"]'::jsonb, 'List of allowed languages in the application', true),
 
 -- Appearance Settings
-('Application.Appearance', 'navbar.backgroundcolor', 'all', '"#26A69A"', '{"type":"string","pattern":"^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$"}', '"#26A69A"', 'Navigation bar background color (hex format)', true),
+('Application.Appearance', 'navbar.backgroundcolor', 'all', '"#F0F8F8"', '{"type":"string","pattern":"^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$"}', '"#F0F8F8"', 'Navigation bar background color (hex format)', true),
 ('Application.Appearance', 'default.module.registered.users', 'all', '"catalog"', '{"type":"string","enum":["catalog","landing","work","kb","reports"]}', '"catalog"', 'Default module for registered users', false),
 ('Application.Appearance', 'default.module.anonymous.users', 'all', '"login"', '{"type":"string","enum":["catalog","landing","login"]}', '"login"', 'Default module for anonymous users', false)
 ON CONFLICT (section_path, setting_name, environment) DO UPDATE SET
