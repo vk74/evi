@@ -168,23 +168,23 @@ function checkAndStartPodmanMachine() {
 // --- Core Workflow Functions ---
 
 /**
- * Performs a complete cleanup: stops containers and removes volumes.
- * This effectively resets the database.
+ * Performs a complete cleanup: stops containers, removes volumes, images, networks, and build cache.
+ * This effectively resets the entire Podman environment to a clean state.
  */
 function cleanAll() {
   const timings = {};
-  log('\n🧹 Cleaning up ALL containers and volumes...', colors.cyan, true);
+  log('\n🧹 Cleaning up ALL Podman artifacts (containers, volumes, images, networks, build cache)...', colors.cyan, true);
   
-  // 1. Stop containers and remove volumes using compose
-  // podman-compose down -v works similar to docker compose
+  // 1. Stop containers, remove volumes and images using compose
+  // --rmi all removes all images created by compose
   try {
-    const cmd = getComposeCommand('down', '-v');
-    timings['Stop & Remove Volumes'] = runCommand(cmd, 'Stop Containers & Remove Volumes');
+    const cmd = getComposeCommand('down', '-v --rmi all');
+    timings['Stop & Remove (Compose)'] = runCommand(cmd, 'Stop Containers, Remove Volumes & Images');
   } catch (e) {
     log('   (Ignored error during down - might not be running)', colors.yellow);
   }
 
-  // 2. Extra cleanup to be sure (force remove specific known container/volume names if compose missed them)
+  // 2. Extra cleanup to be sure (force remove specific known container names if compose missed them)
   // This helps if the user changed project names or context
   try {
     // Force remove known service containers
@@ -192,10 +192,33 @@ function cleanAll() {
     runCommand(`podman rm -f ${containers.join(' ')}`, 'Force Remove Containers', true);
   } catch (e) {}
 
+  // 3. Remove unused networks
   try {
-    // Prune volumes to ensure data is gone
-    runCommand('podman volume prune -f', 'Prune Unused Volumes', true);
-  } catch (e) {}
+    timings['Remove Networks'] = runCommand('podman network prune -f', 'Remove Unused Networks', true);
+  } catch (e) {
+    log('   (Ignored error during network prune)', colors.yellow);
+  }
+
+  // 4. Remove unused images (all dangling and unused images)
+  try {
+    timings['Remove Images'] = runCommand('podman image prune -af', 'Remove Unused Images', true);
+  } catch (e) {
+    log('   (Ignored error during image prune)', colors.yellow);
+  }
+
+  // 5. Clean build cache
+  try {
+    timings['Clean Build Cache'] = runCommand('podman builder prune -af', 'Clean Build Cache', true);
+  } catch (e) {
+    log('   (Ignored error during builder prune)', colors.yellow);
+  }
+
+  // 6. Final volume cleanup (in case something was missed)
+  try {
+    timings['Prune Volumes'] = runCommand('podman volume prune -f', 'Prune Unused Volumes', true);
+  } catch (e) {
+    log('   (Ignored error during volume prune)', colors.yellow);
+  }
 
   return timings;
 }
