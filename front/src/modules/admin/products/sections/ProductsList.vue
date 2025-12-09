@@ -37,6 +37,10 @@
  * Changes in v1.4.0:
  * - Updated language parameter for products search to work with full-name languages ('english', 'russian')
  * - Now passes normalized language value compatible with backend language normalization
+ * 
+ * Changes in v1.4.1:
+ * - Added localeToFullName conversion function to transform 'en'/'ru' to 'english'/'russian'
+ * - Language now converted from vue-i18n locale format to full names before sending to backend
 -->
 <script setup lang="ts">
 import { ref, computed, onMounted, watch, defineAsyncComponent } from 'vue'
@@ -339,8 +343,17 @@ const performSearch = async () => {
   isLoading.value = true
   
   try {
-    // Get current language from i18n (already available from setup)
-    const currentLanguage = locale.value || 'en'
+    // Convert locale.value ('en'/'ru') to full language name ('english'/'russian')
+    const localeToFullName = (localeCode: string): string => {
+      const map: Record<string, string> = {
+        'en': 'english',
+        'ru': 'russian'
+      }
+      return map[localeCode] || 'english'
+    }
+    
+    // Get current language from i18n and convert to full name
+    const currentLanguage = localeToFullName(locale.value || 'en')
     
     // Prepare API request parameters
     const params = {

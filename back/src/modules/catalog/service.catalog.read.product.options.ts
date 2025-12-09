@@ -1,6 +1,6 @@
 /**
  * service.catalog.read.product.options.ts - backend file
- * version: 1.3.0
+ * version: 1.4.0
  * 
  * Purpose: Service that reads product options for a given product id and locale
  * Logic: Queries DB for related option products, only where option product is published, returns localized names
@@ -22,6 +22,11 @@
  * - STRICT FILTERING: Only options with records in app.product_regions are shown
  * - Options without region assignment are NOT shown, even if published/active
  * - Validation errors now published as events to event bus
+ * 
+ * Changes in v1.4.0:
+ * - Removed language normalization - now uses full language names directly
+ * - Directly loads allowed.languages and fallback.language from app settings
+ * - Validates requested language against allowed languages list
  */
 
 import { Request } from 'express';
@@ -30,7 +35,6 @@ import { pool as pgPool } from '../../core/db/maindb';
 import queries from './queries.catalog.products';
 import type { CatalogProductOptionDTO, ReadProductOptionsResponseDTO, ServiceError } from './types.catalog';
 import { getSettingValue } from '../../core/helpers/get.setting.value';
-import { resolveCatalogLanguages } from '../../core/helpers/language.utils';
 import { createAndPublishEvent } from '../../core/eventBus/fabric.events';
 import { EVENTS_CATALOG_PRODUCTS } from './events.catalog.products';
 
@@ -69,8 +73,25 @@ export async function readCatalogProductOptions(req: Request): Promise<ReadProdu
       throw serviceError;
     }
     
-    // Resolve requested and fallback languages using full-name values
-    const { requestedLanguage, fallbackLanguage } = await resolveCatalogLanguages(locale);
+    // Load allowed languages and fallback language from app settings
+    const allowedLanguages = await getSettingValue<string[]>(
+      'Application.RegionalSettings',
+      'allowed.languages',
+      ['english', 'russian']
+    );
+    
+    const fallbackLanguageSetting = await getSettingValue<string>(
+      'Application.RegionalSettings',
+      'fallback.language',
+      'english'
+    );
+    
+    // Validate requested language: if provided and in allowed list, use it; otherwise use fallback
+    const requestedLanguage = (locale && allowedLanguages.includes(locale))
+      ? locale
+      : fallbackLanguageSetting;
+    
+    const fallbackLanguage = fallbackLanguageSetting;
     
     // Convert region_name to region_id - REQUIRED, return error if region not found
     try {

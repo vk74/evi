@@ -1,9 +1,13 @@
 #!/usr/bin/env node
 
 // evi Local Podman Build & Management Script
-// Version: 2.0 (Migration to Podman)
+// Version: 2.1 (Postgres 17 + pg_cron cache modes)
 // Description: A streamlined Node.js script to manage the local Podman environment for evi.
 // Now focuses on "Database First" workflow.
+//
+// Changes in v2.1:
+// - Added explicit podman pull for postgres:17 to refresh local image cache before DB rebuild
+// - Added option to build & start DB using cached images only (no remote pulls) for offline/fast startup
 
 const { execSync } = require('child_process');
 const readline = require('readline');
@@ -223,11 +227,20 @@ function cleanAll() {
 
 /**
  * Builds and starts ONLY the database container using Podman compose.
+ * Always refreshes the base postgres:17 image from the registry so that
+ * the local Podman image cache is up to date before building.
  * Builds the database image and starts the container in detached mode.
  */
 function buildAndStartDB() {
   const timings = {};
   log('\n🐘 Starting Database Container...', colors.cyan, true);
+
+  // 0. Ensure local cache has the latest postgres:17 image
+  // This updates Podman's image cache with the latest upstream image.
+  timings['Pull postgres:17'] = runCommand(
+    'podman pull postgres:17',
+    'Pull latest postgres:17 base image'
+  );
 
   // 1. Build the database image using Podman compose
   // This builds the image from the Containerfile in the db directory
@@ -241,6 +254,44 @@ function buildAndStartDB() {
     getComposeCommand('up', '-d evi-database'),
     'Start Database Service'
   );
+
+  return timings;
+}
+
+/**
+ * Builds and starts ONLY the database container using Podman compose,
+ * but relies strictly on the local image cache (no remote pulls).
+ * Useful for offline mode or when you explicitly want to reuse
+ * previously pulled postgres:17 and already built DB images.
+ */
+function buildAndStartDBFromCache() {
+  const timings = {};
+  log('\n🐘 Starting Database Container from CACHE (no pulls)...', colors.cyan, true);
+
+  // Temporarily instruct Podman/Buildah to never pull images during build.
+  const originalPullPolicy = process.env.BUILDAH_PULL_NEVER;
+  process.env.BUILDAH_PULL_NEVER = '1';
+
+  try {
+    // 1. Build DB image strictly from cached layers/images
+    timings['Build DB (cache only)'] = runCommand(
+      getComposeCommand('build', 'evi-database'),
+      'Build Database Image (cache only)'
+    );
+
+    // 2. Start the database service in detached mode
+    timings['Start DB'] = runCommand(
+      getComposeCommand('up', '-d evi-database'),
+      'Start Database Service'
+    );
+  } finally {
+    // Restore previous pull policy so it does not leak outside this flow
+    if (originalPullPolicy === undefined) {
+      delete process.env.BUILDAH_PULL_NEVER;
+    } else {
+      process.env.BUILDAH_PULL_NEVER = originalPullPolicy;
+    }
+  }
 
   return timings;
 }
@@ -273,8 +324,9 @@ ${colors.cyan}=========================================${colors.reset}
 ${colors.cyan}  evi Local Podman Manager (DB First)${colors.reset}
 ${colors.cyan}=========================================${colors.reset}
 ${colors.yellow}[1]${colors.reset} 🗑️  DELETE ALL (Containers & Volumes) - Reset Environment
-${colors.yellow}[2]${colors.reset} 🐘 Build & Start DB ONLY
-${colors.yellow}[3]${colors.reset} Exit
+${colors.yellow}[2]${colors.reset} 🐘 Build & Start DB ONLY (pull latest postgres:17)
+${colors.yellow}[3]${colors.reset} 🐘 Build & Start DB from CACHE ONLY (no pulls)
+${colors.yellow}[4]${colors.reset} Exit
 `;
 
   console.log(menu);
@@ -306,6 +358,10 @@ ${colors.yellow}[3]${colors.reset} Exit
           break;
 
         case '3':
+          timings = buildAndStartDBFromCache();
+          break;
+
+        case '4':
           log('👋 Exiting.', colors.yellow);
           return;
 

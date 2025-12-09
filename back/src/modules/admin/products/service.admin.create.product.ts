@@ -1,5 +1,5 @@
 /**
- * service.admin.create.product.ts - version 1.3.2
+ * service.admin.create.product.ts - version 1.3.3
  * Service for creating products operations.
  * 
  * Functionality:
@@ -27,6 +27,10 @@
  * - Removed backupOwner validation and handling
  * - Removed JSONB fields (areaSpecifics, industrySpecifics, keyFeatures, productOverview) from createProductTranslations
  * - Removed visibility flags (is_visible_area_specs, is_visible_industry_specs, is_visible_key_features, is_visible_overview) from createProductInDatabase
+ * 
+ * Changes in v1.3.3:
+ * - Updated to use full language names: 'english', 'russian' instead of 'en', 'ru'
+ * - Updated translations interface keys from 'en'/'ru' to 'english'/'russian'
  */
 
 import { Request } from 'express';
@@ -36,9 +40,9 @@ import { queries } from './queries.admin.products';
 import type { 
     CreateProductRequest, 
     CreateProductResponse, 
-    ProductError,
-    LanguageCode
+    ProductError
 } from './types.admin.products';
+import { LanguageCode } from './types.admin.products';
 import { getRequestorUuidFromReq } from '@/core/helpers/get.requestor.uuid.from.req';
 import { getUuidByUsername } from '@/core/helpers/get.uuid.by.username';
 import { getUuidByGroupName } from '@/core/helpers/get.uuid.by.group.name';
@@ -158,11 +162,11 @@ async function createProductTranslations(client: any, productId: string, product
     // Create translations only for provided languages
     const languages: { code: LanguageCode; data: any }[] = [];
     
-    if (translations.en) {
-        languages.push({ code: 'en' as LanguageCode, data: translations.en });
+    if (translations.english) {
+        languages.push({ code: LanguageCode.ENGLISH, data: translations.english });
     }
-    if (translations.ru) {
-        languages.push({ code: 'ru' as LanguageCode, data: translations.ru });
+    if (translations.russian) {
+        languages.push({ code: LanguageCode.RUSSIAN, data: translations.russian });
     }
 
     for (const language of languages) {

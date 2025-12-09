@@ -1,6 +1,6 @@
 /**
  * service.admin.fetch.publishingproducts.ts
- * Version: 1.1.0
+ * Version: 1.2.0
  * Description: Service for fetching active products with their publication status across all catalog sections
  * Purpose: Implements GET /api/admin/catalog/fetchpublishingproducts - returns all active products with sections where published
  * Backend file - service.admin.fetch.publishingproducts.ts
@@ -9,6 +9,10 @@
  * - Switched to full-name languages ('english', 'russian', ...) for admin catalog queries
  * - Now uses fallback.language and allowed.languages settings for language resolution
  * - Added support for legacy short codes ('en', 'ru') via normalization helper
+ * 
+ * Changes in v1.2.0:
+ * - Removed language normalization - now uses full language names directly
+ * - Directly loads fallback.language from app settings
  */
 
 import { Request } from 'express'
@@ -17,15 +21,19 @@ import { pool as defaultPool } from '@/core/db/maindb'
 import { createAndPublishEvent } from '@/core/eventBus/fabric.events'
 import { EVENTS_ADMIN_CATALOG } from './events.admin.catalog'
 import { queries } from './queries.admin.catalog'
-import { resolveCatalogLanguages } from '@/core/helpers/language.utils'
+import { getSettingValue } from '@/core/helpers/get.setting.value'
 
 const pgPool: Pool = (defaultPool as unknown as Pool)
 
 export async function fetchPublishingProducts(req: Request) {
   try {
     // Fetch all active products (status_code = 'active')
-    // Resolve language for translations using full-name values
-    const { requestedLanguage } = await resolveCatalogLanguages(null)
+    // Load fallback language from app settings
+    const requestedLanguage = await getSettingValue<string>(
+      'Application.RegionalSettings',
+      'fallback.language',
+      'english'
+    )
     const productsRes = await pgPool.query(queries.getActiveProducts, [requestedLanguage])
 
     // Fetch all section-product mappings

@@ -1,5 +1,5 @@
 /**
- * service.admin.fetch.all.products.ts - version 1.3.0
+ * service.admin.fetch.all.products.ts - version 1.4.0
  * Service for fetching all products with pagination, search, sorting and filtering.
  * 
  * Handles database queries for products list with user roles and translations.
@@ -22,6 +22,10 @@
  * - Added query parameter parsing and validation in service
  * - Added language code extraction from query parameter, headers, and default
  * - Service now returns full response structure with success and message
+ * 
+ * Changes in v1.4.0:
+ * - Removed language normalization - now uses full language names directly ('english', 'russian')
+ * - Language parameter expected as full name from frontend
  */
 
 import { Request } from 'express'
@@ -34,7 +38,6 @@ import type {
     ProductListItem,
     FetchAllProductsResult
 } from './types.admin.products'
-import { normalizeLanguageValue } from '@/core/helpers/language.utils'
 
 /**
  * Interface for API request query parameters
@@ -78,11 +81,9 @@ export const fetchAllProducts = async (
         const publishedFilter = query.publishedFilter || undefined
         const statusFilter = query.statusFilter || undefined
         
-        // Get language from query/header and normalize to full-name value (e.g. 'english', 'russian')
-        const queryLanguage = query.language
-        const headerLanguage = req.headers['accept-language']?.toString().split(',')[0]
-        const rawLanguage = queryLanguage || headerLanguage || 'english'
-        const normalizedLanguage = normalizeLanguageValue(rawLanguage) || 'english'
+        // Get language from query parameter (expected as full name: 'english', 'russian')
+        // Default to 'english' if not provided
+        const language = query.language || 'english'
         
         // Validate parameters
         if (page < 1) {
@@ -104,7 +105,7 @@ export const fetchAllProducts = async (
                 sortDesc, 
                 publishedFilter,
                 statusFilter,
-                language: normalizedLanguage
+                language: language
             }
         })
 
@@ -151,7 +152,7 @@ export const fetchAllProducts = async (
             validatedSortBy,
             sortDesc || false,
             validatedPublishedFilter,
-            normalizedLanguage,
+            language,
             validatedStatusFilter
         ])
         

@@ -1,5 +1,5 @@
 /**
- * types.admin.products.ts - version 1.3.1
+ * types.admin.products.ts - version 1.3.2
  * Type definitions for products administration module.
  * 
  * Contains TypeScript interfaces and types for products admin functionality.
@@ -39,12 +39,15 @@
   
   Changes in v1.3.1:
   - Added AssignProductOwnerRequest and AssignProductOwnerResponse interfaces
+  
+  Changes in v1.3.2:
+  - Updated LanguageCode enum to use full names: 'english', 'russian' (instead of 'en', 'ru')
  */
 
-// Language code enum
+// Language code enum - uses full names
 export enum LanguageCode {
-    ENGLISH = 'en',
-    RUSSIAN = 'ru'
+    ENGLISH = 'english',
+    RUSSIAN = 'russian'
 }
 
 // Product status interface for reference data
@@ -62,8 +65,8 @@ export interface ProductTranslationData {
 
 // Product translations interface
 export interface ProductTranslations {
-    en?: ProductTranslationData
-    ru?: ProductTranslationData
+    english?: ProductTranslationData
+    russian?: ProductTranslationData
 }
 
 // Create product request interface

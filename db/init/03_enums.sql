@@ -73,7 +73,7 @@ EXCEPTION
 END $$;
 
 DO $$ BEGIN
-    CREATE TYPE app.system_language_code AS ENUM ('en', 'ru');
+    CREATE TYPE app.system_language_code AS ENUM ('english', 'russian');
 EXCEPTION
     WHEN duplicate_object THEN null;
 END $$;

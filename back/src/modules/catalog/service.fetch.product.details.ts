@@ -1,6 +1,6 @@
 /**
  * service.fetch.product.details.ts - backend file
- * version: 1.5.0
+ * version: 1.6.0
  * 
  * Purpose: Service that fetches single product details for catalog consumption
  * Logic: Queries DB for product details with is_published = true, transforms into DTO for frontend
@@ -25,6 +25,11 @@
  * Changes in v1.5.0:
  * - Added visibility flags (is_visible_owner, is_visible_groups, is_visible_tech_specs, is_visible_long_description) to transformRow function
  * - Visibility flags control which sections are displayed in product detail cards
+ * 
+ * Changes in v1.6.0:
+ * - Removed language normalization - now uses full language names directly
+ * - Directly loads allowed.languages and fallback.language from app settings
+ * - Validates requested language against allowed languages list
  */
 
 import { Request } from 'express';
@@ -34,7 +39,6 @@ import queries from './queries.catalog.products';
 import type { DbProductDetails, CatalogProductDetailsDTO, FetchProductDetailsResponse, ServiceError } from './types.catalog';
 import { ProductStatus } from './types.catalog';
 import { getSettingValue } from '../../core/helpers/get.setting.value';
-import { resolveCatalogLanguages } from '../../core/helpers/language.utils';
 
 const pool = pgPool as Pool;
 
@@ -75,8 +79,25 @@ export async function fetchProductDetails(req: Request): Promise<FetchProductDet
       };
     }
     
-    // Resolve requested and fallback languages using full-name values
-    const { requestedLanguage, fallbackLanguage } = await resolveCatalogLanguages(requestedLanguageRaw);
+    // Load allowed languages and fallback language from app settings
+    const allowedLanguages = await getSettingValue<string[]>(
+      'Application.RegionalSettings',
+      'allowed.languages',
+      ['english', 'russian']
+    );
+    
+    const fallbackLanguageSetting = await getSettingValue<string>(
+      'Application.RegionalSettings',
+      'fallback.language',
+      'english'
+    );
+    
+    // Validate requested language: if provided and in allowed list, use it; otherwise use fallback
+    const requestedLanguage = (requestedLanguageRaw && allowedLanguages.includes(requestedLanguageRaw))
+      ? requestedLanguageRaw
+      : fallbackLanguageSetting;
+    
+    const fallbackLanguage = fallbackLanguageSetting;
 
     const result = await pool.query<DbProductDetails>(queries.getProductDetails, [productId, requestedLanguage, fallbackLanguage]);
     

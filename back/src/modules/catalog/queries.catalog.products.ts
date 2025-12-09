@@ -1,6 +1,6 @@
 /**
  * queries.catalog.products.ts - backend file
- * version: 1.8.0
+ * version: 1.9.0
  * 
  * Purpose: SQL queries for catalog products (public consumption layer)
  * Logic: Provides parameterized queries to fetch active products for the catalog and product details
@@ -47,6 +47,10 @@
  * Changes in v1.8.0:
  * - Added visibility flags (is_visible_owner, is_visible_groups, is_visible_tech_specs, is_visible_long_description) to getProductDetails query
  * - Visibility flags control which sections are displayed in product detail cards
+ * 
+ * Changes in v1.9.0:
+ * - Fixed language_code comparisons to cast enum to text before comparison
+ * - This allows queries to work with both old enum values ('en', 'ru') and new values ('english', 'russian')
  */
 
 export const queries = {
@@ -75,10 +79,10 @@ export const queries = {
     INNER JOIN app.product_regions pr ON p.product_id = pr.product_id AND pr.region_id = $3::integer
     LEFT JOIN app.product_translations pt_requested 
       ON p.product_id = pt_requested.product_id 
-      AND pt_requested.language_code = $1
+      AND pt_requested.language_code::text = $1::text
     LEFT JOIN app.product_translations pt_fallback
       ON p.product_id = pt_fallback.product_id
-      AND pt_fallback.language_code = $2
+      AND pt_fallback.language_code::text = $2::text
     WHERE p.is_published = true
       AND (pt_requested.product_id IS NOT NULL OR pt_fallback.product_id IS NOT NULL)
     ORDER BY p.product_code ASC, COALESCE(pt_requested.name, pt_fallback.name) ASC
@@ -111,10 +115,10 @@ export const queries = {
     INNER JOIN app.product_regions pr ON p.product_id = pr.product_id AND pr.region_id = $4::integer
     LEFT JOIN app.product_translations pt_requested 
       ON p.product_id = pt_requested.product_id 
-      AND pt_requested.language_code = $2
+      AND pt_requested.language_code::text = $2::text
     LEFT JOIN app.product_translations pt_fallback
       ON p.product_id = pt_fallback.product_id
-      AND pt_fallback.language_code = $3
+      AND pt_fallback.language_code::text = $3::text
     WHERE p.is_published = true 
       AND sp.section_id = $1
       AND (pt_requested.product_id IS NOT NULL OR pt_fallback.product_id IS NOT NULL)
@@ -157,10 +161,10 @@ export const queries = {
     FROM app.products p
     LEFT JOIN app.product_translations pt_requested 
       ON p.product_id = pt_requested.product_id 
-      AND pt_requested.language_code = $2
+      AND pt_requested.language_code::text = $2::text
     LEFT JOIN app.product_translations pt_fallback
       ON p.product_id = pt_fallback.product_id
-      AND pt_fallback.language_code = $3
+      AND pt_fallback.language_code::text = $3::text
     LEFT JOIN app.product_users pu_owner 
       ON p.product_id = pu_owner.product_id 
       AND pu_owner.role_type = 'owner'
@@ -213,10 +217,10 @@ export const queries = {
     INNER JOIN app.product_regions pr ON p_option.product_id = pr.product_id AND pr.region_id = $4::integer
     LEFT JOIN app.product_translations pt_requested 
       ON pt_requested.product_id = po.option_product_id
-      AND pt_requested.language_code = $2
+      AND pt_requested.language_code::text = $2::text
     LEFT JOIN app.product_translations pt_fallback
       ON pt_fallback.product_id = po.option_product_id
-      AND pt_fallback.language_code = $3
+      AND pt_fallback.language_code::text = $3::text
     WHERE po.main_product_id = $1
       AND p_option.status_code = 'active'
     ORDER BY COALESCE(pt_requested.name, pt_fallback.name, p_option.product_code) ASC

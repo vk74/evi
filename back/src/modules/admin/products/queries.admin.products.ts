@@ -1,5 +1,5 @@
 /**
- * queries.admin.products.ts - version 1.3.0
+ * queries.admin.products.ts - version 1.5.0
  * SQL queries for products administration operations.
  * 
  * Contains all SQL queries used by products admin module.
@@ -70,6 +70,10 @@
   - Added deleteProductRegions query for removing all product-region bindings
   - Added insertProductRegion query for creating product-region bindings
   - Added fetchTaxableCategoriesByRegion query for loading categories available in a region
+  
+  Changes in v1.5.0:
+  - Fixed language_code comparisons in fetchAllProducts and fetchAllOptions to cast enum to text
+  - This allows queries to work with both old enum values ('en', 'ru') and new values ('english', 'russian')
  */
 
 export const queries = {
@@ -313,7 +317,7 @@ export const queries = {
             owner_user.username as owner_name,
             array_agg(DISTINCT specialist_group.group_name) FILTER (WHERE specialist_group.group_name IS NOT NULL) as specialists_groups
         FROM app.products p
-        LEFT JOIN app.product_translations pt ON p.product_id = pt.product_id AND pt.language_code = $7
+        LEFT JOIN app.product_translations pt ON p.product_id = pt.product_id AND pt.language_code::text = $7::text
         LEFT JOIN (
             SELECT pu.product_id, u.username
             FROM app.product_users pu
@@ -400,7 +404,7 @@ export const queries = {
             owner_user.username as owner_name,
             array_agg(DISTINCT specialist_group.group_name) FILTER (WHERE specialist_group.group_name IS NOT NULL) as specialists_groups
         FROM app.products p
-        LEFT JOIN app.product_translations pt ON p.product_id = pt.product_id AND pt.language_code = $6
+        LEFT JOIN app.product_translations pt ON p.product_id = pt.product_id AND pt.language_code::text = $6::text
         LEFT JOIN (
             SELECT pu.product_id, u.username
             FROM app.product_users pu

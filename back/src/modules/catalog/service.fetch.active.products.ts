@@ -1,6 +1,6 @@
 /**
  * service.fetch.active.products.ts - backend file
- * version: 1.6.0
+ * version: 1.7.0
  * 
  * Purpose: Service that fetches active products for catalog consumption
  * Logic: Queries DB for products with is_published = true
@@ -37,6 +37,11 @@
  * - Validation errors now published as events to event bus
  * - Events contain user-friendly messages explaining what went wrong
  * - Events: region.required, region.notFound, region.resolveError
+ * 
+ * Changes in v1.7.0:
+ * - Removed language normalization - now uses full language names directly
+ * - Directly loads allowed.languages and fallback.language from app settings
+ * - Validates requested language against allowed languages list
  */
 
 import { Request } from 'express';
@@ -46,7 +51,6 @@ import queries from './queries.catalog.products';
 import type { DbProduct, CatalogProductDTO, FetchProductsResponse, ServiceError } from './types.catalog';
 import { ProductStatus } from './types.catalog';
 import { getSettingValue } from '../../core/helpers/get.setting.value';
-import { resolveCatalogLanguages } from '../../core/helpers/language.utils';
 import { createAndPublishEvent } from '../../core/eventBus/fabric.events';
 import { EVENTS_CATALOG_PRODUCTS } from './events.catalog.products';
 
@@ -99,10 +103,25 @@ export async function fetchActiveProducts(req: Request): Promise<FetchProductsRe
       throw serviceError;
     }
     
-    // Resolve requested and fallback languages using full-name values
-    const languages = await resolveCatalogLanguages(requestedLanguageRaw);
-    requestedLanguage = languages.requestedLanguage;
-    fallbackLanguage = languages.fallbackLanguage;
+    // Load allowed languages and fallback language from app settings
+    const allowedLanguages = await getSettingValue<string[]>(
+      'Application.RegionalSettings',
+      'allowed.languages',
+      ['english', 'russian']
+    );
+    
+    const fallbackLanguageSetting = await getSettingValue<string>(
+      'Application.RegionalSettings',
+      'fallback.language',
+      'english'
+    );
+    
+    // Validate requested language: if provided and in allowed list, use it; otherwise use fallback
+    requestedLanguage = (requestedLanguageRaw && allowedLanguages.includes(requestedLanguageRaw))
+      ? requestedLanguageRaw
+      : fallbackLanguageSetting;
+    
+    fallbackLanguage = fallbackLanguageSetting;
     
     // Convert region_name to region_id - REQUIRED, return error if region not found
     try {
