@@ -1,4 +1,4 @@
--- Version: 1.0.2
+-- Version: 1.0.4
 -- Description: Seeds the database with demo catalog data, including sections and services.
 -- Backend file: 11_demo_catalog.sql
 
@@ -9,6 +9,13 @@
 -- Changes in v1.0.2:
 -- - Fixed invalid UUIDs: replaced 's' with 'a' for sections, 'm' with 'b' for medical products, 't' with 'c' for tools
 -- - All UUIDs now use valid hex characters (0-9, a-f) only
+--
+-- Changes in v1.0.3:
+-- - Fixed invalid UUIDs for medical products 'MED-10-88888' and 'MED-11-99999' (length of first group was not 8 chars)
+-- - Updated corresponding product translation UUIDs to match the corrected product IDs
+--
+-- Changes in v1.0.4:
+-- - Fixed remaining invalid UUID usages for medical products MED-10-88888 and MED-11-99999 in product_regions, section publishing and product grouping
 
 -- ===========================================
 -- 1. Delete all demo services and their relations
@@ -290,8 +297,8 @@ INSERT INTO app.products (product_id, product_code, translation_key, is_publishe
 ('b7777777-7777-7777-7777-777777777777', 'MED-07-55555', 'med.monitor.cable', true, 'active', '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
 ('b8888888-8888-8888-8888-888888888888', 'MED-08-66666', 'med.dental.tips', true, 'active', '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
 ('b9999999-9999-9999-9999-999999999999', 'MED-09-77777', 'med.probe.covers', true, 'active', '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
-('baaaaaaa1-aaaa-aaaa-aaaa-aaaaaaaaaaaa', 'MED-10-88888', 'med.equipment.stand', true, 'active', '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
-('baaaaaaa2-aaaa-aaaa-aaaa-aaaaaaaaaaab', 'MED-11-99999', 'med.monitor.protection', true, 'active', '7ef9dce8-c832-40fe-a6ef-85afff37c474')
+('baaaaaa1-aaaa-aaaa-aaaa-aaaaaaaaaaaa', 'MED-10-88888', 'med.equipment.stand', true, 'active', '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
+('baaaaaa2-aaaa-aaaa-aaaa-aaaaaaaaaaab', 'MED-11-99999', 'med.monitor.protection', true, 'active', '7ef9dce8-c832-40fe-a6ef-85afff37c474')
 ON CONFLICT (product_id) DO UPDATE SET
     product_code = EXCLUDED.product_code,
     translation_key = EXCLUDED.translation_key,
@@ -328,11 +335,11 @@ INSERT INTO app.product_translations (product_id, language_code, name, short_des
 ('b9999999-9999-9999-9999-999999999999', 'ru', 'Чехлы для датчиков', 'Защитные чехлы', 'Защитные чехлы для ультразвуковых датчиков. Одноразовые, стерильные.', '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
 ('b9999999-9999-9999-9999-999999999999', 'en', 'Probe Covers', 'Protective covers', 'Protective covers for ultrasound probes. Disposable, sterile.', '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
 -- Equipment Stand
-('baaaaaaa1-aaaa-aaaa-aaaa-aaaaaaaaaaaa', 'ru', 'Стойка для оборудования', 'Медицинская стойка', 'Универсальная стойка для размещения медицинского оборудования. Регулируемая высота.', '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
-('baaaaaaa1-aaaa-aaaa-aaaa-aaaaaaaaaaaa', 'en', 'Equipment Stand', 'Medical stand', 'Universal stand for medical equipment placement. Adjustable height.', '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
+('baaaaaa1-aaaa-aaaa-aaaa-aaaaaaaaaaaa', 'ru', 'Стойка для оборудования', 'Медицинская стойка', 'Универсальная стойка для размещения медицинского оборудования. Регулируемая высота.', '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
+('baaaaaa1-aaaa-aaaa-aaaa-aaaaaaaaaaaa', 'en', 'Equipment Stand', 'Medical stand', 'Universal stand for medical equipment placement. Adjustable height.', '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
 -- Monitor Protection
-('baaaaaaa2-aaaa-aaaa-aaaa-aaaaaaaaaaab', 'ru', 'Защитный чехол для монитора', 'Защитный чехол', 'Защитный чехол для монитора пациента. Защита от пыли и повреждений.', '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
-('baaaaaaa2-aaaa-aaaa-aaaa-aaaaaaaaaaab', 'en', 'Monitor Protection Cover', 'Protection cover', 'Protection cover for patient monitor. Protection from dust and damage.', '7ef9dce8-c832-40fe-a6ef-85afff37c474')
+('baaaaaa2-aaaa-aaaa-aaaa-aaaaaaaaaaab', 'ru', 'Защитный чехол для монитора', 'Защитный чехол', 'Защитный чехол для монитора пациента. Защита от пыли и повреждений.', '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
+('baaaaaa2-aaaa-aaaa-aaaa-aaaaaaaaaaab', 'en', 'Monitor Protection Cover', 'Protection cover', 'Protection cover for patient monitor. Protection from dust and damage.', '7ef9dce8-c832-40fe-a6ef-85afff37c474')
 ON CONFLICT (product_id, language_code) DO UPDATE SET
     name = EXCLUDED.name,
     short_desc = EXCLUDED.short_desc,
@@ -357,8 +364,8 @@ BEGIN
     ('b7777777-7777-7777-7777-777777777777', reg_b_id, med_cat_id, '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
     ('b8888888-8888-8888-8888-888888888888', reg_b_id, med_cat_id, '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
     ('b9999999-9999-9999-9999-999999999999', reg_b_id, med_cat_id, '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
-    ('baaaaaaa1-aaaa-aaaa-aaaa-aaaaaaaaaaaa', reg_b_id, med_cat_id, '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
-    ('baaaaaaa2-aaaa-aaaa-aaaa-aaaaaaaaaaab', reg_b_id, med_cat_id, '7ef9dce8-c832-40fe-a6ef-85afff37c474')
+    ('baaaaaa1-aaaa-aaaa-aaaa-aaaaaaaaaaaa', reg_b_id, med_cat_id, '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
+    ('baaaaaa2-aaaa-aaaa-aaaa-aaaaaaaaaaab', reg_b_id, med_cat_id, '7ef9dce8-c832-40fe-a6ef-85afff37c474')
     ON CONFLICT (product_id, region_id) DO UPDATE SET
         taxable_category_id = EXCLUDED.taxable_category_id;
 END $$;
@@ -374,8 +381,8 @@ INSERT INTO app.product_users (product_id, user_id, role_type, created_by) VALUE
 ('b7777777-7777-7777-7777-777777777777', '7ef9dce8-c832-40fe-a6ef-85afff37c474', 'owner', '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
 ('b8888888-8888-8888-8888-888888888888', '7ef9dce8-c832-40fe-a6ef-85afff37c474', 'owner', '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
 ('b9999999-9999-9999-9999-999999999999', '7ef9dce8-c832-40fe-a6ef-85afff37c474', 'owner', '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
-('baaaaaaa1-aaaa-aaaa-aaaa-aaaaaaaaaaaa', '7ef9dce8-c832-40fe-a6ef-85afff37c474', 'owner', '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
-('baaaaaaa2-aaaa-aaaa-aaaa-aaaaaaaaaaab', '7ef9dce8-c832-40fe-a6ef-85afff37c474', 'owner', '7ef9dce8-c832-40fe-a6ef-85afff37c474')
+('baaaaaa1-aaaa-aaaa-aaaa-aaaaaaaaaaaa', '7ef9dce8-c832-40fe-a6ef-85afff37c474', 'owner', '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
+('baaaaaa2-aaaa-aaaa-aaaa-aaaaaaaaaaab', '7ef9dce8-c832-40fe-a6ef-85afff37c474', 'owner', '7ef9dce8-c832-40fe-a6ef-85afff37c474')
 ON CONFLICT (product_id, user_id, role_type) DO NOTHING;
 
 -- Product pairing (Medical)
@@ -385,13 +392,13 @@ INSERT INTO app.product_options (main_product_id, option_product_id, is_required
 ('b1111111-1111-1111-1111-111111111111', 'b5555555-5555-5555-5555-555555555555', true, 1, '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
 -- Ultrasound: optional
 ('b1111111-1111-1111-1111-111111111111', 'b9999999-9999-9999-9999-999999999999', false, NULL, '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
-('b1111111-1111-1111-1111-111111111111', 'baaaaaaa1-aaaa-aaaa-aaaa-aaaaaaaaaaaa', false, NULL, '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
+('b1111111-1111-1111-1111-111111111111', 'baaaaaa1-aaaa-aaaa-aaaa-aaaaaaaaaaaa', false, NULL, '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
 -- Patient Monitor: required
 ('b2222222-2222-2222-2222-222222222222', 'b6666666-6666-6666-6666-666666666666', true, 10, '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
 ('b2222222-2222-2222-2222-222222222222', 'b7777777-7777-7777-7777-777777777777', true, 1, '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
 -- Patient Monitor: optional
-('b2222222-2222-2222-2222-222222222222', 'baaaaaaa1-aaaa-aaaa-aaaa-aaaaaaaaaaaa', false, NULL, '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
-('b2222222-2222-2222-2222-222222222222', 'baaaaaaa2-aaaa-aaaa-aaaa-aaaaaaaaaaab', false, NULL, '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
+('b2222222-2222-2222-2222-222222222222', 'baaaaaa1-aaaa-aaaa-aaaa-aaaaaaaaaaaa', false, NULL, '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
+('b2222222-2222-2222-2222-222222222222', 'baaaaaa2-aaaa-aaaa-aaaa-aaaaaaaaaaab', false, NULL, '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
 -- Dental Equipment: required
 ('b3333333-3333-3333-3333-333333333333', 'b8888888-8888-8888-8888-888888888888', true, 2, '7ef9dce8-c832-40fe-a6ef-85afff37c474')
 ON CONFLICT (main_product_id, option_product_id) DO UPDATE SET
@@ -726,8 +733,8 @@ INSERT INTO app.section_products (section_id, product_id, published_by) VALUES
 ('a3333333-3333-3333-3333-333333333333', 'b7777777-7777-7777-7777-777777777777', '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
 ('a3333333-3333-3333-3333-333333333333', 'b8888888-8888-8888-8888-888888888888', '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
 ('a3333333-3333-3333-3333-333333333333', 'b9999999-9999-9999-9999-999999999999', '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
-('a3333333-3333-3333-3333-333333333333', 'baaaaaaa1-aaaa-aaaa-aaaa-aaaaaaaaaaaa', '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
-('a3333333-3333-3333-3333-333333333333', 'baaaaaaa2-aaaa-aaaa-aaaa-aaaaaaaaaaab', '7ef9dce8-c832-40fe-a6ef-85afff37c474')
+('a3333333-3333-3333-3333-333333333333', 'baaaaaa1-aaaa-aaaa-aaaa-aaaaaaaaaaaa', '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
+('a3333333-3333-3333-3333-333333333333', 'baaaaaa2-aaaa-aaaa-aaaa-aaaaaaaaaaab', '7ef9dce8-c832-40fe-a6ef-85afff37c474')
 ON CONFLICT (section_id, product_id) DO NOTHING;
 
 -- Publish tools products to main section
@@ -772,8 +779,8 @@ INSERT INTO app.product_groups (product_id, group_id, role_type, created_by) VAL
 ('b7777777-7777-7777-7777-777777777777', 'c3d4e5f6-a7b8-4901-c2d3-e4f5a6b7c8d9', 'product_specialists', '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
 ('b8888888-8888-8888-8888-888888888888', 'c3d4e5f6-a7b8-4901-c2d3-e4f5a6b7c8d9', 'product_specialists', '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
 ('b9999999-9999-9999-9999-999999999999', 'c3d4e5f6-a7b8-4901-c2d3-e4f5a6b7c8d9', 'product_specialists', '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
-('baaaaaaa1-aaaa-aaaa-aaaa-aaaaaaaaaaaa', 'c3d4e5f6-a7b8-4901-c2d3-e4f5a6b7c8d9', 'product_specialists', '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
-('baaaaaaa2-aaaa-aaaa-aaaa-aaaaaaaaaaab', 'c3d4e5f6-a7b8-4901-c2d3-e4f5a6b7c8d9', 'product_specialists', '7ef9dce8-c832-40fe-a6ef-85afff37c474')
+('baaaaaa1-aaaa-aaaa-aaaa-aaaaaaaaaaaa', 'c3d4e5f6-a7b8-4901-c2d3-e4f5a6b7c8d9', 'product_specialists', '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
+('baaaaaa2-aaaa-aaaa-aaaa-aaaaaaaaaaab', 'c3d4e5f6-a7b8-4901-c2d3-e4f5a6b7c8d9', 'product_specialists', '7ef9dce8-c832-40fe-a6ef-85afff37c474')
 ON CONFLICT (product_id, group_id, role_type) DO NOTHING;
 
 -- Assign groups to tools products

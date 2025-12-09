@@ -1,9 +1,26 @@
-# Version: 1.0.0
-# Description: Containerfile for evi database container based on official PostgreSQL image.
+# Version: 1.1.0
+# Description: Containerfile for evi database container based on official PostgreSQL 17 image with pg_cron support.
 # Backend file: Containerfile
 # This Containerfile extends the official postgres image and adds initialization scripts.
+#
+# Changes in v1.1.0:
+# - Switched base image to postgres:17 (Debian-based) from postgres:16-alpine
+# - Installed pg_cron extension via Debian package and enabled it via shared_preload_libraries
+# - Kept automatic execution of SQL init scripts including pg_cron setup
+#
+FROM postgres:17
 
-FROM postgres:16-alpine
+# Install pg_cron extension package for PostgreSQL 17
+RUN set -eux; \
+    apt-get update; \
+    apt-get install -y --no-install-recommends \
+        postgresql-17-cron; \
+    rm -rf /var/lib/apt/lists/*
+
+# Enable pg_cron in the default PostgreSQL configuration
+RUN set -eux; \
+    echo "shared_preload_libraries = 'pg_cron'" >> /usr/share/postgresql/postgresql.conf.sample; \
+    echo "cron.database_name = 'maindb'" >> /usr/share/postgresql/postgresql.conf.sample
 
 # Copy initialization scripts to the entrypoint directory
 # These scripts will be executed automatically when the database is first initialized
