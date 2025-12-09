@@ -1,9 +1,14 @@
 /**
  * @file state.user.auth.ts
- * Version: 1.2.0
+ * Version: 1.3.0
  * TypeScript state management for user authentication.
  * Frontend file that manages user authentication state with persistence and integration with auth services.
  * Updated to support device fingerprinting and new database structure.
+ * 
+ * Changes in v1.3.0:
+ * - Changed language storage to use full language names ('english'/'russian') instead of short codes ('en'/'ru')
+ * - Added function to convert old language codes to full names for backward compatibility
+ * - Language is now stored as 'english' or 'russian' to match backend expectations
  */
 
 import { defineStore } from 'pinia'
@@ -43,6 +48,21 @@ function getRefreshBeforeExpiry(): number {
   return TIMER_CONFIG.REFRESH_BEFORE_EXPIRY;
 }
 
+/**
+ * Converts old language codes to full language names
+ * 'en' -> 'english', 'ru' -> 'russian'
+ * If already full name, returns as is
+ */
+function normalizeLanguageToFullName(lang: string | null): string {
+  if (!lang) return 'russian'
+  const normalized = lang.toLowerCase().trim()
+  if (normalized === 'en') return 'english'
+  if (normalized === 'ru') return 'russian'
+  if (normalized === 'english' || normalized === 'russian') return normalized
+  // Default fallback
+  return 'russian'
+}
+
 // Initial state
 const initialState: UserState = {
   username: '',
@@ -55,7 +75,7 @@ const initialState: UserState = {
   jwtId: '',
   tokenExpires: 0,
   activeModule: 'Catalog', // Added from old store
-  language: localStorage.getItem('userLanguage') || 'ru' // Added from old store
+  language: normalizeLanguageToFullName(localStorage.getItem('userLanguage')) // Store full language names
 }
 
 /**
@@ -68,9 +88,12 @@ function loadPersistedState(): UserState {
       const parsed = JSON.parse(persistedState) as UserState
       console.log('[User Auth State] Loaded persisted state:', parsed)
       
-      // Ensure language is always a valid string
+      // Ensure language is always a valid string and convert old codes to full names
       if (!parsed.language || typeof parsed.language !== 'string') {
-        parsed.language = localStorage.getItem('userLanguage') || 'ru'
+        parsed.language = normalizeLanguageToFullName(localStorage.getItem('userLanguage'))
+      } else {
+        // Convert old language codes to full names if needed
+        parsed.language = normalizeLanguageToFullName(parsed.language)
       }
       
       return parsed
@@ -419,10 +442,12 @@ export const useUserAuthStore = defineStore('userAuth', {
     
     /**
      * Sets language (compatibility with old store)
+     * Accepts both short codes ('en'/'ru') and full names ('english'/'russian')
+     * Always stores as full name ('english'/'russian')
      */
     setLanguage(lang: string): void {
-      this.language = lang
-      localStorage.setItem('userLanguage', lang)
+      this.language = normalizeLanguageToFullName(lang)
+      localStorage.setItem('userLanguage', this.language)
       savePersistedState(this.$state)
     },
     

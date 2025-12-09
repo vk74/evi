@@ -113,7 +113,9 @@
       }
     },
     "productCard": {
-      "published": "published"
+      "published": "published",
+      "noCode": "no code",
+      "noDescription": "no description"
     }
   }
 }

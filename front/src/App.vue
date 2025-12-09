@@ -313,13 +313,28 @@ const logout = async (): Promise<void> => {
   }, 50);
 };
 
+/**
+ * Converts i18n locale code to full language name
+ * 'en' -> 'english', 'ru' -> 'russian'
+ */
+const i18nLocaleToFullLanguageName = (locale: string): string => {
+  const normalized = locale.toLowerCase().trim()
+  if (normalized === 'en') return 'english'
+  if (normalized === 'ru') return 'russian'
+  if (normalized === 'english' || normalized === 'russian') return normalized
+  return 'russian' // Default fallback
+}
+
 const changeLanguage = (lang: string): void => {
   // Close language menu
   safeCloseMenus();
   
   // Small delay to avoid race conditions
   setTimeout(() => {
-    userStore.setLanguage(lang);
+    // lang is 'en' or 'ru' from language menu, convert to full name for store
+    const fullLanguageName = i18nLocaleToFullLanguageName(lang)
+    userStore.setLanguage(fullLanguageName);
+    // i18n uses 'en'/'ru' directly
     i18n.locale.value = lang;
   }, 50);
 };

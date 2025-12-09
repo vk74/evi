@@ -1,12 +1,16 @@
 /**
  * @file service.fetch.product.options.ts
- * Version: 1.1.0
+ * Version: 1.2.0
  * Service for fetching product options for product card.
  * Frontend file that posts productId, locale, and region to backend and returns typed data.
  * 
  * Changes in v1.1.0:
  * - Added optional region parameter for region-based option filtering
  * - Region is required for options to be filtered by user's location
+ * 
+ * Changes in v1.2.0:
+ * - Now uses userStore.language which stores full language names ('english'/'russian')
+ * - Language is sent directly to backend without conversion
  */
 
 import { api } from '@/core/api/service.axios'

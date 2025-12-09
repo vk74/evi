@@ -1,12 +1,16 @@
 /**
  * @file service.fetch.active.products.ts
- * Version: 1.3.0
+ * Version: 1.4.0
  * Service for fetching active catalog products from the backend with caching.
  * Frontend file that provides unified interface for getting active products.
  * 
  * Changes in v1.3.0:
  * - Added region parameter support for region-based product filtering
  * - Cache invalidation now considers region parameter
+ * 
+ * Changes in v1.4.0:
+ * - Now uses userStore.language which stores full language names ('english'/'russian')
+ * - Language is sent directly to backend without conversion
  */
 
 import { api } from '@/core/api/service.axios'

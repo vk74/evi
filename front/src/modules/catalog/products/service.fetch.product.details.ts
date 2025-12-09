@@ -1,8 +1,12 @@
 /**
  * @file service.fetch.product.details.ts
- * Version: 1.0.0
+ * Version: 1.1.0
  * Service for fetching single product details from the backend with caching.
  * Frontend file that provides unified interface for getting product details.
+ * 
+ * Changes in v1.1.0:
+ * - Now uses userStore.language which stores full language names ('english'/'russian')
+ * - Language is sent directly to backend without conversion
  */
 
 import { api } from '@/core/api/service.axios'

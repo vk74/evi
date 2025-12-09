@@ -113,7 +113,9 @@
       }
     },
     "productCard": {
-      "published": "опубликовано"
+      "published": "опубликовано",
+      "noCode": "без кода",
+      "noDescription": "описание отсутствует"
     }
   }
 }

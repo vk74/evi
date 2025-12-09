@@ -1,5 +1,5 @@
 <!--
-version: 1.8.0
+version: 1.9.0
 Frontend file for catalog product card component.
 Displays product information in a (closed) card format.
 File: CatalogProductCard.vue
@@ -33,6 +33,11 @@ Changes in v1.7.0:
 Changes in v1.8.0:
 - Localized "опубликовано" text using i18n
 - Fixed date formatting to use current locale instead of hardcoded 'ru-RU'
+
+Changes in v1.9.0:
+- Replaced hardcoded Russian text with i18n keys
+- 'Без кода' -> t('catalog.productCard.noCode')
+- 'Описание отсутствует' -> t('catalog.productCard.noDescription')
 -->
 <script setup lang="ts">
 import { ref, computed } from 'vue';
@@ -151,7 +156,7 @@ const formattedPublishedDate = computed(() => {
               {{ product.name }}
             </div>
             <div class="text-caption text-grey">
-              {{ product.product_code || 'Без кода' }}
+              {{ product.product_code || t('catalog.productCard.noCode') }}
             </div>
           </div>
         </v-card-title>
@@ -166,7 +171,7 @@ const formattedPublishedDate = computed(() => {
 
           <!-- Description -->
           <p class="description-text text-body-2 mb-3">
-            {{ product.description || 'Описание отсутствует' }}
+            {{ product.description || t('catalog.productCard.noDescription') }}
           </p>
         </v-card-text>
       </div>
