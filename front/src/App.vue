@@ -313,18 +313,6 @@ const logout = async (): Promise<void> => {
   }, 50);
 };
 
-/**
- * Converts i18n locale code to full language name
- * 'en' -> 'english', 'ru' -> 'russian'
- */
-const i18nLocaleToFullLanguageName = (locale: string): string => {
-  const normalized = locale.toLowerCase().trim()
-  if (normalized === 'en') return 'english'
-  if (normalized === 'ru') return 'russian'
-  if (normalized === 'english' || normalized === 'russian') return normalized
-  return 'russian' // Default fallback
-}
-
 const changeLanguage = (lang: string): void => {
   // Close language menu
   safeCloseMenus();
@@ -332,7 +320,8 @@ const changeLanguage = (lang: string): void => {
   // Small delay to avoid race conditions
   setTimeout(() => {
     // lang is 'en' or 'ru' from language menu, convert to full name for store
-    const fullLanguageName = i18nLocaleToFullLanguageName(lang)
+    // Map 'en' -> 'english', 'ru' -> 'russian'
+    const fullLanguageName = lang === 'en' ? 'english' : lang === 'ru' ? 'russian' : lang
     userStore.setLanguage(fullLanguageName);
     // i18n uses 'en'/'ru' directly
     i18n.locale.value = lang;
@@ -543,9 +532,9 @@ watch(
       // User country is now loaded in main.ts before app mount
       // No need to load it here to avoid race conditions
     } else {
-      // User logged out - clear user country
-      console.log('[App] User logged out, clearing user country...');
-      appStore.clearUserCountry();
+      // User logged out - clear user location
+      console.log('[App] User logged out, clearing user location...');
+      appStore.clearUserLocation();
     }
   },
   { immediate: false }
@@ -1121,7 +1110,7 @@ onMounted(async () => {
                 <v-list-item
                   v-for="opt in languageMenuOptions"
                   :key="opt.code"
-                  :active="userStore.language === opt.code"
+                  :active="(opt.code === 'en' && userStore.language === 'english') || (opt.code === 'ru' && userStore.language === 'russian')"
                   @click="changeLanguage(opt.code)"
                 >
                   <v-list-item-title>{{ opt.label }}</v-list-item-title>

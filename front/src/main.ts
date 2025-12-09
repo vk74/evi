@@ -10,8 +10,9 @@
     is loaded before components mount, preventing race condition in ModuleCatalog
   
   Changes in v0.3.0:
-  - Added conversion from full language names ('english'/'russian') to i18n locale codes ('en'/'ru')
-  - i18n uses 'ru'/'en' as locale keys, while userStore.language stores 'english'/'russian'
+  - userStore.language now stores full language names ('english'/'russian')
+  - Simple inline conversion to i18n locale codes ('en'/'ru') only where needed for vue-i18n compatibility
+  - No normalization functions - direct mapping only
 */
 // src/main.ts
 import { createApp } from 'vue';
@@ -43,21 +44,6 @@ interface JwtPayload {
 // Merge translations
 const messages = translations;
 
-/**
- * Converts full language name to i18n locale code
- * 'english' -> 'en', 'russian' -> 'ru'
- * If already a code, returns as is
- */
-function fullLanguageNameToI18nLocale(lang: string | null): string {
-  if (!lang) return 'ru'
-  const normalized = lang.toLowerCase().trim()
-  if (normalized === 'english') return 'en'
-  if (normalized === 'russian') return 'ru'
-  if (normalized === 'en' || normalized === 'ru') return normalized
-  // Default fallback
-  return 'ru'
-}
-
 // Create i18n instance with safe initialization
 /**
  * getInitialLocale
@@ -68,7 +54,14 @@ function fullLanguageNameToI18nLocale(lang: string | null): string {
 const getInitialLocale = (): string => {
   try {
     const stored = localStorage.getItem('userLanguage');
-    return fullLanguageNameToI18nLocale(stored);
+    if (!stored) return 'ru'
+    // Convert full language name to i18n locale code
+    if (stored === 'english') return 'en'
+    if (stored === 'russian') return 'ru'
+    // If already a code, return as is (for backward compatibility during migration)
+    if (stored === 'en' || stored === 'ru') return stored
+    // Default fallback
+    return 'ru'
   } catch {
     return 'ru';
   }
@@ -148,7 +141,7 @@ const initializeUserState = async (): Promise<void> => {
   // Update i18n locale if user has different language preference
   // Convert full language name ('english'/'russian') to i18n locale code ('en'/'ru')
   if (userStore.language) {
-    const i18nLocale = fullLanguageNameToI18nLocale(userStore.language)
+    const i18nLocale = userStore.language === 'english' ? 'en' : userStore.language === 'russian' ? 'ru' : 'ru'
     if (i18nLocale !== i18n.global.locale.value) {
       i18n.global.locale.value = i18nLocale as 'ru' | 'en'
       console.log('[startup] initializeUserState: locale updated to', i18n.global.locale.value)
