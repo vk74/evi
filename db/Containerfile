@@ -1,0 +1,14 @@
+# Version: 1.0.0
+# Description: Containerfile for evi database container based on official PostgreSQL image.
+# Backend file: Containerfile
+# This Containerfile extends the official postgres image and adds initialization scripts.
+
+FROM postgres:16-alpine
+
+# Copy initialization scripts to the entrypoint directory
+# These scripts will be executed automatically when the database is first initialized
+COPY init/*.sql /docker-entrypoint-initdb.d/
+
+# The official postgres image will automatically execute all .sql files
+# in /docker-entrypoint-initdb.d/ in alphabetical order
+

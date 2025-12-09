@@ -230,7 +230,7 @@ function buildAndStartDB() {
   log('\n🐘 Starting Database Container...', colors.cyan, true);
 
   // 1. Build the database image using Podman compose
-  // This builds the image from the Dockerfile in the db directory
+  // This builds the image from the Containerfile in the db directory
   timings['Build DB'] = runCommand(
     getComposeCommand('build', 'evi-database'),
     'Build Database Image'

@@ -52,7 +52,7 @@ const componentsData = computed<ComponentsData>(() => ({
     'PostgreSQL 17 - Primary database',
     'pg_cron extension - Scheduled tasks',
     'PostgreSQL Contrib - Additional extensions',
-    'Docker containerization - Database deployment'
+    'Podman containerization - Database deployment'
   ]
 }))
 </script>

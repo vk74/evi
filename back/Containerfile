@@ -1,7 +1,7 @@
-# Version: 1.2
-# Description: Multi-stage Dockerfile for the evi backend.
+# Version: 1.3
+# Description: Multi-stage container build for the evi backend.
 # Creates a build stage to compile TypeScript and a lean runtime stage.
-# Backend file: Dockerfile
+# Backend file: Containerfile
 
 # =========================
 # Build stage
@@ -56,5 +56,6 @@ EXPOSE 3000
 
 # Command to run the application
 CMD ["node", "dist/server.js"]
+
 
 

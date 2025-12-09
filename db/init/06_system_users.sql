@@ -1,4 +1,4 @@
--- Version: 1.3.0
+-- Version: 1.3.1
 -- Description: Seeds the database with essential system users only.
 -- Backend file: 06_system_users.sql
 
@@ -16,7 +16,7 @@ INSERT INTO app.users (user_id, username, hashed_password, email, is_staff, acco
 -- Deleted user (system) -friendly placeholder to be inserted in place of deleted user accounts 
 ('00000000-0000-0000-0000-00000000dead', NULL, NULL, NULL, false, 'disabled', 'Deleted', 'User', NOW(), NULL, NULL, true),
 -- System administrator (active) - marked as system user
-('550e8400-e29b-41d4-a716-446655440001', 'admin', '$2b$10$rkRimJQnKoqxf7riMA2XnOM.t0ch726cq.e65xe9FfZ1/8UMU89F6', 'admin@evi.team', true, 'active', 'System', 'Administrator', NOW(), '+1234567890', 'm', true),
+('550e8400-e29b-41d4-a716-446655440001', 'admin', '$2b$10$rkRimJQnKoqxf7riMA2XnOM.t0ch726cq.e65xe9FfZ1/8UMU89F6', 'admin@evi.team', true, 'active', 'System', 'Administrator', NOW(), '+1234567890', 'm', true)
 ON CONFLICT (user_id) DO UPDATE SET
     username = EXCLUDED.username,
     email = EXCLUDED.email,

@@ -1,10 +1,8 @@
 #
-# version: 1.0.0
-# Purpose: Frontend container build for serving the SPA in production. FRONTEND file: Dockerfile
+# version: 1.1.0
+# Purpose: Frontend container build for serving the SPA in production. FRONTEND file: Containerfile
 # Logic: Multi-stage build (Node for build → Nginx for runtime). Stateless, serves compiled assets from /usr/share/nginx/html.
 #
-
-# syntax=docker/dockerfile:1.5-labs
 
 # =========================
 # Build stage

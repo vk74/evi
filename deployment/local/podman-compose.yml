@@ -1,10 +1,10 @@
 services:
   # evi Database
   evi-database:
-    # Build the image from the local Dockerfile in the 'db' directory
+    # Build the image from the local Containerfile in the 'db' directory
     build:
       context: ../../db
-      dockerfile: Dockerfile
+      dockerfile: Containerfile
     container_name: evi-database-local
     restart: unless-stopped
     
@@ -13,6 +13,10 @@ services:
       # Sets the superuser password for PostgreSQL.
       # This is required by the official postgres image.
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-dev_admin_password}
+      
+      # Specifies the database name to create automatically.
+      # The official postgres image creates this database during initialization.
+      POSTGRES_DB: ${POSTGRES_DB:-maindb}
       
       # Note: APP_DB_USER and APP_DB_PASSWORD are NOT needed here anymore.
       # The 'app_service' user is now created and configured by the 00_init.sql script.
@@ -41,10 +45,10 @@ services:
 
   # evi Backend API
   evi-backend:
-    # Build the image from the local Dockerfile in the 'back' directory
+    # Build the image from the local Containerfile in the 'back' directory
     build:
       context: ../../back
-      dockerfile: Dockerfile
+      dockerfile: Containerfile
     container_name: evi-backend-local
     restart: unless-stopped
     
@@ -75,10 +79,10 @@ services:
 
   # evi Frontend
   evi-frontend:
-    # Build the image from the local Dockerfile in the 'front' directory
+    # Build the image from the local Containerfile in the 'front' directory
     build:
       context: ../../front
-      dockerfile: Dockerfile
+      dockerfile: Containerfile
       args:
         VUE_APP_API_URL: ${FRONTEND_API_URL:-http://localhost:3000}
     container_name: evi-frontend-local

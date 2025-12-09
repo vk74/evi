@@ -1,7 +1,7 @@
 /*
   File version: 1.1.0
   This is a frontend file. FRONTEND file: vue.config.js
-  Purpose: Vue CLI build configuration tuned for faster Docker builds
+  Purpose: Vue CLI build configuration tuned for faster container builds
   Logic: Enable persistent filesystem cache and proper code splitting to reduce build time and bundle sizes
 */
 

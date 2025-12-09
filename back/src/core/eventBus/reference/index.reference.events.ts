@@ -12,7 +12,7 @@ import fs from 'fs';
 
 /**
  * Resolves a module path to the correct runtime file.
- * When running compiled JS in Docker (dist), event reference files are .js.
+ * When running compiled JS in container (dist), event reference files are .js.
  * During development they may be .ts. This helper maps .ts → .js if the .js file exists.
  */
 const resolveRuntimeModulePath = (tsFilePath: string): string => {
