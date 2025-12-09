@@ -1,9 +1,14 @@
 /**
  * @file state.user.auth.ts
- * Version: 1.3.0
+ * Version: 1.4.0
  * TypeScript state management for user authentication.
  * Frontend file that manages user authentication state with persistence and integration with auth services.
  * Updated to support device fingerprinting and new database structure.
+ * 
+ * Changes in v1.4.0:
+ * - Removed language normalization function - now uses full language names directly throughout the application
+ * - Language fallback now retrieved from Application.RegionalSettings.fallback.language setting
+ * - All language handling uses full names ('english'/'russian') without any conversion
  * 
  * Changes in v1.3.0:
  * - Changed language storage to use full language names ('english'/'russian') instead of short codes ('en'/'ru')
@@ -49,18 +54,38 @@ function getRefreshBeforeExpiry(): number {
 }
 
 /**
- * Converts old language codes to full language names
- * 'en' -> 'english', 'ru' -> 'russian'
- * If already full name, returns as is
+ * Gets fallback language from app settings
+ * Returns 'russian' if setting not found or unavailable
  */
-function normalizeLanguageToFullName(lang: string | null): string {
-  if (!lang) return 'russian'
-  const normalized = lang.toLowerCase().trim()
-  if (normalized === 'en') return 'english'
-  if (normalized === 'ru') return 'russian'
-  if (normalized === 'english' || normalized === 'russian') return normalized
+function getFallbackLanguage(): string {
+  try {
+    // Import here to avoid circular dependency
+    const { useAppSettingsStore } = require('@/modules/admin/settings/state.app.settings');
+    const store = useAppSettingsStore();
+    
+    // Try to get from regular cache first
+    let settings = store.getCachedSettings('Application.RegionalSettings');
+    
+    // Fallback to public cache if regular cache not available
+    if (!settings) {
+      const publicCacheEntry = store.publicSettingsCache['Application.RegionalSettings'];
+      if (publicCacheEntry) {
+        settings = publicCacheEntry.data;
+      }
+    }
+    
+    if (settings) {
+      const setting = settings.find(s => s.setting_name === 'fallback.language');
+      if (setting && setting.value && typeof setting.value === 'string') {
+        return setting.value;
+      }
+    }
+  } catch (error) {
+    console.warn('Failed to get fallback language setting, using default:', error);
+  }
+  
   // Default fallback
-  return 'russian'
+  return 'russian';
 }
 
 // Initial state
@@ -75,7 +100,17 @@ const initialState: UserState = {
   jwtId: '',
   tokenExpires: 0,
   activeModule: 'Catalog', // Added from old store
-  language: normalizeLanguageToFullName(localStorage.getItem('userLanguage')) // Store full language names
+  language: (() => {
+    const stored = localStorage.getItem('userLanguage');
+    if (stored && typeof stored === 'string') {
+      // Accept only full language names as-is
+      if (stored === 'english' || stored === 'russian') {
+        return stored;
+      }
+    }
+    // Use fallback from settings if language not set or invalid
+    return getFallbackLanguage();
+  })()
 }
 
 /**
@@ -88,12 +123,23 @@ function loadPersistedState(): UserState {
       const parsed = JSON.parse(persistedState) as UserState
       console.log('[User Auth State] Loaded persisted state:', parsed)
       
-      // Ensure language is always a valid string and convert old codes to full names
+      // Ensure language is always a valid full language name
       if (!parsed.language || typeof parsed.language !== 'string') {
-        parsed.language = normalizeLanguageToFullName(localStorage.getItem('userLanguage'))
+        // Try to get from localStorage, then fallback to settings
+        const stored = localStorage.getItem('userLanguage');
+        if (stored && (stored === 'english' || stored === 'russian')) {
+          parsed.language = stored;
+        } else {
+          parsed.language = getFallbackLanguage();
+        }
       } else {
-        // Convert old language codes to full names if needed
-        parsed.language = normalizeLanguageToFullName(parsed.language)
+        // Validate that it's a full language name as-is
+        if (parsed.language === 'english' || parsed.language === 'russian') {
+          // Keep as-is
+        } else {
+          // Invalid language, use fallback
+          parsed.language = getFallbackLanguage();
+        }
       }
       
       return parsed
@@ -442,13 +488,20 @@ export const useUserAuthStore = defineStore('userAuth', {
     
     /**
      * Sets language (compatibility with old store)
-     * Accepts both short codes ('en'/'ru') and full names ('english'/'russian')
-     * Always stores as full name ('english'/'russian')
+     * Accepts only full language names ('english'/'russian') as-is, without normalization
      */
     setLanguage(lang: string): void {
-      this.language = normalizeLanguageToFullName(lang)
-      localStorage.setItem('userLanguage', this.language)
-      savePersistedState(this.$state)
+      // Validate that it's a full language name as-is
+      if (lang === 'english' || lang === 'russian') {
+        this.language = lang;
+        localStorage.setItem('userLanguage', this.language);
+        savePersistedState(this.$state);
+      } else {
+        console.warn(`[User Auth State] Invalid language provided: ${lang}. Using fallback.`);
+        this.language = getFallbackLanguage();
+        localStorage.setItem('userLanguage', this.language);
+        savePersistedState(this.$state);
+      }
     },
     
     /**

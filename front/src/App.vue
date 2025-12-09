@@ -198,16 +198,16 @@ const languageMenuOptions = computed(() => {
   const options: Array<{ code: string; label: string }> = [];
 
   if (allowed.includes('english')) {
-    options.push({ code: 'en', label: 'English' });
+    options.push({ code: 'english', label: 'english' });
   }
   if (allowed.includes('russian')) {
-    options.push({ code: 'ru', label: 'Русский' });
+    options.push({ code: 'russian', label: 'русский' });
   }
 
   // If somehow nothing is allowed, show both for safety
   if (options.length === 0) {
-    options.push({ code: 'en', label: 'English' });
-    options.push({ code: 'ru', label: 'Русский' });
+    options.push({ code: 'english', label: 'english' });
+    options.push({ code: 'russian', label: 'русский' });
   }
 
   return options;
@@ -319,12 +319,11 @@ const changeLanguage = (lang: string): void => {
   
   // Small delay to avoid race conditions
   setTimeout(() => {
-    // lang is 'en' or 'ru' from language menu, convert to full name for store
-    // Map 'en' -> 'english', 'ru' -> 'russian'
-    const fullLanguageName = lang === 'en' ? 'english' : lang === 'ru' ? 'russian' : lang
-    userStore.setLanguage(fullLanguageName);
-    // i18n uses 'en'/'ru' directly
-    i18n.locale.value = lang;
+    // lang is now full language name ('english'/'russian') from language menu
+    userStore.setLanguage(lang);
+    // i18n uses 'en'/'ru' for compatibility, convert full name to code
+    const i18nLocale = lang === 'english' ? 'en' : lang === 'russian' ? 'ru' : 'ru';
+    i18n.locale.value = i18nLocale;
   }, 50);
 };
 
@@ -1110,7 +1109,7 @@ onMounted(async () => {
                 <v-list-item
                   v-for="opt in languageMenuOptions"
                   :key="opt.code"
-                  :active="(opt.code === 'en' && userStore.language === 'english') || (opt.code === 'ru' && userStore.language === 'russian')"
+                  :active="opt.code === userStore.language"
                   @click="changeLanguage(opt.code)"
                 >
                   <v-list-item-title>{{ opt.label }}</v-list-item-title>

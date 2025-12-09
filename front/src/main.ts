@@ -1,9 +1,14 @@
 /*
-  Version: v0.3.0
+  Version: v0.4.0
   Purpose: Frontend bootstrap file (main.ts). Creates the Vue application, initializes
   internationalization (i18n), state management (Pinia with persistence), registers
   UI framework (Vuetify), mounts the app, and initializes authenticated user state.
   This is a frontend file: main.ts
+  
+  Changes in v0.4.0:
+  - getInitialLocale now retrieves fallback language from Application.RegionalSettings.fallback.language setting
+  - Removed backward compatibility for short language codes ('en'/'ru') in localStorage
+  - Language handling now uses full names ('english'/'russian') throughout
   
   Changes in v0.2.0:
   - Moved initializeUserState() execution before app.mount() to ensure user country
@@ -46,23 +51,69 @@ const messages = translations;
 
 // Create i18n instance with safe initialization
 /**
+ * getFallbackLanguageFromSettings
+ * Gets fallback language from app settings cache if available.
+ * Returns null if settings not available (before Pinia initialization).
+ */
+function getFallbackLanguageFromSettings(): string | null {
+  try {
+    // Try to get from settings store (may not be available at this point)
+    // This is a best-effort attempt - settings may not be loaded yet
+    const { useAppSettingsStore } = require('@/modules/admin/settings/state.app.settings');
+    const store = useAppSettingsStore();
+    
+    // Try to get from regular cache first
+    let settings = store.getCachedSettings('Application.RegionalSettings');
+    
+    // Fallback to public cache if regular cache not available
+    if (!settings) {
+      const publicCacheEntry = store.publicSettingsCache['Application.RegionalSettings'];
+      if (publicCacheEntry) {
+        settings = publicCacheEntry.data;
+      }
+    }
+    
+    if (settings) {
+      const setting = settings.find(s => s.setting_name === 'fallback.language');
+      if (setting && setting.value && typeof setting.value === 'string') {
+        // Convert full language name to i18n locale code as-is
+        if (setting.value === 'english') return 'en';
+        if (setting.value === 'russian') return 'ru';
+      }
+    }
+  } catch (error) {
+    // Settings store may not be available yet - this is expected
+    // Will fall back to default
+  }
+  
+  return null;
+}
+
+/**
  * getInitialLocale
  * Returns the initial UI locale from localStorage when available and valid.
  * Converts full language names ('english'/'russian') to i18n locale codes ('en'/'ru').
- * Falls back to 'ru' on absence or errors.
+ * Falls back to settings fallback.language if available, otherwise 'ru'.
  */
 const getInitialLocale = (): string => {
   try {
     const stored = localStorage.getItem('userLanguage');
-    if (!stored) return 'ru'
-    // Convert full language name to i18n locale code
-    if (stored === 'english') return 'en'
-    if (stored === 'russian') return 'ru'
-    // If already a code, return as is (for backward compatibility during migration)
-    if (stored === 'en' || stored === 'ru') return stored
-    // Default fallback
-    return 'ru'
+    if (stored) {
+      // Convert full language name to i18n locale code as-is
+      if (stored === 'english') return 'en';
+      if (stored === 'russian') return 'ru';
+    }
+    
+    // Try to get fallback from settings
+    const fallbackFromSettings = getFallbackLanguageFromSettings();
+    if (fallbackFromSettings) {
+      return fallbackFromSettings;
+    }
+    
+    // Default fallback if settings not available
+    return 'ru';
   } catch {
+    // Default fallback on error
     return 'ru';
   }
 };
