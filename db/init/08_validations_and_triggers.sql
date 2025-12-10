@@ -130,14 +130,6 @@ DO $$ BEGIN
 EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
 
--- Apply trigger to taxable_categories
-DO $$ BEGIN
-  CREATE TRIGGER trg_taxable_categories_updated_at
-      BEFORE UPDATE ON app.taxable_categories
-      FOR EACH ROW
-      EXECUTE FUNCTION app.update_updated_at_column();
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
-
 -- Apply trigger to regions_taxable_categories
 DO $$ BEGIN
   CREATE TRIGGER trg_regions_taxable_categories_updated_at

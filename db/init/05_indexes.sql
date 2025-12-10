@@ -157,10 +157,6 @@ CREATE INDEX IF NOT EXISTS idx_pl_item_type
 CREATE INDEX IF NOT EXISTS idx_regions_taxable_categories_region_id 
     ON app.regions_taxable_categories(region_id);
 
--- Index for faster lookups by category (which regions have this category)
-CREATE INDEX IF NOT EXISTS idx_regions_taxable_categories_category_id 
-    ON app.regions_taxable_categories(category_id);
-
 -- Index for faster lookups by VAT rate (partial index for non-null values)
 CREATE INDEX IF NOT EXISTS idx_regions_taxable_categories_vat_rate 
     ON app.regions_taxable_categories(vat_rate) 

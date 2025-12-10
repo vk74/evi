@@ -62,13 +62,8 @@ ON CONFLICT (code) DO UPDATE SET
   updated_at = now();
 
 -- ===========================================
--- 4. Taxable Categories
+-- 4. Taxable Categories (Merged into Regional Taxable Categories)
 -- ===========================================
-
-INSERT INTO app.taxable_categories (category_name) VALUES
-('стандартные товары'),
-('медицинские товары')
-ON CONFLICT DO NOTHING;
 
 -- ===========================================
 -- 5. Regional Tax Rates
@@ -80,32 +75,34 @@ DECLARE
     reg_a_id INTEGER;
     reg_b_id INTEGER;
     reg_c_id INTEGER;
-    std_cat_id INTEGER;
-    med_cat_id INTEGER;
 BEGIN
     SELECT region_id INTO reg_a_id FROM app.regions WHERE region_name = 'reg-a';
     SELECT region_id INTO reg_b_id FROM app.regions WHERE region_name = 'reg-b';
     SELECT region_id INTO reg_c_id FROM app.regions WHERE region_name = 'reg-c';
-    SELECT category_id INTO std_cat_id FROM app.taxable_categories WHERE category_name = 'стандартные товары';
-    SELECT category_id INTO med_cat_id FROM app.taxable_categories WHERE category_name = 'медицинские товары';
 
     -- reg-a: стандартные 20%, медицинские 0%
-    INSERT INTO app.regions_taxable_categories (region_id, category_id, vat_rate) VALUES
-    (reg_a_id, std_cat_id, 20),
-    (reg_a_id, med_cat_id, 0)
-    ON CONFLICT (region_id, category_id) DO UPDATE SET vat_rate = EXCLUDED.vat_rate;
+    IF NOT EXISTS (SELECT 1 FROM app.regions_taxable_categories WHERE region_id = reg_a_id AND category_name = 'стандартные товары') THEN
+        INSERT INTO app.regions_taxable_categories (region_id, category_name, vat_rate) VALUES (reg_a_id, 'стандартные товары', 20);
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM app.regions_taxable_categories WHERE region_id = reg_a_id AND category_name = 'медицинские товары') THEN
+        INSERT INTO app.regions_taxable_categories (region_id, category_name, vat_rate) VALUES (reg_a_id, 'медицинские товары', 0);
+    END IF;
 
     -- reg-b: стандартные 15%, медицинские 5%
-    INSERT INTO app.regions_taxable_categories (region_id, category_id, vat_rate) VALUES
-    (reg_b_id, std_cat_id, 15),
-    (reg_b_id, med_cat_id, 5)
-    ON CONFLICT (region_id, category_id) DO UPDATE SET vat_rate = EXCLUDED.vat_rate;
+    IF NOT EXISTS (SELECT 1 FROM app.regions_taxable_categories WHERE region_id = reg_b_id AND category_name = 'стандартные товары') THEN
+        INSERT INTO app.regions_taxable_categories (region_id, category_name, vat_rate) VALUES (reg_b_id, 'стандартные товары', 15);
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM app.regions_taxable_categories WHERE region_id = reg_b_id AND category_name = 'медицинские товары') THEN
+        INSERT INTO app.regions_taxable_categories (region_id, category_name, vat_rate) VALUES (reg_b_id, 'медицинские товары', 5);
+    END IF;
 
     -- reg-c: стандартные 17%, медицинские 5%
-    INSERT INTO app.regions_taxable_categories (region_id, category_id, vat_rate) VALUES
-    (reg_c_id, std_cat_id, 17),
-    (reg_c_id, med_cat_id, 5)
-    ON CONFLICT (region_id, category_id) DO UPDATE SET vat_rate = EXCLUDED.vat_rate;
+    IF NOT EXISTS (SELECT 1 FROM app.regions_taxable_categories WHERE region_id = reg_c_id AND category_name = 'стандартные товары') THEN
+        INSERT INTO app.regions_taxable_categories (region_id, category_name, vat_rate) VALUES (reg_c_id, 'стандартные товары', 17);
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM app.regions_taxable_categories WHERE region_id = reg_c_id AND category_name = 'медицинские товары') THEN
+        INSERT INTO app.regions_taxable_categories (region_id, category_name, vat_rate) VALUES (reg_c_id, 'медицинские товары', 5);
+    END IF;
 END $$;
 
 -- ===========================================
@@ -230,7 +227,8 @@ DECLARE
     std_cat_id INTEGER;
 BEGIN
     SELECT region_id INTO reg_b_id FROM app.regions WHERE region_name = 'reg-b';
-    SELECT category_id INTO std_cat_id FROM app.taxable_categories WHERE category_name = 'стандартные товары';
+    SELECT id INTO std_cat_id FROM app.regions_taxable_categories 
+    WHERE region_id = reg_b_id AND category_name = 'стандартные товары';
 
     INSERT INTO app.product_regions (product_id, region_id, taxable_category_id, created_by) VALUES
     ('a1111111-1111-1111-1111-111111111111', reg_b_id, std_cat_id, 'c2cbae6f-89b9-4fa8-be9b-a8391526ead7'),
@@ -356,7 +354,8 @@ DECLARE
     med_cat_id INTEGER;
 BEGIN
     SELECT region_id INTO reg_b_id FROM app.regions WHERE region_name = 'reg-b';
-    SELECT category_id INTO med_cat_id FROM app.taxable_categories WHERE category_name = 'медицинские товары';
+    SELECT id INTO med_cat_id FROM app.regions_taxable_categories 
+    WHERE region_id = reg_b_id AND category_name = 'медицинские товары';
 
     INSERT INTO app.product_regions (product_id, region_id, taxable_category_id, created_by) VALUES
     ('b1111111-1111-1111-1111-111111111111', reg_b_id, med_cat_id, '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
@@ -466,38 +465,43 @@ DECLARE
     reg_a_id INTEGER;
     reg_b_id INTEGER;
     reg_c_id INTEGER;
-    std_cat_id INTEGER;
+    reg_a_std_id INTEGER;
+    reg_b_std_id INTEGER;
+    reg_c_std_id INTEGER;
 BEGIN
     SELECT region_id INTO reg_a_id FROM app.regions WHERE region_name = 'reg-a';
     SELECT region_id INTO reg_b_id FROM app.regions WHERE region_name = 'reg-b';
     SELECT region_id INTO reg_c_id FROM app.regions WHERE region_name = 'reg-c';
-    SELECT category_id INTO std_cat_id FROM app.taxable_categories WHERE category_name = 'стандартные товары';
+    
+    SELECT id INTO reg_a_std_id FROM app.regions_taxable_categories WHERE region_id = reg_a_id AND category_name = 'стандартные товары';
+    SELECT id INTO reg_b_std_id FROM app.regions_taxable_categories WHERE region_id = reg_b_id AND category_name = 'стандартные товары';
+    SELECT id INTO reg_c_std_id FROM app.regions_taxable_categories WHERE region_id = reg_c_id AND category_name = 'стандартные товары';
 
     INSERT INTO app.product_regions (product_id, region_id, taxable_category_id, created_by) VALUES
-    ('c1111111-1111-1111-1111-111111111111', reg_a_id, std_cat_id, '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
-    ('c1111111-1111-1111-1111-111111111111', reg_b_id, std_cat_id, '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
-    ('c1111111-1111-1111-1111-111111111111', reg_c_id, std_cat_id, '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
-    ('c2222222-2222-2222-2222-222222222222', reg_a_id, std_cat_id, '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
-    ('c2222222-2222-2222-2222-222222222222', reg_b_id, std_cat_id, '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
-    ('c2222222-2222-2222-2222-222222222222', reg_c_id, std_cat_id, '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
-    ('c3333333-3333-3333-3333-333333333333', reg_a_id, std_cat_id, '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
-    ('c3333333-3333-3333-3333-333333333333', reg_b_id, std_cat_id, '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
-    ('c3333333-3333-3333-3333-333333333333', reg_c_id, std_cat_id, '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
-    ('c4444444-4444-4444-4444-444444444444', reg_a_id, std_cat_id, '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
-    ('c4444444-4444-4444-4444-444444444444', reg_b_id, std_cat_id, '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
-    ('c4444444-4444-4444-4444-444444444444', reg_c_id, std_cat_id, '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
-    ('c5555555-5555-5555-5555-555555555555', reg_a_id, std_cat_id, '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
-    ('c5555555-5555-5555-5555-555555555555', reg_b_id, std_cat_id, '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
-    ('c5555555-5555-5555-5555-555555555555', reg_c_id, std_cat_id, '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
-    ('c6666666-6666-6666-6666-666666666666', reg_a_id, std_cat_id, '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
-    ('c6666666-6666-6666-6666-666666666666', reg_b_id, std_cat_id, '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
-    ('c6666666-6666-6666-6666-666666666666', reg_c_id, std_cat_id, '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
-    ('c7777777-7777-7777-7777-777777777777', reg_a_id, std_cat_id, '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
-    ('c7777777-7777-7777-7777-777777777777', reg_b_id, std_cat_id, '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
-    ('c7777777-7777-7777-7777-777777777777', reg_c_id, std_cat_id, '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
-    ('c8888888-8888-8888-8888-888888888888', reg_a_id, std_cat_id, '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
-    ('c8888888-8888-8888-8888-888888888888', reg_b_id, std_cat_id, '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
-    ('c8888888-8888-8888-8888-888888888888', reg_c_id, std_cat_id, '7ef9dce8-c832-40fe-a6ef-85afff37c474')
+    ('c1111111-1111-1111-1111-111111111111', reg_a_id, reg_a_std_id, '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
+    ('c1111111-1111-1111-1111-111111111111', reg_b_id, reg_b_std_id, '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
+    ('c1111111-1111-1111-1111-111111111111', reg_c_id, reg_c_std_id, '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
+    ('c2222222-2222-2222-2222-222222222222', reg_a_id, reg_a_std_id, '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
+    ('c2222222-2222-2222-2222-222222222222', reg_b_id, reg_b_std_id, '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
+    ('c2222222-2222-2222-2222-222222222222', reg_c_id, reg_c_std_id, '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
+    ('c3333333-3333-3333-3333-333333333333', reg_a_id, reg_a_std_id, '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
+    ('c3333333-3333-3333-3333-333333333333', reg_b_id, reg_b_std_id, '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
+    ('c3333333-3333-3333-3333-333333333333', reg_c_id, reg_c_std_id, '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
+    ('c4444444-4444-4444-4444-444444444444', reg_a_id, reg_a_std_id, '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
+    ('c4444444-4444-4444-4444-444444444444', reg_b_id, reg_b_std_id, '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
+    ('c4444444-4444-4444-4444-444444444444', reg_c_id, reg_c_std_id, '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
+    ('c5555555-5555-5555-5555-555555555555', reg_a_id, reg_a_std_id, '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
+    ('c5555555-5555-5555-5555-555555555555', reg_b_id, reg_b_std_id, '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
+    ('c5555555-5555-5555-5555-555555555555', reg_c_id, reg_c_std_id, '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
+    ('c6666666-6666-6666-6666-666666666666', reg_a_id, reg_a_std_id, '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
+    ('c6666666-6666-6666-6666-666666666666', reg_b_id, reg_b_std_id, '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
+    ('c6666666-6666-6666-6666-666666666666', reg_c_id, reg_c_std_id, '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
+    ('c7777777-7777-7777-7777-777777777777', reg_a_id, reg_a_std_id, '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
+    ('c7777777-7777-7777-7777-777777777777', reg_b_id, reg_b_std_id, '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
+    ('c7777777-7777-7777-7777-777777777777', reg_c_id, reg_c_std_id, '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
+    ('c8888888-8888-8888-8888-888888888888', reg_a_id, reg_a_std_id, '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
+    ('c8888888-8888-8888-8888-888888888888', reg_b_id, reg_b_std_id, '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
+    ('c8888888-8888-8888-8888-888888888888', reg_c_id, reg_c_std_id, '7ef9dce8-c832-40fe-a6ef-85afff37c474')
     ON CONFLICT (product_id, region_id) DO UPDATE SET
         taxable_category_id = EXCLUDED.taxable_category_id;
 END $$;
