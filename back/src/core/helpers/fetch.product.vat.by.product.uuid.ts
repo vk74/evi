@@ -69,7 +69,7 @@ export async function fetchProductsVatByProductUuids(
       INNER JOIN app.regions r ON pr.region_id = r.region_id
       INNER JOIN app.regions_taxable_categories rtc 
         ON pr.region_id = rtc.region_id 
-        AND pr.taxable_category_id = rtc.category_id
+        AND pr.taxable_category_id = rtc.id
       WHERE pr.product_id = ANY($1::uuid[]) 
         AND r.region_id = $2
     `
