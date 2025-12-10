@@ -1,52 +1,15 @@
 <!--
-Version: 1.6.0
+Version: 1.8.0
 VAT rates assignment component for pricing administration module.
 Each category row can have only one active marker (displayed as check mark chip).
 Filename: PricingTaxRegions.vue
 
-Changes in v1.1.0:
-- Replaced checkboxes with marker chips displaying "1"
-- Added hover placeholder with plus icon for empty cells
-- Removed "+" from "ADD % RATE" button text
-
-Changes in v1.2.0:
-- Replaced "1" marker with check mark icon
-
-Changes in v1.3.0:
-- Added region selector dropdown in header
-- Changed title to "regions, categories and taxes"
-- Changed "Category" column header to "categories" (lowercase)
-- Added region-specific data storage (each region has its own categories and VAT rate columns)
-- Implemented region switching functionality
-
-Changes in v1.4.0:
-- Integrated with backend API for data loading and saving
-- Added fetchTaxRegions service for loading regions, categories and bindings
-- Added updateTaxRegions service for saving bindings
-- Replaced mock data with API-based data loading
-- Added loading and error states
-- Implemented data transformation between DB format and component format
-
-Changes in v1.4.1:
-- Fixed region data loading: now converts data dynamically per region instead of caching all at once
-- Fixed category filtering: ensures correct categories and VAT rates are shown for each selected region
-- Changed to store raw data and convert on-demand when region is selected
-
-Changes in v1.4.2:
-- Fixed category filtering logic to respect "1 category always binds to 1 region" rule
-- Categories bound to other regions are now hidden from the current region view
-- Only categories bound to the current region or unbound categories are displayed
-
-Changes in v1.5.0:
-- Replaced all hardcoded texts with i18n translations
-- Added useI18n hook for translations
-- Added translations for title, table headers, action buttons, error messages, tooltips
-- All user-facing texts now use translation keys
-
-Changes in v1.6.0:
-- Added sidebar panel on the right side
-- Moved action buttons (ADD RATE, CANCEL, UPDATE) to sidebar
-- Updated layout to use flexbox with main content area and sidebar
+Changes in v1.8.0:
+- Refactored to support merged database structure (app.regions_taxable_categories)
+- Categories are now managed directly within regions
+- "Category" name is editable
+- Updated data loading and saving logic to match new API
+- Removed global categories concept
 -->
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue';
@@ -69,17 +32,19 @@ interface Region {
   name: string;
 }
 
-// Category interface
+// Category interface (Row in the table)
 interface Category {
-  id: number;
+  id: number; // Positive for existing, negative for new
   name: string;
-  [key: string]: boolean | any; // Stores checkbox state per column
+  _delete?: boolean; // Flag for marking category for deletion
+  vat_rate: number | null; // The selected VAT rate
+  [key: string]: any; // For dynamic column bindings (e.g. vatRate_20: true)
 }
 
 // Dynamic VAT rate column interface
 interface VATRateColumn {
-  id: string;
-  header: string;
+  id: string; // e.g. "vatRate_20"
+  header: string; // e.g. "20%"
   value: number; // 0-99
   width: string;
 }
@@ -101,11 +66,17 @@ const regions = ref<Region[]>([]);
 // Currently selected region
 const selectedRegion = ref<number | null>(null);
 
-// Store raw data from API (for dynamic conversion per region)
+// Store raw data from API
+interface RawBinding {
+  id: number;
+  region_id: number;
+  category_name: string;
+  vat_rate: number | null;
+}
+
 interface RawData {
   regions: Array<{ region_id: number; region_name: string }>;
-  categories: Array<{ category_id: number; category_name: string }>;
-  bindings: Array<{ region_id: number; category_id: number; vat_rate: number | null }>;
+  bindings: RawBinding[];
 }
 const rawData = ref<RawData | null>(null);
 
@@ -115,7 +86,7 @@ const regionData = ref<Record<number, RegionData>>({});
 // Current region's categories (active view)
 const categories = ref<Category[]>([]);
 
-// Empty row for table footer
+// Empty row for table footer (for adding columns)
 const emptyRow = ref<Category | null>(null);
 
 // Current region's dynamic VAT rate columns (active view)
@@ -128,16 +99,106 @@ interface VATRatesSnapshot {
 }
 const vatRatesOriginal = ref<VATRatesSnapshot | null>(null);
 
+// Track new (unsaved) categories with temporary negative IDs
+let nextTempCategoryId = -2;
+
+/**
+ * Check if category is new (not yet saved to database)
+ */
+function isNewCategory(categoryId: number): boolean {
+  return categoryId < 0;
+}
+
+/**
+ * Validate category name format (letters of any alphabet, spaces, and hyphens)
+ */
+function validateCategoryNameFormat(name: string): { isValid: boolean; error?: string } {
+  if (!name || name.trim().length === 0) {
+    return { isValid: true };
+  }
+  
+  const trimmedName = name.trim();
+  
+  if (trimmedName.length > 100) {
+    return {
+      isValid: false,
+      error: t('admin.pricing.tax.taxableCategories.validation.maxLength') || 'Max length is 100 characters'
+    };
+  }
+  
+  // Basic validation: allow letters, numbers, spaces, hyphens, parentheses
+  const validPattern = /^[\p{L}\p{N}\s\-()]+$/u;
+  
+  if (!validPattern.test(trimmedName)) {
+    return {
+      isValid: false,
+      error: t('admin.pricing.tax.taxableCategories.validation.format') || 'Invalid format'
+    };
+  }
+  
+  return { isValid: true };
+}
+
+/**
+ * Add new category - add locally
+ */
+function addCategory(): void {
+  if (selectedRegion.value === null) {
+    return;
+  }
+  
+  // Add temporary category with negative ID
+  const newCategory: Category = {
+    id: nextTempCategoryId--,
+    name: '',
+    vat_rate: null,
+    _delete: false
+  };
+  
+  // Initialize all VAT rate columns to false
+  vatRateColumns.value.forEach(column => {
+    newCategory[column.id] = false;
+  });
+  
+  // Insert at the beginning of the list
+  categories.value.unshift(newCategory);
+}
+
+/**
+ * Update category name locally
+ */
+function updateCategoryName(category: Category, newName: string): void {
+  // Update local state
+  category.name = newName; // Allow typing anything, validate on save or blur
+}
+
+/**
+ * Remove category locally (mark for deletion)
+ */
+function removeCategory(categoryId: number): void {
+  const category = categories.value.find(c => c.id === categoryId);
+  if (category) {
+    if (isNewCategory(categoryId)) {
+      const index = categories.value.findIndex(c => c.id === categoryId);
+      if (index > -1) {
+        categories.value.splice(index, 1);
+      }
+    } else {
+      category._delete = true;
+    }
+  }
+}
+
 /**
  * Initialize component with empty row
  */
 function initializeEmptyRow(): void {
   emptyRow.value = {
     id: -1,
-    name: ''
+    name: '',
+    vat_rate: null
   };
   
-  // Initialize empty values for dynamic columns in empty row
   vatRateColumns.value.forEach(column => {
     if (emptyRow.value) {
       emptyRow.value[column.id] = false;
@@ -149,9 +210,13 @@ function initializeEmptyRow(): void {
  * Create snapshot of current VAT rates state for change tracking
  */
 function createVATRatesSnapshot(): void {
+  // Deep copy to break references
+  const categoriesCopy = categories.value.map(c => ({...c}));
+  const columnsCopy = vatRateColumns.value.map(c => ({...c}));
+  
   vatRatesOriginal.value = {
-    categories: JSON.parse(JSON.stringify(categories.value)),
-    vatRateColumns: JSON.parse(JSON.stringify(vatRateColumns.value))
+    categories: categoriesCopy,
+    vatRateColumns: columnsCopy
   };
 }
 
@@ -171,36 +236,13 @@ function saveCurrentRegionData(): void {
 
 /**
  * Convert database bindings data to component format
- * Creates VAT rate columns from unique VAT rates and fills checkbox states
  */
 function convertBindingsToComponentFormat(
-  allCategories: Array<{ category_id: number; category_name: string }>,
-  bindings: Array<{ region_id: number; category_id: number; vat_rate: number | null }>,
+  bindings: RawBinding[],
   regionId: number
 ): RegionData {
   const currentRegionId = Number(regionId);
-  
-  // Get bindings for this region - ensure strict type comparison
   const regionBindings = bindings.filter(b => Number(b.region_id) === currentRegionId);
-  
-  // Get set of category IDs bound to THIS region
-  const thisRegionCategoryIds = new Set(regionBindings.map(b => b.category_id));
-  
-  // Get set of category IDs bound to ANY region
-  const allBoundCategoryIds = new Set(bindings.map(b => b.category_id));
-  
-  // Filter categories: show only if bound to this region OR not bound to any region
-  // This enforces "1 category always binds to 1 region" logic
-  const validCategories = allCategories.filter(cat => {
-    // 1. If bound to this region -> SHOW
-    if (thisRegionCategoryIds.has(cat.category_id)) return true;
-    
-    // 2. If NOT bound to ANY region -> SHOW (Available for assignment)
-    if (!allBoundCategoryIds.has(cat.category_id)) return true;
-    
-    // 3. If bound to another region -> HIDE
-    return false;
-  });
   
   // Get unique VAT rates for this region (excluding null)
   const uniqueVatRates = Array.from(new Set(
@@ -219,10 +261,11 @@ function convertBindingsToComponentFormat(
   }));
   
   // Create categories with checkbox states
-  const categories: Category[] = validCategories.map(category => {
+  const categories: Category[] = regionBindings.map(binding => {
     const categoryData: Category = {
-      id: category.category_id,
-      name: category.category_name
+      id: binding.id,
+      name: binding.category_name,
+      vat_rate: binding.vat_rate
     };
     
     // Initialize all columns to false
@@ -230,12 +273,9 @@ function convertBindingsToComponentFormat(
       categoryData[col.id] = false;
     });
     
-    // Find binding for this category in this region
-    const binding = regionBindings.find(b => b.category_id === category.category_id);
-    if (binding && binding.vat_rate !== null && binding.vat_rate !== undefined) {
-      const vatRateValue = Number(binding.vat_rate);
-      const columnId = `vatRate_${vatRateValue}`;
-      // Mark the checkbox as checked
+    // Mark the checked column
+    if (binding.vat_rate !== null && binding.vat_rate !== undefined) {
+      const columnId = `vatRate_${binding.vat_rate}`;
       categoryData[columnId] = true;
     }
     
@@ -249,52 +289,28 @@ function convertBindingsToComponentFormat(
 }
 
 /**
- * Load or initialize region data - convert from raw data or use cached (with unsaved changes)
- * Always converts from raw data if available to ensure correct data for each region
+ * Load or initialize region data
  */
 function loadRegionData(regionId: number): void {
-  // Always convert from raw data if available (ensures fresh and correct data for each region)
   if (rawData.value) {
-    // Filter bindings strictly for this region
-    const regionBindings = rawData.value.bindings.filter(b => b.region_id === regionId);
-    
     const componentData = convertBindingsToComponentFormat(
-      rawData.value.categories,
       rawData.value.bindings,
       regionId
     );
-    
-    // Always update cache with fresh converted data from rawData for this specific region
     regionData.value[regionId] = componentData;
-    
-    console.log(`Loading data for region ${regionId}:`, {
-      categoriesCount: componentData.categories.length,
-      vatRateColumnsCount: componentData.vatRateColumns.length,
-      bindingsForRegion: regionBindings.length,
-      regionBindings: regionBindings.map(b => ({ category_id: b.category_id, vat_rate: b.vat_rate }))
-    });
   } else if (!regionData.value[regionId]) {
-    // If no raw data and no cache, initialize with empty data
     regionData.value[regionId] = {
       categories: [],
       vatRateColumns: []
     };
   }
   
-  // Load region data into active view (always use cached version which is fresh from rawData)
-  const data = regionData.value[regionId] || {
-    categories: [],
-    vatRateColumns: []
-  };
+  const data = regionData.value[regionId];
   
-  // Clear current state and load fresh data
   categories.value = JSON.parse(JSON.stringify(data.categories));
   vatRateColumns.value = JSON.parse(JSON.stringify(data.vatRateColumns));
   
-  // Re-initialize empty row with current columns
   initializeEmptyRow();
-  
-  // Create snapshot for change tracking
   createVATRatesSnapshot();
 }
 
@@ -302,11 +318,8 @@ function loadRegionData(regionId: number): void {
  * Handle region change
  */
 function onRegionChange(regionId: number | null): void {
-  if (regionId === null) {
-    return;
-  }
+  if (regionId === null) return;
   
-  // Save current region's data before switching
   if (selectedRegion.value !== null) {
     saveCurrentRegionData();
   }
@@ -337,12 +350,10 @@ function addVATRateColumn(): void {
     width: '70px'
   });
   
-  // Initialize empty values for all categories
   categories.value.forEach(category => {
     category[newColumnId] = false;
   });
   
-  // Initialize empty value for empty row if it exists
   if (emptyRow.value) {
     emptyRow.value[newColumnId] = false;
   }
@@ -363,40 +374,35 @@ function updateColumnValue(columnId: string, value: string): void {
   const column = vatRateColumns.value.find(c => c.id === columnId);
   if (!column) return;
   
-  // Allow empty value for editing
   if (value === '') {
     column.value = 0;
     column.header = '%';
     return;
   }
   
-  // Validate: only digits
-  if (!/^\d+$/.test(value)) {
-    return; // Don't update if not digits
-  }
+  if (!/^\d+$/.test(value)) return;
   
   const numValue = parseInt(value);
-  
-  // Validate: must be number between 0 and 99
-  if (isNaN(numValue) || numValue < 0 || numValue > 99) {
-    return; // Don't update if out of range
-  }
+  if (isNaN(numValue) || numValue < 0 || numValue > 99) return;
   
   column.value = numValue;
   column.header = `${numValue}%`;
+  
+  // Update category.vat_rate for any checked categories in this column
+  categories.value.forEach(cat => {
+    if (cat[columnId]) {
+      cat.vat_rate = numValue;
+    }
+  });
 }
 
 /**
  * Handle input event for column header
  */
 function handleColumnInput(columnId: string, value: string): void {
-  // Remove any non-digit characters
   const digitsOnly = value.replace(/\D/g, '');
-  
-  // Limit to 2 digits (max 99, including 0)
   const limitedValue = digitsOnly.slice(0, 2);
   
-  // Update the input field value directly if it was changed
   const inputElement = document.querySelector(`input[data-column-id="${columnId}"]`) as HTMLInputElement;
   if (inputElement && inputElement.value !== limitedValue) {
     inputElement.value = limitedValue;
@@ -411,15 +417,18 @@ function handleColumnInput(columnId: string, value: string): void {
 function deleteVATRateColumn(columnId: string): void {
   const columnIndex = vatRateColumns.value.findIndex(c => c.id === columnId);
   if (columnIndex !== -1) {
-    // Remove column from array
-    vatRateColumns.value.splice(columnIndex, 1);
+    const column = vatRateColumns.value[columnIndex];
     
-    // Remove column data from all categories
+    // Unbind items that had this rate
     categories.value.forEach(category => {
+      if (category[columnId]) {
+        category.vat_rate = null;
+      }
       delete category[columnId];
     });
     
-    // Remove column data from empty row
+    vatRateColumns.value.splice(columnIndex, 1);
+    
     if (emptyRow.value) {
       delete emptyRow.value[columnId];
     }
@@ -428,82 +437,42 @@ function deleteVATRateColumn(columnId: string): void {
 
 /**
  * Toggle checkbox for category/column combination
- * Ensures only one checkbox is active per row
  */
 function toggleCategoryVATRate(category: Category, columnId: string): void {
   const currentValue = category[columnId] as boolean;
+  const column = vatRateColumns.value.find(c => c.id === columnId);
   
-  // If clicking the same checkbox, toggle it off
   if (currentValue === true) {
     category[columnId] = false;
+    category.vat_rate = null;
   } else {
-    // Uncheck all other checkboxes in this row
+    // Uncheck all other checkboxes
     vatRateColumns.value.forEach(col => {
       category[col.id] = false;
     });
     
-    // Check the clicked checkbox
     category[columnId] = true;
+    if (column) {
+      category.vat_rate = column.value;
+    }
   }
 }
 
 /**
- * Get checkbox state for category/column
- */
-function getCheckboxState(category: Category, columnId: string): boolean {
-  return category[columnId] === true;
-}
-
-/**
- * Cancel changes - reset to initial state
+ * Cancel changes
  */
 function cancelChanges(): void {
-  if (!vatRatesOriginal.value) {
-    return;
-  }
+  if (!vatRatesOriginal.value) return;
   
   const original = vatRatesOriginal.value;
-  
-  // Restore categories
   categories.value = JSON.parse(JSON.stringify(original.categories));
-  
-  // Restore VAT rate columns
   vatRateColumns.value = JSON.parse(JSON.stringify(original.vatRateColumns));
+  nextTempCategoryId = -2;
   
-  // Update regionData storage to match restored state
   if (selectedRegion.value !== null) {
     saveCurrentRegionData();
   }
-  
-  // Re-initialize empty row with current columns
   initializeEmptyRow();
-}
-
-/**
- * Convert component format to API bindings format
- * Creates bindings array from current categories and columns state
- */
-function convertComponentToBindingsFormat(): Array<{ category_id: number; vat_rate: number | null }> {
-  const bindings: Array<{ category_id: number; vat_rate: number | null }> = [];
-  
-  categories.value.forEach(category => {
-    // Find which column (VAT rate) is checked for this category
-    let selectedVatRate: number | null = null;
-    
-    vatRateColumns.value.forEach(column => {
-      if (category[column.id] === true) {
-        selectedVatRate = column.value;
-      }
-    });
-    
-    // Add binding (null means no binding/delete)
-    bindings.push({
-      category_id: category.id,
-      vat_rate: selectedVatRate
-    });
-  });
-  
-  return bindings;
 }
 
 /**
@@ -516,37 +485,31 @@ async function loadAllData(): Promise<void> {
   try {
     const data = await fetchTaxRegions();
     
-    if (!data) {
-      throw new Error(t('admin.pricing.tax.regionsTaxes.messages.loadError'));
-    }
+    if (!data) throw new Error(t('admin.pricing.tax.regionsTaxes.messages.loadError'));
     
-    // Store raw data for dynamic conversion
     rawData.value = {
       regions: data.regions,
-      categories: data.categories,
-      bindings: data.bindings
+      bindings: data.bindings as any // Cast to match new structure
     };
     
-    // Convert regions
     regions.value = data.regions.map(r => ({
       id: r.region_id,
       name: r.region_name
     }));
     
-    // Clear region data cache - will be populated on demand when region is selected
     regionData.value = {};
     
-    // Load first region if available
     if (regions.value.length > 0) {
-      selectedRegion.value = regions.value[0].id;
-      loadRegionData(regions.value[0].id);
+      const currentRegionId = selectedRegion.value;
+      const regionExists = currentRegionId !== null && regions.value.some(r => r.id === currentRegionId);
+      
+      if (regionExists && currentRegionId !== null) {
+        loadRegionData(currentRegionId);
+      } else {
+        selectedRegion.value = regions.value[0].id;
+        loadRegionData(regions.value[0].id);
+      }
     }
-    
-    console.log('Tax regions data loaded successfully:', {
-      regions: regions.value.length,
-      categories: data.categories.length,
-      bindings: data.bindings.length
-    });
   } catch (err) {
     console.error('Failed to load tax regions data:', err);
     error.value = err instanceof Error ? err.message : t('admin.pricing.tax.regionsTaxes.messages.loadError');
@@ -564,51 +527,87 @@ async function retryLoadData(): Promise<void> {
 }
 
 /**
- * Update changes - save to backend via API
+ * Update changes - save to backend
  */
 async function updateChanges(): Promise<void> {
-  if (selectedRegion.value === null) {
-    return;
-  }
+  if (selectedRegion.value === null) return;
   
   isSaving.value = true;
   
   try {
-    // Convert component format to API format
-    const bindings = convertComponentToBindingsFormat();
-    
-    // Save via API
-    await updateTaxRegions(selectedRegion.value, bindings);
-    
-    // Reload data to get fresh state from server
+    // Filter out deleted categories and empty ones that were just added
+    const validCategories = categories.value.filter(c => {
+        // If new and empty name -> ignore (don't save)
+        if (isNewCategory(c.id) && (!c.name || !c.name.trim())) return false;
+        return true;
+    });
+
+    // Validate
+    const bindings = [];
+    for (const cat of validCategories) {
+        if (cat._delete) {
+            // Only send delete for existing categories
+            if (!isNewCategory(cat.id)) {
+                bindings.push({
+                    id: cat.id,
+                    category_name: cat.name,
+                    vat_rate: null,
+                    _delete: true
+                });
+            }
+            continue;
+        }
+
+        const trimmedName = cat.name ? cat.name.trim() : '';
+        if (!trimmedName) {
+            throw new Error(t('admin.pricing.tax.taxableCategories.validation.empty') || 'Category name cannot be empty');
+        }
+        
+        // Validate format
+        const formatValidation = validateCategoryNameFormat(trimmedName);
+        if (!formatValidation.isValid) {
+            throw new Error(formatValidation.error);
+        }
+
+        // Must have VAT rate
+        if (cat.vat_rate === null || cat.vat_rate === undefined) {
+             throw new Error(t('admin.pricing.tax.regionsTaxes.validation.categoryWithoutVatRate', { categories: trimmedName }) || `Category ${trimmedName} must have a VAT rate`);
+        }
+
+        bindings.push({
+            id: isNewCategory(cat.id) ? undefined : cat.id,
+            category_name: trimmedName,
+            vat_rate: cat.vat_rate
+        });
+    }
+
+    if (bindings.length > 0) {
+        await updateTaxRegions(selectedRegion.value, bindings);
+    }
+
+    // Reload data
     await loadAllData();
     
-    // Update snapshot after successful save
+    // Update snapshot
     createVATRatesSnapshot();
+    nextTempCategoryId = -2;
+
   } catch (err) {
     console.error('Failed to update tax regions:', err);
-    uiStore.showErrorSnackbar(t('admin.pricing.tax.regionsTaxes.messages.updateError'));
+    uiStore.showErrorSnackbar(err instanceof Error ? err.message : 'Update failed');
   } finally {
     isSaving.value = false;
   }
 }
 
 /**
- * Table headers for VAT rates table
+ * Table headers
  */
-interface TableHeader {
-  title: string | any;
-  key: string;
-  width?: string;
-  sortable?: boolean;
-}
-
 const vatRatesTableHeaders = computed<TableHeader[]>(() => {
   const headers: TableHeader[] = [
-    { title: t('admin.pricing.tax.regionsTaxes.table.headers.categories'), key: 'name', width: '140px' }
+    { title: t('admin.pricing.tax.regionsTaxes.table.headers.categories'), key: 'name', width: '280px' }
   ];
   
-  // Add dynamic VAT rate columns
   vatRateColumns.value.forEach(column => {
     headers.push({
       title: column.header || '%',
@@ -618,14 +617,22 @@ const vatRatesTableHeaders = computed<TableHeader[]>(() => {
     });
   });
   
+  headers.push({
+    title: '',
+    key: 'actions',
+    width: '100px',
+    sortable: false
+  });
+  
   return headers;
 });
 
 /**
- * Table items including categories and empty row
+ * Table items
  */
 const tableItems = computed<Category[]>(() => {
-  const items = [...categories.value];
+  const activeCategories = categories.value.filter(cat => !cat._delete && cat.id !== -1);
+  const items: Category[] = [...activeCategories];
   if (emptyRow.value) {
     items.push(emptyRow.value);
   }
@@ -633,66 +640,48 @@ const tableItems = computed<Category[]>(() => {
 });
 
 /**
- * Check if there are pending changes compared to original state
+ * Check if there are pending changes
  */
 const hasPendingChanges = computed(() => {
-  if (!vatRatesOriginal.value) {
-    return false;
-  }
+  if (!vatRatesOriginal.value) return false;
   
   const original = vatRatesOriginal.value;
   
-  // Check vatRateColumns (length and content)
-  if (original.vatRateColumns.length !== vatRateColumns.value.length) {
-    return true;
-  }
-  
-  // Check each column - all original columns must exist in current state
+  // Check VAT columns
+  if (original.vatRateColumns.length !== vatRateColumns.value.length) return true;
   for (const orig of original.vatRateColumns) {
     const current = vatRateColumns.value.find(c => c.id === orig.id);
-    if (!current || current.value !== orig.value || current.header !== orig.header) {
-      return true;
-    }
+    if (!current || current.value !== orig.value) return true;
   }
-  
-  // Check that all current columns exist in original (handles new columns)
   for (const current of vatRateColumns.value) {
-    const orig = original.vatRateColumns.find(c => c.id === current.id);
-    if (!orig) {
-      return true;
-    }
+    if (!original.vatRateColumns.find(c => c.id === current.id)) return true;
   }
   
-  // Check categories (length and content)
-  if (original.categories.length !== categories.value.length) {
-    return true;
+  // Check categories
+  const activeCategories = categories.value.filter(cat => !cat._delete);
+  const originalActive = original.categories.filter(cat => !cat._delete);
+  
+  if (activeCategories.length !== originalActive.length) return true;
+  
+  for (const current of activeCategories) {
+    const orig = originalActive.find(c => c.id === current.id);
+    if (!orig) return true; // Added or new
+    
+    if (isNewCategory(current.id)) return true; // All new are changes
+    
+    if (orig.name !== current.name) return true;
+    if (orig.vat_rate !== current.vat_rate) return true;
   }
   
-  // Check each category
-  for (let i = 0; i < categories.value.length; i++) {
-    const current = categories.value[i];
-    const orig = original.categories.find(c => c.id === current.id);
-    
-    if (!orig) {
-      return true;
-    }
-    
-    // Check all dynamic columns from both original and current state
-    const originalColumnIds = new Set([...original.vatRateColumns.map(c => c.id)]);
-    const currentColumnIds = new Set([...vatRateColumns.value.map(c => c.id)]);
-    const allColumnIds = new Set([...originalColumnIds, ...currentColumnIds]);
-    
-    for (const colId of allColumnIds) {
-      if (orig[colId] !== current[colId]) {
-        return true;
-      }
-    }
+  // Check deleted
+  for (const orig of originalActive) {
+    if (!activeCategories.find(c => c.id === orig.id)) return true;
   }
   
   return false;
 });
 
-// Initialize component - load data from API
+// Initialize
 onMounted(() => {
   loadAllData();
 });
@@ -709,26 +698,16 @@ onMounted(() => {
               {{ t('admin.pricing.tax.regionsTaxes.title') }}
             </h3>
             <div class="d-flex align-center">
-              <v-tooltip
-                v-if="error"
-                location="top"
-                max-width="300"
-              >
+              <v-tooltip v-if="error" location="top" max-width="300">
                 <template #activator="{ props }">
                   <span v-bind="props" style="cursor: pointer;" @click="retryLoadData" class="me-2">
                     <PhWarningCircle :size="16" />
                   </span>
                 </template>
                 <div class="pa-2">
-                  <p class="text-subtitle-2 mb-2">
-                    {{ t('admin.pricing.tax.regionsTaxes.tooltips.loadError') }}
-                  </p>
-                  <p class="text-caption">
-                    {{ error }}
-                  </p>
-                  <p class="text-caption mt-1">
-                    {{ t('admin.pricing.tax.regionsTaxes.tooltips.retry') }}
-                  </p>
+                  <p class="text-subtitle-2 mb-2">{{ t('admin.pricing.tax.regionsTaxes.tooltips.loadError') }}</p>
+                  <p class="text-caption">{{ error }}</p>
+                  <p class="text-caption mt-1">{{ t('admin.pricing.tax.regionsTaxes.tooltips.retry') }}</p>
                 </div>
               </v-tooltip>
               <v-select
@@ -748,17 +727,9 @@ onMounted(() => {
             </div>
           </div>
           
-          <!-- Loading state -->
-          <DataLoading
-            v-if="isLoading"
-            :loading="isLoading"
-            size="small"
-          />
+          <DataLoading v-if="isLoading" :loading="isLoading" size="small" />
           
-          <div
-            v-else
-            class="vat-rates-table-wrapper"
-          >
+          <div v-else class="vat-rates-table-wrapper">
             <v-data-table
               :headers="vatRatesTableHeaders"
               :items="tableItems"
@@ -768,7 +739,26 @@ onMounted(() => {
             >
               <!-- Category column -->
               <template #[`item.name`]="{ item }">
-                <span v-if="item.id !== -1" class="category-name">{{ item.name }}</span>
+                <v-text-field
+                  v-if="item.id !== -1"
+                  :model-value="item.name"
+                  variant="plain"
+                  density="compact"
+                  hide-details
+                  class="category-input"
+                  :placeholder="isNewCategory(item.id) ? t('admin.pricing.tax.taxableCategories.placeholder') : ''"
+                  @update:model-value="updateCategoryName(item, $event)"
+                  maxlength="100"
+                />
+              </template>
+              
+              <!-- Actions column -->
+              <template #[`item.actions`]="{ item }">
+                <div v-if="item.id !== -1" class="d-flex justify-center">
+                  <v-btn icon size="small" color="error" variant="text" @click="removeCategory(item.id)">
+                    <PhTrash :size="18" />
+                  </v-btn>
+                </div>
               </template>
               
               <!-- Dynamic VAT rate columns headers -->
@@ -793,13 +783,7 @@ onMounted(() => {
               <template v-for="column in vatRateColumns" :key="`item-${column.id}`" #[`item.${column.id}`]="{ item }">
                 <!-- Delete button in empty row -->
                 <div v-if="item.id === -1" class="d-flex justify-center">
-                  <v-btn
-                    icon
-                    size="small"
-                    variant="text"
-                    color="error"
-                    @click="deleteVATRateColumn(column.id)"
-                  >
+                  <v-btn icon size="small" variant="text" color="error" @click="deleteVATRateColumn(column.id)">
                     <PhTrash :size="16" />
                   </v-btn>
                 </div>
@@ -820,7 +804,6 @@ onMounted(() => {
                     <PhCheck :size="16" />
                   </v-chip>
                   
-                  <!-- Hover placeholder for empty cell -->
                   <div v-else class="empty-cell-placeholder">
                     <PhPlus :size="14" class="placeholder-icon" />
                   </div>
@@ -832,9 +815,22 @@ onMounted(() => {
       </div>
     </div>
 
-    <!-- Sidebar (right column with buttons) -->
+    <!-- Sidebar -->
     <div class="side-bar-container">
       <div class="side-bar-section">
+        <v-btn
+          block
+          color="teal"
+          variant="outlined"
+          class="mb-3"
+          :disabled="isLoading || selectedRegion === null"
+          @click="addCategory"
+        >
+          <template #prepend>
+            <PhPlus :size="16" />
+          </template>
+          {{ t('admin.pricing.tax.taxableCategories.actions.add').toUpperCase() }}
+        </v-btn>
         <v-btn
           block
           color="teal"
@@ -884,7 +880,7 @@ onMounted(() => {
   margin-top: 24px;
 }
 
-/* Settings group styling - matching PricingTax.vue */
+/* Settings group styling */
 .settings-group {
   border: 1px solid rgba(0, 0, 0, 0.12);
   border-radius: 8px;
@@ -909,7 +905,7 @@ onMounted(() => {
   padding: 16px;
 }
 
-/* VAT rates table styles - matching PricingTax.vue */
+/* VAT rates table styles */
 .vat-rates-table-wrapper {
   width: fit-content;
   max-width: 100%;
@@ -954,8 +950,8 @@ onMounted(() => {
 /* Column width constraints */
 .vat-rates-table :deep(.v-data-table__th:nth-child(1)),
 .vat-rates-table :deep(.v-data-table__td:nth-child(1)) {
-  min-width: 100px !important;
-  width: 140px !important;
+  min-width: 200px !important;
+  width: 280px !important;
 }
 
 /* Header bottom separator */
@@ -1070,5 +1066,25 @@ onMounted(() => {
   top: 50%;
   transform: translateY(-50%);
   pointer-events: none;
+}
+
+/* Category input field styles - remove borders */
+.category-input {
+  max-width: 100%;
+}
+
+.category-input :deep(.v-field) {
+  border: none !important;
+  box-shadow: none !important;
+  background: transparent !important;
+  position: relative;
+}
+
+.category-input :deep(.v-field__outline) {
+  display: none !important;
+}
+
+.category-input :deep(.v-field__input) {
+  padding: 0 !important;
 }
 </style>

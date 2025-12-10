@@ -485,167 +485,6 @@ export const queries = {
     `,
 
     // ============================================
-    // Taxable Categories Queries
-    // ============================================
-
-    /**
-     * Fetch all taxable categories with region bindings
-     * No parameters
-     * Returns region_name from app.regions via LEFT JOIN
-     */
-    fetchAllTaxableCategories: `
-        SELECT 
-            tc.category_id,
-            tc.category_name,
-            r.region_name as region,
-            tc.created_at,
-            tc.updated_at
-        FROM app.taxable_categories tc
-        LEFT JOIN app.regions_taxable_categories rtc ON tc.category_id = rtc.category_id
-        LEFT JOIN app.regions r ON rtc.region_id = r.region_id
-        ORDER BY tc.category_name ASC
-    `,
-
-    /**
-     * Insert a new taxable category
-     * Parameters: [category_name]
-     * Note: category_id is generated automatically by database default value
-     */
-    insertTaxableCategory: `
-        INSERT INTO app.taxable_categories (category_name)
-        VALUES ($1)
-        RETURNING category_id, category_name, created_at, updated_at
-    `,
-
-    /**
-     * Update a taxable category by ID
-     * Parameters: [category_name, category_id]
-     */
-    updateTaxableCategory: `
-        UPDATE app.taxable_categories
-        SET category_name = $1,
-            updated_at = NOW()
-        WHERE category_id = $2
-        RETURNING category_id, category_name, created_at, updated_at
-    `,
-
-    /**
-     * Delete taxable categories by array of IDs
-     * Parameters: [category_ids array]
-     */
-    deleteTaxableCategories: `
-        DELETE FROM app.taxable_categories
-        WHERE category_id = ANY($1::integer[])
-        RETURNING category_id, category_name
-    `,
-
-    /**
-     * Check if taxable category name already exists for a specific region
-     * Parameters: [category_name, region_name]
-     * If region_name is NULL, checks for categories not linked to any region
-     * If region_name is provided, checks for categories linked to that specific region
-     */
-    checkTaxableCategoryNameExists: `
-        SELECT tc.category_id, tc.category_name
-        FROM app.taxable_categories tc
-        WHERE LOWER(tc.category_name) = LOWER($1)
-        AND (
-            ($2::VARCHAR IS NULL AND NOT EXISTS (
-                SELECT 1 FROM app.regions_taxable_categories rtc
-                WHERE rtc.category_id = tc.category_id
-            ))
-            OR ($2::VARCHAR IS NOT NULL AND EXISTS (
-                SELECT 1 FROM app.regions_taxable_categories rtc
-                INNER JOIN app.regions r ON rtc.region_id = r.region_id
-                WHERE rtc.category_id = tc.category_id
-                AND r.region_name = $2::VARCHAR
-            ))
-        )
-    `,
-
-    /**
-     * Check if taxable category name exists for a specific region excluding a specific category ID
-     * Parameters: [category_name, region_name, exclude_category_id]
-     * If region_name is NULL, checks for categories not linked to any region
-     * If region_name is provided, checks for categories linked to that specific region
-     */
-    checkTaxableCategoryNameExistsExcluding: `
-        SELECT tc.category_id, tc.category_name
-        FROM app.taxable_categories tc
-        WHERE LOWER(tc.category_name) = LOWER($1)
-        AND tc.category_id != $3
-        AND (
-            ($2::VARCHAR IS NULL AND NOT EXISTS (
-                SELECT 1 FROM app.regions_taxable_categories rtc
-                WHERE rtc.category_id = tc.category_id
-            ))
-            OR ($2::VARCHAR IS NOT NULL AND EXISTS (
-                SELECT 1 FROM app.regions_taxable_categories rtc
-                INNER JOIN app.regions r ON rtc.region_id = r.region_id
-                WHERE rtc.category_id = tc.category_id
-                AND r.region_name = $2::VARCHAR
-            ))
-        )
-    `,
-
-    /**
-     * Fetch all region bindings for a category
-     * Parameters: [category_id]
-     * Returns region_id and region_name
-     */
-    fetchCategoryRegions: `
-        SELECT 
-            rtc.region_id,
-            r.region_name
-        FROM app.regions_taxable_categories rtc
-        JOIN app.regions r ON rtc.region_id = r.region_id
-        WHERE rtc.category_id = $1
-    `,
-
-    /**
-     * Insert a region-category binding
-     * Parameters: [region_id, category_id]
-     * Note: created_at and updated_at are set automatically by database defaults
-     */
-    insertCategoryRegion: `
-        INSERT INTO app.regions_taxable_categories (region_id, category_id)
-        VALUES ($1, $2)
-        ON CONFLICT (region_id, category_id) DO NOTHING
-        RETURNING region_id, category_id
-    `,
-
-    /**
-     * Delete a specific region-category binding
-     * Parameters: [region_id, category_id]
-     */
-    deleteCategoryRegion: `
-        DELETE FROM app.regions_taxable_categories
-        WHERE region_id = $1 AND category_id = $2
-        RETURNING region_id, category_id
-    `,
-
-    /**
-     * Delete all region bindings for a category
-     * Parameters: [category_id]
-     */
-    deleteAllCategoryRegions: `
-        DELETE FROM app.regions_taxable_categories
-        WHERE category_id = $1
-        RETURNING region_id, category_id
-    `,
-
-    /**
-     * Check if region exists in app.regions table by region_name
-     * Parameters: [region_name]
-     * Returns region_id and region_name if exists
-     */
-    checkRegionExists: `
-        SELECT region_id, region_name
-        FROM app.regions
-        WHERE region_name = $1
-    `,
-
-    // ============================================
     // Tax Regions Bindings Queries (with VAT rates)
     // ============================================
 
@@ -663,73 +502,73 @@ export const queries = {
     `,
 
     /**
-     * Fetch all taxable categories (for tax regions bindings)
+     * Fetch all taxable categories (for tax regions bindings) - DEPRECATED/REMOVED
      * No parameters
      * Returns category_id, category_name
      */
-    fetchAllTaxableCategoriesSimple: `
-        SELECT 
-            category_id,
-            category_name
-        FROM app.taxable_categories
-        ORDER BY category_name ASC
-    `,
+    /* fetchAllTaxableCategoriesSimple: removed */
 
     /**
      * Fetch all region-taxable category bindings with VAT rates for all regions
      * No parameters
-     * Returns region_id, region_name, category_id, category_name, vat_rate
+     * Returns id, region_id, region_name, category_name, vat_rate
      */
     fetchAllRegionsTaxableCategoriesBindings: `
         SELECT 
+            rtc.id,
             rtc.region_id,
             r.region_name,
-            rtc.category_id,
-            tc.category_name,
+            rtc.category_name,
             rtc.vat_rate
         FROM app.regions_taxable_categories rtc
         JOIN app.regions r ON rtc.region_id = r.region_id
-        JOIN app.taxable_categories tc ON rtc.category_id = tc.category_id
-        ORDER BY r.region_name, tc.category_name
+        ORDER BY r.region_name, rtc.category_name
     `,
 
     /**
      * Fetch all bindings for a specific region with VAT rates
      * Parameters: [region_id]
-     * Returns category_id, category_name, vat_rate
+     * Returns id, category_name, vat_rate
      */
     fetchRegionTaxableCategoriesBindings: `
         SELECT 
-            rtc.category_id,
-            tc.category_name,
-            rtc.vat_rate
-        FROM app.regions_taxable_categories rtc
-        JOIN app.taxable_categories tc ON rtc.category_id = tc.category_id
-        WHERE rtc.region_id = $1
-        ORDER BY tc.category_name
+            id,
+            category_name,
+            vat_rate
+        FROM app.regions_taxable_categories
+        WHERE region_id = $1
+        ORDER BY category_name
     `,
 
     /**
-     * Upsert (insert or update) a region-category binding with VAT rate
-     * Parameters: [region_id, category_id, vat_rate]
-     * Note: vat_rate can be NULL (0-99 or NULL)
+     * Insert a region-category binding with VAT rate
+     * Parameters: [region_id, category_name, vat_rate]
      */
-    upsertRegionCategoryBinding: `
-        INSERT INTO app.regions_taxable_categories (region_id, category_id, vat_rate)
+    insertRegionCategory: `
+        INSERT INTO app.regions_taxable_categories (region_id, category_name, vat_rate)
         VALUES ($1, $2, $3)
-        ON CONFLICT (region_id, category_id) 
-        DO UPDATE SET vat_rate = $3, updated_at = NOW()
-        RETURNING region_id, category_id, vat_rate
+        RETURNING id, category_name, vat_rate
+    `,
+
+    /**
+     * Update a region-category binding
+     * Parameters: [id, category_name, vat_rate]
+     */
+    updateRegionCategory: `
+        UPDATE app.regions_taxable_categories 
+        SET category_name = $2, vat_rate = $3, updated_at = NOW()
+        WHERE id = $1
+        RETURNING id, category_name, vat_rate
     `,
 
     /**
      * Delete a specific region-category binding
-     * Parameters: [region_id, category_id]
+     * Parameters: [id]
      */
-    deleteRegionCategoryBinding: `
+    deleteRegionCategory: `
         DELETE FROM app.regions_taxable_categories
-        WHERE region_id = $1 AND category_id = $2
-        RETURNING region_id, category_id
+        WHERE id = $1
+        RETURNING id
     `,
 
     /**
@@ -744,14 +583,13 @@ export const queries = {
     `,
 
     /**
-     * Check if taxable category exists by category_id
-     * Parameters: [category_id]
-     * Returns category_id and category_name if exists
+     * Check if category exists by id
+     * Parameters: [id]
      */
-    checkTaxableCategoryExistsById: `
-        SELECT category_id, category_name
-        FROM app.taxable_categories
-        WHERE category_id = $1
+    checkRegionCategoryExistsById: `
+        SELECT id, category_name
+        FROM app.regions_taxable_categories
+        WHERE id = $1
     `
 };
 

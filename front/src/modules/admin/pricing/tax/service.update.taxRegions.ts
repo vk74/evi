@@ -1,5 +1,5 @@
 /**
- * version: 1.0.0
+ * version: 1.1.0
  * Frontend service for updating tax regions bindings for pricing module.
  * Frontend file that handles tax regions bindings updating via pricing API endpoint.
  * 
@@ -22,15 +22,17 @@ const logger = {
 /**
  * Updates tax regions bindings data via the pricing API endpoint
  * @param regionId Region ID to update bindings for
- * @param bindings Array of binding records (category_id, vat_rate) for the region
+ * @param bindings Array of binding records for the region
  * @returns Promise<UpdateTaxRegionsResult['data']> Update result with counts
  * @throws {Error} If an error occurs during the update operation
  */
 export async function updateTaxRegions(
     regionId: number,
     bindings: Array<{
-        category_id: number
-        vat_rate: number | null // null means delete binding
+        id?: number
+        category_name: string
+        vat_rate: number | null
+        _delete?: boolean
     }>
 ): Promise<UpdateTaxRegionsResult['data']> {
     const uiStore = useUiStore()
@@ -86,4 +88,3 @@ export async function updateTaxRegions(
 }
 
 export default { updateTaxRegions }
-

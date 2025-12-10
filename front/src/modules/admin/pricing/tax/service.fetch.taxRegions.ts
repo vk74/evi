@@ -1,10 +1,10 @@
 /**
- * version: 1.0.0
+ * version: 1.1.0
  * Frontend service for fetching tax regions bindings data for pricing module.
  * Frontend file that handles tax regions data fetching from pricing API endpoint.
  * 
  * Functionality:
- * - Fetches regions, categories and bindings from the pricing API endpoint
+ * - Fetches regions and bindings from the pricing API endpoint
  * - Returns structured data for all regions
  * - Handles errors and logging
  */
@@ -20,8 +20,8 @@ const logger = {
 }
 
 /**
- * Fetches tax regions data (regions, categories and bindings) from the pricing API endpoint
- * @returns Promise<FetchTaxRegionsResult['data']> Structured data with regions, categories and bindings
+ * Fetches tax regions data (regions and bindings) from the pricing API endpoint
+ * @returns Promise<FetchTaxRegionsResult['data']> Structured data with regions and bindings
  * @throws {Error} If an error occurs during the fetch operation
  */
 export async function fetchTaxRegions(): Promise<FetchTaxRegionsResult['data']> {
@@ -48,7 +48,6 @@ export async function fetchTaxRegions(): Promise<FetchTaxRegionsResult['data']> 
 
         // Validate data structure
         if (!Array.isArray(response.data.data.regions) || 
-            !Array.isArray(response.data.data.categories) || 
             !Array.isArray(response.data.data.bindings)) {
             const errorMessage = 'Invalid tax regions data structure'
             logger.error(errorMessage, { response: response.data })
@@ -57,7 +56,6 @@ export async function fetchTaxRegions(): Promise<FetchTaxRegionsResult['data']> 
 
         logger.info('Successfully received tax regions data', {
             regionsCount: response.data.data.regions.length,
-            categoriesCount: response.data.data.categories.length,
             bindingsCount: response.data.data.bindings.length
         })
 
@@ -72,4 +70,3 @@ export async function fetchTaxRegions(): Promise<FetchTaxRegionsResult['data']> 
 }
 
 export default { fetchTaxRegions }
-

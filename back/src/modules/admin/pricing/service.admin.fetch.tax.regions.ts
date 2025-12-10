@@ -1,7 +1,7 @@
 /**
- * version: 1.0.0
+ * version: 1.1.0
  * Service to fetch tax regions bindings for pricing admin module (backend).
- * Connects to DB, executes queries for regions, categories and bindings, maps fields to DTO format.
+ * Connects to DB, executes queries for regions and their category bindings.
  * File: service.admin.fetch.tax.regions.ts (backend)
  */
 
@@ -17,9 +17,9 @@ import { pool as pgPool } from '@/core/db/maindb'
 const pool = pgPool as Pool
 
 /**
- * Fetches all regions, categories and bindings for tax regions management
+ * Fetches all regions and their taxable category bindings
  * @param req - Express request object for event context
- * @returns Promise with regions, categories and bindings data or error
+ * @returns Promise with regions and bindings data or error
  */
 export async function fetchTaxRegions(req?: any): Promise<FetchTaxRegionsResponse> {
     const client = await pool.connect()
@@ -32,18 +32,13 @@ export async function fetchTaxRegions(req?: any): Promise<FetchTaxRegionsRespons
             region_name: row.region_name
         }))
 
-        // Fetch all taxable categories
-        const categoriesResult = await client.query(queries.fetchAllTaxableCategoriesSimple)
-        const categories = categoriesResult.rows.map((row: any) => ({
-            category_id: row.category_id,
-            category_name: row.category_name
-        }))
-
-        // Fetch all bindings with VAT rates
+        // Fetch all bindings (categories within regions)
         const bindingsResult = await client.query(queries.fetchAllRegionsTaxableCategoriesBindings)
         const bindings = bindingsResult.rows.map((row: any) => ({
+            id: row.id,
             region_id: row.region_id,
-            category_id: row.category_id,
+            region_name: row.region_name,
+            category_name: row.category_name,
             vat_rate: row.vat_rate !== null && row.vat_rate !== undefined ? Number(row.vat_rate) : null
         }))
         
@@ -53,7 +48,6 @@ export async function fetchTaxRegions(req?: any): Promise<FetchTaxRegionsRespons
             req: req,
             payload: {
                 totalRegions: regions.length,
-                totalCategories: categories.length,
                 totalBindings: bindings.length,
                 timestamp: new Date().toISOString()
             }
@@ -64,8 +58,8 @@ export async function fetchTaxRegions(req?: any): Promise<FetchTaxRegionsRespons
             message: 'Tax regions data fetched successfully',
             data: {
                 regions,
-                categories,
-                bindings
+                categories: [], // Kept for backward compatibility but empty
+                bindings: bindings as any // Type cast if necessary, or update types
             }
         }
     } catch (error) {
@@ -84,4 +78,3 @@ export async function fetchTaxRegions(req?: any): Promise<FetchTaxRegionsRespons
         client.release()
     }
 }
-

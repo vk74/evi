@@ -503,7 +503,7 @@ export const queries = {
 
     /**
      * Fetches all regions with product-region bindings and categories
-     * Returns all regions, with LEFT JOIN to product_regions and taxable_categories
+     * Returns all regions, with LEFT JOIN to product_regions and regions_taxable_categories
      * Parameters: [product_id]
      */
     fetchProductRegions: `
@@ -514,7 +514,7 @@ export const queries = {
             tc.category_name
         FROM app.regions r
         LEFT JOIN app.product_regions pr ON r.region_id = pr.region_id AND pr.product_id = $1
-        LEFT JOIN app.taxable_categories tc ON pr.taxable_category_id = tc.category_id
+        LEFT JOIN app.regions_taxable_categories tc ON pr.taxable_category_id = tc.id
         ORDER BY r.region_name ASC
     `,
 
@@ -544,11 +544,10 @@ export const queries = {
      */
     fetchTaxableCategoriesByRegion: `
         SELECT 
-            tc.category_id,
-            tc.category_name
-        FROM app.taxable_categories tc
-        INNER JOIN app.regions_taxable_categories rtc ON tc.category_id = rtc.category_id
-        WHERE rtc.region_id = $1
-        ORDER BY tc.category_name ASC
+            id as category_id,
+            category_name
+        FROM app.regions_taxable_categories
+        WHERE region_id = $1
+        ORDER BY category_name ASC
     `
 };

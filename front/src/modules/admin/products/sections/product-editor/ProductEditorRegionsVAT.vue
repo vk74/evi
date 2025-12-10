@@ -92,7 +92,7 @@ const productName = computed(() => {
 })
 
 // Categories cache per region (will be loaded dynamically)
-const categoriesCache = ref<Record<number, Array<{ category_id: number; category_name: string }>>>({})
+const categoriesCache = ref<Record<number, Array<{ category_id: number; category_name: string; vat_rate?: number | null }>>>({})
 
 // Regions data
 const regions = ref<RegionCategoryRow[]>([])
@@ -128,7 +128,9 @@ function getCategoryOptionsForRegion(regionId: number): Array<{ title: string; v
   return [
     { title: '-', value: null },
     ...categories.map(cat => ({
-      title: cat.category_name,
+      title: cat.vat_rate !== undefined && cat.vat_rate !== null 
+        ? `${cat.category_name} (${cat.vat_rate}%)` 
+        : cat.category_name,
       value: cat.category_id
     }))
   ]
@@ -165,7 +167,7 @@ async function loadCategoriesForRegion(regionId: number): Promise<void> {
     const response = await api.get<{
       success: boolean
       message: string
-      data?: Array<{ category_id: number; category_name: string }>
+      data?: Array<{ category_id: number; category_name: string; vat_rate?: number | null }>
     }>(`/api/admin/products/taxable-categories/by-region/${regionId}`)
     
     if (response.data.success && response.data.data) {

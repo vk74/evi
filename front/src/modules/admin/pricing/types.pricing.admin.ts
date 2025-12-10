@@ -319,9 +319,10 @@ export interface UpdatePriceListItemsResult {
 }
 
 // ============================================
-// Taxable Categories Types
+// Taxable Categories Types - DEPRECATED/REMOVED
 // ============================================
 
+/*
 // Taxable Category type aligned with backend DTO
 export interface TaxableCategory {
   category_id: number
@@ -356,6 +357,7 @@ export interface UpdateTaxableCategoriesResult {
     totalRecords: number
   }
 }
+*/
 
 // ============================================
 // Tax Regions Bindings Types (with VAT rates)
@@ -363,8 +365,10 @@ export interface UpdateTaxableCategoriesResult {
 
 // Region-Category Binding type
 export interface RegionCategoryBinding {
+  id: number
   region_id: number
-  category_id: number
+  region_name: string
+  category_name: string
   vat_rate: number | null // 0-99 or null
 }
 
@@ -377,15 +381,7 @@ export interface FetchTaxRegionsResult {
       region_id: number
       region_name: string
     }>
-    categories: Array<{
-      category_id: number
-      category_name: string
-    }>
-    bindings: Array<{
-      region_id: number
-      category_id: number
-      vat_rate: number | null
-    }>
+    bindings: RegionCategoryBinding[]
   }
 }
 
@@ -393,8 +389,10 @@ export interface FetchTaxRegionsResult {
 export interface UpdateTaxRegionsRequest {
   region_id: number
   bindings: Array<{
-    category_id: number
-    vat_rate: number | null // null means delete binding
+    id?: number
+    category_name: string
+    vat_rate: number | null // null means delete binding (or explicit _delete)
+    _delete?: boolean
   }>
 }
 

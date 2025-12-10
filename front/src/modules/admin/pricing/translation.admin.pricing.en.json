@@ -238,6 +238,9 @@
           "tooltips": {
             "loadError": "error loading data",
             "retry": "click to retry"
+          },
+          "validation": {
+            "categoryWithoutVatRate": "Categories without VAT rate binding: {categories}. Please select a VAT rate for each category before saving."
           }
         }
       },
