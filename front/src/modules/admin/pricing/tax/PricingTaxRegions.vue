@@ -55,6 +55,14 @@ interface RegionData {
   vatRateColumns: VATRateColumn[];
 }
 
+// Table Header interface
+interface TableHeader {
+  title: string;
+  key: string;
+  width?: string;
+  sortable?: boolean;
+}
+
 // Loading and error states
 const isLoading = ref(false);
 const error = ref<string | null>(null);
@@ -543,7 +551,7 @@ async function updateChanges(): Promise<void> {
     });
 
     // Validate
-    const bindings = [];
+    const bindings: Array<{ id?: number; category_name: string; vat_rate: number | null; _delete?: boolean }> = [];
     for (const cat of validCategories) {
         if (cat._delete) {
             // Only send delete for existing categories

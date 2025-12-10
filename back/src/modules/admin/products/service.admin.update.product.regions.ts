@@ -151,12 +151,12 @@ export async function updateProductRegions(
         
         if (newCategoryIds.length > 0) {
             const categoriesResult = await client.query(
-                'SELECT category_id, category_name FROM app.taxable_categories WHERE category_id = ANY($1::int[])',
+                'SELECT id, category_name FROM app.regions_taxable_categories WHERE id = ANY($1::int[])',
                 [newCategoryIds]
             );
             const categoryNameMap = new Map<number, string>();
             categoriesResult.rows.forEach((row: any) => {
-                categoryNameMap.set(row.category_id, row.category_name);
+                categoryNameMap.set(row.id, row.category_name);
             });
             
             // Update category names in newRegionsMap
