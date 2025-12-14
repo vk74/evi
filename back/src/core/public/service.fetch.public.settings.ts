@@ -5,9 +5,9 @@
  * 
  * Public settings include:
  * - Application.Appearance → navbar.backgroundcolor
- * - Catalog.Products → card.color
+ * - Admin.Products → card.color
  * - Catalog.Services → card.color
- * - Catalog.Products → display.optionsOnlyProducts
+ * - Admin.Products → display.optionsOnlyProducts
  * 
  * Changes in v1.1.0:
  * - Renamed PublicUiSetting/PublicUiSettingsResponse to PublicSetting/PublicSettingsResponse
@@ -91,12 +91,12 @@ export async function fetchPublicSettings(req: Request): Promise<PublicSettingsR
 
     // 2. Product card color
     const productCardColor = await getSettingValue<string>(
-      'Catalog.Products',
+      'Admin.Products',
       'card.color',
       '#E8F4F8'
     );
     publicSettings.push({
-      section_path: 'Catalog.Products',
+      section_path: 'Admin.Products',
       setting_name: 'card.color',
       value: productCardColor,
       is_public: true
@@ -117,12 +117,12 @@ export async function fetchPublicSettings(req: Request): Promise<PublicSettingsR
 
     // 4. Display options-only products setting
     const displayOptionsOnlyProducts = await getSettingValue<boolean>(
-      'Catalog.Products',
+      'Admin.Products',
       'display.optionsOnlyProducts',
       false
     );
     publicSettings.push({
-      section_path: 'Catalog.Products',
+      section_path: 'Admin.Products',
       setting_name: 'display.optionsOnlyProducts',
       value: displayOptionsOnlyProducts,
       is_public: true
