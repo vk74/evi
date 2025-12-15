@@ -9,7 +9,7 @@
 import { Request, Response } from 'express';
 import { connectionHandler } from '@/core/helpers/connection.handler';
 import { handleRefreshTokensRequest } from './service.refresh.tokens';
-import { RefreshTokenResponse } from './types.auth';
+import { RefreshTokenResponse } from './types.authentication';
 
 /**
  * Main refresh tokens controller logic

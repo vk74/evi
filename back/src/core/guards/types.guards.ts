@@ -1,16 +1,17 @@
 /*
-  File version: 1.1.0
+  File version: 1.2.0
   This is a backend file. The file provides TypeScript interfaces for guard functions.
   It includes request and response related types for authentication and authorization guards.
   
-  Changes in v1.1.0:
-  - Added RateLimitConfig interface for rate limiting guard
+  Changes in v1.2.0:
+  - Added AuthContext to AuthenticatedRequest
 */
 
 import { Request, Response, NextFunction } from 'express';
+import { AuthContext } from '../auth/types.authorization';
 
 /**
- * Extended Request interface with user information
+ * Extended Request interface with user information and auth context
  */
 export interface AuthenticatedRequest extends Request {
   user?: {
@@ -18,6 +19,7 @@ export interface AuthenticatedRequest extends Request {
     username?: string;
     user_id?: string;
   };
+  authContext?: AuthContext;
 }
 
 /**

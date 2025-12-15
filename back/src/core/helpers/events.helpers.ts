@@ -1,9 +1,12 @@
 /**
  * @file events.helpers.ts
- * @version 1.0.0
+ * @version 1.1.0
  * @description Backend file. Contains event definitions for helper services.
  * These events track various helper operations including cache operations,
  * user/group existence checks, and other utility functions.
+ * 
+ * Changes in v1.1.0:
+ * - Removed redundant start/success events for getUserGroups
  */
 
 /**
@@ -836,6 +839,22 @@ export const GET_UUID_BY_PRODUCT_CODE_EVENTS = {
     severity: 'error' as const,
     eventMessage: 'Error searching for product UUID',
     payload: null, // Will contain: { productCode, error }
+    version: '1.0.0'
+  }
+};
+
+/**
+ * Get User Groups Events
+ * Events for tracking retrieval of user groups
+ */
+export const GET_USER_GROUPS_EVENTS = {
+  ERROR: {
+    eventName: 'helpers.get.user.groups.error',
+    source: 'helpers get user groups service',
+    eventType: 'app' as const,
+    severity: 'error' as const,
+    eventMessage: 'Error getting user groups',
+    payload: null, // Will contain: { userUuid, error }
     version: '1.0.0'
   }
 };

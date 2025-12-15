@@ -30,7 +30,7 @@ export interface BaseEvent {
   source: string;
 
   // 📊 Category of the event for classification and filtering
-  eventType: 'app' | 'system' | 'security' | 'integration' | 'performance';
+  eventType: 'app' | 'system' | 'security' | 'integration' | 'performance' | 'authorization';
 
   // 🪵 Severity level of the event
   severity?: 'debug' | 'info' | 'warning' | 'error' | 'critical';
@@ -155,7 +155,7 @@ export interface CreateEventOptions {
   // Custom source (otherwise from factory config)
   source?: string;
   // Category of the event (classification)
-  eventType?: 'app' | 'system' | 'security' | 'integration' | 'performance';
+  eventType?: 'app' | 'system' | 'security' | 'integration' | 'performance' | 'authorization';
   // Severity level for the event
   severity?: 'debug' | 'info' | 'warning' | 'error' | 'critical';
   // Event duration in milliseconds
@@ -206,7 +206,7 @@ export interface SubscriptionOptions {
   // Only receive events from this source
   source?: string;
   // Only receive events of this type (category)
-  eventType?: 'app' | 'system' | 'security' | 'integration' | 'performance';
+  eventType?: 'app' | 'system' | 'security' | 'integration' | 'performance' | 'authorization';
   // Only receive events with this severity level
   severity?: 'debug' | 'info' | 'warning' | 'error' | 'critical';
   // Custom filter function
@@ -400,7 +400,7 @@ export interface EventSchema {
 export interface CachedEventSchema extends EventSchema {
   eventName: string;
   source: string;
-  eventType: 'app' | 'system' | 'security' | 'integration' | 'performance';
+  eventType: 'app' | 'system' | 'security' | 'integration' | 'performance' | 'authorization';
   severity?: 'debug' | 'info' | 'warning' | 'error' | 'critical';
   eventMessage?: string;
   version: string; 
@@ -413,7 +413,7 @@ export interface CachedEventSchema extends EventSchema {
 export interface EventObject {
   eventName: string;
   source?: string;
-  eventType?: 'app' | 'system' | 'security' | 'integration' | 'performance';
+  eventType?: 'app' | 'system' | 'security' | 'integration' | 'performance' | 'authorization';
   severity?: 'debug' | 'info' | 'warning' | 'error' | 'critical';
   eventMessage?: string;
   version?: string;

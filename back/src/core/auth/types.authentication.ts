@@ -1,9 +1,10 @@
 /**
- * @file types.auth.ts
- * Version: 1.2.0
+ * @file types.authentication.ts
+ * Version: 1.2.1
  * Type definitions for authentication system including login, refresh tokens, and logout functionality.
  * Backend file that defines interfaces for all auth-related requests, responses, and data structures.
  * Updated to support device fingerprinting for enhanced security.
+ * Renamed from types.auth.ts to avoid confusion with authorization types.
  */
 
 import { Request } from 'express';

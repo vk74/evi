@@ -9,7 +9,7 @@
 import crypto from 'crypto';
 import { Request, Response } from 'express';
 import { pool } from '@/core/db/maindb';
-import { RefreshTokenRequest, RefreshTokenResponse, TokenValidationResult, getCookieConfig, DeviceFingerprint } from './types.auth';
+import { RefreshTokenRequest, RefreshTokenResponse, TokenValidationResult, getCookieConfig, DeviceFingerprint } from './types.authentication';
 import { findTokenByHash, revokeTokenByHash } from './queries.auth';
 import { issueTokenPair } from './service.issue.tokens';
 import { validateFingerprint, logDeviceFingerprint } from './utils.device.fingerprint';

@@ -10,7 +10,7 @@ import jwt from 'jsonwebtoken';
 import { v4 as uuidv4 } from 'uuid';
 import crypto from 'crypto';
 import { pool } from '@/core/db/maindb';
-import { JwtPayload, TokenGenerationResult, DeviceFingerprint } from './types.auth';
+import { JwtPayload, TokenGenerationResult, DeviceFingerprint } from './types.authentication';
 import { insertRefreshToken, countActiveTokensForUser, getOldestActiveTokensForUser, revokeTokenById } from './queries.auth';
 import { hashFingerprint } from './utils.device.fingerprint';
 import { getSetting, parseSettingValue } from '../../modules/admin/settings/cache.settings';

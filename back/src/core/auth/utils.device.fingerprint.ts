@@ -6,7 +6,7 @@
  */
 
 import crypto from 'crypto';
-import { DeviceFingerprint, FingerprintHash } from './types.auth';
+import { DeviceFingerprint, FingerprintHash } from './types.authentication';
 import { createAndPublishEvent } from '@/core/eventBus/fabric.events';
 import { AUTH_DEVICE_FINGERPRINT_EVENTS } from './events.auth';
 

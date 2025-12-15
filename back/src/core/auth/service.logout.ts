@@ -9,7 +9,7 @@
 import crypto from 'crypto';
 import { Request, Response } from 'express';
 import { pool } from '@/core/db/maindb';
-import { LogoutRequest, LogoutResponse, TokenValidationResult, getCookieConfig, DeviceFingerprint } from './types.auth';
+import { LogoutRequest, LogoutResponse, TokenValidationResult, getCookieConfig, DeviceFingerprint } from './types.authentication';
 import { findTokenByHashIncludeRevoked, revokeTokenByHash } from './queries.auth';
 import { logDeviceFingerprint } from './utils.device.fingerprint';
 import fabricEvents from '@/core/eventBus/fabric.events';

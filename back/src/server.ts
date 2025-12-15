@@ -69,6 +69,7 @@ import { initCache as initHelpersCache } from '@/core/helpers/cache.helpers';
 import { getSetting, parseSettingValue } from '@/modules/admin/settings/cache.settings';
 
 // Import validation service
+import permissionService from '@/core/auth/service.permissions';
 
 /**
  * Validate that rate limit guard can access rate limiting settings from cache
@@ -240,6 +241,11 @@ async function initializeServer(): Promise<void> {
     await loadSettings();
     settingsLoaded = true;
     console.log('[Server] System settings loaded and ready');
+
+    // 4.1 Load system permissions (requires DB, independent of settings)
+    console.log('Loading system permissions...');
+    await permissionService.loadPermissions();
+    console.log('[Server] System permissions loaded');
 
     // 5. Validate rate limit guard readiness
     console.log('Validating rate limit guard readiness...');

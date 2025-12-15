@@ -9,7 +9,7 @@
 import { Request, Response } from 'express';
 import { connectionHandler } from '@/core/helpers/connection.handler';
 import { logoutService } from './service.logout';
-import { LogoutResponse } from './types.auth';
+import { LogoutResponse } from './types.authentication';
 
 /**
  * Main logout controller logic

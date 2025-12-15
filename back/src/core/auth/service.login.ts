@@ -10,7 +10,7 @@
 import bcrypt from 'bcrypt';
 import { Request, Response } from 'express';
 import { pool } from '@/core/db/maindb';
-import { LoginRequest, LoginResponse, getCookieConfig, DeviceFingerprint } from './types.auth';
+import { LoginRequest, LoginResponse, getCookieConfig, DeviceFingerprint } from './types.authentication';
 import { issueTokenPair } from './service.issue.tokens';
 import { extractDeviceFingerprintFromRequest, logDeviceFingerprint } from './utils.device.fingerprint';
 import fabricEvents, { createAndPublishEvent } from '@/core/eventBus/fabric.events';

@@ -9,7 +9,7 @@
 import { Request, Response } from 'express';
 import { connectionHandler } from '@/core/helpers/connection.handler';
 import { handleLoginRequest } from './service.login';
-import { LoginResponse } from './types.auth';
+import { LoginResponse } from './types.authentication';
 
 /**
  * Main login controller logic
