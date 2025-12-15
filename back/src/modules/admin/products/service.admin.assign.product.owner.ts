@@ -1,5 +1,5 @@
 /**
- * service.admin.assign.product.owner.ts - version 1.0.0
+ * service.admin.assign.product.owner.ts - version 1.1.0
  * Service for assigning product owner operations.
  * 
  * Functionality:
@@ -18,6 +18,11 @@
  * 5. Update product owners in database with transaction
  * 6. Return formatted response
  * 
+ * Changes in v1.1.0:
+ * - Added scope check support for authorization
+ * - If effectiveScope = 'own', checks access to each product before allowing owner change
+ * - Allows owner change only for accessible products
+ * 
  * Backend file - service.admin.assign.product.owner.ts
  */
 
@@ -34,6 +39,8 @@ import { getRequestorUuidFromReq } from '@/core/helpers/get.requestor.uuid.from.
 import { getUuidByUsername } from '@/core/helpers/get.uuid.by.username';
 import { createAndPublishEvent } from '@/core/eventBus/fabric.events';
 import { PRODUCT_ASSIGN_OWNER_EVENTS } from './events.admin.products';
+import { AuthenticatedRequest } from '@/core/guards/types.guards';
+import { checkProductAccess } from './helpers.check.product.access';
 
 // Type assertion for pool
 const pool = pgPool as Pool;
@@ -194,17 +201,70 @@ export async function assignProductOwner(
             };
         }
 
-        // Get old owners before update
-        const oldOwners = await getOldOwners(client, data.productIds);
+        // Check scope for authorization
+        const authReq = req as AuthenticatedRequest;
+        const effectiveScope = authReq.authContext?.effectiveScope;
+
+        // If scope is 'own', filter products by access
+        let accessibleProducts = existingProducts;
+        const errors: Array<{id: string, error: string}> = [];
+
+        if (effectiveScope === 'own') {
+            accessibleProducts = [];
+            for (const product of existingProducts) {
+                const hasAccess = await checkProductAccess(product.product_id, requestorUuid, client);
+                
+                if (hasAccess) {
+                    accessibleProducts.push(product);
+                } else {
+                    errors.push({
+                        id: product.product_id,
+                        error: 'Access denied: you can only change owner for your own products'
+                    });
+                }
+            }
+
+            // If no products are accessible, return early
+            if (accessibleProducts.length === 0) {
+                await createAndPublishEvent({
+                    eventName: PRODUCT_ASSIGN_OWNER_EVENTS.PARTIAL_SUCCESS.eventName,
+                    req: req,
+                    payload: { 
+                        productIds: data.productIds,
+                        productCodes: [],
+                        updatedIds: [],
+                        notFoundIds: [],
+                        newOwnerUsername: data.newOwnerUsername,
+                        totalUpdated: 0,
+                        totalErrors: data.productIds.length
+                    }
+                });
+
+                return {
+                    success: false,
+                    message: 'Access denied: you can only change owner for your own products',
+                    data: {
+                        updatedProducts: [],
+                        errors,
+                        totalRequested: data.productIds.length,
+                        totalUpdated: 0,
+                        totalErrors: data.productIds.length
+                    }
+                };
+            }
+        }
+
+        // Get old owners before update (only for accessible products)
+        const accessibleProductIds = accessibleProducts.map(p => p.product_id);
+        const oldOwners = await getOldOwners(client, accessibleProductIds);
 
         // Start transaction
         await client.query('BEGIN');
 
         const updatedProducts: Array<{id: string, product_code: string}> = [];
-        const errors: Array<{id: string, error: string}> = [];
 
-        // Process each product
-        for (const product of existingProducts) {
+        // Process each accessible product
+        for (const product of accessibleProducts) {
             try {
                 // Delete existing owner for this product
                 await client.query(
@@ -252,6 +312,16 @@ export async function assignProductOwner(
                     id: productId,
                     error: 'Product not found'
                 });
+            }
+        }
+
+        // Add errors for products that exist but are not accessible (if scope = 'own')
+        if (effectiveScope === 'own') {
+            const accessibleProductIds = new Set(accessibleProducts.map(p => p.product_id));
+            for (const product of existingProducts) {
+                if (!accessibleProductIds.has(product.product_id)) {
+                    // Error already added in the access check loop above
+                }
             }
         }
 

@@ -1,5 +1,5 @@
 /**
- * version: 1.1.0
+ * version: 1.2.0
  * Backend router file for admin functionality.
  * Defines routes for administrative functions focused on organization management.
  * All routes are protected by rate limiting, JWT validation and user status check middleware.
@@ -7,6 +7,10 @@
  * 
  * Changes in v1.1.0:
  * - Added rate limit guard as first guard in all routes for DDoS protection
+ * 
+ * Changes in v1.2.0:
+ * - Added checkPermissions middleware to product routes for authorization
+ * - Routes now check user permissions before allowing access to product operations
  */
 
 import express, { Router } from 'express';
@@ -14,6 +18,7 @@ import checkRateLimit from '../../core/guards/guard.rate.limit';
 import validateJWT from '../../core/guards/guard.validate.jwt';
 import checkIsUserStatusActive from '../../core/guards/guard.check.is.user.status.active';
 import checkRequestSecurityHard from '../../core/guards/guard.check.request.security.hard';
+import { checkPermissions } from '../../core/guards/guard.check.permissions';
 
 // Import controllers
 import { fetchUsers, deleteSelectedUsers } from './org/usersList/routes.users.list';
@@ -125,14 +130,14 @@ router.get('/api/admin/services/fetchsingleservice', checkRateLimit, checkReques
 router.post('/api/admin/services/deleteservices', checkRateLimit, checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, deleteServicesController);
 
 // Routes for Products Admin
-router.get('/api/admin/products/fetch-all-products', checkRateLimit, checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, fetchAllProductsController);
+router.get('/api/admin/products/fetch-all-products', checkRateLimit, checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, checkPermissions('adminProducts:items:read'), fetchAllProductsController);
 router.get('/api/admin/products/fetch-statuses', checkRateLimit, checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, fetchStatusesController);
 router.get('/api/admin/products/fetch-options', checkRateLimit, checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, fetchOptionsController);
-router.post('/api/admin/products/create', checkRateLimit, checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, createProductController);
-router.get('/api/admin/products/fetch', checkRateLimit, checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, fetchProductController);
-router.post('/api/admin/products/update', checkRateLimit, checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, updateProductController);
-router.post('/api/admin/products/delete', checkRateLimit, checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, deleteProductsController);
-router.post('/api/admin/products/assign-owner', checkRateLimit, checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, assignProductOwnerController);
+router.post('/api/admin/products/create', checkRateLimit, checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, checkPermissions('adminProducts:items:create'), createProductController);
+router.get('/api/admin/products/fetch', checkRateLimit, checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, checkPermissions('adminProducts:items:read'), fetchProductController);
+router.post('/api/admin/products/update', checkRateLimit, checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, checkPermissions('adminProducts:items:update'), updateProductController);
+router.post('/api/admin/products/delete', checkRateLimit, checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, checkPermissions('adminProducts:items:delete'), deleteProductsController);
+router.post('/api/admin/products/assign-owner', checkRateLimit, checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, checkPermissions('adminProducts:items:change_owner'), assignProductOwnerController);
 router.get('/api/admin/products/:productId/regions', checkRateLimit, checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, fetchProductRegionsController);
 router.put('/api/admin/products/:productId/regions', checkRateLimit, checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, updateProductRegionsController);
 router.get('/api/admin/products/taxable-categories/by-region/:regionId', checkRateLimit, checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, fetchTaxableCategoriesByRegionController);

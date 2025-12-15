@@ -65,6 +65,8 @@ import { fetchGroupnameByUuid } from '@/core/helpers/get.groupname.by.uuid';
 import { validateField } from '@/core/validation/service.validation';
 import { createAndPublishEvent } from '@/core/eventBus/fabric.events';
 import { PRODUCT_UPDATE_EVENTS } from './events.admin.products';
+import { AuthenticatedRequest } from '@/core/guards/types.guards';
+import { checkProductAccess } from './helpers.check.product.access';
 
 // Type assertion for pool
 const pool = pgPool as Pool;
@@ -624,6 +626,36 @@ export async function updateProduct(data: UpdateProductRequest, req: Request): P
                 message: 'Unable to identify requesting user',
                 data: undefined
             };
+        }
+
+        // Check scope for authorization
+        const authReq = req as AuthenticatedRequest;
+        const effectiveScope = authReq.authContext?.effectiveScope;
+
+        // If scope is 'own', check access to product
+        if (effectiveScope === 'own') {
+            const hasAccess = await checkProductAccess(data.productId, requestorUuid, client);
+            
+            if (!hasAccess) {
+                await createAndPublishEvent({
+                    eventName: PRODUCT_UPDATE_EVENTS.ERROR.eventName,
+                    req: req,
+                    payload: { 
+                        productId: data.productId,
+                        productCode: productCode,
+                        userUuid: requestorUuid,
+                        scope: effectiveScope,
+                        error: 'Access denied: user does not have access to this product'
+                    },
+                    errorData: 'Access denied: you can only update your own products'
+                });
+
+                return {
+                    success: false,
+                    message: 'Access denied: you can only update your own products',
+                    data: undefined
+                };
+            }
         }
 
         // Start transaction

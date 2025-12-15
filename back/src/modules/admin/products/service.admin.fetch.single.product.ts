@@ -1,5 +1,5 @@
 /**
- * service.admin.fetch.single.product.ts - version 1.1.2
+ * service.admin.fetch.single.product.ts - version 1.2.0
  * Service for fetching single product data by ID
  * Purpose: Provides business logic for fetching detailed product information
  * Backend file - service.admin.fetch.single.product.ts
@@ -14,6 +14,11 @@
  * Changes in v1.1.2:
  * - Updated to fetch statuses from app.product_status UDT enum instead of product_statuses table
  * - Removed description, is_active, and display_order fields from status mapping
+ * 
+ * Changes in v1.2.0:
+ * - Added scope check support for authorization
+ * - If effectiveScope = 'own', checks user access to product before returning data
+ * - Returns 403 error if user doesn't have access to the product
  */
 
 import { queries } from './queries.admin.products'
@@ -23,6 +28,8 @@ import type { Product, ProductTranslation, FetchProductResponse, ProductWithFull
 import { pool } from '@/core/db/maindb'
 import { fetchGroupnameByUuid } from '@/core/helpers/get.groupname.by.uuid'
 import { fetchUsernameByUuid } from '@/core/helpers/get.username.by.uuid'
+import { AuthenticatedRequest } from '@/core/guards/types.guards'
+import { checkProductAccess } from './helpers.check.product.access'
 
 /**
  * Service class for fetching single product data
@@ -70,6 +77,35 @@ export class ServiceAdminFetchProduct {
       }
 
       const productRow = productResult.rows[0]
+
+      // Check scope for authorization
+      const authReq = req as AuthenticatedRequest | undefined
+      const effectiveScope = authReq?.authContext?.effectiveScope
+      const userUuid = authReq?.user?.user_id
+
+      // If scope is 'own', check access to product
+      if (effectiveScope === 'own' && userUuid) {
+        const hasAccess = await checkProductAccess(productId, userUuid, client)
+        
+        if (!hasAccess) {
+          await createAndPublishEvent({
+            req,
+            eventName: PRODUCT_FETCH_EVENTS.ERROR.eventName,
+            payload: { 
+              productId,
+              userUuid,
+              scope: effectiveScope,
+              error: 'Access denied: user does not have access to this product'
+            },
+            errorData: 'Access denied: you can only access your own products'
+          })
+          
+          return {
+            success: false,
+            message: 'Access denied: you can only access your own products'
+          }
+        }
+      }
 
       // Fetch product translations
       const translationsResult = await client.query(queries.fetchProductTranslations, [productId])

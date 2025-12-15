@@ -1,5 +1,5 @@
 /**
- * service.admin.fetch.all.products.ts - version 1.4.0
+ * service.admin.fetch.all.products.ts - version 1.5.0
  * Service for fetching all products with pagination, search, sorting and filtering.
  * 
  * Handles database queries for products list with user roles and translations.
@@ -26,6 +26,11 @@
  * Changes in v1.4.0:
  * - Removed language normalization - now uses full language names directly ('english', 'russian')
  * - Language parameter expected as full name from frontend
+ * 
+ * Changes in v1.5.0:
+ * - Added scope check support for authorization
+ * - If effectiveScope = 'own', filters products by user ownership or group membership
+ * - Uses fetchAllProductsWithScopeFilter and countAllProductsWithScopeFilter queries for 'own' scope
  */
 
 import { Request } from 'express'
@@ -34,6 +39,7 @@ import { pool as pgPool } from '@/core/db/maindb'
 import { queries } from './queries.admin.products'
 import { PRODUCT_FETCH_EVENTS } from './events.admin.products'
 import { createAndPublishEvent } from '@/core/eventBus/fabric.events'
+import { AuthenticatedRequest } from '@/core/guards/types.guards'
 import type { 
     ProductListItem,
     FetchAllProductsResult
@@ -126,26 +132,16 @@ export const fetchAllProducts = async (
         // Validate status filter - allow any string value (status codes are validated by foreign key)
         const validatedStatusFilter = statusFilter && statusFilter.trim() !== '' ? statusFilter.trim() : ''
 
-        // Execute count query first to get total items
-        const countResult = await client.query(queries.countAllProducts, [
-            searchPattern,
-            validatedPublishedFilter,
-            validatedStatusFilter
-        ])
-        
-        const totalItems = parseInt(countResult.rows[0].total)
-        
-        await createAndPublishEvent({
-            req,
-            eventName: PRODUCT_FETCH_EVENTS.COUNT_COMPLETED.eventName,
-            payload: { 
-                totalItems,
-                filters: { searchQuery, publishedFilter, statusFilter }
-            }
-        })
+        // Check scope for authorization filtering
+        const authReq = req as AuthenticatedRequest
+        const effectiveScope = authReq.authContext?.effectiveScope
+        const userUuid = authReq.user?.user_id
 
-        // Execute main query to get products
-        const productsResult = await client.query(queries.fetchAllProducts, [
+        // Determine which queries to use based on scope
+        let countQuery = queries.countAllProducts
+        let fetchQuery = queries.fetchAllProducts
+        let countParams: any[] = [searchPattern, validatedPublishedFilter, validatedStatusFilter]
+        let fetchParams: any[] = [
             offset,
             itemsPerPage,
             searchPattern,
@@ -154,7 +150,33 @@ export const fetchAllProducts = async (
             validatedPublishedFilter,
             language,
             validatedStatusFilter
-        ])
+        ]
+
+        // If scope is 'own', use filtered queries
+        if (effectiveScope === 'own' && userUuid) {
+            countQuery = queries.countAllProductsWithScopeFilter
+            fetchQuery = queries.fetchAllProductsWithScopeFilter
+            countParams.push(userUuid)
+            fetchParams.push(userUuid)
+        }
+
+        // Execute count query first to get total items
+        const countResult = await client.query(countQuery, countParams)
+        
+        const totalItems = parseInt(countResult.rows[0].total)
+        
+        await createAndPublishEvent({
+            req,
+            eventName: PRODUCT_FETCH_EVENTS.COUNT_COMPLETED.eventName,
+            payload: { 
+                totalItems,
+                filters: { searchQuery, publishedFilter, statusFilter },
+                scope: effectiveScope || 'all'
+            }
+        })
+
+        // Execute main query to get products
+        const productsResult = await client.query(fetchQuery, fetchParams)
         
         // Process results into ProductListItem format
         const products: ProductListItem[] = productsResult.rows.map(row => ({

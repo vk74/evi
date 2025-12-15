@@ -1,5 +1,5 @@
 /**
- * service.admin.delete.products.ts - version 1.2.0
+ * service.admin.delete.products.ts - version 1.3.0
  * Service for deleting products operations.
  * 
  * Functionality:
@@ -13,6 +13,11 @@
  * 2. Validate required fields and data formats
  * 3. Delete products from database (cascade deletion handles related data)
  * 4. Return formatted response
+ * 
+ * Changes in v1.3.0:
+ * - Added scope check support for authorization
+ * - If effectiveScope = 'own', checks access to each product before deletion
+ * - Deletes only accessible products and returns errors for inaccessible ones
  */
 
 import { Request } from 'express';
@@ -28,6 +33,8 @@ import { getRequestorUuidFromReq } from '@/core/helpers/get.requestor.uuid.from.
 // Legacy validation removed; rely on basic type checks and DB
 import { createAndPublishEvent } from '@/core/eventBus/fabric.events';
 import { PRODUCT_DELETE_EVENTS } from './events.admin.products';
+import { AuthenticatedRequest } from '@/core/guards/types.guards';
+import { checkProductAccess } from './helpers.check.product.access';
 
 // Type assertion for pool
 const pool = pgPool as Pool;
@@ -79,12 +86,74 @@ export async function deleteProducts(
         // Validate input data
         validateProductIds(params.productIds);
 
+        // Get requestor UUID for access check
+        const requestorUuid = await getRequestorUuidFromReq(req);
+        if (!requestorUuid) {
+            return {
+                deletedProducts: [],
+                errors: [{ id: 'auth', error: 'Unable to identify requesting user' }],
+                totalRequested: params.productIds.length,
+                totalDeleted: 0,
+                totalErrors: params.productIds.length
+            };
+        }
+
+        // Check scope for authorization
+        const authReq = req as AuthenticatedRequest;
+        const effectiveScope = authReq.authContext?.effectiveScope;
+
+        let productsToDelete: string[] = [];
+        const errors: Array<{id: string, error: string}> = [];
+
+        // If scope is 'own', check access to each product
+        if (effectiveScope === 'own') {
+            for (const productId of params.productIds) {
+                const hasAccess = await checkProductAccess(productId, requestorUuid, client);
+                
+                if (hasAccess) {
+                    productsToDelete.push(productId);
+                } else {
+                    errors.push({
+                        id: productId,
+                        error: 'Access denied: you can only delete your own products'
+                    });
+                }
+            }
+
+            // If no products are accessible, return early
+            if (productsToDelete.length === 0) {
+                await createAndPublishEvent({
+                    eventName: PRODUCT_DELETE_EVENTS.PARTIAL_SUCCESS.eventName,
+                    req: req,
+                    payload: { 
+                        productIds: params.productIds,
+                        productCodes: [],
+                        totalDeleted: 0,
+                        totalErrors: params.productIds.length,
+                        deletedIds: [],
+                        notFoundIds: []
+                    }
+                });
+
+                return {
+                    deletedProducts: [],
+                    errors,
+                    totalRequested: params.productIds.length,
+                    totalDeleted: 0,
+                    totalErrors: params.productIds.length
+                };
+            }
+        } else {
+            // scope = 'all' - delete all requested products without access check
+            productsToDelete = params.productIds;
+        }
+
         // Delete products from database
         // PostgreSQL CASCADE will automatically delete related records:
         // - app.product_translations
         // - app.product_users  
         // - app.product_groups
-        const result = await client.query(queries.deleteProducts, [params.productIds]);
+        const result = await client.query(queries.deleteProducts, [productsToDelete]);
         
         const deletedProducts = result.rows.map(row => ({
             id: row.product_id,
@@ -92,13 +161,12 @@ export async function deleteProducts(
         }));
 
         const totalDeleted = deletedProducts.length;
-        const totalErrors = params.productIds.length - totalDeleted;
+        const totalErrors = errors.length + (productsToDelete.length - totalDeleted);
 
-        // Create errors for products that weren't found/deleted
-        const errors: Array<{id: string, error: string}> = [];
-        if (totalErrors > 0) {
+        // Add errors for products that weren't found/deleted
+        if (productsToDelete.length > totalDeleted) {
             const deletedIds = new Set(deletedProducts.map(p => p.id));
-            for (const id of params.productIds) {
+            for (const id of productsToDelete) {
                 if (!deletedIds.has(id)) {
                     errors.push({ id, error: 'Product not found or already deleted' });
                 }

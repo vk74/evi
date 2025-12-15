@@ -1,11 +1,14 @@
 /**
  * @file get.user.groups.ts
- * Version: 1.0.0
+ * Version: 1.1.0
  * BACKEND Helper for retrieving user groups
  * 
  * Functionality:
  * - Gets list of group UUIDs for a user from database
  * - Used for authorization and permission checks
+ * 
+ * Changes in v1.1.0:
+ * - Removed unnecessary START and SUCCESS events, kept only ERROR event for error tracking
  */
 
 import { Pool, QueryResult } from 'pg';
@@ -23,12 +26,6 @@ const pool = pgPool as Pool;
  */
 export async function getUserGroups(userUuid: string): Promise<string[]> {
   try {
-    // Log start
-    await createAndPublishEvent({
-      eventName: GET_USER_GROUPS_EVENTS.START.eventName,
-      payload: { userUuid }
-    });
-
     const query = {
       text: 'SELECT group_id FROM app.user_groups WHERE user_id = $1',
       values: [userUuid]
@@ -38,15 +35,6 @@ export async function getUserGroups(userUuid: string): Promise<string[]> {
     
     // Extract group IDs
     const groupIds = result.rows.map(row => row.group_id);
-
-    // Log success
-    await createAndPublishEvent({
-      eventName: GET_USER_GROUPS_EVENTS.SUCCESS.eventName,
-      payload: { 
-        userUuid, 
-        count: groupIds.length 
-      }
-    });
 
     return groupIds;
   } catch (error) {

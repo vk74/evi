@@ -1,5 +1,5 @@
     /**
-     * version: 1.9.0
+     * version: 1.10.0
      * SQL queries for pricing administration module.
      * Contains parameterized queries related to pricing (currencies and price lists).
      * Includes integrity check queries and queries for event payload data.
@@ -44,6 +44,10 @@
      * - Updated checkTaxableCategoryNameExists to check uniqueness per region (accepts region_name parameter)
      * - Updated checkTaxableCategoryNameExistsExcluding to check uniqueness per region (accepts region_name parameter)
      * - Queries now check if category exists for specific region or without region binding
+     * 
+     * Changes in v1.10.0:
+     * - Restored fetchAllTaxableCategories query to work with app.regions_taxable_categories table structure
+     * - Query now extracts unique categories from regions_taxable_categories with region information
      */
 
 export const queries = {
@@ -507,6 +511,24 @@ export const queries = {
      * Returns category_id, category_name
      */
     /* fetchAllTaxableCategoriesSimple: removed */
+
+    /**
+     * Fetch all unique taxable categories with their region bindings
+     * No parameters
+     * Returns category_id (generated), category_name, region (region_name), created_at, updated_at
+     * Note: category_id is generated as ROW_NUMBER() since categories are stored in regions_taxable_categories
+     */
+    fetchAllTaxableCategories: `
+        SELECT DISTINCT
+            ROW_NUMBER() OVER (ORDER BY rtc.category_name, r.region_name)::INTEGER as category_id,
+            rtc.category_name,
+            r.region_name as region,
+            MIN(rtc.created_at) OVER (PARTITION BY rtc.category_name, r.region_name) as created_at,
+            MAX(rtc.updated_at) OVER (PARTITION BY rtc.category_name, r.region_name) as updated_at
+        FROM app.regions_taxable_categories rtc
+        JOIN app.regions r ON rtc.region_id = r.region_id
+        ORDER BY rtc.category_name, r.region_name
+    `,
 
     /**
      * Fetch all region-taxable category bindings with VAT rates for all regions

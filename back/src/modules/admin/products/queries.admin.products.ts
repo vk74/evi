@@ -1,5 +1,5 @@
 /**
- * queries.admin.products.ts - version 1.5.0
+ * queries.admin.products.ts - version 1.6.0
  * SQL queries for products administration operations.
  * 
  * Contains all SQL queries used by products admin module.
@@ -74,6 +74,11 @@
   Changes in v1.5.0:
   - Fixed language_code comparisons in fetchAllProducts and fetchAllOptions to cast enum to text
   - This allows queries to work with both old enum values ('en', 'ru') and new values ('english', 'russian')
+  
+  Changes in v1.6.0:
+  - Added fetchAllProductsWithScopeFilter query for 'own' scope filtering
+  - Added countAllProductsWithScopeFilter query for 'own' scope filtering
+  - Scope filter checks: user is owner OR user's group is linked as product_specialists
  */
 
 export const queries = {
@@ -371,6 +376,118 @@ export const queries = {
             ($2::text = 'unpublished' AND p.is_published = false)
         )
         AND ($3::text IS NULL OR $3::text = '' OR p.status_code::text = $3::text)
+    `,
+
+    /**
+     * Fetches all products with pagination, search, sorting and filtering with scope filter for 'own' access
+     * Parameters: [offset, limit, searchQuery, sortBy, sortDesc, publishedFilter, languageCode, statusFilter, userUuid]
+     * Scope filter: user is owner OR user's group is linked as product_specialists
+     */
+    fetchAllProductsWithScopeFilter: `
+        SELECT 
+            p.product_id,
+            p.product_code,
+            p.translation_key,
+            p.is_published,
+            p.is_visible_owner,
+            p.is_visible_groups,
+            p.is_visible_tech_specs,
+            p.is_visible_long_description,
+            p.status_code,
+            p.created_by,
+            p.created_at,
+            p.updated_by,
+            p.updated_at,
+            pt.name as translation_name,
+            pt.language_code,
+            owner_user.username as owner_name,
+            array_agg(DISTINCT specialist_group.group_name) FILTER (WHERE specialist_group.group_name IS NOT NULL) as specialists_groups
+        FROM app.products p
+        LEFT JOIN app.product_translations pt ON p.product_id = pt.product_id AND pt.language_code::text = $7::text
+        LEFT JOIN (
+            SELECT pu.product_id, u.username
+            FROM app.product_users pu
+            JOIN app.users u ON pu.user_id = u.user_id
+            WHERE pu.role_type = 'owner'
+        ) owner_user ON p.product_id = owner_user.product_id
+        LEFT JOIN (
+            SELECT pg.product_id, g.group_name
+            FROM app.product_groups pg
+            JOIN app.groups g ON pg.group_id = g.group_id
+            WHERE pg.role_type = 'product_specialists'
+        ) specialist_group ON p.product_id = specialist_group.product_id
+        WHERE 1=1
+        AND ($3::text IS NULL OR $3::text = '' OR LOWER(p.product_code) LIKE LOWER($3::text) OR LOWER(pt.name) LIKE LOWER($3::text) OR LOWER(p.translation_key) LIKE LOWER($3::text))
+        AND ($6::text IS NULL OR $6::text = '' OR 
+            ($6::text = 'published' AND p.is_published = true) OR
+            ($6::text = 'unpublished' AND p.is_published = false)
+        )
+        AND ($8::text IS NULL OR $8::text = '' OR p.status_code::text = $8::text)
+        AND (
+            EXISTS (
+                SELECT 1 FROM app.product_users pu 
+                WHERE pu.product_id = p.product_id 
+                AND pu.user_id = $9 
+                AND pu.role_type = 'owner'
+            )
+            OR EXISTS (
+                SELECT 1 FROM app.product_groups pg
+                JOIN app.user_groups ug ON pg.group_id = ug.group_id
+                WHERE pg.product_id = p.product_id
+                AND pg.role_type = 'product_specialists'
+                AND ug.user_id = $9
+            )
+        )
+        GROUP BY p.product_id, p.product_code, p.translation_key,
+                 p.is_published, p.is_visible_owner, p.is_visible_groups, p.is_visible_tech_specs,
+                 p.is_visible_long_description, p.status_code, p.created_by, p.created_at,
+                 p.updated_by, p.updated_at, pt.name, pt.language_code, owner_user.username
+        ORDER BY 
+            CASE WHEN $4 = 'product_code' AND $5 = false THEN p.product_code END ASC,
+            CASE WHEN $4 = 'product_code' AND $5 = true THEN p.product_code END DESC,
+            CASE WHEN $4 = 'name' AND $5 = false THEN pt.name END ASC,
+            CASE WHEN $4 = 'name' AND $5 = true THEN pt.name END DESC,
+            CASE WHEN $4 = 'status_code' AND $5 = false THEN p.status_code END ASC,
+            CASE WHEN $4 = 'status_code' AND $5 = true THEN p.status_code END DESC,
+            CASE WHEN $4 = 'published' AND $5 = false THEN p.is_published END ASC,
+            CASE WHEN $4 = 'published' AND $5 = true THEN p.is_published END DESC,
+            CASE WHEN $4 = 'owner' AND $5 = false THEN owner_user.username END ASC NULLS LAST,
+            CASE WHEN $4 = 'owner' AND $5 = true THEN owner_user.username END DESC NULLS LAST,
+            p.product_code ASC
+        LIMIT $2 OFFSET $1
+    `,
+
+    /**
+     * Counts total products with same filters as fetchAllProductsWithScopeFilter
+     * Parameters: [searchQuery, publishedFilter, statusFilter, userUuid]
+     * Scope filter: user is owner OR user's group is linked as product_specialists
+     */
+    countAllProductsWithScopeFilter: `
+        SELECT COUNT(DISTINCT p.product_id) as total
+        FROM app.products p
+        LEFT JOIN app.product_translations pt ON p.product_id = pt.product_id
+        WHERE 1=1
+        AND ($1::text IS NULL OR $1::text = '' OR LOWER(p.product_code) LIKE LOWER($1::text) OR LOWER(pt.name) LIKE LOWER($1::text) OR LOWER(p.translation_key) LIKE LOWER($1::text))
+        AND ($2::text IS NULL OR $2::text = '' OR 
+            ($2::text = 'published' AND p.is_published = true) OR
+            ($2::text = 'unpublished' AND p.is_published = false)
+        )
+        AND ($3::text IS NULL OR $3::text = '' OR p.status_code::text = $3::text)
+        AND (
+            EXISTS (
+                SELECT 1 FROM app.product_users pu 
+                WHERE pu.product_id = p.product_id 
+                AND pu.user_id = $4 
+                AND pu.role_type = 'owner'
+            )
+            OR EXISTS (
+                SELECT 1 FROM app.product_groups pg
+                JOIN app.user_groups ug ON pg.group_id = ug.group_id
+                WHERE pg.product_id = p.product_id
+                AND pg.role_type = 'product_specialists'
+                AND ug.user_id = $4
+            )
+        )
     `,
 
     // Delete products query - deletes products and cascades to related tables

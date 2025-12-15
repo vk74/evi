@@ -24,6 +24,7 @@ import updateUserProfileController from '../../modules/account/controller.update
 import { loginController } from './controller.login';
 import { refreshTokensController } from './controller.refresh.tokens';
 import { logoutController } from './controller.logout';
+import getPermissionsController from './controller.get.permissions';
 // import serviceChangePassword from '../../modules/account/service.change.password';
 
 const router: Router = express.Router();
@@ -43,6 +44,7 @@ router.post('/api/auth/change-password', checkRateLimit, checkRequestSecurityHar
 });
 router.get('/api/auth/profile', checkRateLimit, checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, fetchUserProfileController);
 router.post('/api/auth/profile', checkRateLimit, checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, updateUserProfileController);
+router.get('/api/auth/permissions', checkRateLimit, checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, getPermissionsController);
 
 
 
