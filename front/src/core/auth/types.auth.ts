@@ -104,6 +104,13 @@ export interface RefreshTokenResponse {
 }
 
 /**
+ * Permissions response interface
+ */
+export interface PermissionsResponse {
+  permissions: string[];
+}
+
+/**
  * Logout response interface
  */
 export interface LogoutResponse {
@@ -132,6 +139,7 @@ export interface UserState {
   tokenExpires: number
   activeModule: string // Added for compatibility with old store
   language: string // Added for compatibility with old store
+  permissions: Set<string> // List of user permissions
 }
 
 // Storage keys

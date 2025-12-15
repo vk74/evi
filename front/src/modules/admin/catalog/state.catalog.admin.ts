@@ -141,6 +141,19 @@ export const useCatalogAdminStore = defineStore('catalogAdmin', {
       this.publishedServiceSections = []
       this.unpublishedServices = []
       this.availableSections = []
+    },
+
+    resetState() {
+      this.selectedSectionPath = 'Catalog.Sections'
+      this.expandedSections = ['Catalog']
+      this.isLoading = false
+      this.activeComponent = 'Catalog.Sections'
+      this.editorMode = 'creation'
+      this.activeEditorSection = 'information'
+      this.editingSectionId = null
+      this.sections = []
+      this.error = null
+      this.clearServicesPublisherData()
     }
   }
 })

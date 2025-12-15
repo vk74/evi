@@ -12,6 +12,7 @@ import { useUiStore } from '@/core/state/uistate'
 import type { LoginRequest, LoginResponse } from './types.auth'
 import { STORAGE_KEYS } from './types.auth'
 import { generateDeviceFingerprint } from './helper.generate.device.fingerprint'
+import { fetchPermissionsService } from './service.permissions'
 
 // API configuration
 const LOGIN_ENDPOINT = '/api/auth/login'
@@ -88,6 +89,9 @@ export async function loginService(username: string, password: string): Promise<
       
       // Update user store with token
       updateUserStore(response.data.accessToken)
+      
+      // Fetch user permissions
+      await fetchPermissionsService()
       
       console.log('[Login Service] Login successful for user:', username)
       return { success: true }

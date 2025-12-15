@@ -65,6 +65,43 @@ function resetProductsStore(): void {
 }
 
 /**
+ * Resets additional stores to ensure complete cleanup
+ */
+async function resetAdditionalStores(): Promise<void> {
+  try {
+    // Reset App State (navigation, location)
+    const appStore = useAppStore()
+    appStore.resetState()
+    
+    // Reset User Account Store
+    const { useUserAccountStore } = await import('@/modules/account/state.user.account')
+    const accountStore = useUserAccountStore()
+    accountStore.resetProfile()
+    accountStore.resetSettings()
+    accountStore.resetSessionData()
+    
+    // Reset Org Admin Store
+    const { useOrgAdminStore } = await import('@/modules/admin/org/state.org.admin')
+    useOrgAdminStore().resetState()
+    
+    // Reset Catalog Admin Store
+    const { useCatalogAdminStore } = await import('@/modules/admin/catalog/state.catalog.admin')
+    useCatalogAdminStore().resetState()
+    
+    // Reset Pricing Admin Store
+    const { usePricingAdminStore } = await import('@/modules/admin/pricing/state.pricing.admin')
+    usePricingAdminStore().resetState()
+    
+    // Clear App Settings Persistence
+    localStorage.removeItem('evi-app-settings')
+    
+    console.log('[Logout Service] Additional stores reset successfully')
+  } catch (error) {
+    console.error('[Logout Service] Error resetting additional stores:', error)
+  }
+}
+
+/**
  * Sends logout request to backend with device fingerprint
  * Refresh token is automatically sent as httpOnly cookie
  */
@@ -141,6 +178,9 @@ export async function logoutService(): Promise<boolean> {
     // Reset products admin store
     resetProductsStore()
     
+    // Reset additional stores
+    await resetAdditionalStores()
+    
     // Clear public settings cache
     const { useAppSettingsStore } = await import('../../modules/admin/settings/state.app.settings')
     const appSettingsStore = useAppSettingsStore()
@@ -175,6 +215,7 @@ export async function logoutService(): Promise<boolean> {
     clearTokens()
     resetUserStore()
     resetProductsStore()
+    await resetAdditionalStores()
     clearRefreshTimer()
     
     // Clear public settings cache and reload public settings

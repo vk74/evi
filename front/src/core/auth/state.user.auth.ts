@@ -110,7 +110,8 @@ const initialState: UserState = {
     }
     // Use fallback from settings if language not set or invalid
     return getFallbackLanguage();
-  })()
+  })(),
+  permissions: new Set()
 }
 
 /**
@@ -120,9 +121,16 @@ function loadPersistedState(): UserState {
   try {
     const persistedState = localStorage.getItem(STORAGE_KEYS.USER_STATE)
     if (persistedState) {
-      const parsed = JSON.parse(persistedState) as UserState
-      console.log('[User Auth State] Loaded persisted state:', parsed)
+      const parsed = JSON.parse(persistedState)
+      console.log('[User Auth State] Loaded persisted state')
       
+      // Convert permissions array back to Set
+      if (parsed.permissions && Array.isArray(parsed.permissions)) {
+        parsed.permissions = new Set(parsed.permissions)
+      } else {
+        parsed.permissions = new Set()
+      }
+
       // Ensure language is always a valid full language name
       if (!parsed.language || typeof parsed.language !== 'string') {
         // Try to get from localStorage, then fallback to settings
@@ -142,7 +150,7 @@ function loadPersistedState(): UserState {
         }
       }
       
-      return parsed
+      return parsed as UserState
     }
   } catch (error) {
     console.error('[User Auth State] Error loading persisted state:', error)
@@ -155,7 +163,12 @@ function loadPersistedState(): UserState {
  */
 function savePersistedState(state: UserState): void {
   try {
-    localStorage.setItem(STORAGE_KEYS.USER_STATE, JSON.stringify(state))
+    // Convert Set to Array for JSON serialization
+    const stateToSave = {
+      ...state,
+      permissions: Array.from(state.permissions)
+    }
+    localStorage.setItem(STORAGE_KEYS.USER_STATE, JSON.stringify(stateToSave))
     console.log('[User Auth State] State persisted to localStorage')
   } catch (error) {
     console.error('[User Auth State] Error saving persisted state:', error)
@@ -399,6 +412,7 @@ export const useUserAuthStore = defineStore('userAuth', {
       this.issuedAt = 0
       this.jwtId = ''
       this.tokenExpires = 0
+      this.permissions = new Set()
       
       // Clear persisted state
       clearPersistedState()
@@ -475,6 +489,23 @@ export const useUserAuthStore = defineStore('userAuth', {
      */
     setTokenExpires(tokenExpires: number): void {
       this.tokenExpires = tokenExpires
+      savePersistedState(this.$state)
+    },
+
+    /**
+     * Sets user permissions
+     */
+    setPermissions(permissions: string[]): void {
+      this.permissions = new Set(permissions)
+      savePersistedState(this.$state)
+      console.log(`[User Auth State] Set ${permissions.length} permissions`)
+    },
+
+    /**
+     * Clears user permissions
+     */
+    clearPermissions(): void {
+      this.permissions = new Set()
       savePersistedState(this.$state)
     },
     

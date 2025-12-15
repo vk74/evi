@@ -30,6 +30,13 @@ export const useOrgAdminStore = defineStore('org-admin', {
      */
     setActiveSection(sectionId: UserSectionId) {
       this.activeSection = sectionId
+    },
+
+    /**
+     * Reset state to initial values
+     */
+    resetState() {
+      this.activeSection = 'users-proto'
     }
   },
 
