@@ -89,7 +89,8 @@ export const eventReferenceFiles: Record<string, string[]> = {
   
   // Authentication events - events for authentication operations
   auth: [
-    path.resolve(__dirname, '../../../core/auth/events.auth.ts')
+    path.resolve(__dirname, '../../../core/auth/events.auth.ts'),
+    path.resolve(__dirname, '../../../core/auth/events.authorization.ts')
   ],
   
   // Event Bus events - events for event bus service operations

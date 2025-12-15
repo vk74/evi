@@ -75,6 +75,7 @@ import { ref, computed, onMounted, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useProductsAdminStore } from '../../state.products.admin'
 import { useUiStore } from '@/core/state/uistate'
+import { can } from '@/core/helpers/helper.check.permissions'
 import { defineAsyncComponent } from 'vue'
 import { serviceCreateProduct } from '../../service.create.product'
 import { serviceFetchSingleProduct } from '../../service.fetch.single.product'
@@ -124,12 +125,34 @@ const isCreationMode = computed(() => productsStore.editorMode === 'creation')
 const isEditMode = computed(() => productsStore.editorMode === 'edit')
 const editingProductId = computed(() => productsStore.editingProductId)
 const hasChanges = computed(() => productsStore.hasChanges)
+
+        // Read-only mode logic:
+        // 1. If user has full update rights (update:all) -> NOT read-only
+        // 2. If user has own update rights (update:own) -> check ownership (fallback to NOT read-only to let backend decide)
+        // 3. Otherwise -> read-only
+        const isReadOnly = computed(() => {
+          if (isCreationMode.value) return false // Creation is always editable if we got here
+          
+          if (can('adminProducts:items:update:all')) return false
+          
+          if (can('adminProducts:items:update:own')) {
+            // If we have owner info and it matches current user, definitely editable
+            // If not matching, it might still be editable via groups (which we can't easily check here)
+            // So we default to editable to avoid blocking valid access
+            // Backend will enforce 403 if really not allowed
+            return false
+          }
+          
+          return true
+        })
+
 const isUpdateButtonEnabled = computed(() => {
   return isFormValid.value && 
          !isSubmitting.value && 
          validationRulesReady.value && 
          hasChanges.value &&
-         areSpecialistsGroupsValid.value
+         areSpecialistsGroupsValid.value &&
+         !isReadOnly.value
 })
 
 // Allowed languages for admin product editor based on Application.RegionalSettings.allowed.languages
@@ -715,6 +738,7 @@ onMounted(async () => {
                   :rules="productCodeRules"
                   variant="outlined"
                   color="teal"
+                  :readonly="isReadOnly"
                   required
                 />
               </v-col>
@@ -729,6 +753,7 @@ onMounted(async () => {
                   :rules="statusRules"
                   variant="outlined"
                   color="teal"
+                  :readonly="isReadOnly"
                   required
                 >
                   <template #append-inner>
@@ -744,13 +769,13 @@ onMounted(async () => {
                 md="6"
               >
                 <div class="picture-placeholder">
-                  <div 
-                    class="picture-placeholder-content"
-                    style="cursor: pointer;"
-                    @click="openPicturePicker"
-                  >
-                    <component 
-                      :is="selectedPictureComponent"
+                    <div 
+                      class="picture-placeholder-content"
+                      :style="{ cursor: isReadOnly ? 'default' : 'pointer' }"
+                      @click="!isReadOnly && openPicturePicker()"
+                    >
+                      <component 
+                        :is="selectedPictureComponent"
                       v-if="selectedPictureComponent"
                       :size="48"
                       color="rgb(20, 184, 166)"
@@ -795,6 +820,7 @@ onMounted(async () => {
                     >
                       <span class="mr-2">{{ group }}</span>
                       <v-btn
+                        v-if="!isReadOnly"
                         icon
                         variant="text"
                         density="compact"
@@ -805,7 +831,7 @@ onMounted(async () => {
                       </v-btn>
                     </v-chip>
                     <v-btn
-                      v-if="formData.specialistsGroups.length === 0"
+                      v-if="formData.specialistsGroups.length === 0 && !isReadOnly"
                       variant="outlined"
                       color="teal"
                       size="small"
@@ -818,7 +844,7 @@ onMounted(async () => {
                       {{ t('admin.products.editor.contacts.addGroups') }}
                     </v-btn>
                     <v-btn
-                      v-else
+                      v-else-if="!isReadOnly"
                       variant="text"
                       color="teal"
                       size="small"
@@ -875,6 +901,7 @@ onMounted(async () => {
                   :rules="nameRules"
                   variant="outlined"
                   color="teal"
+                  :readonly="isReadOnly"
                   required
                 />
               </v-col>
@@ -892,6 +919,7 @@ onMounted(async () => {
                   counter="250"
                   no-resize
                   color="teal"
+                  :readonly="isReadOnly"
                   required
                 />
               </v-col>
@@ -908,6 +936,7 @@ onMounted(async () => {
                   counter="10000"
                   no-resize
                   color="teal"
+                  :readonly="isReadOnly"
                 />
               </v-col>
             </v-row>
@@ -935,6 +964,7 @@ onMounted(async () => {
                   variant="outlined"
                   rows="4"
                   color="teal"
+                  :readonly="isReadOnly"
                   @input="updateJsonbField('techSpecs', $event)"
                 />
               </v-col>
@@ -962,6 +992,7 @@ onMounted(async () => {
             variant="outlined"
             color="teal"
             class="select-picture-btn-sidebar"
+            :disabled="isReadOnly"
             @click="openPicturePicker"
           >
             <template #prepend>

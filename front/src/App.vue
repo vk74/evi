@@ -26,11 +26,18 @@ import { useUiStore } from './core/state/uistate';
 import { useAppStore } from './core/state/appstate';
 import { useAppSettingsStore } from './modules/admin/settings/state.app.settings';
 import { useI18n } from 'vue-i18n';
-import { ModuleName, DrawerMode, AdminSubModule } from './types.app';
+import { can } from '@/core/helpers/helper.check.permissions'; // Added import
 
-import { logoutService } from '@/core/auth/service.logout';
-// Defer loading of Phosphor icons to avoid pulling the whole library in the initial chunk
-const icons = ref<Record<string, any>>({})
+// Regular component imports
+import ModuleLogin from './core/auth/ModuleLogin.vue';
+import ChangePassword from './core/ui/modals/change-password/ChangePassword.vue';
+import { PasswordChangeMode } from './core/ui/modals/change-password/types.change.password';
+import LoginDialog from './core/auth/ModuleLogin.vue';
+import ModuleNewUserSelfRegistration from './modules/account/ModuleNewUserSelfRegistration.vue';
+import AppSnackbar from './core/ui/snackbars/AppSnackbar.vue';
+import CriticalSettingsErrorModal from './core/ui/modals/CriticalSettingsErrorModal.vue';
+import LocationSelectionModal from './core/ui/modals/user-location-selection/LocationSelectionModal.vue';
+
 
 // Async component imports with named chunks and prefetch hints
 const ModuleCatalog = defineAsyncComponent(() => import(/* webpackChunkName: "mod-catalog" */ /* webpackPrefetch: true */ './modules/catalog/ModuleCatalog.vue'));
@@ -53,16 +60,6 @@ const SubModuleAppSettings = defineAsyncComponent(() => import(/* webpackChunkNa
 const SubModuleProducts = defineAsyncComponent(() => import(/* webpackChunkName: "admin-products" */ './modules/admin/products/SubModuleProducts.vue'));
 const SubModulePricing = defineAsyncComponent(() => import(/* webpackChunkName: "admin-pricing" */ './modules/admin/pricing/SubModulePricing.vue'));
 
-// Regular component imports
-import ModuleLogin from './core/auth/ModuleLogin.vue';
-import ChangePassword from './core/ui/modals/change-password/ChangePassword.vue';
-import { PasswordChangeMode } from './core/ui/modals/change-password/types.change.password';
-import LoginDialog from './core/auth/ModuleLogin.vue';
-import ModuleNewUserSelfRegistration from './modules/account/ModuleNewUserSelfRegistration.vue';
-import AppSnackbar from './core/ui/snackbars/AppSnackbar.vue';
-import CriticalSettingsErrorModal from './core/ui/modals/CriticalSettingsErrorModal.vue';
-import LocationSelectionModal from './core/ui/modals/user-location-selection/LocationSelectionModal.vue';
-
 // Store and i18n initialization
 const userStore = useUserAuthStore();
 const uiStore = useUiStore();
@@ -71,6 +68,7 @@ const appSettingsStore = useAppSettingsStore();
 const i18n = useI18n();
 
 // Refs
+const icons = ref<Record<string, any>>({})
 const drawer = ref<boolean>(true);
 const isChangePassModalVisible = ref<boolean>(false);
 const isLoginDialogVisible = ref<boolean>(false);
@@ -884,6 +882,7 @@ onMounted(async () => {
               
               <!-- Products Admin -->
               <v-list-item
+                v-if="can('adminProducts:module:access')"
                 v-tooltip="{
                   text: $t('admin.products.sections.productsList'),
                   location: 'right',

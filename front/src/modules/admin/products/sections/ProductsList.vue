@@ -47,6 +47,7 @@ import { ref, computed, onMounted, watch, defineAsyncComponent } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useUiStore } from '@/core/state/uistate'
 import { useProductsAdminStore } from '../state.products.admin'
+import { can, canAny } from '@/core/helpers/helper.check.permissions'
 import DataLoading from '@/core/ui/loaders/DataLoading.vue'
 import type { Product, ProductWithTranslations, ProductWithFullData, ProductListItem, FetchAllProductsResult } from '../types.products.admin'
 import { serviceFetchAllProducts } from '../service.fetch.all.products'
@@ -176,6 +177,8 @@ const handleError = (error: unknown, context: string) => {
 
 // Product action handlers
 const addProduct = () => {
+  if (!can('adminProducts:items:create')) return
+  
   // Set editor mode to creation and switch to editor section
   productsStore.openProductEditor('creation', undefined, undefined)
   productsStore.setActiveSection('product-editor')
@@ -191,6 +194,9 @@ const addProduct = () => {
 const editProduct = async () => {
   const selectedIds = Array.from(selectedProducts.value)
   if (selectedIds.length === 1) {
+    // Check permission - either update:all or update:own
+    if (!can('adminProducts:items:update:all') && !can('adminProducts:items:update:own')) return
+
     const productId = selectedIds[0]
     
     try {
@@ -221,6 +227,9 @@ const editProduct = async () => {
 }
 
 const assignOwner = () => {
+  // Check permission
+  if (!can('adminProducts:items:change_owner:all') && !can('adminProducts:items:change_owner:own')) return
+
   const selectedIds = Array.from(selectedProducts.value)
   if (selectedIds.length === 0) {
     uiStore.showErrorSnackbar(t('admin.products.messages.assignOwner.noProductsSelected'))
@@ -235,6 +244,7 @@ const assignOwner = () => {
 }
 
 const deleteProduct = () => {
+  if (!can('adminProducts:items:delete:all')) return
   showDeleteDialog.value = true
 }
 
@@ -715,6 +725,7 @@ const handleAssignOwnerClose = () => {
           </h3>
           
           <v-btn
+            v-if="can('adminProducts:items:create')"
             block
             color="teal"
             variant="outlined"
@@ -764,6 +775,7 @@ const handleAssignOwnerClose = () => {
           </h3>
           
           <v-btn
+            v-if="canAny(['adminProducts:items:update:all', 'adminProducts:items:update:own'])"
             block
             color="teal"
             variant="outlined"
@@ -775,6 +787,7 @@ const handleAssignOwnerClose = () => {
           </v-btn>
           
           <v-btn
+            v-if="canAny(['adminProducts:items:change_owner:all', 'adminProducts:items:change_owner:own'])"
             block
             color="blue"
             variant="outlined"
@@ -787,6 +800,7 @@ const handleAssignOwnerClose = () => {
           </v-btn>
           
           <v-btn
+            v-if="can('adminProducts:items:delete:all')"
             block
             color="error"
             variant="outlined"

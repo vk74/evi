@@ -8,6 +8,7 @@
 import { computed, defineAsyncComponent } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useProductsAdminStore } from './state.products.admin'
+import { can } from '@/core/helpers/helper.check.permissions'
 import type { ProductSectionId, Section } from './types.products.admin'
 
 // Импортируем Phosphor иконки
@@ -27,23 +28,35 @@ const { t } = useI18n()
 const productsStore = useProductsAdminStore()
 
 // Define administrative module sections as computed property
-const sections = computed((): Section[] => [
-  {
-    id: 'products-list',
-    title: t('admin.products.sections.productsList'),
-    icon: 'PhAlignLeft'
-  },
-  {
-    id: 'product-editor',
-    title: t('admin.products.sections.productEditor'),
-    icon: 'PhPencilSimple'
-  },
-  {
-    id: 'settings',
-    title: t('admin.products.sections.settings'),
-    icon: 'PhFadersHorizontal'
-  }
-])
+const sections = computed((): Section[] => {
+  const result: Section[] = [
+    {
+      id: 'products-list',
+      title: t('admin.products.sections.productsList'),
+      icon: 'PhAlignLeft',
+      // Always visible if user has module access (checked at router level usually, but safe to keep)
+      visible: can('adminProducts:module:access')
+    },
+    {
+      id: 'product-editor',
+      title: t('admin.products.sections.productEditor'),
+      icon: 'PhPencilSimple',
+      // Visible if user can create or update products
+      visible: can('adminProducts:items:create') || 
+               can('adminProducts:items:update:all') || 
+               can('adminProducts:items:update:own')
+    },
+    {
+      id: 'settings',
+      title: t('admin.products.sections.settings'),
+      icon: 'PhFadersHorizontal',
+      // Visible only if user can update settings
+      visible: can('adminProducts:settings:update')
+    }
+  ]
+  
+  return result.filter(s => s.visible !== false)
+})
 
 // Computed properties and methods for section management
 const activeSection = computed((): ProductSectionId => productsStore.getCurrentSection)
@@ -76,7 +89,7 @@ const getIconComponent = (iconName: string) => {
         class="sections-list"
       >
         <v-list-item
-          v-for="section in sections.filter(s => s.visible !== false)"
+          v-for="section in sections"
           :key="section.id"
           :class="[
             'section-item',
