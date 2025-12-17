@@ -1,6 +1,6 @@
 /**
  * @file events.authorization.ts
- * Version: 1.1.0
+ * Version: 1.3.0
  * Event definitions for authorization operations (RBAC/ABAC).
  * Backend file.
  * 
@@ -8,19 +8,28 @@
  * - Removed redundant load events (start/success)
  * - Updated eventType to 'authorization'
  * - Enhanced error event payload
+ * 
+ * Changes in v1.2.0:
+ * - Converted PERMISSION_SERVICE_EVENTS and PERMISSION_CHECK_EVENTS to EventCollection format
+ * - Changed structure to use string keys matching event name parts for proper registration
+ * 
+ * Changes in v1.3.0:
+ * - Fixed event names to use 'auth' domain prefix instead of 'authorization' to match domain registration
+ * - Event names now correctly match the event reference system's domain-based naming (auth.*)
  */
+
+import { EventCollection } from '../eventBus/types.events';
 
 /**
  * Permission Service Events
  */
-export const PERMISSION_SERVICE_EVENTS = {
-  LOAD_ERROR: {
-    eventName: 'authorization.permissions.load.error',
+export const PERMISSION_SERVICE_EVENTS: EventCollection = {
+  'permissions.load.error': {
+    eventName: 'auth.permissions.load.error',
     source: 'permission service',
     eventType: 'authorization' as const,
     severity: 'error' as const,
     eventMessage: 'Error loading system permissions',
-    payload: null, // { error, attemptedAt }
     version: '1.0.0'
   }
 };
@@ -28,36 +37,33 @@ export const PERMISSION_SERVICE_EVENTS = {
 /**
  * Permission Check Events (Guard)
  */
-export const PERMISSION_CHECK_EVENTS = {
-  CHECK_ACCESS_DENIED: {
-    eventName: 'authorization.check.denied',
+export const PERMISSION_CHECK_EVENTS: EventCollection = {
+  'check.denied': {
+    eventName: 'auth.check.denied',
     source: 'permission guard',
     eventType: 'authorization' as const,
     severity: 'warning' as const,
     eventMessage: 'Access denied: insufficient permissions',
     // Payload should answer: WHO tried to do WHAT on WHICH resource and WHY it failed
-    payload: null, // { userUuid, requiredPermission, method, path, ip, resourceId? }
     version: '1.1.0'
   },
 
-  CHECK_ACCESS_GRANTED: {
-    eventName: 'authorization.check.granted',
+  'check.granted': {
+    eventName: 'auth.check.granted',
     source: 'permission guard',
     eventType: 'authorization' as const,
     severity: 'debug' as const, // Debug severity as this is a high-volume event
     eventMessage: 'Access granted',
     // Payload should answer: WHO was granted access to WHAT on WHICH resource
-    payload: null, // { userUuid, permission, scope, method, path, resourceId? }
     version: '1.1.0'
   },
   
-  CHECK_ERROR: {
-    eventName: 'authorization.check.error',
+  'check.error': {
+    eventName: 'auth.check.error',
     source: 'permission guard',
     eventType: 'authorization' as const,
     severity: 'error' as const,
     eventMessage: 'Error checking permissions',
-    payload: null, // { error, userUuid, requiredPermission, method, path }
     version: '1.1.0'
   }
 };

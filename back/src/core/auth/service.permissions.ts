@@ -1,12 +1,16 @@
 /**
  * @file service.permissions.ts
- * Version: 1.1.0
+ * Version: 1.2.0
  * Service for loading and caching system permissions.
  * Implements Singleton pattern using module-level state.
  * 
  * Changes in v1.1.0:
  * - Refactored to functional style (removed class)
  * - Removed redundant event logging
+ * 
+ * Changes in v1.2.0:
+ * - Added better error handling for missing database tables
+ * - Improved error messages to guide database migration
  */
 
 import { Pool } from 'pg';
@@ -55,13 +59,40 @@ export async function loadPermissions(): Promise<void> {
     console.log(`[PermissionService] Loaded ${permissionsCount} permissions for ${permissionsMap.size} system groups.`);
 
   } catch (error) {
+    // Check if error is about missing table
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    const isTableMissing = errorMessage.includes('does not exist') && 
+                          (errorMessage.includes('group_permissions') || errorMessage.includes('relation'));
+    
+    if (isTableMissing) {
+      const helpfulMessage = `Database table 'app.group_permissions' does not exist. ` +
+                            `Please run migration 003_authorization_setup.sql to create the authorization tables. ` +
+                            `Original error: ${errorMessage}`;
+      
+      console.error(`[PermissionService] ${helpfulMessage}`);
+      
+      await createAndPublishEvent({
+        eventName: PERMISSION_SERVICE_EVENTS['permissions.load.error'].eventName,
+        payload: { 
+          error: helpfulMessage,
+          attemptedAt: new Date().toISOString(),
+          errorType: 'MISSING_TABLE',
+          suggestion: 'Run migration 003_authorization_setup.sql'
+        },
+        errorData: helpfulMessage
+      });
+      
+      throw new Error(helpfulMessage);
+    }
+    
+    // For other errors, use standard error handling
     await createAndPublishEvent({
-      eventName: PERMISSION_SERVICE_EVENTS.LOAD_ERROR.eventName,
+      eventName: PERMISSION_SERVICE_EVENTS['permissions.load.error'].eventName,
       payload: { 
-        error: error instanceof Error ? error.message : String(error),
+        error: errorMessage,
         attemptedAt: new Date().toISOString()
       },
-      errorData: error instanceof Error ? error.message : String(error)
+      errorData: errorMessage
     });
     throw error;
   }

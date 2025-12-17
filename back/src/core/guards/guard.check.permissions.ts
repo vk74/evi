@@ -23,7 +23,7 @@ export const checkPermissions = (requiredBasePermission: string) => {
       // 1. Check if user is authenticated (should be handled by previous guard, but safe check)
       if (!req.user || !req.user.user_id) {
          await createAndPublishEvent({
-          eventName: PERMISSION_CHECK_EVENTS.CHECK_ACCESS_DENIED.eventName,
+          eventName: PERMISSION_CHECK_EVENTS['check.denied'].eventName,
           payload: { 
             reason: 'User not authenticated',
             requiredPermission: requiredBasePermission
@@ -61,7 +61,7 @@ export const checkPermissions = (requiredBasePermission: string) => {
         };
 
         await createAndPublishEvent({
-          eventName: PERMISSION_CHECK_EVENTS.CHECK_ACCESS_GRANTED.eventName,
+          eventName: PERMISSION_CHECK_EVENTS['check.granted'].eventName,
           payload: { 
             userUuid, 
             permission: requiredBasePermission,
@@ -76,7 +76,7 @@ export const checkPermissions = (requiredBasePermission: string) => {
       } else {
         // Access denied
         await createAndPublishEvent({
-          eventName: PERMISSION_CHECK_EVENTS.CHECK_ACCESS_DENIED.eventName,
+          eventName: PERMISSION_CHECK_EVENTS['check.denied'].eventName,
           payload: { 
             userUuid, 
             requiredPermission: requiredBasePermission,
@@ -94,7 +94,7 @@ export const checkPermissions = (requiredBasePermission: string) => {
 
     } catch (error) {
       await createAndPublishEvent({
-        eventName: PERMISSION_CHECK_EVENTS.CHECK_ERROR.eventName,
+        eventName: PERMISSION_CHECK_EVENTS['check.error'].eventName,
         payload: { 
           error: error instanceof Error ? error.message : String(error),
           requiredPermission: requiredBasePermission,
