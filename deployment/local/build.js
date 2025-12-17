@@ -1,13 +1,17 @@
 #!/usr/bin/env node
 
 // evi Local Podman Build & Management Script
-// Version: 2.1 (Postgres 17 + pg_cron cache modes)
+// Version: 1.1.1 (Postgres 17 + pg_cron cache modes)
 // Description: A streamlined Node.js script to manage the local Podman environment for evi.
 // Now focuses on "Database First" workflow.
 //
-// Changes in v2.1:
+// Changes in v1.1:
 // - Added explicit podman pull for postgres:17 to refresh local image cache before DB rebuild
 // - Added option to build & start DB using cached images only (no remote pulls) for offline/fast startup
+//
+// Changes in v1.1.1:
+// - Fixed podman pull command to use full image name (docker.io/postgres:17) to resolve short-name resolution issues
+// - Added cross-platform support: uses podman-compose on macOS and podman compose on Linux
 
 const { execSync } = require('child_process');
 const readline = require('readline');
@@ -39,17 +43,22 @@ function envFileExists() {
 }
 
 /**
- * Gets the Podman compose command.
- * Uses 'podman-compose' for Podman compose operations.
+ * Gets the Podman compose command based on the operating system.
+ * - macOS: Uses 'podman-compose' (Python-based standalone tool)
+ * - Linux: Uses 'podman compose' (built-in Podman compose plugin)
  * @param {string} command - The compose command (e.g., 'build', 'up', 'down').
  * @param {string} additionalArgs - Additional arguments to append.
- * @returns {string} The complete podman-compose command.
+ * @returns {string} The complete podman compose command for the current platform.
  */
 function getComposeCommand(command, additionalArgs = '') {
-  // Use 'podman-compose' for Podman compose operations
-  // This uses the standalone podman-compose tool
+  const isMac = process.platform === 'darwin';
+  const isLinux = process.platform === 'linux';
   
-  let cmd = `podman-compose -f "${COMPOSE_FILE}"`;
+  // On macOS, use podman-compose (Python-based standalone tool)
+  // On Linux, use podman compose (built-in command)
+  const composeCmd = isMac ? 'podman-compose' : 'podman compose';
+  
+  let cmd = `${composeCmd} -f "${COMPOSE_FILE}"`;
   
   cmd += ` ${command}`;
   
@@ -89,6 +98,7 @@ function runCommand(command, description, quiet = false) {
     const stdio = quiet ? ['pipe', 'pipe', 'pipe'] : 'inherit';
     // Add /opt/podman/bin and Python user bin directories to PATH for the child process on macOS
     // This fixes "command not found" when running from IDEs/scripts where PATH might differ
+    // On macOS, podman-compose is installed via pip, so we need to include Python bin paths
     const env = { ...process.env };
     if (process.platform === 'darwin') {
         // Try to find podman-compose in common Python user bin locations
@@ -96,8 +106,6 @@ function runCommand(command, description, quiet = false) {
         const pythonUserBins = pythonVersions.map(v => `${process.env.HOME}/Library/Python/${v}/bin`).join(':');
         env.PATH = `/opt/podman/bin:${pythonUserBins}:${env.PATH || ''}`;
     }
-
-    // podman-compose needs to be found in PATH (typically in Python user bin directory)
     
     execSync(command, { stdio, env });
     const endTime = Date.now();
@@ -238,7 +246,7 @@ function buildAndStartDB() {
   // 0. Ensure local cache has the latest postgres:17 image
   // This updates Podman's image cache with the latest upstream image.
   timings['Pull postgres:17'] = runCommand(
-    'podman pull postgres:17',
+    'podman pull docker.io/postgres:17',
     'Pull latest postgres:17 base image'
   );
 
