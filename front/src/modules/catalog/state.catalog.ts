@@ -100,6 +100,17 @@ export const resetCatalogView = () => {
   selectedServiceId.value = null;
 };
 
+/**
+ * Full reset of catalog state (e.g. on logout)
+ */
+export const resetCatalogState = () => {
+  searchQuery.value = '';
+  sortBy.value = 'name';
+  sortDirection.value = 'asc';
+  selectedServiceId.value = null;
+  clearPriceCache();
+};
+
 // ==================== PRICE CACHE ====================
 // Cache for product prices (TTL 5 minutes)
 interface CachedPriceInfo extends ProductPriceInfo {

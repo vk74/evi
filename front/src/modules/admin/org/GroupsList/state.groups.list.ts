@@ -236,6 +236,21 @@ export const useStoreGroupsList = defineStore('groupsList', () => {
         logger.info('Cache cleared');
     }
 
+    /**
+     * Resets the entire store state (alias for clearCache + pagination reset)
+     */
+    function resetState() {
+        clearCache();
+        page.value = 1;
+        itemsPerPage.value = 25;
+        sorting.value = {
+            sortBy: '',
+            sortDesc: false
+        };
+        loading.value = false;
+        logger.info('Store state reset');
+    }
+
     // Clean up the timer when the component or store is unmounted
     onUnmounted(() => {
         if (groupsJwtCheckTimer.value) {
@@ -266,6 +281,7 @@ export const useStoreGroupsList = defineStore('groupsList', () => {
         selectGroup,
         deselectGroup,
         clearSelection,
-        clearCache
+        clearCache,
+        resetState
     };
 });

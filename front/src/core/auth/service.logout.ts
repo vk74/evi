@@ -91,6 +91,35 @@ async function resetAdditionalStores(): Promise<void> {
     // Reset Pricing Admin Store
     const { usePricingAdminStore } = await import('@/modules/admin/pricing/state.pricing.admin')
     usePricingAdminStore().resetState()
+
+    // Reset AR Store
+    // Reset Catalog Module State
+    const { resetCatalogState } = await import('@/modules/catalog/state.catalog')
+    resetCatalogState()
+
+    // Reset Admin Services Store
+    const { useServicesAdminStore } = await import('@/modules/admin/services/state.services.admin')
+    useServicesAdminStore().resetAllState()
+
+    // Reset Admin Store
+    const { useAdminStore } = await import('@/modules/admin/state.admin')
+    useAdminStore().resetAllState()
+
+    // Reset Public Settings Store
+    const { usePublicSettingsStore } = await import('@/core/state/state.public.settings')
+    usePublicSettingsStore().resetState()
+
+    // Reset Org Admin Lists
+    const { useStoreUsersList } = await import('@/modules/admin/org/UsersList/State.users.list')
+    useStoreUsersList().resetState()
+    const { useStoreGroupsList } = await import('@/modules/admin/org/GroupsList/state.groups.list')
+    useStoreGroupsList().resetState()
+
+    // Reset Org Admin Editors
+    const { useUserEditorStore } = await import('@/modules/admin/org/UserEditor/state.user.editor')
+    useUserEditorStore().resetState()
+    const { useGroupEditorStore } = await import('@/modules/admin/org/GroupEditor/state.group.editor')
+    useGroupEditorStore().resetState()
     
     // Clear App Settings Persistence
     localStorage.removeItem('evi-app-settings')

@@ -280,6 +280,30 @@ export const useStoreUsersList = defineStore('viewAllUsers', () => {
      */
     const hasOneSelected = computed(() => selectedCount.value === 1);
     
+    function isSelected(userId: string): boolean {
+        return selectedUsers.value.includes(userId);
+    }
+    
+    /**
+     * Resets the entire store state (e.g. on logout)
+     */
+    function resetState(): void {
+        invalidateCache();
+        displayParams.value = {
+            page: 1,
+            itemsPerPage: 25 as ItemsPerPageOption,
+            sortBy: '',
+            sortDesc: false,
+            search: ''
+        };
+        loading.value = false;
+        error.value = null;
+        selectedUsers.value = [];
+        currentUsers.value = [];
+        totalItems.value = 0;
+        logger.info('Store state reset');
+    }
+    
     // Setup cache cleanup on store initialization
     setupCacheCleanup();
     
@@ -319,6 +343,7 @@ export const useStoreUsersList = defineStore('viewAllUsers', () => {
         selectUser,
         deselectUser,
         clearSelection,
-        isSelected: (userId: string) => selectedUsers.value.includes(userId)
+        isSelected,
+        resetState
     };
 });

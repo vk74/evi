@@ -183,6 +183,17 @@ getters: {
    },
 
    /**
+    * Resets the entire store state
+    */
+   resetState() {
+     this.resetForm()
+     this.mode = { mode: 'create' }
+     this.originalData = undefined
+     this.groups.selectedGroups = []
+     console.log('Store state reset')
+   },
+
+   /**
     * Switch active UI section
     */
    setActiveSection(section: 'details' | 'groups') {

@@ -27,6 +27,7 @@ import { useAppStore } from './core/state/appstate';
 import { useAppSettingsStore } from './modules/admin/settings/state.app.settings';
 import { useI18n } from 'vue-i18n';
 import { can } from '@/core/helpers/helper.check.permissions'; // Added import
+import { logoutService } from './core/auth/service.logout';
 
 // Regular component imports
 import ModuleLogin from './core/auth/ModuleLogin.vue';

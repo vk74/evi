@@ -203,6 +203,20 @@ export const useServicesAdminStore = defineStore('servicesAdmin', () => {
     }
   }
   
+  const resetAllState = () => {
+    selectedSectionPath.value = 'services.serviceslist'
+    activeComponent.value = 'services.serviceslist'
+    expandedSections.value = ['services']
+    editorMode.value = 'creation'
+    editingServiceId.value = null
+    editingServiceData.value = null
+    activeSection.value = 'details'
+    resetFormData()
+    publishingSections.value = []
+    isPublishingSectionsLoading.value = false
+    publishingSectionsError.value = null
+  }
+  
   // Publishing sections actions
   const setPublishingSections = (sections: PublishingSection[]) => {
     publishingSections.value = sections
@@ -263,6 +277,7 @@ export const useServicesAdminStore = defineStore('servicesAdmin', () => {
     setPublishingSections,
     setPublishingSectionsLoading,
     setPublishingSectionsError,
-    clearPublishingSectionsError
+    clearPublishingSectionsError,
+    resetAllState
   }
-}) 
+})

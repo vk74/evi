@@ -391,6 +391,17 @@ export const useGroupEditorStore = defineStore('groupEditor', {
     },
 
     /**
+     * Resets the entire store state
+     */
+    resetState() {
+      this.resetForm()
+      this.mode = { mode: 'create' }
+      this.originalData = undefined
+      this.membersCache = {}
+      console.log('Store state reset')
+    },
+
+    /**
      * Update original data after successful update
      */
     updateOriginalData() {

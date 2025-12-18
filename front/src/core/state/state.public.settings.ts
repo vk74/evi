@@ -94,5 +94,17 @@ export const usePublicSettingsStore = defineStore('publicSettings', {
   getters: {},
   
   // No complex actions needed - direct state mutations
-  actions: {}
+  actions: {
+    /**
+     * Reset public settings to initial state
+     */
+    resetState() {
+      this.passwordPolicies = null;
+      this.validationRules = null;
+      this.isLoadingPasswordPolicies = false;
+      this.isLoadingValidationRules = false;
+      this.passwordPoliciesError = null;
+      this.validationRulesError = null;
+    }
+  }
 }); 
