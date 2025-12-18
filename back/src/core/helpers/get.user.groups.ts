@@ -1,6 +1,6 @@
 /**
  * @file get.user.groups.ts
- * Version: 1.1.0
+ * Version: 1.2.0
  * BACKEND Helper for retrieving user groups
  * 
  * Functionality:
@@ -9,6 +9,10 @@
  * 
  * Changes in v1.1.0:
  * - Removed unnecessary START and SUCCESS events, kept only ERROR event for error tracking
+ * 
+ * Changes in v1.2.0:
+ * - Fixed query to use app.group_members table instead of non-existent app.user_groups
+ * - Added filter by is_active to return only active group memberships
  */
 
 import { Pool, QueryResult } from 'pg';
@@ -27,7 +31,7 @@ const pool = pgPool as Pool;
 export async function getUserGroups(userUuid: string): Promise<string[]> {
   try {
     const query = {
-      text: 'SELECT group_id FROM app.user_groups WHERE user_id = $1',
+      text: 'SELECT group_id FROM app.group_members WHERE user_id = $1 AND is_active = true',
       values: [userUuid]
     };
 
