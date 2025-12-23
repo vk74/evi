@@ -1,6 +1,6 @@
 <!--
   File: ProductEditorRegionsVAT.vue
-  Version: 1.3.2
+  Version: 1.4.0
   Description: Component for managing product regional availability and taxable categories
   Purpose: Provides interface for managing product availability by region and applicable taxable categories
   Frontend file - ProductEditorRegionsVAT.vue
@@ -32,6 +32,14 @@
   Changes in v1.3.2:
   - Increased category column width from 220px to 250px (by 30px)
   - Increased dropdown list min-width from 170px to 200px (by 30px)
+  
+  Changes in v1.4.0:
+  - Added read-only mode support for auditors
+  - Added isReadOnly computed property to detect auditor permissions
+  - Disabled availability toggle button for auditors
+  - Disabled category select dropdown for auditors
+  - Hide "Update" button for auditors
+  - Keep "Cancel" button visible for all users
 -->
 
 <script setup lang="ts">
@@ -39,6 +47,7 @@ import { ref, computed, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useProductsAdminStore } from '../../state.products.admin'
 import { useUiStore } from '@/core/state/uistate'
+import { can } from '@/core/helpers/helper.check.permissions'
 import { PhCaretUpDown, PhCheckSquare, PhSquare } from '@phosphor-icons/vue'
 import { fetchAllRegions } from '@/modules/admin/settings/service.admin.fetch.regions'
 import type { Region } from '@/modules/admin/settings/types.admin.regions'
@@ -112,6 +121,23 @@ const error = ref<string | null>(null)
 
 // Get current product ID from store
 const productId = computed(() => productsStore.editingProductId)
+
+// Read-only mode logic:
+// 1. If user has full update rights (update:all) -> NOT read-only
+// 2. If user has own update rights (update:own) -> NOT read-only (backend will enforce)
+// 3. Otherwise -> read-only (auditor mode)
+const isReadOnly = computed(() => {
+  if (can('adminProducts:items:update:all')) {
+    return false // User can update all products
+  }
+  
+  if (can('adminProducts:items:update:own')) {
+    // Backend will enforce access control for own products
+    return false
+  }
+  
+  return true // Auditor mode - read-only
+})
 
 // Table headers
 const headers = computed<TableHeader[]>(() => [
@@ -488,6 +514,7 @@ onMounted(async () => {
                     icon
                     variant="text"
                     density="comfortable"
+                    :disabled="isReadOnly"
                     @click="handleAvailabilityToggle(item)"
                   >
                     <PhCheckSquare v-if="item.availability" :size="18" color="teal" />
@@ -501,7 +528,7 @@ onMounted(async () => {
                 <v-select
                   v-model="item.category_id"
                   :items="getCategoryOptionsForRegion(item.region_id)"
-                  :disabled="!item.availability"
+                  :disabled="!item.availability || isReadOnly"
                   :loading="isLoadingCategories[item.region_id]"
                   density="compact"
                   variant="outlined"
@@ -542,6 +569,7 @@ onMounted(async () => {
 
           <!-- Update button -->
           <v-btn
+            v-if="!isReadOnly"
             block
             color="teal"
             variant="outlined"
