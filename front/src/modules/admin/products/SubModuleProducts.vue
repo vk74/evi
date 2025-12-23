@@ -1,8 +1,12 @@
 /**
  * @file SubModuleProducts.vue
- * Version: 1.0.0
+ * Version: 1.1.0
  * Products administration submodule component.
  * Frontend file that provides product management interface for admin users.
+ * 
+ * Changes in v1.1.0:
+ * - Added adminProducts:items:read:all permission check to product-editor section visibility
+ * - Auditors (users with read:all permission) can now access product editor section for viewing
  */
 <script setup lang="ts">
 import { computed, defineAsyncComponent } from 'vue'
@@ -41,10 +45,11 @@ const sections = computed((): Section[] => {
       id: 'product-editor',
       title: t('admin.products.sections.productEditor'),
       icon: 'PhPencilSimple',
-      // Visible if user can create or update products
+      // Visible if user can create, update, or read (auditor) products
       visible: can('adminProducts:items:create') || 
                can('adminProducts:items:update:all') || 
-               can('adminProducts:items:update:own')
+               can('adminProducts:items:update:own') ||
+               can('adminProducts:items:read:all')
     },
     {
       id: 'settings',

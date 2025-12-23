@@ -1,6 +1,6 @@
 <!--
  * @file ProductsList.vue
- * Version: 1.4.0
+ * Version: 1.5.0
  * Products list section component.
  * Frontend file that displays list of products for admin users.
  * 
@@ -41,6 +41,14 @@
  * Changes in v1.4.1:
  * - Added localeToFullName conversion function to transform 'en'/'ru' to 'english'/'russian'
  * - Language now converted from vue-i18n locale format to full names before sending to backend
+ * 
+ * Changes in v1.5.0:
+ * - Added support for auditor role (users with adminProducts:items:read:all permission)
+ * - Added isAuditorMode computed property to detect read-only users
+ * - Added canViewOrEditProducts computed property for button visibility
+ * - Modified editProduct function to allow users with read:all permission to view products
+ * - Updated EDIT button to show "VIEW" for auditors and "EDIT" for users with update permissions
+ * - Button now visible for users with read:all OR update permissions
 -->
 <script setup lang="ts">
 import { ref, computed, onMounted, watch, defineAsyncComponent } from 'vue'
@@ -128,6 +136,20 @@ const isSearchEnabled = computed(() =>
 const isStatusFilterActive = computed(() => statusFilter.value !== 'all')
 const isPublishedFilterActive = computed(() => publishedFilter.value !== 'all')
 
+// Check if user is in auditor mode (has read:all but no update permissions)
+const isAuditorMode = computed(() => {
+  return can('adminProducts:items:read:all') && 
+         !can('adminProducts:items:update:all') && 
+         !can('adminProducts:items:update:own')
+})
+
+// Check if user can view/edit products (has read:all or update permissions)
+const canViewOrEditProducts = computed(() => {
+  return can('adminProducts:items:read:all') || 
+         can('adminProducts:items:update:all') || 
+         can('adminProducts:items:update:own')
+})
+
 // Helper function to normalize status code for translation key
 const normalizeStatusCodeForTranslation = (statusCode: string): string => {
   // Replace spaces with underscores for translation keys
@@ -194,8 +216,10 @@ const addProduct = () => {
 const editProduct = async () => {
   const selectedIds = Array.from(selectedProducts.value)
   if (selectedIds.length === 1) {
-    // Check permission - either update:all or update:own
-    if (!can('adminProducts:items:update:all') && !can('adminProducts:items:update:own')) return
+    // Check permission - either read:all (auditor) or update:all/update:own
+    if (!can('adminProducts:items:read:all') && 
+        !can('adminProducts:items:update:all') && 
+        !can('adminProducts:items:update:own')) return
 
     const productId = selectedIds[0]
     
@@ -209,6 +233,7 @@ const editProduct = async () => {
       if (success) {
         // Set editor mode to edit and switch to editor section
         productsStore.openProductEditorForEdit(productId)
+        productsStore.setActiveSection('product-editor')
         
         // Clear selections
         clearSelections()
@@ -775,7 +800,7 @@ const handleAssignOwnerClose = () => {
           </h3>
           
           <v-btn
-            v-if="canAny(['adminProducts:items:update:all', 'adminProducts:items:update:own'])"
+            v-if="canViewOrEditProducts"
             block
             color="teal"
             variant="outlined"
@@ -783,7 +808,7 @@ const handleAssignOwnerClose = () => {
             :disabled="!hasOneSelected"
             @click="editProduct"
           >
-            {{ t('admin.products.actions.edit').toUpperCase() }}
+            {{ (isAuditorMode ? t('admin.products.actions.view') : t('admin.products.actions.edit')).toUpperCase() }}
           </v-btn>
           
           <v-btn
