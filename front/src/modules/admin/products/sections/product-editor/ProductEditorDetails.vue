@@ -1,6 +1,6 @@
 <!--
   File: ProductEditorDetails.vue
-  Version: 1.8.0
+  Version: 1.9.0
   Description: Component for product details form and actions
   Purpose: Provides interface for creating and editing product details with dynamic validation
   Frontend file - ProductEditorDetails.vue
@@ -68,6 +68,10 @@
   - Switched product translations to full language names ('english', 'russian') in admin editor
   - Updated language options and validation to use full-name keys
   - Fixed loading of name/short/long description fields for existing products
+  
+  Changes in v1.9.0:
+  - Improved permission check logic in isReadOnly computed property
+  - Fixed UPDATE button activation logic
 -->
 
 <script setup lang="ts">
@@ -126,25 +130,27 @@ const isEditMode = computed(() => productsStore.editorMode === 'edit')
 const editingProductId = computed(() => productsStore.editingProductId)
 const hasChanges = computed(() => productsStore.hasChanges)
 
-        // Read-only mode logic:
-        // 1. If user has full update rights (update:all) -> NOT read-only
-        // 2. If user has own update rights (update:own) -> check ownership (fallback to NOT read-only to let backend decide)
-        // 3. Otherwise -> read-only
-        const isReadOnly = computed(() => {
-          if (isCreationMode.value) return false // Creation is always editable if we got here
-          
-          if (can('adminProducts:items:update:all')) return false
-          
-          if (can('adminProducts:items:update:own')) {
-            // If we have owner info and it matches current user, definitely editable
-            // If not matching, it might still be editable via groups (which we can't easily check here)
-            // So we default to editable to avoid blocking valid access
-            // Backend will enforce 403 if really not allowed
-            return false
-          }
-          
-          return true
-        })
+// Read-only mode logic:
+// 1. If user has full update rights (update:all) -> NOT read-only
+// 2. If user has own update rights (update:own) -> check ownership (fallback to NOT read-only to let backend decide)
+// 3. Otherwise -> read-only
+const isReadOnly = computed(() => {
+  if (isCreationMode.value) return false // Creation is always editable if we got here
+  
+  if (can('adminProducts:items:update:all')) {
+    return false // User can update all products
+  }
+  
+  if (can('adminProducts:items:update:own')) {
+    // If we have owner info and it matches current user, definitely editable
+    // If not matching, it might still be editable via groups (which we can't easily check here)
+    // So we default to editable to avoid blocking valid access
+    // Backend will enforce 403 if really not allowed
+    return false
+  }
+  
+  return true
+})
 
 const isUpdateButtonEnabled = computed(() => {
   return isFormValid.value && 

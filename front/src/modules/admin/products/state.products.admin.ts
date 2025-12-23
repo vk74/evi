@@ -1,6 +1,6 @@
 /**
  * @file state.products.admin.ts
- * Version: 1.8.0
+ * Version: 1.9.0
  * Pinia store for managing products admin module state.
  * Frontend file that handles active section management for products administration.
  *
@@ -55,6 +55,10 @@
  * Changes in v1.8.0:
  * - Switched formData.translations to use full language names ('english', 'russian') as keys
  * - Updated populateFormWithFullProductData and helpers to work with full-name keys
+ * 
+ * Changes in v1.9.0:
+ * - Fixed setEditingProductData to set originalProductData when editingProductId exists (not just when editorMode === 'edit')
+ * - This ensures hasChanges correctly detects form modifications for users with editor role
  */
 import { defineStore } from 'pinia'
 import type {
@@ -322,7 +326,8 @@ export const useProductsAdminStore = defineStore('productsAdmin', {
       this.editingProductData = productData
       this.populateFormWithFullProductData(productData)
       // Set original data for change tracking when in edit mode
-      if (this.editorMode === 'edit') {
+      // Always set original data if we have editingProductId (means we're in edit mode)
+      if (this.editorMode === 'edit' || this.editingProductId) {
         this.setOriginalProductData(productData)
       }
     },
