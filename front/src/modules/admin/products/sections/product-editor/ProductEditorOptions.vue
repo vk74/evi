@@ -1,6 +1,6 @@
 <!--
   File: ProductEditorOptions.vue
-  Version: 1.11.0
+  Version: 1.12.0
   Description: Component for product options management
   Purpose: Provides interface for managing product options pairing
   Frontend file - ProductEditorOptions.vue
@@ -54,6 +54,13 @@
   Changes in v1.11.0:
   - Updated productName resolution and search language parameter to use full-name language keys ('english', 'russian')
   - Added mapping from i18n locale ('en'/'ru') to full-name translation keys for admin options view
+  
+  Changes in v1.12.0:
+  - Added read-only mode support for auditors
+  - Added isReadOnly computed property to detect auditor permissions
+  - Hide "Unpair All", "Pair Selected", and "Unpair Selected" buttons for auditors
+  - Disable selection checkboxes in table for auditors
+  - Keep "Clear selections" and "Refresh" buttons visible for all users
 -->
 
 <script setup lang="ts">
@@ -61,6 +68,7 @@ import { computed, ref, onMounted, watch, defineAsyncComponent } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useProductsAdminStore } from '../../state.products.admin'
 import { useUiStore } from '@/core/state/uistate'
+import { can } from '@/core/helpers/helper.check.permissions'
 import DataLoading from '@/core/ui/loaders/DataLoading.vue'
 import Paginator from '@/core/ui/paginator/Paginator.vue'
 import debounce from 'lodash/debounce'
@@ -111,6 +119,23 @@ const resolveTranslationLanguageKey = (currentLocale: string | undefined): strin
 // Check if options tab should be active - always true as all products can now be paired
 const isOptionsTabActive = computed(() => {
   return true
+})
+
+// Read-only mode logic:
+// 1. If user has full update rights (update:all) -> NOT read-only
+// 2. If user has own update rights (update:own) -> NOT read-only (backend will enforce)
+// 3. Otherwise -> read-only (auditor mode)
+const isReadOnly = computed(() => {
+  if (can('adminProducts:items:update:all')) {
+    return false // User can update all products
+  }
+  
+  if (can('adminProducts:items:update:own')) {
+    // Backend will enforce access control for own products
+    return false
+  }
+  
+  return true // Auditor mode - read-only
 })
 
 // Product info for display
@@ -674,6 +699,7 @@ watch(isOptionsTabActive, async (isActive) => {
                   variant="text"
                   density="comfortable"
                   :aria-pressed="isSelected(item.product_id)"
+                  :disabled="isReadOnly"
                   @click="onSelectOption(item.product_id, !isSelected(item.product_id))"
                 >
                   <PhCheckSquare v-if="isSelected(item.product_id)" :size="18" color="teal" />
@@ -724,6 +750,7 @@ watch(isOptionsTabActive, async (isActive) => {
 
           <!-- Unpair All button -->
           <v-btn
+            v-if="!isReadOnly"
             block
             color="red"
             variant="outlined"
@@ -761,10 +788,10 @@ watch(isOptionsTabActive, async (isActive) => {
         </div>
         
         <!-- Divider between sections -->
-        <div class="sidebar-divider" />
+        <div v-if="!isReadOnly" class="sidebar-divider" />
         
         <!-- Selected items section -->
-        <div class="side-bar-section">
+        <div v-if="!isReadOnly" class="side-bar-section">
           <h3 class="text-subtitle-2 px-2 py-2">
             {{ t('admin.products.actions.selectedItems').toLowerCase() }}
           </h3>
