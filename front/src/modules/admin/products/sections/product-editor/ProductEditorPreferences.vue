@@ -1,6 +1,6 @@
 <!--
   File: ProductEditorPreferences.vue
-  Version: 1.4.0
+  Version: 1.5.0
   Description: Component for product preferences management
   Purpose: Provides interface for managing product preferences and visibility settings
   Frontend file - ProductEditorPreferences.vue
@@ -11,6 +11,13 @@
   Changes in v1.4.0:
   - Updated productName resolution to use full-name language keys ('english', 'russian') for translations
   - Added mapping from i18n locale ('en'/'ru') to full-name translation keys
+  
+  Changes in v1.5.0:
+  - Added read-only mode support for auditors
+  - Added isReadOnly computed property to detect auditor permissions
+  - Disabled all visibility switches for auditors
+  - Prevented auto-save from triggering for auditors
+  - Keep "Refresh" button visible for all users
 -->
 
 <script setup lang="ts">
@@ -18,6 +25,7 @@ import { computed, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useProductsAdminStore } from '../../state.products.admin'
 import { useUiStore } from '@/core/state/uistate'
+import { can } from '@/core/helpers/helper.check.permissions'
 import { serviceUpdateProduct } from '../../service.update.product'
 import debounce from 'lodash/debounce'
 
@@ -48,6 +56,23 @@ const isRefreshing = ref(false)
 // Computed properties
 const editingProductId = computed(() => productsStore.editingProductId)
 const isFormValid = computed(() => editingProductId.value !== null)
+
+// Read-only mode logic:
+// 1. If user has full update rights (update:all) -> NOT read-only
+// 2. If user has own update rights (update:own) -> NOT read-only (backend will enforce)
+// 3. Otherwise -> read-only (auditor mode)
+const isReadOnly = computed(() => {
+  if (can('adminProducts:items:update:all')) {
+    return false // User can update all products
+  }
+  
+  if (can('adminProducts:items:update:own')) {
+    // Backend will enforce access control for own products
+    return false
+  }
+  
+  return true // Auditor mode - read-only
+})
 
 // Helper to resolve translation language key from i18n locale
 const resolveTranslationLanguageKey = (currentLocale: string | undefined): string => {
@@ -168,8 +193,8 @@ watch(formData, (data) => {
 
 // Watch for changes in preferences and auto-save
 watch([isVisibleOwner, isVisibleGroups, isVisibleTechSpecs, isVisibleLongDescription], () => {
-  // Only save if we have a product ID
-  if (editingProductId.value) {
+  // Only save if we have a product ID and user is not in read-only mode
+  if (editingProductId.value && !isReadOnly.value) {
     debouncedSavePreferences()
   }
 })
@@ -229,6 +254,7 @@ watch([isVisibleOwner, isVisibleGroups, isVisibleTechSpecs, isVisibleLongDescrip
                     v-model="isVisibleOwner"
                     color="teal-darken-2"
                     :label="t('admin.products.editor.visibility.isVisibleOwner.label')"
+                    :disabled="isReadOnly"
                     hide-details
                     density="compact"
                   />
@@ -238,6 +264,7 @@ watch([isVisibleOwner, isVisibleGroups, isVisibleTechSpecs, isVisibleLongDescrip
                     v-model="isVisibleGroups"
                     color="teal-darken-2"
                     :label="t('admin.products.editor.visibility.isVisibleGroups.label')"
+                    :disabled="isReadOnly"
                     hide-details
                     density="compact"
                   />
@@ -247,6 +274,7 @@ watch([isVisibleOwner, isVisibleGroups, isVisibleTechSpecs, isVisibleLongDescrip
                     v-model="isVisibleTechSpecs"
                     color="teal-darken-2"
                     :label="t('admin.products.editor.visibility.isVisibleTechSpecs.label')"
+                    :disabled="isReadOnly"
                     hide-details
                     density="compact"
                   />
@@ -256,6 +284,7 @@ watch([isVisibleOwner, isVisibleGroups, isVisibleTechSpecs, isVisibleLongDescrip
                     v-model="isVisibleLongDescription"
                     color="teal-darken-2"
                     :label="t('admin.products.editor.visibility.isVisibleLongDescription.label')"
+                    :disabled="isReadOnly"
                     hide-details
                     density="compact"
                   />
