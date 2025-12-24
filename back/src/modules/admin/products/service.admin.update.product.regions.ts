@@ -35,6 +35,8 @@ import { getRequestorUuidFromReq } from '@/core/helpers/get.requestor.uuid.from.
 import { createAndPublishEvent } from '@/core/eventBus/fabric.events';
 import { PRODUCT_REGIONS_UPDATE_EVENTS } from './events.admin.products';
 import type { UpdateProductRegionsRequest, UpdateProductRegionsResponse, ProductRegion } from './types.admin.products';
+import { AuthenticatedRequest } from '@/core/guards/types.guards';
+import { checkProductAccess } from './helpers.check.product.access';
 
 // Type assertion for pool
 const pool = pgPool as Pool;
@@ -77,6 +79,39 @@ export async function updateProductRegions(
     try {
         const updatedBy = getRequestorUuidFromReq(req);
         
+        // Check scope for authorization
+        const authReq = req as AuthenticatedRequest;
+        const effectiveScope = authReq.authContext?.effectiveScope;
+
+        // If scope is 'own', check access to product
+        if (effectiveScope === 'own') {
+            if (!updatedBy) {
+                return {
+                    success: false,
+                    message: 'Unable to identify requesting user'
+                };
+            }
+
+            const hasAccess = await checkProductAccess(productId, updatedBy, client);
+            
+            if (!hasAccess) {
+                await createAndPublishEvent({
+                    req,
+                    eventName: PRODUCT_REGIONS_UPDATE_EVENTS.ERROR.eventName,
+                    payload: {
+                        productId,
+                        error: 'Access denied: you can only update regions for your own products',
+                        scope: effectiveScope
+                    }
+                });
+
+                return {
+                    success: false,
+                    message: 'Access denied: you can only update regions for your own products'
+                };
+            }
+        }
+
         // Start transaction
         await client.query('BEGIN');
         

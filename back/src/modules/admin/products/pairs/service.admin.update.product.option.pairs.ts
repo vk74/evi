@@ -13,6 +13,8 @@ import { pairsQueries } from './queries.admin.product.option.pairs'
 import type { UpdatePairsRequestBody, UpdatePairsResult } from './types.admin.product.option.pairs'
 import { getRequestorUuidFromReq } from '@/core/helpers/get.requestor.uuid.from.req'
 import { createAndPublishEvent } from '@/core/eventBus/fabric.events'
+import { AuthenticatedRequest } from '@/core/guards/types.guards'
+import { checkProductAccess } from '../helpers.check.product.access'
 
 const pool = pgPool as Pool
 
@@ -31,6 +33,34 @@ export async function updateProductOptionPairs(body: UpdatePairsRequestBody, req
     }
     if (pairs.length > 200) {
       throw new Error('Pairs exceed limit 200')
+    }
+
+    // Check scope for authorization
+    const authReq = req as AuthenticatedRequest
+    const effectiveScope = authReq.authContext?.effectiveScope
+
+    // If scope is 'own', check access to main product
+    if (effectiveScope === 'own') {
+      if (!requestorUuid) {
+         throw new Error('Unable to identify requesting user')
+      }
+
+      // Need to use a fresh client for this check or run it before transaction
+      // Since we haven't started transaction yet, we can use the pool directly or the client
+      const hasAccess = await checkProductAccess(mainProductId, requestorUuid, client)
+      
+      if (!hasAccess) {
+        await createAndPublishEvent({
+          eventName: 'adminProducts.pairs.update.error',
+          req: req,
+          payload: {
+            mainProductId,
+            error: 'Access denied: you can only update option pairs for your own products',
+            scope: effectiveScope
+          }
+        })
+        throw new Error('Access denied: you can only update option pairs for your own products')
+      }
     }
 
     // Validate semantics

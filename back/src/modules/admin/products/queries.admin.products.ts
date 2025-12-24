@@ -432,7 +432,7 @@ export const queries = {
             )
             OR EXISTS (
                 SELECT 1 FROM app.product_groups pg
-                JOIN app.user_groups ug ON pg.group_id = ug.group_id
+                JOIN app.group_members ug ON pg.group_id = ug.group_id
                 WHERE pg.product_id = p.product_id
                 AND pg.role_type = 'product_specialists'
                 AND ug.user_id = $9
@@ -482,7 +482,7 @@ export const queries = {
             )
             OR EXISTS (
                 SELECT 1 FROM app.product_groups pg
-                JOIN app.user_groups ug ON pg.group_id = ug.group_id
+                JOIN app.group_members ug ON pg.group_id = ug.group_id
                 WHERE pg.product_id = p.product_id
                 AND pg.role_type = 'product_specialists'
                 AND ug.user_id = $4
