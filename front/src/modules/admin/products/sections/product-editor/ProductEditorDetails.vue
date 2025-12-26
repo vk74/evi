@@ -1010,7 +1010,7 @@ onMounted(async () => {
         
         <!-- Create button (visible only in creation mode) -->
         <v-btn
-          v-if="isCreationMode"
+          v-if="isCreationMode && can('adminProducts:items:create')"
           block
           color="teal"
           variant="outlined"
