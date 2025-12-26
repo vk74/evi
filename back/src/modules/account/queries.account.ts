@@ -208,12 +208,14 @@ export const userProfileQueries = {
   /**
    * Get user location by username
    * Retrieves user's location using username
+   * Returns region_name from regions table via JOIN
    */
   getUserLocation: {
     text: `
-      SELECT location
-      FROM app.users
-      WHERE username = $1
+      SELECT r.region_name as location
+      FROM app.users u
+      LEFT JOIN app.regions r ON u.location_id = r.region_id
+      WHERE u.username = $1
     `,
     values: ['username']
   },
@@ -221,18 +223,23 @@ export const userProfileQueries = {
   /**
    * Update user location by username
    * Updates user's location using username
+   * Accepts region_name, converts to region_id via subquery
    */
   updateUserLocation: {
     text: `
       UPDATE app.users
-      SET location = $1
+      SET location_id = (
+        SELECT region_id 
+        FROM app.regions 
+        WHERE region_name = $1
+      )
       WHERE username = $2
       RETURNING user_id, 
                 username,
-                location
+                (SELECT region_name FROM app.regions WHERE region_id = app.users.location_id) as location
     `,
     values: [
-      'location',   // $1
+      'location',   // $1 - region_name
       'username'  // $2
     ]
   }

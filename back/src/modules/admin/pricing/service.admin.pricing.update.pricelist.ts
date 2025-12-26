@@ -1,5 +1,5 @@
 /**
- * version: 1.2.4
+ * version: 1.3.0
  * Service for updating price lists.
  * Backend file that handles business logic for updating existing price lists.
  * 
@@ -24,6 +24,11 @@
  * 
  * Changes in v1.2.4:
  * - Added validation to check if region exists in app.regions table before updating
+ * 
+ * Changes in v1.3.0:
+ * - Updated to use region_id instead of region (VARCHAR)
+ * - Converts region_name to region_id before updating
+ * - Uses region_id for uniqueness checks
  */
 
 import { Request } from 'express';
@@ -201,11 +206,12 @@ async function validateUpdatePriceListData(
                     }
                 });
             } else {
-                // Region exists, check uniqueness (one region per price list)
+                // Region exists, get region_id and check uniqueness (one region per price list)
+                const regionId = regionExistsResult.rows[0].region_id;
                 try {
                     const result = await pool.query(
                         queries.checkPriceListRegionExistsExcluding,
-                        [trimmedRegion, data.price_list_id]
+                        [regionId, data.price_list_id]
                     );
                     if (result.rows.length > 0) {
                         errors.push('This region is already assigned to another price list');
@@ -301,12 +307,21 @@ export async function updatePriceList(
         // Add region parameter only if region is being updated
         // We need to distinguish between "set to null" and "don't update"
         if (data.region !== undefined) {
-            // Region is being updated - pass the value (can be null to clear)
-            const regionValue = (data.region === null || data.region === '') ? null : data.region.trim();
-            updateParams.push(regionValue); // $7
+            // Region is being updated - convert region_name to region_id
+            let regionId: number | null = null;
+            if (data.region !== null && data.region !== '') {
+                const regionCheckResult = await pool.query(
+                    queries.checkRegionExistsInRegionsTable,
+                    [data.region.trim()]
+                );
+                if (regionCheckResult.rows.length > 0) {
+                    regionId = regionCheckResult.rows[0].region_id;
+                }
+            }
+            updateParams.push(regionId); // $7 - region_id (can be null to clear)
         } else {
-            // Don't update region - use a special placeholder value
-            updateParams.push('__NO_UPDATE__'); // $7 - special value means don't update
+            // Don't update region - use special value -1 to indicate no update
+            updateParams.push(-1); // $7 - special value means don't update
         }
 
         updateParams.push(requestorUuid); // $8

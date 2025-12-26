@@ -128,6 +128,7 @@ export const queries = {
     /**
      * Fetch all price lists with owner info and pagination
      * Parameters: offset, limit
+     * Returns region_name via JOIN with regions table
      */
     fetchAllPriceLists: `
         SELECT 
@@ -138,11 +139,12 @@ export const queries = {
             pli.is_active,
             pli.owner_id,
             u.username as owner_username,
-            pli.region,
+            r.region_name as region,
             pli.created_at,
             pli.updated_at
         FROM app.price_lists_info pli
         LEFT JOIN app.users u ON pli.owner_id = u.user_id
+        LEFT JOIN app.regions r ON pli.region_id = r.region_id
         ORDER BY pli.price_list_id DESC
         LIMIT $1 OFFSET $2
     `,
@@ -150,6 +152,7 @@ export const queries = {
     /**
      * Fetch price lists with search (by name or price_list_id)
      * Parameters: searchQuery, offset, limit
+     * Returns region_name via JOIN with regions table
      */
     fetchPriceListsWithSearch: `
         SELECT 
@@ -160,11 +163,12 @@ export const queries = {
             pli.is_active,
             pli.owner_id,
             u.username as owner_username,
-            pli.region,
+            r.region_name as region,
             pli.created_at,
             pli.updated_at
         FROM app.price_lists_info pli
         LEFT JOIN app.users u ON pli.owner_id = u.user_id
+        LEFT JOIN app.regions r ON pli.region_id = r.region_id
         WHERE 
             pli.name ILIKE $1
             OR CAST(pli.price_list_id AS TEXT) LIKE $1
@@ -195,6 +199,7 @@ export const queries = {
     /**
      * Fetch single price list by ID
      * Parameters: price_list_id
+     * Returns region_name via JOIN with regions table
      */
     fetchPriceListById: `
         SELECT 
@@ -204,7 +209,7 @@ export const queries = {
             pli.currency_code,
             pli.is_active,
             pli.owner_id,
-            pli.region,
+            r.region_name as region,
             pli.created_by,
             pli.updated_by,
             pli.created_at,
@@ -212,6 +217,7 @@ export const queries = {
             c.rounding_precision
         FROM app.price_lists_info pli
         LEFT JOIN app.currencies c ON pli.currency_code = c.code
+        LEFT JOIN app.regions r ON pli.region_id = r.region_id
         WHERE pli.price_list_id = $1
     `,
 
@@ -256,26 +262,27 @@ export const queries = {
 
     /**
      * Check if price list region exists excluding specific ID (for update validation)
-     * Parameters: region, price_list_id
+     * Parameters: region_id, price_list_id
      */
     checkPriceListRegionExistsExcluding: `
         SELECT 1 FROM app.price_lists_info
-        WHERE region = $1 AND region IS NOT NULL AND price_list_id != $2
+        WHERE region_id = $1 AND region_id IS NOT NULL AND price_list_id != $2
     `,
 
     /**
-     * Check if region exists in app.regions table
+     * Check if region exists in app.regions table and return region_id
      * Parameters: region_name
      */
     checkRegionExistsInRegionsTable: `
-        SELECT 1 FROM app.regions
+        SELECT region_id, region_name FROM app.regions
         WHERE region_name = $1
     `,
 
     /**
      * Insert new price list
      * Parameters: name, description, currency_code, is_active, 
-     *             owner_id, region, created_by
+     *             owner_id, region_id, created_by
+     * Note: region_id should be obtained from region_name via checkRegionExistsInRegionsTable
      */
     insertPriceList: `
         INSERT INTO app.price_lists_info (
@@ -284,7 +291,7 @@ export const queries = {
             currency_code,
             is_active,
             owner_id,
-            region,
+            region_id,
             created_by,
             updated_by
         ) VALUES ($1, $2, $3, $4, $5, $6, $7, $7)
@@ -294,7 +301,9 @@ export const queries = {
     /**
      * Update price list
      * Parameters: price_list_id, name, description, currency_code, is_active, 
-     *             owner_id, region, updated_by
+     *             owner_id, region_id, updated_by
+     * Note: region_id should be obtained from region_name via checkRegionExistsInRegionsTable
+     * Special value '__NO_UPDATE__' for region_id means don't update this field
      */
     updatePriceList: `
         UPDATE app.price_lists_info SET
@@ -303,10 +312,10 @@ export const queries = {
             currency_code = COALESCE($4, currency_code),
             is_active = COALESCE($5, is_active),
             owner_id = COALESCE($6, owner_id),
-            region = CASE 
-                WHEN $7::VARCHAR = '__NO_UPDATE__' THEN region
-                WHEN $7::VARCHAR IS NULL THEN NULL
-                ELSE $7::VARCHAR
+            region_id = CASE 
+                WHEN $7::INTEGER = -1 THEN region_id
+                WHEN $7::INTEGER IS NULL THEN NULL
+                ELSE $7::INTEGER
             END,
             updated_by = $8,
             updated_at = NOW()

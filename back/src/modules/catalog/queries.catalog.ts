@@ -88,7 +88,8 @@ export const queries: CatalogQueries = {
     `,
 
     // Fetch price list by region
-    // Parameters: region
+    // Parameters: region_name
+    // Accepts region_name, finds price list by region_id via JOIN
     fetchPricelistByRegion: `
         SELECT 
             pli.price_list_id,
@@ -100,7 +101,9 @@ export const queries: CatalogQueries = {
         FROM app.price_lists_info AS pli
         LEFT JOIN app.currencies AS cur
             ON cur.code = pli.currency_code
-        WHERE pli.region = $1 AND pli.is_active = true
+        INNER JOIN app.regions AS r
+            ON pli.region_id = r.region_id
+        WHERE r.region_name = $1 AND pli.is_active = true
         LIMIT 1
     `,
 }; 

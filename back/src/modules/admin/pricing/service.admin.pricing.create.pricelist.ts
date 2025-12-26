@@ -1,5 +1,5 @@
 /**
- * version: 1.2.3
+ * version: 1.3.0
  * Service for creating price lists.
  * Backend file that handles business logic for creating new price lists.
  * 
@@ -8,7 +8,7 @@
  * - Checks currency existence and active status
  * - Checks name uniqueness
  * - Validates owner (optional)
- * - Validates region uniqueness (if provided)
+ * - Validates region existence and uniqueness (if provided)
  * - Creates price list in database
  * - Sets owner_id from created_by if not specified
  * 
@@ -20,6 +20,11 @@
  * Changes in v1.2.3:
  * - Added region uniqueness validation
  * - Added region parameter to INSERT query
+ * 
+ * Changes in v1.3.0:
+ * - Updated to use region_id instead of region (VARCHAR)
+ * - Converts region_name to region_id before inserting
+ * - Validates region existence in app.regions table
  */
 
 import { Request } from 'express';
@@ -139,20 +144,40 @@ async function validateCreatePriceListData(
     // Validate region uniqueness (if provided)
     if (data.region !== undefined && data.region !== null && data.region !== '') {
         try {
-            const result = await pool.query(
-                `SELECT 1 FROM app.price_lists_info WHERE region = $1 AND region IS NOT NULL`,
+            // First, check if region exists and get region_id
+            const regionCheckResult = await pool.query(
+                queries.checkRegionExistsInRegionsTable,
                 [data.region.trim()]
             );
-            if (result.rows.length > 0) {
-                errors.push('This region is already assigned to another price list');
+            
+            if (regionCheckResult.rows.length === 0) {
+                errors.push('Region does not exist in regions table');
                 
                 createAndPublishEvent({
-                    eventName: EVENTS_ADMIN_PRICING['pricelists.create.region.duplicate'].eventName,
+                    eventName: EVENTS_ADMIN_PRICING['pricelists.create.region.not_found'].eventName,
                     req: req,
                     payload: { 
                         region: data.region
                     }
                 });
+            } else {
+                // Region exists, check uniqueness using region_id
+                const regionId = regionCheckResult.rows[0].region_id;
+                const result = await pool.query(
+                    `SELECT 1 FROM app.price_lists_info WHERE region_id = $1 AND region_id IS NOT NULL`,
+                    [regionId]
+                );
+                if (result.rows.length > 0) {
+                    errors.push('This region is already assigned to another price list');
+                    
+                    createAndPublishEvent({
+                        eventName: EVENTS_ADMIN_PRICING['pricelists.create.region.duplicate'].eventName,
+                        req: req,
+                        payload: { 
+                            region: data.region
+                        }
+                    });
+                }
             }
         } catch (error) {
             errors.push('Error checking region uniqueness');
@@ -210,6 +235,18 @@ export async function createPriceList(
             ownerUuid = requestorUuid;
         }
 
+        // Convert region_name to region_id if provided
+        let regionId: number | null = null;
+        if (data.region !== undefined && data.region !== null && data.region !== '') {
+            const regionCheckResult = await pool.query(
+                queries.checkRegionExistsInRegionsTable,
+                [data.region.trim()]
+            );
+            if (regionCheckResult.rows.length > 0) {
+                regionId = regionCheckResult.rows[0].region_id;
+            }
+        }
+
         // Insert price list
         const insertResult = await pool.query(queries.insertPriceList, [
             data.name.trim(),
@@ -217,7 +254,7 @@ export async function createPriceList(
             data.currency_code.trim(),
             data.is_active !== undefined ? data.is_active : false,
             ownerUuid,
-            data.region !== undefined && data.region !== null && data.region !== '' ? data.region.trim() : null,
+            regionId,
             requestorUuid
         ]);
 
