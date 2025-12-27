@@ -158,29 +158,29 @@ router.post('/api/admin/users/update-location', checkRateLimit, checkRequestSecu
 router.get('/api/admin/location-selection/regions', checkRateLimit, checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, getRegionsListController);
 
 // Routes for Pricing Admin - Currencies
-router.get('/api/admin/pricing/fetch-currencies', checkRateLimit, checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, fetchCurrenciesController);
-router.post('/api/admin/pricing/update-currencies', checkRateLimit, checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, updateCurrenciesController);
+router.get('/api/admin/pricing/fetch-currencies', checkRateLimit, checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, checkPermissions('adminPricing:currencies:read'), fetchCurrenciesController);
+router.post('/api/admin/pricing/update-currencies', checkRateLimit, checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, checkPermissions('adminPricing:currencies:update'), updateCurrenciesController);
 
 // Routes for Pricing Admin - Regions VAT
 
 // Routes for Pricing Admin - Tax Regions
-router.get('/api/admin/pricing/tax-regions/fetchall', checkRateLimit, checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, fetchTaxRegionsController);
-router.post('/api/admin/pricing/tax-regions/update', checkRateLimit, checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, updateTaxRegionsController);
+router.get('/api/admin/pricing/tax-regions/fetchall', checkRateLimit, checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, checkPermissions('adminPricing:taxes:read'), fetchTaxRegionsController);
+router.post('/api/admin/pricing/tax-regions/update', checkRateLimit, checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, checkPermissions('adminPricing:taxes:update'), updateTaxRegionsController);
 
 // Routes for Pricing Admin - Price Lists
-router.get('/api/admin/pricing/pricelists/fetchall', checkRateLimit, checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, fetchAllPriceListsController);
-router.get('/api/admin/pricing/pricelists/fetch', checkRateLimit, checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, fetchPriceListController);
-router.post('/api/admin/pricing/pricelists/create', checkRateLimit, checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, createPriceListController);
-router.post('/api/admin/pricing/pricelists/update', checkRateLimit, checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, updatePriceListController);
-router.post('/api/admin/pricing/pricelists/delete', checkRateLimit, checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, deletePriceListsController);
+router.get('/api/admin/pricing/pricelists/fetchall', checkRateLimit, checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, checkPermissions('adminPricing:pricelists:read'), fetchAllPriceListsController);
+router.get('/api/admin/pricing/pricelists/fetch', checkRateLimit, checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, checkPermissions('adminPricing:pricelists:read'), fetchPriceListController);
+router.post('/api/admin/pricing/pricelists/create', checkRateLimit, checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, checkPermissions('adminPricing:pricelists:create'), createPriceListController);
+router.post('/api/admin/pricing/pricelists/update', checkRateLimit, checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, checkPermissions('adminPricing:pricelists:update'), updatePriceListController);
+router.post('/api/admin/pricing/pricelists/delete', checkRateLimit, checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, checkPermissions('adminPricing:pricelists:delete'), deletePriceListsController);
 
 // Routes for Pricing Admin - Price List Items
-router.post('/api/admin/pricing/pricelists/:priceListId/createItem', checkRateLimit, checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, createPriceListItemController);
-router.post('/api/admin/pricing/pricelists/:priceListId/deleteItems', checkRateLimit, checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, deletePriceListItemsController);
-router.post('/api/admin/pricing/pricelists/:priceListId/updateItems', checkRateLimit, checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, updatePriceListItemsController);
+router.post('/api/admin/pricing/pricelists/:priceListId/createItem', checkRateLimit, checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, checkPermissions('adminPricing:items:create'), createPriceListItemController);
+router.post('/api/admin/pricing/pricelists/:priceListId/deleteItems', checkRateLimit, checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, checkPermissions('adminPricing:items:delete'), deletePriceListItemsController);
+router.post('/api/admin/pricing/pricelists/:priceListId/updateItems', checkRateLimit, checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, checkPermissions('adminPricing:items:update'), updatePriceListItemsController);
 
 // Routes for Pricing Admin - Price Item Types
-router.get('/api/admin/pricing/item-types', checkRateLimit, checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, fetchPriceItemTypesController);
+router.get('/api/admin/pricing/item-types', checkRateLimit, checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, checkPermissions('adminPricing:items:read'), fetchPriceItemTypesController);
 
 // Routes for Settings Admin - Regions
 router.get('/api/admin/settings/regions/fetchall', checkRateLimit, checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, fetchAllRegionsController);

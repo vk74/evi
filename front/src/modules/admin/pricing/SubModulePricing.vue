@@ -13,6 +13,7 @@ Changes in v1.5.0:
 import { computed, defineAsyncComponent } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { usePricingAdminStore } from './state.pricing.admin'
+import { can } from '@/core/helpers/helper.check.permissions'
 import type { PricingSectionId, Section } from './types.pricing.admin'
 
 // Import Phosphor icons
@@ -41,27 +42,32 @@ const sections = computed((): Section[] => [
   {
     id: 'price-lists',
     title: t('admin.pricing.sections.priceLists'),
-    icon: 'PhListChecks'
+    icon: 'PhListChecks',
+    visible: can('adminPricing:pricelists:read:all')
   },
   {
     id: 'price-list-editor',
     title: t('admin.pricing.sections.priceListEditor'),
-    icon: 'PhNotePencil'
+    icon: 'PhNotePencil',
+    visible: can('adminPricing:items:read:all')
   },
   {
     id: 'tax',
     title: t('admin.pricing.sections.tax'),
-    icon: 'PhPercent'
+    icon: 'PhPercent',
+    visible: can('adminPricing:taxes:read:all')
   },
   {
     id: 'currencies',
     title: t('admin.pricing.sections.currencies'),
-    icon: 'PhCoins'
+    icon: 'PhCoins',
+    visible: can('adminPricing:currencies:read:all')
   },
   {
     id: 'settings',
     title: t('admin.pricing.sections.settings'),
-    icon: 'PhFadersHorizontal'
+    icon: 'PhFadersHorizontal',
+    visible: can('adminPricing:settings:update')
   }
 ])
 

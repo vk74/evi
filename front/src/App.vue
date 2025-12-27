@@ -910,6 +910,7 @@ onMounted(async () => {
               
               <!-- Pricing Admin -->
               <v-list-item
+                v-if="can('adminPricing:module:access')"
                 v-tooltip="{
                   text: $t('admin.nav.pricing.main'),
                   location: 'right',

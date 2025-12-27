@@ -26,6 +26,7 @@ import { ref, computed, onMounted, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useUiStore } from '@/core/state/uistate'
 import { usePricingAdminStore } from '../state.pricing.admin'
+import { can } from '@/core/helpers/helper.check.permissions'
 import DataLoading from '@/core/ui/loaders/DataLoading.vue'
 import {
   PhMagnifyingGlass,
@@ -112,6 +113,12 @@ const selectedCount = computed(() => selectedPriceLists.value.size)
 const hasSelected = computed(() => selectedPriceLists.value.size > 0)
 const hasOneSelected = computed(() => selectedPriceLists.value.size === 1)
 
+// Permission computed properties
+const canCreate = computed(() => can('adminPricing:pricelists:create:all'))
+const canUpdate = computed(() => can('adminPricing:pricelists:update:all'))
+const canDelete = computed(() => can('adminPricing:pricelists:delete:all'))
+const canViewOrEdit = computed(() => can('adminPricing:pricelists:read:all') || canUpdate.value)
+
 // Table headers
 const headers = computed<TableHeader[]>(() => [
   { title: t('admin.pricing.priceLists.table.headers.selection'), key: 'selection', width: '40px', sortable: false },
@@ -125,6 +132,7 @@ const headers = computed<TableHeader[]>(() => [
 
 // Action handlers
 const addPriceList = () => {
+  if (!canCreate.value) return
   // Clear selections and open add pricelist modal
   clearSelections()
   showAddPricelistDialog.value = true
@@ -160,6 +168,9 @@ const editPriceList = async () => {
     uiStore.showErrorSnackbar(t('admin.pricing.priceLists.messages.noItemsSelected'))
     return
   }
+
+  // Check permission
+  if (!canViewOrEdit.value) return
 
   const priceListId = Array.from(selectedPriceLists.value)[0]
   
@@ -202,6 +213,7 @@ const duplicatePriceList = () => {
 }
 
 const deletePriceList = () => {
+  if (!canDelete.value) return
   showDeleteDialog.value = true
 }
 
@@ -739,7 +751,7 @@ onMounted(async () => {
               density="compact"
               variant="plain"
               :loading="isUpdatingName === item.price_list_id"
-              :disabled="isUpdatingName === item.price_list_id"
+              :disabled="!canUpdate || isUpdatingName === item.price_list_id"
               hide-details
               @update:model-value="debouncedNameUpdate(item.price_list_id, $event)"
             />
@@ -752,7 +764,7 @@ onMounted(async () => {
               variant="plain"
               :items="getRegionOptions(item.price_list_id)"
               :loading="isUpdatingRegion === item.price_list_id"
-              :disabled="isUpdatingRegion === item.price_list_id || isLoadingRegions"
+              :disabled="!canUpdate || isUpdatingRegion === item.price_list_id || isLoadingRegions"
               hide-details
               clearable
               @update:model-value="handleRegionUpdate(item.price_list_id, $event)"
@@ -771,13 +783,14 @@ onMounted(async () => {
             <v-chip
               :color="item.is_active ? 'teal' : 'grey'"
               size="small"
-              class="status-chip status-chip-clickable"
-              :disabled="isUpdatingStatus === item.price_list_id"
+              class="status-chip"
+              :class="{ 'status-chip-clickable': canUpdate }"
+              :disabled="!canUpdate || isUpdatingStatus === item.price_list_id"
               :loading="isUpdatingStatus === item.price_list_id"
-              @click="togglePriceListStatus(item)"
+              @click="canUpdate && togglePriceListStatus(item)"
             >
               {{ item.is_active ? t('admin.pricing.priceLists.table.status.active') : t('admin.pricing.priceLists.table.status.disabled') }}
-              <PhCaretDown :size="14" class="ml-1" />
+              <PhCaretDown v-if="canUpdate" :size="14" class="ml-1" />
             </v-chip>
           </template>
 
@@ -813,7 +826,7 @@ onMounted(async () => {
             color="teal"
             variant="outlined"
             class="mb-3"
-            :disabled="hasSelected"
+            :disabled="hasSelected || !canCreate"
             @click="addPriceList"
           >
             <template #prepend>
@@ -866,29 +879,29 @@ onMounted(async () => {
             color="teal"
             variant="outlined"
             class="mb-3"
-            :disabled="!hasOneSelected"
+            :disabled="!hasOneSelected || !canViewOrEdit"
             @click="editPriceList"
           >
-            {{ t('admin.pricing.priceLists.actions.edit').toUpperCase() }}
+            {{ canUpdate ? t('admin.pricing.priceLists.actions.edit').toUpperCase() : 'VIEW' }}
           </v-btn>
-          
+
           <v-btn
             block
             color="blue"
             variant="outlined"
             class="mb-3"
-            :disabled="!hasOneSelected"
+            :disabled="!hasOneSelected || !canCreate"
             @click="duplicatePriceList"
           >
             {{ t('admin.pricing.priceLists.actions.duplicate').toUpperCase() }}
           </v-btn>
-          
+
           <v-btn
             block
             color="blue"
             variant="outlined"
             class="mb-3"
-            :disabled="!hasOneSelected"
+            :disabled="!hasOneSelected || !canUpdate"
             @click="setOwner"
           >
             {{ t('admin.pricing.priceLists.actions.setOwner').toUpperCase() }}
@@ -899,7 +912,7 @@ onMounted(async () => {
             color="error"
             variant="outlined"
             class="mb-3"
-            :disabled="!hasSelected"
+            :disabled="!hasSelected || !canDelete"
             @click="deletePriceList"
           >
             {{ t('admin.pricing.priceLists.actions.delete').toUpperCase() }}

@@ -19,6 +19,7 @@ import DataLoading from '@/core/ui/loaders/DataLoading.vue';
 import { PhPlus, PhTrash, PhCheck, PhCaretUpDown, PhWarningCircle } from '@phosphor-icons/vue';
 import { fetchTaxRegions } from './service.fetch.taxRegions';
 import { updateTaxRegions } from './service.update.taxRegions';
+import { can } from '@/core/helpers/helper.check.permissions';
 
 // Store references
 const uiStore = useUiStore();
@@ -110,6 +111,9 @@ const vatRatesOriginal = ref<VATRatesSnapshot | null>(null);
 // Track new (unsaved) categories with temporary negative IDs
 let nextTempCategoryId = -2;
 
+// Permissions
+const canUpdate = computed(() => can('adminPricing:taxes:update:all'));
+
 /**
  * Check if category is new (not yet saved to database)
  */
@@ -151,7 +155,7 @@ function validateCategoryNameFormat(name: string): { isValid: boolean; error?: s
  * Add new category - add locally
  */
 function addCategory(): void {
-  if (selectedRegion.value === null) {
+  if (selectedRegion.value === null || !canUpdate.value) {
     return;
   }
   
@@ -176,6 +180,7 @@ function addCategory(): void {
  * Update category name locally
  */
 function updateCategoryName(category: Category, newName: string): void {
+  if (!canUpdate.value) return;
   // Update local state
   category.name = newName; // Allow typing anything, validate on save or blur
 }
@@ -184,6 +189,7 @@ function updateCategoryName(category: Category, newName: string): void {
  * Remove category locally (mark for deletion)
  */
 function removeCategory(categoryId: number): void {
+  if (!canUpdate.value) return;
   const category = categories.value.find(c => c.id === categoryId);
   if (category) {
     if (isNewCategory(categoryId)) {
@@ -350,6 +356,7 @@ const regionOptions = computed(() => {
  * Add new VAT rate column
  */
 function addVATRateColumn(): void {
+  if (!canUpdate.value) return;
   const newColumnId = `vatRate_${Date.now()}`;
   vatRateColumns.value.push({
     id: newColumnId,
@@ -379,6 +386,7 @@ function getColumnInputValue(columnId: string): string {
  * Update column value and header
  */
 function updateColumnValue(columnId: string, value: string): void {
+  if (!canUpdate.value) return;
   const column = vatRateColumns.value.find(c => c.id === columnId);
   if (!column) return;
   
@@ -423,6 +431,7 @@ function handleColumnInput(columnId: string, value: string): void {
  * Delete VAT rate column
  */
 function deleteVATRateColumn(columnId: string): void {
+  if (!canUpdate.value) return;
   const columnIndex = vatRateColumns.value.findIndex(c => c.id === columnId);
   if (columnIndex !== -1) {
     const column = vatRateColumns.value[columnIndex];
@@ -447,6 +456,7 @@ function deleteVATRateColumn(columnId: string): void {
  * Toggle checkbox for category/column combination
  */
 function toggleCategoryVATRate(category: Category, columnId: string): void {
+  if (!canUpdate.value) return;
   const currentValue = category[columnId] as boolean;
   const column = vatRateColumns.value.find(c => c.id === columnId);
   
@@ -538,7 +548,7 @@ async function retryLoadData(): Promise<void> {
  * Update changes - save to backend
  */
 async function updateChanges(): Promise<void> {
-  if (selectedRegion.value === null) return;
+  if (selectedRegion.value === null || !canUpdate.value) return Promise.resolve();
   
   isSaving.value = true;
   
@@ -754,6 +764,7 @@ onMounted(() => {
                   density="compact"
                   hide-details
                   class="category-input"
+                  :readonly="!canUpdate"
                   :placeholder="isNewCategory(item.id) ? t('admin.pricing.tax.taxableCategories.placeholder') : ''"
                   @update:model-value="updateCategoryName(item, $event)"
                   maxlength="100"
@@ -762,7 +773,7 @@ onMounted(() => {
               
               <!-- Actions column -->
               <template #[`item.actions`]="{ item }">
-                <div v-if="item.id !== -1" class="d-flex justify-center">
+                <div v-if="item.id !== -1 && canUpdate" class="d-flex justify-center">
                   <v-btn icon size="small" color="error" variant="text" @click="removeCategory(item.id)">
                     <PhTrash :size="18" />
                   </v-btn>
@@ -779,6 +790,7 @@ onMounted(() => {
                     inputmode="numeric"
                     pattern="[0-9]*"
                     class="column-header-input-field"
+                    :readonly="!canUpdate"
                     @input="handleColumnInput(column.id, ($event.target as HTMLInputElement).value)"
                     @blur="updateColumnValue(column.id, ($event.target as HTMLInputElement).value)"
                     @keydown="(e) => { if (e.key === 'e' || e.key === 'E' || e.key === '+' || e.key === '-' || e.key === '.') e.preventDefault(); }"
@@ -790,7 +802,7 @@ onMounted(() => {
               <!-- Dynamic VAT rate columns data -->
               <template v-for="column in vatRateColumns" :key="`item-${column.id}`" #[`item.${column.id}`]="{ item }">
                 <!-- Delete button in empty row -->
-                <div v-if="item.id === -1" class="d-flex justify-center">
+                <div v-if="item.id === -1 && canUpdate" class="d-flex justify-center">
                   <v-btn icon size="small" variant="text" color="error" @click="deleteVATRateColumn(column.id)">
                     <PhTrash :size="16" />
                   </v-btn>
@@ -812,7 +824,7 @@ onMounted(() => {
                     <PhCheck :size="16" />
                   </v-chip>
                   
-                  <div v-else class="empty-cell-placeholder">
+                  <div v-else-if="canUpdate" class="empty-cell-placeholder">
                     <PhPlus :size="14" class="placeholder-icon" />
                   </div>
                 </div>
@@ -831,7 +843,7 @@ onMounted(() => {
           color="teal"
           variant="outlined"
           class="mb-3"
-          :disabled="isLoading || selectedRegion === null"
+          :disabled="isLoading || selectedRegion === null || !canUpdate"
           @click="addCategory"
         >
           <template #prepend>
@@ -844,6 +856,7 @@ onMounted(() => {
           color="teal"
           variant="outlined"
           class="mb-3"
+          :disabled="!canUpdate"
           @click="addVATRateColumn"
         >
           <template #prepend>
@@ -866,7 +879,7 @@ onMounted(() => {
           color="teal"
           variant="outlined"
           :class="{ 'update-btn-glow': hasPendingChanges && !isSaving }"
-          :disabled="!hasPendingChanges || isSaving || isLoading"
+          :disabled="!hasPendingChanges || isSaving || isLoading || !canUpdate"
           :loading="isSaving"
           @click="updateChanges"
         >

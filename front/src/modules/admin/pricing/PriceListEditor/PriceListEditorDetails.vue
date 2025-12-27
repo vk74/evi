@@ -27,6 +27,7 @@ import { computed, ref, watch, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { usePricingAdminStore } from '../state.pricing.admin'
 import { useUiStore } from '@/core/state/uistate'
+import { can } from '@/core/helpers/helper.check.permissions'
 import Paginator from '@/core/ui/paginator/Paginator.vue'
 import { fetchPriceItemTypesService } from './service.admin.fetch.price.item.types'
 import { createPriceListItemService } from './service.admin.create.pricelist.item'
@@ -129,6 +130,11 @@ const headers = computed<TableHeader[]>(() => [
 // Computed properties for selection
 const selectedCount = computed(() => selectedLines.value.size)
 const hasSelected = computed(() => selectedLines.value.size > 0)
+
+// Permission computed properties
+const canCreate = computed(() => can('adminPricing:items:create:all'))
+const canUpdate = computed(() => can('adminPricing:items:update:all'))
+const canDelete = computed(() => can('adminPricing:items:delete:all'))
 
 // Computed properties for change tracking
 const hasChanges = computed(() => {
@@ -235,7 +241,11 @@ const handlePriceInput = (item: EditorLine, newValue: number | string) => {
 
 // Function to handle price field focus
 const handlePriceFocus = (item: EditorLine) => {
-  editingPriceId.value = item.id
+  if (item.id.startsWith('tmp_')) {
+    editingPriceId.value = item.id
+  } else if (canUpdate.value) {
+    editingPriceId.value = item.id
+  }
 }
 
 // Function to handle price field blur
@@ -996,7 +1006,7 @@ const updateAllItems = async () => {
           class="mb-3"
           :class="{ 'update-btn-glow': hasValidItemsToSave && !isSaving }"
           :loading="isSaving"
-          :disabled="!hasValidItemsToSave"
+          :disabled="!hasValidItemsToSave || !canCreate"
           @click="saveAllItems"
         >
           <template #prepend>
@@ -1013,7 +1023,7 @@ const updateAllItems = async () => {
           class="mb-3"
           :class="{ 'update-btn-glow': hasChanges && !isUpdating }"
           :loading="isUpdating"
-          :disabled="!hasChanges"
+          :disabled="!hasChanges || !canUpdate"
           @click="updateAllItems"
         >
           <template #prepend>
@@ -1028,6 +1038,7 @@ const updateAllItems = async () => {
           color="blue"
           variant="outlined"
           class="mb-3"
+          :disabled="!canCreate"
           @click="addRow"
         >
           <template #prepend>
@@ -1078,7 +1089,7 @@ const updateAllItems = async () => {
           color="error"
           variant="outlined"
           class="mb-3"
-          :disabled="!hasSelected"
+          :disabled="!hasSelected || !canDelete"
           :loading="isDeleting"
           @click="deleteSelected"
         >

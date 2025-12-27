@@ -34,6 +34,7 @@ import {
 import { usePricingAdminStore } from '@/modules/admin/pricing/state.pricing.admin'
 import type { Currency } from '@/modules/admin/pricing/types.pricing.admin'
 import { useUiStore } from '@/core/state/uistate'
+import { can } from '@/core/helpers/helper.check.permissions'
 
 const { t } = useI18n()
 
@@ -49,6 +50,9 @@ const currencyStatus = ref<'all' | 'active' | 'disabled'>('all')
 const searchQuery = ref<string>('')
 const isSearching = computed<boolean>(() => store.isCurrenciesLoading)
 const isSaving = ref<boolean>(false)
+
+// Permissions
+const canUpdate = computed(() => can('adminPricing:currencies:update:all'))
 
 // Validation rules - return error message or undefined
 const validateCode = (code: string): string | undefined => {
@@ -210,7 +214,7 @@ const generateUniqueCurrencyCode = (): string => {
 
 // Action handlers
 const hasPendingChanges = computed(() => store.getHasPendingChanges())
-const canSave = computed(() => hasPendingChanges.value && !hasValidationErrors.value)
+const canSave = computed(() => hasPendingChanges.value && !hasValidationErrors.value && canUpdate.value)
 
 const saveCurrencies = async () => {
   if (!canSave.value) return
@@ -238,6 +242,7 @@ const saveCurrencies = async () => {
 }
 
 const addCurrency = () => {
+  if (!canUpdate.value) return
   const newCurrency: Currency = {
     code: generateUniqueCurrencyCode(),
     name: '',
@@ -253,12 +258,13 @@ const addCurrency = () => {
  * Toggle currency active status
  */
 const toggleCurrencyStatus = (currency: Currency): void => {
+  if (!canUpdate.value) return
   currency.active = !currency.active
   store.markCurrencyChanged(currency.code, 'active', currency.active)
 }
 
 const deleteSelected = async () => {
-  if (!hasSelected.value) return
+  if (!hasSelected.value || !canUpdate.value) return
   
   // Mark each selected currency as deleted using store method
   selectedCurrencies.value.forEach(code => {
@@ -447,6 +453,7 @@ function handleBeforeUnload(e: BeforeUnloadEvent) {
                     v-model="currency.name" 
                     density="compact" 
                     variant="plain" 
+                    :readonly="!canUpdate"
                     :error-messages="validateName(currency.name)"
                     @update:model-value="store.markCurrencyChanged(currency.code, 'name', currency.name)"
                     maxlength="50"
@@ -457,6 +464,7 @@ function handleBeforeUnload(e: BeforeUnloadEvent) {
                     v-model="currency.symbol" 
                     density="compact" 
                     variant="plain" 
+                    :readonly="!canUpdate"
                     :error-messages="validateSymbol(currency.symbol || '')"
                     @update:model-value="store.markCurrencyChanged(currency.code, 'symbol', currency.symbol)"
                     maxlength="3"
@@ -471,6 +479,7 @@ function handleBeforeUnload(e: BeforeUnloadEvent) {
                     min="0"
                     max="8"
                     step="1"
+                    :readonly="!canUpdate"
                     class="rounding-precision-field"
                     :error-messages="validateRoundingPrecision(currency.roundingPrecision)"
                     @update:model-value="value => store.markCurrencyChanged(currency.code, 'roundingPrecision', Number(value))"
@@ -480,11 +489,12 @@ function handleBeforeUnload(e: BeforeUnloadEvent) {
                   <v-chip
                     :color="currency.active ? 'teal' : 'grey'"
                     size="small"
-                    class="status-chip-clickable"
+                    class="status-chip"
+                    :class="{ 'status-chip-clickable': canUpdate }"
                     @click="toggleCurrencyStatus(currency)"
                   >
                     {{ currency.active ? t('admin.pricing.currencies.status.active') : t('admin.pricing.currencies.status.disabled') }}
-                    <PhCaretDown :size="14" class="ml-1" />
+                    <PhCaretDown v-if="canUpdate" :size="14" class="ml-1" />
                   </v-chip>
                 </td>
               </tr>
@@ -535,6 +545,7 @@ function handleBeforeUnload(e: BeforeUnloadEvent) {
             color="blue"
             variant="outlined"
             class="mb-3"
+            :disabled="!canUpdate"
             @click="addCurrency"
           >
             <template #prepend>
@@ -572,7 +583,7 @@ function handleBeforeUnload(e: BeforeUnloadEvent) {
             color="error"
             variant="outlined"
             class="mb-3"
-            :disabled="!hasSelected"
+            :disabled="!hasSelected || !canUpdate"
             @click="deleteSelected"
           >
             <template #prepend>
