@@ -1,7 +1,10 @@
 /**
  * @file types.app.ts
- * Version: 1.1.0
+ * Version: 1.2.0
  * Type definitions for the application
+ * 
+ * Changes in v1.2.0:
+ * - Added 'About' module to ModuleName type
  */
 
 // Module names
@@ -19,6 +22,7 @@ export type ModuleName =
   | 'DeveloperInfo'
   | 'Components'
   | 'KnowledgeBase'
+  | 'About'
   | 'NewUserRegistration';
 
 // Drawer modes

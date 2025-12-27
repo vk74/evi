@@ -62,6 +62,25 @@
       "frontend": "frontend",
       "backend": "backend",
       "database": "database"
+    },
+    "landing": {
+      "title": "about our organization",
+      "organization": {
+        "title": "about organization",
+        "description": "this section contains information about our organization. the content will be customized by the organization administrator."
+      },
+      "services": {
+        "title": "our services and products",
+        "items": [
+          "service 1 - description of the first service or product",
+          "service 2 - description of the second service or product",
+          "service 3 - description of the third service or product"
+        ]
+      },
+      "contacts": {
+        "title": "contacts",
+        "description": "contact information will be provided here. this section can be customized by the organization administrator."
+      }
     }
   },
   "errors": {

@@ -1,5 +1,5 @@
 /**
- * appstate.ts - version 1.2.0
+ * appstate.ts - version 1.3.0
  * State store for the main navigation menu of the application.
  * Manages navigation between main modules, drawer display modes,
  * and preserves states between user sessions.
@@ -19,6 +19,9 @@
  * - Renamed setUserCountry -> setUserLocation
  * - Renamed clearUserCountry -> clearUserLocation
  * - Renamed isLoadingCountry -> isLoadingLocation
+ * 
+ * Changes in v1.3.0:
+ * - Added 'About' module to DEFAULT_MODULES array
  */
 import { defineStore } from 'pinia';
 import { ModuleName, AdminSubModule, DrawerMode } from '../../types.app';
@@ -49,6 +52,7 @@ const DEFAULT_MODULES: ModuleName[] = [
   'DeveloperInfo',
   'Components',
   'KnowledgeBase',
+  'About',
   'Login',
   'NewUserRegistration'
 ];

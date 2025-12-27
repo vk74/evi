@@ -18,6 +18,10 @@ Contains:
 Changes in v1.3.4:
 - Removed duplicate user country loading from isLoggedIn watcher
 - User country is now loaded in main.ts before app mount to prevent race conditions
+
+Changes in v1.3.5:
+- Added ModuleAbout component for landing page
+- Added 'About' module to navigation menu
 -->
 <script setup lang="ts">
 import { ref, computed, onMounted, watch, defineAsyncComponent, nextTick } from 'vue';
@@ -28,6 +32,7 @@ import { useAppSettingsStore } from './modules/admin/settings/state.app.settings
 import { useI18n } from 'vue-i18n';
 import { can } from '@/core/helpers/helper.check.permissions'; // Added import
 import { logoutService } from './core/auth/service.logout';
+import type { ModuleName, AdminSubModule, DrawerMode } from './types.app';
 
 // Regular component imports
 import ModuleLogin from './core/auth/ModuleLogin.vue';
@@ -52,6 +57,7 @@ const ModuleSessionData = defineAsyncComponent(() => import(/* webpackChunkName:
 const ModuleLicense = defineAsyncComponent(() => import(/* webpackChunkName: "mod-license" */ './modules/about/ModuleLicense.vue'));
 const ModuleDeveloperInfo = defineAsyncComponent(() => import(/* webpackChunkName: "mod-developer-info" */ './modules/about/ModuleDeveloperInfo.vue'));
 const ModuleComponents = defineAsyncComponent(() => import(/* webpackChunkName: "mod-components" */ './modules/about/ModuleComponents.vue'));
+const ModuleAbout = defineAsyncComponent(() => import(/* webpackChunkName: "mod-about" */ './modules/about/ModuleAbout.vue'));
 
 // Admin submodule imports (split per submodule; no prefetch for non-admin users)
 const SubModuleCatalogAdmin = defineAsyncComponent(() => import(/* webpackChunkName: "admin-catalog" */ './modules/admin/catalog/SubModuleCatalogAdmin.vue'));
@@ -1172,6 +1178,9 @@ onMounted(async () => {
                 />
               </template>
               <v-list>
+                <v-list-item @click="setActiveModule('About')">
+                  <v-list-item-title>{{ $t('navigation.aboutMenu.about') }}</v-list-item-title>
+                </v-list-item>
                 <v-list-item @click="setActiveModule('SessionData')">
                   <v-list-item-title>{{ $t('navigation.aboutMenu.sessionData') }}</v-list-item-title>
                 </v-list-item>
@@ -1224,6 +1233,7 @@ onMounted(async () => {
       <ModuleLicense v-if="appStore.isModuleActive('License')" />
       <ModuleDeveloperInfo v-if="appStore.isModuleActive('DeveloperInfo')" />
       <ModuleComponents v-if="appStore.isModuleActive('Components')" />
+      <ModuleAbout v-if="appStore.isModuleActive('About')" />
       <ModuleKnowledgeBase v-if="appStore.isModuleActive('KnowledgeBase') && isKnowledgeBaseModuleVisible" />
       <ModuleNewUserSelfRegistration v-if="appStore.isModuleActive('NewUserRegistration')" />
     </v-main>
