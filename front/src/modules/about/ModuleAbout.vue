@@ -130,7 +130,7 @@ const landingData = computed(() => {
 .services-list {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 0;
 }
 
 .service-item {
@@ -139,15 +139,20 @@ const landingData = computed(() => {
   line-height: 1.5;
   padding: 12px 16px;
   background-color: rgba(255, 255, 255, 0.8);
-  border-radius: 4px;
-  border-left: 4px solid rgba(19, 84, 122, 0.4);
+  border-left: 4px solid #026c6c;
+  border-bottom: 1px solid #026c6c;
   transition: all 0.2s ease;
 }
 
+.service-item:last-child {
+  border-bottom: none;
+}
+
 .service-item:hover {
-  background-color: rgba(19, 84, 122, 0.05);
-  border-left-color: rgba(19, 84, 122, 0.6);
-  transform: translateX(4px);
+  background-color: rgba(2, 108, 108, 0.05);
+  border-left-color: #026c6c;
+  border-left-width: 6px;
+  transform: translateX(2px);
 }
 
 @media (max-width: 768px) {
