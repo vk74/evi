@@ -1,4 +1,4 @@
--- Version: 1.0.5
+-- Version: 1.0.6
 -- Description: Seeds the database with demo catalog data, including sections and services.
 -- Backend file: 11_demo_catalog.sql
 
@@ -20,6 +20,9 @@
 -- Changes in v1.0.5:
 -- - Updated product_translations.language_code from short codes ('ru', 'en') to enum values ('russian', 'english')
 --   to match updated app.system_language_code enum in 03_enums.sql
+--
+-- Changes in v1.0.6:
+-- - Added test user t1 to sysadmins group for testing purposes
 
 -- ===========================================
 -- 1. Delete all demo services and their relations
@@ -155,6 +158,11 @@ INSERT INTO app.group_members (group_id, user_id, added_by) VALUES
 ('d4e5f6a7-b8c9-4012-d3e4-f5a6b7c8d9e0', 'c2cbae6f-89b9-4fa8-be9b-a8391526ead7', 'c2cbae6f-89b9-4fa8-be9b-a8391526ead7'),
 ('e5f6a7b8-c9d0-4123-e4f5-a6b7c8d9e0f1', '7ef9dce8-c832-40fe-a6ef-85afff37c474', '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
 ('f6a7b8c9-d0e1-4234-f5a6-b7c8d9e0f1a2', 'c2cbae6f-89b9-4fa8-be9b-a8391526ead7', 'c2cbae6f-89b9-4fa8-be9b-a8391526ead7')
+ON CONFLICT (group_id, user_id, is_active) DO NOTHING;
+
+-- Add test user t1 to sysadmins group
+INSERT INTO app.group_members (group_id, user_id, added_by) VALUES
+('770e8400-e29b-41d4-a716-446655440001', '7ef9dce8-c832-40fe-a6ef-85afff37c474', '7ef9dce8-c832-40fe-a6ef-85afff37c474')
 ON CONFLICT (group_id, user_id, is_active) DO NOTHING;
 
 -- ===========================================
