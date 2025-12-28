@@ -146,4 +146,13 @@ BEGIN
     )
     ON CONFLICT DO NOTHING;
 
+    -- Grant ALL permissions to sysadmins
+    -- This ensures the system administrators have access to all modules, including adminProducts
+    INSERT INTO app.group_permissions (group_id, permission_key, granted_by)
+    SELECT g.group_id, p.permission_key, sys_user_id
+    FROM app.groups g
+    CROSS JOIN app.permissions p
+    WHERE g.group_name = 'sysadmins'
+    ON CONFLICT DO NOTHING;
+
 END $$;
