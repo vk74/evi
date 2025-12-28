@@ -1,4 +1,4 @@
-# Version: 1.1.1
+# Version: 1.2.1
 # Description: Containerfile for evi database container based on official PostgreSQL 17 image with pg_cron support.
 # Backend file: Containerfile
 # This Containerfile extends the official postgres image and adds initialization scripts.
@@ -6,10 +6,19 @@
 # Changes in v1.1.0:
 # - Switched base image to postgres:17 (Debian-based) from postgres:16-alpine
 # - Installed pg_cron extension via Debian package and enabled it via shared_preload_libraries
-# - Kept automatic execution of SQL init scripts including pg_cron setup
+# - Kept automatic execution of maintenance SQL init scripts including pg_cron setup
 #
 # Changes in v1.1.1:
 # - Fixed base image to use full name (docker.io/postgres:17) to resolve Podman short-name resolution issues
+#
+# Changes in v1.2.0:
+# - Added migrations scripts from db/migrations directory (executed after init scripts)
+# - Added conditional demo data seeding via environment variable SEED_DEMO_DATA
+#
+# Changes in v1.2.2:
+# - Renamed migration files to m_xxx format in source to ensure correct execution order (m_ > 10_)
+# - Renamed demo data target to z_demo_catalog.sql to ensure it runs last (z_ > m_)
+# - Removed complex renaming logic from Containerfile as source files are now correctly named
 #
 FROM docker.io/postgres:17
 
@@ -27,8 +36,24 @@ RUN set -eux; \
 
 # Copy initialization scripts to the entrypoint directory
 # These scripts will be executed automatically when the database is first initialized
+# Order: init scripts (00-10) -> migrations (m_*)
 COPY init/*.sql /docker-entrypoint-initdb.d/
 
-# The official postgres image will automatically execute all .sql files
+# Copy migration scripts to the entrypoint directory
+# Source files are now named m_xxx_*.sql which ensures they sort AFTER init scripts (00-10)
+# m (109) > 0 (48) and m > 1 (49)
+COPY migrations/*.sql /docker-entrypoint-initdb.d/
+
+# Copy demo data scripts to a SEPARATE directory to prevent automatic execution
+# They will be conditionally executed by z_seed-demo-data.sh based on env var
+# We use a separate dir because any .sql file in /docker-entrypoint-initdb.d/ runs automatically
+COPY demo-data/*.sql /docker-entrypoint-demo-data/
+
+# Copy wrapper script for conditional execution
+# Named z_* to ensure it runs LAST (z > m) after migrations
+COPY docker-entrypoint-initdb.d/seed-demo-data.sh /docker-entrypoint-initdb.d/z_seed-demo-data.sh
+RUN chmod +x /docker-entrypoint-initdb.d/z_seed-demo-data.sh
+
+# The official postgres image will automatically execute all .sql and .sh files
 # in /docker-entrypoint-initdb.d/ in alphabetical order
 

@@ -1,25 +1,28 @@
 #!/usr/bin/env node
 
 // evi Local Podman Build & Management Script
-// Version: 1.1.1 (Postgres 17 + pg_cron cache modes)
+// Version: 2.1.0 (Fixes and Improvements)
 // Description: A streamlined Node.js script to manage the local Podman environment for evi.
-// Now focuses on "Database First" workflow.
+// Interactive menu system with submenus for container management operations.
 //
-// Changes in v1.1:
-// - Added explicit podman pull for postgres:17 to refresh local image cache before DB rebuild
-// - Added option to build & start DB using cached images only (no remote pulls) for offline/fast startup
-//
-// Changes in v1.1.1:
-// - Fixed podman pull command to use full image name (docker.io/postgres:17) to resolve short-name resolution issues
-// - Added cross-platform support: uses podman-compose on macOS and podman compose on Linux
+// Changes in v2.1.0:
+// - Fixed container detection and statistics logic (handling JSON Array vs JSON Lines output)
+// - Improved cross-platform PATH resolution (Mac/Linux), including Homebrew paths
+// - Added automatic detection of 'podman-compose' vs 'podman compose'
+// - Robust JSON parsing for Podman output
+// - Enhanced error reporting and command execution checks
 
-const { execSync } = require('child_process');
+const { execSync, spawnSync } = require('child_process');
 const readline = require('readline');
 const fs = require('fs');
+const path = require('path');
 
 // --- Configuration ---
 const COMPOSE_FILE = 'deployment/local/podman-compose.yml';
 const ENV_FILE = '.env.local'; // Optional file for environment variables
+
+// Global variable to store detected compose command
+let CACHED_COMPOSE_CMD = null;
 
 // ANSI colors for better output visibility
 const colors = {
@@ -43,38 +46,159 @@ function envFileExists() {
 }
 
 /**
- * Gets the Podman compose command based on the operating system.
- * - macOS: Uses 'podman-compose' (Python-based standalone tool)
- * - Linux: Uses 'podman compose' (built-in Podman compose plugin)
+ * Enhanced environment setup for command execution.
+ * Ensures Podman and other tools are found in PATH.
+ */
+function getEnv() {
+  const env = { ...process.env };
+  if (process.platform === 'darwin') {
+    // Add common paths for Mac (Homebrew, standard local, Podman specific)
+    const extraPaths = [
+      '/opt/podman/bin',
+      '/opt/homebrew/bin',
+      '/usr/local/bin',
+      '/usr/bin',
+      '/bin',
+      '/usr/sbin',
+      '/sbin'
+    ];
+    
+    // Add Python user bin paths (for podman-compose via pip)
+    const pythonVersions = ['3.13', '3.12', '3.11', '3.10', '3.9', '3.8'];
+    const pythonUserBins = pythonVersions.map(v => `${process.env.HOME}/Library/Python/${v}/bin`);
+    
+    const currentPath = env.PATH || '';
+    const newPath = [...extraPaths, ...pythonUserBins, currentPath].join(':');
+    env.PATH = newPath;
+  }
+  return env;
+}
+
+/**
+ * Executes a shell command synchronously and returns the output as string.
+ * Used for getting command results without printing to console.
+ * @param {string} command - The command to execute.
+ * @param {boolean} ignoreErrors - If true, returns empty string on error instead of throwing.
+ * @returns {string} Command output or empty string if ignoreErrors is true and command failed.
+ */
+function runCommandSilent(command, ignoreErrors = false) {
+  try {
+    const output = execSync(command, { 
+      stdio: ['pipe', 'pipe', 'pipe'], 
+      env: getEnv(), 
+      encoding: 'utf8',
+      timeout: 10000 // 10s timeout to prevent hanging
+    });
+    return output.trim();
+  } catch (error) {
+    if (ignoreErrors) {
+      return '';
+    }
+    throw error;
+  }
+}
+
+/**
+ * Robustly parses Podman JSON output.
+ * Handles both JSON Array (one large array) and JSON Lines (one object per line).
+ * @param {string} output - The raw stdout from podman command.
+ * @returns {Array} Array of parsed objects.
+ */
+function parsePodmanOutput(output) {
+  if (!output || !output.trim()) return [];
+  
+  const trimmed = output.trim();
+  
+  // Method 1: Try parsing as a single JSON entity (Array or Object)
+  try {
+    const parsed = JSON.parse(trimmed);
+    if (Array.isArray(parsed)) {
+      return parsed;
+    } else if (parsed && typeof parsed === 'object') {
+      return [parsed];
+    }
+  } catch (e) {
+    // Not a single JSON structure, fall through to line-by-line
+  }
+
+  // Method 2: Try parsing as JSON Lines (NDJSON)
+  const results = [];
+  const lines = trimmed.split('\n');
+  
+  for (const line of lines) {
+    const lineTrimmed = line.trim();
+    if (!lineTrimmed) continue;
+    
+    try {
+      const parsedLine = JSON.parse(lineTrimmed);
+      results.push(parsedLine);
+    } catch (e) {
+      // If a line is not valid JSON, we skip it.
+      // This handles cases where there might be some noise output.
+    }
+  }
+  
+  return results;
+}
+
+/**
+ * Detects the best Podman Compose command available.
+ * Checks for 'podman-compose' then 'podman compose'.
+ * @returns {string} The command to use (e.g., 'podman-compose' or 'podman compose').
+ */
+function detectComposeCommand() {
+  if (CACHED_COMPOSE_CMD) return CACHED_COMPOSE_CMD;
+
+  log('🔍 Detecting Podman Compose command...', colors.cyan);
+
+  const env = getEnv();
+  const options = { stdio: 'ignore', env };
+
+  // 1. Try 'podman-compose' (standalone)
+  try {
+    execSync('podman-compose --version', options);
+    CACHED_COMPOSE_CMD = 'podman-compose';
+    log('   Using: podman-compose', colors.green);
+    return CACHED_COMPOSE_CMD;
+  } catch (e) {}
+
+  // 2. Try 'podman compose' (plugin)
+  try {
+    execSync('podman compose version', options);
+    CACHED_COMPOSE_CMD = 'podman compose';
+    log('   Using: podman compose', colors.green);
+    return CACHED_COMPOSE_CMD;
+  } catch (e) {}
+
+  // 3. Fallback based on OS preference (soft fail)
+  if (process.platform === 'darwin') {
+     CACHED_COMPOSE_CMD = 'podman-compose';
+  } else {
+     CACHED_COMPOSE_CMD = 'podman compose';
+  }
+  
+  log(`   Defaulting to: ${CACHED_COMPOSE_CMD} (detection failed, might not work)`, colors.yellow);
+  return CACHED_COMPOSE_CMD;
+}
+
+/**
+ * Gets the Podman compose command string.
  * @param {string} command - The compose command (e.g., 'build', 'up', 'down').
  * @param {string} additionalArgs - Additional arguments to append.
- * @returns {string} The complete podman compose command for the current platform.
+ * @returns {string} The complete podman compose command.
  */
 function getComposeCommand(command, additionalArgs = '') {
-  const isMac = process.platform === 'darwin';
-  const isLinux = process.platform === 'linux';
-  
-  // On macOS, use podman-compose (Python-based standalone tool)
-  // On Linux, use podman compose (built-in command)
-  const composeCmd = isMac ? 'podman-compose' : 'podman compose';
-  
+  const composeCmd = detectComposeCommand();
   let cmd = `${composeCmd} -f "${COMPOSE_FILE}"`;
-  
   cmd += ` ${command}`;
-  
-  // Add additional arguments if provided
   if (additionalArgs && additionalArgs.trim()) {
     cmd += ` ${additionalArgs.trim()}`;
   }
-  
   return cmd;
 }
 
 /**
  * Prints a formatted message to the console.
- * @param {string} message - The message to print.
- * @param {string} color - The color to use for the message.
- * @param {boolean} isBold - Whether to make the text bold.
  */
 function log(message, color = colors.reset, isBold = false) {
   const style = isBold ? colors.bright : '';
@@ -83,10 +207,6 @@ function log(message, color = colors.reset, isBold = false) {
 
 /**
  * Executes a shell command synchronously and prints its output.
- * Records and returns the execution time.
- * @param {string} command - The command to execute.
- * @param {string} description - A description of the action being performed.
- * @param {boolean} quiet - If true, suppresses command output (default: false).
  */
 function runCommand(command, description, quiet = false) {
   log(`\n🚀 Executing: ${description}...`, colors.yellow, true);
@@ -96,18 +216,7 @@ function runCommand(command, description, quiet = false) {
   const startTime = Date.now();
   try {
     const stdio = quiet ? ['pipe', 'pipe', 'pipe'] : 'inherit';
-    // Add /opt/podman/bin and Python user bin directories to PATH for the child process on macOS
-    // This fixes "command not found" when running from IDEs/scripts where PATH might differ
-    // On macOS, podman-compose is installed via pip, so we need to include Python bin paths
-    const env = { ...process.env };
-    if (process.platform === 'darwin') {
-        // Try to find podman-compose in common Python user bin locations
-        const pythonVersions = ['3.13', '3.12', '3.11', '3.10', '3.9'];
-        const pythonUserBins = pythonVersions.map(v => `${process.env.HOME}/Library/Python/${v}/bin`).join(':');
-        env.PATH = `/opt/podman/bin:${pythonUserBins}:${env.PATH || ''}`;
-    }
-    
-    execSync(command, { stdio, env });
+    execSync(command, { stdio, env: getEnv() });
     const endTime = Date.now();
     const duration = ((endTime - startTime) / 1000).toFixed(2);
     log(`✅ Success: "${description}" completed in ${duration}s.`, colors.green);
@@ -115,10 +224,12 @@ function runCommand(command, description, quiet = false) {
   } catch (error) {
     log(`❌ Error: "${description}" failed.`, colors.red, true);
     if (quiet) {
-      log(`   Command that failed: ${command}`, colors.red);
-      log(`   Error details: ${error.message}`, colors.red);
+      log(`   Command: ${command}`, colors.red);
+      log(`   Error: ${error.message}`, colors.red);
+      if (error.stderr) {
+         log(`   Stderr: ${error.stderr.toString()}`, colors.red);
+      }
     }
-    // We don't always exit on error, letting the caller handle it or decide
     throw error;
   }
 }
@@ -127,7 +238,6 @@ function runCommand(command, description, quiet = false) {
 
 /**
  * Checks if Podman Machine is running (MacOS/Windows) and starts it if needed.
- * This is crucial for Podman on non-Linux systems.
  */
 function checkAndStartPodmanMachine() {
   const isMac = process.platform === 'darwin';
@@ -139,54 +249,186 @@ function checkAndStartPodmanMachine() {
 
   log('\n🐳 Checking Podman Machine status...', colors.cyan);
 
-  const env = { ...process.env };
-  if (isMac) {
-      env.PATH = `/opt/podman/bin:${env.PATH || ''}`;
+  try {
+    runCommandSilent('podman info');
+    log('✅ Podman Machine is running.', colors.green);
+    return;
+  } catch (e) {
+    log('⚠️  Podman Machine is NOT running (or info failed).', colors.yellow);
   }
 
+  log('🚀 Starting Podman Machine...', colors.yellow, true);
   try {
-    // Check machine status
-    // 'podman machine list' output format varies, but we check if 'Running' exists or check via json
-    // Safer way: try running a simple podman command
-    try {
-      execSync('podman info', { stdio: 'pipe', env }); // Use updated env with PATH
-      log('✅ Podman Machine is running.', colors.green);
-      return;
-    } catch (e) {
-      log('⚠️  Podman Machine is NOT running (or info failed).', colors.yellow);
-    }
+      runCommand('podman machine start', 'Start Podman Machine');
+  } catch (e) {
+      if (e.message.includes('already running') || (e.stdout && e.stdout.includes('already running')) || (e.stderr && e.stderr.includes('already running'))) {
+           log('✅ Podman Machine was already running.', colors.green);
+           return;
+      }
+      throw e;
+  }
+}
 
-    log('🚀 Starting Podman Machine...', colors.yellow, true);
-    // Try to start, but catch "already running" error which is actually a success state
-    try {
-        runCommand('podman machine start', 'Start Podman Machine');
-    } catch (e) {
-        if (e.message.includes('already running') || e.stdout?.includes('already running') || e.stderr?.includes('already running')) {
-             log('✅ Podman Machine was already running (detected during start).', colors.green);
-             return;
-        }
-        throw e;
+/**
+ * Gets the podman command.
+ * @returns {string} The podman command.
+ */
+function getPodmanCommand() {
+  return 'podman'; // We rely on PATH resolution in getEnv()
+}
+
+/**
+ * Checks if a volume exists.
+ */
+function volumeExists(volumeName) {
+  try {
+    const podmanCmd = getPodmanCommand();
+    // Use json format to be sure
+    const output = runCommandSilent(`${podmanCmd} volume inspect ${volumeName} --format json`, true);
+    const parsed = parsePodmanOutput(output);
+    return parsed && parsed.length > 0;
+  } catch (error) {
+    return false;
+  }
+}
+
+/**
+ * Checks if a container exists and is running.
+ */
+function getContainerStatus(containerName) {
+  try {
+    const podmanCmd = getPodmanCommand();
+    // Using simple filter might return substring matches, so we iterate results
+    const output = runCommandSilent(`${podmanCmd} ps -a --filter name=${containerName} --format json`, true);
+    const containers = parsePodmanOutput(output);
+    
+    if (!containers || containers.length === 0) {
+      return { exists: false, isRunning: false };
     }
     
+    for (const container of containers) {
+       // Normalize names: remove leading / if present (Docker/Podman convention)
+       const names = (container.Names || []).map(n => n.startsWith('/') ? n.slice(1) : n);
+       // Also check Name field
+       if (container.Name) names.push(container.Name.startsWith('/') ? container.Name.slice(1) : container.Name);
+       
+       // Precise match or contains
+       if (names.includes(containerName) || names.some(n => n === containerName)) {
+           const state = (container.State || '').toLowerCase();
+           const status = (container.Status || '').toLowerCase();
+           const isRunning = state === 'running' || status.includes('up');
+           return { exists: true, isRunning };
+       }
+    }
+    
+    return { exists: false, isRunning: false };
   } catch (error) {
-    log('❌ Failed to manage Podman Machine.', colors.red);
-    log('   Please ensure Podman is installed and initialized (podman machine init).', colors.yellow);
-    process.exit(1);
+    return { exists: false, isRunning: false };
   }
+}
+
+/**
+ * Gets all containers with their details.
+ */
+function getAllContainers() {
+  try {
+    const podmanCmd = getPodmanCommand();
+    const output = runCommandSilent(`${podmanCmd} ps -a --format json`, true);
+    return parsePodmanOutput(output);
+  } catch (error) {
+    return [];
+  }
+}
+
+/**
+ * Gets container stats (current resource usage).
+ */
+function getContainerStats(containerName) {
+  try {
+    const podmanCmd = getPodmanCommand();
+    const output = runCommandSilent(`${podmanCmd} stats --no-stream --format json ${containerName}`, true);
+    const statsList = parsePodmanOutput(output);
+    
+    if (!statsList || statsList.length === 0) return null;
+    
+    // Find the specific container stats
+    return statsList.find(s => {
+        const name = s.Name || '';
+        return name === containerName || name.includes(containerName);
+    }) || statsList[0]; // Fallback to first if only one requested
+  } catch (error) {
+    return null;
+  }
+}
+
+/**
+ * Gets container inspect data.
+ */
+function getContainerInspect(containerName) {
+  try {
+    const podmanCmd = getPodmanCommand();
+    const output = runCommandSilent(`${podmanCmd} inspect ${containerName} --format json`, true);
+    const inspected = parsePodmanOutput(output);
+    return inspected && inspected.length > 0 ? inspected[0] : null;
+  } catch (error) {
+    return null;
+  }
+}
+
+/**
+ * Gets volume information including size.
+ */
+function getVolumeInfo(volumeName) {
+  try {
+    const podmanCmd = getPodmanCommand();
+    const output = runCommandSilent(`${podmanCmd} volume inspect ${volumeName} --format json`, true);
+    const volumes = parsePodmanOutput(output);
+    return volumes && volumes.length > 0 ? volumes[0] : null;
+  } catch (error) {
+    return null;
+  }
+}
+
+/**
+ * Formats bytes to human-readable size.
+ */
+function formatBytes(bytes) {
+  if (bytes === undefined || bytes === null || bytes === '') return 'N/A';
+  const num = Number(bytes);
+  if (isNaN(num)) return bytes; // return as is if not a number
+  if (num === 0) return '0 B';
+  
+  const k = 1024;
+  const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
+  const i = Math.floor(Math.log(num) / Math.log(k));
+  return Math.round(num / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i];
+}
+
+/**
+ * Formats duration in seconds to human-readable string.
+ */
+function formatUptime(seconds) {
+  if (!seconds || seconds === 0) return '0s';
+  const days = Math.floor(seconds / 86400);
+  const hours = Math.floor((seconds % 86400) / 3600);
+  const mins = Math.floor((seconds % 3600) / 60);
+  const secs = Math.floor(seconds % 60);
+  
+  const parts = [];
+  if (days > 0) parts.push(`${days}d`);
+  if (hours > 0) parts.push(`${hours}h`);
+  if (mins > 0) parts.push(`${mins}m`);
+  if (secs > 0 || parts.length === 0) parts.push(`${secs}s`);
+  
+  return parts.join(' ');
 }
 
 // --- Core Workflow Functions ---
 
-/**
- * Performs a complete cleanup: stops containers, removes volumes, images, networks, and build cache.
- * This effectively resets the entire Podman environment to a clean state.
- */
 function cleanAll() {
   const timings = {};
-  log('\n🧹 Cleaning up ALL Podman artifacts (containers, volumes, images, networks, build cache)...', colors.cyan, true);
+  log('\n🧹 Cleaning up ALL Podman artifacts...', colors.cyan, true);
   
-  // 1. Stop containers, remove volumes and images using compose
-  // --rmi all removes all images created by compose
   try {
     const cmd = getComposeCommand('down', '-v --rmi all');
     timings['Stop & Remove (Compose)'] = runCommand(cmd, 'Stop Containers, Remove Volumes & Images');
@@ -194,70 +436,46 @@ function cleanAll() {
     log('   (Ignored error during down - might not be running)', colors.yellow);
   }
 
-  // 2. Extra cleanup to be sure (force remove specific known container names if compose missed them)
-  // This helps if the user changed project names or context
+  // Force remove known containers just in case
   try {
-    // Force remove known service containers
+    const podmanCmd = getPodmanCommand();
     const containers = ['evi-database-local', 'evi-backend-local', 'evi-frontend-local'];
-    runCommand(`podman rm -f ${containers.join(' ')}`, 'Force Remove Containers', true);
+    runCommandSilent(`${podmanCmd} rm -f ${containers.join(' ')}`, true);
   } catch (e) {}
 
-  // 3. Remove unused networks
-  try {
-    timings['Remove Networks'] = runCommand('podman network prune -f', 'Remove Unused Networks', true);
-  } catch (e) {
-    log('   (Ignored error during network prune)', colors.yellow);
-  }
+  // Prune network, images, builder, volumes
+  const pruneCmds = [
+      { cmd: 'network prune -f', name: 'Remove Networks' },
+      { cmd: 'image prune -af', name: 'Remove Images' },
+      { cmd: 'builder prune -af', name: 'Clean Build Cache' },
+      { cmd: 'volume prune -f', name: 'Prune Volumes' }
+  ];
 
-  // 4. Remove unused images (all dangling and unused images)
-  try {
-    timings['Remove Images'] = runCommand('podman image prune -af', 'Remove Unused Images', true);
-  } catch (e) {
-    log('   (Ignored error during image prune)', colors.yellow);
-  }
-
-  // 5. Clean build cache
-  try {
-    timings['Clean Build Cache'] = runCommand('podman builder prune -af', 'Clean Build Cache', true);
-  } catch (e) {
-    log('   (Ignored error during builder prune)', colors.yellow);
-  }
-
-  // 6. Final volume cleanup (in case something was missed)
-  try {
-    timings['Prune Volumes'] = runCommand('podman volume prune -f', 'Prune Unused Volumes', true);
-  } catch (e) {
-    log('   (Ignored error during volume prune)', colors.yellow);
+  const podmanCmd = getPodmanCommand();
+  for (const item of pruneCmds) {
+      try {
+          timings[item.name] = runCommand(`${podmanCmd} ${item.cmd}`, item.name, true);
+      } catch(e) {}
   }
 
   return timings;
 }
 
-/**
- * Builds and starts ONLY the database container using Podman compose.
- * Always refreshes the base postgres:17 image from the registry so that
- * the local Podman image cache is up to date before building.
- * Builds the database image and starts the container in detached mode.
- */
 function buildAndStartDB() {
   const timings = {};
   log('\n🐘 Starting Database Container...', colors.cyan, true);
 
-  // 0. Ensure local cache has the latest postgres:17 image
-  // This updates Podman's image cache with the latest upstream image.
+  const podmanCmd = getPodmanCommand();
   timings['Pull postgres:17'] = runCommand(
-    'podman pull docker.io/postgres:17',
+    `${podmanCmd} pull docker.io/postgres:17`,
     'Pull latest postgres:17 base image'
   );
 
-  // 1. Build the database image using Podman compose
-  // This builds the image from the Containerfile in the db directory
   timings['Build DB'] = runCommand(
     getComposeCommand('build', 'evi-database'),
     'Build Database Image'
   );
 
-  // 2. Start the database service in detached mode
   timings['Start DB'] = runCommand(
     getComposeCommand('up', '-d evi-database'),
     'Start Database Service'
@@ -266,34 +484,24 @@ function buildAndStartDB() {
   return timings;
 }
 
-/**
- * Builds and starts ONLY the database container using Podman compose,
- * but relies strictly on the local image cache (no remote pulls).
- * Useful for offline mode or when you explicitly want to reuse
- * previously pulled postgres:17 and already built DB images.
- */
 function buildAndStartDBFromCache() {
   const timings = {};
-  log('\n🐘 Starting Database Container from CACHE (no pulls)...', colors.cyan, true);
+  log('\n🐘 Starting Database Container from CACHE...', colors.cyan, true);
 
-  // Temporarily instruct Podman/Buildah to never pull images during build.
   const originalPullPolicy = process.env.BUILDAH_PULL_NEVER;
   process.env.BUILDAH_PULL_NEVER = '1';
 
   try {
-    // 1. Build DB image strictly from cached layers/images
     timings['Build DB (cache only)'] = runCommand(
       getComposeCommand('build', 'evi-database'),
       'Build Database Image (cache only)'
     );
 
-    // 2. Start the database service in detached mode
     timings['Start DB'] = runCommand(
       getComposeCommand('up', '-d evi-database'),
       'Start Database Service'
     );
   } finally {
-    // Restore previous pull policy so it does not leak outside this flow
     if (originalPullPolicy === undefined) {
       delete process.env.BUILDAH_PULL_NEVER;
     } else {
@@ -304,9 +512,6 @@ function buildAndStartDBFromCache() {
   return timings;
 }
 
-/**
- * Displays a summary of the execution timings.
- */
 function showSummary(timings) {
   log('\n📊 Execution Summary:', colors.blue, true);
   log('-------------------------', colors.blue);
@@ -319,71 +524,458 @@ function showSummary(timings) {
   log(`${'Total Time'.padEnd(30)}: ${total.toFixed(2)}s`, colors.blue, true);
 }
 
-// --- Main Menu ---
+function showContainersDetails() {
+  log('\n📋 Current Containers Details:', colors.cyan, true);
+  log('========================================', colors.cyan);
+  
+  const containers = getAllContainers();
+  
+  if (containers.length === 0) {
+    log('No containers found.', colors.yellow);
+    return;
+  }
+  
+  for (const container of containers) {
+    let containerName = 'Unknown';
+    if (container.Names) {
+      if (Array.isArray(container.Names)) {
+        containerName = container.Names[0] || 'Unknown';
+      } else {
+        containerName = container.Names;
+      }
+    } else if (container.Name) {
+      containerName = container.Name;
+    }
+    
+    // Clean name
+    if (containerName.startsWith('/')) containerName = containerName.slice(1);
 
-async function mainMenu() {
-  const rl = readline.createInterface({
-    input: process.stdin,
-    output: process.stdout
-  });
+    const status = container.Status || container.State || 'Unknown';
+    log(`\n${colors.bright}${colors.cyan}Container: ${containerName}${colors.reset}`, colors.cyan);
+    log(`  Status: ${status}`, colors.reset);
+    
+    // Get stats
+    const isRunning = (container.State === 'running') || (status.toLowerCase().includes('up'));
+    const stats = isRunning ? getContainerStats(containerName) : null;
+    const inspect = getContainerInspect(containerName);
+    
+    // Volumes
+    if (inspect && inspect.Mounts) {
+      const volumes = inspect.Mounts.filter(m => m.Type === 'volume');
+      if (volumes.length > 0) {
+        log(`  Volumes:`, colors.reset);
+        for (const vol of volumes) {
+          const volInfo = getVolumeInfo(vol.Name);
+          let sizeStr = 'N/A';
+          if (volInfo) {
+              const size = volInfo.UsageData?.Size || volInfo.Size;
+              sizeStr = formatBytes(size);
+          }
+          log(`    - ${vol.Name}: ${sizeStr}`, colors.reset);
+        }
+      }
+    }
+    
+    // Stats
+    if (stats) {
+      const memUsage = stats.MemUsage || stats.MemUsageRaw || 'N/A';
+      const memLimit = stats.MemLimit || stats.MemLimitRaw || 'N/A';
+      log(`  RAM Usage: ${memUsage} / ${memLimit}`, colors.reset);
+      
+      const cpu = stats.CPU || stats.CPUPerc || 'N/A';
+      log(`  CPU Usage: ${cpu}`, colors.reset);
+    }
+    
+    // Uptime (calculated if not present in stats)
+    if (stats && stats.UpTime) {
+         log(`  Uptime: ${stats.UpTime}`, colors.reset);
+    } else if (inspect && inspect.State && inspect.State.StartedAt && isRunning) {
+         const started = new Date(inspect.State.StartedAt);
+         const now = new Date();
+         const seconds = Math.floor((now - started) / 1000);
+         log(`  Uptime: ${formatUptime(seconds)}`, colors.reset);
+    }
 
+    log('  ---', colors.reset);
+  }
+  log('\n', colors.reset);
+}
+
+function deleteDBContainerOnly() {
+  const timings = {};
+  log('\n🗑️  Deleting DB Container Only...', colors.cyan, true);
+  
+  const containerName = 'evi-database-local';
+  const status = getContainerStatus(containerName);
+  
+  if (!status.exists) {
+    log(`Container ${containerName} does not exist.`, colors.yellow);
+    return timings;
+  }
+  
+  try {
+    const podmanCmd = getPodmanCommand();
+    
+    if (status.isRunning) {
+      timings['Stop Container'] = runCommand(
+        `${podmanCmd} stop ${containerName}`,
+        'Stop DB Container',
+        true
+      );
+    }
+    
+    timings['Remove Container'] = runCommand(
+      `${podmanCmd} rm ${containerName}`,
+      'Remove DB Container',
+      true
+    );
+    
+    log('✅ DB container deleted successfully. Volume preserved.', colors.green);
+  } catch (error) {
+    log(`❌ Failed to delete container: ${error.message}`, colors.red, true);
+    throw error;
+  }
+  
+  return timings;
+}
+
+function deleteDBContainerAndVolume() {
+  const timings = {};
+  log('\n🗑️  Deleting DB Container and Volume...', colors.cyan, true);
+  
+  try {
+    const cmd = getComposeCommand('down', '-v evi-database');
+    timings['Stop & Remove'] = runCommand(cmd, 'Stop Container and Remove Volume');
+    
+    // Explicitly check and remove the volume if compose didn't catch it (due to naming)
+    const volumeName = 'evi_db_volume';
+    if (volumeExists(volumeName)) {
+        const podmanCmd = getPodmanCommand();
+        runCommand(`${podmanCmd} volume rm ${volumeName}`, 'Explicitly Remove Volume', true);
+    }
+    
+    log('✅ DB container and volume deleted successfully.', colors.green);
+  } catch (error) {
+    log(`❌ Failed to delete container and volume: ${error.message}`, colors.red, true);
+    throw error;
+  }
+  
+  return timings;
+}
+
+async function buildDBWithVolume(useCache, seedDemoData = false) {
+  const timings = {};
+  const volumeName = 'evi_db_volume';
+  
+  log('\n🐘 Building DB Container with Volume...', colors.cyan, true);
+  if (seedDemoData) {
+    log('   Demo catalog data will be seeded.', colors.yellow);
+  }
+  
+  if (volumeExists(volumeName)) {
+    log(`❌ Error: Volume ${volumeName} already exists.`, colors.red, true);
+    log('   Cannot build with new volume when volume already exists.', colors.red);
+    throw new Error(`Volume ${volumeName} already exists`);
+  }
+  
+  try {
+    const podmanCmd = getPodmanCommand();
+    if (!useCache) {
+      timings['Pull postgres:17'] = runCommand(
+        `${podmanCmd} pull docker.io/postgres:17`,
+        'Pull latest postgres:17 base image'
+      );
+    } else {
+      log('📦 Using cached images only...', colors.yellow);
+    }
+    
+    const originalPullPolicy = process.env.BUILDAH_PULL_NEVER;
+    if (useCache) process.env.BUILDAH_PULL_NEVER = '1';
+    
+    const originalSeedDemoData = process.env.SEED_DEMO_DATA;
+    process.env.SEED_DEMO_DATA = seedDemoData ? 'true' : 'false';
+    
+    try {
+      timings['Build DB'] = runCommand(
+        getComposeCommand('build', 'evi-database'),
+        useCache ? 'Build Database Image (cache only)' : 'Build Database Image'
+      );
+      
+      log('\n🚀 Starting container for initialization...', colors.cyan, true);
+      timings['Start DB'] = runCommand(
+        getComposeCommand('up', '-d evi-database'),
+        'Start Database Service for Initialization'
+      );
+      
+      log('⏳ Waiting for database initialization...', colors.yellow);
+      const podmanCmd = getPodmanCommand();
+      let retries = 30;
+      let dbReady = false;
+      while (retries > 0 && !dbReady) {
+        try {
+          runCommandSilent(`${podmanCmd} exec evi-database-local pg_isready -U postgres`, false);
+          dbReady = true;
+        } catch (e) {
+          retries--;
+          await new Promise(resolve => setTimeout(resolve, 1000));
+        }
+      }
+      
+      if (!dbReady) throw new Error('Database did not become ready within timeout period');
+      
+      log('⏳ Waiting for scripts to complete...', colors.yellow);
+      await new Promise(resolve => setTimeout(resolve, 10000));
+      
+    } finally {
+      if (useCache) {
+        if (originalPullPolicy === undefined) delete process.env.BUILDAH_PULL_NEVER;
+        else process.env.BUILDAH_PULL_NEVER = originalPullPolicy;
+      }
+      if (originalSeedDemoData === undefined) delete process.env.SEED_DEMO_DATA;
+      else process.env.SEED_DEMO_DATA = originalSeedDemoData;
+    }
+    
+    log('✅ DB container built and initialized successfully.', colors.green);
+  } catch (error) {
+    log(`❌ Failed to build container: ${error.message}`, colors.red, true);
+    throw error;
+  }
+  
+  return timings;
+}
+
+function buildDBForExistingVolume(useCache) {
+  const timings = {};
+  const volumeName = 'evi_db_volume';
+  
+  log('\n🐘 Building DB Container for Existing Volume...', colors.cyan, true);
+  
+  if (!volumeExists(volumeName)) {
+    log(`❌ Error: Volume ${volumeName} does not exist.`, colors.red, true);
+    throw new Error(`Volume ${volumeName} does not exist`);
+  }
+  
+  try {
+    const podmanCmd = getPodmanCommand();
+    if (!useCache) {
+      timings['Pull postgres:17'] = runCommand(
+        `${podmanCmd} pull docker.io/postgres:17`,
+        'Pull latest postgres:17 base image'
+      );
+    } else {
+      log('📦 Using cached images only...', colors.yellow);
+    }
+    
+    const originalPullPolicy = process.env.BUILDAH_PULL_NEVER;
+    if (useCache) process.env.BUILDAH_PULL_NEVER = '1';
+    
+    try {
+      timings['Build DB'] = runCommand(
+        getComposeCommand('build', 'evi-database'),
+        useCache ? 'Build Database Image (cache only)' : 'Build Database Image'
+      );
+    } finally {
+      if (useCache) {
+        if (originalPullPolicy === undefined) delete process.env.BUILDAH_PULL_NEVER;
+        else process.env.BUILDAH_PULL_NEVER = originalPullPolicy;
+      }
+    }
+    
+    log('✅ DB container built successfully.', colors.green);
+  } catch (error) {
+    log(`❌ Failed to build container: ${error.message}`, colors.red, true);
+    throw error;
+  }
+  
+  return timings;
+}
+
+function runDBContainer() {
+  const timings = {};
+  log('\n🚀 Running DB Container...', colors.cyan, true);
+  
+  const containerName = 'evi-database-local';
+  const status = getContainerStatus(containerName);
+  
+  if (status.isRunning) {
+    log(`⚠️  Container ${containerName} is already running.`, colors.yellow, true);
+    return timings;
+  }
+  
+  try {
+    timings['Start DB'] = runCommand(
+      getComposeCommand('up', '-d evi-database'),
+      'Start Database Service'
+    );
+    log('✅ DB container started successfully.', colors.green);
+  } catch (error) {
+    log(`❌ Failed to start container: ${error.message}`, colors.red, true);
+    throw error;
+  }
+  
+  return timings;
+}
+
+// --- Menu Functions ---
+
+async function showDemoDataSubMenu(useCache, buildType) {
+  const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
   const menu = `
-${colors.cyan}=========================================${colors.reset}
-${colors.cyan}  evi Local Podman Manager (DB First)${colors.reset}
-${colors.cyan}=========================================${colors.reset}
-${colors.yellow}[1]${colors.reset} 🗑️  DELETE ALL (Containers & Volumes) - Reset Environment
-${colors.yellow}[2]${colors.reset} 🐘 Build & Start DB ONLY (pull latest postgres:17)
-${colors.yellow}[3]${colors.reset} 🐘 Build & Start DB from CACHE ONLY (no pulls)
-${colors.yellow}[4]${colors.reset} Exit
+${colors.cyan}Demo Data Options:${colors.reset}
+${colors.yellow}[1]${colors.reset} Deploy without demo data
+${colors.yellow}[2]${colors.reset} Deploy and seed demo catalog data
 `;
+  console.log(menu);
+  return new Promise((resolve) => {
+    rl.question('Select option: ', async (option) => {
+      rl.close();
+      let timings = {};
+      const scriptStartTime = Date.now();
+      try {
+        const seedDemoData = option.trim() === '2';
+        if (buildType === 'withVolume') {
+          timings = await buildDBWithVolume(useCache, seedDemoData);
+        } else if (buildType === 'forExistingVolume') {
+          timings = await buildDBForExistingVolume(useCache);
+        } else {
+          log('❌ Invalid build type.', colors.red, true);
+          resolve(); return;
+        }
+        const scriptEndTime = Date.now();
+        timings['Total Duration'] = parseFloat(((scriptEndTime - scriptStartTime) / 1000).toFixed(2));
+        showSummary(timings);
+        log('\n🎉 Done!', colors.green, true);
+        resolve();
+      } catch (e) {
+        log(`\n❌ Script failed: ${e.message}`, colors.red, true);
+        resolve();
+      }
+    });
+  });
+}
+
+async function showBuildSubMenu(buildType) {
+  const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
+  const menu = `
+${colors.cyan}Build Options:${colors.reset}
+${colors.yellow}[1]${colors.reset} Build container from cache (use previously downloaded code)
+${colors.yellow}[2]${colors.reset} Pull latest container version
+`;
+  console.log(menu);
+  return new Promise((resolve) => {
+    rl.question('Select option: ', async (option) => {
+      rl.close();
+      try {
+        const useCache = option.trim() === '1';
+        if (buildType === 'withVolume') await showDemoDataSubMenu(useCache, buildType);
+        else if (buildType === 'forExistingVolume') {
+          let timings = {};
+          const scriptStartTime = Date.now();
+          timings = await buildDBForExistingVolume(useCache);
+          const scriptEndTime = Date.now();
+          timings['Total Duration'] = parseFloat(((scriptEndTime - scriptStartTime) / 1000).toFixed(2));
+          showSummary(timings);
+          log('\n🎉 Done!', colors.green, true);
+        }
+        resolve();
+      } catch (e) {
+        log(`\n❌ Script failed: ${e.message}`, colors.red, true);
+        resolve();
+      }
+    });
+  });
+}
+
+async function showSubMenu(menuType) {
+  const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
+  let menu = '';
+  let options = {};
+
+  if (menuType === 'delete') {
+    menu = `
+${colors.cyan}Delete Options:${colors.reset}
+${colors.yellow}[1]${colors.reset} Delete DB container only
+${colors.yellow}[2]${colors.reset} Delete DB container and volume
+`;
+    options = {
+      '1': () => deleteDBContainerOnly(),
+      '2': () => deleteDBContainerAndVolume()
+    };
+  } else if (menuType === 'build') {
+    menu = `
+${colors.cyan}Build Options:${colors.reset}
+${colors.yellow}[1]${colors.reset} Build DB container and volume (no current DB volume should exist)
+${colors.yellow}[2]${colors.reset} Build DB container for existing DB volume
+`;
+    options = {
+      '1': () => showBuildSubMenu('withVolume'),
+      '2': () => showBuildSubMenu('forExistingVolume')
+    };
+  } else if (menuType === 'run') {
+    menu = `
+${colors.cyan}Run Options:${colors.reset}
+${colors.yellow}[1]${colors.reset} Run DB container
+`;
+    options = { '1': () => runDBContainer() };
+  } else {
+    log('❌ Invalid menu type.', colors.red, true);
+    return;
+  }
 
   console.log(menu);
+  return new Promise((resolve) => {
+    rl.question('Select option: ', async (option) => {
+      rl.close();
+      let timings = {};
+      const scriptStartTime = Date.now();
+      try {
+        const action = options[option.trim()];
+        if (!action) {
+          log('❌ Invalid option.', colors.red, true);
+          resolve(); return;
+        }
+        if (menuType === 'build') {
+          await action();
+        } else {
+          timings = action();
+          const scriptEndTime = Date.now();
+          timings['Total Duration'] = parseFloat(((scriptEndTime - scriptStartTime) / 1000).toFixed(2));
+          showSummary(timings);
+          log('\n🎉 Done!', colors.green, true);
+        }
+        resolve();
+      } catch (e) {
+        log(`\n❌ Script failed: ${e.message}`, colors.red, true);
+        resolve();
+      }
+    });
+  });
+}
 
+async function mainMenu() {
+  const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
+  const menu = `
+${colors.cyan}=========================================${colors.reset}
+${colors.cyan}  evi Local Podman Manager${colors.reset}
+${colors.cyan}=========================================${colors.reset}
+${colors.yellow}[1]${colors.reset} 📋 Show current containers details
+${colors.yellow}[2]${colors.reset} 🗑️  Delete container(s) / volume(s)
+${colors.yellow}[3]${colors.reset} 🔨 Build container(s)
+${colors.yellow}[4]${colors.reset} 🚀 Run container(s)
+${colors.yellow}[5]${colors.reset} Exit
+`;
+  console.log(menu);
   rl.question('Select option: ', async (option) => {
     rl.close();
-    let timings = {};
-    const scriptStartTime = Date.now();
-
     try {
       switch (option.trim()) {
-        case '1':
-          // Confirm before delete
-          const confirmRl = readline.createInterface({ input: process.stdin, output: process.stdout });
-          confirmRl.question(`\n${colors.red}⚠️  ARE YOU SURE? This will DELETE ALL DATABASE DATA! (y/N): ${colors.reset}`, async (ans) => {
-            confirmRl.close();
-            if (ans.toLowerCase() === 'y') {
-              timings = cleanAll();
-              showSummary(timings);
-            } else {
-              log('Cancelled.', colors.yellow);
-            }
-            // Show menu again? Or exit? Let's exit for simplicity in this script style.
-          });
-          return; // Return here because of async callback inside
-
-        case '2':
-          timings = buildAndStartDB();
-          break;
-
-        case '3':
-          timings = buildAndStartDBFromCache();
-          break;
-
-        case '4':
-          log('👋 Exiting.', colors.yellow);
-          return;
-
-        default:
-          log('❌ Invalid option.', colors.red, true);
-          return;
+        case '1': showContainersDetails(); break;
+        case '2': await showSubMenu('delete'); break;
+        case '3': await showSubMenu('build'); break;
+        case '4': await showSubMenu('run'); break;
+        case '5': log('👋 Exiting.', colors.yellow); return;
+        default: log('❌ Invalid option.', colors.red, true); return;
       }
-
-      // If we didn't return early (like in case 1), show summary
-      const scriptEndTime = Date.now();
-      timings['Total Duration'] = parseFloat(((scriptEndTime - scriptStartTime) / 1000).toFixed(2));
-      showSummary(timings);
-      log('\n🎉 Done!', colors.green, true);
-
     } catch (e) {
       log(`\n❌ Script failed: ${e.message}`, colors.red, true);
       process.exit(1);
@@ -391,29 +983,34 @@ ${colors.yellow}[4]${colors.reset} Exit
   });
 }
 
-// --- Entry Point ---
-
 async function main() {
   try {
-    // 0. Check Environment
     if (!fs.existsSync(COMPOSE_FILE)) {
       log(`❌ Error: Compose file not found at "${COMPOSE_FILE}"`, colors.red, true);
       process.exit(1);
     }
+    
+    // Initial check for Podman
+    try {
+        const env = getEnv();
+        execSync('podman --version', { stdio: 'ignore', env });
+    } catch (e) {
+        log('❌ Error: "podman" command not found in PATH.', colors.red, true);
+        log('   Please install Podman or check your PATH environment variable.', colors.yellow);
+        process.exit(1);
+    }
 
-    // 1. Check Podman Machine
     checkAndStartPodmanMachine();
+    
+    // Auto-detect compose command on startup
+    detectComposeCommand();
 
-    // 2. Parse Args (if any) - keeping it simple for now, relying on menu
     const args = process.argv.slice(2);
     if (args.includes('--clean')) {
       cleanAll();
       process.exit(0);
     }
-
-    // 3. Show Menu
     mainMenu();
-
   } catch (e) {
     log(`Unexpected error: ${e.message}`, colors.red, true);
     process.exit(1);

@@ -18,6 +18,10 @@ services:
       # The official postgres image creates this database during initialization.
       POSTGRES_DB: ${POSTGRES_DB:-maindb}
       
+      # Controls whether demo catalog data should be seeded during initialization.
+      # Set to 'true' to seed demo data, 'false' or unset to skip.
+      SEED_DEMO_DATA: ${SEED_DEMO_DATA:-false}
+      
       # Note: APP_DB_USER and APP_DB_PASSWORD are NOT needed here anymore.
       # The 'app_service' user is now created and configured by the 00_init.sql script.
     
@@ -29,7 +33,7 @@ services:
     
     # Volume for persistent data. This ensures that database data survives container restarts.
     volumes:
-      - evi_database_data:/var/lib/postgresql/data
+      - evi_db_volume:/var/lib/postgresql/data
     
     # Health check to ensure the database is ready before other services start
     healthcheck:
@@ -106,8 +110,9 @@ services:
 
 # Volumes configuration
 volumes:
-  evi_database_data:
+  evi_db_volume:
     driver: local
+    name: evi_db_volume
 
 # Networks configuration
 networks:

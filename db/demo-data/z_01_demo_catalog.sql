@@ -551,15 +551,26 @@ ON CONFLICT (main_product_id, option_product_id) DO UPDATE SET
 -- ===========================================
 
 -- Price list info
-INSERT INTO app.price_lists_info (name, description, currency_code, is_active, owner_id, region, created_by) VALUES
-('Прайслист RUB reg-b', 'Прайслист в российских рублях для региона reg-b', 'RUB', true, '7ef9dce8-c832-40fe-a6ef-85afff37c474', 'reg-b', '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
-('Прайслист KZT reg-a', 'Прайслист в казахстанских тенге для региона reg-a', 'KZT', true, '7ef9dce8-c832-40fe-a6ef-85afff37c474', 'reg-a', '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
-('Прайслист BYN reg-c', 'Прайслист в белорусских рублях для региона reg-c', 'BYN', false, '7ef9dce8-c832-40fe-a6ef-85afff37c474', 'reg-c', '7ef9dce8-c832-40fe-a6ef-85afff37c474')
-ON CONFLICT (name) DO UPDATE SET
-    description = EXCLUDED.description,
-    currency_code = EXCLUDED.currency_code,
-    is_active = EXCLUDED.is_active,
-    region = EXCLUDED.region;
+DO $$
+DECLARE
+    reg_a_id INTEGER;
+    reg_b_id INTEGER;
+    reg_c_id INTEGER;
+BEGIN
+    SELECT region_id INTO reg_a_id FROM app.regions WHERE region_name = 'reg-a';
+    SELECT region_id INTO reg_b_id FROM app.regions WHERE region_name = 'reg-b';
+    SELECT region_id INTO reg_c_id FROM app.regions WHERE region_name = 'reg-c';
+
+    INSERT INTO app.price_lists_info (name, description, currency_code, is_active, owner_id, region_id, created_by) VALUES
+    ('Прайслист RUB reg-b', 'Прайслист в российских рублях для региона reg-b', 'RUB', true, '7ef9dce8-c832-40fe-a6ef-85afff37c474', reg_b_id, '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
+    ('Прайслист KZT reg-a', 'Прайслист в казахстанских тенге для региона reg-a', 'KZT', true, '7ef9dce8-c832-40fe-a6ef-85afff37c474', reg_a_id, '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
+    ('Прайслист BYN reg-c', 'Прайслист в белорусских рублях для региона reg-c', 'BYN', false, '7ef9dce8-c832-40fe-a6ef-85afff37c474', reg_c_id, '7ef9dce8-c832-40fe-a6ef-85afff37c474')
+    ON CONFLICT (name) DO UPDATE SET
+        description = EXCLUDED.description,
+        currency_code = EXCLUDED.currency_code,
+        is_active = EXCLUDED.is_active,
+        region_id = EXCLUDED.region_id;
+END $$;
 
 -- Price list items (all products in all price lists)
 -- Note: We need to create partitions first, but for demo we'll use dynamic SQL
