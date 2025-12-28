@@ -108,16 +108,16 @@ router.get('/api/admin/groups/:groupId/members', checkRateLimit, checkRequestSec
 router.post('/api/admin/groups/:groupId/members/remove', checkRateLimit, checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, removeGroupMembers);
 
 // Routes for Catalog Admin
-router.get('/api/admin/catalog/fetch-sections', checkRateLimit, checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, fetchCatalogSections);
-router.post('/api/admin/catalog/create-section', checkRateLimit, checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, createCatalogSection);
-router.post('/api/admin/catalog/update-section', checkRateLimit, checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, updateCatalogSection);
-router.post('/api/admin/catalog/delete-section', checkRateLimit, checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, deleteCatalogSection);
-router.get('/api/admin/catalog/fetchpublishingservices', checkRateLimit, checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, fetchPublishingServicesController);
-router.post('/api/admin/catalog/service-publish', checkRateLimit, checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, servicePublishController);
-router.post('/api/admin/catalog/service-unpublish', checkRateLimit, checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, serviceUnpublishController);
-router.get('/api/admin/catalog/fetchpublishingproducts', checkRateLimit, checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, fetchPublishingProductsController);
-router.post('/api/admin/catalog/product-publish', checkRateLimit, checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, productPublishController);
-router.post('/api/admin/catalog/product-unpublish', checkRateLimit, checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, productUnpublishController);
+router.get('/api/admin/catalog/fetch-sections', checkRateLimit, checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, checkPermissions('adminCatalog:sections:read'), fetchCatalogSections);
+router.post('/api/admin/catalog/create-section', checkRateLimit, checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, checkPermissions('adminCatalog:sections:create'), createCatalogSection);
+router.post('/api/admin/catalog/update-section', checkRateLimit, checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, checkPermissions('adminCatalog:sections:update'), updateCatalogSection);
+router.post('/api/admin/catalog/delete-section', checkRateLimit, checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, checkPermissions('adminCatalog:sections:delete'), deleteCatalogSection);
+router.get('/api/admin/catalog/fetchpublishingservices', checkRateLimit, checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, checkPermissions('adminCatalog:publishing:services:read'), fetchPublishingServicesController);
+router.post('/api/admin/catalog/service-publish', checkRateLimit, checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, checkPermissions('adminCatalog:publishing:services:update'), servicePublishController);
+router.post('/api/admin/catalog/service-unpublish', checkRateLimit, checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, checkPermissions('adminCatalog:publishing:services:update'), serviceUnpublishController);
+router.get('/api/admin/catalog/fetchpublishingproducts', checkRateLimit, checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, checkPermissions('adminCatalog:publishing:products:read'), fetchPublishingProductsController);
+router.post('/api/admin/catalog/product-publish', checkRateLimit, checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, checkPermissions('adminCatalog:publishing:products:update'), productPublishController);
+router.post('/api/admin/catalog/product-unpublish', checkRateLimit, checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, checkPermissions('adminCatalog:publishing:products:update'), productUnpublishController);
 // Ordering disabled: route removed
 
 // Routes for Services Admin
