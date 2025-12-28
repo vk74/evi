@@ -7,6 +7,7 @@
 import { ref, computed, onMounted, markRaw, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useCatalogAdminStore } from './state.catalog.admin'
+import { can, canAny } from '@/core/helpers/helper.check.permissions'
 import type { Section } from './types.catalog.admin'
 
 // Импорты компонентов секций
@@ -33,33 +34,54 @@ const sections = computed<Section[]>(() => {
   // Явно используем locale.value для создания зависимости
   const currentLocale = locale.value
   
-  return [
-    {
+  const result: Section[] = []
+
+  // Catalog Sections List
+  if (can('adminCatalog:sections:read:all')) {
+    result.push({
       id: 'Catalog.Sections',
       name: t('admin.catalog.navigation.sections'),
       icon: 'PhTabs'
-    },
-    {
+    })
+  }
+
+  // Catalog Section Editor - visible if create, update or read permissions exist
+  if (canAny(['adminCatalog:sections:create:all', 'adminCatalog:sections:update:all', 'adminCatalog:sections:read:all'])) {
+    result.push({
       id: 'Catalog.SectionEditor',
       name: t('admin.catalog.navigation.sectioneditor'),
       icon: 'PhPencilSimple'
-    },
-    {
+    })
+  }
+
+  // Services Publisher
+  if (can('adminCatalog:publishing:services:read:all')) {
+    result.push({
       id: 'Catalog.ServicesPublisher',
       name: t('admin.catalog.navigation.servicesPublisher'),
       icon: 'PhFilePlus'
-    },
-    {
+    })
+  }
+
+  // Products Publisher
+  if (can('adminCatalog:publishing:products:read:all')) {
+    result.push({
       id: 'Catalog.ProductsPublisher',
       name: t('admin.catalog.navigation.productsPublisher'),
       icon: 'PhFilePlus'
-    },
-    {
+    })
+  }
+
+  // Settings
+  if (can('adminCatalog:settings:read:all')) {
+    result.push({
       id: 'Catalog.Settings',
       name: t('admin.catalog.navigation.settings'),
       icon: 'PhGear'
-    }
-  ]
+    })
+  }
+
+  return result
 })
 
 // Map section IDs to components

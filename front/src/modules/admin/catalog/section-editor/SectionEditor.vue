@@ -34,6 +34,7 @@ import { catalogSectionUpdateService } from './service.admin.update.catalog.sect
 import type { SectionStatus, CatalogSection } from '@/modules/admin/catalog/types.catalog.admin'
 import * as PhosphorIcons from '@phosphor-icons/vue'
 import { PhMagnifyingGlass, PhCaretUpDown, PhCheckSquare, PhSquare, PhPaintBrush, PhImage } from '@phosphor-icons/vue'
+import { can } from '@/core/helpers/helper.check.permissions'
 
 const { t, locale } = useI18n()
 const catalogStore = useCatalogAdminStore()
@@ -85,6 +86,11 @@ const isCreationMode = computed(() => catalogStore.getEditorMode === 'creation')
 const isEditMode = computed(() => catalogStore.getEditorMode === 'edit')
 const editingSectionId = computed(() => catalogStore.getEditingSectionId)
 
+// Read-only mode for auditors (who have read permission but not create/update)
+const isReadOnly = computed(() => {
+  return !can('adminCatalog:sections:create:all') && !can('adminCatalog:sections:update:all')
+})
+
 // Page title for navigation bar
 const pageTitle = computed(() => (isCreationMode.value
   ? t('admin.catalog.editor.creation.title')
@@ -115,6 +121,7 @@ const hasChanges = computed(() => {
 
 // Update button enabled state
 const isUpdateButtonEnabled = computed(() => {
+  if (isReadOnly.value) return false
   return isFormValid.value && 
          !isSubmitting.value && 
          hasChanges.value
@@ -380,7 +387,7 @@ const handleBackupOwnerSelected = (result: any) => {
                         <div
                           class="icon-placeholder"
                           style="cursor: pointer;"
-                          @click="openIconPicker"
+                          @click="!isReadOnly && openIconPicker()"
                         >
                           <component
                             :is="selectedIconComponent"
@@ -408,6 +415,7 @@ const handleBackupOwnerSelected = (result: any) => {
                           min="1"
                           :rules="orderRules"
                           color="teal"
+                          :readonly="isReadOnly"
                         />
                       </v-col>
                       <v-col
@@ -424,6 +432,7 @@ const handleBackupOwnerSelected = (result: any) => {
                           counter="100"
                           required
                           color="teal"
+                          :readonly="isReadOnly"
                         />
                       </v-col>
                     </v-row>
@@ -443,7 +452,12 @@ const handleBackupOwnerSelected = (result: any) => {
                             color="teal"
                           >
                             <template #append-inner>
-                              <div class="d-flex align-center" style="cursor: pointer" @click="showOwnerSelector = true">
+                              <div 
+                                v-if="!isReadOnly"
+                                class="d-flex align-center" 
+                                style="cursor: pointer" 
+                                @click="showOwnerSelector = true"
+                              >
                                 <PhMagnifyingGlass />
                               </div>
                             </template>
@@ -462,7 +476,12 @@ const handleBackupOwnerSelected = (result: any) => {
                             color="teal"
                           >
                             <template #append-inner>
-                              <div class="d-flex align-center" style="cursor: pointer" @click="showBackupOwnerSelector = true">
+                              <div 
+                                v-if="!isReadOnly"
+                                class="d-flex align-center" 
+                                style="cursor: pointer" 
+                                @click="showBackupOwnerSelector = true"
+                              >
                                 <PhMagnifyingGlass />
                               </div>
                             </template>
@@ -493,9 +512,10 @@ const handleBackupOwnerSelected = (result: any) => {
                           item-title="title"
                           item-value="value"
                           color="teal"
+                          :readonly="isReadOnly"
                         >
                           <template #append-inner>
-                            <PhCaretUpDown class="dropdown-icon" />
+                            <PhCaretUpDown v-if="!isReadOnly" class="dropdown-icon" />
                           </template>
                         </v-select>
                       </v-col>
@@ -509,9 +529,10 @@ const handleBackupOwnerSelected = (result: any) => {
                             variant="text"
                             density="comfortable"
                             :aria-pressed="formData.isPublic"
-                            @click="formData.isPublic = !formData.isPublic"
+                            :disabled="isReadOnly"
+                            @click="!isReadOnly && (formData.isPublic = !formData.isPublic)"
                           >
-                            <PhCheckSquare v-if="formData.isPublic" :size="18" color="teal" />
+                            <PhCheckSquare v-if="formData.isPublic" :size="18" :color="isReadOnly ? 'grey' : 'teal'" />
                             <PhSquare v-else :size="18" color="grey" />
                           </v-btn>
                           <span style="margin-left: 8px;">{{ t('admin.catalog.editor.settings.isPublic.label') }}</span>
@@ -530,16 +551,17 @@ const handleBackupOwnerSelected = (result: any) => {
                             placeholder="#1976D2"
                             :rules="[v => /^#[0-9A-Fa-f]{6}$/.test(v) || t('admin.catalog.editor.settings.color.picker.validHex')]"
                             color="teal"
+                            :readonly="isReadOnly"
                           >
                             <template #prepend-inner>
                               <div
                                 class="color-preview"
-                                :style="{ backgroundColor: formData.color }"
-                                @click="showColorPicker = true"
+                                :style="{ backgroundColor: formData.color, cursor: isReadOnly ? 'default' : 'pointer' }"
+                                @click="!isReadOnly && (showColorPicker = true)"
                               />
                             </template>
                             <template #append-inner>
-                              <v-btn icon variant="text" size="small" @click="showColorPicker = true">
+                              <v-btn v-if="!isReadOnly" icon variant="text" size="small" @click="showColorPicker = true">
                                 <PhPaintBrush />
                               </v-btn>
                             </template>
@@ -640,6 +662,7 @@ const handleBackupOwnerSelected = (result: any) => {
                           counter="1000"
                           no-resize
                           color="teal"
+                          :readonly="isReadOnly"
                         />
                       </v-col>
                     </v-row>
@@ -654,6 +677,7 @@ const handleBackupOwnerSelected = (result: any) => {
                           counter="500"
                           no-resize
                           color="teal"
+                          :readonly="isReadOnly"
                         />
                       </v-col>
                     </v-row>
@@ -676,6 +700,7 @@ const handleBackupOwnerSelected = (result: any) => {
                 color="teal"
                 class="select-icon-btn-sidebar"
                 @click="openIconPicker"
+                :disabled="isReadOnly"
               >
                 <template #prepend>
                   <PhImage />
@@ -695,7 +720,7 @@ const handleBackupOwnerSelected = (result: any) => {
               {{ t('admin.catalog.editor.actions.create') }}
             </v-btn>
             <v-btn
-              v-if="isEditMode"
+              v-if="isEditMode && !isReadOnly"
               block
               color="teal"
               variant="outlined"

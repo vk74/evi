@@ -20,8 +20,9 @@ import catalogSectionsFetchService from '../service.admin.fetch.catalog.sections
 import catalogSectionsDeleteService from '../service.admin.delete.catalog.sections'
 import DataLoading from '@/core/ui/loaders/DataLoading.vue'
 import { CatalogSection, SectionStatus } from '../types.catalog.admin'
-import { PhMagnifyingGlass, PhX, PhCheckSquare, PhSquare, PhFolder, PhArrowClockwise } from '@phosphor-icons/vue'
+import { PhMagnifyingGlass, PhX, PhCheckSquare, PhSquare, PhFolder, PhArrowClockwise, PhEye, PhPencilSimple } from '@phosphor-icons/vue'
 import Paginator from '@/core/ui/paginator/Paginator.vue'
+import { can } from '@/core/helpers/helper.check.permissions'
 
 // Types
 interface TableHeader {
@@ -117,6 +118,11 @@ const getPhosphorIcon = (iconName: string | null) => {
 onMounted(() => {
   loadPhosphorIcons()
 })
+
+// Computed properties for permissions
+const canCreate = computed(() => can('adminCatalog:sections:create:all'))
+const canDelete = computed(() => can('adminCatalog:sections:delete:all'))
+const canUpdate = computed(() => can('adminCatalog:sections:update:all'))
 
 // Computed properties
 const selectedCount = computed(() => selectedSections.value.size)
@@ -506,6 +512,7 @@ const handleItemsPerPageChange = async (newItemsPerPage: ItemsPerPageOption) => 
           </h3>
           
           <v-btn
+            v-if="canCreate"
             block
             color="teal"
             variant="outlined"
@@ -562,10 +569,15 @@ const handleItemsPerPageChange = async (newItemsPerPage: ItemsPerPageOption) => 
             :disabled="!hasOneSelected"
             @click="editSection"
           >
-            {{ t('admin.catalog.sections.actions.edit') }}
+            <template #prepend>
+              <PhPencilSimple v-if="canUpdate" />
+              <PhEye v-else />
+            </template>
+            {{ canUpdate ? t('admin.catalog.sections.actions.edit') : t('admin.catalog.sections.actions.view') }}
           </v-btn>
           
           <v-btn
+            v-if="canDelete"
             block
             color="error"
             variant="outlined"

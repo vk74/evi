@@ -24,6 +24,7 @@ import { fetchProductsSections } from './service.admin.catalog.fetch-products-se
 import { publishProducts } from './service.admin.catalog.publish-products'
 import { unpublishProducts } from './service.admin.catalog.unpublish-products'
 import type { ProductWithSections } from './service.admin.catalog.fetch-products-sections'
+import { can } from '@/core/helpers/helper.check.permissions'
 
 // Types
 interface TableHeader {
@@ -74,6 +75,8 @@ const selectedSections = ref<Set<string>>(new Set())
 // Computed properties
 const selectedCount = computed(() => selectedRows.value.size)
 const hasSelected = computed(() => selectedRows.value.size > 0)
+
+const canPublish = computed(() => can('adminCatalog:publishing:products:update:all'))
 
 const isSearchEnabled = computed(() => 
   searchQuery.value.length >= 2 || searchQuery.value.length === 0
@@ -614,6 +617,7 @@ const handlePublish = async () => {
           </h3>
           
           <v-btn
+            v-if="canPublish"
             block
             color="teal"
             variant="outlined"
@@ -625,6 +629,7 @@ const handlePublish = async () => {
           </v-btn>
           
           <v-btn
+            v-if="canPublish"
             block
             color="red"
             variant="outlined"
@@ -635,6 +640,10 @@ const handlePublish = async () => {
           >
             {{ t('admin.catalog.productsPublisher.selectedElements.unpublishSelected').toUpperCase() }}
           </v-btn>
+          
+          <div v-if="!canPublish" class="text-caption text-grey pa-2 text-center">
+             {{ t('admin.catalog.messages.readOnly') || 'Read only mode' }}
+          </div>
         </div>
       </div>
     </div>

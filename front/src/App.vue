@@ -849,6 +849,7 @@ onMounted(async () => {
             >
               <!-- Catalog Admin -->
               <v-list-item
+                v-if="can('adminCatalog:module:access')"
                 v-tooltip="{
                   text: $t('admin.nav.catalog.main'),
                   location: 'right',

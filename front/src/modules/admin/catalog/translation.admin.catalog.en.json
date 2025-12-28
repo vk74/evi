@@ -9,6 +9,9 @@
         "productsPublisher": "products publisher",
         "settings": "settings"
       },
+      "messages": {
+        "readOnly": "read only mode"
+      },
       "editor": {
         "mapping": {
           "title": "service mappings",
@@ -118,6 +121,7 @@
           "cancel": "cancel"
         },
         "messages": {
+          "readOnly": "read only mode",
           "create": {
             "success": "section created successfully",
             "error": "error creating section"
@@ -204,6 +208,7 @@
           "clearSelection": "clear selection",
           "selectedElements": "selected elements",
           "edit": "edit",
+          "view": "view",
           "delete": "delete",
           "selectAll": "select all"
         },
