@@ -43,7 +43,7 @@ export async function fetchActiveServices(req: Request): Promise<FetchServicesRe
       '#F5F5F5'
     );
     const productCardColor = await getSettingValue<string>(
-      'Admin.Products',
+      'AdminProducts',
       'card.color',
       '#E8F4F8'
     );

@@ -1,13 +1,13 @@
 /**
  * service.fetch.public.settings.ts - backend file
- * version: 1.2.0
+ * version: 1.3.0
  * Service for fetching public settings that are accessible without authentication.
  * 
  * Public settings include:
  * - Application.Appearance → navbar.backgroundcolor
- * - Admin.Products → card.color
+ * - AdminProducts → card.color
  * - Catalog.Services → card.color
- * - Admin.Products → display.optionsOnlyProducts
+ * - AdminProducts → display.optionsOnlyProducts
  * 
  * Changes in v1.1.0:
  * - Renamed PublicUiSetting/PublicUiSettingsResponse to PublicSetting/PublicSettingsResponse
@@ -17,6 +17,9 @@
  * Changes in v1.2.0:
  * - Updated event bus integration to use PUBLIC_SETTINGS_EVENT_NAMES
  * - Removed legacy UI settings terminology from event names
+ * 
+ * Changes in v1.3.0:
+ * - Updated section_path from 'Admin.Products' to 'AdminProducts' (removed dot)
  */
 
 import { Request } from 'express';
@@ -91,12 +94,12 @@ export async function fetchPublicSettings(req: Request): Promise<PublicSettingsR
 
     // 2. Product card color
     const productCardColor = await getSettingValue<string>(
-      'Admin.Products',
+      'AdminProducts',
       'card.color',
       '#E8F4F8'
     );
     publicSettings.push({
-      section_path: 'Admin.Products',
+      section_path: 'AdminProducts',
       setting_name: 'card.color',
       value: productCardColor,
       is_public: true
@@ -117,12 +120,12 @@ export async function fetchPublicSettings(req: Request): Promise<PublicSettingsR
 
     // 4. Display options-only products setting
     const displayOptionsOnlyProducts = await getSettingValue<boolean>(
-      'Admin.Products',
+      'AdminProducts',
       'display.optionsOnlyProducts',
       false
     );
     publicSettings.push({
-      section_path: 'Admin.Products',
+      section_path: 'AdminProducts',
       setting_name: 'display.optionsOnlyProducts',
       value: displayOptionsOnlyProducts,
       is_public: true
