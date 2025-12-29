@@ -1,5 +1,5 @@
 <!--
-version: 1.1.0
+version: 1.2.0
 Frontend file UserEditorDetails.vue.
 Purpose: User details form with dynamic validation using public policies and form state management.
 Features: Dynamic validation for username/email/phone, static validation for FIO fields, form submission handling.
@@ -8,6 +8,10 @@ Changes in v1.1.0:
 - Added can() check for permissions
 - Added isReadOnly computed property for view-only mode
 - Disabled form fields if isReadOnly is true
+
+Changes in v1.2.0:
+- Fixed permission checks to use :all suffix (adminOrg:users:create:all)
+- This matches the permission naming after migration m_014_fix_org_permissions
 - Hide Create/Update buttons if no permission
 - Hide Reset Password button if no update permission
 -->
@@ -79,7 +83,7 @@ const userUuid = computed(() => userEditorStore.account.user_id || '')
 // Read-only logic
 const isReadOnly = computed(() => {
   if (userEditorStore.mode.mode === 'create') {
-    return !can('adminOrg:users:create')
+    return !can('adminOrg:users:create:all')
   }
   return !can('adminOrg:users:update:all')
 })
@@ -282,7 +286,7 @@ const resetForm = () => {
 }
 
 const saveUser = async () => {
-  if (!can('adminOrg:users:create')) return
+  if (!can('adminOrg:users:create:all')) return
   if (!form.value?.validate()) {
     uiStore.showErrorSnackbar(t('admin.org.editor.messages.validation.formErrors'))
     return
@@ -652,7 +656,7 @@ onBeforeUnmount(() => {
     <div class="side-bar-container">
       <div class="side-bar-section">
         <h3 class="text-subtitle-2 px-2 py-2">{{ t('admin.org.editor.sidebar.actions') }}</h3>
-        <v-btn v-if="userEditorStore.mode.mode === 'create' && can('adminOrg:users:create')" block color="teal" variant="outlined" :disabled="!isFormValid || isSubmitting" class="mb-3" @click="saveUser">{{ t('admin.org.editor.buttons.create') }}</v-btn>
+        <v-btn v-if="userEditorStore.mode.mode === 'create' && can('adminOrg:users:create:all')" block color="teal" variant="outlined" :disabled="!isFormValid || isSubmitting" class="mb-3" @click="saveUser">{{ t('admin.org.editor.buttons.create') }}</v-btn>
         <v-btn 
           v-if="userEditorStore.mode.mode === 'edit' && can('adminOrg:users:update:all')" 
           block 

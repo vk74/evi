@@ -10,6 +10,9 @@
  * 
  * Changes in v1.2.0:
  * - Updated permission checks to use :all suffix (e.g. adminOrg:groups:read:all)
+ * 
+ * Changes in v1.3.0:
+ * - Fixed create permission check to use adminOrg:groups:create:all
  */
 -->
 
@@ -291,7 +294,7 @@ watch([page, itemsPerPage], ([newPage, newItemsPerPage]) => {
           </h3>
           
           <v-btn
-            v-if="can('adminOrg:groups:create')"
+            v-if="can('adminOrg:groups:create:all')"
             block
             color="teal"
             variant="outlined"

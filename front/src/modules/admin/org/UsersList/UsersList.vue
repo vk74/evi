@@ -11,6 +11,9 @@
  * 
  * Changes in v1.2.0:
  * - Updated permission checks to use :all suffix (e.g. adminOrg:users:read:all)
+ * 
+ * Changes in v1.3.0:
+ * - Fixed create permission check to use adminOrg:users:create:all
  */
 <script setup lang="ts">
 import usersFetchService from './Service.fetch.users'
@@ -551,7 +554,7 @@ const handleItemsPerPageChange = async (newItemsPerPage: ItemsPerPageOption) => 
           </h3>
           
           <v-btn
-            v-if="can('adminOrg:users:create')"
+            v-if="can('adminOrg:users:create:all')"
             block
             color="teal"
             variant="outlined"

@@ -1,5 +1,6 @@
 /**
  * @file SubModuleOrgAdmin.vue
+ * Version: 1.1.0
  * Component for managing sections of administrative module for organization management.
  * 
  * Functionality:
@@ -8,6 +9,10 @@
  * - State management via Pinia store
  * - Multilingual interface using i18n
  * - Permission-based section visibility
+ * 
+ * Changes in v1.1.0:
+ * - Fixed permission checks to use :all suffix (adminOrg:users:create:all, adminOrg:groups:create:all)
+ * - This matches the permission naming after migration m_014_fix_org_permissions
  */
 
 <script setup lang="ts">
@@ -53,7 +58,7 @@ const sections = computed((): Section[] => {
       title: t('admin.org.sections.userEditor'),
       icon: 'PhUserFocus',
       // Visible if user can create or update users, or read them (for view only)
-      visible: can('adminOrg:users:create') || can('adminOrg:users:update:all') || can('adminOrg:users:read:all')
+      visible: can('adminOrg:users:create:all') || can('adminOrg:users:update:all') || can('adminOrg:users:read:all')
     },
     {
       id: 'groups',
@@ -67,7 +72,7 @@ const sections = computed((): Section[] => {
       title: t('admin.org.sections.groupEditor'),
       icon: 'PhUsersFour',
       // Visible if user can create or update groups, or read them (for view only)
-      visible: can('adminOrg:groups:create') || can('adminOrg:groups:update:all') || can('adminOrg:groups:read:all')
+      visible: can('adminOrg:groups:create:all') || can('adminOrg:groups:update:all') || can('adminOrg:groups:read:all')
     },
     {
       id: 'settings',

@@ -1,5 +1,12 @@
-<!-- GroupEditor.vue -->
-<!-- Component for creating or editing a group with dynamic form and member management -->
+<!--
+version: 1.2.0
+Frontend file GroupEditor.vue.
+Purpose: Component for creating or editing a group with dynamic form and member management.
+
+Changes in v1.2.0:
+- Fixed permission checks to use :all suffix (adminOrg:groups:create:all, adminOrg:groups:update:all, adminOrg:groups:change_owner:all)
+- This matches the permission naming after migration m_014_fix_org_permissions
+-->
 <script setup lang="ts">
 import { ref, onMounted, onBeforeUnmount, computed, watch } from 'vue'
 import { defineAsyncComponent } from 'vue'
@@ -103,7 +110,7 @@ const validate = async () => {
 }
 
 const handleCreateGroup = async () => {
-  if (!can('adminOrg:groups:create')) return
+  if (!can('adminOrg:groups:create:all')) return
   if (!(await validate())) {
     uiStore.showErrorSnackbar(t('admin.groups.editor.messages.requiredFields'))
     return
@@ -128,7 +135,7 @@ const handleCreateGroup = async () => {
 }
 
 const handleUpdateGroup = async () => {
-  if (!can('adminOrg:groups:update')) return
+  if (!can('adminOrg:groups:update:all')) return
   
   if (!(await validate())) {
     uiStore.showErrorSnackbar(t('admin.groups.editor.messages.requiredFields'))
@@ -247,7 +254,7 @@ const handleRemoveMembers = async () => {
 
 // ==================== OWNER CHANGE HANDLERS ====================
 const handleChangeOwner = () => {
-  if (!can('adminOrg:groups:change_owner')) return
+  if (!can('adminOrg:groups:change_owner:all')) return
   isOwnerSelectorModalOpen.value = true
 }
 

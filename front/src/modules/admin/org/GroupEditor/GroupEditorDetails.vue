@@ -1,5 +1,5 @@
 <!--
-version: 1.1.0
+version: 1.2.0
 Frontend file GroupEditorDetails.vue.
 Purpose: Renders the group details form (create/edit) and its right-side actions.
 
@@ -8,6 +8,10 @@ Changes in v1.1.0:
 - Added isReadOnly computed property
 - Disabled form fields if isReadOnly is true
 - Hide Create/Update/Change Owner buttons if no permission
+
+Changes in v1.2.0:
+- Fixed permission checks to use :all suffix (adminOrg:groups:create:all, adminOrg:groups:update:all, adminOrg:groups:change_owner:all)
+- This matches the permission naming after migration m_014_fix_org_permissions
 -->
 <script setup lang="ts">
 import { ref, computed, watch, onMounted } from 'vue'
@@ -61,7 +65,7 @@ const isReadOnly = computed(() => {
   if (groupEditorStore.isEditMode) {
     return !can('adminOrg:groups:update:all')
   }
-  return !can('adminOrg:groups:create')
+  return !can('adminOrg:groups:create:all')
 })
 
 // Change tracking computed property (same approach as SectionEditor)
@@ -141,7 +145,7 @@ const populateFormWithGroupData = (groupData: IGroupData) => {
 }
 
 async function handleCreateGroup() {
-  if (!can('adminOrg:groups:create')) return
+  if (!can('adminOrg:groups:create:all')) return
   if (!(await validate())) {
     uiStore.showErrorSnackbar(t('admin.groups.editor.messages.requiredFields'))
     return
@@ -225,7 +229,7 @@ function resetForm() {
 }
 
 const handleChangeOwner = () => {
-  if (!can('adminOrg:groups:change_owner')) return
+  if (!can('adminOrg:groups:change_owner:all')) return
   isOwnerSelectorModalOpen.value = true
 }
 
@@ -353,7 +357,7 @@ onMounted(() => {
       <div class="side-bar-section">
         <h3 class="text-subtitle-2 px-2 py-2">{{ t('admin.groups.editor.sidebar.actions') }}</h3>
         <v-btn
-          v-if="!groupEditorStore.isEditMode && can('adminOrg:groups:create')"
+          v-if="!groupEditorStore.isEditMode && can('adminOrg:groups:create:all')"
           block
           color="teal"
           variant="outlined"
@@ -390,7 +394,7 @@ onMounted(() => {
           {{ t('admin.groups.editor.buttons.reset') }}
         </v-btn>
         <v-btn
-          v-if="groupEditorStore.isEditMode && can('adminOrg:groups:change_owner')"
+          v-if="groupEditorStore.isEditMode && can('adminOrg:groups:change_owner:all')"
           block
           color="teal"
           variant="outlined"
