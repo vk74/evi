@@ -38,7 +38,7 @@ export async function fetchActiveServices(req: Request): Promise<FetchServicesRe
 
     // Get card colors from settings cache
     const serviceCardColor = await getSettingValue<string>(
-      'Catalog.Services',
+      'AdminCatalog',
       'card.color',
       '#F5F5F5'
     );

@@ -23,7 +23,7 @@ import { PhPaintBrush } from '@phosphor-icons/vue';
 import { getRgbFromHex } from '@/core/helpers/color.helpers';
 
 // Section path identifier
-const section_path = 'Catalog.Services';
+const section_path = 'AdminCatalog';
 
 // Store references
 const appSettingsStore = useAppSettingsStore();
@@ -193,7 +193,7 @@ async function loadSettings() {
   isLoadingSettings.value = true;
   
   try {
-    console.log('Loading settings for Catalog.Services');
+    console.log('Loading settings for AdminCatalog');
     
     // Disable watch effects during initial load
     isFirstLoad.value = true;
