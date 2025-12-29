@@ -1,7 +1,12 @@
 <!--
-version: 1.0.0
+version: 1.1.0
 Frontend file GroupEditorMembers.vue.
 Purpose: Renders members search + table and its right-side actions.
+
+Changes in v1.1.0:
+- Fixed bug where table didn't update after adding/removing members
+- Now uses forceRefresh parameter when fetching members after add/remove operations
+- Refresh button now properly forces data refresh from server
 -->
 <script setup lang="ts">
 import { ref, computed } from 'vue'
@@ -67,7 +72,7 @@ const handleAddMembers = async (result: any) => {
       const groupId = (groupEditorStore.mode as any).groupId
       try {
         const { fetchGroupMembersService } = await import('./service.fetch.group.members')
-        await fetchGroupMembersService.fetchGroupMembers(groupId)
+        await fetchGroupMembersService.fetchGroupMembers(groupId, true)
         groupEditorStore.clearGroupMembersSelection()
       } catch {}
     }
@@ -82,7 +87,7 @@ const handleRemoveMembers = async () => {
   const removedCount = await removeGroupMembers(groupId, groupEditorStore.members.selectedMembers)
   if (removedCount > 0) {
     const { fetchGroupMembersService } = await import('./service.fetch.group.members')
-    await fetchGroupMembersService.fetchGroupMembers(groupId)
+    await fetchGroupMembersService.fetchGroupMembers(groupId, true)
     groupEditorStore.clearGroupMembersSelection()
   }
 }
@@ -93,7 +98,7 @@ const refreshMembers = async () => {
   try {
     refreshing.value = true
     const { fetchGroupMembersService } = await import('./service.fetch.group.members')
-    await fetchGroupMembersService.fetchGroupMembers(groupId)
+    await fetchGroupMembersService.fetchGroupMembers(groupId, true)
   } finally {
     refreshing.value = false
   }

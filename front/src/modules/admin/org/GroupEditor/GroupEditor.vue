@@ -200,8 +200,8 @@ const handleAddMembers = async (result: any) => {
     if (groupEditorStore.isEditMode) {
       const groupId = (groupEditorStore.mode as EditMode).groupId
       try {
-        // Просто обновляем список участников
-        await fetchGroupMembersService.fetchGroupMembers(groupId)
+        // Force refresh to get latest data from server
+        await fetchGroupMembersService.fetchGroupMembers(groupId, true)
         // Очищаем выбор
         groupEditorStore.clearGroupMembersSelection()
       } catch (error) {
@@ -231,8 +231,8 @@ const handleRemoveMembers = async () => {
     )
     
     if (removedCount > 0) {
-      // After successful removal, update the members list
-      await fetchGroupMembersService.fetchGroupMembers(groupId)
+      // After successful removal, update the members list with force refresh
+      await fetchGroupMembersService.fetchGroupMembers(groupId, true)
       // Clear selection
       groupEditorStore.clearGroupMembersSelection()
     }

@@ -67,8 +67,8 @@ class RemoveGroupMembersService {
       if (success) {
         console.log(`[RemoveGroupMembersService] Successfully removed ${removedCount} members`)
         
-        // After successful removal, refresh the members list
-        await fetchGroupMembersService.fetchGroupMembers(groupId)
+        // After successful removal, refresh the members list with force refresh
+        await fetchGroupMembersService.fetchGroupMembers(groupId, true)
         
         return removedCount
       } else {

@@ -1,12 +1,16 @@
 /**
  * @file service.fetch.group.members.ts
- * Version: 1.0.0
+ * Version: 1.1.0
  * Frontend service for fetching group members from the API.
  * Frontend file that handles group member data fetching and error processing.
  * 
  * Functionality:
  * - Fetches group members data from the API
  * - Handles API response and error processing
+ * 
+ * Changes in v1.1.0:
+ * - Added forceRefresh parameter to allow bypassing cache when needed
+ * - Force refresh is used after adding/removing members to ensure data consistency
  */
 import { api } from '@/core/api/service.axios';
 import { useGroupEditorStore } from './state.group.editor'
@@ -21,9 +25,10 @@ class FetchGroupMembersService {
   /**
    * Fetches members for a specific group
    * @param groupId - ID of the group to fetch members for
+   * @param forceRefresh - If true, bypasses cache and fetches fresh data from API
    * @returns Promise<boolean> - Success status
    */
-  async fetchGroupMembers(groupId: string): Promise<boolean> {
+  async fetchGroupMembers(groupId: string, forceRefresh: boolean = false): Promise<boolean> {
     const groupEditorStore = useGroupEditorStore()
     const userStore = useUserAuthStore()
     const uiStore = useUiStore()
@@ -36,8 +41,8 @@ class FetchGroupMembersService {
     }
     
     try {
-      // Use cache if available to avoid refetch on navigation back
-      if (groupEditorStore.loadMembersFromCacheIfAvailable(groupId)) {
+      // Use cache if available to avoid refetch on navigation back (unless forceRefresh is true)
+      if (!forceRefresh && groupEditorStore.loadMembersFromCacheIfAvailable(groupId)) {
         return true
       }
 
