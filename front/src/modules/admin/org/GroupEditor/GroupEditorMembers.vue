@@ -1,12 +1,15 @@
 <!--
-version: 1.1.0
+version: 1.3.0
 Frontend file GroupEditorMembers.vue.
 Purpose: Renders members search + table and its right-side actions.
 
-Changes in v1.1.0:
-- Fixed bug where table didn't update after adding/removing members
-- Now uses forceRefresh parameter when fetching members after add/remove operations
-- Refresh button now properly forces data refresh from server
+Changes in v1.2.0:
+- Added can() check for permissions
+- Hide Add/Remove member buttons if no permission
+
+Changes in v1.3.0:
+- Fixed permission checks to use :all suffix (adminOrg:groups:manage_members:all)
+- This matches the permission naming after migration m_014_fix_org_permissions
 -->
 <script setup lang="ts">
 import { ref, computed } from 'vue'
@@ -16,6 +19,7 @@ import type { TableHeader } from './types.group.editor'
 import { defineAsyncComponent } from 'vue'
 import Paginator from '@/core/ui/paginator/Paginator.vue'
 import { PhMagnifyingGlass, PhX, PhCheckCircle, PhMinusCircle, PhArrowsClockwise, PhCheckSquare, PhSquare } from '@phosphor-icons/vue'
+import { can } from '@/core/helpers/helper.check.permissions'
 
 const ItemSelector = defineAsyncComponent(() => import(/* webpackChunkName: "ui-item-selector" */ '../../../../core/ui/modals/item-selector/ItemSelector.vue'))
 
@@ -197,6 +201,7 @@ const refreshMembers = async () => {
       <div class="side-bar-section">
         <h3 class="text-subtitle-2 px-2 py-2">{{ t('admin.groups.editor.sidebar.actions') }}</h3>
         <v-btn
+          v-if="can('adminOrg:groups:manage_members:all')"
           block
           color="teal"
           variant="outlined"
@@ -206,6 +211,7 @@ const refreshMembers = async () => {
           {{ t('admin.groups.editor.buttons.addMember') }}
         </v-btn>
         <v-btn
+          v-if="can('adminOrg:groups:manage_members:all')"
           block
           color="error"
           variant="outlined"
@@ -275,5 +281,3 @@ const refreshMembers = async () => {
   display: inline-block;
 }
 </style>
-
-

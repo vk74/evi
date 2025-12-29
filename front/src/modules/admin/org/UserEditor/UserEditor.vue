@@ -9,6 +9,7 @@ import { ref, computed, onMounted, onBeforeUnmount, defineAsyncComponent } from 
 import { useUserEditorStore } from './state.user.editor'
 import { useUiStore } from '@/core/state/uistate'
 import { useOrgAdminStore } from '../state.org.admin'
+import { can } from '@/core/helpers/helper.check.permissions'
 
 const userEditorStore = useUserEditorStore()
 const uiStore = useUiStore()
@@ -24,6 +25,13 @@ const isEditMode = computed(() => userEditorStore.mode.mode === 'edit')
 
 const setSection = (section: 'details' | 'groups') => {
   if (section === 'groups' && !isEditMode.value) return
+  
+  // Permission check for groups section
+  if (section === 'groups' && !can('adminOrg:users:read:all')) {
+    uiStore.showErrorSnackbar(t('admin.org.editor.messages.noPermission'))
+    return
+  }
+  
   userEditorStore.setActiveSection(section)
 }
 
@@ -43,7 +51,12 @@ onBeforeUnmount(() => {
         <v-btn :class="['section-btn', { 'section-active': userEditorStore.ui.activeSection === 'details' }]" variant="text" @click="setSection('details')">
           {{ t('admin.org.editor.sections.details') }}
         </v-btn>
-        <v-btn :class="['section-btn', { 'section-active': userEditorStore.ui.activeSection === 'groups' }]" :disabled="!isEditMode" variant="text" @click="setSection('groups')">
+        <v-btn 
+          :class="['section-btn', { 'section-active': userEditorStore.ui.activeSection === 'groups' }]" 
+          :disabled="!isEditMode || !can('adminOrg:users:read:all')" 
+          variant="text" 
+          @click="setSection('groups')"
+        >
           {{ t('admin.org.editor.sections.groups') }}
         </v-btn>
       </div>

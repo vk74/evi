@@ -1,8 +1,15 @@
 <!--
-version: 1.0.5
+version: 1.1.0
 Frontend file UserEditorDetails.vue.
 Purpose: User details form with dynamic validation using public policies and form state management.
 Features: Dynamic validation for username/email/phone, static validation for FIO fields, form submission handling.
+
+Changes in v1.1.0:
+- Added can() check for permissions
+- Added isReadOnly computed property for view-only mode
+- Disabled form fields if isReadOnly is true
+- Hide Create/Update buttons if no permission
+- Hide Reset Password button if no update permission
 -->
 <script setup lang="ts">
 import { ref, computed, onMounted, watch, onBeforeUnmount } from 'vue'
@@ -21,6 +28,7 @@ import { PhCaretUpDown, PhCheckSquare, PhSquare, PhEye, PhEyeSlash } from '@phos
 import { fetchPublicValidationRules } from '@/core/services/service.fetch.public.validation.rules'
 import { fetchPublicPasswordPolicies } from '@/core/services/service.fetch.public.password.policies'
 import { usePublicSettingsStore, type PasswordPolicies, type ValidationRules } from '@/core/state/state.public.settings'
+import { can } from '@/core/helpers/helper.check.permissions'
 
 const userEditorStore = useUserEditorStore()
 const uiStore = useUiStore()
@@ -67,6 +75,14 @@ const accountIsStaff = computed({ get: () => userEditorStore.account.is_staff, s
 // System user computed properties
 const isSystemUser = computed(() => userEditorStore.account.is_system === true)
 const userUuid = computed(() => userEditorStore.account.user_id || '')
+
+// Read-only logic
+const isReadOnly = computed(() => {
+  if (userEditorStore.mode.mode === 'create') {
+    return !can('adminOrg:users:create')
+  }
+  return !can('adminOrg:users:update:all')
+})
 
 const requiredFields = computed(() => ({
   username: userEditorStore.account.username,
@@ -266,6 +282,7 @@ const resetForm = () => {
 }
 
 const saveUser = async () => {
+  if (!can('adminOrg:users:create')) return
   if (!form.value?.validate()) {
     uiStore.showErrorSnackbar(t('admin.org.editor.messages.validation.formErrors'))
     return
@@ -284,6 +301,7 @@ const saveUser = async () => {
 }
 
 const updateUser = async () => {
+  if (!can('adminOrg:users:update:all')) return
   if (!form.value?.validate()) {
     uiStore.showErrorSnackbar(t('admin.org.editor.messages.validation.formErrors'))
     return
@@ -424,7 +442,7 @@ onBeforeUnmount(() => {
   <div class="d-flex">
     <div class="flex-grow-1 main-content-area">
       <v-card flat>
-        <v-form ref="form" v-model="isFormValid">
+        <v-form ref="form" v-model="isFormValid" :disabled="isReadOnly">
           <v-row class="pa-4">
               <!-- User UUID and System User Info (only in edit mode) -->
               <v-col v-if="userEditorStore.mode.mode === 'edit'" cols="12">
@@ -456,7 +474,7 @@ onBeforeUnmount(() => {
                       :label="t('admin.org.editor.fields.username.label')" 
                       :rules="dynamicUsernameRules" 
                       :loading="isLoadingValidationRules"
-                      :disabled="!validationRulesReady || isSystemUser"
+                      :disabled="!validationRulesReady || isSystemUser || isReadOnly"
                       variant="outlined" 
                       density="comfortable" 
                       :counter="currentValidationRules?.wellKnownFields?.userName?.maxLength" 
@@ -468,20 +486,20 @@ onBeforeUnmount(() => {
                 </v-row>
                 <v-row>
                   <v-col cols="12" md="4">
-                    <v-text-field v-model="accountFirstName" :label="t('admin.org.editor.fields.firstName.label')" :rules="firstNameRules" variant="outlined" density="comfortable" counter="50" color="teal" required />
+                    <v-text-field v-model="accountFirstName" :label="t('admin.org.editor.fields.firstName.label')" :rules="firstNameRules" variant="outlined" density="comfortable" counter="50" color="teal" required :disabled="isReadOnly" />
                   </v-col>
                   <v-col cols="12" md="4">
-                    <v-text-field v-model="accountMiddleName" :label="t('admin.org.editor.fields.middleName.label')" :rules="middleNameRules" variant="outlined" density="comfortable" counter="50" color="teal" />
+                    <v-text-field v-model="accountMiddleName" :label="t('admin.org.editor.fields.middleName.label')" :rules="middleNameRules" variant="outlined" density="comfortable" counter="50" color="teal" :disabled="isReadOnly" />
                   </v-col>
                   <v-col cols="12" md="4">
-                    <v-text-field v-model="accountLastName" :label="t('admin.org.editor.fields.lastName.label')" :rules="lastNameRules" variant="outlined" density="comfortable" counter="50" color="teal" required />
+                    <v-text-field v-model="accountLastName" :label="t('admin.org.editor.fields.lastName.label')" :rules="lastNameRules" variant="outlined" density="comfortable" counter="50" color="teal" required :disabled="isReadOnly" />
                   </v-col>
                   <v-col cols="12" md="4">
                     <v-select v-model="profileGender" :label="t('admin.org.editor.fields.gender.label')" variant="outlined" density="comfortable" color="teal" class="fixed-300" :items="[
                       { title: t('admin.org.editor.fields.gender.options.male'), value: Gender.MALE },
                       { title: t('admin.org.editor.fields.gender.options.female'), value: Gender.FEMALE },
                       { title: t('admin.org.editor.fields.gender.options.notDefined'), value: Gender.NOT_DEFINED }
-                    ]" item-title="title" item-value="value">
+                    ]" item-title="title" item-value="value" :disabled="isReadOnly">
                     <template #append-inner>
                       <PhCaretUpDown class="dropdown-icon" />
                     </template>
@@ -505,7 +523,7 @@ onBeforeUnmount(() => {
                       density="comfortable" 
                       color="teal"
                       class="fixed-300"
-                      :disabled="isSystemUser"
+                      :disabled="isSystemUser || isReadOnly"
                       :items="[
                         { title: t('admin.org.editor.fields.accountStatus.options.active'), value: AccountStatus.ACTIVE },
                         { title: t('admin.org.editor.fields.accountStatus.options.disabled'), value: AccountStatus.DISABLED },
@@ -527,6 +545,7 @@ onBeforeUnmount(() => {
                         density="comfortable"
                         :aria-pressed="accountIsStaff"
                         @click="accountIsStaff = !accountIsStaff"
+                        :disabled="isReadOnly"
                       >
                         <PhCheckSquare v-if="accountIsStaff" :size="18" color="teal" />
                         <PhSquare v-else :size="18" color="grey" />
@@ -550,7 +569,7 @@ onBeforeUnmount(() => {
                       :placeholder="currentValidationRules?.wellKnownFields?.telephoneNumber?.mask || t('admin.org.editor.fields.mobilePhone.placeholder')" 
                       :rules="dynamicPhoneRules"
                       :loading="isLoadingValidationRules"
-                      :disabled="!validationRulesReady"
+                      :disabled="!validationRulesReady || isReadOnly"
                       variant="outlined" 
                       density="comfortable"
                       color="teal"
@@ -562,7 +581,7 @@ onBeforeUnmount(() => {
                       :label="t('admin.org.editor.fields.email.label')" 
                       :rules="dynamicEmailRules" 
                       :loading="isLoadingValidationRules"
-                      :disabled="!validationRulesReady"
+                      :disabled="!validationRulesReady || isReadOnly"
                       variant="outlined" 
                       density="comfortable" 
                       type="email" 
@@ -587,7 +606,7 @@ onBeforeUnmount(() => {
                       :label="t('admin.org.editor.fields.password.label')" 
                       :rules="dynamicPasswordRules"
                       :loading="isLoadingPasswordPolicies"
-                      :disabled="!passwordPoliciesReady"
+                      :disabled="!passwordPoliciesReady || isReadOnly"
                       variant="outlined" 
                       density="comfortable" 
                       :type="showPassword ? 'text' : 'password'" 
@@ -603,7 +622,7 @@ onBeforeUnmount(() => {
                       :label="t('admin.org.editor.fields.password.confirm')" 
                       :rules="[(v) => v === accountPassword || t('admin.org.editor.validation.fields.password.mismatch')]"
                       :loading="isLoadingPasswordPolicies"
-                      :disabled="!passwordPoliciesReady"
+                      :disabled="!passwordPoliciesReady || isReadOnly"
                       variant="outlined" 
                       density="comfortable" 
                       :type="showPassword ? 'text' : 'password'" 
@@ -624,7 +643,7 @@ onBeforeUnmount(() => {
             </v-row>
           </v-form>
           <!-- Password policies panel moved outside the form -->
-          <div v-if="showPasswordPoliciesPanel" class="pa-4">
+          <div v-if="showPasswordPoliciesPanel && !isReadOnly" class="pa-4">
             <PasswordPoliciesPanel />
           </div>
         </v-card>
@@ -633,9 +652,9 @@ onBeforeUnmount(() => {
     <div class="side-bar-container">
       <div class="side-bar-section">
         <h3 class="text-subtitle-2 px-2 py-2">{{ t('admin.org.editor.sidebar.actions') }}</h3>
-        <v-btn v-if="userEditorStore.mode.mode === 'create'" block color="teal" variant="outlined" :disabled="!isFormValid || isSubmitting" class="mb-3" @click="saveUser">{{ t('admin.org.editor.buttons.create') }}</v-btn>
+        <v-btn v-if="userEditorStore.mode.mode === 'create' && can('adminOrg:users:create')" block color="teal" variant="outlined" :disabled="!isFormValid || isSubmitting" class="mb-3" @click="saveUser">{{ t('admin.org.editor.buttons.create') }}</v-btn>
         <v-btn 
-          v-if="userEditorStore.mode.mode === 'edit'" 
+          v-if="userEditorStore.mode.mode === 'edit' && can('adminOrg:users:update:all')" 
           block 
           color="teal" 
           variant="outlined" 
@@ -645,7 +664,7 @@ onBeforeUnmount(() => {
         >
           {{ t('admin.org.editor.buttons.update') }}
         </v-btn>
-        <v-btn v-if="userEditorStore.mode.mode === 'edit'" block color="teal" variant="outlined" class="mb-3" @click="() => showPasswordDialog = true">{{ t('admin.org.editor.buttons.resetPassword') }}</v-btn>
+        <v-btn v-if="userEditorStore.mode.mode === 'edit' && can('adminOrg:users:update:all')" block color="teal" variant="outlined" class="mb-3" @click="() => showPasswordDialog = true">{{ t('admin.org.editor.buttons.resetPassword') }}</v-btn>
       </div>
 
       <div class="sidebar-divider" />

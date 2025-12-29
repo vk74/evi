@@ -1,7 +1,11 @@
 <!--
-version: 1.2.0
+version: 1.3.0
 Frontend file UserEditorGroups.vue.
 Purpose: Lists groups where the user participates with server-side pagination and sorting. Includes sidebar with actions and user name display. Frontend file.
+
+Changes in v1.3.0:
+- Fixed permission checks to use :all suffix (adminOrg:users:manage_groups:all)
+- This matches the permission naming after migration m_014_fix_org_permissions
 -->
 <script setup lang="ts">
 import { ref, computed, onMounted, watch } from 'vue'
@@ -13,6 +17,7 @@ import { PhMagnifyingGlass, PhX, PhCheckCircle, PhMinusCircle, PhArrowsClockwise
 import { userGroupsService } from './service.fetch.user.groups'
 import { removeUserFromGroups } from './service.remove.user.from.groups'
 import { defineAsyncComponent } from 'vue'
+import { can } from '@/core/helpers/helper.check.permissions'
 
 const ItemSelector = defineAsyncComponent(() => import(/* webpackChunkName: "ui-item-selector" */ '../../../../core/ui/modals/item-selector/ItemSelector.vue'))
 
@@ -63,6 +68,7 @@ const onSelectGroup = (groupId: string, selected: boolean) => {
 
 async function fetchRows() {
   if (!isEditMode.value) return
+  if (!can('adminOrg:users:read:all')) return
   loading.value = true
   try {
     const userId = (store.mode as any).userId
@@ -113,6 +119,7 @@ async function onSearchEnter(e: KeyboardEvent) {
 
 async function refresh() {
   if (!isEditMode.value) return
+  if (!can('adminOrg:users:read:all')) return
   try { refreshing.value = true; await fetchRows() } finally { refreshing.value = false }
 }
 
@@ -269,6 +276,7 @@ watch(isEditMode, (v) => { if (v) { page.value = 1; fetchRows() } })
       <div class="side-bar-section">
         <h3 class="text-subtitle-2 px-2 py-2">{{ t('admin.org.editor.groups.actions') }}</h3>
         <v-btn
+          v-if="can('adminOrg:users:manage_groups:all')"
           block
           color="teal"
           variant="outlined"
@@ -278,6 +286,7 @@ watch(isEditMode, (v) => { if (v) { page.value = 1; fetchRows() } })
           {{ t('admin.org.editor.groups.addToGroups') }}
         </v-btn>
         <v-btn
+          v-if="can('adminOrg:users:read:all')"
           block
           color="grey"
           variant="outlined"
@@ -300,6 +309,7 @@ watch(isEditMode, (v) => { if (v) { page.value = 1; fetchRows() } })
         </h3>
         
         <v-btn
+          v-if="can('adminOrg:users:manage_groups:all')"
           block
           color="error"
           variant="outlined"

@@ -7,12 +7,14 @@
  * - Display of active section
  * - State management via Pinia store
  * - Multilingual interface using i18n
+ * - Permission-based section visibility
  */
 
 <script setup lang="ts">
 import { computed, defineAsyncComponent } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useOrgAdminStore } from './state.org.admin'
+import { can } from '@/core/helpers/helper.check.permissions'
 import type { UserSectionId, Section } from './types.org.admin'
 
 // Импортируем Phosphor иконки
@@ -37,33 +39,46 @@ const { t } = useI18n()
 const orgStore = useOrgAdminStore()
 
 // Define administrative module sections as computed property
-const sections = computed((): Section[] => [
-  {
-    id: 'users-proto',
-    title: t('admin.org.sections.usersList'),
-    icon: 'PhUserList'
-  },
-  {
-    id: 'user-editor',
-    title: t('admin.org.sections.userEditor'),
-    icon: 'PhUserFocus'
-  },
-  {
-    id: 'groups',
-    title: t('admin.org.sections.groupsList'),
-    icon: 'PhUsersThree'
-  },
-  {
-    id: 'group-editor',
-    title: t('admin.org.sections.groupEditor'),
-    icon: 'PhUsersFour'
-  },
-  {
-    id: 'settings',
-    title: t('admin.org.sections.settings'),
-    icon: 'PhFadersHorizontal'
-  }
-])
+const sections = computed((): Section[] => {
+  const result: Section[] = [
+    {
+      id: 'users-proto',
+      title: t('admin.org.sections.usersList'),
+      icon: 'PhUserList',
+      // Visible if user can read users
+      visible: can('adminOrg:users:read:all')
+    },
+    {
+      id: 'user-editor',
+      title: t('admin.org.sections.userEditor'),
+      icon: 'PhUserFocus',
+      // Visible if user can create or update users, or read them (for view only)
+      visible: can('adminOrg:users:create') || can('adminOrg:users:update:all') || can('adminOrg:users:read:all')
+    },
+    {
+      id: 'groups',
+      title: t('admin.org.sections.groupsList'),
+      icon: 'PhUsersThree',
+      // Visible if user can read groups
+      visible: can('adminOrg:groups:read:all')
+    },
+    {
+      id: 'group-editor',
+      title: t('admin.org.sections.groupEditor'),
+      icon: 'PhUsersFour',
+      // Visible if user can create or update groups, or read them (for view only)
+      visible: can('adminOrg:groups:create') || can('adminOrg:groups:update:all') || can('adminOrg:groups:read:all')
+    },
+    {
+      id: 'settings',
+      title: t('admin.org.sections.settings'),
+      icon: 'PhFadersHorizontal',
+      // Visible if user can read settings
+      visible: can('adminOrg:settings:read:all')
+    }
+  ]
+  return result
+})
 
 // Computed properties and methods for section management
 const activeSection = computed((): UserSectionId => orgStore.getCurrentSection)

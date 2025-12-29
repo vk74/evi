@@ -17,6 +17,7 @@
         },
         "buttons": {
           "create": "create group",
+          "view": "view",
           "edit": "edit",
           "delete": "delete",
           "clearSelections": "clear selections"

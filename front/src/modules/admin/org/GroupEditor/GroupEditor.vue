@@ -18,6 +18,7 @@ const GroupEditorDetails = defineAsyncComponent(() => import('./GroupEditorDetai
 const GroupEditorMembers = defineAsyncComponent(() => import('./GroupEditorMembers.vue'))
 import { useUserAuthStore } from '@/core/auth/state.user.auth' // Import for JWT check
 import { PhMagnifyingGlass, PhX, PhCheckCircle, PhMinusCircle } from '@phosphor-icons/vue'
+import { can } from '@/core/helpers/helper.check.permissions' // Import can helper
 
 // Initialize i18n
 const { t } = useI18n()
@@ -102,6 +103,7 @@ const validate = async () => {
 }
 
 const handleCreateGroup = async () => {
+  if (!can('adminOrg:groups:create')) return
   if (!(await validate())) {
     uiStore.showErrorSnackbar(t('admin.groups.editor.messages.requiredFields'))
     return
@@ -126,6 +128,7 @@ const handleCreateGroup = async () => {
 }
 
 const handleUpdateGroup = async () => {
+  if (!can('adminOrg:groups:update')) return
   
   if (!(await validate())) {
     uiStore.showErrorSnackbar(t('admin.groups.editor.messages.requiredFields'))
@@ -212,6 +215,7 @@ const handleAddMembers = async (result: any) => {
 }
 
 const handleRemoveMembers = async () => {
+  if (!can('adminOrg:groups:manage_members:all')) return
   if (!groupEditorStore.hasSelectedMembers) {
     uiStore.showErrorSnackbar(t('admin.groups.editor.messages.noMembersSelected'))
     return
@@ -243,6 +247,7 @@ const handleRemoveMembers = async () => {
 
 // ==================== OWNER CHANGE HANDLERS ====================
 const handleChangeOwner = () => {
+  if (!can('adminOrg:groups:change_owner')) return
   isOwnerSelectorModalOpen.value = true
 }
 

@@ -1,13 +1,13 @@
 <!--
-version: 1.0.2
+version: 1.1.0
 Frontend file GroupEditorDetails.vue.
 Purpose: Renders the group details form (create/edit) and its right-side actions.
 
-Changes in v1.0.2:
-- Refactored to use local formData ref and initialGroupData ref for change tracking (same approach as SectionEditor)
-- Added local hasChanges computed property that compares formData with initialGroupData
-- All form fields now use v-model directly with formData ref for proper Vue reactivity
-- This ensures reliable change tracking and activates UPDATE button with glow effect when fields are modified
+Changes in v1.1.0:
+- Added can() check for permissions
+- Added isReadOnly computed property
+- Disabled form fields if isReadOnly is true
+- Hide Create/Update/Change Owner buttons if no permission
 -->
 <script setup lang="ts">
 import { ref, computed, watch, onMounted } from 'vue'
@@ -19,6 +19,7 @@ import { useValidationRules } from '@/core/validation/rules.common.fields'
 import { defineAsyncComponent } from 'vue'
 import { fetchGroupService } from './service.fetch.group'
 import { PhCaretUpDown } from '@phosphor-icons/vue'
+import { can } from '@/core/helpers/helper.check.permissions'
 
 const ItemSelector = defineAsyncComponent(() => import(/* webpackChunkName: "ui-item-selector" */ '../../../../core/ui/modals/item-selector/ItemSelector.vue'))
 
@@ -56,7 +57,12 @@ const ownerDisplay = computed(() => {
   return groupEditorStore.group.ownerUsername || groupEditorStore.group.group_owner || ''
 })
 
-const isAuthorized = computed(() => true) // parent enforces auth; keep buttons enabled based on store if needed
+const isReadOnly = computed(() => {
+  if (groupEditorStore.isEditMode) {
+    return !can('adminOrg:groups:update:all')
+  }
+  return !can('adminOrg:groups:create')
+})
 
 // Change tracking computed property (same approach as SectionEditor)
 const hasChanges = computed(() => {
@@ -135,6 +141,7 @@ const populateFormWithGroupData = (groupData: IGroupData) => {
 }
 
 async function handleCreateGroup() {
+  if (!can('adminOrg:groups:create')) return
   if (!(await validate())) {
     uiStore.showErrorSnackbar(t('admin.groups.editor.messages.requiredFields'))
     return
@@ -162,6 +169,7 @@ async function handleCreateGroup() {
 }
 
 async function handleUpdateGroup() {
+  if (!can('adminOrg:groups:update:all')) return
   if (!(await validate())) {
     uiStore.showErrorSnackbar(t('admin.groups.editor.messages.requiredFields'))
     return
@@ -217,6 +225,7 @@ function resetForm() {
 }
 
 const handleChangeOwner = () => {
+  if (!can('adminOrg:groups:change_owner')) return
   isOwnerSelectorModalOpen.value = true
 }
 
@@ -268,7 +277,7 @@ onMounted(() => {
             </div>
           </div>
 
-          <v-form ref="formRef" v-model="isFormValid" @submit.prevent>
+          <v-form ref="formRef" v-model="isFormValid" @submit.prevent :disabled="isReadOnly">
             <v-row class="pa-4">
               <v-col cols="12" md="9">
                 <v-text-field
@@ -344,7 +353,7 @@ onMounted(() => {
       <div class="side-bar-section">
         <h3 class="text-subtitle-2 px-2 py-2">{{ t('admin.groups.editor.sidebar.actions') }}</h3>
         <v-btn
-          v-if="!groupEditorStore.isEditMode"
+          v-if="!groupEditorStore.isEditMode && can('adminOrg:groups:create')"
           block
           color="teal"
           variant="outlined"
@@ -355,7 +364,7 @@ onMounted(() => {
           {{ t('admin.groups.editor.buttons.create') }}
         </v-btn>
         <v-btn
-          v-if="groupEditorStore.isEditMode"
+          v-if="groupEditorStore.isEditMode && can('adminOrg:groups:update:all')"
           block
           color="teal"
           variant="outlined"
@@ -381,7 +390,7 @@ onMounted(() => {
           {{ t('admin.groups.editor.buttons.reset') }}
         </v-btn>
         <v-btn
-          v-if="groupEditorStore.isEditMode"
+          v-if="groupEditorStore.isEditMode && can('adminOrg:groups:change_owner')"
           block
           color="teal"
           variant="outlined"
@@ -466,5 +475,3 @@ onMounted(() => {
   }
 }
 </style>
-
-

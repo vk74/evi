@@ -1,8 +1,15 @@
 <!--
 /**
  * @file GroupsList.vue
- * @version 1.0.2
+ * @version 1.2.0
  * Frontend component for displaying and managing the list of groups in the administration module.
+ * 
+ * Changes in v1.1.0:
+ * - Added permission checks for buttons (create, edit, delete)
+ * - Changed 'Edit' button to 'View' if user has read-only access
+ * 
+ * Changes in v1.2.0:
+ * - Updated permission checks to use :all suffix (e.g. adminOrg:groups:read:all)
  */
 -->
 
@@ -19,6 +26,7 @@ import Paginator from '@/core/ui/paginator/Paginator.vue'
 import { useUiStore } from '@/core/state/uistate';
 import { useOrgAdminStore } from '../state.org.admin';
 import { useGroupEditorStore } from '../GroupEditor/state.group.editor';
+import { can } from '@/core/helpers/helper.check.permissions';
 import {
   PhMagnifyingGlass,
   PhX,
@@ -26,7 +34,8 @@ import {
   PhSquare,
   PhCheckCircle,
   PhMinusCircle,
-  PhFunnel
+  PhFunnel,
+  PhEye
 } from '@phosphor-icons/vue'
 // Initialize stores and i18n
 const { t } = useI18n();
@@ -149,6 +158,7 @@ const clearSelections = () => {
 };
 
 onMounted(async () => {
+  if (!can('adminOrg:groups:read:all')) return
   try {
     await groupsService.fetchGroups();
   } catch (error) {
@@ -281,7 +291,7 @@ watch([page, itemsPerPage], ([newPage, newItemsPerPage]) => {
           </h3>
           
           <v-btn
-            v-if="isAuthorized"
+            v-if="can('adminOrg:groups:create')"
             block
             color="teal"
             variant="outlined"
@@ -292,7 +302,7 @@ watch([page, itemsPerPage], ([newPage, newItemsPerPage]) => {
           </v-btn>
           
           <v-btn
-            v-if="isAuthorized"
+            v-if="can('adminOrg:groups:read:all')"
             block
             color="grey"
             variant="outlined"
@@ -315,7 +325,7 @@ watch([page, itemsPerPage], ([newPage, newItemsPerPage]) => {
           </h3>
           
           <v-btn
-            v-if="isAuthorized"
+            v-if="can('adminOrg:groups:read:all')"
             block
             color="teal"
             variant="outlined"
@@ -323,11 +333,12 @@ watch([page, itemsPerPage], ([newPage, newItemsPerPage]) => {
             :disabled="!hasOneSelected"
             @click="editGroup"
           >
-            {{ t('admin.groups.list.buttons.edit') }}
+            <component :is="can('adminOrg:groups:update:all') ? undefined : PhEye" class="mr-2" v-if="!can('adminOrg:groups:update:all')" />
+            {{ can('adminOrg:groups:update:all') ? t('admin.groups.list.buttons.edit') : t('admin.groups.list.buttons.view') }}
           </v-btn>
           
           <v-btn
-            v-if="isAuthorized"
+            v-if="can('adminOrg:groups:delete:all')"
             block
             color="error"
             variant="outlined"

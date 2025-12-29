@@ -1,9 +1,16 @@
 /**
  * @file UsersList.vue
- * Version: 1.0.09
+ * Version: 1.2.0
  * Component for displaying and managing the system users list with server-side processing.
  * Features: pagination, search, sorting, user management operations (create, edit, delete, reset password).
  * FRONTEND file: UsersList.vue
+ * 
+ * Changes in v1.1.0:
+ * - Added permission checks for buttons (create, edit, delete, reset password, refresh)
+ * - Changed 'Edit' button to 'View' if user has read-only access
+ * 
+ * Changes in v1.2.0:
+ * - Updated permission checks to use :all suffix (e.g. adminOrg:users:read:all)
  */
 <script setup lang="ts">
 import usersFetchService from './Service.fetch.users'
@@ -20,6 +27,7 @@ import loadUserService from '../UserEditor/service.load.user'
 import { useUserEditorStore } from '../UserEditor/state.user.editor'
 import { useUiStore } from '@/core/state/uistate'
 import { useUserAuthStore } from '@/core/auth/state.user.auth'
+import { can } from '@/core/helpers/helper.check.permissions'
 import debounce from 'lodash/debounce'
 import ChangePassword from '../../../../core/ui/modals/change-password/ChangePassword.vue'
 import { PasswordChangeMode } from '../../../../core/ui/modals/change-password/types.change.password'
@@ -31,7 +39,8 @@ import {
   PhCheckCircle,
   PhMinusCircle,
   PhArrowClockwise,
-  PhFunnel
+  PhFunnel,
+  PhEye
 } from '@phosphor-icons/vue'
 import Paginator from '@/core/ui/paginator/Paginator.vue'
 
@@ -120,6 +129,7 @@ const handleError = (error: unknown, context: string) => {
 
 // Helper function to fetch users with current parameters
 const fetchUsers = async () => {
+  if (!can('adminOrg:users:read:all')) return
   try {
     await usersFetchService.fetchUsers(getFetchParams())
   } catch (error) {
@@ -541,7 +551,7 @@ const handleItemsPerPageChange = async (newItemsPerPage: ItemsPerPageOption) => 
           </h3>
           
           <v-btn
-            v-if="isAuthorized"
+            v-if="can('adminOrg:users:create')"
             block
             color="teal"
             variant="outlined"
@@ -553,7 +563,7 @@ const handleItemsPerPageChange = async (newItemsPerPage: ItemsPerPageOption) => 
           </v-btn>
           
           <v-btn
-            v-if="isAuthorized"
+            v-if="can('adminOrg:users:read:all')"
             block
             color="teal"
             variant="outlined"
@@ -566,7 +576,7 @@ const handleItemsPerPageChange = async (newItemsPerPage: ItemsPerPageOption) => 
           </v-btn>
           
           <v-btn
-            v-if="isAuthorized"
+            v-if="can('adminOrg:users:read:all')"
             block
             color="grey"
             variant="outlined"
@@ -589,7 +599,7 @@ const handleItemsPerPageChange = async (newItemsPerPage: ItemsPerPageOption) => 
           </h3>
           
           <v-btn
-            v-if="isAuthorized"
+            v-if="can('adminOrg:users:read:all')"
             block
             color="teal"
             variant="outlined"
@@ -597,11 +607,12 @@ const handleItemsPerPageChange = async (newItemsPerPage: ItemsPerPageOption) => 
             :disabled="!hasOneSelected"
             @click="editUser"
           >
-            {{ t('list.buttons.edit') }}
+            <component :is="can('adminOrg:users:update:all') ? undefined : PhEye" class="mr-2" v-if="!can('adminOrg:users:update:all')" />
+            {{ can('adminOrg:users:update:all') ? t('list.buttons.edit') : t('list.buttons.view') }}
           </v-btn>
           
           <v-btn
-            v-if="isAuthorized"
+            v-if="can('adminOrg:users:update:all')"
             block
             color="teal"
             variant="outlined"
@@ -613,7 +624,7 @@ const handleItemsPerPageChange = async (newItemsPerPage: ItemsPerPageOption) => 
           </v-btn>
           
           <v-btn
-            v-if="isAuthorized"
+            v-if="can('adminOrg:users:delete:all')"
             block
             color="error"
             variant="outlined"
