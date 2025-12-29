@@ -1,12 +1,12 @@
 /**
  * service.fetch.public.settings.ts - backend file
- * version: 1.4.0
+ * version: 1.5.0
  * Service for fetching public settings that are accessible without authentication.
  * 
  * Public settings include:
  * - Application.Appearance → navbar.backgroundcolor
  * - AdminProducts → card.color
- * - AdminCatalog → card.color
+ * - AdminServices → card.color
  * - AdminProducts → display.optionsOnlyProducts
  * 
  * Changes in v1.1.0:
@@ -23,6 +23,9 @@
  * 
  * Changes in v1.4.0:
  * - Updated section_path from 'Catalog.Services' to 'AdminCatalog'
+ * 
+ * Changes in v1.5.0:
+ * - Updated section_path from 'AdminCatalog' to 'AdminServices'
  */
 
 import { Request } from 'express';
@@ -110,12 +113,12 @@ export async function fetchPublicSettings(req: Request): Promise<PublicSettingsR
 
     // 3. Service card color
     const serviceCardColor = await getSettingValue<string>(
-      'AdminCatalog',
+      'AdminServices',
       'card.color',
       '#F5F5F5'
     );
     publicSettings.push({
-      section_path: 'AdminCatalog',
+      section_path: 'AdminServices',
       setting_name: 'card.color',
       value: serviceCardColor,
       is_public: true
