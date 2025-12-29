@@ -126,7 +126,7 @@ async function validateUserAccountStatus(userId: string): Promise<boolean> {
     }
     
     // For non-active users, check application settings
-    const settingPath = 'OrganizationManagement.GroupsManagement';
+    const settingPath = 'AdminOrgMgmt';
     const settingName = 'add.only.active.users.to.groups';
     const setting = getSetting(settingPath, settingName);
     
