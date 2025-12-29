@@ -1,6 +1,6 @@
 <!--
   File: ProductEditorDetails.vue
-  Version: 1.9.0
+  Version: 1.10.0
   Description: Component for product details form and actions
   Purpose: Provides interface for creating and editing product details with dynamic validation
   Frontend file - ProductEditorDetails.vue
@@ -72,6 +72,15 @@
   Changes in v1.9.0:
   - Improved permission check logic in isReadOnly computed property
   - Fixed UPDATE button activation logic
+  
+  Changes in v1.10.0:
+  - Refactored to use local formData ref and initialProductData ref for change tracking (same approach as SectionEditor)
+  - Added local hasChanges computed property that compares formData with initialProductData
+  - Added loadProductData function that loads data directly from API on mount
+  - Added populateFormWithProductData function to populate form and initial data
+  - All form fields now use local formData ref for proper Vue reactivity
+  - Data is loaded independently in component, not from store dependency
+  - This ensures reliable change tracking and activates UPDATE button with glow effect when fields are modified
 -->
 
 <script setup lang="ts">
@@ -112,23 +121,82 @@ const isLoadingProduct = ref(false)
 // Validation rules state
 const currentValidationRules = ref<ValidationRules | null>(null)
 
-// Initial values for tracking changes in edit mode
-const initialSpecialistsGroups = ref<string[]>([])
-
 // ItemSelector state
 const showSpecialistsGroupsSelector = ref(false)
 
 // Picture picker state
 const showPicturePicker = ref(false)
 
-// Form data - now using store
-const formData = computed(() => productsStore.formData)
+// Local form data for change tracking (same approach as SectionEditor)
+const formData = ref({
+  productCode: '',
+  translationKey: '',
+  statusCode: '',
+  owner: '',
+  specialistsGroups: [] as string[],
+  translations: {
+    english: {
+      name: '',
+      shortDesc: '',
+      longDesc: '',
+      techSpecs: {} as Record<string, any>
+    },
+    russian: {
+      name: '',
+      shortDesc: '',
+      longDesc: '',
+      techSpecs: {} as Record<string, any>
+    }
+  },
+  visibility: {
+    isVisibleOwner: false,
+    isVisibleGroups: false,
+    isVisibleTechSpecs: false,
+    isVisibleLongDescription: false
+  }
+})
+
+// Initial product data for change tracking (same approach as SectionEditor)
+const initialProductData = ref<{
+  productCode: string
+  translationKey: string
+  statusCode: string
+  specialistsGroups: string[]
+  translations: {
+    english?: { name: string; shortDesc: string; longDesc?: string; techSpecs?: Record<string, any> }
+    russian?: { name: string; shortDesc: string; longDesc?: string; techSpecs?: Record<string, any> }
+  }
+} | null>(null)
 
 // Computed properties
 const isCreationMode = computed(() => productsStore.editorMode === 'creation')
 const isEditMode = computed(() => productsStore.editorMode === 'edit')
 const editingProductId = computed(() => productsStore.editingProductId)
-const hasChanges = computed(() => productsStore.hasChanges)
+
+// Change tracking computed property (same approach as SectionEditor)
+const hasChanges = computed(() => {
+  if (!isEditMode.value || !initialProductData.value) {
+    return false
+  }
+  
+  const initial = initialProductData.value
+  const current = formData.value
+  
+  // Compare basic fields
+  if (current.productCode !== initial.productCode) return true
+  if (current.translationKey !== initial.translationKey) return true
+  if (current.statusCode !== initial.statusCode) return true
+  
+  // Compare specialistsGroups arrays
+  const currentGroups = [...(current.specialistsGroups || [])].sort()
+  const initialGroups = [...(initial.specialistsGroups || [])].sort()
+  if (JSON.stringify(currentGroups) !== JSON.stringify(initialGroups)) return true
+  
+  // Compare translations (deep comparison using JSON.stringify like store does)
+  if (JSON.stringify(current.translations) !== JSON.stringify(initial.translations)) return true
+  
+  return false
+})
 
 // Read-only mode logic:
 // 1. If user has full update rights (update:all) -> NOT read-only
@@ -245,10 +313,12 @@ const validationRulesReady = computed(() => {
          currentValidationRules.value !== null
 })
 
-// Check if fields changed (for edit mode)
+// Check if fields changed (for edit mode) - now using initialProductData
 const areSpecialistsGroupsChanged = computed(() => {
+  if (!initialProductData.value) return false
+  
   const current = formData.value.specialistsGroups
-  const initial = initialSpecialistsGroups.value
+  const initial = initialProductData.value.specialistsGroups
   
   if (current.length !== initial.length) return true
   
@@ -438,13 +508,19 @@ const createProduct = async () => {
   isSubmitting.value = true
   
   try {
-    // Debug: Log formData before preparing API data
-    console.log('[ProductEditorDetails] Full formData.value:', formData.value)
-    console.log('[ProductEditorDetails] formData.value.translations:', JSON.stringify(formData.value.translations, null, 2))
-    console.log('[ProductEditorDetails] formData.value.translations.english:', JSON.stringify(formData.value.translations?.english, null, 2))
-    console.log('[ProductEditorDetails] formData.value.translations.russian:', JSON.stringify(formData.value.translations?.russian, null, 2))
-    console.log('[ProductEditorDetails] formData.value.specialistsGroups:', JSON.stringify(formData.value.specialistsGroups, null, 2))
-    // isPublished removed from product creation
+    // Update store with form data before creating (for consistency)
+    productsStore.populateFormWithFullProductData({
+      product_code: formData.value.productCode,
+      translation_key: formData.value.translationKey || generateUUID(),
+      status_code: formData.value.statusCode || 'draft',
+      owner: '',
+      specialistsGroups: formData.value.specialistsGroups,
+      translations: formData.value.translations,
+      is_visible_owner: false,
+      is_visible_groups: false,
+      is_visible_tech_specs: false,
+      is_visible_long_description: false
+    } as any)
 
     // Prepare data for API - only send filled languages
     const translations: any = {}
@@ -477,9 +553,6 @@ const createProduct = async () => {
       specialistsGroups: formData.value.specialistsGroups,
       translations: translations
     }
-
-    // Debug: Log prepared productData
-    console.log('[ProductEditorDetails] Prepared productData:', JSON.stringify(productData, null, 2))
 
     // Call service to create product
     const result = await serviceCreateProduct.createProduct(productData)
@@ -525,13 +598,38 @@ const updateProduct = async () => {
   isSubmitting.value = true
   
   try {
+    // Sync local formData to store before update (so store can determine changed fields)
+    productsStore.populateFormWithFullProductData({
+      product_code: formData.value.productCode,
+      translation_key: formData.value.translationKey,
+      status_code: formData.value.statusCode,
+      owner: formData.value.owner,
+      specialistsGroups: formData.value.specialistsGroups,
+      translations: formData.value.translations,
+      is_visible_owner: formData.value.visibility.isVisibleOwner,
+      is_visible_groups: formData.value.visibility.isVisibleGroups,
+      is_visible_tech_specs: formData.value.visibility.isVisibleTechSpecs,
+      is_visible_long_description: formData.value.visibility.isVisibleLongDescription
+    } as any)
+    
     // Use service method that sends only changed fields
     const result = await serviceUpdateProduct.updateProductFromForm()
     
     if (result.success) {
-      // Product was updated successfully, data is already updated in store
-      // Original data is also updated in store to reset change tracking
-      console.log('Product updated successfully:', result)
+      // Update initial data after successful update to reset change tracking (same approach as SectionEditor)
+      // Store is already updated by serviceUpdateProduct.updateProduct, so we just reset local tracking
+      if (initialProductData.value) {
+        initialProductData.value = {
+          productCode: formData.value.productCode,
+          translationKey: formData.value.translationKey,
+          statusCode: formData.value.statusCode,
+          specialistsGroups: [...formData.value.specialistsGroups],
+          translations: JSON.parse(JSON.stringify(formData.value.translations)) // Deep copy
+        }
+      }
+      
+      // Store is already updated by serviceUpdateProduct.updateProduct
+      // productsStore.updateOriginalProductData() is called by the service
     }
     
   } catch (error) {
@@ -614,7 +712,47 @@ const clearPicture = () => {
   uiStore.showSuccessSnackbar(t('admin.products.editor.messages.picture.cleared'))
 }
 
-// Load product data when in edit mode
+// Populate form data from product data (same approach as SectionEditor.populateFormWithSection)
+const populateFormWithProductData = (productData: any) => {
+  const defaultTranslations = {
+    english: { name: '', shortDesc: '', longDesc: '', techSpecs: {} },
+    russian: { name: '', shortDesc: '', longDesc: '', techSpecs: {} }
+  }
+  
+  const safeTranslations = {
+    english: { ...defaultTranslations.english, ...(productData.translations?.english || {}) },
+    russian: { ...defaultTranslations.russian, ...(productData.translations?.russian || {}) }
+  }
+  
+  formData.value = {
+    productCode: productData.product_code || '',
+    translationKey: productData.translation_key || '',
+    statusCode: productData.status_code || '',
+    owner: productData.owner || '',
+    specialistsGroups: [...(productData.specialistsGroups || [])],
+    translations: safeTranslations,
+    visibility: {
+      isVisibleOwner: productData.is_visible_owner || false,
+      isVisibleGroups: productData.is_visible_groups || false,
+      isVisibleTechSpecs: productData.is_visible_tech_specs || false,
+      isVisibleLongDescription: productData.is_visible_long_description || false
+    }
+  }
+  
+  // Store initial data for change tracking (same approach as SectionEditor)
+  initialProductData.value = {
+    productCode: formData.value.productCode,
+    translationKey: formData.value.translationKey,
+    statusCode: formData.value.statusCode,
+    specialistsGroups: [...formData.value.specialistsGroups],
+    translations: JSON.parse(JSON.stringify(formData.value.translations)) // Deep copy
+  }
+  
+  // Also update store for consistency (but don't trigger watch cycles)
+  productsStore.setEditingProductData(productData)
+}
+
+// Load product data from API (same approach as SectionEditor.loadSectionData)
 const loadProductData = async () => {
   if (isEditMode.value && editingProductId.value) {
     isLoadingProduct.value = true
@@ -623,22 +761,15 @@ const loadProductData = async () => {
       const productData = await serviceFetchSingleProduct.fetchProduct(editingProductId.value)
       
       if (productData) {
-        // Update store with fetched data
-        productsStore.setEditingProductData(productData)
-        
-        // Save initial values for tracking changes
-        initialSpecialistsGroups.value = [...(formData.value.specialistsGroups || [])]
-        
+        populateFormWithProductData(productData)
         uiStore.showSuccessSnackbar(t('admin.products.editor.messages.data.loaded'))
       } else {
         uiStore.showErrorSnackbar(t('admin.products.editor.messages.data.loadError'))
-        // Close editor if product not found
         productsStore.closeProductEditor()
       }
     } catch (error) {
       console.error('Error loading product data:', error)
       uiStore.showErrorSnackbar(t('admin.products.editor.messages.data.loadError'))
-      // Close editor on error
       productsStore.closeProductEditor()
     } finally {
       isLoadingProduct.value = false
@@ -646,50 +777,36 @@ const loadProductData = async () => {
   }
 }
 
-// Watch for changes in editingProductId to reload data when needed
-watch(editingProductId, (newProductId, oldProductId) => {
-  if (newProductId && newProductId !== oldProductId && isEditMode.value) {
-    // Check if we need to load data
-    if (productsStore.needsProductDataLoad(newProductId)) {
-      loadProductData()
-    }
-  }
-}, { immediate: false })
 
-// Watch for changes in editor mode
-watch(isEditMode, (newMode) => {
-  if (newMode && editingProductId.value) {
-    // Check if we need to load data
-    if (productsStore.needsProductDataLoad(editingProductId.value)) {
-      loadProductData()
-    }
-  }
-}, { immediate: false })
-
-// Initialize form data on mount
+// Initialize form data on mount (same approach as SectionEditor.onMounted)
 onMounted(async () => {
   // Load validation rules first
   await loadValidationRules()
   
   if (isCreationMode.value) {
+    // Initialize from store for creation mode
+    const storeFormData = productsStore.formData
+    formData.value = {
+      productCode: storeFormData.productCode || '',
+      translationKey: storeFormData.translationKey || '',
+      statusCode: storeFormData.statusCode || '',
+      owner: storeFormData.owner || '',
+      specialistsGroups: [...(storeFormData.specialistsGroups || [])],
+      translations: {
+        english: { ...storeFormData.translations?.english || { name: '', shortDesc: '', longDesc: '', techSpecs: {} } },
+        russian: { ...storeFormData.translations?.russian || { name: '', shortDesc: '', longDesc: '', techSpecs: {} } }
+      },
+      visibility: { ...storeFormData.visibility }
+    }
+    
     // Set default status if not set
     if (!formData.value.statusCode && statusOptions.value.length > 0) {
-      // Use 'draft' if available, otherwise first status
       const draftStatus = statusOptions.value.find((s: any) => s.value === 'draft')
       formData.value.statusCode = draftStatus ? draftStatus.value : statusOptions.value[0].value
     }
-    
-    // Initialize empty initial values for creation mode
-    initialSpecialistsGroups.value = []
-  } else if (isEditMode.value && editingProductId.value) {
-    // Check if we need to load data
-    if (productsStore.needsProductDataLoad(editingProductId.value)) {
-      // Load product data for editing
-      await loadProductData()
-    } else {
-      // Data already loaded, just save initial values
-      initialSpecialistsGroups.value = [...(formData.value.specialistsGroups || [])]
-    }
+  } else if (isEditMode.value) {
+    // Load product data for editing (same approach as SectionEditor)
+    await loadProductData()
   }
 })
 </script>
