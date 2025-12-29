@@ -932,6 +932,7 @@ onMounted(async () => {
               
               <!-- Organization Admin -->
               <v-list-item
+                v-if="can('adminOrg:module:access')"
                 v-tooltip="{
                   text: $t('admin.nav.org.main'),
                   location: 'right',
