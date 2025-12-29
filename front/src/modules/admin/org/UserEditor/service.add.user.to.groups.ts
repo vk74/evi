@@ -1,18 +1,29 @@
 /**
  * @file service.add.user.to.groups.ts
- * Service for adding a user to multiple groups in the ItemSelector.
+ * Version: 1.1.0
+ * Service for adding a user to multiple groups in the UserEditor.
  * 
  * Functionality:
  * - Adds a user to multiple groups via the API based on group IDs and user ID
  * - Validates the received data
  * - Handles errors during the operation
  * - Provides logging for key operations
+ * Frontend file
+ * 
+ * Changes in v1.1.0:
+ * - Moved from core/ui/modals/item-selector to UserEditor module
+ * - Updated API endpoint from /api/core/item-selector/add-user-to-groups to /api/admin/users/:userId/add-to-groups
  */
 import { api } from '@/core/api/service.axios';
 import { useUiStore } from '@/core/state/uistate';
-import { useUserEditorStore } from '@/modules/admin/org/UserEditor/state.user.editor';
+import { useUserEditorStore } from './state.user.editor';
 import { useUserAuthStore } from '@/core/auth/state.user.auth';
-import { AddUsersResponse, AddUsersToGroupRequest } from './types.action.services';
+
+export interface AddUsersResponse {
+  success: boolean;
+  count: number;
+  message?: string;
+}
 
 // Logger for tracking operations
 const logger = {
@@ -43,19 +54,18 @@ async function addUserToGroups(groupIds: string[]): Promise<AddUsersResponse> {
 
   // Log the sent request with request body
   const requestBody = {
-    userId,
     groupIds,
     addedBy: userStore.userID || '', // Используем UUID текущего пользователя из userStore
   };
   logger.info('Sending request to add user to groups', {
-    endpoint: '/api/core/item-selector/add-user-to-groups',
+    endpoint: `/api/admin/users/${userId}/add-to-groups`,
     requestBody,
   });
 
   try {
     // Send POST request to the API endpoint
     const response = await api.post<AddUsersResponse>(
-      '/api/core/item-selector/add-user-to-groups',
+      `/api/admin/users/${userId}/add-to-groups`,
       requestBody,
     );
 
@@ -82,3 +92,4 @@ async function addUserToGroups(groupIds: string[]): Promise<AddUsersResponse> {
 }
 
 export default addUserToGroups;
+

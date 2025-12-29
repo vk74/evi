@@ -1,5 +1,6 @@
 /**
  * @file service.add.users.to.group.ts
+ * Version: 1.1.0
  * BACKEND Service for adding users to a group in the database.
  * 
  * Functionality:
@@ -9,20 +10,26 @@
  * - Provides comprehensive error handling
  * - Returns formatted response
  * - Publishes events to event bus for monitoring and tracking
+ * Backend file
+ * 
+ * Changes in v1.1.0:
+ * - Moved from core/services/item-selector to groupEditor module
+ * - Updated imports to use relative paths to core services
+ * - Updated event source from 'item-selector service' to 'group-editor service'
  */
 import { Pool } from 'pg';
-import { pool as pgPool } from '../../db/maindb';
-import { queries } from './queries.item.selector';
+import { pool as pgPool } from '../../../../core/db/maindb';
+import { queries } from '../../../../core/services/item-selector/queries.item.selector';
 import type { 
   AddUsersToGroupResponse,
   ServiceError, 
   ValidationError,
   NotFoundError
-} from './types.item.selector';
-import { getUserAccountStatus } from '../../helpers/get.user.account.status';
-import { getSetting, parseSettingValue } from '../../../modules/admin/settings/cache.settings';
-import { createAndPublishEvent } from '../../eventBus/fabric.events';
-import { ADD_USERS_TO_GROUP_SERVICE_EVENTS } from './events.item.selector';
+} from '../../../../core/services/item-selector/types.item.selector';
+import { getUserAccountStatus } from '../../../../core/helpers/get.user.account.status';
+import { getSetting, parseSettingValue } from '../../settings/cache.settings';
+import { createAndPublishEvent } from '../../../../core/eventBus/fabric.events';
+import { ADD_USERS_TO_GROUP_SERVICE_EVENTS } from '../../../../core/services/item-selector/events.item.selector';
 
 const pool = pgPool as Pool;
 
@@ -329,3 +336,4 @@ export async function addUsersToGroup(
 }
 
 export default addUsersToGroup;
+

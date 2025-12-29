@@ -1,23 +1,27 @@
 /**
  * @file service.change.group.owner.ts
- * FRONTEND service for changing the owner of a group in the ItemSelector.
+ * Version: 1.1.0
+ * FRONTEND service for changing the owner of a group in the GroupEditor.
  * 
  * Functionality:
  * - Changes the owner of a group via the API based on selected user ID
  * - Validates the received data
  * - Handles errors during the operation
  * - Provides logging for key operations
+ * Frontend file
+ * 
+ * Changes in v1.1.0:
+ * - Moved from core/ui/modals/item-selector to GroupEditor module
+ * - Updated API endpoint from /api/core/item-selector/change-group-owner to /api/admin/groups/:groupId/change-owner
  */
 import { api } from '@/core/api/service.axios';
 import { useUiStore } from '@/core/state/uistate';
-import { useGroupEditorStore } from '@/modules/admin/org/GroupEditor/state.group.editor';
+import { useGroupEditorStore } from './state.group.editor';
 import { useUserAuthStore } from '@/core/auth/state.user.auth';
-import { ActionResult } from './types.item.selector';
 import { useStoreGroupsList } from '@/modules/admin/org/GroupsList/state.groups.list';
 
 // Define interfaces for request and response
 interface ChangeGroupOwnerRequest {
-  groupId: string;      // ID of the group
   newOwnerId: string;   // ID of the new owner
   changedBy: string;    // ID of the user making the change
 }
@@ -26,6 +30,13 @@ interface ChangeGroupOwnerResponse {
   success: boolean;
   message?: string;
   oldOwnerId?: string;  // Optional: ID of the previous owner
+}
+
+export interface ActionResult {
+  success: boolean;
+  count?: number;
+  message?: string;
+  [key: string]: any;
 }
 
 // Logger for tracking operations
@@ -74,20 +85,19 @@ async function changeGroupOwner(userIds: string[]): Promise<ActionResult> {
 
   // Log the sent request with request body
   const requestBody: ChangeGroupOwnerRequest = {
-    groupId,
     newOwnerId,
     changedBy: userStore.userID || '', // Current user ID from userStore
   };
   
   logger.info('Sending request to change group owner', {
-    endpoint: '/api/core/item-selector/change-group-owner',
+    endpoint: `/api/admin/groups/${groupId}/change-owner`,
     requestBody,
   });
 
   try {
     // Send POST request to the API endpoint
     const response = await api.post<ChangeGroupOwnerResponse>(
-      '/api/core/item-selector/change-group-owner',
+      `/api/admin/groups/${groupId}/change-owner`,
       requestBody,
     );
 
@@ -134,3 +144,4 @@ async function changeGroupOwner(userIds: string[]): Promise<ActionResult> {
 }
 
 export default changeGroupOwner;
+

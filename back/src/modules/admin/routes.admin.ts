@@ -1,5 +1,5 @@
 /**
- * version: 1.2.0
+ * version: 1.3.0
  * Backend router file for admin functionality.
  * Defines routes for administrative functions focused on organization management.
  * All routes are protected by rate limiting, JWT validation and user status check middleware.
@@ -11,6 +11,10 @@
  * Changes in v1.2.0:
  * - Added checkPermissions middleware to product routes for authorization
  * - Routes now check user permissions before allowing access to product operations
+ * 
+ * Changes in v1.3.0:
+ * - Added routes for adding user to groups, adding users to group, and changing group owner
+ * - Routes moved from core/item-selector to admin module
  */
 
 import express, { Router } from 'express';
@@ -81,6 +85,9 @@ import fetchPriceItemTypesController from './pricing/controller.admin.fetch.pric
 import registerUserController from '../account/controller.register.user';
 import fetchUserGroupsController from './org/userEditor/controller.fetch.user.groups';
 import removeUserFromGroupsController from './org/userEditor/controller.remove.user.from.groups';
+import addUserToGroupsController from './org/userEditor/controller.add.user.to.groups';
+import addUsersToGroupController from './org/groupEditor/controller.add.users.to.group';
+import changeGroupOwnerController from './org/groupEditor/controller.change.group.owner';
 import getUserLocationController from '../account/controller.get.user.location';
 import fetchAllRegionsController from './settings/controller.admin.fetch.regions';
 import updateRegionsController from './settings/controller.admin.update.regions';
@@ -97,6 +104,7 @@ router.post('/api/admin/users/update-user-by-userid/:userId', checkRateLimit, ch
 router.post('/api/admin/users/delete-selected-users', checkRateLimit, checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, deleteSelectedUsers);
 router.get('/api/admin/users/:userId/groups', checkRateLimit, checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, fetchUserGroupsController);
 router.post('/api/admin/users/remove-from-groups', checkRateLimit, checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, removeUserFromGroupsController);
+router.post('/api/admin/users/:userId/add-to-groups', checkRateLimit, checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, addUserToGroupsController);
 
 // Routes for Groups
 router.post('/api/admin/groups/create-new-group', checkRateLimit, checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, createGroupController);
@@ -106,6 +114,8 @@ router.get('/api/admin/groups/fetch-group-by-groupid/:groupId', checkRateLimit, 
 router.post('/api/admin/groups/update-group-by-groupid', checkRateLimit, checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, updateGroupById);
 router.get('/api/admin/groups/:groupId/members', checkRateLimit, checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, fetchGroupMembers);
 router.post('/api/admin/groups/:groupId/members/remove', checkRateLimit, checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, removeGroupMembers);
+router.post('/api/admin/groups/:groupId/add-members', checkRateLimit, checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, addUsersToGroupController);
+router.post('/api/admin/groups/:groupId/change-owner', checkRateLimit, checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, changeGroupOwnerController);
 
 // Routes for Catalog Admin
 router.get('/api/admin/catalog/fetch-sections', checkRateLimit, checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, checkPermissions('adminCatalog:sections:read'), fetchCatalogSections);

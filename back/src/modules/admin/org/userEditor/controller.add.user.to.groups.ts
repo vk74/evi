@@ -1,23 +1,34 @@
 /**
  * @file controller.add.user.to.groups.ts
+ * Version: 1.1.0
  * Controller for handling requests to add a user to multiple groups.
  * 
  * Functionality:
- * - Receives requests with user ID and group IDs
+ * - Receives requests with user ID from URL and group IDs from body
  * - Validates input data
  * - Calls service to add user to groups
  * - Returns response with operation status
  * - Handles and logs errors
  * - Publishes events to event bus for monitoring and tracking
+ * Backend file
+ * 
+ * Changes in v1.1.0:
+ * - Moved from core/services/item-selector to userEditor module
+ * - Updated to get userId from URL parameter instead of request body
+ * - Updated imports to use relative paths
  */
 import { Request, Response } from 'express';
 import { addUserToGroups } from './service.add.user.to.groups';
 import type { 
-  AddUserToGroupsRequest,
   ServiceError
-} from './types.item.selector';
-import { createAndPublishEvent } from '../../eventBus/fabric.events';
-import { ADD_USER_TO_GROUPS_EVENTS } from './events.item.selector';
+} from '../../../../core/services/item-selector/types.item.selector';
+import { createAndPublishEvent } from '../../../../core/eventBus/fabric.events';
+import { ADD_USER_TO_GROUPS_EVENTS } from '../../../../core/services/item-selector/events.item.selector';
+
+interface AddUserToGroupsRequestBody {
+  groupIds: string[];
+  addedBy?: string;
+}
 
 /**
  * Controller function that handles HTTP requests for adding a user to multiple groups
@@ -25,27 +36,28 @@ import { ADD_USER_TO_GROUPS_EVENTS } from './events.item.selector';
  * @param res Express response object
  */
 async function addUserToGroupsController(req: Request & { user?: { uuid: string } }, res: Response) {
-  const requestData: AddUserToGroupsRequest = req.body;
+  const userId = req.params.userId;
+  const requestData: AddUserToGroupsRequestBody = req.body;
   
   // Publish request received event
   await createAndPublishEvent({
     req,
     eventName: ADD_USER_TO_GROUPS_EVENTS.REQUEST_RECEIVED.eventName,
     payload: {
-      userId: requestData.userId,
+      userId,
       groupCount: requestData.groupIds?.length || 0,
       requestedBy: req.user?.uuid
     }
   });
 
   // Basic validation
-  if (!requestData.userId || !requestData.groupIds || !Array.isArray(requestData.groupIds) || requestData.groupIds.length === 0) {
+  if (!userId || !requestData.groupIds || !Array.isArray(requestData.groupIds) || requestData.groupIds.length === 0) {
     // Publish validation error event
     await createAndPublishEvent({
       req,
       eventName: ADD_USER_TO_GROUPS_EVENTS.VALIDATION_ERROR.eventName,
       payload: {
-        userId: requestData.userId,
+        userId,
         groupIds: requestData.groupIds
       },
       errorData: 'Invalid request. User ID and at least one group ID are required.'
@@ -62,7 +74,7 @@ async function addUserToGroupsController(req: Request & { user?: { uuid: string 
   try {
     // Call service function to process the request
     const result = await addUserToGroups(
-      requestData.userId,
+      userId,
       requestData.groupIds,
       requestData.addedBy || req.user?.uuid || ''
     );
@@ -72,7 +84,7 @@ async function addUserToGroupsController(req: Request & { user?: { uuid: string 
       req,
       eventName: ADD_USER_TO_GROUPS_EVENTS.RESPONSE_SUCCESS.eventName,
       payload: {
-        userId: requestData.userId,
+        userId,
         addedCount: result.count
       }
     });
@@ -86,7 +98,7 @@ async function addUserToGroupsController(req: Request & { user?: { uuid: string 
       req,
       eventName: ADD_USER_TO_GROUPS_EVENTS.RESPONSE_ERROR.eventName,
       payload: {
-        userId: requestData.userId,
+        userId,
         error: error
       },
       errorData: error.message
@@ -100,7 +112,7 @@ async function addUserToGroupsController(req: Request & { user?: { uuid: string 
           req,
           eventName: ADD_USER_TO_GROUPS_EVENTS.RESPONSE_VALIDATION_ERROR.eventName,
           payload: {
-            userId: requestData.userId,
+            userId,
             error: error
           },
           errorData: error.message
@@ -118,7 +130,7 @@ async function addUserToGroupsController(req: Request & { user?: { uuid: string 
           req,
           eventName: ADD_USER_TO_GROUPS_EVENTS.RESPONSE_NOT_FOUND_ERROR.eventName,
           payload: {
-            userId: requestData.userId,
+            userId,
             error: error
           },
           errorData: error.message
@@ -136,7 +148,7 @@ async function addUserToGroupsController(req: Request & { user?: { uuid: string 
           req,
           eventName: ADD_USER_TO_GROUPS_EVENTS.RESPONSE_PERMISSION_ERROR.eventName,
           payload: {
-            userId: requestData.userId,
+            userId,
             error: error
           },
           errorData: error.message
@@ -161,3 +173,4 @@ async function addUserToGroupsController(req: Request & { user?: { uuid: string 
 }
 
 export default addUserToGroupsController;
+

@@ -1,5 +1,5 @@
 /**
- * version: 1.1.0
+ * version: 1.2.0
  * Core routes for global backend services.
  * 
  * Functionality:
@@ -16,6 +16,9 @@
  * 
  * Changes in v1.1.0:
  * - Added rate limit guard as first guard in all routes for DDoS protection
+ * 
+ * Changes in v1.2.0:
+ * - Removed add-users-to-group, add-user-to-groups, and change-group-owner routes (moved to admin routes)
  */
 
 import express, { Router } from 'express';
@@ -30,9 +33,6 @@ import getAppCountriesListController from '../controllers/controller.get.app.cou
 import getActivePriceListIdsController from '../controllers/controller.get.active.pricelist.ids';
 import searchUsers from '../services/item-selector/controller.search.users';
 import searchGroups from '../services/item-selector/controller.search.groups';
-import addUsersToGroup from '../services/item-selector/controller.add.users.to.group';
-import addUserToGroups from '../services/item-selector/controller.add.user.to.groups';
-import changeGroupOwner from '../services/item-selector/controller.change.group.owner';
 
 import selfChangePasswordController from '../services/change-password/controller.self.change.password';
 import adminResetPasswordController from '../services/change-password/controller.admin.change.password';
@@ -49,9 +49,6 @@ router.get('/api/core/pricelists/active/ids', checkRateLimit, validateJWT, check
 // item selector universal component services
 router.get('/api/core/item-selector/search-users', checkRateLimit, validateJWT, checkIsUserStatusActive, searchUsers); 
 router.get('/api/core/item-selector/search-groups', checkRateLimit, validateJWT, checkIsUserStatusActive, searchGroups);
-router.post('/api/core/item-selector/add-users-to-group', checkRateLimit, validateJWT, checkIsUserStatusActive, addUsersToGroup);
-router.post('/api/core/item-selector/add-user-to-groups', checkRateLimit, validateJWT, checkIsUserStatusActive, addUserToGroups);
-router.post('/api/core/item-selector/change-group-owner', checkRateLimit, validateJWT, checkIsUserStatusActive, changeGroupOwner);
 
 // change password universal component
 router.post('/api/core/users/self-change-password', checkRateLimit, validateJWT, checkIsUserStatusActive, selfChangePasswordController);

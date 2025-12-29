@@ -1,5 +1,6 @@
 /**
  * @file service.change.group.owner.ts
+ * Version: 1.1.0
  * BACKEND Service for changing the owner of a group in the database.
  * 
  * Functionality:
@@ -9,19 +10,25 @@
  * - Provides comprehensive error handling
  * - Returns formatted response with old owner ID
  * - Publishes events to event bus for monitoring and tracking
+ * Backend file
+ * 
+ * Changes in v1.1.0:
+ * - Moved from core/services/item-selector to groupEditor module
+ * - Updated imports to use relative paths to core services
+ * - Updated event source from 'item-selector service' to 'group-editor service'
  */
 import { Pool } from 'pg';
-import { pool as pgPool } from '../../db/maindb';
-import { queries } from './queries.item.selector';
+import { pool as pgPool } from '../../../../core/db/maindb';
+import { queries } from '../../../../core/services/item-selector/queries.item.selector';
 import type { 
   ChangeGroupOwnerResponse,
   ServiceError, 
   ValidationError,
   NotFoundError
-} from './types.item.selector';
-import { createAndPublishEvent } from '../../eventBus/fabric.events';
-import { CHANGE_GROUP_OWNER_SERVICE_EVENTS } from './events.item.selector';
-import { groupsRepository } from '../../../modules/admin/org/groupsList/repository.groups.list';
+} from '../../../../core/services/item-selector/types.item.selector';
+import { createAndPublishEvent } from '../../../../core/eventBus/fabric.events';
+import { CHANGE_GROUP_OWNER_SERVICE_EVENTS } from '../../../../core/services/item-selector/events.item.selector';
+import { groupsRepository } from '../groupsList/repository.groups.list';
 
 const pool = pgPool as Pool;
 
@@ -281,3 +288,4 @@ export async function changeGroupOwner(
 }
 
 export default changeGroupOwner;
+

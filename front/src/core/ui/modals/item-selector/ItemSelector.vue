@@ -1,9 +1,12 @@
 <!--
   File: ItemSelector.vue
-  Version: 1.0.0
+  Version: 1.1.0
   Description: Universal modal component for searching and selecting objects
   Purpose: Provides interface for searching objects via searchService and performing actions via actionService
   Frontend file
+  
+  Changes in v1.1.0:
+  - Updated imports for addUsersToGroup, addUserToGroups, and changeGroupOwner services to point to their new locations in UserEditor and GroupEditor modules
 -->
 <script setup lang="ts">
 import { ref, computed, onMounted, onBeforeUnmount, PropType, watch } from 'vue'
@@ -15,9 +18,9 @@ import { PhMagnifyingGlass, PhX, PhPlus, PhMinus } from '@phosphor-icons/vue'
 // Импорт сервисов
 import searchUsers from '@/core/ui/modals/item-selector/service.search.users'
 import searchGroups from '@/core/ui/modals/item-selector/service.search.groups'
-import addUsersToGroup from '@/core/ui/modals/item-selector/service.add.users.to.group'
-import addUserToGroups from '@/core/ui/modals/item-selector/service.add.user.to.groups'
-import changeGroupOwner from './service.change.group.owner'
+import addUsersToGroup from '@/modules/admin/org/GroupEditor/service.add.users.to.group'
+import addUserToGroups from '@/modules/admin/org/UserEditor/service.add.user.to.groups'
+import changeGroupOwner from '@/modules/admin/org/GroupEditor/service.change.group.owner'
 import returnSelectedUsername from './service.return.selected.username'
 import returnSelectedGroup from './service.return.selected.group'
 import returnMultipleGroups from './service.return.multiple.groups'

@@ -1,18 +1,29 @@
 /**
  * @file service.add.users.to.group.ts
- * Service for adding users to a group in the ItemSelector.
+ * Version: 1.1.0
+ * Service for adding users to a group in the GroupEditor.
  * 
  * Functionality:
  * - Adds users to a group via the API based on user IDs and group ID
  * - Validates the received data
  * - Handles errors during the operation
  * - Provides logging for key operations
+ * Frontend file
+ * 
+ * Changes in v1.1.0:
+ * - Moved from core/ui/modals/item-selector to GroupEditor module
+ * - Updated API endpoint from /api/core/item-selector/add-users-to-group to /api/admin/groups/:groupId/add-members
  */
 import { api } from '@/core/api/service.axios';
 import { useUiStore } from '@/core/state/uistate';
-import { useGroupEditorStore } from '@/modules/admin/org/GroupEditor/state.group.editor';
+import { useGroupEditorStore } from './state.group.editor';
 import { useUserAuthStore } from '@/core/auth/state.user.auth';
-import { AddUsersResponse, AddUsersToGroupRequest } from './types.action.services';
+
+export interface AddUsersResponse {
+  success: boolean;
+  count: number;
+  message?: string;
+}
 
 // Logger for tracking operations
 const logger = {
@@ -43,19 +54,18 @@ async function addUsersToGroup(userIds: string[]): Promise<AddUsersResponse> {
 
   // Log the sent request with request body
   const requestBody = {
-    groupId,
     userIds,
     addedBy: userStore.userID || '', // Используем UUID текущего пользователя из userStore
   };
   logger.info('Sending request to add users to group', {
-    endpoint: '/api/core/item-selector/add-users-to-group',
+    endpoint: `/api/admin/groups/${groupId}/add-members`,
     requestBody,
   });
 
   try {
     // Send POST request to the API endpoint
     const response = await api.post<AddUsersResponse>(
-      '/api/core/item-selector/add-users-to-group',
+      `/api/admin/groups/${groupId}/add-members`,
       requestBody,
     );
 
@@ -82,3 +92,4 @@ async function addUsersToGroup(userIds: string[]): Promise<AddUsersResponse> {
 }
 
 export default addUsersToGroup;
+
