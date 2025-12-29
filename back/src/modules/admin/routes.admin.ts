@@ -1,5 +1,5 @@
 /**
- * version: 1.3.0
+ * version: 1.4.0
  * Backend router file for admin functionality.
  * Defines routes for administrative functions focused on organization management.
  * All routes are protected by rate limiting, JWT validation and user status check middleware.
@@ -15,6 +15,10 @@
  * Changes in v1.3.0:
  * - Added routes for adding user to groups, adding users to group, and changing group owner
  * - Routes moved from core/item-selector to admin module
+ * 
+ * Changes in v1.4.0:
+ * - Added checkPermissions middleware to organization admin routes
+ * - Implemented RBAC for users, groups, and settings management
  */
 
 import express, { Router } from 'express';
@@ -97,25 +101,25 @@ import updateUserLocationControllerNew from '../../core/services/user-location-s
 const router: Router = express.Router();
 
 // Routes for Users
-router.post('/api/admin/users/create-new-user', checkRateLimit, checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, createUserController);
-router.get('/api/admin/users/fetch-users', checkRateLimit, checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, fetchUsers);
-router.get('/api/admin/users/fetch-user-by-userid/:userId', checkRateLimit, checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, loadUserById);
-router.post('/api/admin/users/update-user-by-userid/:userId', checkRateLimit, checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, updateUserById);
-router.post('/api/admin/users/delete-selected-users', checkRateLimit, checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, deleteSelectedUsers);
-router.get('/api/admin/users/:userId/groups', checkRateLimit, checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, fetchUserGroupsController);
-router.post('/api/admin/users/remove-from-groups', checkRateLimit, checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, removeUserFromGroupsController);
-router.post('/api/admin/users/:userId/add-to-groups', checkRateLimit, checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, addUserToGroupsController);
+router.post('/api/admin/users/create-new-user', checkRateLimit, checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, checkPermissions('adminOrg:users:create'), createUserController);
+router.get('/api/admin/users/fetch-users', checkRateLimit, checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, checkPermissions('adminOrg:users:read'), fetchUsers);
+router.get('/api/admin/users/fetch-user-by-userid/:userId', checkRateLimit, checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, checkPermissions('adminOrg:users:read'), loadUserById);
+router.post('/api/admin/users/update-user-by-userid/:userId', checkRateLimit, checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, checkPermissions('adminOrg:users:update'), updateUserById);
+router.post('/api/admin/users/delete-selected-users', checkRateLimit, checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, checkPermissions('adminOrg:users:delete'), deleteSelectedUsers);
+router.get('/api/admin/users/:userId/groups', checkRateLimit, checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, checkPermissions('adminOrg:users:read'), fetchUserGroupsController);
+router.post('/api/admin/users/remove-from-groups', checkRateLimit, checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, checkPermissions('adminOrg:users:manage_groups'), removeUserFromGroupsController);
+router.post('/api/admin/users/:userId/add-to-groups', checkRateLimit, checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, checkPermissions('adminOrg:users:manage_groups'), addUserToGroupsController);
 
 // Routes for Groups
-router.post('/api/admin/groups/create-new-group', checkRateLimit, checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, createGroupController);
-router.get('/api/admin/groups/fetch-groups', checkRateLimit, checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, fetchGroups);
-router.post('/api/admin/groups/delete-selected-groups', checkRateLimit, checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, deleteSelectedGroupsController);
-router.get('/api/admin/groups/fetch-group-by-groupid/:groupId', checkRateLimit, checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, fetchGroupById);
-router.post('/api/admin/groups/update-group-by-groupid', checkRateLimit, checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, updateGroupById);
-router.get('/api/admin/groups/:groupId/members', checkRateLimit, checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, fetchGroupMembers);
-router.post('/api/admin/groups/:groupId/members/remove', checkRateLimit, checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, removeGroupMembers);
-router.post('/api/admin/groups/:groupId/add-members', checkRateLimit, checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, addUsersToGroupController);
-router.post('/api/admin/groups/:groupId/change-owner', checkRateLimit, checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, changeGroupOwnerController);
+router.post('/api/admin/groups/create-new-group', checkRateLimit, checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, checkPermissions('adminOrg:groups:create'), createGroupController);
+router.get('/api/admin/groups/fetch-groups', checkRateLimit, checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, checkPermissions('adminOrg:groups:read'), fetchGroups);
+router.post('/api/admin/groups/delete-selected-groups', checkRateLimit, checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, checkPermissions('adminOrg:groups:delete'), deleteSelectedGroupsController);
+router.get('/api/admin/groups/fetch-group-by-groupid/:groupId', checkRateLimit, checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, checkPermissions('adminOrg:groups:read'), fetchGroupById);
+router.post('/api/admin/groups/update-group-by-groupid', checkRateLimit, checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, checkPermissions('adminOrg:groups:update'), updateGroupById);
+router.get('/api/admin/groups/:groupId/members', checkRateLimit, checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, checkPermissions('adminOrg:groups:read'), fetchGroupMembers);
+router.post('/api/admin/groups/:groupId/members/remove', checkRateLimit, checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, checkPermissions('adminOrg:groups:manage_members'), removeGroupMembers);
+router.post('/api/admin/groups/:groupId/add-members', checkRateLimit, checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, checkPermissions('adminOrg:groups:manage_members'), addUsersToGroupController);
+router.post('/api/admin/groups/:groupId/change-owner', checkRateLimit, checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, checkPermissions('adminOrg:groups:change_owner'), changeGroupOwnerController);
 
 // Routes for Catalog Admin
 router.get('/api/admin/catalog/fetch-sections', checkRateLimit, checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, checkPermissions('adminCatalog:sections:read'), fetchCatalogSections);
@@ -193,8 +197,8 @@ router.post('/api/admin/pricing/pricelists/:priceListId/updateItems', checkRateL
 router.get('/api/admin/pricing/item-types', checkRateLimit, checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, checkPermissions('adminPricing:items:read'), fetchPriceItemTypesController);
 
 // Routes for Settings Admin - Regions
-router.get('/api/admin/settings/regions/fetchall', checkRateLimit, checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, fetchAllRegionsController);
-router.post('/api/admin/settings/regions/update', checkRateLimit, checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, updateRegionsController);
+router.get('/api/admin/settings/regions/fetchall', checkRateLimit, checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, checkPermissions('adminOrg:settings:read'), fetchAllRegionsController);
+router.post('/api/admin/settings/regions/update', checkRateLimit, checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, checkPermissions('adminOrg:settings:update'), updateRegionsController);
 
 // Export using ES modules syntax
 export default router;
