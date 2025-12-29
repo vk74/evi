@@ -107,13 +107,9 @@ export const useGroupEditorStore = defineStore('groupEditor', {
         group_id: (this.mode as EditMode).groupId
       }
 
-      const currentData = {
-        ...this.group,
-      }
-
-      const originalData = {
-        ...this.originalData,
-      }
+      // Use direct references to maintain reactivity (same approach as UserEditor)
+      const currentData = this.group
+      const originalData = this.originalData
 
       // Check each field and add only changed ones
       if (currentData.group_name !== originalData.group_name) {

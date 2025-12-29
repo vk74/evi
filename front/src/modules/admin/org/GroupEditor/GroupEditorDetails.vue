@@ -1,14 +1,20 @@
 <!--
-version: 1.0.1
+version: 1.0.2
 Frontend file GroupEditorDetails.vue.
 Purpose: Renders the group details form (create/edit) and its right-side actions.
+
+Changes in v1.0.2:
+- Refactored to use local formData ref and initialGroupData ref for change tracking (same approach as SectionEditor)
+- Added local hasChanges computed property that compares formData with initialGroupData
+- All form fields now use v-model directly with formData ref for proper Vue reactivity
+- This ensures reliable change tracking and activates UPDATE button with glow effect when fields are modified
 -->
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue'
+import { ref, computed, watch, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useGroupEditorStore } from './state.group.editor'
 import { useUiStore } from '@/core/state/uistate'
-import { GroupStatus, type EditMode } from './types.group.editor'
+import { GroupStatus, type EditMode, type IGroupData } from './types.group.editor'
 import { useValidationRules } from '@/core/validation/rules.common.fields'
 import { defineAsyncComponent } from 'vue'
 import { fetchGroupService } from './service.fetch.group'
@@ -30,11 +36,44 @@ const isFormValid = ref(false)
 const isSubmitting = ref(false)
 const isOwnerSelectorModalOpen = ref(false)
 
+// Local form data for change tracking (same approach as SectionEditor)
+const formData = ref({
+  group_name: '',
+  group_status: GroupStatus.ACTIVE,
+  group_description: '',
+  group_email: ''
+})
+
+// Initial group data for change tracking
+const initialGroupData = ref<{
+  group_name: string
+  group_status: GroupStatus
+  group_description: string
+  group_email: string
+} | null>(null)
+
 const ownerDisplay = computed(() => {
   return groupEditorStore.group.ownerUsername || groupEditorStore.group.group_owner || ''
 })
 
 const isAuthorized = computed(() => true) // parent enforces auth; keep buttons enabled based on store if needed
+
+// Change tracking computed property (same approach as SectionEditor)
+const hasChanges = computed(() => {
+  if (!groupEditorStore.isEditMode || !initialGroupData.value) {
+    return false
+  }
+  
+  const initial = initialGroupData.value
+  const current = formData.value
+  
+  return (
+    current.group_name !== initial.group_name ||
+    current.group_status !== initial.group_status ||
+    current.group_description !== initial.group_description ||
+    current.group_email !== initial.group_email
+  )
+})
 
 const groupNameRules = [
   (v: string) => !!v || t('admin.groups.editor.messages.requiredFields'),
@@ -62,6 +101,39 @@ async function validate() {
   return valid
 }
 
+// Load group data from API (same approach as SectionEditor.loadSectionData)
+const loadGroupData = async () => {
+  if (groupEditorStore.isEditMode && (groupEditorStore.mode as EditMode).groupId) {
+    try {
+      const groupId = (groupEditorStore.mode as EditMode).groupId
+      const groupData = await fetchGroupService.fetchGroupById(groupId)
+      populateFormWithGroupData(groupData)
+      // Also update store for consistency
+      groupEditorStore.initEditMode(groupData)
+    } catch (error) {
+      console.error('Failed to load group data:', error)
+    }
+  }
+}
+
+// Populate form data from group data (same approach as SectionEditor.populateFormWithSection)
+const populateFormWithGroupData = (groupData: IGroupData) => {
+  const groupFormData = {
+    group_name: groupData.group_name || '',
+    group_status: groupData.group_status || GroupStatus.ACTIVE,
+    group_description: groupData.group_description || '',
+    group_email: groupData.group_email || ''
+  }
+  
+  formData.value = groupFormData
+  
+  // Store initial data for change tracking (same approach as SectionEditor)
+  initialGroupData.value = { ...groupFormData }
+  
+  // Also update store for consistency (but don't trigger watch cycles)
+  groupEditorStore.updateGroup(groupFormData)
+}
+
 async function handleCreateGroup() {
   if (!(await validate())) {
     uiStore.showErrorSnackbar(t('admin.groups.editor.messages.requiredFields'))
@@ -69,12 +141,17 @@ async function handleCreateGroup() {
   }
   try {
     isSubmitting.value = true
+    // Update store with form data before creating
+    groupEditorStore.updateGroup(formData.value)
     const response = await groupEditorStore.createNewGroup()
     if (response?.success) {
-      groupEditorStore.initEditMode({
-        ...groupEditorStore.group, 
-        group_id: response.groupId
-      })
+      const groupData: IGroupData = {
+        ...formData.value,
+        group_id: response.groupId,
+        group_owner: groupEditorStore.group.group_owner
+      }
+      groupEditorStore.initEditMode(groupData)
+      populateFormWithGroupData(groupData)
       uiStore.showSuccessSnackbar(t('admin.groups.editor.messages.createSuccess'))
     }
   } catch (error) {
@@ -89,16 +166,34 @@ async function handleUpdateGroup() {
     uiStore.showErrorSnackbar(t('admin.groups.editor.messages.requiredFields'))
     return
   }
-  if (!groupEditorStore.hasChanges) {
+  if (!hasChanges.value) {
     uiStore.showInfoSnackbar(t('admin.groups.editor.messages.noChanges'))
     return
   }
   isSubmitting.value = true
   try {
-    const requestData = groupEditorStore.prepareUpdateData()
+    // Prepare update data from local formData
+    const groupId = (groupEditorStore.mode as EditMode).groupId
+    const requestData = {
+      group_id: groupId,
+      group_name: formData.value.group_name,
+      group_status: formData.value.group_status,
+      group_description: formData.value.group_description,
+      group_email: formData.value.group_email
+    }
     const success = await (await import('./service.update.group')).updateGroupService.updateGroup(requestData)
     if (success) {
-      // Update original data to reset hasChanges state
+      // Update initial data after successful update to reset change tracking (same approach as SectionEditor)
+      if (initialGroupData.value) {
+        initialGroupData.value = {
+          group_name: formData.value.group_name,
+          group_status: formData.value.group_status,
+          group_description: formData.value.group_description,
+          group_email: formData.value.group_email
+        }
+      }
+      // Also update store for consistency
+      groupEditorStore.updateGroup(formData.value)
       groupEditorStore.updateOriginalData()
       uiStore.showSuccessSnackbar(t('admin.groups.editor.messages.updateSuccess'))
     }
@@ -111,6 +206,13 @@ async function handleUpdateGroup() {
 
 function resetForm() {
   groupEditorStore.resetForm()
+  formData.value = {
+    group_name: '',
+    group_status: GroupStatus.ACTIVE,
+    group_description: '',
+    group_email: ''
+  }
+  initialGroupData.value = null
   formRef.value?.reset()
 }
 
@@ -123,6 +225,7 @@ const handleOwnerChanged = async (result: any) => {
     const groupId = (groupEditorStore.mode as EditMode).groupId
     try {
       const groupData = await fetchGroupService.fetchGroupById(groupId)
+      populateFormWithGroupData(groupData)
       groupEditorStore.initEditMode(groupData)
       uiStore.showSuccessSnackbar(t('admin.groups.editor.messages.ownerChangeSuccess'))
     } catch (error) {
@@ -132,6 +235,21 @@ const handleOwnerChanged = async (result: any) => {
     uiStore.showErrorSnackbar(result?.message || t('admin.groups.editor.messages.ownerChangeError'))
   }
 }
+
+// Initialize form data on mount (same approach as SectionEditor.onMounted)
+onMounted(() => {
+  if (groupEditorStore.isEditMode) {
+    loadGroupData()
+  } else {
+    // In create mode, initialize from store
+    formData.value = {
+      group_name: groupEditorStore.group.group_name || '',
+      group_status: groupEditorStore.group.group_status || GroupStatus.ACTIVE,
+      group_description: groupEditorStore.group.group_description || '',
+      group_email: groupEditorStore.group.group_email || ''
+    }
+  }
+})
 </script>
 
 <template>
@@ -154,7 +272,7 @@ const handleOwnerChanged = async (result: any) => {
             <v-row class="pa-4">
               <v-col cols="12" md="9">
                 <v-text-field
-                  v-model="groupEditorStore.group.group_name"
+                  v-model="formData.group_name"
                   :label="t('admin.groups.editor.form.name')"
                   :rules="groupNameRules"
                   variant="outlined"
@@ -165,7 +283,7 @@ const handleOwnerChanged = async (result: any) => {
 
               <v-col cols="12" md="3">
                 <v-select
-                  v-model="groupEditorStore.group.group_status"
+                  v-model="formData.group_status"
                   :label="t('admin.groups.editor.form.status')"
                   :items="[
                     { title: t('admin.groups.editor.status.active'), value: GroupStatus.ACTIVE },
@@ -186,7 +304,7 @@ const handleOwnerChanged = async (result: any) => {
 
               <v-col cols="12">
                 <v-textarea
-                  v-model="groupEditorStore.group.group_description"
+                  v-model="formData.group_description"
                   :label="t('admin.groups.editor.form.description')"
                   :rules="generalDescriptionRules"
                   variant="outlined"
@@ -197,7 +315,7 @@ const handleOwnerChanged = async (result: any) => {
 
               <v-col cols="12" md="8">
                 <v-text-field
-                  v-model="groupEditorStore.group.group_email"
+                  v-model="formData.group_email"
                   :label="t('admin.groups.editor.form.email')"
                   :rules="optionalEmailRules"
                   variant="outlined"
@@ -241,8 +359,8 @@ const handleOwnerChanged = async (result: any) => {
           block
           color="teal"
           variant="outlined"
-          :disabled="!isFormValid || !groupEditorStore.hasChanges || isSubmitting"
-          :class="['mb-3', { 'update-btn-glow': groupEditorStore.hasChanges && isFormValid && !isSubmitting }]"
+          :disabled="!isFormValid || !hasChanges || isSubmitting"
+          :class="['mb-3', { 'update-btn-glow': hasChanges && isFormValid && !isSubmitting }]"
           @click="handleUpdateGroup"
         >
           {{ t('admin.groups.editor.buttons.update') }}
