@@ -1,5 +1,5 @@
 /**
- * version: 1.2.0
+ * version: 1.3.0
  * Core routes for global backend services.
  * 
  * Functionality:
@@ -19,6 +19,10 @@
  * 
  * Changes in v1.2.0:
  * - Removed add-users-to-group, add-user-to-groups, and change-group-owner routes (moved to admin routes)
+ * 
+ * Changes in v1.3.0:
+ * - Added checkPermissions guard to admin password reset route
+ * - Admin password reset now requires adminOrg:users:reset_password permission
  */
 
 import express, { Router } from 'express';
@@ -26,6 +30,7 @@ import checkRateLimit from '../guards/guard.rate.limit';
 import validateJWT from '../guards/guard.validate.jwt';
 import checkIsUserStatusActive from '../guards/guard.check.is.user.status.active';
 import checkRequestSecurityHard from '../guards/guard.check.request.security.hard';
+import { checkPermissions } from '../guards/guard.check.permissions';
 
 // Импорт контроллеров
 import getUsernameByUuidController from '../controllers/controller.get.username.by.uuid';
@@ -52,7 +57,7 @@ router.get('/api/core/item-selector/search-groups', checkRateLimit, validateJWT,
 
 // change password universal component
 router.post('/api/core/users/self-change-password', checkRateLimit, validateJWT, checkIsUserStatusActive, selfChangePasswordController);
-router.post('/api/core/users/admin-change-password', checkRateLimit, validateJWT, checkIsUserStatusActive, adminResetPasswordController);
+router.post('/api/core/users/admin-change-password', checkRateLimit, checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, checkPermissions('adminOrg:users:reset_password'), adminResetPasswordController);
 
 // settings services
 router.post('/api/core/settings/fetch-settings', checkRateLimit, checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, fetchSettingsController);
