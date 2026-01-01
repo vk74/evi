@@ -1,5 +1,5 @@
 <!--
-Version: 1.7.1
+Version: 1.7.2
 Price list editor details section with items table and action buttons.
 Frontend file: PriceListEditorDetails.vue
 
@@ -21,6 +21,9 @@ Changes in v1.7.1:
 - Fixed price formatting to be reactive to locale changes
 - Changed formatPriceDisplay from regular function to computed property
 - Price formatting now correctly adapts to Russian and English locales
+
+Changes in v1.7.2:
+- Added caret up/down icon to item type dropdown to indicate it's a selectable list
 -->
 <script setup lang="ts">
 import { computed, ref, watch, onMounted } from 'vue'
@@ -45,7 +48,8 @@ import {
   PhCheckSquare,
   PhSquare,
   PhFloppyDisk,
-  PhPencilSimple
+  PhPencilSimple,
+  PhCaretUpDown
 } from '@phosphor-icons/vue'
 
 const { t, locale } = useI18n()
@@ -938,7 +942,11 @@ const updateAllItems = async () => {
             density="compact"
             variant="plain"
             hide-details
-          />
+          >
+            <template #append-inner>
+              <PhCaretUpDown :size="16" color="rgba(0, 0, 0, 0.6)" />
+            </template>
+          </v-select>
         </template>
 
         <!-- Product Name - editable -->
