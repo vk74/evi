@@ -1,5 +1,5 @@
 <!--
-version: 1.2.0
+version: 1.3.0
 Frontend file UserEditorDetails.vue.
 Purpose: User details form with dynamic validation using public policies and form state management.
 Features: Dynamic validation for username/email/phone, static validation for FIO fields, form submission handling.
@@ -14,6 +14,11 @@ Changes in v1.2.0:
 - This matches the permission naming after migration m_014_fix_org_permissions
 - Hide Create/Update buttons if no permission
 - Hide Reset Password button if no update permission
+
+Changes in v1.3.0:
+- Changed Reset Password button permission check from adminOrg:users:update:all to adminOrg:users:reset_password:all
+- This matches the permission naming after migration m_015_add_admin_password_reset_permission
+- Reset Password button now uses dedicated permission for password reset functionality
 -->
 <script setup lang="ts">
 import { ref, computed, onMounted, watch, onBeforeUnmount } from 'vue'
@@ -668,7 +673,7 @@ onBeforeUnmount(() => {
         >
           {{ t('admin.org.editor.buttons.update') }}
         </v-btn>
-        <v-btn v-if="userEditorStore.mode.mode === 'edit' && can('adminOrg:users:update:all')" block color="teal" variant="outlined" class="mb-3" @click="() => showPasswordDialog = true">{{ t('admin.org.editor.buttons.resetPassword') }}</v-btn>
+        <v-btn v-if="userEditorStore.mode.mode === 'edit' && can('adminOrg:users:reset_password:all')" block color="teal" variant="outlined" class="mb-3" @click="() => showPasswordDialog = true">{{ t('admin.org.editor.buttons.resetPassword') }}</v-btn>
       </div>
 
       <div class="sidebar-divider" />

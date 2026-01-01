@@ -615,7 +615,7 @@ const handleItemsPerPageChange = async (newItemsPerPage: ItemsPerPageOption) => 
           </v-btn>
           
           <v-btn
-            v-if="can('adminOrg:users:update:all')"
+            v-if="can('adminOrg:users:reset_password:all')"
             block
             color="teal"
             variant="outlined"
