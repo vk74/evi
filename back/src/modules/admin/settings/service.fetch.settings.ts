@@ -5,15 +5,8 @@
  */
 
 import { Request } from 'express';
+import { AuthenticatedRequest } from '../../../core/guards/types.guards';
 
-// Extended Request interface to include user property added by auth middleware
-interface AuthenticatedRequest extends Request {
-  user?: {
-    id: string;
-    username?: string;
-    [key: string]: any;
-  }
-}
 import { getAllSettings } from './cache.settings';
 import { 
   AppSetting, 
@@ -387,9 +380,8 @@ export async function handleFetchSettingsRequest(req: AuthenticatedRequest): Pro
   const userId = req.user?.id;
   const requestorUuid = getRequestorUuidFromReq(req);
 
-  // ВРЕМЕННО: Отключаем проверку административных прав
-  // const isAdmin = userId ? await isUserAdmin(userId) : false;
-  const isAdmin = true; // Временное решение для отладки
+  // Check privileged access from auth context (set by guard)
+  const isPrivileged = req.authContext?.isPrivilegedSettingsAccess === true;
 
   const { type, ...params } = req.body;
 
@@ -399,12 +391,12 @@ export async function handleFetchSettingsRequest(req: AuthenticatedRequest): Pro
   }
 
   // Set defaults
-  // Only administrators can access confidential settings
-  const includeConfidential = isAdmin && params.includeConfidential === true;
+  // Only privileged users (Admins) can access confidential settings
+  const includeConfidential = isPrivileged && params.includeConfidential === true;
   const isPublicOnly = params.isPublicOnly;
   
-  if (params.includeConfidential && !isAdmin) {
-    throw new Error('User attempted to access confidential settings without administrator privileges');
+  if (params.includeConfidential && !isPrivileged) {
+    throw new Error('User attempted to access confidential settings without sufficient privileges');
   }
 
   let environment = params.environment;

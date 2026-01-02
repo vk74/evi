@@ -243,6 +243,21 @@ const registerUser = async (req: EnhancedRequest, res: Response): Promise<void> 
 
             const userId = userResult.rows[0].user_id;
 
+            // Add user to 'role.users.registered' group (Common Users)
+            // Group ID is fixed: 440e8400-e29b-41d4-a716-446655440002
+            // Added by system admin (fallback to self if system admin not found/applicable, using generic system ID here)
+            // Ideally we should use the system admin ID 550e8400-e29b-41d4-a716-446655440001
+            await pool.query(
+                `INSERT INTO app.group_members (group_id, user_id, added_by) 
+                 VALUES ($1, $2, $3)
+                 ON CONFLICT (group_id, user_id, is_active) DO NOTHING`,
+                [
+                    '440e8400-e29b-41d4-a716-446655440002', // role.users.registered
+                    userId,
+                    '550e8400-e29b-41d4-a716-446655440001'  // system admin
+                ]
+            );
+
             await pool.query('COMMIT');
 
             // Log successful registration

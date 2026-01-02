@@ -1,5 +1,5 @@
 /**
- * version: 1.3.0
+ * version: 1.4.0
  * Core routes for global backend services.
  * 
  * Functionality:
@@ -23,6 +23,9 @@
  * Changes in v1.3.0:
  * - Added checkPermissions guard to admin password reset route
  * - Admin password reset now requires adminOrg:users:reset_password permission
+ * 
+ * Changes in v1.4.0:
+ * - Added checkSettingsPermissions guard to settings routes for granular RBAC
  */
 
 import express, { Router } from 'express';
@@ -31,6 +34,7 @@ import validateJWT from '../guards/guard.validate.jwt';
 import checkIsUserStatusActive from '../guards/guard.check.is.user.status.active';
 import checkRequestSecurityHard from '../guards/guard.check.request.security.hard';
 import { checkPermissions } from '../guards/guard.check.permissions';
+import checkSettingsPermissions from '../guards/guard.check.settings.permissions';
 
 // Импорт контроллеров
 import getUsernameByUuidController from '../controllers/controller.get.username.by.uuid';
@@ -60,8 +64,8 @@ router.post('/api/core/users/self-change-password', checkRateLimit, validateJWT,
 router.post('/api/core/users/admin-change-password', checkRateLimit, checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, checkPermissions('adminOrg:users:reset_password'), adminResetPasswordController);
 
 // settings services
-router.post('/api/core/settings/fetch-settings', checkRateLimit, checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, fetchSettingsController);
-router.post('/api/core/settings/update-settings', checkRateLimit, checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, updateSettingsController);
+router.post('/api/core/settings/fetch-settings', checkRateLimit, checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, checkSettingsPermissions('read'), fetchSettingsController);
+router.post('/api/core/settings/update-settings', checkRateLimit, checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, checkSettingsPermissions('update'), updateSettingsController);
 
 // Export using ES modules syntax
 export default router;
