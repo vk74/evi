@@ -1,6 +1,6 @@
 <!--
 App.vue 
-Version: 1.3.4
+Version: 1.3.6
 Root component of the application that defines the main interface structure.
 Contains:
 - App Bar with primary controls (language switching, account management)
@@ -22,6 +22,11 @@ Changes in v1.3.4:
 Changes in v1.3.5:
 - Added ModuleAbout component for landing page
 - Added 'About' module to navigation menu
+
+Changes in v1.3.6:
+- Added permission checks for Admin module visibility using canAny
+- Added permission check for Services Management (adminServices:module:access)
+- Added permission check for Application Settings (system:settings:access)
 -->
 <script setup lang="ts">
 import { ref, computed, onMounted, watch, defineAsyncComponent, nextTick } from 'vue';
@@ -30,7 +35,7 @@ import { useUiStore } from './core/state/uistate';
 import { useAppStore } from './core/state/appstate';
 import { useAppSettingsStore } from './modules/admin/settings/state.app.settings';
 import { useI18n } from 'vue-i18n';
-import { can } from '@/core/helpers/helper.check.permissions'; // Added import
+import { can, canAny } from '@/core/helpers/helper.check.permissions';
 import { logoutService } from './core/auth/service.logout';
 import type { ModuleName, AdminSubModule, DrawerMode } from './types.app';
 
@@ -805,7 +810,7 @@ onMounted(async () => {
         
         <!-- Enhanced Admin accordion section -->
         <div
-          v-if="isLoggedIn"
+          v-if="canAny(['adminProducts:module:access', 'adminPricing:module:access', 'adminCatalog:module:access', 'adminServices:module:access', 'adminOrg:module:access', 'system:settings:access'])"
           class="admin-accordion-container"
         >
           <!-- Admin header with toggle -->
@@ -870,6 +875,7 @@ onMounted(async () => {
               
               <!-- Service Admin -->
               <v-list-item
+                v-if="can('adminServices:module:access')"
                 v-tooltip="{
                   text: $t('admin.nav.services.main'),
                   location: 'right',
@@ -953,6 +959,7 @@ onMounted(async () => {
               
               <!-- App Settings Admin -->
               <v-list-item
+                v-if="can('system:settings:access')"
                 v-tooltip="{
                   text: $t('admin.nav.settings.main'),
                   location: 'right',

@@ -55,8 +55,8 @@ const sections = computed((): Section[] => {
       id: 'settings',
       title: t('admin.products.sections.settings'),
       icon: 'PhFadersHorizontal',
-      // Visible only if user can update settings
-      visible: can('adminProducts:settings:update')
+      // Visible only if user has settings access permission
+      visible: can('adminProducts:settings:access')
     }
   ]
   

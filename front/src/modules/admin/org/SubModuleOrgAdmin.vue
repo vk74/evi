@@ -78,8 +78,8 @@ const sections = computed((): Section[] => {
       id: 'settings',
       title: t('admin.org.sections.settings'),
       icon: 'PhFadersHorizontal',
-      // Visible if user can read settings
-      visible: can('adminOrg:settings:read:all')
+      // Visible if user has settings access permission
+      visible: can('adminOrg:settings:access')
     }
   ]
   return result

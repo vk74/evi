@@ -7,6 +7,7 @@
 import { ref, computed, onMounted, markRaw, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useServicesAdminStore } from './state.services.admin'
+import { can } from '@/core/helpers/helper.check.permissions'
 import type { Section } from './types.services.admin'
 
 // Импорты компонентов секций
@@ -30,7 +31,7 @@ const sections = computed<Section[]>(() => {
   // Явно используем locale.value для создания зависимости
   const currentLocale = locale.value
   
-  return [
+  const result: Section[] = [
     {
       id: 'services.serviceslist',
       name: t('admin.services.navigation.serviceslist'),
@@ -40,13 +41,19 @@ const sections = computed<Section[]>(() => {
       id: 'services.serviceeditor',
       name: t('admin.services.navigation.serviceeditor'),
       icon: 'PhPencilSimple'
-    },
-    {
+    }
+  ]
+
+  // Settings section - visible only if user has settings access permission
+  if (can('adminServices:settings:access')) {
+    result.push({
       id: 'services.settings',
       name: t('admin.services.navigation.settings'),
       icon: 'PhFadersHorizontal'
-    }
-  ]
+    })
+  }
+
+  return result
 })
 
 // Map section IDs to components

@@ -73,7 +73,7 @@ const sections = computed<Section[]>(() => {
   }
 
   // Settings
-  if (can('adminCatalog:settings:read:all')) {
+  if (can('adminCatalog:settings:access')) {
     result.push({
       id: 'Catalog.Settings',
       name: t('admin.catalog.navigation.settings'),

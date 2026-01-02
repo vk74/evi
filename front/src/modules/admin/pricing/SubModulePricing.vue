@@ -1,5 +1,5 @@
 <!--
-Version: 1.5.0
+Version: 1.5.1
 Pricing administration submodule component.
 Frontend file that provides pricing management interface for admin users.
 Filename: SubModulePricing.vue
@@ -8,6 +8,9 @@ Changes in v1.5.0:
 - Added Tax section above currencies section
 - Imported PhPercent icon for Tax section
 - Added PricingTax async component
+
+Changes in v1.5.1:
+- Updated settings section visibility check to use adminPricing:settings:access permission
 -->
 <script setup lang="ts">
 import { computed, defineAsyncComponent } from 'vue'
@@ -67,7 +70,7 @@ const sections = computed((): Section[] => [
     id: 'settings',
     title: t('admin.pricing.sections.settings'),
     icon: 'PhFadersHorizontal',
-    visible: can('adminPricing:settings:update')
+    visible: can('adminPricing:settings:access')
   }
 ])
 
