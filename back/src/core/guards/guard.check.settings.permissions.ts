@@ -1,8 +1,19 @@
 /**
  * @file guard.check.settings.permissions.ts
- * Version: 1.0.0
+ * Version: 1.2.0
  * Guard for checking permissions specifically for Settings operations (read/update).
- * Implements mapping from section paths to specific permissions.
+ * Implements strict mapping from section paths to specific permissions.
+ * 
+ * Changes in v1.1.0:
+ * - Removed DEFAULT_UPDATE_PERMISSION_BASE fallback
+ * - Added explicit mapping for 'Application', 'Work', 'Reports', 'KnowledgeBase' to 'system:settings'
+ * - Enforced strict RBAC: users can only update settings if they have the specific permission for that section
+ * 
+ * Changes in v1.2.0:
+ * - Added support for reading system settings (Application.*, Work, Reports, KnowledgeBase) with common permission
+ * - For read operations on system settings: allows access with 'settings:read:common' if includeConfidential=false or isPublicOnly=true
+ * - For read operations requesting confidential system settings: still requires 'system:settings:read:all'
+ * - For update operations on system settings: still requires 'system:settings:update:all' (unchanged)
  */
 
 import { Response, NextFunction } from 'express';
@@ -14,14 +25,20 @@ import { PERMISSION_CHECK_EVENTS } from '../auth/events.authorization';
 
 // Mapping of Section Path prefixes to Base Permission Keys
 const SECTION_PERMISSION_MAP: Record<string, string> = {
+  // Module-specific Admin Sections
   'AdminProducts': 'adminProducts:settings',
   'AdminPricing': 'adminPricing:settings',
   'AdminCatalog': 'adminCatalog:settings',
   'AdminServices': 'adminCatalog:settings', // Services share adminCatalog settings
   'OrganizationManagement': 'adminOrg:settings',
+
+  // System-wide Sections (Restricted to sysadmins)
+  'Application': 'system:settings',
+  'Work': 'system:settings',
+  'Reports': 'system:settings',
+  'KnowledgeBase': 'system:settings',
 };
 
-const DEFAULT_UPDATE_PERMISSION_BASE = 'adminOrg:settings';
 const DEFAULT_READ_PERMISSION = 'settings:read:common';
 
 /**
@@ -48,22 +65,9 @@ export const checkSettingsPermissions = (action: 'read' | 'update') => {
 
       const userUuid = req.user.user_id;
 
-      // 2. Extract sectionPath from body
-      const { sectionPath } = req.body;
+      // 2. Extract sectionPath and request parameters from body
+      const { sectionPath, includeConfidential, isPublicOnly } = req.body;
       
-      if (!sectionPath && req.path.includes('all')) {
-         // Special case for fetching ALL settings (if supported) or handling bulk operations
-         // If no sectionPath provided, we might need a generic check or deny.
-         // For now, assuming sectionPath is required for granular check.
-         // If it's "fetch all settings", the controller might handle filtering based on permissions,
-         // but here we are checking Access.
-         // If request is "Fetch All", we might skip granular check here and let service filter?
-         // Or require at least ONE permission?
-         // Let's assume for "Fetch All", we don't use this guard or it passes if user has ANY settings permission?
-         // The plan says "Apply checkSettingsPermissions('read') to /api/core/settings/fetch-settings".
-         // fetch-settings can be type='all'.
-      }
-
       // Determine required permission
       let requiredPermission = '';
       let isCommon = false;
@@ -74,8 +78,6 @@ export const checkSettingsPermissions = (action: 'read' | 'update') => {
         if (action === 'read') {
              requiredPermission = DEFAULT_READ_PERMISSION;
              isCommon = true;
-             // Note: privileged access will be determined by what user HAS, not what is required here.
-             // But for the guard to pass, they need at least common read.
         } else {
              // Update requires specific section
              res.status(400).json({ message: 'Section path is required for updates' });
@@ -83,18 +85,52 @@ export const checkSettingsPermissions = (action: 'read' | 'update') => {
         }
       } else {
           const prefix = sectionPath.split('.')[0];
+          const mappedPermission = SECTION_PERMISSION_MAP[prefix];
           
-          if (SECTION_PERMISSION_MAP[prefix]) {
-              requiredPermission = `${SECTION_PERMISSION_MAP[prefix]}:${action}`;
-              isPrivileged = true; // Admin sections are always privileged
-          } else {
-              // Application.*, Work.*, etc.
-              if (action === 'update') {
-                  requiredPermission = `${DEFAULT_UPDATE_PERMISSION_BASE}:${action}`;
-                  isPrivileged = true; // Updating common settings is privileged (adminOrg)
+          if (mappedPermission) {
+              // Special handling for system settings (Application.*, Work, Reports, KnowledgeBase)
+              if (mappedPermission === 'system:settings' && action === 'read') {
+                  // For reading system settings:
+                  // - If not requesting confidential settings, allow with common permission
+                  // - If requesting confidential settings, require system:settings:read:all
+                  const requestingConfidential = includeConfidential === true;
+                  const requestingPublicOnly = isPublicOnly === true;
+                  
+                  if (!requestingConfidential || requestingPublicOnly) {
+                      // Allow reading non-confidential system settings with common permission
+                      requiredPermission = DEFAULT_READ_PERMISSION;
+                      isCommon = true;
+                      // Note: isPrivileged remains false for common permission access
+                  } else {
+                      // Require system permission for confidential settings
+                      requiredPermission = `${mappedPermission}:${action}`;
+                      isPrivileged = true;
+                  }
               } else {
+                  // For admin sections or system settings updates: use mapped permission
+                  requiredPermission = `${mappedPermission}:${action}`;
+                  // Any mapped permission (admin* or system) is considered privileged relative to 'common'
+                  isPrivileged = true;
+              }
+          } else {
+              // Unknown section
+              if (action === 'read') {
+                  // Allow reading unknown sections with common permission (fallback)
+                  // This allows non-critical settings to be read if they don't have a specific map
                   requiredPermission = DEFAULT_READ_PERMISSION;
                   isCommon = true;
+              } else {
+                  // STRICT: Deny update for unknown sections
+                  await createAndPublishEvent({
+                    eventName: PERMISSION_CHECK_EVENTS['check.denied'].eventName,
+                    payload: { 
+                      userUuid, 
+                      reason: `Unknown settings section: ${prefix}`,
+                      path: req.originalUrl
+                    }
+                  });
+                  res.status(403).json({ message: `Access denied: unknown settings section '${prefix}'` });
+                  return;
               }
           }
       }
@@ -105,24 +141,17 @@ export const checkSettingsPermissions = (action: 'read' | 'update') => {
 
       // 4. Verify Permission
       let accessGranted = false;
-      let effectiveScope: 'all' | 'own' = 'all'; // Default to all if not specified (for common)
+      let effectiveScope: 'all' | 'own' = 'all';
 
       if (isCommon) {
-          // Check exact match for common permission
+          // Check for common permission
           if (effectivePermissions.has(requiredPermission)) {
               accessGranted = true;
-          } else {
-              // Even if common is required, Sysadmins/Admins might have specific permissions but maybe not 'common' explicit?
-              // Migration gave sysadmins 'settings:read:common'.
-              // Other admins might NOT have 'settings:read:common' explicitly if we didn't give it?
-              // But 'role.users.registered' has it. All users are in it. So Admins are also in it.
-              // So they should have it.
           }
       } else {
-          // Check for :all or :own suffix (Admin Permissions)
-          // requiredPermission is e.g. 'adminProducts:settings:read'
-          // We check 'adminProducts:settings:read:all'
-          // We don't support :own for settings currently (no "own settings"), so just :all
+          // Check for :all permission
+          // requiredPermission is e.g. 'system:settings:update'
+          // We check 'system:settings:update:all'
           const permAll = `${requiredPermission}:all`;
           
           if (effectivePermissions.has(permAll)) {
@@ -132,42 +161,21 @@ export const checkSettingsPermissions = (action: 'read' | 'update') => {
       }
 
       // 5. Determine if user has privileged access (for confidentiality check)
-      // If the USER has any Admin Settings permission (even if we only checked Common), we mark as privileged?
-      // Or strictly if they passed a Privileged check?
-      // If I request 'Application.Appearance' (Common Read), I get 'settings:read:common'. Access Granted.
-      // But if I am Admin, I should see confidential settings too?
-      // The plan says: "Store strict permission flag ... to control confidentiality".
-      // We should check if user has Admin permissions generally or for this specific section?
-      // If I am AdminProducts, I should see confidential settings for AdminProducts, but maybe not for AdminOrg?
-      // The code in service.fetch.settings.ts currently had `isAdmin = true` global.
-      // We want granular.
-      // So `isPrivilegedSettingsAccess` should be true if the user has `:all` permission for the REQUESTED section.
-      
-      // If we used `isCommon` check (e.g. Application.* read), does user have privileged access to Application.*?
-      // Application.* maps to `adminOrg:settings` for update.
-      // Does user have `adminOrg:settings:read:all`?
-      // If so, they are privileged for Application.*.
-      
-      // So, additionally check for privileged permission if we fell back to common.
       let finalPrivilegedStatus = isPrivileged && accessGranted;
       
+      // If we fell back to common read, check if user happens to be an admin for this section anyway
       if (!finalPrivilegedStatus && isCommon && sectionPath) {
-          // We checked common read, but let's see if user is Admin for this section
-          // For Application.* etc, admin is adminOrg.
-          const adminPermBase = SECTION_PERMISSION_MAP[sectionPath.split('.')[0]] || DEFAULT_UPDATE_PERMISSION_BASE;
-          // Check if user has read/update permission for this admin scope
-          // We can check `adminOrg:settings:read:all`
-          const checkPerm = `${adminPermBase}:read:all`;
-          if (effectivePermissions.has(checkPerm)) {
-              finalPrivilegedStatus = true;
-          }
-          // Also check update permission just in case
-          const checkPermUpdate = `${adminPermBase}:update:all`;
-          if (effectivePermissions.has(checkPermUpdate)) {
-              finalPrivilegedStatus = true;
+          const prefix = sectionPath.split('.')[0];
+          const mappedPermission = SECTION_PERMISSION_MAP[prefix];
+          
+          if (mappedPermission) {
+              // Check if user has read permission for this specific scope
+              const checkPerm = `${mappedPermission}:read:all`;
+              if (effectivePermissions.has(checkPerm)) {
+                  finalPrivilegedStatus = true;
+              }
           }
       }
-
 
       if (accessGranted) {
         req.authContext = {
@@ -219,4 +227,3 @@ export const checkSettingsPermissions = (action: 'read' | 'update') => {
 };
 
 export default checkSettingsPermissions;
-
