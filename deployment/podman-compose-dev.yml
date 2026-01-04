@@ -3,9 +3,9 @@ services:
   evi-database:
     # Build the image from the local Containerfile in the 'db' directory
     build:
-      context: ../../db
+      context: ../db
       dockerfile: Containerfile
-    container_name: evi-database-local
+    container_name: evi-db
     restart: unless-stopped
     
     # Environment variables passed to the container
@@ -51,7 +51,7 @@ services:
   evi-backend:
     # Build the image from the local Containerfile in the 'back' directory
     build:
-      context: ../../back
+      context: ../back
       dockerfile: Containerfile
     container_name: evi-backend-local
     restart: unless-stopped
@@ -85,7 +85,7 @@ services:
   evi-frontend:
     # Build the image from the local Containerfile in the 'front' directory
     build:
-      context: ../../front
+      context: ../front
       dockerfile: Containerfile
       args:
         VUE_APP_API_URL: ${FRONTEND_API_URL:-http://localhost:3000}

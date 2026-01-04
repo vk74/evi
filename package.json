@@ -17,12 +17,12 @@
     "start:backend": "cd back && npm start",
     "start:frontend": "cd front && npm run serve",
     "clean": "rm -rf back/dist front/dist back/node_modules front/node_modules",
-    "podman:build": "podman compose -f deployment/local/podman-compose.yml build",
-    "podman:up": "podman compose -f deployment/local/podman-compose.yml up -d",
-    "podman:down": "podman compose -f deployment/local/podman-compose.yml down",
-    "podman:logs": "podman compose -f deployment/local/podman-compose.yml logs -f",
-    "build:local": "node deployment/local/build.js",
-    "build:local:clean": "node deployment/local/build.js --clean"
+    "podman:build": "podman compose -f deployment/podman-compose-dev.yml build",
+    "podman:up": "podman compose -f deployment/podman-compose-dev.yml up -d",
+    "podman:down": "podman compose -f deployment/podman-compose-dev.yml down",
+    "podman:logs": "podman compose -f deployment/podman-compose-dev.yml logs -f",
+    "build:local": "node deployment/build-dev.js",
+    "build:local:clean": "node deployment/build-dev.js --clean"
   },
   "keywords": [
     "evi",

@@ -18,7 +18,7 @@ const fs = require('fs');
 const path = require('path');
 
 // --- Configuration ---
-const COMPOSE_FILE = 'deployment/local/podman-compose.yml';
+const COMPOSE_FILE = 'deployment/podman-compose-dev.yml';
 const ENV_FILE = '.env.local'; // Optional file for environment variables
 
 // Global variable to store detected compose command
@@ -366,6 +366,7 @@ function getContainerStats(containerName) {
  */
 function getContainerInspect(containerName) {
   try {
+    if (!containerName) return null;
     const podmanCmd = getPodmanCommand();
     const output = runCommandSilent(`${podmanCmd} inspect ${containerName} --format json`, true);
     const inspected = parsePodmanOutput(output);
@@ -439,7 +440,7 @@ function cleanAll() {
   // Force remove known containers just in case
   try {
     const podmanCmd = getPodmanCommand();
-    const containers = ['evi-database-local', 'evi-backend-local', 'evi-frontend-local'];
+    const containers = ['evi-db', 'evi-backend-local', 'evi-frontend-local'];
     runCommandSilent(`${podmanCmd} rm -f ${containers.join(' ')}`, true);
   } catch (e) {}
 
@@ -605,7 +606,7 @@ function deleteDBContainerOnly() {
   const timings = {};
   log('\n🗑️  Deleting DB Container Only...', colors.cyan, true);
   
-  const containerName = 'evi-database-local';
+  const containerName = 'evi-db';
   const status = getContainerStatus(containerName);
   
   if (!status.exists) {
@@ -643,15 +644,43 @@ function deleteDBContainerAndVolume() {
   const timings = {};
   log('\n🗑️  Deleting DB Container and Volume...', colors.cyan, true);
   
+  const podmanCmd = getPodmanCommand();
+  const volumeName = 'evi_db_volume';
+  const containerName = 'evi-db';
+  
   try {
-    const cmd = getComposeCommand('down', '-v evi-database');
-    timings['Stop & Remove'] = runCommand(cmd, 'Stop Container and Remove Volume');
+    // First, stop and remove container by name
+    const status = getContainerStatus(containerName);
+    if (status.exists) {
+      if (status.isRunning) {
+        timings['Stop Container'] = runCommand(
+          `${podmanCmd} stop ${containerName}`,
+          'Stop DB Container',
+          true
+        );
+      }
+      timings['Remove Container'] = runCommand(
+        `${podmanCmd} rm ${containerName}`,
+        'Remove DB Container',
+        true
+      );
+    }
     
-    // Explicitly check and remove the volume if compose didn't catch it (due to naming)
-    const volumeName = 'evi_db_volume';
+    // Try compose down as well
+    try {
+      const cmd = getComposeCommand('down', '-v evi-database');
+      runCommand(cmd, 'Stop Container and Remove Volume (compose)', true);
+    } catch (e) {
+      // Ignore compose errors if container doesn't exist
+    }
+    
+    // Remove the volume if it still exists
     if (volumeExists(volumeName)) {
-        const podmanCmd = getPodmanCommand();
-        runCommand(`${podmanCmd} volume rm ${volumeName}`, 'Explicitly Remove Volume', true);
+      timings['Remove Volume'] = runCommand(
+        `${podmanCmd} volume rm ${volumeName}`,
+        'Remove Volume',
+        true
+      );
     }
     
     log('✅ DB container and volume deleted successfully.', colors.green);
@@ -713,7 +742,7 @@ async function buildDBWithVolume(useCache, seedDemoData = false) {
       let dbReady = false;
       while (retries > 0 && !dbReady) {
         try {
-          runCommandSilent(`${podmanCmd} exec evi-database-local pg_isready -U postgres`, false);
+          runCommandSilent(`${podmanCmd} exec evi-db pg_isready -U postgres`, false);
           dbReady = true;
         } catch (e) {
           retries--;
@@ -794,7 +823,7 @@ function runDBContainer() {
   const timings = {};
   log('\n🚀 Running DB Container...', colors.cyan, true);
   
-  const containerName = 'evi-database-local';
+  const containerName = 'evi-db';
   const status = getContainerStatus(containerName);
   
   if (status.isRunning) {
