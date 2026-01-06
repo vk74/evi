@@ -1,0 +1,44 @@
+# Version: 1.0.0
+# Purpose: Podman Quadlet container unit for evi PostgreSQL database.
+# Deployment file: evi-db.container
+# Logic: Runs DB on the internal network only (no host port published).
+#
+# Changes in v1.0.0:
+# - Initial DB container unit (internal-only, persistent volume)
+#
+
+[Unit]
+Description=evi database (Podman)
+Wants=network-online.target
+After=network-online.target
+
+[Container]
+# Rendered by evictl
+Image={{EVI_DB_IMAGE}}
+ContainerName=evi-db
+
+# Internal network
+Network={{EVI_NETWORK}}
+
+# Persistent data volume
+Volume=evi_db_data:/var/lib/postgresql/data:Z
+
+# Environment
+Environment=POSTGRES_PASSWORD={{EVI_POSTGRES_PASSWORD}}
+Environment=POSTGRES_DB={{EVI_POSTGRES_DB}}
+Environment=SEED_DEMO_DATA={{EVI_SEED_DEMO_DATA}}
+
+# Healthcheck (optional) - keep minimal for MVP
+PodmanArgs=--health-cmd=pg_isready
+PodmanArgs=--health-interval=10s
+PodmanArgs=--health-timeout=5s
+PodmanArgs=--health-retries=10
+
+# Resource limits (optional)
+{{EVI_PODMANARGS_LIMITS_DB}}
+
+[Service]
+Restart=always
+TimeoutStartSec=180
+
+

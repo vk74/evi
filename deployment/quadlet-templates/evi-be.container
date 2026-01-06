@@ -1,0 +1,46 @@
+# Version: 1.0.0
+# Purpose: Podman Quadlet container unit for evi backend API.
+# Deployment file: evi-be.container
+# Logic: Runs backend only on internal network; exposed externally via evi-proxy (Caddy) as /api over HTTPS.
+#
+# Changes in v1.0.0:
+# - Initial backend container unit (no host port, JWT key mounted via podman secret)
+#
+
+[Unit]
+Description=evi backend (Podman)
+Wants=network-online.target
+After=network-online.target
+
+[Container]
+# Rendered by evictl
+Image={{EVI_BE_IMAGE}}
+ContainerName=evi-be
+
+# Internal network
+Network={{EVI_NETWORK}}
+
+# Environment (DB connectivity)
+Environment=NODE_ENV={{EVI_NODE_ENV}}
+Environment=API_PORT={{EVI_BE_PORT}}
+Environment=PGHOST=evi-db
+Environment=PGPORT={{EVI_DB_PORT}}
+Environment=PGDATABASE={{EVI_POSTGRES_DB}}
+Environment=PGUSER={{EVI_POSTGRES_USER}}
+Environment=PGPASSWORD={{EVI_POSTGRES_PASSWORD}}
+
+# CORS (must include https://<domain>)
+Environment=EVI_CORS_ORIGINS={{EVI_CORS_ORIGINS}}
+
+# JWT private key from Podman secret mounted as file
+PodmanArgs=--secret={{EVI_JWT_SECRET_NAME}},type=mount,target=/run/secrets/{{EVI_JWT_SECRET_NAME}}
+Environment=JWT_PRIVATE_KEY_PATH=/run/secrets/{{EVI_JWT_SECRET_NAME}}
+
+# Resource limits (optional)
+{{EVI_PODMANARGS_LIMITS_BE}}
+
+[Service]
+Restart=always
+TimeoutStartSec=180
+
+

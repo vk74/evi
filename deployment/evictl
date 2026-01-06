@@ -1,0 +1,393 @@
+#!/usr/bin/env bash
+#
+# Version: 1.0.0
+# Purpose: evi production deployment controller (rootless Podman + Quadlet).
+# Deployment file: evictl
+# Logic:
+# - Provides CLI subcommands (init/up/down/restart/status/logs/update/doctor/self-update)
+# - Provides interactive menu mode when run without args
+# - Renders Quadlet units from templates, renders Caddyfile, and manages secrets
+#
+# Changes in v1.0.0:
+# - Initial CLI + menu tool for prod deployment using Caddy reverse-proxy on 80/443
+#
+
+set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+DEPLOYMENT_DIR="${SCRIPT_DIR}"
+ENV_DIR="${DEPLOYMENT_DIR}/env"
+TPL_DIR="${DEPLOYMENT_DIR}/quadlet-templates"
+PROXY_DIR="${DEPLOYMENT_DIR}/proxy"
+SCRIPTS_DIR="${DEPLOYMENT_DIR}/scripts"
+
+EVI_STATE_DIR_DEFAULT="${HOME}/.local/share/evi"
+EVI_CONFIG_DIR_DEFAULT="${HOME}/.config/evi"
+EVI_QUADLET_DIR_DEFAULT="${HOME}/.config/containers/systemd"
+
+EVI_ENV_FILE_DEFAULT="${ENV_DIR}/evi.template.env"
+EVI_SECRETS_FILE_DEFAULT="${ENV_DIR}/evi.secrets.template.env"
+
+log() { printf "%s\n" "$*"; }
+warn() { printf "WARN: %s\n" "$*" >&2; }
+die() { printf "ERROR: %s\n" "$*" >&2; exit 1; }
+
+require_cmd() { command -v "$1" >/dev/null 2>&1 || die "Missing command: $1"; }
+
+load_env_files() {
+  # shellcheck disable=SC1090
+  if [[ -f "${EVI_ENV_FILE_DEFAULT}" ]]; then source "${EVI_ENV_FILE_DEFAULT}"; else die "Missing env template: ${EVI_ENV_FILE_DEFAULT}"; fi
+  # shellcheck disable=SC1090
+  if [[ -f "${EVI_SECRETS_FILE_DEFAULT}" ]]; then source "${EVI_SECRETS_FILE_DEFAULT}"; else die "Missing secrets template: ${EVI_SECRETS_FILE_DEFAULT}"; fi
+
+  export EVI_STATE_DIR="${EVI_STATE_DIR:-${EVI_STATE_DIR_DEFAULT}}"
+  export EVI_CONFIG_DIR="${EVI_CONFIG_DIR:-${EVI_CONFIG_DIR_DEFAULT}}"
+  export EVI_QUADLET_DIR="${EVI_QUADLET_DIR:-${EVI_QUADLET_DIR_DEFAULT}}"
+
+  export EVI_JWT_SECRET_NAME="${EVI_JWT_SECRET_NAME:-evi_jwt_private_key}"
+}
+
+ensure_dirs() {
+  mkdir -p "${EVI_STATE_DIR}/proxy" "${EVI_STATE_DIR}/tls" "${EVI_STATE_DIR}/secrets"
+  mkdir -p "${EVI_CONFIG_DIR}"
+  mkdir -p "${EVI_QUADLET_DIR}"
+}
+
+render_template_file() {
+  local in_file="$1"
+  local out_file="$2"
+  shift 2
+
+  local content
+  content="$(cat "${in_file}")"
+
+  # Replace {{KEY}} placeholders based on exported env vars.
+  # Note: Keep this simple and deterministic for MVP.
+  local keys=(
+    EVI_DOMAIN EVI_ACME_EMAIL EVI_TLS_MODE
+    EVI_HTTP_PORT EVI_HTTPS_PORT
+    EVI_PROXY_IMAGE EVI_FE_IMAGE EVI_BE_IMAGE EVI_DB_IMAGE
+    EVI_NETWORK EVI_BE_PORT EVI_FE_PORT EVI_DB_PORT
+    EVI_NODE_ENV EVI_CORS_ORIGINS
+    EVI_POSTGRES_DB EVI_POSTGRES_USER EVI_POSTGRES_PASSWORD EVI_SEED_DEMO_DATA
+    EVI_STATE_DIR EVI_JWT_SECRET_NAME
+  )
+
+  local k v
+  for k in "${keys[@]}"; do
+    v="${!k-}"
+    content="${content//\{\{${k}\}\}/${v}}"
+  done
+
+  # Render dynamic blocks prepared by caller (placeholders remain if unset)
+  content="${content//\{\{EVI_PODMANARGS_LIMITS_PROXY\}\}/${EVI_PODMANARGS_LIMITS_PROXY-}}"
+  content="${content//\{\{EVI_PODMANARGS_LIMITS_FE\}\}/${EVI_PODMANARGS_LIMITS_FE-}}"
+  content="${content//\{\{EVI_PODMANARGS_LIMITS_BE\}\}/${EVI_PODMANARGS_LIMITS_BE-}}"
+  content="${content//\{\{EVI_PODMANARGS_LIMITS_DB\}\}/${EVI_PODMANARGS_LIMITS_DB-}}"
+  content="${content//\{\{EVI_PROXY_TLS_MOUNTS\}\}/${EVI_PROXY_TLS_MOUNTS-}}"
+  content="${content//\{\{EVI_TLS_SITE_BLOCK\}\}/${EVI_TLS_SITE_BLOCK-}}"
+
+  printf "%s\n" "${content}" > "${out_file}"
+}
+
+compute_limits_block() {
+  # Build PodmanArgs lines for limits (CPU/memory) based on env.
+  # We keep them empty if unset.
+  local cpu="$1"
+  local mem="$2"
+  local out=""
+
+  if [[ -n "${cpu}" ]]; then
+    out+=$'PodmanArgs=--cpus='"${cpu}"$'\n'
+  fi
+  if [[ -n "${mem}" ]]; then
+    out+=$'PodmanArgs=--memory='"${mem}"$'\n'
+  fi
+
+  printf "%s" "${out}"
+}
+
+prepare_proxy_tls_mounts() {
+  # For manual TLS, we mount cert/key from state dir into container.
+  if [[ "${EVI_TLS_MODE}" == "manual" ]]; then
+    export EVI_TLS_CERT_IN_CONTAINER="/etc/evi-tls/cert.pem"
+    export EVI_TLS_KEY_IN_CONTAINER="/etc/evi-tls/key.pem"
+    export EVI_PROXY_TLS_MOUNTS=$'Volume='"${EVI_STATE_DIR}"$'/tls/cert.pem:'"${EVI_TLS_CERT_IN_CONTAINER}"$':ro,Z\nVolume='"${EVI_STATE_DIR}"$'/tls/key.pem:'"${EVI_TLS_KEY_IN_CONTAINER}"$':ro,Z\n'
+  else
+    export EVI_PROXY_TLS_MOUNTS=""
+  fi
+}
+
+render_caddyfile() {
+  local base_tpl="${PROXY_DIR}/Caddyfile.template"
+  local site_tpl=""
+
+  if [[ "${EVI_TLS_MODE}" == "manual" ]]; then
+    site_tpl="${PROXY_DIR}/Caddyfile.site.manual.template"
+    export EVI_TLS_SITE_BLOCK="$(cat "${site_tpl}")"
+    export EVI_TLS_SITE_BLOCK="${EVI_TLS_SITE_BLOCK//\{\{EVI_TLS_CERT_IN_CONTAINER\}\}/${EVI_TLS_CERT_IN_CONTAINER}}"
+    export EVI_TLS_SITE_BLOCK="${EVI_TLS_SITE_BLOCK//\{\{EVI_TLS_KEY_IN_CONTAINER\}\}/${EVI_TLS_KEY_IN_CONTAINER}}"
+  else
+    site_tpl="${PROXY_DIR}/Caddyfile.site.letsencrypt.template"
+    export EVI_TLS_SITE_BLOCK="$(cat "${site_tpl}")"
+  fi
+
+  # Replace the common placeholders inside the site block
+  export EVI_TLS_SITE_BLOCK="${EVI_TLS_SITE_BLOCK//\{\{EVI_DOMAIN\}\}/${EVI_DOMAIN}}"
+  export EVI_TLS_SITE_BLOCK="${EVI_TLS_SITE_BLOCK//\{\{EVI_HTTP_PORT\}\}/${EVI_HTTP_PORT}}"
+  export EVI_TLS_SITE_BLOCK="${EVI_TLS_SITE_BLOCK//\{\{EVI_HTTPS_PORT\}\}/${EVI_HTTPS_PORT}}"
+  export EVI_TLS_SITE_BLOCK="${EVI_TLS_SITE_BLOCK//\{\{EVI_BE_PORT\}\}/${EVI_BE_PORT}}"
+  export EVI_TLS_SITE_BLOCK="${EVI_TLS_SITE_BLOCK//\{\{EVI_FE_PORT\}\}/${EVI_FE_PORT}}"
+
+  render_template_file "${base_tpl}" "${EVI_STATE_DIR}/proxy/Caddyfile"
+  log "OK: rendered Caddyfile to ${EVI_STATE_DIR}/proxy/Caddyfile"
+}
+
+create_or_update_secret_from_file() {
+  local secret_name="$1"
+  local file_path="$2"
+
+  [[ -f "${file_path}" ]] || die "Secret source file not found: ${file_path}"
+
+  if podman secret inspect "${secret_name}" >/dev/null 2>&1; then
+    podman secret rm "${secret_name}" >/dev/null
+  fi
+  podman secret create "${secret_name}" "${file_path}" >/dev/null
+}
+
+prepare_jwt_secret() {
+  require_cmd podman
+
+  local target="${EVI_STATE_DIR}/secrets/jwt_private_key.pem"
+
+  if [[ "${EVI_JWT_GENERATE_KEY}" == "true" ]]; then
+    require_cmd openssl
+    "${SCRIPTS_DIR}/gen-jwt-rs256-keypair.sh" "${EVI_STATE_DIR}/secrets" "jwt_private_key.pem" >/dev/null
+  elif [[ -n "${EVI_JWT_PRIVATE_KEY_PEM_PATH}" ]]; then
+    cp -f "${EVI_JWT_PRIVATE_KEY_PEM_PATH}" "${target}"
+    chmod 600 "${target}"
+  elif [[ -n "${EVI_JWT_PRIVATE_KEY_PEM_INLINE}" ]]; then
+    printf "%s\n" "${EVI_JWT_PRIVATE_KEY_PEM_INLINE}" > "${target}"
+    chmod 600 "${target}"
+  else
+    die "JWT key not provided. Set EVI_JWT_GENERATE_KEY=true or provide EVI_JWT_PRIVATE_KEY_PEM_PATH or EVI_JWT_PRIVATE_KEY_PEM_INLINE."
+  fi
+
+  create_or_update_secret_from_file "${EVI_JWT_SECRET_NAME}" "${target}"
+  log "OK: created/updated podman secret ${EVI_JWT_SECRET_NAME}"
+}
+
+prepare_manual_tls_files() {
+  if [[ "${EVI_TLS_MODE}" != "manual" ]]; then
+    return 0
+  fi
+
+  if [[ -n "${EVI_TLS_CERT_PATH}" && -n "${EVI_TLS_KEY_PATH}" ]]; then
+    "${SCRIPTS_DIR}/import-tls.sh" "${EVI_TLS_CERT_PATH}" "${EVI_TLS_KEY_PATH}" "${EVI_STATE_DIR}/tls" >/dev/null
+    log "OK: imported manual TLS cert/key to ${EVI_STATE_DIR}/tls"
+    return 0
+  fi
+
+  die "Manual TLS selected but EVI_TLS_CERT_PATH/EVI_TLS_KEY_PATH not provided."
+}
+
+render_quadlets() {
+  # Compute optional limits
+  export EVI_PODMANARGS_LIMITS_PROXY
+  export EVI_PODMANARGS_LIMITS_FE
+  export EVI_PODMANARGS_LIMITS_BE
+  export EVI_PODMANARGS_LIMITS_DB
+
+  EVI_PODMANARGS_LIMITS_PROXY="$(compute_limits_block "${EVI_LIMIT_CPU_PROXY-}" "${EVI_LIMIT_MEM_PROXY-}")"
+  EVI_PODMANARGS_LIMITS_FE="$(compute_limits_block "${EVI_LIMIT_CPU_FE-}" "${EVI_LIMIT_MEM_FE-}")"
+  EVI_PODMANARGS_LIMITS_BE="$(compute_limits_block "${EVI_LIMIT_CPU_BE-}" "${EVI_LIMIT_MEM_BE-}")"
+  EVI_PODMANARGS_LIMITS_DB="$(compute_limits_block "${EVI_LIMIT_CPU_DB-}" "${EVI_LIMIT_MEM_DB-}")"
+
+  prepare_proxy_tls_mounts
+
+  render_template_file "${TPL_DIR}/evi.network" "${EVI_QUADLET_DIR}/evi.network"
+  render_template_file "${TPL_DIR}/evi-db.volume" "${EVI_QUADLET_DIR}/evi-db.volume"
+
+  render_template_file "${TPL_DIR}/evi-db.container" "${EVI_QUADLET_DIR}/evi-db.container"
+  render_template_file "${TPL_DIR}/evi-be.container" "${EVI_QUADLET_DIR}/evi-be.container"
+  render_template_file "${TPL_DIR}/evi-fe.container" "${EVI_QUADLET_DIR}/evi-fe.container"
+  render_template_file "${TPL_DIR}/evi-proxy.container" "${EVI_QUADLET_DIR}/evi-proxy.container"
+
+  log "OK: rendered Quadlet files into ${EVI_QUADLET_DIR}"
+}
+
+systemd_user_daemon_reload() {
+  systemctl --user daemon-reload
+}
+
+cmd_init() {
+  require_cmd podman
+  require_cmd systemctl
+
+  load_env_files
+  ensure_dirs
+
+  # Validate minimal required config
+  [[ -n "${EVI_DOMAIN}" ]] || die "EVI_DOMAIN is required"
+  [[ -n "${EVI_PROXY_IMAGE}" ]] || die "EVI_PROXY_IMAGE is required"
+  [[ -n "${EVI_FE_IMAGE}" ]] || die "EVI_FE_IMAGE is required"
+  [[ -n "${EVI_BE_IMAGE}" ]] || die "EVI_BE_IMAGE is required"
+  [[ -n "${EVI_DB_IMAGE}" ]] || die "EVI_DB_IMAGE is required"
+
+  # Secrets
+  prepare_jwt_secret
+  prepare_manual_tls_files
+
+  # Proxy config
+  render_caddyfile
+
+  # Quadlets
+  render_quadlets
+
+  systemd_user_daemon_reload
+  log "OK: init completed."
+}
+
+cmd_up() {
+  require_cmd systemctl
+  systemctl --user start evi.network evi-db.volume || true
+  systemctl --user start evi-db evi-be evi-fe evi-proxy
+  systemctl --user enable evi-db evi-be evi-fe evi-proxy >/dev/null 2>&1 || true
+  log "OK: started services."
+}
+
+cmd_down() {
+  require_cmd systemctl
+  systemctl --user stop evi-proxy evi-fe evi-be evi-db || true
+  log "OK: stopped services."
+}
+
+cmd_restart() {
+  require_cmd systemctl
+  systemctl --user restart evi-db evi-be evi-fe evi-proxy
+  log "OK: restarted services."
+}
+
+cmd_status() {
+  require_cmd systemctl
+  systemctl --user status evi-proxy evi-fe evi-be evi-db --no-pager || true
+}
+
+cmd_logs() {
+  require_cmd journalctl
+  local unit="${1:-evi-proxy}"
+  journalctl --user -u "${unit}" -n 200 --no-pager || true
+}
+
+cmd_update() {
+  require_cmd podman
+  load_env_files
+  podman pull "${EVI_PROXY_IMAGE}"
+  podman pull "${EVI_FE_IMAGE}"
+  podman pull "${EVI_BE_IMAGE}"
+  podman pull "${EVI_DB_IMAGE}"
+  cmd_restart
+  log "OK: images pulled and services restarted."
+}
+
+cmd_doctor() {
+  require_cmd podman
+  require_cmd systemctl
+
+  log "== doctor =="
+  log "podman: $(podman --version)"
+  log "systemctl --user: OK"
+
+  if command -v sysctl >/dev/null 2>&1; then
+    local v
+    v="$(sysctl -n net.ipv4.ip_unprivileged_port_start 2>/dev/null || echo "")"
+    log "net.ipv4.ip_unprivileged_port_start=${v}"
+  fi
+
+  if command -v timedatectl >/dev/null 2>&1; then
+    log "NTPSynchronized: $(timedatectl show -p NTPSynchronized --value 2>/dev/null || echo "unknown")"
+  fi
+}
+
+cmd_self_update() {
+  die "self-update not implemented yet (MVP placeholder)."
+}
+
+usage() {
+  cat <<'EOF'
+evictl - evi production deployment controller
+
+Usage:
+  evictl <command>
+  evictl               # interactive menu
+
+Commands:
+  init        Render Quadlet + proxy config, create secrets
+  up          Start services
+  down        Stop services
+  restart     Restart services
+  status      Show systemd user unit status
+  logs [unit] Show recent logs (default: evi-proxy)
+  update      Pull images and restart
+  doctor      Validate host prerequisites
+  self-update Update evictl (not implemented yet)
+EOF
+}
+
+menu() {
+  while true; do
+    cat <<'EOF'
+
+evi Prod Manager (evictl)
+=========================
+1) init
+2) up
+3) down
+4) restart
+5) status
+6) logs (evi-proxy)
+7) update
+8) doctor
+9) exit
+EOF
+    read -r -p "Select option: " choice
+    case "${choice}" in
+      1) cmd_init ;;
+      2) cmd_up ;;
+      3) cmd_down ;;
+      4) cmd_restart ;;
+      5) cmd_status ;;
+      6) cmd_logs "evi-proxy" ;;
+      7) cmd_update ;;
+      8) cmd_doctor ;;
+      9) exit 0 ;;
+      *) warn "Invalid option." ;;
+    esac
+  done
+}
+
+main() {
+  if [[ "${#}" -eq 0 ]]; then
+    menu
+    return 0
+  fi
+
+  local cmd="$1"; shift || true
+  case "${cmd}" in
+    init) cmd_init "$@" ;;
+    up) cmd_up "$@" ;;
+    down) cmd_down "$@" ;;
+    restart) cmd_restart "$@" ;;
+    status) cmd_status "$@" ;;
+    logs) cmd_logs "$@" ;;
+    update) cmd_update "$@" ;;
+    doctor) cmd_doctor "$@" ;;
+    self-update) cmd_self_update "$@" ;;
+    -h|--help|help) usage ;;
+    *) usage; die "Unknown command: ${cmd}" ;;
+  esac
+}
+
+main "$@"
+
+

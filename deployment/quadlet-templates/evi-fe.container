@@ -1,0 +1,30 @@
+# Version: 1.0.0
+# Purpose: Podman Quadlet container unit for evi frontend (SPA static assets).
+# Deployment file: evi-fe.container
+# Logic: Runs frontend on internal network only; exposed externally via evi-proxy (Caddy) over HTTPS.
+#
+# Changes in v1.0.0:
+# - Initial frontend container unit (no host port)
+#
+
+[Unit]
+Description=evi frontend (Podman)
+Wants=network-online.target
+After=network-online.target
+
+[Container]
+# Rendered by evictl
+Image={{EVI_FE_IMAGE}}
+ContainerName=evi-fe
+
+# Internal network
+Network={{EVI_NETWORK}}
+
+# Resource limits (optional)
+{{EVI_PODMANARGS_LIMITS_FE}}
+
+[Service]
+Restart=always
+TimeoutStartSec=180
+
+
