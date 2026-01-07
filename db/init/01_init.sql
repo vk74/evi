@@ -1,23 +1,10 @@
--- Version: 1.1
--- Description: Creates the app schema and application user, then grants necessary privileges. This script runs first.
--- Backend file: 00_init.sql
-
--- This script creates the dedicated application user ('app_service') with a hardcoded
--- password for simplified local development. In a production environment, this password
--- should be managed securely, for example, through environment variables or a secrets manager.
--- The script is idempotent and can be run multiple times without causing errors.
+-- Version: 1.2
+-- Description: Creates the app schema and grants privileges to app_service.
+-- Backend file: 01_init.sql
+-- Note: User 'app_service' is created by 00_init_users.sh before this script runs.
 
 -- Create the application schema FIRST
 CREATE SCHEMA IF NOT EXISTS app;
-
-DO $$
-BEGIN
-   -- Create the role only if it does not already exist
-   IF NOT EXISTS (SELECT FROM pg_roles WHERE rolname = 'app_service') THEN
-      CREATE ROLE app_service LOGIN PASSWORD 'P@ssw0rd';
-   END IF;
-END
-$$;
 
 -- Grant basic connection rights to the database
 GRANT CONNECT ON DATABASE maindb TO app_service;

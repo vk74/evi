@@ -26,6 +26,8 @@ Volume=evi_db_data:/var/lib/postgresql/data:Z
 # Environment
 Environment=POSTGRES_PASSWORD={{EVI_POSTGRES_PASSWORD}}
 Environment=POSTGRES_DB={{EVI_POSTGRES_DB}}
+Environment=EVI_APP_DB_PASSWORD={{EVI_APP_DB_PASSWORD}}
+Environment=EVI_ADMIN_DB_PASSWORD={{EVI_ADMIN_DB_PASSWORD}}
 Environment=SEED_DEMO_DATA={{EVI_SEED_DEMO_DATA}}
 
 # Healthcheck (optional) - keep minimal for MVP

@@ -38,6 +38,7 @@ RUN set -eux; \
 # These scripts will be executed automatically when the database is first initialized
 # Order: init scripts (00-10) -> migrations (m_*)
 COPY init/*.sql /docker-entrypoint-initdb.d/
+COPY init/*.sh /docker-entrypoint-initdb.d/
 
 # Copy migration scripts to the entrypoint directory
 # Source files are now named m_xxx_*.sql which ensures they sort AFTER init scripts (00-10)
