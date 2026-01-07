@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# Version: 1.1.0
+# Version: 1.1.1
 # Purpose: Interactive installer and manager for evi production deployment.
 # Deployment file: install.sh
 # Logic:
@@ -9,14 +9,14 @@
 # - Secrets management (Auto-generate or manual)
 # - Deployment orchestration (Build & Start)
 #
-# Changes in v2.1.0:
+# Changes in v1.1.0:
+# - Revised Config menu: Edit Env, Edit Secrets, Apply (Auto-generate).
+# - Removed "Setup Wizard" in favor of template-based auto-filling.
+# - Validates and auto-fills blank secrets in evi.secrets.env.
+#
+# Changes in v1.1.1:
 # - Added option to install Podman GUI/Cockpit tools
 # - Split prerequisites menu into Core and Core+GUI
-#
-# Changes in v2.0.0:
-# - Full rewrite to interactive menu system
-# - Added secrets generation and verification
-# - Added comprehensive system checks
 #
 
 set -uo pipefail
@@ -180,52 +180,73 @@ generate_secret() {
   openssl rand -base64 32 | tr -d '/+' | cut -c1-32
 }
 
-setup_config() {
-  log "Setup Configuration & Secrets"
-
-  # 1. Main Env
-  if [[ -f "${TARGET_ENV}" ]]; then
-    info "${TARGET_ENV} exists."
-  else
-    if confirm "Create ${TARGET_ENV} from template?"; then
-      cp "${TEMPLATE_ENV}" "${TARGET_ENV}"
-      info "Created ${TARGET_ENV}. Please edit it manually to set your Domain/IP."
-    fi
+ensure_config_files() {
+  # Ensure env files exist by copying templates if needed
+  if [[ ! -f "${TARGET_ENV}" ]]; then
+    cp "${TEMPLATE_ENV}" "${TARGET_ENV}"
+    info "Created ${TARGET_ENV} from template."
   fi
+  if [[ ! -f "${TARGET_SECRETS}" ]]; then
+    cp "${TEMPLATE_SECRETS}" "${TARGET_SECRETS}"
+    info "Created ${TARGET_SECRETS} from template."
+  fi
+}
 
-  # 2. Secrets Env
-  if [[ -f "${TARGET_SECRETS}" ]]; then
-    info "${TARGET_SECRETS} exists."
+edit_file() {
+  local file="$1"
+  ensure_config_files
+  if command -v nano >/dev/null 2>&1; then
+    nano "${file}"
   else
-    if confirm "Create ${TARGET_SECRETS} with AUTO-GENERATED secrets?"; then
-      cp "${TEMPLATE_SECRETS}" "${TARGET_SECRETS}"
-      
-      # Auto-generate DB passwords
-      local db_pass=$(generate_secret)
-      local app_db_pass=$(generate_secret)
-      local admin_db_pass=$(generate_secret)
-      local jwt_secret=$(generate_secret)
-      
-      # Use sed to replace placeholders or append if not present
-      sed -i "s/EVI_POSTGRES_PASSWORD=.*/EVI_POSTGRES_PASSWORD=${db_pass}/" "${TARGET_SECRETS}"
-      sed -i "s/EVI_APP_DB_PASSWORD=.*/EVI_APP_DB_PASSWORD=${app_db_pass}/" "${TARGET_SECRETS}"
-      sed -i "s/EVI_ADMIN_DB_PASSWORD=.*/EVI_ADMIN_DB_PASSWORD=${admin_db_pass}/" "${TARGET_SECRETS}"
-      # Add JWT secret if not in template or replace it
-      # Assuming template might be empty or commented
-      
-      # Explicitly append/overwrite secure keys
-      echo "" >> "${TARGET_SECRETS}"
-      echo "# Auto-generated secrets" >> "${TARGET_SECRETS}"
-      # If template didn't have them set, we ensure they are set now.
-      # Ideally we should parse, but appending overrides in many env parsers or we just ask user to check.
-      
-      info "Secrets generated in ${TARGET_SECRETS}."
-      info "DB Password: (hidden)"
+    vi "${file}"
+  fi
+}
+
+apply_config_and_autogenerate() {
+  log "Validating and applying configuration..."
+  ensure_config_files
+  
+  local updates_made=0
+  
+  # Helper to check and fill secret
+  check_fill_secret() {
+    local key="$1"
+    local file="${TARGET_SECRETS}"
+    # Grep key, ignore comments, cut value. If empty after = or not found...
+    # Simple logic: check if line exists as KEY=...
+    # If KEY= is there but empty value, fill it.
+    
+    if grep -q "^${key}=$" "${file}"; then
+      log "  Generating secret for ${key}..."
+      local val=$(generate_secret)
+      # Use sed with a different delimiter to avoid issues with / in base64
+      # Using | as delimiter
+      sed -i "s|^${key}=.*|${key}=${val}|" "${file}"
+      updates_made=1
+    elif grep -q "^${key}=\s*$" "${file}"; then
+       # Handle case with spaces? strict check above covers empty
+       log "  Generating secret for ${key}..."
+       local val=$(generate_secret)
+       sed -i "s|^${key}=.*|${key}=${val}|" "${file}"
+       updates_made=1
     fi
+  }
+
+  check_fill_secret "EVI_POSTGRES_PASSWORD"
+  check_fill_secret "EVI_ADMIN_DB_PASSWORD"
+  check_fill_secret "EVI_APP_DB_PASSWORD"
+  
+  # JWT: If all options are empty/default, we rely on EVI_JWT_GENERATE_KEY=true in template.
+  # But we can verify if the user messed up.
+  # For now, let's assume template default is fine for auto-generation (handled by evictl).
+  
+  if [[ $updates_made -eq 1 ]]; then
+    info "Auto-generated missing secrets in ${TARGET_SECRETS}."
+  else
+    info "No missing secrets found (all passwords set)."
   fi
   
-  echo ""
-  warn "IMPORTANT: Please review ${TARGET_ENV} and ${TARGET_SECRETS} before deploying!"
+  info "Configuration is ready."
   read -r -p "Press Enter to continue..."
 }
 
@@ -233,18 +254,20 @@ menu_config() {
   while true; do
     echo ""
     log "=== Configuration ==="
-    if [[ -f "${TARGET_ENV}" ]]; then printf "${GREEN}[OK]${NC} Env file found\n"; else printf "${RED}[MISSING]${NC} Env file\n"; fi
-    if [[ -f "${TARGET_SECRETS}" ]]; then printf "${GREEN}[OK]${NC} Secrets file found\n"; else printf "${RED}[MISSING]${NC} Secrets file\n"; fi
+    # Status check
+    if [[ -f "${TARGET_ENV}" ]]; then printf "  ${GREEN}[OK]${NC} evi.env\n"; else printf "  ${RED}[MISSING]${NC} evi.env\n"; fi
+    if [[ -f "${TARGET_SECRETS}" ]]; then printf "  ${GREEN}[OK]${NC} evi.secrets.env\n"; else printf "  ${RED}[MISSING]${NC} evi.secrets.env\n"; fi
     
-    echo "1) Run Setup Wizard (Create/Check files)"
-    echo "2) Edit Env File (nano)"
-    echo "3) Edit Secrets File (nano)"
+    echo ""
+    echo "1) Edit Environment (evi.env)"
+    echo "2) Edit Secrets (evi.secrets.env)"
+    echo "3) Apply Configuration (Auto-generate missing secrets)"
     echo "4) Back to Main Menu"
     read -r -p "Select: " opt
     case $opt in
-      1) setup_config ;;
-      2) nano "${TARGET_ENV}" ;;
-      3) nano "${TARGET_SECRETS}" ;;
+      1) edit_file "${TARGET_ENV}" ;;
+      2) edit_file "${TARGET_SECRETS}" ;;
+      3) apply_config_and_autogenerate ;;
       4) break ;;
       *) warn "Invalid option" ;;
     esac
