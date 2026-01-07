@@ -46,8 +46,9 @@ chmod +x install.sh evictl
 ```
 
 **Inside the Installer Menu:**
-1.  Select **1) Prerequisites** -> **Install Dependencies**.
-    *   *This installs Podman, curl, openssl and configures system settings.*
+1.  Select **1) Prerequisites**.
+    *   Choose **Core** (CLI only) or **Core + GUI** (Cockpit Web Console).
+    *   *This installs Podman, curl, openssl and optionally Cockpit for web-based container management.*
 2.  Select **2) Configuration & Secrets** -> **Run Setup Wizard**.
     *   *This will create your `.env` files.*
     *   *Select **"Yes"** to Auto-generate secure passwords/keys.*
@@ -56,8 +57,14 @@ chmod +x install.sh evictl
     *   *This builds the containers and starts the application stack.*
 
 #### Step 3: Verify
-Open your browser and navigate to:
-*   `https://<YOUR_DOMAIN>` (or `http://<YOUR_IP>` if no domain configured yet)
+
+**Application:**
+*   Open `https://<YOUR_DOMAIN>` (or `http://<YOUR_IP>`)
+
+**Management GUI (if installed):**
+*   Open `https://<YOUR_IP>:9090`
+*   Log in with your system user (e.g. `vit`) and password.
+*   Navigate to the **Podman Containers** tab.
 
 ---
 
