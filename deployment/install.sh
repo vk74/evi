@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# Version: 2.1.0
+# Version: 1.1.0
 # Purpose: Interactive installer and manager for evi production deployment.
 # Deployment file: install.sh
 # Logic:
@@ -130,7 +130,16 @@ install_deps_gui() {
   # Enable cockpit socket
   log "Enabling Cockpit web console..."
   sudo systemctl enable --now cockpit.socket
-  info "Cockpit enabled. Access via port 9090 (requires firewall rule)."
+  
+  # Configure Firewall if UFW is active
+  if command -v ufw >/dev/null 2>&1; then
+    if sudo ufw status | grep -q "Status: active"; then
+      log "Opening port 9090 for Cockpit in UFW..."
+      sudo ufw allow 9090/tcp
+    fi
+  fi
+  
+  info "Cockpit enabled. Access via port 9090."
   
   configure_rootless
 }
