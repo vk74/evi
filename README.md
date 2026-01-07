@@ -8,7 +8,8 @@
 
 This guide assumes you are deploying to a fresh **Ubuntu 24.04** server.
 
-### 1. Prerequisites
+### 1. Prerequisites. 
+Prepare the following hardware server or a VM:
 
 | Component | Requirement | Notes |
 |-----------|-------------|-------|
@@ -28,15 +29,19 @@ Clone the repository to your home directory.
 *(Note: If the repo is private, you will need to use an SSH Deploy Key or Personal Access Token)*
 
 ```bash
+sudo apt install git
 cd ~
 git clone <YOUR_REPO_URL> evi
 cd evi/deployment
 ```
+example clone command with token: git clone https://vk74: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@github.com/vk74/evi.git ~/evi
 
 #### Step 2: Run the Installer
 Launch the interactive installer wizard.
 
 ```bash
+cd ~/evi/deployment
+chmod +x install.sh evictl
 ./install.sh
 ```
 

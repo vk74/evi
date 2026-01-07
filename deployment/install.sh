@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# Version: 2.0.0
+# Version: 2.1.0
 # Purpose: Interactive installer and manager for evi production deployment.
 # Deployment file: install.sh
 # Logic:
@@ -8,6 +8,10 @@
 # - Prerequisites checks (Ubuntu 24.04, Podman, Ports, Resources)
 # - Secrets management (Auto-generate or manual)
 # - Deployment orchestration (Build & Start)
+#
+# Changes in v2.1.0:
+# - Added option to install Podman GUI/Cockpit tools
+# - Split prerequisites menu into Core and Core+GUI
 #
 # Changes in v2.0.0:
 # - Full rewrite to interactive menu system
@@ -102,8 +106,8 @@ check_podman() {
   fi
 }
 
-install_deps() {
-  log "Installing system dependencies..."
+install_deps_core() {
+  log "Installing CORE system dependencies (CLI only)..."
   if ! confirm "This will run 'apt-get update' and install podman, curl, openssl. Proceed?"; then
     return 0
   fi
@@ -111,6 +115,27 @@ install_deps() {
   sudo apt-get update
   sudo apt-get install -y podman curl openssl
   
+  configure_rootless
+}
+
+install_deps_gui() {
+  log "Installing CORE + GUI system dependencies..."
+  if ! confirm "This will install podman, curl, openssl AND cockpit-podman (web management). Proceed?"; then
+    return 0
+  fi
+
+  sudo apt-get update
+  sudo apt-get install -y podman curl openssl cockpit cockpit-podman
+  
+  # Enable cockpit socket
+  log "Enabling Cockpit web console..."
+  sudo systemctl enable --now cockpit.socket
+  info "Cockpit enabled. Access via port 9090 (requires firewall rule)."
+  
+  configure_rootless
+}
+
+configure_rootless() {
   # Enable rootless ports if needed (ports < 1024)
   log "Configuring rootless ports (80/443)..."
   echo "net.ipv4.ip_unprivileged_port_start=80" | sudo tee /etc/sysctl.d/99-evi-rootless.conf
@@ -127,12 +152,14 @@ menu_prerequisites() {
     check_resources
     check_podman
     echo ""
-    echo "1) Install Dependencies (Podman, etc.)"
-    echo "2) Back to Main Menu"
+    echo "1) Install Core Dependencies (CLI only)"
+    echo "2) Install Core + GUI Tools (Cockpit/Podman)"
+    echo "3) Back to Main Menu"
     read -r -p "Select: " opt
     case $opt in
-      1) install_deps ;;
-      2) break ;;
+      1) install_deps_core ;;
+      2) install_deps_gui ;;
+      3) break ;;
       *) warn "Invalid option" ;;
     esac
   done
