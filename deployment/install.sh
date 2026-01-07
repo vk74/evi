@@ -24,7 +24,7 @@
 # - Split prerequisites menu into Core and Core+GUI
 #
 
-set -uo pipefail
+set -euo pipefail
 
 # --- Configuration ---
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"

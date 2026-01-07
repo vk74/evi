@@ -9,7 +9,7 @@
 # =========================
 # Build stage
 # =========================
-FROM node:20-alpine AS build
+FROM docker.io/library/node:20-alpine AS build
 
 WORKDIR /app
 
@@ -28,7 +28,7 @@ RUN npm run build
 # =========================
 # Runtime stage
 # =========================
-FROM node:20-alpine
+FROM docker.io/library/node:20-alpine
 
 # Set production environment
 ENV NODE_ENV=production

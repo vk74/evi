@@ -7,7 +7,7 @@
 # =========================
 # Build stage
 # =========================
-FROM node:18-alpine AS build
+FROM docker.io/library/node:18-alpine AS build
 
 WORKDIR /app
 
@@ -35,7 +35,7 @@ RUN --mount=type=cache,target=/app/node_modules/.cache \
 # =========================
 # Runtime stage
 # =========================
-FROM nginx:alpine
+FROM docker.io/library/nginx:alpine
 
 # Non-root user for security
 # (Nginx in alpine runs as root by default; we keep root to bind 80 but use minimal surface.)
