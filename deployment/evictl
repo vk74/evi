@@ -1,12 +1,15 @@
 #!/usr/bin/env bash
 #
-# Version: 1.0.0
+# Version: 1.1.0
 # Purpose: evi production deployment controller (rootless Podman + Quadlet).
 # Deployment file: evictl
 # Logic:
-# - Provides CLI subcommands (init/up/down/restart/status/logs/update/doctor/self-update)
+# - Provides CLI subcommands (init/up/down/restart/status/logs/update/doctor/self-update/build)
 # - Provides interactive menu mode when run without args
 # - Renders Quadlet units from templates, renders Caddyfile, and manages secrets
+#
+# Changes in v1.1.0:
+# - Added 'build' command to build images from source using tags from env file.
 #
 # Changes in v1.0.0:
 # - Initial CLI + menu tool for prod deployment using Caddy reverse-proxy on 80/443
@@ -20,6 +23,7 @@ ENV_DIR="${DEPLOYMENT_DIR}/env"
 TPL_DIR="${DEPLOYMENT_DIR}/quadlet-templates"
 PROXY_DIR="${DEPLOYMENT_DIR}/proxy"
 SCRIPTS_DIR="${DEPLOYMENT_DIR}/scripts"
+PROJECT_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 
 EVI_STATE_DIR_DEFAULT="${HOME}/.local/share/evi"
 EVI_CONFIG_DIR_DEFAULT="${HOME}/.config/evi"
@@ -161,12 +165,18 @@ prepare_jwt_secret() {
   local target="${EVI_STATE_DIR}/secrets/jwt_private_key.pem"
 
   if [[ "${EVI_JWT_GENERATE_KEY}" == "true" ]]; then
+    log "Generating new JWT key pair..."
     require_cmd openssl
+    # Ensure script is executable
+    chmod +x "${SCRIPTS_DIR}/gen-jwt-rs256-keypair.sh"
     "${SCRIPTS_DIR}/gen-jwt-rs256-keypair.sh" "${EVI_STATE_DIR}/secrets" "jwt_private_key.pem" >/dev/null
+    log "OK: JWT key pair generated."
   elif [[ -n "${EVI_JWT_PRIVATE_KEY_PEM_PATH}" ]]; then
+    log "Using provided JWT key from file..."
     cp -f "${EVI_JWT_PRIVATE_KEY_PEM_PATH}" "${target}"
     chmod 600 "${target}"
   elif [[ -n "${EVI_JWT_PRIVATE_KEY_PEM_INLINE}" ]]; then
+    log "Using provided JWT key from inline config..."
     printf "%s\n" "${EVI_JWT_PRIVATE_KEY_PEM_INLINE}" > "${target}"
     chmod 600 "${target}"
   else
@@ -183,6 +193,8 @@ prepare_manual_tls_files() {
   fi
 
   if [[ -n "${EVI_TLS_CERT_PATH}" && -n "${EVI_TLS_KEY_PATH}" ]]; then
+    log "Importing manual TLS certificates..."
+    chmod +x "${SCRIPTS_DIR}/import-tls.sh"
     "${SCRIPTS_DIR}/import-tls.sh" "${EVI_TLS_CERT_PATH}" "${EVI_TLS_KEY_PATH}" "${EVI_STATE_DIR}/tls" >/dev/null
     log "OK: imported manual TLS cert/key to ${EVI_STATE_DIR}/tls"
     return 0
@@ -246,6 +258,46 @@ cmd_init() {
 
   systemd_user_daemon_reload
   log "OK: init completed."
+}
+
+cmd_build() {
+  require_cmd podman
+  load_env_files
+  
+  log "Building images from source..."
+  
+  # Build DB
+  if [[ -d "${PROJECT_ROOT}/db" ]]; then
+    log "Building Database image: ${EVI_DB_IMAGE}"
+    podman build -t "${EVI_DB_IMAGE}" "${PROJECT_ROOT}/db"
+  else
+    warn "DB source directory not found at ${PROJECT_ROOT}/db"
+  fi
+
+  # Build Backend
+  if [[ -d "${PROJECT_ROOT}/back" ]]; then
+    log "Building Backend image: ${EVI_BE_IMAGE}"
+    podman build -t "${EVI_BE_IMAGE}" "${PROJECT_ROOT}/back"
+  else
+    warn "Backend source directory not found at ${PROJECT_ROOT}/back"
+  fi
+
+  # Build Frontend
+  if [[ -d "${PROJECT_ROOT}/front" ]]; then
+    log "Building Frontend image: ${EVI_FE_IMAGE}"
+    # Pass build args if needed, typically API URL might be needed at build time for some stacks
+    # But usually we inject it at runtime or Caddy handles it.
+    # Checking Containerfile for ARGS...
+    # FRONTEND_API_URL is an ARG.
+    # We should pass it if we want it hardcoded, but for prod with relative paths (/api) it might be fine.
+    # However, let's pass generic defaults or what is in env if applicable.
+    # For now, simplistic build.
+    podman build -t "${EVI_FE_IMAGE}" "${PROJECT_ROOT}/front"
+  else
+    warn "Frontend source directory not found at ${PROJECT_ROOT}/front"
+  fi
+  
+  log "OK: Build completed."
 }
 
 cmd_up() {
@@ -323,6 +375,7 @@ Usage:
 
 Commands:
   init        Render Quadlet + proxy config, create secrets
+  build       Build images from source (using tags defined in env)
   up          Start services
   down        Stop services
   restart     Restart services
@@ -341,26 +394,28 @@ menu() {
 evi Prod Manager (evictl)
 =========================
 1) init
-2) up
-3) down
-4) restart
-5) status
-6) logs (evi-proxy)
-7) update
-8) doctor
-9) exit
+2) build (from source)
+3) up
+4) down
+5) restart
+6) status
+7) logs (evi-proxy)
+8) update (pull)
+9) doctor
+10) exit
 EOF
     read -r -p "Select option: " choice
     case "${choice}" in
       1) cmd_init ;;
-      2) cmd_up ;;
-      3) cmd_down ;;
-      4) cmd_restart ;;
-      5) cmd_status ;;
-      6) cmd_logs "evi-proxy" ;;
-      7) cmd_update ;;
-      8) cmd_doctor ;;
-      9) exit 0 ;;
+      2) cmd_build ;;
+      3) cmd_up ;;
+      4) cmd_down ;;
+      5) cmd_restart ;;
+      6) cmd_status ;;
+      7) cmd_logs "evi-proxy" ;;
+      8) cmd_update ;;
+      9) cmd_doctor ;;
+      10) exit 0 ;;
       *) warn "Invalid option." ;;
     esac
   done
@@ -375,6 +430,7 @@ main() {
   local cmd="$1"; shift || true
   case "${cmd}" in
     init) cmd_init "$@" ;;
+    build) cmd_build "$@" ;;
     up) cmd_up "$@" ;;
     down) cmd_down "$@" ;;
     restart) cmd_restart "$@" ;;
@@ -389,5 +445,3 @@ main() {
 }
 
 main "$@"
-
-

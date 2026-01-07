@@ -9,12 +9,17 @@
 # - Secrets management (Auto-generate or manual)
 # - Deployment orchestration (Build & Start)
 #
+# Changes in v1.1.1:
+# - Fixed permission issues for helper scripts.
+# - Added Build step in Deployment menu.
+# - Added logs for key generation.
+#
 # Changes in v1.1.0:
 # - Revised Config menu: Edit Env, Edit Secrets, Apply (Auto-generate).
 # - Removed "Setup Wizard" in favor of template-based auto-filling.
 # - Validates and auto-fills blank secrets in evi.secrets.env.
 #
-# Changes in v1.1.1:
+# Changes in v2.1.0 (Previously):
 # - Added option to install Podman GUI/Cockpit tools
 # - Split prerequisites menu into Core and Core+GUI
 #
@@ -25,6 +30,7 @@ set -uo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 ENV_DIR="${SCRIPT_DIR}/env"
+SCRIPTS_DIR="${SCRIPT_DIR}/scripts"
 TEMPLATE_ENV="${ENV_DIR}/evi.template.env"
 TEMPLATE_SECRETS="${ENV_DIR}/evi.secrets.template.env"
 TARGET_ENV="${ENV_DIR}/evi.env"
@@ -61,6 +67,16 @@ require_cmd() {
     return 1
   fi
   return 0
+}
+
+ensure_executable() {
+  # Ensure core scripts are executable
+  if [[ -d "${SCRIPTS_DIR}" ]]; then
+    chmod +x "${SCRIPTS_DIR}"/*.sh 2>/dev/null || true
+  fi
+  if [[ -f "${SCRIPT_DIR}/evictl" ]]; then
+    chmod +x "${SCRIPT_DIR}/evictl"
+  fi
 }
 
 # --- 1. Prerequisites ---
@@ -205,6 +221,7 @@ edit_file() {
 apply_config_and_autogenerate() {
   log "Validating and applying configuration..."
   ensure_config_files
+  ensure_executable
   
   local updates_made=0
   
@@ -246,6 +263,9 @@ apply_config_and_autogenerate() {
     info "No missing secrets found (all passwords set)."
   fi
   
+  # Log that JWT/TLS will be handled by evictl init
+  log "Note: JWT keys and TLS certificates will be processed during 'Init & Start'."
+  
   info "Configuration is ready."
   read -r -p "Press Enter to continue..."
 }
@@ -278,10 +298,7 @@ menu_config() {
 
 deploy_up() {
   log "Starting Deployment..."
-  # We rely on evictl for the heavy lifting
-  if [[ ! -x "${SCRIPT_DIR}/evictl" ]]; then
-    chmod +x "${SCRIPT_DIR}/evictl"
-  fi
+  ensure_executable
   
   # Ensure env files are sourced by evictl by default logic
   # But we must ensure they exist first
@@ -290,10 +307,19 @@ deploy_up() {
     return
   fi
 
+  # Ask to build images
+  if confirm "Do you want to BUILD container images from source now?"; then
+    "${SCRIPT_DIR}/evictl" build
+  else
+    info "Skipping build (assuming images exist or will be pulled)."
+  fi
+
   # Run init to render quadlets
+  log "Initializing services (rendering configs, generating keys)..."
   "${SCRIPT_DIR}/evictl" init
   
   # Run up
+  log "Starting services..."
   "${SCRIPT_DIR}/evictl" up
 }
 
@@ -329,6 +355,7 @@ menu_deploy() {
 # --- Main Menu ---
 
 main_menu() {
+  ensure_executable
   while true; do
     echo ""
     log "=== evi Installer (Ubuntu 24.04) ==="
@@ -348,9 +375,4 @@ main_menu() {
 }
 
 # Start
-# Ensure we are in the right directory or can find files
-if [[ ! -f "${SCRIPT_DIR}/evictl" ]]; then
-  die "Cannot find 'evictl' in ${SCRIPT_DIR}. Please run from deployment directory."
-fi
-
 main_menu
