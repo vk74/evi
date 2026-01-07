@@ -173,9 +173,9 @@ menu_prerequisites() {
   while true; do
     echo ""
     log "=== Prerequisites ==="
-    check_os
-    check_resources
-    check_podman
+    check_os || true
+    check_resources || true
+    check_podman || true
     echo ""
     echo "1) Install Core Dependencies (CLI only)"
     echo "2) Install Core + GUI Tools (Cockpit/Podman)"
