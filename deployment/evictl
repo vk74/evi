@@ -348,7 +348,7 @@ cmd_up() {
   # Explicitly start services (autostart is handled by [Install] via generator)
   systemctl --user start evi-db evi-be evi-fe evi-reverse-proxy
   
-  if [[ "${EVI_PGADMIN_ENABLED}" == "true" ]]; then
+  if [[ "${EVI_PGADMIN_ENABLED:-false}" == "true" ]]; then
     systemctl --user start evi-pgadmin
   fi
   

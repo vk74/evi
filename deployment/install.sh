@@ -466,7 +466,7 @@ install_pgadmin() {
   "${SCRIPT_DIR}/evictl" init
   
   log "Starting pgAdmin..."
-  systemctl --user enable --now evi-pgadmin
+  systemctl --user start evi-pgadmin
   
   info "pgAdmin installed."
   info "URL: http://127.0.0.1:5050"
@@ -484,7 +484,7 @@ main_menu() {
     echo "1) Prerequisites (Check & Install)"
     echo "2) Configuration & Secrets"
     echo "3) Deployment Operations"
-    echo "4) Install pgAdmin (Troubleshooting)"
+    echo "4) Install pgAdmin"
     echo "5) Exit"
     read -r -p "Select: " opt
     case $opt in
