@@ -409,73 +409,6 @@ menu_deploy() {
 
 # --- Main Menu ---
 
-install_pgadmin() {
-  log "Installing pgAdmin (Host-only)..."
-  ensure_executable
-  
-  if [[ ! -f "${TARGET_SECRETS}" ]]; then
-    err "Secrets file missing. Please configure secrets first (Option 2)."
-    read -r -p "Press Enter to continue..."
-    return
-  fi
-  
-  # Extract Admin Password
-  local admin_pass
-  admin_pass=$(grep "^EVI_ADMIN_DB_PASSWORD=" "${TARGET_SECRETS}" | cut -d'=' -f2-)
-  
-  if [[ -z "${admin_pass}" ]]; then
-     err "EVI_ADMIN_DB_PASSWORD is not set in secrets. Configure secrets first."
-     read -r -p "Press Enter to continue..."
-     return
-  fi
-  
-  ensure_config_files
-  
-  log "Configuring evi.env for pgAdmin..."
-  if grep -q "^EVI_PGADMIN_ENABLED=" "${TARGET_ENV}"; then
-    sed -i "s|^EVI_PGADMIN_ENABLED=.*|EVI_PGADMIN_ENABLED=true|" "${TARGET_ENV}"
-  else
-    echo "EVI_PGADMIN_ENABLED=true" >> "${TARGET_ENV}"
-  fi
-  
-  if grep -q "^EVI_PGADMIN_HOST=" "${TARGET_ENV}"; then
-    sed -i "s|^EVI_PGADMIN_HOST=.*|EVI_PGADMIN_HOST=127.0.0.1|" "${TARGET_ENV}"
-  else
-    echo "EVI_PGADMIN_HOST=127.0.0.1" >> "${TARGET_ENV}"
-  fi
-  
-  log "Configuring evi.secrets.env for pgAdmin..."
-  if grep -q "^PGADMIN_DEFAULT_EMAIL=" "${TARGET_SECRETS}"; then
-    sed -i "s|^PGADMIN_DEFAULT_EMAIL=.*|PGADMIN_DEFAULT_EMAIL=admin@localhost|" "${TARGET_SECRETS}"
-  else
-    echo "PGADMIN_DEFAULT_EMAIL=admin@localhost" >> "${TARGET_SECRETS}"
-  fi
-  
-  # Escape special chars for sed replacement with | delimiter
-  local escaped_pass="${admin_pass//\\/\\\\}"
-  escaped_pass="${escaped_pass//|/\\|}"
-  escaped_pass="${escaped_pass//&/\\&}"
-
-  if grep -q "^PGADMIN_DEFAULT_PASSWORD=" "${TARGET_SECRETS}"; then
-     sed -i "s|^PGADMIN_DEFAULT_PASSWORD=.*|PGADMIN_DEFAULT_PASSWORD=${escaped_pass}|" "${TARGET_SECRETS}"
-  else
-    echo "PGADMIN_DEFAULT_PASSWORD=${admin_pass}" >> "${TARGET_SECRETS}"
-  fi
-  
-  log "Regenerating configuration (init)..."
-  "${SCRIPT_DIR}/evictl" init
-  
-  log "Starting pgAdmin..."
-  systemctl --user start evi-pgadmin
-  
-  info "pgAdmin installed."
-  info "URL: http://127.0.0.1:5050"
-  info "Email: admin@localhost"
-  info "Password: (same as EVI_ADMIN_DB_PASSWORD)"
-  
-  read -r -p "Press Enter to continue..."
-}
-
 main_menu() {
   ensure_executable
   while true; do
@@ -484,15 +417,13 @@ main_menu() {
     echo "1) Prerequisites (Check & Install)"
     echo "2) Configuration & Secrets"
     echo "3) Deployment Operations"
-    echo "4) Install pgAdmin"
-    echo "5) Exit"
+    echo "4) Exit"
     read -r -p "Select: " opt
     case $opt in
       1) menu_prerequisites ;;
       2) menu_config ;;
       3) menu_deploy ;;
-      4) install_pgadmin ;;
-      5) log "Bye!"; exit 0 ;;
+      4) log "Bye!"; exit 0 ;;
       *) warn "Invalid option" ;;
     esac
   done

@@ -247,7 +247,6 @@ render_quadlets() {
     content="$(cat "${TPL_DIR}/evi-pgadmin.container")"
     content="${content//\{\{EVI_PGADMIN_IMAGE\}\}/${EVI_PGADMIN_IMAGE}}"
     content="${content//\{\{EVI_NETWORK\}\}/${EVI_NETWORK}}"
-    content="${content//\{\{EVI_PGADMIN_HOST\}\}/${EVI_PGADMIN_HOST}}"
     content="${content//\{\{EVI_PGADMIN_PORT\}\}/${EVI_PGADMIN_PORT}}"
     content="${content//\{\{PGADMIN_DEFAULT_EMAIL\}\}/${PGADMIN_DEFAULT_EMAIL}}"
     content="${content//\{\{PGADMIN_DEFAULT_PASSWORD\}\}/${PGADMIN_DEFAULT_PASSWORD}}"
@@ -348,7 +347,7 @@ cmd_up() {
   # Explicitly start services (autostart is handled by [Install] via generator)
   systemctl --user start evi-db evi-be evi-fe evi-reverse-proxy
   
-  if [[ "${EVI_PGADMIN_ENABLED:-false}" == "true" ]]; then
+  if [[ "${EVI_PGADMIN_ENABLED}" == "true" ]]; then
     systemctl --user start evi-pgadmin
   fi
   

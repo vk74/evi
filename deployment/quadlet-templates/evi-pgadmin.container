@@ -24,7 +24,7 @@ ContainerName=evi-pgadmin
 Network={{EVI_NETWORK}}
 
 # Publish port to host
-PublishPort={{EVI_PGADMIN_HOST}}:{{EVI_PGADMIN_PORT}}:80
+PublishPort={{EVI_PGADMIN_PORT}}:80
 
 # Environment
 Environment=PGADMIN_DEFAULT_EMAIL={{PGADMIN_DEFAULT_EMAIL}}
