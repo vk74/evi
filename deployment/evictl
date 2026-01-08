@@ -29,8 +29,8 @@ EVI_STATE_DIR_DEFAULT="${HOME}/.local/share/evi"
 EVI_CONFIG_DIR_DEFAULT="${HOME}/.config/evi"
 EVI_QUADLET_DIR_DEFAULT="${HOME}/.config/containers/systemd"
 
-EVI_ENV_FILE_DEFAULT="${ENV_DIR}/evi.template.env"
-EVI_SECRETS_FILE_DEFAULT="${ENV_DIR}/evi.secrets.template.env"
+EVI_ENV_FILE_DEFAULT="${ENV_DIR}/evi.env"
+EVI_SECRETS_FILE_DEFAULT="${ENV_DIR}/evi.secrets.env"
 
 log() { printf "%s\n" "$*"; }
 warn() { printf "WARN: %s\n" "$*" >&2; }
@@ -40,9 +40,22 @@ require_cmd() { command -v "$1" >/dev/null 2>&1 || die "Missing command: $1"; }
 
 load_env_files() {
   # shellcheck disable=SC1090
-  if [[ -f "${EVI_ENV_FILE_DEFAULT}" ]]; then source "${EVI_ENV_FILE_DEFAULT}"; else die "Missing env template: ${EVI_ENV_FILE_DEFAULT}"; fi
+  if [[ -f "${EVI_ENV_FILE_DEFAULT}" ]]; then 
+    source "${EVI_ENV_FILE_DEFAULT}"
+  else 
+    # Fallback to template ONLY if main env is missing? 
+    # No, for prod we should fail or warn heavily.
+    # But for fresh install, init might need to read something.
+    # However, init usually happens AFTER config wizard.
+    die "Missing config file: ${EVI_ENV_FILE_DEFAULT}. Run install.sh or configure first."
+  fi
+  
   # shellcheck disable=SC1090
-  if [[ -f "${EVI_SECRETS_FILE_DEFAULT}" ]]; then source "${EVI_SECRETS_FILE_DEFAULT}"; else die "Missing secrets template: ${EVI_SECRETS_FILE_DEFAULT}"; fi
+  if [[ -f "${EVI_SECRETS_FILE_DEFAULT}" ]]; then 
+    source "${EVI_SECRETS_FILE_DEFAULT}"
+  else 
+    die "Missing secrets file: ${EVI_SECRETS_FILE_DEFAULT}. Run install.sh or configure first."
+  fi
 
   export EVI_STATE_DIR="${EVI_STATE_DIR:-${EVI_STATE_DIR_DEFAULT}}"
   export EVI_CONFIG_DIR="${EVI_CONFIG_DIR:-${EVI_CONFIG_DIR_DEFAULT}}"
