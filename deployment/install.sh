@@ -131,6 +131,15 @@ install_deps_core() {
   sudo apt-get update
   sudo apt-get install -y podman curl openssl
   
+  # Configure Firewall if UFW is active (Core ports only)
+  if command -v ufw >/dev/null 2>&1; then
+    if sudo ufw status | grep -q "Status: active"; then
+      log "Opening ports 80, 443 in UFW..."
+      sudo ufw allow 80/tcp
+      sudo ufw allow 443/tcp
+    fi
+  fi
+  
   configure_rootless
 }
 
@@ -150,7 +159,9 @@ install_deps_gui() {
   # Configure Firewall if UFW is active
   if command -v ufw >/dev/null 2>&1; then
     if sudo ufw status | grep -q "Status: active"; then
-      log "Opening port 9090 for Cockpit in UFW..."
+      log "Opening ports 80, 443, 9090 in UFW..."
+      sudo ufw allow 80/tcp
+      sudo ufw allow 443/tcp
       sudo ufw allow 9090/tcp
     fi
   fi
@@ -158,6 +169,10 @@ install_deps_gui() {
   info "Cockpit enabled. Access via port 9090."
   
   configure_rootless
+  
+  # Enable user-level podman socket for Cockpit/Tools
+  log "Enabling user-level podman.socket..."
+  systemctl --user enable --now podman.socket
 }
 
 configure_rootless() {
