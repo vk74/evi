@@ -29,4 +29,7 @@ Network={{EVI_NETWORK}}
 Restart=always
 TimeoutStartSec=180
 
+[Install]
+WantedBy=default.target
+
 

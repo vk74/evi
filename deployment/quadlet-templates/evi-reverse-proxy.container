@@ -41,4 +41,7 @@ Volume=evi_caddy_config:/config:Z
 Restart=always
 TimeoutStartSec=180
 
+[Install]
+WantedBy=default.target
+
 

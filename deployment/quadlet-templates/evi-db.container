@@ -45,4 +45,7 @@ PodmanArgs=--health-retries=10
 Restart=always
 TimeoutStartSec=180
 
+[Install]
+WantedBy=default.target
+
 

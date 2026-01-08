@@ -45,4 +45,7 @@ Environment=JWT_PRIVATE_KEY_PATH=/run/secrets/{{EVI_JWT_SECRET_NAME}}
 Restart=always
 TimeoutStartSec=180
 
+[Install]
+WantedBy=default.target
+
 

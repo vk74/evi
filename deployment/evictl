@@ -269,7 +269,8 @@ cmd_build() {
   # Build DB
   if [[ -d "${PROJECT_ROOT}/db" ]]; then
     log "Building Database image: ${EVI_DB_IMAGE}"
-    podman build -t "${EVI_DB_IMAGE}" "${PROJECT_ROOT}/db"
+    podman build -t "${EVI_DB_IMAGE}" "${PROJECT_ROOT}/db" &
+    pids[0]=$!
   else
     warn "DB source directory not found at ${PROJECT_ROOT}/db"
   fi
@@ -277,7 +278,8 @@ cmd_build() {
   # Build Backend
   if [[ -d "${PROJECT_ROOT}/back" ]]; then
     log "Building Backend image: ${EVI_BE_IMAGE}"
-    podman build -t "${EVI_BE_IMAGE}" "${PROJECT_ROOT}/back"
+    podman build -t "${EVI_BE_IMAGE}" "${PROJECT_ROOT}/back" &
+    pids[1]=$!
   else
     warn "Backend source directory not found at ${PROJECT_ROOT}/back"
   fi
@@ -292,10 +294,16 @@ cmd_build() {
     # We should pass it if we want it hardcoded, but for prod with relative paths (/api) it might be fine.
     # However, let's pass generic defaults or what is in env if applicable.
     # For now, simplistic build.
-    podman build -t "${EVI_FE_IMAGE}" "${PROJECT_ROOT}/front"
+    podman build -t "${EVI_FE_IMAGE}" "${PROJECT_ROOT}/front" &
+    pids[2]=$!
   else
     warn "Frontend source directory not found at ${PROJECT_ROOT}/front"
   fi
+  
+  # Wait for all builds
+  for pid in ${pids[*]}; do
+    wait $pid
+  done
   
   log "OK: Build completed."
 }
@@ -303,8 +311,8 @@ cmd_build() {
 cmd_up() {
   require_cmd systemctl
   systemctl --user start evi-network.service evi-db-volume.service || true
-  # Explicitly enable services so they start on boot (requires lingering enabled)
-  systemctl --user enable --now evi-db evi-be evi-fe evi-reverse-proxy
+  # Explicitly start services (autostart is handled by [Install] via generator)
+  systemctl --user start evi-db evi-be evi-fe evi-reverse-proxy
   log "OK: started services."
 }
 
