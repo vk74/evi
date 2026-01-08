@@ -303,8 +303,8 @@ cmd_build() {
 cmd_up() {
   require_cmd systemctl
   systemctl --user start evi-network.service evi-db-volume.service || true
-  systemctl --user start evi-db evi-be evi-fe evi-reverse-proxy
-  systemctl --user enable evi-db evi-be evi-fe evi-reverse-proxy >/dev/null 2>&1 || true
+  # Explicitly enable services so they start on boot (requires lingering enabled)
+  systemctl --user enable --now evi-db evi-be evi-fe evi-reverse-proxy
   log "OK: started services."
 }
 

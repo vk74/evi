@@ -182,6 +182,12 @@ configure_rootless() {
   sudo sysctl --system
   
   info "Dependencies installed."
+  
+  # Enable linger for current user to allow services to start on boot
+  if ! loginctl show-user "$(whoami)" -p Linger | grep -q "yes"; then
+    log "Enabling systemd linger for $(whoami) (autostart on boot)..."
+    sudo loginctl enable-linger "$(whoami)"
+  fi
 }
 
 menu_prerequisites() {
@@ -285,13 +291,46 @@ apply_config_and_autogenerate() {
   read -r -p "Press Enter to continue..."
 }
 
+check_env_status() {
+  if [[ -f "${TARGET_ENV}" ]]; then
+    printf "${GREEN}[OK]${NC}"
+  else
+    printf "${RED}[MISSING]${NC}"
+  fi
+}
+
+check_secrets_status() {
+  local file="${TARGET_SECRETS}"
+  if [[ ! -f "${file}" ]]; then
+    printf "${RED}[MISSING]${NC}"
+    return
+  fi
+  
+  local needs_apply=0
+  local required_keys=("EVI_POSTGRES_PASSWORD" "EVI_ADMIN_DB_PASSWORD" "EVI_APP_DB_PASSWORD")
+  
+  for key in "${required_keys[@]}"; do
+    # If key missing OR key is empty
+    if ! grep -q "^${key}=" "${file}" || grep -q "^${key}=\s*$" "${file}"; then
+      needs_apply=1
+      break
+    fi
+  done
+  
+  if [[ $needs_apply -eq 1 ]]; then
+    printf "${YELLOW}[WAITING FOR APPLY]${NC}"
+  else
+    printf "${GREEN}[OK]${NC}"
+  fi
+}
+
 menu_config() {
   while true; do
     echo ""
     log "=== Configuration ==="
     # Status check
-    if [[ -f "${TARGET_ENV}" ]]; then printf "  ${GREEN}[OK]${NC} evi.env\n"; else printf "  ${RED}[MISSING]${NC} evi.env\n"; fi
-    if [[ -f "${TARGET_SECRETS}" ]]; then printf "  ${GREEN}[OK]${NC} evi.secrets.env\n"; else printf "  ${RED}[MISSING]${NC} evi.secrets.env\n"; fi
+    printf "  %s evi.env\n" "$(check_env_status)"
+    printf "  %s evi.secrets.env\n" "$(check_secrets_status)"
     
     echo ""
     echo "1) Edit Environment (evi.env)"
@@ -373,7 +412,7 @@ main_menu() {
   ensure_executable
   while true; do
     echo ""
-    log "=== evi Installer (Ubuntu 24.04) ==="
+    log "=== evi installation main menu ==="
     echo "1) Prerequisites (Check & Install)"
     echo "2) Configuration & Secrets"
     echo "3) Deployment Operations"
