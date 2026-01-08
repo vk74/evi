@@ -238,6 +238,27 @@ render_quadlets() {
   render_template_file "${TPL_DIR}/evi-fe.container" "${EVI_QUADLET_DIR}/evi-fe.container"
   render_template_file "${TPL_DIR}/evi-reverse-proxy.container" "${EVI_QUADLET_DIR}/evi-reverse-proxy.container"
 
+  # Optional pgAdmin
+  if [[ "${EVI_PGADMIN_ENABLED}" == "true" ]]; then
+    export PGADMIN_DEFAULT_EMAIL
+    export PGADMIN_DEFAULT_PASSWORD
+    # Render if enabled
+    local content
+    content="$(cat "${TPL_DIR}/evi-pgadmin.container")"
+    content="${content//\{\{EVI_PGADMIN_IMAGE\}\}/${EVI_PGADMIN_IMAGE}}"
+    content="${content//\{\{EVI_NETWORK\}\}/${EVI_NETWORK}}"
+    content="${content//\{\{EVI_PGADMIN_HOST\}\}/${EVI_PGADMIN_HOST}}"
+    content="${content//\{\{EVI_PGADMIN_PORT\}\}/${EVI_PGADMIN_PORT}}"
+    content="${content//\{\{PGADMIN_DEFAULT_EMAIL\}\}/${PGADMIN_DEFAULT_EMAIL}}"
+    content="${content//\{\{PGADMIN_DEFAULT_PASSWORD\}\}/${PGADMIN_DEFAULT_PASSWORD}}"
+    printf "%s\n" "${content}" > "${EVI_QUADLET_DIR}/evi-pgadmin.container"
+  else
+    # Remove if disabled/exists
+    if [[ -f "${EVI_QUADLET_DIR}/evi-pgadmin.container" ]]; then
+      rm "${EVI_QUADLET_DIR}/evi-pgadmin.container"
+    fi
+  fi
+
   log "OK: rendered Quadlet files into ${EVI_QUADLET_DIR}"
 }
 
@@ -326,6 +347,11 @@ cmd_up() {
   systemctl --user start evi-network.service evi-db-volume.service || true
   # Explicitly start services (autostart is handled by [Install] via generator)
   systemctl --user start evi-db evi-be evi-fe evi-reverse-proxy
+  
+  if [[ "${EVI_PGADMIN_ENABLED}" == "true" ]]; then
+    systemctl --user start evi-pgadmin
+  fi
+  
   log "OK: started services."
 }
 

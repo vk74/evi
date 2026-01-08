@@ -1,0 +1,42 @@
+# Version: 1.0.0
+# Purpose: Podman Quadlet container unit for pgAdmin 4.
+# Deployment file: evi-pgadmin.container
+# Logic: Runs pgAdmin web interface, connected to internal network.
+#        Enabled only if EVI_PGADMIN_ENABLED=true.
+#
+# Changes in v1.0.0:
+# - Initial pgAdmin container unit
+#
+
+[Unit]
+Description=evi pgAdmin 4 (Podman)
+Wants=network-online.target
+After=network-online.target
+Requires=evi-network.service
+After=evi-network.service
+
+[Container]
+# Rendered by evictl
+Image={{EVI_PGADMIN_IMAGE}}
+ContainerName=evi-pgadmin
+
+# Internal network
+Network={{EVI_NETWORK}}
+
+# Publish port to host
+PublishPort={{EVI_PGADMIN_HOST}}:{{EVI_PGADMIN_PORT}}:80
+
+# Environment
+Environment=PGADMIN_DEFAULT_EMAIL={{PGADMIN_DEFAULT_EMAIL}}
+Environment=PGADMIN_DEFAULT_PASSWORD={{PGADMIN_DEFAULT_PASSWORD}}
+Environment=PGADMIN_CONFIG_SERVER_MODE=True
+
+# Resource limits (optional - keep minimal)
+PodmanArgs=--memory=512m
+
+[Service]
+Restart=always
+TimeoutStartSec=180
+
+[Install]
+WantedBy=default.target
