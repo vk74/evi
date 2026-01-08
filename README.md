@@ -115,7 +115,7 @@ For local development instructions, see the specific README files in the subdire
 
 ### Deployment Architecture
 The stack runs as a set of **Rootless Podman Quadlets** (systemd services):
-*   `evi-proxy`: Caddy (Reverse Proxy & TLS termination)
+*   `evi-reverse-proxy`: Caddy (Reverse Proxy & TLS termination)
 *   `evi-fe`: Frontend Nginx container
 *   `evi-be`: Backend Node.js container
 *   `evi-db`: PostgreSQL 17 container

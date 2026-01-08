@@ -11,6 +11,8 @@
 Description=evi database (Podman)
 Wants=network-online.target
 After=network-online.target
+Requires=evi-network.service evi-db-volume.service
+After=evi-network.service evi-db-volume.service
 
 [Container]
 # Rendered by evictl

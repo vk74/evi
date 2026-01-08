@@ -1,7 +1,7 @@
 # Version: 1.0.0
 # Purpose: Podman Quadlet container unit for evi backend API.
 # Deployment file: evi-be.container
-# Logic: Runs backend only on internal network; exposed externally via evi-proxy (Caddy) as /api over HTTPS.
+# Logic: Runs backend only on internal network; exposed externally via evi-reverse-proxy (Caddy) as /api over HTTPS.
 #
 # Changes in v1.0.0:
 # - Initial backend container unit (no host port, JWT key mounted via podman secret)
@@ -11,6 +11,8 @@
 Description=evi backend (Podman)
 Wants=network-online.target
 After=network-online.target
+Requires=evi-network.service
+After=evi-network.service
 
 [Container]
 # Rendered by evictl
