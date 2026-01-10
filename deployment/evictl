@@ -253,7 +253,7 @@ render_quadlets() {
   render_template_file "${TPL_DIR}/evi-db.container" "${EVI_QUADLET_DIR}/evi-db.container"
   render_template_file "${TPL_DIR}/evi-be.container" "${EVI_QUADLET_DIR}/evi-be.container"
   render_template_file "${TPL_DIR}/evi-fe.container" "${EVI_QUADLET_DIR}/evi-fe.container"
-  render_template_file "${TPL_DIR}/evi-reverse-proxy.container" "${EVI_QUADLET_DIR}/evi-reverse-proxy.container"
+  render_template_file "${TPL_DIR}/evi-proxy.container" "${EVI_QUADLET_DIR}/evi-proxy.container"
 
   # Optional pgAdmin
   if [[ "${EVI_PGADMIN_ENABLED}" == "true" ]]; then
@@ -362,7 +362,7 @@ cmd_up() {
   require_cmd systemctl
   systemctl --user start evi-network.service evi-db-volume.service || true
   # Explicitly start services (autostart is handled by [Install] via generator)
-  systemctl --user start evi-db evi-be evi-fe evi-reverse-proxy
+  systemctl --user start evi-db evi-be evi-fe evi-proxy
   
   if [[ "${EVI_PGADMIN_ENABLED}" == "true" ]]; then
     systemctl --user start evi-pgadmin
@@ -373,24 +373,24 @@ cmd_up() {
 
 cmd_down() {
   require_cmd systemctl
-  systemctl --user stop evi-reverse-proxy evi-fe evi-be evi-db || true
+  systemctl --user stop evi-proxy evi-fe evi-be evi-db || true
   log "OK: stopped services."
 }
 
 cmd_restart() {
   require_cmd systemctl
-  systemctl --user restart evi-db evi-be evi-fe evi-reverse-proxy
+  systemctl --user restart evi-db evi-be evi-fe evi-proxy
   log "OK: restarted services."
 }
 
 cmd_status() {
   require_cmd systemctl
-  systemctl --user status evi-reverse-proxy evi-fe evi-be evi-db --no-pager || true
+  systemctl --user status evi-proxy evi-fe evi-be evi-db --no-pager || true
 }
 
 cmd_logs() {
   require_cmd journalctl
-  local unit="${1:-evi-reverse-proxy}"
+  local unit="${1:-evi-proxy}"
   journalctl --user -u "${unit}" -n 200 --no-pager || true
 }
 
@@ -448,7 +448,7 @@ Commands:
   down        Stop services
   restart     Restart services
   status      Show systemd user unit status
-  logs [unit] Show recent logs (default: evi-reverse-proxy)
+  logs [unit] Show recent logs (default: evi-proxy)
   update      Pull images and restart
   doctor      Validate host prerequisites
   self-update Update evictl (not implemented yet)
@@ -467,7 +467,7 @@ evi Prod Manager (evictl)
 4) down
 5) restart
 6) status
-7) logs (evi-reverse-proxy)
+7) logs (evi-proxy)
 8) update (pull)
 9) doctor
 10) exit
@@ -480,7 +480,7 @@ EOF
       4) cmd_down ;;
       5) cmd_restart ;;
       6) cmd_status ;;
-      7) cmd_logs "evi-reverse-proxy" ;;
+      7) cmd_logs "evi-proxy" ;;
       8) cmd_update ;;
       9) cmd_doctor ;;
       10) exit 0 ;;

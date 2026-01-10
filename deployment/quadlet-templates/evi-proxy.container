@@ -1,14 +1,17 @@
-# Version: 1.0.0
-# Purpose: Podman Quadlet container unit for evi reverse-proxy (Caddy).
+# Version: 1.1.0
+# Purpose: Podman Quadlet container unit for evi proxy (Caddy).
 # Deployment file: evi-proxy.container
 # Logic: Terminates TLS on host 80/443 and routes / -> evi-fe, /api -> evi-be.
+#
+# Changes in v1.1.0:
+# - Renamed from evi-reverse-proxy to evi-proxy for consistency.
 #
 # Changes in v1.0.0:
 # - Initial Caddy proxy container (single ingress point)
 #
 
 [Unit]
-Description=evi reverse-proxy (Caddy) (Podman)
+Description=evi proxy (Caddy) (Podman)
 Wants=network-online.target
 After=network-online.target
 Requires=evi-network.service
@@ -41,4 +44,5 @@ Volume=evi_caddy_config:/config:Z
 Restart=always
 TimeoutStartSec=180
 
-
+[Install]
+WantedBy=default.target
