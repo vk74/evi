@@ -10,7 +10,7 @@
 
 {
 	# Global options rendered by evictl
-	email {{EVI_ACME_EMAIL}}
+	{{EVI_CADDY_EMAIL_BLOCK}}
 
 	# Recommended: reduce noise in logs (can be tuned)
 	# debug

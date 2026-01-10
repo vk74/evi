@@ -1,7 +1,12 @@
-# Version: 1.0.0
+# Version: 1.1.0
 # Purpose: Caddy site block template for Internal TLS (Local CA).
 # Deployment file: Caddyfile.site.internal.template
 # Logic: Used by `evictl` when EVI_TLS_MODE=internal.
+#
+# Changes in v1.1.0:
+# - Fixed internal TLS configuration for IP addresses
+# - Added explicit issuer configuration to ensure proper certificate generation for IPs
+# - Added sign_with_root option for better compatibility
 #
 # Changes in v1.0.0:
 # - Initial internal TLS-enabled site block routing / and /api
@@ -10,9 +15,15 @@
 https://{{EVI_DOMAIN}}:{{EVI_HTTPS_PORT}} {
 	encode zstd gzip
 
-	# Internal TLS (Caddy manages its own local CA)
-	# Useful for local IPs (e.g. 192.168.x.x) or internal domains (.local)
-	tls internal
+	# Internal TLS with explicit issuer configuration
+	# This ensures proper certificate generation for IP addresses (e.g. 192.168.x.x)
+	# and internal domains (.local, localhost)
+	# Using explicit issuer block for better IP address support
+	tls {
+		issuer internal {
+			sign_with_root
+		}
+	}
 
 	# Basic security headers
 	header {

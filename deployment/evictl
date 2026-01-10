@@ -1,12 +1,17 @@
 #!/usr/bin/env bash
 #
-# Version: 1.1.1
+# Version: 1.1.2
 # Purpose: evi production deployment controller (rootless Podman + Quadlet).
 # Deployment file: evictl
 # Logic:
 # - Provides CLI subcommands (init/up/down/restart/status/logs/update/doctor/self-update/build)
 # - Provides interactive menu mode when run without args
 # - Renders Quadlet units from templates, renders Caddyfile, and manages secrets
+#
+# Changes in v1.1.2:
+# - Fixed internal TLS mode for IP addresses: disabled global email to prevent automatic ACME attempts
+# - Updated Caddyfile.site.internal.template to use explicit issuer configuration
+# - Added sign_with_root option for better certificate compatibility
 #
 # Changes in v1.1.1:
 # - Added internal TLS mode support (Caddy local CA).
@@ -151,6 +156,13 @@ prepare_proxy_tls_mounts() {
 render_caddyfile() {
   local base_tpl="${PROXY_DIR}/Caddyfile.template"
   local site_tpl=""
+
+  # For internal TLS mode, don't set global email to avoid automatic ACME attempts
+  if [[ "${EVI_TLS_MODE}" == "internal" ]]; then
+    export EVI_CADDY_EMAIL_BLOCK="# email not needed for internal TLS"
+  else
+    export EVI_CADDY_EMAIL_BLOCK="email ${EVI_ACME_EMAIL:-admin@example.com}"
+  fi
 
   if [[ "${EVI_TLS_MODE}" == "manual" ]]; then
     site_tpl="${PROXY_DIR}/Caddyfile.site.manual.template"

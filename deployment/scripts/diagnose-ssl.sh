@@ -10,7 +10,28 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 DEPLOYMENT_DIR="$(cd "${SCRIPT_DIR}/.." && pwd)"
-ENV_DIR="${DEPLOYMENT_DIR}/env"
+
+# Try multiple possible locations for env files
+ENV_DIR=""
+for candidate in "${DEPLOYMENT_DIR}/env" "$(cd "${DEPLOYMENT_DIR}/.." && pwd)/env" "./env" "$(pwd)/env"; do
+	if [[ -d "${candidate}" && -f "${candidate}/evi.env" ]]; then
+		ENV_DIR="${candidate}"
+		break
+	fi
+done
+
+# If still not found, try to find evi.env in current directory tree
+if [[ -z "${ENV_DIR}" ]]; then
+	FOUND_ENV=$(find "${DEPLOYMENT_DIR}" -name "evi.env" -type f 2>/dev/null | head -1)
+	if [[ -n "${FOUND_ENV}" ]]; then
+		ENV_DIR="$(dirname "${FOUND_ENV}")"
+	fi
+fi
+
+# Final fallback: use deployment/env even if it doesn't exist yet
+if [[ -z "${ENV_DIR}" ]]; then
+	ENV_DIR="${DEPLOYMENT_DIR}/env"
+fi
 
 RED='\033[0;31m'
 GREEN='\033[0;32m'
