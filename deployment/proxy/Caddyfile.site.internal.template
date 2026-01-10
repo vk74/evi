@@ -1,0 +1,34 @@
+# Version: 1.0.0
+# Purpose: Caddy site block template for Internal TLS (Local CA).
+# Deployment file: Caddyfile.site.internal.template
+# Logic: Used by `evictl` when EVI_TLS_MODE=internal.
+#
+# Changes in v1.0.0:
+# - Initial internal TLS-enabled site block routing / and /api
+#
+
+https://{{EVI_DOMAIN}}:{{EVI_HTTPS_PORT}} {
+	encode zstd gzip
+
+	# Internal TLS (Caddy manages its own local CA)
+	# Useful for local IPs (e.g. 192.168.x.x) or internal domains (.local)
+	tls internal
+
+	# Basic security headers
+	header {
+		Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+		X-Content-Type-Options "nosniff"
+		X-Frame-Options "DENY"
+		Referrer-Policy "strict-origin-when-cross-origin"
+	}
+
+	# Route API to backend
+	handle_path /api/* {
+		reverse_proxy evi-be:{{EVI_BE_PORT}}
+	}
+
+	# Everything else to frontend
+	handle {
+		reverse_proxy evi-fe:{{EVI_FE_PORT}}
+	}
+}
