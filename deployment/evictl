@@ -1,12 +1,17 @@
 #!/usr/bin/env bash
 #
-# Version: 1.2.1
+# Version: 1.3.0
 # Purpose: evi production deployment controller (rootless Podman + Quadlet).
 # Deployment file: evictl
 # Logic:
 # - Provides CLI subcommands (init/up/down/restart/status/logs/update/doctor/self-update/build)
 # - Provides interactive menu mode when run without args
 # - Renders Quadlet units from templates, renders Caddyfile, and manages secrets
+#
+# Changes in v1.3.0:
+# - Fixed TLS handshake error by using port-based Caddy binding instead of domain-based
+# - Added auto_https off for manual TLS mode
+# - Refactored Caddyfile rendering with EVI_CADDY_GLOBAL_OPTIONS and EVI_HTTP_REDIRECT_BLOCK
 #
 # Changes in v1.2.1:
 # - Fixed unbound variable error: EVI_TLS_CERT_IN_CONTAINER now set in render_caddyfile()
@@ -138,6 +143,8 @@ render_template_file() {
   content="${content//\{\{EVI_PROXY_TLS_MOUNTS\}\}/${EVI_PROXY_TLS_MOUNTS-}}"
   content="${content//\{\{EVI_TLS_SITE_BLOCK\}\}/${EVI_TLS_SITE_BLOCK-}}"
   content="${content//\{\{EVI_CADDY_EMAIL_BLOCK\}\}/${EVI_CADDY_EMAIL_BLOCK-}}"
+  content="${content//\{\{EVI_CADDY_GLOBAL_OPTIONS\}\}/${EVI_CADDY_GLOBAL_OPTIONS-}}"
+  content="${content//\{\{EVI_HTTP_REDIRECT_BLOCK\}\}/${EVI_HTTP_REDIRECT_BLOCK-}}"
 
   printf "%s\n" "${content}" > "${out_file}"
 }
@@ -174,11 +181,26 @@ render_caddyfile() {
   local base_tpl="${PROXY_DIR}/Caddyfile.template"
   local site_tpl=""
 
-  # For internal TLS mode, don't set global email to avoid automatic ACME attempts
-  if [[ "${EVI_TLS_MODE}" == "internal" ]]; then
-    export EVI_CADDY_EMAIL_BLOCK="# email not needed for internal TLS"
+  # Build global options based on TLS mode
+  if [[ "${EVI_TLS_MODE}" == "manual" ]]; then
+    # Manual TLS requires auto_https off to prevent Caddy from interfering
+    export EVI_CADDY_GLOBAL_OPTIONS="auto_https off"
+    # HTTP redirect uses port-based binding for manual mode
+    export EVI_HTTP_REDIRECT_BLOCK=":${EVI_HTTP_PORT} {
+	redir https://${EVI_DOMAIN}{uri} permanent
+}"
+  elif [[ "${EVI_TLS_MODE}" == "internal" ]]; then
+    # Internal TLS mode - let Caddy manage local CA
+    export EVI_CADDY_GLOBAL_OPTIONS="# Internal TLS - Caddy manages local CA"
+    export EVI_HTTP_REDIRECT_BLOCK="http://${EVI_DOMAIN}:${EVI_HTTP_PORT} {
+	redir https://${EVI_DOMAIN}{uri} permanent
+}"
   else
-    export EVI_CADDY_EMAIL_BLOCK="email ${EVI_ACME_EMAIL:-admin@example.com}"
+    # Let's Encrypt mode - need email for ACME
+    export EVI_CADDY_GLOBAL_OPTIONS="email ${EVI_ACME_EMAIL:-admin@example.com}"
+    export EVI_HTTP_REDIRECT_BLOCK="http://${EVI_DOMAIN}:${EVI_HTTP_PORT} {
+	redir https://${EVI_DOMAIN}{uri} permanent
+}"
   fi
 
   if [[ "${EVI_TLS_MODE}" == "manual" ]]; then

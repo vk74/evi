@@ -1,13 +1,17 @@
-# Version: 1.0.0
+# Version: 1.1.0
 # Purpose: Caddy site block template for manual TLS certificate/key.
 # Deployment file: Caddyfile.site.manual.template
 # Logic: Used by `evictl` when EVI_TLS_MODE=manual.
+#
+# Changes in v1.1.0:
+# - Changed from https://DOMAIN:PORT to :PORT syntax to fix TLS handshake errors
+# - Port-based binding works better with manual certificates and IP addresses
 #
 # Changes in v1.0.0:
 # - Initial manual TLS-enabled site block routing / and /api
 #
 
-https://{{EVI_DOMAIN}}:{{EVI_HTTPS_PORT}} {
+:{{EVI_HTTPS_PORT}} {
 	encode zstd gzip
 
 	# Manual TLS cert/key paths inside container (mounted by Quadlet)
@@ -29,5 +33,4 @@ https://{{EVI_DOMAIN}}:{{EVI_HTTPS_PORT}} {
 		reverse_proxy evi-fe:{{EVI_FE_PORT}}
 	}
 }
-
 
