@@ -1,35 +1,26 @@
 #!/usr/bin/env bash
 #
-# Version: 1.2.0
+# Version: 2.0.0
 # Purpose: Interactive installer and manager for evi production deployment.
 # Deployment file: install.sh
 # Logic:
-# - Interactive Bash menu system (similar to build-dev.js logic)
-# - Prerequisites checks (Ubuntu 24.04, Podman, Ports, Resources)
-# - Secrets management (Auto-generate or manual)
-# - TLS Certificate management (Generate self-signed certs for internal use)
-# - Deployment orchestration (Build & Start)
+# - Interactive Bash menu system with guided setup
+# - Prerequisites checks and installation (core + optional GUI tools)
+# - Environment configuration via guided questionnaire or manual editing
+# - Secrets management with auto-generation
+# - TLS certificate management (auto-generate or user-provided)
+# - Deployment orchestration and status display
+#
+# Changes in v2.0.0:
+# - Complete menu restructure: prerequisites, env config (guided/manual), deploy, manage
+# - Added deployment readiness status display in main menu
+# - Added guided setup questionnaire (access type, TLS, passwords)
+# - Removed internal TLS mode (only manual and letsencrypt)
+# - All text in lowercase for consistent styling
 #
 # Changes in v1.2.0:
 # - Added TLS Certificate Management menu
 # - Auto-generate self-signed certificates for internal deployments
-# - Support for IP addresses and DNS names with proper SAN
-# - Client-installable CA certificate (evi-tls.crt)
-# - Auto-configure EVI_TLS_MODE=manual when certificates are generated
-#
-# Changes in v1.1.1:
-# - Fixed permission issues for helper scripts.
-# - Added Build step in Deployment menu.
-# - Added logs for key generation.
-#
-# Changes in v1.1.0:
-# - Revised Config menu: Edit Env, Edit Secrets, Apply (Auto-generate).
-# - Removed "Setup Wizard" in favor of template-based auto-filling.
-# - Validates and auto-fills blank secrets in evi.secrets.env.
-#
-# Changes in v2.1.0 (Previously):
-# - Added option to install Podman GUI/Cockpit tools
-# - Split prerequisites menu into Core and Core+GUI
 #
 
 set -euo pipefail
@@ -45,42 +36,45 @@ TEMPLATE_SECRETS="${ENV_DIR}/evi.secrets.template.env"
 TARGET_ENV="${ENV_DIR}/evi.env"
 TARGET_SECRETS="${ENV_DIR}/evi.secrets.env"
 
+# Password minimum length
+MIN_PASSWORD_LENGTH=12
+
 # Colors
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[0;33m'
 CYAN='\033[0;36m'
+GRAY='\033[0;90m'
 NC='\033[0m' # No Color
+
+# Status symbols
+SYM_OK="${GREEN}[✓]${NC}"
+SYM_FAIL="${RED}[✗]${NC}"
+SYM_WARN="${YELLOW}[!]${NC}"
+SYM_PENDING="${GRAY}[○]${NC}"
 
 # --- Helpers ---
 
 log() { printf "${CYAN}[evi]${NC} %s\n" "$*"; }
-info() { printf "${GREEN}INFO:${NC} %s\n" "$*"; }
-warn() { printf "${YELLOW}WARN:${NC} %s\n" "$*"; }
-err() { printf "${RED}ERROR:${NC} %s\n" "$*"; }
-
+info() { printf "${GREEN}info:${NC} %s\n" "$*"; }
+warn() { printf "${YELLOW}warn:${NC} %s\n" "$*"; }
+err() { printf "${RED}error:${NC} %s\n" "$*"; }
 die() { err "$*"; exit 1; }
 
-# Interactive confirmation (Y/n)
 confirm() {
   local prompt="$1"
-  local default="${2:-Y}"
+  local default="${2:-y}"
   local reply
-  read -r -p "${prompt} [${default}/n]: " reply
+  read -r -p "${prompt} [${default}]: " reply
   reply="${reply:-$default}"
-  # Case insensitive match for Y, Yes, yes, y, etc.
   [[ "$reply" =~ ^[Yy] ]]
 }
 
 require_cmd() {
-  if ! command -v "$1" >/dev/null 2>&1; then
-    return 1
-  fi
-  return 0
+  command -v "$1" >/dev/null 2>&1
 }
 
 ensure_executable() {
-  # Ensure core scripts are executable
   if [[ -d "${SCRIPTS_DIR}" ]]; then
     chmod +x "${SCRIPTS_DIR}"/*.sh 2>/dev/null || true
   fi
@@ -89,155 +83,578 @@ ensure_executable() {
   fi
 }
 
-# --- 1. Prerequisites ---
+ensure_config_files() {
+  if [[ ! -f "${TARGET_ENV}" ]]; then
+    cp "${TEMPLATE_ENV}" "${TARGET_ENV}"
+    info "created ${TARGET_ENV} from template."
+  fi
+  if [[ ! -f "${TARGET_SECRETS}" ]]; then
+    cp "${TEMPLATE_SECRETS}" "${TARGET_SECRETS}"
+    info "created ${TARGET_SECRETS} from template."
+  fi
+}
+
+# --- Validation Functions ---
+
+validate_ip() {
+  local ip="$1"
+  [[ "$ip" =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$ ]]
+}
+
+validate_domain() {
+  local domain="$1"
+  [[ "$domain" =~ ^[a-zA-Z0-9]([a-zA-Z0-9-]*[a-zA-Z0-9])?(\.[a-zA-Z0-9]([a-zA-Z0-9-]*[a-zA-Z0-9])?)*$ ]]
+}
+
+validate_password() {
+  local pass="$1"
+  [[ ${#pass} -ge ${MIN_PASSWORD_LENGTH} ]]
+}
+
+is_private_ip() {
+  local ip="$1"
+  [[ "$ip" =~ ^10\. ]] || [[ "$ip" =~ ^172\.(1[6-9]|2[0-9]|3[0-1])\. ]] || [[ "$ip" =~ ^192\.168\. ]] || [[ "$ip" =~ ^127\. ]]
+}
+
+# --- Status Check Functions ---
+
+check_prerequisites_status() {
+  if require_cmd podman && require_cmd systemctl; then
+    local port_start
+    port_start=$(sysctl -n net.ipv4.ip_unprivileged_port_start 2>/dev/null || echo "1024")
+    if [[ "$port_start" -le 80 ]]; then
+      echo "ready"
+      return
+    fi
+  fi
+  echo "not_ready"
+}
+
+check_env_status() {
+  if [[ ! -f "${TARGET_ENV}" ]]; then
+    echo "missing"
+    return
+  fi
+  
+  local domain
+  domain=$(grep "^EVI_DOMAIN=" "${TARGET_ENV}" 2>/dev/null | cut -d'=' -f2 | tr -d '"' | tr -d "'" || echo "")
+  
+  if [[ -z "${domain}" ]] || [[ "${domain}" == "evi.example.com" ]]; then
+    echo "not_configured"
+    return
+  fi
+  
+  echo "ready:${domain}"
+}
+
+check_secrets_status() {
+  if [[ ! -f "${TARGET_SECRETS}" ]]; then
+    echo "missing"
+    return
+  fi
+  
+  local required_keys=("EVI_POSTGRES_PASSWORD" "EVI_ADMIN_DB_PASSWORD" "EVI_APP_DB_PASSWORD")
+  
+  for key in "${required_keys[@]}"; do
+    local val
+    val=$(grep "^${key}=" "${TARGET_SECRETS}" 2>/dev/null | cut -d'=' -f2 || echo "")
+    if [[ -z "${val}" ]]; then
+      echo "incomplete"
+      return
+    fi
+  done
+  
+  echo "ready"
+}
+
+check_tls_status() {
+  local tls_mode
+  tls_mode=$(grep "^EVI_TLS_MODE=" "${TARGET_ENV}" 2>/dev/null | cut -d'=' -f2 | tr -d '"' | tr -d "'" || echo "letsencrypt")
+  
+  if [[ "${tls_mode}" == "letsencrypt" ]]; then
+    local email
+    email=$(grep "^EVI_ACME_EMAIL=" "${TARGET_ENV}" 2>/dev/null | cut -d'=' -f2 | tr -d '"' | tr -d "'" || echo "")
+    if [[ -n "${email}" ]] && [[ "${email}" != *"@example.com" ]]; then
+      echo "ready:letsencrypt"
+    else
+      echo "needs_email"
+    fi
+  elif [[ "${tls_mode}" == "manual" ]]; then
+    if [[ -f "${TLS_DIR}/cert.pem" ]] && [[ -f "${TLS_DIR}/key.pem" ]]; then
+      echo "ready:manual"
+    else
+      echo "missing_certs"
+    fi
+  else
+    echo "not_configured"
+  fi
+}
+
+check_deployment_status() {
+  if ! require_cmd podman; then
+    echo "not_ready"
+    return
+  fi
+  
+  local running
+  running=$(podman ps --format "{{.Names}}" 2>/dev/null | grep -c "^evi-" || echo "0")
+  
+  if [[ "$running" -ge 4 ]]; then
+    echo "running:${running}"
+  elif [[ "$running" -gt 0 ]]; then
+    echo "partial:${running}"
+  else
+    echo "stopped"
+  fi
+}
+
+# --- Display Status ---
+
+display_status() {
+  echo ""
+  printf "  ${CYAN}status:${NC}\n"
+  
+  # Prerequisites
+  local prereq_status
+  prereq_status=$(check_prerequisites_status)
+  if [[ "${prereq_status}" == "ready" ]]; then
+    printf "    ${SYM_OK} prerequisites installed\n"
+  else
+    printf "    ${SYM_FAIL} prerequisites not ready\n"
+  fi
+  
+  # Environment
+  local env_status
+  env_status=$(check_env_status)
+  if [[ "${env_status}" == missing ]]; then
+    printf "    ${SYM_FAIL} environment not configured\n"
+  elif [[ "${env_status}" == not_configured ]]; then
+    printf "    ${SYM_WARN} environment needs configuration\n"
+  else
+    local domain
+    domain=$(echo "${env_status}" | cut -d: -f2)
+    printf "    ${SYM_OK} environment configured (${domain})\n"
+  fi
+  
+  # Secrets
+  local secrets_status
+  secrets_status=$(check_secrets_status)
+  if [[ "${secrets_status}" == "ready" ]]; then
+    printf "    ${SYM_OK} secrets configured\n"
+  elif [[ "${secrets_status}" == "incomplete" ]]; then
+    printf "    ${SYM_WARN} secrets incomplete\n"
+  else
+    printf "    ${SYM_FAIL} secrets missing\n"
+  fi
+  
+  # TLS
+  local tls_status
+  tls_status=$(check_tls_status)
+  if [[ "${tls_status}" == ready:* ]]; then
+    local mode
+    mode=$(echo "${tls_status}" | cut -d: -f2)
+    printf "    ${SYM_OK} tls certificates ready (${mode})\n"
+  elif [[ "${tls_status}" == "needs_email" ]]; then
+    printf "    ${SYM_WARN} tls needs acme email\n"
+  elif [[ "${tls_status}" == "missing_certs" ]]; then
+    printf "    ${SYM_FAIL} tls certificates missing\n"
+  else
+    printf "    ${SYM_PENDING} tls not configured\n"
+  fi
+  
+  # Deployment
+  local deploy_status
+  deploy_status=$(check_deployment_status)
+  if [[ "${deploy_status}" == running:* ]]; then
+    local count
+    count=$(echo "${deploy_status}" | cut -d: -f2)
+    printf "    ${SYM_OK} deployment running (${count} containers)\n"
+  elif [[ "${deploy_status}" == partial:* ]]; then
+    local count
+    count=$(echo "${deploy_status}" | cut -d: -f2)
+    printf "    ${SYM_WARN} deployment partial (${count} containers)\n"
+  else
+    printf "    ${SYM_PENDING} deployment: not started\n"
+  fi
+  
+  echo ""
+}
+
+# --- Prerequisites ---
 
 check_os() {
-  printf "Checking OS... "
+  printf "  checking os... "
   if [[ -f /etc/os-release ]]; then
     source /etc/os-release
     if [[ "${ID}" == "ubuntu" && "${VERSION_ID}" == "24.04" ]]; then
-      printf "${GREEN}OK (Ubuntu 24.04)${NC}\n"
+      printf "${GREEN}ok (ubuntu 24.04)${NC}\n"
       return 0
     else
-      printf "${YELLOW}WARN (Found ${NAME} ${VERSION_ID}, expected Ubuntu 24.04)${NC}\n"
-      return 1 # Warning only
+      printf "${YELLOW}warn (${NAME} ${VERSION_ID})${NC}\n"
+      return 1
     fi
   else
-    printf "${RED}FAIL (Unknown OS)${NC}\n"
+    printf "${RED}unknown${NC}\n"
     return 1
   fi
 }
 
 check_resources() {
-  printf "Checking Resources... "
-  # Simple check: Warn if RAM < 4GB
+  printf "  checking resources... "
   local mem_kb
   mem_kb=$(grep MemTotal /proc/meminfo | awk '{print $2}')
-  # 4GB ~ 4000000 KB
   if [[ "$mem_kb" -lt 3800000 ]]; then
-    printf "${YELLOW}WARN (RAM < 4GB recommended)${NC}\n"
+    printf "${YELLOW}warn (ram < 4gb)${NC}\n"
   else
-    printf "${GREEN}OK${NC}\n"
+    printf "${GREEN}ok${NC}\n"
   fi
 }
 
 check_podman() {
-  printf "Checking Podman... "
+  printf "  checking podman... "
   if require_cmd podman; then
-    printf "${GREEN}OK ($(podman --version))${NC}\n"
+    printf "${GREEN}ok ($(podman --version | head -1))${NC}\n"
     return 0
   else
-    printf "${RED}MISSING${NC}\n"
+    printf "${RED}missing${NC}\n"
     return 1
   fi
 }
 
-install_deps_core() {
-  log "Installing CORE system dependencies (CLI only)..."
-  if ! confirm "This will run 'apt-get update' and install podman, curl, openssl. Proceed?"; then
+check_ports() {
+  printf "  checking rootless ports... "
+  local port_start
+  port_start=$(sysctl -n net.ipv4.ip_unprivileged_port_start 2>/dev/null || echo "1024")
+  if [[ "$port_start" -le 80 ]]; then
+    printf "${GREEN}ok (start=${port_start})${NC}\n"
+    return 0
+  else
+    printf "${RED}not configured (start=${port_start})${NC}\n"
+    return 1
+  fi
+}
+
+install_core_prerequisites() {
+  log "installing core prerequisites..."
+  if ! confirm "this will install podman, curl, openssl and configure rootless ports. proceed?"; then
     return 0
   fi
 
   sudo apt-get update
   sudo apt-get install -y podman curl openssl
   
-  # Configure Firewall if UFW is active (Core ports only)
+  # Configure rootless ports
+  log "configuring rootless ports (80/443)..."
+  echo "net.ipv4.ip_unprivileged_port_start=80" | sudo tee /etc/sysctl.d/99-evi-rootless.conf
+  sudo sysctl --system
+  
+  # Enable linger
+  if ! loginctl show-user "$(whoami)" -p Linger 2>/dev/null | grep -q "yes"; then
+    log "enabling systemd linger for $(whoami)..."
+    sudo loginctl enable-linger "$(whoami)"
+  fi
+  
+  # Configure firewall
   if command -v ufw >/dev/null 2>&1; then
     if sudo ufw status | grep -q "Status: active"; then
-      log "Opening ports 80, 443 in UFW..."
+      log "opening ports 80, 443 in ufw..."
       sudo ufw allow 80/tcp
       sudo ufw allow 443/tcp
     fi
   fi
   
-  configure_rootless
+  info "core prerequisites installed."
+  read -r -p "press enter to continue..."
 }
 
-install_deps_gui() {
-  log "Installing CORE + GUI system dependencies..."
-  if ! confirm "This will install podman, curl, openssl AND cockpit-podman (web management). Proceed?"; then
+install_gui_tools() {
+  log "installing gui tools..."
+  if ! confirm "this will install cockpit (web-based server management). proceed?"; then
     return 0
   fi
 
   sudo apt-get update
-  sudo apt-get install -y podman curl openssl cockpit cockpit-podman
+  sudo apt-get install -y cockpit cockpit-podman
   
-  # Enable cockpit socket
-  log "Enabling Cockpit web console..."
   sudo systemctl enable --now cockpit.socket
   
-  # Configure Firewall if UFW is active
   if command -v ufw >/dev/null 2>&1; then
     if sudo ufw status | grep -q "Status: active"; then
-      log "Opening ports 80, 443, 9090 in UFW..."
-      sudo ufw allow 80/tcp
-      sudo ufw allow 443/tcp
+      log "opening port 9090 in ufw..."
       sudo ufw allow 9090/tcp
     fi
   fi
   
-  info "Cockpit enabled. Access via port 9090."
-  
-  configure_rootless
-  
-  # Enable user-level podman socket for Cockpit/Tools
-  log "Enabling user-level podman.socket..."
+  # Enable user podman socket for cockpit
   systemctl --user enable --now podman.socket
-}
-
-configure_rootless() {
-  # Enable rootless ports if needed (ports < 1024)
-  log "Configuring rootless ports (80/443)..."
-  echo "net.ipv4.ip_unprivileged_port_start=80" | sudo tee /etc/sysctl.d/99-evi-rootless.conf
-  sudo sysctl --system
   
-  info "Dependencies installed."
-  
-  # Enable linger for current user to allow services to start on boot
-  if ! loginctl show-user "$(whoami)" -p Linger | grep -q "yes"; then
-    log "Enabling systemd linger for $(whoami) (autostart on boot)..."
-    sudo loginctl enable-linger "$(whoami)"
-  fi
+  info "gui tools installed. access cockpit at https://localhost:9090"
+  read -r -p "press enter to continue..."
 }
 
 menu_prerequisites() {
   while true; do
     echo ""
-    log "=== Prerequisites ==="
+    log "=== prerequisites ==="
+    echo ""
     check_os || true
     check_resources || true
     check_podman || true
+    check_ports || true
     echo ""
-    echo "1) Install Core Dependencies (CLI only)"
-    echo "2) Install Core + GUI Tools (Cockpit/Podman)"
-    echo "3) Back to Main Menu"
-    read -r -p "Select: " opt
+    echo "1) install core prerequisites (requires sudo)"
+    echo "2) install gui tools (cockpit, optional)"
+    echo "3) back to main menu"
+    read -r -p "select: " opt
     case $opt in
-      1) install_deps_core ;;
-      2) install_deps_gui ;;
+      1) install_core_prerequisites ;;
+      2) install_gui_tools ;;
       3) break ;;
-      *) warn "Invalid option" ;;
+      *) warn "invalid option" ;;
     esac
   done
 }
 
-# --- 2. Secrets & Config ---
+# --- Guided Environment Configuration ---
 
-generate_secret() {
-  openssl rand -base64 32 | tr -d '/+' | cut -c1-32
+generate_password() {
+  openssl rand -base64 32 | tr -d '/+=' | cut -c1-24
 }
 
-ensure_config_files() {
-  # Ensure env files exist by copying templates if needed
-  if [[ ! -f "${TARGET_ENV}" ]]; then
-    cp "${TEMPLATE_ENV}" "${TARGET_ENV}"
-    info "Created ${TARGET_ENV} from template."
+guided_setup() {
+  log "=== guided environment configuration ==="
+  echo ""
+  echo "this wizard will help you configure evi for deployment."
+  echo ""
+  
+  ensure_config_files
+  
+  # Step 1: Access type
+  echo "step 1: how will users connect to evi?"
+  echo ""
+  echo "  a) internal use (private ip or intranet domain)"
+  echo "  b) public domain with automatic tls (let's encrypt)"
+  echo "  c) public ip address (self-signed certificate)"
+  echo ""
+  
+  local access_type=""
+  while [[ -z "${access_type}" ]]; do
+    read -r -p "select [a-c]: " access_type
+    case "${access_type}" in
+      a|A) access_type="internal" ;;
+      b|B) access_type="letsencrypt" ;;
+      c|C) access_type="public_ip" ;;
+      *) access_type=""; warn "please select a, b, or c" ;;
+    esac
+  done
+  
+  # Get domain/IP
+  echo ""
+  local domain=""
+  local tls_mode=""
+  
+  if [[ "${access_type}" == "letsencrypt" ]]; then
+    while [[ -z "${domain}" ]]; do
+      read -r -p "enter your public domain name (e.g., evi.example.com): " domain
+      if ! validate_domain "${domain}"; then
+        warn "invalid domain format"
+        domain=""
+      fi
+    done
+    tls_mode="letsencrypt"
+    
+    # Get ACME email
+    local acme_email=""
+    while [[ -z "${acme_email}" ]]; do
+      read -r -p "enter email for let's encrypt notifications: " acme_email
+      if [[ ! "${acme_email}" =~ ^[^@]+@[^@]+\.[^@]+$ ]]; then
+        warn "invalid email format"
+        acme_email=""
+      fi
+    done
+    
+    # Save ACME email
+    sed -i "s|^EVI_ACME_EMAIL=.*|EVI_ACME_EMAIL=${acme_email}|" "${TARGET_ENV}"
+    
+  elif [[ "${access_type}" == "public_ip" ]]; then
+    while [[ -z "${domain}" ]]; do
+      read -r -p "enter your public ip address: " domain
+      if ! validate_ip "${domain}"; then
+        warn "invalid ip address format"
+        domain=""
+      fi
+    done
+    tls_mode="manual"
+    
+  else  # internal
+    while [[ -z "${domain}" ]]; do
+      read -r -p "enter ip address or domain name: " domain
+      if ! validate_ip "${domain}" && ! validate_domain "${domain}"; then
+        warn "invalid ip or domain format"
+        domain=""
+      fi
+    done
+    tls_mode="manual"
   fi
-  if [[ ! -f "${TARGET_SECRETS}" ]]; then
-    cp "${TEMPLATE_SECRETS}" "${TARGET_SECRETS}"
-    info "Created ${TARGET_SECRETS} from template."
+  
+  # Step 2: TLS certificates (only for manual mode)
+  local generate_certs="yes"
+  if [[ "${tls_mode}" == "manual" ]]; then
+    echo ""
+    echo "step 2: tls certificate configuration"
+    echo ""
+    echo "  a) auto-generate self-signed certificate (recommended)"
+    echo "  b) use my own certificates"
+    echo ""
+    
+    local cert_choice=""
+    while [[ -z "${cert_choice}" ]]; do
+      read -r -p "select [a-b]: " cert_choice
+      case "${cert_choice}" in
+        a|A) generate_certs="yes" ;;
+        b|B) generate_certs="no" ;;
+        *) cert_choice=""; warn "please select a or b" ;;
+      esac
+    done
+    
+    if [[ "${generate_certs}" == "no" ]]; then
+      echo ""
+      echo "please place your certificates in: ${TLS_DIR}/"
+      echo "  - cert.pem (server certificate)"
+      echo "  - key.pem (private key)"
+      echo ""
+      read -r -p "press enter when files are ready..."
+      
+      if [[ ! -f "${TLS_DIR}/cert.pem" ]] || [[ ! -f "${TLS_DIR}/key.pem" ]]; then
+        err "certificates not found in ${TLS_DIR}/"
+        warn "you can add them later and run deployment again."
+      fi
+    fi
+  else
+    echo ""
+    echo "step 2: tls certificates"
+    echo "let's encrypt will automatically manage tls certificates."
+    echo ""
   fi
+  
+  # Step 3: Database passwords
+  echo "step 3: database password configuration"
+  echo ""
+  echo "  a) auto-generate secure passwords (recommended)"
+  echo "  b) set passwords manually"
+  echo ""
+  
+  local pass_choice=""
+  while [[ -z "${pass_choice}" ]]; do
+    read -r -p "select [a-b]: " pass_choice
+    case "${pass_choice}" in
+      a|A) pass_choice="auto" ;;
+      b|B) pass_choice="manual" ;;
+      *) pass_choice=""; warn "please select a or b" ;;
+    esac
+  done
+  
+  local pg_password="" app_password="" admin_password=""
+  
+  if [[ "${pass_choice}" == "manual" ]]; then
+    echo ""
+    while [[ -z "${pg_password}" ]]; do
+      read -r -s -p "enter postgres superuser password (min ${MIN_PASSWORD_LENGTH} chars): " pg_password
+      echo ""
+      if ! validate_password "${pg_password}"; then
+        warn "password must be at least ${MIN_PASSWORD_LENGTH} characters"
+        pg_password=""
+      fi
+    done
+    
+    while [[ -z "${app_password}" ]]; do
+      read -r -s -p "enter app service password (min ${MIN_PASSWORD_LENGTH} chars): " app_password
+      echo ""
+      if ! validate_password "${app_password}"; then
+        warn "password must be at least ${MIN_PASSWORD_LENGTH} characters"
+        app_password=""
+      fi
+    done
+    
+    while [[ -z "${admin_password}" ]]; do
+      read -r -s -p "enter admin user password (min ${MIN_PASSWORD_LENGTH} chars): " admin_password
+      echo ""
+      if ! validate_password "${admin_password}"; then
+        warn "password must be at least ${MIN_PASSWORD_LENGTH} characters"
+        admin_password=""
+      fi
+    done
+  else
+    pg_password=$(generate_password)
+    app_password=$(generate_password)
+    admin_password=$(generate_password)
+    info "passwords will be auto-generated."
+  fi
+  
+  # Step 4: GUI tools
+  echo ""
+  echo "step 4: administration tools"
+  local install_gui="no"
+  if confirm "would you like to install gui tools (cockpit)?"; then
+    install_gui="yes"
+  fi
+  
+  # Summary
+  echo ""
+  log "=== configuration summary ==="
+  echo ""
+  printf "  domain/ip:     %s\n" "${domain}"
+  printf "  tls mode:      %s\n" "${tls_mode}"
+  if [[ "${tls_mode}" == "manual" ]]; then
+    printf "  certificates:  %s\n" "${generate_certs}"
+  fi
+  printf "  db passwords:  %s\n" "${pass_choice}"
+  printf "  gui tools:     %s\n" "${install_gui}"
+  echo ""
+  
+  if ! confirm "save this configuration?"; then
+    warn "configuration cancelled."
+    return
+  fi
+  
+  # Apply configuration
+  log "saving configuration..."
+  
+  # Update evi.env
+  sed -i "s|^EVI_DOMAIN=.*|EVI_DOMAIN=${domain}|" "${TARGET_ENV}"
+  sed -i "s|^EVI_TLS_MODE=.*|EVI_TLS_MODE=${tls_mode}|" "${TARGET_ENV}"
+  
+  # Update evi.secrets.env
+  sed -i "s|^EVI_POSTGRES_PASSWORD=.*|EVI_POSTGRES_PASSWORD=${pg_password}|" "${TARGET_SECRETS}"
+  sed -i "s|^EVI_APP_DB_PASSWORD=.*|EVI_APP_DB_PASSWORD=${app_password}|" "${TARGET_SECRETS}"
+  sed -i "s|^EVI_ADMIN_DB_PASSWORD=.*|EVI_ADMIN_DB_PASSWORD=${admin_password}|" "${TARGET_SECRETS}"
+  
+  info "configuration saved to evi.env and evi.secrets.env"
+  
+  # Generate certificates if needed
+  if [[ "${tls_mode}" == "manual" ]] && [[ "${generate_certs}" == "yes" ]]; then
+    log "generating tls certificates..."
+    ensure_executable
+    mkdir -p "${TLS_DIR}"
+    if "${SCRIPTS_DIR}/gen-self-signed-tls.sh" "${domain}" "${TLS_DIR}" --force; then
+      info "tls certificates generated successfully."
+    else
+      err "certificate generation failed!"
+    fi
+  fi
+  
+  # Install GUI tools if requested
+  if [[ "${install_gui}" == "yes" ]]; then
+    install_gui_tools
+  fi
+  
+  echo ""
+  info "guided setup complete!"
+  info "you can now proceed to 'deploy' to start the application."
+  read -r -p "press enter to continue..."
 }
+
+# --- Manual Environment Configuration (Advanced) ---
 
 edit_file() {
   local file="$1"
@@ -249,415 +666,241 @@ edit_file() {
   fi
 }
 
-apply_config_and_autogenerate() {
-  log "Validating and applying configuration..."
+apply_auto_secrets() {
+  log "auto-generating missing secrets..."
   ensure_config_files
-  ensure_executable
   
-  local updates_made=0
+  local keys=("EVI_POSTGRES_PASSWORD" "EVI_ADMIN_DB_PASSWORD" "EVI_APP_DB_PASSWORD")
+  local updated=0
   
-  # Helper to check and fill secret
-  check_fill_secret() {
-    local key="$1"
-    local file="${TARGET_SECRETS}"
-    # Grep key, ignore comments, cut value. If empty after = or not found...
-    # Simple logic: check if line exists as KEY=...
-    # If KEY= is there but empty value, fill it.
-    
-    if grep -q "^${key}=$" "${file}"; then
-      log "  Generating secret for ${key}..."
-      local val=$(generate_secret)
-      # Use sed with a different delimiter to avoid issues with / in base64
-      # Using | as delimiter
-      sed -i "s|^${key}=.*|${key}=${val}|" "${file}"
-      updates_made=1
-    elif grep -q "^${key}=\s*$" "${file}"; then
-       # Handle case with spaces? strict check above covers empty
-       log "  Generating secret for ${key}..."
-       local val=$(generate_secret)
-       sed -i "s|^${key}=.*|${key}=${val}|" "${file}"
-       updates_made=1
-    fi
-  }
-
-  check_fill_secret "EVI_POSTGRES_PASSWORD"
-  check_fill_secret "EVI_ADMIN_DB_PASSWORD"
-  check_fill_secret "EVI_APP_DB_PASSWORD"
-  
-  # JWT: If all options are empty/default, we rely on EVI_JWT_GENERATE_KEY=true in template.
-  # But we can verify if the user messed up.
-  # For now, let's assume template default is fine for auto-generation (handled by evictl).
-  
-  if [[ $updates_made -eq 1 ]]; then
-    info "Auto-generated missing secrets in ${TARGET_SECRETS}."
-  else
-    info "No missing secrets found (all passwords set)."
-  fi
-  
-  # Log that JWT/TLS will be handled by evictl init
-  log "Note: JWT keys and TLS certificates will be processed during 'Init & Start'."
-  
-  info "Configuration is ready."
-  read -r -p "Press Enter to continue..."
-}
-
-check_env_status() {
-  if [[ -f "${TARGET_ENV}" ]]; then
-    printf "${GREEN}[OK]${NC}"
-  else
-    printf "${RED}[MISSING]${NC}"
-  fi
-}
-
-check_secrets_status() {
-  local file="${TARGET_SECRETS}"
-  if [[ ! -f "${file}" ]]; then
-    printf "${RED}[MISSING]${NC}"
-    return
-  fi
-  
-  local needs_apply=0
-  local required_keys=("EVI_POSTGRES_PASSWORD" "EVI_ADMIN_DB_PASSWORD" "EVI_APP_DB_PASSWORD")
-  
-  for key in "${required_keys[@]}"; do
-    # If key missing OR key is empty
-    if ! grep -q "^${key}=" "${file}" || grep -q "^${key}=\s*$" "${file}"; then
-      needs_apply=1
-      break
+  for key in "${keys[@]}"; do
+    local val
+    val=$(grep "^${key}=" "${TARGET_SECRETS}" 2>/dev/null | cut -d'=' -f2 || echo "")
+    if [[ -z "${val}" ]]; then
+      local new_val
+      new_val=$(generate_password)
+      sed -i "s|^${key}=.*|${key}=${new_val}|" "${TARGET_SECRETS}"
+      info "generated ${key}"
+      updated=1
     fi
   done
   
-  if [[ $needs_apply -eq 1 ]]; then
-    printf "${YELLOW}[WAITING FOR APPLY]${NC}"
-  else
-    printf "${GREEN}[OK]${NC}"
-  fi
-}
-
-menu_config() {
-  while true; do
-    echo ""
-    log "=== Configuration ==="
-    # Status check
-    printf "  %s evi.env\n" "$(check_env_status)"
-    printf "  %s evi.secrets.env\n" "$(check_secrets_status)"
-    
-    echo ""
-    echo "1) Edit Environment (evi.env)"
-    echo "2) Edit Secrets (evi.secrets.env)"
-    echo "3) Apply Configuration (Auto-generate missing secrets)"
-    echo "4) Back to Main Menu"
-    read -r -p "Select: " opt
-    case $opt in
-      1) edit_file "${TARGET_ENV}" ;;
-      2) edit_file "${TARGET_SECRETS}" ;;
-      3) apply_config_and_autogenerate ;;
-      4) break ;;
-      *) warn "Invalid option" ;;
-    esac
-  done
-}
-
-# --- 3. Deployment ---
-
-deploy_up() {
-  log "Starting Deployment..."
-  ensure_executable
-  
-  # Ensure env files are sourced by evictl by default logic
-  # But we must ensure they exist first
-  if [[ ! -f "${TARGET_ENV}" || ! -f "${TARGET_SECRETS}" ]]; then
-    err "Configuration files missing. Go to Config menu first."
-    return
-  fi
-
-  # Ask to build images
-  if confirm "Do you want to BUILD container images from source now?"; then
-    "${SCRIPT_DIR}/evictl" build
-  else
-    info "Skipping build (assuming images exist or will be pulled)."
-  fi
-
-  # Run init to render quadlets
-  log "Initializing services (rendering configs, generating keys)..."
-  "${SCRIPT_DIR}/evictl" init
-  
-  # Run up
-  log "Starting services..."
-  "${SCRIPT_DIR}/evictl" up
-}
-
-deploy_down() {
-  "${SCRIPT_DIR}/evictl" down
-}
-
-deploy_restart() {
-  "${SCRIPT_DIR}/evictl" restart
-}
-
-menu_deploy() {
-  while true; do
-    echo ""
-    log "=== Deployment ==="
-    echo "1) Init & Start (Build & Up)"
-    echo "2) Stop (Down)"
-    echo "3) Restart"
-    echo "4) View Logs (Proxy)"
-    echo "5) Back to Main Menu"
-    read -r -p "Select: " opt
-    case $opt in
-      1) deploy_up ;;
-      2) deploy_down ;;
-      3) deploy_restart ;;
-      4) "${SCRIPT_DIR}/evictl" logs ;;
-      5) break ;;
-      *) warn "Invalid option" ;;
-    esac
-  done
-}
-
-# --- 4. TLS Certificate Management ---
-
-# Get domain from evi.env file
-get_evi_domain() {
-  if [[ -f "${TARGET_ENV}" ]]; then
-    grep "^EVI_DOMAIN=" "${TARGET_ENV}" 2>/dev/null | cut -d'=' -f2 | tr -d '"' | tr -d "'" || echo ""
-  else
-    echo ""
-  fi
-}
-
-# Get TLS mode from evi.env file
-get_tls_mode() {
-  if [[ -f "${TARGET_ENV}" ]]; then
-    grep "^EVI_TLS_MODE=" "${TARGET_ENV}" 2>/dev/null | cut -d'=' -f2 | tr -d '"' | tr -d "'" || echo "letsencrypt"
-  else
-    echo "letsencrypt"
-  fi
-}
-
-# Check TLS certificate status
-check_tls_status() {
-  if [[ ! -d "${TLS_DIR}" ]] || [[ ! -f "${TLS_DIR}/cert.pem" ]]; then
-    printf "${YELLOW}[NOT GENERATED]${NC}"
-    return
+  if [[ $updated -eq 0 ]]; then
+    info "all secrets already configured."
   fi
   
-  ensure_executable
-  local status
-  status=$("${SCRIPTS_DIR}/gen-self-signed-tls.sh" "dummy" "${TLS_DIR}" --check 2>/dev/null || echo "ERROR")
-  
-  if [[ "${status}" == VALID* ]]; then
-    local days
-    days=$(echo "${status}" | cut -d: -f2)
-    printf "${GREEN}[VALID - ${days} days left]${NC}"
-  elif [[ "${status}" == EXPIRING_SOON* ]]; then
-    local days
-    days=$(echo "${status}" | cut -d: -f2)
-    printf "${YELLOW}[EXPIRING - ${days} days left]${NC}"
-  elif [[ "${status}" == "EXPIRED" ]]; then
-    printf "${RED}[EXPIRED]${NC}"
-  else
-    printf "${RED}[ERROR]${NC}"
-  fi
+  read -r -p "press enter to continue..."
 }
 
-# Generate TLS certificates
 tls_generate() {
   ensure_config_files
   ensure_executable
   
   local domain
-  domain=$(get_evi_domain)
+  domain=$(grep "^EVI_DOMAIN=" "${TARGET_ENV}" 2>/dev/null | cut -d'=' -f2 | tr -d '"' | tr -d "'" || echo "")
   
   if [[ -z "${domain}" ]] || [[ "${domain}" == "evi.example.com" ]]; then
     warn "EVI_DOMAIN is not set or still default."
-    echo ""
-    read -r -p "Enter domain or IP address for the certificate: " domain
+    read -r -p "enter domain or ip address: " domain
     if [[ -z "${domain}" ]]; then
-      err "Domain cannot be empty."
+      err "domain cannot be empty."
       return
     fi
-    # Update evi.env with the domain
-    if grep -q "^EVI_DOMAIN=" "${TARGET_ENV}"; then
-      sed -i "s|^EVI_DOMAIN=.*|EVI_DOMAIN=${domain}|" "${TARGET_ENV}"
-    fi
+    sed -i "s|^EVI_DOMAIN=.*|EVI_DOMAIN=${domain}|" "${TARGET_ENV}"
   fi
   
-  echo ""
-  log "Generating TLS certificates for: ${domain}"
-  
-  # Check if certificates already exist
   if [[ -f "${TLS_DIR}/cert.pem" ]]; then
-    if ! confirm "Certificates already exist. Regenerate?"; then
+    if ! confirm "certificates already exist. regenerate?"; then
       return
     fi
   fi
   
   mkdir -p "${TLS_DIR}"
   
-  # Generate certificates
   if "${SCRIPTS_DIR}/gen-self-signed-tls.sh" "${domain}" "${TLS_DIR}" --force; then
-    info "Certificates generated successfully!"
-    echo ""
+    info "certificates generated successfully!"
     
-    # Update evi.env to use manual TLS mode
-    local current_mode
-    current_mode=$(get_tls_mode)
-    if [[ "${current_mode}" != "manual" ]]; then
-      log "Updating EVI_TLS_MODE to 'manual' in evi.env..."
-      if grep -q "^EVI_TLS_MODE=" "${TARGET_ENV}"; then
-        sed -i "s|^EVI_TLS_MODE=.*|EVI_TLS_MODE=manual|" "${TARGET_ENV}"
-      fi
-    fi
-    
-    # Update evi.secrets.env with certificate paths
-    log "Updating certificate paths in evi.secrets.env..."
-    if grep -q "^EVI_TLS_CERT_PATH=" "${TARGET_SECRETS}"; then
-      sed -i "s|^EVI_TLS_CERT_PATH=.*|EVI_TLS_CERT_PATH=${TLS_DIR}/cert.pem|" "${TARGET_SECRETS}"
-    fi
-    if grep -q "^EVI_TLS_KEY_PATH=" "${TARGET_SECRETS}"; then
-      sed -i "s|^EVI_TLS_KEY_PATH=.*|EVI_TLS_KEY_PATH=${TLS_DIR}/key.pem|" "${TARGET_SECRETS}"
-    fi
-    
-    info "Configuration updated automatically."
+    # Update TLS mode
+    sed -i "s|^EVI_TLS_MODE=.*|EVI_TLS_MODE=manual|" "${TARGET_ENV}"
+    info "EVI_TLS_MODE set to 'manual'"
   else
-    err "Certificate generation failed!"
+    err "certificate generation failed!"
   fi
   
-  read -r -p "Press Enter to continue..."
+  read -r -p "press enter to continue..."
 }
 
-# Show TLS certificate info
 tls_show_info() {
-  ensure_executable
-  
   if [[ ! -f "${TLS_DIR}/cert.pem" ]]; then
-    warn "No certificates found. Generate them first."
-    read -r -p "Press Enter to continue..."
+    warn "no certificates found."
+    read -r -p "press enter to continue..."
     return
   fi
   
   echo ""
-  log "=== Certificate Information ==="
-  "${SCRIPTS_DIR}/gen-self-signed-tls.sh" "dummy" "${TLS_DIR}" --check 2>/dev/null || true
+  log "=== certificate information ==="
+  openssl x509 -in "${TLS_DIR}/cert.pem" -noout -subject -issuer -dates -ext subjectAltName 2>/dev/null || true
+  echo ""
   
-  read -r -p "Press Enter to continue..."
+  read -r -p "press enter to continue..."
 }
 
-# Show client installation instructions
 tls_client_instructions() {
   echo ""
-  log "=== Client Certificate Installation ==="
+  log "=== client certificate installation ==="
   echo ""
   
   if [[ ! -f "${TLS_DIR}/evi-tls.crt" ]]; then
-    warn "CA certificate not found. Generate certificates first."
-    read -r -p "Press Enter to continue..."
+    warn "ca certificate not found. generate certificates first."
+    read -r -p "press enter to continue..."
     return
   fi
   
-  local ca_path="${TLS_DIR}/evi-tls.crt"
-  
-  echo "To eliminate browser security warnings, install the CA certificate"
-  echo "on client devices that will access this application."
+  echo "to eliminate browser warnings, install the ca certificate on client devices."
   echo ""
-  echo "Certificate file: ${ca_path}"
+  echo "certificate file: ${TLS_DIR}/evi-tls.crt"
   echo ""
-  printf "${CYAN}=== Windows ===${NC}\n"
-  echo "1. Copy evi-tls.crt to the client machine"
-  echo "2. Double-click the file"
-  echo "3. Click 'Install Certificate...'"
-  echo "4. Select 'Local Machine' (requires admin)"
-  echo "5. Select 'Place all certificates in the following store'"
-  echo "6. Browse and select 'Trusted Root Certification Authorities'"
-  echo "7. Click Finish"
-  echo ""
-  printf "${CYAN}=== macOS ===${NC}\n"
-  echo "1. Copy evi-tls.crt to the client machine"
-  echo "2. Double-click the file to add to Keychain"
-  echo "3. Open Keychain Access"
-  echo "4. Find 'evi Root CA' in the System keychain"
-  echo "5. Double-click it, expand 'Trust'"
-  echo "6. Set 'When using this certificate' to 'Always Trust'"
-  echo ""
-  printf "${CYAN}=== Linux (Ubuntu/Debian) ===${NC}\n"
-  echo "1. Copy evi-tls.crt to /usr/local/share/ca-certificates/"
-  echo "   sudo cp ${ca_path} /usr/local/share/ca-certificates/evi-tls.crt"
-  echo "2. Update CA certificates:"
-  echo "   sudo update-ca-certificates"
-  echo ""
-  printf "${CYAN}=== Firefox (all platforms) ===${NC}\n"
-  echo "Firefox uses its own certificate store:"
-  echo "1. Open Firefox Settings > Privacy & Security"
-  echo "2. Scroll to 'Certificates' > 'View Certificates'"
-  echo "3. Go to 'Authorities' tab"
-  echo "4. Click 'Import' and select evi-tls.crt"
-  echo "5. Check 'Trust this CA to identify websites'"
+  printf "${CYAN}windows:${NC} double-click file > install certificate > local machine > trusted root ca\n"
+  printf "${CYAN}macos:${NC} double-click file > add to keychain > set 'always trust'\n"
+  printf "${CYAN}linux:${NC} sudo cp evi-tls.crt /usr/local/share/ca-certificates/ && sudo update-ca-certificates\n"
+  printf "${CYAN}firefox:${NC} settings > privacy > certificates > import > trust for websites\n"
   echo ""
   
-  read -r -p "Press Enter to continue..."
+  read -r -p "press enter to continue..."
 }
 
-# Regenerate TLS certificates (force)
-tls_regenerate() {
-  ensure_config_files
-  ensure_executable
-  
-  local domain
-  domain=$(get_evi_domain)
-  
-  if [[ -z "${domain}" ]] || [[ "${domain}" == "evi.example.com" ]]; then
-    err "EVI_DOMAIN is not set. Please configure it first."
-    read -r -p "Press Enter to continue..."
-    return
-  fi
-  
-  if ! confirm "This will regenerate ALL TLS certificates for ${domain}. Proceed?"; then
-    return
-  fi
-  
-  mkdir -p "${TLS_DIR}"
-  
-  if "${SCRIPTS_DIR}/gen-self-signed-tls.sh" "${domain}" "${TLS_DIR}" --force; then
-    info "Certificates regenerated successfully!"
-    warn "Remember to reinstall evi-tls.crt on client devices if you previously installed it."
-  else
-    err "Certificate regeneration failed!"
-  fi
-  
-  read -r -p "Press Enter to continue..."
-}
-
-menu_tls() {
+menu_manual_config() {
   while true; do
     echo ""
-    log "=== TLS Certificate Management ==="
-    
-    # Show current status
-    local domain
-    domain=$(get_evi_domain)
-    local tls_mode
-    tls_mode=$(get_tls_mode)
-    
-    printf "  Domain:    %s\n" "${domain:-${YELLOW}(not set)${NC}}"
-    printf "  TLS Mode:  %s\n" "${tls_mode}"
-    printf "  Status:    %s\n" "$(check_tls_status)"
-    
+    log "=== manual configuration (advanced) ==="
     echo ""
-    echo "1) Generate Certificates (for internal use)"
-    echo "2) View Certificate Info"
-    echo "3) Regenerate Certificates (force)"
-    echo "4) Client Installation Instructions"
-    echo "5) Back to Main Menu"
-    read -r -p "Select: " opt
+    printf "  environment: %s\n" "$(check_env_status)"
+    printf "  secrets:     %s\n" "$(check_secrets_status)"
+    printf "  tls:         %s\n" "$(check_tls_status)"
+    echo ""
+    echo "1) edit environment (evi.env)"
+    echo "2) edit secrets (evi.secrets.env)"
+    echo "3) auto-generate missing secrets"
+    echo "4) generate tls certificates"
+    echo "5) view certificate info"
+    echo "6) client certificate instructions"
+    echo "7) back"
+    read -r -p "select: " opt
     case $opt in
-      1) tls_generate ;;
-      2) tls_show_info ;;
-      3) tls_regenerate ;;
-      4) tls_client_instructions ;;
+      1) edit_file "${TARGET_ENV}" ;;
+      2) edit_file "${TARGET_SECRETS}" ;;
+      3) apply_auto_secrets ;;
+      4) tls_generate ;;
+      5) tls_show_info ;;
+      6) tls_client_instructions ;;
+      7) break ;;
+      *) warn "invalid option" ;;
+    esac
+  done
+}
+
+menu_env_config() {
+  while true; do
+    echo ""
+    log "=== environment configuration ==="
+    echo ""
+    echo "  a) guided setup (recommended for first-time setup)"
+    echo "  b) manual configuration (advanced)"
+    echo "  c) back to main menu"
+    echo ""
+    read -r -p "select: " opt
+    case $opt in
+      a|A) guided_setup ;;
+      b|B) menu_manual_config ;;
+      c|C) break ;;
+      *) warn "invalid option" ;;
+    esac
+  done
+}
+
+# --- Deployment ---
+
+deploy_up() {
+  log "starting deployment..."
+  ensure_executable
+  
+  if [[ ! -f "${TARGET_ENV}" || ! -f "${TARGET_SECRETS}" ]]; then
+    err "configuration files missing. run guided setup first."
+    read -r -p "press enter to continue..."
+    return
+  fi
+  
+  # Check TLS readiness
+  local tls_status
+  tls_status=$(check_tls_status)
+  if [[ "${tls_status}" == "missing_certs" ]]; then
+    err "tls certificates missing. generate them in environment configuration."
+    read -r -p "press enter to continue..."
+    return
+  fi
+  
+  if confirm "do you want to build container images from source?"; then
+    "${SCRIPT_DIR}/evictl" build
+  else
+    info "skipping build (will pull images if needed)."
+  fi
+  
+  log "initializing services..."
+  "${SCRIPT_DIR}/evictl" init
+  
+  log "starting services..."
+  "${SCRIPT_DIR}/evictl" up
+  
+  echo ""
+  info "deployment complete!"
+  read -r -p "press enter to continue..."
+}
+
+menu_deploy() {
+  while true; do
+    echo ""
+    log "=== deployment ==="
+    printf "  status: %s\n" "$(check_deployment_status)"
+    echo ""
+    echo "1) deploy (build & start)"
+    echo "2) stop"
+    echo "3) restart"
+    echo "4) view logs"
+    echo "5) back to main menu"
+    read -r -p "select: " opt
+    case $opt in
+      1) deploy_up ;;
+      2) "${SCRIPT_DIR}/evictl" down ;;
+      3) "${SCRIPT_DIR}/evictl" restart ;;
+      4) "${SCRIPT_DIR}/evictl" logs ;;
       5) break ;;
-      *) warn "Invalid option" ;;
+      *) warn "invalid option" ;;
+    esac
+  done
+}
+
+# --- Manage (evictl) ---
+
+menu_manage() {
+  while true; do
+    echo ""
+    log "=== manage ==="
+    echo ""
+    echo "1) status"
+    echo "2) logs (all services)"
+    echo "3) restart services"
+    echo "4) update (pull images)"
+    echo "5) doctor (check system)"
+    echo "6) back to main menu"
+    read -r -p "select: " opt
+    case $opt in
+      1) "${SCRIPT_DIR}/evictl" status ;;
+      2) "${SCRIPT_DIR}/evictl" logs ;;
+      3) "${SCRIPT_DIR}/evictl" restart ;;
+      4) "${SCRIPT_DIR}/evictl" update ;;
+      5) "${SCRIPT_DIR}/evictl" doctor ;;
+      6) break ;;
+      *) warn "invalid option" ;;
     esac
   done
 }
@@ -668,20 +911,26 @@ main_menu() {
   ensure_executable
   while true; do
     echo ""
-    log "=== evi installation main menu ==="
-    echo "1) Prerequisites (Check & Install)"
-    echo "2) Configuration & Secrets"
-    echo "3) TLS Certificates"
-    echo "4) Deployment Operations"
-    echo "5) Exit"
-    read -r -p "Select: " opt
+    echo "┌──────────────────────────────────────────────────────────────┐"
+    echo "│                    evi installation manager                   │"
+    echo "└──────────────────────────────────────────────────────────────┘"
+    
+    display_status
+    
+    echo "  1) prerequisites"
+    echo "  2) environment configuration"
+    echo "  3) deploy"
+    echo "  4) manage"
+    echo "  5) exit"
+    echo ""
+    read -r -p "select: " opt
     case $opt in
       1) menu_prerequisites ;;
-      2) menu_config ;;
-      3) menu_tls ;;
-      4) menu_deploy ;;
-      5) log "Bye!"; exit 0 ;;
-      *) warn "Invalid option" ;;
+      2) menu_env_config ;;
+      3) menu_deploy ;;
+      4) menu_manage ;;
+      5) log "bye!"; exit 0 ;;
+      *) warn "invalid option" ;;
     esac
   done
 }

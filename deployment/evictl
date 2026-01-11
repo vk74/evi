@@ -1,17 +1,23 @@
 #!/usr/bin/env bash
 #
-# Version: 1.3.0
+# Version: 1.4.0
 # Purpose: evi production deployment controller (rootless Podman + Quadlet).
 # Deployment file: evictl
 # Logic:
-# - Provides CLI subcommands (init/up/down/restart/status/logs/update/doctor/self-update/build)
+# - Provides CLI subcommands (init/up/down/restart/status/logs/update/doctor/health/cert/build)
 # - Provides interactive menu mode when run without args
 # - Renders Quadlet units from templates, renders Caddyfile, and manages secrets
+#
+# Changes in v1.4.0:
+# - Added health command for comprehensive service health checks
+# - Added cert command with subcommands: info, check, regen, install
+# - Lowercase styling for menu and messages
 #
 # Changes in v1.3.0:
 # - Fixed TLS handshake error by using port-based Caddy binding instead of domain-based
 # - Added auto_https off for manual TLS mode
 # - Refactored Caddyfile rendering with EVI_CADDY_GLOBAL_OPTIONS and EVI_HTTP_REDIRECT_BLOCK
+# - Removed internal TLS mode (simplified to manual and letsencrypt only)
 #
 # Changes in v1.2.1:
 # - Fixed unbound variable error: EVI_TLS_CERT_IN_CONTAINER now set in render_caddyfile()
@@ -98,8 +104,8 @@ load_env_files() {
   [[ -n "${EVI_DOMAIN:-}" ]] || die "EVI_DOMAIN is not set in evi.env"
   
   EVI_TLS_MODE="${EVI_TLS_MODE:-letsencrypt}"
-  if [[ "${EVI_TLS_MODE}" != "letsencrypt" && "${EVI_TLS_MODE}" != "manual" && "${EVI_TLS_MODE}" != "internal" ]]; then
-    die "Invalid EVI_TLS_MODE: '${EVI_TLS_MODE}'. Must be one of: letsencrypt, manual, internal."
+  if [[ "${EVI_TLS_MODE}" != "letsencrypt" && "${EVI_TLS_MODE}" != "manual" ]]; then
+    die "Invalid EVI_TLS_MODE: '${EVI_TLS_MODE}'. Must be one of: letsencrypt, manual."
   fi
 }
 
@@ -189,21 +195,6 @@ render_caddyfile() {
     export EVI_HTTP_REDIRECT_BLOCK=":${EVI_HTTP_PORT} {
 	redir https://${EVI_DOMAIN}{uri} permanent
 }"
-  elif [[ "${EVI_TLS_MODE}" == "internal" ]]; then
-    # Internal TLS mode - let Caddy manage local CA
-    export EVI_CADDY_GLOBAL_OPTIONS="# Internal TLS - Caddy manages local CA"
-    export EVI_HTTP_REDIRECT_BLOCK="http://${EVI_DOMAIN}:${EVI_HTTP_PORT} {
-	redir https://${EVI_DOMAIN}{uri} permanent
-}"
-  else
-    # Let's Encrypt mode - need email for ACME
-    export EVI_CADDY_GLOBAL_OPTIONS="email ${EVI_ACME_EMAIL:-admin@example.com}"
-    export EVI_HTTP_REDIRECT_BLOCK="http://${EVI_DOMAIN}:${EVI_HTTP_PORT} {
-	redir https://${EVI_DOMAIN}{uri} permanent
-}"
-  fi
-
-  if [[ "${EVI_TLS_MODE}" == "manual" ]]; then
     # Set container paths for manual TLS mode (fixed paths inside container)
     export EVI_TLS_CERT_IN_CONTAINER="/etc/evi-tls/cert.pem"
     export EVI_TLS_KEY_IN_CONTAINER="/etc/evi-tls/key.pem"
@@ -212,11 +203,12 @@ render_caddyfile() {
     export EVI_TLS_SITE_BLOCK="$(cat "${site_tpl}")"
     export EVI_TLS_SITE_BLOCK="${EVI_TLS_SITE_BLOCK//\{\{EVI_TLS_CERT_IN_CONTAINER\}\}/${EVI_TLS_CERT_IN_CONTAINER}}"
     export EVI_TLS_SITE_BLOCK="${EVI_TLS_SITE_BLOCK//\{\{EVI_TLS_KEY_IN_CONTAINER\}\}/${EVI_TLS_KEY_IN_CONTAINER}}"
-  elif [[ "${EVI_TLS_MODE}" == "internal" ]]; then
-    site_tpl="${PROXY_DIR}/Caddyfile.site.internal.template"
-    export EVI_TLS_SITE_BLOCK="$(cat "${site_tpl}")"
   else
-    # Default to letsencrypt
+    # Let's Encrypt mode - need email for ACME
+    export EVI_CADDY_GLOBAL_OPTIONS="email ${EVI_ACME_EMAIL:-admin@example.com}"
+    export EVI_HTTP_REDIRECT_BLOCK="http://${EVI_DOMAIN}:${EVI_HTTP_PORT} {
+	redir https://${EVI_DOMAIN}{uri} permanent
+}"
     site_tpl="${PROXY_DIR}/Caddyfile.site.letsencrypt.template"
     export EVI_TLS_SITE_BLOCK="$(cat "${site_tpl}")"
   fi
@@ -549,6 +541,190 @@ cmd_self_update() {
   die "self-update not implemented yet (MVP placeholder)."
 }
 
+cmd_health() {
+  require_cmd podman
+  load_env_files
+  
+  log "== health check =="
+  echo ""
+  
+  local all_ok=true
+  
+  # Check containers
+  log "containers:"
+  local containers=("evi-db" "evi-be" "evi-fe" "evi-proxy")
+  for c in "${containers[@]}"; do
+    local status
+    status=$(podman ps --filter "name=^${c}$" --format "{{.Status}}" 2>/dev/null || echo "")
+    if [[ -n "${status}" ]]; then
+      printf "  %-12s ${GREEN}running${NC} (%s)\n" "${c}:" "${status}"
+    else
+      printf "  %-12s ${RED}not running${NC}\n" "${c}:"
+      all_ok=false
+    fi
+  done
+  echo ""
+  
+  # Check database connectivity using app_service account
+  log "database:"
+  if podman ps --filter "name=^evi-db$" --format "{{.Status}}" 2>/dev/null | grep -q "healthy"; then
+    printf "  %-12s ${GREEN}healthy${NC}\n" "status:"
+    
+    # Try to connect with app_service
+    local db_test
+    db_test=$(podman exec evi-db psql -U app_service -d maindb -c "SELECT 1;" 2>&1 || echo "FAIL")
+    if echo "${db_test}" | grep -q "1 row"; then
+      printf "  %-12s ${GREEN}ok${NC}\n" "app_service:"
+    else
+      printf "  %-12s ${YELLOW}connection issue${NC}\n" "app_service:"
+    fi
+  else
+    printf "  %-12s ${RED}not healthy${NC}\n" "status:"
+    all_ok=false
+  fi
+  echo ""
+  
+  # Check HTTPS endpoint
+  log "https endpoint:"
+  if require_cmd curl; then
+    local https_test
+    https_test=$(curl -sk --connect-timeout 5 -o /dev/null -w "%{http_code}" "https://${EVI_DOMAIN}/" 2>/dev/null || echo "000")
+    if [[ "${https_test}" == "200" ]] || [[ "${https_test}" == "301" ]] || [[ "${https_test}" == "302" ]]; then
+      printf "  %-12s ${GREEN}ok (HTTP ${https_test})${NC}\n" "status:"
+    else
+      printf "  %-12s ${YELLOW}issue (HTTP ${https_test})${NC}\n" "status:"
+    fi
+  else
+    printf "  %-12s ${YELLOW}curl not available${NC}\n" "status:"
+  fi
+  echo ""
+  
+  # Check TLS certificate
+  log "tls certificate:"
+  local tls_dir="${ENV_DIR}/tls"
+  if [[ "${EVI_TLS_MODE}" == "manual" ]] && [[ -f "${tls_dir}/cert.pem" ]]; then
+    local expiry
+    expiry=$(openssl x509 -enddate -noout -in "${tls_dir}/cert.pem" 2>/dev/null | cut -d= -f2 || echo "")
+    if [[ -n "${expiry}" ]]; then
+      local expiry_epoch now_epoch days_left
+      expiry_epoch=$(date -d "${expiry}" +%s 2>/dev/null || date -j -f "%b %d %T %Y %Z" "${expiry}" +%s 2>/dev/null || echo "0")
+      now_epoch=$(date +%s)
+      days_left=$(( (expiry_epoch - now_epoch) / 86400 ))
+      
+      if [[ ${days_left} -lt 0 ]]; then
+        printf "  %-12s ${RED}expired${NC}\n" "status:"
+        all_ok=false
+      elif [[ ${days_left} -lt 30 ]]; then
+        printf "  %-12s ${YELLOW}expiring in ${days_left} days${NC}\n" "status:"
+      else
+        printf "  %-12s ${GREEN}valid (${days_left} days left)${NC}\n" "status:"
+      fi
+    fi
+  elif [[ "${EVI_TLS_MODE}" == "letsencrypt" ]]; then
+    printf "  %-12s ${GREEN}managed by let's encrypt${NC}\n" "mode:"
+  else
+    printf "  %-12s ${YELLOW}not configured${NC}\n" "status:"
+  fi
+  echo ""
+  
+  if [[ "${all_ok}" == true ]]; then
+    log "overall: ${GREEN}all systems operational${NC}"
+  else
+    log "overall: ${YELLOW}some issues detected${NC}"
+  fi
+}
+
+cmd_cert() {
+  local subcmd="${1:-info}"
+  shift || true
+  
+  load_env_files
+  local tls_dir="${ENV_DIR}/tls"
+  
+  case "${subcmd}" in
+    info)
+      log "== certificate information =="
+      if [[ "${EVI_TLS_MODE}" == "letsencrypt" ]]; then
+        log "mode: let's encrypt (automatic)"
+        log "certificates are managed by caddy and stored in the container volume."
+        return 0
+      fi
+      
+      if [[ ! -f "${tls_dir}/cert.pem" ]]; then
+        warn "no manual certificates found in ${tls_dir}/"
+        return 1
+      fi
+      
+      echo ""
+      openssl x509 -in "${tls_dir}/cert.pem" -noout -subject -issuer -dates -ext subjectAltName 2>/dev/null || true
+      echo ""
+      ;;
+    check)
+      log "== certificate expiry check =="
+      if [[ "${EVI_TLS_MODE}" == "letsencrypt" ]]; then
+        log "mode: let's encrypt - certificates auto-renew"
+        return 0
+      fi
+      
+      if [[ ! -f "${tls_dir}/cert.pem" ]]; then
+        warn "no certificates found"
+        return 1
+      fi
+      
+      local expiry
+      expiry=$(openssl x509 -enddate -noout -in "${tls_dir}/cert.pem" 2>/dev/null | cut -d= -f2)
+      local expiry_epoch now_epoch days_left
+      expiry_epoch=$(date -d "${expiry}" +%s 2>/dev/null || date -j -f "%b %d %T %Y %Z" "${expiry}" +%s 2>/dev/null)
+      now_epoch=$(date +%s)
+      days_left=$(( (expiry_epoch - now_epoch) / 86400 ))
+      
+      log "expires: ${expiry}"
+      log "days left: ${days_left}"
+      
+      if [[ ${days_left} -lt 30 ]]; then
+        warn "certificate expires soon - consider regenerating"
+      fi
+      ;;
+    regen)
+      log "== regenerate certificates =="
+      if [[ "${EVI_TLS_MODE}" != "manual" ]]; then
+        warn "regeneration only applies to manual TLS mode"
+        return 1
+      fi
+      
+      require_cmd openssl
+      chmod +x "${SCRIPTS_DIR}/gen-self-signed-tls.sh"
+      
+      log "regenerating certificates for ${EVI_DOMAIN}..."
+      "${SCRIPTS_DIR}/gen-self-signed-tls.sh" "${EVI_DOMAIN}" "${tls_dir}" --force
+      
+      log "certificates regenerated. restart proxy to apply:"
+      log "  systemctl --user restart evi-proxy"
+      ;;
+    install)
+      log "== client certificate installation ==="
+      if [[ ! -f "${tls_dir}/evi-tls.crt" ]]; then
+        warn "CA certificate not found. Generate certificates first."
+        return 1
+      fi
+      
+      echo ""
+      echo "to eliminate browser warnings, install the CA certificate:"
+      echo ""
+      echo "certificate file: ${tls_dir}/evi-tls.crt"
+      echo ""
+      echo "windows: double-click > install > local machine > trusted root ca"
+      echo "macos:   double-click > add to keychain > set 'always trust'"
+      echo "linux:   sudo cp evi-tls.crt /usr/local/share/ca-certificates/ && sudo update-ca-certificates"
+      echo "firefox: settings > privacy > certificates > import > trust for websites"
+      echo ""
+      ;;
+    *)
+      echo "usage: evictl cert <info|check|regen|install>"
+      ;;
+  esac
+}
+
 usage() {
   cat <<'EOF'
 evictl - evi production deployment controller
@@ -558,16 +734,22 @@ Usage:
   evictl               # interactive menu
 
 Commands:
-  init        Render Quadlet + proxy config, create secrets
-  build       Build images from source (using tags defined in env)
-  up          Start services
-  down        Stop services
-  restart     Restart services
-  status      Show systemd user unit status
-  logs [unit] Show recent logs (default: evi-proxy)
-  update      Pull images and restart
-  doctor      Validate host prerequisites
-  self-update Update evictl (not implemented yet)
+  init            Render Quadlet + proxy config, create secrets
+  build           Build images from source (using tags defined in env)
+  up              Start services
+  down            Stop services
+  restart         Restart services
+  status          Show systemd user unit status
+  logs [unit]     Show recent logs (default: evi-proxy)
+  update          Pull images and restart
+  health          Check health of all services
+  cert <subcmd>   Certificate management:
+                    info    - Show certificate information
+                    check   - Check certificate expiry
+                    regen   - Regenerate certificates (manual mode)
+                    install - Show client installation instructions
+  doctor          Validate host prerequisites
+  self-update     Update evictl (not implemented yet)
 EOF
 }
 
@@ -575,7 +757,7 @@ menu() {
   while true; do
     cat <<'EOF'
 
-evi Prod Manager (evictl)
+evi prod manager (evictl)
 =========================
 1) init
 2) build (from source)
@@ -585,10 +767,12 @@ evi Prod Manager (evictl)
 6) status
 7) logs (evi-proxy)
 8) update (pull)
-9) doctor
-10) exit
+9) health
+10) cert info
+11) doctor
+12) exit
 EOF
-    read -r -p "Select option: " choice
+    read -r -p "select option: " choice
     case "${choice}" in
       1) cmd_init ;;
       2) cmd_build ;;
@@ -598,9 +782,11 @@ EOF
       6) cmd_status ;;
       7) cmd_logs "evi-proxy" ;;
       8) cmd_update ;;
-      9) cmd_doctor ;;
-      10) exit 0 ;;
-      *) warn "Invalid option." ;;
+      9) cmd_health ;;
+      10) cmd_cert info ;;
+      11) cmd_doctor ;;
+      12) exit 0 ;;
+      *) warn "invalid option." ;;
     esac
   done
 }
@@ -621,6 +807,8 @@ main() {
     status) cmd_status "$@" ;;
     logs) cmd_logs "$@" ;;
     update) cmd_update "$@" ;;
+    health) cmd_health "$@" ;;
+    cert) cmd_cert "$@" ;;
     doctor) cmd_doctor "$@" ;;
     self-update) cmd_self_update "$@" ;;
     -h|--help|help) usage ;;
