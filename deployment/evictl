@@ -1,12 +1,15 @@
 #!/usr/bin/env bash
 #
-# Version: 1.2.0
+# Version: 1.2.1
 # Purpose: evi production deployment controller (rootless Podman + Quadlet).
 # Deployment file: evictl
 # Logic:
 # - Provides CLI subcommands (init/up/down/restart/status/logs/update/doctor/self-update/build)
 # - Provides interactive menu mode when run without args
 # - Renders Quadlet units from templates, renders Caddyfile, and manages secrets
+#
+# Changes in v1.2.1:
+# - Fixed unbound variable error: EVI_TLS_CERT_IN_CONTAINER now set in render_caddyfile()
 #
 # Changes in v1.2.0:
 # - Updated manual TLS mode to auto-detect certificates from deployment/env/tls/
@@ -179,6 +182,10 @@ render_caddyfile() {
   fi
 
   if [[ "${EVI_TLS_MODE}" == "manual" ]]; then
+    # Set container paths for manual TLS mode (fixed paths inside container)
+    export EVI_TLS_CERT_IN_CONTAINER="/etc/evi-tls/cert.pem"
+    export EVI_TLS_KEY_IN_CONTAINER="/etc/evi-tls/key.pem"
+    
     site_tpl="${PROXY_DIR}/Caddyfile.site.manual.template"
     export EVI_TLS_SITE_BLOCK="$(cat "${site_tpl}")"
     export EVI_TLS_SITE_BLOCK="${EVI_TLS_SITE_BLOCK//\{\{EVI_TLS_CERT_IN_CONTAINER\}\}/${EVI_TLS_CERT_IN_CONTAINER}}"
