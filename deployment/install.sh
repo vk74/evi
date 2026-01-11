@@ -1,13 +1,21 @@
 #!/usr/bin/env bash
 #
-# Version: 1.1.1
+# Version: 1.2.0
 # Purpose: Interactive installer and manager for evi production deployment.
 # Deployment file: install.sh
 # Logic:
 # - Interactive Bash menu system (similar to build-dev.js logic)
 # - Prerequisites checks (Ubuntu 24.04, Podman, Ports, Resources)
 # - Secrets management (Auto-generate or manual)
+# - TLS Certificate management (Generate self-signed certs for internal use)
 # - Deployment orchestration (Build & Start)
+#
+# Changes in v1.2.0:
+# - Added TLS Certificate Management menu
+# - Auto-generate self-signed certificates for internal deployments
+# - Support for IP addresses and DNS names with proper SAN
+# - Client-installable CA certificate (evi-tls.crt)
+# - Auto-configure EVI_TLS_MODE=manual when certificates are generated
 #
 # Changes in v1.1.1:
 # - Fixed permission issues for helper scripts.
@@ -31,6 +39,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 ENV_DIR="${SCRIPT_DIR}/env"
 SCRIPTS_DIR="${SCRIPT_DIR}/scripts"
+TLS_DIR="${ENV_DIR}/tls"
 TEMPLATE_ENV="${ENV_DIR}/evi.template.env"
 TEMPLATE_SECRETS="${ENV_DIR}/evi.secrets.template.env"
 TARGET_ENV="${ENV_DIR}/evi.env"
@@ -407,6 +416,252 @@ menu_deploy() {
   done
 }
 
+# --- 4. TLS Certificate Management ---
+
+# Get domain from evi.env file
+get_evi_domain() {
+  if [[ -f "${TARGET_ENV}" ]]; then
+    grep "^EVI_DOMAIN=" "${TARGET_ENV}" 2>/dev/null | cut -d'=' -f2 | tr -d '"' | tr -d "'" || echo ""
+  else
+    echo ""
+  fi
+}
+
+# Get TLS mode from evi.env file
+get_tls_mode() {
+  if [[ -f "${TARGET_ENV}" ]]; then
+    grep "^EVI_TLS_MODE=" "${TARGET_ENV}" 2>/dev/null | cut -d'=' -f2 | tr -d '"' | tr -d "'" || echo "letsencrypt"
+  else
+    echo "letsencrypt"
+  fi
+}
+
+# Check TLS certificate status
+check_tls_status() {
+  if [[ ! -d "${TLS_DIR}" ]] || [[ ! -f "${TLS_DIR}/cert.pem" ]]; then
+    printf "${YELLOW}[NOT GENERATED]${NC}"
+    return
+  fi
+  
+  ensure_executable
+  local status
+  status=$("${SCRIPTS_DIR}/gen-self-signed-tls.sh" "dummy" "${TLS_DIR}" --check 2>/dev/null || echo "ERROR")
+  
+  if [[ "${status}" == VALID* ]]; then
+    local days
+    days=$(echo "${status}" | cut -d: -f2)
+    printf "${GREEN}[VALID - ${days} days left]${NC}"
+  elif [[ "${status}" == EXPIRING_SOON* ]]; then
+    local days
+    days=$(echo "${status}" | cut -d: -f2)
+    printf "${YELLOW}[EXPIRING - ${days} days left]${NC}"
+  elif [[ "${status}" == "EXPIRED" ]]; then
+    printf "${RED}[EXPIRED]${NC}"
+  else
+    printf "${RED}[ERROR]${NC}"
+  fi
+}
+
+# Generate TLS certificates
+tls_generate() {
+  ensure_config_files
+  ensure_executable
+  
+  local domain
+  domain=$(get_evi_domain)
+  
+  if [[ -z "${domain}" ]] || [[ "${domain}" == "evi.example.com" ]]; then
+    warn "EVI_DOMAIN is not set or still default."
+    echo ""
+    read -r -p "Enter domain or IP address for the certificate: " domain
+    if [[ -z "${domain}" ]]; then
+      err "Domain cannot be empty."
+      return
+    fi
+    # Update evi.env with the domain
+    if grep -q "^EVI_DOMAIN=" "${TARGET_ENV}"; then
+      sed -i "s|^EVI_DOMAIN=.*|EVI_DOMAIN=${domain}|" "${TARGET_ENV}"
+    fi
+  fi
+  
+  echo ""
+  log "Generating TLS certificates for: ${domain}"
+  
+  # Check if certificates already exist
+  if [[ -f "${TLS_DIR}/cert.pem" ]]; then
+    if ! confirm "Certificates already exist. Regenerate?"; then
+      return
+    fi
+  fi
+  
+  mkdir -p "${TLS_DIR}"
+  
+  # Generate certificates
+  if "${SCRIPTS_DIR}/gen-self-signed-tls.sh" "${domain}" "${TLS_DIR}" --force; then
+    info "Certificates generated successfully!"
+    echo ""
+    
+    # Update evi.env to use manual TLS mode
+    local current_mode
+    current_mode=$(get_tls_mode)
+    if [[ "${current_mode}" != "manual" ]]; then
+      log "Updating EVI_TLS_MODE to 'manual' in evi.env..."
+      if grep -q "^EVI_TLS_MODE=" "${TARGET_ENV}"; then
+        sed -i "s|^EVI_TLS_MODE=.*|EVI_TLS_MODE=manual|" "${TARGET_ENV}"
+      fi
+    fi
+    
+    # Update evi.secrets.env with certificate paths
+    log "Updating certificate paths in evi.secrets.env..."
+    if grep -q "^EVI_TLS_CERT_PATH=" "${TARGET_SECRETS}"; then
+      sed -i "s|^EVI_TLS_CERT_PATH=.*|EVI_TLS_CERT_PATH=${TLS_DIR}/cert.pem|" "${TARGET_SECRETS}"
+    fi
+    if grep -q "^EVI_TLS_KEY_PATH=" "${TARGET_SECRETS}"; then
+      sed -i "s|^EVI_TLS_KEY_PATH=.*|EVI_TLS_KEY_PATH=${TLS_DIR}/key.pem|" "${TARGET_SECRETS}"
+    fi
+    
+    info "Configuration updated automatically."
+  else
+    err "Certificate generation failed!"
+  fi
+  
+  read -r -p "Press Enter to continue..."
+}
+
+# Show TLS certificate info
+tls_show_info() {
+  ensure_executable
+  
+  if [[ ! -f "${TLS_DIR}/cert.pem" ]]; then
+    warn "No certificates found. Generate them first."
+    read -r -p "Press Enter to continue..."
+    return
+  fi
+  
+  echo ""
+  log "=== Certificate Information ==="
+  "${SCRIPTS_DIR}/gen-self-signed-tls.sh" "dummy" "${TLS_DIR}" --check 2>/dev/null || true
+  
+  read -r -p "Press Enter to continue..."
+}
+
+# Show client installation instructions
+tls_client_instructions() {
+  echo ""
+  log "=== Client Certificate Installation ==="
+  echo ""
+  
+  if [[ ! -f "${TLS_DIR}/evi-tls.crt" ]]; then
+    warn "CA certificate not found. Generate certificates first."
+    read -r -p "Press Enter to continue..."
+    return
+  fi
+  
+  local ca_path="${TLS_DIR}/evi-tls.crt"
+  
+  echo "To eliminate browser security warnings, install the CA certificate"
+  echo "on client devices that will access this application."
+  echo ""
+  echo "Certificate file: ${ca_path}"
+  echo ""
+  printf "${CYAN}=== Windows ===${NC}\n"
+  echo "1. Copy evi-tls.crt to the client machine"
+  echo "2. Double-click the file"
+  echo "3. Click 'Install Certificate...'"
+  echo "4. Select 'Local Machine' (requires admin)"
+  echo "5. Select 'Place all certificates in the following store'"
+  echo "6. Browse and select 'Trusted Root Certification Authorities'"
+  echo "7. Click Finish"
+  echo ""
+  printf "${CYAN}=== macOS ===${NC}\n"
+  echo "1. Copy evi-tls.crt to the client machine"
+  echo "2. Double-click the file to add to Keychain"
+  echo "3. Open Keychain Access"
+  echo "4. Find 'evi Root CA' in the System keychain"
+  echo "5. Double-click it, expand 'Trust'"
+  echo "6. Set 'When using this certificate' to 'Always Trust'"
+  echo ""
+  printf "${CYAN}=== Linux (Ubuntu/Debian) ===${NC}\n"
+  echo "1. Copy evi-tls.crt to /usr/local/share/ca-certificates/"
+  echo "   sudo cp ${ca_path} /usr/local/share/ca-certificates/evi-tls.crt"
+  echo "2. Update CA certificates:"
+  echo "   sudo update-ca-certificates"
+  echo ""
+  printf "${CYAN}=== Firefox (all platforms) ===${NC}\n"
+  echo "Firefox uses its own certificate store:"
+  echo "1. Open Firefox Settings > Privacy & Security"
+  echo "2. Scroll to 'Certificates' > 'View Certificates'"
+  echo "3. Go to 'Authorities' tab"
+  echo "4. Click 'Import' and select evi-tls.crt"
+  echo "5. Check 'Trust this CA to identify websites'"
+  echo ""
+  
+  read -r -p "Press Enter to continue..."
+}
+
+# Regenerate TLS certificates (force)
+tls_regenerate() {
+  ensure_config_files
+  ensure_executable
+  
+  local domain
+  domain=$(get_evi_domain)
+  
+  if [[ -z "${domain}" ]] || [[ "${domain}" == "evi.example.com" ]]; then
+    err "EVI_DOMAIN is not set. Please configure it first."
+    read -r -p "Press Enter to continue..."
+    return
+  fi
+  
+  if ! confirm "This will regenerate ALL TLS certificates for ${domain}. Proceed?"; then
+    return
+  fi
+  
+  mkdir -p "${TLS_DIR}"
+  
+  if "${SCRIPTS_DIR}/gen-self-signed-tls.sh" "${domain}" "${TLS_DIR}" --force; then
+    info "Certificates regenerated successfully!"
+    warn "Remember to reinstall evi-tls.crt on client devices if you previously installed it."
+  else
+    err "Certificate regeneration failed!"
+  fi
+  
+  read -r -p "Press Enter to continue..."
+}
+
+menu_tls() {
+  while true; do
+    echo ""
+    log "=== TLS Certificate Management ==="
+    
+    # Show current status
+    local domain
+    domain=$(get_evi_domain)
+    local tls_mode
+    tls_mode=$(get_tls_mode)
+    
+    printf "  Domain:    %s\n" "${domain:-${YELLOW}(not set)${NC}}"
+    printf "  TLS Mode:  %s\n" "${tls_mode}"
+    printf "  Status:    %s\n" "$(check_tls_status)"
+    
+    echo ""
+    echo "1) Generate Certificates (for internal use)"
+    echo "2) View Certificate Info"
+    echo "3) Regenerate Certificates (force)"
+    echo "4) Client Installation Instructions"
+    echo "5) Back to Main Menu"
+    read -r -p "Select: " opt
+    case $opt in
+      1) tls_generate ;;
+      2) tls_show_info ;;
+      3) tls_regenerate ;;
+      4) tls_client_instructions ;;
+      5) break ;;
+      *) warn "Invalid option" ;;
+    esac
+  done
+}
+
 # --- Main Menu ---
 
 main_menu() {
@@ -416,14 +671,16 @@ main_menu() {
     log "=== evi installation main menu ==="
     echo "1) Prerequisites (Check & Install)"
     echo "2) Configuration & Secrets"
-    echo "3) Deployment Operations"
-    echo "4) Exit"
+    echo "3) TLS Certificates"
+    echo "4) Deployment Operations"
+    echo "5) Exit"
     read -r -p "Select: " opt
     case $opt in
       1) menu_prerequisites ;;
       2) menu_config ;;
-      3) menu_deploy ;;
-      4) log "Bye!"; exit 0 ;;
+      3) menu_tls ;;
+      4) menu_deploy ;;
+      5) log "Bye!"; exit 0 ;;
       *) warn "Invalid option" ;;
     esac
   done

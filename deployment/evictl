@@ -1,12 +1,17 @@
 #!/usr/bin/env bash
 #
-# Version: 1.1.4
+# Version: 1.2.0
 # Purpose: evi production deployment controller (rootless Podman + Quadlet).
 # Deployment file: evictl
 # Logic:
 # - Provides CLI subcommands (init/up/down/restart/status/logs/update/doctor/self-update/build)
 # - Provides interactive menu mode when run without args
 # - Renders Quadlet units from templates, renders Caddyfile, and manages secrets
+#
+# Changes in v1.2.0:
+# - Updated manual TLS mode to auto-detect certificates from deployment/env/tls/
+# - Removed internal TLS mode recommendation in favor of manual mode with self-signed certs
+# - Improved certificate path resolution (supports absolute and relative paths)
 #
 # Changes in v1.1.4:
 # - Updated internal TLS configuration to use sign_with_root option
@@ -238,20 +243,81 @@ prepare_jwt_secret() {
   log "OK: created/updated podman secret ${EVI_JWT_SECRET_NAME}"
 }
 
+resolve_tls_path() {
+  # Resolve TLS file path - supports absolute and relative paths
+  local path="$1"
+  
+  if [[ -z "${path}" ]]; then
+    echo ""
+    return
+  fi
+  
+  # If absolute path, use as-is
+  if [[ "${path}" == /* ]]; then
+    echo "${path}"
+    return
+  fi
+  
+  # Try relative to ENV_DIR first
+  if [[ -f "${ENV_DIR}/${path}" ]]; then
+    echo "${ENV_DIR}/${path}"
+    return
+  fi
+  
+  # Try relative to DEPLOYMENT_DIR
+  if [[ -f "${DEPLOYMENT_DIR}/${path}" ]]; then
+    echo "${DEPLOYMENT_DIR}/${path}"
+    return
+  fi
+  
+  # Return original (let caller handle error)
+  echo "${path}"
+}
+
 prepare_manual_tls_files() {
   if [[ "${EVI_TLS_MODE}" != "manual" ]]; then
     return 0
   fi
 
-  if [[ -n "${EVI_TLS_CERT_PATH}" && -n "${EVI_TLS_KEY_PATH}" ]]; then
+  local cert_path="${EVI_TLS_CERT_PATH:-}"
+  local key_path="${EVI_TLS_KEY_PATH:-}"
+  
+  # Auto-detect from default TLS directory if not specified
+  local default_tls_dir="${ENV_DIR}/tls"
+  
+  if [[ -z "${cert_path}" && -f "${default_tls_dir}/cert.pem" ]]; then
+    cert_path="${default_tls_dir}/cert.pem"
+    log "Auto-detected certificate: ${cert_path}"
+  fi
+  
+  if [[ -z "${key_path}" && -f "${default_tls_dir}/key.pem" ]]; then
+    key_path="${default_tls_dir}/key.pem"
+    log "Auto-detected private key: ${key_path}"
+  fi
+  
+  # Resolve paths (handle relative paths)
+  cert_path=$(resolve_tls_path "${cert_path}")
+  key_path=$(resolve_tls_path "${key_path}")
+
+  if [[ -n "${cert_path}" && -n "${key_path}" ]]; then
+    if [[ ! -f "${cert_path}" ]]; then
+      die "TLS certificate not found: ${cert_path}"
+    fi
+    if [[ ! -f "${key_path}" ]]; then
+      die "TLS private key not found: ${key_path}"
+    fi
+    
     log "Importing manual TLS certificates..."
     chmod +x "${SCRIPTS_DIR}/import-tls.sh"
-    "${SCRIPTS_DIR}/import-tls.sh" "${EVI_TLS_CERT_PATH}" "${EVI_TLS_KEY_PATH}" "${EVI_STATE_DIR}/tls" >/dev/null
+    "${SCRIPTS_DIR}/import-tls.sh" "${cert_path}" "${key_path}" "${EVI_STATE_DIR}/tls" >/dev/null
     log "OK: imported manual TLS cert/key to ${EVI_STATE_DIR}/tls"
     return 0
   fi
 
-  die "Manual TLS selected but EVI_TLS_CERT_PATH/EVI_TLS_KEY_PATH not provided."
+  die "Manual TLS selected but certificates not found. Either:
+  1. Generate certificates using install.sh -> TLS Certificates menu
+  2. Set EVI_TLS_CERT_PATH and EVI_TLS_KEY_PATH in evi.secrets.env
+  3. Place cert.pem and key.pem in ${default_tls_dir}/"
 }
 
 render_quadlets() {

@@ -13,6 +13,11 @@
 .env.local
 .env.*.local
 
+# Deployment secrets and generated files (do NOT commit these!)
+deployment/env/evi.env
+deployment/env/evi.secrets.env
+deployment/env/tls/
+
 # Build outputs
 dist/
 */dist/
