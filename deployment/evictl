@@ -1,12 +1,17 @@
 #!/usr/bin/env bash
 #
-# Version: 1.5.0
+# Version: 1.5.1
 # Purpose: evi production deployment controller (rootless Podman + Quadlet).
 # Deployment file: evictl
 # Logic:
 # - Provides CLI subcommands (init/up/down/restart/status/logs/update/doctor/health/cert/build/cleanup)
 # - Provides interactive menu mode when run without args
 # - Renders Quadlet units from templates, renders Caddyfile, and manages secrets
+#
+# Changes in v1.5.1:
+# - Updated pgAdmin rendering: removed auth credentials, added localhost-only binding
+# - Added servers.json rendering for pre-configured evi-db connection in pgAdmin
+# - Added EVI_ADMIN_DB_USERNAME, EVI_PGADMIN_HOST, EVI_PGADMIN_PORT to template rendering
 #
 # Changes in v1.5.0:
 # - Added cleanup command to remove source code files after successful deployment
@@ -111,6 +116,9 @@ load_env_files() {
   export EVI_QUADLET_DIR="${EVI_QUADLET_DIR:-${EVI_QUADLET_DIR_DEFAULT}}"
 
   export EVI_JWT_SECRET_NAME="${EVI_JWT_SECRET_NAME:-evi_jwt_private_key}"
+  
+  # Default admin username if not set
+  export EVI_ADMIN_DB_USERNAME="${EVI_ADMIN_DB_USERNAME:-evidba}"
 
   # Validation
   [[ -n "${EVI_DOMAIN:-}" ]] || die "EVI_DOMAIN is not set in evi.env"
@@ -122,7 +130,7 @@ load_env_files() {
 }
 
 ensure_dirs() {
-  mkdir -p "${EVI_STATE_DIR}/proxy" "${EVI_STATE_DIR}/tls" "${EVI_STATE_DIR}/secrets"
+  mkdir -p "${EVI_STATE_DIR}/proxy" "${EVI_STATE_DIR}/tls" "${EVI_STATE_DIR}/secrets" "${EVI_STATE_DIR}/pgadmin"
   mkdir -p "${EVI_CONFIG_DIR}"
   mkdir -p "${EVI_QUADLET_DIR}"
 }
@@ -143,8 +151,9 @@ render_template_file() {
     EVI_PROXY_IMAGE EVI_FE_IMAGE EVI_BE_IMAGE EVI_DB_IMAGE
     EVI_NETWORK EVI_BE_PORT EVI_FE_PORT EVI_DB_PORT
     EVI_NODE_ENV EVI_CORS_ORIGINS
-    EVI_POSTGRES_DB EVI_POSTGRES_USER EVI_POSTGRES_PASSWORD EVI_APP_DB_PASSWORD EVI_ADMIN_DB_PASSWORD EVI_SEED_DEMO_DATA
+    EVI_POSTGRES_DB EVI_POSTGRES_USER EVI_POSTGRES_PASSWORD EVI_APP_DB_PASSWORD EVI_ADMIN_DB_USERNAME EVI_ADMIN_DB_PASSWORD EVI_SEED_DEMO_DATA
     EVI_STATE_DIR EVI_JWT_SECRET_NAME
+    EVI_PGADMIN_IMAGE EVI_PGADMIN_HOST EVI_PGADMIN_PORT
   )
 
   local k v
@@ -376,18 +385,22 @@ render_quadlets() {
   render_template_file "${TPL_DIR}/evi-proxy.container" "${EVI_QUADLET_DIR}/evi-proxy.container"
 
   # Optional pgAdmin
-  if [[ "${EVI_PGADMIN_ENABLED}" == "true" ]]; then
-    export PGADMIN_DEFAULT_EMAIL
-    export PGADMIN_DEFAULT_PASSWORD
-    # Render if enabled
-    local content
-    content="$(cat "${TPL_DIR}/evi-pgadmin.container")"
-    content="${content//\{\{EVI_PGADMIN_IMAGE\}\}/${EVI_PGADMIN_IMAGE}}"
-    content="${content//\{\{EVI_NETWORK\}\}/${EVI_NETWORK}}"
-    content="${content//\{\{EVI_PGADMIN_PORT\}\}/${EVI_PGADMIN_PORT}}"
-    content="${content//\{\{PGADMIN_DEFAULT_EMAIL\}\}/${PGADMIN_DEFAULT_EMAIL}}"
-    content="${content//\{\{PGADMIN_DEFAULT_PASSWORD\}\}/${PGADMIN_DEFAULT_PASSWORD}}"
-    printf "%s\n" "${content}" > "${EVI_QUADLET_DIR}/evi-pgadmin.container"
+  if [[ "${EVI_PGADMIN_ENABLED:-false}" == "true" ]]; then
+    # Render pgAdmin container quadlet
+    render_template_file "${TPL_DIR}/evi-pgadmin.container" "${EVI_QUADLET_DIR}/evi-pgadmin.container"
+    
+    # Render servers.json for pre-configured evi-db connection
+    local pgadmin_tpl="${DEPLOYMENT_DIR}/pgadmin/servers.json.template"
+    local pgadmin_out="${EVI_STATE_DIR}/pgadmin/servers.json"
+    if [[ -f "${pgadmin_tpl}" ]]; then
+      local servers_content
+      servers_content="$(cat "${pgadmin_tpl}")"
+      servers_content="${servers_content//\{\{EVI_ADMIN_DB_USERNAME\}\}/${EVI_ADMIN_DB_USERNAME:-evidba}}"
+      printf "%s\n" "${servers_content}" > "${pgadmin_out}"
+      log "OK: rendered pgAdmin servers.json"
+    else
+      warn "pgAdmin servers.json template not found at ${pgadmin_tpl}"
+    fi
   else
     # Remove if disabled/exists
     if [[ -f "${EVI_QUADLET_DIR}/evi-pgadmin.container" ]]; then

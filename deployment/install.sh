@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# Version: 1.5.0
+# Version: 1.5.1
 # Purpose: Interactive installer and manager for evi production deployment.
 # Deployment file: install.sh
 # Logic:
@@ -11,6 +11,12 @@
 # - TLS certificate management (auto-generate or user-provided)
 # - Deployment orchestration and status display
 # - Optional cleanup of source files after successful deployment
+#
+# Changes in v1.5.1:
+# - Added pgAdmin configuration to install_gui_tools()
+# - pgAdmin runs as container alongside other evi services
+# - pgAdmin accessible only from localhost (127.0.0.1:5050)
+# - Pre-configured connection to evi-db with admin user
 #
 # Changes in v1.5.0:
 # - Cleanup prompt moved to evictl (appears after successful deployment)
@@ -477,11 +483,22 @@ install_core_prerequisites() {
 }
 
 install_gui_tools() {
-  log "installing gui tools..."
-  if ! confirm "this will install cockpit (web-based server management). proceed?"; then
+  log "installing admin and gui tools..."
+  echo ""
+  echo "this will install:"
+  echo "  - cockpit: web-based server management (https://localhost:9090)"
+  echo "  - pgadmin: database administration tool (http://localhost:5050)"
+  echo ""
+  echo "pgadmin runs as a container and will be started with evi deployment."
+  echo "it is accessible ONLY from localhost for security."
+  echo ""
+  
+  if ! confirm "proceed with installation?"; then
     return 0
   fi
 
+  # --- Install Cockpit ---
+  log "installing cockpit..."
   sudo apt-get update
   sudo apt-get install -y cockpit cockpit-podman
   
@@ -497,7 +514,34 @@ install_gui_tools() {
   # Enable user podman socket for cockpit
   systemctl --user enable --now podman.socket
   
-  info "gui tools installed. access cockpit at https://localhost:9090"
+  info "cockpit installed. access at https://localhost:9090"
+
+  # --- Configure pgAdmin ---
+  log "configuring pgadmin..."
+  ensure_config_files
+  
+  # Enable pgAdmin in evi.env
+  if [[ -f "${TARGET_ENV}" ]]; then
+    if grep -q "^EVI_PGADMIN_ENABLED=" "${TARGET_ENV}"; then
+      sed -i "s|^EVI_PGADMIN_ENABLED=.*|EVI_PGADMIN_ENABLED=true|" "${TARGET_ENV}"
+    else
+      echo "EVI_PGADMIN_ENABLED=true" >> "${TARGET_ENV}"
+    fi
+    info "pgadmin enabled in evi.env"
+  fi
+  
+  echo ""
+  log "=== admin tools configured ==="
+  echo ""
+  echo "  cockpit:  https://localhost:9090 (available now)"
+  echo "  pgadmin:  http://localhost:5050 (available after deployment)"
+  echo ""
+  echo "pgadmin notes:"
+  echo "  - no login required (localhost-only access)"
+  echo "  - evi-db connection is pre-configured"
+  echo "  - use EVI_ADMIN_DB_USERNAME password to connect to database"
+  echo ""
+  
   read -r -p "press enter to continue..."
 }
 

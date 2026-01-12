@@ -1,7 +1,11 @@
-# Version: 1.0.0
+# Version: 1.0.1
 # Purpose: Podman Quadlet container unit for evi PostgreSQL database.
 # Deployment file: evi-db.container
 # Logic: Runs DB on the internal network only (no host port published).
+#
+# Changes in v1.0.1:
+# - Fixed healthcheck to use explicit postgres user (fixes "role root does not exist" errors)
+# - Added EVI_ADMIN_DB_USERNAME environment variable for configurable admin username
 #
 # Changes in v1.0.0:
 # - Initial DB container unit (internal-only, persistent volume)
@@ -29,11 +33,12 @@ Volume=evi_db_data:/var/lib/postgresql/data:Z
 Environment=POSTGRES_PASSWORD={{EVI_POSTGRES_PASSWORD}}
 Environment=POSTGRES_DB={{EVI_POSTGRES_DB}}
 Environment=EVI_APP_DB_PASSWORD={{EVI_APP_DB_PASSWORD}}
+Environment=EVI_ADMIN_DB_USERNAME={{EVI_ADMIN_DB_USERNAME}}
 Environment=EVI_ADMIN_DB_PASSWORD={{EVI_ADMIN_DB_PASSWORD}}
 Environment=SEED_DEMO_DATA={{EVI_SEED_DEMO_DATA}}
 
-# Healthcheck (optional) - keep minimal for MVP
-PodmanArgs=--health-cmd=pg_isready
+# Healthcheck - use explicit postgres user to avoid "role root does not exist" errors
+PodmanArgs=--health-cmd="pg_isready -U postgres -d maindb"
 PodmanArgs=--health-interval=10s
 PodmanArgs=--health-timeout=5s
 PodmanArgs=--health-retries=10
